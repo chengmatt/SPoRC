@@ -22,7 +22,7 @@ install.packages("devtools")       # Development tools
 install.packages("TMB")            # Template Model Builder
 install.packages("RTMB")           # R interface to TMB
 TMB:::install.contrib("https://github.com/vtrijoulet/OSA_multivariate_dists/archive/main.zip") # Optional: multivariate OSA distributions
-remotes::install_github("fishfollower/compResidual") # Optional OSA residuals
+remotes::install_github("fishfollower/compResidual/compResidual", force=TRUE) # Optional OSA residuals
 ```
 
 #### Installing SPoRC

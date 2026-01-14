@@ -802,15 +802,6 @@ do_srv_fixed_sel_pars_mapping <- function(input_list, srv_fixed_sel_pars_spec) {
       # Only add a counter if caatches are avaliable in some years for a given region and fleet combination
       if(sum(input_list$data$UseSrvIdx[r,,f]) > 0) {
 
-        # Warning for if no compositions, but est_all or est_shared_s
-        if(sum(input_list$data$UseSrvAgeComps[r,,f]) == 0 && sum(input_list$data$UseSrvLenComps[r,,f]) == 0) {
-          if(!srv_fixed_sel_pars_spec[f] %in% c("est_shared_r", "est_shared_r_s", "fix")) {
-            warning("Fleet ", f, " in region ", r, " has catch data but no composition data. ",
-                    "Consider using 'est_shared_r', 'est_shared_r_s', or 'fix' specification to share selectivity parameters. ",
-                    "Current specification: ", srv_fixed_sel_pars_spec[f])
-          }
-        }
-
         # Extract number of srvery selectivity blocks
         srvsel_blocks_tmp <- unique(as.vector(input_list$data$srv_sel_blocks[r,,f]))
 
@@ -995,15 +986,6 @@ do_srvsel_pe_pars_mapping <- function(input_list, srvsel_pe_pars_spec, corr_opt_
         map_srvsel_pe_pars[r,,,f] <- NA
       } else { # if we have time-variation
 
-        # Warning for if no compositions, but est_all or est_shared_s
-        if(sum(input_list$data$UseSrvAgeComps[r,,f]) == 0 && sum(input_list$data$UseSrvLenComps[r,,f]) == 0) {
-          if(!is.null(srvsel_pe_pars_spec)) if(!srvsel_pe_pars_spec[f] %in% c("est_shared_r", "est_shared_r_s", "fix")) {
-            warning("Fleet ", f, " in region ", r, " has catch data but no composition data. ",
-                    "Consider using 'est_shared_r', 'est_shared_r_s', or 'fix' specification to share selectivity parameters. ",
-                    "Current specification: ", srvsel_pe_pars_spec[f])
-          }
-        }
-
         # Figure out max number of selectivity parameters for a given region and fleet
         if(unique(input_list$data$srv_sel_model[r,,f]) %in% 2) max_sel_pars <- 1 # exponential
         if(unique(input_list$data$srv_sel_model[r,,f]) %in% c(0,1,3)) max_sel_pars <- 2 # logistic or gamma
@@ -1180,15 +1162,6 @@ do_srvsel_devs_mapping <- function(input_list, srv_sel_devs_spec, srvsel_devs_sh
 
       # Skip fleet sharing specs in first pass
       if(!is.null(srv_sel_devs_spec)) if(stringr::str_detect(srv_sel_devs_spec[f], "est_shared_f")) next
-
-      # Warning for if no compositions, but est_all or est_shared_s
-      if(sum(input_list$data$UseSrvAgeComps[r,,f]) == 0 && sum(input_list$data$UseSrvLenComps[r,,f]) == 0) {
-        if(!is.null(srv_sel_devs_spec)) if(!srv_sel_devs_spec[f] %in% c("est_shared_r", "est_shared_r_s", "fix")) {
-          warning("Fleet ", f, " in region ", r, " has catch data but no composition data. ",
-                  "Consider using 'est_shared_r', 'est_shared_r_s', or 'fix' specification to share selectivity parameters. ",
-                  "Current specification: ", srv_sel_devs_spec[f])
-        }
-      }
 
       for(s in 1:input_list$data$n_sexes) {
         for(y in 1:(length(input_list$data$years) + input_list$data$n_proj_yrs_devs)) {

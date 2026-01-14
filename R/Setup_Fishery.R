@@ -1235,15 +1235,6 @@ do_fish_fixed_sel_pars_mapping <- function(input_list, fish_fixed_sel_pars_spec)
       # Only add a counter if caatches are avaliable in some years for a given region and fleet combination
       if(sum(input_list$data$UseCatch[r,,f]) > 0) {
 
-        # Warning for if no compositions, but est_all or est_shared_s
-        if(sum(input_list$data$UseFishAgeComps[r,,f]) == 0 && sum(input_list$data$UseFishLenComps[r,,f]) == 0) {
-          if(!fish_fixed_sel_pars_spec[f] %in% c("est_shared_r", "est_shared_r_s", "fix")) {
-            warning("Fleet ", f, " in region ", r, " has catch data but no composition data. ",
-                    "Consider using 'est_shared_r', 'est_shared_r_s', or 'fix' specification to share selectivity parameters. ",
-                    "Current specification: ", fish_fixed_sel_pars_spec[f])
-          }
-        }
-
         # Extract number of fishery selectivity blocks
         fishsel_blocks_tmp <- unique(as.vector(input_list$data$fish_sel_blocks[r,,f]))
 
@@ -1427,15 +1418,6 @@ do_fishsel_pe_pars_mapping <- function(input_list, fishsel_pe_pars_spec, corr_op
         map_fishsel_pe_pars[r,,,f] <- NA
       } else { # if we have time-variation
 
-        # Warning for if no compositions, but est_all or est_shared_s
-        if(sum(input_list$data$UseFishAgeComps[r,,f]) == 0 && sum(input_list$data$UseFishLenComps[r,,f]) == 0) {
-          if(!fishsel_pe_pars_spec[f] %in% c("est_shared_r", "est_shared_r_s", "fix")) {
-            warning("Fleet ", f, " in region ", r, " has catch data but no composition data. ",
-                    "Consider using 'est_shared_r', 'est_shared_r_s', or 'fix' specification to share selectivity parameters. ",
-                    "Current specification: ", fishsel_pe_pars_spec[f])
-          }
-        }
-
         # Figure out max number of selectivity parameters for a given region and fleet
         if(unique(input_list$data$fish_sel_model[r,,f]) %in% 2) max_sel_pars <- 1 # exponential
         if(unique(input_list$data$fish_sel_model[r,,f]) %in% c(0,1,3)) max_sel_pars <- 2 # logistic or gamma
@@ -1612,15 +1594,6 @@ do_fishsel_devs_mapping <- function(input_list, fish_sel_devs_spec, fishsel_devs
 
       # Skip fleet sharing specs in first pass
       if(!is.null(fish_sel_devs_spec)) if(stringr::str_detect(fish_sel_devs_spec[f], "est_shared_f")) next
-
-      # Warning for if no compositions, but est_all or est_shared_s
-      if(sum(input_list$data$UseFishAgeComps[r,,f]) == 0 && sum(input_list$data$UseFishLenComps[r,,f]) == 0) {
-        if(!is.null(fish_sel_devs_spec)) if(!fish_sel_devs_spec[f] %in% c("est_shared_r", "est_shared_r_s", "fix")) {
-          warning("Fleet ", f, " in region ", r, " has catch data but no composition data. ",
-                  "Consider using 'est_shared_r', 'est_shared_r_s', or 'fix' specification to share selectivity parameters. ",
-                  "Current specification: ", fish_sel_devs_spec[f])
-        }
-      }
 
       for(s in 1:input_list$data$n_sexes) {
         for(y in 1:(length(input_list$data$years) + input_list$data$n_proj_yrs_devs)) {

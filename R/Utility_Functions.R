@@ -87,7 +87,7 @@ is_package_available <- function(pkg) {
   nzchar(system.file(package = pkg))
 }
 
-#' Go from TAC to Fishing Mortality using bisection
+#' Go from TAC to Fishing Mortality using bisection for when a single fishery fleet exists
 #'
 #' @param f_guess Initial guess of F
 #' @param catch Provided catch values
@@ -99,18 +99,18 @@ is_package_available <- function(pkg) {
 #' @param lb Lower bound of F
 #' @param ub Upper bound of F
 #'
-#' @returns Fishing mortality values
+#' @returns Fishing mortality values for a single fleet
 #' @export bisection_F
 #' @family Closed Loop Simulations
-bisection_F <- function(f_guess,
-                        catch,
-                        NAA,
-                        WAA,
-                        natmort,
-                        fish_sel,
-                        n.iter = 20,
-                        lb = 0,
-                        ub = 2) {
+catch_to_F_singlefleet <- function(f_guess,
+                                    catch,
+                                    NAA,
+                                    WAA,
+                                    natmort,
+                                    fish_sel,
+                                    n.iter = 20,
+                                    lb = 0,
+                                    ub = 2) {
 
   range <- vector(length=2) # F range
   range[1] <- lb # Lower bound
@@ -137,6 +137,53 @@ bisection_F <- function(f_guess,
   } # end i loop
 
   return(midpoint)
+}
+
+#' Solve for fishing mortality rates that achieve target catches for multiple fleets
+#'
+#' @param target_catch Numeric vector of target catch values for each fleet
+#' @param NAA Matrix of numbers-at-age (ages x sexes)
+#' @param WAA Matrix of weight-at-age (ages x sexes)
+#' @param natmort Matrix of natural mortality (ages x sexes)
+#' @param fish_sel 3D array of fishery selectivity (ages x sexes x fleets)
+#' @param f_init Initial guess for F values (scalar or vector)
+#' @param control List of control parameters for nleqslv
+#' @return Numeric vector of F values for each fleet
+#' @export solve_multifleet_F
+#' @family Closed Loop Simulations
+catch_to_F_multifleet <- function(target_catch, NAA, WAA, natmort, fish_sel,
+                               f_init = 0.05, control = list(btol = 1e-6)) {
+
+  n_fleets <- length(target_catch)
+
+  # Expand f_init if scalar
+  if(length(f_init) == 1) f_init <- rep(f_init, n_fleets)
+
+  # Function to minimize: difference between predicted and target catch for all fleets
+  catch_diff <- function(f_vec) {
+    pred_catches <- numeric(n_fleets)
+
+    for(f in 1:n_fleets) {
+      # F-at-age for this fleet
+      FAA <- f_vec[f] * fish_sel[, , f]
+
+      # Total Z includes F from ALL fleets
+      ZAA_total <- natmort
+      for(ff in 1:n_fleets) {
+        ZAA_total <- ZAA_total + f_vec[ff] * fish_sel[, , ff]
+      }
+
+      # Predicted catch for this fleet (Baranov catch equation)
+      pred_catches[f] <- sum((FAA / ZAA_total * NAA * (1 - exp(-ZAA_total))) * WAA)
+    }
+
+    return(pred_catches - target_catch)  # Difference from target
+  }
+
+  # Solve for F vector
+  result <- nleqslv::nleqslv(f_init, catch_diff, control = control)
+
+  return(result$x)
 }
 
 #' Post Optimization Model Convergence Checks

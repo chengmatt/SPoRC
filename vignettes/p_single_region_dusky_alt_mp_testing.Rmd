@@ -412,7 +412,7 @@ tac_to_fmort <- function(sim_env, tmp_TAC, y, sim, assessment_years) {
   # Solve for F that achieves target catch for each region-fleet combination
   tmp_f <- mapply(
     function(r, f) {
-      SPoRC::bisection_F(
+      SPoRC::catch_to_F_singlefleet(
         f_guess = 0.05,
         catch = tmp_TAC[r, tac_year_index, f],
         NAA = sim_env$NAA[r, y + 1, , , sim],

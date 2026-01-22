@@ -414,7 +414,7 @@ for (sim in 1:sim_env$n_sims) {
         tac_year_index <- y - last_assess_year + 1 # get years to index TACs
         rf_grid <- expand.grid(r = seq_len(sim_env$n_regions), f = seq_len(sim_env$n_fish_fleets)) # set up region, fleet grid to bisection across
         tmp_f <- mapply(function(r, f) { # do bisection to go from region and fleet specific catch to region and fleet specific F rates
-          bisection_F(
+          catch_to_F_singlefleet(
             f_guess = 0.05, # guess for fishing mortality rate
             catch = tmp_TAC[r, tac_year_index, f], # catch values to use
             NAA = sim_env$NAA[r, y+1, , , sim], # numbers at age in simulation (truth)

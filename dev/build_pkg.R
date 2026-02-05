@@ -12,6 +12,7 @@ att_amend_desc(update = TRUE)
 desc::desc_del_dep("compResidual", "Imports") # move to suggests
 desc::desc_set_dep("compResidual", "Suggests") # move to suggests
 desc::desc_del_dep("remotes", "Imports") # remove remotes
+# usethis::use_news_md() # add news md
 Sys.unsetenv("GITHUB_PAT") # may need to unset to build vignettes
 # build_vignettes() # build vignettes
 build_site(examples = FALSE)

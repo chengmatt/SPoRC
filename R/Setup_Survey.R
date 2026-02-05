@@ -2,17 +2,17 @@
 #'
 #' @param sim_list Simulation list object from `Setup_Sim_Dim()`
 #' @param ObsSrvIdx_SE Survey index observation error
-#'   [n_regions × n_yrs × n_srv_fleets]
+#'   [n_regions × n_yrs × n_seas x n_srv_fleets]
 #'   (default: `0.2`)
 #' @param srv_sel_input Survey selectivity array
-#'   [n_regions × n_yrs × n_ages × n_sexes × n_srv_fleets × n_sims]
+#'   [n_regions × n_yrs x n_ages × n_sexes × n_srv_fleets × n_sims]
 #'   (no default, must be provided)
 #' @param srv_q_input Survey catchability array
-#'   [n_regions × n_yrs × n_srv_fleets × n_sims]
+#'   [n_regions × n_yrs × n_seas x n_srv_fleets × n_sims]
 #'   (default: `1`)
-#' @param t_srv Survey timing fraction
-#'   [n_regions × n_srv_fleets]
-#'   (default: `0`)
+#' @param t_srv Survey timing fraction within a given year and/or season
+#'   [n_regions × n_seas x n_srv_fleets]
+#'   (default: `1`)
 #' @param srv_idx_type Array of index types [n_regions x n_srv_fleets]
 #'   (default: all `1` = biomass index)
 #'   \itemize{
@@ -29,7 +29,7 @@
 #'     \item \code{4}: Logistic Normal 2d correlation (constant by sex, 1dar1 by age)
 #'   }
 #' @param ISS_SrvAgeComps Input sample sizes
-#'   [n_regions × n_yrs × n_sexes × n_srv_fleets × n_sims]
+#'   [n_regions × n_yrs × n_seas x n_sexes × n_srv_fleets × n_sims]
 #'   (default: `100`)
 #' @param ln_SrvAge_theta Overdispersion parameters
 #'   [n_regions × n_sexes × n_srv_fleets]
@@ -61,7 +61,7 @@
 #'     \item \code{4}: Logistic Normal 2d correlation (constant by sex, 1dar1 by length)
 #'   }
 #' @param ISS_SrvLenComps Input sample sizes
-#'   [n_regions × n_yrs × n_sexes × n_srv_fleets × n_sims]
+#'   [n_regions × n_yrs × n_seas x n_sexes × n_srv_fleets × n_sims]
 #'   (default: `100`)
 #' @param ln_SrvLen_theta Overdispersion parameters
 #'   [n_regions × n_sexes × n_srv_fleets]
@@ -86,21 +86,21 @@
 #'
 #' @export Setup_Sim_Survey
 #' @family Simulation Setup
-Setup_Sim_Survey <- function(ObsSrvIdx_SE = array(0.2, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_srv_fleets)),
+Setup_Sim_Survey <- function(ObsSrvIdx_SE = array(0.2, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,  sim_list$n_srv_fleets)),
                              sim_list,
                              srv_sel_input,
-                             srv_q_input = array(1, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_srv_fleets, sim_list$n_sims)),
-                             t_srv = array(0, dim = c(sim_list$n_regions, sim_list$n_srv_fleets)),
+                             srv_q_input = array(1, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_srv_fleets, sim_list$n_sims)),
+                             t_srv = array(1, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_srv_fleets)),
                              srv_idx_type = array(1, dim = c(sim_list$n_regions, sim_list$n_srv_fleets)),
                              comp_srvage_like = rep(0, sim_list$n_srv_fleets),
-                             ISS_SrvAgeComps = array(100, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims)),
+                             ISS_SrvAgeComps = array(100, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims)),
                              ln_SrvAge_theta = array(log(1), dim = c(sim_list$n_regions, sim_list$n_sexes, sim_list$n_srv_fleets)),
                              ln_SrvAge_theta_agg = rep(log(1), sim_list$n_srv_fleets),
                              SrvAge_corr_pars_agg = rep(0.01, sim_list$n_srv_fleets),
                              SrvAge_corr_pars = array(0.01, dim = c(sim_list$n_regions, sim_list$n_sexes, sim_list$n_srv_fleets, 2)),
                              SrvAgeComps_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_srv_fleets)),
                              comp_srvlen_like = rep(0, sim_list$n_srv_fleets),
-                             ISS_SrvLenComps = array(100, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims)),
+                             ISS_SrvLenComps = array(100, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims)),
                              ln_SrvLen_theta = array(log(1), dim = c(sim_list$n_regions, sim_list$n_sexes, sim_list$n_srv_fleets)),
                              ln_SrvLen_theta_agg = rep(log(1), sim_list$n_srv_fleets),
                              SrvLen_corr_pars_agg = rep(0.01, sim_list$n_srv_fleets),
@@ -112,16 +112,16 @@ Setup_Sim_Survey <- function(ObsSrvIdx_SE = array(0.2, dim = c(sim_list$n_region
   check_sim_dimensions(srv_sel_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs,
                        n_ages = sim_list$n_ages, n_sexes = sim_list$n_sexes,
                        n_srv_fleets = sim_list$n_srv_fleets, n_sims = sim_list$n_sims, what = "srv_sel_input")
-  check_sim_dimensions(srv_q_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs,
+  check_sim_dimensions(srv_q_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
                        n_srv_fleets = sim_list$n_srv_fleets, n_sims = sim_list$n_sims, what = "srv_q_input")
-  check_sim_dimensions(ObsSrvIdx_SE, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs,
+  check_sim_dimensions(ObsSrvIdx_SE, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
                        n_srv_fleets = sim_list$n_srv_fleets, what = "ObsSrvIdx_SE")
   check_sim_dimensions(srv_idx_type, n_regions = sim_list$n_regions, n_srv_fleets = sim_list$n_srv_fleets, what = "srv_idx_type")
-  check_sim_dimensions(t_srv, n_regions = sim_list$n_regions, n_srv_fleets = sim_list$n_srv_fleets, what = "t_srv")
+  check_sim_dimensions(t_srv, n_regions = sim_list$n_regions, n_seas = sim_list$n_seas, n_srv_fleets = sim_list$n_srv_fleets, what = "t_srv")
 
   # Validate survey age composition parameters
   check_sim_dimensions(comp_srvage_like, n_srv_fleets = sim_list$n_srv_fleets, what = "comp_srvage_like")
-  check_sim_dimensions(ISS_SrvAgeComps, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs,
+  check_sim_dimensions(ISS_SrvAgeComps, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
                        n_sexes = sim_list$n_sexes, n_srv_fleets = sim_list$n_srv_fleets,
                        n_sims = sim_list$n_sims, what = "ISS_SrvAgeComps")
   check_sim_dimensions(ln_SrvAge_theta, n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes,
@@ -135,7 +135,7 @@ Setup_Sim_Survey <- function(ObsSrvIdx_SE = array(0.2, dim = c(sim_list$n_region
 
   # Validate suvey length composition parameters
   check_sim_dimensions(comp_srvlen_like, n_srv_fleets = sim_list$n_srv_fleets, what = "comp_srvlen_like")
-  check_sim_dimensions(ISS_SrvLenComps, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs,
+  check_sim_dimensions(ISS_SrvLenComps, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
                        n_sexes = sim_list$n_sexes, n_srv_fleets = sim_list$n_srv_fleets,
                        n_sims = sim_list$n_sims, what = "ISS_SrvLenComps")
   check_sim_dimensions(ln_SrvLen_theta, n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes,

@@ -12,14 +12,15 @@ devtools::load_all(here("R"))
 
 # Setup Operating Model ---------------------------------------------------
 ### Setup Model Dimensions --------------------------------------------------
-sim_list <- Setup_Sim_Dim(n_sims = 50, # number of simulations
+sim_list <- Setup_Sim_Dim(n_sims = 1, # number of simulations
                           n_yrs = 30, # number of years
                           n_regions = 1,  # number of regions
                           n_ages = 10, # number of ages
                           n_lens = NULL, # number of lengths
                           n_sexes = 1, # number of sexes
                           n_fish_fleets = 1, # number of fishery fleets
-                          n_srv_fleets = 1 # number of survey fleets
+                          n_srv_fleets = 1,  # number of survey fleets
+                          n_seas = 1  # number of seasons
 )
 
 ### Setup Simulation Containers ---------------------------------------------
@@ -31,7 +32,7 @@ sim_list <- Setup_Sim_Fishing(sim_list = sim_list, # update simulate list
                               fish_sel_input = replicate(
                                 n = sim_list$n_sims,
                                 array(rep(1 / (1 + exp(-3 * ((1:sim_list$n_ages) - 5))), each = sim_list$n_yrs),
-                                      dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_ages,
+                                      dim = c(sim_list$n_regions, sim_list$n_yrs,  sim_list$n_ages,
                                               sim_list$n_sexes, sim_list$n_fish_fleets))
                               )
 )
@@ -51,16 +52,15 @@ sim_list <- Setup_Sim_Survey(
 ### Setup Biological Dynamics -----------------------------------------------
 sim_list <- Setup_Sim_Biologicals(
   sim_list = sim_list, # simualtion list
-  natmort_input = replicate(n = sim_list$n_sims, array(0.3, dim = c(sim_list$n_regions, sim_list$n_yrs,
-                                                                    sim_list$n_ages, sim_list$n_sexes))), # natural mortality
+  natmort_input = replicate(n = sim_list$n_sims, array(0.3, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_ages, sim_list$n_sexes))), # natural mortality
   WAA_input = replicate(n = sim_list$n_sims, array(rep(5 / (1 + exp(-3 * ((1:sim_list$n_ages) - 3))), each = sim_list$n_yrs),
-                                                   dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_ages, sim_list$n_sexes))), # weight at age
+                                                   dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes))), # weight at age
   WAA_fish_input = replicate(n = sim_list$n_sims, array(rep(5 / (1 + exp(-3 * ((1:sim_list$n_ages) - 3))), each = sim_list$n_yrs),
-                                                        dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets))), # fishery weight at age
+                                                        dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets))), # fishery weight at age
   WAA_srv_input = replicate(n = sim_list$n_sims, array(rep(5 / (1 + exp(-3 * ((1:sim_list$n_ages) - 3))), each = sim_list$n_yrs),
-                                                       dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_ages, sim_list$n_sexes, sim_list$n_srv_fleets))), # survey weight at age
+                                                       dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_srv_fleets))), # survey weight at age
   MatAA_input = replicate(n = sim_list$n_sims, array(rep(1 / (1 + exp(-3 * ((1:sim_list$n_ages) - 3))), each = sim_list$n_yrs),
-                                                     dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_ages, sim_list$n_sexes))) # maturity at age
+                                                     dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes))) # maturity at age
 )
 
 ### Setup Tagging and Movement -----------------------------------------------------------
@@ -70,20 +70,24 @@ sim_list <- Setup_Sim_Tagging(
 )
 
 # No Movement
-sim_list$Movement <- array(1, dim = c(sim_list$n_regions, sim_list$n_regions, sim_list$n_yrs, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims))
+sim_list$Movement <- array(1, dim = c(sim_list$n_regions, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims))
 
 ### Setup Recruitment Processes ---------------------------------------------
 sim_list <- Setup_Sim_Rec(
   sim_list = sim_list,
   R0_input = replicate(n = sim_list$n_sims, expr = array(5, dim = c(sim_list$n_regions, sim_list$n_yrs))), # R0
-  ln_sigmaR = log(c(1, 1)),
-  recruitment_opt = 'mean_rec',
+  ln_sigmaR = log(c(0,0)),
+  recruitment_opt = 'bh_rec',
   init_age_strc = 1
 )
 
 ## Simulate Data -----------------------------------------------------------
 set.seed(123)
+sim_list$Fmort[] = 0
 sim_obj <- Simulate_Pop_Static(sim_list = sim_list, output_path = NULL) # get simulated datasets
+
+plot(apply(sim_obj$SSB[,,1,drop = F], 2, sum))
+apply(sim_obj$SSB, 2, sum)
 
 # Define Estimation Model -------------------------------------------------
 setup_em <- function(sim_obj, sim) {

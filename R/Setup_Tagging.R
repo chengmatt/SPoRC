@@ -1,18 +1,16 @@
 #' Set up simulated tagging dynamics
 #'
 #' @param n_tags Number of tags to release in a given year (scalar, default = NULL)
-#' @param max_liberty Maximum liberty to track cohorts (default = sim_list$n_ages / 2)
-#' @param t_tagging Time of tagging (e.g., start year == 0, mid year == 0.5; default = 0)
+#' @param max_liberty Maximum liberty (years) to track cohorts (default = sim_list$n_ages / 2)
+#' @param t_tagging Fraction of season remaining when tags are released (e.g., start of season == 1, mid season == 0.5, end of season == 0; default = 1)
 #' @param ln_Init_Tag_Mort Log initial tag-induced mortality (default = log(1e-5))
-#' @param ln_Tag_Shed Log chronic tag shedding rate (default = log(1e-5))
+#' @param ln_Tag_Shed Log chronic tag shedding rate (default = log(1e-5)) annual rate
 #' @param sim_list Simulation list (required)
 #' @param UseTagging Boolean to use tagging (default = 0):
 #'   \itemize{
 #'     \item 0: Do not simulate tagging
 #'     \item 1: Simulate tagging
 #'   }
-#' @param tag_release_indicator Tag release indicator [regions × tag_years]
-#'   (default = all combinations of regions × years via `expand.grid`)
 #' @param Tag_Reporting_input Tag reporting input [n_regions × n_yrs × n_sims]
 #'   (default = 0.5)
 #' @param n_tags_rel_input Number of tag releases by tag cohort length (default = NULL)
@@ -42,14 +40,15 @@
 #'     \item 5: Dirichlet-Multinomial_Recapture
 #'   }
 #' @param ln_tag_theta Scalar in log space describing tag likelihood overdispersion (default = log(1))
+#'
 #' @export Setup_Sim_Tagging
 #' @family Simulation Setup
 Setup_Sim_Tagging <- function(n_tags = NULL,
                               n_tags_rel_input = NULL,
                               UseTagging = 0,
                               max_liberty = sim_list$n_ages / 2,
-                              tag_release_indicator = expand.grid(regions = 1:sim_list$n_regions, tag_years = 1:sim_list$n_yrs),
-                              t_tagging = 0,
+                              tag_release_indicator = expand.grid(regions = 1:sim_list$n_regions, tag_years = 1:sim_list$n_yrs, tag_seas = 1:sim_list$n_seas),
+                              t_tagging = 1,
                               ln_Init_Tag_Mort = log(1e-5),
                               ln_Tag_Shed = log(1e-5),
                               Tag_Reporting_input = array(0.5, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)),
@@ -75,9 +74,9 @@ Setup_Sim_Tagging <- function(n_tags = NULL,
 
   # Containers
   sim_list$Tagged_Fish <- array(0, dim = c(sim_list$n_tag_rel_events, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # number of tagged fish
-  sim_list$Tag_Avail <- array(0, dim = c(sim_list$max_liberty + 1, sim_list$n_tag_rel_events, sim_list$n_regions, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # tags availiable for recapture every year
-  sim_list$Pred_Tag_Recap <- array(0, dim = c(sim_list$max_liberty, sim_list$n_tag_rel_events, sim_list$n_regions, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # predicted tag recaptures
-  sim_list$Obs_Tag_Recap <- array(0, dim = c(sim_list$max_liberty, sim_list$n_tag_rel_events, sim_list$n_regions, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # observed tag recaptures
+  sim_list$Tag_Avail <- array(0, dim = c(sim_list$max_liberty + 1, sim_list$n_seas, sim_list$n_tag_rel_events, sim_list$n_regions, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # tags availiable for recapture every year
+  sim_list$Pred_Tag_Recap <- array(0, dim = c(sim_list$max_liberty, sim_list$n_seas, sim_list$n_tag_rel_events, sim_list$n_regions, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # predicted tag recaptures
+  sim_list$Obs_Tag_Recap <- array(0, dim = c(sim_list$max_liberty, sim_list$n_seas, sim_list$n_tag_rel_events, sim_list$n_regions, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # observed tag recaptures
 
   sim_list$Tag_Reporting <- Tag_Reporting_input # output this into list
   sim_list$UseTagging <- UseTagging # output into list
@@ -209,7 +208,7 @@ do_Tag_Reporting_Pars_mapping <- function(input_list, TagRep_spec) {
 #'
 #' @param input_list List containing a data list, parameter list, and map list
 #' @param UseTagging Numeric (0 or 1) indicating whether to use tagging data (1) or not (0)
-#' @param tag_release_indicator Matrix [n_tag_cohorts x 2], where columns are release region and release year
+#' @param tag_release_indicator Matrix [n_tag_cohorts x 3], where columns are release region, release year, and release season
 #' @param max_tag_liberty Maximum number of years to track a tagged cohort
 #' @param Tagged_Fish Array [n_tag_cohorts x n_ages x n_sexes] describing tagged fish releases
 #' @param Obs_Tag_Recap Array [max_tag_liberty x n_tag_cohorts x n_regions x n_ages x n_sexes] observed tag recaptures
@@ -224,7 +223,7 @@ do_Tag_Reporting_Pars_mapping <- function(input_list, TagRep_spec) {
 #'   }
 #'   Example: \code{Tag_LikeType = "NegBin"}
 #' @param mixing_period Numeric indicating minimum years post-release to include in fitting
-#' @param t_tagging Fractional year when tagging occurs (e.g., 0.5 for mid-year)
+#' @param t_tagging Fraction of season remaining when tags are released (e.g., start of season == 1, mid season == 0.5, end of season == 0; default = 1)
 #' @param tag_selex Character string specifying tag recovery selectivity. One of:
 #'   \itemize{
 #'     \item \code{"Uniform_DomFleet"}
@@ -288,7 +287,7 @@ Setup_Mod_Tagging <- function(input_list,
                               Obs_Tag_Recap = NA,
                               Tag_LikeType = NA,
                               mixing_period = 1,
-                              t_tagging = 0,
+                              t_tagging = 1,
                               tag_selex = NA,
                               tag_natmort = NA,
                               Use_TagRep_Prior = 0,

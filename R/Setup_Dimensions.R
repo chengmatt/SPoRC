@@ -16,6 +16,8 @@
 #' @param n_srv_fleets Integer. Number of survey fleets.
 #' @param run_feedback Logical. Whether to include a feedback management loop (default = \code{FALSE}).
 #' @param feedback_start_yr Integer. First year that feedback is applied (only used if \code{run_feedback = TRUE}).
+#' @param n_seas Integer. Number of seasons
+#' @param seasdur Duration of season. Default is 1 if 1 season, or 1 / n_seas if n_seas > 1
 #'
 #' @return
 #' A list containing the specified dimension values, with elements:
@@ -30,6 +32,7 @@
 #' @family Simulation Setup
 Setup_Sim_Dim <- function(n_sims,
                           n_yrs,
+                          n_seas = 1,
                           n_regions,
                           n_ages,
                           n_lens,
@@ -37,6 +40,7 @@ Setup_Sim_Dim <- function(n_sims,
                           n_sexes,
                           n_fish_fleets,
                           n_srv_fleets,
+                          seasdur = if(n_seas == 1) 1 else rep(1 / n_seas, n_seas),
                           run_feedback = FALSE,
                           feedback_start_yr = NULL
                           ) {
@@ -46,6 +50,7 @@ Setup_Sim_Dim <- function(n_sims,
   # output dimensions into list
   sim_list$n_sims <- n_sims
   sim_list$n_yrs <- n_yrs
+  sim_list$n_seas <- n_seas
   sim_list$n_regions <- n_regions
   sim_list$n_ages <- n_ages
   sim_list$n_lens <- n_lens
@@ -54,6 +59,7 @@ Setup_Sim_Dim <- function(n_sims,
   sim_list$n_fish_fleets <- n_fish_fleets
   sim_list$n_srv_fleets <- n_srv_fleets
   sim_list$init_iter <- n_ages * 10
+  sim_list$seasdur <- seasdur
   sim_list$feedback_start_yr <- feedback_start_yr
   sim_list$run_feedback <- run_feedback
 

@@ -39,7 +39,9 @@
 #'   - 1: Scalar geometric series solution w/o movement in any groups (no movement in all groups)
 #'   - 2: Matrix geometric series solution (generalizes scalar solution with movement)
 #'   - 3: Scalar geometric series solution w/o movement only in plus group (no movement in plus groups)
-#' @param t_spawn Spawn timing fraction of the year (scalar, default = 0)
+#' @param t_spawn Spawn timing fraction within the year / season (scalar, default = 0, where spawning happens before mortality processes)
+#' @param rec_seasdur Recruitment distribution across seasons (default is seasdur)
+#' @param spawn_seas Season in which spawning occurs
 #'
 #' @export Setup_Sim_Rec
 #' @family Simulation Setup
@@ -54,7 +56,9 @@ Setup_Sim_Rec <- function(
     init_dd = 'global',
     sim_list,
     init_age_strc = 2,
+    spawn_seas = 1,
     t_spawn = 0,
+    rec_seasdur = sim_list$seasdur,
     rec_lag = 1,
     Rec_input = NULL,
     ln_InitDevs_input = NULL
@@ -85,10 +89,10 @@ Setup_Sim_Rec <- function(
     Rec_input <- tmp_Rec_input # overwrite
   } # resampling
 
-  if(rec_dd == "global") sim_list$rec_dd <- 0
-  if(rec_dd == "local") sim_list$rec_dd <- 1
-  if(init_dd == "global") sim_list$init_dd <- 0
-  if(init_dd == "local") sim_list$init_dd <- 1
+  if(rec_dd == "global") sim_list$rec_dd <- 1
+  if(rec_dd == "local") sim_list$rec_dd <- 0
+  if(init_dd == "global") sim_list$init_dd <- 1
+  if(init_dd == "local") sim_list$init_dd <- 0
 
   # output these into environment
   sim_list$h <- h_input
@@ -98,6 +102,8 @@ Setup_Sim_Rec <- function(
   sim_list$ln_sigmaR <- ln_sigmaR
   sim_list$t_spawn <- t_spawn
   sim_list$init_age_strc <- init_age_strc
+  sim_list$rec_seasdur <- rec_seasdur
+  sim_list$spawn_seas <- spawn_seas
   if(!is.null(Rec_input)) sim_list$Rec_input <- Rec_input
   if(!is.null(ln_InitDevs_input)) sim_list$ln_InitDevs_input <- ln_InitDevs_input
 

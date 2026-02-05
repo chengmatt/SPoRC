@@ -48,7 +48,7 @@ SPoRC_rtmb = function(pars, data) {
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
-RTMB::getAll(pars, data) # load in starting values and data
+  RTMB::getAll(pars, data, warn = FALSE) # load in starting values and data
 
   # Model Set Up (Containers) -----------------------------------------------
   n_ages = length(ages) # number of ages
@@ -393,11 +393,11 @@ RTMB::getAll(pars, data) # load in starting values and data
                                       n_ages = n_ages,
                                       n_regions = n_regions,
                                       # Note: Using first year and female quantities to compute unfished SSB0
+                                      sexratio_f = if(n_sexes == 1) rep(0.5, n_regions) else sexratio[,1,1],
                                       WAA = array(WAA[,1,,1], dim = c(n_regions, n_ages)),
                                       MatAA = array(MatAA[,1,,1], dim = c(n_regions, n_ages)),
                                       natmort = array(natmort[,1,,1], dim = c(n_regions, n_ages)),
                                       Movement = array(Movement[,,1,,1], dim = c(n_regions, n_regions, n_ages)),
-                                      sex_ratio_f = sexratio[,1,1],
                                       do_recruits_move = do_recruits_move,
                                       t_spawn = t_spawn,
                                       SSB_vals = SSB,

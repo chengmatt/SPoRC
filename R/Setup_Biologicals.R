@@ -1,13 +1,13 @@
 #' Set up simulation containers and inputs for biological parameters
 #'
 #' @param sim_list Simulation list object from `Setup_Sim_Dim()`
-#' @param natmort_input Natural mortality array [n_regions × n_yrs × n_ages × n_sexes × n_sims]
-#' @param WAA_input Spawning weight-at-age array [n_regions × n_yrs × n_ages × n_sexes × n_sims]
-#' @param WAA_fish_input Fishery weight-at-age array [n_regions × n_yrs × n_ages × n_sexes × n_sims]
-#' @param WAA_srv_input Survey weight-at-age array [n_regions × n_yrs × n_ages × n_sexes × n_sims]
-#' @param MatAA_input Maturity-at-age array [n_regions × n_yrs × n_ages × n_sexes × n_sims]
+#' @param natmort_input Natural mortality array [n_regions × n_yrs × n_seas x n_ages × n_sexes × n_sims]
+#' @param WAA_input Spawning weight-at-age array [n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]
+#' @param WAA_fish_input Fishery weight-at-age array [n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]
+#' @param WAA_srv_input Survey weight-at-age array [n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]
+#' @param MatAA_input Maturity-at-age array [n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]
 #' @param AgeingError_input Ageing error matrix [n_regions × n_model_ages × n_obs_ages × n_sims]
-#' @param SizeAgeTrans_input Size-age transition matrix [n_regions × n_yrs × n_lens × n_ages × n_sexes x n_sims]
+#' @param SizeAgeTrans_input Size-age transition matrix [n_regions × n_yrs × n_seas × n_lens × n_ages × n_sexes x n_sims]
 #'
 #' @export Setup_Sim_Biologicals
 #' @family Simulation Setup
@@ -24,17 +24,17 @@ Setup_Sim_Biologicals <- function(
 
   check_sim_dimensions(natmort_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs,
                        n_ages = sim_list$n_ages, n_sexes = sim_list$n_sexes, n_sims = sim_list$n_sims, what = 'natmort_input')
-  check_sim_dimensions(WAA_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs,
+  check_sim_dimensions(WAA_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
                        n_ages = sim_list$n_ages, n_sexes = sim_list$n_sexes, n_sims = sim_list$n_sims, what = 'WAA_input')
-  check_sim_dimensions(WAA_fish_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs,
+  check_sim_dimensions(WAA_fish_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
                        n_ages = sim_list$n_ages, n_sexes = sim_list$n_sexes, n_fish_fleets = sim_list$n_fish_fleets,
                        n_sims = sim_list$n_sims, what = 'WAA_fish_input')
-  check_sim_dimensions(WAA_srv_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs,
+  check_sim_dimensions(WAA_srv_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
                        n_ages = sim_list$n_ages, n_sexes = sim_list$n_sexes, n_srv_fleets = sim_list$n_srv_fleets,
                        n_sims = sim_list$n_sims, what = 'WAA_srv_input')
-  check_sim_dimensions(MatAA_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs,
+  check_sim_dimensions(MatAA_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
                        n_ages = sim_list$n_ages, n_sexes = sim_list$n_sexes, n_sims = sim_list$n_sims, what = 'MatAA_input')
-  if(!is.null(SizeAgeTrans_input)) check_sim_dimensions(SizeAgeTrans_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_lens = sim_list$n_lens,
+  if(!is.null(SizeAgeTrans_input)) check_sim_dimensions(SizeAgeTrans_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_lens = sim_list$n_lens, n_seas = sim_list$n_seas,
                                                         n_ages = sim_list$n_ages, n_sexes = sim_list$n_sexes, n_sims = sim_list$n_sims, what = 'SizeAgeTrans_input')
 
   # output into list

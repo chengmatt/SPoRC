@@ -3,8 +3,8 @@
 #' @param n_tags Number of tags to release in a given year (scalar, default = NULL)
 #' @param max_liberty Maximum liberty (years) to track cohorts (default = sim_list$n_ages / 2)
 #' @param t_tagging Fraction of season remaining when tags are released (e.g., start of season == 1, mid season == 0.5, end of season == 0; default = 1)
-#' @param ln_Init_Tag_Mort Log initial tag-induced mortality (default = log(1e-5))
-#' @param ln_Tag_Shed Log chronic tag shedding rate (default = log(1e-5)) annual rate
+#' @param ln_Init_Tag_Mort Log initial tag-induced mortality (default = -1000)
+#' @param ln_Tag_Shed Log chronic tag shedding rate (default = -1000) annual rate
 #' @param sim_list Simulation list (required)
 #' @param UseTagging Boolean to use tagging (default = 0):
 #'   \itemize{
@@ -14,30 +14,30 @@
 #' @param Tag_Reporting_input Tag reporting input [n_regions × n_yrs × n_sims]
 #'   (default = 0.5)
 #' @param n_tags_rel_input Number of tag releases by tag cohort length (default = NULL)
-#' @param tag_selex Tag selectivity type (integer, default = 5):
+#' @param tag_selex Tag selectivity type (default = 5):
 #'   \itemize{
-#'     \item 0: Uniform_DomFleet
-#'     \item 1: SexAgg_DomFleet
-#'     \item 2: SexSp_DomFleet
-#'     \item 3: Uniform_AllFleet
-#'     \item 4: SexAgg_AllFleet
-#'     \item 5: SexSp_AllFleet
+#'     \item \code{0} or \code{"Uniform_DomFleet"}: Uniform by age/sex, dominant fleet
+#'     \item \code{1} or \code{"SexAgg_DomFleet"}: Sex-aggregated, dominant fleet
+#'     \item \code{2} or \code{"SexSp_DomFleet"}: Sex-specific, dominant fleet
+#'     \item \code{3} or \code{"Uniform_AllFleet"}: Uniform by age/sex, all fleets
+#'     \item \code{4} or \code{"SexAgg_AllFleet"}: Sex-aggregated, all fleets
+#'     \item \code{5} or \code{"SexSp_AllFleet"}: Sex-specific, all fleets
 #'   }
-#' @param tag_natmort Tag natural mortality type (integer, default = 3):
+#' @param tag_natmort Tag natural mortality type (default = 3):
 #'   \itemize{
-#'     \item 0: AgeAgg_SexAgg
-#'     \item 1: AgeSp_SexAgg
-#'     \item 2: AgeAgg_SexSp
-#'     \item 3: AgeSp_SexSp
+#'     \item \code{0} or \code{"AgeAgg_SexAgg"}: Age-aggregated, sex-aggregated
+#'     \item \code{1} or \code{"AgeSp_SexAgg"}: Age-specific, sex-aggregated
+#'     \item \code{2} or \code{"AgeAgg_SexSp"}: Age-aggregated, sex-specific
+#'     \item \code{3} or \code{"AgeSp_SexSp"}: Age-specific, sex-specific
 #'   }
-#' @param tag_like Tag likelihood type (integer, default = 0):
+#' @param tag_like Tag likelihood type (default = 0):
 #'   \itemize{
-#'     \item 0: Poisson
-#'     \item 1: NegBin
-#'     \item 2: Multinomial_Release
-#'     \item 3: Multinomial_Recapture
-#'     \item 4: Dirichlet-Multinomial_Release
-#'     \item 5: Dirichlet-Multinomial_Recapture
+#'     \item \code{0} or \code{"Poisson"}: Poisson
+#'     \item \code{1} or \code{"NegBin"}: Negative Binomial
+#'     \item \code{2} or \code{"Multinomial_Release"}: Multinomial by release cohort
+#'     \item \code{3} or \code{"Multinomial_Recapture"}: Multinomial by recapture event
+#'     \item \code{4} or \code{"Dirichlet-Multinomial_Release"}: Dirichlet-Multinomial by release cohort
+#'     \item \code{5} or \code{"Dirichlet-Multinomial_Recapture"}: Dirichlet-Multinomial by recapture event
 #'   }
 #' @param ln_tag_theta Scalar in log space describing tag likelihood overdispersion (default = log(1))
 #'
@@ -49,8 +49,8 @@ Setup_Sim_Tagging <- function(n_tags = NULL,
                               max_liberty = sim_list$n_ages / 2,
                               tag_release_indicator = expand.grid(regions = 1:sim_list$n_regions, tag_years = 1:sim_list$n_yrs, tag_seas = 1:sim_list$n_seas),
                               t_tagging = 1,
-                              ln_Init_Tag_Mort = log(1e-5),
-                              ln_Tag_Shed = log(1e-5),
+                              ln_Init_Tag_Mort = -1000,
+                              ln_Tag_Shed = -1000,
                               Tag_Reporting_input = array(0.5, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)),
                               tag_selex = 5,
                               tag_natmort = 3,
@@ -58,6 +58,12 @@ Setup_Sim_Tagging <- function(n_tags = NULL,
                               ln_tag_theta = log(1),
                               sim_list
                               ) {
+
+  # Convert codes to numeric
+  tag_selex <- convert_to_numeric(tag_selex, list(Uniform_DomFleet = 0, SexAgg_DomFleet = 1, SexSp_DomFleet = 2, Uniform_AllFleet = 3, SexAgg_AllFleet = 4, SexSp_AllFleet = 5))
+  tag_natmort <- convert_to_numeric(tag_natmort, list(AgeAgg_SexAgg = 0, AgeSp_SexAgg = 1, AgeAgg_SexSp = 2, AgeSp_SexSp = 3))
+  tag_like <- convert_to_numeric(tag_like, list(Poisson = 0, NegBin = 1, Multinomial_Release = 2,
+                                                Multinomial_Recapture = 3, `Dirichlet-Multinomial_Release` = 4, `Dirichlet-Multinomial_Recapture` = 5))
 
   if(!is.null(Tag_Reporting_input)) check_sim_dimensions(Tag_Reporting_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_sims = sim_list$n_sims, what = "Tag_Reporting_input")
 
@@ -74,7 +80,7 @@ Setup_Sim_Tagging <- function(n_tags = NULL,
 
   # Containers
   sim_list$Tagged_Fish <- array(0, dim = c(sim_list$n_tag_rel_events, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # number of tagged fish
-  sim_list$Tag_Avail <- array(0, dim = c(sim_list$max_liberty + 1, sim_list$n_seas, sim_list$n_tag_rel_events, sim_list$n_regions, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # tags availiable for recapture every year
+  sim_list$Tags_Avail <- array(0, dim = c(sim_list$max_liberty + 1, sim_list$n_seas, sim_list$n_tag_rel_events, sim_list$n_regions, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # tags availiable for recapture every year
   sim_list$Pred_Tag_Recap <- array(0, dim = c(sim_list$max_liberty, sim_list$n_seas, sim_list$n_tag_rel_events, sim_list$n_regions, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # predicted tag recaptures
   sim_list$Obs_Tag_Recap <- array(0, dim = c(sim_list$max_liberty, sim_list$n_seas, sim_list$n_tag_rel_events, sim_list$n_regions, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # observed tag recaptures
 
@@ -211,7 +217,7 @@ do_Tag_Reporting_Pars_mapping <- function(input_list, TagRep_spec) {
 #' @param tag_release_indicator Matrix [n_tag_cohorts x 3], where columns are release region, release year, and release season
 #' @param max_tag_liberty Maximum number of years to track a tagged cohort
 #' @param Tagged_Fish Array [n_tag_cohorts x n_ages x n_sexes] describing tagged fish releases
-#' @param Obs_Tag_Recap Array [max_tag_liberty x n_tag_cohorts x n_regions x n_ages x n_sexes] observed tag recaptures
+#' @param Obs_Tag_Recap Array [max_tag_liberty x n_seas x n_tag_cohorts x n_regions x n_ages x n_sexes] observed tag recaptures
 #' @param Tag_LikeType Character string specifying tag likelihood type. One of:
 #'   \itemize{
 #'     \item \code{"Poisson"}
@@ -306,6 +312,24 @@ Setup_Mod_Tagging <- function(input_list,
 
   # Input Validation --------------------------------------------------------
 
+  # Checking data and other specifications
+  if(UseTagging == 1) {
+
+    # check specifications
+    if(is.na(sum(Tagged_Fish))) stop("No data is provided for Tagged_Fish")
+    if(is.na(sum(Obs_Tag_Recap))) stop("No data is provided for Obs_Tag_Recap")
+    if(is.na(Tag_LikeType)) stop("No likelihood is provided for Tag_LikeType")
+    if(is.na(tag_selex)) stop("No specfication is provided for tag_selex")
+    if(is.na(tag_natmort)) stop("No specfication is provided for tag_natmort")
+    if(max_tag_liberty == 0) stop("max_tag_liberty must be greater than 0")
+    if(TagRep_spec == 'fix') warning("Note that tag reporting rates is fixed. Specify est_all or est_shared_r if this was not the intention.")
+
+    # Check data
+    check_data_dimensions(Tagged_Fish, n_tag_cohorts = nrow(tag_release_indicator), n_ages = length(input_list$data$ages), n_sexes = input_list$data$n_sexes, what = 'Tagged_Fish')
+    check_data_dimensions(Obs_Tag_Recap, max_tag_liberty = max_tag_liberty, n_seas = input_list$data$n_seas, n_regions = input_list$data$n_regions, n_tag_cohorts = nrow(tag_release_indicator), n_ages = length(input_list$data$ages),
+                          n_sexes = input_list$data$n_sexes, what = 'Obs_Tag_Recap')
+  }
+
   # Checking tagging priors
   if(Use_TagRep_Prior == 1) {
     required_cols <- c("region", "block", "mu", "sd", 'type')
@@ -328,8 +352,7 @@ Setup_Mod_Tagging <- function(input_list,
   }
 
   # Setup tagging selectivity
-  tag_selex_map <- data.frame(type = c("Uniform_DomFleet", "SexAgg_DomFleet", "SexSp_DomFleet",
-                                       "Uniform_AllFleet", "SexAgg_AllFleet", "SexSp_AllFleet"), num = c(0,1,2,3,4,5))
+  tag_selex_map <- data.frame(type = c("Uniform_DomFleet", "SexAgg_DomFleet", "SexSp_DomFleet", "Uniform_AllFleet", "SexAgg_AllFleet", "SexSp_AllFleet"), num = c(0,1,2,3,4,5))
 
   if(is.na(Tag_LikeType)) tag_selex_vals <- 999
   else {
@@ -339,8 +362,7 @@ Setup_Mod_Tagging <- function(input_list,
   }
 
   # Checking tagging natural moratlity
-  tag_natmort_map <- data.frame(type = c("AgeAgg_SexAgg", "AgeSp_SexAgg",
-                                         "AgeAgg_SexSp", "AgeSp_SexSp"), num = c(0,1,2,3))
+  tag_natmort_map <- data.frame(type = c("AgeAgg_SexAgg", "AgeSp_SexAgg", "AgeAgg_SexSp", "AgeSp_SexSp"), num = c(0,1,2,3))
 
   if(is.na(Tag_LikeType)) tag_natmort_vals <- 999
   else {
@@ -427,11 +449,11 @@ Setup_Mod_Tagging <- function(input_list,
 
   # Initial tag induced mortality
   if("ln_Init_Tag_Mort" %in% names(starting_values)) input_list$par$ln_Init_Tag_Mort <- starting_values$ln_Init_Tag_Mort
-  else input_list$par$ln_Init_Tag_Mort <- log(1e-50)
+  else input_list$par$ln_Init_Tag_Mort <- -1000
 
   # Chronic tag shedding
   if("ln_Tag_Shed" %in% names(starting_values)) input_list$par$ln_Tag_Shed <- starting_values$ln_Tag_Shed
-  else input_list$par$ln_Tag_Shed <- log(1e-50)
+  else input_list$par$ln_Tag_Shed <- -1000
 
   # tag overdispersion parameter
   if("ln_tag_theta" %in% names(starting_values)) input_list$par$ln_tag_theta <- starting_values$ln_tag_theta

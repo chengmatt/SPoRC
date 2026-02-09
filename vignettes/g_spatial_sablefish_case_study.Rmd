@@ -128,6 +128,7 @@ In this implementation, the movement prior is constructed by expanding over all 
 # setting up movement parameterization
 Movement_prior <- expand.grid(
   region_from = 1:5, # regions
+  year = 1, # penalize first year since no blocks
   age = c(6,7,16), # age blocks
   sex = 1, # sex
   alpha = I(list(rep(2.5, 5))) # prior alpha to each row
@@ -228,13 +229,12 @@ input_list <- Setup_Mod_Tagging(input_list = input_list,
 
 ## Setup Catch and Fishing Mortality
 
-In general, specifying catch and fishing mortality is relatively straightforward. Users need to supply several data inputs, which include an array of observed catches `ObsCatch`, the catch type (`Catch_Type`), which indicates if we gave region-specific or region-aggregated catch, and `UseCatch`, which indicates whether or not to fit to catch data in a given region and year. Users can inspect the `mlt_rg_sable_data` data object to further understand the dimensions of data inputs, or refer to the Description of Model and Data Dimensions vignette. Given that we are going to be using TMB-style likelihoods, we are also specifying that the sigma for catch is fixed (`sigmaC_spec = 'fix'`) at a value of 0.05 for all fleets, years, and regions (`ln_sigmaC = array(log(0.05), dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets))`).
+In general, specifying catch and fishing mortality is relatively straightforward. Users need to supply several data inputs, which include an array of observed catches `ObsCatch`. Users can inspect the `mlt_rg_sable_data` data object to further understand the dimensions of data inputs, or refer to the Description of Model and Data Dimensions vignette. Given that we are going to be using TMB-style likelihoods, we are also specifying that the sigma for catch is fixed (`sigmaC_spec = 'fix'`) at a value of 0.05 for all fleets, years, and regions (`ln_sigmaC = array(log(0.05), dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets))`).
 
 ```{r Setup Catch and Fishing Mortality, message = FALSE,  eval = FALSE}
 input_list <- Setup_Mod_Catch_and_F(input_list = input_list,
                                     # Data inputs
                                     ObsCatch = mlt_rg_sable_data$ObsCatch,
-                                    Catch_Type = mlt_rg_sable_data$Catch_Type,
                                     UseCatch = mlt_rg_sable_data$UseCatch,
                                     # Model options
                                     Use_F_pen = 1,

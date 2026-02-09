@@ -119,7 +119,7 @@ Because this vignette illustrates a single-region model, movement dynamics are n
 
 
 ## Setup Catch and Fishing Mortality
-The function `Setup_Mod_Catch_and_F` then updates the `input_list` with catch data and fishing mortality specifications. Three data inputs are required: observed catch (`ObsCatch`), the type of catch (`Catch_Type`), and an indicator for whether the catch is used in the model (`UseCatch`). Model options include a switch for applying a fishing mortality penalty (`Use_F_pen`) and whether the catch error standard deviation is fixed or estimated (`sigmaC_spec`), and a small constant added to avoid problems with zero catches (`Catch_Constant`). Finally, fixed values for the observation error of catch (`ln_sigmaC`) and the penalty on fishing mortality (`ln_sigmaF`) are provided. Note that these are specified as $log(\sqrt{(1/2)})$ because the model was originally written in ADMB where these values were computed as sum of squares, and the standard deviation of these terms were implicitly assumed to be set at 1. 
+The function `Setup_Mod_Catch_and_F` then updates the `input_list` with catch data and fishing mortality specifications. Three data inputs are required: observed catch (`ObsCatch`), and an indicator for whether the catch is used in the model (`UseCatch`). Model options include a switch for applying a fishing mortality penalty (`Use_F_pen`) and whether the catch error standard deviation is fixed or estimated (`sigmaC_spec`), and a small constant added to avoid problems with zero catches (`Catch_Constant`). Finally, fixed values for the observation error of catch (`ln_sigmaC`) and the penalty on fishing mortality (`ln_sigmaF`) are provided. Note that these are specified as $log(\sqrt{(1/2)})$ because the model was originally written in ADMB where these values were computed as sum of squares, and the standard deviation of these terms were implicitly assumed to be set at 1. 
 
 ```{r eval = F}
 input_list <- Setup_Mod_Catch_and_F(
@@ -127,7 +127,6 @@ input_list <- Setup_Mod_Catch_and_F(
 
   # Data inputs
   ObsCatch = sgl_rg_dusky_data$ObsCatch, # observed catch
-  Catch_Type = sgl_rg_dusky_data$Catch_Type, # catch type
   UseCatch = sgl_rg_dusky_data$UseCatch, # whether catch is used
 
   # Model options

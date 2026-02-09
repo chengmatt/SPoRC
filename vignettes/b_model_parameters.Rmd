@@ -22,13 +22,9 @@ The following table describes all elements contained within `input_list$pars`, w
 | Parameter | Dimension | Description | Default |
 |-----------|-----------|-------------|---------|
 | `ln_sigmaC` | `n_regions, n_years, n_fish_fleets` | Standard deviation for catch likelihood | 0.01 |
-| `ln_sigmaC_agg` | `n_years, n_fish_fleets` | Standard deviation for region-aggregated catch likelihood | 0.01 |
 | `ln_sigmaF` | `n_regions, n_fish_fleets` | Standard deviation for fishing mortality process error | 0 |
-| `ln_sigmaF_agg` | `n_fish_fleets` | Standard deviation for region-aggregated fishing mortality process error | 0 |
 | `ln_F_mean` | `n_regions, n_fish_fleets` | Log-scale mean fishing mortality rate | 0.1 |
 | `ln_F_devs` | `n_regions, n_years, n_fish_fleets` | Log-scale annual fishing mortality deviations (can be specified as random effects) | 0 |
-| `ln_F_mean_AggCatch` | `n_fish_fleets` | Log-scale mean fishing mortality for region-aggregated catch | 0.1 |
-| `ln_F_devs_AggCatch` | `n_Catch_Type_years, n_fish_fleets` | Log-scale fishing mortality deviations for region-aggregated catch (can be specified as random effects) | 0 |
 
 ## Fishery Selectivity
 
@@ -118,7 +114,7 @@ The following table describes all elements contained within `input_list$pars`, w
 
 | Parameter | Dimension | Description | Default |
 |-----------|-----------|-------------|---------|
-| `ln_Init_Tag_Mort` | `1` | Log-scale initial tagging mortality rate | 1e-50 |
-| `ln_Tag_Shed` | `1` | Log-scale chronic tag shedding rate | 1e-50 |
+| `ln_Init_Tag_Mort` | `1` | Log-scale initial tagging mortality rate | -1000 |
+| `ln_Tag_Shed` | `1` | Log-scale chronic tag shedding rate | -1000 |
 | `Tag_Reporting_Pars` | `n_regions, n_blocks` | Logit-scale tag reporting rates | 0 |
 | `ln_tag_theta` | `1` | Log-scale overdispersion parameter for tag recapture likelihood | 0 |

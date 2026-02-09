@@ -16,7 +16,7 @@ sim_list <- Setup_Sim_Dim(n_sims = 1, # number of simulations
                           n_yrs = 30, # number of years
                           n_regions = 1,  # number of regions
                           n_ages = 10, # number of ages
-                          n_lens = NULL, # number of lengths
+                          n_lens = 1, # number of lengths
                           n_sexes = 1, # number of sexes
                           n_fish_fleets = 1, # number of fishery fleets
                           n_srv_fleets = 1,  # number of survey fleets
@@ -83,11 +83,7 @@ sim_list <- Setup_Sim_Rec(
 
 ## Simulate Data -----------------------------------------------------------
 set.seed(123)
-sim_list$Fmort[] = 0
 sim_obj <- Simulate_Pop_Static(sim_list = sim_list, output_path = NULL) # get simulated datasets
-
-plot(apply(sim_obj$SSB[,,1,drop = F], 2, sum))
-apply(sim_obj$SSB, 2, sum)
 
 # Define Estimation Model -------------------------------------------------
 setup_em <- function(sim_obj, sim) {
@@ -148,7 +144,6 @@ setup_em <- function(sim_obj, sim) {
     input_list = input_list,
     # Data inputs
     ObsCatch = sim_data$ObsCatch,
-    Catch_Type = array(1, dim = c(length(input_list$data$years), input_list$data$n_fish_fleets)),
     UseCatch = sim_data$UseCatch,
     # Model options
     Use_F_pen = 1,

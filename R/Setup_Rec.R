@@ -8,19 +8,19 @@
 #'   }
 #' @param recruitment_opt Recruitment type (default = "bh_rec"):
 #'   \itemize{
-#'     \item \code{"mean_rec"}: Mean recruitment
-#'     \item \code{"bh_rec"}: Beverton-Holt recruitment
-#'     \item \code{"resample_from_input"}: Resampling recruitment years from `Rec_input` and preserves covariance of recruitment among regions if spatially-explicit values are provided
+#'     \item \code{0} or \code{"mean_rec"}: Mean recruitment
+#'     \item \code{1} or \code{"bh_rec"}: Beverton-Holt recruitment
+#'     \item \code{999} or \code{"resample_from_input"}: Resampling recruitment years from `Rec_input` and preserves covariance of recruitment among regions if spatially-explicit values are provided
 #'   }
 #' @param rec_dd Recruitment density dependence (default = "global"):
 #'   \itemize{
-#'     \item \code{"global"}: Shared across regions
-#'     \item \code{"local"}: Region-specific
+#'     \item \code{0} or \code{"local"}: Region-specific
+#'     \item \code{1} or \code{"global"}: Shared across regions
 #'   }
 #' @param init_dd Initial age density dependence (default = "global"):
 #'   \itemize{
-#'     \item \code{"global"}: Shared across regions
-#'     \item \code{"local"}: Region-specific
+#'     \item \code{0} or \code{"local"}: Region-specific
+#'     \item \code{1} or \code{"global"}: Shared across regions
 #'   }
 #' @param rec_lag Recruitment lag (default = 1)
 #' @param sexratio_input Sex ratio array [n_regions × n_yrs × n_sexes × n_sims]
@@ -34,13 +34,14 @@
 #'   (default = log(c(1, 1)))
 #' @param Rec_input Recruitment array [n_regions × n_yrs × n_sims] (default = NULL)
 #' @param ln_InitDevs_input Initial deviations [n_regions × (n_ages-1) × n_sims] (default = NULL)
-#' @param init_age_strc Integer specifying the initialization method for the age structure:
-#'   - 0: Iterative solution to equilibrium
-#'   - 1: Scalar geometric series solution w/o movement in any groups (no movement in all groups)
-#'   - 2: Matrix geometric series solution (generalizes scalar solution with movement)
-#'   - 3: Scalar geometric series solution w/o movement only in plus group (no movement in plus groups)
+#' @param init_age_strc Integer specifying the initialization method for the age structure (default = 2):
+#'   \itemize{
+#'     \item \code{0} or \code{"iterative"}: Iterative solution to equilibrium
+#'     \item \code{1} or \code{"scalar_no_move"}: Scalar geometric series solution w/o movement in any groups
+#'     \item \code{2} or \code{"matrix"}: Matrix geometric series solution (generalizes scalar solution with movement)
+#'     \item \code{3} or \code{"scalar_plus_only"}: Scalar geometric series solution w/o movement only in plus group
+#'   }
 #' @param t_spawn Spawn timing fraction within the year / season (scalar, default = 0, where spawning happens before mortality processes)
-#' @param rec_seasdur Recruitment distribution across seasons (default is seasdur)
 #' @param spawn_seas Season in which spawning occurs
 #'
 #' @export Setup_Sim_Rec
@@ -58,11 +59,16 @@ Setup_Sim_Rec <- function(
     init_age_strc = 2,
     spawn_seas = 1,
     t_spawn = 0,
-    rec_seasdur = sim_list$seasdur,
     rec_lag = 1,
     Rec_input = NULL,
     ln_InitDevs_input = NULL
     ) {
+
+  # Convert character inputs to numeric codes
+  recruitment_opt <- convert_to_numeric(recruitment_opt, list(mean_rec = 0, bh_rec = 1, resample_from_input = 999))
+  rec_dd <- convert_to_numeric(rec_dd, list(local = 0, global = 1))
+  init_dd <- convert_to_numeric(init_dd, list(local = 0, global = 1))
+  init_age_strc <- convert_to_numeric(init_age_strc, list(iterative = 0, scalar_no_move = 1, matrix = 2, scalar_plus_only = 3))
 
   check_sim_dimensions(sexratio_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_sexes = sim_list$n_sexes, n_sims = sim_list$n_sims, what = "sexratio_input")
   check_sim_dimensions(R0_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_sims = sim_list$n_sims, what = "R0_input")
@@ -73,11 +79,8 @@ Setup_Sim_Rec <- function(
   sim_list$do_recruits_move <- do_recruits_move
   if(sim_list$do_recruits_move == 0) sim_list$move_age <- 2 else sim_list$move_age <- 1 # what age to start movement of individuals
 
-  if(recruitment_opt == "mean_rec") sim_list$recruitment_opt <- 0
-  if(recruitment_opt == "bh_rec") sim_list$recruitment_opt <- 1
-  if(recruitment_opt == "resample_from_input") {
+  if(recruitment_opt == 999) {
     if(is.null(Rec_input)) stop("Recruitment input is NULL, but future recruitment is specified to be resampled!")
-    sim_list$recruitment_opt <- 999 # set at 999 (arbitrary)
     rec_input_yrs <- dim(Rec_input)[2] # get years from Rec_input
     tmp_Rec_input <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims))
     # loop through simulations to resample years
@@ -89,12 +92,10 @@ Setup_Sim_Rec <- function(
     Rec_input <- tmp_Rec_input # overwrite
   } # resampling
 
-  if(rec_dd == "global") sim_list$rec_dd <- 1
-  if(rec_dd == "local") sim_list$rec_dd <- 0
-  if(init_dd == "global") sim_list$init_dd <- 1
-  if(init_dd == "local") sim_list$init_dd <- 0
-
-  # output these into environment
+  # Output recruitment stuff into environment
+  sim_list$recruitment_opt <- recruitment_opt
+  sim_list$rec_dd <- rec_dd
+  sim_list$init_dd <- init_dd
   sim_list$h <- h_input
   sim_list$R0 <- R0_input
   sim_list$sexratio <- sexratio_input
@@ -102,7 +103,6 @@ Setup_Sim_Rec <- function(
   sim_list$ln_sigmaR <- ln_sigmaR
   sim_list$t_spawn <- t_spawn
   sim_list$init_age_strc <- init_age_strc
-  sim_list$rec_seasdur <- rec_seasdur
   sim_list$spawn_seas <- spawn_seas
   if(!is.null(Rec_input)) sim_list$Rec_input <- Rec_input
   if(!is.null(ln_InitDevs_input)) sim_list$ln_InitDevs_input <- ln_InitDevs_input
@@ -382,14 +382,14 @@ do_Rec_prop_mapping <- function(input_list) {
 #'     \item Years 64–65: No bias correction.
 #'   }
 #' @param sigmaR_switch Integer year indicating when \code{sigmaR} switches from early to late values (0 disables switching).
-#' @param init_age_strc Integer flag specifying initialization of initial age structure:
+#' @param init_age_strc Initialization method for initial age structure (default = 2):
 #'   \itemize{
-#'     \item \code{0}: Initialize by iteration.
-#'     \item \code{1}: Initialize using a scalar geometric series w/o any movement in all groups (does not account for movement in all group).
-#'     \item \code{2}: Initialize using a matrix geometric series (accounts for movement; default).
-#'     \item \code{3}: Initialize using a scalar geometric series w/o any movement in only plus groups (does not account for movement in plus group).
+#'     \item \code{0} or \code{"iterative"}: Initialize by iteration.
+#'     \item \code{1} or \code{"scalar_no_move"}: Scalar geometric series w/o any movement in all groups.
+#'     \item \code{2} or \code{"matrix"}: Matrix geometric series (accounts for movement).
+#'     \item \code{3} or \code{"scalar_plus_only"}: Scalar geometric series w/o movement only in plus groups.
 #'   }
-#' @param init_F_prop Numeric value specifying the initial fishing mortality proportion relative to mean fishing mortality for initializing age structure.
+#' @param init_F_prop Numeric vector (n_seas) specifying the initial fishing mortality proportion relative to mean fishing mortality for initializing age structure.
 #' @param sigmaR_spec Character string specifying estimation of recruitment variability (\code{sigmaR}):
 #' \itemize{
 #'   \item \code{NULL or "est_all"}: Estimate separate \code{sigmaR} for early and late periods.
@@ -419,13 +419,13 @@ do_Rec_prop_mapping <- function(input_list) {
 #'   If \code{rec_model == "mean_rec"}, steepness is fixed.
 #' @param rec_dd Character string specifying recruitment density dependence, options:
 #' \code{"local"}, \code{"global"}, or \code{NULL}.
-#' @param t_spawn Numeric fraction specifying spawning timing within the year.
+#' @param t_spawn Spawn timing fraction within the year / season (scalar, default = 0, where spawning happens before mortality processes)
 #' @param ... Additional arguments specifying starting values for recruitment parameters such as \code{ln_global_R0}, \code{Rec_prop}, \code{h}, \code{ln_InitDevs}, \code{ln_RecDevs}, and \code{ln_sigmaR}.
-#' @param equil_init_age_strc Integer flag specifying how initial age structure deviations should be initialized. Default is stochastic for all ages except the recruitment age and the plus group.
+#' @param equil_init_age_strc How initial age structure deviations should be initialized (default = 1):
 #'   \itemize{
-#'     \item \code{0}: Equilibrium initial age structure.
-#'     \item \code{1}: Stochastic initial age structure for all ages, except for the plus group, which follows equilibrium calculations (geometric series)
-#'     \item \code{2}: Stochastic initial age structure for all ages
+#'     \item \code{0} or \code{"equil"}: Equilibrium initial age structure.
+#'     \item \code{1} or \code{"stoch_no_plus"}: Stochastic for all ages except plus group (follows equilibrium).
+#'     \item \code{2} or \code{"stoch_all"}: Stochastic initial age structure for all ages.
 #'   }
 #' @param max_bias_ramp_fct Numeric specifying the maximum bias correction to apply to the recruitment bias ramp (should be between 0 and 1)
 #' @param h_prior Data frame specifying beta prior distributions for the `h_trans` parameters.
@@ -448,6 +448,7 @@ do_Rec_prop_mapping <- function(input_list) {
 #'     \item \code{"est_all"} estimates sex ratio for all blocks and regions independently
 #'     \item \code{"est_shared_r"} estimates sex ratio shared across regions but varying by block
 #'     \item \code{"fix"} fixes all sex ratio (no estimation)
+#' @param spawn_seas Season in which spawning occurs. Default is season 1.
 #'   }
 #' @export Setup_Mod_Rec
 #' @family Model Setup
@@ -466,12 +467,13 @@ Setup_Mod_Rec <- function(input_list,
                           dont_est_recdev_last = 0,
                           init_age_strc = 2,
                           equil_init_age_strc = 1,
-                          init_F_prop = 0,
+                          init_F_prop = rep(0, input_list$data$n_seas),
                           sigmaR_spec = NULL,
                           InitDevs_spec = NULL,
                           RecDevs_spec = NULL,
                           h_spec = NULL,
                           t_spawn = 0,
+                          spawn_seas = 1,
                           sexratio_spec = 'fix',
                           sexratio_blocks = c(
                             paste("none_Region_", c(1:input_list$data$n_regions), sep = '')
@@ -481,6 +483,10 @@ Setup_Mod_Rec <- function(input_list,
 
   messages_list <<- character(0)
   starting_values <- list(...)
+
+  # Convert character inputs to numeric codes for init_age_strc and equil_init_age_strc
+  init_age_strc <- convert_to_numeric(init_age_strc, list(iterative = 0, scalar_no_move = 1, matrix = 2, scalar_plus_only = 3))
+  equil_init_age_strc <- convert_to_numeric(equil_init_age_strc, list(equil = 0, stoch_no_plus = 1, stoch_all = 2))
 
   # Recruitment Model Type and Options --------------------------------------
 
@@ -591,6 +597,8 @@ Setup_Mod_Rec <- function(input_list,
   # Populate Data List ------------------------------------------------------
 
   # input variables into data list
+  collect_message("Spawning season occurs in season ", spawn_seas)
+  input_list$data$spawn_seas <- spawn_seas
   input_list$data$rec_model <- rec_model_val
   input_list$data$rec_dd <- rec_dd_val
   input_list$data$rec_lag <- rec_lag

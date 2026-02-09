@@ -9,7 +9,7 @@
 #' @param n_yrs Integer. Number of years in the simulation.
 #' @param n_regions Integer. Number of modeled regions.
 #' @param n_ages Integer. Number of modeled age classes.
-#' @param n_lens Integer. Number of modeled length bins.
+#' @param n_lens Integer. Number of modeled length bins (if no lengths are simulated, leave as NULL).
 #' @param n_obs_ages Integer. Number of observed age classes (can differ from \code{n_ages}, default = \code{n_ages}).
 #' @param n_sexes Integer. Number of sexes.
 #' @param n_fish_fleets Integer. Number of fishery fleets.
@@ -17,7 +17,7 @@
 #' @param run_feedback Logical. Whether to include a feedback management loop (default = \code{FALSE}).
 #' @param feedback_start_yr Integer. First year that feedback is applied (only used if \code{run_feedback = TRUE}).
 #' @param n_seas Integer. Number of seasons
-#' @param seasdur Duration of season. Default is 1 if 1 season, or 1 / n_seas if n_seas > 1
+#' @param seasdur Vector of n_seas length. Duration of season, expressed as a fraction of the year. Default is 1 if 1 season, or 1 / n_seas if n_seas > 1
 #'
 #' @return
 #' A list containing the specified dimension values, with elements:
@@ -35,7 +35,7 @@ Setup_Sim_Dim <- function(n_sims,
                           n_seas = 1,
                           n_regions,
                           n_ages,
-                          n_lens,
+                          n_lens = NULL,
                           n_obs_ages = n_ages,
                           n_sexes,
                           n_fish_fleets,
@@ -78,6 +78,8 @@ Setup_Sim_Dim <- function(n_sims,
 #' @param lens Numeric vector of length bins; can be set to \code{1} if length data are not modeled.
 #' @param verbose Logical flag indicating whether to print progress messages (default \code{FALSE}).
 #' @param n_proj_yrs_devs Number of projection years for deviation parameters (ln_RecDevs, move_devs, ln_fishsel_devs, ln_srvsel_devs)
+#' @param n_seas Integer, Number of seasons
+#' @param seasdur Vector of n_seas length. Duration of season, expressed as a fraction of the year. Default is 1 if 1 season, or 1 / n_seas if n_seas > 1
 #'
 #' @returns A list containing three named elements:
 #' \describe{
@@ -90,6 +92,8 @@ Setup_Sim_Dim <- function(n_sims,
 Setup_Mod_Dim <- function(years,
                           ages,
                           lens,
+                          n_seas = 1,
+                          seasdur = if(n_seas == 1) 1 else rep(1 / n_seas, n_seas),
                           n_regions,
                           n_sexes,
                           n_fish_fleets,
@@ -112,9 +116,13 @@ Setup_Mod_Dim <- function(years,
   input_list$data$n_fish_fleets <- n_fish_fleets
   input_list$data$n_srv_fleets <- n_srv_fleets
   input_list$data$n_proj_yrs_devs <- n_proj_yrs_devs
+  input_list$data$n_seas <- n_seas
+  input_list$data$seasdur <- seasdur
   input_list$verbose <- verbose
 
   collect_message("Number of Years: ", length(years))
+  collect_message("Number of Seasons: ", n_seas)
+  for(i in 1:n_seas) collect_message("Duration of season ", i, ": ", seasdur[i])
   collect_message("Number of Projection Years for Dev Pars: ", n_proj_yrs_devs)
   collect_message("Number of Regions: ", n_regions)
   collect_message("Number of Age Bins: ", length(ages))

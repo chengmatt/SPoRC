@@ -1,9 +1,9 @@
 #' Set up SPoRC model weighting
 #'
 #' @param input_list List containing data, parameter, and map lists.
-#' @param Wt_Catch Either a numeric scalar (lambda) applied to the overall catch dataset or an array of lambdas (i.e., weights can change by year and fleet) dimensioned by n_regions, n_years, n_fish_fleets.
-#' @param Wt_FishIdx Either a numeric scalar (lambda) applied to the overall fishery index dataset  or an array of lambdas (i.e., weights can change by year and fleet) dimensioned by n_regions, n_years, n_fish_fleets.
-#' @param Wt_SrvIdx Either a numeric scalar (lambda) applied to the overall survey index dataset or an array of lambdas (i.e., weights can change by year and fleet) dimensioned by n_regions, n_years, n_srv_fleets.
+#' @param Wt_Catch Either a numeric scalar (lambda) applied to the overall catch dataset or an array of lambdas dimensioned by n_regions, n_years, n_seas, n_fish_fleets.
+#' @param Wt_FishIdx Either a numeric scalar (lambda) applied to the overall fishery index dataset  or an array of lambdas dimensioned by n_regions, n_years, n_seas, n_fish_fleets.
+#' @param Wt_SrvIdx Either a numeric scalar (lambda) applied to the overall survey index dataset or an array of lambdas dimensioned by n_regions, n_years, n_seas, n_srv_fleets.
 #' @param Wt_Rec Numeric weight (lambda) applied to the recruitment penalty.
 #' @param Wt_F Numeric weight (lambda) applied to the fishing mortality penalty.
 #' @param Wt_FishAgeComps Numeric weight (lambda) applied to fishery age composition data.

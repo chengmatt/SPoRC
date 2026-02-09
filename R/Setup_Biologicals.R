@@ -159,7 +159,7 @@ do_M_mapping <- function(input_list,
 #'   \item \code{"est_ln_M"}: Estimates natural mortality across the defined natural mortality blocks.
 #'   \item \code{"fix"}: Fix all natural mortality parameters using the provided array.
 #' }
-#' @param Fixed_natmort Numeric array of fixed natural mortality values, dimensioned \code{[n_regions, n_years, n_ages, n_sexes]}. Required if \code{M_spec = "fix"}.
+#' @param Fixed_natmort Numeric array of fixed natural mortality values, opearting on an annual basis, dimensioned \code{[n_regions, n_years, n_ages, n_sexes]}. Required if \code{M_spec = "fix"}.
 #' @param Selex_Type Character string specifying whether selectivity is age or length-based. Default is age-based
 #' \itemize{
 #'   \item \code{"length"}: Length-based selectivity.
@@ -213,19 +213,19 @@ Setup_Mod_Biologicals <- function(input_list,
   # Input Validation --------------------------------------------------------
 
   # Weight at age checking
-  check_data_dimensions(WAA, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_ages = length(input_list$data$ages), n_sexes = input_list$data$n_sexes, what = 'WAA')
-  if(!is.null(WAA_fish)) check_data_dimensions(WAA_fish, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_ages = length(input_list$data$ages), n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'WAA_fish')
-  if(!is.null(WAA_srv)) check_data_dimensions(WAA_srv, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_ages = length(input_list$data$ages), n_sexes = input_list$data$n_sexes, n_srv_fleets = input_list$data$n_srv_fleets, what = 'WAA_srv')
+  check_data_dimensions(WAA, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_ages = length(input_list$data$ages), n_sexes = input_list$data$n_sexes, n_seas = input_list$data$n_seas, what = 'WAA')
+  if(!is.null(WAA_fish)) check_data_dimensions(WAA_fish, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_ages = length(input_list$data$ages), n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'WAA_fish')
+  if(!is.null(WAA_srv)) check_data_dimensions(WAA_srv, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_ages = length(input_list$data$ages), n_sexes = input_list$data$n_sexes, n_srv_fleets = input_list$data$n_srv_fleets, what = 'WAA_srv')
 
   # Maturity at age checking
-  check_data_dimensions(MatAA, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_ages = length(input_list$data$ages), n_sexes = input_list$data$n_sexes, what = 'MatAA')
+  check_data_dimensions(MatAA, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas,  n_ages = length(input_list$data$ages), n_sexes = input_list$data$n_sexes, what = 'MatAA')
 
   # Length checking
   if(!fit_lengths %in% c(0,1)) stop("Values for fit_lengths are not valid. They are == 0 (not used), or == 1 (used)")
   collect_message("Length Composition data are: ", ifelse(fit_lengths == 0, "Not Used", "Used"))
 
   # Size Age Transition checking
-  if(fit_lengths == 1) check_data_dimensions(SizeAgeTrans, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_lens = length(input_list$data$lens), n_ages = length(input_list$data$ages), n_sexes = input_list$data$n_sexes, what = 'SizeAgeTrans')
+  if(fit_lengths == 1) check_data_dimensions(SizeAgeTrans, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_lens = length(input_list$data$lens), n_ages = length(input_list$data$ages), n_sexes = input_list$data$n_sexes, what = 'SizeAgeTrans')
   if(fit_lengths == 1 & is.na(sum(SizeAgeTrans))) stop("Length composition are fit to, but the size-age transition matrix is NA")
 
   # Natural Mortality checking
@@ -271,15 +271,15 @@ Setup_Mod_Biologicals <- function(input_list,
 
   # setup fishery and survey specific weight at age (if not specified - just uses the WAA (spawning) already supplied)
   if(is.null(WAA_fish)) { # if no fishery WAA provided, use spawning WAA supplied
-    WAA_fish <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), length(input_list$data$ages), input_list$data$n_sexes, input_list$data$n_fish_fleets))
-    for(f in 1:input_list$data$n_fish_fleets) WAA_fish[,,,,f] <- WAA
+    WAA_fish <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), n_seas = input_list$data$n_seas, length(input_list$data$ages), input_list$data$n_sexes, input_list$data$n_fish_fleets))
+    for(f in 1:input_list$data$n_fish_fleets) WAA_fish[,,,,,f] <- WAA
     collect_message("WAA_fish was specified at NULL. Using the spawning WAA for WAA_fish")
   }
 
   # if no survey WAA provided, use spawning WAA supplied
   if(is.null(WAA_srv)) {
-    WAA_srv <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), length(input_list$data$ages), input_list$data$n_sexes, input_list$data$n_srv_fleets))
-    for(f in 1:input_list$data$n_srv_fleets) WAA_srv[,,,,f] <- WAA
+    WAA_srv <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), n_seas = input_list$data$n_seas, length(input_list$data$ages), input_list$data$n_sexes, input_list$data$n_srv_fleets))
+    for(f in 1:input_list$data$n_srv_fleets) WAA_srv[,,,,,f] <- WAA
     collect_message("WAA_srv was specified at NULL. Using the spawning WAA for WAA_srv")
   }
 

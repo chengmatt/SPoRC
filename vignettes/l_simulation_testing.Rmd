@@ -203,7 +203,6 @@ setup_em <- function(sim_obj, sim) {
     input_list = input_list,
     # Data inputs
     ObsCatch = sim_data$ObsCatch,
-    Catch_Type = array(1, dim = c(length(input_list$data$years), input_list$data$n_fish_fleets)),
     UseCatch = sim_data$UseCatch,
     # Model options
     Use_F_pen = 1,

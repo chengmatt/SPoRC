@@ -61,6 +61,7 @@ input_list <- Setup_Mod_Biologicals(input_list = input_list,
 # setting up movement parameterization
 Movement_prior <- expand.grid(
   region_from = 1:3, # regions
+  year = 1, # penalize first year since no blocks
   age = c(6,7,16), # age blocks
   sex = 1, # sex
   alpha = I(list(rep(2.5, 3))) # prior alpha to each row
@@ -141,7 +142,6 @@ input_list <- Setup_Mod_Tagging(input_list = input_list,
 input_list <- Setup_Mod_Catch_and_F(input_list = input_list,
                                     # Data inputs
                                     ObsCatch = three_rg_sable_data$ObsCatch,
-                                    Catch_Type = three_rg_sable_data$Catch_Type,
                                     UseCatch = three_rg_sable_data$UseCatch,
                                     # Model options
                                     Use_F_pen = 1,

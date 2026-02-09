@@ -64,13 +64,14 @@ get_ts_plot <- function(rep,
 
     # Fishing Mortality
     f_plot_df <- reshape2::melt(rep[[i]]$Fmort) %>%
-      dplyr::rename(Region = Var1, Year = Var2, Type = Var3) %>%
+      dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Type = Var4) %>%
       dplyr::mutate(Region = paste("Region", Region),
-                    Type = paste("Fleet", Type, "F"),
+                    Type = paste("Seas", Seas, "Fleet", Type, "F"),
                     lwr = NA,
                     upr = NA,
                     se = NA,
-                    Model = model_names[i])
+                    Model = model_names[i]) %>%
+      dplyr::select(-Seas)
 
     # bind together
     biom_rec_df <- rbind(ssb_plot_df, totbiom_plot_df, rec_plot_df, f_plot_df, biom_rec_df, ssb0_plot_df)
@@ -233,7 +234,7 @@ get_selex_plot <- function(rep, model_names, Selex_Type = 'age', year_indx = NUL
 #' @param rep List of n_models of `SPoRC` report lists
 #' @param model_names Vector of model names
 #'
-#' @returns A list of plots for terminal year movement, natural mortality, weight-at-age, and maturity at age across models
+#' @returns A list of plots for terminal year and terminal season movement, natural mortality, weight-at-age, and maturity at age across models
 #' @export get_biological_plot
 #' @family Plotting
 #' @examples
@@ -253,7 +254,7 @@ get_biological_plot <- function(data,
 
     # Movement
     move_plot_tmp_df <- reshape2::melt(rep[[i]]$Movement) %>%
-      dplyr::rename(Region_From = from, Region_To = to, Year = years, Age = ages, Sex = sexes) %>%
+      dplyr::rename(Region_From = from, Region_To = to, Seas = seas, Year = years, Age = ages, Sex = sexes) %>%
       {if (data[[i]]$do_recruits_move == 0) filter(., Age != min(data[[i]]$ages)) else .} %>%
       dplyr::mutate(Region_From = paste("From Region", Region_From),
                     Region_To = paste("To Region", Region_To),
@@ -271,7 +272,7 @@ get_biological_plot <- function(data,
 
     # Spawning Weight-at-age
     waa_plot_tmp_df <- reshape2::melt(data[[i]]$WAA) %>%
-      dplyr::rename(Region = Var1, Year = Var2, Age = Var3, Sex = Var4) %>%
+      dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Age = Var4, Sex = Var5) %>%
       dplyr::mutate(Region = paste("Region", Region),
                     Sex = paste("Sex", Sex),
                     Model = model_names[i]
@@ -279,7 +280,7 @@ get_biological_plot <- function(data,
 
     # Maturity at age
     mataa_plot_tmp_df <- reshape2::melt(data[[i]]$MatAA) %>%
-      dplyr::rename(Region = Var1, Year = Var2, Age = Var3, Sex = Var4) %>%
+      dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Age = Var4, Sex = Var5) %>%
       dplyr::mutate(Region = paste("Region", Region),
                     Sex = paste("Sex", Sex),
                     Model = model_names[i]
@@ -293,7 +294,7 @@ get_biological_plot <- function(data,
   }
 
   # Movement plot
-  move_plot <- ggplot(move_plot_df %>% dplyr::filter(Year == max(move_plot_df$Year)),
+  move_plot <- ggplot(move_plot_df %>% dplyr::filter(Year == max(move_plot_df$Year), Seas == max(move_plot_df$Seas)),
                       ggplot2::aes(x = Age, y = value, color = factor(Model), lty = Sex)) +
     ggplot2::geom_line(lwd = 1) +
     ggplot2::facet_grid(Region_To~Region_From) +
@@ -304,7 +305,7 @@ get_biological_plot <- function(data,
 
   # Natural mortality plot
   natmort_plot <- ggplot2::ggplot(natmort_plot_df %>%
-                                    dplyr::filter(Year == max(natmort_plot_df$Year)),
+                                    dplyr::filter(Year == max(natmort_plot_df$Year), Seas == max(natmort_plot$Seas)),
                                   ggplot2::aes(x = Age, y = value, color = factor(Model))) +
     ggplot2::geom_line(lwd = 2) +
     ggplot2::facet_grid(Region~Sex) +
@@ -315,7 +316,7 @@ get_biological_plot <- function(data,
 
   # Weight at age plot
   waa_plot <- ggplot2::ggplot(waa_plot_df %>%
-                                dplyr::filter(Year == max(waa_plot_df$Year)),
+                                dplyr::filter(Year == max(waa_plot_df$Year), Seas == max(waa_plot$Seas)),
                               ggplot2::aes(x = Age, y = value, color = factor(Model))) +
     ggplot2::geom_line(lwd = 2) +
     ggplot2::facet_grid(Region~Sex) +
@@ -326,7 +327,7 @@ get_biological_plot <- function(data,
 
   # Maturity plot
   mataa_plot <- ggplot2::ggplot(mataa_plot_df %>%
-                                  dplyr::filter(Year == max(mataa_plot_df$Year)),
+                                  dplyr::filter(Year == max(mataa_plot_df$Year), Seas == max(mataa_plot$Seas)),
                                 ggplot2::aes(x = Age, y = value, color = factor(Model))) +
     ggplot2::geom_line(lwd = 2) +
     ggplot2::facet_grid(Region~Sex) +
@@ -360,52 +361,52 @@ get_data_fitted_plot <- function(data,
 
     # Get tag release indicator
     if(data[[i]]$UseTagging == 1) {
-      use_tag_indicator <- array(0, dim = c(max(data[[i]]$tag_release_indicator[,1]), max(data[[i]]$tag_release_indicator[,2])))
-      use_tag_indicator[data[[i]]$tag_release_indicator[,1],data[[i]]$tag_release_indicator[,2]] <- 1
+      use_tag_indicator <- array(0, dim = c(max(data[[i]]$tag_release_indicator[,1]), max(data[[i]]$tag_release_indicator[,2]), max(data[[i]]$tag_release_indicator[,3])))
+      use_tag_indicator[data[[i]]$tag_release_indicator[,1],data[[i]]$tag_release_indicator[,2],data[[i]]$tag_release_indicator[,3]] <- 1
     }
 
     # Bind all data indicators together
     data_plot_df <- reshape2::melt(data[[i]]$UseSrvLenComps) %>% # Survey lengths
-      dplyr::rename(Region = Var1, Year = Var2, Fleet = Var3) %>%
-      dplyr::mutate(Type = paste('Survey Lengths', "Fleet", Fleet)) %>%
+      dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+      dplyr::mutate(Type = paste('Survey Lengths', "Seas", Seas, "Fleet", Fleet)) %>%
 
       dplyr::bind_rows(
         # survey ages
         reshape2::melt(data[[i]]$UseSrvAgeComps) %>%
-          dplyr::rename(Region = Var1, Year = Var2, Fleet = Var3) %>%
-          dplyr::mutate(Type = paste('Survey Ages', "Fleet", Fleet)),
+          dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+          dplyr::mutate(Type = paste('Survey Ages', "Seas", Seas, "Fleet", Fleet)),
 
         # fishery lengths
         reshape2::melt(data[[i]]$UseFishLenComps) %>%
-          dplyr::rename(Region = Var1, Year = Var2, Fleet = Var3) %>%
-          dplyr::mutate(Type = paste('Fishery Lengths', "Fleet", Fleet)),
+          dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+          dplyr::mutate(Type = paste('Fishery Lengths', "Seas", Seas, "Fleet", Fleet)),
 
         # fishery ages
         reshape2::melt(data[[i]]$UseFishAgeComps) %>%
-          dplyr::rename(Region = Var1, Year = Var2, Fleet = Var3) %>%
-          dplyr::mutate(Type = paste('Fishery Ages', "Fleet", Fleet)),
+          dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+          dplyr::mutate(Type = paste('Fishery Ages', "Seas", Seas, "Fleet", Fleet)),
 
         # fishery catches
         reshape2::melt(data[[i]]$UseCatch) %>%
-          dplyr::rename(Region = Var1, Year = Var2, Fleet = Var3) %>%
-          dplyr::mutate(Type = paste('Fishery Catch', "Fleet", Fleet)),
+          dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+          dplyr::mutate(Type = paste('Fishery Catch', "Seas", Seas, "Fleet", Fleet)),
 
         # fishery indices
         reshape2::melt(data[[i]]$UseFishIdx) %>%
-          dplyr::rename(Region = Var1, Year = Var2, Fleet = Var3) %>%
-          dplyr::mutate(Type = paste('Fishery Index', "Fleet", Fleet)),
+          dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+          dplyr::mutate(Type = paste('Fishery Index', "Seas", Seas, "Fleet", Fleet)),
 
         # survey indices
         reshape2::melt(data[[i]]$UseSrvIdx) %>%
-          dplyr::rename(Region = Var1, Year = Var2, Fleet = Var3) %>%
-          dplyr::mutate(Type = paste('Survey Index', "Fleet", Fleet))
+          dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+          dplyr::mutate(Type = paste('Survey Index', "Seas", Seas, "Fleet", Fleet))
       )
 
     # Add tagging if used
     if (data[[i]]$UseTagging == 1) {
       tag_df <- reshape2::melt(use_tag_indicator) %>%
-        dplyr::rename(Region = Var1, Year = Var2) %>%
-        dplyr::mutate(Type = 'Tagging', Fleet = NA)
+        dplyr::rename(Region = Var1, Year = Var2, Seas = Var3) %>%
+        dplyr::mutate(Type = paste('Tagging', "Seas", Seas), Fleet = NA)
       data_plot_df <- dplyr::bind_rows(data_plot_df, tag_df)
     }
 
@@ -578,18 +579,20 @@ get_catch_fits_plot <- function(data,
   for(i in 1:length(rep)) {
     # Get catch fits
     catch_fits <- reshape2::melt(rep[[i]]$PredCatch) %>%
-      dplyr::rename(Region = Var1, Year = Var2, Fleet = Var3) %>%
+      dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
       dplyr::left_join(
         reshape2::melt(data[[i]]$ObsCatch) %>%
           dplyr::left_join(reshape2::melt(exp(rep[[i]]$ln_sigmaC) / data[[i]]$Wt_Catch) %>%
                              dplyr::rename(se = value),
-                           by = c("Var1", "Var2", "Var3")) %>%
-          dplyr::rename(Region = Var1, Year = Var2, Fleet = Var3, obs = value),
-        by = c("Region", "Year", "Fleet")
+                           by = c("Var1", "Var2", "Var3", "Var4")) %>%
+          dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4, obs = value),
+        by = c("Region", "Year", "Seas", "Fleet")
       ) %>%
       dplyr::mutate(Model = model_names[i],
                     Region = paste('Region', Region),
-                    Fleet = paste('Fleet', Fleet))
+                    Seas = paste("Seas", Seas),
+                    Fleet = paste('Fleet', Fleet),
+                    Seas_Fleet = paste(Seas, Fleet))
     catch_fits_all <- rbind(catch_fits_all, catch_fits) # bind
   }
 
@@ -603,7 +606,7 @@ get_catch_fits_plot <- function(data,
     ggplot2::labs(x = "Year", y = 'Catch', color = 'Model') +
     theme_sablefish() +
     ggplot2::coord_cartesian(ylim = c(0,NA)) +
-    ggplot2::facet_grid(Fleet~Region, scales = 'free_y')
+    ggplot2::facet_grid(Seas_Fleet~Region, scales = 'free_y')
 
   return(catch_fit_plot)
 }
@@ -685,7 +688,43 @@ get_retrospective_plot <- function(retro_output, Rec_Age) {
 
   return(list(retro_plot, abs_retro_plot, squid_plot))
 }
+#' Plotting function for all basic quantities
+#'
+#' @param data List of n_models of `SPoRC` data lists
+#' @param rep List of n_models of `SPoRC` report lists
+#' @param sd_rep List of n_models of sd report lists from `SPoRC`
+#' @param out_path Path to the output directory. Users only need to specify the path.
+#' @param model_names Character vector of model names
+#'
+#' @returns A series of plots compared across models outputted as a pdf in the specified directory
+#' @export plot_all_basic
+#' @family Plotting
+#'
+#' @examples
+#' \dontrun{
+#' plot_all_basic(
+#'   data = list(data1, data2),
+#'   rep = list(rep1, rep2),
+#'   sd_rep = list(sd_rep1, sd_rep2),
+#'   model_names = c("Model1", "Model2"),
+#'   out_path = here::here()
+#' )
+#' }
+plot_all_basic <- function(data,
+                           rep,
+                           sd_rep,
+                           model_names,
+                           out_path) {
 
+  pdf(here::here(out_path, "plot_results.pdf"), width = 25, height = 13)
+  print(get_biological_plot(data = data, rep = rep, model_names = model_names))
+  print(get_data_fitted_plot(data = data, model_names = model_names))
+  print(get_ts_plot(rep = rep, sd_rep = sd_rep, model_names = model_names))
+  print(get_selex_plot(rep = rep, model_names = model_names))
+  print(get_nLL_plot(data = data, rep = rep, model_names = model_names))
+  dev.off()
+
+}
 #' Generate Key Projection Quantities and Table Plot
 #'
 #' Calculates biological and fishery reference points and performs population projections to estimate terminal spawning biomass, catch advice, and reference point values by model and region. Also returns a formatted table plot of key quantities.
@@ -936,41 +975,3 @@ get_key_quants <- function(data,
   return(list(key_quants_df, table_plot1))
 
 } # end function
-
-#' Plotting function for all basic quantities
-#'
-#' @param data List of n_models of `SPoRC` data lists
-#' @param rep List of n_models of `SPoRC` report lists
-#' @param sd_rep List of n_models of sd report lists from `SPoRC`
-#' @param out_path Path to the output directory. Users only need to specify the path.
-#' @param model_names Character vector of model names
-#'
-#' @returns A series of plots compared across models outputted as a pdf in the specified directory
-#' @export plot_all_basic
-#' @family Plotting
-#'
-#' @examples
-#' \dontrun{
-#' plot_all_basic(
-#'   data = list(data1, data2),
-#'   rep = list(rep1, rep2),
-#'   sd_rep = list(sd_rep1, sd_rep2),
-#'   model_names = c("Model1", "Model2"),
-#'   out_path = here::here()
-#' )
-#' }
-plot_all_basic <- function(data,
-                           rep,
-                           sd_rep,
-                           model_names,
-                           out_path) {
-
-  pdf(here::here(out_path, "plot_results.pdf"), width = 25, height = 13)
-  print(get_biological_plot(data = data, rep = rep, model_names = model_names))
-  print(get_data_fitted_plot(data = data, model_names = model_names))
-  print(get_ts_plot(rep = rep, sd_rep = sd_rep, model_names = model_names))
-  print(get_selex_plot(rep = rep, model_names = model_names))
-  print(get_nLL_plot(data = data, rep = rep, model_names = model_names))
-  dev.off()
-
-}

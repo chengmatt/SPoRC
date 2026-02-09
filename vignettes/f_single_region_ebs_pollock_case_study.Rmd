@@ -148,7 +148,7 @@ Given that this vignette demonstrates a single-region model, no movement dynamic
 ```
 
 # Setup Catch and Fishing Mortality
-Following the parameterization of biological dynamics, fishery dynamics can then be specified and set up using the `Setup_Mod_Catch_and_F` function. Again, the input_list that gets updated from previous helper functions. Users will need to supply the function with an array of observed catches `ObsCatch`, which are dimensioned as `n_regions`, `n_years`, and `n_fish_fleets`. Similarly, users will also need to specify the catch type of these observations with the `Catch_Type` argument. This argument expects a matrix dimensioned by `n_years` and `n_fish_fleets`, and is really only applicable in a spatial model (values of 0 indicate that catch is aggregated across regions in some periods and fleets, while values of 1 indicate catch is specific to each region in all periods and fleets). Thus, in a single region model, values of `1` should always be supplied. The function also expects the `UseCatch` argument to be specified, which is dimensioned as `n_regions`, `n_years`, and `n_fish_fleets`. Essentially, users will need to fill out whether catch is fit to for those particular partitions. Most use cases of this argument are scenarios in which catch is observed to be a value of 0, where the helper function automatically turns off the estimation of fishing mortality deviations for those partitions. Additional model options specified for this case study include whether fishing mortality penalties are utilized to help estimate deviations `Use_F_pen = 1`, and the `ln_sigmaC` values to fix at.
+Following the parameterization of biological dynamics, fishery dynamics can then be specified and set up using the `Setup_Mod_Catch_and_F` function. Again, the input_list that gets updated from previous helper functions. Users will need to supply the function with an array of observed catches `ObsCatch`, which are dimensioned as `n_regions`, `n_years`, and `n_fish_fleets`. Additional model options specified for this case study include whether fishing mortality penalties are utilized to help estimate deviations `Use_F_pen = 1`, and the `ln_sigmaC` values to fix at.
 
 ```{r, eval = FALSE}
   input_list <- Setup_Mod_Catch_and_F(
@@ -156,7 +156,6 @@ Following the parameterization of biological dynamics, fishery dynamics can then
 
     # Data inputs
     ObsCatch = sgl_rg_ebswp_data$ObsCatch,
-    Catch_Type = sgl_rg_ebswp_data$Catch_Type,
     UseCatch = sgl_rg_ebswp_data$UseCatch,
 
     # Model options

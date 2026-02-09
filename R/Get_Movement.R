@@ -68,11 +68,12 @@ get_movement_dp_design_matrix <- function(data,
 #' @param area_r Vector of areas for each region (used for scaling diffusion rates).
 #' @param adjacency_mat Square adjacency matrix defining connectivity between regions for CTMC movement.
 #' @param ctmc_diffusion_bounds Integer flag: 1 = apply diffusion bounds to generator matrix, 0 = no bounds.
+#' @param n_seas Number of seasons
 #'
 #' @return A list with components:
 #' \describe{
-#'   \item{\code{Movement}}{Array of movement fractions for each stratum (from regions × to regions × years × ages × sexes).}
-#'   \item{\code{Mrate}}{Instantaneous movement rate matrix if CTMC movement is used (from regions × to regions × years × ages × sexes); otherwise NULL.}
+#'   \item{\code{Movement}}{Array of movement fractions for each stratum (from regions × to regions × years × seas, ages × sexes).}
+#'   \item{\code{Mrate}}{Instantaneous movement rate matrix if CTMC movement is used (from regions × to regions × years × seas x ages × sexes); otherwise NULL.}
 #'   \item{\code{move_pen}}{Numeric value of movement penalty calculated from preference parameters (for CTMC only).}
 #' }
 #'
@@ -84,6 +85,7 @@ Get_Movement <- function(move_type,
                          n_proj_yrs_devs,
                          n_ages,
                          n_sexes,
+                         n_seas,
                          move_pars,
                          move_devs,
                          use_fixed_movement,
@@ -103,7 +105,7 @@ Get_Movement <- function(move_type,
 
   move_pen = 0 # initialize movement penalty if used
   Mrate = NULL # initialize for non-CTMC cases
-  dims = list(from = 1:n_regions, to = 1:n_regions, years = 1:(n_yrs + n_proj_yrs_devs), ages = 1:n_ages, sexes = 1:n_sexes)
+  dims = list(from = 1:n_regions, to = 1:n_regions, years = 1:(n_yrs + n_proj_yrs_devs), seas = 1:n_seas, ages = 1:n_ages, sexes = 1:n_sexes)
 
   # use fixed movement matrix
   if(use_fixed_movement == 1) {
@@ -115,26 +117,28 @@ Get_Movement <- function(move_type,
 
     for(r in 1:n_regions) {
       for(y in 1:(n_yrs + n_proj_yrs_devs)) {
-        for(a in 1:n_ages) {
-          for(s in 1:n_sexes) {
+        for(seas in 1:n_seas) {
+          for(a in 1:n_ages) {
+            for(s in 1:n_sexes) {
 
-            move_tmp = rep(0, n_regions) # temporary movement vector to store values
-            counter = 1  # counter
+              move_tmp = rep(0, n_regions) # temporary movement vector to store values
+              counter = 1  # counter
 
-            for(rr in 1:n_regions) {
-              if(rr != ref_region) {
-                # extract movement parameters
-                if(y <= n_yrs) tmp_move_pars = move_pars[r,counter,y,a,s]
-                else tmp_move_pars = move_pars[r,counter,n_yrs,a,s]
-                move_tmp[rr] = tmp_move_pars + move_devs[r,counter,y,a,s]
-                counter = counter + 1
-              } # end if not reference region
-            } # end rr loop
+              for(rr in 1:n_regions) {
+                if(rr != ref_region) {
+                  # extract movement parameters
+                  if(y <= n_yrs) tmp_move_pars = move_pars[r,counter,y,seas,a,s]
+                  else tmp_move_pars = move_pars[r,counter,n_yrs,seas,a,s]
+                  move_tmp[rr] = tmp_move_pars + move_devs[r,counter,y,seas,a,s]
+                  counter = counter + 1
+                } # end if not reference region
+              } # end rr loop
 
-            Movement[r,,y,a,s] = exp(move_tmp) / sum(exp(move_tmp)) # multinomial logit transform estimated movement
+              Movement[r,,y,seas,a,s] = exp(move_tmp) / sum(exp(move_tmp)) # multinomial logit transform estimated movement
 
-          } # end s loop
-        } # end a loop
+            } # end s loop
+          } # end a loop
+        } # end seas loop
       } # end y loop
     } # end r loop
 
@@ -163,17 +167,18 @@ Get_Movement <- function(move_type,
     for( index in seq_len(nrow(loop)) ){
 
       # get year, age, and sex specific indices for a given stratum combination
-      which_rows = expand.grid( 1:n_regions, loop[index,"years"], loop[index,"ages"], loop[index,"sexes"] )
+      which_rows = expand.grid( 1:n_regions, loop[index,"years"], loop[index,'seas'], loop[index,"ages"], loop[index,"sexes"] )
       which_rows$index = NA
       colnames(which_rows) = c( "regions", names(loop), "index" )
 
       # Cap year spline look up parameters at n_yrs
       y_lookup = min(loop[index,"years"], n_yrs)
 
-      # Match the current stratum (region, year, age, sex) to rows in ctmc_move_dat
+      # Match the current stratum (region, year, seas, age, sex) to rows in ctmc_move_dat
       for( i2 in seq_len(nrow(which_rows)) ){
         which_rows$index[i2] = which((which_rows[i2,'regions'] == ctmc_move_dat[,'regions']) &
                                        y_lookup == ctmc_move_dat[,"years"] &
+                                       (which_rows[i2,'seas'] == ctmc_move_dat[,'seas']) &
                                        (which_rows[i2,'ages'] == ctmc_move_dat[,'ages']) &
                                        (which_rows[i2,'sexes'] == ctmc_move_dat[,'sexes']) )
       }
@@ -190,10 +195,11 @@ Get_Movement <- function(move_type,
 
       # Add origin-destination deviations (always uses actual year, not y_lookup)
       y_idx = loop$years[index]
+      seas_idx = loop$seas[index]
       a_idx = loop$ages[index]
       s_idx = loop$sexes[index]
 
-      # Note: move_devs is indexed as [origin_region, counter, year, age, sex]
+      # Note: move_devs is indexed as [origin_region, counter, year, seas, age, sex]
       # where counter goes through non-diagonal destinations for that origin
       for(rr in 1:n_regions) {  # rr = origin (from)
         counter = 1  # Reset counter for each origin region
@@ -201,7 +207,7 @@ Get_Movement <- function(move_type,
           # Only apply deviations to off-diagonal elements (actual transitions, not residency)
           if(adjacency_mat[r, rr] == 1 && r != rr) {  # if adjacent BUT NOT diagonal
             # Apply deviation: rr is origin, counter indexes non-diagonal destinations
-            D_ss[r, rr] = D_ss[r, rr] * exp(move_devs[rr, counter, y_idx, a_idx, s_idx])
+            D_ss[r, rr] = D_ss[r, rr] * exp(move_devs[rr, counter, y_idx, seas_idx, a_idx, s_idx])
             counter = counter + 1  # Increment counter for next valid destination from rr
           } # end if
         } # end r (to)
@@ -224,10 +230,10 @@ Get_Movement <- function(move_type,
       M_ss = Matrix::expm( Q_ss ) # turn rate matrix into fractions
 
       # populate matrices
-      Movement[,,loop$years[index],loop$ages[index],loop$sexes[index]] = t(as.matrix(M_ss))
-      Taxis[,,loop$years[index],loop$ages[index],loop$sexes[index]] = t(as.matrix(Z_ss))
-      Diffusion[,,loop$years[index],loop$ages[index],loop$sexes[index]] = t(as.matrix(D_ss))
-      Mrate[,,loop$years[index],loop$ages[index],loop$sexes[index]] = t(as.matrix(Q_ss))
+      Movement[,,y_idx,seas_idx,a_idx,s_idx] = t(as.matrix(M_ss))
+      Taxis[,,y_idx,seas_idx,a_idx,s_idx] = t(as.matrix(Z_ss))
+      Diffusion[,,y_idx,seas_idx,a_idx,s_idx] = t(as.matrix(D_ss))
+      Mrate[,,y_idx,seas_idx,a_idx,s_idx] = t(as.matrix(Q_ss))
 
       # return penalty (Lagrange multiplier)
       move_pen = move_pen + sum(pref_s)^2

@@ -491,13 +491,13 @@ set_data_indicator_unused <- function(data,
 
   if(length(unused_years) > 0) {
     # set to not use
-    if("Catch" %in% what) data$UseCatch[,unused_years,] <- 0
-    if("FishIdx" %in% what) data$UseFishIdx[,unused_years,] <- 0
-    if("FishAgeComps" %in% what) data$UseFishAgeComps[,unused_years,] <- 0
-    if("FishLenComps" %in% what) data$UseFishLenComps[,unused_years,] <- 0
-    if("SrvIdx" %in% what) data$UseSrvIdx[,unused_years,] <- 0
-    if("SrvAgeComps" %in% what) data$UseSrvAgeComps[,unused_years,] <- 0
-    if("SrvLenComps" %in% what) data$UseSrvLenComps[,unused_years,] <- 0
+    if("Catch" %in% what) data$UseCatch[,unused_years,,] <- 0
+    if("FishIdx" %in% what) data$UseFishIdx[,unused_years,,] <- 0
+    if("FishAgeComps" %in% what) data$UseFishAgeComps[,unused_years,,] <- 0
+    if("FishLenComps" %in% what) data$UseFishLenComps[,unused_years,,] <- 0
+    if("SrvIdx" %in% what) data$UseSrvIdx[,unused_years,,] <- 0
+    if("SrvAgeComps" %in% what) data$UseSrvAgeComps[,unused_years,,] <- 0
+    if("SrvLenComps" %in% what) data$UseSrvLenComps[,unused_years,,] <- 0
   }
 
   # modify tagging stuff
@@ -505,7 +505,7 @@ set_data_indicator_unused <- function(data,
     tags_to_remove <- which(data$tag_release_indicator[,2] %in% unused_years)
     if(length(tags_to_remove) > 0) {
       data$Tagged_Fish <- data$Tagged_Fish[-tags_to_remove,,,drop=FALSE]
-      data$Obs_Tag_Recap <- data$Obs_Tag_Recap[,-tags_to_remove,,,,drop=FALSE]
+      data$Obs_Tag_Recap <- data$Obs_Tag_Recap[,,-tags_to_remove,,,,drop=FALSE]
       data$tag_release_indicator <- data$tag_release_indicator[-tags_to_remove,,drop=FALSE]
       data$n_tag_cohorts <- nrow(data$tag_release_indicator)
     }
@@ -699,3 +699,36 @@ marg_AIC <- function(opt, p = 2, n = Inf){
   return(Return)
 }
 
+#' Convert character or numeric input to numeric codes
+#'
+#' @param x Input vector (character or numeric)
+#' @param lookup Named list mapping character strings to numeric codes
+#' @return Numeric vector
+#' @keywords internal
+convert_to_numeric <- function(x, lookup) {
+
+  # Return numberic if already numeric
+  if (is.numeric(x)) {
+    return(x)
+  }
+
+  # if character, return numeric and convert
+  if (is.character(x)) {
+    result <- lookup[x]
+    if (any(is.na(result))) {
+      invalid <- x[is.na(lookup[x])]
+      stop("Invalid character input: ", paste(invalid, collapse = ", "),
+           "\nValid options: ", paste(names(lookup), collapse = ", "))
+    }
+    return(unlist(result))
+  }
+
+  # Handle arrays/matrices
+  if (is.array(x)) {
+    dims <- dim(x)
+    result <- convert_to_numeric(as.vector(x), lookup)
+    return(array(result, dim = dims))
+  }
+
+  stop("Input must be numeric or character")
+}

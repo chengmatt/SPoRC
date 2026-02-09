@@ -36,15 +36,15 @@ truncate_yr <- function(j,
 # Fishery -----------------------------------------------------------------
 
   # Catch, Fishery Index, and Compositions
-  retro_data$ObsCatch <- data$ObsCatch[,1:(length(data$years) - j),,drop = FALSE]
-  retro_data$ObsFishIdx <- data$ObsFishIdx[,1:(length(data$years) - j),,drop = FALSE]
-  retro_data$ObsFishIdx_SE <- data$ObsFishIdx_SE[,1:(length(data$years) - j),,drop = FALSE]
-  retro_data$ObsFishAgeComps <- data$ObsFishAgeComps[,1:(length(data$years) - j),,,,drop = FALSE]
-  retro_data$ObsFishLenComps <- data$ObsFishLenComps[,1:(length(data$years) - j),,,,drop = FALSE]
+  retro_data$ObsCatch <- data$ObsCatch[,1:(length(data$years) - j),,,drop = FALSE]
+  retro_data$ObsFishIdx <- data$ObsFishIdx[,1:(length(data$years) - j),,,drop = FALSE]
+  retro_data$ObsFishIdx_SE <- data$ObsFishIdx_SE[,1:(length(data$years) - j),,,drop = FALSE]
+  retro_data$ObsFishAgeComps <- data$ObsFishAgeComps[,1:(length(data$years) - j),,,,,drop = FALSE]
+  retro_data$ObsFishLenComps <- data$ObsFishLenComps[,1:(length(data$years) - j),,,,,drop = FALSE]
 
   # Fishery mortality devs
-  retro_parameters$ln_F_devs <- parameters$ln_F_devs[,1:(length(data$years) - j),,drop = FALSE] # modify F dev parameters
-  retro_mapping$ln_F_devs <- factor(array(mapping$ln_F_devs, dim = dim(parameters$ln_F_devs))[,1:(length(data$years) - j),,drop = FALSE]) # modify map
+  retro_parameters$ln_F_devs <- parameters$ln_F_devs[,1:(length(data$years) - j),,,drop = FALSE] # modify F dev parameters
+  retro_mapping$ln_F_devs <- factor(array(mapping$ln_F_devs, dim = dim(parameters$ln_F_devs))[,1:(length(data$years) - j),,,drop = FALSE]) # modify map
 
   # Fishery selectivity deviations
   retro_parameters$ln_fishsel_devs <- parameters$ln_fishsel_devs[,1:(length(data$years) - j),,,,drop = FALSE] # modify parameter length
@@ -66,10 +66,10 @@ truncate_yr <- function(j,
 # Survey ------------------------------------------------------------------
 
   # Survey index and compositions
-  retro_data$ObsSrvIdx <- data$ObsSrvIdx[,1:(length(data$years) - j),,drop = FALSE]
-  retro_data$ObsSrvIdx_SE <- data$ObsSrvIdx_SE[,1:(length(data$years) - j),,drop = FALSE]
-  retro_data$ObsSrvAgeComps <- data$ObsSrvAgeComps[,1:(length(data$years) - j),,,,drop = FALSE]
-  retro_data$ObsSrvLenComps <- data$ObsSrvLenComps[,1:(length(data$years) - j),,,,drop = FALSE]
+  retro_data$ObsSrvIdx <- data$ObsSrvIdx[,1:(length(data$years) - j),,,drop = FALSE]
+  retro_data$ObsSrvIdx_SE <- data$ObsSrvIdx_SE[,1:(length(data$years) - j),,,drop = FALSE]
+  retro_data$ObsSrvAgeComps <- data$ObsSrvAgeComps[,1:(length(data$years) - j),,,,,drop = FALSE]
+  retro_data$ObsSrvLenComps <- data$ObsSrvLenComps[,1:(length(data$years) - j),,,,,drop = FALSE]
 
   # Survey selectivity deviations
   retro_parameters$ln_srvsel_devs <- parameters$ln_srvsel_devs[,1:(length(data$years) - j),,,,drop = FALSE] # Survey selectivity deviations
@@ -92,13 +92,13 @@ truncate_yr <- function(j,
 
   if(data$n_regions > 1) {
     # Movement stuff
-    retro_parameters$move_pars <- parameters$move_pars[,,1:(length(data$years) - j),,,drop = FALSE]
-    retro_parameters$move_devs <- parameters$move_devs[,,1:(length(data$years) - j),,,drop = FALSE]
-    retro_mapping$move_pars <- factor(array(mapping$move_pars, dim = dim(parameters$move_pars))[,,1:(length(data$years) - j),,,drop = FALSE])
-    retro_mapping$move_devs <- factor(array(mapping$move_devs, dim = dim(parameters$move_devs))[,,1:(length(data$years) - j),,,drop = FALSE])
-    retro_data$Fixed_Movement <- data$Fixed_Movement[,,1:(length(data$years) - j),,,drop = FALSE]
+    retro_parameters$move_pars <- parameters$move_pars[,,1:(length(data$years) - j),,,,drop = FALSE]
+    retro_parameters$move_devs <- parameters$move_devs[,,1:(length(data$years) - j),,,,drop = FALSE]
+    retro_mapping$move_pars <- factor(array(mapping$move_pars, dim = dim(parameters$move_pars))[,,1:(length(data$years) - j),,,,drop = FALSE])
+    retro_mapping$move_devs <- factor(array(mapping$move_devs, dim = dim(parameters$move_devs))[,,1:(length(data$years) - j),,,,drop = FALSE])
+    retro_data$Fixed_Movement <- data$Fixed_Movement[,,1:(length(data$years) - j),,,,drop = FALSE]
     retro_data$ctmc_move_dat <- retro_data$ctmc_move_dat[which(data$ctmc_move_dat$years %in% 1:(length(data$years) - j)),]
-    retro_data$map_move_devs <- retro_data$map_move_devs[,,1:(length(data$years) - j),,,drop = FALSE]
+    retro_data$map_move_devs <- retro_data$map_move_devs[,,1:(length(data$years) - j),,,,drop = FALSE]
   }
 
 # Tagging -----------------------------------------------------------------
@@ -115,31 +115,31 @@ truncate_yr <- function(j,
     retro_data$tag_release_indicator <- as.matrix(Tag_Release_Ind[which(Tag_Release_Ind[,2] %in% 1:(length(data$years) - j)), ])
     retro_data$n_tag_cohorts <- nrow(retro_data$tag_release_indicator)
     retro_data$Tagged_Fish <- data$Tagged_Fish[1:nrow(retro_data$tag_release_indicator),,,drop = FALSE] # remove data (not necessary, but helps with computational cost if using tagging)
-    retro_data$Obs_Tag_Recap <- data$Obs_Tag_Recap[,1:nrow(retro_data$tag_release_indicator),,,,drop = FALSE] # remove data (not necessary, but helps with computational cost)
+    retro_data$Obs_Tag_Recap <- data$Obs_Tag_Recap[,,1:nrow(retro_data$tag_release_indicator),,,,drop = FALSE] # remove data (not necessary, but helps with computational cost)
   }
 
 
 # Data Weights, Composition Stuff, and use indicators ------------------------------------------------------------
 
   # Data weights and composition stuff
-  retro_data$Wt_FishAgeComps <- data$Wt_FishAgeComps[,1:(length(data$years) - j),,,drop = FALSE]
-  retro_data$Wt_SrvAgeComps <- data$Wt_SrvAgeComps[,1:(length(data$years) - j),,,drop = FALSE]
-  retro_data$Wt_FishLenComps <- data$Wt_FishLenComps[,1:(length(data$years) - j),,,drop = FALSE]
-  retro_data$Wt_SrvLenComps <- data$Wt_SrvLenComps[,1:(length(data$years) - j),,,drop = FALSE]
+  retro_data$Wt_FishAgeComps <- data$Wt_FishAgeComps[,1:(length(data$years) - j),,,,drop = FALSE]
+  retro_data$Wt_SrvAgeComps <- data$Wt_SrvAgeComps[,1:(length(data$years) - j),,,,drop = FALSE]
+  retro_data$Wt_FishLenComps <- data$Wt_FishLenComps[,1:(length(data$years) - j),,,,drop = FALSE]
+  retro_data$Wt_SrvLenComps <- data$Wt_SrvLenComps[,1:(length(data$years) - j),,,,drop = FALSE]
   retro_data$FishAgeComps_Type <- data$FishAgeComps_Type[1:(length(data$years) - j),,drop = FALSE]
   retro_data$FishLenComps_Type <- data$FishLenComps_Type[1:(length(data$years) - j),,drop = FALSE]
   retro_data$SrvLenComps_Type <- data$SrvLenComps_Type[1:(length(data$years) - j),,drop = FALSE]
   retro_data$SrvAgeComps_Type <- data$SrvAgeComps_Type[1:(length(data$years) - j),,drop = FALSE]
-  if(length(dim(data$Wt_Catch)) == 3) retro_data$Wt_Catch <- data$Wt_Catch[,1:(length(data$years) - j),,drop = FALSE] # Catch is dim = 3, b/c can accept scalar or array
+  if(length(dim(data$Wt_Catch)) == 4) retro_data$Wt_Catch <- data$Wt_Catch[,1:(length(data$years) - j),,,drop = FALSE] # Catch is dim = 3, b/c can accept scalar or array
 
   # data use indicators
-  retro_data$UseFishAgeComps <- data$UseFishAgeComps[,1:(length(data$years) - j),,drop = FALSE]
-  retro_data$UseFishIdx <- data$UseFishIdx[,1:(length(data$years) - j),,drop = FALSE]
-  retro_data$UseCatch <- data$UseCatch[,1:(length(data$years) - j),,drop = FALSE]
-  retro_data$UseFishLenComps <- data$UseFishLenComps[,1:(length(data$years) - j),,drop = FALSE]
-  retro_data$UseSrvAgeComps <- data$UseSrvAgeComps[,1:(length(data$years) - j),,drop = FALSE]
-  retro_data$UseSrvIdx <- data$UseSrvIdx[,1:(length(data$years) - j),,drop = FALSE]
-  retro_data$UseSrvLenComps <- data$UseSrvLenComps[,1:(length(data$years) - j),,drop = FALSE]
+  retro_data$UseFishAgeComps <- data$UseFishAgeComps[,1:(length(data$years) - j),,,drop = FALSE]
+  retro_data$UseFishIdx <- data$UseFishIdx[,1:(length(data$years) - j),,,drop = FALSE]
+  retro_data$UseCatch <- data$UseCatch[,1:(length(data$years) - j),,,drop = FALSE]
+  retro_data$UseFishLenComps <- data$UseFishLenComps[,1:(length(data$years) - j),,,drop = FALSE]
+  retro_data$UseSrvAgeComps <- data$UseSrvAgeComps[,1:(length(data$years) - j),,,drop = FALSE]
+  retro_data$UseSrvIdx <- data$UseSrvIdx[,1:(length(data$years) - j),,,drop = FALSE]
+  retro_data$UseSrvLenComps <- data$UseSrvLenComps[,1:(length(data$years) - j),,,drop = FALSE]
 
 
   return(list(retro_data = retro_data,
@@ -237,17 +237,17 @@ do_retrospective <- function(n_retro,
           # fishery ages
           if(fishage_tmp_lag > 0) {
             fishage_end_col <- max(start_col - fishage_tmp_lag + 1, 1) # get end index
-            init$retro_data$UseFishAgeComps[r, start_col:fishage_end_col, f] <- 0 # input 0 to lag incoming data into assessment
+            init$retro_data$UseFishAgeComps[r, start_col:fishage_end_col,, f] <- 0 # input 0 to lag incoming data into assessment
           }
           # fishery lengths
           if(fishlen_tmp_lag > 0) {
             fishlen_end_col <- max(start_col - fishlen_tmp_lag + 1, 1) # get end index
-            init$retro_data$UseFishLenComps[r, start_col:fishlen_end_col, f] <- 0 # input 0 to lag incoming data into assessment
+            init$retro_data$UseFishLenComps[r, start_col:fishlen_end_col,, f] <- 0 # input 0 to lag incoming data into assessment
           }
           # fishery index
           if(fishidx_tmp_lag > 0) {
             fishidx_end_col <- max(start_col - fishidx_tmp_lag + 1, 1) # get end index
-            init$retro_data$UseFishIdx[r, start_col:fishidx_end_col, f] <- 0 # input 0 to lag incoming data into assessment
+            init$retro_data$UseFishIdx[r, start_col:fishidx_end_col,, f] <- 0 # input 0 to lag incoming data into assessment
           }
         } # end r loop
       } # end f loop
@@ -262,17 +262,17 @@ do_retrospective <- function(n_retro,
           # survey ages
           if(srvage_tmp_lag > 0) {
             srvage_end_col <- max(start_col - srvage_tmp_lag + 1, 1) # get end index
-            init$retro_data$UseSrvAgeComps[r, start_col:srvage_end_col, f] <- 0 # input 0 to lag incoming data into assessment
+            init$retro_data$UseSrvAgeComps[r, start_col:srvage_end_col,, f] <- 0 # input 0 to lag incoming data into assessment
           }
           # survey lengths
           if(srvlen_tmp_lag > 0) {
             srvlen_end_col <- max(start_col - srvlen_tmp_lag + 1, 1) # get end index
-            init$retro_data$UseSrvLenComps[r, start_col:srvlen_end_col, f] <- 0 # input 0 to lag incoming data into assessment
+            init$retro_data$UseSrvLenComps[r, start_col:srvlen_end_col,, f] <- 0 # input 0 to lag incoming data into assessment
           }
           # survey index
           if(srvidx_tmp_lag > 0) {
             srvidx_end_col <- max(start_col - srvidx_tmp_lag + 1, 1) # get end index
-            init$retro_data$UseSrvIdx[r, start_col:srvidx_end_col, f] <- 0 # input 0 to lag incoming data into assessment
+            init$retro_data$UseSrvIdx[r, start_col:srvidx_end_col,, f] <- 0 # input 0 to lag incoming data into assessment
           }
         } # end r loop
       } # end f loop
@@ -284,7 +284,7 @@ do_retrospective <- function(n_retro,
         init$retro_data$tag_release_indicator <- as.matrix(Tag_Release_Ind[-which(Tag_Release_Ind[,2] %in% start_col:tag_end_col), ]) # remove tag data when lagged
         init$retro_data$n_tag_cohorts <- nrow(init$retro_data$tag_release_indicator)
         init$retro_data$Tagged_Fish <- init$retro_data$Tagged_Fish[1:nrow(init$retro_data$tag_release_indicator),,,drop = FALSE] # remove data (not necessary, but helps with computational cost if using tagging)
-        init$retro_data$Obs_Tag_Recap <- init$retro_data$Obs_Tag_Recap[,1:nrow(init$retro_data$tag_release_indicator),,,,drop = FALSE] # remove data (not necessary, but helps with computational cost)
+        init$retro_data$Obs_Tag_Recap <- init$retro_data$Obs_Tag_Recap[,,1:nrow(init$retro_data$tag_release_indicator),,,,drop = FALSE] # remove data (not necessary, but helps with computational cost)
       }
 
       if(do_francis == FALSE) { # don't do francis within retrospective loop
@@ -365,17 +365,17 @@ do_retrospective <- function(n_retro,
             # fishery ages
             if(fishage_tmp_lag > 0) {
               fishage_end_col <- max(start_col - fishage_tmp_lag + 1, 1) # get end index
-              init$retro_data$UseFishAgeComps[r, start_col:fishage_end_col, f] <- 0 # input 0 to lag incoming data into assessment
+              init$retro_data$UseFishAgeComps[r, start_col:fishage_end_col,, f] <- 0 # input 0 to lag incoming data into assessment
             }
             # fishery lengths
             if(fishlen_tmp_lag > 0) {
               fishlen_end_col <- max(start_col - fishlen_tmp_lag + 1, 1) # get end index
-              init$retro_data$UseFishLenComps[r, start_col:fishlen_end_col, f] <- 0 # input 0 to lag incoming data into assessment
+              init$retro_data$UseFishLenComps[r, start_col:fishlen_end_col,, f] <- 0 # input 0 to lag incoming data into assessment
             }
             # fishery index
             if(fishidx_tmp_lag > 0) {
               fishidx_end_col <- max(start_col - fishidx_tmp_lag + 1, 1) # get end index
-              init$retro_data$UseFishIdx[r, start_col:fishidx_end_col, f] <- 0 # input 0 to lag incoming data into assessment
+              init$retro_data$UseFishIdx[r, start_col:fishidx_end_col,, f] <- 0 # input 0 to lag incoming data into assessment
             }
           } # end r loop
         } # end f loop
@@ -390,17 +390,17 @@ do_retrospective <- function(n_retro,
             # survey ages
             if(srvage_tmp_lag > 0) {
               srvage_end_col <- max(start_col - srvage_tmp_lag + 1, 1) # get end index
-              init$retro_data$UsesrvAgeComps[r, start_col:srvage_end_col, f] <- 0 # input 0 to lag incoming data into assessment
+              init$retro_data$UsesrvAgeComps[r, start_col:srvage_end_col,, f] <- 0 # input 0 to lag incoming data into assessment
             }
             # survey lengths
             if(srvlen_tmp_lag > 0) {
               srvlen_end_col <- max(start_col - srvlen_tmp_lag + 1, 1) # get end index
-              init$retro_data$UsesrvLenComps[r, start_col:srvlen_end_col, f] <- 0 # input 0 to lag incoming data into assessment
+              init$retro_data$UsesrvLenComps[r, start_col:srvlen_end_col,, f] <- 0 # input 0 to lag incoming data into assessment
             }
             # survey index
             if(srvidx_tmp_lag > 0) {
               srvidx_end_col <- max(start_col - srvidx_tmp_lag + 1, 1) # get end index
-              init$retro_data$UsesrvIdx[r, start_col:srvidx_end_col, f] <- 0 # input 0 to lag incoming data into assessment
+              init$retro_data$UsesrvIdx[r, start_col:srvidx_end_col,, f] <- 0 # input 0 to lag incoming data into assessment
             }
           } # end r loop
         } # end f loop
@@ -412,7 +412,7 @@ do_retrospective <- function(n_retro,
           init$retro_data$tag_release_indicator <- as.matrix(Tag_Release_Ind[-which(Tag_Release_Ind[,2] %in% start_col:tag_end_col), ]) # remove tag data when lagged
           init$retro_data$n_tag_cohorts <- nrow(init$retro_data$tag_release_indicator)
           init$retro_data$Tagged_Fish <- init$retro_data$Tagged_Fish[1:nrow(init$retro_data$tag_release_indicator),,,drop = FALSE] # remove data (not necessary, but helps with computational cost if using tagging)
-          init$retro_data$Obs_Tag_Recap <- init$retro_data$Obs_Tag_Recap[,1:nrow(init$retro_data$tag_release_indicator),,,,drop = FALSE] # remove data (not necessary, but helps with computational cost)
+          init$retro_data$Obs_Tag_Recap <- init$retro_data$Obs_Tag_Recap[,,1:nrow(init$retro_data$tag_release_indicator),,,,drop = FALSE] # remove data (not necessary, but helps with computational cost)
         }
 
         if(do_francis == FALSE) { # don't do francis within retrospective loop

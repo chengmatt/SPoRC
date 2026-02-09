@@ -170,7 +170,6 @@ for(r in 1:n_regions) {
 
 # Catch inputs
 ObsCatch <- array(0, dim = c(n_regions, n_years, n_fish_fleets))
-Catch_Type <- array(1, dim = c(n_years, n_fish_fleets))
 UseCatch <- array(1, dim = c(n_regions, n_years, n_fish_fleets))
 ObsCatch[] <- fish_catch
 
@@ -306,7 +305,6 @@ input_list <- Setup_Mod_Catch_and_F(
 
   # Data inputs
   ObsCatch = sgl_rg_dusky_data$ObsCatch,
-  Catch_Type = sgl_rg_dusky_data$Catch_Type,
   UseCatch = sgl_rg_dusky_data$UseCatch,
 
   # Model options

@@ -89,7 +89,6 @@ input_list <- Setup_Mod_Catch_and_F(
 
   # Data inputs
   ObsCatch = sgl_rg_dusky_data$ObsCatch,
-  Catch_Type = sgl_rg_dusky_data$Catch_Type,
   UseCatch = sgl_rg_dusky_data$UseCatch,
 
   # Model options

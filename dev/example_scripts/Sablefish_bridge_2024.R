@@ -78,7 +78,6 @@ input_list <- Setup_Mod_Movement(input_list = input_list,
 input_list <- Setup_Mod_Catch_and_F(input_list = input_list,
                                     # Data inputs
                                     ObsCatch = rtmb_data$ObsCatch,
-                                    Catch_Type = array(1, dim = c(length(input_list$data$years), input_list$data$n_fish_fleets)),
                                     UseCatch = rtmb_data$UseCatch,
                                     # Model options
                                     Use_F_pen = 1, # whether to use f penalty, == 0 don't use, == 1 use

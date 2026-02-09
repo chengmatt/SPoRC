@@ -190,7 +190,6 @@ input_list <- Setup_Mod_Tagging(input_list = input_list, UseTagging = 0)
 input_list <- Setup_Mod_Catch_and_F(input_list = input_list,
                                     # Data inputs
                                     ObsCatch = obscatch,
-                                    Catch_Type = catchtype,
                                     UseCatch = usecatch,
                                     # Model options
                                     Use_F_pen = 1,

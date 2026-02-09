@@ -5,10 +5,10 @@
 #' @param n_fleets Number of fleets (fishery or survey)
 #' @param Use Array from data list that specifies whether to use data that year
 #' @param ISS Input sample size array
-#' @param Pred_array Predicted values array dimensioned by n_regions, n_years, n_ages, n_sexes, n_fleets
-#' @param Obs_array Observed values array dimensioned by n_regions, n_years, n_ages, n_sexes, n_fleets
+#' @param Pred_array Predicted values array dimensioned by n_regions, n_years, n_seas, n_ages, n_sexes, n_fleets
+#' @param Obs_array Observed values array dimensioned by n_regions, n_years, n_seas, n_ages, n_sexes, n_fleets
 #' @param bins Vector of bins used (age or length)
-#' @param weights Array of francis weights (NAs) to apply dimensioned by n_regions, n_years, n_sexes, n_fleets
+#' @param weights Array of francis weights (NAs) to apply dimensioned by n_regions, n_years, n_seas, n_sexes, n_fleets
 #' @param comp_type Matrix of composition structure types dimensioned by year and fleet
 #'
 #' @returns List of values for calculated francis weight, and a dataframe of observed and expected means
@@ -27,16 +27,19 @@ get_francis_weights <- function(n_regions,
 
   mean_francis <- data.frame()
   n_years <- dim(Use)[2] # get n_years
+  n_seas <- dim(Use)[3] # get n_seas
 
   for(f in 1:n_fleets) {
 
-    data_indices <- matrix(nrow=0, ncol=2)  # storage container for data indices
+    data_indices <- matrix(nrow=0, ncol=3)  # storage container for data indices
 
     for(r in 1:n_regions) {
       for(y in 1:n_years) {
-        if(Use[r, y, f] == 1) {
-          data_indices <- rbind(data_indices, c(r, y)) # get data indices by regionn and year
-        } # end if
+        for(seas in 1:n_seas) {
+          if(Use[r, y, seas, f] == 1) {
+            data_indices <- rbind(data_indices, c(r, y, seas)) # get data indices by regionn and year
+          } # end if
+        } # end seas loop
       } # end y loop
     } # end r loop
 
@@ -46,50 +49,53 @@ get_francis_weights <- function(n_regions,
     data_yrs <- sort(unique(data_indices[,2]))
 
     # Set up reweighting vectors
-    exp_bar <- array(NA, dim = c(length(unique(data_indices[,1])), length(data_yrs), n_sexes), dimnames = list(NULL, data_yrs, NULL)) # mean expected
-    obs_bar <- array(NA, dim = c(length(unique(data_indices[,1])), length(data_yrs), n_sexes), dimnames = list(NULL, data_yrs, NULL))  # mean observed
-    v_y <- array(NA, dim = c(length(unique(data_indices[,1])), length(data_yrs), n_sexes))  # variance
-    w_denom <- array(NA, dim = c(length(unique(data_indices[,1])), length(data_yrs), n_sexes))  # weight factor in denominator
+    exp_bar <- array(NA, dim = c(n_regions, length(data_yrs), n_seas, n_sexes),  dimnames = list(NULL, data_yrs, NULL, NULL))
+    obs_bar <- array(NA, dim = c(n_regions, length(data_yrs), n_seas, n_sexes), dimnames = list(NULL, data_yrs, NULL, NULL))
+    v_y <- array(NA, dim = c(n_regions, length(data_yrs), n_seas, n_sexes))
+    w_denom <- array(NA, dim = c(n_regions, length(data_yrs), n_seas, n_sexes))
 
     for(y in data_yrs) {
 
-      # Extract out temporary variables
-      tmp_iss_obs <- ISS[,y,,f, drop = FALSE] # temporary ISS
-      tmp_exp <- Pred_array[,y,,,f, drop = FALSE] # temporary expected values
-      tmp_obs <- Obs_array[,y,,,f, drop = FALSE] # temporary observed values
-      yr_alt_idx <- which(data_yrs == y) # get indexing to start from 1
-      use_regions <- data_indices[which(data_indices[,2] == y)] # get regions with data
+      for(seas in 1:n_seas) {
 
-      # If compositions are aggregated across regions and sexes
-      if(comp_type[y,f] == 0) {
-        exp_bar[1,yr_alt_idx,1] <- sum(bins * as.vector(tmp_exp[1,1,,1,1])) # get mean pred comps
-        obs_bar[1,yr_alt_idx,1] <- sum(bins * as.vector(tmp_obs[1,1,,1,1])) # get mean obs comps
-        v_y[1,yr_alt_idx,1] <- sum(bins^2*tmp_exp[1,1,,1,1])-exp_bar[1,yr_alt_idx,1]^2 # get variance
-        w_denom[1,yr_alt_idx,1] <- (obs_bar[1,yr_alt_idx,1]-exp_bar[1,yr_alt_idx,1])/sqrt(v_y[1,yr_alt_idx,1]/tmp_iss_obs[1,1,1,1]) # get weights
-      } # end if aggregated
+        # Extract out temporary variables
+        tmp_iss_obs <- ISS[,y,seas,,f, drop = FALSE] # temporary ISS
+        tmp_exp <- Pred_array[,y,seas,,,f, drop = FALSE] # temporary expected values
+        tmp_obs <- Obs_array[,y,seas,,,f, drop = FALSE] # temporary observed values
+        yr_alt_idx <- which(data_yrs == y) # get indexing to start from 1
+        use_regions <- data_indices[which(data_indices[,2] == y & data_indices[,3] == seas),1] # get regions with data
 
-      # If compositions are split by region and sex
-      if(comp_type[y,f] == 1) {
-        for(r in use_regions) {
-          for(s in 1:n_sexes) {
-            exp_bar[r,yr_alt_idx,s] <- sum(bins * as.vector(tmp_exp[r,1,,s,1])) # get mean pred comps
-            obs_bar[r,yr_alt_idx,s] <- sum(bins * as.vector(tmp_obs[r,1,,s,1])) # get mean obs comps
-            v_y[r,yr_alt_idx,s] <- sum(bins^2*tmp_exp[r,1,,s,1])-exp_bar[r,yr_alt_idx,s]^2 # get variance
-            w_denom[r,yr_alt_idx,s] <- (obs_bar[r,yr_alt_idx,s]-exp_bar[r,yr_alt_idx,s])/sqrt(v_y[r,yr_alt_idx,s]/tmp_iss_obs[r,1,s,1]) # get weights
-          } # end s loop
-        } # end r loop
-      } # end if split by region and sex
+        # If compositions are aggregated across regions and sexes
+        if(comp_type[y,f] == 0) {
+          exp_bar[1,yr_alt_idx,seas,1] <- sum(bins * as.vector(tmp_exp[1,1,1,,1,1])) # get mean pred comps
+          obs_bar[1,yr_alt_idx,seas,1] <- sum(bins * as.vector(tmp_obs[1,1,1,,1,1])) # get mean obs comps
+          v_y[1,yr_alt_idx,seas,1] <- sum(bins^2*tmp_exp[1,1,1,,1,1])-exp_bar[1,yr_alt_idx,seas,1]^2 # get variance
+          w_denom[1,yr_alt_idx,seas,1] <- (obs_bar[1,yr_alt_idx,seas,1]-exp_bar[1,yr_alt_idx,seas,1])/sqrt(v_y[1,yr_alt_idx,seas,1]/tmp_iss_obs[1,1,1,1,1]) # get weights
+        } # end if aggregated
 
-      # If compositions are split by region, but joint by sex
-      if(comp_type[y,f] == 2) {
-        for(r in use_regions) {
-          exp_bar[r,yr_alt_idx,1] <- sum(bins * rowSums(tmp_exp[r,1,,,1])) # input mean pred comps
-          obs_bar[r,yr_alt_idx,1] <- sum(bins * rowSums(tmp_obs[r,1,,,1])) # input mean obs comps
-          v_y[r,yr_alt_idx,1] <- sum(bins^2*rowSums(tmp_exp[r,1,,,1]))-exp_bar[r,yr_alt_idx,1]^2  # variance
-          w_denom[r,yr_alt_idx,1] <- (obs_bar[r,yr_alt_idx,1]-exp_bar[r,yr_alt_idx,1])/sqrt(v_y[r,yr_alt_idx,1]/tmp_iss_obs[r,1,1,1]) # get weights
-        } # end r loop
-      } # end if split by region, joint by sex
+        # If compositions are split by region and sex
+        if(comp_type[y,f] == 1) {
+          for(r in use_regions) {
+            for(s in 1:n_sexes) {
+              exp_bar[r,yr_alt_idx,seas,s] <- sum(bins * as.vector(tmp_exp[r,1,1,,s,1])) # get mean pred comps
+              obs_bar[r,yr_alt_idx,seas,s] <- sum(bins * as.vector(tmp_obs[r,1,1,,s,1])) # get mean obs comps
+              v_y[r,yr_alt_idx,seas,s] <- sum(bins^2*tmp_exp[r,1,1,,s,1])-exp_bar[r,yr_alt_idx,seas,s]^2 # get variance
+              w_denom[r,yr_alt_idx,seas,s] <- (obs_bar[r,yr_alt_idx,seas,s]-exp_bar[r,yr_alt_idx,seas,s])/sqrt(v_y[r,yr_alt_idx,seas,s]/tmp_iss_obs[r,1,1,s,1]) # get weights
+            } # end s loop
+          } # end r loop
+        } # end if split by region and sex
 
+        # If compositions are split by region, but joint by sex
+        if(comp_type[y,f] == 2) {
+          for(r in use_regions) {
+            exp_bar[r,yr_alt_idx,seas,1] <- sum(bins * rowSums(tmp_exp[r,1,1,,,1])) # input mean pred comps
+            obs_bar[r,yr_alt_idx,seas,1] <- sum(bins * rowSums(tmp_obs[r,1,1,,,1])) # input mean obs comps
+            v_y[r,yr_alt_idx,seas,1] <- sum(bins^2*rowSums(tmp_exp[r,1,1,,,1]))-exp_bar[r,yr_alt_idx,seas,1]^2  # variance
+            w_denom[r,yr_alt_idx,seas,1] <- (obs_bar[r,yr_alt_idx,seas,1]-exp_bar[r,yr_alt_idx,seas,1])/sqrt(v_y[r,yr_alt_idx,seas,1]/tmp_iss_obs[r,1,1,1,1]) # get weights
+          } # end r loop
+        } # end if split by region, joint by sex
+
+      } # end seas loop
     } # end y loop
 
     # get unique composition types
@@ -100,23 +106,25 @@ get_francis_weights <- function(n_regions,
       # get year pointer index to subset w_denom and calculate weights separately for each composition type
       year_pointer <- which(comp_type[data_yrs,f] == unique_comp_type[j])
 
-      # if aggregated or joint by region and sex
-      if(unique_comp_type[j] == 0) weights[1,data_yrs,1,f] <- 1 / var(w_denom[1,year_pointer,1], na.rm = TRUE)
+      for(seas in 1:n_seas) {
+        # if aggregated or joint by region and sex
+        if(unique_comp_type[j] == 0) weights[1,data_yrs,seas,1,f] <- 1 / var(w_denom[1,year_pointer,seas,1], na.rm = TRUE)
 
-      # if split by sex and region
-      if(unique_comp_type[j] == 1) for(r in 1:n_regions) for(s in 1:n_sexes) weights[r,data_yrs,s,f] <- 1 / var(w_denom[r,year_pointer,s], na.rm = TRUE)
+        # if split by sex and region
+        if(unique_comp_type[j] == 1) for(r in 1:n_regions) for(s in 1:n_sexes) weights[r,data_yrs,seas,s,f] <- 1 / var(w_denom[r,year_pointer,seas,s], na.rm = TRUE)
 
-      # if split by region, joint by sex
-      if(unique_comp_type[j] == 2) for(r in 1:n_regions) weights[r,data_yrs,1,f] <- 1 / var(w_denom[r,year_pointer,1], na.rm = TRUE)
+        # if split by region, joint by sex
+        if(unique_comp_type[j] == 2) for(r in 1:n_regions) weights[r,data_yrs,seas,1,f] <- 1 / var(w_denom[r,year_pointer,seas,1], na.rm = TRUE)
+      } # end seas loop
 
     } # end j loop
 
     # Summarize observed and expected means
     tmp_means <- reshape2::melt(obs_bar) %>%
-      dplyr::rename(Region = Var1, Comp_Year = Var2, Sex = Var3, obs = value) %>%
+      dplyr::rename(Region = Var1, Comp_Year = Var2, Comp_Seas = Var3, Sex = Var4, obs = value) %>%
       dplyr::left_join(reshape2::melt(exp_bar) %>%
-                         dplyr::rename(Region = Var1, Comp_Year = Var2, Sex = Var3, pred = value),
-                       by = c("Region", "Comp_Year", "Sex")) %>%
+                         dplyr::rename(Region = Var1, Comp_Year = Var2, Comp_Seas = Var3, Sex = Var4, pred = value),
+                         by = c("Region", "Comp_Year", "Comp_Seas", "Sex")) %>%
       dplyr::mutate(Fleet = f)
 
     mean_francis <- rbind(mean_francis, tmp_means)
@@ -400,7 +408,7 @@ run_francis <- function(data,
     wts <- do_francis_reweighting(
       data = data, rep = rep,
       # uses fishery ages to index, because of potential for uneven number of observed and modelled ages
-      age_labels = 1:dim(data$ObsFishAgeComps)[3],
+      age_labels = 1:dim(data$ObsFishAgeComps)[4],
       len_labels = data$lens,
       year_labels = data$years
     )
@@ -415,7 +423,7 @@ run_francis <- function(data,
     srv_age_wts_df <- reshape2::melt(wts$new_srv_age_wts); srv_age_wts_df$Type <- "Survey Ages"
     srv_len_wts_df <- reshape2::melt(wts$new_srv_len_wts); srv_len_wts_df$Type <- "Survey Lengths"
     tmp_wts_df <- rbind(fish_age_wts_df, fish_len_wts_df, srv_age_wts_df, srv_len_wts_df) # bind dataframes together
-    colnames(tmp_wts_df) <- c("Region", "Year", "Sex", "Fleet", "Weight", "Type") # rename columns
+    colnames(tmp_wts_df) <- c("Region", "Year", "Seas", "Sex", "Fleet", "Weight", "Type") # rename columns
     tmp_wts_df$iter <- j # indicate francis iteration
     wts_df <- rbind(wts_df, tmp_wts_df) # update dataframe
     print(paste("Francis iteration:", j)) # print francis iteration

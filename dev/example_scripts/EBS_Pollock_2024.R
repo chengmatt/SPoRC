@@ -35,7 +35,6 @@ ebswp_SPoRC_data$AgeingError <- as.matrix(in_dat$age_err)
 
 # Catch stuff
 ebswp_SPoRC_data$ObsCatch <- array(in_dat$obs_catch, dim = c(1, length(in_dat$obs_catch), 1))
-ebswp_SPoRC_data$Catch_Type <- array(1, dim = c(length(ebswp_SPoRC_data$years), 1))
 ebswp_SPoRC_data$UseCatch <- array(1, dim = c(1, length(in_dat$obs_catch), 1))
 
 # Fishery Indices and Compositions
@@ -202,7 +201,6 @@ usethis::use_data(sgl_rg_ebswp_data, internal = FALSE, overwrite = TRUE)
 
     # Data inputs
     ObsCatch = sgl_rg_ebswp_data$ObsCatch,
-    Catch_Type = sgl_rg_ebswp_data$Catch_Type,
     UseCatch = sgl_rg_ebswp_data$UseCatch,
 
     # Model options

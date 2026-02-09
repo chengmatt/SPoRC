@@ -294,28 +294,28 @@ do_likelihood_profile <- function(data,
     dplyr::rename(prof_val = Var1) %>%
     dplyr::mutate(type = 'FmortPen')
   Catch_nLL_df <- Catch_nLL %>%
-    dplyr::rename(Region = Var1, Year = Var2, Fleet = Var3) %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
     dplyr::mutate(type = 'Catch')
   FishAge_nLL_df <- FishAge_nLL %>%
-    dplyr::rename(Region = Var1, Year = Var2, Sex = Var3, Fleet = Var4) %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
     dplyr::mutate(type = 'FishAge')
   SrvAge_nLL_df <- SrvAge_nLL %>%
-    dplyr::rename(Region = Var1, Year = Var2, Sex = Var3, Fleet = Var4) %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
     dplyr::mutate(type = 'SrvAge')
   FishLen_nLL_df <- FishLen_nLL %>%
-    dplyr::rename(Region = Var1, Year = Var2, Sex = Var3, Fleet = Var4) %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
     dplyr::mutate(type = 'FishLen')
   SrvLen_nLL_df <- SrvLen_nLL %>%
-    dplyr::rename(Region = Var1, Year = Var2, Sex = Var3, Fleet = Var4) %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
     dplyr::mutate(type = 'SrvLen')
-  FishIdx_nLL_df <- FishLen_nLL %>%
-    dplyr::rename(Region = Var1, Year = Var2, Fleet = Var3) %>%
+  FishIdx_nLL_df <- FishIdx_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
     dplyr::mutate(type = 'FishIdx')
   SrvIdx_nLL_df <- SrvIdx_nLL %>%
-    dplyr::rename(Region = Var1, Year = Var2, Fleet = Var3) %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
     dplyr::mutate(type = 'SrvIdx')
   Tag_nLL_df <- Tag_nLL %>%
-    dplyr::rename(Recap_Year = Var1, Tag_Cohort = Var2, Region = Var3, Age = Var4, Sex = Var5) %>%
+    dplyr::rename(Recap_Year = Var1, Recap_Seas = Var2, Tag_Cohort = Var3, Region = Var4, Age = Var5, Sex = Var6) %>%
     dplyr::mutate(type = 'Tagging')
 
   # Get likelihoods aggregated across all dimensions

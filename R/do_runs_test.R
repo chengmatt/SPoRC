@@ -8,53 +8,6 @@
 #' @export do_runs_test
 #' @family Model Diagnostics
 #' @import randtests
-#' @examples
-#' \dontrun{
-#'  idx_fits <- get_idx_fits(data = data, rep = rep,
-#'  year_labs = seq(1960, 2024, 1))
-#'   idx_fits <- idx_fits %>%
-#'     mutate(
-#'       Idx = case_when(
-#'         Type == "Fishery" & Year < 1995 ~
-#'          "Japanese Fishery CPUE Index",
-#'         Type == "Fishery" & Year >= 1995 ~
-#'          "Domestic Fishery CPUE Index",
-#'         Type == 'Survey' & Fleet == 1 ~
-#'         "Domestic LL Survey Relative Population Numbers",
-#'         Type == 'Survey' & Fleet == 2 ~
-#'         "GOA Trawl Survey Biomass (kt)",
-#'         Type == 'Survey' & Fleet == 3 ~
-#'         'Japanese LL Survey Relative Population Numbers'
-#'       )
-#'     )
-#'
-#'   unique_idx <- unique(idx_fits$Idx)
-#'   runs_all <- data.frame()
-#'   for(i in 1:length(unique(idx_fits$Idx))) {
-#'     tmp <- idx_fits %>% filter(Idx == unique_idx[i])
-#'     runstest <- do_runs_test(x=as.numeric(tmp$resid),
-#'     type="resid", mixing = "less")
-#'     tmp_runs <- data.frame(p = runstest$p.runs,
-#'      lwr = runstest$sig3lim[1], upr = runstest$sig3lim[2],
-#'      Idx = unique_idx[i])
-#'     runs_all <- rbind(runs_all, tmp_runs)
-#'   } # end i
-#'
-#'   ggplot() +
-#'     geom_point(idx_fits, mapping = aes(x = Year, y = resid)) +
-#'     geom_segment(idx_fits, mapping =
-#'     aes(x = Year, xend = Year, y = 0, yend = resid)) +
-#'     geom_smooth(idx_fits, mapping = aes(x = Year, y = resid), se = F) +
-#'     geom_hline(yintercept = 0, lty = 2) +
-#'     geom_hline(runs_all, mapping = aes(yintercept = upr), lty = 2) +
-#'     geom_hline(runs_all, mapping = aes(yintercept = lwr), lty = 2) +
-#'     geom_text(data = runs_all, aes(x = -Inf, y = Inf,
-#'     label = paste("p = ", round(p, 3))), hjust = -0.5,
-#'     vjust = 8.2, size = 7)+
-#'     labs(x = "Year", y = 'Residuals') +
-#'     theme_bw(base_size = 20) +
-#'     facet_wrap(~Idx, scales = 'free', ncol = 2)
-#' }
 do_runs_test <- function(x,
                          type = NULL,
                          mixing = "two.sided"

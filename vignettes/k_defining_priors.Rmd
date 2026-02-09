@@ -22,7 +22,7 @@ In `SPoRC`, priors can be placed on several parameters. These include:
 2. Natural Mortality,
 3. Catchability,
 4. Selectivity,
-5.  Movement, 
+5. Movement, 
 6. Tag Reporting Rates, and
 7. Recruitment Proportions
 
@@ -218,11 +218,12 @@ input_list <- Setup_Mod_Dim(years = 1:length(mlt_rg_sable_data$years),
 )
 ```
 
-Because movement parameters are correlated and must sum to 1, `SPoRC` uses a Dirichlet prior to model movement probabilities. To illustrate, we set up the movement specification using the `Setup_Mod_Movement` function. Movement priors are enabled by setting `Use_Movement_Prior = 1`. The `Movement_prior` argument must be provided as a dataframe where each row corresponds to an origin region (and age or sex index) and includes a list-column alpha specifying the Dirichlet shape parameters that define the prior over movement probabilities to all destination regions.
+Because movement parameters are correlated and must sum to 1, `SPoRC` uses a Dirichlet prior to model movement probabilities. To illustrate, we set up the movement specification using the `Setup_Mod_Movement` function. Movement priors are enabled by setting `Use_Movement_Prior = 1`. The `Movement_prior` argument must be provided as a dataframe where each row corresponds to an origin region (year, age or sex index) and includes a list-column alpha specifying the Dirichlet shape parameters that define the prior over movement probabilities to all destination regions.
 
 ```{r}
 prior <- expand.grid(
     region_from = 1:input_list$data$n_regions, # regions
+    year = 1, # penalize first year since no blocks
     age = 1, # age blocks
     sex = 1, # sex
     alpha = I(list(rep(2, input_list$data$n_regions))) # prior alpha to each row

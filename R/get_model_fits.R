@@ -13,31 +13,6 @@
 #' \dontrun{
 #' idx_fits <- get_idx_fits(data = data, rep = rep,
 #'  year_labs = seq(1960, 2024, 1))
-#'
-#' idx_fits <- idx_fits %>%
-#'   mutate(
-#'     Idx = case_when(
-#'       Type == "Fishery" & Year < 1995 ~
-#'       "Japanese Fishery CPUE Index",
-#'       Type == "Fishery" & Year >= 1995 ~
-#'       "Domestic Fishery CPUE Index",
-#'       Type == 'Survey' & Fleet == 1 ~
-#'       "Domestic LL Survey Relative Population Numbers",
-#'       Type == 'Survey' & Fleet == 2 ~
-#'       "GOA Trawl Survey Biomass (kt)",
-#'       Type == 'Survey' & Fleet == 3 ~
-#'        'Japanese LL Survey Relative Population Numbers'
-#'     )
-#'   )
-#' ggplot() +
-#'   geom_line(idx_fits, mapping =
-#'   aes(x = Year, y = value), lwd = 1.3, col = 'red') +
-#'   geom_pointrange(idx_fits, mapping =
-#'   aes(x = Year, y = obs, ymin = lci, ymax = uci), color = 'blue', pch = 1) +
-#'   labs(x = "Year", y = 'Index') +
-#'   theme_bw(base_size = 20) +
-#'   facet_wrap(~Idx, scales = 'free', ncol = 2)
-#'
 #' }
 get_idx_fits <- function(data,
                          rep,
@@ -55,14 +30,14 @@ get_idx_fits <- function(data,
 
   # Observed survey index
   obs_srv <- reshape2::melt(data$ObsSrvIdx) %>% dplyr::rename(obs = value) %>%
-    dplyr::left_join(reshape2::melt(data$ObsSrvIdx_SE / sqrt(data$Wt_SrvIdx)) %>%  dplyr::rename(se = value), by = c("Var1", "Var2", "Var3")) %>%
+    dplyr::left_join(reshape2::melt(data$ObsSrvIdx_SE / sqrt(data$Wt_SrvIdx)) %>%  dplyr::rename(se = value), by = c("Var1", "Var2", "Var3", "Var4")) %>%
     dplyr::mutate(lci = exp(log(obs) - (1.96 * se)), uci = exp(log(obs) + (1.96 * se)), Type = 'Survey') %>%
     tidyr::drop_na() %>%
-    dplyr::rename(Region = Var1, Year = Var2, Fleet = Var3)
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4)
 
   # Predicted survey index
   pred_srv <- reshape2::melt(rep$PredSrvIdx) %>%
-    dplyr::rename(Region = Var1, Year = Var2, Fleet = Var3) %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
     dplyr::mutate(Type = 'Survey') %>%
     dplyr::filter(Year %in% unique(obs_srv$Year), value != 0)
 
@@ -73,7 +48,7 @@ get_idx_fits <- function(data,
 
   # combine survey results
   all_srv <- obs_srv %>%
-    dplyr::left_join(pred_srv, by = c("Region", "Year", "Fleet", 'Type')) %>%
+    dplyr::left_join(pred_srv, by = c("Region", "Year", "Seas", "Fleet", 'Type')) %>%
     dplyr::left_join(srv_q, by = c("Region", "Year", "Fleet", 'Type')) %>%
     dplyr::mutate(resid = log(obs) - log(value))
 
@@ -81,14 +56,14 @@ get_idx_fits <- function(data,
   obs_fish <- reshape2::melt(data$ObsFishIdx) %>%
     dplyr::rename(obs = value) %>%
     dplyr::left_join(reshape2::melt(data$ObsFishIdx_SE / sqrt(data$Wt_FishIdx)) %>%
-                       dplyr::rename(se = value), by = c("Var1", "Var2", "Var3")) %>%
+                       dplyr::rename(se = value), by = c("Var1", "Var2", "Var3", "Var4")) %>%
     dplyr::mutate(lci = exp(log(obs) - (1.96 * se)), uci = exp(log(obs) + (1.96 * se)), Type = 'Fishery') %>%
     tidyr::drop_na() %>%
-    dplyr::rename(Region = Var1, Year = Var2, Fleet = Var3)
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4)
 
   # Predicted fishery index
   pred_fish <- reshape2::melt(rep$PredFishIdx) %>%
-    dplyr::rename(Region = Var1, Year = Var2, Fleet = Var3) %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
     dplyr::mutate(Type = 'Fishery') %>%
     dplyr::filter(Year %in% unique(obs_fish$Year), value != 0)
 
@@ -99,17 +74,16 @@ get_idx_fits <- function(data,
 
   # combine survey results
   all_fish <- obs_fish %>%
-    dplyr::left_join(pred_fish, by = c("Region", "Year", "Fleet", 'Type')) %>%
+    dplyr::left_join(pred_fish, by = c("Region", "Year", "Seas", "Fleet", 'Type')) %>%
     dplyr::left_join(fish_q, by = c("Region", "Year", "Fleet", 'Type')) %>%
     dplyr::mutate(resid = log(obs) - log(value))
 
   all_idx <- rbind(all_fish, all_srv) %>%
-    dplyr::mutate(Category = paste(Type, Fleet, ", Q", q_block, sep = ''),
+    dplyr::mutate(Category = paste(Type, Fleet, ", Seas", Seas, ", Q", q_block, sep = ''),
                   Region = paste("Region", Region))
 
   return(all_idx)
 }
-
 #' Restructure composition values, used within a variety of functions to either do Francis reweighting or get observed and expected composition values
 #'
 #' @param Exp Expected values (catch at age or survey index at age) indexed for a given year and fleet (structured as a matrix by age and sex)
@@ -130,9 +104,7 @@ Restrc_Comps <- function(Exp,
                          Obs,
                          Comp_Type,
                          age_or_len,
-                         AgeingError,
-                         comp_agg_type
-                         ) {
+                         AgeingError) {
 
   const <- 0
 
@@ -142,9 +114,9 @@ Restrc_Comps <- function(Exp,
 
   # Dimensions
   n_regions <- dim(Exp)[1]
-  n_model_bins <- dim(Exp)[3]
-  n_obs_bins <- dim(Obs)[3]
-  n_sexes <- dim(Exp)[4]
+  n_model_bins <- dim(Exp)[4]
+  n_obs_bins <- dim(Obs)[4]
+  n_sexes <- dim(Exp)[5]
 
   # Storage (Expected values get converted to n_obs_bins dimensions)
   Exp_mat = array(NA, c(n_regions, n_obs_bins, n_sexes))
@@ -162,7 +134,7 @@ Restrc_Comps <- function(Exp,
     if(age_or_len == 1) tmp_Exp = as.vector((tmp_Exp) / sum(tmp_Exp)) # renormalize (lengths)
 
     # Normalize observed
-    tmp_Obs =  (Obs[1,1,,1,1]) / sum( Obs[1,1,,1,1])
+    tmp_Obs =  (Obs[1,1,1,,1,1]) / sum( Obs[1,1,1,,1,1])
 
     # Input into storage matrix
     Exp_mat[1,,1] = tmp_Exp
@@ -177,12 +149,12 @@ Restrc_Comps <- function(Exp,
 
         # Expected Values
         if(age_or_len == 0) {
-          tmp_Exp = ((Exp[r,1,,s,1]) / sum(Exp[r,1,,s,1])) %*% AgeingError # Normalize temporary variable (ages), collapses to observed age bins if ageing error is non square
+          tmp_Exp = ((Exp[r,1,1,,s,1]) / sum(Exp[r,1,1,,s,1])) %*% AgeingError # Normalize temporary variable (ages), collapses to observed age bins if ageing error is non square
           tmp_Exp = tmp_Exp / sum(tmp_Exp) # renormalize
         }
-        if(age_or_len == 1) tmp_Exp = (Exp[r,1,,s,1]) / sum(Exp[r,1,,s,1]) # normalize lengths
+        if(age_or_len == 1) tmp_Exp = (Exp[r,1,1,,s,1]) / sum(Exp[r,1,1,,s,1]) # normalize lengths
 
-        tmp_Obs = (Obs[r,1,,s,1]) / sum(Obs[r,1,,s,1]) # Normalize observed temporary variable
+        tmp_Obs = (Obs[r,1,1,,s,1]) / sum(Obs[r,1,1,,s,1]) # Normalize observed temporary variable
 
         # Input into storage matrix
         Exp_mat[r,,s] = tmp_Exp
@@ -195,12 +167,12 @@ Restrc_Comps <- function(Exp,
     for(r in 1:n_regions) {
       # Expected values
       if(age_or_len == 0) { # if ages
-        tmp_Exp = t(as.vector((Exp[r,1,,,1])/ sum(Exp[r,1,,,1]))) %*% kronecker(diag(n_sexes), AgeingError) # apply ageing error, collapses to observed age bins if ageing error is non square
+        tmp_Exp = t(as.vector((Exp[r,1,1,,,1])/ sum(Exp[r,1,1,,,1]))) %*% kronecker(diag(n_sexes), AgeingError) # apply ageing error, collapses to observed age bins if ageing error is non square
         tmp_Exp = as.vector((tmp_Exp) / sum(tmp_Exp)) # renormalize to make sure sum to 1
       } # if ages
-      if(age_or_len == 1) tmp_Exp = as.vector((Exp[r,1,,,1]) / sum((Exp[r,1,,,1]))) # Normalize temporary variable (lengths)
+      if(age_or_len == 1) tmp_Exp = as.vector((Exp[r,1,1,,,1]) / sum((Exp[r,1,1,,,1]))) # Normalize temporary variable (lengths)
 
-      tmp_Obs = (Obs[r,1,,,1]) / sum(Obs[r,1,,,1]) # Normalize observed temporary variable
+      tmp_Obs = (Obs[r,1,1,,,1]) / sum(Obs[r,1,1,,,1]) # Normalize observed temporary variable
 
       # Input into storage matrix
       Exp_mat[r,,] = array(tmp_Exp, dim = c(n_obs_bins, n_sexes))
@@ -230,37 +202,6 @@ Restrc_Comps <- function(Exp,
 #' \dontrun{
 #' comp_props <- get_comp_prop(data = data, rep = rep,
 #' age_labels = 2:31, len_labels = seq(41, 99, 2), year_labels = 1960:2024)
-#' comp_props$Fishery_Ages %>%
-#'   filter(Fleet == 1, Sex == 1) %>%
-#'   ggplot() +
-#'   geom_col(aes(x = Age, y = obs)) +
-#'   geom_line(aes(x = Age, y = pred)) +
-#'   facet_wrap(~Year, ncol = 3)
-#'
-#'   comp_props$Survey_Ages %>%
-#'     group_by(Region, Age, Sex, Fleet) %>%
-#'     summarize(lwr_obs = quantile(obs, 0.1),
-#'               upr_obs = quantile(obs, 0.9),
-#'               lwr_pred = quantile(pred, 0.1),
-#'               upr_pred = quantile(pred, 0.9),
-#'               obs = mean(obs),
-#'               pred = mean(pred)) %>%
-#'     ggplot() +
-#'     geom_line(mapping = aes(x = Age, y = obs,
-#'     color = 'Obs', lty = 'Obs'), lwd = 1.3) +
-#'     geom_ribbon(mapping = aes(x = Age, y = obs,
-#'     ymin = lwr_obs, ymax = upr_obs, fill = 'Obs'), alpha = 0.3) +
-#'     geom_line(mapping = aes(x = Age, y = pred,
-#'      color = 'Pred', lty = 'Pred'), lwd = 1.3) +
-#'     geom_ribbon(mapping = aes(x = Age, y = pred,
-#'      ymin = lwr_pred, ymax = upr_pred, fill = 'Pred'), alpha = 0.3) +
-#'     facet_grid(Region~Fleet, labeller = labeller(
-#'       Region = c('1' = "Region 1"),
-#'       Fleet = c('1' = 'Domestic LL Survey', '3' = 'JP LL Survey')
-#'     )) +
-#'     labs(x = 'Age', y = 'Proportion', color = '', linetype = '', fill = '') +
-#'     theme_bw(base_size = 20) +
-#'     theme(legend.position = 'top')
 #' }
 get_comp_prop <- function(data,
                           rep,
@@ -272,22 +213,23 @@ get_comp_prop <- function(data,
   # dimensinoing
   n_regions <- data$n_regions
   n_yrs <- length(data$years)
-  n_fish_ages <- dim(data$ObsFishAgeComps)[3]
-  n_srv_ages <- dim(data$ObsSrvAgeComps)[3]
+  n_seas <- data$n_seas
+  n_fish_ages <- dim(data$ObsFishAgeComps)[4]
+  n_srv_ages <- dim(data$ObsSrvAgeComps)[4]
   n_lens <- length(data$lens)
   n_sexes <- data$n_sexes
   n_fish_fleets <- data$n_fish_fleets
   n_srv_fleets <- data$n_srv_fleets
 
   # storage containers
-  Obs_FishAge <- array(data = NA, dim = c(n_regions, n_yrs, n_fish_ages, n_sexes, n_fish_fleets), dimnames = list(NULL, year_labels, age_labels, NULL, NULL)) # Obs fishery ages
-  Obs_FishLen <- array(data = NA, dim = c(n_regions, n_yrs, n_lens, n_sexes, n_fish_fleets), dimnames = list(NULL, year_labels, len_labels, NULL, NULL)) # Obs fishery lengths
-  Obs_SrvAge <- array(data = NA, dim = c(n_regions, n_yrs, n_srv_ages, n_sexes, n_srv_fleets), dimnames = list(NULL, year_labels, age_labels, NULL, NULL)) # Obs survey ages
-  Obs_SrvLen <- array(data = NA, dim = c(n_regions, n_yrs, n_lens, n_sexes, n_srv_fleets), dimnames = list(NULL, year_labels, len_labels, NULL, NULL)) # Obs survey lengths
-  Pred_FishAge <- array(data = NA, dim = c(n_regions, n_yrs, n_fish_ages, n_sexes, n_fish_fleets), dimnames = list(NULL, year_labels, age_labels, NULL, NULL)) # Predicted fishery ages
-  Pred_FishLen <- array(data = NA, dim = c(n_regions, n_yrs, n_lens, n_sexes, n_fish_fleets), dimnames = list(NULL, year_labels, len_labels, NULL, NULL)) # Predicted fishery lengths
-  Pred_SrvAge <- array(data = NA, dim = c(n_regions, n_yrs, n_srv_ages, n_sexes, n_srv_fleets), dimnames = list(NULL, year_labels, age_labels, NULL, NULL)) # Predicted survey ages
-  Pred_SrvLen <- array(data = NA, dim = c(n_regions, n_yrs, n_lens, n_sexes, n_srv_fleets), dimnames = list(NULL, year_labels, len_labels, NULL, NULL)) # Predicted survey lengths
+  Obs_FishAge <- array(data = NA, dim = c(n_regions, n_yrs, n_seas, n_fish_ages, n_sexes, n_fish_fleets), dimnames = list(NULL, year_labels, NULL, age_labels, NULL, NULL)) # Obs fishery ages
+  Obs_FishLen <- array(data = NA, dim = c(n_regions, n_yrs,  n_seas, n_lens, n_sexes, n_fish_fleets), dimnames = list(NULL, year_labels, NULL, len_labels, NULL, NULL)) # Obs fishery lengths
+  Obs_SrvAge <- array(data = NA, dim = c(n_regions, n_yrs,  n_seas, n_srv_ages, n_sexes, n_srv_fleets), dimnames = list(NULL, year_labels, NULL, age_labels, NULL, NULL)) # Obs survey ages
+  Obs_SrvLen <- array(data = NA, dim = c(n_regions, n_yrs,  n_seas, n_lens, n_sexes, n_srv_fleets), dimnames = list(NULL, year_labels, NULL, len_labels, NULL, NULL)) # Obs survey lengths
+  Pred_FishAge <- array(data = NA, dim = c(n_regions, n_yrs,  n_seas, n_fish_ages, n_sexes, n_fish_fleets), dimnames = list(NULL, year_labels, NULL,  age_labels, NULL, NULL)) # Predicted fishery ages
+  Pred_FishLen <- array(data = NA, dim = c(n_regions, n_yrs, n_seas, n_lens, n_sexes, n_fish_fleets), dimnames = list(NULL, year_labels, NULL,  len_labels, NULL, NULL)) # Predicted fishery lengths
+  Pred_SrvAge <- array(data = NA, dim = c(n_regions, n_yrs, n_seas, n_srv_ages, n_sexes, n_srv_fleets), dimnames = list(NULL, year_labels, NULL, age_labels, NULL, NULL)) # Predicted survey ages
+  Pred_SrvLen <- array(data = NA, dim = c(n_regions, n_yrs, n_seas, n_lens, n_sexes, n_srv_fleets), dimnames = list(NULL, year_labels, NULL, len_labels, NULL, NULL)) # Predicted survey lengths
 
   # Get quantities
   # setup ageing error if user-supplied is not year specific
@@ -331,91 +273,99 @@ get_comp_prop <- function(data,
   # Fishery Ages
   for(y in 1:n_yrs) {
     for(f in 1:n_fish_fleets) {
+      for(seas in 1:n_seas) {
 
-      # figure out regions with obs
-      use_regions <- which(UseFishAgeComps[,y,f] == 1)
+        # figure out regions with obs
+        use_regions <- which(UseFishAgeComps[,y,seas,f] == 1)
 
-      if(sum(use_regions) > 0) {
-        Exp <- CAA[,y,,,f, drop = FALSE] # expected
-        Obs <- ObsFishAgeComps[,y,,,f, drop = FALSE] # observed
-        Comp_Type <- FishAge_CompType[y,f] # composition type
+        if(sum(use_regions) > 0) {
+          Exp <- CAA[,y,seas,,,f, drop = FALSE] # expected
+          Obs <- ObsFishAgeComps[,y,seas,,,f, drop = FALSE] # observed
+          Comp_Type <- FishAge_CompType[y,f] # composition type
 
-        # reformat expected compositions
-        tmp_comps <- Restrc_Comps(Exp = Exp, Obs = Obs, Comp_Type = Comp_Type,
-                                  age_or_len = 0, AgeingError = AgeingError_t[y,,])
-        # Input into storage
-        Obs_FishAge[,y,,,f] <- tmp_comps$Obs
-        Pred_FishAge[,y,,,f] <- tmp_comps$Exp
-      }
+          # reformat expected compositions
+          tmp_comps <- Restrc_Comps(Exp = Exp, Obs = Obs, Comp_Type = Comp_Type,
+                                    age_or_len = 0, AgeingError = AgeingError_t[y,,])
+          # Input into storage
+          Obs_FishAge[,y,seas,,,f] <- tmp_comps$Obs
+          Pred_FishAge[,y,seas,,,f] <- tmp_comps$Exp
+        }
 
+      } # end seas loop
     } # end f
   } # end y
 
   # Fishery Lengths
   for(y in 1:n_yrs) {
     for(f in 1:n_fish_fleets) {
+      for(seas in 1:n_seas) {
 
-      use_regions <- which(UseFishLenComps[,y,f] == 1) # figure out regions with obs
+        use_regions <- which(UseFishLenComps[,y,seas,f] == 1) # figure out regions with obs
 
-      if(sum(use_regions) > 0) {
-        Exp <- CAL[,y,,,f, drop = FALSE] # expected
-        Obs <- ObsFishLenComps[,y,,,f, drop = FALSE] # observed
-        Comp_Type <- FishLen_CompType[y,f] # composition type
+        if(sum(use_regions) > 0) {
+          Exp <- CAL[,y,seas,,,f, drop = FALSE] # expected
+          Obs <- ObsFishLenComps[,y,seas,,,f, drop = FALSE] # observed
+          Comp_Type <- FishLen_CompType[y,f] # composition type
 
-        # get compositions
-        tmp_comps <- Restrc_Comps(Exp = Exp, Obs = Obs, Comp_Type = Comp_Type,
-                                  age_or_len = 1, AgeingError = NA)
-        # Input into storage
-        Obs_FishLen[,y,,,f] <- tmp_comps$Obs
-        Pred_FishLen[,y,,,f] <- tmp_comps$Exp
-      }
+          # get compositions
+          tmp_comps <- Restrc_Comps(Exp = Exp, Obs = Obs, Comp_Type = Comp_Type,
+                                    age_or_len = 1, AgeingError = NA)
+          # Input into storage
+          Obs_FishLen[,y,seas,,,f] <- tmp_comps$Obs
+          Pred_FishLen[,y,seas,,,f] <- tmp_comps$Exp
+        }
 
+      } # end seas
     } # end f
   } # end y
 
   # Survey Ages
   for(y in 1:n_yrs) {
     for(f in 1:n_srv_fleets) {
+      for(seas in 1:n_seas) {
 
-      # figure out regions with obs
-      use_regions <- which(UseSrvAgeComps[,y,f] == 1)
+        # figure out regions with obs
+        use_regions <- which(UseSrvAgeComps[,y,seas,f] == 1)
 
-      if(sum(use_regions) > 0) {
-        Exp <- SrvIAA[,y,,,f, drop = FALSE] # expected
-        Obs <- ObsSrvAgeComps[,y,,,f, drop = FALSE] # observed
-        Comp_Type <- SrvAge_CompType[y,f] # composition type
+        if(sum(use_regions) > 0) {
+          Exp <- SrvIAA[,y,seas,,,f, drop = FALSE] # expected
+          Obs <- ObsSrvAgeComps[,y,seas,,,f, drop = FALSE] # observed
+          Comp_Type <- SrvAge_CompType[y,f] # composition type
 
-        # reformat expected compositions
-        tmp_comps <- Restrc_Comps(Exp = Exp, Obs = Obs, Comp_Type = Comp_Type,
-                                  age_or_len = 0, AgeingError = AgeingError_t[y,,])
-        # Input into storage
-        Obs_SrvAge[,y,,,f] <- tmp_comps$Obs
-        Pred_SrvAge[,y,,,f] <- tmp_comps$Exp
-      }
+          # reformat expected compositions
+          tmp_comps <- Restrc_Comps(Exp = Exp, Obs = Obs, Comp_Type = Comp_Type,
+                                    age_or_len = 0, AgeingError = AgeingError_t[y,,])
+          # Input into storage
+          Obs_SrvAge[,y,seas,,,f] <- tmp_comps$Obs
+          Pred_SrvAge[,y,seas,,,f] <- tmp_comps$Exp
+        }
 
+      } # end seas loop
     } # end f
   } # end y
 
   # Survey Lengths
   for(y in 1:n_yrs) {
     for(f in 1:n_srv_fleets) {
+      for(seas in 1:n_seas) {
 
-      # figure out regions with obs
-      use_regions <- which(UseSrvLenComps[,y,f] == 1)
+        # figure out regions with obs
+        use_regions <- which(UseSrvLenComps[,y,seas,f] == 1)
 
-      if(sum(use_regions) > 0) {
-        Exp <- SrvIAL[,y,,,f, drop = FALSE] # expected
-        Obs <- ObsSrvLenComps[,y,,,f, drop = FALSE] # observed
-        Comp_Type <- SrvLen_CompType[y,f] # composition type
+        if(sum(use_regions) > 0) {
+          Exp <- SrvIAL[,y,seas,,,f, drop = FALSE] # expected
+          Obs <- ObsSrvLenComps[,y,seas,,,f, drop = FALSE] # observed
+          Comp_Type <- SrvLen_CompType[y,f] # composition type
 
-        # reformat expected compositions
-        tmp_comps <- Restrc_Comps(Exp = Exp, Obs = Obs, Comp_Type = Comp_Type,
-                                  age_or_len = 1, AgeingError = NA)
-        # Input into storage
-        Obs_SrvLen[,y,,,f] <- tmp_comps$Obs
-        Pred_SrvLen[,y,,,f] <- tmp_comps$Exp
-      }
+          # reformat expected compositions
+          tmp_comps <- Restrc_Comps(Exp = Exp, Obs = Obs, Comp_Type = Comp_Type,
+                                    age_or_len = 1, AgeingError = NA)
+          # Input into storage
+          Obs_SrvLen[,y,seas,,,f] <- tmp_comps$Obs
+          Pred_SrvLen[,y,seas,,,f] <- tmp_comps$Exp
+        }
 
+      } # end seas
     } # end f
   } # end y
 
@@ -423,32 +373,32 @@ get_comp_prop <- function(data,
   all_fishages <- reshape2::melt(Obs_FishAge) %>%
     dplyr::rename(obs = value) %>%
     tidyr::drop_na() %>%
-    dplyr::left_join(reshape2::melt(Pred_FishAge) %>% dplyr::rename(pred = value), by = c("Var1", "Var2", "Var3", "Var4", "Var5")) %>%
-    dplyr::rename(Region = Var1, Year = Var2, Age = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::left_join(reshape2::melt(Pred_FishAge) %>% dplyr::rename(pred = value), by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6")) %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Age = Var4, Sex = Var5, Fleet = Var6) %>%
     dplyr::mutate(Type = 'Fishery Ages')
 
   # Fish Lengths
   all_fishlens <- reshape2::melt(Obs_FishLen) %>%
     dplyr::rename(obs = value) %>%
     tidyr::drop_na() %>%
-    dplyr::left_join(reshape2::melt(Pred_FishLen) %>% dplyr::rename(pred = value), by = c("Var1", "Var2", "Var3", "Var4", "Var5")) %>%
-    dplyr::rename(Region = Var1, Year = Var2, Len = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::left_join(reshape2::melt(Pred_FishLen) %>% dplyr::rename(pred = value), by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6")) %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Len = Var4, Sex = Var5, Fleet = Var6) %>%
     dplyr::mutate(Type = 'Fishery Lengths')
 
   # Survey Ages
   all_srvages <- reshape2::melt(Obs_SrvAge) %>%
     dplyr::rename(obs = value) %>%
     tidyr::drop_na() %>%
-    dplyr::left_join(reshape2::melt(Pred_SrvAge) %>% dplyr::rename(pred = value), by = c("Var1", "Var2", "Var3", "Var4", "Var5")) %>%
-    dplyr::rename(Region = Var1, Year = Var2, Age = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::left_join(reshape2::melt(Pred_SrvAge) %>% dplyr::rename(pred = value), by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6")) %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Age = Var4, Sex = Var5, Fleet = Var6) %>%
     dplyr::mutate(Type = 'Survey Ages')
 
   # Survey Lengths
   all_srvlens <- reshape2::melt(Obs_SrvLen) %>%
     dplyr::rename(obs = value) %>%
     tidyr::drop_na() %>%
-    dplyr::left_join(reshape2::melt(Pred_SrvLen) %>% dplyr::rename(pred = value), by = c("Var1", "Var2", "Var3", "Var4", "Var5")) %>%
-    dplyr::rename(Region = Var1, Year = Var2, Len = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::left_join(reshape2::melt(Pred_SrvLen) %>% dplyr::rename(pred = value), by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6")) %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Len = Var4, Sex = Var5, Fleet = Var6) %>%
     dplyr::mutate(Type = 'Survey Lengths')
 
   return(list(# data frames of observed and expected comps
@@ -671,12 +621,13 @@ run_osa <- function(obs,
 #'   }
 #'   Use [get_logistN_Sigma()] to help construct this input.
 #' @param addtocomp Constant that is added to compositions
+#' @param seas Season index
 #'
 #' @return A list with one element:
 #' \describe{
 #'   \item{res}{Data frame of OSA residuals. Columns include:
 #'     \code{fleet}, \code{index_label}, \code{year}, \code{index},
-#'     \code{resid}, \code{region}, \code{sex}, and \code{comp_type}.}
+#'     \code{resid}, \code{region}, \code{seas}, \code{sex}, and \code{comp_type}.}
 #' }
 #'
 #' @family Model Diagnostics
@@ -688,6 +639,7 @@ get_osa <- function(obs_mat,
                     DM_theta = NULL,
                     LN_Sigma = NULL,
                     years,
+                    seas,
                     fleet,
                     bins,
                     comp_type,
@@ -702,15 +654,15 @@ get_osa <- function(obs_mat,
 
     # get dimensions
     n_regions <- dim(obs_mat)[1]
-    n_sexes <- dim(obs_mat)[4]
+    n_sexes <- dim(obs_mat)[5]
 
     # if comps are aggregated
     if(comp_type == 0) {
 
-      obs <- obs_mat[,years,,,fleet, drop = FALSE] # get filtered observed matrix
-      exp <- exp_mat[,years,,,fleet, drop = FALSE] # get filtered expected matrix
-      tmp_obs <- obs[1,,,1,1] # only get a single sex and single region out since aggregated
-      tmp_exp <- exp[1,,,1,1] # only get a single sex and single region out since aggregated
+      obs <- obs_mat[,years,seas,,,fleet, drop = FALSE] # get filtered observed matrix
+      exp <- exp_mat[,years,seas,,,fleet, drop = FALSE] # get filtered expected matrix
+      tmp_obs <- obs[1,,1,,1,1] # only get a single sex and single region out since aggregated
+      tmp_exp <- exp[1,,1,,1,1] # only get a single sex and single region out since aggregated
 
       # normalize
       tmp_obs <- (tmp_obs + addtocomp) / rowSums(tmp_obs + addtocomp)
@@ -724,6 +676,7 @@ get_osa <- function(obs_mat,
       # Doing some naming stuff
       tmp_osa$res$region <- 1 # 1s below b/c aggregated across all dimensions
       tmp_osa$res$sex <- 1
+      tmp_osa$res$seas <- seas
       tmp_osa$res$comp_type <- "Aggregated"
       osa_all <- tmp_osa
     }
@@ -738,11 +691,11 @@ get_osa <- function(obs_mat,
       for(r in 1:n_regions) {
         for(s in 1:n_sexes) {
 
-          obs <- obs_mat[,years[[r]],,,fleet, drop = FALSE] # get filtered observed matrix
-          exp <- exp_mat[,years[[r]],,,fleet, drop = FALSE] # get filtered expected matrix
+          obs <- obs_mat[,years[[r]],seas,,,fleet, drop = FALSE] # get filtered observed matrix
+          exp <- exp_mat[,years[[r]],seas,,,fleet, drop = FALSE] # get filtered expected matrix
 
-          tmp_obs <- obs[r,,,s,1] # get observations
-          tmp_exp <- exp[r,,,s,1] # get expected
+          tmp_obs <- obs[r,,1,,s,1] # get observations
+          tmp_exp <- exp[r,,1,,s,1] # get expected
 
           # normalize
           tmp_obs <- (tmp_obs + addtocomp) / rowSums(tmp_obs + addtocomp)
@@ -756,6 +709,7 @@ get_osa <- function(obs_mat,
           # Doing some naming stuff
           tmp_osa$res$region <- r
           tmp_osa$res$sex <- s
+          tmp_osa$res$seas <- seas
           tmp_osa$res$comp_type <- "SpltR_SpltS"
 
           res_all <- rbind(res_all, tmp_osa$res)
@@ -776,16 +730,16 @@ get_osa <- function(obs_mat,
 
       for(r in 1:n_regions) {
 
-        obs <- obs_mat[,years[[r]],,,fleet, drop = FALSE] # get filtered observed matrix
-        exp <- exp_mat[,years[[r]],,,fleet, drop = FALSE] # get filtered expected matrix
+        obs <- obs_mat[,years[[r]],seas,,,fleet, drop = FALSE] # get filtered observed matrix
+        exp <- exp_mat[,years[[r]],seas,,,fleet, drop = FALSE] # get filtered expected matrix
 
         # initialize to cbind
         tmp_obs <- NULL
         tmp_exp <- NULL
 
         for(s in 1:n_sexes) {
-          tmp_obs <- cbind(tmp_obs, obs[r,,,s,1]) # get observations
-          tmp_exp <- cbind(tmp_exp, exp[r,,,s,1]) # get expected
+          tmp_obs <- cbind(tmp_obs, obs[r,,1,,s,1]) # get observations
+          tmp_exp <- cbind(tmp_exp, exp[r,,1,,s,1]) # get expected
         } # end s loop
 
         # normalize
@@ -800,6 +754,7 @@ get_osa <- function(obs_mat,
 
         # Doing some naming stuff
         tmp_osa$res$region <- r
+        tmp_osa$res$seas <- seas
         tmp_osa$res <- tmp_osa$res %>% dplyr::mutate(split_index = str_split(index, "_"),  # Split once and store as list
                                                      sex = sapply(split_index, `[`, 1),
                                                      index = sapply(split_index, `[`, 2)) %>% dplyr::select(-split_index)
@@ -838,6 +793,7 @@ get_osa <- function(obs_mat,
 #'                     years = which(1960:2024 %in% 1999:2023),
 #'                     LN_Sigma = LN_Sigma,
 #'                     fleet = 1,
+#'                     seas = 1,
 #'                     bins = 2:31,
 #'                     comp_type = 0,
 #'                     comp_like = 0,

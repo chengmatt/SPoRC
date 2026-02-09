@@ -119,10 +119,8 @@ The following tables describes all elements contained within `input_list$data`, 
 | Name | Description |
 |-------------------------|------------------------------------------------------|
 | `ObsCatch` | Observed catch data dimensioned by n_regions, n_years, n_fish_fleets |
-| `Catch_Type` | Matrix dimensioned by n_years, n_fish_fleets describing when and for what fishery fleet catch is aggregated across regions (0) or spatially explicit (1). For example, in a case where we have 10 years and 1 fishery fleet, where fishery fleet 1 is spatially aggregated in the first 5 years and fishery fleet 2 is spatially explicit, this would be structured as: `Catch_Type <- array(c(rep(0, 5), rep(1, 5)), dim = c(n_years, n_fish_fleets))` |
 | `catch_units` | Array dimensioned by n_regions, n_fish_fleets describing catch units. 0 == Abundance, 1 == Biomass (default) |
 | `UseCatch` | Array dimensioned by n_regions, n_years, n_fish_fleets describing whether to fit to catch data in a given year for a given fleet. 0: Don't fit catch, 1: Fit catch |
-| `est_all_regional_F` | Value specifying whether regional fishing mortality deviations are all estimated or only a subset are. 0: A subset of fishing mortality deviations are spatially aggregated, 1: All fishing mortality deviations are spatially explicit, irrespective of whether catch is aggregated across regions in certain periods |
 | `Use_F_pen` | Value specifying whether to use a fishing mortality penalty to regularize fishing mortality deviations. 0: Don't use regularity penalty, 1: Use regularity penalty |
 
 ## Data Inputs for Defining Fishery Indices and Compositions

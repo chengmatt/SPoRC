@@ -21,13 +21,14 @@ rtmb_data <- readRDS(here("dev", "dev_data", 'sgl_rg_sable_data.RDS'))
 # Prepare Data and Inputs -------------------------------------------------
 
 # Initialize model dimensions and data list
-input_list <- Setup_Mod_Dim(years = as.numeric((rownames(tem_dat$t.series))), # vector of years
-                            ages = 1:30, # vector of ages
-                            lens = seq(41,99,2), # number of lengths
-                            n_regions = 1, # number of regions
-                            n_sexes = 2, # number of sexes == 1, female, == 2 male
-                            n_fish_fleets = 2, # number of fishery fleet == 1, fixed gear, == 2 trawl gear
-                            n_srv_fleets = 3, # number of survey fleets
+input_list <- Setup_Mod_Dim(years = sgl_rg_sable_data$years, # vector of years
+                            ages = sgl_rg_sable_data$ages, # vector of ages
+                            lens = sgl_rg_sable_data$lens, # number of lengths
+                            n_regions = sgl_rg_sable_data$n_regions, # number of regions
+                            n_sexes = sgl_rg_sable_data$n_sexes, # number of sexes == 1, female, == 2 male
+                            n_fish_fleets = sgl_rg_sable_data$n_fish_fleets, # number of fishery fleet == 1, fixed gear, == 2 trawl gear
+                            n_srv_fleets = sgl_rg_sable_data$n_srv_fleets, # number of survey fleets
+                            n_seas = sgl_rg_sable_data$n_seas, # number of seasons
                             verbose = TRUE
 )
 
@@ -45,8 +46,7 @@ input_list <- Setup_Mod_Rec(input_list = input_list, # input data list from abov
                             sigmaR_spec = "fix_early_est_late", # fix early sigmaR, estiamte late sigmaR
                             InitDevs_spec = NULL, # estimate all initial deviations
                             RecDevs_spec = NULL, # stiamte all recruitment deivations
-                            # sexratio = as.vector(c(0.5, 0.5)), # recruitment sex ratio
-                            init_age_strc = 2,
+                            init_age_strc = 1,
                             init_F_prop = 0.1
 )
 
@@ -57,10 +57,10 @@ fixed_natmort[,,,2] <- 0.1052175 # fix male M
 
 input_list <- Setup_Mod_Biologicals(input_list = input_list,
                                     # Data inputs
-                                    WAA = rtmb_data$WAA, # weight-at-age
-                                    MatAA = rtmb_data$MatAA, # maturity at age
-                                    AgeingError = as.matrix(ageing_dat$age_error), # ageing error
-                                    SizeAgeTrans = rtmb_data$SizeAgeTrans, # size age transition matrix
+                                    WAA = sgl_rg_sable_data$WAA, # weight-at-age
+                                    MatAA = sgl_rg_sable_data$MatAA, # maturity at age
+                                    AgeingError = as.matrix(sgl_rg_sable_data$age_error), # ageing error
+                                    SizeAgeTrans = sgl_rg_sable_data$SizeAgeTrans, # size age transition matrix
                                     # Model options
                                     Use_M_prior = 0, # use natural mortality prior
                                     fit_lengths = 1, # fitting length compositions
@@ -77,8 +77,8 @@ input_list <- Setup_Mod_Movement(input_list = input_list,
 # Setup catch and fishing mortality stuff
 input_list <- Setup_Mod_Catch_and_F(input_list = input_list,
                                     # Data inputs
-                                    ObsCatch = rtmb_data$ObsCatch,
-                                    UseCatch = rtmb_data$UseCatch,
+                                    ObsCatch = sgl_rg_sable_data$ObsCatch,
+                                    UseCatch = sgl_rg_sable_data$UseCatch,
                                     # Model options
                                     Use_F_pen = 1, # whether to use f penalty, == 0 don't use, == 1 use
                                     sigmaC_spec = 'fix'
@@ -87,15 +87,15 @@ input_list <- Setup_Mod_Catch_and_F(input_list = input_list,
 # Setup fishery indices and compositions
 input_list <- Setup_Mod_FishIdx_and_Comps(input_list = input_list,
                                           # data inputs
-                                          ObsFishIdx = rtmb_data$ObsFishIdx,
-                                          ObsFishIdx_SE = rtmb_data$ObsFishIdx_SE,
-                                          UseFishIdx =  rtmb_data$UseFishIdx,
-                                          ObsFishAgeComps = rtmb_data$ObsFishAgeComps,
-                                          UseFishAgeComps = rtmb_data$UseFishAgeComps,
-                                          ISS_FishAgeComps = rtmb_data$ISS_FishAgeComps,
-                                          ObsFishLenComps = rtmb_data$ObsFishLenComps,
-                                          UseFishLenComps = rtmb_data$UseFishLenComps,
-                                          ISS_FishLenComps = rtmb_data$ISS_FishLenComps,
+                                          ObsFishIdx = sgl_rg_sable_data$ObsFishIdx,
+                                          ObsFishIdx_SE = sgl_rg_sable_data$ObsFishIdx_SE,
+                                          UseFishIdx =  sgl_rg_sable_data$UseFishIdx,
+                                          ObsFishAgeComps = sgl_rg_sable_data$ObsFishAgeComps,
+                                          UseFishAgeComps = sgl_rg_sable_data$UseFishAgeComps,
+                                          ISS_FishAgeComps = sgl_rg_sable_data$ISS_FishAgeComps,
+                                          ObsFishLenComps = sgl_rg_sable_data$ObsFishLenComps,
+                                          UseFishLenComps = sgl_rg_sable_data$UseFishLenComps,
+                                          ISS_FishLenComps = sgl_rg_sable_data$ISS_FishLenComps,
 
                                           # Model options
                                           fish_idx_type = c("biom", "none"), # biomass indices for fishery fleet 1 and 2
@@ -111,15 +111,15 @@ input_list <- Setup_Mod_FishIdx_and_Comps(input_list = input_list,
 # Setup survey indices and compositions
 input_list <- Setup_Mod_SrvIdx_and_Comps(input_list = input_list,
                                          # data inputs
-                                         ObsSrvIdx = rtmb_data$ObsSrvIdx,
-                                         ObsSrvIdx_SE = rtmb_data$ObsSrvIdx_SE,
-                                         UseSrvIdx =  rtmb_data$UseSrvIdx,
-                                         ObsSrvAgeComps = rtmb_data$ObsSrvAgeComps,
-                                         ISS_SrvAgeComps = rtmb_data$ISS_SrvAgeComps,
-                                         UseSrvAgeComps = rtmb_data$UseSrvAgeComps,
-                                         ObsSrvLenComps = rtmb_data$ObsSrvLenComps,
-                                         UseSrvLenComps = rtmb_data$UseSrvLenComps,
-                                         ISS_SrvLenComps = rtmb_data$ISS_SrvLenComps,
+                                         ObsSrvIdx = sgl_rg_sable_data$ObsSrvIdx,
+                                         ObsSrvIdx_SE = sgl_rg_sable_data$ObsSrvIdx_SE,
+                                         UseSrvIdx =  sgl_rg_sable_data$UseSrvIdx,
+                                         ObsSrvAgeComps = sgl_rg_sable_data$ObsSrvAgeComps,
+                                         ISS_SrvAgeComps = sgl_rg_sable_data$ISS_SrvAgeComps,
+                                         UseSrvAgeComps = sgl_rg_sable_data$UseSrvAgeComps,
+                                         ObsSrvLenComps = sgl_rg_sable_data$ObsSrvLenComps,
+                                         UseSrvLenComps = sgl_rg_sable_data$UseSrvLenComps,
+                                         ISS_SrvLenComps = sgl_rg_sable_data$ISS_SrvLenComps,
 
                                          # Model options
                                          srv_idx_type = c("abd", "biom", "abd"), # abundance and biomass for survey fleet 1, 2, and 3
@@ -189,7 +189,9 @@ input_list <- Setup_Mod_Srvsel_and_Q(input_list = input_list,
                                      srv_fixed_sel_pars_spec = c("est_all", "est_all", "est_all"),
 
                                      # whether to estiamte all fixed effects for survey catchability
-                                     srv_q_spec = c("est_all", "est_all", "est_all")
+                                     srv_q_spec = c("est_all", "est_all", "est_all"),
+                                     t_srv = array(0.5, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_srv_fleets)),
+
 )
 
 # ll survey, share delta female (index 2) across time blocks and to the coop jp ll survey delta
@@ -208,29 +210,33 @@ input_list <- Setup_Mod_Tagging(input_list = input_list,
 )
 
 # set up data weighting stuff
-Wt_FishAgeComps <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_sexes, input_list$data$n_fish_fleets)) # weights for fishery age comps
-Wt_FishAgeComps[1,,1,1] <- 0.826107286513784 # Weight for fixed gear age comps
+Wt_FishAgeComps <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
+                                     input_list$data$n_sexes, input_list$data$n_fish_fleets)) # weights for fishery age comps
+Wt_FishAgeComps[1,,,1,1] <- 0.826107286513784 # Weight for fixed gear age comps
 
 # Fishery length comps
-Wt_FishLenComps <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_sexes, input_list$data$n_fish_fleets)) # weights for fishery age comps
-Wt_FishLenComps[1,,1,1] <- 4.1837057381917 # Weight for fixed gear len comps females
-Wt_FishLenComps[1,,2,1] <- 4.26969350917589 # Weight for fixed gear len comps males
-Wt_FishLenComps[1,,1,2] <- 0.316485920691651 # Weight for trawl gear len comps females
-Wt_FishLenComps[1,,2,2] <- 0.229396580680981 # Weight for trawl gear len comps males
+Wt_FishLenComps <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
+                                     input_list$data$n_sexes, input_list$data$n_fish_fleets)) # weights for fishery age comps
+Wt_FishLenComps[1,,,1,1] <- 4.1837057381917 # Weight for fixed gear len comps females
+Wt_FishLenComps[1,,,2,1] <- 4.26969350917589 # Weight for fixed gear len comps males
+Wt_FishLenComps[1,,,1,2] <- 0.316485920691651 # Weight for trawl gear len comps females
+Wt_FishLenComps[1,,,2,2] <- 0.229396580680981 # Weight for trawl gear len comps males
 
 # survey age comps
-Wt_SrvAgeComps <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_sexes, input_list$data$n_srv_fleets)) # weights for survey age comps
-Wt_SrvAgeComps[1,,1,1] <- 3.79224544725927 # Weight for domestic survey ll gear age comps
-Wt_SrvAgeComps[1,,1,3] <- 1.31681114024037 # Weight for coop jp survey ll gear age comps
+Wt_SrvAgeComps <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
+                                    input_list$data$n_sexes, input_list$data$n_srv_fleets)) # weights for survey age comps
+Wt_SrvAgeComps[1,,,1,1] <- 3.79224544725927 # Weight for domestic survey ll gear age comps
+Wt_SrvAgeComps[1,,,1,3] <- 1.31681114024037 # Weight for coop jp survey ll gear age comps
 
 # Survey length comps
-Wt_SrvLenComps <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_sexes, input_list$data$n_srv_fleets)) # weights for survey age comps
-Wt_SrvLenComps[1,,1,1] <- 1.43792019016567 # Weight for domestic ll survey len comps females
-Wt_SrvLenComps[1,,2,1] <- 1.07053763450712 # Weight for domestic ll survey len comps males
-Wt_SrvLenComps[1,,1,2] <- 0.670883273592302 # Weight for domestic trawl survey len comps females
-Wt_SrvLenComps[1,,2,2] <- 0.465207132450763 # Weight for domestic trawl survey len comps males
-Wt_SrvLenComps[1,,1,3] <- 1.27772810174693 # Weight for coop jp ll survey len comps females
-Wt_SrvLenComps[1,,2,3] <- 0.857519546948587 # Weight for coop jp ll survey len comps males
+Wt_SrvLenComps <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
+                                   input_list$data$n_sexes, input_list$data$n_srv_fleets)) # weights for survey age comps
+Wt_SrvLenComps[1,,,1,1] <- 1.43792019016567 # Weight for domestic ll survey len comps females
+Wt_SrvLenComps[1,,,2,1] <- 1.07053763450712 # Weight for domestic ll survey len comps males
+Wt_SrvLenComps[1,,,1,2] <- 0.670883273592302 # Weight for domestic trawl survey len comps females
+Wt_SrvLenComps[1,,,2,2] <- 0.465207132450763 # Weight for domestic trawl survey len comps males
+Wt_SrvLenComps[1,,,1,3] <- 1.27772810174693 # Weight for coop jp ll survey len comps females
+Wt_SrvLenComps[1,,,2,3] <- 0.857519546948587 # Weight for coop jp ll survey len comps males
 
 input_list <- Setup_Mod_Weighting(input_list = input_list,
                                   Wt_Catch = 50,
@@ -267,6 +273,7 @@ sabie_rtmb_model$sd_rep <- RTMB::sdreport(sabie_rtmb_model)
 rep <- sabie_rtmb_model$rep
 sd_rep <- sabie_rtmb_model$sd_rep
 
+saveRDS(data, here("dev", "dev_output", "1_Region_Model_Sablefish", "data.RDS"))
 saveRDS(sd_rep, here("dev", "dev_output", "1_Region_Model_Sablefish", "sd_rep.RDS"))
 saveRDS(rep, here("dev", "dev_output", "1_Region_Model_Sablefish", "rep.RDS"))
 
@@ -314,12 +321,12 @@ f_series <- data.frame(Par = "Total F",
 
 females_series <- data.frame(Par = "Total Females",
                              Year = 1960:2024,
-                             TMB = rowSums(sabie_rtmb_model$rep$NAA[1,-66,,1]),
+                             TMB = rowSums(sabie_rtmb_model$rep$NAA[1,-66,1,,1]),
                              ADMB = tem_dat$t.series$numbers.f[1:length(data$years)])
 
 males_series <- data.frame(Par = "Total Males",
                            Year = 1960:2024,
-                           TMB = rowSums(sabie_rtmb_model$rep$NAA[1,-66,,2]),
+                           TMB = rowSums(sabie_rtmb_model$rep$NAA[1,-66,1,,2]),
                            ADMB = tem_dat$t.series$numbers.m[1:length(data$years)])
 
 ssb_series <- data.frame(Par = "SSB",

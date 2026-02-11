@@ -305,7 +305,7 @@ get_biological_plot <- function(data,
 
   # Natural mortality plot
   natmort_plot <- ggplot2::ggplot(natmort_plot_df %>%
-                                    dplyr::filter(Year == max(natmort_plot_df$Year), Seas == max(natmort_plot$Seas)),
+                                    dplyr::filter(Year == max(natmort_plot_df$Year)),
                                   ggplot2::aes(x = Age, y = value, color = factor(Model))) +
     ggplot2::geom_line(lwd = 2) +
     ggplot2::facet_grid(Region~Sex) +
@@ -316,7 +316,7 @@ get_biological_plot <- function(data,
 
   # Weight at age plot
   waa_plot <- ggplot2::ggplot(waa_plot_df %>%
-                                dplyr::filter(Year == max(waa_plot_df$Year), Seas == max(waa_plot$Seas)),
+                                dplyr::filter(Year == max(waa_plot_df$Year), Seas == max(waa_plot_df$Seas)),
                               ggplot2::aes(x = Age, y = value, color = factor(Model))) +
     ggplot2::geom_line(lwd = 2) +
     ggplot2::facet_grid(Region~Sex) +
@@ -327,7 +327,7 @@ get_biological_plot <- function(data,
 
   # Maturity plot
   mataa_plot <- ggplot2::ggplot(mataa_plot_df %>%
-                                  dplyr::filter(Year == max(mataa_plot_df$Year), Seas == max(mataa_plot$Seas)),
+                                  dplyr::filter(Year == max(mataa_plot_df$Year), Seas == max(mataa_plot_df$Seas)),
                                 ggplot2::aes(x = Age, y = value, color = factor(Model))) +
     ggplot2::geom_line(lwd = 2) +
     ggplot2::facet_grid(Region~Sex) +

@@ -12,6 +12,7 @@ test_that("Single-region Sablefish RTMB model produces expected results", {
                               n_sexes = 2, # number of sexes == 1, female, == 2 male
                               n_fish_fleets = 2, # number of fishery fleet == 1, fixed gear, == 2 trawl gear
                               n_srv_fleets = 3, # number of survey fleets
+                              n_seas = 1,
                               verbose = FALSE
   )
 

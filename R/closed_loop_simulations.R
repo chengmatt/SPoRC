@@ -472,12 +472,12 @@ get_closed_loop_reference_points <- function(use_true_values,
     )
 
     # get sex ratio
-    tmp_sex_ratio_f <- if(sim_env$n_sexes == 1) 0.5 else sim_env$sexratio[,y,1,sim]
+    tmp_sex_ratio_f <- if(sim_env$n_sexes == 1) rep(0.5, sim_env$n_regions) else sim_env$sexratio[,y,1,sim]
 
   } else {
     data_obj <- asmt_data
     rep_obj <- asmt_rep
-    tmp_sex_ratio_f <- if(data_obj$n_sexes == 1) 0.5 else rep_obj$sexratio[,y,1]
+    tmp_sex_ratio_f <- if(data_obj$n_sexes == 1) rep(0.5, sim_env$n_regions) else rep_obj$sexratio[,y,1]
   }
 
   # get reference points based on true values

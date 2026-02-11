@@ -661,7 +661,7 @@ dev.off()
 # get reference points
 spr_35 <- SPoRC::Get_Reference_Points(data = francis_data,
                                       rep = francis_model$rep,
-                                      SPR_x = 0.35, t_spwn = 0, sex_ratio_f = 0.5,
+                                      SPR_x = 0.35, t_spawn = 0, sex_ratio_f = 0.5,
                                       type = "single_region",
                                       what = 'SPR',
                                       calc_rec_st_yr = 3, rec_age = 4)
@@ -670,14 +670,14 @@ spr_40 <- SPoRC::Get_Reference_Points(data = francis_data,
                                       rep = francis_model$rep,
                                       type = "single_region",
                                       what = 'SPR',
-                                      SPR_x = 0.4, t_spwn = 0, sex_ratio_f = 0.5,
+                                      SPR_x = 0.4, t_spawn = 0, sex_ratio_f = 0.5,
                                       calc_rec_st_yr = 3, rec_age = 4)
 
 spr_60 <- SPoRC::Get_Reference_Points(data = francis_data,
                                       rep = francis_model$rep,
                                       type = "single_region",
                                       what = 'SPR',
-                                      SPR_x = 0.6, t_spwn = 0, sex_ratio_f = 0.5,
+                                      SPR_x = 0.6, t_spawn = 0, sex_ratio_f = 0.5,
                                       calc_rec_st_yr = 3, rec_age = 4)
 
 # Extract reference points

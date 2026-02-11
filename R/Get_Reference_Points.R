@@ -5,9 +5,123 @@
 #'
 #' @keywords internal
 #' @import RTMB
+# single_region_SPR <- function(pars,
+#                               data
+# ) {
+#
+#   "c" <- RTMB::ADoverload("c")
+#   "[<-" <- RTMB::ADoverload("[<-")
+#
+#   RTMB::getAll(pars, data) # get parameters and data
+#
+#   n_ages = dim(fish_sel)[1] # number of ages
+#
+#   # exponentitate reference points to "estimate"
+#   F_x = exp(log_F_x)
+#
+#   # set up containers
+#   SB_age = Nspr = array(0, dim = c(2, n_ages)) # 2 slots in rows, for unfished, and fished at F_x
+#
+#   # Set up the initial recruits
+#   Nspr[,1] = 1 * sex_ratio_f
+#
+#   ## Loop through ages
+#   for (j in 2:(n_ages - 1)) {
+#     for (seas in 1:n_seas) {
+#
+#       tmp_unfished = Nspr[1,j - 1]
+#       tmp_fished   = Nspr[2,j - 1]
+#
+#       ## Spawning biomass
+#       if (seas == spawn_seas) {
+#         SB_age[1, j - 1] = tmp_unfished * WAA[spawn_seas, j - 1] * MatAA[spawn_seas, j - 1] * exp(-t_spawn * natmort[j - 1] * seasdur[seas])
+#         SB_age[2, j - 1] = tmp_fished * WAA[spawn_seas, j - 1] * MatAA[spawn_seas, j - 1] *
+#                                   exp(-t_spawn * (natmort[j - 1] * seasdur[seas] + sum(F_fract_flt[seas,] * F_x * fish_sel[j-1,]) ))
+#       }
+#
+#       ## Mortality and ageing
+#       if (seas < n_seas) { # Within season mortality
+#         Nspr[1, j - 1] = tmp_unfished * exp(-natmort[j - 1] * seasdur[seas])
+#         Nspr[2, j - 1] = tmp_fished * exp(-(natmort[j - 1] * seasdur[seas] + sum(F_fract_flt[seas,] * F_x * fish_sel[j-1,]) ))
+#       } else {
+#         # Ageing
+#         Nspr[1, j] = tmp_unfished * exp(-natmort[j - 1] * seasdur[seas])
+#         Nspr[2, j] = tmp_fished * exp(-(natmort[j - 1] * seasdur[seas] +  sum(F_fract_flt[seas,] * F_x * fish_sel[n_ages-1,]) ))
+#       }
+#     }
+#   }
+#
+#   # Age n_ages-1 is now at start of year after the loop
+#   tmp_unfished = Nspr[1,n_ages-1]
+#   tmp_fished = Nspr[2,n_ages-1]
+#
+#   if(spawn_seas > 1) {
+#     for (seas in 1:(spawn_seas - 1)) {
+#
+#       # Apply seasonal mortality
+#       tmp_unfished = tmp_unfished * exp(-(natmort[n_ages-1] * seasdur[seas]))
+#       tmp_fished = tmp_fished * exp(-(natmort[n_ages-1] * seasdur[seas] + sum(F_fract_flt[seas,] * F_x * fish_sel[n_ages-1,]) ))
+#
+#     } # end seas loop
+#   }
+#
+#   SB_age[1, n_ages - 1] = tmp_unfished * WAA[spawn_seas, n_ages - 1] * MatAA[spawn_seas, n_ages - 1] * exp(-t_spawn * natmort[n_ages - 1] * seasdur[spawn_seas])
+#   SB_age[2, n_ages - 1] = tmp_fished * WAA[spawn_seas, n_ages - 1] * MatAA[spawn_seas, n_ages - 1] *
+#                                  exp(-t_spawn * (natmort[n_ages - 1] * seasdur[spawn_seas] + sum(F_fract_flt[spawn_seas,] * F_x * fish_sel[n_ages-1,]) ))
+#
+#
+#   # Plus group
+#   Z_plus = natmort[n_ages] + sum(F_fract_flt * F_x * fish_sel[n_ages,])
+#   M_plus = natmort[n_ages]
+#   Nspr[1,n_ages] = Nspr[1,n_ages-1] * exp(-Z_plus) / (1 - exp(-Z_plus))
+#   Nspr[2,n_ages] = Nspr[2,n_ages-1] * exp(-M_plus) / (1 - exp(-M_plus))
+#
+#   tmp_unfished = Nspr[1,n_ages]
+#   tmp_fished = Nspr[2,n_ages]
+#
+#   if(spawn_seas > 1) {
+#     for (seas in 1:(spawn_seas - 1)) {
+#
+#       # Apply seasonal mortality
+#       tmp_unfished = tmp_unfished * exp(-(natmort[n_ages] * seasdur[seas]))
+#       tmp_fished = tmp_fished * exp(-(natmort[n_ages] * seasdur[seas] + sum(F_fract_flt[spawn_seas,] * F_x * fish_sel[n_ages,]) ))
+#
+#     } # end seas loop
+#   }
+#
+#   ## Plus group spawning biomass
+#   SB_age[1, n_ages] = tmp_unfished * WAA[spawn_seas, n_ages] * MatAA[spawn_seas, n_ages] * exp(-t_spawn * natmort[n_ages] * seasdur[spawn_seas])
+#
+#   SB_age[2, n_ages] = tmp_fished * WAA[spawn_seas, n_ages] * MatAA[spawn_seas, n_ages] *
+#     exp(-t_spawn * (natmort[n_ages] * seasdur[spawn_seas] + sum(F_fract_flt[spawn_seas,] * F_x * fish_sel[n_ages,])))
+#
+#   # Get spawning biomass per recruit to get spawning potential ratio
+#   SB0 = sum(SB_age[1,])
+#   SB_F_x = sum(SB_age[2,])
+#   SPR = SB_F_x / SB0
+#
+#   # compute objective function to get F_x
+#   sprpen = 100 * (SPR - SPR_x)^2
+#
+#   RTMB::REPORT(SB_age)
+#   RTMB::REPORT(Nspr)
+#   RTMB::REPORT(SB0)
+#   RTMB::REPORT(SB_F_x)
+#   RTMB::REPORT(F_x)
+#
+#   return(sprpen)
+# }
+
+#' Get SPR reference points (Single Region)
+#'
+#' @param pars Parameter List
+#' @param data Data List
+#'
+#' @keywords internal
+#' @import RTMB
 single_region_SPR <- function(pars,
                               data
-                              ) {
+) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -25,22 +139,78 @@ single_region_SPR <- function(pars,
   # Set up the initial recruits
   Nspr[,1] = 1 * sex_ratio_f
 
-  # Loop through and decrement recruit
-  for(j in 2:(n_ages - 1)) {
-    Nspr[1,j] = Nspr[1,j-1] * exp(-1 * natmort[j-1]) # unfished
-    Nspr[2,j] = Nspr[2,j-1] * exp(-1 * (natmort[j-1] + sum(F_fract_flt * F_x * fish_sel[j-1,]))) # fished
+  ## Loop through ages
+  for (j in 2:(n_ages - 1)) {
+    for (seas in 1:n_seas) {
+
+      tmp_unfished = Nspr[1,j - 1]
+      tmp_fished   = Nspr[2,j - 1]
+
+      ## Spawning biomass
+      if (seas == spawn_seas) {
+        SB_age[1, j - 1] = tmp_unfished * WAA[spawn_seas, j - 1] * MatAA[spawn_seas, j - 1] * exp(-t_spawn * natmort[j - 1] * seasdur[seas])
+        SB_age[2, j - 1] = tmp_fished * WAA[spawn_seas, j - 1] * MatAA[spawn_seas, j - 1] *
+          exp(-t_spawn * (natmort[j - 1] * seasdur[seas] + sum(F_fract_flt[seas,] * F_x * fish_sel[j-1,]) ))
+      }
+
+      ## Mortality and ageing
+      if (seas < n_seas) { # Within season mortality
+        Nspr[1, j - 1] = tmp_unfished * exp(-natmort[j - 1] * seasdur[seas])
+        Nspr[2, j - 1] = tmp_fished * exp(-(natmort[j - 1] * seasdur[seas] + sum(F_fract_flt[seas,] * F_x * fish_sel[j-1,]) ))
+      } else {
+        # Ageing
+        Nspr[1, j] = tmp_unfished * exp(-natmort[j - 1] * seasdur[seas])
+        Nspr[2, j] = tmp_fished * exp(-(natmort[j - 1] * seasdur[seas] +  sum(F_fract_flt[seas,] * F_x * fish_sel[j-1,]) ))
+      }
+    }
   }
 
-  # Accumulate plus group
-  Nspr[1,n_ages] = Nspr[1,n_ages-1] * exp(-1 * natmort[n_ages-1])/(1-exp(-1*natmort[n_ages])) # unfished
-  Nspr[2,n_ages] = Nspr[2,n_ages-1] * exp(-1 * (natmort[n_ages-1] + sum(F_fract_flt * F_x * fish_sel[n_ages-1,])))/
-    (1 - exp(-1 * (natmort[n_ages] + sum(F_fract_flt * F_x * fish_sel[n_ages,])))) # fished
+  # Age n_ages-1 is now at start of year after the loop
+  tmp_unfished = Nspr[1,n_ages-1]
+  tmp_fished = Nspr[2,n_ages-1]
 
-  # Convert numbers at age to spawning biomass at age (t_spwn accounts for mortality up until spawning)
-  for(j in 1:n_ages) {
-    SB_age[1,j] = Nspr[1,j] * WAA[j] * MatAA[j] * exp(-t_spwn * natmort[j]) # unfished
-    SB_age[2,j] = Nspr[2,j] * WAA[j] * MatAA[j] * exp(-t_spwn * (natmort[j] + sum(F_fract_flt * F_x * fish_sel[j,]))) # fished
+  if(spawn_seas > 1) {
+    for (seas in 1:(spawn_seas - 1)) {
+
+      # Apply seasonal mortality
+      tmp_unfished = tmp_unfished * exp(-(natmort[n_ages-1] * seasdur[seas]))
+      tmp_fished = tmp_fished * exp(-(natmort[n_ages-1] * seasdur[seas] + sum(F_fract_flt[seas,] * F_x * fish_sel[n_ages-1,]) ))
+
+    } # end seas loop
   }
+
+  SB_age[1, n_ages - 1] = tmp_unfished * WAA[spawn_seas, n_ages - 1] * MatAA[spawn_seas, n_ages - 1] * exp(-t_spawn * natmort[n_ages - 1] * seasdur[spawn_seas])
+  SB_age[2, n_ages - 1] = tmp_fished * WAA[spawn_seas, n_ages - 1] * MatAA[spawn_seas, n_ages - 1] *
+    exp(-t_spawn * (natmort[n_ages - 1] * seasdur[spawn_seas] + sum(F_fract_flt[spawn_seas,] * F_x * fish_sel[n_ages-1,]) ))
+
+
+  # Plus group
+  M_penult = natmort[n_ages - 1]
+  Z_penult = natmort[n_ages - 1] + F_x * sum(colSums(F_fract_flt) * fish_sel[n_ages - 1,])
+
+  Z_plus = natmort[n_ages] + F_x * sum(colSums(F_fract_flt) * fish_sel[n_ages,])
+  M_plus = natmort[n_ages]
+
+  Nspr[1,n_ages] = Nspr[1,n_ages-1] * exp(-M_penult) / (1 - exp(-M_plus))
+  Nspr[2,n_ages] = Nspr[2,n_ages-1] * exp(-Z_penult) / (1 - exp(-Z_plus))
+
+  tmp_unfished = Nspr[1,n_ages]
+  tmp_fished = Nspr[2,n_ages]
+
+  if(spawn_seas > 1) {
+    for (seas in 1:(spawn_seas - 1)) {
+
+      # Apply seasonal mortality
+      tmp_unfished = tmp_unfished * exp(-(natmort[n_ages] * seasdur[seas]))
+      tmp_fished = tmp_fished * exp(-(natmort[n_ages] * seasdur[seas] + sum(F_fract_flt[seas,] * F_x * fish_sel[n_ages,]) ))
+
+    } # end seas loop
+  }
+
+  ## Plus group spawning biomass
+  SB_age[1, n_ages] = tmp_unfished * WAA[spawn_seas, n_ages] * MatAA[spawn_seas, n_ages] * exp(-t_spawn * natmort[n_ages] * seasdur[spawn_seas])
+  SB_age[2, n_ages] = tmp_fished * WAA[spawn_seas, n_ages] * MatAA[spawn_seas, n_ages] *
+    exp(-t_spawn * (natmort[n_ages] * seasdur[spawn_seas] + sum(F_fract_flt[spawn_seas,] * F_x * fish_sel[n_ages,])))
 
   # Get spawning biomass per recruit to get spawning potential ratio
   SB0 = sum(SB_age[1,])
@@ -106,8 +276,8 @@ global_SPR <- function(pars,
 
     # compute pr quantities here (before mortality)
     for(d in 1:n_regions) {
-      SB_age[1,d,j-1] = tmp_unfished[d] * WAA[d,j - 1] * MatAA[d,j - 1] * exp(-t_spwn * natmort[d,j - 1])
-      SB_age[2,d,j-1] = tmp_fished[d] * WAA[d,j - 1] * MatAA[d,j - 1] * exp(-t_spwn * tmp_Z[d])
+      SB_age[1,d,j-1] = tmp_unfished[d] * WAA[d,j - 1] * MatAA[d,j - 1] * exp(-t_spawn * natmort[d,j - 1])
+      SB_age[2,d,j-1] = tmp_fished[d] * WAA[d,j - 1] * MatAA[d,j - 1] * exp(-t_spawn * tmp_Z[d])
     }
 
     # decrement fish and project forward
@@ -151,9 +321,9 @@ global_SPR <- function(pars,
   # Calculate spawning biomass and catch for plus group
   for(d in 1:n_regions) {
     SB_age[1,d, n_ages] = N_plus_equil_unfished[d] * WAA[d, n_ages] *
-      MatAA[d, n_ages] * exp(-t_spwn * natmort[d, n_ages])
+      MatAA[d, n_ages] * exp(-t_spawn * natmort[d, n_ages])
     SB_age[2, d, n_ages] = N_plus_equil_fished[d] * WAA[d, n_ages] *
-      MatAA[d, n_ages] * exp(-t_spwn * tmp_Z_plus[d])
+      MatAA[d, n_ages] * exp(-t_spawn * tmp_Z_plus[d])
   }
 
   # Get spawning biomass per recruit to get spawning potential ratio
@@ -215,9 +385,9 @@ single_region_BH_Fmsy <- function(pars,
     tmp_F = sum(F_fract_flt * Fmsy * fish_sel[j,]) # temporary fishing mortality at age
     tmp_Z = tmp_F + natmort[j] # temporary total mortality at age
 
-    # Convert numbers at age to spawning biomass at age (t_spwn accounts for mortality up until spawning)
-    SB_age[1,j] = Nspr[1,j] * WAA[j] * MatAA[j] * exp(-t_spwn * natmort[j]) # unfished
-    SB_age[2,j] = Nspr[2,j] * WAA[j] * MatAA[j] * exp(-t_spwn * tmp_Z) # fished
+    # Convert numbers at age to spawning biomass at age (t_spawn accounts for mortality up until spawning)
+    SB_age[1,j] = Nspr[1,j] * WAA[j] * MatAA[j] * exp(-t_spawn * natmort[j]) # unfished
+    SB_age[2,j] = Nspr[2,j] * WAA[j] * MatAA[j] * exp(-t_spawn * tmp_Z) # fished
 
     # Get catch at age to derive yield per recruit
     CAA[j] = Nspr[2,j] * (tmp_F / tmp_Z) * (1 - exp(-tmp_Z)) # Baranov's
@@ -301,8 +471,8 @@ global_BH_Fmsy <- function(pars,
 
     # compute pr quantities here (before mortality)
     for(d in 1:n_regions) {
-      SB_age[1,d,j-1] = tmp_unfished[d] * WAA[d,j - 1] * MatAA[d,j - 1] * exp(-t_spwn * natmort[d,j - 1])
-      SB_age[2,d,j-1] = tmp_fished[d] * WAA[d,j - 1] * MatAA[d,j - 1] * exp(-t_spwn * tmp_Z[d])
+      SB_age[1,d,j-1] = tmp_unfished[d] * WAA[d,j - 1] * MatAA[d,j - 1] * exp(-t_spawn * natmort[d,j - 1])
+      SB_age[2,d,j-1] = tmp_fished[d] * WAA[d,j - 1] * MatAA[d,j - 1] * exp(-t_spawn * tmp_Z[d])
       CAA[d,j-1] = tmp_fished[d] * (tmp_F[d] / tmp_Z[d]) * (1 - exp(-tmp_Z[d]))
     }
 
@@ -347,9 +517,9 @@ global_BH_Fmsy <- function(pars,
   # Calculate spawning biomass and catch for plus group
   for(d in 1:n_regions) {
     SB_age[1,d, n_ages] = N_plus_equil_unfished[d] * WAA[d, n_ages] *
-      MatAA[d, n_ages] * exp(-t_spwn * natmort[d, n_ages])
+      MatAA[d, n_ages] * exp(-t_spawn * natmort[d, n_ages])
     SB_age[2, d, n_ages] = N_plus_equil_fished[d] * WAA[d, n_ages] *
-      MatAA[d, n_ages] * exp(-t_spwn * tmp_Z_plus[d])
+      MatAA[d, n_ages] * exp(-t_spawn * tmp_Z_plus[d])
     CAA[d, n_ages] = N_plus_equil_fished[d] * (tmp_F_plus[d] / tmp_Z_plus[d]) * (1 - exp(-tmp_Z_plus[d]))
   }
 
@@ -445,8 +615,8 @@ local_BH_Fmsy <- function(pars, data) {
 
       # compute pr quantities here (before mortality)
       for(d in 1:n_regions) {
-        SB_age[1,o,d,j-1] = tmp_unfished[d] * WAA[d,j - 1] * MatAA[d,j - 1] * exp(-t_spwn * natmort[d,j - 1])
-        SB_age[2,o,d,j-1] = tmp_fished[d] * WAA[d,j - 1] * MatAA[d,j - 1] * exp(-t_spwn * tmp_Z[d])
+        SB_age[1,o,d,j-1] = tmp_unfished[d] * WAA[d,j - 1] * MatAA[d,j - 1] * exp(-t_spawn * natmort[d,j - 1])
+        SB_age[2,o,d,j-1] = tmp_fished[d] * WAA[d,j - 1] * MatAA[d,j - 1] * exp(-t_spawn * tmp_Z[d])
         CAA[o,d,j-1] = tmp_fished[d] * (tmp_F[d] / tmp_Z[d]) * (1 - exp(-tmp_Z[d]))
       }
 
@@ -494,9 +664,9 @@ local_BH_Fmsy <- function(pars, data) {
     # Calculate spawning biomass and catch for plus group
     for(d in 1:n_regions) {
       SB_age[1, o, d, n_ages] = N_plus_equil_unfished[d] * WAA[d, n_ages] *
-        MatAA[d, n_ages] * exp(-t_spwn * natmort[d, n_ages])
+        MatAA[d, n_ages] * exp(-t_spawn * natmort[d, n_ages])
       SB_age[2, o, d, n_ages] = N_plus_equil_fished[d] * WAA[d, n_ages] *
-        MatAA[d, n_ages] * exp(-t_spwn * tmp_Z_plus[d])
+        MatAA[d, n_ages] * exp(-t_spawn * tmp_Z_plus[d])
       CAA[o, d, n_ages] = N_plus_equil_fished[d] * (tmp_F_plus[d] / tmp_Z_plus[d]) * (1 - exp(-tmp_Z_plus[d]))
     }
   } # end o loop
@@ -593,7 +763,7 @@ local_BH_Fmsy <- function(pars, data) {
 #' @param data List. Data object containing ages, years, weight-at-age, maturity, natural mortality, and other simulation/assessment info.
 #' @param rep List. Report object from RTMB containing estimated parameters like Fmort, selectivity, recruitment, steepness.
 #' @param SPR_x Numeric. Target Spawning Potential Ratio fraction. Required for SPR-based reference points.
-#' @param t_spwn Numeric. Mortality time until spawning.
+#' @param t_spawn Numeric. Mortality time until spawning.
 #' @param sex_ratio_f Numeric vector. Female sex ratio by region.
 #' @param calc_rec_st_yr Integer. First year used to compute mean recruitment.
 #' @param rec_age Integer. Age at recruitment.
@@ -626,7 +796,7 @@ local_BH_Fmsy <- function(pars, data) {
 Get_Reference_Points <- function(data,
                                  rep,
                                  SPR_x = NULL,
-                                 t_spwn = 0,
+                                 t_spawn = 0,
                                  sex_ratio_f = rep(0.5, data$n_regions),
                                  calc_rec_st_yr = 1,
                                  rec_age = 1,
@@ -652,26 +822,32 @@ Get_Reference_Points <- function(data,
     # Extract out relevant elements
     n_ages <- length(data$ages) # number of ages
     n_years <- length(data$years) # number of years
-    data_list$t_spwn <- t_spwn # specified mortality time up until spawning
+
+    # Seasonal stuff
+    data_list$t_spawn <- t_spawn # specified mortality time up until spawning
+    data_list$n_seas <- data$n_seas # number of seasons
+    data_list$seasdur <- data$seasdur # seasonal duration
+    data_list$spawn_seas <- data$spawn_seas # spawning season
 
     # fishing mortality fraction
-    data_list$F_fract_flt <- rep$Fmort[1,n_years,] / sum(rep$Fmort[1,n_years,]) # get fleet F fraction to derive population level selectivity
+    data_list$F_fract_flt <- array(rep$Fmort[1,n_years,,] / sum(rep$Fmort[1,n_years,,]),
+                                   dim = c(data$n_seas, data$n_fish_fleets)) # get fleet F fraction to derive population level selectivity
 
     # fishery selectivity
-    fish_sel_avg <- apply(rep$fish_sel[,avg_yrs,,1,,drop = FALSE], c(1, 3, 4, 5), mean)
+    fish_sel_avg <- apply(rep$fish_sel[1,avg_yrs,,1,,drop = FALSE], c(3,5), mean)
     data_list$fish_sel <- array(fish_sel_avg, dim = c(n_ages, data$n_fish_fleets)) # get female selectivity for all fleets
 
     # natural mortality
-    natmort_avg <- apply(rep$natmort[,avg_yrs,,1,drop = FALSE], c(1, 3, 4), mean)
+    natmort_avg <- apply(rep$natmort[1,avg_yrs,,1,drop = FALSE], c(3), mean)
     data_list$natmort <- as.vector(natmort_avg) # get female natural mortality
 
     # weight at age
-    WAA_avg <- apply(data$WAA[,avg_yrs,,1,drop = FALSE], c(1, 3, 4), mean)
-    data_list$WAA <- WAA_avg # weight at age for females
+    WAA_avg <- apply(data$WAA[1,avg_yrs,,,1,drop = FALSE], c(3,4), mean)
+    data_list$WAA <- array(WAA_avg, dim = c(data$n_seas, n_ages)) # weight at age for females
 
     # maturity at age
-    MatAA_avg <- apply(data$MatAA[,avg_yrs,,1,drop = FALSE], c(1, 3, 4), mean)
-    data_list$MatAA <- MatAA_avg # maturity at age for females
+    MatAA_avg <- apply(data$MatAA[1,avg_yrs,,,1,drop = FALSE], c(3,4), mean)
+    data_list$MatAA <- array(MatAA_avg, dim = c(data$n_seas, n_ages)) # maturity at age for females
     data_list$sex_ratio_f <- sex_ratio_f # recritment sex ratio
 
     if(what == 'SPR') {
@@ -724,7 +900,7 @@ Get_Reference_Points <- function(data,
         # Extract out relevant elements for a given region
         n_years <- length(data$years) # number of years
         n_ages <- length(data$ages) # number of ages
-        data_list$t_spwn <- t_spwn # specified mortality time up until spawning
+        data_list$t_spawn <- t_spawn # specified mortality time up until spawning
         data_list$F_fract_flt <- rep$Fmort[r,n_years,] / sum(rep$Fmort[r,n_years,]) # get fleet F fraction to derive population level selectivity
 
         # fishery selectivity
@@ -789,7 +965,7 @@ Get_Reference_Points <- function(data,
         data_list$h <- rep$h_trans[r] # steepness
         data_list$R0 <- rep$R0 * rep$Rec_trans_prop[r] # unfished recruitment by region
         data_list$sex_ratio_f <- sex_ratio_f[r] # recritment sex ratio
-        data_list$t_spwn <- t_spwn # specified mortality time up until spawning
+        data_list$t_spawn <- t_spawn # specified mortality time up until spawning
 
         par_list <- list() # set up parameter list
         par_list$log_Fmsy <- log(0.1) # Fmsy starting value
@@ -813,7 +989,7 @@ Get_Reference_Points <- function(data,
       n_ages <- length(data$ages) # number of ages to iterate through
       n_years <- length(data$years) # number of years
       n_regions <- data$n_regions # number of regions
-      data_list$t_spwn <- t_spwn # specified mortality time up until spawning
+      data_list$t_spawn <- t_spawn # specified mortality time up until spawning
 
       # Fleet fraction F
       data_list$F_fract_flt <- rep$Fmort[,n_years,,drop = FALSE] / apply(rep$Fmort[,n_years,,drop = FALSE], 1, sum) # get fleet F fraction to derive population level selectivity
@@ -866,7 +1042,7 @@ Get_Reference_Points <- function(data,
       n_ages <- length(data$ages) # number of ages to iterate through
       n_years <- length(data$years) # number of years
       n_regions <- data$n_regions # number of regions
-      data_list$t_spwn <- t_spwn # specified mortality time up until spawning
+      data_list$t_spawn <- t_spawn # specified mortality time up until spawning
 
       # Fleet fraction F
       data_list$F_fract_flt <- rep$Fmort[,n_years,,drop = FALSE] / apply(rep$Fmort[,n_years,,drop = FALSE], 1, sum) # get fleet F fraction to derive population level selectivity
@@ -918,7 +1094,7 @@ Get_Reference_Points <- function(data,
       n_ages <- length(data$ages) # number of ages to iterate through
       n_years <- length(data$years) # number of years
       n_regions <- data$n_regions # number of regions
-      data_list$t_spwn <- t_spwn # specified mortality time up until spawning
+      data_list$t_spawn <- t_spawn # specified mortality time up until spawning
 
       # Fleet fraction F
       data_list$F_fract_flt <- rep$Fmort[,n_years,,drop = FALSE] / apply(rep$Fmort[,n_years,,drop = FALSE], 1, sum) # get fleet F fraction to derive population level selectivity

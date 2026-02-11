@@ -415,6 +415,7 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
 #'   }
 #' @param sim_env Simulation environment
 #' @param n_proj_yrs Number of projection years
+#' @param t_spawn Spawn timing wihtin a given season / year, default uses sim_env true values
 #'
 #' @return A list with elements:
 #'   \describe{
@@ -429,6 +430,7 @@ get_closed_loop_reference_points <- function(use_true_values,
                                              sim_env,
                                              asmt_data = NULL,
                                              asmt_rep = NULL,
+                                             t_spawn = sim_env$t_spawn,
                                              y,
                                              sim,
                                              reference_points_opt = list(
@@ -459,7 +461,7 @@ get_closed_loop_reference_points <- function(use_true_values,
 
     # Build rep list if not doing assessment (using truth)
     rep_obj <- list(
-      Fmort = array(sim_env$Fmort[, 1:y, , sim], dim = c(sim_env$n_regions, length(1:y), sim_env$n_seas,, sim_env$n_fish_fleets)),
+      Fmort = array(sim_env$Fmort[, 1:y,, , sim], dim = c(sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_fish_fleets)),
       fish_sel = array(sim_env$fish_sel[, 1:y, , , , sim, drop = FALSE], dim = c(sim_env$n_regions, length(1:y), sim_env$n_ages, sim_env$n_sexes, sim_env$n_fish_fleets)),
       natmort = array(sim_env$natmort[, 1:y, , , sim], dim = c(sim_env$n_regions, length(1:y), sim_env$n_ages, sim_env$n_sexes)),
       h_trans = sim_env$h[, y, sim],
@@ -482,7 +484,7 @@ get_closed_loop_reference_points <- function(use_true_values,
   reference_points <- Get_Reference_Points(data = data_obj,
                                            rep = rep_obj,
                                            SPR_x = reference_points_opt$SPR_x,
-                                           t_spwn = sim_env$t_spawn,
+                                           t_spawn = t_spawn,
                                            sex_ratio_f = tmp_sex_ratio_f,
                                            calc_rec_st_yr = reference_points_opt$calc_rec_st_yr,
                                            rec_age = reference_points_opt$rec_age,

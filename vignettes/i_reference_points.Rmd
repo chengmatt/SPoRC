@@ -812,7 +812,7 @@ sgl_ref_pt <- SPoRC::Get_Reference_Points(data = sgl_rg_sable_data, # data file
                                           what = 'SPR', # SPR reference point
                                           calc_rec_st_yr = 20, # first year to calculate mean recruitment
                                           rec_age = 2,  # exclues the last rec_age years when computing mean recruitment
-                                          t_spwn = 0,  # spawn timing
+                                          t_spawn = 0,  # spawn timing
                                           sex_ratio_f = 0.5 # recruitment sex-ratio for females
                                           )
 sgl_ref_pt$f_ref_pt # F40
@@ -837,7 +837,7 @@ mlt_ref_pt_indp <- Get_Reference_Points(data = mlt_rg_sable_data, # data file
                                           what = 'independent_SPR', # SPR reference point
                                           calc_rec_st_yr = 20, # first year to calculate mean recruitment
                                           rec_age = 2,  # exclues the last rec_age years when computing mean recruitment
-                                          t_spwn = 0,  # spawn timing
+                                          t_spawn = 0,  # spawn timing
                                           sex_ratio_f = rep(0.5, mlt_rg_sable_data$n_regions) # recruitment sex-ratio for females
                                           )
 mlt_ref_pt_indp$f_ref_pt # F40
@@ -858,7 +858,7 @@ mlt_ref_pt_global <- SPoRC::Get_Reference_Points(data = mlt_rg_sable_data, # dat
                                                  what = 'global_SPR', # SPR reference point
                                                  calc_rec_st_yr = 20, # first year to calculate mean recruitment
                                                  rec_age = 2,  # exclues the last rec_age years when computing mean recruitment
-                                                 t_spwn = 0,  # spawn timing
+                                                 t_spawn = 0,  # spawn timing
                                                  sex_ratio_f = rep(0.5, mlt_rg_sable_data$n_regions) # recruitment sex-ratio for females
                                                  )
 mlt_ref_pt_global$f_ref_pt # F40

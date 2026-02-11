@@ -734,7 +734,7 @@ plot_all_basic <- function(data,
 #' @param reference_points_opt A named list specifying options for reference point calculations. See \code{\link{Get_Reference_Points}} for more details. Must include:
 #' \describe{
 #'   \item{SPR_x}{Spawning potential ratio (e.g., 0.4) for calculating F reference points. May be \code{NULL} if using \code{bh_rec}.}
-#'   \item{t_spwn}{Fraction of year when spawning occurs (e.g., 0.5).}
+#'   \item{t_spawn}{Fraction of year when spawning occurs (e.g., 0.5).}
 #'   \item{sex_ratio_f}{Proportion of recruits that are female.}
 #'   \item{calc_rec_st_yr}{Start year for averaging recruitment.}
 #'   \item{rec_age}{Recruitment age.}
@@ -767,7 +767,7 @@ plot_all_basic <- function(data,
 #' @examples
 #' \dontrun{
 #' reference_points_opt <- list(SPR_x = 0.4,
-#'                              t_spwn = 0,
+#'                              t_spawn = 0,
 #'                              sex_ratio_f = 0.5,
 #'                              calc_rec_st_yr = 20,
 #'                              rec_age = 2,
@@ -807,7 +807,7 @@ get_key_quants <- function(data,
 ) {
 
   # required elements for reference points opt
-  required <- c("SPR_x", "t_spwn", "sex_ratio_f", "calc_rec_st_yr", "rec_age", "type", "what")
+  required <- c("SPR_x", "t_spawn", "sex_ratio_f", "calc_rec_st_yr", "rec_age", "type", "what")
   missing <- setdiff(required, names(reference_points_opt))
 
   # check to see if reference points opt has all of the required elements
@@ -844,7 +844,7 @@ get_key_quants <- function(data,
     tmp_ref_pts <- Get_Reference_Points(data = data[[i]],
                                         rep = rep[[i]],
                                         SPR_x = reference_points_opt$SPR_x,
-                                        t_spwn = reference_points_opt$t_spwn,
+                                        t_spawn = reference_points_opt$t_spawn,
                                         sex_ratio_f = reference_points_opt$sex_ratio_f,
                                         calc_rec_st_yr = reference_points_opt$calc_rec_st_yr,
                                         rec_age = reference_points_opt$rec_age,
@@ -857,12 +857,12 @@ get_key_quants <- function(data,
 
     # do population project to get catch advice
     n_proj_yrs <- proj_model_opt$n_proj_yrs # number of projection years
-    t_spawn <- reference_points_opt$t_spwn # spawn timing
+    t_spawn <- reference_points_opt$t_spawn # spawn timing
 
     # terminal estimates
-    terminal_NAA <-  array(rep[[i]]$NAA[,length(data[[i]]$years),,], dim = c(data[[i]]$n_regions, length(data[[i]]$ages), data[[i]]$n_sexes)) # terminal NAA
-    terminal_NAA0 <-  array(rep[[i]]$NAA0[,length(data[[i]]$years),,], dim = c(data[[i]]$n_regions, length(data[[i]]$ages), data[[i]]$n_sexes)) # terminal NAA
-    terminal_F <- array(rep[[i]]$Fmort[,length(data[[i]]$years),], dim = c(data[[i]]$n_regions, data[[i]]$n_fish_fleets)) # terminal F
+    terminal_NAA <-  array(rep[[i]]$NAA[,length(data[[i]]$years),,,], dim = c(data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes)) # terminal NAA
+    terminal_NAA0 <-  array(rep[[i]]$NAA0[,length(data[[i]]$years),,,], dim = c(data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes)) # terminal NAA
+    terminal_F <- array(rep[[i]]$Fmort[,length(data[[i]]$years),,], dim = c(data[[i]]$n_regions, data[[i]]$n_seas, data[[i]]$n_fish_fleets)) # terminal F
     recruitment <- array(rep[[i]]$Rec[,reference_points_opt$calc_rec_st_yr:(length(data[[i]]$years) - reference_points_opt$rec_age)],
                          dim = c(data[[i]]$n_regions, length(reference_points_opt$calc_rec_st_yr:(length(data[[i]]$years) - reference_points_opt$rec_age)))) # recruitment
 
@@ -874,15 +874,15 @@ get_key_quants <- function(data,
     avg_yrs <- (n_yrs - n_avg_yrs + 1):n_yrs
 
     # spawning weight-at-age
-    WAA_avg <- apply(data[[i]]$WAA[,avg_yrs,,,drop = FALSE], c(1, 3, 4), mean)
-    WAA <- array(rep(WAA_avg, each = n_proj_yrs), dim = c(data[[i]]$n_regions, n_proj_yrs, length(data[[i]]$ages), data[[i]]$n_sexes))
+    WAA_avg <- apply(data[[i]]$WAA[,avg_yrs,,,,drop = FALSE], c(1, 3, 4, 5), mean)
+    WAA <- array(rep(WAA_avg, each = n_proj_yrs), dim = c(data[[i]]$n_regions, n_proj_yrs, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes))
 
-    WAA_fish_avg <- apply(data[[i]]$WAA_fish[,avg_yrs,,,,drop = FALSE], c(1, 3, 4, 5), mean)
-    WAA_fish <- array(rep(WAA_fish_avg, each = n_proj_yrs), dim = c(data[[i]]$n_regions, n_proj_yrs, length(data[[i]]$ages), data[[i]]$n_sexes, data[[i]]$n_fish_fleets))
+    WAA_fish_avg <- apply(data[[i]]$WAA_fish[,avg_yrs,,,,,drop = FALSE], c(1, 3, 4, 5, 6), mean)
+    WAA_fish <- array(rep(WAA_fish_avg, each = n_proj_yrs), dim = c(data[[i]]$n_regions, n_proj_yrs, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes, data[[i]]$n_fish_fleets))
 
     # maturity at age
-    MatAA_avg <- apply(data[[i]]$MatAA[,avg_yrs,,,drop = FALSE], c(1, 3, 4), mean)
-    MatAA <- array(rep(MatAA_avg, each = proj_model_opt$n_proj_yrs), dim = c(data[[i]]$n_regions, proj_model_opt$n_proj_yrs, length(data[[i]]$ages), data[[i]]$n_sexes))
+    MatAA_avg <- apply(data[[i]]$MatAA[,avg_yrs,,,,drop = FALSE], c(1, 3, 4, 5), mean)
+    MatAA <- array(rep(MatAA_avg, each = proj_model_opt$n_proj_yrs), dim = c(data[[i]]$n_regions, proj_model_opt$n_proj_yrs, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes))
 
     # natural mortality
     natmort_avg <- apply(rep[[i]]$natmort[,avg_yrs,,,drop = FALSE], c(1, 3, 4), mean)
@@ -893,8 +893,8 @@ get_key_quants <- function(data,
     fish_sel <- array(rep(fish_sel_avg, each = proj_model_opt$n_proj_yrs), dim = c(data[[i]]$n_regions, proj_model_opt$n_proj_yrs, length(data[[i]]$ages), data[[i]]$n_sexes, data[[i]]$n_fish_fleets))
 
     # movement
-    Movement_avg <- apply(rep[[i]]$Movement[,,avg_yrs,,,drop = FALSE], c(1,2,4,5), mean) # movement
-    Movement <- aperm(abind::abind(replicate(n_proj_yrs, Movement_avg, simplify = FALSE), along = 5), perm = c(1,2,5,3,4)) # movement
+    Movement_avg <- apply(rep[[i]]$Movement[,,avg_yrs,,,,drop = FALSE], c(1,2,4,5,6), mean) # movement
+    Movement <- aperm(abind::abind(replicate(n_proj_yrs, Movement_avg, simplify = FALSE), along = 6), perm = c(1,2,6,3,4,5)) # movement
 
     # Sex ratio
     sexratio_avg <- apply(rep[[i]]$sexratio[,avg_yrs,,drop = FALSE], c(1,3), mean)
@@ -915,8 +915,8 @@ get_key_quants <- function(data,
         h = rep[[i]]$h_trans,
         SSB = rep[[i]]$SSB,
         # Using first year for demographics of computing unfished SSB
-        WAA = data[[i]]$WAA[,1,,,drop = FALSE],
-        MatAA = data[[i]]$MatAA[,1,,,drop = FALSE],
+        WAA = data[[i]]$WAA[,1,,,,drop = FALSE],
+        MatAA = data[[i]]$MatAA[,1,,,,drop = FALSE],
         natmort = rep[[i]]$natmort[,1,,,drop = FALSE]
       )
     } else {
@@ -946,7 +946,7 @@ get_key_quants <- function(data,
                                          HCR_function = proj_model_opt$HCR_function, # HCR function
                                          recruitment_opt = proj_model_opt$recruitment_opt, # recruitment assumption
                                          fmort_opt = proj_model_opt$fmort_opt, # Fishing mortality in projection years (whether input or HCR)
-                                         t_spawn = reference_points_opt$t_spwn, # Spawn timing
+                                         t_spawn = reference_points_opt$t_spawn, # Spawn timing
                                          bh_rec_opt = bh_rec_opt # beverton holt projection options
     )
 

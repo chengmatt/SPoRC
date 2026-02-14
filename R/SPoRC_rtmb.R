@@ -857,8 +857,16 @@ SPoRC_rtmb = function(pars, data) {
       ty = ty_vec[tc] # extract tag release year
       tseas = tseas_vec[tc] # extract tag release season
 
-      for(ry in mixing_period:min(max_tag_liberty, n_yrs - ty + 1)) { # loop through recapture years
+      for(ry in 1:min(max_tag_liberty, n_yrs - ty + 1)) { # loop through recapture years
         for(rseas in 1:n_seas) { # loop through recapture seasons
+
+          # Dealing with tag mixing (not fitting to tags liberty < mixing period)
+          # Skip seasons before release in the first year at liberty
+          if(ry == 1 && rseas < tseas) next
+          # Total seasonal time steps since release
+          total_seas_at_liberty = (ry - 1) * n_seas + (rseas - tseas + 1)
+          # Skip if within mixing period (in seasonal units)
+          if(total_seas_at_liberty < mixing_period) next
 
           for(r in 1:n_regions) {
             for(a in 1:n_move_age_tag_pool) {

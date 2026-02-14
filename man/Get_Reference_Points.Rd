@@ -8,7 +8,7 @@ Get_Reference_Points(
   data,
   rep,
   SPR_x = NULL,
-  t_spwn = 0,
+  t_spawn = 0,
   sex_ratio_f = rep(0.5, data$n_regions),
   calc_rec_st_yr = 1,
   rec_age = 1,
@@ -25,7 +25,7 @@ Get_Reference_Points(
 
 \item{SPR_x}{Numeric. Target Spawning Potential Ratio fraction. Required for SPR-based reference points.}
 
-\item{t_spwn}{Numeric. Mortality time until spawning.}
+\item{t_spawn}{Numeric. Mortality time until spawning.}
 
 \item{sex_ratio_f}{Numeric vector. Female sex ratio by region.}
 

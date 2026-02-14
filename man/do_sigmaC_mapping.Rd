@@ -2,18 +2,35 @@
 % Please edit documentation in R/Setup_Fishery.R
 \name{do_sigmaC_mapping}
 \alias{do_sigmaC_mapping}
-\title{Helper function to setup sigma C and sigma C agg mapping}
+\title{Helper function to setup sigma C mapping}
 \usage{
-do_sigmaC_mapping(input_list, sigmaC_spec, sigmaC_agg_spec)
+do_sigmaC_mapping(input_list, sigmaC_spec)
 }
 \arguments{
 \item{input_list}{Input list}
 
-\item{sigmaC_spec}{Character vector for sigmaC specification}
-
-\item{sigmaC_agg_spec}{Character vector for sigmaC_agg specification}
+\item{sigmaC_spec}{Character vector for sigmaC specification. Options:
+\itemize{
+  \item \code{"est_shared_r"}: Shared across regions
+  \item \code{"est_shared_y"}: Shared across years
+  \item \code{"est_shared_seas"}: Shared across seasons
+  \item \code{"est_shared_f"}: Shared across fleets
+  \item \code{"est_shared_r_y"}: Shared across regions and years
+  \item \code{"est_shared_r_seas"}: Shared across regions and seasons
+  \item \code{"est_shared_r_f"}: Shared across regions and fleets
+  \item \code{"est_shared_y_seas"}: Shared across years and seasons
+  \item \code{"est_shared_y_f"}: Shared across years and fleets
+  \item \code{"est_shared_seas_f"}: Shared across seasons and fleets
+  \item \code{"est_shared_r_y_seas"}: Shared across regions, years, and seasons
+  \item \code{"est_shared_r_y_f"}: Shared across regions, years, and fleets
+  \item \code{"est_shared_r_seas_f"}: Shared across regions, seasons, and fleets
+  \item \code{"est_shared_y_seas_f"}: Shared across years, seasons, and fleets
+  \item \code{"est_shared_r_y_seas_f"}: Single parameter shared across all
+  \item \code{"est_all"}: Unique per region, year, season, fleet
+  \item \code{"fix"}: Fixed at starting values
+}}
 }
 \description{
-Helper function to setup sigma C and sigma C agg mapping
+Helper function to setup sigma C mapping
 }
 \keyword{internal}

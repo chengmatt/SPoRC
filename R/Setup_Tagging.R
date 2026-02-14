@@ -228,7 +228,7 @@ do_Tag_Reporting_Pars_mapping <- function(input_list, TagRep_spec) {
 #'     \item \code{"Dirichlet-Multinomial_Recapture"}
 #'   }
 #'   Example: \code{Tag_LikeType = "NegBin"}
-#' @param mixing_period Numeric indicating minimum years post-release to include in fitting
+#' @param mixing_period Numeric indicating minimum years post-release to include in fitting (or minimum seasons post-release if model is seasonal)
 #' @param t_tagging Fraction of season remaining when tags are released (e.g., start of season == 1, mid season == 0.5, end of season == 0; default = 1)
 #' @param tag_selex Character string specifying tag recovery selectivity. One of:
 #'   \itemize{

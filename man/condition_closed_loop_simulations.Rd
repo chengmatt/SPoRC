@@ -79,7 +79,7 @@ length composition input sample sizes. Same options as `ISS_SrvAgeComps_fill`.}
           - If shorter than the number of projection years, new recruitment deviates will be simulated
             based on `recruitment_opt`, `R0_input`, and `h_input` (supports changing regimes across years).
           - If you want fixed recruitment for all projection years, provide a `Rec_input` array that spans all years.
-  - **Tagging**: `Tag_Reporting_input`, `ln_Init_Tag_Mort`, `ln_Tag_Shed`, `tag_selex`, `tag_natmort`
+  - **Tagging**: `Tag_Reporting_input`, `ln_Init_Tag_Mort`, `ln_Tag_Shed`, `tag_selex`, `tag_natmort`, `n_tags`, `n_tags_rel_input`
   - **Movement**: `Movement` (must match the expected dimensions and be named exactly `Movement`)
 
   The values must have the correct dimensions expected by each component.
@@ -94,7 +94,8 @@ through `...` using the correct name (e.g., `WAA_input`, `fish_sel_input`).
 }
 \seealso{
 Other Closed Loop Simulations: 
-\code{\link{bisection_F}()},
+\code{\link{catch_to_F_multifleet}()},
+\code{\link{catch_to_F_singlefleet}()},
 \code{\link{get_closed_loop_reference_points}()}
 }
 \concept{Closed Loop Simulations}

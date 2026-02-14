@@ -16,6 +16,7 @@ Setup_Sim_Rec(
   init_dd = "global",
   sim_list,
   init_age_strc = 2,
+  spawn_seas = 1,
   t_spawn = 0,
   rec_lag = 1,
   Rec_input = NULL,
@@ -44,33 +45,36 @@ Setup_Sim_Rec(
 
 \item{recruitment_opt}{Recruitment type (default = "bh_rec"):
 \itemize{
-  \item \code{"mean_rec"}: Mean recruitment
-  \item \code{"bh_rec"}: Beverton-Holt recruitment
-  \item \code{"resample_from_input"}: Resampling recruitment years from `Rec_input` and preserves covariance of recruitment among regions if spatially-explicit values are provided
+  \item \code{0} or \code{"mean_rec"}: Mean recruitment
+  \item \code{1} or \code{"bh_rec"}: Beverton-Holt recruitment
+  \item \code{999} or \code{"resample_from_input"}: Resampling recruitment years from `Rec_input` and preserves covariance of recruitment among regions if spatially-explicit values are provided
 }}
 
 \item{rec_dd}{Recruitment density dependence (default = "global"):
 \itemize{
-  \item \code{"global"}: Shared across regions
-  \item \code{"local"}: Region-specific
+  \item \code{0} or \code{"local"}: Region-specific
+  \item \code{1} or \code{"global"}: Shared across regions
 }}
 
 \item{init_dd}{Initial age density dependence (default = "global"):
 \itemize{
-  \item \code{"global"}: Shared across regions
-  \item \code{"local"}: Region-specific
+  \item \code{0} or \code{"local"}: Region-specific
+  \item \code{1} or \code{"global"}: Shared across regions
 }}
 
 \item{sim_list}{Simulation list object from `Setup_Sim_Dim()`}
 
-\item{init_age_strc}{Integer flag specifying initialization of initial age structure:
+\item{init_age_strc}{Integer specifying the initialization method for the age structure (default = 2):
 \itemize{
-  \item \code{0}: Initialize by iteration.
-  \item \code{1}: Initialize using a scalar geometric series (does not account for movement).
-  \item \code{2}: Initialize using a matrix geometric series (accounts for movement; default).
+  \item \code{0} or \code{"iterative"}: Iterative solution to equilibrium
+  \item \code{1} or \code{"scalar_no_move"}: Scalar geometric series solution w/o movement in any groups
+  \item \code{2} or \code{"matrix"}: Matrix geometric series solution (generalizes scalar solution with movement)
+  \item \code{3} or \code{"scalar_plus_only"}: Scalar geometric series solution w/o movement only in plus group
 }}
 
-\item{t_spawn}{Spawn timing fraction of the year (scalar, default = 0)}
+\item{spawn_seas}{Season in which spawning occurs}
+
+\item{t_spawn}{Spawn timing fraction within the year / season (scalar, default = 0, where spawning happens before mortality processes)}
 
 \item{rec_lag}{Recruitment lag (default = 1)}
 

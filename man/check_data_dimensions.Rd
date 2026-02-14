@@ -9,10 +9,13 @@ check_data_dimensions(
   n_regions = NULL,
   n_years = NULL,
   n_ages = NULL,
+  n_seas = NULL,
   n_lens = NULL,
   n_sexes = NULL,
   n_fish_fleets = NULL,
   n_srv_fleets = NULL,
+  max_tag_liberty = NULL,
+  n_tag_cohorts = NULL,
   what
 )
 }
@@ -25,6 +28,8 @@ check_data_dimensions(
 
 \item{n_ages}{Number of ages}
 
+\item{n_seas}{Number of seasons}
+
 \item{n_lens}{Number of lengths}
 
 \item{n_sexes}{Number of sexes}
@@ -32,6 +37,10 @@ check_data_dimensions(
 \item{n_fish_fleets}{Number of fishery fleets}
 
 \item{n_srv_fleets}{Number of survey fleets}
+
+\item{max_tag_liberty}{Maximum tag liberty to track a given cohort}
+
+\item{n_tag_cohorts}{Number of tag cohorts to fit to}
 
 \item{what}{charcter specifying what to be evaluated}
 }

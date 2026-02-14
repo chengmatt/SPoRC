@@ -15,21 +15,6 @@ Returns a data frame with relative difference of SSB and recruitment from the te
 \description{
 Derive relative difference from terminal year from a retrospective analysis.
 }
-\examples{
-\dontrun{
- ret <- do_retrospective(7, data, parameters, mapping, random = NULL, do_par = TRUE, n_cores = 7, do_francis = TRUE, n_francis_iter = 5)
- ret_df <- get_retrospective_relative_difference(ret)
- ggplot(ret_df \%>\% filter(Type == 'SSB'), aes(x = Year, y = rd, group = 2024- as.numeric(peel), color = 2024 - as.numeric(peel))) +
- geom_hline(yintercept = 0, lty = 2, lwd = 1.3) +
-   coord_cartesian(ylim = c(-0.4, 0.4)) +
-   geom_line(lwd = 1.5) +
-   guides (color = guide_colourbar(barwidth = 15, barheight = 1.3)) +
-   labs(x = 'Year', y = 'Relative Difference from Terminal Year', color = 'Retrospective Year') +
-   scale_color_viridis_c() +
-   theme_bw(base_size = 15) +
-   theme(legend.position = 'top')
-}
-}
 \seealso{
 Other Model Diagnostics: 
 \code{\link{do_jitter}()},

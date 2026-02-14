@@ -14,7 +14,7 @@ get_biological_plot(data, rep, model_names)
 \item{model_names}{Vector of model names}
 }
 \value{
-A list of plots for terminal year movement, natural mortality, weight-at-age, and maturity at age across models
+A list of plots for terminal year and terminal season movement, natural mortality, weight-at-age, and maturity at age across models
 }
 \description{
 Get Plots of Biological Quantities

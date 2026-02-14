@@ -7,20 +7,20 @@
 Setup_Sim_Fishing(
   sim_list,
   ln_sigmaC = array(log(0.02), dim = c(sim_list$n_regions, sim_list$n_yrs,
-    sim_list$n_fish_fleets)),
-  catch_units = array(1, dim = c(sim_list$n_regions, sim_list$n_fish_fleets)),
-  init_F_val = 0,
-  Fmort_input = array(0.1, dim = c(sim_list$n_regions, sim_list$n_yrs,
+    sim_list$n_seas, sim_list$n_fish_fleets)),
+  catch_units = array(1, dim = c(sim_list$n_fish_fleets)),
+  init_F_val = rep(0, sim_list$n_seas),
+  Fmort_input = array(0.1, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
     sim_list$n_fish_fleets, sim_list$n_sims)),
   fish_sel_input,
   fish_q_input = array(1, dim = c(sim_list$n_regions, sim_list$n_yrs,
     sim_list$n_fish_fleets, sim_list$n_sims)),
-  ObsFishIdx_SE = array(0.2, dim = c(sim_list$n_regions, sim_list$n_yrs,
+  ObsFishIdx_SE = array(0.2, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
     sim_list$n_fish_fleets)),
-  fish_idx_type = rep(1, sim_list$n_fish_fleets),
+  fish_idx_type = array(1, dim = c(sim_list$n_regions, sim_list$n_fish_fleets)),
   comp_fishage_like = rep(0, sim_list$n_fish_fleets),
   ISS_FishAgeComps = array(100, dim = c(sim_list$n_regions, sim_list$n_yrs,
-    sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims)),
+    sim_list$n_seas, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims)),
   ln_FishAge_theta = array(log(1), dim = c(sim_list$n_regions, sim_list$n_sexes,
     sim_list$n_fish_fleets)),
   ln_FishAge_theta_agg = rep(log(1), sim_list$n_fish_fleets),
@@ -30,7 +30,7 @@ Setup_Sim_Fishing(
   FishAgeComps_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_fish_fleets)),
   comp_fishlen_like = rep(0, sim_list$n_fish_fleets),
   ISS_FishLenComps = array(100, dim = c(sim_list$n_regions, sim_list$n_yrs,
-    sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims)),
+    sim_list$n_seas, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims)),
   ln_FishLen_theta = array(log(1), dim = c(sim_list$n_regions, sim_list$n_sexes,
     sim_list$n_fish_fleets)),
   ln_FishLen_theta_agg = rep(log(1), sim_list$n_fish_fleets),
@@ -44,53 +44,53 @@ Setup_Sim_Fishing(
 \item{sim_list}{Simulation list object from `Setup_Sim_Dim()`}
 
 \item{ln_sigmaC}{Observation error for catch
-[n_regions × n_yrs × n_fish_fleets]
+[n_regions × n_yrs × n_seas x n_fish_fleets]
 (default: `log(0.02)`)}
 
-\item{catch_units}{Units of catch - Array [n_regions × n_fish_fleets]
+\item{catch_units}{Units of catch - Array [n_fish_fleets]
 \itemize{
-  \item \code{0}: Abundance
-  \item \code{1}: Biomass (default)
+  \item \code{0} or \code{"abd"}: Abundance
+  \item \code{1} or \code{"bioms"}: Biomass (default)
 }}
 
-\item{init_F_val}{Initial fishing mortality value
-(default: `0`)}
+\item{init_F_val}{Vector of initial fishing mortality values from the dominant fleet
+(default: `rep(0, n_seas)`)}
 
 \item{Fmort_input}{Fishing mortality input array
-[n_regions × n_yrs × n_fish_fleets × n_sims]
+[n_regions × n_yrs × n_seas x n_fish_fleets × n_sims]
 (default: `0.1`)}
 
 \item{fish_sel_input}{Fishery selectivity array
-[n_regions × n_yrs × n_ages × n_sexes × n_fish_fleets × n_sims]
+[n_regions × n_yrs x n_ages × n_sexes × n_fish_fleets × n_sims]
 (no default, must be provided)}
 
 \item{fish_q_input}{Fishery catchability array
-[n_regions × n_yrs × n_fish_fleets × n_sims]
+[n_regions × n_yrs x n_fish_fleets × n_sims]
 (default: `1`)}
 
 \item{ObsFishIdx_SE}{Observation error of fishery index
-[n_regions × n_yrs × n_fish_fleets]
+[n_regions × n_yrs n_seas x × n_fish_fleets]
 (default: `0.2`)}
 
-\item{fish_idx_type}{Vector of index types [n_fish_fleets]
+\item{fish_idx_type}{Array of index types [n_regions x n_fish_fleets]
 (default: all `1` = biomass index)
 \itemize{
-  \item \code{0}: Abundance index
-  \item \code{1}: Biomass index
+  \item \code{0} or \code{"abd"}: Abundance index
+  \item \code{1} or \code{"biom"}: Biomass index
 }}
 
 \item{comp_fishage_like}{Vector [n_fish_fleets] specifying likelihood for simulating age comps
 (default: all `0` = multinomial)
 \itemize{
-  \item \code{0}: Multinomial
-  \item \code{1}: Dirichlet-Multinomial
-  \item \code{2}: Logistic Normal iid
-  \item \code{3}: Logistic Normal 1dar1
-  \item \code{4}: Logistic Normal 2d correlation (constant by sex, 1dar1 by age)
+  \item \code{0} or \code{"Multinomial"}: Multinomial
+  \item \code{1} or \code{"Dirichlet-Multinomial"}: Dirichlet-Multinomial
+  \item \code{2} or \code{"iid-Logistic-Normal"}: Logistic Normal iid
+  \item \code{3} or \code{"1d-Logistic-Normal"}: Logistic Normal 1dar1
+  \item \code{4} or \code{"2d-Logistic-Normal"}: Logistic Normal 2d correlation (constant by sex, 1dar1 by age)
 }}
 
 \item{ISS_FishAgeComps}{Input sample sizes
-[n_regions × n_yrs × n_sexes × n_fish_fleets × n_sims]
+[n_regions × n_yrs × n_seas x n_sexes × n_fish_fleets × n_sims]
 (default: `100`)}
 
 \item{ln_FishAge_theta}{Overdispersion parameters
@@ -112,24 +112,24 @@ Setup_Sim_Fishing(
 \item{FishAgeComps_Type}{Array [n_yrs × n_fish_fleets]
 (default: `2` = joint by sex, split by region)
 \itemize{
-  \item \code{0}: Aggregated
-  \item \code{1}: Split by sex and region
-  \item \code{2}: Joint by sex, split by region
-  \item \code{999}: Not simulated
+  \item \code{0} or \code{"agg"}: Aggregated
+  \item \code{1} or \code{"spltRspltS"}: Split by sex and region
+  \item \code{2} or \code{"spltRjntS"}: Joint by sex, split by region
+  \item \code{999} or \code{"none"}: Not simulated
 }}
 
 \item{comp_fishlen_like}{Vector [n_fish_fleets] specifying likelihood for simulating length comps
 (default: all `0` = multinomial)
 \itemize{
-  \item \code{0}: Multinomial
-  \item \code{1}: Dirichlet-Multinomial
-  \item \code{2}: Logistic Normal iid
-  \item \code{3}: Logistic Normal 1dar1
-  \item \code{4}: Logistic Normal 2d correlation (constant by sex, 1dar1 by length)
+  \item \code{0} or \code{"Multinomial"}: Multinomial
+  \item \code{1} or \code{"Dirichlet-Multinomial"}: Dirichlet-Multinomial
+  \item \code{2} or \code{"iid-Logistic-Normal"}: Logistic Normal iid
+  \item \code{3} or \code{"1d-Logistic-Normal"}: Logistic Normal 1dar1
+  \item \code{4} or \code{"2d-Logistic-Normal"}: Logistic Normal 2d correlation (constant by sex, 1dar1 by age)
 }}
 
 \item{ISS_FishLenComps}{Input sample sizes
-[n_regions × n_yrs × n_sexes × n_fish_fleets × n_sims]
+[n_regions × n_yrs × n_seas x n_sexes × n_fish_fleets × n_sims]
 (default: `100`)}
 
 \item{ln_FishLen_theta}{Overdispersion parameters
@@ -151,10 +151,10 @@ Setup_Sim_Fishing(
 \item{FishLenComps_Type}{Array [n_yrs × n_fish_fleets]
 (default: `2` = joint by sex, split by region)
 \itemize{
-  \item \code{0}: Aggregated
-  \item \code{1}: Split by sex and region
-  \item \code{2}: Joint by sex, split by region
-  \item \code{999}: Not simulated
+  \item \code{0} or \code{"agg"}: Aggregated
+  \item \code{1} or \code{"spltRspltS"}: Split by sex and region
+  \item \code{2} or \code{"spltRjntS"}: Joint by sex, split by region
+  \item \code{999} or \code{"none"}: Not simulated
 }}
 }
 \description{

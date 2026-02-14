@@ -10,10 +10,10 @@ Setup_Sim_Tagging(
   UseTagging = 0,
   max_liberty = sim_list$n_ages/2,
   tag_release_indicator = expand.grid(regions = 1:sim_list$n_regions, tag_years =
-    1:sim_list$n_yrs),
-  t_tagging = 0,
-  ln_Init_Tag_Mort = log(1e-05),
-  ln_Tag_Shed = log(1e-05),
+    1:sim_list$n_yrs, tag_seas = 1:sim_list$n_seas),
+  t_tagging = 1,
+  ln_Init_Tag_Mort = -1000,
+  ln_Tag_Shed = -1000,
   Tag_Reporting_input = array(0.5, dim = c(sim_list$n_regions, sim_list$n_yrs,
     sim_list$n_sims)),
   tag_selex = 5,
@@ -34,46 +34,43 @@ Setup_Sim_Tagging(
   \item 1: Simulate tagging
 }}
 
-\item{max_liberty}{Maximum liberty to track cohorts (default = sim_list$n_ages / 2)}
+\item{max_liberty}{Maximum liberty (years) to track cohorts (default = sim_list$n_ages / 2)}
 
-\item{tag_release_indicator}{Tag release indicator [regions × tag_years]
-(default = all combinations of regions × years via `expand.grid`)}
+\item{t_tagging}{Fraction of season remaining when tags are released (e.g., start of season == 1, mid season == 0.5, end of season == 0; default = 1)}
 
-\item{t_tagging}{Time of tagging (e.g., start year == 0, mid year == 0.5; default = 0)}
+\item{ln_Init_Tag_Mort}{Log initial tag-induced mortality (default = -1000)}
 
-\item{ln_Init_Tag_Mort}{Log initial tag-induced mortality (default = log(1e-5))}
-
-\item{ln_Tag_Shed}{Log chronic tag shedding rate (default = log(1e-5))}
+\item{ln_Tag_Shed}{Log chronic tag shedding rate (default = -1000) annual rate}
 
 \item{Tag_Reporting_input}{Tag reporting input [n_regions × n_yrs × n_sims]
 (default = 0.5)}
 
-\item{tag_selex}{Tag selectivity type (integer, default = 5):
+\item{tag_selex}{Tag selectivity type (default = 5):
 \itemize{
-  \item 0: Uniform_DomFleet
-  \item 1: SexAgg_DomFleet
-  \item 2: SexSp_DomFleet
-  \item 3: Uniform_AllFleet
-  \item 4: SexAgg_AllFleet
-  \item 5: SexSp_AllFleet
+  \item \code{0} or \code{"Uniform_DomFleet"}: Uniform by age/sex, dominant fleet
+  \item \code{1} or \code{"SexAgg_DomFleet"}: Sex-aggregated, dominant fleet
+  \item \code{2} or \code{"SexSp_DomFleet"}: Sex-specific, dominant fleet
+  \item \code{3} or \code{"Uniform_AllFleet"}: Uniform by age/sex, all fleets
+  \item \code{4} or \code{"SexAgg_AllFleet"}: Sex-aggregated, all fleets
+  \item \code{5} or \code{"SexSp_AllFleet"}: Sex-specific, all fleets
 }}
 
-\item{tag_natmort}{Tag natural mortality type (integer, default = 3):
+\item{tag_natmort}{Tag natural mortality type (default = 3):
 \itemize{
-  \item 0: AgeAgg_SexAgg
-  \item 1: AgeSp_SexAgg
-  \item 2: AgeAgg_SexSp
-  \item 3: AgeSp_SexSp
+  \item \code{0} or \code{"AgeAgg_SexAgg"}: Age-aggregated, sex-aggregated
+  \item \code{1} or \code{"AgeSp_SexAgg"}: Age-specific, sex-aggregated
+  \item \code{2} or \code{"AgeAgg_SexSp"}: Age-aggregated, sex-specific
+  \item \code{3} or \code{"AgeSp_SexSp"}: Age-specific, sex-specific
 }}
 
-\item{tag_like}{Tag likelihood type (integer, default = 0):
+\item{tag_like}{Tag likelihood type (default = 0):
 \itemize{
-  \item 0: Poisson
-  \item 1: NegBin
-  \item 2: Multinomial_Release
-  \item 3: Multinomial_Recapture
-  \item 4: Dirichlet-Multinomial_Release
-  \item 5: Dirichlet-Multinomial_Recapture
+  \item \code{0} or \code{"Poisson"}: Poisson
+  \item \code{1} or \code{"NegBin"}: Negative Binomial
+  \item \code{2} or \code{"Multinomial_Release"}: Multinomial by release cohort
+  \item \code{3} or \code{"Multinomial_Recapture"}: Multinomial by recapture event
+  \item \code{4} or \code{"Dirichlet-Multinomial_Release"}: Dirichlet-Multinomial by release cohort
+  \item \code{5} or \code{"Dirichlet-Multinomial_Recapture"}: Dirichlet-Multinomial by recapture event
 }}
 
 \item{ln_tag_theta}{Scalar in log space describing tag likelihood overdispersion (default = log(1))}

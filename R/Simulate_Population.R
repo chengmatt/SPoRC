@@ -311,7 +311,7 @@ run_annual_cycle <- function(y,
         use_rec_input <- exists("Rec_input") && (y <= dim(Rec_input)[2])
         if(use_rec_input) {
           # recruitment input
-          for(s in 1:n_sexes) NAA[r,1,1,s,sim] <- Rec_input[r,y,sim] * sexratio[r,y,s,sim]
+          for(s in 1:n_sexes) NAA[r,1,1,1,s,sim] <- Rec_input[r,y,sim] * sexratio[r,y,s,sim]
         } else {
           # Simulate new recruitment data
           if(rec_dd == 0 && is.null(tmp_ln_RecDevs)) tmp_ln_RecDevs <- stats::rnorm(1, 0, exp(ln_sigmaR[2])) # Global Recruitment Deviations
@@ -754,7 +754,7 @@ run_annual_cycle <- function(y,
         if (exists("Rec_input")) if ((y + 1 <= dim(Rec_input)[2])) use_rec_input <- TRUE
 
         if (use_rec_input) { # use rec input
-          for (s in 1:n_sexes) NAA[r, y+1, 1, s, sim] <- Rec_input[r, y+1, sim] * sexratio[r, y+1, s, sim]
+          for (s in 1:n_sexes) NAA[r, y+1, 1, 1, s, sim] <- Rec_input[r, y+1, sim] * sexratio[r, y+1, s, sim]
         } else { # sim new recs
 
           # Global Recruitment Deviations
@@ -1080,7 +1080,7 @@ simulation_self_test <- function(data,
   )
 
   # Movement
-  sim_list$Movement <- replicate(n = sim_list$n_sims, rep$Movement[,,1:length(data$years),,,drop = FALSE])
+  sim_list$Movement <- replicate(n = sim_list$n_sims, rep$Movement[,,1:length(data$years),,,,drop = FALSE])
 
   # Setup Recruitment Processes ---------------------------------------------
   sim_list <- Setup_Sim_Rec(
@@ -1414,7 +1414,7 @@ simulation_data_to_SPoRC <- function(sim_env,
     # Survey Compositions
     ObsSrvAgeComps <- array(sim_env$ObsSrvAgeComps[, 1:y,,,,, sim, drop = FALSE], dim = c(sim_env$n_regions, length(1:y), sim_env$n_seas, dim(sim_env$AgeingError)[3], sim_env$n_sexes, sim_env$n_srv_fleets))
     ObsSrvLenComps <- if(!is.null(sim_env$n_lens)) {
-      array(sim_env$ObsSrvLenComps[, 1:y,,,,, sim, drop = FALSE], dim = c(sim_env$n_regions, length(1:y), sim_env$n_lens, sim_env$n_seas, sim_env$n_sexes, sim_env$n_srv_fleets))
+      array(sim_env$ObsSrvLenComps[, 1:y,,,,, sim, drop = FALSE], dim = c(sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_lens, sim_env$n_sexes, sim_env$n_srv_fleets))
     } else NULL
     ISS_SrvAgeComps <- array(sim_env$ISS_SrvAgeComps[, 1:y,,,, sim, drop = FALSE], dim = c(sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_sexes, sim_env$n_srv_fleets))
     ISS_SrvLenComps <- array(sim_env$ISS_SrvLenComps[, 1:y,,,, sim, drop = FALSE], dim = c(sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_sexes, sim_env$n_srv_fleets))

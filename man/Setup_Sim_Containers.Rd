@@ -8,7 +8,7 @@ Setup_Sim_Containers(sim_list)
 }
 \arguments{
 \item{sim_list}{List from `Setup_Sim_Dim()` containing core simulation dimensions
-(`n_regions`, `n_yrs`, `n_ages`, `n_sexes`, `n_sims`, `n_fish_fleets`, `n_srv_fleets`, `n_obs_ages`, `n_lens`).
+(`n_regions`, `n_yrs`, `n_seas` `n_ages`, `n_sexes`, `n_sims`, `n_fish_fleets`, `n_srv_fleets`, `n_obs_ages`, `n_lens`).
 The function appends container arrays for biological, fishery, and survey quantities.}
 }
 \description{

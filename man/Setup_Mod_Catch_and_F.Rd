@@ -6,39 +6,27 @@
 \usage{
 Setup_Mod_Catch_and_F(
   input_list,
-  ObsCatch = array(1, dim = c(length(input_list$data$years),
-    input_list$data$n_fish_fleets)),
-  catch_units = array("biom", dim = c(input_list$data$n_regions,
-    input_list$data$n_fish_fleets)),
-  Catch_Type,
+  ObsCatch,
+  catch_units = array("biom", dim = c(input_list$data$n_fish_fleets)),
   UseCatch,
   Use_F_pen = 1,
-  est_all_regional_F = 1,
   sigmaC_spec = "fix",
-  sigmaC_agg_spec = "fix",
   sigmaF_spec = "fix",
-  sigmaF_agg_spec = "fix",
   ...
 )
 }
 \arguments{
 \item{input_list}{A list containing data, parameters, and map lists used by the model.}
 
-\item{ObsCatch}{Numeric array of observed catches, dimensioned \code{[n_regions, n_years, n_fish_fleets]}.}
+\item{ObsCatch}{Numeric array of observed catches, dimensioned \code{[n_regions, n_years, n_seas, n_fish_fleets]}.}
 
-\item{catch_units}{Catch units - Array dimensioned by n_regions x n_fish_fleets
+\item{catch_units}{Catch units - Array dimensioned by n_fish_fleets
 \itemize{
   \item \code{"abd"}: Catch units in abundance
   \item \code{"biom"}: Catch units in biomass (default)
 }}
 
-\item{Catch_Type}{Integer matrix with dimensions \code{[n_years, n_fish_fleets]}, specifying catch data types:
-\itemize{
-  \item \code{0}: Use aggregated catch data for the year.
-  \item \code{1}: Use region-specific catch data for the year.
-}}
-
-\item{UseCatch}{Indicator array \code{[n_regions, n_years, n_fish_fleets]} specifying whether to include catch data in the fit:
+\item{UseCatch}{Indicator array \code{[n_regions, n_years, n_seas, n_fish_fleets]} specifying whether to include catch data in the fit:
 \itemize{
   \item \code{0}: Do not use catch data.
   \item \code{1}: Use catch data and fit.
@@ -50,51 +38,39 @@ Setup_Mod_Catch_and_F(
   \item \code{1}: Apply penalty.
 }}
 
-\item{est_all_regional_F}{Integer flag indicating whether all regional fishing mortality deviations are estimated:
-\itemize{
-  \item \code{0}: Some fishing mortality deviations are aggregated across regions.
-  \item \code{1}: All fishing mortality deviations are regional.
-}}
-
 \item{sigmaC_spec}{Character string specifying observation error structure for catch data. Default behavior fixes \code{sigmaC} at a starting value of \code{1e-3} (log-scale \code{ln_sigmaC = log(1e-3)}) for all regions, years, and fleets. Other options include:
 \itemize{
-  \item \code{"est_shared_f"}: Estimate \code{sigmaC} shared across fishery fleets, unique by region and year.
-  \item \code{"est_shared_r"}: Estimate \code{sigmaC} shared across regions, unique by fleet and year.
-  \item \code{"est_shared_y"}: Estimate \code{sigmaC} shared across years, unique by region and fleet.
-  \item \code{"est_shared_r_f"}: Estimate \code{sigmaC} shared across regions and fleets, unique by year.
-  \item \code{"est_shared_f_y"}: Estimate \code{sigmaC} shared across fleets and years, unique by region.
-  \item \code{"est_shared_r_y"}: Estimate \code{sigmaC} shared across regions and years, unique by fleet.
-  \item \code{"est_shared_r_y_f"}: Estimate single \code{sigmaC} shared across regions, years, and fleets.
-  \item \code{"fix"}: Fix \code{sigmaC} at the starting value.
-  \item \code{"est_all"}: Estimate separate \code{sigmaC} for each region, year, and fleet combination.
-}}
-
-\item{sigmaC_agg_spec}{Character string specifying process error structure for aggregated catch observation error. Default fixes \code{sigmaC_agg} at the starting value (log-scale \code{sigmaC_agg}). Other options include:
-\itemize{
-  \item \code{"est_shared_f"}: Estimate \code{sigmaC_agg} shared across fishery fleets, unique by year.
-  \item \code{"est_shared_y"}: Estimate \code{sigmaC_agg} shared across years, unique by fleet.
-  \item \code{"est_shared_y_f"}: Estimate single \code{sigmaC_agg} shared across years and fleets.
-  \item \code{"fix"}: Fix at the starting value.
-  \item \code{"est_all"}: Estimate separate parameters for each year and fleet combination.
+    \item \code{"est_shared_r"}: Shared across regions
+    \item \code{"est_shared_y"}: Shared across years
+    \item \code{"est_shared_seas"}: Shared across seasons
+    \item \code{"est_shared_f"}: Shared across fleets
+    \item \code{"est_shared_r_y"}: Shared across regions and years
+    \item \code{"est_shared_r_seas"}: Shared across regions and seasons
+    \item \code{"est_shared_r_f"}: Shared across regions and fleets
+    \item \code{"est_shared_y_seas"}: Shared across years and seasons
+    \item \code{"est_shared_y_f"}: Shared across years and fleets
+    \item \code{"est_shared_seas_f"}: Shared across seasons and fleets
+    \item \code{"est_shared_r_y_seas"}: Shared across regions, years, and seasons
+    \item \code{"est_shared_r_y_f"}: Shared across regions, years, and fleets
+    \item \code{"est_shared_r_seas_f"}: Shared across regions, seasons, and fleets
+    \item \code{"est_shared_y_seas_f"}: Shared across years, seasons, and fleets
+    \item \code{"est_shared_r_y_seas_f"}: Single parameter shared across all
+    \item \code{"est_all"}: Unique per region, year, season, fleet
+    \item \code{"fix"}: Fixed at starting values
 }}
 
 \item{sigmaF_spec}{Character string specifying process error structure for fishing mortality. Default fixes \code{sigmaF} at \code{1} on the log scale (i.e., \code{ln_sigmaF = 0}). Other options include:
 \itemize{
-  \item \code{"est_shared_f"}: Estimate \code{sigmaF} shared across fishery fleets.
-  \item \code{"est_shared_r"}: Estimate \code{sigmaF} shared across regions but unique by fleet.
-  \item \code{"est_shared_r_f"}: Estimate \code{sigmaF} shared across regions and fleets.
-  \item \code{"fix"}: Fix \code{sigmaF} at the starting value.
-  \item \code{"est_all"}: Estimate separate \code{sigmaF} for each region and fleet.
+    \item \code{"est_shared_r"}: Shared across regions
+    \item \code{"est_shared_seas"}: Shared across seasons
+    \item \code{"est_shared_f"}: Shared across fleets
+    \item \code{"est_shared_r_seas"}: Shared across regions and seasons
+    \item \code{"est_shared_r_f"}: Shared across regions and fleets
+    \item \code{"est_shared_seas_f"}: Shared across seasons and fleets
+    \item \code{"est_shared_r_seas_f"}: Single parameter shared across all
+    \item \code{"est_all"}: Unique per region, season, fleet
+    \item \code{"fix"}: Fixed at starting values
 }}
-
-\item{sigmaF_agg_spec}{Character string specifying process error structure for aggregated fishing mortality. Default fixes \code{sigmaF_agg} at the starting value (log-scale \code{ln_sigmaF_agg}). Other options include:
-\itemize{
-  \item \code{"est_shared_f"}: Estimate \code{sigmaF_agg} shared across fishery fleets.
-  \item \code{"fix"}: Fix at the starting value.
-  \item \code{"est_all"}: Estimate separate parameters for each fishery fleet.
-}}
-
-\item{...}{Additional arguments specifying starting values for \code{ln_sigmaC}, \code{ln_sigmaF}, and \code{ln_sigmaF_agg}.}
 }
 \description{
 Setup fishing mortality and catch observations

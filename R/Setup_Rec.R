@@ -448,8 +448,8 @@ do_Rec_prop_mapping <- function(input_list) {
 #'     \item \code{"est_all"} estimates sex ratio for all blocks and regions independently
 #'     \item \code{"est_shared_r"} estimates sex ratio shared across regions but varying by block
 #'     \item \code{"fix"} fixes all sex ratio (no estimation)
+#'     }
 #' @param spawn_seas Season in which spawning occurs. Default is season 1.
-#'   }
 #' @export Setup_Mod_Rec
 #' @family Model Setup
 Setup_Mod_Rec <- function(input_list,

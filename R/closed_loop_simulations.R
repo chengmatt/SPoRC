@@ -108,7 +108,7 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
                             n_yrs = length(data$years) + closed_loop_yrs, # number of years
                             n_regions = data$n_regions,  # number of regions
                             n_ages = length(data$ages), # number of ages
-                            n_obs_ages = dim(data$ObsFishAgeComps)[3], # number of observed ages
+                            n_obs_ages = dim(data$ObsFishAgeComps)[4], # number of observed ages
                             n_lens = length(data$lens), # number of lengths
                             n_sexes = data$n_sexes, # number of sexes
                             n_fish_fleets = data$n_fish_fleets, # number of fishery fleets
@@ -175,7 +175,7 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   sim_list <- Setup_Sim_Fishing(
     sim_list = sim_list, # update simulate list
     ln_sigmaC = ln_sigmaC,
-    Fmort_input = extend_years(replicate(n = sim_list$n_sims, rep$Fmort[,1:length(data$years),,drop = FALSE]), n_years = closed_loop_yrs, 2, fill = 'zeros'),
+    Fmort_input = extend_years(replicate(n = sim_list$n_sims, rep$Fmort[,1:length(data$years),,,drop = FALSE]), n_years = closed_loop_yrs, 2, fill = 'zeros'),
     fish_sel_input = fish_sel_input,
     fish_q_input = fish_q_input,
     ObsFishIdx_SE = ObsFishIdx_SE,
@@ -331,7 +331,7 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   # setup recruitment simulation
   sim_list <- Setup_Sim_Rec(
     sim_list = sim_list,
-    spawn_eas = data$spawn_seas,
+    spawn_seas = data$spawn_seas,
     do_recruits_move = data$do_recruits_move,
     t_spawn = data$t_spawn,
     init_age_strc = data$init_age_strc,

@@ -82,33 +82,6 @@ Performs retrospective peels by truncating the input data, optionally applying
 Francis reweighting and parallelization, and returns estimates of spawning stock
 biomass (SSB) and recruitment for each peel.
 }
-\examples{
-\dontrun{
-# Run a 7-year retrospective
-ret <- do_retrospective(
-  n_retro = 7,
-  data = data,
-  parameters = parameters,
-  mapping = mapping,
-  random = NULL,
-  do_par = TRUE,
-  n_cores = 7,
-  do_francis = TRUE,
-  n_francis_iter = 5
-)
-
-# Plot retrospective SSB and Recruitment
-library(ggplot2)
-ggplot(ret, aes(x = Year + 1959, y = value, group = peel, color = 2024 - peel)) +
-  geom_line(lwd = 1.3) +
-  facet_wrap(~Type) +
-  guides(color = guide_colourbar(barwidth = 10, barheight = 1.3)) +
-  labs(x = 'Year', y = 'Value', color = 'Retrospective Year') +
-  scale_color_viridis_c() +
-  theme_bw(base_size = 15) +
-  theme(legend.position = 'top')
-}
-}
 \seealso{
 Other Model Diagnostics: 
 \code{\link{do_jitter}()},

@@ -9,6 +9,7 @@ get_closed_loop_reference_points(
   sim_env,
   asmt_data = NULL,
   asmt_rep = NULL,
+  t_spawn = sim_env$t_spawn,
   y,
   sim,
   reference_points_opt = list(n_avg_yrs = 1, SPR_x = 0.4, calc_rec_st_yr = 1, rec_age =
@@ -25,6 +26,8 @@ get_closed_loop_reference_points(
 \item{asmt_data}{Optional list. Assessment data object (from RTMB) if not using true values.}
 
 \item{asmt_rep}{Optional list. Assessment report object (from RTMB) if not using true values.}
+
+\item{t_spawn}{Spawn timing wihtin a given season / year, default uses sim_env true values}
 
 \item{y}{Integer. Number of years to include in calculations (usually the last year of the assessment or simulation).}
 
@@ -57,7 +60,8 @@ single-region and multi-region reference points.
 }
 \seealso{
 Other Closed Loop Simulations: 
-\code{\link{bisection_F}()},
+\code{\link{catch_to_F_multifleet}()},
+\code{\link{catch_to_F_singlefleet}()},
 \code{\link{condition_closed_loop_simulations}()}
 }
 \concept{Closed Loop Simulations}

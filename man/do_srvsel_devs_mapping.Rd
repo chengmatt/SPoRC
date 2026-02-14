@@ -4,12 +4,14 @@
 \alias{do_srvsel_devs_mapping}
 \title{Helper function to set up survey selectivity deviations mapping}
 \usage{
-do_srvsel_devs_mapping(input_list, srv_sel_devs_spec)
+do_srvsel_devs_mapping(input_list, srv_sel_devs_spec, srvsel_devs_shared_ages)
 }
 \arguments{
 \item{input_list}{Input list}
 
 \item{srv_sel_devs_spec}{Character vector specifying survey selectivity deviations parameterization}
+
+\item{srvsel_devs_shared_ages}{List object for specifying which ages are shared when selectivity deviations are semi-parametric (e.g., list(1:5, 6:10, 11:30) specifies that ages 1-5, 6-10, and 11-30 have the same deviations.)}
 }
 \description{
 Helper function to set up survey selectivity deviations mapping

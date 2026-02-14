@@ -20,12 +20,13 @@ Setup_Mod_Rec(
   dont_est_recdev_last = 0,
   init_age_strc = 2,
   equil_init_age_strc = 1,
-  init_F_prop = 0,
+  init_F_prop = rep(0, input_list$data$n_seas),
   sigmaR_spec = NULL,
   InitDevs_spec = NULL,
   RecDevs_spec = NULL,
   h_spec = NULL,
   t_spawn = 0,
+  spawn_seas = 1,
   sexratio_spec = "fix",
   sexratio_blocks = c(paste("none_Region_", c(1:input_list$data$n_regions), sep = "")),
   ...
@@ -83,21 +84,22 @@ For example, with 65 years total, \code{c(21, 31, 60, 64)} means:
 
 \item{dont_est_recdev_last}{Integer specifying how many of the most recent recruitment deviations to not estimate. Default is 0.}
 
-\item{init_age_strc}{Integer flag specifying initialization of initial age structure:
+\item{init_age_strc}{Initialization method for initial age structure (default = 2):
 \itemize{
-  \item \code{0}: Initialize by iteration.
-  \item \code{1}: Initialize using a scalar geometric series (does not account for movement).
-  \item \code{2}: Initialize using a matrix geometric series (accounts for movement; default).
+  \item \code{0} or \code{"iterative"}: Initialize by iteration.
+  \item \code{1} or \code{"scalar_no_move"}: Scalar geometric series w/o any movement in all groups.
+  \item \code{2} or \code{"matrix"}: Matrix geometric series (accounts for movement).
+  \item \code{3} or \code{"scalar_plus_only"}: Scalar geometric series w/o movement only in plus groups.
 }}
 
-\item{equil_init_age_strc}{Integer flag specifying how initial age structure deviations should be initialized. Default is stochastic for all ages except the recruitment age and the plus group.
+\item{equil_init_age_strc}{How initial age structure deviations should be initialized (default = 1):
 \itemize{
-  \item \code{0}: Equilibrium initial age structure.
-  \item \code{1}: Stochastic initial age structure for all ages, except for the plus group, which follows equilibrium calculations (geometric series)
-  \item \code{2}: Stochastic initial age structure for all ages
+  \item \code{0} or \code{"equil"}: Equilibrium initial age structure.
+  \item \code{1} or \code{"stoch_no_plus"}: Stochastic for all ages except plus group (follows equilibrium).
+  \item \code{2} or \code{"stoch_all"}: Stochastic initial age structure for all ages.
 }}
 
-\item{init_F_prop}{Numeric value specifying the initial fishing mortality proportion relative to mean fishing mortality for initializing age structure.}
+\item{init_F_prop}{Numeric vector (n_seas) specifying the initial fishing mortality proportion relative to mean fishing mortality for initializing age structure.}
 
 \item{sigmaR_spec}{Character string specifying estimation of recruitment variability (\code{sigmaR}):
 \itemize{
@@ -129,14 +131,16 @@ For example, with 65 years total, \code{c(21, 31, 60, 64)} means:
 }
   If \code{rec_model == "mean_rec"}, steepness is fixed.}
 
-\item{t_spawn}{Numeric fraction specifying spawning timing within the year.}
+\item{t_spawn}{Spawn timing fraction within the year / season (scalar, default = 0, where spawning happens before mortality processes)}
+
+\item{spawn_seas}{Season in which spawning occurs. Default is season 1.}
 
 \item{sexratio_spec}{Character string specifying sex ratio estimation scheme:
 \itemize{
   \item \code{"est_all"} estimates sex ratio for all blocks and regions independently
   \item \code{"est_shared_r"} estimates sex ratio shared across regions but varying by block
   \item \code{"fix"} fixes all sex ratio (no estimation)
-}}
+  }}
 
 \item{sexratio_blocks}{Character vector specifying blocks of years and regions for sex ratio. Format examples:
 \itemize{

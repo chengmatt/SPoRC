@@ -2,16 +2,16 @@
 % Please edit documentation in R/Get_Reference_Points.R
 \name{single_region_BH_Fmsy}
 \alias{single_region_BH_Fmsy}
-\title{Title Get FMSY from a Beverton-Holt function (Single Region)}
+\title{Title Get singl region BH MSY Reference Points}
 \usage{
 single_region_BH_Fmsy(pars, data)
 }
 \arguments{
-\item{pars}{Parameter List}
+\item{pars}{Parameter List from RTMB}
 
-\item{data}{Data List}
+\item{data}{Data List from RTMB}
 }
 \description{
-Title Get FMSY from a Beverton-Holt function (Single Region)
+Title Get singl region BH MSY Reference Points
 }
 \keyword{internal}

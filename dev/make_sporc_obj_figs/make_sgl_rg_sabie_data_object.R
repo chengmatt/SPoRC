@@ -13,6 +13,8 @@ sgl_rg_sable_data$n_srv_fleets <- 3
 sgl_rg_sable_data$n_sexes <- 2
 sgl_rg_sable_data$n_seas <- 1
 sgl_rg_sable_data$n_regions <- 1
+sgl_rg_sable_data$spawn_seas <- 1
+sgl_rg_sable_data$seasdur <- 1
 sgl_rg_sable_data$lens <- seq(41,99,2)
 
 # Dimensions to use in current R file
@@ -24,6 +26,7 @@ n_sexes <- sgl_rg_sable_data$n_sexes
 n_fish_fleets <- sgl_rg_sable_data$n_fish_fleets
 n_srv_fleets <- sgl_rg_sable_data$n_srv_fleets
 n_lens <- length(sgl_rg_sable_data$lens)
+
 
 # get ageing error
 sgl_rg_sable_data$age_error <- ageing_dat$age_error # input ageing error

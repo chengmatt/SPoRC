@@ -27,6 +27,8 @@ sgl_rg_dusky_data$n_srv_fleets <- 1
 
 # Number of seasons
 sgl_rg_dusky_data$n_seas <- 1
+sgl_rg_dusky_data$seasdur <- 1
+
 n_seas <- 1
 
 # Get model start and end year

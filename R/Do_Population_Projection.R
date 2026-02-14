@@ -51,7 +51,7 @@
 #' @param seasdur Vector of season durations (length n_seas). Default = 1 / n_seas
 #' @param spawn_seas Spawning season index. Default = 1
 #'
-#' @returns A list containing projected F, catch, SSB (and dynamic unfished), and Numbers at Age (and dynamic unfished). (Objects are generally dimensioned in the following order: n_regions, n_yrs, n_ages, n_sexes, n_fleets)
+#' @returns A list containing projected annual F, catch (annual and seasonal), SSB (and dynamic unfished; annual), and Numbers at Age (and dynamic unfished; annual and seasonal). (Objects are generally dimensioned in the following order: n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fleets)
 #' @export Do_Population_Projection
 #' @family Reference Points and Projections
 Do_Population_Projection <- function(n_proj_yrs = 2,

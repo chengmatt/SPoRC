@@ -14,7 +14,7 @@ get_key_quants(data, rep, reference_points_opt, proj_model_opt, model_names)
 \item{reference_points_opt}{A named list specifying options for reference point calculations. See \code{\link{Get_Reference_Points}} for more details. Must include:
 \describe{
   \item{SPR_x}{Spawning potential ratio (e.g., 0.4) for calculating F reference points. May be \code{NULL} if using \code{bh_rec}.}
-  \item{t_spwn}{Fraction of year when spawning occurs (e.g., 0.5).}
+  \item{t_spawn}{Fraction of year when spawning occurs (e.g., 0.5).}
   \item{sex_ratio_f}{Proportion of recruits that are female.}
   \item{calc_rec_st_yr}{Start year for averaging recruitment.}
   \item{rec_age}{Recruitment age.}
@@ -51,7 +51,7 @@ If \code{recruitment_opt} is set to "inv_gauss", a warning is issued since only 
 \examples{
 \dontrun{
 reference_points_opt <- list(SPR_x = 0.4,
-                             t_spwn = 0,
+                             t_spawn = 0,
                              sex_ratio_f = 0.5,
                              calc_rec_st_yr = 20,
                              rec_age = 2,

@@ -64,29 +64,37 @@ Run Jitter Analysis
      summarize(prop_conv = sum(Hessian) / length(Hessian))
 
    # get final model results
-   final_mod <- reshape2::melt(sabie_rtmb_model$rep$SSB) \%>\% rename(Region = Var1, Year = Var2) \%>\%
+   final_mod <- reshape2::melt(sabie_rtmb_model$rep$SSB) \%>\%
+   rename(Region = Var1, Year = Var2) \%>\%
    mutate(Type = 'SSB') \%>\%
      bind_rows(reshape2::melt(sabie_rtmb_model$rep$Rec) \%>\%
      rename(Region = Var1, Year = Var2) \%>\% mutate(Type = 'Recruitment'))
 
    # comparison of SSB and recruitment
   ggplot() +
-    geom_line(jit, mapping = aes(x = Year + 1959, y = value, group = jitter, color = Hessian), lwd = 1) +
-    geom_line(final_mod, mapping = aes(x = Year + 1959, y = value), color = "black", lwd = 1.3 , lty = 2) +
+    geom_line(jit, mapping = aes(x = Year + 1959, y = value,
+     group = jitter, color = Hessian), lwd = 1) +
+    geom_line(final_mod, mapping = aes(x = Year + 1959, y = value),
+    color = "black", lwd = 1.3 , lty = 2) +
     facet_grid(Type~Region, scales = 'free',
                labeller = labeller(Region = function(x) paste0("Region ", x),
-                                   Type = c("Recruitment" = "Age 2 Recruitment (millions)", "SSB" = 'SSB (kt)'))) +
+    Type = c("Recruitment" = "Age 2 Recruitment (millions)",
+     "SSB" = 'SSB (kt)'))) +
     labs(x = "Year", y = "Value") +
     theme_bw(base_size = 20) +
     scale_color_manual(values = c("red", 'grey')) +
     geom_text(data = jit \%>\% filter(Type == 'SSB', Year == 1, jitter == 1),
-              aes(x = Inf, y = Inf, label = paste("Proportion Converged: ", round(prop_converged$prop_conv, 3))),
+              aes(x = Inf, y = Inf, label =
+              paste("Proportion Converged: ",
+              round(prop_converged$prop_conv, 3))),
               hjust = 1.1, vjust = 1.9, size = 6, color = "black")
 
    # compare jitter of max gradient and hessian PD
-   ggplot(jit, aes(x = jitter, y = jnLL, color = Max_Gradient, shape = Hessian)) +
+   ggplot(jit, aes(x = jitter, y = jnLL,
+   color = Max_Gradient, shape = Hessian)) +
      geom_point(size = 5, alpha = 0.3) +
-     geom_hline(yintercept = min(sabie_rtmb_model$rep$jnLL), lty = 2, size = 2, color = "blue") +
+     geom_hline(yintercept = min(sabie_rtmb_model$rep$jnLL),
+     lty = 2, size = 2, color = "blue") +
      facet_wrap(~Hessian, labeller = labeller(
        Hessian = c("FALSE" = "non-PD Hessian", "TRUE" = 'PD Hessian')
      )) +
@@ -95,8 +103,11 @@ Run Jitter Analysis
      theme(legend.position = "bottom") +
      guides(color = guide_colorbar(barwidth = 15, barheight = 0.5)) +
      labs(x = 'Jitter') +
-     geom_text(data = jit \%>\% filter(Hessian == TRUE, Year == 1, jitter == 1),
-               aes(x = Inf, y = Inf, label = paste("Proportion Converged: ", round(prop_converged$prop_conv, 3))),
+     geom_text(data = jit \%>\% filter(Hessian == TRUE,
+     Year == 1, jitter == 1),
+               aes(x = Inf, y = Inf, label =
+               paste("Proportion Converged: ",
+               round(prop_converged$prop_conv, 3))),
                hjust = 1.1, vjust = 1.9, size = 6, color = "black")
 }
 }

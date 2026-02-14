@@ -12,10 +12,10 @@ Setup_Mod_FishIdx_and_Comps(
   UseFishIdx,
   ObsFishAgeComps,
   UseFishAgeComps,
-  ISS_FishAgeComps,
+  ISS_FishAgeComps = NULL,
   ObsFishLenComps,
   UseFishLenComps,
-  ISS_FishLenComps,
+  ISS_FishLenComps = NULL,
   FishAgeComps_LikeType,
   FishLenComps_LikeType,
   FishAgeComps_Type,
@@ -27,39 +27,39 @@ Setup_Mod_FishIdx_and_Comps(
 \item{input_list}{List containing a data list, parameter list, and map list}
 
 \item{ObsFishIdx}{Observed fishery index data as a numeric array with dimensions
-\code{[n_regions, n_years, n_fish_fleets]}.}
+\code{[n_regions, n_years, n_seas, n_fish_fleets]}.}
 
 \item{ObsFishIdx_SE}{Standard errors associated with \code{ObsFishIdx},
-also dimensioned \code{[n_regions, n_years, n_fish_fleets]}.}
+also dimensioned \code{[n_regions, n_years, n_seas,  n_fish_fleets]}.}
 
 \item{fish_idx_type}{Character vector of length \code{n_fish_fleets} specifying the type of index data.
 Options are \code{"abd"} for abundance, \code{"biom"} for biomass, and \code{"none"} if no index is available.}
 
-\item{UseFishIdx}{Logical or binary indicator array (\code{[n_regions, n_years, n_fish_fleets]})
+\item{UseFishIdx}{Logical or binary indicator array (\code{[n_regions, n_years, n_seas,  n_fish_fleets]})
 specifying whether to include a fishery index in the likelihood (\code{1}) or ignore it (\code{0}).}
 
 \item{ObsFishAgeComps}{Observed fishery age composition data as a numeric array with dimensions
-\code{[n_regions, n_years, n_ages, n_sexes, n_fish_fleets]}. Values should reflect counts or proportions
+\code{[n_regions, n_years, n_seas,  n_ages, n_sexes, n_fish_fleets]}. Values should reflect counts or proportions
 (not required to sum to 1, but should be on a comparable scale).}
 
-\item{UseFishAgeComps}{Indicator array (\code{[n_regions, n_years, n_fish_fleets]}) specifying whether
+\item{UseFishAgeComps}{Indicator array (\code{[n_regions, n_years, n_seas,  n_fish_fleets]}) specifying whether
 to fit fishery age composition data (\code{1}) or ignore it (\code{0}).}
 
 \item{ISS_FishAgeComps}{Input sample size for age compositions, array dimensioned
-\code{[n_regions, n_years, n_sexes, n_fish_fleets]}. Required if observed age comps are normalized
-(i.e., sum to 1), to correctly scale the contribution to the likelihood.}
+\code{[n_regions, n_years, n_seas, n_sexes, n_fish_fleets]}. Required if observed age comps are normalized
+(i.e., sum to 1), to correctly scale the contribution to the likelihood. (NULL is default, which sums up the observed fishery comps to derive the ISS.)}
 
 \item{ObsFishLenComps}{Observed fishery length composition data as a numeric array with dimensions
-\code{[n_regions, n_years, n_lens, n_sexes, n_fish_fleets]}. Values should reflect counts or proportions.}
+\code{[n_regions, n_years, n_seas, n_lens, n_sexes, n_fish_fleets]}. Values should reflect counts or proportions.}
 
-\item{UseFishLenComps}{Indicator array (\code{[n_regions, n_years, n_fish_fleets]}) specifying whether
+\item{UseFishLenComps}{Indicator array (\code{[n_regions, n_years, n_seas, n_fish_fleets]}) specifying whether
 to fit fishery length composition data (\code{1}) or ignore it (\code{0}).}
 
 \item{ISS_FishLenComps}{Same as \code{ISS_FishAgeComps}, but for length compositions.}
 
 \item{FishAgeComps_LikeType}{Character vector of length \code{n_fish_fleets} specifying the likelihood
 type used for fishery age composition data. Options include \code{"Multinomial"}, \code{"Dirichlet-Multinomial"},
-and \code{"iid-Logistic-Normal"}. Use \code{"none"} to omit the likelihood.}
+\code{"iid-Logistic-Normal"}, \code{"1d-Logistic-Normal"}, and \code{"2d-Logistic-Normal"}. Use \code{"none"} to omit the likelihood.}
 
 \item{FishLenComps_LikeType}{Same as \code{FishAgeComps_LikeType}, but for fishery length composition data.}
 

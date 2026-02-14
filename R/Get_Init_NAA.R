@@ -184,8 +184,8 @@ Get_Init_NAA <- function(init_age_strc,
       for(seas in 1:n_seas) {
         S_penult = diag(exp(-((natmort[,n_ages-1,s] * seasdur[seas]) + init_F[seas] * fish_sel[,n_ages-1,s,1])), n_regions)
         S_plus = diag(exp(-((natmort[,n_ages,s] * seasdur[seas]) + init_F[seas] * fish_sel[,n_ages,s,1])), n_regions)
-        T_penult = T_penult %*% (Movement[,,seas,n_ages-1,s]) %*% S_penult
-        T_plus = T_plus %*% (Movement[,,seas,n_ages,s]) %*% S_plus
+        T_penult = T_penult %*% t(Movement[,,seas,n_ages-1,s]) %*% S_penult
+        T_plus = T_plus %*% t(Movement[,,seas,n_ages,s]) %*% S_plus
       }
 
       source = T_penult %*% Init_NAA[,n_ages-1,s] # compute forward projection of penultimate age
@@ -243,6 +243,9 @@ Get_Init_NAA <- function(init_age_strc,
     # save result
     NAA = Init_NAA
   }
+
+  # Input r0 into first age
+  NAA[,1,] = R0_r * as.vector(sexratio)
 
   # Apply initial age deviations
   for(r in 1:n_regions) {

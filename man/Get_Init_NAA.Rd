@@ -10,6 +10,8 @@ Get_Init_NAA(
   n_regions,
   n_sexes,
   n_ages,
+  n_seas,
+  seasdur,
   natmort,
   init_F,
   fish_sel,
@@ -17,15 +19,15 @@ Get_Init_NAA(
   sexratio,
   Movement,
   do_recruits_move,
-  NAA,
   ln_InitDevs
 )
 }
 \arguments{
 \item{init_age_strc}{Integer specifying the initialization method for the age structure:
 - 0: Iterative solution to equilibrium
-- 1: Scalar geometric series solution (no movement in plus group)
-- 2: Matrix geometric series solution (generalizes scalar solution with movement)}
+- 1: Scalar geometric series solution w/o movement in any groups (no movement in all groups)
+- 2: Matrix geometric series solution (generalizes scalar solution with movement)
+- 3: Scalar geometric series solution w/o movement only in plus group (no movement in plus groups)}
 
 \item{init_iter}{Integer; number of iterations to run when `init_age_strc = 0`.}
 
@@ -35,9 +37,13 @@ Get_Init_NAA(
 
 \item{n_ages}{Integer; number of age classes.}
 
+\item{n_seas}{Number of seasons}
+
+\item{seasdur}{Fraction of time within each season}
+
 \item{natmort}{Array of natural mortality rates with dimensions `[regions, ages, sexes]`.}
 
-\item{init_F}{Numeric; initial fishing mortality applied (0 for unfished population).}
+\item{init_F}{Vector; initial fishing mortality applied by season (0 for unfished population).}
 
 \item{fish_sel}{Array of fishery selectivity with dimensions `[regions, ages, sexes, fleets]`.}
 
@@ -45,7 +51,7 @@ Get_Init_NAA(
 
 \item{sexratio}{Array `[regions, sexes]` giving the proportion of each sex in recruitment.}
 
-\item{Movement}{Array `[regions, regions, ages, sexes]` defining movement probabilities.}
+\item{Movement}{Array `[regions, regions, season, ages, sexes]` defining movement probabilities.}
 
 \item{do_recruits_move}{Integer; 0 = recruits do not move, 1 = recruits move according to `Movement`.}
 

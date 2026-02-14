@@ -16,6 +16,8 @@ Get_Tagging_Mortality(
   n_sexes,
   n_fish_fleets,
   y,
+  seas,
+  seasdur,
   what
 )
 }
@@ -28,7 +30,7 @@ Get_Tagging_Mortality(
 
 \item{natmort}{Array of fishing mortality, dimensioned by n_region, n_years, n_ages, n_sexes}
 
-\item{Tag_Shed}{Scalar chronic tag shedding rate}
+\item{Tag_Shed}{Scalar chronic tag shedding rate (annual)}
 
 \item{fish_sel}{Array of fishery selectivity, dimensioned by n_region, n_years, n_ages, n_sexes, n_fish_fleetss}
 
@@ -41,6 +43,10 @@ Get_Tagging_Mortality(
 \item{n_fish_fleets}{Number of fishery fleets}
 
 \item{y}{Year index}
+
+\item{seas}{Season index}
+
+\item{seasdur}{Fraction of the year the season occurs in}
 
 \item{what}{Whether to return Z or F (total or fishing mortality)}
 }

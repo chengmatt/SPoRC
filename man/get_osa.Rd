@@ -11,11 +11,13 @@ get_osa(
   DM_theta = NULL,
   LN_Sigma = NULL,
   years,
+  seas,
   fleet,
   bins,
   comp_type,
   bin_label,
-  comp_like = 0
+  comp_like = 0,
+  addtocomp = 0
 )
 }
 \arguments{
@@ -34,7 +36,8 @@ removed when filtering by \code{years}.}
     \code{[n_regions, n_years, n_sexes]}.
   \item \code{comp_type = 2} (split by region, joint by sex): matrix
     \code{[n_regions, n_years]}.
-}}
+}
+For years without data, users can simply input an NA or any abritary number (it gets filtered out within the function).}
 
 \item{DM_theta}{Dirichlet-multinomial overdispersion parameter(s). Dimensions
 must match \code{N}:
@@ -53,8 +56,9 @@ must match \code{N}:
 }
 Use [get_logistN_Sigma()] to help construct this input.}
 
-\item{years}{Vector of years to filter to. Must match dimensions of
-\code{obs_mat} and \code{exp_mat}.}
+\item{years}{Vector of years to filter to if composition type is aggregated (0). Otherwise, this expects a list where each list element is a vector of years for each region where compositions are available for use (split by region and sex, or split by region, joint by sex).}
+
+\item{seas}{Season index}
 
 \item{fleet}{Fleet identifier (character or numeric) to filter to.}
 
@@ -77,13 +81,15 @@ lengths.}
   \item 1 = Dirichlet-multinomial
   \item 2–4 = logistic-normal variants
 }}
+
+\item{addtocomp}{Constant that is added to compositions}
 }
 \value{
 A list with one element:
 \describe{
   \item{res}{Data frame of OSA residuals. Columns include:
     \code{fleet}, \code{index_label}, \code{year}, \code{index},
-    \code{resid}, \code{region}, \code{sex}, and \code{comp_type}.}
+    \code{resid}, \code{region}, \code{seas}, \code{sex}, and \code{comp_type}.}
 }
 }
 \description{

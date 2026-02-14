@@ -4,7 +4,7 @@
 \alias{Restrc_Comps}
 \title{Restructure composition values, used within a variety of functions to either do Francis reweighting or get observed and expected composition values}
 \usage{
-Restrc_Comps(Exp, Obs, Comp_Type, age_or_len, AgeingError, comp_agg_type)
+Restrc_Comps(Exp, Obs, Comp_Type, age_or_len, AgeingError)
 }
 \arguments{
 \item{Exp}{Expected values (catch at age or survey index at age) indexed for a given year and fleet (structured as a matrix by age and sex)}

@@ -28,11 +28,11 @@ get_francis_weights(
 
 \item{ISS}{Input sample size array}
 
-\item{Pred_array}{Predicted values array dimensioned by n_regions, n_years, n_ages, n_sexes, n_fleets}
+\item{Pred_array}{Predicted values array dimensioned by n_regions, n_years, n_seas, n_ages, n_sexes, n_fleets}
 
-\item{Obs_array}{Observed values array dimensioned by n_regions, n_years, n_ages, n_sexes, n_fleets}
+\item{Obs_array}{Observed values array dimensioned by n_regions, n_years, n_seas, n_ages, n_sexes, n_fleets}
 
-\item{weights}{Array of francis weights (NAs) to apply dimensioned by n_regions, n_years, n_sexes, n_fleets}
+\item{weights}{Array of francis weights (NAs) to apply dimensioned by n_regions, n_years, n_seas, n_sexes, n_fleets}
 
 \item{bins}{Vector of bins used (age or length)}
 
@@ -43,11 +43,5 @@ List of values for calculated francis weight, and a dataframe of observed and ex
 }
 \description{
 Computes Francis weights, which is used internally by do_francis_reweighting
-}
-\examples{
-\dontrun{
-# Function is used within do_francis_reweighting
-get_francis_weights(n_regions, n_sexes, n_fleets, Use, ISS, Pred_arry, Obs_array, weights, bins, comp_type)
-}
 }
 \keyword{internal}

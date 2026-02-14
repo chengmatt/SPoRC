@@ -4,7 +4,7 @@
 \alias{rlogistnormal}
 \title{Simulate logistic normal variables}
 \usage{
-rlogistnormal(exp, pars, comp_like)
+rlogistnormal(exp, pars, comp_like, n_sexes)
 }
 \arguments{
 \item{exp}{Expected values}
@@ -12,6 +12,8 @@ rlogistnormal(exp, pars, comp_like)
 \item{pars}{Parameters for a logistic normal (iid == 1 parameter, AR1 == 2 parameters, 2D, by age and sex == 3 parameters, 3D, by age, sex, and region == 4 parameters)}
 
 \item{comp_like}{Likelihood structure (iid == 2, ar1 == 3, 2d == 4, 3d == 5)}
+
+\item{n_sexes}{Number of sexes}
 }
 \description{
 Simulate logistic normal variables

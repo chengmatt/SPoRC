@@ -11,6 +11,10 @@ library(PBSmodelling)
 devtools::load_all(here("R"))
 data("sgl_rg_dusky_data")
 
+# for comparisons
+rep_dat_rtem <- readList(here::here("dev", "dev_data", "dusky_rtem.rep"))
+rep_dat <- readLines(here::here("dev", "dev_data", "dusky.rep"))
+
 # Setup Model -------------------------------------------------------------
 
 input_list <- Setup_Mod_Dim(
@@ -351,7 +355,6 @@ ggplot(ts_comp) +
 ggplot(ts_comp) +
   geom_line(aes(x = Year, y = (RTMB - ADMB) / ADMB), size = 1) +
   geom_hline(yintercept = 0, lty = 2, size = 1.3) +
-  # coord_cartesian(ylim = c(-0.05, 0.05)) +
   scale_y_continuous(labels = scales::percent) +
   facet_wrap(~Type, scales = "free_y") +
   labs(y = "Relative difference (%)") +

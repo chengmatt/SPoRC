@@ -184,14 +184,14 @@ Get_Det_Recruitment <- function(recruitment_model,
           # Unfished
           S_penult_unfished = diag(exp(-(natmort[,n_ages-1] * seasdur[seas])), n_regions)
           S_plus_unfished = diag(exp(-(natmort[,n_ages] * seasdur[seas])), n_regions)
-          T_penult_unfished = S_penult_unfished %*% (Movement[,,seas,n_ages-1]) %*% T_penult_unfished
-          T_plus_unfished = S_plus_unfished %*% (Movement[,,seas,n_ages]) %*% T_plus_unfished
+          T_penult_unfished = S_penult_unfished %*% t(Movement[,,seas,n_ages-1]) %*% T_penult_unfished
+          T_plus_unfished = S_plus_unfished %*% t(Movement[,,seas,n_ages]) %*% T_plus_unfished
 
           # Fished
           S_penult_fished = diag(exp(-(natmort[,n_ages-1] * seasdur[seas] + init_F[seas] * fish_sel[,n_ages-1])), n_regions)
           S_plus_fished = diag(exp(-(natmort[,n_ages] * seasdur[seas] + init_F[seas] * fish_sel[,n_ages])), n_regions)
-          T_penult_fished = S_penult_fished %*% (Movement[,,seas,n_ages-1]) %*% T_penult_fished
-          T_plus_fished = S_plus_fished %*% (Movement[,,seas,n_ages]) %*% T_plus_fished
+          T_penult_fished = S_penult_fished %*% t(Movement[,,seas,n_ages-1]) %*% T_penult_fished
+          T_plus_fished = S_plus_fished %*% t(Movement[,,seas,n_ages]) %*% T_plus_fished
         } # end seas loop
 
         # Solve for equilibrium plus group (at start of year)
@@ -335,10 +335,10 @@ Get_Det_Recruitment <- function(recruitment_model,
         S_plus_fished = diag(exp(-(natmort[, n_ages] * seasdur[seas] + init_F[seas] * fish_sel[, n_ages])), n_regions)
 
         # Get transition matrices
-        T_penult_unfished = S_penult_unfished %*% Movement[,,seas, n_ages - 1] %*% T_penult_unfished
-        T_plus_unfished = S_plus_unfished %*% Movement[,,seas, n_ages] %*% T_plus_unfished
-        T_penult_fished = S_penult_fished %*% Movement[,,seas, n_ages - 1] %*% T_penult_fished
-        T_plus_fished = S_plus_fished %*% Movement[,,seas, n_ages] %*% T_plus_fished
+        T_penult_unfished = S_penult_unfished %*% t(Movement[,,seas, n_ages - 1]) %*% T_penult_unfished
+        T_plus_unfished = S_plus_unfished %*% t(Movement[,,seas, n_ages]) %*% T_plus_unfished
+        T_penult_fished = S_penult_fished %*% t(Movement[,,seas, n_ages - 1]) %*% T_penult_fished
+        T_plus_fished = S_plus_fished %*% t(Movement[,,seas, n_ages]) %*% T_plus_fished
       }
 
       source_unfished = T_penult_unfished %*% Nspr[, n_ages - 1]

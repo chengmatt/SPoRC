@@ -8,7 +8,9 @@ do_move_pars_mapping(
   input_list,
   Movement_ageblk_spec,
   Movement_yearblk_spec,
-  Movement_sexblk_spec
+  Movement_sexblk_spec,
+  Movement_seasblk_spec,
+  use_fixed_movement
 )
 }
 \arguments{
@@ -19,6 +21,10 @@ do_move_pars_mapping(
 \item{Movement_yearblk_spec}{Character specifying movement year block options}
 
 \item{Movement_sexblk_spec}{Character specifying movement sex block options}
+
+\item{Movement_seasblk_spec}{Character specifying movement season block options}
+
+\item{use_fixed_movement}{Numeric on whether movement is fixed or not}
 }
 \description{
 Helper function to set up movement mapping

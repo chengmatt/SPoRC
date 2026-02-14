@@ -13,13 +13,13 @@ Setup_Mod_Tagging(
   Obs_Tag_Recap = NA,
   Tag_LikeType = NA,
   mixing_period = 1,
-  t_tagging = 0,
+  t_tagging = 1,
   tag_selex = NA,
   tag_natmort = NA,
   Use_TagRep_Prior = 0,
   TagRep_Prior = NULL,
-  move_age_tag_pool = NA,
-  move_sex_tag_pool = NA,
+  move_age_tag_pool = as.list(1:length(input_list$data$ages)),
+  move_sex_tag_pool = as.list(1:input_list$data$n_sexes),
   Init_Tag_Mort_spec = NULL,
   Tag_Shed_spec = NULL,
   TagRep_spec = "fix",
@@ -32,13 +32,13 @@ Setup_Mod_Tagging(
 
 \item{UseTagging}{Numeric (0 or 1) indicating whether to use tagging data (1) or not (0)}
 
-\item{tag_release_indicator}{Matrix [n_tag_cohorts x 2], where columns are release region and release year}
+\item{tag_release_indicator}{Matrix [n_tag_cohorts x 3], where columns are release region, release year, and release season}
 
 \item{max_tag_liberty}{Maximum number of years to track a tagged cohort}
 
 \item{Tagged_Fish}{Array [n_tag_cohorts x n_ages x n_sexes] describing tagged fish releases}
 
-\item{Obs_Tag_Recap}{Array [max_tag_liberty x n_tag_cohorts x n_regions x n_ages x n_sexes] observed tag recaptures}
+\item{Obs_Tag_Recap}{Array [max_tag_liberty x n_seas x n_tag_cohorts x n_regions x n_ages x n_sexes] observed tag recaptures}
 
 \item{Tag_LikeType}{Character string specifying tag likelihood type. One of:
 \itemize{
@@ -51,9 +51,9 @@ Setup_Mod_Tagging(
 }
 Example: \code{Tag_LikeType = "NegBin"}}
 
-\item{mixing_period}{Numeric indicating minimum years post-release to include in fitting}
+\item{mixing_period}{Numeric indicating minimum years post-release to include in fitting (or minimum seasons post-release if model is seasonal)}
 
-\item{t_tagging}{Fractional year when tagging occurs (e.g., 0.5 for mid-year)}
+\item{t_tagging}{Fraction of season remaining when tags are released (e.g., start of season == 1, mid season == 0.5, end of season == 0; default = 1)}
 
 \item{tag_selex}{Character string specifying tag recovery selectivity. One of:
 \itemize{
@@ -84,14 +84,14 @@ Must include columns: \code{region} (region index), \code{block} (time block ind
 Each row specifies a beta prior for one tag reporting parameter.
 Only parameters with rows in this data frame will have priors applied.}
 
-\item{move_age_tag_pool}{List or character specifying pooling of tagging data by age groups. Examples:
+\item{move_age_tag_pool}{List or character specifying pooling of tagging data by age groups. Default does not pool ages. Examples:
 \itemize{
   \item \code{list(1:5, 6:11, 12:20)} pools these age groups together
   \item \code{"all"} pools all ages together (internally converted to \code{list(1:n_ages)})
   \item \code{as.list(1:n_ages)} fits each sex separately
 }}
 
-\item{move_sex_tag_pool}{List or character specifying pooling of tagging data by sex groups. Examples:
+\item{move_sex_tag_pool}{List or character specifying pooling of tagging data by sex groups. Default do not pool sexes. Examples:
 \itemize{
   \item \code{list(1:2)} pools sexes together
   \item \code{"all"} pools all sexes together (internally converted to \code{list(1:n_sexes)})
@@ -109,7 +109,7 @@ Only parameters with rows in this data frame will have priors applied.}
   \item \code{"fix"} fixes all reporting rates (no estimation)
 }}
 
-\item{Tag_Reporting_blocks}{Character vector specifying blocks of years and regions for tag reporting rates. Format examples:
+\item{Tag_Reporting_blocks}{Character vector specifying blocks of years and regions for tag reporting rates. Default is a single block for all regions. Format examples:
 \itemize{
   \item \code{"Block_1_Year_1-15_Region_1"}
   \item \code{"Block_2_Year_16-terminal_Region_2"}

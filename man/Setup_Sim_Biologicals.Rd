@@ -16,19 +16,19 @@ Setup_Sim_Biologicals(
 )
 }
 \arguments{
-\item{natmort_input}{Natural mortality array [n_regions × n_yrs × n_ages × n_sexes × n_sims]}
+\item{natmort_input}{Natural mortality array [n_regions × n_yrs × n_seas x n_ages × n_sexes × n_sims]}
 
-\item{WAA_input}{Spawning weight-at-age array [n_regions × n_yrs × n_ages × n_sexes × n_sims]}
+\item{WAA_input}{Spawning weight-at-age array [n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]}
 
-\item{WAA_fish_input}{Fishery weight-at-age array [n_regions × n_yrs × n_ages × n_sexes × n_sims]}
+\item{WAA_fish_input}{Fishery weight-at-age array [n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]}
 
-\item{WAA_srv_input}{Survey weight-at-age array [n_regions × n_yrs × n_ages × n_sexes × n_sims]}
+\item{WAA_srv_input}{Survey weight-at-age array [n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]}
 
-\item{MatAA_input}{Maturity-at-age array [n_regions × n_yrs × n_ages × n_sexes × n_sims]}
+\item{MatAA_input}{Maturity-at-age array [n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]}
 
 \item{AgeingError_input}{Ageing error matrix [n_regions × n_model_ages × n_obs_ages × n_sims]}
 
-\item{SizeAgeTrans_input}{Size-age transition matrix [n_regions × n_yrs × n_lens × n_ages × n_sexes x n_sims]}
+\item{SizeAgeTrans_input}{Size-age transition matrix [n_regions × n_yrs × n_seas × n_lens × n_ages × n_sexes x n_sims]}
 
 \item{sim_list}{Simulation list object from `Setup_Sim_Dim()`}
 }

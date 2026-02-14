@@ -2,18 +2,27 @@
 % Please edit documentation in R/Setup_Fishery.R
 \name{do_sigmaF_mapping}
 \alias{do_sigmaF_mapping}
-\title{Helper function to setup sigma F and sigma F agg mapping}
+\title{Helper function to setup sigma F}
 \usage{
-do_sigmaF_mapping(input_list, sigmaF_spec, sigmaF_agg_spec)
+do_sigmaF_mapping(input_list, sigmaF_spec)
 }
 \arguments{
 \item{input_list}{Input list}
 
-\item{sigmaF_spec}{Character vector for sigmaF specification}
-
-\item{sigmaF_agg_spec}{Character vector for sigmaF_agg specification}
+\item{sigmaF_spec}{Character vector for sigmaF specification. Options:
+\itemize{
+  \item \code{"est_shared_r"}: Shared across regions
+  \item \code{"est_shared_seas"}: Shared across seasons
+  \item \code{"est_shared_f"}: Shared across fleets
+  \item \code{"est_shared_r_seas"}: Shared across regions and seasons
+  \item \code{"est_shared_r_f"}: Shared across regions and fleets
+  \item \code{"est_shared_seas_f"}: Shared across seasons and fleets
+  \item \code{"est_shared_r_seas_f"}: Single parameter shared across all
+  \item \code{"est_all"}: Unique per region, season, fleet
+  \item \code{"fix"}: Fixed at starting values
+}}
 }
 \description{
-Helper function to setup sigma F and sigma F agg mapping
+Helper function to setup sigma F
 }
 \keyword{internal}

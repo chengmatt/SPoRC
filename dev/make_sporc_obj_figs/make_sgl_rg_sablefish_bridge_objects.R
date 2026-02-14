@@ -277,6 +277,10 @@ saveRDS(data, here("dev", "dev_output", "1_Region_Model_Sablefish", "data.RDS"))
 saveRDS(sd_rep, here("dev", "dev_output", "1_Region_Model_Sablefish", "sd_rep.RDS"))
 saveRDS(rep, here("dev", "dev_output", "1_Region_Model_Sablefish", "rep.RDS"))
 
+# Write Region Sablefish Report
+sgl_rg_sable_rep <- rep
+usethis::use_data(sgl_rg_sable_rep, internal = FALSE, overwrite = TRUE)
+
 # Compare to ADMB (23.5b) -------------------------------------------------
 # Read in data
 tem_dat <- dget(here("dev", "dev_data", '2024 Base (23.5)_final model_v3', 'tem.rdat'))

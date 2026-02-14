@@ -18,18 +18,18 @@ and survey data.}
 \value{
 A named list with the following elements:
 \describe{
-  \item{WAA}{Weight-at-age array [region × year × age × sex].}
-  \item{MatAA}{Maturity-at-age array [region × year × age × sex].}
-  \item{SizeAgeTrans}{Size–age transition array [region × year × length × age × sex].}
-  \item{AgeingError}{Ageing error matrix [year × age × error × sim].}
+  \item{WAA}{Weight-at-age array [region × year × seas x age × sex].}
+  \item{MatAA}{Maturity-at-age array [region × year × seas x age × sex].}
+  \item{SizeAgeTrans}{Size–age transition array [region × year × seas x length × age × sex].}
+  \item{AgeingError}{Ageing error matrix [year × age × error].}
   \item{tag_release_indicator}{Tag release indicators (or `NULL` if tagging not used).}
   \item{Obs_Tag_Recap}{Observed tag recapture array (or `NULL`).}
   \item{Tagged_Fish}{Tagged fish counts (or `NULL`).}
   \item{n_tag_cohorts}{Number of tag release cohorts (or `NULL`).}
-  \item{ObsCatch}{Observed fishery catch array [region × year × fleet].}
-  \item{ln_sigmaC}{Log Fishery Catch SD [region × year × fleet].}
+  \item{ObsCatch}{Observed fishery catch array [region × year × seas x fleet].}
+  \item{ln_sigmaC}{Log Fishery Catch SD [region × year × seas x fleet].}
   \item{UseCatch}{Binary indicator array for catch data availability.}
-  \item{ObsFishIdx}{Observed fishery index array [region × year × fleet].}
+  \item{ObsFishIdx}{Observed fishery index array [region × year × seas x fleet].}
   \item{ObsFishIdx_SE}{Standard error for fishery index array.}
   \item{UseFishIdx}{Binary indicator array for fishery indices.}
   \item{ObsFishAgeComps}{Observed fishery age composition array.}
@@ -38,7 +38,7 @@ A named list with the following elements:
   \item{ISS_FishLenComps}{Implied sample sizes for fishery length compositions.}
   \item{UseFishAgeComps}{Binary indicator array for fishery age comps.}
   \item{UseFishLenComps}{Binary indicator array for fishery length comps.}
-  \item{ObsSrvIdx}{Observed survey index array [region × year × fleet].}
+  \item{ObsSrvIdx}{Observed survey index array [region × year × seas x fleet].}
   \item{ObsSrvIdx_SE}{Standard error for survey index array.}
   \item{UseSrvIdx}{Binary indicator array for survey indices.}
   \item{ObsSrvAgeComps}{Observed survey age composition array.}

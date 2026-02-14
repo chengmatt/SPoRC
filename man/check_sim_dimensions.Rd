@@ -11,6 +11,7 @@ check_sim_dimensions(
   n_ages = NULL,
   n_lens = NULL,
   n_sexes = NULL,
+  n_seas = NULL,
   n_fish_fleets = NULL,
   n_srv_fleets = NULL,
   n_sims = NULL,
@@ -29,6 +30,8 @@ check_sim_dimensions(
 \item{n_lens}{Number of lengths}
 
 \item{n_sexes}{Number of sexes}
+
+\item{n_seas}{Number of seasons}
 
 \item{n_fish_fleets}{Number of fishery fleets}
 

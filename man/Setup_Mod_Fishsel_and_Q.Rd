@@ -20,6 +20,7 @@ Setup_Mod_Fishsel_and_Q(
   Use_fish_selex_prior = 0,
   fish_selex_prior = NULL,
   cont_tv_fish_sel_penalty = TRUE,
+  fishsel_devs_shared_ages = NULL,
   ...
 )
 }
@@ -69,7 +70,7 @@ The default for each fleet is \code{"none_Fleet_x"} (i.e., no selectivity blocks
 Each element must follow one of the following structures:
 \itemize{
   \item \code{"<selectivity model>_Fleet_<fleet number>"}
-  \item \code{"<selectivity model>_Block_<block number>_Fleet_<fleet number>"}
+  \item \code{"<selectivity model>_Fleet_<fleet number>_Block_<block number>"}
 }
 
 The first form applies a single selectivity model across all years for the specified fleet.
@@ -170,6 +171,10 @@ Available options include:
   \item \code{"est_shared_r"}: Shares deviations across regions (sex-specific deviations are still estimated).
   \item \code{"est_shared_s"}: Shares deviations across sexes (region-specific deviations are still estimated).
   \item \code{"est_shared_r_s"}: Shares deviations across both regions and sexes, estimating a single deviation time series.
+  \item \code{"est_shared_a"}: Shares deviations across age blocks.
+  \item \code{"est_shared_r_a"}: Shares deviations across regions and age shared blocks.
+  \item \code{"est_shared_a_s"}: Shares deviations across age shared blocks and sexes.
+  \item \code{"est_shared_r_a_s"}: Shares deviations across regions, age shared blocks, and sexes.
   \item \code{"est_shared_f_x"}: Shares deviations with another fleet, where \code{x} is the fleet number to share with.
     This option allows multiple fleets to use identical deviation parameters, reducing the number of parameters
     to estimate. For example, \code{"est_shared_f_2"} means the current fleet will use the same deviation
@@ -217,7 +222,7 @@ Only parameters with rows in this data frame will have priors applied.}
 
 \item{cont_tv_fish_sel_penalty}{Whether or not continuous fishery time varying selectivity penalties are applied (if cont_tv_fish_sel > 0)}
 
-\item{...}{Additional arguments specifying starting values for fishery selectivity and catchability parameters (fishsel_pe_pars, ln_fishsel_devs, ln_fish_fixed_sel_pars, ln_fish_q)}
+\item{fishsel_devs_shared_ages}{List object for specifying which ages are shared when selectivity deviations are semi-parametric (e.g., list(1:5, 6:10, 11:30) specifies that ages 1-5, 6-10, and 11-30 have the same deviations.)}
 }
 \description{
 Setup fishery selectivity and catchability specifications

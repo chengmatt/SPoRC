@@ -14,9 +14,4 @@ cmb(f, d)
 \description{
 For combining a parameter and data list in RTMB so a data object can be explicitly defined
 }
-\examples{
-\dontrun{
-  obj <- RTMB::MakeADFun(cmb(sabie_RTMB, data), parameters = parameters, map = mapping, random = random, silent = TRUE)
-}
-}
 \keyword{internal}

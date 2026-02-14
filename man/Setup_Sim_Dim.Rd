@@ -7,13 +7,15 @@
 Setup_Sim_Dim(
   n_sims,
   n_yrs,
+  n_seas = 1,
   n_regions,
   n_ages,
-  n_lens,
+  n_lens = NULL,
   n_obs_ages = n_ages,
   n_sexes,
   n_fish_fleets,
   n_srv_fleets,
+  seasdur = if (n_seas == 1) 1 else rep(1/n_seas, n_seas),
   run_feedback = FALSE,
   feedback_start_yr = NULL
 )
@@ -23,11 +25,13 @@ Setup_Sim_Dim(
 
 \item{n_yrs}{Integer. Number of years in the simulation.}
 
+\item{n_seas}{Integer. Number of seasons}
+
 \item{n_regions}{Integer. Number of modeled regions.}
 
 \item{n_ages}{Integer. Number of modeled age classes.}
 
-\item{n_lens}{Integer. Number of modeled length bins.}
+\item{n_lens}{Integer. Number of modeled length bins (if no lengths are simulated, leave as NULL).}
 
 \item{n_obs_ages}{Integer. Number of observed age classes (can differ from \code{n_ages}, default = \code{n_ages}).}
 
@@ -36,6 +40,8 @@ Setup_Sim_Dim(
 \item{n_fish_fleets}{Integer. Number of fishery fleets.}
 
 \item{n_srv_fleets}{Integer. Number of survey fleets.}
+
+\item{seasdur}{Vector of n_seas length. Duration of season, expressed as a fraction of the year. Default is 1 if 1 season, or 1 / n_seas if n_seas > 1}
 
 \item{run_feedback}{Logical. Whether to include a feedback management loop (default = \code{FALSE}).}
 

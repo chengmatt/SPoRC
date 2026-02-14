@@ -100,7 +100,7 @@ is_package_available <- function(pkg) {
 #' @param ub Upper bound of F
 #'
 #' @returns Fishing mortality values for a single fleet
-#' @export bisection_F
+#' @export catch_to_F_singlefleet
 #' @family Closed Loop Simulations
 catch_to_F_singlefleet <- function(f_guess,
                                     catch,
@@ -149,7 +149,7 @@ catch_to_F_singlefleet <- function(f_guess,
 #' @param f_init Initial guess for F values (scalar or vector)
 #' @param control List of control parameters for nleqslv
 #' @return Numeric vector of F values for each fleet
-#' @export solve_multifleet_F
+#' @export catch_to_F_multifleet
 #' @family Closed Loop Simulations
 catch_to_F_multifleet <- function(target_catch, NAA, WAA, natmort, fish_sel,
                                f_init = 0.05, control = list(btol = 1e-6)) {

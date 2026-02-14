@@ -18,6 +18,7 @@ Depends:
     RTMB
 Imports: 
     abind,
+    compResidual,
     cowplot,
     data.table,
     dplyr,
@@ -30,24 +31,27 @@ Imports:
     MASS,
     Matrix,
     methods,
+    nleqslv,
     parallel,
     progressr,
     randtests,
+    remotes,
     reshape2,
     stats,
     stringr,
     tidyr,
     TMB
 Suggests: 
-    compResidual,
+    igraph,
     knitr,
     purrr,
     rmarkdown,
+    splines2,
     testthat (>= 3.0.0)
 VignetteBuilder: 
     knitr
+Config/testthat/edition: 3
 Encoding: UTF-8
 LazyData: true
 LazyDataCompression: xz
 RoxygenNote: 7.3.2
-Config/testthat/edition: 3

@@ -7,9 +7,11 @@
 Get_move_PE_loglik(
   PE_model,
   PE_pars,
-  logit_devs,
+  move_devs,
   map_move_devs,
-  do_recruits_move
+  do_recruits_move,
+  adjacency_collapsed,
+  move_type
 )
 }
 \arguments{
@@ -17,11 +19,15 @@ Get_move_PE_loglik(
 
 \item{PE_pars}{Process error parameters}
 
-\item{logit_devs}{Deviations}
+\item{move_devs}{Deviations}
 
 \item{map_move_devs}{movement deviations to share}
 
 \item{do_recruits_move}{Whether recruits move (0, don't move, 1 move)}
+
+\item{adjacency_collapsed}{Adjacency matrix collapsed w/o retention}
+
+\item{move_type}{Movement type (0 == unstructed; all regions connected, 1 == ctmc)}
 }
 \value{
 numeric value of log likelihood (in positive space)

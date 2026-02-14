@@ -21,11 +21,11 @@ Setup_Mod_Weighting(
 \arguments{
 \item{input_list}{List containing data, parameter, and map lists.}
 
-\item{Wt_Catch}{Either a numeric scalar (lambda) applied to the overall catch dataset or an array of lambdas (i.e., weights can change by year and fleet) dimensioned by n_regions, n_years, n_fish_fleets.}
+\item{Wt_Catch}{Either a numeric scalar (lambda) applied to the overall catch dataset or an array of lambdas dimensioned by n_regions, n_years, n_seas, n_fish_fleets.}
 
-\item{Wt_FishIdx}{Either a numeric scalar (lambda) applied to the overall fishery index dataset  or an array of lambdas (i.e., weights can change by year and fleet) dimensioned by n_regions, n_years, n_fish_fleets.}
+\item{Wt_FishIdx}{Either a numeric scalar (lambda) applied to the overall fishery index dataset  or an array of lambdas dimensioned by n_regions, n_years, n_seas, n_fish_fleets.}
 
-\item{Wt_SrvIdx}{Either a numeric scalar (lambda) applied to the overall survey index dataset or an array of lambdas (i.e., weights can change by year and fleet) dimensioned by n_regions, n_years, n_srv_fleets.}
+\item{Wt_SrvIdx}{Either a numeric scalar (lambda) applied to the overall survey index dataset or an array of lambdas dimensioned by n_regions, n_years, n_seas, n_srv_fleets.}
 
 \item{Wt_Rec}{Numeric weight (lambda) applied to the recruitment penalty.}
 

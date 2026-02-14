@@ -8,6 +8,7 @@ simulate_comps(
   r,
   y,
   f,
+  seas,
   sim,
   Exp,
   ISS,
@@ -31,6 +32,8 @@ simulate_comps(
 \item{y}{Integer. Year index.}
 
 \item{f}{Integer. Fleet index.}
+
+\item{seas}{Intege. Seasonal index}
 
 \item{sim}{Integer. Simulation iteration index.}
 

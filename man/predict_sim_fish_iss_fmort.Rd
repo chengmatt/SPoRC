@@ -4,21 +4,23 @@
 \alias{predict_sim_fish_iss_fmort}
 \title{Predict ISS fishery compositions under fishing mortality}
 \usage{
-predict_sim_fish_iss_fmort(ISS_FishComps, Fmort, y, sim)
+predict_sim_fish_iss_fmort(ISS_FishComps, Fmort, y, seas, sim)
 }
 \arguments{
 \item{ISS_FishComps}{Array of ISS fishery compositions with dimensions
-`[region, year, sex, fleet, sim]`.}
+`[region, year, seas, sex, fleet, sim]`.}
 
 \item{Fmort}{Array of fishing mortality rates with dimensions
-`[region, year, fleet, sim]`.}
+`[region, year, seas, fleet, sim]`.}
 
 \item{y}{Integer, projection year index for prediction.}
+
+\item{seas}{Integer, season}
 
 \item{sim}{Integer, simulation index.}
 }
 \value{
-Array with predicted ISS values for year `y`.
+Array with predicted ISS values for year `y` and season `seas`.
 }
 \description{
 Uses historical ISS fishery compositions and fishing mortality rates

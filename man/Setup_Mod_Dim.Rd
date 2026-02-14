@@ -8,6 +8,8 @@ Setup_Mod_Dim(
   years,
   ages,
   lens,
+  n_seas = 1,
+  seasdur = if (n_seas == 1) 1 else rep(1/n_seas, n_seas),
   n_regions,
   n_sexes,
   n_fish_fleets,
@@ -23,6 +25,10 @@ Setup_Mod_Dim(
 
 \item{lens}{Numeric vector of length bins; can be set to \code{1} if length data are not modeled.}
 
+\item{n_seas}{Integer, Number of seasons}
+
+\item{seasdur}{Vector of n_seas length. Duration of season, expressed as a fraction of the year. Default is 1 if 1 season, or 1 / n_seas if n_seas > 1}
+
 \item{n_regions}{Integer specifying the number of spatial regions.}
 
 \item{n_sexes}{Integer specifying the number of sexes.}
@@ -31,7 +37,7 @@ Setup_Mod_Dim(
 
 \item{n_srv_fleets}{Integer specifying the number of survey fleets.}
 
-\item{n_proj_yrs_devs}{Number of projection years for deviation parameters (ln_RecDevs, logit_move_devs, ln_fishsel_devs, ln_srvsel_devs)}
+\item{n_proj_yrs_devs}{Number of projection years for deviation parameters (ln_RecDevs, move_devs, ln_fishsel_devs, ln_srvsel_devs)}
 
 \item{verbose}{Logical flag indicating whether to print progress messages (default \code{FALSE}).}
 }

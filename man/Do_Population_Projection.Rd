@@ -28,7 +28,11 @@ Do_Population_Projection(
   recruitment_opt = "inv_gauss",
   fmort_opt = "HCR",
   t_spawn,
-  bh_rec_opt = NULL
+  bh_rec_opt = NULL,
+  n_seas = 1,
+  seasdur = rep(1/n_seas, n_seas),
+  spawn_seas = 1,
+  init_F = rep(0, n_seas)
 )
 }
 \arguments{
@@ -48,23 +52,23 @@ Do_Population_Projection(
 
 \item{recruitment}{Recruitment matrix dimensioned by n_regions, and n_yrs that we want to summarize across, or condition our projection on}
 
-\item{terminal_NAA}{Terminal Numbers at Age dimensioned by n_regions, n_ages, n_sexes}
+\item{terminal_NAA}{Terminal Numbers at Age dimensioned by n_regions, n_seas, n_ages, n_sexes}
 
-\item{terminal_NAA0}{Terminal Unfished Numbers at Age dimensioned by n_regions, n_ages, n_sexes}
+\item{terminal_NAA0}{Terminal Unfished Numbers at Age dimensioned by n_regions, n_seas, n_ages, n_sexes}
 
-\item{terminal_F}{Terminal fishing mortality rate, dimensioned by n_regions, n_fish_fleets}
+\item{terminal_F}{Terminal fishing mortality rate, dimensioned by n_regions, n_seas, n_fish_fleets}
 
 \item{natmort}{Natural mortality, dimensioned by n_regions, n_proj_yrs, n_ages, n_sexes}
 
-\item{WAA}{Weight at age, dimensioned by n_regions, n_proj_yrs, n_ages, n_sexes}
+\item{WAA}{Weight at age, dimensioned by n_regions, n_proj_yrs, n_seas, n_ages, n_sexes}
 
-\item{WAA_fish}{Weight at age for the fishery, dimensioned by n_regions, n_proj_yrs, n_ages, n_sexes, n_fish_fleets}
+\item{WAA_fish}{Weight at age for the fishery, dimensioned by n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets}
 
-\item{MatAA}{Maturity at age, dimensioned by n_regions, n_proj_yrs, n_ages, n_sexes}
+\item{MatAA}{Maturity at age, dimensioned by n_regions, n_proj_yrs, n_seas, n_ages, n_sexes}
 
 \item{fish_sel}{Fishery selectivity, dimensioned by n_regions, n_proj_yrs, n_ages, n_sexes, n_fish_fleets}
 
-\item{Movement}{Movement, dimensioned by n_regions, n_regions, n_proj_yrs, n_ages, n_sexes}
+\item{Movement}{Movement, dimensioned by n_regions, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes}
 
 \item{f_ref_pt}{Fishing mortality reference point dimensioned by n_regions and n_proj_yrs}
 
@@ -74,7 +78,17 @@ Do_Population_Projection(
 
 \item{recruitment_opt}{Recruitment simulation option, where options are "inv_gauss", which simulates future recruitment based on the the recruitment values supplied using an inverse gaussian distribution, "mean_rec", which takes the mean of the recruitment values supplied for a given region, and "zero", which assumes that future recruitment does not occur}
 
-\item{fmort_opt}{Fishing Mortality option, which includes "HCR", which modifies the F reference point using a user supplied HCR_function, or "Input", which uses projected F values supplied by the user.}
+\item{fmort_opt}{Fishing mortality option. Choices are:
+
+* **"HCR"** – Applies the user-supplied `HCR_function` using region-specific
+  SSB, F reference point, and biomass reference point.
+
+* **"HCR_global"** – Applies the `HCR_function` using global SSB (summed
+  across regions) and a global biomass reference point (sum of the
+  region-specific biomass reference points). Each region's biomass reference
+  point should be defined individually; the function performs the summation.
+
+* **"Input"** – Uses user-supplied projected fishing mortality values directly.}
 
 \item{t_spawn}{Fraction time of spawning used to compute projected SSB}
 
@@ -85,14 +99,23 @@ Do_Population_Projection(
 \item{R0}{The virgin recruitment parameter}
 \item{Rec_Prop}{Recruitment apportionment values. In a single region model, this should be set at a value of 1. Dimensioned by n_regions}
 \item{h}{Steepness values for the stock recruitment curve. Dimensioned by n_regions}
-\item{WAA}{A weight-at-age array dimensioned by n_regions, n_ages, and n_sexes, where the reference year should utilize values from the first year}
-\item{MatAA}{A maturity at age array dimensioned by n_regions, n_ages, and n_sexes, where the reference year should utilize values from the first year}
+\item{WAA}{A weight-at-age array dimensioned by n_regions, n_seas, n_ages, and n_sexes, where the reference year should utilize values from the first year}
+\item{MatAA}{A maturity at age array dimensioned by n_regions, n_seas, n_ages, and n_sexes, where the reference year should utilize values from the first year}
 \item{natmort}{A natural mortality at age array dimensioned by n_regions, n_ages, and n_sexes, where the reference year should utilize values from the first year}
 \item{SSB}{All SSB values estimated from a given model, dimensioned by n_regions and n_yrs}
+\item{spawn_seas}{Spawning season index}
 }}
+
+\item{n_seas}{Number of seasons. Default = 1}
+
+\item{seasdur}{Vector of season durations (length n_seas). Default = 1 / n_seas}
+
+\item{spawn_seas}{Spawning season index. Default = 1}
+
+\item{init_F}{Vector of initial F values (n_seas) to apply for deriving beverton holt recruitment; default is set at 0.}
 }
 \value{
-A list containing projected F, catch, SSB (and dynamic unfished), and Numbers at Age (and dynamic unfished). (Objects are generally dimensioned in the following order: n_regions, n_yrs, n_ages, n_sexes, n_fleets)
+A list containing projected annual F, catch (annual and seasonal), SSB (and dynamic unfished; annual), and Numbers at Age (and dynamic unfished; annual and seasonal). (Objects are generally dimensioned in the following order: n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fleets)
 }
 \description{
 Do Population Projections

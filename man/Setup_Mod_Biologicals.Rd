@@ -93,7 +93,7 @@ Either a character string ("constant") or a list of index vectors, e.g., \code{l
 \item{M_sexblk_spec}{Specification of sex blocking for natural mortality.
 Either a character string ("constant") or a list of index vectors, e.g., \code{list(1:2)}, which specifies sex-invariant M.}
 
-\item{Fixed_natmort}{Numeric array of fixed natural mortality values, dimensioned \code{[n_regions, n_years, n_ages, n_sexes]}. Required if \code{M_spec = "fix"}.}
+\item{Fixed_natmort}{Numeric array of fixed natural mortality values, opearting on an annual basis, dimensioned \code{[n_regions, n_years, n_ages, n_sexes]}. Required if \code{M_spec = "fix"}.}
 
 \item{...}{Additional arguments for starting values such as \code{ln_M} and \code{M_offset.} These are ignored if \code{M_spec = fix}.}
 }

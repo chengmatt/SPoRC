@@ -14,6 +14,7 @@
 #' @param n_fish_fleets Number of fishery fleets
 #' @param seas Season index
 #' @param seasdur Fraction of the year the season occurs in
+#' @param n_pop Number of populations
 #'
 #' @returns Z or F values from tagging specifications
 #' @keywords internal
@@ -24,6 +25,7 @@ Get_Tagging_Mortality <- function(tag_selex,
                                   natmort,
                                   Tag_Shed,
                                   fish_sel,
+                                  n_pop,
                                   n_regions,
                                   n_ages,
                                   n_sexes,
@@ -72,7 +74,7 @@ Get_Tagging_Mortality <- function(tag_selex,
 
   # Parameterizations for natural mortality
   # Mean natural mortality across ages and sexes
-  if(tag_natmort == 0) tmp_natmort = array(apply(natmort[,y,,,drop=FALSE], 1, mean), dim = c(n_regions, 1, n_ages, n_sexes))
+  if(tag_natmort == 0) tmp_natmort = array(apply(natmort[,,y,,,drop=FALSE], 1, mean), dim = c(n_pop, n_regions, 1, n_ages, n_sexes))
 
   # Age-specific, sex-aggregated natural mortality
   if(tag_natmort == 1) {

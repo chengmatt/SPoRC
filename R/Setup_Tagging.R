@@ -1,71 +1,122 @@
-#' Set up simulated tagging dynamics
+#' Set Up Simulated Tagging Dynamics
 #'
-#' @param n_tags Number of tags to release in a given year (scalar, default = NULL)
-#' @param max_liberty Maximum liberty (years) to track cohorts (default = sim_list$n_ages / 2)
-#' @param t_tagging Fraction of season remaining when tags are released (e.g., start of season == 1, mid season == 0.5, end of season == 0; default = 1)
-#' @param ln_Init_Tag_Mort Log initial tag-induced mortality (default = -1000)
-#' @param ln_Tag_Shed Log chronic tag shedding rate (default = -1000) annual rate
-#' @param sim_list Simulation list (required)
-#' @param UseTagging Boolean to use tagging (default = 0):
-#'   \itemize{
-#'     \item 0: Do not simulate tagging
-#'     \item 1: Simulate tagging
+#' Initializes conventional tagging processes for a simulation, including tag
+#' releases, tag-induced mortality, tag shedding, reporting rates, and
+#' containers for predicted and observed recaptures.
+#'
+#' This function defines tag release cohorts (by region, year, and season),
+#' sets assumptions about tag mortality and shedding, and allocates arrays
+#' required to track tagged fish and recapture observations through time.
+#'
+#' @param n_tags Numeric scalar. Total number of tags released per release
+#'   event. Cannot be specified simultaneously with `n_tags_rel_input`.
+#'
+#' @param n_tags_rel_input Optional array specifying the number of tags
+#'   released by cohort (e.g., by length, age, or other structure defined in
+#'   the operating model). Overrides `n_tags` if supplied. Cannot be specified
+#'   simultaneously with `n_tags`.
+#'
+#' @param use_conv_fish_tagging Integer (0/1). Indicator for whether
+#'   conventional tag recaptures from fisheries are simulated.
+#'
+#' @param max_liberty Maximum number of years-at-liberty tracked for each tag
+#'   cohort. Default is `sim_list$n_ages / 2`.
+#'
+#' @param tag_release_indicator Data frame defining tag release events
+#'   (i.e., tag cohorts). Default expands across all regions, years, and
+#'   seasons in `sim_list`. Must contain columns:
+#'   \describe{
+#'     \item{regions}{Region of release}
+#'     \item{tag_years}{Year of release}
+#'     \item{tag_seas}{Season of release}
 #'   }
-#' @param Tag_Reporting_input Tag reporting input [n_regions × n_yrs × n_sims]
-#'   (default = 0.5)
-#' @param n_tags_rel_input Number of tag releases by tag cohort length (default = NULL)
-#' @param tag_selex Tag selectivity type (default = 5):
-#'   \itemize{
-#'     \item \code{0} or \code{"Uniform_DomFleet"}: Uniform by age/sex, dominant fleet
-#'     \item \code{1} or \code{"SexAgg_DomFleet"}: Sex-aggregated, dominant fleet
-#'     \item \code{2} or \code{"SexSp_DomFleet"}: Sex-specific, dominant fleet
-#'     \item \code{3} or \code{"Uniform_AllFleet"}: Uniform by age/sex, all fleets
-#'     \item \code{4} or \code{"SexAgg_AllFleet"}: Sex-aggregated, all fleets
-#'     \item \code{5} or \code{"SexSp_AllFleet"}: Sex-specific, all fleets
+#'
+#' @param tag_release_platform Character matrix specifying the release
+#'   platform and fleet number associated with each tag release event.
+#'   Rows must align with `tag_release_indicator`. The first column
+#'   (`platform`) must be one of:
+#'   \describe{
+#'     \item{"population"}{Tags are released directly into the population
+#'     (i.e., independent of a fleet or survey sampling process).}
+#'     \item{"fishery"}{Tags are released through a fishery fleet. The
+#'     corresponding fleet number must be provided in the second column.}
+#'     \item{"survey"}{Tags are released through a survey fleet. The
+#'     corresponding fleet number must be provided in the second column.}
 #'   }
-#' @param tag_natmort Tag natural mortality type (default = 3):
+#'   The second column (`fleet`) identifies the fleet index when
+#'   `platform` is `"fishery"` or `"survey"`, and may be set to `NA`
+#'   when `platform` is `"population"`.
+#'
+#' @param t_tagging Numeric scalar in [0,1]. Fraction of the season remaining
+#'   when tags are released:
 #'   \itemize{
-#'     \item \code{0} or \code{"AgeAgg_SexAgg"}: Age-aggregated, sex-aggregated
-#'     \item \code{1} or \code{"AgeSp_SexAgg"}: Age-specific, sex-aggregated
-#'     \item \code{2} or \code{"AgeAgg_SexSp"}: Age-aggregated, sex-specific
-#'     \item \code{3} or \code{"AgeSp_SexSp"}: Age-specific, sex-specific
+#'     \item 1 = start of season
+#'     \item 0.5 = mid-season
+#'     \item 0 = end of season
 #'   }
-#' @param tag_like Tag likelihood type (default = 0):
-#'   \itemize{
-#'     \item \code{0} or \code{"Poisson"}: Poisson
-#'     \item \code{1} or \code{"NegBin"}: Negative Binomial
-#'     \item \code{2} or \code{"Multinomial_Release"}: Multinomial by release cohort
-#'     \item \code{3} or \code{"Multinomial_Recapture"}: Multinomial by recapture event
-#'     \item \code{4} or \code{"Dirichlet-Multinomial_Release"}: Dirichlet-Multinomial by release cohort
-#'     \item \code{5} or \code{"Dirichlet-Multinomial_Recapture"}: Dirichlet-Multinomial by recapture event
+#'
+#' @param ln_init_conv_tag_mort Log initial tag-induced mortality applied at
+#'   release. Default of -1000 approximates zero mortality.
+#'
+#' @param ln_conv_tag_shed Log annual chronic tag shedding rate. Default of -1000
+#'   approximates no shedding.
+#'
+#' @param conv_fish_tag_like Integer specifying likelihood used for tag
+#'   recapture observations:
+#'   \describe{
+#'     \item Poisson
+#'     \item Negative binomial
+#'     \item Multinomial (release)
+#'     \item Multinomial (recapture)
+#'     \item Dirichlet-multinomial (release)
+#'     \item Dirichlet-multinomial (recapture)
 #'   }
-#' @param ln_tag_theta Scalar in log space describing tag likelihood overdispersion (default = log(1))
+#'
+#' @param ln_conv_fish_tag_theta Log overdispersion parameter for
+#'   negative-binomial or Dirichlet-multinomial likelihoods.
+#'
+#' @param sim_list A list passed on from previous Setup functions.
+#'
+#' @param conv_fish_tag_attr Character string specifying which biological attributes
+#'   are recorded at recapture. Constructed from any combination of \code{"p"} (population),
+#'   \code{"a"} (age), and \code{"s"} (sex), joined by underscores. Region and fleet are
+#'   always retained. Supported values: \code{"p_a_s"}, \code{"a_s"}, \code{"p_a"},
+#'   \code{"p_s"}, \code{"a"}, \code{"s"}, \code{"p"}, \code{"none"}.
+#'
+#' @param conv_tag_fish_reporting_input Numeric array of tag reporting rates for
+#'   fishery fleets with dimensions \code{[n_regions, n_yrs, n_fish_fleets, n_sims]}.
+#'   Values represent the probability that a recaptured tag is reported by the
+#'   fishery and should be betweem \code{[0, 1]}. Reporting rates can vary by region,
+#'   year, fleet, and simulation replicate.
 #'
 #' @export Setup_Sim_Tagging
 #' @family Simulation Setup
 Setup_Sim_Tagging <- function(n_tags = NULL,
                               n_tags_rel_input = NULL,
-                              UseTagging = 0,
+                              use_conv_fish_tagging = 0,
                               max_liberty = sim_list$n_ages / 2,
                               tag_release_indicator = expand.grid(regions = 1:sim_list$n_regions, tag_years = 1:sim_list$n_yrs, tag_seas = 1:sim_list$n_seas),
+                              tag_release_platform = matrix(c("survey", "1"), nrow = nrow(tag_release_indicator),  ncol = 2, byrow = TRUE,dimnames = list(NULL, c("platform", "fleet"))),
                               t_tagging = 1,
-                              ln_Init_Tag_Mort = -1000,
-                              ln_Tag_Shed = -1000,
-                              Tag_Reporting_input = array(0.5, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)),
-                              tag_selex = 5,
-                              tag_natmort = 3,
-                              tag_like = 0,
-                              ln_tag_theta = log(1),
+                              ln_init_conv_tag_mort = -1000,
+                              ln_conv_tag_shed = -1000,
+                              conv_fish_tag_attr = 'p_a_s',
+                              conv_tag_fish_reporting_input = array(0.5, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_fish_fleets, sim_list$n_sims)),
+                              conv_fish_tag_like = 0,
+                              ln_conv_fish_tag_theta = log(1),
                               sim_list
                               ) {
 
-  # Convert codes to numeric
-  tag_selex <- convert_to_numeric(tag_selex, list(Uniform_DomFleet = 0, SexAgg_DomFleet = 1, SexSp_DomFleet = 2, Uniform_AllFleet = 3, SexAgg_AllFleet = 4, SexSp_AllFleet = 5))
-  tag_natmort <- convert_to_numeric(tag_natmort, list(AgeAgg_SexAgg = 0, AgeSp_SexAgg = 1, AgeAgg_SexSp = 2, AgeSp_SexSp = 3))
-  tag_like <- convert_to_numeric(tag_like, list(Poisson = 0, NegBin = 1, Multinomial_Release = 2,
-                                                Multinomial_Recapture = 3, `Dirichlet-Multinomial_Release` = 4, `Dirichlet-Multinomial_Recapture` = 5))
+  check_sim_dimensions(conv_tag_fish_reporting_input, n_regions = sim_list$n_regions,
+                       n_years = sim_list$n_yrs, n_fish_fleets = sim_list$n_fish_fleets,
+                       n_sims = sim_list$n_sims, what = "conv_tag_fish_reporting_input")
 
-  if(!is.null(Tag_Reporting_input)) check_sim_dimensions(Tag_Reporting_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_sims = sim_list$n_sims, what = "Tag_Reporting_input")
+  # Convert codes to numeric
+  conv_fish_tag_like <- convert_to_numeric(conv_fish_tag_like, list(Poisson = 0, NegBin = 1,
+                                                Multinomial_Release = 2,
+                                                Multinomial_Recapture = 3,
+                                                `Dirichlet-Multinomial_Release` = 4,
+                                                `Dirichlet-Multinomial_Recapture` = 5))
 
   # Output variables into list
   if(!is.null(n_tags) && !is.null(n_tags_rel_input)) stop("n_tags and n_tags_rel_input cannot be specified simultaneously. n_tags is a scalar, while n_tags_rel_input specifies cohort-specific tags!")
@@ -73,23 +124,32 @@ Setup_Sim_Tagging <- function(n_tags = NULL,
   if(!is.null(n_tags_rel_input)) sim_list$n_tags_rel_input <- n_tags_rel_input
   sim_list$max_liberty <- max_liberty
   sim_list$t_tagging <- t_tagging # time of tagging
-  sim_list$ln_Init_Tag_Mort <- ln_Init_Tag_Mort # tag induced mortality
-  sim_list$ln_Tag_Shed <- ln_Tag_Shed # tag shedding
+  sim_list$ln_init_conv_tag_mort <- ln_init_conv_tag_mort # tag induced mortality
+  sim_list$ln_conv_tag_shed <- ln_conv_tag_shed # tag shedding
   sim_list$tag_release_indicator <- tag_release_indicator # tag release indicator (by tag years and regions = a tag cohort)
+  sim_list$tag_release_platform <- tag_release_platform # how tags are released
   sim_list$n_tag_rel_events <- nrow(tag_release_indicator) # number of tag release events - tag years x tag region (tag cohorts)
 
   # Containers
-  sim_list$Tagged_Fish <- array(0, dim = c(sim_list$n_tag_rel_events, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # number of tagged fish
-  sim_list$Tags_Avail <- array(0, dim = c(sim_list$max_liberty + 1, sim_list$n_seas, sim_list$n_tag_rel_events, sim_list$n_regions, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # tags availiable for recapture every year
-  sim_list$Pred_Tag_Recap <- array(0, dim = c(sim_list$max_liberty, sim_list$n_seas, sim_list$n_tag_rel_events, sim_list$n_regions, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # predicted tag recaptures
-  sim_list$Obs_Tag_Recap <- array(0, dim = c(sim_list$max_liberty, sim_list$n_seas, sim_list$n_tag_rel_events, sim_list$n_regions, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # observed tag recaptures
+  sim_list$conv_tagged_fish <-
+    array(0, dim = c(sim_list$n_tag_rel_events, sim_list$n_pop,
+                     sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # number of tagged fish
 
-  sim_list$Tag_Reporting <- Tag_Reporting_input # output this into list
-  sim_list$UseTagging <- UseTagging # output into list
-  sim_list$tag_selex <- tag_selex # output into list
-  sim_list$tag_natmort <- tag_natmort # otuput into list
-  sim_list$tag_like <- tag_like # tag likelihood
-  sim_list$ln_tag_theta <- ln_tag_theta # tag likelihood overdispersion parameter
+  sim_list$conv_tag_fish_avail <-
+    array(0, dim = c(sim_list$max_liberty + 1, sim_list$n_seas, sim_list$n_tag_rel_events,
+                     sim_list$n_pop, sim_list$n_regions,
+                     sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # tags availiable for recapture every year
+
+  sim_list$obs_conv_tag_fish_recap <- sim_list$pred_conv_tag_fish_recap <-
+    array(0, dim = c(sim_list$max_liberty, sim_list$n_seas, sim_list$n_tag_rel_events,
+                     sim_list$n_pop, sim_list$n_regions, sim_list$n_ages, sim_list$n_sexes,
+                     sim_list$n_fish_fleets, sim_list$n_sims)) # predicted tag recaptures
+
+  sim_list$conv_tag_fish_reporting <- conv_tag_fish_reporting_input # output this into list
+  sim_list$use_conv_fish_tagging <- use_conv_fish_tagging # output into list
+  sim_list$conv_fish_tag_like <- conv_fish_tag_like # tag likelihood
+  sim_list$conv_fish_tag_attr <- conv_fish_tag_attr # tag recpature attributes for fishery conventional tags
+  sim_list$ln_conv_fish_tag_theta <- ln_conv_fish_tag_theta # tag likelihood overdispersion parameter
 
   return(sim_list)
 }
@@ -100,13 +160,13 @@ Setup_Sim_Tagging <- function(n_tags = NULL,
 #' @param Init_Tag_Mort_spec Character vector specifying initial tag mortality parameterization
 #' @keywords internal
 do_Init_Tag_Mort_mapping <- function(input_list, Init_Tag_Mort_spec) {
-  if(input_list$data$UseTagging == 0) input_list$map$ln_Init_Tag_Mort <- factor(NA) # initial tag mortality
+  if(input_list$data$UseTagging == 0) input_list$map$ln_init_conv_tag_mort <- factor(NA) # initial tag mortality
   if(input_list$data$UseTagging == 1) {
     # Validate input
     if(!Init_Tag_Mort_spec %in% c("fix", "est")) stop("Init_Tag_Mort_spec is incorrectly specified. Should be one of these: fix, est")
     # Initial tag mortality
-    if(Init_Tag_Mort_spec == "fix") input_list$map$ln_Init_Tag_Mort <- factor(NA)
-    if(Init_Tag_Mort_spec == "est") input_list$map$ln_Init_Tag_Mort <- factor(1)
+    if(Init_Tag_Mort_spec == "fix") input_list$map$ln_init_conv_tag_mort <- factor(NA)
+    if(Init_Tag_Mort_spec == "est") input_list$map$ln_init_conv_tag_mort <- factor(1)
     collect_message("Initial Tag Mortality is specified as: ", Init_Tag_Mort_spec)
   }
   return(input_list)
@@ -118,13 +178,13 @@ do_Init_Tag_Mort_mapping <- function(input_list, Init_Tag_Mort_spec) {
 #' @param Tag_Shed_spec Character specifying tag shedding parameterization
 #' @keywords internal
 do_Tag_Shed_mapping <- function(input_list, Tag_Shed_spec) {
-  if(input_list$data$UseTagging == 0) input_list$map$ln_Tag_Shed <- factor(NA) # chronic tag shedding
+  if(input_list$data$UseTagging == 0) input_list$map$ln_conv_tag_shed <- factor(NA) # chronic tag shedding
   if(input_list$data$UseTagging == 1) {
     # Validate input
     if(!Tag_Shed_spec %in% c("fix", "est")) stop("Tag_Shed_spec is incorrectly specified. Should be one of these: fix, est")
     # Tag Shedding
-    if(Tag_Shed_spec == "fix" || UseTagging == 0) input_list$map$ln_Tag_Shed <- factor(NA)
-    if(Tag_Shed_spec == "est") input_list$map$ln_Tag_Shed <- factor(1)
+    if(Tag_Shed_spec == "fix" || UseTagging == 0) input_list$map$ln_conv_tag_shed <- factor(NA)
+    if(Tag_Shed_spec == "est") input_list$map$ln_conv_tag_shed <- factor(1)
     collect_message("Chronic Tag Shedding is specified as: ", Tag_Shed_spec)
   }
   return(input_list)
@@ -275,7 +335,7 @@ do_Tag_Reporting_Pars_mapping <- function(input_list, TagRep_spec) {
 #'     \item \code{"est_shared_r"} estimates rates shared across regions but varying by block
 #'     \item \code{"fix"} fixes all reporting rates (no estimation)
 #'   }
-#' @param ... Additional starting values for tagging parameters such as \code{ln_Init_Tag_Mort}, \code{ln_Tag_Shed}, \code{ln_tag_theta}, \code{Tag_Reporting_Pars}
+#' @param ... Additional starting values for tagging parameters such as \code{ln_init_conv_tag_mort}, \code{ln_conv_tag_shed}, \code{ln_tag_theta}, \code{Tag_Reporting_Pars}
 #' @param TagRep_Prior Data frame containing prior specifications for tag reporting parameters.
 #'   Must include columns: \code{region} (region index), \code{block} (time block index),
 #'   \code{mu} (Numeric mean for tag reporting prior (normal space); \code{NA} if symmetric beta is used),
@@ -448,12 +508,12 @@ Setup_Mod_Tagging <- function(input_list,
   # Populate Parameter List ------------------------------------------------------
 
   # Initial tag induced mortality
-  if("ln_Init_Tag_Mort" %in% names(starting_values)) input_list$par$ln_Init_Tag_Mort <- starting_values$ln_Init_Tag_Mort
-  else input_list$par$ln_Init_Tag_Mort <- -1000
+  if("ln_init_conv_tag_mort" %in% names(starting_values)) input_list$par$ln_init_conv_tag_mort <- starting_values$ln_init_conv_tag_mort
+  else input_list$par$ln_init_conv_tag_mort <- -1000
 
   # Chronic tag shedding
-  if("ln_Tag_Shed" %in% names(starting_values)) input_list$par$ln_Tag_Shed <- starting_values$ln_Tag_Shed
-  else input_list$par$ln_Tag_Shed <- -1000
+  if("ln_conv_tag_shed" %in% names(starting_values)) input_list$par$ln_conv_tag_shed <- starting_values$ln_conv_tag_shed
+  else input_list$par$ln_conv_tag_shed <- -1000
 
   # tag overdispersion parameter
   if("ln_tag_theta" %in% names(starting_values)) input_list$par$ln_tag_theta <- starting_values$ln_tag_theta

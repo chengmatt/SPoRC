@@ -48,10 +48,10 @@
 #' @family Simulation Setup
 Setup_Sim_Rec <- function(
     do_recruits_move = 0,
-    sexratio_input = array(if(sim_list$n_sexes == 1) 1 else 0.5, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_sexes, sim_list$n_sims)),
-    R0_input = array(10, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)),
-    h_input = array(0.8, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)),
-    ln_sigmaR = log(c(1, 1)),
+    sexratio_input = array(if(sim_list$n_sexes == 1) 1 else 0.5, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sexes, sim_list$n_sims)),
+    R0_input = array(10, dim = c(sim_list$n_pop,sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)),
+    h_input = array(0.8, dim = c(sim_list$n_pop,sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)),
+    ln_sigmaR = array(log(1), dim = c(sim_list$n_pop, sim_list$n_regions)),
     recruitment_opt = 'bh_rec',
     rec_dd = 'global',
     init_dd = 'global',
@@ -64,16 +64,18 @@ Setup_Sim_Rec <- function(
     ln_InitDevs_input = NULL
     ) {
 
+  if(rec_dd == 'global' && sim_list$n_pop > 1 && recruitment_opt == 'bh_rec') stop("Invalid recruitment density-dependence option! When n_pop > 1 and recruitment_opt == 'bh_rec', rec_dd must be local (0).")
+
   # Convert character inputs to numeric codes
   recruitment_opt <- convert_to_numeric(recruitment_opt, list(mean_rec = 0, bh_rec = 1, resample_from_input = 999))
   rec_dd <- convert_to_numeric(rec_dd, list(local = 0, global = 1))
   init_dd <- convert_to_numeric(init_dd, list(local = 0, global = 1))
   init_age_strc <- convert_to_numeric(init_age_strc, list(iterative = 0, scalar_no_move = 1, matrix = 2, scalar_plus_only = 3))
 
-  check_sim_dimensions(sexratio_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_sexes = sim_list$n_sexes, n_sims = sim_list$n_sims, what = "sexratio_input")
-  check_sim_dimensions(R0_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_sims = sim_list$n_sims, what = "R0_input")
-  check_sim_dimensions(h_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_sims  = sim_list$n_sims, what = "h_input")
-  if(!is.null(ln_InitDevs_input)) check_sim_dimensions(ln_InitDevs_input, n_regions = sim_list$n_regions, n_ages = sim_list$n_ages, n_sims = sim_list$n_sims, what = "ln_InitDevs_input")
+  check_sim_dimensions(sexratio_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_sexes = sim_list$n_sexes, n_sims = sim_list$n_sims, n_pop = sim_list$n_pop, what = "sexratio_input")
+  check_sim_dimensions(R0_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_sims = sim_list$n_sims, n_pop = sim_list$n_pop, what = "R0_input")
+  check_sim_dimensions(h_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_sims  = sim_list$n_sims, n_pop = sim_list$n_pop, what = "h_input")
+  if(!is.null(ln_InitDevs_input)) check_sim_dimensions(ln_InitDevs_input, n_regions = sim_list$n_regions, n_ages = sim_list$n_ages, n_sims = sim_list$n_sims, n_pop = sim_list$n_pop, what = "ln_InitDevs_input")
 
   # Recruitment options
   sim_list$do_recruits_move <- do_recruits_move

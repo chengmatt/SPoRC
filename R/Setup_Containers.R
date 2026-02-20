@@ -9,22 +9,22 @@
 Setup_Sim_Containers <- function(sim_list) {
 
   # Biological Containers
-  sim_list$NAA <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs+1, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # numbers at age
-  sim_list$NAA0 <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs+1,  sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # unfished numbers at age
-  sim_list$ZAA <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # total mortality at age
-  sim_list$Rec <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)) # recruitment
-  sim_list$SSB <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)) # spawning biomass
-  sim_list$Dynamic_SSB0 <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs,  sim_list$n_sims)) # Dynamic unfished spawning biomass
-  sim_list$Total_Biom <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)) # total biomass
-  sim_list$ln_RecDevs <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)) # rec devs
-  sim_list$ln_InitDevs <- array(0, dim = c(sim_list$n_regions, sim_list$n_ages - 1, sim_list$n_sims)) # initial age devs
+  sim_list$NAA <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs+1, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # numbers at age
+  sim_list$NAA0 <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs+1,  sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # unfished numbers at age
+  sim_list$ZAA <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # total mortality at age
+  sim_list$Rec <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)) # recruitment
+  sim_list$SSB <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)) # spawning biomass
+  sim_list$Dynamic_SSB0 <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs,  sim_list$n_sims)) # Dynamic unfished spawning biomass
+  sim_list$Total_Biom <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)) # total biomass
+  sim_list$ln_RecDevs <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)) # rec devs
+  sim_list$ln_InitDevs <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_ages - 1, sim_list$n_sims)) # initial age devs
 
   # Fishery Containers
   sim_list$ObsCatch <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets, sim_list$n_sims)) # observed catch
   sim_list$ObsFishAgeComps <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_obs_ages, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims)) # observed fishery age comps
   sim_list$ObsFishLenComps <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_lens, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims)) # observed fishery length comps
-  sim_list$CAA <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims)) # catch at age
-  sim_list$CAL <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_lens, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims)) # catch at length
+  sim_list$CAA <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims)) # catch at age
+  sim_list$CAL <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_lens, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims)) # catch at length
   sim_list$TrueCatch <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets, sim_list$n_sims)) # true catches
   sim_list$ObsFishIdx <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets, sim_list$n_sims)) # observed fishery index
   sim_list$TrueFishIdx <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets, sim_list$n_sims)) # true fishery index
@@ -34,8 +34,8 @@ Setup_Sim_Containers <- function(sim_list) {
   sim_list$TrueSrvIdx <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_srv_fleets, sim_list$n_sims)) # true survey index
   sim_list$ObsSrvAgeComps <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_obs_ages, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims)) # observed survey age comps
   sim_list$ObsSrvLenComps <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_lens, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims)) # observed survey length comps
-  sim_list$SrvIAA <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims)) # survey index at age
-  sim_list$SrvIAL <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_lens, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims)) # survey index at length
+  sim_list$SrvIAA <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims)) # survey index at age
+  sim_list$SrvIAL <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_lens, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims)) # survey index at length
 
   return(sim_list)
 }

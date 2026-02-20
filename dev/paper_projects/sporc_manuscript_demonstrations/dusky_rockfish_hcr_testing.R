@@ -845,7 +845,7 @@ mp_list <- list(
       bh_rec_opt = NULL
     ),
     catch_opt = function(catch, prev_catch = NULL, catch_cap = 3000) {
-      pmin(catch, catch_cap)    # Apply 4000 ton maximum
+      pmin(catch, catch_cap)    # Apply 3000 ton maximum
     }
   )
 )

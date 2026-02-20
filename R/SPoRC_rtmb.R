@@ -393,7 +393,7 @@ SPoRC_rtmb = function(pars, data) {
     ### Annual Recruitment ------------------------------------------------------
     # Get Deterministic Recruitment
     tmp_Det_Rec = Get_Det_Recruitment(recruitment_model = rec_model,
-                                      recruitment_dd = rec_dd,
+                                      rec_dd = rec_dd,
                                       R0 = R0,
                                       Rec_Prop = Rec_trans_prop,
                                       h = h_trans,

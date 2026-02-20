@@ -11,13 +11,14 @@
 #' @param n_ages Integer. Number of modeled age classes.
 #' @param n_lens Integer. Number of modeled length bins (if no lengths are simulated, leave as NULL).
 #' @param n_obs_ages Integer. Number of observed age classes (can differ from \code{n_ages}, default = \code{n_ages}).
-#' @param n_sexes Integer. Number of sexes.
+#' @param n_sexes Integer. Number of sexes (must be either 1 or 2).
 #' @param n_fish_fleets Integer. Number of fishery fleets.
 #' @param n_srv_fleets Integer. Number of survey fleets.
 #' @param run_feedback Logical. Whether to include a feedback management loop (default = \code{FALSE}).
 #' @param feedback_start_yr Integer. First year that feedback is applied (only used if \code{run_feedback = TRUE}).
 #' @param n_seas Integer. Number of seasons
 #' @param seasdur Vector of n_seas length. Duration of season, expressed as a fraction of the year. Default is 1 if 1 season, or 1 / n_seas if n_seas > 1
+#' @param n_pop Integer. Number of populations
 #'
 #' @return
 #' A list containing the specified dimension values, with elements:
@@ -32,6 +33,7 @@
 #' @family Simulation Setup
 Setup_Sim_Dim <- function(n_sims,
                           n_yrs,
+                          n_pop = 1,
                           n_seas = 1,
                           n_regions,
                           n_ages,
@@ -45,11 +47,14 @@ Setup_Sim_Dim <- function(n_sims,
                           feedback_start_yr = NULL
                           ) {
 
-  sim_list <- list() # setup empty list
+  sim_list <- list() # setup empty list1
+
+  if(n_sexes > 2) stop("The number of sexes modelled cannot be larger than 2!")
 
   # output dimensions into list
   sim_list$n_sims <- n_sims
   sim_list$n_yrs <- n_yrs
+  sim_list$n_pop <- n_pop
   sim_list$n_seas <- n_seas
   sim_list$n_regions <- n_regions
   sim_list$n_ages <- n_ages

@@ -15,12 +15,20 @@ Setup_sim_env <- function(sim_list) {
   sim_env <- new.env(parent = parent.frame()) # define new environment for simulation
 
   # Get SPoRC functions in simulation environment
+  sim_env$generate_initial_age_structure <- generate_initial_age_structure
+  sim_env$generate_recruitment <- generate_recruitment
+  sim_env$apply_pop_dy <- apply_pop_dy
+  sim_env$generate_fishery_catch_comp_idx <- generate_fishery_catch_comp_idx
+  sim_env$generate_survey_comp_idx <- generate_survey_comp_idx
+  sim_env$release_conv_tags <- release_conv_tags
+  sim_env$generate_fishery_conv_tags_recap <- generate_fishery_conv_tags_recap
   sim_env$Get_Det_Recruitment <- Get_Det_Recruitment
   sim_env$Get_Init_NAA <- Get_Init_NAA
   sim_env$Get_Tagging_Mortality <- Get_Tagging_Mortality
   sim_env$predict_sim_fish_iss_fmort <- predict_sim_fish_iss_fmort
   sim_env$rho_trans <- rho_trans
   sim_env$simulate_comps <- simulate_comps
+  sim_env$simulate_conv_tag_fish_recaptures <- simulate_conv_tag_fish_recaptures
 
   # output into simulation environment
   list2env(sim_list, envir = sim_env)
@@ -52,6 +60,8 @@ Setup_sim_env <- function(sim_list) {
 #' @param Obs Array. Observed compositions array to fill, same dimensions as `Exp`.
 #' @param age_or_len Integer. Flag to indicate if ageing error should be applied: 0 = apply ageing error (for ages), 1 = do not apply (for lengths).
 #' @param seas Intege. Seasonal index
+#' @param pop_specific Boolean on whether or not composition data are population-specific
+#' @param n_pop Integer. Number of populations.
 #'
 #' @return Array of Observed compositions with the same dimensions as `Obs`, updated with simulated Observations.
 #'
@@ -64,8 +74,13 @@ Setup_sim_env <- function(sim_list) {
 #' The function normalizes expected compositions, applies the selected likelihood (`comp_like`), and multiplies by `AgeingError` when applicable.
 #'
 #' @keywords internal
-simulate_comps <- function(r, y, f, seas, sim,
-                           Exp, ISS,
+simulate_comps <- function(r,
+                           y,
+                           f,
+                           seas,
+                           sim,
+                           Exp,
+                           ISS,
                            AgeingError,
                            comp_like,
                            ln_theta,
@@ -74,10 +89,12 @@ simulate_comps <- function(r, y, f, seas, sim,
                            corr_pars_agg,
                            comp_type,
                            n_sexes,
+                           n_pop,
                            n_regions,
                            n_cat,
                            Obs,
-                           age_or_len = 0) {
+                           age_or_len = 0,
+                           pop_specific = FALSE) {
 
   if(comp_type[y,f] == 999 || comp_like[f] == 999) return(Obs)
 
@@ -93,138 +110,918 @@ simulate_comps <- function(r, y, f, seas, sim,
     if(comp_type[y,f] == 2) age_error_mat <- kronecker(diag(n_sexes), AgeingError[y,,,sim]) # joint
   } else if(age_or_len == 1) age_error_mat <- NULL # length compositions
 
-  # Split by sex
-  if(comp_type[y,f] == 1) {
-    for(s in 1:n_sexes) {
-      tmp_prob <- Exp[r,y,seas,,s,f,sim] # extract compositions
+  if(pop_specific == FALSE) {
+
+    # Split by sex
+    if(comp_type[y,f] == 1) {
+      for(s in 1:n_sexes) {
+
+        tmp_prob <- apply(Exp[,r,y,seas,,s,f,sim, drop = FALSE], 5, sum) # extract compositions
+
+        # multinomial
+        if(comp_like[f] == 0) {
+          Obs[r,y,seas,,s,f,sim] <- array(
+            apply_error(as.vector(
+              stats::rmultinom(n = 1, ISS[r,y,seas,s,f,sim], get_expected(tmp_prob))), age_or_len, age_error_mat),
+            dim = dim(Obs[r,y,seas,,s,f,sim, drop = FALSE])
+          )
+
+          # dirichlet-multinomial
+        } else if(comp_like[f] == 1) {
+          Obs[r,y,seas,,s,f,sim] <- array(
+            apply_error(as.vector(
+              rdirM(
+                n = 1,
+                N = ISS[r,y,seas,s,f,sim],
+                alpha = (exp(ln_theta[r,s,f]) * ISS[r,y,seas,s,f,sim]) * get_expected(tmp_prob)
+              )
+            ), age_or_len, age_error_mat),
+            dim = dim(Obs[r,y,seas,,s,f,sim, drop = FALSE])
+          )
+
+          # logistic normal
+        } else if(comp_like[f] %in% 2:4) {
+          Obs[r,y,seas,,s,f,sim] <- array(
+            apply_error(as.vector(
+              rlogistnormal(
+                exp = get_expected(tmp_prob),
+                pars = c(exp(ln_theta[r,s,f]), rho_trans(corr_pars[r,s,f,])),
+                comp_like = comp_like[f],
+                n_sexes = n_sexes
+              )
+            ), age_or_len, age_error_mat),
+            dim = dim(Obs[r,y,seas,,s,f,sim, drop = FALSE])
+          )
+        }
+
+      } # end s loop
+    } # end split by sex
+
+    # Joint compositions
+    if(comp_type[y,f] == 2) {
+
+      tmp_prob <- apply(Exp[,r,y,seas,,,f,sim, drop = FALSE], c(5,6), sum) # extract compositions
 
       # multinomial
       if(comp_like[f] == 0) {
-        Obs[r,y,seas,,s,f,sim] <- array(
-          apply_error(as.vector(
-            stats::rmultinom(n = 1, ISS[r,y,seas,s,f,sim], get_expected(tmp_prob))), age_or_len, age_error_mat),
-          dim = dim(Obs[r,y,seas,,s,f,sim, drop = FALSE])
+        Obs[r,y,seas,,,f,sim] <- array(
+          apply_error(as.vector(stats::rmultinom(1, ISS[r,y,seas,1,f,sim], get_expected(tmp_prob))),
+                      age_or_len, age_error_mat),
+          dim = dim(Obs[r,y,seas,,,f,sim, drop = FALSE])
         )
 
         # dirichlet-multinomial
       } else if(comp_like[f] == 1) {
-        Obs[r,y,seas,,s,f,sim] <- array(
+        Obs[r,y,seas,,,f,sim] <- array(
           apply_error(as.vector(
             rdirM(
               n = 1,
-              N = ISS[r,y,seas,s,f,sim],
-              alpha = (exp(ln_theta[r,s,f]) * ISS[r,y,seas,s,f,sim]) * get_expected(tmp_prob)
+              N = ISS[r,y,seas,1,f,sim],
+              alpha = (exp(ln_theta[r,1,f]) * ISS[r,y,seas,1,f,sim]) * get_expected(tmp_prob)
             )
           ), age_or_len, age_error_mat),
-          dim = dim(Obs[r,y,seas,,s,f,sim, drop = FALSE])
+          dim = dim(Obs[r,y,seas,,,f,sim, drop = FALSE])
         )
 
         # logistic normal
       } else if(comp_like[f] %in% 2:4) {
-        Obs[r,y,seas,,s,f,sim] <- array(
+        Obs[r,y,seas,,,f,sim] <- array(
           apply_error(as.vector(
             rlogistnormal(
               exp = get_expected(tmp_prob),
-              pars = c(exp(ln_theta[r,s,f]), rho_trans(corr_pars[r,s,f,])),
+              pars = c(exp(ln_theta[r,1,f]), rho_trans(corr_pars[r,1,f,])),
               comp_like = comp_like[f],
               n_sexes = n_sexes
             )
           ), age_or_len, age_error_mat),
-          dim = dim(Obs[r,y,seas,,s,f,sim, drop = FALSE])
+          dim = dim(Obs[r,y,seas,,,f,sim, drop = FALSE])
         )
       }
 
-    } # end s loop
-  } # end split by sex
+    } # end joint compositions
 
-  # Joint compositions
-  if(comp_type[y,f] == 2) {
-    tmp_prob <- Exp[r,y,seas,,,f,sim] # extract compositions
+    # Aggregated comps across regions
+    if(r == n_regions && comp_type[y,f] == 0) {
 
-    # multinomial
-    if(comp_like[f] == 0) {
-      Obs[r,y,seas,,,f,sim] <- array(
-        apply_error(as.vector(stats::rmultinom(1, ISS[r,y,seas,1,f,sim], get_expected(tmp_prob))),
-                    age_or_len, age_error_mat),
-        dim = dim(Obs[r,y,seas,,,f,sim, drop = FALSE])
-      )
+      # extract compositions
+      tmp_prob <- apply(Exp[,,y,seas,,,f,sim, drop = FALSE], 5, sum)
+      tmp_prob <- tmp_prob / sum(tmp_prob)
 
-      # dirichlet-multinomial
-    } else if(comp_like[f] == 1) {
-      Obs[r,y,seas,,,f,sim] <- array(
-        apply_error(as.vector(
-          rdirM(
-            n = 1,
-            N = ISS[r,y,seas,1,f,sim],
-            alpha = (exp(ln_theta[r,1,f]) * ISS[r,y,seas,1,f,sim]) * get_expected(tmp_prob)
-          )
-        ), age_or_len, age_error_mat),
-        dim = dim(Obs[r,y,seas,,,f,sim, drop = FALSE])
-      )
+      # multinomial
+      if(comp_like[f] == 0) {
+        Obs[1,y,seas,,1,f,sim] <- array(
+          apply_error(as.vector(stats::rmultinom(1, ISS[1,y,seas,1,f,sim], get_expected(tmp_prob))), age_or_len, age_error_mat),
+          dim = dim(Obs[1,y,seas,,1,f,sim, drop = FALSE])
+        )
 
-      # logistic normal
-    } else if(comp_like[f] %in% 2:4) {
-      Obs[r,y,seas,,,f,sim] <- array(
-        apply_error(as.vector(
-          rlogistnormal(
-            exp = get_expected(tmp_prob),
-            pars = c(exp(ln_theta[r,1,f]), rho_trans(corr_pars[r,1,f,])),
-            comp_like = comp_like[f],
-            n_sexes = n_sexes
-          )
-        ), age_or_len, age_error_mat),
-        dim = dim(Obs[r,y,seas,,,f,sim, drop = FALSE])
-      )
+        # dirichlet-multinomial
+      } else if(comp_like[f] == 1) {
+        Obs[1,y,seas,,1,f,sim] <- array(
+          apply_error(as.vector(
+            rdirM(
+              n = 1,
+              N = ISS[1,y,seas,1,f,sim],
+              alpha = (exp(ln_theta_agg[f]) * ISS[1,y,seas,1,f,sim]) * get_expected(tmp_prob)
+            )
+          ), age_or_len, age_error_mat),
+          dim = dim(Obs[1,y,seas,,1,f,sim, drop = FALSE])
+        )
+
+        # logistic normal
+      } else if(comp_like[f] %in% 2:4) {
+        Obs[1,y,seas,,1,f,sim] <- array(
+          apply_error(as.vector(
+            rlogistnormal(
+              exp = get_expected(tmp_prob),
+              pars = c(exp(ln_theta_agg[f]), rho_trans(corr_pars_agg[f])),
+              comp_like = comp_like[f],
+              n_sexes = n_sexes
+            )
+          )),
+          dim = dim(Obs[1,y,seas,,1,f,sim, drop = FALSE])
+        )
+      }
     }
 
-  } # end joint compositions
-
-  # Aggregated comps across regions
-  if(r == n_regions && comp_type[y,f] == 0) {
-
-    # extract compositions
-    tmp_prob <- Exp[,y,seas,,,f,sim]
-    tmp_prob <- matrix(rowSums(matrix(tmp_prob, nrow = n_cat)) / (n_sexes * n_regions), nrow = 1)
-    tmp_prob <- tmp_prob / sum(tmp_prob)
-
-    # multinomial
-    if(comp_like[f] == 0) {
-      Obs[1,y,seas,,1,f,sim] <- array(
-        apply_error(as.vector(stats::rmultinom(1, ISS[1,y,seas,1,f,sim], get_expected(tmp_prob))), age_or_len, age_error_mat),
-        dim = dim(Obs[1,y,seas,,1,f,sim, drop = FALSE])
-      )
-
-      # dirichlet-multinomial
-    } else if(comp_like[f] == 1) {
-      Obs[1,y,seas,,1,f,sim] <- array(
-        apply_error(as.vector(
-          rdirM(
-            n = 1,
-            N = ISS[1,y,seas,1,f,sim],
-            alpha = (exp(ln_theta_agg[f]) * ISS[1,y,seas,1,f,sim]) * get_expected(tmp_prob)
-          )
-        ), age_or_len, age_error_mat),
-        dim = dim(Obs[1,y,seas,,1,f,sim, drop = FALSE])
-      )
-
-      # logistic normal
-    } else if(comp_like[f] %in% 2:4) {
-      Obs[1,y,seas,,1,f,sim] <- array(
-        apply_error(as.vector(
-          rlogistnormal(
-            exp = get_expected(tmp_prob),
-            pars = c(exp(ln_theta_agg[f]), rho_trans(corr_pars_agg[f])),
-            comp_like = comp_like[f],
-            n_sexes = n_sexes
-          )
-        )),
-        dim = dim(Obs[1,y,seas,,1,f,sim, drop = FALSE])
-      )
-    }
-  }
+  } # end if not population specific
 
   return(Obs)
 }
+
+#' Simulate conventional tag recaptures for fishery fleets
+#'
+#' Simulates observed tag recaptures from fishery fleets given predicted recapture
+#' arrays, supporting multiple likelihood structures (Poisson, Negative Binomial,
+#' Multinomial, Dirichlet-Multinomial) and flexible attribute reporting levels
+#' (population, age, sex). The function marginalizes over unreported dimensions
+#' based on the specified \code{tag_recaptures_attr} string.
+#'
+#' @param conv_fish_tag_like Integer specifying the likelihood for tag recaptures.
+#'   \itemize{
+#'     \item \code{0} Poisson
+#'     \item \code{1} Negative Binomial
+#'     \item \code{2} Multinomial, release conditioned
+#'     \item \code{3} Multinomial, recovery conditioned
+#'     \item \code{4} Dirichlet-Multinomial, release conditioned
+#'     \item \code{5} Dirichlet-Multinomial, recovery conditioned
+#'   }
+#' @param tag_recaptures_attr Character string specifying which biological attributes
+#'   are recorded at recapture. Constructed from any combination of \code{"p"} (population),
+#'   \code{"a"} (age), and \code{"s"} (sex), joined by underscores. Region and fleet are
+#'   always retained. Supported values: \code{"p_a_s"}, \code{"a_s"}, \code{"p_a"},
+#'   \code{"p_s"}, \code{"a"}, \code{"s"}, \code{"p"}, \code{"none"}. Dimensions not
+#'   present in the string are marginalized out and assigned to index 1 in the output array.
+#' @param conv_tagged_fish Array of tagged fish at release with dimensions
+#'   \code{[tc, pop, region, sex, sim]}. Used to determine the number of tags at liberty
+#'   for release-conditioned likelihoods.
+#' @param pred_conv_tag_fish_recap Array of predicted tag recaptures with dimensions
+#'   \code{[year, season, cohort, pop, region, age, sex, fleet, sim]}.
+#' @param obs_conv_tag_fish_recap Array of observed tag recaptures with the same
+#'   dimensions as \code{pred_conv_tag_fish_recap}. Simulated values are written into
+#'   this array and the updated array is returned.
+#' @param ln_conv_fish_tag_theta Numeric. Log of the overdispersion parameter used
+#'   in Negative Binomial (size = \code{exp(ln_conv_fish_tag_theta)}) and
+#'   Dirichlet-Multinomial (\eqn{\theta = \exp(\text{ln\_conv\_fish\_tag\_theta})}) likelihoods.
+#'   Ignored for Poisson and Multinomial.
+#' @param ry Integer. Recovery year index into the recapture arrays.
+#' @param rseas Integer. Recovery season index into the recapture arrays.
+#' @param tc Integer. Tag cohort index, used to index into \code{pred_conv_tag_fish_recap}
+#'   and \code{conv_tagged_fish}.
+#' @param sim Integer. Simulation replicate index.
+#' @param n_pop Integer. Number of populations.
+#' @param n_regions Integer. Number of regions.
+#' @param n_ages Integer. Number of age classes.
+#' @param n_sexes Integer. Number of sexes.
+#' @param n_fish_fleets Integer. Number of fishery fleets.
+#'
+#' @returns The \code{obs_conv_tag_fish_recap} array with simulated recaptures filled in
+#'   at indices \code{[ry, rseas, tc, pop_idx, reg_idx, age_idx, sex_idx, flt_idx, sim]},
+#'   where marginalized dimensions are fixed at index 1.
+#'
+#' @details
+#' For release-conditioned likelihoods (\code{2}, \code{4}), the total number of tags
+#' at liberty is taken from \code{conv_tagged_fish} and predicted recaptures are expressed
+#' as proportions. A "not recaptured" bin is appended to complete the probability vector
+#' before drawing, then removed before assignment.
+#'
+#' For recovery-conditioned likelihoods (\code{3}, \code{5}), the total number of
+#' recaptures is taken directly from the sum of \code{pred_conv_tag_fish_recap} and
+#' no "not recaptured" bin is needed.
+#'
+#' Marginalization is performed by reshaping the flat predicted recapture vector into
+#' a 5-dimensional array of shape \code{c(n_pop, n_regions, n_ages, n_sexes, n_fish_fleets)}
+#' and summing over dimensions absent from \code{tag_recaptures_attr}.
+#'
+#' @keywords internal
+simulate_conv_tag_fish_recaptures <- function(conv_fish_tag_like,
+                                              tag_recaptures_attr,
+                                              conv_tagged_fish,
+                                              pred_conv_tag_fish_recap,
+                                              obs_conv_tag_fish_recap,
+                                              ln_conv_fish_tag_theta,
+                                              ry,
+                                              rseas,
+                                              tc,
+                                              sim,
+                                              n_pop,
+                                              n_regions,
+                                              n_ages,
+                                              n_sexes,
+                                              n_fish_fleets
+                                              ) {
+
+  # get full dimensions of tag recaptures we simulate
+  full_dims  <- c(n_pop, n_regions, n_ages, n_sexes, n_fish_fleets)
+  attr_parts <- strsplit(tag_recaptures_attr, "_")[[1]]
+
+  # Which of the 5 free dims (pop=1, region=2, age=3, sex=4, fleet=5) to retain
+  # Region and fleet are always kept; pop/age/sex kept only if present in attr string
+  keep_dims <- c(
+    if("p" %in% attr_parts) 1,
+    2,                            # region always kept
+    if("a" %in% attr_parts) 3,
+    if("s" %in% attr_parts) 4,
+    5                             # fleet always kept
+  )
+
+  # get obs slice indices: full range if dim is kept, fixed at 1 if marginalized out
+  pop_idx <- if("p" %in% attr_parts) seq_len(n_pop)   else 1
+  age_idx <- if("a" %in% attr_parts) seq_len(n_ages)  else 1
+  sex_idx <- if("s" %in% attr_parts) seq_len(n_sexes) else 1
+  reg_idx <- seq_len(n_regions)   # always full
+  flt_idx <- seq_len(n_fish_fleets) # always full
+
+  # Function to marginalize tag recaptures. If dims == 5, then keep dimensions, otherwise,
+  # marginalize and retain the kept dimensions
+  marginalize <- function(vals) {
+    tmp <- array(vals, dim = full_dims)
+    if(length(keep_dims) < 5) apply(tmp, keep_dims, sum) else tmp
+  }
+
+  # Poisson or Neg Bin
+  if(conv_fish_tag_like %in% c(0, 1)) {
+    lambda <- marginalize(pred_conv_tag_fish_recap[ry, rseas, tc, , , , , , sim]) # get lambda / mu parameter
+    # input and simulate
+    obs_conv_tag_fish_recap[ry, rseas, tc, pop_idx, reg_idx, age_idx, sex_idx, flt_idx, sim] <-
+      if(conv_fish_tag_like == 0) {
+        rpois(n = length(lambda), lambda = lambda)
+      } else {
+        rnbinom(n = length(lambda), mu = lambda, size = exp(ln_conv_fish_tag_theta))
+      }
+  }
+
+  # Multinomial or Dirichlet Multinomial (Release conditioned)
+  if(conv_fish_tag_like %in% c(2, 4)) {
+    tmp_n_tags_rel <- round(sum(conv_tagged_fish[tc, , , , sim])) # get sample size
+    tmp_recap      <- marginalize(pred_conv_tag_fish_recap[ry, rseas, tc, , , , , , sim] / tmp_n_tags_rel) # marginalize
+    tmp_probs      <- c(tmp_recap, 1 - sum(tmp_recap)) # get non-recaptured state
+
+    # simualte
+    tmp_sim_recap <-
+      if(conv_fish_tag_like == 2) {
+        stats::rmultinom(1, tmp_n_tags_rel, tmp_probs)
+      } else {
+        rdirM(n = 1, N = tmp_n_tags_rel, exp(ln_conv_fish_tag_theta) * tmp_n_tags_rel * tmp_probs)
+      }
+
+    # Drop the "not recaptured" bin and restore array shape
+    tmp_sim_recap <- array(tmp_sim_recap[-length(tmp_sim_recap)], dim(tmp_recap))
+    obs_conv_tag_fish_recap[ry, rseas, tc, pop_idx, reg_idx, age_idx, sex_idx, flt_idx, sim] <- tmp_sim_recap
+  }
+
+  # Multinomial or Dirichlet Multinomial (Recovery conditioned)
+  if(conv_fish_tag_like %in% c(3, 5)) {
+    tmp_n_tags_recap <- round(sum(pred_conv_tag_fish_recap[ry, rseas, tc, , , , , , sim])) # get sample size
+    tmp_probs        <- marginalize(pred_conv_tag_fish_recap[ry, rseas, tc, , , , , , sim] / tmp_n_tags_recap)
+
+    # simulate
+    tmp_sim_recap <-
+      if(conv_fish_tag_like == 3) {
+        stats::rmultinom(1, tmp_n_tags_recap, c(tmp_probs))
+      } else {
+        rdirM(n = 1, N = tmp_n_tags_recap, exp(ln_conv_fish_tag_theta) * tmp_n_tags_recap * c(tmp_probs))
+      }
+
+    # input
+    obs_conv_tag_fish_recap[ry, rseas, tc, pop_idx, reg_idx, age_idx, sex_idx, flt_idx, sim] <- tmp_sim_recap
+  }
+
+  return(obs_conv_tag_fish_recap)
+
+}
+
+#' Title Initialize Age Structure for Simulation
+#'
+#' @param y Year index
+#' @param sim Simulation index
+#' @param sim_env Simulation Environment
+#' @keywords internal
+generate_initial_age_structure <- function(y,
+                                           sim,
+                                           sim_env) {
+  with(sim_env, {
+    tmp_ln_init_devs <- NULL
+    for(p in 1:n_pop) {
+
+      # reset deviations for each population (draws for each popn)
+      if(n_pop > 1) tmp_ln_init_devs <- NULL
+
+      for(r in 1:n_regions) {
+
+        # if local DD and n_pop = 1, reset deviations for each region (draws for each region, but if n_pop > 1,
+        # shares deviations across regions withn a given population)
+        if(n_pop == 1 && init_dd == 0) tmp_ln_init_devs <- NULL
+
+        if(exists("ln_InitDevs_input")) { # if exists in environment, then use input
+          tmp_ln_init_devs <- ln_InitDevs_input[p,r,,sim]
+        } else { # simulate new initial age devs otherwise
+
+          # index ln_sigmaR, if n_pop == 1 and local DD, use region specific rates,
+          # otherwise use 1 (i.e., n_pop > 1 or init_dd == 1)
+          sigma_idx <- ifelse(n_pop == 1 && init_dd == 0, r, 1)
+
+          # simulate initial age deviations
+          if(is.null(tmp_ln_init_devs)) tmp_ln_init_devs <- stats::rnorm(n_ages-1, 0, exp(ln_sigmaR[1,p,sigma_idx]))
+        }
+
+        # input age deviations
+        sim_env$ln_InitDevs[p,r,,sim] <- tmp_ln_init_devs
+
+      } # end r loop
+    } # end p loop
+
+
+    # Get initial fished NAA
+    Init_Fished_NAA = Get_Init_NAA(
+      init_age_strc = init_age_strc, # initial age structure
+      init_iter = n_ages * 5, # if init_age_strc == 0, number of iterations to run
+      n_pop = n_pop, # number of populations
+      n_regions = n_regions, # regions
+      n_sexes = n_sexes, # sexes
+      n_ages = n_ages, # ages
+      n_seas = n_seas, # seasons
+      seasdur = seasdur,  # fracion of time in season
+      natmort = array(natmort[,,1,,,sim], dim = c(n_pop, n_regions, n_ages, n_sexes)), # natural mortality in first year
+      init_F = init_F, # initial F applied (0 for unfished)
+      fish_sel = array(fish_sel[,1,,,,sim], dim = c(n_regions, n_ages, n_sexes, n_fish_fleets)), # fishery selectivity in first year
+      R0_r = array(R0[,,1,sim], dim = c(n_pop, n_regions)), # regional mean or virgin recruitment
+      sexratio = array(sexratio[,,1,,sim], dim = c(n_pop, n_regions, n_sexes)), # sex ratio in first year
+      Movement = array(Movement[,,,1,,,,sim], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages, n_sexes)), # movement in first year
+      do_recruits_move = do_recruits_move, # whether recruits move
+      ln_InitDevs = array(ln_InitDevs[,,,sim], dim = c(n_pop, n_regions, n_ages - 1)) # initial deviations
+    )
+
+    # Get initial unfished NAA
+    Init_Unfished_NAA = Get_Init_NAA(
+      init_age_strc = init_age_strc, # initial age structure
+      init_iter = n_ages * 5, # if init_age_strc == 0, number of iterations to run
+      n_pop = n_pop, # number of populations
+      n_regions = n_regions, # regions
+      n_sexes = n_sexes, # sexes
+      n_ages = n_ages, # ages
+      natmort = array(natmort[,,1,,,sim], dim = c(n_pop, n_regions, n_ages, n_sexes)), # natural mortality in first year
+      init_F = rep(0, n_seas), # initial F applied (0 for unfished)
+      n_seas = n_seas, # seasons
+      seasdur = seasdur,  # fracion of time in season
+      fish_sel = array(fish_sel[,1,,,,sim], dim = c(n_regions, n_ages, n_sexes, n_fish_fleets)), # fishery selectivity in first year
+      R0_r = array(R0[,,1,sim], dim = c(n_pop, n_regions)), # regional mean or virgin recruitment
+      sexratio = array(sexratio[,,1,,sim], dim = c(n_pop, n_regions, n_sexes)), # sex ratio in first year
+      Movement = array(Movement[,,,1,,,,sim], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages, n_sexes)), # movement in first year
+      do_recruits_move = do_recruits_move, # whether recruits move
+      ln_InitDevs = array(ln_InitDevs[,,,sim], dim = c(n_pop, n_regions, n_ages - 1)) # initial deviations
+    )
+
+    # Input into model arrays and assign back to simulation environment (first year and first season)
+    sim_env$NAA[,,1,1,,,sim] = Init_Fished_NAA
+    sim_env$NAA0[,,1,1,,,sim] = Init_Unfished_NAA
+
+  })
+
+}
+
+#' Title Generate Recruitment for Simulation
+#'
+#' @param y Year index
+#' @param sim Simulation index
+#' @param sim_env Simulation Environment
+#' @keywords internal
+generate_recruitment <- function(y,
+                                 sim,
+                                 sim_env) {
+  with(sim_env, {
+
+    # Get deterministic recruitment
+    tmp_det_rec <- Get_Det_Recruitment(recruitment_model = recruitment_opt,
+                                       rec_dd = rec_dd,
+                                       y = y,
+                                       rec_lag = rec_lag,
+                                       R0 = apply(R0[,,y,sim, drop = FALSE], 1, sum), # sum to get global R0
+                                       Rec_Prop =       t(apply(R0[,,y,sim, drop = FALSE], c(1), function(x) x / sum(x))), # get R0 proportion
+                                       h = array(h[,,y,sim], dim = c(n_pop, n_regions)),
+                                       n_pop = n_pop,
+                                       n_regions = n_regions,
+                                       n_ages = n_ages,
+
+                                       # Note: Using first year and female quantities to compute unfished SSB0
+                                       sexratio_f = if(n_sexes == 1) array(0.5, dim = c(n_pop, n_regions)) else array(sexratio[,,1,1,sim], dim = c(n_pop, n_regions)),
+                                       WAA = array(WAA[,,1,,,1,sim], dim = c(n_pop, n_regions, n_seas, n_ages)),
+                                       MatAA = array(MatAA[,,1,,,1,sim], dim = c(n_pop, n_regions, n_seas, n_ages)),
+                                       natmort = array(natmort[,,1,,1,sim], dim = c(n_pop, n_regions, n_ages)),
+                                       Movement = array(Movement[,,,1,,,1,sim], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
+                                       SSB_vals = array(SSB[,,,sim], dim = c(n_pop, n_regions, n_yrs)),
+                                       t_spawn = t_spawn,
+                                       n_seas = n_seas,
+                                       spawn_seas = spawn_seas,
+                                       seasdur = seasdur,
+                                       do_recruits_move = do_recruits_move,
+                                       init_F = init_F, # initial F applied
+                                       fish_sel = array(fish_sel[,1,,1,1,sim], dim = c(n_regions, n_ages)) # fishery selectivity in first year
+    )
+
+
+    # if Rec_input exists and year index is within bounds
+    use_rec_input <- exists("Rec_input") && (y <= dim(Rec_input)[3])
+    tmp_ln_rec_devs <- NULL
+
+    for(p in 1:n_pop) {
+
+      # reset deviations for each population (draws for each popn)
+      if(n_pop > 1) tmp_ln_rec_devs <- NULL
+
+      for(r in 1:n_regions) {
+
+        # if local DD and n_pop = 1, reset deviations for each region (draws for each region, but if n_pop > 1,
+        # shares deviations across regions withn a given population)
+        if(n_pop == 1 && rec_dd == 0) tmp_ln_rec_devs <- NULL
+
+        if(use_rec_input) {
+          # recruitment input
+          for(s in 1:n_sexes) sim_env$NAA[p,r,y,1,1,s,sim] <- Rec_input[p,r,y,sim] * sexratio[p,r,y,s,sim]
+        } else {
+
+          # index ln_sigmaR, if n_pop == 1 and local DD, use region specific rates,
+          # otherwise use 1 (i.e., n_pop > 1 or rec_dd == 1)
+          sigma_idx <- ifelse(n_pop == 1 && rec_dd == 0, r, 1)
+
+          # simulate recial age deviations
+          if(is.null(tmp_ln_rec_devs)) tmp_ln_rec_devs <- stats::rnorm(1, 0, exp(ln_sigmaR[2,p,sigma_idx]))
+
+          # input deviations
+          sim_env$ln_RecDevs[p,r,y,sim] <- tmp_ln_rec_devs
+          for(s in 1:n_sexes) sim_env$NAA[p,r,y,1,1,s,sim] <-
+            tmp_det_rec[p,r] * exp(sim_env$ln_RecDevs[p,r,y,sim] -
+            exp(ln_sigmaR[2,p,sigma_idx])^2/2) * sexratio[p,r,y,s,sim]
+        }
+
+        sim_env$Rec[p,r,y,sim] <- sum(NAA[p,r,y,1,1,,sim]) # Save recruitment estimates
+        sim_env$NAA0[p,r,y,1,1,,sim] = NAA[p,r,y,1,1,,sim] # populate unfished NAA
+
+      } # end r loop
+    } # end p loop
+  })
+}
+
+#' Title Apply Population Dynamics (Movement, Mortality, and SSB) in Simulation
+#'
+#' @param y Year index
+#' @param sim Simulation index
+#' @param sim_env Simulation Environment
+#' @keywords internal
+apply_pop_dy <- function(y, sim, sim_env) {
+
+  with(sim_env, {
+
+    for(seas in 1:n_seas) {
+
+      # Mortality and Ageing
+      tmp_Fmort <- array(Fmort[,y,seas,,sim], dim = c(n_regions, n_fish_fleets))
+      tmp_fish_sel  <- array(fish_sel[,y,,,,sim], dim = c(n_regions, n_ages, n_sexes, n_fish_fleets))
+      tmp_natmort <- array((natmort[,,y,,,sim] * seasdur[seas]), dim = c(n_pop, n_regions, n_ages, n_sexes))
+      tmp_FAA   <- apply(sweep(tmp_fish_sel, c(1,4), tmp_Fmort, "*"), c(1,2,3), sum)
+      sim_env$ZAA[,,y,seas,,,sim] <- sweep(tmp_natmort, c(2,3,4), tmp_FAA, "+")
+
+      # Movement
+      for(p in 1:n_pop) {
+        if(n_regions > 1) {
+          if(do_recruits_move == 0) { # Recruits don't move
+            for(a in 2:n_ages) { # apply movement after ageing processes - start movement at age 2
+              for(s in 1:n_sexes) {
+                sim_env$NAA[p,,y,seas,a,s,sim] <- t(NAA[p,,y,seas,a,s,sim]) %*% Movement[p,,,y,seas,a,s,sim] # Fished
+                sim_env$NAA0[p,,y,seas,a,s,sim] <- t(NAA0[p,,y,seas,a,s,sim]) %*% Movement[p,,,y,seas,a,s,sim] # Unfished
+              } # end s loop
+            } # end a loop
+          } # end if recruits don't move
+
+          if(do_recruits_move == 1) { # Recruits move here
+            for(a in 1:n_ages) {
+              for(s in 1:n_sexes) {
+                sim_env$NAA[p,,y,seas,a,s,sim] <- t(NAA[p,,y,seas,a,s,sim]) %*% Movement[p,,,y,seas,a,s,sim] # Fished
+                sim_env$NAA0[p,,y,seas,a,s,sim] <- t(NAA0[p,,y,seas,a,s,sim]) %*% Movement[p,,,y,seas,a,s,sim] # Unfished
+              } # end s loop
+            } # end a loop
+          } # end if
+        } # only compute if spatial
+      } # end p loop
+
+      if(seas < n_seas) { # Within year seasonal mortality
+        sim_env$NAA[,,y,seas + 1,1:n_ages,,sim] = NAA[,,y,seas,1:n_ages,,sim] * exp(-ZAA[,,y,seas,1:n_ages,,sim]) # fished
+        sim_env$NAA0[,,y,seas + 1,1:n_ages,,sim] <- NAA0[,,y,seas,1:n_ages,,sim] * exp(-(tmp_natmort[,,1:n_ages,])) # unfished
+      } else {
+        # Advance into the next year, season 1
+        sim_env$NAA[,,y+1,1,2:n_ages,,sim] = NAA[,,y,seas,1:(n_ages-1),,sim] * exp(-ZAA[,,y,seas,1:(n_ages-1),,sim]) # fished
+        sim_env$NAA[,,y+1,1,n_ages,,sim] = NAA[,,y+1,1,n_ages,,sim] + NAA[,,y,seas,n_ages,,sim] * exp(-ZAA[,,y,seas,n_ages,,sim]) # Acuumulate plus group (fished)
+        sim_env$NAA0[,,y+1,1,2:n_ages,,sim] = NAA0[,,y,seas,1:(n_ages-1),,sim] * exp(-(tmp_natmort[,,1:(n_ages - 1),])) # fished
+        sim_env$NAA0[,,y+1,1,n_ages,,sim] = NAA0[,,y+1,1,n_ages,,sim] + NAA0[,,y,seas,n_ages,,sim] * exp(-(tmp_natmort[,,n_ages,])) # Acuumulate plus group (fished)
+      }
+
+      # Compute Biomass Quantities
+      if(seas == spawn_seas) {
+
+        # Total Biomass
+        sim_env$Total_Biom[,, y, sim] <- apply(NAA[,, y, spawn_seas, , , sim,drop = FALSE] *
+                                               WAA[,, y, spawn_seas, , , sim,drop = FALSE] *
+                                               exp(-ZAA[,,y,spawn_seas,,,sim,drop = FALSE] * t_spawn), c(1,2), sum)
+
+        # Spawning Stock Biomass
+        sim_env$SSB[,, y, sim] <- apply(NAA[,, y, spawn_seas, , 1, sim,drop = FALSE] * WAA[,, y, spawn_seas, , 1, sim,drop = FALSE] *
+                                        MatAA[,, y, spawn_seas, , 1, sim,drop = FALSE] *
+                                        exp(-ZAA[,, y, spawn_seas, , 1, sim,drop = FALSE] * t_spawn), c(1,2), sum)
+
+        # Get dynamic B0
+        SSB0_array <- NAA0[,, y, spawn_seas, , 1, sim, drop = FALSE] *  WAA[,,  y, spawn_seas, , 1, sim, drop = FALSE] * MatAA[,,y, spawn_seas, , 1, sim, drop = FALSE]
+        mort_spawn <- exp(-natmort[,, y, , 1, sim, drop = FALSE] * t_spawn * seasdur[seas])
+        mort_spawn <- array(mort_spawn, dim = dim(SSB0_array) ) # coerce array
+        sim_env$Dynamic_SSB0[,,y,sim] <- apply(SSB0_array * mort_spawn, c(1,2), sum) # Dynamic B0
+
+        if(n_sexes == 1) { # If single sex model, multiply SSB calculations by 0.5
+          sim_env$SSB[,,y,sim] <- SSB[,,y,sim] * 0.5
+          sim_env$Dynamic_SSB0[,,y,sim] <- Dynamic_SSB0[,,y,sim] * 0.5
+        }
+
+      } # if season = spawning season
+    } # end seas loop
+  })
+}
+
+#' Title Generate Fishery Catches, Comps, and Indices in Simulation
+#'
+#' @param y Year index
+#' @param sim Simulation index
+#' @param sim_env Simulation Environment
+#' @keywords internal
+generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
+  with(sim_env, {
+    for(seas in 1:n_seas) {
+      for(r in 1:n_regions) {
+        for(f in 1:n_fish_fleets) {
+
+          for(p in 1:n_pop) {
+            # Baranov's catch equation
+            sim_env$CAA[p,r,y,seas,,,f,sim] <- (Fmort[r,y,seas,f,sim] * fish_sel[r,y,,,f,sim]) / ZAA[p,r,y,seas,,,sim] *
+                                                NAA[p,r,y,seas,,,sim] * (1 - exp(-ZAA[p,r,y,seas,,,sim]))
+            if(exists("SizeAgeTrans") && !is.null(SizeAgeTrans)) for(s in 1:n_sexes) sim_env$CAL[p,r,y,seas,,s,f,sim] <- SizeAgeTrans[p,r,y,seas,,,s,sim] %*% CAA[p,r,y,seas,,s,f,sim] # Catch at length
+          } # end p loop
+
+          # Catch
+          if(catch_units[f] == 0) sim_env$TrueCatch[r,y,seas,f,sim] <- sum(CAA[,r,y,seas,,,f,sim]) # abundance
+          if(catch_units[f] == 1) sim_env$TrueCatch[r,y,seas,f,sim] <- sum(CAA[,r,y,seas,,,f,sim] * WAA_fish[,r,y,seas,,,f,sim]) # biomass
+          sim_env$ObsCatch[r,y,seas,f,sim] <- TrueCatch[r,y,seas,f,sim] * exp(stats::rnorm(1, 0, exp(ln_sigmaC[r,y,seas,f]))) # Observed Catch w/ lognormal deviations
+
+          # Fishery Index
+          tmp_expl_abd <- sweep(NAA[,r,y,seas,,,sim, drop = F], c(5,6), fish_sel[r,y,,,f,sim, drop = F], "*") # get exploitable abundance
+          tmp_expl_biom <- sweep(tmp_expl_abd, c(1,5,6), WAA_fish[,r,y,seas,,,f,sim, drop = F], "*") # get exploitable abundance
+          if(fish_idx_type[f] == 0) sim_env$TrueFishIdx[r,y,seas,f,sim] <- fish_q[r,y,f,sim] * sum(tmp_expl_abd) # True Fishery Index (abundance)
+          if(fish_idx_type[f] == 1) sim_env$TrueFishIdx[r,y,seas,f,sim] <- fish_q[r,y,f,sim] * sum(tmp_expl_biom) # True Fishery Index (biomass)
+          sim_env$ObsFishIdx[r,y,seas,f,sim] <- TrueFishIdx[r,y,seas,f,sim] * exp(stats::rnorm(1, 0, ObsFishIdx_SE[r,y,seas,f])) # Observed Fishery index w/ lognormal deviations
+
+          # Fishery Compositions
+          if(Fmort[r,y,seas,f,sim] > 0) { # only simulate if Fishing Mortality > 0
+
+            # Age Compositions (Dynamic ISS based on feedback fishing mortality)
+            if(exists("ISS_FishAgeComps_fill") && isTRUE(ISS_FishAgeComps_fill == "F_pattern") && isTRUE(run_feedback) && y >= feedback_start_yr + 1 && r == 1 && f == 1) {
+              sim_env$ISS_FishAgeComps[,1:y,seas,,,sim] <- predict_sim_fish_iss_fmort(ISS_FishComps = ISS_FishAgeComps, Fmort = Fmort, y = y, sim = sim, seas = seas)
+            }
+
+            # Length Compositions (Dynamic ISS based on feedback fishing mortality)
+            if(exists("ISS_FishLenComps_fill") && isTRUE(ISS_FishLenComps_fill == "F_pattern") && isTRUE(run_feedback) && y >= feedback_start_yr + 1 && r == 1 && f == 1) {
+              sim_env$ISS_FishLenComps[,1:y,seas,,,sim] <- predict_sim_fish_iss_fmort(ISS_FishComps = ISS_FishLenComps, Fmort = Fmort, y = y, sim = sim, seas = seas)
+            }
+
+            # Sample fishery ages
+            sim_env$ObsFishAgeComps <- simulate_comps(r = r,
+                                                      y = y,
+                                                      seas = seas,
+                                                      f = f,
+                                                      sim = sim,
+                                                      Exp = CAA,
+                                                      ISS = ISS_FishAgeComps,
+                                                      AgeingError = AgeingError,
+                                                      comp_like = comp_fishage_like,
+                                                      ln_theta = ln_FishAge_theta,
+                                                      ln_theta_agg = ln_FishAge_theta_agg,
+                                                      corr_pars = FishAge_corr_pars,
+                                                      corr_pars_agg = FishAge_corr_pars_agg,
+                                                      comp_type = FishAgeComps_Type,
+                                                      n_sexes = n_sexes,
+                                                      n_regions = n_regions,
+                                                      n_cat = n_ages,
+                                                      Obs = ObsFishAgeComps,
+                                                      age_or_len = 0,
+                                                      pop_specific = FALSE)
+
+            # Sample fishery lengths
+            if(exists("SizeAgeTrans") && !is.null(SizeAgeTrans)) {
+              sim_env$ObsFishLenComps <- simulate_comps(r = r,
+                                                        y = y,
+                                                        seas = seas,
+                                                        f = f,
+                                                        sim = sim,
+                                                        Exp = CAL,
+                                                        ISS = ISS_FishLenComps,
+                                                        AgeingError = NULL,
+                                                        comp_like = comp_fishlen_like,
+                                                        ln_theta = ln_FishLen_theta,
+                                                        ln_theta_agg = ln_FishLen_theta_agg,
+                                                        corr_pars = FishLen_corr_pars,
+                                                        corr_pars_agg = FishLen_corr_pars_agg,
+                                                        comp_type = FishLenComps_Type,
+                                                        n_sexes = n_sexes,
+                                                        n_regions = n_regions,
+                                                        n_cat = n_lens,
+                                                        Obs = ObsFishLenComps,
+                                                        age_or_len = 1,
+                                                        pop_specific = FALSE)
+
+            } # end if size age transition if availiable
+          } # end if Fmort > 0
+
+        } # end f loop
+      } # end r loop
+    } # end seas loop
+  })
+
+}
+
+
+#' Title Generate Survey Comps and Indices in Simulation
+#'
+#' @param y Year index
+#' @param sim Simulation index
+#' @param sim_env Simulation Environment
+#' @keywords internal
+generate_survey_comp_idx <- function(y, sim, sim_env) {
+  with(sim_env, {
+
+    for(seas in 1:n_seas) {
+      for(r in 1:n_regions) {
+        for(sf in 1:n_srv_fleets) {
+
+          for(p in 1:n_pop) {
+            # Survey Ages Indexed (midpoint year)
+            sim_env$SrvIAA[p,r,y,seas,,,sf,sim] <- NAA[p,r,y,seas,,,sim] * srv_sel[r,y,,,sf,sim] * exp(-t_srv[r,seas,sf] * ZAA[p,r,y,seas,,,sim])
+            if(exists("SizeAgeTrans") && !is.null(SizeAgeTrans)) for(s in 1:n_sexes) sim_env$SrvIAL[p,r,y,seas,,s,sf,sim] <- SizeAgeTrans[p,r,y,seas,,,s,sim] %*% SrvIAA[p,r,y,seas,,s,sf,sim] # Survey index at length
+          } # end p loop
+
+          # Survey Index
+          if(srv_idx_type[sf] == 0) sim_env$TrueSrvIdx[r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * sum(SrvIAA[,r,y,seas,,,sf,sim]) # True Survey Index (abundance)
+          if(srv_idx_type[sf] == 1) sim_env$TrueSrvIdx[r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * sum(SrvIAA[,r,y,seas,,,sf,sim] * WAA_srv[,r,y,seas,,,sf,sim]) # True Survey Index (biomass)
+          sim_env$ObsSrvIdx[r,y,seas,sf,sim] <- TrueSrvIdx[r,y,seas,sf,sim] * exp(stats::rnorm(1, 0, ObsSrvIdx_SE[r,y,seas,sf])) # Observed survey index w/ lognormal deviations
+
+          # Survey Compositions
+          # Sample survey ages
+          sim_env$ObsSrvAgeComps <- simulate_comps(r = r,
+                                                   y = y,
+                                                   f = sf,
+                                                   seas = seas,
+                                                   sim = sim,
+                                                   Exp = SrvIAA,
+                                                   ISS = ISS_SrvAgeComps,
+                                                   AgeingError = AgeingError,
+                                                   comp_like = comp_srvage_like,
+                                                   ln_theta = ln_SrvAge_theta,
+                                                   ln_theta_agg = ln_SrvAge_theta_agg,
+                                                   corr_pars = SrvAge_corr_pars,
+                                                   corr_pars_agg = SrvAge_corr_pars_agg,
+                                                   comp_type = SrvAgeComps_Type,
+                                                   n_sexes = n_sexes,
+                                                   n_regions = n_regions,
+                                                   n_cat = n_ages,
+                                                   Obs = ObsSrvAgeComps,
+                                                   age_or_len = 0,
+                                                   pop_specific = FALSE)
+
+          # Sample survey lengths
+          if(exists("SizeAgeTrans") && !is.null(SizeAgeTrans)) {
+            sim_env$ObsSrvLenComps <- simulate_comps(r = r,
+                                                     y = y,
+                                                     f = sf,
+                                                     seas = seas,
+                                                     sim = sim,
+                                                     Exp = SrvIAL,
+                                                     ISS = ISS_SrvLenComps,
+                                                     AgeingError = NULL,
+                                                     comp_like = comp_srvlen_like,
+                                                     ln_theta = ln_SrvLen_theta,
+                                                     ln_theta_agg = ln_SrvLen_theta_agg,
+                                                     corr_pars = SrvLen_corr_pars,
+                                                     corr_pars_agg = SrvLen_corr_pars_agg,
+                                                     comp_type = SrvLenComps_Type,
+                                                     n_sexes = n_sexes,
+                                                     n_regions = n_regions,
+                                                     n_cat = n_lens,
+                                                     Obs = ObsSrvLenComps,
+                                                     age_or_len = 1,
+                                                     pop_specific = FALSE)
+
+          } # end if size age transition if availiable
+
+        } # end sf loop
+      } # end r loop
+    } # end seas loop
+
+  })
+}
+
+#' Title Generate Conventional Tag Releases
+#'
+#' @param y Year index
+#' @param sim Simulation index
+#' @param sim_env Simulation Environment
+#' @keywords internal
+release_conv_tags <- function(y, sim, sim_env) {
+  with(sim_env, {
+    for(seas in 1:n_seas) {
+      for(r in 1:n_regions) {
+
+        # Get indices for tag cohorts in the current year and region
+        tag_rel <- which(tag_release_indicator[,1] == r & tag_release_indicator[,2] == y & tag_release_indicator[,3] == seas) # Get tag cohort (release event)
+
+        # Release Tags if any events
+        if(length(tag_rel) != 0) {
+
+          # Tag Indexing
+          tr <- tag_release_indicator[tag_rel,1] # tag release region
+          ty <- tag_release_indicator[tag_rel,2] # tag release year
+          tseas <- tag_release_indicator[tag_rel,3] # tag release season
+          tplat <- tag_release_platform[tag_rel, 1] # get tagging platform information
+          tplat_f <- as.numeric(tag_release_platform[tag_rel, 2]) # get tagging fleet
+
+          # distribute tags by survey
+          if(tplat[1] == 'survey') {
+            if(!exists("n_tags_rel_input")) {
+              n_tags_rel <- round(sum(SrvIAA[,tr,ty,tseas,,,tplat_f,sim]) / sum(SrvIAA[,,ty,tseas,,,tplat_f,sim]) * n_tags) # get region specific tags
+            } else {
+              n_tags_rel <- n_tags_rel_input[tag_rel] # use input tags by cohort if availiable
+            }
+            tmp_props <- SrvIAA[, tr, ty, tseas, , , tplat_f, sim] / sum(SrvIAA[, tr, ty, tseas, , , tplat_f, sim]) # get proportions by population, age, and sex
+          }
+
+          # distribute tags by fishery
+          if(tplat[1] == 'fishery') {
+            if(!exists("n_tags_rel_input")) {
+              n_tags_rel <- round(sum(CAA[,tr,ty,tseas,,,tplat_f,sim]) / sum(CAA[,,ty,tseas,,,tplat_f,sim]) * n_tags) # get region specific tags
+            } else {
+              n_tags_rel <- n_tags_rel_input[tag_rel] # use input tags by cohort if availiable
+            }
+            tmp_props <- CAA[, tr, ty, tseas, , , tplat_f, sim] / sum(CAA[, tr, ty, tseas, , , tplat_f, sim]) # get proportions by population, age, and sex
+          }
+
+          # distribute tags by population
+          if(tplat[1] == 'population') {
+            if(!exists("n_tags_rel_input")) {
+              n_tags_rel <- round(sum(NAA[,tr,ty,tseas,,,sim]) / sum(NAA[,,ty,tseas,,,sim]) * n_tags) # get region specific tags
+            } else {
+              n_tags_rel <- n_tags_rel_input[tag_rel] # use input tags by cohort if availiable
+            }
+            tmp_props <- NAA[, tr, ty, tseas, , , sim] / sum(NAA[, tr, ty, tseas, , , sim]) # get proportions by population, age, and sex
+          }
+
+          # multiply by tags in each region and distributa cross ages and sexes
+          sim_env$conv_tagged_fish[tag_rel, , , , sim] <- array(round(tmp_props * n_tags_rel), dim = c(n_pop, n_ages, n_sexes))
+
+        } # end if no tag releases
+
+      } # end r loop
+    } # end seas loop
+  })
+}
+
+#' Title Generate Conventional Tag Recaptures from Fisheries
+#'
+#' @param y Year index
+#' @param sim Simulation index
+#' @param sim_env Simulation Environment
+#' @keywords internal
+generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {
+  with(sim_env,{
+
+      for(rseas in 1:n_seas) {
+        for(tc in 1:n_tag_rel_events) {
+
+          # get indexing
+          tr <- tag_release_indicator[tc,1] # tag release region
+          ty <- tag_release_indicator[tc,2] # tag release year
+          tseas <- tag_release_indicator[tc,3] # tag release seasons
+
+          # Skipping stuff if hasn't occurred yet, or if max liberty
+          if(y < ty || (y == ty && rseas < tseas)) next
+          ry <- y - ty + 1 # get tag liberty
+          if(ry > max_liberty) next # skip if max liberty
+
+          # get fishing mortality
+          tmp_F <- array(Fmort[, y, rseas, , sim] , dim = c(n_regions, 1, n_ages, n_sexes, n_fish_fleets, 1))
+          tmp_FAA <- tmp_F * fish_sel[, y, , , , sim, drop = FALSE]
+
+          # get total mortality
+          tmp_natmort <- array(natmort[,,y,,,sim], dim = c(n_pop, n_regions, 1, n_ages, n_sexes, 1))
+          tmp_ZAA <- sweep((tmp_natmort * seasdur[rseas]), c(2,3,4,5), apply(tmp_FAA, 1:4, sum), "+") + (exp(ln_conv_tag_shed) * seasdur[rseas])
+
+          # Discount with tagging time (t_tagging) if it doesn't happen at the start of the season / year
+          if(ry == 1 && rseas == tseas) {
+            if(t_tagging != 1) tmp_ZAA <- tmp_ZAA * t_tagging
+            # Input tagged fish into available tags for recapture and adjust initial number of tagged fish for tag induced mortality (exponential mortality process)
+            sim_env$conv_tag_fish_avail[1, rseas, tc, , tr, , , sim] <- array(conv_tagged_fish[tc, , , , sim] * exp(-exp(ln_init_conv_tag_mort)), dim = c(n_pop, n_ages, n_sexes))
+          }
+
+          # get temporary survival value
+          tmp_SAA <- exp(-tmp_ZAA)
+
+          # Move tagged fish around (skip only in first release year + tagging season when tagging occurs mid-season)
+          if(t_tagging == 1 || ry != 1 || rseas != tseas) {
+            for(p in 1:n_pop) {
+              # Movement of tag cohorts
+              if(do_recruits_move == 0) {
+                for(a in 2:n_ages) for(s in 1:n_sexes) {
+                  sim_env$conv_tag_fish_avail[ry, rseas, tc, p, , a, s, sim] <-
+                    t(conv_tag_fish_avail[ry, rseas, tc, p, , a, s, sim]) %*%
+                    Movement[p, , , y, rseas, a, s, sim]
+                }
+              } else { # if recruits move
+                for(a in 1:n_ages) for(s in 1:n_sexes) {
+                  sim_env$conv_tag_fish_avail[ry, rseas, tc, p, , a, s, sim] <-
+                    t(conv_tag_fish_avail[ry, rseas, tc, p, , a, s, sim]) %*%
+                    Movement[p, , , y, rseas, a, s, sim]
+                } # end s loop
+              } # end else
+            } # end p loop
+          } # end if
+
+          # Apply mortality and ageing to tagged fish
+          if(rseas < n_seas) {
+
+            # Season mortality within a given year, advance to next season same year/age
+            sim_env$conv_tag_fish_avail[ry, rseas + 1, tc, , , , , sim] <-
+              conv_tag_fish_avail[ry, rseas, tc, , , , , sim] *
+              tmp_SAA[,,1,,,1]
+
+          } else {
+
+            # End of year mortality and age advancement (end of season)
+            sim_env$conv_tag_fish_avail[ry + 1, 1, tc, , , 2:n_ages, , sim] <-
+              conv_tag_fish_avail[ry, n_seas, tc, , , 1:(n_ages-1), , sim] *
+              tmp_SAA[,,1,1:(n_ages - 1),,1]
+
+            # Accumulate plus group
+            sim_env$conv_tag_fish_avail[ry + 1, 1, tc, , , n_ages, , sim] <-
+              conv_tag_fish_avail[ry + 1, 1, tc, , , n_ages, , sim] +
+              conv_tag_fish_avail[ry, n_seas, tc, , , n_ages, , sim] *
+              tmp_SAA[,,1,n_ages,,1]
+          }
+
+          # # Apply Baranov's to get predicted recaptures
+          for(f in 1:n_fish_fleets) {
+            for(p in 1:n_pop) {
+              sim_env$pred_conv_tag_fish_recap[ry,rseas,tc,p,,,,f,sim] <- conv_tag_fish_reporting[,y,f,sim] *
+                (tmp_FAA[,1,,,f,1] / tmp_ZAA[p,,1,,,1]) *
+                conv_tag_fish_avail[ry,rseas,tc,p,,,,sim] *
+                (1 - tmp_SAA[p,,1,,,1])
+            } # end p loop
+          } # end f loop
+
+          # Simulate Tag Recoveries
+          sim_env$obs_conv_tag_fish_recap <- simulate_conv_tag_fish_recaptures(
+            conv_fish_tag_like = conv_fish_tag_like,
+            tag_recaptures_attr = conv_fish_tag_attr,
+            conv_tagged_fish = conv_tagged_fish,
+            pred_conv_tag_fish_recap = pred_conv_tag_fish_recap,
+            obs_conv_tag_fish_recap = obs_conv_tag_fish_recap,
+            ln_conv_fish_tag_theta = ln_conv_fish_tag_theta,
+            ry = ry,
+            rseas = rseas,
+            tc = tc,
+            sim = sim,
+            n_pop = n_pop,
+            n_regions = n_regions,
+            n_ages = n_ages,
+            n_sexes = n_sexes,
+            n_fish_fleets = n_fish_fleets
+          )
+
+        } # end tc loop
+      } # end rseas loop
+  })
+}
+
 
 #' Run Annual Cycle in Simulation Environment
 #'
@@ -243,561 +1040,19 @@ run_annual_cycle <- function(y,
   sim_env$sim <- sim
 
   with(sim_env, {
-    # Initialize Age Structure ------------------------------------------------
+
     if(y == 1) {
-
-      # Set up initial age deviations
-      tmp_ln_init_devs <- NULL
-      for(r in 1:n_regions) {
-        if(exists("ln_InitDevs_input")) { # if exists in environment, then use input
-          tmp_ln_init_devs <- ln_InitDevs_input[r,,sim]
-        } else { # simulate new initial age devs otherwise
-          if(init_dd == 0 && is.null(tmp_ln_init_devs)) tmp_ln_init_devs <- stats::rnorm(n_ages-1, 0, exp(ln_sigmaR[1])) # global initial age deviations
-          if(init_dd == 1) tmp_ln_init_devs <- stats::rnorm(n_ages-1, 0, exp(ln_sigmaR[1])) # local initial age deviations
-        }
-        ln_InitDevs[r,,sim] <- tmp_ln_init_devs # save ln_init_devs
-      }
-
-      # Get initial fished NAA
-      Init_Fished_NAA = Get_Init_NAA(
-        init_age_strc = init_age_strc, # initial age structure
-        init_iter = n_ages * 5, # if init_age_strc == 0, number of iterations to run
-        n_regions = n_regions, # regions
-        n_sexes = n_sexes, # sexes
-        n_ages = n_ages, # ages
-        n_seas = n_seas, # seasons
-        seasdur = seasdur,  # fracion of time in season
-        natmort = array(natmort[,1,,,sim], dim = c(n_regions, n_ages, n_sexes)), # natural mortality in first year
-        init_F = init_F, # initial F applied (0 for unfished)
-        fish_sel = array(fish_sel[,1,,,,sim], dim = c(n_regions, n_ages, n_sexes, n_fish_fleets)), # fishery selectivity in first year
-        R0_r = array(R0[,1,sim], dim = n_regions), # regional mean or virgin recruitment
-        sexratio = array(sexratio[,1,,sim], dim = c(n_regions, n_sexes)), # sex ratio in first year
-        Movement = array(Movement[,,1,,,,sim], dim = c(n_regions, n_regions, n_seas, n_ages, n_sexes)), # movement in first year
-        do_recruits_move = do_recruits_move, # whether recruits move
-        ln_InitDevs = array(ln_InitDevs[,,sim], dim = c(n_regions, n_ages - 1)) # initial deviations
-      )
-
-      # Get initial unfished NAA
-      Init_Unfished_NAA = Get_Init_NAA(
-        init_age_strc = init_age_strc, # initial age structure
-        init_iter = n_ages * 5, # if init_age_strc == 0, number of iterations to run
-        n_regions = n_regions, # regions
-        n_sexes = n_sexes, # sexes
-        n_ages = n_ages, # ages
-        natmort = array(natmort[,1,,,sim], dim = c(n_regions, n_ages, n_sexes)), # natural mortality in first year
-        init_F = rep(0, n_seas), # initial F applied (0 for unfished)
-        n_seas = n_seas, # seasons
-        seasdur = seasdur,  # fracion of time in season
-        fish_sel = array(fish_sel[,1,,,,sim], dim = c(n_regions, n_ages, n_sexes, n_fish_fleets)), # fishery selectivity in first year
-        R0_r = array(R0[,1,sim], dim = n_regions), # regional mean or virgin recruitment
-        sexratio = array(sexratio[,1,,sim], dim = c(n_regions, n_sexes)), # sex ratio in first year
-        Movement = array(Movement[,,1,,,,sim], dim = c(n_regions, n_regions, n_seas, n_ages, n_sexes)), # movement in first year
-        do_recruits_move = do_recruits_move, # whether recruits move
-        ln_InitDevs = array(ln_InitDevs[,,sim], dim = c(n_regions, n_ages - 1)) # initial deviations
-      )
-
-      # Input into model arrays (first year and first season)
-      NAA[,1,1,,,sim] = Init_Fished_NAA
-      NAA0[,1,1,,,sim] = Init_Unfished_NAA
-
-    } # end initializing age structure
-
-    # Run Annual Cycle --------------------------------------------------------
-    ### Recruitment (Year 1 only) ----------------------------------------------
-    if(y == 1) {
-      tmp_ln_RecDevs <- NULL # Initialize container vector for global recruitment deviations (remains NULL within a given year)
-      for(r in 1:n_regions) {
-        # if Rec_input exists and year index is within bounds
-        use_rec_input <- exists("Rec_input") && (y <= dim(Rec_input)[2])
-        if(use_rec_input) {
-          # recruitment input
-          for(s in 1:n_sexes) NAA[r,1,1,1,s,sim] <- Rec_input[r,y,sim] * sexratio[r,y,s,sim]
-        } else {
-          # Simulate new recruitment data
-          if(rec_dd == 0 && is.null(tmp_ln_RecDevs)) tmp_ln_RecDevs <- stats::rnorm(1, 0, exp(ln_sigmaR[2])) # Global Recruitment Deviations
-          if(rec_dd == 1) tmp_ln_RecDevs <- ln_RecDevs[r,y,sim] <- stats::rnorm(1, 0, exp(ln_sigmaR[2])) # Local Recruitment Deviations
-          ln_RecDevs[r,y,sim] <- tmp_ln_RecDevs # Input recruitment deviations into vector
-
-          # Get deterministic recruitment
-          tmp_det_rec <- Get_Det_Recruitment(recruitment_model = recruitment_opt,
-                                             recruitment_dd = rec_dd,
-                                             y = y,
-                                             rec_lag = rec_lag,
-                                             R0 = sum(R0[,y,sim]), # sum to get global R0
-                                             Rec_Prop = R0[,y,sim] / sum(R0[,y,sim]), # get R0 proportion
-                                             h = h[,y,sim],
-                                             n_regions = n_regions,
-                                             n_ages = n_ages,
-                                             # Note: Using first year and female quantities to compute unfished SSB0
-                                             sexratio_f = if(n_sexes == 1) rep(0.5, n_regions) else sexratio[,1,1,sim],
-                                             WAA = array(WAA[,1,,,1,sim], dim = c(n_regions, n_seas, n_ages)),
-                                             MatAA = array(MatAA[,1,,,1,sim], dim = c(n_regions, n_seas, n_ages)),
-                                             natmort = array(natmort[,1,,1,sim], dim = c(n_regions, n_ages)),
-                                             Movement = array(Movement[,,1,,,1,sim], dim = c(n_regions, n_regions, n_seas, n_ages)),
-                                             SSB_vals = array(SSB[,,sim], dim = c(n_regions, n_yrs)),
-                                             t_spawn = t_spawn,
-                                             n_seas = n_seas,
-                                             spawn_seas = spawn_seas,
-                                             seasdur = seasdur,
-                                             do_recruits_move = do_recruits_move,
-                                             init_F = init_F, # initial F applied
-                                             fish_sel = array(fish_sel[,1,,1,1,sim], dim = c(n_regions, n_ages)) # fishery selectivity in first year
-          )
-
-          # input deviates
-          for(s in 1:n_sexes) NAA[r,1,1,1,s,sim] <- tmp_det_rec[r] * exp(ln_RecDevs[r,y,sim] - exp(ln_sigmaR[2])^2/2) * sexratio[r,y,s,sim]
-        }
-
-        Rec[r,1,sim] <- sum(NAA[r,1,1,1,,sim]) # Save recruitment estimates
-        NAA0[r,y,1,1,,sim] = NAA[r,1,1,1,,sim] # populate unfished NAA
-      } # end r loop
-    } # end if first year recruitment
-
-    #### Movement ----------------------------------------------------------------
-    for(seas in 1:n_seas) {
-      if(n_regions > 1) {
-        if(do_recruits_move == 0) { # Recruits don't move
-          for(a in 2:n_ages) { # apply movement after ageing processes - start movement at age 2
-            for(s in 1:n_sexes) {
-              NAA[,y,seas,a,s,sim] <- t(NAA[,y,seas,a,s,sim]) %*% Movement[,,y,seas,a,s,sim] # Fished
-              NAA0[,y,seas,a,s,sim] <- t(NAA0[,y,seas,a,s,sim]) %*% Movement[,,y,seas,a,s,sim] # Unfished
-            } # end s loop
-          } # end a loop
-        } # end if recruits don't move
-
-        if(do_recruits_move == 1) { # Recruits move here
-          for(a in 1:n_ages) {
-            for(s in 1:n_sexes) {
-              NAA[,y,seas,a,s,sim] <- t(NAA[,y,seas,a,s,sim]) %*% Movement[,,y,seas,a,s,sim] # Fished
-              NAA0[,y,seas,a,s,sim] <- t(NAA0[,y,seas,a,s,sim]) %*% Movement[,,y,seas,a,s,sim] # Unfished
-            } # end s loop
-          } # end a loop
-        } # end if
-      } # only compute if spatial
-
-      ### Mortality and Ageing ----------------------------------------------------
-      for(r in 1:n_regions) for(a in 1:n_ages) for(s in 1:n_sexes) ZAA[r,y,seas,a,s,sim] <- (natmort[r,y,a,s,sim] * seasdur[seas]) + sum(Fmort[r,y,seas,,sim] * fish_sel[r,y,a,s,,sim]) # compute total mortality
-
-      if(seas < n_seas) { # Within year seasonal mortality
-        NAA[,y,seas + 1,1:n_ages,,sim] = NAA[,y,seas,1:n_ages,,sim] * exp(-ZAA[,y,seas,1:n_ages,,sim]) # fished
-        NAA0[,y,seas + 1,1:n_ages,,sim] <- NAA0[,y,seas,1:n_ages,,sim] * exp(-(natmort[,y,1:n_ages,,sim] * seasdur[seas])) # unfished
-      } else {
-        # Advance into the next year, season 1
-        NAA[,y+1,1,2:n_ages,,sim] = NAA[,y,seas,1:(n_ages-1),,sim] * exp(-ZAA[,y,seas,1:(n_ages-1),,sim]) # fished
-        NAA[,y+1,1,n_ages,,sim] = NAA[,y+1,1,n_ages,,sim] + NAA[,y,seas,n_ages,,sim] * exp(-ZAA[,y,seas,n_ages,,sim]) # Acuumulate plus group (fished)
-        NAA0[,y+1,1,2:n_ages,,sim] = NAA0[,y,seas,1:(n_ages-1),,sim] * exp(-(natmort[,y,1:(n_ages - 1),,sim] * seasdur[seas])) # fished
-        NAA0[,y+1,1,n_ages,,sim] = NAA0[,y+1,1,n_ages,,sim] + NAA0[,y,seas,n_ages,,sim] * exp(-(natmort[,y,n_ages,,sim] * seasdur[seas])) # Acuumulate plus group (fished)
-      }
-
-      ### Compute Biomass Quantities ----------------------------------------------
-      if(seas == spawn_seas) {
-        Total_Biom[, y, sim] <- apply(NAA[, y, spawn_seas, , , sim,drop = FALSE] * WAA[, y, spawn_seas, , , sim,drop = FALSE] * exp(-ZAA[,y,spawn_seas,,,sim,drop = FALSE] * t_spawn), 1, sum) # Total Biomass during Spawning
-        SSB[, y, sim] <- apply(NAA[, y, spawn_seas, , 1, sim,drop = FALSE] * WAA[, y, spawn_seas, , 1, sim,drop = FALSE] *
-                                 MatAA[, y, spawn_seas, , 1, sim,drop = FALSE] * exp(-ZAA[, y, spawn_seas, , 1, sim,drop = FALSE] * t_spawn), 1, sum) # Spawning Stock Biomass
-
-        # Get dynamic B0
-        SSB0_array <- NAA0[, y, spawn_seas, , 1, sim, drop = FALSE] *  WAA[,  y, spawn_seas, , 1, sim, drop = FALSE] * MatAA[,y, spawn_seas, , 1, sim, drop = FALSE]
-        mort_spawn <- exp(-natmort[, y, , 1, sim, drop = FALSE] * t_spawn * seasdur[seas])
-        mort_spawn <- array(mort_spawn, dim = dim(SSB0_array) ) # coerce array
-        Dynamic_SSB0[,y,sim] <- apply(SSB0_array * mort_spawn, 1, sum) # Dynamic B0
-
-        if(n_sexes == 1) { # If single sex model, multiply SSB calculations by 0.5
-          SSB[,y,sim] <- SSB[,y,sim] * 0.5
-          Dynamic_SSB0[,y,sim] <- Dynamic_SSB0[,y,sim] * 0.5
-        }
-
-      } # if season = spawning season
-    } # end seas loop
-
-    for(seas in 1:n_seas) {
-      for(r in 1:n_regions) {
-
-        ### Generate Fishery Observations ----------------------------------------------------------
-        for(f in 1:n_fish_fleets) {
-
-          # Baranov's catch equation
-          CAA[r,y,seas,,,f,sim] <- (Fmort[r,y,seas,f,sim] * fish_sel[r,y,,,f,sim]) / ZAA[r,y,seas,,,sim] *  NAA[r,y,seas,,,sim] * (1 - exp(-ZAA[r,y,seas,,,sim]))
-          if(exists("SizeAgeTrans") && !is.null(SizeAgeTrans)) for(s in 1:n_sexes) CAL[r,y,seas,,s,f,sim] <- SizeAgeTrans[r,y,seas,,,s,sim] %*% CAA[r,y,seas,,s,f,sim] # Catch at length
-
-          #### Catch -------------------------------------------------------------------
-          if(catch_units[f] == 0) TrueCatch[r,y,seas,f,sim] <- sum(CAA[r,y,seas,,,f,sim]) # abundance
-          if(catch_units[f] == 1) TrueCatch[r,y,seas,f,sim] <- sum(CAA[r,y,seas,,,f,sim] * WAA_fish[r,y,seas,,,f,sim]) # biomass
-          ObsCatch[r,y,seas,f,sim] <- TrueCatch[r,y,seas,f,sim] * exp(stats::rnorm(1, 0, exp(ln_sigmaC[r,y,seas,f]))) # Observed Catch w/ lognormal deviations
-
-          #### Fishery Index -------------------------------------------------------------------
-          if(fish_idx_type[f] == 0) TrueFishIdx[r,y,seas,f,sim] <- fish_q[r,y,f,sim] * sum(NAA[r,y,seas,,,sim] * fish_sel[r,y,,,f,sim]) # True Fishery Index (abundance)
-          if(fish_idx_type[f] == 1) TrueFishIdx[r,y,seas,f,sim] <- fish_q[r,y,f,sim] * sum(NAA[r,y,seas,,,sim] * fish_sel[r,y,,,f,sim] * WAA_fish[r,y,seas,,,f,sim]) # True Fishery Index (biomass)
-          ObsFishIdx[r,y,seas,f,sim] <- TrueFishIdx[r,y,seas,f,sim] * exp(stats::rnorm(1, 0, ObsFishIdx_SE[r,y,seas,f])) # Observed Fishery index w/ lognormal deviations
-
-          #### Fishery Compositions ----------------------------------------------------
-          if(Fmort[r,y,seas,f,sim] > 0) { # only simulate if Fishing Mortality > 0
-
-            # Age Compositions (Dynamic ISS based on feedback fishing mortality)
-            if(exists("ISS_FishAgeComps_fill") && isTRUE(ISS_FishAgeComps_fill == "F_pattern") && isTRUE(run_feedback) && y >= feedback_start_yr + 1 && r == 1 && f == 1) {
-              ISS_FishAgeComps[,1:y,seas,,,sim] <- predict_sim_fish_iss_fmort(ISS_FishComps = ISS_FishAgeComps, Fmort = Fmort, y = y, sim = sim, seas = seas)
-            }
-
-            # Length Compositions (Dynamic ISS based on feedback fishing mortality)
-            if(exists("ISS_FishLenComps_fill") && isTRUE(ISS_FishLenComps_fill == "F_pattern") && isTRUE(run_feedback) && y >= feedback_start_yr + 1 && r == 1 && f == 1) {
-              ISS_FishLenComps[,1:y,seas,,,sim] <- predict_sim_fish_iss_fmort(ISS_FishComps = ISS_FishLenComps, Fmort = Fmort, y = y, sim = sim, seas = seas)
-            }
-
-            # Sample fishery ages
-            ObsFishAgeComps <- simulate_comps(r = r,
-                                              y = y,
-                                              seas = seas,
-                                              f = f,
-                                              sim = sim,
-                                              Exp = CAA,
-                                              ISS = ISS_FishAgeComps,
-                                              AgeingError = AgeingError,
-                                              comp_like = comp_fishage_like,
-                                              ln_theta = ln_FishAge_theta,
-                                              ln_theta_agg = ln_FishAge_theta_agg,
-                                              corr_pars = FishAge_corr_pars,
-                                              corr_pars_agg = FishAge_corr_pars_agg,
-                                              comp_type = FishAgeComps_Type,
-                                              n_sexes = n_sexes,
-                                              n_regions = n_regions,
-                                              n_cat = n_ages,
-                                              Obs = ObsFishAgeComps,
-                                              age_or_len = 0)
-
-            # Sample fishery lengths
-            if(exists("SizeAgeTrans") && !is.null(SizeAgeTrans)) {
-              ObsFishLenComps <- simulate_comps(r = r,
-                                                y = y,
-                                                seas = seas,
-                                                f = f,
-                                                sim = sim,
-                                                Exp = CAL,
-                                                ISS = ISS_FishLenComps,
-                                                AgeingError = NULL,
-                                                comp_like = comp_fishlen_like,
-                                                ln_theta = ln_FishLen_theta,
-                                                ln_theta_agg = ln_FishLen_theta_agg,
-                                                corr_pars = FishLen_corr_pars,
-                                                corr_pars_agg = FishLen_corr_pars_agg,
-                                                comp_type = FishLenComps_Type,
-                                                n_sexes = n_sexes,
-                                                n_regions = n_regions,
-                                                n_cat = n_lens,
-                                                Obs = ObsFishLenComps,
-                                                age_or_len = 1)
-
-            } # end if size age transition if availiable
-          } # end if Fmort > 0
-
-        } # end f loop
-      } # end r loop
+      generate_initial_age_structure(y, sim, sim_env) # Initialize age structure
+      generate_recruitment(y = 1, sim, sim_env) # Get recruitment in the first year
     }
 
-      ### Generate Survey Observations ----------------------------------------------------------
-     for(seas in 1:n_seas) {
-       for(r in 1:n_regions) {
-         for(sf in 1:n_srv_fleets) {
+    apply_pop_dy(y, sim, sim_env) # Apply population dynamics (movement, mortality, and biomass calculations)
+    generate_fishery_catch_comp_idx(y, sim, sim_env) # Get Fishery Catches, Compositions, and Indices
+    generate_survey_comp_idx(y, sim, sim_env) # Get Fishery Catches, Compositions, and Indices
+    release_conv_tags(y, sim, sim_env) # Release conventional tags
 
-           # Survey Ages Indexed (midpoint year)
-           SrvIAA[r,y,seas,,,sf,sim] <- NAA[r,y,seas,,,sim] * srv_sel[r,y,,,sf,sim] * exp(-t_srv[r,seas,sf] * ZAA[r,y,seas,,,sim])
-           if(exists("SizeAgeTrans") && !is.null(SizeAgeTrans)) for(s in 1:n_sexes) SrvIAL[r,y,seas,,s,sf,sim] <- SizeAgeTrans[r,y,seas,,,s,sim] %*% SrvIAA[r,y,seas,,s,sf,sim] # Survey index at length
-
-           #### Survey Index ------------------------------------------------------------
-           if(srv_idx_type[sf] == 0) TrueSrvIdx[r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * sum(SrvIAA[r,y,seas,,,sf,sim]) # True Survey Index (abundance)
-           if(srv_idx_type[sf] == 1) TrueSrvIdx[r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * sum(SrvIAA[r,y,seas,,,sf,sim] * WAA_srv[r,y,seas,,,sf,sim]) # True Survey Index (biomass)
-           ObsSrvIdx[r,y,seas,sf,sim] <- TrueSrvIdx[r,y,seas,sf,sim] * exp(stats::rnorm(1, 0, ObsSrvIdx_SE[r,y,seas,sf])) # Observed survey index w/ lognormal deviations
-
-           #### Survey Compositions -----------------------------------------------------
-           # Sample survey ages
-           ObsSrvAgeComps <- simulate_comps(r = r,
-                                            y = y,
-                                            f = sf,
-                                            seas = seas,
-                                            sim = sim,
-                                            Exp = SrvIAA,
-                                            ISS = ISS_SrvAgeComps,
-                                            AgeingError = AgeingError,
-                                            comp_like = comp_srvage_like,
-                                            ln_theta = ln_SrvAge_theta,
-                                            ln_theta_agg = ln_SrvAge_theta_agg,
-                                            corr_pars = SrvAge_corr_pars,
-                                            corr_pars_agg = SrvAge_corr_pars_agg,
-                                            comp_type = SrvAgeComps_Type,
-                                            n_sexes = n_sexes,
-                                            n_regions = n_regions,
-                                            n_cat = n_ages,
-                                            Obs = ObsSrvAgeComps,
-                                            age_or_len = 0)
-
-           # Sample survey lengths
-           if(exists("SizeAgeTrans") && !is.null(SizeAgeTrans)) {
-             ObsSrvLenComps <- simulate_comps(r = r,
-                                              y = y,
-                                              f = sf,
-                                              seas = seas,
-                                              sim = sim,
-                                              Exp = SrvIAL,
-                                              ISS = ISS_SrvLenComps,
-                                              AgeingError = NULL,
-                                              comp_like = comp_srvlen_like,
-                                              ln_theta = ln_SrvLen_theta,
-                                              ln_theta_agg = ln_SrvLen_theta_agg,
-                                              corr_pars = SrvLen_corr_pars,
-                                              corr_pars_agg = SrvLen_corr_pars_agg,
-                                              comp_type = SrvLenComps_Type,
-                                              n_sexes = n_sexes,
-                                              n_regions = n_regions,
-                                              n_cat = n_lens,
-                                              Obs = ObsSrvLenComps,
-                                              age_or_len = 1)
-           } # end if size age transition if availiable
-
-         } # end sf loop
-       } # end r loop
-     } # end seas loop
-
-      if(UseTagging == 1) {
-        for(seas in 1:n_seas) {
-          for(r in 1:n_regions) {
-
-            ### Release Tags ------------------------------------------------
-            # Get indices for tag cohorts in the current year and region
-            tag_rel <- which(tag_release_indicator[,1] == r & tag_release_indicator[,2] == y & tag_release_indicator[,3] == seas) # Get tag cohort (release event)
-
-            # Release Tags if any events
-            if(length(tag_rel) != 0) {
-
-              # Tag Indexing
-              tr <- tag_release_indicator[tag_rel,1] # tag release region
-              ty <- tag_release_indicator[tag_rel,2] # tag release year
-              tseas <- tag_release_indicator[tag_rel,3] # tag release season
-
-              # Release Tagged Fish
-              if(!exists("n_tags_rel_input")) n_tags_rel <- round(ObsSrvIdx[tr,ty,tseas,1,sim] / sum(ObsSrvIdx[,ty,tseas,1,sim]) * n_tags) # Number of tags apportioned across regions
-              else n_tags_rel <- n_tags_rel_input[tag_rel] # input number of tag releases
-              tmp_SrvAgeComps_Prob <- as.vector(SrvIAA[tr, ty,tseas,,,1,sim]) # Tagged Fish Proportions at age and sex (from first survey)
-              tagged_fish <- round((tmp_SrvAgeComps_Prob / sum(tmp_SrvAgeComps_Prob)) * n_tags_rel) # Tagged fish
-              Tagged_Fish[tag_rel,,,sim] <- array(tagged_fish, dim = c(n_ages, n_sexes)) # Input into Tagged_Fish array and apply initial tag induced mortality
-            }
-
-          } # if using tagging data / simulating
-        } # end seas loop
-      } # end r loop
-
-      if(UseTagging == 1) {
-       for(rseas in 1:n_seas) {
-         #### Generate Tag Recaptures ------------------------------------------------
-         for(tc in 1:n_tag_rel_events) {
-
-           # get indexing
-           tr <- tag_release_indicator[tc,1] # tag release region
-           ty <- tag_release_indicator[tc,2] # tag release year
-           tseas <- tag_release_indicator[tc,3] # tag release seasons
-
-           # Skipping stuff if hasn't occurred yet, or if max liberty
-           if(y < ty || (y == ty && rseas < tseas)) next
-           ry <- y - ty + 1 # get tag liberty
-           if(ry > max_liberty) next # skip if max liberty
-
-           # Get mortality estimates
-           tmp_F <- Get_Tagging_Mortality(tag_selex = tag_selex, # Tag Selex Type
-                                          tag_natmort = tag_natmort, # Tag natural mortality
-                                          # Reformat fishing mortality
-                                          Fmort = array(Fmort[,,,,sim,drop = FALSE], dim = c(n_regions, n_yrs, n_seas, n_fish_fleets)),
-                                          # Reformat natural mortality
-                                          natmort = array(natmort[,,,,sim,drop = FALSE], dim = c(n_regions, n_yrs, n_ages, n_sexes)),
-                                          Tag_Shed = exp(ln_Tag_Shed),
-                                          # Reformat fishery selectivity
-                                          fish_sel = array(fish_sel[,,,,,sim,drop = FALSE], dim = c(n_regions, n_yrs, n_ages, n_sexes, n_fish_fleets)),
-                                          n_regions = n_regions,
-                                          n_ages = n_ages,
-                                          n_sexes = n_sexes,
-                                          n_fish_fleets = n_fish_fleets,
-                                          y = y,
-                                          seas = rseas,
-                                          seasdur = seasdur,
-                                          what = "F"
-           )
-
-           # Get total mortality
-           tmp_Z <- Get_Tagging_Mortality(tag_selex = tag_selex, # tag selex
-                                            tag_natmort = tag_natmort, # tag natmort
-                                            # Reformat fishing mortality
-                                            Fmort = array(Fmort[,,,,sim,drop = FALSE], dim = c(n_regions, n_yrs, n_seas, n_fish_fleets)),
-                                            # Reformat natural mortality
-                                            natmort = array(natmort[,,,,sim,drop = FALSE], dim = c(n_regions, n_yrs, n_ages, n_sexes)),
-                                            Tag_Shed = exp(ln_Tag_Shed),
-                                            # Reformat fishery selectivity
-                                            fish_sel = array(fish_sel[,,,,,sim,drop = FALSE], dim = c(n_regions, n_yrs, n_ages, n_sexes, n_fish_fleets)),
-                                            n_regions = n_regions,
-                                            n_ages = n_ages,
-                                            n_sexes = n_sexes,
-                                            n_fish_fleets = n_fish_fleets,
-                                            y = y,
-                                            seas = rseas,
-                                            seasdur = seasdur,
-                                            what = "Z"
-           )
-
-         # Discount with tagging time (t_tagging) if it doesn't happen at the start of the season / year
-         if(ry == 1 && rseas == tseas) {
-           if(t_tagging != 1) tmp_Z <- tmp_Z * t_tagging
-           # Input tagged fish into available tags for recapture and adjust initial number of tagged fish for tag induced mortality (exponential mortality process)
-           Tags_Avail[1, rseas, tc, tr, , , sim] <- Tagged_Fish[tc, , , sim] * exp(-exp(ln_Init_Tag_Mort))
-         }
-
-           # Move tagged fish around (skip only in first release year + tagging season when tagging occurs mid-season)
-           if(t_tagging == 1 || ry != 1 || rseas != tseas) {
-             # Movement of tag cohorts
-             if(do_recruits_move == 0) {
-               for(a in 2:n_ages) for(s in 1:n_sexes) {
-                 Tags_Avail[ry, rseas, tc, , a, s, sim] <-
-                   t(Tags_Avail[ry, rseas, tc, , a, s, sim]) %*%
-                   Movement[, , y, rseas, a, s, sim]
-               }
-             } else { # if recruits move
-               for(a in 1:n_ages) for(s in 1:n_sexes) {
-                 Tags_Avail[ry, rseas, tc, , a, s, sim] <-
-                   t(Tags_Avail[ry, rseas, tc, , a, s, sim]) %*%
-                   Movement[, , y, rseas, a, s, sim]
-               }
-             }
-           }
-
-           # Apply mortality and ageing to tagged fish
-           if(rseas < n_seas) {
-             # Season mortality within a given year, advance to next season same year/age
-             Tags_Avail[ry, rseas + 1, tc, , , , sim] <-
-               Tags_Avail[ry, rseas, tc, , , , sim] * exp(-tmp_Z[, 1, , ])
-           } else {
-             # End of year mortality and age advancement (end of season)
-             Tags_Avail[ry + 1, 1, tc, , 2:n_ages, , sim] <-
-               Tags_Avail[ry, n_seas, tc, , 1:(n_ages-1), , sim] * exp(-tmp_Z[, 1, 1:(n_ages-1), ])
-
-             # Accumulate plus group
-             Tags_Avail[ry + 1, 1, tc, , n_ages, , sim] <-
-               Tags_Avail[ry + 1, 1, tc, , n_ages, , sim] +
-               Tags_Avail[ry, n_seas, tc, , n_ages, , sim] * exp(-tmp_Z[, 1, n_ages, ])
-           }
-
-           # Apply Baranov's to get predicted recaptures
-           Pred_Tag_Recap[ry,rseas,tc,,,,sim] <- Tag_Reporting[,y,sim] * (tmp_F[,1,,] / tmp_Z[,1,,]) *
-                                                                 Tags_Avail[ry,rseas,tc,,,,sim] * (1 - exp(-tmp_Z[,1,,]))
-
-           # Simulate Tag Recoveries
-           if(tag_like %in% c(0,1)) {
-             for(r in 1:n_regions) {
-               for(a in 1:n_ages) {
-                 for(s in 1:n_sexes) {
-                   # Poisson Tag Recovery
-                   if(tag_like == 0){
-                     Obs_Tag_Recap[ry,rseas,tc,r,a,s,sim] <- rpois(n = 1, lambda = Pred_Tag_Recap[ry,rseas,tc,r,a,s,sim])
-                   }
-                   # Negative Binomial Tag Recovery
-                   if(tag_like == 1) {
-                     Obs_Tag_Recap[ry,rseas,tc,r,a,s,sim] <- rnbinom(n = 1, mu = Pred_Tag_Recap[ry,rseas,tc,r,a,s,sim], size = exp(ln_tag_theta))
-                   }
-                 } # end s loop
-               } # end a loop
-             } # end r loop
-           } # end if
-
-           # Multinomial or Dirichlet-Multinomial tag recovery (release conditioned)
-           if(tag_like %in% c(2,4)) {
-
-             # Get number of initial tags released
-             tmp_n_tags_rel <- round(sum(Tagged_Fish[tc,,,sim]))
-             # get recapture probabilities ordered by ages, sexes, regions
-             tmp_recap <- aperm(Pred_Tag_Recap[ry,rseas,tc,,,,sim, drop = FALSE] / tmp_n_tags_rel, c(5, 6, 4, 1, 2, 3, 7))
-             # concatenate recapture and non recapture probabilities
-             tmp_probs <- c(tmp_recap, 1 - sum(tmp_recap))
-
-             # simulate
-             if(tag_like == 2) tmp_sim_recap <- stats::rmultinom(1, tmp_n_tags_rel, tmp_probs) # multinomial draws
-             if(tag_like == 4) tmp_sim_recap <- rdirM(n = 1, N = tmp_n_tags_rel, exp(ln_tag_theta) * tmp_n_tags_rel * tmp_probs) # dirichlet-multinomial draws
-
-             # remove last group (not recaptured) and then reshape into correct format
-             tmp_sim_recap <- aperm(array(tmp_sim_recap[-length(tmp_sim_recap)], dim(tmp_recap)), c(4, 5, 6, 3, 1, 2, 7))
-             # input recaptures from multinomial into observed array
-             Obs_Tag_Recap[ry,rseas,tc,,,,sim] <- tmp_sim_recap
-
-           } # end if for multinomial likelihood (release conditioned)
-
-           # Multinomial or Dirichlet-Mutlinomial tag recovery (recovery conditioned)
-           if(tag_like %in% c(3,5)) {
-
-             # Get number of tags to simulate
-             tmp_n_tags_recap <- sum(Pred_Tag_Recap[ry,rseas,tc,,,,sim]) # Get number of tags to simulate
-             # get recapture probabilities ordered by ages, sexes, regions
-             tmp_probs <- aperm(Pred_Tag_Recap[ry,rseas,tc,,,,sim, drop = FALSE] / tmp_n_tags_recap, c(5, 6, 4, 1, 2, 3, 7))
-
-             # simulate
-             if(tag_like == 3) tmp_sim_recap <- stats::rmultinom(1, tmp_n_tags_recap, tmp_probs) # mutlinomial draws
-             if(tag_like == 5) tmp_sim_recap <- rdirM(n = 1, N = tmp_n_tags_recap, exp(ln_tag_theta) * tmp_n_tags_recap * tmp_probs) # dirichlet-multinomial draws
-
-             # reshape into correct format
-             tmp_sim_recap <- aperm(array(tmp_sim_recap, dim(tmp_probs)), c(4, 5, 6, 3, 1, 2, 7))
-             # input recaptures from multinomial into observed array
-             Obs_Tag_Recap[ry,rseas,tc,,,,sim] <- tmp_sim_recap
-
-           } # end if for Multinomial likelihood (recovery conditioned)
-         } # end tc loop
-       } # end rseas loop
-      } # end if using tagging data
-
-    ### Compute Recruitment for Next Year ---------------------------------------
-    tmp_ln_RecDevs_next <- NULL # Initialize container vector for next year's recruitment deviations
-    if(y < n_yrs) { # Get Recruitment Deviations for next year
-      for(r in 1:n_regions) {
-
-        # check if Rec_input exists and year index is within bounds
-        use_rec_input <- FALSE
-        if (exists("Rec_input")) if ((y + 1 <= dim(Rec_input)[2])) use_rec_input <- TRUE
-
-        if (use_rec_input) { # use rec input
-          for (s in 1:n_sexes) NAA[r, y+1, 1, 1, s, sim] <- Rec_input[r, y+1, sim] * sexratio[r, y+1, s, sim]
-        } else { # sim new recs
-
-          # Global Recruitment Deviations
-          if(rec_dd == 0 && is.null(tmp_ln_RecDevs_next)) tmp_ln_RecDevs_next <- stats::rnorm(1, 0, exp(ln_sigmaR[2]))
-          # Local Recruitment Deviations
-          if(rec_dd == 1)  tmp_ln_RecDevs_next <- ln_RecDevs[r,y+1,sim] <- stats::rnorm(1, 0, exp(ln_sigmaR[2]))
-
-          ln_RecDevs[r,y+1,sim] = tmp_ln_RecDevs_next # Input recruitment deviations into vector
-
-          # Get Deterministic Recruitment for next year
-          tmp_det_rec_next <- Get_Det_Recruitment(recruitment_model = recruitment_opt,
-                                                  recruitment_dd = rec_dd,
-                                                  y = y+1,
-                                                  rec_lag = rec_lag,
-                                                  R0 = sum(R0[,y,sim]), # sum to get global R0
-                                                  Rec_Prop = R0[,y,sim] / sum(R0[,y,sim]), # get R0 proportion
-                                                  h = h[,y,sim],
-                                                  n_regions = n_regions,
-                                                  n_ages = n_ages,
-                                                  # Note: Using first year and female quantities to compute unfished SSB0
-                                                  sexratio_f = if(n_sexes == 1) rep(0.5, n_regions) else sexratio[,1,1,sim],
-                                                  WAA = array(WAA[,1,,,1,sim], dim = c(n_regions, n_seas, n_ages)),
-                                                  MatAA = array(MatAA[,1,,,1,sim], dim = c(n_regions, n_seas, n_ages)),
-                                                  natmort = array(natmort[,1,,1,sim], dim = c(n_regions, n_ages)),
-                                                  Movement = array(Movement[,,1,,,1,sim], dim = c(n_regions, n_regions, n_seas, n_ages)),
-                                                  SSB_vals = array(SSB[,,sim], dim = c(n_regions, n_yrs)),
-                                                  t_spawn = t_spawn,
-                                                  n_seas = n_seas,
-                                                  spawn_seas = spawn_seas,
-                                                  seasdur = seasdur,
-                                                  do_recruits_move = do_recruits_move,
-                                                  init_F = init_F, # initial F applied
-                                                  fish_sel = array(fish_sel[,1,,1,1,sim], dim = c(n_regions, n_ages)) # fishery selectivity in first year
-          )
-
-          # Store next year's recruitment
-          for(s in 1:n_sexes) NAA[r,y+1,1,1,s,sim] <- tmp_det_rec_next[r] * exp(ln_RecDevs[r,y+1,sim] - exp(ln_sigmaR[2])^2/2) * sexratio[r,y+1,s,sim]
-
-        }
-        Rec[r,y+1,sim] <- sum(NAA[r,y+1,1,1,,sim]) # Save recruitment estimates
-        NAA0[r,y+1,1,1,,sim] <- NAA[r,y+1,1,1,,sim] # populate unfished NAA
-      } # end r loop
-    } # end if
+    if(use_conv_fish_tagging == 1) generate_fishery_conv_tags_recap(y, sim, sim_env) # Generate fishery conventional tag recaptures
+    if(y < n_yrs) generate_recruitment(y = y + 1, sim, sim_env) # Get recruitment in the following year
 
   }) # end simulation environment
 
@@ -873,14 +1128,14 @@ Simulate_Pop_Static <- function(sim_list,
                   ObsSrvAgeComps = sim_env$ObsSrvAgeComps,
                   ObsSrvLenComps = sim_env$ObsSrvLenComps,
                   tag_release_indicator = as.matrix(sim_env$tag_release_indicator),
-                  Tag_Reporting = sim_env$Tag_Reporting,
-                  Tagged_Fish = sim_env$Tagged_Fish,
-                  ln_Init_Tag_Mort = sim_env$ln_Init_Tag_Mort,
-                  ln_Tag_Shed = sim_env$ln_Tag_Shed,
-                  Tags_Avail = sim_env$Tags_Avail,
+                  conv_tag_fish_reporting = sim_env$conv_tag_fish_reporting,
+                  conv_tagged_fish = sim_env$conv_tagged_fish,
+                  ln_init_conv_tag_mort = sim_env$ln_init_conv_tag_mort,
+                  ln_conv_tag_shed = sim_env$ln_conv_tag_shed,
+                  conv_tag_fish_avail = sim_env$conv_tag_fish_avail,
                   UseTagging = sim_env$UseTagging,
-                  Pred_Tag_Recap = sim_env$Pred_Tag_Recap,
-                  Obs_Tag_Recap = sim_env$Obs_Tag_Recap,
+                  pred_conv_tag_fish_recap = sim_env$pred_conv_tag_fish_recap,
+                  obs_conv_tag_fish_recap = sim_env$obs_conv_tag_fish_recap,
                   SizeAgeTrans = if(!is.null(sim_env$SizeAgeTrans)) sim_env$SizeAgeTrans else NULL,
                   AgeingError = sim_env$AgeingError,
                   ISS_FishAgeComps = sim_env$ISS_FishAgeComps,
@@ -1098,9 +1353,9 @@ simulation_self_test <- function(data,
   )
 
   # Setup Tagging -----------------------------------------------------------
-  if(!is.na(sum(data$Tagged_Fish))) n_tags_rel_input <- apply(data$Tagged_Fish, 1, sum) else n_tags_rel_input <- NA
+  if(!is.na(sum(data$conv_tagged_fish))) n_tags_rel_input <- apply(data$conv_tagged_fish, 1, sum) else n_tags_rel_input <- NA
   if(exists("tag_release_indicator", data)) tag_release_indicator <- data$tag_release_indicator  else tag_release_indicator <- NA
-  Tag_Reporting_input <- if(!is.null(rep$Tag_Reporting)) replicate(n = sim_list$n_sims, rep$Tag_Reporting) else NULL
+  conv_tag_fish_reporting_input <- if(!is.null(rep$conv_tag_fish_reporting)) replicate(n = sim_list$n_sims, rep$conv_tag_fish_reporting) else NULL
 
   sim_list <- Setup_Sim_Tagging(
     sim_list = sim_list, # simulation list
@@ -1108,14 +1363,14 @@ simulation_self_test <- function(data,
     t_tagging = data$t_tagging, # time of tagging
     n_tags_rel_input = n_tags_rel_input * data$Wt_Tagging,  # number of tags to release per event
     tag_release_indicator = tag_release_indicator,  # tag release indicator
-    ln_Init_Tag_Mort = optim_parameters_list$ln_Init_Tag_Mort,  # inital tagging mortality
-    ln_Tag_Shed = optim_parameters_list$ln_Tag_Shed, # chronic tag shedding
-    Tag_Reporting_input = Tag_Reporting_input, # tag reporting rates
+    ln_init_conv_tag_mort = optim_parameters_list$ln_init_conv_tag_mort,  # inital tagging mortality
+    ln_conv_tag_shed = optim_parameters_list$ln_conv_tag_shed, # chronic tag shedding
+    conv_tag_fish_reporting_input = conv_tag_fish_reporting_input, # tag reporting rates
     UseTagging = data$UseTagging, # whether or not tagging is used / simulated
     tag_selex = data$tag_selex, # tag selectivity type
     tag_natmort = data$tag_natmort, # tag natural mortality type
-    tag_like = data$Tag_LikeType, # tag likelihood
-    ln_tag_theta = parameters$ln_tag_theta # tag overdispersion
+    conv_fish_tag_like = data$conv_fish_tag_likeType, # tag likelihood
+    ln_conv_fish_tag_theta = parameters$ln_conv_fish_tag_theta # tag overdispersion
   )
 
 
@@ -1147,8 +1402,8 @@ simulation_self_test <- function(data,
 
         # setup tagging data stuff if tagging is done
         if(tmp_data$UseTagging == 1) {
-          tmp_data$Tagged_Fish <- array(sim_obj$Tagged_Fish[,,,i], dim = dim(tmp_data$Tagged_Fish)) # new tagged fish
-          tmp_data$Obs_Tag_Recap <- array(sim_obj$Obs_Tag_Recap[,,,,,,i], dim = dim(tmp_data$Obs_Tag_Recap)) # new tag recaps
+          tmp_data$conv_tagged_fish <- array(sim_obj$conv_tagged_fish[,,,i], dim = dim(tmp_data$conv_tagged_fish)) # new tagged fish
+          tmp_data$obs_conv_tag_fish_recap <- array(sim_obj$obs_conv_tag_fish_recap[,,,,,,i], dim = dim(tmp_data$obs_conv_tag_fish_recap)) # new tag recaps
           tmp_data$tag_release_indicator <- sim_obj$tag_release_indicator # release indicator
         }
 
@@ -1233,8 +1488,8 @@ simulation_self_test <- function(data,
 
           # setup tagging data stuff if tagging is done
           if(tmp_data$UseTagging == 1) {
-            tmp_data$Tagged_Fish <- array(sim_obj$Tagged_Fish[,,,i], dim = dim(tmp_data$Tagged_Fish)) # new tagged fish
-            tmp_data$Obs_Tag_Recap <- array(sim_obj$Obs_Tag_Recap[,,,,,,i], dim = dim(tmp_data$Obs_Tag_Recap)) # new tag recaps
+            tmp_data$conv_tagged_fish <- array(sim_obj$conv_tagged_fish[,,,i], dim = dim(tmp_data$conv_tagged_fish)) # new tagged fish
+            tmp_data$obs_conv_tag_fish_recap <- array(sim_obj$obs_conv_tag_fish_recap[,,,,,,i], dim = dim(tmp_data$obs_conv_tag_fish_recap)) # new tag recaps
             tmp_data$tag_release_indicator <- sim_obj$tag_release_indicator # release indicator
           }
 
@@ -1327,8 +1582,8 @@ simulation_self_test <- function(data,
 #'   \item{SizeAgeTrans}{Size–age transition array [region × year × seas x length × age × sex].}
 #'   \item{AgeingError}{Ageing error matrix [year × age × error].}
 #'   \item{tag_release_indicator}{Tag release indicators (or `NULL` if tagging not used).}
-#'   \item{Obs_Tag_Recap}{Observed tag recapture array (or `NULL`).}
-#'   \item{Tagged_Fish}{Tagged fish counts (or `NULL`).}
+#'   \item{obs_conv_tag_fish_recap}{Observed tag recapture array (or `NULL`).}
+#'   \item{conv_tagged_fish}{Tagged fish counts (or `NULL`).}
 #'   \item{n_tag_cohorts}{Number of tag release cohorts (or `NULL`).}
 #'   \item{ObsCatch}{Observed fishery catch array [region × year × seas x fleet].}
 #'   \item{ln_sigmaC}{Log Fishery Catch SD [region × year × seas x fleet].}
@@ -1372,11 +1627,11 @@ simulation_data_to_SPoRC <- function(sim_env,
     if(sim_env$UseTagging == 1) {
       keep_tag_cohorts <- which(sim_env$tag_release_indicator[,2] %in% 1:y)
       tag_release_indicator <- sim_env$tag_release_indicator[keep_tag_cohorts,,drop = FALSE]
-      Obs_Tag_Recap <- array(sim_env$Obs_Tag_Recap[,,keep_tag_cohorts,,,,sim], dim = dim(sim_env$Obs_Tag_Recap)[-length(dim(sim_env$Obs_Tag_Recap))])
-      Tagged_Fish <- array(sim_env$Tagged_Fish[keep_tag_cohorts,,,sim], dim = c(dim(sim_env$Tagged_Fish)[-length(dim(sim_env$Tagged_Fish))]))
+      obs_conv_tag_fish_recap <- array(sim_env$obs_conv_tag_fish_recap[,,keep_tag_cohorts,,,,sim], dim = dim(sim_env$obs_conv_tag_fish_recap)[-length(dim(sim_env$obs_conv_tag_fish_recap))])
+      conv_tagged_fish <- array(sim_env$conv_tagged_fish[keep_tag_cohorts,,,sim], dim = c(dim(sim_env$conv_tagged_fish)[-length(dim(sim_env$conv_tagged_fish))]))
       n_tag_cohorts <- nrow(tag_release_indicator)
     } else {
-      tag_release_indicator = Obs_Tag_Recap = Tagged_Fish = n_tag_cohorts = NULL
+      tag_release_indicator = obs_conv_tag_fish_recap = conv_tagged_fish = n_tag_cohorts = NULL
     }
 
     # Fishery Catches
@@ -1432,8 +1687,8 @@ simulation_data_to_SPoRC <- function(sim_env,
                 SizeAgeTrans = SizeAgeTrans,
                 AgeingError = AgeingError,
                 tag_release_indicator = tag_release_indicator,
-                Obs_Tag_Recap = Obs_Tag_Recap,
-                Tagged_Fish = Tagged_Fish,
+                obs_conv_tag_fish_recap = obs_conv_tag_fish_recap,
+                conv_tagged_fish = conv_tagged_fish,
                 n_tag_cohorts = n_tag_cohorts,
                 ObsCatch = ObsCatch,
                 ln_sigmaC = ln_sigmaC,

@@ -419,6 +419,10 @@ simulate_conv_tag_fish_recaptures <- function(conv_fish_tag_like,
 generate_initial_age_structure <- function(y,
                                            sim,
                                            sim_env) {
+
+  sim_env$y   <- y
+  sim_env$sim <- sim
+
   with(sim_env, {
     tmp_ln_init_devs <- NULL
     for(p in 1:n_pop) {
@@ -508,6 +512,10 @@ generate_initial_age_structure <- function(y,
 generate_recruitment <- function(y,
                                  sim,
                                  sim_env) {
+
+  sim_env$y   <- y
+  sim_env$sim <- sim
+
   with(sim_env, {
 
     # Get deterministic recruitment
@@ -528,6 +536,7 @@ generate_recruitment <- function(y,
                                        MatAA = array(MatAA[,,1,,,1,sim], dim = c(n_pop, n_regions, n_seas, n_ages)),
                                        natmort = array(natmort[,,1,,1,sim], dim = c(n_pop, n_regions, n_ages)),
                                        Movement = array(Movement[,,,1,,,1,sim], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
+                                       sgl_seas_spawning_movement = array(sgl_seas_spawning_movement[,,,1,,1,sim], dim = c(n_pop, n_regions, n_regions, n_ages)),
                                        SSB_vals = array(SSB[,,,sim], dim = c(n_pop, n_regions, n_yrs)),
                                        t_spawn = t_spawn,
                                        n_seas = n_seas,
@@ -573,6 +582,8 @@ generate_recruitment <- function(y,
             exp(ln_sigmaR[2,p,sigma_idx])^2/2) * sexratio[p,r,y,s,sim]
         }
 
+        # print(sum(NAA[p,r,y,1,1,,sim]))
+
         sim_env$Rec[p,r,y,sim] <- sum(NAA[p,r,y,1,1,,sim]) # Save recruitment estimates
         sim_env$NAA0[p,r,y,1,1,,sim] = NAA[p,r,y,1,1,,sim] # populate unfished NAA
 
@@ -588,6 +599,9 @@ generate_recruitment <- function(y,
 #' @param sim_env Simulation Environment
 #' @keywords internal
 apply_pop_dy <- function(y, sim, sim_env) {
+
+  sim_env$y   <- y
+  sim_env$sim <- sim
 
   with(sim_env, {
 
@@ -623,6 +637,8 @@ apply_pop_dy <- function(y, sim, sim_env) {
         } # only compute if spatial
       } # end p loop
 
+      # print(NAA[1,,y,1,1,1,sim])
+
       if(seas < n_seas) { # Within year seasonal mortality
         sim_env$NAA[,,y,seas + 1,1:n_ages,,sim] = NAA[,,y,seas,1:n_ages,,sim] * exp(-ZAA[,,y,seas,1:n_ages,,sim]) # fished
         sim_env$NAA0[,,y,seas + 1,1:n_ages,,sim] <- NAA0[,,y,seas,1:n_ages,,sim] * exp(-(tmp_natmort[,,1:n_ages,])) # unfished
@@ -637,19 +653,34 @@ apply_pop_dy <- function(y, sim, sim_env) {
       # Compute Biomass Quantities
       if(seas == spawn_seas) {
 
+        # Get NAA for spawning
+        tmp_NAA_spawn <- NAA[,,y,spawn_seas,,,sim, drop = FALSE]
+        tmp_NAA0_spawn <- NAA0[,,y,spawn_seas,,,sim, drop = FALSE]
+
+        # If we we are natal homing with 1 season
+        if(n_seas == 1 && n_pop > 1) {
+          # Get NAA during spawning
+          for(p in 1:n_pop) for(a in 1:n_ages) for(s in 1:n_sexes) {
+            tmp_NAA_spawn[p,,1,1,a,s,1] <- tmp_NAA_spawn[p,,1,1,a,s,1] %*% sgl_seas_spawning_movement[p,,,y,a,s,sim]
+            tmp_NAA0_spawn[p,,1,1,a,s,1] <- tmp_NAA0_spawn[p,,1,1,a,s,1] %*% sgl_seas_spawning_movement[p,,,y,a,s,sim]
+          } # end s loop
+        }
+
+
         # Total Biomass
-        sim_env$Total_Biom[,, y, sim] <- apply(NAA[,, y, spawn_seas, , , sim,drop = FALSE] *
-                                               WAA[,, y, spawn_seas, , , sim,drop = FALSE] *
-                                               exp(-ZAA[,,y,spawn_seas,,,sim,drop = FALSE] * t_spawn), c(1,2), sum)
+        sim_env$Total_Biom[,, y, sim] <- apply(tmp_NAA_spawn *
+                                                 WAA[,, y, spawn_seas, , , sim,drop = FALSE] *
+                                                 exp(-ZAA[,,y,spawn_seas,,,sim,drop = FALSE] * t_spawn), c(1,2), sum)
 
         # Spawning Stock Biomass
-        sim_env$SSB[,, y, sim] <- apply(NAA[,, y, spawn_seas, , 1, sim,drop = FALSE] * WAA[,, y, spawn_seas, , 1, sim,drop = FALSE] *
-                                        MatAA[,, y, spawn_seas, , 1, sim,drop = FALSE] *
-                                        exp(-ZAA[,, y, spawn_seas, , 1, sim,drop = FALSE] * t_spawn), c(1,2), sum)
+        sim_env$SSB[,, y, sim] <- apply(tmp_NAA_spawn *
+                                          WAA[,, y, spawn_seas, , 1, sim,drop = FALSE] *
+                                          MatAA[,, y, spawn_seas, , 1, sim,drop = FALSE] *
+                                          exp(-ZAA[,, y, spawn_seas, , 1, sim,drop = FALSE] * t_spawn), c(1,2), sum)
 
         # Get dynamic B0
-        SSB0_array <- NAA0[,, y, spawn_seas, , 1, sim, drop = FALSE] *  WAA[,,  y, spawn_seas, , 1, sim, drop = FALSE] * MatAA[,,y, spawn_seas, , 1, sim, drop = FALSE]
-        mort_spawn <- exp(-natmort[,, y, , 1, sim, drop = FALSE] * t_spawn * seasdur[seas])
+        SSB0_array <- tmp_NAA0_spawn *  WAA[,,  y, spawn_seas, , 1, sim, drop = FALSE] * MatAA[,,y, spawn_seas, , 1, sim, drop = FALSE]
+        mort_spawn <- exp(-natmort[,, y, , 1, sim, drop = FALSE] * t_spawn * seasdur[spawn_seas])
         mort_spawn <- array(mort_spawn, dim = dim(SSB0_array) ) # coerce array
         sim_env$Dynamic_SSB0[,,y,sim] <- apply(SSB0_array * mort_spawn, c(1,2), sum) # Dynamic B0
 
@@ -670,6 +701,10 @@ apply_pop_dy <- function(y, sim, sim_env) {
 #' @param sim_env Simulation Environment
 #' @keywords internal
 generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
+
+  sim_env$y   <- y
+  sim_env$sim <- sim
+
   with(sim_env, {
     for(seas in 1:n_seas) {
       for(r in 1:n_regions) {
@@ -770,6 +805,10 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
 #' @param sim_env Simulation Environment
 #' @keywords internal
 generate_survey_comp_idx <- function(y, sim, sim_env) {
+
+  sim_env$y   <- y
+  sim_env$sim <- sim
+
   with(sim_env, {
 
     for(seas in 1:n_seas) {
@@ -849,6 +888,10 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
 #' @param sim_env Simulation Environment
 #' @keywords internal
 release_conv_tags <- function(y, sim, sim_env) {
+
+  sim_env$y   <- y
+  sim_env$sim <- sim
+
   with(sim_env, {
     for(seas in 1:n_seas) {
       for(r in 1:n_regions) {
@@ -913,6 +956,10 @@ release_conv_tags <- function(y, sim, sim_env) {
 #' @param sim_env Simulation Environment
 #' @keywords internal
 generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {
+
+  sim_env$y   <- y
+  sim_env$sim <- sim
+
   with(sim_env,{
 
       for(rseas in 1:n_seas) {
@@ -1016,6 +1063,7 @@ generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {
             n_sexes = n_sexes,
             n_fish_fleets = n_fish_fleets
           )
+          print(sum(sim_env$obs_conv_tag_fish_recap))
 
         } # end tc loop
       } # end rseas loop
@@ -1035,26 +1083,19 @@ run_annual_cycle <- function(y,
                              sim,
                              sim_env) {
 
-  # Assign y and sim into simulation environment
-  sim_env$y <- y
-  sim_env$sim <- sim
+  if(y == 1) {
+    generate_initial_age_structure(y = 1, sim, sim_env) # Initialize age structure
+    generate_recruitment(y = 1, sim, sim_env) # Get recruitment in the first year
+  }
 
-  with(sim_env, {
+  apply_pop_dy(y, sim, sim_env) # Apply population dynamics (movement, mortality, and biomass calculations)
+  generate_fishery_catch_comp_idx(y, sim, sim_env) # Get Fishery Catches, Compositions, and Indices
+  generate_survey_comp_idx(y, sim, sim_env) # Get Fishery Catches, Compositions, and Indices
+  release_conv_tags(y, sim, sim_env) # Release conventional tags
 
-    if(y == 1) {
-      generate_initial_age_structure(y, sim, sim_env) # Initialize age structure
-      generate_recruitment(y = 1, sim, sim_env) # Get recruitment in the first year
-    }
+  if(sim_env$use_conv_fish_tagging == 1) generate_fishery_conv_tags_recap(y, sim, sim_env) # Generate fishery conventional tag recaptures
+  if(y < sim_env$n_yrs) generate_recruitment(y = y + 1, sim, sim_env) # Get recruitment in the following year
 
-    apply_pop_dy(y, sim, sim_env) # Apply population dynamics (movement, mortality, and biomass calculations)
-    generate_fishery_catch_comp_idx(y, sim, sim_env) # Get Fishery Catches, Compositions, and Indices
-    generate_survey_comp_idx(y, sim, sim_env) # Get Fishery Catches, Compositions, and Indices
-    release_conv_tags(y, sim, sim_env) # Release conventional tags
-
-    if(use_conv_fish_tagging == 1) generate_fishery_conv_tags_recap(y, sim, sim_env) # Generate fishery conventional tag recaptures
-    if(y < n_yrs) generate_recruitment(y = y + 1, sim, sim_env) # Get recruitment in the following year
-
-  }) # end simulation environment
 
   return(invisible(NULL))
 

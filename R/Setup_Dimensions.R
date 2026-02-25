@@ -85,6 +85,7 @@ Setup_Sim_Dim <- function(n_sims,
 #' @param n_proj_yrs_devs Number of projection years for deviation parameters (ln_RecDevs, move_devs, ln_fishsel_devs, ln_srvsel_devs)
 #' @param n_seas Integer, Number of seasons
 #' @param seasdur Vector of n_seas length. Duration of season, expressed as a fraction of the year. Default is 1 if 1 season, or 1 / n_seas if n_seas > 1
+#' @param n_pop Integer, Number of populations
 #'
 #' @returns A list containing three named elements:
 #' \describe{
@@ -97,6 +98,7 @@ Setup_Sim_Dim <- function(n_sims,
 Setup_Mod_Dim <- function(years,
                           ages,
                           lens,
+                          n_pop = 1,
                           n_seas = 1,
                           seasdur = if(n_seas == 1) 1 else rep(1 / n_seas, n_seas),
                           n_regions,
@@ -114,6 +116,7 @@ Setup_Mod_Dim <- function(years,
 
   # ouput variables into list
   input_list$data$years <- years
+  input_list$data$n_pop <- n_pop
   input_list$data$n_regions <- n_regions
   input_list$data$ages <- ages
   input_list$data$lens <- if(is.null(lens)) 1 else lens
@@ -130,6 +133,7 @@ Setup_Mod_Dim <- function(years,
   for(i in 1:n_seas) collect_message("Duration of season ", i, ": ", seasdur[i])
   collect_message("Number of Projection Years for Dev Pars: ", n_proj_yrs_devs)
   collect_message("Number of Regions: ", n_regions)
+  collect_message("Number of Populations: ", n_pop)
   collect_message("Number of Age Bins: ", length(ages))
   collect_message("Number of Length Bins: ", length(lens))
   collect_message("Number of Sexes: ", n_sexes)

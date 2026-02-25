@@ -449,7 +449,9 @@ generate_initial_age_structure <- function(y,
         }
 
         # input age deviations
-        sim_env$ln_InitDevs[p,r,,sim] <- tmp_ln_init_devs
+        if(R0[p,r,y,sim] != 0) {
+          sim_env$ln_InitDevs[p,r,,sim] <- tmp_ln_init_devs
+        } else sim_env$ln_InitDevs[p,r,,sim] <- 0
 
       } # end r loop
     } # end p loop
@@ -569,20 +571,21 @@ generate_recruitment <- function(y,
         } else {
 
           # index ln_sigmaR, if n_pop == 1 and local DD, use region specific rates,
-          # otherwise use 1 (i.e., n_pop > 1 or rec_dd == 1)
-          sigma_idx <- ifelse(n_pop == 1 && rec_dd == 0, r, 1)
+          # otherwise use p (i.e., n_pop > 1 or rec_dd == 1)
+          sigma_idx <- ifelse(n_pop == 1 && rec_dd == 0, r, p)
 
-          # simulate recial age deviations
+          # simulate rec deviations
           if(is.null(tmp_ln_rec_devs)) tmp_ln_rec_devs <- stats::rnorm(1, 0, exp(ln_sigmaR[2,p,sigma_idx]))
 
-          # input deviations
-          sim_env$ln_RecDevs[p,r,y,sim] <- tmp_ln_rec_devs
+          if(R0[p,r,y,sim] != 0) {
+            sim_env$ln_RecDevs[p,r,y,sim] <- tmp_ln_rec_devs
+          } else sim_env$ln_RecDevs[p,r,y,sim] <- 0
+
+          # compute rec
           for(s in 1:n_sexes) sim_env$NAA[p,r,y,1,1,s,sim] <-
             tmp_det_rec[p,r] * exp(sim_env$ln_RecDevs[p,r,y,sim] -
             exp(ln_sigmaR[2,p,sigma_idx])^2/2) * sexratio[p,r,y,s,sim]
         }
-
-        # print(sum(NAA[p,r,y,1,1,,sim]))
 
         sim_env$Rec[p,r,y,sim] <- sum(NAA[p,r,y,1,1,,sim]) # Save recruitment estimates
         sim_env$NAA0[p,r,y,1,1,,sim] = NAA[p,r,y,1,1,,sim] # populate unfished NAA
@@ -1063,7 +1066,6 @@ generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {
             n_sexes = n_sexes,
             n_fish_fleets = n_fish_fleets
           )
-          print(sum(sim_env$obs_conv_tag_fish_recap))
 
         } # end tc loop
       } # end rseas loop
@@ -1174,7 +1176,7 @@ Simulate_Pop_Static <- function(sim_list,
                   ln_init_conv_tag_mort = sim_env$ln_init_conv_tag_mort,
                   ln_conv_tag_shed = sim_env$ln_conv_tag_shed,
                   conv_tag_fish_avail = sim_env$conv_tag_fish_avail,
-                  UseTagging = sim_env$UseTagging,
+                  use_conv_fish_tagging = sim_env$use_conv_fish_tagging,
                   pred_conv_tag_fish_recap = sim_env$pred_conv_tag_fish_recap,
                   obs_conv_tag_fish_recap = sim_env$obs_conv_tag_fish_recap,
                   SizeAgeTrans = if(!is.null(sim_env$SizeAgeTrans)) sim_env$SizeAgeTrans else NULL,
@@ -1185,6 +1187,7 @@ Simulate_Pop_Static <- function(sim_list,
                   ISS_SrvLenComps = sim_env$ISS_SrvLenComps,
                   n_sims = sim_env$n_sims,
                   n_regions = sim_env$n_regions,
+                  n_pop = sim_env$n_pop,
                   n_years = sim_env$n_yrs,  # duplicated to ensure backwards compatbility
                   n_yrs = sim_env$n_yrs, # duplicated to ensure backwards compatbility
                   n_ages = sim_env$n_ages,
@@ -1407,7 +1410,7 @@ simulation_self_test <- function(data,
     ln_init_conv_tag_mort = optim_parameters_list$ln_init_conv_tag_mort,  # inital tagging mortality
     ln_conv_tag_shed = optim_parameters_list$ln_conv_tag_shed, # chronic tag shedding
     conv_tag_fish_reporting_input = conv_tag_fish_reporting_input, # tag reporting rates
-    UseTagging = data$UseTagging, # whether or not tagging is used / simulated
+    use_conv_fish_tagging = data$use_conv_fish_tagging, # whether or not tagging is used / simulated
     tag_selex = data$tag_selex, # tag selectivity type
     tag_natmort = data$tag_natmort, # tag natural mortality type
     conv_fish_tag_like = data$conv_fish_tag_likeType, # tag likelihood
@@ -1442,7 +1445,7 @@ simulation_self_test <- function(data,
         tmp_data$ObsSrvLenComps  <- array(sim_obj$ObsSrvLenComps[,,,,,,i], dim = dim(tmp_data$ObsSrvLenComps)) # new survey lens
 
         # setup tagging data stuff if tagging is done
-        if(tmp_data$UseTagging == 1) {
+        if(tmp_data$use_conv_fish_tagging == 1) {
           tmp_data$conv_tagged_fish <- array(sim_obj$conv_tagged_fish[,,,i], dim = dim(tmp_data$conv_tagged_fish)) # new tagged fish
           tmp_data$obs_conv_tag_fish_recap <- array(sim_obj$obs_conv_tag_fish_recap[,,,,,,i], dim = dim(tmp_data$obs_conv_tag_fish_recap)) # new tag recaps
           tmp_data$tag_release_indicator <- sim_obj$tag_release_indicator # release indicator
@@ -1528,7 +1531,7 @@ simulation_self_test <- function(data,
           tmp_data$ObsSrvLenComps  <- array(sim_obj$ObsSrvLenComps[,,,,,,i], dim = dim(tmp_data$ObsSrvLenComps)) # new survey lens
 
           # setup tagging data stuff if tagging is done
-          if(tmp_data$UseTagging == 1) {
+          if(tmp_data$use_conv_fish_tagging == 1) {
             tmp_data$conv_tagged_fish <- array(sim_obj$conv_tagged_fish[,,,i], dim = dim(tmp_data$conv_tagged_fish)) # new tagged fish
             tmp_data$obs_conv_tag_fish_recap <- array(sim_obj$obs_conv_tag_fish_recap[,,,,,,i], dim = dim(tmp_data$obs_conv_tag_fish_recap)) # new tag recaps
             tmp_data$tag_release_indicator <- sim_obj$tag_release_indicator # release indicator
@@ -1655,21 +1658,21 @@ simulation_data_to_SPoRC <- function(sim_env,
                                      sim) {
 
     # Biologicals
-    WAA <- array(sim_env$WAA[,1:y,,,,sim, drop = FALSE], dim = c(sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes))
-    WAA_fish <- array(sim_env$WAA_fish[,1:y,,,,,sim, drop = FALSE], dim = c(sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes, sim_env$n_fish_fleets))
-    WAA_srv <- array(sim_env$WAA_srv[,1:y,,,,,sim, drop = FALSE], dim = c(sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes, sim_env$n_srv_fleets))
-    MatAA <- array(sim_env$MatAA[,1:y,,,,sim, drop = FALSE], dim = c(sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes))
+    WAA <- array(sim_env$WAA[,,1:y,,,,sim, drop = FALSE], dim = c(sim_env$n_pop, sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes))
+    WAA_fish <- array(sim_env$WAA_fish[,,1:y,,,,,sim, drop = FALSE], dim = c(sim_env$n_pop, sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes, sim_env$n_fish_fleets))
+    WAA_srv <- array(sim_env$WAA_srv[,,1:y,,,,,sim, drop = FALSE], dim = c(sim_env$n_pop, sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes, sim_env$n_srv_fleets))
+    MatAA <- array(sim_env$MatAA[,,1:y,,,,sim, drop = FALSE], dim = c(sim_env$n_pop, sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes))
     SizeAgeTrans <- if(!is.null(sim_env$SizeAgeTrans)) {
-      array(sim_env$SizeAgeTrans[,1:y,,,,,sim, drop = FALSE], dim = c(sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_lens, sim_env$n_ages, sim_env$n_sexes))
+      array(sim_env$SizeAgeTrans[,,1:y,,,,,sim, drop = FALSE], dim = c(sim_env$n_pop, sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_lens, sim_env$n_ages, sim_env$n_sexes))
       } else NULL
     AgeingError <- sim_env$AgeingError[1:y,,,sim]
 
     # Tagging
-    if(sim_env$UseTagging == 1) {
+    if(sim_env$use_conv_fish_tagging == 1) {
       keep_tag_cohorts <- which(sim_env$tag_release_indicator[,2] %in% 1:y)
       tag_release_indicator <- sim_env$tag_release_indicator[keep_tag_cohorts,,drop = FALSE]
-      obs_conv_tag_fish_recap <- array(sim_env$obs_conv_tag_fish_recap[,,keep_tag_cohorts,,,,sim], dim = dim(sim_env$obs_conv_tag_fish_recap)[-length(dim(sim_env$obs_conv_tag_fish_recap))])
-      conv_tagged_fish <- array(sim_env$conv_tagged_fish[keep_tag_cohorts,,,sim], dim = c(dim(sim_env$conv_tagged_fish)[-length(dim(sim_env$conv_tagged_fish))]))
+      obs_conv_tag_fish_recap <- array(sim_env$obs_conv_tag_fish_recap[,,keep_tag_cohorts,,,,,,sim], dim = dim(sim_env$obs_conv_tag_fish_recap)[-length(dim(sim_env$obs_conv_tag_fish_recap))])
+      conv_tagged_fish <- array(sim_env$conv_tagged_fish[keep_tag_cohorts,,,,sim], dim = c(dim(sim_env$conv_tagged_fish)[-length(dim(sim_env$conv_tagged_fish))]))
       n_tag_cohorts <- nrow(tag_release_indicator)
     } else {
       tag_release_indicator = obs_conv_tag_fish_recap = conv_tagged_fish = n_tag_cohorts = NULL
@@ -1719,7 +1722,7 @@ simulation_data_to_SPoRC <- function(sim_env,
     if(!is.null(sim_env$n_lens)) {
       UseSrvLenComps <- apply(ObsSrvLenComps, c(1,2,3,6), sum)
       UseSrvLenComps[!is.na(UseSrvLenComps) & UseSrvLenComps > 0] <- 1
-    } else UseSrvLenComps <- array(0, dim = c(sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_fish_fleets))
+    } else UseSrvLenComps <- array(0, dim = c(sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_srv_fleets))
 
     return(list(WAA = WAA,
                 WAA_fish = WAA_fish,
@@ -1727,6 +1730,7 @@ simulation_data_to_SPoRC <- function(sim_env,
                 MatAA = MatAA,
                 SizeAgeTrans = SizeAgeTrans,
                 AgeingError = AgeingError,
+                use_conv_fish_tagging = sim_env$use_conv_fish_tagging,
                 tag_release_indicator = tag_release_indicator,
                 obs_conv_tag_fish_recap = obs_conv_tag_fish_recap,
                 conv_tagged_fish = conv_tagged_fish,

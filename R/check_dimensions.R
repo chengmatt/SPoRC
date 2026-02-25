@@ -12,9 +12,11 @@
 #' @param n_seas Number of seasons
 #' @param max_tag_liberty Maximum tag liberty to track a given cohort
 #' @param n_tag_cohorts Number of tag cohorts to fit to
+#' @param n_pop Number of populations
 #'
 #' @keywords internal
 check_data_dimensions <- function(x,
+                                  n_pop = NULL,
                                   n_regions = NULL,
                                   n_years = NULL,
                                   n_ages = NULL,
@@ -32,25 +34,25 @@ check_data_dimensions <- function(x,
 
   # Weight at age (spawning), maturity
   if(what %in% c('WAA', 'MatAA')) {
-    if(sum(dim(x) == c(n_regions, n_years, n_seas, n_ages, n_sexes)) != 5)
-      stop(paste("Dimensions of", what, "are not correct. Should be n_regions, n_years, n_seas, n_ages, and n_sexes"))
+    if(sum(dim(x) == c(n_pop, n_regions, n_years, n_seas, n_ages, n_sexes)) != 6)
+      stop(paste("Dimensions of", what, "are not correct. Should be n_pop,, n_regions, n_years, n_seas, n_ages, and n_sexes"))
   }
 
   if(what %in% c("Fixed_natmort")) {
-    if(sum(dim(x) == c(n_regions, n_years, n_ages, n_sexes)) != 4)
-      stop(paste("Dimensions of", what, "are not correct. Should be n_regions, n_years, n_ages, and n_sexes"))
+    if(sum(dim(x) == c(n_pop, n_regions, n_years, n_ages, n_sexes)) != 5)
+      stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_regions, n_years, n_ages, and n_sexes"))
   }
 
   # weight at age for the fishery
   if(what == 'WAA_fish') {
-    if(sum(dim(x) == c(n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets)) != 6)
-      stop(paste("Dimensions of", what, "are not correct. Should be n_regions, n_years, n_seas, n_ages, n_sexes, and n_fish_fleets"))
+    if(sum(dim(x) == c(n_pop, n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets)) != 7)
+      stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_regions, n_years, n_seas, n_ages, n_sexes, and n_fish_fleets"))
   }
 
   # weight at age for the survey
   if(what == 'WAA_srv') {
-    if(sum(dim(x) == c(n_regions, n_years, n_seas, n_ages, n_sexes, n_srv_fleets)) != 6)
-      stop(paste("Dimensions of", what, "are not correct. Should be n_regions, n_years, n_seas, n_ages, n_sexes, and n_srv_fleets"))
+    if(sum(dim(x) == c(n_pop, n_regions, n_years, n_seas, n_ages, n_sexes, n_srv_fleets)) != 7)
+      stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_regions, n_years, n_seas, n_ages, n_sexes, and n_srv_fleets"))
   }
 
   if(what == 'AgeingError') { # Not checking the age dimension
@@ -64,13 +66,18 @@ check_data_dimensions <- function(x,
   }
 
   if(what == 'SizeAgeTrans') {
-    if(sum(dim(x) == c(n_regions, n_years, n_seas, n_lens, n_ages, n_sexes)) != 6)
-       stop("Dimensions of SizeAgeTrans are not correct. Should be n_regions, n_years, n_seas, n_lens, n_ages, and n_sexes")
+    if(sum(dim(x) == c(n_pop, n_regions, n_years, n_seas, n_lens, n_ages, n_sexes)) != 7)
+       stop("Dimensions of SizeAgeTrans are not correct. Should be n_pop, n_regions, n_years, n_seas, n_lens, n_ages, and n_sexes")
   }
 
   if(what == 'Fixed_Movement') {
-    if(sum(dim(x) == c(n_regions, n_regions, n_years, n_seas, n_ages, n_sexes)) != 6)
-      stop("Fixed Movement Matrix does not have the correct dimensions. This should be n_regions, n_regions, n_years, n_seas, n_ages, n_sexes")
+    if(sum(dim(x) == c(n_pop, n_regions, n_regions, n_years, n_seas, n_ages, n_sexes)) != 7)
+      stop("Fixed Movement Matrix does not have the correct dimensions. This should be n_pop, n_regions, n_regions, n_years, n_seas, n_ages, n_sexes")
+  }
+
+  if(what == 'sgl_seas_spawning_movement') {
+    if(sum(dim(x) == c(n_pop, n_regions, n_regions, n_years, n_ages, n_sexes)) != 6)
+      stop("Fixed Movement Matrix does not have the correct dimensions. This should be n_pop, n_regions, n_regions, n_years, n_ages, n_sexes")
   }
 
 
@@ -132,14 +139,14 @@ check_data_dimensions <- function(x,
 
 
   # Tagging Stuff -----------------------------------------------------------
-  if(what %in% c("Tagged_Fish")) {
-    if(sum(dim(x) == c(n_tag_cohorts, n_ages, n_sexes)) != 3)
-      stop(paste(what, " is not the correct dimension. Should be n_tag_cohorts, n_ages, n_sexes"))
+  if(what %in% c("conv_tagged_fish")) {
+    if(sum(dim(x) == c(n_tag_cohorts, n_pop, n_ages, n_sexes)) != 4)
+      stop(paste(what, " is not the correct dimension. Should be n_tag_cohorts, n_pop, n_ages, n_sexes"))
   }
 
-  if(what %in% c("Obs_Tag_Recap")) {
-    if(sum(dim(x) == c(max_tag_liberty, n_seas, n_tag_cohorts, n_regions, n_ages, n_sexes)) != 6)
-      stop(paste(what, " is not the correct dimension. Should be max_tag_liberty, n_seas, n_tag_cohorts, n_regions, n_ages, n_sexes"))
+  if(what %in% c("obs_conv_tag_fish_recap")) {
+    if(sum(dim(x) == c(max_tag_liberty, n_seas, n_tag_cohorts, n_pop, n_regions, n_ages, n_sexes)) != 7)
+      stop(paste(what, " is not the correct dimension. Should be max_tag_liberty, n_seas, n_tag_cohorts, n_pop, n_regions, n_ages, n_sexes"))
   }
 
 }

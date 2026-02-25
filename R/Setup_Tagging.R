@@ -131,7 +131,7 @@ Setup_Sim_Tagging <- function(n_tags = NULL,
   sim_list$n_tag_rel_events <- nrow(tag_release_indicator) # number of tag release events - tag years x tag region (tag cohorts)
 
   # Containers
-  sim_list$conv_tagged_fish <-
+  sim_list$conv_conv_tagged_fish <-
     array(0, dim = c(sim_list$n_tag_rel_events, sim_list$n_pop,
                      sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # number of tagged fish
 
@@ -157,17 +157,17 @@ Setup_Sim_Tagging <- function(n_tags = NULL,
 #' Helper function to setup initial tag mortality parameters
 #'
 #' @param input_list Input list
-#' @param Init_Tag_Mort_spec Character vector specifying initial tag mortality parameterization
+#' @param init_conv_tag_mort_spec Character vector specifying initial tag mortality parameterization
 #' @keywords internal
-do_Init_Tag_Mort_mapping <- function(input_list, Init_Tag_Mort_spec) {
-  if(input_list$data$UseTagging == 0) input_list$map$ln_init_conv_tag_mort <- factor(NA) # initial tag mortality
-  if(input_list$data$UseTagging == 1) {
+do_conv_init_tag_mort_mapping <- function(input_list, init_conv_tag_mort_spec) {
+  if(input_list$data$use_conv_fish_tagging == 0) input_list$map$ln_init_conv_tag_mort <- factor(NA) # initial tag mortality
+  if(input_list$data$use_conv_fish_tagging == 1) {
     # Validate input
-    if(!Init_Tag_Mort_spec %in% c("fix", "est")) stop("Init_Tag_Mort_spec is incorrectly specified. Should be one of these: fix, est")
+    if(!init_conv_tag_mort_spec %in% c("fix", "est")) stop("init_conv_tag_mort_spec is incorrectly specified. Should be one of these: fix, est")
     # Initial tag mortality
-    if(Init_Tag_Mort_spec == "fix") input_list$map$ln_init_conv_tag_mort <- factor(NA)
-    if(Init_Tag_Mort_spec == "est") input_list$map$ln_init_conv_tag_mort <- factor(1)
-    collect_message("Initial Tag Mortality is specified as: ", Init_Tag_Mort_spec)
+    if(init_conv_tag_mort_spec == "fix") input_list$map$ln_init_conv_tag_mort <- factor(NA)
+    if(init_conv_tag_mort_spec == "est") input_list$map$ln_init_conv_tag_mort <- factor(1)
+    collect_message("Conventional Initial Tag Mortality is specified as: ", init_conv_tag_mort_spec)
   }
   return(input_list)
 }
@@ -175,17 +175,17 @@ do_Init_Tag_Mort_mapping <- function(input_list, Init_Tag_Mort_spec) {
 #' Helper function to set up tag shedding parameters
 #'
 #' @param input_list Input list
-#' @param Tag_Shed_spec Character specifying tag shedding parameterization
+#' @param conv_tag_shed_spec Character specifying tag shedding parameterization
 #' @keywords internal
-do_Tag_Shed_mapping <- function(input_list, Tag_Shed_spec) {
-  if(input_list$data$UseTagging == 0) input_list$map$ln_conv_tag_shed <- factor(NA) # chronic tag shedding
-  if(input_list$data$UseTagging == 1) {
+do_conv_tag_shed_mapping <- function(input_list, conv_tag_shed_spec) {
+  if(input_list$data$use_conv_fish_tagging == 0) input_list$map$ln_conv_tag_shed <- factor(NA) # chronic tag shedding
+  if(input_list$data$use_conv_fish_tagging == 1) {
     # Validate input
-    if(!Tag_Shed_spec %in% c("fix", "est")) stop("Tag_Shed_spec is incorrectly specified. Should be one of these: fix, est")
+    if(!conv_tag_shed_spec %in% c("fix", "est")) stop("conv_tag_shed_spec is incorrectly specified. Should be one of these: fix, est")
     # Tag Shedding
-    if(Tag_Shed_spec == "fix" || UseTagging == 0) input_list$map$ln_conv_tag_shed <- factor(NA)
-    if(Tag_Shed_spec == "est") input_list$map$ln_conv_tag_shed <- factor(1)
-    collect_message("Chronic Tag Shedding is specified as: ", Tag_Shed_spec)
+    if(conv_tag_shed_spec == "fix" || use_conv_fish_tagging == 0) input_list$map$ln_conv_tag_shed <- factor(NA)
+    if(conv_tag_shed_spec == "est") input_list$map$ln_conv_tag_shed <- factor(1)
+    collect_message("Conventional Chronic Tag Shedding is specified as: ", conv_tag_shed_spec)
   }
   return(input_list)
 }
@@ -194,12 +194,12 @@ do_Tag_Shed_mapping <- function(input_list, Tag_Shed_spec) {
 #'
 #' @param input_list Input list
 #' @keywords internal
-do_tag_theta_mapping <- function(input_list) {
-  if(input_list$data$UseTagging == 0) input_list$map$ln_tag_theta <- factor(NA) # tag overdispersion
-  if(input_list$data$UseTagging == 1) {
+do_conv_tag_theta_mapping <- function(input_list) {
+  if(input_list$data$use_conv_fish_tagging == 0) input_list$map$ln_conv_fish_tag_theta <- factor(NA) # tag overdispersion
+  if(input_list$data$use_conv_fish_tagging == 1) {
     # Tag Overdispersion
-    if(input_list$data$Tag_LikeType %in% c(0,2,3)) input_list$map$ln_tag_theta <- factor(NA)
-    if(input_list$data$Tag_LikeType %in% c(1,4,5)) input_list$map$ln_tag_theta <- factor(1)
+    if(input_list$data$conv_fish_tag_like %in% c(0,2,3)) input_list$map$ln_conv_fish_tag_theta <- factor(NA)
+    if(input_list$data$conv_fish_tag_like %in% c(1,4,5)) input_list$map$ln_conv_fish_tag_theta <- factor(1)
   }
   return(input_list)
 }
@@ -207,163 +207,227 @@ do_tag_theta_mapping <- function(input_list) {
 #' Helper function to set up tag reporting rate parameters
 #'
 #' @param input_list Input list
-#' @param TagRep_spec Charcacter specifying tag reporting parameterization
+#' @param conv_tagrep_spec Charcacter specifying tag reporting parameterization
 #' @keywords internal
-do_Tag_Reporting_Pars_mapping <- function(input_list, TagRep_spec) {
+do_conv_tag_fish_reporting_pars_mapping <- function(input_list, conv_tagrep_spec) {
 
-  # If not using tagging data
-  if(input_list$data$UseTagging == 0) {
-    input_list$map$Tag_Reporting_Pars <- factor(rep(NA, length(input_list$par$Tag_Reporting_Pars))) # tag reporting rates
+  if(input_list$data$use_conv_fish_tagging == 0) {
+    input_list$map$conv_tag_fish_reporting_pars <- factor(rep(NA, length(input_list$par$conv_tag_fish_reporting_pars)))
   }
 
-  if(input_list$data$UseTagging == 1) {
+  if(input_list$data$use_conv_fish_tagging == 1) {
 
-    # Initialize arrays and counters
-    map_TagRep <- input_list$par$Tag_Reporting_Pars
+    map_TagRep <- input_list$par$conv_tag_fish_reporting_pars
     map_TagRep[] <- NA
     tagrep_counter <- 1
 
-    if(input_list$data$Tag_LikeType %in% c(0,1,2,4)) { # If this is a poisson, negative binomial, multinomial or dirichlet-multinomial release conditioned
+    if(input_list$data$conv_fish_tag_like %in% c(0,1,2,4)) {
 
-      # Validate inputs here
-      if(!TagRep_spec %in% c("est_all", "est_shared_r", "fix")) stop("Tag Reporting Specificaiton is not correctly specified. Needs to be fix, est_all, or est_shared_r")
+      # Validate inputs
+      if(!conv_tagrep_spec %in% c("est_all", "est_shared_r", "est_shared_f", "est_shared_r_f", "fix"))
+        stop("Tag Reporting Specification is not correctly specified. Needs to be fix, est_all, est_shared_r, est_shared_f, or est_shared_r_f")
 
-      # if we want to fix
-      if(TagRep_spec == 'fix') map_TagRep[] <- NA
+      # Block consistency checks for sharing specs
+      if(conv_tagrep_spec == "est_shared_r") {
+        # blocks must match across regions within each fleet
+        for(f in 1:input_list$data$n_fish_fleets) {
+          ref_blocks <- input_list$data$conv_tag_fish_reporting_blocks[1,,f]
+          for(rr in 1:input_list$data$n_regions) {
+            if(!identical(as.vector(input_list$data$conv_tag_fish_reporting_blocks[rr,,f]), as.vector(ref_blocks)))
+              stop("est_shared_r requires consistent tag reporting block structure across all regions within each fleet.")
+          }
+        }
+      }
+
+      if(conv_tagrep_spec == "est_shared_f") {
+        # blocks must match across fleets within each region
+        for(r in 1:input_list$data$n_regions) {
+          ref_blocks <- input_list$data$conv_tag_fish_reporting_blocks[r,,1]
+          for(ff in 1:input_list$data$n_fish_fleets) {
+            if(!identical(as.vector(input_list$data$conv_tag_fish_reporting_blocks[r,,ff]), as.vector(ref_blocks)))
+              stop("est_shared_f requires consistent tag reporting block structure across all fleets within each region.")
+          }
+        }
+      }
+
+      if(conv_tagrep_spec == "est_shared_r_f") {
+        # blocks must match across all regions and fleets
+        ref_blocks <- input_list$data$conv_tag_fish_reporting_blocks[1,,1]
+        for(r in 1:input_list$data$n_regions) {
+          for(f in 1:input_list$data$n_fish_fleets) {
+            if(!identical(as.vector(input_list$data$conv_tag_fish_reporting_blocks[r,,f]), as.vector(ref_blocks)))
+              stop("est_shared_r_f requires consistent tag reporting block structure across all regions and fleets.")
+          }
+        }
+      }
+
+      if(conv_tagrep_spec == 'fix') map_TagRep[] <- NA
 
       for(r in 1:input_list$data$n_regions) {
+        for(f in 1:input_list$data$n_fish_fleets) {
+          tagrep_blocks_tmp <- unique(as.vector(input_list$data$conv_tag_fish_reporting_blocks[r,,f]))
 
-        # Get number of tag reporting rate blocks
-        tagrep_blocks_tmp <- unique(as.vector(input_list$data$Tag_Reporting_blocks[r,]))
+          for(b in 1:length(tagrep_blocks_tmp)) {
 
-        for(b in 1:length(tagrep_blocks_tmp)) {
+            if(conv_tagrep_spec == 'est_all') {
+              map_TagRep[r,b,f] <- tagrep_counter
+              tagrep_counter <- tagrep_counter + 1
+            }
 
-          # Estimate for all regions
-          if(TagRep_spec == 'est_all') {
-            map_TagRep[r,b] <- tagrep_counter
-            tagrep_counter <- tagrep_counter + 1
-          }
+            if(conv_tagrep_spec == 'est_shared_r' && r == 1) {
+              for(rr in 1:input_list$data$n_regions) {
+                if(tagrep_blocks_tmp[b] %in% input_list$data$conv_tag_fish_reporting_blocks[rr,,f])
+                  map_TagRep[rr,b,f] <- tagrep_counter
+              }
+              tagrep_counter <- tagrep_counter + 1
+            }
 
-          # Estimate but share tag reporting across regions
-          if(TagRep_spec == 'est_shared_r' && r == 1) {
-            for(rr in 1:input_list$data$n_regions) {
-              # only assign if this value exists for this region
-              if(tagrep_blocks_tmp[b] %in% input_list$data$Tag_Reporting_blocks[rr,]) {
-                map_TagRep[rr, b] <- tagrep_counter
-              } # end if
-            } # end rr loop
-            tagrep_counter <- tagrep_counter + 1
-          }
+            if(conv_tagrep_spec == 'est_shared_f' && f == 1) {
+              for(ff in 1:input_list$data$n_fish_fleets) {
+                if(tagrep_blocks_tmp[b] %in% input_list$data$conv_tag_fish_reporting_blocks[r,,ff])
+                  map_TagRep[r,b,ff] <- tagrep_counter
+              }
+              tagrep_counter <- tagrep_counter + 1
+            }
 
-        } # end b loop
+            if(conv_tagrep_spec == 'est_shared_r_f' && r == 1 && f == 1) {
+              for(rr in 1:input_list$data$n_regions) {
+                for(ff in 1:input_list$data$n_fish_fleets) {
+                  if(tagrep_blocks_tmp[b] %in% input_list$data$conv_tag_fish_reporting_blocks[rr,,ff])
+                    map_TagRep[rr,b,ff] <- tagrep_counter
+                }
+              }
+              tagrep_counter <- tagrep_counter + 1
+            }
+
+          } # end b loop
+        } # end f loop
       } # end r loop
 
-      collect_message("Tag Reporting is specified as: ", TagRep_spec)
+      collect_message("Conventional Tag Reporting is specified as: ", conv_tagrep_spec)
+    }
 
-    } # end if
-
-    # input tag reporting rates into mapping list
-    input_list$map$Tag_Reporting_Pars <- factor(map_TagRep) # tag reporting rates
-
+    input_list$map$conv_tag_fish_reporting_pars <- factor(map_TagRep)
   }
 
   return(input_list)
 }
 
-#' Setup tagging processes and parameters
+#' Set Up Model-Based Conventional Tagging
 #'
-#' @param input_list List containing a data list, parameter list, and map list
-#' @param UseTagging Numeric (0 or 1) indicating whether to use tagging data (1) or not (0)
-#' @param tag_release_indicator Matrix [n_tag_cohorts x 3], where columns are release region, release year, and release season
-#' @param max_tag_liberty Maximum number of years to track a tagged cohort
-#' @param Tagged_Fish Array [n_tag_cohorts x n_ages x n_sexes] describing tagged fish releases
-#' @param Obs_Tag_Recap Array [max_tag_liberty x n_seas x n_tag_cohorts x n_regions x n_ages x n_sexes] observed tag recaptures
-#' @param Tag_LikeType Character string specifying tag likelihood type. One of:
+#' Configures conventional tagging data, likelihood structure, parameter
+#' mappings, and optional priors for model fitting.
+#'
+#' This function:
+#' \itemize{
+#'   \item Validates tagging data inputs,
+#'   \item Defines likelihood type,
+#'   \item Specifies parameterizations for tag mortality and shedding,
+#'   \item Configures reporting-rate blocks and sharing structure,
+#'   \item Applies optional priors to reporting parameters.
+#' }
+#'
+#' @param input_list List containing \code{$data}, \code{$par}, and \code{$map}.
+#'
+#' @param use_conv_fish_tagging Integer (0/1) indicating whether tagging data
+#'   are included in model fitting.
+#'
+#' @param tag_release_indicator Matrix [n_tag_cohorts x 3] giving release
+#'   region, year, and season.
+#'
+#' @param max_tag_liberty Maximum number of years-at-liberty included in fitting.
+#'
+#' @param conv_tagged_fish Array describing tagged fish releases with
+#'   dimensions:
+#'   \code{[n_tag_cohorts, n_pop, n_ages, n_sexes]}.
+#'
+#' @param obs_conv_tag_fish_recap Array of observed recaptures with dimensions:
+#'   \code{[max_tag_liberty, n_seas, n_tag_cohorts, n_pop,
+#'           n_regions, n_ages, n_sexes]}.
+#'
+#' @param conv_fish_tag_like Character specifying likelihood type.
+#'   One of:
+#'   \code{"Poisson"}, \code{"NegBin"},
+#'   \code{"Multinomial_Release"}, \code{"Multinomial_Recapture"},
+#'   \code{"Dirichlet-Multinomial_Release"},
+#'   \code{"Dirichlet-Multinomial_Recapture"}.
+#'
+#' @param mixing_period Minimum years (or seasons if seasonal model)
+#'   post-release included in fitting.
+#'
+#' @param t_tagging Numeric scalar in [0,1]. Fraction of the season remaining
+#'   when tags are released:
 #'   \itemize{
-#'     \item \code{"Poisson"}
-#'     \item \code{"NegBin"}
-#'     \item \code{"Multinomial_Release"}
-#'     \item \code{"Multinomial_Recapture"}
-#'     \item \code{"Dirichlet-Multinomial_Release"}
-#'     \item \code{"Dirichlet-Multinomial_Recapture"}
+#'     \item 1 = start of season
+#'     \item 0.5 = mid-season
+#'     \item 0 = end of season
 #'   }
-#'   Example: \code{Tag_LikeType = "NegBin"}
-#' @param mixing_period Numeric indicating minimum years post-release to include in fitting (or minimum seasons post-release if model is seasonal)
-#' @param t_tagging Fraction of season remaining when tags are released (e.g., start of season == 1, mid season == 0.5, end of season == 0; default = 1)
-#' @param tag_selex Character string specifying tag recovery selectivity. One of:
+#'
+#' @param use_conv_tag_fishrep_prior Integer (0/1) indicating whether priors
+#'   are applied to reporting parameters.
+#'
+#' @param conv_tag_fishrep_prior Data frame specifying priors on reporting
+#'   parameters. Must include columns:
+#'   \code{region}, \code{block}, \code{fleet},
+#'   \code{mu}, \code{sd}, and \code{type}.
+#'
+#' @param move_age_tag_pool List defining age pooling structure for tagging
+#'   likelihood. Examples:
 #'   \itemize{
-#'     \item \code{"Uniform_DomFleet"}
-#'     \item \code{"SexAgg_DomFleet"}
-#'     \item \code{"SexSp_DomFleet"}
-#'     \item \code{"Uniform_AllFleet"}
-#'     \item \code{"SexAgg_AllFleet"}
-#'     \item \code{"SexSp_AllFleet"}
+#'     \item \code{list(1:5, 6:10)}
+#'     \item \code{"all"}
+#'     \item \code{as.list(1:n_ages)}
 #'   }
-#'   Example: \code{tag_selex = "SexSp_AllFleet"}
-#' @param tag_natmort Character string specifying tag natural mortality parameterization. One of:
+#'
+#' @param move_sex_tag_pool List defining sex pooling structure.
+#'
+#' @param init_conv_tag_mort_spec Character string \code{"fix"} or \code{"est"}
+#'   specifying whether initial tag mortality is fixed or estimated.
+#'
+#' @param conv_tag_shed_spec Character string \code{"fix"} or \code{"est"}
+#'   specifying whether chronic tag shedding is fixed or estimated.
+#'
+#' @param conv_tag_fish_reporting_blocks Character vector defining reporting
+#'   rate blocks. Examples:
 #'   \itemize{
-#'     \item \code{"AgeAgg_SexAgg"}
-#'     \item \code{"AgeSp_SexAgg"}
-#'     \item \code{"AgeAgg_SexSp"}
-#'     \item \code{"AgeSp_SexSp"}
+#'     \item \code{"none_Region_1_Fleet_1"}
+#'     \item \code{"Block_2_Year_1-20_Region_1_Fleet_1"}
+#'     \item \code{"Block_3_Year_21-terminal_Region_2_Fleet_2"}
 #'   }
-#'   Example: \code{tag_natmort = "AgeSp_SexSp"}
-#' @param Use_TagRep_Prior Numeric (0 or 1) whether to use tag reporting rate prior
-#' @param move_age_tag_pool List or character specifying pooling of tagging data by age groups. Default does not pool ages. Examples:
-#'   \itemize{
-#'     \item \code{list(1:5, 6:11, 12:20)} pools these age groups together
-#'     \item \code{"all"} pools all ages together (internally converted to \code{list(1:n_ages)})
-#'     \item \code{as.list(1:n_ages)} fits each sex separately
+#'
+#' @param conv_tagrep_spec Character specifying reporting-rate sharing scheme:
+#'   \describe{
+#'     \item{est_all}{Estimate independently for all regions, fleets, and blocks}
+#'     \item{est_shared_r}{Share across regions within fleet}
+#'     \item{est_shared_f}{Share across fleets within region}
+#'     \item{est_shared_r_f}{Share across all regions and fleets}
+#'     \item{fix}{Fix reporting rates}
 #'   }
-#' @param move_sex_tag_pool List or character specifying pooling of tagging data by sex groups. Default do not pool sexes. Examples:
-#'   \itemize{
-#'     \item \code{list(1:2)} pools sexes together
-#'     \item \code{"all"} pools all sexes together (internally converted to \code{list(1:n_sexes)})
-#'     \item \code{list(1, 2)} fits each sex separately
-#'   }
-#' @param Init_Tag_Mort_spec Character string \code{"fix"} or \code{"est"} specifying if initial tag mortality is fixed or estimated
-#' @param Tag_Shed_spec Character string \code{"fix"} or \code{"est"} specifying if chronic tag shedding is fixed or estimated
-#' @param Tag_Reporting_blocks Character vector specifying blocks of years and regions for tag reporting rates. Default is a single block for all regions. Format examples:
-#'   \itemize{
-#'     \item \code{"Block_1_Year_1-15_Region_1"}
-#'     \item \code{"Block_2_Year_16-terminal_Region_2"}
-#'     \item \code{"none_Region_3"} (means no block, constant for that region)
-#'   }
-#' @param TagRep_spec Character string specifying tag reporting rate estimation scheme:
-#'   \itemize{
-#'     \item \code{"est_all"} estimates rates for all blocks and regions independently
-#'     \item \code{"est_shared_r"} estimates rates shared across regions but varying by block
-#'     \item \code{"fix"} fixes all reporting rates (no estimation)
-#'   }
-#' @param ... Additional starting values for tagging parameters such as \code{ln_init_conv_tag_mort}, \code{ln_conv_tag_shed}, \code{ln_tag_theta}, \code{Tag_Reporting_Pars}
-#' @param TagRep_Prior Data frame containing prior specifications for tag reporting parameters.
-#'   Must include columns: \code{region} (region index), \code{block} (time block index),
-#'   \code{mu} (Numeric mean for tag reporting prior (normal space); \code{NA} if symmetric beta is used),
-#'   \code{sd} (Numeric standard deviation for tag reporting prior (normal space)), and \code{type} (0 == symmetric beta, 1 == regular beta).
-#'   Each row specifies a beta prior for one tag reporting parameter.
-#'   Only parameters with rows in this data frame will have priors applied.
+#'
+#' @param ... Optional starting values for tagging parameters
+#'   (\code{ln_init_conv_tag_mort}, \code{ln_conv_tag_shed},
+#'   \code{ln_conv_fish_tag_theta}, \code{conv_tag_fish_reporting_pars}).
+#'
 #'
 #' @export Setup_Mod_Tagging
 #' @family Model Setup
 Setup_Mod_Tagging <- function(input_list,
-                              UseTagging = 0,
+                              use_conv_fish_tagging = 0,
                               tag_release_indicator = NULL,
                               max_tag_liberty = 0,
-                              Tagged_Fish = NA,
-                              Obs_Tag_Recap = NA,
-                              Tag_LikeType = NA,
+                              conv_tagged_fish = NA,
+                              obs_conv_tag_fish_recap = NA,
+                              conv_fish_tag_like = NA,
                               mixing_period = 1,
                               t_tagging = 1,
-                              tag_selex = NA,
-                              tag_natmort = NA,
-                              Use_TagRep_Prior = 0,
-                              TagRep_Prior = NULL,
+                              use_conv_tag_fishrep_prior = 0,
+                              conv_tag_fishrep_prior = NULL,
                               move_age_tag_pool = as.list(1:length(input_list$data$ages)),
                               move_sex_tag_pool = as.list(1:input_list$data$n_sexes),
-                              Init_Tag_Mort_spec = NULL,
-                              Tag_Shed_spec = NULL,
-                              TagRep_spec = 'fix',
-                              Tag_Reporting_blocks = NULL,
+                              init_conv_tag_mort_spec = NULL,
+                              conv_tag_shed_spec = NULL,
+                              conv_tagrep_spec = 'fix',
+                              conv_tag_fish_reporting_blocks = NULL,
                               ...
                               ) {
 
@@ -373,29 +437,31 @@ Setup_Mod_Tagging <- function(input_list,
   # Input Validation --------------------------------------------------------
 
   # Checking data and other specifications
-  if(UseTagging == 1) {
+  if(use_conv_fish_tagging == 1) {
 
     # check specifications
-    if(is.na(sum(Tagged_Fish))) stop("No data is provided for Tagged_Fish")
-    if(is.na(sum(Obs_Tag_Recap))) stop("No data is provided for Obs_Tag_Recap")
-    if(is.na(Tag_LikeType)) stop("No likelihood is provided for Tag_LikeType")
-    if(is.na(tag_selex)) stop("No specfication is provided for tag_selex")
-    if(is.na(tag_natmort)) stop("No specfication is provided for tag_natmort")
+    if(is.na(sum(conv_tagged_fish))) stop("No data is provided for conv_tagged_fish")
+    if(is.na(sum(obs_conv_tag_fish_recap))) stop("No data is provided for obs_conv_tag_fish_recap")
+    if(is.na(conv_fish_tag_like)) stop("No likelihood is provided for conv_fish_tag_like")
     if(max_tag_liberty == 0) stop("max_tag_liberty must be greater than 0")
-    if(TagRep_spec == 'fix') warning("Note that tag reporting rates is fixed. Specify est_all or est_shared_r if this was not the intention.")
+    if(conv_tagrep_spec == 'fix') warning("Note that tag reporting rates is fixed. Specify est_all or est_shared_r if this was not the intention.")
 
     # Check data
-    check_data_dimensions(Tagged_Fish, n_tag_cohorts = nrow(tag_release_indicator), n_ages = length(input_list$data$ages), n_sexes = input_list$data$n_sexes, what = 'Tagged_Fish')
-    check_data_dimensions(Obs_Tag_Recap, max_tag_liberty = max_tag_liberty, n_seas = input_list$data$n_seas, n_regions = input_list$data$n_regions, n_tag_cohorts = nrow(tag_release_indicator), n_ages = length(input_list$data$ages),
-                          n_sexes = input_list$data$n_sexes, what = 'Obs_Tag_Recap')
+    check_data_dimensions(conv_tagged_fish, n_tag_cohorts = nrow(tag_release_indicator), n_ages = length(input_list$data$ages),
+                          n_sexes = input_list$data$n_sexes, n_pop = input_list$data$n_pop, what = 'conv_tagged_fish')
+
+    check_data_dimensions(obs_conv_tag_fish_recap, max_tag_liberty = max_tag_liberty,  n_pop = input_list$data$n_pop,
+                          n_seas = input_list$data$n_seas, n_regions = input_list$data$n_regions,
+                          n_tag_cohorts = nrow(tag_release_indicator), n_ages = length(input_list$data$ages),
+                          n_sexes = input_list$data$n_sexes, what = 'obs_conv_tag_fish_recap')
   }
 
   # Checking tagging priors
-  if(Use_TagRep_Prior == 1) {
-    required_cols <- c("region", "block", "mu", "sd", 'type')
-    missing_cols <- setdiff(required_cols, names(TagRep_Prior))
+  if(use_conv_tag_fishrep_prior == 1) {
+    required_cols <- c("region", "block", "fleet", "mu", "sd", 'type')
+    missing_cols <- setdiff(required_cols, names(conv_tag_fishrep_prior))
     if(length(missing_cols) > 0) {
-      stop("TagRep_Prior is missing required columns: ", paste(missing_cols, collapse = ", "))
+      stop("conv_tag_fishrep_prior is missing required columns: ", paste(missing_cols, collapse = ", "))
     }
     collect_message("Tagging priors are used")
   }
@@ -404,31 +470,11 @@ Setup_Mod_Tagging <- function(input_list,
   tag_like_map <- data.frame(type = c("Poisson", "NegBin", "Multinomial_Release", "Multinomial_Recapture",
                                       "Dirichlet-Multinomial_Release", "Dirichlet-Multinomial_Recapture"), num = c(0,1,2,3,4,5))
 
-  if(is.na(Tag_LikeType)) Tag_LikeType_vals <- 999
+  if(is.na(conv_fish_tag_like)) conv_fish_tag_like_vals <- 999
   else {
-    if(!Tag_LikeType %in% c(tag_like_map$type)) stop("Tag Likelihood not correctly specified. Should be one of these: Poisson, NegBin, Multinomial_Release, Multinomial_Recapture, Dirichlet-Multinomial_Release, Dirichlet-Multinomial_Recapture")
-    Tag_LikeType_vals <- tag_like_map$num[tag_like_map$type == Tag_LikeType]
-    collect_message("Tag Likelihood specified as: ", Tag_LikeType)
-  }
-
-  # Setup tagging selectivity
-  tag_selex_map <- data.frame(type = c("Uniform_DomFleet", "SexAgg_DomFleet", "SexSp_DomFleet", "Uniform_AllFleet", "SexAgg_AllFleet", "SexSp_AllFleet"), num = c(0,1,2,3,4,5))
-
-  if(is.na(Tag_LikeType)) tag_selex_vals <- 999
-  else {
-    if(!tag_selex %in% c(tag_selex_map$type)) stop("Tag Selectivity not correctly specified. Should be one of these: Uniform_DomFleet, SexAgg_DomFleet, SexSp_DomFleet, Uniform_AllFleet, SexAgg_AllFleet, SexSp_AllFleet")
-    tag_selex_vals <- tag_selex_map$num[tag_selex_map$type == tag_selex]
-    collect_message("Tag Selectivity specified as: ", tag_selex)
-  }
-
-  # Checking tagging natural moratlity
-  tag_natmort_map <- data.frame(type = c("AgeAgg_SexAgg", "AgeSp_SexAgg", "AgeAgg_SexSp", "AgeSp_SexSp"), num = c(0,1,2,3))
-
-  if(is.na(Tag_LikeType)) tag_natmort_vals <- 999
-  else {
-    if(!tag_natmort %in% c(tag_natmort_map$type)) stop("Tag Natural Mortality not correctly specified. Should be one of these: AgeAgg_SexAgg, AgeSp_SexAgg, AgeAgg_SexSp, AgeSp_SexSp")
-    tag_natmort_vals <- tag_natmort_map$num[tag_natmort_map$type == tag_natmort]
-     collect_message("Tag Natural Mortality specified as: ", tag_natmort)
+    if(!conv_fish_tag_like %in% c(tag_like_map$type)) stop("Tag Likelihood not correctly specified. Should be one of these: Poisson, NegBin, Multinomial_Release, Multinomial_Recapture, Dirichlet-Multinomial_Release, Dirichlet-Multinomial_Recapture")
+    conv_fish_tag_like_vals <- tag_like_map$num[tag_like_map$type == conv_fish_tag_like]
+    collect_message("Conventional Tag Likelihood specified as: ", conv_fish_tag_like)
   }
 
 
@@ -442,30 +488,33 @@ Setup_Mod_Tagging <- function(input_list,
     if(move_sex_tag_pool == "all") move_sex_tag_pool_vals = list(1:input_list$data$n_sexes)
   } else move_sex_tag_pool_vals = move_sex_tag_pool
 
-  collect_message("Tagging data are fit to ", length(move_age_tag_pool_vals), " age groups")
-  collect_message("Tagging data are fit to ", length(move_sex_tag_pool_vals), " sex groups")
+  collect_message("Conventional Tagging data are fit to ", length(move_age_tag_pool_vals), " age groups")
+  collect_message("Conventional Tagging data are fit to ", length(move_sex_tag_pool_vals), " sex groups")
 
   # Tag Reporting Rates Options ---------------------------------------------
-  Tag_Reporting_blocks_mat <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years)))
+  conv_tag_fish_reporting_blocks_mat <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets))
 
-  if(!is.null(Tag_Reporting_blocks)) {
-    for(i in 1:length(Tag_Reporting_blocks)) {
+  if(!is.null(conv_tag_fish_reporting_blocks)) {
+    for(i in 1:length(conv_tag_fish_reporting_blocks)) {
 
       # Extract out components from list
-      tmp <- Tag_Reporting_blocks[i]
+      # conv_tag_fish_reporting_blocks = c('none_Region_1_Fleet_1', 'Block_2_Year_1-35_Region2_Fleet_2')
+      tmp <- conv_tag_fish_reporting_blocks[i]
       tmp_vec <- unlist(strsplit(tmp, "_"))
 
-      if(!tmp_vec[1] %in% c("none", "Block")) stop("Tag Reporting Blocks not correctly specified. This should be either none_Region_x or Block_x_Year_x-y_Region_x")
+      if(!tmp_vec[1] %in% c("none", "Block")) stop("Tag Reporting Blocks not correctly specified. This should be either none_Region_x_Fleet_x or Block_x_Year_x-y_Region_x_Fleet_x")
 
       # extract out fleets if constant
       if(tmp_vec[1] == "none") {
         region <- as.numeric(tmp_vec[3]) # get region index
-        Tag_Reporting_blocks_mat[region,] <- 1 # input tag reporting time block
+        fleet <- as.numeric(tmp_vec[5]) # get fleet index
+        conv_tag_fish_reporting_blocks_mat[region,,fleet] <- 1 # input tag reporting time block
       }
 
       if(tmp_vec[1] == "Block") {
         block_val <- as.numeric(tmp_vec[2]) # get block value
         region <- as.numeric(tmp_vec[6]) # get region value
+        fleet <- as.numeric(tmp_vec[8]) # get fleet value
 
         # get year ranges
         if(!str_detect(tmp, "terminal")) { # if not terminal year
@@ -476,34 +525,33 @@ Setup_Mod_Tagging <- function(input_list,
           years <- as.numeric(year_range):length(input_list$data$years) # get sequence of years
         }
 
-        Tag_Reporting_blocks_mat[region,years] <- block_val # input tag reporting time block
+        conv_tag_fish_reporting_blocks_mat[region,years,fleet] <- block_val # input tag reporting time block
       }
 
     } # end i loop
-  } else Tag_Reporting_blocks_mat[] <- 1
+  } else conv_tag_fish_reporting_blocks_mat[] <- 1
 
-   for(r in 1:input_list$data$n_regions) collect_message("Tag Reporting estimated with ", length(unique(Tag_Reporting_blocks_mat[r,])), " block for region ", r)
+   for(f in 1:input_list$data$n_fish_fleets) for(r in 1:input_list$data$n_regions)
+     collect_message("Conventional Tag Reporting estimated with ", length(unique(conv_tag_fish_reporting_blocks_mat[r,,f])), " blocks for region ", r, " and fleet ", f)
 
 
   # Populate Data List ------------------------------------------------------
 
-  input_list$data$UseTagging <- UseTagging
+  input_list$data$use_conv_fish_tagging <- use_conv_fish_tagging
   input_list$data$tag_release_indicator <- tag_release_indicator
-  if(UseTagging == 0) input_list$data$n_tag_cohorts <- 0
-  if(UseTagging == 1) input_list$data$n_tag_cohorts <- nrow(tag_release_indicator)
+  if(use_conv_fish_tagging == 0) input_list$data$n_tag_cohorts <- 0
+  if(use_conv_fish_tagging == 1) input_list$data$n_tag_cohorts <- nrow(tag_release_indicator)
   input_list$data$max_tag_liberty <- max_tag_liberty
-  input_list$data$Tagged_Fish <- Tagged_Fish
-  input_list$data$Obs_Tag_Recap <- Obs_Tag_Recap
-  input_list$data$Tag_LikeType <- Tag_LikeType_vals
+  input_list$data$conv_tagged_fish <- conv_tagged_fish
+  input_list$data$obs_conv_tag_fish_recap <- obs_conv_tag_fish_recap
+  input_list$data$conv_fish_tag_like <- conv_fish_tag_like_vals
   input_list$data$mixing_period <- mixing_period
   input_list$data$t_tagging <- t_tagging
-  input_list$data$tag_selex <- tag_selex_vals
-  input_list$data$tag_natmort <- tag_natmort_vals
-  input_list$data$Use_TagRep_Prior <- Use_TagRep_Prior
-  input_list$data$TagRep_Prior <- TagRep_Prior
+  input_list$data$use_conv_tag_fishrep_prior <- use_conv_tag_fishrep_prior
+  input_list$data$conv_tag_fishrep_prior <- conv_tag_fishrep_prior
   input_list$data$move_age_tag_pool <- move_age_tag_pool_vals
   input_list$data$move_sex_tag_pool <- move_sex_tag_pool_vals
-  input_list$data$Tag_Reporting_blocks <- Tag_Reporting_blocks_mat
+  input_list$data$conv_tag_fish_reporting_blocks <- conv_tag_fish_reporting_blocks_mat
 
   # Populate Parameter List ------------------------------------------------------
 
@@ -516,23 +564,23 @@ Setup_Mod_Tagging <- function(input_list,
   else input_list$par$ln_conv_tag_shed <- -1000
 
   # tag overdispersion parameter
-  if("ln_tag_theta" %in% names(starting_values)) input_list$par$ln_tag_theta <- starting_values$ln_tag_theta
-  else input_list$par$ln_tag_theta <- 0
+  if("ln_conv_fish_tag_theta" %in% names(starting_values)) input_list$par$ln_conv_fish_tag_theta <- starting_values$ln_conv_fish_tag_theta
+  else input_list$par$ln_conv_fish_tag_theta <- 0
 
   # tag reporting rate parameters
-  max_tagrep_blks <- max(apply(input_list$data$Tag_Reporting_blocks, 1, FUN = function(x) length(unique(x)))) # figure out maximum number of tag reporting rate blocks for each region
-  if("Tag_Reporting_Pars" %in% names(starting_values)) input_list$par$Tag_Reporting_Pars <- starting_values$Tag_Reporting_Pars
-  else input_list$par$Tag_Reporting_Pars <- array(0, dim = c(input_list$data$n_regions, max_tagrep_blks)) # specified at 0.5 in inverse logit space
+  max_tagrep_blks <- max(apply(input_list$data$conv_tag_fish_reporting_blocks, c(1,3), FUN = function(x) length(unique(x)))) # figure out maximum number of tag reporting rate blocks for each region and fleet
+  if("conv_tag_fish_reporting_pars" %in% names(starting_values)) input_list$par$conv_tag_fish_reporting_pars <- starting_values$conv_tag_fish_reporting_pars
+  else input_list$par$conv_tag_fish_reporting_pars <- array(0, dim = c(input_list$data$n_regions, max_tagrep_blks, input_list$data$n_fish_fleets)) # specified at 0.5 in inverse logit space
 
 
   # Mapping Options ---------------------------------------------------------
-  input_list <- do_Init_Tag_Mort_mapping(input_list, Init_Tag_Mort_spec)
-  input_list <- do_Tag_Shed_mapping(input_list, Tag_Shed_spec)
-  input_list <- do_tag_theta_mapping(input_list)
-  input_list <- do_Tag_Reporting_Pars_mapping(input_list, TagRep_spec)
+  input_list <- do_conv_init_tag_mort_mapping(input_list, init_conv_tag_mort_spec)
+  input_list <- do_conv_tag_shed_mapping(input_list, conv_tag_shed_spec)
+  input_list <- do_conv_tag_theta_mapping(input_list)
+  input_list <- do_conv_tag_fish_reporting_pars_mapping(input_list, conv_tagrep_spec)
 
   # Print Messages ----------------------------------------------------------
-  if(input_list$verbose && UseTagging == 1) for(msg in messages_list) message(msg)
+  if(input_list$verbose && use_conv_fish_tagging == 1) for(msg in messages_list) message(msg)
 
   return(input_list)
 }

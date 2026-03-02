@@ -19,6 +19,11 @@
 #' @param n_seas Integer. Number of seasons
 #' @param seasdur Vector of n_seas length. Duration of season, expressed as a fraction of the year. Default is 1 if 1 season, or 1 / n_seas if n_seas > 1
 #' @param n_pop Integer. Number of populations
+#' @param natal_region Integer vector of length \code{n_pop}. Maps each population
+#'   to its natal region (1-indexed). Defaults to \code{rep(1, n_pop)} when
+#'   \code{n_regions == 1}, or \code{seq_len(n_pop)} when \code{n_pop == n_regions}.
+#'   Must be user-specified when \code{n_pop > n_regions} and \code{n_regions > 1},
+#'   as multiple populations will share a natal region and no sensible default exists.
 #'
 #' @return
 #' A list containing the specified dimension values, with elements:
@@ -36,6 +41,7 @@ Setup_Sim_Dim <- function(n_sims,
                           n_pop = 1,
                           n_seas = 1,
                           n_regions,
+                          natal_region = NULL,
                           n_ages,
                           n_lens = NULL,
                           n_obs_ages = n_ages,
@@ -51,10 +57,21 @@ Setup_Sim_Dim <- function(n_sims,
 
   if(n_sexes > 2) stop("The number of sexes modelled cannot be larger than 2!")
 
+  if(is.null(natal_region)) {
+    if(n_regions == 1) {
+      natal_region <- rep(1, n_pop) # all home to region 1
+    } else if(n_pop == n_regions) {
+      natal_region <- seq_len(n_pop)       # 1:1 mapping
+    } else {
+      stop("natal_region must be specified when n_pop != n_regions and n_regions > 1")
+    }
+  }
+
   # output dimensions into list
   sim_list$n_sims <- n_sims
   sim_list$n_yrs <- n_yrs
   sim_list$n_pop <- n_pop
+  sim_list$natal_region <- natal_region
   sim_list$n_seas <- n_seas
   sim_list$n_regions <- n_regions
   sim_list$n_ages <- n_ages
@@ -86,6 +103,11 @@ Setup_Sim_Dim <- function(n_sims,
 #' @param n_seas Integer, Number of seasons
 #' @param seasdur Vector of n_seas length. Duration of season, expressed as a fraction of the year. Default is 1 if 1 season, or 1 / n_seas if n_seas > 1
 #' @param n_pop Integer, Number of populations
+#' @param natal_region Integer vector of length \code{n_pop}. Maps each population
+#'   to its natal region (1-indexed). Defaults to \code{rep(1, n_pop)} when
+#'   \code{n_regions == 1}, or \code{seq_len(n_pop)} when \code{n_pop == n_regions}.
+#'   Must be user-specified when \code{n_pop > n_regions} and \code{n_regions > 1},
+#'   as multiple populations will share a natal region and no sensible default exists.
 #'
 #' @returns A list containing three named elements:
 #' \describe{
@@ -99,6 +121,7 @@ Setup_Mod_Dim <- function(years,
                           ages,
                           lens,
                           n_pop = 1,
+                          natal_region = NULL,
                           n_seas = 1,
                           seasdur = if(n_seas == 1) 1 else rep(1 / n_seas, n_seas),
                           n_regions,
@@ -114,10 +137,21 @@ Setup_Mod_Dim <- function(years,
   # Create empty list
   input_list <- list(data = list(), par = list(), map = list())
 
+  if(is.null(natal_region)) {
+    if(n_regions == 1) {
+      natal_region <- rep(1, n_pop) # all home to region 1
+    } else if(n_pop == n_regions) {
+      natal_region <- seq_len(n_pop)       # 1:1 mapping
+    } else {
+      stop("natal_region must be specified when n_pop != n_regions and n_regions > 1")
+    }
+  }
+
   # ouput variables into list
   input_list$data$years <- years
   input_list$data$n_pop <- n_pop
   input_list$data$n_regions <- n_regions
+  input_list$data$natal_region <- natal_region
   input_list$data$ages <- ages
   input_list$data$lens <- if(is.null(lens)) 1 else lens
   input_list$data$n_sexes <- n_sexes

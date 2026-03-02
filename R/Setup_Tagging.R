@@ -22,7 +22,7 @@
 #' @param max_liberty Maximum number of years-at-liberty tracked for each tag
 #'   cohort. Default is `sim_list$n_ages / 2`.
 #'
-#' @param tag_release_indicator Data frame defining tag release events
+#' @param conv_tag_release_indicator Data frame defining tag release events
 #'   (i.e., tag cohorts). Default expands across all regions, years, and
 #'   seasons in `sim_list`. Must contain columns:
 #'   \describe{
@@ -31,9 +31,9 @@
 #'     \item{tag_seas}{Season of release}
 #'   }
 #'
-#' @param tag_release_platform Character matrix specifying the release
+#' @param conv_tag_release_platform Character matrix specifying the release
 #'   platform and fleet number associated with each tag release event.
-#'   Rows must align with `tag_release_indicator`. The first column
+#'   Rows must align with `conv_tag_release_indicator`. The first column
 #'   (`platform`) must be one of:
 #'   \describe{
 #'     \item{"population"}{Tags are released directly into the population
@@ -95,8 +95,8 @@ Setup_Sim_Tagging <- function(n_tags = NULL,
                               n_tags_rel_input = NULL,
                               use_conv_fish_tagging = 0,
                               max_liberty = sim_list$n_ages / 2,
-                              tag_release_indicator = expand.grid(regions = 1:sim_list$n_regions, tag_years = 1:sim_list$n_yrs, tag_seas = 1:sim_list$n_seas),
-                              tag_release_platform = matrix(c("survey", "1"), nrow = nrow(tag_release_indicator),  ncol = 2, byrow = TRUE,dimnames = list(NULL, c("platform", "fleet"))),
+                              conv_tag_release_indicator = expand.grid(regions = 1:sim_list$n_regions, tag_years = 1:sim_list$n_yrs, tag_seas = 1:sim_list$n_seas),
+                              conv_tag_release_platform = matrix(c("survey", "1"), nrow = nrow(conv_tag_release_indicator),  ncol = 2, byrow = TRUE,dimnames = list(NULL, c("platform", "fleet"))),
                               t_tagging = 1,
                               ln_init_conv_tag_mort = -1000,
                               ln_conv_tag_shed = -1000,
@@ -126,12 +126,12 @@ Setup_Sim_Tagging <- function(n_tags = NULL,
   sim_list$t_tagging <- t_tagging # time of tagging
   sim_list$ln_init_conv_tag_mort <- ln_init_conv_tag_mort # tag induced mortality
   sim_list$ln_conv_tag_shed <- ln_conv_tag_shed # tag shedding
-  sim_list$tag_release_indicator <- tag_release_indicator # tag release indicator (by tag years and regions = a tag cohort)
-  sim_list$tag_release_platform <- tag_release_platform # how tags are released
-  sim_list$n_tag_rel_events <- nrow(tag_release_indicator) # number of tag release events - tag years x tag region (tag cohorts)
+  sim_list$conv_tag_release_indicator <- conv_tag_release_indicator # tag release indicator (by tag years and regions = a tag cohort)
+  sim_list$conv_tag_release_platform <- conv_tag_release_platform # how tags are released
+  sim_list$n_tag_rel_events <- nrow(conv_tag_release_indicator) # number of tag release events - tag years x tag region (tag cohorts)
 
   # Containers
-  sim_list$conv_conv_tagged_fish <-
+  sim_list$conv_tagged_fish <- sim_list$conv_tagged_fish_attr <-
     array(0, dim = c(sim_list$n_tag_rel_events, sim_list$n_pop,
                      sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # number of tagged fish
 
@@ -227,6 +227,12 @@ do_conv_tag_fish_reporting_pars_mapping <- function(input_list, conv_tagrep_spec
       if(!conv_tagrep_spec %in% c("est_all", "est_shared_r", "est_shared_f", "est_shared_r_f", "fix"))
         stop("Tag Reporting Specification is not correctly specified. Needs to be fix, est_all, est_shared_r, est_shared_f, or est_shared_r_f")
 
+      if(any(input_list$data$use_conv_fish_tagging == 0) && conv_tagrep_spec %in% c("est_all", "est_shared_r"))
+        stop("One or more fishery fleets have no tagging data (use_conv_fish_tagging = 0), but ",
+             "conv_tagrep_spec = '", conv_tagrep_spec, "' estimates fleet-specific reporting rates, ",
+             "which are unidentifiable for fleets without data. ",
+             "Use 'est_shared_f' or 'est_shared_r_f' to share reporting rates across fleets.")
+
       # Block consistency checks for sharing specs
       if(conv_tagrep_spec == "est_shared_r") {
         # blocks must match across regions within each fleet
@@ -313,6 +319,7 @@ do_conv_tag_fish_reporting_pars_mapping <- function(input_list, conv_tagrep_spec
   return(input_list)
 }
 
+
 #' Set Up Model-Based Conventional Tagging
 #'
 #' Configures conventional tagging data, likelihood structure, parameter
@@ -320,100 +327,173 @@ do_conv_tag_fish_reporting_pars_mapping <- function(input_list, conv_tagrep_spec
 #'
 #' This function:
 #' \itemize{
-#'   \item Validates tagging data inputs,
-#'   \item Defines likelihood type,
-#'   \item Specifies parameterizations for tag mortality and shedding,
-#'   \item Configures reporting-rate blocks and sharing structure,
-#'   \item Applies optional priors to reporting parameters.
+#'   \item Validates tagging data inputs and dimensions,
+#'   \item Defines the tag recapture likelihood type,
+#'   \item Specifies parameterizations for tag-induced mortality and chronic shedding,
+#'   \item Configures reporting-rate time blocks and sharing structure,
+#'   \item Applies optional priors to reporting rate parameters.
 #' }
 #'
 #' @param input_list List containing \code{$data}, \code{$par}, and \code{$map}.
 #'
-#' @param use_conv_fish_tagging Integer (0/1) indicating whether tagging data
-#'   are included in model fitting.
+#' @param use_conv_fish_tagging Integer of length n_fish_fleets (0/1) indicating whether conventional
+#'   tagging data for a given fishery fleet are included in model fitting.
 #'
-#' @param tag_release_indicator Matrix [n_tag_cohorts x 3] giving release
-#'   region, year, and season.
+#' @param conv_tag_release_indicator Integer matrix \code{[n_tag_cohorts x 3]} giving
+#'   the release region, year, and season for each tag cohort.
 #'
-#' @param max_tag_liberty Maximum number of years-at-liberty included in fitting.
+#' @param max_tag_liberty Maximum number of years-at-liberty to include in
+#'   the likelihood. Tag recaptures beyond this horizon are ignored.
 #'
-#' @param conv_tagged_fish Array describing tagged fish releases with
-#'   dimensions:
-#'   \code{[n_tag_cohorts, n_pop, n_ages, n_sexes]}.
+#' @param conv_tagged_fish Array of tagged fish released with dimensions
+#'   \code{[n_tag_cohorts, n_pop, n_ages, n_sexes]}. See
+#'   \code{conv_fish_tag_attr} for requirements when certain dimensions are
+#'   not attended.
 #'
-#' @param obs_conv_tag_fish_recap Array of observed recaptures with dimensions:
-#'   \code{[max_tag_liberty, n_seas, n_tag_cohorts, n_pop,
-#'           n_regions, n_ages, n_sexes]}.
+#' @param obs_conv_tag_fish_recap Array of observed tag recaptures with
+#'   dimensions \code{[max_tag_liberty, n_seas, n_tag_cohorts, n_pop,
+#'   n_regions, n_ages, n_sexes]}. See \code{conv_fish_tag_attr} for
+#'   requirements when certain dimensions are not attended.
 #'
-#' @param conv_fish_tag_like Character specifying likelihood type.
-#'   One of:
-#'   \code{"Poisson"}, \code{"NegBin"},
+#' @param conv_fish_tag_like Character string specifying the tag recapture
+#'   likelihood. One of: \code{"Poisson"}, \code{"NegBin"},
 #'   \code{"Multinomial_Release"}, \code{"Multinomial_Recapture"},
 #'   \code{"Dirichlet-Multinomial_Release"},
 #'   \code{"Dirichlet-Multinomial_Recapture"}.
 #'
-#' @param mixing_period Minimum years (or seasons if seasonal model)
-#'   post-release included in fitting.
+#' @param mixing_period Minimum number of years (or seasons in a seasonal
+#'   model) post-release before recaptures are included in fitting. This
+#'   allows time for tags to mix within the population before informing
+#'   movement estimation.
 #'
-#' @param t_tagging Numeric scalar in [0,1]. Fraction of the season remaining
-#'   when tags are released:
+#' @param t_tagging Numeric scalar in \code{[0, 1]} giving the fraction of
+#'   the season remaining at the time of tag release:
 #'   \itemize{
-#'     \item 1 = start of season
-#'     \item 0.5 = mid-season
-#'     \item 0 = end of season
+#'     \item \code{1} = released at the start of the season.
+#'     \item \code{0.5} = released at mid-season.
+#'     \item \code{0} = released at the end of the season.
 #'   }
 #'
 #' @param use_conv_tag_fishrep_prior Integer (0/1) indicating whether priors
-#'   are applied to reporting parameters.
+#'   are applied to reporting rate parameters.
 #'
 #' @param conv_tag_fishrep_prior Data frame specifying priors on reporting
-#'   parameters. Must include columns:
-#'   \code{region}, \code{block}, \code{fleet},
-#'   \code{mu}, \code{sd}, and \code{type}.
+#'   rate parameters. Required columns: \code{region}, \code{block},
+#'   \code{fleet}, \code{mu}, \code{sd}, \code{type}.
 #'
-#' @param move_age_tag_pool List defining age pooling structure for tagging
-#'   likelihood. Examples:
-#'   \itemize{
-#'     \item \code{list(1:5, 6:10)}
-#'     \item \code{"all"}
-#'     \item \code{as.list(1:n_ages)}
-#'   }
+#' @param conv_fish_tag_attr Character string specifying which population
+#'   dimensions are retained (i.e., "attended") in the tag recapture
+#'   observation likelihood. Built from any combination of \code{"p"}
+#'   (population), \code{"a"} (age), and \code{"s"} (sex), joined by
+#'   underscores (e.g., \code{"p_a_s"}, \code{"a"}, \code{"p_a"}).
 #'
-#' @param move_sex_tag_pool List defining sex pooling structure.
+#'   When a dimension is \strong{attended} (present in the string), tag
+#'   recaptures are resolved at that resolution and the likelihood is fit
+#'   against dimension-specific recapture rates.
 #'
-#' @param init_conv_tag_mort_spec Character string \code{"fix"} or \code{"est"}
-#'   specifying whether initial tag mortality is fixed or estimated.
+#'   When a dimension is \strong{not attended}, the user is responsible for
+#'   ensuring that both \code{conv_tagged_fish} and
+#'   \code{obs_conv_tag_fish_recap} have all released and recaptured fish
+#'   placed into index 1 of that dimension, with all other indices set to
+#'   zero. For example, if age is not attended, all released and recaptured
+#'   tags should be placed into age 1 regardless of the true age of the fish;
+#'   if population is not attended, all tags should be placed into population
+#'   1. The observation likelihood then marginalizes over the unattended
+#'   dimension, fitting only marginal recapture rates. Note that estimating
+#'   dimension-specific movement or selectivity rates is generally much harder
+#'   when a dimension is marginalized in this way, as the data no longer
+#'   directly inform those quantities.
 #'
-#' @param conv_tag_shed_spec Character string \code{"fix"} or \code{"est"}
-#'   specifying whether chronic tag shedding is fixed or estimated.
+#'   The pooling arguments \code{move_age_tag_pool}, \code{move_sex_tag_pool},
+#'   and \code{move_pop_tag_pool} must be consistent with this argument: any
+#'   dimension not attended should be fully pooled (all indices in a single
+#'   group) in the corresponding pooling argument.
 #'
-#' @param conv_tag_fish_reporting_blocks Character vector defining reporting
-#'   rate blocks. Examples:
-#'   \itemize{
-#'     \item \code{"none_Region_1_Fleet_1"}
-#'     \item \code{"Block_2_Year_1-20_Region_1_Fleet_1"}
-#'     \item \code{"Block_3_Year_21-terminal_Region_2_Fleet_2"}
-#'   }
+#'   Use \code{"p_a_s"} to retain full resolution across all three dimensions.
 #'
-#' @param conv_tagrep_spec Character specifying reporting-rate sharing scheme:
+#' @param conv_tag_release_platform Character matrix \code{[n_tag_cohorts x 2]}
+#'   specifying the release platform and associated fleet index for each tag
+#'   cohort. Rows must align with \code{conv_tag_release_indicator}. The first
+#'   column (\code{platform}) must be one of:
 #'   \describe{
-#'     \item{est_all}{Estimate independently for all regions, fleets, and blocks}
-#'     \item{est_shared_r}{Share across regions within fleet}
-#'     \item{est_shared_f}{Share across fleets within region}
-#'     \item{est_shared_r_f}{Share across all regions and fleets}
-#'     \item{fix}{Fix reporting rates}
+#'     \item{\code{"population"}}{Tags are assumed to be released directly into the population (i.e., representative of population age structure),
+#'       independent of any fleet or survey sampling process.}
+#'     \item{\code{"fishery"}}{Tags are assumed to be released through a fishery fleet. The
+#'       corresponding fleet index must be provided in the second column.}
+#'     \item{\code{"survey"}}{Tags are assumed to be released through a survey fleet. The
+#'       corresponding fleet index must be provided in the second column.}
+#'   }
+#'   The second column (\code{fleet}) gives the fleet index when
+#'   \code{platform} is \code{"fishery"} or \code{"survey"}, and should be
+#'   \code{NA} when \code{platform} is \code{"population"}.
+#'
+#' @param move_pop_tag_pool List defining the population pooling structure for
+#'   the tagging likelihood. Each element is an integer vector of population
+#'   indices pooled together (treated as a single group). Must be consistent
+#'   with \code{conv_fish_tag_attr}: when \code{"p"} is not attended, use
+#'   \code{list(1:n_pop)} to pool all populations; when \code{"p"} is
+#'   attended, users can optionally use \code{as.list(1:n_pop)} for population-specific fitting.
+#'
+#' @param move_age_tag_pool List defining the age pooling structure for the
+#'   tagging likelihood. Each element is an integer vector of age indices
+#'   pooled together. Must be consistent with \code{conv_fish_tag_attr}: when
+#'   \code{"a"} is not attended, use \code{list(1:n_ages)} to pool all ages;
+#'   when \code{"a"} is attended, users can optionally use \code{as.list(1:n_ages)} for age-specific
+#'   fitting, or specify custom groupings (e.g., \code{list(1:5, 6:10)}).
+#'
+#' @param move_sex_tag_pool List defining the sex pooling structure for the
+#'   tagging likelihood, following the same conventions as
+#'   \code{move_age_tag_pool}. When \code{"s"} is not attended, use
+#'   \code{list(1:n_sexes)}; when \code{"s"} is attended, users can optionally use
+#'   \code{as.list(1:n_sexes)}.
+#'
+#' @param init_conv_tag_mort_spec Character string specifying whether initial
+#'   tag-induced mortality is \code{"fix"}ed at its starting value or
+#'   \code{"est"}imated.
+#'
+#' @param conv_tag_shed_spec Character string specifying whether chronic tag
+#'   shedding is \code{"fix"}ed at its starting value or \code{"est"}imated.
+#'
+#' @param conv_tag_fish_reporting_blocks Character vector defining time blocks
+#'   for tag reporting rates, specified per region and fleet. Each element
+#'   follows one of two formats:
+#'   \itemize{
+#'     \item \code{"none_Region_r_Fleet_f"} — a single constant reporting rate
+#'       for region \code{r} and fleet \code{f}.
+#'     \item \code{"Block_b_Year_y1-y2_Region_r_Fleet_f"} — block \code{b}
+#'       applies to years \code{y1} through \code{y2} for region \code{r} and
+#'       fleet \code{f}. Use \code{"terminal"} in place of \code{y2} to extend
+#'       the block to the final model year.
 #'   }
 #'
-#' @param ... Optional starting values for tagging parameters
-#'   (\code{ln_init_conv_tag_mort}, \code{ln_conv_tag_shed},
-#'   \code{ln_conv_fish_tag_theta}, \code{conv_tag_fish_reporting_pars}).
+#' @param conv_tagrep_spec Character string specifying the reporting rate
+#'   sharing scheme across regions, fleets, and time blocks:
+#'   \describe{
+#'     \item{\code{"est_all"}}{Estimate independently for each region, fleet,
+#'       and block.}
+#'     \item{\code{"est_shared_r"}}{Share across regions within each fleet and
+#'       block. Requires consistent block structure across regions within each
+#'       fleet.}
+#'     \item{\code{"est_shared_f"}}{Share across fleets within each region and
+#'       block. Requires consistent block structure across fleets within each
+#'       region.}
+#'     \item{\code{"est_shared_r_f"}}{Share across all regions and fleets
+#'       within each block. Requires consistent block structure across all
+#'       regions and fleets.}
+#'     \item{\code{"fix"}}{Fix all reporting rates at their starting values.}
+#'   }
+#'
+#' @param ... Optional named starting values for parameters. Supported names:
+#'   \code{ln_init_conv_tag_mort}, \code{ln_conv_tag_shed},
+#'   \code{ln_conv_fish_tag_theta}, \code{conv_tag_fish_reporting_pars}.
+#'   If not provided, internal defaults are used.
 #'
 #'
 #' @export Setup_Mod_Tagging
 #' @family Model Setup
 Setup_Mod_Tagging <- function(input_list,
-                              use_conv_fish_tagging = 0,
-                              tag_release_indicator = NULL,
+                              use_conv_fish_tagging = rep(0, input_list$data$n_fish_fleets),
+                              conv_tag_release_indicator = NULL,
                               max_tag_liberty = 0,
                               conv_tagged_fish = NA,
                               obs_conv_tag_fish_recap = NA,
@@ -422,12 +502,15 @@ Setup_Mod_Tagging <- function(input_list,
                               t_tagging = 1,
                               use_conv_tag_fishrep_prior = 0,
                               conv_tag_fishrep_prior = NULL,
+                              move_pop_tag_pool = as.list(1:input_list$data$n_pop),
                               move_age_tag_pool = as.list(1:length(input_list$data$ages)),
                               move_sex_tag_pool = as.list(1:input_list$data$n_sexes),
                               init_conv_tag_mort_spec = NULL,
                               conv_tag_shed_spec = NULL,
                               conv_tagrep_spec = 'fix',
                               conv_tag_fish_reporting_blocks = NULL,
+                              conv_fish_tag_attr = 'p_a_s',
+                              conv_tag_release_platform = NULL,
                               ...
                               ) {
 
@@ -447,12 +530,12 @@ Setup_Mod_Tagging <- function(input_list,
     if(conv_tagrep_spec == 'fix') warning("Note that tag reporting rates is fixed. Specify est_all or est_shared_r if this was not the intention.")
 
     # Check data
-    check_data_dimensions(conv_tagged_fish, n_tag_cohorts = nrow(tag_release_indicator), n_ages = length(input_list$data$ages),
+    check_data_dimensions(conv_tagged_fish, n_tag_cohorts = nrow(conv_tag_release_indicator), n_ages = length(input_list$data$ages),
                           n_sexes = input_list$data$n_sexes, n_pop = input_list$data$n_pop, what = 'conv_tagged_fish')
 
     check_data_dimensions(obs_conv_tag_fish_recap, max_tag_liberty = max_tag_liberty,  n_pop = input_list$data$n_pop,
-                          n_seas = input_list$data$n_seas, n_regions = input_list$data$n_regions,
-                          n_tag_cohorts = nrow(tag_release_indicator), n_ages = length(input_list$data$ages),
+                          n_seas = input_list$data$n_seas, n_regions = input_list$data$n_regions, n_fish_fleets = input_list$data$n_fish_fleets,
+                          n_tag_cohorts = nrow(conv_tag_release_indicator), n_ages = length(input_list$data$ages),
                           n_sexes = input_list$data$n_sexes, what = 'obs_conv_tag_fish_recap')
   }
 
@@ -479,7 +562,11 @@ Setup_Mod_Tagging <- function(input_list,
 
 
   # Tag Pooling Options -----------------------------------------------------
-  # If movement is pooled either across sexes or ages
+  # If movement is pooled either across pops, sexes or ages
+  if(is.character(move_pop_tag_pool)){
+    if(move_pop_tag_pool == "all") move_pop_tag_pool_vals = list(1:input_list$data$n_pop)
+  } else move_pop_tag_pool_vals = move_pop_tag_pool
+
   if(is.character(move_age_tag_pool)){
     if(move_age_tag_pool == "all") move_age_tag_pool_vals = list(input_list$data$ages)
   } else move_age_tag_pool_vals = move_age_tag_pool
@@ -488,6 +575,30 @@ Setup_Mod_Tagging <- function(input_list,
     if(move_sex_tag_pool == "all") move_sex_tag_pool_vals = list(1:input_list$data$n_sexes)
   } else move_sex_tag_pool_vals = move_sex_tag_pool
 
+  # Enforce consistency between pooling structure and conv_fish_tag_attr.
+  # If a dimension is not attended, it must be fully pooled (single group).
+  # Warn the user and correct automatically if not.
+  attr_parts <- strsplit(conv_fish_tag_attr, "_")[[1]]
+
+  if(!"p" %in% attr_parts && length(move_pop_tag_pool_vals) > 1) {
+    warning("move_pop_tag_pool has more than one group but 'p' is not attended in conv_fish_tag_attr. ",
+            "Overriding to list(1:n_pop) to pool all populations.")
+    move_pop_tag_pool_vals <- list(1:input_list$data$n_pop)
+  }
+
+  if(!"a" %in% attr_parts && length(move_age_tag_pool_vals) > 1) {
+    warning("move_age_tag_pool has more than one group but 'a' is not attended in conv_fish_tag_attr. ",
+            "Overriding to list(1:n_ages) to pool all ages.")
+    move_age_tag_pool_vals <- list(seq_along(input_list$data$ages))
+  }
+
+  if(!"s" %in% attr_parts && length(move_sex_tag_pool_vals) > 1) {
+    warning("move_sex_tag_pool has more than one group but 's' is not attended in conv_fish_tag_attr. ",
+            "Overriding to list(1:n_sexes) to pool all sexes.")
+    move_sex_tag_pool_vals <- list(1:input_list$data$n_sexes)
+  }
+
+  collect_message("Conventional Tagging data are fit to ", length(move_pop_tag_pool_vals), " population groups")
   collect_message("Conventional Tagging data are fit to ", length(move_age_tag_pool_vals), " age groups")
   collect_message("Conventional Tagging data are fit to ", length(move_sex_tag_pool_vals), " sex groups")
 
@@ -498,7 +609,6 @@ Setup_Mod_Tagging <- function(input_list,
     for(i in 1:length(conv_tag_fish_reporting_blocks)) {
 
       # Extract out components from list
-      # conv_tag_fish_reporting_blocks = c('none_Region_1_Fleet_1', 'Block_2_Year_1-35_Region2_Fleet_2')
       tmp <- conv_tag_fish_reporting_blocks[i]
       tmp_vec <- unlist(strsplit(tmp, "_"))
 
@@ -538,9 +648,9 @@ Setup_Mod_Tagging <- function(input_list,
   # Populate Data List ------------------------------------------------------
 
   input_list$data$use_conv_fish_tagging <- use_conv_fish_tagging
-  input_list$data$tag_release_indicator <- tag_release_indicator
+  input_list$data$conv_tag_release_indicator <- conv_tag_release_indicator
   if(use_conv_fish_tagging == 0) input_list$data$n_tag_cohorts <- 0
-  if(use_conv_fish_tagging == 1) input_list$data$n_tag_cohorts <- nrow(tag_release_indicator)
+  if(use_conv_fish_tagging == 1) input_list$data$n_tag_cohorts <- nrow(conv_tag_release_indicator)
   input_list$data$max_tag_liberty <- max_tag_liberty
   input_list$data$conv_tagged_fish <- conv_tagged_fish
   input_list$data$obs_conv_tag_fish_recap <- obs_conv_tag_fish_recap
@@ -549,9 +659,12 @@ Setup_Mod_Tagging <- function(input_list,
   input_list$data$t_tagging <- t_tagging
   input_list$data$use_conv_tag_fishrep_prior <- use_conv_tag_fishrep_prior
   input_list$data$conv_tag_fishrep_prior <- conv_tag_fishrep_prior
+  input_list$data$move_pop_tag_pool <- move_pop_tag_pool_vals
   input_list$data$move_age_tag_pool <- move_age_tag_pool_vals
   input_list$data$move_sex_tag_pool <- move_sex_tag_pool_vals
   input_list$data$conv_tag_fish_reporting_blocks <- conv_tag_fish_reporting_blocks_mat
+  input_list$data$conv_fish_tag_attr <- conv_fish_tag_attr
+  input_list$data$conv_tag_release_platform <- conv_tag_release_platform
 
   # Populate Parameter List ------------------------------------------------------
 
@@ -572,6 +685,9 @@ Setup_Mod_Tagging <- function(input_list,
   if("conv_tag_fish_reporting_pars" %in% names(starting_values)) input_list$par$conv_tag_fish_reporting_pars <- starting_values$conv_tag_fish_reporting_pars
   else input_list$par$conv_tag_fish_reporting_pars <- array(0, dim = c(input_list$data$n_regions, max_tagrep_blks, input_list$data$n_fish_fleets)) # specified at 0.5 in inverse logit space
 
+  # For fleets with no tagging data, set reporting pars to -1000 on the logit scale
+  # (effectively zero reporting probability; these will be fixed via map)
+  if(any(input_list$data$use_conv_fish_tagging == 0)) input_list$par$conv_tag_fish_reporting_pars[,, which(input_list$data$use_conv_fish_tagging == 0)] <- -1000
 
   # Mapping Options ---------------------------------------------------------
   input_list <- do_conv_init_tag_mort_mapping(input_list, init_conv_tag_mort_spec)

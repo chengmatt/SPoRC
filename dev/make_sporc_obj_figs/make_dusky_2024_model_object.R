@@ -18,6 +18,8 @@ rep_dat <- readLines(here::here("dev", "dev_data", "dusky.rep"))
 # Setup Model -------------------------------------------------------------
 
 input_list <- Setup_Mod_Dim(
+  # Number of populations
+  n_pop = sgl_rg_dusky_data$n_pop,
   years = sgl_rg_dusky_data$years,
   # vector of years
   ages = sgl_rg_dusky_data$mod_ages,
@@ -46,7 +48,7 @@ input_list <- Setup_Mod_Rec(
   # do bias ramp (0 == don't do bias ramp, 1 == do bias ramp)
   sigmaR_switch = 1,
   # when to switch from early to late sigmaR (switch in first year)
-  ln_sigmaR = rep(-0.1068576 , 2), # 2 values for early and late sigma
+  ln_sigmaR = array(-0.1068576, dim = c(2, input_list$data$n_pop, input_list$data$n_regions)),
   # Starting values for early and late sigmaR
   rec_model = "mean_rec",
   sigmaR_spec = "fix",
@@ -258,6 +260,34 @@ parameters <- input_list$par
 mapping <- input_list$map
 
 # Optimize Values ---------------------------------------------------------
+# n_ages <- length(input_list$data$ages)
+# par_dat <- R2admb::read_pars(here::here("dev", "dev_data", "dusky"))
+# parameters$ln_global_R0 <- par_dat$coefficients[names(par_dat$coefficients) == 'log_mean_rec']
+# parameters$ln_sigmaR[] <- log(par_dat$coefficients[names(par_dat$coefficients) == 'sigr'])
+# parameters$ln_F_mean[] <- par_dat$coefficients[names(par_dat$coefficients) == 'log_avg_F']
+# parameters$ln_F_devs[] <- par_dat$coefficients[str_detect(names(par_dat$coefficients), "log_F_devs")]
+# parameters$ln_InitDevs[,,1:(n_ages - 2)] <- rev(par_dat$coefficients[str_detect(names(par_dat$coefficients), "log_rec_dev")][1:(n_ages - 2)])
+# parameters$ln_RecDevs[] <- par_dat$coefficients[str_detect(names(par_dat$coefficients), "log_rec_dev")][-c(1:(n_ages - 2))]
+# parameters$ln_srv_q[] <- par_dat$coefficients[str_detect(names(par_dat$coefficients), "q_srv1")]
+# parameters$ln_fish_fixed_sel_pars[] <- log(c(par_dat$coefficients[str_detect(names(par_dat$coefficients), "a50")][1], par_dat$coefficients[str_detect(names(par_dat$coefficients), "delta")][1]))
+# parameters$ln_srv_fixed_sel_pars[] <- log(c(par_dat$coefficients[str_detect(names(par_dat$coefficients), "a50")][3], par_dat$coefficients[str_detect(names(par_dat$coefficients), "delta")][3]))
+#
+# # Fit model
+# dusky_rtmb_model <- fit_model(data,
+#                               parameters,
+#                               mapping,
+#                               random = NULL,
+#                               newton_loops = 3,
+#                               silent = FALSE, do_optim = F
+# )
+#
+# plot(dusky_rtmb_model$rep$NAA[1,1,1,1,,1], type = 'l')
+# lines(rep_dat_rtem$natage[1,-1])
+#
+# plot(as.vector(dusky_rtmb_model$rep$SSB), col = 'red') # RTMB
+# lines((rep_dat_rtem$tseries[6,]))
+#
+# SPoRC_rtmb(parameters, data)
 
 # Fit model
 dusky_rtmb_model <- fit_model(data,

@@ -312,6 +312,14 @@ Setup_Mod_Biologicals <- function(input_list,
   if(!Use_M_prior %in% c(0,1)) stop("Values for Use_M_prior are not valid. They are == 0 (don't use prior), or == 1 (use prior)")
   collect_message("Natural Mortality priors are: ", ifelse(Use_M_prior == 0, "Not Used", "Used"))
 
+  if(Use_M_prior == 1) {
+    required_cols <- c("popblk", "regionblk", "yearblk", "ageblk", "sexblk", "mu", "sd")
+    missing_cols <- setdiff(required_cols, names(M_prior))
+    if(length(missing_cols) > 0) {
+      stop("M_prior is missing required columns: ", paste(missing_cols, collapse = ", "))
+    }
+  }
+
   # Checking ageing error dimensions
   if(!is.null(AgeingError)) {
     if(length(dim(AgeingError)) == 2) check_data_dimensions(AgeingError, n_ages = length(input_list$data$ages), what = 'AgeingError') # user supplied ageing error is not time-varying

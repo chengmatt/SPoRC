@@ -12,6 +12,10 @@ rep_dat_rtem <- PBSmodelling::readList(here::here("dev", "dev_data", "dusky_rtem
 
 sgl_rg_dusky_data <- list()
 
+# Number of populations
+sgl_rg_dusky_data$n_pop <- 1
+n_pop <- 1
+
 # Number of regions
 sgl_rg_dusky_data$n_regions <- 1
 n_regions <- 1
@@ -149,19 +153,19 @@ oac_srv1_size <- matrix(flat_values, ncol = ncol, byrow = TRUE)
 # Setup RTMB inputs -------------------------------------------------------
 
 # biologicals
-sgl_rg_dusky_data$waa_arr <- array(0, dim = c(n_regions, n_years, n_seas, n_ages, n_sexes))
-sgl_rg_dusky_data$fix_natmort <- array(0, dim = c(n_regions, n_years, n_ages, n_sexes))
-sgl_rg_dusky_data$mataa_arr <- array(0, dim = c(n_regions, n_years, n_seas, n_ages, n_sexes))
-sgl_rg_dusky_data$sizeage <- array(0, dim = c(n_regions, n_years, n_seas, n_lens, n_ages, n_sexes))
+sgl_rg_dusky_data$waa_arr <- array(0, dim = c(n_pop, n_regions, n_years, n_seas, n_ages, n_sexes))
+sgl_rg_dusky_data$fix_natmort <- array(0, dim = c(n_pop,n_regions, n_years, n_ages, n_sexes))
+sgl_rg_dusky_data$mataa_arr <- array(0, dim = c(n_pop,n_regions, n_years, n_seas, n_ages, n_sexes))
+sgl_rg_dusky_data$sizeage <- array(0, dim = c(n_pop,n_regions, n_years, n_seas, n_lens, n_ages, n_sexes))
 
 for(r in 1:n_regions) {
   for(y in 1:n_years) {
     for(s in 1:sgl_rg_dusky_data$n_sexes) {
-      sgl_rg_dusky_data$fix_natmort[r,y,,s] <- 0.07 # natural mortality
+      sgl_rg_dusky_data$fix_natmort[,r,y,,s] <- 0.07 # natural mortality
       for(seas in 1:n_seas) {
-        sgl_rg_dusky_data$waa_arr[r,y,seas,,s] <- waa # weight at age
-        sgl_rg_dusky_data$mataa_arr[r,y,seas,,s] <- mat # maturity at age
-        sgl_rg_dusky_data$sizeage[r,y,seas,,,s] <- t(size_age_matrix) # size age transition
+        sgl_rg_dusky_data$waa_arr[,r,y,seas,,s] <- waa # weight at age
+        sgl_rg_dusky_data$mataa_arr[,r,y,seas,,s] <- mat # maturity at age
+        sgl_rg_dusky_data$sizeage[,r,y,seas,,,s] <- t(size_age_matrix) # size age transition
       }
     } # end s loop
   } # end y loop
@@ -232,3 +236,4 @@ sgl_rg_dusky_data$ISS_SrvLenComps[1,which(sgl_rg_dusky_data$years %in% bts_catch
 
 # Write data
 usethis::use_data(sgl_rg_dusky_data, internal = FALSE, overwrite = TRUE)
+

@@ -646,7 +646,8 @@ Setup_Mod_Movement <- function(input_list,
 
   # define for continuous varying movement
   cont_move_map <- data.frame(
-    type = c("none", "iid_y", "iid_a", "iid_y_a", "iid_y_a_s", "iid_y_seas_a_s", "iid_p_y", "iid_p_a", "iid_p_y_a", "iid_p_y_a_s", "iid_p_y_seas_a_s"),
+    type = c("none", "iid_y", "iid_a", "iid_y_a", "iid_y_a_s", "iid_y_seas_a_s",
+             "iid_p_y", "iid_p_a", "iid_p_y_a", "iid_p_y_a_s", "iid_p_y_seas_a_s"),
     num = 0:10
   )
   cont_vary_movement_val <- cont_move_map$num[cont_move_map$type == cont_vary_movement] # look for number corresponding to specified option

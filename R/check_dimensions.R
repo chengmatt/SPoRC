@@ -145,8 +145,8 @@ check_data_dimensions <- function(x,
   }
 
   if(what %in% c("obs_conv_tag_fish_recap")) {
-    if(sum(dim(x) == c(max_tag_liberty, n_seas, n_tag_cohorts, n_pop, n_regions, n_ages, n_sexes)) != 7)
-      stop(paste(what, " is not the correct dimension. Should be max_tag_liberty, n_seas, n_tag_cohorts, n_pop, n_regions, n_ages, n_sexes"))
+    if(sum(dim(x) == c(max_tag_liberty, n_seas, n_tag_cohorts, n_pop, n_regions, n_ages, n_sexes, n_fish_fleets)) != 8)
+      stop(paste(what, " is not the correct dimension. Should be max_tag_liberty, n_seas, n_tag_cohorts, n_pop, n_regions, n_ages, n_sexes, n_fish_fleets"))
   }
 
 }

@@ -35,6 +35,8 @@
 #' @param sexratio_f Array of sex-ratio values for females (n_pop x n_regions)
 #' @param n_pop Number of populations
 #' @param sgl_seas_spawning_movement Array of spawning movement probabilities between regions by age (`[pop, origin, destination, age]` or alternatively, `[n_pop, n_regions, n_regions, age]`)
+#' @param natal_region Integer vector of length \code{n_pop}. Maps each population
+#'   to its natal region (1-indexed).
 #'
 #' @details
 #' The function returns region-specific deterministic recruitment estimates
@@ -72,6 +74,7 @@ Get_Det_Recruitment <- function(recruitment_model,
                                 fish_sel,
                                 n_seas,
                                 spawn_seas,
+                                natal_region,
                                 seasdur,
                                 sexratio_f
 ) {
@@ -79,7 +82,10 @@ Get_Det_Recruitment <- function(recruitment_model,
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
-  if(recruitment_model == 0) rec = R0 * Rec_Prop # mean recruitment apportioned across n_pop and n_regions
+  if(recruitment_model == 0) {
+    rec = array(0, dim = c(n_pop, n_regions))
+    for(p in 1:n_pop) rec[p,] = R0[p] * Rec_Prop[p,] # mean recruitment apportioned across n_pop and n_regions
+  }
 
   # Beverton-Holt
   if(recruitment_model == 1) {
@@ -459,10 +465,14 @@ Get_Det_Recruitment <- function(recruitment_model,
 
     # Local Density Dependence w/ more than 1 population (using h[p,p] since a given population has the same steepness)
     if(rec_dd == 0 && n_pop > 1) {
-      for(p in 1:n_pop) rec[p,] = (4 * h[p,p] *  R0[p] * sum(SSB[p,]) ) / ( (1 - h[p,p] ) * sum(S0[p,]) + (5 * h[p,p] -1) * sum(SSB[p,])) * Rec_Prop[p,]
+      for(p in 1:n_pop) rec[p,] = (4 * h[p,natal_region[p]] *  R0[p] * sum(SSB[p,]) ) /
+          ( (1 - h[p,natal_region[p]] ) * sum(S0[p,]) + (5 * h[p,natal_region[p]] -1) * sum(SSB[p,])) * Rec_Prop[p,]
     }
 
   } # end Beverton-Holt
+
+  # coerce into array at the end
+  rec = array(rec, dim = c(n_pop, n_regions))
 
   return(rec)
 }

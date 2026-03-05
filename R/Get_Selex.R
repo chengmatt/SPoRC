@@ -1,41 +1,66 @@
 #' Calculate Selectivity
 #'
-#' Computes selectivity using one of several parametric or semi-parametric models.
-#' Supports both constant and time-varying selectivity, including random effects and GMRF-based deviations.
+#' Computes selectivity-at-bin using one of several parametric or
+#' semi-parametric formulations. Supports constant, parameter-varying,
+#' and semi-parametric (GMRF-based) time-varying selectivity structures.
 #'
-#' @param Selex_Model Integer specifying the selectivity model:
+#' @param Selex_Model Integer specifying the parametric selectivity model:
 #'   \describe{
-#'     \item{0}{Logistic selectivity: uses b50 and slope parameters}
-#'     \item{1}{Gamma-shaped (dome) selectivity: uses bin-at-peak and delta parameters}
-#'     \item{2}{Power function selectivity: decreasing selectivity with bin}
-#'     \item{3}{Logistic selectivity using b50 and b95}
-#'     \item{4}{Double-normal (dome-shaped) selectivity with plateau and flexible tails}
+#'     \item{0}{Logistic (b50, slope)}
+#'     \item{1}{Gamma-shaped dome (bin-at-peak, delta)}
+#'     \item{2}{Power function (monotonic decreasing)}
+#'     \item{3}{Logistic (b50, b95 parameterization)}
+#'     \item{4}{Double-normal dome with plateau and flexible tails}
 #'   }
 #'
-#' @param TimeVary_Model Integer specifying time variation structure:
+#' @param TimeVary_Model Integer specifying the temporal deviation structure:
 #'   \describe{
-#'     \item{0}{No time variation (constant or blocked)}
-#'     \item{1}{IID deviations}
-#'     \item{2}{Random walk over time}
-#'     \item{3}{3D AR1-GMRF marginal}
-#'     \item{4}{3D AR1-GMRF conditional}
+#'     \item{0}{No time variation}
+#'     \item{1}{IID parameter deviations}
+#'     \item{2}{Random walk parameter deviations}
+#'     \item{3}{3D AR1-GMRF (marginal)}
+#'     \item{4}{3D AR1-GMRF (conditional)}
 #'     \item{5}{2D AR1-GMRF}
 #'   }
 #'
-#' @param ln_Pars Vector of log-transformed selectivity parameters. Interpretation depends on `Selex_Model`.
-#' @param ln_seldevs Array of selectivity deviations (may be log-scale), dimensioned as:
-#'   [n_regions, n_years, n_bins, n_sexes, 1]. Used for time-varying or semi-parametric selectivity.
-#' @param Region Integer index for region
-#' @param Year Integer index for year
-#' @param Bin Numeric vector of bins to compute selectivity for
-#' @param Sex Integer index for sex
+#' @param ln_Pars Numeric vector of log-scale selectivity parameters.
+#'   Parameter interpretation and ordering depend on `Selex_Model`:
+#'   \describe{
+#'     \item{Model 0}{(ln b50, ln slope)}
+#'     \item{Model 1}{(ln bmax, ln delta)}
+#'     \item{Model 2}{(ln power)}
+#'     \item{Model 3}{(ln b50, ln b95)}
+#'     \item{Model 4}{Six parameters controlling peak, plateau width,
+#'                    ascending/descending widths, and tail selectivity}
+#'   }
 #'
-#' @return A numeric vector of selectivity values corresponding to the bins specified in the model.
+#' @param ln_seldevs Array of selectivity deviations. Expected dimension:
+#'   `[n_regions, n_years, n_parameters_or_bins, n_sexes, 1]`.
+#'
+#'   For `TimeVary_Model` 1–2, deviations apply multiplicatively to the
+#'   transformed parametric parameters.
+#'
+#'   For `TimeVary_Model` 3–5, deviations apply multiplicatively to the
+#'   resulting selectivity curve at each bin (semi-parametric formulation).
+#'
+#' @param Region Integer index of region.
+#' @param Year Integer index of year.
+#' @param Bin Numeric vector of bins (e.g., age or length).
+#' @param Sex Integer index of sex.
+#'
+#' @return
+#' Numeric vector of selectivity values corresponding to `Bin`.
 #'
 #' @details
-#' Selectivity parameters are transformed internally (typically using `exp()` or logistic transformations)
-#' to ensure they remain in valid ranges. Deviations (`ln_seldevs`) apply multiplicatively to these transformed
-#' parameters when time-varying models are used. For semi-parametric models (TimeVary_Model 3–5), deviations are applied directly to the resulting selectivity curve.
+#' All parameters are supplied on the log scale and transformed internally
+#' to enforce biological constraints (e.g., positivity or bounds in [0,1]).
+#'
+#' Parametric models (TimeVary_Model 0–2) modify model parameters directly.
+#' Semi-parametric models (TimeVary_Model 3–5) apply log-scale deviations
+#' multiplicatively to the fully constructed selectivity curve.
+#'
+#' Output selectivity is not explicitly normalized; downstream model
+#' components are responsible for any scaling or standardization.
 #'
 #' @keywords internal
 Get_Selex = function(Selex_Model,

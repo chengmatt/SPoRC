@@ -23,11 +23,11 @@
 #'     \item \code{1} or \code{"global"}: Shared across regions
 #'   }
 #' @param rec_lag Recruitment lag (default = 1)
-#' @param sexratio_input Sex ratio array [n_regions × n_yrs × n_sexes × n_sims]
+#' @param sexratio_input Sex ratio array [n_pop x n_regions × n_yrs × n_sexes × n_sims]
 #'   (default = 1 if one sex, else 0.5 for each sex)
-#' @param R0_input Unfished recruitment (R0) array [n_regions × n_yrs × n_sims]
+#' @param R0_input Unfished recruitment (R0) array [n_pop x n_regions × n_yrs × n_sims]
 #'   (default = 10)
-#' @param h_input Steepness array [n_regions × n_yrs × n_sims]
+#' @param h_input Steepness array [n_pop x n_regions × n_yrs × n_sims]
 #'   (default = 0.8)
 #' @param ln_sigmaR Logarithmic standard deviation of recruitment [2]:
 #'   1st = sigma for initial devs, 2nd = sigma for latter devs
@@ -43,15 +43,23 @@
 #'   }
 #' @param t_spawn Spawn timing fraction within the year / season (scalar, default = 0, where spawning happens before mortality processes)
 #' @param spawn_seas Season in which spawning occurs
+#' @param stray_rate_input straying rate array [n_pop × n_yrs × n_sims]
+#' @param rec_seas_prop_input Seasonal recruitment allocation. Vector dimensioned by [n_pop x n_seas x n_sims].
 #'
 #' @export Setup_Sim_Rec
 #' @family Simulation Setup
 Setup_Sim_Rec <- function(
     do_recruits_move = 0,
     sexratio_input = array(if(sim_list$n_sexes == 1) 1 else 0.5, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sexes, sim_list$n_sims)),
-    R0_input = array(10, dim = c(sim_list$n_pop,sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)),
-    h_input = array(0.8, dim = c(sim_list$n_pop,sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)),
+    R0_input = array(10, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)),
+    h_input = array(0.8, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)),
+    stray_rate_input = array(1, dim = c(sim_list$n_pop, sim_list$n_yrs, sim_list$n_sims)),
     ln_sigmaR = array(log(1), dim = c(sim_list$n_pop, sim_list$n_regions)),
+    rec_seas_prop_input = {
+      rec_seas_prop = array(0, dim = c(sim_list$n_pop, sim_list$n_seas, sim_list$n_sims))
+      rec_seas_prop[, 1, ] <- 1
+      rec_seas_prop
+    },
     recruitment_opt = 'bh_rec',
     rec_dd = 'global',
     init_dd = 'global',
@@ -75,6 +83,8 @@ Setup_Sim_Rec <- function(
   check_sim_dimensions(sexratio_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_sexes = sim_list$n_sexes, n_sims = sim_list$n_sims, n_pop = sim_list$n_pop, what = "sexratio_input")
   check_sim_dimensions(R0_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_sims = sim_list$n_sims, n_pop = sim_list$n_pop, what = "R0_input")
   check_sim_dimensions(h_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_sims  = sim_list$n_sims, n_pop = sim_list$n_pop, what = "h_input")
+  check_sim_dimensions(stray_rate_input, n_years = sim_list$n_yrs, n_sims  = sim_list$n_sims, n_pop = sim_list$n_pop, what = "stray_rate_input")
+  check_sim_dimensions(rec_seas_prop_input, n_seas = sim_list$n_seas, n_sims  = sim_list$n_sims, n_pop = sim_list$n_pop, what = "rec_seas_prop_input")
   if(!is.null(ln_InitDevs_input)) check_sim_dimensions(ln_InitDevs_input, n_regions = sim_list$n_regions, n_ages = sim_list$n_ages, n_sims = sim_list$n_sims, n_pop = sim_list$n_pop, what = "ln_InitDevs_input")
 
   # Recruitment options
@@ -104,8 +114,10 @@ Setup_Sim_Rec <- function(
   sim_list$rec_lag <- rec_lag
   sim_list$ln_sigmaR <- ln_sigmaR
   sim_list$t_spawn <- t_spawn
+  sim_list$rec_seas_prop <- rec_seas_prop_input
   sim_list$init_age_strc <- init_age_strc
   sim_list$spawn_seas <- spawn_seas
+  sim_list$stray_rate <- stray_rate_input
   if(!is.null(Rec_input)) sim_list$Rec_input <- Rec_input
   if(!is.null(ln_InitDevs_input)) sim_list$ln_InitDevs_input <- ln_InitDevs_input
 
@@ -276,7 +288,7 @@ do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd) {
 
   } else { # If NULL, then estimating age deviations across all dimensions
 
-    if(input_list$data$n_pop > 1 && input_list$data$Rec_prop_spec == 1)
+    if(input_list$data$n_pop > 1 && input_list$data$rec_region_prop_spec == 1)
       stop("Can't estimate initial age deviations for all populations and regions if no recruitment dispersal is occuring within a given region! Please specify est_shared_r or est_shared_pop_r instead!")
 
     map_InitDevs <- input_list$par$ln_InitDevs # set up mapping for initial age deviations
@@ -298,7 +310,7 @@ do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd) {
 
   # When no_dispersal, non-natal regions have no recruitment so their
   # deviations are structurally zero. Fix them regardless of InitDevs_spec.
-  if(input_list$data$Rec_prop_spec == 1 && input_list$data$n_pop > 1) {
+  if(input_list$data$rec_region_prop_spec == 1 && input_list$data$n_pop > 1) {
 
     # extract mapping
     map_tmp <- as.integer(input_list$map$ln_InitDevs)
@@ -306,12 +318,16 @@ do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd) {
 
     for(p in seq_len(input_list$data$n_pop)) {
       for(r in seq_len(input_list$data$n_regions)) {
-        if(r != natal_region[p]) {
+        if(r != input_list$data$natal_region[p]) {
           input_list$par$ln_InitDevs[p, r, ] <- 0  # fix starting value
           map_tmp[p, r, ] <- NA                     # turn off estimation
         }
       }
     }
+
+    # Re-index non-NA values sequentially (1, 2, 3, ...)
+    non_na <- !is.na(map_tmp)
+    map_tmp[non_na] <- as.integer(factor(map_tmp[non_na]))
     input_list$map$ln_InitDevs <- factor(map_tmp)
     collect_message("No dispersal: initial age deviations for non-natal regions fixed to 0 and not estimated.")
   }
@@ -368,7 +384,7 @@ do_RecDevs_mapping <- function(input_list, RecDevs_spec, rec_dd) {
 
   } else { # if NULL, estimating all dimensions
 
-    if(input_list$data$n_pop > 1 && input_list$data$Rec_prop_spec == 1)
+    if(input_list$data$n_pop > 1 && input_list$data$rec_region_prop_spec == 1)
       stop("Can't estimate recruitment eviations for all populations and regions if no recruitment dispersal is occuring within a given region! Please specify est_shared_r or est_shared_pop_r instead!")
 
     input_list$map$ln_RecDevs <- factor(1:length(map_RecDevs)) # input into mapping
@@ -377,7 +393,7 @@ do_RecDevs_mapping <- function(input_list, RecDevs_spec, rec_dd) {
 
   # When no_dispersal, non-natal regions have no recruitment so their
   # deviations are structurally zero. Fix them regardless of RecDevs_spec.
-  if(input_list$data$Rec_prop_spec == 1 && input_list$data$n_pop > 1) {
+  if(input_list$data$rec_region_prop_spec == 1 && input_list$data$n_pop > 1) {
 
     # extract mapping
     map_tmp <- as.integer(input_list$map$ln_RecDevs)
@@ -385,12 +401,16 @@ do_RecDevs_mapping <- function(input_list, RecDevs_spec, rec_dd) {
 
     for(p in seq_len(input_list$data$n_pop)) {
       for(r in seq_len(input_list$data$n_regions)) {
-        if(r != natal_region[p]) {
+        if(r != input_list$data$natal_region[p]) {
           input_list$par$ln_RecDevs[p, r, ] <- 0  # fix starting value
           map_tmp[p, r, ] <- NA                     # turn off estimation
         }
       }
     }
+
+    # Re-index non-NA values sequentially (1, 2, 3, ...)
+    non_na <- !is.na(map_tmp)
+    map_tmp[non_na] <- as.integer(factor(map_tmp[non_na]))
     input_list$map$ln_RecDevs <- factor(map_tmp)
     collect_message("No dispersal: Recruitment deviations for non-natal regions fixed to 0 and not estimated.")
   }
@@ -490,7 +510,7 @@ do_sexratio_pars_mapping <- function(input_list, sexratio_spec) {
 
         # Estimate for all regions
         if(sexratio_spec == 'est_all') {
-          if(input_list$data$n_pop > 1 && input_list$data$Rec_prop_spec == 1)
+          if(input_list$data$n_pop > 1 && input_list$data$rec_region_prop_spec == 1)
             stop("Can't estimate recruitment sex ratio for all populations and regions if no recruitment dispersal is occuring within a given region! Please specify est_shared_r or est_shared_pop_r instead!")
           map_sexratio[p,r,b] <- sexratio_counter
           sexratio_counter <- sexratio_counter + 1
@@ -531,40 +551,82 @@ do_sexratio_pars_mapping <- function(input_list, sexratio_spec) {
   return(input_list)
 }
 
-#' Helper function to map recruitment proportions
+#' Helper function to map recruitment proportions by region
 #'
 #' @param input_list Input list
 #' @keywords internal
-do_Rec_prop_mapping <- function(input_list, Rec_prop_spec) {
+do_rec_region_prop_mapping <- function(input_list, rec_region_prop_spec) {
 
   # Validate spec options
   valid_specs <- c("no_dispersal")
-  if(!is.null(Rec_prop_spec) && !Rec_prop_spec %in% valid_specs) {
-    stop("Invalid Rec_prop_spec: '", Rec_prop_spec, "'. Valid options are: ", paste(valid_specs, collapse=", "), ", or NULL to estimate all.")
+  if(!is.null(rec_region_prop_spec) && !rec_region_prop_spec %in% valid_specs) {
+    stop("Invalid rec_region_prop_spec: '", rec_region_prop_spec, "'. Valid options are: ", paste(valid_specs, collapse=", "), ", or NULL to estimate all.")
   }
 
   # no_dispersal only makes sense with multiple populations
-  if(!is.null(Rec_prop_spec) && Rec_prop_spec == "no_dispersal" && input_list$data$n_pop == 1 && input_list$data$n_regions == 1) stop("'no_dispersal' is only valid when n_pop > 1 and n_regions > 1.")
+  if(!is.null(rec_region_prop_spec) && rec_region_prop_spec == "no_dispersal" && input_list$data$n_pop == 1 && input_list$data$n_regions == 1) stop("'no_dispersal' is only valid when n_pop > 1 and n_regions > 1.")
 
   # par is [n_pop, n_regions-1]
-  if(!is.null(Rec_prop_spec) && Rec_prop_spec == 'no_dispersal') {
+  if(!is.null(rec_region_prop_spec) && rec_region_prop_spec == 'no_dispersal') {
     par_mat <- matrix(-20, nrow = input_list$data$n_pop, ncol = input_list$data$n_regions - 1)
     natal_region <- input_list$data$natal_region
     for(p in seq_len(input_list$data$n_pop)) {
       if(natal_region[p] > 1) par_mat[p, natal_region[p] - 1] <- 20
     }
-    input_list$par$Rec_prop <- par_mat # fix values
-    input_list$map$Rec_prop <- factor(rep(NA, length(par_mat)))  # fix all
-    collect_message("No dispersal: recruitment fixed to natal regions.")
+    input_list$par$rec_region_prop_pars <- par_mat # fix values
+    input_list$map$rec_region_prop_pars <- factor(rep(NA, length(par_mat)))  # fix all
   }
 
   # estimate all recruitment propostions if n_regions > 1
-  if(is.null(Rec_prop_spec) && input_list$data$n_regions > 1) input_list$map$Rec_prop <- factor(1:length(input_list$par$Rec_prop))
+  if(is.null(rec_region_prop_spec) && input_list$data$n_regions > 1) input_list$map$rec_region_prop_pars <- factor(1:length(input_list$par$rec_region_prop_pars))
 
   # single region - not even a parameter
   if(input_list$data$n_regions == 1) {
-    input_list$par$Rec_prop <- NULL
-    input_list$map$Rec_prop <- NULL
+    input_list$par$rec_region_prop_pars <- NULL
+    input_list$map$rec_region_prop_pars <- NULL
+  }
+
+  return(input_list)
+}
+
+#' Helper function to map recruitment proportions by seasons
+#'
+#' @param input_list Input list
+#' @keywords internal
+do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
+
+  # Validate spec options
+  valid_specs <- c("fix", "est_shared_p")
+  if(!is.null(rec_seas_prop_spec) && !rec_seas_prop_spec %in% valid_specs) {
+    stop("Invalid rec_seas_prop_spec: '", rec_seas_prop_spec, "'. Valid options are: ", paste(valid_specs, collapse=", "), ", or NULL to estimate all.")
+  }
+
+  if((is.null(rec_seas_prop_spec) || rec_seas_prop_spec == 'est_shared_p') && input_list$data$use_fixed_rec_seas_prop == 1) {
+    input_list$data$use_fixed_rec_seas_prop <- 0
+    warning("Recruitment seasonal apportionment is specified as estimated, but use_fixed_rec_seas_prop == 1 (fixed). Changing to use_fixed_rec_seas_prop == 0.")
+  }
+
+  # estimating recruitment seasonal apporitonment is only valid for seasonal models
+  if(!is.null(rec_seas_prop_spec) && rec_seas_prop_spec == 'est_shared_p' && input_list$data$n_seas == 1)
+    stop("Estimating recruitment seasonal apportionment is only applicable for seasonal models. ")
+
+  # estimate all recruitment seasonal proportions if n_seas > 1
+  if(is.null(rec_seas_prop_spec)) {
+    input_list$map$rec_seas_prop_pars <- factor(1:length(input_list$par$rec_seas_prop_pars))
+  } else if(rec_seas_prop_spec == 'est_shared_p') { # estimate recruitment seasonal proportions but share across populations
+    counter <- 1
+    tmp_map = input_list$par$rec_seas_prop_pars
+    for(seas in 1:(input_list$data$n_seas - 1)) {
+      tmp_map[,seas] <- counter
+      counter + 1
+    }
+    input_list$map$rec_seas_prop_pars <- factor(tmp_map)
+  } else if(rec_seas_prop_spec == 'fix') input_list$map$rec_seas_prop_pars <- factor(rep(NA, length(input_list$par$rec_seas_prop_pars)))
+
+  # single seas - not even a parameter
+  if(input_list$data$n_seas == 1) {
+    input_list$par$rec_seas_prop_pars <- NULL
+    input_list$map$rec_seas_prop_pars <- NULL
   }
 
   return(input_list)
@@ -572,99 +634,50 @@ do_Rec_prop_mapping <- function(input_list, Rec_prop_spec) {
 
 #' Setup Recruitment Module and Associated Processes
 #'
-#' Configures all recruitment-related components of the model, including:
-#' recruitment form, density dependence structure, recruitment lag,
-#' recruitment dispersal, steepness estimation and priors, recruitment
-#' variability (\eqn{\sigma_R}), recruitment deviations, initial age structure,
-#' spawning movement, bias ramp options, and sex ratio dynamics.
+#' Configures all recruitment-related components of the model, including
+#' the recruitment function, density dependence structure, recruitment lag,
+#' dispersal processes, steepness estimation and priors, recruitment
+#' variability (\eqn{\sigma_R}), recruitment deviations, initial age
+#' structure, spawning movement, bias ramp options, and sex ratio dynamics.
 #'
-#' This function:
+#' This function performs the following tasks:
 #' \itemize{
 #'   \item Validates structural compatibility among recruitment options
-#'   \item Initializes parameter arrays in \code{input_list$par}
+#'   \item Initializes recruitment-related parameters in \code{input_list$par}
 #'   \item Populates recruitment-related entries in \code{input_list$data}
-#'   \item Constructs mapping objects for estimation control
+#'   \item Constructs parameter mapping objects used to control estimation
 #' }
 #'
-#' All recruitment processes are configured before model compilation.
+#' All recruitment processes must be configured before model compilation.
 #'
-#' @param input_list A model input list created during earlier setup steps.
-#'   Must contain \code{input_list$data} with population, region, age, year,
-#'   and season dimensions defined.
+#' @param input_list Model input list created during earlier setup steps.
+#'   Must contain \code{input_list$data} with population, region, age,
+#'   year, and season dimensions defined.
+#'
+#' @section Recruitment Model:
 #'
 #' @param rec_model Character string specifying the recruitment model:
 #' \itemize{
 #'   \item \code{"mean_rec"} — Fixed mean recruitment (no stock–recruit relationship)
 #'   \item \code{"bh_rec"} — Beverton–Holt stock–recruit relationship
 #' }
-#' If \code{rec_model = "mean_rec"}, steepness is automatically fixed.
+#' When \code{rec_model = "mean_rec"}, steepness is fixed and not estimated.
 #'
-#' @param rec_dd Character string specifying recruitment density dependence:
+#' @param rec_dd Character string specifying the density dependence structure:
 #' \itemize{
-#'   \item \code{"local"} — Separate stock–recruit relationship per population
-#'   \item \code{"global"} — Single pooled SSB drives one SR relationship
+#'   \item \code{"local"} — Independent stock–recruit relationship per population
+#'   \item \code{"global"} — Pooled spawning biomass drives a single SR relationship
 #' }
 #'
-#' If \code{n_pop > 1}, \code{rec_dd} must be \code{"local"}.
+#' If \code{n_pop > 1}, density dependence must be \code{"local"}.
 #'
-#' @param rec_lag Integer. Lag (in years) between spawning biomass and recruitment.
+#' @param rec_lag Integer. Lag (in years) between spawning biomass and
+#' resulting recruitment.
 #'
-#' @param Use_h_prior Integer (0/1). Whether to apply priors to steepness.
+#' @section Recruitment Variability:
 #'
-#' @param h_prior Data frame specifying steepness prior information.
-#'   Required columns: \code{pop}, \code{region}, \code{mu}, \code{sd}.
-#'   Used only when \code{Use_h_prior = 1}.
-#'
-#' @param Rec_prop_spec Recruitment dispersal structure:
-#' \itemize{
-#'   \item \code{NULL} — Estimate recruitment proportions
-#'   \item \code{"no_dispersal"} — Fix recruitment to natal regions
-#' }
-#'
-#' Recruitment proportion parameter dimension:
-#' \preformatted{
-#' Rec_prop: [n_pop, n_regions - 1]
-#' }
-#'
-#' @param Use_Rec_prop_Prior Integer (0/1). Whether to apply priors on recruitment proportions.
-#'
-#' @param Rec_prop_prior Optional data.frame defining Dirichlet prior
-#' concentration parameters. Must include columns:
-#' \code{pop} and \code{alpha}, where \code{alpha}
-#' is a list-column of length-\code{n_regions} numeric vectors.
-#'
-#' @param do_rec_bias_ramp Integer (0/1). Whether to apply a recruitment bias ramp.
-#'
-#' @param bias_year Numeric. Year at which bias ramp begins.
-#'
-#' @param max_bias_ramp_fct Numeric in [0,1]. Maximum bias correction factor.
-#'
-#' @param sigmaR_switch Numeric. Year index at which \eqn{\sigma_R} switches
-#' from early to late period value. If \code{<= 1}, only one effective period
-#' is used.
-#'
-#' @param dont_est_recdev_last Integer. Number of terminal years for which
-#' recruitment deviations are not estimated.
-#'
-#' @param init_age_strc Initial age structure specification:
-#' \itemize{
-#'   \item \code{0} — Iterative equilibrium
-#'   \item \code{1} — Scalar geometric series (no movement)
-#'   \item \code{2} — Matrix geometric series (movement allowed)
-#'   \item \code{3} — Movement allowed, scalar plus-group
-#' }
-#'
-#' @param equil_init_age_strc Initial plus-group treatment:
-#' \itemize{
-#'   \item \code{0} — Equilibrium
-#'   \item \code{1} — Stochastic, no plus
-#'   \item \code{2} — Fully stochastic
-#' }
-#'
-#' @param init_F_prop Numeric vector of length \code{n_seas}.
-#'   Initial fishing mortality proportion by season.
-#'
-#' @param sigmaR_spec Character controlling \eqn{\sigma_R} mapping:
+#' @param sigmaR_spec Character controlling estimation of recruitment
+#' variability \eqn{\sigma_R}. Options include:
 #' \itemize{
 #'   \item \code{"est_all"}
 #'   \item \code{"est_shared_all"}
@@ -677,7 +690,15 @@ do_Rec_prop_mapping <- function(input_list, Rec_prop_spec) {
 #' ln_sigmaR: [2, n_pop, n_regions]
 #' }
 #'
-#' @param InitDevs_spec Character controlling initial age deviation mapping:
+#' The first element represents the early-period value and the second
+#' represents the late-period value when \code{sigmaR_switch > 1}.
+#'
+#' @param sigmaR_switch Numeric. Year index at which \eqn{\sigma_R}
+#' switches from the early-period value to the late-period value.
+#' If \code{<= 1}, only a single value is used.
+#'
+#' @param RecDevs_spec Character controlling recruitment deviation
+#' estimation structure:
 #' \itemize{
 #'   \item \code{NULL}
 #'   \item \code{"est_shared_r"}
@@ -685,47 +706,129 @@ do_Rec_prop_mapping <- function(input_list, Rec_prop_spec) {
 #'   \item \code{"fix"}
 #' }
 #'
-#' Dimension:
-#' \preformatted{
-#' ln_InitDevs: [n_pop, n_regions, n_ages - 1]
-#' }
-#'
-#' @param RecDevs_spec Character controlling recruitment deviation mapping:
-#' \itemize{
-#'   \item \code{NULL}
-#'   \item \code{"est_shared_r"}
-#'   \item \code{"est_shared_pop_r"}
-#'   \item \code{"fix"}
-#' }
-#'
-#' Dimension:
+#' Parameter dimension:
 #' \preformatted{
 #' ln_RecDevs: [n_pop, n_regions, n_years]
 #' }
 #'
-#' @param h_spec Character controlling steepness mapping:
+#' @param dont_est_recdev_last Integer. Number of terminal years for which
+#' recruitment deviations are not estimated.
+#'
+#' @section Initial Age Structure:
+#'
+#' @param init_age_strc Method used to initialize the age structure:
+#' \itemize{
+#'   \item \code{0} — Iterative equilibrium
+#'   \item \code{1} — Scalar geometric series (no movement)
+#'   \item \code{2} — Matrix geometric series (movement allowed)
+#'   \item \code{3} — Scalar geometric series with movement only for the plus group
+#' }
+#'
+#' @param equil_init_age_strc Plus-group treatment for stochastic
+#' initialization:
+#' \itemize{
+#'   \item \code{0} — Deterministic equilibrium
+#'   \item \code{1} — Stochastic without plus-group deviations
+#'   \item \code{2} — Fully stochastic
+#' }
+#'
+#' @param InitDevs_spec Character controlling estimation structure of
+#' initial age deviations:
 #' \itemize{
 #'   \item \code{NULL}
 #'   \item \code{"est_shared_r"}
 #'   \item \code{"est_shared_pop_r"}
 #'   \item \code{"fix"}
 #' }
+#'
+#' Parameter dimension:
+#' \preformatted{
+#' ln_InitDevs: [n_pop, n_regions, n_ages - 1]
+#' }
+#'
+#' @section Recruitment Spatial Structure:
+#'
+#' @param rec_region_prop_spec Recruitment dispersal specification:
+#' \itemize{
+#'   \item \code{NULL} — Regional recruitment proportions are estimated
+#'   \item \code{"no_dispersal"} — Recruitment fixed to natal regions
+#' }
+#'
+#' Parameter dimension:
+#' \preformatted{
+#' rec_region_prop_pars: [n_pop, n_regions - 1]
+#' }
+#'
+#' @param use_rec_region_prop_prior Integer (0/1). Whether Dirichlet priors
+#' are applied to recruitment regional proportions.
+#'
+#' @param rec_region_prop_prior Optional data frame specifying Dirichlet
+#' prior concentration parameters. Must contain columns:
+#' \code{pop} and \code{alpha}, where \code{alpha} is a list-column
+#' containing length-\code{n_regions} vectors.
+#'
+#' @section Recruitment Seasonal Structure:
+#'
+#' @param rec_seas_prop_spec Character controlling estimation of seasonal
+#' recruitment proportions.
+#'
+#' @param use_rec_seas_prop_prior Integer (0/1). Whether priors are applied
+#' to seasonal recruitment proportions.
+#'
+#' @param rec_seas_prop_prior Optional data frame defining Dirichlet prior
+#' concentration parameters for seasonal recruitment proportions.
+#'
+#' @param use_fixed_rec_seas_prop Integer (0/1). Whether fixed seasonal
+#' recruitment proportions are used.
+#'
+#' @param fixed_rec_seas_prop Array specifying fixed seasonal recruitment
+#' proportions with dimension:
+#' \preformatted{
+#' [n_pop, n_seas]
+#' }
+#'
+#' @section Steepness:
+#'
+#' @param h_spec Character controlling steepness parameter mapping:
+#' \itemize{
+#'   \item \code{NULL}
+#'   \item \code{"est_shared_r"}
+#'   \item \code{"est_shared_pop_r"}
+#'   \item \code{"fix"}
+#' }
+#'
+#' @param Use_h_prior Integer (0/1). Whether steepness priors are applied.
+#'
+#' @param h_prior Data frame specifying steepness prior information.
+#' Required columns:
+#' \code{pop}, \code{region}, \code{mu}, \code{sd}.
 #'
 #' Steepness parameter dimension:
 #' \preformatted{
 #' steepness_h: [n_pop, n_regions]
 #' }
 #'
-#' @param sgl_seas_spawning_movement Optional array specifying spawning movement:
+#' @section Spawning Processes:
+#'
+#' @param spawn_seas Integer. Season index in which spawning occurs.
+#'
+#' @param t_spawn Numeric. Fraction of the year at which spawning occurs.
+#'
+#' @param sgl_seas_spawning_movement Optional spawning movement array:
 #' \preformatted{
 #' [n_pop, n_regions, n_regions, n_years, n_ages, n_sexes]
 #' }
 #'
-#' If \code{NA}, default is 100% natal homing.
+#' If \code{NA}, 100\% natal homing is assumed.
 #'
-#' @param t_spawn Numeric. Fraction of year at which spawning occurs.
+#' @param stray_rate Array of stray rates with dimension:
+#' \preformatted{
+#' [n_pop, n_years]
+#' }
 #'
-#' @param spawn_seas Integer. Season index in which spawning occurs.
+#' Values must lie between 0 and 1.
+#'
+#' @section Sex Ratio Dynamics:
 #'
 #' @param sexratio_spec Character controlling sex ratio estimation:
 #' \itemize{
@@ -735,20 +838,37 @@ do_Rec_prop_mapping <- function(input_list, Rec_prop_spec) {
 #'   \item \code{"fix"}
 #' }
 #'
-#' Sex ratio parameter dimension:
+#' @param sexratio_blocks Character vector specifying temporal block
+#' structure. Valid formats include:
+#' \itemize{
+#'   \item \code{"none_Pop_x_Region_x"}
+#'   \item \code{"Block_k_Year_a-b_Pop_x_Region_x"}
+#' }
+#'
+#' Parameter dimension:
 #' \preformatted{
 #' sexratio_pars: [n_pop, n_regions, n_blocks]
 #' }
 #'
-#' @param sexratio_blocks Character vector specifying block structure.
-#'   Blocks follow naming conventions:
-#'   \code{"none_Pop_x_Region_x"} or
-#'   \code{"Block_k_Year_a-b_Pop_x_Region_x"}.
+#' @section Bias Ramp:
+#'
+#' @param do_rec_bias_ramp Integer (0/1). Whether a recruitment bias ramp
+#' is applied.
+#'
+#' @param bias_year Numeric. Year at which the bias ramp begins.
+#'
+#' @param max_bias_ramp_fct Numeric in [0,1]. Maximum bias correction factor.
+#'
+#' @section Additional Inputs:
+#'
+#' @param init_F_prop Numeric vector of length \code{n_seas} specifying
+#' the seasonal distribution of initial fishing mortality.
 #'
 #' @param ... Optional named starting values for parameters. Supported names:
 #' \itemize{
 #'   \item \code{ln_global_R0}
-#'   \item \code{Rec_prop}
+#'   \item \code{rec_region_prop_pars}
+#'   \item \code{rec_seas_prop_pars}
 #'   \item \code{steepness_h}
 #'   \item \code{ln_InitDevs}
 #'   \item \code{ln_RecDevs}
@@ -762,25 +882,31 @@ do_Rec_prop_mapping <- function(input_list, Rec_prop_spec) {
 #' If \code{n_pop > 1}, recruitment density dependence must be local.
 #'
 #' \strong{Global density dependence:}
-#' When \code{rec_dd = "global"}, steepness and deviation parameters must be shared
-#' or fixed. Fully independent regional estimation is not permitted.
+#' When \code{rec_dd = "global"}, steepness and deviation parameters must
+#' be shared or fixed across spatial units.
 #'
 #' \strong{No dispersal constraint:}
-#' If \code{Rec_prop_spec = "no_dispersal"} and \code{n_pop > 1},
-#' recruitment and initial deviations cannot be fully independent across
-#' populations and regions.
+#' When \code{rec_region_prop_spec = "no_dispersal"} and
+#' \code{n_pop > 1}, recruitment and initial deviations cannot be
+#' fully independent across populations and regions.
 #'
-#' @export Setup_Mod_Rec
 #' @family Model Setup
+#' @export Setup_Mod_Rec
 Setup_Mod_Rec <- function(input_list,
                           rec_model,
                           rec_dd = "global",
                           rec_lag = 1,
                           Use_h_prior = 0,
                           h_prior = NULL,
-                          Rec_prop_spec = NULL,
-                          Use_Rec_prop_Prior = 0,
-                          Rec_prop_prior = NULL,
+                          rec_region_prop_spec = NULL,
+                          use_rec_region_prop_prior = 0,
+                          rec_region_prop_prior = NULL,
+                          rec_seas_prop_spec = "fix",
+                          use_rec_seas_prop_prior = 0,
+                          rec_seas_prop_prior = NULL,
+                          use_fixed_rec_seas_prop = 1,
+                          fixed_rec_seas_prop = array(rep(c(1, rep(0, input_list$data$n_seas - 1)),
+                                                          each = input_list$data$n_seas), dim = c(input_list$data$n_pop, input_list$data$n_seas)),
                           do_rec_bias_ramp = 0,
                           bias_year = NA,
                           max_bias_ramp_fct = 1,
@@ -795,6 +921,7 @@ Setup_Mod_Rec <- function(input_list,
                           h_spec = NULL,
                           sgl_seas_spawning_movement = NA,
                           t_spawn = 0,
+                          stray_rate = array(1, dim = c(input_list$data$n_pop, length(input_list$data$years))),
                           spawn_seas = 1,
                           sexratio_spec = 'fix',
                           sexratio_blocks = {
@@ -833,15 +960,26 @@ Setup_Mod_Rec <- function(input_list,
   # Recruitment lag
   if (rec_model != "mean_rec") collect_message("Recruitment and SSB lag is specified as: ", rec_lag)
 
-  # Recruitment proportion prior
-  if(!Use_Rec_prop_Prior %in% c(0,1)) stop("Use_Rec_prop_Prior must be 0 or 1")
-  if(Use_Rec_prop_Prior == 1 && input_list$data$n_regions == 1) stop("Priors should not be applied to recruitment proportions when n_regions = 1.")
-  if(Use_Rec_prop_Prior == 1) {
+  # Recruitment regional proportion prior
+  if(!use_rec_region_prop_prior %in% c(0,1)) stop("use_rec_region_prop_prior must be 0 or 1")
+  if(use_rec_region_prop_prior == 1 && input_list$data$n_regions == 1) stop("Priors should not be applied to recruitment regional proportions when n_regions = 1.")
+  if(use_rec_region_prop_prior == 1) {
     required_cols <- c("pop", "alpha")
-    missing_cols <- setdiff(required_cols, names(Rec_prop_prior))
-    if (length(missing_cols) > 0) stop("Rec_prop_prior is missing columns: ", paste(missing_cols, collapse = ", "))
+    missing_cols <- setdiff(required_cols, names(rec_region_prop_prior))
+    if (length(missing_cols) > 0) stop("rec_region_prop_prior is missing columns: ", paste(missing_cols, collapse = ", "))
   }
-  collect_message("Recruitment proportion priors are: ", ifelse(Use_Rec_prop_Prior == 1, "Used", "Not Used"))
+  collect_message("Recruitment regional proportion priors are: ", ifelse(use_rec_region_prop_prior == 1, "Used", "Not Used"))
+
+  # recruitment seasonal priors
+  if(!use_rec_seas_prop_prior %in% c(0,1)) stop("use_rec_seas_prop_prior must be 0 or 1")
+  if(use_rec_seas_prop_prior == 1 && input_list$data$n_seas == 1) stop("Priors should not be applied to recruitment seasonal proportions when n_seass = 1.")
+  if(use_rec_seas_prop_prior == 1) {
+    required_cols <- c("pop", "alpha")
+    missing_cols <- setdiff(required_cols, names(rec_seas_prop_prior))
+    if (length(missing_cols) > 0) stop("rec_seas_prop_prior is missing columns: ", paste(missing_cols, collapse = ", "))
+  }
+  collect_message("Recruitment seasonal proportion priors are: ", ifelse(use_rec_seas_prop_prior == 1, "Used", "Not Used"))
+  collect_message("Recruitment seasonal proportions is: ", ifelse(is.null(rec_seas_prop_spec), "estimated for all dimensions", rec_seas_prop_spec))
 
   # Checking that rec_dd is local when n_pop > 1
   if(input_list$data$n_pop > 1 && rec_dd != 'local') stop("When n_pop > 1, rec_dd must be local!")
@@ -860,6 +998,11 @@ Setup_Mod_Rec <- function(input_list,
     tmp_sgl_seas_spawning_movement <- sgl_seas_spawning_movement
     if(input_list$data$n_pop > 1 && input_list$data$n_seas == 1 && rec_model_val == 1) collect_message("Using user input natal homing rate.")
   }
+
+
+  # Straying Rates ----------------------------------------------------------
+  check_data_dimensions(stray_rate, n_pop = input_list$data$n_pop, n_years = length(input_list$data$years),  what = 'stray_rate')
+
 
   # Steepness Settings ------------------------------------------------------
   if (rec_model == "bh_rec") {
@@ -912,7 +1055,7 @@ Setup_Mod_Rec <- function(input_list,
   } # end i loop
 
   for(p in 1:input_list$data$n_pop) for(r in 1:input_list$data$n_regions)
-    collect_message("Sex Ratios estimated with ", length(unique(sexratio_blocks_mat[p,r,])), " block for population ", p, " and region ", r)
+    collect_message("Sex Ratios specified with ", length(unique(sexratio_blocks_mat[p,r,])), " block for population ", p, " and region ", r)
 
   # Input Validation --------------------------------------------------------
 
@@ -961,10 +1104,15 @@ Setup_Mod_Rec <- function(input_list,
   input_list$data$t_spawn <- t_spawn
   input_list$data$equil_init_age_strc <- equil_init_age_strc
   input_list$data$max_bias_ramp_fct <- max_bias_ramp_fct
-  input_list$data$Use_Rec_prop_Prior <- Use_Rec_prop_Prior
-  input_list$data$Rec_prop_spec <- ifelse(is.null(Rec_prop_spec), 0, 1) # 0 = Full dispersal, 1 = no dispersal
-  input_list$data$Rec_prop_prior <- Rec_prop_prior
+  input_list$data$use_rec_region_prop_prior <- use_rec_region_prop_prior
+  input_list$data$rec_region_prop_spec <- ifelse(is.null(rec_region_prop_spec), 0, 1) # 0 = Full dispersal, 1 = no dispersal
+  input_list$data$rec_region_prop_prior <- rec_region_prop_prior
+  input_list$data$stray_rate <- stray_rate
   input_list$data$sexratio_blocks <- sexratio_blocks_mat
+  input_list$data$use_fixed_rec_seas_prop <- use_fixed_rec_seas_prop
+  input_list$data$fixed_rec_seas_prop <- fixed_rec_seas_prop
+  input_list$data$use_rec_seas_prop_prior <- use_rec_seas_prop_prior
+  input_list$data$rec_seas_prop_prior <- rec_seas_prop_prior
 
   # Populate Parameter List -------------------------------------------------
 
@@ -972,9 +1120,13 @@ Setup_Mod_Rec <- function(input_list,
   if("ln_global_R0" %in% names(starting_values)) input_list$par$ln_global_R0 <- starting_values$ln_global_R0
   else input_list$par$ln_global_R0 <- array(log(15), dim = c(input_list$data$n_pop))
 
-  # R0 proportion (not availiable when n_regions == 1; altered in do_Rec_prop_mapping)
-  if("Rec_prop" %in% names(starting_values)) input_list$par$Rec_prop <- starting_values$Rec_prop
-  else input_list$par$Rec_prop <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions - 1))
+  # R0 regional proportion (not availiable when n_regions == 1; altered in do_rec_region_prop_mapping)
+  if("rec_region_prop_pars" %in% names(starting_values)) input_list$par$rec_region_prop_pars <- starting_values$rec_region_prop_pars
+  else input_list$par$rec_region_prop_pars <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions - 1))
+
+  # R0 seasonal proportion (not availiable when n_seas == 1; altered in do_rec_seas_prop_mapping)
+  if("rec_seas_prop_pars" %in% names(starting_values)) input_list$par$rec_seas_prop_pars <- starting_values$rec_seas_prop_pars
+  else input_list$par$rec_seas_prop_pars <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_seas - 1))
 
   # Steepness in bounded logit space (0.2 and 1)
   if("steepness_h" %in% names(starting_values)) input_list$par$steepness_h <- starting_values$steepness_h
@@ -999,7 +1151,8 @@ Setup_Mod_Rec <- function(input_list,
 
   # Mapping Options -----------------------------------------------------------
 
-  input_list <- do_Rec_prop_mapping(input_list, Rec_prop_spec) # Recruitment proportion mapping
+  input_list <- do_rec_region_prop_mapping(input_list, rec_region_prop_spec) # Recruitment regional proportion mapping
+  input_list <- do_rec_seas_prop_mapping(input_list, rec_seas_prop_spec) # Recruitment seasonal proportion mapping
   input_list <- do_sigmaR_mapping(input_list, sigmaR_spec) # sigmaR mapping
   input_list <- do_InitDevs_mapping(input_list, InitDevs_spec, rec_dd) # InitDevs mapping
   input_list <- do_RecDevs_mapping(input_list, RecDevs_spec, rec_dd) # RevDevs mapping
@@ -1012,4 +1165,3 @@ Setup_Mod_Rec <- function(input_list,
   return(input_list)
 
 }
-

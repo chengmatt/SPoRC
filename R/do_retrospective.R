@@ -25,13 +25,13 @@ truncate_yr <- function(j,
 
   # Years
   retro_data$years <- data$years[1:(length(data$years) - j)] # remove j years from years vector
-  if(!is.na(sum(retro_data$bias_year))) data$bias_year[3:4] <- data$bias_year[3:4] - j # remove j years from bias correction vector (only applied to the full bias and descending limb)
+  if(!is.na(sum(retro_data$bias_year))) retro_data$bias_year[3:4] <- data$bias_year[3:4] - j # remove j years from bias correction vector (only applied to the full bias and descending limb)
 
 # Recruitment -------------------------------------------------------------
 
   # Recruitment devs
-  retro_parameters$ln_RecDevs <- parameters$ln_RecDevs[,1:(ncol(parameters$ln_RecDevs) - j), drop = FALSE] # Recruitment deviations
-  if(any(names(retro_mapping) == 'ln_RecDevs')) retro_mapping$ln_RecDevs <- factor(array(mapping$ln_RecDevs, dim = dim(parameters$ln_RecDevs))[,1:(ncol(parameters$ln_RecDevs) - j), drop = FALSE]) # modify mapping if we have recruitment map
+  retro_parameters$ln_RecDevs <- parameters$ln_RecDevs[,,1:(dim(parameters$ln_RecDevs)[3] - j), drop = FALSE] # Recruitment deviations
+  if(any(names(retro_mapping) == 'ln_RecDevs')) retro_mapping$ln_RecDevs <- factor(array(mapping$ln_RecDevs, dim = dim(parameters$ln_RecDevs))[,,1:(dim(parameters$ln_RecDevs)[3] - j), drop = FALSE]) # modify mapping if we have recruitment map
 
 # Fishery -----------------------------------------------------------------
 
@@ -92,30 +92,33 @@ truncate_yr <- function(j,
 
   if(data$n_regions > 1) {
     # Movement stuff
-    retro_parameters$move_pars <- parameters$move_pars[,,1:(length(data$years) - j),,,,drop = FALSE]
-    retro_parameters$move_devs <- parameters$move_devs[,,1:(length(data$years) - j),,,,drop = FALSE]
-    retro_mapping$move_pars <- factor(array(mapping$move_pars, dim = dim(parameters$move_pars))[,,1:(length(data$years) - j),,,,drop = FALSE])
-    retro_mapping$move_devs <- factor(array(mapping$move_devs, dim = dim(parameters$move_devs))[,,1:(length(data$years) - j),,,,drop = FALSE])
-    retro_data$Fixed_Movement <- data$Fixed_Movement[,,1:(length(data$years) - j),,,,drop = FALSE]
+    retro_parameters$move_pars <- parameters$move_pars[,,,1:(length(data$years) - j),,,,drop = FALSE]
+    retro_parameters$move_devs <- parameters$move_devs[,,,1:(length(data$years) - j),,,,drop = FALSE]
+    retro_mapping$move_pars <- factor(array(mapping$move_pars, dim = dim(parameters$move_pars))[,,,1:(length(data$years) - j),,,,drop = FALSE])
+    retro_mapping$move_devs <- factor(array(mapping$move_devs, dim = dim(parameters$move_devs))[,,,1:(length(data$years) - j),,,,drop = FALSE])
+    retro_data$Fixed_Movement <- data$Fixed_Movement[,,,1:(length(data$years) - j),,,,drop = FALSE]
+    retro_data$sgl_seas_spawning_movement <- data$sgl_seas_spawning_movement[,,,1:(length(data$years) - j),,,drop = FALSE]
     retro_data$ctmc_move_dat <- retro_data$ctmc_move_dat[which(data$ctmc_move_dat$years %in% 1:(length(data$years) - j)),]
-    retro_data$map_move_devs <- retro_data$map_move_devs[,,1:(length(data$years) - j),,,,drop = FALSE]
+    retro_data$map_move_devs <- retro_data$map_move_devs[,,,1:(length(data$years) - j),,,,drop = FALSE]
   }
 
 # Tagging -----------------------------------------------------------------
 
-  if(data$UseTagging == 1) {
+  if(data$use_conv_fish_tagging == 1) {
     # Tag reporting
-    retro_data$Tag_Reporting_blocks <- data$Tag_Reporting_blocks[,1:(length(data$years) - j), drop = FALSE]
-    if(!is.na(sum(data$Tag_Reporting_blocks))) retro_parameters$Tag_Reporting_Pars <- parameters$Tag_Reporting_Pars[,1:max(data$Tag_Reporting_blocks),drop = FALSE]
-    retro_mapping$Tag_Reporting_Pars <- factor(array(mapping$Tag_Reporting_Pars, dim = dim(parameters$Tag_Reporting_Pars))[,1:max(data$Tag_Reporting_blocks),drop = FALSE])
-    retro_data$map_Tag_Reporting_Pars <- data$map_Tag_Reporting_Pars[,1:max(data$Tag_Reporting_blocks),drop = FALSE]
+    retro_data$conv_tag_fish_reporting_blocks <- data$conv_tag_fish_reporting_blocks[,1:(length(data$years) - j),, drop = FALSE]
+    if(!is.na(sum(retro_data$conv_tag_fish_reporting_blocks))) {
+      retro_parameters$conv_tag_fish_reporting_pars <- parameters$conv_tag_fish_reporting_pars[,1:max(retro_data$conv_tag_fish_reporting_blocks),,drop = FALSE]
+      retro_mapping$conv_tag_fish_reporting_pars <- factor(array(mapping$conv_tag_fish_reporting_pars, dim = dim(parameters$conv_tag_fish_reporting_pars))[,1:max(retro_data$conv_tag_fish_reporting_blocks),,drop = FALSE])
+    }
 
     # Tag cohort stuff
-    Tag_Release_Ind <- as.matrix(data$tag_release_indicator)
-    retro_data$tag_release_indicator <- as.matrix(Tag_Release_Ind[which(Tag_Release_Ind[,2] %in% 1:(length(data$years) - j)), ])
-    retro_data$n_tag_cohorts <- nrow(retro_data$tag_release_indicator)
-    retro_data$Tagged_Fish <- data$Tagged_Fish[1:nrow(retro_data$tag_release_indicator),,,drop = FALSE] # remove data (not necessary, but helps with computational cost if using tagging)
-    retro_data$Obs_Tag_Recap <- data$Obs_Tag_Recap[,,1:nrow(retro_data$tag_release_indicator),,,,drop = FALSE] # remove data (not necessary, but helps with computational cost)
+    Tag_Release_Ind <- as.matrix(data$conv_tag_release_indicator)
+    retro_data$conv_tag_release_indicator <- as.matrix(Tag_Release_Ind[which(Tag_Release_Ind[,2] %in% 1:(length(data$years) - j)), ])
+    retro_data$conv_tag_release_platform <- data$conv_tag_release_platform[1:nrow(retro_data$conv_tag_release_indicator),]
+    retro_data$n_tag_cohorts <- nrow(retro_data$conv_tag_release_indicator)
+    retro_data$conv_tagged_fish <- data$conv_tagged_fish[1:nrow(retro_data$conv_tag_release_indicator),,,,drop = FALSE] # remove data (not necessary, but helps with computational cost if using tagging)
+    retro_data$obs_conv_tag_fish_recap <- data$obs_conv_tag_fish_recap[,,1:nrow(retro_data$conv_tag_release_indicator),,,,,,drop = FALSE] # remove data (not necessary, but helps with computational cost)
   }
 
 
@@ -130,7 +133,7 @@ truncate_yr <- function(j,
   retro_data$FishLenComps_Type <- data$FishLenComps_Type[1:(length(data$years) - j),,drop = FALSE]
   retro_data$SrvLenComps_Type <- data$SrvLenComps_Type[1:(length(data$years) - j),,drop = FALSE]
   retro_data$SrvAgeComps_Type <- data$SrvAgeComps_Type[1:(length(data$years) - j),,drop = FALSE]
-  if(length(dim(data$Wt_Catch)) == 4) retro_data$Wt_Catch <- data$Wt_Catch[,1:(length(data$years) - j),,,drop = FALSE] # Catch is dim = 3, b/c can accept scalar or array
+  if(length(dim(data$Wt_Catch)) == 4) retro_data$Wt_Catch <- data$Wt_Catch[,1:(length(data$years) - j),,,drop = FALSE] # Catch is dim = 4, b/c can accept scalar or array
 
   # data use indicators
   retro_data$UseFishAgeComps <- data$UseFishAgeComps[,1:(length(data$years) - j),,,drop = FALSE]
@@ -279,12 +282,13 @@ do_retrospective <- function(n_retro,
 
       # Tagging Data Lags
       if(tag_datalag > 0) {
-        Tag_Release_Ind <- as.matrix(init$retro_data$tag_release_indicator) # get tag release indicator
+        Tag_Release_Ind <- as.matrix(init$retro_data$conv_tag_release_indicator) # get tag release indicator
         tag_end_col <- max(start_col - tag_datalag + 1, 1) # get end index
-        init$retro_data$tag_release_indicator <- as.matrix(Tag_Release_Ind[-which(Tag_Release_Ind[,2] %in% start_col:tag_end_col), ]) # remove tag data when lagged
-        init$retro_data$n_tag_cohorts <- nrow(init$retro_data$tag_release_indicator)
-        init$retro_data$Tagged_Fish <- init$retro_data$Tagged_Fish[1:nrow(init$retro_data$tag_release_indicator),,,drop = FALSE] # remove data (not necessary, but helps with computational cost if using tagging)
-        init$retro_data$Obs_Tag_Recap <- init$retro_data$Obs_Tag_Recap[,,1:nrow(init$retro_data$tag_release_indicator),,,,drop = FALSE] # remove data (not necessary, but helps with computational cost)
+        init$retro_data$conv_tag_release_indicator <- as.matrix(Tag_Release_Ind[-which(Tag_Release_Ind[,2] %in% start_col:tag_end_col), ]) # remove tag data when lagged
+        init$retro_data$n_tag_cohorts <- nrow(init$retro_data$conv_tag_release_indicator)
+        init$retro_data$conv_tag_release_platform <- init$retro_data$conv_tag_release_platform[1:nrow(init$retro_data$conv_tag_release_indicator),]
+        init$retro_data$conv_tagged_fish <- init$retro_data$conv_tagged_fish[1:nrow(init$retro_data$conv_tag_release_indicator),,,,drop = FALSE] # remove data (not necessary, but helps with computational cost if using tagging)
+        init$retro_data$obs_conv_tag_fish_recap <- init$retro_data$obs_conv_tag_fish_recap[,,1:nrow(init$retro_data$conv_tag_release_indicator),,,,,,drop = FALSE] # remove data (not necessary, but helps with computational cost)
       }
 
       if(do_francis == FALSE) { # don't do francis within retrospective loop
@@ -318,10 +322,10 @@ do_retrospective <- function(n_retro,
 
       # get ssb and recruitment
       retro_tmp <- reshape2::melt(rep$SSB) %>%
-        dplyr::rename(Region = Var1, Year = Var2) %>%
+        dplyr::rename(Pop = Var1, Region = Var2, Year = Var3) %>%
         dplyr::mutate(Type = "SSB") %>%
         bind_rows(reshape2::melt(rep$Rec) %>%
-                    dplyr::rename(Region = Var1, Year = Var2) %>%
+                    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3) %>%
                     dplyr::mutate(Type = "Recruitment")) %>%
         dplyr::mutate(peel = j)
 
@@ -407,12 +411,13 @@ do_retrospective <- function(n_retro,
 
         # Tagging Data Lags
         if(tag_datalag > 0) {
-          Tag_Release_Ind <- as.matrix(init$retro_data$tag_release_indicator) # get tag release indicator
+          Tag_Release_Ind <- as.matrix(init$retro_data$conv_tag_release_indicator) # get tag release indicator
           tag_end_col <- max(start_col - tag_datalag + 1, 1) # get end index
-          init$retro_data$tag_release_indicator <- as.matrix(Tag_Release_Ind[-which(Tag_Release_Ind[,2] %in% start_col:tag_end_col), ]) # remove tag data when lagged
-          init$retro_data$n_tag_cohorts <- nrow(init$retro_data$tag_release_indicator)
-          init$retro_data$Tagged_Fish <- init$retro_data$Tagged_Fish[1:nrow(init$retro_data$tag_release_indicator),,,drop = FALSE] # remove data (not necessary, but helps with computational cost if using tagging)
-          init$retro_data$Obs_Tag_Recap <- init$retro_data$Obs_Tag_Recap[,,1:nrow(init$retro_data$tag_release_indicator),,,,drop = FALSE] # remove data (not necessary, but helps with computational cost)
+          init$retro_data$conv_tag_release_indicator <- as.matrix(Tag_Release_Ind[-which(Tag_Release_Ind[,2] %in% start_col:tag_end_col), ]) # remove tag data when lagged
+          init$retro_data$n_tag_cohorts <- nrow(init$retro_data$conv_tag_release_indicator)
+          init$retro_data$conv_tag_release_platform <- init$retro_data$conv_tag_release_platform[1:nrow(init$retro_data$conv_tag_release_indicator),]
+          init$retro_data$conv_tagged_fish <- init$retro_data$conv_tagged_fish[1:nrow(init$retro_data$conv_tag_release_indicator),,,,drop = FALSE] # remove data (not necessary, but helps with computational cost if using tagging)
+          init$retro_data$obs_conv_tag_fish_recap <- init$retro_data$obs_conv_tag_fish_recap[,,1:nrow(init$retro_data$conv_tag_release_indicator),,,,,,drop = FALSE] # remove data (not necessary, but helps with computational cost)
         }
 
         if(do_francis == FALSE) { # don't do francis within retrospective loop
@@ -445,10 +450,10 @@ do_retrospective <- function(n_retro,
         } # end else
 
         retro_tmp <- reshape2::melt(rep$SSB) %>%
-          dplyr::rename(Region = Var1, Year = Var2) %>%
+          dplyr::rename(Pop = Var1, Region = Var2, Year = Var3) %>%
           dplyr::mutate(Type = "SSB") %>%
           bind_rows(reshape2::melt(rep$Rec) %>%
-                      dplyr::rename(Region = Var1, Year = Var2) %>%
+                      dplyr::rename(Pop = Var1, Region = Var2, Year = Var3) %>%
                       dplyr::mutate(Type = "Recruitment")) %>%
           dplyr::mutate(peel = j)
 
@@ -495,18 +500,18 @@ get_retrospective_relative_difference <- function(retro_data) {
 
   # Get peels
   peels <- retro_data %>% filter(peel != 0) %>%
-    tidyr::pivot_wider(names_from = peel, values_from = value, id_cols = c('Region', "Year", "Type"))
+    tidyr::pivot_wider(names_from = peel, values_from = value, id_cols = c('Pop', 'Region', "Year", "Type"))
 
   # Summarize relative difference
   allret <- terminal %>%
-    dplyr::left_join(peels, by = c("Region", "Year", "Type")) %>%
+    dplyr::left_join(peels, by = c("Pop", "Region", "Year", "Type")) %>%
     dplyr::mutate(across(as.character(1:unique_peels), ~ (.x - value) / value, .names = "{.col}"))
 
   # Pivot longer
   allret <- allret %>%
     dplyr::select(Region, Year, Type, as.character(1:unique_peels)) %>%
     tidyr::pivot_longer(cols = as.character(1:unique_peels), names_to = "peel", values_to = "rd") %>%
-    dplyr::mutate(Region = paste("Region", Region))
+    dplyr::mutate(Pop = paste("Pop", Pop), Region = paste("Region", Region))
 
   return(allret)
 }

@@ -62,6 +62,8 @@ Setup_Sim_Dim <- function(n_sims,
       natal_region <- rep(1, n_pop) # all home to region 1
     } else if(n_pop == n_regions) {
       natal_region <- seq_len(n_pop)       # 1:1 mapping
+    } else if(n_pop == 1) {
+      natal_region <- rep(1, n_pop)
     } else {
       stop("natal_region must be specified when n_pop != n_regions and n_regions > 1")
     }
@@ -142,6 +144,8 @@ Setup_Mod_Dim <- function(years,
       natal_region <- rep(1, n_pop) # all home to region 1
     } else if(n_pop == n_regions) {
       natal_region <- seq_len(n_pop)       # 1:1 mapping
+    } else if(n_pop == 1) {
+      natal_region <- rep(1, n_pop)
     } else {
       stop("natal_region must be specified when n_pop != n_regions and n_regions > 1")
     }

@@ -30,11 +30,11 @@
 #'   release platform (\code{"population"}, \code{"fishery"}, or
 #'   \code{"survey"}) and the fleet index (or \code{NA} for
 #'   \code{"population"}) for this tag cohort.
-#' @param SrvIAA Numeric array of survey index-at-age used as apportionment
+#' @param srv_sel Numeric array of survey selectivity used as apportionment
 #'   weights when \code{platform = "survey"}.
-#' @param CAA Numeric array of catch-at-age used as apportionment weights
+#' @param fish_sel Numeric array of fishery selectivity used as apportionment weights
 #'   when \code{platform = "fishery"}.
-#' @param NAA Numeric array of numbers-at-age used as apportionment weights
+#' @param NAA Numeric array of numbers-at-age prior to movement, used as apportionment weights
 #'   when \code{platform = "population"}.
 #' @param ty Integer. Current model year index.
 #' @param tseas Integer. Current season index.
@@ -51,8 +51,8 @@
 release_conv_tag_attr <- function(tagged_fish,
                                   tag_attr,
                                   tag_release_platform,
-                                  SrvIAA,
-                                  CAA,
+                                  srv_sel,
+                                  fish_sel,
                                   NAA,
                                   ty,
                                   tseas,
@@ -62,8 +62,8 @@ release_conv_tag_attr <- function(tagged_fish,
                                   n_sexes
                                   ) {
 
-  "c" <- RTMB::ADoverload("c")
-  "[<-" <- RTMB::ADoverload("[<-")
+  "c" =RTMB::ADoverload("c")
+  "[<-" =RTMB::ADoverload("[<-")
 
   # reshape into array
   tagged_fish = array(tagged_fish, dim = c(n_pop, n_ages, n_sexes))
@@ -85,10 +85,18 @@ release_conv_tag_attr <- function(tagged_fish,
   weights = if(platform == "population") {
     array(NAA[, tr, ty, tseas, , ], dim = c(n_pop, n_ages, n_sexes))
   } else if(platform == "fishery") {
-    array(CAA[, tr, ty, tseas, , , fleet], dim = c(n_pop, n_ages, n_sexes))
+    NAA_slice  =NAA[, tr, ty, tseas, , , drop = FALSE]
+    dim(NAA_slice) =c(n_pop, n_ages, n_sexes)
+    sel_slice  =fish_sel[tr, ty, , , fleet, drop = FALSE]
+    dim(sel_slice) =c(n_ages, n_sexes)
+    sweep(NAA_slice, 2:3, sel_slice, "*")
   } else if(platform == "survey") {
-    array(SrvIAA[, tr, ty, tseas, , , fleet], dim = c(n_pop, n_ages, n_sexes))
-  }
+    NAA_slice  =NAA[, tr, ty, tseas, , , drop = FALSE]
+    dim(NAA_slice) =c(n_pop, n_ages, n_sexes)
+    sel_slice  =srv_sel[tr, ty, , , fleet, drop = FALSE]
+    dim(sel_slice) =c(n_ages, n_sexes)
+    sweep(NAA_slice, 2:3, sel_slice, "*")
+    }
 
   # Normalize weights within attended dimensions.
   # The denominator sums over unattended dims only, preserving totals

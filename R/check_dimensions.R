@@ -1,18 +1,61 @@
-#' Helper function used to check data dimensions to ensure they are correct
+#' Validate Simulation Input Dimensions
 #'
-#' @param x Object to evaluate
-#' @param n_regions Number of regions
-#' @param n_years Number of years
-#' @param n_ages Number of ages
-#' @param n_lens Number of lengths
-#' @param n_sexes Number of sexes
-#' @param n_fish_fleets Number of fishery fleets
-#' @param n_srv_fleets Number of survey fleets
-#' @param what charcter specifying what to be evaluated
-#' @param n_seas Number of seasons
-#' @param max_tag_liberty Maximum tag liberty to track a given cohort
-#' @param n_tag_cohorts Number of tag cohorts to fit to
-#' @param n_pop Number of populations
+#' Internal helper function that validates the dimensions of simulation
+#' input arrays against the expected structure implied by model configuration.
+#'
+#' This function is analogous to `check_data_dimensions()` but is used for
+#' simulation objects that include an additional simulation dimension
+#' (`n_sims`). The required dimension ordering depends on the object
+#' specified in `what`.
+#'
+#' @param x Object to evaluate. Typically a multi-dimensional array including
+#'   a simulation dimension.
+#' @param n_pop Integer. Number of populations.
+#' @param n_regions Integer. Number of regions.
+#' @param n_years Integer. Number of years.
+#' @param n_ages Integer. Number of age classes.
+#' @param n_lens Integer. Number of length bins.
+#' @param n_sexes Integer. Number of sexes.
+#' @param n_seas Integer. Number of seasons.
+#' @param n_fish_fleets Integer. Number of fishery fleets.
+#' @param n_srv_fleets Integer. Number of survey fleets.
+#' @param n_sims Integer. Number of simulation replicates.
+#' @param what Character string specifying the object type to validate.
+#'
+#' @details
+#' Simulation objects typically append `n_sims` as the final dimension.
+#'
+#' Examples of expected structures:
+#'
+#' Biological inputs:
+#' - `WAA_input`, `MatAA_input`:
+#'   `[n_pop, n_regions, n_years, n_seas, n_ages, n_sexes, n_sims]`
+#' - `natmort_input`:
+#'   `[n_pop, n_regions, n_years, n_ages, n_sexes, n_sims]`
+#'
+#' Fishery processes:
+#' - Fishing mortality (`Fmort_input`):
+#'   `[n_regions, n_years, n_seas, n_fish_fleets, n_sims]`
+#' - Selectivity (`fish_sel_input`):
+#'   `[n_regions, n_years, n_ages, n_sexes, n_fish_fleets, n_sims]`
+#'
+#' Survey processes:
+#' - Catchability (`srv_q_input`):
+#'   `[n_regions, n_years, n_srv_fleets, n_sims]`
+#'
+#' Recruitment:
+#' - `R0_input`, `h_input`:
+#'   `[n_pop, n_regions, n_years, n_sims]`
+#'
+#' Tag reporting:
+#' - `conv_tag_fish_reporting_input`:
+#'   `[n_regions, n_years, n_fish_fleets, n_sims]`
+#'
+#' All dimension checks are strict and require exact agreement.
+#'
+#' @return
+#' Invisibly returns `NULL`. The function stops with an error if dimensions
+#' do not match expectations.
 #'
 #' @keywords internal
 check_data_dimensions <- function(x,
@@ -80,6 +123,10 @@ check_data_dimensions <- function(x,
       stop("Fixed Movement Matrix does not have the correct dimensions. This should be n_pop, n_regions, n_regions, n_years, n_ages, n_sexes")
   }
 
+  if(what == 'stray_rate') {
+    if(sum(dim(x) == c(n_pop, n_years)) != 2)
+      stop("stray_ratedoes not have the correct dimensions. This should be n_pop, n_years")
+  }
 
 # Fishery Stuff -----------------------------------------------------------------
 
@@ -151,20 +198,58 @@ check_data_dimensions <- function(x,
 
 }
 
-#' Helper function used to check simulation object dimensions to ensure they are correct
+#' Validate Input Data Dimensions
 #'
-#' @param x Object to evaluate
-#' @param n_regions Number of regions
-#' @param n_years Number of years
-#' @param n_ages Number of ages
-#' @param n_lens Number of lengths
-#' @param n_sexes Number of sexes
-#' @param n_fish_fleets Number of fishery fleets
-#' @param n_srv_fleets Number of survey fleets
-#' @param n_sims Number of simulations
-#' @param what character specifying what to be evaluated
-#' @param n_seas Number of seasons
-#' @param n_pop
+#' Internal helper function that validates the dimensions of model input
+#' objects against the expected array structure defined by model settings.
+#'
+#' The function uses the `what` argument to determine the expected dimension
+#' ordering and verifies that `x` conforms exactly to that structure. If a
+#' mismatch is detected, execution stops with an informative error message.
+#'
+#' @param x Object to evaluate. Typically an array or vector whose dimensions
+#'   must match the expected structure for the object specified by `what`.
+#' @param n_pop Integer. Number of populations.
+#' @param n_regions Integer. Number of spatial regions.
+#' @param n_years Integer. Number of years.
+#' @param n_ages Integer. Number of age classes.
+#' @param n_seas Integer. Number of seasons.
+#' @param n_lens Integer. Number of length bins.
+#' @param n_sexes Integer. Number of sexes.
+#' @param n_fish_fleets Integer. Number of fishery fleets.
+#' @param n_srv_fleets Integer. Number of survey fleets.
+#' @param max_tag_liberty Integer. Maximum tag liberty (time-at-liberty)
+#'   tracked for a tag cohort.
+#' @param n_tag_cohorts Integer. Number of tagging cohorts.
+#' @param what Character string specifying the object type to validate.
+#'   Determines the required dimension ordering.
+#'
+#' @details
+#' Expected dimension order varies by object type. For example:
+#'
+#' Biological inputs:
+#' - `WAA`, `MatAA`:
+#'   `[n_pop, n_regions, n_years, n_seas, n_ages, n_sexes]`
+#' - `Fixed_natmort`:
+#'   `[n_pop, n_regions, n_years, n_ages, n_sexes]`
+#'
+#' Fishery and survey inputs:
+#' - Catch and index objects:
+#'   `[n_regions, n_years, n_seas, n_*_fleets]`
+#' - Composition data include additional age or length and sex dimensions.
+#'
+#' Tagging inputs:
+#' - Tagged fish releases:
+#'   `[n_tag_cohorts, n_pop, n_ages, n_sexes]`
+#' - Recaptures:
+#'   `[max_tag_liberty, n_seas, n_tag_cohorts, n_pop, n_regions,
+#'     n_ages, n_sexes, n_fish_fleets]`
+#'
+#' The function performs strict equality checks on dimension lengths.
+#'
+#' @return
+#' Invisibly returns `NULL`. The function is called for its side effect of
+#' stopping execution if a dimension mismatch is detected.
 #'
 #' @keywords internal
 check_sim_dimensions <- function(x,
@@ -306,6 +391,16 @@ check_sim_dimensions <- function(x,
   if(what == 'sexratio_input') {
     if(sum(dim(x) == c(n_pop, n_regions, n_years, n_sexes, n_sims)) != 5)
       stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_regions, n_years, n_sexes, n_sims"))
+  }
+
+  if(what == 'stray_rate_input') {
+    if(sum(dim(x) == c(n_pop, n_years, n_sims)) != 3)
+      stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_years, n_sims"))
+  }
+
+  if(what == 'rec_seas_prop') {
+    if(sum(dim(x) == c(n_pop, n_seas, n_sims)) != 3)
+      stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_seas, n_sims"))
   }
 
   if(what %in% c("R0_input", "h_input")) {

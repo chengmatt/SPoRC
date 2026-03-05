@@ -1,7 +1,7 @@
 #' Setup containers for simulation and output
 #'
 #' @param sim_list List from `Setup_Sim_Dim()` containing core simulation dimensions
-#' (`n_regions`, `n_yrs`, `n_seas` `n_ages`, `n_sexes`, `n_sims`, `n_fish_fleets`, `n_srv_fleets`, `n_obs_ages`, `n_lens`).
+#' (`n_pop`, `n_regions`, `n_yrs`, `n_seas` `n_ages`, `n_sexes`, `n_sims`, `n_fish_fleets`, `n_srv_fleets`, `n_obs_ages`, `n_lens`).
 #' The function appends container arrays for biological, fishery, and survey quantities.
 #'
 #' @export Setup_Sim_Containers
@@ -9,11 +9,12 @@
 Setup_Sim_Containers <- function(sim_list) {
 
   # Biological Containers
-  sim_list$NAA <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs+1, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # numbers at age
+  sim_list$NAA_aft = sim_list$NAA_bef = sim_list$NAA <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs+1, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # numbers at age
   sim_list$NAA0 <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs+1,  sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # unfished numbers at age
   sim_list$ZAA <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims)) # total mortality at age
   sim_list$Rec <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)) # recruitment
   sim_list$SSB <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)) # spawning biomass
+  sim_list$eff_SSB <- array(0, dim = c(sim_list$n_pop, sim_list$n_yrs, sim_list$n_sims)) # effective spawning biomass by population
   sim_list$Dynamic_SSB0 <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs,  sim_list$n_sims)) # Dynamic unfished spawning biomass
   sim_list$Total_Biom <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)) # total biomass
   sim_list$ln_RecDevs <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)) # rec devs

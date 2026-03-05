@@ -506,6 +506,7 @@ do_Fmort_mapping <- function(input_list) {
 #'   \item \code{"abd"}: Catch units in abundance
 #'   \item \code{"biom"}: Catch units in biomass (default)
 #' }
+#' @param ... Optional inputs for starting values for \code{ln_sigmaF}, \code{ln_sigmaC}, \code{ln_F_mean}, and \code{ln_F_devs}
 #'
 #' @export Setup_Mod_Catch_and_F
 #' @family Model Setup
@@ -1894,6 +1895,7 @@ do_fishsel_devs_mapping <- function(input_list, fish_sel_devs_spec, fishsel_devs
 #'   Only parameters with rows in this data frame will have priors applied.
 #' @param cont_tv_fish_sel_penalty Whether or not continuous fishery time varying selectivity penalties are applied (if cont_tv_fish_sel > 0)
 #' @param fishsel_devs_shared_ages List object for specifying which ages are shared when selectivity deviations are semi-parametric (e.g., list(1:5, 6:10, 11:30) specifies that ages 1-5, 6-10, and 11-30 have the same deviations.)
+#' @param ... Optional starting values for \code{ln_fish_fixed_sel_pars}, \code{ln_fish_q}, \code{fishsel_pe_pars}, and \code{ln_fishsel_devs}
 #'
 #' @export Setup_Mod_Fishsel_and_Q
 #'

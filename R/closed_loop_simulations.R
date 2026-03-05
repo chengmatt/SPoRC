@@ -1,59 +1,117 @@
-#' Set up simulation list for closed-loop projections
+#' Condition Closed-Loop Simulation Object
 #'
-#' This function creates and initializes a simulation list for closed-loop
-#' projections of population dynamics. All components of the simulation list
-#' must match the expected names used internally by the setup functions.
-#' Users can provide **custom definitions** for any component by passing them
-#' through `...` using the correct name (e.g., `WAA_input`, `fish_sel_input`).
+#' Constructs and conditions a simulation list for closed-loop population
+#' projections. The function initializes all required simulation components
+#' (dimensions, biological processes, fishing, survey, recruitment, tagging,
+#' and movement) and extends fitted model quantities into projection years.
 #'
-#' @param closed_loop_yrs Integer. Number of years to project in the closed loop.
-#' @param n_sims Integer. Number of simulation replicates.
-#' @param data List. Observed data and configuration for the population.
-#' @param parameters List. Parameter values for the model.
-#' @param mapping List. Mapping of parameters for optimization.
-#' @param sd_rep List. Standard deviation reports from fitted model.
-#' @param ... Optional named arguments for custom inputs.
-#'   Each name must correspond to a component expected by the simulation setup functions, and be dimensioned appropriately:
-#'   `Setup_Sim_Fishing()`, `Setup_Sim_Survey()`, `Setup_Sim_Biologicals()`,
-#'   `Setup_Sim_Rec()`, and `Setup_Sim_Tagging()`. Examples include:
+#' Users may override any internally generated component by supplying
+#' correctly named and dimensioned objects via `...`.
 #'
-#'   - **Fishing**: `fish_sel_input`, `ln_sigmaC`, `Fmort_input`, `fish_q_input`, etc.
-#'   - **Survey**: `srv_sel_input`, `srv_q_input`, `ObsSrvIdx_SE`, etc.
-#'   - **Biologicals**: `WAA_input`, `MatAA_input`, `natmort_input`, `AgeingError_input`, `SizeAgeTrans_input`
-#'   - **Recruitment inputs**:
-#'       - `R0_input`, `h_input`, `sexratio_input`, `ln_InitDevs_input`, `Rec_input`
-#'       - `Rec_input`:
-#'           - If shorter than the number of projection years, new recruitment deviates will be simulated
-#'             based on `recruitment_opt`, `R0_input`, and `h_input` (supports changing regimes across years).
-#'           - If you want fixed recruitment for all projection years, provide a `Rec_input` array that spans all years.
-#'   - **Tagging**: `Tag_Reporting_input`, `ln_Init_Tag_Mort`, `ln_Tag_Shed`, `tag_selex`, `tag_natmort`, `n_tags`, `n_tags_rel_input`
-#'   - **Movement**: `Movement` (must match the expected dimensions and be named exactly `Movement`)
+#' @param closed_loop_yrs Integer. Number of projection years beyond the
+#'   fitted data period.
+#' @param n_sims Integer. Number of stochastic simulation replicates.
+#' @param data List. Data object used to fit the assessment model.
+#' @param parameters List. Parameter list from fitted model.
+#' @param mapping List. Mapping object used during estimation.
+#' @param sd_rep List. Standard deviation report from fitted model.
+#' @param rep List. Report object from fitted model.
+#' @param random Character vector of estimated random effects.
 #'
-#'   The values must have the correct dimensions expected by each component.
-#'   If a component is not provided, default behavior will extend the last year (or zeros for fishing mortality, which can filled in subsequently)
-#' @param random Character vector of random effects estimated
-#' @param rep List. Report from fitted model.
-#' @param FishIdx_SE_fill Character or numeric. Fill method for fishery index
-#'   standard errors when extending to simulation years. Options are:
-#'   - `"zeros"`: fill with zeros
-#'   - `"last"`: repeat last non-NA slice
-#'   - `"mean"`: fill with the mean of the observed series
-#'   - Numeric: constant scalar or array value
-#' @param SrvIdx_SE_fill Character or numeric. Fill method for survey index
-#'   standard errors. Same options as `FishIdx_SE_fill`.
-#' @param ISS_FishAgeComps_fill Character or numeric. Fill method for fishery
-#'   age composition input sample sizes. Options are:
-#'   - `"zeros"`, `"last"`, `"mean"` (as above)
-#'   - `"F_pattern"`: fill based on fishing mortality pattern in the closed-loop simulation
-#'   - Numeric: constant scalar or array value
-#' @param ISS_FishLenComps_fill Character or numeric. Fill method for fishery
-#'   length composition input sample sizes. Same options as `ISS_FishAgeComps_fill`.
-#' @param ISS_SrvAgeComps_fill Character or numeric. Fill method for survey
-#'   age composition input sample sizes. Options are `"zeros"`, `"last"`, `"mean"`,
-#'   or a numeric constant.
-#' @param ISS_SrvLenComps_fill Character or numeric. Fill method for survey
-#'   length composition input sample sizes. Same options as `ISS_SrvAgeComps_fill`.
-#' @export condition_closed_loop_simulations
+#' @param FishIdx_SE_fill Character or numeric. Method used to extend fishery
+#'   index standard errors into projection years:
+#'   \describe{
+#'     \item{"zeros"}{Fill with zeros}
+#'     \item{"last"}{Repeat last observed slice}
+#'     \item{"mean"}{Use mean of observed series}
+#'     \item{numeric}{Use supplied constant or array}
+#'   }
+#'
+#' @param SrvIdx_SE_fill Character or numeric. Same behavior as
+#'   `FishIdx_SE_fill`, applied to survey index uncertainty.
+#'
+#' @param ISS_FishAgeComps_fill Character or numeric. Method for extending
+#'   fishery age composition input sample sizes. Additional option:
+#'   \describe{
+#'     \item{"F_pattern"}{Scale sample sizes based on fishing mortality pattern
+#'     during closed-loop simulation}
+#'   }
+#'
+#' @param ISS_FishLenComps_fill Same behavior as `ISS_FishAgeComps_fill`.
+#' @param ISS_SrvAgeComps_fill Character or numeric. Extension rule for survey
+#'   age composition input sample sizes.
+#' @param ISS_SrvLenComps_fill Same behavior as `ISS_SrvAgeComps_fill`.
+#'
+#' @param ... Optional named overrides for simulation inputs.
+#'
+#'   Any component expected by:
+#'   `Setup_Sim_Fishing()`, `Setup_Sim_Survey()`,
+#'   `Setup_Sim_Biologicals()`, `Setup_Sim_Rec()`,
+#'   `Setup_Sim_Tagging()`
+#'   may be supplied.
+#'
+#'   Common overrides include:
+#'
+#'   Fishing:
+#'     - `fish_sel_input`
+#'     - `Fmort_input`
+#'     - `fish_q_input`
+#'
+#'   Survey:
+#'     - `srv_sel_input`
+#'     - `srv_q_input`
+#'
+#'   Biologicals:
+#'     - `WAA_input`
+#'     - `MatAA_input`
+#'     - `natmort_input`
+#'
+#'   Recruitment:
+#'     - `R0_input`
+#'     - `h_input`
+#'     - `Rec_input`
+#'
+#'   Tagging:
+#'     - `conv_tag_fish_reporting_input`
+#'
+#'   Movement:
+#'     - `Movement`
+#'
+#'   Supplied objects must have dimensions consistent with
+#'   `n_sims`, total years (`length(data$years) + closed_loop_yrs`),
+#'   and model structural dimensions.
+#'
+#' @details
+#' Simulation years consist of:
+#'   - Historical years (conditioning period)
+#'   - Projection years (`closed_loop_yrs`)
+#'
+#' By default:
+#'   - Selectivity, catchability, biological inputs, and other
+#'     time-varying quantities are extended using the final
+#'     estimated year.
+#'   - Fishing mortality in projection years is initialized to zero
+#'     and may be modified during feedback.
+#'   - Recruitment deviations are simulated forward if not fully
+#'     supplied via `Rec_input`.
+#'
+#' Parameter values are reconstructed into their original list
+#' structure using `get_optim_param_list()` before being passed to
+#' simulation setup functions.
+#'
+#' Closed-loop feedback begins in the first projection year and
+#' updates fishing mortality and other management controls
+#' according to the model's feedback mechanism.
+#'
+#' @return
+#' A fully initialized `sim_list` object containing:
+#'   - Model dimensions
+#'   - Simulation containers
+#'   - Fishing, survey, biological, recruitment,
+#'     tagging, and movement inputs
+#'   - Replicated structures across `n_sims`
+#'
+#' @export
 #' @family Closed Loop Simulations
 condition_closed_loop_simulations <- function(closed_loop_yrs,
                                               n_sims,
@@ -116,6 +174,8 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
                             feedback_start_yr = length(data$years), # when to start closed loop feedback
                             n_seas = data$n_seas, # number of seasons
                             seasdur = data$seasdur, # seasonal duration
+                            n_pop = data$n_pop,  # number of populations
+                            natal_region = data$natal_region, # natal region
                             run_feedback = TRUE # whether or not to run feedback (closed loop)
   )
 
@@ -271,25 +331,26 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
 
   # Setup Biological Dynamics -----------------------------------------------
   natmort_input <- if(!"natmort_input" %in% names(args)) {
-    extend_years(replicate(n = sim_list$n_sims, rep$natmort[,1:length(data$years),,,drop = FALSE]), closed_loop_yrs, 2, 'last')
+    extend_years(replicate(n = sim_list$n_sims, rep$natmort[,,1:length(data$years),,,drop = FALSE]), closed_loop_yrs, 3, 'last')
   } else args$natmort_input
   WAA_input <- if(!"WAA_input" %in% names(args)) {
-    extend_years(replicate(n = sim_list$n_sims, data$WAA[,1:length(data$years),,,,drop = FALSE]), closed_loop_yrs, 2, 'last')
+    extend_years(replicate(n = sim_list$n_sims, data$WAA[,,1:length(data$years),,,,drop = FALSE]), closed_loop_yrs, 3, 'last')
   } else args$WAA_input
   WAA_fish_input <- if(!"WAA_fish_input" %in% names(args)) {
-    extend_years(replicate(n = sim_list$n_sims, data$WAA_fish[,1:length(data$years),,,,,drop = FALSE]), closed_loop_yrs, 2, 'last')
+    extend_years(replicate(n = sim_list$n_sims, data$WAA_fish[,,1:length(data$years),,,,,drop = FALSE]), closed_loop_yrs, 3, 'last')
   } else args$WAA_fish_input
   WAA_srv_input <- if(!"WAA_srv_input" %in% names(args)) {
-    extend_years(replicate(n = sim_list$n_sims, data$WAA_srv[,1:length(data$years),,,,,drop = FALSE]), closed_loop_yrs, 2, 'last')
+    extend_years(replicate(n = sim_list$n_sims, data$WAA_srv[,,1:length(data$years),,,,,drop = FALSE]), closed_loop_yrs, 3, 'last')
   } else args$WAA_srv_input
   MatAA_input <- if(!"MatAA_input" %in% names(args)) {
-    extend_years(replicate(n = sim_list$n_sims, data$MatAA[,1:length(data$years),,,,drop = FALSE]), closed_loop_yrs, 2, 'last')
+    extend_years(replicate(n = sim_list$n_sims, data$MatAA[,,1:length(data$years),,,,drop = FALSE]), closed_loop_yrs, 3, 'last')
   } else args$MatAA_input
   AgeingError_input <- if(!"AgeingError_input" %in% names(args)) {
     extend_years(replicate(n = sim_list$n_sims, data$AgeingError[1:length(data$years),,,drop = FALSE]), closed_loop_yrs, 1, 'last')
   } else args$AgeingError_input
   SizeAgeTrans_input <- if(!"SizeAgeTrans_input" %in% names(args)) {
-    extend_years(replicate(n = sim_list$n_sims, data$SizeAgeTrans[,1:length(data$years),,,,,drop = FALSE]), closed_loop_yrs, 2, 'last')
+    if(data$fit_lengths == 0) array(NA, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_lens, sim_list$n_ages, sim_list$n_sexes))
+    if(data$fit_lengths == 1) extend_years(replicate(n = sim_list$n_sims, data$SizeAgeTrans[,,1:length(data$years),,,,,drop = FALSE]), closed_loop_yrs, 3, 'last')
   } else args$SizeAgeTrans_input
 
   # setup biologicals
@@ -306,17 +367,19 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
 
   # Setup Recruitment Processes ---------------------------------------------
   h_input <- if(!"h_input" %in% names(args)) {
-    replicate(n = sim_list$n_sims, array(rep$h_trans, dim = c(sim_list$n_regions, sim_list$n_yrs)))
+    replicate(n = sim_list$n_sims, array(rep$h_trans, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs)))
   } else args$h_input
   R0_input <- if(!"R0_input" %in% names(args)) {
-    replicate(n = sim_list$n_sims, expr = array(rep$R0 * rep$Rec_trans_prop, dim = c(sim_list$n_regions, sim_list$n_yrs)))
+    R0_r = array(0, dim = c(n_pop, n_regions)) # container
+    for(p in 1:n_pop) R0_r[p,] = rep$R0 [p] * rep$Rec_trans_prop[p,]
+    replicate(n = sim_list$n_sims, expr = array(R0_r, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs)))
   } else args$R0_input
   sexratio_input <- if(!"sexratio_input" %in% names(args)) {
-    extend_years(replicate(n = sim_list$n_sims, expr = rep$sexratio[,1:length(data$years),,drop = FALSE]), closed_loop_yrs, 2, 'last')
+    extend_years(replicate(n = sim_list$n_sims, expr = rep$sexratio[,,1:length(data$years),,drop = FALSE]), closed_loop_yrs, 3, 'last')
   } else args$sexratio_input
   ln_sigmaR <- if(!"ln_sigmaR" %in% names(args)) optim_parameters_list$ln_sigmaR else args$ln_sigmaR
   Rec_input <- if(!"Rec_input" %in% names(args)) {
-    replicate(n = sim_list$n_sims, expr = rep$Rec[,1:length(data$years),drop = FALSE])
+    replicate(n = sim_list$n_sims, expr = rep$Rec[,,1:length(data$years),drop = FALSE])
   } else args$Rec_input
   ln_InitDevs_input <- if(!"ln_InitDevs_input" %in% names(args)) {
     replicate(sim_list$n_sims, optim_parameters_list$ln_InitDevs)
@@ -349,22 +412,22 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
 
   # Setup Tagging -----------------------------------------------------------
   n_tags_rel_input <- if(!"n_tags_rel_input" %in% names(args)) {
-    if(!is.na(sum(data$Tagged_Fish))) apply(data$Tagged_Fish, 1, sum) else NA
+    if(!is.na(sum(data$conv_tagged_fish))) apply(data$conv_tagged_fish, 1, sum) else NA
   } else args$n_tags_rel_input
   n_tags <- if(!"n_tags" %in% names(args)) NULL else args$n_tags
-  tag_release_indicator <- if(!"tag_release_indicator" %in% names(args)) {
-    if(exists("tag_release_indicator", data)) data$tag_release_indicator else NA
-  } else args$tag_release_indicator
-  ln_Init_Tag_Mort <- if(!"ln_Init_Tag_Mort" %in% names(args)) optim_parameters_list$ln_Init_Tag_Mort else args$ln_Init_Tag_Mort
-  ln_Tag_Shed <- if(!"ln_Tag_Shed" %in% names(args)) optim_parameters_list$ln_Tag_Shed else args$ln_Tag_Shed
-  Tag_Reporting_input <- if(!"Tag_Reporting_input" %in% names(args)) {
-    if(is.null(rep$Tag_Reporting)) NULL else extend_years(replicate(n = sim_list$n_sims, rep$Tag_Reporting), closed_loop_yrs, 2, 'last')
-  } else args$Tag_Reporting_input
-  UseTagging <- if(!"UseTagging" %in% names(args)) data$UseTagging else args$UseTagging
+  conv_tag_release_indicator <- if(!"conv_tag_release_indicator" %in% names(args)) {
+    if(exists("conv_tag_release_indicator", data)) data$conv_tag_release_indicator else NA
+  } else args$conv_tag_release_indicator
+  ln_init_conv_tag_mort <- if(!"ln_init_conv_tag_mort" %in% names(args)) optim_parameters_list$ln_init_conv_tag_mort else args$ln_init_conv_tag_mort
+  ln_conv_tag_shed <- if(!"ln_conv_tag_shed" %in% names(args)) optim_parameters_list$ln_conv_tag_shed else args$ln_conv_tag_shed
+  conv_tag_fish_reporting_input <- if(!"conv_tag_fish_reporting_input" %in% names(args)) {
+    if(is.null(rep$conv_tag_fish_reporting)) NULL else extend_years(replicate(n = sim_list$n_sims, rep$conv_tag_fish_reporting), closed_loop_yrs, 2, 'last')
+  } else args$conv_tag_fish_reporting_input
+  use_conv_fish_tagging <- if(!"use_conv_fish_tagging" %in% names(args)) data$use_conv_fish_tagging else args$use_conv_fish_tagging
   tag_selex <- if(!"tag_selex" %in% names(args)) data$tag_selex else args$tag_selex
   tag_natmort <- if(!"tag_natmort" %in% names(args)) data$tag_natmort else args$tag_natmort
-  tag_like <- if(!"tag_like" %in% names(args)) data$Tag_LikeType else args$tag_like
-  ln_tag_theta <- if(!"ln_tag_theta" %in% names(args)) parameters$ln_tag_theta else args$ln_tag_theta
+  conv_fish_tag_like <- if(!"conv_fish_tag_like" %in% names(args)) data$conv_fish_tag_like else args$conv_fish_tag_like
+  ln_conv_fish_tag_theta <- if(!"ln_conv_fish_tag_theta" %in% names(args)) parameters$ln_conv_fish_tag_theta else args$ln_conv_fish_tag_theta
 
   # setup tagging simulation
   if(!is.null(n_tags)) sim_list$n_tags_rel_input <- NULL # set release input to NULL if n_tags is specified.
@@ -374,19 +437,19 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     t_tagging = data$t_tagging,
     n_tags = n_tags,
     n_tags_rel_input = n_tags_rel_input * data$Wt_Tagging,
-    tag_release_indicator = tag_release_indicator,
-    ln_Init_Tag_Mort = ln_Init_Tag_Mort,
-    ln_Tag_Shed = ln_Tag_Shed,
-    Tag_Reporting_input = Tag_Reporting_input,
-    UseTagging = UseTagging,
-    tag_selex = tag_selex,
-    tag_natmort = tag_natmort,
-    tag_like = tag_like,
-    ln_tag_theta = ln_tag_theta
+    conv_tag_release_indicator = conv_tag_release_indicator,
+    conv_tag_release_platform = data$conv_tag_release_platform,
+    ln_init_conv_tag_mort = ln_init_conv_tag_mort,
+    ln_conv_tag_shed = ln_conv_tag_shed,
+    conv_fish_tag_attr = data$conv_fish_tag_attr,
+    conv_tag_fish_reporting_input = conv_tag_fish_reporting_input,
+    use_conv_fish_tagging = use_conv_fish_tagging,
+    conv_fish_tag_like = conv_fish_tag_like,
+    ln_conv_fish_tag_theta = ln_conv_fish_tag_theta
   )
 
   # Movement ----------------------------------------------------------------
-  Movement <- if(!"Movement" %in% names(args)) extend_years(replicate(n = sim_list$n_sims, rep$Movement[,,1:length(data$years),,,,drop = FALSE]), closed_loop_yrs, 3, 'last') else args$Movement
+  Movement <- if(!"Movement" %in% names(args)) extend_years(replicate(n = sim_list$n_sims, rep$Movement[,,,1:length(data$years),,,,drop = FALSE]), closed_loop_yrs, 4, 'last') else args$Movement
   sim_list$Movement <- Movement
 
   return(sim_list)
@@ -454,7 +517,7 @@ get_closed_loop_reference_points <- function(use_true_values,
       spawn_seas = sim_env$spawn_seas,
       n_fish_fleets = sim_env$n_fish_fleets,
       n_regions = sim_env$n_regions,
-      WAA = array(sim_env$WAA[, 1:y, ,, , sim], dim = c(sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes)),
+      WAA = array(sim_env$WAA[,1:y, ,, , sim], dim = c(sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes)),
       MatAA = array(sim_env$MatAA[, 1:y,, , , sim], dim = c(sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes)),
       do_recruits_move = sim_env$do_recruits_move
     )

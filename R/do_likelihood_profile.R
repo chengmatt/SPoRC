@@ -53,7 +53,7 @@ do_likelihood_profile <- function(data,
   Movement_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
   TagRep_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
   Fmort_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
-  Tag_nLL <- data.frame()
+  Conv_Fish_Tag_nLL <- data.frame()
   Catch_nLL <- data.frame()
   FishAge_nLL <- data.frame()
   SrvAge_nLL <- data.frame()
@@ -106,7 +106,7 @@ do_likelihood_profile <- function(data,
         h_nLL[j,1] <- report$h_nLL
         TagRep_nLL[j,1] <- report$TagRep_nLL
         Fmort_nLL[j,1] <- sum(data$Wt_F * report$Fmort_nLL)
-        Tag_nLL <- rbind(Tag_nLL, reshape2::melt(data$Wt_Tagging * report$Tag_nLL) %>% dplyr::mutate(prof_val = vals[j]))
+        Conv_Fish_Tag_nLL <- rbind(Conv_Fish_Tag_nLL, reshape2::melt(data$Wt_Tagging * report$Conv_Fish_Tag_nLL) %>% dplyr::mutate(prof_val = vals[j]))
         Catch_nLL <- rbind(Catch_nLL, reshape2::melt(data$Wt_Catch * report$Catch_nLL) %>% dplyr::mutate(prof_val = vals[j]))
         FishAge_nLL <- rbind(FishAge_nLL, reshape2::melt(report$FishAgeComps_nLL) %>% dplyr::mutate(prof_val = vals[j]))
         SrvAge_nLL <- rbind(SrvAge_nLL, reshape2::melt(report$SrvAgeComps_nLL) %>% dplyr::mutate(prof_val = vals[j]))
@@ -154,7 +154,7 @@ do_likelihood_profile <- function(data,
           h_nLL = NA,
           TagRep_nLL = NA,
           Fmort_nLL = NA,
-          Tag_nLL = data.frame(),
+          Conv_Fish_Tag_nLL = data.frame(),
           Catch_nLL = data.frame(),
           FishAge_nLL = data.frame(),
           SrvAge_nLL = data.frame(),
@@ -204,7 +204,7 @@ do_likelihood_profile <- function(data,
           result$h_nLL <- report$h_nLL
           result$TagRep_nLL <- report$TagRep_nLL
           result$Fmort_nLL <- sum(data$Wt_F * report$Fmort_nLL)
-          result$Tag_nLL <- reshape2::melt(data$Wt_Tagging * report$Tag_nLL) %>% dplyr::mutate(prof_val = vals[j])
+          result$Conv_Fish_Tag_nLL <- reshape2::melt(data$Wt_Tagging * report$Conv_Fish_Tag_nLL) %>% dplyr::mutate(prof_val = vals[j])
           result$Catch_nLL <- reshape2::melt(data$Wt_Catch * report$Catch_nLL) %>% dplyr::mutate(prof_val = vals[j])
           result$FishAge_nLL <- reshape2::melt(report$FishAgeComps_nLL) %>% dplyr::mutate(prof_val = vals[j])
           result$SrvAge_nLL <- reshape2::melt(report$SrvAgeComps_nLL) %>% dplyr::mutate(prof_val = vals[j])
@@ -240,7 +240,7 @@ do_likelihood_profile <- function(data,
         h_nLL[j,1] <- res$h_nLL
         TagRep_nLL[j,1] <- res$TagRep_nLL
         Fmort_nLL[j,1] <- res$Fmort_nLL
-        Tag_nLL <- rbind(Tag_nLL, res$Tag_nLL)
+        Conv_Fish_Tag_nLL <- rbind(Conv_Fish_Tag_nLL, res$Conv_Fish_Tag_nLL)
         Catch_nLL <- rbind(Catch_nLL, res$Catch_nLL)
         FishAge_nLL <- rbind(FishAge_nLL, res$FishAge_nLL)
         SrvAge_nLL <- rbind(SrvAge_nLL, res$SrvAge_nLL)
@@ -314,7 +314,7 @@ do_likelihood_profile <- function(data,
   SrvIdx_nLL_df <- SrvIdx_nLL %>%
     dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
     dplyr::mutate(type = 'SrvIdx')
-  Tag_nLL_df <- Tag_nLL %>%
+  Conv_Fish_Tag_nLL_df <- Conv_Fish_Tag_nLL %>%
     dplyr::rename(Recap_Year = Var1, Recap_Seas = Var2, Tag_Cohort = Var3, Region = Var4, Age = Var5, Sex = Var6) %>%
     dplyr::mutate(type = 'Tagging')
 
@@ -323,7 +323,7 @@ do_likelihood_profile <- function(data,
                    TagRep_nLL_df,Fmort_nLL_df, sel_nLL_df,
                    Catch_nLL_df %>% dplyr::group_by(prof_val, type) %>%
                      dplyr::summarize(value = sum(value)),
-                   Tag_nLL_df %>% dplyr::group_by(prof_val, type) %>%
+                   Conv_Fish_Tag_nLL_df %>% dplyr::group_by(prof_val, type) %>%
                      dplyr::summarize(value = sum(value, na.rm = T)),
                    FishAge_nLL_df %>% dplyr::group_by(prof_val, type) %>%
                      dplyr::summarize(value = sum(value, na.rm = T)),
@@ -349,7 +349,7 @@ do_likelihood_profile <- function(data,
                        TagRep_nLL_df = TagRep_nLL_df,
                        Fmort_nLL_df = Fmort_nLL_df,
                        Catch_nLL_df = Catch_nLL_df,
-                       Tag_nLL_df = Tag_nLL_df,
+                       Conv_Fish_Tag_nLL_df = Conv_Fish_Tag_nLL_df,
                        FishAge_nLL_df = FishAge_nLL_df,
                        SrvAge_nLL_df = SrvAge_nLL_df,
                        FishLen_nLL_df = FishLen_nLL_df,

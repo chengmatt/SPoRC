@@ -2031,9 +2031,9 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
     sel_form <- tmp_sel_form_vec[1] # get selectivity type
 
     # get fleet index
-    tmp_fleet <- as.numeric(tmp_sel_form_vec[3])
+    tmp_fleet <- if(length(tmp_sel_form_vec) == 3) as.numeric(tmp_sel_form_vec[3]) else as.numeric(tmp_sel_form_vec[5]) # fleet index changes if block is included in character vector
     # get block index
-    tmp_block <- if(length(tmp_sel_form_vec) == 5) as.numeric(tmp_sel_form_vec[5])
+    tmp_block <- if(length(tmp_sel_form_vec) == 5) as.numeric(tmp_sel_form_vec[3]) else NULL
 
     # validate options
     if(!sel_form %in% c(sel_map$sel)) stop("fish_sel_model is not correctly specified. This needs to be one of these: logist1, gamma, exponential, logist2, dbnrml (the seltypes) and specified as seltype_Fleet_x")

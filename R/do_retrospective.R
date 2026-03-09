@@ -1,18 +1,46 @@
-#' Helper function to truncate data years, parameters, and mapping to conduct retrospective diagnostics. Called within do_retrospective function.
+#' Truncate Model Inputs for Retrospective Diagnostics
 #'
-#' @param j The years to truncate from the terminal year
-#' @param data Data list used for the RTMB model
-#' @param parameters Parameter list used for the RTMB model
-#' @param mapping Mapping list used for the RTMB model
+#' Internal helper used by \code{do_retrospective()} to truncate model inputs
+#' when conducting retrospective diagnostics. The function removes the last
+#' \code{j} years from the terminal portion of the time series and updates all
+#' associated data objects, parameter arrays, and parameter mappings so that
+#' their dimensions remain internally consistent.
 #'
-#' @returns List of data, parameters, and mapping that have truncated dimensions from the original data, parameters, and mapping list
-#' @keywords internal
-#'
-#' @examples
-#' \dontrun{
-#' retro_list <- retro_truncate_year(j = 0, data, parameters, mapping) # does not remove any data
-#' retro_list <- retro_truncate_year(j = 1, data, parameters, mapping) # removes last year of data
+#' Specifically, the function adjusts the model \code{data}, \code{parameters},
+#' and \code{mapping} lists used by the RTMB model by:
+#' \itemize{
+#'   \item Truncating the \code{years} vector.
+#'   \item Removing terminal years from observations (catch, indices, and
+#'   composition data).
+#'   \item Truncating time-varying parameter arrays (e.g., recruitment
+#'   deviations, fishing mortality deviations, selectivity deviations,
+#'   movement parameters).
+#'   \item Updating parameter mappings to match the truncated parameter
+#'   dimensions.
+#'   \item Adjusting block structures and auxiliary objects that depend on
+#'   the number of modeled years.
 #' }
+#'
+#' The resulting objects can be passed directly to the model to fit a
+#' retrospective peel.
+#'
+#' @param j Integer specifying the number of terminal years to remove from the
+#'   dataset. A value of \code{0} returns the full dataset with no truncation.
+#' @param data List containing model data supplied to the RTMB model.
+#' @param parameters List containing model parameters supplied to the RTMB
+#'   model.
+#' @param mapping List defining parameter mappings used during estimation.
+#'
+#' @returns A list containing truncated versions of the RTMB inputs:
+#' \itemize{
+#'   \item \code{retro_data} – Modified data list with terminal years removed.
+#'   \item \code{retro_parameters} – Parameter list truncated to match the
+#'   shortened time series.
+#'   \item \code{retro_mapping} – Mapping list updated to match truncated
+#'   parameter dimensions.
+#' }
+#'
+#' @keywords internal
 truncate_yr <- function(j,
                         data,
                         parameters,
@@ -104,7 +132,7 @@ truncate_yr <- function(j,
 
 # Tagging -----------------------------------------------------------------
 
-  if(data$use_conv_fish_tagging == 1) {
+  if(any(data$use_conv_fish_tagging == 1)) {
     # Tag reporting
     retro_data$conv_tag_fish_reporting_blocks <- data$conv_tag_fish_reporting_blocks[,1:(length(data$years) - j),, drop = FALSE]
     if(!is.na(sum(retro_data$conv_tag_fish_reporting_blocks))) {
@@ -116,7 +144,7 @@ truncate_yr <- function(j,
     Tag_Release_Ind <- as.matrix(data$conv_tag_release_indicator)
     retro_data$conv_tag_release_indicator <- as.matrix(Tag_Release_Ind[which(Tag_Release_Ind[,2] %in% 1:(length(data$years) - j)), ])
     retro_data$conv_tag_release_platform <- data$conv_tag_release_platform[1:nrow(retro_data$conv_tag_release_indicator),]
-    retro_data$n_tag_cohorts <- nrow(retro_data$conv_tag_release_indicator)
+    retro_data$n_conv_tag_cohorts <- nrow(retro_data$conv_tag_release_indicator)
     retro_data$conv_tagged_fish <- data$conv_tagged_fish[1:nrow(retro_data$conv_tag_release_indicator),,,,drop = FALSE] # remove data (not necessary, but helps with computational cost if using tagging)
     retro_data$obs_conv_tag_fish_recap <- data$obs_conv_tag_fish_recap[,,1:nrow(retro_data$conv_tag_release_indicator),,,,,,drop = FALSE] # remove data (not necessary, but helps with computational cost)
   }
@@ -152,45 +180,74 @@ truncate_yr <- function(j,
 
 
 
-#' Run retrospective analyses for RTMB models
+#' Run Retrospective Diagnostics for RTMB Models
 #'
-#' Performs retrospective peels by truncating the input data, optionally applying
-#' Francis reweighting and parallelization, and returns estimates of spawning stock
-#' biomass (SSB) and recruitment for each peel.
+#' Conducts retrospective analyses by sequentially removing terminal years
+#' ("peels") from the dataset and refitting the model. For each peel, the
+#' function truncates the model inputs, optionally applies data lags and
+#' Francis composition reweighting, fits the model, and extracts estimates
+#' of spawning stock biomass (SSB) and recruitment.
 #'
-#' @param n_retro Integer. Number of retrospective peels to perform.
-#' @param data List. Data input for the RTMB model.
-#' @param parameters List. Parameter values for the RTMB model.
-#' @param mapping List. Mapping information for the RTMB model.
-#' @param random Character vector. Names of random effects in the model. Default is \code{NULL}.
-#' @param do_par Logical. Whether to run retrospective peels in parallel. Default is \code{FALSE}.
-#' @param n_cores Integer. Number of cores to use for parallel execution if \code{do_par = TRUE}.
-#' @param newton_loops Integer. Number of Newton loops to run during model fitting. Default is 3.
-#' @param do_francis Logical. Whether to apply Francis reweighting within each retrospective peel. Default is \code{FALSE}.
-#' @param n_francis_iter Integer. Number of Francis reweighting iterations. Required if \code{do_francis = TRUE}.
-#' @param nlminb_control List. Control parameters passed to \code{nlminb} during model fitting. Default is \code{list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15)}.
-#' @param do_sdrep Logical. Whether to return standard errors from \code{sdreport}. Default is \code{FALSE}.
-#' @param fishidx_datalag Integer array. Lags for fishery index data [regions x fleets]. Default is zeros.
-#' @param fishage_datalag Integer array. Lags for fishery age composition data [regions x fleets]. Default is zeros.
-#' @param fishlen_datalag Integer array. Lags for fishery length composition data [regions x fleets]. Default is zeros.
-#' @param srvidx_datalag Integer array. Lags for survey index data [regions x fleets]. Default is zeros.
-#' @param srvage_datalag Integer array. Lags for survey age composition data [regions x fleets]. Default is zeros.
-#' @param srvlen_datalag Integer array. Lags for survey length composition data [regions x fleets]. Default is zeros.
-#' @param tag_datalag Integer. Lag for tagging data. Default is 0.
+#' Retrospective analyses are commonly used to evaluate the stability of
+#' model estimates through time and to diagnose potential model misspecification.
 #'
-#' @return A \code{data.frame} containing retrospective estimates of SSB and recruitment.
-#'   Columns include:
+#' @param n_retro Integer specifying the number of retrospective peels to perform.
+#'   A value of \code{n_retro = 0} fits the model using the full dataset only.
+#' @param data List containing the data supplied to the RTMB model.
+#' @param parameters List containing the model parameters.
+#' @param mapping List defining parameter mappings used during estimation.
+#' @param random Character vector identifying random-effect parameters in the model.
+#'   Default is \code{NULL}.
+#' @param do_par Logical indicating whether retrospective peels should be run
+#'   in parallel. Default is \code{FALSE}.
+#' @param n_cores Integer specifying the number of cores to use when
+#'   \code{do_par = TRUE}.
+#' @param newton_loops Integer specifying the number of Newton optimization
+#'   loops used during model fitting. Default is \code{3}.
+#' @param do_francis Logical indicating whether Francis composition
+#'   reweighting should be applied within each retrospective peel.
+#'   Default is \code{FALSE}.
+#' @param n_francis_iter Integer specifying the number of Francis reweighting
+#'   iterations. Required if \code{do_francis = TRUE}.
+#' @param nlminb_control List of control arguments passed to \code{stats::nlminb}
+#'   during model fitting. Default is
+#'   \code{list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15)}.
+#' @param do_sdrep Logical indicating whether standard errors should be
+#'   calculated using \code{RTMB::sdreport}. Default is \code{FALSE}.
+#'
+#' @param fishidx_datalag Integer array specifying lags applied to fishery
+#'   index data \eqn{[region \times fleet]}. Default is zeros.
+#' @param fishage_datalag Integer array specifying lags applied to fishery
+#'   age-composition data \eqn{[region \times fleet]}. Default is zeros.
+#' @param fishlen_datalag Integer array specifying lags applied to fishery
+#'   length-composition data \eqn{[region \times fleet]}. Default is zeros.
+#' @param srvidx_datalag Integer array specifying lags applied to survey
+#'   index data \eqn{[region \times fleet]}. Default is zeros.
+#' @param srvage_datalag Integer array specifying lags applied to survey
+#'   age-composition data \eqn{[region \times fleet]}. Default is zeros.
+#' @param srvlen_datalag Integer array specifying lags applied to survey
+#'   length-composition data \eqn{[region \times fleet]}. Default is zeros.
+#' @param conv_tag_datalag Integer specifying the lag applied to conventional
+#'   tagging data. Default is \code{0}.
+#'
+#' @return A long-format \code{data.frame} containing retrospective estimates
+#'   of spawning stock biomass and recruitment. Columns include:
 #'   \itemize{
-#'     \item \code{Region}: Region index.
-#'     \item \code{Year}: Year index.
-#'     \item \code{Type}: "SSB" or "Recruitment".
-#'     \item \code{peel}: Peel number (0 = full data, 1 = 1-year peel, etc.).
-#'     \item \code{value}: Estimated value of SSB or recruitment.
-#'     \item \code{pdHess} and \code{max_grad} (optional): Information from \code{sdreport} if \code{do_sdrep = TRUE}.
+#'     \item \code{Pop} – Population index.
+#'     \item \code{Region} – Region index.
+#'     \item \code{Year} – Model year.
+#'     \item \code{Type} – Quantity reported ("SSB" or "Recruitment").
+#'     \item \code{peel} – Retrospective peel number (0 = full data, 1 = one-year peel, etc.).
+#'     \item \code{value} – Estimated value of the quantity.
+#'     \item \code{pdHess} – Logical indicator of positive-definite Hessian
+#'     (returned when \code{do_sdrep = TRUE}).
+#'     \item \code{max_grad} – Maximum absolute gradient of fixed effects
+#'     (returned when \code{do_sdrep = TRUE}).
 #'   }
 #'
 #' @export do_retrospective
 #' @family Model Diagnostics
+#'
 #' @import RTMB
 #' @import dplyr
 #' @import future.apply
@@ -216,7 +273,7 @@ do_retrospective <- function(n_retro,
                              srvidx_datalag = array(0, dim = c(data$n_regions, data$n_srv_fleets)),
                              srvage_datalag = array(0, dim = c(data$n_regions, data$n_srv_fleets)),
                              srvlen_datalag = array(0, dim = c(data$n_regions, data$n_srv_fleets)),
-                             tag_datalag = 0
+                             conv_tag_datalag = 0
                              ) {
 
   # Loop through retrospective (no parrallelization)
@@ -228,6 +285,8 @@ do_retrospective <- function(n_retro,
 
       # truncate data
       init <- truncate_yr(j = j, data = data, parameters = parameters, mapping = mapping)
+      init$retro_data$conv_tagged_fish
+      SPoRC_rtmb(pars = init$retro_parameters, data = init$retro_data)
 
       # Fishery Data Lags
       start_col <- length(init$retro_data$years) # get start index
@@ -281,11 +340,11 @@ do_retrospective <- function(n_retro,
       } # end f loop
 
       # Tagging Data Lags
-      if(tag_datalag > 0) {
+      if(conv_tag_datalag > 0) {
         Tag_Release_Ind <- as.matrix(init$retro_data$conv_tag_release_indicator) # get tag release indicator
-        tag_end_col <- max(start_col - tag_datalag + 1, 1) # get end index
+        tag_end_col <- max(start_col - conv_tag_datalag + 1, 1) # get end index
         init$retro_data$conv_tag_release_indicator <- as.matrix(Tag_Release_Ind[-which(Tag_Release_Ind[,2] %in% start_col:tag_end_col), ]) # remove tag data when lagged
-        init$retro_data$n_tag_cohorts <- nrow(init$retro_data$conv_tag_release_indicator)
+        init$retro_data$n_conv_tag_cohorts <- nrow(init$retro_data$conv_tag_release_indicator)
         init$retro_data$conv_tag_release_platform <- init$retro_data$conv_tag_release_platform[1:nrow(init$retro_data$conv_tag_release_indicator),]
         init$retro_data$conv_tagged_fish <- init$retro_data$conv_tagged_fish[1:nrow(init$retro_data$conv_tag_release_indicator),,,,drop = FALSE] # remove data (not necessary, but helps with computational cost if using tagging)
         init$retro_data$obs_conv_tag_fish_recap <- init$retro_data$obs_conv_tag_fish_recap[,,1:nrow(init$retro_data$conv_tag_release_indicator),,,,,,drop = FALSE] # remove data (not necessary, but helps with computational cost)
@@ -410,11 +469,11 @@ do_retrospective <- function(n_retro,
         } # end f loop
 
         # Tagging Data Lags
-        if(tag_datalag > 0) {
+        if(conv_tag_datalag > 0) {
           Tag_Release_Ind <- as.matrix(init$retro_data$conv_tag_release_indicator) # get tag release indicator
-          tag_end_col <- max(start_col - tag_datalag + 1, 1) # get end index
+          tag_end_col <- max(start_col - conv_tag_datalag + 1, 1) # get end index
           init$retro_data$conv_tag_release_indicator <- as.matrix(Tag_Release_Ind[-which(Tag_Release_Ind[,2] %in% start_col:tag_end_col), ]) # remove tag data when lagged
-          init$retro_data$n_tag_cohorts <- nrow(init$retro_data$conv_tag_release_indicator)
+          init$retro_data$n_conv_tag_cohorts <- nrow(init$retro_data$conv_tag_release_indicator)
           init$retro_data$conv_tag_release_platform <- init$retro_data$conv_tag_release_platform[1:nrow(init$retro_data$conv_tag_release_indicator),]
           init$retro_data$conv_tagged_fish <- init$retro_data$conv_tagged_fish[1:nrow(init$retro_data$conv_tag_release_indicator),,,,drop = FALSE] # remove data (not necessary, but helps with computational cost if using tagging)
           init$retro_data$obs_conv_tag_fish_recap <- init$retro_data$obs_conv_tag_fish_recap[,,1:nrow(init$retro_data$conv_tag_release_indicator),,,,,,drop = FALSE] # remove data (not necessary, but helps with computational cost)
@@ -509,7 +568,7 @@ get_retrospective_relative_difference <- function(retro_data) {
 
   # Pivot longer
   allret <- allret %>%
-    dplyr::select(Region, Year, Type, as.character(1:unique_peels)) %>%
+    dplyr::select(Pop, Region, Year, Type, as.character(1:unique_peels)) %>%
     tidyr::pivot_longer(cols = as.character(1:unique_peels), names_to = "peel", values_to = "rd") %>%
     dplyr::mutate(Pop = paste("Pop", Pop), Region = paste("Region", Region))
 

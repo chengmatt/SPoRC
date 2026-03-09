@@ -1,18 +1,40 @@
-#' Constructor algorithin for correlations within ages, years, and cohort (Work in Progress)
+#' Construct a 3D sparse precision matrix over ages, years, and cohorts
 #'
-#' @param n_ages Number of ages
-#' @param n_yrs Number of years
-#' @param pcorr_age correlations for age
-#' @param pcorr_year correaltions for year
-#' @param pcorr_cohort correlaitons for cohort
-#' @param ln_var_value log space variance
-#' @param Var_Type variance type == 0, marginal (stationary and slower run time), == 1 conditional (non-statationary, faster run time)
+#' Builds a sparse \eqn{(n_{\text{ages}} \times n_{\text{yrs}}) \times
+#' (n_{\text{ages}} \times n_{\text{yrs}})} precision matrix \eqn{Q} for a
+#' Gaussian Markov random field (GMRF) with simultaneous autoregressive (SAR)
+#' structure across three biological dimensions: age, year, and cohort
+#' (age-year diagonal). The matrix is constructed via the path-matrix
+#' factorisation \eqn{Q = (I - B)^\top \Omega^{-1} (I - B)}, where \eqn{B}
+#' encodes the partial correlations and \eqn{\Omega} is a diagonal variance
+#' matrix. Two variance parameterisations are supported: marginal (stationary)
+#' and conditional (non-stationary).
+#'
+#' @param n_ages Integer. Number of age classes.
+#' @param n_yrs Integer. Number of years.
+#' @param pcorr_age Numeric. Partial correlation along the age dimension
+#'   (i.e., between adjacent ages within the same year).
+#' @param pcorr_year Numeric. Partial correlation along the year dimension
+#'   (i.e., between adjacent years within the same age).
+#' @param pcorr_cohort Numeric. Partial correlation along the cohort diagonal
+#'   (i.e., between the \eqn{(a-1, y-1)} and \eqn{(a, y)} cell).
+#' @param ln_var_value Numeric. Log of the target variance. Exponentiated
+#'   internally to \eqn{\sigma^2 = \exp(\text{ln\_var\_value})}.
+#' @param Var_Type Integer. Variance parameterisation: \code{0} = marginal
+#'   (stationary) variance, where diagonal elements of \eqn{\Omega} are
+#'   solved recursively via the accumulator \eqn{(I - B)^{-1}} to achieve a
+#'   constant marginal variance \eqn{\sigma^2} at every node (slower);
+#'   \code{1} = conditional (non-stationary) variance, where all diagonal
+#'   elements of \eqn{\Omega} are set to \eqn{\sigma^2} directly (faster).
+#'
+#' @return A sparse \code{Matrix::sparseMatrix} precision matrix \eqn{Q} of
+#'   dimension \eqn{(n_{\text{ages}} \times n_{\text{yrs}}) \times
+#'   (n_{\text{ages}} \times n_{\text{yrs}})}, compatible with
+#'   \code{RTMB::dgmrf}.
 #'
 #' @importFrom Matrix sparseMatrix
 #' @importFrom methods as
-#' @returns Sparse precision matrix dimensioned by n_ages * n_years, n_ages * n_years
 #' @keywords internal
-#'
 Get_3d_precision <- function(n_ages, n_yrs, pcorr_age, pcorr_year, pcorr_cohort, ln_var_value, Var_Type){
 
     "c" <- RTMB::ADoverload("c")

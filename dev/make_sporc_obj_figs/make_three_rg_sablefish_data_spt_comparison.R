@@ -16,6 +16,8 @@ years <- three_rg_sable_data$years <- spatial_data$years
 ages <- three_rg_sable_data$ages <- spatial_data$ages
 lens <- three_rg_sable_data$lens <- spatial_data$length_bins
 n_yrs <- length(years)
+n_pop <- three_rg_sable_data$n_pop <- 1
+three_rg_sable_data$natal_region <- 1
 n_ages <- length(ages)
 n_lens <- length(three_rg_sable_data$lens)
 n_regions <- three_rg_sable_data$n_regions <- 3
@@ -29,34 +31,36 @@ three_rg_sable_data$seasdur <- 1
 
 # biologicals
 # Weight at age
-three_rg_sable_data$WAA <- array(0, dim = c(n_regions,n_yrs, n_seas, n_ages, n_sexes))
+three_rg_sable_data$WAA <- array(0, dim = c(n_pop, n_regions,n_yrs, n_seas, n_ages, n_sexes))
 
 # Maturity at age
-three_rg_sable_data$MatAA <- array(0, dim = c(n_regions,n_yrs, n_seas,n_ages, n_sexes))
+three_rg_sable_data$MatAA <- array(0, dim = c(n_pop, n_regions,n_yrs, n_seas,n_ages, n_sexes))
 
 for(r in 1:n_regions) {
   # weight at age
-  three_rg_sable_data$WAA[r,,1,,1] <- t(spatial_data$female_mean_weight_by_age) # female weight at age
-  three_rg_sable_data$WAA[r,,1,,2] <- t(spatial_data$male_mean_weight_by_age) # male weight at age
+  three_rg_sable_data$WAA[,r,,1,,1] <- t(spatial_data$female_mean_weight_by_age) # female weight at age
+  three_rg_sable_data$WAA[,r,,1,,2] <- t(spatial_data$male_mean_weight_by_age) # male weight at age
 
   # maturity
-  three_rg_sable_data$MatAA[r,,1,,1] <- t(spatial_data$maturity) # female maturity at age
-  three_rg_sable_data$MatAA[r,,1,,2] <- t(spatial_data$maturity) # male maturity at age (not used)
+  three_rg_sable_data$MatAA[,r,,1,,1] <- t(spatial_data$maturity) # female maturity at age
+  three_rg_sable_data$MatAA[,r,,1,,2] <- t(spatial_data$maturity) # male maturity at age (not used)
 }
 
 # ageing error
 three_rg_sable_data$AgeingError <- as.matrix(ageing_dat$age_error) # ageing error matrix
 
 # Size Age transition matrix
-three_rg_sable_data$SizeAgeTrans <- array(0, dim = c(n_regions, n_yrs, n_seas, n_lens, n_ages, n_sexes)) # size age transition matrix
-for(y in 1:n_yrs) {
-  for(r in 1:n_regions) {
-    three_rg_sable_data$SizeAgeTrans[r,y,1,,,1] <- t(spatial_data$female_age_length_transition[,,y])
-    three_rg_sable_data$SizeAgeTrans[r,y,1,,,1] <- apply(three_rg_sable_data$SizeAgeTrans[r,y,1,,,1], 2, function(x) x / sum(x))
-    three_rg_sable_data$SizeAgeTrans[r,y,1,,,2] <- t(spatial_data$male_age_length_transition[,,y]) / colSums(t(spatial_data$male_age_length_transition[,,y]))
-    three_rg_sable_data$SizeAgeTrans[r,y,1,,,2] <- apply(three_rg_sable_data$SizeAgeTrans[r,y,1,,,2], 2, function(x) x / sum(x))
-  } # end r loop
-} # end y loop
+three_rg_sable_data$SizeAgeTrans <- array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_lens, n_ages, n_sexes)) # size age transition matrix
+for(p in 1:n_pop) {
+  for(y in 1:n_yrs) {
+    for(r in 1:n_regions) {
+      three_rg_sable_data$SizeAgeTrans[p,r,y,1,,,1] <- t(spatial_data$female_age_length_transition[,,y])
+      three_rg_sable_data$SizeAgeTrans[p,r,y,1,,,1] <- apply(three_rg_sable_data$SizeAgeTrans[p,r,y,1,,,1], 2, function(x) x / sum(x))
+      three_rg_sable_data$SizeAgeTrans[p,r,y,1,,,2] <- t(spatial_data$male_age_length_transition[,,y]) / colSums(t(spatial_data$male_age_length_transition[,,y]))
+      three_rg_sable_data$SizeAgeTrans[p,r,y,1,,,2] <- apply(three_rg_sable_data$SizeAgeTrans[p,r,y,1,,,2], 2, function(x) x / sum(x))
+    } # end r loop
+  } # end y loop
+}  # end p loop
 
 # Tagging data
 tag_rel <- tag_rel %>% mutate(region_num = case_when(
@@ -81,42 +85,45 @@ for(i in 1:nrow(rel_cohorts_df)) {
   tag_release_ind <- rbind(tag_release_ind, tmp)
 } # end i
 
-three_rg_sable_data$tag_release_indicator <- as.matrix(tag_release_ind) # input releases of cohorts in
-three_rg_sable_data$n_tag_cohorts <- nrow(three_rg_sable_data$tag_release_indicator) # number of tag cohorts
-three_rg_sable_data$max_tag_liberty <- 15 # maximum liberty to track cohorts
+three_rg_sable_data$conv_tag_release_indicator <- as.matrix(tag_release_ind) # input releases of cohorts in
+three_rg_sable_data$n_conv_tag_cohorts <- nrow(three_rg_sable_data$conv_tag_release_indicator) # number of tag cohorts
+three_rg_sable_data$conv_tag_max_tag_liberty <- 15 # maximum liberty to track cohorts
 
 # Get Tagged Fish
-three_rg_sable_data$Tagged_Fish <- array(0, dim = c(three_rg_sable_data$n_tag_cohorts, n_ages, n_sexes)) # tagged fish
-for(i in 1:nrow(three_rg_sable_data$tag_release_indicator )) {
+three_rg_sable_data$conv_tagged_fish <- array(0, dim = c(three_rg_sable_data$n_conv_tag_cohorts, n_pop, n_ages, n_sexes)) # tagged fish
+for(i in 1:nrow(three_rg_sable_data$conv_tag_release_indicator )) {
   tmp_rel_f <- tag_rel %>% filter(release_event_id == i, sex == "F") # filter to a given cohort females
   tmp_rel_m <- tag_rel %>% filter(release_event_id == i, sex == "M") # filter to a given cohort males
-  three_rg_sable_data$Tagged_Fish[i,,1] <- tmp_rel_f$Nage_at_release # females
-  three_rg_sable_data$Tagged_Fish[i,,2] <- tmp_rel_m$Nage_at_release # males
+  three_rg_sable_data$conv_tagged_fish[i,1,,1] <- tmp_rel_f$Nage_at_release # females
+  three_rg_sable_data$conv_tagged_fish[i,1,,2] <- tmp_rel_m$Nage_at_release # males
 } # end i for tag cohorts
 
 
 # Get Observed Recaptures
-three_rg_sable_data$Obs_Tag_Recap <- array(0, dim = c(three_rg_sable_data$max_tag_liberty,
-                                                      n_seas,
-                                                      three_rg_sable_data$n_tag_cohorts,
-                                                      n_regions,
-                                                      n_ages,
-                                                      n_sexes))
+three_rg_sable_data$obs_conv_tag_fish_recap <- array(0, dim = c(three_rg_sable_data$conv_tag_max_tag_liberty,
+                                                              n_seas,
+                                                              three_rg_sable_data$n_conv_tag_cohorts,
+                                                              n_pop,
+                                                              n_regions,
+                                                              n_ages,
+                                                              n_sexes,
+                                                              n_fish_fleets))
 
-# pre filter data frame before looping
+# pre filter data frame before looping (only recoveries from fixed gear included)
 tag_rec_f <- tag_rec %>% filter(sex == "F")
 tag_rec_m <- tag_rec %>% filter(sex == "M")
 
-for(ry in 1:three_rg_sable_data$max_tag_liberty) {
-  for(i in 1:three_rg_sable_data$n_tag_cohorts) {
+for(ry in 1:three_rg_sable_data$conv_tag_max_tag_liberty) {
+  for(i in 1:three_rg_sable_data$n_conv_tag_cohorts) {
     for(r in 1:n_regions) {
       tmp_rec_f <- tag_rec_f %>% filter(release_event_id == i, region_num == r, tag_lib == ry)
       tmp_rec_m <- tag_rec_m %>% filter(release_event_id == i, region_num == r, tag_lib == ry)
-      if(nrow(tmp_rec_f) > 0) three_rg_sable_data$Obs_Tag_Recap[ry,1,i,r,,1] <- tmp_rec_f$Nage_at_recovery
-      if(nrow(tmp_rec_m) > 0) three_rg_sable_data$Obs_Tag_Recap[ry,1,i,r,,2] <- tmp_rec_m$Nage_at_recovery
+      if(nrow(tmp_rec_f) > 0) three_rg_sable_data$obs_conv_tag_fish_recap[ry,1,i,1,r,,1,1] <- tmp_rec_f$Nage_at_recovery
+      if(nrow(tmp_rec_m) > 0) three_rg_sable_data$obs_conv_tag_fish_recap[ry,1,i,1,r,,2,1] <- tmp_rec_m$Nage_at_recovery
     }
   }
 }
+
 
 # Catch data
 three_rg_sable_data$ObsCatch <- array(0, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
@@ -133,7 +140,7 @@ three_rg_sable_data$UseFishIdx <- array(0, c(n_regions, n_yrs, n_seas, n_fish_fl
 
 # Fishery Age Compositions (Joint by sex, split by region)
 three_rg_sable_data$ObsFishAgeComps <- array(0, dim = c(n_regions, n_yrs, n_seas,
-                                                        n_ages, n_sexes, n_fish_fleets))
+                                                      n_ages, n_sexes, n_fish_fleets))
 # loop through to populate
 for(y in 1:n_yrs) {
   for(r in 1:n_regions) {
@@ -192,7 +199,7 @@ three_rg_sable_data$UseSrvIdx[,,1,] <- spatial_data$srv_bio_indicator # survey i
 
 # Survey Age Comps
 three_rg_sable_data$ObsSrvAgeComps <- array(0, dim = c(n_regions, n_yrs, n_seas,
-                                                       n_ages, n_sexes, n_srv_fleets))
+                                                     n_ages, n_sexes, n_srv_fleets))
 
 # loop through to populate
 for(y in 1:n_yrs) {
@@ -217,7 +224,7 @@ three_rg_sable_data$UseSrvAgeComps[,,1,] <- spatial_data$srv_catchatage_indicato
 
 # input sample sizes
 three_rg_sable_data$ISS_SrvAgeComps <- array(0, dim = c(n_regions, n_yrs, n_seas,
-                                                        n_sexes, n_srv_fleets))
+                                                      n_sexes, n_srv_fleets))
 three_rg_sable_data$ISS_SrvAgeComps[] <- 60 # input sample size of 60 for all survey age comps
 
 # Survey length compositions (not used)
@@ -229,4 +236,3 @@ three_rg_sable_data$do_recruits_move <- 0 # recruit's don't move
 
 # Write data
 usethis::use_data(three_rg_sable_data, internal = FALSE, overwrite = TRUE)
-

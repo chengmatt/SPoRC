@@ -28,6 +28,9 @@ input_list <- Setup_Mod_Dim(
   n_srv_fleets = 3, # number of survey fleets
   # number of seasons
   n_seas = sgl_rg_ebswp_data$n_seas,
+  # Populaiton stuff
+  n_pop = sgl_rg_ebswp_data$n_pop,
+  natal_region = sgl_rg_ebswp_data$natal_region,
   verbose = TRUE
 )
 
@@ -42,11 +45,11 @@ input_list <- Setup_Mod_Rec(
   # do bias ramp (0 == don't do bias ramp, 1 == do bias ramp)
   sigmaR_switch = 1,
   # when to switch from early to late sigmaR (switch in first year)
-  ln_sigmaR = log(c(1, 1)),
+  ln_sigmaR = array(log(1), dim = c(2, input_list$data$n_pop, input_list$data$n_regions)),
   # Starting values for early and late sigmaR
   rec_model = "bh_rec",
   # recruitment model
-  steepness_h = inv_steepness(0.623013),
+  steepness_h = array(inv_steepness(0.623013), dim = c(input_list$data$n_pop, input_list$data$n_regions)),
   h_spec = "fix",
   # fixing steepness
   sigmaR_spec = "fix",
@@ -59,10 +62,10 @@ input_list <- Setup_Mod_Rec(
 )
 
 # Setup a fixed natural mortality array for use
-fix_natmort <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), length(input_list$data$ages), 1))
-fix_natmort[,,1,] <- 0.9 # age 1 M
-fix_natmort[,,2,] <- 0.45 # age 2 M
-fix_natmort[,,-c(1,2),] <- 0.3 # age 3+ M
+fix_natmort <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), length(input_list$data$ages), 1))
+fix_natmort[,,,1,] <- 0.9 # age 1 M
+fix_natmort[,,,2,] <- 0.45 # age 2 M
+fix_natmort[,,,-c(1,2),] <- 0.3 # age 3+ M
 
 input_list <- Setup_Mod_Biologicals(
   input_list = input_list,
@@ -278,17 +281,17 @@ rep <- ebswp_rtmb_model$rep
 # Plot! -------------------------------------------------------------------
 # Get recruitment
 rec_series <- reshape2::melt((ebswp_rtmb_model$rep$Rec)) %>%
-  mutate(se = ebswp_rtmb_model$sdrep$sd[names(ebswp_rtmb_model$sdrep$value) == 'log(Rec)'] * t(ebswp_rtmb_model$rep$Rec))
+  mutate(se = t(ebswp_rtmb_model$sdrep$sd[names(ebswp_rtmb_model$sdrep$value) == 'log_Rec'] * t(ebswp_rtmb_model$rep$Rec[1,,])))
 rec_series$Par <- "Recruitment"
 
 # Get SSB time-series
 ssb_series <- reshape2::melt((ebswp_rtmb_model$rep$SSB)) %>%
-  mutate(se = ebswp_rtmb_model$sdrep$sd[names(ebswp_rtmb_model$sdrep$value) == 'log(SSB)'] * t(ebswp_rtmb_model$rep$SSB))
+  mutate(se = t(ebswp_rtmb_model$sdrep$sd[names(ebswp_rtmb_model$sdrep$value) == 'log_SSB'] * t(ebswp_rtmb_model$rep$SSB[1,,])))
 ssb_series$Par <- "Spawning Biomass"
 
 # bind together
-ts_df <- rbind(ssb_series,rec_series) %>%
-  dplyr::rename(Region = Var1, Year = Var2) %>%
+ts_df <- rbind(ssb_series, rec_series) %>%
+  dplyr::rename(Pop = Var1, Region = Var2, Year = Var3) %>%
   dplyr::mutate(Year = Year + 1963, type = 'SPoRC')
 
 # Get actual assessment results

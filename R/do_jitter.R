@@ -1,92 +1,63 @@
-#' Run Jitter Analysis
+#' Run Jitter Analysis for Model Diagnostics
 #'
-#' @param data Data list to make obj
-#' @param parameters Parameter list to make obj
-#' @param mapping Mapping list to make obj
-#' @param random Character of random effects
-#' @param sd sd for jitter (additive)
-#' @param n_jitter Number of jitters to do
-#' @param n_newton_loops Number of newton loops to do
-#' @param do_par Whether to do paralleizaiton or not (boolean)
-#' @param n_cores Number of cores to use
-#' @param par_vec Vector of parameter starting values to use for jitter analysis. The default of this is NULL (jitters the starting value of the model). If a vector is provided, the jitter is initialized at the MLE parameters
+#' Performs a jitter analysis to evaluate sensitivity of model optimization
+#' to starting parameter values. The function repeatedly perturbs the
+#' parameter vector with additive normal noise, refits the model, and records
+#' resulting time series and diagnostic metrics.
+#'
+#' Each jitter iteration:
+#' \itemize{
+#'   \item Perturbs the starting parameter vector with random normal noise.
+#'   \item Optimizes the objective function using \code{stats::nlminb()}.
+#'   \item Optionally performs additional Newton steps to refine the solution.
+#'   \item Extracts reported quantities (e.g., spawning biomass and recruitment)
+#'   and diagnostic statistics.
+#' }
+#'
+#' The analysis can be executed sequentially or in parallel using the
+#' \code{future} framework.
+#'
+#' @param data A list of model data used to construct the \code{RTMB} objective
+#'   function.
+#' @param parameters A named list of model parameters used to initialize
+#'   \code{RTMB::MakeADFun()}.
+#' @param mapping A named list defining parameter mappings for
+#'   \code{RTMB::MakeADFun()}.
+#' @param random Character vector specifying random-effect parameters.
+#' @param sd Numeric value specifying the standard deviation of the additive
+#'   normal noise used to jitter parameters.
+#' @param n_jitter Integer specifying the number of jittered optimization runs.
+#' @param n_newton_loops Integer specifying the number of additional Newton
+#'   optimization steps performed after \code{nlminb()} convergence.
+#' @param do_par Logical indicating whether jitter iterations should be
+#'   executed in parallel.
+#' @param n_cores Integer specifying the number of parallel workers to use
+#'   when \code{do_par = TRUE}.
+#' @param par_vec Optional numeric vector of parameter values used as the
+#'   starting point for jittering. If \code{NULL}, the model's default starting
+#'   parameter vector is jittered. If provided, jittering is applied to this
+#'   vector (for example, the maximum likelihood estimates).
+#'
+#' @return A \code{data.frame} containing jitter iteration results. The output
+#' includes time series of spawning stock biomass (SSB) and recruitment,
+#' along with diagnostic information for each jitter run, including:
+#' \itemize{
+#'   \item Jitter index
+#'   \item Whether the Hessian is positive definite
+#'   \item Joint negative log-likelihood
+#'   \item Maximum absolute gradient of fixed effects
+#' }
 #'
 #' @import RTMB
-#' @import future.apply
 #' @import future
+#' @import future.apply
 #' @import progressr
-#' @importFrom reshape2 melt
 #' @import dplyr
+#' @importFrom reshape2 melt
 #' @importFrom stats rnorm nlminb optimHess
-#' @returns Dataframe of jitter values
-#' @export do_jitter
+#'
 #' @family Model Diagnostics
-#' @examples
-#' \dontrun{
-#'    library(ggplot2)
-#'    # get jitter values
-#'    jit <- do_jitter(data = data,
-#'                  parameters = parameters,
-#'                  mapping = mapping,
-#'                  random = NULL,
-#'                  sd = 0.1,
-#'                  n_jitter = 100,
-#'                  n_newton_loops = 3,
-#'                  do_par = TRUE,
-#'                  n_cores = 8)
-#'
-#'    # get proportion converged
-#'    prop_converged <- jit %>%
-#'    filter(Year == 1, Type == 'Recruitment') %>%
-#'      summarize(prop_conv = sum(Hessian) / length(Hessian))
-#'
-#'    # get final model results
-#'    final_mod <- reshape2::melt(sabie_rtmb_model$rep$SSB) %>%
-#'    rename(Region = Var1, Year = Var2) %>%
-#'    mutate(Type = 'SSB') %>%
-#'      bind_rows(reshape2::melt(sabie_rtmb_model$rep$Rec) %>%
-#'      rename(Region = Var1, Year = Var2) %>% mutate(Type = 'Recruitment'))
-#'
-#'    # comparison of SSB and recruitment
-#'   ggplot() +
-#'     geom_line(jit, mapping = aes(x = Year + 1959, y = value,
-#'      group = jitter, color = Hessian), lwd = 1) +
-#'     geom_line(final_mod, mapping = aes(x = Year + 1959, y = value),
-#'     color = "black", lwd = 1.3 , lty = 2) +
-#'     facet_grid(Type~Region, scales = 'free',
-#'                labeller = labeller(Region = function(x) paste0("Region ", x),
-#'     Type = c("Recruitment" = "Age 2 Recruitment (millions)",
-#'      "SSB" = 'SSB (kt)'))) +
-#'     labs(x = "Year", y = "Value") +
-#'     theme_bw(base_size = 20) +
-#'     scale_color_manual(values = c("red", 'grey')) +
-#'     geom_text(data = jit %>% filter(Type == 'SSB', Year == 1, jitter == 1),
-#'               aes(x = Inf, y = Inf, label =
-#'               paste("Proportion Converged: ",
-#'               round(prop_converged$prop_conv, 3))),
-#'               hjust = 1.1, vjust = 1.9, size = 6, color = "black")
-#'
-#'    # compare jitter of max gradient and hessian PD
-#'    ggplot(jit, aes(x = jitter, y = jnLL,
-#'    color = Max_Gradient, shape = Hessian)) +
-#'      geom_point(size = 5, alpha = 0.3) +
-#'      geom_hline(yintercept = min(sabie_rtmb_model$rep$jnLL),
-#'      lty = 2, size = 2, color = "blue") +
-#'      facet_wrap(~Hessian, labeller = labeller(
-#'        Hessian = c("FALSE" = "non-PD Hessian", "TRUE" = 'PD Hessian')
-#'      )) +
-#'      scale_color_viridis_c() +
-#'      theme_bw(base_size = 20) +
-#'      theme(legend.position = "bottom") +
-#'      guides(color = guide_colorbar(barwidth = 15, barheight = 0.5)) +
-#'      labs(x = 'Jitter') +
-#'      geom_text(data = jit %>% filter(Hessian == TRUE,
-#'      Year == 1, jitter == 1),
-#'                aes(x = Inf, y = Inf, label =
-#'                paste("Proportion Converged: ",
-#'                round(prop_converged$prop_conv, 3))),
-#'                hjust = 1.1, vjust = 1.9, size = 6, color = "black")
-#'}
+#' @export do_jitter
 do_jitter <- function(data,
                       parameters,
                       mapping,
@@ -135,10 +106,10 @@ do_jitter <- function(data,
 
       # put jitter results into a dataframe
       jitter_ts_df <- reshape2::melt(obj$rep$SSB) %>%
-        dplyr::rename(Region = Var1, Year = Var2) %>%
+        dplyr::rename(Pop = Var1, Region = Var2, Year = Var3) %>%
         dplyr::mutate(Type = 'SSB') %>%
         dplyr::bind_rows(reshape2::melt(obj$rep$Rec) %>%
-                           dplyr::rename(Region = Var1, Year = Var2) %>%
+                           dplyr::rename(Pop = Var1, Region = Var2, Year = Var3) %>%
                            dplyr::mutate(Type = 'Recruitment')) %>%
         dplyr::mutate(jitter = i,
                       Hessian = obj$sd_rep$pdHess,
@@ -189,10 +160,10 @@ do_jitter <- function(data,
 
         # put jitter results into a dataframe
         jitter_ts_df <- reshape2::melt(obj$rep$SSB) %>%
-          dplyr::rename(Region = Var1, Year = Var2) %>%
+          dplyr::rename(Pop = Var1, Region = Var2, Year = Var3) %>%
           dplyr::mutate(Type = 'SSB') %>%
           dplyr::bind_rows(reshape2::melt(obj$rep$Rec) %>%
-                             dplyr::rename(Region = Var1, Year = Var2) %>%
+                             dplyr::rename(Pop = Var1, Region = Var2, Year = Var3) %>%
                              dplyr::mutate(Type = 'Recruitment')) %>%
           dplyr::mutate(jitter = i,
                         Hessian = obj$sd_rep$pdHess,

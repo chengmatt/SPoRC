@@ -816,7 +816,7 @@ local_BH_Fmsy <- function(pars, data) {
     denom_vec = B + (C * x_vec) # compute denominator of BH
     g_vec = numer_vec / denom_vec # equilibrium recruitment in destination region
 
-    # define root and fine Jacobian
+    # define root and deffine Jacobian
     iter_vec = Req_o - g_vec # find values of origin recruitment that are consisitent w/ destination recruitment such that pop'n is in equilibrium
 
     # construct Jacobian for root

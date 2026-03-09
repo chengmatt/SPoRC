@@ -31,6 +31,9 @@ input_list <- Setup_Mod_Dim(
   # number of fishery fleets
   n_srv_fleets = sgl_rg_dusky_data$n_srv_fleets, # number of survey fleets
   n_seas = sgl_rg_dusky_data$n_seas, # number of seasons
+  # Population stuff
+  n_pop = sgl_rg_dusky_data$n_pop,
+  natal_region = sgl_rg_dusky_data$natal_region,
   verbose = TRUE # whether to output messages
 )
 
@@ -45,7 +48,7 @@ input_list <- Setup_Mod_Rec(
   # do bias ramp (0 == don't do bias ramp, 1 == do bias ramp)
   sigmaR_switch = 1,
   # when to switch from early to late sigmaR (switch in first year)
-  ln_sigmaR = rep(-0.1068576 , 2), # 2 values for early and late sigma
+  ln_sigmaR = array(-0.1068576, dim = c(2, input_list$data$n_pop, input_list$data$n_regions)),
   # Starting values for early and late sigmaR
   rec_model = "mean_rec",
   sigmaR_spec = "fix",
@@ -563,10 +566,10 @@ prop_converged <- jitter_res %>%
   summarize(prop_conv = sum(Hessian) / length(Hessian))
 
 # get final model results
-final_mod <- reshape2::melt(francis_model$rep$SSB) %>% rename(Region = Var1, Year = Var2) %>%
+final_mod <- reshape2::melt(francis_model$rep$SSB) %>% rename(Pop = Var1, Region = Var2, Year = Var3) %>%
   mutate(Type = 'SSB') %>%
   bind_rows(reshape2::melt(francis_model$rep$Rec) %>%
-              rename(Region = Var1, Year = Var2) %>% mutate(Type = 'Recruitment'))
+              rename(Pop = Var1, Region = Var2, Year = Var3) %>% mutate(Type = 'Recruitment'))
 
 # comparison of SSB and recruitment
 png(here("vignettes", "figures", "o_jiter_ts.png"), width = 1000, height = 800)
@@ -720,18 +723,19 @@ n_sexes <- 1
 n_fish_fleets <- 1
 n_sexes <- 1
 n_seas <- 1
+n_pop <- 1
 do_recruits_move <- 0
-terminal_NAA <- array(francis_model$rep$NAA[,length(francis_data$years),,,], dim = c(n_regions, n_seas, n_ages, n_sexes))
-terminal_NAA0 <- array(francis_model$rep$NAA0[,length(francis_data$years),,,], dim = c(n_regions, n_seas, n_ages, n_sexes))
-WAA <- array(rep(francis_data$WAA[,length(francis_data$years),,,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # weight at age
-WAA_fish <- array(rep(francis_data$WAA[,length(francis_data$years),,,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # weight at age for fishery
-MatAA <- array(rep(francis_data$MatAA[,length(francis_data$years),,,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # maturity at age
+terminal_NAA <- array(francis_model$rep$NAA[,,length(francis_data$years),,,], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes))
+terminal_NAA0 <- array(francis_model$rep$NAA0[,,length(francis_data$years),,,], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes))
+WAA <- array(rep(francis_data$WAA[,,length(francis_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # weight at age
+WAA_fish <- array(rep(francis_data$WAA[,,length(francis_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # weight at age for fishery
+MatAA <- array(rep(francis_data$MatAA[,,length(francis_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # maturity at age
 fish_sel <- array(rep(francis_model$rep$fish_sel[,length(francis_data$years),,,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_ages, n_sexes, n_fish_fleets)) # selectivity
-Movement <- array(rep(francis_model$rep$Movement[,,length(francis_data$years),,,], each = n_proj_yrs), dim = c(n_regions, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # movement - not used
+Movement <- array(rep(francis_model$rep$Movement[,,,length(francis_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # movement - not used
 terminal_F <- array(francis_model$rep$Fmort[,length(francis_data$years),,], dim = c(n_regions, n_seas, n_fish_fleets)) # terminal F
-natmort <- array(rep(francis_model$rep$natmort[,length(francis_data$years),,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_ages, n_sexes)) # natural mortaility
-recruitment <- array(francis_model$rep$Rec[,3:(length(francis_data$years) - 4)], dim = c(n_regions, length(3:(length(francis_data$years) - 4)))) # recruitment from years 3 - terminal (corresponds to 1979)
-sexratio <- array(1, dim = c(sim_env$n_regions, n_proj_yrs, sim_env$n_sexes)) # recruitment sex ratio
+natmort <- array(rep(francis_model$rep$natmort[,,length(francis_data$years),,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_ages, n_sexes)) # natural mortaility
+recruitment <- array(francis_model$rep$Rec[,,3:(length(francis_data$years) - 4)], dim = c(n_pop, n_regions, length(3:(length(francis_data$years) - 4)))) # recruitment from years 3 - terminal (corresponds to 1979)
+sexratio <- array(1, dim = c(n_pop, n_regions, n_proj_yrs, n_sexes)) # recruitment sex ratio
 
 # Define the F used for each scenario (Based on BSAI Intro Report - Alaska Scenarios)
 proj_inputs <- list(
@@ -786,6 +790,7 @@ for (i in seq_along(proj_inputs)) {
                                            n_regions = n_regions,
                                            n_ages = n_ages,
                                            n_sexes = n_sexes,
+                                           n_pop = n_pop,
                                            sexratio = sexratio,
                                            n_fish_fleets = n_fish_fleets,
                                            do_recruits_move = do_recruits_move,

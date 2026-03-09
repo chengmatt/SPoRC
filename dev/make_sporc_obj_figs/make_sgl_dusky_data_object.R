@@ -14,7 +14,9 @@ sgl_rg_dusky_data <- list()
 
 # Number of populations
 sgl_rg_dusky_data$n_pop <- 1
+sgl_rg_dusky_data$natal_region <- 1
 n_pop <- 1
+natal_region <- 1
 
 # Number of regions
 sgl_rg_dusky_data$n_regions <- 1
@@ -22,17 +24,19 @@ n_regions <- 1
 
 # Number of sexes
 sgl_rg_dusky_data$n_sexes <- 1
+n_sexes <- 1
 
 # Number of fishery fleets
 sgl_rg_dusky_data$n_fish_fleets <- 1
+n_fish_fleets <- 1
 
 # Number of survey fleets
 sgl_rg_dusky_data$n_srv_fleets <- 1
+n_srv_fleets <- 1
 
 # Number of seasons
 sgl_rg_dusky_data$n_seas <- 1
 sgl_rg_dusky_data$seasdur <- 1
-
 n_seas <- 1
 
 # Get model start and end year
@@ -173,8 +177,8 @@ for(r in 1:n_regions) {
 
 # Catch inputs
 sgl_rg_dusky_data$ObsCatch <- base::array(0, dim = c(n_regions, n_years, n_seas, n_fish_fleets))
+sgl_rg_dusky_data$UseCatch <- base::array(1, dim = c(n_regions, n_years, n_seas, n_fish_fleets))
 sgl_rg_dusky_data$Catch_Type <- array(1, dim = c(n_years, n_fish_fleets))
-sgl_rg_dusky_data$UseCatch <- array(1, dim = c(n_regions, n_years, n_seas, n_fish_fleets))
 sgl_rg_dusky_data$ObsCatch[] <- fish_catch
 
 # Fishery index inputs -- none used

@@ -1,99 +1,129 @@
-#' Setup values and dimensions of fishing processes
+#' Set up fishing process inputs for the operating model simulation
 #'
-#' @param sim_list Simulation list object from `Setup_Sim_Dim()`
-#' @param ln_sigmaC Observation error for catch
-#'   [n_regions × n_yrs × n_seas x n_fish_fleets]
-#'   (default: `log(0.02)`)
-#' @param init_F_val Vector of initial fishing mortality values from the dominant fleet
-#'   (default: `rep(0, n_seas)`)
-#' @param Fmort_input Fishing mortality input array
-#'   [n_regions × n_yrs × n_seas x n_fish_fleets × n_sims]
-#'   (default: `0.1`)
-#' @param fish_sel_input Fishery selectivity array
-#'   [n_regions × n_yrs x n_ages × n_sexes × n_fish_fleets × n_sims]
-#'   (no default, must be provided)
-#' @param fish_q_input Fishery catchability array
-#'   [n_regions × n_yrs x n_fish_fleets × n_sims]
-#'   (default: `1`)
+#' Populates \code{sim_list} with all fishery-related inputs needed by the
+#' operating model: fishing mortality schedules, selectivity, catchability,
+#' catch observation error, fishery indices, and age and length composition
+#' simulation settings (likelihoods, sample sizes, overdispersion, and
+#' correlation parameters). Must be called after \code{\link{Setup_Sim_Dim}}.
 #'
-#' @param ObsFishIdx_SE Observation error of fishery index
-#'   [n_regions × n_yrs n_seas x × n_fish_fleets]
-#'   (default: `0.2`)
-#' @param fish_idx_type Array of index types [n_regions x n_fish_fleets]
-#'   (default: all `1` = biomass index)
-#'   \itemize{
-#'     \item \code{0} or \code{"abd"}: Abundance index
-#'     \item \code{1} or \code{"biom"}: Biomass index
-#'   }
-#' @param comp_fishage_like Vector [n_fish_fleets] specifying likelihood for simulating age comps
-#'   (default: all `0` = multinomial)
-#'   \itemize{
-#'     \item \code{0} or \code{"Multinomial"}: Multinomial
-#'     \item \code{1} or \code{"Dirichlet-Multinomial"}: Dirichlet-Multinomial
-#'     \item \code{2} or \code{"iid-Logistic-Normal"}: Logistic Normal iid
-#'     \item \code{3} or \code{"1d-Logistic-Normal"}: Logistic Normal 1dar1
-#'     \item \code{4} or \code{"2d-Logistic-Normal"}: Logistic Normal 2d correlation (constant by sex, 1dar1 by age)
-#'   }
-#' @param ISS_FishAgeComps Input sample sizes
-#'   [n_regions × n_yrs × n_seas x n_sexes × n_fish_fleets × n_sims]
-#'   (default: `100`)
-#' @param ln_FishAge_theta Overdispersion parameters
-#'   [n_regions × n_sexes × n_fish_fleets]
-#'   (default: `log(1)`)
-#' @param ln_FishAge_theta_agg Overdispersion parameters for aggregated comps
-#'   [n_fish_fleets]
-#'   (default: `log(1)`)
-#' @param FishAge_corr_pars_agg Correlation parameters (agg.) for options 3–4
-#'   [n_fish_fleets]
-#'   (default: `0.01`)
-#' @param FishAge_corr_pars Correlation parameters
-#'   [n_regions × n_sexes × n_fish_fleets x 2]
-#'   (default: `0.01`)
-#' @param FishAgeComps_Type Array [n_yrs × n_fish_fleets]
-#'   (default: `2` = joint by sex, split by region)
-#'   \itemize{
-#'     \item \code{0} or \code{"agg"}: Aggregated
-#'     \item \code{1} or \code{"spltRspltS"}: Split by sex and region
-#'     \item \code{2} or \code{"spltRjntS"}: Joint by sex, split by region
-#'     \item \code{999} or \code{"none"}: Not simulated
-#'   }
-#' @param comp_fishlen_like Vector [n_fish_fleets] specifying likelihood for simulating length comps
-#'   (default: all `0` = multinomial)
-#'   \itemize{
-#'     \item \code{0} or \code{"Multinomial"}: Multinomial
-#'     \item \code{1} or \code{"Dirichlet-Multinomial"}: Dirichlet-Multinomial
-#'     \item \code{2} or \code{"iid-Logistic-Normal"}: Logistic Normal iid
-#'     \item \code{3} or \code{"1d-Logistic-Normal"}: Logistic Normal 1dar1
-#'     \item \code{4} or \code{"2d-Logistic-Normal"}: Logistic Normal 2d correlation (constant by sex, 1dar1 by age)
-#'   }
-#' @param ISS_FishLenComps Input sample sizes
-#'   [n_regions × n_yrs × n_seas x n_sexes × n_fish_fleets × n_sims]
-#'   (default: `100`)
-#' @param ln_FishLen_theta Overdispersion parameters
-#'   [n_regions × n_sexes × n_fish_fleets x 2]
-#'   (default: `log(1)`)
-#' @param ln_FishLen_theta_agg Overdispersion parameters for aggregated comps
-#'   [n_fish_fleets]
-#'   (default: `log(1)`)
-#' @param FishLen_corr_pars_agg Correlation parameters (agg.) for options 3–4
-#'   [n_fish_fleets]
-#'   (default: `0.01`)
-#' @param FishLen_corr_pars Correlation parameters
-#'   [n_regions × n_sexes × n_fish_fleets]
-#'   (default: `0.01`)
-#' @param FishLenComps_Type Array [n_yrs × n_fish_fleets]
-#'   (default: `2` = joint by sex, split by region)
-#'   \itemize{
-#'     \item \code{0} or \code{"agg"}: Aggregated
-#'     \item \code{1} or \code{"spltRspltS"}: Split by sex and region
-#'     \item \code{2} or \code{"spltRjntS"}: Joint by sex, split by region
-#'     \item \code{999} or \code{"none"}: Not simulated
-#'   }
-#' @param catch_units Units of catch - Array [n_fish_fleets]
-#'   \itemize{
-#'     \item \code{0} or \code{"abd"}: Abundance
-#'     \item \code{1} or \code{"bioms"}: Biomass (default)
-#'   }
+#' Most array arguments accept either numeric codes or their character string
+#' equivalents (e.g., \code{"biom"} instead of \code{1}); these are converted
+#' internally via \code{convert_to_numeric()}.
+#'
+#' @param sim_list Simulation list returned by \code{\link{Setup_Sim_Dim}}.
+#'
+#' @section Fishing mortality:
+#' \describe{
+#'   \item{\code{Fmort_input}}{Instantaneous fishing mortality array
+#'     \code{[n_regions × n_yrs × n_seas × n_fish_fleets × n_sims]}.
+#'     Default: \code{0.1} for all cells.}
+#'   \item{\code{init_F_val}}{Numeric vector of length \code{n_seas} giving the
+#'     initial fishing mortality used during equilibrium initialisation for the
+#'     dominant fleet. Default: \code{rep(0, n_seas)} (unfished initialisation).}
+#'   \item{\code{fish_sel_input}}{Fishery selectivity-at-age array
+#'     \code{[n_regions × n_yrs × n_ages × n_sexes × n_fish_fleets × n_sims]}.
+#'     No default; must be provided.}
+#'   \item{\code{fish_q_input}}{Fishery catchability array
+#'     \code{[n_regions × n_yrs × n_fish_fleets × n_sims]}.
+#'     Default: \code{1} for all cells.}
+#'   \item{\code{catch_units}}{Integer array \code{[n_fish_fleets]} specifying
+#'     the units in which catch is recorded per fleet.
+#'     \code{0}/\code{"abd"} = abundance; \code{1}/\code{"biom"} = biomass
+#'     (default).}
+#' }
+#'
+#' @section Catch observation error:
+#' \describe{
+#'   \item{\code{ln_sigmaC}}{Log-scale standard deviation of lognormal catch
+#'     observation error, array
+#'     \code{[n_regions × n_yrs × n_seas × n_fish_fleets]}.
+#'     Default: \code{log(0.02)}.}
+#' }
+#'
+#' @section Fishery index:
+#' \describe{
+#'   \item{\code{ObsFishIdx_SE}}{Standard error of the observed fishery index
+#'     (lognormal scale), array
+#'     \code{[n_regions × n_yrs × n_seas × n_fish_fleets]}.
+#'     Default: \code{0.2}.}
+#'   \item{\code{fish_idx_type}}{Integer array \code{[n_regions × n_fish_fleets]}
+#'     specifying whether each fleet's index is an abundance or biomass index.
+#'     \code{0}/\code{"abd"} = abundance; \code{1}/\code{"biom"} = biomass
+#'     (default).}
+#' }
+#'
+#' @section Fishery age composition:
+#' \describe{
+#'   \item{\code{FishAgeComps_Type}}{Integer array \code{[n_yrs × n_fish_fleets]}
+#'     controlling how age compositions are structured before simulation.
+#'     \code{0}/\code{"agg"} = aggregated across regions and sexes;
+#'     \code{1}/\code{"spltRspltS"} = split by region and sex;
+#'     \code{2}/\code{"spltRjntS"} = split by region, joint across sexes (default);
+#'     \code{999}/\code{"none"} = not simulated.}
+#'   \item{\code{comp_fishage_like}}{Integer vector \code{[n_fish_fleets]}
+#'     specifying the composition likelihood used to simulate age observations.
+#'     \code{0}/\code{"Multinomial"} (default);
+#'     \code{1}/\code{"Dirichlet-Multinomial"};
+#'     \code{2}/\code{"iid-Logistic-Normal"};
+#'     \code{3}/\code{"1d-Logistic-Normal"} (AR1 by age);
+#'     \code{4}/\code{"2d-Logistic-Normal"} (AR1 by age, constant by sex).}
+#'   \item{\code{ISS_FishAgeComps}}{Input sample sizes for age composition
+#'     simulation, array
+#'     \code{[n_regions × n_yrs × n_seas × n_sexes × n_fish_fleets × n_sims]}.
+#'     Interpreted as the Dirichlet-Multinomial or multinomial sample size
+#'     depending on \code{comp_fishage_like}. Default: \code{100}.}
+#'   \item{\code{ln_FishAge_theta}}{Log-scale overdispersion parameters for
+#'     fleet- region- and sex-specific compositions, array
+#'     \code{[n_regions × n_sexes × n_fish_fleets]}.
+#'     Only used for Dirichlet-Multinomial and logistic-normal likelihoods.
+#'     Default: \code{log(1)}.}
+#'   \item{\code{ln_FishAge_theta_agg}}{Log-scale overdispersion parameters
+#'     for aggregated compositions, vector \code{[n_fish_fleets]}.
+#'     Default: \code{log(1)}.}
+#'   \item{\code{FishAge_corr_pars}}{Correlation parameters for 1D/2D
+#'     logistic-normal likelihoods, array
+#'     \code{[n_regions × n_sexes × n_fish_fleets × 2]}.
+#'     The two trailing elements correspond to the age AR1 coefficient and
+#'     the sex correlation. Default: \code{0.01}.}
+#'   \item{\code{FishAge_corr_pars_agg}}{Correlation parameters for aggregated
+#'     compositions under options 3–4, vector \code{[n_fish_fleets]}.
+#'     Default: \code{0.01}.}
+#' }
+#'
+#' @section Fishery length composition:
+#' \describe{
+#'   \item{\code{FishLenComps_Type}}{Integer array \code{[n_yrs × n_fish_fleets]}
+#'     with the same coding as \code{FishAgeComps_Type} but applied to length
+#'     compositions. Default: \code{2} (split by region, joint across sexes).}
+#'   \item{\code{comp_fishlen_like}}{Integer vector \code{[n_fish_fleets]}
+#'     with the same likelihood codes as \code{comp_fishage_like} applied to
+#'     length compositions. Default: \code{0} (Multinomial).}
+#'   \item{\code{ISS_FishLenComps}}{Input sample sizes for length composition
+#'     simulation, array
+#'     \code{[n_regions × n_yrs × n_seas × n_sexes × n_fish_fleets × n_sims]}.
+#'     Default: \code{100}.}
+#'   \item{\code{ln_FishLen_theta}}{Log-scale overdispersion parameters for
+#'     length compositions, array
+#'     \code{[n_regions × n_sexes × n_fish_fleets]}.
+#'     Default: \code{log(1)}.}
+#'   \item{\code{ln_FishLen_theta_agg}}{Log-scale overdispersion for aggregated
+#'     length compositions, vector \code{[n_fish_fleets]}.
+#'     Default: \code{log(1)}.}
+#'   \item{\code{FishLen_corr_pars}}{Correlation parameters for 1D/2D
+#'     logistic-normal length likelihoods, array
+#'     \code{[n_regions × n_sexes × n_fish_fleets × 2]}.
+#'     Default: \code{0.01}.}
+#'   \item{\code{FishLen_corr_pars_agg}}{Correlation parameters for aggregated
+#'     length compositions, vector \code{[n_fish_fleets]}.
+#'     Default: \code{0.01}.}
+#' }
+#'
+#' @return The input \code{sim_list} with all fishery fields appended under their
+#'   respective names (e.g., \code{$Fmort}, \code{$fish_sel}, \code{$ln_sigmaC},
+#'   \code{$comp_fishage_like}, \code{$ISS_FishAgeComps}, etc.). Character-coded
+#'   inputs are converted to their integer equivalents before storage.
+#'
+#'
 #' @export Setup_Sim_Fishing
 #' @family Simulation Setup
 Setup_Sim_Fishing <- function(sim_list,
@@ -203,21 +233,34 @@ Setup_Sim_Fishing <- function(sim_list,
 
 
 
-#' Helper function to setup sigma F
+#' Map sigma_F (fishing mortality process error SD) parameters
 #'
-#' @param input_list Input list
-#' @param sigmaF_spec Character vector for sigmaF specification. Options:
-#'   \itemize{
-#'     \item \code{"est_shared_r"}: Shared across regions
-#'     \item \code{"est_shared_seas"}: Shared across seasons
-#'     \item \code{"est_shared_f"}: Shared across fleets
-#'     \item \code{"est_shared_r_seas"}: Shared across regions and seasons
-#'     \item \code{"est_shared_r_f"}: Shared across regions and fleets
-#'     \item \code{"est_shared_seas_f"}: Shared across seasons and fleets
-#'     \item \code{"est_shared_r_seas_f"}: Single parameter shared across all
-#'     \item \code{"est_all"}: Unique per region, season, fleet
-#'     \item \code{"fix"}: Fixed at starting values
+#' Constructs the \code{ln_sigmaF} factor map used by the TMB/RTMB objective
+#' function to share or fix the log-scale standard deviation of fishing mortality
+#' process error across regions, seasons, and fleets. All cells within a shared
+#' group are assigned the same estimation index.
+#'
+#' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
+#'   sublists, as constructed by upstream setup functions.
+#' @param sigmaF_spec Character string controlling the sharing and estimation
+#'   structure for \code{ln_sigmaF}. One of:
+#'   \describe{
+#'     \item{\code{"est_all"}}{Unique parameter per region × season × fleet combination.}
+#'     \item{\code{"est_shared_r"}}{Shared across regions; unique per season × fleet.}
+#'     \item{\code{"est_shared_seas"}}{Shared across seasons; unique per region × fleet.}
+#'     \item{\code{"est_shared_f"}}{Shared across fleets; unique per region × season.}
+#'     \item{\code{"est_shared_r_seas"}}{Shared across regions and seasons; unique per fleet.}
+#'     \item{\code{"est_shared_r_f"}}{Shared across regions and fleets; unique per season.}
+#'     \item{\code{"est_shared_seas_f"}}{Shared across seasons and fleets; unique per region.}
+#'     \item{\code{"est_shared_r_seas_f"}}{Single parameter shared across all dimensions.}
+#'     \item{\code{"fix"}}{All \code{ln_sigmaF} parameters fixed at starting values (mapped to \code{NA}).}
 #'   }
+#'
+#' @return The input \code{input_list} with \code{$map$ln_sigmaF} set to a factor
+#'   vector of length \code{prod(dim(par$ln_sigmaF))}. Each element is an integer
+#'   estimation index for shared or estimated configurations, or \code{NA} when
+#'   \code{sigmaF_spec = "fix"}.
+#'
 #' @keywords internal
 do_sigmaF_mapping <- function(input_list, sigmaF_spec) {
 
@@ -288,29 +331,41 @@ do_sigmaF_mapping <- function(input_list, sigmaF_spec) {
   return(input_list)
 }
 
-#' Helper function to setup sigma C mapping
+#' Map sigma_C (catch observation error SD) parameters
 #'
-#' @param input_list Input list
-#' @param sigmaC_spec Character vector for sigmaC specification. Options:
-#'   \itemize{
-#'     \item \code{"est_shared_r"}: Shared across regions
-#'     \item \code{"est_shared_y"}: Shared across years
-#'     \item \code{"est_shared_seas"}: Shared across seasons
-#'     \item \code{"est_shared_f"}: Shared across fleets
-#'     \item \code{"est_shared_r_y"}: Shared across regions and years
-#'     \item \code{"est_shared_r_seas"}: Shared across regions and seasons
-#'     \item \code{"est_shared_r_f"}: Shared across regions and fleets
-#'     \item \code{"est_shared_y_seas"}: Shared across years and seasons
-#'     \item \code{"est_shared_y_f"}: Shared across years and fleets
-#'     \item \code{"est_shared_seas_f"}: Shared across seasons and fleets
-#'     \item \code{"est_shared_r_y_seas"}: Shared across regions, years, and seasons
-#'     \item \code{"est_shared_r_y_f"}: Shared across regions, years, and fleets
-#'     \item \code{"est_shared_r_seas_f"}: Shared across regions, seasons, and fleets
-#'     \item \code{"est_shared_y_seas_f"}: Shared across years, seasons, and fleets
-#'     \item \code{"est_shared_r_y_seas_f"}: Single parameter shared across all
-#'     \item \code{"est_all"}: Unique per region, year, season, fleet
-#'     \item \code{"fix"}: Fixed at starting values
+#' Constructs the \code{ln_sigmaC} factor map used by the TMB/RTMB objective
+#' function to share or fix the log-scale standard deviation of catch observation
+#' error across regions, years, seasons, and fleets. All cells within a shared
+#' group are assigned the same estimation index.
+#'
+#' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
+#'   sublists, as constructed by upstream setup functions.
+#' @param sigmaC_spec Character string controlling the sharing and estimation
+#'   structure for \code{ln_sigmaC}. One of:
+#'   \describe{
+#'     \item{\code{"est_all"}}{Unique parameter per region × year × season × fleet.}
+#'     \item{\code{"est_shared_r"}}{Shared across regions.}
+#'     \item{\code{"est_shared_y"}}{Shared across years.}
+#'     \item{\code{"est_shared_seas"}}{Shared across seasons.}
+#'     \item{\code{"est_shared_f"}}{Shared across fleets.}
+#'     \item{\code{"est_shared_r_y"}}{Shared across regions and years.}
+#'     \item{\code{"est_shared_r_seas"}}{Shared across regions and seasons.}
+#'     \item{\code{"est_shared_r_f"}}{Shared across regions and fleets.}
+#'     \item{\code{"est_shared_y_seas"}}{Shared across years and seasons.}
+#'     \item{\code{"est_shared_y_f"}}{Shared across years and fleets.}
+#'     \item{\code{"est_shared_seas_f"}}{Shared across seasons and fleets.}
+#'     \item{\code{"est_shared_r_y_seas"}}{Shared across regions, years, and seasons.}
+#'     \item{\code{"est_shared_r_y_f"}}{Shared across regions, years, and fleets.}
+#'     \item{\code{"est_shared_r_seas_f"}}{Shared across regions, seasons, and fleets.}
+#'     \item{\code{"est_shared_y_seas_f"}}{Shared across years, seasons, and fleets.}
+#'     \item{\code{"est_shared_r_y_seas_f"}}{Single parameter shared across all dimensions.}
+#'     \item{\code{"fix"}}{All \code{ln_sigmaC} parameters fixed at starting values (mapped to \code{NA}).}
 #'   }
+#'
+#' @return The input \code{input_list} with \code{$map$ln_sigmaC} set to a factor
+#'   vector of length \code{prod(dim(par$ln_sigmaC))}. Each element is an integer
+#'   estimation index, or \code{NA} when \code{sigmaC_spec = "fix"}.
+#'
 #' @keywords internal
 do_sigmaC_mapping <- function(input_list, sigmaC_spec) {
 
@@ -412,9 +467,22 @@ do_sigmaC_mapping <- function(input_list, sigmaC_spec) {
   return(input_list)
 }
 
-#' Helper function to setup fmort mapping
+#' Map fishing mortality deviation parameters
 #'
-#' @param input_list Input list
+#' Constructs the \code{ln_F_devs} factor map, assigning unique estimation
+#' indices to region–year–season–fleet cells where catch data are used
+#' (\code{UseCatch == 1}) and mapping cells without catch data to \code{NA}.
+#' This ensures that \code{ln_F_devs} parameters are only estimated for
+#' dimensions with observed catch.
+#'
+#' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
+#'   sublists. Requires \code{$data$UseCatch} to be populated by
+#'   \code{\link{Setup_Mod_Catch_and_F}}.
+#'
+#' @return The input \code{input_list} with \code{$map$ln_F_devs} set to a
+#'   factor vector. Cells with catch are assigned sequential integer indices;
+#'   cells without catch are \code{NA}.
+#'
 #' @keywords internal
 do_Fmort_mapping <- function(input_list) {
 
@@ -449,64 +517,67 @@ do_Fmort_mapping <- function(input_list) {
   return(input_list)
 }
 
-#' Setup fishing mortality and catch observations
+##' Set up fishing mortality and catch observation inputs
 #'
-#' @param input_list A list containing data, parameters, and map lists used by the model.
+#' Populates \code{input_list} with observed catch, catch usage indicators,
+#' fishing mortality parameters (\code{ln_F_mean}, \code{ln_F_devs}), and
+#' observation/process error structures (\code{ln_sigmaC}, \code{ln_sigmaF}).
+#' Must be called after \code{\link{Setup_Mod_Biologicals}}.
 #'
-#' @param ObsCatch Numeric array of observed catches, dimensioned \code{[n_regions, n_years, n_seas, n_fish_fleets]}.
+#' @param input_list Named list with \code{$data}, \code{$par}, \code{$map},
+#'   and \code{$verbose} sublists, as returned by upstream setup functions.
+#' @param ObsCatch Observed catch array \code{[n_regions × n_years × n_seas × n_fish_fleets]}.
+#'   Values should be in the units specified by \code{catch_units}.
+#' @param UseCatch Binary indicator array \code{[n_regions × n_years × n_seas × n_fish_fleets]}
+#'   controlling which catch observations enter the likelihood and whether
+#'   \code{ln_F_devs} are estimated for each cell. \code{1} = use; \code{0} = exclude
+#'   (corresponding \code{ln_F_devs} will be mapped to \code{NA}).
+#' @param catch_units Character array \code{[n_fish_fleets]} specifying catch
+#'   units per fleet. \code{"biom"} = biomass (default); \code{"abd"} = abundance.
+#'   Converted internally to \code{0}/\code{1} integer codes.
+#' @param Use_F_pen Integer flag for applying a fishing mortality penalty to
+#'   penalise large deviations in \code{ln_F_devs}. \code{1} = apply (default);
+#'   \code{0} = do not apply.
+#' @param sigmaC_spec Character string specifying the sharing structure for
+#'   \code{ln_sigmaC} (catch observation error SD). Default \code{"fix"} holds
+#'   \code{ln_sigmaC} at its starting value (\code{log(0.01)} unless overridden
+#'   via \code{...}). See \code{\link{do_sigmaC_mapping}} for all sharing options
+#'   (\code{"est_shared_r"}, \code{"est_shared_y"}, \code{"est_all"}, etc.).
+#'   A warning is issued if \code{"fix"} is selected without providing a starting
+#'   value in \code{...}.
+#' @param sigmaF_spec Character string specifying the sharing structure for
+#'   \code{ln_sigmaF} (fishing mortality process error SD). Default \code{"fix"}
+#'   holds \code{ln_sigmaF} at its starting value (\code{log(1)}, i.e.,
+#'   \eqn{\sigma_F = 1}, unless overridden via \code{...}). See
+#'   \code{\link{do_sigmaF_mapping}} for all sharing options. A warning is issued
+#'   if \code{"fix"} is selected without providing a starting value in \code{...}.
+#' @param ... Optional starting value overrides, passed by name. Recognised
+#'   arguments:
+#'   \describe{
+#'     \item{\code{ln_sigmaC}}{Array of log-scale starting values for catch
+#'       observation error, dimensioned
+#'       \code{[n_regions × n_years × n_seas × n_fish_fleets]}.
+#'       Default: \code{log(0.01)}.}
+#'     \item{\code{ln_sigmaF}}{Array of log-scale starting values for fishing
+#'       mortality process error, dimensioned
+#'       \code{[n_regions × n_seas × n_fish_fleets]}.
+#'       Default: \code{log(1)}.}
+#'     \item{\code{ln_F_mean}}{Array of log-scale mean fishing mortality starting
+#'       values, dimensioned \code{[n_regions × n_seas × n_fish_fleets]}.
+#'       Default: \code{log(0.1)}.}
+#'     \item{\code{ln_F_devs}}{Array of log-scale annual fishing mortality
+#'       deviation starting values, dimensioned
+#'       \code{[n_regions × n_years × n_seas × n_fish_fleets]}.
+#'       Default: \code{0}.}
+#'   }
 #'
-#' @param UseCatch Indicator array \code{[n_regions, n_years, n_seas, n_fish_fleets]} specifying whether to include catch data in the fit:
-#' \itemize{
-#'   \item \code{0}: Do not use catch data.
-#'   \item \code{1}: Use catch data and fit.
-#' }
+#' @return The input \code{input_list} with \code{$data}, \code{$par}, and
+#'   \code{$map} updated. Key additions: \code{$data$ObsCatch},
+#'   \code{$data$UseCatch}, \code{$data$Use_F_pen}, \code{$data$catch_units},
+#'   \code{$par$ln_sigmaC}, \code{$par$ln_sigmaF}, \code{$par$ln_F_mean},
+#'   \code{$par$ln_F_devs}, \code{$map$ln_sigmaC}, \code{$map$ln_sigmaF},
+#'   \code{$map$ln_F_devs}.
 #'
-#' @param Use_F_pen Integer flag indicating whether to apply a fishing mortality penalty:
-#' \itemize{
-#'   \item \code{0}: Do not apply penalty.
-#'   \item \code{1}: Apply penalty.
-#' }
-#'
-#' @param sigmaC_spec Character string specifying observation error structure for catch data. Default behavior fixes \code{sigmaC} at a starting value of \code{1e-3} (log-scale \code{ln_sigmaC = log(1e-3)}) for all regions, years, and fleets. Other options include:
-#' \itemize{
-#'     \item \code{"est_shared_r"}: Shared across regions
-#'     \item \code{"est_shared_y"}: Shared across years
-#'     \item \code{"est_shared_seas"}: Shared across seasons
-#'     \item \code{"est_shared_f"}: Shared across fleets
-#'     \item \code{"est_shared_r_y"}: Shared across regions and years
-#'     \item \code{"est_shared_r_seas"}: Shared across regions and seasons
-#'     \item \code{"est_shared_r_f"}: Shared across regions and fleets
-#'     \item \code{"est_shared_y_seas"}: Shared across years and seasons
-#'     \item \code{"est_shared_y_f"}: Shared across years and fleets
-#'     \item \code{"est_shared_seas_f"}: Shared across seasons and fleets
-#'     \item \code{"est_shared_r_y_seas"}: Shared across regions, years, and seasons
-#'     \item \code{"est_shared_r_y_f"}: Shared across regions, years, and fleets
-#'     \item \code{"est_shared_r_seas_f"}: Shared across regions, seasons, and fleets
-#'     \item \code{"est_shared_y_seas_f"}: Shared across years, seasons, and fleets
-#'     \item \code{"est_shared_r_y_seas_f"}: Single parameter shared across all
-#'     \item \code{"est_all"}: Unique per region, year, season, fleet
-#'     \item \code{"fix"}: Fixed at starting values
-#' }
-#'
-#' @param sigmaF_spec Character string specifying process error structure for fishing mortality. Default fixes \code{sigmaF} at \code{1} on the log scale (i.e., \code{ln_sigmaF = 0}). Other options include:
-#' \itemize{
-#'     \item \code{"est_shared_r"}: Shared across regions
-#'     \item \code{"est_shared_seas"}: Shared across seasons
-#'     \item \code{"est_shared_f"}: Shared across fleets
-#'     \item \code{"est_shared_r_seas"}: Shared across regions and seasons
-#'     \item \code{"est_shared_r_f"}: Shared across regions and fleets
-#'     \item \code{"est_shared_seas_f"}: Shared across seasons and fleets
-#'     \item \code{"est_shared_r_seas_f"}: Single parameter shared across all
-#'     \item \code{"est_all"}: Unique per region, season, fleet
-#'     \item \code{"fix"}: Fixed at starting values
-#' }
-#'
-#' @param catch_units Catch units - Array dimensioned by n_fish_fleets
-#' \itemize{
-#'   \item \code{"abd"}: Catch units in abundance
-#'   \item \code{"biom"}: Catch units in biomass (default)
-#' }
-#' @param ... Optional inputs for starting values for \code{ln_sigmaF}, \code{ln_sigmaC}, \code{ln_F_mean}, and \code{ln_F_devs}
 #'
 #' @export Setup_Mod_Catch_and_F
 #' @family Model Setup
@@ -580,9 +651,24 @@ Setup_Mod_Catch_and_F <- function(input_list,
   return(input_list)
 }
 
-#' Helper function to set up fishery age overdispersion parameters
+#' Map fishery age composition overdispersion parameters
 #'
-#' @param input_list Input list
+#' Constructs factor maps for \code{ln_FishAge_theta} (fleet- region- and
+#' sex-specific overdispersion) and \code{ln_FishAge_theta_agg} (aggregated
+#' overdispersion) based on the composition type and likelihood specified in
+#' \code{$data$FishAgeComps_Type} and \code{$data$FishAgeComps_LikeType}.
+#' Parameters are mapped to \code{NA} for fleets using multinomial likelihoods
+#' (\code{LikeType == 0}) or with no observed age compositions.
+#'
+#' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
+#'   sublists. Requires \code{FishAgeComps_Type}, \code{FishAgeComps_LikeType},
+#'   and \code{UseFishAgeComps} to be set by
+#'   \code{\link{Setup_Mod_FishIdx_and_Comps}}.
+#'
+#' @return The input \code{input_list} with \code{$map$ln_FishAge_theta} and
+#'   \code{$map$ln_FishAge_theta_agg} set to factor vectors. Active parameters
+#'   receive sequential integer indices; inactive parameters are \code{NA}.
+#'
 #' @keywords internal
 do_FishAge_theta_mapping <- function(input_list) {
 
@@ -641,9 +727,23 @@ do_FishAge_theta_mapping <- function(input_list) {
   return(input_list)
 }
 
-#' Helper function to set up fishery length overdispersion parameters
+#' Map fishery length composition overdispersion parameters
 #'
-#' @param input_list Input list
+#' Analogous to \code{\link{do_FishAge_theta_mapping}} but for length
+#' compositions. Constructs factor maps for \code{ln_FishLen_theta} and
+#' \code{ln_FishLen_theta_agg} based on \code{FishLenComps_Type},
+#' \code{FishLenComps_LikeType}, and \code{UseFishLenComps}.
+#' Parameters are mapped to \code{NA} for fleets using multinomial likelihoods
+#' or with no observed length compositions.
+#'
+#' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
+#'   sublists. Requires \code{FishLenComps_Type}, \code{FishLenComps_LikeType},
+#'   and \code{UseFishLenComps} to be set by
+#'   \code{\link{Setup_Mod_FishIdx_and_Comps}}.
+#'
+#' @return The input \code{input_list} with \code{$map$ln_FishLen_theta} and
+#'   \code{$map$ln_FishLen_theta_agg} set to factor vectors.
+#'
 #' @keywords internal
 do_FishLen_theta_mapping <- function(input_list) {
 
@@ -702,9 +802,26 @@ do_FishLen_theta_mapping <- function(input_list) {
   return(input_list)
 }
 
-#' Helper function to set up fishery age overdispersion correlation parameters
+#' Map fishery age composition correlation parameters
 #'
-#' @param input_list Input list
+#' Constructs factor maps for \code{FishAge_corr_pars} (region- and sex-specific
+#' AR1 and sex correlation parameters) and \code{FishAge_corr_pars_agg}
+#' (aggregated correlation parameters) for 1D and 2D logistic-normal age
+#' composition likelihoods. Parameters are activated only when
+#' \code{FishAgeComps_LikeType %in% c(3, 4)} (1D or 2D logistic-normal);
+#' all other likelihoods map correlation parameters to \code{NA}.
+#'
+#' For the 2D logistic-normal (\code{LikeType == 4}), both trailing elements of
+#' the \code{[..., 2]} dimension are activated — element 1 for the age AR1
+#' coefficient and element 2 for the sex correlation (skipped when
+#' \code{n_sexes == 1}).
+#'
+#' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
+#'   sublists.
+#'
+#' @return The input \code{input_list} with \code{$map$FishAge_corr_pars} and
+#'   \code{$map$FishAge_corr_pars_agg} set to factor vectors.
+#'
 #' @keywords internal
 do_FishAge_corr_pars_mapping <- function(input_list) {
 
@@ -781,9 +898,19 @@ do_FishAge_corr_pars_mapping <- function(input_list) {
   return(input_list)
 }
 
-#' Helper function to set up fishery length overdispersion correlation parameters
+#' Map fishery length composition correlation parameters
 #'
-#' @param input_list Input list
+#' Analogous to \code{\link{do_FishAge_corr_pars_mapping}} but for length
+#' compositions. Constructs factor maps for \code{FishLen_corr_pars} and
+#' \code{FishLen_corr_pars_agg} for 1D and 2D logistic-normal length composition
+#' likelihoods (\code{FishLenComps_LikeType %in% c(3, 4)}).
+#'
+#' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
+#'   sublists.
+#'
+#' @return The input \code{input_list} with \code{$map$FishLen_corr_pars} and
+#'   \code{$map$FishLen_corr_pars_agg} set to factor vectors.
+#'
 #' @keywords internal
 do_FishLen_corr_pars_mapping <- function(input_list) {
 
@@ -860,60 +987,98 @@ do_FishLen_corr_pars_mapping <- function(input_list) {
   return(input_list)
 }
 
-#' Setup observed fishery indices and composition data (age and length comps)
+#' Set up fishery index, age composition, and length composition inputs
 #'
-#' @param input_list List containing a data list, parameter list, and map list
-#' @param ObsFishIdx Observed fishery index data as a numeric array with dimensions
-#' \code{[n_regions, n_years, n_seas, n_fish_fleets]}.
+#' Populates \code{input_list} with observed fishery indices, age compositions,
+#' and length compositions along with their usage indicators, likelihood types,
+#' composition structure types, input sample sizes, and overdispersion and
+#' correlation parameter starting values and mappings. Must be called after
+#' \code{\link{Setup_Mod_Catch_and_F}}.
 #'
-#' @param ObsFishIdx_SE Standard errors associated with \code{ObsFishIdx},
-#' also dimensioned \code{[n_regions, n_years, n_seas,  n_fish_fleets]}.
+#' When \code{ISS_FishAgeComps} or \code{ISS_FishLenComps} are \code{NULL},
+#' input sample sizes are derived automatically by summing the observed
+#' composition arrays within each year–fleet–season–region cell, consistent
+#' with the specified \code{FishAgeComps_Type} or \code{FishLenComps_Type}.
 #'
-#' @param UseFishIdx Logical or binary indicator array (\code{[n_regions, n_years, n_seas,  n_fish_fleets]})
-#' specifying whether to include a fishery index in the likelihood (\code{1}) or ignore it (\code{0}).
+#' @param input_list Named list with \code{$data}, \code{$par}, \code{$map},
+#'   and \code{$verbose} sublists, as returned by upstream setup functions.
+#' @param ObsFishIdx Observed fishery CPUE or biomass index array
+#'   \code{[n_regions × n_years × n_seas × n_fish_fleets]}.
+#' @param ObsFishIdx_SE Standard errors of \code{ObsFishIdx} on the log scale,
+#'   same dimensions as \code{ObsFishIdx}.
+#' @param UseFishIdx Binary indicator array \code{[n_regions × n_years × n_seas × n_fish_fleets]}.
+#'   \code{1} = include index in the likelihood; \code{0} = exclude.
+#' @param fish_idx_type Character vector of length \code{n_fish_fleets} specifying
+#'   the index type for each fleet. \code{"biom"} = biomass; \code{"abd"} =
+#'   abundance; \code{"none"} = no index for this fleet.
+#' @param ObsFishAgeComps Observed fishery age composition array
+#'   \code{[n_regions × n_years × n_seas × n_ages × n_sexes × n_fish_fleets]}.
+#'   Values may be raw counts or proportions; if proportions, supply
+#'   \code{ISS_FishAgeComps} explicitly.
+#' @param UseFishAgeComps Binary indicator array
+#'   \code{[n_regions × n_years × n_seas × n_fish_fleets]}.
+#'   \code{1} = fit age compositions; \code{0} = exclude.
+#' @param ISS_FishAgeComps Input sample size array
+#'   \code{[n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
+#'   If \code{NULL} (default), sample sizes are computed automatically by
+#'   summing \code{ObsFishAgeComps} within each year–fleet–season–region cell
+#'   according to \code{FishAgeComps_Type}.
+#' @param ObsFishLenComps Observed fishery length composition array
+#'   \code{[n_regions × n_years × n_seas × n_lens × n_sexes × n_fish_fleets]}.
+#'   Only required when \code{input_list$data$fit_lengths == 1}.
+#' @param UseFishLenComps Binary indicator array
+#'   \code{[n_regions × n_years × n_seas × n_fish_fleets]}.
+#'   \code{1} = fit length compositions; \code{0} = exclude.
+#' @param ISS_FishLenComps Input sample size array for length compositions,
+#'   \code{[n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
+#'   If \code{NULL} (default), derived automatically from \code{ObsFishLenComps}.
+#' @param FishAgeComps_LikeType Character vector of length \code{n_fish_fleets}
+#'   specifying the likelihood for fishery age compositions. Options:
+#'   \code{"Multinomial"}, \code{"Dirichlet-Multinomial"},
+#'   \code{"iid-Logistic-Normal"}, \code{"1d-Logistic-Normal"},
+#'   \code{"2d-Logistic-Normal"}, \code{"none"}.
+#' @param FishLenComps_LikeType Same as \code{FishAgeComps_LikeType} but for
+#'   length compositions.
+#' @param FishAgeComps_Type Character vector defining the age composition
+#'   structure (aggregation level) for each fleet and time period. Each element
+#'   must follow the format \code{"<type>_Year_<start>-<end>_Fleet_<f>"} or
+#'   \code{"<type>_Year_<start>-terminal_Fleet_<f>"}. Valid types:
+#'   \describe{
+#'     \item{\code{"agg"}}{Aggregated across regions and sexes
+#'       (incompatible with \code{"2d-Logistic-Normal"}).}
+#'     \item{\code{"spltRspltS"}}{Split by region and sex.}
+#'     \item{\code{"spltRjntS"}}{Split by region, summed jointly across sexes.}
+#'     \item{\code{"none"}}{No composition data for this fleet and period.}
+#'   }
+#'   Example: \code{c("spltRjntS_Year_1-10_Fleet_1", "agg_Year_11-terminal_Fleet_1")}.
+#' @param FishLenComps_Type Same format and options as \code{FishAgeComps_Type}
+#'   but applied to length compositions.
+#' @param ... Optional starting value overrides for overdispersion and
+#'   correlation parameters. Recognised arguments:
+#'   \describe{
+#'     \item{\code{ln_FishAge_theta}}{Log-scale overdispersion starting values
+#'       \code{[n_regions × n_sexes × n_fish_fleets]}. Default: \code{0}.}
+#'     \item{\code{ln_FishAge_theta_agg}}{Aggregated overdispersion starting
+#'       values \code{[n_fish_fleets]}. Default: \code{0}.}
+#'     \item{\code{FishAge_corr_pars}}{Correlation parameter starting values
+#'       \code{[n_regions × n_sexes × n_fish_fleets × 2]}. Default: \code{0.01}.}
+#'     \item{\code{FishAge_corr_pars_agg}}{Aggregated correlation starting values
+#'       \code{[n_fish_fleets]}. Default: \code{0.01}.}
+#'     \item{\code{ln_FishLen_theta}}{Length composition overdispersion
+#'       \code{[n_regions × n_sexes × n_fish_fleets]}. Default: \code{0}.}
+#'     \item{\code{ln_FishLen_theta_agg}}{Aggregated length overdispersion
+#'       \code{[n_fish_fleets]}. Default: \code{0}.}
+#'     \item{\code{FishLen_corr_pars}}{Length correlation parameters
+#'       \code{[n_regions × n_sexes × n_fish_fleets × 2]}. Default: \code{0.01}.}
+#'     \item{\code{FishLen_corr_pars_agg}}{Aggregated length correlation
+#'       \code{[n_fish_fleets]}. Default: \code{0.01}.}
+#'   }
 #'
-#' @param ObsFishAgeComps Observed fishery age composition data as a numeric array with dimensions
-#' \code{[n_regions, n_years, n_seas,  n_ages, n_sexes, n_fish_fleets]}. Values should reflect counts or proportions
-#' (not required to sum to 1, but should be on a comparable scale).
+#' @return The input \code{input_list} with \code{$data}, \code{$par}, and
+#'   \code{$map} updated with all fishery index and composition fields, including
+#'   computed or supplied ISS arrays, integer-coded likelihood and composition
+#'   type matrices, overdispersion parameters, and their factor maps.
 #'
-#' @param UseFishAgeComps Indicator array (\code{[n_regions, n_years, n_seas,  n_fish_fleets]}) specifying whether
-#' to fit fishery age composition data (\code{1}) or ignore it (\code{0}).
-#'
-#' @param ObsFishLenComps Observed fishery length composition data as a numeric array with dimensions
-#' \code{[n_regions, n_years, n_seas, n_lens, n_sexes, n_fish_fleets]}. Values should reflect counts or proportions.
-#'
-#' @param UseFishLenComps Indicator array (\code{[n_regions, n_years, n_seas, n_fish_fleets]}) specifying whether
-#' to fit fishery length composition data (\code{1}) or ignore it (\code{0}).
-#'
-#' @param FishAgeComps_LikeType Character vector of length \code{n_fish_fleets} specifying the likelihood
-#' type used for fishery age composition data. Options include \code{"Multinomial"}, \code{"Dirichlet-Multinomial"},
-#' \code{"iid-Logistic-Normal"}, \code{"1d-Logistic-Normal"}, and \code{"2d-Logistic-Normal"}. Use \code{"none"} to omit the likelihood.
-#'
-#' @param FishLenComps_LikeType Same as \code{FishAgeComps_LikeType}, but for fishery length composition data.
-#'
-#' @param FishAgeComps_Type Character vector specifying how age compositions are structured by fleet and year range.
-#' Options include:
-#' \itemize{
-#'   \item \code{"agg"}: Aggregated across regions and sexes.
-#'   \item \code{"spltRspltS"}: Split by region and by sex (compositions sum to 1 within region-sex group).
-#'   \item \code{"spltRjntS"}: Split by region but summed jointly across sexes.
-#'   \item \code{"none"}: No composition data used.
-#' }
-#' Format each element as \code{"<type>_Year_<start>-<end>_Fleet_<fleet number>"}
-#' (e.g., \code{"agg_Year_1-10_Fleet_1"}).
-#'
-#' @param FishLenComps_Type Same as \code{FishAgeComps_Type}, but for length compositions.
-#' @param fish_idx_type Character vector of length \code{n_fish_fleets} specifying the type of index data.
-#' Options are \code{"abd"} for abundance, \code{"biom"} for biomass, and \code{"none"} if no index is available.
-#'
-#' @param ISS_FishAgeComps Input sample size for age compositions, array dimensioned
-#' \code{[n_regions, n_years, n_seas, n_sexes, n_fish_fleets]}. Required if observed age comps are normalized
-#' (i.e., sum to 1), to correctly scale the contribution to the likelihood. (NULL is default, which sums up the observed fishery comps to derive the ISS.)
-#'
-#' @param ISS_FishLenComps Same as \code{ISS_FishAgeComps}, but for length compositions.
-#'
-#' @param ... Additional arguments specifying starting values for overdispersion parameters
-#' (e.g., \code{ln_FishAge_theta}, \code{ln_FishLen_theta}, \code{ln_FishAge_theta_agg}, \code{ln_FishLen_theta_agg}).
 #'
 #' @export Setup_Mod_FishIdx_and_Comps
 #' @importFrom stringr str_detect
@@ -1180,15 +1345,35 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
   return(input_list)
 }
 
-#' Helper function to set up fishery selctivity fixed effects mapping
+#' Map fishery selectivity fixed-effect parameters
 #'
-#' @param input_list Input list
-#' @param fish_fixed_sel_pars_spec Character vector specifying fishery selectivity fixed effects parameterization
-#' @keywords internal
-#' Helper function to set up fishery selctivity fixed effects mapping
+#' Constructs the factor map for \code{ln_fish_fixed_sel_pars} (e.g., \eqn{a_{50}},
+#' \eqn{k}, \eqn{a_{max}}), controlling whether selectivity shape parameters are
+#' estimated independently or shared across regions, sexes, or fleets. Cells with
+#' no catch data (\code{UseCatch == 0}) are automatically mapped to \code{NA}.
 #'
-#' @param input_list Input list
-#' @param fish_fixed_sel_pars_spec Character vector specifying fishery selectivity fixed effects parameterization
+#' Fleet sharing (\code{"est_shared_f_x"}) is handled in a second pass after all
+#' base fleet mappings are established, copying the reference fleet's index
+#' assignments into the sharing fleet.
+#'
+#' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
+#'   sublists.
+#' @param fish_fixed_sel_pars_spec Character vector of length \code{n_fish_fleets}.
+#'   Each element specifies the estimation structure for one fleet. Options:
+#'   \describe{
+#'     \item{\code{"est_all"}}{Separate parameters per region × sex × block.}
+#'     \item{\code{"est_shared_r"}}{Parameters shared across regions; unique per sex × block.}
+#'     \item{\code{"est_shared_s"}}{Parameters shared across sexes; unique per region × block.}
+#'     \item{\code{"est_shared_r_s"}}{Parameters shared across regions and sexes; unique per block.}
+#'     \item{\code{"est_shared_f_x"}}{Copy parameters from fleet \code{x} (e.g.,
+#'       \code{"est_shared_f_2"} shares with fleet 2). Fleet \code{x} must not
+#'       itself use \code{"est_shared_f_y"}.}
+#'     \item{\code{"fix"}}{All parameters fixed at starting values (mapped to \code{NA}).}
+#'   }
+#'
+#' @return The input \code{input_list} with \code{$map$ln_fish_fixed_sel_pars}
+#'   set to a factor vector.
+#'
 #' @keywords internal
 do_fish_fixed_sel_pars_mapping <- function(input_list, fish_fixed_sel_pars_spec) {
 
@@ -1299,10 +1484,26 @@ do_fish_fixed_sel_pars_mapping <- function(input_list, fish_fixed_sel_pars_spec)
 }
 
 
-#' Helper function to set up fishery catchability mapping
+#' Map fishery catchability parameters
 #'
-#' @param input_list Input list
-#' @param fish_q_spec Character vector specifying fishery catchability parameterization
+#' Constructs the factor map for \code{ln_fish_q}, controlling whether
+#' catchability parameters are estimated independently per region and time block
+#' or shared across regions. Cells with no fishery index observations
+#' (\code{UseFishIdx == 0}) are automatically mapped to \code{NA}.
+#'
+#' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
+#'   sublists.
+#' @param fish_q_spec Character vector of length \code{n_fish_fleets}. Options:
+#'   \describe{
+#'     \item{\code{"est_all"}}{Separate catchability per region × block × fleet.}
+#'     \item{\code{"est_shared_r"}}{Single catchability shared across regions,
+#'       unique per block × fleet.}
+#'     \item{\code{"fix"}}{All catchability parameters fixed (mapped to \code{NA}).}
+#'   }
+#'
+#' @return The input \code{input_list} with \code{$map$ln_fish_q} set to a
+#'   factor vector.
+#'
 #' @keywords internal
 do_fish_q_mapping <- function(input_list, fish_q_spec) {
 
@@ -1361,11 +1562,43 @@ do_fish_q_mapping <- function(input_list, fish_q_spec) {
   return(input_list)
 }
 
-#' Helper function to set up fishery process error mapping
+#' Map fishery selectivity process error hyperparameters
 #'
-#' @param input_list Input list
-#' @param corr_opt_semipar Character vector specifying correlation parameter options
-#' @param fishsel_pe_pars_spec Character vector specifying fishery process error parameterization
+#' Constructs the factor map for \code{fishsel_pe_pars}, which contains the
+#' variance and correlation hyperparameters governing continuous time-varying
+#' selectivity. The set of active parameters depends on the time-variation type
+#' (\code{cont_tv_fish_sel}): iid/random-walk forms use up to 2 parameters
+#' (log-sigma); 3D GMRF forms use up to 4 (partial correlations for age, year,
+#' cohort dimensions plus log-sigma); the 2D AR1 form uses 3 (bin AR1, year AR1,
+#' log-sigma). Correlation components can be selectively suppressed via
+#' \code{corr_opt_semipar}.
+#'
+#' Fleet sharing (\code{"est_shared_f_x"}) is handled in a second pass.
+#'
+#' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
+#'   sublists.
+#' @param fishsel_pe_pars_spec Character vector of length \code{n_fish_fleets}.
+#'   Options:
+#'   \describe{
+#'     \item{\code{"est_all"}}{Separate hyperparameters per region × sex.}
+#'     \item{\code{"est_shared_r"}}{Shared across regions; unique per sex.}
+#'     \item{\code{"est_shared_s"}}{Shared across sexes; unique per region.}
+#'     \item{\code{"est_shared_r_s"}}{Shared across regions and sexes.}
+#'     \item{\code{"est_shared_f_x"}}{Copy hyperparameters from fleet \code{x}.}
+#'     \item{\code{"fix"} or \code{"none"}}{All parameters fixed (mapped to \code{NA}).}
+#'   }
+#' @param corr_opt_semipar Character vector of length \code{n_fish_fleets}
+#'   specifying which correlation components to suppress for semi-parametric
+#'   models. Valid values per fleet: \code{NA} (no suppression),
+#'   \code{"corr_zero_y"}, \code{"corr_zero_b"}, \code{"corr_zero_y_b"},
+#'   \code{"corr_zero_c"}, \code{"corr_zero_y_c"}, \code{"corr_zero_b_c"},
+#'   \code{"corr_zero_y_b_c"}. Cohort options (\code{"corr_zero_c"}, etc.) are
+#'   only valid for 3D GMRF forms and will error if applied to the 2D AR1
+#'   (\code{cont_tv_fish_sel == 5}).
+#'
+#' @return The input \code{input_list} with \code{$map$fishsel_pe_pars} set to a
+#'   factor vector. Index numbering is reset after any correlation suppression to
+#'   maintain contiguous integer indices.
 #'
 #' @keywords internal
 do_fishsel_pe_pars_mapping <- function(input_list, fishsel_pe_pars_spec, corr_opt_semipar) {
@@ -1543,11 +1776,48 @@ do_fishsel_pe_pars_mapping <- function(input_list, fishsel_pe_pars_spec, corr_op
   return(input_list)
 }
 
-#' Helper function to set up fishery selectivity deviations mapping
+#' Map fishery selectivity deviation parameters
 #'
-#' @param input_list Input list
-#' @param fishsel_devs_shared_ages List object for specifying which ages are shared when selectivity deviations are semi-parametric (e.g., list(1:5, 6:10, 11:30) specifies that ages 1-5, 6-10, and 11-30 have the same deviations.)
-#' @param fish_sel_devs_spec Character vector specifying fishery selectivity deviations parameterization
+#' Constructs the factor map for \code{ln_fishsel_devs}, the annual deviations in
+#' continuous time-varying fishery selectivity. For iid and random-walk forms,
+#' the deviation dimension corresponds to selectivity parameters (up to 6 for
+#' double-normal); for semi-parametric forms (3D GMRF, 2D AR1), it corresponds
+#' to age or length bins. Cells with no time-variation
+#' (\code{cont_tv_fish_sel == 0}) or no catch data are mapped to \code{NA}.
+#'
+#' Age-sharing (\code{"est_shared_a"} and related options) groups bins into
+#' blocks defined by \code{fishsel_devs_shared_ages}, reducing the number of
+#' estimated deviation series. Fleet sharing (\code{"est_shared_f_x"}) is handled
+#' in a second pass. The resulting integer map is also stored as
+#' \code{$data$map_ln_fishsel_devs} for use in the C++ objective function.
+#'
+#' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
+#'   sublists.
+#' @param fish_sel_devs_spec Character vector of length \code{n_fish_fleets}.
+#'   Options:
+#'   \describe{
+#'     \item{\code{"est_all"}}{Separate deviation series per region × sex × bin.}
+#'     \item{\code{"est_shared_r"}}{Shared across regions.}
+#'     \item{\code{"est_shared_s"}}{Shared across sexes.}
+#'     \item{\code{"est_shared_r_s"}}{Shared across regions and sexes.}
+#'     \item{\code{"est_shared_a"}}{Shared across age/bin groups defined by
+#'       \code{fishsel_devs_shared_ages}.}
+#'     \item{\code{"est_shared_r_a"}}{Shared across regions and age groups.}
+#'     \item{\code{"est_shared_a_s"}}{Shared across age groups and sexes.}
+#'     \item{\code{"est_shared_r_a_s"}}{Shared across regions, age groups, and sexes.}
+#'     \item{\code{"est_shared_f_x"}}{Copy deviation map from fleet \code{x}.}
+#'     \item{\code{"fix"} or \code{"none"}}{All deviations fixed at zero (mapped to \code{NA}).}
+#'   }
+#'   Age-sharing options (\code{"est_shared_a"}, etc.) are only valid with
+#'   semi-parametric time-varying forms (\code{cont_tv_fish_sel %in% c(3,4,5)}).
+#' @param fishsel_devs_shared_ages List of integer vectors defining age/bin
+#'   groupings for age-sharing options. Each element groups bins that share a
+#'   single deviation series, e.g., \code{list(1:5, 6:10, 11:30)}.
+#'   Only used when \code{fish_sel_devs_spec} includes \code{"est_shared_a"}.
+#'
+#' @return The input \code{input_list} with \code{$map$ln_fishsel_devs} set to a
+#'   factor vector and \code{$data$map_ln_fishsel_devs} set to the corresponding
+#'   integer array (for use in the C++ template).
 #'
 #' @keywords internal
 do_fishsel_devs_mapping <- function(input_list, fish_sel_devs_spec, fishsel_devs_shared_ages) {
@@ -1707,198 +1977,128 @@ do_fishsel_devs_mapping <- function(input_list, fish_sel_devs_spec, fishsel_devs
   return(input_list)
 }
 
-#' Setup fishery selectivity and catchability specifications
+
+#' Set up fishery selectivity and catchability specifications
 #'
-#' @param input_list List containing a data list, parameter list, and map list
-#' @param cont_tv_fish_sel Character vector specifying the form of continuous time-varying selectivity for each fishery fleet.
-#' The vector must be length \code{n_fish_fleets}, and each element must follow the structure:
-#' \code{"<time variation type>_Fleet_<fleet number>"}.
+#' Configures all aspects of fishery selectivity and catchability for the
+#' estimation model: functional forms, time blocks, continuous time-varying
+#' structures, process error hyperparameters, annual deviations, and
+#' catchability blocks and estimation structure. Must be called after
+#' \code{\link{Setup_Mod_FishIdx_and_Comps}}.
 #'
-#' Valid time variation types include:
-#' \itemize{
-#'   \item \code{"none"}: No continuous time variation (default)
-#'   \item \code{"iid"}: Independent and identically distributed deviations across years.
-#'   \item \code{"rw"}: Random walk in time.
-#'   \item \code{"3dmarg"}: 3D marginal time-varying selectivity.
-#'   \item \code{"3dcond"}: 3D conditional time-varying selectivity.
-#'   \item \code{"2dar1"}: Two-dimensional AR1 process.
-#' }
+#' Selectivity time-variation and blocked selectivity are mutually exclusive
+#' within a fleet — specifying both for the same fleet will raise an error.
 #'
-#' For example:
-#' \itemize{
-#'   \item \code{"iid_Fleet_1"} applies an iid time-varying structure to Fleet 1.
-#'   \item \code{"none_Fleet_2"} means no time variation is used for Fleet 2.
-#' }
-#'
-#' @param fish_sel_blocks Character vector specifying the fishery selectivity blocks for each region and fleet.
-#'
-#' Each element must follow one of the following structures:
-#' \itemize{
-#'   \item `"Block_<block number>_Year_<start>-<end>_Fleet_<fleet number>"`
-#'   \item `"Block_<block number>_Year_<start>-terminal_Fleet_<fleet number>"`
-#'   \item `"none_Fleet_<fleet number>"`
-#' }
-#'
-#' This argument defines how fishery selectivity varies over time for each fleet:
-#' \itemize{
-#'   \item \code{"Block_..."} entries specify discrete time blocks during which selectivity parameters are assumed constant.
-#'   \item \code{"none_..."} entries indicate that selectivity is constant across all years for the specified fleet.
-#' }
-#'
-#' If time-block-based selectivity is specified for a fleet (via \code{fish_sel_blocks}), its corresponding continuous selectivity option (in \code{cont_tv_fish_sel}) must be set to \code{"none_Fleet_<fleet number>"}. The two approaches—blocked and continuous time-varying selectivity—are mutually exclusive.
-#' The default for each fleet is \code{"none_Fleet_x"} (i.e., no selectivity blocks).
-#'
-#' @param fish_sel_model Character vector specifying the fishery selectivity functional form for each fleet, and optionally by time block.
-#'
-#' Each element must follow one of the following structures:
-#' \itemize{
-#'   \item \code{"<selectivity model>_Fleet_<fleet number>"}
-#'   \item \code{"<selectivity model>_Fleet_<fleet number>_Block_<block number>"}
-#' }
-#'
-#' The first form applies a single selectivity model across all years for the specified fleet.
-#' The second form allows the user to assign a distinct selectivity model to a specific time block, as defined in \code{fish_sel_blocks}.
-#'
-#' Available selectivity model types include:
-#' \itemize{
-#'   \item \code{"logist1"} — Logistic function with parameters \code{a50} and \code{k}.
-#'   \item \code{"logist2"} — Logistic function with parameters \code{a50} and \code{a95}.
-#'   \item \code{"gamma"} — Dome-shaped gamma function with parameters \code{amax} and \code{delta}.
-#'   \item \code{"exponential"} — Exponential function with a power parameter.
-#'   \item \code{"dbnrml"} — Double-normal function with six parameters.
-#' }
-#' If multiple selectivity time blocks are specified for a fleet (using \code{fish_sel_blocks}), then the corresponding selectivity model for each block must be explicitly defined using the \code{"<model>_Block_<block>_Fleet_<fleet>"} format.
-#' If blocks are not defined for a fleet, use the \code{"<model>_Fleet_<fleet number>"} format only.
-#' For mathematical definitions and implementation details of each selectivity form, refer to the model equations vignette.
-#'
-#' @param fish_q_blocks Character vector specifying fishery catchability (q) blocks for each fleet.
-#' Each element must follow the structure: \code{"Block_<block number>_Year_<start>-<end>_Fleet_<fleet number>"}
-#' or \code{"none_Fleet_<fleet number>"}. Default is "none_Fleet_x".
-#'
-#' This allows users to define time-varying catchability blocks independently of selectivity blocks.
-#' The blocks must be non-overlapping and sequential in time within each fleet.
-#'
-#' For example:
-#' \itemize{
-#'   \item \code{"Block_1_Year_1-35_Fleet_1"} assigns block 1 to Fleet 1 for years 1–35.
-#'   \item \code{"Block_2_Year_36-56_Fleet_1"} continues with block 2 for years 36–56.
-#'   \item \code{"Block_3_Year_57-terminal_Fleet_1"} assigns block 3 from year 57 to the terminal year for Fleet 1.
-#'   \item \code{"none_Fleet_2"} indicates no catchability blocks are used for Fleet 2.
-#' }
-#'
-#' Internally, these specifications are converted to a \code{[n_regions, n_years, n_fish_fleets]} array,
-#' where each block is mapped to the appropriate years and fleets.
-#' @param fishsel_pe_pars_spec Character string specifying how process error parameters for fishery selectivity
-#' are estimated across regions and sexes. This is only relevant if \code{cont_tv_fish_sel} is not set to \code{"none"};
-#' otherwise, all process error parameters are treated as fixed.
-#'
-#' Available options include:
-#' \itemize{
-#'   \item \code{"est_all"}: Estimates separate process error parameters for each region and sex.
-#'   \item \code{"est_shared_r"}: Shares process error parameters across regions (sex-specific parameters are still estimated).
-#'   \item \code{"est_shared_s"}: Shares process error parameters across sexes (region-specific parameters are still estimated).
-#'   \item \code{"est_shared_r_s"}: Shares process error parameters across both regions and sexes, estimating a single set of parameters.
-#'   \item \code{"est_shared_f_x"}: Shares process error parameters with another fleet, where \code{x} is the fleet number to share with.
-#'     This option forces multiple fleets to have identical process error variance and correlation structures for their
-#'     time-varying selectivity. For example, \code{"est_shared_f_2"} means the current fleet will use the same
-#'     process error parameters as fleet 2. The reference fleet (fleet x) must use one of the other sharing options
-#'     and cannot itself be sharing with another fleet.
-#'   \item \code{"fix"} or \code{"none"}: Does not estimate process error parameters; all are treated as fixed.
-#' }
-#' @param fish_fixed_sel_pars_spec Character string specifying the structure for estimating
-#' fixed-effect parameters of the fishery selectivity model (e.g., a50, k, amax).
-#' This controls whether selectivity parameters are estimated separately or shared across regions and sexes.
-#'
-#' Available options include:
-#' \itemize{
-#'   \item \code{"est_all"}: Estimates separate fixed-effect selectivity parameters for each region and sex.
-#'   \item \code{"est_shared_r"}: Shares parameters across regions (sex-specific parameters are still estimated).
-#'   \item \code{"est_shared_s"}: Shares parameters across sexes (region-specific parameters are still estimated).
-#'   \item \code{"est_shared_r_s"}: Shares parameters across both regions and sexes, estimating a single set of fixed-effect parameters.
-#'   \item \code{"est_shared_f_x"}: Shares fixed-effect selectivity parameters with another fleet, where \code{x} is the fleet number to share with.
-#'     This option forces multiple fleets to have identical selectivity curves by using the same underlying parameters
-#'     (e.g., same a50, k, amax values). For example, \code{"est_shared_f_2"} means the current fleet will use the same
-#'     fixed-effect selectivity parameters as fleet 2. The reference fleet (fleet x) must use one of the other sharing options
-#'     and cannot itself be sharing with another fleet.
-#'   \item \code{"fix"}: Fixes all selectivity parameters to their initial values (no estimation).
-#'   \item \code{"none"}: No selectivity parameters are estimated (equivalent to \code{"fix"}).
-#' }
-#' @param fish_q_spec Character string specifying the structure of fishery catchability (\code{q}) estimation
-#' across regions. This controls whether separate or shared parameters are used.
-#'
-#' Available options include:
-#' \itemize{
-#'   \item \code{"est_all"}: Estimates separate catchability parameters for each region.
-#'   \item \code{"est_shared_r"}: Estimates a single catchability parameter shared across all regions.
-#' }
-#' @param fish_sel_devs_spec Character string specifying the structure of process error deviations
-#' in time-varying fishery selectivity dimensioned by the number of fishery fleets. This determines how deviations are estimated across regions and sexes.
-#'
-#' Available options include:
-#' \itemize{
-#'   \item \code{"est_all"}: Estimates a separate deviation time series for each region and sex.
-#'   \item \code{"est_shared_r"}: Shares deviations across regions (sex-specific deviations are still estimated).
-#'   \item \code{"est_shared_s"}: Shares deviations across sexes (region-specific deviations are still estimated).
-#'   \item \code{"est_shared_r_s"}: Shares deviations across both regions and sexes, estimating a single deviation time series.
-#'   \item \code{"est_shared_a"}: Shares deviations across age blocks.
-#'   \item \code{"est_shared_r_a"}: Shares deviations across regions and age shared blocks.
-#'   \item \code{"est_shared_a_s"}: Shares deviations across age shared blocks and sexes.
-#'   \item \code{"est_shared_r_a_s"}: Shares deviations across regions, age shared blocks, and sexes.
-#'   \item \code{"est_shared_f_x"}: Shares deviations with another fleet, where \code{x} is the fleet number to share with.
-#'     This option allows multiple fleets to use identical deviation parameters, reducing the number of parameters
-#'     to estimate. For example, \code{"est_shared_f_2"} means the current fleet will use the same deviation
-#'     parameters as fleet 2. The reference fleet (fleet x) must use one of the other sharing options
-#'     (\code{"est_all"}, \code{"est_shared_r"}, \code{"est_shared_s"}, or \code{"est_shared_r_s"})
-#'     and cannot itself be sharing with another fleet.
-#'   \item \code{"fix"}: Fixes all deviation parameters to zero (no time-variation).
-#'   \item \code{"none"}: No deviation parameters are estimated (equivalent to \code{"fix"}).
-#' }
-#'
-#' This argument is only used when a continuous time-varying selectivity form is specified (e.g., via \code{cont_tv_fish_sel}).
-#' @param corr_opt_semipar Character string specifying which correlation structures to suppress
-#'   when using semi-parametric time-varying selectivity models. Only used if \code{cont_tv_sel}
-#'   is set to one of \code{"3dmarg"}, \code{"3dcond"}, or \code{"2dar1"}.
-#'
-#'   This option allows users to turn off estimation of specific correlation components in the
-#'   time-varying selectivity model. This can improve stability or enforce assumptions about
-#'   independence in the temporal or age structure.
-#'
-#'   Available options:
+#' @param input_list Named list with \code{$data}, \code{$par}, \code{$map},
+#'   and \code{$verbose} sublists.
+#' @param fish_sel_model Character vector specifying the selectivity functional
+#'   form for each fleet (and optionally each time block). Each element must
+#'   follow one of:
 #'   \itemize{
-#'     \item \code{"corr_zero_y"}: Sets year (temporal) correlations to 0.
-#'     \item \code{"corr_zero_b"}: Sets age correlations to 0.
-#'     \item \code{"corr_zero_y_b"}: Sets both year and bin correlations to 0.
-#'     \item \code{"corr_zero_c"}: Sets cohort correlations to 0. Only valid for \code{cont_tv_sel} = \code{"3dmarg"} or \code{"3dcond"}.
-#'     \item \code{"corr_zero_y_c"}: Sets year and cohort correlations to 0. Only valid for \code{cont_tv_sel} = \code{"3dmarg"} or \code{"3dcond"}.
-#'     \item \code{"corr_zero_b_c"}: Sets bin (age) and cohort correlations to 0. Only valid for \code{cont_tv_sel} = \code{"3dmarg"} or \code{"3dcond"}.
-#'     \item \code{"corr_zero_y_b_c"}: Sets all correlations (year, bin (age), and cohort) to 0.
-#'       Only valid for \code{cont_tv_sel} = \code{"3dmarg"} or \code{"3dcond"}; equivalent to an iid structure.
+#'     \item \code{"<model>_Fleet_<f>"} — single form for all years of fleet \code{f}.
+#'     \item \code{"<model>_Fleet_<f>_Block_<b>"} — form specific to block \code{b}
+#'       of fleet \code{f}, as defined in \code{fish_sel_blocks}.
+#'   }
+#'   Available models:
+#'   \describe{
+#'     \item{\code{"logist1"}}{Logistic with \eqn{a_{50}} and slope \eqn{k} (2 parameters).}
+#'     \item{\code{"logist2"}}{Logistic with \eqn{a_{50}} and \eqn{a_{95}} (2 parameters).}
+#'     \item{\code{"gamma"}}{Dome-shaped gamma with \eqn{a_{max}} and \eqn{\delta} (2 parameters).}
+#'     \item{\code{"exponential"}}{Exponential with a single power parameter (1 parameter).}
+#'     \item{\code{"dbnrml"}}{Double-normal with 6 parameters.}
+#'   }
+#'   See the model equations vignette for mathematical definitions.
+#' @param cont_tv_fish_sel Character vector of length \code{n_fish_fleets}
+#'   specifying continuous time-varying selectivity per fleet. Each element
+#'   must be \code{"<type>_Fleet_<f>"}. Valid types:
+#'   \describe{
+#'     \item{\code{"none"}}{No continuous time-variation (default).}
+#'     \item{\code{"iid"}}{IID annual deviations on selectivity parameters.}
+#'     \item{\code{"rw"}}{Random walk in selectivity parameters over time.}
+#'     \item{\code{"3dmarg"}}{3D GMRF with marginal variance parameterisation.}
+#'     \item{\code{"3dcond"}}{3D GMRF with conditional variance parameterisation.}
+#'     \item{\code{"2dar1"}}{2D separable AR1 in bin and year dimensions.}
+#'   }
+#'   If any fleet has \code{cont_tv_fish_sel != "none"}, both
+#'   \code{fishsel_pe_pars_spec} and \code{fish_sel_devs_spec} must also be
+#'   provided.
+#' @param fish_sel_blocks Character vector defining discrete selectivity time
+#'   blocks per fleet. Each element follows \code{"Block_<b>_Year_<s>-<e>_Fleet_<f>"}
+#'   or \code{"Block_<b>_Year_<s>-terminal_Fleet_<f>"}. Use
+#'   \code{"none_Fleet_<f>"} (default) for a single constant block. Blocks must
+#'   be non-overlapping and together span all model years for the specified fleet.
+#'   Mutually exclusive with \code{cont_tv_fish_sel != "none"} for the same fleet.
+#' @param fish_q_blocks Character vector defining catchability time blocks per
+#'   fleet, using the same format as \code{fish_sel_blocks}. Default
+#'   \code{"none_Fleet_<f>"} gives a single constant block.
+#' @param fish_fixed_sel_pars_spec Character vector of length \code{n_fish_fleets}
+#'   specifying how fixed-effect selectivity parameters are estimated. See
+#'   \code{\link{do_fish_fixed_sel_pars_mapping}} for all options
+#'   (\code{"est_all"}, \code{"est_shared_r"}, \code{"est_shared_s"},
+#'   \code{"est_shared_r_s"}, \code{"est_shared_f_x"}, \code{"fix"}).
+#' @param fish_q_spec Character vector of length \code{n_fish_fleets} specifying
+#'   catchability estimation structure. See \code{\link{do_fish_q_mapping}} for
+#'   options (\code{"est_all"}, \code{"est_shared_r"}, \code{"fix"}).
+#' @param fishsel_pe_pars_spec Character vector of length \code{n_fish_fleets}
+#'   specifying the estimation structure for selectivity process error
+#'   hyperparameters. Required when any fleet has continuous time-variation.
+#'   See \code{\link{do_fishsel_pe_pars_mapping}} for all options.
+#' @param fish_sel_devs_spec Character vector of length \code{n_fish_fleets}
+#'   specifying the estimation structure for annual selectivity deviations.
+#'   Required when any fleet has continuous time-variation. See
+#'   \code{\link{do_fishsel_devs_mapping}} for all options including age-sharing
+#'   options for semi-parametric forms.
+#' @param fishsel_devs_shared_ages List of integer vectors grouping age or length
+#'   bins that share a single deviation series. Only used when
+#'   \code{fish_sel_devs_spec} contains one of the \code{"est_shared_a"} variants.
+#'   Example: \code{list(1:5, 6:10, 11:30)}.
+#' @param corr_opt_semipar Character vector of length \code{n_fish_fleets}
+#'   controlling which correlation components to suppress in semi-parametric
+#'   (3D GMRF or 2D AR1) time-varying selectivity. Set to \code{NA} (default)
+#'   for no suppression. See \code{\link{do_fishsel_pe_pars_mapping}} for valid
+#'   suppression codes. Cohort-correlation options are invalid for \code{"2dar1"}.
+#' @param cont_tv_fish_sel_penalty Logical. If \code{TRUE} (default), applies a
+#'   penalty on the continuous time-varying selectivity deviations to regularise
+#'   the process.
+#' @param Use_fish_q_prior Integer flag. \code{1} = apply lognormal priors to
+#'   catchability; \code{0} = no priors (default). Requires \code{fish_q_prior}.
+#' @param fish_q_prior Data frame of catchability prior hyperparameters. Required
+#'   columns: \code{region}, \code{fleet}, \code{block} (block index), \code{mu}
+#'   (prior mean on natural scale), \code{sd} (prior SD on log scale). Each row
+#'   specifies a \eqn{\text{Normal}(\log(\mu), \sigma)} prior for one catchability
+#'   parameter. Only used when \code{Use_fish_q_prior = 1}.
+#' @param Use_fish_selex_prior Integer flag. \code{1} = apply lognormal priors to
+#'   selectivity parameters; \code{0} = no priors (default). Requires
+#'   \code{fish_selex_prior}.
+#' @param fish_selex_prior Data frame of selectivity prior hyperparameters.
+#'   Required columns: \code{region}, \code{fleet}, \code{block}, \code{sex},
+#'   \code{par} (parameter index within the functional form), \code{mu}, \code{sd}.
+#'   Only used when \code{Use_fish_selex_prior = 1}.
+#' @param ... Optional starting value overrides, passed by name. Recognised
+#'   arguments:
+#'   \describe{
+#'     \item{\code{ln_fish_fixed_sel_pars}}{Array dimensioned
+#'       \code{[n_regions × max_pars × max_blocks × n_sexes × n_fish_fleets]}.
+#'       Default: \code{0}.}
+#'     \item{\code{ln_fish_q}}{Array dimensioned
+#'       \code{[n_regions × max_q_blocks × n_fish_fleets]}.
+#'       Default: \code{0}.}
+#'     \item{\code{fishsel_pe_pars}}{Array dimensioned
+#'       \code{[n_regions × 4 × n_sexes × n_fish_fleets]}.
+#'       Default: \code{0}.}
+#'     \item{\code{ln_fishsel_devs}}{Array dimensioned
+#'       \code{[n_regions × (n_years + n_proj_yrs_devs) × n_bins × n_sexes × n_fish_fleets]}.
+#'       Default: \code{0}.}
 #'   }
 #'
-#' These correlation-suppression flags are ignored when \code{cont_tv_sel} is set to any other value.
-#' @param Use_fish_q_prior Integer (0 or 1). Flag to enable/disable fishery catchability priors.
-#'   When set to 1, applies log-normal priors to fishery selectivity parameters as specified
-#'   in \code{fish_q_prior}. When set to 0, no priors are applied.
-#' @param fish_q_prior Data frame containing prior specifications for fishery catchability parameters.
-#'   Must include columns: \code{region} (region index), \code{fleet} (fleet index),
-#'   \code{block} (time block index), \code{mu} (prior mean on natural scale), and \code{sd} (prior standard deviation on log scale).
-#'   Each row specifies a log-normal prior N(log(mu), sd) for a given catchability parameter.
-#'   Only parameters with rows in this data frame will have priors applied.
-#' @param Use_fish_selex_prior Integer (0 or 1). Flag to enable/disable fishery selectivity priors.
-#'   When set to 1, applies log-normal priors to fishery selectivity parameters as specified
-#'   in \code{fish_selex_prior}. When set to 0, no priors are applied.
-#' @param fish_selex_prior Data frame containing prior specifications for fishery selectivity parameters.
-#'   Must include columns: \code{region} (region index), \code{fleet} (fleet index),
-#'   \code{block} (time block index), \code{sex} (sex index), \code{par} (parameter index),
-#'   \code{mu} (prior mean on natural scale), and \code{sd} (prior standard deviation on log scale).
-#'   Each row specifies a log-normal prior N(log(mu), sd) for one selectivity parameter.
-#'   Only parameters with rows in this data frame will have priors applied.
-#' @param cont_tv_fish_sel_penalty Whether or not continuous fishery time varying selectivity penalties are applied (if cont_tv_fish_sel > 0)
-#' @param fishsel_devs_shared_ages List object for specifying which ages are shared when selectivity deviations are semi-parametric (e.g., list(1:5, 6:10, 11:30) specifies that ages 1-5, 6-10, and 11-30 have the same deviations.)
-#' @param ... Optional starting values for \code{ln_fish_fixed_sel_pars}, \code{ln_fish_q}, \code{fishsel_pe_pars}, and \code{ln_fishsel_devs}
+#' @return The input \code{input_list} with \code{$data}, \code{$par}, and
+#'   \code{$map} updated. Key additions include the parsed integer arrays for
+#'   \code{cont_tv_fish_sel}, \code{fish_sel_blocks}, \code{fish_sel_model}, and
+#'   \code{fish_q_blocks}; starting value arrays for all four parameter groups;
+#'   and their corresponding factor maps.
+#'
 #'
 #' @export Setup_Mod_Fishsel_and_Q
-#'
 #' @importFrom stringr str_detect
 #' @family Model Setup
 Setup_Mod_Fishsel_and_Q <- function(input_list,

@@ -1,27 +1,46 @@
-#' Run RTMB model
+#' Fit a SPoRC RTMB model
 #'
-#' @param data Data list
-#' @param parameters Parameter list
-#' @param mapping Mapping list
-#' @param random Character of random effects to integrate out
-#' @param newton_loops Number of newton loops to run to get gradients down
-#' @param do_optim Boolean on whether or not model is optimized
-#' @param silent Boolean on whether or not model run is silent
-#' @param nlminb_control List argument controls by nlminb
-#' @param ... Additional arguments taken by MakeADFun
+#' Constructs an RTMB automatic differentiation function via
+#' \code{RTMB::MakeADFun}, optimises it with \code{stats::nlminb}, and
+#' optionally refines the solution with Newton steps using the analytic
+#' Hessian. The best parameter vector (\code{obj$env$last.par.best}),
+#' optimiser output, and model report are attached to the returned object.
+#'
+#' @param data Named list of model data as constructed by the
+#'   \code{Setup_Mod_*} family of functions.
+#' @param parameters Named list of parameter starting values.
+#' @param mapping Named list of factor maps controlling parameter sharing
+#'   and fixing.
+#' @param random Character vector of parameter names to integrate out as
+#'   random effects. \code{NULL} (default) fits a fixed-effects-only model.
+#' @param newton_loops Integer. Number of Newton refinement steps applied
+#'   after \code{nlminb} convergence to reduce gradient magnitudes. Each
+#'   step solves \eqn{\Delta\theta = -H^{-1} g} and updates the objective.
+#'   Default \code{3}. Errors and warnings are caught silently via
+#'   \code{tryCatch}.
+#' @param silent Logical. If \code{TRUE}, suppresses RTMB and optimiser
+#'   console output. Default \code{FALSE}.
+#' @param do_optim Logical. If \code{TRUE} (default), runs \code{nlminb}
+#'   and Newton refinement. If \code{FALSE}, returns the un-optimised
+#'   \code{MakeADFun} object only.
+#' @param nlminb_control Named list of control parameters passed to
+#'   \code{stats::nlminb}. Default
+#'   \code{list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15)}.
+#' @param ... Additional arguments forwarded to \code{RTMB::MakeADFun}.
+#'
+#' @return The RTMB \code{ADFun} object with three additional fields:
+#'   \code{$optim} (the \code{nlminb} output list), and \code{$rep} (the
+#'   model report evaluated at \code{obj$env$last.par.best}).
 #'
 #' @importFrom stats nlminb optimHess
-#' @return Returns a list object that is optimized, with results outputted from the RTMB model
 #' @export fit_model
 #' @family Utility
+#'
 #' @examples
 #' \dontrun{
-#'model <- fit_model(data,
-#'                  parameters,
-#'                  mapping,
-#'                  random = NULL,
-#'                  newton_loops = 3)
-#'}
+#' obj <- fit_model(data, parameters, mapping, random = NULL, newton_loops = 3)
+#' obj$rep$SSB
+#' }
 fit_model <- function(data,
                       parameters,
                       mapping,

@@ -1,8 +1,12 @@
-#' ggplot theme for sablefish
+#' ggplot2 theme for SPoRC plots
 #'
-#' @return ggplot theme
-#' @export theme_sablefish
+#' A clean \code{theme_bw}-based ggplot2 theme with enlarged text elements
+#' suitable for publication-quality SPoRC diagnostic and results figures.
+#'
+#' @return A \code{ggplot2} theme object.
+#'
 #' @import ggplot2
+#' @export theme_sablefish
 #' @family Plotting
 theme_sablefish <- function() {
    theme_bw() +
@@ -16,17 +20,25 @@ theme_sablefish <- function() {
 }
 
 
-#' Function to fill in an n x n correlation AR(1) matrix
+#' Construct an AR(1) correlation matrix
 #'
-#' @param n Number of bins
-#' @param rho correaltion parameter
+#' Builds an \eqn{n \times n} correlation matrix whose \eqn{(i,j)} element
+#' equals \eqn{\rho^{|i-j|}}, corresponding to a stationary AR(1) process
+#' with autocorrelation parameter \eqn{\rho}.
 #'
-#' @return correlation matrix for an ar1 process
+#' @param n Integer. Matrix dimension (number of bins, ages, or lengths).
+#' @param rho Numeric. AR(1) autocorrelation parameter in \eqn{(-1, 1)}.
+#'   Values close to 1 produce strong positive correlation between adjacent
+#'   bins; values close to 0 approach the identity matrix.
+#'
+#' @return Numeric \eqn{n \times n} correlation matrix.
+#'
+#'
 #' @keywords internal
 #'
 #' @examples
 #' \dontrun{
-#' mat <- get_AR1_CorrMat(10, 0.5)
+#' get_AR1_CorrMat(10, 0.5)
 #' }
 get_AR1_CorrMat <- function(n, rho) {
   corrMatrix <- matrix(0, nrow = n, ncol = n)
@@ -39,17 +51,27 @@ get_AR1_CorrMat <- function(n, rho) {
   return(corrMatrix)
 }
 
-#' Constant correlation matrix
+#' Construct a constant (exchangeable) correlation matrix
 #'
-#' @param n Number of bins
-#' @param rho correaltion parameter
+#' Builds an \eqn{n \times n} correlation matrix with 1 on the diagonal and
+#' \eqn{\rho} on all off-diagonal elements, corresponding to a compound
+#' symmetry (exchangeable) covariance structure. Used in SPoRC to model
+#' constant correlation across sexes in the 2D logistic-normal composition
+#' likelihood (\code{comp_like = 4}).
 #'
-#' @return constant correlation matrix
+#' @param n Integer. Matrix dimension (typically \code{n_sexes}).
+#' @param rho Numeric. Off-diagonal correlation in \eqn{(-1, 1)}. A value
+#'   of 0 produces the identity matrix; a value approaching 1 produces
+#'   near-perfect correlation across sexes.
+#'
+#' @return Numeric \eqn{n \times n} correlation matrix.
+#'
+#'
 #' @keywords internal
 #'
 #' @examples
 #' \dontrun{
-#' mat <- get_Constant_CorrMat(10, 0.5)
+#' get_Constant_CorrMat(2, 0.5)
 #' }
 get_Constant_CorrMat <- function(n, rho) {
   corrMatrix <- matrix(0, nrow = n, ncol = n)
@@ -62,44 +84,86 @@ get_Constant_CorrMat <- function(n, rho) {
   return(corrMatrix)
 }
 
-#' For combining a parameter and data list in RTMB so a data object can be explicitly defined
+#' Combine a parameter function and a data list for RTMB
 #'
-#' @param f Parameter list
-#' @param d Data list
+#' Returns a closure that calls \code{f(p, d)}, allowing the data list to be
+#' fixed at construction time so that \code{RTMB::MakeADFun} receives a
+#' single-argument objective function of the form \code{function(p)}.
+#'
+#' @param f Function with signature \code{function(pars, data)}, typically
+#'   \code{\link{SPoRC_rtmb}}.
+#' @param d Named list of model data passed as the second argument to
+#'   \code{f} on every call.
+#'
+#' @return A single-argument function \code{function(p)} equivalent to
+#'   \code{f(p, d)}.
+#'
 #' @keywords internal
 cmb <- function(f, d) {
   function(p) f(p, d)
 }
 
-#' Helper function to collect messages
+#' Append a message to the global messages list
 #'
-#' @param ... character vector of messages
+#' Concatenates its arguments into a single string and appends the result to
+#' \code{messages_list} in the calling environment via \code{<<-}. Used
+#' internally to accumulate validation and setup messages for deferred display.
+#'
+#' @param ... Character strings passed to \code{paste(..., sep = "")}.
+#'
+#' @return \code{NULL} invisibly. Side effect: \code{messages_list} is
+#'   updated in the parent environment.
+#'
 #' @keywords internal
 collect_message <- function(...) {
   messages_list <<- c(messages_list, paste(..., sep = ""))
 }
 
-#' Helper function to check package availbility
+#' Check whether an R package is installed
 #'
-#' @param pkg package name character
+#' Tests for package availability without loading it, using
+#' \code{system.file} to locate the package directory.
+#'
+#' @param pkg Character string. Name of the package to check.
+#'
+#' @return Logical. \code{TRUE} if the package is installed and findable;
+#'   \code{FALSE} otherwise.
+#'
 #' @keywords internal
 is_package_available <- function(pkg) {
   nzchar(system.file(package = pkg))
 }
 
-#' Go from TAC to Fishing Mortality using bisection for when a single fishery fleet exists
+#' Convert a target catch to fishing mortality for a single fleet via bisection
 #'
-#' @param f_guess Initial guess of F
-#' @param catch Provided catch values
-#' @param NAA Numbers, dimensioned by ages, and sexes
-#' @param WAA Weight, dimensioned by ages and sexes
-#' @param natmort Natural mortality dimensioned by ages and sex
-#' @param fish_sel Fishery selectivity, dimesnioned by ages and sex
-#' @param n.iter Number of iterations for bisection
-#' @param lb Lower bound of F
-#' @param ub Upper bound of F
+#' Uses interval bisection to find the scalar fishing mortality \eqn{F} that
+#' produces a predicted catch (Baranov catch equation, summed over ages and
+#' sexes in biomass) equal to \code{catch}. Intended for closed-loop MSE
+#' harvest control rules where a TAC must be translated into an \eqn{F} for
+#' the operating model.
 #'
-#' @returns Fishing mortality values for a single fleet
+#' @param f_guess Numeric. Initial \eqn{F} guess (not used directly by the
+#'   bisection algorithm but retained for API consistency).
+#' @param catch Numeric. Target catch in biomass units.
+#' @param NAA Numeric matrix \code{[n_ages × n_sexes]}. Numbers-at-age at
+#'   the start of the time step.
+#' @param WAA Numeric matrix \code{[n_ages × n_sexes]}. Weight-at-age.
+#' @param natmort Numeric matrix \code{[n_ages × n_sexes]}. Instantaneous
+#'   natural mortality rate.
+#' @param fish_sel Numeric matrix \code{[n_ages × n_sexes]}. Fishery
+#'   selectivity (scaled to a maximum of 1).
+#' @param n.iter Integer. Number of bisection iterations. Default \code{20};
+#'   approximately \eqn{\log_2((ub - lb) / \epsilon)} iterations are required
+#'   for tolerance \eqn{\epsilon}.
+#' @param lb Numeric. Lower bound of the \eqn{F} search interval.
+#'   Default \code{0}.
+#' @param ub Numeric. Upper bound of the \eqn{F} search interval.
+#'   Default \code{2}.
+#'
+#' @return Scalar numeric. The \eqn{F} value at the final bisection midpoint
+#'   that most closely produces \code{catch}.
+#'
+#'
 #' @export catch_to_F_singlefleet
 #' @family Closed Loop Simulations
 catch_to_F_singlefleet <- function(f_guess,
@@ -139,16 +203,34 @@ catch_to_F_singlefleet <- function(f_guess,
   return(midpoint)
 }
 
-#' Solve for fishing mortality rates that achieve target catches for multiple fleets
+#' Convert target catches to fishing mortality rates for multiple fleets
 #'
-#' @param target_catch Numeric vector of target catch values for each fleet
-#' @param NAA Matrix of numbers-at-age (ages x sexes)
-#' @param WAA Matrix of weight-at-age (ages x sexes)
-#' @param natmort Matrix of natural mortality (ages x sexes)
-#' @param fish_sel 3D array of fishery selectivity (ages x sexes x fleets)
-#' @param f_init Initial guess for F values (scalar or vector)
-#' @param control List of control parameters for nleqslv
-#' @return Numeric vector of F values for each fleet
+#' Solves for the vector of fleet-specific fishing mortality rates
+#' \eqn{\mathbf{F} = (F_1, \ldots, F_k)} that simultaneously satisfy the
+#' Baranov catch equations for all fleets, given a vector of target catches.
+#' Total mortality at age accounts for contributions from all fleets:
+#' \eqn{Z_a = M_a + \sum_f F_f s_{a,f}}. The system of equations is solved
+#' via \code{nleqslv::nleqslv}. Intended for closed-loop MSE harvest control
+#' rules with multiple interacting fishery fleets.
+#'
+#' @param target_catch Numeric vector \code{[n_fleets]}. Target catch in
+#'   biomass units for each fleet.
+#' @param NAA Numeric matrix \code{[n_ages × n_sexes]}. Numbers-at-age.
+#' @param WAA Numeric matrix \code{[n_ages × n_sexes]}. Weight-at-age.
+#' @param natmort Numeric matrix \code{[n_ages × n_sexes]}. Instantaneous
+#'   natural mortality rate.
+#' @param fish_sel Numeric array \code{[n_ages × n_sexes × n_fleets]}.
+#'   Fishery selectivity for each fleet.
+#' @param f_init Numeric scalar or vector \code{[n_fleets]}. Starting values
+#'   for the \eqn{F} solver. If a scalar is supplied it is recycled across
+#'   all fleets. Default \code{0.05}.
+#' @param control Named list of control parameters passed to
+#'   \code{nleqslv::nleqslv}. Default \code{list(btol = 1e-6)}.
+#'
+#' @return Numeric vector \code{[n_fleets]} of solved fishing mortality rates,
+#'   one per fleet.
+#'
+#'
 #' @export catch_to_F_multifleet
 #' @family Closed Loop Simulations
 catch_to_F_multifleet <- function(target_catch, NAA, WAA, natmort, fish_sel,
@@ -186,13 +268,32 @@ catch_to_F_multifleet <- function(target_catch, NAA, WAA, natmort, fish_sel,
   return(result$x)
 }
 
-#' Post Optimization Model Convergence Checks
+#' Run post-optimisation convergence checks on a fitted SPoRC model
 #'
-#' @param sd_rep sd report list from a `SPoRC` model
-#' @param rep report list from a `SPoRC` model
-#' @param gradient_tol Value for maximum gradient tolerance to use
-#' @param se_tol Value for maximum standard error tolerance to use
-#' @param corr_tol Value for maximum correlation tolerance to use
+#' Evaluates four convergence criteria on the output of a fitted RTMB model:
+#' (1) finiteness of the joint negative log-likelihood, (2) maximum absolute
+#' gradient of fixed-effect parameters, (3) positive-definiteness of the
+#' Hessian, and (4) finiteness and magnitude of parameter standard errors and
+#' pairwise correlations. A diagnostic message is printed for each failed
+#' check identifying the offending parameter or parameter pair.
+#'
+#' @param sd_rep \code{sdreport} object returned by \code{RTMB::sdreport}.
+#'   Must contain \code{$gradient.fixed}, \code{$par.fixed},
+#'   \code{$pdHess}, and \code{$cov.fixed}.
+#' @param rep Report list returned by \code{obj$rep} after fitting a SPoRC
+#'   model. Must contain \code{$jnLL}.
+#' @param gradient_tol Numeric. Maximum tolerated absolute gradient for any
+#'   fixed-effect parameter. Default \code{1e-3}; values above this threshold
+#'   suggest the optimiser did not reach a local minimum.
+#' @param se_tol Numeric. Maximum tolerated parameter standard error. Default
+#'   \code{100}; very large SEs indicate poorly identified parameters.
+#' @param corr_tol Numeric. Maximum tolerated absolute pairwise parameter
+#'   correlation. Default \code{0.99}; values approaching 1 indicate
+#'   near-redundant parameters.
+#'
+#' @return Logical. \code{TRUE} if all four checks pass; \code{FALSE} if any
+#'   check fails. In either case, informative messages are printed via
+#'   \code{message}.
 #'
 #' @export post_optim_sanity_checks
 #' @family Utility
@@ -261,10 +362,18 @@ post_optim_sanity_checks <- function(sd_rep,
 
 }
 
-#' Helper function for extracting elements from TMB report
+#' Safely extract a named element from a TMB report object
 #'
-#' @param obj TMB report object
-#' @param name Name of object to be extracted
+#' Returns the named element if it exists and is non-\code{NULL}; returns
+#' \code{0} otherwise. Used to guard against missing or \code{NULL} report
+#' fields when accumulating likelihood components.
+#'
+#' @param obj Named list, typically \code{obj$rep} from a fitted RTMB model.
+#' @param name Character string. Name of the element to extract.
+#'
+#' @return The value of \code{obj[[name]]} if present and non-\code{NULL};
+#'   \code{0} otherwise.
+#'
 #' @keywords internal
 safe_extract <- function(obj, name) {
   if (name %in% names(obj) && !is.null(obj[[name]])) {
@@ -274,13 +383,38 @@ safe_extract <- function(obj, name) {
   }
 }
 
-#' Helper function for extracting parameter information and names from TMB
+#' Extract and tabulate parameter estimates and metadata from a fitted SPoRC model
 #'
-#' @param parameters Parameter list from setting up TMB object
-#' @param mapping Mapping list from setting up TMB object
-#' @param sd_rep SD Report from TMB obj
+#' Joins the parameter list, factor map, and \code{sdreport} to produce two
+#' tidy data frames: one for estimated parameters (with initial values,
+#' posterior estimates, standard errors, and absolute gradients) and one for
+#' fixed (non-estimated) parameters. Parameter indices are re-sequenced to
+#' match the sequential numbering used internally by RTMB's \code{sdreport},
+#' and map entries of \code{NA} (i.e., parameters fixed via \code{mapping})
+#' are labelled \code{"NE"} (not estimated).
 #'
-#' @returns A list of dataframes for estimated and non-estimated parameter values.
+#' @param parameters Named list of parameter starting values passed to
+#'   \code{RTMB::MakeADFun}.
+#' @param mapping Named list of factor maps passed to \code{RTMB::MakeADFun}.
+#'   Parameters absent from \code{mapping} are treated as freely estimated.
+#'   Elements with \code{NA} factor levels are treated as fixed.
+#' @param sd_rep \code{sdreport} object returned by \code{RTMB::sdreport}.
+#'   Must contain \code{$par.fixed}, \code{$par.random}, \code{$cov.fixed},
+#'   \code{$diag.cov.random}, and \code{$gradient.fixed}.
+#'
+#' @return A named list with two elements:
+#'   \describe{
+#'     \item{\code{est_pars}}{Data frame of estimated parameters, with columns
+#'       \code{Par} (parameter name), \code{Est_Val} (estimated value on the
+#'       native scale), \code{SE_Val} (standard error), \code{Abs_Grad_Val}
+#'       (absolute gradient; \code{NA} for random effects), \code{Init_Val}
+#'       (starting value), and dimension columns \code{Dim1}, \code{Dim2},
+#'       \ldots indicating the array indices of each element.}
+#'     \item{\code{non_est_pars}}{Data frame of non-estimated (fixed) parameters
+#'       with the same dimension and \code{Init_Val} columns, plus \code{map =
+#'       "NE"} indicating they were excluded from estimation.}
+#'   }
+#'
 #' @export get_par_est_info
 #' @family Utility
 get_par_est_info <- function(parameters, mapping, sd_rep) {
@@ -339,14 +473,32 @@ get_par_est_info <- function(parameters, mapping, sd_rep) {
   )
 }
 
-#' Title Populates an unoptimized parameter list with optimized values
+#' Populate a parameter list with optimised values from sdreport
 #'
-#' @param parameters Parameter list
-#' @param mapping Mapping list
-#' @param sd_rep Sd report list from RTMB
-#' @param random Character vector of whether random effects were estimated
+#' Replaces starting values in \code{parameters} with the corresponding
+#' optimised estimates from \code{sd_rep}, respecting the factor-map sharing
+#' structure in \code{mapping}. For each parameter: if a map exists, factor
+#' level integers are used to index into the estimated value vector so that
+#' shared elements receive the same optimised value and \code{NA}-mapped
+#' (fixed) elements are left unchanged. Parameters absent from \code{mapping}
+#' are treated as fully estimated and filled in sequentially. Random effects
+#' are sourced from \code{sd_rep$par.random}; all other estimated parameters
+#' from \code{sd_rep$par.fixed}.
 #'
-#' @returns Updated parameter list with associated optimized parameters corresponding to the same mapping indices
+#' @param parameters Named list of parameter starting values passed to
+#'   \code{RTMB::MakeADFun}.
+#' @param mapping Named list of factor maps passed to \code{RTMB::MakeADFun}.
+#' @param sd_rep \code{sdreport} object returned by \code{RTMB::sdreport}.
+#'   Must contain \code{$par.fixed}, \code{$par.random}, and
+#'   \code{$cov.fixed}.
+#' @param random Character vector of parameter names declared as random
+#'   effects in \code{RTMB::MakeADFun}. Used to route extraction to
+#'   \code{sd_rep$par.random} rather than \code{sd_rep$par.fixed}.
+#'
+#' @return The \code{parameters} list with all estimated elements replaced by
+#'   their optimised values. Fixed (\code{NA}-mapped) elements retain their
+#'   original starting values.
+#'
 #' @keywords internal
 get_optim_param_list <- function(parameters, mapping, sd_rep, random) {
 
@@ -363,22 +515,10 @@ get_optim_param_list <- function(parameters, mapping, sd_rep, random) {
       }
 
       est_values <- if(param_name %in% random) sd_rep$par.random[names(sd_rep$par.random) == param_name] else sd_rep$par.fixed[names(sd_rep$par.fixed) == param_name] # Get estimated values for this parameter
-      unique_map_values <- unique(param_map[!is.na(param_map)]) # Get unique non-NA mapping values
-
-      # Create estimated parameter array/vector by mapping unique values to estimates
-      if(!is.vector(parameters[[param_name]])) {
-        param_est <- array(NA, dim = dim(parameters[[param_name]]))
-      } else {
-        param_est <- rep(NA, length(parameters[[param_name]]))
-      }
-
-      # mapg unique values back to the parameter structure
-      for (i in seq_along(unique_map_values)) {
-        param_est[param_map == unique_map_values[i]] <- est_values[i]
-      }
-
-      # if mapping is NA use original, else use estimated (shared values)
-      parameters[[param_name]][!is.na(param_map)] <- param_est[!is.na(param_map)]
+      param_map_int <- as.integer(mapping[[map_name]])  # codes: 1=level1, 2=level2, etc.
+      if (!is.vector(parameters[[param_name]])) param_map_int <- array(param_map_int, dim = dim(parameters[[param_name]]))
+      non_na <- !is.na(param_map_int)
+      parameters[[param_name]][non_na] <- est_values[param_map_int[non_na]]
 
       # No mapping - estimated by default
     } else if (param_name %in% est_param_names) {
@@ -391,21 +531,41 @@ get_optim_param_list <- function(parameters, mapping, sd_rep, random) {
   return(parameters)
 }
 
-#' Extend an array along a year dimension
+#' Extend an array along its year dimension
 #'
-#' This function takes an array and extends it along the specified year dimension.
-#' The extension can either be filled with zeros or by repeating the last year slice.
+#' Appends additional year slices to an array along a specified dimension,
+#' using one of several fill strategies. Used in SPoRC to extend biological,
+#' selectivity, and sample-size arrays from the conditioning period into
+#' projection years before running closed-loop MSE simulations.
 #'
-#' @param arr Array to extend. Can have any number of dimensions.
-#' @param n_years Integer. The total number of years to extend the array to.
-#' @param yr_dim Integer. The dimension of `arr` that corresponds to years.
-#' @param fill Character or Numeric (scalar or array). How to fill the extended years:
-#'   - `"zeros"`: fill with zeros
-#'   - `"last"`: repeat the last year slice that is not a NaN or NA value. If all values are NA, then the array gets populated with NAs.
-#'   - `"mean"`: take mean of time series
-#'   - `"F_pattern"`: Used for fishery input sample sizes, dynamically fills in sample sizes based on fishing mortality values specified in a closed loop simulation
-#'   -  Numeric: Constant scalar or array
-#' @return An array extended along the `yr_dim` dimension.
+#' @param arr Array of any dimensionality to extend.
+#' @param n_years Integer. Total number of years in the extended array
+#'   (i.e., the new size of dimension \code{yr_dim}). Must be greater than
+#'   \code{dim(arr)[yr_dim]}.
+#' @param yr_dim Integer. Index of the dimension in \code{arr} corresponding
+#'   to years.
+#' @param fill Character string or numeric. Fill strategy for the appended
+#'   year slices:
+#'   \describe{
+#'     \item{\code{"zeros"}}{Fill with zeros.}
+#'     \item{\code{"last"}}{Repeat the last year slice that contains at least
+#'       one non-\code{NA}, non-\code{NaN} value. If no valid slice exists,
+#'       fills with \code{NA}.}
+#'     \item{\code{"mean"}}{Fill with the per-element mean across years,
+#'       excluding zeros, \code{NA}, and \code{NaN} values. Elements with no
+#'       valid values are set to zero.}
+#'     \item{\code{"F_pattern"}}{Fill with zeros; signals to downstream
+#'       functions (e.g., \code{\link{predict_sim_fish_iss_fmort}}) that
+#'       sample sizes should be dynamically updated based on projected fishing
+#'       mortality during the closed-loop simulation.}
+#'     \item{Numeric scalar or array}{Fill all appended slices with the
+#'       supplied constant value, recycled via \code{array()}.}
+#'   }
+#'
+#' @return Array with the same dimensions as \code{arr} except that
+#'   \code{dim(result)[yr_dim] == dim(arr)[yr_dim] + n_years}, formed by
+#'   binding \code{arr} and the fill array along \code{yr_dim} via
+#'   \code{abind::abind}.
 #'
 #' @keywords internal
 extend_years <- function(arr, n_years, yr_dim, fill = "zeros") {
@@ -459,23 +619,41 @@ extend_years <- function(arr, n_years, yr_dim, fill = "zeros") {
   return(abind::abind(arr, fill_array, along = yr_dim))
 }
 
-#' Set Data Indicators to Unused for Specified Years
+#' Set data indicators to unused for specified years
 #'
-#' @param data Data list for RTMB model
-#' @param unused_years Integer vector specifying which years to mark as unused. Only years present in \code{data$years} are considered.
-#' @param what Character vector specifying which data types to modify. Possible values include:
+#' Sets \code{Use*} binary indicator arrays to \code{0} for the specified
+#' years across one or more data types, and optionally removes conventional
+#' tag cohorts released in those years. Used in MSE closed-loop simulations
+#' and retrospective analyses to exclude future or withheld data from the
+#' estimation model without modifying the underlying observation arrays.
+#' Only years present in \code{data$years} are affected; out-of-range values
+#' in \code{unused_years} are silently ignored.
+#'
+#' @param data Named list of model data as constructed by the
+#'   \code{Setup_Mod_*} family of functions.
+#' @param unused_years Integer vector. Year indices (relative to
+#'   \code{data$years}) to mark as unused. Values not present in
+#'   \code{1:length(data$years)} are dropped.
+#' @param what Character vector. Data types to modify. Any combination of:
 #'   \describe{
-#'     \item{"Catch"}{Catch data indicators.}
-#'     \item{"FishIdx"}{Fishery index data indicators.}
-#'     \item{"FishAgeComps"}{Fishery age composition data indicators.}
-#'     \item{"FishLenComps"}{Fishery length composition data indicators.}
-#'     \item{"SrvIdx"}{Survey index data indicators.}
-#'     \item{"SrvAgeComps"}{Survey age composition data indicators.}
-#'     \item{"SrvLenComps"}{Survey length composition data indicators.}
-#'     \item{"Tagging"}{Tagging data and associated cohorts.}
+#'     \item{\code{"Catch"}}{Sets \code{UseCatch[, unused_years, , ] <- 0}.}
+#'     \item{\code{"FishIdx"}}{Sets \code{UseFishIdx[, unused_years, , ] <- 0}.}
+#'     \item{\code{"FishAgeComps"}}{Sets \code{UseFishAgeComps[, unused_years, , ] <- 0}.}
+#'     \item{\code{"FishLenComps"}}{Sets \code{UseFishLenComps[, unused_years, , ] <- 0}.}
+#'     \item{\code{"SrvIdx"}}{Sets \code{UseSrvIdx[, unused_years, , ] <- 0}.}
+#'     \item{\code{"SrvAgeComps"}}{Sets \code{UseSrvAgeComps[, unused_years, , ] <- 0}.}
+#'     \item{\code{"SrvLenComps"}}{Sets \code{UseSrvLenComps[, unused_years, , ] <- 0}.}
+#'     \item{\code{"conv_tagging"}}{Removes tag cohorts whose release year
+#'       falls in \code{unused_years} from \code{conv_tagged_fish},
+#'       \code{obs_conv_tag_fish_recap}, \code{conv_tag_release_indicator},
+#'       and updates \code{n_conv_tag_cohorts}. Only applied when
+#'       \code{any(data$use_conv_fish_tagging == 1)}.}
 #'   }
 #'
-#' @returns The modified \code{data} object, with indicators set to 0 for the specified years and tagging cohorts removed if relevant.
+#' @return The modified \code{data} list with \code{Use*} indicators set to
+#'   \code{0} for \code{unused_years} and, if applicable, tagging cohorts
+#'   from those years removed.
+#'
 #' @export set_data_indicator_unused
 #' @family Utility
 set_data_indicator_unused <- function(data,
@@ -483,7 +661,7 @@ set_data_indicator_unused <- function(data,
                                       what = c('Catch', "FishIdx",
                                                "FishAgeComps", "FishLenComps",
                                                "SrvIdx", "SrvAgeComps", "SrvLenComps",
-                                               "Tagging")) {
+                                               "conv_tagging")) {
 
   # figure out year dimensions
   data_years <- 1:length(data$years)
@@ -501,43 +679,54 @@ set_data_indicator_unused <- function(data,
   }
 
   # modify tagging stuff
-  if(data$UseTagging == 1 && "Tagging" %in% what) {
-    tags_to_remove <- which(data$tag_release_indicator[,2] %in% unused_years)
+  if(any(data$use_conv_fish_tagging == 1) && "conv_tagging" %in% what) {
+    tags_to_remove <- which(data$conv_tag_release_indicator[,2] %in% unused_years)
     if(length(tags_to_remove) > 0) {
-      data$Tagged_Fish <- data$Tagged_Fish[-tags_to_remove,,,drop=FALSE]
-      data$Obs_Tag_Recap <- data$Obs_Tag_Recap[,,-tags_to_remove,,,,drop=FALSE]
-      data$tag_release_indicator <- data$tag_release_indicator[-tags_to_remove,,drop=FALSE]
-      data$n_tag_cohorts <- nrow(data$tag_release_indicator)
+      data$conv_tagged_fish <- data$Tagged_Fish[-tags_to_remove,,,,drop=FALSE]
+      data$obs_conv_tag_fish_recap <- data$Obs_Tag_Recap[,,-tags_to_remove,,,,,,drop=FALSE]
+      data$conv_tag_release_indicator <- data$conv_tag_release_indicator[-tags_to_remove,,drop=FALSE]
+      data$n_conv_tag_cohorts <- nrow(data$tag_release_indicator)
     }
   }
 
   return(data)
 }
 
-#' Extract model report from MCMC posterior samples
+#' Extract model report quantities from MCMC posterior samples
 #'
-#' This function collapses MCMC chains from an RTMB/ADNUTS object,
-#' generates model reports for each posterior draw, and extracts
-#' specified components of the report.
+#' Discards warmup iterations, collapses all chains into a single matrix of
+#' posterior draws, evaluates the RTMB report function at each draw in
+#' parallel, and returns the requested report components as tidy
+#' \code{data.table}s with a \code{posterior_sample} index column.
 #'
-#' @param rtmb_obj An RTMB object created via `ADFun`.
-#' @param adnuts_obj An `adnuts` object containing MCMC samples.
-#' @param what Character vector specifying the names of components
-#'   in the model report to extract.
-#' @param n_cores Number of cores to use
+#' @param rtmb_obj An RTMB \code{ADFun} object with a \code{$report()}
+#'   method, as returned by \code{RTMB::MakeADFun}.
+#' @param adnuts_obj An \code{adnuts} posterior object containing
+#'   \code{$samples} (array \code{[n_iter × n_chain × n_param]}) and
+#'   \code{$warmup} (number of warmup iterations to discard).
+#' @param what Character vector. Names of components in the model report
+#'   (i.e., quantities passed to \code{RTMB::REPORT} inside
+#'   \code{\link{SPoRC_rtmb}}) to extract from each posterior draw.
+#' @param n_cores Integer. Number of parallel workers to use via
+#'   \code{future::multisession}.
 #'
-#' @return A named list of `data.table`s, one for each element in
-#'   `what`. Each table contains the melted report component across
-#'   all posterior samples, with an additional column
-#'   `posterior_sample` indicating the MCMC draw index.
-#' @family Model Diagnostics
-#' @examples
-#' \dontrun{
-#' model_reports <- get_model_rep_from_mcmc(rtmb_obj, adnuts_obj,
-#'                                          what = c("SSB", "Rec"))
-#' }
+#' @return Named list of \code{data.table}s, one per element of \code{what}.
+#'   Each table is the row-bound result of \code{reshape2::melt} applied to
+#'   the report component across all post-warmup draws, with an additional
+#'   integer column \code{posterior_sample} identifying the draw index
+#'   (1 to \code{n_iter × n_chain}).
 #'
 #' @export get_model_rep_from_mcmc
+#' @family Model Diagnostics
+#'
+#' @examples
+#' \dontrun{
+#' model_reports <- get_model_rep_from_mcmc(
+#'   rtmb_obj, adnuts_obj,
+#'   what = c("SSB", "Rec"),
+#'   n_cores = 4
+#' )
+#' }
 get_model_rep_from_mcmc <- function(rtmb_obj, adnuts_obj, what, n_cores) {
 
   # discard warmup samples
@@ -578,71 +767,73 @@ get_model_rep_from_mcmc <- function(rtmb_obj, adnuts_obj, what, n_cores) {
   return(what_list)
 }
 
-#' Title Constrains value between -1 and 1
+#' Transform a real-valued parameter to the interval (-1, 1)
 #'
-#' @param x Numeric value to constrain
+#' Applies the scaled logistic transformation
+#' \eqn{2 / (1 + e^{-2x}) - 1} to map an unconstrained real value to
+#' \eqn{(-1, 1)}, suitable for parameterising correlation coefficients.
+#' Used in SPoRC to back-transform raw correlation parameters before
+#' constructing AR(1) and constant covariance matrices for logistic-normal
+#' composition likelihoods.
 #'
-#' @returns Constrained value between -1 and 1
+#' @param x Numeric. Unconstrained real-valued parameter.
+#'
+#' @return Numeric. Transformed value in \eqn{(-1, 1)}.
+#'
+#'
 #' @export rho_trans
 #' @family Utility
 rho_trans <- function(x){
   2/(1+ exp(-2 * x)) - 1 # constraint between -1 and 1
 }
 
-#' Construct logistic-normal covariance matrix
+#' Construct a logistic-normal covariance matrix
 #'
-#' Helper function to generate the covariance matrix (\eqn{\Sigma}) used in
-#' logistic-normal composition models. The structure depends on the
-#' specification of \code{comp_like}:
-#' \itemize{
-#'   \item \code{comp_like = 2}: independent and identically distributed (iid)
-#'     across categories (\eqn{n_\mathrm{categories}}).
-#'   \item \code{comp_like = 3}: first-order autoregressive (AR1) correlation
-#'     across categories (\eqn{n_\mathrm{categories}}).
-#'   \item \code{comp_like = 4}: two-dimensional AR1 correlation across
-#'     categories and sexes (\eqn{n_\mathrm{categories} \times n_\mathrm{sexes}}).
-#' }
+#' Builds the covariance matrix \eqn{\Sigma} used in logistic-normal
+#' composition likelihoods for a given correlation structure. Three structures
+#' are supported, matching the \code{comp_like} codes used throughout SPoRC:
+#' iid (\code{2}), AR(1) across bins (\code{3}), and AR(1) across bins with
+#' constant correlation across sexes via a Kronecker product (\code{4}).
 #'
-#' @param comp_like Integer specifying the logistic-normal correlation structure:
-#'   \itemize{
-#'     \item 2 = iid across categories
-#'     \item 3 = AR1 across categories
-#'     \item 4 = AR1 across categories and sexes
-#'   }
-#' @param n_bins Number of composition categories (e.g., age or length bins).
-#'   For \code{comp_like = 2, 3}, the covariance matrix is dimensioned
-#'   \code{n_bins}. For \code{comp_like = 4}, it is dimensioned
-#'   \code{n_bins * n_sexes}.
-#' @param n_sexes Number of sexes. Required when \code{comp_like = 4}.
-#' @param theta Standard deviation parameter controlling the overall scale
-#'   of the covariance.
-#' @param corr_b Correlation parameter across categories, in the interval
-#'   \eqn{(-1, 1)}. Used when \code{comp_like = 3} or \code{4}.
-#' @param corr_s Correlation parameter across sexes, in the interval
-#'   \eqn{(-1, 1)}. Used when \code{comp_like = 4}.
+#' @param comp_like Integer. Covariance structure: \code{2} = iid (diagonal
+#'   \eqn{\theta^2 I}), \code{3} = AR(1) across bins
+#'   (\eqn{\theta^2 C_{\text{AR1}}}), \code{4} = Kronecker product of
+#'   constant sex correlation and AR(1) bin correlation
+#'   (\eqn{\theta^2 (C_{\text{sex}} \otimes C_{\text{AR1}})}).
+#' @param n_bins Integer. Number of composition categories (ages or lengths).
+#'   The resulting matrix has dimension \code{n_bins} for \code{comp_like}
+#'   \code{2} and \code{3}, or \code{n_bins × n_sexes} for \code{comp_like
+#'   = 4}.
+#' @param n_sexes Integer. Number of sexes. Required for \code{comp_like = 4};
+#'   ignored otherwise.
+#' @param theta Numeric. Marginal standard deviation \eqn{\theta > 0}
+#'   controlling the overall scale of \eqn{\Sigma}.
+#' @param corr_b Numeric. AR(1) correlation across bins in \eqn{(-1, 1)}.
+#'   Required for \code{comp_like} \code{3} and \code{4}; ignored for
+#'   \code{comp_like = 2}.
+#' @param corr_s Numeric. Constant (exchangeable) correlation across sexes in
+#'   \eqn{(-1, 1)}. Required for \code{comp_like = 4}; ignored otherwise.
 #'
-#' @return A covariance matrix \eqn{\Sigma} with dimension:
-#'   \itemize{
-#'     \item \code{n_bins} (\code{comp_like = 2, 3})
-#'     \item \code{n_bins * n_sexes} (\code{comp_like = 4})
-#'   }
+#' @return Numeric covariance matrix \eqn{\Sigma} of dimension
+#'   \code{n_bins × n_bins} (\code{comp_like} \code{2}, \code{3}) or
+#'   \code{(n_bins × n_sexes) × (n_bins × n_sexes)} (\code{comp_like = 4}).
+#'
 #'
 #' @export get_logistN_Sigma
 #' @family Utility
-#' @examples \dontrun{
-#' n_cat <- 5
-#' n_sexes <- 2
 #'
-#' # iid example (categories only)
-#' get_logistN_Sigma(comp_like = 2, n_bins = n_cat, n_sexes = NULL, theta = 0.5)
+#' @examples
+#' \dontrun{
+#' # iid
+#' get_logistN_Sigma(comp_like = 2, n_bins = 5, n_sexes = NULL, theta = 0.5)
 #'
-#' # AR1 across categories
-#' get_logistN_Sigma(comp_like = 3, n_bins = n_cat, n_sexes = NULL, theta = 0.5,
-#'                   corr_b = 0.3)
+#' # AR(1) across bins
+#' get_logistN_Sigma(comp_like = 3, n_bins = 5, n_sexes = NULL,
+#'                   theta = 0.5, corr_b = 0.3)
 #'
-#' # AR1 across categories and sexes
-#' get_logistN_Sigma(comp_like = 4, n_bins = n_cat, n_sexes = n_sexes, theta = 0.5,
-#'                   corr_b = 0.3, corr_s = 0.2)
+#' # AR(1) across bins x constant across sexes
+#' get_logistN_Sigma(comp_like = 4, n_bins = 5, n_sexes = 2,
+#'                   theta = 0.5, corr_b = 0.3, corr_s = 0.2)
 #' }
 get_logistN_Sigma <- function(comp_like,
                               n_bins,
@@ -675,21 +866,27 @@ get_logistN_Sigma <- function(comp_like,
   return(Sigma)
 }
 
-#' Calculate the Corrected marginal AIC (AICc) from Optimization Results
+#' Compute the corrected marginal AIC (AICc)
 #'
-#' Computes the corrected marginal Akaike Information Criterion (AICc)
-#' for model selection using optimization results. It supports objects returned
-#' from different optimizers, such as `optim` or `nlminb`.
+#' Calculates the corrected Akaike Information Criterion
+#' \eqn{\mathrm{AICc} = p k + 2 \ell + 2k(k+1)/(n-k-1)}, where \eqn{k} is
+#' the number of estimated parameters, \eqn{\ell} is the negative
+#' log-likelihood at the optimum, \eqn{p} is the penalty multiplier, and
+#' \eqn{n} is the sample size. When \eqn{n = \infty} the small-sample
+#' correction term vanishes and the result reduces to standard marginal AIC.
+#' Compatible with output from both \code{optim} (\code{$value}) and
+#' \code{nlminb} (\code{$objective}).
 #'
-#' @param opt A list containing optimization results. Must include either:
-#'   \itemize{
-#'     \item `"par"` and `"objective"` (e.g., from `optim`), or
-#'     \item `"par"` and `"value"` (e.g., from `nlminb`)
-#'   }
-#' @param p Numeric. Penalty multiplier for the number of parameters. Default is 2.
-#' @param n Numeric. Sample size. Default is `Inf`.
+#' @param opt Named list of optimiser output. Must contain \code{$par} and
+#'   either \code{$objective} (e.g., \code{nlminb}) or \code{$value}
+#'   (e.g., \code{optim}).
+#' @param p Numeric. Penalty multiplier per parameter. Default \code{2}
+#'   (standard AIC).
+#' @param n Numeric. Sample size used for the small-sample correction.
+#'   Default \code{Inf} (no correction, equivalent to AIC).
 #'
-#' @return Numeric. The corrected AIC (AICc) value.
+#' @return Numeric. The AICc value.
+#'
 #' @export marg_AIC
 marg_AIC <- function(opt, p = 2, n = Inf){
   k <- length(opt[["par"]])
@@ -701,9 +898,18 @@ marg_AIC <- function(opt, p = 2, n = Inf){
 
 #' Convert character or numeric input to numeric codes
 #'
-#' @param x Input vector (character or numeric)
-#' @param lookup Named list mapping character strings to numeric codes
-#' @return Numeric vector
+#' Maps a character vector to integer codes via a named lookup list, or
+#' passes numeric input through unchanged. Arrays and matrices are flattened,
+#' converted element-wise, and restored to their original dimensions.
+#' Unrecognised character values raise an informative error listing both the
+#' invalid inputs and the valid options.
+#'
+#' @param x Character vector, numeric vector, or array to convert.
+#' @param lookup Named list mapping valid character strings to numeric codes
+#'   (e.g., \code{list("none" = 999, "multinomial" = 0)}).
+#'
+#' @return Numeric vector or array of the same shape as \code{x}.
+#'
 #' @keywords internal
 convert_to_numeric <- function(x, lookup) {
 

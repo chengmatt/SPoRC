@@ -1,29 +1,69 @@
-#' Set up simulation containers and inputs for biological parameters
+#' Set up biological parameter inputs for closed-loop simulation
 #'
-#' @param sim_list Simulation list object from `Setup_Sim_Dim()`
-#' @param natmort_input Natural mortality array \code{[n_pop × n_regions × n_yrs × n_ages × n_sexes × n_sims]}.
-#'   Note: natural mortality is not season-specific and does not include an \code{n_seas} dimension.
-#' @param WAA_input Spawning weight-at-age array \code{[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]}.
-#' @param WAA_fish_input Fishery weight-at-age array \code{[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_fish_fleets × n_sims]}.
-#' @param WAA_srv_input Survey weight-at-age array \code{[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_srv_fleets × n_sims]}.
-#' @param MatAA_input Maturity-at-age array \code{[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]}.
-#' @param AgeingError_input Ageing error array \code{[n_yrs × n_model_ages × n_obs_ages × n_sims]}.
-#'   If \code{NULL} (default), an identity matrix is used for each year and simulation, assuming observed
-#'   age bins exactly match modeled age bins. See warning for implications when bins differ.
-#' @param SizeAgeTrans_input Size-age transition matrix array \code{[n_pop × n_regions × n_yrs × n_seas × n_lens × n_ages × n_sexes × n_sims]}.
-#'   Optional; only required when fitting length compositions.
+#' Populates a simulation list (created by \code{\link{Setup_Sim_Dim}}) with
+#' biological arrays needed to run the operating model: natural mortality,
+#' weight-at-age (spawning, fishery, and survey), maturity-at-age, ageing
+#' error, and an optional size-age transition matrix for length compositions.
+#' All arrays must conform to the dimension structure stored in \code{sim_list}.
+#'
+#' @param sim_list Simulation list object returned by \code{\link{Setup_Sim_Dim}},
+#'   which defines the dimension sizes used to validate all input arrays.
+#' @param natmort_input Natural mortality array with dimensions
+#'   \code{[n_pop × n_regions × n_yrs × n_ages × n_sexes × n_sims]}.
+#'   Note: natural mortality is not season-specific and therefore lacks an
+#'   \code{n_seas} dimension.
+#' @param WAA_input Spawning weight-at-age array with dimensions
+#'   \code{[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]}.
+#'   Used to compute spawning stock biomass.
+#' @param WAA_fish_input Fishery weight-at-age array with dimensions
+#'   \code{[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_fish_fleets × n_sims]}.
+#'   Used to compute fishery biomass and catch in weight.
+#' @param WAA_srv_input Survey weight-at-age array with dimensions
+#'   \code{[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_srv_fleets × n_sims]}.
+#'   Used to compute survey biomass indices.
+#' @param MatAA_input Maturity-at-age array with dimensions
+#'   \code{[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]}.
+#'   Values should be proportions in \eqn{[0, 1]}.
+#' @param AgeingError_input Ageing error (age-length transition) array with
+#'   dimensions \code{[n_yrs × n_model_ages × n_obs_ages × n_sims]}, where each
+#'   \code{[n_model_ages × n_obs_ages]} slice is a row-stochastic matrix mapping
+#'   true modelled ages to observed age bins. If \code{NULL} (default), an
+#'   identity matrix is constructed for each year and simulation, which assumes
+#'   that modelled and observed age bins are identical in number and alignment.
+#'   \strong{If observed age bins are a subset of modelled ages} (e.g., observed
+#'   ages 2–10 vs. modelled ages 1–10), the default identity matrix will cause a
+#'   dimensional mismatch. In that case, supply a shifted identity matrix such as
+#'   \code{diag(1, n_model_ages)[, obs_age_index]} to correctly drop or collapse
+#'   model ages into observed bins.
+#' @param SizeAgeTrans_input Size-age transition matrix array with dimensions
+#'   \code{[n_pop × n_regions × n_yrs × n_seas × n_lens × n_ages × n_sexes × n_sims]}.
+#'   Each slice maps age classes to length bins and should be column-stochastic
+#'   (columns sum to 1). Only required when fitting length compositions;
+#'   defaults to \code{NULL}.
+#'
+#' @return The input \code{sim_list} with the following fields added or updated:
+#'   \describe{
+#'     \item{\code{$natmort}}{Natural mortality array.}
+#'     \item{\code{$WAA}}{Spawning weight-at-age array.}
+#'     \item{\code{$WAA_fish}}{Fishery weight-at-age array.}
+#'     \item{\code{$WAA_srv}}{Survey weight-at-age array.}
+#'     \item{\code{$MatAA}}{Maturity-at-age array.}
+#'     \item{\code{$AgeingError}}{Ageing error array (identity matrix if not supplied).}
+#'     \item{\code{$SizeAgeTrans}}{Size-age transition array (only added if supplied).}
+#'   }
+#'
 #'
 #' @export Setup_Sim_Biologicals
 #' @family Simulation Setup
 Setup_Sim_Biologicals <- function(
+                                  sim_list,
                                   natmort_input,
                                   WAA_input,
                                   WAA_fish_input,
                                   WAA_srv_input,
                                   MatAA_input,
                                   AgeingError_input = NULL,
-                                  SizeAgeTrans_input = NULL,
-                                  sim_list
+                                  SizeAgeTrans_input = NULL
                                   ) {
 
   check_sim_dimensions(natmort_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_pop = sim_list$n_pop,
@@ -61,40 +101,44 @@ Setup_Sim_Biologicals <- function(
 
 }
 
-#' Helper function to map natural mortality blocks
+#' Map natural mortality parameters to a block structure
 #'
-#' Maps natural mortality (\code{ln_M}) to a block structure across population, region, year, age,
-#' and sex dimensions. Each unique combination of blocks is assigned an integer identifier, stored
-#' in \code{M_blocks} within the input list, which is then used for parameter indexing during
-#' model estimation.
+#' Constructs the \code{M_blocks} index array and the \code{ln_M} factor map used
+#' by the TMB/RTMB objective function to share or fix natural mortality parameters
+#' across population, region, year, age, and sex dimensions. Each unique combination
+#' of blocks is assigned a sequential integer ID; all cells within a block share the
+#' same \code{ln_M} parameter.
 #'
-#' @param input_list A named list containing model data, parameters, and mapping structures,
-#'   as constructed by upstream setup functions.
-#' @param M_spec Character string specifying whether to estimate or fix natural mortality. Options:
-#'   \itemize{
-#'     \item \code{"est_ln_M"}: Estimate natural mortality across the defined blocks.
-#'     \item \code{"fix"}: Fix all natural mortality parameters, mapping them to \code{NA}.
+#' @param input_list Named list containing \code{$data}, \code{$par}, and \code{$map}
+#'   sublists, as constructed by upstream setup functions.
+#' @param M_spec Character string controlling whether \code{ln_M} is estimated or
+#'   fixed. One of:
+#'   \describe{
+#'     \item{\code{"est_ln_M"}}{Freely estimate \code{ln_M} across all defined blocks.}
+#'     \item{\code{"fix"}}{Fix all \code{ln_M} parameters by mapping them to \code{NA}.}
 #'   }
-#' @param M_popblk_spec_vals A list of integer vectors specifying which population indices belong
-#'   to each population block, e.g., \code{list(1, 2)} for two separate population-specific blocks.
-#' @param M_regionblk_spec_vals A list of integer vectors specifying which region indices belong
-#'   to each region block, e.g., \code{list(1:3, 4:5)} for two region blocks.
-#' @param M_yearblk_spec_vals A list of integer vectors specifying which year indices belong
-#'   to each year block, e.g., \code{list(1:10, 11:30)} for two time blocks.
-#' @param M_ageblk_spec_vals A list of integer vectors specifying which age indices belong
-#'   to each age block, e.g., \code{list(1:5, 6:10)} for two age blocks.
-#' @param M_sexblk_spec_vals A list of integer vectors specifying which sex indices belong
-#'   to each sex block, e.g., \code{list(1:2)} for a single sex-invariant block or
-#'   \code{list(1, 2)} for sex-specific blocks.
+#' @param M_popblk_spec_vals List of integer vectors assigning population indices to
+#'   blocks, e.g., \code{list(1, 2)} for two population-specific blocks or
+#'   \code{list(1:2)} for a single shared block.
+#' @param M_regionblk_spec_vals List of integer vectors assigning region indices to
+#'   blocks, e.g., \code{list(1:3, 4:5)} for two region blocks.
+#' @param M_yearblk_spec_vals List of integer vectors assigning year indices to
+#'   blocks, e.g., \code{list(1:10, 11:30)} for two time periods.
+#' @param M_ageblk_spec_vals List of integer vectors assigning age indices to
+#'   blocks, e.g., \code{list(1:5, 6:10)} for two age groups.
+#' @param M_sexblk_spec_vals List of integer vectors assigning sex indices to
+#'   blocks. Use \code{list(1:2)} for a sex-invariant block or \code{list(1, 2)}
+#'   for sex-specific mortality.
 #'
-#' @return An updated \code{input_list} with the following modifications:
-#'   \itemize{
-#'     \item \code{input_list$map$ln_M}: A factor vector mapping each \code{ln_M} parameter to its
-#'       estimation index. Parameters are freely estimated when \code{M_spec = "est_ln_M"} and
-#'       fixed (\code{NA}) when \code{M_spec = "fix"}.
-#'     \item \code{input_list$data$M_blocks}: A 5D integer array of dimensions
-#'       \code{[n_pop, n_regions, n_years, n_ages, n_sexes]} containing unique block IDs that map
-#'       each population-region-year-age-sex combination to its corresponding \code{ln_M} parameter.
+#' @return The input \code{input_list} with two fields updated:
+#'   \describe{
+#'     \item{\code{$map$ln_M}}{Factor vector of length equal to \code{prod(dim(par$ln_M))}.
+#'       Each element is an integer estimation index when \code{M_spec = "est_ln_M"},
+#'       or \code{NA} when \code{M_spec = "fix"}.}
+#'     \item{\code{$data$M_blocks}}{Integer array of dimensions
+#'       \code{[n_pop × n_regions × n_years × n_ages × n_sexes]} mapping each
+#'       population–region–year–age–sex cell to its corresponding \code{ln_M}
+#'       parameter index.}
 #'   }
 #'
 #' @keywords internal
@@ -155,95 +199,107 @@ do_M_mapping <- function(input_list,
   return(input_list)
 }
 
-#' Setup biological inputs for estimation model
+#' Set up biological inputs for the estimation model
 #'
-#' @param input_list List containing data, parameter, and map lists for the model,
-#'   as created by \code{Setup_Mod_Dimensions()}.
-#' @param WAA Numeric array of spawning weight-at-age, dimensioned
-#'   \code{[n_pop, n_regions, n_years, n_seas, n_ages, n_sexes]}.
-#' @param WAA_fish Numeric array of fishery weight-at-age, dimensioned
-#'   \code{[n_pop, n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets]}.
-#'   If \code{NULL} (default), the spawning \code{WAA} is used for all fishery fleets.
-#' @param WAA_srv Numeric array of survey weight-at-age, dimensioned
-#'   \code{[n_pop, n_regions, n_years, n_seas, n_ages, n_sexes, n_srv_fleets]}.
-#'   If \code{NULL} (default), the spawning \code{WAA} is used for all survey fleets.
-#' @param MatAA Numeric array of maturity-at-age, dimensioned
-#'   \code{[n_pop, n_regions, n_years, n_seas, n_ages, n_sexes]}.
-#' @param addtocomp Numeric constant added to composition data before likelihood evaluation.
-#'   Default is \code{1e-3}. Not used when logistic-normal likelihoods are specified.
-#' @param addtofishidx Numeric constant added to fishery index data. Default is \code{1e-4}.
-#' @param addtosrvidx Numeric constant added to survey index data. Default is \code{1e-4}.
-#' @param addtotag Numeric constant added to tag recovery data. Default is \code{1e-10}.
-#' @param AgeingError Numeric matrix or array representing the ageing error transition matrix.
-#'   \itemize{
-#'     \item If a 2D matrix \code{[n_model_ages, n_obs_ages]}: ageing error is assumed constant over time.
-#'     \item If a 3D array \code{[n_years, n_model_ages, n_obs_ages]}: ageing error varies by year.
-#'     \item If \code{NULL} (default): an identity matrix is used, assuming observed age bins exactly match
-#'       modeled age bins. If bins differ (e.g., observed ages 2–10 vs. modeled ages 1–10), this will cause
-#'       a dimensional mismatch. In that case, supply a shifted identity matrix such as \code{diag(1, 10)[, 2:10]}.
+#' Populates \code{input_list} with biological arrays and parameter structures
+#' needed by the TMB/RTMB objective function: weight-at-age (spawning, fishery,
+#' and survey), maturity-at-age, ageing error, the size-age transition matrix
+#' (optional), small constants for numerical stability, and the natural mortality
+#' block structure and mapping. Called after \code{\link{Setup_Mod_Dimensions}}.
+#'
+#' @param input_list Named list with \code{$data}, \code{$par}, \code{$map}, and
+#'   \code{$verbose} sublists, as returned by \code{\link{Setup_Mod_Dimensions}}.
+#' @param WAA Numeric array of spawning weight-at-age with dimensions
+#'   \code{[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes]}.
+#'   Used to compute spawning stock biomass. Also serves as the fallback for
+#'   \code{WAA_fish} and \code{WAA_srv} when those are \code{NULL}.
+#' @param WAA_fish Numeric array of fishery weight-at-age with dimensions
+#'   \code{[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes × n_fish_fleets]}.
+#'   If \code{NULL} (default), \code{WAA} is broadcast across all fishery fleets.
+#' @param WAA_srv Numeric array of survey weight-at-age with dimensions
+#'   \code{[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes × n_srv_fleets]}.
+#'   If \code{NULL} (default), \code{WAA} is broadcast across all survey fleets.
+#' @param MatAA Numeric array of maturity-at-age proportions (\eqn{\in [0,1]}) with
+#'   dimensions \code{[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes]}.
+#' @param addtocomp Small constant added to composition proportions before likelihood
+#'   evaluation to avoid \code{log(0)}. Default \code{1e-3}. Ignored when a
+#'   logistic-normal likelihood is specified, as that family handles zeros internally.
+#' @param addtofishidx Small constant added to fishery indices. Default \code{1e-4}.
+#' @param addtosrvidx Small constant added to survey indices. Default \code{1e-4}.
+#' @param addtotag Small constant added to tag recovery observations. Default \code{1e-10}.
+#' @param AgeingError Ageing error (age–age transition) array mapping true modelled ages
+#'   to observed age bins. Accepted forms:
+#'   \describe{
+#'     \item{2D matrix \code{[n_model_ages × n_obs_ages]}}{Time-invariant ageing error;
+#'       replicated internally across all years.}
+#'     \item{3D array \code{[n_years × n_model_ages × n_obs_ages]}}{Time-varying ageing error.}
+#'     \item{\code{NULL} (default)}{An identity matrix is constructed, assuming modelled
+#'       and observed age bins are identical. If observed bins are a subset of modelled
+#'       ages (e.g., observed ages 2–10 vs. modelled ages 1–10), supply a shifted
+#'       identity matrix such as \code{diag(1, n_model_ages)[, obs_age_index]} to
+#'       avoid a dimensional mismatch.}
 #'   }
-#' @param Use_M_prior Integer flag for applying a natural mortality prior. \code{0} = no prior (default),
-#'   \code{1} = apply prior.
-#' @param M_prior A data frame specifying natural mortality prior hyperparameters, with one row
-#'   per block combination. Required columns are:
-#'   \itemize{
-#'     \item \code{popblk}: Population block index.
-#'     \item \code{regionblk}: Region block index.
-#'     \item \code{yearblk}: Year block index.
-#'     \item \code{ageblk}: Age block index.
-#'     \item \code{sexblk}: Sex block index.
-#'     \item \code{mu}: Prior mean in normal (untransformed) space.
-#'     \item \code{sd}: Prior standard deviation.
+#' @param Use_M_prior Integer flag to apply a lognormal prior on natural mortality.
+#'   \code{0} = no prior (default); \code{1} = apply prior.
+#' @param M_prior Data frame of prior hyperparameters for natural mortality, with one
+#'   row per unique block combination. Required columns:
+#'   \describe{
+#'     \item{\code{popblk}, \code{regionblk}, \code{yearblk}, \code{ageblk}, \code{sexblk}}{Block indices identifying which parameter the prior applies to.}
+#'     \item{\code{mu}}{Prior mean in natural (untransformed) space.}
+#'     \item{\code{sd}}{Prior standard deviation.}
 #'   }
-#'   For example, a single shared prior across all blocks would be:
+#'   Example for a single shared prior:
 #'   \preformatted{M_prior <- data.frame(
-#'     popblk    = 1,
-#'     regionblk = 1,
-#'     yearblk   = 1,
-#'     ageblk    = 1,
-#'     sexblk    = 1,
-#'     mu        = 0.085,
-#'     sd        = 0.05
+#'     popblk = 1, regionblk = 1, yearblk = 1,
+#'     ageblk = 1, sexblk = 1,
+#'     mu = 0.085, sd = 0.05
 #'   )}
 #'   Only used when \code{Use_M_prior = 1}.
+#' @param fit_lengths Integer flag for fitting length compositions. \code{0} = no
+#'   (default); \code{1} = yes. Requires a valid \code{SizeAgeTrans} array.
+#' @param SizeAgeTrans Numeric array of size-at-age transition probabilities
+#'   (column-stochastic; each age column sums to 1) with dimensions
+#'   \code{[n_pop × n_regions × n_years × n_seas × n_lens × n_ages × n_sexes]}.
+#'   Required when \code{fit_lengths = 1}; ignored otherwise.
+#' @param Selex_Type Character string specifying the selectivity basis. One of:
+#'   \describe{
+#'     \item{\code{"age"} (default)}{Age-based selectivity.}
+#'     \item{\code{"length"}}{Length-based selectivity. Requires \code{fit_lengths = 1}.}
+#'   }
+#' @param M_spec Character string controlling natural mortality estimation. One of:
+#'   \describe{
+#'     \item{\code{"est_ln_M"} (default)}{Estimate \code{ln_M} across the defined blocks.}
+#'     \item{\code{"fix"}}{Fix mortality to \code{Fixed_natmort}; \code{ln_M} parameters
+#'       are mapped to \code{NA} and not passed to the optimizer.}
+#'   }
+#' @param Fixed_natmort Numeric array of fixed natural mortality rates with dimensions
+#'   \code{[n_pop × n_regions × n_years × n_ages × n_sexes]}. Note the absence of an
+#'   \code{n_seas} dimension. Required when \code{M_spec = "fix"}; ignored otherwise.
+#' @param M_popblk_spec Blocking structure for \code{ln_M} across populations. Either
+#'   \code{"constant"} (default; single shared value) or a list of integer index
+#'   vectors defining population groups, e.g., \code{list(1, 2)} for
+#'   population-specific M.
+#' @param M_regionblk_spec Blocking structure across regions. Either \code{"constant"}
+#'   (default) or a list of integer index vectors, e.g., \code{list(1:3, 4:5)}.
+#' @param M_yearblk_spec Blocking structure across years. Either \code{"constant"}
+#'   (default) or a list of integer index vectors, e.g., \code{list(1:10, 11:30)}.
+#' @param M_ageblk_spec Blocking structure across ages. Either \code{"constant"}
+#'   (default) or a list of integer index vectors, e.g., \code{list(1:5, 6:10)}.
+#' @param M_sexblk_spec Blocking structure across sexes. Either \code{"constant"}
+#'   (default; shared across sexes) or a list of integer index vectors, e.g.,
+#'   \code{list(1, 2)} for sex-specific M.
+#' @param ... Optional starting value overrides passed by name. Currently recognised:
+#'   \describe{
+#'     \item{\code{ln_M}}{Array of log-scale starting values for natural mortality,
+#'       dimensioned \code{[n_popblks × n_regionblks × n_yearblks × n_ageblks × n_sexblks]}.
+#'       Defaults to \code{log(0.5)} for all blocks if not supplied.}
+#'   }
+#'   All \code{...} arguments are silently ignored when \code{M_spec = "fix"}.
 #'
-#' @param fit_lengths Integer flag for fitting length composition data. \code{0} = not fit (default),
-#'   \code{1} = fit. Requires \code{SizeAgeTrans} when enabled.
-#' @param SizeAgeTrans Numeric array of size-at-age transition probabilities, dimensioned
-#'   \code{[n_pop, n_regions, n_years, n_seas, n_lens, n_ages, n_sexes]}. Required when \code{fit_lengths = 1}.
-#' @param Selex_Type Character string specifying the basis for selectivity. Options:
-#'   \itemize{
-#'     \item \code{"age"} (default): Age-based selectivity.
-#'     \item \code{"length"}: Length-based selectivity. Requires \code{fit_lengths = 1}.
-#'   }
-#' @param M_spec Character string specifying how natural mortality is treated. Options:
-#'   \itemize{
-#'     \item \code{"est_ln_M"} (default): Estimate natural mortality across the defined blocks.
-#'     \item \code{"fix"}: Fix natural mortality to values supplied via \code{Fixed_natmort}.
-#'   }
-#' @param Fixed_natmort Numeric array of fixed annual natural mortality values, dimensioned
-#'   \code{[n_pop, n_regions, n_years, n_ages, n_sexes]}. Required when \code{M_spec = "fix"}.
-#' @param M_popblk_spec Blocking structure for natural mortality across populations.
-#'   Either \code{"constant"} (default, single shared value across all populations) or a list of
-#'   integer index vectors defining population groups, e.g., \code{list(1, 2)} for population-specific M.
-#' @param M_regionblk_spec Blocking structure for natural mortality across regions.
-#'   Either \code{"constant"} (default) or a list of integer index vectors, e.g.,
-#'   \code{list(1:3, 4:5)} for two region blocks.
-#' @param M_yearblk_spec Blocking structure for natural mortality across years.
-#'   Either \code{"constant"} (default) or a list of integer index vectors, e.g.,
-#'   \code{list(1:10, 11:30)} for two time blocks.
-#' @param M_ageblk_spec Blocking structure for natural mortality across ages.
-#'   Either \code{"constant"} (default) or a list of integer index vectors, e.g.,
-#'   \code{list(1:10, 11:30)} for two age blocks.
-#' @param M_sexblk_spec Blocking structure for natural mortality across sexes.
-#'   Either \code{"constant"} (default, shared across sexes) or a list of integer index vectors,
-#'   e.g., \code{list(1, 2)} for sex-specific M.
-#' @param ... Optional starting value overrides. Recognized arguments:
-#'   \itemize{
-#'     \item \code{ln_M}: Starting values for the log natural mortality parameter array.
-#'       Must conform to the dimensions implied by the block specifications.
-#'   }
-#'   All \code{...} arguments are ignored when \code{M_spec = "fix"}.
+#' @return The input \code{input_list} with \code{$data}, \code{$par}, and \code{$map}
+#'   sublists updated. Key additions include \code{$data$WAA}, \code{$data$WAA_fish},
+#'   \code{$data$WAA_srv}, \code{$data$MatAA}, \code{$data$AgeingError},
+#'   \code{$data$M_blocks}, \code{$par$ln_M}, and \code{$map$ln_M}.
 #'
 #' @export Setup_Mod_Biologicals
 #' @family Model Setup

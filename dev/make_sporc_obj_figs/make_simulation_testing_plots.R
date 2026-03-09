@@ -20,7 +20,8 @@ sim_list <- Setup_Sim_Dim(n_sims = 50, # number of simulations
                           n_sexes = 1, # number of sexes
                           n_fish_fleets = 1, # number of fishery fleets
                           n_srv_fleets = 1,  # number of survey fleets
-                          n_seas = 1 # number of seasons
+                          n_seas = 1, # number of seasons
+                          n_pop = 1 # number of populations
 )
 
 ### Setup Simulation Containers ---------------------------------------------
@@ -52,31 +53,31 @@ sim_list <- Setup_Sim_Survey(
 ### Setup Biological Dynamics -----------------------------------------------
 sim_list <- Setup_Sim_Biologicals(
   sim_list = sim_list, # simualtion list
-  natmort_input = replicate(n = sim_list$n_sims, array(0.3, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_ages, sim_list$n_sexes))), # natural mortality
+  natmort_input = replicate(n = sim_list$n_sims, array(0.3, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_ages, sim_list$n_sexes))), # natural mortality
   WAA_input = replicate(n = sim_list$n_sims, array(rep(5 / (1 + exp(-3 * ((1:sim_list$n_ages) - 3))), each = sim_list$n_yrs),
-                                                   dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes))), # weight at age
+                                                   dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes))), # weight at age
   WAA_fish_input = replicate(n = sim_list$n_sims, array(rep(5 / (1 + exp(-3 * ((1:sim_list$n_ages) - 3))), each = sim_list$n_yrs),
-                                                        dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets))), # fishery weight at age
+                                                        dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets))), # fishery weight at age
   WAA_srv_input = replicate(n = sim_list$n_sims, array(rep(5 / (1 + exp(-3 * ((1:sim_list$n_ages) - 3))), each = sim_list$n_yrs),
-                                                       dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_srv_fleets))), # survey weight at age
+                                                       dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_srv_fleets))), # survey weight at age
   MatAA_input = replicate(n = sim_list$n_sims, array(rep(1 / (1 + exp(-3 * ((1:sim_list$n_ages) - 3))), each = sim_list$n_yrs),
-                                                     dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes))) # maturity at age
+                                                     dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes))) # maturity at age
 )
 
 ### Setup Tagging and Movement -----------------------------------------------------------
 sim_list <- Setup_Sim_Tagging(
   sim_list = sim_list, # simulation list
-  UseTagging = 0
+  use_conv_fish_tagging = 0
 )
 
 # No Movement
-sim_list$Movement <- array(1, dim = c(sim_list$n_regions, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims))
+sim_list$Movement <- array(1, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims))
 
 ### Setup Recruitment Processes ---------------------------------------------
 sim_list <- Setup_Sim_Rec(
   sim_list = sim_list,
-  R0_input = replicate(n = sim_list$n_sims, expr = array(5, dim = c(sim_list$n_regions, sim_list$n_yrs))), # R0
-  ln_sigmaR = log(c(1,1)),
+  R0_input = replicate(n = sim_list$n_sims, expr = array(5, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs))), # R0
+  ln_sigmaR = array(log(1), dim = c(2, sim_list$n_pop, sim_list$n_region)),
   recruitment_opt = 'mean_rec',
   init_age_strc = 1
 )
@@ -100,6 +101,8 @@ setup_em <- function(sim_obj, sim) {
     n_sexes = sim_obj$n_sexes,
     n_fish_fleets = sim_obj$n_fish_fleets,
     n_srv_fleets = sim_obj$n_srv_fleets,
+    n_pop = sim_obj$n_pop,
+    natal_region = sim_obj$natal_region,
     verbose = F
   )
 
@@ -108,7 +111,7 @@ setup_em <- function(sim_obj, sim) {
     input_list = input_list,
     do_rec_bias_ramp = 0, # not doing bias ramp
     sigmaR_switch = 1, # when to switch from early to late sigmaR (switch in first year)
-    ln_sigmaR = rep(log(1) , 2), # 2 values for early and late sigma
+    ln_sigmaR = array(log(1), c(2, input_list$data$n_pop, input_list$data$n_regions)), # 2 values for early and late sigma
     rec_model = "mean_rec",
     sigmaR_spec = "fix", # fix early sigmaR and late sigmaR
     init_age_strc = 1, # scalar geometric series to derive initial age structure
@@ -127,12 +130,12 @@ setup_em <- function(sim_obj, sim) {
     fit_lengths = 0, # not fitting lengths
     AgeingError = sim_data$AgeingError,
     M_spec = "fix",     # fixing natural mortality
-    Fixed_natmort = array(0.3, dim = c(input_list$data$n_regions, length(input_list$data$years),
+    Fixed_natmort = array(0.3, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years),
                                        length(input_list$data$ages), input_list$data$n_sexes))
   )
 
   # Movement and tagging
-  input_list <- Setup_Mod_Tagging(input_list = input_list, UseTagging = 0)
+  input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
   input_list <- Setup_Mod_Movement(
     input_list = input_list,
     use_fixed_movement = 1,
@@ -262,7 +265,7 @@ for(i in 1:sim_obj$n_sims) {
 ssb_df_res <- reshape2::melt(ssb_results) %>%
   rename(Year = Var1, Sim = Var2, Est = value) %>%
   dplyr::left_join(reshape2::melt(sim_obj$SSB) %>%
-                     dplyr::rename(Region = Var1, Year = Var2, Sim = Var3, True = value), by = c("Year", "Sim")) %>%
+                     dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Sim = Var4, True = value), by = c("Year", "Sim")) %>%
   dplyr::mutate(RE = (Est - True) / True * 100) %>%
   dplyr::group_by(Year) %>%
   dplyr::summarise(median = median(RE, na.rm = TRUE),
@@ -295,10 +298,10 @@ self_test <- simulation_self_test(
   random = NULL,
   rep = dusky_rtmb_model$rep,
   sd_rep = dusky_rtmb_model$sdrep,
-  n_sims = 500,
+  n_sims = 10,
   newton_loops = 3,
   do_sdrep = FALSE,
-  do_par = TRUE,
+  do_par = F,
   n_cores = 8,
   output_path = NULL,
   what = c("SSB", "Rec")
@@ -306,16 +309,16 @@ self_test <- simulation_self_test(
 
 # Process self test results
 self_test_res <- reshape2::melt(self_test$SSB) %>%
-  dplyr::rename(Region = Var1, Year = Var2, Sim = Var3, Est = value) %>%
+  dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Sim = Var4, Est = value) %>%
   dplyr::left_join(reshape2::melt(dusky_rtmb_model$rep$SSB) %>%
-                     dplyr::rename(Region = Var1, Year = Var2, Best = value),
+                     dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Best = value),
                    by = c("Region", "Year")) %>%
   dplyr::mutate(Type = 'SSB') %>%
   dplyr::bind_rows(
     reshape2::melt(self_test$Rec) %>%
-      dplyr::rename(Region = Var1, Year = Var2, Sim = Var3, Est = value) %>%
+      dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Sim = Var4, Est = value) %>%
       dplyr::left_join(reshape2::melt(dusky_rtmb_model$rep$Rec) %>%
-                         dplyr::rename(Region = Var1, Year = Var2, Best = value),
+                         dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Best = value),
                        by = c("Region", "Year")) %>%
       dplyr::mutate(Type = 'Rec')
   )

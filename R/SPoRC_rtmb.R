@@ -1,4 +1,4 @@
-# version 1 - 12/22/24 (M.LH Cheng)
+# version 1 - (M.LH Cheng)
 # Bridge model 23.5 from ADMB to RTMB
 # Changed code to be more modular, accommodating any number of fishery and survey fleets
 # Rectified errors in fitting to length composition data (normalize proportions at length after conversion from age-length matrix)
@@ -7,7 +7,7 @@
 # Added options for TMB / R-like likelihoods (e.g., dnorm) instead of custom likelihoods
 # Added options for dirichlet multinomial likelihood
 
-# version 2 - 12/23/24 (M.LH Cheng)
+# version 2 - (M.LH Cheng)
 # Incorporated options to fit age and length composition data as sex-aggregated, split by sex (no sex ratio
 # information), and jointly by sex (implicit sex ratio information)
 # Added in option for Dirichlet Multinomial likelihood
@@ -30,12 +30,16 @@
 # Refactored natural mortality module
 # Removed ADMB likelihoods and Sablefish specific calculations
 # Added equilibrium plus group calculations to initial abundance when movement occurs
-# Refactored Initial Numbers at Age module
+# Re-factored Initial Numbers at Age module
 
-# version 5 - (M.LH Cheng)
+# version 5 - (M.LH Cheng & J.T Thorson)
 # Refactored movement priors and movement setup
 # Added in CTMC movement
 
+# verison 6 - (M.LH Cheng)
+# Re-coded tagging module to include fleet-specific dynamics
+# Expanded model to include populations and season partitions (natal homing
+# and seasonality dynamics)
 
 #' Generalized RTMB model
 #'
@@ -79,14 +83,14 @@ SPoRC_rtmb = function(pars, data) {
 
   # Movement Stuff
   Movement = array(data = 0, dim = c(n_pop, n_regions, n_regions, n_yrs + n_proj_yrs_devs, n_seas, n_ages, n_sexes)) # movement "matrix"
-  n_move_pop_tag_pool = length(move_pop_tag_pool) # number of populations to pool for tagging data
-  n_move_age_tag_pool = length(move_age_tag_pool) # number of ages to pool for tagging data
-  n_move_sex_tag_pool = length(move_sex_tag_pool) # number of sexes to pool for tagging data
+  n_conv_tag_pop_pool = length(conv_tag_pop_pool) # number of populations to pool for tagging data
+  n_conv_tag_age_pool = length(conv_tag_age_pool) # number of ages to pool for tagging data
+  n_conv_tag_sex_pool = length(conv_tag_sex_pool) # number of sexes to pool for tagging data
 
   # Tagging Stuff
-  conv_tag_fish_avail = array(data = 0, dim = c(max_tag_liberty + 1, n_seas, n_tag_cohorts, n_pop, n_regions, n_ages, n_sexes)) # Tags availiable for recapture
+  conv_tag_fish_avail = array(data = 0, dim = c(conv_tag_max_liberty + 1, n_seas, n_conv_tag_cohorts, n_pop, n_regions, n_ages, n_sexes)) # Tags availiable for recapture
   conv_tag_fish_reporting = array(data = 0, dim = c(n_regions, n_yrs, n_fish_fleets)) # Tag reporting rate
-  pred_conv_tag_fish_recap = array(data = 0, dim = c(max_tag_liberty, n_seas, n_tag_cohorts, n_pop, n_regions, n_ages, n_sexes, n_fish_fleets)) # predicted recaptures
+  pred_conv_tag_fish_recap = array(data = 0, dim = c(conv_tag_max_liberty, n_seas, n_conv_tag_cohorts, n_pop, n_regions, n_ages, n_sexes, n_fish_fleets)) # predicted recaptures
 
   # Fishery Processes
   init_F = init_F_prop * exp(ln_F_mean[1]) # initial F for age structure
@@ -116,7 +120,7 @@ SPoRC_rtmb = function(pars, data) {
   SrvIdx_nLL = array(0, dim = c(n_regions, n_yrs, n_seas, n_srv_fleets)) # Survey Index Likelihoods
   SrvAgeComps_nLL = array(data = 0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_srv_fleets)) # Survey Age Comps Likelihoods
   SrvLenComps_nLL = array(data = 0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_srv_fleets)) # Survey Length Comps Likelihoods
-  Conv_Fish_Tag_nLL = array(data = 0, dim = c(max_tag_liberty, n_seas, n_tag_cohorts, n_regions, n_fish_fleets)) # Tagging Likelihoods
+  conv_fish_tag_nLL = array(data = 0, dim = c(conv_tag_max_liberty, n_seas, n_conv_tag_cohorts, n_regions, n_fish_fleets)) # Tagging Likelihoods
 
   # Penalties and Priors
   Fmort_nLL = array(0, dim = dim(ln_F_devs)) # Fishing Mortality Deviation penalty
@@ -129,7 +133,7 @@ SPoRC_rtmb = function(pars, data) {
   h_nLL = 0 # Prior for steepness
   Movement_nLL = 0 # Penalty for movement rates
   TagRep_nLL = 0 # penalty for tag reporting rate
-  Rec_prop_nLL = # penalty / prior for recruitment proportions
+  rec_prop_nLL = # penalty / prior for recruitment proportions
   jnLL = 0 # Joint negative log likelihood
 
   # Model Process Equations -------------------------------------------------
@@ -334,7 +338,8 @@ SPoRC_rtmb = function(pars, data) {
   for(p in 1:n_pop) R0_r[p,] = R0[p] * rec_region_prop[p,]
 
   # Steepness
-  h_trans = 0.2 + (1 - 0.2) * RTMB::plogis(steepness_h) # bound steepness between 0.2 and 1
+  h_trans = array(0, dim = c(n_pop, n_regions))
+  for(p in 1:n_pop) for(r in 1:n_regions) h_trans[p,r] = 0.2 + (1 - 0.2) * RTMB::plogis(steepness_h[p,r]) # bound steepness between 0.2 and 1
 
   # Recruitment SD
   sigmaR2_early = array(exp(ln_sigmaR[1,,])^2, dim = c(n_pop, n_regions)) # recruitment variability for early period
@@ -557,13 +562,13 @@ SPoRC_rtmb = function(pars, data) {
                                   exp(-ZAA[,,y,spawn_seas,,,drop = FALSE] * t_spawn), c(1,2), sum)
 
         # Spawning Stock Biomass
-        SSB[,, y] = apply(tmp_NAA_spawn *
+        SSB[,, y] = apply(tmp_NAA_spawn[,, 1, 1, , 1,drop = FALSE] *
                             WAA[,, y, spawn_seas, , 1,drop = FALSE] *
                             MatAA[,, y, spawn_seas, , 1,drop = FALSE] *
                             exp(-ZAA[,, y, spawn_seas, , 1,drop = FALSE] * t_spawn), c(1,2), sum)
 
         # Get dynamic B0
-        SSB0_array = tmp_NAA0_spawn *  WAA[,,  y, spawn_seas, , 1, drop = FALSE] * MatAA[,,y, spawn_seas, , 1, drop = FALSE]
+        SSB0_array = tmp_NAA0_spawn[,, 1, 1, , 1,drop = FALSE] *  WAA[,,  y, spawn_seas, , 1, drop = FALSE] * MatAA[,,y, spawn_seas, , 1, drop = FALSE]
         mort_spawn = exp(-natmort[,, y, , 1, drop = FALSE] * t_spawn * seasdur[spawn_seas])
         mort_spawn = array(mort_spawn, dim = dim(SSB0_array) ) # coerce array
         Dynamic_SSB0[,,y] = apply(SSB0_array * mort_spawn, c(1,2), sum) # Dynamic B0
@@ -665,19 +670,19 @@ SPoRC_rtmb = function(pars, data) {
     # Set up tag reporting rates
     for(f in 1:n_fish_fleets) {
       for(r in 1:n_regions) {
-        TagRep_blk_idx = conv_tag_fish_reporting_blocks[r,,f]  # Get all blocks for this region
-        conv_tag_fish_reporting[r,,f] = RTMB::plogis(conv_tag_fish_reporting_pars[r,TagRep_blk_idx,f])  # inverse logit transform
+        conv_tagrep_blk_idx = conv_tag_fish_reporting_blocks[r,,f]  # Get all blocks for this region
+        conv_tag_fish_reporting[r,,f] = RTMB::plogis(conv_tag_fish_reporting_pars[r,conv_tagrep_blk_idx,f])  # inverse logit transform
       } # end r loop
     } # end f loop
 
     for(rseas in 1:n_seas) {
-      for(tc in 1:n_tag_cohorts) {
+      for(tc in 1:n_conv_tag_cohorts) {
 
         tr = conv_tag_release_indicator[tc,1] # extract tag release region
         ty = conv_tag_release_indicator[tc,2] # extract tag release year
         tseas = conv_tag_release_indicator[tc,3] # extract tag release season
 
-        for(ry in 1:min(max_tag_liberty, n_yrs - ty + 1)) {
+        for(ry in 1:min(conv_tag_max_liberty, n_yrs - ty + 1)) {
 
           y = ty + ry - 1 # Get index for actual year in the model (instead of tag year)
 
@@ -689,10 +694,10 @@ SPoRC_rtmb = function(pars, data) {
           tmp_natmort = array(natmort[,,y,,], dim = c(n_pop, n_regions, 1, n_ages, n_sexes))
           tmp_ZAA = sweep((tmp_natmort * seasdur[rseas]), c(2,3,4,5), apply(tmp_FAA, 1:4, sum), "+") + (exp(ln_conv_tag_shed) * seasdur[rseas])
 
-          # Discount with tagging time (t_tagging) if it doesn't happen at the start of the season / year
+          # Discount with tagging time (conv_tag_t_tagging) if it doesn't happen at the start of the season / year
           if(ry == 1 && rseas == tseas) {
 
-            if(t_tagging != 1) tmp_ZAA = tmp_ZAA * t_tagging
+            if(conv_tag_t_tagging != 1) tmp_ZAA = tmp_ZAA * conv_tag_t_tagging
 
             # apportion tagged fish out to appropriate dimensions if necessary
             tmp_tagged_fish = release_conv_tag_attr(conv_tagged_fish[tc, , , ], conv_fish_tag_attr, conv_tag_release_platform[tc,],
@@ -706,7 +711,7 @@ SPoRC_rtmb = function(pars, data) {
           tmp_SAA = exp(-tmp_ZAA)
 
           # Move tagged fish around (skip only in first release year + tagging season when tagging occurs mid-season)
-          if(t_tagging == 1 || ry != 1 || rseas != tseas) {
+          if(conv_tag_t_tagging == 1 || ry != 1 || rseas != tseas) {
             for(p in 1:n_pop) {
               # Movement of tag cohorts
               if(do_recruits_move == 0) {
@@ -919,7 +924,8 @@ SPoRC_rtmb = function(pars, data) {
             ln_theta_agg = ln_SrvAge_theta_agg[sf],
             LN_corr_pars = SrvAge_corr_pars[,,sf,],
             LN_corr_pars_agg = SrvAge_corr_pars_agg[sf],
-            n_regions = n_regions, n_sexes = n_sexes, age_or_len = 0,
+            n_regions = n_regions, n_sexes = n_sexes,
+            age_or_len = 0,
             AgeingError = AgeingError[y,,],
             use = UseSrvAgeComps[,y,seas,sf],
             n_model_bins = n_ages,
@@ -967,14 +973,14 @@ SPoRC_rtmb = function(pars, data) {
 
   ## Tag Likelihoods ---------------------------------------------------------
   if(any(use_conv_fish_tagging == 1)) {
-    for(tc in 1:n_tag_cohorts) {
+    for(tc in 1:n_conv_tag_cohorts) {
 
       # set up tagging cohort indexing
       tr = conv_tag_release_indicator[tc,1] # extract tag release region
       ty = conv_tag_release_indicator[tc,2] # extract tag release year
       tseas = conv_tag_release_indicator[tc,3] # extract tag release season
 
-      for(ry in 1:min(max_tag_liberty, n_yrs - ty + 1)) { # loop through recapture years
+      for(ry in 1:min(conv_tag_max_liberty, n_yrs - ty + 1)) { # loop through recapture years
         for(rseas in 1:n_seas) { # loop through recapture seasons
 
           # Dealing with tag mixing (not fitting to tags liberty < mixing period)
@@ -983,33 +989,33 @@ SPoRC_rtmb = function(pars, data) {
           # Total seasonal time steps since release
           total_seas_at_liberty = (ry - 1) * n_seas + (rseas - tseas + 1)
           # Skip if within mixing period (in seasonal units)
-          if(total_seas_at_liberty < mixing_period) next
+          if(total_seas_at_liberty < conv_tag_mixing_period) next
 
           for(f in 1:n_fish_fleets) {
             if(use_conv_fish_tagging[f] == 1) {
-              for(p in 1:n_move_pop_tag_pool) {
+              for(p in 1:n_conv_tag_pop_pool) {
                 for(r in 1:n_regions) {
-                  for(a in 1:n_move_age_tag_pool) {
-                    for(s in 1:n_move_sex_tag_pool) {
+                  for(a in 1:n_conv_tag_age_pool) {
+                    for(s in 1:n_conv_tag_sex_pool) {
 
-                      move_pop_pool_idx = move_pop_tag_pool[[p]] # extract movement pop pool indices
-                      move_age_pool_idx = move_age_tag_pool[[a]] # extract movement age pool indices
-                      move_sex_pool_idx = move_sex_tag_pool[[s]] # extract movement sex pool indices
+                      pop_pool_idx = conv_tag_pop_pool[[p]] # extract movement pop pool indices
+                      age_pool_idx = conv_tag_age_pool[[a]] # extract movement age pool indices
+                      sex_pool_idx = conv_tag_sex_pool[[s]] # extract movement sex pool indices
 
                       # Poisson likelihood
                       if(conv_fish_tag_like == 0) {
-                        Conv_Fish_Tag_nLL[ry,rseas,tc,r,f] = Conv_Fish_Tag_nLL[ry,rseas,tc,r,f]  +
-                          -dpois_noint(sum(obs_conv_tag_fish_recap[ry,rseas,tc,move_pop_pool_idx,r,move_age_pool_idx,move_sex_pool_idx,f] + addtotag),
-                                       sum(pred_conv_tag_fish_recap[ry,rseas,tc,move_pop_pool_idx,r,move_age_pool_idx,move_sex_pool_idx,f] + addtotag),
+                        conv_fish_tag_nLL[ry,rseas,tc,r,f] = conv_fish_tag_nLL[ry,rseas,tc,r,f]  +
+                          -dpois_noint(sum(obs_conv_tag_fish_recap[ry,rseas,tc,pop_pool_idx,r,age_pool_idx,sex_pool_idx,f] + addtotag),
+                                       sum(pred_conv_tag_fish_recap[ry,rseas,tc,pop_pool_idx,r,age_pool_idx,sex_pool_idx,f] + addtotag),
                                        give_log = TRUE)
                       } # end if poisson likelihood
 
                       # Negative binomial likelihood
                       if(conv_fish_tag_like == 1) {
-                        log_mu = log(sum(pred_conv_tag_fish_recap[ry,rseas,tc,move_pop_pool_idx,r,move_age_pool_idx,move_sex_pool_idx,f] + addtotag)) # log mu
+                        log_mu = log(sum(pred_conv_tag_fish_recap[ry,rseas,tc,pop_pool_idx,r,age_pool_idx,sex_pool_idx,f] + addtotag)) # log mu
                         log_var_minus_mu = 2 * log_mu - ln_conv_fish_tag_theta # log var minus mu
-                        Conv_Fish_Tag_nLL[ry,rseas,tc,r,f] = Conv_Fish_Tag_nLL[ry,rseas,tc,r,f] +
-                          -dnbinom_robust_noint(x = sum(obs_conv_tag_fish_recap[ry,rseas,tc,move_pop_pool_idx,r,move_age_pool_idx,move_sex_pool_idx,f] + addtotag),
+                        conv_fish_tag_nLL[ry,rseas,tc,r,f] = conv_fish_tag_nLL[ry,rseas,tc,r,f] +
+                          -dnbinom_robust_noint(x = sum(obs_conv_tag_fish_recap[ry,rseas,tc,pop_pool_idx,r,age_pool_idx,sex_pool_idx,f] + addtotag),
                                                 log_mu = log_mu, log_var_minus_mu = log_var_minus_mu, give_log = TRUE)
                       } # end if for negative binomial likelihood
 
@@ -1033,18 +1039,18 @@ SPoRC_rtmb = function(pars, data) {
             # Loop through age and sex pooling and combine vectors into the correct format
             for(f in 1:n_fish_fleets) {
               if(use_conv_fish_tagging[f] == 1) {
-                for(p in 1:n_move_pop_tag_pool) {
-                  for(a in 1:n_move_age_tag_pool) {
-                    for(s in 1:n_move_sex_tag_pool) {
+                for(p in 1:n_conv_tag_pop_pool) {
+                  for(a in 1:n_conv_tag_age_pool) {
+                    for(s in 1:n_conv_tag_sex_pool) {
 
-                      move_pop_pool_idx = move_pop_tag_pool[[p]] # extract movement pop pool indices
-                      move_age_pool_idx = move_age_tag_pool[[a]] # extract movement age pool indices
-                      move_sex_pool_idx = move_sex_tag_pool[[s]] # extract movement sex pool indices
+                      pop_pool_idx = conv_tag_pop_pool[[p]] # extract movement pop pool indices
+                      age_pool_idx = conv_tag_age_pool[[a]] # extract movement age pool indices
+                      sex_pool_idx = conv_tag_sex_pool[[s]] # extract movement sex pool indices
 
                       # Pool observed and expected if any pooling
                       for (r in 1:n_regions) {
-                        pred_val = sum(pred_conv_tag_fish_recap[ry, rseas, tc, move_pop_pool_idx, r, move_age_pool_idx, move_sex_pool_idx, f] + addtotag) # sum across age and sex groups
-                        obs_val  = sum(obs_conv_tag_fish_recap[ry, rseas, tc, move_pop_pool_idx, r, move_age_pool_idx, move_sex_pool_idx, f] + addtotag) # sum across age and sex groups
+                        pred_val = sum(pred_conv_tag_fish_recap[ry, rseas, tc, pop_pool_idx, r, age_pool_idx, sex_pool_idx, f] + addtotag) # sum across age and sex groups
+                        obs_val  = sum(obs_conv_tag_fish_recap[ry, rseas, tc, pop_pool_idx, r, age_pool_idx, sex_pool_idx, f] + addtotag) # sum across age and sex groups
                         tmp_pred_c_all = c(tmp_pred_c_all, pred_val) # combine predicted recaptures for a given age sex pooled group
                         tmp_obs_c_all  = c(tmp_obs_c_all,  obs_val) # combine observed recaptures for a given age sex pooled group
                       } # end r loop
@@ -1063,8 +1069,8 @@ SPoRC_rtmb = function(pars, data) {
             tmp_pred = c(tmp_pred_c_all, 1 - sum(tmp_pred_c_all))
             tmp_obs = c(tmp_obs_c_all, 1 - sum(tmp_obs_c_all))
 
-            if(conv_fish_tag_like == 2) Conv_Fish_Tag_nLL[ry,rseas,tc,1,1] = -tmp_n_tags_released * sum((tmp_obs) * log(tmp_pred)) # multinomial
-            if(conv_fish_tag_like == 4) Conv_Fish_Tag_nLL[ry,rseas,tc,1,1] =  -1 * ddirmult(obs = tmp_obs, pred = tmp_pred, Ntotal = tmp_n_tags_released, ln_theta = ln_conv_fish_tag_theta, TRUE) # Dirichlet Multinomial
+            if(conv_fish_tag_like == 2) conv_fish_tag_nLL[ry,rseas,tc,1,1] = -tmp_n_tags_released * sum((tmp_obs) * log(tmp_pred)) # multinomial
+            if(conv_fish_tag_like == 4) conv_fish_tag_nLL[ry,rseas,tc,1,1] =  -1 * ddirmult(obs = tmp_obs, pred = tmp_pred, Ntotal = tmp_n_tags_released, ln_theta = ln_conv_fish_tag_theta, TRUE) # Dirichlet Multinomial
 
           } # end if release conditioned
 
@@ -1080,17 +1086,17 @@ SPoRC_rtmb = function(pars, data) {
             # Loop through age and sex pooling and combine vectors into the correct format
             for(f in 1:n_fish_fleets) {
               if(use_conv_fish_tagging[f] == 1) {
-                for(p in 1:n_move_pop_tag_pool) {
-                  for(a in 1:n_move_age_tag_pool) {
-                    for(s in 1:n_move_sex_tag_pool) {
+                for(p in 1:n_conv_tag_pop_pool) {
+                  for(a in 1:n_conv_tag_age_pool) {
+                    for(s in 1:n_conv_tag_sex_pool) {
 
-                      move_pop_pool_idx = move_pop_tag_pool[[p]] # extract movement pop pool indices
-                      move_age_pool_idx = move_age_tag_pool[[a]] # extract movement age pool indices
-                      move_sex_pool_idx = move_sex_tag_pool[[s]] # extract movement sex pool indices
+                      pop_pool_idx = conv_tag_pop_pool[[p]] # extract movement pop pool indices
+                      age_pool_idx = conv_tag_age_pool[[a]] # extract movement age pool indices
+                      sex_pool_idx = conv_tag_sex_pool[[s]] # extract movement sex pool indices
 
                       for (r in 1:n_regions) {
-                        pred_val = sum(pred_conv_tag_fish_recap[ry, rseas, tc, move_pop_pool_idx, r, move_age_pool_idx, move_sex_pool_idx, f] + addtotag) # sum across age and sex groups
-                        obs_val  = sum(obs_conv_tag_fish_recap[ry, rseas, tc, move_pop_pool_idx, r, move_age_pool_idx, move_sex_pool_idx, f] + addtotag) # sum across age and sex groups
+                        pred_val = sum(pred_conv_tag_fish_recap[ry, rseas, tc, pop_pool_idx, r, age_pool_idx, sex_pool_idx, f] + addtotag) # sum across age and sex groups
+                        obs_val  = sum(obs_conv_tag_fish_recap[ry, rseas, tc, pop_pool_idx, r, age_pool_idx, sex_pool_idx, f] + addtotag) # sum across age and sex groups
                         tmp_pred_all = c(tmp_pred_all, pred_val) # combine predicted recaptures for a given age sex pooled group
                         tmp_obs_all  = c(tmp_obs_all,  obs_val) # combine observed recaptures for a given age sex pooled group
                       } # end r loop
@@ -1105,8 +1111,8 @@ SPoRC_rtmb = function(pars, data) {
             tmp_pred_all = tmp_pred_all / sum(tmp_pred_all)
             tmp_obs_all = tmp_obs_all / tmp_n_tags_recap
 
-            if(conv_fish_tag_like == 3) Conv_Fish_Tag_nLL[ry,rseas,tc,1,1] = -1 * tmp_n_tags_recap * sum(((tmp_obs_all) * log(tmp_pred_all))) # Multinomial
-            if(conv_fish_tag_like == 5) Conv_Fish_Tag_nLL[ry,rseas,tc,1,1] =  -1 * ddirmult(obs = tmp_obs_all, pred = tmp_pred_all, Ntotal = tmp_n_tags_recap, ln_theta = ln_conv_fish_tag_theta, TRUE) # Dirichlet Multinomial
+            if(conv_fish_tag_like == 3) conv_fish_tag_nLL[ry,rseas,tc,1,1] = -1 * tmp_n_tags_recap * sum(((tmp_obs_all) * log(tmp_pred_all))) # Multinomial
+            if(conv_fish_tag_like == 5) conv_fish_tag_nLL[ry,rseas,tc,1,1] =  -1 * ddirmult(obs = tmp_obs_all, pred = tmp_pred_all, Ntotal = tmp_n_tags_recap, ln_theta = ln_conv_fish_tag_theta, TRUE) # Dirichlet Multinomial
 
           } # end if recapture conditioned
 
@@ -1324,7 +1330,7 @@ SPoRC_rtmb = function(pars, data) {
     for(i in 1:nrow(rec_region_prop_prior)) {
       p = rec_region_prop_prior$pop[i] # population
       alpha = rec_region_prop_prior$alpha[[i]] # get concentration values
-      Rec_prop_nLL = -ddirichlet(x = rec_region_prop[p,], alpha = alpha, log = TRUE) # dirichlet prior
+      rec_prop_nLL = -ddirichlet(x = rec_region_prop[p,], alpha = alpha, log = TRUE) # dirichlet prior
     }
   }
 
@@ -1332,7 +1338,7 @@ SPoRC_rtmb = function(pars, data) {
     for(i in 1:nrow(rec_seas_prop_prior)) {
       p = rec_seas_prop_prior$pop[i] # population
       alpha = rec_seas_prop_prior$alpha[[i]] # get concentration values
-      Rec_prop_nLL = -ddirichlet(x = rec_seas_prop[p,], alpha = alpha, log = TRUE) # dirichlet prior
+      rec_prop_nLL = -ddirichlet(x = rec_seas_prop[p,], alpha = alpha, log = TRUE) # dirichlet prior
     }
   }
 
@@ -1351,9 +1357,9 @@ SPoRC_rtmb = function(pars, data) {
       } # end if symmetric beta
 
       if(conv_tag_fishrep_prior$type[i] == 1) {
-        a = conv_tag_fishrep_prior$mu[i] / (conv_tag_fishrep_prior$sd[i] * conv_tag_fishrep_prior$sd[i]) # alpha parameter
-        b = (1 - conv_tag_fishrep_prior$mu[i]) / (conv_tag_fishrep_prior$sd[i] * conv_tag_fishrep_prior$sd[i]) # beta parameter
-        TagRep_nLL = TagRep_nLL -RTMB::dbeta(x = conv_tag_fishrep_val, shape1 = a, shape2 = b, log = TRUE) # penalize
+        alpha = conv_tag_fishrep_prior$mu[i] / (conv_tag_fishrep_prior$sd[i] * conv_tag_fishrep_prior$sd[i]) # alpha parameter
+        beta = (1 - conv_tag_fishrep_prior$mu[i]) / (conv_tag_fishrep_prior$sd[i] * conv_tag_fishrep_prior$sd[i]) # beta parameter
+        TagRep_nLL = TagRep_nLL -RTMB::dbeta(x = conv_tag_fishrep_val, shape1 = alpha, shape2 = beta, log = TRUE) # penalize
       } # end if for full beta
 
     } # end i loop
@@ -1367,7 +1373,7 @@ SPoRC_rtmb = function(pars, data) {
          sum(FishLenComps_nLL) + # Fishery Length likelihood
          sum(SrvAgeComps_nLL) + # Survey Age likelihood
          sum(SrvLenComps_nLL) + # Survey Length likelihood
-         (Wt_Tagging * sum(Conv_Fish_Tag_nLL)) + # Tagging likelihood
+         (Wt_Tagging * sum(conv_fish_tag_nLL)) + # Tagging likelihood
          (Wt_F * sum(Fmort_nLL)) + # Fishery Mortality Penalty
          (Wt_Rec * sum(Rec_nLL)) + # Recruitment Penalty
          (Wt_Rec * sum(Init_Rec_nLL)) + #  Initial Age Penalty
@@ -1378,7 +1384,7 @@ SPoRC_rtmb = function(pars, data) {
          TagRep_nLL + # tag reporting rate Prior
          fish_q_nLL + # fishery q prior
          srv_q_nLL +  # survey q prior
-         Rec_prop_nLL # recruitment proportion prior
+         rec_prop_nLL # recruitment proportion prior
 
 
 
@@ -1427,7 +1433,7 @@ SPoRC_rtmb = function(pars, data) {
   }
 
   # Tagging Processes
-  if(use_conv_fish_tagging == 1) {
+  if(any(use_conv_fish_tagging == 1)) {
     RTMB::REPORT(pred_conv_tag_fish_recap)
     RTMB::REPORT(conv_tag_fish_avail)
     RTMB::REPORT(conv_tag_fish_reporting)
@@ -1451,14 +1457,14 @@ SPoRC_rtmb = function(pars, data) {
   RTMB::REPORT(Fmort_nLL)
   RTMB::REPORT(Rec_nLL)
   RTMB::REPORT(Init_Rec_nLL)
-  RTMB::REPORT(Conv_Fish_Tag_nLL)
+  RTMB::REPORT(conv_fish_tag_nLL)
   RTMB::REPORT(h_nLL)
   RTMB::REPORT(fish_q_nLL)
   RTMB::REPORT(sel_nLL)
   RTMB::REPORT(srv_q_nLL)
   RTMB::REPORT(Movement_nLL)
   RTMB::REPORT(TagRep_nLL)
-  RTMB::REPORT(Rec_prop_nLL)
+  RTMB::REPORT(rec_prop_nLL)
   RTMB::REPORT(jnLL)
 
   # Report for derived quantities

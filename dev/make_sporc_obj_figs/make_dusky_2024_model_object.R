@@ -16,10 +16,10 @@ rep_dat_rtem <- readList(here::here("dev", "dev_data", "dusky_rtem.rep"))
 rep_dat <- readLines(here::here("dev", "dev_data", "dusky.rep"))
 
 # Setup Model -------------------------------------------------------------
-
 input_list <- Setup_Mod_Dim(
   # Number of populations
   n_pop = sgl_rg_dusky_data$n_pop,
+  natal_region = sgl_rg_dusky_data$natal_region,
   years = sgl_rg_dusky_data$years,
   # vector of years
   ages = sgl_rg_dusky_data$mod_ages,

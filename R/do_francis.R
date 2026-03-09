@@ -10,12 +10,18 @@
 #' @param bins Vector of bins used (age or length)
 #' @param weights Array of francis weights (NAs) to apply dimensioned by n_regions, n_years, n_seas, n_sexes, n_fleets
 #' @param comp_type Matrix of composition structure types dimensioned by year and fleet
+#' @param n_years Number of years
+#' @param n_seas Number of seasons
+#' @param n_ages Number of ages
 #'
 #' @returns List of values for calculated francis weight, and a dataframe of observed and expected means
 #' @keywords internal
 get_francis_weights <- function(n_regions,
                                 n_sexes,
                                 n_fleets,
+                                n_years,
+                                n_seas,
+                                n_ages,
                                 Use,
                                 ISS,
                                 Pred_array,
@@ -26,8 +32,6 @@ get_francis_weights <- function(n_regions,
                                 ) {
 
   mean_francis <- data.frame()
-  n_years <- dim(Use)[2] # get n_years
-  n_seas <- dim(Use)[3] # get n_seas
 
   for(f in 1:n_fleets) {
 
@@ -88,9 +92,11 @@ get_francis_weights <- function(n_regions,
         # If compositions are split by region, but joint by sex
         if(comp_type[y,f] == 2) {
           for(r in use_regions) {
-            exp_bar[r,yr_alt_idx,seas,1] <- sum(bins * rowSums(tmp_exp[r,1,1,,,1])) # input mean pred comps
-            obs_bar[r,yr_alt_idx,seas,1] <- sum(bins * rowSums(tmp_obs[r,1,1,,,1])) # input mean obs comps
-            v_y[r,yr_alt_idx,seas,1] <- sum(bins^2*rowSums(tmp_exp[r,1,1,,,1]))-exp_bar[r,yr_alt_idx,seas,1]^2  # variance
+            mat_exp <- matrix(tmp_exp[r,1,1,,,1], nrow = n_ages)
+            mat_obs <- matrix(tmp_obs[r,1,1,,,1], nrow = n_ages)
+            exp_bar[r,yr_alt_idx,seas,1] <- sum(bins * rowSums(mat_exp)) # input mean pred comps
+            obs_bar[r,yr_alt_idx,seas,1] <- sum(bins * rowSums(mat_obs)) # input mean obs comps
+            v_y[r,yr_alt_idx,seas,1] <- sum(bins^2*rowSums(mat_exp))-exp_bar[r,yr_alt_idx,seas,1]^2  # variance
             w_denom[r,yr_alt_idx,seas,1] <- (obs_bar[r,yr_alt_idx,seas,1]-exp_bar[r,yr_alt_idx,seas,1])/sqrt(v_y[r,yr_alt_idx,seas,1]/tmp_iss_obs[r,1,1,1,1]) # get weights
           } # end r loop
         } # end if split by region, joint by sex
@@ -190,6 +196,9 @@ do_francis_reweighting <- function(data,
   n_fish_fleets <- data$n_fish_fleets
   n_srv_fleets <- data$n_srv_fleets
   n_sexes <- data$n_sexes
+  n_ages <- dim(data$ObsFishAgeComps)[4]
+  n_years <- length(year_labels)
+  n_seas <- data$n_seas
 
   # Get composition proportions
   comp_prop <- get_comp_prop(data = data,
@@ -215,6 +224,9 @@ do_francis_reweighting <- function(data,
     n_regions = n_regions,
     n_sexes = n_sexes,
     n_fleets = n_fish_fleets,
+    n_years = n_years,
+    n_seas = n_seas,
+    n_ages = n_ages,
     Use = tmp_Use,
     ISS = tmp_ISS,
     Pred_array = tmp_Pred,
@@ -243,6 +255,9 @@ do_francis_reweighting <- function(data,
     n_regions = n_regions,
     n_sexes = n_sexes,
     n_fleets = n_fish_fleets,
+    n_years = n_years,
+    n_seas = n_seas,
+    n_ages = n_ages,
     Use = tmp_Use,
     ISS = tmp_ISS,
     Pred_array = tmp_Pred,
@@ -271,6 +286,9 @@ do_francis_reweighting <- function(data,
     n_regions = n_regions,
     n_sexes = n_sexes,
     n_fleets = n_srv_fleets,
+    n_years = n_years,
+    n_seas = n_seas,
+    n_ages = n_ages,
     Use = tmp_Use,
     ISS = tmp_ISS,
     Pred_array = tmp_Pred,
@@ -299,6 +317,9 @@ do_francis_reweighting <- function(data,
     n_regions = n_regions,
     n_sexes = n_sexes,
     n_fleets = n_srv_fleets,
+    n_years = n_years,
+    n_seas = n_seas,
+    n_ages = n_ages,
     Use = tmp_Use,
     ISS = tmp_ISS,
     Pred_array = tmp_Pred,

@@ -29,6 +29,9 @@ input_list <- Setup_Mod_Dim(years = 1:length(mlt_rg_sable_data$years),
                             # number of survey fleets (2)
                             n_seas = mlt_rg_sable_data$n_seas,
                             # number of seasons
+                            n_pop = mlt_rg_sable_data$n_pop,
+                            natal_region = mlt_rg_sable_data$natal_region,
+                            # population stuff
                             verbose = TRUE
 )
 
@@ -43,12 +46,11 @@ input_list <- Setup_Mod_Rec(input_list = input_list, # input data list from abov
                             InitDevs_spec = "est_shared_r",
                             # initial deviations are shared across regions,
                             # but recruitment deviations are region specific
-                            ln_sigmaR = log(c(0.4, 1.2)),
+                            ln_sigmaR = array(log(c(0.4, 1.2)), dim = c(2, input_list$data$n_pop, input_list$data$n_regions)),
                             # values to fix sigmaR at, or starting values
                             ln_global_R0 = log(20),
                             # starting value for global R0
-                            R0_prop = array(c(0.2, 0.2, 0.2, 0.2),
-                                            dim = c(input_list$data$n_regions - 1))
+                            rec_region_prop_pars = array(c(0.2, 0.2, 0.2, 0.2), dim = c(input_list$data$n_pop, input_list$data$n_regions - 1))
                             # starting value for R0 proportions in multinomial logit space
 )
 
@@ -62,7 +64,8 @@ input_list <- Setup_Mod_Biologicals(input_list = input_list,
                                     SizeAgeTrans = mlt_rg_sable_data$SizeAgeTrans,
                                     # size age transition matrix
                                     M_spec = "fix", # fix natural mortality
-                                    Fixed_natmort = array(0.104884, dim = c(mlt_rg_sable_data$n_regions,
+                                    Fixed_natmort = array(0.104884, dim = c(mlt_rg_sable_data$n_pop,
+                                                                            mlt_rg_sable_data$n_regions,
                                                                             length(mlt_rg_sable_data$years),
                                                                             length(mlt_rg_sable_data$ages),
                                                                             mlt_rg_sable_data$n_sexes))
@@ -71,12 +74,13 @@ input_list <- Setup_Mod_Biologicals(input_list = input_list,
 
 # setting up movement parameterization
 Movement_prior <- expand.grid(
+  pop = 1, # populations
   region_from = 1:5, # regions
   year = 1, # penalize first year since no blocks
   seas = 1,
   age = c(6,7,16), # age blocks
   sex = 1, # sex
-  alpha = I(list(rep(2.5, 5))) # prior alpha to each row
+  alpha = I(list(rep(3, 5))) # prior alpha to each row
 )
 
 input_list <- Setup_Mod_Movement(input_list = input_list,
@@ -84,9 +88,10 @@ input_list <- Setup_Mod_Movement(input_list = input_list,
                                  Movement_ageblk_spec = list(c(1:6), c(7:15), c(16:30)),
                                  # estimating movement in 3 age blocks
                                  # (ages 1-6, ages 7-15, ages 16-30)
+                                 Movement_popblk_spec = 'constant', # population-invariant movement
                                  Movement_yearblk_spec = "constant", # time-invariant movement
                                  Movement_sexblk_spec = "constant", # sex-invariant movement
-                                 Movement_seasblk_spec = 'constant',
+                                 Movement_seasblk_spec = 'constant', # seasonal blocks
                                  do_recruits_move = 0, # recruits do not move
                                  use_fixed_movement = 0, # estimating movement
                                  Use_Movement_Prior = 1, # priors used for movement
@@ -100,64 +105,60 @@ input_list <- Setup_Mod_Movement(input_list = input_list,
 tag_prior <- data.frame(
   region = 1,
   block = c(1,2),
+  fleet = 1,
   mu = NA, # no mean, since symmetric beta
   sd = 5, # sd = 5
   type = 0 # symmetric beta
 )
 
 input_list <- Setup_Mod_Tagging(input_list = input_list,
-                                UseTagging = 1, # using tagging data
-                                max_tag_liberty = 15, # maximum number of years to track a cohort
+                                use_conv_fish_tagging = c(1,0), # using tagging data for fixed gear
+                                conv_tag_max_liberty = 15, # maximum number of years to track a cohort
 
                                 # Data Inputs
-                                tag_release_indicator = mlt_rg_sable_data$tag_release_indicator,
+                                conv_tag_release_indicator = mlt_rg_sable_data$conv_tag_release_indicator,
                                 # tag release indicator (first col = tag region,
                                 # second col = tag year),
                                 # total number of rows = number of tagged cohorts
-                                Tagged_Fish = mlt_rg_sable_data$Tagged_Fish, # Released fish
+                                conv_tagged_fish = mlt_rg_sable_data$conv_tagged_fish, # Released fish
                                 # dimensioned by total number of tagged cohorts, (implicitly
-                                # tracks the release year and region), age, and sex
-                                Obs_Tag_Recap = mlt_rg_sable_data$Obs_Tag_Recap,
-                                # dimensioned by max tag liberty, tagged cohorts, regions,
+                                # tracks the release year and region), pop, age, and sex
+                                obs_conv_tag_fish_recap = mlt_rg_sable_data$obs_conv_tag_fish_recap,
+                                # dimensioned by max tag liberty, tagged cohorts, pop, regions,
                                 # ages, and sexes
 
                                 # Model options
-                                Tag_LikeType = "NegBin", # Negative Binomial
-                                mixing_period = 2, # Don't fit tagging until release year + 1
-                                t_tagging = 0.5, # tagging happens midway through the year,
+                                conv_fish_tag_like = "NegBin", # Negative Binomial
+                                conv_tag_mixing_period = 2, # Don't fit tagging until release year + 1
+                                conv_tag_t_tagging = 0.5, # tagging happens midway through the year,
                                 # movement does not occur within that year
-                                tag_selex = "SexSp_AllFleet", # tagging recapture selectivity
-                                # is a weighted average of fishery selectivity of two fleets
-                                tag_natmort = "AgeSp_SexSp", # tagging natural mortality is
-                                # age and sex-specific
-                                Use_TagRep_Prior = 1, # tag reporting rate priors are used
-                                TagRep_Prior = tag_prior,
-                                move_age_tag_pool = list(c(1:6), c(7:15), c(16:30)), # whether or
+                                use_conv_tag_fishrep_prior = 1, # tag reporting rate priors are used
+                                conv_tag_fishrep_prior = tag_prior,
+                                conv_tag_age_pool = list(c(1:6), c(7:15), c(16:30)), # whether or
                                 # not to pool tagging data when fitting (for computational cost)
-                                move_sex_tag_pool = list(c(1:2)), # whether or not to pool
+                                conv_tag_sex_pool = list(c(1:2)), # whether or not to pool
                                 # sex-specific data when fitting
-                                Init_Tag_Mort_spec = "fix", # fixing initial tag mortality
-                                Tag_Shed_spec = "fix", # fixing chronic shedding
-                                TagRep_spec = "est_shared_r", # tag reporting rates are
+                                init_conv_tag_mort_spec = "fix", # fixing initial tag mortality
+                                conv_tag_shed_spec = "fix", # fixing chronic shedding
+                                conv_tagrep_spec = "est_shared_r_f", # tag reporting rates are
                                 # not region specific
                                 # Time blocks for tag reporting rates
-                                Tag_Reporting_blocks = c(
-                                  paste("Block_1_Year_1-35_Region_",
-                                        c(1:input_list$data$n_regions), sep = ''),
-                                  paste("Block_2_Year_36-terminal_Region_",
-                                        c(1:input_list$data$n_regions), sep = '')
+                                conv_tag_fish_reporting_blocks = c(
+                                  apply(expand.grid(1:input_list$data$n_regions, 1:input_list$data$n_fish_fleets), 1, function(x)
+                                    paste0("Block_1_Year_1-35_Region_", x[1], "_Fleet_", x[2])),
+                                  apply(expand.grid(1:input_list$data$n_regions, 1:input_list$data$n_fish_fleets), 1, function(x)
+                                    paste0("Block_2_Year_36-terminal_Region_", x[1], "_Fleet_", x[2]))
                                 ),
-
+                                conv_fish_tag_attr = 'p_a_s',
                                 # Specify starting values or fixing values
-                                ln_Init_Tag_Mort = log(0.1), # fixing initial tag mortality
-                                ln_Tag_Shed = log(0.02),  # fixing tag shedding
-                                ln_tag_theta = log(0.5),
+                                ln_init_conv_tag_mort = log(0.1), # fixing initial tag mortality
+                                ln_conv_tag_shed = log(0.02),  # fixing tag shedding
+                                ln_conv_fish_tag_theta = log(0.5),
                                 # starting value for tagging overdispersion
-                                Tag_Reporting_Pars = array(log(0.2 / (1-0.2)), dim = c(input_list$data$n_regions, 2))
+                                conv_tag_fish_reporting_pars = array(log(0.2 / (1-0.2)), dim = c(input_list$data$n_regions, 2, input_list$data$n_fish_fleets))
                                 # starting values for tag reporting pars
 
 )
-
 
 # setting up catch data
 input_list <- Setup_Mod_Catch_and_F(input_list = input_list,
@@ -313,7 +314,8 @@ map_ln_fish_fixed_sel_pars[,2,1,2,2] <- 7 # delta, male, time block 1, trawl gea
 map_ln_fish_fixed_sel_pars[,,2,,2] <- NA # no parameters estimated for time block 2 trawl gear
 
 input_list$map$ln_fish_fixed_sel_pars <- factor(map_ln_fish_fixed_sel_pars) # input into map list
-input_list$par$ln_fish_fixed_sel_pars[] <- log(0.1) # some more inforamtive starting values
+input_list$par$ln_fish_fixed_sel_pars[,,,,1] <- log(3) # some more inforamtive starting values
+input_list$par$ln_fish_fixed_sel_pars[,,,,2] <- log(6) # some more inforamtive starting values
 
 input_list <- Setup_Mod_Srvsel_and_Q(input_list = input_list,
 
@@ -379,7 +381,7 @@ map_ln_srv_fixed_sel_pars[,2,1,2,2] <- 4 # delta, domestic survey, time block 1,
 # (sharing with coop survey)
 
 input_list$map$ln_srv_fixed_sel_pars <- factor(map_ln_srv_fixed_sel_pars)  # input into map list
-input_list$par$ln_srv_fixed_sel_pars[] <- log(0.1) # some more informative starting values
+input_list$par$ln_srv_fixed_sel_pars[] <- log(3) # some more informative starting values
 
 # set up model weighting stuff
 input_list <- Setup_Mod_Weighting(input_list = input_list,
@@ -420,7 +422,6 @@ input_list <- Setup_Mod_Weighting(input_list = input_list,
 data <- input_list$data
 parameters <- input_list$par
 mapping <- input_list$map
-
 data$t_srv[] = 0.5
 
 # Fit model
@@ -429,7 +430,7 @@ sabie_rtmb_model <- fit_model(data,
                               parameters,
                               mapping,
                               random = NULL,
-                              newton_loops = 5,
+                              newton_loops = 3,
                               silent = FALSE
 )
 en <- Sys.time()
@@ -459,7 +460,7 @@ ssb_series$Par <- "Spawning Biomass"
 ts_df <- rbind(ssb_series,rec_series) # bind together
 
 # Do some data munging here
-ts_df <- ts_df %>% dplyr::rename(Region = Var1, Year = Var2) %>%
+ts_df <- ts_df %>% dplyr::rename(Pop = Var1, Region = Var2, Year = Var3) %>%
   dplyr::mutate(Region = dplyr::case_when(
     Region == 1 ~ 'BS',
     Region == 2 ~ 'AI',

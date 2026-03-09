@@ -1,38 +1,64 @@
-#' Initialize Simulation Dimension Settings
+#' Initialise simulation dimension settings
 #'
-#' Creates and returns a list of key dimension values used to set up a
-#' simulation or management strategy evaluation (MSE). This list provides
-#' structural information such as number of simulations, years, regions,
-#' ages, fleets, and whether to include a feedback loop.
+#' Creates the foundational \code{sim_list} object used throughout a closed-loop
+#' simulation or management strategy evaluation (MSE). All downstream setup
+#' functions (\code{\link{Setup_Sim_Biologicals}}, \code{\link{Setup_Sim_Containers}},
+#' etc.) expect a \code{sim_list} produced by this function. Dimension scalars are
+#' validated on input and stored alongside derived quantities such as
+#' \code{init_iter} and the \code{natal_region} mapping.
 #'
-#' @param n_sims Integer. Number of simulation replicates.
-#' @param n_yrs Integer. Number of years in the simulation.
-#' @param n_regions Integer. Number of modeled regions.
-#' @param n_ages Integer. Number of modeled age classes.
-#' @param n_lens Integer. Number of modeled length bins (if no lengths are simulated, leave as NULL).
-#' @param n_obs_ages Integer. Number of observed age classes (can differ from \code{n_ages}, default = \code{n_ages}).
-#' @param n_sexes Integer. Number of sexes (must be either 1 or 2).
-#' @param n_fish_fleets Integer. Number of fishery fleets.
-#' @param n_srv_fleets Integer. Number of survey fleets.
-#' @param run_feedback Logical. Whether to include a feedback management loop (default = \code{FALSE}).
-#' @param feedback_start_yr Integer. First year that feedback is applied (only used if \code{run_feedback = TRUE}).
-#' @param n_seas Integer. Number of seasons
-#' @param seasdur Vector of n_seas length. Duration of season, expressed as a fraction of the year. Default is 1 if 1 season, or 1 / n_seas if n_seas > 1
-#' @param n_pop Integer. Number of populations
-#' @param natal_region Integer vector of length \code{n_pop}. Maps each population
-#'   to its natal region (1-indexed). Defaults to \code{rep(1, n_pop)} when
-#'   \code{n_regions == 1}, or \code{seq_len(n_pop)} when \code{n_pop == n_regions}.
-#'   Must be user-specified when \code{n_pop > n_regions} and \code{n_regions > 1},
-#'   as multiple populations will share a natal region and no sensible default exists.
+#' @param n_sims Positive integer. Number of simulation replicates.
+#' @param n_yrs Positive integer. Number of projection years.
+#' @param n_pop Positive integer. Number of distinct populations (default \code{1}).
+#'   Populations share movement and selectivity schedules but can have independent
+#'   stock-recruit relationships and natal regions.
+#' @param n_regions Positive integer. Number of spatial regions.
+#' @param natal_region Integer vector of length \code{n_pop} mapping each population
+#'   to its natal region (1-indexed). Defaults are applied when \code{NULL}:
+#'   \itemize{
+#'     \item \code{n_regions == 1}: all populations assigned to region 1.
+#'     \item \code{n_pop == n_regions}: one-to-one mapping (\code{1:n_pop}).
+#'     \item \code{n_pop == 1}: assigned to region 1.
+#'   }
+#'   Must be supplied explicitly when \code{n_pop > 1}, \code{n_pop != n_regions},
+#'   and \code{n_regions > 1}, as multiple populations would share a natal region
+#'   and no sensible default exists.
+#' @param n_seas Positive integer. Number of seasons within each year (default \code{1}).
+#' @param seasdur Numeric vector of length \code{n_seas} giving the duration of each
+#'   season as a fraction of a year (values should sum to 1). Defaults to \code{1}
+#'   for a single season or \code{rep(1 / n_seas, n_seas)} for equal-length seasons
+#'   when \code{n_seas > 1}.
+#' @param n_ages Positive integer. Number of modelled age classes.
+#' @param n_obs_ages Positive integer. Number of observed age bins in composition
+#'   data. Can differ from \code{n_ages} when the plus group or youngest ages are
+#'   pooled differently in observations. Defaults to \code{n_ages}.
+#' @param n_lens Positive integer. Number of length bins. Set to \code{NULL}
+#'   (default) when length compositions are not simulated.
+#' @param n_sexes Integer. Number of sexes; must be \code{1} (sex-aggregated) or
+#'   \code{2} (sex-structured).
+#' @param n_fish_fleets Positive integer. Number of fishery fleets.
+#' @param n_srv_fleets Positive integer. Number of survey fleets.
+#' @param run_feedback Logical. Whether to run a closed-loop feedback MSE in which
+#'   an estimation model and harvest control rule are applied each year to update
+#'   simulated fishing mortality. Default \code{FALSE} (open-loop simulation).
+#' @param feedback_start_yr Integer. First year in which the feedback loop is
+#'   activated. Required when \code{run_feedback = TRUE}; ignored otherwise.
 #'
-#' @return
-#' A list containing the specified dimension values, with elements:
-#' \itemize{
-#'   \item \code{n_sims}, \code{n_yrs}, \code{n_regions}, \code{n_ages}, \code{n_lens},
-#'   \code{n_obs_ages}, \code{n_sexes}, \code{n_fish_fleets}, \code{n_srv_fleets}
-#'   \item \code{init_iter} (set internally to \code{n_ages * 10})
-#'   \item \code{feedback_start_yr}, \code{run_feedback}
-#' }
+#' @return A named list (\code{sim_list}) with the following elements:
+#'   \describe{
+#'     \item{\code{n_sims}, \code{n_yrs}, \code{n_pop}, \code{n_regions},
+#'       \code{n_seas}, \code{n_ages}, \code{n_obs_ages}, \code{n_lens},
+#'       \code{n_sexes}, \code{n_fish_fleets}, \code{n_srv_fleets}}{Dimension
+#'       scalars passed directly from arguments.}
+#'     \item{\code{natal_region}}{Integer vector of length \code{n_pop} giving the
+#'       natal region for each population (see argument description for defaults).}
+#'     \item{\code{seasdur}}{Numeric vector of season durations summing to 1.}
+#'     \item{\code{init_iter}}{Derived scalar equal to \code{n_ages * 10}, giving
+#'       the number of years used to spin up equilibrium initial conditions.}
+#'     \item{\code{run_feedback}, \code{feedback_start_yr}}{Feedback control
+#'       settings passed directly from arguments.}
+#'   }
+#'
 #'
 #' @export Setup_Sim_Dim
 #' @family Simulation Setup
@@ -91,32 +117,73 @@ Setup_Sim_Dim <- function(n_sims,
 
 }
 
-#' Set up model dimensions
+#' Initialise model dimension settings
 #'
-#' @param n_regions Integer specifying the number of spatial regions.
-#' @param ages Numeric vector of age classes.
-#' @param n_sexes Integer specifying the number of sexes.
-#' @param n_fish_fleets Integer specifying the number of fishery fleets.
-#' @param n_srv_fleets Integer specifying the number of survey fleets.
-#' @param years Numeric vector of years.
-#' @param lens Numeric vector of length bins; can be set to \code{1} if length data are not modeled.
-#' @param verbose Logical flag indicating whether to print progress messages (default \code{FALSE}).
-#' @param n_proj_yrs_devs Number of projection years for deviation parameters (ln_RecDevs, move_devs, ln_fishsel_devs, ln_srvsel_devs)
-#' @param n_seas Integer, Number of seasons
-#' @param seasdur Vector of n_seas length. Duration of season, expressed as a fraction of the year. Default is 1 if 1 season, or 1 / n_seas if n_seas > 1
-#' @param n_pop Integer, Number of populations
-#' @param natal_region Integer vector of length \code{n_pop}. Maps each population
-#'   to its natal region (1-indexed). Defaults to \code{rep(1, n_pop)} when
-#'   \code{n_regions == 1}, or \code{seq_len(n_pop)} when \code{n_pop == n_regions}.
-#'   Must be user-specified when \code{n_pop > n_regions} and \code{n_regions > 1},
-#'   as multiple populations will share a natal region and no sensible default exists.
+#' Creates the foundational \code{input_list} object used throughout the estimation
+#' model setup. All downstream configuration functions
+#' (\code{\link{Setup_Mod_Biologicals}}, \code{\link{Setup_Mod_Fishery}},
+#' \code{\link{Setup_Mod_Survey}}, etc.) expect an \code{input_list} produced by
+#' this function. Dimension vectors and scalars are stored in \code{$data}, with
+#' empty \code{$par} and \code{$map} sublists ready to be populated by subsequent
+#' setup calls.
 #'
-#' @returns A list containing three named elements:
-#' \describe{
-#'   \item{\code{data}}{List of data inputs dimensioned by the model dimensions.}
-#'   \item{\code{parameters}}{List of model parameters initialized according to dimensions.}
-#'   \item{\code{map}}{List of parameter mappings for model fitting.}
-#' }
+#' @param years Numeric vector of calendar years included in the model (e.g.,
+#'   \code{1990:2024}). The length of this vector determines \code{n_years}
+#'   throughout the model.
+#' @param ages Numeric vector of modelled age classes (e.g., \code{2:31} for a
+#'   model spanning ages 2–31). The final element is treated as a plus-group.
+#' @param lens Numeric vector of length bin midpoints. Set to \code{NULL} when
+#'   length data are not modelled; a scalar placeholder of \code{1} is stored
+#'   internally in that case.
+#' @param n_pop Positive integer. Number of distinct populations (default \code{1}).
+#'   Populations can have independent stock-recruit relationships and natal regions
+#'   but share the spatial domain defined by \code{n_regions}.
+#' @param n_regions Positive integer. Number of spatial regions.
+#' @param natal_region Integer vector of length \code{n_pop} mapping each population
+#'   to its natal region (1-indexed). Defaults are applied when \code{NULL}:
+#'   \itemize{
+#'     \item \code{n_regions == 1}: all populations assigned to region 1.
+#'     \item \code{n_pop == n_regions}: one-to-one mapping (\code{1:n_pop}).
+#'     \item \code{n_pop == 1}: assigned to region 1.
+#'   }
+#'   Must be supplied explicitly when \code{n_pop > 1}, \code{n_pop != n_regions},
+#'   and \code{n_regions > 1}, as no sensible default exists when populations
+#'   must share a natal region.
+#' @param n_seas Positive integer. Number of seasons within each year (default
+#'   \code{1}).
+#' @param seasdur Numeric vector of length \code{n_seas} giving the duration of
+#'   each season as a fraction of a year (values should sum to 1). Defaults to
+#'   \code{1} for a single season or \code{rep(1 / n_seas, n_seas)} for
+#'   equal-length seasons when \code{n_seas > 1}.
+#' @param n_sexes Integer. Number of sexes; must be \code{1} (sex-aggregated) or
+#'   \code{2} (sex-structured).
+#' @param n_fish_fleets Positive integer. Number of fishery fleets.
+#' @param n_srv_fleets Positive integer. Number of survey fleets.
+#' @param n_proj_yrs_devs Non-negative integer. Number of projection years for
+#'   which deviation parameters (\code{ln_RecDevs}, \code{move_devs},
+#'   \code{ln_fishsel_devs}, \code{ln_srvsel_devs}) are allocated. Set to
+#'   \code{0} (default) when projections beyond the assessment period are not
+#'   required.
+#' @param verbose Logical. If \code{TRUE}, prints a summary of all dimension
+#'   settings to the console via \code{message()} after setup. Default
+#'   \code{FALSE}.
+#'
+#' @return A named list (\code{input_list}) with three sublists:
+#'   \describe{
+#'     \item{\code{$data}}{Dimension scalars and vectors stored for use by the
+#'       TMB/RTMB objective function: \code{years}, \code{ages}, \code{lens},
+#'       \code{n_pop}, \code{n_regions}, \code{natal_region}, \code{n_seas},
+#'       \code{seasdur}, \code{n_sexes}, \code{n_fish_fleets},
+#'       \code{n_srv_fleets}, \code{n_proj_yrs_devs}.}
+#'     \item{\code{$par}}{Empty list to be populated with parameter starting
+#'       values by downstream setup functions.}
+#'     \item{\code{$map}}{Empty list to be populated with TMB/RTMB factor maps
+#'       by downstream setup functions.}
+#'   }
+#'   The top-level \code{$verbose} flag is also set and respected by all
+#'   subsequent setup functions.
+#'
+#'
 #' @export Setup_Mod_Dim
 #' @family Model Setup
 Setup_Mod_Dim <- function(years,

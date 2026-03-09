@@ -1,19 +1,46 @@
-#' Gets index fits results
+#' Extract Index Fit Results
 #'
-#' @param data Data list fed into RTMB
-#' @param year_labs Year labels to use (vector)
-#' @param rep Report list output from RTMB
+#' Generates a tidy dataframe of observed and predicted survey and fishery
+#' indices from a fitted RTMB model, including standard errors, confidence
+#' intervals, residuals, and catchability blocks.
 #'
-#' @returns Fits to indices as a dataframe
+#' @param data List; input data used in the RTMB model. Must contain
+#'   \code{ObsSrvIdx}, \code{ObsSrvIdx_SE}, \code{ObsFishIdx}, \code{ObsFishIdx_SE},
+#'   \code{Wt_SrvIdx}, \code{Wt_FishIdx}, \code{srv_q_blocks}, and \code{fish_q_blocks}.
+#' @param rep List; RTMB report output containing \code{PredSrvIdx} and \code{PredFishIdx}.
+#' @param year_labs Vector; year labels to assign to the third dimension of the
+#'   predicted indices and the columns of observed indices.
+#'
+#' @return A dataframe containing combined survey and fishery indices with the
+#' following columns:
+#' \itemize{
+#'   \item \code{Region} – Region label (prefixed with "Region")
+#'   \item \code{Year} – Year
+#'   \item \code{Seas} – Season
+#'   \item \code{Fleet} – Fleet identifier
+#'   \item \code{Type} – Either "Survey" or "Fishery"
+#'   \item \code{obs} – Observed index
+#'   \item \code{value} – Predicted index
+#'   \item \code{se} – Standard error of the observed index
+#'   \item \code{lci}, \code{uci} – 95% confidence interval for the observed index
+#'   \item \code{q_block} – Catchability block value
+#'   \item \code{resid} – Log-scale residual (\eqn{\log(obs) - \log(predicted)})
+#'   \item \code{Category} – Combined Type, Fleet, Season, and Q-block label
+#' }
+#'
+#' @examples
+#' \dontrun{
+#' idx_fits <- get_idx_fits(
+#'   data = data,
+#'   rep = rep,
+#'   year_labs = seq(1960, 2024, 1)
+#' )
+#' }
+#'
 #' @export get_idx_fits
 #' @family Model Diagnostics
 #' @import dplyr
 #' @importFrom tidyr drop_na
-#' @examples
-#' \dontrun{
-#' idx_fits <- get_idx_fits(data = data, rep = rep,
-#'  year_labs = seq(1960, 2024, 1))
-#' }
 get_idx_fits <- function(data,
                          rep,
                          year_labs
@@ -21,12 +48,18 @@ get_idx_fits <- function(data,
 
   colnames(data$ObsSrvIdx) <- year_labs
   colnames(data$ObsSrvIdx_SE) <- year_labs
-  colnames(rep$PredSrvIdx) <- year_labs
+  dimnames(rep$PredSrvIdx)[3] <- list(year_labs)
   colnames(data$ObsFishIdx) <- year_labs
   colnames(data$ObsFishIdx_SE) <- year_labs
   colnames(data$srv_q_blocks) <- year_labs
   colnames(data$fish_q_blocks) <- year_labs
-  colnames(rep$PredFishIdx) <- year_labs
+  dimnames(rep$PredFishIdx)[3] <- list(year_labs)
+
+  # Remove data not used(i.e., removing ghost fits)
+  data$ObsFishIdx[which(data$UseFishIdx == 0)] <- NA
+  data$ObsSrvIdx[which(data$UseSrvIdx == 0)] <- NA
+  data$ObsFishIdx_SE[which(data$UseFishIdx == 0)] <- NA
+  data$ObsSrvIdx_SE[which(data$UseSrvIdx == 0)] <- NA
 
   # Observed survey index
   obs_srv <- reshape2::melt(data$ObsSrvIdx) %>% dplyr::rename(obs = value) %>%
@@ -37,9 +70,11 @@ get_idx_fits <- function(data,
 
   # Predicted survey index
   pred_srv <- reshape2::melt(rep$PredSrvIdx) %>%
-    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
     dplyr::mutate(Type = 'Survey') %>%
-    dplyr::filter(Year %in% unique(obs_srv$Year), value != 0)
+    dplyr::filter(Year %in% unique(obs_srv$Year), value != 0) %>%
+    dplyr::group_by(Region, Year, Seas, Fleet, Type) %>%
+    dplyr::summarise(value = sum(value))
 
   # Get survey catchability
   srv_q <- reshape2::melt(data$srv_q_blocks) %>%
@@ -63,9 +98,11 @@ get_idx_fits <- function(data,
 
   # Predicted fishery index
   pred_fish <- reshape2::melt(rep$PredFishIdx) %>%
-    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
     dplyr::mutate(Type = 'Fishery') %>%
-    dplyr::filter(Year %in% unique(obs_fish$Year), value != 0)
+    dplyr::filter(Year %in% unique(obs_fish$Year), value != 0) %>%
+    dplyr::group_by(Region, Year, Seas, Fleet, Type) %>%
+    dplyr::summarise(value = sum(value))
 
   # Get fishery catchability
   fish_q <- reshape2::melt(data$fish_q_blocks) %>%
@@ -84,22 +121,33 @@ get_idx_fits <- function(data,
 
   return(all_idx)
 }
-#' Restructure composition values, used within a variety of functions to either do Francis reweighting or get observed and expected composition values
+
+#' Restructure Composition Values
 #'
-#' @param Exp Expected values (catch at age or survey index at age) indexed for a given year and fleet (structured as a matrix by age and sex)
-#' @param Obs Observed values (catch at age or survey index at age) indexed for a given year and fleet (structured as a matrix by age and sex)
-#' @param Comp_Type Composition Parameterization Type (== 0, aggregated comps by sex, == 1, split comps by sex (no implicit sex ratio information), == 2, joint comps across sexes (implicit sex ratio information)
-#' @param age_or_len Age or length comps (== 0, Age, == 1, Length)
-#' @param AgeingError Ageing Error matrix
+#' Restructures observed and expected composition values (catch-at-age or survey
+#' index-at-age) for use in Francis reweighting or other composition-based analyses.
+#' The function can handle aggregated, split, or joint sex composition parameterizations
+#' and can apply ageing error if provided.
 #'
-#' @return Returns a list of array observed and expected values for a given year and fleet
-#' @keywords internal
+#' @param Exp Array; expected composition values indexed by
+#'   \code{[region, pop, year, age/length bins, sex, fleet]}.
+#' @param Obs Array; observed composition values indexed similarly to \code{Exp}.
+#' @param Comp_Type Integer; composition parameterization type:
+#'   \itemize{
+#'     \item 0 = aggregated across sexes
+#'     \item 1 = split by sex (no implicit sex ratio information)
+#'     \item 2 = joint across sexes (implicit sex ratio information)
+#'   }
+#' @param age_or_len Integer; 0 for age compositions, 1 for length compositions.
+#' @param AgeingError Matrix; ageing error transition matrix (applied to age compositions only).
 #'
-#' @examples
-#' \dontrun{
-#' comps <- Restrc_Comps(Exp, Obs, Comp_Type, age_or_len, AgeingError)
-#' comps$Exp; comps$Obs
+#' @return A list with elements:
+#' \itemize{
+#'   \item \code{Exp} – array of expected composition values in observed bins
+#'   \item \code{Obs} – array of observed composition values in observed bins
 #' }
+#'
+#' @keywords internal
 Restrc_Comps <- function(Exp,
                          Obs,
                          Comp_Type,
@@ -185,23 +233,43 @@ Restrc_Comps <- function(Exp,
 } # end function
 
 
-#' Gets composition data proportions normalized according to the assessment specifications from RTMB
+#' Get Composition Proportions from RTMB Output
 #'
-#' @param data list of data inputs
-#' @param rep report file from RTMB
-#' @param year_labels vector of years
-#' @param age_labels vector of observed age labels in assessment
-#' @param len_labels vector of length labels in assessment
+#' Extracts and normalizes age and length composition data for fishery and survey
+#' fleets according to the assessment specifications from RTMB. This includes
+#' both observed and expected compositions and returns them in array and
+#' long-dataframe formats.
+#'
+#' @param data List; data inputs used by RTMB, containing observed compositions,
+#'   composition types, aggregation types, ageing errors, and fleet/region/season info.
+#' @param rep List; report output from RTMB containing predicted compositions (CAA, CAL, SrvIAA, SrvIAL).
+#' @param year_labels Vector; year labels corresponding to the assessment years.
+#' @param age_labels Vector; observed age labels used in the assessment.
+#' @param len_labels Vector; observed length labels used in the assessment.
+#'
+#' @return List containing:
+#' \itemize{
+#'   \item \strong{Fishery_Ages, Fishery_Lens, Survey_Ages, Survey_Lens}: Dataframes with
+#'         observed (`obs`) and expected (`pred`) compositions and associated metadata.
+#'   \item \strong{Obs_FishAge_mat, Obs_FishLen_mat, Obs_SrvAge_mat, Obs_SrvLen_mat}:
+#'         Arrays of observed compositions (dimensioned by region, year, season, bin, sex, fleet).
+#'   \item \strong{Pred_FishAge_mat, Pred_FishLen_mat, Pred_SrvAge_mat, Pred_SrvLen_mat}:
+#'         Arrays of expected compositions (dimensioned by region, year, season, bin, sex, fleet).
+#' }
 #'
 #' @import dplyr
 #' @importFrom tidyr drop_na
-#' @returns List of fishery age, lengths, survey age, lengths dataframe as well as in matrix form (dimensioned by region, year, bin, sex, fleet)
 #' @export get_comp_prop
 #' @family Model Diagnostics
+#'
 #' @examples
 #' \dontrun{
-#' comp_props <- get_comp_prop(data = data, rep = rep,
-#' age_labels = 2:31, len_labels = seq(41, 99, 2), year_labels = 1960:2024)
+#' comp_props <- get_comp_prop(
+#'   data = data, rep = rep,
+#'   age_labels = 2:31,
+#'   len_labels = seq(41, 99, 2),
+#'   year_labels = 1960:2024
+#' )
 #' }
 get_comp_prop <- function(data,
                           rep,
@@ -241,10 +309,10 @@ get_comp_prop <- function(data,
   if(length(dim(data$AgeingError)) == 3) AgeingError_t <-  data$AgeingError
 
   AgeingError <- AgeingError_t # ageing errors
-  CAA <- rep$CAA # catch at age
-  CAL <- rep$CAL # catch at len
-  SrvIAA <- rep$SrvIAA # survey at age
-  SrvIAL <- rep$SrvIAL # survey at length
+  CAA <- apply(rep$CAA, 2:7, sum) # catch at age
+  CAL <- apply(rep$CAL, 2:7, sum) # catch at len
+  SrvIAA <- apply(rep$SrvIAA, 2:7, sum) # survey at age
+  SrvIAL <- apply(rep$SrvIAL, 2:7, sum) # survey at length
 
   # Observed quantities
   ObsFishAgeComps <- data$ObsFishAgeComps
@@ -442,15 +510,10 @@ get_comp_prop <- function(data,
 #'     \item{2-4}{logistic-normal variants}
 #'   }
 #'
-#' @return A list with one element:
+#' @return A list containing:
 #' \describe{
 #'   \item{res}{Data frame of OSA residuals with columns fleet, index_label, year, index, resid}
 #' }
-#'
-#' @details
-#' For multinomial and Dirichlet-multinomial, observed proportions are scaled to counts.
-#' For logistic-normal, bins with zeros are removed, compositions renormalized,
-#' residuals computed in log-ratio space, and mapped back to original bins.
 #'
 #' @keywords internal
 run_osa <- function(obs,
@@ -773,33 +836,18 @@ get_osa <- function(obs_mat,
 
 }
 
-#' Plots OSA residuals from outputs from get_osa. Much of this code is taken from the afscOM package, but with modificaitons to plot features.
+#' Plot OSA residuals from outputs of get_osa
 #'
-#' @param osa_results List object obtained from get_osa, that contains a dataframe of residuals and aggregated fits.
+#' Generates diagnostic plots for one-step-ahead (OSA) residuals. Includes
+#' QQ-plots with SDNR annotations and bubble plots showing residual magnitude and sign.
 #'
-#' @returns A vareity of plots for OSA residuals (list)
+#' @param osa_results List obtained from get_osa() containing residuals dataframe.
+#'
+#' @return List of plots: \code{sdnr_plot} (QQ-plot) and \code{bubble_plot} (bubble residuals).
 #' @export plot_resids
 #' @family Model Diagnostics
 #' @import dplyr
 #' @import ggplot2
-#'
-#' @examples
-#' \dontrun{
-#' comp_props <- get_comp_prop(data = data, rep = sabie_rtmb_model$rep,
-#'  age_labels = 2:31, len_labels = seq(41, 99, 2), year_labels = 1960:2024)
-#' plot_resids(get_osa(obs_mat = comp_props$Obs_FishAge_mat,
-#'                     exp_mat = comp_props$Pred_FishAge_mat,
-#'                     N = rep(16.52215, length(1999:2023)),
-#'                     years = which(1960:2024 %in% 1999:2023),
-#'                     LN_Sigma = LN_Sigma,
-#'                     fleet = 1,
-#'                     seas = 1,
-#'                     bins = 2:31,
-#'                     comp_type = 0,
-#'                     comp_like = 0,
-#'                     bin_label = "Age"))
-#' osa_plot <- plot_resids(osa_results)
-#' }
 plot_resids <- function(osa_results) {
 
   # extract results

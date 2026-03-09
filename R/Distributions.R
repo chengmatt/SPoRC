@@ -1,14 +1,26 @@
-#' Symmetric Beta Function
+#' Evaluate a symmetric beta log-density
 #'
-#' @param p_val Parameter value
-#' @param p_ub Upper Bound of Parameter
-#' @param p_lb Lower Bound of Parameter
-#' @param p_prsd SD of parameter, higher values have a stronger penalty on bounds, lower values have a more difuse penalty on bounds
-#' @param log whether or not to return the log likelihood
+#' Computes a log-density that penalises a parameter value toward the midpoint
+#' of \code{[p_lb, p_ub]} using a symmetric beta-like kernel. The penalty
+#' strengthens as \code{p_prsd} increases and diffuses as \code{p_prsd}
+#' decreases. Used in SPoRC as a prior for tag reporting rates to discourage
+#' values near the boundaries of the unit interval.
 #'
-#' @returns Returns likelihood values from a symmetric beta distribution
+#' @param p_val Numeric. Parameter value to evaluate; must lie in
+#'   \code{(p_lb, p_ub)}.
+#' @param p_ub Numeric. Upper bound of the parameter support.
+#' @param p_lb Numeric. Lower bound of the parameter support.
+#' @param p_prsd Numeric. Pseudo-standard-deviation controlling prior
+#'   concentration. Larger values produce a stronger penalty toward the
+#'   midpoint \eqn{(p_{ub} + p_{lb}) / 2}; smaller values produce a more
+#'   diffuse prior.
+#' @param log Logical. If \code{TRUE} (default), returns the log-density;
+#'   otherwise returns the density on the probability scale.
+#'
+#' @return Numeric. Log-density (or density if \code{log = FALSE}).
+#'
+#'
 #' @keywords internal
-#'
 dbeta_symmetric <- function(p_val, p_ub, p_lb, p_prsd, log = TRUE) {
   # Calculate mu term
   mu <- p_prsd * log((p_ub + p_lb)/2 - p_lb) - p_prsd * log(0.5)
@@ -22,33 +34,53 @@ dbeta_symmetric <- function(p_val, p_ub, p_lb, p_prsd, log = TRUE) {
 }
 
 
-#' Dirichlet Likelihood
+#' Evaluate a Dirichlet log-density
 #'
-#' @param x vector of values
-#' @param alpha Expected values w/ concentration sum(alpha)
-#' @param log Whether to give log or not
+#' Computes the Dirichlet log-density
+#' \eqn{\log \Gamma(\sum \alpha) - \sum \log \Gamma(\alpha_k) +
+#' \sum (\alpha_k - 1) \log x_k} for a compositional vector \code{x} and
+#' concentration parameter vector \code{alpha}. Used in SPoRC as a prior for
+#' movement rates and recruitment regional apportionment.
 #'
-#' @returns Returns likelihood values from a Dirichlet distribution
+#' @param x Numeric vector of compositional values summing to 1; all elements
+#'   must be strictly positive.
+#' @param alpha Numeric vector of Dirichlet concentration parameters of the
+#'   same length as \code{x}. Larger values of \eqn{\sum \alpha} concentrate
+#'   mass near \eqn{\alpha / \sum \alpha}.
+#' @param log Logical. If \code{TRUE} (default), returns the log-density;
+#'   otherwise returns the density.
+#'
+#' @return Numeric. Log-density (or density if \code{log = FALSE}).
+#'
 #' @keywords internal
-#'
 ddirichlet <- function(x, alpha, log = TRUE) {
   logres = lgamma(sum(alpha)) - sum(lgamma(alpha)) + sum((alpha - 1) * log(x))
   if(log == TRUE) return(logres) else return(exp(logres))
 } # end function
 
-#' Dirichlet Multinomial Likelihood
+#' Evaluate a Dirichlet-multinomial log-likelihood
 #'
-#' From https://github.com/James-Thorson/CCSRA/blob/main/inst/executables/CCSRA_v9.cpp
+#' Computes the Dirichlet-multinomial log-likelihood following the
+#' parameterisation of Thorson et al. (CCSRA). The concentration parameters
+#' are \eqn{\alpha_k = \exp(\ln\theta) \times N \times \hat{p}_k}, so
+#' \eqn{\exp(\ln\theta)} is the per-observation overdispersion scalar: values
+#' near zero approach the multinomial and larger values increase variance.
+#' Non-integer observed counts are supported via \code{lgamma}.
 #'
-#' @param obs Vector of observed values in proportions
-#' @param pred Vector or predicted values in proportions
-#' @param Ntotal Input sample size scalar
-#' @param ln_theta Weighting parameter in log space
-#' @param give_log Whether or not likelihood is in log space
+#' @param obs Numeric vector of observed proportions of length \eqn{K}
+#'   (need not sum exactly to 1 after \code{addtotag} offsets).
+#' @param pred Numeric vector of predicted proportions of length \eqn{K};
+#'   must sum to 1.
+#' @param Ntotal Numeric. Total count (input sample size \eqn{N}).
+#' @param ln_theta Numeric. Log overdispersion parameter. The Dirichlet
+#'   concentration is \eqn{\exp(\ln\theta) \times N \times \hat{p}_k}.
+#' @param give_log Logical. If \code{TRUE} (default), returns the
+#'   log-likelihood; otherwise returns the likelihood.
 #'
-#' @returns returns likelihood values from a dirihclet multinomial
+#' @return Numeric. Log-likelihood (or likelihood if \code{give_log = FALSE}).
+#'
+#'
 #' @keywords internal
-#'
 ddirmult = function(obs, pred, Ntotal, ln_theta, give_log = TRUE) {
   # Set up function variables
   n_c = length(obs) # number of categories
@@ -71,18 +103,35 @@ ddirmult = function(obs, pred, Ntotal, ln_theta, give_log = TRUE) {
   else return(exp(logres))
 } # end function
 
-#' Logistic Normal Likelihood
+#' Evaluate a logistic-normal log-likelihood
 #'
-#' @param obs Vector of observed values in numbers (can be integers or non-integers - vector length of n_bins)
-#' @param pred Vector of predicted values in proportions (vector length of n_bins)
-#' @param give_log whether or not to use log space likelihood
-#' @param Sigma_or_Q Sigma or Precision Matrix
-#' @param type Whether to fit using dgmrf (default; uses precision) or dmvnorm (uses sigma)
+#' Applies the additive log-ratio (ALR) transformation to observed and
+#' predicted compositions (removing the last reference bin) and evaluates
+#' either a Gaussian Markov random field log-density (\code{RTMB::dgmrf},
+#' using a precision matrix) or a multivariate normal log-density
+#' (\code{RTMB::dmvnorm}, using a covariance matrix). The ALR mean vector
+#' is \eqn{\mu_k = \log(\hat{p}_k / \hat{p}_K)}, \eqn{k = 1,\ldots,K-1}.
+#'
+#' @param obs Numeric vector of observed composition values of length
+#'   \eqn{K}. Need not sum to 1; the last element is the ALR reference.
+#' @param pred Numeric vector of predicted proportions of length \eqn{K};
+#'   the last element is the ALR reference.
+#' @param Sigma_or_Q Covariance matrix \eqn{\Sigma} (when
+#'   \code{type = "dmvnorm"}) or precision matrix \eqn{Q = \Sigma^{-1}}
+#'   (when \code{type = "dgmrf"}) of dimension \eqn{(K-1) \times (K-1)}.
+#'   Use \code{\link{get_logistN_Sigma}} to construct \eqn{\Sigma} and
+#'   invert for \eqn{Q}.
+#' @param type Character. \code{"dgmrf"} (default) evaluates via
+#'   \code{RTMB::dgmrf} (preferred for AD efficiency); \code{"dmvnorm"}
+#'   evaluates via \code{RTMB::dmvnorm}.
+#' @param give_log Logical. If \code{TRUE} (default), returns the
+#'   log-likelihood; otherwise returns the likelihood.
+#'
+#' @return Numeric. Log-likelihood (or likelihood if \code{give_log = FALSE}).
 #'
 #' @import RTMB
-#' @returns Returns likelihood values from a logistic normal
-#' @keywords internal
 #'
+#' @keywords internal
 dlogistnormal = function(obs, pred, Sigma_or_Q, type = 'dgmrf', give_log = TRUE) {
   # do logistic transformation on observed values
   tmp_Obs = log(obs[-length(obs)])
@@ -99,18 +148,25 @@ dlogistnormal = function(obs, pred, Sigma_or_Q, type = 'dgmrf', give_log = TRUE)
   return(res)
 }
 
-#' Negative Binomial Likelihood
+#' Evaluate a robust negative binomial log-likelihood
 #'
-#' Approximates negative binomial when non-integer values are provided
+#' Computes the negative binomial log-likelihood using a
+#' \eqn{(\mu, \sigma^2 - \mu)} reparameterisation that remains valid for
+#' non-integer observations via \code{lgamma}. The overdispersion parameter
+#' is recovered as \eqn{k = \mu^2 / (\sigma^2 - \mu)}.
 #'
-#' @param x observations
-#' @param give_log whether to give log
-#' @param log_mu log mu
-#' @param log_var_minus_mu log var minus mu - reparameterize negbin
+#' @param x Numeric. Observed count (may be non-integer).
+#' @param log_mu Numeric. Log of the mean parameter \eqn{\mu}.
+#' @param log_var_minus_mu Numeric. Log of the excess variance
+#'   \eqn{\sigma^2 - \mu}. Must satisfy \eqn{\sigma^2 > \mu} (i.e.,
+#'   overdispersion); the implied size parameter is
+#'   \eqn{k = \mu^2 / (\sigma^2 - \mu)}.
+#' @param give_log Logical. If \code{TRUE} (default), returns the
+#'   log-likelihood; otherwise returns the likelihood.
 #'
-#' @returns Returns likelihood values from a robust negative binomial
+#' @return Numeric. Log-likelihood (or likelihood if \code{give_log = FALSE}).
+#'
 #' @keywords internal
-#'
 dnbinom_robust_noint <- function(x, log_mu, log_var_minus_mu, give_log = TRUE) {
   mu = exp(log_mu)
   var_minus_mu = exp(log_var_minus_mu)
@@ -120,34 +176,45 @@ dnbinom_robust_noint <- function(x, log_mu, log_var_minus_mu, give_log = TRUE) {
 }
 
 
-#' Poisson Likelihood
+#' Evaluate a Poisson log-likelihood for non-integer counts
 #'
-#' Approximates Poisson when non-integer values are provided
+#' Computes \eqn{-\lambda + x \log \lambda - \log \Gamma(x+1)}, which
+#' reduces to the standard Poisson log-likelihood for integer \code{x} and
+#' extends it continuously to non-integer values via \code{lgamma}.
 #'
-#' @param x observations
-#' @param pred predicted
-#' @param give_log if giving log likelihood
+#' @param x Numeric. Observed count (may be non-integer).
+#' @param pred Numeric. Predicted mean \eqn{\lambda > 0}.
+#' @param give_log Logical. If \code{TRUE} (default), returns the
+#'   log-likelihood; otherwise returns the likelihood.
 #'
-#' @returns Returns likelihood values from a poisson
+#' @return Numeric. Log-likelihood (or likelihood if \code{give_log = FALSE}).
+#'
 #' @keywords internal
-#'
 dpois_noint <- function(x, pred, give_log = TRUE) {
   logres <- -pred + x*log(pred) - lgamma(x+1)
   if(give_log == TRUE) return(logres) else return(exp(logres))
 }
 
-#' Get scaled parameters for a scaled beta distribution
+#' Compute shape parameters for a scaled beta distribution
 #'
-#' From https://stackoverflow.com/questions/75165770/beta-distribution-with-bounds-at-0-1-0-5
+#' Converts a mean and standard deviation expressed on the \code{[low, high]}
+#' scale to the \eqn{\alpha} and \eqn{\beta} shape parameters of a beta
+#' distribution defined on \code{[0, 1]} after location-scale transformation.
+#' Used in SPoRC to construct beta priors for steepness (\eqn{h}) bounded to
+#' \eqn{[0.2, 1]}.
 #'
-#' @param low lower bound
-#' @param high upper bound
-#' @param sigma sigma in normal space
-#' @param mu mean in normal space
+#' @param low Numeric. Lower bound of the parameter support.
+#' @param high Numeric. Upper bound of the parameter support.
+#' @param mu Numeric. Prior mean on the \code{[low, high]} scale.
+#' @param sigma Numeric. Prior standard deviation on the \code{[low, high]}
+#'   scale. Must satisfy \eqn{\sigma^2 < \bar{\mu}(1-\bar{\mu})} where
+#'   \eqn{\bar{\mu} = (\mu - \text{low}) / (\text{high} - \text{low})}.
 #'
-#' @returns Returns beta distribution parmeters with bounds
+#' @return Numeric vector \code{c(alpha, beta, low, scale)} where
+#'   \code{scale = high - low}.
+#'
+#'
 #' @keywords internal
-#'
 get_beta_scaled_pars <- function(low, high, mu, sigma) {
   # convert mean and sd to alpha and beta
   scale = high - low

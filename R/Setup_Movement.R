@@ -1,45 +1,45 @@
-#' Construct Parameter Mapping for Movement Fixed Effects
+#' Map unstructured Markov movement parameters
 #'
-#' Internal helper used by \code{Setup_Mod_Movement()} to construct the
-#' TMB parameter mapping for movement parameters under the unstructured
-#' Markov formulation (\code{move_type = 0}).
+#' Internal helper called by \code{\link{Setup_Mod_Movement}} to construct the
+#' TMB/RTMB factor maps for \code{move_pars} (unstructured Markov transitions),
+#' \code{log_move_diffusion_pars} (CTMC diffusion), and
+#' \code{move_preference_pars} (CTMC taxis). Under the unstructured Markov
+#' formulation (\code{move_type = 0}), parameters within each block combination
+#' share a common estimation index; for CTMC (\code{move_type = 1}),
+#' \code{move_pars} is mapped entirely to \code{NA} and only the CTMC-specific
+#' arrays are activated.
 #'
-#' This function defines how movement parameters are shared across
-#' population, age, year, season, and sex blocks. When blocks are specified,
-#' parameters within each block share a common estimated value via a common
-#' factor level in the TMB \code{map} list.
-#'
-#' @param input_list A model input list containing \code{$data}, \code{$par},
-#'   and \code{$map} components. This object is modified and returned.
-#' @param Movement_popblk_spec Either \code{"constant"} (population-invariant
-#'   movement) or a \code{list} of integer vectors defining population blocks
+#' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
+#'   sublists, as constructed by upstream setup functions.
+#' @param Movement_popblk_spec \code{"constant"} for population-invariant
+#'   movement, or a list of integer vectors partitioning populations into blocks
 #'   that share parameters.
-#' @param Movement_ageblk_spec Either \code{"constant"} (age-invariant
-#'   movement) or a \code{list} of integer vectors defining age blocks.
-#' @param Movement_yearblk_spec Either \code{"constant"} (time-invariant
-#'   movement) or a \code{list} of integer vectors defining year blocks.
-#' @param Movement_sexblk_spec Either \code{"constant"} (sex-invariant
-#'   movement) or a \code{list} of integer vectors defining sex blocks.
-#' @param Movement_seasblk_spec Either \code{"constant"} (season-invariant
-#'   movement) or a \code{list} of integer vectors defining seasonal blocks.
-#' @param use_fixed_movement Integer flag (0 or 1). If \code{1}, movement is
-#'   treated as fixed and parameters are not estimated.
+#' @param Movement_ageblk_spec \code{"constant"} for age-invariant movement, or
+#'   a list of integer vectors defining age blocks.
+#' @param Movement_yearblk_spec \code{"constant"} for time-invariant movement,
+#'   or a list of integer vectors defining year blocks.
+#' @param Movement_sexblk_spec \code{"constant"} for sex-invariant movement, or
+#'   a list of integer vectors defining sex blocks.
+#' @param Movement_seasblk_spec \code{"constant"} for season-invariant movement,
+#'   or a list of integer vectors defining season blocks.
+#' @param use_fixed_movement Integer flag. \code{1} = movement rates are
+#'   externally supplied; all \code{move_pars} are mapped to \code{NA} and not
+#'   estimated. \code{0} = movement is estimated.
 #'
-#' @details
-#' For \code{move_type = 0}, movement is parameterized as an unstructured
-#' Markov transition among regions. Parameters are defined for each
-#' population × region_from × region_to × year × season × age × sex
-#' combination (excluding self-transitions).
-#'
-#' Block specifications determine which indices share a common parameter.
-#' Internally, unique integer identifiers are assigned to each block
-#' combination and converted to factors for TMB.
-#'
-#' For \code{move_type = 1} (CTMC), all unstructured movement parameters are
-#' mapped to \code{NA}, and only CTMC-specific parameters are estimated.
-#'
-#' @return The updated \code{input_list} with movement-related entries in
-#'   \code{$map} populated.
+#' @return The input \code{input_list} with three \code{$map} entries updated:
+#'   \describe{
+#'     \item{\code{$map$move_pars}}{Factor vector for unstructured Markov
+#'       transition parameters. Under \code{move_type = 0} with estimated
+#'       movement, cells within the same block receive the same integer index;
+#'       cells outside a spatial model or with fixed movement are \code{NA}.
+#'       Entirely \code{NA} under \code{move_type = 1}.}
+#'     \item{\code{$map$log_move_diffusion_pars}}{Factor vector for CTMC
+#'       diffusion parameters. Active (sequential integers) under
+#'       \code{move_type = 1}; entirely \code{NA} under \code{move_type = 0}.}
+#'     \item{\code{$map$move_preference_pars}}{Factor vector for CTMC
+#'       preference (taxis) parameters. Active under \code{move_type = 1};
+#'       entirely \code{NA} under \code{move_type = 0}.}
+#'   }
 #'
 #' @keywords internal
 do_move_pars_mapping <- function(input_list, Movement_popblk_spec,
@@ -155,47 +155,51 @@ do_move_pars_mapping <- function(input_list, Movement_popblk_spec,
   return(input_list)
 }
 
-#' Construct Mapping for Continuous Movement Deviations and Process Error
+#' Map continuous movement deviation and process-error parameters
 #'
-#' Internal helper used by \code{Setup_Mod_Movement()} to define the TMB
-#' parameter mapping for continuous time-varying movement deviations and
-#' associated process-error parameters.
+#' Internal helper called by \code{\link{Setup_Mod_Movement}} to construct the
+#' TMB/RTMB factor maps for \code{move_devs} (iid deviations on the movement
+#' logit or log-rate surface) and \code{move_pe_pars} (process-error variance
+#' parameters). Deviations are only activated when the model is spatial
+#' (\code{n_regions > 1}), continuous variation is requested
+#' (\code{cont_vary_movement > 0}), and movement is estimated
+#' (\code{use_fixed_movement == 0}). For CTMC movement, deviations are only
+#' assigned to region pairs that are connected in the adjacency matrix. The
+#' resulting integer map is also stored as \code{$data$map_move_devs} for use
+#' in the C++ template.
 #'
-#' @param input_list Model input list containing \code{$data}, \code{$par},
-#'   and \code{$map}. Modified in-place and returned.
-#' @param cont_vary_movement Character string specifying the structure of
-#'   independent deviations (e.g., \code{"iid_y"}, \code{"iid_y_a_s"},
-#'   \code{"iid_p_y_seas_a_s"}).
-#' @param Movement_cont_pe_pars_spec Character string specifying how movement
-#'   process-error parameters are treated. Options:
-#'   \itemize{
-#'     \item \code{"none"}: no process-error parameters.
-#'     \item \code{"fix"}: parameters fixed (not estimated).
-#'     \item \code{"est_shared"}: single shared parameter estimated.
-#'     \item \code{"est_all"}: all process-error parameters estimated independently.
+#' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
+#'   sublists.
+#' @param cont_vary_movement Character string specifying the deviation structure.
+#'   One of \code{"none"}, \code{"iid_y"}, \code{"iid_a"}, \code{"iid_y_a"},
+#'   \code{"iid_y_a_s"}, \code{"iid_y_seas_a_s"}, or the population-specific
+#'   analogues \code{"iid_p_y"}, \code{"iid_p_a"}, \code{"iid_p_y_a"},
+#'   \code{"iid_p_y_a_s"}, \code{"iid_p_y_seas_a_s"}. Dimensions present in
+#'   the string receive unique estimation indices; absent dimensions share a
+#'   single index. \code{"none"} maps all deviations to \code{NA}.
+#' @param Movement_cont_pe_pars_spec Character string controlling estimation of
+#'   the process-error variance for movement deviations. One of:
+#'   \describe{
+#'     \item{\code{"none"} or \code{"fix"}}{All \code{move_pe_pars} held fixed
+#'       (mapped to \code{NA} or at starting values).}
+#'     \item{\code{"est_shared"}}{Single variance parameter shared across all
+#'       dimensions (all elements mapped to index 1).}
+#'     \item{\code{"est_all"}}{All \code{move_pe_pars} estimated independently
+#'       with dimensions
+#'       \code{[n_pop × n_regions × n_seas × n_ages × n_sexes]}.}
 #'   }
 #'
-#' @details
-#' When continuous movement variation is enabled
-#' (\code{cont_vary_movement != "none"}) and movement is estimated,
-#' this function assigns unique factor levels to movement deviation
-#' parameters according to the specified structure.
-#'
-#' Supported structures include:
-#' \itemize{
-#'   \item Year-only (\code{"iid_y"})
-#'   \item Age-only (\code{"iid_a"})
-#'   \item Year × Age (\code{"iid_y_a"})
-#'   \item Year × Age × Sex (\code{"iid_y_a_s"})
-#'   \item Year × Season × Age × Sex (\code{"iid_y_seas_a_s"})
-#'   \item Population-interacted analogues (e.g., \code{"iid_p_y_a_s"})
-#' }
-#'
-#' For CTMC movement, deviations are assigned only to region pairs that are
-#' connected in the adjacency matrix.
-#'
-#' @return The updated \code{input_list} with \code{$map$move_devs} and
-#'   \code{$map$move_pe_pars} defined.
+#' @return The input \code{input_list} with three entries updated:
+#'   \describe{
+#'     \item{\code{$map$move_devs}}{Factor vector for movement deviations.
+#'       Active cells receive sequential integer indices; non-adjacent CTMC
+#'       pairs and inactive configurations are \code{NA}.}
+#'     \item{\code{$data$map_move_devs}}{Integer array (same dimensions as
+#'       \code{$par$move_devs}) storing the numeric version of the factor map
+#'       for use in the C++ objective function.}
+#'     \item{\code{$map$move_pe_pars}}{Factor vector for process-error
+#'       variance parameters, following \code{Movement_cont_pe_pars_spec}.}
+#'   }
 #'
 #' @keywords internal
 do_cont_vary_move_mapping <- function(input_list, cont_vary_movement, Movement_cont_pe_pars_spec) {
@@ -365,209 +369,163 @@ do_cont_vary_move_mapping <- function(input_list, cont_vary_movement, Movement_c
 
 }
 
-#' Configure Movement Processes for SPoRC
+#' Set up movement model inputs and parameter structures
 #'
-#' Define and initialize movement model components for SPoRC, including
-#' unstructured Markov movement (\code{move_type = 0}) and Continuous Time
-#' Markov Chain (CTMC) movement (\code{move_type = 1}). This function
-#' validates inputs, initializes parameter arrays, constructs TMB mapping
-#' structures, and updates the model input list accordingly.
+#' Configures all aspects of spatial movement for the estimation model,
+#' supporting both unstructured Markov transition (\code{move_type = 0}) and
+#' Continuous Time Markov Chain (\code{move_type = 1}) formulations, with
+#' optional continuous iid deviations on the movement surface. Validates all
+#' inputs, initialises parameter arrays, constructs TMB/RTMB factor maps, and
+#' populates \code{input_list$data} accordingly. Must be called after
+#' \code{\link{Setup_Mod_Biologicals}}.
 #'
-#' @param input_list A list containing \code{$data}, \code{$par}, and
-#'   \code{$map} components as returned by \code{Setup_Mod_Basics()} or a
-#'   preceding \code{Setup_Mod_*()} call. This object is updated and returned.
-#'
-#' @param move_type Integer specifying the movement model formulation:
-#'   \itemize{
-#'     \item \code{0}: Unstructured Markov transition model. Region-to-region
-#'       transition probabilities are parameterized via a multinomial logit
-#'       with a reference-cell constraint. Supports flexible blocking across
-#'       populations, ages, years, seasons, and sexes.
-#'     \item \code{1}: Continuous Time Markov Chain (CTMC). Transitions are
-#'       driven by diffusion and preference components defined through
-#'       user-specified design matrices. Requires \code{adjacency_mat},
-#'       \code{area_r}, \code{ctmc_move_dat}, \code{diffusion_formula}, and
-#'       \code{preference_formula}. Parameter blocking is not supported for
-#'       CTMC; all block specs must remain \code{"constant"}.
-#'   }
-#'
-#' @param do_recruits_move Integer (0/1) indicating whether age-1 fish
-#'   (recruits) participate in movement. If \code{0}, movement deviations
-#'   for age-1 are fixed at zero and CTMC rows corresponding to the minimum
-#'   age are excluded from the design matrix.
-#'
-#' @param use_fixed_movement Integer (0/1). If \code{1}, movement rates are
-#'   supplied externally via \code{Fixed_Movement} and no movement parameters
-#'   are estimated. If \code{0}, movement is estimated from data.
-#'
-#' @param Fixed_Movement Numeric array of dimension
-#'   \code{[n_pop, n_regions, n_regions, n_years, n_seas, n_ages, n_sexes]}
-#'   containing movement probability matrices (rows must sum to 1 for each
-#'   \code{[pop, year, seas, age, sex]} stratum). Required when
-#'   \code{use_fixed_movement = 1}. If \code{NA} (the default), a neutral
-#'   identity matrix (no movement) is constructed automatically.
-#'
-#' @param Use_Movement_Prior Integer (0/1) indicating whether Dirichlet
-#'   priors are applied to movement probabilities. Priors are specified via
-#'   \code{Movement_prior}.
-#'
-#' @param Movement_prior Optional \code{data.frame} defining Dirichlet prior
-#'   concentration parameters for movement probability rows. Must include
-#'   columns \code{pop}, \code{region_from}, \code{year}, \code{seas},
-#'   \code{age}, \code{sex}, and \code{alpha}, where \code{alpha} is a
-#'   list-column with each element a numeric vector of length \code{n_regions}
-#'   giving the Dirichlet concentration for transitions out of
-#'   \code{region_from}. Larger values concentrate the prior toward the
-#'   mean of a symmetric Dirichlet; values near 1 are uninformative.
-#'   Only used when \code{Use_Movement_Prior = 1}.
-#'
-#' @param Movement_popblk_spec Either \code{"constant"} for
-#'   population-invariant movement (all populations share the same movement
-#'   parameters) or a \code{list} of integer vectors partitioning populations
-#'   into blocks that share a common set of parameters. For example, with
-#'   3 populations, \code{list(c(1, 2), 3)} estimates one shared parameter
-#'   for populations 1 and 2, and a separate parameter for population 3.
-#'   Ignored when \code{move_type = 1}.
-#'
-#' @param Movement_ageblk_spec Either \code{"constant"} for age-invariant
-#'   movement or a \code{list} of integer vectors partitioning age classes
-#'   into blocks. For example, \code{list(c(1:4), c(5:10))} creates a
-#'   juvenile block (ages 1--4) and an adult block (ages 5--10). Ignored
-#'   when \code{move_type = 1}.
-#'
-#' @param Movement_yearblk_spec Either \code{"constant"} for time-invariant
-#'   movement or a \code{list} of integer vectors partitioning years into
-#'   blocks. For example, \code{list(c(1:20), c(21:40))} creates two
-#'   temporal periods with distinct movement parameters. For continuous
-#'   time-varying movement, use \code{cont_vary_movement} instead. Ignored
-#'   when \code{move_type = 1}.
-#'
-#' @param Movement_seasblk_spec Either \code{"constant"} for season-invariant
-#'   movement or a \code{list} of integer vectors partitioning seasons into
-#'   blocks. For example, in a 4-season model, \code{list(c(1, 2), c(3, 4))}
-#'   groups winter/spring and summer/fall into two blocks. Ignored when
-#'   \code{move_type = 1}.
-#'
-#' @param Movement_sexblk_spec Either \code{"constant"} for sex-invariant
-#'   movement or a \code{list} of integer vectors partitioning sexes into
-#'   blocks. For example, \code{list(1, 2)} estimates sex-specific movement
-#'   rates independently. Ignored when \code{move_type = 1}.
-#'
-#' @param cont_vary_movement Character string specifying the structure of
-#'   continuous (iid) movement deviations applied on top of the fixed-effect
-#'   movement surface. Options:
-#'   \itemize{
-#'     \item \code{"none"}: No deviations (default).
-#'     \item \code{"iid_y"}: Year-varying deviations, shared across pops,
-#'       ages, sexes, and seasons.
-#'     \item \code{"iid_a"}: Age-varying deviations, shared across pops,
-#'       years, sexes, and seasons.
-#'     \item \code{"iid_y_a"}: Year \eqn{\times} Age deviations.
-#'     \item \code{"iid_y_a_s"}: Year \eqn{\times} Age \eqn{\times} Sex.
-#'     \item \code{"iid_y_seas_a_s"}: Year \eqn{\times} Season \eqn{\times}
-#'       Age \eqn{\times} Sex.
-#'     \item \code{"iid_p_y"}, \code{"iid_p_a"}, \code{"iid_p_y_a"},
-#'       \code{"iid_p_y_a_s"}, \code{"iid_p_y_seas_a_s"}: Population-specific
-#'       analogues of the above.
-#'   }
-#'   Deviations are penalized as independent normal random effects with
-#'   variance controlled by \code{Movement_cont_pe_pars_spec}.
-#'
-#' @param Movement_cont_pe_pars_spec Character string controlling the
-#'   estimation of process-error variance parameters for continuous movement
-#'   deviations:
-#'   \itemize{
-#'     \item \code{"none"}: No process-error parameters (use with
-#'       \code{cont_vary_movement = "none"}).
-#'     \item \code{"fix"}: Parameters are initialized but not estimated;
-#'       use to fix the deviation variance at its starting value.
-#'     \item \code{"est_shared"}: A single variance is estimated and shared
-#'       across all dimensions.
-#'     \item \code{"est_all"}: All variance parameters are estimated
-#'       independently with dimensions
-#'       \code{[n_pop, n_regions, n_seas, n_ages, n_sexes]}.
-#'   }
-#'
-#' @param ctmc_move_dat \code{data.frame} required when \code{move_type = 1}.
-#'   Each row corresponds to a unique combination of population, region,
-#'   year, season, age, and sex for which CTMC parameters are evaluated.
-#'   Must contain columns \code{pop}, \code{regions}, \code{years},
-#'   \code{seas}, \code{ages}, \code{sexes}, plus any covariate columns
-#'   referenced in \code{diffusion_formula} or \code{preference_formula}.
-#'   Projection years exceeding the number of estimation years are
-#'   automatically capped to prevent spline extrapolation.
-#'
-#' @param adjacency_mat Square numeric matrix of dimension
-#'   \code{n_regions \eqn{\times} n_regions} with 1 indicating an allowed
-#'   transition between regions and 0 indicating no direct connection.
-#'   Diagonal entries should be 0. Required for \code{move_type = 1}; for
-#'   \code{move_type = 0} a fully connected matrix (all off-diagonal entries
-#'   1) is constructed automatically.
-#'
-#' @param area_r Numeric vector of length \code{n_regions} giving the area
-#'   of each region. Used in the CTMC parameterization to scale diffusion
-#'   rates. Required when \code{move_type = 1}; defaults to a vector of ones.
-#'
-#' @param diffusion_formula An R \code{formula} object (e.g.,
-#'   \code{~ bs(depth, df = 4)}) defining the linear predictor for the
-#'   CTMC diffusion component. All variables on the right-hand side must
-#'   be present as columns in \code{ctmc_move_dat}. Required when
-#'   \code{move_type = 1}.
-#'
-#' @param preference_formula An R \code{formula} object defining the linear
-#'   predictor for the CTMC habitat-preference (taxis) component. All
-#'   variables must be present in \code{ctmc_move_dat}. Required when
-#'   \code{move_type = 1}.
-#'
-#' @param ctmc_diffusion_bounds Integer (0/1). If \code{1}, bounds are
-#'   applied to the diffusion parameters to ensure the resulting CTMC
-#'   generator matrix is a valid Metzler matrix (non-negative off-diagonal
-#'   entries). Defaults to \code{0}.
-#'
-#' @param ... Optional named starting values passed as arrays or vectors.
-#'   Accepted names are \code{move_pars}, \code{move_devs},
-#'   \code{move_pe_pars}, \code{log_move_diffusion_pars}, and
-#'   \code{move_preference_pars}.
-#'
-#' @details
-#' \strong{Unstructured Markov movement (\code{move_type = 0}):}
-#'
+#' @section Unstructured Markov movement (\code{move_type = 0}):
 #' Transition probabilities from region \eqn{r} to all other regions are
-#' parameterized via a multinomial logit with a reference cell. The
-#' parameter array \code{move_pars} has dimensions
-#' \code{[n_pop, n_regions, n_regions - 1, n_years, n_seas, n_ages, n_sexes]}.
-#' Block specifications (\code{Movement_*blk_spec}) control parameter
-#' sharing: indices within the same block receive the same TMB factor level
-#' and are jointly estimated as a single free parameter.
+#' parameterised via a multinomial logit with a reference-cell constraint.
+#' The parameter array \code{move_pars} has dimensions
+#' \code{[n_pop × n_regions × (n_regions - 1) × n_years × n_seas × n_ages × n_sexes]}.
+#' Block specifications (\code{Movement_*blk_spec}) control sharing: indices
+#' within the same block receive the same TMB factor level and are estimated
+#' as a single free parameter. A fully connected adjacency matrix is
+#' constructed automatically. Blocked and continuous time-varying movement
+#' can be combined: use \code{Movement_yearblk_spec} for discrete structural
+#' breaks and \code{cont_vary_movement} for residual year-to-year variation.
 #'
-#' \strong{CTMC movement (\code{move_type = 1}):}
-#'
+#' @section CTMC movement (\code{move_type = 1}):
 #' The instantaneous rate matrix \eqn{Q} is decomposed into diffusion
-#' (\eqn{\theta}) and preference (\eqn{\gamma}) components following the
-#' mechanistic formulation of Thorson et al. Design matrices for both
-#' components are derived from user-supplied formulas evaluated on
-#' \code{ctmc_move_dat}. The matrix exponential \eqn{\exp(Q \Delta t)} gives
-#' the discrete-time movement probability matrix for each time step.
-#' Movement blocks are not supported; use formula covariates to introduce
-#' structural variation across populations, ages, sexes, or seasons.
+#' (\eqn{\theta}) and preference (\eqn{\gamma}) components following
+#' Thorson et al. Design matrices for both components are derived from
+#' \code{diffusion_formula} and \code{preference_formula} evaluated on
+#' \code{ctmc_move_dat}. The discrete-time movement matrix for each time step
+#' is \eqn{\exp(Q \Delta t)}. Parameter blocking is not supported for CTMC;
+#' all \code{Movement_*blk_spec} arguments must remain \code{"constant"}.
+#' Structural variation across populations, ages, sexes, or seasons should
+#' instead be introduced through formula covariates in \code{ctmc_move_dat}.
 #'
-#' \strong{Continuous movement deviations:}
+#' @section Continuous movement deviations:
+#' IID deviations (\code{move_devs}) are added to the movement logit surface
+#' (unstructured Markov) or log-rate surface (CTMC) before computing
+#' probabilities. Deviations are penalised as normal random effects; the
+#' variance is optionally estimated via \code{Movement_cont_pe_pars_spec}.
+#' If \code{do_recruits_move = 0}, age-1 deviations are fixed at zero.
 #'
-#' Time- or age-varying iid deviations (\code{move_devs}) are added to the
-#' movement logit surface (unstructured Markov) or to the log-rate surface
-#' (CTMC) before computing probabilities. These are random effects penalized
-#' by a half-normal prior on the standard deviation, with the variance
-#' (process error) optionally estimated via \code{Movement_cont_pe_pars_spec}.
+#' @param input_list Named list with \code{$data}, \code{$par}, \code{$map},
+#'   and \code{$verbose} sublists, as returned by upstream setup functions.
+#' @param move_type Integer. Movement model formulation: \code{0} =
+#'   unstructured Markov; \code{1} = CTMC. Default \code{0}.
+#' @param do_recruits_move Integer flag. \code{0} = age-1 fish do not move
+#'   (default); movement deviations and CTMC rows for the minimum age are
+#'   fixed at zero. \code{1} = recruits participate in movement.
+#' @param use_fixed_movement Integer flag. \code{0} = estimate movement
+#'   (default); \code{1} = fix movement rates to \code{Fixed_Movement} and
+#'   map all movement parameters to \code{NA}.
+#' @param Fixed_Movement Numeric array of externally supplied movement
+#'   probability matrices, dimensioned
+#'   \code{[n_pop × n_regions × n_regions × n_years × n_seas × n_ages × n_sexes]}.
+#'   Each \code{[n_regions × n_regions]} slice must be row-stochastic (rows
+#'   sum to 1). Required when \code{use_fixed_movement = 1}. If \code{NA}
+#'   (default), an identity matrix (no movement) is constructed internally.
+#' @param Use_Movement_Prior Integer flag. \code{1} = apply Dirichlet priors
+#'   to movement row probabilities; \code{0} = no priors (default). Requires
+#'   \code{Movement_prior}.
+#' @param Movement_prior Data frame of Dirichlet prior concentration
+#'   parameters. Required columns: \code{pop}, \code{region_from},
+#'   \code{year}, \code{seas}, \code{age}, \code{sex}, and \code{alpha},
+#'   where \code{alpha} is a list-column with each element a numeric vector
+#'   of length \code{n_regions} giving the Dirichlet concentration for
+#'   transitions out of \code{region_from}. Values near 1 are uninformative;
+#'   larger values concentrate the prior toward equal movement. Only used
+#'   when \code{Use_Movement_Prior = 1}.
+#' @param Movement_popblk_spec \code{"constant"} (default, shared across all
+#'   populations) or a list of integer vectors partitioning populations into
+#'   blocks. Example: \code{list(c(1, 2), 3)} shares parameters for
+#'   populations 1 and 2 and estimates a separate parameter for population 3.
+#'   Ignored when \code{move_type = 1}.
+#' @param Movement_ageblk_spec \code{"constant"} (default) or a list of
+#'   integer vectors defining age blocks. Example: \code{list(1:4, 5:10)}
+#'   creates a juvenile block (ages 1--4) and an adult block (ages 5--10).
+#'   Ignored when \code{move_type = 1}.
+#' @param Movement_yearblk_spec \code{"constant"} (default) or a list of
+#'   integer vectors defining year blocks for discrete structural breaks in
+#'   movement. For residual annual variation, use \code{cont_vary_movement}
+#'   instead. Ignored when \code{move_type = 1}.
+#' @param Movement_seasblk_spec \code{"constant"} (default) or a list of
+#'   integer vectors defining season blocks. Example: \code{list(c(1, 2),
+#'   c(3, 4))} groups winter/spring and summer/fall. Ignored when
+#'   \code{move_type = 1}.
+#' @param Movement_sexblk_spec \code{"constant"} (default, sex-invariant) or
+#'   a list of integer vectors defining sex blocks. Example: \code{list(1, 2)}
+#'   estimates sex-specific movement independently. Ignored when
+#'   \code{move_type = 1}.
+#' @param cont_vary_movement Character string specifying the structure of
+#'   continuous iid movement deviations added on top of the fixed-effect
+#'   movement surface. Default \code{"none"}. Options:
+#'   \describe{
+#'     \item{\code{"none"}}{No deviations.}
+#'     \item{\code{"iid_y"}}{Year-varying; shared across pop, age, sex, season.}
+#'     \item{\code{"iid_a"}}{Age-varying; shared across pop, year, sex, season.}
+#'     \item{\code{"iid_y_a"}}{Year \eqn{\times} age.}
+#'     \item{\code{"iid_y_a_s"}}{Year \eqn{\times} age \eqn{\times} sex.}
+#'     \item{\code{"iid_y_seas_a_s"}}{Year \eqn{\times} season \eqn{\times} age \eqn{\times} sex.}
+#'     \item{\code{"iid_p_y"}, \code{"iid_p_a"}, \code{"iid_p_y_a"}, \code{"iid_p_y_a_s"}, \code{"iid_p_y_seas_a_s"}}{Population-specific analogues of the above.}
+#'   }
+#' @param Movement_cont_pe_pars_spec Character string specifying estimation of
+#'   process-error variance for \code{cont_vary_movement} deviations. One of:
+#'   \describe{
+#'     \item{\code{"none"}}{No process-error parameters; use with \code{cont_vary_movement = "none"}.}
+#'     \item{\code{"fix"}}{Parameters initialised but not estimated; fixes
+#'       deviation variance at its starting value.}
+#'     \item{\code{"est_shared"}}{Single variance estimated, shared across all
+#'       dimensions.}
+#'     \item{\code{"est_all"}}{All variance parameters estimated independently,
+#'       dimensioned \code{[n_pop × n_regions × n_seas × n_ages × n_sexes]}.}
+#'   }
+#' @param ctmc_move_dat Data frame required when \code{move_type = 1}. Each
+#'   row corresponds to a unique pop–region–year–season–age–sex combination.
+#'   Required columns: \code{pop}, \code{regions}, \code{years}, \code{seas},
+#'   \code{ages}, \code{sexes}, plus any covariate columns referenced in
+#'   \code{diffusion_formula} or \code{preference_formula}. Projection years
+#'   exceeding \code{n_years} are automatically capped to the final estimation
+#'   year to prevent spline extrapolation.
+#' @param adjacency_mat Square numeric matrix \code{[n_regions × n_regions]}
+#'   with 1 indicating an allowed transition and 0 indicating no direct
+#'   connection; diagonal should be 0. Required for \code{move_type = 1}.
+#'   For \code{move_type = 0} a fully connected matrix is constructed
+#'   automatically.
+#' @param area_r Numeric vector of length \code{n_regions} giving the area of
+#'   each region, used to scale CTMC diffusion rates. Required for
+#'   \code{move_type = 1}. Default: \code{rep(1, n_regions)}.
+#' @param diffusion_formula R \code{formula} defining the linear predictor for
+#'   the CTMC diffusion (\eqn{\theta}) component (e.g.,
+#'   \code{~ bs(depth, df = 4)}). All right-hand-side variables must be
+#'   present in \code{ctmc_move_dat}. Required for \code{move_type = 1}.
+#' @param preference_formula R \code{formula} defining the linear predictor for
+#'   the CTMC habitat-preference (taxis, \eqn{\gamma}) component. All
+#'   variables must be present in \code{ctmc_move_dat}. Required for
+#'   \code{move_type = 1}.
+#' @param ctmc_diffusion_bounds Integer flag. \code{1} = apply bounds to
+#'   diffusion parameters to ensure the CTMC generator matrix is a valid
+#'   Metzler matrix (non-negative off-diagonal entries). \code{0} = no bounds
+#'   (default).
+#' @param ... Optional starting value overrides, passed by name. Recognised
+#'   arguments:
+#'   \describe{
+#'     \item{\code{move_pars}}{Array \code{[n_pop × n_regions × (n_regions-1) × n_years × n_seas × n_ages × n_sexes]}. Default: \code{0} (equal movement on logit scale).}
+#'     \item{\code{log_move_diffusion_pars}}{Vector of length \code{n_theta}. Default: \code{log(0.1)}.}
+#'     \item{\code{move_preference_pars}}{Vector of length \code{n_gamma}. Default: \code{0}.}
+#'     \item{\code{move_devs}}{Array \code{[n_pop × n_regions × (n_regions-1) × (n_years + n_proj_yrs_devs) × n_seas × n_ages × n_sexes]}. Default: \code{0}.}
+#'     \item{\code{move_pe_pars}}{Array \code{[n_pop × n_regions × n_seas × n_ages × n_sexes]}. Default: \code{0}.}
+#'   }
 #'
-#' \strong{Adjacency and projection handling:}
-#'
-#' An internal collapsed adjacency matrix (dropping the diagonal) is
-#' constructed and stored in \code{input_list$data$adjacency_collapsed} for
-#' use in the TMB template. For CTMC projection years beyond the estimation
-#' period, covariate values are reused from the final estimation year to
-#' prevent spline extrapolation while still allowing covariate-driven
-#' movement during projections.
-#'
+#' @return The input \code{input_list} with \code{$data}, \code{$par}, and
+#'   \code{$map} updated. Key additions to \code{$data} include
+#'   \code{move_type}, \code{use_fixed_movement}, \code{Fixed_Movement},
+#'   \code{adjacency_mat}, \code{adjacency_collapsed}, \code{area_r},
+#'   \code{ctmc_move_dat}, \code{diffusion_formula}, \code{preference_formula},
+#'   and \code{cont_vary_movement} (stored as an integer code). Parameter
+#'   arrays \code{move_pars}, \code{log_move_diffusion_pars},
+#'   \code{move_preference_pars}, \code{move_devs}, and \code{move_pe_pars}
+#'   are added to \code{$par}, with corresponding factor maps in \code{$map}.
 #'
 #'
 #' @export Setup_Mod_Movement

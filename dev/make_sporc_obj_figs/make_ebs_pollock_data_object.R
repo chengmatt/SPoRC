@@ -16,7 +16,10 @@ ebswp_SPoRC_data$n_regions <- 1
 ebswp_SPoRC_data$n_sexes <- 1
 ebswp_SPoRC_data$n_fish_fleets <- 1
 ebswp_SPoRC_data$n_srv_fleets <- 3
+ebswp_SPoRC_data$n_pop <- 1
+ebswp_SPoRC_data$natal_region <- 1
 
+n_pop <- 1
 n_regions <- ebswp_SPoRC_data$n_regions
 n_yrs <- length(ebswp_SPoRC_data$years)
 n_ages <- length(ebswp_SPoRC_data$ages)
@@ -28,13 +31,13 @@ yrs <- in_dat$styr:in_dat$endyr
 
 # Biologicals --------------------------------------------------------------
 # WAA: region, year, seas, age, sex
-ebswp_SPoRC_data$WAA <- array(0, dim = c(n_regions, n_yrs, n_seas, n_ages, n_sexes))
+ebswp_SPoRC_data$WAA <- array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
 # MatAA: region, year, seas, age, sex
-ebswp_SPoRC_data$MatAA <- array(0, dim = c(n_regions, n_yrs, n_seas, n_ages, n_sexes))
+ebswp_SPoRC_data$MatAA <- array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
 for(y in 1:n_yrs) {
   for(seas in 1:n_seas) {
-    ebswp_SPoRC_data$WAA[1, y, seas, , 1] <- in_dat$wt_ssb[y, 1:n_ages]
-    ebswp_SPoRC_data$MatAA[1, y, seas, , 1] <- in_dat$p_mature[1:n_ages]
+    ebswp_SPoRC_data$WAA[,1, y, seas, , 1] <- in_dat$wt_ssb[y, 1:n_ages]
+    ebswp_SPoRC_data$MatAA[,1, y, seas, , 1] <- in_dat$p_mature[1:n_ages]
   }
 }
 

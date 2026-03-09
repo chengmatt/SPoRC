@@ -1,51 +1,58 @@
 #' Distribute Tagged Fish Releases to Full Population Dimensions
 #'
-#' When tag release data are not recorded at full population resolution
-#' (i.e., when one or more of population, age, or sex dimensions are not
-#' attended in \code{tag_attr}), this function distributes the known tag
-#' totals out to full \code{[n_pop, n_ages, n_sexes]} resolution using
+#' When tag release data are not recorded at full population resolution —
+#' i.e. when one or more of the population, age, or sex dimensions are
+#' unattended in \code{tag_attr} — this function distributes the known tag
+#' totals to full \code{[n_pop, n_ages, n_sexes]} resolution using
 #' apportionment weights derived from the release platform (population
-#' abundance, catch, or survey index). If all three dimensions are attended
-#' (\code{tag_attr = "p_a_s"}), the function returns \code{tagged_fish}
-#' unchanged.
+#' abundance, fishery catch-at-age, or survey index-at-age). If all three
+#' dimensions are attended (\code{tag_attr = "p_a_s"}), \code{tagged_fish}
+#' is returned unchanged with no computation performed.
 #'
-#' Apportionment is performed conditionally on the attended dimensions. For
-#' each cell \code{[p, a, s]}, the normalized weight is the raw weight
-#' divided by the sum of raw weights over all cells that share the same
-#' attended-dimension indices. For example, if only age is attended, the
-#' denominator is the total weight at that age across all populations and
-#' sexes, so that the age totals in \code{tagged_fish} are preserved while
-#' tags are distributed across the unattended population and sex dimensions.
+#' Apportionment weights are constructed from numbers-at-age
+#' (\code{platform = "population"}), numbers-at-age multiplied by fishery
+#' selectivity (\code{platform = "fishery"}), or numbers-at-age multiplied
+#' by survey selectivity (\code{platform = "survey"}), all evaluated at the
+#' release region, year, and season. Weights are then normalised
+#' conditionally on the attended dimensions: the denominator for cell
+#' \code{[p, a, s]} is the sum of raw weights across all cells that share
+#' the same indices in the attended dimensions. This ensures that the
+#' marginal totals of \code{tagged_fish} are preserved exactly along every
+#' attended dimension. For example, if only age is attended
+#' (\code{tag_attr = "a"}), age-specific totals in \code{tagged_fish} are
+#' preserved while tags are distributed across population and sex in
+#' proportion to the platform weights.
 #'
 #' @param tagged_fish Numeric vector or array of released tagged fish for a
-#'   single tag cohort, with values placed into index 1 of any unattended
-#'   dimensions. Will be reshaped internally to
-#'   \code{[n_pop, n_ages, n_sexes]}.
+#'   single tag cohort. Unattended dimensions are expected to be collapsed
+#'   to index 1. Reshaped internally to \code{[n_pop, n_ages, n_sexes]}.
 #' @param tag_attr Character string specifying which population dimensions
-#'   are attended. Built from any combination of \code{"p"} (population),
-#'   \code{"a"} (age), and \code{"s"} (sex), joined by underscores (e.g.,
-#'   \code{"p_a_s"}, \code{"a"}, \code{"p_a"}). See
-#'   \code{\link{Setup_Mod_Tagging}} for full details.
-#' @param tag_release_platform Character vector of length 2 giving the
-#'   release platform (\code{"population"}, \code{"fishery"}, or
-#'   \code{"survey"}) and the fleet index (or \code{NA} for
-#'   \code{"population"}) for this tag cohort.
-#' @param srv_sel Numeric array of survey selectivity used as apportionment
-#'   weights when \code{platform = "survey"}.
-#' @param fish_sel Numeric array of fishery selectivity used as apportionment weights
-#'   when \code{platform = "fishery"}.
-#' @param NAA Numeric array of numbers-at-age prior to movement, used as apportionment weights
-#'   when \code{platform = "population"}.
-#' @param ty Integer. Current model year index.
-#' @param tseas Integer. Current season index.
-#' @param tr Integer. Release region index.
+#'   are attended in \code{tagged_fish}. Constructed from any combination of
+#'   \code{"p"} (population), \code{"a"} (age), and \code{"s"} (sex),
+#'   joined by underscores (e.g. \code{"p_a_s"}, \code{"a"}, \code{"p_a"}).
+#'   See \code{\link{Setup_Mod_Tagging}} for the full set of valid strings.
+#' @param tag_release_platform Character vector of length 2. Element 1 is
+#'   the release platform: one of \code{"population"}, \code{"fishery"}, or
+#'   \code{"survey"}. Element 2 is the fleet index as a character string
+#'   (coerced to integer internally), or \code{NA} when
+#'   \code{platform = "population"}.
+#' @param srv_sel Numeric array of survey selectivity
+#'   \code{[n_regions, n_yrs, n_ages, n_sexes, n_srv_fleets]}. Used as the
+#'   age-sex apportionment weight when \code{platform = "survey"}.
+#' @param fish_sel Numeric array of fishery selectivity
+#'   \code{[n_regions, n_yrs, n_ages, n_sexes, n_fish_fleets]}. Used as the
+#'   age-sex apportionment weight when \code{platform = "fishery"}.
+#' @param NAA Numeric array of numbers-at-age prior to movement
+#'   \code{[n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes]}. Used
+#'   directly as weights when \code{platform = "population"}, and multiplied
+#'   by selectivity for fishery and survey platforms.
+#' @param ty Integer. Model year index of the tag release cohort.
+#' @param tseas Integer. Season index of the tag release cohort.
+#' @param tr Integer. Region index of the tag release cohort.
 #' @param n_pop Integer. Number of populations.
 #' @param n_ages Integer. Number of age classes.
-#' @param n_sexes Integer. Number of sexes.
+#' @param n_sexes Integer. Number of sexes (1 or 2).
 #'
-#' @return Numeric array of dimensions \code{[n_pop, n_ages, n_sexes]} with
-#'   tagged fish distributed to full population resolution according to the
-#'   apportionment weights.
 #'
 #' @keywords internal
 release_conv_tag_attr <- function(tagged_fish,
@@ -62,8 +69,8 @@ release_conv_tag_attr <- function(tagged_fish,
                                   n_sexes
                                   ) {
 
-  "c" =RTMB::ADoverload("c")
-  "[<-" =RTMB::ADoverload("[<-")
+  "c" = RTMB::ADoverload("c")
+  "[<-" = RTMB::ADoverload("[<-")
 
   # reshape into array
   tagged_fish = array(tagged_fish, dim = c(n_pop, n_ages, n_sexes))

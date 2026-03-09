@@ -1,16 +1,50 @@
 #' Get Time Series Plots
 #'
-#' @param rep List of n_models of `SPoRC` report lists
-#' @param sd_rep List of n_models of `SPoRC` sdreport lists
-#' @param model_names Vector of model names
-#' @param do_ci Boolean for whether confidence intervals are plotted
+#' Generates a suite of time series plots for key population dynamics quantities
+#' (spawning stock biomass, dynamic unfished SSB, total biomass, recruitment, and
+#' fishing mortality) across one or more SPoRC model runs. Optionally overlays
+#' approximate 95% confidence intervals derived from the delta method via the
+#' sdreport.
 #'
-#' @returns Plots of spawning biomass, dynamic b0, total biomass, recruitment, and fishing mortality time-series across models
+#' @param rep List of length \code{n_models}, where each element is a SPoRC
+#'   report list (i.e. the output of \code{obj$report()} after optimisation).
+#' @param sd_rep List of length \code{n_models}, where each element is a SPoRC
+#'   sdreport list (i.e. the output of \code{sdreport(obj)}). Used to extract
+#'   delta-method standard errors on log-scale quantities (\code{log_SSB},
+#'   \code{log_Dynamic_SSB0}, \code{log_Total_Biom}, \code{log_Rec}).
+#' @param model_names Character vector of length \code{n_models} giving display
+#'   names for each model run. Used as legend labels across all plots.
+#' @param do_ci Logical. If \code{TRUE} (default), approximate 95% confidence
+#'   ribbons are added to SSB, total biomass, dynamic SSB0, and recruitment
+#'   plots. Ribbons are computed on the natural scale as
+#'   \code{exp(log(value) ± 1.96 * se)}.
+#'
+#' @return A named list of seven \code{ggplot} objects:
+#' \describe{
+#'   \item{[[1]] comb_ts_plot}{All quantities faceted by Type × Region.}
+#'   \item{[[2]] f_ts_plot}{Fishing mortality by fleet and season, faceted by Region.}
+#'   \item{[[3]] rec_ts_plot}{Recruitment by population, faceted by Region.}
+#'   \item{[[4]] ssb_ts_plot}{Spawning stock biomass by population, faceted by Region.
+#'     Dynamic SSB0 is excluded from this panel.}
+#'   \item{[[5]] total_biom_plot}{Total biomass by population, faceted by Region.}
+#'   \item{[[6]] ssb0_plot}{Dynamic unfished SSB (B0) by population, faceted by Region.}
+#'   \item{[[7]] ssb_ssb0_plot}{SSB and dynamic SSB0 overlaid on the same panel,
+#'     distinguished by linetype, faceted by Region. Useful for visualising depletion.}
+#' }
+#'
 #' @export get_ts_plot
 #' @family Plotting
+#'
 #' @examples
 #' \dontrun{
-#'   get_ts_plot(list(rep1, rep2), list(sd_rep1, sd_rep2), c("Model1", "Model2"), do_ci = TRUE)
+#'   plots <- get_ts_plot(
+#'     rep        = list(rep1, rep2),
+#'     sd_rep     = list(sdrep1, sdrep2),
+#'     model_names = c("Base", "Sensitivity"),
+#'     do_ci      = TRUE
+#'   )
+#'   plots[[4]] # SSB time series
+#'   plots[[7]] # SSB vs dynamic B0
 #' }
 get_ts_plot <- function(rep,
                         sd_rep,
@@ -24,42 +58,46 @@ get_ts_plot <- function(rep,
 
     # Spawning Stock Biomass
     ssb_plot_df <- reshape2::melt(rep[[i]]$SSB) %>%
-      dplyr::rename(Region = Var1, Year = Var2) %>%
-      dplyr::bind_cols(se = sd_rep[[i]]$sd[names(sd_rep[[i]]$value) == "log(SSB)"]) %>%
+      dplyr::rename(Pop = Var1, Region = Var2, Year = Var3) %>%
+      dplyr::bind_cols(se = sd_rep[[i]]$sd[names(sd_rep[[i]]$value) == "log_SSB"]) %>%
       dplyr::mutate(lwr = exp(log(value) - 1.96 * se),
                     upr = exp(log(value) + 1.96 * se),
                     Region = paste("Region", Region),
-                    Type = 'SSB',
+                    Pop = paste("Population", Pop),
+                    Type = paste(Pop, 'SSB'),
                     Model = model_names[i])
 
     # Dynamic Unfished Spawning Stock Biomass
     ssb0_plot_df <- reshape2::melt(rep[[i]]$Dynamic_SSB0) %>%
-      dplyr::rename(Region = Var1, Year = Var2) %>%
-      dplyr::bind_cols(se = sd_rep[[i]]$sd[names(sd_rep[[i]]$value) == "log(Dynamic_SSB0)"]) %>%
+      dplyr::rename(Pop = Var1, Region = Var2, Year = Var3) %>%
+      dplyr::bind_cols(se = sd_rep[[i]]$sd[names(sd_rep[[i]]$value) == "log_Dynamic_SSB0"]) %>%
       dplyr::mutate(lwr = exp(log(value) - 1.96 * se),
                     upr = exp(log(value) + 1.96 * se),
                     Region = paste("Region", Region),
-                    Type = 'Dynamic SSB0',
+                    Pop = paste("Population", Pop),
+                    Type = paste(Pop, 'Dynamic SSB0'),
                     Model = model_names[i])
 
     # Total Biomass
     totbiom_plot_df <- reshape2::melt(rep[[i]]$Total_Biom) %>%
-      dplyr::rename(Region = Var1, Year = Var2) %>%
-      dplyr::bind_cols(se = sd_rep[[i]]$sd[names(sd_rep[[i]]$value) == "log(Total_Biom)"]) %>%
+      dplyr::rename(Pop = Var1, Region = Var2, Year = Var3) %>%
+      dplyr::bind_cols(se = sd_rep[[i]]$sd[names(sd_rep[[i]]$value) == "log_Total_Biom"]) %>%
       dplyr::mutate(lwr = exp(log(value) - 1.96 * se),
                     upr = exp(log(value) + 1.96 * se),
                     Region = paste("Region", Region),
-                    Type = 'Total Biom',
+                    Pop = paste("Population", Pop),
+                    Type = paste(Pop, 'Total Biom'),
                     Model = model_names[i])
 
     # Recruitment
     rec_plot_df <- reshape2::melt(rep[[i]]$Rec) %>%
-      dplyr::rename(Region = Var1, Year = Var2) %>%
-      dplyr::bind_cols(se = sd_rep[[i]]$sd[names(sd_rep[[i]]$value) == "log(Rec)"]) %>%
+      dplyr::rename(Pop = Var1, Region = Var2, Year = Var3) %>%
+      dplyr::bind_cols(se = sd_rep[[i]]$sd[names(sd_rep[[i]]$value) == "log_Rec"]) %>%
       dplyr::mutate(lwr = exp(log(value) - 1.96 * se),
                     upr = exp(log(value) + 1.96 * se),
                     Region = paste("Region", Region),
-                    Type = 'Recruitment',
+                    Pop = paste("Population", Pop),
+                    Type = paste(Pop, 'Recruitment'),
                     Model = model_names[i])
 
     # Fishing Mortality
@@ -67,6 +105,7 @@ get_ts_plot <- function(rep,
       dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Type = Var4) %>%
       dplyr::mutate(Region = paste("Region", Region),
                     Type = paste("Seas", Seas, "Fleet", Type, "F"),
+                    Pop = NA,
                     lwr = NA,
                     upr = NA,
                     se = NA,
@@ -91,12 +130,12 @@ get_ts_plot <- function(rep,
                                ggplot2::aes(x = Year, y = value, color = factor(Model))) +
     ggplot2::geom_line(lwd = 0.9) +
     ggplot2::facet_grid(Type~Region, scales = 'free') +
-    ggplot2::labs(x = 'Year', y = 'Value', color = 'Model', fill = 'Model') +
+    ggplot2::labs(x = 'Year', y = 'Value', color = 'Model') +
     ggplot2::coord_cartesian(ylim = c(0,NA)) +
     theme_sablefish()
 
   # recruitment
-  rec_ts_plot <- ggplot2::ggplot(biom_rec_df %>% dplyr::filter(Type == 'Recruitment'),
+  rec_ts_plot <- ggplot2::ggplot(biom_rec_df %>% dplyr::filter(str_detect(Type, 'Recruitment')),
                                  ggplot2::aes(x = Year, y = value, ymin = lwr, ymax = upr, color = factor(Model), fill = factor(Model))) +
     ggplot2::geom_line(lwd = 0.9) +
     ggplot2::facet_grid(Type~Region, scales = 'free') +
@@ -105,7 +144,7 @@ get_ts_plot <- function(rep,
     theme_sablefish()
 
   # ssb
-  ssb_ts_plot <- ggplot2::ggplot(biom_rec_df %>% dplyr::filter(Type == 'SSB'),
+  ssb_ts_plot <- ggplot2::ggplot(biom_rec_df %>% dplyr::filter(str_detect(Type, 'SSB') & !str_detect(Type, 'Dynamic')),
                                ggplot2::aes(x = Year, y = value, ymin = lwr, ymax = upr, color = factor(Model), fill = factor(Model))) +
     ggplot2::geom_line(lwd = 0.9) +
     ggplot2::facet_grid(Type~Region, scales = 'free') +
@@ -114,7 +153,7 @@ get_ts_plot <- function(rep,
     theme_sablefish()
 
   # total biomass
-  total_biom_plot <- ggplot2::ggplot(biom_rec_df %>% dplyr::filter(Type == 'Total Biom'),
+  total_biom_plot <- ggplot2::ggplot(biom_rec_df %>% dplyr::filter(str_detect(Type, 'Total')),
                       ggplot2::aes(x = Year, y = value, ymin = lwr, ymax = upr, color = factor(Model), fill = factor(Model))) +
     ggplot2::geom_line(lwd = 0.9) +
     ggplot2::facet_grid(Type~Region, scales = 'free') +
@@ -123,7 +162,7 @@ get_ts_plot <- function(rep,
     theme_sablefish()
 
   # dynamic b0
-  ssb0_plot <- ggplot2::ggplot(biom_rec_df %>% dplyr::filter(Type == 'Dynamic SSB0'),
+  ssb0_plot <- ggplot2::ggplot(biom_rec_df %>% dplyr::filter(str_detect(Type, 'Dynamic')),
                                ggplot2::aes(x = Year, y = value, ymin = lwr, ymax = upr, color = factor(Model), fill = factor(Model))) +
     ggplot2::geom_line(lwd = 0.9) +
     ggplot2::facet_grid(Type~Region, scales = 'free') +
@@ -132,7 +171,7 @@ get_ts_plot <- function(rep,
     theme_sablefish()
 
   # dynamic b0 and SSB
-  ssb_ssb0_plot <- ggplot2::ggplot(biom_rec_df %>% dplyr::filter(Type %in% c('Dynamic SSB0', "SSB")),
+  ssb_ssb0_plot <- ggplot2::ggplot(biom_rec_df %>% dplyr::filter(str_detect(Type, 'SSB')),
                                ggplot2::aes(x = Year, y = value, color = factor(Model), lty = Type)) +
     ggplot2::geom_line(lwd = 0.9) +
     ggplot2::facet_wrap(~Region, scales = 'free') +
@@ -154,17 +193,50 @@ get_ts_plot <- function(rep,
 
 #' Get Fishery and Survey Selectivity Plots
 #'
-#' @param rep List of n_models of `SPoRC` report lists
-#' @param model_names Vector of model names
-#' @param Selex_Type Character vector specifying whether to output age or length-based selectivity (age, length)
-#' @param year_indx Year index for which selectivity year to plot (can be an integer or vector)
+#' Generates age- or length-based selectivity plots for all fishery and survey
+#' fleets across one or more SPoRC model runs. Selectivity curves are faceted by
+#' sex, region, and fleet, and coloured by year when multiple years are requested,
+#' allowing visualisation of time-varying selectivity alongside model comparisons.
 #'
-#' @returns Plots of terminal year fishery and survey selectivity by fleet, region, and sex across models
+#' @param rep List of length \code{n_models}, where each element is a SPoRC
+#'   report list (i.e. the output of \code{obj$report()} after optimisation).
+#'   Must contain \code{fish_sel} and \code{srv_sel} (age-based) and/or
+#'   \code{fish_sel_l} and \code{srv_sel_l} (length-based) depending on
+#'   \code{Selex_Type}.
+#' @param model_names Character vector of length \code{n_models} giving display
+#'   names for each model run. Used as the linetype legend label.
+#' @param Selex_Type Character string specifying whether to plot age- or
+#'   length-based selectivity. One of \code{"age"} (default) or \code{"length"}.
+#'   Must match the \code{Selex_Type} used when fitting the model (i.e.
+#'   \code{fish_sel_l} / \code{srv_sel_l} are only populated when
+#'   \code{Selex_Type = 1} in the model).
+#' @param year_indx Integer or integer vector of year indices to include in the
+#'   plot. When multiple years are supplied, curves are coloured by year on a
+#'   continuous viridis scale, making time-variation in selectivity visible.
+#'   If \code{NULL} (default), only the terminal year is plotted.
+#'
+#' @return A list of two \code{ggplot} objects:
+#' \describe{
+#'   \item{[[1]] fish_sel_plot}{Fishery selectivity curves faceted by
+#'     Sex × (Region + Fleet). Lines are coloured by year and distinguished
+#'     by linetype across models.}
+#'   \item{[[2]] srv_sel_plot}{Survey selectivity curves with identical
+#'     faceting and aesthetic structure as the fishery plot.}
+#' }
+#'
 #' @export get_selex_plot
 #' @family Plotting
+#'
 #' @examples
 #' \dontrun{
-#' get_selex_plot(list(rep1, rep2), c("Model1", "Model2"), year_indx = c(1:30))
+#'   # Terminal year only
+#'   plots <- get_selex_plot(list(rep1, rep2), c("Base", "Sensitivity"))
+#'
+#'   # All years to visualise time-varying selectivity
+#'   plots <- get_selex_plot(list(rep1), "Base", Selex_Type = "age", year_indx = 1:40)
+#'
+#'   plots[[1]] # fishery selectivity
+#'   plots[[2]] # survey selectivity
 #' }
 get_selex_plot <- function(rep, model_names, Selex_Type = 'age', year_indx = NULL) {
 
@@ -230,16 +302,60 @@ get_selex_plot <- function(rep, model_names, Selex_Type = 'age', year_indx = NUL
 
 #' Get Plots of Biological Quantities
 #'
-#' @param data List of n_models of `SPoRC` data lists
-#' @param rep List of n_models of `SPoRC` report lists
-#' @param model_names Vector of model names
+#' Generates plots of movement probabilities, natural mortality, weight-at-age,
+#' and maturity-at-age across one or more SPoRC model runs. All plots use a
+#' user-specified year index; movement plots additionally show all seasons and
+#' are returned as a separate plot per population.
 #'
-#' @returns A list of plots for terminal year and terminal season movement, natural mortality, weight-at-age, and maturity at age across models
+#' @param data List of length \code{n_models}, where each element is a SPoRC
+#'   data list. Used to extract \code{WAA}, \code{MatAA}, \code{ages},
+#'   \code{n_pop}, and \code{do_recruits_move}.
+#' @param rep List of length \code{n_models}, where each element is a SPoRC
+#'   report list (i.e. the output of \code{obj$report()} after optimisation).
+#'   Must contain \code{Movement} and \code{natmort}.
+#' @param model_names Character vector of length \code{n_models} giving display
+#'   names for each model run. Used as colour legend labels across all plots.
+#' @param year_indx Integer giving the year index at which to slice biological
+#'   quantities for plotting. Defaults to the terminal year if \code{NULL}.
+#'   Movement plots show all seasons for the specified year; natural mortality,
+#'   weight-at-age, and maturity-at-age plots show all seasons via faceting.
+#'
+#' @return A list of four elements:
+#' \describe{
+#'   \item{[[1]] move_plot}{A list of \code{n_pop} \code{ggplot} objects, one
+#'     per population. Each plot shows age-specific movement probabilities for
+#'     all seasons at \code{year_indx}, faceted by Region_To × (Region_From +
+#'     Season), with lines coloured by model and distinguished by sex linetype.
+#'     If \code{do_recruits_move = 0}, age-1 fish are excluded. Y-axis is fixed
+#'     to [0, 1].}
+#'   \item{[[2]] natmort_plot}{Natural mortality at age at \code{year_indx},
+#'     faceted by Region × Sex. Lines coloured by model and distinguished by
+#'     population linetype.}
+#'   \item{[[3]] waa_plot}{Spawning weight-at-age at \code{year_indx}, faceted
+#'     by Region × (Sex + Season). Lines coloured by model and distinguished by
+#'     population linetype.}
+#'   \item{[[4]] mataa_plot}{Maturity-at-age at \code{year_indx}, faceted by
+#'     Region × (Sex + Season). Lines coloured by model and distinguished by
+#'     population linetype.}
+#' }
+#'
 #' @export get_biological_plot
 #' @family Plotting
+#'
 #' @examples
 #' \dontrun{
-#' get_biological_plot(list(data1, data2), list(rep1, rep2), c("Model1", "Model2"))
+#'   plots <- get_biological_plot(
+#'     data        = list(data1, data2),
+#'     rep         = list(rep1, rep2),
+#'     model_names = c("Base", "Sensitivity"),
+#'     year_indx   = 40
+#'   )
+#'
+#'   plots[[1]][[1]]  # movement plot for population 1
+#'   plots[[1]][[2]]  # movement plot for population 2, etc
+#'   plots[[2]]       # natural mortality
+#'   plots[[3]]       # weight-at-age
+#'   plots[[4]]       # maturity-at-age
 #' }
 get_biological_plot <- function(data,
                                 rep,
@@ -254,35 +370,42 @@ get_biological_plot <- function(data,
 
     # Movement
     move_plot_tmp_df <- reshape2::melt(rep[[i]]$Movement) %>%
-      dplyr::rename(Region_From = from, Region_To = to, Seas = seas, Year = years, Age = ages, Sex = sexes) %>%
+      dplyr::rename(Pop = pop, Region_From = from, Region_To = to, Seas = seas, Year = years, Age = ages, Sex = sexes) %>%
       {if (data[[i]]$do_recruits_move == 0) filter(., Age != min(data[[i]]$ages)) else .} %>%
       dplyr::mutate(Region_From = paste("From Region", Region_From),
                     Region_To = paste("To Region", Region_To),
                     Sex = paste("Sex", Sex),
+                    Seas = paste("Seas", Seas),
+                    Pop = paste('Population', Pop),
                     Model = model_names[i]
       )
 
     # Natural Mortality
     natmort_plot_tmp_df <- reshape2::melt(rep[[i]]$natmort) %>%
-      dplyr::rename(Region = Var1, Year = Var2, Age = Var3, Sex = Var4) %>%
+      dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Age = Var4, Sex = Var5) %>%
       dplyr::mutate(Region = paste("Region", Region),
                     Sex = paste("Sex", Sex),
+                    Pop = paste('Population', Pop),
                     Model = model_names[i]
       )
 
     # Spawning Weight-at-age
     waa_plot_tmp_df <- reshape2::melt(data[[i]]$WAA) %>%
-      dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Age = Var4, Sex = Var5) %>%
+      dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Age = Var5, Sex = Var6) %>%
       dplyr::mutate(Region = paste("Region", Region),
                     Sex = paste("Sex", Sex),
+                    Seas = paste("Seas", Seas),
+                    Pop = paste('Population', Pop),
                     Model = model_names[i]
       )
 
     # Maturity at age
     mataa_plot_tmp_df <- reshape2::melt(data[[i]]$MatAA) %>%
-      dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Age = Var4, Sex = Var5) %>%
+      dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Age = Var5, Sex = Var6) %>%
       dplyr::mutate(Region = paste("Region", Region),
                     Sex = paste("Sex", Sex),
+                    Seas = paste("Seas", Seas),
+                    Pop = paste('Population', Pop),
                     Model = model_names[i]
       )
 
@@ -294,44 +417,48 @@ get_biological_plot <- function(data,
   }
 
   # Movement plot
-  move_plot <- ggplot(move_plot_df %>% dplyr::filter(Year == max(move_plot_df$Year), Seas == max(move_plot_df$Seas)),
-                      ggplot2::aes(x = Age, y = value, color = factor(Model), lty = Sex)) +
-    ggplot2::geom_line(lwd = 1) +
-    ggplot2::facet_grid(Region_To~Region_From) +
-    ggplot2::labs(x = 'Age', y = 'Movement Probabilities', color = 'Model', lty = 'Sex') +
-    ggplot2::coord_cartesian(ylim = c(0, 1)) +
-    theme_sablefish() +
-    ggplot2::theme(legend.key.width = unit(2, "lines"))
+  move_plot <- list()
+  for(i in 1:data[[1]]$n_pop) {
+    move_plot[[i]] <- ggplot(move_plot_df %>% dplyr::filter(Year == max(move_plot_df$Year),
+                                                            Pop == paste("Population", i)),
+                             ggplot2::aes(x = Age, y = value, color = factor(Model), lty = Sex)) +
+      ggplot2::geom_line(lwd = 1) +
+      ggplot2::facet_grid(Region_To ~ Region_From + Seas) +
+      ggplot2::labs(x = 'Age', y = 'Movement Probabilities', color = 'Model', lty = 'Sex', title = paste("Population", i)) +
+      ggplot2::coord_cartesian(ylim = c(0, 1)) +
+      theme_sablefish() +
+      ggplot2::theme(legend.key.width = unit(2, "lines"))
+  }
 
   # Natural mortality plot
   natmort_plot <- ggplot2::ggplot(natmort_plot_df %>%
                                     dplyr::filter(Year == max(natmort_plot_df$Year)),
-                                  ggplot2::aes(x = Age, y = value, color = factor(Model))) +
+                                  ggplot2::aes(x = Age, y = value, color = factor(Model), lty = factor(Pop))) +
     ggplot2::geom_line(lwd = 2) +
     ggplot2::facet_grid(Region~Sex) +
-    ggplot2::labs(x = 'Age', y = 'Natural Mortality', color = 'Model') +
+    ggplot2::labs(x = 'Age', y = 'Natural Mortality', color = 'Model', lty=  'Population') +
     ggplot2::coord_cartesian(ylim = c(0, NA)) +
     theme_sablefish() +
     ggplot2::theme(legend.key.width = unit(2, "lines"))
 
   # Weight at age plot
   waa_plot <- ggplot2::ggplot(waa_plot_df %>%
-                                dplyr::filter(Year == max(waa_plot_df$Year), Seas == max(waa_plot_df$Seas)),
-                              ggplot2::aes(x = Age, y = value, color = factor(Model))) +
+                                dplyr::filter(Year == max(waa_plot_df$Year)),
+                              ggplot2::aes(x = Age, y = value, color = factor(Model), lty = Pop)) +
     ggplot2::geom_line(lwd = 2) +
-    ggplot2::facet_grid(Region~Sex) +
-    ggplot2::labs(x = 'Age', y = 'Spawning Weight at Age', color = 'Model') +
+    ggplot2::facet_grid(Region~Sex + Seas) +
+    ggplot2::labs(x = 'Age', y = 'Spawning Weight at Age', color = 'Model', lty = 'Population') +
     ggplot2::coord_cartesian(ylim = c(0, NA)) +
     theme_sablefish() +
     ggplot2::theme(legend.key.width = unit(2, "lines"))
 
   # Maturity plot
   mataa_plot <- ggplot2::ggplot(mataa_plot_df %>%
-                                  dplyr::filter(Year == max(mataa_plot_df$Year), Seas == max(mataa_plot_df$Seas)),
-                                ggplot2::aes(x = Age, y = value, color = factor(Model))) +
+                                  dplyr::filter(Year == max(mataa_plot_df$Year)),
+                                ggplot2::aes(x = Age, y = value, color = factor(Model), lty = Pop)) +
     ggplot2::geom_line(lwd = 2) +
-    ggplot2::facet_grid(Region~Sex) +
-    ggplot2::labs(x = 'Age', y = 'Maturity at Age', color = 'Model') +
+    ggplot2::facet_grid(Region~Sex+Seas) +
+    ggplot2::labs(x = 'Age', y = 'Maturity at Age', color = 'Model', lty = 'Population') +
     ggplot2::coord_cartesian(ylim = c(0, NA)) +
     theme_sablefish() +
     ggplot2::theme(legend.key.width = unit(2, "lines"))
@@ -342,15 +469,38 @@ get_biological_plot <- function(data,
 
 #' Get Data Fitted to Plot
 #'
-#' @param data List of n_models of `SPoRC` data lists
-#' @param model_names Character vector of model names
+#' Produces a dot-plot showing which data types were fitted to in each year,
+#' region, and model. Each point represents a year in which a given data source
+#' was active (i.e. the corresponding \code{Use*} indicator equals 1). This is
+#' useful for quickly auditing data availability and comparing data structures
+#' across model configurations.
 #'
-#' @returns A plot of data that were fitted to across models
+#' @param data List of length \code{n_models}, where each element is a SPoRC
+#'   data list. The following \code{Use*} indicator arrays are extracted from
+#'   each element, all with dimensions
+#'   \code{[n_regions, n_yrs, n_seas, n_fleets]}:
+#'   \code{UseSrvLenComps}, \code{UseSrvAgeComps}, \code{UseFishLenComps},
+#'   \code{UseFishAgeComps}, \code{UseCatch}, \code{UseFishIdx},
+#'   \code{UseSrvIdx}. If \code{use_conv_fish_tagging} contains any 1s,
+#'   \code{conv_tag_release_indicator} is also used to construct a tagging
+#'   activity indicator array.
+#' @param model_names Character vector of length \code{n_models} giving display
+#'   names for each model run. Used as row facet labels.
+#'
+#' @return A single \code{ggplot} object: a dot-plot with Year on the x-axis
+#'   and data type (labelled by source, season, and fleet) on the y-axis,
+#'   faceted by Model × Region. Points appear only in years where the
+#'   corresponding \code{Use*} indicator is 1. The legend is suppressed; data
+#'   types are distinguished by y-axis position and fill colour.
+#'
 #' @export get_data_fitted_plot
 #' @family Plotting
 #' @examples
 #' \dontrun{
-#' get_data_fitted_plot(list(data1, data2), c("Model1", "Model2"))
+#'   get_data_fitted_plot(
+#'     data        = list(data1, data2),
+#'     model_names = c("Base", "Sensitivity")
+#'   )
 #' }
 get_data_fitted_plot <- function(data,
                                  model_names
@@ -360,9 +510,9 @@ get_data_fitted_plot <- function(data,
   for(i in 1:length(data)) {
 
     # Get tag release indicator
-    if(data[[i]]$UseTagging == 1) {
-      use_tag_indicator <- array(0, dim = c(max(data[[i]]$tag_release_indicator[,1]), max(data[[i]]$tag_release_indicator[,2]), max(data[[i]]$tag_release_indicator[,3])))
-      use_tag_indicator[data[[i]]$tag_release_indicator[,1],data[[i]]$tag_release_indicator[,2],data[[i]]$tag_release_indicator[,3]] <- 1
+    if(any(data[[i]]$use_conv_fish_tagging == 1)) {
+      use_tag_indicator <- array(0, dim = c(max(data[[i]]$conv_tag_release_indicator[,1]), max(data[[i]]$conv_tag_release_indicator[,2]), max(data[[i]]$conv_tag_release_indicator[,3]) ))
+      use_tag_indicator[data[[i]]$conv_tag_release_indicator[,1], data[[i]]$conv_tag_release_indicator[,2], data[[i]]$conv_tag_release_indicator[,3]] <- 1
     }
 
     # Bind all data indicators together
@@ -403,7 +553,7 @@ get_data_fitted_plot <- function(data,
       )
 
     # Add tagging if used
-    if (data[[i]]$UseTagging == 1) {
+    if (any(data[[i]]$use_conv_fish_tagging == 1)) {
       tag_df <- reshape2::melt(use_tag_indicator) %>%
         dplyr::rename(Region = Var1, Year = Var2, Seas = Var3) %>%
         dplyr::mutate(Type = paste('Tagging', "Seas", Seas), Fleet = NA)
@@ -430,18 +580,55 @@ get_data_fitted_plot <- function(data,
   return(data_plot)
 }
 
-#' Get plot of negative log likelihood values
+#' Get Plot of Negative Log Likelihood Values
 #'
-#' @param rep List of n_models of `SPoRC` report lists
-#' @param model_names Vector of model names
-#' @param data List of data from `SPoRC`
+#' Extracts, weights, and visualises all negative log-likelihood (nLL)
+#' components from one or more SPoRC model runs. Likelihood weights stored in
+#' the data list are applied to the relevant components (catch, indices,
+#' recruitment, tagging, fishing mortality) before plotting, so reported values
+#' reflect the actual contribution of each component to the joint nLL. Components
+#' with a value of zero are silently excluded from both the plot and table.
 #'
-#' @returns Plot and tables of negative log likelihood values across models
+#' @param data List of length \code{n_models}, where each element is a SPoRC
+#'   data list. Likelihood weights are extracted from \code{Wt_Catch},
+#'   \code{Wt_F}, \code{Wt_Rec}, \code{Wt_Tagging}, \code{Wt_SrvIdx}, and
+#'   \code{Wt_FishIdx}.
+#' @param rep List of length \code{n_models}, where each element is a SPoRC
+#'   report list (i.e. the output of \code{obj$report()} after optimisation).
+#'   The following nLL components are extracted: \code{jnLL}, \code{h_nLL},
+#'   \code{M_nLL}, \code{rec_prop_nLL}, \code{Rec_nLL}, \code{Init_Rec_nLL},
+#'   \code{sel_nLL}, \code{conv_fish_tag_nLL}, \code{Catch_nLL},
+#'   \code{Fmort_nLL}, \code{srv_q_nLL}, \code{fish_q_nLL}, \code{SrvIdx_nLL},
+#'   \code{FishIdx_nLL}, \code{TagRep_nLL}, \code{Movement_nLL},
+#'   \code{SrvAgeComps_nLL}, \code{FishAgeComps_nLL}, \code{SrvLenComps_nLL},
+#'   and \code{FishLenComps_nLL}. Missing components are handled gracefully via
+#'   \code{safe_extract}.
+#' @param model_names Character vector of length \code{n_models} giving display
+#'   names for each model run. Used as facet labels on the bar chart.
+#'
+#' @return A list of two objects:
+#' \describe{
+#'   \item{[[1]] nLL_plot}{A stacked bar chart (\code{ggplot}) with one facet
+#'     per model. Bars show the weighted nLL contribution of each component,
+#'     coloured by component type (Prior, Penalty, Catch, Index, Age, Length,
+#'     Tagging, jnLL). Components with value 0 are excluded.}
+#'   \item{[[2]] table_plot}{A \code{ggdraw} table (via \code{gridExtra} and
+#'     \code{cowplot}) showing weighted nLL values in wide format, with one
+#'     column per non-zero component and one row per model.}
+#' }
+#'
 #' @export get_nLL_plot
 #' @family Model Diagnostics
+#'
 #' @examples
 #' \dontrun{
-#' get_nLL_plot(list(data1, data2), list(rep1, rep2), c("Model1", "Model2"))
+#'   out <- get_nLL_plot(
+#'     data        = list(data1, data2),
+#'     rep         = list(rep1, rep2),
+#'     model_names = c("Base", "Sensitivity")
+#'   )
+#'   out[[1]]  # bar chart
+#'   out[[2]]  # table
 #' }
 get_nLL_plot <- function(data,
                          rep,
@@ -459,10 +646,10 @@ get_nLL_plot <- function(data,
       value = c(safe_extract(rep[[i]], "jnLL"),
                 safe_extract(rep[[i]], "h_nLL"),
                 safe_extract(rep[[i]], "M_nLL"),
-                safe_extract(rep[[i]], "Rec_prop_nLL"),
+                safe_extract(rep[[i]], "rec_prop_nLL"),
                 sum(data[[i]]$Wt_Rec * safe_extract(rep[[i]], "Rec_nLL")),
                 safe_extract(rep[[i]], "sel_nLL"),
-                sum(data[[i]]$Wt_Tagging * safe_extract(rep[[i]], "Tag_nLL")),
+                sum(data[[i]]$Wt_Tagging * safe_extract(rep[[i]], "conv_fish_tag_nLL")),
                 sum(data[[i]]$Wt_Catch * safe_extract(rep[[i]], "Catch_nLL")),
                 sum(data[[i]]$Wt_F * safe_extract(rep[[i]], "Fmort_nLL")),
                 safe_extract(rep[[i]], "srv_q_nLL"),
@@ -479,7 +666,7 @@ get_nLL_plot <- function(data,
 
       # nLL names
       name = c("jnLL", "Steepness Prior", "M Prior", "Recruitment Prop Prior", "Recruitment Penalty",
-               "Selectivity Penalty", "Tag nLL", "Catch nLL", "Fishing Mortality Penalty",
+               "Selectivity Penalty", "Conventional Tagging nLL", "Catch nLL", "Fishing Mortality Penalty",
                "Survey Q Prior", "Fishery Q Prior", "Survey Index nLL", "Tag Reporting Prior",
                "Fishery Index nLL", "Initial Age Penalty", "Movement Prior",
                "Survey Age nLL", "Fishery Age nLL", "Survey Length nLL", "Fishery Length nLL"),
@@ -518,16 +705,37 @@ get_nLL_plot <- function(data,
 
 #' Get Index Fits Plot
 #'
-#' @param data List of n_models of `SPoRC` data lists
-#' @param rep List of n_models of `SPoRC` report lists
-#' @param model_names Vector of model names
+#' Plots observed survey and fishery indices alongside model-predicted values
+#' for one or more SPoRC model runs. Observed values are shown as points with
+#' approximate 95% confidence intervals; predicted trajectories are overlaid as
+#' lines coloured by model. Years where the observed index is zero (i.e.
+#' \code{Use*Idx = 0}) are excluded from both the points and lines.
 #'
-#' @returns A plot of fitted values to various indices across models
+#' @param data List of length \code{n_models}, where each element is a SPoRC
+#'   data list. Passed to \code{get_idx_fits} along with \code{rep[[i]]}; year
+#'   labels are taken from \code{data[[i]]$years}.
+#' @param rep List of length \code{n_models}, where each element is a SPoRC
+#'   report list (i.e. the output of \code{obj$report()} after optimisation).
+#'   Predicted index values are extracted internally via \code{get_idx_fits}.
+#' @param model_names Character vector of length \code{n_models} giving display
+#'   names for each model run. Used as the colour legend label on predicted
+#'   trajectories.
+#'
+#' @return A single \code{ggplot} object. Observed indices are shown as
+#'   \code{geom_pointrange} (black) with lower and upper confidence interval
+#'   bounds from \code{get_idx_fits}. Predicted indices are shown as
+#'   \code{geom_line} coloured by model.
+#'
 #' @export get_idx_fits_plot
 #' @family Model Diagnostics
+#'
 #' @examples
 #' \dontrun{
-#' get_idx_fits_plot(list(data1, data2), list(rep1, rep2), c("Model1", "Model2"))
+#'   get_idx_fits_plot(
+#'     data        = list(data1, data2),
+#'     rep         = list(rep1, rep2),
+#'     model_names = c("Base", "Sensitivity")
+#'   )
 #' }
 get_idx_fits_plot <- function(data,
                               rep,
@@ -556,18 +764,49 @@ get_idx_fits_plot <- function(data,
   return(idx_fit_plot)
 }
 
-#' Title Get Catch Fits Plot
+#' Get Catch Fits Plot
 #'
-#' @param data List of n_models of `SPoRC` data lists
-#' @param rep List of n_models of `SPoRC` report lists
-#' @param model_names Vector of model names
+#' Plots observed catch time series alongside model-predicted values for one or
+#' more SPoRC model runs. Predicted catch is summed across populations before
+#' comparison with observations. Observed values are shown as points with
+#' approximate 95% log-normal confidence intervals derived from
+#' \code{ln_sigmaC}; predicted trajectories are overlaid as lines coloured by
+#' model. Years where observed catch is zero (i.e. \code{UseCatch = 0}) are
+#' excluded from both layers.
 #'
-#' @returns A plot of fitted values to various catch time series across models
+#' @param data List of length \code{n_models}, where each element is a SPoRC
+#'   data list. \code{ObsCatch} (dimensions
+#'   \code{[n_regions, n_yrs, n_seas, n_fish_fleets]}) provides observed catch
+#'   values. \code{Wt_Catch} is used alongside \code{ln_sigmaC} from the report
+#'   to recover the unweighted observation-error SD for confidence interval
+#'   construction (\code{se = exp(ln_sigmaC) / Wt_Catch}).
+#' @param rep List of length \code{n_models}, where each element is a SPoRC
+#'   report list (i.e. the output of \code{obj$report()} after optimisation).
+#'   \code{PredCatch} (dimensions
+#'   \code{[n_pop, n_regions, n_yrs, n_seas, n_fish_fleets]}) is summed across
+#'   populations to produce region-level predicted catch. \code{ln_sigmaC} is
+#'   used for CI construction.
+#' @param model_names Character vector of length \code{n_models} giving display
+#'   names for each model run. Used as the colour legend label on predicted
+#'   trajectories.
+#'
+#' @return A single \code{ggplot} object. Observed catch is shown as
+#'   \code{geom_pointrange} (black) with 95% log-normal confidence intervals
+#'   (\code{exp(log(obs) ± 1.96 * se)}). Predicted catch is shown as
+#'   \code{geom_line} coloured by model. The plot is faceted by
+#'   (Season + Fleet) × Region with free y-scales, and the y-axis is
+#'   constrained to [0, NA].
+#'
 #' @export get_catch_fits_plot
 #' @family Model Diagnostics
+#'
 #' @examples
 #' \dontrun{
-#' get_catch_fits_plot(list(data1, data2), list(rep1, rep2), c("Model1", "Model2"))
+#'   get_catch_fits_plot(
+#'     data        = list(data1, data2),
+#'     rep         = list(rep1, rep2),
+#'     model_names = c("Base", "Sensitivity")
+#'   )
 #' }
 get_catch_fits_plot <- function(data,
                                 rep,
@@ -579,7 +818,10 @@ get_catch_fits_plot <- function(data,
   for(i in 1:length(rep)) {
     # Get catch fits
     catch_fits <- reshape2::melt(rep[[i]]$PredCatch) %>%
-      dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+      dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+      dplyr::group_by(Region, Year, Seas, Fleet) %>%
+      dplyr::summarize(value = sum(value)) %>%
+      dplyr::ungroup() %>%
       dplyr::left_join(
         reshape2::melt(data[[i]]$ObsCatch) %>%
           dplyr::left_join(reshape2::melt(exp(rep[[i]]$ln_sigmaC) / data[[i]]$Wt_Catch) %>%
@@ -612,39 +854,82 @@ get_catch_fits_plot <- function(data,
 }
 
 
-
 #' Get Retrospective Plot
 #'
-#' @param retro_output Dataframe generated from do_retrospective
-#' @param Rec_Age Age in which recruitment occurs
+#' Generates three retrospective diagnostic plots from a set of peeled model
+#' runs: a relative-difference plot with Mohn's rho, an absolute-scale
+#' trajectory plot, and a cohort-tracking squid plot for recruitment. Together
+#' these plots diagnose systematic retrospective patterns in SSB and recruitment
+#' estimates across sequential data removals.
 #'
-#' @returns A retrospective plot of recruitment and SSB in relative and absolute scales, as well as a retrospective plot of recruitment by cohort (squid plot)
+#' @param retro_output Data frame produced by \code{do_retrospective}, containing
+#'   columns \code{Year}, \code{value}, \code{peel}, \code{Type} (e.g.
+#'   \code{"SSB"}, \code{"Recruitment"}), \code{Pop}, and \code{Region}. Rows
+#'   with \code{peel = 0} represent the full-data terminal run; rows with
+#'   \code{peel > 0} represent sequential data removals. Rows with
+#'   \code{value = 0} are excluded before plotting.
+#' @param Rec_Age Integer giving the age at recruitment (e.g. \code{2} for
+#'   age-2 recruitment). Used to convert model year to cohort year in the squid
+#'   plot (\code{cohort = Year - Rec_Age}).
+#'
+#' @return A list of three \code{ggplot} objects:
+#' \describe{
+#'   \item{[[1]] retro_plot}{Relative-difference plot. Each line shows the
+#'     proportional deviation of a peeled run from the terminal-year estimate
+#'     at each year, computed via \code{get_retrospective_relative_difference}.
+#'     Terminal-year points (where \code{peel = max(Year) - Year}) are
+#'     highlighted. Mohn's rho (mean relative difference across terminal-year
+#'     points) is annotated on each facet panel. Faceted by Region ×
+#'     (Type + Population); lines and points coloured by peel year on a
+#'     continuous viridis scale.}
+#'   \item{[[2]] abs_retro_plot}{Absolute-scale trajectory plot. Peeled runs
+#'     (\code{peel > 0}) are drawn as solid lines coloured by peel; the
+#'     full-data run (\code{peel = 0}) is overlaid as a dashed black line.
+#'     Faceted by Region × (Type + Population) with free y-scales.}
+#'   \item{[[3]] squid_plot}{Cohort-tracking (squid) plot for recruitment.
+#'     Restricted to the 10 most recent cohorts. X-axis shows years since the
+#'     cohort was last estimated (\code{terminal - Year - 1}), y-axis shows
+#'     recruitment value, and lines are grouped and coloured by cohort year.
+#'     Faceted by Population × Region with free y-scales.}
+#' }
+#'
 #' @export get_retrospective_plot
 #' @family Model Diagnostics
+#'
 #' @examples
 #' \dontrun{
-#' # do retrospective
-#' retro <- do_retrospective(n_retro = 7, # number of retro peels to run
-#' data = data, # rtmb data
-#' parameters = parameters, # rtmb parameters
-#' mapping = mapping, # rtmb mapping
-#' random = NULL, # if random effects are used
-#' do_par = TRUE, # whether or not to parralleize
-#' n_cores = 7, # if parallel, number of cores to use
-#' do_francis = F, # if we want tod o Francis
-#' n_francis_iter = NULL # Number of francis iterations to do
-#' )
-#' get_retrospective_plot(retro, Rec_Age = 2)
+#'   retro <- do_retrospective(
+#'     n_retro        = 7,
+#'     data           = data,
+#'     parameters     = parameters,
+#'     mapping        = mapping,
+#'     random         = NULL,
+#'     do_par         = TRUE,
+#'     n_cores        = 7,
+#'     do_francis     = FALSE,
+#'     n_francis_iter = NULL
+#'   )
+#'   plots <- get_retrospective_plot(retro, Rec_Age = 2)
+#'   plots[[1]]  # relative difference + Mohn's rho
+#'   plots[[2]]  # absolute trajectories
+#'   plots[[3]]  # squid plot
 #' }
 get_retrospective_plot <- function(retro_output, Rec_Age) {
 
   # Get relative differences
   ret_df <- get_retrospective_relative_difference(retro_output)
+  ret_df <- ret_df %>% dplyr::filter(!is.nan(rd)) # remove 0s
+
+  # some quick naming
+  retro_output <- retro_output %>%
+    dplyr::mutate(Pop = paste('Pop', Pop),
+                  Region = paste('Region', Region)) %>%
+    dplyr::filter(value != 0)
 
   # Get mohns rho (mean relative difference for a given terminal year peel to terminal year estimates)
   mohns_rho <- ret_df %>%
     dplyr::filter(peel == (max(Year) - Year)) %>%
-    dplyr::group_by(Type, Region) %>%
+    dplyr::group_by(Type, Pop, Region) %>%
     dplyr::summarize(rho = mean(rd))
 
   # get retrospective plot
@@ -661,7 +946,7 @@ get_retrospective_plot <- function(retro_output, Rec_Age) {
     ggplot2::labs(x = 'Year', y = 'Relative Difference from Terminal Year', color = 'Retrospective Year', fill = 'Retrospective Year') +
     ggplot2::scale_color_viridis_c() +
     ggplot2::scale_fill_viridis_c() +
-    ggplot2::facet_grid(Region~Type, scales = 'free') +
+    ggplot2::facet_grid(Region~Type + Pop, scales = 'free') +
     theme_sablefish() +
     ggplot2::theme(legend.position = 'top')
 
@@ -671,7 +956,7 @@ get_retrospective_plot <- function(retro_output, Rec_Age) {
     ggplot2::geom_line(retro_output %>% filter(peel == 0), mapping = ggplot2::aes(x = Year, y = value), lty = 2, lwd = 1) +
     ggplot2::scale_color_viridis_c() +
     ggplot2::coord_cartesian(ylim = c(0, NA)) +
-    ggplot2::facet_grid(Type~Region, scales = 'free_y') +
+    ggplot2::facet_grid(Region~Type+Pop, scales = 'free_y') +
     theme_sablefish() +
     ggplot2::labs(x = 'Year', y = 'Value', color = 'Peel')
 
@@ -682,33 +967,52 @@ get_retrospective_plot <- function(retro_output, Rec_Age) {
     ggplot2::ggplot(ggplot2::aes(x = years_est - 1, y = value, group = Year, color = factor(cohort))) +
     ggplot2::geom_line(lwd = 1.3) +
     ggplot2::geom_point(size = 4) +
-    ggplot2::facet_wrap(~Region, scales = 'free') +
+    ggplot2::facet_grid(Pop~Region, scales = 'free') +
     ggplot2::theme_bw(base_size = 15) +
     ggplot2::labs(x = 'Years since cohort was last estimated', y = 'Recruitment (millions)', color = 'Cohort')
 
   return(list(retro_plot, abs_retro_plot, squid_plot))
 }
-#' Plotting function for all basic quantities
+
+#' Plotting Function for All Basic Quantities
 #'
-#' @param data List of n_models of `SPoRC` data lists
-#' @param rep List of n_models of `SPoRC` report lists
-#' @param sd_rep List of n_models of sd report lists from `SPoRC`
-#' @param out_path Path to the output directory. Users only need to specify the path.
-#' @param model_names Character vector of model names
+#' Convenience wrapper that calls all core SPoRC plotting functions and writes
+#' their output to a single PDF file. Equivalent to calling
+#' \code{get_biological_plot}, \code{get_data_fitted_plot}, \code{get_ts_plot},
+#' \code{get_selex_plot}, and \code{get_nLL_plot} in sequence and printing each
+#' to the same device.
 #'
-#' @returns A series of plots compared across models outputted as a pdf in the specified directory
+#' @param data List of length \code{n_models}, where each element is a SPoRC
+#'   data list. Passed to \code{get_biological_plot}, \code{get_data_fitted_plot},
+#'   and \code{get_nLL_plot}.
+#' @param rep List of length \code{n_models}, where each element is a SPoRC
+#'   report list (i.e. the output of \code{obj$report()} after optimisation).
+#'   Passed to \code{get_biological_plot}, \code{get_ts_plot},
+#'   \code{get_selex_plot}, and \code{get_nLL_plot}.
+#' @param sd_rep List of length \code{n_models}, where each element is a SPoRC
+#'   sdreport list (i.e. the output of \code{sdreport(obj)}). Passed to
+#'   \code{get_ts_plot} for delta-method confidence intervals.
+#' @param model_names Character vector of length \code{n_models} giving display
+#'   names for each model run. Passed to all sub-functions as legend and facet
+#'   labels.
+#' @param out_path Path to the output directory. The PDF is written to
+#'   \code{here::here(out_path, "plot_results.pdf")} at 25 × 13 inches per page.
+#'
+#' @return Called for its side effect. Writes \code{plot_results.pdf} to
+#'   \code{out_path} and returns \code{NULL} invisibly.
+#'
 #' @export plot_all_basic
 #' @family Plotting
 #'
 #' @examples
 #' \dontrun{
-#' plot_all_basic(
-#'   data = list(data1, data2),
-#'   rep = list(rep1, rep2),
-#'   sd_rep = list(sd_rep1, sd_rep2),
-#'   model_names = c("Model1", "Model2"),
-#'   out_path = here::here()
-#' )
+#'   plot_all_basic(
+#'     data        = list(data1, data2),
+#'     rep         = list(rep1, rep2),
+#'     sd_rep      = list(sd_rep1, sd_rep2),
+#'     model_names = c("Base", "Sensitivity"),
+#'     out_path    = here::here()
+#'   )
 #' }
 plot_all_basic <- function(data,
                            rep,
@@ -725,6 +1029,7 @@ plot_all_basic <- function(data,
   dev.off()
 
 }
+
 #' Generate Key Projection Quantities and Table Plot
 #'
 #' Calculates biological and fishery reference points and performs population projections to estimate terminal spawning biomass, catch advice, and reference point values by model and region. Also returns a formatted table plot of key quantities.

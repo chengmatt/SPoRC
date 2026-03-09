@@ -1,15 +1,35 @@
-#' Constructs simulation objects in a new simulation environment for use in simulation functions
+#' Construct and populate a simulation execution environment
 #'
-#' @param sim_list Simulation list objects
+#' Creates a new R environment populated with all objects from \code{sim_list}
+#' and binds the SPoRC simulation functions required by
+#' \code{\link{run_annual_cycle}}. Isolating the simulation state in a
+#' dedicated environment prevents name collisions with the calling frame and
+#' allows \code{with()} / \code{<<-} assignment patterns used internally by
+#' the annual-cycle helpers to modify shared state without polluting the
+#' global workspace.
 #'
-#' @returns A new simulation environment with objects from sim_list
+#' @param sim_list Named list returned by \code{\link{Setup_Sim_Rec}} (or the
+#'   last upstream setup function called). All elements are copied into the
+#'   new environment via \code{list2env}.
+#'
+#' @return A new environment (parent = calling frame) containing every element
+#'   of \code{sim_list} as a named object, plus bound references to the
+#'   following SPoRC simulation functions: \code{generate_initial_age_structure},
+#'   \code{generate_recruitment}, \code{apply_pop_dy},
+#'   \code{generate_fishery_catch_comp_idx}, \code{generate_survey_comp_idx},
+#'   \code{release_conv_tags}, \code{generate_fishery_conv_tags_recap},
+#'   \code{Get_Det_Recruitment}, \code{Get_Init_NAA},
+#'   \code{predict_sim_fish_iss_fmort}, \code{rho_trans},
+#'   \code{simulate_comps}, \code{simulate_conv_tag_fish_recaptures}.
+#'
+#'
 #' @export Setup_sim_env
+#' @family Simulation Setup
 #'
 #' @examples
 #' \dontrun{
 #' sim_env <- Setup_sim_env(sim_list)
 #' }
-#' @family Simulation Setup
 Setup_sim_env <- function(sim_list) {
 
   sim_env <- new.env(parent = parent.frame()) # define new environment for simulation
@@ -35,41 +55,69 @@ Setup_sim_env <- function(sim_list) {
   return(sim_env)
 }
 
-#' Simulate Age or Length Compositions
+#' Simulate age or length compositions
 #'
-#' Generates Observed fish compositions by age or length for a given region, year, fleet, and simulation iteration.
-#' Supports multinomial, Dirichlet-multinomial, and logistic-normal likelihoods, with optional ageing error applied.
+#' Draws observed composition samples (by age or length) for a single
+#' region–year–fleet–season–simulation cell, supporting multinomial,
+#' Dirichlet-multinomial, and logistic-normal likelihoods. Ageing error is
+#' optionally applied post-draw. Three composition aggregation structures are
+#' handled: sex-split (\code{comp_type = 1}), joint across sexes
+#' (\code{comp_type = 2}), and spatially aggregated across all regions
+#' (\code{comp_type = 0}). The sentinel value \code{comp_type = 999} or
+#' \code{comp_like = 999} causes the function to return \code{Obs} unchanged.
+#'
+#' For joint compositions (\code{comp_type = 2}), the Kronecker product
+#' \code{diag(n_sexes) ⊗ AgeingError} is used to apply ageing error across
+#' the combined age–sex vector. For aggregated compositions
+#' (\code{comp_type = 0}), the draw is only executed when \code{r == n_regions}
+#' (i.e., on the final region pass), and uses region- and sex-marginalised
+#' expected proportions.
 #'
 #' @param r Integer. Region index.
 #' @param y Integer. Year index.
-#' @param f Integer. Fleet index.
-#' @param sim Integer. Simulation iteration index.
-#' @param Exp Array. Expected compositions (age or length) with dimensions [region, year, category, sex, fleet, sim].
-#' @param ISS Array. Sample size (integer) for the Observed compositions with dimensions [region, year, sex, fleet, sim].
-#' @param AgeingError Array. Ageing error matrix for each year, dimensions [year, category, category, sim].
-#' @param comp_like Integer vector. Composition likelihood type per fleet: 0 = multinomial, 1 = Dirichlet-multinomial, 2-4 = logistic-normal.
-#' @param ln_theta Array. Log-variance parameter for compositions per region, sex, and fleet, dimensions [region, sex, fleet].
-#' @param corr_pars Array. Correlation parameters for logistic-normal likelihood, dimensions [region, sex, fleet, ?].
-#' @param ln_theta_agg Numeric vector. Log-variance parameter for aggregated compositions per fleet.
-#' @param corr_pars_agg Numeric vector. Correlation parameters for aggregated logistic-normal likelihood per fleet.
-#' @param comp_type Integer array. Composition type: 0 = aggregated across regions, 1 = split by sex, 2 = joint across sexes, dimensions [year, fleet].
+#' @param f Integer. Fleet index (fishery or survey).
+#' @param seas Integer. Season index.
+#' @param sim Integer. Simulation replicate index.
+#' @param Exp Array. Expected compositions \code{[n_pop × n_regions × n_yrs ×
+#'   n_seas × n_cat × n_sexes × n_fleets × n_sims]}.
+#' @param ISS Array. Integer sample sizes
+#'   \code{[n_regions × n_yrs × n_seas × n_sexes × n_fleets × n_sims]}.
+#'   Interpretation depends on \code{comp_like}: effective sample size for
+#'   multinomial; input sample size scaling the Dirichlet concentration; not
+#'   directly used for logistic-normal (variance governed by \code{ln_theta}).
+#' @param AgeingError Array. Ageing error transition matrices
+#'   \code{[n_yrs × n_obs_ages × n_ages × n_sims]}. Ignored when
+#'   \code{age_or_len = 1}.
+#' @param comp_like Integer vector \code{[n_fleets]}. Likelihood type per
+#'   fleet: \code{0} = multinomial, \code{1} = Dirichlet-multinomial,
+#'   \code{2}–\code{4} = logistic-normal variants.
+#' @param ln_theta Array. Log overdispersion or log-variance parameters
+#'   \code{[n_regions × n_sexes × n_fleets]}. Used by Dirichlet-multinomial
+#'   (\code{1}) and logistic-normal (\code{2}–\code{4}) likelihoods.
+#' @param corr_pars Array. Correlation parameters for logistic-normal
+#'   likelihoods \code{[n_regions × n_sexes × n_fleets × n_corr_pars]}.
+#' @param ln_theta_agg Numeric vector \code{[n_fleets]}. Log overdispersion
+#'   for spatially aggregated compositions (\code{comp_type = 0}).
+#' @param corr_pars_agg Numeric vector \code{[n_fleets]}. Correlation
+#'   parameter(s) for aggregated logistic-normal compositions.
+#' @param comp_type Integer matrix \code{[n_yrs × n_fleets]}. Aggregation
+#'   structure: \code{0} = aggregated across regions, \code{1} = split by
+#'   sex, \code{2} = joint across sexes, \code{999} = no data (skip).
 #' @param n_sexes Integer. Number of sexes.
-#' @param n_regions Integer. Number of regions.
-#' @param n_cat Integer. Number of categories (ages or lengths).
-#' @param Obs Array. Observed compositions array to fill, same dimensions as `Exp`.
-#' @param age_or_len Integer. Flag to indicate if ageing error should be applied: 0 = apply ageing error (for ages), 1 = do not apply (for lengths).
-#' @param seas Integer. Seasonal index
 #' @param n_pop Integer. Number of populations.
+#' @param n_regions Integer. Number of regions.
+#' @param n_cat Integer. Number of composition categories (ages or lengths).
+#' @param Obs Array. Observed compositions container with the same dimensions
+#'   as \code{Exp}. Simulated values are written in-place and the updated
+#'   array is returned.
+#' @param age_or_len Integer. \code{0} = age compositions (ageing error
+#'   applied); \code{1} = length compositions (ageing error skipped).
+#'   Default \code{0}.
 #'
-#' @return Array of Observed compositions with the same dimensions as `Obs`, updated with simulated Observations.
+#' @return The \code{Obs} array with simulated composition draws filled in at
+#'   the appropriate \code{[r, y, seas, , , f, sim]} slice. All other slices
+#'   are unchanged.
 #'
-#' @details
-#' The function handles three cases based on `comp_type`:
-#' 1. Split by sex (comp_type = 1): compositions are simulated separately for each sex.
-#' 2. Joint compositions across sexes (comp_type = 2): compositions simulated jointly and multiplied by a kronecker matrix for logistic-normal or Dirichlet-multinomial likelihoods.
-#' 3. Aggregated across regions (comp_type = 0): only applied in the last region and averages across regions and sexes.
-#'
-#' The function normalizes expected compositions, applies the selected likelihood (`comp_like`), and multiplies by `AgeingError` when applicable.
 #'
 #' @keywords internal
 simulate_comps <- function(r,
@@ -243,43 +291,51 @@ simulate_comps <- function(r,
 
 #' Simulate conventional tag recaptures for fishery fleets
 #'
-#' Simulates observed tag recaptures from fishery fleets given predicted recapture
-#' arrays, supporting multiple likelihood structures (Poisson, Negative Binomial,
-#' Multinomial, Dirichlet-Multinomial) and flexible attribute reporting levels
-#' (population, age, sex). The function marginalizes over unreported dimensions
-#' based on the specified \code{tag_recaptures_attr} string.
+#' Draws observed tag recapture counts for a single liberty–season–cohort cell
+#' from predicted recapture arrays, supporting six likelihood structures:
+#' Poisson, negative binomial, and release- or recovery-conditioned
+#' multinomial and Dirichlet-multinomial. Dimensions absent from
+#' \code{tag_recaptures_attr} are marginalised by summing over them, and all
+#' recaptures are placed into index 1 of the corresponding dimension in the
+#' output array.
 #'
-#' @param conv_fish_tag_like Integer specifying the likelihood for tag recaptures.
-#'   \itemize{
-#'     \item \code{0} Poisson
-#'     \item \code{1} Negative Binomial
-#'     \item \code{2} Multinomial, release conditioned
-#'     \item \code{3} Multinomial, recovery conditioned
-#'     \item \code{4} Dirichlet-Multinomial, release conditioned
-#'     \item \code{5} Dirichlet-Multinomial, recovery conditioned
-#'   }
-#' @param tag_recaptures_attr Character string specifying which biological attributes
-#'   are recorded at tagging / recapture. Constructed from any combination of \code{"p"} (population),
-#'   \code{"a"} (age), and \code{"s"} (sex), joined by underscores. Region and fleet are
-#'   always retained. Supported values: \code{"p_a_s"}, \code{"a_s"}, \code{"p_a"},
-#'   \code{"p_s"}, \code{"a"}, \code{"s"}, \code{"p"}, \code{"none"}. Dimensions not
-#'   present in the string are marginalized out and assigned to index 1 in the output array.
-#' @param conv_tagged_fish Array of tagged fish at release with dimensions
-#'   \code{[tc, pop, region, sex, sim]}. Used to determine the number of tags at liberty
-#'   for release-conditioned likelihoods.
-#' @param pred_conv_tag_fish_recap Array of predicted tag recaptures with dimensions
-#'   \code{[year, season, cohort, pop, region, age, sex, fleet, sim]}.
-#' @param obs_conv_tag_fish_recap Array of observed tag recaptures with the same
-#'   dimensions as \code{pred_conv_tag_fish_recap}. Simulated values are written into
-#'   this array and the updated array is returned.
-#' @param ln_conv_fish_tag_theta Numeric. Log of the overdispersion parameter used
-#'   in Negative Binomial (size = \code{exp(ln_conv_fish_tag_theta)}) and
-#'   Dirichlet-Multinomial (\eqn{\theta = \exp(\text{ln\_conv\_fish\_tag\_theta})}) likelihoods.
-#'   Ignored for Poisson and Multinomial.
-#' @param ry Integer. Recovery year index into the recapture arrays.
-#' @param rseas Integer. Recovery season index into the recapture arrays.
-#' @param tc Integer. Tag cohort index, used to index into \code{pred_conv_tag_fish_recap}
-#'   and \code{conv_tagged_fish}.
+#' For release-conditioned likelihoods (\code{2}, \code{4}), predicted
+#' recaptures are expressed as proportions of total tags released. A
+#' "not-recaptured" bin is appended to complete the probability vector before
+#' drawing and removed before assignment. For recovery-conditioned likelihoods
+#' (\code{3}, \code{5}), the draw is conditioned on the total predicted
+#' recapture count with no not-recaptured bin needed. The overdispersion
+#' parameter \code{ln_conv_fish_tag_theta} governs the negative-binomial size
+#' parameter and the Dirichlet-multinomial concentration scaling, and is
+#' ignored for Poisson and multinomial likelihoods.
+#'
+#' @param conv_fish_tag_like Integer. Likelihood for tag recaptures:
+#'   \code{0} = Poisson, \code{1} = negative binomial,
+#'   \code{2} = multinomial (release-conditioned),
+#'   \code{3} = multinomial (recovery-conditioned),
+#'   \code{4} = Dirichlet-multinomial (release-conditioned),
+#'   \code{5} = Dirichlet-multinomial (recovery-conditioned).
+#' @param tag_recaptures_attr Character string specifying which biological
+#'   dimensions are attended in the recapture likelihood. Built from any
+#'   combination of \code{"p"} (population), \code{"a"} (age), and \code{"s"}
+#'   (sex), joined by underscores. Region and fleet are always retained.
+#'   Unattended dimensions are marginalised and output into index 1.
+#' @param conv_tagged_fish Array of released tagged fish
+#'   \code{[n_conv_tag_cohorts × n_pop × n_ages × n_sexes × n_sims]}. Used
+#'   as the release sample size for release-conditioned likelihoods.
+#' @param pred_conv_tag_fish_recap Array of predicted recaptures
+#'   \code{[conv_tag_max_liberty × n_seas × n_conv_tag_cohorts × n_pop ×
+#'   n_regions × n_ages × n_sexes × n_fish_fleets × n_sims]}.
+#' @param obs_conv_tag_fish_recap Array of observed recaptures with the same
+#'   dimensions as \code{pred_conv_tag_fish_recap}. Simulated values are
+#'   written in-place at the \code{[ry, rseas, tc, ...]} slice.
+#' @param ln_conv_fish_tag_theta Numeric. Log overdispersion: negative
+#'   binomial size = \code{exp(ln_conv_fish_tag_theta)}; Dirichlet-multinomial
+#'   concentration = \code{exp(ln_conv_fish_tag_theta) × N × p}.
+#' @param ry Integer. Years-at-liberty index (first dimension of recapture
+#'   arrays).
+#' @param rseas Integer. Recovery season index.
+#' @param tc Integer. Tag cohort index.
 #' @param sim Integer. Simulation replicate index.
 #' @param n_pop Integer. Number of populations.
 #' @param n_regions Integer. Number of regions.
@@ -287,23 +343,10 @@ simulate_comps <- function(r,
 #' @param n_sexes Integer. Number of sexes.
 #' @param n_fish_fleets Integer. Number of fishery fleets.
 #'
-#' @returns The \code{obs_conv_tag_fish_recap} array with simulated recaptures filled in
-#'   at indices \code{[ry, rseas, tc, pop_idx, reg_idx, age_idx, sex_idx, flt_idx, sim]},
-#'   where marginalized dimensions are fixed at index 1.
+#' @return The \code{obs_conv_tag_fish_recap} array with simulated recaptures
+#'   filled in at \code{[ry, rseas, tc, pop_idx, reg_idx, age_idx, sex_idx,
+#'   flt_idx, sim]}. Marginalised dimensions are fixed at index 1.
 #'
-#' @details
-#' For release-conditioned likelihoods (\code{2}, \code{4}), the total number of tags
-#' at liberty is taken from \code{conv_tagged_fish} and predicted recaptures are expressed
-#' as proportions. A "not recaptured" bin is appended to complete the probability vector
-#' before drawing, then removed before assignment.
-#'
-#' For recovery-conditioned likelihoods (\code{3}, \code{5}), the total number of
-#' recaptures is taken directly from the sum of \code{pred_conv_tag_fish_recap} and
-#' no "not recaptured" bin is needed.
-#'
-#' Marginalization is performed by reshaping the flat predicted recapture vector into
-#' a 5-dimensional array of shape \code{c(n_pop, n_regions, n_ages, n_sexes, n_fish_fleets)}
-#' and summing over dimensions absent from \code{tag_recaptures_attr}.
 #'
 #' @keywords internal
 simulate_conv_tag_fish_recaptures <- function(conv_fish_tag_like,
@@ -403,18 +446,30 @@ simulate_conv_tag_fish_recaptures <- function(conv_fish_tag_like,
 
 }
 
-#' Title Function to marginalize conventional fishery tags across populations, ages, and sex dimensions
+#' Marginalise conventional fishery tag arrays across unattended dimensions
 #'
-#' @param vals Conventional fishery tag recapture values
-#' @param tag_recaptures_attr Character string specifying which biological attributes
-#'   are recorded at tagging / recapture. Constructed from any combination of \code{"p"} (population),
-#'   \code{"a"} (age), and \code{"s"} (sex), joined by underscores. Region and fleet are
-#'   always retained. Supported values: \code{"p_a_s"}, \code{"a_s"}, \code{"p_a"},
-#'   \code{"p_s"}, \code{"a"}, \code{"s"}, \code{"p"}, \code{"none"}. Dimensions not
-#'   present in the string are marginalized out and assigned to index 1 in the output array
-#' @param n_pop Number of populations
-#' @param n_ages Number of ages
-#' @param n_sexes Number of sexes
+#' Collapses population, age, and/or sex dimensions of a tag count array
+#' \code{[n_pop × n_ages × n_sexes]} by summing over dimensions absent from
+#' \code{tag_recaptures_attr}, placing the result into index 1 of the
+#' corresponding dimension and zeroing all other indices. Region and fleet are
+#' not handled here (they are managed at the calling level). The function is
+#' used to align the release array \code{conv_tagged_fish} with the attended
+#' resolution of the recapture likelihood.
+#'
+#' @param vals Numeric vector or array of tag counts, interpreted as a
+#'   \code{[n_pop × n_ages × n_sexes]} array.
+#' @param tag_recaptures_attr Character string specifying attended dimensions.
+#'   Same format as \code{conv_fish_tag_attr} in
+#'   \code{\link{Setup_Sim_Tagging}}: any combination of \code{"p"},
+#'   \code{"a"}, \code{"s"} joined by underscores.
+#' @param n_pop Integer. Number of populations.
+#' @param n_ages Integer. Number of age classes.
+#' @param n_sexes Integer. Number of sexes.
+#'
+#' @return Array \code{[n_pop × n_ages × n_sexes]} with unattended dimensions
+#'   summed into index 1 and all other indices set to zero.
+#'
+#'
 #' @keywords internal
 marginalize_conv_fish_tags <- function(vals,
                                        tag_recaptures_attr,
@@ -445,11 +500,33 @@ marginalize_conv_fish_tags <- function(vals,
   return(tmp)
 }
 
-#' Title Initialize Age Structure for Simulation
+#' Initialise age structure for a simulation replicate
 #'
-#' @param y Year index
-#' @param sim Simulation index
-#' @param sim_env Simulation Environment
+#' Simulates or reads in initial age deviations and calls
+#' \code{\link{Get_Init_NAA}} to compute both the fished and unfished
+#' equilibrium numbers-at-age for year 1 and season 1. Results are written
+#' directly into the simulation environment arrays \code{NAA} and
+#' \code{NAA0}. This function is called once per simulation replicate at
+#' \code{y = 1} by \code{\link{run_annual_cycle}}.
+#'
+#' Initial deviation sharing follows the same logic as the estimation model:
+#' deviations are drawn once per population when \code{n_pop > 1}, or once
+#' per region when \code{n_pop = 1} and \code{init_dd = 0} (local
+#' density-dependence). If \code{ln_InitDevs_input} exists in the simulation
+#' environment, those values are used directly rather than simulating new
+#' draws. Populations with \code{R0 = 0} receive zero deviations. The
+#' equilibrium solver uses \code{init_iter = n_ages × 5} iterations.
+#'
+#' @param y Integer. Year index (must be \code{1}).
+#' @param sim Integer. Simulation replicate index.
+#' @param sim_env Simulation environment created by
+#'   \code{\link{Setup_sim_env}}. Modified in place: \code{$ln_InitDevs},
+#'   \code{$NAA[,,1,1,,,sim]}, and \code{$NAA0[,,1,1,,,sim]} are updated.
+#'
+#' @return \code{invisible(NULL)}. All modifications are made by reference
+#'   within \code{sim_env}.
+#'
+#'
 #' @keywords internal
 generate_initial_age_structure <- function(y,
                                            sim,
@@ -482,7 +559,7 @@ generate_initial_age_structure <- function(y,
         }
 
         # input age deviations
-        if(R0[p,r,y,sim] != 0) {
+        if(R0[p,r,1,sim] != 0) {
           sim_env$ln_InitDevs[p,r,,sim] <- tmp_ln_init_devs
         } else sim_env$ln_InitDevs[p,r,,sim] <- 0
 
@@ -540,11 +617,36 @@ generate_initial_age_structure <- function(y,
 
 }
 
-#' Title Generate Recruitment for Simulation
+#' Generate recruitment for a simulation year
 #'
-#' @param y Year index
-#' @param sim Simulation index
-#' @param sim_env Simulation Environment
+#' Computes total recruitment for year \code{y} by first obtaining
+#' deterministic expected recruitment from \code{\link{Get_Det_Recruitment}}
+#' and then multiplying by lognormal deviations (bias-corrected). Recruitment
+#' is apportioned across sexes and seasons and written into
+#' \code{sim_env$NAA[p, r, y, 1, 1, s, sim]} (first season, age-1 slot).
+#' Unfished NAA (\code{NAA0}) is synchronised to match fished NAA at
+#' recruitment. If \code{Rec_input} exists in the environment and covers year
+#' \code{y}, those values override the stochastic draw entirely.
+#'
+#' Recruitment deviation sharing follows the same population/region logic as
+#' \code{\link{generate_initial_age_structure}}: deviations are drawn once
+#' per population (\code{n_pop > 1}) or once per region (\code{n_pop = 1},
+#' local density-dependence). Populations with \code{R0 = 0} receive zero
+#' deviations. \code{sigma_idx} selects the natal region's \code{ln_sigmaR}
+#' for the bias-correction term.
+#'
+#' @param y Integer. Year index for which recruitment is generated.
+#' @param sim Integer. Simulation replicate index.
+#' @param sim_env Simulation environment created by
+#'   \code{\link{Setup_sim_env}}. Modified in place:
+#'   \code{$ln_RecDevs[p, r, y, sim]}, \code{$Rec[p, r, y, sim]},
+#'   \code{$NAA[p, r, y, 1, 1, s, sim]}, and
+#'   \code{$NAA0[p, r, y, 1, 1, s, sim]} are updated.
+#'
+#' @return \code{invisible(NULL)}. All modifications are made by reference
+#'   within \code{sim_env}.
+#'
+#'
 #' @keywords internal
 generate_recruitment <- function(y,
                                  sim,
@@ -631,11 +733,37 @@ generate_recruitment <- function(y,
   })
 }
 
-#' Title Apply Population Dynamics (Movement, Mortality, and SSB) in Simulation
+#' Apply population dynamics within a simulation year
 #'
-#' @param y Year index
-#' @param sim Simulation index
-#' @param sim_env Simulation Environment
+#' Executes the full within-year population dynamics loop for year \code{y}:
+#' seasonal recruitment apportionment (seasons 2+), movement, Baranov
+#' catch-equation mortality, age advancement into the following year, and
+#' spawning-season biomass calculations (total biomass, SSB, dynamic \eqn{B_0},
+#' and effective SSB for multi-population natal homing). Both fished
+#' (\code{NAA}) and unfished (\code{NAA0}) trajectories are tracked in
+#' parallel. For single-season multi-population models,
+#' \code{sgl_seas_spawning_movement} is applied to \code{NAA} and
+#' \code{NAA0} prior to computing spawning biomass quantities. Single-sex
+#' models have SSB and \eqn{B_0} multiplied by 0.5 to obtain female-only
+#' spawning biomass.
+#'
+#' Pre- and post-movement snapshots are stored in \code{NAA_bef} and
+#' \code{NAA_aft} respectively. Movement is only applied when
+#' \code{n_regions > 1}; recruits (\code{a = 1}) are excluded from movement
+#' when \code{do_recruits_move = 0}.
+#'
+#' @param y Integer. Year index.
+#' @param sim Integer. Simulation replicate index.
+#' @param sim_env Simulation environment created by
+#'   \code{\link{Setup_sim_env}}. Modified in place: \code{$ZAA},
+#'   \code{$NAA}, \code{$NAA0}, \code{$NAA_bef}, \code{$NAA_aft},
+#'   \code{$Total_Biom}, \code{$SSB}, \code{$Dynamic_SSB0}, and
+#'   \code{$eff_SSB} are updated.
+#'
+#' @return \code{invisible(NULL)}. All modifications are made by reference
+#'   within \code{sim_env}.
+#'
+#'
 #' @keywords internal
 apply_pop_dy <- function(y, sim, sim_env) {
 
@@ -771,11 +899,36 @@ apply_pop_dy <- function(y, sim, sim_env) {
   })
 }
 
-#' Title Generate Fishery Catches, Comps, and Indices in Simulation
+#' Generate fishery catches, compositions, and indices in simulation
 #'
-#' @param y Year index
-#' @param sim Simulation index
-#' @param sim_env Simulation Environment
+#' Applies Baranov's catch equation to compute catch-at-age
+#' (\code{CAA}) for all populations, regions, seasons, and fleets, derives
+#' catch-at-length (\code{CAL}) when a size-age transition matrix is
+#' available, and generates observed catch (with lognormal error), fishery
+#' abundance or biomass indices, and age and length composition samples.
+#' Composition sampling calls \code{\link{simulate_comps}} and respects
+#' the likelihood type (\code{comp_fishage_like}, \code{comp_fishlen_like})
+#' and aggregation structure (\code{FishAgeComps_Type},
+#' \code{FishLenComps_Type}) specified in \code{sim_env}. Composition draws
+#' are skipped for fleet–season cells with \code{Fmort = 0}. When
+#' \code{ISS_FishAgeComps_fill = "F_pattern"} and feedback is active,
+#' sample sizes for the current and all prior years are updated via
+#' \code{\link{predict_sim_fish_iss_fmort}} before sampling.
+#'
+#' @param y Integer. Year index.
+#' @param sim Integer. Simulation replicate index.
+#' @param sim_env Simulation environment created by
+#'   \code{\link{Setup_sim_env}}. Modified in place: \code{$CAA},
+#'   \code{$CAL} (if \code{SizeAgeTrans} present), \code{$TrueCatch},
+#'   \code{$ObsCatch}, \code{$TrueFishIdx}, \code{$ObsFishIdx},
+#'   \code{$ObsFishAgeComps}, \code{$ObsFishLenComps}, and (when
+#'   \code{ISS_FishAgeComps_fill = "F_pattern"}) \code{$ISS_FishAgeComps}
+#'   and \code{$ISS_FishLenComps} are updated.
+#'
+#' @return \code{invisible(NULL)}. All modifications are made by reference
+#'   within \code{sim_env}.
+#'
+#'
 #' @keywords internal
 generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
 
@@ -873,11 +1026,27 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
 }
 
 
-#' Title Generate Survey Comps and Indices in Simulation
+#' Generate survey indices and compositions in simulation
 #'
-#' @param y Year index
-#' @param sim Simulation index
-#' @param sim_env Simulation Environment
+#' Computes survey index-at-age (\code{SrvIAA}) for all populations using
+#' the mid-survey abundance formula \eqn{N \cdot s \cdot e^{-t_{\text{srv}} Z}},
+#' derives index-at-length (\code{SrvIAL}) when a size-age transition matrix
+#' is available, generates observed survey indices (with lognormal error) as
+#' abundance or biomass depending on \code{srv_idx_type}, and draws age and
+#' length composition samples via \code{\link{simulate_comps}}.
+#'
+#' @param y Integer. Year index.
+#' @param sim Integer. Simulation replicate index.
+#' @param sim_env Simulation environment created by
+#'   \code{\link{Setup_sim_env}}. Modified in place: \code{$SrvIAA},
+#'   \code{$SrvIAL} (if \code{SizeAgeTrans} present), \code{$TrueSrvIdx},
+#'   \code{$ObsSrvIdx}, \code{$ObsSrvAgeComps}, and
+#'   \code{$ObsSrvLenComps} are updated.
+#'
+#' @return \code{invisible(NULL)}. All modifications are made by reference
+#'   within \code{sim_env}.
+#'
+#'
 #' @keywords internal
 generate_survey_comp_idx <- function(y, sim, sim_env) {
 
@@ -954,11 +1123,36 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
   })
 }
 
-#' Title Generate Conventional Tag Releases
+#' Release conventional tags in the simulation
 #'
-#' @param y Year index
-#' @param sim Simulation index
-#' @param sim_env Simulation Environment
+#' For each tag cohort scheduled for release in year \code{y}, distributes
+#' \code{n_tags} (or \code{n_tags_rel_input} if provided) across populations,
+#' ages, and sexes proportional to the selectivity-weighted abundance
+#' (\code{NAA_bef}) of the release platform (survey, fishery, or population).
+#' Tagged fish counts are rounded to integers. The attended attribute string
+#' \code{conv_fish_tag_attr} is then applied via
+#' \code{\link{marginalize_conv_fish_tags}} to produce the observation-level
+#' release array \code{conv_tagged_fish_attr}, which is consistent with the
+#' dimension resolution of the recapture likelihood.
+#'
+#' For survey and fishery platforms, total tags in the release region are
+#' scaled relative to the selectivity-weighted global abundance to allocate
+#' region-specific cohort sizes when \code{n_tags_rel_input} is not provided.
+#' For the population platform, scaling is proportional to the region's share
+#' of total abundance.
+#'
+#' @param y Integer. Year index.
+#' @param sim Integer. Simulation replicate index.
+#' @param sim_env Simulation environment created by
+#'   \code{\link{Setup_sim_env}}. Modified in place:
+#'   \code{$conv_tagged_fish[tc, , , , sim]} and
+#'   \code{$conv_tagged_fish_attr[tc, , , , sim]} for each cohort released
+#'   in year \code{y}.
+#'
+#' @return \code{invisible(NULL)}. All modifications are made by reference
+#'   within \code{sim_env}.
+#'
+#'
 #' @keywords internal
 release_conv_tags <- function(y, sim, sim_env) {
 
@@ -1046,11 +1240,39 @@ release_conv_tags <- function(y, sim, sim_env) {
   })
 }
 
-#' Title Generate Conventional Tag Recaptures from Fisheries
+#' Generate conventional tag recaptures from fisheries in simulation
 #'
-#' @param y Year index
-#' @param sim Simulation index
-#' @param sim_env Simulation Environment
+#' For each tag cohort (\code{tc}) and recovery season (\code{rseas}) in year
+#' \code{y}, advances available tagged fish through movement and mortality,
+#' applies Baranov's equation to compute predicted recaptures
+#' (\code{pred_conv_tag_fish_recap}), and draws observed recaptures
+#' (\code{obs_conv_tag_fish_recap}) via
+#' \code{\link{simulate_conv_tag_fish_recaptures}}. Cohorts not yet released,
+#' already at \code{conv_tag_max_liberty}, or with release year in the future
+#' are silently skipped.
+#'
+#' At initial release (\code{ry = 1}, \code{rseas = tseas}), tags are
+#' placed into \code{conv_tag_fish_avail[1, rseas, tc, ...]} after discounting
+#' for initial tag-induced mortality (\code{ln_init_conv_tag_mort}). When
+#' \code{conv_tag_t_tagging < 1}, total mortality is scaled by the fraction of
+#' the season remaining at release for that cell only. Chronic shedding
+#' (\code{ln_conv_tag_shed}) enters the total mortality rate alongside natural
+#' and fishing mortality. At the end of each season, survivors advance to the
+#' next season or the next year's first season with plus-group accumulation.
+#' Tag reporting rates from \code{conv_tag_fish_reporting} are applied fleet-
+#' and region-specifically.
+#'
+#' @param y Integer. Year index.
+#' @param sim Integer. Simulation replicate index.
+#' @param sim_env Simulation environment created by
+#'   \code{\link{Setup_sim_env}}. Modified in place:
+#'   \code{$conv_tag_fish_avail}, \code{$pred_conv_tag_fish_recap}, and
+#'   \code{$obs_conv_tag_fish_recap} are updated.
+#'
+#' @return \code{invisible(NULL)}. All modifications are made by reference
+#'   within \code{sim_env}.
+#'
+#'
 #' @keywords internal
 generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {
 
@@ -1070,7 +1292,7 @@ generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {
           # Skipping stuff if hasn't occurred yet, or if max liberty
           if(y < ty || (y == ty && rseas < tseas)) next
           ry <- y - ty + 1 # get tag liberty
-          if(ry > max_liberty) next # skip if max liberty
+          if(ry > conv_tag_max_liberty) next # skip if max liberty
 
           # get fishing mortality
           tmp_F <- array(Fmort[, y, rseas, , sim] , dim = c(n_regions, 1, n_ages, n_sexes, n_fish_fleets, 1))
@@ -1080,9 +1302,9 @@ generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {
           tmp_natmort <- array(natmort[,,y,,,sim], dim = c(n_pop, n_regions, 1, n_ages, n_sexes, 1))
           tmp_ZAA <- sweep((tmp_natmort * seasdur[rseas]), c(2,3,4,5), apply(tmp_FAA, 1:4, sum), "+") + (exp(ln_conv_tag_shed) * seasdur[rseas])
 
-          # Discount with tagging time (t_tagging) if it doesn't happen at the start of the season / year
+          # Discount with tagging time (conv_tag_t_tagging) if it doesn't happen at the start of the season / year
           if(ry == 1 && rseas == tseas) {
-            if(t_tagging != 1) tmp_ZAA <- tmp_ZAA * t_tagging
+            if(conv_tag_t_tagging != 1) tmp_ZAA <- tmp_ZAA * conv_tag_t_tagging
             # Input tagged fish into available tags for recapture and adjust initial number of tagged fish for tag induced mortality (exponential mortality process)
             sim_env$conv_tag_fish_avail[1, rseas, tc, , tr, , , sim] <- array(conv_tagged_fish[tc, , , , sim] * exp(-exp(ln_init_conv_tag_mort)), dim = c(n_pop, n_ages, n_sexes))
           }
@@ -1091,7 +1313,7 @@ generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {
           tmp_SAA <- exp(-tmp_ZAA)
 
           # Move tagged fish around (skip only in first release year + tagging season when tagging occurs mid-season)
-          if(t_tagging == 1 || ry != 1 || rseas != tseas) {
+          if(conv_tag_t_tagging == 1 || ry != 1 || rseas != tseas) {
             for(p in 1:n_pop) {
               # Movement of tag cohorts
               if(do_recruits_move == 0) {
@@ -1167,13 +1389,28 @@ generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {
 }
 
 
-#' Run Annual Cycle in Simulation Environment
+#' Run the annual cycle for a single simulation year
 #'
-#' @param y Year index
-#' @param sim Simulation index
-#' @param sim_env Simulation environment will all the necessary elements to run the annual cycle
-#' @export run_annual_cycle
+#' Orchestrates the complete annual sequence of operating model processes for
+#' year \code{y} and simulation replicate \code{sim}: initialises age
+#' structure and generates first-year recruitment at \code{y = 1}; applies
+#' population dynamics (movement, mortality, biomass); generates fishery
+#' catches, indices, and compositions; generates survey indices and
+#' compositions; releases conventional tags; generates fishery tag
+#' recaptures (when any \code{use_conv_fish_tagging = 1}); and generates
+#' recruitment for the following year (\code{y + 1}) when \code{y < n_yrs}.
+#'
+#' @param y Integer. Year index.
+#' @param sim Integer. Simulation replicate index.
+#' @param sim_env Simulation environment created by
+#'   \code{\link{Setup_sim_env}} and passed by reference. All annual-cycle
+#'   helper functions modify this environment in place.
+#'
+#' @return \code{invisible(NULL)}.
+#'
+#'
 #' @importFrom stats rnorm rmultinom
+#' @export run_annual_cycle
 #' @family Simulation Setup
 run_annual_cycle <- function(y,
                              sim,
@@ -1187,9 +1424,12 @@ run_annual_cycle <- function(y,
   apply_pop_dy(y, sim, sim_env) # Apply population dynamics (movement, mortality, and biomass calculations)
   generate_fishery_catch_comp_idx(y, sim, sim_env) # Get Fishery Catches, Compositions, and Indices
   generate_survey_comp_idx(y, sim, sim_env) # Get Fishery Catches, Compositions, and Indices
-  release_conv_tags(y, sim, sim_env) # Release conventional tags
 
-  if(sim_env$use_conv_fish_tagging == 1) generate_fishery_conv_tags_recap(y, sim, sim_env) # Generate fishery conventional tag recaptures
+  if(any(sim_env$use_conv_fish_tagging == 1)) {
+    release_conv_tags(y, sim, sim_env) # Release conventional tags
+    generate_fishery_conv_tags_recap(y, sim, sim_env) # Generate fishery conventional tag recaptures
+  }
+
   if(y < sim_env$n_yrs) generate_recruitment(y = y + 1, sim, sim_env) # Get recruitment in the following year
 
 
@@ -1197,14 +1437,42 @@ run_annual_cycle <- function(y,
 
 }
 
-#' Simulates a static spatial, sex, and age-structured population (no feedback loop)
+#' Simulate a static (open-loop) spatial age- and sex-structured population
 #'
-#' @param output_path path to output simulation objects
-#' @param sim_list Simulation list objects
+#' Runs a complete multi-replicate operating model simulation with no
+#' feedback between the population and the harvest control rule (i.e.,
+#' fishing mortality is fixed as supplied in \code{sim_list}). Calls
+#' \code{\link{Setup_sim_env}} to create an isolated execution environment
+#' and then iterates \code{\link{run_annual_cycle}} over all years and
+#' simulation replicates. All simulation outputs are collected from the
+#' environment and returned as a named list. Optionally writes the output
+#' to an RDS file.
 #'
-#' @returns a list object with a bunch of simulated values and outputs
+#' @param sim_list Simulation list returned by the last upstream setup
+#'   function (typically \code{\link{Setup_Sim_Rec}} or
+#'   \code{\link{Setup_Sim_Tagging}}).
+#' @param output_path Character string. File path for saving the output list
+#'   as an RDS file via \code{saveRDS}. If \code{NULL} (default), no file is
+#'   written.
+#'
+#' @return A named list containing all simulation outputs, including (among
+#'   others): \code{NAA}, \code{NAA0}, \code{SSB}, \code{Dynamic_SSB0},
+#'   \code{eff_SSB}, \code{Rec}, \code{ln_RecDevs}, \code{ln_InitDevs},
+#'   \code{ZAA}, \code{TrueCatch}, \code{ObsCatch}, \code{CAA}, \code{CAL},
+#'   \code{ObsFishAgeComps}, \code{ObsFishLenComps}, \code{ObsFishIdx},
+#'   \code{TrueFishIdx}, \code{SrvIAA}, \code{SrvIAL},
+#'   \code{ObsSrvAgeComps}, \code{ObsSrvLenComps}, \code{ObsSrvIdx},
+#'   \code{TrueSrvIdx}, \code{conv_tagged_fish}, \code{conv_tagged_fish_attr},
+#'   \code{conv_tag_fish_avail}, \code{pred_conv_tag_fish_recap},
+#'   \code{obs_conv_tag_fish_recap}, and key dimension scalars
+#'   (\code{n_regions}, \code{n_pop}, \code{n_yrs}, \code{n_ages}, etc.).
+#'   Note that \code{n_years} and \code{n_yrs} are both present for backwards
+#'   compatibility.
+#'
+#'
 #' @export Simulate_Pop_Static
 #' @family Simulation Setup
+
 Simulate_Pop_Static <- function(sim_list,
                                 output_path = NULL) {
 
@@ -1307,49 +1575,65 @@ Simulate_Pop_Static <- function(sim_list,
 } # end function
 
 
-#' Conduct a Simulation Self Test
+#' Run a simulation self-test of a fitted RTMB estimation model
 #'
-#' This function runs a self test of the fitted RTMB model by simulating new
-#' datasets under the fitted parameters, refitting the model, and comparing
-#' estimated outputs to the true values used for simulation. It can be run
-#' sequentially or in parallel.
+#' Validates model performance by: (1) generating \code{n_sims} new datasets
+#' from the fitted model parameters using \code{\link{Simulate_Pop_Static}},
+#' (2) re-fitting the estimation model to each simulated dataset, and (3)
+#' storing user-specified report quantities for comparison against true values.
+#' Supports sequential or parallel execution via
+#' \code{future}/\code{future.apply}. Likelihood weights from the original fit
+#' are propagated into the simulation (e.g., ISS scaled by
+#' \code{Wt_FishAgeComps}; \code{ObsSrvIdx_SE} divided by
+#' \code{sqrt(Wt_SrvIdx)}); all weights are reset to 1 when re-fitting.
+#' Failed replicates are silently stored as \code{NA}.
 #'
-#' @param data A list containing model data from an RTMB object.
-#' @param parameters A list of fitted parameter values from an RTMB object.
-#' @param mapping A list specifying parameter mappings from an RTMB object.
-#' @param random Character vector specifying random effects.
-#' @param rep A list of report values from an RTMB object (`$rep`).
-#' @param sd_rep An `sdreport` object from RTMB summarizing parameter uncertainty.
-#' @param n_sims Integer. Number of simulation replicates to run.
-#' @param newton_loops Integer. Number of Newton loops used in model fitting (default: `3`).
-#' @param do_sdrep Logical. If `TRUE`, compute `sdreport` for each fitted replicate (default: `FALSE`).
-#' @param do_par Logical. If `TRUE`, run simulations in parallel (default: `FALSE`).
-#' @param n_cores Integer. Number of cores to use for parallelization (default: `NULL` = detect automatically).
-#' @param output_path Optional file path. If provided, the simulated datasets are written to this location.
-#' @param what Character vector. Names of report elements in `rep` to extract and store for each replicate.
-#' @family Simulation Setup
-#' @return
-#' A list with elements corresponding to the requested `what` values, each containing
-#' an array of simulation results across replicates. If `do_sdrep = TRUE`, an additional
-#' element `"sd_rep"` is included with the list of `sdreport` objects (or `NA` if a replicate fails).
+#' @param data Named list of model data from a fitted RTMB object
+#'   (\code{$data}).
+#' @param parameters Named list of fitted parameter values (\code{$par} or
+#'   equivalent).
+#' @param mapping Named list of parameter factor maps (\code{$map}).
+#' @param random Character vector of random effect names passed to RTMB.
+#' @param rep Named list of report values from the fitted model
+#'   (\code{obj$rep}).
+#' @param sd_rep \code{sdreport} object from the fitted model, used to
+#'   extract optimised parameter values in list format via
+#'   \code{get_optim_param_list}.
+#' @param n_sims Integer. Number of simulation replicates.
+#' @param newton_loops Integer. Number of Newton refinement steps applied
+#'   during re-fitting. Default \code{3}.
+#' @param do_sdrep Logical. Whether to compute \code{sdreport} for each
+#'   fitted replicate. Results stored as \code{$sd_rep} in the output list;
+#'   failed \code{sdreport} calls stored as \code{NA}. Default \code{FALSE}.
+#' @param do_par Logical. Whether to run replicates in parallel via
+#'   \code{future::multisession}. Default \code{FALSE}.
+#' @param n_cores Integer. Number of parallel workers. If \code{NULL}
+#'   (default), \code{parallel::detectCores() - 1} is used.
+#' @param output_path Character string. Path to save the simulated dataset
+#'   RDS file. Passed to \code{\link{Simulate_Pop_Static}}. Default
+#'   \code{NULL}.
+#' @param what Character vector. Names of report elements (keys of
+#'   \code{rep}) to extract and store from each replicate. An error is raised
+#'   if any name is not found in \code{rep}. Default \code{c("SSB", "Rec")}.
+#'
+#' @return Named list with one element per entry in \code{what}, each an
+#'   array with the last dimension indexing simulation replicates (via
+#'   \code{simplify2array}). If \code{do_sdrep = TRUE}, an additional element
+#'   \code{"sd_rep"} contains a list of \code{sdreport} objects (or \code{NA}
+#'   for failed replicates).
+#'
 #'
 #' @export
+#' @family Simulation Setup
 #'
 #' @examples
 #' \dontrun{
-#' # Run a simple self test with 10 simulations, extracting SSB
 #' res <- simulation_self_test(
-#'   data = model$data,
-#'   parameters = model$parameters,
-#'   mapping = model$mapping,
-#'   random = model$random,
-#'   rep = model$rep,
-#'   sd_rep = model$sd_rep,
-#'   n_sims = 10,
-#'   what = "SSB"
+#'   data = obj$data, parameters = obj$par, mapping = obj$map,
+#'   random = obj$random, rep = obj$rep, sd_rep = obj$sd_rep,
+#'   n_sims = 100, what = c("SSB", "Rec", "Fmort")
 #' )
-#'
-#' str(res$SSB) # look at simulated SSB arrays
+#' str(res$SSB)
 #' }
 simulation_self_test <- function(data,
                                  parameters,
@@ -1393,7 +1677,7 @@ simulation_self_test <- function(data,
                             # Seasonal stuff
                             n_seas = data$n_seas,
                             seasdur = data$seasdur,
-                            # Populatoin stuff
+                            # Population stuff
                             n_pop = data$n_pop,
                             natal_region = data$natal_region
   )
@@ -1477,12 +1761,12 @@ simulation_self_test <- function(data,
     WAA_srv_input = replicate(n = sim_list$n_sims, data$WAA_srv[,,1:length(data$years),,,,,drop = FALSE]), # survey weight at age
     MatAA_input = replicate(n = sim_list$n_sims, data$MatAA[,,1:length(data$years),,,,drop = FALSE]), # maturity at age
     AgeingError_input = replicate(n = sim_list$n_sims, data$AgeingError[1:length(data$years),,,drop = FALSE]), # ageing error
-    SizeAgeTrans_input = replicate(n = sim_list$n_sims, data$SizeAgeTrans[,,1:length(data$years),,,,,drop = FALSE]) # size age transition matrix
+    SizeAgeTrans_input = if(data$fit_lengths == 0) NULL else replicate(n = sim_list$n_sims, data$SizeAgeTrans[,,1:length(data$years),,,,,drop = FALSE]) # size age transition matrix
   )
 
   # Movement
   sim_list$Movement <- replicate(n = sim_list$n_sims, rep$Movement[,,,1:length(data$years),,,,drop = FALSE])
-  sim_list$sgl_seas_spawning_movement <- replicate(n = sim_list$n_sims, rep$sgl_seas_spawning_movement[,,,1:length(data$years),,,,drop = FALSE])
+  sim_list$sgl_seas_spawning_movement <- replicate(n = sim_list$n_sims, rep$sgl_seas_spawning_movement[,,,1:length(data$years),,,drop = FALSE])
 
   # Setup Recruitment Processes ---------------------------------------------
   sim_list <- Setup_Sim_Rec(
@@ -1491,12 +1775,26 @@ simulation_self_test <- function(data,
     do_recruits_move = data$do_recruits_move, # whether recruits move
     t_spawn = data$t_spawn, # spawn timing
     init_age_strc = data$init_age_strc, # initilaizing age structure
-    h_input = replicate(n = sim_list$n_sims, array(rep$h_trans, dim = c(sim_list$n_regions, sim_list$n_yrs))), # steepness
-    R0_input = replicate(n = sim_list$n_sims, expr = array(rep$R0 * rep$Rec_trans_prop, dim = c(sim_list$n_regions, sim_list$n_yrs))), # R0
-    sexratio_input = replicate(n = sim_list$n_sims, expr = rep$sexratio[,1:length(data$years),,drop = FALSE]), # sex ratio
+    h_input = replicate(n = sim_list$n_sims, array(rep$h_trans, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs))), # steepness
+    R0_input = {
+      tmp = array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims))
+      for(p in 1:sim_list$n_pop) for(r in 1:sim_list$n_regions) tmp[p,r,,] = rep$R0[p] * rep$rec_region_prop[p,r]
+      tmp
+    },
+    sexratio_input = replicate(n = sim_list$n_sims, expr = rep$sexratio[,,1:length(data$years),,drop = FALSE]), # sex ratio
     ln_sigmaR = optim_parameters_list$ln_sigmaR / sqrt(data$Wt_Rec), # ln_sigmaR
-    Rec_input = replicate(n = sim_list$n_sims, expr = rep$Rec[,1:length(data$years),drop = FALSE]), # recruitment time series
-    ln_InitDevs_input = replicate(sim_list$n_sims, optim_parameters_list$ln_InitDevs) # init devs
+    Rec_input = replicate(n = sim_list$n_sims, expr = rep$Rec[,,1:length(data$years),drop = FALSE]), # recruitment time series
+    ln_InitDevs_input = replicate(sim_list$n_sims, optim_parameters_list$ln_InitDevs),  # init devs
+    stray_rate_input = replicate(sim_list$n_sims, data$stray_rate[,1:length(data$years), drop = FALSE]),
+    rec_seas_prop_input = array(
+      rep(rep$rec_seas_prop, times = sim_list$n_sims),
+      dim = c(data$n_pop, data$n_seas, sim_list$n_sims)), # seasonal recruitment apportionment
+
+    # Not needed; already specified in Rec_input and ln_InitDevs_input
+    recruitment_opt = data$rec_model,
+    rec_dd = data$rec_dd,
+    init_dd = data$rec_dd,
+    rec_lag = data$rec_lag
   )
 
   # Setup Tagging -----------------------------------------------------------
@@ -1506,18 +1804,18 @@ simulation_self_test <- function(data,
 
   sim_list <- Setup_Sim_Tagging(
     sim_list = sim_list, # simulation list
-    max_liberty = data$max_tag_liberty, # maximum tag liberty
-    t_tagging = data$t_tagging, # time of tagging
+    conv_tag_max_liberty = data$conv_tag_max_liberty, # maximum tag liberty
+    conv_tag_t_tagging = data$conv_tag_t_tagging, # time of tagging
     n_tags_rel_input = n_tags_rel_input * data$Wt_Tagging,  # number of tags to release per event
     conv_tag_release_indicator = conv_tag_release_indicator,  # tag release indicator
     ln_init_conv_tag_mort = optim_parameters_list$ln_init_conv_tag_mort,  # inital tagging mortality
     ln_conv_tag_shed = optim_parameters_list$ln_conv_tag_shed, # chronic tag shedding
     conv_tag_fish_reporting_input = conv_tag_fish_reporting_input, # tag reporting rates
     use_conv_fish_tagging = data$use_conv_fish_tagging, # whether or not tagging is used / simulated
-    tag_selex = data$tag_selex, # tag selectivity type
-    tag_natmort = data$tag_natmort, # tag natural mortality type
-    conv_fish_tag_like = data$conv_fish_tag_likeType, # tag likelihood
-    ln_conv_fish_tag_theta = parameters$ln_conv_fish_tag_theta # tag overdispersion
+    conv_fish_tag_like = data$conv_fish_tag_like, # tag likelihood
+    ln_conv_fish_tag_theta = parameters$ln_conv_fish_tag_theta, # tag overdispersion
+    conv_tag_release_platform = data$conv_tag_release_platform,  # tag release platform
+    conv_fish_tag_attr = data$conv_fish_tag_attr # tag attributes
   )
 
 
@@ -1544,13 +1842,15 @@ simulation_self_test <- function(data,
         tmp_data$ObsCatch <- array(sim_obj$ObsCatch[,,,,i], dim = dim(tmp_data$ObsCatch)) # new catch
         tmp_data$ObsFishAgeComps <- array(sim_obj$ObsFishAgeComps[,,,,,,i], dim = dim(tmp_data$ObsFishAgeComps)) # new fishery ages
         tmp_data$ObsSrvAgeComps  <- array(sim_obj$ObsSrvAgeComps[,,,,,,i], dim = dim(tmp_data$ObsSrvAgeComps)) # new srv ages
-        tmp_data$ObsFishLenComps <- array(sim_obj$ObsFishLenComps[,,,,,,i], dim = dim(tmp_data$ObsFishLenComps)) # new fishery lens
-        tmp_data$ObsSrvLenComps  <- array(sim_obj$ObsSrvLenComps[,,,,,,i], dim = dim(tmp_data$ObsSrvLenComps)) # new survey lens
+        if(tmp_data$fit_lengths != 0) { # if fitting lengths
+          tmp_data$ObsFishLenComps <- array(sim_obj$ObsFishLenComps[,,,,,,i], dim = dim(tmp_data$ObsFishLenComps)) # new fishery lens
+          tmp_data$ObsSrvLenComps  <- array(sim_obj$ObsSrvLenComps[,,,,,,i], dim = dim(tmp_data$ObsSrvLenComps)) # new survey lens
+        }
 
         # setup tagging data stuff if tagging is done
-        if(tmp_data$use_conv_fish_tagging == 1) {
-          tmp_data$conv_tagged_fish <- array(sim_obj$conv_tagged_fish[,,,i], dim = dim(tmp_data$conv_tagged_fish)) # new tagged fish
-          tmp_data$obs_conv_tag_fish_recap <- array(sim_obj$obs_conv_tag_fish_recap[,,,,,,i], dim = dim(tmp_data$obs_conv_tag_fish_recap)) # new tag recaps
+        if(any(tmp_data$use_conv_fish_tagging == 1)) {
+          tmp_data$conv_tagged_fish <- array(sim_obj$conv_tagged_fish[,,,,i], dim = dim(tmp_data$conv_tagged_fish)) # new tagged fish
+          tmp_data$obs_conv_tag_fish_recap <- array(sim_obj$obs_conv_tag_fish_recap[,,,,,,,,i], dim = dim(tmp_data$obs_conv_tag_fish_recap)) # new tag recaps
           tmp_data$conv_tag_release_indicator <- sim_obj$conv_tag_release_indicator # release indicator
         }
 
@@ -1630,13 +1930,15 @@ simulation_self_test <- function(data,
           tmp_data$ObsCatch <- array(sim_obj$ObsCatch[,,,,i], dim = dim(tmp_data$ObsCatch)) # new catch
           tmp_data$ObsFishAgeComps <- array(sim_obj$ObsFishAgeComps[,,,,,,i], dim = dim(tmp_data$ObsFishAgeComps)) # new fishery ages
           tmp_data$ObsSrvAgeComps  <- array(sim_obj$ObsSrvAgeComps[,,,,,,i], dim = dim(tmp_data$ObsSrvAgeComps)) # new srv ages
-          tmp_data$ObsFishLenComps <- array(sim_obj$ObsFishLenComps[,,,,,,i], dim = dim(tmp_data$ObsFishLenComps)) # new fishery lens
-          tmp_data$ObsSrvLenComps  <- array(sim_obj$ObsSrvLenComps[,,,,,,i], dim = dim(tmp_data$ObsSrvLenComps)) # new survey lens
+          if(tmp_data$fit_lengths != 0) { # if fitting lengths
+            tmp_data$ObsFishLenComps <- array(sim_obj$ObsFishLenComps[,,,,,,i], dim = dim(tmp_data$ObsFishLenComps)) # new fishery lens
+            tmp_data$ObsSrvLenComps  <- array(sim_obj$ObsSrvLenComps[,,,,,,i], dim = dim(tmp_data$ObsSrvLenComps)) # new survey lens
+          }
 
           # setup tagging data stuff if tagging is done
-          if(tmp_data$use_conv_fish_tagging == 1) {
-            tmp_data$conv_tagged_fish <- array(sim_obj$conv_tagged_fish[,,,i], dim = dim(tmp_data$conv_tagged_fish)) # new tagged fish
-            tmp_data$obs_conv_tag_fish_recap <- array(sim_obj$obs_conv_tag_fish_recap[,,,,,,i], dim = dim(tmp_data$obs_conv_tag_fish_recap)) # new tag recaps
+          if(any(tmp_data$use_conv_fish_tagging == 1)) {
+            tmp_data$conv_tagged_fish <- array(sim_obj$conv_tagged_fish[,,,,i], dim = dim(tmp_data$conv_tagged_fish)) # new tagged fish
+            tmp_data$obs_conv_tag_fish_recap <- array(sim_obj$obs_conv_tag_fish_recap[,,,,,,,,i], dim = dim(tmp_data$obs_conv_tag_fish_recap)) # new tag recaps
             tmp_data$conv_tag_release_indicator <- sim_obj$conv_tag_release_indicator # release indicator
           }
 
@@ -1711,50 +2013,48 @@ simulation_self_test <- function(data,
 
 }
 
-#' Extract simulation data into SPoRC format
+#' Extract simulation outputs into SPoRC estimation model format
 #'
-#' This function subsets and reshapes biological, tagging, fishery, and survey
-#' data from a simulation environment for use in SPoRC analyses.
+#' Subsets and reshapes biological, tagging, fishery, and survey arrays from a
+#' simulation environment or output list to cover years \code{1:y} and
+#' simulation replicate \code{sim}, producing a named list ready for direct
+#' use in \code{Setup_Mod_Biologicals}, \code{Setup_Mod_Catch_and_F},
+#' \code{Setup_Mod_SrvIdx_and_Comps}, and \code{Setup_Mod_Tagging}. Binary
+#' \code{Use*} indicator arrays are derived automatically from the extracted
+#' observation arrays (non-NA, positive values set to 1). Length composition
+#' outputs (\code{ObsFishLenComps}, \code{ObsSrvLenComps}) and
+#' \code{SizeAgeTrans} are \code{NULL} when no size-age transition matrix is
+#' present in \code{sim_env}. Tagging outputs are \code{NULL} when
+#' \code{use_conv_fish_tagging = 0}; otherwise, only cohorts with release
+#' years in \code{1:y} are retained.
 #'
-#' @param sim_env A simulation environment / object (list or environment) containing
-#'   arrays of biological quantities, tagging information, fishery data,
-#'   and survey data.
-#' @param y Integer. Number of years to retain (subset from `1:y`).
+#' @param sim_env Simulation environment or list (e.g., output from
+#'   \code{\link{Simulate_Pop_Static}} or a \code{\link{Setup_sim_env}}
+#'   environment) containing all operating model arrays.
+#' @param y Integer. Last year to include; years \code{1:y} are retained.
 #' @param sim Integer. Simulation replicate index to extract.
-#' @family Simulation Setup
-#' @return A named list with the following elements:
-#' \describe{
-#'   \item{WAA}{Weight-at-age array [region × year × seas x age × sex].}
-#'   \item{MatAA}{Maturity-at-age array [region × year × seas x age × sex].}
-#'   \item{SizeAgeTrans}{Size–age transition array [region × year × seas x length × age × sex].}
-#'   \item{AgeingError}{Ageing error matrix [year × age × error].}
-#'   \item{conv_tag_release_indicator}{Tag release indicators (or `NULL` if tagging not used).}
-#'   \item{obs_conv_tag_fish_recap}{Observed tag recapture array (or `NULL`).}
-#'   \item{conv_tagged_fish}{Tagged fish counts (or `NULL`).}
-#'   \item{conv_tagged_fish}{Tagged fish counts w/ their respective observed attributes (i.e., p_a_s specified in OM results in population, age, and sex specific tags) (or `NULL`).}
-#'   \item{n_tag_cohorts}{Number of tag release cohorts (or `NULL`).}
-#'   \item{ObsCatch}{Observed fishery catch array [region × year × seas x fleet].}
-#'   \item{ln_sigmaC}{Log Fishery Catch SD [region × year × seas x fleet].}
-#'   \item{UseCatch}{Binary indicator array for catch data availability.}
-#'   \item{ObsFishIdx}{Observed fishery index array [region × year × seas x fleet].}
-#'   \item{ObsFishIdx_SE}{Standard error for fishery index array.}
-#'   \item{UseFishIdx}{Binary indicator array for fishery indices.}
-#'   \item{ObsFishAgeComps}{Observed fishery age composition array.}
-#'   \item{ObsFishLenComps}{Observed fishery length composition array.}
-#'   \item{ISS_FishAgeComps}{Implied sample sizes for fishery age compositions.}
-#'   \item{ISS_FishLenComps}{Implied sample sizes for fishery length compositions.}
-#'   \item{UseFishAgeComps}{Binary indicator array for fishery age comps.}
-#'   \item{UseFishLenComps}{Binary indicator array for fishery length comps.}
-#'   \item{ObsSrvIdx}{Observed survey index array [region × year × seas x fleet].}
-#'   \item{ObsSrvIdx_SE}{Standard error for survey index array.}
-#'   \item{UseSrvIdx}{Binary indicator array for survey indices.}
-#'   \item{ObsSrvAgeComps}{Observed survey age composition array.}
-#'   \item{ObsSrvLenComps}{Observed survey length composition array.}
-#'   \item{ISS_SrvAgeComps}{Implied sample sizes for survey age compositions.}
-#'   \item{ISS_SrvLenComps}{Implied sample sizes for survey length compositions.}
-#'   \item{UseSrvAgeComps}{Binary indicator array for survey age comps.}
-#'   \item{UseSrvLenComps}{Binary indicator array for survey length comps.}
-#' }
+#'
+#' @return Named list with the following elements (all arrays have \code{y}
+#'   in the year dimension unless noted):
+#'   \code{WAA} \code{[n_pop × n_regions × y × n_seas × n_ages × n_sexes]},
+#'   \code{WAA_fish} \code{[... × n_fish_fleets]},
+#'   \code{WAA_srv} \code{[... × n_srv_fleets]},
+#'   \code{MatAA}, \code{SizeAgeTrans} (or \code{NULL}),
+#'   \code{AgeingError} \code{[y × n_obs_ages × n_ages]},
+#'   \code{use_conv_fish_tagging},
+#'   \code{conv_tag_release_indicator}, \code{obs_conv_tag_fish_recap},
+#'   \code{conv_tagged_fish}, \code{conv_tagged_fish_attr},
+#'   \code{n_tag_cohorts} (all \code{NULL} when tagging inactive),
+#'   \code{ObsCatch}, \code{ln_sigmaC}, \code{UseCatch},
+#'   \code{ObsFishIdx}, \code{ObsFishIdx_SE}, \code{UseFishIdx},
+#'   \code{ObsFishAgeComps}, \code{ISS_FishAgeComps}, \code{UseFishAgeComps},
+#'   \code{ObsFishLenComps} (or \code{NULL}), \code{ISS_FishLenComps},
+#'   \code{UseFishLenComps},
+#'   \code{ObsSrvIdx}, \code{ObsSrvIdx_SE}, \code{UseSrvIdx},
+#'   \code{ObsSrvAgeComps}, \code{ISS_SrvAgeComps}, \code{UseSrvAgeComps},
+#'   \code{ObsSrvLenComps} (or \code{NULL}), \code{ISS_SrvLenComps},
+#'   \code{UseSrvLenComps}.
+#'
 #'
 #' @export simulation_data_to_SPoRC
 simulation_data_to_SPoRC <- function(sim_env,
@@ -1866,25 +2166,34 @@ simulation_data_to_SPoRC <- function(sim_env,
 
 }
 
-#' Predict ISS fishery compositions under fishing mortality
+#' Predict fishery ISS under projected fishing mortality
 #'
-#' Uses historical ISS fishery compositions and fishing mortality rates
-#' to estimate ISS compositions in the projection year. Compositions are
-#' scaled relative to the historical maximum fishing mortality with
-#' linear interpolation between the minimum and maximum observed ISS values.
-#' If historical values are not available, defaults to the mean or zero.
+#' Scales fishery input sample sizes for the projection year \code{y} based
+#' on the relationship between fishing mortality and historical ISS values.
+#' For each region–sex–fleet cell, the minimum and maximum ISS from the
+#' conditioning period (\code{1:(y-1)}) are identified from years with
+#' positive, non-NA values, and the projected ISS is obtained by linear
+#' interpolation between those bounds using the ratio of projected
+#' \eqn{F_y} to the historical maximum \eqn{F} (capped at 1). If no valid
+#' historical observations exist for a cell, ISS is set to zero. If
+#' conditions for scaling are not met (e.g., maximum historical \eqn{F = 0}),
+#' the mean historical ISS is used as a fallback. All prior years
+#' (\code{1:(y-1)}) are carried over unchanged from \code{ISS_FishComps}.
 #'
-#' @param ISS_FishComps Array of ISS fishery compositions with dimensions
-#'   `[region, year, seas, sex, fleet, sim]`.
-#' @param Fmort Array of fishing mortality rates with dimensions
-#'   `[region, year, seas, fleet, sim]`.
-#' @param y Integer, projection year index for prediction.
-#' @param sim Integer, simulation index.
-#' @param seas Integer, season
+#' @param ISS_FishComps Array of fishery ISS values
+#'   \code{[n_regions × n_yrs × n_seas × n_sexes × n_fish_fleets × n_sims]}.
+#' @param Fmort Array of fishing mortality rates
+#'   \code{[n_regions × n_yrs × n_seas × n_fish_fleets × n_sims]}.
+#' @param y Integer. Projection year index for which ISS is predicted.
+#' @param sim Integer. Simulation replicate index.
+#' @param seas Integer. Season index.
 #'
-#' @returns Array with predicted ISS values for year `y` and season `seas`.
+#' @return Array \code{[n_regions × y × 1 × n_sexes × n_fish_fleets]} with
+#'   historical ISS values filled in for years \code{1:(y-1)} and the
+#'   predicted ISS in year \code{y}.
+#'
+#'
 #' @keywords internal
-#'
 predict_sim_fish_iss_fmort <- function(ISS_FishComps,
                                        Fmort,
                                        y,

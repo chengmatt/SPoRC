@@ -1,117 +1,151 @@
-#' Condition Closed-Loop Simulation Object
+#' Construct and Condition Closed-Loop Simulation Inputs
 #'
-#' Constructs and conditions a simulation list for closed-loop population
-#' projections. The function initializes all required simulation components
-#' (dimensions, biological processes, fishing, survey, recruitment, tagging,
-#' and movement) and extends fitted model quantities into projection years.
+#' Initializes and conditions a simulation object used for closed-loop
+#' population projections. The function reconstructs fitted model quantities,
+#' extends time-varying processes into projection years, and prepares all
+#' simulation components required by the operating model.
 #'
-#' Users may override any internally generated component by supplying
-#' correctly named and dimensioned objects via `...`.
+#' Simulation inputs are generated for biological dynamics, fishing,
+#' surveys, recruitment, tagging, and movement processes. Historical years
+#' are conditioned on outputs from the fitted assessment model, while
+#' projection years are initialized using extension rules or user-supplied
+#' overrides.
 #'
-#' @param closed_loop_yrs Integer. Number of projection years beyond the
-#'   fitted data period.
+#' Users may replace any internally generated component by supplying a
+#' correctly named object via `...`.
+#'
+#' @param closed_loop_yrs Integer. Number of projection years added beyond
+#'   the fitted data period.
 #' @param n_sims Integer. Number of stochastic simulation replicates.
 #' @param data List. Data object used to fit the assessment model.
-#' @param parameters List. Parameter list from fitted model.
-#' @param mapping List. Mapping object used during estimation.
-#' @param sd_rep List. Standard deviation report from fitted model.
-#' @param rep List. Report object from fitted model.
+#' @param parameters List. Parameter vector from the fitted model.
+#' @param mapping List. Parameter mapping object used during estimation.
+#' @param sd_rep List. Standard deviation report from the fitted model.
+#' @param rep List. Model report object produced by the fitted model.
 #' @param random Character vector of estimated random effects.
 #'
-#' @param FishIdx_SE_fill Character or numeric. Method used to extend fishery
-#'   index standard errors into projection years:
-#'   \describe{
-#'     \item{"zeros"}{Fill with zeros}
-#'     \item{"last"}{Repeat last observed slice}
-#'     \item{"mean"}{Use mean of observed series}
-#'     \item{numeric}{Use supplied constant or array}
-#'   }
+#' @param FishIdx_SE_fill Character or numeric specifying how fishery index
+#'   standard errors are extended into projection years.
+#' @param SrvIdx_SE_fill Character or numeric specifying how survey index
+#'   standard errors are extended into projection years.
+#' @param ISS_FishAgeComps_fill Character or numeric specifying how fishery
+#'   age-composition input sample sizes are extended into projection years.
+#' @param ISS_FishLenComps_fill Same behavior as `ISS_FishAgeComps_fill` for
+#'   fishery length compositions.
+#' @param ISS_SrvAgeComps_fill Character or numeric specifying how survey
+#'   age-composition input sample sizes are extended into projection years.
+#' @param ISS_SrvLenComps_fill Same behavior as `ISS_SrvAgeComps_fill` for
+#'   survey length compositions.
 #'
-#' @param SrvIdx_SE_fill Character or numeric. Same behavior as
-#'   `FishIdx_SE_fill`, applied to survey index uncertainty.
+#' Extension rules may be:
 #'
-#' @param ISS_FishAgeComps_fill Character or numeric. Method for extending
-#'   fishery age composition input sample sizes. Additional option:
-#'   \describe{
-#'     \item{"F_pattern"}{Scale sample sizes based on fishing mortality pattern
-#'     during closed-loop simulation}
-#'   }
+#' \describe{
+#'   \item{"zeros"}{Fill projection years with zeros}
+#'   \item{"last"}{Repeat the final observed year}
+#'   \item{"mean"}{Use the mean of the historical series}
+#'   \item{"F_pattern"}{Scale fishery composition sample sizes with the
+#'   simulated fishing mortality pattern}
+#'   \item{numeric}{Use a supplied constant or array}
+#' }
 #'
-#' @param ISS_FishLenComps_fill Same behavior as `ISS_FishAgeComps_fill`.
-#' @param ISS_SrvAgeComps_fill Character or numeric. Extension rule for survey
-#'   age composition input sample sizes.
-#' @param ISS_SrvLenComps_fill Same behavior as `ISS_SrvAgeComps_fill`.
+#' @param ... Optional named simulation inputs that override internally
+#'   generated components. Any argument expected by:
 #'
-#' @param ... Optional named overrides for simulation inputs.
+#'   \code{Setup_Sim_Fishing()},
+#'   \code{Setup_Sim_Survey()},
+#'   \code{Setup_Sim_Biologicals()},
+#'   \code{Setup_Sim_Rec()},
+#'   or \code{Setup_Sim_Tagging()}
 #'
-#'   Any component expected by:
-#'   `Setup_Sim_Fishing()`, `Setup_Sim_Survey()`,
-#'   `Setup_Sim_Biologicals()`, `Setup_Sim_Rec()`,
-#'   `Setup_Sim_Tagging()`
-#'   may be supplied.
+#'   may be provided.
 #'
 #'   Common overrides include:
 #'
-#'   Fishing:
-#'     - `fish_sel_input`
-#'     - `Fmort_input`
-#'     - `fish_q_input`
+#'   \strong{Fishing processes}
+#'   \itemize{
+#'     \item \code{Fmort_input}
+#'     \item \code{fish_sel_input}
+#'     \item \code{fish_q_input}
+#'   }
 #'
-#'   Survey:
-#'     - `srv_sel_input`
-#'     - `srv_q_input`
+#'   \strong{Survey processes}
+#'   \itemize{
+#'     \item \code{srv_sel_input}
+#'     \item \code{srv_q_input}
+#'   }
 #'
-#'   Biologicals:
-#'     - `WAA_input`
-#'     - `MatAA_input`
-#'     - `natmort_input`
+#'   \strong{Biological processes}
+#'   \itemize{
+#'     \item \code{WAA_input}
+#'     \item \code{MatAA_input}
+#'     \item \code{natmort_input}
+#'   }
 #'
-#'   Recruitment:
-#'     - `R0_input`
-#'     - `h_input`
-#'     - `Rec_input`
+#'   \strong{Recruitment processes}
+#'   \itemize{
+#'     \item \code{R0_input}
+#'     \item \code{h_input}
+#'     \item \code{Rec_input}
+#'   }
 #'
-#'   Tagging:
-#'     - `conv_tag_fish_reporting_input`
+#'   \strong{Tagging processes}
+#'   \itemize{
+#'     \item \code{conv_tag_fish_reporting_input}
+#'   }
 #'
-#'   Movement:
-#'     - `Movement`
+#'   \strong{Movement processes}
+#'   \itemize{
+#'     \item \code{Movement}
+#'   }
 #'
-#'   Supplied objects must have dimensions consistent with
-#'   `n_sims`, total years (`length(data$years) + closed_loop_yrs`),
-#'   and model structural dimensions.
+#'   Supplied objects must have dimensions consistent with model structure,
+#'   the total number of years (`length(data$years) + closed_loop_yrs`), and
+#'   the number of simulations (`n_sims`).
 #'
 #' @details
-#' Simulation years consist of:
-#'   - Historical years (conditioning period)
-#'   - Projection years (`closed_loop_yrs`)
+#' Simulation years consist of two periods:
+#'
+#' \itemize{
+#'   \item \strong{Conditioning years} — historical years corresponding to
+#'   the fitted assessment model.
+#'   \item \strong{Projection years} — future years simulated under closed-loop
+#'   management.
+#' }
+#'
+#' During conditioning years, model processes are reconstructed from the
+#' fitted model report objects. For projection years, quantities are extended
+#' using specified fill rules or user-supplied inputs.
 #'
 #' By default:
-#'   - Selectivity, catchability, biological inputs, and other
-#'     time-varying quantities are extended using the final
-#'     estimated year.
-#'   - Fishing mortality in projection years is initialized to zero
-#'     and may be modified during feedback.
-#'   - Recruitment deviations are simulated forward if not fully
-#'     supplied via `Rec_input`.
 #'
-#' Parameter values are reconstructed into their original list
-#' structure using `get_optim_param_list()` before being passed to
-#' simulation setup functions.
+#' \itemize{
+#'   \item Biological inputs, selectivity, and catchability are extended using
+#'   values from the final estimated year.
+#'   \item Fishing mortality is initialized to zero in projection years.
+#'   \item Recruitment is simulated forward when not fully specified by
+#'   `Rec_input`.
+#' }
 #'
-#' Closed-loop feedback begins in the first projection year and
-#' updates fishing mortality and other management controls
-#' according to the model's feedback mechanism.
+#'
+#' Closed-loop feedback begins in the first projection year and allows
+#' management actions (e.g., fishing mortality adjustments) to update
+#' dynamically during the simulation.
 #'
 #' @return
 #' A fully initialized `sim_list` object containing:
-#'   - Model dimensions
-#'   - Simulation containers
-#'   - Fishing, survey, biological, recruitment,
-#'     tagging, and movement inputs
-#'   - Replicated structures across `n_sims`
 #'
-#' @export
+#' \itemize{
+#'   \item model dimensions and simulation containers
+#'   \item biological process inputs
+#'   \item fishing and survey processes
+#'   \item recruitment dynamics
+#'   \item tagging processes
+#'   \item spatial movement structures
+#'   \item replicated arrays across `n_sims`
+#' }
+#'
+#'
+#' @export condition_closed_loop_simulations
 #' @family Closed Loop Simulations
 condition_closed_loop_simulations <- function(closed_loop_yrs,
                                               n_sims,
@@ -370,14 +404,17 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     replicate(n = sim_list$n_sims, array(rep$h_trans, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs)))
   } else args$h_input
   R0_input <- if(!"R0_input" %in% names(args)) {
-    R0_r = array(0, dim = c(n_pop, n_regions)) # container
-    for(p in 1:n_pop) R0_r[p,] = rep$R0 [p] * rep$Rec_trans_prop[p,]
+    R0_r = array(0, dim = c(sim_list$n_pop, sim_list$n_regions)) # container
+    for(p in 1:sim_list$n_pop) R0_r[p,] = rep$R0 [p] * rep$rec_region_prop[p,]
     replicate(n = sim_list$n_sims, expr = array(R0_r, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs)))
   } else args$R0_input
   sexratio_input <- if(!"sexratio_input" %in% names(args)) {
     extend_years(replicate(n = sim_list$n_sims, expr = rep$sexratio[,,1:length(data$years),,drop = FALSE]), closed_loop_yrs, 3, 'last')
   } else args$sexratio_input
   ln_sigmaR <- if(!"ln_sigmaR" %in% names(args)) optim_parameters_list$ln_sigmaR else args$ln_sigmaR
+  stray_rate_input <- if(!"stray_rate_input" %in% names(args)) {
+    extend_years(replicate(n = sim_list$n_sims, expr = data$stray_rate[,1:length(data$years),drop = FALSE]), closed_loop_yrs, 2, 'last')
+  } else args$stray_rate_input
   Rec_input <- if(!"Rec_input" %in% names(args)) {
     replicate(n = sim_list$n_sims, expr = rep$Rec[,,1:length(data$years),drop = FALSE])
   } else args$Rec_input
@@ -386,10 +423,11 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   } else args$ln_InitDevs_input
 
   # recruitment options
-  rec_dd <- if(!"rec_dd" %in% names(args)) "global" else args$rec_dd
-  init_dd <- if(!"init_dd" %in% names(args)) "global" else args$init_dd
-  rec_lag <- if(!"rec_lag" %in% names(args)) 1 else args$rec_lag
-  recruitment_opt <- if(!"recruitment_opt" %in% names(args)) "bh_rec" else args$recruitment_opt
+  rec_dd <- if(!"rec_dd" %in% names(args)) data$rec_dd else args$rec_dd
+  init_dd <- if(!"init_dd" %in% names(args)) data$rec_dd else args$init_dd
+  rec_lag <- if(!"rec_lag" %in% names(args)) data$rec_lag else args$rec_lag
+  recruitment_opt <- if(!"recruitment_opt" %in% names(args)) data$rec_model else args$recruitment_opt
+  rec_seas_prop_input <- if(!"rec_seas_prop_input" %in% names(args)) replicate(sim_list$n_sims, rep$rec_seas_prop) else args$rec_seas_prop_input
 
   # setup recruitment simulation
   sim_list <- Setup_Sim_Rec(
@@ -407,7 +445,9 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     recruitment_opt = recruitment_opt,
     rec_dd = rec_dd,
     init_dd = init_dd,
-    rec_lag = rec_lag
+    rec_lag = rec_lag,
+    stray_rate_input = stray_rate_input,
+    rec_seas_prop_input = rec_seas_prop_input
   )
 
   # Setup Tagging -----------------------------------------------------------
@@ -433,8 +473,8 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   if(!is.null(n_tags)) sim_list$n_tags_rel_input <- NULL # set release input to NULL if n_tags is specified.
   sim_list <- Setup_Sim_Tagging(
     sim_list = sim_list,
-    max_liberty = data$max_tag_liberty,
-    t_tagging = data$t_tagging,
+    conv_tag_max_liberty = data$conv_tag_max_liberty,
+    conv_tag_t_tagging = data$conv_tag_t_tagging,
     n_tags = n_tags,
     n_tags_rel_input = n_tags_rel_input * data$Wt_Tagging,
     conv_tag_release_indicator = conv_tag_release_indicator,
@@ -451,6 +491,8 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   # Movement ----------------------------------------------------------------
   Movement <- if(!"Movement" %in% names(args)) extend_years(replicate(n = sim_list$n_sims, rep$Movement[,,,1:length(data$years),,,,drop = FALSE]), closed_loop_yrs, 4, 'last') else args$Movement
   sim_list$Movement <- Movement
+  sgl_seas_spawning_movement <- if(!"sgl_seas_spawning_movement" %in% names(args)) extend_years(replicate(n = sim_list$n_sims, data$sgl_seas_spawning_movement[,,,1:length(data$years),,,drop = FALSE]), closed_loop_yrs, 4, 'last') else args$sgl_seas_spawning_movement
+  sim_list$sgl_seas_spawning_movement <- sgl_seas_spawning_movement
 
   return(sim_list)
 }

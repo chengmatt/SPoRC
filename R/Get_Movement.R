@@ -7,16 +7,16 @@
 #' @param data A \code{data.frame} containing the CTMC covariates. Must include all variables
 #'   referenced in \code{diffusion_formula} and \code{preference_formula}.
 #' @param preference_formula An R formula describing the linear predictor for movement
-#'   preference. Variables must exist in \code{data}.
+#'   preference (taxis). Variables must exist in \code{data}.
 #' @param diffusion_formula An R formula describing the linear predictor for diffusion
 #'   rates. Variables must exist in \code{data}.
 #'
 #' @return A \code{list} with the following components:
 #' \describe{
-#'   \item{\code{n_theta}}{Number of diffusion parameters (number of columns in diffusion design matrix).}
-#'   \item{\code{n_gamma}}{Number of preference parameters (number of columns in preference design matrix).}
+#'   \item{\code{n_theta}}{Number of diffusion parameters (columns in \code{X_zk}).}
+#'   \item{\code{n_gamma}}{Number of preference parameters (columns in \code{W_zk}).}
 #'   \item{\code{X_zk}}{Diffusion design matrix constructed from \code{diffusion_formula} and \code{data}.}
-#'   \item{\code{W_zk}}{Preference design matrix constructed from \code{preference_formula} and \code{data}.}
+#'   \item{\code{W_zk}}{Preference (taxis) design matrix constructed from \code{preference_formula} and \code{data}.}
 #' }
 #'
 #' @keywords internal
@@ -39,60 +39,86 @@ get_movement_dp_design_matrix <- function(data,
 #' Generates movement matrices for a population model based on either unstructured
 #' multinomial logit movement or a Continuous Time Markov Chain (CTMC) formulation.
 #' Also calculates a movement penalty if applicable. For CTMC movement, projection
-#' years are supported: base parameters (preference/diffusion) can either be frozen
-#' at the last historical year or extended via user-provided covariates in ctmc_move_dat.
+#' years are supported: covariate lookups are capped at the last historical year
+#' (\code{n_yrs}), so CTMC parameters are frozen at their final historical values
+#' during projection unless \code{ctmc_move_dat} is extended with projection-year rows.
 #'
 #' @param move_type Integer flag indicating movement type: 0 = unstructured Markov,
 #'   1 = CTMC movement.
-#' @param do_recruits_move Integer flag: 0 = recruits do not move, 1 = recruits move.
+#' @param do_recruits_move Integer flag: 0 = recruits (age 1) do not move, 1 = recruits move.
 #' @param n_regions Number of spatial regions.
-#' @param n_yrs Number of years in the observed data.
-#' @param n_proj_yrs_devs Number of projected years for deviations.
+#' @param n_yrs Number of years in the observed (historical) data.
+#' @param n_proj_yrs_devs Number of projected years. Extends the year dimension of the
+#'   movement array beyond \code{n_yrs}; CTMC covariate lookups are capped at \code{n_yrs}
+#'   unless \code{ctmc_move_dat} contains projection-year rows.
 #' @param n_ages Number of age classes.
 #' @param n_sexes Number of sexes.
-#' @param move_pars Array of movement parameters for unstructured movement.
-#' @param move_devs Array of movement deviations (applies to both unstructured and CTMC movement).
+#' @param n_seas Number of seasons.
+#' @param n_pop Number of populations.
+#' @param move_pars Array of movement parameters for unstructured (multinomial logit)
+#'   movement, dimensioned \code{[pop, from_region, counter, year, seas, age, sex]}.
+#'   \code{counter} indexes the \code{n_regions - 1} non-reference destinations.
+#'   Ignored when \code{move_type == 1} or \code{use_fixed_movement == 1}.
+#' @param move_devs Array of origin-destination movement deviations, dimensioned
+#'   \code{[pop, origin_region, counter, year, seas, age, sex]}, where \code{counter}
+#'   indexes adjacent non-diagonal destinations from each origin region. Applied as
+#'   multiplicative offsets (\code{exp(move_devs)}) to off-diagonal diffusion rates
+#'   in CTMC movement, or as additive offsets to logit-scale parameters in unstructured
+#'   movement. Always indexed on the actual (possibly projected) year.
 #' @param use_fixed_movement Integer flag: 0 = estimate movement, 1 = use fixed matrix.
-#' @param Fixed_Movement Fixed movement matrix used when
-#'   \code{use_fixed_movement == 1}. Ignored otherwise.
-#' @param ctmc_move_dat Data.frame of CTMC covariates.
-#'   Required when \code{move_type == 1}. Must include columns
-#'   \code{pop}, \code{regions}, \code{years}, \code{seas},
-#'   \code{ages}, \code{sexes}, and any covariates referenced
-#'   in \code{diffusion_formula} or \code{preference_formula}.
-#' @param preference_formula R formula specifying preference covariates
+#' @param Fixed_Movement Fixed movement matrix used when \code{use_fixed_movement == 1},
+#'   dimensioned \code{[pop, from_region, to_region, year, seas, age, sex]}. Ignored otherwise.
+#' @param ctmc_move_dat Data.frame of CTMC covariates. Required when \code{move_type == 1}.
+#'   Must include columns \code{pop}, \code{regions}, \code{years}, \code{seas},
+#'   \code{ages}, \code{sexes}, and any covariates referenced in \code{diffusion_formula}
+#'   or \code{preference_formula}.
+#' @param preference_formula R formula specifying preference (taxis) covariates
 #'   for CTMC movement. Required when \code{move_type == 1}.
 #' @param diffusion_formula R formula specifying diffusion covariates
 #'   for CTMC movement. Required when \code{move_type == 1}.
-#' @param log_move_diffusion_pars Log diffusion parameters for CTMC movement.
+#' @param log_move_diffusion_pars Log-scale diffusion parameters (\eqn{\theta_k}) for
+#'   CTMC movement. Exponentiated and squared internally (\code{exp(2 * log_theta)}).
 #'   Required when \code{move_type == 1}.
-#' @param move_preference_pars Preference parameters for CTMC movement.
-#'   Required when \code{move_type == 1}.
-#' @param area_r Numeric vector of region areas used to scale diffusion.
-#'   Required when \code{move_type == 1}.
-#' @param adjacency_mat Square matrix defining connectivity among regions.
-#'   Required when \code{move_type == 1}.
-#' @param ctmc_diffusion_bounds Integer flag: 1 = apply diffusion bounds to generator matrix, 0 = no bounds.
-#' @param n_seas Number of seasons
-#' @param n_pop Number of populations
+#' @param move_preference_pars Preference (taxis) parameters (\eqn{\gamma_k}) for CTMC
+#'   movement, on the natural scale. Required when \code{move_type == 1}.
+#' @param area_r Numeric vector of region areas (length \code{n_regions}) used to
+#'   scale diffusion rates. Required when \code{move_type == 1}.
+#' @param adjacency_mat Square \code{[n_regions x n_regions]} matrix defining
+#'   connectivity among regions (1 = adjacent, 0 = not adjacent). Required when
+#'   \code{move_type == 1}.
+#' @param ctmc_diffusion_bounds Integer flag: 1 = shift diffusion columns to ensure
+#'   all off-diagonal generator matrix entries are non-negative (valid generator);
+#'   0 = no bounds applied.
 #'
 #' @return A list with components:
 #' \describe{
-#'   \item{\code{Movement}}{Array of movement fractions for each stratum (pop x from regions × to regions × years × seas, ages × sexes).}
-#'   \item{\code{Mrate}}{Instantaneous movement rate matrix if CTMC movement is used (pop x from regions × to regions × years × seas x ages × sexes); otherwise NULL.}
-#'   \item{\code{move_pen}}{Numeric value of movement penalty calculated from preference parameters (for CTMC only).}
+#'   \item{\code{Movement}}{Array of movement fractions dimensioned
+#'     \code{[pop, from_region, to_region, year, seas, age, sex]}.
+#'     Populated for all three movement configurations.}
+#'   \item{\code{Mrate}}{Instantaneous rate matrix (generator \eqn{Q}) dimensioned
+#'     \code{[pop, from_region, to_region, year, seas, age, sex]}. Populated only
+#'     when \code{move_type == 1} and \code{use_fixed_movement == 0}; \code{NULL} otherwise.}
+#'   \item{\code{move_pen}}{Numeric movement penalty used for regularization.
+#'     For CTMC movement, equal to \eqn{\sum_{\text{strata}} (\sum_r \gamma_{z,r})^2},
+#'     which penalizes large net preference values across regions. Zero for unstructured
+#'     or fixed movement.}
 #' }
-#'
 #'
 #' @details
 #' Three movement configurations are supported:
 #' \enumerate{
-#'   \item Fixed movement (\code{use_fixed_movement == 1})
-#'   \item Unstructured multinomial logit movement (\code{move_type == 0})
-#'   \item CTMC movement (\code{move_type == 1})
+#'   \item Fixed movement (\code{use_fixed_movement == 1}): \code{Fixed_Movement} is used
+#'     directly with no estimation.
+#'   \item Unstructured multinomial logit movement (\code{move_type == 0}): movement
+#'     fractions are estimated via a softmax transform of \code{move_pars + move_devs}.
+#'   \item CTMC movement (\code{move_type == 1}): a generator matrix \eqn{Q = D + Z}
+#'     is constructed from diffusion (\eqn{D}) and taxis (\eqn{Z}) components, then
+#'     exponentiated via \code{Matrix::expm(Q)} to obtain movement fractions. During
+#'     projection years (\code{y > n_yrs}), covariate lookups are capped at \code{n_yrs}
+#'     (i.e., CTMC base parameters are frozen at their last historical values), while
+#'     \code{move_devs} continue to use the actual projected year index.
 #' }
 #'
-#' Arguments are required conditionally depending on the selected configuration.
 #' @keywords internal
 Get_Movement <- function(move_type,
                          do_recruits_move,

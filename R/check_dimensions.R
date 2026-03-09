@@ -1,61 +1,53 @@
-#' Validate Simulation Input Dimensions
+#' Validate Dimensions of Model Input Objects
 #'
-#' Internal helper function that validates the dimensions of simulation
-#' input arrays against the expected structure implied by model configuration.
+#' Internal utility that verifies the dimensional structure of model input
+#' objects. The function checks that the supplied object \code{x} has the
+#' expected dimensions for the specified object type \code{what}. Expected
+#' dimension ordering depends on the data structure used in the population
+#' model (e.g., population, region, year, season, age, sex, fleet).
 #'
-#' This function is analogous to `check_data_dimensions()` but is used for
-#' simulation objects that include an additional simulation dimension
-#' (`n_sims`). The required dimension ordering depends on the object
-#' specified in `what`.
+#' The argument \code{what} determines which dimension template is applied.
+#' If the dimensions of \code{x} do not match the required structure, the
+#' function stops with an informative error message.
 #'
-#' @param x Object to evaluate. Typically a multi-dimensional array including
-#'   a simulation dimension.
+#' @param x Object to evaluate. Typically a numeric array (or vector) whose
+#'   dimensions must match the expected structure associated with \code{what}.
 #' @param n_pop Integer. Number of populations.
-#' @param n_regions Integer. Number of regions.
-#' @param n_years Integer. Number of years.
+#' @param n_regions Integer. Number of spatial regions.
+#' @param n_years Integer. Number of model years.
 #' @param n_ages Integer. Number of age classes.
+#' @param n_seas Integer. Number of seasons.
 #' @param n_lens Integer. Number of length bins.
 #' @param n_sexes Integer. Number of sexes.
-#' @param n_seas Integer. Number of seasons.
 #' @param n_fish_fleets Integer. Number of fishery fleets.
 #' @param n_srv_fleets Integer. Number of survey fleets.
-#' @param n_sims Integer. Number of simulation replicates.
-#' @param what Character string specifying the object type to validate.
+#' @param conv_tag_max_liberty Integer. Maximum tag liberty for conventional
+#'   tagging data (number of seasons between release and recapture).
+#' @param n_conv_tag_cohorts Integer. Number of conventional tagging cohorts.
+#' @param what Character string identifying the type of object being validated.
+#'   This determines the expected dimension ordering (e.g., biological inputs,
+#'   fishery observations, survey observations, or tagging data).
 #'
 #' @details
-#' Simulation objects typically append `n_sims` as the final dimension.
+#' The function supports validation of several model input classes including:
 #'
-#' Examples of expected structures:
+#' \itemize{
+#'   \item Biological quantities (e.g., weight-at-age, maturity, natural mortality)
+#'   \item Movement and spatial processes
+#'   \item Fishery observations (catch, indices, composition data)
+#'   \item Survey observations (indices and compositions)
+#'   \item Conventional tagging data and recaptures
+#' }
 #'
-#' Biological inputs:
-#' - `WAA_input`, `MatAA_input`:
-#'   `[n_pop, n_regions, n_years, n_seas, n_ages, n_sexes, n_sims]`
-#' - `natmort_input`:
-#'   `[n_pop, n_regions, n_years, n_ages, n_sexes, n_sims]`
-#'
-#' Fishery processes:
-#' - Fishing mortality (`Fmort_input`):
-#'   `[n_regions, n_years, n_seas, n_fish_fleets, n_sims]`
-#' - Selectivity (`fish_sel_input`):
-#'   `[n_regions, n_years, n_ages, n_sexes, n_fish_fleets, n_sims]`
-#'
-#' Survey processes:
-#' - Catchability (`srv_q_input`):
-#'   `[n_regions, n_years, n_srv_fleets, n_sims]`
-#'
-#' Recruitment:
-#' - `R0_input`, `h_input`:
-#'   `[n_pop, n_regions, n_years, n_sims]`
-#'
-#' Tag reporting:
-#' - `conv_tag_fish_reporting_input`:
-#'   `[n_regions, n_years, n_fish_fleets, n_sims]`
-#'
-#' All dimension checks are strict and require exact agreement.
+#' Some objects (e.g., ageing-error matrices or age compositions) may contain
+#' additional dimensions representing observed ages or length bins. These
+#' dimensions are not always validated explicitly because they depend on the
+#' structure of the observed data.
 #'
 #' @return
-#' Invisibly returns `NULL`. The function stops with an error if dimensions
-#' do not match expectations.
+#' No return value. The function is used for validation and will terminate
+#' execution with an error if the dimensions of \code{x} do not match the
+#' expected structure.
 #'
 #' @keywords internal
 check_data_dimensions <- function(x,
@@ -68,8 +60,8 @@ check_data_dimensions <- function(x,
                                   n_sexes = NULL,
                                   n_fish_fleets = NULL,
                                   n_srv_fleets = NULL,
-                                  max_tag_liberty = NULL,
-                                  n_tag_cohorts = NULL,
+                                  conv_tag_max_liberty = NULL,
+                                  n_conv_tag_cohorts = NULL,
                                   what
                                   ) {
 
@@ -187,69 +179,69 @@ check_data_dimensions <- function(x,
 
   # Tagging Stuff -----------------------------------------------------------
   if(what %in% c("conv_tagged_fish")) {
-    if(sum(dim(x) == c(n_tag_cohorts, n_pop, n_ages, n_sexes)) != 4)
-      stop(paste(what, " is not the correct dimension. Should be n_tag_cohorts, n_pop, n_ages, n_sexes"))
+    if(sum(dim(x) == c(n_conv_tag_cohorts, n_pop, n_ages, n_sexes)) != 4)
+      stop(paste(what, " is not the correct dimension. Should be n_conv_tag_cohorts, n_pop, n_ages, n_sexes"))
   }
 
   if(what %in% c("obs_conv_tag_fish_recap")) {
-    if(sum(dim(x) == c(max_tag_liberty, n_seas, n_tag_cohorts, n_pop, n_regions, n_ages, n_sexes, n_fish_fleets)) != 8)
-      stop(paste(what, " is not the correct dimension. Should be max_tag_liberty, n_seas, n_tag_cohorts, n_pop, n_regions, n_ages, n_sexes, n_fish_fleets"))
+    if(sum(dim(x) == c(conv_tag_max_liberty, n_seas, n_conv_tag_cohorts, n_pop, n_regions, n_ages, n_sexes, n_fish_fleets)) != 8)
+      stop(paste(what, " is not the correct dimension. Should be conv_tag_max_liberty, n_seas, n_conv_tag_cohorts, n_pop, n_regions, n_ages, n_sexes, n_fish_fleets"))
   }
 
 }
 
-#' Validate Input Data Dimensions
+
+#' Validate Dimensions of Simulation Input Objects
 #'
-#' Internal helper function that validates the dimensions of model input
-#' objects against the expected array structure defined by model settings.
+#' Internal utility that verifies the dimensional structure of simulation
+#' input objects used in the operating model. The function checks that the
+#' supplied object \code{x} has the expected dimensions for the object type
+#' specified by \code{what}. If the dimensions do not match the required
+#' structure, the function stops with an informative error.
 #'
-#' The function uses the `what` argument to determine the expected dimension
-#' ordering and verifies that `x` conforms exactly to that structure. If a
-#' mismatch is detected, execution stops with an informative error message.
+#' Simulation inputs generally include an additional dimension representing
+#' the number of stochastic simulations (\code{n_sims}). The position of this
+#' dimension depends on the object type but is typically the final dimension
+#' of the array.
 #'
-#' @param x Object to evaluate. Typically an array or vector whose dimensions
-#'   must match the expected structure for the object specified by `what`.
+#' @param x Object to evaluate. Typically a numeric array (or vector) whose
+#'   dimensions must match the expected structure associated with
+#'   \code{what}.
 #' @param n_pop Integer. Number of populations.
 #' @param n_regions Integer. Number of spatial regions.
-#' @param n_years Integer. Number of years.
+#' @param n_years Integer. Number of model years.
 #' @param n_ages Integer. Number of age classes.
 #' @param n_seas Integer. Number of seasons.
 #' @param n_lens Integer. Number of length bins.
 #' @param n_sexes Integer. Number of sexes.
 #' @param n_fish_fleets Integer. Number of fishery fleets.
 #' @param n_srv_fleets Integer. Number of survey fleets.
-#' @param max_tag_liberty Integer. Maximum tag liberty (time-at-liberty)
-#'   tracked for a tag cohort.
-#' @param n_tag_cohorts Integer. Number of tagging cohorts.
-#' @param what Character string specifying the object type to validate.
-#'   Determines the required dimension ordering.
+#' @param n_sims Integer. Number of stochastic simulations.
+#' @param what Character string identifying the type of object to validate.
+#'   This determines the expected dimension ordering and structure.
 #'
 #' @details
-#' Expected dimension order varies by object type. For example:
+#' The function validates the dimensional structure of several classes of
+#' simulation inputs used in the operating model:
 #'
-#' Biological inputs:
-#' - `WAA`, `MatAA`:
-#'   `[n_pop, n_regions, n_years, n_seas, n_ages, n_sexes]`
-#' - `Fixed_natmort`:
-#'   `[n_pop, n_regions, n_years, n_ages, n_sexes]`
+#' \itemize{
+#'   \item Biological processes (e.g., weight-at-age, maturity, natural mortality)
+#'   \item Fishery processes (e.g., fishing mortality, selectivity, catchability)
+#'   \item Survey processes (e.g., selectivity, catchability)
+#'   \item Observation models for indices and composition data
+#'   \item Recruitment and demographic processes
+#'   \item Conventional tagging parameters
+#' }
 #'
-#' Fishery and survey inputs:
-#' - Catch and index objects:
-#'   `[n_regions, n_years, n_seas, n_*_fleets]`
-#' - Composition data include additional age or length and sex dimensions.
-#'
-#' Tagging inputs:
-#' - Tagged fish releases:
-#'   `[n_tag_cohorts, n_pop, n_ages, n_sexes]`
-#' - Recaptures:
-#'   `[max_tag_liberty, n_seas, n_tag_cohorts, n_pop, n_regions,
-#'     n_ages, n_sexes, n_fish_fleets]`
-#'
-#' The function performs strict equality checks on dimension lengths.
+#' Arrays generally follow the dimension ordering
+#' \preformatted{
+#' population × region × year × season × age × sex × fleet × simulation
+#' }
+#' although only the dimensions relevant to a given object are included.
 #'
 #' @return
-#' Invisibly returns `NULL`. The function is called for its side effect of
-#' stopping execution if a dimension mismatch is detected.
+#' No return value. The function is used for validation and terminates with an
+#' error if the dimensions of \code{x} do not match the expected structure.
 #'
 #' @keywords internal
 check_sim_dimensions <- function(x,

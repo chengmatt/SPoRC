@@ -1,93 +1,107 @@
-#' Get Deterministic Recruitment
+#' Deterministic Recruitment
 #'
 #' Computes deterministic recruitment by population and region using either
 #' a mean recruitment model or a Beverton–Holt stock–recruitment relationship.
 #'
+#' Recruitment is distributed spatially using regional recruitment proportions
+#' and seasonal recruitment timing. When Beverton–Holt recruitment is used,
+#' unfished spawning biomass per recruit (\eqn{S_0}) is calculated internally
+#' by projecting a single recruit through the full seasonal population dynamics,
+#' including movement and mortality.
+#'
 #' @param recruitment_model Integer flag specifying the recruitment model:
 #'   \itemize{
-#'     \item `0` = mean recruitment
-#'     \item `1` = Beverton–Holt recruitment with steepness
+#'   \item \code{0} Mean recruitment
+#'   \item \code{1} Beverton–Holt recruitment with steepness
 #'   }
-#' @param rec_dd Integer flag specifying the density-dependence structure:
+#'
+#' @param rec_dd Integer flag specifying the density dependence structure:
 #'   \itemize{
-#'     \item `0` = local (region- or population-specific density dependence)
-#'     \item `1` = global (shared across regions; only valid when `n_pop = 1`)
+#'   \item \code{0} Local density dependence (population or region specific)
+#'   \item \code{1} Global density dependence (shared across regions;
+#'   only valid when \code{n_pop = 1})
 #'   }
-#' @param y Current projection year index.
-#' @param rec_lag Recruitment lag (years between spawning and recruitment).
-#' @param R0 Numeric vector of length `n_pop`. Virgin (mean) recruitment by population.
-#' @param rec_region_prop Array `[n_pop, n_regions]` giving the proportion of each
-#'   population’s recruitment allocated to each region.
-#' @param h Array `[n_pop, n_regions]` of Beverton–Holt steepness values.
+#'
+#' @param y Current model year index.
+#' @param rec_lag Recruitment lag in years between spawning and recruitment.
+#' @param R0 Numeric vector (\code{n_pop}) of unfished recruitment by population.
+#' @param rec_region_prop Matrix (\code{n_pop × n_regions}) giving the proportion
+#'   of recruitment allocated to each region.
+#' @param rec_seas_prop Matrix (\code{n_pop × n_seas}) giving seasonal recruitment
+#'   proportions.
+#' @param h Matrix (\code{n_pop × n_regions}) of Beverton–Holt steepness values.
 #' @param n_pop Number of populations.
 #' @param n_regions Number of spatial regions.
-#' @param n_ages Number of modeled age classes (including plus group).
-#' @param WAA Array `[n_pop, n_regions, n_seas, n_ages]` of weight-at-age.
-#' @param MatAA Array `[n_pop, n_regions, n_seas, n_ages]` of maturity-at-age.
-#' @param natmort Array `[n_pop, n_regions, n_ages]` of natural mortality.
-#' @param SSB_vals Array `[n_pop, n_regions, n_years]` of spawning stock biomass.
-#' @param Movement Array `[n_pop, origin, destination, n_seas, n_ages]`
-#'   of seasonal movement probabilities.
-#' @param sgl_seas_spawning_movement Array `[n_pop, origin, destination, n_ages]`
-#'   used when `n_seas = 1` and `n_pop > 1` to represent spawning migration.
-#' @param do_recruits_move Logical or integer flag indicating whether
-#'   age-1 recruits move during their first year.
-#' @param t_spawn Fraction of the spawning season elapsed before spawning occurs.
-#' @param init_F Numeric vector of length `n_seas` giving fishing mortality.
-#' @param fish_sel Matrix `[n_regions, n_ages]` of selectivity for the dominant fleet.
+#' @param n_ages Number of age classes (including the plus group).
+#' @param WAA Array (\code{n_pop × n_regions × n_seas × n_ages}) of weight-at-age.
+#' @param MatAA Array (\code{n_pop × n_regions × n_seas × n_ages}) of maturity-at-age.
+#' @param natmort Array (\code{n_pop × n_regions × n_ages}) of natural mortality.
+#' @param SSB_vals Array (\code{n_pop × n_regions × n_years}) of spawning biomass.
+#' @param Movement Array
+#'   (\code{n_pop × origin × destination × n_seas × n_ages}) giving seasonal
+#'   movement probabilities.
+#' @param sgl_seas_spawning_movement Array
+#'   (\code{n_pop × origin × destination × n_ages}) describing spawning movement
+#'   when a single season is used and \code{n_pop > 1}.
+#' @param stray_rate Numeric vector of stray rates by population.
+#' @param do_recruits_move Indicator for whether recruits move in their first year.
+#' @param t_spawn Fraction of the spawning season that occurs before spawning.
+#' @param init_F Numeric vector (\code{n_seas}) of fishing mortality.
+#' @param fish_sel Matrix (\code{n_regions × n_ages}) of fishery selectivity.
 #' @param n_seas Number of seasons per year.
 #' @param spawn_seas Season index in which spawning occurs.
-#' @param natal_region Integer vector of length `n_pop` mapping each population
+#' @param natal_region Integer vector (\code{n_pop}) mapping each population
 #'   to its natal region.
-#' @param seasdur Numeric vector of length `n_seas` giving seasonal duration
+#' @param seasdur Numeric vector (\code{n_seas}) giving seasonal durations
 #'   as fractions of a year.
-#' @param sexratio_f Array `[n_pop, n_regions]` giving the female recruitment
-#'   proportion.
-#' @param stray_rate Vector of stray rate by population
-#' @param rec_seas_prop Array of recruitment seasonal apportionment by population and season.
+#' @param sexratio_f Matrix (\code{n_pop × n_regions}) giving female recruitment
+#'   proportions.
 #'
 #' @details
-#' Two recruitment formulations are supported:
 #'
-#' **Mean recruitment (`recruitment_model = 0`)**
+#' Two recruitment formulations are supported.
 #'
-#' Recruitment is fixed at:
-#' \deqn{R_{p,r} = R0_p \times Rec\_Prop_{p,r}}
+#' **Mean recruitment**
 #'
-#' **Beverton–Holt recruitment (`recruitment_model = 1`)**
+#' When \code{recruitment_model = 0}, recruitment is constant:
 #'
-#' Recruitment follows:
-#' \deqn{R = \frac{4hR_0SSB}{(1 - h)S_0 + (5h - 1)SSB}}
+#' \deqn{R_{p,r} = R_{0,p} \times RecProp_{p,r}}
+#'
+#' where recruitment is distributed spatially according to
+#' \code{rec_region_prop}.
+#'
+#' **Beverton–Holt recruitment**
+#'
+#' When \code{recruitment_model = 1}, recruitment follows the
+#' Beverton–Holt relationship:
+#'
+#' \deqn{
+#' R = \frac{4hR_0SSB}{(1-h)S_0 + (5h-1)SSB}
+#' }
 #'
 #' where:
 #' \itemize{
-#'   \item `SSB` is lagged spawning biomass (`rec_lag`)
-#'   \item `S0` is unfished spawning biomass per recruit
-#'   \item `h` is steepness
+#' \item \eqn{SSB} is spawning biomass lagged by \code{rec_lag}
+#' \item \eqn{S_0} is unfished spawning biomass per recruit
+#' \item \eqn{h} is steepness
 #' }
 #'
-#' Spawning biomass per recruit (`S0`) is calculated by projecting a single
-#' recruit through all ages and seasons under unfished and fished conditions.
-#' The algorithm:
+#' Spawning biomass per recruit (\eqn{S_0}) is computed internally by
+#' projecting a single recruit through all ages and seasons under both
+#' unfished and fished conditions. The algorithm:
 #'
 #' \enumerate{
-#'   \item Applies seasonal movement.
-#'   \item Applies exponential natural and fishing mortality.
-#'   \item Computes spawning biomass in `spawn_seas`.
-#'   \item Solves the plus group analytically using annual transition matrices.
+#' \item Allocates a recruit across regions and seasons.
+#' \item Applies seasonal movement.
+#' \item Applies natural and fishing mortality.
+#' \item Computes spawning biomass during the spawning season.
+#' \item Solves the plus group analytically using annual transition matrices.
 #' }
 #'
-#' For local density dependence (`rec_dd = 0`), recruitment is calculated
-#' separately for each population (and region when `n_pop = 1`).
+#' When multiple populations are modeled, recruitment for each population
+#' depends on spawning biomass in its natal region. Contributions from
+#' other populations are scaled by the specified stray rates.
 #'
-#' For global density dependence (`rec_dd = 1`), recruitment depends on
-#' total spawning biomass across regions and is only valid when `n_pop = 1`.
-#'
-#' When `n_pop > 1`, recruitment for each population depends on total
-#' spawning biomass across its regions and steepness associated with
-#' its natal region.
-#'
-#' @return Numeric array `[n_pop, n_regions]` of deterministic recruitment.
 #'
 #' @keywords internal
 Get_Det_Recruitment <- function(recruitment_model,

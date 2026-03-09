@@ -8,49 +8,65 @@
 #' \itemize{
 #'   \item IID process error
 #'   \item Random walk process error
-#'   \item 3D Gaussian Markov Random Field (GMRF) models
+#'   \item 3D Gaussian Markov Random Field (GMRF) models (marginal or conditional variance)
 #'   \item Separable 2D AR(1) models
 #' }
 #'
-#' Additional optional regularization penalties may be applied to:
+#' When \code{do_sel_pen = TRUE}, additional regularization penalties are applied:
 #' \itemize{
-#'   \item Temporal smoothness of deviations
-#'   \item Bin/age smoothness of selectivity
+#'   \item For \code{PE_model} 1--2: first-difference penalty on log-deviations across years.
+#'   \item For \code{PE_model} 3--5: second-difference (smoothness) penalty on log-selectivity
+#'     across bins and across years.
 #' }
 #'
-#' The returned likelihood is on the positive scale. It is converted
-#' to a negative log-likelihood outside this function.
+#' \strong{Note:} The returned value is on the \emph{positive} log-likelihood scale.
+#' It must be negated to obtain a negative log-likelihood contribution, which is
+#' handled outside this function.
 #'
-#' @param PE_model
-#' Integer specifying the process error structure:
+#' @param PE_model Integer specifying the process error structure:
 #' \itemize{
-#'   \item 1 = IID
-#'   \item 2 = Random walk
-#'   \item 3 = 3D GMRF (marginal variance)
-#'   \item 4 = 3D GMRF (conditional variance)
-#'   \item 5 = 2D separable AR(1)
+#'   \item 1 = IID: deviations drawn independently as \eqn{N(0, \sigma^2)}.
+#'   \item 2 = Random walk: deviations follow a first-order random walk initialized
+#'     with a diffuse prior (\eqn{\sigma = 5}) at \code{y = 1}.
+#'   \item 3 = 3D GMRF with marginal variance parameterization.
+#'   \item 4 = 3D GMRF with conditional variance parameterization.
+#'   \item 5 = Separable 2D AR(1) across bins and years.
 #' }
 #'
-#' @param PE_pars
-#' Array of process error parameters (variance and correlation parameters),
-#' indexed consistently with model structure.
+#' @param PE_pars Array of process error parameters dimensioned
+#'   \code{[1, par_index, sex, 1]}. The \code{par_index} slot meaning
+#'   depends on \code{PE_model}:
+#' \itemize{
+#'   \item Models 1--2: \code{[1,1,s,1]} = log standard deviation (\eqn{\log \sigma})
+#'     for sex \code{s}, indexed by bin/age.
+#'   \item Models 3--4: \code{[1,1,s,1]} = unconstrained partial correlation by age/bin;
+#'     \code{[1,2,s,1]} = unconstrained partial correlation by year;
+#'     \code{[1,3,s,1]} = unconstrained partial correlation by cohort;
+#'     \code{[1,4,s,1]} = log variance.
+#'   \item Model 5: \code{[1,1,s,1]} = unconstrained bin correlation (transformed via
+#'     \eqn{2/(1+e^{-2x})-1}); \code{[1,2,s,1]} = unconstrained year correlation;
+#'     \code{[1,4,s,1]} = log standard deviation.
+#' }
 #'
-#' @param ln_devs
-#' Array of log-scale selectivity deviations.
+#' @param ln_devs Array of log-scale selectivity deviations dimensioned
+#'   \code{[1, year, bin, sex, 1]}.
 #'
-#' @param map_sel_devs
-#' Mapping array indicating which deviations are shared
-#' across years, bins, and sexes.
+#' @param map_sel_devs Integer array dimensioned \code{[fleet, year, bin, sex]}
+#'   mapping deviations to unique estimated parameters. Shared deviations
+#'   carry the same integer value; \code{NA} entries are treated as fixed
+#'   and excluded from likelihood evaluation.
 #'
-#' @param sel_vals
-#' Selectivity values (used when applying smoothness penalties).
+#' @param sel_vals Array of selectivity values dimensioned \code{[1, year, bin, sex, 1]},
+#'   used on the log scale when computing bin and year smoothness penalties
+#'   (\code{do_sel_pen = TRUE}).
 #'
-#' @param do_sel_pen
-#' Logical. If TRUE, applies additional temporal and bin regularization
-#' penalties to selectivity.
+#' @param do_sel_pen Logical. If \code{TRUE}, applies additional regularization penalties
+#'   beyond the process error likelihood. For models 1--2, penalizes first differences
+#'   of log-deviations across years. For models 3--5, penalizes second differences
+#'   (curvature) of log-selectivity across bins and across years.
 #'
-#' @return
-#' Numeric value of the positive log-likelihood contribution.
+#' @return Numeric scalar: the positive log-likelihood contribution from selectivity
+#'   process error. Negated externally to form the negative log-likelihood.
 #'
 #' @keywords internal
 #' @import RTMB
@@ -198,19 +214,22 @@ Get_sel_PE_loglik <- function(PE_model,
 #' Compute Movement Process Error Log-Likelihood (Positive Scale)
 #'
 #' Calculates the positive log-likelihood contribution for movement
-#' process error deviations under multiple structural assumptions.
+#' process error deviations under multiple IID structural assumptions.
+#' Deviations are penalized as \eqn{N(0, \sigma^2)} where \eqn{\sigma}
+#' is drawn from \code{PE_pars} according to the selected model structure.
+#' Only origin-destination pairs that are adjacent (non-zero in
+#' \code{adjacency_collapsed}) contribute to the likelihood.
 #'
-#' Supports a range of IID structures across combinations of:
-#' population, region, year, season, age, and sex.
+#' \strong{Note:} The returned value is on the \emph{positive} log-likelihood
+#' scale. It must be negated externally to form the negative log-likelihood.
 #'
-#' Movement deviations are penalized according to the selected
-#' process error model.
-#'
-#' @param PE_model
-#' Integer specifying movement process error structure:
+#' @param PE_model Integer specifying the movement process error structure.
+#'   All models are IID; they differ in which dimensions share a common
+#'   standard deviation. Models 1--5 are single-population (fix \code{pop = 1});
+#'   models 6--10 estimate separate parameters per population:
 #' \itemize{
-#'   \item \strong{1} – IID across years
-#'   \item \strong{2} – IID across ages
+#'   \item \strong{1} – IID across years (single \eqn{\sigma} per origin region)
+#'   \item \strong{2} – IID across ages (single \eqn{\sigma} per origin region and age)
 #'   \item \strong{3} – IID across years and ages
 #'   \item \strong{4} – IID across years, ages, and sexes
 #'   \item \strong{5} – IID across years, seasons, ages, and sexes
@@ -221,33 +240,41 @@ Get_sel_PE_loglik <- function(PE_model,
 #'   \item \strong{10} – IID across populations, years, seasons, ages, and sexes
 #' }
 #'
-#' @param PE_pars
-#' Array of movement process error parameters
-#' (typically standard deviations on log scale).
+#' @param PE_pars Array of movement process error parameters (log standard
+#'   deviations) dimensioned \code{[pop, from_region, seas, age, sex]}.
+#'   Exponentiated internally to obtain \eqn{\sigma}. Which dimensions
+#'   are active depends on \code{PE_model}; unused dimensions should be
+#'   fixed at a constant (e.g., index 1) via the parameter map.
 #'
-#' @param move_devs
-#' Movement deviation array.
+#' @param move_devs Movement deviation array dimensioned
+#'   \code{[pop, from_region, to_region, year, seas, age, sex]}.
 #'
-#' @param map_move_devs
-#' Mapping array defining which deviations are shared.
+#' @param map_move_devs Integer array dimensioned
+#'   \code{[pop, from_region, to_region, year, seas, age, sex]}
+#'   mapping deviations to unique estimated parameters. Shared deviations
+#'   carry the same integer value; dimensions are extracted from this
+#'   array to determine loop bounds.
 #'
-#' @param do_recruits_move
-#' Logical indicator (0/1) for whether recruits are allowed to move.
-#' Controls the starting age for penalties.
+#' @param do_recruits_move Integer (0/1). If \code{0} and \code{n_ages >= 2},
+#'   age-1 recruits are excluded from the likelihood (loop starts at age 2).
+#'   If \code{1}, all ages including recruits are penalized.
 #'
-#' @param adjacency_collapsed
-#' Collapsed adjacency matrix (without retention),
-#' indicating allowable movement connections.
+#' @param adjacency_collapsed Square \code{[n_regions x n_regions]} matrix
+#'   of allowable movement connections among regions, excluding self-retention
+#'   (diagonal entries should be 0). Origin-destination pairs with a value
+#'   of 0 are skipped and contribute nothing to the likelihood.
 #'
-#' @param move_type
-#' Movement formulation type:
+#' @param move_type Integer specifying the movement formulation:
 #' \itemize{
-#'   \item 0 = Unstructured (fully connected)
-#'   \item 1 = CTMC-based movement
+#'   \item \strong{0} = Unstructured multinomial logit movement
+#'   \item \strong{1} = CTMC-based movement
 #' }
+#'   Currently used for dispatch context; likelihood computation is
+#'   identical across movement types within this function.
 #'
-#' @return
-#' Numeric value of the positive log-likelihood contribution.
+#' @return Numeric scalar: the positive log-likelihood contribution from
+#'   movement process error deviations. Negated externally to form the
+#'   negative log-likelihood.
 #'
 #' @keywords internal
 #' @import RTMB

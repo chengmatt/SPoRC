@@ -112,11 +112,13 @@ for(sim in 1:n_sims) {
 }
 
 # Three area model
+three_rep$h_trans[] <- 0.95
+three_rep$Movement[] <- diag(1, 3)
 three_ref_pt <- Get_Reference_Points(data = three_dat,
                                      rep = three_rep,
                                      SPR_x = 0.4,
                                      type = 'multi_region',
-                                     what = 'global_SPR',
+                                     what = 'local_BH_MSY',
                                      calc_rec_st_yr = 20,
                                      rec_age = 2)
 
@@ -124,29 +126,49 @@ three_ref_pt <- Get_Reference_Points(data = three_dat,
 n_sims <- 1
 t_spawn <- 0
 sexratio <- 0.5
-n_proj_yrs <- 30
+n_proj_yrs <- 500
 n_regions <- 3
 n_ages <- length(three_dat$ages)
 n_sexes <- three_dat$n_sexes
 n_fish_fleets <- 2
 do_recruits_move <- 0
 n_seas <- 1
-terminal_NAA <- array(three_rep$NAA[,length(three_dat$years),,,], dim = c(n_regions, n_seas, n_ages, n_sexes))
-terminal_NAA0 <- array(three_rep$NAA0[,length(three_dat$years),,,], dim = c(n_regions, n_seas, n_ages, n_sexes))
-WAA <- array(rep(three_dat$WAA[,length(three_dat$years),,,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # weight at age
-WAA_fish <- array(rep(three_dat$WAA[,length(sgl_dat$years),,,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # weight at age
-MatAA <- array(rep(three_dat$MatAA[,length(three_dat$years),,,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # maturity at age
-fish_sel <- array(rep(three_rep$fish_sel[,length(three_dat$years),,,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_ages, n_sexes, n_fish_fleets)) # selectivity
-Movement <- abind::abind(replicate(n_proj_yrs,  three_rep$Movement[,,length(three_dat$years),,,,drop = FALSE],  simplify = FALSE), along = 3) # movement
+terminal_NAA <- array(three_rep$NAA[,,length(three_dat$years),,,], dim = c(1, n_regions, n_seas, n_ages, n_sexes))
+terminal_NAA0 <- array(three_rep$NAA0[,,length(three_dat$years),,,], dim = c(1, n_regions, n_seas, n_ages, n_sexes))
+WAA <- array(rep(three_dat$WAA[,,length(three_dat$years),,,], each = n_proj_yrs), dim = c(1, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # weight at age
+WAA_fish <- array(rep(three_dat$WAA[,,length(sgl_dat$years),,,], each = n_proj_yrs), dim = c(1, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # weight at age
+MatAA <- array(rep(three_dat$MatAA[,,length(three_dat$years),,,], each = n_proj_yrs), dim = c(1, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # maturity at age
+fish_sel <- array(rep(three_rep$fish_sel[,length(three_dat$years),,,], each = n_proj_yrs), dim = c( n_regions, n_proj_yrs, n_ages, n_sexes, n_fish_fleets)) # selectivity
+Movement <- abind::abind(replicate(n_proj_yrs,  three_rep$Movement[,,,length(three_dat$years),,,,drop = FALSE],  simplify = FALSE), along = 4) # movement
 terminal_F <- array(three_rep$Fmort[,length(three_dat$years),,], dim = c(n_regions, n_seas, n_fish_fleets))
-natmort <- array(three_rep$natmort[,length(three_dat$years),,], dim = c(n_regions, n_proj_yrs, n_ages, n_sexes))
-recruitment <- array(three_rep$Rec[,20:(length(three_dat$years) - 2)], dim = c(n_regions, length(20:(length(three_dat$years) - 2))))
-sexratio <- array(0.5, dim = c(n_regions, n_proj_yrs, n_sexes))
+natmort <- array(three_rep$natmort[,,length(three_dat$years),,], dim = c(1,n_regions, n_proj_yrs, n_ages, n_sexes))
+recruitment <- array(three_rep$Rec[,,20:(length(three_dat$years) - 2)], dim = c(1,n_regions, length(20:(length(three_dat$years) - 2))))
+sexratio <- array(0.5, dim = c(1, n_regions, n_proj_yrs, n_sexes))
 
 # storage
 three_f_proj <- array(0, dim = c(n_regions, n_proj_yrs, n_sims))
 three_ssb_proj <- array(0, dim = c(n_regions, n_proj_yrs, n_sims))
 three_catch_proj <- array(0, dim = c(n_regions, n_proj_yrs, n_fish_fleets, n_sims))
+
+bh_rec_opt <- list(
+  rec_dd = 0,
+  rec_lag = three_dat$rec_lag,
+  R0 = three_rep$R0,
+  h = array(three_rep$h_trans, dim = c(1, 3)),
+  rec_region_prop = three_rep$rec_region_prop,
+  WAA = array(three_dat$WAA[,,1,,,1], dim = c(1,3,1,30)),
+  MatAA = array(three_dat$MatAA[,,1,,,1], dim = c(1,3,1,30)),
+  SSB = three_rep$SSB,
+  Movement = array(Movement[,,,1,,,1], dim = c(1, 3, 3, 1, 30)),
+  do_recruits_move = three_dat$do_recruits_move,
+  # t_spawn = three_dat$t_spawn,
+  sex_ratio_f = array(0.5, dim = c(n_pop, n_regions)),
+  sgl_seas_spawning_movement = three_dat$sgl_seas_spawning_movement[,,,1,,],
+  stray_rate = array(1, dim = c(n_pop)),
+  # rec_seas_prop = rec_seas_prop,
+  natmort = array(natmort[,,1,,1], dim = c(1, 3, 30))
+
+)
 
 # do population projection
 for(sim in 1:n_sims) {
@@ -165,17 +187,37 @@ for(sim in 1:n_sims) {
                                          terminal_F = terminal_F,
                                          natmort = natmort,
                                          WAA = WAA,
+                                         n_pop = 1,
                                          WAA_fish = WAA_fish,
                                          MatAA = MatAA,
                                          fish_sel = fish_sel,
                                          Movement = Movement,
                                          f_ref_pt = array(three_ref_pt$f_ref_pt, dim = c(three_dat$n_regions, n_proj_yrs)),
-                                         b_ref_pt = array(three_ref_pt$b_ref_pt, dim = c(three_dat$n_regions, n_proj_yrs)),
+                                         # f_ref_pt = array(0, dim = c(three_dat$n_regions, n_proj_yrs)),
+
+                                         # b_ref_pt = array(three_ref_pt$b_ref_pt, dim = c(three_dat$n_regions, n_proj_yrs)),
                                          HCR_function = HCR_function,
-                                         recruitment_opt = "mean_rec",
-                                         fmort_opt = "HCR",
-                                         t_spawn = t_spawn
+                                         recruitment_opt = "bh_rec",
+                                         fmort_opt = "Input",
+                                         t_spawn = t_spawn,
+                                         bh_rec_opt = bh_rec_opt,
+                                         rec_seas_prop = array(1, dim = c(1,1))
   )
+
+
+
+  options(digits = 10)
+  three_ref_pt$f_ref_pt
+  three_ref_pt$b_ref_pt
+  three_ref_pt$virgin_b_ref_pt
+  out$proj_SSB[1,,n_proj_yrs]
+
+
+  plot(out$proj_SSB[1,1,])
+  lines(out$proj_SSB[1,2,])
+  lines(out$proj_SSB[1,3,])
+
+
 
   three_ssb_proj[,,sim] <- out$proj_SSB
   three_catch_proj[,,,sim] <- out$proj_Catch

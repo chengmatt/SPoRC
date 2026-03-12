@@ -670,26 +670,33 @@ dev.off()
 ### Reference Points --------------------------------------------------------
 
 # get reference points
-spr_35 <- SPoRC::Get_Reference_Points(data = francis_data,
-                                      rep = francis_model$rep,
-                                      SPR_x = 0.35, t_spawn = 0, sex_ratio_f = 0.5,
-                                      type = "single_region",
-                                      what = 'SPR',
-                                      calc_rec_st_yr = 3, rec_age = 4)
+spr_35 <- Get_Reference_Points(data = francis_data,
+                               rep = francis_model$rep,
+                               SPR_x = 0.35,
+                               t_spawn = 0,
+                               sex_ratio_f = 0.5,
+                               type = "single_region",
+                               what = 'SPR',
+                               calc_rec_st_yr = 3,
+                               rec_age = 4)
 
-spr_40 <- SPoRC::Get_Reference_Points(data = francis_data,
-                                      rep = francis_model$rep,
-                                      type = "single_region",
-                                      what = 'SPR',
-                                      SPR_x = 0.4, t_spawn = 0, sex_ratio_f = 0.5,
-                                      calc_rec_st_yr = 3, rec_age = 4)
+spr_40 <- Get_Reference_Points(data = francis_data,
+                               rep = francis_model$rep,
+                               type = "single_region",
+                               what = 'SPR',
+                               SPR_x = 0.4,
+                               t_spawn = 0,
+                               sex_ratio_f = 0.5,
+                               calc_rec_st_yr = 3, rec_age = 4)
 
-spr_60 <- SPoRC::Get_Reference_Points(data = francis_data,
-                                      rep = francis_model$rep,
-                                      type = "single_region",
-                                      what = 'SPR',
-                                      SPR_x = 0.6, t_spawn = 0, sex_ratio_f = 0.5,
-                                      calc_rec_st_yr = 3, rec_age = 4)
+spr_60 <- Get_Reference_Points(data = francis_data,
+                               rep = francis_model$rep,
+                               type = "single_region",
+                               what = 'SPR',
+                               SPR_x = 0.6,
+                               t_spawn = 0,
+                               sex_ratio_f = 0.5,
+                               calc_rec_st_yr = 3, rec_age = 4)
 
 # Extract reference points
 b40 <- spr_40$b_ref_pt
@@ -719,7 +726,6 @@ t_spawn <- 0
 n_proj_yrs <- 25
 n_regions <- 1
 n_ages <- length(francis_data$ages)
-n_sexes <- 1
 n_fish_fleets <- 1
 n_sexes <- 1
 n_seas <- 1
@@ -736,17 +742,18 @@ terminal_F <- array(francis_model$rep$Fmort[,length(francis_data$years),,], dim 
 natmort <- array(rep(francis_model$rep$natmort[,,length(francis_data$years),,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_ages, n_sexes)) # natural mortaility
 recruitment <- array(francis_model$rep$Rec[,,3:(length(francis_data$years) - 4)], dim = c(n_pop, n_regions, length(3:(length(francis_data$years) - 4)))) # recruitment from years 3 - terminal (corresponds to 1979)
 sexratio <- array(1, dim = c(n_pop, n_regions, n_proj_yrs, n_sexes)) # recruitment sex ratio
+rec_seas_prop <- array(1, dim = c(1,1)) # recruitment seasonal apportionment
 
 # Define the F used for each scenario (Based on BSAI Intro Report - Alaska Scenarios)
 proj_inputs <- list(
   # Scenario 1 - Using HCR to adjust maxFABC
   list(f_ref_pt = array(f40, dim = c(n_regions, n_proj_yrs)),
-       b_ref_pt = array(b40, dim = c(n_regions, n_proj_yrs)),
+       b_ref_pt = array(b40, dim = c(n_pop, n_regions, n_proj_yrs)),
        fmort_opt = 'HCR'
   ),
   # Scenario 2 - Using HCR to adjust maxFABC based on last year's value (constant fraction - author specified F)
   list(f_ref_pt = array(f40 * (f40 / 0.091), dim = c(n_regions, n_proj_yrs)),
-       b_ref_pt = array(b40, dim = c(n_regions, n_proj_yrs)),
+       b_ref_pt = array(b40, dim = c(n_pop, n_regions, n_proj_yrs)),
        fmort_opt = 'HCR'
   ),
   # Scenario 3 - Using an F input of last 5 years average F, and
@@ -766,54 +773,55 @@ proj_inputs <- list(
   ),
   # Scenario 6 - Using HCR to adjust FOFL
   list(f_ref_pt = array(f35, dim = c(n_regions, n_proj_yrs)),
-       b_ref_pt = array(b35, dim = c(n_regions, n_proj_yrs)),
+       b_ref_pt = array(b35, dim = c(n_pop, n_regions, n_proj_yrs)),
        fmort_opt = 'HCR'
   ),
   # Scenario 7 - Using HCR to adjust FABC in first 2 projection years, and then later years are adjusting FOFL
   list(f_ref_pt = array(c(rep(f40, 2), rep(f35, n_proj_yrs - 2)), dim = c(n_regions, n_proj_yrs)),
-       b_ref_pt = array(c(rep(b40, 2), rep(b35, n_proj_yrs - 2)), dim = c(n_regions, n_proj_yrs)),
+       b_ref_pt = array(c(rep(b40, 2), rep(b35, n_proj_yrs - 2)), dim = c(n_pop, n_regions, n_proj_yrs)),
        fmort_opt = 'HCR'
   )
 )
 
 # store outputs
 all_scenarios_f <- array(0, dim = c(n_regions, n_proj_yrs, n_sims, length(proj_inputs)))
-all_scenarios_ssb <- array(0, dim = c(n_regions, n_proj_yrs, n_sims, length(proj_inputs)))
-all_scenarios_catch <- array(0, dim = c(n_regions, n_proj_yrs, n_seas, n_fish_fleets, n_sims, length(proj_inputs)))
+all_scenarios_ssb <- array(0, dim = c(n_pop, n_regions, n_proj_yrs, n_sims, length(proj_inputs)))
+all_scenarios_catch <- array(0, dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_fish_fleets, n_sims, length(proj_inputs)))
 
 set.seed(123)
 for (i in seq_along(proj_inputs)) {
   for (sim in 1:n_sims) {
 
     # do population projection
-    out <- SPoRC::Do_Population_Projection(n_proj_yrs = n_proj_yrs,
-                                           n_regions = n_regions,
-                                           n_ages = n_ages,
-                                           n_sexes = n_sexes,
-                                           n_pop = n_pop,
-                                           sexratio = sexratio,
-                                           n_fish_fleets = n_fish_fleets,
-                                           do_recruits_move = do_recruits_move,
-                                           recruitment = recruitment,
-                                           terminal_NAA = terminal_NAA,
-                                           terminal_NAA0 = terminal_NAA0,
-                                           terminal_F = terminal_F,
-                                           natmort = natmort,
-                                           WAA = WAA,
-                                           WAA_fish = WAA_fish,
-                                           MatAA = MatAA,
-                                           fish_sel = fish_sel,
-                                           Movement = Movement,
-                                           f_ref_pt = proj_inputs[[i]]$f_ref_pt,
-                                           b_ref_pt = proj_inputs[[i]]$b_ref_pt,
-                                           HCR_function = HCR_function,
-                                           recruitment_opt = "inv_gauss",
-                                           fmort_opt = proj_inputs[[i]]$fmort_opt,
-                                           t_spawn = t_spawn
+    out <- Do_Population_Projection(n_proj_yrs = n_proj_yrs,
+                                    n_regions = n_regions,
+                                    n_ages = n_ages,
+                                    n_sexes = n_sexes,
+                                    n_pop = n_pop,
+                                    sexratio = sexratio,
+                                    n_fish_fleets = n_fish_fleets,
+                                    do_recruits_move = do_recruits_move,
+                                    recruitment = recruitment,
+                                    terminal_NAA = terminal_NAA,
+                                    terminal_NAA0 = terminal_NAA0,
+                                    terminal_F = terminal_F,
+                                    natmort = natmort,
+                                    rec_seas_prop = rec_seas_prop,
+                                    WAA = WAA,
+                                    WAA_fish = WAA_fish,
+                                    MatAA = MatAA,
+                                    fish_sel = fish_sel,
+                                    Movement = Movement,
+                                    f_ref_pt = proj_inputs[[i]]$f_ref_pt,
+                                    b_ref_pt = proj_inputs[[i]]$b_ref_pt,
+                                    HCR_function = HCR_function,
+                                    recruitment_opt = "inv_gauss",
+                                    fmort_opt = proj_inputs[[i]]$fmort_opt,
+                                    t_spawn = t_spawn
     )
 
-    all_scenarios_ssb[,,sim,i] <- out$proj_SSB
-    all_scenarios_catch[,,,,sim,i] <- out$proj_Catch
+    all_scenarios_ssb[,,,sim,i] <- out$proj_SSB
+    all_scenarios_catch[,,,,,sim,i] <- out$proj_Catch
     all_scenarios_f[,,sim,i] <- out$proj_F[,-(n_proj_yrs+1)] # remove last year, since it's not used
   } # end sim loop
   print(i)
@@ -823,27 +831,27 @@ for (i in seq_along(proj_inputs)) {
 
 # Get historical SSB
 historical <- reshape2::melt(array(rep(francis_model$rep$SSB, n_sims),
-                                   dim = c(n_regions, length(francis_data$years), n_sims))) %>%
-  mutate(Year = Var2 + 1976,
+                                   dim = c(n_pop, n_regions, length(francis_data$years), n_sims))) %>%
+  mutate(Year = Var3 + 1976,
          Scenario = "FABC (F40)",  # or change to match the scenarios you're plotting
          Type = "Historical") %>%
-  rename(Region = Var1, Simulation = Var3, SSB = value)
+  rename(Pop = Var1, Region = Var2, Simulation = Var4, SSB = value)
 
 # Get all scenario projections
 scenarios <- reshape2::melt(all_scenarios_ssb) %>%
-  mutate(Year = Var2 + 2023,
+  mutate(Year = Var3 + 2023,
          Scenario = case_when(
-           Var4 == 1 ~ "S1: FABC (F40)",
-           Var4 == 2 ~ "S2: FABC Ratio",
-           Var4 == 3 ~ "S3: F Last 5 Years",
-           Var4 == 4 ~ "S4: F60 SPR",
-           Var4 == 5 ~ "S5: No Fishing",
-           Var4 == 6 ~ "S6: FOFL",
-           Var4 == 7 ~ "S7: FABC -> FOFL",
+           Var5 == 1 ~ "S1: FABC (F40)",
+           Var5 == 2 ~ "S2: FABC Ratio",
+           Var5 == 3 ~ "S3: F Last 5 Years",
+           Var5 == 4 ~ "S4: F60 SPR",
+           Var5 == 5 ~ "S5: No Fishing",
+           Var5 == 6 ~ "S6: FOFL",
+           Var5 == 7 ~ "S7: FABC -> FOFL",
            TRUE ~ paste("Scenario", Var4)
          ),
          Type = "Projection") %>%
-  rename(Region = Var1, Simulation = Var3, SSB = value)
+  rename(Pop = Var1, Region = Var2, Simulation = Var4, SSB = value)
 
 # expand historical SSB for plotting
 scenarios_unique <- unique(scenarios$Scenario)
@@ -895,31 +903,31 @@ combined_ssb %>%
 
 # Get historical catch
 historical <- reshape2::melt(array(rep(francis_data$ObsCatch, n_sims),
-                                   dim = c(n_regions, length(francis_data$years), francis_data$n_fish_fleets, n_sims))) %>%
-  mutate(Year = Var2 + 1976,
+                                   dim = c(n_pop, n_regions, length(francis_data$years), francis_data$n_fish_fleets, n_sims))) %>%
+  mutate(Year = Var3 + 1976,
          Scenario = "FABC (F40)",  # or change to match the scenarios you're plotting
          Type = "Historical") %>%
-  rename(Region = Var1, Simulation = Var4, Fleet = Var3, Catch = value) %>%
-  select(-Var2)
+  rename(Pop = Var1, Region = Var2, Simulation = Var5, Fleet = Var4, Catch = value) %>%
+  select(-Var3)
 
 historical$Catch[is.na(historical$Catch)] <- 0
 
 # Get all scenario projections
 scenarios <- reshape2::melt(all_scenarios_catch) %>%
-  mutate(Year = Var2 + 2023,
+  mutate(Year = Var3 + 2023,
          Scenario = case_when(
-           Var6 == 1 ~ "S1: FABC (F40)",
-           Var6 == 2 ~ "S2: FABC Ratio",
-           Var6 == 3 ~ "S3: F Last 5 Years",
-           Var6 == 4 ~ "S4: F60 SPR",
-           Var6 == 5 ~ "S5: No Fishing",
-           Var6 == 6 ~ "S6: FOFL",
-           Var6 == 7 ~ "S7: FABC -> FOFL",
+           Var7 == 1 ~ "S1: FABC (F40)",
+           Var7 == 2 ~ "S2: FABC Ratio",
+           Var7 == 3 ~ "S3: F Last 5 Years",
+           Var7 == 4 ~ "S4: F60 SPR",
+           Var7 == 5 ~ "S5: No Fishing",
+           Var7 == 6 ~ "S6: FOFL",
+           Var7 == 7 ~ "S7: FABC -> FOFL",
            TRUE ~ paste("Scenario", Var6)
          ),
          Type = "Projection") %>%
-  rename(Region = Var1, Simulation = Var5, Catch = value, Fleet = Var4, Seas = Var3) %>%
-  select(-c(Var2, Var6))
+  rename(Pop = Var1, Region = Var2, Simulation = Var6, Catch = value, Fleet = Var5, Seas = Var4) %>%
+  select(-c(Var3, Var7))
 
 # expand historical SSB for plotting
 scenarios_unique <- unique(scenarios$Scenario)
@@ -935,7 +943,7 @@ combined_cat %>%
   group_by(Year, Scenario, Simulation, Type, Region) %>%
   summarize(Catch = sum(Catch)) %>%
   ggplot(aes(x = Year, y = Catch, group = interaction(Scenario, Simulation), color = Type)) +
-  geom_line(alpha = 0.05) +
+  geom_line(alpha = 1) +
   facet_wrap(~Scenario) +
   coord_cartesian(ylim = c(0, NA)) +
   scale_color_manual(values = c("Historical" = "black", "Projection" = "blue")) +

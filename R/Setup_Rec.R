@@ -75,8 +75,7 @@
 #'   movement from age 1.
 #' @param stray_rate_input Natal-homing stray rate array
 #'   \code{[n_pop × n_yrs × n_sims]}. Proportion of individuals that stray
-#'   from their natal region during spawning. Default: \code{1} (all fish
-#'   return to natal region).
+#'   from their natal region during spawning. Default: \code{0} (No individuals stray).
 #' @param Rec_input External recruitment array
 #'   \code{[n_pop x n_regions × n_yrs × n_sims]}. Required when
 #'   \code{recruitment_opt = "resample_from_input"}; projection years beyond
@@ -106,7 +105,7 @@ Setup_Sim_Rec <- function(
     sexratio_input = array(if(sim_list$n_sexes == 1) 1 else 0.5, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sexes, sim_list$n_sims)),
     R0_input = array(10, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)),
     h_input = array(0.8, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)),
-    stray_rate_input = array(1, dim = c(sim_list$n_pop, sim_list$n_yrs, sim_list$n_sims)),
+    stray_rate_input = array(0, dim = c(sim_list$n_pop, sim_list$n_yrs, sim_list$n_sims)),
     ln_sigmaR = array(log(1), dim = c(sim_list$n_pop, sim_list$n_regions)),
     rec_seas_prop_input = {
       rec_seas_prop = array(0, dim = c(sim_list$n_pop, sim_list$n_seas, sim_list$n_sims))
@@ -1146,7 +1145,7 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   array is constructed internally.
 #' @param stray_rate Array \code{[n_pop × n_years]}. Proportion of fish that
 #'   stray from their natal region during spawning. Values in \eqn{[0, 1]}.
-#'   Default: \code{1} (all fish return to their natal region).
+#'   Default: \code{0} (No individuals stray.).
 #'
 #' @section Sex Ratio Dynamics:
 #'
@@ -1228,7 +1227,7 @@ Setup_Mod_Rec <- function(input_list,
                           h_spec = NULL,
                           sgl_seas_spawning_movement = NA,
                           t_spawn = 0,
-                          stray_rate = array(1, dim = c(input_list$data$n_pop, length(input_list$data$years))),
+                          stray_rate = array(0, dim = c(input_list$data$n_pop, length(input_list$data$years))),
                           spawn_seas = 1,
                           sexratio_spec = 'fix',
                           sexratio_blocks = {

@@ -233,6 +233,7 @@ Get_Det_Recruitment <- function(recruitment_model,
       # Now calculate spawning biomass for penultimate age (n_ages-1)
       for(p in 1:n_pop) {
         for(o in 1:n_regions) {
+
           # Age n_ages-1 is now at start of year after the loop
           tmp_unfished = Nspr[p,o,,n_ages-1]
           tmp_fished = Nspr_fished[p,o,,n_ages-1]
@@ -265,7 +266,6 @@ Get_Det_Recruitment <- function(recruitment_model,
             tmp_unfished_spawn = tmp_unfished_spawn %*% sgl_seas_spawning_movement[p,,,n_ages-1]
             tmp_fished_spawn = tmp_fished_spawn %*% sgl_seas_spawning_movement[p,,,n_ages-1]
           }
-
 
           # Calculate spawning biomass
           for(d in 1:n_regions) {

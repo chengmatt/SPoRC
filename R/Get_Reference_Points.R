@@ -1,3 +1,45 @@
+#' Optimize Reference Point Models
+#'
+#' Constructs and optimizes an RTMB automatic differentiation objective function
+#' for estimating fisheries reference points (e.g., SPR-based or Fmsy-based
+#' biological reference points). After optimization, retrieves the model report
+#' and standard deviation report from the best parameter estimates.
+#'
+#' @param model_name Function. An RTMB-compatible model function (e.g.,
+#'   \code{global_SPR}, \code{global_BH_Fmsy}, \code{local_BH_Fmsy}) that
+#'   defines the objective function for the reference point calculation.
+#' @param data_list List. A named list of data inputs passed to \code{model_name}
+#'   via \code{\link[RTMB]{MakeADFun}}. Should contain all quantities treated as
+#'   fixed data within the reference point model (e.g., biological parameters,
+#'   selectivity, movement matrices).
+#' @param pars_list List. A named list of initial parameter values passed to
+#'   \code{\link[RTMB]{MakeADFun}}. These are the parameters over which the
+#'   objective function is optimized (e.g., \code{ln_Fmsy}, \code{ln_F_spr}).
+#'
+#' @returns An RTMB AD function object (list) with the following additional
+#'   elements appended after optimization:
+#'   \describe{
+#'     \item{\code{$optim}}{Output from \code{\link[stats]{nlminb}}, including
+#'       convergence code, final objective value, and optimized parameter
+#'       estimates.}
+#'     \item{\code{$rep}}{Named list of reported quantities from the model
+#'       (e.g., equilibrium SSB, yield, reference point values), evaluated at
+#'       the best parameter estimates via \code{$env$last.par.best}.}
+#'     \item{\code{$sd_rep}}{Output from \code{\link[RTMB]{sdreport}}, containing
+#'       standard errors and summary statistics for all estimated and derived
+#'       quantities.}
+#'   }
+#'
+#'
+#' @keywords internal
+optim_ref_pts <- function(model_name, data_list, pars_list) {
+  tmp_obj <- RTMB::MakeADFun(cmb(model_name, data_list), parameters = pars_list, random = NULL, silent = TRUE)
+  tmp_obj$optim <- stats::nlminb(tmp_obj$par, tmp_obj$fn, tmp_obj$gr, control = list(iter.max = 1e6, eval.max = 1e6, rel.tol = 1e-15))
+  tmp_obj$rep <- tmp_obj$report(tmp_obj$env$last.par.best) # get report
+  tmp_obj$sd_rep <- sdreport(tmp_obj)
+  return(tmp_obj)
+}
+
 #' Build annual transition matrices for the plus-group analytical solution
 #'
 #' Constructs the four annual transition matrices needed to solve for the
@@ -1804,6 +1846,7 @@ local_BH_Fmsy_multipop <- function(pars, data) {
 #' @import RTMB
 #' @export Get_Reference_Points
 #' @family Reference Points and Projections
+
 Get_Reference_Points <- function(data,
                                  rep,
                                  SPR_x = NULL,
@@ -1815,7 +1858,7 @@ Get_Reference_Points <- function(data,
                                  what,
                                  n_avg_yrs = 1,
                                  local_bh_msy_newton_steps = 6
-                                 ) {
+) {
 
   # Dimensions
   n_years <- length(data$years) # number of years
@@ -1825,14 +1868,16 @@ Get_Reference_Points <- function(data,
   n_regions <- data$n_regions # number of regions
   n_fish_fleets <- data$n_fish_fleets # number of fleets
 
-  f_ref_pt <- vector() # set up storage
-  virgin_pop_b_ref_pt <- pop_b_ref_pt <- virgin_b_ref_pt <- b_ref_pt <- array(0, dim = c(n_pop, n_regions)) # set up storage
+  f_ref_pt <- vector()
+  virgin_pop_b_ref_pt <- pop_b_ref_pt <- virgin_b_ref_pt <- b_ref_pt <- array(0, dim = c(n_pop, n_regions))
 
   # determine years to average over demogrphaics
   n_yrs <- length(data$years)
   avg_yrs <- (n_yrs - n_avg_yrs + 1):n_yrs
 
   if(type == "single_region") {
+
+    if(n_regions > 1) stop("Single region reference points specified, but n_regions > 1!")
 
     data_list <- list() # set up data list
 
@@ -1848,39 +1893,30 @@ Get_Reference_Points <- function(data,
 
     if(!what %in% c("SPR", "BH_MSY")) stop("what is not correctly specified! Should be SPR, BH_MSY for type = single_region")
 
-    # fishing mortality fraction
-    data_list$F_fract_flt <- array(rep$Fmort[1,n_years,,] / sum(rep$Fmort[1,n_years,,]),
-                                   dim = c(data$n_seas, data$n_fish_fleets)) # get fleet F fraction to derive population level selectivity
-
-    # fishery selectivity
+    # setup shared data lists
+    data_list$F_fract_flt <- array(rep$Fmort[1,n_years,,] / sum(rep$Fmort[1,n_years,,]), dim = c(data$n_seas, data$n_fish_fleets)) # fishing mortality fraction
     fish_sel_avg <- apply(rep$fish_sel[1,avg_yrs,,1,,drop = FALSE], c(3,5), mean)
     data_list$fish_sel <- array(fish_sel_avg, dim = c(n_ages, data$n_fish_fleets)) # get female selectivity for all fleets
-
-    # natural mortality
     natmort_avg <- apply(rep$natmort[,1,avg_yrs,,1,drop = FALSE], c(1,4), mean)
     data_list$natmort <- natmort_avg # get female natural mortality
-
-    # weight at age
     WAA_avg <- apply(data$WAA[,1,avg_yrs,,,1,drop = FALSE], c(1,4,5), mean)
     data_list$WAA <- array(WAA_avg, dim = c(n_pop, data$n_seas, n_ages)) # weight at age for females
-
-    # maturity at age
     MatAA_avg <- apply(data$MatAA[,1,avg_yrs,,,1,drop = FALSE], c(1,4,5), mean)
     data_list$MatAA <- array(MatAA_avg, dim = c(n_pop, data$n_seas, n_ages)) # maturity at age for females
 
-    data_list$rec_seas_prop <- array(rep$rec_seas_prop[,], dim = c(n_pop, data$n_seas)) # recruitment seasonal proportion
+    # Other recruitment stuff
     data_list$sex_ratio_f <- sex_ratio_f # recritment sex ratio
     data_list$stray_rate <- array(apply(rep$stray_rate[,avg_yrs, drop = FALSE], 1, mean), dim = n_pop) # stray rate
+    data_list$rec_seas_prop <- array(rep$rec_seas_prop[,], dim = c(n_pop, data$n_seas)) # recruitment seasonal proportion
 
     if(what == 'SPR') {
+
       data_list$SPR_x <- SPR_x # SPR fraction
       par_list <- list() # set up parameter list
       par_list$log_F_x <- log(0.1) # F_x starting value
 
       # Make adfun object
-      tmp_obj <- RTMB::MakeADFun(cmb(single_region_SPR, data_list), parameters = par_list, map = NULL, silent = TRUE)
-      tmp_obj$optim <- stats::nlminb(tmp_obj$par, tmp_obj$fn, tmp_obj$gr, control = list(iter.max = 1e6, eval.max = 1e6, rel.tol = 1e-15))
-      tmp_obj$rep <- tmp_obj$report(tmp_obj$env$last.par.best) # get report
+      tmp_obj <- optim_ref_pts(single_region_SPR, data_list, par_list)
 
       # Output reference points
       f_ref_pt[1] <- tmp_obj$rep$F_x
@@ -1914,13 +1950,12 @@ Get_Reference_Points <- function(data,
       par_list$log_Fmsy <- log(0.1) # Fmsy starting value
 
       # make adfun ect
-      tmp_obj <- RTMB::MakeADFun(cmb(single_region_BH_Fmsy, data_list), parameters = par_list, map = NULL, silent = TRUE)
-      tmp_obj$optim <- stats::nlminb(tmp_obj$par, tmp_obj$fn, tmp_obj$gr, control = list(iter.max = 1e6, eval.max = 1e6, rel.tol = 1e-15))
-      tmp_obj$rep <- tmp_obj$report(tmp_obj$env$last.par.best) # get report
+      tmp_obj <- optim_ref_pts(single_region_BH_Fmsy, data_list, par_list)
 
       # Output reference points
       f_ref_pt[1] <- tmp_obj$rep$Fmsy
 
+      # Accumulate biomass reference points
       for(p2 in 1:n_pop) {
         pop_b_ref_pt[p2,1]        <- tmp_obj$rep$SB[p2]  * tmp_obj$rep$Req[p2]
         virgin_pop_b_ref_pt[p2,1] <- tmp_obj$rep$SB0[p2] * rep$R0[p2]
@@ -1956,164 +1991,118 @@ Get_Reference_Points <- function(data,
     data_list$n_ages <- n_ages
     data_list$n_regions <- n_regions
 
-    if(what == "independent_SPR") {
+    if(what %in% c("independent_SPR", 'independent_BH_MSY')) {
+
+      tmp_obj <- list() # save optimized object as a list
 
       for(r in 1:data$n_regions) {
 
-        data_list$F_fract_flt <- array(rep$Fmort[r,n_years,,] / sum(rep$Fmort[r,n_years,,]),
-                                       dim = c(data$n_seas, data$n_fish_fleets)) # get fleet F fraction to derive population level selectivity
-
-        # fishery selectivity
+        # create shared data lists
+        data_list$F_fract_flt <- array(rep$Fmort[r,n_years,,] / sum(rep$Fmort[r,n_years,,]), dim = c(data$n_seas, data$n_fish_fleets)) # get fleet F fraction to derive population level selectivity
         fish_sel_avg <- apply(rep$fish_sel[r,avg_yrs,,1,,drop = FALSE], c(1, 3, 4, 5), mean)
         data_list$fish_sel <- array(fish_sel_avg, dim = c(n_ages, data$n_fish_fleets)) # get female selectivity for all fleets
-
-        # natural mortality
         natmort_avg <- apply(rep$natmort[,r,avg_yrs,,1,drop = FALSE], c(1,4), mean)
         data_list$natmort <- array(natmort_avg, dim = c(n_pop, n_ages)) # get female natural mortality
-
-        # weight at age
         WAA_avg <- apply(data$WAA[,r,avg_yrs,,,1,drop = FALSE], c(1,4,5), mean)
         data_list$WAA <- array(WAA_avg, dim = c(n_pop, data$n_seas, n_ages)) # weight at age for females
-
-        # maturity at age
         MatAA_avg <- apply(data$MatAA[,r,avg_yrs,,,1,drop = FALSE], c(1,4,5), mean)
         data_list$MatAA <- array(MatAA_avg, dim = c(n_pop, data$n_seas, n_ages)) # maturity at age for females
-
-        data_list$SPR_x <- SPR_x # SPR fraction
         data_list$sex_ratio_f <- array(sex_ratio_f[,r], dim = n_pop) # recritment sex ratio
-        data_list$rec_seas_prop <- array(rep$rec_seas_prop[,], dim = c(n_pop, data$n_seas)) # recruitment seasonal proportion
         data_list$stray_rate <- array(apply(rep$stray_rate[,avg_yrs, drop = FALSE], 1, mean), dim = n_pop) # stray rate
-
-        par_list <- list() # set up parameter list
-        par_list$log_F_x <- log(0.1) # F_x starting value
-
-        # Make adfun object
-        tmp_obj <- RTMB::MakeADFun(cmb(single_region_SPR, data_list), parameters = par_list, map = NULL, silent = TRUE)
-        tmp_obj$optim <- stats::nlminb(tmp_obj$par, tmp_obj$fn, tmp_obj$gr, control = list(iter.max = 1e6, eval.max = 1e6, rel.tol = 1e-15))
-        tmp_obj$rep <- tmp_obj$report(tmp_obj$env$last.par.best) # get report
-
-        # Output reference points
-        f_ref_pt[r] <- tmp_obj$rep$F_x
-
-        # Compute population specific reference points, by using stray rates
-        mean_rec <- apply(rep$Rec[,r,calc_rec_st_yr:(n_years-rec_age),drop=FALSE], 1, mean)
-        if(n_pop > 1) {
-          for(p2 in 1:n_pop) {
-            pop_b_ref_pt[p2,r]        <- tmp_obj$rep$SB[p2]  * mean_rec[p2]
-            virgin_pop_b_ref_pt[p2,r] <- tmp_obj$rep$SB0[p2] * mean_rec[p2]
-            for(p in 1:n_pop) {
-              if(p != p2) {
-                pop_b_ref_pt[p2,r]        <- pop_b_ref_pt[p2,r]        + stray_rate[p] * tmp_obj$rep$SB[p]  * mean_rec[p]
-                virgin_pop_b_ref_pt[p2,r] <- virgin_pop_b_ref_pt[p2,r] + stray_rate[p] * tmp_obj$rep$SB0[p] * mean_rec[p]
-              } # end if
-            } # end p loop
-          } # end p2 loop
-        }
-
-        # Compute global reference points (sum across populations)
-        b_ref_pt[,r] <- tmp_obj$rep$SB * apply(rep$Rec[,r,calc_rec_st_yr:(n_years - rec_age), drop = F], 1, mean)
-        virgin_b_ref_pt[,r] <- tmp_obj$rep$SB0 * apply(rep$Rec[,r,calc_rec_st_yr:(n_years - rec_age), drop = F], 1, mean)
-
-      } # end r loop
-
-      if(n_pop == 1) {
-        pop_b_ref_pt[1,1] = sum(b_ref_pt)
-        virgin_pop_b_ref_pt[1,1] = sum(virgin_b_ref_pt)
-      }
-
-
-    } # end independent_SPR
-
-    if(what == "independent_BH_MSY") {
-
-      for(r in 1:data$n_regions) {
-
-        data_list$F_fract_flt <- array(rep$Fmort[r,n_years,,] / sum(rep$Fmort[r,n_years,,]),
-                                       dim = c(data$n_seas, data$n_fish_fleets)) # get fleet F fraction to derive population level selectivity
-
-        # fishery selectivity
-        fish_sel_avg <- apply(rep$fish_sel[r,avg_yrs,,1,,drop = FALSE], c(1, 3, 4, 5), mean)
-        data_list$fish_sel <- array(fish_sel_avg, dim = c(n_ages, data$n_fish_fleets)) # get female selectivity for all fleets
-
-        # natural mortality
-        natmort_avg <- apply(rep$natmort[,r,avg_yrs,,1,drop = FALSE], c(1,4), mean)
-        data_list$natmort <- array(natmort_avg, dim = c(n_pop, n_ages)) # get female natural mortality
-
-        # weight at age
-        WAA_avg <- apply(data$WAA[,r,avg_yrs,,,1,drop = FALSE], c(1,4,5), mean)
-        data_list$WAA <- array(WAA_avg, dim = c(n_pop, data$n_seas, n_ages)) # weight at age for females
-
-        # maturity at age
-        MatAA_avg <- apply(data$MatAA[,r,avg_yrs,,,1,drop = FALSE], c(1,4,5), mean)
-        data_list$MatAA <- array(MatAA_avg, dim = c(n_pop, data$n_seas, n_ages)) # maturity at age for females
-
-        # Beverton Holt parameters
-        data_list$h <- array(rep$h_trans[,r], dim = n_pop) # steepness
-        data_list$R0 <- array(rep$R0 * rep$rec_region_prop[,r], dim = n_pop) # unfished recruitment by region
-        data_list$sex_ratio_f <- array(sex_ratio_f[,r], dim = n_pop) # recritment sex ratio
         data_list$rec_seas_prop <- array(rep$rec_seas_prop, dim = c(n_pop, data$n_seas)) # recruitment seasonal proportion
-        data_list$stray_rate <- array(apply(rep$stray_rate[,avg_yrs, drop = FALSE], 1, mean), dim = n_pop) # stray rate
 
-        par_list <- list() # set up parameter list
-        par_list$log_Fmsy <- log(0.1) # Fmsy starting value
+        if(what == 'independent_SPR') {
 
-        # Make adfun object
-        tmp_obj <- RTMB::MakeADFun(cmb(single_region_BH_Fmsy, data_list), parameters = par_list, map = NULL, silent = TRUE)
-        tmp_obj$optim <- stats::nlminb(tmp_obj$par, tmp_obj$fn, tmp_obj$gr, control = list(iter.max = 1e6, eval.max = 1e6, rel.tol = 1e-15))
-        tmp_obj$rep <- tmp_obj$report(tmp_obj$env$last.par.best) # get report
+          data_list$SPR_x <- SPR_x # SPR fraction
 
-        # Output reference points
-        f_ref_pt[r] <- tmp_obj$rep$Fmsy
-        if(n_pop > 1) {
-          for(p2 in 1:n_pop) {
-            pop_b_ref_pt[p2,r]        <- tmp_obj$rep$SB[p2]  * tmp_obj$rep$Req[p2]
-            virgin_pop_b_ref_pt[p2,r] <- tmp_obj$rep$SB0[p2] * rep$R0[p2]
-            for(p in 1:n_pop) {
-              if(p != p2) {
-                pop_b_ref_pt[p2,r]        <- pop_b_ref_pt[p2,r]        + stray_rate[p] * tmp_obj$rep$SB[p]  * tmp_obj$rep$Req[p]
-                virgin_pop_b_ref_pt[p2,r] <- virgin_pop_b_ref_pt[p2,r] + stray_rate[p] * tmp_obj$rep$SB0[p] * data_list$R0[p]
+          par_list <- list() # set up parameter list
+          par_list$log_F_x <- log(0.1) # F_x starting value
+
+          # Make adfun object
+          tmp_obj[[r]] <- optim_ref_pts(single_region_SPR, data_list, par_list)
+
+          # Output reference points
+          f_ref_pt[r] <- tmp_obj[[r]]$rep$F_x
+
+          # Compute population specific reference points, by using stray rates
+          mean_rec <- apply(rep$Rec[,r,calc_rec_st_yr:(n_years-rec_age),drop=FALSE], 1, mean)
+          if(n_pop > 1) {
+            for(p2 in 1:n_pop) {
+              pop_b_ref_pt[p2,r]        <- tmp_obj[[r]]$rep$SB[p2]  * mean_rec[p2]
+              virgin_pop_b_ref_pt[p2,r] <- tmp_obj[[r]]$rep$SB0[p2] * mean_rec[p2]
+              for(p in 1:n_pop) {
+                if(p != p2) {
+                  pop_b_ref_pt[p2,r]        <- pop_b_ref_pt[p2,r]        + stray_rate[p] * tmp_obj[[r]]$rep$SB[p]  * mean_rec[p]
+                  virgin_pop_b_ref_pt[p2,r] <- virgin_pop_b_ref_pt[p2,r] + stray_rate[p] * tmp_obj[[r]]$rep$SB0[p] * mean_rec[p]
+                } # end if
+              } # end p loop
+            } # end p2 loop
+          }
+
+          # Compute global reference points (sum across populations)
+          b_ref_pt[,r] <- tmp_obj[[r]]$rep$SB * apply(rep$Rec[,r,calc_rec_st_yr:(n_years - rec_age), drop = F], 1, mean)
+          virgin_b_ref_pt[,r] <- tmp_obj[[r]]$rep$SB0 * apply(rep$Rec[,r,calc_rec_st_yr:(n_years - rec_age), drop = F], 1, mean)
+
+        } # independent SPR
+
+        if(what == 'independent_BH_MSY') {
+
+          # Beverton Holt parameters
+          data_list$h <- array(rep$h_trans[,r], dim = n_pop) # steepness
+          data_list$R0 <- array(rep$R0 * rep$rec_region_prop[,r], dim = n_pop) # unfished recruitment by region
+
+          par_list <- list() # set up parameter list
+          par_list$log_Fmsy <- log(0.1) # Fmsy starting value
+
+          # optimize model
+          tmp_obj[[r]] <- optim_ref_pts(single_region_BH_Fmsy, data_list, par_list)
+          f_ref_pt[r] <- tmp_obj[[r]]$rep$Fmsy
+
+          # get and accumulate biomass reference points
+          if(n_pop > 1) {
+            for(p2 in 1:n_pop) {
+              pop_b_ref_pt[p2,r]        <- tmp_obj[[r]]$rep$SB[p2]  * tmp_obj[[r]]$rep$Req[p2]
+              virgin_pop_b_ref_pt[p2,r] <- tmp_obj[[r]]$rep$SB0[p2] * rep$R0[p2]
+              for(p in 1:n_pop) {
+                if(p != p2) {
+                  pop_b_ref_pt[p2,r]        <- pop_b_ref_pt[p2,r]        + stray_rate[p] * tmp_obj[[r]]$rep$SB[p]  * tmp_obj[[r]]$rep$Req[p]
+                  virgin_pop_b_ref_pt[p2,r] <- virgin_pop_b_ref_pt[p2,r] + stray_rate[p] * tmp_obj[[r]]$rep$SB0[p] * data_list$R0[p]
+                }
               }
             }
           }
-        }
 
-        b_ref_pt[,r] <-  tmp_obj$rep$SB * tmp_obj$rep$Req
-        virgin_b_ref_pt[,r] <-  tmp_obj$rep$SB0 * data_list$R0
+          b_ref_pt[,r] <-  tmp_obj[[r]]$rep$SB * tmp_obj[[r]]$rep$Req
+          virgin_b_ref_pt[,r] <-  tmp_obj[[r]]$rep$SB0 * data_list$R0
+
+        } # independent BH MSY
+
       } # end r loop
 
+      # sum up biomass reference points to pop-specific quantities
       if(n_pop == 1) {
         pop_b_ref_pt[1,1] = sum(b_ref_pt)
         virgin_pop_b_ref_pt[1,1] = sum(virgin_b_ref_pt)
       }
 
+    } # end independent methods
 
-    } # end independent_SPR
-
+    # Global SPR
     if(what == 'global_SPR') {
 
-      # Fleet fraction F
+      # create data lists
       fratio <- array(0, dim = c(n_regions, data$n_seas, data$n_fish_fleets))
       terminal_F <- array(rep$Fmort[,n_years,,], dim = dim(fratio))
       for(r in 1:n_regions) for(seas in 1:data$n_seas) for(f in 1:data$n_fish_fleets) fratio[r,seas,f] <- terminal_F[r,seas,f] / sum(terminal_F[r,,])
       data_list$F_fract_flt <- fratio
-
-      # fishery selectivity
       fish_sel_avg <- apply(rep$fish_sel[,avg_yrs,,1,,drop = FALSE], c(1,3,5), mean)
       data_list$fish_sel <- array(fish_sel_avg, dim = c(n_regions, n_ages, data$n_fish_fleets)) # get female selectivity for all fleets
-
-      # natural mortality
       natmort_avg <- apply(rep$natmort[,,avg_yrs,,1,drop = FALSE], c(1,2,4), mean)
       data_list$natmort <- array(natmort_avg, dim = c(n_pop, n_regions, n_ages)) # get female natural mortality
-
-      # weight at age
       WAA_avg <- apply(data$WAA[,,avg_yrs,,,1,drop = FALSE], c(1, 2, 4, 5), mean)
       data_list$WAA <- array(WAA_avg, dim = c(n_pop, n_regions, data$n_seas, n_ages)) # weight at age for females
-
-      # maturity at age
       MatAA_avg <- apply(data$MatAA[,,avg_yrs,,,1,drop = FALSE], c(1, 2, 4, 5), mean)
       data_list$MatAA <- array(MatAA_avg, dim = c(n_pop, n_regions, data$n_seas, n_ages)) # maturity at age for females
-
-      # Movement
       Movement_avg <- apply(rep$Movement[,,,avg_yrs,,,1,drop = FALSE], c(1,2,3,5,6), mean)
       data_list$Movement <- array(Movement_avg, dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)) # Movement
 
@@ -2122,11 +2111,11 @@ Get_Reference_Points <- function(data,
       data_list$sex_ratio_f <- sex_ratio_f # recritment sex ratio
       data_list$rec_seas_prop <- array(rep$rec_seas_prop[,], dim = c(n_pop, data$n_seas)) # recruitment seasonal proportion
       data_list$stray_rate <- array(apply(rep$stray_rate[,avg_yrs, drop = FALSE], 1, mean), dim = n_pop) # stray rate
-      data_list$SPR_x <- SPR_x # SPR fraction
       sgl_seas_spawning_movement_avg <- apply(rep$sgl_seas_spawning_movement[,,,avg_yrs,,1,drop = FALSE], c(1,2,3,5), mean)
       data_list$sgl_seas_spawning_movement <- array(sgl_seas_spawning_movement_avg, dim = c(n_pop, n_regions, n_regions, n_ages)) # Movement
       data_list$natal_region <- data$natal_region
 
+      data_list$SPR_x <- SPR_x # SPR fraction
       mean_rec <- apply(rep$Rec[,,calc_rec_st_yr:(n_years-rec_age),drop=FALSE], c(1,2), mean) # [n_pop, n_regions]
       total_mean_rec <- apply(mean_rec, 1, sum) # [n_pop] - total recruitment across regions
       data_list$rec_region_prop <- mean_rec / total_mean_rec # recruitment proportions
@@ -2135,9 +2124,7 @@ Get_Reference_Points <- function(data,
       par_list$log_F_x <- log(0.1) # F_x starting value
 
       # make adfn object
-      tmp_obj <- RTMB::MakeADFun(cmb(global_SPR, data_list), parameters = par_list, map = NULL, silent = TRUE)
-      tmp_obj$optim <- stats::nlminb(tmp_obj$par, tmp_obj$fn, tmp_obj$gr, control = list(iter.max = 1e6, eval.max = 1e6, rel.tol = 1e-15))
-      tmp_obj$rep <- tmp_obj$report(tmp_obj$env$last.par.best) # get report
+      tmp_obj <- optim_ref_pts(global_SPR, data_list, par_list)
 
       # output reference points
       f_ref_pt <- rep(tmp_obj$rep$F_x, n_regions)
@@ -2168,34 +2155,25 @@ Get_Reference_Points <- function(data,
 
     } # end global SPR
 
+    # Global BH MSY
     if(what == 'global_BH_MSY') {
 
       # Error out if invalid recruitment density dependent option
       if(n_pop > 1) stop("Invalid reference point option! When n_pop > 1 reference points must either be independent_SPR, independent_BH_MSY, global_SPR, or local_BH_MSY.")
 
-      # Fleet fraction F
+      # createa data list
       fratio <- array(0, dim = c(n_regions, data$n_seas, data$n_fish_fleets))
       terminal_F <- array(rep$Fmort[,n_years,,], dim = dim(fratio))
       for(r in 1:n_regions) for(seas in 1:data$n_seas) for(f in 1:data$n_fish_fleets) fratio[r,seas,f] <- terminal_F[r,seas,f] / sum(terminal_F[r,,])
       data_list$F_fract_flt <- fratio
-
-      # fishery selectivity
       fish_sel_avg <- apply(rep$fish_sel[,avg_yrs,,1,,drop = FALSE], c(1,3,5), mean)
       data_list$fish_sel <- array(fish_sel_avg, dim = c(n_regions, n_ages, data$n_fish_fleets)) # get female selectivity for all fleets
-
-      # natural mortality
       natmort_avg <- apply(rep$natmort[1,,avg_yrs,,1,drop = FALSE], c(2,4), mean)
       data_list$natmort <- array(natmort_avg, dim = c(n_regions, n_ages)) # get female natural mortality
-
-      # weight at age
       WAA_avg <- apply(data$WAA[,,avg_yrs,,,1,drop = FALSE], c(2, 4, 5), mean)
       data_list$WAA <- array(WAA_avg, dim = c(n_regions, data$n_seas, n_ages)) # weight at age for females
-
-      # maturity at age
       MatAA_avg <- apply(data$MatAA[,,avg_yrs,,,1,drop = FALSE], c(2, 4, 5), mean)
       data_list$MatAA <- array(MatAA_avg, dim = c(n_regions, data$n_seas, n_ages)) # maturity at age for females
-
-      # Movement
       Movement_avg <- apply(rep$Movement[1,,,avg_yrs,,,1,drop = FALSE], c(1,2,3,5,6), mean)
       data_list$Movement <- array(Movement_avg, dim = c(n_regions, n_regions, n_seas, n_ages)) # Movement
 
@@ -2210,10 +2188,8 @@ Get_Reference_Points <- function(data,
       par_list <- list() # set up parameter list
       par_list$log_Fmsy <- log(0.1) # Fmsy starting value
 
-      # Make adfun object
-      tmp_obj <- RTMB::MakeADFun(cmb(global_BH_Fmsy, data_list), parameters = par_list, map = NULL, silent = TRUE)
-      tmp_obj$optim <- stats::nlminb(tmp_obj$par, tmp_obj$fn, tmp_obj$gr, control = list(iter.max = 1e6, eval.max = 1e6, rel.tol = 1e-15))
-      tmp_obj$rep <- tmp_obj$report(tmp_obj$env$last.par.best) # get report
+      # make adfn object
+      tmp_obj <- optim_ref_pts(global_BH_Fmsy, data_list, par_list)
 
       # Output reference points
       f_ref_pt <- rep(tmp_obj$rep$Fmsy, n_regions)
@@ -2221,33 +2197,24 @@ Get_Reference_Points <- function(data,
       pop_b_ref_pt[1,1] <- sum(b_ref_pt)
       virgin_b_ref_pt[1,] <- apply(tmp_obj$rep$SB_age[1,,,drop = F], 2, sum) * data_list$R0
       virgin_pop_b_ref_pt[1,1]  <- sum(virgin_b_ref_pt)
-    }
+
+    } # end global BH MSY
 
     if(what == 'local_BH_MSY') {
 
-      # Fleet fraction F
+      # create data list
       fratio <- array(0, dim = c(n_regions, data$n_seas, data$n_fish_fleets))
       terminal_F <- array(rep$Fmort[,n_years,,], dim = dim(fratio))
       for(r in 1:n_regions) for(seas in 1:data$n_seas) for(f in 1:data$n_fish_fleets) fratio[r,seas,f] <- terminal_F[r,seas,f] / sum(terminal_F[r,,])
       data_list$F_fract_flt <- fratio
-
-      # fishery selectivity
       fish_sel_avg <- apply(rep$fish_sel[,avg_yrs,,1,,drop = FALSE], c(1,3,5), mean)
       data_list$fish_sel <- array(fish_sel_avg, dim = c(n_regions, n_ages, data$n_fish_fleets)) # get female selectivity for all fleets
-
-      # natural mortality
       natmort_avg <- apply(rep$natmort[,,avg_yrs,,1,drop = FALSE], c(1,2,4), mean)
       data_list$natmort <- array(natmort_avg, dim = c(if(n_pop > 1) n_pop else NULL, n_regions, n_ages)) # get female natural mortality
-
-      # weight at age
       WAA_avg <- apply(data$WAA[,,avg_yrs,,,1,drop = FALSE], c(1, 2, 4, 5), mean)
       data_list$WAA <- array(WAA_avg, dim = c(if(n_pop > 1) n_pop else NULL, n_regions, data$n_seas, n_ages)) # weight at age for females
-
-      # maturity at age
       MatAA_avg <- apply(data$MatAA[,,avg_yrs,,,1,drop = FALSE], c(1, 2, 4, 5), mean)
       data_list$MatAA <- array(MatAA_avg, dim = c(if(n_pop > 1) n_pop else NULL, n_regions, data$n_seas, n_ages)) # maturity at age for females
-
-      # Movement
       Movement_avg <- apply(rep$Movement[,,,avg_yrs,,,1,drop = FALSE], c(1,2,3,5,6), mean)
       data_list$Movement <- array(Movement_avg, dim = c(if(n_pop > 1) n_pop else NULL, n_regions, n_regions, n_seas, n_ages)) # Movement
 
@@ -2264,34 +2231,24 @@ Get_Reference_Points <- function(data,
       sgl_seas_spawning_movement_avg <- apply(rep$sgl_seas_spawning_movement[,,,avg_yrs,,1,drop = FALSE], c(1,2,3,5), mean)
       data_list$sgl_seas_spawning_movement <- array(sgl_seas_spawning_movement_avg, dim = c(n_pop, n_regions, n_regions, n_ages)) # Movement
 
-
       par_list <- list() # set up parameter list
       par_list$log_Fmsy <- rep(log(0.1), n_regions) # Fmsy starting value
 
-      # data_list$h[] <- 0.5
-      # # data_list$Movement[1,,,1,] <- data_list$Movement[2,,,1,] <- diag(1, 2)
-      # data_list$Movement[1,,,2,] <-  c(1,1,0,0)
-      # data_list$Movement[2,,,2,] <-  c(0,0,1,1)
-      # data_list$rec_seas_prop[] <- 0.5
-      # data_list$R0[] <- 5
-      # data_list$stray_rate[] <- 0
-
       # Make adfun object
-      if(n_pop == 1) tmp_obj <- RTMB::MakeADFun(cmb(local_BH_Fmsy_sglpop, data_list), parameters = par_list, map = NULL, silent = TRUE)
-      if(n_pop > 1) tmp_obj <- RTMB::MakeADFun(cmb(local_BH_Fmsy_multipop, data_list), parameters = par_list, map = NULL, silent = TRUE)
-      tmp_obj$optim <- stats::nlminb(tmp_obj$par, tmp_obj$fn, tmp_obj$gr, control = list(iter.max = 1e6, eval.max = 1e6, rel.tol = 1e-15))
-      tmp_obj$rep <- tmp_obj$report(tmp_obj$env$last.par.best) # get report
+      tmp_model <- if(n_pop == 1) local_BH_Fmsy_sglpop else local_BH_Fmsy_multipop
+      tmp_obj <- optim_ref_pts(tmp_model, data_list, par_list)
 
       # Output reference points
       f_ref_pt <- tmp_obj$rep$Fmsy
 
-
+      # multi-population reference points
       if(n_pop > 1) {
         for(r in 1:n_regions) {
           b_ref_pt[,r]        <- tmp_obj$rep$SB[,r]  * tmp_obj$rep$Req_o
           virgin_b_ref_pt[,r] <- tmp_obj$rep$SB0[,r] * data_list$R0
         }
 
+        # accumulate stray rates
         for(p2 in 1:n_pop) {
           r_natal <- data$natal_region[p2]
           pop_b_ref_pt[p2, r_natal]        <- tmp_obj$rep$SB[p2, r_natal]  * tmp_obj$rep$Req_o[p2]
@@ -2303,7 +2260,7 @@ Get_Reference_Points <- function(data,
             }
           }
         }
-      } else{
+      } else{ # single population reference points
         for(r in 1:n_regions) {
           b_ref_pt[1, r]        <- tmp_obj$rep$SB[r] * tmp_obj$rep$Req_o[r]
           virgin_b_ref_pt[1, r] <- tmp_obj$rep$SB0[r] * data_list$R0
@@ -2315,6 +2272,7 @@ Get_Reference_Points <- function(data,
       # see if Newton Raphson calcs for equil rec converged
       if(sum(tmp_obj$rep$iter_vec) > 1e-10) warning("Calculations for equilibrium recruits from origin regions might not have converged! Try increasing local_bh_msy_newton_steps or be wary of these values!")
       if(sum(tmp_obj$rep$Fmsy) == sum(exp(par_list$log_Fmsy))) warning("It is unlikely this converged. Starting values of log Fmsy have not changed (specified at log (0.1).")
+
     }
 
   } # end multi region
@@ -2323,13 +2281,74 @@ Get_Reference_Points <- function(data,
               b_ref_pt = b_ref_pt,
               virgin_b_ref_pt = virgin_b_ref_pt,
               pop_b_ref_pt = pop_b_ref_pt,
-              virgin_pop_b_ref_pt = virgin_pop_b_ref_pt))
+              virgin_pop_b_ref_pt = virgin_pop_b_ref_pt,
+              obj = tmp_obj))
 
 }
 
 
-# the current code has a bug - tmp_obj$env$last.par.best doesn't update
-# when you set tmp_obj$par[], you need to pass the new pars explicitly
+
+
+
+# Fleet fraction F
+# fratio <- array(0, dim = c(n_regions, data$n_seas, data$n_fish_fleets))
+# terminal_F <- array(rep$Fmort[,n_years,,], dim = dim(fratio))
+# for(r in 1:n_regions) for(seas in 1:data$n_seas) for(f in 1:data$n_fish_fleets) fratio[r,seas,f] <- terminal_F[r,seas,f] / sum(terminal_F[r,,])
+# data_list$F_fract_flt <- fratio
+#
+# # fishery selectivity
+# fish_sel_avg <- apply(rep$fish_sel[,avg_yrs,,1,,drop = FALSE], c(1,3,5), mean)
+# data_list$fish_sel <- array(fish_sel_avg, dim = c(n_regions, n_ages, data$n_fish_fleets)) # get female selectivity for all fleets
+#
+# # natural mortality
+# natmort_avg <- apply(rep$natmort[,,avg_yrs,,1,drop = FALSE], c(1,2,4), mean)
+# data_list$natmort <- array(natmort_avg, dim = c(if(n_pop > 1) n_pop else NULL, n_regions, n_ages)) # get female natural mortality
+#
+# # weight at age
+# WAA_avg <- apply(data$WAA[,,avg_yrs,,,1,drop = FALSE], c(1, 2, 4, 5), mean)
+# data_list$WAA <- array(WAA_avg, dim = c(if(n_pop > 1) n_pop else NULL, n_regions, data$n_seas, n_ages)) # weight at age for females
+#
+# # maturity at age
+# MatAA_avg <- apply(data$MatAA[,,avg_yrs,,,1,drop = FALSE], c(1, 2, 4, 5), mean)
+# data_list$MatAA <- array(MatAA_avg, dim = c(if(n_pop > 1) n_pop else NULL, n_regions, data$n_seas, n_ages)) # maturity at age for females
+#
+# # Movement
+# Movement_avg <- apply(rep$Movement[,,,avg_yrs,,,1,drop = FALSE], c(1,2,3,5,6), mean)
+# data_list$Movement <- array(Movement_avg, dim = c(if(n_pop > 1) n_pop else NULL, n_regions, n_regions, n_seas, n_ages)) # Movement
+#
+# # Recruitment options
+# data_list$do_recruits_move <- data$do_recruits_move # whether recruits move
+# data_list$rec_region_prop <- array(rep$rec_region_prop, dim = c(if(n_pop > 1) n_pop else NULL, n_regions)) # recruitment proportions
+# data_list$sex_ratio_f <- array(sex_ratio_f, dim = c(if(n_pop > 1) n_pop else NULL, n_regions)) # recruitment sex ratio to use
+# data_list$rec_seas_prop <- array(rep$rec_seas_prop, dim = c(if(n_pop > 1) n_pop else NULL, data$n_seas)) # seasonal recruitment
+# data_list$h <- array(rep$h_trans, dim = c(if(n_pop > 1) n_pop else NULL, n_regions)) # steepness
+# data_list$R0 <- rep$R0  # unfished recruitment
+# data_list$stray_rate <- array(apply(rep$stray_rate[,avg_yrs, drop = FALSE], 1, mean), dim = data$n_pop) # stray rate
+# data_list$newton_steps <- local_bh_msy_newton_steps # number of newton steps to take
+# data_list$natal_region <- data$natal_region
+# sgl_seas_spawning_movement_avg <- apply(rep$sgl_seas_spawning_movement[,,,avg_yrs,,1,drop = FALSE], c(1,2,3,5), mean)
+# data_list$sgl_seas_spawning_movement <- array(sgl_seas_spawning_movement_avg, dim = c(n_pop, n_regions, n_regions, n_ages)) # Movement
+#
+#
+# par_list <- list() # set up parameter list
+# par_list$log_Fmsy <- rep(log(0.1), n_regions) # Fmsy starting value
+
+# data_list$h[] <- 0.5
+# # data_list$Movement[1,,,1,] <- data_list$Movement[2,,,1,] <- diag(1, 2)
+# data_list$Movement[1,,,2,] <-  c(1,1,0,0)
+# data_list$Movement[2,,,2,] <-  c(0,0,1,1)
+# data_list$rec_seas_prop[] <- 0.5
+# data_list$R0[] <- 5
+# data_list$stray_rate[] <- 0
+
+# Make adfun object
+# if(n_pop == 1) tmp_obj <- RTMB::MakeADFun(cmb(local_BH_Fmsy_sglpop, data_list), parameters = par_list, map = NULL, silent = TRUE)
+# if(n_pop > 1) tmp_obj <- RTMB::MakeADFun(cmb(local_BH_Fmsy_multipop, data_list), parameters = par_list, map = NULL, silent = TRUE)
+# tmp_obj$optim <- stats::nlminb(tmp_obj$par, tmp_obj$fn, tmp_obj$gr, control = list(iter.max = 1e6, eval.max = 1e6, rel.tol = 1e-15))
+# tmp_obj$rep <- tmp_obj$report(tmp_obj$env$last.par.best) # get report
+
+# Output reference points
+f_ref_pt <- tmp_obj$rep$Fmsy
 
 # grid <- expand.grid(f1 = seq(0.01, 0.2, 0.01),
 #                     f2 = seq(0.01, 0.2, 0.01))

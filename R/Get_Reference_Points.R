@@ -1310,7 +1310,7 @@ local_BH_Fmsy_sglpop <- function(pars, data) {
 
   A = 4 * h * rec_region_prop * R0 # define first part of the numerator of BH recruitment
   B = rep(0, n_regions) # define first part of the denominator of BH recruitment
-  for(d in 1:n_regions) B[d] = (1 - h[d]) * sum(SB_unfished_mat[, d] * R0)
+  for(d in 1:n_regions) B[d] = (1 - h[d]) * sum(SB_unfished_mat[, d] * R0 * rec_region_prop)
   C = 5 * h - 1 # define second part of the denominator for BH recruitment
 
   # define initial guess to solve for equilibrium recruitment from origin region
@@ -2235,8 +2235,7 @@ Get_Reference_Points <- function(data,
       par_list$log_Fmsy <- rep(log(0.1), n_regions) # Fmsy starting value
 
       # Make adfun object
-      tmp_model <- if(n_pop == 1) local_BH_Fmsy_sglpop else local_BH_Fmsy_multipop
-      tmp_obj <- optim_ref_pts(tmp_model, data_list, par_list)
+      tmp_obj <- optim_ref_pts(if(n_pop == 1) local_BH_Fmsy_sglpop else local_BH_Fmsy_multipop, data_list, par_list)
 
       # Output reference points
       f_ref_pt <- tmp_obj$rep$Fmsy
@@ -2262,13 +2261,12 @@ Get_Reference_Points <- function(data,
         }
       } else{ # single population reference points
         for(r in 1:n_regions) {
-          b_ref_pt[1, r]        <- tmp_obj$rep$SB[r] * tmp_obj$rep$Req_o[r]
-          virgin_b_ref_pt[1, r] <- tmp_obj$rep$SB0[r] * data_list$R0
+          b_ref_pt[1, r]        <- sum(tmp_obj$rep$SB_fished_mat[, r]   * tmp_obj$rep$Req_o)
+          virgin_b_ref_pt[1, r] <- sum(tmp_obj$rep$SB_unfished_mat[, r] * data_list$R0 * data_list$rec_region_prop)
         }
         pop_b_ref_pt[1, 1]        <- sum(b_ref_pt)
         virgin_pop_b_ref_pt[1, 1] <- sum(virgin_b_ref_pt)
       }
-
       # see if Newton Raphson calcs for equil rec converged
       if(sum(tmp_obj$rep$iter_vec) > 1e-10) warning("Calculations for equilibrium recruits from origin regions might not have converged! Try increasing local_bh_msy_newton_steps or be wary of these values!")
       if(sum(tmp_obj$rep$Fmsy) == sum(exp(par_list$log_Fmsy))) warning("It is unlikely this converged. Starting values of log Fmsy have not changed (specified at log (0.1).")
@@ -2348,7 +2346,7 @@ Get_Reference_Points <- function(data,
 # tmp_obj$rep <- tmp_obj$report(tmp_obj$env$last.par.best) # get report
 
 # Output reference points
-f_ref_pt <- tmp_obj$rep$Fmsy
+# f_ref_pt <- tmp_obj$rep$Fmsy
 
 # grid <- expand.grid(f1 = seq(0.01, 0.2, 0.01),
 #                     f2 = seq(0.01, 0.2, 0.01))

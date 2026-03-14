@@ -112,7 +112,7 @@ for(sim in 1:n_sims) {
 }
 
 # Three area model
-three_rep$h_trans[] <- 0.95
+three_rep$h_trans[] <- 0.
 three_ref_pt <- Get_Reference_Points(data = three_dat,
                                      rep = three_rep,
                                      SPR_x = 0.4,
@@ -207,7 +207,7 @@ for(sim in 1:n_sims) {
 
 
   three_ref_pt$f_ref_pt
-  three_ref_pt$virgin_b_ref_pt
+  # three_ref_pt$virgin_b_ref_pt
   three_ref_pt$b_ref_pt
   out$proj_SSB[1,,n_proj_yrs]
 

@@ -112,20 +112,23 @@ for(sim in 1:n_sims) {
 }
 
 # Three area model
-three_rep$h_trans[] <- 0.6
+three_rep$h_trans[] <- 0.95
 three_ref_pt <- Get_Reference_Points(data = three_dat,
                                      rep = three_rep,
                                      SPR_x = 0.4,
                                      type = 'multi_region',
-                                     what = 'global_BH_MSY',
+                                     what = 'local_BH_MSY',
                                      calc_rec_st_yr = 20,
                                      rec_age = 2)
+
+three_ref_pt$b_ref_pt
+three_ref_pt$virgin_b_ref_pt
 
 # quantities to use in projection
 n_sims <- 1
 t_spawn <- 0
 sexratio <- 0.5
-n_proj_yrs <- 500
+n_proj_yrs <- 1e3
 n_regions <- 3
 n_ages <- length(three_dat$ages)
 n_sexes <- three_dat$n_sexes
@@ -150,7 +153,7 @@ three_ssb_proj <- array(0, dim = c(n_regions, n_proj_yrs, n_sims))
 three_catch_proj <- array(0, dim = c(n_regions, n_proj_yrs, n_fish_fleets, n_sims))
 
 bh_rec_opt <- list(
-  rec_dd = 1,
+  rec_dd = 0,
   rec_lag = three_dat$rec_lag,
   R0 = three_rep$R0,
   h = array(three_rep$h_trans, dim = c(1, 3)),
@@ -204,11 +207,14 @@ for(sim in 1:n_sims) {
 
 
   three_ref_pt$f_ref_pt
+  three_ref_pt$virgin_b_ref_pt
   three_ref_pt$b_ref_pt
   out$proj_SSB[1,,n_proj_yrs]
 
   sum(out$proj_SSB[1,,n_proj_yrs])
   sum(three_ref_pt$b_ref_pt)
+  sum(three_ref_pt$virgin_b_ref_pt)
+
 
 
   plot(c(three_rep$SSB[1,1,], out$proj_SSB[1,1,1:50]))

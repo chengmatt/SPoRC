@@ -112,13 +112,12 @@ for(sim in 1:n_sims) {
 }
 
 # Three area model
-three_rep$h_trans[] <- 0.95
-three_rep$Movement[] <- diag(1, 3)
+three_rep$h_trans[] <- 0.6
 three_ref_pt <- Get_Reference_Points(data = three_dat,
                                      rep = three_rep,
                                      SPR_x = 0.4,
                                      type = 'multi_region',
-                                     what = 'local_BH_MSY',
+                                     what = 'global_BH_MSY',
                                      calc_rec_st_yr = 20,
                                      rec_age = 2)
 
@@ -151,7 +150,7 @@ three_ssb_proj <- array(0, dim = c(n_regions, n_proj_yrs, n_sims))
 three_catch_proj <- array(0, dim = c(n_regions, n_proj_yrs, n_fish_fleets, n_sims))
 
 bh_rec_opt <- list(
-  rec_dd = 0,
+  rec_dd = 1,
   rec_lag = three_dat$rec_lag,
   R0 = three_rep$R0,
   h = array(three_rep$h_trans, dim = c(1, 3)),
@@ -162,9 +161,9 @@ bh_rec_opt <- list(
   Movement = array(Movement[,,,1,,,1], dim = c(1, 3, 3, 1, 30)),
   do_recruits_move = three_dat$do_recruits_move,
   # t_spawn = three_dat$t_spawn,
-  sex_ratio_f = array(0.5, dim = c(n_pop, n_regions)),
+  sex_ratio_f = array(0.5, dim = c(1, n_regions)),
   sgl_seas_spawning_movement = three_dat$sgl_seas_spawning_movement[,,,1,,],
-  stray_rate = array(1, dim = c(n_pop)),
+  stray_rate = array(1, dim = c(1)),
   # rec_seas_prop = rec_seas_prop,
   natmort = array(natmort[,,1,,1], dim = c(1, 3, 30))
 
@@ -194,8 +193,7 @@ for(sim in 1:n_sims) {
                                          Movement = Movement,
                                          f_ref_pt = array(three_ref_pt$f_ref_pt, dim = c(three_dat$n_regions, n_proj_yrs)),
                                          # f_ref_pt = array(0, dim = c(three_dat$n_regions, n_proj_yrs)),
-
-                                         # b_ref_pt = array(three_ref_pt$b_ref_pt, dim = c(three_dat$n_regions, n_proj_yrs)),
+                                         # b_ref_pt = array(three_ref_pt$b_ref_pt, dim = c(1, three_dat$n_regions, n_proj_yrs)),
                                          HCR_function = HCR_function,
                                          recruitment_opt = "bh_rec",
                                          fmort_opt = "Input",
@@ -205,19 +203,22 @@ for(sim in 1:n_sims) {
   )
 
 
-
-  options(digits = 10)
   three_ref_pt$f_ref_pt
   three_ref_pt$b_ref_pt
-  three_ref_pt$virgin_b_ref_pt
   out$proj_SSB[1,,n_proj_yrs]
 
-
-  plot(out$proj_SSB[1,1,])
-  lines(out$proj_SSB[1,2,])
-  lines(out$proj_SSB[1,3,])
+  sum(out$proj_SSB[1,,n_proj_yrs])
+  sum(three_ref_pt$b_ref_pt)
 
 
+  plot(c(three_rep$SSB[1,1,], out$proj_SSB[1,1,1:50]))
+  abline(h = three_ref_pt$b_ref_pt[1,1])
+
+  plot(c(three_rep$SSB[1,2,], out$proj_SSB[1,2,1:50]))
+  abline(h = three_ref_pt$b_ref_pt[1,2])
+
+  plot(c(three_rep$SSB[1,3,], out$proj_SSB[1,3,1:50]))
+  abline(h = three_ref_pt$b_ref_pt[1,3])
 
   three_ssb_proj[,,sim] <- out$proj_SSB
   three_catch_proj[,,,sim] <- out$proj_Catch

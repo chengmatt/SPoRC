@@ -435,7 +435,7 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
       if(fmort_opt == 'HCR') {
         proj_F[r,y+1] <- HCR_function(x = sum(proj_SSB[,r,y]),
                                       frp = f_ref_pt[r,y],
-                                      brp = b_ref_pt[,r,y])
+                                      brp = sum(b_ref_pt[,r,y]))
       }
 
       if(fmort_opt == 'HCR_global') {

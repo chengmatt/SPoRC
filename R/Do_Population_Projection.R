@@ -378,7 +378,6 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
                                MatAA[,, y, spawn_seas, , 1,drop = FALSE] *
                                exp(-proj_ZAA[,, y, spawn_seas, , 1,drop = FALSE] * t_spawn), c(1,2), sum)
 
-
         # Get dynamic B0
         SSB0_array = tmp_NAA0_spawn[,, 1, 1, , 1,drop = FALSE] *  WAA[,,  y, spawn_seas, , 1, drop = FALSE] * MatAA[,,y, spawn_seas, , 1, drop = FALSE]
         mort_spawn = exp(-natmort[,, y, , 1, drop = FALSE] * t_spawn * seasdur[spawn_seas])

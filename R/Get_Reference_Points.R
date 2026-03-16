@@ -1452,67 +1452,75 @@ local_BH_Fmsy_multipop <- function(pars, data) {
     }
   }
 
-  ## Loop through ages
-  for(j in 2:(n_ages - 1)) {
+  # Loop through, apply movement first, then decrement recruit
+  # Loop through ages, projecting each cohort through the full annual cycle
+  for(j in 2:(n_ages-1)){
+
+    # Project age j-1 through all seasons to become age j
     for(seas in 1:n_seas) {
+
       for(p in 1:n_pop) {
         for(o in 1:n_regions) {
 
-          # get mortality
-          F_seas = F_by_region(j - 1, seas)
-          M_seas = natmort[p,, j - 1] * seasdur[seas]
-          Z_seas = F_seas + M_seas
+          F_a_seas = apply(F_fract_flt[,seas,,drop=F] * Fmsy * fish_sel[,j-1,,drop=F], 1, sum)
+          Z_a_seas = natmort[p,,j - 1] * seasdur[seas] + F_a_seas
 
-          # extract out quantities
-          tmp_unfished = Nspr[1, p, o,, j - 1]; tmp_fished = Nspr[2, p, o,, j - 1]
+          # Get temporary values from origin region
+          tmp_unfished = Nspr[1,p,o,,j-1]
+          tmp_fished = Nspr[2,p,o,,j-1]
 
           # add in seasonal recruits
           if(seas > 1 && j - 1 == 1) {
-            tmp_unfished[o] = tmp_unfished[o] + rec_seas_prop[p, seas] * sex_ratio_f[p, o] * rec_region_prop[p, o]
-            tmp_fished[o]   = tmp_fished[o]   + rec_seas_prop[p, seas] * sex_ratio_f[p, o] * rec_region_prop[p, o]
+            tmp_unfished[o] = tmp_unfished[o] + rec_seas_prop[p,seas] * sex_ratio_f[p,o] * rec_region_prop[p,o]
+            tmp_fished[o]   = tmp_fished[o]   + rec_seas_prop[p,seas] * sex_ratio_f[p,o] * rec_region_prop[p,o]
           }
 
-          ## Movement
+          # Apply movement
           if(do_recruits_move == 1 || (do_recruits_move == 0 && j > 2)) {
-            tmp_unfished = as.vector(tmp_unfished %*% Movement[p,,,seas, j - 1])
-            tmp_fished   = as.vector(tmp_fished   %*% Movement[p,,,seas, j - 1])
+            tmp_unfished = tmp_unfished %*% Movement[p,,,seas,j-1]
+            tmp_fished = tmp_fished %*% Movement[p,,,seas,j-1]
           }
 
-          ## Spawning biomass
+          # Calculate spawning biomass if this is the spawning season
           if(seas == spawn_seas) {
 
             # Extract temporary variables out
-            tmp_unfished_spawn = tmp_unfished; tmp_fished_spawn = tmp_fished
+            tmp_unfished_spawn = tmp_unfished
+            tmp_fished_spawn = tmp_fished
 
             # If single season natal homing population
             if(n_pop > 1 && n_seas == 1) {
               # Get NAA during spawning in single season case
-              tmp_unfished_spawn = as.vector(tmp_unfished_spawn %*% sgl_seas_spawning_movement[p,,, j - 1])
-              tmp_fished_spawn   = as.vector(tmp_fished_spawn   %*% sgl_seas_spawning_movement[p,,, j - 1])
+              tmp_unfished_spawn = tmp_unfished_spawn %*% sgl_seas_spawning_movement[p,,,j-1]
+              tmp_fished_spawn = tmp_fished_spawn %*% sgl_seas_spawning_movement[p,,,j-1]
             }
 
-            # Get spawning biomass per recruit
-            SB_age[1, p, o,, j - 1] = tmp_unfished_spawn * WAA[p,, spawn_seas, j - 1] * MatAA[p,, spawn_seas, j - 1] *
-              exp(-t_spawn * M_seas)
-            SB_age[2, p, o,, j - 1] = tmp_fished_spawn   * WAA[p,, spawn_seas, j - 1] * MatAA[p,, spawn_seas, j - 1] *
-              exp(-t_spawn * Z_seas)
+            for(d in 1:n_regions) {
+              SB_age[1,p,o,d,j-1] = tmp_unfished_spawn[d] * WAA[p,d,spawn_seas,j-1] * MatAA[p,d,spawn_seas,j-1] *
+                exp(-(t_spawn * natmort[p,d,j-1] * seasdur[spawn_seas]))
+              SB_age[2,p,o,d,j-1] =
+                tmp_fished_spawn[d] * WAA[p,d,spawn_seas,j-1] * MatAA[p,d,spawn_seas,j-1] *
+                exp(-t_spawn * (natmort[p,d,j-1] * seasdur[spawn_seas] + F_a_seas[d]))
+            }
           }
 
-          # Catch-at-age (Baranov)
-          CAA[p, o,, seas, j - 1] = tmp_fished * (F_seas / Z_seas) * (1 - exp(-Z_seas))
+          # Compute F and Z for this age/season
+          CAA[p,o,,seas,j-1] = tmp_fished * (F_a_seas / Z_a_seas) * (1 - exp(-Z_a_seas))
 
-          ## Mortality and ageing
-          if(seas < n_seas) { # Within season mortality
-            Nspr[1, p, o,, j - 1] = tmp_unfished * exp(-M_seas)
-            Nspr[2, p, o,, j - 1] = tmp_fished   * exp(-Z_seas)
+          # Apply mortality
+          if(seas < n_seas) {
+            # Within-season mortality, no ageing yet
+            Nspr[1,p,o,,j-1] = tmp_unfished * exp(-(natmort[p,,j-1] * seasdur[seas]))
+            Nspr[2,p,o,,j-1] = tmp_fished * exp(-(natmort[p,,j-1] * seasdur[seas] + apply(F_fract_flt[,seas,,drop = F] * Fmsy * fish_sel[,j-1,,drop = F], 1, sum) ))
           } else {
-            # Ageing
-            Nspr[1, p, o,, j] = tmp_unfished * exp(-M_seas)
-            Nspr[2, p, o,, j] = tmp_fished   * exp(-Z_seas)
+            # Last season: mortality + ageing
+            Nspr[1,p,o,,j] = tmp_unfished * exp(-(natmort[p,,j-1] * seasdur[seas]))
+            Nspr[2,p,o,,j] = tmp_fished * exp(-(natmort[p,,j-1] * seasdur[seas] + apply(F_fract_flt[,seas,,drop = F] * Fmsy * fish_sel[,j-1,,drop = F], 1, sum) ))
           }
 
         } # end o loop
       } # end p loop
+
     } # end seas loop
   } # end j loop
 
@@ -1565,11 +1573,14 @@ local_BH_Fmsy_multipop <- function(pars, data) {
       }
     }
 
-    SB_age[1, p,,, n_ages - 1] = tmp_unfished_spawn * WAA[p,, spawn_seas, n_ages - 1] * MatAA[p,, spawn_seas, n_ages - 1] *
-      exp(-t_spawn * natmort[p,, n_ages - 1] * seasdur[spawn_seas])
-    SB_age[2, p,,, n_ages - 1] = tmp_fished_spawn   * WAA[p,, spawn_seas, n_ages - 1] * MatAA[p,, spawn_seas, n_ages - 1] *
-      exp(-t_spawn * (natmort[p,, n_ages - 1] * seasdur[spawn_seas] +
-                        apply(F_fract_flt[, spawn_seas,, drop = F] * Fmsy * fish_sel[, n_ages - 1,, drop = F], 1, sum)))
+    # get spawning biomass
+    SB_age[1, p,,, n_ages - 1] = t(t(tmp_unfished_spawn) * WAA[p,, spawn_seas, n_ages - 1] *
+                                     MatAA[p,, spawn_seas, n_ages - 1] *
+                                     exp(-t_spawn * natmort[p,, n_ages - 1] * seasdur[spawn_seas]))
+    SB_age[2, p,,, n_ages - 1] = t(t(tmp_fished_spawn) * WAA[p,, spawn_seas, n_ages - 1] *
+                                     MatAA[p,, spawn_seas, n_ages - 1] *
+                                     exp(-t_spawn * (natmort[p,, n_ages - 1] * seasdur[spawn_seas] +
+                                                       apply(F_fract_flt[, spawn_seas,, drop = F] * Fmsy * fish_sel[, n_ages - 1,, drop = F], 1, sum))))
 
     ## Plus group analytical solution
     # Get fishing mortality for penultimate and plus ages
@@ -1646,11 +1657,13 @@ local_BH_Fmsy_multipop <- function(pars, data) {
       }
     }
 
-    SB_age[1, p,,, n_ages] = tmp_unfished_spawn * WAA[p,, spawn_seas, n_ages] * MatAA[p,, spawn_seas, n_ages] *
-      exp(-t_spawn * natmort[p,, n_ages] * seasdur[spawn_seas])
-    SB_age[2, p,,, n_ages] = tmp_fished_spawn   * WAA[p,, spawn_seas, n_ages] * MatAA[p,, spawn_seas, n_ages] *
-      exp(-t_spawn * (natmort[p,, n_ages] * seasdur[spawn_seas] + F_plus[, spawn_seas]))
-
+    # get spawning biomass
+    SB_age[1, p,,, n_ages] = t(t(tmp_unfished_spawn) * WAA[p,, spawn_seas, n_ages] *
+                                 MatAA[p,, spawn_seas, n_ages] *
+                                 exp(-t_spawn * natmort[p,, n_ages] * seasdur[spawn_seas]))
+    SB_age[2, p,,, n_ages] = t(t(tmp_fished_spawn) * WAA[p,, spawn_seas, n_ages] *
+                                 MatAA[p,, spawn_seas, n_ages] *
+                                 exp(-t_spawn * (natmort[p,, n_ages] * seasdur[spawn_seas] + F_plus[, spawn_seas])))
   } # end p loop
 
   # Determine equilibrium recruitment for destination region
@@ -1723,8 +1736,8 @@ local_BH_Fmsy_multipop <- function(pars, data) {
 
   # get destination region yield
   for(d in 1:n_regions) {
-    tmp <- 0
     for(p in 1:n_pop) {
+      tmp <- 0
       for(seas in 1:n_seas) {
         for(o in 1:n_regions) {
           tmp <- tmp + sum(CAA[p, o, d, seas, ] * WAA[p, d, seas, ]) * rec_region_prop[p, o] * Req_o[p]
@@ -1754,6 +1767,8 @@ local_BH_Fmsy_multipop <- function(pars, data) {
   RTMB::REPORT(SB_fished_mat)
   RTMB::REPORT(SB_unfished_mat)
   RTMB::REPORT(Nspr)
+  RTMB::REPORT(SBPR_unfished)
+  RTMB::REPORT(SBPR_fished)
   RTMB::REPORT(SB_age)
   RTMB::REPORT(SB)
   RTMB::REPORT(SB0)
@@ -1928,8 +1943,8 @@ Get_Reference_Points <- function(data,
         virgin_pop_b_ref_pt[p2,1] <- tmp_obj$rep$SB0[p2] * mean_rec[p2]
         for(p in 1:n_pop) {
           if(p != p2) {
-            pop_b_ref_pt[p2,1]        <- pop_b_ref_pt[p2,1]        + stray_rate[p] * tmp_obj$rep$SB[p]  * mean_rec[p]
-            virgin_pop_b_ref_pt[p2,1] <- virgin_pop_b_ref_pt[p2,1] + stray_rate[p] * tmp_obj$rep$SB0[p] * mean_rec[p]
+            pop_b_ref_pt[p2,1]        <- pop_b_ref_pt[p2,1]        + data_list$stray_rate[p] * tmp_obj$rep$SB[p]  * mean_rec[p]
+            virgin_pop_b_ref_pt[p2,1] <- virgin_pop_b_ref_pt[p2,1] + data_list$stray_rate[p] * tmp_obj$rep$SB0[p] * mean_rec[p]
           } # end if
         } # end p loop
       } # end p2 loop
@@ -1961,8 +1976,8 @@ Get_Reference_Points <- function(data,
         virgin_pop_b_ref_pt[p2,1] <- tmp_obj$rep$SB0[p2] * rep$R0[p2]
         for(p in 1:n_pop) {
           if(p != p2) {
-            pop_b_ref_pt[p2,1]        <- pop_b_ref_pt[p2,1]        + stray_rate[p] * tmp_obj$rep$SB[p]  * tmp_obj$rep$Req[p]
-            virgin_pop_b_ref_pt[p2,1] <- virgin_pop_b_ref_pt[p2,1] + stray_rate[p] * tmp_obj$rep$SB0[p] * data_list$R0[p]
+            pop_b_ref_pt[p2,1]        <- pop_b_ref_pt[p2,1]        + data_list$stray_rate[p] * tmp_obj$rep$SB[p]  * tmp_obj$rep$Req[p]
+            virgin_pop_b_ref_pt[p2,1] <- virgin_pop_b_ref_pt[p2,1] + data_list$stray_rate[p] * tmp_obj$rep$SB0[p] * data_list$R0[p]
           }
         }
       }
@@ -2032,8 +2047,8 @@ Get_Reference_Points <- function(data,
               virgin_pop_b_ref_pt[p2,r] <- tmp_obj[[r]]$rep$SB0[p2] * mean_rec[p2]
               for(p in 1:n_pop) {
                 if(p != p2) {
-                  pop_b_ref_pt[p2,r]        <- pop_b_ref_pt[p2,r]        + stray_rate[p] * tmp_obj[[r]]$rep$SB[p]  * mean_rec[p]
-                  virgin_pop_b_ref_pt[p2,r] <- virgin_pop_b_ref_pt[p2,r] + stray_rate[p] * tmp_obj[[r]]$rep$SB0[p] * mean_rec[p]
+                  pop_b_ref_pt[p2,r]        <- pop_b_ref_pt[p2,r]        + data_list$stray_rate[p] * tmp_obj[[r]]$rep$SB[p]  * mean_rec[p]
+                  virgin_pop_b_ref_pt[p2,r] <- virgin_pop_b_ref_pt[p2,r] + data_list$stray_rate[p] * tmp_obj[[r]]$rep$SB0[p] * mean_rec[p]
                 } # end if
               } # end p loop
             } # end p2 loop
@@ -2065,8 +2080,8 @@ Get_Reference_Points <- function(data,
               virgin_pop_b_ref_pt[p2,r] <- tmp_obj[[r]]$rep$SB0[p2] * rep$R0[p2]
               for(p in 1:n_pop) {
                 if(p != p2) {
-                  pop_b_ref_pt[p2,r]        <- pop_b_ref_pt[p2,r]        + stray_rate[p] * tmp_obj[[r]]$rep$SB[p]  * tmp_obj[[r]]$rep$Req[p]
-                  virgin_pop_b_ref_pt[p2,r] <- virgin_pop_b_ref_pt[p2,r] + stray_rate[p] * tmp_obj[[r]]$rep$SB0[p] * data_list$R0[p]
+                  pop_b_ref_pt[p2,r]        <- pop_b_ref_pt[p2,r]        + data_list$stray_rate[p] * tmp_obj[[r]]$rep$SB[p]  * tmp_obj[[r]]$rep$Req[p]
+                  virgin_pop_b_ref_pt[p2,r] <- virgin_pop_b_ref_pt[p2,r] + data_list$stray_rate[p] * tmp_obj[[r]]$rep$SB0[p] * data_list$R0[p]
                 }
               }
             }
@@ -2143,8 +2158,8 @@ Get_Reference_Points <- function(data,
           virgin_pop_b_ref_pt[p2, r_natal] <- tmp_obj$rep$SB0[p2, r_natal] * total_mean_rec[p2]
           for(p in 1:n_pop) {
             if(p != p2) {
-              pop_b_ref_pt[p2, r_natal]        <- pop_b_ref_pt[p2, r_natal]        + stray_rate[p] * tmp_obj$rep$SB[p, r_natal]  * total_mean_rec[p]
-              virgin_pop_b_ref_pt[p2, r_natal] <- virgin_pop_b_ref_pt[p2, r_natal] + stray_rate[p] * tmp_obj$rep$SB0[p, r_natal] * total_mean_rec[p]
+              pop_b_ref_pt[p2, r_natal]        <- pop_b_ref_pt[p2, r_natal]        + data_list$stray_rate[p] * tmp_obj$rep$SB[p, r_natal]  * total_mean_rec[p]
+              virgin_pop_b_ref_pt[p2, r_natal] <- virgin_pop_b_ref_pt[p2, r_natal] + data_list$stray_rate[p] * tmp_obj$rep$SB0[p, r_natal] * total_mean_rec[p]
             }
           }
         }
@@ -2252,10 +2267,11 @@ Get_Reference_Points <- function(data,
           r_natal <- data$natal_region[p2]
           pop_b_ref_pt[p2, r_natal]        <- tmp_obj$rep$SB[p2, r_natal]  * tmp_obj$rep$Req_o[p2]
           virgin_pop_b_ref_pt[p2, r_natal] <- tmp_obj$rep$SB0[p2, r_natal] * data_list$R0[p2]
+
           for(p in 1:n_pop) {
             if(p != p2) {
-              pop_b_ref_pt[p2, r_natal]        <- pop_b_ref_pt[p2, r_natal]        + stray_rate[p] * tmp_obj$rep$SB[p, r_natal]  * tmp_obj$rep$Req_o[p]
-              virgin_pop_b_ref_pt[p2, r_natal] <- virgin_pop_b_ref_pt[p2, r_natal] + stray_rate[p] * tmp_obj$rep$SB0[p, r_natal] * data_list$R0[p]
+              pop_b_ref_pt[p2, r_natal]        <- pop_b_ref_pt[p2, r_natal]        + data_list$stray_rate[p] * tmp_obj$rep$SB[p, r_natal]  * tmp_obj$rep$Req_o[p]
+              virgin_pop_b_ref_pt[p2, r_natal] <- virgin_pop_b_ref_pt[p2, r_natal] + data_list$stray_rate[p] * tmp_obj$rep$SB0[p, r_natal] * data_list$R0[p]
             }
           }
         }

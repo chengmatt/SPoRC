@@ -112,7 +112,7 @@ for(sim in 1:n_sims) {
 }
 
 # Three area model
-three_rep$h_trans[] <- 0.
+three_rep$h_trans[] <- 0.8
 three_ref_pt <- Get_Reference_Points(data = three_dat,
                                      rep = three_rep,
                                      SPR_x = 0.4,
@@ -196,7 +196,7 @@ for(sim in 1:n_sims) {
                                          Movement = Movement,
                                          f_ref_pt = array(three_ref_pt$f_ref_pt, dim = c(three_dat$n_regions, n_proj_yrs)),
                                          # f_ref_pt = array(0, dim = c(three_dat$n_regions, n_proj_yrs)),
-                                         # b_ref_pt = array(three_ref_pt$b_ref_pt, dim = c(1, three_dat$n_regions, n_proj_yrs)),
+                                         b_ref_pt = array(three_ref_pt$b_ref_pt, dim = c(1, three_dat$n_regions, n_proj_yrs)),
                                          HCR_function = HCR_function,
                                          recruitment_opt = "bh_rec",
                                          fmort_opt = "Input",

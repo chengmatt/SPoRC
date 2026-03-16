@@ -596,7 +596,7 @@ get_data_fitted_plot <- function(data,
 #' @param rep List of length \code{n_models}, where each element is a SPoRC
 #'   report list (i.e. the output of \code{obj$report()} after optimisation).
 #'   The following nLL components are extracted: \code{jnLL}, \code{h_nLL},
-#'   \code{M_nLL}, \code{rec_prop_nLL}, \code{Rec_nLL}, \code{Init_Rec_nLL},
+#'   \code{M_nLL}, \code{rec_region_prop_nLL}, \code{Rec_nLL}, \code{Init_Rec_nLL},
 #'   \code{sel_nLL}, \code{conv_fish_tag_nLL}, \code{Catch_nLL},
 #'   \code{Fmort_nLL}, \code{srv_q_nLL}, \code{fish_q_nLL}, \code{SrvIdx_nLL},
 #'   \code{FishIdx_nLL}, \code{TagRep_nLL}, \code{Movement_nLL},
@@ -646,7 +646,7 @@ get_nLL_plot <- function(data,
       value = c(safe_extract(rep[[i]], "jnLL"),
                 safe_extract(rep[[i]], "h_nLL"),
                 safe_extract(rep[[i]], "M_nLL"),
-                safe_extract(rep[[i]], "rec_prop_nLL"),
+                safe_extract(rep[[i]], "rec_region_prop_nLL"),
                 sum(data[[i]]$Wt_Rec * safe_extract(rep[[i]], "Rec_nLL")),
                 safe_extract(rep[[i]], "sel_nLL"),
                 sum(data[[i]]$Wt_Tagging * safe_extract(rep[[i]], "conv_fish_tag_nLL")),
@@ -1032,78 +1032,140 @@ plot_all_basic <- function(data,
 
 #' Generate Key Projection Quantities and Table Plot
 #'
-#' Calculates biological and fishery reference points and performs population projections to estimate terminal spawning biomass, catch advice, and reference point values by model and region. Also returns a formatted table plot of key quantities.
+#' Calculates biological and fishery reference points and performs short-term
+#' population projections to estimate terminal spawning biomass, catch advice,
+#' and reference point ratios by model and region. Returns both a tidy
+#' data frame and a formatted table plot of the assembled quantities.
 #'
-#' @param data A list of model input data objects, one for each model (i.e., a list of SPoRC-formatted data lists). Each element should contain information on regions, years, ages, fleets, and biological inputs (e.g., weight-at-age, maturity, mortality).
-#' @param rep A list of model output objects, one for each model (i.e., a list of SPoRC-formatted report lists). Each element must include recruitment, selectivity, mortality, and numbers-at-age.
-#' @param reference_points_opt A named list specifying options for reference point calculations. See \code{\link{Get_Reference_Points}} for more details. Must include:
-#' \describe{
-#'   \item{SPR_x}{Spawning potential ratio (e.g., 0.4) for calculating F reference points. May be \code{NULL} if using \code{bh_rec}.}
-#'   \item{t_spawn}{Fraction of year when spawning occurs (e.g., 0.5).}
-#'   \item{sex_ratio_f}{Proportion of recruits that are female.}
-#'   \item{calc_rec_st_yr}{Start year for averaging recruitment.}
-#'   \item{rec_age}{Recruitment age.}
-#'   \item{type}{Reference point calculation method (e.g., "multi_region").}
-#'   \item{what}{Type of output requested from the reference point function.}
-#' }
-#' @param proj_model_opt A named list of projection settings. See \code{\link{Do_Population_Projection}} for details. Must include:
-#' \describe{
-#'   \item{n_proj_yrs}{Number of years to project forward.}
-#'   \item{HCR_function}{Harvest control rule function to use.}
-#'   \item{recruitment_opt}{Recruitment assumption (e.g., "mean_rec", "bh_rec", "inv_gauss").}
-#'   \item{fmort_opt}{Fishing mortality assumption (e.g., "input", "HCR").}
-#'   \item{n_avg_yrs}{Number of years to average over for projection inputs.}
-#' }
-#' @param model_names A character vector of model identifiers (e.g., c("Base", "Alt1", "Alt2")), one for each element in \code{data} and \code{rep}.
+#' @note The quantities returned by this function are \strong{approximate and
+#'   should not be treated as official catch advice}. This wrapper provides
+#'   only a simplified projection interface; full projection capability —
+#'   including stochastic recruitment, closed-loop feedback, and
+#'   fleet-specific harvest control rules — requires calling
+#'   \code{\link{Do_Population_Projection}} directly. Results here are
+#'   intended for rapid model comparison and diagnostic screening only.
 #'
-#' @return A list with two elements:
-#' \describe{
-#'   \item{\code{[[1]]}}{A data.frame of key quantities by model and region, including terminal SSB, catch advice, and reference points.}
-#'   \item{\code{[[2]]}}{A cowplot table plot (ggdraw object) of the same key quantities.}
-#' }
+#' @param data A list of length \code{n_models}, where each element is a
+#'   SPoRC-formatted data list containing region, year, age, fleet, and
+#'   biological inputs (e.g., weight-at-age, maturity, natural mortality).
+#' @param rep A list of length \code{n_models}, where each element is a
+#'   SPoRC-formatted report list (i.e., the output of \code{obj$report()}
+#'   after optimisation). Each element must include recruitment, selectivity,
+#'   fishing mortality, and numbers-at-age arrays.
+#' @param reference_points_opt A named list of options passed to
+#'   \code{\link{Get_Reference_Points}}. Required elements:
+#'   \describe{
+#'     \item{\code{SPR_x}}{Target spawning potential ratio (e.g., \code{0.4})
+#'       for SPR-based F reference points. May be \code{NULL} when
+#'       \code{type = "bh_msy"}.}
+#'     \item{\code{t_spawn}}{Fraction of the year elapsed before spawning
+#'       occurs (e.g., \code{0} for start-of-year, \code{0.5} for
+#'       mid-year).}
+#'     \item{\code{sex_ratio_f}}{Array of dimension
+#'       \code{(n_pop, n_regions)} giving the proportion of recruits that
+#'       are female.}
+#'     \item{\code{calc_rec_st_yr}}{Index of the first model year to include
+#'       when averaging recruitment for reference point calculations.}
+#'     \item{\code{rec_age}}{Age at recruitment (used to lag the recruitment
+#'       series relative to terminal year).}
+#'     \item{\code{type}}{Reference point calculation method; e.g.,
+#'       \code{"multi_region"} or \code{"single_region"}.}
+#'     \item{\code{what}}{Output selector passed to
+#'       \code{Get_Reference_Points}; e.g., \code{"global_SPR"} or
+#'       \code{"local_BH_MSY"}.}
+#'   }
+#' @param proj_model_opt A named list of projection settings passed to
+#'   \code{\link{Do_Population_Projection}}. Required elements:
+#'   \describe{
+#'     \item{\code{n_proj_yrs}}{Number of years to project forward.}
+#'     \item{\code{n_avg_yrs}}{Number of terminal model years over which
+#'       demographic inputs (selectivity, weight-at-age, maturity, natural
+#'       mortality, movement) are averaged before being held constant across
+#'       the projection period.}
+#'     \item{\code{HCR_function}}{A harvest control rule function with
+#'       signature \code{function(x, frp, brp, ...)}, where \code{x} is
+#'       current biomass, \code{frp} is the F reference point, and \code{brp}
+#'       is the biomass reference point.}
+#'     \item{\code{recruitment_opt}}{Recruitment assumption for projection
+#'       years. One of \code{"mean_rec"}, \code{"bh_rec"},
+#'       \code{"zero_rec"}, or \code{"inv_gauss"}. See Details.}
+#'     \item{\code{fmort_opt}}{How fishing mortality is set during the
+#'       projection. One of \code{"input"} (hold terminal F constant) or
+#'       \code{"HCR"} (apply \code{HCR_function}).}
+#'   }
+#' @param model_names Character vector of length \code{n_models} giving
+#'   display names for each model run (e.g., \code{c("Base", "Alt1")}).
+#'
+#' @return A list of length 2:
+#'   \describe{
+#'     \item{\code{[[1]]}}{A data frame of key quantities by model and
+#'       region, with columns \code{Model}, \code{Region},
+#'       \code{Terminal_SSB}, \code{Terminal_SSB0}, \code{Terminal_F},
+#'       \code{Catch_Advice}, \code{B_Ref_Pt}, \code{F_Ref_Pt},
+#'       \code{B_over_B_Ref}, \code{B_over_DynB_Ref}, and
+#'       \code{F_over_F_Ref}.}
+#'     \item{\code{[[2]]}}{A \code{cowplot} \code{ggdraw} object rendering
+#'       the same quantities as a formatted table, suitable for inclusion in
+#'       a PDF report.}
+#'   }
 #'
 #' @details
-#' This function checks input list completeness, calculates reference points using \code{Get_Reference_Points()}, performs population projections with \code{Do_Population_Projection()}, and assembles both tabular and visual summaries.
+#' For each model, the function: (1) computes reference points via
+#' \code{Get_Reference_Points()}; (2) averages demographic inputs over the
+#' last \code{n_avg_yrs} model years; (3) projects the population forward
+#' \code{n_proj_yrs} years via \code{Do_Population_Projection()}; and (4)
+#' extracts terminal SSB, dynamic unfished SSB, catch advice (year 2 of the
+#' projection), and status ratios.
 #'
-#' If \code{recruitment_opt} is set to "inv_gauss", a warning is issued since only a single simulation will be run. This is typically not appropriate and an alternative assumption is recommended.
+#' When \code{recruitment_opt = "bh_rec"}, Beverton-Holt stock-recruit
+#' parameters are passed to the projection via an internal \code{bh_rec_opt}
+#' list constructed from year-1 demographics to approximate unfished SSB. When
+#' \code{recruitment_opt = "inv_gauss"}, a warning is issued because only a
+#' single deterministic simulation is run; stochastic recruitment options
+#' should be used within a full MSE loop rather than here.
 #'
-#' @seealso \code{\link{Get_Reference_Points}}, \code{\link{Do_Population_Projection}}
-#'
-#' @examples
-#' \dontrun{
-#' reference_points_opt <- list(SPR_x = 0.4,
-#'                              t_spawn = 0,
-#'                              sex_ratio_f = 0.5,
-#'                              calc_rec_st_yr = 20,
-#'                              rec_age = 2,
-#'                              type = "multi_region",
-#'                              what = "global_SPR")
-#'
-#' proj_model_opt <- list(
-#'   n_proj_yrs = 2,
-#'   n_avg_yrs = 1,
-#'   HCR_function = function(x, frp, brp, alpha = 0.05) {
-#'     stock_status <- x / brp
-#'     if (stock_status >= 1) f <- frp
-#'     if (stock_status > alpha && stock_status < 1) f <- frp * (stock_status - alpha) / (1 - alpha)
-#'     if (stock_status < alpha) f <- 0
-#'     return(f)
-#'   },
-#'   recruitment_opt = "mean_rec",
-#'   fmort_opt = "HCR"
-#' )
-#'
-#' out <- get_key_quants(list(mlt_rg_sable_data),
-#'                       list(mlt_rg_sable_rep),
-#'                       reference_points_opt,
-#'                       proj_model_opt,
-#'                       "Model 1")
-#' out[[1]]  # key quantities data.frame
-#' out[[2]]  # table plot
-#' }
+#' @seealso \code{\link{Get_Reference_Points}},
+#'   \code{\link{Do_Population_Projection}}
 #'
 #' @export get_key_quants
 #' @family Reference Points and Projections
+#'
+#' @examples
+#' \dontrun{
+#'   reference_points_opt <- list(
+#'     SPR_x          = 0.4,
+#'     t_spawn        = 0,
+#'     sex_ratio_f    = array(0.5, dim = c(n_pop, n_regions)),
+#'     calc_rec_st_yr = 20,
+#'     rec_age        = 2,
+#'     type           = "multi_region",
+#'     what           = "global_SPR"
+#'   )
+#'
+#'   proj_model_opt <- list(
+#'     n_proj_yrs      = 2,
+#'     n_avg_yrs       = 1,
+#'     HCR_function    = function(x, frp, brp, alpha = 0.05) {
+#'       stock_status <- x / brp
+#'       if (stock_status >= 1)                            frp
+#'       else if (stock_status > alpha) frp * (stock_status - alpha) / (1 - alpha)
+#'       else                                              0
+#'     },
+#'     recruitment_opt = "mean_rec",
+#'     fmort_opt       = "HCR"
+#'   )
+#'
+#'   out <- get_key_quants(
+#'     data                  = list(mlt_rg_sable_data),
+#'     rep                   = list(mlt_rg_sable_rep),
+#'     reference_points_opt  = reference_points_opt,
+#'     proj_model_opt        = proj_model_opt,
+#'     model_names           = "Model 1"
+#'   )
+#'
+#'   out[[1]]  # key quantities data frame
+#'   out[[2]]  # table plot
+#' }
 get_key_quants <- function(data,
                            rep,
                            reference_points_opt,
@@ -1165,11 +1227,11 @@ get_key_quants <- function(data,
     t_spawn <- reference_points_opt$t_spawn # spawn timing
 
     # terminal estimates
-    terminal_NAA <-  array(rep[[i]]$NAA[,length(data[[i]]$years),,,], dim = c(data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes)) # terminal NAA
-    terminal_NAA0 <-  array(rep[[i]]$NAA0[,length(data[[i]]$years),,,], dim = c(data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes)) # terminal NAA
+    terminal_NAA <-  array(rep[[i]]$NAA[,,length(data[[i]]$years),,,], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes)) # terminal NAA
+    terminal_NAA0 <-  array(rep[[i]]$NAA0[,,length(data[[i]]$years),,,], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes)) # terminal NAA
     terminal_F <- array(rep[[i]]$Fmort[,length(data[[i]]$years),,], dim = c(data[[i]]$n_regions, data[[i]]$n_seas, data[[i]]$n_fish_fleets)) # terminal F
-    recruitment <- array(rep[[i]]$Rec[,reference_points_opt$calc_rec_st_yr:(length(data[[i]]$years) - reference_points_opt$rec_age)],
-                         dim = c(data[[i]]$n_regions, length(reference_points_opt$calc_rec_st_yr:(length(data[[i]]$years) - reference_points_opt$rec_age)))) # recruitment
+    recruitment <- array(rep[[i]]$Rec[,,reference_points_opt$calc_rec_st_yr:(length(data[[i]]$years) - reference_points_opt$rec_age)],
+                         dim = c(data[[i]]$n_pop, data[[i]]$n_regions, length(reference_points_opt$calc_rec_st_yr:(length(data[[i]]$years) - reference_points_opt$rec_age)))) # recruitment
 
     # demographics
     # determine years to average over demogrphaics
@@ -1179,50 +1241,72 @@ get_key_quants <- function(data,
     avg_yrs <- (n_yrs - n_avg_yrs + 1):n_yrs
 
     # spawning weight-at-age
-    WAA_avg <- apply(data[[i]]$WAA[,avg_yrs,,,,drop = FALSE], c(1, 3, 4, 5), mean)
-    WAA <- array(rep(WAA_avg, each = n_proj_yrs), dim = c(data[[i]]$n_regions, n_proj_yrs, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes))
+    WAA_avg <- apply(data[[i]]$WAA[,,avg_yrs,,,,drop = FALSE], c(1, 2, 4, 5, 6), mean)
+    WAA <- aperm(
+      array(rep(WAA_avg, times = n_proj_yrs),
+            dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes, n_proj_yrs)),
+      perm = c(1, 2, 6, 3, 4, 5))
 
-    WAA_fish_avg <- apply(data[[i]]$WAA_fish[,avg_yrs,,,,,drop = FALSE], c(1, 3, 4, 5, 6), mean)
-    WAA_fish <- array(rep(WAA_fish_avg, each = n_proj_yrs), dim = c(data[[i]]$n_regions, n_proj_yrs, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes, data[[i]]$n_fish_fleets))
+    WAA_fish_avg <- apply(data[[i]]$WAA_fish[,,avg_yrs,,,,,drop = FALSE], c(1, 2, 4, 5, 6, 7), mean)
+    WAA_fish <- aperm(
+      array(rep(WAA_fish_avg, times = n_proj_yrs),
+            dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes, data[[i]]$n_fish_fleets, n_proj_yrs)),
+      perm = c(1, 2, 7, 3, 4, 5, 6))
 
     # maturity at age
-    MatAA_avg <- apply(data[[i]]$MatAA[,avg_yrs,,,,drop = FALSE], c(1, 3, 4, 5), mean)
-    MatAA <- array(rep(MatAA_avg, each = proj_model_opt$n_proj_yrs), dim = c(data[[i]]$n_regions, proj_model_opt$n_proj_yrs, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes))
+    MatAA_avg <- apply(data[[i]]$MatAA[,,avg_yrs,,,,drop = FALSE], c(1, 2, 4, 5, 6), mean)
+    MatAA <- aperm(
+      array(rep(MatAA_avg, times = n_proj_yrs),
+            dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes, n_proj_yrs)),
+      perm = c(1, 2, 6, 3, 4, 5))
 
     # natural mortality
-    natmort_avg <- apply(rep[[i]]$natmort[,avg_yrs,,,drop = FALSE], c(1, 3, 4), mean)
-    natmort <- array(rep(natmort_avg, each = proj_model_opt$n_proj_yrs), dim = c(data[[i]]$n_regions, proj_model_opt$n_proj_yrs, length(data[[i]]$ages), data[[i]]$n_sexes))
-
+    natmort_avg <- apply(rep[[i]]$natmort[,,avg_yrs,,,drop = FALSE], c(1, 2, 4, 5), mean)
+    natmort <- aperm(array(rep(natmort_avg, times = n_proj_yrs),
+                           dim = c(data[[i]]$n_pop, data[[i]]$n_regions, length(data[[i]]$ages),
+                                   data[[i]]$n_sexes, n_proj_yrs)), perm = c(1, 2, 5, 3, 4))
     # fishery selectivity
     fish_sel_avg <- apply(rep[[i]]$fish_sel[,avg_yrs,,,,drop = FALSE], c(1, 3, 4, 5), mean)
-    fish_sel <- array(rep(fish_sel_avg, each = proj_model_opt$n_proj_yrs), dim = c(data[[i]]$n_regions, proj_model_opt$n_proj_yrs, length(data[[i]]$ages), data[[i]]$n_sexes, data[[i]]$n_fish_fleets))
+    fish_sel <- aperm(
+      array(rep(fish_sel_avg, times = n_proj_yrs),
+            dim = c(data[[i]]$n_regions, length(data[[i]]$ages), data[[i]]$n_sexes, data[[i]]$n_fish_fleets, n_proj_yrs)),
+      perm = c(1, 5, 2, 3, 4))
 
     # movement
-    Movement_avg <- apply(rep[[i]]$Movement[,,avg_yrs,,,,drop = FALSE], c(1,2,4,5,6), mean) # movement
-    Movement <- aperm(abind::abind(replicate(n_proj_yrs, Movement_avg, simplify = FALSE), along = 6), perm = c(1,2,6,3,4,5)) # movement
+    Movement_avg <- apply(rep[[i]]$Movement[,,,avg_yrs,,,,drop = FALSE], c(1,2,3,5,6,7), mean) # movement
+    Movement <- aperm(abind::abind(replicate(n_proj_yrs, Movement_avg, simplify = FALSE), along = 7), perm = c(1,2,3,7,4,5,6)) # movement
+    sgl_seas_spawning_movement_avg <- apply(rep[[i]]$sgl_seas_spawning_movement[,,,avg_yrs,,1,drop = FALSE], c(1,2,3,5), mean)
+    sgl_seas_spawning_movement <- array(sgl_seas_spawning_movement_avg, dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_regions, data[[i]]$n_ages)) # Movement
+    stray_rate <- array(apply(rep[[i]]$stray_rate[,avg_yrs, drop = FALSE], 1, mean), dim = c(data[[i]]$n_pop, n_proj_yrs))
 
     # Sex ratio
-    sexratio_avg <- apply(rep[[i]]$sexratio[,avg_yrs,,drop = FALSE], c(1,3), mean)
-    sexratio <- array(dim = c(data[[i]]$n_regions, proj_model_opt$n_proj_yrs, data[[i]]$n_sexes)) # empty array
-    for(yr in 1:proj_model_opt$n_proj_yrs) sexratio[, yr, ] <- sexratio_avg # populate empty array
+    sexratio_avg <- apply(rep[[i]]$sexratio[,,avg_yrs,,drop = FALSE], c(1,2,4), mean)
+    sexratio <- array(dim = c(data[[i]]$n_pop, data[[i]]$n_regions, proj_model_opt$n_proj_yrs, data[[i]]$n_sexes)) # empty array
+    for(yr in 1:proj_model_opt$n_proj_yrs) sexratio[,, yr, ] <- sexratio_avg # populate empty array
 
     # Now, set up inputs for reference points
     f_ref_pt = array(tmp_ref_pts$f_ref_pt, dim = c(data[[i]]$n_regions, n_proj_yrs))
-    b_ref_pt = array(tmp_ref_pts$b_ref_pt, dim = c(data[[i]]$n_regions, n_proj_yrs))
+    b_ref_pt = array(tmp_ref_pts$b_ref_pt, dim = c(data[[i]]$n_pop, data[[i]]$n_regions, n_proj_yrs))
 
     # Set up beverton-holt options if using beverton holt for projection
     if(proj_model_opt$recruitment_opt == 'bh_rec') {
       bh_rec_opt <- list(
-        recruitment_dd = data[[i]]$rec_dd,
+        do_recruits_move = data[[i]]$do_recruits_move,
+        rec_dd = data[[i]]$rec_dd,
         rec_lag = data[[i]]$rec_lag,
         R0 = rep[[i]]$R0,
-        Rec_Prop = rep[[i]]$Rec_trans_prop,
+        rec_region_prop = rep[[i]]$rec_region_prop,
         h = rep[[i]]$h_trans,
         SSB = rep[[i]]$SSB,
+
         # Using first year for demographics of computing unfished SSB
-        WAA = data[[i]]$WAA[,1,,,,drop = FALSE],
-        MatAA = data[[i]]$MatAA[,1,,,,drop = FALSE],
-        natmort = rep[[i]]$natmort[,1,,,drop = FALSE]
+        WAA = array(data[[i]]$WAA[,,1,,,1,drop = FALSE], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages)) ),
+        MatAA = array(data[[i]]$MatAA[,,1,,,1,drop = FALSE], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages)) ) ,
+        natmort = array(rep[[i]]$natmort[,,1,,1,drop = FALSE], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, length(data[[i]]$ages) )),
+        sgl_seas_spawning_movement = array(rep[[i]]$sgl_seas_spawning_movement[,,,1,,1], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_regions, length(data[[i]]$ages) )),
+        Movement = array(rep[[i]]$Movement[,,,1,,,1], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages) )),
+        stray_rate = array(rep[[i]]$stray_rate[,1], dim = data[[i]]$n_pop),
+        sex_ratio_f = array(if(data[[i]]$n_sexes == 1) 0.5 else rep[[i]]$sexratio[,,1,1], dim = c(data[[i]]$n_pop, data[[i]]$n_regions))
       )
     } else {
       bh_rec_opt <- NULL
@@ -1233,6 +1317,14 @@ get_key_quants <- function(data,
                                          n_regions = data[[i]]$n_regions, # number of regions
                                          n_ages = length(data[[i]]$ages), # number of ages
                                          n_sexes = data[[i]]$n_sexes, # number of sexes
+                                         n_pop = data[[i]]$n_pop, # number of populations
+                                         n_seas = data[[i]]$n_seas, # number of seasons
+                                         seasdur = data[[i]]$seasdur, # seasonal duration
+                                         rec_seas_prop = rep[[i]]$rec_seas_prop, # recruitment seasonal proportion
+                                         spawn_seas = data[[i]]$spawn_seas, # spawning season
+                                         natal_region = data[[i]]$natal_region, # natal regions
+                                         stray_rate = stray_rate, # stray rate
+                                         t_spawn = data[[i]]$t_spawn, # spawn timing
                                          sexratio = sexratio, # sex ratio for recruitment
                                          n_fish_fleets = data[[i]]$n_fish_fleets, # number of fishery fleets
                                          do_recruits_move = data[[i]]$do_recruits_move, # whether recruits move
@@ -1250,22 +1342,21 @@ get_key_quants <- function(data,
                                          b_ref_pt = b_ref_pt, # biological reference points
                                          HCR_function = proj_model_opt$HCR_function, # HCR function
                                          recruitment_opt = proj_model_opt$recruitment_opt, # recruitment assumption
-                                         fmort_opt = proj_model_opt$fmort_opt, # Fishing mortality in projection years (whether input or HCR)
-                                         t_spawn = reference_points_opt$t_spawn, # Spawn timing
+                                         fmort_opt = 'Input', # Fishing mortality in projection years (whether input or HCR)
                                          bh_rec_opt = bh_rec_opt # beverton holt projection options
     )
 
     # extract out quantities and store
     key_quants_tmp <- data.frame(Model = model_names[i],
                                  Region = 1:data[[i]]$n_regions,
-                                 Terminal_SSB = round(out_proj$proj_SSB[,1], 5),
-                                 Terminal_SSB0 = round(out_proj$proj_Dynamic_SSB0[,1], 5),
+                                 Terminal_SSB = round(apply(out_proj$proj_SSB[,,1, drop = FALSE], 2, sum), 5),
+                                 Terminal_SSB0 = round(apply(out_proj$proj_Dynamic_SSB0[,,1, drop = FALSE], 2, sum), 5),
                                  Terminal_F = rowSums(terminal_F),
-                                 Catch_Advice = round(apply(out_proj$proj_Catch[,2,,drop = FALSE], c(1,2), sum), 5), # sum across fleets
-                                 B_Ref_Pt = round(tmp_ref_pts$b_ref_pt, 5),
+                                 Catch_Advice = round(apply(out_proj$proj_Catch[,,2,,,drop = FALSE], 2, sum), 5), # sum across fleets, season, and populations
+                                 B_Ref_Pt = apply(tmp_ref_pts$b_ref_pt, 2, sum),
                                  F_Ref_Pt = round(tmp_ref_pts$f_ref_pt, 5),
-                                 B_over_B_Ref = round(out_proj$proj_SSB[,1] / tmp_ref_pts$b_ref_pt, 5),
-                                 B_over_DynB_Ref = round(out_proj$proj_SSB[,1] / out_proj$proj_Dynamic_SSB0[,1], 5),
+                                 B_over_B_Ref = round(apply(out_proj$proj_SSB[,,1, drop = FALSE], 2, sum) / apply(tmp_ref_pts$b_ref_pt, 2, sum), 5),
+                                 B_over_DynB_Ref = round(apply(out_proj$proj_SSB[,,1, drop = FALSE], 2, sum) / apply(out_proj$proj_Dynamic_SSB0[,,1, drop = FALSE], 2, sum), 5),
                                  F_over_F_Ref = round(rowSums(terminal_F) / tmp_ref_pts$f_ref_pt, 5)
     )
 

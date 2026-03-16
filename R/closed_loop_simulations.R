@@ -554,13 +554,15 @@ get_closed_loop_reference_points <- function(use_true_values,
     data_obj <- list(
       ages = 1:sim_env$n_ages,
       years = 1:y,
+      n_pop = sim_env$n_pop,
+      natal_region = sim_env$natal_region,
       n_seas = sim_env$n_seas,
       seasdur = sim_env$seasdur,
       spawn_seas = sim_env$spawn_seas,
       n_fish_fleets = sim_env$n_fish_fleets,
       n_regions = sim_env$n_regions,
-      WAA = array(sim_env$WAA[,1:y, ,, , sim], dim = c(sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes)),
-      MatAA = array(sim_env$MatAA[, 1:y,, , , sim], dim = c(sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes)),
+      WAA = array(sim_env$WAA[,,1:y, ,, , sim], dim = c(sim_env$n_pop, sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes)),
+      MatAA = array(sim_env$MatAA[,, 1:y,, , , sim], dim = c(sim_env$n_pop, sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes)),
       do_recruits_move = sim_env$do_recruits_move
     )
 
@@ -568,22 +570,28 @@ get_closed_loop_reference_points <- function(use_true_values,
     rep_obj <- list(
       Fmort = array(sim_env$Fmort[, 1:y,, , sim], dim = c(sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_fish_fleets)),
       fish_sel = array(sim_env$fish_sel[, 1:y, , , , sim, drop = FALSE], dim = c(sim_env$n_regions, length(1:y), sim_env$n_ages, sim_env$n_sexes, sim_env$n_fish_fleets)),
-      natmort = array(sim_env$natmort[, 1:y, , , sim], dim = c(sim_env$n_regions, length(1:y), sim_env$n_ages, sim_env$n_sexes)),
-      h_trans = sim_env$h[, y, sim],
-      R0 = sum(sim_env$R0[, y, sim]),
-      Rec_trans_prop = sim_env$R0[, y, sim] / sum(sim_env$R0[, y, sim]),
-      Rec = array(sim_env$Rec[, 1:y, sim], dim = c(sim_env$n_regions, length(1:y))),
-      Movement = array(sim_env$Movement[, , 1:y, , , , sim],  dim = c(sim_env$n_regions, sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes))
+      natmort = array(sim_env$natmort[,, 1:y, , , sim], dim = c(sim_env$n_pop, sim_env$n_regions, length(1:y), sim_env$n_ages, sim_env$n_sexes)),
+      h_trans = array(sim_env$h[,, y, sim], dim = c(sim_env$n_pop, sim_env$n_regions)),
+      R0 = apply(sim_env$R0[,, y, sim, drop = FALSE], 1, sum),
+      stray_rate = array(sim_env$stray_rate[,1:y,sim], dim = c(sim_env$n_pop, length(1:y))),
+      rec_seas_prop = array(sim_env$rec_seas_prop[,,sim], dim = c(sim_env$n_pop, sim_env$n_seas)),
+      rec_region_prop = sweep(sim_env$R0[,, y, sim], 1, apply(sim_env$R0[,, y, sim, drop = FALSE], 1, sum), "/"),
+      Rec = array(sim_env$Rec[, , 1:y, sim], dim = c(sim_env$n_pop, sim_env$n_regions, length(1:y))),
+      Movement = array(sim_env$Movement[, , , 1:y, , , , sim],  dim = c(sim_env$n_pop, sim_env$n_regions, sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes)),
+      sgl_seas_spawning_movement = array(sim_env$sgl_seas_spawning_movement[, , , 1:y, , , sim],  dim = c(sim_env$n_pop, sim_env$n_regions, sim_env$n_regions, length(1:y), sim_env$n_ages, sim_env$n_sexes))
     )
 
     # get sex ratio
-    tmp_sex_ratio_f <- if(sim_env$n_sexes == 1) rep(0.5, sim_env$n_regions) else sim_env$sexratio[,y,1,sim]
+    tmp_sex_ratio_f <- if(sim_env$n_sexes == 1) array(0.5, dim = c(sim_env$n_pop, sim_env$n_regions)) else sim_env$sexratio[,,y,1,sim]
 
   } else {
     data_obj <- asmt_data
     rep_obj <- asmt_rep
-    tmp_sex_ratio_f <- if(data_obj$n_sexes == 1) rep(0.5, sim_env$n_regions) else rep_obj$sexratio[,y,1]
+    tmp_sex_ratio_f <- if(data_obj$n_sexes == 1) array(0.5, dim = c(sim_env$n_pop, sim_env$n_regions)) else rep_obj$sexratio[,,y,1]
   }
+
+  reference_points_opt$what = 'local_BH_MSY'
+  reference_points_opt$type = 'multi_region'
 
   # get reference points based on true values
   reference_points <- Get_Reference_Points(data = data_obj,
@@ -600,10 +608,12 @@ get_closed_loop_reference_points <- function(use_true_values,
 
   # extract fishery and biological reference points
   f_ref_pt <- array(reference_points$f_ref_pt, dim = c(data_obj$n_regions, n_proj_yrs)) # fishery reference points
-  b_ref_pt <- array(reference_points$b_ref_pt, dim = c(data_obj$n_regions, n_proj_yrs)) # biological reference points
-  virgin_b_ref_pt <- array(reference_points$virgin_b_ref_pt, dim = c(data_obj$n_regions, n_proj_yrs)) # biological reference points
+  b_ref_pt <- array(reference_points$b_ref_pt, dim = c(data_obj$n_pop, data_obj$n_regions, n_proj_yrs)) # biological reference points
+  virgin_b_ref_pt <- array(reference_points$virgin_b_ref_pt, dim = c(data_obj$n_pop, data_obj$n_regions, n_proj_yrs)) # biological reference points
+  pop_b_ref_pt <- array(reference_points$pop_b_ref_pt, dim = c(data_obj$n_pop, data_obj$n_regions, n_proj_yrs)) # biological reference points
+  virgin_pop_b_ref_pt <- array(reference_points$virgin_pop_b_ref_pt, dim = c(data_obj$n_pop, data_obj$n_regions, n_proj_yrs)) # biological reference points
 
-  return(list(f_ref_pt = f_ref_pt, b_ref_pt = b_ref_pt, virgin_b_ref_pt = virgin_b_ref_pt))
+  return(list(f_ref_pt = f_ref_pt, b_ref_pt = b_ref_pt, virgin_b_ref_pt = virgin_b_ref_pt, pop_b_ref_pt = pop_b_ref_pt, virgin_pop_b_ref_pt = virgin_pop_b_ref_pt))
 }
 
 

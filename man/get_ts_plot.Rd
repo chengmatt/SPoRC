@@ -7,23 +7,53 @@
 get_ts_plot(rep, sd_rep, model_names, do_ci = TRUE)
 }
 \arguments{
-\item{rep}{List of n_models of `SPoRC` report lists}
+\item{rep}{List of length \code{n_models}, where each element is a SPoRC
+report list (i.e. the output of \code{obj$report()} after optimisation).}
 
-\item{sd_rep}{List of n_models of `SPoRC` sdreport lists}
+\item{sd_rep}{List of length \code{n_models}, where each element is a SPoRC
+sdreport list (i.e. the output of \code{sdreport(obj)}). Used to extract
+delta-method standard errors on log-scale quantities (\code{log_SSB},
+\code{log_Dynamic_SSB0}, \code{log_Total_Biom}, \code{log_Rec}).}
 
-\item{model_names}{Vector of model names}
+\item{model_names}{Character vector of length \code{n_models} giving display
+names for each model run. Used as legend labels across all plots.}
 
-\item{do_ci}{Boolean for whether confidence intervals are plotted}
+\item{do_ci}{Logical. If \code{TRUE} (default), approximate 95% confidence
+ribbons are added to SSB, total biomass, dynamic SSB0, and recruitment
+plots. Ribbons are computed on the natural scale as
+\code{exp(log(value) ± 1.96 * se)}.}
 }
 \value{
-Plots of spawning biomass, dynamic b0, total biomass, recruitment, and fishing mortality time-series across models
+A named list of seven \code{ggplot} objects:
+\describe{
+  \item{[[1]] comb_ts_plot}{All quantities faceted by Type × Region.}
+  \item{[[2]] f_ts_plot}{Fishing mortality by fleet and season, faceted by Region.}
+  \item{[[3]] rec_ts_plot}{Recruitment by population, faceted by Region.}
+  \item{[[4]] ssb_ts_plot}{Spawning stock biomass by population, faceted by Region.
+    Dynamic SSB0 is excluded from this panel.}
+  \item{[[5]] total_biom_plot}{Total biomass by population, faceted by Region.}
+  \item{[[6]] ssb0_plot}{Dynamic unfished SSB (B0) by population, faceted by Region.}
+  \item{[[7]] ssb_ssb0_plot}{SSB and dynamic SSB0 overlaid on the same panel,
+    distinguished by linetype, faceted by Region. Useful for visualising depletion.}
+}
 }
 \description{
-Get Time Series Plots
+Generates a suite of time series plots for key population dynamics quantities
+(spawning stock biomass, dynamic unfished SSB, total biomass, recruitment, and
+fishing mortality) across one or more SPoRC model runs. Optionally overlays
+approximate 95% confidence intervals derived from the delta method via the
+sdreport.
 }
 \examples{
 \dontrun{
-  get_ts_plot(list(rep1, rep2), list(sd_rep1, sd_rep2), c("Model1", "Model2"), do_ci = TRUE)
+  plots <- get_ts_plot(
+    rep        = list(rep1, rep2),
+    sd_rep     = list(sdrep1, sdrep2),
+    model_names = c("Base", "Sensitivity"),
+    do_ci      = TRUE
+  )
+  plots[[4]] # SSB time series
+  plots[[7]] # SSB vs dynamic B0
 }
 }
 \seealso{

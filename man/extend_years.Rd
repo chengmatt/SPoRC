@@ -2,29 +2,48 @@
 % Please edit documentation in R/Utility_Functions.R
 \name{extend_years}
 \alias{extend_years}
-\title{Extend an array along a year dimension}
+\title{Extend an array along its year dimension}
 \usage{
 extend_years(arr, n_years, yr_dim, fill = "zeros")
 }
 \arguments{
-\item{arr}{Array to extend. Can have any number of dimensions.}
+\item{arr}{Array of any dimensionality to extend.}
 
-\item{n_years}{Integer. The total number of years to extend the array to.}
+\item{n_years}{Integer. Total number of years in the extended array
+(i.e., the new size of dimension \code{yr_dim}). Must be greater than
+\code{dim(arr)[yr_dim]}.}
 
-\item{yr_dim}{Integer. The dimension of `arr` that corresponds to years.}
+\item{yr_dim}{Integer. Index of the dimension in \code{arr} corresponding
+to years.}
 
-\item{fill}{Character or Numeric (scalar or array). How to fill the extended years:
-- `"zeros"`: fill with zeros
-- `"last"`: repeat the last year slice that is not a NaN or NA value. If all values are NA, then the array gets populated with NAs.
-- `"mean"`: take mean of time series
-- `"F_pattern"`: Used for fishery input sample sizes, dynamically fills in sample sizes based on fishing mortality values specified in a closed loop simulation
--  Numeric: Constant scalar or array}
+\item{fill}{Character string or numeric. Fill strategy for the appended
+year slices:
+\describe{
+  \item{\code{"zeros"}}{Fill with zeros.}
+  \item{\code{"last"}}{Repeat the last year slice that contains at least
+    one non-\code{NA}, non-\code{NaN} value. If no valid slice exists,
+    fills with \code{NA}.}
+  \item{\code{"mean"}}{Fill with the per-element mean across years,
+    excluding zeros, \code{NA}, and \code{NaN} values. Elements with no
+    valid values are set to zero.}
+  \item{\code{"F_pattern"}}{Fill with zeros; signals to downstream
+    functions (e.g., \code{\link{predict_sim_fish_iss_fmort}}) that
+    sample sizes should be dynamically updated based on projected fishing
+    mortality during the closed-loop simulation.}
+  \item{Numeric scalar or array}{Fill all appended slices with the
+    supplied constant value, recycled via \code{array()}.}
+}}
 }
 \value{
-An array extended along the `yr_dim` dimension.
+Array with the same dimensions as \code{arr} except that
+  \code{dim(result)[yr_dim] == dim(arr)[yr_dim] + n_years}, formed by
+  binding \code{arr} and the fill array along \code{yr_dim} via
+  \code{abind::abind}.
 }
 \description{
-This function takes an array and extends it along the specified year dimension.
-The extension can either be filled with zeros or by repeating the last year slice.
+Appends additional year slices to an array along a specified dimension,
+using one of several fill strategies. Used in SPoRC to extend biological,
+selectivity, and sample-size arrays from the conditioning period into
+projection years before running closed-loop MSE simulations.
 }
 \keyword{internal}

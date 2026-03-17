@@ -2,7 +2,7 @@
 % Please edit documentation in R/Utility_Functions.R
 \name{catch_to_F_multifleet}
 \alias{catch_to_F_multifleet}
-\title{Solve for fishing mortality rates that achieve target catches for multiple fleets}
+\title{Convert target catches to fishing mortality rates for multiple fleets}
 \usage{
 catch_to_F_multifleet(
   target_catch,
@@ -15,25 +15,38 @@ catch_to_F_multifleet(
 )
 }
 \arguments{
-\item{target_catch}{Numeric vector of target catch values for each fleet}
+\item{target_catch}{Numeric vector \code{[n_fleets]}. Target catch in
+biomass units for each fleet.}
 
-\item{NAA}{Matrix of numbers-at-age (ages x sexes)}
+\item{NAA}{Numeric matrix \code{[n_ages × n_sexes]}. Numbers-at-age.}
 
-\item{WAA}{Matrix of weight-at-age (ages x sexes)}
+\item{WAA}{Numeric matrix \code{[n_ages × n_sexes]}. Weight-at-age.}
 
-\item{natmort}{Matrix of natural mortality (ages x sexes)}
+\item{natmort}{Numeric matrix \code{[n_ages × n_sexes]}. Instantaneous
+natural mortality rate.}
 
-\item{fish_sel}{3D array of fishery selectivity (ages x sexes x fleets)}
+\item{fish_sel}{Numeric array \code{[n_ages × n_sexes × n_fleets]}.
+Fishery selectivity for each fleet.}
 
-\item{f_init}{Initial guess for F values (scalar or vector)}
+\item{f_init}{Numeric scalar or vector \code{[n_fleets]}. Starting values
+for the \eqn{F} solver. If a scalar is supplied it is recycled across
+all fleets. Default \code{0.05}.}
 
-\item{control}{List of control parameters for nleqslv}
+\item{control}{Named list of control parameters passed to
+\code{nleqslv::nleqslv}. Default \code{list(btol = 1e-6)}.}
 }
 \value{
-Numeric vector of F values for each fleet
+Numeric vector \code{[n_fleets]} of solved fishing mortality rates,
+  one per fleet.
 }
 \description{
-Solve for fishing mortality rates that achieve target catches for multiple fleets
+Solves for the vector of fleet-specific fishing mortality rates
+\eqn{\mathbf{F} = (F_1, \ldots, F_k)} that simultaneously satisfy the
+Baranov catch equations for all fleets, given a vector of target catches.
+Total mortality at age accounts for contributions from all fleets:
+\eqn{Z_a = M_a + \sum_f F_f s_{a,f}}. The system of equations is solved
+via \code{nleqslv::nleqslv}. Intended for closed-loop MSE harvest control
+rules with multiple interacting fishery fleets.
 }
 \seealso{
 Other Closed Loop Simulations: 

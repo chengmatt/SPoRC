@@ -2,7 +2,7 @@
 % Please edit documentation in R/Setup_Fishery.R
 \name{Setup_Mod_Fishsel_and_Q}
 \alias{Setup_Mod_Fishsel_and_Q}
-\title{Setup fishery selectivity and catchability specifications}
+\title{Set up fishery selectivity and catchability specifications}
 \usage{
 Setup_Mod_Fishsel_and_Q(
   input_list,
@@ -25,207 +25,141 @@ Setup_Mod_Fishsel_and_Q(
 )
 }
 \arguments{
-\item{input_list}{List containing a data list, parameter list, and map list}
+\item{input_list}{Named list with \code{$data}, \code{$par}, \code{$map},
+and \code{$verbose} sublists.}
 
-\item{cont_tv_fish_sel}{Character vector specifying the form of continuous time-varying selectivity for each fishery fleet.
-The vector must be length \code{n_fish_fleets}, and each element must follow the structure:
-\code{"<time variation type>_Fleet_<fleet number>"}.
-
-Valid time variation types include:
-\itemize{
-  \item \code{"none"}: No continuous time variation (default)
-  \item \code{"iid"}: Independent and identically distributed deviations across years.
-  \item \code{"rw"}: Random walk in time.
-  \item \code{"3dmarg"}: 3D marginal time-varying selectivity.
-  \item \code{"3dcond"}: 3D conditional time-varying selectivity.
-  \item \code{"2dar1"}: Two-dimensional AR1 process.
+\item{cont_tv_fish_sel}{Character vector of length \code{n_fish_fleets}
+specifying continuous time-varying selectivity per fleet. Each element
+must be \code{"<type>_Fleet_<f>"}. Valid types:
+\describe{
+  \item{\code{"none"}}{No continuous time-variation (default).}
+  \item{\code{"iid"}}{IID annual deviations on selectivity parameters.}
+  \item{\code{"rw"}}{Random walk in selectivity parameters over time.}
+  \item{\code{"3dmarg"}}{3D GMRF with marginal variance parameterisation.}
+  \item{\code{"3dcond"}}{3D GMRF with conditional variance parameterisation.}
+  \item{\code{"2dar1"}}{2D separable AR1 in bin and year dimensions.}
 }
+If any fleet has \code{cont_tv_fish_sel != "none"}, both
+\code{fishsel_pe_pars_spec} and \code{fish_sel_devs_spec} must also be
+provided.}
 
-For example:
+\item{fish_sel_blocks}{Character vector defining discrete selectivity time
+blocks per fleet. Each element follows \code{"Block_<b>_Year_<s>-<e>_Fleet_<f>"}
+or \code{"Block_<b>_Year_<s>-terminal_Fleet_<f>"}. Use
+\code{"none_Fleet_<f>"} (default) for a single constant block. Blocks must
+be non-overlapping and together span all model years for the specified fleet.
+Mutually exclusive with \code{cont_tv_fish_sel != "none"} for the same fleet.}
+
+\item{fish_sel_model}{Character vector specifying the selectivity functional
+form for each fleet (and optionally each time block). Each element must
+follow one of:
 \itemize{
-  \item \code{"iid_Fleet_1"} applies an iid time-varying structure to Fleet 1.
-  \item \code{"none_Fleet_2"} means no time variation is used for Fleet 2.
+  \item \code{"<model>_Fleet_<f>"} — single form for all years of fleet \code{f}.
+  \item \code{"<model>_Fleet_<f>_Block_<b>"} — form specific to block \code{b}
+    of fleet \code{f}, as defined in \code{fish_sel_blocks}.
+}
+Available models:
+\describe{
+  \item{\code{"logist1"}}{Logistic with \eqn{a_{50}} and slope \eqn{k} (2 parameters).}
+  \item{\code{"logist2"}}{Logistic with \eqn{a_{50}} and \eqn{a_{95}} (2 parameters).}
+  \item{\code{"gamma"}}{Dome-shaped gamma with \eqn{a_{max}} and \eqn{\delta} (2 parameters).}
+  \item{\code{"exponential"}}{Exponential with a single power parameter (1 parameter).}
+  \item{\code{"dbnrml"}}{Double-normal with 6 parameters.}
+}
+See the model equations vignette for mathematical definitions.}
+
+\item{Use_fish_q_prior}{Integer flag. \code{1} = apply lognormal priors to
+catchability; \code{0} = no priors (default). Requires \code{fish_q_prior}.}
+
+\item{fish_q_prior}{Data frame of catchability prior hyperparameters. Required
+columns: \code{region}, \code{fleet}, \code{block} (block index), \code{mu}
+(prior mean on natural scale), \code{sd} (prior SD on log scale). Each row
+specifies a \eqn{\text{Normal}(\log(\mu), \sigma)} prior for one catchability
+parameter. Only used when \code{Use_fish_q_prior = 1}.}
+
+\item{fish_q_blocks}{Character vector defining catchability time blocks per
+fleet, using the same format as \code{fish_sel_blocks}. Default
+\code{"none_Fleet_<f>"} gives a single constant block.}
+
+\item{fishsel_pe_pars_spec}{Character vector of length \code{n_fish_fleets}
+specifying the estimation structure for selectivity process error
+hyperparameters. Required when any fleet has continuous time-variation.
+See \code{\link{do_fishsel_pe_pars_mapping}} for all options.}
+
+\item{fish_fixed_sel_pars_spec}{Character vector of length \code{n_fish_fleets}
+specifying how fixed-effect selectivity parameters are estimated. See
+\code{\link{do_fish_fixed_sel_pars_mapping}} for all options
+(\code{"est_all"}, \code{"est_shared_r"}, \code{"est_shared_s"},
+\code{"est_shared_r_s"}, \code{"est_shared_f_x"}, \code{"fix"}).}
+
+\item{fish_q_spec}{Character vector of length \code{n_fish_fleets} specifying
+catchability estimation structure. See \code{\link{do_fish_q_mapping}} for
+options (\code{"est_all"}, \code{"est_shared_r"}, \code{"fix"}).}
+
+\item{fish_sel_devs_spec}{Character vector of length \code{n_fish_fleets}
+specifying the estimation structure for annual selectivity deviations.
+Required when any fleet has continuous time-variation. See
+\code{\link{do_fishsel_devs_mapping}} for all options including age-sharing
+options for semi-parametric forms.}
+
+\item{corr_opt_semipar}{Character vector of length \code{n_fish_fleets}
+controlling which correlation components to suppress in semi-parametric
+(3D GMRF or 2D AR1) time-varying selectivity. Set to \code{NA} (default)
+for no suppression. See \code{\link{do_fishsel_pe_pars_mapping}} for valid
+suppression codes. Cohort-correlation options are invalid for \code{"2dar1"}.}
+
+\item{Use_fish_selex_prior}{Integer flag. \code{1} = apply lognormal priors to
+selectivity parameters; \code{0} = no priors (default). Requires
+\code{fish_selex_prior}.}
+
+\item{fish_selex_prior}{Data frame of selectivity prior hyperparameters.
+Required columns: \code{region}, \code{fleet}, \code{block}, \code{sex},
+\code{par} (parameter index within the functional form), \code{mu}, \code{sd}.
+Only used when \code{Use_fish_selex_prior = 1}.}
+
+\item{cont_tv_fish_sel_penalty}{Logical. If \code{TRUE} (default), applies a
+penalty on the continuous time-varying selectivity deviations to regularise
+the process.}
+
+\item{fishsel_devs_shared_ages}{List of integer vectors grouping age or length
+bins that share a single deviation series. Only used when
+\code{fish_sel_devs_spec} contains one of the \code{"est_shared_a"} variants.
+Example: \code{list(1:5, 6:10, 11:30)}.}
+
+\item{...}{Optional starting value overrides, passed by name. Recognised
+arguments:
+\describe{
+  \item{\code{ln_fish_fixed_sel_pars}}{Array dimensioned
+    \code{[n_regions × max_pars × max_blocks × n_sexes × n_fish_fleets]}.
+    Default: \code{0}.}
+  \item{\code{ln_fish_q}}{Array dimensioned
+    \code{[n_regions × max_q_blocks × n_fish_fleets]}.
+    Default: \code{0}.}
+  \item{\code{fishsel_pe_pars}}{Array dimensioned
+    \code{[n_regions × 4 × n_sexes × n_fish_fleets]}.
+    Default: \code{0}.}
+  \item{\code{ln_fishsel_devs}}{Array dimensioned
+    \code{[n_regions × (n_years + n_proj_yrs_devs) × n_bins × n_sexes × n_fish_fleets]}.
+    Default: \code{0}.}
 }}
-
-\item{fish_sel_blocks}{Character vector specifying the fishery selectivity blocks for each region and fleet.
-
-Each element must follow one of the following structures:
-\itemize{
-  \item `"Block_<block number>_Year_<start>-<end>_Fleet_<fleet number>"`
-  \item `"Block_<block number>_Year_<start>-terminal_Fleet_<fleet number>"`
-  \item `"none_Fleet_<fleet number>"`
 }
-
-This argument defines how fishery selectivity varies over time for each fleet:
-\itemize{
-  \item \code{"Block_..."} entries specify discrete time blocks during which selectivity parameters are assumed constant.
-  \item \code{"none_..."} entries indicate that selectivity is constant across all years for the specified fleet.
-}
-
-If time-block-based selectivity is specified for a fleet (via \code{fish_sel_blocks}), its corresponding continuous selectivity option (in \code{cont_tv_fish_sel}) must be set to \code{"none_Fleet_<fleet number>"}. The two approaches—blocked and continuous time-varying selectivity—are mutually exclusive.
-The default for each fleet is \code{"none_Fleet_x"} (i.e., no selectivity blocks).}
-
-\item{fish_sel_model}{Character vector specifying the fishery selectivity functional form for each fleet, and optionally by time block.
-
-Each element must follow one of the following structures:
-\itemize{
-  \item \code{"<selectivity model>_Fleet_<fleet number>"}
-  \item \code{"<selectivity model>_Fleet_<fleet number>_Block_<block number>"}
-}
-
-The first form applies a single selectivity model across all years for the specified fleet.
-The second form allows the user to assign a distinct selectivity model to a specific time block, as defined in \code{fish_sel_blocks}.
-
-Available selectivity model types include:
-\itemize{
-  \item \code{"logist1"} — Logistic function with parameters \code{a50} and \code{k}.
-  \item \code{"logist2"} — Logistic function with parameters \code{a50} and \code{a95}.
-  \item \code{"gamma"} — Dome-shaped gamma function with parameters \code{amax} and \code{delta}.
-  \item \code{"exponential"} — Exponential function with a power parameter.
-  \item \code{"dbnrml"} — Double-normal function with six parameters.
-}
-If multiple selectivity time blocks are specified for a fleet (using \code{fish_sel_blocks}), then the corresponding selectivity model for each block must be explicitly defined using the \code{"<model>_Block_<block>_Fleet_<fleet>"} format.
-If blocks are not defined for a fleet, use the \code{"<model>_Fleet_<fleet number>"} format only.
-For mathematical definitions and implementation details of each selectivity form, refer to the model equations vignette.}
-
-\item{Use_fish_q_prior}{Integer (0 or 1). Flag to enable/disable fishery catchability priors.
-When set to 1, applies log-normal priors to fishery selectivity parameters as specified
-in \code{fish_q_prior}. When set to 0, no priors are applied.}
-
-\item{fish_q_prior}{Data frame containing prior specifications for fishery catchability parameters.
-Must include columns: \code{region} (region index), \code{fleet} (fleet index),
-\code{block} (time block index), \code{mu} (prior mean on natural scale), and \code{sd} (prior standard deviation on log scale).
-Each row specifies a log-normal prior N(log(mu), sd) for a given catchability parameter.
-Only parameters with rows in this data frame will have priors applied.}
-
-\item{fish_q_blocks}{Character vector specifying fishery catchability (q) blocks for each fleet.
-Each element must follow the structure: \code{"Block_<block number>_Year_<start>-<end>_Fleet_<fleet number>"}
-or \code{"none_Fleet_<fleet number>"}. Default is "none_Fleet_x".
-
-This allows users to define time-varying catchability blocks independently of selectivity blocks.
-The blocks must be non-overlapping and sequential in time within each fleet.
-
-For example:
-\itemize{
-  \item \code{"Block_1_Year_1-35_Fleet_1"} assigns block 1 to Fleet 1 for years 1–35.
-  \item \code{"Block_2_Year_36-56_Fleet_1"} continues with block 2 for years 36–56.
-  \item \code{"Block_3_Year_57-terminal_Fleet_1"} assigns block 3 from year 57 to the terminal year for Fleet 1.
-  \item \code{"none_Fleet_2"} indicates no catchability blocks are used for Fleet 2.
-}
-
-Internally, these specifications are converted to a \code{[n_regions, n_years, n_fish_fleets]} array,
-where each block is mapped to the appropriate years and fleets.}
-
-\item{fishsel_pe_pars_spec}{Character string specifying how process error parameters for fishery selectivity
-are estimated across regions and sexes. This is only relevant if \code{cont_tv_fish_sel} is not set to \code{"none"};
-otherwise, all process error parameters are treated as fixed.
-
-Available options include:
-\itemize{
-  \item \code{"est_all"}: Estimates separate process error parameters for each region and sex.
-  \item \code{"est_shared_r"}: Shares process error parameters across regions (sex-specific parameters are still estimated).
-  \item \code{"est_shared_s"}: Shares process error parameters across sexes (region-specific parameters are still estimated).
-  \item \code{"est_shared_r_s"}: Shares process error parameters across both regions and sexes, estimating a single set of parameters.
-  \item \code{"est_shared_f_x"}: Shares process error parameters with another fleet, where \code{x} is the fleet number to share with.
-    This option forces multiple fleets to have identical process error variance and correlation structures for their
-    time-varying selectivity. For example, \code{"est_shared_f_2"} means the current fleet will use the same
-    process error parameters as fleet 2. The reference fleet (fleet x) must use one of the other sharing options
-    and cannot itself be sharing with another fleet.
-  \item \code{"fix"} or \code{"none"}: Does not estimate process error parameters; all are treated as fixed.
-}}
-
-\item{fish_fixed_sel_pars_spec}{Character string specifying the structure for estimating
-fixed-effect parameters of the fishery selectivity model (e.g., a50, k, amax).
-This controls whether selectivity parameters are estimated separately or shared across regions and sexes.
-
-Available options include:
-\itemize{
-  \item \code{"est_all"}: Estimates separate fixed-effect selectivity parameters for each region and sex.
-  \item \code{"est_shared_r"}: Shares parameters across regions (sex-specific parameters are still estimated).
-  \item \code{"est_shared_s"}: Shares parameters across sexes (region-specific parameters are still estimated).
-  \item \code{"est_shared_r_s"}: Shares parameters across both regions and sexes, estimating a single set of fixed-effect parameters.
-  \item \code{"est_shared_f_x"}: Shares fixed-effect selectivity parameters with another fleet, where \code{x} is the fleet number to share with.
-    This option forces multiple fleets to have identical selectivity curves by using the same underlying parameters
-    (e.g., same a50, k, amax values). For example, \code{"est_shared_f_2"} means the current fleet will use the same
-    fixed-effect selectivity parameters as fleet 2. The reference fleet (fleet x) must use one of the other sharing options
-    and cannot itself be sharing with another fleet.
-  \item \code{"fix"}: Fixes all selectivity parameters to their initial values (no estimation).
-  \item \code{"none"}: No selectivity parameters are estimated (equivalent to \code{"fix"}).
-}}
-
-\item{fish_q_spec}{Character string specifying the structure of fishery catchability (\code{q}) estimation
-across regions. This controls whether separate or shared parameters are used.
-
-Available options include:
-\itemize{
-  \item \code{"est_all"}: Estimates separate catchability parameters for each region.
-  \item \code{"est_shared_r"}: Estimates a single catchability parameter shared across all regions.
-}}
-
-\item{fish_sel_devs_spec}{Character string specifying the structure of process error deviations
-in time-varying fishery selectivity dimensioned by the number of fishery fleets. This determines how deviations are estimated across regions and sexes.
-
-Available options include:
-\itemize{
-  \item \code{"est_all"}: Estimates a separate deviation time series for each region and sex.
-  \item \code{"est_shared_r"}: Shares deviations across regions (sex-specific deviations are still estimated).
-  \item \code{"est_shared_s"}: Shares deviations across sexes (region-specific deviations are still estimated).
-  \item \code{"est_shared_r_s"}: Shares deviations across both regions and sexes, estimating a single deviation time series.
-  \item \code{"est_shared_a"}: Shares deviations across age blocks.
-  \item \code{"est_shared_r_a"}: Shares deviations across regions and age shared blocks.
-  \item \code{"est_shared_a_s"}: Shares deviations across age shared blocks and sexes.
-  \item \code{"est_shared_r_a_s"}: Shares deviations across regions, age shared blocks, and sexes.
-  \item \code{"est_shared_f_x"}: Shares deviations with another fleet, where \code{x} is the fleet number to share with.
-    This option allows multiple fleets to use identical deviation parameters, reducing the number of parameters
-    to estimate. For example, \code{"est_shared_f_2"} means the current fleet will use the same deviation
-    parameters as fleet 2. The reference fleet (fleet x) must use one of the other sharing options
-    (\code{"est_all"}, \code{"est_shared_r"}, \code{"est_shared_s"}, or \code{"est_shared_r_s"})
-    and cannot itself be sharing with another fleet.
-  \item \code{"fix"}: Fixes all deviation parameters to zero (no time-variation).
-  \item \code{"none"}: No deviation parameters are estimated (equivalent to \code{"fix"}).
-}
-
-This argument is only used when a continuous time-varying selectivity form is specified (e.g., via \code{cont_tv_fish_sel}).}
-
-\item{corr_opt_semipar}{Character string specifying which correlation structures to suppress
-  when using semi-parametric time-varying selectivity models. Only used if \code{cont_tv_sel}
-  is set to one of \code{"3dmarg"}, \code{"3dcond"}, or \code{"2dar1"}.
-
-  This option allows users to turn off estimation of specific correlation components in the
-  time-varying selectivity model. This can improve stability or enforce assumptions about
-  independence in the temporal or age structure.
-
-  Available options:
-  \itemize{
-    \item \code{"corr_zero_y"}: Sets year (temporal) correlations to 0.
-    \item \code{"corr_zero_b"}: Sets age correlations to 0.
-    \item \code{"corr_zero_y_b"}: Sets both year and bin correlations to 0.
-    \item \code{"corr_zero_c"}: Sets cohort correlations to 0. Only valid for \code{cont_tv_sel} = \code{"3dmarg"} or \code{"3dcond"}.
-    \item \code{"corr_zero_y_c"}: Sets year and cohort correlations to 0. Only valid for \code{cont_tv_sel} = \code{"3dmarg"} or \code{"3dcond"}.
-    \item \code{"corr_zero_b_c"}: Sets bin (age) and cohort correlations to 0. Only valid for \code{cont_tv_sel} = \code{"3dmarg"} or \code{"3dcond"}.
-    \item \code{"corr_zero_y_b_c"}: Sets all correlations (year, bin (age), and cohort) to 0.
-      Only valid for \code{cont_tv_sel} = \code{"3dmarg"} or \code{"3dcond"}; equivalent to an iid structure.
-  }
-
-These correlation-suppression flags are ignored when \code{cont_tv_sel} is set to any other value.}
-
-\item{Use_fish_selex_prior}{Integer (0 or 1). Flag to enable/disable fishery selectivity priors.
-When set to 1, applies log-normal priors to fishery selectivity parameters as specified
-in \code{fish_selex_prior}. When set to 0, no priors are applied.}
-
-\item{fish_selex_prior}{Data frame containing prior specifications for fishery selectivity parameters.
-Must include columns: \code{region} (region index), \code{fleet} (fleet index),
-\code{block} (time block index), \code{sex} (sex index), \code{par} (parameter index),
-\code{mu} (prior mean on natural scale), and \code{sd} (prior standard deviation on log scale).
-Each row specifies a log-normal prior N(log(mu), sd) for one selectivity parameter.
-Only parameters with rows in this data frame will have priors applied.}
-
-\item{cont_tv_fish_sel_penalty}{Whether or not continuous fishery time varying selectivity penalties are applied (if cont_tv_fish_sel > 0)}
-
-\item{fishsel_devs_shared_ages}{List object for specifying which ages are shared when selectivity deviations are semi-parametric (e.g., list(1:5, 6:10, 11:30) specifies that ages 1-5, 6-10, and 11-30 have the same deviations.)}
+\value{
+The input \code{input_list} with \code{$data}, \code{$par}, and
+  \code{$map} updated. Key additions include the parsed integer arrays for
+  \code{cont_tv_fish_sel}, \code{fish_sel_blocks}, \code{fish_sel_model}, and
+  \code{fish_q_blocks}; starting value arrays for all four parameter groups;
+  and their corresponding factor maps.
 }
 \description{
-Setup fishery selectivity and catchability specifications
+Configures all aspects of fishery selectivity and catchability for the
+estimation model: functional forms, time blocks, continuous time-varying
+structures, process error hyperparameters, annual deviations, and
+catchability blocks and estimation structure. Must be called after
+\code{\link{Setup_Mod_FishIdx_and_Comps}}.
+}
+\details{
+Selectivity time-variation and blocked selectivity are mutually exclusive
+within a fleet — specifying both for the same fleet will raise an error.
 }
 \seealso{
 Other Model Setup: 

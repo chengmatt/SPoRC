@@ -2,18 +2,38 @@
 % Please edit documentation in R/Simulate_RV.R
 \name{rdirM}
 \alias{rdirM}
-\title{Title Simulate dirichlet multinomial draws}
+\title{Draw samples from a Dirichlet-multinomial distribution}
 \usage{
 rdirM(n, N, alpha)
 }
 \arguments{
-\item{n}{Number of sims}
+\item{n}{Integer. Number of independent draws to generate.}
 
-\item{N}{Sum of observations}
+\item{N}{Integer. Total count per draw (multinomial sample size).}
 
-\item{alpha}{Concentration parameter}
+\item{alpha}{Numeric vector of length \eqn{K}. Dirichlet concentration
+parameters. All elements must be positive. Larger values relative to
+\eqn{N} produce draws closer to the expected proportions
+\eqn{\alpha / \sum \alpha}.}
+}
+\value{
+Integer matrix of dimensions \eqn{K \times n}. Each column is one
+  draw: a vector of category counts summing to \code{N}.
 }
 \description{
-Title Simulate dirichlet multinomial draws
+Generates \code{n} independent draws from a Dirichlet-multinomial
+distribution with total count \code{N} and concentration parameter vector
+\code{alpha}. Each draw is produced by first sampling a Dirichlet-
+distributed probability vector from \code{Gamma(alpha)} variates and then
+drawing multinomial counts conditioned on that probability vector.
+}
+\details{
+The Dirichlet-multinomial arises naturally as an overdispersed alternative
+to the multinomial: the marginal variance of each category count is
+\eqn{N \bar{p}_k (1 - \bar{p}_k) (N + \theta) / (1 + \theta)}, where
+\eqn{\theta = \sum \alpha_k} controls overdispersion. In SPoRC,
+\code{alpha} is typically supplied as
+\eqn{\exp(\ln\theta) \times N \times \hat{p}} so that
+\eqn{\exp(\ln\theta)} is the per-observation overdispersion scalar.
 }
 \keyword{internal}

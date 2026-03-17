@@ -7,6 +7,9 @@ test_that("Dusky RTMB model produces expected results", {
   # Setup Model -------------------------------------------------------------
 
   input_list <- Setup_Mod_Dim(
+    # Number of populations
+    n_pop = sgl_rg_dusky_data$n_pop,
+    natal_region = sgl_rg_dusky_data$natal_region,
     years = sgl_rg_dusky_data$years,
     # vector of years
     ages = sgl_rg_dusky_data$mod_ages,
@@ -20,7 +23,8 @@ test_that("Dusky RTMB model produces expected results", {
     n_fish_fleets = sgl_rg_dusky_data$n_fish_fleets,
     # number of fishery fleets
     n_srv_fleets = sgl_rg_dusky_data$n_srv_fleets, # number of survey fleets
-    verbose = FALSE # whether to output messages
+    n_seas = sgl_rg_dusky_data$n_seas,
+    verbose = TRUE # whether to output messages
   )
 
   # Setup recruitment stuff (using defaults for other stuff)
@@ -34,7 +38,7 @@ test_that("Dusky RTMB model produces expected results", {
     # do bias ramp (0 == don't do bias ramp, 1 == do bias ramp)
     sigmaR_switch = 1,
     # when to switch from early to late sigmaR (switch in first year)
-    ln_sigmaR = rep(-0.1068576 , 2), # 2 values for early and late sigma
+    ln_sigmaR = array(-0.1068576, dim = c(2, input_list$data$n_pop, input_list$data$n_regions)),
     # Starting values for early and late sigmaR
     rec_model = "mean_rec",
     sigmaR_spec = "fix",
@@ -71,27 +75,24 @@ test_that("Dusky RTMB model produces expected results", {
     do_recruits_move = 0
   )
 
-  input_list <- Setup_Mod_Tagging(input_list = input_list, UseTagging = 0)
+  input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
 
 
-  input_list <- suppressWarnings(
-    Setup_Mod_Catch_and_F(
-      input_list = input_list,
+  input_list <- Setup_Mod_Catch_and_F(
+    input_list = input_list,
 
-      # Data inputs
-      ObsCatch = sgl_rg_dusky_data$ObsCatch,
-      Catch_Type = sgl_rg_dusky_data$Catch_Type,
-      UseCatch = sgl_rg_dusky_data$UseCatch,
+    # Data inputs
+    ObsCatch = sgl_rg_dusky_data$ObsCatch,
+    UseCatch = sgl_rg_dusky_data$UseCatch,
 
-      # Model options
-      Use_F_pen = 1,
-      # whether to use f penalty, == 0 don't use, == 1 use
-      sigmaC_spec = "fix",
+    # Model options
+    Use_F_pen = 1,
+    # whether to use f penalty, == 0 don't use, == 1 use
+    sigmaC_spec = "fix",
 
-      # Fixing sigma C and F
-      ln_sigmaC = array(log(sqrt(1/2)), dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets)),
-      ln_sigmaF = array(log(sqrt(1/2)), dim = c(input_list$data$n_regions, input_list$data$n_fish_fleets))
-    )
+    # Fixing sigma C and F
+    ln_sigmaC = array(log(sqrt(1/2)), dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets)),
+    ln_sigmaF = array(log(sqrt(1/2)), dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
   )
 
   input_list <- Setup_Mod_FishIdx_and_Comps(
@@ -205,13 +206,14 @@ test_that("Dusky RTMB model produces expected results", {
     srv_q_prior = srv_q_prior,
     # survey timing
     t_srv = array(0, dim = c(input_list$data$n_regions,
+                             input_list$data$n_seas,
                              input_list$data$n_srv_fleets))
   )
 
   # catch weigthing for duskies
-  Wt_Catch <- array(0, dim = c(sgl_rg_dusky_data$n_regions, length(sgl_rg_dusky_data$years), sgl_rg_dusky_data$n_fish_fleets))
-  Wt_Catch[,which(sgl_rg_dusky_data$years %in% 1977:1991),] <- 2
-  Wt_Catch[,-which(sgl_rg_dusky_data$years %in% 1977:1991),] <- 50
+  Wt_Catch <- array(0, dim = c(sgl_rg_dusky_data$n_regions, length(sgl_rg_dusky_data$years), sgl_rg_dusky_data$n_seas, sgl_rg_dusky_data$n_fish_fleets))
+  Wt_Catch[,which(sgl_rg_dusky_data$years %in% 1977:1991),1,] <- 2
+  Wt_Catch[,-which(sgl_rg_dusky_data$years %in% 1977:1991),1,] <- 50
 
   input_list <- Setup_Mod_Weighting(
     input_list = input_list,
@@ -223,18 +225,22 @@ test_that("Dusky RTMB model produces expected results", {
     Wt_Tagging = 0,
     Wt_FishAgeComps = array(1, dim = c(input_list$data$n_regions,
                                        length(input_list$data$years),
+                                       input_list$data$n_seas,
                                        input_list$data$n_sexes,
                                        input_list$data$n_fish_fleets)),
     Wt_FishLenComps = array(1, dim = c(input_list$data$n_regions,
                                        length(input_list$data$years),
+                                       input_list$data$n_seas,
                                        input_list$data$n_sexes,
                                        input_list$data$n_fish_fleets)),
     Wt_SrvAgeComps = array(1, dim = c(input_list$data$n_regions,
                                       length(input_list$data$years),
+                                      input_list$data$n_seas,
                                       input_list$data$n_sexes,
                                       input_list$data$n_srv_fleets)),
     Wt_SrvLenComps = array(0, dim = c(input_list$data$n_regions,
                                       length(input_list$data$years),
+                                      input_list$data$n_seas,
                                       input_list$data$n_sexes,
                                       input_list$data$n_srv_fleets))
   )
@@ -282,8 +288,8 @@ test_that("Dusky RTMB model produces expected results", {
     2.061323, 2.393618, 2.529818, 2.838106
   )
 
-  expect_equal(dusky_rtmb_model$rep$SSB[1,], ssb_expected_vec, tolerance = 1e-2)
-  expect_equal(dusky_rtmb_model$rep$Rec[1,], rec_expected_vec, tolerance = 1e-2)
+  expect_equal(dusky_rtmb_model$rep$SSB[1,1,], ssb_expected_vec, tolerance = 1e-2)
+  expect_equal(dusky_rtmb_model$rep$Rec[1,1,], rec_expected_vec, tolerance = 1e-2)
   expect_true(dusky_rtmb_model$sdrep$pdHess)
 
 })

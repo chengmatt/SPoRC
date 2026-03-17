@@ -2,23 +2,30 @@
 % Please edit documentation in R/Distributions.R
 \name{get_beta_scaled_pars}
 \alias{get_beta_scaled_pars}
-\title{Get scaled parameters for a scaled beta distribution}
+\title{Compute shape parameters for a scaled beta distribution}
 \usage{
 get_beta_scaled_pars(low, high, mu, sigma)
 }
 \arguments{
-\item{low}{lower bound}
+\item{low}{Numeric. Lower bound of the parameter support.}
 
-\item{high}{upper bound}
+\item{high}{Numeric. Upper bound of the parameter support.}
 
-\item{mu}{mean in normal space}
+\item{mu}{Numeric. Prior mean on the \code{[low, high]} scale.}
 
-\item{sigma}{sigma in normal space}
+\item{sigma}{Numeric. Prior standard deviation on the \code{[low, high]}
+scale. Must satisfy \eqn{\sigma^2 < \bar{\mu}(1-\bar{\mu})} where
+\eqn{\bar{\mu} = (\mu - \text{low}) / (\text{high} - \text{low})}.}
 }
 \value{
-Returns beta distribution parmeters with bounds
+Numeric vector \code{c(alpha, beta, low, scale)} where
+  \code{scale = high - low}.
 }
 \description{
-From https://stackoverflow.com/questions/75165770/beta-distribution-with-bounds-at-0-1-0-5
+Converts a mean and standard deviation expressed on the \code{[low, high]}
+scale to the \eqn{\alpha} and \eqn{\beta} shape parameters of a beta
+distribution defined on \code{[0, 1]} after location-scale transformation.
+Used in SPoRC to construct beta priors for steepness (\eqn{h}) bounded to
+\eqn{[0.2, 1]}.
 }
 \keyword{internal}

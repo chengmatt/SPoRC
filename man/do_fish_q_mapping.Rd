@@ -2,16 +2,30 @@
 % Please edit documentation in R/Setup_Fishery.R
 \name{do_fish_q_mapping}
 \alias{do_fish_q_mapping}
-\title{Helper function to set up fishery catchability mapping}
+\title{Map fishery catchability parameters}
 \usage{
 do_fish_q_mapping(input_list, fish_q_spec)
 }
 \arguments{
-\item{input_list}{Input list}
+\item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
+sublists.}
 
-\item{fish_q_spec}{Character vector specifying fishery catchability parameterization}
+\item{fish_q_spec}{Character vector of length \code{n_fish_fleets}. Options:
+\describe{
+  \item{\code{"est_all"}}{Separate catchability per region × block × fleet.}
+  \item{\code{"est_shared_r"}}{Single catchability shared across regions,
+    unique per block × fleet.}
+  \item{\code{"fix"}}{All catchability parameters fixed (mapped to \code{NA}).}
+}}
+}
+\value{
+The input \code{input_list} with \code{$map$ln_fish_q} set to a
+  factor vector.
 }
 \description{
-Helper function to set up fishery catchability mapping
+Constructs the factor map for \code{ln_fish_q}, controlling whether
+catchability parameters are estimated independently per region and time block
+or shared across regions. Cells with no fishery index observations
+(\code{UseFishIdx == 0}) are automatically mapped to \code{NA}.
 }
 \keyword{internal}

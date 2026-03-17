@@ -2,25 +2,39 @@
 % Please edit documentation in R/Distributions.R
 \name{dlogistnormal}
 \alias{dlogistnormal}
-\title{Logistic Normal Likelihood}
+\title{Evaluate a logistic-normal log-likelihood}
 \usage{
 dlogistnormal(obs, pred, Sigma_or_Q, type = "dgmrf", give_log = TRUE)
 }
 \arguments{
-\item{obs}{Vector of observed values in numbers (can be integers or non-integers - vector length of n_bins)}
+\item{obs}{Numeric vector of observed composition values of length
+\eqn{K}. Need not sum to 1; the last element is the ALR reference.}
 
-\item{pred}{Vector of predicted values in proportions (vector length of n_bins)}
+\item{pred}{Numeric vector of predicted proportions of length \eqn{K};
+the last element is the ALR reference.}
 
-\item{Sigma_or_Q}{Sigma or Precision Matrix}
+\item{Sigma_or_Q}{Covariance matrix \eqn{\Sigma} (when
+\code{type = "dmvnorm"}) or precision matrix \eqn{Q = \Sigma^{-1}}
+(when \code{type = "dgmrf"}) of dimension \eqn{(K-1) \times (K-1)}.
+Use \code{\link{get_logistN_Sigma}} to construct \eqn{\Sigma} and
+invert for \eqn{Q}.}
 
-\item{type}{Whether to fit using dgmrf (default; uses precision) or dmvnorm (uses sigma)}
+\item{type}{Character. \code{"dgmrf"} (default) evaluates via
+\code{RTMB::dgmrf} (preferred for AD efficiency); \code{"dmvnorm"}
+evaluates via \code{RTMB::dmvnorm}.}
 
-\item{give_log}{whether or not to use log space likelihood}
+\item{give_log}{Logical. If \code{TRUE} (default), returns the
+log-likelihood; otherwise returns the likelihood.}
 }
 \value{
-Returns likelihood values from a logistic normal
+Numeric. Log-likelihood (or likelihood if \code{give_log = FALSE}).
 }
 \description{
-Logistic Normal Likelihood
+Applies the additive log-ratio (ALR) transformation to observed and
+predicted compositions (removing the last reference bin) and evaluates
+either a Gaussian Markov random field log-density (\code{RTMB::dgmrf},
+using a precision matrix) or a multivariate normal log-density
+(\code{RTMB::dmvnorm}, using a covariance matrix). The ALR mean vector
+is \eqn{\mu_k = \log(\hat{p}_k / \hat{p}_K)}, \eqn{k = 1,\ldots,K-1}.
 }
 \keyword{internal}

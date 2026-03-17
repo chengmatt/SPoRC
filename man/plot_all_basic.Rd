@@ -2,36 +2,51 @@
 % Please edit documentation in R/Make_Plots_Tables.R
 \name{plot_all_basic}
 \alias{plot_all_basic}
-\title{Plotting function for all basic quantities}
+\title{Plotting Function for All Basic Quantities}
 \usage{
 plot_all_basic(data, rep, sd_rep, model_names, out_path)
 }
 \arguments{
-\item{data}{List of n_models of `SPoRC` data lists}
+\item{data}{List of length \code{n_models}, where each element is a SPoRC
+data list. Passed to \code{get_biological_plot}, \code{get_data_fitted_plot},
+and \code{get_nLL_plot}.}
 
-\item{rep}{List of n_models of `SPoRC` report lists}
+\item{rep}{List of length \code{n_models}, where each element is a SPoRC
+report list (i.e. the output of \code{obj$report()} after optimisation).
+Passed to \code{get_biological_plot}, \code{get_ts_plot},
+\code{get_selex_plot}, and \code{get_nLL_plot}.}
 
-\item{sd_rep}{List of n_models of sd report lists from `SPoRC`}
+\item{sd_rep}{List of length \code{n_models}, where each element is a SPoRC
+sdreport list (i.e. the output of \code{sdreport(obj)}). Passed to
+\code{get_ts_plot} for delta-method confidence intervals.}
 
-\item{model_names}{Character vector of model names}
+\item{model_names}{Character vector of length \code{n_models} giving display
+names for each model run. Passed to all sub-functions as legend and facet
+labels.}
 
-\item{out_path}{Path to the output directory. Users only need to specify the path.}
+\item{out_path}{Path to the output directory. The PDF is written to
+\code{here::here(out_path, "plot_results.pdf")} at 25 × 13 inches per page.}
 }
 \value{
-A series of plots compared across models outputted as a pdf in the specified directory
+Called for its side effect. Writes \code{plot_results.pdf} to
+  \code{out_path} and returns \code{NULL} invisibly.
 }
 \description{
-Plotting function for all basic quantities
+Convenience wrapper that calls all core SPoRC plotting functions and writes
+their output to a single PDF file. Equivalent to calling
+\code{get_biological_plot}, \code{get_data_fitted_plot}, \code{get_ts_plot},
+\code{get_selex_plot}, and \code{get_nLL_plot} in sequence and printing each
+to the same device.
 }
 \examples{
 \dontrun{
-plot_all_basic(
-  data = list(data1, data2),
-  rep = list(rep1, rep2),
-  sd_rep = list(sd_rep1, sd_rep2),
-  model_names = c("Model1", "Model2"),
-  out_path = here::here()
-)
+  plot_all_basic(
+    data        = list(data1, data2),
+    rep         = list(rep1, rep2),
+    sd_rep      = list(sd_rep1, sd_rep2),
+    model_names = c("Base", "Sensitivity"),
+    out_path    = here::here()
+  )
 }
 }
 \seealso{

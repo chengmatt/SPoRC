@@ -2,26 +2,40 @@
 % Please edit documentation in R/Setup_Fishery.R
 \name{do_fish_fixed_sel_pars_mapping}
 \alias{do_fish_fixed_sel_pars_mapping}
-\title{Helper function to set up fishery selctivity fixed effects mapping}
+\title{Map fishery selectivity fixed-effect parameters}
 \usage{
 do_fish_fixed_sel_pars_mapping(input_list, fish_fixed_sel_pars_spec)
 }
 \arguments{
-\item{input_list}{Input list}
+\item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
+sublists.}
 
-\item{fish_fixed_sel_pars_spec}{Character vector specifying fishery selectivity fixed effects parameterization}
+\item{fish_fixed_sel_pars_spec}{Character vector of length \code{n_fish_fleets}.
+Each element specifies the estimation structure for one fleet. Options:
+\describe{
+  \item{\code{"est_all"}}{Separate parameters per region × sex × block.}
+  \item{\code{"est_shared_r"}}{Parameters shared across regions; unique per sex × block.}
+  \item{\code{"est_shared_s"}}{Parameters shared across sexes; unique per region × block.}
+  \item{\code{"est_shared_r_s"}}{Parameters shared across regions and sexes; unique per block.}
+  \item{\code{"est_shared_f_x"}}{Copy parameters from fleet \code{x} (e.g.,
+    \code{"est_shared_f_2"} shares with fleet 2). Fleet \code{x} must not
+    itself use \code{"est_shared_f_y"}.}
+  \item{\code{"fix"}}{All parameters fixed at starting values (mapped to \code{NA}).}
+}}
+}
+\value{
+The input \code{input_list} with \code{$map$ln_fish_fixed_sel_pars}
+  set to a factor vector.
 }
 \description{
-Helper function to set up fishery selctivity fixed effects mapping
+Constructs the factor map for #' \code{ln_fish_fixed_sel_pars} (e.g., \eqn{a_50}, \eqn{k}, \eqn{a_max}),
+controlling whether selectivity shape parameters are
+estimated independently or shared across regions, sexes, or fleets. Cells with
+no catch data (\code{UseCatch == 0}) are automatically mapped to \code{NA}.
 }
-\keyword{Helper}
-\keyword{effects}
-\keyword{fishery}
-\keyword{fixed}
-\keyword{function}
+\details{
+Fleet sharing (\code{"est_shared_f_x"}) is handled in a second pass after all
+base fleet mappings are established, copying the reference fleet's index
+assignments into the sharing fleet.
+}
 \keyword{internal}
-\keyword{mapping}
-\keyword{selctivity}
-\keyword{set}
-\keyword{to}
-\keyword{up}

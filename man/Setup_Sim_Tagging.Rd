@@ -2,83 +2,132 @@
 % Please edit documentation in R/Setup_Tagging.R
 \name{Setup_Sim_Tagging}
 \alias{Setup_Sim_Tagging}
-\title{Set up simulated tagging dynamics}
+\title{Set up conventional tagging dynamics for the operating model simulation}
 \usage{
 Setup_Sim_Tagging(
   n_tags = NULL,
   n_tags_rel_input = NULL,
-  UseTagging = 0,
-  max_liberty = sim_list$n_ages/2,
-  tag_release_indicator = expand.grid(regions = 1:sim_list$n_regions, tag_years =
+  use_conv_fish_tagging = 0,
+  conv_tag_max_liberty = sim_list$n_ages/2,
+  conv_tag_release_indicator = expand.grid(regions = 1:sim_list$n_regions, tag_years =
     1:sim_list$n_yrs, tag_seas = 1:sim_list$n_seas),
-  t_tagging = 1,
-  ln_Init_Tag_Mort = -1000,
-  ln_Tag_Shed = -1000,
-  Tag_Reporting_input = array(0.5, dim = c(sim_list$n_regions, sim_list$n_yrs,
-    sim_list$n_sims)),
-  tag_selex = 5,
-  tag_natmort = 3,
-  tag_like = 0,
-  ln_tag_theta = log(1),
+  conv_tag_release_platform = matrix(c("survey", "1"), nrow =
+    nrow(conv_tag_release_indicator), ncol = 2, byrow = TRUE, dimnames = list(NULL,
+    c("platform", "fleet"))),
+  conv_tag_t_tagging = 1,
+  ln_init_conv_tag_mort = -1000,
+  ln_conv_tag_shed = -1000,
+  conv_fish_tag_attr = "p_a_s",
+  conv_tag_fish_reporting_input = array(0.5, dim = c(sim_list$n_regions, sim_list$n_yrs,
+    sim_list$n_fish_fleets, sim_list$n_sims)),
+  conv_fish_tag_like = 0,
+  ln_conv_fish_tag_theta = log(1),
   sim_list
 )
 }
 \arguments{
-\item{n_tags}{Number of tags to release in a given year (scalar, default = NULL)}
+\item{n_tags}{Numeric scalar. Constant number of tags released per release
+event. Cannot be specified simultaneously with \code{n_tags_rel_input}.
+Default \code{NULL}.}
 
-\item{n_tags_rel_input}{Number of tag releases by tag cohort length (default = NULL)}
+\item{n_tags_rel_input}{Array specifying cohort-specific tag release
+numbers (e.g., varying by length, age, or other structure). Overrides
+\code{n_tags} when supplied. Cannot be specified simultaneously with
+\code{n_tags}. Default \code{NULL}.}
 
-\item{UseTagging}{Boolean to use tagging (default = 0):
-\itemize{
-  \item 0: Do not simulate tagging
-  \item 1: Simulate tagging
+\item{use_conv_fish_tagging}{Integer (0/1). Whether conventional tag
+recaptures from fisheries are simulated. Default \code{0}.}
+
+\item{conv_tag_max_liberty}{Integer. Maximum number of years-at-liberty
+tracked per tag cohort. Controls the size of recapture containers.
+Default: \code{n_ages / 2}.}
+
+\item{conv_tag_release_indicator}{Data frame defining tag release cohorts.
+Required columns: \code{regions} (release region), \code{tag_years}
+(release year), \code{tag_seas} (release season). Default: all
+combinations of regions, years, and seasons from \code{sim_list}.}
+
+\item{conv_tag_release_platform}{Character matrix
+\code{[n_conv_tag_cohorts × 2]} specifying the release platform and
+associated fleet index for each cohort. Rows must align with
+\code{conv_tag_release_indicator}. Column \code{platform} must be one
+of:
+\describe{
+  \item{\code{"population"}}{Tags released directly into the population,
+    independent of any fleet or survey sampling process.
+    \code{fleet} column should be \code{NA}.}
+  \item{\code{"fishery"}}{Tags released through a fishery fleet.
+    \code{fleet} column gives the fleet index.}
+  \item{\code{"survey"}}{Tags released through a survey fleet.
+    \code{fleet} column gives the fleet index.}
+}
+Default: \code{"survey"} platform with fleet \code{1} for every cohort.}
+
+\item{conv_tag_t_tagging}{Numeric scalar in \eqn{[0, 1]}. Fraction of the
+season remaining at the time of tag release. \code{1} = start of season;
+\code{0.5} = mid-season; \code{0} = end of season. Default \code{1}.}
+
+\item{ln_init_conv_tag_mort}{Log-scale initial tag-induced mortality
+applied at the moment of release. Default \code{-1000} (approximately
+zero mortality).}
+
+\item{ln_conv_tag_shed}{Log-scale annual chronic tag shedding rate.
+Default \code{-1000} (approximately no shedding).}
+
+\item{conv_fish_tag_attr}{Character string specifying which biological
+dimensions are retained at recapture. Built from any combination of
+\code{"p"} (population), \code{"a"} (age), and \code{"s"} (sex), joined
+by underscores. Region and fleet are always retained. Valid values:
+\code{"p_a_s"}, \code{"a_s"}, \code{"p_a"}, \code{"p_s"}, \code{"a"},
+\code{"s"}, \code{"p"}, \code{"none"}. Default \code{"p_a_s"}.}
+
+\item{conv_tag_fish_reporting_input}{Fishery tag reporting rate array
+\code{[n_regions × n_yrs × n_fish_fleets × n_sims]}. Values represent
+the probability that a recaptured tag is reported and must be in
+\eqn{[0, 1]}. Default: \code{0.5} for all cells.}
+
+\item{conv_fish_tag_like}{Integer or character scalar specifying the tag
+recapture likelihood. Default \code{0} (Poisson). Options:
+\describe{
+  \item{\code{0}/\code{"Poisson"}}{Poisson.}
+  \item{\code{1}/\code{"NegBin"}}{Negative binomial.}
+  \item{\code{2}/\code{"Multinomial_Release"}}{Multinomial conditioned
+    on releases.}
+  \item{\code{3}/\code{"Multinomial_Recapture"}}{Multinomial conditioned
+    on recaptures.}
+  \item{\code{4}/\code{"Dirichlet-Multinomial_Release"}}{Dirichlet-multinomial
+    conditioned on releases.}
+  \item{\code{5}/\code{"Dirichlet-Multinomial_Recapture"}}{Dirichlet-multinomial
+    conditioned on recaptures.}
 }}
 
-\item{max_liberty}{Maximum liberty (years) to track cohorts (default = sim_list$n_ages / 2)}
+\item{ln_conv_fish_tag_theta}{Log-scale overdispersion parameter for
+negative-binomial (\code{1}) or Dirichlet-multinomial (\code{4},
+\code{5}) likelihoods. Ignored for Poisson and multinomial likelihoods.
+Default \code{log(1)}.}
 
-\item{t_tagging}{Fraction of season remaining when tags are released (e.g., start of season == 1, mid season == 0.5, end of season == 0; default = 1)}
-
-\item{ln_Init_Tag_Mort}{Log initial tag-induced mortality (default = -1000)}
-
-\item{ln_Tag_Shed}{Log chronic tag shedding rate (default = -1000) annual rate}
-
-\item{Tag_Reporting_input}{Tag reporting input [n_regions × n_yrs × n_sims]
-(default = 0.5)}
-
-\item{tag_selex}{Tag selectivity type (default = 5):
-\itemize{
-  \item \code{0} or \code{"Uniform_DomFleet"}: Uniform by age/sex, dominant fleet
-  \item \code{1} or \code{"SexAgg_DomFleet"}: Sex-aggregated, dominant fleet
-  \item \code{2} or \code{"SexSp_DomFleet"}: Sex-specific, dominant fleet
-  \item \code{3} or \code{"Uniform_AllFleet"}: Uniform by age/sex, all fleets
-  \item \code{4} or \code{"SexAgg_AllFleet"}: Sex-aggregated, all fleets
-  \item \code{5} or \code{"SexSp_AllFleet"}: Sex-specific, all fleets
-}}
-
-\item{tag_natmort}{Tag natural mortality type (default = 3):
-\itemize{
-  \item \code{0} or \code{"AgeAgg_SexAgg"}: Age-aggregated, sex-aggregated
-  \item \code{1} or \code{"AgeSp_SexAgg"}: Age-specific, sex-aggregated
-  \item \code{2} or \code{"AgeAgg_SexSp"}: Age-aggregated, sex-specific
-  \item \code{3} or \code{"AgeSp_SexSp"}: Age-specific, sex-specific
-}}
-
-\item{tag_like}{Tag likelihood type (default = 0):
-\itemize{
-  \item \code{0} or \code{"Poisson"}: Poisson
-  \item \code{1} or \code{"NegBin"}: Negative Binomial
-  \item \code{2} or \code{"Multinomial_Release"}: Multinomial by release cohort
-  \item \code{3} or \code{"Multinomial_Recapture"}: Multinomial by recapture event
-  \item \code{4} or \code{"Dirichlet-Multinomial_Release"}: Dirichlet-Multinomial by release cohort
-  \item \code{5} or \code{"Dirichlet-Multinomial_Recapture"}: Dirichlet-Multinomial by recapture event
-}}
-
-\item{ln_tag_theta}{Scalar in log space describing tag likelihood overdispersion (default = log(1))}
-
-\item{sim_list}{Simulation list (required)}
+\item{sim_list}{Simulation list returned by \code{\link{Setup_Sim_Dim}}.}
+}
+\value{
+The input \code{sim_list} with tagging-related fields appended:
+  \code{$n_tags} or \code{$n_tags_rel_input} (depending on which is
+  provided), \code{$conv_tag_max_liberty}, \code{$conv_tag_t_tagging},
+  \code{$ln_init_conv_tag_mort}, \code{$ln_conv_tag_shed},
+  \code{$conv_tag_release_indicator}, \code{$conv_tag_release_platform},
+  \code{$n_tag_rel_events}, \code{$use_conv_fish_tagging},
+  \code{$conv_fish_tag_like}, \code{$conv_fish_tag_attr},
+  \code{$ln_conv_fish_tag_theta}, \code{$conv_tag_fish_reporting}, and
+  zero-filled containers \code{$conv_tagged_fish},
+  \code{$conv_tagged_fish_attr}, \code{$conv_tag_fish_avail},
+  \code{$obs_conv_tag_fish_recap}, \code{$pred_conv_tag_fish_recap}.
 }
 \description{
-Set up simulated tagging dynamics
+Populates \code{sim_list} with all conventional tagging inputs needed by
+the operating model: tag release cohort definitions, release platform,
+tagging timing, tag-induced mortality, chronic shedding, recapture
+likelihood settings, fishery reporting rates, and zero-filled containers
+for predicted and observed recaptures. Must be called after
+\code{\link{Setup_Sim_Dim}}.
 }
 \seealso{
 Other Simulation Setup: 
@@ -91,7 +140,6 @@ Other Simulation Setup:
 \code{\link{Setup_sim_env}()},
 \code{\link{Simulate_Pop_Static}()},
 \code{\link{run_annual_cycle}()},
-\code{\link{simulation_data_to_SPoRC}()},
 \code{\link{simulation_self_test}()}
 }
 \concept{Simulation Setup}

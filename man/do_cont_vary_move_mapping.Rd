@@ -2,7 +2,7 @@
 % Please edit documentation in R/Setup_Movement.R
 \name{do_cont_vary_move_mapping}
 \alias{do_cont_vary_move_mapping}
-\title{Helper function to set up mapping for movement deviations and process error parameters}
+\title{Map continuous movement deviation and process-error parameters}
 \usage{
 do_cont_vary_move_mapping(
   input_list,
@@ -11,13 +11,52 @@ do_cont_vary_move_mapping(
 )
 }
 \arguments{
-\item{input_list}{Input list}
+\item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
+sublists.}
 
-\item{cont_vary_movement}{Character vector specfiying continuous time-varying movmenet parameterization}
+\item{cont_vary_movement}{Character string specifying the deviation structure.
+One of \code{"none"}, \code{"iid_y"}, \code{"iid_a"}, \code{"iid_y_a"},
+\code{"iid_y_a_s"}, \code{"iid_y_seas_a_s"}, or the population-specific
+analogues \code{"iid_p_y"}, \code{"iid_p_a"}, \code{"iid_p_y_a"},
+\code{"iid_p_y_a_s"}, \code{"iid_p_y_seas_a_s"}. Dimensions present in
+the string receive unique estimation indices; absent dimensions share a
+single index. \code{"none"} maps all deviations to \code{NA}.}
 
-\item{Movement_cont_pe_pars_spec}{Character vector specifying process erorr parameterization}
+\item{Movement_cont_pe_pars_spec}{Character string controlling estimation of
+the process-error variance for movement deviations. One of:
+\describe{
+  \item{\code{"none"} or \code{"fix"}}{All \code{move_pe_pars} held fixed
+    (mapped to \code{NA} or at starting values).}
+  \item{\code{"est_shared"}}{Single variance parameter shared across all
+    dimensions (all elements mapped to index 1).}
+  \item{\code{"est_all"}}{All \code{move_pe_pars} estimated independently
+    with dimensions
+    \code{[n_pop × n_regions × n_seas × n_ages × n_sexes]}.}
+}}
+}
+\value{
+The input \code{input_list} with three entries updated:
+  \describe{
+    \item{\code{$map$move_devs}}{Factor vector for movement deviations.
+      Active cells receive sequential integer indices; non-adjacent CTMC
+      pairs and inactive configurations are \code{NA}.}
+    \item{\code{$data$map_move_devs}}{Integer array (same dimensions as
+      \code{$par$move_devs}) storing the numeric version of the factor map
+      for use in the C++ objective function.}
+    \item{\code{$map$move_pe_pars}}{Factor vector for process-error
+      variance parameters, following \code{Movement_cont_pe_pars_spec}.}
+  }
 }
 \description{
-Helper function to set up mapping for movement deviations and process error parameters
+Internal helper called by \code{\link{Setup_Mod_Movement}} to construct the
+TMB/RTMB factor maps for \code{move_devs} (iid deviations on the movement
+logit or log-rate surface) and \code{move_pe_pars} (process-error variance
+parameters). Deviations are only activated when the model is spatial
+(\code{n_regions > 1}), continuous variation is requested
+(\code{cont_vary_movement > 0}), and movement is estimated
+(\code{use_fixed_movement == 0}). For CTMC movement, deviations are only
+assigned to region pairs that are connected in the adjacency matrix. The
+resulting integer map is also stored as \code{$data$map_move_devs} for use
+in the C++ template.
 }
 \keyword{internal}

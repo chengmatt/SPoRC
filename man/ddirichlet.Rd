@@ -2,21 +2,29 @@
 % Please edit documentation in R/Distributions.R
 \name{ddirichlet}
 \alias{ddirichlet}
-\title{Dirichlet Likelihood}
+\title{Evaluate a Dirichlet log-density}
 \usage{
 ddirichlet(x, alpha, log = TRUE)
 }
 \arguments{
-\item{x}{vector of values}
+\item{x}{Numeric vector of compositional values summing to 1; all elements
+must be strictly positive.}
 
-\item{alpha}{Expected values w/ concentration sum(alpha)}
+\item{alpha}{Numeric vector of Dirichlet concentration parameters of the
+same length as \code{x}. Larger values of \eqn{\sum \alpha} concentrate
+mass near \eqn{\alpha / \sum \alpha}.}
 
-\item{log}{Whether to give log or not}
+\item{log}{Logical. If \code{TRUE} (default), returns the log-density;
+otherwise returns the density.}
 }
 \value{
-Returns likelihood values from a Dirichlet distribution
+Numeric. Log-density (or density if \code{log = FALSE}).
 }
 \description{
-Dirichlet Likelihood
+Computes the Dirichlet log-density
+\eqn{\log \Gamma(\sum \alpha) - \sum \log \Gamma(\alpha_k) +
+\sum (\alpha_k - 1) \log x_k} for a compositional vector \code{x} and
+concentration parameter vector \code{alpha}. Used in SPoRC as a prior for
+movement rates and recruitment regional apportionment.
 }
 \keyword{internal}

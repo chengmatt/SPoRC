@@ -2,17 +2,24 @@
 % Please edit documentation in R/Setup_Rec.R
 \name{Setup_Mod_Rec}
 \alias{Setup_Mod_Rec}
-\title{Setup model objects for specifying recruitment module and associated processes}
+\title{Set up the recruitment module and associated processes}
 \usage{
 Setup_Mod_Rec(
   input_list,
   rec_model,
-  rec_dd = NULL,
+  rec_dd = "global",
   rec_lag = 1,
   Use_h_prior = 0,
   h_prior = NULL,
-  Use_Rec_prop_Prior = 0,
-  Rec_prop_prior = NULL,
+  rec_region_prop_spec = NULL,
+  use_rec_region_prop_prior = 0,
+  rec_region_prop_prior = NULL,
+  rec_seas_prop_spec = "fix",
+  use_rec_seas_prop_prior = 0,
+  rec_seas_prop_prior = NULL,
+  use_fixed_rec_seas_prop = 1,
+  fixed_rec_seas_prop = array(rep(c(1, rep(0, input_list$data$n_seas - 1)), each =
+    input_list$data$n_seas), dim = c(input_list$data$n_pop, input_list$data$n_seas)),
   do_rec_bias_ramp = 0,
   bias_year = NA,
   max_bias_ramp_fct = 1,
@@ -21,139 +28,277 @@ Setup_Mod_Rec(
   init_age_strc = 2,
   equil_init_age_strc = 1,
   init_F_prop = rep(0, input_list$data$n_seas),
-  sigmaR_spec = NULL,
+  sigmaR_spec = "est_all",
   InitDevs_spec = NULL,
   RecDevs_spec = NULL,
   h_spec = NULL,
+  sgl_seas_spawning_movement = NA,
   t_spawn = 0,
+  stray_rate = array(0, dim = c(input_list$data$n_pop, length(input_list$data$years))),
   spawn_seas = 1,
   sexratio_spec = "fix",
-  sexratio_blocks = c(paste("none_Region_", c(1:input_list$data$n_regions), sep = "")),
+  sexratio_blocks = {
+     grid <- expand.grid(region = 1:input_list$data$n_regions, pop
+    = 1:input_list$data$n_pop)
+     blks <- paste0("none_Pop_", grid$pop, "_Region_",
+    grid$region)
+     blks
+ },
   ...
 )
 }
 \arguments{
-\item{input_list}{List containing data, parameters, and map lists used by the model.}
+\item{input_list}{Named list with \code{$data}, \code{$par}, \code{$map},
+and \code{$verbose} sublists, as returned by upstream setup functions.
+Population, region, age, year, and season dimensions must already be
+defined in \code{$data}.}
 
-\item{rec_model}{Character string specifying the recruitment model. Options are:
-\itemize{
-  \item \code{"mean_rec"}: Recruitment is a fixed mean value.
-  \item \code{"bh_rec"}: Beverton-Holt recruitment with steepness parameter.
+\item{rec_model}{Character string (required). Stock-recruit relationship:
+\describe{
+  \item{\code{"mean_rec"}}{Fixed mean recruitment; no stock-recruit
+    relationship. Steepness is automatically fixed and not estimated.}
+  \item{\code{"bh_rec"}}{Beverton-Holt stock-recruit relationship.}
 }}
 
-\item{rec_dd}{Character string specifying recruitment density dependence, options:
-\code{"local"}, \code{"global"}, or \code{NULL}.}
+\item{rec_dd}{Density-dependence structure. Default \code{"global"}.
+\describe{
+  \item{\code{"local"}}{Independent stock-recruit relationship per
+    population. Required when \code{n_pop > 1}.}
+  \item{\code{"global"}}{Single pooled spawner-recruit relationship
+    across all regions. Constrains \code{h_spec},
+    \code{RecDevs_spec}, and \code{InitDevs_spec} to shared or fixed
+    options when \code{n_regions > 1}.}
+}}
 
-\item{rec_lag}{Integer specifying the recruitment lag duration relative to spawning stock biomass (SSB).}
+\item{rec_lag}{Integer. Lag between spawning biomass and age-1
+recruitment (in seasons). Must be \eqn{\geq 1}. Default \code{1}.}
 
-\item{Use_h_prior}{Integer flag (0 or 1) indicating whether to apply a prior on steepness \code{h}.}
+\item{Use_h_prior}{Integer (0/1). Whether normal priors on steepness are
+applied. Only relevant for \code{rec_model = "bh_rec"}. Default \code{0}.}
 
-\item{h_prior}{Data frame specifying beta prior distributions for the `h_trans` parameters.
-Must include the following columns:
-- `region`: Integer region index corresponding to the element in `h_trans` being penalized.
-- `mu`: Mean of the prior in normal space (used to calculate the corresponding beta distribution).
-- `sd`: Standard deviation of the prior in normal space.
-For each row, a beta distribution is scaled to the interval [0.2, 1], and the corresponding element of `h_trans` is transformed to that scale and penalized using the log-density from the beta distribution.}
+\item{h_prior}{Data frame of steepness prior parameters. Required columns:
+\code{pop}, \code{region}, \code{mu}, \code{sd}. Ignored when
+\code{Use_h_prior = 0}. Default \code{NULL}.}
 
-\item{Use_Rec_prop_Prior}{Integer flag (0 or 1) indicating whether to apply a prior on recruitment proportions.}
+\item{rec_region_prop_spec}{Character or \code{NULL}. Regional recruitment
+dispersal structure. Default \code{NULL} (estimate all proportions
+freely). See \code{\link{do_rec_region_prop_mapping}} for full option
+descriptions including \code{"no_dispersal"}. Stored as
+\code{$data$rec_region_prop_spec}: \code{0} = full dispersal,
+\code{1} = no dispersal.}
 
-\item{Rec_prop_prior}{Scalar or array specifying prior values for recruitment proportion parameters.
-If scalar, a constant uniform prior is applied across all dimensions.}
+\item{use_rec_region_prop_prior}{Integer (0/1). Whether Dirichlet priors
+are applied to regional recruitment proportions. Not valid when
+\code{n_regions = 1}. Default \code{0}.}
 
-\item{do_rec_bias_ramp}{Integer flag (0 or 1) indicating whether to apply a recruitment bias correction ramp.}
+\item{rec_region_prop_prior}{Data frame of Dirichlet prior concentration
+parameters. Required columns: \code{pop} and \code{alpha}, where
+\code{alpha} is a list-column of length-\code{n_regions} vectors.
+Ignored when \code{use_rec_region_prop_prior = 0}. Default \code{NULL}.}
 
-\item{bias_year}{Numeric vector of length 4 defining the recruitment bias ramp periods:
-\itemize{
-  \item Element 1: End year of no bias correction period.
-  \item Element 2: End year of ascending bias ramp period.
-  \item Element 3: End year of full bias correction period.
-  \item Element 4: Start year of final no bias correction period.
+\item{rec_seas_prop_spec}{Character or \code{NULL}. Seasonal recruitment
+apportionment structure. Default \code{"fix"}. See
+\code{\link{do_rec_seas_prop_mapping}} for full option descriptions
+including \code{"est_shared_p"}.}
+
+\item{use_rec_seas_prop_prior}{Integer (0/1). Whether Dirichlet priors are
+applied to seasonal recruitment proportions. Not valid when
+\code{n_seas = 1}. Default \code{0}.}
+
+\item{rec_seas_prop_prior}{Data frame of Dirichlet prior concentration
+parameters for seasonal proportions. Required columns: \code{pop} and
+\code{alpha}. Ignored when \code{use_rec_seas_prop_prior = 0}. Default
+\code{NULL}.}
+
+\item{use_fixed_rec_seas_prop}{Integer (0/1). Whether fixed (non-estimated)
+seasonal proportions from \code{fixed_rec_seas_prop} are used. Automatically
+reset to \code{0} with a warning if \code{rec_seas_prop_spec} requests
+estimation. Default \code{1}.}
+
+\item{fixed_rec_seas_prop}{Array \code{[n_pop × n_seas]}. Fixed seasonal
+recruitment proportions used when \code{use_fixed_rec_seas_prop = 1}.
+Default: all recruitment assigned to season 1.}
+
+\item{do_rec_bias_ramp}{Integer (0/1). Whether a recruitment bias ramp is
+applied to \code{ln_RecDevs} to account for reduced information in early
+and terminal years. Default \code{0}.}
+
+\item{bias_year}{Numeric. Calendar year at which the bias ramp reaches its
+maximum correction. Only used when \code{do_rec_bias_ramp = 1}. Default
+\code{NA}.}
+
+\item{max_bias_ramp_fct}{Numeric in \eqn{[0, 1]}. Maximum bias correction
+factor applied at \code{bias_year}. Default \code{1}.}
+
+\item{sigmaR_switch}{Integer. Year index at which \eqn{\sigma_R} switches
+from the early-period value (index 1) to the late-period value (index 2).
+If \eqn{\leq 1}, a single \eqn{\sigma_R} is applied throughout. Default
+\code{1}.}
+
+\item{dont_est_recdev_last}{Non-negative integer. Number of terminal years
+for which recruitment deviations are not estimated. Automatically
+overridden to \code{0} if \code{n_proj_yrs_devs > 0}, since projected
+deviation years are penalised toward the mean and are effectively
+estimated regardless. Default \code{0}.}
+
+\item{init_age_strc}{Equilibrium initialisation method. Default \code{2}.
+\describe{
+  \item{\code{0}/\code{"iterative"}}{Iterates the population to
+    approximate equilibrium. Slowest but most general.}
+  \item{\code{1}/\code{"scalar_no_move"}}{Scalar geometric series
+    assuming no movement.}
+  \item{\code{2}/\code{"matrix"}}{Matrix geometric series incorporating
+    movement. Recommended default for spatial models.}
+  \item{\code{3}/\code{"scalar_plus_only"}}{Scalar geometric series
+    with movement only in the plus group.}
+}}
+
+\item{equil_init_age_strc}{Plus-group treatment during stochastic
+initialisation. Default \code{1}.
+\describe{
+  \item{\code{0}/\code{"equil"}}{Deterministic equilibrium; no
+    \code{ln_InitDevs} are estimated.}
+  \item{\code{1}/\code{"stoch_no_plus"}}{Stochastic deviations for all
+    ages except the plus group.}
+  \item{\code{2}/\code{"stoch_all"}}{Stochastic deviations for all ages
+    including the plus group.}
+}}
+
+\item{init_F_prop}{Numeric vector \code{[n_seas]}. Seasonal distribution of
+fishing mortality applied during equilibrium initialisation. Default:
+zero for all seasons.}
+
+\item{sigmaR_spec}{Character. Estimation structure for \eqn{\sigma_R},
+stored in \code{ln_sigmaR} \code{[2 × n_pop × n_regions]}, where index
+1 = initial deviation period and index 2 = annual deviation period.
+Default \code{"est_all"}. See \code{\link{do_sigmaR_mapping}} for full
+option descriptions.}
+
+\item{InitDevs_spec}{Character or \code{NULL}. Sharing structure for
+initial age-structure deviations \code{ln_InitDevs} \code{[n_pop ×
+n_regions × (n_ages - 1)]}. Default \code{NULL} (estimate all
+independently). See \code{\link{do_InitDevs_mapping}} for full option
+descriptions.}
+
+\item{RecDevs_spec}{Character or \code{NULL}. Sharing structure for annual
+recruitment deviations \code{ln_RecDevs} \code{[n_pop × n_regions ×
+n_years]}. Default \code{NULL} (estimate all independently). See
+\code{\link{do_RecDevs_mapping}} for full option descriptions.}
+
+\item{h_spec}{Character or \code{NULL}. Sharing structure for
+Beverton-Holt steepness \code{steepness_h} \code{[n_pop × n_regions]},
+parameterised in bounded logit space \eqn{(0.2, 1)}. Default \code{NULL}
+(estimate by population when \code{n_pop > 1}, by region when
+\code{n_pop = 1}). Ignored when \code{rec_model = "mean_rec"}. See
+\code{\link{do_h_mapping}} for full option descriptions.}
+
+\item{sgl_seas_spawning_movement}{Spawning movement array
+\code{[n_pop × n_regions × n_regions × n_years × n_ages × n_sexes]}.
+Each \code{[p, , r, y, a, s]} slice is a row-stochastic movement matrix
+giving the probability of fish from each origin region spawning in region
+\code{r}. If \code{NA} (default), 100\% natal homing is assumed and the
+array is constructed internally.}
+
+\item{t_spawn}{Numeric. Spawn timing as a fraction of the season elapsed
+before spawning. \code{0} (default) = spawning before any mortality;
+\code{1} = spawning after all mortality.}
+
+\item{stray_rate}{Array \code{[n_pop × n_years]}. Proportion of fish that
+stray from their natal region during spawning. Values in \eqn{[0, 1]}.
+Default: \code{0} (No individuals stray.).}
+
+\item{spawn_seas}{Integer. Season index in which spawning occurs. Default
+\code{1}.}
+
+\item{sexratio_spec}{Character. Estimation structure for sex ratio
+parameters \code{sexratio_pars} \code{[n_pop × n_regions × n_blocks]}.
+Default \code{"fix"}. See \code{\link{do_sexratio_pars_mapping}} for
+full option descriptions. Must be \code{"fix"} when \code{n_sexes = 1}.}
+
+\item{sexratio_blocks}{Character vector defining temporal block structure
+for sex ratio parameters. One entry per population-region combination.
+Valid formats:
+\describe{
+  \item{\code{"none_Pop_x_Region_x"}}{Constant sex ratio for population
+    \code{x} and region \code{x} (single block across all years).}
+  \item{\code{"Block_k_Year_a-b_Pop_x_Region_x"}}{Block \code{k}
+    applies to years \code{a} through \code{b}. Use \code{"terminal"}
+    in place of the end year to extend through the final model year.}
 }
-For example, with 65 years total, \code{c(21, 31, 60, 64)} means:
-\itemize{
-  \item Years 1–21: No bias correction.
-  \item Years 22–31: Ascending bias correction.
-  \item Years 32–60: Full bias correction.
-  \item Years 61–63: Descending bias ramp.
-  \item Years 64–65: No bias correction.
-}}
+Default: a single constant block for every population-region combination.}
 
-\item{max_bias_ramp_fct}{Numeric specifying the maximum bias correction to apply to the recruitment bias ramp (should be between 0 and 1)}
-
-\item{sigmaR_switch}{Integer year indicating when \code{sigmaR} switches from early to late values (0 disables switching).}
-
-\item{dont_est_recdev_last}{Integer specifying how many of the most recent recruitment deviations to not estimate. Default is 0.}
-
-\item{init_age_strc}{Initialization method for initial age structure (default = 2):
-\itemize{
-  \item \code{0} or \code{"iterative"}: Initialize by iteration.
-  \item \code{1} or \code{"scalar_no_move"}: Scalar geometric series w/o any movement in all groups.
-  \item \code{2} or \code{"matrix"}: Matrix geometric series (accounts for movement).
-  \item \code{3} or \code{"scalar_plus_only"}: Scalar geometric series w/o movement only in plus groups.
-}}
-
-\item{equil_init_age_strc}{How initial age structure deviations should be initialized (default = 1):
-\itemize{
-  \item \code{0} or \code{"equil"}: Equilibrium initial age structure.
-  \item \code{1} or \code{"stoch_no_plus"}: Stochastic for all ages except plus group (follows equilibrium).
-  \item \code{2} or \code{"stoch_all"}: Stochastic initial age structure for all ages.
-}}
-
-\item{init_F_prop}{Numeric vector (n_seas) specifying the initial fishing mortality proportion relative to mean fishing mortality for initializing age structure.}
-
-\item{sigmaR_spec}{Character string specifying estimation of recruitment variability (\code{sigmaR}):
-\itemize{
-  \item \code{NULL or "est_all"}: Estimate separate \code{sigmaR} for early and late periods.
-  \item \code{"est_shared"}: Estimate one \code{sigmaR} shared across periods.
-  \item \code{"fix"}: Fix both \code{sigmaR} values.
-  \item \code{"fix_early_est_late"}: Fix early \code{sigmaR}, estimate late \code{sigmaR}.
-}}
-
-\item{InitDevs_spec}{Character string specifying estimation of initial age deviations:
-\itemize{
-  \item \code{NULL}: Estimate deviations for all ages and regions.
-  \item \code{"est_shared_r"}: Estimate deviations shared across regions.
-  \item \code{"fix"}: Fix all deviations.
-}}
-
-\item{RecDevs_spec}{Character string specifying recruitment deviation estimation:
-\itemize{
-  \item \code{NULL}: Estimate deviations for all regions and years.
-  \item \code{"est_shared_r"}: Estimate deviations shared across regions (global recruitment deviations).
-  \item \code{"fix"}: Fix all recruitment deviations.
-}}
-
-\item{h_spec}{Character string specifying steepness estimation:
-\itemize{
-  \item \code{NULL}: Estimate steepness for all regions if \code{rec_model == "bh_rec"}.
-  \item \code{"est_shared_r"}: Estimate steepness shared across regions.
-  \item \code{"fix"}: Fix steepness values.
+\item{...}{Optional named starting values for parameters. Any of:
+\code{ln_global_R0} \code{[n_pop]},
+\code{rec_region_prop_pars} \code{[n_pop × (n_regions - 1)]},
+\code{rec_seas_prop_pars} \code{[n_pop × (n_seas - 1)]},
+\code{steepness_h} \code{[n_pop × n_regions]} (bounded logit scale),
+\code{ln_InitDevs} \code{[n_pop × n_regions × (n_ages - 1)]},
+\code{ln_RecDevs} \code{[n_pop × n_regions × n_years]},
+\code{ln_sigmaR} \code{[2 × n_pop × n_regions]},
+\code{sexratio_pars} \code{[n_pop × n_regions × n_blocks]}.
+Unspecified parameters use internal defaults.}
 }
-  If \code{rec_model == "mean_rec"}, steepness is fixed.}
-
-\item{t_spawn}{Spawn timing fraction within the year / season (scalar, default = 0, where spawning happens before mortality processes)}
-
-\item{spawn_seas}{Season in which spawning occurs. Default is season 1.}
-
-\item{sexratio_spec}{Character string specifying sex ratio estimation scheme:
-\itemize{
-  \item \code{"est_all"} estimates sex ratio for all blocks and regions independently
-  \item \code{"est_shared_r"} estimates sex ratio shared across regions but varying by block
-  \item \code{"fix"} fixes all sex ratio (no estimation)
-  }}
-
-\item{sexratio_blocks}{Character vector specifying blocks of years and regions for sex ratio. Format examples:
-\itemize{
-  \item \code{"Block_1_Year_1-15_Region_1"}
-  \item \code{"Block_2_Year_16-terminal_Region_2"}
-  \item \code{"none_Region_3"} (means no block, constant for that region; this is the default option)
-}}
-
-\item{...}{Additional arguments specifying starting values for recruitment parameters such as \code{ln_global_R0}, \code{Rec_prop}, \code{h}, \code{ln_InitDevs}, \code{ln_RecDevs}, and \code{ln_sigmaR}.}
+\value{
+The input \code{input_list} with all recruitment-related fields
+  populated in \code{$data} and \code{$par}, and factor maps constructed
+  in \code{$map} for: \code{rec_region_prop_pars}, \code{rec_seas_prop_pars},
+  \code{ln_sigmaR}, \code{ln_InitDevs}, \code{ln_RecDevs},
+  \code{steepness_h}, and \code{sexratio_pars}. Character-coded inputs
+  for \code{init_age_strc} and \code{equil_init_age_strc} are converted to
+  integer codes before storage.
 }
 \description{
-Setup model objects for specifying recruitment module and associated processes
+Configures all recruitment-related components of the estimation model:
+stock-recruit relationship type and density-dependence structure,
+Beverton-Holt steepness and priors, recruitment variability
+(\eqn{\sigma_R}), annual and initial age-structure deviations, regional
+and seasonal recruitment apportionment, spawning movement and stray rates,
+sex ratio dynamics, equilibrium initialisation method, and the recruitment
+bias ramp. Delegates parameter mapping to a family of internal helpers
+(\code{\link{do_sigmaR_mapping}}, \code{\link{do_RecDevs_mapping}},
+\code{\link{do_InitDevs_mapping}}, \code{\link{do_h_mapping}},
+\code{\link{do_sexratio_pars_mapping}},
+\code{\link{do_rec_region_prop_mapping}},
+\code{\link{do_rec_seas_prop_mapping}}). Must be called after
+\code{\link{Setup_Mod_Dim}} and \code{\link{Setup_Mod_Biologicals}}, and
+before model compilation.
 }
+\section{Recruitment Model}{
+
+}
+
+\section{Recruitment Variability}{
+
+}
+
+\section{Initial Age Structure}{
+
+}
+
+\section{Recruitment Spatial Structure}{
+
+}
+
+\section{Recruitment Seasonal Structure}{
+
+}
+
+\section{Steepness}{
+
+}
+
+\section{Spawning Processes}{
+
+}
+
+\section{Sex Ratio Dynamics}{
+
+}
+
+\section{Bias Ramp}{
+
+}
+
 \seealso{
 Other Model Setup: 
 \code{\link{Setup_Mod_Biologicals}()},

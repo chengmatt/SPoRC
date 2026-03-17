@@ -1938,6 +1938,7 @@ Get_Reference_Points <- function(data,
 
       # Compute population specific reference points, by using stray rates
       mean_rec <- apply(rep$Rec[,1,calc_rec_st_yr:(n_years-rec_age),drop=FALSE], 1, mean)
+      print(mean_rec)
       for(p2 in 1:n_pop) {
         pop_b_ref_pt[p2,1]        <- tmp_obj$rep$SB[p2]  * mean_rec[p2]
         virgin_pop_b_ref_pt[p2,1] <- tmp_obj$rep$SB0[p2] * mean_rec[p2]

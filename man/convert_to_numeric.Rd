@@ -7,14 +7,19 @@
 convert_to_numeric(x, lookup)
 }
 \arguments{
-\item{x}{Input vector (character or numeric)}
+\item{x}{Character vector, numeric vector, or array to convert.}
 
-\item{lookup}{Named list mapping character strings to numeric codes}
+\item{lookup}{Named list mapping valid character strings to numeric codes
+(e.g., \code{list("none" = 999, "multinomial" = 0)}).}
 }
 \value{
-Numeric vector
+Numeric vector or array of the same shape as \code{x}.
 }
 \description{
-Convert character or numeric input to numeric codes
+Maps a character vector to integer codes via a named lookup list, or
+passes numeric input through unchanged. Arrays and matrices are flattened,
+converted element-wise, and restored to their original dimensions.
+Unrecognised character values raise an informative error listing both the
+invalid inputs and the valid options.
 }
 \keyword{internal}

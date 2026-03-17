@@ -48,6 +48,8 @@ input_list <- Setup_Mod_Dim(years = 1:length(mlt_rg_sable_data$years),
                             # number of fishery fleet (2)
                             n_srv_fleets = mlt_rg_sable_data$n_srv_fleets,
                             # number of survey fleets (2)
+                            n_pop = mlt_rg_sable_data$n_pop, 
+                            # number of populations
                             verbose = TRUE
 )
 ```
@@ -63,11 +65,9 @@ Following the initialization of `input_list`, we can pass the created object int
 4) Recruitment deviations are estimated in a penalized likelihood framework,
 5) Recruitment deviations are estimated for all years and regions, except for the terminal year,
 6) Recruitment sex-ratios are fixed at 0.5 for each sex (as default),
-7) Initial age structure is derived by iterating the age structure to equilibrium, and
-8) Initial age deviations are shared across regions to facilitate model convergence
+7) Initial age deviations are shared across regions to facilitate model convergence
 
 ```{r Setup Recruitment, message = FALSE,  eval = FALSE}
-# Setup recruitment stuff (using defaults for other stuff)
 input_list <- Setup_Mod_Rec(input_list = input_list, # input data list from above
                             do_rec_bias_ramp = 0, # not using bias ramp
                             sigmaR_switch = 16, # switch to using late sigma in year 16
@@ -78,12 +78,11 @@ input_list <- Setup_Mod_Rec(input_list = input_list, # input data list from abov
                             InitDevs_spec = "est_shared_r",
                             # initial deviations are shared across regions,
                             # but recruitment deviations are region specific
-                            ln_sigmaR = log(c(0.4, 1.2)),
+                            ln_sigmaR = array(log(c(0.4, 1.2)), dim = c(2, input_list$data$n_pop, input_list$data$n_regions)),
                             # values to fix sigmaR at, or starting values
                             ln_global_R0 = log(20),
                             # starting value for global R0
-                            R0_prop = array(c(0.2, 0.2, 0.2, 0.2),
-                                            dim = c(input_list$data$n_regions - 1))
+                            rec_region_prop_pars = array(c(0.2, 0.2, 0.2, 0.2), dim = c(input_list$data$n_pop, input_list$data$n_regions - 1))
                             # starting value for R0 proportions in multinomial logit space
 )
 ```
@@ -91,7 +90,7 @@ input_list <- Setup_Mod_Rec(input_list = input_list, # input data list from abov
 
 ## Setup Biological Dynamics
 
-Passing on the `input_list` that was updated in the previous helper function, we can then parameterize the biological dynamics of the model. The `Setup_Mod_Biologicals` requires data inputs for weight-at-age (`WAA`) and maturity-at-age (`MatAA`), both of which are dimensioned by `n_regions`, `n_years`, `n_ages`, `n_sexes`. Optional model inputs include a single ageing-error matrix `AgeingError`, dimensioned by `n_ages`, `n_ages`, and a size-age transition matrix, whichn is dimensioned by `n_regions`, `n_years`, `n_lens`, `n_ages`, `n_sexes`. In this case, we are supplying both an ageing error matrix and a size-age transition matrix, given that the spatial sablefish model incorporates ageing error and also fits to length composition data (`fit_lengths = 1`). Given that spatial models are heavily parameterized and natural mortality is often poorly estimated, we are fixing natural mortality `M_spec = "fix"` at a value of `0.104884`, which is specified to be sex-invariant.
+Passing on the `input_list` that was updated in the previous helper function, we can then parameterize the biological dynamics of the model. The `Setup_Mod_Biologicals` requires data inputs for weight-at-age (`WAA`) and maturity-at-age (`MatAA`), both of which are dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_ages`, `n_sexes`. Optional model inputs include a single ageing-error matrix `AgeingError`, dimensioned by `n_years`, `n_modelled_ages`, `n_observed_ages`, and a size-age transition matrix, which is dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_lens`, `n_ages`, `n_sexes`. In this case, we are supplying both an ageing error matrix and a size-age transition matrix, given that the spatial sablefish model incorporates ageing error and also fits to length composition data (`fit_lengths = 1`). Given that spatial models are heavily parameterized and natural mortality is often poorly estimated, we are fixing natural mortality `M_spec = "fix"` at a value of `0.104884`, which is specified to be sex-invariant.
 
 ```{r Setup Biologicals, message = FALSE,  eval = FALSE}
 # Setup biological stuff (using defaults for other stuff)
@@ -104,7 +103,8 @@ input_list <- Setup_Mod_Biologicals(input_list = input_list,
                                     SizeAgeTrans = mlt_rg_sable_data$SizeAgeTrans,
                                     # size age transition matrix
                                     M_spec = "fix", # fix natural mortality
-                                    Fixed_natmort = array(0.104884, dim = c(mlt_rg_sable_data$n_regions,
+                                    Fixed_natmort = array(0.104884, dim = c(mlt_rg_sable_data$n_pop, 
+                                                                            mlt_rg_sable_data$n_regions,
                                                                             length(mlt_rg_sable_data$years),
                                                                             length(mlt_rg_sable_data$ages),
                                                                             mlt_rg_sable_data$n_sexes))
@@ -127,11 +127,13 @@ In this implementation, the movement prior is constructed by expanding over all 
 ```{r Setup Movement, message = FALSE,  eval = FALSE}
 # setting up movement parameterization
 Movement_prior <- expand.grid(
+  pop = 1, # populations
   region_from = 1:5, # regions
   year = 1, # penalize first year since no blocks
+  seas = 1,
   age = c(6,7,16), # age blocks
   sex = 1, # sex
-  alpha = I(list(rep(2.5, 5))) # prior alpha to each row
+  alpha = I(list(rep(3, 5))) # prior alpha to each row
 )
 
 input_list <- Setup_Mod_Movement(input_list = input_list,
@@ -148,79 +150,74 @@ input_list <- Setup_Mod_Movement(input_list = input_list,
                                  )
 ```
 
-Specification of tagging dynamics can be a bit cumbersome given the myriad of options available. In the current application, tagging data from a longline survey are utilized `UseTagging = 1` and a maximum tag liberty of 15 years is specified `max_tag_liberty = 15` for tag cohort tracking. This cut off is used to minimize computational demands, while providing a reasonable level of movement information. Next, we need to specify some data inputs. These primarily include:
+Specification of tagging dynamics can be a bit cumbersome given the myriad of options available. In the current application, tagging data from a longline survey are utilized (`use_conv_fish_tagging = c(1, 0)`, indicating tagging data are used for the fixed-gear fleet only) and a maximum tag liberty of 15 years is specified `conv_tag_max_liberty = 15` for tag cohort tracking. This cut off is used to minimize computational demands, while providing a reasonable level of movement information. Next, we need to specify some data inputs. These primarily include:
 
-1. `tag_release_indicator`, which indicates the release year and release region of a given tag cohort,
-2. `Tagged_Fish`, which contains the number of tagged fish in each tag cohort, and
-3. `Obs_Tag_Recap`, which contains the observed tag recaptures
+1. `conv_tag_release_indicator`, which indicates the release year, release region, and release season of a given tag cohort,
+2. `conv_tagged_fish`, which contains the number of tagged fish in each tag cohort, and
+3. `obs_conv_tag_fish_recap`, which contains the observed tag recaptures
 
-Following the specification of our data inputs, we can then specify several model options. Here, can specify the likelihood type utilized for tagging data (`Tag_LikeType = "NegBin"`), which is specified as a negative binomial, with an overdispersion parameter estimated. We can also specify a tag mixing period (`mixing_period = 2`), which indicates to the model to not fit tag recapture data until `release_year + 1`, given that tagged individuals have not fully mixed. Additionally, the function also takes a time at tagging argument `t_tagging`, which is specified at a value of 0.5 to indicate that tagging happens midway through the year, and movement does not occur in the tag release year. Users can also specify how tagging fishing and natural mortality occurs. In this application, tagging fishing mortality / selectivity is specified as `tag_selex = "SexSp_AllFleet"`, which indicates that the selectivity curve utilized to fit to tag data is sex-specific is derived by a weighting fishery fleet-specific selectivity by fishing mortality. The option `tag_natmort = "AgeSp_SexSp"` specifies that tagged individuals experience age-and sex-specific natural mortality. For more options, users can inspect `?Setup_Mod_Tagging`.
+Following the specification of our data inputs, we can then specify several model options. Here, we can specify the likelihood type utilized for tagging data (`conv_fish_tag_like = "NegBin"`), which is specified as a negative binomial, with an overdispersion parameter estimated. We can also specify a tag mixing period (`conv_tag_mixing_period = 2`), which indicates to the model to not fit tag recapture data until `release_year + 1`, given that tagged individuals have not fully mixed. Additionally, the function also takes a time at tagging argument `conv_tag_t_tagging`, which is specified at a value of 0.5 to indicate that tagging happens midway through the year, and movement does not occur in the tag release year.
 
-Next, we can specify whether tag reporting rate priors are used (`Use_TagRep_Prior = 1`) and the type of prior used. Here, tag reporting priors are in fact used, and a symmetric beta prior is specified. Given that, the symmetric beta prior does not require an input for a mean value for tag reporting (`mu = NA`), but does require an input for the standard deviation (`sd = 5`), where larger values penalize the extremes more. We then specify the `move_age_tag_pool` and `move_sex_tag_pool` arguments which indicate to the model how tagging data should be fit. In this case, we are fitting tag data by their respective age and sex-blocks to reduce computational demand. If users wish to fit tag data by their individual ages and sexes, `move_age_tag_pool` would be specified as `list(1,2,3,4 ..., n_ages)` and `move_sex_tag_pool` would be `list(1,2)`. 
+Next, we can specify whether tag reporting rate priors are used (`use_conv_tag_fishrep_prior = 1`) and the type of prior used. Here, tag reporting priors are in fact used, and a symmetric beta prior is specified. Given that, the symmetric beta prior does not require an input for a mean value for tag reporting (`mu = NA`), but does require an input for the standard deviation (`sd = 5`), where larger values penalize the extremes more. We then specify the `conv_tag_age_pool` and `conv_tag_sex_pool` arguments which indicate to the model how tagging data should be fit. In this case, we are fitting tag data by their respective age and sex-blocks to reduce computational demand. If users wish to fit tag data by their individual ages and sexes, `conv_tag_age_pool` would be specified as `list(1, 2, 3, 4, ..., n_ages)` and `conv_tag_sex_pool` would be `list(1, 2)`. 
 
-Because initial tagging mortality and chronic tag shedding are often confounded with other mortality processes and difficult to estiamte, we will fix these parameters in this application (`Init_Tag_Mort_spec = "fix"` and `Tag_Shed_spec = "fix"`). Lastly, we will specify the estimation of tag reporting rates, which are time-varying (estimated as 2 blocks; see input supplied to the `Tag_Reporting_blocks` argument) but are shared across regions (`TagRep_spec = "est_shared_r"`). 
+Because initial tagging mortality and chronic tag shedding are often confounded with other mortality processes and difficult to estimate, we will fix these parameters in this application (`init_conv_tag_mort_spec = "fix"` and `conv_tag_shed_spec = "fix"`). Lastly, we will specify the estimation of tag reporting rates, which are time-varying (estimated as 2 blocks; see input supplied to the `conv_tag_fish_reporting_blocks` argument) but are shared across regions (`conv_tagrep_spec = "est_shared_r_f"`). 
 
 ```{r Setup Tagging, message = FALSE,  eval = FALSE}
 # setup tagging priors
 tag_prior <- data.frame(
   region = 1,
   block = c(1,2),
+  fleet = 1,
   mu = NA, # no mean, since symmetric beta
   sd = 5, # sd = 5
   type = 0 # symmetric beta
 )
 
-# setting up tagging parameterization
 input_list <- Setup_Mod_Tagging(input_list = input_list,
-                                UseTagging = 1, # using tagging data
-                                max_tag_liberty = 15, # maximum number of years to track a cohort
+                                use_conv_fish_tagging = c(1,0), # using tagging data for fixed gear
+                                conv_tag_max_liberty = 15, # maximum number of years to track a cohort
 
                                 # Data Inputs
-                                tag_release_indicator = mlt_rg_sable_data$tag_release_indicator,
+                                conv_tag_release_indicator = mlt_rg_sable_data$conv_tag_release_indicator,
                                 # tag release indicator (first col = tag region,
                                 # second col = tag year),
                                 # total number of rows = number of tagged cohorts
-                                Tagged_Fish = mlt_rg_sable_data$Tagged_Fish, # Released fish
+                                conv_tagged_fish = mlt_rg_sable_data$conv_tagged_fish, # Released fish
                                 # dimensioned by total number of tagged cohorts, (implicitly
-                                # tracks the release year and region), age, and sex
-                                Obs_Tag_Recap = mlt_rg_sable_data$Obs_Tag_Recap,
-                                # dimensioned by max tag liberty, tagged cohorts, regions,
+                                # tracks the release year and region), pop, age, and sex
+                                obs_conv_tag_fish_recap = mlt_rg_sable_data$obs_conv_tag_fish_recap,
+                                # dimensioned by max tag liberty, tagged cohorts, pop, regions,
                                 # ages, and sexes
 
                                 # Model options
-                                Tag_LikeType = "NegBin", # Negative Binomial
-                                mixing_period = 2, # Don't fit tagging until release year + 1
-                                t_tagging = 0.5, # tagging happens midway through the year,
+                                conv_fish_tag_like = "NegBin", # Negative Binomial
+                                conv_tag_mixing_period = 2, # Don't fit tagging until release year + 1
+                                conv_tag_t_tagging = 0.5, # tagging happens midway through the year,
                                 # movement does not occur within that year
-                                tag_selex = "SexSp_AllFleet", # tagging recapture selectivity
-                                # is a weighted average of fishery selectivity of two fleets
-                                tag_natmort = "AgeSp_SexSp", # tagging natural mortality is
-                                # age and sex-specific
-                                Use_TagRep_Prior = 1, # tag reporting rate priors are used
-                                TagRep_Prior = tag_prior,
-                                move_age_tag_pool = list(c(1:6), c(7:15), c(16:30)), # whether or
+                                use_conv_tag_fishrep_prior = 1, # tag reporting rate priors are used
+                                conv_tag_fishrep_prior = tag_prior,
+                                conv_tag_age_pool = list(c(1:6), c(7:15), c(16:30)), # whether or
                                 # not to pool tagging data when fitting (for computational cost)
-                                move_sex_tag_pool = list(c(1:2)), # whether or not to pool
+                                conv_tag_sex_pool = list(c(1:2)), # whether or not to pool
                                 # sex-specific data when fitting
-                                Init_Tag_Mort_spec = "fix", # fixing initial tag mortality
-                                Tag_Shed_spec = "fix", # fixing chronic shedding
-                                TagRep_spec = "est_shared_r", # tag reporting rates are
+                                init_conv_tag_mort_spec = "fix", # fixing initial tag mortality
+                                conv_tag_shed_spec = "fix", # fixing chronic shedding
+                                conv_tagrep_spec = "est_shared_r_f", # tag reporting rates are
                                 # not region specific
                                 # Time blocks for tag reporting rates
-                                Tag_Reporting_blocks = c(
-                                  paste("Block_1_Year_1-35_Region_",
-                                        c(1:input_list$data$n_regions), sep = ''),
-                                  paste("Block_2_Year_36-terminal_Region_",
-                                        c(1:input_list$data$n_regions), sep = '')
+                                conv_tag_fish_reporting_blocks = c(
+                                  apply(expand.grid(1:input_list$data$n_regions, 1:input_list$data$n_fish_fleets), 1, function(x)
+                                    paste0("Block_1_Year_1-35_Region_", x[1], "_Fleet_", x[2])),
+                                  apply(expand.grid(1:input_list$data$n_regions, 1:input_list$data$n_fish_fleets), 1, function(x)
+                                    paste0("Block_2_Year_36-terminal_Region_", x[1], "_Fleet_", x[2]))
                                 ),
-
+                                conv_fish_tag_attr = 'p_a_s',
                                 # Specify starting values or fixing values
-                                ln_Init_Tag_Mort = log(0.1), # fixing initial tag mortality
-                                ln_Tag_Shed = log(0.02),  # fixing tag shedding
-                                ln_tag_theta = log(0.5),
+                                ln_init_conv_tag_mort = log(0.1), # fixing initial tag mortality
+                                ln_conv_tag_shed = log(0.02),  # fixing tag shedding
+                                ln_conv_fish_tag_theta = log(0.5),
                                 # starting value for tagging overdispersion
-                                Tag_Reporting_Pars = array(log(0.2 / (1-0.2)),
-                                                           dim = c(input_list$data$n_regions, 2))
+                                conv_tag_fish_reporting_pars = array(log(0.2 / (1-0.2)), dim = c(input_list$data$n_regions, 2, input_list$data$n_fish_fleets))
                                 # starting values for tag reporting pars
 
 )
@@ -229,9 +226,10 @@ input_list <- Setup_Mod_Tagging(input_list = input_list,
 
 ## Setup Catch and Fishing Mortality
 
-In general, specifying catch and fishing mortality is relatively straightforward. Users need to supply several data inputs, which include an array of observed catches `ObsCatch`. Users can inspect the `mlt_rg_sable_data` data object to further understand the dimensions of data inputs, or refer to the Description of Model and Data Dimensions vignette. Given that we are going to be using TMB-style likelihoods, we are also specifying that the sigma for catch is fixed (`sigmaC_spec = 'fix'`) at a value of 0.05 for all fleets, years, and regions (`ln_sigmaC = array(log(0.05), dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets))`).
+In general, specifying catch and fishing mortality is relatively straightforward. Users need to supply several data inputs, which include an array of observed catches `ObsCatch`, dimensioned by `n_regions`, `n_years`, `n_seas`, and `n_fish_fleets`. Users can inspect the `mlt_rg_sable_data` data object to further understand the dimensions of data inputs, or refer to the Description of Model and Data Dimensions vignette. Given that we are going to be using TMB-style likelihoods, we are also specifying that the sigma for catch is fixed (`sigmaC_spec = 'fix'`) at a value of 0.05 for all fleets, years, seasons, and regions.
 
 ```{r Setup Catch and Fishing Mortality, message = FALSE,  eval = FALSE}
+# setting up catch data
 input_list <- Setup_Mod_Catch_and_F(input_list = input_list,
                                     # Data inputs
                                     ObsCatch = mlt_rg_sable_data$ObsCatch,
@@ -243,9 +241,11 @@ input_list <- Setup_Mod_Catch_and_F(input_list = input_list,
                                     ln_sigmaC =
                                       array(log(0.05), dim = c(input_list$data$n_regions,
                                                                length(input_list$data$years),
+                                                               input_list$data$n_seas,
                                                                input_list$data$n_fish_fleets)),
                                     # fixing catch sd at small value
                                     ln_F_mean = array(-2, dim = c(input_list$data$n_regions,
+                                                                  input_list$data$n_seas,
                                                                   input_list$data$n_fish_fleets))
                                     # some starting values for fishing mortality
 )
@@ -254,17 +254,18 @@ input_list <- Setup_Mod_Catch_and_F(input_list = input_list,
 ## Setup Index and Composition Data (Fishery and Survey)
 
 Setting up fishery (and survey) index and composition data can similarly be a bit cumbersome, given the number of data inputs that may be required. Users can inspect the `mlt_rg_sable_data` data object to further understand the dimensions of data inputs, or refer to the Description of Model and Data Dimensions vignette. These data inputs include the following:
-1. `ObsFishIdx` and `ObsSrvIdx`, which specifies the observed indices 
+
+1. `ObsFishIdx` and `ObsSrvIdx`, which specifies the observed indices dimensioned by `n_regions`, `n_years`, `n_seas`, and the respective number of fleets
 2. `ObsFishIdx_SE` and `ObsSrvIdx_SE`, which specifies the standard errors of the observed indices
 3. `UseFishIdx` and `UseSrvIdx`, which indicate whether or not indices are fit to 
-4. `ObsFishAgeComps` and `ObsSrvAgeComps` contains the observed age compositions
+4. `ObsFishAgeComps` and `ObsSrvAgeComps` contains the observed age compositions dimensioned by `n_regions`, `n_years`, `n_seas`, `n_ages`, `n_sexes`, and the respective number of fleets
 5. `UseFishAgeComps` and `UseSrvAgeComps` indicates whether or not age compositions are fit to 
-6. `ISS_FishAgeComps` and `ISS_SrvAgeComps` indicates the input sample sizes used to weight age compositions
-7. `ObsFishLenComps` and `ObsSrvLenComps` contains the observed length compositions
+6. `ISS_FishAgeComps` and `ISS_SrvAgeComps` indicates the input sample sizes used to weight age compositions, dimensioned by `n_regions`, `n_years`, `n_seas`, `n_sexes`, and the respective number of fleets
+7. `ObsFishLenComps` and `ObsSrvLenComps` contains the observed length compositions dimensioned by `n_regions`, `n_years`, `n_seas`, `n_lens`, `n_sexes`, and the respective number of fleets
 8. `UseFishLenComps` and `UseSrvLenComps` indicates whether or not length compositions are fit to
 9. `ISS_FishLenComps` and `ISS_SrvLenComps` indicates the input sample sizes used to weight length compositions
 
-Model options available are similar to those described in the Setting up a Single Region Model (Alaska Sablefish) vignette. In the case of fishery indices, `fish_idx_type` is specified at `none` given that these are not used. Age composition likelihoods are specified as `FishAgeComps_LikeType = c("Multinomial", "none")`, indicating that the first fleet uses a Multinomial and the second fleet does not have age compositions. Fishery length compositions are specified as Multinomial for both fleets. With respect to `FishAgeComps_Type` and `FishLenComps_Type`, these are both specified as `spltRjntS` when they are availiable to indicate that compositions sum to 1 jointly across sexes, split by a given region.
+Model options available are similar to those described in the Setting up a Single Region Model (Alaska Sablefish) vignette. In the case of fishery indices, `fish_idx_type` is specified at `none` given that these are not used. Age composition likelihoods are specified as `FishAgeComps_LikeType = c("Multinomial", "none")`, indicating that the first fleet uses a Multinomial and the second fleet does not have age compositions. Fishery length compositions are specified as Multinomial for both fleets. With respect to `FishAgeComps_Type` and `FishLenComps_Type`, these are both specified as `spltRjntS` when they are available to indicate that compositions sum to 1 jointly across sexes, split by a given region.
 
 ```{r Setup Fishery Indices and Compositions, message = FALSE,  eval = FALSE}
 input_list <- Setup_Mod_FishIdx_and_Comps(input_list = input_list,
@@ -298,7 +299,7 @@ input_list <- Setup_Mod_FishIdx_and_Comps(input_list = input_list,
 )
 ```
 
-The same arguments are expected for survey indices and compositions. Here, 2 survey fleets are specified, where they are abundance based for both fleets. Age compositions for both fleets are joint by sex, but split by region, while length compositions are not used. All compositions for the survey fleets assume a Mulinomial likelihood. 
+The same arguments are expected for survey indices and compositions. Here, 2 survey fleets are specified, where they are abundance based for both fleets. Age compositions for both fleets are joint by sex, but split by region, while length compositions are not used. All compositions for the survey fleets assume a Multinomial likelihood. 
 
 ```{r Setup Survey Indices and Compositions, message = FALSE,  eval = FALSE}
 # Survey Indices and Compositions
@@ -328,8 +329,8 @@ input_list <- Setup_Mod_SrvIdx_and_Comps(input_list = input_list,
                                                               "spltRjntS_Year_1-terminal_Fleet_2"),
                                          # survey age comp type
                                          SrvLenComps_Type = c("none_Year_1-terminal_Fleet_1",
-                                                              "none_Year_1-terminal_Fleet_2")
-                                         # survey length comp type
+                                                              "none_Year_1-terminal_Fleet_2"),
+                                         t_srv = array(0.5, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_srv_fleets))
 )
 ```
 
@@ -343,6 +344,7 @@ In the spatial sablefish application, all fishery/survey selectivity and catchab
 4) The number of catchability blocks specified (`fish_q_blocks` or `srv_q_blocks`). Given that no fishery indices are used, fishery catchability has no blocks are estimated (`fish_q_blocks = c("none_Fleet_1", "none_Fleet_2")`),
 5) How fishery or survey selectivity parameters should be estimated (`fish_fixed_sel_pars`). In the case of sablefish, we are first specifying that all selectivity parameters (by regions, time-blocks, sexes) should be estimated. However, there are some more nuanced parameter sharing across regions, sexes, and time-blocks that are used to help stabilize the model (last part of this code chunk), and cannot be easily generalized. Thus, users can manually extract the `map` list from the updated `input_list` object to modify how parameters should be fixed or shared,
 6) Lastly, how fishery or survey catchability should be estimated (`fish_q_spec` or `srv_q_spec`). For the fishery, catchability is not estimated as no fishery indices are utilized (`fix`).
+
 
 ```{r Setup Fishery Selectivity and Catchability, message = FALSE,  eval = FALSE}
 # Fishery Selectivity and Catchability
@@ -457,7 +459,7 @@ input_list <- Setup_Mod_Srvsel_and_Q(input_list = input_list,
                                      # spatially-invariant q
                                      srv_q_spec =
                                        c("est_shared_r",
-                                         "est_shared_r"),
+                                         "est_shared_r"), 
 
                                      # Starting values for survey catchability
                                      ln_srv_q = array(8.75,
@@ -505,25 +507,28 @@ input_list <- Setup_Mod_Weighting(input_list = input_list,
                                   Wt_FishAgeComps =
                                     array(1, dim = c(input_list$data$n_regions,
                                                      length(input_list$data$years),
+                                                     input_list$data$n_seas,
                                                      input_list$data$n_sexes,
                                                      input_list$data$n_fish_fleets)),
                                   Wt_FishLenComps =
                                     array(1, dim = c(input_list$data$n_regions,
                                                      length(input_list$data$years),
+                                                     input_list$data$n_seas,
                                                      input_list$data$n_sexes,
                                                      input_list$data$n_fish_fleets)),
                                   Wt_SrvAgeComps =
                                     array(1, dim = c(input_list$data$n_regions,
                                                      length(input_list$data$years),
+                                                     input_list$data$n_seas,
                                                      input_list$data$n_sexes,
                                                      input_list$data$n_srv_fleets)),
                                   Wt_SrvLenComps =
                                     array(1, dim = c(input_list$data$n_regions,
                                                      length(input_list$data$years),
+                                                     input_list$data$n_seas,
                                                      input_list$data$n_sexes,
                                                      input_list$data$n_srv_fleets))
 )
-
 ```
 
 
@@ -550,6 +555,7 @@ sabie_rtmb_model$sd_rep <- RTMB::sdreport(sabie_rtmb_model)
 ```
 
 Inspecting results from our spatial model, it appears that the highest spawning biomass occurs in the CGOA, followed by the EGOA. Western regions generally demonstrate relatively comparable levels of spawning biomass. Additionally, western regions (BS and AI) along with the CGOA appear to exhibit the highest recruitment levels. 
+
 ```{r, fig.width = 12, fig.height = 5.5, message = FALSE, warning = FALSE, eval = FALSE}
 # Get recruitment time-series
 rec_series <- reshape2::melt((sabie_rtmb_model$rep$Rec))
@@ -562,7 +568,7 @@ ssb_series$Par <- "Spawning Biomass"
 ts_df <- rbind(ssb_series,rec_series) # bind together
 
 # Do some data munging here
-ts_df <- ts_df %>% dplyr::rename(Region = Var1, Year = Var2) %>% 
+ts_df <- ts_df %>% dplyr::rename(Pop = Var1, Region = Var2, Year = Var3) %>% 
   dplyr::mutate(Region = dplyr::case_when(
     Region == 1 ~ 'BS',
     Region == 2 ~ 'AI',

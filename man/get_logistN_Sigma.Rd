@@ -2,7 +2,7 @@
 % Please edit documentation in R/Utility_Functions.R
 \name{get_logistN_Sigma}
 \alias{get_logistN_Sigma}
-\title{Construct logistic-normal covariance matrix}
+\title{Construct a logistic-normal covariance matrix}
 \usage{
 get_logistN_Sigma(
   comp_like,
@@ -14,64 +14,54 @@ get_logistN_Sigma(
 )
 }
 \arguments{
-\item{comp_like}{Integer specifying the logistic-normal correlation structure:
-\itemize{
-  \item 2 = iid across categories
-  \item 3 = AR1 across categories
-  \item 4 = AR1 across categories and sexes
-}}
+\item{comp_like}{Integer. Covariance structure: \code{2} = iid (diagonal
+\eqn{\theta^2 I}), \code{3} = AR(1) across bins
+(\eqn{\theta^2 C_{\text{AR1}}}), \code{4} = Kronecker product of
+constant sex correlation and AR(1) bin correlation
+(\eqn{\theta^2 (C_{\text{sex}} \otimes C_{\text{AR1}})}).}
 
-\item{n_bins}{Number of composition categories (e.g., age or length bins).
-For \code{comp_like = 2, 3}, the covariance matrix is dimensioned
-\code{n_bins}. For \code{comp_like = 4}, it is dimensioned
-\code{n_bins * n_sexes}.}
+\item{n_bins}{Integer. Number of composition categories (ages or lengths).
+The resulting matrix has dimension \code{n_bins} for \code{comp_like}
+\code{2} and \code{3}, or \code{n_bins × n_sexes} for \code{comp_like
+= 4}.}
 
-\item{n_sexes}{Number of sexes. Required when \code{comp_like = 4}.}
+\item{n_sexes}{Integer. Number of sexes. Required for \code{comp_like = 4};
+ignored otherwise.}
 
-\item{theta}{Standard deviation parameter controlling the overall scale
-of the covariance.}
+\item{theta}{Numeric. Marginal standard deviation \eqn{\theta > 0}
+controlling the overall scale of \eqn{\Sigma}.}
 
-\item{corr_b}{Correlation parameter across categories, in the interval
-\eqn{(-1, 1)}. Used when \code{comp_like = 3} or \code{4}.}
+\item{corr_b}{Numeric. AR(1) correlation across bins in \eqn{(-1, 1)}.
+Required for \code{comp_like} \code{3} and \code{4}; ignored for
+\code{comp_like = 2}.}
 
-\item{corr_s}{Correlation parameter across sexes, in the interval
-\eqn{(-1, 1)}. Used when \code{comp_like = 4}.}
+\item{corr_s}{Numeric. Constant (exchangeable) correlation across sexes in
+\eqn{(-1, 1)}. Required for \code{comp_like = 4}; ignored otherwise.}
 }
 \value{
-A covariance matrix \eqn{\Sigma} with dimension:
-  \itemize{
-    \item \code{n_bins} (\code{comp_like = 2, 3})
-    \item \code{n_bins * n_sexes} (\code{comp_like = 4})
-  }
+Numeric covariance matrix \eqn{\Sigma} of dimension
+  \code{n_bins × n_bins} (\code{comp_like} \code{2}, \code{3}) or
+  \code{(n_bins × n_sexes) × (n_bins × n_sexes)} (\code{comp_like = 4}).
 }
 \description{
-Helper function to generate the covariance matrix (\eqn{\Sigma}) used in
-logistic-normal composition models. The structure depends on the
-specification of \code{comp_like}:
-\itemize{
-  \item \code{comp_like = 2}: independent and identically distributed (iid)
-    across categories (\eqn{n_\mathrm{categories}}).
-  \item \code{comp_like = 3}: first-order autoregressive (AR1) correlation
-    across categories (\eqn{n_\mathrm{categories}}).
-  \item \code{comp_like = 4}: two-dimensional AR1 correlation across
-    categories and sexes (\eqn{n_\mathrm{categories} \times n_\mathrm{sexes}}).
-}
+Builds the covariance matrix \eqn{\Sigma} used in logistic-normal
+composition likelihoods for a given correlation structure. Three structures
+are supported, matching the \code{comp_like} codes used throughout SPoRC:
+iid (\code{2}), AR(1) across bins (\code{3}), and AR(1) across bins with
+constant correlation across sexes via a Kronecker product (\code{4}).
 }
 \examples{
 \dontrun{
-n_cat <- 5
-n_sexes <- 2
+# iid
+get_logistN_Sigma(comp_like = 2, n_bins = 5, n_sexes = NULL, theta = 0.5)
 
-# iid example (categories only)
-get_logistN_Sigma(comp_like = 2, n_bins = n_cat, n_sexes = NULL, theta = 0.5)
+# AR(1) across bins
+get_logistN_Sigma(comp_like = 3, n_bins = 5, n_sexes = NULL,
+                  theta = 0.5, corr_b = 0.3)
 
-# AR1 across categories
-get_logistN_Sigma(comp_like = 3, n_bins = n_cat, n_sexes = NULL, theta = 0.5,
-                  corr_b = 0.3)
-
-# AR1 across categories and sexes
-get_logistN_Sigma(comp_like = 4, n_bins = n_cat, n_sexes = n_sexes, theta = 0.5,
-                  corr_b = 0.3, corr_s = 0.2)
+# AR(1) across bins x constant across sexes
+get_logistN_Sigma(comp_like = 4, n_bins = 5, n_sexes = 2,
+                  theta = 0.5, corr_b = 0.3, corr_s = 0.2)
 }
 }
 \seealso{

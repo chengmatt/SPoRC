@@ -2,26 +2,31 @@
 % Please edit documentation in R/Utility_Functions.R
 \name{marg_AIC}
 \alias{marg_AIC}
-\title{Calculate the Corrected marginal AIC (AICc) from Optimization Results}
+\title{Compute the corrected marginal AIC (AICc)}
 \usage{
 marg_AIC(opt, p = 2, n = Inf)
 }
 \arguments{
-\item{opt}{A list containing optimization results. Must include either:
-\itemize{
-  \item `"par"` and `"objective"` (e.g., from `optim`), or
-  \item `"par"` and `"value"` (e.g., from `nlminb`)
-}}
+\item{opt}{Named list of optimiser output. Must contain \code{$par} and
+either \code{$objective} (e.g., \code{nlminb}) or \code{$value}
+(e.g., \code{optim}).}
 
-\item{p}{Numeric. Penalty multiplier for the number of parameters. Default is 2.}
+\item{p}{Numeric. Penalty multiplier per parameter. Default \code{2}
+(standard AIC).}
 
-\item{n}{Numeric. Sample size. Default is `Inf`.}
+\item{n}{Numeric. Sample size used for the small-sample correction.
+Default \code{Inf} (no correction, equivalent to AIC).}
 }
 \value{
-Numeric. The corrected AIC (AICc) value.
+Numeric. The AICc value.
 }
 \description{
-Computes the corrected marginal Akaike Information Criterion (AICc)
-for model selection using optimization results. It supports objects returned
-from different optimizers, such as `optim` or `nlminb`.
+Calculates the corrected Akaike Information Criterion
+\eqn{\mathrm{AICc} = p k + 2 \ell + 2k(k+1)/(n-k-1)}, where \eqn{k} is
+the number of estimated parameters, \eqn{\ell} is the negative
+log-likelihood at the optimum, \eqn{p} is the penalty multiplier, and
+\eqn{n} is the sample size. When \eqn{n = \infty} the small-sample
+correction term vanishes and the result reduces to standard marginal AIC.
+Compatible with output from both \code{optim} (\code{$value}) and
+\code{nlminb} (\code{$objective}).
 }

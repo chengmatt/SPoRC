@@ -2,26 +2,59 @@
 % Please edit documentation in R/Make_Plots_Tables.R
 \name{get_nLL_plot}
 \alias{get_nLL_plot}
-\title{Get plot of negative log likelihood values}
+\title{Get Plot of Negative Log Likelihood Values}
 \usage{
 get_nLL_plot(data, rep, model_names)
 }
 \arguments{
-\item{data}{List of data from `SPoRC`}
+\item{data}{List of length \code{n_models}, where each element is a SPoRC
+data list. Likelihood weights are extracted from \code{Wt_Catch},
+\code{Wt_F}, \code{Wt_Rec}, \code{Wt_Tagging}, \code{Wt_SrvIdx}, and
+\code{Wt_FishIdx}.}
 
-\item{rep}{List of n_models of `SPoRC` report lists}
+\item{rep}{List of length \code{n_models}, where each element is a SPoRC
+report list (i.e. the output of \code{obj$report()} after optimisation).
+The following nLL components are extracted: \code{jnLL}, \code{h_nLL},
+\code{M_nLL}, \code{rec_region_prop_nLL}, \code{Rec_nLL}, \code{Init_Rec_nLL},
+\code{sel_nLL}, \code{conv_fish_tag_nLL}, \code{Catch_nLL},
+\code{Fmort_nLL}, \code{srv_q_nLL}, \code{fish_q_nLL}, \code{SrvIdx_nLL},
+\code{FishIdx_nLL}, \code{TagRep_nLL}, \code{Movement_nLL},
+\code{SrvAgeComps_nLL}, \code{FishAgeComps_nLL}, \code{SrvLenComps_nLL},
+and \code{FishLenComps_nLL}. Missing components are handled gracefully via
+\code{safe_extract}.}
 
-\item{model_names}{Vector of model names}
+\item{model_names}{Character vector of length \code{n_models} giving display
+names for each model run. Used as facet labels on the bar chart.}
 }
 \value{
-Plot and tables of negative log likelihood values across models
+A list of two objects:
+\describe{
+  \item{[[1]] nLL_plot}{A stacked bar chart (\code{ggplot}) with one facet
+    per model. Bars show the weighted nLL contribution of each component,
+    coloured by component type (Prior, Penalty, Catch, Index, Age, Length,
+    Tagging, jnLL). Components with value 0 are excluded.}
+  \item{[[2]] table_plot}{A \code{ggdraw} table (via \code{gridExtra} and
+    \code{cowplot}) showing weighted nLL values in wide format, with one
+    column per non-zero component and one row per model.}
+}
 }
 \description{
-Get plot of negative log likelihood values
+Extracts, weights, and visualises all negative log-likelihood (nLL)
+components from one or more SPoRC model runs. Likelihood weights stored in
+the data list are applied to the relevant components (catch, indices,
+recruitment, tagging, fishing mortality) before plotting, so reported values
+reflect the actual contribution of each component to the joint nLL. Components
+with a value of zero are silently excluded from both the plot and table.
 }
 \examples{
 \dontrun{
-get_nLL_plot(list(data1, data2), list(rep1, rep2), c("Model1", "Model2"))
+  out <- get_nLL_plot(
+    data        = list(data1, data2),
+    rep         = list(rep1, rep2),
+    model_names = c("Base", "Sensitivity")
+  )
+  out[[1]]  # bar chart
+  out[[2]]  # table
 }
 }
 \seealso{

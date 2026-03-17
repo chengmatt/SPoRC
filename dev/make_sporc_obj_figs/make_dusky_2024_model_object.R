@@ -85,7 +85,7 @@ input_list <- Setup_Mod_Movement(
   do_recruits_move = 0
 )
 
-input_list <- Setup_Mod_Tagging(input_list = input_list, UseTagging = 0)
+input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
 
 
 input_list <- Setup_Mod_Catch_and_F(

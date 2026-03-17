@@ -2,11 +2,12 @@
 % Please edit documentation in R/Setup_Biologicals.R
 \name{do_M_mapping}
 \alias{do_M_mapping}
-\title{Helper function to map natural mortality blocks}
+\title{Map natural mortality parameters to a block structure}
 \usage{
 do_M_mapping(
   input_list,
   M_spec,
+  M_popblk_spec_vals,
   M_regionblk_spec_vals,
   M_yearblk_spec_vals,
   M_ageblk_spec_vals,
@@ -14,33 +15,50 @@ do_M_mapping(
 )
 }
 \arguments{
-\item{input_list}{A named list object containing model data, parameters, and mapping structures.}
+\item{input_list}{Named list containing \code{$data}, \code{$par}, and \code{$map}
+sublists, as constructed by upstream setup functions.}
 
-\item{M_spec}{Character string indicating whether to estimate or fix natural mortality.
-Options are:
-\itemize{
-  \item \code{"est_ln_M"}: Estimate natural mortality parameters.
-  \item \code{"fix"}: Fix all natural mortality parameters (requires them to be passed in the input list).
+\item{M_spec}{Character string controlling whether \code{ln_M} is estimated or
+fixed. One of:
+\describe{
+  \item{\code{"est_ln_M"}}{Freely estimate \code{ln_M} across all defined blocks.}
+  \item{\code{"fix"}}{Fix all \code{ln_M} parameters by mapping them to \code{NA}.}
 }}
 
-\item{M_regionblk_spec_vals}{A list of numeric vectors specifying the region indices grouped in each block.}
+\item{M_popblk_spec_vals}{List of integer vectors assigning population indices to
+blocks, e.g., \code{list(1, 2)} for two population-specific blocks or
+\code{list(1:2)} for a single shared block.}
 
-\item{M_yearblk_spec_vals}{A list of numeric vectors specifying the year indices grouped in each block.}
+\item{M_regionblk_spec_vals}{List of integer vectors assigning region indices to
+blocks, e.g., \code{list(1:3, 4:5)} for two region blocks.}
 
-\item{M_ageblk_spec_vals}{A list of numeric vectors specifying the age indices grouped in each block.}
+\item{M_yearblk_spec_vals}{List of integer vectors assigning year indices to
+blocks, e.g., \code{list(1:10, 11:30)} for two time periods.}
 
-\item{M_sexblk_spec_vals}{A list of numeric vectors specifying the sex indices grouped in each block.}
+\item{M_ageblk_spec_vals}{List of integer vectors assigning age indices to
+blocks, e.g., \code{list(1:5, 6:10)} for two age groups.}
+
+\item{M_sexblk_spec_vals}{List of integer vectors assigning sex indices to
+blocks. Use \code{list(1:2)} for a sex-invariant block or \code{list(1, 2)}
+for sex-specific mortality.}
 }
 \value{
-An updated \code{input_list} with mapped natural mortality blocks:
-\itemize{
-  \item \code{input_list$map$ln_M} is a factor indicating fixed or estimated mortality parameters.
-  \item \code{input_list$data$M_blocks} is a 4D array (region × year × age × sex) with unique block IDs.
-}
+The input \code{input_list} with two fields updated:
+  \describe{
+    \item{\code{$map$ln_M}}{Factor vector of length equal to \code{prod(dim(par$ln_M))}.
+      Each element is an integer estimation index when \code{M_spec = "est_ln_M"},
+      or \code{NA} when \code{M_spec = "fix"}.}
+    \item{\code{$data$M_blocks}}{Integer array of dimensions
+      \code{[n_pop × n_regions × n_years × n_ages × n_sexes]} mapping each
+      population–region–year–age–sex cell to its corresponding \code{ln_M}
+      parameter index.}
+  }
 }
 \description{
-This function maps natural mortality (\code{ln_M}) to a block structure across region, year, age, and sex dimensions.
-It assigns unique integer identifiers to each block defined by the user's specifications, which is stored in the \code{M_blocks}
-array in the input list.
+Constructs the \code{M_blocks} index array and the \code{ln_M} factor map used
+by the TMB/RTMB objective function to share or fix natural mortality parameters
+across population, region, year, age, and sex dimensions. Each unique combination
+of blocks is assigned a sequential integer ID; all cells within a block share the
+same \code{ln_M} parameter.
 }
 \keyword{internal}

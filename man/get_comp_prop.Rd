@@ -2,31 +2,47 @@
 % Please edit documentation in R/get_model_fits.R
 \name{get_comp_prop}
 \alias{get_comp_prop}
-\title{Gets composition data proportions normalized according to the assessment specifications from RTMB}
+\title{Get Composition Proportions from RTMB Output}
 \usage{
 get_comp_prop(data, rep, age_labels, len_labels, year_labels)
 }
 \arguments{
-\item{data}{list of data inputs}
+\item{data}{List; data inputs used by RTMB, containing observed compositions,
+composition types, aggregation types, ageing errors, and fleet/region/season info.}
 
-\item{rep}{report file from RTMB}
+\item{rep}{List; report output from RTMB containing predicted compositions (CAA, CAL, SrvIAA, SrvIAL).}
 
-\item{age_labels}{vector of observed age labels in assessment}
+\item{age_labels}{Vector; observed age labels used in the assessment.}
 
-\item{len_labels}{vector of length labels in assessment}
+\item{len_labels}{Vector; observed length labels used in the assessment.}
 
-\item{year_labels}{vector of years}
+\item{year_labels}{Vector; year labels corresponding to the assessment years.}
 }
 \value{
-List of fishery age, lengths, survey age, lengths dataframe as well as in matrix form (dimensioned by region, year, bin, sex, fleet)
+List containing:
+\itemize{
+  \item \strong{Fishery_Ages, Fishery_Lens, Survey_Ages, Survey_Lens}: Dataframes with
+        observed (`obs`) and expected (`pred`) compositions and associated metadata.
+  \item \strong{Obs_FishAge_mat, Obs_FishLen_mat, Obs_SrvAge_mat, Obs_SrvLen_mat}:
+        Arrays of observed compositions (dimensioned by region, year, season, bin, sex, fleet).
+  \item \strong{Pred_FishAge_mat, Pred_FishLen_mat, Pred_SrvAge_mat, Pred_SrvLen_mat}:
+        Arrays of expected compositions (dimensioned by region, year, season, bin, sex, fleet).
+}
 }
 \description{
-Gets composition data proportions normalized according to the assessment specifications from RTMB
+Extracts and normalizes age and length composition data for fishery and survey
+fleets according to the assessment specifications from RTMB. This includes
+both observed and expected compositions and returns them in array and
+long-dataframe formats.
 }
 \examples{
 \dontrun{
-comp_props <- get_comp_prop(data = data, rep = rep,
-age_labels = 2:31, len_labels = seq(41, 99, 2), year_labels = 1960:2024)
+comp_props <- get_comp_prop(
+  data = data, rep = rep,
+  age_labels = 2:31,
+  len_labels = seq(41, 99, 2),
+  year_labels = 1960:2024
+)
 }
 }
 \seealso{

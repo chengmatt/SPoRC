@@ -2,10 +2,11 @@
 % Please edit documentation in R/check_dimensions.R
 \name{check_sim_dimensions}
 \alias{check_sim_dimensions}
-\title{Helper function used to check simulation object dimensions to ensure they are correct}
+\title{Validate Dimensions of Simulation Input Objects}
 \usage{
 check_sim_dimensions(
   x,
+  n_pop = NULL,
   n_regions = NULL,
   n_years = NULL,
   n_ages = NULL,
@@ -19,29 +20,67 @@ check_sim_dimensions(
 )
 }
 \arguments{
-\item{x}{Object to evaluate}
+\item{x}{Object to evaluate. Typically a numeric array (or vector) whose
+dimensions must match the expected structure associated with
+\code{what}.}
 
-\item{n_regions}{Number of regions}
+\item{n_pop}{Integer. Number of populations.}
 
-\item{n_years}{Number of years}
+\item{n_regions}{Integer. Number of spatial regions.}
 
-\item{n_ages}{Number of ages}
+\item{n_years}{Integer. Number of model years.}
 
-\item{n_lens}{Number of lengths}
+\item{n_ages}{Integer. Number of age classes.}
 
-\item{n_sexes}{Number of sexes}
+\item{n_lens}{Integer. Number of length bins.}
 
-\item{n_seas}{Number of seasons}
+\item{n_sexes}{Integer. Number of sexes.}
 
-\item{n_fish_fleets}{Number of fishery fleets}
+\item{n_seas}{Integer. Number of seasons.}
 
-\item{n_srv_fleets}{Number of survey fleets}
+\item{n_fish_fleets}{Integer. Number of fishery fleets.}
 
-\item{n_sims}{Number of simulations}
+\item{n_srv_fleets}{Integer. Number of survey fleets.}
 
-\item{what}{character specifying what to be evaluated}
+\item{n_sims}{Integer. Number of stochastic simulations.}
+
+\item{what}{Character string identifying the type of object to validate.
+This determines the expected dimension ordering and structure.}
+}
+\value{
+No return value. The function is used for validation and terminates with an
+error if the dimensions of \code{x} do not match the expected structure.
 }
 \description{
-Helper function used to check simulation object dimensions to ensure they are correct
+Internal utility that verifies the dimensional structure of simulation
+input objects used in the operating model. The function checks that the
+supplied object \code{x} has the expected dimensions for the object type
+specified by \code{what}. If the dimensions do not match the required
+structure, the function stops with an informative error.
+}
+\details{
+Simulation inputs generally include an additional dimension representing
+the number of stochastic simulations (\code{n_sims}). The position of this
+dimension depends on the object type but is typically the final dimension
+of the array.
+
+
+The function validates the dimensional structure of several classes of
+simulation inputs used in the operating model:
+
+\itemize{
+  \item Biological processes (e.g., weight-at-age, maturity, natural mortality)
+  \item Fishery processes (e.g., fishing mortality, selectivity, catchability)
+  \item Survey processes (e.g., selectivity, catchability)
+  \item Observation models for indices and composition data
+  \item Recruitment and demographic processes
+  \item Conventional tagging parameters
+}
+
+Arrays generally follow the dimension ordering
+\preformatted{
+population × region × year × season × age × sex × fleet × simulation
+}
+although only the dimensions relevant to a given object are included.
 }
 \keyword{internal}

@@ -2,22 +2,48 @@
 % Please edit documentation in R/do_runs_test.R
 \name{do_runs_test}
 \alias{do_runs_test}
-\title{Runs test function taken from SS3 diags.}
+\title{Runs Test for Residual Randomness}
 \usage{
 do_runs_test(x, type = NULL, mixing = "two.sided")
 }
 \arguments{
-\item{x}{Vector of residuals}
+\item{x}{Numeric vector of residuals.}
 
-\item{type}{Whether to use mean 0 assumption of mean of residuals (default = use mean 0)}
+\item{type}{Character string specifying the assumed mean of the residuals.
+If \code{"resid"} (default), the residual mean is assumed to be zero.
+Otherwise, the empirical mean of \code{x} is used.}
 
-\item{mixing}{Type of test to do, less = left tailed test that detects positive autocorrelation, two.sided = two sided test that tests whether there is positive and/or negative autocorrealtion. The null is that there isn't any, rejecting the null (<0.05) indictes that there is some non-randomness.}
+\item{mixing}{Character string specifying the alternative hypothesis for
+the runs test:
+\itemize{
+  \item \code{"two.sided"} – tests for both positive and negative
+  autocorrelation (default).
+  \item \code{"less"} – left-tailed test detecting positive
+  autocorrelation.
+}}
 }
 \value{
-List object with p value and limits for a three-sigma limit - (potential data outlier, where residual is > 3 standard deviations away from a mean of 0)
+A list containing:
+\itemize{
+  \item \code{sig3lim} – Numeric vector of length two giving the lower and
+  upper three–sigma control limits for the residuals.
+  \item \code{p.runs} – P-value from the runs test for randomness.
+}
+
+A small p-value (e.g., \code{< 0.05}) indicates evidence that the residual
+sequence is not random and may exhibit autocorrelation or other systematic
+patterns.
 }
 \description{
-Runs test function taken from SS3 diags.
+Performs a nonparametric runs test to evaluate whether a sequence of
+residuals is randomly distributed around a reference mean. The function
+also computes three–sigma control limits used to identify potential
+residual outliers.
+}
+\details{
+This implementation is adapted from diagnostics used in
+Stock Synthesis (SS3). The runs test evaluates whether residuals exhibit
+non-random structure (e.g., positive or negative autocorrelation).
 }
 \seealso{
 Other Model Diagnostics: 

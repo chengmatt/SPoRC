@@ -2,7 +2,7 @@
 % Please edit documentation in R/Setup_Fishery.R
 \name{do_fishsel_devs_mapping}
 \alias{do_fishsel_devs_mapping}
-\title{Helper function to set up fishery selectivity deviations mapping}
+\title{Map fishery selectivity deviation parameters}
 \usage{
 do_fishsel_devs_mapping(
   input_list,
@@ -11,13 +11,50 @@ do_fishsel_devs_mapping(
 )
 }
 \arguments{
-\item{input_list}{Input list}
+\item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
+sublists.}
 
-\item{fish_sel_devs_spec}{Character vector specifying fishery selectivity deviations parameterization}
+\item{fish_sel_devs_spec}{Character vector of length \code{n_fish_fleets}.
+Options:
+\describe{
+  \item{\code{"est_all"}}{Separate deviation series per region × sex × bin.}
+  \item{\code{"est_shared_r"}}{Shared across regions.}
+  \item{\code{"est_shared_s"}}{Shared across sexes.}
+  \item{\code{"est_shared_r_s"}}{Shared across regions and sexes.}
+  \item{\code{"est_shared_a"}}{Shared across age/bin groups defined by
+    \code{fishsel_devs_shared_ages}.}
+  \item{\code{"est_shared_r_a"}}{Shared across regions and age groups.}
+  \item{\code{"est_shared_a_s"}}{Shared across age groups and sexes.}
+  \item{\code{"est_shared_r_a_s"}}{Shared across regions, age groups, and sexes.}
+  \item{\code{"est_shared_f_x"}}{Copy deviation map from fleet \code{x}.}
+  \item{\code{"fix"} or \code{"none"}}{All deviations fixed at zero (mapped to \code{NA}).}
+}
+Age-sharing options (\code{"est_shared_a"}, etc.) are only valid with
+semi-parametric time-varying forms (\code{cont_tv_fish_sel} is in \code{c(3,4,5)}).}
 
-\item{fishsel_devs_shared_ages}{List object for specifying which ages are shared when selectivity deviations are semi-parametric (e.g., list(1:5, 6:10, 11:30) specifies that ages 1-5, 6-10, and 11-30 have the same deviations.)}
+\item{fishsel_devs_shared_ages}{List of integer vectors defining age/bin
+groupings for age-sharing options. Each element groups bins that share a
+single deviation series, e.g., \code{list(1:5, 6:10, 11:30)}.
+Only used when \code{fish_sel_devs_spec} includes \code{"est_shared_a"}.}
+}
+\value{
+The input \code{input_list} with \code{$map$ln_fishsel_devs} set to a
+  factor vector and \code{$data$map_ln_fishsel_devs} set to the corresponding
+  integer array (for use in the RTMB template).
 }
 \description{
-Helper function to set up fishery selectivity deviations mapping
+Constructs the factor map for \code{ln_fishsel_devs}, the annual deviations in
+continuous time-varying fishery selectivity. For iid and random-walk forms,
+the deviation dimension corresponds to selectivity parameters (up to 6 for
+double-normal); for semi-parametric forms (3D GMRF, 2D AR1), it corresponds
+to age or length bins. Cells with no time-variation
+(\code{cont_tv_fish_sel == 0}) or no catch data are mapped to \code{NA}.
+}
+\details{
+Age-sharing (\code{"est_shared_a"} and related options) groups bins into
+blocks defined by \code{fishsel_devs_shared_ages}, reducing the number of
+estimated deviation series. Fleet sharing (\code{"est_shared_f_x"}) is handled
+in a second pass. The resulting integer map is also stored as
+\code{$data$map_ln_fishsel_devs} for use in the RTMB objective function.
 }
 \keyword{internal}

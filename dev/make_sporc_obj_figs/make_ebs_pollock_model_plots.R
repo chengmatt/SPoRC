@@ -222,7 +222,7 @@ input_list <- Setup_Mod_Srvsel_and_Q(
 )
 
 # Setup tagging stuff
-input_list <- Setup_Mod_Tagging(input_list = input_list, UseTagging = 0)
+input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
 
 input_list <- Setup_Mod_Weighting(
   input_list = input_list,

@@ -2,20 +2,52 @@
 % Please edit documentation in R/Simulate_RV.R
 \name{rlogistnormal}
 \alias{rlogistnormal}
-\title{Simulate logistic normal variables}
+\title{Simulate from a logistic-normal distribution}
 \usage{
 rlogistnormal(exp, pars, comp_like, n_sexes)
 }
 \arguments{
-\item{exp}{Expected values}
+\item{exp}{Numeric vector of length \eqn{K}. Expected (predicted) composition
+proportions; must be positive and sum to 1. The last element is used as
+the ALR reference bin and is not directly simulated.}
 
-\item{pars}{Parameters for a logistic normal (iid == 1 parameter, AR1 == 2 parameters, 2D, by age and sex == 3 parameters, 3D, by age, sex, and region == 4 parameters)}
+\item{pars}{Numeric vector of parameters governing the covariance structure.
+Required elements depend on \code{comp_like}:
+\describe{
+  \item{\code{comp_like = 2} (iid)}{1 parameter: \code{pars[1]} = marginal
+    standard deviation \eqn{\sigma}.}
+  \item{\code{comp_like = 3} (AR1 by bin)}{2 parameters: \code{pars[1]} =
+    \eqn{\sigma}, \code{pars[2]} = AR1 correlation \eqn{\rho} across
+    bins. The covariance matrix is \eqn{\sigma^2 / (1 - \rho^2)} times the
+    AR1 correlation matrix, with the last row/column removed.}
+  \item{\code{comp_like = 4} (AR1 × constant sex)}{3 parameters:
+    \code{pars[1]} = \eqn{\sigma}, \code{pars[2]} = AR1 correlation across
+    bins, \code{pars[3]} = constant correlation across sexes. The
+    covariance is a Kronecker product
+    \eqn{C_{\text{sex}} \otimes C_{\text{AR1}}} scaled by
+    \eqn{\sigma^2 / ((1 - \rho_{\text{bin}}^2)(1 - \rho_{\text{sex}}^2))},
+    with the last row/column removed.}
+}}
 
-\item{comp_like}{Likelihood structure (iid == 2, ar1 == 3, 2d == 4, 3d == 5)}
+\item{comp_like}{Integer. Covariance structure: \code{2} = iid,
+\code{3} = AR1 by bin, \code{4} = AR1 by bin with constant sex
+correlation.}
 
-\item{n_sexes}{Number of sexes}
+\item{n_sexes}{Integer. Number of sexes. Used only when
+\code{comp_like = 4} to construct the Kronecker product covariance.}
+}
+\value{
+Numeric vector of length \eqn{K} summing to 1, representing a
+  single draw from the logistic-normal distribution with the specified mean
+  and covariance structure.
 }
 \description{
-Simulate logistic normal variables
+Draws a single composition vector of length \eqn{K} from a logistic-normal
+distribution using the additive log-ratio (ALR) parameterisation. The last
+category is treated as the reference bin: the mean vector of the underlying
+multivariate normal is \eqn{\mu_k = \log(p_k / p_K)}, \eqn{k = 1, \ldots,
+K-1}. The draw is back-transformed via the additive softmax so the returned
+vector sums to 1. Four covariance structures are supported, controlled by
+\code{comp_like}.
 }
 \keyword{internal}

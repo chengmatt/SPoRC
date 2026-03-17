@@ -7,21 +7,62 @@
 get_biological_plot(data, rep, model_names)
 }
 \arguments{
-\item{data}{List of n_models of `SPoRC` data lists}
+\item{data}{List of length \code{n_models}, where each element is a SPoRC
+data list. Used to extract \code{WAA}, \code{MatAA}, \code{ages},
+\code{n_pop}, and \code{do_recruits_move}.}
 
-\item{rep}{List of n_models of `SPoRC` report lists}
+\item{rep}{List of length \code{n_models}, where each element is a SPoRC
+report list (i.e. the output of \code{obj$report()} after optimisation).
+Must contain \code{Movement} and \code{natmort}.}
 
-\item{model_names}{Vector of model names}
+\item{model_names}{Character vector of length \code{n_models} giving display
+names for each model run. Used as colour legend labels across all plots.}
+
+\item{year_indx}{Integer giving the year index at which to slice biological
+quantities for plotting. Defaults to the terminal year if \code{NULL}.
+Movement plots show all seasons for the specified year; natural mortality,
+weight-at-age, and maturity-at-age plots show all seasons via faceting.}
 }
 \value{
-A list of plots for terminal year and terminal season movement, natural mortality, weight-at-age, and maturity at age across models
+A list of four elements:
+\describe{
+  \item{[[1]] move_plot}{A list of \code{n_pop} \code{ggplot} objects, one
+    per population. Each plot shows age-specific movement probabilities for
+    all seasons at \code{year_indx}, faceted by Region_To × (Region_From +
+    Season), with lines coloured by model and distinguished by sex linetype.
+    If \code{do_recruits_move = 0}, age-1 fish are excluded. Y-axis is fixed
+    to [0, 1].}
+  \item{[[2]] natmort_plot}{Natural mortality at age at \code{year_indx},
+    faceted by Region × Sex. Lines coloured by model and distinguished by
+    population linetype.}
+  \item{[[3]] waa_plot}{Spawning weight-at-age at \code{year_indx}, faceted
+    by Region × (Sex + Season). Lines coloured by model and distinguished by
+    population linetype.}
+  \item{[[4]] mataa_plot}{Maturity-at-age at \code{year_indx}, faceted by
+    Region × (Sex + Season). Lines coloured by model and distinguished by
+    population linetype.}
+}
 }
 \description{
-Get Plots of Biological Quantities
+Generates plots of movement probabilities, natural mortality, weight-at-age,
+and maturity-at-age across one or more SPoRC model runs. All plots use a
+user-specified year index; movement plots additionally show all seasons and
+are returned as a separate plot per population.
 }
 \examples{
 \dontrun{
-get_biological_plot(list(data1, data2), list(rep1, rep2), c("Model1", "Model2"))
+  plots <- get_biological_plot(
+    data        = list(data1, data2),
+    rep         = list(rep1, rep2),
+    model_names = c("Base", "Sensitivity"),
+    year_indx   = 40
+  )
+
+  plots[[1]][[1]]  # movement plot for population 1
+  plots[[1]][[2]]  # movement plot for population 2, etc
+  plots[[2]]       # natural mortality
+  plots[[3]]       # weight-at-age
+  plots[[4]]       # maturity-at-age
 }
 }
 \seealso{

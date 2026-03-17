@@ -5,14 +5,26 @@ data("three_rg_sable_data")
 test_that("Three-region Sablefish RTMB model produces expected results", {
 
   # Initialize model dimensions and data list
-  input_list <- Setup_Mod_Dim(years = 1:length(three_rg_sable_data$years), # vector of years (1 - 62)
-                              ages = 1:30, # vector of ages (1 - 30)
-                              lens = three_rg_sable_data$lens, # number of lengths (41 - 99)
-                              n_regions = three_rg_sable_data$n_regions, # number of regions (5)
-                              n_sexes = three_rg_sable_data$n_sexes, # number of sexes (2)
-                              n_fish_fleets = three_rg_sable_data$n_fish_fleets, # number of fishery fleet (2)
-                              n_srv_fleets = three_rg_sable_data$n_srv_fleets, # number of survey fleets (2)
-                              verbose = FALSE
+  input_list <- Setup_Mod_Dim(years = 1:length(three_rg_sable_data$years),
+                              # vector of years (1 - 62)
+                              ages = 1:length(three_rg_sable_data$ages),
+                              # vector of ages (1 - 30)
+                              lens = three_rg_sable_data$lens,
+                              # number of lengths (41 - 99)
+                              n_regions = three_rg_sable_data$n_regions,
+                              # number of regions (5)
+                              n_sexes = three_rg_sable_data$n_sexes,
+                              # number of sexes (2)
+                              n_fish_fleets = three_rg_sable_data$n_fish_fleets,
+                              # number of fishery fleet (2)
+                              n_srv_fleets = three_rg_sable_data$n_srv_fleets,
+                              # number of survey fleets (2)
+                              n_seas = three_rg_sable_data$n_seas,
+                              # number of seasons
+                              n_pop = three_rg_sable_data$n_pop,
+                              natal_region = three_rg_sable_data$natal_region,
+                              # population stuff
+                              verbose = TRUE
   )
 
   # Setup recruitment stuff (using defaults for other stuff)
@@ -20,18 +32,17 @@ test_that("Three-region Sablefish RTMB model produces expected results", {
                               do_rec_bias_ramp = 0, # not using bias ramp
                               sigmaR_switch = 16, # switch to using late sigma in year 16
                               dont_est_recdev_last = 1, # don't estimate last rec dev
-
                               # Model options
                               rec_model = "mean_rec", # recruitment model
-                              h_spec = 'fix',
                               sigmaR_spec = "fix", # fixing
-                              InitDevs_spec = "est_shared_r", # initial deviations are shared across regions,
+                              InitDevs_spec = "est_shared_r",
+                              # initial deviations are shared across regions,
                               # but recruitment deviations are region specific
-                              ln_sigmaR = log(c(0.4, 1.2)), # values to fix sigmaR at, or starting values
+                              ln_sigmaR = array(log(c(0.4, 1.2)), dim = c(2, input_list$data$n_pop, input_list$data$n_regions)),
+                              # values to fix sigmaR at, or starting values
                               ln_global_R0 = log(20),
                               # starting value for global R0
-                              R0_prop = array(c(0.2, 0.2),
-                                              dim = c(input_list$data$n_regions - 1))
+                              rec_region_prop_pars = array(c(0.2, 0.2, 0.2, 0.2), dim = c(input_list$data$n_pop, input_list$data$n_regions - 1))
                               # starting value for R0 proportions in multinomial logit space
   )
 
@@ -39,116 +50,139 @@ test_that("Three-region Sablefish RTMB model produces expected results", {
   input_list <- Setup_Mod_Biologicals(input_list = input_list,
                                       WAA = three_rg_sable_data$WAA, # weight at age
                                       MatAA = three_rg_sable_data$MatAA, # maturity at age
-                                      AgeingError = three_rg_sable_data$AgeingError, # ageing error matrix
+                                      AgeingError = three_rg_sable_data$AgeingError,
+                                      # ageing error matrix
                                       fit_lengths = 1, # fitting lengths
-                                      SizeAgeTrans = three_rg_sable_data$SizeAgeTrans, # size age transition matrix
+                                      SizeAgeTrans = three_rg_sable_data$SizeAgeTrans,
+                                      # size age transition matrix
                                       M_spec = "fix", # fix natural mortality
-                                      Fixed_natmort = array(0.104884, dim = c(three_rg_sable_data$n_regions,
+                                      Fixed_natmort = array(0.104884, dim = c(three_rg_sable_data$n_pop,
+                                                                              three_rg_sable_data$n_regions,
                                                                               length(three_rg_sable_data$years),
                                                                               length(three_rg_sable_data$ages),
                                                                               three_rg_sable_data$n_sexes))
-                                      # value to fix natural mortality at
+                                      # values to fix natural mortality at
   )
 
   # setting up movement parameterization
   Movement_prior <- expand.grid(
+    pop = 1, # populations
     region_from = 1:3, # regions
+    year = 1, # penalize first year since no blocks
+    seas = 1,
     age = c(6,7,16), # age blocks
     sex = 1, # sex
-    alpha = I(list(rep(2.5, 3))) # prior alpha to each row
+    alpha = I(list(rep(3, 3))) # prior alpha to each row
   )
 
   input_list <- Setup_Mod_Movement(input_list = input_list,
                                    # Model options
-                                   Movement_ageblk_spec = list(c(1:6), c(7:15), c(16:30)), # estimating movement in 3 age blocks
+                                   Movement_ageblk_spec = list(c(1:6), c(7:15), c(16:30)),
+                                   # estimating movement in 3 age blocks
                                    # (ages 1-6, ages 7-15, ages 16-30)
-                                   Movement_yearblk_spec = "constant", # time-invariant for movement
+                                   Movement_popblk_spec = 'constant', # population-invariant movement
+                                   Movement_yearblk_spec = "constant", # time-invariant movement
                                    Movement_sexblk_spec = "constant", # sex-invariant movement
+                                   Movement_seasblk_spec = 'constant',
                                    do_recruits_move = 0, # recruits do not move
                                    use_fixed_movement = 0, # estimating movement
                                    Use_Movement_Prior = 1, # priors used for movement
-                                   Movement_prior = Movement_prior, # vague prior to penalize movement away from the extremes
-                                   cont_vary_movement = 'none'
+                                   Movement_prior = Movement_prior
+                                   # vague prior to penalize movement away from the extremes
   )
 
   # setting up tagging parameterization
+
   # setup tagging priors
   tag_prior <- data.frame(
     region = 1,
     block = c(1,2),
+    fleet = 1,
     mu = NA, # no mean, since symmetric beta
     sd = 5, # sd = 5
     type = 0 # symmetric beta
   )
 
   input_list <- Setup_Mod_Tagging(input_list = input_list,
-                                  UseTagging = 1, # using tagging data
-                                  max_tag_liberty = 15, # maximum number of years to track a cohort
+                                  use_conv_fish_tagging = c(1,0), # using tagging data for fixed gear
+                                  conv_tag_max_liberty = 15, # maximum number of years to track a cohort
 
                                   # Data Inputs
-                                  tag_release_indicator = three_rg_sable_data$tag_release_indicator,
-                                  # tag release indicator (first col = tag region, second col = tag year),
+                                  conv_tag_release_indicator = three_rg_sable_data$conv_tag_release_indicator,
+                                  # tag release indicator (first col = tag region,
+                                  # second col = tag year),
                                   # total number of rows = number of tagged cohorts
-                                  Tagged_Fish = three_rg_sable_data$Tagged_Fish, # Released fish
+                                  conv_tagged_fish = three_rg_sable_data$conv_tagged_fish, # Released fish
                                   # dimensioned by total number of tagged cohorts, (implicitly
-                                  # tracks the release year and region), age, and sex
-                                  Obs_Tag_Recap = three_rg_sable_data$Obs_Tag_Recap,
-                                  # dimensioned by max tag liberty, tagged cohorts, regions,
+                                  # tracks the release year and region), pop, age, and sex
+                                  obs_conv_tag_fish_recap = three_rg_sable_data$obs_conv_tag_fish_recap,
+                                  # dimensioned by max tag liberty, tagged cohorts, pop, regions,
                                   # ages, and sexes
 
                                   # Model options
-                                  Tag_LikeType = "NegBin", # Negative Binomial
-                                  mixing_period = 2, # Don't fit tagging until release year + 1
-                                  t_tagging = 0.5, # tagging happens midway through the year,
+                                  conv_fish_tag_like = "NegBin", # Negative Binomial
+                                  conv_tag_mixing_period = 2, # Don't fit tagging until release year + 1
+                                  conv_tag_t_tagging = 0.5, # tagging happens midway through the year,
                                   # movement does not occur within that year
-                                  tag_selex = "SexSp_AllFleet", # tagging recapture selectivity
-                                  # is a weighted average of fishery selectivity of two fleets
-                                  tag_natmort = "AgeSp_SexSp", # tagging natural mortality is
-                                  # age and sex-specific
-                                  Use_TagRep_Prior = 1, # tag reporting rate priors are used
-                                  TagRep_Prior = tag_prior,
-                                  move_age_tag_pool = list(c(1:6), c(7:15), c(16:30)), # whether or
+                                  use_conv_tag_fishrep_prior = 1, # tag reporting rate priors are used
+                                  conv_tag_fishrep_prior = tag_prior,
+                                  conv_tag_age_pool = list(c(1:6), c(7:15), c(16:30)), # whether or
                                   # not to pool tagging data when fitting (for computational cost)
-                                  move_sex_tag_pool = list(c(1:2)), # whether or not to pool
+                                  conv_tag_sex_pool = list(c(1:2)), # whether or not to pool
                                   # sex-specific data when fitting
-                                  Init_Tag_Mort_spec = "fix", # fixing initial tag mortality
-                                  Tag_Shed_spec = "fix", # fixing chronic shedding
-                                  TagRep_spec = "est_shared_r", # tag reporting rates are not region specific
+                                  init_conv_tag_mort_spec = "fix", # fixing initial tag mortality
+                                  conv_tag_shed_spec = "fix", # fixing chronic shedding
+                                  conv_tagrep_spec = "est_shared_r_f", # tag reporting rates are
+                                  # not region specific
                                   # Time blocks for tag reporting rates
-                                  Tag_Reporting_blocks = c(
-                                    paste("Block_1_Year_1-35_Region_", c(1:input_list$data$n_regions), sep = ''),
-                                    paste("Block_2_Year_36-terminal_Region_", c(1:input_list$data$n_regions), sep = '')
+                                  conv_tag_fish_reporting_blocks = c(
+                                    apply(expand.grid(1:input_list$data$n_regions, 1:input_list$data$n_fish_fleets), 1, function(x)
+                                      paste0("Block_1_Year_1-35_Region_", x[1], "_Fleet_", x[2])),
+                                    apply(expand.grid(1:input_list$data$n_regions, 1:input_list$data$n_fish_fleets), 1, function(x)
+                                      paste0("Block_2_Year_36-terminal_Region_", x[1], "_Fleet_", x[2]))
                                   ),
+                                  conv_fish_tag_attr = 'p_a_s',
 
                                   # Specify starting values or fixing values
-                                  ln_Init_Tag_Mort = log(0.1), # fixing initial tag mortality
-                                  ln_Tag_Shed = log(0.02),  # fixing tag shedding
-                                  ln_tag_theta = log(0.5), # starting value for tagging overdispersion
-                                  Tag_Reporting_Pars = array(log(0.2 / (1-0.2)), # starting values for tag reporting pars
-                                                             dim = c(input_list$data$n_regions, 2))
+                                  ln_init_conv_tag_mort = log(0.1), # fixing initial tag mortality
+                                  ln_conv_tag_shed = log(0.02),  # fixing tag shedding
+                                  ln_conv_fish_tag_theta = log(0.5),
+                                  # starting value for tagging overdispersion
+                                  conv_tag_fish_reporting_pars = array(log(0.2 / (1-0.2)), dim = c(input_list$data$n_regions, 2, input_list$data$n_fish_fleets))
+                                  # starting values for tag reporting pars
+
   )
+
+  input_list$par$conv_tag_fish_reporting_pars
+  input_list$par$ln_conv_tag_shed
+  input_list$par$ln_conv_fish_tag_theta
+  input_list$par$ln_init_conv_tag_mort
+
+  input_list$map$conv_tag_fish_reporting_pars
+  input_list$par$ln_conv_tag_shed
+  input_list$par$ln_conv_fish_tag_theta
+  input_list$par$ln_init_conv_tag_mort
 
 
   # setting up catch data
-  input_list <- suppressWarnings(
-    Setup_Mod_Catch_and_F(input_list = input_list,
-                          # Data inputs
-                          ObsCatch = three_rg_sable_data$ObsCatch,
-                          Catch_Type = three_rg_sable_data$Catch_Type,
-                          UseCatch = three_rg_sable_data$UseCatch,
-                          # Model options
-                          Use_F_pen = 1,
-                          # whether to use f penalty, == 0 don't use, == 1 use
-                          sigmaC_spec = 'fix',
-                          ln_sigmaC =
-                            array(log(0.05), dim = c(input_list$data$n_regions,
-                                                     length(input_list$data$years),
-                                                     input_list$data$n_fish_fleets)),
-                          # fixing catch sd at small value
-                          ln_F_mean = array(-2, dim = c(input_list$data$n_regions,
-                                                        input_list$data$n_fish_fleets))
-                          # some starting values for fishing mortality
-    )
+  input_list <- Setup_Mod_Catch_and_F(input_list = input_list,
+                                      # Data inputs
+                                      ObsCatch = three_rg_sable_data$ObsCatch,
+                                      UseCatch = three_rg_sable_data$UseCatch,
+                                      # Model options
+                                      Use_F_pen = 1,
+                                      # whether to use f penalty, == 0 don't use, == 1 use
+                                      sigmaC_spec = 'fix',
+                                      ln_sigmaC =
+                                        array(log(0.05), dim = c(input_list$data$n_regions,
+                                                                 length(input_list$data$years),
+                                                                 input_list$data$n_seas,
+                                                                 input_list$data$n_fish_fleets)),
+                                      # fixing catch sd at small value
+                                      ln_F_mean = array(-2, dim = c(input_list$data$n_regions,
+                                                                    input_list$data$n_seas,
+                                                                    input_list$data$n_fish_fleets))
+                                      # some starting values for fishing mortality
   )
 
   # Fishery Indices and Compositions
@@ -167,9 +201,11 @@ test_that("Three-region Sablefish RTMB model produces expected results", {
                                             # Model options
                                             fish_idx_type = c("none", "none"),
                                             # fishery indices not used
-                                            FishAgeComps_LikeType = c("Multinomial", "none"),
+                                            FishAgeComps_LikeType =
+                                              c("Multinomial", "none"),
                                             # age comp likelihoods for fishery fleet 1 and 2
-                                            FishLenComps_LikeType = c("Multinomial", "Multinomial"),
+                                            FishLenComps_LikeType =
+                                              c("Multinomial", "Multinomial"),
                                             # length comp likelihoods for fishery fleet 1 and 2
                                             FishAgeComps_Type =
                                               c("spltRjntS_Year_1-terminal_Fleet_1",
@@ -209,6 +245,7 @@ test_that("Three-region Sablefish RTMB model produces expected results", {
                                            # survey age comp type
                                            SrvLenComps_Type = c("none_Year_1-terminal_Fleet_1",
                                                                 "none_Year_1-terminal_Fleet_2")
+                                           # survey length comp type
   )
 
   # Fishery Selectivity and Catchability
@@ -251,32 +288,39 @@ test_that("Three-region Sablefish RTMB model produces expected results", {
                                         # fix fishery q since not used
   )
 
+
   # Custom parameter sharing for fishery selectivity
   map_ln_fish_fixed_sel_pars <- input_list$par$ln_fish_fixed_sel_pars # mapping fishery selectivity
 
   # Fixed gear fleet, unique parameters for each sex (time block 1)
   map_ln_fish_fixed_sel_pars[,1,1,1,1] <- 1 # a50, female, time block 1, fixed gear
-  map_ln_fish_fixed_sel_pars[,2,1,1,1] <- 2 # delta, female, time block 1, fixed gear (shared with time block 2 and sex)
+  map_ln_fish_fixed_sel_pars[,2,1,1,1] <- 2 # delta, female, time block 1, fixed gear
+  # (shared with time block 2 and sex)
   map_ln_fish_fixed_sel_pars[,1,1,2,1] <- 3 # a50, male, time block 1, fixed gear
-  map_ln_fish_fixed_sel_pars[,2,1,2,1] <- 4 # delta, male, time block 1, fixed gear (shared with time block 2 and sex)
+  map_ln_fish_fixed_sel_pars[,2,1,2,1] <- 2 # delta, male, time block 1, fixed gear
+  # (shared with time block 2 and sex)
 
   # time block 2, fixed gear fishery
-  map_ln_fish_fixed_sel_pars[,1,2,1,1] <- 5 # a50, female, time block 2, fixed gear
-  map_ln_fish_fixed_sel_pars[,2,2,1,1] <- 2 # delta, female, time block 2, fixed gear (shared with time block 1 and sex)
-  map_ln_fish_fixed_sel_pars[,1,2,2,1] <- 6 # a50, male, time block 2, fixed gear
-  map_ln_fish_fixed_sel_pars[,2,2,2,1] <- 4 # delta, male, time block 2, fixed gear (shared with time block 1 and sex)
+  map_ln_fish_fixed_sel_pars[,1,2,1,1] <- 4 # a50, female, time block 2, fixed gear
+  map_ln_fish_fixed_sel_pars[,2,2,1,1] <- 2 # delta, female, time block 2, fixed gear
+  # (shared with time block 1 and sex)
+  map_ln_fish_fixed_sel_pars[,1,2,2,1] <- 5 # a50, male, time block 2, fixed gear
+  map_ln_fish_fixed_sel_pars[,2,2,2,1] <- 2 # delta, male, time block 2, fixed gear
+  # (shared with time block 1 and sex)
 
   # time block 1 and 2, trawl gear fishery
-  map_ln_fish_fixed_sel_pars[,1,1,1,2] <- 7 # amax, female, time block 1, trawl gear
-  map_ln_fish_fixed_sel_pars[,2,1,1,2] <- 8 # delta, female, time block 1, trawl gear (shared by sex)
-  map_ln_fish_fixed_sel_pars[,1,1,2,2] <- 9 # amax, male, time block 1, trawl gear
-  map_ln_fish_fixed_sel_pars[,2,1,2,2] <- 8 # delta, male, time block 1, trawl gear (shared by sex)
+  map_ln_fish_fixed_sel_pars[,1,1,1,2] <- 6 # amax, female, time block 1, trawl gear
+  map_ln_fish_fixed_sel_pars[,2,1,1,2] <- 7 # delta, female, time block 1, trawl gear
+  # (shared by sex)
+  map_ln_fish_fixed_sel_pars[,1,1,2,2] <- 8 # amax, male, time block 1, trawl gear
+  map_ln_fish_fixed_sel_pars[,2,1,2,2] <- 7 # delta, male, time block 1, trawl gear
+  # (shared by sex)
   map_ln_fish_fixed_sel_pars[,,2,,2] <- NA # no parameters estimated for time block 2 trawl gear
 
   input_list$map$ln_fish_fixed_sel_pars <- factor(map_ln_fish_fixed_sel_pars) # input into map list
-  input_list$par$ln_fish_fixed_sel_pars[] <- log(0.1) # some more inforamtive starting values
+  input_list$par$ln_fish_fixed_sel_pars[,,,,1] <- log(3) # some more inforamtive starting values
+  input_list$par$ln_fish_fixed_sel_pars[,,,,2] <- log(6) # some more inforamtive starting values
 
-  # Survey Selectivity and Catchability
   input_list <- Setup_Mod_Srvsel_and_Q(input_list = input_list,
 
                                        # Model options
@@ -312,7 +356,8 @@ test_that("Three-region Sablefish RTMB model produces expected results", {
                                        # fixed effects for survey catchability
                                        # spatially-invariant q
                                        srv_q_spec =
-                                         c("est_shared_r", "est_shared_r"),
+                                         c("est_shared_r",
+                                           "est_shared_r"),
 
                                        # Starting values for survey catchability
                                        ln_srv_q = array(8.75,
@@ -325,19 +370,22 @@ test_that("Three-region Sablefish RTMB model produces expected results", {
 
   # Coop survey (japanese)
   map_ln_srv_fixed_sel_pars[,1,1,1,1] <- 1 # a50, coop survey, time block 1, female
-  map_ln_srv_fixed_sel_pars[,2,1,1,1] <- 2 # delta, coop survey, time block 1, female (sharing with domestic survey)
+  map_ln_srv_fixed_sel_pars[,2,1,1,1] <- 2 # delta, coop survey, time block 1, female
+  # (sharing with domestic survey)
   map_ln_srv_fixed_sel_pars[,1,1,2,1] <- 3 # a50, coop survey, time block 1, male
-  map_ln_srv_fixed_sel_pars[,2,1,2,1] <- 2 # delta, coop survey, time block 1, male (sharing with domestic survey)
+  map_ln_srv_fixed_sel_pars[,2,1,2,1] <- 4 # delta, coop survey, time block 1, male
+  # (sharing with domestic survey)
 
   # domestic survey
   map_ln_srv_fixed_sel_pars[,1,1,1,2] <- 5 # a50, domestic survey, time block 1, female
-  map_ln_srv_fixed_sel_pars[,2,1,1,2] <- 2 # delta, domestic survey, time block 1, female (sharing with coop survey)
+  map_ln_srv_fixed_sel_pars[,2,1,1,2] <- 2 # delta, domestic survey, time block 1, female
+  # (sharing with coop survey)
   map_ln_srv_fixed_sel_pars[,1,1,2,2] <- 6 # a50, domestic survey, time block 1, male
-  map_ln_srv_fixed_sel_pars[,2,1,2,2] <- 2 # delta, domestic survey, time block 1, male (sharing with coop survey)
+  map_ln_srv_fixed_sel_pars[,2,1,2,2] <- 4 # delta, domestic survey, time block 1, male
+  # (sharing with coop survey)
 
   input_list$map$ln_srv_fixed_sel_pars <- factor(map_ln_srv_fixed_sel_pars)  # input into map list
-  input_list$par$ln_srv_fixed_sel_pars[] <- log(0.1) # some more informative starting values
-
+  input_list$par$ln_srv_fixed_sel_pars[] <- log(3) # some more informative starting values
 
   # set up model weighting stuff
   input_list <- Setup_Mod_Weighting(input_list = input_list,
@@ -351,21 +399,25 @@ test_that("Three-region Sablefish RTMB model produces expected results", {
                                     Wt_FishAgeComps =
                                       array(1, dim = c(input_list$data$n_regions,
                                                        length(input_list$data$years),
+                                                       input_list$data$n_seas,
                                                        input_list$data$n_sexes,
                                                        input_list$data$n_fish_fleets)),
                                     Wt_FishLenComps =
                                       array(1, dim = c(input_list$data$n_regions,
                                                        length(input_list$data$years),
+                                                       input_list$data$n_seas,
                                                        input_list$data$n_sexes,
                                                        input_list$data$n_fish_fleets)),
                                     Wt_SrvAgeComps =
                                       array(1, dim = c(input_list$data$n_regions,
                                                        length(input_list$data$years),
+                                                       input_list$data$n_seas,
                                                        input_list$data$n_sexes,
                                                        input_list$data$n_srv_fleets)),
                                     Wt_SrvLenComps =
                                       array(1, dim = c(input_list$data$n_regions,
                                                        length(input_list$data$years),
+                                                       input_list$data$n_seas,
                                                        input_list$data$n_sexes,
                                                        input_list$data$n_srv_fleets))
   )
@@ -375,10 +427,9 @@ test_that("Three-region Sablefish RTMB model produces expected results", {
   parameters <- input_list$par
   mapping <- input_list$map
 
-  # Pre-specify ISS
-  data$ISS_FishAgeComps[] <- 50
-  data$ISS_FishLenComps[] <- 40
-  data$ISS_SrvAgeComps[] <- 60
+  # set survey timing to midway through year
+  data$t_srv[] <- 0.5
+
 
   sabie_rtmb_model <- fit_model(data,
                                 parameters,
@@ -390,106 +441,76 @@ test_that("Three-region Sablefish RTMB model produces expected results", {
   # Save model results
   sabie_rtmb_model$sd_rep <- RTMB::sdreport(sabie_rtmb_model)
 
-  ssb_expected_vec <- c(
-    41.31334, 112.03276, 92.32823, 40.95897,
-    111.17527, 91.43794, 39.41037, 107.68528,
-    87.73502, 37.01079, 102.02302, 81.96514,
-    35.59069, 98.41208, 79.47796, 35.30646,
-    96.82819, 78.69146, 35.08223, 95.40563,
-    78.10767, 34.45520, 93.11114, 76.56564,
-    33.76643, 90.59166, 74.79041, 32.20515,
-    86.27259, 71.18591, 30.23384, 81.10761,
-    66.69770, 28.24654, 75.62611, 61.23012,
-    25.56714, 69.23012, 55.67898, 21.85469,
-    60.98703, 48.72356, 19.64360, 55.22301,
-    43.56300, 17.59444, 49.60068, 38.29287,
-    15.89943, 44.65376, 33.81197, 13.95575,
-    39.21270, 29.02038, 12.41632, 36.41166,
-    25.31809, 12.35180, 34.33274, 24.69786,
-    13.02970, 32.33558, 23.34568, 14.34337,
-    31.31804, 22.98218, 17.31755, 31.31101,
-    22.64579, 22.98803, 33.96925, 23.50783,
-    30.45777, 39.31391, 25.18314, 36.85791,
-    46.66771, 29.37425, 39.92687, 55.55482,
-    36.58013, 42.86800, 62.90875, 41.45861,
-    44.81373, 69.04212, 44.73558, 41.98176,
-    73.91971, 48.76300, 37.19320, 76.67455,
-    52.17302, 33.05445, 76.00453, 52.62515,
-    28.44692, 73.87178, 52.61725, 24.62396,
-    70.64786, 51.15683, 22.01163, 66.01084,
-    48.05534, 20.33407, 62.26051, 44.56067,
-    18.84145, 58.99149, 41.78472, 17.72453,
-    56.10474, 39.84279, 16.76462, 53.31921,
-    38.73848, 16.19008, 50.73804, 37.21608,
-    15.74297, 48.52365, 35.86079, 15.68860,
-    46.53411, 33.79828, 16.15540, 46.18020,
-    32.47626, 16.69367, 46.91151, 32.26707,
-    17.68851, 48.11924, 32.16655, 18.50490,
-    49.56069, 32.68358, 19.00383, 50.75666,
-    33.94823, 19.53500, 51.69528, 34.80850,
-    18.62709, 51.69105, 35.77683, 17.52899,
-    50.92796, 36.11574, 16.54400, 49.59006,
-    35.90766, 15.84797, 48.24508, 35.61607,
-    15.49644, 46.56341, 34.61231, 15.23844,
-    44.69829, 33.34705, 15.21171, 42.45868,
-    31.39539, 14.99489, 40.38498, 30.09393,
-    14.78778, 38.60958, 28.85505, 14.61202,
-    37.17293, 27.90553, 15.71122, 36.84435,
-    26.85475, 18.27793, 38.18578, 26.18840,
-    23.12911, 42.46053, 26.94233, 30.07849,
-    50.58409, 29.60340
-  )
+  ssb_expected_vec <- c(39.67343, 107.48289,  92.51175,  39.36165, 106.71604,  91.67044,
+                        37.88366, 103.36530,  87.99805,  35.57364,  97.88692,  82.22800,
+                        34.04447,  94.17644,  79.61764,  33.74517,  92.57153,  78.73323,
+                        33.41889,  90.98589,  77.99490,  32.64240,  88.42775,  76.22456,
+                        31.78232,  85.57802,  74.15394,  30.03818,  80.89521,  70.19132,
+                        27.93790,  75.43623,  65.32746,  26.02643,  69.99544,  59.61421,
+                        23.28865,  63.50973,  53.76333,  19.50736,  55.15801,  46.48303,
+                        17.46065,  49.59485,  41.13676,  15.64010,  44.32800,  35.81326,
+                        14.16076,  39.77291,  31.34789,  12.36818,  34.71830,  26.62317,
+                        10.90454,  32.27983,  23.00080,  10.91353,  30.47202,  22.40091,
+                        11.54200,  28.68866,  21.06338,  12.78997,  27.76512,  20.73099,
+                        15.80127,  27.80515,  20.51699,  21.35350,  30.42202,  21.49741,
+                        28.84921,  35.58794,  23.17528,  34.73732,  42.89803,  27.42985,
+                        37.66594,  51.75827,  34.30106,  40.48605,  58.91989,  38.85329,
+                        42.07947,  64.73477,  41.99223,  39.42727,  69.39803,  45.47265,
+                        34.64654,  72.01091,  48.48852,  30.60451,  71.25642,  48.79042,
+                        26.15117,  69.15636,  48.64726,  22.51175,  65.95486,  47.16957,
+                        20.07105,  61.19376,  44.34020,  18.50823,  57.28018,  41.11739,
+                        17.10786,  53.98262,  38.45956,  16.05590,  51.14422,  36.64825,
+                        15.19210,  48.33164,  35.70321,  14.64602,  45.77870,  34.39098,
+                        14.22069,  43.65331,  33.11230,  14.15888,  41.74608,  31.15173,
+                        14.61611,  41.47845,  29.93888,  15.11204,  42.25352,  29.76285,
+                        16.10109,  43.47449,  29.65799,  16.85709,  44.94767,  30.17051,
+                        17.38703,  46.23232,  31.30070,  17.87425,  47.22247,  32.09435,
+                        16.94653,  47.38386,  32.96218,  15.86883,  46.74063,  33.19290,
+                        14.96649,  45.53138,  32.95381,  14.31236,  44.27862,  32.66366,
+                        14.01417,  42.63895,  31.70690,  13.77220,  40.83854,  30.49004,
+                        13.71247,  38.61034,  28.70865,  13.52290,  36.57973,  27.49647,
+                        13.29165,  34.87613,  26.32353,  13.10033,  33.47268,  25.47910,
+                        14.17759,  33.13018,  24.49356,  16.70203,  34.41596,  23.92235,
+                        21.43838,  38.56011,  24.77585,  28.23219,  46.42713,  27.54328)
 
-  rec_expected_vec <- c(
-    9.6148867, 4.7628042, 2.6240565, 9.8152715,
-    4.8122609, 2.6392956, 10.3084691, 4.9062933,
-    2.6692695, 11.2873663, 5.0545166, 2.7171714,
-    12.5870065, 5.2117803, 2.7658632, 14.0837548,
-    5.3356052, 2.8075168, 15.3125159, 5.3874395,
-    2.8289695, 15.2767541, 5.3153180, 2.8166022,
-    14.2783119, 5.1464349, 2.7769095, 12.9401836,
-    4.9052797, 2.7141051, 11.6751789, 4.6184366,
-    2.6348140, 10.5300742, 4.2853360, 2.5350707,
-    9.4087368, 3.8892240, 2.4059369, 8.4794735,
-    3.4628713, 2.2636538, 8.2162219, 3.0666051,
-    2.1299754, 3.2581110, 0.6988721, 0.6573834,
-    4.9556619, 0.5842927, 0.6181444, 5.1883982,
-    0.4982642, 0.6035069, 7.2912508, 0.5755407,
-    0.7320428, 32.8433942, 0.8953928, 16.0971020,
-    64.5291811, 1.0576272, 2.1431233, 3.9182895,
-    0.8848496, 0.7160814, 19.2758958, 1.0128301,
-    0.6689465, 85.2569618, 1.0189279, 0.7389304,
-    33.3994656, 1.1411407, 0.9323679, 3.2782052,
-    1.6011670, 0.9420896, 22.8645395, 10.8880136,
-    0.9495787, 3.5951812, 6.1150578, 0.8634550,
-    1.2750286, 2.8875786, 0.9550809, 1.0018263,
-    12.4500175, 2.4370427, 0.8746270, 2.2597593,
-    8.6965781, 1.2789112, 3.9514055, 14.4258385,
-    4.0177584, 7.5509891, 1.5711284, 0.7996369,
-    5.4826663, 2.9384787, 0.6768236, 10.4631048,
-    3.0536955, 0.9335852, 2.3183874, 1.7352583,
-    3.9893154, 2.1945989, 4.6834187, 7.7965838,
-    6.2460951, 2.1524309, 3.1770034, 6.1593914,
-    1.0547154, 9.7888633, 18.0359826, 0.8012966,
-    1.8300217, 23.3820131, 1.4059043, 2.4862392,
-    3.1247399, 3.3237795, 17.2191738, 17.4358114,
-    1.2562539, 5.6582553, 6.0157993, 0.7718985,
-    2.5049310, 3.1933669, 2.9156549, 3.2812893,
-    6.0596172, 2.7902627, 3.0436321, 2.8755509,
-    1.3909855, 2.6698167, 5.5923299, 3.8386324,
-    1.4219191, 2.0031776, 2.6153778, 6.4917936,
-    2.3274801, 6.8831119, 8.3406690, 4.0942803,
-    1.2690962, 3.8437368, 1.2687131, 0.9711480,
-    4.9356866, 1.1537111, 1.4220850, 0.8784587,
-    0.9127894, 1.9236057, 3.6254646, 1.5864582,
-    2.1099395, 6.2957189, 3.8180067, 0.6894480,
-    32.4643659, 22.1930391, 1.6658426, 6.3974593,
-    5.1580625, 2.6236741, 78.3922492, 54.7443987,
-    4.7630196, 15.6643769, 22.3552314, 0.7867188,
-    25.0060657, 13.5420664, 0.5998973, 10.8377116,
-    5.2553253, 2.8740964
-  )
-
+  rec_expected_vec <- c( 9.4882457,  5.1430092,  2.2192742,  9.6630398,  5.1961050,
+                         2.2291811, 10.0958374,  5.2967932,  2.2484061, 10.9922214,
+                         5.4635005,  2.2799843, 12.2623279,  5.6435165,  2.3130034,
+                         13.5242196,  5.7626878,  2.3360275, 14.5187579,  5.8033033,
+                         2.3465295, 14.2465191,  5.6857193,  2.3322683, 13.2368709,
+                         5.4666756,  2.3007542, 11.9777172,  5.1733162,  2.2539899,
+                         10.7790350,  4.8350114,  2.1950969,  9.6618306,  4.4499041,
+                         2.1204772,  8.6273058,  4.0201232,  2.0285796,  7.8720899,
+                         3.5973555,  1.9338144,  7.7642927,  3.2218101,  1.8504594,
+                         2.9546454,  0.7340996,  0.6051922,  4.2861911,  0.6259843,
+                         0.5790964,  4.2950662,  0.5423907,  0.5643884,  4.4130149,
+                         0.6129132,  0.6581187, 37.3789206,  0.9342916, 16.2418030,
+                         58.7085464,  1.1014723,  1.6354865,  3.3162862,  0.8741255,
+                         0.6377696, 23.3252522,  1.0438339,  0.6227757, 74.8103258,
+                         1.0199767,  0.6415209, 37.3534299,  1.1156789,  0.7737032,
+                         3.3670105,  1.5305303,  0.7793424, 22.5914344,  8.4847774,
+                         0.7974638,  2.9121990,  7.2274555,  0.7033818,  1.2765954,
+                         3.2446704,  0.8076420,  1.0703113, 12.0432368,  1.5424296,
+                         0.9441979,  2.5853643,  7.8793986,  1.7288712,  5.3667827,
+                         12.0724809,  3.7518065,  6.7730932,  1.3388498,  0.8745027,
+                         6.8937280,  2.0412569,  0.7034009,  8.7952875,  3.2740892,
+                         0.9464316,  2.9811932,  1.3939773,  3.7067847,  3.1176189,
+                         3.3451741,  7.4717484,  6.1761534,  1.8894439,  3.4956614,
+                         4.4658538,  0.8986409,  8.2310130, 20.9702710,  0.9209671,
+                         1.7131843, 19.7925575,  0.9541103,  2.8619230,  5.6611189,
+                         1.8745978, 16.9200019, 16.3403548,  1.0912541,  4.2868211,
+                         6.8301796,  0.8707011,  2.6256240,  3.6489298,  1.5503650,
+                         3.5679318,  6.8753391,  1.7678221,  2.4910274,  3.0371900,
+                         1.0510983,  2.7897915,  6.2499170,  2.9613137,  1.6673446,
+                         2.7244196,  2.0082918,  5.6112075,  3.2792355,  4.5251297,
+                         8.7084097,  4.5978793,  1.1628381,  3.1492820,  1.4751992,
+                         0.7748086,  4.3467724,  1.4351274,  1.1514011,  1.0543084,
+                         1.1591482,  1.5131083,  3.1544606,  2.0511119,  1.6548438,
+                         5.1380380,  4.1908328,  0.8485258, 32.6601177, 20.9888894,
+                         1.1995712,  5.5172590,  7.9104128,  1.9855286, 74.7348313,
+                         51.2124053,  5.2986286, 16.9730548, 23.2022554,  0.6042292,
+                         22.2523710, 11.7528461,  0.5012960, 10.4172817,  5.6120456,
+                         2.4140437)
 
   expect_equal(as.vector(sabie_rtmb_model$rep$SSB), ssb_expected_vec, tolerance = 1e-3)
   expect_equal(as.vector(sabie_rtmb_model$rep$Rec), rec_expected_vec, tolerance = 1e-3)

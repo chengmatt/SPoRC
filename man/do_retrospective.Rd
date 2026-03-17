@@ -2,7 +2,7 @@
 % Please edit documentation in R/do_retrospective.R
 \name{do_retrospective}
 \alias{do_retrospective}
-\title{Run retrospective analyses for RTMB models}
+\title{Run Retrospective Diagnostics for RTMB Models}
 \usage{
 do_retrospective(
   n_retro,
@@ -23,64 +23,92 @@ do_retrospective(
   srvidx_datalag = array(0, dim = c(data$n_regions, data$n_srv_fleets)),
   srvage_datalag = array(0, dim = c(data$n_regions, data$n_srv_fleets)),
   srvlen_datalag = array(0, dim = c(data$n_regions, data$n_srv_fleets)),
-  tag_datalag = 0
+  conv_tag_datalag = 0
 )
 }
 \arguments{
-\item{n_retro}{Integer. Number of retrospective peels to perform.}
+\item{n_retro}{Integer specifying the number of retrospective peels to perform.
+A value of \code{n_retro = 0} fits the model using the full dataset only.}
 
-\item{data}{List. Data input for the RTMB model.}
+\item{data}{List containing the data supplied to the RTMB model.}
 
-\item{parameters}{List. Parameter values for the RTMB model.}
+\item{parameters}{List containing the model parameters.}
 
-\item{mapping}{List. Mapping information for the RTMB model.}
+\item{mapping}{List defining parameter mappings used during estimation.}
 
-\item{random}{Character vector. Names of random effects in the model. Default is \code{NULL}.}
+\item{random}{Character vector identifying random-effect parameters in the model.
+Default is \code{NULL}.}
 
-\item{do_par}{Logical. Whether to run retrospective peels in parallel. Default is \code{FALSE}.}
+\item{do_par}{Logical indicating whether retrospective peels should be run
+in parallel. Default is \code{FALSE}.}
 
-\item{n_cores}{Integer. Number of cores to use for parallel execution if \code{do_par = TRUE}.}
+\item{n_cores}{Integer specifying the number of cores to use when
+\code{do_par = TRUE}.}
 
-\item{newton_loops}{Integer. Number of Newton loops to run during model fitting. Default is 3.}
+\item{newton_loops}{Integer specifying the number of Newton optimization
+loops used during model fitting. Default is \code{3}.}
 
-\item{do_francis}{Logical. Whether to apply Francis reweighting within each retrospective peel. Default is \code{FALSE}.}
+\item{do_francis}{Logical indicating whether Francis composition
+reweighting should be applied within each retrospective peel.
+Default is \code{FALSE}.}
 
-\item{n_francis_iter}{Integer. Number of Francis reweighting iterations. Required if \code{do_francis = TRUE}.}
+\item{n_francis_iter}{Integer specifying the number of Francis reweighting
+iterations. Required if \code{do_francis = TRUE}.}
 
-\item{nlminb_control}{List. Control parameters passed to \code{nlminb} during model fitting. Default is \code{list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15)}.}
+\item{nlminb_control}{List of control arguments passed to \code{stats::nlminb}
+during model fitting. Default is
+\code{list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15)}.}
 
-\item{do_sdrep}{Logical. Whether to return standard errors from \code{sdreport}. Default is \code{FALSE}.}
+\item{do_sdrep}{Logical indicating whether standard errors should be
+calculated using \code{RTMB::sdreport}. Default is \code{FALSE}.}
 
-\item{fishidx_datalag}{Integer array. Lags for fishery index data [regions x fleets]. Default is zeros.}
+\item{fishidx_datalag}{Integer array specifying lags applied to fishery
+index data \eqn{[region \times fleet]}. Default is zeros.}
 
-\item{fishage_datalag}{Integer array. Lags for fishery age composition data [regions x fleets]. Default is zeros.}
+\item{fishage_datalag}{Integer array specifying lags applied to fishery
+age-composition data \eqn{[region \times fleet]}. Default is zeros.}
 
-\item{fishlen_datalag}{Integer array. Lags for fishery length composition data [regions x fleets]. Default is zeros.}
+\item{fishlen_datalag}{Integer array specifying lags applied to fishery
+length-composition data \eqn{[region \times fleet]}. Default is zeros.}
 
-\item{srvidx_datalag}{Integer array. Lags for survey index data [regions x fleets]. Default is zeros.}
+\item{srvidx_datalag}{Integer array specifying lags applied to survey
+index data \eqn{[region \times fleet]}. Default is zeros.}
 
-\item{srvage_datalag}{Integer array. Lags for survey age composition data [regions x fleets]. Default is zeros.}
+\item{srvage_datalag}{Integer array specifying lags applied to survey
+age-composition data \eqn{[region \times fleet]}. Default is zeros.}
 
-\item{srvlen_datalag}{Integer array. Lags for survey length composition data [regions x fleets]. Default is zeros.}
+\item{srvlen_datalag}{Integer array specifying lags applied to survey
+length-composition data \eqn{[region \times fleet]}. Default is zeros.}
 
-\item{tag_datalag}{Integer. Lag for tagging data. Default is 0.}
+\item{conv_tag_datalag}{Integer specifying the lag applied to conventional
+tagging data. Default is \code{0}.}
 }
 \value{
-A \code{data.frame} containing retrospective estimates of SSB and recruitment.
-  Columns include:
+A long-format \code{data.frame} containing retrospective estimates
+  of spawning stock biomass and recruitment. Columns include:
   \itemize{
-    \item \code{Region}: Region index.
-    \item \code{Year}: Year index.
-    \item \code{Type}: "SSB" or "Recruitment".
-    \item \code{peel}: Peel number (0 = full data, 1 = 1-year peel, etc.).
-    \item \code{value}: Estimated value of SSB or recruitment.
-    \item \code{pdHess} and \code{max_grad} (optional): Information from \code{sdreport} if \code{do_sdrep = TRUE}.
+    \item \code{Pop} – Population index.
+    \item \code{Region} – Region index.
+    \item \code{Year} – Model year.
+    \item \code{Type} – Quantity reported ("SSB" or "Recruitment").
+    \item \code{peel} – Retrospective peel number (0 = full data, 1 = one-year peel, etc.).
+    \item \code{value} – Estimated value of the quantity.
+    \item \code{pdHess} – Logical indicator of positive-definite Hessian
+    (returned when \code{do_sdrep = TRUE}).
+    \item \code{max_grad} – Maximum absolute gradient of fixed effects
+    (returned when \code{do_sdrep = TRUE}).
   }
 }
 \description{
-Performs retrospective peels by truncating the input data, optionally applying
-Francis reweighting and parallelization, and returns estimates of spawning stock
-biomass (SSB) and recruitment for each peel.
+Conducts retrospective analyses by sequentially removing terminal years
+("peels") from the dataset and refitting the model. For each peel, the
+function truncates the model inputs, optionally applies data lags and
+Francis composition reweighting, fits the model, and extracts estimates
+of spawning stock biomass (SSB) and recruitment.
+}
+\details{
+Retrospective analyses are commonly used to evaluate the stability of
+model estimates through time and to diagnose potential model misspecification.
 }
 \seealso{
 Other Model Diagnostics: 

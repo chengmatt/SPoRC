@@ -15,6 +15,7 @@ sgl_rg_sable_data$n_seas <- 1
 sgl_rg_sable_data$n_regions <- 1
 sgl_rg_sable_data$spawn_seas <- 1
 sgl_rg_sable_data$seasdur <- 1
+sgl_rg_sable_data$n_pop <- 1
 sgl_rg_sable_data$lens <- seq(41,99,2)
 
 # Dimensions to use in current R file
@@ -26,15 +27,16 @@ n_sexes <- sgl_rg_sable_data$n_sexes
 n_fish_fleets <- sgl_rg_sable_data$n_fish_fleets
 n_srv_fleets <- sgl_rg_sable_data$n_srv_fleets
 n_lens <- length(sgl_rg_sable_data$lens)
+n_pop <- sgl_rg_sable_data$n_pop
 
 
 # get ageing error
 sgl_rg_sable_data$age_error <- ageing_dat$age_error # input ageing error
 
 # Expand arrays
-sgl_rg_sable_data$WAA <- array(sgl_rg_sable_data$WAA, dim = c(n_regions, n_yrs, n_seas, n_ages, n_sexes))
-sgl_rg_sable_data$MatAA <- array(sgl_rg_sable_data$MatAA, dim = c(n_regions, n_yrs, n_seas, n_ages, n_sexes))
-sgl_rg_sable_data$SizeAgeTrans <- array(sgl_rg_sable_data$SizeAgeTrans, dim = c(n_regions, n_yrs, n_seas, n_lens, n_ages, n_sexes))
+sgl_rg_sable_data$WAA <- array(sgl_rg_sable_data$WAA, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
+sgl_rg_sable_data$MatAA <- array(sgl_rg_sable_data$MatAA, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
+sgl_rg_sable_data$SizeAgeTrans <- array(sgl_rg_sable_data$SizeAgeTrans, dim = c(n_pop, n_regions, n_yrs, n_seas, n_lens, n_ages, n_sexes))
 sgl_rg_sable_data$ObsCatch <- array(sgl_rg_sable_data$ObsCatch, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
 sgl_rg_sable_data$UseCatch <- array(sgl_rg_sable_data$UseCatch, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
 sgl_rg_sable_data$ObsFishIdx <- array(sgl_rg_sable_data$ObsFishIdx, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))

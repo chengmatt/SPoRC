@@ -2,69 +2,52 @@
 % Please edit documentation in R/Simulate_Population.R
 \name{simulation_data_to_SPoRC}
 \alias{simulation_data_to_SPoRC}
-\title{Extract simulation data into SPoRC format}
+\title{Extract simulation outputs into SPoRC estimation model format}
 \usage{
 simulation_data_to_SPoRC(sim_env, y, sim)
 }
 \arguments{
-\item{sim_env}{A simulation environment / object (list or environment) containing
-arrays of biological quantities, tagging information, fishery data,
-and survey data.}
+\item{sim_env}{Simulation environment or list (e.g., output from
+\code{\link{Simulate_Pop_Static}} or a \code{\link{Setup_sim_env}}
+environment) containing all operating model arrays.}
 
-\item{y}{Integer. Number of years to retain (subset from `1:y`).}
+\item{y}{Integer. Last year to include; years \code{1:y} are retained.}
 
 \item{sim}{Integer. Simulation replicate index to extract.}
 }
 \value{
-A named list with the following elements:
-\describe{
-  \item{WAA}{Weight-at-age array [region × year × seas x age × sex].}
-  \item{MatAA}{Maturity-at-age array [region × year × seas x age × sex].}
-  \item{SizeAgeTrans}{Size–age transition array [region × year × seas x length × age × sex].}
-  \item{AgeingError}{Ageing error matrix [year × age × error].}
-  \item{tag_release_indicator}{Tag release indicators (or `NULL` if tagging not used).}
-  \item{Obs_Tag_Recap}{Observed tag recapture array (or `NULL`).}
-  \item{Tagged_Fish}{Tagged fish counts (or `NULL`).}
-  \item{n_tag_cohorts}{Number of tag release cohorts (or `NULL`).}
-  \item{ObsCatch}{Observed fishery catch array [region × year × seas x fleet].}
-  \item{ln_sigmaC}{Log Fishery Catch SD [region × year × seas x fleet].}
-  \item{UseCatch}{Binary indicator array for catch data availability.}
-  \item{ObsFishIdx}{Observed fishery index array [region × year × seas x fleet].}
-  \item{ObsFishIdx_SE}{Standard error for fishery index array.}
-  \item{UseFishIdx}{Binary indicator array for fishery indices.}
-  \item{ObsFishAgeComps}{Observed fishery age composition array.}
-  \item{ObsFishLenComps}{Observed fishery length composition array.}
-  \item{ISS_FishAgeComps}{Implied sample sizes for fishery age compositions.}
-  \item{ISS_FishLenComps}{Implied sample sizes for fishery length compositions.}
-  \item{UseFishAgeComps}{Binary indicator array for fishery age comps.}
-  \item{UseFishLenComps}{Binary indicator array for fishery length comps.}
-  \item{ObsSrvIdx}{Observed survey index array [region × year × seas x fleet].}
-  \item{ObsSrvIdx_SE}{Standard error for survey index array.}
-  \item{UseSrvIdx}{Binary indicator array for survey indices.}
-  \item{ObsSrvAgeComps}{Observed survey age composition array.}
-  \item{ObsSrvLenComps}{Observed survey length composition array.}
-  \item{ISS_SrvAgeComps}{Implied sample sizes for survey age compositions.}
-  \item{ISS_SrvLenComps}{Implied sample sizes for survey length compositions.}
-  \item{UseSrvAgeComps}{Binary indicator array for survey age comps.}
-  \item{UseSrvLenComps}{Binary indicator array for survey length comps.}
-}
+Named list with the following elements (all arrays have \code{y}
+  in the year dimension unless noted):
+  \code{WAA} \code{[n_pop × n_regions × y × n_seas × n_ages × n_sexes]},
+  \code{WAA_fish} \code{[... × n_fish_fleets]},
+  \code{WAA_srv} \code{[... × n_srv_fleets]},
+  \code{MatAA}, \code{SizeAgeTrans} (or \code{NULL}),
+  \code{AgeingError} \code{[y × n_obs_ages × n_ages]},
+  \code{use_conv_fish_tagging},
+  \code{conv_tag_release_indicator}, \code{obs_conv_tag_fish_recap},
+  \code{conv_tagged_fish}, \code{conv_tagged_fish_attr},
+  \code{n_tag_cohorts} (all \code{NULL} when tagging inactive),
+  \code{ObsCatch}, \code{ln_sigmaC}, \code{UseCatch},
+  \code{ObsFishIdx}, \code{ObsFishIdx_SE}, \code{UseFishIdx},
+  \code{ObsFishAgeComps}, \code{ISS_FishAgeComps}, \code{UseFishAgeComps},
+  \code{ObsFishLenComps} (or \code{NULL}), \code{ISS_FishLenComps},
+  \code{UseFishLenComps},
+  \code{ObsSrvIdx}, \code{ObsSrvIdx_SE}, \code{UseSrvIdx},
+  \code{ObsSrvAgeComps}, \code{ISS_SrvAgeComps}, \code{UseSrvAgeComps},
+  \code{ObsSrvLenComps} (or \code{NULL}), \code{ISS_SrvLenComps},
+  \code{UseSrvLenComps}.
 }
 \description{
-This function subsets and reshapes biological, tagging, fishery, and survey
-data from a simulation environment for use in SPoRC analyses.
+Subsets and reshapes biological, tagging, fishery, and survey arrays from a
+simulation environment or output list to cover years \code{1:y} and
+simulation replicate \code{sim}, producing a named list ready for direct
+use in \code{Setup_Mod_Biologicals}, \code{Setup_Mod_Catch_and_F},
+\code{Setup_Mod_SrvIdx_and_Comps}, and \code{Setup_Mod_Tagging}. Binary
+\code{Use*} indicator arrays are derived automatically from the extracted
+observation arrays (non-NA, positive values set to 1). Length composition
+outputs (\code{ObsFishLenComps}, \code{ObsSrvLenComps}) and
+\code{SizeAgeTrans} are \code{NULL} when no size-age transition matrix is
+present in \code{sim_env}. Tagging outputs are \code{NULL} when
+\code{use_conv_fish_tagging = 0}; otherwise, only cohorts with release
+years in \code{1:y} are retained.
 }
-\seealso{
-Other Simulation Setup: 
-\code{\link{Setup_Sim_Biologicals}()},
-\code{\link{Setup_Sim_Containers}()},
-\code{\link{Setup_Sim_Dim}()},
-\code{\link{Setup_Sim_Fishing}()},
-\code{\link{Setup_Sim_Rec}()},
-\code{\link{Setup_Sim_Survey}()},
-\code{\link{Setup_Sim_Tagging}()},
-\code{\link{Setup_sim_env}()},
-\code{\link{Simulate_Pop_Static}()},
-\code{\link{run_annual_cycle}()},
-\code{\link{simulation_self_test}()}
-}
-\concept{Simulation Setup}

@@ -2,31 +2,38 @@
 % Please edit documentation in R/get_model_fits.R
 \name{Restrc_Comps}
 \alias{Restrc_Comps}
-\title{Restructure composition values, used within a variety of functions to either do Francis reweighting or get observed and expected composition values}
+\title{Restructure Composition Values}
 \usage{
 Restrc_Comps(Exp, Obs, Comp_Type, age_or_len, AgeingError)
 }
 \arguments{
-\item{Exp}{Expected values (catch at age or survey index at age) indexed for a given year and fleet (structured as a matrix by age and sex)}
+\item{Exp}{Array; expected composition values indexed by
+\code{[region, pop, year, age/length bins, sex, fleet]}.}
 
-\item{Obs}{Observed values (catch at age or survey index at age) indexed for a given year and fleet (structured as a matrix by age and sex)}
+\item{Obs}{Array; observed composition values indexed similarly to \code{Exp}.}
 
-\item{Comp_Type}{Composition Parameterization Type (== 0, aggregated comps by sex, == 1, split comps by sex (no implicit sex ratio information), == 2, joint comps across sexes (implicit sex ratio information)}
+\item{Comp_Type}{Integer; composition parameterization type:
+\itemize{
+  \item 0 = aggregated across sexes
+  \item 1 = split by sex (no implicit sex ratio information)
+  \item 2 = joint across sexes (implicit sex ratio information)
+}}
 
-\item{age_or_len}{Age or length comps (== 0, Age, == 1, Length)}
+\item{age_or_len}{Integer; 0 for age compositions, 1 for length compositions.}
 
-\item{AgeingError}{Ageing Error matrix}
+\item{AgeingError}{Matrix; ageing error transition matrix (applied to age compositions only).}
 }
 \value{
-Returns a list of array observed and expected values for a given year and fleet
+A list with elements:
+\itemize{
+  \item \code{Exp} – array of expected composition values in observed bins
+  \item \code{Obs} – array of observed composition values in observed bins
+}
 }
 \description{
-Restructure composition values, used within a variety of functions to either do Francis reweighting or get observed and expected composition values
-}
-\examples{
-\dontrun{
-comps <- Restrc_Comps(Exp, Obs, Comp_Type, age_or_len, AgeingError)
-comps$Exp; comps$Obs
-}
+Restructures observed and expected composition values (catch-at-age or survey
+index-at-age) for use in Francis reweighting or other composition-based analyses.
+The function can handle aggregated, split, or joint sex composition parameterizations
+and can apply ageing error if provided.
 }
 \keyword{internal}

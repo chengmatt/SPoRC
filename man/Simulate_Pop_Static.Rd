@@ -2,20 +2,43 @@
 % Please edit documentation in R/Simulate_Population.R
 \name{Simulate_Pop_Static}
 \alias{Simulate_Pop_Static}
-\title{Simulates a static spatial, sex, and age-structured population (no feedback loop)}
+\title{Simulate a static (open-loop) spatial age- and sex-structured population}
 \usage{
 Simulate_Pop_Static(sim_list, output_path = NULL)
 }
 \arguments{
-\item{sim_list}{Simulation list objects}
+\item{sim_list}{Simulation list returned by the last upstream setup
+function (typically \code{\link{Setup_Sim_Rec}} or
+\code{\link{Setup_Sim_Tagging}}).}
 
-\item{output_path}{path to output simulation objects}
+\item{output_path}{Character string. File path for saving the output list
+as an RDS file via \code{saveRDS}. If \code{NULL} (default), no file is
+written.}
 }
 \value{
-a list object with a bunch of simulated values and outputs
+A named list containing all simulation outputs, including (among
+  others): \code{NAA}, \code{NAA0}, \code{SSB}, \code{Dynamic_SSB0},
+  \code{eff_SSB}, \code{Rec}, \code{ln_RecDevs}, \code{ln_InitDevs},
+  \code{ZAA}, \code{TrueCatch}, \code{ObsCatch}, \code{CAA}, \code{CAL},
+  \code{ObsFishAgeComps}, \code{ObsFishLenComps}, \code{ObsFishIdx},
+  \code{TrueFishIdx}, \code{SrvIAA}, \code{SrvIAL},
+  \code{ObsSrvAgeComps}, \code{ObsSrvLenComps}, \code{ObsSrvIdx},
+  \code{TrueSrvIdx}, \code{conv_tagged_fish}, \code{conv_tagged_fish_attr},
+  \code{conv_tag_fish_avail}, \code{pred_conv_tag_fish_recap},
+  \code{obs_conv_tag_fish_recap}, and key dimension scalars
+  (\code{n_regions}, \code{n_pop}, \code{n_yrs}, \code{n_ages}, etc.).
+  Note that \code{n_years} and \code{n_yrs} are both present for backwards
+  compatibility.
 }
 \description{
-Simulates a static spatial, sex, and age-structured population (no feedback loop)
+Runs a complete multi-replicate operating model simulation with no
+feedback between the population and the harvest control rule (i.e.,
+fishing mortality is fixed as supplied in \code{sim_list}). Calls
+\code{\link{Setup_sim_env}} to create an isolated execution environment
+and then iterates \code{\link{run_annual_cycle}} over all years and
+simulation replicates. All simulation outputs are collected from the
+environment and returned as a named list. Optionally writes the output
+to an RDS file.
 }
 \seealso{
 Other Simulation Setup: 
@@ -28,7 +51,6 @@ Other Simulation Setup:
 \code{\link{Setup_Sim_Tagging}()},
 \code{\link{Setup_sim_env}()},
 \code{\link{run_annual_cycle}()},
-\code{\link{simulation_data_to_SPoRC}()},
 \code{\link{simulation_self_test}()}
 }
 \concept{Simulation Setup}

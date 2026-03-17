@@ -2,16 +2,24 @@
 % Please edit documentation in R/Utility_Functions.R
 \name{cmb}
 \alias{cmb}
-\title{For combining a parameter and data list in RTMB so a data object can be explicitly defined}
+\title{Combine a parameter function and a data list for RTMB}
 \usage{
 cmb(f, d)
 }
 \arguments{
-\item{f}{Parameter list}
+\item{f}{Function with signature \code{function(pars, data)}, typically
+\code{\link{SPoRC_rtmb}}.}
 
-\item{d}{Data list}
+\item{d}{Named list of model data passed as the second argument to
+\code{f} on every call.}
+}
+\value{
+A single-argument function \code{function(p)} equivalent to
+  \code{f(p, d)}.
 }
 \description{
-For combining a parameter and data list in RTMB so a data object can be explicitly defined
+Returns a closure that calls \code{f(p, d)}, allowing the data list to be
+fixed at construction time so that \code{RTMB::MakeADFun} receives a
+single-argument objective function of the form \code{function(p)}.
 }
 \keyword{internal}

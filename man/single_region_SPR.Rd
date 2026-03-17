@@ -2,16 +2,56 @@
 % Please edit documentation in R/Get_Reference_Points.R
 \name{single_region_SPR}
 \alias{single_region_SPR}
-\title{Get SPR reference points (Single Region)}
+\title{Compute SPR reference point for a single-region or non-spatial model}
 \usage{
 single_region_SPR(pars, data)
 }
 \arguments{
-\item{pars}{Parameter List}
+\item{pars}{Named list of RTMB parameters. Must contain:
+\describe{
+  \item{\code{log_F_x}}{Log-scale trial fishing mortality.}
+}}
 
-\item{data}{Data List}
+\item{data}{Named list of RTMB data. Must contain:
+\describe{
+  \item{\code{n_pop}}{Integer. Number of populations.}
+  \item{\code{n_ages}}{Integer. Number of age classes.}
+  \item{\code{n_seas}}{Integer. Number of seasons.}
+  \item{\code{seasdur}}{Numeric vector \code{[n_seas]}. Season durations.}
+  \item{\code{spawn_seas}}{Integer. Index of the spawning season.}
+  \item{\code{t_spawn}}{Numeric. Fraction of spawning season elapsed
+    before spawning (used for mid-season mortality correction).}
+  \item{\code{F_fract_flt}}{Numeric array \code{[n_seas, n_fish_fleets]}.
+    Fleet F fractions (see \code{\link{make_fratio}}).}
+  \item{\code{fish_sel}}{Numeric array \code{[n_ages, n_fish_fleets]}.
+    Fishery selectivity at age for females.}
+  \item{\code{natmort}}{Numeric array \code{[n_pop, n_ages]}. Female
+    natural mortality at age.}
+  \item{\code{WAA}}{Numeric array \code{[n_pop, n_seas, n_ages]}. Female
+    weight at age.}
+  \item{\code{MatAA}}{Numeric array \code{[n_pop, n_seas, n_ages]}.
+    Maturity at age.}
+  \item{\code{sex_ratio_f}}{Numeric vector \code{[n_pop]}. Female sex
+    ratio at recruitment.}
+  \item{\code{rec_seas_prop}}{Numeric array \code{[n_pop, n_seas]}.
+    Proportion of annual recruitment entering in each season.}
+  \item{\code{stray_rate}}{Numeric vector \code{[n_pop]}. Per-population
+    stray rate used to compute effective SSB across populations.}
+  \item{\code{SPR_x}}{Numeric. Target SPR fraction (e.g. 0.4).}
+}}
+}
+\value{
+Numeric scalar. Squared penalty \eqn{(SPR - SPR_x)^2}.
+  Minimised to zero at \eqn{F = F_{SPR_x}}.
 }
 \description{
-Get SPR reference points (Single Region)
+Calculates the spawning potential ratio (SPR) as a function of a trial
+fishing mortality \eqn{F_x}, then returns a squared penalty
+\eqn{100 (SPR - SPR_x)^2} that is minimised by the outer optimizer to find
+\eqn{F_{SPR_x}}. Supports multiple populations via stray rates but does not
+include spatial movement.
+}
+\seealso{
+\code{\link{Get_Reference_Points}}
 }
 \keyword{internal}

@@ -2,7 +2,7 @@
 % Please edit documentation in R/closed_loop_simulations.R
 \name{condition_closed_loop_simulations}
 \alias{condition_closed_loop_simulations}
-\title{Set up simulation list for closed-loop projections}
+\title{Construct and Condition Closed-Loop Simulation Inputs}
 \usage{
 condition_closed_loop_simulations(
   closed_loop_yrs,
@@ -23,74 +23,163 @@ condition_closed_loop_simulations(
 )
 }
 \arguments{
-\item{closed_loop_yrs}{Integer. Number of years to project in the closed loop.}
+\item{closed_loop_yrs}{Integer. Number of projection years added beyond
+the fitted data period.}
 
-\item{n_sims}{Integer. Number of simulation replicates.}
+\item{n_sims}{Integer. Number of stochastic simulation replicates.}
 
-\item{data}{List. Observed data and configuration for the population.}
+\item{data}{List. Data object used to fit the assessment model.}
 
-\item{parameters}{List. Parameter values for the model.}
+\item{parameters}{List. Parameter vector from the fitted model.}
 
-\item{mapping}{List. Mapping of parameters for optimization.}
+\item{mapping}{List. Parameter mapping object used during estimation.}
 
-\item{sd_rep}{List. Standard deviation reports from fitted model.}
+\item{sd_rep}{List. Standard deviation report from the fitted model.}
 
-\item{rep}{List. Report from fitted model.}
+\item{rep}{List. Model report object produced by the fitted model.}
 
-\item{random}{Character vector of random effects estimated}
+\item{random}{Character vector of estimated random effects.}
 
-\item{FishIdx_SE_fill}{Character or numeric. Fill method for fishery index
-standard errors when extending to simulation years. Options are:
-- `"zeros"`: fill with zeros
-- `"last"`: repeat last non-NA slice
-- `"mean"`: fill with the mean of the observed series
-- Numeric: constant scalar or array value}
+\item{FishIdx_SE_fill}{Character or numeric specifying how fishery index
+standard errors are extended into projection years.}
 
-\item{SrvIdx_SE_fill}{Character or numeric. Fill method for survey index
-standard errors. Same options as `FishIdx_SE_fill`.}
+\item{SrvIdx_SE_fill}{Character or numeric specifying how survey index
+standard errors are extended into projection years.}
 
-\item{ISS_FishAgeComps_fill}{Character or numeric. Fill method for fishery
-age composition input sample sizes. Options are:
-- `"zeros"`, `"last"`, `"mean"` (as above)
-- `"F_pattern"`: fill based on fishing mortality pattern in the closed-loop simulation
-- Numeric: constant scalar or array value}
+\item{ISS_FishAgeComps_fill}{Character or numeric specifying how fishery
+age-composition input sample sizes are extended into projection years.}
 
-\item{ISS_FishLenComps_fill}{Character or numeric. Fill method for fishery
-length composition input sample sizes. Same options as `ISS_FishAgeComps_fill`.}
+\item{ISS_FishLenComps_fill}{Same behavior as `ISS_FishAgeComps_fill` for
+fishery length compositions.}
 
-\item{ISS_SrvAgeComps_fill}{Character or numeric. Fill method for survey
-age composition input sample sizes. Options are `"zeros"`, `"last"`, `"mean"`,
-or a numeric constant.}
+\item{ISS_SrvAgeComps_fill}{Character or numeric specifying how survey
+age-composition input sample sizes are extended into projection years.}
 
-\item{ISS_SrvLenComps_fill}{Character or numeric. Fill method for survey
-length composition input sample sizes. Same options as `ISS_SrvAgeComps_fill`.}
+\item{ISS_SrvLenComps_fill}{Same behavior as `ISS_SrvAgeComps_fill` for
+  survey length compositions.
 
-\item{...}{Optional named arguments for custom inputs.
-  Each name must correspond to a component expected by the simulation setup functions, and be dimensioned appropriately:
-  `Setup_Sim_Fishing()`, `Setup_Sim_Survey()`, `Setup_Sim_Biologicals()`,
-  `Setup_Sim_Rec()`, and `Setup_Sim_Tagging()`. Examples include:
+Extension rules may be:
 
-  - **Fishing**: `fish_sel_input`, `ln_sigmaC`, `Fmort_input`, `fish_q_input`, etc.
-  - **Survey**: `srv_sel_input`, `srv_q_input`, `ObsSrvIdx_SE`, etc.
-  - **Biologicals**: `WAA_input`, `MatAA_input`, `natmort_input`, `AgeingError_input`, `SizeAgeTrans_input`
-  - **Recruitment inputs**:
-      - `R0_input`, `h_input`, `sexratio_input`, `ln_InitDevs_input`, `Rec_input`
-      - `Rec_input`:
-          - If shorter than the number of projection years, new recruitment deviates will be simulated
-            based on `recruitment_opt`, `R0_input`, and `h_input` (supports changing regimes across years).
-          - If you want fixed recruitment for all projection years, provide a `Rec_input` array that spans all years.
-  - **Tagging**: `Tag_Reporting_input`, `ln_Init_Tag_Mort`, `ln_Tag_Shed`, `tag_selex`, `tag_natmort`, `n_tags`, `n_tags_rel_input`
-  - **Movement**: `Movement` (must match the expected dimensions and be named exactly `Movement`)
+\describe{
+  \item{"zeros"}{Fill projection years with zeros}
+  \item{"last"}{Repeat the final observed year}
+  \item{"mean"}{Use the mean of the historical series}
+  \item{"F_pattern"}{Scale fishery composition sample sizes with the
+  simulated fishing mortality pattern}
+  \item{numeric}{Use a supplied constant or array}
+}}
 
-  The values must have the correct dimensions expected by each component.
-  If a component is not provided, default behavior will extend the last year (or zeros for fishing mortality, which can filled in subsequently)}
+\item{...}{Optional named simulation inputs that override internally
+  generated components. Any argument expected by:
+
+  \code{Setup_Sim_Fishing()},
+  \code{Setup_Sim_Survey()},
+  \code{Setup_Sim_Biologicals()},
+  \code{Setup_Sim_Rec()},
+  or \code{Setup_Sim_Tagging()}
+
+  may be provided.
+
+  Common overrides include:
+
+  \strong{Fishing processes}
+  \itemize{
+    \item \code{Fmort_input}
+    \item \code{fish_sel_input}
+    \item \code{fish_q_input}
+  }
+
+  \strong{Survey processes}
+  \itemize{
+    \item \code{srv_sel_input}
+    \item \code{srv_q_input}
+  }
+
+  \strong{Biological processes}
+  \itemize{
+    \item \code{WAA_input}
+    \item \code{MatAA_input}
+    \item \code{natmort_input}
+  }
+
+  \strong{Recruitment processes}
+  \itemize{
+    \item \code{R0_input}
+    \item \code{h_input}
+    \item \code{Rec_input}
+  }
+
+  \strong{Tagging processes}
+  \itemize{
+    \item \code{conv_tag_fish_reporting_input}
+  }
+
+  \strong{Movement processes}
+  \itemize{
+    \item \code{Movement}
+  }
+
+  Supplied objects must have dimensions consistent with model structure,
+  the total number of years (`length(data$years) + closed_loop_yrs`), and
+  the number of simulations (`n_sims`).}
+}
+\value{
+A fully initialized `sim_list` object containing:
+
+\itemize{
+  \item model dimensions and simulation containers
+  \item biological process inputs
+  \item fishing and survey processes
+  \item recruitment dynamics
+  \item tagging processes
+  \item spatial movement structures
+  \item replicated arrays across `n_sims`
+}
 }
 \description{
-This function creates and initializes a simulation list for closed-loop
-projections of population dynamics. All components of the simulation list
-must match the expected names used internally by the setup functions.
-Users can provide **custom definitions** for any component by passing them
-through `...` using the correct name (e.g., `WAA_input`, `fish_sel_input`).
+Initializes and conditions a simulation object used for closed-loop
+population projections. The function reconstructs fitted model quantities,
+extends time-varying processes into projection years, and prepares all
+simulation components required by the operating model.
+}
+\details{
+Simulation inputs are generated for biological dynamics, fishing,
+surveys, recruitment, tagging, and movement processes. Historical years
+are conditioned on outputs from the fitted assessment model, while
+projection years are initialized using extension rules or user-supplied
+overrides.
+
+Users may replace any internally generated component by supplying a
+correctly named object via `...`.
+
+
+Simulation years consist of two periods:
+
+\itemize{
+  \item \strong{Conditioning years} — historical years corresponding to
+  the fitted assessment model.
+  \item \strong{Projection years} — future years simulated under closed-loop
+  management.
+}
+
+During conditioning years, model processes are reconstructed from the
+fitted model report objects. For projection years, quantities are extended
+using specified fill rules or user-supplied inputs.
+
+By default:
+
+\itemize{
+  \item Biological inputs, selectivity, and catchability are extended using
+  values from the final estimated year.
+  \item Fishing mortality is initialized to zero in projection years.
+  \item Recruitment is simulated forward when not fully specified by
+  `Rec_input`.
+}
+
+
+Closed-loop feedback begins in the first projection year and allows
+management actions (e.g., fishing mortality adjustments) to update
+dynamically during the simulation.
 }
 \seealso{
 Other Closed Loop Simulations: 

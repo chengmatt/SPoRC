@@ -2,14 +2,25 @@
 % Please edit documentation in R/Setup_Fishery.R
 \name{do_Fmort_mapping}
 \alias{do_Fmort_mapping}
-\title{Helper function to setup fmort mapping}
+\title{Map fishing mortality deviation parameters}
 \usage{
 do_Fmort_mapping(input_list)
 }
 \arguments{
-\item{input_list}{Input list}
+\item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
+sublists. Requires \code{$data$UseCatch} to be populated by
+\code{\link{Setup_Mod_Catch_and_F}}.}
+}
+\value{
+The input \code{input_list} with \code{$map$ln_F_devs} set to a
+  factor vector. Cells with catch are assigned sequential integer indices;
+  cells without catch are \code{NA}.
 }
 \description{
-Helper function to setup fmort mapping
+Constructs the \code{ln_F_devs} factor map, assigning unique estimation
+indices to region–year–season–fleet cells where catch data are used
+(\code{UseCatch == 1}) and mapping cells without catch data to \code{NA}.
+This ensures that \code{ln_F_devs} parameters are only estimated for
+dimensions with observed catch.
 }
 \keyword{internal}

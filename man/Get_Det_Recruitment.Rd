@@ -2,16 +2,18 @@
 % Please edit documentation in R/Get_Det_Recruitment.R
 \name{Get_Det_Recruitment}
 \alias{Get_Det_Recruitment}
-\title{Get Deterministic Recruitment}
+\title{Deterministic Recruitment}
 \usage{
 Get_Det_Recruitment(
   recruitment_model,
-  recruitment_dd,
+  rec_dd,
   y,
   rec_lag,
   R0,
-  Rec_Prop,
+  rec_region_prop,
+  rec_seas_prop,
   h,
+  n_pop,
   n_regions,
   n_ages,
   WAA,
@@ -19,12 +21,15 @@ Get_Det_Recruitment(
   natmort,
   SSB_vals,
   Movement,
+  sgl_seas_spawning_movement,
+  stray_rate,
   do_recruits_move,
   t_spawn,
   init_F,
   fish_sel,
   n_seas,
   spawn_seas,
+  natal_region,
   seasdur,
   sexratio_f
 )
@@ -32,72 +37,130 @@ Get_Det_Recruitment(
 \arguments{
 \item{recruitment_model}{Integer flag specifying the recruitment model:
 \itemize{
-  \item `0` = mean recruitment
-  \item `1` = Beverton–Holt recruitment with steepness
+\item \code{0} Mean recruitment
+\item \code{1} Beverton–Holt recruitment with steepness
 }}
 
-\item{recruitment_dd}{Integer flag specifying the scale of density dependence:
+\item{rec_dd}{Integer flag specifying the density dependence structure:
 \itemize{
-  \item `0` = local (region-specific)
-  \item `1` = global (shared across regions)
+\item \code{0} Local density dependence (population or region specific)
+\item \code{1} Global density dependence (shared across regions;
+only valid when \code{n_pop = 1})
 }}
 
-\item{y}{Current model year (used for SSB lag indexing)}
+\item{y}{Current model year index.}
 
-\item{rec_lag}{Recruitment lag (number of years between spawning and recruitment)}
+\item{rec_lag}{Recruitment lag in years between spawning and recruitment.}
 
-\item{R0}{Virgin or mean recruitment (global scalar)}
+\item{R0}{Numeric vector (\code{n_pop}) of unfished recruitment by population.}
 
-\item{Rec_Prop}{Vector of recruitment proportions by region (used to allocate global `R0` under local density dependence)}
+\item{rec_region_prop}{Matrix (\code{n_pop × n_regions}) giving the proportion
+of recruitment allocated to each region.}
 
-\item{h}{Vector of Beverton–Holt steepness values by region}
+\item{rec_seas_prop}{Matrix (\code{n_pop × n_seas}) giving seasonal recruitment
+proportions.}
 
-\item{n_regions}{Number of spatial regions}
+\item{h}{Matrix (\code{n_pop × n_regions}) of Beverton–Holt steepness values.}
 
-\item{n_ages}{Number of modeled age classes}
+\item{n_pop}{Number of populations.}
 
-\item{WAA}{Matrix of weight-at-age by region and age}
+\item{n_regions}{Number of spatial regions.}
 
-\item{MatAA}{Matrix of maturity-at-age by region and age}
+\item{n_ages}{Number of age classes (including the plus group).}
 
-\item{natmort}{Matrix or vector of natural mortality by region and age}
+\item{WAA}{Array (\code{n_pop × n_regions × n_seas × n_ages}) of weight-at-age.}
 
-\item{SSB_vals}{Matrix of spawning stock biomass (SSB) by region and year}
+\item{MatAA}{Array (\code{n_pop × n_regions × n_seas × n_ages}) of maturity-at-age.}
 
-\item{Movement}{3D array of movement probabilities between regions by age (`[origin, destination, age]` or alternatively, `[n_regions, n_regions, age]`)}
+\item{natmort}{Array (\code{n_pop × n_regions × n_ages}) of natural mortality.}
 
-\item{do_recruits_move}{Logical or integer flag (0/1) indicating whether recruits move during their first year}
+\item{SSB_vals}{Array (\code{n_pop × n_regions × n_years}) of spawning biomass.}
 
-\item{t_spawn}{Fraction of the year at which spawning occurs (used for survival to spawning)}
+\item{Movement}{Array
+(\code{n_pop × origin × destination × n_seas × n_ages}) giving seasonal
+movement probabilities.}
 
-\item{init_F}{Scalar for initial F value to apply}
+\item{sgl_seas_spawning_movement}{Array
+(\code{n_pop × origin × destination × n_ages}) describing spawning movement
+when a single season is used and \code{n_pop > 1}.}
 
-\item{fish_sel}{Array of fishery selectivity of dominant fleet (fleet 1) dimensioned by n_regions x n_ages}
+\item{stray_rate}{Numeric vector of stray rates by population.}
 
-\item{n_seas}{Number of seasons}
+\item{do_recruits_move}{Indicator for whether recruits move in their first year.}
 
-\item{spawn_seas}{Season in which spawning happens}
+\item{t_spawn}{Fraction of the spawning season that occurs before spawning.}
 
-\item{seasdur}{Fraction of year within a given season}
+\item{init_F}{Numeric vector (\code{n_seas}) of fishing mortality.}
 
-\item{sexratio_f}{Vector of sex-ratio values for females (n_regions)}
-}
-\value{
-A numeric vector of length `n_regions` containing deterministic
-recruitment values for each region.
+\item{fish_sel}{Matrix (\code{n_regions × n_ages}) of fishery selectivity.}
+
+\item{n_seas}{Number of seasons per year.}
+
+\item{spawn_seas}{Season index in which spawning occurs.}
+
+\item{natal_region}{Integer vector (\code{n_pop}) mapping each population
+to its natal region.}
+
+\item{seasdur}{Numeric vector (\code{n_seas}) giving seasonal durations
+as fractions of a year.}
+
+\item{sexratio_f}{Matrix (\code{n_pop × n_regions}) giving female recruitment
+proportions.}
 }
 \description{
-Computes deterministic recruitment for each region based on either
+Computes deterministic recruitment by population and region using either
 a mean recruitment model or a Beverton–Holt stock–recruitment relationship.
 }
 \details{
-The function returns region-specific deterministic recruitment estimates
-based on the chosen recruitment model and density dependence structure.
+Recruitment is distributed spatially using regional recruitment proportions
+and seasonal recruitment timing. When Beverton–Holt recruitment is used,
+unfished spawning biomass per recruit (\eqn{S_0}) is calculated internally
+by projecting a single recruit through the full seasonal population dynamics,
+including movement and mortality.
 
-When `recruitment_model = 0`, recruitment is fixed at mean values (`R0 * Rec_Prop`).
-When `recruitment_model = 1`, Beverton–Holt recruitment is applied using:
-\deqn{R = \frac{4hR_0SSB}{(1 - h)S_0 + (5h - 1)SSB}}
-where `S_0` is unfished spawning biomass per recruit, computed separately for each
-region (local) or summed across all regions (global).
+
+
+Two recruitment formulations are supported.
+
+**Mean recruitment**
+
+When \code{recruitment_model = 0}, recruitment is constant:
+
+\deqn{R_{p,r} = R_{0,p} \times RecProp_{p,r}}
+
+where recruitment is distributed spatially according to
+\code{rec_region_prop}.
+
+**Beverton–Holt recruitment**
+
+When \code{recruitment_model = 1}, recruitment follows the
+Beverton–Holt relationship:
+
+\deqn{
+R = \frac{4hR_0SSB}{(1-h)S_0 + (5h-1)SSB}
+}
+
+where:
+\itemize{
+\item \eqn{SSB} is spawning biomass lagged by \code{rec_lag}
+\item \eqn{S_0} is unfished spawning biomass per recruit
+\item \eqn{h} is steepness
+}
+
+Spawning biomass per recruit (\eqn{S_0}) is computed internally by
+projecting a single recruit through all ages and seasons under both
+unfished and fished conditions. The algorithm:
+
+\enumerate{
+\item Allocates a recruit across regions and seasons.
+\item Applies seasonal movement.
+\item Applies natural and fishing mortality.
+\item Computes spawning biomass during the spawning season.
+\item Solves the plus group analytically using annual transition matrices.
+}
+
+When multiple populations are modeled, recruitment for each population
+depends on spawning biomass in its natal region. Contributions from
+other populations are scaled by the specified stray rates.
 }
 \keyword{internal}

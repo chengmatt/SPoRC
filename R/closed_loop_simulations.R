@@ -427,7 +427,8 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   init_dd <- if(!"init_dd" %in% names(args)) data$rec_dd else args$init_dd
   rec_lag <- if(!"rec_lag" %in% names(args)) data$rec_lag else args$rec_lag
   recruitment_opt <- if(!"recruitment_opt" %in% names(args)) data$rec_model else args$recruitment_opt
-  rec_seas_prop_input <- if(!"rec_seas_prop_input" %in% names(args)) replicate(sim_list$n_sims, rep$rec_seas_prop) else args$rec_seas_prop_input
+  rec_seas_prop_input <- if(!"rec_seas_prop_input" %in% names(args)) array(replicate(sim_list$n_sims, rep$rec_seas_prop), dim = c(dim(rep$rec_seas_prop), sim_list$n_sims))
+  else args$rec_seas_prop_input
 
   # setup recruitment simulation
   sim_list <- Setup_Sim_Rec(

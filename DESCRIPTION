@@ -12,7 +12,7 @@ Authors@R: c(
 Description: A generalized spatial population model for stock assessment,
     written in RTMB.
 License: GPL-3
-URL: https://chengmatt.github.io/SPoRC
+URL: https://chengmatt.github.io/SPoRC, https://chengmatt.github.io/SPoRC/
 Depends:
     R (>= 3.5),
     RTMB
@@ -54,4 +54,4 @@ Config/testthat/edition: 3
 Encoding: UTF-8
 LazyData: true
 LazyDataCompression: xz
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3

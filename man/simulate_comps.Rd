@@ -2,7 +2,7 @@
 % Please edit documentation in R/Simulate_Population.R
 \name{simulate_comps}
 \alias{simulate_comps}
-\title{Simulate Age or Length Compositions}
+\title{Simulate age or length compositions}
 \usage{
 simulate_comps(
   r,
@@ -20,6 +20,7 @@ simulate_comps(
   corr_pars_agg,
   comp_type,
   n_sexes,
+  n_pop,
   n_regions,
   n_cat,
   Obs,
@@ -31,53 +32,83 @@ simulate_comps(
 
 \item{y}{Integer. Year index.}
 
-\item{f}{Integer. Fleet index.}
+\item{f}{Integer. Fleet index (fishery or survey).}
 
-\item{seas}{Intege. Seasonal index}
+\item{seas}{Integer. Season index.}
 
-\item{sim}{Integer. Simulation iteration index.}
+\item{sim}{Integer. Simulation replicate index.}
 
-\item{Exp}{Array. Expected compositions (age or length) with dimensions [region, year, category, sex, fleet, sim].}
+\item{Exp}{Array. Expected compositions \code{[n_pop × n_regions × n_yrs ×
+n_seas × n_cat × n_sexes × n_fleets × n_sims]}.}
 
-\item{ISS}{Array. Sample size (integer) for the Observed compositions with dimensions [region, year, sex, fleet, sim].}
+\item{ISS}{Array. Integer sample sizes
+\code{[n_regions × n_yrs × n_seas × n_sexes × n_fleets × n_sims]}.
+Interpretation depends on \code{comp_like}: effective sample size for
+multinomial; input sample size scaling the Dirichlet concentration; not
+directly used for logistic-normal (variance governed by \code{ln_theta}).}
 
-\item{AgeingError}{Array. Ageing error matrix for each year, dimensions [year, category, category, sim].}
+\item{AgeingError}{Array. Ageing error transition matrices
+\code{[n_yrs × n_obs_ages × n_ages × n_sims]}. Ignored when
+\code{age_or_len = 1}.}
 
-\item{comp_like}{Integer vector. Composition likelihood type per fleet: 0 = multinomial, 1 = Dirichlet-multinomial, 2-4 = logistic-normal.}
+\item{comp_like}{Integer vector \code{[n_fleets]}. Likelihood type per
+fleet: \code{0} = multinomial, \code{1} = Dirichlet-multinomial,
+\code{2}–\code{4} = logistic-normal variants.}
 
-\item{ln_theta}{Array. Log-variance parameter for compositions per region, sex, and fleet, dimensions [region, sex, fleet].}
+\item{ln_theta}{Array. Log overdispersion or log-variance parameters
+\code{[n_regions × n_sexes × n_fleets]}. Used by Dirichlet-multinomial
+(\code{1}) and logistic-normal (\code{2}–\code{4}) likelihoods.}
 
-\item{corr_pars}{Array. Correlation parameters for logistic-normal likelihood, dimensions [region, sex, fleet, ?].}
+\item{corr_pars}{Array. Correlation parameters for logistic-normal
+likelihoods \code{[n_regions × n_sexes × n_fleets × n_corr_pars]}.}
 
-\item{ln_theta_agg}{Numeric vector. Log-variance parameter for aggregated compositions per fleet.}
+\item{ln_theta_agg}{Numeric vector \code{[n_fleets]}. Log overdispersion
+for spatially aggregated compositions (\code{comp_type = 0}).}
 
-\item{corr_pars_agg}{Numeric vector. Correlation parameters for aggregated logistic-normal likelihood per fleet.}
+\item{corr_pars_agg}{Numeric vector \code{[n_fleets]}. Correlation
+parameter(s) for aggregated logistic-normal compositions.}
 
-\item{comp_type}{Integer array. Composition type: 0 = aggregated across regions, 1 = split by sex, 2 = joint across sexes, dimensions [year, fleet].}
+\item{comp_type}{Integer matrix \code{[n_yrs × n_fleets]}. Aggregation
+structure: \code{0} = aggregated across regions, \code{1} = split by
+sex, \code{2} = joint across sexes, \code{999} = no data (skip).}
 
 \item{n_sexes}{Integer. Number of sexes.}
 
+\item{n_pop}{Integer. Number of populations.}
+
 \item{n_regions}{Integer. Number of regions.}
 
-\item{n_cat}{Integer. Number of categories (ages or lengths).}
+\item{n_cat}{Integer. Number of composition categories (ages or lengths).}
 
-\item{Obs}{Array. Observed compositions array to fill, same dimensions as `Exp`.}
+\item{Obs}{Array. Observed compositions container with the same dimensions
+as \code{Exp}. Simulated values are written in-place and the updated
+array is returned.}
 
-\item{age_or_len}{Integer. Flag to indicate if ageing error should be applied: 0 = apply ageing error (for ages), 1 = do not apply (for lengths).}
+\item{age_or_len}{Integer. \code{0} = age compositions (ageing error
+applied); \code{1} = length compositions (ageing error skipped).
+Default \code{0}.}
 }
 \value{
-Array of Observed compositions with the same dimensions as `Obs`, updated with simulated Observations.
+The \code{Obs} array with simulated composition draws filled in at
+  the appropriate \code{[r, y, seas, , , f, sim]} slice. All other slices
+  are unchanged.
 }
 \description{
-Generates Observed fish compositions by age or length for a given region, year, fleet, and simulation iteration.
-Supports multinomial, Dirichlet-multinomial, and logistic-normal likelihoods, with optional ageing error applied.
+Draws observed composition samples (by age or length) for a single
+region–year–fleet–season–simulation cell, supporting multinomial,
+Dirichlet-multinomial, and logistic-normal likelihoods. Ageing error is
+optionally applied post-draw. Three composition aggregation structures are
+handled: sex-split (\code{comp_type = 1}), joint across sexes
+(\code{comp_type = 2}), and spatially aggregated across all regions
+(\code{comp_type = 0}). The sentinel value \code{comp_type = 999} or
+\code{comp_like = 999} causes the function to return \code{Obs} unchanged.
 }
 \details{
-The function handles three cases based on `comp_type`:
-1. Split by sex (comp_type = 1): compositions are simulated separately for each sex.
-2. Joint compositions across sexes (comp_type = 2): compositions simulated jointly and multiplied by a kronecker matrix for logistic-normal or Dirichlet-multinomial likelihoods.
-3. Aggregated across regions (comp_type = 0): only applied in the last region and averages across regions and sexes.
-
-The function normalizes expected compositions, applies the selected likelihood (`comp_like`), and multiplies by `AgeingError` when applicable.
+For joint compositions (\code{comp_type = 2}), the Kronecker product
+\code{diag(n_sexes) ⊗ AgeingError} is used to apply ageing error across
+the combined age–sex vector. For aggregated compositions
+(\code{comp_type = 0}), the draw is only executed when \code{r == n_regions}
+(i.e., on the final region pass), and uses region- and sex-marginalised
+expected proportions.
 }
 \keyword{internal}

@@ -2,28 +2,52 @@
 % Please edit documentation in R/get_model_fits.R
 \name{get_idx_fits}
 \alias{get_idx_fits}
-\title{Gets index fits results}
+\title{Extract Index Fit Results}
 \usage{
 get_idx_fits(data, rep, year_labs)
 }
 \arguments{
-\item{data}{Data list fed into RTMB}
+\item{data}{List; input data used in the RTMB model. Must contain
+\code{ObsSrvIdx}, \code{ObsSrvIdx_SE}, \code{ObsFishIdx}, \code{ObsFishIdx_SE},
+\code{Wt_SrvIdx}, \code{Wt_FishIdx}, \code{srv_q_blocks}, and \code{fish_q_blocks}.}
 
-\item{rep}{Report list output from RTMB}
+\item{rep}{List; RTMB report output containing \code{PredSrvIdx} and \code{PredFishIdx}.}
 
-\item{year_labs}{Year labels to use (vector)}
+\item{year_labs}{Vector; year labels to assign to the third dimension of the
+predicted indices and the columns of observed indices.}
 }
 \value{
-Fits to indices as a dataframe
+A dataframe containing combined survey and fishery indices with the
+following columns:
+\itemize{
+  \item \code{Region} – Region label (prefixed with "Region")
+  \item \code{Year} – Year
+  \item \code{Seas} – Season
+  \item \code{Fleet} – Fleet identifier
+  \item \code{Type} – Either "Survey" or "Fishery"
+  \item \code{obs} – Observed index
+  \item \code{value} – Predicted index
+  \item \code{se} – Standard error of the observed index
+  \item \code{lci}, \code{uci} – 95% confidence interval for the observed index
+  \item \code{q_block} – Catchability block value
+  \item \code{resid} – Log-scale residual (\eqn{\log(obs) - \log(predicted)})
+  \item \code{Category} – Combined Type, Fleet, Season, and Q-block label
+}
 }
 \description{
-Gets index fits results
+Generates a tidy dataframe of observed and predicted survey and fishery
+indices from a fitted RTMB model, including standard errors, confidence
+intervals, residuals, and catchability blocks.
 }
 \examples{
 \dontrun{
-idx_fits <- get_idx_fits(data = data, rep = rep,
- year_labs = seq(1960, 2024, 1))
+idx_fits <- get_idx_fits(
+  data = data,
+  rep = rep,
+  year_labs = seq(1960, 2024, 1)
+)
 }
+
 }
 \seealso{
 Other Model Diagnostics: 

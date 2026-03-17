@@ -2,16 +2,37 @@
 % Please edit documentation in R/Setup_Survey.R
 \name{do_srv_q_mapping}
 \alias{do_srv_q_mapping}
-\title{Helper function to set up survey catchability mapping}
+\title{Map survey catchability parameters}
 \usage{
 do_srv_q_mapping(input_list, srv_q_spec)
 }
 \arguments{
-\item{input_list}{Input list}
+\item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
+sublists. Requires \code{$data$n_srv_fleets}, \code{$data$n_regions},
+\code{$data$srv_q_blocks}, and \code{$data$UseSrvIdx}.}
 
-\item{srv_q_spec}{Character vector specifying survey catchability parameterization}
+\item{srv_q_spec}{Character vector \code{[n_srv_fleets]} specifying the
+sharing structure for catchability. One of:
+\describe{
+  \item{\code{"est_all"}}{Separate catchability per region and block.}
+  \item{\code{"est_shared_r"}}{Single catchability per block shared across
+    all regions. Block membership is checked per region before assignment.}
+  \item{\code{"fix"}}{All catchability parameters fixed at starting values
+    (mapped to \code{NA}).}
+}}
+}
+\value{
+The input \code{input_list} with \code{$map$ln_srv_q} set to a
+  factor vector. Active parameters receive sequential integer indices;
+  unused region–fleet combinations and fixed parameters are \code{NA}.
 }
 \description{
-Helper function to set up survey catchability mapping
+Internal helper called by \code{\link{Setup_Mod_Srvsel_and_Q}} to construct
+the TMB/RTMB factor map for \code{ln_srv_q}
+\code{[n_regions × max_q_blocks × n_srv_fleets]}, the log-scale survey
+catchability parameters. Parameters are only activated for region–fleet
+combinations where survey index data are used
+(\code{sum(UseSrvIdx[r,,,f]) > 0}); unused combinations are mapped to
+\code{NA}.
 }
 \keyword{internal}

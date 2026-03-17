@@ -160,7 +160,6 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
                                      sexratio,
                                      n_fish_fleets,
                                      do_recruits_move = 0,
-                                     rec_seas_prop,
                                      recruitment,
                                      terminal_NAA,
                                      terminal_NAA0,
@@ -184,6 +183,11 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
                                      n_seas = 1,
                                      seasdur = rep(1 / n_seas, n_seas),
                                      spawn_seas = 1,
+                                     rec_seas_prop = {
+                                       rec_seas_prop = array(0, dim = c(n_pop, n_seas))
+                                       rec_seas_prop[] <- 1 / n_seas
+                                       rec_seas_prop
+                                     },
                                      init_F = rep(0, n_seas)
                                      ) {
 

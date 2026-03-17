@@ -11,7 +11,7 @@ get_movement_dp_design_matrix(data, preference_formula, diffusion_formula)
 referenced in \code{diffusion_formula} and \code{preference_formula}.}
 
 \item{preference_formula}{An R formula describing the linear predictor for movement
-preference. Variables must exist in \code{data}.}
+preference (taxis). Variables must exist in \code{data}.}
 
 \item{diffusion_formula}{An R formula describing the linear predictor for diffusion
 rates. Variables must exist in \code{data}.}
@@ -19,10 +19,10 @@ rates. Variables must exist in \code{data}.}
 \value{
 A \code{list} with the following components:
 \describe{
-  \item{\code{n_theta}}{Number of diffusion parameters (number of columns in diffusion design matrix).}
-  \item{\code{n_gamma}}{Number of preference parameters (number of columns in preference design matrix).}
+  \item{\code{n_theta}}{Number of diffusion parameters (columns in \code{X_zk}).}
+  \item{\code{n_gamma}}{Number of preference parameters (columns in \code{W_zk}).}
   \item{\code{X_zk}}{Diffusion design matrix constructed from \code{diffusion_formula} and \code{data}.}
-  \item{\code{W_zk}}{Preference design matrix constructed from \code{preference_formula} and \code{data}.}
+  \item{\code{W_zk}}{Preference (taxis) design matrix constructed from \code{preference_formula} and \code{data}.}
 }
 }
 \description{

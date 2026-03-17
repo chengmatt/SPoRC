@@ -2,19 +2,31 @@
 % Please edit documentation in R/Simulate_Population.R
 \name{run_annual_cycle}
 \alias{run_annual_cycle}
-\title{Run Annual Cycle in Simulation Environment}
+\title{Run the annual cycle for a single simulation year}
 \usage{
 run_annual_cycle(y, sim, sim_env)
 }
 \arguments{
-\item{y}{Year index}
+\item{y}{Integer. Year index.}
 
-\item{sim}{Simulation index}
+\item{sim}{Integer. Simulation replicate index.}
 
-\item{sim_env}{Simulation environment will all the necessary elements to run the annual cycle}
+\item{sim_env}{Simulation environment created by
+\code{\link{Setup_sim_env}} and passed by reference. All annual-cycle
+helper functions modify this environment in place.}
+}
+\value{
+\code{invisible(NULL)}.
 }
 \description{
-Run Annual Cycle in Simulation Environment
+Orchestrates the complete annual sequence of operating model processes for
+year \code{y} and simulation replicate \code{sim}: initialises age
+structure and generates first-year recruitment at \code{y = 1}; applies
+population dynamics (movement, mortality, biomass); generates fishery
+catches, indices, and compositions; generates survey indices and
+compositions; releases conventional tags; generates fishery tag
+recaptures (when any \code{use_conv_fish_tagging = 1}); and generates
+recruitment for the following year (\code{y + 1}) when \code{y < n_yrs}.
 }
 \seealso{
 Other Simulation Setup: 
@@ -27,7 +39,6 @@ Other Simulation Setup:
 \code{\link{Setup_Sim_Tagging}()},
 \code{\link{Setup_sim_env}()},
 \code{\link{Simulate_Pop_Static}()},
-\code{\link{simulation_data_to_SPoRC}()},
 \code{\link{simulation_self_test}()}
 }
 \concept{Simulation Setup}

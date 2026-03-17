@@ -2,7 +2,7 @@
 % Please edit documentation in R/fit_model.R
 \name{fit_model}
 \alias{fit_model}
-\title{Run RTMB model}
+\title{Fit a SPoRC RTMB model}
 \usage{
 fit_model(
   data,
@@ -17,37 +17,52 @@ fit_model(
 )
 }
 \arguments{
-\item{data}{Data list}
+\item{data}{Named list of model data as constructed by the
+\code{Setup_Mod_*} family of functions.}
 
-\item{parameters}{Parameter list}
+\item{parameters}{Named list of parameter starting values.}
 
-\item{mapping}{Mapping list}
+\item{mapping}{Named list of factor maps controlling parameter sharing
+and fixing.}
 
-\item{random}{Character of random effects to integrate out}
+\item{random}{Character vector of parameter names to integrate out as
+random effects. \code{NULL} (default) fits a fixed-effects-only model.}
 
-\item{newton_loops}{Number of newton loops to run to get gradients down}
+\item{newton_loops}{Integer. Number of Newton refinement steps applied
+after \code{nlminb} convergence to reduce gradient magnitudes. Each
+step solves \eqn{\Delta\theta = -H^{-1} g} and updates the objective.
+Default \code{3}. Errors and warnings are caught silently via
+\code{tryCatch}.}
 
-\item{silent}{Boolean on whether or not model run is silent}
+\item{silent}{Logical. If \code{TRUE}, suppresses RTMB and optimiser
+console output. Default \code{FALSE}.}
 
-\item{do_optim}{Boolean on whether or not model is optimized}
+\item{do_optim}{Logical. If \code{TRUE} (default), runs \code{nlminb}
+and Newton refinement. If \code{FALSE}, returns the un-optimised
+\code{MakeADFun} object only.}
 
-\item{nlminb_control}{List argument controls by nlminb}
+\item{nlminb_control}{Named list of control parameters passed to
+\code{stats::nlminb}. Default
+\code{list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15)}.}
 
-\item{...}{Additional arguments taken by MakeADFun}
+\item{...}{Additional arguments forwarded to \code{RTMB::MakeADFun}.}
 }
 \value{
-Returns a list object that is optimized, with results outputted from the RTMB model
+The RTMB \code{ADFun} object with three additional fields:
+  \code{$optim} (the \code{nlminb} output list), and \code{$rep} (the
+  model report evaluated at \code{obj$env$last.par.best}).
 }
 \description{
-Run RTMB model
+Constructs an RTMB automatic differentiation function via
+\code{RTMB::MakeADFun}, optimises it with \code{stats::nlminb}, and
+optionally refines the solution with Newton steps using the analytic
+Hessian. The best parameter vector (\code{obj$env$last.par.best}),
+optimiser output, and model report are attached to the returned object.
 }
 \examples{
 \dontrun{
-model <- fit_model(data,
-                 parameters,
-                 mapping,
-                 random = NULL,
-                 newton_loops = 3)
+obj <- fit_model(data, parameters, mapping, random = NULL, newton_loops = 3)
+obj$rep$SSB
 }
 }
 \seealso{

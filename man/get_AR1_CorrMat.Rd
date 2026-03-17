@@ -2,24 +2,28 @@
 % Please edit documentation in R/Utility_Functions.R
 \name{get_AR1_CorrMat}
 \alias{get_AR1_CorrMat}
-\title{Function to fill in an n x n correlation AR(1) matrix}
+\title{Construct an AR(1) correlation matrix}
 \usage{
 get_AR1_CorrMat(n, rho)
 }
 \arguments{
-\item{n}{Number of bins}
+\item{n}{Integer. Matrix dimension (number of bins, ages, or lengths).}
 
-\item{rho}{correaltion parameter}
+\item{rho}{Numeric. AR(1) autocorrelation parameter in \eqn{(-1, 1)}.
+Values close to 1 produce strong positive correlation between adjacent
+bins; values close to 0 approach the identity matrix.}
 }
 \value{
-correlation matrix for an ar1 process
+Numeric \eqn{n \times n} correlation matrix.
 }
 \description{
-Function to fill in an n x n correlation AR(1) matrix
+Builds an \eqn{n \times n} correlation matrix whose \eqn{(i,j)} element
+equals \eqn{\rho^{|i-j|}}, corresponding to a stationary AR(1) process
+with autocorrelation parameter \eqn{\rho}.
 }
 \examples{
 \dontrun{
-mat <- get_AR1_CorrMat(10, 0.5)
+get_AR1_CorrMat(10, 0.5)
 }
 }
 \keyword{internal}

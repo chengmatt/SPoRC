@@ -2,25 +2,34 @@
 % Please edit documentation in R/Distributions.R
 \name{dbeta_symmetric}
 \alias{dbeta_symmetric}
-\title{Symmetric Beta Function}
+\title{Evaluate a symmetric beta log-density}
 \usage{
 dbeta_symmetric(p_val, p_ub, p_lb, p_prsd, log = TRUE)
 }
 \arguments{
-\item{p_val}{Parameter value}
+\item{p_val}{Numeric. Parameter value to evaluate; must lie in
+\code{(p_lb, p_ub)}.}
 
-\item{p_ub}{Upper Bound of Parameter}
+\item{p_ub}{Numeric. Upper bound of the parameter support.}
 
-\item{p_lb}{Lower Bound of Parameter}
+\item{p_lb}{Numeric. Lower bound of the parameter support.}
 
-\item{p_prsd}{SD of parameter, higher values have a stronger penalty on bounds, lower values have a more difuse penalty on bounds}
+\item{p_prsd}{Numeric. Pseudo-standard-deviation controlling prior
+concentration. Larger values produce a stronger penalty toward the
+midpoint \eqn{(p_{ub} + p_{lb}) / 2}; smaller values produce a more
+diffuse prior.}
 
-\item{log}{whether or not to return the log likelihood}
+\item{log}{Logical. If \code{TRUE} (default), returns the log-density;
+otherwise returns the density on the probability scale.}
 }
 \value{
-Returns likelihood values from a symmetric beta distribution
+Numeric. Log-density (or density if \code{log = FALSE}).
 }
 \description{
-Symmetric Beta Function
+Computes a log-density that penalises a parameter value toward the midpoint
+of \code{[p_lb, p_ub]} using a symmetric beta-like kernel. The penalty
+strengthens as \code{p_prsd} increases and diffuses as \code{p_prsd}
+decreases. Used in SPoRC as a prior for tag reporting rates to discourage
+values near the boundaries of the unit interval.
 }
 \keyword{internal}

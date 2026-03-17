@@ -2,38 +2,80 @@
 % Please edit documentation in R/Setup_Biologicals.R
 \name{Setup_Sim_Biologicals}
 \alias{Setup_Sim_Biologicals}
-\title{Set up simulation containers and inputs for biological parameters}
+\title{Set up biological parameter inputs for closed-loop simulation}
 \usage{
 Setup_Sim_Biologicals(
+  sim_list,
   natmort_input,
   WAA_input,
   WAA_fish_input,
   WAA_srv_input,
   MatAA_input,
   AgeingError_input = NULL,
-  SizeAgeTrans_input = NULL,
-  sim_list
+  SizeAgeTrans_input = NULL
 )
 }
 \arguments{
-\item{natmort_input}{Natural mortality array [n_regions × n_yrs × n_seas x n_ages × n_sexes × n_sims]}
+\item{sim_list}{Simulation list object returned by \code{\link{Setup_Sim_Dim}},
+which defines the dimension sizes used to validate all input arrays.}
 
-\item{WAA_input}{Spawning weight-at-age array [n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]}
+\item{natmort_input}{Natural mortality array with dimensions
+\code{[n_pop × n_regions × n_yrs × n_ages × n_sexes × n_sims]}.
+Note: natural mortality is not season-specific and therefore lacks an
+\code{n_seas} dimension.}
 
-\item{WAA_fish_input}{Fishery weight-at-age array [n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]}
+\item{WAA_input}{Spawning weight-at-age array with dimensions
+\code{[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]}.
+Used to compute spawning stock biomass.}
 
-\item{WAA_srv_input}{Survey weight-at-age array [n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]}
+\item{WAA_fish_input}{Fishery weight-at-age array with dimensions
+\code{[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_fish_fleets × n_sims]}.
+Used to compute fishery biomass and catch in weight.}
 
-\item{MatAA_input}{Maturity-at-age array [n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]}
+\item{WAA_srv_input}{Survey weight-at-age array with dimensions
+\code{[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_srv_fleets × n_sims]}.
+Used to compute survey biomass indices.}
 
-\item{AgeingError_input}{Ageing error matrix [n_regions × n_model_ages × n_obs_ages × n_sims]}
+\item{MatAA_input}{Maturity-at-age array with dimensions
+\code{[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]}.
+Values should be proportions in \eqn{[0, 1]}.}
 
-\item{SizeAgeTrans_input}{Size-age transition matrix [n_regions × n_yrs × n_seas × n_lens × n_ages × n_sexes x n_sims]}
+\item{AgeingError_input}{Ageing error (age-length transition) array with
+dimensions \code{[n_yrs × n_model_ages × n_obs_ages × n_sims]}, where each
+\code{[n_model_ages × n_obs_ages]} slice is a row-stochastic matrix mapping
+true modelled ages to observed age bins. If \code{NULL} (default), an
+identity matrix is constructed for each year and simulation, which assumes
+that modelled and observed age bins are identical in number and alignment.
+\strong{If observed age bins are a subset of modelled ages} (e.g., observed
+ages 2–10 vs. modelled ages 1–10), the default identity matrix will cause a
+dimensional mismatch. In that case, supply a shifted identity matrix such as
+\code{diag(1, n_model_ages)[, obs_age_index]} to correctly drop or collapse
+model ages into observed bins.}
 
-\item{sim_list}{Simulation list object from `Setup_Sim_Dim()`}
+\item{SizeAgeTrans_input}{Size-age transition matrix array with dimensions
+\code{[n_pop × n_regions × n_yrs × n_seas × n_lens × n_ages × n_sexes × n_sims]}.
+Each slice maps age classes to length bins and should be column-stochastic
+(columns sum to 1). Only required when fitting length compositions;
+defaults to \code{NULL}.}
+}
+\value{
+The input \code{sim_list} with the following fields added or updated:
+  \describe{
+    \item{\code{$natmort}}{Natural mortality array.}
+    \item{\code{$WAA}}{Spawning weight-at-age array.}
+    \item{\code{$WAA_fish}}{Fishery weight-at-age array.}
+    \item{\code{$WAA_srv}}{Survey weight-at-age array.}
+    \item{\code{$MatAA}}{Maturity-at-age array.}
+    \item{\code{$AgeingError}}{Ageing error array (identity matrix if not supplied).}
+    \item{\code{$SizeAgeTrans}}{Size-age transition array (only added if supplied).}
+  }
 }
 \description{
-Set up simulation containers and inputs for biological parameters
+Populates a simulation list (created by \code{\link{Setup_Sim_Dim}}) with
+biological arrays needed to run the operating model: natural mortality,
+weight-at-age (spawning, fishery, and survey), maturity-at-age, ageing
+error, and an optional size-age transition matrix for length compositions.
+All arrays must conform to the dimension structure stored in \code{sim_list}.
 }
 \seealso{
 Other Simulation Setup: 
@@ -46,7 +88,6 @@ Other Simulation Setup:
 \code{\link{Setup_sim_env}()},
 \code{\link{Simulate_Pop_Static}()},
 \code{\link{run_annual_cycle}()},
-\code{\link{simulation_data_to_SPoRC}()},
 \code{\link{simulation_self_test}()}
 }
 \concept{Simulation Setup}

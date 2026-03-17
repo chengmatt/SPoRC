@@ -2,24 +2,30 @@
 % Please edit documentation in R/Utility_Functions.R
 \name{get_Constant_CorrMat}
 \alias{get_Constant_CorrMat}
-\title{Constant correlation matrix}
+\title{Construct a constant (exchangeable) correlation matrix}
 \usage{
 get_Constant_CorrMat(n, rho)
 }
 \arguments{
-\item{n}{Number of bins}
+\item{n}{Integer. Matrix dimension (typically \code{n_sexes}).}
 
-\item{rho}{correaltion parameter}
+\item{rho}{Numeric. Off-diagonal correlation in \eqn{(-1, 1)}. A value
+of 0 produces the identity matrix; a value approaching 1 produces
+near-perfect correlation across sexes.}
 }
 \value{
-constant correlation matrix
+Numeric \eqn{n \times n} correlation matrix.
 }
 \description{
-Constant correlation matrix
+Builds an \eqn{n \times n} correlation matrix with 1 on the diagonal and
+\eqn{\rho} on all off-diagonal elements, corresponding to a compound
+symmetry (exchangeable) covariance structure. Used in SPoRC to model
+constant correlation across sexes in the 2D logistic-normal composition
+likelihood (\code{comp_like = 4}).
 }
 \examples{
 \dontrun{
-mat <- get_Constant_CorrMat(10, 0.5)
+get_Constant_CorrMat(2, 0.5)
 }
 }
 \keyword{internal}

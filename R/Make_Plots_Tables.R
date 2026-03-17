@@ -956,7 +956,7 @@ get_retrospective_plot <- function(retro_output, Rec_Age) {
     ggplot2::geom_line(retro_output %>% filter(peel == 0), mapping = ggplot2::aes(x = Year, y = value), lty = 2, lwd = 1) +
     ggplot2::scale_color_viridis_c() +
     ggplot2::coord_cartesian(ylim = c(0, NA)) +
-    ggplot2::facet_grid(Region~Type+Pop, scales = 'free_y') +
+    ggplot2::facet_wrap(Region~Type+Pop, scales = 'free_y') +
     theme_sablefish() +
     ggplot2::labs(x = 'Year', y = 'Value', color = 'Peel')
 
@@ -1274,7 +1274,7 @@ get_key_quants <- function(data,
 
     # movement
     Movement_avg <- apply(rep[[i]]$Movement[,,,avg_yrs,,,,drop = FALSE], c(1,2,3,5,6,7), mean) # movement
-    Movement <- aperm(abind::abind(replicate(n_proj_yrs, Movement_avg, simplify = FALSE), along = 7), perm = c(1,2,3,7,4,5,6)) # movement
+    Movement <- abind::abind(replicate(n_proj_yrs, Movement_avg, simplify = FALSE), along = 4)
     sgl_seas_spawning_movement_avg <- apply(rep[[i]]$sgl_seas_spawning_movement[,,,avg_yrs,,1,drop = FALSE], c(1,2,3,5), mean)
     sgl_seas_spawning_movement <- array(sgl_seas_spawning_movement_avg, dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_regions, data[[i]]$n_ages)) # Movement
     stray_rate <- array(apply(rep[[i]]$stray_rate[,avg_yrs, drop = FALSE], 1, mean), dim = c(data[[i]]$n_pop, n_proj_yrs))

@@ -2,7 +2,7 @@
 % Please edit documentation in R/Setup_Fishery.R
 \name{Setup_Mod_Catch_and_F}
 \alias{Setup_Mod_Catch_and_F}
-\title{Setup fishing mortality and catch observations}
+\title{Set up fishing mortality and catch observation inputs}
 \usage{
 Setup_Mod_Catch_and_F(
   input_list,
@@ -16,64 +16,73 @@ Setup_Mod_Catch_and_F(
 )
 }
 \arguments{
-\item{input_list}{A list containing data, parameters, and map lists used by the model.}
+\item{input_list}{Named list with \code{$data}, \code{$par}, \code{$map},
+and \code{$verbose} sublists, as returned by upstream setup functions.}
 
-\item{ObsCatch}{Numeric array of observed catches, dimensioned \code{[n_regions, n_years, n_seas, n_fish_fleets]}.}
+\item{ObsCatch}{Observed catch array \code{[n_regions × n_years × n_seas × n_fish_fleets]}.
+Values should be in the units specified by \code{catch_units}.}
 
-\item{catch_units}{Catch units - Array dimensioned by n_fish_fleets
-\itemize{
-  \item \code{"abd"}: Catch units in abundance
-  \item \code{"biom"}: Catch units in biomass (default)
-}}
+\item{catch_units}{Character array \code{[n_fish_fleets]} specifying catch
+units per fleet. \code{"biom"} = biomass (default); \code{"abd"} = abundance.
+Converted internally to \code{0}/\code{1} integer codes.}
 
-\item{UseCatch}{Indicator array \code{[n_regions, n_years, n_seas, n_fish_fleets]} specifying whether to include catch data in the fit:
-\itemize{
-  \item \code{0}: Do not use catch data.
-  \item \code{1}: Use catch data and fit.
-}}
+\item{UseCatch}{Binary indicator array \code{[n_regions × n_years × n_seas × n_fish_fleets]}
+controlling which catch observations enter the likelihood and whether
+\code{ln_F_devs} are estimated for each cell. \code{1} = use; \code{0} = exclude
+(corresponding \code{ln_F_devs} will be mapped to \code{NA}).}
 
-\item{Use_F_pen}{Integer flag indicating whether to apply a fishing mortality penalty:
-\itemize{
-  \item \code{0}: Do not apply penalty.
-  \item \code{1}: Apply penalty.
-}}
+\item{Use_F_pen}{Integer flag for applying a fishing mortality penalty to
+penalise large deviations in \code{ln_F_devs}. \code{1} = apply (default);
+\code{0} = do not apply.}
 
-\item{sigmaC_spec}{Character string specifying observation error structure for catch data. Default behavior fixes \code{sigmaC} at a starting value of \code{1e-3} (log-scale \code{ln_sigmaC = log(1e-3)}) for all regions, years, and fleets. Other options include:
-\itemize{
-    \item \code{"est_shared_r"}: Shared across regions
-    \item \code{"est_shared_y"}: Shared across years
-    \item \code{"est_shared_seas"}: Shared across seasons
-    \item \code{"est_shared_f"}: Shared across fleets
-    \item \code{"est_shared_r_y"}: Shared across regions and years
-    \item \code{"est_shared_r_seas"}: Shared across regions and seasons
-    \item \code{"est_shared_r_f"}: Shared across regions and fleets
-    \item \code{"est_shared_y_seas"}: Shared across years and seasons
-    \item \code{"est_shared_y_f"}: Shared across years and fleets
-    \item \code{"est_shared_seas_f"}: Shared across seasons and fleets
-    \item \code{"est_shared_r_y_seas"}: Shared across regions, years, and seasons
-    \item \code{"est_shared_r_y_f"}: Shared across regions, years, and fleets
-    \item \code{"est_shared_r_seas_f"}: Shared across regions, seasons, and fleets
-    \item \code{"est_shared_y_seas_f"}: Shared across years, seasons, and fleets
-    \item \code{"est_shared_r_y_seas_f"}: Single parameter shared across all
-    \item \code{"est_all"}: Unique per region, year, season, fleet
-    \item \code{"fix"}: Fixed at starting values
-}}
+\item{sigmaC_spec}{Character string specifying the sharing structure for
+\code{ln_sigmaC} (catch observation error SD). Default \code{"fix"} holds
+\code{ln_sigmaC} at its starting value (\code{log(0.01)} unless overridden
+via \code{...}). See \code{\link{do_sigmaC_mapping}} for all sharing options
+(\code{"est_shared_r"}, \code{"est_shared_y"}, \code{"est_all"}, etc.).
+A warning is issued if \code{"fix"} is selected without providing a starting
+value in \code{...}.}
 
-\item{sigmaF_spec}{Character string specifying process error structure for fishing mortality. Default fixes \code{sigmaF} at \code{1} on the log scale (i.e., \code{ln_sigmaF = 0}). Other options include:
-\itemize{
-    \item \code{"est_shared_r"}: Shared across regions
-    \item \code{"est_shared_seas"}: Shared across seasons
-    \item \code{"est_shared_f"}: Shared across fleets
-    \item \code{"est_shared_r_seas"}: Shared across regions and seasons
-    \item \code{"est_shared_r_f"}: Shared across regions and fleets
-    \item \code{"est_shared_seas_f"}: Shared across seasons and fleets
-    \item \code{"est_shared_r_seas_f"}: Single parameter shared across all
-    \item \code{"est_all"}: Unique per region, season, fleet
-    \item \code{"fix"}: Fixed at starting values
+\item{sigmaF_spec}{Character string specifying the sharing structure for
+\code{ln_sigmaF} (fishing mortality process error SD). Default \code{"fix"}
+holds \code{ln_sigmaF} at its starting value (\code{log(1)}, i.e.,
+\eqn{\sigma_F = 1}, unless overridden via \code{...}). See
+\code{\link{do_sigmaF_mapping}} for all sharing options. A warning is issued
+if \code{"fix"} is selected without providing a starting value in \code{...}.}
+
+\item{...}{Optional starting value overrides, passed by name. Recognised
+arguments:
+\describe{
+  \item{\code{ln_sigmaC}}{Array of log-scale starting values for catch
+    observation error, dimensioned
+    \code{[n_regions × n_years × n_seas × n_fish_fleets]}.
+    Default: \code{log(0.01)}.}
+  \item{\code{ln_sigmaF}}{Array of log-scale starting values for fishing
+    mortality process error, dimensioned
+    \code{[n_regions × n_seas × n_fish_fleets]}.
+    Default: \code{log(1)}.}
+  \item{\code{ln_F_mean}}{Array of log-scale mean fishing mortality starting
+    values, dimensioned \code{[n_regions × n_seas × n_fish_fleets]}.
+    Default: \code{log(0.1)}.}
+  \item{\code{ln_F_devs}}{Array of log-scale annual fishing mortality
+    deviation starting values, dimensioned
+    \code{[n_regions × n_years × n_seas × n_fish_fleets]}.
+    Default: \code{0}.}
 }}
 }
+\value{
+The input \code{input_list} with \code{$data}, \code{$par}, and
+  \code{$map} updated. Key additions: \code{$data$ObsCatch},
+  \code{$data$UseCatch}, \code{$data$Use_F_pen}, \code{$data$catch_units},
+  \code{$par$ln_sigmaC}, \code{$par$ln_sigmaF}, \code{$par$ln_F_mean},
+  \code{$par$ln_F_devs}, \code{$map$ln_sigmaC}, \code{$map$ln_sigmaF},
+  \code{$map$ln_F_devs}.
+}
 \description{
-Setup fishing mortality and catch observations
+Populates \code{input_list} with observed catch, catch usage indicators,
+fishing mortality parameters (\code{ln_F_mean}, \code{ln_F_devs}), and
+observation/process error structures (\code{ln_sigmaC}, \code{ln_sigmaF}).
+Must be called after \code{\link{Setup_Mod_Biologicals}}.
 }
 \seealso{
 Other Model Setup: 

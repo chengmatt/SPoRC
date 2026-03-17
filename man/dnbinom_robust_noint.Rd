@@ -2,23 +2,30 @@
 % Please edit documentation in R/Distributions.R
 \name{dnbinom_robust_noint}
 \alias{dnbinom_robust_noint}
-\title{Negative Binomial Likelihood}
+\title{Evaluate a robust negative binomial log-likelihood}
 \usage{
 dnbinom_robust_noint(x, log_mu, log_var_minus_mu, give_log = TRUE)
 }
 \arguments{
-\item{x}{observations}
+\item{x}{Numeric. Observed count (may be non-integer).}
 
-\item{log_mu}{log mu}
+\item{log_mu}{Numeric. Log of the mean parameter \eqn{\mu}.}
 
-\item{log_var_minus_mu}{log var minus mu - reparameterize negbin}
+\item{log_var_minus_mu}{Numeric. Log of the excess variance
+\eqn{\sigma^2 - \mu}. Must satisfy \eqn{\sigma^2 > \mu} (i.e.,
+overdispersion); the implied size parameter is
+\eqn{k = \mu^2 / (\sigma^2 - \mu)}.}
 
-\item{give_log}{whether to give log}
+\item{give_log}{Logical. If \code{TRUE} (default), returns the
+log-likelihood; otherwise returns the likelihood.}
 }
 \value{
-Returns likelihood values from a robust negative binomial
+Numeric. Log-likelihood (or likelihood if \code{give_log = FALSE}).
 }
 \description{
-Approximates negative binomial when non-integer values are provided
+Computes the negative binomial log-likelihood using a
+\eqn{(\mu, \sigma^2 - \mu)} reparameterisation that remains valid for
+non-integer observations via \code{lgamma}. The overdispersion parameter
+is recovered as \eqn{k = \mu^2 / (\sigma^2 - \mu)}.
 }
 \keyword{internal}

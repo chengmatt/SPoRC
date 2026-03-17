@@ -2,23 +2,38 @@
 % Please edit documentation in R/Utility_Functions.R
 \name{get_optim_param_list}
 \alias{get_optim_param_list}
-\title{Title Populates an unoptimized parameter list with optimized values}
+\title{Populate a parameter list with optimised values from sdreport}
 \usage{
 get_optim_param_list(parameters, mapping, sd_rep, random)
 }
 \arguments{
-\item{parameters}{Parameter list}
+\item{parameters}{Named list of parameter starting values passed to
+\code{RTMB::MakeADFun}.}
 
-\item{mapping}{Mapping list}
+\item{mapping}{Named list of factor maps passed to \code{RTMB::MakeADFun}.}
 
-\item{sd_rep}{Sd report list from RTMB}
+\item{sd_rep}{\code{sdreport} object returned by \code{RTMB::sdreport}.
+Must contain \code{$par.fixed}, \code{$par.random}, and
+\code{$cov.fixed}.}
 
-\item{random}{Character vector of whether random effects were estimated}
+\item{random}{Character vector of parameter names declared as random
+effects in \code{RTMB::MakeADFun}. Used to route extraction to
+\code{sd_rep$par.random} rather than \code{sd_rep$par.fixed}.}
 }
 \value{
-Updated parameter list with associated optimized parameters corresponding to the same mapping indices
+The \code{parameters} list with all estimated elements replaced by
+  their optimised values. Fixed (\code{NA}-mapped) elements retain their
+  original starting values.
 }
 \description{
-Title Populates an unoptimized parameter list with optimized values
+Replaces starting values in \code{parameters} with the corresponding
+optimised estimates from \code{sd_rep}, respecting the factor-map sharing
+structure in \code{mapping}. For each parameter: if a map exists, factor
+level integers are used to index into the estimated value vector so that
+shared elements receive the same optimised value and \code{NA}-mapped
+(fixed) elements are left unchanged. Parameters absent from \code{mapping}
+are treated as fully estimated and filled in sequentially. Random effects
+are sourced from \code{sd_rep$par.random}; all other estimated parameters
+from \code{sd_rep$par.fixed}.
 }
 \keyword{internal}

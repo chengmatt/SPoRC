@@ -2,37 +2,46 @@
 % Please edit documentation in R/Utility_Functions.R
 \name{get_model_rep_from_mcmc}
 \alias{get_model_rep_from_mcmc}
-\title{Extract model report from MCMC posterior samples}
+\title{Extract model report quantities from MCMC posterior samples}
 \usage{
 get_model_rep_from_mcmc(rtmb_obj, adnuts_obj, what, n_cores)
 }
 \arguments{
-\item{rtmb_obj}{An RTMB object created via `ADFun`.}
+\item{rtmb_obj}{An RTMB \code{ADFun} object with a \code{$report()}
+method, as returned by \code{RTMB::MakeADFun}.}
 
-\item{adnuts_obj}{An `adnuts` object containing MCMC samples.}
+\item{adnuts_obj}{An \code{adnuts} posterior object containing
+\code{$samples} (array \code{[n_iter × n_chain × n_param]}) and
+\code{$warmup} (number of warmup iterations to discard).}
 
-\item{what}{Character vector specifying the names of components
-in the model report to extract.}
+\item{what}{Character vector. Names of components in the model report
+(i.e., quantities passed to \code{RTMB::REPORT} inside
+\code{\link{SPoRC_rtmb}}) to extract from each posterior draw.}
 
-\item{n_cores}{Number of cores to use}
+\item{n_cores}{Integer. Number of parallel workers to use via
+\code{future::multisession}.}
 }
 \value{
-A named list of `data.table`s, one for each element in
-  `what`. Each table contains the melted report component across
-  all posterior samples, with an additional column
-  `posterior_sample` indicating the MCMC draw index.
+Named list of \code{data.table}s, one per element of \code{what}.
+  Each table is the row-bound result of \code{reshape2::melt} applied to
+  the report component across all post-warmup draws, with an additional
+  integer column \code{posterior_sample} identifying the draw index
+  (1 to \code{n_iter × n_chain}).
 }
 \description{
-This function collapses MCMC chains from an RTMB/ADNUTS object,
-generates model reports for each posterior draw, and extracts
-specified components of the report.
+Discards warmup iterations, collapses all chains into a single matrix of
+posterior draws, evaluates the RTMB report function at each draw in
+parallel, and returns the requested report components as tidy
+\code{data.table}s with a \code{posterior_sample} index column.
 }
 \examples{
 \dontrun{
-model_reports <- get_model_rep_from_mcmc(rtmb_obj, adnuts_obj,
-                                         what = c("SSB", "Rec"))
+model_reports <- get_model_rep_from_mcmc(
+  rtmb_obj, adnuts_obj,
+  what = c("SSB", "Rec"),
+  n_cores = 4
+)
 }
-
 }
 \seealso{
 Other Model Diagnostics: 

@@ -2,18 +2,34 @@
 % Please edit documentation in R/Simulate_Population.R
 \name{Setup_sim_env}
 \alias{Setup_sim_env}
-\title{Constructs simulation objects in a new simulation environment for use in simulation functions}
+\title{Construct and populate a simulation execution environment}
 \usage{
 Setup_sim_env(sim_list)
 }
 \arguments{
-\item{sim_list}{Simulation list objects}
+\item{sim_list}{Named list returned by \code{\link{Setup_Sim_Rec}} (or the
+last upstream setup function called). All elements are copied into the
+new environment via \code{list2env}.}
 }
 \value{
-A new simulation environment with objects from sim_list
+A new environment (parent = calling frame) containing every element
+  of \code{sim_list} as a named object, plus bound references to the
+  following SPoRC simulation functions: \code{generate_initial_age_structure},
+  \code{generate_recruitment}, \code{apply_pop_dy},
+  \code{generate_fishery_catch_comp_idx}, \code{generate_survey_comp_idx},
+  \code{release_conv_tags}, \code{generate_fishery_conv_tags_recap},
+  \code{Get_Det_Recruitment}, \code{Get_Init_NAA},
+  \code{predict_sim_fish_iss_fmort}, \code{rho_trans},
+  \code{simulate_comps}, \code{simulate_conv_tag_fish_recaptures}.
 }
 \description{
-Constructs simulation objects in a new simulation environment for use in simulation functions
+Creates a new R environment populated with all objects from \code{sim_list}
+and binds the SPoRC simulation functions required by
+\code{\link{run_annual_cycle}}. Isolating the simulation state in a
+dedicated environment prevents name collisions with the calling frame and
+allows \code{with()} / \code{<<-} assignment patterns used internally by
+the annual-cycle helpers to modify shared state without polluting the
+global workspace.
 }
 \examples{
 \dontrun{
@@ -31,7 +47,6 @@ Other Simulation Setup:
 \code{\link{Setup_Sim_Tagging}()},
 \code{\link{Simulate_Pop_Static}()},
 \code{\link{run_annual_cycle}()},
-\code{\link{simulation_data_to_SPoRC}()},
 \code{\link{simulation_self_test}()}
 }
 \concept{Simulation Setup}

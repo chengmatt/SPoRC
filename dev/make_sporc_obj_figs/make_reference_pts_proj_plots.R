@@ -18,7 +18,7 @@ data("mlt_rg_sable_data") # read in multi region data
 # Single Region SPR -------------------------------------------------------
 
 # single area model
-sgl_ref_pt <- SPoRC::Get_Reference_Points(data = sgl_rg_sable_data, # data file
+sgl_ref_pt <- Get_Reference_Points(data = sgl_rg_sable_data, # data file
                                           rep = sgl_rg_sable_rep, # report file
                                           SPR_x = 0.4, # spr rate
                                           type = 'single_region', # single region reference point
@@ -43,8 +43,9 @@ mlt_ref_pt_indp <- Get_Reference_Points(data = mlt_rg_sable_data, # data file
                                                calc_rec_st_yr = 20, # first year to calculate mean recruitment
                                                rec_age = 2,  # exclues the last rec_age years when computing mean recruitment
                                                t_spawn = 0,  # spawn timing
-                                               sex_ratio_f = rep(0.5, mlt_rg_sable_data$n_regions) # recruitment sex-ratio for females
+                                               sex_ratio_f = array(0.5, dim = c(mlt_rg_sable_data$n_pop, mlt_rg_sable_data$n_regions)) # recruitment sex-ratio for females
 )
+
 mlt_ref_pt_indp$f_ref_pt # F40
 mlt_ref_pt_indp$b_ref_pt # B40
 
@@ -58,8 +59,9 @@ mlt_ref_pt_global <- Get_Reference_Points(data = mlt_rg_sable_data, # data file
                                           calc_rec_st_yr = 20, # first year to calculate mean recruitment
                                           rec_age = 2,  # exclues the last rec_age years when computing mean recruitment
                                           t_spawn = 0,  # spawn timing
-                                          sex_ratio_f = rep(0.5, mlt_rg_sable_data$n_regions) # recruitment sex-ratio for females
+                                          sex_ratio_f = array(0.5, dim = c(mlt_rg_sable_data$n_pop, mlt_rg_sable_data$n_regions)) # recruitment sex-ratio for females
 )
+
 mlt_ref_pt_global$f_ref_pt # F40
 mlt_ref_pt_global$b_ref_pt # B40
 
@@ -104,22 +106,23 @@ n_ages <- length(sgl_rg_sable_data$ages) # number of ages
 n_sexes <- sgl_rg_sable_data$n_sexes # number of sexes
 n_fish_fleets <- sgl_rg_sable_data$n_fish_fleets # number of fishery fleets
 n_seas <- 1
+n_pop <- 1
 do_recruits_move <- 0 # recruits don't move
-terminal_NAA <- array(sgl_rg_sable_rep$NAA[,length(sgl_rg_sable_data$years),,,], dim = c(n_regions, n_seas, n_ages, n_sexes)) # terminal numbers at age
-terminal_NAA0 <- array(sgl_rg_sable_rep$NAA0[,length(sgl_rg_sable_data$years),,,], dim = c(n_regions, n_seas, n_ages, n_sexes)) # terminal numbers at age
-WAA <- array(rep(sgl_rg_sable_data$WAA[,length(sgl_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # weight at age
-WAA_fish <- array(rep(sgl_rg_sable_data$WAA[,length(sgl_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # weight at age fishery
-MatAA <- array(rep(sgl_rg_sable_data$MatAA[,length(sgl_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # maturity at age
+terminal_NAA <- array(sgl_rg_sable_rep$NAA[,,length(sgl_rg_sable_data$years),,,], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes)) # terminal numbers at age
+terminal_NAA0 <- array(sgl_rg_sable_rep$NAA0[,,length(sgl_rg_sable_data$years),,,], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes)) # terminal numbers at age
+WAA <- array(rep(sgl_rg_sable_data$WAA[,,length(sgl_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # weight at age
+WAA_fish <- array(rep(sgl_rg_sable_data$WAA[,,length(sgl_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # weight at age fishery
+MatAA <- array(rep(sgl_rg_sable_data$MatAA[,,length(sgl_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # maturity at age
 fish_sel <- array(rep(sgl_rg_sable_rep$fish_sel[,length(sgl_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_ages, n_sexes, n_fish_fleets)) # selectivity
-Movement <- array(rep(sgl_rg_sable_rep$Movement[,,length(sgl_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_regions, n_regions, n_seas, n_proj_yrs, n_ages, n_sexes)) # movement
+Movement <- array(rep(sgl_rg_sable_rep$Movement[,,,length(sgl_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_regions, n_seas, n_proj_yrs, n_ages, n_sexes)) # movement
 terminal_F <- array(sgl_rg_sable_rep$Fmort[,length(sgl_rg_sable_data$years),,], dim = c(n_regions, n_seas, n_fish_fleets)) # terminal F
-natmort <- array(sgl_rg_sable_rep$natmort[,length(sgl_rg_sable_data$years),,], dim = c(n_regions, n_proj_yrs, n_ages, n_sexes)) # natural mortality
-recruitment <- array(sgl_rg_sable_rep$Rec[,20:(length(sgl_rg_sable_data$years) - 2)], dim = c(n_regions, length(20:length(sgl_rg_sable_data$years) - 2))) # recruitment values to use for mean recruitment calculations or inverse gaussian parameterization
-sexratio <- array(0.5, dim = c(n_regions, n_proj_yrs, n_sexes)) # recruitment sex ratio
+natmort <- array(sgl_rg_sable_rep$natmort[,,length(sgl_rg_sable_data$years),,], dim = c(n_pop, n_regions, n_proj_yrs, n_ages, n_sexes)) # natural mortality
+recruitment <- array(sgl_rg_sable_rep$Rec[,,20:(length(sgl_rg_sable_data$years) - 2)], dim = c(n_pop, n_regions, length(20:length(sgl_rg_sable_data$years) - 2))) # recruitment values to use for mean recruitment calculations or inverse gaussian parameterization
+sexratio <- array(0.5, dim = c(n_pop, n_regions, n_proj_yrs, n_sexes)) # recruitment sex ratio
 
 # Define reference points to use in HCR
 f_ref_pt = array(sgl_ref_pt$f_ref_pt, dim = c(n_regions, n_proj_yrs))
-b_ref_pt = array(sgl_ref_pt$b_ref_pt, dim = c(n_regions, n_proj_yrs))
+b_ref_pt = array(sgl_ref_pt$b_ref_pt, dim = c(n_pop, n_regions, n_proj_yrs))
 
 # do population projection
 out <- Do_Population_Projection(n_proj_yrs = n_proj_yrs, # Number of projection years
@@ -132,6 +135,7 @@ out <- Do_Population_Projection(n_proj_yrs = n_proj_yrs, # Number of projection 
                                 recruitment = recruitment, # recruitment values to use for mean recruitment
                                 terminal_NAA = terminal_NAA, # terminal numbers at age
                                 terminal_NAA0 = terminal_NAA0,
+                                n_pop = n_pop, # number of pops
                                 terminal_F = terminal_F, # terminal F
                                 natmort = natmort, # natural mortality values to use in projection
                                 WAA = WAA, # weight at age values to use in projection
@@ -144,11 +148,11 @@ out <- Do_Population_Projection(n_proj_yrs = n_proj_yrs, # Number of projection 
                                 HCR_function = HCR_function, # threshold control rule defined above
                                 recruitment_opt = "mean_rec", # recruitment assumption utilizes the mean recruits for the supplied recruitment estimates
                                 fmort_opt = "HCR", # Fishing mortality in projection years are determined using a HCR
-                                t_spawn = t_spawn # Spawn timing
+                                t_spawn = t_spawn, # Spawn timing
 )
 
 # ssb
-combined_ssb <- c(sgl_rg_sable_rep$SSB[1, -65], out$proj_SSB[1,]) # removing terminal year becauase repeated in projection calculations
+combined_ssb <- c(sgl_rg_sable_rep$SSB[1,1, -65], out$proj_SSB[1,1,]) # removing terminal year becauase repeated in projection calculations
 years <- 1960:(2023 + n_proj_yrs)
 
 ssb_df <- tibble(
@@ -168,8 +172,8 @@ dev.off()
 
 # catch
 combined_catch <- c(
-  rowSums(sgl_rg_sable_rep$PredCatch[1, -65, 1, ]), # removing terminal year becauase repeated in projection calculations
-  rowSums(out$proj_Catch[1, , 1, ])
+  rowSums(sgl_rg_sable_rep$PredCatch[1, 1, -65, 1, ]), # removing terminal year becauase repeated in projection calculations
+  rowSums(out$proj_Catch[1, 1, , 1, ])
 )
 
 years <- 1960:(2023 + n_proj_yrs)
@@ -187,7 +191,7 @@ ggplot(catch_df, aes(x = Year, y = Catch)) +
   labs(x = "Year", y = "Catch (kt)") +
   theme_bw(base_size = 13)
 dev.off()
-sum(out$proj_Catch[1,2,1,]) # Catch advice in terminal year + 1
+sum(out$proj_Catch[1,1,2,1,]) # Catch advice in terminal year + 1
 
 
 ## Multi Region ------------------------------------------------------------
@@ -236,22 +240,23 @@ n_sexes <- mlt_rg_sable_data$n_sexes # number of sexes
 n_fish_fleets <- mlt_rg_sable_data$n_fish_fleets # number of fishery fleets
 do_recruits_move <- 0 # recruits don't move
 n_seas <- 1
-terminal_NAA <- array(mlt_rg_sable_rep$NAA[,length(mlt_rg_sable_data$years),,,], dim = c(n_regions, n_seas, n_ages, n_sexes)) # terminal numbers at age
-terminal_NAA0 <- array(mlt_rg_sable_rep$NAA0[,length(mlt_rg_sable_data$years),,,], dim = c(n_regions, n_seas, n_ages, n_sexes)) # terminal numbers at age
-WAA <- array(rep(mlt_rg_sable_data$WAA[,length(mlt_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # weight at age
-WAA_fish <- array(rep(mlt_rg_sable_data$WAA[,length(mlt_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # weight at age for fishery
-MatAA <- array(rep(mlt_rg_sable_data$MatAA[,length(mlt_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # maturity at age
+n_pop <- 1
+terminal_NAA <- array(mlt_rg_sable_rep$NAA[,,length(mlt_rg_sable_data$years),,,], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes)) # terminal numbers at age
+terminal_NAA0 <- array(mlt_rg_sable_rep$NAA0[,,length(mlt_rg_sable_data$years),,,], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes)) # terminal numbers at age
+WAA <- array(rep(mlt_rg_sable_data$WAA[,,length(mlt_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # weight at age
+WAA_fish <- array(rep(mlt_rg_sable_data$WAA[,,length(mlt_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # weight at age for fishery
+MatAA <- array(rep(mlt_rg_sable_data$MatAA[,,length(mlt_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # maturity at age
 fish_sel <- array(rep(mlt_rg_sable_rep$fish_sel[,length(mlt_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_ages, n_sexes, n_fish_fleets)) # selectivity
-Movement <- abind::abind(replicate(n_proj_yrs,  mlt_rg_sable_rep$Movement[,,length(mlt_rg_sable_data$years),,,,drop = FALSE],  simplify = FALSE),along = 3) # movement
+Movement <- abind::abind(replicate(n_proj_yrs,  mlt_rg_sable_rep$Movement[,,,length(mlt_rg_sable_data$years),,,,drop = FALSE],  simplify = FALSE), along = 4) # movement
 terminal_F <- array(mlt_rg_sable_rep$Fmort[,length(mlt_rg_sable_data$years),,], dim = c(n_regions, n_seas, n_fish_fleets)) # terminal F
-natmort <- array(mlt_rg_sable_rep$natmort[,length(mlt_rg_sable_data$years),,], dim = c(n_regions, n_proj_yrs, n_ages, n_sexes)) # natural mortality
-recruitment <- array(mlt_rg_sable_rep$Rec[,20:(length(mlt_rg_sable_data$years) - 2)], dim = c(n_regions, length(20:length(mlt_rg_sable_data$years) - 2))) # recruitment values to use for mean recruitment calculations or inverse gaussian parameterization
-sexratio <- array(0.5, dim = c(n_regions, n_proj_yrs, n_sexes)) # recruitment sex ratio
+natmort <- array(mlt_rg_sable_rep$natmort[,,length(mlt_rg_sable_data$years),,], dim = c(n_pop, n_regions, n_proj_yrs, n_ages, n_sexes)) # natural mortality
+recruitment <- array(mlt_rg_sable_rep$Rec[,,20:(length(mlt_rg_sable_data$years) - 2)], dim = c(n_pop, n_regions, length(20:length(mlt_rg_sable_data$years) - 2))) # recruitment values to use for mean recruitment calculations or inverse gaussian parameterization
+sexratio <- array(0.5, dim = c(n_pop, n_regions, n_proj_yrs, n_sexes)) # recruitment sex ratio
 
 
 # Define independent SPR reference points to use in HCR
 f_ref_pt_indp = array(mlt_ref_pt_indp$f_ref_pt, dim = c(n_regions, n_proj_yrs))
-b_ref_pt_indp = array(mlt_ref_pt_indp$b_ref_pt, dim = c(n_regions, n_proj_yrs))
+b_ref_pt_indp = array(mlt_ref_pt_indp$b_ref_pt, dim = c(n_pop, n_regions, n_proj_yrs))
 
 # do population projection
 out <- Do_Population_Projection(n_proj_yrs = n_proj_yrs, # Number of projection years
@@ -264,6 +269,7 @@ out <- Do_Population_Projection(n_proj_yrs = n_proj_yrs, # Number of projection 
                                 recruitment = recruitment, # recruitment values to use for mean recruitment
                                 terminal_NAA = terminal_NAA, # terminal numbers at age
                                 terminal_NAA0 = terminal_NAA0,
+                                n_pop = n_pop,
                                 terminal_F = terminal_F, # terminal F
                                 natmort = natmort, # natural mortality values to use in projection
                                 WAA = WAA, # weight at age values to use in projection
@@ -279,7 +285,7 @@ out <- Do_Population_Projection(n_proj_yrs = n_proj_yrs, # Number of projection 
                                 t_spawn = t_spawn # Spawn timing
 )
 
-combined_ssb <- cbind(mlt_rg_sable_rep$SSB[,-62], out$proj_SSB[,]) # removing terminal year becauase repeated in projection calculations
+combined_ssb <- cbind(mlt_rg_sable_rep$SSB[1,,-62], out$proj_SSB[1,,]) # removing terminal year becauase repeated in projection calculations
 combined_ssb_df <- reshape2::melt(combined_ssb) %>%
   rename(Region = Var1, Year = Var2, SSB = value)
 
@@ -295,7 +301,7 @@ ggplot(combined_ssb_df, aes(x = Year + 1959, y = SSB, color = factor(Region))) +
   theme(legend.position = 'none')
 dev.off()
 
-combined_catch <- cbind(apply(mlt_rg_sable_rep$PredCatch, c(1,2), sum), apply(out$proj_Catch, c(1,2), sum))
+combined_catch <- cbind(apply(mlt_rg_sable_rep$PredCatch[1,,,,], c(1,2), sum), apply(out$proj_Catch[1,,,,], c(1,2), sum))
 combined_catch_df <- reshape2::melt(combined_catch) %>%
   rename(Region = Var1, Year = Var2, Catch = value)
 
@@ -311,38 +317,39 @@ ggplot(combined_catch_df, aes(x = Year + 1959, y = Catch, color = factor(Region)
   theme(legend.position = 'none')
 dev.off()
 
-rowSums(out$proj_Catch[,2,1,]) # Catch advice by region in terminal year + 1
+rowSums(out$proj_Catch[,,2,1,]) # Catch advice by region in terminal year + 1
 
 
 # Stochastic Projections --------------------------------------------------
+n_sims <- 500
 
 # Setup necessary inputs
-n_sims <- 1e3 # number of simulations to conduct
 t_spawn <- 0 # spawn timing
 n_proj_yrs <- 15 # number of projection years
 n_regions <- 1 # number of regions
 n_ages <- length(sgl_rg_sable_data$ages) # number of ages
 n_sexes <- sgl_rg_sable_data$n_sexes # number of sexes
 n_fish_fleets <- sgl_rg_sable_data$n_fish_fleets # number of fishery fleets
-do_recruits_move <- 0 # recruits don't move
 n_seas <- 1
-terminal_NAA <- array(sgl_rg_sable_rep$NAA[,length(sgl_rg_sable_data$years),,,], dim = c(n_regions, n_seas, n_ages, n_sexes)) # terminal numbers at age
-terminal_NAA0 <- array(sgl_rg_sable_rep$NAA0[,length(sgl_rg_sable_data$years),,,], dim = c(n_regions, n_seas, n_ages, n_sexes)) # terminal numbers at age
-WAA <- array(rep(sgl_rg_sable_data$WAA[,length(sgl_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # weight at age
-WAA_fish <- array(rep(sgl_rg_sable_data$WAA[,length(sgl_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # weight at age fpr fishery catch
-MatAA <- array(rep(sgl_rg_sable_data$MatAA[,length(sgl_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # maturity at age
+n_pop <- 1
+do_recruits_move <- 0 # recruits don't move
+terminal_NAA <- array(sgl_rg_sable_rep$NAA[,,length(sgl_rg_sable_data$years),,,], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes)) # terminal numbers at age
+terminal_NAA0 <- array(sgl_rg_sable_rep$NAA0[,,length(sgl_rg_sable_data$years),,,], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes)) # terminal numbers at age
+WAA <- array(rep(sgl_rg_sable_data$WAA[,,length(sgl_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # weight at age
+WAA_fish <- array(rep(sgl_rg_sable_data$WAA[,,length(sgl_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # weight at age fishery
+MatAA <- array(rep(sgl_rg_sable_data$MatAA[,,length(sgl_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # maturity at age
 fish_sel <- array(rep(sgl_rg_sable_rep$fish_sel[,length(sgl_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_ages, n_sexes, n_fish_fleets)) # selectivity
-Movement <- array(rep(sgl_rg_sable_rep$Movement[,,length(sgl_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_regions, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # movement
+Movement <- array(rep(sgl_rg_sable_rep$Movement[,,,length(sgl_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_regions, n_seas, n_proj_yrs, n_ages, n_sexes)) # movement
 terminal_F <- array(sgl_rg_sable_rep$Fmort[,length(sgl_rg_sable_data$years),,], dim = c(n_regions, n_seas, n_fish_fleets)) # terminal F
-natmort <- array(sgl_rg_sable_rep$natmort[,length(sgl_rg_sable_data$years),,], dim = c(n_regions, n_proj_yrs, n_ages, n_sexes)) # natural mortality
-recruitment <- array(sgl_rg_sable_rep$Rec[,20:(length(sgl_rg_sable_data$years) - 2)], dim = c(n_regions, length(20:length(sgl_rg_sable_data$years) - 2))) # recruitment values to use for mean recruitment calculations or inverse gaussian parameterization
-sexratio <- array(0.5, dim = c(n_regions, n_proj_yrs, n_sexes)) # recruitment sex ratio
+natmort <- array(sgl_rg_sable_rep$natmort[,,length(sgl_rg_sable_data$years),,], dim = c(n_pop, n_regions, n_proj_yrs, n_ages, n_sexes)) # natural mortality
+recruitment <- array(sgl_rg_sable_rep$Rec[,,20:(length(sgl_rg_sable_data$years) - 2)], dim = c(n_pop, n_regions, length(20:length(sgl_rg_sable_data$years) - 2))) # recruitment values to use for mean recruitment calculations or inverse gaussian parameterization
+sexratio <- array(0.5, dim = c(n_pop, n_regions, n_proj_yrs, n_sexes)) # recruitment sex ratio
 
 # Define the F used for each scenario
 proj_inputs <- list(
   # Scenario 1 - Using HCR to adjust f40
   list(f_ref_pt = array(sgl_ref_pt$f_ref_pt, dim = c(n_regions, n_proj_yrs)),
-       b_ref_pt = array(sgl_ref_pt$b_ref_pt, dim = c(n_regions, n_proj_yrs)),
+       b_ref_pt = array(sgl_ref_pt$b_ref_pt, dim = c(n_pop, n_regions, n_proj_yrs)),
        fmort_opt = 'HCR'
   ),
   # Scenario 2 - F is set at 0
@@ -374,6 +381,7 @@ for (i in seq_along(proj_inputs)) {
                                     terminal_NAA0 = terminal_NAA, # unfished terminal numbers at age
                                     terminal_F = terminal_F, # terminal fishing mortality at age
                                     natmort = natmort, # natural mortality
+                                    n_pop = n_pop,
                                     WAA = WAA, # weight at age
                                     WAA_fish = WAA_fish, # weight at age for fishery catch
                                     MatAA = MatAA, # maturity at age
@@ -388,8 +396,8 @@ for (i in seq_along(proj_inputs)) {
     )
 
     # store results
-    all_scenarios_ssb[,,sim,i] <- out$proj_SSB
-    all_scenarios_catch[,,,sim,i] <- out$proj_Catch
+    all_scenarios_ssb[,,sim,i] <- out$proj_SSB[1,,]
+    all_scenarios_catch[,,,sim,i] <- out$proj_Catch[1,,,,]
     all_scenarios_f[,,sim,i] <- out$proj_F[,-(n_proj_yrs+1)] # remove last year, since it's not used
 
   } # end sim loop
@@ -397,7 +405,7 @@ for (i in seq_along(proj_inputs)) {
 } # end i loop
 
 # Get historical SSB
-historical <- reshape2::melt(array(rep(sgl_rg_sable_rep$SSB, n_sims),
+historical <- reshape2::melt(array(rep(sgl_rg_sable_rep$SSB[1,,], n_sims),
                                    dim = c(n_regions, length(sgl_rg_sable_data$years), n_sims))) %>%
   mutate(Year = Var2 + 1959,
          Scenario = "FABC (F40)",  # or change to match the scenarios you're plotting
@@ -436,7 +444,7 @@ combined_ssb %>%
 dev.off()
 
 # Get historical catch
-historical <- reshape2::melt(array(rep(sgl_rg_sable_data$ObsCatch, n_sims),
+historical <- reshape2::melt(array(rep(sgl_rg_sable_data$ObsCatch[1,,,], n_sims),
                                    dim = c(n_regions, length(sgl_rg_sable_data$years), sgl_rg_sable_data$n_fish_fleets, n_sims))) %>%
   mutate(Year = Var2 + 1959,
          Scenario = "FABC (F40)",  # or change to match the scenarios you're plotting

@@ -2,124 +2,182 @@
 % Please edit documentation in R/Setup_Tagging.R
 \name{Setup_Mod_Tagging}
 \alias{Setup_Mod_Tagging}
-\title{Setup tagging processes and parameters}
+\title{Set up the conventional tagging module for model fitting}
 \usage{
 Setup_Mod_Tagging(
   input_list,
-  UseTagging = 0,
-  tag_release_indicator = NULL,
-  max_tag_liberty = 0,
-  Tagged_Fish = NA,
-  Obs_Tag_Recap = NA,
-  Tag_LikeType = NA,
-  mixing_period = 1,
-  t_tagging = 1,
-  tag_selex = NA,
-  tag_natmort = NA,
-  Use_TagRep_Prior = 0,
-  TagRep_Prior = NULL,
-  move_age_tag_pool = as.list(1:length(input_list$data$ages)),
-  move_sex_tag_pool = as.list(1:input_list$data$n_sexes),
-  Init_Tag_Mort_spec = NULL,
-  Tag_Shed_spec = NULL,
-  TagRep_spec = "fix",
-  Tag_Reporting_blocks = NULL,
+  use_conv_fish_tagging = rep(0, input_list$data$n_fish_fleets),
+  conv_tag_release_indicator = NULL,
+  conv_tag_max_liberty = 0,
+  conv_tagged_fish = NA,
+  obs_conv_tag_fish_recap = NA,
+  conv_fish_tag_like = NA,
+  conv_tag_mixing_period = 1,
+  conv_tag_t_tagging = 1,
+  use_conv_tag_fishrep_prior = 0,
+  conv_tag_fishrep_prior = NULL,
+  conv_tag_pop_pool = as.list(1:input_list$data$n_pop),
+  conv_tag_age_pool = as.list(1:length(input_list$data$ages)),
+  conv_tag_sex_pool = as.list(1:input_list$data$n_sexes),
+  init_conv_tag_mort_spec = NULL,
+  conv_tag_shed_spec = NULL,
+  conv_tagrep_spec = "fix",
+  conv_tag_fish_reporting_blocks = NULL,
+  conv_fish_tag_attr = "p_a_s",
+  conv_tag_release_platform = NULL,
   ...
 )
 }
 \arguments{
-\item{input_list}{List containing a data list, parameter list, and map list}
+\item{input_list}{Named list with \code{$data}, \code{$par}, \code{$map},
+and \code{$verbose} sublists, as returned by upstream setup functions.}
 
-\item{UseTagging}{Numeric (0 or 1) indicating whether to use tagging data (1) or not (0)}
+\item{use_conv_fish_tagging}{Integer vector \code{[n_fish_fleets]} (0/1).
+Whether conventional tagging data are included in the likelihood for
+each fishery fleet. Default: \code{0} for all fleets.}
 
-\item{tag_release_indicator}{Matrix [n_tag_cohorts x 3], where columns are release region, release year, and release season}
+\item{conv_tag_release_indicator}{Integer matrix
+\code{[n_conv_tag_cohorts × 3]} giving the release region, year, and
+season for each tag cohort. Required when any
+\code{use_conv_fish_tagging = 1}. Default \code{NULL}.}
 
-\item{max_tag_liberty}{Maximum number of years to track a tagged cohort}
+\item{conv_tag_max_liberty}{Integer. Maximum years-at-liberty included in
+the likelihood; recaptures beyond this horizon are ignored. Must be
+\eqn{> 0} when tagging is active. Default \code{0}.}
 
-\item{Tagged_Fish}{Array [n_tag_cohorts x n_ages x n_sexes] describing tagged fish releases}
+\item{conv_tagged_fish}{Array \code{[n_conv_tag_cohorts × n_pop × n_ages ×
+n_sexes]} of tagged fish released per cohort. Required when any
+\code{use_conv_fish_tagging = 1}. Dimensions not attended in
+\code{conv_fish_tag_attr} should have all fish placed into index 1 with
+remaining indices set to zero. Default \code{NA}.}
 
-\item{Obs_Tag_Recap}{Array [max_tag_liberty x n_seas x n_tag_cohorts x n_regions x n_ages x n_sexes] observed tag recaptures}
+\item{obs_conv_tag_fish_recap}{Array of observed recaptures
+\code{[conv_tag_max_liberty × n_seas × n_conv_tag_cohorts × n_pop ×
+n_regions × n_ages × n_sexes × n_fish_fleets]}. Required when any
+\code{use_conv_fish_tagging = 1}. Default \code{NA}.}
 
-\item{Tag_LikeType}{Character string specifying tag likelihood type. One of:
-\itemize{
-  \item \code{"Poisson"}
-  \item \code{"NegBin"}
-  \item \code{"Multinomial_Release"}
-  \item \code{"Multinomial_Recapture"}
-  \item \code{"Dirichlet-Multinomial_Release"}
-  \item \code{"Dirichlet-Multinomial_Recapture"}
+\item{conv_fish_tag_like}{Character string specifying the tag recapture
+likelihood. One of \code{"Poisson"}, \code{"NegBin"},
+\code{"Multinomial_Release"}, \code{"Multinomial_Recapture"},
+\code{"Dirichlet-Multinomial_Release"},
+\code{"Dirichlet-Multinomial_Recapture"}. Converted to integer codes
+(\code{0}–\code{5}) before storage. Default \code{NA}.}
+
+\item{conv_tag_mixing_period}{Integer. Minimum number of years (or seasons
+in seasonal models) post-release before recaptures contribute to the
+likelihood. Allows time for tags to mix within the population before
+informing movement estimation. Default \code{1}.}
+
+\item{conv_tag_t_tagging}{Numeric scalar in \eqn{[0, 1]}. Fraction of the
+season remaining at tag release. \code{1} = start of season;
+\code{0.5} = mid-season; \code{0} = end of season. Default \code{1}.}
+
+\item{use_conv_tag_fishrep_prior}{Integer (0/1). Whether priors are applied
+to reporting rate parameters. Default \code{0}.}
+
+\item{conv_tag_fishrep_prior}{Data frame of prior specifications for
+reporting rates. Required columns: \code{region}, \code{block},
+\code{fleet}, \code{mu}, \code{sd}, \code{type}. Ignored when
+\code{use_conv_tag_fishrep_prior = 0}. Default \code{NULL}.}
+
+\item{conv_tag_pop_pool}{List of integer vectors defining population pooling
+groups for the tagging likelihood. When \code{"p"} is not attended in
+\code{conv_fish_tag_attr}, use \code{list(1:n_pop)}. If the pooling
+structure is inconsistent with \code{conv_fish_tag_attr}, a warning is
+issued and the structure is automatically overridden to a single group.
+Default: \code{as.list(1:n_pop)} (population-specific).}
+
+\item{conv_tag_age_pool}{List of integer vectors defining age pooling
+groups. When \code{"a"} is not attended, use \code{list(1:n_ages)}.
+Custom groupings (e.g., \code{list(1:5, 6:10)}) are supported when
+\code{"a"} is attended. Default: \code{as.list(1:n_ages)}.}
+
+\item{conv_tag_sex_pool}{List of integer vectors defining sex pooling
+groups. When \code{"s"} is not attended, use \code{list(1:n_sexes)}.
+Default: \code{as.list(1:n_sexes)}.}
+
+\item{init_conv_tag_mort_spec}{Character string (\code{"fix"} or
+\code{"est"}). Whether initial tag-induced mortality is fixed at its
+starting value or estimated. See
+\code{\link{do_conv_init_tag_mort_mapping}}. Default \code{NULL}.}
+
+\item{conv_tag_shed_spec}{Character string (\code{"fix"} or \code{"est"}).
+Whether chronic tag shedding is fixed or estimated. See
+\code{\link{do_conv_tag_shed_mapping}}. Default \code{NULL}.}
+
+\item{conv_tagrep_spec}{Character string. Sharing structure for reporting
+rate parameters \code{conv_tag_fish_reporting_pars}
+\code{[n_regions × max_tagrep_blocks × n_fish_fleets]}. See
+\code{\link{do_conv_tag_fish_reporting_pars_mapping}} for full option
+descriptions. Default \code{"fix"} (a warning is issued if this was
+unintentional).}
+
+\item{conv_tag_fish_reporting_blocks}{Character vector defining time blocks
+for fishery tag reporting rates. Each element follows one of:
+\describe{
+  \item{\code{"none_Region_r_Fleet_f"}}{Constant reporting rate for
+    region \code{r} and fleet \code{f}.}
+  \item{\code{"Block_b_Year_y1-y2_Region_r_Fleet_f"}}{Block \code{b}
+    applies to years \code{y1}–\code{y2}. Use \code{"terminal"} for the
+    end year to extend to the final model year.}
 }
-Example: \code{Tag_LikeType = "NegBin"}}
+Parsed into an array \code{[n_regions × n_years × n_fish_fleets]}.
+If \code{NULL}, a single constant block is used for all region–fleet
+combinations. Default \code{NULL}.}
 
-\item{mixing_period}{Numeric indicating minimum years post-release to include in fitting (or minimum seasons post-release if model is seasonal)}
+\item{conv_fish_tag_attr}{Character string specifying which biological
+dimensions are attended (resolved) in the recapture likelihood. Built
+from any combination of \code{"p"} (population), \code{"a"} (age), and
+\code{"s"} (sex), joined by underscores. Region and fleet are always
+retained. When a dimension is not attended, all released and recaptured
+fish must be placed into index 1 of that dimension, and the
+corresponding pooling argument must pool all indices into a single group.
+The likelihood then marginalises over the unattended dimension. Valid
+values: \code{"p_a_s"}, \code{"a_s"}, \code{"p_a"}, \code{"p_s"},
+\code{"a"}, \code{"s"}, \code{"p"}, \code{"none"}. Default
+\code{"p_a_s"}.}
 
-\item{t_tagging}{Fraction of season remaining when tags are released (e.g., start of season == 1, mid season == 0.5, end of season == 0; default = 1)}
+\item{conv_tag_release_platform}{Character matrix
+\code{[n_conv_tag_cohorts × 2]} specifying the release platform and
+fleet index per cohort. Same format as in \code{\link{Setup_Sim_Tagging}}.
+Default \code{NULL}.}
 
-\item{tag_selex}{Character string specifying tag recovery selectivity. One of:
-\itemize{
-  \item \code{"Uniform_DomFleet"}
-  \item \code{"SexAgg_DomFleet"}
-  \item \code{"SexSp_DomFleet"}
-  \item \code{"Uniform_AllFleet"}
-  \item \code{"SexAgg_AllFleet"}
-  \item \code{"SexSp_AllFleet"}
+\item{...}{Optional named starting values for parameters. Supported names
+and defaults:
+\code{ln_init_conv_tag_mort} (scalar, default \code{-1000}),
+\code{ln_conv_tag_shed} (scalar, default \code{-1000}),
+\code{ln_conv_fish_tag_theta} (scalar, default \code{0}),
+\code{conv_tag_fish_reporting_pars}
+  \code{[n_regions × max_tagrep_blocks × n_fish_fleets]},
+default \code{0} (logit scale ≈ 0.5 reporting probability; inactive
+fleet slots overwritten to \code{-1000}).}
 }
-Example: \code{tag_selex = "SexSp_AllFleet"}}
-
-\item{tag_natmort}{Character string specifying tag natural mortality parameterization. One of:
-\itemize{
-  \item \code{"AgeAgg_SexAgg"}
-  \item \code{"AgeSp_SexAgg"}
-  \item \code{"AgeAgg_SexSp"}
-  \item \code{"AgeSp_SexSp"}
-}
-Example: \code{tag_natmort = "AgeSp_SexSp"}}
-
-\item{Use_TagRep_Prior}{Numeric (0 or 1) whether to use tag reporting rate prior}
-
-\item{TagRep_Prior}{Data frame containing prior specifications for tag reporting parameters.
-Must include columns: \code{region} (region index), \code{block} (time block index),
-\code{mu} (Numeric mean for tag reporting prior (normal space); \code{NA} if symmetric beta is used),
-\code{sd} (Numeric standard deviation for tag reporting prior (normal space)), and \code{type} (0 == symmetric beta, 1 == regular beta).
-Each row specifies a beta prior for one tag reporting parameter.
-Only parameters with rows in this data frame will have priors applied.}
-
-\item{move_age_tag_pool}{List or character specifying pooling of tagging data by age groups. Default does not pool ages. Examples:
-\itemize{
-  \item \code{list(1:5, 6:11, 12:20)} pools these age groups together
-  \item \code{"all"} pools all ages together (internally converted to \code{list(1:n_ages)})
-  \item \code{as.list(1:n_ages)} fits each sex separately
-}}
-
-\item{move_sex_tag_pool}{List or character specifying pooling of tagging data by sex groups. Default do not pool sexes. Examples:
-\itemize{
-  \item \code{list(1:2)} pools sexes together
-  \item \code{"all"} pools all sexes together (internally converted to \code{list(1:n_sexes)})
-  \item \code{list(1, 2)} fits each sex separately
-}}
-
-\item{Init_Tag_Mort_spec}{Character string \code{"fix"} or \code{"est"} specifying if initial tag mortality is fixed or estimated}
-
-\item{Tag_Shed_spec}{Character string \code{"fix"} or \code{"est"} specifying if chronic tag shedding is fixed or estimated}
-
-\item{TagRep_spec}{Character string specifying tag reporting rate estimation scheme:
-\itemize{
-  \item \code{"est_all"} estimates rates for all blocks and regions independently
-  \item \code{"est_shared_r"} estimates rates shared across regions but varying by block
-  \item \code{"fix"} fixes all reporting rates (no estimation)
-}}
-
-\item{Tag_Reporting_blocks}{Character vector specifying blocks of years and regions for tag reporting rates. Default is a single block for all regions. Format examples:
-\itemize{
-  \item \code{"Block_1_Year_1-15_Region_1"}
-  \item \code{"Block_2_Year_16-terminal_Region_2"}
-  \item \code{"none_Region_3"} (means no block, constant for that region)
-}}
-
-\item{...}{Additional starting values for tagging parameters such as \code{ln_Init_Tag_Mort}, \code{ln_Tag_Shed}, \code{ln_tag_theta}, \code{Tag_Reporting_Pars}}
+\value{
+The input \code{input_list} with tagging configuration stored in
+  \code{$data} (\code{use_conv_fish_tagging}, \code{conv_tag_release_indicator},
+  \code{n_conv_tag_cohorts}, \code{conv_tag_max_liberty},
+  \code{conv_tagged_fish}, \code{obs_conv_tag_fish_recap},
+  \code{conv_fish_tag_like}, \code{conv_tag_mixing_period},
+  \code{conv_tag_t_tagging}, \code{use_conv_tag_fishrep_prior},
+  \code{conv_tag_fishrep_prior}, \code{conv_tag_pop_pool},
+  \code{conv_tag_age_pool}, \code{conv_tag_sex_pool},
+  \code{conv_tag_fish_reporting_blocks}, \code{conv_fish_tag_attr},
+  \code{conv_tag_release_platform}); starting values in \code{$par} for
+  \code{ln_init_conv_tag_mort}, \code{ln_conv_tag_shed},
+  \code{ln_conv_fish_tag_theta}, and \code{conv_tag_fish_reporting_pars};
+  and factor maps in \code{$map} for all four parameter arrays.
 }
 \description{
-Setup tagging processes and parameters
+Configures all conventional tagging components of the estimation model:
+tag release cohort definitions, recapture data, tag recapture likelihood,
+mixing period, release platform, dimension-attendance and pooling
+structure, reporting rate time blocks and sharing, and optional reporting
+rate priors. Delegates parameter mapping to four internal helpers
+(\code{\link{do_conv_init_tag_mort_mapping}},
+\code{\link{do_conv_tag_shed_mapping}},
+\code{\link{do_conv_tag_theta_mapping}},
+\code{\link{do_conv_tag_fish_reporting_pars_mapping}}). Must be called
+after \code{\link{Setup_Mod_Dim}} and before model compilation.
 }
 \seealso{
 Other Model Setup: 

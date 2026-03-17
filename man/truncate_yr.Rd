@@ -2,29 +2,55 @@
 % Please edit documentation in R/do_retrospective.R
 \name{truncate_yr}
 \alias{truncate_yr}
-\title{Helper function to truncate data years, parameters, and mapping to conduct retrospective diagnostics. Called within do_retrospective function.}
+\title{Truncate Model Inputs for Retrospective Diagnostics}
 \usage{
 truncate_yr(j, data, parameters, mapping)
 }
 \arguments{
-\item{j}{The years to truncate from the terminal year}
+\item{j}{Integer specifying the number of terminal years to remove from the
+dataset. A value of \code{0} returns the full dataset with no truncation.}
 
-\item{data}{Data list used for the RTMB model}
+\item{data}{List containing model data supplied to the RTMB model.}
 
-\item{parameters}{Parameter list used for the RTMB model}
+\item{parameters}{List containing model parameters supplied to the RTMB
+model.}
 
-\item{mapping}{Mapping list used for the RTMB model}
+\item{mapping}{List defining parameter mappings used during estimation.}
 }
 \value{
-List of data, parameters, and mapping that have truncated dimensions from the original data, parameters, and mapping list
+A list containing truncated versions of the RTMB inputs:
+\itemize{
+  \item \code{retro_data} – Modified data list with terminal years removed.
+  \item \code{retro_parameters} – Parameter list truncated to match the
+  shortened time series.
+  \item \code{retro_mapping} – Mapping list updated to match truncated
+  parameter dimensions.
+}
 }
 \description{
-Helper function to truncate data years, parameters, and mapping to conduct retrospective diagnostics. Called within do_retrospective function.
+Internal helper used by \code{do_retrospective()} to truncate model inputs
+when conducting retrospective diagnostics. The function removes the last
+\code{j} years from the terminal portion of the time series and updates all
+associated data objects, parameter arrays, and parameter mappings so that
+their dimensions remain internally consistent.
 }
-\examples{
-\dontrun{
-retro_list <- retro_truncate_year(j = 0, data, parameters, mapping) # does not remove any data
-retro_list <- retro_truncate_year(j = 1, data, parameters, mapping) # removes last year of data
+\details{
+Specifically, the function adjusts the model \code{data}, \code{parameters},
+and \code{mapping} lists used by the RTMB model by:
+\itemize{
+  \item Truncating the \code{years} vector.
+  \item Removing terminal years from observations (catch, indices, and
+  composition data).
+  \item Truncating time-varying parameter arrays (e.g., recruitment
+  deviations, fishing mortality deviations, selectivity deviations,
+  movement parameters).
+  \item Updating parameter mappings to match the truncated parameter
+  dimensions.
+  \item Adjusting block structures and auxiliary objects that depend on
+  the number of modeled years.
 }
+
+The resulting objects can be passed directly to the model to fit a
+retrospective peel.
 }
 \keyword{internal}

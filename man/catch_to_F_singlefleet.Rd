@@ -2,7 +2,7 @@
 % Please edit documentation in R/Utility_Functions.R
 \name{catch_to_F_singlefleet}
 \alias{catch_to_F_singlefleet}
-\title{Go from TAC to Fishing Mortality using bisection for when a single fishery fleet exists}
+\title{Convert a target catch to fishing mortality for a single fleet via bisection}
 \usage{
 catch_to_F_singlefleet(
   f_guess,
@@ -17,29 +17,42 @@ catch_to_F_singlefleet(
 )
 }
 \arguments{
-\item{f_guess}{Initial guess of F}
+\item{f_guess}{Numeric. Initial \eqn{F} guess (not used directly by the
+bisection algorithm but retained for API consistency).}
 
-\item{catch}{Provided catch values}
+\item{catch}{Numeric. Target catch in biomass units.}
 
-\item{NAA}{Numbers, dimensioned by ages, and sexes}
+\item{NAA}{Numeric matrix \code{[n_ages × n_sexes]}. Numbers-at-age at
+the start of the time step.}
 
-\item{WAA}{Weight, dimensioned by ages and sexes}
+\item{WAA}{Numeric matrix \code{[n_ages × n_sexes]}. Weight-at-age.}
 
-\item{natmort}{Natural mortality dimensioned by ages and sex}
+\item{natmort}{Numeric matrix \code{[n_ages × n_sexes]}. Instantaneous
+natural mortality rate.}
 
-\item{fish_sel}{Fishery selectivity, dimesnioned by ages and sex}
+\item{fish_sel}{Numeric matrix \code{[n_ages × n_sexes]}. Fishery
+selectivity (scaled to a maximum of 1).}
 
-\item{n.iter}{Number of iterations for bisection}
+\item{n.iter}{Integer. Number of bisection iterations. Default \code{20};
+approximately \eqn{\log_2((ub - lb) / \epsilon)} iterations are required
+for tolerance \eqn{\epsilon}.}
 
-\item{lb}{Lower bound of F}
+\item{lb}{Numeric. Lower bound of the \eqn{F} search interval.
+Default \code{0}.}
 
-\item{ub}{Upper bound of F}
+\item{ub}{Numeric. Upper bound of the \eqn{F} search interval.
+Default \code{2}.}
 }
 \value{
-Fishing mortality values for a single fleet
+Scalar numeric. The \eqn{F} value at the final bisection midpoint
+  that most closely produces \code{catch}.
 }
 \description{
-Go from TAC to Fishing Mortality using bisection for when a single fishery fleet exists
+Uses interval bisection to find the scalar fishing mortality \eqn{F} that
+produces a predicted catch (Baranov catch equation, summed over ages and
+sexes in biomass) equal to \code{catch}. Intended for closed-loop MSE
+harvest control rules where a TAC must be translated into an \eqn{F} for
+the operating model.
 }
 \seealso{
 Other Closed Loop Simulations: 

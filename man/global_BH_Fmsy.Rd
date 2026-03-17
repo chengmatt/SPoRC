@@ -2,16 +2,42 @@
 % Please edit documentation in R/Get_Reference_Points.R
 \name{global_BH_Fmsy}
 \alias{global_BH_Fmsy}
-\title{Title Get Global FMSY from a Beverton-Holt (Spatial)}
+\title{Compute global Beverton-Holt Fmsy for a spatially explicit single-population model}
 \usage{
 global_BH_Fmsy(pars, data)
 }
 \arguments{
-\item{pars}{Parameter List}
+\item{pars}{Named list of RTMB parameters. Must contain:
+\describe{
+  \item{\code{log_Fmsy}}{Log-scale trial \eqn{F_{MSY}}.}
+}}
 
-\item{data}{Data List}
+\item{data}{Named list of RTMB data. Must contain all spatial fields
+required by \code{\link{global_SPR}} (excluding \code{SPR_x} and
+\code{stray_rate}) plus:
+\describe{
+  \item{\code{h}}{Numeric scalar. Beverton-Holt steepness.}
+  \item{\code{R0}}{Numeric scalar. Unfished equilibrium recruitment.}
+  \item{\code{rec_region_prop}}{Numeric vector \code{[n_regions]}.
+    Proportion of annual recruitment entering each region.}
+  \item{\code{rec_seas_prop}}{Numeric vector \code{[n_seas]}. Seasonal
+    recruitment proportions (no population dimension for single-pop).}
+  \item{\code{sex_ratio_f}}{Numeric scalar or vector. Female sex ratio.}
+}}
+}
+\value{
+Numeric scalar. Negative total equilibrium yield (minimised to
+  find \eqn{F_{MSY}}).
 }
 \description{
-Title Get Global FMSY from a Beverton-Holt (Spatial)
+Finds a single \eqn{F_{MSY}} that is applied uniformly across all regions
+by maximising total equilibrium yield under a Beverton-Holt stock-recruit
+relationship. Cohorts are tracked spatially across regions and seasons under
+movement. Only valid for single-population models (\code{n_pop = 1});
+multi-population models should use \code{\link{local_BH_Fmsy_multipop}}.
+}
+\details{
+The plus-group is solved analytically using
+\code{\link{build_plus_group_T}} and \code{\link{solve_plus_group}}.
 }
 \keyword{internal}

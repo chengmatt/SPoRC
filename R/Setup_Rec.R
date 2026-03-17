@@ -146,13 +146,13 @@ Setup_Sim_Rec <- function(
 
   if(recruitment_opt == 999) {
     if(is.null(Rec_input)) stop("Recruitment input is NULL, but future recruitment is specified to be resampled!")
-    rec_input_yrs <- dim(Rec_input)[2] # get years from Rec_input
-    tmp_Rec_input <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims))
+    rec_input_yrs <- dim(Rec_input)[3] # get years from Rec_input
+    tmp_Rec_input <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims))
     # loop through simulations to resample years
     for(i in 1:sim_list$n_sims) {
-      tmp_Rec_input[,1:rec_input_yrs,i] <- Rec_input[,,i]
-      resampled_years <- sample(1:rec_input_yrs, length(tmp_Rec_input[1,-c(1:rec_input_yrs),i]), TRUE)
-      tmp_Rec_input[,-c(1:rec_input_yrs),i] <- Rec_input[,resampled_years,i]
+      tmp_Rec_input[,,1:rec_input_yrs,i] <- Rec_input[,,,i]
+      resampled_years <- sample(1:rec_input_yrs, length(tmp_Rec_input[1,1,-c(1:rec_input_yrs),i]), TRUE)
+      tmp_Rec_input[,,-c(1:rec_input_yrs),i] <- Rec_input[,,resampled_years,i]
     } # end i loop
     Rec_input <- tmp_Rec_input # overwrite
   } # resampling

@@ -7,83 +7,145 @@
 get_key_quants(data, rep, reference_points_opt, proj_model_opt, model_names)
 }
 \arguments{
-\item{data}{A list of model input data objects, one for each model (i.e., a list of SPoRC-formatted data lists). Each element should contain information on regions, years, ages, fleets, and biological inputs (e.g., weight-at-age, maturity, mortality).}
+\item{data}{A list of length \code{n_models}, where each element is a
+SPoRC-formatted data list containing region, year, age, fleet, and
+biological inputs (e.g., weight-at-age, maturity, natural mortality).}
 
-\item{rep}{A list of model output objects, one for each model (i.e., a list of SPoRC-formatted report lists). Each element must include recruitment, selectivity, mortality, and numbers-at-age.}
+\item{rep}{A list of length \code{n_models}, where each element is a
+SPoRC-formatted report list (i.e., the output of \code{obj$report()}
+after optimisation). Each element must include recruitment, selectivity,
+fishing mortality, and numbers-at-age arrays.}
 
-\item{reference_points_opt}{A named list specifying options for reference point calculations. See \code{\link{Get_Reference_Points}} for more details. Must include:
+\item{reference_points_opt}{A named list of options passed to
+\code{\link{Get_Reference_Points}}. Required elements:
 \describe{
-  \item{SPR_x}{Spawning potential ratio (e.g., 0.4) for calculating F reference points. May be \code{NULL} if using \code{bh_rec}.}
-  \item{t_spawn}{Fraction of year when spawning occurs (e.g., 0.5).}
-  \item{sex_ratio_f}{Proportion of recruits that are female.}
-  \item{calc_rec_st_yr}{Start year for averaging recruitment.}
-  \item{rec_age}{Recruitment age.}
-  \item{type}{Reference point calculation method (e.g., "multi_region").}
-  \item{what}{Type of output requested from the reference point function.}
+  \item{\code{SPR_x}}{Target spawning potential ratio (e.g., \code{0.4})
+    for SPR-based F reference points. May be \code{NULL} when
+    \code{type = "bh_msy"}.}
+  \item{\code{t_spawn}}{Fraction of the year elapsed before spawning
+    occurs (e.g., \code{0} for start-of-year, \code{0.5} for
+    mid-year).}
+  \item{\code{sex_ratio_f}}{Array of dimension
+    \code{(n_pop, n_regions)} giving the proportion of recruits that
+    are female.}
+  \item{\code{calc_rec_st_yr}}{Index of the first model year to include
+    when averaging recruitment for reference point calculations.}
+  \item{\code{rec_age}}{Age at recruitment (used to lag the recruitment
+    series relative to terminal year).}
+  \item{\code{type}}{Reference point calculation method; e.g.,
+    \code{"multi_region"} or \code{"single_region"}.}
+  \item{\code{what}}{Output selector passed to
+    \code{Get_Reference_Points}; e.g., \code{"global_SPR"} or
+    \code{"local_BH_MSY"}.}
 }}
 
-\item{proj_model_opt}{A named list of projection settings. See \code{\link{Do_Population_Projection}} for details. Must include:
+\item{proj_model_opt}{A named list of projection settings passed to
+\code{\link{Do_Population_Projection}}. Required elements:
 \describe{
-  \item{n_proj_yrs}{Number of years to project forward.}
-  \item{HCR_function}{Harvest control rule function to use.}
-  \item{recruitment_opt}{Recruitment assumption (e.g., "mean_rec", "bh_rec", "inv_gauss").}
-  \item{fmort_opt}{Fishing mortality assumption (e.g., "input", "HCR").}
-  \item{n_avg_yrs}{Number of years to average over for projection inputs.}
+  \item{\code{n_proj_yrs}}{Number of years to project forward.}
+  \item{\code{n_avg_yrs}}{Number of terminal model years over which
+    demographic inputs (selectivity, weight-at-age, maturity, natural
+    mortality, movement) are averaged before being held constant across
+    the projection period.}
+  \item{\code{HCR_function}}{A harvest control rule function with
+    signature \code{function(x, frp, brp, ...)}, where \code{x} is
+    current biomass, \code{frp} is the F reference point, and \code{brp}
+    is the biomass reference point.}
+  \item{\code{recruitment_opt}}{Recruitment assumption for projection
+    years. One of \code{"mean_rec"}, \code{"bh_rec"},
+    \code{"zero_rec"}, or \code{"inv_gauss"}. See Details.}
+  \item{\code{fmort_opt}}{How fishing mortality is set during the
+    projection. One of \code{"input"} (hold terminal F constant) or
+    \code{"HCR"} (apply \code{HCR_function}).}
 }}
 
-\item{model_names}{A character vector of model identifiers (e.g., c("Base", "Alt1", "Alt2")), one for each element in \code{data} and \code{rep}.}
+\item{model_names}{Character vector of length \code{n_models} giving
+display names for each model run (e.g., \code{c("Base", "Alt1")}).}
 }
 \value{
-A list with two elements:
-\describe{
-  \item{\code{[[1]]}}{A data.frame of key quantities by model and region, including terminal SSB, catch advice, and reference points.}
-  \item{\code{[[2]]}}{A cowplot table plot (ggdraw object) of the same key quantities.}
-}
+A list of length 2:
+  \describe{
+    \item{\code{[[1]]}}{A data frame of key quantities by model and
+      region, with columns \code{Model}, \code{Region},
+      \code{Terminal_SSB}, \code{Terminal_SSB0}, \code{Terminal_F},
+      \code{Catch_Advice}, \code{B_Ref_Pt}, \code{F_Ref_Pt},
+      \code{B_over_B_Ref}, \code{B_over_DynB_Ref}, and
+      \code{F_over_F_Ref}.}
+    \item{\code{[[2]]}}{A \code{cowplot} \code{ggdraw} object rendering
+      the same quantities as a formatted table, suitable for inclusion in
+      a PDF report.}
+  }
 }
 \description{
-Calculates biological and fishery reference points and performs population projections to estimate terminal spawning biomass, catch advice, and reference point values by model and region. Also returns a formatted table plot of key quantities.
+Calculates biological and fishery reference points and performs short-term
+population projections to estimate terminal spawning biomass, catch advice,
+and reference point ratios by model and region. Returns both a tidy
+data frame and a formatted table plot of the assembled quantities.
 }
 \details{
-This function checks input list completeness, calculates reference points using \code{Get_Reference_Points()}, performs population projections with \code{Do_Population_Projection()}, and assembles both tabular and visual summaries.
+For each model, the function: (1) computes reference points via
+\code{Get_Reference_Points()}; (2) averages demographic inputs over the
+last \code{n_avg_yrs} model years; (3) projects the population forward
+\code{n_proj_yrs} years via \code{Do_Population_Projection()}; and (4)
+extracts terminal SSB, dynamic unfished SSB, catch advice (year 2 of the
+projection), and status ratios.
 
-If \code{recruitment_opt} is set to "inv_gauss", a warning is issued since only a single simulation will be run. This is typically not appropriate and an alternative assumption is recommended.
+When \code{recruitment_opt = "bh_rec"}, Beverton-Holt stock-recruit
+parameters are passed to the projection via an internal \code{bh_rec_opt}
+list constructed from year-1 demographics to approximate unfished SSB. When
+\code{recruitment_opt = "inv_gauss"}, a warning is issued because only a
+single deterministic simulation is run; stochastic recruitment options
+should be used within a full MSE loop rather than here.
+}
+\note{
+The quantities returned by this function are \strong{approximate and
+  should not be treated as official catch advice}. This wrapper provides
+  only a simplified projection interface; full projection capability —
+  including stochastic recruitment, closed-loop feedback, and
+  fleet-specific harvest control rules — requires calling
+  \code{\link{Do_Population_Projection}} directly. Results here are
+  intended for rapid model comparison and diagnostic screening only.
 }
 \examples{
 \dontrun{
-reference_points_opt <- list(SPR_x = 0.4,
-                             t_spawn = 0,
-                             sex_ratio_f = 0.5,
-                             calc_rec_st_yr = 20,
-                             rec_age = 2,
-                             type = "multi_region",
-                             what = "global_SPR")
+  reference_points_opt <- list(
+    SPR_x          = 0.4,
+    t_spawn        = 0,
+    sex_ratio_f    = array(0.5, dim = c(n_pop, n_regions)),
+    calc_rec_st_yr = 20,
+    rec_age        = 2,
+    type           = "multi_region",
+    what           = "global_SPR"
+  )
 
-proj_model_opt <- list(
-  n_proj_yrs = 2,
-  n_avg_yrs = 1,
-  HCR_function = function(x, frp, brp, alpha = 0.05) {
-    stock_status <- x / brp
-    if (stock_status >= 1) f <- frp
-    if (stock_status > alpha && stock_status < 1) f <- frp * (stock_status - alpha) / (1 - alpha)
-    if (stock_status < alpha) f <- 0
-    return(f)
-  },
-  recruitment_opt = "mean_rec",
-  fmort_opt = "HCR"
-)
+  proj_model_opt <- list(
+    n_proj_yrs      = 2,
+    n_avg_yrs       = 1,
+    HCR_function    = function(x, frp, brp, alpha = 0.05) {
+      stock_status <- x / brp
+      if (stock_status >= 1)                            frp
+      else if (stock_status > alpha) frp * (stock_status - alpha) / (1 - alpha)
+      else                                              0
+    },
+    recruitment_opt = "mean_rec",
+    fmort_opt       = "HCR"
+  )
 
-out <- get_key_quants(list(mlt_rg_sable_data),
-                      list(mlt_rg_sable_rep),
-                      reference_points_opt,
-                      proj_model_opt,
-                      "Model 1")
-out[[1]]  # key quantities data.frame
-out[[2]]  # table plot
+  out <- get_key_quants(
+    data                  = list(mlt_rg_sable_data),
+    rep                   = list(mlt_rg_sable_rep),
+    reference_points_opt  = reference_points_opt,
+    proj_model_opt        = proj_model_opt,
+    model_names           = "Model 1"
+  )
+
+  out[[1]]  # key quantities data frame
+  out[[2]]  # table plot
 }
-
 }
 \seealso{
-\code{\link{Get_Reference_Points}}, \code{\link{Do_Population_Projection}}
+\code{\link{Get_Reference_Points}},
+  \code{\link{Do_Population_Projection}}
 
 Other Reference Points and Projections: 
 \code{\link{Do_Population_Projection}()},

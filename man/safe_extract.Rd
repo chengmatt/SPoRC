@@ -2,16 +2,22 @@
 % Please edit documentation in R/Utility_Functions.R
 \name{safe_extract}
 \alias{safe_extract}
-\title{Helper function for extracting elements from TMB report}
+\title{Safely extract a named element from a TMB report object}
 \usage{
 safe_extract(obj, name)
 }
 \arguments{
-\item{obj}{TMB report object}
+\item{obj}{Named list, typically \code{obj$rep} from a fitted RTMB model.}
 
-\item{name}{Name of object to be extracted}
+\item{name}{Character string. Name of the element to extract.}
+}
+\value{
+The value of \code{obj[[name]]} if present and non-\code{NULL};
+  \code{0} otherwise.
 }
 \description{
-Helper function for extracting elements from TMB report
+Returns the named element if it exists and is non-\code{NULL}; returns
+\code{0} otherwise. Used to guard against missing or \code{NULL} report
+fields when accumulating likelihood components.
 }
 \keyword{internal}

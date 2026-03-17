@@ -13,7 +13,8 @@ test_that("Simulation self-test produces approximately unbiased SSB results", {
                             n_lens = NULL, # number of lengths
                             n_sexes = 1, # number of sexes
                             n_fish_fleets = 1, # number of fishery fleets
-                            n_srv_fleets = 1 # number of survey fleets
+                            n_srv_fleets = 1, # number of survey fleets
+                            n_pop = 1 # number of populations
   )
 
   ### Setup Simulation Containers ---------------------------------------------
@@ -46,39 +47,39 @@ test_that("Simulation self-test produces approximately unbiased SSB results", {
   sim_list <- suppressWarnings(
     Setup_Sim_Biologicals(
       sim_list = sim_list, # simualtion list
-      natmort_input = replicate(n = sim_list$n_sims, array(0.3, dim = c(sim_list$n_regions, sim_list$n_yrs,
+      natmort_input = replicate(n = sim_list$n_sims, array(0.3, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs,
                                                                         sim_list$n_ages, sim_list$n_sexes))), # natural mortality
       WAA_input = replicate(n = sim_list$n_sims, array(rep(5 / (1 + exp(-3 * ((1:sim_list$n_ages) - 3))), each = sim_list$n_yrs),
-                                                       dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_ages, sim_list$n_sexes))), # weight at age
+                                                       dim = c(sim_list$n_pop,sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes))), # weight at age
       WAA_fish_input = replicate(n = sim_list$n_sims, array(rep(5 / (1 + exp(-3 * ((1:sim_list$n_ages) - 3))), each = sim_list$n_yrs),
-                                                            dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets))), # fishery weight at age
+                                                            dim = c(sim_list$n_pop,  sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets))), # fishery weight at age
       WAA_srv_input = replicate(n = sim_list$n_sims, array(rep(5 / (1 + exp(-3 * ((1:sim_list$n_ages) - 3))), each = sim_list$n_yrs),
-                                                           dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_ages, sim_list$n_sexes, sim_list$n_srv_fleets))), # survey weight at age
+                                                           dim = c(sim_list$n_pop,  sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_srv_fleets))), # survey weight at age
       MatAA_input = replicate(n = sim_list$n_sims, array(rep(1 / (1 + exp(-3 * ((1:sim_list$n_ages) - 3))), each = sim_list$n_yrs),
-                                                         dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_ages, sim_list$n_sexes))) # maturity at age
+                                                         dim = c(sim_list$n_pop,  sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes))) # maturity at age
     )
   )
 
   ### Setup Tagging and Movement -----------------------------------------------------------
   sim_list <- Setup_Sim_Tagging(
     sim_list = sim_list, # simulation list
-    UseTagging = 0
+    use_conv_fish_tagging = 0
   )
 
   # No Movement
-  sim_list$Movement <- array(1, dim = c(sim_list$n_regions, sim_list$n_regions, sim_list$n_yrs, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims))
+  sim_list$Movement <- array(1, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims))
 
   ### Setup Recruitment Processes ---------------------------------------------
   sim_list <- Setup_Sim_Rec(
     sim_list = sim_list,
-    R0_input = replicate(n = sim_list$n_sims, expr = array(5, dim = c(sim_list$n_regions, sim_list$n_yrs))), # R0
-    ln_sigmaR = log(c(1, 1)),
+    R0_input = replicate(n = sim_list$n_sims, expr = array(5, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs))), # R0
+    ln_sigmaR = array(log(1), dim = c(2, sim_list$n_pop, sim_list$n_region)),
     recruitment_opt = 'mean_rec',
     init_age_strc = 1
   )
 
   ## Simulate Data -----------------------------------------------------------
-  set.seed(123)
+  set.seed(777)
   sim_obj <- Simulate_Pop_Static(sim_list = sim_list, output_path = NULL) # get simulated datasets
 
   # Define Estimation Model -------------------------------------------------
@@ -96,6 +97,8 @@ test_that("Simulation self-test produces approximately unbiased SSB results", {
       n_sexes = sim_obj$n_sexes,
       n_fish_fleets = sim_obj$n_fish_fleets,
       n_srv_fleets = sim_obj$n_srv_fleets,
+      n_pop = sim_obj$n_pop,
+      natal_region = sim_obj$natal_region,
       verbose = F
     )
 
@@ -104,7 +107,7 @@ test_that("Simulation self-test produces approximately unbiased SSB results", {
       input_list = input_list,
       do_rec_bias_ramp = 0, # not doing bias ramp
       sigmaR_switch = 1, # when to switch from early to late sigmaR (switch in first year)
-      ln_sigmaR = rep(log(1) , 2), # 2 values for early and late sigma
+      ln_sigmaR = array(log(1), c(2, input_list$data$n_pop, input_list$data$n_regions)), # 2 values for early and late sigma
       rec_model = "mean_rec",
       sigmaR_spec = "fix", # fix early sigmaR and late sigmaR
       init_age_strc = 1, # scalar geometric series to derive initial age structure
@@ -123,11 +126,12 @@ test_that("Simulation self-test produces approximately unbiased SSB results", {
       fit_lengths = 0, # not fitting lengths
       AgeingError = sim_data$AgeingError,
       M_spec = "fix",     # fixing natural mortality
-      Fixed_natmort = array(0.3, dim = c(input_list$data$n_regions, length(input_list$data$years),  length(input_list$data$ages), input_list$data$n_sexes))
+      Fixed_natmort = array(0.3, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years),
+                                         length(input_list$data$ages), input_list$data$n_sexes))
     )
 
     # Movement and tagging
-    input_list <- Setup_Mod_Tagging(input_list = input_list, UseTagging = 0)
+    input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
     input_list <- Setup_Mod_Movement(
       input_list = input_list,
       use_fixed_movement = 1,
@@ -136,20 +140,17 @@ test_that("Simulation self-test produces approximately unbiased SSB results", {
     )
 
     # Fishery catch & fishing mortality
-    input_list <- suppressWarnings(
-      Setup_Mod_Catch_and_F(
-        input_list = input_list,
-        # Data inputs
-        ObsCatch = sim_data$ObsCatch,
-        Catch_Type = array(1, dim = c(length(input_list$data$years), input_list$data$n_fish_fleets)),
-        UseCatch = sim_data$UseCatch,
-        # Model options
-        Use_F_pen = 1,
-        sigmaC_spec = "fix",
-        # Fixing sigma C and F
-        ln_sigmaC = sim_data$ln_sigmaC,
-        ln_sigmaF = array(log(1), dim = c(input_list$data$n_regions, input_list$data$n_fish_fleets))
-      )
+    input_list <- Setup_Mod_Catch_and_F(
+      input_list = input_list,
+      # Data inputs
+      ObsCatch = sim_data$ObsCatch,
+      UseCatch = sim_data$UseCatch,
+      # Model options
+      Use_F_pen = 1,
+      sigmaC_spec = "fix",
+      # Fixing sigma C and F
+      ln_sigmaC = sim_data$ln_sigmaC,
+      ln_sigmaF = array(log(1), dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
     )
 
     # Survey selectivity and catchability
@@ -199,7 +200,7 @@ test_that("Simulation self-test produces approximately unbiased SSB results", {
     input_list <- Setup_Mod_Fishsel_and_Q(
       input_list = input_list,
       # Model options
-      fish_sel_model = c("logist1_Fleet_1"), # fishery selex model
+      fish_sel_model = c("logist2_Fleet_1"), # fishery selex model
       fish_fixed_sel_pars_spec = c("est_all"), # whether to estiamte all fixed effects for fishery selectivity
       fish_q_spec = "est_all" # estimate fishery q
     )
@@ -208,7 +209,7 @@ test_that("Simulation self-test produces approximately unbiased SSB results", {
     input_list <- Setup_Mod_Srvsel_and_Q(
       input_list = input_list,
       # Model options
-      srv_sel_model = c("logist1_Fleet_1"), # survey selectivity form
+      srv_sel_model = c("logist2_Fleet_1"), # survey selectivity form
       srv_fixed_sel_pars_spec = c("est_all"), # whether to estimate all fixed effects for survey selectivity
       srv_q_spec = c("est_all")  # whether to estiamte all fixed effects for survey catchability
     )
@@ -222,13 +223,13 @@ test_that("Simulation self-test produces approximately unbiased SSB results", {
       Wt_Rec = 1,
       Wt_F = 1,
       Wt_Tagging = 0,
-      Wt_FishAgeComps = array(1, dim = c(input_list$data$n_regions, length(input_list$data$years),
+      Wt_FishAgeComps = array(1, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
                                          input_list$data$n_sexes, input_list$data$n_fish_fleets)),
-      Wt_FishLenComps = array(1, dim = c(input_list$data$n_regions, length(input_list$data$years),
+      Wt_FishLenComps = array(1, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
                                          input_list$data$n_sexes, input_list$data$n_fish_fleets)),
-      Wt_SrvAgeComps = array(1, dim = c(input_list$data$n_regions,length(input_list$data$years),
+      Wt_SrvAgeComps = array(1, dim = c(input_list$data$n_regions,length(input_list$data$years), input_list$data$n_seas,
                                         input_list$data$n_sexes, input_list$data$n_srv_fleets)),
-      Wt_SrvLenComps = array(0, dim = c(input_list$data$n_regions, length(input_list$data$years),
+      Wt_SrvLenComps = array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
                                         input_list$data$n_sexes, input_list$data$n_srv_fleets))
     )
 
@@ -249,17 +250,17 @@ test_that("Simulation self-test produces approximately unbiased SSB results", {
                        silent = T
     )
 
-    ssb_results[,i] <- model$rep$SSB # save results
+    ssb_results[,i] <- as.vector(model$rep$SSB) # save results
 
   } # end i loop
 
-  (ssb_results[,1] - sim_obj$SSB[,,1]) / sim_obj$SSB[,,1]
+  (ssb_results[,1] - sim_obj$SSB[,,,1]) / sim_obj$SSB[,,,1]
 
   # Process SSB results
   ssb_df_res <- reshape2::melt(ssb_results) %>%
     rename(Year = Var1, Sim = Var2, Est = value) %>%
     dplyr::left_join(reshape2::melt(sim_obj$SSB) %>%
-                       dplyr::rename(Region = Var1, Year = Var2, Sim = Var3, True = value),
+                       dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Sim = Var4, True = value),
                      by = c("Year", "Sim")) %>%
     dplyr::mutate(RE = (Est - True) / True)
 

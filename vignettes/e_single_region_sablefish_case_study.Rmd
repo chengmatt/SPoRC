@@ -18,6 +18,14 @@ knitr::opts_chunk$set(
   )
 ```
 
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  tidy.opts = list(width.cutoff = 30)
+  )
+```
+
 The `SPoRC` package utilizes several helper functions to facilitate the set up of an age-structured assessment model. In this vignette, we will demonstrate how these helper functions might be used to set up a single-region model for Alaska sablefish. The vignette sets up the model following the parameterization of the 2024 federal Alaska sablefish stock assessment and compares model outputs from `SPoRC` to the existing ADMB model. The 2024 federal Alaska sablefish stock assessment is assessed on an Alaska-wide scale (from the Bering Sea to Eastern Gulf of Alaska) as a panmictic single-region model, with 2 sexes (females and males), 2 fishery fleets (fixed-gear and trawl), and 3 survey fleets (domestic longline, Japanese longline, and a domestic trawl survey). 
 
 First, let us load in any necessary packages. 
@@ -46,6 +54,7 @@ input_list <- Setup_Mod_Dim(years = 1:length(sgl_rg_sable_data$years), # vector 
                             n_fish_fleets = sgl_rg_sable_data$n_fish_fleets, # number of fishery
                             # fleet == 1, fixed gear, == 2 trawl gear
                             n_srv_fleets = sgl_rg_sable_data$n_srv_fleets, # number of survey fleets
+                            n_pop = sgl_rg_sable_data$n_pop, # number of populations
                             verbose = FALSE
                             )
 ```
@@ -83,7 +92,7 @@ input_list <- Setup_Mod_Rec(input_list = input_list, # input data list from abov
                             # when to switch from early to late sigmaR
                             dont_est_recdev_last = 1, 
                             # don't estimate last recruitment deviate
-                            ln_sigmaR = log(c(0.4, 1.2)),
+                            ln_sigmaR = array(log(c(0.4, 1.2)), dim = c(2, input_list$data$n_pop, input_list$data$n_regions)),
                             rec_model = "mean_rec", # recruitment model
                             sigmaR_spec = "fix_early_est_late", 
                             # fix early sigmaR, estiamte late sigmaR
@@ -96,20 +105,20 @@ input_list <- Setup_Mod_Rec(input_list = input_list, # input data list from abov
 
 ## Setup Biological Dynamics
 
-Passing on the `input_list` that was updated in the previous helper function, we can then parameterize the biological dynamics of the model. The `Setup_Mod_Biologicals` requires data inputs for weight-at-age (`WAA`) and maturity-at-age (`MatAA`), both of which are dimensioned by `n_regions`, `n_years`, `n_ages`, `n_sexes`. Optional model inputs include a single ageing-error matrix `AgeingError`, dimensioned by `n_ages`, `n_ages`. This can be left as NULL if no ageing-error matrix is available, and the model will assume an identity matrix for the ageing-error for age-composition data. Additionally, a size-age transition matrix can be supplied if length data are being fit to `fit_lengths = 1`, which are dimensioned by `n_regions`, `n_years`, `n_lens`, `n_ages`, `n_sexes`. Although the Alaska sablefish assessment utilizes priors for natural mortality, it is not possible to get an exact match with the 2024 assessment, given differences in the parameterization of natural mortality. Thus, for demonstration purposes, M will be fixed in this case. The `M_spec` argument specifies that natural mortality should be fixed and an array of fixed values is provided `Fixed_natmort = fixed_natmort`. Starting values and fixed parameters can be specified using the `...`, where the parameter name is supplied, and the values provided to the parameter name represent the starting value. 
+Passing on the `input_list` that was updated in the previous helper function, we can then parameterize the biological dynamics of the model. The `Setup_Mod_Biologicals` requires data inputs for weight-at-age (`WAA`) and maturity-at-age (`MatAA`), both of which are dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_ages`, `n_sexes`. Optional model inputs include a single ageing-error matrix `AgeingError`, dimensioned by `n_years`, `n_modelled_ages`, `n_observed_ages`. This can be left as NULL if no ageing-error matrix is available, and the model will assume an identity matrix for the ageing-error for age-composition data. Additionally, a size-age transition matrix can be supplied if length data are being fit to `fit_lengths = 1`, which are dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_lens`, `n_ages`, `n_sexes`. Although the Alaska sablefish assessment utilizes priors for natural mortality, it is not possible to get an exact match with the 2024 assessment, given differences in the parameterization of natural mortality. Thus, for demonstration purposes, M will be fixed in this case. The `M_spec` argument specifies that natural mortality should be fixed and an array of fixed values is provided `Fixed_natmort = fixed_natmort`. Starting values and fixed parameters can be specified using the `...`, where the parameter name is supplied, and the values provided to the parameter name represent the starting value. 
 
 ```{r Setup Biologicals, message = FALSE,  eval = FALSE}
 # Specificying natural mortality fixed array
-fixed_natmort <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), length(input_list$data$ages), input_list$data$n_sexes))
-fixed_natmort[,,,1] <- 0.1134156 # fix female M
-fixed_natmort[,,,2] <- 0.1052175 # fix male M
+fixed_natmort <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), length(input_list$data$ages), input_list$data$n_sexes))
+fixed_natmort[,,,,1] <- 0.1134156 # fix female M
+fixed_natmort[,,,,2] <- 0.1052175 # fix male M
 
 input_list <- Setup_Mod_Biologicals(input_list = input_list,
                                     # Data inputs
-                                    WAA = rtmb_data$WAA, # weight-at-age
-                                    MatAA = rtmb_data$MatAA, # maturity at age
-                                    AgeingError = as.matrix(ageing_dat$age_error), # ageing error
-                                    SizeAgeTrans = rtmb_data$SizeAgeTrans, # size age transition matrix
+                                    WAA = sgl_rg_sable_data$WAA, # weight-at-age
+                                    MatAA = sgl_rg_sable_data$MatAA, # maturity at age
+                                    AgeingError = as.matrix(sgl_rg_sable_data$age_error), # ageing error
+                                    SizeAgeTrans = sgl_rg_sable_data$SizeAgeTrans, # size age transition matrix
                                     # Model options
                                     Use_M_prior = 0, # use natural mortality prior
                                     fit_lengths = 1, # fitting length compositions
@@ -128,18 +137,18 @@ input_list <- Setup_Mod_Movement(input_list = input_list,
                                  )
 ```
 
-Specification of tagging dynamics will follow a similar fashion since this is a single-region model. All that is necessary is updating the `input_list` and setting the `UseTagging` argument to a value of 0. 
+Specification of tagging dynamics will follow a similar fashion since this is a single-region model. All that is necessary is updating the `input_list` and setting the `use_conv_fish_tagging` argument to a vector of 0s (one per fishery fleet) to indicate that no tagging data are used. 
 
 ```{r Setup Tagging, message = FALSE,  eval = FALSE}
 input_list <- Setup_Mod_Tagging(input_list = input_list,
-                                UseTagging = 0
+                                use_conv_fish_tagging = rep(0, input_list$data$n_fish_fleets)
                                 )
 ```
 
 
 ## Setup Catch and Fishing Mortality
 
-Following the parameterization of biological dynamics, fishery dynamics can then be specified and set up using the `Setup_Mod_Catch_and_F` function. Again, the input_list that gets updated from previous helper functions. Users will need to supply the function with an array of observed catches `ObsCatch`, which are dimensioned as `n_regions`, `n_years`, and `n_fish_fleets`. Additional model options specified for this case study include: 1) whether fishing mortality penalties are utilized to help estimate deviations `Use_F_pen = 1`, to fix the standard deviation for catches and fishing mortality (`sigmaC_spec = 'fix'`, `sigmaF_spec = 'fix'`).
+Following the parameterization of biological dynamics, fishery dynamics can then be specified and set up using the `Setup_Mod_Catch_and_F` function. Again, the input_list that gets updated from previous helper functions. Users will need to supply the function with an array of observed catches `ObsCatch`, which are dimensioned as `n_regions`, `n_years`, `n_seas`, and `n_fish_fleets`. Additional model options specified for this case study include: 1) whether fishing mortality penalties are utilized to help estimate deviations `Use_F_pen = 1`, to fix the standard deviation for catches and fishing mortality (`sigmaC_spec = 'fix'`, `sigmaF_spec = 'fix'`).
 
 ```{r Setup Catch and Fishing Mortality, message = FALSE,  eval = FALSE}
 input_list <- Setup_Mod_Catch_and_F(input_list = input_list,
@@ -153,8 +162,8 @@ input_list <- Setup_Mod_Catch_and_F(input_list = input_list,
                                     sigmaF_spec = "fix",
 
                                     # Fixing sigma C and F
-                                    ln_sigmaC = array(log(sqrt(1/2)), dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets)),
-                                    ln_sigmaF = array(log(sqrt(1/2)), dim = c(input_list$data$n_regions, input_list$data$n_fish_fleets))
+                                    ln_sigmaC = array(log(sqrt(1/2)), dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets)),
+                                    ln_sigmaF = array(log(sqrt(1/2)), dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
                                     )
 ```
 
@@ -162,9 +171,9 @@ input_list <- Setup_Mod_Catch_and_F(input_list = input_list,
 
 Some of the more involved helper functions used to set up the single region model are the `Setup_Mod_FishIdx_and_Comps`, `Setup_Mod_SrvIdx_and_Comps`, `Setup_Mod_Fishsel_and_Q`, and `Setup_Mod_Srvsel_and_Q` functions. These helper functions essentially facilitate the parameterization of selectivity and catchability for both the fishery and survey, compositional likelihood types, how composition data are structured, and the types of indices used (biomass vs. abundance). The fishery and survey helper functions described in the following sections are essentially equivalent with respect to data arguments and inputs that are expected, but are specified independently for fisheries and surveys. 
 
-To set up fishery indices and composition data, users will need to supply arrays of observed fishery indices and their associated standard errors (`ObsFishIdx` and `ObsFishIdx_SE`), which are dimensioned by by `n_regions`, `n_years`, `n_fish_fleets`. If fleets do not have data, this can be input as `NA` and the `UseFishIdx` argument (also dimensioned by `n_regions`, `n_years`, `n_fish_fleets`) can be used to ensure that these data are not fit to. Similarly, users will need to supply both fishery age composition data and length composition data. Both `ObsFishAgeComps` and `ObsFishLenComps` are dimensioned by `n_regions`, `n_years`, `n_bins (n_ages | n_lens)`, `n_sexes`, `n_fish_fleets`. Data inputs are also required to denote whether composition data are used or available for thos regions, years, and fleets. This can be specified using both `UseFishAgeComps` and `UseFishLenComps`, which expects values of 0 (don't fit) or 1 (fit), and are dimensioned by `n_regions`, `n_years`, and `n_fish_fleets`. Users can optionally supply `ISS_FishAgeComps` and `ISS_FishLenComps` data inputs which specify the input sample size for these composition data, and are dimensioned by `n_regions`, `n_years`, `n_sexes`, and `n_fish_fleets`. If this is not specified (i.e., left NULL), the helper function will automatically sum up the `ObsFishAgeComps` and `ObsFishLenComps` by their partitions and use the those sums as the input sample size. Thus, if observed composition data are input as proportions, the model will potentially incorrectly assume an input sample size of 1 for these data. 
+To set up fishery indices and composition data, users will need to supply arrays of observed fishery indices and their associated standard errors (`ObsFishIdx` and `ObsFishIdx_SE`), which are dimensioned by `n_regions`, `n_years`, `n_seas`, `n_fish_fleets`. If fleets do not have data, this can be input as `NA` and the `UseFishIdx` argument (also dimensioned by `n_regions`, `n_years`, `n_seas`, `n_fish_fleets`) can be used to ensure that these data are not fit to. Similarly, users will need to supply both fishery age composition data and length composition data. Both `ObsFishAgeComps` and `ObsFishLenComps` are dimensioned by `n_regions`, `n_years`, `n_seas`, `n_bins (n_ages | n_lens)`, `n_sexes`, `n_fish_fleets`. Data inputs are also required to denote whether composition data are used or available for those regions, years, and fleets. This can be specified using both `UseFishAgeComps` and `UseFishLenComps`, which expects values of 0 (don't fit) or 1 (fit), and are dimensioned by `n_regions`, `n_years`, `n_seas`, and `n_fish_fleets`. Users can optionally supply `ISS_FishAgeComps` and `ISS_FishLenComps` data inputs which specify the input sample size for these composition data, and are dimensioned by `n_regions`, `n_years`, `n_seas`, `n_sexes`, and `n_fish_fleets`. If this is not specified (i.e., left NULL), the helper function will automatically sum up the `ObsFishAgeComps` and `ObsFishLenComps` by their partitions and use those sums as the input sample size. Thus, if observed composition data are input as proportions, the model will potentially incorrectly assume an input sample size of 1 for these data. 
 
-For Alaska sablefish, fishery indices are currently utilized for the fixed-gear fleet (dominant fleet), which are biomass based, while the trawl fleet does not fit to fishery indices. This can be specified using the `fish_idx_type` argument, where `biom` represents biomass indices, and `none` indicates not fishery indices are available. Multinomial likelihoods are also assumed for fishery ages, which are specified with `FishAgeComps_LikeType`. However, only the fixed-gear fleet has fishery age compositions available. Thus, the `FishAgeComps_LikeType` is specified as `c("Multinomial", "none")`. Fishery length compositions `FishLenComps_LikeType` are available for both fleets and are specified as Multinomial. Currently, Alaska sablefish is a sex-structured model but age-compositions are not sex-specific. This is specified using `FishAgeComps_Type = c("agg_Year_1-terminal_Fleet_1", "none_Year_1-terminal_Fleet_2")`, which indicates to the model that these data should be fit to as aggregated across sexes for all years and for fleet 1 (fixed-gear) (i.e., the Multinomial expected proportions are summed across sexes). The `none_Year_1-terminal_Fleet_2` character indicates to not do anything with the age compositions for the trawl fishery, since these are not availiable. For fishery length compositions, these are specified as `FishLenComps_Type = c("spltRspltS_Year_1-terminal_Fleet_1", "spltRspltS_Year_1-terminal_Fleet_2")` because both fleets have length composition data that are sex-specific. Here, the `spltRspltS` character indicates to the model that these data sum to 1 for each sex and each region, and no implicit sex-ratios can be inferred using these composition data from the model. 
+For Alaska sablefish, fishery indices are currently utilized for the fixed-gear fleet (dominant fleet), which are biomass based, while the trawl fleet does not fit to fishery indices. This can be specified using the `fish_idx_type` argument, where `biom` represents biomass indices, and `none` indicates no fishery indices are available. Multinomial likelihoods are also assumed for fishery ages, which are specified with `FishAgeComps_LikeType`. However, only the fixed-gear fleet has fishery age compositions available. Thus, the `FishAgeComps_LikeType` is specified as `c("Multinomial", "none")`. Fishery length compositions `FishLenComps_LikeType` are available for both fleets and are specified as Multinomial. Currently, Alaska sablefish is a sex-structured model but age-compositions are not sex-specific. This is specified using `FishAgeComps_Type = c("agg_Year_1-terminal_Fleet_1", "none_Year_1-terminal_Fleet_2")`, which indicates to the model that these data should be fit to as aggregated across sexes for all years and for fleet 1 (fixed-gear) (i.e., the Multinomial expected proportions are summed across sexes). The `none_Year_1-terminal_Fleet_2` character indicates to not do anything with the age compositions for the trawl fishery, since these are not available. For fishery length compositions, these are specified as `FishLenComps_Type = c("spltRspltS_Year_1-terminal_Fleet_1", "spltRspltS_Year_1-terminal_Fleet_2")` because both fleets have length composition data that are sex-specific. Here, the `spltRspltS` character indicates to the model that these data sum to 1 for each sex and each region, and no implicit sex-ratios can be inferred using these composition data from the model. 
 
 ```{r Setup Fishery Indices and Compositions, message = FALSE,  eval = FALSE}
 input_list <- Setup_Mod_FishIdx_and_Comps(input_list = input_list,
@@ -347,7 +356,9 @@ input_list <- Setup_Mod_Srvsel_and_Q(input_list = input_list,
                                      srv_q_spec = 
                                        c("est_all", 
                                          "est_all", 
-                                         "est_all")
+                                         "est_all"), 
+                                     # Half way survey timing
+                                     t_srv = array(0.5, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_srv_fleets))
                                      )
 
 # ll survey, share delta female (index 2) across time blocks and to the coop jp ll survey delta
@@ -372,53 +383,57 @@ The last helper function that needs to be utilized to setup and run the model is
 # set up data weighting stuff
 Wt_FishAgeComps <- array(NA, dim = c(input_list$data$n_regions,
                                      length(input_list$data$years),
+                                     input_list$data$n_seas,
                                      input_list$data$n_sexes, 
                                      input_list$data$n_fish_fleets)) 
 # weights for fishery age comps
-Wt_FishAgeComps[1,,1,1] <- 0.826107286513784
+Wt_FishAgeComps[1,,,1,1] <- 0.826107286513784
 # Weight for fixed gear age comps
 
 # Fishery length comps
 Wt_FishLenComps <- array(NA, dim = c(input_list$data$n_regions, 
-                                     length(input_list$data$years), 
+                                     length(input_list$data$years),
+                                     input_list$data$n_seas,
                                      input_list$data$n_sexes, 
                                      input_list$data$n_fish_fleets)) 
-Wt_FishLenComps[1,,1,1] <- 4.1837057381917 
+Wt_FishLenComps[1,,,1,1] <- 4.1837057381917 
 # Weight for fixed gear len comps females
-Wt_FishLenComps[1,,2,1] <- 4.26969350917589 
+Wt_FishLenComps[1,,,2,1] <- 4.26969350917589 
 # Weight for fixed gear len comps males
-Wt_FishLenComps[1,,1,2] <- 0.316485920691651
+Wt_FishLenComps[1,,,1,2] <- 0.316485920691651
 # Weight for trawl gear len comps females
-Wt_FishLenComps[1,,2,2] <- 0.229396580680981 
+Wt_FishLenComps[1,,,2,2] <- 0.229396580680981 
 # Weight for trawl gear len comps males
 
 # survey age comps
 Wt_SrvAgeComps <- array(NA, dim = c(input_list$data$n_regions, 
                                     length(input_list$data$years), 
+                                    input_list$data$n_seas,
                                     input_list$data$n_sexes, 
                                     input_list$data$n_srv_fleets)) 
 # weights for survey age comps
-Wt_SrvAgeComps[1,,1,1] <- 3.79224544725927 
+Wt_SrvAgeComps[1,,,1,1] <- 3.79224544725927 
 # Weight for domestic survey ll gear age comps
-Wt_SrvAgeComps[1,,1,3] <- 1.31681114024037
+Wt_SrvAgeComps[1,,,1,3] <- 1.31681114024037
 # Weight for coop jp survey ll gear age comps
 
 # Survey length comps
 Wt_SrvLenComps <- array(0, dim = c(input_list$data$n_regions, 
                                    length(input_list$data$years), 
+                                   input_list$data$n_seas,
                                    input_list$data$n_sexes, 
                                    input_list$data$n_srv_fleets)) 
-Wt_SrvLenComps[1,,1,1] <- 1.43792019016567 
+Wt_SrvLenComps[1,,,1,1] <- 1.43792019016567 
 # Weight for domestic ll survey len comps females
-Wt_SrvLenComps[1,,2,1] <- 1.07053763450712
+Wt_SrvLenComps[1,,,2,1] <- 1.07053763450712
 # Weight for domestic ll survey len comps males
-Wt_SrvLenComps[1,,1,2] <- 0.670883273592302 
+Wt_SrvLenComps[1,,,1,2] <- 0.670883273592302 
 # Weight for domestic trawl survey len comps females
-Wt_SrvLenComps[1,,2,2] <- 0.465207132450763
+Wt_SrvLenComps[1,,,2,2] <- 0.465207132450763
 # Weight for domestic trawl survey len comps males
-Wt_SrvLenComps[1,,1,3] <- 1.27772810174693
+Wt_SrvLenComps[1,,,1,3] <- 1.27772810174693
 # Weight for coop jp ll survey len comps females
-Wt_SrvLenComps[1,,2,3] <- 0.857519546948587 
+Wt_SrvLenComps[1,,,2,3] <- 0.857519546948587 
 # Weight for coop jp ll survey len comps males
 
 input_list <- Setup_Mod_Weighting(input_list = input_list,
@@ -458,18 +473,19 @@ sabie_rtmb_model <- fit_model(data,
 sabie_rtmb_model$sd_rep <- RTMB::sdreport(sabie_rtmb_model)
 ```
 
-Finally, we can compare outputs from ADMB to RTMB. For brevity, we will only show comparisons of spawning biomass and recruitment between the two models. 
+Finally, we can compare outputs from ADMB to RTMB. For brevity, we will only show comparisons of spawning biomass and recruitment between the two models. Since this is a single-population, single-region model, `SSB` and `Rec` are both dimensioned `n_pop × n_regions × n_years` and can be coerced to a vector directly.
+
 ```{r Compare Models, message = FALSE, eval = F, fig.width = 11, fig.height = 5, fig.align='center'}
 # Get recruitment time-series
 rec_series <- data.frame(Par = "Recruitment",
                          Year = 1960:2024,
-                         RTMB = t(sabie_rtmb_model$rep$Rec),
+                         RTMB = as.vector(sabie_rtmb_model$rep$Rec),
                          ADMB = sgl_rg_sable_data$admb_recr)
 
 # Get SSB time-series
 ssb_series <- data.frame(Par = "SSB",
                          Year = 1960:2024,
-                         RTMB = t(sabie_rtmb_model$rep$SSB),
+                         RTMB = as.vector(sabie_rtmb_model$rep$SSB),
                          ADMB = sgl_rg_sable_data$admb_spbiom)
 
 ts_df <- rbind(ssb_series,rec_series) # bind together

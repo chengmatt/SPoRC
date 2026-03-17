@@ -2,14 +2,22 @@
 % Please edit documentation in R/Setup_Fishery.R
 \name{do_FishLen_corr_pars_mapping}
 \alias{do_FishLen_corr_pars_mapping}
-\title{Helper function to set up fishery length overdispersion correlation parameters}
+\title{Map fishery length composition correlation parameters}
 \usage{
 do_FishLen_corr_pars_mapping(input_list)
 }
 \arguments{
-\item{input_list}{Input list}
+\item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
+sublists.}
+}
+\value{
+The input \code{input_list} with \code{$map$FishLen_corr_pars} and
+  \code{$map$FishLen_corr_pars_agg} set to factor vectors.
 }
 \description{
-Helper function to set up fishery length overdispersion correlation parameters
+Analogous to \code{\link{do_FishAge_corr_pars_mapping}} but for length
+compositions. Constructs factor maps for \code{FishLen_corr_pars} and
+\code{FishLen_corr_pars_agg} for 1D and 2D logistic-normal length composition
+likelihoods (\code{FishLenComps_LikeType} is in \code{c(3, 4)}).
 }
 \keyword{internal}

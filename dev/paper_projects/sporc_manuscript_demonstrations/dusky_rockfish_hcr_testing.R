@@ -23,7 +23,7 @@ data("dusky_rtmb_model")
 
 # SECTION 2: ESTIMATION MODEL SETUP ========================================
 
-#' Setup Estimation Model (EM) Inputs for SPoRC
+#' Setup Estimation Model Inputs for Gulf of Alaska Dusky Rockfish
 #'
 #' Prepares the estimation model input list for a given simulation year
 #' and replicate within the SPoRC closed-loop simulation framework.
@@ -36,7 +36,7 @@ data("dusky_rtmb_model")
 setup_em <- function(sim_env, y, sim) {
 
   # Extract simulation data for current year and replicate
-  sim_data <- simulation_data_to_SPoRC(sim_env, y, sim)
+  sim_data <- SPoRC::simulation_data_to_SPoRC(sim_env, y, sim)
 
   # Initialize model dimensions
   input_list <- Setup_Mod_Dim(
@@ -47,7 +47,7 @@ setup_em <- function(sim_env, y, sim) {
     n_sexes = sim_env$n_sexes,
     n_fish_fleets = sim_env$n_fish_fleets,
     n_srv_fleets = sim_env$n_srv_fleets,
-    n_seas = sim_env$n_seas,
+    n_pop = sim_env$n_pop,
     verbose = FALSE
   )
 
@@ -57,7 +57,7 @@ setup_em <- function(sim_env, y, sim) {
     do_rec_bias_ramp = 1,  # Enable bias ramp (no lognormal bias correction)
     bias_year = rep(length(input_list$data$years), 4),
     sigmaR_switch = 1,  # Switch from early to late sigmaR in first year
-    ln_sigmaR = rep(-0.1068576, 2),  # Early and late sigma values
+    ln_sigmaR = array(-0.1068576, dim = c(2, input_list$data$n_pop, input_list$data$n_regions)),  # Early and late sigma values
     rec_model = "mean_rec",
     sigmaR_spec = "fix",  # Fix early and late sigmaR
     init_age_strc = 1,  # Geometric series for initial age structure
@@ -75,6 +75,7 @@ setup_em <- function(sim_env, y, sim) {
     AgeingError = sim_data$AgeingError,
     M_spec = "fix",  # Fix natural mortality at 0.07
     Fixed_natmort = array(0.07, dim = c(
+      input_list$data$n_pop,
       input_list$data$n_regions,
       length(input_list$data$years),
       length(input_list$data$ages),
@@ -84,7 +85,7 @@ setup_em <- function(sim_env, y, sim) {
   )
 
   # Configure movement and tagging (no tagging used)
-  input_list <- Setup_Mod_Tagging(input_list = input_list, UseTagging = 0)
+  input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
   input_list <- Setup_Mod_Movement(
     input_list = input_list,
     use_fixed_movement = 1,
@@ -195,7 +196,7 @@ setup_em <- function(sim_env, y, sim) {
 
 #' Run Population Projection
 #'
-#' Executes forward projection of the population using assessment model outputs
+#' Performs forward projection of the population using assessment model outputs
 #' and management procedure specifications.
 #'
 #' @param sim_env Simulation environment
@@ -212,29 +213,29 @@ run_projection <- function(sim_env, obj, reference_points, asmt_data, mp_config,
 
   # Extract terminal year numbers-at-age
   tmp_terminal_NAA <- array(
-    obj$rep$NAA[, y, , , ],
-    dim = c(asmt_data$n_regions, asmt_data$n_seas, length(asmt_data$ages), asmt_data$n_sexes)
+    obj$rep$NAA[,, y, ,, ],
+    dim = c(asmt_data$n_pop, asmt_data$n_regions, asmt_data$n_seas, length(asmt_data$ages), asmt_data$n_sexes)
   )
   tmp_terminal_NAA0 <- array(
-    obj$rep$NAA0[, y, , , ],
-    dim = c(asmt_data$n_regions, asmt_data$n_seas, length(asmt_data$ages), asmt_data$n_sexes)
+    obj$rep$NAA0[,, y, ,, ],
+    dim = c(asmt_data$n_pop, asmt_data$n_regions, asmt_data$n_seas, length(asmt_data$ages), asmt_data$n_sexes)
   )
 
   # Replicate biological parameters for projection years
   tmp_WAA <- array(
-    rep(asmt_data$WAA[, y, , , ], each = n_proj),
-    dim = c(asmt_data$n_regions, n_proj, asmt_data$n_seas, length(asmt_data$ages), asmt_data$n_sexes)
+    rep(asmt_data$WAA[,, y, ,, ], each = n_proj),
+    dim = c(asmt_data$n_pop, asmt_data$n_regions, n_proj, asmt_data$n_seas, length(asmt_data$ages), asmt_data$n_sexes)
   )
 
   tmp_WAA_fish <- array(
-    rep(asmt_data$WAA_fish[, y, , , , ], each = n_proj),
-    dim = c(asmt_data$n_regions, n_proj, asmt_data$n_seas, length(asmt_data$ages),
+    rep(asmt_data$WAA_fish[,, y, ,, , ], each = n_proj),
+    dim = c(asmt_data$n_pop, asmt_data$n_regions, n_proj, asmt_data$n_seas, length(asmt_data$ages),
             asmt_data$n_sexes, asmt_data$n_fish_fleets)
   )
 
   tmp_MatAA <- array(
-    rep(asmt_data$MatAA[, y, , , ], each = n_proj),
-    dim = c(asmt_data$n_regions, n_proj, asmt_data$n_seas, length(asmt_data$ages), asmt_data$n_sexes)
+    rep(asmt_data$MatAA[,, y, ,, ], each = n_proj),
+    dim = c(asmt_data$n_pop, asmt_data$n_regions, n_proj, asmt_data$n_seas, length(asmt_data$ages), asmt_data$n_sexes)
   )
 
   tmp_fish_sel <- array(
@@ -244,39 +245,39 @@ run_projection <- function(sim_env, obj, reference_points, asmt_data, mp_config,
   )
 
   tmp_natmort <- array(
-    rep(obj$rep$natmort[, y, , ], each = n_proj),
-    dim = c(asmt_data$n_regions, n_proj, length(asmt_data$ages), asmt_data$n_sexes)
+    rep(obj$rep$natmort[,, y, , ], each = n_proj),
+    dim = c(asmt_data$n_pop, asmt_data$n_regions, n_proj, length(asmt_data$ages), asmt_data$n_sexes)
   )
 
   # Extract terminal fishing mortality
   tmp_terminal_F <- array(
-    obj$rep$Fmort[, y, , ],
+    obj$rep$Fmort[, y,, ],
     dim = c(asmt_data$n_regions, asmt_data$n_seas, asmt_data$n_fish_fleets)
   )
 
   # Extract recruitment history
   tmp_recruitment <- array(
-    obj$rep$Rec[, 1:y],
-    dim = c(asmt_data$n_regions, length(1:y))
+    obj$rep$Rec[,, 1:y],
+    dim = c(asmt_data$n_pop, asmt_data$n_regions, length(1:y))
   )
 
   # Replicate sex ratio for projection years
   tmp_sexratio <- array(
-    replicate(n = n_proj, obj$rep$sexratio[, y, ]),
-    dim = c(asmt_data$n_regions, n_proj, asmt_data$n_sexes)
+    replicate(n = n_proj, obj$rep$sexratio[,, y, ]),
+    dim = c(asmt_data$n_pop, asmt_data$n_regions, n_proj, asmt_data$n_sexes)
   )
 
   # Replicate movement matrix for projection years
   tmp_Movement <- array(
-    dim = c(asmt_data$n_regions, asmt_data$n_regions, n_proj, asmt_data$n_seas,
+    dim = c(asmt_data$n_pop, asmt_data$n_regions, asmt_data$n_regions, n_proj, asmt_data$n_seas,
             length(asmt_data$ages), asmt_data$n_sexes)
   )
   for (proj_yr in 1:n_proj) {
-    tmp_Movement[, , proj_yr, , , ] <- obj$rep$Movement[, , y, , , ]
+    tmp_Movement[, ,, proj_yr, ,, ] <- obj$rep$Movement[, ,, y, ,, ]
   }
 
   # Execute population projection
-  SPoRC::Do_Population_Projection(
+  proj_results <- SPoRC::Do_Population_Projection(
     n_proj_yrs = n_proj,
     n_regions = sim_env$n_regions,
     n_ages = sim_env$n_ages,
@@ -290,6 +291,7 @@ run_projection <- function(sim_env, obj, reference_points, asmt_data, mp_config,
     terminal_F = tmp_terminal_F,
     natmort = tmp_natmort,
     WAA = tmp_WAA,
+    n_pop = sim_env$n_pop,
     WAA_fish = tmp_WAA_fish,
     MatAA = tmp_MatAA,
     fish_sel = tmp_fish_sel,
@@ -302,6 +304,8 @@ run_projection <- function(sim_env, obj, reference_points, asmt_data, mp_config,
     t_spawn = sim_env$t_spawn,
     bh_rec_opt = mp_config$proj_opt$bh_rec_opt
   )
+
+  return(proj_results)
 }
 
 
@@ -314,8 +318,8 @@ run_projection <- function(sim_env, obj, reference_points, asmt_data, mp_config,
 #'
 #' @return Modified TAC array with constraints applied
 apply_catch_constraints <- function(tmp_TAC, catch_opt_func) {
-  for (j in 1:dim(tmp_TAC)[2]) {
-    tmp_TAC[, j, 1, ] <- catch_opt_func(catch = tmp_TAC[, j, 1, ])
+  for (j in 1:dim(tmp_TAC)[3]) {
+    tmp_TAC[1,, j,1, ] <- catch_opt_func(catch = tmp_TAC[1,, j,1, ])
   }
   return(tmp_TAC)
 }
@@ -349,10 +353,10 @@ tac_to_fmort <- function(sim_env, tmp_TAC, y, sim, assessment_years) {
     function(r, f) {
       SPoRC::catch_to_F_singlefleet(
         f_guess = 0.05,
-        catch = tmp_TAC[r, tac_year_index, 1, f],
-        NAA = sim_env$NAA[r, y + 1, , , , sim],
-        WAA = sim_env$WAA[r, y + 1, , , , sim],
-        natmort = sim_env$natmort[r, y + 1, , , sim],
+        catch = tmp_TAC[1, r, tac_year_index, 1, f],
+        NAA = sim_env$NAA[1, r, y + 1, 1, , , sim],
+        WAA = sim_env$WAA[1, r, y + 1, 1, , , sim],
+        natmort = sim_env$natmort[1, r, y + 1, , , sim],
         fish_sel = sim_env$fish_sel[r, y + 1, , , f, sim]
       )
     },
@@ -361,7 +365,7 @@ tac_to_fmort <- function(sim_env, tmp_TAC, y, sim, assessment_years) {
   )
 
   # Update fishing mortality in simulation environment
-  sim_env$Fmort[, y + 1, , , sim] <- array(tmp_f, dim = c(sim_env$n_regions, sim_env$n_seas, sim_env$n_fish_fleets))
+  sim_env$Fmort[, y + 1, 1, , sim] <- array(tmp_f, dim = c(sim_env$n_regions, sim_env$n_seas, sim_env$n_fish_fleets))
 
   return(sim_env)
 }
@@ -384,6 +388,19 @@ tac_to_fmort <- function(sim_env, tmp_TAC, y, sim, assessment_years) {
 #' @return List containing simulation results (SSB, catch, F, NAA)
 #' Run single simulation replicate with error handling
 #' @return List containing simulation results (SSB, catch, F, NAA) or NA if model fails
+#' Run Single Simulation Replicate
+#'
+#' Executes one complete closed-loop simulation replicate including population
+#' dynamics, assessments, and management feedback.
+#'
+#' @param sim Simulation replicate index
+#' @param sim_list Simulation configuration list
+#' @param mp_config Management procedure configuration
+#' @param assessment_years Vector of years when assessments occur
+#' @param years_to_use Vector of years with available data
+#' @param assess_freq Assessment frequency (years)
+#'
+#' @return List containing simulation results (SSB, catch, F, NAA)
 run_single_replicate <- function(sim, sim_list, mp_config, assessment_years,
                                  years_to_use, assess_freq) {
 
@@ -392,6 +409,7 @@ run_single_replicate <- function(sim, sim_list, mp_config, assessment_years,
 
   # Loop through all simulation years
   for (y in 1:sim_env$n_yrs) {
+
     # Execute annual population dynamics
     run_annual_cycle(y, sim, sim_env)
 
@@ -413,8 +431,7 @@ run_single_replicate <- function(sim, sim_list, mp_config, assessment_years,
           asmt_data <- SPoRC::set_data_indicator_unused(
             data = asmt_data,
             unused_years = setdiff(1:sim_env$n_yrs, years_to_use),
-            what = c("FishIdx", "FishAgeComps", "SrvIdx", "SrvAgeComps",
-                     "FishLenComps", "SrvLenComps")
+            what = c("FishIdx", "FishAgeComps", "SrvIdx", "SrvAgeComps", "FishLenComps", "SrvLenComps")
           )
 
           # Fit assessment model with error handling
@@ -462,7 +479,7 @@ run_single_replicate <- function(sim, sim_list, mp_config, assessment_years,
 
           # Apply catch constraints (e.g., caps)
           tmp_TAC <- apply_catch_constraints(
-            proj$proj_Catch[, -1, , , drop = FALSE],
+            proj$proj_Catch[1,, -1, 1, , drop = FALSE],
             mp_config$catch_opt
           )
         }
@@ -478,14 +495,15 @@ run_single_replicate <- function(sim, sim_list, mp_config, assessment_years,
   # Return successful replicate results
   list(
     sim = sim,
-    rec = sim_env$Rec[,,sim,drop = FALSE],
-    ssb = sim_env$SSB[, , sim, drop = FALSE],
-    catch = sim_env$TrueCatch[, , , , sim, drop = FALSE],
-    fmort = sim_env$Fmort[, , , , sim, drop = FALSE],
-    naa = sim_env$NAA[, , , , , sim, drop = FALSE],
+    rec = sim_env$Rec[,,,sim,drop = FALSE],
+    ssb = sim_env$SSB[,, , sim, drop = FALSE],
+    catch = sim_env$TrueCatch[,, , , sim, drop = FALSE],
+    fmort = sim_env$Fmort[,, , , sim, drop = FALSE],
+    naa = sim_env$NAA[,,, , , , sim, drop = FALSE],
     failed = FALSE
   )
 }
+
 
 
 # SECTION 5: PARALLEL EXECUTION ============================================
@@ -496,29 +514,22 @@ run_single_replicate <- function(sim, sim_list, mp_config, assessment_years,
 #'
 #' @param mp_list List of management procedure configurations
 #' @param sim_list Simulation configuration list
-#' @param n_cores Number of CPU cores to use (NULL = auto-detect)
+#' @param n_cores Number of CPU cores to use
 #'
 #' @return List of simulation results for each management procedure
-run_parallel_simulations <- function(mp_list, sim_list, n_cores = NULL) {
-
-  # Auto-detect cores if not specified (leave one free)
-  if (is.null(n_cores)) {
-    n_cores <- max(1, detectCores() - 1)
-  }
-
-  message(sprintf("Running %d management procedures", length(mp_list)))
+run_parallel_simulations <- function(mp_list, sim_list, n_cores = max(1, detectCores() - 2)) {
 
   # Initialize parallel cluster
   cl <- makeCluster(n_cores)
   registerDoParallel(cl)
 
-  # Load required packages on each worker
+  # load in packages
   clusterEvalQ(cl, {
     library(SPoRC)
     library(here)
   })
 
-  # Export functions and data to workers
+  # export functions in env
   clusterExport(
     cl,
     c("sim_list", "assessment_years", "years_to_use", "assess_freq",
@@ -527,11 +538,11 @@ run_parallel_simulations <- function(mp_list, sim_list, n_cores = NULL) {
     envir = environment()
   )
 
-  # Initialize results storage
+  # init results storage
   sim_res <- vector("list", length(mp_list))
   names(sim_res) <- names(mp_list)
 
-  # Loop through each management procedure
+  # loop through each management procedure
   for (i in seq_along(mp_list)) {
 
     message(sprintf(
@@ -539,15 +550,15 @@ run_parallel_simulations <- function(mp_list, sim_list, n_cores = NULL) {
       i, length(mp_list), names(mp_list)[i], n_cores, sim_list$n_sims
     ))
 
-    # Export current MP configuration to workers
+    # export MP to par env
     current_mp_config <- mp_list[[i]]
     current_mp_name <- names(mp_list)[i]
     clusterExport(cl, c("current_mp_config", "current_mp_name"), envir = environment())
 
-    # Run replicates in parallel
+    # run replicates in parallel
     replicate_results <- parLapply(cl, 1:sim_list$n_sims, function(sim) {
 
-      set.seed(123 + sim)  # Unique seed per replicate
+      set.seed(123 + sim)
 
       tryCatch({
         run_single_replicate(
@@ -563,45 +574,35 @@ run_parallel_simulations <- function(mp_list, sim_list, n_cores = NULL) {
       })
     })
 
-    list(
-      sim = sim,
-      rec = sim_env$Rec[,,sim,drop = FALSE],
-      ssb = sim_env$SSB[, , sim, drop = FALSE],
-      catch = sim_env$TrueCatch[, , , , sim, drop = FALSE],
-      fmort = sim_env$Fmort[, , , , sim, drop = FALSE],
-      naa = sim_env$NAA[, , , , , sim, drop = FALSE],
-      failed = FALSE
-    )
-
-    # Extract dimensions from first replicate
-    n_regions <- dim(replicate_results[[1]]$ssb)[1]
-    n_years <- dim(replicate_results[[1]]$ssb)[2]
-    n_seas <- dim(replicate_results[[1]]$naa)[3]
-    n_ages <- dim(replicate_results[[1]]$naa)[4]
-    n_sexes <- dim(replicate_results[[1]]$naa)[5]
+    # get dimensions from first replicate
+    n_regions <- dim(replicate_results[[1]]$ssb)[2]
+    n_years <- dim(replicate_results[[1]]$ssb)[3]
+    n_ages <- dim(replicate_results[[1]]$naa)[5]
+    n_sexes <- dim(replicate_results[[1]]$naa)[6]
     n_fish_fleets <- dim(replicate_results[[1]]$fmort)[4]
 
-    # Initialize result arrays
+    # init result arrays
     sim_res[[i]] <- list(
       mp_name = names(mp_list)[i],
       rec = array(dim = c(n_regions, n_years, sim_list$n_sims)),
       ssb = array(dim = c(n_regions, n_years, sim_list$n_sims)),
-      catch = array(dim = c(n_regions, n_years, n_seas, n_fish_fleets, sim_list$n_sims)),
-      fmort = array(dim = c(n_regions, n_years, n_seas, n_fish_fleets, sim_list$n_sims)),
-      naa = array(dim = c(n_regions, n_years + 1, n_seas, n_ages, n_sexes, sim_list$n_sims))
+      catch = array(dim = c(n_regions, n_years, n_fish_fleets, sim_list$n_sims)),
+      fmort = array(dim = c(n_regions, n_years, n_fish_fleets, sim_list$n_sims)),
+      naa = array(dim = c(n_regions, n_years, n_ages, n_sexes, sim_list$n_sims))
     )
 
-    # Populate result arrays from replicate results
+    # populate result arrays from replicate results
     for (sim in 1:sim_list$n_sims) {
-      sim_res[[i]]$rec[, , sim] <- replicate_results[[sim]]$rec
-      sim_res[[i]]$ssb[, , sim] <- replicate_results[[sim]]$ssb
-      sim_res[[i]]$catch[, , , , sim] <- replicate_results[[sim]]$catch
-      sim_res[[i]]$fmort[, , , , sim] <- replicate_results[[sim]]$fmort
-      sim_res[[i]]$naa[, , , , , sim] <- replicate_results[[sim]]$naa
+      sim_res[[i]]$rec[, , sim] <- replicate_results[[sim]]$rec[1,,,]
+      sim_res[[i]]$ssb[, , sim] <- replicate_results[[sim]]$ssb[1,,,]
+      sim_res[[i]]$catch[, , , sim] <- replicate_results[[sim]]$catch[,,1,,]
+      sim_res[[i]]$fmort[, , , sim] <- replicate_results[[sim]]$fmort[,,1,,]
+      sim_res[[i]]$naa[, , , , sim] <- replicate_results[[sim]]$naa[1,,-n_years,1,,,1]
     }
+
   }
 
-  # Clean up parallel cluster
+  # reset parallel cluster
   stopCluster(cl)
 
   return(sim_res)
@@ -683,24 +684,25 @@ sim_list_rand <- condition_closed_loop_simulations(
   rep = rep,
   random = NULL,
   recruitment_opt = 'resample_from_input',
-  ISS_FishAgeComps = array(20, dim = c(n_regions, n_years + closed_loop_yrs, 1, 1, 1, n_sims))
+  ISS_FishAgeComps_fill = "F_pattern",
+  ISS_FishLenComps_fill = "F_pattern"
 )
 
 
 # beverton holt crash and recover
 
 # setup R0 input to mimic crash scenario
-R0_input <- array(0, dim = c(n_regions, n_years + closed_loop_yrs))
-R0_input[,1:47] <- exp(parameters$ln_global_R0) # mean recruitment from EM
-R0_input[,48:70] <- 2.5 # BH recruitment with crash R0
-R0_input[,71:98] <- 12 # BH recruitment with rebound R0
+R0_input <- array(0, dim = c(1, n_regions, n_years + closed_loop_yrs))
+R0_input[,,1:47] <- exp(parameters$ln_global_R0) # mean recruitment from EM
+R0_input[,,48:70] <- 2.5 # BH recruitment with crash R0
+R0_input[,,71:98] <- 12 # BH recruitment with rebound R0
 R0_input <- replicate(n = n_sims, R0_input)
 
 # setup h input to mimic crash scenario
-h_input <- array(0, dim = c(n_regions, n_years + closed_loop_yrs))
-h_input[,1:47] <- 0.999 # mean recruitment from EM
-h_input[,48:70] <- 0.5 # steepness in crash
-h_input[,71:98] <- 0.75 # steepness in rebound
+h_input <- array(0, dim = c(1, n_regions, n_years + closed_loop_yrs))
+h_input[,,1:47] <- 0.999 # mean recruitment from EM
+h_input[,,48:70] <- 0.5 # steepness in crash
+h_input[,,71:98] <- 0.75 # steepness in rebound
 h_input <- replicate(n = n_sims, h_input)
 
 sim_list_crash <- condition_closed_loop_simulations(
@@ -724,10 +726,12 @@ sim_list_crash <- condition_closed_loop_simulations(
 assessment_years <- seq(sim_list_rand$feedback_start_yr, sim_list_rand$n_yrs, assess_freq)
 years_to_use <- c(burnin_years, seq(sim_list_rand$feedback_start_yr, sim_list_rand$n_yrs, data_yr_freq))
 
-# Define management procedures
+# MP List
+assess_freq <- 2           # Assessment frequency (every 2 years)
 mp_list <- list(
 
-  # No fishing
+  # 1. No fishing
+  # Serves as a baseline scenario. No assessment, projection, or catch is applied.
   f0 = list(
     skip_assessment = TRUE,
     reference_points_opt = NULL,
@@ -735,52 +739,10 @@ mp_list <- list(
     catch_opt = NULL
   ),
 
-  # F40% with B40% threshold
+  # 2. F40% with B40% threshold
+  # The assessment is performed and reference points are calculated based on an SPR of 40%.
+  # A threshold rule (B40%) is applied, where F declines linearly as biomass drops below 40% of B_SPR.
   f40_thresh = list(
-    skip_assessment = FALSE,
-    reference_points_opt = list(
-      n_avg_yrs = 1,              # Years to average demographic rates
-      SPR_x = 0.4,                # Target SPR (40%)
-      calc_rec_st_yr = 3,         # Starting year for recruitment calcs
-      rec_age = 4,                # Age at recruitment
-      type = 'single_region',     # Single-region reference points
-      what = "SPR",               # Use SPR-based reference points
-      B_x = 0.4                   # Biomass trigger (40% of B_SPR)
-    ),
-    proj_opt = list(
-      n_proj_yrs = assess_freq + 1,
-      HCR_function = HCR_threshold,
-      recruitment_opt = 'mean_rec',
-      fmort_opt = 'HCR',
-      bh_rec_opt = NULL
-    ),
-    catch_opt = function(catch, prev_catch = NULL, catch_cap = NULL) catch
-  ),
-
-  # F40% constant (no biomass-based adjustment)
-  f40_const = list(
-    skip_assessment = FALSE,
-    reference_points_opt = list(
-      n_avg_yrs = 1,
-      SPR_x = 0.4,
-      calc_rec_st_yr = 3,
-      rec_age = 4,
-      type = 'single_region',
-      what = "SPR",
-      B_x = NULL                  # No biomass trigger
-    ),
-    proj_opt = list(
-      n_proj_yrs = assess_freq + 1,
-      HCR_function = HCR_constant,
-      recruitment_opt = 'mean_rec',
-      fmort_opt = 'HCR',
-      bh_rec_opt = NULL
-    ),
-    catch_opt = function(catch, prev_catch = NULL, catch_cap = NULL) catch
-  ),
-
-  # F40% with B40% threshold and 300 ton catch cap
-  f40_thresh_cap = list(
     skip_assessment = FALSE,
     reference_points_opt = list(
       n_avg_yrs = 1,
@@ -798,13 +760,13 @@ mp_list <- list(
       fmort_opt = 'HCR',
       bh_rec_opt = NULL
     ),
-    catch_opt = function(catch, prev_catch = NULL, catch_cap = 3000) {
-      pmin(catch, catch_cap)    # Apply 4000 ton maximum
-    }
+    catch_opt = function(catch, prev_catch = NULL, catch_cap = NULL) catch
   ),
 
-  # F40% with B60% threshold (steeper control rule)
-  f40_steep = list(
+  # 3. F40% constant
+  # Similar to f40_thresh, but no biomass threshold is applied.
+  # Fishing mortality remains constant at F40%, regardless of biomass status.
+  f40_const = list(
     skip_assessment = FALSE,
     reference_points_opt = list(
       n_avg_yrs = 1,
@@ -813,11 +775,11 @@ mp_list <- list(
       rec_age = 4,
       type = 'single_region',
       what = "SPR",
-      B_x = 0.6                   # Higher biomass trigger (60%)
+      B_x = NULL
     ),
     proj_opt = list(
       n_proj_yrs = assess_freq + 1,
-      HCR_function = HCR_threshold,
+      HCR_function = HCR_constant,
       recruitment_opt = 'mean_rec',
       fmort_opt = 'HCR',
       bh_rec_opt = NULL
@@ -825,7 +787,10 @@ mp_list <- list(
     catch_opt = function(catch, prev_catch = NULL, catch_cap = NULL) catch
   ),
 
-  # F40% hybrid: B60% threshold with 3000 ton catch cap
+  # 4. F40% hybrid: B60% threshold with 3k ton catch cap
+  # Combines a precautionary threshold (B60%) with a hard catch cap (3,000 tons).
+  # This MP reduces F more aggressively at lower biomass and constrains annual catches
+  # to prevent excessive harvest in high-recruitment years.
   f40_hybrid = list(
     skip_assessment = FALSE,
     reference_points_opt = list(
@@ -835,7 +800,7 @@ mp_list <- list(
       rec_age = 4,
       type = 'single_region',
       what = "SPR",
-      B_x = 0.6                   # Higher biomass trigger
+      B_x = 0.6
     ),
     proj_opt = list(
       n_proj_yrs = assess_freq + 1,
@@ -845,7 +810,7 @@ mp_list <- list(
       bh_rec_opt = NULL
     ),
     catch_opt = function(catch, prev_catch = NULL, catch_cap = 3000) {
-      pmin(catch, catch_cap)    # Apply 3000 ton maximum
+      pmin(catch, catch_cap)
     }
   )
 )
@@ -948,8 +913,7 @@ sumry <- ssb_results %>% # ssb
   ) %>%
   mutate(Year = Year + 1976,
          Period = ifelse(Year <= 2024, "Historical", "Feedback"),
-         MP = factor(MP, levels = c("f0", "f40_thresh", "f40_const", "f40_steep",
-                                    "f40_thresh_cap", "f40_hybrid")),
+         MP = factor(MP, levels = c("f0", "f40_thresh", "f40_const", "f40_hybrid")),
          Scenario = factor(Scenario, levels = c("rand", "crash")))
 
 # Calculate summary statistics across entire feedback period from raw data
@@ -1004,8 +968,7 @@ period_summary <- ssb_results %>%
       ) %>%
       mutate(Type = 'Catch')
   ) %>%
-  mutate(MP = factor(MP, levels = c("f0", "f40_thresh", "f40_const", "f40_steep",
-                                    "f40_thresh_cap", "f40_hybrid")))
+  mutate(MP = factor(MP, levels = c("f0", "f40_thresh", "f40_const", "f40_hybrid")))
 
 cols <- c("#E69F00", "#56B4E9", "#009E73", "#0072B2", "#D55E00", "#CC79A7") # colors
 
@@ -1329,8 +1292,7 @@ df <- data.frame(
 
 # Plot
 hcr_plot <- ggplot(df %>%
-                     mutate(scenario = factor(scenario,
-                                              levels = c("f40_thresh", "f40_const", "f40_hybrid"))),
+                     mutate(scenario = factor(scenario, levels = c("f40_thresh", "f40_const", "f40_hybrid"))),
                    aes(x = biomass, y = f_ratio, color = scenario, lty = scenario)) +
   geom_line(linewidth = 2) +
   scale_color_manual(values = cols) +

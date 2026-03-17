@@ -85,7 +85,7 @@ input_list <- Setup_Mod_Movement(
   do_recruits_move = 0
 )
 
-input_list <- Setup_Mod_Tagging(input_list = input_list, UseTagging = 0)
+input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
 
 
 input_list <- Setup_Mod_Catch_and_F(
@@ -608,8 +608,8 @@ dev.off()
 # MCMC --------------------------------------------------------------------
 
 # load in adnuts for MCMC
-# devtools::install_github('Cole-Monnahan-NOAA/adnuts')
-library(adnuts)
+# remotes::install_github("noaa-afsc/SparseNUTS")
+library(SparseNUTS)
 
 # run MCMC
 mcmc <- sample_snuts(francis_model, num_samples = 1e3, control = list(adapt_delta = 0.99))
@@ -623,7 +623,7 @@ dev.off()
 
 png(here("vignettes", "figures", "o_mcmc_dens.png"), width = 1000, height = 800)
 plot_marginals(mcmc)
-dev.of()
+dev.off()
 
 png(here("vignettes", "figures", "o_mcmc_mle_comp.png"), width = 1000, height = 800)
 plot_uncertainties(mcmc)
@@ -636,14 +636,14 @@ saveRDS(mcmc_ts_plot, here("dev", "dev_output", "1_Region_Model_Dusky_Rockfish",
 png(here("vignettes", "figures", "o_mcmc_ssb_plot.png"), width = 500, height = 500)
 # summarize results
 ssb_summry <- mcmc_ts_plot$SSB %>%
-  group_by(Var1, Var2) %>%
+  group_by(Var2, Var3) %>%
   summarize(median = median(value),
             lwr = quantile(value, 0.025),
             upr = quantile(value, 0.975))
 ggplot() +
-  geom_line(ssb_summry, mapping = aes(x = Var2, y = median)) +
-  geom_ribbon(ssb_summry, mapping = aes(x = Var2, y = median, ymin = lwr, ymax = upr), alpha = 0.3) +
-  geom_line(reshape2::melt(francis_model$rep$SSB), mapping = aes(x = Var2, y = value), col = 'red', lwd = 1.3, lty = 2) +
+  geom_line(ssb_summry, mapping = aes(x = Var3, y = median)) +
+  geom_ribbon(ssb_summry, mapping = aes(x = Var3, y = median, ymin = lwr, ymax = upr), alpha = 0.3) +
+  geom_line(reshape2::melt(francis_model$rep$SSB), mapping = aes(x = Var3, y = value), col = 'red', lwd = 1.3, lty = 2) +
   coord_cartesian(ylim = c(0, NA)) +
   labs(x = 'Year', y = 'Spawning Stock Biomass') +
   theme_bw(base_size = 15)
@@ -652,14 +652,14 @@ dev.off()
 png(here("vignettes", "figures", "o_mcmc_rec_plot.png"), width = 500, height = 500)
 # summarize results
 rec_summry <- mcmc_ts_plot$Rec %>%
-  group_by(Var1, Var2) %>%
+  group_by(Var2, Var3) %>%
   summarize(median = median(value),
             lwr = quantile(value, 0.025),
             upr = quantile(value, 0.975))
 ggplot() +
-  geom_line(rec_summry, mapping = aes(x = Var2, y = median)) +
-  geom_ribbon(rec_summry, mapping = aes(x = Var2, y = median, ymin = lwr, ymax = upr), alpha = 0.3) +
-  geom_line(reshape2::melt(francis_model$rep$Rec), mapping = aes(x = Var2, y = value), col = 'red', lwd = 1.3, lty = 2) +
+  geom_line(rec_summry, mapping = aes(x = Var3, y = median)) +
+  geom_ribbon(rec_summry, mapping = aes(x = Var3, y = median, ymin = lwr, ymax = upr), alpha = 0.3) +
+  geom_line(reshape2::melt(francis_model$rep$Rec), mapping = aes(x = Var3, y = value), col = 'red', lwd = 1.3, lty = 2) +
   coord_cartesian(ylim = c(0, NA)) +
   labs(x = 'Year', y = 'Recruitment') +
   theme_bw(base_size = 15)

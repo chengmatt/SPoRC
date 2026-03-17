@@ -41,7 +41,7 @@ input_list <- Setup_Mod_Rec(input_list = input_list, # input data list from abov
                             bias_year = c(length(1960:1979), length(1960:1989), (length(1960:2023) - 5), length(1960:2024) - 2) + 1,
                             sigmaR_switch = as.integer(length(1960:1975)), # when to switch from early to late sigmaR
                             dont_est_recdev_last = 1, # don't estimate last recruitment deviate
-                            ln_sigmaR = log(c(0.4, 1.2)),
+                            ln_sigmaR = array(log(c(0.4, 1.2)), dim = c(2, input_list$data$n_pop, input_list$data$n_regions)),
                             rec_model = "mean_rec", # recruitment model
                             sigmaR_spec = "fix_early_est_late", # fix early sigmaR, estiamte late sigmaR
                             InitDevs_spec = NULL, # estimate all initial deviations
@@ -51,9 +51,9 @@ input_list <- Setup_Mod_Rec(input_list = input_list, # input data list from abov
 )
 
 # Specificying natural mortality fixed array
-fixed_natmort <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), length(input_list$data$ages), input_list$data$n_sexes))
-fixed_natmort[,,,1] <- 0.1134156 # fix female M
-fixed_natmort[,,,2] <- 0.1052175 # fix male M
+fixed_natmort <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), length(input_list$data$ages), input_list$data$n_sexes))
+fixed_natmort[,,,,1] <- 0.1134156 # fix female M
+fixed_natmort[,,,,2] <- 0.1052175 # fix male M
 
 input_list <- Setup_Mod_Biologicals(input_list = input_list,
                                     # Data inputs
@@ -206,7 +206,7 @@ input_list$par$ln_srv_fixed_sel_pars[1,,,2,3] <- c(1.22224502478, tem_par$coeffi
 
 # Setup tagging stuff
 input_list <- Setup_Mod_Tagging(input_list = input_list,
-                                UseTagging = 0
+                                use_conv_fish_tagging = c(0,0)
 )
 
 # set up data weighting stuff
@@ -315,7 +315,7 @@ devs_ll_trwl <- tem_par$coefficients[str_detect(names(tem_par$coefficients), "lo
 # Get time series
 rec_series <- data.frame(Par = "Recruitment",
                          Year = 1960:2024,
-                         TMB = t(sabie_rtmb_model$rep$Rec),
+                         TMB = as.vector(sabie_rtmb_model$rep$Rec),
                          ADMB = rec[1:length(data$years)])
 
 f_series <- data.frame(Par = "Total F",
@@ -325,27 +325,27 @@ f_series <- data.frame(Par = "Total F",
 
 females_series <- data.frame(Par = "Total Females",
                              Year = 1960:2024,
-                             TMB = rowSums(sabie_rtmb_model$rep$NAA[1,-66,1,,1]),
+                             TMB = rowSums(sabie_rtmb_model$rep$NAA[1,1,-66,1,,1]),
                              ADMB = tem_dat$t.series$numbers.f[1:length(data$years)])
 
 males_series <- data.frame(Par = "Total Males",
                            Year = 1960:2024,
-                           TMB = rowSums(sabie_rtmb_model$rep$NAA[1,-66,1,,2]),
+                           TMB = rowSums(sabie_rtmb_model$rep$NAA[1,1,-66,1,,2]),
                            ADMB = tem_dat$t.series$numbers.m[1:length(data$years)])
 
 ssb_series <- data.frame(Par = "SSB",
                          Year = 1960:2024,
-                         TMB = t(sabie_rtmb_model$rep$SSB),
+                         TMB = as.vector(sabie_rtmb_model$rep$SSB),
                          ADMB = ssb)
 
 ssb_se_series <- data.frame(Par = "SSB (SE)",
                             Year = 1960:2024,
-                            TMB = sabie_rtmb_model$sd_rep$sd[names(sabie_rtmb_model$sd_rep$value) == "log(SSB)"] * t(sabie_rtmb_model$rep$SSB),
+                            TMB = sabie_rtmb_model$sd_rep$sd[names(sabie_rtmb_model$sd_rep$value) == "log_SSB"] * as.vector(sabie_rtmb_model$rep$SSB),
                             ADMB = tem_par$se[str_detect(names(tem_par$se), "ssb")])
 
 rec_se_series <- data.frame(Par = "Recruitment (SE)",
                             Year = 1960:2024,
-                            TMB = sabie_rtmb_model$sd_rep$sd[names(sabie_rtmb_model$sd_rep$value) == "log(Rec)"] * t(sabie_rtmb_model$rep$Rec),
+                            TMB = sabie_rtmb_model$sd_rep$sd[names(sabie_rtmb_model$sd_rep$value) == "log_Rec"] * as.vector(sabie_rtmb_model$rep$Rec),
                             ADMB = tem_par$se[str_detect(names(tem_par$se), "pred_rec")])
 
 opt_ts_df_v3 <- rbind(ssb_se_series,rec_series, f_series, females_series, males_series, ssb_series, rec_se_series)

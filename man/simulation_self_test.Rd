@@ -2,7 +2,7 @@
 % Please edit documentation in R/Simulate_Population.R
 \name{simulation_self_test}
 \alias{simulation_self_test}
-\title{Conduct a Simulation Self Test}
+\title{Run a simulation self-test of a fitted RTMB estimation model}
 \usage{
 simulation_self_test(
   data,
@@ -21,58 +21,73 @@ simulation_self_test(
 )
 }
 \arguments{
-\item{data}{A list containing model data from an RTMB object.}
+\item{data}{Named list of model data from a fitted RTMB object
+(\code{$data}).}
 
-\item{parameters}{A list of fitted parameter values from an RTMB object.}
+\item{parameters}{Named list of fitted parameter values (\code{$par} or
+equivalent).}
 
-\item{mapping}{A list specifying parameter mappings from an RTMB object.}
+\item{mapping}{Named list of parameter factor maps (\code{$map}).}
 
-\item{random}{Character vector specifying random effects.}
+\item{random}{Character vector of random effect names passed to RTMB.}
 
-\item{rep}{A list of report values from an RTMB object (`$rep`).}
+\item{rep}{Named list of report values from the fitted model
+(\code{obj$rep}).}
 
-\item{sd_rep}{An `sdreport` object from RTMB summarizing parameter uncertainty.}
+\item{sd_rep}{\code{sdreport} object from the fitted model, used to
+extract optimised parameter values in list format via
+\code{get_optim_param_list}.}
 
-\item{n_sims}{Integer. Number of simulation replicates to run.}
+\item{n_sims}{Integer. Number of simulation replicates.}
 
-\item{newton_loops}{Integer. Number of Newton loops used in model fitting (default: `3`).}
+\item{newton_loops}{Integer. Number of Newton refinement steps applied
+during re-fitting. Default \code{3}.}
 
-\item{do_sdrep}{Logical. If `TRUE`, compute `sdreport` for each fitted replicate (default: `FALSE`).}
+\item{do_sdrep}{Logical. Whether to compute \code{sdreport} for each
+fitted replicate. Results stored as \code{$sd_rep} in the output list;
+failed \code{sdreport} calls stored as \code{NA}. Default \code{FALSE}.}
 
-\item{do_par}{Logical. If `TRUE`, run simulations in parallel (default: `FALSE`).}
+\item{do_par}{Logical. Whether to run replicates in parallel via
+\code{future::multisession}. Default \code{FALSE}.}
 
-\item{n_cores}{Integer. Number of cores to use for parallelization (default: `NULL` = detect automatically).}
+\item{n_cores}{Integer. Number of parallel workers. If \code{NULL}
+(default), \code{parallel::detectCores() - 1} is used.}
 
-\item{output_path}{Optional file path. If provided, the simulated datasets are written to this location.}
+\item{output_path}{Character string. Path to save the simulated dataset
+RDS file. Passed to \code{\link{Simulate_Pop_Static}}. Default
+\code{NULL}.}
 
-\item{what}{Character vector. Names of report elements in `rep` to extract and store for each replicate.}
+\item{what}{Character vector. Names of report elements (keys of
+\code{rep}) to extract and store from each replicate. An error is raised
+if any name is not found in \code{rep}. Default \code{c("SSB", "Rec")}.}
 }
 \value{
-A list with elements corresponding to the requested `what` values, each containing
-an array of simulation results across replicates. If `do_sdrep = TRUE`, an additional
-element `"sd_rep"` is included with the list of `sdreport` objects (or `NA` if a replicate fails).
+Named list with one element per entry in \code{what}, each an
+  array with the last dimension indexing simulation replicates (via
+  \code{simplify2array}). If \code{do_sdrep = TRUE}, an additional element
+  \code{"sd_rep"} contains a list of \code{sdreport} objects (or \code{NA}
+  for failed replicates).
 }
 \description{
-This function runs a self test of the fitted RTMB model by simulating new
-datasets under the fitted parameters, refitting the model, and comparing
-estimated outputs to the true values used for simulation. It can be run
-sequentially or in parallel.
+Validates model performance by: (1) generating \code{n_sims} new datasets
+from the fitted model parameters using \code{\link{Simulate_Pop_Static}},
+(2) re-fitting the estimation model to each simulated dataset, and (3)
+storing user-specified report quantities for comparison against true values.
+Supports sequential or parallel execution via
+\code{future}/\code{future.apply}. Likelihood weights from the original fit
+are propagated into the simulation (e.g., ISS scaled by
+\code{Wt_FishAgeComps}; \code{ObsSrvIdx_SE} divided by
+\code{sqrt(Wt_SrvIdx)}); all weights are reset to 1 when re-fitting.
+Failed replicates are silently stored as \code{NA}.
 }
 \examples{
 \dontrun{
-# Run a simple self test with 10 simulations, extracting SSB
 res <- simulation_self_test(
-  data = model$data,
-  parameters = model$parameters,
-  mapping = model$mapping,
-  random = model$random,
-  rep = model$rep,
-  sd_rep = model$sd_rep,
-  n_sims = 10,
-  what = "SSB"
+  data = obj$data, parameters = obj$par, mapping = obj$map,
+  random = obj$random, rep = obj$rep, sd_rep = obj$sd_rep,
+  n_sims = 100, what = c("SSB", "Rec", "Fmort")
 )
-
-str(res$SSB) # look at simulated SSB arrays
+str(res$SSB)
 }
 }
 \seealso{
@@ -86,7 +101,6 @@ Other Simulation Setup:
 \code{\link{Setup_Sim_Tagging}()},
 \code{\link{Setup_sim_env}()},
 \code{\link{Simulate_Pop_Static}()},
-\code{\link{run_annual_cycle}()},
-\code{\link{simulation_data_to_SPoRC}()}
+\code{\link{run_annual_cycle}()}
 }
 \concept{Simulation Setup}

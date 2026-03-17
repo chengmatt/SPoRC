@@ -5,15 +5,15 @@ data("sgl_rg_sable_data")
 test_that("Single-region Sablefish RTMB model produces expected results", {
 
   # Initialize model dimensions and data list
-  input_list <- Setup_Mod_Dim(years = 1960:2024, # vector of years
-                              ages = 1:30, # vector of ages
-                              lens = seq(41,99,2), # number of lengths
-                              n_regions = 1, # number of regions
-                              n_sexes = 2, # number of sexes == 1, female, == 2 male
-                              n_fish_fleets = 2, # number of fishery fleet == 1, fixed gear, == 2 trawl gear
-                              n_srv_fleets = 3, # number of survey fleets
-                              n_seas = 1,
-                              verbose = FALSE
+  input_list <- Setup_Mod_Dim(years = sgl_rg_sable_data$years, # vector of years
+                              ages = sgl_rg_sable_data$ages, # vector of ages
+                              lens = sgl_rg_sable_data$lens, # number of lengths
+                              n_regions = sgl_rg_sable_data$n_regions, # number of regions
+                              n_sexes = sgl_rg_sable_data$n_sexes, # number of sexes == 1, female, == 2 male
+                              n_fish_fleets = sgl_rg_sable_data$n_fish_fleets, # number of fishery fleet == 1, fixed gear, == 2 trawl gear
+                              n_srv_fleets = sgl_rg_sable_data$n_srv_fleets, # number of survey fleets
+                              n_seas = sgl_rg_sable_data$n_seas, # number of seasons
+                              verbose = TRUE
   )
 
   # Setup recruitment stuff (using defaults for other stuff)
@@ -25,20 +25,19 @@ test_that("Single-region Sablefish RTMB model produces expected results", {
                               bias_year = c(length(1960:1979), length(1960:1989), (length(1960:2023) - 5), length(1960:2024) - 2) + 1,
                               sigmaR_switch = as.integer(length(1960:1975)), # when to switch from early to late sigmaR
                               dont_est_recdev_last = 1, # don't estimate last recruitment deviate
-                              ln_sigmaR = log(c(0.4, 1.2)),
+                              ln_sigmaR = array(log(c(0.4, 1.2)), dim = c(2, input_list$data$n_pop, input_list$data$n_regions)),
                               rec_model = "mean_rec", # recruitment model
                               sigmaR_spec = "fix_early_est_late", # fix early sigmaR, estiamte late sigmaR
                               InitDevs_spec = NULL, # estimate all initial deviations
                               RecDevs_spec = NULL, # stiamte all recruitment deivations
-                              # sexratio = as.vector(c(0.5, 0.5)), # recruitment sex ratio
-                              init_age_strc = 2,
+                              init_age_strc = 1,
                               init_F_prop = 0.1
   )
 
   # Specificying natural mortality fixed array
-  fixed_natmort <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), length(input_list$data$ages), input_list$data$n_sexes))
-  fixed_natmort[,,,1] <- 0.1134156 # fix female M
-  fixed_natmort[,,,2] <- 0.1052175 # fix male M
+  fixed_natmort <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), length(input_list$data$ages), input_list$data$n_sexes))
+  fixed_natmort[,,,,1] <- 0.1134156 # fix female M
+  fixed_natmort[,,,,2] <- 0.1052175 # fix male M
 
   input_list <- Setup_Mod_Biologicals(input_list = input_list,
                                       # Data inputs
@@ -60,16 +59,13 @@ test_that("Single-region Sablefish RTMB model produces expected results", {
   )
 
   # Setup catch and fishing mortality stuff
-  input_list <- suppressWarnings(
-    Setup_Mod_Catch_and_F(input_list = input_list,
-                          # Data inputs
-                          ObsCatch = sgl_rg_sable_data$ObsCatch,
-                          Catch_Type = array(1, dim = c(length(input_list$data$years), input_list$data$n_fish_fleets)),
-                          UseCatch = sgl_rg_sable_data$UseCatch,
-                          # Model options
-                          Use_F_pen = 1, # whether to use f penalty, == 0 don't use, == 1 use
-                          sigmaC_spec = 'fix'
-    )
+  input_list <- Setup_Mod_Catch_and_F(input_list = input_list,
+                                      # Data inputs
+                                      ObsCatch = sgl_rg_sable_data$ObsCatch,
+                                      UseCatch = sgl_rg_sable_data$UseCatch,
+                                      # Model options
+                                      Use_F_pen = 1, # whether to use f penalty, == 0 don't use, == 1 use
+                                      sigmaC_spec = 'fix'
   )
 
   # Setup fishery indices and compositions
@@ -177,7 +173,9 @@ test_that("Single-region Sablefish RTMB model produces expected results", {
                                        srv_fixed_sel_pars_spec = c("est_all", "est_all", "est_all"),
 
                                        # whether to estiamte all fixed effects for survey catchability
-                                       srv_q_spec = c("est_all", "est_all", "est_all")
+                                       srv_q_spec = c("est_all", "est_all", "est_all"),
+                                       t_srv = array(0.5, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_srv_fleets)),
+
   )
 
   # ll survey, share delta female (index 2) across time blocks and to the coop jp ll survey delta
@@ -187,38 +185,42 @@ test_that("Single-region Sablefish RTMB model produces expected results", {
   input_list$map$ln_srv_fixed_sel_pars <- factor(c(1:3, 2, 4:6, 5,rep(7,4), rep(8, 4), rep(c(NA,2), 2), rep(c(NA, 5), 2)))
 
   # Coop JP Survey (Logistic) Single time block (these estimates are fixed!)
-  input_list$par$ln_srv_fixed_sel_pars[1,,,1,3] <- c(0.980660760456, tem_par$coefficients[names(tem_par$coefficients) == "log_delta_srv1_f"])
-  input_list$par$ln_srv_fixed_sel_pars[1,,,2,3] <- c(1.22224502478, tem_par$coefficients[names(tem_par$coefficients) == "log_delta_srv1_m"])
+  input_list$par$ln_srv_fixed_sel_pars[1,,,1,3] <- c(0.980660760456, 0.9287775)
+  input_list$par$ln_srv_fixed_sel_pars[1,,,2,3] <- c(1.22224502478, 0.8831787)
 
   # Setup tagging stuff
   input_list <- Setup_Mod_Tagging(input_list = input_list,
-                                  UseTagging = 0
+                                  use_conv_fish_tagging = c(0,0)
   )
 
   # set up data weighting stuff
-  Wt_FishAgeComps <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_sexes, input_list$data$n_fish_fleets)) # weights for fishery age comps
-  Wt_FishAgeComps[1,,1,1] <- 0.826107286513784 # Weight for fixed gear age comps
+  Wt_FishAgeComps <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
+                                       input_list$data$n_sexes, input_list$data$n_fish_fleets)) # weights for fishery age comps
+  Wt_FishAgeComps[1,,,1,1] <- 0.826107286513784 # Weight for fixed gear age comps
 
   # Fishery length comps
-  Wt_FishLenComps <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_sexes, input_list$data$n_fish_fleets)) # weights for fishery age comps
-  Wt_FishLenComps[1,,1,1] <- 4.1837057381917 # Weight for fixed gear len comps females
-  Wt_FishLenComps[1,,2,1] <- 4.26969350917589 # Weight for fixed gear len comps males
-  Wt_FishLenComps[1,,1,2] <- 0.316485920691651 # Weight for trawl gear len comps females
-  Wt_FishLenComps[1,,2,2] <- 0.229396580680981 # Weight for trawl gear len comps males
+  Wt_FishLenComps <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
+                                       input_list$data$n_sexes, input_list$data$n_fish_fleets)) # weights for fishery age comps
+  Wt_FishLenComps[1,,,1,1] <- 4.1837057381917 # Weight for fixed gear len comps females
+  Wt_FishLenComps[1,,,2,1] <- 4.26969350917589 # Weight for fixed gear len comps males
+  Wt_FishLenComps[1,,,1,2] <- 0.316485920691651 # Weight for trawl gear len comps females
+  Wt_FishLenComps[1,,,2,2] <- 0.229396580680981 # Weight for trawl gear len comps males
 
   # survey age comps
-  Wt_SrvAgeComps <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_sexes, input_list$data$n_srv_fleets)) # weights for survey age comps
-  Wt_SrvAgeComps[1,,1,1] <- 3.79224544725927 # Weight for domestic survey ll gear age comps
-  Wt_SrvAgeComps[1,,1,3] <- 1.31681114024037 # Weight for coop jp survey ll gear age comps
+  Wt_SrvAgeComps <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
+                                      input_list$data$n_sexes, input_list$data$n_srv_fleets)) # weights for survey age comps
+  Wt_SrvAgeComps[1,,,1,1] <- 3.79224544725927 # Weight for domestic survey ll gear age comps
+  Wt_SrvAgeComps[1,,,1,3] <- 1.31681114024037 # Weight for coop jp survey ll gear age comps
 
   # Survey length comps
-  Wt_SrvLenComps <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_sexes, input_list$data$n_srv_fleets)) # weights for survey age comps
-  Wt_SrvLenComps[1,,1,1] <- 1.43792019016567 # Weight for domestic ll survey len comps females
-  Wt_SrvLenComps[1,,2,1] <- 1.07053763450712 # Weight for domestic ll survey len comps males
-  Wt_SrvLenComps[1,,1,2] <- 0.670883273592302 # Weight for domestic trawl survey len comps females
-  Wt_SrvLenComps[1,,2,2] <- 0.465207132450763 # Weight for domestic trawl survey len comps males
-  Wt_SrvLenComps[1,,1,3] <- 1.27772810174693 # Weight for coop jp ll survey len comps females
-  Wt_SrvLenComps[1,,2,3] <- 0.857519546948587 # Weight for coop jp ll survey len comps males
+  Wt_SrvLenComps <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
+                                     input_list$data$n_sexes, input_list$data$n_srv_fleets)) # weights for survey age comps
+  Wt_SrvLenComps[1,,,1,1] <- 1.43792019016567 # Weight for domestic ll survey len comps females
+  Wt_SrvLenComps[1,,,2,1] <- 1.07053763450712 # Weight for domestic ll survey len comps males
+  Wt_SrvLenComps[1,,,1,2] <- 0.670883273592302 # Weight for domestic trawl survey len comps females
+  Wt_SrvLenComps[1,,,2,2] <- 0.465207132450763 # Weight for domestic trawl survey len comps males
+  Wt_SrvLenComps[1,,,1,3] <- 1.27772810174693 # Weight for coop jp ll survey len comps females
+  Wt_SrvLenComps[1,,,2,3] <- 0.857519546948587 # Weight for coop jp ll survey len comps males
 
   input_list <- Setup_Mod_Weighting(input_list = input_list,
                                     Wt_Catch = 50,
@@ -232,6 +234,7 @@ test_that("Single-region Sablefish RTMB model produces expected results", {
                                     Wt_SrvAgeComps = Wt_SrvAgeComps,
                                     Wt_SrvLenComps = Wt_SrvLenComps
   )
+
 
   data <- input_list$data
   parameters <- input_list$par
@@ -288,8 +291,8 @@ test_that("Single-region Sablefish RTMB model produces expected results", {
     25.904198
   )
 
-  expect_equal(sabie_rtmb_model$rep$SSB[1,], ssb_expected_vec, tolerance = 1e-2)
-  expect_equal(sabie_rtmb_model$rep$Rec[1,], rec_expected_vec, tolerance = 1e-2)
+  expect_equal(sabie_rtmb_model$rep$SSB[1,1,], ssb_expected_vec, tolerance = 1e-2)
+  expect_equal(sabie_rtmb_model$rep$Rec[1,1,], rec_expected_vec, tolerance = 1e-2)
   expect_true(sabie_rtmb_model$sd_rep$pdHess)
 
 })

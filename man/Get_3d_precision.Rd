@@ -2,7 +2,7 @@
 % Please edit documentation in R/Get_3d_precision.R
 \name{Get_3d_precision}
 \alias{Get_3d_precision}
-\title{Constructor algorithin for correlations within ages, years, and cohort (Work in Progress)}
+\title{Construct a 3D sparse precision matrix over ages, years, and cohorts}
 \usage{
 Get_3d_precision(
   n_ages,
@@ -15,24 +15,44 @@ Get_3d_precision(
 )
 }
 \arguments{
-\item{n_ages}{Number of ages}
+\item{n_ages}{Integer. Number of age classes.}
 
-\item{n_yrs}{Number of years}
+\item{n_yrs}{Integer. Number of years.}
 
-\item{pcorr_age}{correlations for age}
+\item{pcorr_age}{Numeric. Partial correlation along the age dimension
+(i.e., between adjacent ages within the same year).}
 
-\item{pcorr_year}{correaltions for year}
+\item{pcorr_year}{Numeric. Partial correlation along the year dimension
+(i.e., between adjacent years within the same age).}
 
-\item{pcorr_cohort}{correlaitons for cohort}
+\item{pcorr_cohort}{Numeric. Partial correlation along the cohort diagonal
+(i.e., between the \eqn{(a-1, y-1)} and \eqn{(a, y)} cell).}
 
-\item{ln_var_value}{log space variance}
+\item{ln_var_value}{Numeric. Log of the target variance. Exponentiated
+internally to \eqn{\sigma^2 = \exp(\text{ln\_var\_value})}.}
 
-\item{Var_Type}{variance type == 0, marginal (stationary and slower run time), == 1 conditional (non-statationary, faster run time)}
+\item{Var_Type}{Integer. Variance parameterisation: \code{0} = marginal
+(stationary) variance, where diagonal elements of \eqn{\Omega} are
+solved recursively via the accumulator \eqn{(I - B)^{-1}} to achieve a
+constant marginal variance \eqn{\sigma^2} at every node (slower);
+\code{1} = conditional (non-stationary) variance, where all diagonal
+elements of \eqn{\Omega} are set to \eqn{\sigma^2} directly (faster).}
 }
 \value{
-Sparse precision matrix dimensioned by n_ages * n_years, n_ages * n_years
+A sparse \code{Matrix::sparseMatrix} precision matrix \eqn{Q} of
+  dimension \eqn{(n_{\text{ages}} \times n_{\text{yrs}}) \times
+  (n_{\text{ages}} \times n_{\text{yrs}})}, compatible with
+  \code{RTMB::dgmrf}.
 }
 \description{
-Constructor algorithin for correlations within ages, years, and cohort (Work in Progress)
+Builds a sparse \eqn{(n_{\text{ages}} \times n_{\text{yrs}}) \times
+(n_{\text{ages}} \times n_{\text{yrs}})} precision matrix \eqn{Q} for a
+Gaussian Markov random field (GMRF) with simultaneous autoregressive (SAR)
+structure across three biological dimensions: age, year, and cohort
+(age-year diagonal). The matrix is constructed via the path-matrix
+factorisation \eqn{Q = (I - B)^\top \Omega^{-1} (I - B)}, where \eqn{B}
+encodes the partial correlations and \eqn{\Omega} is a diagonal variance
+matrix. Two variance parameterisations are supported: marginal (stationary)
+and conditional (non-stationary).
 }
 \keyword{internal}

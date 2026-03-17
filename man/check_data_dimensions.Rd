@@ -2,10 +2,11 @@
 % Please edit documentation in R/check_dimensions.R
 \name{check_data_dimensions}
 \alias{check_data_dimensions}
-\title{Helper function used to check data dimensions to ensure they are correct}
+\title{Validate Dimensions of Model Input Objects}
 \usage{
 check_data_dimensions(
   x,
+  n_pop = NULL,
   n_regions = NULL,
   n_years = NULL,
   n_ages = NULL,
@@ -14,37 +15,73 @@ check_data_dimensions(
   n_sexes = NULL,
   n_fish_fleets = NULL,
   n_srv_fleets = NULL,
-  max_tag_liberty = NULL,
-  n_tag_cohorts = NULL,
+  conv_tag_max_liberty = NULL,
+  n_conv_tag_cohorts = NULL,
   what
 )
 }
 \arguments{
-\item{x}{Object to evaluate}
+\item{x}{Object to evaluate. Typically a numeric array (or vector) whose
+dimensions must match the expected structure associated with \code{what}.}
 
-\item{n_regions}{Number of regions}
+\item{n_pop}{Integer. Number of populations.}
 
-\item{n_years}{Number of years}
+\item{n_regions}{Integer. Number of spatial regions.}
 
-\item{n_ages}{Number of ages}
+\item{n_years}{Integer. Number of model years.}
 
-\item{n_seas}{Number of seasons}
+\item{n_ages}{Integer. Number of age classes.}
 
-\item{n_lens}{Number of lengths}
+\item{n_seas}{Integer. Number of seasons.}
 
-\item{n_sexes}{Number of sexes}
+\item{n_lens}{Integer. Number of length bins.}
 
-\item{n_fish_fleets}{Number of fishery fleets}
+\item{n_sexes}{Integer. Number of sexes.}
 
-\item{n_srv_fleets}{Number of survey fleets}
+\item{n_fish_fleets}{Integer. Number of fishery fleets.}
 
-\item{max_tag_liberty}{Maximum tag liberty to track a given cohort}
+\item{n_srv_fleets}{Integer. Number of survey fleets.}
 
-\item{n_tag_cohorts}{Number of tag cohorts to fit to}
+\item{conv_tag_max_liberty}{Integer. Maximum tag liberty for conventional
+tagging data (number of seasons between release and recapture).}
 
-\item{what}{charcter specifying what to be evaluated}
+\item{n_conv_tag_cohorts}{Integer. Number of conventional tagging cohorts.}
+
+\item{what}{Character string identifying the type of object being validated.
+This determines the expected dimension ordering (e.g., biological inputs,
+fishery observations, survey observations, or tagging data).}
+}
+\value{
+No return value. The function is used for validation and will terminate
+execution with an error if the dimensions of \code{x} do not match the
+expected structure.
 }
 \description{
-Helper function used to check data dimensions to ensure they are correct
+Internal utility that verifies the dimensional structure of model input
+objects. The function checks that the supplied object \code{x} has the
+expected dimensions for the specified object type \code{what}. Expected
+dimension ordering depends on the data structure used in the population
+model (e.g., population, region, year, season, age, sex, fleet).
+}
+\details{
+The argument \code{what} determines which dimension template is applied.
+If the dimensions of \code{x} do not match the required structure, the
+function stops with an informative error message.
+
+
+The function supports validation of several model input classes including:
+
+\itemize{
+  \item Biological quantities (e.g., weight-at-age, maturity, natural mortality)
+  \item Movement and spatial processes
+  \item Fishery observations (catch, indices, composition data)
+  \item Survey observations (indices and compositions)
+  \item Conventional tagging data and recaptures
+}
+
+Some objects (e.g., ageing-error matrices or age compositions) may contain
+additional dimensions representing observed ages or length bins. These
+dimensions are not always validated explicitly because they depend on the
+structure of the observed data.
 }
 \keyword{internal}

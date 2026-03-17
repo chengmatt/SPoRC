@@ -2,18 +2,60 @@
 % Please edit documentation in R/Setup_Rec.R
 \name{do_h_mapping}
 \alias{do_h_mapping}
-\title{Helper function to setup steepness mapping}
+\title{Map Beverton-Holt steepness parameters}
 \usage{
 do_h_mapping(input_list, h_spec, rec_dd)
 }
 \arguments{
-\item{input_list}{Input list}
+\item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
+sublists. Requires \code{$data$rec_model}, \code{$data$n_pop},
+\code{$data$n_regions}, and \code{$data$rec_dd} to be set by upstream
+setup functions.}
 
-\item{h_spec}{Character vector for specifying steepness mapping}
+\item{h_spec}{Character string specifying the sharing structure for
+\code{steepness_h}, or \code{NULL} to estimate steepness independently
+across all relevant dimensions. Options when non-\code{NULL}:
+\describe{
+  \item{\code{"est_shared_pop_r"}}{Single steepness value shared across
+    all populations and regions. All elements of \code{steepness_h} share
+    factor level \code{1}. Required when \code{rec_dd = "global"} and
+    \code{n_regions > 1}.}
+  \item{\code{"est_shared_r"}}{Separate steepness per population, shared
+    across regions within each population. Produces \code{n_pop}
+    estimated parameters. Also valid under global density dependence.}
+  \item{\code{"fix"}}{All \code{steepness_h} parameters fixed at their
+    starting values (mapped to \code{NA}).}
+  \item{\code{NULL}}{Estimate steepness independently: by population when
+    \code{n_pop > 1} (shared across regions within each population), or
+    by region when \code{n_pop = 1}. Not permitted when
+    \code{rec_dd = "global"} and \code{n_regions > 1}.}
+}}
 
-\item{rec_dd}{Recruitment density dependence indicator (global vs. local)}
+\item{rec_dd}{Recruitment density-dependence structure inherited from
+\code{\link{Setup_Mod_Recruitment}}. \code{"global"} restricts valid
+\code{h_spec} values to \code{"est_shared_r"}, \code{"est_shared_pop_r"},
+or \code{"fix"}, and prohibits \code{NULL}.}
+}
+\value{
+The input \code{input_list} with \code{$map$steepness_h} set to a
+  factor vector of length \code{prod(dim(par$steepness_h))}. Active
+  parameters receive sequential integer indices; unused parameters
+  (mean recruitment model or fixed steepness) are \code{NA}.
 }
 \description{
-Helper function to setup steepness mapping
+Internal helper called by \code{\link{Setup_Mod_Recruitment}} to construct
+the TMB/RTMB factor map for \code{steepness_h}, the Beverton-Holt
+steepness parameter. The \code{steepness_h} array has dimensions
+\code{[n_pop × n_regions]}.
+}
+\details{
+When \code{rec_model = 0} (mean recruitment), steepness has no role in the
+stock-recruit relationship and all elements are mapped to \code{NA}
+regardless of \code{h_spec}. For Beverton-Holt recruitment
+(\code{rec_model = 1}), mapping follows \code{h_spec} subject to the
+density-dependence constraint: global density dependence requires steepness
+to be shared across regions (\code{"est_shared_r"} or
+\code{"est_shared_pop_r"}), since a single pooled spawner-recruit
+relationship cannot support region-specific steepness values.
 }
 \keyword{internal}

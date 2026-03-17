@@ -557,6 +557,9 @@ Get_Det_Recruitment <- function(recruitment_model,
 
   } # end Beverton-Holt
 
+  # resampling
+  if(recruitment_model == 999) rec = NA
+
   # coerce into array at the end
   rec = array(rec, dim = c(n_pop, n_regions))
 

@@ -480,7 +480,7 @@ reshape2::melt(rep$SSB) %>%
   ggplot(aes(x = Var3, y = value)) +
   geom_line() +
   ylim(0, NA) +
-  facet_wrap(~VaZ +
+  facet_wrap(~Var2) +
   labs(x = 'Year', y = 'SSB')
 
 get_idx_fits(data, rep, 1960:2021) %>%

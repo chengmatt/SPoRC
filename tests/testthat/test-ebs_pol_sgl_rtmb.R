@@ -19,7 +19,12 @@ test_that("Single-region EBS Pollock RTMB model produces expected results", {
     n_fish_fleets = 1,
     # number of fishery fleets
     n_srv_fleets = 3, # number of survey fleets
-    verbose = FALSE
+    # number of seasons
+    n_seas = sgl_rg_ebswp_data$n_seas,
+    # Populaiton stuff
+    n_pop = sgl_rg_ebswp_data$n_pop,
+    natal_region = sgl_rg_ebswp_data$natal_region,
+    verbose = TRUE
   )
 
   inv_steepness <- function(s) qlogis((s - 0.2) / 0.8)
@@ -33,11 +38,11 @@ test_that("Single-region EBS Pollock RTMB model produces expected results", {
     # do bias ramp (0 == don't do bias ramp, 1 == do bias ramp)
     sigmaR_switch = 1,
     # when to switch from early to late sigmaR (switch in first year)
-    ln_sigmaR = log(c(1, 1)),
+    ln_sigmaR = array(log(1), dim = c(2, input_list$data$n_pop, input_list$data$n_regions)),
     # Starting values for early and late sigmaR
     rec_model = "bh_rec",
     # recruitment model
-    steepness_h = inv_steepness(0.623013),
+    steepness_h = array(inv_steepness(0.623013), dim = c(input_list$data$n_pop, input_list$data$n_regions)),
     h_spec = "fix",
     # fixing steepness
     sigmaR_spec = "fix",
@@ -50,27 +55,25 @@ test_that("Single-region EBS Pollock RTMB model produces expected results", {
   )
 
   # Setup a fixed natural mortality array for use
-  fix_natmort <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), length(input_list$data$ages), 1))
-  fix_natmort[,,1,] <- 0.9 # age 1 M
-  fix_natmort[,,2,] <- 0.45 # age 2 M
-  fix_natmort[,,-c(1,2),] <- 0.3 # age 3+ M
+  fix_natmort <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), length(input_list$data$ages), 1))
+  fix_natmort[,,,1,] <- 0.9 # age 1 M
+  fix_natmort[,,,2,] <- 0.45 # age 2 M
+  fix_natmort[,,,-c(1,2),] <- 0.3 # age 3+ M
 
-  input_list <- suppressWarnings(
-    Setup_Mod_Biologicals(
-      input_list = input_list,
+  input_list <- Setup_Mod_Biologicals(
+    input_list = input_list,
 
-      # Data inputs
-      WAA = sgl_rg_ebswp_data$WAA,
-      MatAA = sgl_rg_ebswp_data$MatAA,
+    # Data inputs
+    WAA = sgl_rg_ebswp_data$WAA,
+    MatAA = sgl_rg_ebswp_data$MatAA,
 
-      # Model options
-      # mean and sd for M prior
-      fit_lengths = 0,
-      # don't fit length compositions
-      M_spec = "fix",
-      # fixing natural mortality
-      Fixed_natmort = fix_natmort
-    )
+    # Model options
+    # mean and sd for M prior
+    fit_lengths = 0,
+    # don't fit length compositions
+    M_spec = "fix",
+    # fixing natural mortality
+    Fixed_natmort = fix_natmort
   )
 
   # Setup movement stuff (using defaults for other stuff)
@@ -81,23 +84,20 @@ test_that("Single-region EBS Pollock RTMB model produces expected results", {
     do_recruits_move = 0
   )
 
-  input_list <- suppressWarnings(
-    Setup_Mod_Catch_and_F(
-      input_list = input_list,
+  input_list <- Setup_Mod_Catch_and_F(
+    input_list = input_list,
 
-      # Data inputs
-      ObsCatch = sgl_rg_ebswp_data$ObsCatch,
-      Catch_Type = sgl_rg_ebswp_data$Catch_Type,
-      UseCatch = sgl_rg_ebswp_data$UseCatch,
+    # Data inputs
+    ObsCatch = sgl_rg_ebswp_data$ObsCatch,
+    UseCatch = sgl_rg_ebswp_data$UseCatch,
 
-      # Model options
-      Use_F_pen = 1,
-      # whether to use f penalty, == 0 don't use, == 1 use
-      sigmaC_spec = "fix",
-      # fixing catch standard deviation
-      ln_sigmaC = array(log(0.05), dim = c(1, length(input_list$data$years), 1))
-      # starting / fixed value for catch standard deviation
-    )
+    # Model options
+    Use_F_pen = 1,
+    # whether to use f penalty, == 0 don't use, == 1 use
+    sigmaC_spec = "fix",
+    # fixing catch standard deviation
+    ln_sigmaC = array(log(0.05), dim = c(1, length(input_list$data$years), input_list$data$n_seas, 1))
+    # starting / fixed value for catch standard deviation
   )
 
   input_list <- Setup_Mod_FishIdx_and_Comps(
@@ -109,9 +109,9 @@ test_that("Single-region EBS Pollock RTMB model produces expected results", {
     ObsFishAgeComps = sgl_rg_ebswp_data$ObsFishAgeComps,
     UseFishAgeComps = sgl_rg_ebswp_data$UseFishAgeComps,
     ISS_FishAgeComps = sgl_rg_ebswp_data$ISS_FishAgeComps,
-    ObsFishLenComps = array(NA_real_, dim = c(1, length(input_list$data$years), length(input_list$data$lens), 1, 1)),
-    UseFishLenComps = array(0, dim = c(1, length(input_list$data$years), 1)),
-    ISS_FishLenComps = NULL,
+    ObsFishLenComps = array(NA_real_, dim = c(1, length(input_list$data$years), input_list$data$n_seas, length(input_list$data$lens), 1, 1)),
+    UseFishLenComps = array(0, dim = c(1, length(input_list$data$years), input_list$data$n_seas, 1)),
+    ISS_FishLenComps = array(0, dim = c(1, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_sexes, 1)),
 
     # Model options
     fish_idx_type = c("biom"),
@@ -137,9 +137,9 @@ test_that("Single-region EBS Pollock RTMB model produces expected results", {
     ObsSrvAgeComps = sgl_rg_ebswp_data$ObsSrvAgeComps,
     ISS_SrvAgeComps = sgl_rg_ebswp_data$ISS_SrvAgeComps,
     UseSrvAgeComps = sgl_rg_ebswp_data$UseSrvAgeComps,
-    ObsSrvLenComps = array(NA_real_, dim = c(1, length(input_list$data$years), length(input_list$data$lens), 1, 3)),
-    UseSrvLenComps = array(0, dim = c(1, length(input_list$data$years), 3)),
-    ISS_SrvLenComps = NULL,
+    ObsSrvLenComps = array(NA_real_, dim = c(1, length(input_list$data$years), input_list$data$n_seas, length(input_list$data$lens), 1, 3)),
+    UseSrvLenComps = array(0, dim = c(1, length(input_list$data$years), input_list$data$n_seas, 3)),
+    ISS_SrvLenComps = array(0, dim = c(1, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_sexes, 3)),
 
     # Model options
     srv_idx_type = c("biom", "biom", "biom"),
@@ -215,7 +215,7 @@ test_that("Single-region EBS Pollock RTMB model produces expected results", {
   )
 
   # Setup tagging stuff
-  input_list <- Setup_Mod_Tagging(input_list = input_list, UseTagging = 0)
+  input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
 
   input_list <- Setup_Mod_Weighting(
     input_list = input_list,
@@ -227,84 +227,67 @@ test_that("Single-region EBS Pollock RTMB model produces expected results", {
     Wt_Tagging = 0,
     Wt_FishAgeComps = array(1, dim = c(input_list$data$n_regions,
                                        length(input_list$data$years),
+                                       input_list$data$n_seas,
                                        input_list$data$n_sexes,
                                        input_list$data$n_srv_fleets)),
     Wt_FishLenComps = array(1, dim = c(input_list$data$n_regions,
                                        length(input_list$data$years),
+                                       input_list$data$n_seas,
                                        input_list$data$n_sexes,
                                        input_list$data$n_srv_fleets)),
     Wt_SrvAgeComps = array(1, dim = c(input_list$data$n_regions,
                                       length(input_list$data$years),
+                                      input_list$data$n_seas,
                                       input_list$data$n_sexes,
                                       input_list$data$n_srv_fleets)),
     Wt_SrvLenComps = array(1, dim = c(input_list$data$n_regions,
                                       length(input_list$data$years),
+                                      input_list$data$n_seas,
                                       input_list$data$n_sexes,
                                       input_list$data$n_srv_fleets))
   )
 
 
-# extract out lists updated with helper functions
-data <- input_list$data
-parameters <- input_list$par
-mapping <- input_list$map
+  # extract out lists updated with helper functions
+  data <- input_list$data
+  parameters <- input_list$par
+  mapping <- input_list$map
 
-# selex sigma to fix at, given penalized likelihood
-parameters$fishsel_pe_pars[,4,,] <- log(0.075) # fishery selex variance
-parameters$srvsel_pe_pars[,1:2,,1] <- log(0.075) # survey BTS - a50 and delta variance
-parameters$srvsel_pe_pars[,4,,2] <- log(0.15) # survey ATS and ato variance
+  # selex sigma to fix at, given penalized likelihood
+  parameters$fishsel_pe_pars[,4,,] <- log(0.075) # fishery selex variance
+  parameters$srvsel_pe_pars[,1:2,,1] <- log(0.075) # survey BTS - a50 and delta variance
+  parameters$srvsel_pe_pars[,4,,2] <- log(0.15) # survey ATS and ato variance
 
-# Fit model
-ebswp_rtmb_model <- fit_model(data,
-                              parameters,
-                              mapping,
-                              # random = NULL,
-                              newton_loops = 3,
-                              silent = TRUE
-)
 
-ebswp_rtmb_model$sdrep <- RTMB::sdreport(ebswp_rtmb_model)
+  # Fit model
+  ebswp_rtmb_model <- fit_model(data,
+                                parameters,
+                                mapping,
+                                # random = NULL,
+                                newton_loops = 3,
+                                silent = TRUE
+  )
 
-ssb_expected_vec <- c(
-  657.1762, 680.2184, 718.7174, 825.2028,
-  944.1852, 1084.8949, 1161.1742, 1247.5739,
-  1199.4435, 1063.9323, 787.7986, 718.2284,
-  664.1857, 771.3573, 680.2554, 666.0738,
-  915.4311, 1590.9518, 2316.5292, 3167.2514,
-  3285.8133, 3731.4632, 3628.4957, 3705.7806,
-  3572.5137, 3122.2608, 2646.0529, 2144.8926,
-  2131.1259, 2908.7692, 3399.8736, 3578.1818,
-  3435.7394, 3255.8144, 2752.8077, 2944.4359,
-  2939.0820, 3058.6304, 2856.7313, 2866.8775,
-  3145.2613, 2755.1340, 2512.7244, 2104.1365,
-  1673.5465, 1870.8596, 1929.9060, 2258.6853,
-  2582.9556, 2832.5065, 2742.7521, 2618.8809,
-  2914.1180, 3296.8276, 3009.4396, 2773.3159,
-  1991.6662, 2149.0372, 3101.9510, 3174.2998,
-  3372.2566
-)
+  ebswp_rtmb_model$sdrep <- RTMB::sdreport(ebswp_rtmb_model)
 
-rec_expected_vec <- c(
-  4626.538, 18535.337, 10544.334, 21411.120,
-  20497.788, 25327.872, 23287.175, 13883.983,
-  10673.224, 20029.445, 11635.872, 11199.117,
-  11394.433, 12688.980, 22949.808, 55990.210,
-  26726.112, 31406.946, 15589.579, 47694.510,
-  14130.237, 35621.813, 15024.110, 7449.747,
-  5863.242, 12311.157, 55997.278, 29078.860,
-  22786.109, 43906.812, 14998.510, 11159.706,
-  25451.680, 36759.929, 17129.405, 17943.498,
-  26612.054, 37023.222, 23934.133, 15586.900,
-  7208.119, 5132.779, 13819.358, 29529.549,
-  12655.885, 47470.501, 21828.605, 14208.347,
-  12606.109, 49337.739, 48678.459, 17896.884,
-  5877.043, 5891.516, 12063.299, 82831.911,
-  23318.777, 16139.247, 13369.558, 25698.900,
-  43233.295
-)
+  ssb_expected_vec <- c(604.8303, 620.3900, 650.9218, 749.7160, 864.9073, 1001.7853, 1079.4247, 1164.7102, 1120.7780, 987.6462,
+                        720.1733, 667.4834, 635.9955, 747.5421, 664.7550, 658.3988, 914.7824, 1591.3212, 2307.3483, 3140.5967,
+                        3256.9845, 3711.8637, 3619.9472, 3706.5877, 3581.7596, 3136.6307, 2664.5500, 2166.4447, 2150.8002, 2928.0622,
+                        3416.5021, 3590.8871, 3444.9857, 3261.1167, 2758.6261, 2956.9983, 2957.1241, 3082.2228, 2882.4844, 2903.2505,
+                        3196.0122, 2801.1688, 2554.6853, 2136.4215, 1699.6423, 1896.1574, 1951.9939, 2284.2466, 2612.3691, 2860.9857,
+                        2775.7142, 2659.4668, 2963.2610, 3354.2383, 3063.3879, 2824.2168, 2038.8854, 2196.5457, 3155.6046, 3226.9139,
+                        3437.5710)
 
-expect_equal(ebswp_rtmb_model$rep$SSB[1,], ssb_expected_vec, tolerance = 1e-2)
-expect_equal(ebswp_rtmb_model$rep$Rec[1,], rec_expected_vec, tolerance = 1e-2)
+  rec_expected_vec <- c(4336.183, 17914.462, 10405.798, 20871.329, 20385.116, 25215.438, 23145.713, 14095.170, 11009.571, 20797.617,
+                        11958.594, 11396.141, 11543.669, 12878.865, 23161.020, 55626.388, 26242.962, 30956.401, 15945.294, 48113.748,
+                        14181.902, 35934.771, 15256.019,  7509.865,  5909.875, 12336.732, 56068.126, 29073.899, 22745.314, 43862.523,
+                        15026.768, 11208.157, 25745.114, 37052.757, 17211.965, 18061.800, 26783.645, 37348.415, 24088.436, 15601.540,
+                        7200.247,  5118.634, 13881.948, 29676.666, 12726.764, 47689.853, 21942.654, 14328.258, 12741.027, 49722.905,
+                        49113.069, 18013.886,  5952.349,  6010.924, 12352.300, 83426.122, 23304.418, 16428.846, 14114.836, 27634.359,
+                        50430.467)
+
+expect_equal(ebswp_rtmb_model$rep$SSB[1,1,], ssb_expected_vec, tolerance = 1e-2)
+expect_equal(ebswp_rtmb_model$rep$Rec[1,1,], rec_expected_vec, tolerance = 1e-2)
 expect_true(ebswp_rtmb_model$sdrep$pdHess)
 
 

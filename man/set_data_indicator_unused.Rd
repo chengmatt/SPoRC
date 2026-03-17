@@ -2,37 +2,52 @@
 % Please edit documentation in R/Utility_Functions.R
 \name{set_data_indicator_unused}
 \alias{set_data_indicator_unused}
-\title{Set Data Indicators to Unused for Specified Years}
+\title{Set data indicators to unused for specified years}
 \usage{
 set_data_indicator_unused(
   data,
   unused_years,
   what = c("Catch", "FishIdx", "FishAgeComps", "FishLenComps", "SrvIdx", "SrvAgeComps",
-    "SrvLenComps", "Tagging")
+    "SrvLenComps", "conv_tagging")
 )
 }
 \arguments{
-\item{data}{Data list for RTMB model}
+\item{data}{Named list of model data as constructed by the
+\code{Setup_Mod_*} family of functions.}
 
-\item{unused_years}{Integer vector specifying which years to mark as unused. Only years present in \code{data$years} are considered.}
+\item{unused_years}{Integer vector. Year indices (relative to
+\code{data$years}) to mark as unused. Values not present in
+\code{1:length(data$years)} are dropped.}
 
-\item{what}{Character vector specifying which data types to modify. Possible values include:
+\item{what}{Character vector. Data types to modify. Any combination of:
 \describe{
-  \item{"Catch"}{Catch data indicators.}
-  \item{"FishIdx"}{Fishery index data indicators.}
-  \item{"FishAgeComps"}{Fishery age composition data indicators.}
-  \item{"FishLenComps"}{Fishery length composition data indicators.}
-  \item{"SrvIdx"}{Survey index data indicators.}
-  \item{"SrvAgeComps"}{Survey age composition data indicators.}
-  \item{"SrvLenComps"}{Survey length composition data indicators.}
-  \item{"Tagging"}{Tagging data and associated cohorts.}
+  \item{\code{"Catch"}}{Sets \code{UseCatch[, unused_years, , ] <- 0}.}
+  \item{\code{"FishIdx"}}{Sets \code{UseFishIdx[, unused_years, , ] <- 0}.}
+  \item{\code{"FishAgeComps"}}{Sets \code{UseFishAgeComps[, unused_years, , ] <- 0}.}
+  \item{\code{"FishLenComps"}}{Sets \code{UseFishLenComps[, unused_years, , ] <- 0}.}
+  \item{\code{"SrvIdx"}}{Sets \code{UseSrvIdx[, unused_years, , ] <- 0}.}
+  \item{\code{"SrvAgeComps"}}{Sets \code{UseSrvAgeComps[, unused_years, , ] <- 0}.}
+  \item{\code{"SrvLenComps"}}{Sets \code{UseSrvLenComps[, unused_years, , ] <- 0}.}
+  \item{\code{"conv_tagging"}}{Removes tag cohorts whose release year
+    falls in \code{unused_years} from \code{conv_tagged_fish},
+    \code{obs_conv_tag_fish_recap}, \code{conv_tag_release_indicator},
+    and updates \code{n_conv_tag_cohorts}. Only applied when
+    \code{any(data$use_conv_fish_tagging == 1)}.}
 }}
 }
 \value{
-The modified \code{data} object, with indicators set to 0 for the specified years and tagging cohorts removed if relevant.
+The modified \code{data} list with \code{Use*} indicators set to
+  \code{0} for \code{unused_years} and, if applicable, tagging cohorts
+  from those years removed.
 }
 \description{
-Set Data Indicators to Unused for Specified Years
+Sets \code{Use*} binary indicator arrays to \code{0} for the specified
+years across one or more data types, and optionally removes conventional
+tag cohorts released in those years. Used in MSE closed-loop simulations
+and retrospective analyses to exclude future or withheld data from the
+estimation model without modifying the underlying observation arrays.
+Only years present in \code{data$years} are affected; out-of-range values
+in \code{unused_years} are silently ignored.
 }
 \seealso{
 Other Utility: 

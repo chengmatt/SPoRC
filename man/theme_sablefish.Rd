@@ -2,15 +2,16 @@
 % Please edit documentation in R/Utility_Functions.R
 \name{theme_sablefish}
 \alias{theme_sablefish}
-\title{ggplot theme for sablefish}
+\title{ggplot2 theme for SPoRC plots}
 \usage{
 theme_sablefish()
 }
 \value{
-ggplot theme
+A \code{ggplot2} theme object.
 }
 \description{
-ggplot theme for sablefish
+A clean \code{theme_bw}-based ggplot2 theme with enlarged text elements
+suitable for publication-quality SPoRC diagnostic and results figures.
 }
 \seealso{
 Other Plotting: 

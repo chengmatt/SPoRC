@@ -2,14 +2,20 @@
 % Please edit documentation in R/Utility_Functions.R
 \name{collect_message}
 \alias{collect_message}
-\title{Helper function to collect messages}
+\title{Append a message to the global messages list}
 \usage{
 collect_message(...)
 }
 \arguments{
-\item{...}{character vector of messages}
+\item{...}{Character strings passed to \code{paste(..., sep = "")}.}
+}
+\value{
+\code{NULL} invisibly. Side effect: \code{messages_list} is
+  updated in the parent environment.
 }
 \description{
-Helper function to collect messages
+Concatenates its arguments into a single string and appends the result to
+\code{messages_list} in the calling environment via \code{<<-}. Used
+internally to accumulate validation and setup messages for deferred display.
 }
 \keyword{internal}

@@ -7,21 +7,38 @@
 get_idx_fits_plot(data, rep, model_names)
 }
 \arguments{
-\item{data}{List of n_models of `SPoRC` data lists}
+\item{data}{List of length \code{n_models}, where each element is a SPoRC
+data list. Passed to \code{get_idx_fits} along with \code{rep[[i]]}; year
+labels are taken from \code{data[[i]]$years}.}
 
-\item{rep}{List of n_models of `SPoRC` report lists}
+\item{rep}{List of length \code{n_models}, where each element is a SPoRC
+report list (i.e. the output of \code{obj$report()} after optimisation).
+Predicted index values are extracted internally via \code{get_idx_fits}.}
 
-\item{model_names}{Vector of model names}
+\item{model_names}{Character vector of length \code{n_models} giving display
+names for each model run. Used as the colour legend label on predicted
+trajectories.}
 }
 \value{
-A plot of fitted values to various indices across models
+A single \code{ggplot} object. Observed indices are shown as
+  \code{geom_pointrange} (black) with lower and upper confidence interval
+  bounds from \code{get_idx_fits}. Predicted indices are shown as
+  \code{geom_line} coloured by model.
 }
 \description{
-Get Index Fits Plot
+Plots observed survey and fishery indices alongside model-predicted values
+for one or more SPoRC model runs. Observed values are shown as points with
+approximate 95% confidence intervals; predicted trajectories are overlaid as
+lines coloured by model. Years where the observed index is zero (i.e.
+\code{Use*Idx = 0}) are excluded from both the points and lines.
 }
 \examples{
 \dontrun{
-get_idx_fits_plot(list(data1, data2), list(rep1, rep2), c("Model1", "Model2"))
+  get_idx_fits_plot(
+    data        = list(data1, data2),
+    rep         = list(rep1, rep2),
+    model_names = c("Base", "Sensitivity")
+  )
 }
 }
 \seealso{

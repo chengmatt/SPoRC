@@ -2,10 +2,11 @@
 % Please edit documentation in R/Setup_Movement.R
 \name{do_move_pars_mapping}
 \alias{do_move_pars_mapping}
-\title{Helper function to set up movement mapping}
+\title{Map unstructured Markov movement parameters}
 \usage{
 do_move_pars_mapping(
   input_list,
+  Movement_popblk_spec,
   Movement_ageblk_spec,
   Movement_yearblk_spec,
   Movement_sexblk_spec,
@@ -14,19 +15,53 @@ do_move_pars_mapping(
 )
 }
 \arguments{
-\item{input_list}{Input list}
+\item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
+sublists, as constructed by upstream setup functions.}
 
-\item{Movement_ageblk_spec}{Character specifying movement age block options}
+\item{Movement_popblk_spec}{\code{"constant"} for population-invariant
+movement, or a list of integer vectors partitioning populations into blocks
+that share parameters.}
 
-\item{Movement_yearblk_spec}{Character specifying movement year block options}
+\item{Movement_ageblk_spec}{\code{"constant"} for age-invariant movement, or
+a list of integer vectors defining age blocks.}
 
-\item{Movement_sexblk_spec}{Character specifying movement sex block options}
+\item{Movement_yearblk_spec}{\code{"constant"} for time-invariant movement,
+or a list of integer vectors defining year blocks.}
 
-\item{Movement_seasblk_spec}{Character specifying movement season block options}
+\item{Movement_sexblk_spec}{\code{"constant"} for sex-invariant movement, or
+a list of integer vectors defining sex blocks.}
 
-\item{use_fixed_movement}{Numeric on whether movement is fixed or not}
+\item{Movement_seasblk_spec}{\code{"constant"} for season-invariant movement,
+or a list of integer vectors defining season blocks.}
+
+\item{use_fixed_movement}{Integer flag. \code{1} = movement rates are
+externally supplied; all \code{move_pars} are mapped to \code{NA} and not
+estimated. \code{0} = movement is estimated.}
+}
+\value{
+The input \code{input_list} with three \code{$map} entries updated:
+  \describe{
+    \item{\code{$map$move_pars}}{Factor vector for unstructured Markov
+      transition parameters. Under \code{move_type = 0} with estimated
+      movement, cells within the same block receive the same integer index;
+      cells outside a spatial model or with fixed movement are \code{NA}.
+      Entirely \code{NA} under \code{move_type = 1}.}
+    \item{\code{$map$log_move_diffusion_pars}}{Factor vector for CTMC
+      diffusion parameters. Active (sequential integers) under
+      \code{move_type = 1}; entirely \code{NA} under \code{move_type = 0}.}
+    \item{\code{$map$move_preference_pars}}{Factor vector for CTMC
+      preference (taxis) parameters. Active under \code{move_type = 1};
+      entirely \code{NA} under \code{move_type = 0}.}
+  }
 }
 \description{
-Helper function to set up movement mapping
+Internal helper called by \code{\link{Setup_Mod_Movement}} to construct the
+TMB/RTMB factor maps for \code{move_pars} (unstructured Markov transitions),
+\code{log_move_diffusion_pars} (CTMC diffusion), and
+\code{move_preference_pars} (CTMC taxis). Under the unstructured Markov
+formulation (\code{move_type = 0}), parameters within each block combination
+share a common estimation index; for CTMC (\code{move_type = 1}),
+\code{move_pars} is mapped entirely to \code{NA} and only the CTMC-specific
+arrays are activated.
 }
 \keyword{internal}

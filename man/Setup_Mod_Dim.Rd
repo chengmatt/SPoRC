@@ -2,12 +2,14 @@
 % Please edit documentation in R/Setup_Dimensions.R
 \name{Setup_Mod_Dim}
 \alias{Setup_Mod_Dim}
-\title{Set up model dimensions}
+\title{Initialise model dimension settings}
 \usage{
 Setup_Mod_Dim(
   years,
   ages,
   lens,
+  n_pop = 1,
+  natal_region = NULL,
   n_seas = 1,
   seasdur = if (n_seas == 1) 1 else rep(1/n_seas, n_seas),
   n_regions,
@@ -19,38 +21,83 @@ Setup_Mod_Dim(
 )
 }
 \arguments{
-\item{years}{Numeric vector of years.}
+\item{years}{Numeric vector of calendar years included in the model (e.g.,
+\code{1990:2024}). The length of this vector determines \code{n_years}
+throughout the model.}
 
-\item{ages}{Numeric vector of age classes.}
+\item{ages}{Numeric vector of modelled age classes (e.g., \code{2:31} for a
+model spanning ages 2–31). The final element is treated as a plus-group.}
 
-\item{lens}{Numeric vector of length bins; can be set to \code{1} if length data are not modeled.}
+\item{lens}{Numeric vector of length bin midpoints. Set to \code{NULL} when
+length data are not modelled; a scalar placeholder of \code{1} is stored
+internally in that case.}
 
-\item{n_seas}{Integer, Number of seasons}
+\item{n_pop}{Positive integer. Number of distinct populations (default \code{1}).
+Populations can have independent stock-recruit relationships and natal regions
+but share the spatial domain defined by \code{n_regions}.}
 
-\item{seasdur}{Vector of n_seas length. Duration of season, expressed as a fraction of the year. Default is 1 if 1 season, or 1 / n_seas if n_seas > 1}
+\item{natal_region}{Integer vector of length \code{n_pop} mapping each population
+to its natal region (1-indexed). Defaults are applied when \code{NULL}:
+\itemize{
+  \item \code{n_regions == 1}: all populations assigned to region 1.
+  \item \code{n_pop == n_regions}: one-to-one mapping (\code{1:n_pop}).
+  \item \code{n_pop == 1}: assigned to region 1.
+}
+Must be supplied explicitly when \code{n_pop > 1}, \code{n_pop != n_regions},
+and \code{n_regions > 1}, as no sensible default exists when populations
+must share a natal region.}
 
-\item{n_regions}{Integer specifying the number of spatial regions.}
+\item{n_seas}{Positive integer. Number of seasons within each year (default
+\code{1}).}
 
-\item{n_sexes}{Integer specifying the number of sexes.}
+\item{seasdur}{Numeric vector of length \code{n_seas} giving the duration of
+each season as a fraction of a year (values should sum to 1). Defaults to
+\code{1} for a single season or \code{rep(1 / n_seas, n_seas)} for
+equal-length seasons when \code{n_seas > 1}.}
 
-\item{n_fish_fleets}{Integer specifying the number of fishery fleets.}
+\item{n_regions}{Positive integer. Number of spatial regions.}
 
-\item{n_srv_fleets}{Integer specifying the number of survey fleets.}
+\item{n_sexes}{Integer. Number of sexes; must be \code{1} (sex-aggregated) or
+\code{2} (sex-structured).}
 
-\item{n_proj_yrs_devs}{Number of projection years for deviation parameters (ln_RecDevs, move_devs, ln_fishsel_devs, ln_srvsel_devs)}
+\item{n_fish_fleets}{Positive integer. Number of fishery fleets.}
 
-\item{verbose}{Logical flag indicating whether to print progress messages (default \code{FALSE}).}
+\item{n_srv_fleets}{Positive integer. Number of survey fleets.}
+
+\item{n_proj_yrs_devs}{Non-negative integer. Number of projection years for
+which deviation parameters (\code{ln_RecDevs}, \code{move_devs},
+\code{ln_fishsel_devs}, \code{ln_srvsel_devs}) are allocated. Set to
+\code{0} (default) when projections beyond the assessment period are not
+required.}
+
+\item{verbose}{Logical. If \code{TRUE}, prints a summary of all dimension
+settings to the console via \code{message()} after setup. Default
+\code{FALSE}.}
 }
 \value{
-A list containing three named elements:
-\describe{
-  \item{\code{data}}{List of data inputs dimensioned by the model dimensions.}
-  \item{\code{parameters}}{List of model parameters initialized according to dimensions.}
-  \item{\code{map}}{List of parameter mappings for model fitting.}
-}
+A named list (\code{input_list}) with three sublists:
+  \describe{
+    \item{\code{$data}}{Dimension scalars and vectors stored for use by the
+      TMB/RTMB objective function: \code{years}, \code{ages}, \code{lens},
+      \code{n_pop}, \code{n_regions}, \code{natal_region}, \code{n_seas},
+      \code{seasdur}, \code{n_sexes}, \code{n_fish_fleets},
+      \code{n_srv_fleets}, \code{n_proj_yrs_devs}.}
+    \item{\code{$par}}{Empty list to be populated with parameter starting
+      values by downstream setup functions.}
+    \item{\code{$map}}{Empty list to be populated with TMB/RTMB factor maps
+      by downstream setup functions.}
+  }
+  The top-level \code{$verbose} flag is also set and respected by all
+  subsequent setup functions.
 }
 \description{
-Set up model dimensions
+Creates the foundational \code{input_list} object used throughout the estimation
+model setup. All downstream configuration functions
+(\code{\link{Setup_Mod_Biologicals}}, \code{\link{Setup_Mod_Fishery}},
+\code{\link{Setup_Mod_Survey}}, etc.) expect an \code{input_list} produced by
+this function. Dimension vectors and scalars are stored in \code{$data}, with
+empty \code{$par} and \code{$map} sublists ready to be populated by subsequent
+setup calls.
 }
 \seealso{
 Other Model Setup: 

@@ -2,25 +2,34 @@
 % Please edit documentation in R/Distributions.R
 \name{ddirmult}
 \alias{ddirmult}
-\title{Dirichlet Multinomial Likelihood}
+\title{Evaluate a Dirichlet-multinomial log-likelihood}
 \usage{
 ddirmult(obs, pred, Ntotal, ln_theta, give_log = TRUE)
 }
 \arguments{
-\item{obs}{Vector of observed values in proportions}
+\item{obs}{Numeric vector of observed proportions of length \eqn{K}
+(need not sum exactly to 1 after \code{addtotag} offsets).}
 
-\item{pred}{Vector or predicted values in proportions}
+\item{pred}{Numeric vector of predicted proportions of length \eqn{K};
+must sum to 1.}
 
-\item{Ntotal}{Input sample size scalar}
+\item{Ntotal}{Numeric. Total count (input sample size \eqn{N}).}
 
-\item{ln_theta}{Weighting parameter in log space}
+\item{ln_theta}{Numeric. Log overdispersion parameter. The Dirichlet
+concentration is \eqn{\exp(\ln\theta) \times N \times \hat{p}_k}.}
 
-\item{give_log}{Whether or not likelihood is in log space}
+\item{give_log}{Logical. If \code{TRUE} (default), returns the
+log-likelihood; otherwise returns the likelihood.}
 }
 \value{
-returns likelihood values from a dirihclet multinomial
+Numeric. Log-likelihood (or likelihood if \code{give_log = FALSE}).
 }
 \description{
-From https://github.com/James-Thorson/CCSRA/blob/main/inst/executables/CCSRA_v9.cpp
+Computes the Dirichlet-multinomial log-likelihood following the
+parameterisation of Thorson et al. (CCSRA). The concentration parameters
+are \eqn{\alpha_k = \exp(\ln\theta) \times N \times \hat{p}_k}, so
+\eqn{\exp(\ln\theta)} is the per-observation overdispersion scalar: values
+near zero approach the multinomial and larger values increase variance.
+Non-integer observed counts are supported via \code{lgamma}.
 }
 \keyword{internal}

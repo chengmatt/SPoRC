@@ -7,19 +7,39 @@
 get_data_fitted_plot(data, model_names)
 }
 \arguments{
-\item{data}{List of n_models of `SPoRC` data lists}
+\item{data}{List of length \code{n_models}, where each element is a SPoRC
+data list. The following \code{Use*} indicator arrays are extracted from
+each element, all with dimensions
+\code{[n_regions, n_yrs, n_seas, n_fleets]}:
+\code{UseSrvLenComps}, \code{UseSrvAgeComps}, \code{UseFishLenComps},
+\code{UseFishAgeComps}, \code{UseCatch}, \code{UseFishIdx},
+\code{UseSrvIdx}. If \code{use_conv_fish_tagging} contains any 1s,
+\code{conv_tag_release_indicator} is also used to construct a tagging
+activity indicator array.}
 
-\item{model_names}{Character vector of model names}
+\item{model_names}{Character vector of length \code{n_models} giving display
+names for each model run. Used as row facet labels.}
 }
 \value{
-A plot of data that were fitted to across models
+A single \code{ggplot} object: a dot-plot with Year on the x-axis
+  and data type (labelled by source, season, and fleet) on the y-axis,
+  faceted by Model × Region. Points appear only in years where the
+  corresponding \code{Use*} indicator is 1. The legend is suppressed; data
+  types are distinguished by y-axis position and fill colour.
 }
 \description{
-Get Data Fitted to Plot
+Produces a dot-plot showing which data types were fitted to in each year,
+region, and model. Each point represents a year in which a given data source
+was active (i.e. the corresponding \code{Use*} indicator equals 1). This is
+useful for quickly auditing data availability and comparing data structures
+across model configurations.
 }
 \examples{
 \dontrun{
-get_data_fitted_plot(list(data1, data2), c("Model1", "Model2"))
+  get_data_fitted_plot(
+    data        = list(data1, data2),
+    model_names = c("Base", "Sensitivity")
+  )
 }
 }
 \seealso{

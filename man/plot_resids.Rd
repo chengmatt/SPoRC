@@ -2,36 +2,19 @@
 % Please edit documentation in R/get_model_fits.R
 \name{plot_resids}
 \alias{plot_resids}
-\title{Plots OSA residuals from outputs from get_osa. Much of this code is taken from the afscOM package, but with modificaitons to plot features.}
+\title{Plot OSA residuals from outputs of get_osa}
 \usage{
 plot_resids(osa_results)
 }
 \arguments{
-\item{osa_results}{List object obtained from get_osa, that contains a dataframe of residuals and aggregated fits.}
+\item{osa_results}{List obtained from get_osa() containing residuals dataframe.}
 }
 \value{
-A vareity of plots for OSA residuals (list)
+List of plots: \code{sdnr_plot} (QQ-plot) and \code{bubble_plot} (bubble residuals).
 }
 \description{
-Plots OSA residuals from outputs from get_osa. Much of this code is taken from the afscOM package, but with modificaitons to plot features.
-}
-\examples{
-\dontrun{
-comp_props <- get_comp_prop(data = data, rep = sabie_rtmb_model$rep,
- age_labels = 2:31, len_labels = seq(41, 99, 2), year_labels = 1960:2024)
-plot_resids(get_osa(obs_mat = comp_props$Obs_FishAge_mat,
-                    exp_mat = comp_props$Pred_FishAge_mat,
-                    N = rep(16.52215, length(1999:2023)),
-                    years = which(1960:2024 \%in\% 1999:2023),
-                    LN_Sigma = LN_Sigma,
-                    fleet = 1,
-                    seas = 1,
-                    bins = 2:31,
-                    comp_type = 0,
-                    comp_like = 0,
-                    bin_label = "Age"))
-osa_plot <- plot_resids(osa_results)
-}
+Generates diagnostic plots for one-step-ahead (OSA) residuals. Includes
+QQ-plots with SDNR annotations and bubble plots showing residual magnitude and sign.
 }
 \seealso{
 Other Model Diagnostics: 

@@ -2,16 +2,34 @@
 % Please edit documentation in R/Get_Reference_Points.R
 \name{single_region_BH_Fmsy}
 \alias{single_region_BH_Fmsy}
-\title{Title Get singl region BH MSY Reference Points}
+\title{Compute Beverton-Holt Fmsy for a single-region or non-spatial model}
 \usage{
 single_region_BH_Fmsy(pars, data)
 }
 \arguments{
-\item{pars}{Parameter List from RTMB}
+\item{pars}{Named list of RTMB parameters. Must contain:
+\describe{
+  \item{\code{log_Fmsy}}{Log-scale trial \eqn{F_{MSY}}.}
+}}
 
-\item{data}{Data List from RTMB}
+\item{data}{Named list of RTMB data. Must contain all fields required by
+\code{\link{single_region_SPR}} plus:
+\describe{
+  \item{\code{h}}{Numeric vector \code{[n_pop]}. Beverton-Holt steepness.}
+  \item{\code{R0}}{Numeric vector \code{[n_pop]}. Unfished equilibrium
+    recruitment.}
+}}
+}
+\value{
+Numeric scalar. Negative total equilibrium yield (minimised to
+  find \eqn{F_{MSY}}).
 }
 \description{
-Title Get singl region BH MSY Reference Points
+Finds \eqn{F_{MSY}} by maximising equilibrium yield under a
+Beverton-Holt stock-recruit relationship. Yield is computed from
+spawning biomass per recruit (\eqn{\phi_F}), the BH equilibrium
+recruitment formula, and catch-at-age integrated across all seasons.
+Supports multiple populations via stray rates but does not include
+spatial movement.
 }
 \keyword{internal}

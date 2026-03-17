@@ -2,7 +2,7 @@
 % Please edit documentation in R/Get_Comp_Likelihoods.R
 \name{Get_Comp_Likelihoods}
 \alias{Get_Comp_Likelihoods}
-\title{Gives negative log liklelihood values for composition data for a given year and a given fleet (fishery or survey)}
+\title{Composition Data Likelihood}
 \usage{
 Get_Comp_Likelihoods(
   Exp,
@@ -22,54 +22,91 @@ Get_Comp_Likelihoods(
   age_or_len,
   AgeingError,
   use,
-  comp_agg_type,
   addtocomp
 )
 }
 \arguments{
-\item{Exp}{Expected values (catch at age or survey index at age) indexed for a given year and fleet (structured as a matrix by age and sex)}
+\item{Exp}{Expected composition values (e.g., predicted catch-at-age or
+survey age compositions), structured as an array indexed by
+\eqn{[region \times model\_bins \times sex]}.}
 
-\item{Obs}{Observed values (catch at age or survey index at age) indexed for a given year and fleet (structured as a matrix by age and sex)}
+\item{Obs}{Observed composition counts indexed by
+\eqn{[region \times observed\_bins \times sex]}.}
 
-\item{ISS}{Input sample size indexed for a given year and fleet (structured as a vector w/ sexes)}
+\item{ISS}{Input sample size for the composition data,
+indexed by \eqn{[region \times sex]}.}
 
-\item{Wt_Mltnml}{Mutlinomial weight (if any) for a given fleet (structured as a vector w/ sexes)}
+\item{Wt_Mltnml}{Multinomial weighting applied to the effective sample
+size, indexed by \eqn{[region \times sex]}.}
 
-\item{ln_theta_agg}{Log overdispersion parameter if comp_type == 0, but we want to estsimate either a dirichlet or multinomial}
+\item{ln_theta_agg}{Log overdispersion parameter used when compositions
+are aggregated (\code{Comp_Type = 0}).}
 
-\item{ln_theta}{Log theta overdispersion for Dirichlet mutlinomial (scalar or vector depending on if 'Split' or 'Joint')}
+\item{ln_theta}{Log overdispersion parameters used for Dirichlet–
+multinomial or logistic–normal likelihoods, indexed by
+\eqn{[region \times sex]}.}
 
-\item{LN_corr_pars}{Logistic normal correlation parameters (dimensioned by n_regions, n_sexes, and 3 parameters)}
+\item{LN_corr_pars}{Logistic–normal correlation parameters used for
+correlated logistic–normal likelihoods, dimensioned by
+\eqn{[region \times sex \times parameters]}.}
 
-\item{LN_corr_pars_agg}{Logistic normal correlation parameters if comps are aggregated (just dimensioned by length of 1 value)}
+\item{LN_corr_pars_agg}{Logistic–normal correlation parameters used
+when compositions are aggregated.}
 
-\item{Comp_Type}{Composition Parameterization Type (== 0, aggregated comps by sex, == 1, split comps by sex and region (no implicit sex and region ratio information),
-== 2, joint comps across sexes but split by region (implicit sex ratio information, but not region information))}
+\item{Comp_Type}{Integer specifying the composition parameterization:
+\itemize{
+  \item \code{0} – Aggregated compositions across sexes and regions.
+  \item \code{1} – Compositions split by sex and region (no implicit
+  sex or region ratio information).
+  \item \code{2} – Joint compositions across sexes but split by region
+  (implicit sex ratio information).
+}}
 
-\item{Likelihood_Type}{Composition Likelihood Type (== 0, Multinomial, == 1 Dirichlet Multinomial)}
+\item{Likelihood_Type}{Integer specifying the likelihood family:
+\itemize{
+  \item \code{0} – Multinomial.
+  \item \code{1} – Dirichlet–multinomial.
+  \item \code{2} – Logistic–normal with independent bins.
+  \item \code{3} – Logistic–normal with AR(1) correlation across bins.
+  \item \code{4} – Logistic–normal with AR(1) correlation across bins
+  and constant correlation across sexes.
+}}
 
-\item{n_regions}{number of regions modeled}
+\item{n_regions}{Number of regions modeled.}
 
-\item{n_model_bins}{Number of bins used in the model}
+\item{n_model_bins}{Number of composition bins used internally in the model.}
 
-\item{n_obs_bins}{Number of observed composition bins}
+\item{n_obs_bins}{Number of observed composition bins.}
 
-\item{n_sexes}{Number of sexes modeled}
+\item{n_sexes}{Number of sexes modeled.}
 
-\item{age_or_len}{Age or length comps (== 0, Age, == 1, Length)}
+\item{age_or_len}{Indicator for composition type:
+\itemize{
+  \item \code{0} – Age compositions.
+  \item \code{1} – Length compositions.
+}}
 
-\item{AgeingError}{Ageing Error matrix}
+\item{AgeingError}{Ageing error matrix used to map model age bins to
+observed age bins.}
 
-\item{use}{Vector of 0s and 1s corresponding to regions (==0, don't have obs and dont' use, ==1, have obs and use)}
+\item{use}{Integer vector indicating which regions have observations
+(\code{1} = use data, \code{0} = ignore).}
 
-\item{comp_agg_type}{How to aggregate data (if aggregating)}
-
-\item{addtocomp}{Small constant to add to composition data}
-}
-\value{
-Returns negative log likelihood for composition data (age and/or length)
+\item{addtocomp}{Small constant added to compositions to avoid numerical
+issues when zeros are present.}
 }
 \description{
-Gives negative log liklelihood values for composition data for a given year and a given fleet (fishery or survey)
+Computes the negative log-likelihood contribution for composition data
+(age or length) for a single year and fleet. The function supports multiple
+composition parameterizations and likelihood families commonly used in
+stock assessment models, including multinomial, Dirichlet–multinomial,
+and logistic–normal likelihoods.
+}
+\details{
+Expected and observed compositions are provided as arrays indexed by
+region, composition bin (age or length), and sex. The function optionally
+applies ageing error, aggregates compositions depending on the
+parameterization type, and evaluates the likelihood for each region
+and/or sex.
 }
 \keyword{internal}

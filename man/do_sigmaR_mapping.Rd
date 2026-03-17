@@ -2,19 +2,49 @@
 % Please edit documentation in R/Setup_Rec.R
 \name{do_sigmaR_mapping}
 \alias{do_sigmaR_mapping}
-\title{Title Helper function to handle sigmaR mapping}
+\title{Map recruitment variability (sigma_R) parameters}
 \usage{
 do_sigmaR_mapping(input_list, sigmaR_spec)
 }
 \arguments{
-\item{input_list}{Input list}
+\item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
+sublists, as constructed by upstream setup functions.}
 
-\item{sigmaR_spec}{Character vector for specifying sigmaR mapping}
+\item{sigmaR_spec}{Character string specifying the estimation structure for
+\code{ln_sigmaR}. One of:
+\describe{
+  \item{\code{"est_all"}}{Estimate \code{ln_sigmaR} separately for both
+    the initial deviation period (\code{i = 1}) and the annual deviation
+    period (\code{i = 2}), respecting the density-dependence sharing rules
+    described above.}
+  \item{\code{"est_shared_all"}}{Single \code{ln_sigmaR} shared across
+    both deviation periods, all populations, and all regions.}
+  \item{\code{"fix_early_est_late"}}{Fix \code{ln_sigmaR} for the initial
+    deviation period (\code{i = 1}) at its starting value; estimate
+    \code{ln_sigmaR} for the annual deviation period (\code{i = 2}).
+    Useful when initial age-structure uncertainty is assumed known.}
+  \item{\code{"fix"}}{Fix all \code{ln_sigmaR} parameters at their
+    starting values (all mapped to \code{NA}).}
+}}
 }
 \value{
-Input list with mapping modified
+The input \code{input_list} with \code{$map$ln_sigmaR} set to a
+  factor vector of length \code{prod(dim(par$ln_sigmaR))}. Active parameters
+  receive sequential integer indices; fixed parameters are \code{NA}.
 }
 \description{
-Title Helper function to handle sigmaR mapping
+Internal helper called by \code{\link{Setup_Mod_Recruitment}} to construct
+the TMB/RTMB factor map for \code{ln_sigmaR}, the log-scale standard
+deviation of recruitment deviations. The \code{ln_sigmaR} array has
+dimensions \code{[2 × n_pop × n_regions]}, where the first index
+distinguishes initial age-structure deviations (\code{i = 1}) from annual
+recruitment deviations (\code{i = 2}).
+}
+\details{
+Sharing behaviour adapts to the density-dependence structure: under local
+density dependence (\code{rec_dd = 0}) with a single population, each
+region receives its own \code{ln_sigmaR} estimate; under global density
+dependence or with multiple populations, a single \code{ln_sigmaR} is
+shared across regions within each population.
 }
 \keyword{internal}

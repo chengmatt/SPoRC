@@ -2,7 +2,7 @@
 % Please edit documentation in R/Utility_Functions.R
 \name{post_optim_sanity_checks}
 \alias{post_optim_sanity_checks}
-\title{Post Optimization Model Convergence Checks}
+\title{Run post-optimisation convergence checks on a fitted SPoRC model}
 \usage{
 post_optim_sanity_checks(
   sd_rep,
@@ -13,18 +13,36 @@ post_optim_sanity_checks(
 )
 }
 \arguments{
-\item{sd_rep}{sd report list from a `SPoRC` model}
+\item{sd_rep}{\code{sdreport} object returned by \code{RTMB::sdreport}.
+Must contain \code{$gradient.fixed}, \code{$par.fixed},
+\code{$pdHess}, and \code{$cov.fixed}.}
 
-\item{rep}{report list from a `SPoRC` model}
+\item{rep}{Report list returned by \code{obj$rep} after fitting a SPoRC
+model. Must contain \code{$jnLL}.}
 
-\item{gradient_tol}{Value for maximum gradient tolerance to use}
+\item{gradient_tol}{Numeric. Maximum tolerated absolute gradient for any
+fixed-effect parameter. Default \code{1e-3}; values above this threshold
+suggest the optimiser did not reach a local minimum.}
 
-\item{se_tol}{Value for maximum standard error tolerance to use}
+\item{se_tol}{Numeric. Maximum tolerated parameter standard error. Default
+\code{100}; very large SEs indicate poorly identified parameters.}
 
-\item{corr_tol}{Value for maximum correlation tolerance to use}
+\item{corr_tol}{Numeric. Maximum tolerated absolute pairwise parameter
+correlation. Default \code{0.99}; values approaching 1 indicate
+near-redundant parameters.}
+}
+\value{
+Logical. \code{TRUE} if all four checks pass; \code{FALSE} if any
+  check fails. In either case, informative messages are printed via
+  \code{message}.
 }
 \description{
-Post Optimization Model Convergence Checks
+Evaluates four convergence criteria on the output of a fitted RTMB model:
+(1) finiteness of the joint negative log-likelihood, (2) maximum absolute
+gradient of fixed-effect parameters, (3) positive-definiteness of the
+Hessian, and (4) finiteness and magnitude of parameter standard errors and
+pairwise correlations. A diagnostic message is printed for each failed
+check identifying the offending parameter or parameter pair.
 }
 \seealso{
 Other Utility: 

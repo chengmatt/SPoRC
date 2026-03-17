@@ -2,19 +2,35 @@
 % Please edit documentation in R/Simulate_RV.R
 \name{rinvgauss_rec}
 \alias{rinvgauss_rec}
-\title{Title Generate Recruitment Values based on Inverse Gaussian Distribution}
+\title{Sample recruitment from an inverse-Gaussian distribution}
 \usage{
 rinvgauss_rec(sims, recruitment)
 }
 \arguments{
-\item{sims}{Number of Simulations}
+\item{sims}{Integer. Number of random recruitment values to generate.}
 
-\item{recruitment}{Recruitment vector}
+\item{recruitment}{Numeric vector of historical recruitment values (must be
+strictly positive). Used to estimate \eqn{\bar{R}_a} and \eqn{\bar{R}_h}.}
 }
 \value{
-Random variables following an inverse gaussian
+Numeric vector of length \code{sims} of positive random variates
+  drawn from the fitted inverse-Gaussian distribution.
 }
 \description{
-Title Generate Recruitment Values based on Inverse Gaussian Distribution
+Generates \code{sims} random recruitment values from an inverse-Gaussian
+distribution whose parameters are estimated from a historical recruitment
+vector using the method of moments. The arithmetic mean \eqn{\bar{R}_a}
+and harmonic mean \eqn{\bar{R}_h} of \code{recruitment} are used to derive
+the shape parameter \eqn{\delta = 1 / (\bar{R}_a / \bar{R}_h - 1)} and
+scale parameter \eqn{\beta = \bar{R}_a}. Random draws are generated via
+the Michael–Schucany–Haas (1976) acceptance-mixture algorithm: a squared
+standard normal variate \eqn{\psi} yields two candidate roots \eqn{\omega}
+and \eqn{\zeta}, and a uniform draw selects between them with probability
+\eqn{\beta / (\beta + \omega)}.
+}
+\details{
+The inverse-Gaussian is appropriate for recruitment time series that are
+right-skewed and strictly positive, and is used in SPoRC's resampling
+recruitment option (\code{recruitment_opt = 999}) during projection years.
 }
 \keyword{internal}

@@ -2,14 +2,19 @@
 % Please edit documentation in R/Utility_Functions.R
 \name{is_package_available}
 \alias{is_package_available}
-\title{Helper function to check package availbility}
+\title{Check whether an R package is installed}
 \usage{
 is_package_available(pkg)
 }
 \arguments{
-\item{pkg}{package name character}
+\item{pkg}{Character string. Name of the package to check.}
+}
+\value{
+Logical. \code{TRUE} if the package is installed and findable;
+  \code{FALSE} otherwise.
 }
 \description{
-Helper function to check package availbility
+Tests for package availability without loading it, using
+\code{system.file} to locate the package directory.
 }
 \keyword{internal}

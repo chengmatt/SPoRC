@@ -2,22 +2,44 @@
 % Please edit documentation in R/Utility_Functions.R
 \name{get_par_est_info}
 \alias{get_par_est_info}
-\title{Helper function for extracting parameter information and names from TMB}
+\title{Extract and tabulate parameter estimates and metadata from a fitted SPoRC model}
 \usage{
 get_par_est_info(parameters, mapping, sd_rep)
 }
 \arguments{
-\item{parameters}{Parameter list from setting up TMB object}
+\item{parameters}{Named list of parameter starting values passed to
+\code{RTMB::MakeADFun}.}
 
-\item{mapping}{Mapping list from setting up TMB object}
+\item{mapping}{Named list of factor maps passed to \code{RTMB::MakeADFun}.
+Parameters absent from \code{mapping} are treated as freely estimated.
+Elements with \code{NA} factor levels are treated as fixed.}
 
-\item{sd_rep}{SD Report from TMB obj}
+\item{sd_rep}{\code{sdreport} object returned by \code{RTMB::sdreport}.
+Must contain \code{$par.fixed}, \code{$par.random}, \code{$cov.fixed},
+\code{$diag.cov.random}, and \code{$gradient.fixed}.}
 }
 \value{
-A list of dataframes for estimated and non-estimated parameter values.
+A named list with two elements:
+  \describe{
+    \item{\code{est_pars}}{Data frame of estimated parameters, with columns
+      \code{Par} (parameter name), \code{Est_Val} (estimated value on the
+      native scale), \code{SE_Val} (standard error), \code{Abs_Grad_Val}
+      (absolute gradient; \code{NA} for random effects), \code{Init_Val}
+      (starting value), and dimension columns \code{Dim1}, \code{Dim2},
+      \ldots indicating the array indices of each element.}
+    \item{\code{non_est_pars}}{Data frame of non-estimated (fixed) parameters
+      with the same dimension and \code{Init_Val} columns, plus \code{map =
+      "NE"} indicating they were excluded from estimation.}
+  }
 }
 \description{
-Helper function for extracting parameter information and names from TMB
+Joins the parameter list, factor map, and \code{sdreport} to produce two
+tidy data frames: one for estimated parameters (with initial values,
+posterior estimates, standard errors, and absolute gradients) and one for
+fixed (non-estimated) parameters. Parameter indices are re-sequenced to
+match the sequential numbering used internally by RTMB's \code{sdreport},
+and map entries of \code{NA} (i.e., parameters fixed via \code{mapping})
+are labelled \code{"NE"} (not estimated).
 }
 \seealso{
 Other Utility: 

@@ -1,14 +1,15 @@
-# SPoRC (dev-seasons)
-- Follows the dev-movement branch with updates to incorporate seasonality.
+# dev-popn-seasons
+- Follows the dev-movement branch with updates to incorporate population-specific and seasonal dynamics.
 
 ## Major changes
-- Incorporated ability to simulate seasonal dynamics.
+- Incorporated ability to simulate and estimate both population-specific (natal homing) and seasonal dynamics.
+- Recoded tagging module to allow fleet-specific tag reporting rates, as well as missing attributes in tagged fish. 
+- Reference points for local density-dependence in both meta-population and natal homing contexts.
 
 ## Improvements
 - Allowed both numeric and character codes for specifying dynamics in simulator, so as to be more consistent with how estimation models are specified, while maintaining backwards compatibility. 
 
-
-# SPoRC (dev-movement)
+# dev-movement
 
 ## Major changes
 - Added capability to estimate movement using continuous time Markov chains (CTMC) using preference functions. 
@@ -16,7 +17,7 @@
 ## Bug Fixes
 - Fixed bug to allow for size-based selectivity in the estimation model. 
 
-# SPoRC 1.0.0
+# version 1.0.0
 Release Date: 2025-11-24
 
 ## Major changes

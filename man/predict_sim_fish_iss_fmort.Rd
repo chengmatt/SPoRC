@@ -2,31 +2,39 @@
 % Please edit documentation in R/Simulate_Population.R
 \name{predict_sim_fish_iss_fmort}
 \alias{predict_sim_fish_iss_fmort}
-\title{Predict ISS fishery compositions under fishing mortality}
+\title{Predict fishery ISS under projected fishing mortality}
 \usage{
 predict_sim_fish_iss_fmort(ISS_FishComps, Fmort, y, seas, sim)
 }
 \arguments{
-\item{ISS_FishComps}{Array of ISS fishery compositions with dimensions
-`[region, year, seas, sex, fleet, sim]`.}
+\item{ISS_FishComps}{Array of fishery ISS values
+\code{[n_regions × n_yrs × n_seas × n_sexes × n_fish_fleets × n_sims]}.}
 
-\item{Fmort}{Array of fishing mortality rates with dimensions
-`[region, year, seas, fleet, sim]`.}
+\item{Fmort}{Array of fishing mortality rates
+\code{[n_regions × n_yrs × n_seas × n_fish_fleets × n_sims]}.}
 
-\item{y}{Integer, projection year index for prediction.}
+\item{y}{Integer. Projection year index for which ISS is predicted.}
 
-\item{seas}{Integer, season}
+\item{seas}{Integer. Season index.}
 
-\item{sim}{Integer, simulation index.}
+\item{sim}{Integer. Simulation replicate index.}
 }
 \value{
-Array with predicted ISS values for year `y` and season `seas`.
+Array \code{[n_regions × y × 1 × n_sexes × n_fish_fleets]} with
+  historical ISS values filled in for years \code{1:(y-1)} and the
+  predicted ISS in year \code{y}.
 }
 \description{
-Uses historical ISS fishery compositions and fishing mortality rates
-to estimate ISS compositions in the projection year. Compositions are
-scaled relative to the historical maximum fishing mortality with
-linear interpolation between the minimum and maximum observed ISS values.
-If historical values are not available, defaults to the mean or zero.
+Scales fishery input sample sizes for the projection year \code{y} based
+on the relationship between fishing mortality and historical ISS values.
+For each region–sex–fleet cell, the minimum and maximum ISS from the
+conditioning period (\code{1:(y-1)}) are identified from years with
+positive, non-NA values, and the projected ISS is obtained by linear
+interpolation between those bounds using the ratio of projected
+\eqn{F_y} to the historical maximum \eqn{F} (capped at 1). If no valid
+historical observations exist for a cell, ISS is set to zero. If
+conditions for scaling are not met (e.g., maximum historical \eqn{F = 0}),
+the mean historical ISS is used as a fallback. All prior years
+(\code{1:(y-1)}) are carried over unchanged from \code{ISS_FishComps}.
 }
 \keyword{internal}

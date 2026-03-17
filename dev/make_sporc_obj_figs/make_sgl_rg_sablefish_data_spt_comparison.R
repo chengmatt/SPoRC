@@ -18,23 +18,23 @@ dat <- readRDS(here("dev", "dev_data", "Spatial Sablefish Model", "data_1_area.R
 n_seas <- 1
 
 # Setup biological data
-waa <- array(0, dim = c(dat$n_regions, length(dat$years), n_seas, length(dat$ages), 2))
-mataa <- array(0, dim = c(dat$n_regions, length(dat$years), n_seas, length(dat$ages), 2))
-agelen <- array(0, dim = c(dat$n_regions, length(dat$years), n_seas, length(dat$length_bins), length(dat$ages), 2))
+waa <- array(0, dim = c(1, dat$n_regions, length(dat$years), n_seas, length(dat$ages), 2))
+mataa <- array(0, dim = c(1, dat$n_regions, length(dat$years), n_seas, length(dat$ages), 2))
+agelen <- array(0, dim = c(1, dat$n_regions, length(dat$years), n_seas, length(dat$length_bins), length(dat$ages), 2))
 
 for(y in 1:length(dat$years)) {
 
   # weight at age
-  waa[1,y,1,,1] <- dat$female_mean_weight_by_age[,y]
-  waa[1,y,1,,2] <- dat$male_mean_weight_by_age[,y]
+  waa[1,1,y,1,,1] <- dat$female_mean_weight_by_age[,y]
+  waa[1,1,y,1,,2] <- dat$male_mean_weight_by_age[,y]
 
   # maturity at age
-  mataa[1,y,1,,1] <- dat$maturity[,y]
-  mataa[1,y,1,,2] <- dat$maturity[,y]
+  mataa[1,1,y,1,,1] <- dat$maturity[,y]
+  mataa[1,1,y,1,,2] <- dat$maturity[,y]
 
   # age length transition
-  agelen[1,y,1,,,1] <- t(dat$female_age_length_transition[,,y])
-  agelen[1,y,1,,,2] <- t(dat$male_age_length_transition[,,y])
+  agelen[1,1,y,1,,,1] <- t(dat$female_age_length_transition[,,y])
+  agelen[1,1,y,1,,,2] <- t(dat$male_age_length_transition[,,y])
 
 } # end y loop
 
@@ -143,6 +143,7 @@ input_list <- Setup_Mod_Dim(years = 1:length(dat$years),
                             n_srv_fleets = 2,
                             # number of survey fleets (2)
                             n_seas = 1,
+                            n_pop = 1,
                             verbose = TRUE
 )
 
@@ -158,7 +159,7 @@ input_list <- Setup_Mod_Rec(input_list = input_list, # input data list from abov
                             InitDevs_spec = "est_shared_r",
                             # initial deviations are shared across regions,
                             # but recruitment deviations are region specific
-                            ln_sigmaR = log(c(0.4, 1.2)),
+                            ln_sigmaR = array(log(c(0.4, 1.2)), dim = c(2, 1, 1)),
                             # values to fix sigmaR at, or starting values
                             ln_global_R0 = log(30)
 )
@@ -173,7 +174,7 @@ input_list <- Setup_Mod_Biologicals(input_list = input_list,
                                     SizeAgeTrans = agelen,
                                     # size age transition matrix
                                     M_spec = "fix", # fix natural mortality
-                                    Fixed_natmort = array(0.104884, dim = c(input_list$data$n_regions,
+                                    Fixed_natmort = array(0.104884, dim = c(1, input_list$data$n_regions,
                                                                             length(input_list$data$years),
                                                                             length(input_list$data$ages),
                                                                             input_list$data$n_sexes))
@@ -184,7 +185,7 @@ input_list <- Setup_Mod_Biologicals(input_list = input_list,
 input_list <- Setup_Mod_Movement(input_list = input_list)
 
 # setting up tagging parameterization
-input_list <- Setup_Mod_Tagging(input_list = input_list, UseTagging = 0)
+input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = c(0,0))
 
 # setting up catch data
 input_list <- Setup_Mod_Catch_and_F(input_list = input_list,
@@ -469,3 +470,4 @@ sd_rep <- sabie_rtmb_model$sd_rep
 saveRDS(data, here("dev", "dev_output", "1_Region_Model_Sablefish_SptComparison", "data.RDS"))
 saveRDS(sd_rep, here("dev", "dev_output", "1_Region_Model_Sablefish_SptComparison", "sd_rep.RDS"))
 saveRDS(rep, here("dev", "dev_output", "1_Region_Model_Sablefish_SptComparison", "rep.RDS"))
+

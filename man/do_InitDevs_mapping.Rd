@@ -2,18 +2,74 @@
 % Please edit documentation in R/Setup_Rec.R
 \name{do_InitDevs_mapping}
 \alias{do_InitDevs_mapping}
-\title{Helper function to handle mapping for ln_InitDevs}
+\title{Map initial age-structure deviation parameters}
 \usage{
 do_InitDevs_mapping(input_list, InitDevs_spec, rec_dd)
 }
 \arguments{
-\item{input_list}{Input list}
+\item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
+sublists. Requires \code{$data$equil_init_age_strc},
+\code{$data$rec_region_prop_spec}, \code{$data$natal_region}, and
+\code{$data$rec_dd} to be set by upstream setup functions.}
 
-\item{InitDevs_spec}{Character vector for specifying InitDevs mapping}
+\item{InitDevs_spec}{Character string specifying the sharing structure for
+\code{ln_InitDevs}, or \code{NULL} to estimate all deviations independently
+across all dimensions. Options when non-\code{NULL}:
+\describe{
+  \item{\code{"est_shared_pop_r"}}{A single set of age-specific deviations
+    shared across all populations and regions. Each age class receives one
+    estimated parameter regardless of how many populations or regions
+    are modelled. Required when \code{rec_dd = "global"} and
+    \code{n_regions > 1}.}
+  \item{\code{"est_shared_r"}}{Separate age-specific deviations per
+    population, shared across regions within each population. Regions
+    within the same population are constrained to identical initial
+    age structure. Also valid under global density dependence.}
+  \item{\code{"fix"}}{All \code{ln_InitDevs} parameters fixed at zero
+    (mapped to \code{NA}). Equivalent to assuming a fully deterministic
+    initial age structure.}
+  \item{\code{NULL}}{Estimate all deviations independently across
+    populations, regions, and ages. Not permitted when
+    \code{rec_region_prop_spec = 1} and \code{n_pop > 1}, as non-natal
+    regions have no recruitment.}
+}}
 
-\item{rec_dd}{Recruitment density dependence indicator (global vs. local)}
+\item{rec_dd}{Recruitment density-dependence structure inherited from
+\code{\link{Setup_Mod_Recruitment}}. \code{"global"} restricts valid
+\code{InitDevs_spec} choices to \code{"est_shared_r"} or
+\code{"est_shared_pop_r"} when \code{n_regions > 1}.}
+}
+\value{
+The input \code{input_list} with \code{$map$ln_InitDevs} set to a
+  factor vector of length \code{prod(dim(par$ln_InitDevs))}. Active
+  parameters receive sequential integer indices; plus-group slots (when
+  \code{equil_init_age_strc = 1}) and non-natal region slots (when
+  \code{rec_region_prop_spec = 1}) are \code{NA}. Starting values in
+  \code{$par$ln_InitDevs} are also reset to \code{0} for any fixed cells.
 }
 \description{
-Helper function to handle mapping for ln_InitDevs
+Internal helper called by \code{\link{Setup_Mod_Recruitment}} to construct
+the TMB/RTMB factor map for \code{ln_InitDevs}, the log-scale deviations
+from the equilibrium initial age structure. The \code{ln_InitDevs} array has
+dimensions \code{[n_pop × n_regions × (n_ages - 1)]}, where the age
+dimension excludes the plus group by default (see \code{equil_init_age_strc}
+below).
+}
+\details{
+Mapping behaviour is governed by three interacting considerations:
+\enumerate{
+  \item \strong{Equilibrium initialisation} (\code{equil_init_age_strc}):
+    if \code{0}, all deviations are fixed at zero (no stochastic initial
+    structure). If \code{1}, plus-group deviations are fixed and the
+    remaining ages are estimated or shared. If \code{2}, all ages including
+    the plus group receive stochastic deviations.
+  \item \strong{Sharing specification} (\code{InitDevs_spec}): controls
+    whether deviations are shared across regions and/or populations.
+  \item \strong{No-dispersal constraint}: when \code{rec_region_prop_spec = 1}
+    and \code{n_pop > 1}, non-natal regions receive no recruitment and their
+    initial age deviations are structurally zero; these are automatically
+    fixed to \code{NA} regardless of \code{InitDevs_spec}, and the remaining
+    indices are re-numbered sequentially.
+}
 }
 \keyword{internal}

@@ -2,26 +2,53 @@
 % Please edit documentation in R/Setup_Survey.R
 \name{do_srv_fixed_sel_pars_mapping}
 \alias{do_srv_fixed_sel_pars_mapping}
-\title{Helper function to set up survey selctivity fixed effects mapping}
+\title{Map survey selectivity fixed-effect parameters}
 \usage{
 do_srv_fixed_sel_pars_mapping(input_list, srv_fixed_sel_pars_spec)
 }
 \arguments{
-\item{input_list}{Input list}
+\item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
+sublists. Requires \code{$data$n_srv_fleets}, \code{$data$n_regions},
+\code{$data$n_sexes}, \code{$data$srv_sel_blocks},
+\code{$data$srv_sel_model}, and \code{$data$UseSrvIdx}.}
 
-\item{srv_fixed_sel_pars_spec}{Character vector specifying survey selectivity fixed effects parameterization}
+\item{srv_fixed_sel_pars_spec}{Character vector \code{[n_srv_fleets]}
+specifying the sharing structure for fixed-effect selectivity parameters.
+One of:
+\describe{
+  \item{\code{"est_all"}}{Separate parameters for each region, sex, block,
+    and parameter index.}
+  \item{\code{"est_shared_r"}}{Shared across regions; separate by sex,
+    block, and parameter index.}
+  \item{\code{"est_shared_s"}}{Shared across sexes; separate by region,
+    block, and parameter index.}
+  \item{\code{"est_shared_r_s"}}{Shared across both regions and sexes;
+    separate by block and parameter index.}
+  \item{\code{"est_shared_f_x"}}{Copy the map from fleet \code{x}.
+    Fleet \code{x} must not itself use \code{"est_shared_f_x"}.}
+  \item{\code{"fix"}}{All parameters fixed at starting values
+    (mapped to \code{NA}).}
+}}
+}
+\value{
+The input \code{input_list} with \code{$map$ln_srv_fixed_sel_pars}
+  set to a factor vector. Active parameters receive sequential integer
+  indices; inactive region–fleet combinations and fixed parameters are
+  \code{NA}.
 }
 \description{
-Helper function to set up survey selctivity fixed effects mapping
+Internal helper called by \code{\link{Setup_Mod_Srvsel_and_Q}} to construct
+the TMB/RTMB factor map for \code{ln_srv_fixed_sel_pars}
+\code{[n_regions × max_sel_pars × max_sel_blocks × n_sexes × n_srv_fleets]},
+the log-scale fixed-effect parameters of the survey selectivity functional
+forms (e.g., \eqn{a_{50}}, \eqn{k}, \eqn{a_{max}}). The number of active
+parameters per block depends on the selectivity model: exponential = 1,
+logistic/gamma = 2, double-normal = 6.
 }
-\keyword{Helper}
-\keyword{effects}
-\keyword{fixed}
-\keyword{function}
+\details{
+Parameters are only activated for region–fleet combinations where survey
+index data are used (\code{sum(UseSrvIdx[r,,,f]) > 0}). Fleet-sharing
+(\code{"est_shared_f_x"}) is handled in a second pass after all base
+mappings are established, copying the map from the reference fleet.
+}
 \keyword{internal}
-\keyword{mapping}
-\keyword{selctivity}
-\keyword{set}
-\keyword{survey}
-\keyword{to}
-\keyword{up}

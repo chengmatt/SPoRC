@@ -2,27 +2,38 @@
 % Please edit documentation in R/Setup_Fishery.R
 \name{do_sigmaF_mapping}
 \alias{do_sigmaF_mapping}
-\title{Helper function to setup sigma F}
+\title{Map sigma_F (fishing mortality process error SD) parameters}
 \usage{
 do_sigmaF_mapping(input_list, sigmaF_spec)
 }
 \arguments{
-\item{input_list}{Input list}
+\item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
+sublists, as constructed by upstream setup functions.}
 
-\item{sigmaF_spec}{Character vector for sigmaF specification. Options:
-\itemize{
-  \item \code{"est_shared_r"}: Shared across regions
-  \item \code{"est_shared_seas"}: Shared across seasons
-  \item \code{"est_shared_f"}: Shared across fleets
-  \item \code{"est_shared_r_seas"}: Shared across regions and seasons
-  \item \code{"est_shared_r_f"}: Shared across regions and fleets
-  \item \code{"est_shared_seas_f"}: Shared across seasons and fleets
-  \item \code{"est_shared_r_seas_f"}: Single parameter shared across all
-  \item \code{"est_all"}: Unique per region, season, fleet
-  \item \code{"fix"}: Fixed at starting values
+\item{sigmaF_spec}{Character string controlling the sharing and estimation
+structure for \code{ln_sigmaF}. One of:
+\describe{
+  \item{\code{"est_all"}}{Unique parameter per region × season × fleet combination.}
+  \item{\code{"est_shared_r"}}{Shared across regions; unique per season × fleet.}
+  \item{\code{"est_shared_seas"}}{Shared across seasons; unique per region × fleet.}
+  \item{\code{"est_shared_f"}}{Shared across fleets; unique per region × season.}
+  \item{\code{"est_shared_r_seas"}}{Shared across regions and seasons; unique per fleet.}
+  \item{\code{"est_shared_r_f"}}{Shared across regions and fleets; unique per season.}
+  \item{\code{"est_shared_seas_f"}}{Shared across seasons and fleets; unique per region.}
+  \item{\code{"est_shared_r_seas_f"}}{Single parameter shared across all dimensions.}
+  \item{\code{"fix"}}{All \code{ln_sigmaF} parameters fixed at starting values (mapped to \code{NA}).}
 }}
 }
+\value{
+The input \code{input_list} with \code{$map$ln_sigmaF} set to a factor
+  vector of length \code{prod(dim(par$ln_sigmaF))}. Each element is an integer
+  estimation index for shared or estimated configurations, or \code{NA} when
+  \code{sigmaF_spec = "fix"}.
+}
 \description{
-Helper function to setup sigma F
+Constructs the \code{ln_sigmaF} factor map used by the TMB/RTMB objective
+function to share or fix the log-scale standard deviation of fishing mortality
+process error across regions, seasons, and fleets. All cells within a shared
+group are assigned the same estimation index.
 }
 \keyword{internal}

@@ -807,20 +807,23 @@ do_FishLen_theta_mapping <- function(input_list) {
 #' Constructs factor maps for \code{FishAge_corr_pars} (region- and sex-specific
 #' AR1 and sex correlation parameters) and \code{FishAge_corr_pars_agg}
 #' (aggregated correlation parameters) for 1D and 2D logistic-normal age
-#' composition likelihoods. Parameters are activated only when
-#' \code{FishAgeComps_LikeType %in% c(3, 4)} (1D or 2D logistic-normal);
-#' all other likelihoods map correlation parameters to \code{NA}.
+#' composition likelihoods.
+#'
+#' Parameters are activated only when
+#' \code{FishAgeComps_LikeType} is in \code{c(3, 4)}.
+#' These correspond to the 1D and 2D logistic-normal likelihoods.
+#' All other likelihoods map correlation parameters to \code{NA}.
 #'
 #' For the 2D logistic-normal (\code{LikeType == 4}), both trailing elements of
-#' the \code{[..., 2]} dimension are activated — element 1 for the age AR1
-#' coefficient and element 2 for the sex correlation (skipped when
-#' \code{n_sexes == 1}).
+#' the \code{[,,,,2]} slice are activated: element 1 for the age AR1 coefficient
+#' and element 2 for the sex correlation (skipped when \code{n_sexes == 1}).
 #'
-#' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
-#'   sublists.
+#' @param input_list Named list containing \code{data}, \code{par}, and
+#'   \code{map} components.
 #'
-#' @return The input \code{input_list} with \code{$map$FishAge_corr_pars} and
-#'   \code{$map$FishAge_corr_pars_agg} set to factor vectors.
+#' @return The input \code{input_list} with elements
+#'   \code{map\$FishAge_corr_pars} and
+#'   \code{map\$FishAge_corr_pars_agg} set to factor vectors.
 #'
 #' @keywords internal
 do_FishAge_corr_pars_mapping <- function(input_list) {
@@ -903,7 +906,7 @@ do_FishAge_corr_pars_mapping <- function(input_list) {
 #' Analogous to \code{\link{do_FishAge_corr_pars_mapping}} but for length
 #' compositions. Constructs factor maps for \code{FishLen_corr_pars} and
 #' \code{FishLen_corr_pars_agg} for 1D and 2D logistic-normal length composition
-#' likelihoods (\code{FishLenComps_LikeType %in% c(3, 4)}).
+#' likelihoods (\code{FishLenComps_LikeType} is in \code{c(3, 4)}).
 #'
 #' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
 #'   sublists.
@@ -1347,8 +1350,8 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
 
 #' Map fishery selectivity fixed-effect parameters
 #'
-#' Constructs the factor map for \code{ln_fish_fixed_sel_pars} (e.g., \eqn{a_{50}},
-#' \eqn{k}, \eqn{a_{max}}), controlling whether selectivity shape parameters are
+#' Constructs the factor map for #' \code{ln_fish_fixed_sel_pars} (e.g., \eqn{a_50}, \eqn{k}, \eqn{a_max}),
+#' controlling whether selectivity shape parameters are
 #' estimated independently or shared across regions, sexes, or fleets. Cells with
 #' no catch data (\code{UseCatch == 0}) are automatically mapped to \code{NA}.
 #'
@@ -1789,7 +1792,7 @@ do_fishsel_pe_pars_mapping <- function(input_list, fishsel_pe_pars_spec, corr_op
 #' blocks defined by \code{fishsel_devs_shared_ages}, reducing the number of
 #' estimated deviation series. Fleet sharing (\code{"est_shared_f_x"}) is handled
 #' in a second pass. The resulting integer map is also stored as
-#' \code{$data$map_ln_fishsel_devs} for use in the C++ objective function.
+#' \code{$data$map_ln_fishsel_devs} for use in the RTMB objective function.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
 #'   sublists.
@@ -1809,7 +1812,7 @@ do_fishsel_pe_pars_mapping <- function(input_list, fishsel_pe_pars_spec, corr_op
 #'     \item{\code{"fix"} or \code{"none"}}{All deviations fixed at zero (mapped to \code{NA}).}
 #'   }
 #'   Age-sharing options (\code{"est_shared_a"}, etc.) are only valid with
-#'   semi-parametric time-varying forms (\code{cont_tv_fish_sel %in% c(3,4,5)}).
+#'   semi-parametric time-varying forms (\code{cont_tv_fish_sel} is in \code{c(3,4,5)}).
 #' @param fishsel_devs_shared_ages List of integer vectors defining age/bin
 #'   groupings for age-sharing options. Each element groups bins that share a
 #'   single deviation series, e.g., \code{list(1:5, 6:10, 11:30)}.
@@ -1817,7 +1820,7 @@ do_fishsel_pe_pars_mapping <- function(input_list, fishsel_pe_pars_spec, corr_op
 #'
 #' @return The input \code{input_list} with \code{$map$ln_fishsel_devs} set to a
 #'   factor vector and \code{$data$map_ln_fishsel_devs} set to the corresponding
-#'   integer array (for use in the C++ template).
+#'   integer array (for use in the RTMB template).
 #'
 #' @keywords internal
 do_fishsel_devs_mapping <- function(input_list, fish_sel_devs_spec, fishsel_devs_shared_ages) {

@@ -2,7 +2,7 @@
 % Please edit documentation in R/Get_PE_loglik.R
 \name{Get_sel_PE_loglik}
 \alias{Get_sel_PE_loglik}
-\title{Get selectivity process error log likelihoods (positive)}
+\title{Compute Selectivity Process Error Log-Likelihood (Positive Scale)}
 \usage{
 Get_sel_PE_loglik(
   PE_model,
@@ -14,22 +14,75 @@ Get_sel_PE_loglik(
 )
 }
 \arguments{
-\item{PE_model}{Process error model values (1, 2, 3, 4, and 5) (iid, random walk, 3d marginal, 3d conditional, and 2dar1)}
+\item{PE_model}{Integer specifying the process error structure:
+\itemize{
+  \item 1 = IID: deviations drawn independently as \eqn{N(0, \sigma^2)}.
+  \item 2 = Random walk: deviations follow a first-order random walk initialized
+    with a diffuse prior (\eqn{\sigma = 5}) at \code{y = 1}.
+  \item 3 = 3D GMRF with marginal variance parameterization.
+  \item 4 = 3D GMRF with conditional variance parameterization.
+  \item 5 = Separable 2D AR(1) across bins and years.
+}}
 
-\item{PE_pars}{Process error parameters}
+\item{PE_pars}{Array of process error parameters dimensioned
+  \code{[1, par_index, sex, 1]}. The \code{par_index} slot meaning
+  depends on \code{PE_model}:
+\itemize{
+  \item Models 1--2: \code{[1,1,s,1]} = log standard deviation (\eqn{\log \sigma})
+    for sex \code{s}, indexed by bin/age.
+  \item Models 3--4: \code{[1,1,s,1]} = unconstrained partial correlation by age/bin;
+    \code{[1,2,s,1]} = unconstrained partial correlation by year;
+    \code{[1,3,s,1]} = unconstrained partial correlation by cohort;
+    \code{[1,4,s,1]} = log variance.
+  \item Model 5: \code{[1,1,s,1]} = unconstrained bin correlation (transformed via
+    \eqn{2/(1+e^{-2x})-1}); \code{[1,2,s,1]} = unconstrained year correlation;
+    \code{[1,4,s,1]} = log standard deviation.
+}}
 
-\item{ln_devs}{Deviations}
+\item{ln_devs}{Array of log-scale selectivity deviations dimensioned
+\code{[1, year, bin, sex, 1]}.}
 
-\item{map_sel_devs}{selectivity deviations to share}
+\item{map_sel_devs}{Integer array dimensioned \code{[fleet, year, bin, sex]}
+mapping deviations to unique estimated parameters. Shared deviations
+carry the same integer value; \code{NA} entries are treated as fixed
+and excluded from likelihood evaluation.}
 
-\item{sel_vals}{Selectivity values (either length or age based)}
+\item{sel_vals}{Array of selectivity values dimensioned \code{[1, year, bin, sex, 1]},
+used on the log scale when computing bin and year smoothness penalties
+(\code{do_sel_pen = TRUE}).}
 
-\item{do_sel_pen}{Whether temporal or bin penalties are used}
+\item{do_sel_pen}{Logical. If \code{TRUE}, applies additional regularization penalties
+beyond the process error likelihood. For models 1--2, penalizes first differences
+of log-deviations across years. For models 3--5, penalizes second differences
+(curvature) of log-selectivity across bins and across years.}
 }
 \value{
-numeric value of log likelihood (in positive space)
+Numeric scalar: the positive log-likelihood contribution from selectivity
+  process error. Negated externally to form the negative log-likelihood.
 }
 \description{
-Get selectivity process error log likelihoods (positive)
+Calculates the positive log-likelihood contribution for selectivity
+process error deviations under a variety of temporal/spatiotemporal
+structures.
+}
+\details{
+The function supports:
+\itemize{
+  \item IID process error
+  \item Random walk process error
+  \item 3D Gaussian Markov Random Field (GMRF) models (marginal or conditional variance)
+  \item Separable 2D AR(1) models
+}
+
+When \code{do_sel_pen = TRUE}, additional regularization penalties are applied:
+\itemize{
+  \item For \code{PE_model} 1--2: first-difference penalty on log-deviations across years.
+  \item For \code{PE_model} 3--5: second-difference (smoothness) penalty on log-selectivity
+    across bins and across years.
+}
+
+\strong{Note:} The returned value is on the \emph{positive} log-likelihood scale.
+It must be negated to obtain a negative log-likelihood contribution, which is
+handled outside this function.
 }
 \keyword{internal}

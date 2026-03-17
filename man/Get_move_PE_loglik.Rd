@@ -2,7 +2,7 @@
 % Please edit documentation in R/Get_PE_loglik.R
 \name{Get_move_PE_loglik}
 \alias{Get_move_PE_loglik}
-\title{Title Get Movement Process Error Likelihoods}
+\title{Compute Movement Process Error Log-Likelihood (Positive Scale)}
 \usage{
 Get_move_PE_loglik(
   PE_model,
@@ -15,24 +15,70 @@ Get_move_PE_loglik(
 )
 }
 \arguments{
-\item{PE_model}{Process error model values}
+\item{PE_model}{Integer specifying the movement process error structure.
+  All models are IID; they differ in which dimensions share a common
+  standard deviation. Models 1--5 are single-population (fix \code{pop = 1});
+  models 6--10 estimate separate parameters per population:
+\itemize{
+  \item \strong{1} – IID across years (single \eqn{\sigma} per origin region)
+  \item \strong{2} – IID across ages (single \eqn{\sigma} per origin region and age)
+  \item \strong{3} – IID across years and ages
+  \item \strong{4} – IID across years, ages, and sexes
+  \item \strong{5} – IID across years, seasons, ages, and sexes
+  \item \strong{6} – IID across populations and years
+  \item \strong{7} – IID across populations and ages
+  \item \strong{8} – IID across populations, years, and ages
+  \item \strong{9} – IID across populations, years, ages, and sexes
+  \item \strong{10} – IID across populations, years, seasons, ages, and sexes
+}}
 
-\item{PE_pars}{Process error parameters}
+\item{PE_pars}{Array of movement process error parameters (log standard
+deviations) dimensioned \code{[pop, from_region, seas, age, sex]}.
+Exponentiated internally to obtain \eqn{\sigma}. Which dimensions
+are active depends on \code{PE_model}; unused dimensions should be
+fixed at a constant (e.g., index 1) via the parameter map.}
 
-\item{move_devs}{Deviations}
+\item{move_devs}{Movement deviation array dimensioned
+\code{[pop, from_region, to_region, year, seas, age, sex]}.}
 
-\item{map_move_devs}{movement deviations to share}
+\item{map_move_devs}{Integer array dimensioned
+\code{[pop, from_region, to_region, year, seas, age, sex]}
+mapping deviations to unique estimated parameters. Shared deviations
+carry the same integer value; dimensions are extracted from this
+array to determine loop bounds.}
 
-\item{do_recruits_move}{Whether recruits move (0, don't move, 1 move)}
+\item{do_recruits_move}{Integer (0/1). If \code{0} and \code{n_ages >= 2},
+age-1 recruits are excluded from the likelihood (loop starts at age 2).
+If \code{1}, all ages including recruits are penalized.}
 
-\item{adjacency_collapsed}{Adjacency matrix collapsed w/o retention}
+\item{adjacency_collapsed}{Square \code{[n_regions x n_regions]} matrix
+of allowable movement connections among regions, excluding self-retention
+(diagonal entries should be 0). Origin-destination pairs with a value
+of 0 are skipped and contribute nothing to the likelihood.}
 
-\item{move_type}{Movement type (0 == unstructed; all regions connected, 1 == ctmc)}
+\item{move_type}{Integer specifying the movement formulation:
+\itemize{
+  \item \strong{0} = Unstructured multinomial logit movement
+  \item \strong{1} = CTMC-based movement
+}
+  Currently used for dispatch context; likelihood computation is
+  identical across movement types within this function.}
 }
 \value{
-numeric value of log likelihood (in positive space)
+Numeric scalar: the positive log-likelihood contribution from
+  movement process error deviations. Negated externally to form the
+  negative log-likelihood.
 }
 \description{
-Title Get Movement Process Error Likelihoods
+Calculates the positive log-likelihood contribution for movement
+process error deviations under multiple IID structural assumptions.
+Deviations are penalized as \eqn{N(0, \sigma^2)} where \eqn{\sigma}
+is drawn from \code{PE_pars} according to the selected model structure.
+Only origin-destination pairs that are adjacent (non-zero in
+\code{adjacency_collapsed}) contribute to the likelihood.
+}
+\details{
+\strong{Note:} The returned value is on the \emph{positive} log-likelihood
+scale. It must be negated externally to form the negative log-likelihood.
 }
 \keyword{internal}

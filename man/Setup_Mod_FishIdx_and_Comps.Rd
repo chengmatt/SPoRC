@@ -2,7 +2,7 @@
 % Please edit documentation in R/Setup_Fishery.R
 \name{Setup_Mod_FishIdx_and_Comps}
 \alias{Setup_Mod_FishIdx_and_Comps}
-\title{Setup observed fishery indices and composition data (age and length comps)}
+\title{Set up fishery index, age composition, and length composition inputs}
 \usage{
 Setup_Mod_FishIdx_and_Comps(
   input_list,
@@ -24,63 +24,113 @@ Setup_Mod_FishIdx_and_Comps(
 )
 }
 \arguments{
-\item{input_list}{List containing a data list, parameter list, and map list}
+\item{input_list}{Named list with \code{$data}, \code{$par}, \code{$map},
+and \code{$verbose} sublists, as returned by upstream setup functions.}
 
-\item{ObsFishIdx}{Observed fishery index data as a numeric array with dimensions
-\code{[n_regions, n_years, n_seas, n_fish_fleets]}.}
+\item{ObsFishIdx}{Observed fishery CPUE or biomass index array
+\code{[n_regions × n_years × n_seas × n_fish_fleets]}.}
 
-\item{ObsFishIdx_SE}{Standard errors associated with \code{ObsFishIdx},
-also dimensioned \code{[n_regions, n_years, n_seas,  n_fish_fleets]}.}
+\item{ObsFishIdx_SE}{Standard errors of \code{ObsFishIdx} on the log scale,
+same dimensions as \code{ObsFishIdx}.}
 
-\item{fish_idx_type}{Character vector of length \code{n_fish_fleets} specifying the type of index data.
-Options are \code{"abd"} for abundance, \code{"biom"} for biomass, and \code{"none"} if no index is available.}
+\item{fish_idx_type}{Character vector of length \code{n_fish_fleets} specifying
+the index type for each fleet. \code{"biom"} = biomass; \code{"abd"} =
+abundance; \code{"none"} = no index for this fleet.}
 
-\item{UseFishIdx}{Logical or binary indicator array (\code{[n_regions, n_years, n_seas,  n_fish_fleets]})
-specifying whether to include a fishery index in the likelihood (\code{1}) or ignore it (\code{0}).}
+\item{UseFishIdx}{Binary indicator array \code{[n_regions × n_years × n_seas × n_fish_fleets]}.
+\code{1} = include index in the likelihood; \code{0} = exclude.}
 
-\item{ObsFishAgeComps}{Observed fishery age composition data as a numeric array with dimensions
-\code{[n_regions, n_years, n_seas,  n_ages, n_sexes, n_fish_fleets]}. Values should reflect counts or proportions
-(not required to sum to 1, but should be on a comparable scale).}
+\item{ObsFishAgeComps}{Observed fishery age composition array
+\code{[n_regions × n_years × n_seas × n_ages × n_sexes × n_fish_fleets]}.
+Values may be raw counts or proportions; if proportions, supply
+\code{ISS_FishAgeComps} explicitly.}
 
-\item{UseFishAgeComps}{Indicator array (\code{[n_regions, n_years, n_seas,  n_fish_fleets]}) specifying whether
-to fit fishery age composition data (\code{1}) or ignore it (\code{0}).}
+\item{UseFishAgeComps}{Binary indicator array
+\code{[n_regions × n_years × n_seas × n_fish_fleets]}.
+\code{1} = fit age compositions; \code{0} = exclude.}
 
-\item{ISS_FishAgeComps}{Input sample size for age compositions, array dimensioned
-\code{[n_regions, n_years, n_seas, n_sexes, n_fish_fleets]}. Required if observed age comps are normalized
-(i.e., sum to 1), to correctly scale the contribution to the likelihood. (NULL is default, which sums up the observed fishery comps to derive the ISS.)}
+\item{ISS_FishAgeComps}{Input sample size array
+\code{[n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
+If \code{NULL} (default), sample sizes are computed automatically by
+summing \code{ObsFishAgeComps} within each year–fleet–season–region cell
+according to \code{FishAgeComps_Type}.}
 
-\item{ObsFishLenComps}{Observed fishery length composition data as a numeric array with dimensions
-\code{[n_regions, n_years, n_seas, n_lens, n_sexes, n_fish_fleets]}. Values should reflect counts or proportions.}
+\item{ObsFishLenComps}{Observed fishery length composition array
+\code{[n_regions × n_years × n_seas × n_lens × n_sexes × n_fish_fleets]}.
+Only required when \code{input_list$data$fit_lengths == 1}.}
 
-\item{UseFishLenComps}{Indicator array (\code{[n_regions, n_years, n_seas, n_fish_fleets]}) specifying whether
-to fit fishery length composition data (\code{1}) or ignore it (\code{0}).}
+\item{UseFishLenComps}{Binary indicator array
+\code{[n_regions × n_years × n_seas × n_fish_fleets]}.
+\code{1} = fit length compositions; \code{0} = exclude.}
 
-\item{ISS_FishLenComps}{Same as \code{ISS_FishAgeComps}, but for length compositions.}
+\item{ISS_FishLenComps}{Input sample size array for length compositions,
+\code{[n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
+If \code{NULL} (default), derived automatically from \code{ObsFishLenComps}.}
 
-\item{FishAgeComps_LikeType}{Character vector of length \code{n_fish_fleets} specifying the likelihood
-type used for fishery age composition data. Options include \code{"Multinomial"}, \code{"Dirichlet-Multinomial"},
-\code{"iid-Logistic-Normal"}, \code{"1d-Logistic-Normal"}, and \code{"2d-Logistic-Normal"}. Use \code{"none"} to omit the likelihood.}
+\item{FishAgeComps_LikeType}{Character vector of length \code{n_fish_fleets}
+specifying the likelihood for fishery age compositions. Options:
+\code{"Multinomial"}, \code{"Dirichlet-Multinomial"},
+\code{"iid-Logistic-Normal"}, \code{"1d-Logistic-Normal"},
+\code{"2d-Logistic-Normal"}, \code{"none"}.}
 
-\item{FishLenComps_LikeType}{Same as \code{FishAgeComps_LikeType}, but for fishery length composition data.}
+\item{FishLenComps_LikeType}{Same as \code{FishAgeComps_LikeType} but for
+length compositions.}
 
-\item{FishAgeComps_Type}{Character vector specifying how age compositions are structured by fleet and year range.
-Options include:
-\itemize{
-  \item \code{"agg"}: Aggregated across regions and sexes.
-  \item \code{"spltRspltS"}: Split by region and by sex (compositions sum to 1 within region-sex group).
-  \item \code{"spltRjntS"}: Split by region but summed jointly across sexes.
-  \item \code{"none"}: No composition data used.
+\item{FishAgeComps_Type}{Character vector defining the age composition
+structure (aggregation level) for each fleet and time period. Each element
+must follow the format \code{"<type>_Year_<start>-<end>_Fleet_<f>"} or
+\code{"<type>_Year_<start>-terminal_Fleet_<f>"}. Valid types:
+\describe{
+  \item{\code{"agg"}}{Aggregated across regions and sexes
+    (incompatible with \code{"2d-Logistic-Normal"}).}
+  \item{\code{"spltRspltS"}}{Split by region and sex.}
+  \item{\code{"spltRjntS"}}{Split by region, summed jointly across sexes.}
+  \item{\code{"none"}}{No composition data for this fleet and period.}
 }
-Format each element as \code{"<type>_Year_<start>-<end>_Fleet_<fleet number>"}
-(e.g., \code{"agg_Year_1-10_Fleet_1"}).}
+Example: \code{c("spltRjntS_Year_1-10_Fleet_1", "agg_Year_11-terminal_Fleet_1")}.}
 
-\item{FishLenComps_Type}{Same as \code{FishAgeComps_Type}, but for length compositions.}
+\item{FishLenComps_Type}{Same format and options as \code{FishAgeComps_Type}
+but applied to length compositions.}
 
-\item{...}{Additional arguments specifying starting values for overdispersion parameters
-(e.g., \code{ln_FishAge_theta}, \code{ln_FishLen_theta}, \code{ln_FishAge_theta_agg}, \code{ln_FishLen_theta_agg}).}
+\item{...}{Optional starting value overrides for overdispersion and
+correlation parameters. Recognised arguments:
+\describe{
+  \item{\code{ln_FishAge_theta}}{Log-scale overdispersion starting values
+    \code{[n_regions × n_sexes × n_fish_fleets]}. Default: \code{0}.}
+  \item{\code{ln_FishAge_theta_agg}}{Aggregated overdispersion starting
+    values \code{[n_fish_fleets]}. Default: \code{0}.}
+  \item{\code{FishAge_corr_pars}}{Correlation parameter starting values
+    \code{[n_regions × n_sexes × n_fish_fleets × 2]}. Default: \code{0.01}.}
+  \item{\code{FishAge_corr_pars_agg}}{Aggregated correlation starting values
+    \code{[n_fish_fleets]}. Default: \code{0.01}.}
+  \item{\code{ln_FishLen_theta}}{Length composition overdispersion
+    \code{[n_regions × n_sexes × n_fish_fleets]}. Default: \code{0}.}
+  \item{\code{ln_FishLen_theta_agg}}{Aggregated length overdispersion
+    \code{[n_fish_fleets]}. Default: \code{0}.}
+  \item{\code{FishLen_corr_pars}}{Length correlation parameters
+    \code{[n_regions × n_sexes × n_fish_fleets × 2]}. Default: \code{0.01}.}
+  \item{\code{FishLen_corr_pars_agg}}{Aggregated length correlation
+    \code{[n_fish_fleets]}. Default: \code{0.01}.}
+}}
+}
+\value{
+The input \code{input_list} with \code{$data}, \code{$par}, and
+  \code{$map} updated with all fishery index and composition fields, including
+  computed or supplied ISS arrays, integer-coded likelihood and composition
+  type matrices, overdispersion parameters, and their factor maps.
 }
 \description{
-Setup observed fishery indices and composition data (age and length comps)
+Populates \code{input_list} with observed fishery indices, age compositions,
+and length compositions along with their usage indicators, likelihood types,
+composition structure types, input sample sizes, and overdispersion and
+correlation parameter starting values and mappings. Must be called after
+\code{\link{Setup_Mod_Catch_and_F}}.
+}
+\details{
+When \code{ISS_FishAgeComps} or \code{ISS_FishLenComps} are \code{NULL},
+input sample sizes are derived automatically by summing the observed
+composition arrays within each year–fleet–season–region cell, consistent
+with the specified \code{FishAgeComps_Type} or \code{FishLenComps_Type}.
 }
 \seealso{
 Other Model Setup: 

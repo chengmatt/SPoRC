@@ -2,14 +2,14 @@
 % Please edit documentation in R/Get_Reference_Points.R
 \name{Get_Reference_Points}
 \alias{Get_Reference_Points}
-\title{Wrapper function to get reference points}
+\title{Compute fishing and biological reference points from an assessment or simulation}
 \usage{
 Get_Reference_Points(
   data,
   rep,
   SPR_x = NULL,
   t_spawn = 0,
-  sex_ratio_f = rep(0.5, data$n_regions),
+  sex_ratio_f = array(0.5, dim = c(data$n_pop, data$n_regions)),
   calc_rec_st_yr = 1,
   rec_age = 1,
   type,
@@ -19,50 +19,95 @@ Get_Reference_Points(
 )
 }
 \arguments{
-\item{data}{List. Data object containing ages, years, weight-at-age, maturity, natural mortality, and other simulation/assessment info.}
+\item{data}{List. SPoRC data object containing age structure, weight-at-age,
+maturity, natural mortality, seasons, and spatial configuration.}
 
-\item{rep}{List. Report object from RTMB containing estimated parameters like Fmort, selectivity, recruitment, steepness.}
+\item{rep}{List. SPoRC report object from RTMB containing estimated or
+simulated quantities including \code{Fmort}, \code{fish_sel},
+\code{natmort}, \code{Rec}, \code{SSB}, \code{h_trans}, \code{R0},
+\code{rec_region_prop}, \code{rec_seas_prop}, \code{Movement}, and
+\code{stray_rate}.}
 
-\item{SPR_x}{Numeric. Target Spawning Potential Ratio fraction. Required for SPR-based reference points.}
+\item{SPR_x}{Numeric. Target spawning potential ratio fraction (e.g. 0.4).
+Required when \code{what} is \code{"SPR"}, \code{"independent_SPR"}, or
+\code{"global_SPR"}.}
 
-\item{t_spawn}{Numeric. Mortality time until spawning.}
+\item{t_spawn}{Numeric. Fraction of the spawning season elapsed before
+spawning, used for the mid-season mortality correction. Default = 0.}
 
-\item{sex_ratio_f}{Numeric vector. Female sex ratio by region.}
+\item{sex_ratio_f}{Numeric array \code{[n_pop, n_regions]}. Female sex
+ratio at recruitment. Default = 0.5 everywhere.}
 
-\item{calc_rec_st_yr}{Integer. First year used to compute mean recruitment.}
+\item{calc_rec_st_yr}{Integer. First year included when computing mean
+historical recruitment for biological reference point scaling. Default = 1.}
 
-\item{rec_age}{Integer. Age at recruitment.}
+\item{rec_age}{Integer. Recruitment lag in years, used to exclude the most
+recent years from the mean recruitment calculation. Default = 1.}
 
-\item{type}{Character. "single_region" or "multi_region".}
-
-\item{what}{Character. Type of reference point:
+\item{type}{Character. Spatial structure of the model:
 \describe{
-  \item{SPR}{Single-region SPR reference point}
-  \item{independent_SPR}{Multi-region SPR without movement}
-  \item{global_SPR}{Multi-region SPR with movement}
-  \item{BH_MSY}{Single-region Beverton–Holt MSY}
-  \item{independent_BH_MSY}{Multi-region BH-MSY without movement}
-  \item{global_BH_MSY}{Multi-region global BH-MSY with movement}
-  \item{local_BH_MSY}{Multi-region local BH-MSY with movement}
+  \item{\code{"single_region"}}{No spatial movement; supports
+    \code{"SPR"} and \code{"BH_MSY"}.}
+  \item{\code{"multi_region"}}{Spatially explicit; supports
+    \code{"independent_SPR"}, \code{"independent_BH_MSY"},
+    \code{"global_SPR"}, \code{"global_BH_MSY"}, and
+    \code{"local_BH_MSY"}.}
 }}
 
-\item{n_avg_yrs}{Integer. Number of years to average demographic rates when calculating reference points.}
+\item{what}{Character. Reference point method:
+\describe{
+  \item{\code{"SPR"}}{Single-region \eqn{F_{SPR_x}}.}
+  \item{\code{"BH_MSY"}}{Single-region Beverton-Holt \eqn{F_{MSY}}.}
+  \item{\code{"independent_SPR"}}{Per-region \eqn{F_{SPR_x}} computed
+    independently for each region without movement.}
+  \item{\code{"independent_BH_MSY"}}{Per-region \eqn{F_{MSY}} computed
+    independently for each region without movement.}
+  \item{\code{"global_SPR"}}{Single shared \eqn{F_{SPR_x}} with
+    movement, integrated across all regions.}
+  \item{\code{"global_BH_MSY"}}{Single shared \eqn{F_{MSY}} with
+    movement. Valid for single-population models only.}
+  \item{\code{"local_BH_MSY"}}{Region-specific \eqn{F_{MSY}} values
+    that jointly maximise total yield with movement. Valid for both
+    single- and multi-population models.}
+}}
 
-\item{local_bh_msy_newton_steps}{Number of newton steps to take to solve for equilibrium recruitment in the origin region
-when local_BH_MSY is assumed.}
+\item{n_avg_yrs}{Integer. Number of terminal years over which demographic
+rates (selectivity, natural mortality, weight, maturity, movement) are
+averaged before computing reference points. Default = 1.}
+
+\item{local_bh_msy_newton_steps}{Integer. Number of Newton-Raphson
+iterations used to solve for equilibrium recruitment by origin region
+when \code{what = "local_BH_MSY"}. Increase if convergence is suspect.
+Default = 6.}
 }
 \value{
-A list with elements:
+A named list:
   \describe{
-    \item{f_ref_pt}{Vector of fishing reference points for each region.}
-    \item{b_ref_pt}{Vector of biological reference points for each region.}
-    \item{virgin_b_ref_pt}{Vector of virgin biomass reference points for each region.}
+    \item{\code{f_ref_pt}}{Numeric vector \code{[n_regions]}. Fishing
+      mortality reference point by region. All regions share the same value
+      for global methods; regions have independent values for local or
+      independent methods.}
+    \item{\code{b_ref_pt}}{Numeric array \code{[n_pop, n_regions]}.
+      Equilibrium spawning biomass at the reference point by population and
+      region (\eqn{SBPR_F \times R_{eq}} or \eqn{SBPR_F \times \bar{R}}).}
+    \item{\code{virgin_b_ref_pt}}{Numeric array \code{[n_pop, n_regions]}.
+      Virgin (unfished) spawning biomass by population and region
+      (\eqn{SBPR_0 \times R_0} or \eqn{SBPR_0 \times \bar{R}}).}
+    \item{\code{pop_b_ref_pt}}{Numeric array \code{[n_pop, n_regions]}.
+      Population-specific effective spawning biomass at the reference point,
+      evaluated at each population's natal region and incorporating stray
+      contributions from other populations.}
+    \item{\code{virgin_pop_b_ref_pt}}{Numeric array \code{[n_pop, n_regions]}.
+      Population-specific effective virgin spawning biomass, evaluated at
+      each population's natal region.}
   }
 }
 \description{
-Wrapper function to compute fishing and biological reference points given data and report
-objects from an assessment or simulation. Supports both single-region and multi-region
-calculations with options for SPR or Beverton–Holt MSY reference points.
+Wrapper that constructs the appropriate data list, calls the relevant
+inner objective function via RTMB, and returns fishing and biological
+reference points for use in projections or harvest control rules. Supports
+single-region and spatially explicit multi-region models, with options for
+SPR-based or Beverton-Holt MSY-based reference points.
 }
 \seealso{
 Other Reference Points and Projections: 

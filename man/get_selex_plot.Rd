@@ -7,23 +7,52 @@
 get_selex_plot(rep, model_names, Selex_Type = "age", year_indx = NULL)
 }
 \arguments{
-\item{rep}{List of n_models of `SPoRC` report lists}
+\item{rep}{List of length \code{n_models}, where each element is a SPoRC
+report list (i.e. the output of \code{obj$report()} after optimisation).
+Must contain \code{fish_sel} and \code{srv_sel} (age-based) and/or
+\code{fish_sel_l} and \code{srv_sel_l} (length-based) depending on
+\code{Selex_Type}.}
 
-\item{model_names}{Vector of model names}
+\item{model_names}{Character vector of length \code{n_models} giving display
+names for each model run. Used as the linetype legend label.}
 
-\item{Selex_Type}{Character vector specifying whether to output age or length-based selectivity (age, length)}
+\item{Selex_Type}{Character string specifying whether to plot age- or
+length-based selectivity. One of \code{"age"} (default) or \code{"length"}.
+Must match the \code{Selex_Type} used when fitting the model (i.e.
+\code{fish_sel_l} / \code{srv_sel_l} are only populated when
+\code{Selex_Type = 1} in the model).}
 
-\item{year_indx}{Year index for which selectivity year to plot (can be an integer or vector)}
+\item{year_indx}{Integer or integer vector of year indices to include in the
+plot. When multiple years are supplied, curves are coloured by year on a
+continuous viridis scale, making time-variation in selectivity visible.
+If \code{NULL} (default), only the terminal year is plotted.}
 }
 \value{
-Plots of terminal year fishery and survey selectivity by fleet, region, and sex across models
+A list of two \code{ggplot} objects:
+\describe{
+  \item{[[1]] fish_sel_plot}{Fishery selectivity curves faceted by
+    Sex × (Region + Fleet). Lines are coloured by year and distinguished
+    by linetype across models.}
+  \item{[[2]] srv_sel_plot}{Survey selectivity curves with identical
+    faceting and aesthetic structure as the fishery plot.}
+}
 }
 \description{
-Get Fishery and Survey Selectivity Plots
+Generates age- or length-based selectivity plots for all fishery and survey
+fleets across one or more SPoRC model runs. Selectivity curves are faceted by
+sex, region, and fleet, and coloured by year when multiple years are requested,
+allowing visualisation of time-varying selectivity alongside model comparisons.
 }
 \examples{
 \dontrun{
-get_selex_plot(list(rep1, rep2), c("Model1", "Model2"), year_indx = c(1:30))
+  # Terminal year only
+  plots <- get_selex_plot(list(rep1, rep2), c("Base", "Sensitivity"))
+
+  # All years to visualise time-varying selectivity
+  plots <- get_selex_plot(list(rep1), "Base", Selex_Type = "age", year_indx = 1:40)
+
+  plots[[1]] # fishery selectivity
+  plots[[2]] # survey selectivity
 }
 }
 \seealso{

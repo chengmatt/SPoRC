@@ -2,16 +2,73 @@
 % Please edit documentation in R/Get_Reference_Points.R
 \name{global_SPR}
 \alias{global_SPR}
-\title{Title Get Global SPR Reference Points (Spatial)}
+\title{Compute global SPR reference point for a spatially explicit model}
 \usage{
 global_SPR(pars, data)
 }
 \arguments{
-\item{pars}{Parameter List from RTMB}
+\item{pars}{Named list of RTMB parameters. Must contain:
+\describe{
+  \item{\code{log_F_x}}{Log-scale trial fishing mortality.}
+}}
 
-\item{data}{Data List from RTMB}
+\item{data}{Named list of RTMB data. Must contain:
+\describe{
+  \item{\code{n_pop}}{Integer. Number of populations.}
+  \item{\code{n_regions}}{Integer. Number of spatial regions.}
+  \item{\code{n_ages}}{Integer. Number of age classes.}
+  \item{\code{n_seas}}{Integer. Number of seasons.}
+  \item{\code{seasdur}}{Numeric vector \code{[n_seas]}. Season durations.}
+  \item{\code{spawn_seas}}{Integer. Index of the spawning season.}
+  \item{\code{t_spawn}}{Numeric. Mid-season spawning timing correction.}
+  \item{\code{F_fract_flt}}{Numeric array \code{[n_regions, n_seas, n_fish_fleets]}.
+    Fleet F fractions by region.}
+  \item{\code{fish_sel}}{Numeric array \code{[n_regions, n_ages, n_fish_fleets]}.
+    Female fishery selectivity.}
+  \item{\code{natmort}}{Numeric array \code{[n_pop, n_regions, n_ages]}.
+    Female natural mortality.}
+  \item{\code{WAA}}{Numeric array \code{[n_pop, n_regions, n_seas, n_ages]}.
+    Female weight at age.}
+  \item{\code{MatAA}}{Numeric array \code{[n_pop, n_regions, n_seas, n_ages]}.
+    Maturity at age.}
+  \item{\code{Movement}}{Numeric array \code{[n_pop, n_regions, n_regions, n_seas, n_ages]}.
+    Seasonal movement transition matrices.}
+  \item{\code{sgl_seas_spawning_movement}}{Numeric array
+    \code{[n_pop, n_regions, n_regions, n_ages]}. Spawning movement for
+    single-season natal homing models.}
+  \item{\code{do_recruits_move}}{Integer (0/1). Whether age-1 recruits
+    are subject to movement.}
+  \item{\code{rec_region_prop}}{Numeric array \code{[n_pop, n_regions]}.
+    Proportion of recruitment entering each region.}
+  \item{\code{sex_ratio_f}}{Numeric array \code{[n_pop, n_regions]}.
+    Female sex ratio at recruitment.}
+  \item{\code{rec_seas_prop}}{Numeric array \code{[n_pop, n_seas]}.
+    Seasonal recruitment proportions.}
+  \item{\code{stray_rate}}{Numeric vector \code{[n_pop]}. Per-population
+    stray rate.}
+  \item{\code{natal_region}}{Integer vector \code{[n_pop]}. Natal region
+    index for each population.}
+  \item{\code{SPR_x}}{Numeric. Target SPR fraction.}
+}}
+}
+\value{
+Numeric scalar. Squared penalty \eqn{(SPR - SPR_x)^2}.
 }
 \description{
-Title Get Global SPR Reference Points (Spatial)
+Calculates a single, spatially-integrated SPR using a per-recruit cohort
+that is tracked across all regions and seasons under movement. A single
+scalar \eqn{F_x} is applied uniformly across regions (scaled by
+region-specific fleet fractions and selectivity). Returns the squared
+penalty \eqn{100(SPR - SPR_x)^2} for optimisation.
+}
+\details{
+Supports single- and multi-population models. When \code{n_pop > 1},
+effective SSB at each population's natal region accumulates straying
+contributions from other populations. When \code{n_seas = 1} and
+\code{n_pop > 1}, \code{sgl_seas_spawning_movement} redistributes fish to
+natal grounds before SSB is computed.
+
+The plus-group is solved analytically using
+\code{\link{build_plus_group_T}} and \code{\link{solve_plus_group}}.
 }
 \keyword{internal}

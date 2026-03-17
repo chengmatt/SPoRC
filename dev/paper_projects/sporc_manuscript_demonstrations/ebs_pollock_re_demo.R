@@ -12,9 +12,62 @@ devtools::load_all(here("R"))
 data("sgl_rg_ebswp_data")
 
 # Prepare Data and Inputs -------------------------------------------------
-pol_model <- function(cont_tv_fish_sel, fishsel_pe_pars_spec,
-                      corr_opt_semipar, fish_sel_devs_spec
-                      ) {
+#' Setup Single-Region Population Model for EBS Pollock
+#'
+#' Constructs a single-region population model input list, tailored to the
+#' \code{sgl_rg_ebswp_data} dataset. This function initializes dimensions,
+#' recruitment, natural mortality, biologicals, movement, tagging, catch,
+#' fishery indices and compositions, survey indices and compositions,
+#' selectivity and catchability, and component weighting.
+#'
+#' @param cont_tv_fish_sel Character vector. Whether to estimate continuous
+#' time-varying fishery selectivit (see \code{\link{Setup_Mod_FishIdx_and_Comps}}).
+#' @param fishsel_pe_pars_spec Character vector. Specification for penalized
+#' likelihood parameters for fishery selectivity deviations (see \code{\link{Setup_Mod_FishIdx_and_Comps}}).
+#' @param corr_opt_semipar Character vector. Correlation options for
+#' semi-parametric selectivity (see \code{\link{Setup_Mod_FishIdx_and_Comps}}).
+#' @param fish_sel_devs_spec Character vector. Specification of fishery
+#' selectivity deviations to be estimated (see \code{\link{Setup_Mod_FishIdx_and_Comps}}).
+#'
+#' @details
+#' The function relies on the global dataset \code{sgl_rg_ebswp_data} to provide
+#' years, ages, weight-at-age, maturity-at-age, observed catches, fishery and
+#' survey indices, age and length compositions, and other required inputs.
+#'
+#' The model is configured for:
+#' - one region
+#' - one sex
+#' - one fishery fleet
+#' - three survey fleets
+#'
+#' Natural mortality (\eqn{M}) is fixed at:
+#' - 0.9 for age-1,
+#' - 0.45 for age-2,
+#' - 0.3 for age-3+.
+#'
+#' Recruitment is modeled using a Beverton–Holt stock–recruitment function
+#' with fixed steepness.
+#'
+#' Selectivity and catchability are parameterized separately for fishery and
+#' survey fleets, with user control over random effects and correlation
+#' structure for fishery selectivity deviations.
+#'
+#' @return A fully specified model input list to pass onto subsequent model fitting functions.
+#'
+#' @seealso
+#' \code{\link{Setup_Mod_Dim}}, \code{\link{Setup_Mod_Rec}},
+#' \code{\link{Setup_Mod_Biologicals}}, \code{\link{Setup_Mod_Movement}},
+#' \code{\link{Setup_Mod_Tagging}}, \code{\link{Setup_Mod_Catch_and_F}},
+#' \code{\link{Setup_Mod_FishIdx_and_Comps}},
+#' \code{\link{Setup_Mod_SrvIdx_and_Comps}},
+#' \code{\link{Setup_Mod_Fishsel_and_Q}}, \code{\link{Setup_Mod_Srvsel_and_Q}},
+#' \code{\link{Setup_Mod_Weighting}}
+#'
+pol_model <- function(cont_tv_fish_sel,
+                      fishsel_pe_pars_spec,
+                      corr_opt_semipar,
+                      fish_sel_devs_spec
+) {
 
   ## Initialize model dimensions and data list----
   input_list <- Setup_Mod_Dim(
@@ -31,7 +84,7 @@ pol_model <- function(cont_tv_fish_sel, fishsel_pe_pars_spec,
     n_fish_fleets = 1,
     # number of fishery fleets
     n_srv_fleets = 3, # number of survey fleets
-    n_seas = 1, # number of seasons
+    n_pop = 1, # number of populations
     verbose = FALSE
   )
 
@@ -46,11 +99,11 @@ pol_model <- function(cont_tv_fish_sel, fishsel_pe_pars_spec,
     # do bias ramp (0 == don't do bias ramp, 1 == do bias ramp)
     sigmaR_switch = 1,
     # when to switch from early to late sigmaR (switch in first year)
-    ln_sigmaR = log(c(5, 1)),
+    ln_sigmaR = array(log(c(5, 1)), dim = c(2, input_list$data$n_pop, input_list$data$n_regions)),
     # Starting values for early and late sigmaR
     rec_model = "bh_rec",
     # recruitment model
-    steepness_h = inv_steepness(0.623013),
+    steepness_h = array(inv_steepness(0.623013), dim = c(input_list$data$n_pop, input_list$data$n_regions)),
     h_spec = "fix",
     # fixing steepness
     sigmaR_spec = "fix",
@@ -62,10 +115,10 @@ pol_model <- function(cont_tv_fish_sel, fishsel_pe_pars_spec,
   )
 
   # Setup a fixed natural mortality array for use
-  fix_natmort <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), length(input_list$data$ages), 1))
-  fix_natmort[,,1,] <- 0.9 # age 1 M
-  fix_natmort[,,2,] <- 0.45 # age 2 M
-  fix_natmort[,,-c(1,2),] <- 0.3 # age 3+ M
+  fix_natmort <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), length(input_list$data$ages), 1))
+  fix_natmort[,,,1,] <- 0.9 # age 1 M
+  fix_natmort[,,,2,] <- 0.45 # age 2 M
+  fix_natmort[,,,-c(1,2),] <- 0.3 # age 3+ M
 
   input_list <- Setup_Mod_Biologicals(
     input_list = input_list,
@@ -92,13 +145,14 @@ pol_model <- function(cont_tv_fish_sel, fishsel_pe_pars_spec,
   )
 
   # Setup tagging stuff
-  input_list <- Setup_Mod_Tagging(input_list = input_list, UseTagging = 0)
+  input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
 
   input_list <- Setup_Mod_Catch_and_F(
     input_list = input_list,
 
     # Data inputs
     ObsCatch = sgl_rg_ebswp_data$ObsCatch,
+    Catch_Type = sgl_rg_ebswp_data$Catch_Type,
     UseCatch = sgl_rg_ebswp_data$UseCatch,
 
     # Model options
@@ -179,9 +233,8 @@ pol_model <- function(cont_tv_fish_sel, fishsel_pe_pars_spec,
 
     input_list = input_list,
 
-    # Model options
-    # fishery selectivity, whether continuous time-varying
-    cont_tv_fish_sel = cont_tv_fish_sel,
+    # Model options (NOTE: Iterating Different Fishery Selectivity Random Effects Here!)
+    cont_tv_fish_sel = cont_tv_fish_sel,  # fishery selectivity, whether continuous time-varying
     fishsel_pe_pars_spec = fishsel_pe_pars_spec, # doing penalized likelihood for selex devs
     fish_sel_devs_spec = fish_sel_devs_spec, # estimating all sel devs
     corr_opt_semipar = corr_opt_semipar, # correlation options
@@ -228,23 +281,19 @@ pol_model <- function(cont_tv_fish_sel, fishsel_pe_pars_spec,
     Wt_F = 1,
     Wt_Tagging = 0,
     Wt_FishAgeComps = array(1, dim = c(input_list$data$n_regions,
-                                       length(input_list$data$years),
-                                       input_list$data$n_seas,
+                                       length(input_list$data$years), input_list$data$n_seas,
                                        input_list$data$n_sexes,
                                        input_list$data$n_srv_fleets)),
     Wt_FishLenComps = array(1, dim = c(input_list$data$n_regions,
-                                       length(input_list$data$years),
-                                       input_list$data$n_seas,
+                                       length(input_list$data$years), input_list$data$n_seas,
                                        input_list$data$n_sexes,
                                        input_list$data$n_srv_fleets)),
     Wt_SrvAgeComps = array(1, dim = c(input_list$data$n_regions,
-                                      length(input_list$data$years),
-                                      input_list$data$n_seas,
+                                      length(input_list$data$years), input_list$data$n_seas,
                                       input_list$data$n_sexes,
                                       input_list$data$n_srv_fleets)),
     Wt_SrvLenComps = array(1, dim = c(input_list$data$n_regions,
-                                      length(input_list$data$years),
-                                      input_list$data$n_seas,
+                                      length(input_list$data$years), input_list$data$n_seas,
                                       input_list$data$n_sexes,
                                       input_list$data$n_srv_fleets))
   )
@@ -311,13 +360,13 @@ for(i in 1:length(models)) {
 
   # Get recruitment time-series
   rec_series <- reshape2::melt((models[[i]]$rep$Rec)) %>%
-    mutate(se = models[[i]]$sdrep$sd[names(models[[i]]$sdrep$value) == 'log(Rec)'] * t(models[[i]]$rep$Rec))
+    mutate(se = models[[i]]$sdrep$sd[names(models[[i]]$sdrep$value) == 'log_Rec'] * as.vector(models[[i]]$rep$Rec))
   rec_series$Par <- "Recruitment"
   rec_series$Model <- model_names[i]
 
   # Get SSB time-series
   ssb_series <- reshape2::melt((models[[i]]$rep$SSB)) %>%
-    mutate(se = models[[i]]$sdrep$sd[names(models[[i]]$sdrep$value) == 'log(SSB)'] * t(models[[i]]$rep$SSB))
+    mutate(se = models[[i]]$sdrep$sd[names(models[[i]]$sdrep$value) == 'log_SSB'] * as.vector(models[[i]]$rep$SSB))
   ssb_series$Par <- "Spawning Stock Biomass"
   ssb_series$Model <- model_names[i]
 
@@ -331,7 +380,7 @@ for(i in 1:length(models)) {
 
   # bind together
   ts_df <- rbind(ssb_series,rec_series) %>%
-    dplyr::rename(Region = Var1, Year = Var2) %>%
+    dplyr::rename(Region = Var2, Year = Var3) %>%
     dplyr::mutate(Year = Year + 1963)
 
   ts_all_df <- rbind(ts_all_df, ts_df)

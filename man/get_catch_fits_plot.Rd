@@ -2,26 +2,53 @@
 % Please edit documentation in R/Make_Plots_Tables.R
 \name{get_catch_fits_plot}
 \alias{get_catch_fits_plot}
-\title{Title Get Catch Fits Plot}
+\title{Get Catch Fits Plot}
 \usage{
 get_catch_fits_plot(data, rep, model_names)
 }
 \arguments{
-\item{data}{List of n_models of `SPoRC` data lists}
+\item{data}{List of length \code{n_models}, where each element is a SPoRC
+data list. \code{ObsCatch} (dimensions
+\code{[n_regions, n_yrs, n_seas, n_fish_fleets]}) provides observed catch
+values. \code{Wt_Catch} is used alongside \code{ln_sigmaC} from the report
+to recover the unweighted observation-error SD for confidence interval
+construction (\code{se = exp(ln_sigmaC) / Wt_Catch}).}
 
-\item{rep}{List of n_models of `SPoRC` report lists}
+\item{rep}{List of length \code{n_models}, where each element is a SPoRC
+report list (i.e. the output of \code{obj$report()} after optimisation).
+\code{PredCatch} (dimensions
+\code{[n_pop, n_regions, n_yrs, n_seas, n_fish_fleets]}) is summed across
+populations to produce region-level predicted catch. \code{ln_sigmaC} is
+used for CI construction.}
 
-\item{model_names}{Vector of model names}
+\item{model_names}{Character vector of length \code{n_models} giving display
+names for each model run. Used as the colour legend label on predicted
+trajectories.}
 }
 \value{
-A plot of fitted values to various catch time series across models
+A single \code{ggplot} object. Observed catch is shown as
+  \code{geom_pointrange} (black) with 95% log-normal confidence intervals
+  (\code{exp(log(obs) ± 1.96 * se)}). Predicted catch is shown as
+  \code{geom_line} coloured by model. The plot is faceted by
+  (Season + Fleet) × Region with free y-scales, and the y-axis is
+  constrained to [0, NA].
 }
 \description{
-Title Get Catch Fits Plot
+Plots observed catch time series alongside model-predicted values for one or
+more SPoRC model runs. Predicted catch is summed across populations before
+comparison with observations. Observed values are shown as points with
+approximate 95% log-normal confidence intervals derived from
+\code{ln_sigmaC}; predicted trajectories are overlaid as lines coloured by
+model. Years where observed catch is zero (i.e. \code{UseCatch = 0}) are
+excluded from both layers.
 }
 \examples{
 \dontrun{
-get_catch_fits_plot(list(data1, data2), list(rep1, rep2), c("Model1", "Model2"))
+  get_catch_fits_plot(
+    data        = list(data1, data2),
+    rep         = list(rep1, rep2),
+    model_names = c("Base", "Sensitivity")
+  )
 }
 }
 \seealso{

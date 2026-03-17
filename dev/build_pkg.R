@@ -6,6 +6,9 @@ library(usethis)
 library(here)
 
 # Build Package -----------------------------------------------------------
+# usethis::create_github_token()
+# gitcreds::gitcreds_set()
+
 att_amend_desc(update = TRUE)
 document() # document functions
 roxygenise() # make sure functions have roxygen documentation
@@ -13,7 +16,15 @@ desc::desc_del_dep("compResidual", "Imports") # move to suggests
 desc::desc_set_dep("compResidual", "Suggests") # move to suggests
 desc::desc_del_dep("remotes", "Imports") # remove remotes
 Sys.unsetenv("GITHUB_PAT") # may need to unset to build vignettes
+
+# website stuff
+Sys.unsetenv("GITHUB_PAT") # may need to unset to build vignettes
+usethis::use_pkgdown_github_pages()
+pkgdown::check_pkgdown()
 build_site(examples = FALSE)
+# pkgdown::build_site(preview = TRUE)
+
+
 use_build_ignore("dev") # ignore dev folder
 usethis::use_build_ignore("_pkgdown.yml") # ignore pkgdown.yml
 check() # check package stuff

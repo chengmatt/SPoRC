@@ -2,21 +2,24 @@
 % Please edit documentation in R/Distributions.R
 \name{dpois_noint}
 \alias{dpois_noint}
-\title{Poisson Likelihood}
+\title{Evaluate a Poisson log-likelihood for non-integer counts}
 \usage{
 dpois_noint(x, pred, give_log = TRUE)
 }
 \arguments{
-\item{x}{observations}
+\item{x}{Numeric. Observed count (may be non-integer).}
 
-\item{pred}{predicted}
+\item{pred}{Numeric. Predicted mean \eqn{\lambda > 0}.}
 
-\item{give_log}{if giving log likelihood}
+\item{give_log}{Logical. If \code{TRUE} (default), returns the
+log-likelihood; otherwise returns the likelihood.}
 }
 \value{
-Returns likelihood values from a poisson
+Numeric. Log-likelihood (or likelihood if \code{give_log = FALSE}).
 }
 \description{
-Approximates Poisson when non-integer values are provided
+Computes \eqn{-\lambda + x \log \lambda - \log \Gamma(x+1)}, which
+reduces to the standard Poisson log-likelihood for integer \code{x} and
+extends it continuously to non-integer values via \code{lgamma}.
 }
 \keyword{internal}

@@ -7,30 +7,63 @@
 get_retrospective_plot(retro_output, Rec_Age)
 }
 \arguments{
-\item{retro_output}{Dataframe generated from do_retrospective}
+\item{retro_output}{Data frame produced by \code{do_retrospective}, containing
+columns \code{Year}, \code{value}, \code{peel}, \code{Type} (e.g.
+\code{"SSB"}, \code{"Recruitment"}), \code{Pop}, and \code{Region}. Rows
+with \code{peel = 0} represent the full-data terminal run; rows with
+\code{peel > 0} represent sequential data removals. Rows with
+\code{value = 0} are excluded before plotting.}
 
-\item{Rec_Age}{Age in which recruitment occurs}
+\item{Rec_Age}{Integer giving the age at recruitment (e.g. \code{2} for
+age-2 recruitment). Used to convert model year to cohort year in the squid
+plot (\code{cohort = Year - Rec_Age}).}
 }
 \value{
-A retrospective plot of recruitment and SSB in relative and absolute scales, as well as a retrospective plot of recruitment by cohort (squid plot)
+A list of three \code{ggplot} objects:
+\describe{
+  \item{[[1]] retro_plot}{Relative-difference plot. Each line shows the
+    proportional deviation of a peeled run from the terminal-year estimate
+    at each year, computed via \code{get_retrospective_relative_difference}.
+    Terminal-year points (where \code{peel = max(Year) - Year}) are
+    highlighted. Mohn's rho (mean relative difference across terminal-year
+    points) is annotated on each facet panel. Faceted by Region ×
+    (Type + Population); lines and points coloured by peel year on a
+    continuous viridis scale.}
+  \item{[[2]] abs_retro_plot}{Absolute-scale trajectory plot. Peeled runs
+    (\code{peel > 0}) are drawn as solid lines coloured by peel; the
+    full-data run (\code{peel = 0}) is overlaid as a dashed black line.
+    Faceted by Region × (Type + Population) with free y-scales.}
+  \item{[[3]] squid_plot}{Cohort-tracking (squid) plot for recruitment.
+    Restricted to the 10 most recent cohorts. X-axis shows years since the
+    cohort was last estimated (\code{terminal - Year - 1}), y-axis shows
+    recruitment value, and lines are grouped and coloured by cohort year.
+    Faceted by Population × Region with free y-scales.}
+}
 }
 \description{
-Get Retrospective Plot
+Generates three retrospective diagnostic plots from a set of peeled model
+runs: a relative-difference plot with Mohn's rho, an absolute-scale
+trajectory plot, and a cohort-tracking squid plot for recruitment. Together
+these plots diagnose systematic retrospective patterns in SSB and recruitment
+estimates across sequential data removals.
 }
 \examples{
 \dontrun{
-# do retrospective
-retro <- do_retrospective(n_retro = 7, # number of retro peels to run
-data = data, # rtmb data
-parameters = parameters, # rtmb parameters
-mapping = mapping, # rtmb mapping
-random = NULL, # if random effects are used
-do_par = TRUE, # whether or not to parralleize
-n_cores = 7, # if parallel, number of cores to use
-do_francis = F, # if we want tod o Francis
-n_francis_iter = NULL # Number of francis iterations to do
-)
-get_retrospective_plot(retro, Rec_Age = 2)
+  retro <- do_retrospective(
+    n_retro        = 7,
+    data           = data,
+    parameters     = parameters,
+    mapping        = mapping,
+    random         = NULL,
+    do_par         = TRUE,
+    n_cores        = 7,
+    do_francis     = FALSE,
+    n_francis_iter = NULL
+  )
+  plots <- get_retrospective_plot(retro, Rec_Age = 2)
+  plots[[1]]  # relative difference + Mohn's rho
+  plots[[2]]  # absolute trajectories
+  plots[[3]]  # squid plot
 }
 }
 \seealso{

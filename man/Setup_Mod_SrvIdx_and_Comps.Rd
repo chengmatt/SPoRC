@@ -2,7 +2,7 @@
 % Please edit documentation in R/Setup_Survey.R
 \name{Setup_Mod_SrvIdx_and_Comps}
 \alias{Setup_Mod_SrvIdx_and_Comps}
-\title{Setup observed survey indices and composition data (age and length comps)}
+\title{Set up observed survey indices and composition data}
 \usage{
 Setup_Mod_SrvIdx_and_Comps(
   input_list,
@@ -24,63 +24,111 @@ Setup_Mod_SrvIdx_and_Comps(
 )
 }
 \arguments{
-\item{input_list}{List containing a data list, parameter list, and map list}
+\item{input_list}{Named list with \code{$data}, \code{$par}, \code{$map},
+and \code{$verbose} sublists, as returned by upstream setup functions.}
 
-\item{ObsSrvIdx}{Observed survey index data as a numeric array with dimensions
-\code{[n_regions, n_years, n_seas, n_srv_fleets]}.}
+\item{ObsSrvIdx}{Observed survey index array
+\code{[n_regions × n_years × n_seas × n_srv_fleets]}.}
 
-\item{ObsSrvIdx_SE}{Standard errors associated with \code{ObsSrvIdx},
-also dimensioned \code{[n_regions, n_years, n_seas, n_srv_fleets]}.}
+\item{ObsSrvIdx_SE}{Lognormal standard errors for \code{ObsSrvIdx}, same
+dimensions \code{[n_regions × n_years × n_seas × n_srv_fleets]}.}
 
-\item{UseSrvIdx}{Logical or binary indicator array (\code{[n_regions, n_years, n_seas,  n_srv_fleets]})
-specifying whether to include a survey index in the likelihood (\code{1}) or ignore it (\code{0}).}
+\item{UseSrvIdx}{Binary indicator array
+\code{[n_regions × n_years × n_seas × n_srv_fleets]}. \code{1} = include
+in likelihood; \code{0} = exclude.}
 
-\item{srv_idx_type}{Character vector of length \code{n_srv_fleets} specifying the type of index data.
-Options are \code{"abd"} for abundance, \code{"biom"} for biomass, and \code{"none"} if no index is available.}
+\item{srv_idx_type}{Character vector \code{[n_srv_fleets]} specifying the
+index type per fleet. One of \code{"biom"} (biomass), \code{"abd"}
+(abundance), or \code{"none"} (no index for that fleet). Converted to
+integer codes (\code{1}, \code{0}, \code{999}) before storage.}
 
-\item{ObsSrvAgeComps}{Observed survey age composition data as a numeric array with dimensions
-\code{[n_regions, n_years, n_seas, n_ages, n_sexes, n_srv_fleets]}. Values should reflect counts or proportions
-(not required to sum to 1, but should be on a comparable scale).}
+\item{ObsSrvAgeComps}{Observed survey age compositions, array
+\code{[n_regions × n_years × n_seas × n_ages × n_sexes × n_srv_fleets]}.
+Values may be counts or proportions on a comparable scale.}
 
-\item{UseSrvAgeComps}{Indicator array (\code{[n_regions, n_years, n_seas,  n_srv_fleets]}) specifying whether
-to fit survey age composition data (\code{1}) or ignore it (\code{0}).}
+\item{UseSrvAgeComps}{Binary indicator array
+\code{[n_regions × n_years × n_seas × n_srv_fleets]}. \code{1} = fit age
+compositions; \code{0} = exclude.}
 
-\item{ObsSrvLenComps}{Observed survey length composition data as a numeric array with dimensions
-\code{[n_regions, n_years, n_seas,  n_lens, n_sexes, n_srv_fleets]}. Values should reflect counts or proportions.}
+\item{ObsSrvLenComps}{Observed survey length compositions, array
+\code{[n_regions × n_years × n_seas × n_lens × n_sexes × n_srv_fleets]}.
+Only validated when \code{fit_lengths = 1} in \code{$data}.}
 
-\item{UseSrvLenComps}{Indicator array (\code{[n_regions, n_years, n_seas,  n_srv_fleets]}) specifying whether
-to fit survey length composition data (\code{1}) or ignore it (\code{0}).}
+\item{UseSrvLenComps}{Binary indicator array
+\code{[n_regions × n_years × n_seas × n_srv_fleets]}. \code{1} = fit
+length compositions; \code{0} = exclude.}
 
-\item{ISS_SrvAgeComps}{Input sample size for age compositions, array dimensioned
-\code{[n_regions, n_years, n_seas, n_sexes, n_srv_fleets]}. Required if observed age comps are normalized
-(i.e., sum to 1), to correctly scale the contribution to the likelihood.}
+\item{ISS_SrvAgeComps}{Input sample sizes for survey age compositions, array
+\code{[n_regions × n_years × n_seas × n_sexes × n_srv_fleets]}, or
+\code{NULL} to derive automatically by summing \code{ObsSrvAgeComps}
+across the age dimension each year, respecting \code{SrvAgeComps_Type}.}
 
-\item{ISS_SrvLenComps}{Same as \code{ISS_SrvAgeComps}, but for length compositions.}
+\item{ISS_SrvLenComps}{Input sample sizes for survey length compositions,
+same structure as \code{ISS_SrvAgeComps}, or \code{NULL} for automatic
+derivation from \code{ObsSrvLenComps}.}
 
-\item{SrvAgeComps_LikeType}{Character vector of length \code{n_srv_fleets} specifying the likelihood
-type used for survey age composition data. Options include \code{"Multinomial"}, \code{"Dirichlet-Multinomial"},
-\code{"iid-Logistic-Normal"}, \code{"1d-Logistic-Normal"}, and \code{"2d-Logistic-Normal"}. Use \code{"none"} to omit the likelihood.}
+\item{SrvAgeComps_LikeType}{Character vector \code{[n_srv_fleets]}
+specifying the likelihood for survey age compositions. One of
+\code{"none"}, \code{"Multinomial"}, \code{"Dirichlet-Multinomial"},
+\code{"iid-Logistic-Normal"}, \code{"1d-Logistic-Normal"},
+\code{"2d-Logistic-Normal"}. Converted to integer codes
+(\code{999}, \code{0}–\code{4}) before storage.}
 
-\item{SrvLenComps_LikeType}{Same as \code{SrvAgeComps_LikeType}, but for survey length composition data.}
+\item{SrvLenComps_LikeType}{Character vector \code{[n_srv_fleets]}
+specifying the likelihood for survey length compositions. Same options
+as \code{SrvAgeComps_LikeType}.}
 
-\item{SrvAgeComps_Type}{Character vector specifying how age compositions are structured by fleet and year range.
-Options include:
-\itemize{
-  \item \code{"agg"}: Aggregated across regions and sexes.
-  \item \code{"spltRspltS"}: Split by region and by sex (compositions sum to 1 within region-sex group).
-  \item \code{"spltRjntS"}: Split by region but summed jointly across sexes.
-  \item \code{"none"}: No composition data used.
+\item{SrvAgeComps_Type}{Character vector defining the survey age composition
+structure per fleet and year range. Each element follows the format
+\code{"<type>_Year_<start>-<end>_Fleet_<fleet>"}. Use \code{"terminal"}
+in place of the end year to extend to the final model year. Valid types:
+\describe{
+  \item{\code{"agg"}}{Aggregated across regions and sexes. Not compatible
+    with \code{"2d-Logistic-Normal"}.}
+  \item{\code{"spltRspltS"}}{Split by region and sex.}
+  \item{\code{"spltRjntS"}}{Split by region, joint across sexes.}
+  \item{\code{"none"}}{No composition data used.}
 }
-Format each element as \code{"<type>_Year_<start>-<end>_Fleet_<fleet number>"}
-(e.g., \code{"agg_Year_1-10_Fleet_1"}).}
+Parsed into a \code{[n_years × n_srv_fleets]} integer matrix before
+storage. An error is raised if any cell remains \code{NA} after parsing,
+indicating an incomplete year range specification.}
 
-\item{SrvLenComps_Type}{Same as \code{SrvAgeComps_Type}, but for length compositions.}
+\item{SrvLenComps_Type}{Character vector defining the survey length
+composition structure. Same format and options as \code{SrvAgeComps_Type}.}
 
-\item{...}{Additional arguments specifying starting values for overdispersion parameters
-(e.g., \code{ln_SrvAge_theta}, \code{ln_SrvLen_theta}, \code{ln_SrvAge_theta_agg}, \code{ln_SrvLen_theta_agg}).}
+\item{...}{Optional named starting values for overdispersion and correlation
+parameters. Supported names and default dimensions:
+\code{ln_SrvAge_theta} \code{[n_regions × n_sexes × n_srv_fleets]},
+\code{ln_SrvAge_theta_agg} \code{[n_srv_fleets]},
+\code{SrvAge_corr_pars} \code{[n_regions × n_sexes × n_srv_fleets × 2]},
+\code{SrvAge_corr_pars_agg} \code{[n_srv_fleets]},
+\code{ln_SrvLen_theta} \code{[n_regions × n_sexes × n_srv_fleets]},
+\code{ln_SrvLen_theta_agg} \code{[n_srv_fleets]},
+\code{SrvLen_corr_pars} \code{[n_regions × n_sexes × n_srv_fleets × 2]},
+\code{SrvLen_corr_pars_agg} \code{[n_srv_fleets]}.}
+}
+\value{
+The input \code{input_list} with survey data stored in \code{$data}
+  (\code{ObsSrvIdx}, \code{ObsSrvIdx_SE}, \code{UseSrvIdx},
+  \code{ObsSrvAgeComps}, \code{UseSrvAgeComps}, \code{ObsSrvLenComps},
+  \code{UseSrvLenComps}, \code{ISS_SrvAgeComps}, \code{ISS_SrvLenComps},
+  \code{SrvAgeComps_LikeType}, \code{SrvLenComps_LikeType},
+  \code{SrvAgeComps_Type}, \code{SrvLenComps_Type}, \code{srv_idx_type});
+  overdispersion and correlation starting values in \code{$par}; and
+  factor maps in \code{$map} for all eight overdispersion/correlation
+  parameter arrays.
 }
 \description{
-Setup observed survey indices and composition data (age and length comps)
+Ingests observed survey index, age composition, and length composition data
+into \code{input_list$data}, initialises overdispersion and correlation
+starting values in \code{input_list$par}, and constructs parameter maps via
+\code{\link{do_SrvAge_theta_mapping}}, \code{\link{do_SrvLen_theta_mapping}},
+\code{\link{do_SrvAge_corr_pars_mapping}}, and
+\code{\link{do_SrvLen_corr_pars_mapping}}. When \code{ISS_SrvAgeComps} or
+\code{ISS_SrvLenComps} is \code{NULL}, input sample sizes are derived
+automatically by summing observed composition counts across the appropriate
+dimensions each year. Must be called after \code{\link{Setup_Mod_Dim}} and
+before model compilation.
 }
 \seealso{
 Other Model Setup: 

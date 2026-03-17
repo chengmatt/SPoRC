@@ -8,6 +8,9 @@ get_francis_weights(
   n_regions,
   n_sexes,
   n_fleets,
+  n_years,
+  n_seas,
+  n_ages,
   Use,
   ISS,
   Pred_array,
@@ -23,6 +26,12 @@ get_francis_weights(
 \item{n_sexes}{Number of sexes}
 
 \item{n_fleets}{Number of fleets (fishery or survey)}
+
+\item{n_years}{Number of years}
+
+\item{n_seas}{Number of seasons}
+
+\item{n_ages}{Number of ages}
 
 \item{Use}{Array from data list that specifies whether to use data that year}
 

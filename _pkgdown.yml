@@ -1,15 +1,14 @@
+url: https://chengmatt.github.io/SPoRC/
 template:
   bootstrap: 5
-  bootswatch: flatly
 
 destination: docs
-url: https://chengmatt.github.io/SPoRC
 
 articles:
   - title: "Getting Started"
     contents:
       - o_get_started
-      
+
   - title: "Model Descriptions"
     contents:
       - a_model_dimensions
@@ -82,7 +81,8 @@ reference:
     contents:
       - condition_closed_loop_simulations
       - get_closed_loop_reference_points
-      - bisection_F
+      - catch_to_F_singlefleet
+      - catch_to_F_multifleet
 
   - title: "Francis Reweighting"
     desc: "Functions for setting up Francis Reweighting"
@@ -136,6 +136,7 @@ reference:
       - mlt_rg_sable_data
       - sgl_rg_ebswp_data
       - three_rg_sable_data
+      - three_rg_sable_rep
       - sgl_rg_sable_rep
       - mlt_rg_sable_rep
       - sgl_rg_dusky_data

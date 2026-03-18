@@ -687,7 +687,7 @@ single_region_BH_Fmsy <- function(pars, data) {
 
         # get mortality
         F_seas = sum(F_fract_flt[seas, ] * Fmsy * fish_sel[j - 1, ])
-        M_a_seas = natmort[p, j - 1] * seasdur[seas] + F_seas
+        M_a_seas = natmort[p, j - 1] * seasdur[seas]
         Z_seas = F_seas + M_a_seas
 
         # Extract out numbers

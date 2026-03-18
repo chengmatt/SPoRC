@@ -1,8 +1,7 @@
 url: https://chengmatt.github.io/SPoRC/
 template:
   bootstrap: 5
-
-destination: docs
+  bootswatch: flatly
 
 articles:
   - title: "Getting Started"

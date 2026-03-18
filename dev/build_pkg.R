@@ -19,9 +19,12 @@ Sys.unsetenv("GITHUB_PAT") # may need to unset to build vignettes
 
 # website stuff
 Sys.unsetenv("GITHUB_PAT") # may need to unset to build vignettes
-usethis::use_pkgdown_github_pages()
+pkgdown::clean_cache()
+# usethis::use_pkgdown_github_pages()
 pkgdown::check_pkgdown()
-build_site(examples = FALSE)
+pkgdown::build_site()
+pkgdown::build_news()
+servr::httd("docs")
 # pkgdown::build_site(preview = TRUE)
 
 

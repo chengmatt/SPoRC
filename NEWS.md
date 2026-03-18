@@ -1,4 +1,4 @@
-# dev-popn-seasons
+# version 1.2.0 (dev-popn-seasons)
 - Follows the dev-movement branch with updates to incorporate population-specific and seasonal dynamics.
 
 ## Major changes
@@ -9,7 +9,7 @@
 ## Improvements
 - Allowed both numeric and character codes for specifying dynamics in simulator, so as to be more consistent with how estimation models are specified, while maintaining backwards compatibility. 
 
-# dev-movement
+# version 1.1.0 (dev-movement)
 
 ## Major changes
 - Added capability to estimate movement using continuous time Markov chains (CTMC) using preference functions. 

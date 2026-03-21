@@ -1,139 +1,97 @@
-#' Set up fishing process inputs for the operating model simulation
+#' Setup Simulation Fishing Inputs
 #'
-#' Populates \code{sim_list} with all fishery-related inputs needed by the
-#' operating model: fishing mortality schedules, selectivity, catchability,
-#' catch observation error, fishery indices, and age and length composition
-#' simulation settings (likelihoods, sample sizes, overdispersion, and
-#' correlation parameters). Must be called after \code{\link{Setup_Sim_Dim}}.
+#' Initializes and validates fishing-related inputs for a simulation list (`sim_list`).
+#' This includes fishing mortality, selectivity, catchability, observation error,
+#' and age/length composition parameters for both general and population-specific data.
 #'
-#' Most array arguments accept either numeric codes or their character string
-#' equivalents (e.g., \code{"biom"} instead of \code{1}); these are converted
-#' internally via \code{convert_to_numeric()}.
+#' @param sim_list A list containing simulation settings, including the number of populations
+#'   (`n_pop`), regions (`n_regions`), years (`n_yrs`), seasons (`n_seas`), ages (`n_ages`),
+#'   sexes (`n_sexes`), fishing fleets (`n_fish_fleets`), and simulations (`n_sims`).
+#' @param ln_sigmaC Numeric array. Observation SD for fishery catch (log-scale),
+#'   dimensions `n_regions x n_yrs x n_seas x n_fish_fleets`. Default: log(0.02).
+#' @param ln_sigmaC_pop Numeric array. Observation SD for population-specific catch (log-scale),
+#'   dimensions `n_pop x n_regions x n_yrs x n_seas x n_fish_fleets`. Default: log(0.02).
+#' @param catch_units Numeric vector. Units for catch (0 = abundance, 1 = biomass). Default: 1.
+#' @param init_F_val Numeric vector. Initial fishing mortality by season (`n_seas`). Default: 0.
+#' @param Fmort_input Numeric array. Fishing mortality pattern,
+#'   dimensions `n_regions x n_yrs x n_seas x n_fish_fleets x n_sims`. Default: 0.1.
+#' @param fish_sel_input Numeric array. Fishery selectivity,
+#'   dimensions `n_regions x n_yrs x n_ages x n_sexes x n_fish_fleets x n_sims`.
+#' @param fish_q_input Numeric array. Fishery catchability,
+#'   dimensions `n_regions x n_yrs x n_fish_fleets x n_sims`. Default: 1.
+#' @param ObsFishIdx_SE Numeric array. Observation SD for fishery indices,
+#'   dimensions `n_regions x n_yrs x n_seas x n_fish_fleets`. Default: 0.2.
+#' @param ObsFishIdx_pop_SE Numeric array. Population-specific observation SD,
+#'   dimensions `n_pop x n_regions x n_yrs x n_seas x n_fish_fleets`. Default: 0.2.
+#' @param fish_idx_type Numeric array. Type of fishery index (0 = abundance, 1 = biomass),
+#'   dimensions `n_regions x n_fish_fleets`. Default: 1.
+#' @param comp_fishage_like Numeric vector. Likelihood type for fishery age composition,
+#'   length `n_fish_fleets`. Default: 0.
+#' @param ISS_FishAgeComps Numeric array. Effective sample sizes for fishery age comps,
+#'   dimensions `n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x n_sims`. Default: 100.
+#' @param ln_FishAge_theta Numeric array. Log-scale overdispersion for fishery age comps,
+#'   dimensions `n_regions x n_sexes x n_fish_fleets`. Default: 1.
+#' @param ln_FishAge_theta_agg Numeric vector. Aggregated fishery age theta (log-scale),
+#'   length `n_fish_fleets`. Default: 1.
+#' @param FishAge_corr_pars_agg Numeric vector. Aggregated fishery age correlation parameters,
+#'   length `n_fish_fleets`. Default: 0.01.
+#' @param FishAge_corr_pars Numeric array. Fishery age correlation parameters,
+#'   dimensions `n_regions x n_sexes x n_fish_fleets x 2`. Default: 0.01.
+#' @param FishAgeComps_Type Numeric array. Type of fishery age composition, `n_yrs x n_fish_fleets`. Default: 2.
+#' @param comp_fishlen_like Numeric vector. Likelihood type for fishery length composition,
+#'   length `n_fish_fleets`. Default: 0.
+#' @param ISS_FishLenComps Numeric array. Effective sample sizes for fishery length comps,
+#'   dimensions `n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x n_sims`. Default: 100.
+#' @param ln_FishLen_theta Numeric array. Log-scale overdispersion for fishery length comps,
+#'   dimensions `n_regions x n_sexes x n_fish_fleets`. Default: 1.
+#' @param ln_FishLen_theta_agg Numeric vector. Aggregated fishery length theta (log-scale),
+#'   length `n_fish_fleets`. Default: 1.
+#' @param FishLen_corr_pars_agg Numeric vector. Aggregated fishery length correlation parameters,
+#'   length `n_fish_fleets`. Default: 0.01.
+#' @param FishLen_corr_pars Numeric array. Fishery length correlation parameters,
+#'   dimensions `n_regions x n_sexes x n_fish_fleets x 2`. Default: 0.01.
+#' @param FishLenComps_Type Numeric array. Type of fishery length composition, `n_yrs x n_fish_fleets`. Default: 2.
 #'
-#' @param sim_list Simulation list returned by \code{\link{Setup_Sim_Dim}}.
+#' @param pop_comp_fishage_like Numeric vector. Likelihood type for population-specific age comps,
+#'   length `n_fish_fleets`. Default: 0.
+#' @param ISS_FishAgeComps_pop Numeric array. Pop-specific age comp effective sample sizes,
+#'   dimensions `n_pop x n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x n_sims`. Default: 100.
+#' @param ln_FishAge_pop_theta Numeric array. Pop-specific age theta (log-scale),
+#'   dimensions `n_pop x n_regions x n_sexes x n_fish_fleets`. Default: 1.
+#' @param ln_FishAge_pop_theta_agg Numeric array. Aggregated pop-specific age theta (log-scale),
+#'   dimensions `n_pop x n_fish_fleets`. Default: 1.
+#' @param FishAge_pop_corr_pars Numeric array. Pop-specific age correlation parameters,
+#'   dimensions `n_pop x n_regions x n_sexes x n_fish_fleets x 2`. Default: 0.01.
+#' @param FishAge_pop_corr_pars_agg Numeric array. Aggregated pop-specific age correlation parameters,
+#'   dimensions `n_pop x n_fish_fleets`. Default: 0.01.
+#' @param pop_FishAgeComps_Type Numeric array. Type of pop-specific age composition, `n_yrs x n_fish_fleets`. Default: 2.
+#' @param pop_comp_fishlen_like Numeric vector. Likelihood type for population-specific length comps,
+#'   length `n_fish_fleets`. Default: 0.
+#' @param ISS_FishLenComps_pop Numeric array. Pop-specific length comp effective sample sizes,
+#'   dimensions `n_pop x n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x n_sims`. Default: 100.
+#' @param ln_FishLen_pop_theta Numeric array. Pop-specific length theta (log-scale),
+#'   dimensions `n_pop x n_regions x n_sexes x n_fish_fleets`. Default: 1.
+#' @param ln_FishLen_pop_theta_agg Numeric array. Aggregated pop-specific length theta (log-scale),
+#'   dimensions `n_pop x n_fish_fleets`. Default: 1.
+#' @param FishLen_pop_corr_pars Numeric array. Pop-specific length correlation parameters,
+#'   dimensions `n_pop x n_regions x n_sexes x n_fish_fleets x 2`. Default: 0.01.
+#' @param FishLen_pop_corr_pars_agg Numeric array. Aggregated pop-specific length correlation parameters,
+#'   dimensions `n_pop x n_fish_fleets`. Default: 0.01.
+#' @param pop_FishLenComps_Type Numeric array. Type of pop-specific length composition, `n_yrs x n_fish_fleets`. Default: 2.
 #'
-#' @section Fishing mortality:
-#' \describe{
-#'   \item{\code{Fmort_input}}{Instantaneous fishing mortality array
-#'     \code{[n_regions × n_yrs × n_seas × n_fish_fleets × n_sims]}.
-#'     Default: \code{0.1} for all cells.}
-#'   \item{\code{init_F_val}}{Numeric vector of length \code{n_seas} giving the
-#'     initial fishing mortality used during equilibrium initialisation for the
-#'     dominant fleet. Default: \code{rep(0, n_seas)} (unfished initialisation).}
-#'   \item{\code{fish_sel_input}}{Fishery selectivity-at-age array
-#'     \code{[n_regions × n_yrs × n_ages × n_sexes × n_fish_fleets × n_sims]}.
-#'     No default; must be provided.}
-#'   \item{\code{fish_q_input}}{Fishery catchability array
-#'     \code{[n_regions × n_yrs × n_fish_fleets × n_sims]}.
-#'     Default: \code{1} for all cells.}
-#'   \item{\code{catch_units}}{Integer array \code{[n_fish_fleets]} specifying
-#'     the units in which catch is recorded per fleet.
-#'     \code{0}/\code{"abd"} = abundance; \code{1}/\code{"biom"} = biomass
-#'     (default).}
-#' }
-#'
-#' @section Catch observation error:
-#' \describe{
-#'   \item{\code{ln_sigmaC}}{Log-scale standard deviation of lognormal catch
-#'     observation error, array
-#'     \code{[n_regions × n_yrs × n_seas × n_fish_fleets]}.
-#'     Default: \code{log(0.02)}.}
-#' }
-#'
-#' @section Fishery index:
-#' \describe{
-#'   \item{\code{ObsFishIdx_SE}}{Standard error of the observed fishery index
-#'     (lognormal scale), array
-#'     \code{[n_regions × n_yrs × n_seas × n_fish_fleets]}.
-#'     Default: \code{0.2}.}
-#'   \item{\code{fish_idx_type}}{Integer array \code{[n_regions × n_fish_fleets]}
-#'     specifying whether each fleet's index is an abundance or biomass index.
-#'     \code{0}/\code{"abd"} = abundance; \code{1}/\code{"biom"} = biomass
-#'     (default).}
-#' }
-#'
-#' @section Fishery age composition:
-#' \describe{
-#'   \item{\code{FishAgeComps_Type}}{Integer array \code{[n_yrs × n_fish_fleets]}
-#'     controlling how age compositions are structured before simulation.
-#'     \code{0}/\code{"agg"} = aggregated across regions and sexes;
-#'     \code{1}/\code{"spltRspltS"} = split by region and sex;
-#'     \code{2}/\code{"spltRjntS"} = split by region, joint across sexes (default);
-#'     \code{999}/\code{"none"} = not simulated.}
-#'   \item{\code{comp_fishage_like}}{Integer vector \code{[n_fish_fleets]}
-#'     specifying the composition likelihood used to simulate age observations.
-#'     \code{0}/\code{"Multinomial"} (default);
-#'     \code{1}/\code{"Dirichlet-Multinomial"};
-#'     \code{2}/\code{"iid-Logistic-Normal"};
-#'     \code{3}/\code{"1d-Logistic-Normal"} (AR1 by age);
-#'     \code{4}/\code{"2d-Logistic-Normal"} (AR1 by age, constant by sex).}
-#'   \item{\code{ISS_FishAgeComps}}{Input sample sizes for age composition
-#'     simulation, array
-#'     \code{[n_regions × n_yrs × n_seas × n_sexes × n_fish_fleets × n_sims]}.
-#'     Interpreted as the Dirichlet-Multinomial or multinomial sample size
-#'     depending on \code{comp_fishage_like}. Default: \code{100}.}
-#'   \item{\code{ln_FishAge_theta}}{Log-scale overdispersion parameters for
-#'     fleet- region- and sex-specific compositions, array
-#'     \code{[n_regions × n_sexes × n_fish_fleets]}.
-#'     Only used for Dirichlet-Multinomial and logistic-normal likelihoods.
-#'     Default: \code{log(1)}.}
-#'   \item{\code{ln_FishAge_theta_agg}}{Log-scale overdispersion parameters
-#'     for aggregated compositions, vector \code{[n_fish_fleets]}.
-#'     Default: \code{log(1)}.}
-#'   \item{\code{FishAge_corr_pars}}{Correlation parameters for 1D/2D
-#'     logistic-normal likelihoods, array
-#'     \code{[n_regions × n_sexes × n_fish_fleets × 2]}.
-#'     The two trailing elements correspond to the age AR1 coefficient and
-#'     the sex correlation. Default: \code{0.01}.}
-#'   \item{\code{FishAge_corr_pars_agg}}{Correlation parameters for aggregated
-#'     compositions under options 3–4, vector \code{[n_fish_fleets]}.
-#'     Default: \code{0.01}.}
-#' }
-#'
-#' @section Fishery length composition:
-#' \describe{
-#'   \item{\code{FishLenComps_Type}}{Integer array \code{[n_yrs × n_fish_fleets]}
-#'     with the same coding as \code{FishAgeComps_Type} but applied to length
-#'     compositions. Default: \code{2} (split by region, joint across sexes).}
-#'   \item{\code{comp_fishlen_like}}{Integer vector \code{[n_fish_fleets]}
-#'     with the same likelihood codes as \code{comp_fishage_like} applied to
-#'     length compositions. Default: \code{0} (Multinomial).}
-#'   \item{\code{ISS_FishLenComps}}{Input sample sizes for length composition
-#'     simulation, array
-#'     \code{[n_regions × n_yrs × n_seas × n_sexes × n_fish_fleets × n_sims]}.
-#'     Default: \code{100}.}
-#'   \item{\code{ln_FishLen_theta}}{Log-scale overdispersion parameters for
-#'     length compositions, array
-#'     \code{[n_regions × n_sexes × n_fish_fleets]}.
-#'     Default: \code{log(1)}.}
-#'   \item{\code{ln_FishLen_theta_agg}}{Log-scale overdispersion for aggregated
-#'     length compositions, vector \code{[n_fish_fleets]}.
-#'     Default: \code{log(1)}.}
-#'   \item{\code{FishLen_corr_pars}}{Correlation parameters for 1D/2D
-#'     logistic-normal length likelihoods, array
-#'     \code{[n_regions × n_sexes × n_fish_fleets × 2]}.
-#'     Default: \code{0.01}.}
-#'   \item{\code{FishLen_corr_pars_agg}}{Correlation parameters for aggregated
-#'     length compositions, vector \code{[n_fish_fleets]}.
-#'     Default: \code{0.01}.}
-#' }
-#'
-#' @return The input \code{sim_list} with all fishery fields appended under their
-#'   respective names (e.g., \code{$Fmort}, \code{$fish_sel}, \code{$ln_sigmaC},
-#'   \code{$comp_fishage_like}, \code{$ISS_FishAgeComps}, etc.). Character-coded
-#'   inputs are converted to their integer equivalents before storage.
-#'
-#'
+#' @return A list (`sim_list`) with all fishing-related variables added and validated.
 #' @export Setup_Sim_Fishing
 #' @family Simulation Setup
 Setup_Sim_Fishing <- function(sim_list,
                               ln_sigmaC = array(log(0.02), dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
+                              ln_sigmaC_pop = array(log(0.02), dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
                               catch_units = array(1, dim = c(sim_list$n_fish_fleets)),
                               init_F_val = rep(0, sim_list$n_seas),
                               Fmort_input = array(0.1, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets, sim_list$n_sims)),
                               fish_sel_input,
                               fish_q_input = array(1, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_fish_fleets, sim_list$n_sims)),
                               ObsFishIdx_SE = array(0.2, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
+                              ObsFishIdx_pop_SE = array(0.2, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
                               fish_idx_type = array(1, dim = c(sim_list$n_regions, sim_list$n_fish_fleets)),
                               comp_fishage_like = rep(0, sim_list$n_fish_fleets),
                               ISS_FishAgeComps = array(100, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims)),
@@ -148,7 +106,21 @@ Setup_Sim_Fishing <- function(sim_list,
                               ln_FishLen_theta_agg = rep(log(1), sim_list$n_fish_fleets),
                               FishLen_corr_pars_agg = rep(0.01, sim_list$n_fish_fleets),
                               FishLen_corr_pars = array(0.01, dim = c(sim_list$n_regions, sim_list$n_sexes, sim_list$n_fish_fleets, 2)),
-                              FishLenComps_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_fish_fleets))
+                              FishLenComps_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_fish_fleets)),
+                              pop_comp_fishage_like = rep(0, sim_list$n_fish_fleets),
+                              ISS_FishAgeComps_pop = array(100, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims)),
+                              ln_FishAge_pop_theta = array(log(1), dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_sexes, sim_list$n_fish_fleets)),
+                              ln_FishAge_pop_theta_agg = array(log(1), dim = c(sim_list$n_pop, sim_list$n_fish_fleets)),
+                              FishAge_pop_corr_pars = array(0.01, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_sexes, sim_list$n_fish_fleets, 2)),
+                              FishAge_pop_corr_pars_agg = array(0.01, dim = c(sim_list$n_pop, sim_list$n_fish_fleets)),
+                              pop_FishAgeComps_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_fish_fleets)),
+                              pop_comp_fishlen_like = rep(0, sim_list$n_fish_fleets),
+                              ISS_FishLenComps_pop = array(100, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims)),
+                              ln_FishLen_pop_theta = array(log(1), dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_sexes, sim_list$n_fish_fleets)),
+                              ln_FishLen_pop_theta_agg = array(log(1), dim = c(sim_list$n_pop, sim_list$n_fish_fleets)),
+                              FishLen_pop_corr_pars = array(0.01, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_sexes, sim_list$n_fish_fleets, 2)),
+                              FishLen_pop_corr_pars_agg = array(0.01, dim = c(sim_list$n_pop, sim_list$n_fish_fleets)),
+                              pop_FishLenComps_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_fish_fleets))
                               ) {
 
   # Convert character inputs to numeric codes
@@ -158,10 +130,14 @@ Setup_Sim_Fishing <- function(sim_list,
   comp_fishlen_like <- convert_to_numeric(comp_fishlen_like, list(Multinomial = 0, `Dirichlet-Multinomial` = 1, `iid-Logistic-Normal` = 2, `1d-Logistic-Normal` = 3, `2d-Logistic-Normal` = 4))
   FishAgeComps_Type <- convert_to_numeric(FishAgeComps_Type,  list(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999))
   FishLenComps_Type <- convert_to_numeric(FishLenComps_Type,  list(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999))
+  pop_FishAgeComps_Type <- convert_to_numeric(pop_FishAgeComps_Type,  list(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999))
+  pop_FishLenComps_Type <- convert_to_numeric(pop_FishLenComps_Type,  list(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999))
 
   # Validate dimensions of all input parameters
   check_sim_dimensions(ln_sigmaC, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
                        n_fish_fleets = sim_list$n_fish_fleets, what = "ln_sigmaC")
+  check_sim_dimensions(ln_sigmaC_pop, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
+                       n_fish_fleets = sim_list$n_fish_fleets, n_pop = sim_list$n_pop, what = "ln_sigmaC_pop")
   check_sim_dimensions(Fmort_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
                        n_fish_fleets = sim_list$n_fish_fleets, n_sims = sim_list$n_sims, what = "Fmort_input")
   check_sim_dimensions(fish_sel_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs,
@@ -171,6 +147,8 @@ Setup_Sim_Fishing <- function(sim_list,
                        n_fish_fleets = sim_list$n_fish_fleets, n_sims = sim_list$n_sims, what = "fish_q_input")
   check_sim_dimensions(ObsFishIdx_SE, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
                        n_fish_fleets = sim_list$n_fish_fleets, what = "ObsFishIdx_SE")
+  check_sim_dimensions(ObsFishIdx_pop_SE, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
+                       n_fish_fleets = sim_list$n_fish_fleets, what = "ObsFishIdx_pop_SE")
 
   # Validate fishery age composition parameters
   check_sim_dimensions(comp_fishage_like, n_fish_fleets = sim_list$n_fish_fleets, what = "comp_fishage_like")
@@ -185,6 +163,14 @@ Setup_Sim_Fishing <- function(sim_list,
                        n_fish_fleets = sim_list$n_fish_fleets, what = "FishAge_corr_pars")
   check_sim_dimensions(FishAgeComps_Type, n_years = sim_list$n_yrs, n_fish_fleets = sim_list$n_fish_fleets,
                        what = "FishAgeComps_Type")
+  check_sim_dimensions(pop_comp_fishage_like, n_fish_fleets = sim_list$n_fish_fleets, what = "pop_comp_fishage_like")
+  check_sim_dimensions(ISS_FishAgeComps_pop, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas, n_sexes = sim_list$n_sexes, n_fish_fleets = sim_list$n_fish_fleets, n_sims = sim_list$n_sims, what = "ISS_FishAgeComps_pop")
+  check_sim_dimensions(ln_FishAge_pop_theta, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes, n_fish_fleets = sim_list$n_fish_fleets, what = "ln_FishAge_pop_theta")
+  check_sim_dimensions(ln_FishAge_pop_theta_agg, n_pop = sim_list$n_pop, n_fish_fleets = sim_list$n_fish_fleets, what = "ln_FishAge_pop_theta_agg")
+  check_sim_dimensions(FishAge_pop_corr_pars_agg, n_pop = sim_list$n_pop, n_fish_fleets = sim_list$n_fish_fleets, what = "FishAge_pop_corr_pars_agg")
+  check_sim_dimensions(FishAge_pop_corr_pars, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes, n_fish_fleets = sim_list$n_fish_fleets, what = "FishAge_pop_corr_pars")
+  check_sim_dimensions(pop_FishAgeComps_Type, n_years = sim_list$n_yrs, n_fish_fleets = sim_list$n_fish_fleets, what = "pop_FishAgeComps_Type")
+
 
   # Validate fishery length composition parameters
   check_sim_dimensions(comp_fishlen_like, n_fish_fleets = sim_list$n_fish_fleets, what = "comp_fishlen_like")
@@ -199,15 +185,24 @@ Setup_Sim_Fishing <- function(sim_list,
                        n_fish_fleets = sim_list$n_fish_fleets, what = "FishLen_corr_pars")
   check_sim_dimensions(FishLenComps_Type, n_years = sim_list$n_yrs, n_fish_fleets = sim_list$n_fish_fleets,
                        what = "FishLenComps_Type")
+  check_sim_dimensions(pop_comp_fishlen_like, n_fish_fleets = sim_list$n_fish_fleets, what = "pop_comp_fishlen_like")
+  check_sim_dimensions(ISS_FishLenComps_pop, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas, n_sexes = sim_list$n_sexes, n_fish_fleets = sim_list$n_fish_fleets, n_sims = sim_list$n_sims, what = "ISS_FishLenComps_pop")
+  check_sim_dimensions(ln_FishLen_pop_theta, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes, n_fish_fleets = sim_list$n_fish_fleets, what = "ln_FishLen_pop_theta")
+  check_sim_dimensions(ln_FishLen_pop_theta_agg, n_pop = sim_list$n_pop, n_fish_fleets = sim_list$n_fish_fleets, what = "ln_FishLen_pop_theta_agg")
+  check_sim_dimensions(FishLen_pop_corr_pars_agg, n_pop = sim_list$n_pop, n_fish_fleets = sim_list$n_fish_fleets, what = "FishLen_pop_corr_pars_agg")
+  check_sim_dimensions(FishLen_pop_corr_pars, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes, n_fish_fleets = sim_list$n_fish_fleets, what = "FishLen_pop_corr_pars")
+  check_sim_dimensions(pop_FishLenComps_Type, n_years = sim_list$n_yrs, n_fish_fleets = sim_list$n_fish_fleets, what = "pop_FishLenComps_Type")
 
   # output variables into list
   sim_list$Fmort <- Fmort_input # input fishing mortality pattern
   sim_list$catch_units <- catch_units # catch units
   sim_list$ln_sigmaC <- ln_sigmaC # Observation sd for catch
+  sim_list$ln_sigmaC_pop <- ln_sigmaC_pop # observation sd for pop-specific catch
   sim_list$init_F <- init_F_val # initial F value
   sim_list$fish_sel <- fish_sel_input # fishery selectivity
   sim_list$fish_q <- fish_q_input # fishery catchability
   sim_list$ObsFishIdx_SE <- ObsFishIdx_SE # fishery index SE
+  sim_list$ObsFishIdx_pop_SE <- ObsFishIdx_pop_SE # fishery index SE pop-specific
   sim_list$fish_idx_type <- fish_idx_type # fishery index type
 
   # Fishery age compositions
@@ -227,6 +222,23 @@ Setup_Sim_Fishing <- function(sim_list,
   sim_list$FishLen_corr_pars_agg <- FishLen_corr_pars_agg
   sim_list$FishLen_corr_pars <- FishLen_corr_pars
   sim_list$FishLenComps_Type <- FishLenComps_Type
+
+  # Population-specific stuff
+  sim_list$pop_comp_fishage_like <- pop_comp_fishage_like
+  sim_list$ISS_FishAgeComps_pop <- ISS_FishAgeComps_pop
+  sim_list$ln_FishAge_pop_theta <- ln_FishAge_pop_theta
+  sim_list$ln_FishAge_pop_theta_agg <- ln_FishAge_pop_theta_agg
+  sim_list$FishAge_pop_corr_pars <- FishAge_pop_corr_pars
+  sim_list$FishAge_pop_corr_pars_agg <- FishAge_pop_corr_pars_agg
+  sim_list$pop_FishAgeComps_Type <- pop_FishAgeComps_Type
+
+  sim_list$pop_comp_fishlen_like <- pop_comp_fishlen_like
+  sim_list$ISS_FishLenComps_pop <- ISS_FishLenComps_pop
+  sim_list$ln_FishLen_pop_theta <- ln_FishLen_pop_theta
+  sim_list$ln_FishLen_pop_theta_agg <- ln_FishLen_pop_theta_agg
+  sim_list$FishLen_pop_corr_pars <- FishLen_pop_corr_pars
+  sim_list$FishLen_pop_corr_pars_agg <- FishLen_pop_corr_pars_agg
+  sim_list$pop_FishLenComps_Type <- pop_FishLenComps_Type
 
   return(sim_list)
 }
@@ -486,8 +498,7 @@ do_sigmaC_mapping <- function(input_list, sigmaC_spec) {
 #' @keywords internal
 do_Fmort_mapping <- function(input_list) {
 
-  # Mapping for fishing mortality deviations
-  F_dev_map <- input_list$par$ln_F_devs # initialize for mapping
+  F_dev_map <- input_list$par$ln_F_devs
   F_dev_map[] <- NA
   F_dev_counter <- 1
 
@@ -496,74 +507,281 @@ do_Fmort_mapping <- function(input_list) {
       for(seas in 1:input_list$data$n_seas) {
         for(f in 1:input_list$data$n_fish_fleets) {
 
-          # if no catch, don't estimate devs
-          if(input_list$data$UseCatch[r,y,seas,f] == 0) {
-            F_dev_map[r,y,seas,f] <- NA
-          }
+          # Estimate F devs if aggregated catch OR any pop-specific catch
+          # is used for this r/y/seas/f combination
+          has_agg_catch <- input_list$data$UseCatch[r,y,seas,f] == 1
+          has_pop_catch <- any(input_list$data$UseCatch_pop[,r,y,seas,f] == 1)
 
-          # if have catch, estimate f devs
-          if(input_list$data$UseCatch[r,y,seas,f] == 1) {
+          if(has_agg_catch || has_pop_catch) {
             F_dev_map[r,y,seas,f] <- F_dev_counter
             F_dev_counter <- F_dev_counter + 1
-          } # end if
+          }
 
         } # end f
-      } # end seas loop
+      } # end seas
     } # end y
   } # end r
 
   input_list$map$ln_F_devs <- factor(F_dev_map)
-
   return(input_list)
 }
 
-##' Set up fishing mortality and catch observation inputs
+#' Map population-specific catch observation error SD parameters
+#'
+#' Constructs the \code{ln_sigmaC_pop} factor map used by the TMB/RTMB
+#' objective function to share or fix the log-scale standard deviation of
+#' population-specific catch observation error across populations, regions,
+#' years, seasons, and fleets. All cells within a shared group are assigned
+#' the same estimation index.
+#'
+#' The sharing specification encodes which dimensions are collapsed into a
+#' single parameter via underscore-separated tokens. For example,
+#' \code{"est_shared_pop_r"} shares across populations and regions (one
+#' parameter per year × season × fleet combination), while
+#' \code{"est_shared_r_f"} shares across regions and fleets (one parameter
+#' per population × year × season combination).
+#'
+#' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
+#'   sublists, as constructed by upstream setup functions. Requires
+#'   \code{$data$n_pop}, \code{$data$n_regions}, \code{$data$years},
+#'   \code{$data$n_seas}, \code{$data$n_fish_fleets}, and
+#'   \code{$par$ln_sigmaC_pop} to be populated before calling.
+#' @param sigmaC_pop_spec Character string controlling the sharing and
+#'   estimation structure for \code{ln_sigmaC_pop}. One of:
+#'   \describe{
+#'     \item{\code{"fix"}}{All parameters fixed at starting values
+#'       (mapped to \code{NA}).}
+#'     \item{\code{"est_all"}}{Unique parameter per population × region ×
+#'       year × season × fleet cell.}
+#'     \item{\code{"est_shared_pop"}}{Shared across populations; unique per
+#'       region × year × season × fleet.}
+#'     \item{\code{"est_shared_r"}}{Shared across regions; unique per
+#'       population × year × season × fleet.}
+#'     \item{\code{"est_shared_y"}}{Shared across years; unique per
+#'       population × region × season × fleet.}
+#'     \item{\code{"est_shared_seas"}}{Shared across seasons; unique per
+#'       population × region × year × fleet.}
+#'     \item{\code{"est_shared_f"}}{Shared across fleets; unique per
+#'       population × region × year × season.}
+#'     \item{\code{"est_shared_pop_r"}}{Shared across populations and regions.}
+#'     \item{\code{"est_shared_pop_y"}}{Shared across populations and years.}
+#'     \item{\code{"est_shared_pop_seas"}}{Shared across populations and seasons.}
+#'     \item{\code{"est_shared_pop_f"}}{Shared across populations and fleets.}
+#'     \item{\code{"est_shared_r_y"}}{Shared across regions and years.}
+#'     \item{\code{"est_shared_r_seas"}}{Shared across regions and seasons.}
+#'     \item{\code{"est_shared_r_f"}}{Shared across regions and fleets.}
+#'     \item{\code{"est_shared_y_seas"}}{Shared across years and seasons.}
+#'     \item{\code{"est_shared_y_f"}}{Shared across years and fleets.}
+#'     \item{\code{"est_shared_seas_f"}}{Shared across seasons and fleets.}
+#'     \item{\code{"est_shared_pop_r_y"}}{Shared across populations, regions,
+#'       and years.}
+#'     \item{\code{"est_shared_pop_r_seas"}}{Shared across populations, regions,
+#'       and seasons.}
+#'     \item{\code{"est_shared_pop_r_f"}}{Shared across populations, regions,
+#'       and fleets.}
+#'     \item{\code{"est_shared_pop_y_seas"}}{Shared across populations, years,
+#'       and seasons.}
+#'     \item{\code{"est_shared_pop_y_f"}}{Shared across populations, years,
+#'       and fleets.}
+#'     \item{\code{"est_shared_pop_seas_f"}}{Shared across populations, seasons,
+#'       and fleets.}
+#'     \item{\code{"est_shared_r_y_seas"}}{Shared across regions, years,
+#'       and seasons.}
+#'     \item{\code{"est_shared_r_y_f"}}{Shared across regions, years,
+#'       and fleets.}
+#'     \item{\code{"est_shared_r_seas_f"}}{Shared across regions, seasons,
+#'       and fleets.}
+#'     \item{\code{"est_shared_y_seas_f"}}{Shared across years, seasons,
+#'       and fleets.}
+#'     \item{\code{"est_shared_pop_r_y_seas"}}{Shared across populations,
+#'       regions, years, and seasons.}
+#'     \item{\code{"est_shared_pop_r_y_f"}}{Shared across populations, regions,
+#'       years, and fleets.}
+#'     \item{\code{"est_shared_pop_r_seas_f"}}{Shared across populations,
+#'       regions, seasons, and fleets.}
+#'     \item{\code{"est_shared_pop_y_seas_f"}}{Shared across populations, years,
+#'       seasons, and fleets.}
+#'     \item{\code{"est_shared_r_y_seas_f"}}{Shared across regions, years,
+#'       seasons, and fleets.}
+#'     \item{\code{"est_shared_pop_r_y_seas_f"}}{Single parameter shared across
+#'       all dimensions.}
+#'   }
+#'
+#'
+#' @keywords internal
+do_sigmaC_pop_mapping <- function(input_list, sigmaC_pop_spec) {
+
+  # All valid sharing specs
+  valid_specs <- c("fix", "est_all",
+                   "est_shared_pop", "est_shared_r", "est_shared_y",
+                   "est_shared_seas", "est_shared_f",
+                   "est_shared_pop_r", "est_shared_pop_y", "est_shared_pop_seas",
+                   "est_shared_pop_f", "est_shared_r_y", "est_shared_r_seas",
+                   "est_shared_r_f", "est_shared_y_seas", "est_shared_y_f",
+                   "est_shared_seas_f",
+                   "est_shared_pop_r_y", "est_shared_pop_r_seas", "est_shared_pop_r_f",
+                   "est_shared_pop_y_seas", "est_shared_pop_y_f", "est_shared_pop_seas_f",
+                   "est_shared_r_y_seas", "est_shared_r_y_f", "est_shared_r_seas_f",
+                   "est_shared_y_seas_f",
+                   "est_shared_pop_r_y_seas", "est_shared_pop_r_y_f",
+                   "est_shared_pop_r_seas_f", "est_shared_pop_y_seas_f",
+                   "est_shared_r_y_seas_f",
+                   "est_shared_pop_r_y_seas_f")
+
+  if (!sigmaC_pop_spec %in% valid_specs)
+    stop("sigmaC_pop_spec '", sigmaC_pop_spec,
+         "' not recognized. Valid options: ", paste(valid_specs, collapse = ", "))
+
+  # Fixing everything
+  if (sigmaC_pop_spec == "fix") {
+    input_list$map$ln_sigmaC_pop <- factor(rep(NA, length(input_list$par$ln_sigmaC_pop)))
+    collect_message("sigmaC_pop is specified as: fix")
+    return(input_list)
+  }
+
+  # Independently estimate everything
+  if (sigmaC_pop_spec == "est_all") {
+    input_list$map$ln_sigmaC_pop <- factor(seq_along(input_list$par$ln_sigmaC_pop))
+    collect_message("sigmaC_pop is specified as: est_all")
+    return(input_list)
+  }
+
+  # Pull dimensions out of the data list for readability
+  n_pop         <- input_list$data$n_pop
+  n_regions     <- input_list$data$n_regions
+  n_years       <- length(input_list$data$years)
+  n_seas        <- input_list$data$n_seas
+  n_fish_fleets <- input_list$data$n_fish_fleets
+
+  map_sigmaC_pop <- input_list$par$ln_sigmaC_pop
+  counter <- 1  # running integer index for unique parameters
+
+  # Walk every cell of the 5D array [p, r, y, seas, f]
+  for (p in 1:n_pop) {
+    for (r in 1:n_regions) {
+      for (y in 1:n_years) {
+        for (seas in 1:n_seas) {
+          for (f in 1:n_fish_fleets) {
+
+            # Check specification and see if dimensions > 1
+            share_p    <- grepl("p",    sigmaC_pop_spec) && p    > 1
+            share_r    <- grepl("_r",   sigmaC_pop_spec) && r    > 1
+            share_y    <- grepl("_y",   sigmaC_pop_spec) && y    > 1
+            share_seas <- grepl("seas", sigmaC_pop_spec) && seas > 1
+            share_f    <- grepl("_f",   sigmaC_pop_spec) && f    > 1
+
+            # Check to see if we are sharing a dimension, and if that dimesnion = 1
+            is_first <- (!share_p    || p    == 1) &&
+                        (!share_r    || r    == 1) &&
+                        (!share_y    || y    == 1) &&
+                        (!share_seas || seas == 1) &&
+                        (!share_f    || f    == 1)
+
+            if (is_first) {
+
+              # figure out indexing, if sharing dimension, then use full vector, otherwise,
+              # population unique index
+              p_idx    <- if (share_p)    1:n_pop         else p
+              r_idx    <- if (share_r)    1:n_regions     else r
+              y_idx    <- if (share_y)    1:n_years       else y
+              seas_idx <- if (share_seas) 1:n_seas        else seas
+              f_idx    <- if (share_f)    1:n_fish_fleets else f
+              map_sigmaC_pop[p_idx, r_idx, y_idx, seas_idx, f_idx] <- counter
+              counter <- counter + 1  # update counter
+            }  # end if
+          } # end f
+        } # end seas
+      } # end y
+    } # end r
+  } # end p
+
+  input_list$map$ln_sigmaC_pop <- factor(map_sigmaC_pop)
+  collect_message("sigmaC_pop is specified as: ", sigmaC_pop_spec)
+  return(input_list)
+}
+
+#' Set up fishing mortality and catch observation inputs
 #'
 #' Populates \code{input_list} with observed catch, catch usage indicators,
 #' fishing mortality parameters (\code{ln_F_mean}, \code{ln_F_devs}), and
-#' observation/process error structures (\code{ln_sigmaC}, \code{ln_sigmaF}).
-#' Must be called after \code{\link{Setup_Mod_Biologicals}}.
+#' observation/process error structures (\code{ln_sigmaC}, \code{ln_sigmaC_pop},
+#' \code{ln_sigmaF}). Must be called after \code{\link{Setup_Mod_Biologicals}}.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par}, \code{$map},
 #'   and \code{$verbose} sublists, as returned by upstream setup functions.
-#' @param ObsCatch Observed catch array \code{[n_regions × n_years × n_seas × n_fish_fleets]}.
+#' @param ObsCatch Observed aggregated catch array
+#'   \code{[n_regions × n_years × n_seas × n_fish_fleets]}.
 #'   Values should be in the units specified by \code{catch_units}.
-#' @param UseCatch Binary indicator array \code{[n_regions × n_years × n_seas × n_fish_fleets]}
-#'   controlling which catch observations enter the likelihood and whether
-#'   \code{ln_F_devs} are estimated for each cell. \code{1} = use; \code{0} = exclude
-#'   (corresponding \code{ln_F_devs} will be mapped to \code{NA}).
+#' @param ObsCatch_pop Observed population-specific catch array
+#'   \code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]}.
+#'   Values should be in the units specified by \code{catch_units}.
+#' @param UseCatch Binary indicator array
+#'   \code{[n_regions × n_years × n_seas × n_fish_fleets]} controlling which
+#'   aggregated catch observations enter the likelihood and whether
+#'   \code{ln_F_devs} are estimated for each cell. \code{1} = use;
+#'   \code{0} = exclude (corresponding \code{ln_F_devs} will be mapped to
+#'   \code{NA}).
+#' @param UseCatch_pop Binary indicator array
+#'   \code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]} controlling
+#'   which population-specific catch observations enter the likelihood.
+#'   \code{1} = use; \code{0} = exclude.
 #' @param catch_units Character array \code{[n_fish_fleets]} specifying catch
-#'   units per fleet. \code{"biom"} = biomass (default); \code{"abd"} = abundance.
-#'   Converted internally to \code{0}/\code{1} integer codes.
+#'   units per fleet. \code{"biom"} = biomass (default); \code{"abd"} =
+#'   abundance. Converted internally to \code{0}/\code{1} integer codes.
+#' @param Wt_Catch Likelihood weight applied to aggregated catch observations.
+#'   Scalar or array conformable to \code{Catch_nLL}. Default: \code{1}.
+#' @param Wt_Catch_pop Likelihood weight applied to population-specific catch
+#'   observations. Scalar or array conformable to \code{Catch_pop_nLL}.
+#'   Default: \code{1}.
 #' @param Use_F_pen Integer flag for applying a fishing mortality penalty to
-#'   penalise large deviations in \code{ln_F_devs}. \code{1} = apply (default);
-#'   \code{0} = do not apply.
+#'   penalise large deviations in \code{ln_F_devs}. \code{1} = apply
+#'   (default); \code{0} = do not apply.
 #' @param sigmaC_spec Character string specifying the sharing structure for
-#'   \code{ln_sigmaC} (catch observation error SD). Default \code{"fix"} holds
-#'   \code{ln_sigmaC} at its starting value (\code{log(0.01)} unless overridden
-#'   via \code{...}). See \code{\link{do_sigmaC_mapping}} for all sharing options
-#'   (\code{"est_shared_r"}, \code{"est_shared_y"}, \code{"est_all"}, etc.).
-#'   A warning is issued if \code{"fix"} is selected without providing a starting
-#'   value in \code{...}.
+#'   \code{ln_sigmaC} (aggregated catch observation error SD). Default
+#'   \code{"fix"} holds \code{ln_sigmaC} at its starting value
+#'   (\code{log(0.01)} unless overridden via \code{...}). Sharing options
+#'   follow the convention \code{"est_shared_<dims>"} where \code{<dims>} is
+#'   an underscore-separated list of dimensions to collapse: \code{"r"}
+#'   (regions), \code{"y"} (years), \code{"seas"} (seasons), \code{"f"}
+#'   (fleets), or any combination (e.g., \code{"est_shared_r_y"},
+#'   \code{"est_shared_r_y_seas_f"}). Use \code{"est_all"} for a fully
+#'   independent parameter per cell. A warning is issued if \code{"fix"} is
+#'   selected without providing a starting value in \code{...}.
+#' @param sigmaC_pop_spec Character string specifying the sharing structure for
+#'   \code{ln_sigmaC_pop} (population-specific catch observation error SD).
+#'   Default \code{"fix"} holds \code{ln_sigmaC_pop} at its starting value
+#'   (\code{log(0.01)} unless overridden via \code{...}). Sharing options
+#'   follow the same convention as \code{sigmaC_spec} but with an additional
+#'   population dimension: e.g., \code{"est_shared_pop"} shares across
+#'   populations, \code{"est_shared_pop_r"} shares across populations and
+#'   regions, and \code{"est_shared_pop_r_y_seas_f"} collapses all dimensions
+#'   into a single parameter. A warning is issued if \code{"fix"} is selected
+#'   without providing a starting value in \code{...}.
 #' @param sigmaF_spec Character string specifying the sharing structure for
-#'   \code{ln_sigmaF} (fishing mortality process error SD). Default \code{"fix"}
-#'   holds \code{ln_sigmaF} at its starting value (\code{log(1)}, i.e.,
-#'   \eqn{\sigma_F = 1}, unless overridden via \code{...}). See
-#'   \code{\link{do_sigmaF_mapping}} for all sharing options. A warning is issued
-#'   if \code{"fix"} is selected without providing a starting value in \code{...}.
+#'   \code{ln_sigmaF} (fishing mortality process error SD). Default
+#'   \code{"fix"} holds \code{ln_sigmaF} at its starting value (\code{log(1)},
+#'   i.e., \eqn{\sigma_F = 1}, unless overridden via \code{...}). See
+#'   \code{\link{do_sigmaF_mapping}} for all sharing options. A warning is
+#'   issued if \code{"fix"} is selected without providing a starting value
+#'   in \code{...}.
 #' @param ... Optional starting value overrides, passed by name. Recognised
 #'   arguments:
 #'   \describe{
-#'     \item{\code{ln_sigmaC}}{Array of log-scale starting values for catch
-#'       observation error, dimensioned
+#'     \item{\code{ln_sigmaC}}{Array of log-scale starting values for
+#'       aggregated catch observation error, dimensioned
 #'       \code{[n_regions × n_years × n_seas × n_fish_fleets]}.
+#'       Default: \code{log(0.01)}.}
+#'     \item{\code{ln_sigmaC_pop}}{Array of log-scale starting values for
+#'       population-specific catch observation error, dimensioned
+#'       \code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]}.
 #'       Default: \code{log(0.01)}.}
 #'     \item{\code{ln_sigmaF}}{Array of log-scale starting values for fishing
 #'       mortality process error, dimensioned
 #'       \code{[n_regions × n_seas × n_fish_fleets]}.
 #'       Default: \code{log(1)}.}
-#'     \item{\code{ln_F_mean}}{Array of log-scale mean fishing mortality starting
-#'       values, dimensioned \code{[n_regions × n_seas × n_fish_fleets]}.
+#'     \item{\code{ln_F_mean}}{Array of log-scale mean fishing mortality
+#'       starting values, dimensioned
+#'       \code{[n_regions × n_seas × n_fish_fleets]}.
 #'       Default: \code{log(0.1)}.}
 #'     \item{\code{ln_F_devs}}{Array of log-scale annual fishing mortality
 #'       deviation starting values, dimensioned
@@ -572,21 +790,32 @@ do_Fmort_mapping <- function(input_list) {
 #'   }
 #'
 #' @return The input \code{input_list} with \code{$data}, \code{$par}, and
-#'   \code{$map} updated. Key additions: \code{$data$ObsCatch},
-#'   \code{$data$UseCatch}, \code{$data$Use_F_pen}, \code{$data$catch_units},
-#'   \code{$par$ln_sigmaC}, \code{$par$ln_sigmaF}, \code{$par$ln_F_mean},
-#'   \code{$par$ln_F_devs}, \code{$map$ln_sigmaC}, \code{$map$ln_sigmaF},
-#'   \code{$map$ln_F_devs}.
-#'
+#'   \code{$map} updated. Key additions:
+#'   \describe{
+#'     \item{\code{$data}}{
+#'       \code{ObsCatch}, \code{ObsCatch_pop}, \code{UseCatch},
+#'       \code{UseCatch_pop}, \code{Use_F_pen}, \code{catch_units},
+#'       \code{Wt_Catch}, \code{Wt_Catch_pop}.}
+#'     \item{\code{$par}}{
+#'       \code{ln_sigmaC}, \code{ln_sigmaC_pop}, \code{ln_sigmaF},
+#'       \code{ln_F_mean}, \code{ln_F_devs}.}
+#'     \item{\code{$map}}{
+#'       \code{ln_sigmaC}, \code{ln_sigmaC_pop}, \code{ln_sigmaF},
+#'       \code{ln_F_devs}.}
+#'   }
 #'
 #' @export Setup_Mod_Catch_and_F
 #' @family Model Setup
 Setup_Mod_Catch_and_F <- function(input_list,
                                   ObsCatch,
-                                  catch_units = array("biom", dim = c(input_list$data$n_fish_fleets)),
                                   UseCatch,
+                                  catch_units = array("biom", dim = c(input_list$data$n_fish_fleets)),
+                                  UseCatch_pop = array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions,
+                                                                  length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets )),
+                                  ObsCatch_pop = NULL,
                                   Use_F_pen = 1,
                                   sigmaC_spec = "fix",
+                                  sigmaC_pop_spec = 'fix',
                                   sigmaF_spec = "fix",
                                   ...
                                   ) {
@@ -599,9 +828,10 @@ Setup_Mod_Catch_and_F <- function(input_list,
   # Catch objects
   check_data_dimensions(ObsCatch, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsCatch')
   check_data_dimensions(UseCatch, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'UseCatch')
-
-  # Indicators for whether catch is aggregated across regions
-  if(any(UseCatch == 0)) collect_message("User specified catch for some years, seasons, and fleets to not be fit to, and ln_F_devs will not be estimated for those dimensions")
+  if(any(UseCatch_pop == 1)) {
+    check_data_dimensions(ObsCatch_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsCatch_pop')
+    check_data_dimensions(UseCatch_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'UseCatch_pop')
+  }
 
   # Fishing Mortality checking
   if(!Use_F_pen %in% c(0,1)) stop("Use_F_pen incorrectly specified. Either set at 0 (don't use F penalty) or 1 (use F penalty)")
@@ -619,6 +849,8 @@ Setup_Mod_Catch_and_F <- function(input_list,
 
   input_list$data$ObsCatch <- ObsCatch
   input_list$data$UseCatch <- UseCatch
+  input_list$data$ObsCatch_pop <- ObsCatch_pop
+  input_list$data$UseCatch_pop <- UseCatch_pop
   input_list$data$Use_F_pen <- Use_F_pen
   input_list$data$catch_units <- catch_units
 
@@ -627,6 +859,9 @@ Setup_Mod_Catch_and_F <- function(input_list,
   # Catch observation error
   if("ln_sigmaC" %in% names(starting_values)) input_list$par$ln_sigmaC <- starting_values$ln_sigmaC
   else input_list$par$ln_sigmaC <- array(log(0.01), dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets))
+
+  if("ln_sigmaC_pop" %in% names(starting_values)) input_list$par$ln_sigmaC_pop <- starting_values$ln_sigmaC_pop
+  else input_list$par$ln_sigmaC_pop <- array(log(0.01), dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets))
 
   # Process error fishing deviations for regional catch
   if("ln_sigmaF" %in% names(starting_values)) input_list$par$ln_sigmaF <- starting_values$ln_sigmaF
@@ -642,6 +877,7 @@ Setup_Mod_Catch_and_F <- function(input_list,
 
   # Mapping Options ---------------------------------------------------------
   input_list <- do_sigmaC_mapping(input_list, sigmaC_spec)
+  input_list <- do_sigmaC_pop_mapping(input_list, sigmaC_pop_spec)
   input_list <- do_sigmaF_mapping(input_list, sigmaF_spec)
   input_list <- do_Fmort_mapping(input_list)
 
@@ -727,6 +963,84 @@ do_FishAge_theta_mapping <- function(input_list) {
   return(input_list)
 }
 
+#' Map population fishery age composition overdispersion parameters
+#'
+#' Constructs factor maps for \code{ln_FishAge_pop_theta} (fleet- region- and
+#' sex-specific overdispersion) and \code{ln_FishAge_pop_theta_agg} (aggregated
+#' overdispersion) based on the composition type and likelihood specified in
+#' \code{$data$pop_FishAgeComps_Type} and \code{$data$pop_FishAgeComps_LikeType}.
+#' Parameters are mapped to \code{NA} for fleets using multinomial likelihoods
+#' (\code{LikeType == 0}) or with no observed age compositions.
+#'
+#' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
+#'   sublists. Requires \code{pop_FishAgeComps_Type}, \code{pop_FishAgeComps_LikeType},
+#'   and \code{UseFishAgeComps_pop} to be set by
+#'   \code{\link{Setup_Mod_FishIdx_and_Comps}}.
+#'
+#' @return The input \code{input_list} with \code{$map$ln_FishAge_pop_theta} and
+#'   \code{$map$ln_FishAge_pop_theta_agg} set to factor vectors. Active parameters
+#'   receive sequential integer indices; inactive parameters are \code{NA}.
+#'
+#' @keywords internal
+do_FishAge_pop_theta_mapping <- function(input_list) {
+
+  # setup counters
+  counter_fishage_agg <- 1
+  counter_fishage <- 1
+
+  # initialize array to set up mapping
+  map_FishAge_pop_theta <- input_list$par$ln_FishAge_pop_theta
+  map_FishAge_pop_theta_agg <- input_list$par$ln_FishAge_pop_theta_agg
+  map_FishAge_pop_theta[] <- NA
+  map_FishAge_pop_theta_agg[] <- NA
+
+  for(p in 1:input_list$data$n_pop) {
+    for(f in 1:input_list$data$n_fish_fleets) {
+
+      # get unique fishery comp types
+      fishage_comp_type <- unique(input_list$data$pop_FishAgeComps_Type[,f])
+
+      # If aggregated (ages)
+      if(any(fishage_comp_type == 0) && input_list$data$pop_FishAgeComps_LikeType[f] != 0) {
+        map_FishAge_pop_theta_agg[p,f] <- counter_fishage_agg
+        counter_fishage_agg <- counter_fishage_agg + 1 # aggregated
+      }
+
+      # Loop through to make sure mapping stuff off correctly
+      for(r in 1:input_list$data$n_regions) {
+        for(s in 1:input_list$data$n_sexes) {
+
+          # if split by sex and region
+          if(any(fishage_comp_type == 1) && input_list$data$pop_FishAgeComps_LikeType[f] != 0) {
+            map_FishAge_pop_theta[p,r,s,f] <- counter_fishage
+            counter_fishage <- counter_fishage + 1 # split by sex and region
+          }
+
+          # joint by sex, split by region
+          if(any(fishage_comp_type == 2) && input_list$data$pop_FishAgeComps_LikeType[f] != 0 && s == 1) {
+            map_FishAge_pop_theta[p,r,1,f] <- counter_fishage
+            counter_fishage <- counter_fishage + 1 # joint by sex, split by region
+          }
+
+        } # end s loop
+      } # end r loop
+
+      # If we are using a multinomial or there aren't any age comps for a given fleet
+      if(input_list$data$pop_FishAgeComps_LikeType[f] == 0 || sum(input_list$data$UseFishAgeComps_pop[p,,,,f]) == 0) {
+        map_FishAge_pop_theta[p,,,f] <- NA
+        map_FishAge_pop_theta_agg[p,f] <- NA
+      }
+
+    } # end f loop
+  } # end p loop
+
+  # Input into mapping list
+  input_list$map$ln_FishAge_pop_theta <- factor(map_FishAge_pop_theta)
+  input_list$map$ln_FishAge_pop_theta_agg <- factor(map_FishAge_pop_theta_agg)
+
+  return(input_list)
+}
+
 #' Map fishery length composition overdispersion parameters
 #'
 #' Analogous to \code{\link{do_FishAge_theta_mapping}} but for length
@@ -798,6 +1112,84 @@ do_FishLen_theta_mapping <- function(input_list) {
   # Input into mapping list
   input_list$map$ln_FishLen_theta <- factor(map_FishLen_theta)
   input_list$map$ln_FishLen_theta_agg <- factor(map_FishLen_theta_agg)
+
+  return(input_list)
+}
+
+#' Map population fishery length composition overdispersion parameters
+#'
+#' Constructs factor maps for \code{ln_FishLen_pop_theta} (fleet- region- and
+#' sex-specific overdispersion) and \code{ln_FishLen_pop_theta_agg} (aggregated
+#' overdispersion) based on the composition type and likelihood specified in
+#' \code{$data$pop_FishLenComps_Type} and \code{$data$pop_FishLenComps_LikeType}.
+#' Parameters are mapped to \code{NA} for fleets using multinomial likelihoods
+#' (\code{LikeType == 0}) or with no observed len compositions.
+#'
+#' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
+#'   sublists. Requires \code{pop_FishLenComps_Type}, \code{pop_FishLenComps_LikeType},
+#'   and \code{UseFishLenComps_pop} to be set by
+#'   \code{\link{Setup_Mod_FishIdx_and_Comps}}.
+#'
+#' @return The input \code{input_list} with \code{$map$ln_FishLen_pop_theta} and
+#'   \code{$map$ln_FishLen_pop_theta_agg} set to factor vectors. Active parameters
+#'   receive sequential integer indices; inactive parameters are \code{NA}.
+#'
+#' @keywords internal
+do_FishLen_pop_theta_mapping <- function(input_list) {
+
+  # setup counters
+  counter_fishlen_agg <- 1
+  counter_fishlen <- 1
+
+  # initialize array to set up mapping
+  map_FishLen_pop_theta <- input_list$par$ln_FishLen_pop_theta
+  map_FishLen_pop_theta_agg <- input_list$par$ln_FishLen_pop_theta_agg
+  map_FishLen_pop_theta[] <- NA
+  map_FishLen_pop_theta_agg[] <- NA
+
+  for(p in 1:input_list$data$n_pop) {
+    for(f in 1:input_list$data$n_fish_fleets) {
+
+      # get unique fishery comp types
+      fishlen_comp_type <- unique(input_list$data$pop_FishLenComps_Type[,f])
+
+      # If aggregated (lens)
+      if(any(fishlen_comp_type == 0) && input_list$data$pop_FishLenComps_LikeType[f] != 0) {
+        map_FishLen_pop_theta_agg[p,f] <- counter_fishlen_agg
+        counter_fishlen_agg <- counter_fishlen_agg + 1 # aggregated
+      }
+
+      # Loop through to make sure mapping stuff off correctly
+      for(r in 1:input_list$data$n_regions) {
+        for(s in 1:input_list$data$n_sexes) {
+
+          # if split by sex and region
+          if(any(fishlen_comp_type == 1) && input_list$data$pop_FishLenComps_LikeType[f] != 0) {
+            map_FishLen_pop_theta[p,r,s,f] <- counter_fishlen
+            counter_fishlen <- counter_fishlen + 1 # split by sex and region
+          }
+
+          # joint by sex, split by region
+          if(any(fishlen_comp_type == 2) && input_list$data$pop_FishLenComps_LikeType[f] != 0 && s == 1) {
+            map_FishLen_pop_theta[p,r,1,f] <- counter_fishlen
+            counter_fishlen <- counter_fishlen + 1 # joint by sex, split by region
+          }
+
+        } # end s loop
+      } # end r loop
+
+      # If we are using a multinomial or there aren't any len comps for a given fleet
+      if(input_list$data$pop_FishLenComps_LikeType[f] == 0 || sum(input_list$data$UseFishLenComps_pop[p,,,,f]) == 0) {
+        map_FishLen_pop_theta[p,,,f] <- NA
+        map_FishLen_pop_theta_agg[p,f] <- NA
+      }
+
+    } # end f loop
+  } # end p loop
+
+  # Input into mapping list
+  input_list$map$ln_FishLen_pop_theta <- factor(map_FishLen_pop_theta)
+  input_list$map$ln_FishLen_pop_theta_agg <- factor(map_FishLen_pop_theta_agg)
 
   return(input_list)
 }
@@ -901,6 +1293,107 @@ do_FishAge_corr_pars_mapping <- function(input_list) {
   return(input_list)
 }
 
+#' Map population fishery age composition correlation parameters
+#'
+#' Constructs factor maps for \code{FishAge_pop_corr_pars} (region- and sex-specific
+#' AR1 and sex correlation parameters) and \code{FishAge_pop_corr_pars_agg}
+#' (aggregated correlation parameters) for 1D and 2D logistic-normal age
+#' composition likelihoods.
+#'
+#' Parameters are activated only when
+#' \code{pop_FishAgeComps_LikeType} is in \code{c(3, 4)}.
+#' These correspond to the 1D and 2D logistic-normal likelihoods.
+#' All other likelihoods map correlation parameters to \code{NA}.
+#'
+#' For the 2D logistic-normal (\code{LikeType == 4}), both trailing elements of
+#' the \code{[,,,,2]} slice are activated: element 1 for the age AR1 coefficient
+#' and element 2 for the sex correlation (skipped when \code{n_sexes == 1}).
+#'
+#' @param input_list Named list containing \code{data}, \code{par}, and
+#'   \code{map} components.
+#'
+#' @return The input \code{input_list} with elements
+#'   \code{map\$FishAge_pop_corr_pars} and
+#'   \code{map\$FishAge_pop_corr_pars_agg} set to factor vectors.
+#'
+#' @keywords internal
+do_FishAge_pop_corr_pars_mapping <- function(input_list) {
+
+  # setup counters
+  counter_fishage_corr <- 1
+  counter_fishage_corr_agg <- 1
+
+  # initialize array to set up mapping
+  map_FishAge_pop_corr_pars <- input_list$par$FishAge_pop_corr_pars
+  map_FishAge_pop_corr_pars_agg <- input_list$par$FishAge_pop_corr_pars_agg
+  map_FishAge_pop_corr_pars[] <- NA
+  map_FishAge_pop_corr_pars_agg[] <- NA
+
+  for(p in 1:input_list$data$n_pop) {
+    for(f in 1:input_list$data$n_fish_fleets) {
+
+      # No overdispersion parameters estimated
+      if(input_list$data$pop_FishAgeComps_LikeType[f] == 0 || sum(input_list$data$UseFishAgeComps_pop[p,,,,f]) == 0) {
+        map_FishAge_pop_corr_pars[p,,,f,] <- NA
+        map_FishAge_pop_corr_pars_agg[p,f] <- NA
+        next # skip if none
+      }
+
+      # get unique fishery comp types
+      fishage_comp_type <- unique(input_list$data$FishAgeComps_Type[,f])
+
+      # Aggregated Correlation Parameters
+      if(any(fishage_comp_type == 0) && input_list$data$pop_FishAgeComps_LikeType[f] != 0) {
+        if(input_list$data$pop_FishAgeComps_LikeType[f] == 3) {
+          map_FishAge_pop_corr_pars_agg[p,f] <- counter_fishage_corr_agg
+          counter_fishage_corr_agg <- counter_fishage_corr_agg + 1 # aggregated
+        }
+      }
+
+      # Loop through to make sure mapping stuff off correctly
+      for(r in 1:input_list$data$n_regions) {
+        for(s in 1:input_list$data$n_sexes) {
+
+          # Split by region and sex
+          if(any(fishage_comp_type == 1) && input_list$data$pop_FishAgeComps_LikeType[f] != 0) {
+            if(input_list$data$pop_FishAgeComps_LikeType[f] == 3) {
+              map_FishAge_pop_corr_pars[p,r,s,f,1] <- counter_fishage_corr
+              counter_fishage_corr <- counter_fishage_corr + 1
+            }
+          }
+
+          # Joint by sex, split by region
+          if(any(fishage_comp_type == 2) && input_list$data$pop_FishAgeComps_LikeType[f] != 0 && s == 1) {
+
+            # 1dar1 correlation
+            if(input_list$data$pop_FishAgeComps_LikeType[f] == 3) {
+              map_FishAge_pop_corr_pars[p,r,1,f,1] <- counter_fishage_corr
+              counter_fishage_corr <- counter_fishage_corr + 1
+            }
+
+            # 2dar1 correlation
+            if(input_list$data$pop_FishAgeComps_LikeType[f] == 4) {
+              for(i in 1:2) {
+                if(i == 2 && input_list$data$n_sexes == 1) next # skip if we only have 1 sex
+                map_FishAge_pop_corr_pars[p,r,1,f,i] <- counter_fishage_corr
+                counter_fishage_corr <- counter_fishage_corr + 1
+              } # end i
+            } # end if
+
+          }
+        } # end s loop
+      } # end r loop
+
+    } # end f loop
+  } # end p loop
+
+  # Input into mapping list
+  input_list$map$FishAge_pop_corr_pars_agg <- factor(map_FishAge_pop_corr_pars_agg)
+  input_list$map$FishAge_pop_corr_pars <- factor(map_FishAge_pop_corr_pars)
+
+  return(input_list)
+}
+
 #' Map fishery length composition correlation parameters
 #'
 #' Analogous to \code{\link{do_FishAge_corr_pars_mapping}} but for length
@@ -990,18 +1483,120 @@ do_FishLen_corr_pars_mapping <- function(input_list) {
   return(input_list)
 }
 
+#' Map population fishery length composition correlation parameters
+#'
+#' Constructs factor maps for \code{FishLen_pop_corr_pars} (region- and sex-specific
+#' AR1 and sex correlation parameters) and \code{FishLen_pop_corr_pars_agg}
+#' (aggregated correlation parameters) for 1D and 2D logistic-normal len
+#' composition likelihoods.
+#'
+#' Parameters are activated only when
+#' \code{pop_FishLenComps_LikeType} is in \code{c(3, 4)}.
+#' These correspond to the 1D and 2D logistic-normal likelihoods.
+#' All other likelihoods map correlation parameters to \code{NA}.
+#'
+#' For the 2D logistic-normal (\code{LikeType == 4}), both trailing elements of
+#' the \code{[,,,,2]} slice are activated: element 1 for the len AR1 coefficient
+#' and element 2 for the sex correlation (skipped when \code{n_sexes == 1}).
+#'
+#' @param input_list Named list containing \code{data}, \code{par}, and
+#'   \code{map} components.
+#'
+#' @return The input \code{input_list} with elements
+#'   \code{map\$FishLen_pop_corr_pars} and
+#'   \code{map\$FishLen_pop_corr_pars_agg} set to factor vectors.
+#'
+#' @keywords internal
+do_FishLen_pop_corr_pars_mapping <- function(input_list) {
+
+  # setup counters
+  counter_fishlen_corr <- 1
+  counter_fishlen_corr_agg <- 1
+
+  # initialize array to set up mapping
+  map_FishLen_pop_corr_pars <- input_list$par$FishLen_pop_corr_pars
+  map_FishLen_pop_corr_pars_agg <- input_list$par$FishLen_pop_corr_pars_agg
+  map_FishLen_pop_corr_pars[] <- NA
+  map_FishLen_pop_corr_pars_agg[] <- NA
+
+  for(p in 1:input_list$data$n_pop) {
+    for(f in 1:input_list$data$n_fish_fleets) {
+
+      # No overdispersion parameters estimated
+      if(input_list$data$pop_FishLenComps_LikeType[f] == 0 || sum(input_list$data$UseFishLenComps_pop[p,,,,f]) == 0) {
+        map_FishLen_pop_corr_pars[p,,,f,] <- NA
+        map_FishLen_pop_corr_pars_agg[p,f] <- NA
+        next # skip if none
+      }
+
+      # get unique fishery comp types
+      fishlen_comp_type <- unique(input_list$data$FishLenComps_Type[,f])
+
+      # Aggregated Correlation Parameters
+      if(any(fishlen_comp_type == 0) && input_list$data$pop_FishLenComps_LikeType[f] != 0) {
+        if(input_list$data$pop_FishLenComps_LikeType[f] == 3) {
+          map_FishLen_pop_corr_pars_agg[p,f] <- counter_fishlen_corr_agg
+          counter_fishlen_corr_agg <- counter_fishlen_corr_agg + 1 # aggregated
+        }
+      }
+
+      # Loop through to make sure mapping stuff off correctly
+      for(r in 1:input_list$data$n_regions) {
+        for(s in 1:input_list$data$n_sexes) {
+
+          # Split by region and sex
+          if(any(fishlen_comp_type == 1) && input_list$data$pop_FishLenComps_LikeType[f] != 0) {
+            if(input_list$data$pop_FishLenComps_LikeType[f] == 3) {
+              map_FishLen_pop_corr_pars[p,r,s,f,1] <- counter_fishlen_corr
+              counter_fishlen_corr <- counter_fishlen_corr + 1
+            }
+          }
+
+          # Joint by sex, split by region
+          if(any(fishlen_comp_type == 2) && input_list$data$pop_FishLenComps_LikeType[f] != 0 && s == 1) {
+
+            # 1dar1 correlation
+            if(input_list$data$pop_FishLenComps_LikeType[f] == 3) {
+              map_FishLen_pop_corr_pars[p,r,1,f,1] <- counter_fishlen_corr
+              counter_fishlen_corr <- counter_fishlen_corr + 1
+            }
+
+            # 2dar1 correlation
+            if(input_list$data$pop_FishLenComps_LikeType[f] == 4) {
+              for(i in 1:2) {
+                if(i == 2 && input_list$data$n_sexes == 1) next # skip if we only have 1 sex
+                map_FishLen_pop_corr_pars[p,r,1,f,i] <- counter_fishlen_corr
+                counter_fishlen_corr <- counter_fishlen_corr + 1
+              } # end i
+            } # end if
+
+          }
+        } # end s loop
+      } # end r loop
+
+    } # end f loop
+  } # end p loop
+
+  # Input into mapping list
+  input_list$map$FishLen_pop_corr_pars_agg <- factor(map_FishLen_pop_corr_pars_agg)
+  input_list$map$FishLen_pop_corr_pars <- factor(map_FishLen_pop_corr_pars)
+
+  return(input_list)
+}
+
 #' Set up fishery index, age composition, and length composition inputs
 #'
 #' Populates \code{input_list} with observed fishery indices, age compositions,
-#' and length compositions along with their usage indicators, likelihood types,
-#' composition structure types, input sample sizes, and overdispersion and
-#' correlation parameter starting values and mappings. Must be called after
-#' \code{\link{Setup_Mod_Catch_and_F}}.
+#' and length compositions (both pooled and population-specific) along with
+#' their usage indicators, likelihood types, composition structure types, input
+#' sample sizes, and overdispersion and correlation parameter starting values
+#' and mappings. Must be called after \code{\link{Setup_Mod_Catch_and_F}}.
 #'
-#' When \code{ISS_FishAgeComps} or \code{ISS_FishLenComps} are \code{NULL},
+#' When \code{ISS_FishAgeComps}, \code{ISS_FishLenComps},
+#' \code{ISS_FishAgeComps_pop}, or \code{ISS_FishLenComps_pop} are \code{NULL},
 #' input sample sizes are derived automatically by summing the observed
 #' composition arrays within each year–fleet–season–region cell, consistent
-#' with the specified \code{FishAgeComps_Type} or \code{FishLenComps_Type}.
+#' with the specified composition type.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par}, \code{$map},
 #'   and \code{$verbose} sublists, as returned by upstream setup functions.
@@ -1014,6 +1609,14 @@ do_FishLen_corr_pars_mapping <- function(input_list) {
 #' @param fish_idx_type Character vector of length \code{n_fish_fleets} specifying
 #'   the index type for each fleet. \code{"biom"} = biomass; \code{"abd"} =
 #'   abundance; \code{"none"} = no index for this fleet.
+#' @param ObsFishIdx_pop Observed population-specific fishery index array
+#'   \code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]}.
+#' @param ObsFishIdx_pop_SE Lognormal standard errors for \code{ObsFishIdx_pop},
+#'   same dimensions \code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]}.
+#' @param UseFishIdx_pop Binary indicator array
+#'   \code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]}. \code{1} =
+#'   include population-specific index in likelihood; \code{0} = exclude.
+#'   Default: all zeros.
 #' @param ObsFishAgeComps Observed fishery age composition array
 #'   \code{[n_regions × n_years × n_seas × n_ages × n_sexes × n_fish_fleets]}.
 #'   Values may be raw counts or proportions; if proportions, supply
@@ -1023,8 +1626,8 @@ do_FishLen_corr_pars_mapping <- function(input_list) {
 #'   \code{1} = fit age compositions; \code{0} = exclude.
 #' @param ISS_FishAgeComps Input sample size array
 #'   \code{[n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
-#'   If \code{NULL} (default), sample sizes are computed automatically by
-#'   summing \code{ObsFishAgeComps} within each year–fleet–season–region cell
+#'   If \code{NULL} (default), computed automatically by summing
+#'   \code{ObsFishAgeComps} within each year–fleet–season–region cell
 #'   according to \code{FishAgeComps_Type}.
 #' @param ObsFishLenComps Observed fishery length composition array
 #'   \code{[n_regions × n_years × n_seas × n_lens × n_sexes × n_fish_fleets]}.
@@ -1032,7 +1635,7 @@ do_FishLen_corr_pars_mapping <- function(input_list) {
 #' @param UseFishLenComps Binary indicator array
 #'   \code{[n_regions × n_years × n_seas × n_fish_fleets]}.
 #'   \code{1} = fit length compositions; \code{0} = exclude.
-#' @param ISS_FishLenComps Input sample size array for length compositions,
+#' @param ISS_FishLenComps Input sample size array for length compositions
 #'   \code{[n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
 #'   If \code{NULL} (default), derived automatically from \code{ObsFishLenComps}.
 #' @param FishAgeComps_LikeType Character vector of length \code{n_fish_fleets}
@@ -1056,6 +1659,50 @@ do_FishLen_corr_pars_mapping <- function(input_list) {
 #'   Example: \code{c("spltRjntS_Year_1-10_Fleet_1", "agg_Year_11-terminal_Fleet_1")}.
 #' @param FishLenComps_Type Same format and options as \code{FishAgeComps_Type}
 #'   but applied to length compositions.
+#' @param ObsFishAgeComps_pop Observed population-specific fishery age
+#'   composition array
+#'   \code{[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes × n_fish_fleets]}.
+#'   Required when any element of \code{UseFishAgeComps_pop} is \code{1}.
+#' @param UseFishAgeComps_pop Binary indicator array
+#'   \code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]}.
+#'   \code{1} = fit population-specific age compositions; \code{0} = exclude.
+#'   Default: all zeros.
+#' @param ISS_FishAgeComps_pop Input sample size array for population-specific
+#'   age compositions
+#'   \code{[n_pop × n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
+#'   If \code{NULL} (default), computed automatically by summing
+#'   \code{ObsFishAgeComps_pop} within each population–year–fleet–season–region
+#'   cell according to \code{pop_FishAgeComps_Type}.
+#' @param ObsFishLenComps_pop Observed population-specific fishery length
+#'   composition array
+#'   \code{[n_pop × n_regions × n_years × n_seas × n_lens × n_sexes × n_fish_fleets]}.
+#'   Required when \code{input_list$data$fit_lengths == 1} and any element of
+#'   \code{UseFishLenComps_pop} is \code{1}.
+#' @param UseFishLenComps_pop Binary indicator array
+#'   \code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]}.
+#'   \code{1} = fit population-specific length compositions; \code{0} = exclude.
+#'   Default: all zeros.
+#' @param ISS_FishLenComps_pop Input sample size array for population-specific
+#'   length compositions
+#'   \code{[n_pop × n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
+#'   If \code{NULL} (default), derived automatically from
+#'   \code{ObsFishLenComps_pop}.
+#' @param pop_FishAgeComps_LikeType Character vector of length
+#'   \code{n_fish_fleets} specifying the likelihood for population-specific
+#'   fishery age compositions. Same options as \code{FishAgeComps_LikeType}.
+#'   Default: \code{"none"} for all fleets.
+#' @param pop_FishLenComps_LikeType Character vector of length
+#'   \code{n_fish_fleets} specifying the likelihood for population-specific
+#'   fishery length compositions. Same options as \code{FishLenComps_LikeType}.
+#'   Default: \code{"none"} for all fleets.
+#' @param pop_FishAgeComps_Type Character vector defining the composition
+#'   structure for population-specific age compositions. Same format and options
+#'   as \code{FishAgeComps_Type}. Default: \code{"none"} for all fleets across
+#'   all years.
+#' @param pop_FishLenComps_Type Character vector defining the composition
+#'   structure for population-specific length compositions. Same format and
+#'   options as \code{FishLenComps_Type}. Default: \code{"none"} for all fleets
+#'   across all years.
 #' @param ... Optional starting value overrides for overdispersion and
 #'   correlation parameters. Recognised arguments:
 #'   \describe{
@@ -1075,13 +1722,37 @@ do_FishLen_corr_pars_mapping <- function(input_list) {
 #'       \code{[n_regions × n_sexes × n_fish_fleets × 2]}. Default: \code{0.01}.}
 #'     \item{\code{FishLen_corr_pars_agg}}{Aggregated length correlation
 #'       \code{[n_fish_fleets]}. Default: \code{0.01}.}
+#'     \item{\code{ln_FishAge_pop_theta}}{Log-scale overdispersion for
+#'       population-specific age compositions
+#'       \code{[n_pop × n_regions × n_sexes × n_fish_fleets]}. Default: \code{0}.}
+#'     \item{\code{ln_FishAge_pop_theta_agg}}{Aggregated overdispersion for
+#'       population-specific age compositions
+#'       \code{[n_pop × n_fish_fleets]}. Default: \code{0}.}
+#'     \item{\code{FishAge_pop_corr_pars}}{Correlation parameters for
+#'       population-specific age compositions
+#'       \code{[n_pop × n_regions × n_sexes × n_fish_fleets × 2]}. Default: \code{0.01}.}
+#'     \item{\code{FishAge_pop_corr_pars_agg}}{Aggregated correlation parameters
+#'       for population-specific age compositions
+#'       \code{[n_pop × n_fish_fleets]}. Default: \code{0.01}.}
+#'     \item{\code{ln_FishLen_pop_theta}}{Log-scale overdispersion for
+#'       population-specific length compositions
+#'       \code{[n_pop × n_regions × n_sexes × n_fish_fleets]}. Default: \code{0}.}
+#'     \item{\code{ln_FishLen_pop_theta_agg}}{Aggregated overdispersion for
+#'       population-specific length compositions
+#'       \code{[n_pop × n_fish_fleets]}. Default: \code{0}.}
+#'     \item{\code{FishLen_pop_corr_pars}}{Correlation parameters for
+#'       population-specific length compositions
+#'       \code{[n_pop × n_regions × n_sexes × n_fish_fleets × 2]}. Default: \code{0.01}.}
+#'     \item{\code{FishLen_pop_corr_pars_agg}}{Aggregated correlation parameters
+#'       for population-specific length compositions
+#'       \code{[n_pop × n_fish_fleets]}. Default: \code{0.01}.}
 #'   }
 #'
 #' @return The input \code{input_list} with \code{$data}, \code{$par}, and
 #'   \code{$map} updated with all fishery index and composition fields, including
-#'   computed or supplied ISS arrays, integer-coded likelihood and composition
-#'   type matrices, overdispersion parameters, and their factor maps.
-#'
+#'   pooled and population-specific observed arrays, computed or supplied ISS
+#'   arrays, integer-coded likelihood and composition type matrices,
+#'   overdispersion parameters, and their factor maps.
 #'
 #' @export Setup_Mod_FishIdx_and_Comps
 #' @importFrom stringr str_detect
@@ -1089,6 +1760,9 @@ do_FishLen_corr_pars_mapping <- function(input_list) {
 Setup_Mod_FishIdx_and_Comps <- function(input_list,
                                         ObsFishIdx,
                                         ObsFishIdx_SE,
+                                        ObsFishIdx_pop = NULL,
+                                        ObsFishIdx_pop_SE = NULL,
+                                        UseFishIdx_pop = array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets)),
                                         fish_idx_type,
                                         UseFishIdx,
                                         ObsFishAgeComps,
@@ -1101,6 +1775,16 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
                                         FishLenComps_LikeType,
                                         FishAgeComps_Type,
                                         FishLenComps_Type,
+                                        ObsFishAgeComps_pop = NULL,
+                                        UseFishAgeComps_pop = array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets)),
+                                        ISS_FishAgeComps_pop = NULL,
+                                        ObsFishLenComps_pop = NULL,
+                                        UseFishLenComps_pop = array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets)),
+                                        ISS_FishLenComps_pop = NULL,
+                                        pop_FishAgeComps_LikeType = rep("none", input_list$data$n_fish_fleets),
+                                        pop_FishLenComps_LikeType = rep("none", input_list$data$n_fish_fleets),
+                                        pop_FishAgeComps_Type = paste("none_Year_1-terminal_Fleet_", 1:input_list$data$n_fish_fleets, sep = ''),
+                                        pop_FishLenComps_Type = paste("none_Year_1-terminal_Fleet_", 1:input_list$data$n_fish_fleets, sep = ''),
                                         ...
                                         ) {
 
@@ -1113,6 +1797,13 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
   check_data_dimensions(ObsFishIdx, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsFishIdx')
   check_data_dimensions(ObsFishIdx_SE, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsFishIdx_SE')
   check_data_dimensions(UseFishIdx, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'UseFishIdx')
+
+  if(any(UseFishIdx_pop == 1)) {
+    check_data_dimensions(ObsFishIdx_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsFishIdx_pop')
+    check_data_dimensions(ObsFishIdx_pop_SE, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsFishIdx_pop_SE')
+    check_data_dimensions(UseFishIdx_pop, n_pop = input_list$data$n_pop,  n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'UseFishIdx_pop')
+  }
+
   if(!all(fish_idx_type %in% c("biom", "abd", "none"))) stop("Invalid specification for fish_idx_type. Should be either abd, biom, or none")
 
   # Fishery compositions
@@ -1128,6 +1819,33 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
     stop("Invalid specification for FishAgeComps_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
   if(!all(FishLenComps_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal")))
     stop("Invalid specification for FishLenComps_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
+
+   # Fishery compositions (population-specific)
+  if(any(UseFishAgeComps_pop == 1)) check_data_dimensions(ObsFishAgeComps_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsFishAgeComps_pop')
+  check_data_dimensions(UseFishAgeComps_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'UseFishAgeComps_pop')
+  check_data_dimensions(UseFishLenComps_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'UseFishLenComps_pop')
+  if(input_list$data$fit_lengths == 1 && any(UseFishLenComps_pop == 1)) check_data_dimensions(ObsFishLenComps_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_lens = length(input_list$data$lens), n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsFishLenComps_pop')
+  if(!is.null(ISS_FishAgeComps_pop)) check_data_dimensions(ISS_FishAgeComps_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ISS_FishAgeComps_pop')
+  if(!is.null(ISS_FishLenComps_pop)) check_data_dimensions(ISS_FishLenComps_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ISS_FishLenComps_pop')
+  check_data_dimensions(pop_FishAgeComps_LikeType, n_fish_fleets = input_list$data$n_fish_fleets, what = 'pop_FishAgeComps_LikeType')
+  check_data_dimensions(pop_FishLenComps_LikeType, n_fish_fleets = input_list$data$n_fish_fleets, what = 'pop_FishLenComps_LikeType')
+  if(!all(pop_FishAgeComps_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal")))
+    stop("Invalid specification for pop_FishAgeComps_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
+  if(!all(pop_FishLenComps_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal")))
+    stop("Invalid specification for pop_FishLenComps_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
+
+  # checking to make sure defaults are not applied
+  if(any(UseFishAgeComps_pop == 1)) {
+    if(is.null(ObsFishAgeComps_pop)) stop("ObsFishAgeComps_pop is NULL, but UseFishAgeComps_pop contains 1s!")
+    if(any(str_detect(pop_FishAgeComps_LikeType, "none"))) warning("pop_FishAgeComps_LikeType has nones, but UseFishAgeComps_pop contains 1s! Please verify!")
+    if(any(str_detect(pop_FishAgeComps_Type, "none"))) warning("pop_FishAgeComps_Type has nones, but UseFishAgeComps_pop contains 1s! Please verify!")
+  }
+
+  if(any(UseFishLenComps_pop == 1)) {
+    if(is.null(ObsFishLenComps_pop)) stop("ObsFishLenComps_pop is NULL, but UseFishAgeComps_pop contains 1s!")
+    if(any(str_detect(pop_FishLenComps_LikeType, "none"))) warning("pop_FishLenComps_LikeType has nones, but UseFishAgeComps_pop contains 1s! Please verify!")
+    if(any(str_detect(pop_FishLenComps_Type, "none"))) warning("pop_FishLenComps_Type has nones, but UseFishAgeComps_pop contains 1s! Please verify!")
+  }
 
 
   # Fishery Index Options ---------------------------------------------------
@@ -1194,6 +1912,57 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
 
   if(any(is.na(FishAgeComps_Type_Mat))) stop("FishAgeComps_Type is returning an NA. Did you update the year range of FishAgeComps_Type?")
 
+  # Specifying composition likelihood for population-specific data
+  pop_comp_fishage_like_vals <- vector()
+  for(f in 1:input_list$data$n_fish_fleets) {
+    if(pop_FishAgeComps_LikeType[f] == 'none') pop_comp_fishage_like_vals <- c(pop_comp_fishage_like_vals, 999)
+    if(pop_FishAgeComps_LikeType[f] == "Multinomial") pop_comp_fishage_like_vals <- c(pop_comp_fishage_like_vals, 0)
+    if(pop_FishAgeComps_LikeType[f] == "Dirichlet-Multinomial") pop_comp_fishage_like_vals <- c(pop_comp_fishage_like_vals, 1)
+    if(pop_FishAgeComps_LikeType[f] == "iid-Logistic-Normal") pop_comp_fishage_like_vals <- c(pop_comp_fishage_like_vals, 2)
+    if(pop_FishAgeComps_LikeType[f] == "1d-Logistic-Normal") pop_comp_fishage_like_vals <- c(pop_comp_fishage_like_vals, 3)
+    if(pop_FishAgeComps_LikeType[f] == "2d-Logistic-Normal") pop_comp_fishage_like_vals <- c(pop_comp_fishage_like_vals, 4)
+    collect_message(paste("Population Fishery Age Composition Likelihoods", "for fishery fleet", f, "specified as:" , pop_FishAgeComps_LikeType[f]))
+  } # end f loop
+
+  # Specifying composition type
+  pop_FishAgeComps_Type_Mat <- array(NA, dim = c(length(input_list$data$years), input_list$data$n_fish_fleets))
+  for(i in 1:length(pop_FishAgeComps_Type)) {
+
+    # Extract out components from list
+    tmp <- pop_FishAgeComps_Type[i]
+    tmp_vec <- unlist(strsplit(tmp, "_"))
+    comps_type_tmp <- tmp_vec[1] # get composition type
+    fleet <- as.numeric(tmp_vec[5]) # extract fleet index
+
+    # Checking character string
+    if(!comps_type_tmp %in% c("agg", "spltRspltS", "spltRjntS", 'none')) stop("pop_FishAgeComps_Type not specified correctly. Must be one of: agg, spltRspltS, spltRjntS, none")
+    if(!fleet %in% c(1:input_list$data$n_fish_fleets)) stop("Invalid fleet specified for pop_FishAgeComps_Type. This needs to be specified as CompType_Year_x-y_Fleet_x")
+
+    # get year ranges
+    if(!str_detect(tmp, "terminal")) { # if not terminal year
+      year_range <- as.numeric(unlist(strsplit(tmp_vec[3], "-")))
+      years <- year_range[1]:year_range[2] # get sequence of years
+    } else { # if terminal year
+      year_range <- unlist(strsplit(tmp_vec[3], '-'))[1] # get year range
+      years <- as.numeric(year_range):length(input_list$data$years) # get sequence of years
+    }
+
+    # Composition type
+    # define composition types
+    if(comps_type_tmp == "agg") {
+      if(pop_comp_fishage_like_vals[fleet] == 4) stop("Population Age composition likelihood specified as 2d-Logistic-Normal, but composition type is aggregated. This is not valid.")
+      comps_type_val <- 0
+    }
+    if(comps_type_tmp == "spltRspltS") comps_type_val <- 1
+    if(comps_type_tmp == "spltRjntS") comps_type_val <- 2
+    if(comps_type_tmp == "none") comps_type_val <- 999
+
+    # input into matrix
+    pop_FishAgeComps_Type_Mat[years,fleet] <- comps_type_val
+  } # end i
+
+  if(any(is.na(pop_FishAgeComps_Type_Mat))) stop("pop_FishAgeComps_Type is returning an NA. Did you update the year range of pop_FishAgeComps_Type?")
+
   # Fishery Length Composition Options -----------------------------------------
 
   # Specifying composition likelihood
@@ -1247,6 +2016,57 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
   if(any(is.na(FishLenComps_Type_Mat))) stop("FishLenComps_Type_Mat is returning an NA. Did you update the year range of FishLenComps_Type_Mat?")
 
 
+  # Specifying composition likelihood for population-specific data
+  pop_comp_fishlen_like_vals <- vector()
+  for(f in 1:input_list$data$n_fish_fleets) {
+    if(pop_FishLenComps_LikeType[f] == 'none') pop_comp_fishlen_like_vals <- c(pop_comp_fishlen_like_vals, 999)
+    if(pop_FishLenComps_LikeType[f] == "Multinomial") pop_comp_fishlen_like_vals <- c(pop_comp_fishlen_like_vals, 0)
+    if(pop_FishLenComps_LikeType[f] == "Dirichlet-Multinomial") pop_comp_fishlen_like_vals <- c(pop_comp_fishlen_like_vals, 1)
+    if(pop_FishLenComps_LikeType[f] == "iid-Logistic-Normal") pop_comp_fishlen_like_vals <- c(pop_comp_fishlen_like_vals, 2)
+    if(pop_FishLenComps_LikeType[f] == "1d-Logistic-Normal") pop_comp_fishlen_like_vals <- c(pop_comp_fishlen_like_vals, 3)
+    if(pop_FishLenComps_LikeType[f] == "2d-Logistic-Normal") pop_comp_fishlen_like_vals <- c(pop_comp_fishlen_like_vals, 4)
+    collect_message(paste("Population Fishery Length Composition Likelihoods", "for fishery fleet", f, "specified as:" , pop_FishLenComps_LikeType[f]))
+  } # end f loop
+
+  # Specifying composition type
+  pop_FishLenComps_Type_Mat <- array(NA, dim = c(length(input_list$data$years), input_list$data$n_fish_fleets))
+  for(i in 1:length(pop_FishLenComps_Type)) {
+
+    # Extract out components from list
+    tmp <- pop_FishLenComps_Type[i]
+    tmp_vec <- unlist(strsplit(tmp, "_"))
+    comps_type_tmp <- tmp_vec[1] # get composition type
+    fleet <- as.numeric(tmp_vec[5]) # extract fleet index
+
+    # Checking character string
+    if(!comps_type_tmp %in% c("agg", "spltRspltS", "spltRjntS", 'none')) stop("pop_FishLenComps_Type not specified correctly. Must be one of: agg, spltRspltS, spltRjntS, none")
+    if(!fleet %in% c(1:input_list$data$n_fish_fleets)) stop("Invalid fleet specified for pop_FishLenComps_Type. This needs to be specified as CompType_Year_x-y_Fleet_x")
+
+    # get year ranges
+    if(!str_detect(tmp, "terminal")) { # if not terminal year
+      year_range <- as.numeric(unlist(strsplit(tmp_vec[3], "-")))
+      years <- year_range[1]:year_range[2] # get sequence of years
+    } else { # if terminal year
+      year_range <- unlist(strsplit(tmp_vec[3], '-'))[1] # get year range
+      years <- as.numeric(year_range):length(input_list$data$years) # get sequence of years
+    }
+
+    # Composition type
+    # define composition types
+    if(comps_type_tmp == "agg") {
+      if(pop_comp_fishlen_like_vals[fleet] == 4) stop("Population Len composition likelihood specified as 2d-Logistic-Normal, but composition type is aggregated. This is not valid.")
+      comps_type_val <- 0
+    }
+    if(comps_type_tmp == "spltRspltS") comps_type_val <- 1
+    if(comps_type_tmp == "spltRjntS") comps_type_val <- 2
+    if(comps_type_tmp == "none") comps_type_val <- 999
+
+    # input into matrix
+    pop_FishLenComps_Type_Mat[years,fleet] <- comps_type_val
+  } # end i
+
+  if(any(is.na(pop_FishLenComps_Type_Mat))) stop("pop_FishLenComps_Type is returning an NA. Did you update the year range of pop_FishLenComps_Type?")
+
   # ISS Munging -------------------------------------------------------------
 
   # Fishery Ages
@@ -1285,22 +2105,75 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
     } # end y loop
   }
 
+  # Fishery Ages
+  if(is.null(ISS_FishAgeComps_pop)) {
+    collect_message("No ISS is specified for pop_FishAgeComps. ISS weighting is calculated by summing up values from ObsFishAgeComps_pop each year")
+    ISS_FishAgeComps_pop <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_sexes, input_list$data$n_fish_fleets))
+    for(p in 1:input_list$data$n_pop) {
+      for(y in 1:length(input_list$data$years)) {
+        for(f in 1:input_list$data$n_fish_fleets) {
+          for(seas in 1:input_list$data$n_seas) {
+            # if aggregated across sexes and regions (0) or joint across sexes
+            if(pop_FishAgeComps_Type_Mat[y,f] == 0) ISS_FishAgeComps_pop[p,1,y,seas,1,f] <- sum(ObsFishAgeComps_pop[p,,y,seas,,,f])
+            # if split by region and sex
+            if(pop_FishAgeComps_Type_Mat[y,f] == 1) ISS_FishAgeComps_pop[p,,y,seas,,f] <- apply(ObsFishAgeComps_pop[p,,y,seas,,,f, drop = FALSE], c(2,5), sum)
+            # if split by region, joint by sex
+            if(pop_FishAgeComps_Type_Mat[y,f] == 2) ISS_FishAgeComps_pop[p,,y,seas,1,f] <- apply(ObsFishAgeComps_pop[p,,y,seas,,,f, drop = FALSE], 2, sum)
+          } # end seas loop
+        } # end f loop
+      } # end y loop
+    } # end p loop
+  }
+
+  # Fishery Lengths
+  if(is.null(ISS_FishLenComps_pop)) {
+    collect_message("No ISS is specified for pop_FishLenComps. ISS weighting is calculated by summing up values from ObsFishLenComps_pop each year")
+    ISS_FishLenComps_pop <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_sexes, input_list$data$n_fish_fleets))
+    for(p in 1:input_list$data$n_pop) {
+      for(y in 1:length(input_list$data$years)) {
+        for(f in 1:input_list$data$n_fish_fleets) {
+          for(seas in 1:input_list$data$n_seas) {
+            # if aggregated across sexes and regions (0)
+            if(pop_FishLenComps_Type_Mat[y,f] == 0) ISS_FishLenComps_pop[p,1,y,seas,1,f] <- sum(ObsFishLenComps_pop[p,,y,seas,,,f])
+            # if split by region and sex
+            if(pop_FishLenComps_Type_Mat[y,f] == 1) ISS_FishLenComps_pop[p,,y,seas,,f] <- apply(ObsFishLenComps_pop[p,,y,seas,,,f, drop = FALSE], c(2,5), sum)
+            # if split by region, joint by sex
+            if(pop_FishLenComps_Type_Mat[y,f] == 2) ISS_FishLenComps_pop[p,,y,seas,1,f] <- apply(ObsFishLenComps_pop[p,,y,seas,,,f, drop = FALSE], 2, sum)
+          } # end seas loop
+        } # end f loop
+      } # end y loop
+    } # end p loop
+  }
+
   # Populate Data List ------------------------------------------------------
 
   input_list$data$ISS_FishAgeComps <- ISS_FishAgeComps
   input_list$data$ISS_FishLenComps <- ISS_FishLenComps
+  input_list$data$ISS_FishAgeComps_pop <- ISS_FishAgeComps_pop
+  input_list$data$ISS_FishLenComps_pop <- ISS_FishLenComps_pop
   input_list$data$ObsFishIdx <- ObsFishIdx
   input_list$data$ObsFishIdx_SE <- ObsFishIdx_SE
   input_list$data$UseFishIdx <- UseFishIdx
+  input_list$data$ObsFishIdx_pop <- ObsFishIdx_pop
+  input_list$data$ObsFishIdx_pop_SE <- ObsFishIdx_pop_SE
+  input_list$data$UseFishIdx_pop <- UseFishIdx_pop
   input_list$data$fish_idx_type <- fish_idx_type_vals
   input_list$data$ObsFishAgeComps <- ObsFishAgeComps
   input_list$data$UseFishAgeComps <- UseFishAgeComps
   input_list$data$ObsFishLenComps <- ObsFishLenComps
   input_list$data$UseFishLenComps <- UseFishLenComps
+  input_list$data$ObsFishAgeComps_pop <- ObsFishAgeComps_pop
+  input_list$data$UseFishAgeComps_pop <- UseFishAgeComps_pop
+  input_list$data$ObsFishLenComps_pop <- ObsFishLenComps_pop
+  input_list$data$UseFishLenComps_pop <- UseFishLenComps_pop
   input_list$data$FishAgeComps_LikeType <- comp_fishage_like_vals
   input_list$data$FishLenComps_LikeType <- comp_fishlen_like_vals
+  input_list$data$pop_FishAgeComps_LikeType <- pop_comp_fishage_like_vals
+  input_list$data$pop_FishLenComps_LikeType <- pop_comp_fishlen_like_vals
   input_list$data$FishAgeComps_Type <- FishAgeComps_Type_Mat
   input_list$data$FishLenComps_Type <- FishLenComps_Type_Mat
+  input_list$data$pop_FishAgeComps_Type <- pop_FishAgeComps_Type_Mat
+  input_list$data$pop_FishLenComps_Type <- pop_FishLenComps_Type_Mat
 
   # Populate Parameter List -------------------------------------------------
 
@@ -1335,12 +2208,48 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
   if("FishLen_corr_pars_agg" %in% names(starting_values)) input_list$par$FishLen_corr_pars_agg <- starting_values$FishLen_corr_pars_agg
   else input_list$par$FishLen_corr_pars_agg <- array(0.01, dim = c(input_list$data$n_fish_fleets))
 
+  # Dispersion parameters for the population fishery age comps
+  if("ln_FishAge_pop_theta" %in% names(starting_values)) input_list$par$ln_FishAge_pop_theta <- starting_values$ln_FishAge_pop_theta
+  else input_list$par$ln_FishAge_pop_theta <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, input_list$data$n_sexes, input_list$data$n_fish_fleets))
+
+  # logistic normal correlation parameters for population fishery age comps
+  if("FishAge_pop_corr_pars" %in% names(starting_values)) input_list$par$FishAge_pop_corr_pars <- starting_values$FishAge_pop_corr_pars
+  else input_list$par$FishAge_pop_corr_pars <- array(0.01, dim = c(input_list$data$n_pop,input_list$data$n_regions, input_list$data$n_sexes, input_list$data$n_fish_fleets, 2))
+
+  # aggregated population pars
+  if("ln_FishAge_pop_theta_agg" %in% names(starting_values)) input_list$par$ln_FishAge_pop_theta_agg <- starting_values$ln_FishAge_pop_theta_agg
+  else input_list$par$ln_FishAge_pop_theta_agg <- array(0, dim = c(input_list$data$n_pop,input_list$data$n_fish_fleets))
+
+  # aggregated population correlation parameters
+  if("FishAge_pop_corr_pars_agg" %in% names(starting_values)) input_list$par$FishAge_pop_corr_pars_agg <- starting_values$FishAge_pop_corr_pars_agg
+  else input_list$par$FishAge_pop_corr_pars_agg <- array(0.01, dim = c(input_list$data$n_pop,input_list$data$n_fish_fleets))
+
+  # Dispersion parameters for population fishery length comps
+  if("ln_FishLen_pop_theta" %in% names(starting_values)) input_list$par$ln_FishLen_pop_theta <- starting_values$ln_FishLen_pop_theta
+  else input_list$par$ln_FishLen_pop_theta <- array(0, dim = c(input_list$data$n_pop,input_list$data$n_regions, input_list$data$n_sexes, input_list$data$n_fish_fleets))
+
+  # logistic normal correlation parameters for population fishery length comps
+  if("FishLen_pop_corr_pars" %in% names(starting_values)) input_list$par$FishLen_pop_corr_pars <- starting_values$FishLen_pop_corr_pars
+  else input_list$par$FishLen_pop_corr_pars <- array(0.01, dim = c(input_list$data$n_pop,input_list$data$n_regions, input_list$data$n_sexes, input_list$data$n_fish_fleets, 2))
+
+  # aggregated population pars
+  if("ln_FishLen_pop_theta_agg" %in% names(starting_values)) input_list$par$ln_FishLen_pop_theta_agg <- starting_values$ln_FishLen_pop_theta_agg
+  else input_list$par$ln_FishLen_pop_theta_agg <- array(0, dim = c(input_list$data$n_pop,input_list$data$n_fish_fleets))
+
+  if("FishLen_pop_corr_pars_agg" %in% names(starting_values)) input_list$par$FishLen_pop_corr_pars_agg <- starting_values$FishLen_pop_corr_pars_agg
+  else input_list$par$FishLen_pop_corr_pars_agg <- array(0.01, dim = c(input_list$data$n_pop, input_list$data$n_fish_fleets))
+
   # Mapping Options ---------------------------------------------------------
 
   input_list <- do_FishAge_theta_mapping(input_list)
   input_list <- do_FishLen_theta_mapping(input_list)
   input_list <- do_FishAge_corr_pars_mapping(input_list)
   input_list <- do_FishLen_corr_pars_mapping(input_list)
+
+  input_list <- do_FishAge_pop_theta_mapping(input_list)
+  input_list <- do_FishLen_pop_theta_mapping(input_list)
+  input_list <- do_FishAge_pop_corr_pars_mapping(input_list)
+  input_list <- do_FishLen_pop_corr_pars_mapping(input_list)
 
   # Print Messages ----------------------------------------------------------
   if(input_list$verbose) for(msg in messages_list) message(msg)

@@ -13,7 +13,7 @@ test_that("Single-region Sablefish RTMB model produces expected results", {
                               n_fish_fleets = sgl_rg_sable_data$n_fish_fleets, # number of fishery fleet == 1, fixed gear, == 2 trawl gear
                               n_srv_fleets = sgl_rg_sable_data$n_srv_fleets, # number of survey fleets
                               n_seas = sgl_rg_sable_data$n_seas, # number of seasons
-                              verbose = TRUE
+                              verbose = FALSE
   )
 
   # Setup recruitment stuff (using defaults for other stuff)

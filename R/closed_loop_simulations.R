@@ -12,7 +12,7 @@
 #' overrides.
 #'
 #' Users may replace any internally generated component by supplying a
-#' correctly named object via `...`.
+#' correctly named object via \code{...}.
 #'
 #' @param closed_loop_yrs Integer. Number of projection years added beyond
 #'   the fitted data period.
@@ -24,40 +24,59 @@
 #' @param rep List. Model report object produced by the fitted model.
 #' @param random Character vector of estimated random effects.
 #'
-#' @param FishIdx_SE_fill Character or numeric specifying how fishery index
-#'   standard errors are extended into projection years.
-#' @param SrvIdx_SE_fill Character or numeric specifying how survey index
-#'   standard errors are extended into projection years.
-#' @param ISS_FishAgeComps_fill Character or numeric specifying how fishery
-#'   age-composition input sample sizes are extended into projection years.
-#' @param ISS_FishLenComps_fill Same behavior as `ISS_FishAgeComps_fill` for
-#'   fishery length compositions.
-#' @param ISS_SrvAgeComps_fill Character or numeric specifying how survey
-#'   age-composition input sample sizes are extended into projection years.
-#' @param ISS_SrvLenComps_fill Same behavior as `ISS_SrvAgeComps_fill` for
-#'   survey length compositions.
+#' @param FishIdx_SE_fill Character or numeric specifying how pooled fishery
+#'   index standard errors are extended into projection years.
+#' @param SrvIdx_SE_fill Character or numeric specifying how pooled survey
+#'   index standard errors are extended into projection years.
+#' @param FishIdx_SE_pop_fill Character or numeric specifying how
+#'   population-specific fishery index standard errors are extended into
+#'   projection years. Default \code{"mean"}.
+#' @param SrvIdx_SE_pop_fill Character or numeric specifying how
+#'   population-specific survey index standard errors are extended into
+#'   projection years. Default \code{"mean"}.
+#' @param ISS_FishAgeComps_fill Character or numeric specifying how pooled
+#'   fishery age-composition input sample sizes are extended into projection
+#'   years.
+#' @param ISS_FishLenComps_fill Same behavior as \code{ISS_FishAgeComps_fill}
+#'   for pooled fishery length compositions.
+#' @param ISS_SrvAgeComps_fill Character or numeric specifying how pooled
+#'   survey age-composition input sample sizes are extended into projection
+#'   years.
+#' @param ISS_SrvLenComps_fill Same behavior as \code{ISS_SrvAgeComps_fill}
+#'   for pooled survey length compositions.
+#' @param ISS_FishAgeComps_pop_fill Character or numeric specifying how
+#'   population-specific fishery age-composition input sample sizes are
+#'   extended into projection years. Default \code{"mean"}.
+#' @param ISS_FishLenComps_pop_fill Same behavior as
+#'   \code{ISS_FishAgeComps_pop_fill} for population-specific fishery length
+#'   compositions. Default \code{"mean"}.
+#' @param ISS_SrvAgeComps_pop_fill Character or numeric specifying how
+#'   population-specific survey age-composition input sample sizes are
+#'   extended into projection years. Default \code{"mean"}.
+#' @param ISS_SrvLenComps_pop_fill Same behavior as
+#'   \code{ISS_SrvAgeComps_pop_fill} for population-specific survey length
+#'   compositions. Default \code{"mean"}.
 #'
-#' Extension rules may be:
+#' Extension rules for all \code{*_fill} arguments may be:
 #'
 #' \describe{
-#'   \item{"zeros"}{Fill projection years with zeros}
-#'   \item{"last"}{Repeat the final observed year}
-#'   \item{"mean"}{Use the mean of the historical series}
-#'   \item{"F_pattern"}{Scale fishery composition sample sizes with the
-#'   simulated fishing mortality pattern}
-#'   \item{numeric}{Use a supplied constant or array}
+#'   \item{\code{"zeros"}}{Fill projection years with zeros.}
+#'   \item{\code{"last"}}{Repeat the final observed year.}
+#'   \item{\code{"mean"}}{Use the mean of the historical series.}
+#'   \item{\code{"F_pattern"}}{Scale fishery composition sample sizes
+#'     proportionally to the simulated fishing mortality pattern (pooled
+#'     fishery ISS only).}
+#'   \item{numeric}{Use a supplied constant or array.}
 #' }
 #'
+#' If a fill argument receives an array directly, it is interpreted as the
+#' fully specified input and stored accordingly; the fill rule is ignored.
+#'
 #' @param ... Optional named simulation inputs that override internally
-#'   generated components. Any argument expected by:
-#'
-#'   \code{Setup_Sim_Fishing()},
-#'   \code{Setup_Sim_Survey()},
-#'   \code{Setup_Sim_Biologicals()},
-#'   \code{Setup_Sim_Rec()},
-#'   or \code{Setup_Sim_Tagging()}
-#'
-#'   may be provided.
+#'   generated components. Any argument expected by
+#'   \code{\link{Setup_Sim_Fishing}}, \code{\link{Setup_Sim_Survey}},
+#'   \code{\link{Setup_Sim_Biologicals}}, \code{\link{Setup_Sim_Rec}}, or
+#'   \code{\link{Setup_Sim_Tagging}} may be provided.
 #'
 #'   Common overrides include:
 #'
@@ -99,51 +118,53 @@
 #'   }
 #'
 #'   Supplied objects must have dimensions consistent with model structure,
-#'   the total number of years (`length(data$years) + closed_loop_yrs`), and
-#'   the number of simulations (`n_sims`).
+#'   the total number of years (\code{length(data$years) + closed_loop_yrs}),
+#'   and the number of simulations (\code{n_sims}).
 #'
 #' @details
 #' Simulation years consist of two periods:
 #'
 #' \itemize{
 #'   \item \strong{Conditioning years} — historical years corresponding to
-#'   the fitted assessment model.
-#'   \item \strong{Projection years} — future years simulated under closed-loop
-#'   management.
+#'     the fitted assessment model.
+#'   \item \strong{Projection years} — future years simulated under
+#'     closed-loop management.
 #' }
 #'
 #' During conditioning years, model processes are reconstructed from the
 #' fitted model report objects. For projection years, quantities are extended
-#' using specified fill rules or user-supplied inputs.
+#' using the specified fill rules or user-supplied inputs.
 #'
 #' By default:
 #'
 #' \itemize{
-#'   \item Biological inputs, selectivity, and catchability are extended using
-#'   values from the final estimated year.
+#'   \item Biological inputs, selectivity, and catchability are extended
+#'     using values from the final estimated year.
 #'   \item Fishing mortality is initialized to zero in projection years.
 #'   \item Recruitment is simulated forward when not fully specified by
-#'   `Rec_input`.
+#'     \code{Rec_input}.
+#'   \item Population-specific data streams (\code{ObsFishIdx_pop_SE},
+#'     \code{ObsSrvIdx_pop_SE}, and all \code{*_pop} ISS arrays) fall back
+#'     to uninformative defaults when the corresponding \code{Use*_pop}
+#'     flags contain no ones.
 #' }
-#'
 #'
 #' Closed-loop feedback begins in the first projection year and allows
 #' management actions (e.g., fishing mortality adjustments) to update
 #' dynamically during the simulation.
 #'
 #' @return
-#' A fully initialized `sim_list` object containing:
+#' A fully initialized \code{sim_list} object containing:
 #'
 #' \itemize{
 #'   \item model dimensions and simulation containers
 #'   \item biological process inputs
-#'   \item fishing and survey processes
+#'   \item pooled and population-specific fishing and survey processes
 #'   \item recruitment dynamics
 #'   \item tagging processes
 #'   \item spatial movement structures
-#'   \item replicated arrays across `n_sims`
+#'   \item replicated arrays across \code{n_sims}
 #' }
-#'
 #'
 #' @export condition_closed_loop_simulations
 #' @family Closed Loop Simulations
@@ -157,10 +178,16 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
                                               random = random,
                                               FishIdx_SE_fill = "mean",
                                               SrvIdx_SE_fill = "mean",
+                                              FishIdx_SE_pop_fill = "mean",
+                                              SrvIdx_SE_pop_fill = "mean",
                                               ISS_FishAgeComps_fill = "mean",
                                               ISS_FishLenComps_fill = "mean",
                                               ISS_SrvAgeComps_fill = "mean",
                                               ISS_SrvLenComps_fill = "mean",
+                                              ISS_FishAgeComps_pop_fill = "mean",
+                                              ISS_FishLenComps_pop_fill = "mean",
+                                              ISS_SrvAgeComps_pop_fill = "mean",
+                                              ISS_SrvLenComps_pop_fill = "mean",
                                               ...
                                               ) {
 
@@ -192,25 +219,57 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     args$ObsSrvIdx_SE <- SrvIdx_SE_fill
     SrvIdx_SE_fill <- "placeholder"
   }
+  if(is.array(ISS_FishAgeComps_pop_fill)) {
+    args$ISS_FishAgeComps_pop <- ISS_FishAgeComps_pop_fill
+    ISS_FishAgeComps_pop_fill <- "placeholder"
+  }
+  if(is.array(ISS_FishLenComps_pop_fill)) {
+    args$ISS_FishLenComps_pop <- ISS_FishLenComps_pop_fill
+    ISS_FishLenComps_pop_fill <- "placeholder"
+  }
+  if(is.array(ISS_SrvAgeComps_pop_fill)) {
+    args$ISS_SrvAgeComps_pop <- ISS_SrvAgeComps_pop_fill
+    ISS_SrvAgeComps_pop_fill <- "placeholder"
+  }
+  if(is.array(ISS_SrvLenComps_pop_fill)) {
+    args$ISS_SrvLenComps_pop <- ISS_SrvLenComps_pop_fill
+    ISS_SrvLenComps_pop_fill <- "placeholder"
+  }
+  if(is.array(FishIdx_SE_pop_fill)) {
+    args$ObsFishIdx_pop_SE <- FishIdx_SE_pop_fill
+    FishIdx_SE_pop_fill <- "placeholder"
+  }
+  if(is.array(SrvIdx_SE_pop_fill)) {
+    args$ObsSrvIdx_pop_SE <- SrvIdx_SE_pop_fill
+    SrvIdx_SE_pop_fill <- "placeholder"
+  }
 
   optim_parameters_list <- get_optim_param_list(parameters, mapping, sd_rep, random) # get optimized parameters in original list format
 
   # Setup Model Dimensions --------------------------------------------------
-  sim_list <- Setup_Sim_Dim(n_sims = n_sims, # number of simulations
-                            n_yrs = length(data$years) + closed_loop_yrs, # number of years
-                            n_regions = data$n_regions,  # number of regions
-                            n_ages = length(data$ages), # number of ages
-                            n_obs_ages = dim(data$ObsFishAgeComps)[4], # number of observed ages
-                            n_lens = length(data$lens), # number of lengths
-                            n_sexes = data$n_sexes, # number of sexes
-                            n_fish_fleets = data$n_fish_fleets, # number of fishery fleets
-                            n_srv_fleets = data$n_srv_fleets, # number of survey fleets
-                            feedback_start_yr = length(data$years), # when to start closed loop feedback
-                            n_seas = data$n_seas, # number of seasons
-                            seasdur = data$seasdur, # seasonal duration
-                            n_pop = data$n_pop,  # number of populations
-                            natal_region = data$natal_region, # natal region
-                            run_feedback = TRUE # whether or not to run feedback (closed loop)
+  sim_list <- Setup_Sim_Dim(n_sims = n_sims,
+                            n_yrs = length(data$years) + closed_loop_yrs,
+                            n_regions = data$n_regions,
+                            n_ages = length(data$ages),
+                            n_obs_ages = if(any(data$UseFishAgeComps == 1)) {
+                              dim(data$ObsFishAgeComps)[4]
+                            } else if(any(data$UseFishAgeComps_pop == 1)) {
+                              dim(data$ObsFishAgeComps_pop)[5]
+                            } else if(any(data$UseSrvAgeComps == 1)) {
+                              dim(data$ObsSrvAgeComps)[4]
+                            } else if(any(data$UseSrvAgeComps_pop == 1)) {
+                              dim(data$ObsSrvAgeComps_pop)[5]
+                            },
+                            n_lens = length(data$lens),
+                            n_sexes = data$n_sexes,
+                            n_fish_fleets = data$n_fish_fleets,
+                            n_srv_fleets = data$n_srv_fleets,
+                            feedback_start_yr = length(data$years),
+                            n_seas = data$n_seas,
+                            seasdur = data$seasdur,
+                            n_pop = data$n_pop,
+                            natal_region = data$natal_region,
+                            run_feedback = TRUE
   )
 
   # Setup Simulation Containers ---------------------------------------------
@@ -229,6 +288,18 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     }
     tmp
   } else args$ln_sigmaC
+
+  ln_sigmaC_pop <- if(!"ln_sigmaC_pop" %in% names(args)) {
+    tmp <- array(NA, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets))
+    for(p in 1:sim_list$n_pop) for(r in 1:sim_list$n_regions) for(f in 1:sim_list$n_fish_fleets) {
+      if(!is.vector(data$Wt_Catch_pop)) {
+        tmp[p,r,,,f] <- mean(log(exp(optim_parameters_list$ln_sigmaC_pop[p,r,,,f]) / sqrt(data$Wt_Catch_pop[p,r,,,f])))
+      } else {
+        tmp[p,r,,,f] <- mean(log(exp(optim_parameters_list$ln_sigmaC_pop[p,r,,,f]) / sqrt(data$Wt_Catch_pop)))
+      }
+    }
+    tmp
+  } else args$ln_sigmaC_pop
 
   # Fishery selectivity
   fish_sel_input <- if(!"fish_sel_input" %in% names(args)) {
@@ -265,14 +336,55 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   FishLen_corr_pars_agg <- if(!"FishLen_corr_pars_agg" %in% names(args)) optim_parameters_list$FishLen_corr_pars_agg else args$FishLen_corr_pars_agg
   FishLen_corr_pars <- if(!"FishLen_corr_pars" %in% names(args)) optim_parameters_list$FishLen_corr_pars[,,,,drop = FALSE] else args$FishLen_corr_pars
 
+  # Population-specific fishery index SE
+  ObsFishIdx_pop_SE <- if(!"ObsFishIdx_pop_SE" %in% names(args)) {
+    if(any(data$UseFishIdx_pop == 1)) {
+      extend_years(data$ObsFishIdx_pop_SE / sqrt(data$Wt_FishIdx_pop), closed_loop_yrs, 3, fill = FishIdx_SE_pop_fill)
+    } else {
+      array(0.2, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets))
+    }
+  } else args$ObsFishIdx_pop_SE
+
+  # Population-specific fishery age compositions
+  pop_comp_fishage_like <- if(!"pop_comp_fishage_like" %in% names(args)) data$pop_FishAgeComps_LikeType else args$pop_comp_fishage_like
+  pop_FishAgeComps_Type <- if(!"pop_FishAgeComps_Type" %in% names(args)) extend_years(data$pop_FishAgeComps_Type, closed_loop_yrs, 1, 'last') else args$pop_FishAgeComps_Type
+  ISS_FishAgeComps_pop <- if(!"ISS_FishAgeComps_pop" %in% names(args)) {
+    if(any(data$UseFishAgeComps_pop == 1)) {
+      extend_years(replicate(sim_list$n_sims, data$ISS_FishAgeComps_pop[,,,,,,drop = FALSE] * data$Wt_FishAgeComps_pop), closed_loop_yrs, 3, fill = ISS_FishAgeComps_pop_fill)
+    } else {
+      array(100, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims))
+    }
+  } else args$ISS_FishAgeComps_pop
+  ln_FishAge_pop_theta <- if(!"ln_FishAge_pop_theta" %in% names(args)) optim_parameters_list$ln_FishAge_pop_theta[,,,,drop = FALSE] else args$ln_FishAge_pop_theta
+  ln_FishAge_pop_theta_agg <- if(!"ln_FishAge_pop_theta_agg" %in% names(args)) optim_parameters_list$ln_FishAge_pop_theta_agg else args$ln_FishAge_pop_theta_agg
+  FishAge_pop_corr_pars_agg <- if(!"FishAge_pop_corr_pars_agg" %in% names(args)) optim_parameters_list$FishAge_pop_corr_pars_agg else args$FishAge_pop_corr_pars_agg
+  FishAge_pop_corr_pars <- if(!"FishAge_pop_corr_pars" %in% names(args)) optim_parameters_list$FishAge_pop_corr_pars[,,,,,drop = FALSE] else args$FishAge_pop_corr_pars
+
+  # Population-specific fishery length compositions
+  pop_comp_fishlen_like <- if(!"pop_comp_fishlen_like" %in% names(args)) data$pop_FishLenComps_LikeType else args$pop_comp_fishlen_like
+  pop_FishLenComps_Type <- if(!"pop_FishLenComps_Type" %in% names(args)) extend_years(data$pop_FishLenComps_Type, closed_loop_yrs, 1, 'last') else args$pop_FishLenComps_Type
+  ISS_FishLenComps_pop <- if(!"ISS_FishLenComps_pop" %in% names(args)) {
+    if(any(data$UseFishLenComps_pop == 1)) {
+      extend_years(replicate(sim_list$n_sims, data$ISS_FishLenComps_pop[,,,,,,drop = FALSE] * data$Wt_FishLenComps_pop), closed_loop_yrs, 3, fill = ISS_FishLenComps_pop_fill)
+    } else {
+      array(100, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims))
+    }
+  } else args$ISS_FishLenComps_pop
+  ln_FishLen_pop_theta <- if(!"ln_FishLen_pop_theta" %in% names(args)) optim_parameters_list$ln_FishLen_pop_theta[,,,,drop = FALSE] else args$ln_FishLen_pop_theta
+  ln_FishLen_pop_theta_agg <- if(!"ln_FishLen_pop_theta_agg" %in% names(args)) optim_parameters_list$ln_FishLen_pop_theta_agg else args$ln_FishLen_pop_theta_agg
+  FishLen_pop_corr_pars_agg <- if(!"FishLen_pop_corr_pars_agg" %in% names(args)) optim_parameters_list$FishLen_pop_corr_pars_agg else args$FishLen_pop_corr_pars_agg
+  FishLen_pop_corr_pars <- if(!"FishLen_pop_corr_pars" %in% names(args)) optim_parameters_list$FishLen_pop_corr_pars[,,,,,drop = FALSE] else args$FishLen_pop_corr_pars
+
   # setup fishery simulation processes
   sim_list <- Setup_Sim_Fishing(
     sim_list = sim_list, # update simulate list
     ln_sigmaC = ln_sigmaC,
+    ln_sigmaC_pop = ln_sigmaC_pop,
     Fmort_input = extend_years(replicate(n = sim_list$n_sims, rep$Fmort[,1:length(data$years),,,drop = FALSE]), n_years = closed_loop_yrs, 2, fill = 'zeros'),
     fish_sel_input = fish_sel_input,
     fish_q_input = fish_q_input,
     ObsFishIdx_SE = ObsFishIdx_SE,
+    ObsFishIdx_pop_SE = ObsFishIdx_pop_SE,
     fish_idx_type = data$fish_idx_type,
     init_F_val = rep$init_F,
 
@@ -292,7 +404,25 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     ln_FishLen_theta = ln_FishLen_theta,
     ln_FishLen_theta_agg = ln_FishLen_theta_agg,
     FishLen_corr_pars_agg = FishLen_corr_pars_agg,
-    FishLen_corr_pars = FishLen_corr_pars
+    FishLen_corr_pars = FishLen_corr_pars,
+
+    # population-specific age composition specifications
+    pop_comp_fishage_like = pop_comp_fishage_like,
+    pop_FishAgeComps_Type = pop_FishAgeComps_Type,
+    ISS_FishAgeComps_pop = ISS_FishAgeComps_pop,
+    ln_FishAge_pop_theta = ln_FishAge_pop_theta,
+    ln_FishAge_pop_theta_agg = ln_FishAge_pop_theta_agg,
+    FishAge_pop_corr_pars_agg = FishAge_pop_corr_pars_agg,
+    FishAge_pop_corr_pars = FishAge_pop_corr_pars,
+
+    # population-specific length composition specifications
+    pop_comp_fishlen_like = pop_comp_fishlen_like,
+    pop_FishLenComps_Type = pop_FishLenComps_Type,
+    ISS_FishLenComps_pop = ISS_FishLenComps_pop,
+    ln_FishLen_pop_theta = ln_FishLen_pop_theta,
+    ln_FishLen_pop_theta_agg = ln_FishLen_pop_theta_agg,
+    FishLen_pop_corr_pars_agg = FishLen_pop_corr_pars_agg,
+    FishLen_pop_corr_pars = FishLen_pop_corr_pars
   )
 
   # add in ISS F pattern into simulation list
@@ -335,12 +465,52 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   SrvLen_corr_pars_agg <- if(!"SrvLen_corr_pars_agg" %in% names(args)) optim_parameters_list$SrvLen_corr_pars_agg else args$SrvLen_corr_pars_agg
   SrvLen_corr_pars <- if(!"SrvLen_corr_pars" %in% names(args)) optim_parameters_list$SrvLen_corr_pars[,,,,drop = FALSE] else args$SrvLen_corr_pars
 
+  # Population-specific survey index SE
+  ObsSrvIdx_pop_SE <- if(!"ObsSrvIdx_pop_SE" %in% names(args)) {
+    if(any(data$UseSrvIdx_pop == 1)) {
+      extend_years(data$ObsSrvIdx_pop_SE / sqrt(data$Wt_SrvIdx_pop), closed_loop_yrs, 3, fill = SrvIdx_SE_pop_fill)
+    } else {
+      array(0.2, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_srv_fleets))
+    }
+  } else args$ObsSrvIdx_pop_SE
+
+  # Population-specific survey age compositions
+  pop_comp_srvage_like <- if(!"pop_comp_srvage_like" %in% names(args)) data$pop_SrvAgeComps_LikeType else args$pop_comp_srvage_like
+  pop_SrvAgeComps_Type <- if(!"pop_SrvAgeComps_Type" %in% names(args)) extend_years(data$pop_SrvAgeComps_Type, closed_loop_yrs, 1, 'last') else args$pop_SrvAgeComps_Type
+  ISS_SrvAgeComps_pop <- if(!"ISS_SrvAgeComps_pop" %in% names(args)) {
+    if(any(data$UseSrvAgeComps_pop == 1)) {
+      extend_years(replicate(sim_list$n_sims, data$ISS_SrvAgeComps_pop[,,,,,,drop = FALSE] * data$Wt_SrvAgeComps_pop), closed_loop_yrs, 3, fill = ISS_SrvAgeComps_pop_fill)
+    } else {
+      array(100, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims))
+    }
+  } else args$ISS_SrvAgeComps_pop
+  ln_SrvAge_pop_theta <- if(!"ln_SrvAge_pop_theta" %in% names(args)) optim_parameters_list$ln_SrvAge_pop_theta[,,,,drop = FALSE] else args$ln_SrvAge_pop_theta
+  ln_SrvAge_pop_theta_agg <- if(!"ln_SrvAge_pop_theta_agg" %in% names(args)) optim_parameters_list$ln_SrvAge_pop_theta_agg else args$ln_SrvAge_pop_theta_agg
+  SrvAge_pop_corr_pars_agg <- if(!"SrvAge_pop_corr_pars_agg" %in% names(args)) optim_parameters_list$SrvAge_pop_corr_pars_agg else args$SrvAge_pop_corr_pars_agg
+  SrvAge_pop_corr_pars <- if(!"SrvAge_pop_corr_pars" %in% names(args)) optim_parameters_list$SrvAge_pop_corr_pars[,,,,,drop = FALSE] else args$SrvAge_pop_corr_pars
+
+  # Population-specific survey length compositions
+  pop_comp_srvlen_like <- if(!"pop_comp_srvlen_like" %in% names(args)) data$pop_SrvLenComps_LikeType else args$pop_comp_srvlen_like
+  pop_SrvLenComps_Type <- if(!"pop_SrvLenComps_Type" %in% names(args)) extend_years(data$pop_SrvLenComps_Type, closed_loop_yrs, 1, 'last') else args$pop_SrvLenComps_Type
+  ISS_SrvLenComps_pop <- if(!"ISS_SrvLenComps_pop" %in% names(args)) {
+    if(any(data$UseSrvLenComps_pop == 1)) {
+      extend_years(replicate(sim_list$n_sims, data$ISS_SrvLenComps_pop[,,,,,,drop = FALSE] * data$Wt_SrvLenComps_pop), closed_loop_yrs, 3, fill = ISS_SrvLenComps_pop_fill)
+    } else {
+      array(100, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims))
+    }
+  } else args$ISS_SrvLenComps_pop
+  ln_SrvLen_pop_theta <- if(!"ln_SrvLen_pop_theta" %in% names(args)) optim_parameters_list$ln_SrvLen_pop_theta[,,,,drop = FALSE] else args$ln_SrvLen_pop_theta
+  ln_SrvLen_pop_theta_agg <- if(!"ln_SrvLen_pop_theta_agg" %in% names(args)) optim_parameters_list$ln_SrvLen_pop_theta_agg else args$ln_SrvLen_pop_theta_agg
+  SrvLen_pop_corr_pars_agg <- if(!"SrvLen_pop_corr_pars_agg" %in% names(args)) optim_parameters_list$SrvLen_pop_corr_pars_agg else args$SrvLen_pop_corr_pars_agg
+  SrvLen_pop_corr_pars <- if(!"SrvLen_pop_corr_pars" %in% names(args)) optim_parameters_list$SrvLen_pop_corr_pars[,,,,,drop = FALSE] else args$SrvLen_pop_corr_pars
+
   # setup survey simulation processes
   sim_list <- Setup_Sim_Survey(
     sim_list = sim_list,
     srv_sel_input = srv_sel_input,
     srv_q_input = srv_q_input,
     ObsSrvIdx_SE = ObsSrvIdx_SE,
+    ObsSrvIdx_pop_SE = ObsSrvIdx_pop_SE,
     srv_idx_type = data$srv_idx_type,
     t_srv = data$t_srv,
 
@@ -360,7 +530,25 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     ln_SrvLen_theta = ln_SrvLen_theta,
     ln_SrvLen_theta_agg = ln_SrvLen_theta_agg,
     SrvLen_corr_pars_agg = SrvLen_corr_pars_agg,
-    SrvLen_corr_pars = SrvLen_corr_pars
+    SrvLen_corr_pars = SrvLen_corr_pars,
+
+    # population-specific age composition specifications
+    pop_comp_srvage_like = pop_comp_srvage_like,
+    pop_SrvAgeComps_Type = pop_SrvAgeComps_Type,
+    ISS_SrvAgeComps_pop = ISS_SrvAgeComps_pop,
+    ln_SrvAge_pop_theta = ln_SrvAge_pop_theta,
+    ln_SrvAge_pop_theta_agg = ln_SrvAge_pop_theta_agg,
+    SrvAge_pop_corr_pars_agg = SrvAge_pop_corr_pars_agg,
+    SrvAge_pop_corr_pars = SrvAge_pop_corr_pars,
+
+    # population-specific length composition specifications
+    pop_comp_srvlen_like = pop_comp_srvlen_like,
+    pop_SrvLenComps_Type = pop_SrvLenComps_Type,
+    ISS_SrvLenComps_pop = ISS_SrvLenComps_pop,
+    ln_SrvLen_pop_theta = ln_SrvLen_pop_theta,
+    ln_SrvLen_pop_theta_agg = ln_SrvLen_pop_theta_agg,
+    SrvLen_pop_corr_pars_agg = SrvLen_pop_corr_pars_agg,
+    SrvLen_pop_corr_pars = SrvLen_pop_corr_pars
   )
 
   # Setup Biological Dynamics -----------------------------------------------

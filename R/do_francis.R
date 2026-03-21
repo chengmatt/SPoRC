@@ -142,44 +142,64 @@ get_francis_weights <- function(n_regions,
 
 #' Get Francis Weights
 #'
-#' @param rep Report file list
-#' @param age_labels Age labels
-#' @param len_labels Length labels
-#' @param year_labels Year labels
-#' @param data List of data inputs
+#' Computes Francis composition reweighting factors for pooled and
+#' population-specific fishery and survey age and length compositions.
+#' Used inside \code{\link{run_francis}} or directly in a user-defined
+#' reweighting loop.
 #'
-#' @return A list object of francis weights (note that it will be NAs for some, if using jnt composition approaches - i.e., only uses one dimension), as well as a dataframe of francis mean fits
+#' @param data List of model data inputs containing observed compositions,
+#'   usage flags, input sample sizes, weight arrays, and composition type
+#'   matrices for both pooled and population-specific data streams.
+#' @param rep Report list from a fitted RTMB model containing predicted
+#'   compositions (\code{CAA}, \code{CAL}, \code{SrvIAA}, \code{SrvIAL})
+#'   with a leading population dimension.
+#' @param age_labels Vector of observed age bin labels.
+#' @param len_labels Vector of observed length bin labels.
+#' @param year_labels Vector of assessment year labels.
+#'
+#' @return A named list containing:
+#'   \describe{
+#'     \item{\code{new_fish_age_wts}, \code{new_fish_len_wts},
+#'       \code{new_srv_age_wts}, \code{new_srv_len_wts}}{Updated Francis
+#'       weight arrays for pooled compositions, same dimensions as the
+#'       corresponding \code{Wt_*} arrays in \code{data}.}
+#'     \item{\code{new_fish_age_wts_pop}, \code{new_fish_len_wts_pop},
+#'       \code{new_srv_age_wts_pop}, \code{new_srv_len_wts_pop}}{Updated
+#'       Francis weight arrays for population-specific compositions, same
+#'       dimensions as the corresponding \code{Wt_*_pop} arrays in
+#'       \code{data}. Cells remain \code{NA} when the corresponding
+#'       \code{Use*_pop} flag contains no ones.}
+#'     \item{\code{mean_francis}}{Long-format dataframe of observed and
+#'       expected composition means across all data streams and populations,
+#'       with columns \code{Region}, \code{Comp_Year}, \code{Comp_Seas},
+#'       \code{Sex}, \code{Fleet}, \code{obs}, \code{pred}, \code{Type},
+#'       and \code{Pop} (pooled rows have \code{Pop = NA}).}
+#'   }
+#'
 #' @export do_francis_reweighting
 #' @family Francis Reweighting
-#' @details
-#' Function to get francis weights. Used inside the wrapper function run_francis(), or can be defined by the user as a loop to extract Francis weights (see example).
-#'
 #'
 #' @examples
 #' \dontrun{
 #' for(j in 1:5) {
-#'
-#'   if(j == 1) { # reset weights at 1
-#'     data$Wt_FishAgeComps[] <- 1
-#'     data$Wt_FishLenComps[] <- 1
-#'     data$Wt_SrvAgeComps[] <- 1
-#'     data$Wt_SrvLenComps[] <- 1
+#'   if(j == 1) {
+#'     data$Wt_FishAgeComps[] <- 1; data$Wt_FishLenComps[] <- 1
+#'     data$Wt_SrvAgeComps[]  <- 1; data$Wt_SrvLenComps[]  <- 1
+#'     data$Wt_FishAgeComps_pop[] <- 0; data$Wt_FishLenComps_pop[] <- 0
+#'     data$Wt_SrvAgeComps_pop[]  <- 0; data$Wt_SrvLenComps_pop[]  <- 0
 #'   } else {
 #'     data$Wt_FishAgeComps[] <- wts$new_fish_age_wts
 #'     data$Wt_FishLenComps[] <- wts$new_fish_len_wts
-#'     data$Wt_SrvAgeComps[] <- wts$new_srv_age_wts
-#'     data$Wt_SrvLenComps[] <- wts$new_srv_len_wts
+#'     data$Wt_SrvAgeComps[]  <- wts$new_srv_age_wts
+#'     data$Wt_SrvLenComps[]  <- wts$new_srv_len_wts
+#'     if(any(data$UseFishAgeComps_pop == 1)) data$Wt_FishAgeComps_pop[] <- wts$new_fish_age_wts_pop
+#'     if(any(data$UseFishLenComps_pop == 1)) data$Wt_FishLenComps_pop[] <- wts$new_fish_len_wts_pop
+#'     if(any(data$UseSrvAgeComps_pop  == 1)) data$Wt_SrvAgeComps_pop[]  <- wts$new_srv_age_wts_pop
+#'     if(any(data$UseSrvLenComps_pop  == 1)) data$Wt_SrvLenComps_pop[]  <- wts$new_srv_len_wts_pop
 #'   }
-#'
-#'   sabie_rtmb_model <- fit_model(data,
-#'                                 parameters,
-#'                                 mapping,
-#'                                 random = NULL,
-#'                                 newton_loops = 3,
-#'                                 silent = TRUE
-#'   )
-#'
-#'   rep <- sabie_rtmb_model$report(sabie_rtmb_model$env$last.par.best) # Get report
+#'   obj <- fit_model(data, parameters, mapping, random = NULL,
+#'                    newton_loops = 3, silent = TRUE)
+#'   rep <- obj$report(obj$env$last.par.best)
 #'   wts <- do_francis_reweighting(data = data, rep = rep, age_labels = 2:31,
 #'                                 len_labels = seq(41, 99, 2), year_labels = 1960:2024)
 #' }
@@ -331,62 +351,178 @@ do_francis_reweighting <- function(data,
 
   new_srv_len_wts[] <- srv_len_info$weights
 
+
+  # Population-specific comps ---------------------------------------------
+  n_pop <- data$n_pop
+  pop_dim_fish <- dim(data$Wt_FishAgeComps_pop)[-1]  # [n_regions, n_years, n_seas, n_sexes, n_fish_fleets]
+  pop_dim_srv  <- dim(data$Wt_SrvAgeComps_pop)[-1]   # [n_regions, n_years, n_seas, n_sexes, n_srv_fleets]
+
+
+  ### Fishery Ages (Pop) ------------------------------------------------------
+  new_fish_age_wts_pop <- data$Wt_FishAgeComps_pop
+  new_fish_age_wts_pop[] <- NA
+  mean_francis_fish_age_pop <- data.frame()
+  if(any(data$UseFishAgeComps_pop == 1)) {
+    for(p in 1:n_pop) {
+      tmp_info <- get_francis_weights(
+        n_regions = n_regions, n_sexes = n_sexes, n_fleets = n_fish_fleets,
+        n_years = n_years, n_seas = n_seas, n_ages = n_ages,
+        Use      = array(data$UseFishAgeComps_pop[p,,,,],     dim = dim(data$UseFishAgeComps_pop)[-1]),
+        ISS      = array(data$ISS_FishAgeComps_pop[p,,,,,],   dim = dim(data$ISS_FishAgeComps_pop)[-1]),
+        Pred_array = array(comp_prop$Pred_FishAge_pop_mat[p,,,,,,], dim = dim(comp_prop$Pred_FishAge_pop_mat)[-1]),
+        Obs_array  = array(comp_prop$Obs_FishAge_pop_mat[p,,,,,,],  dim = dim(comp_prop$Obs_FishAge_pop_mat)[-1]),
+        weights    = array(new_fish_age_wts_pop[p,,,,,],      dim = pop_dim_fish),
+        bins       = age_labels,
+        comp_type  = data$pop_FishAgeComps_Type
+      )
+      new_fish_age_wts_pop[p,,,,,] <- tmp_info$weights
+      mean_francis_fish_age_pop <- rbind(mean_francis_fish_age_pop, tmp_info$mean_francis %>% dplyr::mutate(Pop = p))
+    }
+  }
+
+
+  ### Fishery Lengths (Pop) ---------------------------------------------------
+  new_fish_len_wts_pop <- data$Wt_FishLenComps_pop
+  new_fish_len_wts_pop[] <- NA
+  mean_francis_fish_len_pop <- data.frame()
+  if(any(data$UseFishLenComps_pop == 1)) {
+    for(p in 1:n_pop) {
+      tmp_info <- get_francis_weights(
+        n_regions = n_regions, n_sexes = n_sexes, n_fleets = n_fish_fleets,
+        n_years = n_years, n_seas = n_seas, n_ages = n_ages,
+        Use      = array(data$UseFishLenComps_pop[p,,,,],     dim = dim(data$UseFishLenComps_pop)[-1]),
+        ISS      = array(data$ISS_FishLenComps_pop[p,,,,,],   dim = dim(data$ISS_FishLenComps_pop)[-1]),
+        Pred_array = array(comp_prop$Pred_FishLen_pop_mat[p,,,,,,], dim = dim(comp_prop$Pred_FishLen_pop_mat)[-1]),
+        Obs_array  = array(comp_prop$Obs_FishLen_pop_mat[p,,,,,,],  dim = dim(comp_prop$Obs_FishLen_pop_mat)[-1]),
+        weights    = array(new_fish_len_wts_pop[p,,,,,],      dim = pop_dim_fish),
+        bins       = len_labels,
+        comp_type  = data$pop_FishLenComps_Type
+      )
+      new_fish_len_wts_pop[p,,,,,] <- tmp_info$weights
+      mean_francis_fish_len_pop <- rbind(mean_francis_fish_len_pop, tmp_info$mean_francis %>% dplyr::mutate(Pop = p))
+    }
+  }
+
+
+  ### Survey Ages (Pop) -------------------------------------------------------
+  new_srv_age_wts_pop <- data$Wt_SrvAgeComps_pop
+  new_srv_age_wts_pop[] <- NA
+  mean_francis_srv_age_pop <- data.frame()
+  if(any(data$UseSrvAgeComps_pop == 1)) {
+    for(p in 1:n_pop) {
+      tmp_info <- get_francis_weights(
+        n_regions = n_regions, n_sexes = n_sexes, n_fleets = n_srv_fleets,
+        n_years = n_years, n_seas = n_seas, n_ages = n_ages,
+        Use      = array(data$UseSrvAgeComps_pop[p,,,,],     dim = dim(data$UseSrvAgeComps_pop)[-1]),
+        ISS      = array(data$ISS_SrvAgeComps_pop[p,,,,,],   dim = dim(data$ISS_SrvAgeComps_pop)[-1]),
+        Pred_array = array(comp_prop$Pred_SrvAge_pop_mat[p,,,,,,], dim = dim(comp_prop$Pred_SrvAge_pop_mat)[-1]),
+        Obs_array  = array(comp_prop$Obs_SrvAge_pop_mat[p,,,,,,],  dim = dim(comp_prop$Obs_SrvAge_pop_mat)[-1]),
+        weights    = array(new_srv_age_wts_pop[p,,,,,],      dim = pop_dim_srv),
+        bins       = age_labels,
+        comp_type  = data$pop_SrvAgeComps_Type
+      )
+      new_srv_age_wts_pop[p,,,,,] <- tmp_info$weights
+      mean_francis_srv_age_pop <- rbind(mean_francis_srv_age_pop, tmp_info$mean_francis %>% dplyr::mutate(Pop = p))
+    }
+  }
+
+
+  ### Survey Lengths (Pop) ----------------------------------------------------
+  new_srv_len_wts_pop <- data$Wt_SrvLenComps_pop
+  new_srv_len_wts_pop[] <- NA
+  mean_francis_srv_len_pop <- data.frame()
+  if(any(data$UseSrvLenComps_pop == 1)) {
+    for(p in 1:n_pop) {
+      tmp_info <- get_francis_weights(
+        n_regions = n_regions, n_sexes = n_sexes, n_fleets = n_srv_fleets,
+        n_years = n_years, n_seas = n_seas, n_ages = n_ages,
+        Use      = array(data$UseSrvLenComps_pop[p,,,,],     dim = dim(data$UseSrvLenComps_pop)[-1]),
+        ISS      = array(data$ISS_SrvLenComps_pop[p,,,,,],   dim = dim(data$ISS_SrvLenComps_pop)[-1]),
+        Pred_array = array(comp_prop$Pred_SrvLen_pop_mat[p,,,,,,], dim = dim(comp_prop$Pred_SrvLen_pop_mat)[-1]),
+        Obs_array  = array(comp_prop$Obs_SrvLen_pop_mat[p,,,,,,],  dim = dim(comp_prop$Obs_SrvLen_pop_mat)[-1]),
+        weights    = array(new_srv_len_wts_pop[p,,,,,],      dim = pop_dim_srv),
+        bins       = len_labels,
+        comp_type  = data$pop_SrvLenComps_Type
+      )
+      new_srv_len_wts_pop[p,,,,,] <- tmp_info$weights
+      mean_francis_srv_len_pop <- rbind(mean_francis_srv_len_pop, tmp_info$mean_francis %>% dplyr::mutate(Pop = p))
+    }
+  }
+
   # Get francis mean fits
   mean_francis <- rbind(
     fish_age_info$mean_francis %>% dplyr::mutate(Type = "Fishery Ages"),
-    srv_age_info$mean_francis %>% dplyr::mutate(Type = "Survey Ages"),
+    srv_age_info$mean_francis  %>% dplyr::mutate(Type = "Survey Ages"),
     fish_len_info$mean_francis %>% dplyr::mutate(Type = "Fishery Lengths"),
-    srv_len_info$mean_francis %>% dplyr::mutate(Type = "Survey Lengths")
+    srv_len_info$mean_francis  %>% dplyr::mutate(Type = "Survey Lengths"),
+    mean_francis_fish_age_pop  %>% dplyr::mutate(Type = "Pop Fishery Ages"),
+    mean_francis_fish_len_pop  %>% dplyr::mutate(Type = "Pop Fishery Lengths"),
+    mean_francis_srv_age_pop   %>% dplyr::mutate(Type = "Pop Survey Ages"),
+    mean_francis_srv_len_pop   %>% dplyr::mutate(Type = "Pop Survey Lengths")
   )
 
-  return(list(new_fish_age_wts = new_fish_age_wts, new_fish_len_wts = new_fish_len_wts,
-              new_srv_age_wts = new_srv_age_wts, new_srv_len_wts = new_srv_len_wts, mean_francis = mean_francis))
+  return(list(new_fish_age_wts     = new_fish_age_wts,
+              new_fish_len_wts     = new_fish_len_wts,
+              new_srv_age_wts      = new_srv_age_wts,
+              new_srv_len_wts      = new_srv_len_wts,
+              new_fish_age_wts_pop = new_fish_age_wts_pop,
+              new_fish_len_wts_pop = new_fish_len_wts_pop,
+              new_srv_age_wts_pop  = new_srv_age_wts_pop,
+              new_srv_len_wts_pop  = new_srv_len_wts_pop,
+              mean_francis         = mean_francis))
+
 
 } # end function
 
 #' Run Iterative Francis Reweighting Procedure
 #'
-#' Runs an iterative Francis reweighting procedure for composition data
-#' (fishery and survey age- and length-compositions). The function
-#' reweights input data, repeatedly fits the model, and computes
-#' updated Francis weights.
+#' Runs an iterative Francis reweighting procedure for pooled and
+#' population-specific fishery and survey age and length compositions.
+#' Repeatedly fits the model and updates composition weights until the
+#' specified number of iterations is reached.
 #'
-#' @param data A list of model input data, including at least observed
-#'   compositions (`ObsFishAgeComps`, `ObsFishLenComps`, `ObsSrvAgeComps`,
-#'   `ObsSrvLenComps`) and corresponding weights
-#'   (`Wt_FishAgeComps`, `Wt_FishLenComps`, `Wt_SrvAgeComps`,
-#'   `Wt_SrvLenComps`).
-#' @param parameters A list of model parameters to be passed to
-#'   [fit_model()].
-#' @param mapping A list or mapping object used to specify fixed or
-#'   estimated parameters in [fit_model()].
-#' @param n_francis_iter Integer. Number of Francis reweighting
-#'   iterations to perform. Default is `10`.
-#' @param newton_loops Integer. Number of Newton loops passed to
-#'   [fit_model()]. Default is `0`.
-#' @param random A character string of random effects passed to [fit_model()].
+#' @param data A list of model input data containing observed compositions,
+#'   usage flags, input sample sizes, and weight arrays for both pooled
+#'   (\code{Wt_FishAgeComps}, \code{Wt_FishLenComps}, \code{Wt_SrvAgeComps},
+#'   \code{Wt_SrvLenComps}) and population-specific
+#'   (\code{Wt_FishAgeComps_pop}, \code{Wt_FishLenComps_pop},
+#'   \code{Wt_SrvAgeComps_pop}, \code{Wt_SrvLenComps_pop}) data streams.
+#' @param parameters A list of model parameters passed to \code{\link{fit_model}}.
+#' @param mapping A list or mapping object passed to \code{\link{fit_model}}.
+#' @param random Character vector of random effects passed to
+#'   \code{\link{fit_model}}. Default \code{NULL}.
+#' @param n_francis_iter Integer. Number of Francis reweighting iterations.
+#'   Default \code{10}.
+#' @param newton_loops Integer. Number of Newton refinement steps passed to
+#'   \code{\link{fit_model}}. Default \code{0}.
 #'
-#' @returns A list with three elements:
-#' \describe{
-#'   \item{obj}{The fitted model object returned by [fit_model()],
-#'   including all elements of a TMB object, data, parameters, mapping, random effects specified, and report.}
-#'   \item{end_mean_francis}{A summary of the mean Francis weights from the first iteration.}
-#'   \item{end_mean_francis}{A summary of the mean Francis weights from the final iteration.}
-#'   \item{recorded_weights}{A summary of recorded francis weights from each iteartion.}
-#' }
+#' @return A named list with:
+#'   \describe{
+#'     \item{\code{obj}}{The fitted model object from the final iteration,
+#'       augmented with \code{$data}, \code{$parameters}, \code{$mapping},
+#'       \code{$random}, and \code{$rep}.}
+#'     \item{\code{start_mean_francis}}{Mean composition fits from the first
+#'       iteration, as returned by \code{\link{do_francis_reweighting}}.}
+#'     \item{\code{end_mean_francis}}{Mean composition fits from the final
+#'       iteration.}
+#'     \item{\code{recorded_weights}}{Long-format dataframe of Francis weights
+#'       from every iteration for all pooled and population-specific data
+#'       streams, with columns \code{Region}, \code{Year}, \code{Seas},
+#'       \code{Sex}, \code{Fleet}, \code{Weight}, \code{Type}, \code{Pop}
+#'       (pooled rows have \code{Pop = NA}), and \code{iter}.}
+#'   }
+#'
 #' @family Francis Reweighting
 #' @export run_francis
 #'
 #' @examples
 #' \dontrun{
-#'   out <- run_francis(data = data,
-#'                      parameters = parameters,
-#'                      mapping = mapping,
-#'                      random = NULL,
-#'                      n_francis_iter = 5,
-#'                      newton_loops = 3)
+#'   out <- run_francis(data = data, parameters = parameters,
+#'                      mapping = mapping, random = NULL,
+#'                      n_francis_iter = 5, newton_loops = 3)
 #'   out$obj
-#'   out$mean_francis
+#'   out$end_mean_francis
+#'   out$recorded_weights
 #' }
 run_francis <- function(data,
                         parameters,
@@ -401,17 +537,24 @@ run_francis <- function(data,
   # run francis
   for(j in 1:n_francis_iter) {
 
-    if(j == 1) { # reset weights at 1
+    if(j == 1) {
       data$Wt_FishAgeComps[] <- 1
       data$Wt_FishLenComps[] <- 1
-      data$Wt_SrvAgeComps[] <- 1
-      data$Wt_SrvLenComps[] <- 1
+      data$Wt_SrvAgeComps[]  <- 1
+      data$Wt_SrvLenComps[]  <- 1
+      data$Wt_FishAgeComps_pop[] <- 0
+      data$Wt_FishLenComps_pop[] <- 0
+      data$Wt_SrvAgeComps_pop[]  <- 0
+      data$Wt_SrvLenComps_pop[]  <- 0
     } else {
-      # iterate francis weights
       data$Wt_FishAgeComps[] <- wts$new_fish_age_wts
       data$Wt_FishLenComps[] <- wts$new_fish_len_wts
-      data$Wt_SrvAgeComps[] <- wts$new_srv_age_wts
-      data$Wt_SrvLenComps[] <- wts$new_srv_len_wts
+      data$Wt_SrvAgeComps[]  <- wts$new_srv_age_wts
+      data$Wt_SrvLenComps[]  <- wts$new_srv_len_wts
+      if(any(data$UseFishAgeComps_pop == 1)) data$Wt_FishAgeComps_pop[] <- wts$new_fish_age_wts_pop
+      if(any(data$UseFishLenComps_pop == 1)) data$Wt_FishLenComps_pop[] <- wts$new_fish_len_wts_pop
+      if(any(data$UseSrvAgeComps_pop  == 1)) data$Wt_SrvAgeComps_pop[]  <- wts$new_srv_age_wts_pop
+      if(any(data$UseSrvLenComps_pop  == 1)) data$Wt_SrvLenComps_pop[]  <- wts$new_srv_len_wts_pop
     }
 
     # run model
@@ -438,16 +581,31 @@ run_francis <- function(data,
     if(j == 1) wts_1 <- wts
 
     # record weights
-    # reshape matrices and label
     fish_age_wts_df <- reshape2::melt(wts$new_fish_age_wts); fish_age_wts_df$Type <- "Fishery Ages"
     fish_len_wts_df <- reshape2::melt(wts$new_fish_len_wts); fish_len_wts_df$Type <- "Fishery Lengths"
-    srv_age_wts_df <- reshape2::melt(wts$new_srv_age_wts); srv_age_wts_df$Type <- "Survey Ages"
-    srv_len_wts_df <- reshape2::melt(wts$new_srv_len_wts); srv_len_wts_df$Type <- "Survey Lengths"
-    tmp_wts_df <- rbind(fish_age_wts_df, fish_len_wts_df, srv_age_wts_df, srv_len_wts_df) # bind dataframes together
-    colnames(tmp_wts_df) <- c("Region", "Year", "Seas", "Sex", "Fleet", "Weight", "Type") # rename columns
-    tmp_wts_df$iter <- j # indicate francis iteration
-    wts_df <- rbind(wts_df, tmp_wts_df) # update dataframe
-    print(paste("Francis iteration:", j)) # print francis iteration
+    srv_age_wts_df  <- reshape2::melt(wts$new_srv_age_wts);  srv_age_wts_df$Type  <- "Survey Ages"
+    srv_len_wts_df  <- reshape2::melt(wts$new_srv_len_wts);  srv_len_wts_df$Type  <- "Survey Lengths"
+    colnames(fish_age_wts_df) <- c("Region", "Year", "Seas", "Sex", "Fleet", "Weight", "Type")
+    colnames(fish_len_wts_df) <- c("Region", "Year", "Seas", "Sex", "Fleet", "Weight", "Type")
+    colnames(srv_age_wts_df)  <- c("Region", "Year", "Seas", "Sex", "Fleet", "Weight", "Type")
+    colnames(srv_len_wts_df)  <- c("Region", "Year", "Seas", "Sex", "Fleet", "Weight", "Type")
+    fish_age_wts_df$Pop <- NA; fish_len_wts_df$Pop <- NA
+    srv_age_wts_df$Pop  <- NA; srv_len_wts_df$Pop  <- NA
+
+    fish_age_pop_wts_df <- reshape2::melt(wts$new_fish_age_wts_pop); fish_age_pop_wts_df$Type <- "Pop Fishery Ages"
+    fish_len_pop_wts_df <- reshape2::melt(wts$new_fish_len_wts_pop); fish_len_pop_wts_df$Type <- "Pop Fishery Lengths"
+    srv_age_pop_wts_df  <- reshape2::melt(wts$new_srv_age_wts_pop);  srv_age_pop_wts_df$Type  <- "Pop Survey Ages"
+    srv_len_pop_wts_df  <- reshape2::melt(wts$new_srv_len_wts_pop);  srv_len_pop_wts_df$Type  <- "Pop Survey Lengths"
+    colnames(fish_age_pop_wts_df) <- c("Pop", "Region", "Year", "Seas", "Sex", "Fleet", "Weight", "Type")
+    colnames(fish_len_pop_wts_df) <- c("Pop", "Region", "Year", "Seas", "Sex", "Fleet", "Weight", "Type")
+    colnames(srv_age_pop_wts_df)  <- c("Pop", "Region", "Year", "Seas", "Sex", "Fleet", "Weight", "Type")
+    colnames(srv_len_pop_wts_df)  <- c("Pop", "Region", "Year", "Seas", "Sex", "Fleet", "Weight", "Type")
+
+    tmp_wts_df <- rbind(fish_age_wts_df, fish_len_wts_df, srv_age_wts_df, srv_len_wts_df,
+                        fish_age_pop_wts_df, fish_len_pop_wts_df, srv_age_pop_wts_df, srv_len_pop_wts_df)
+    tmp_wts_df$iter <- j
+    wts_df <- rbind(wts_df, tmp_wts_df)
+    print(paste("Francis iteration:", j))
 
   } # end j loop
 

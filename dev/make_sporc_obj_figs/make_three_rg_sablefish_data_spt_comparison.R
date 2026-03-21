@@ -1,4 +1,5 @@
 library(here)
+library(tidyverse)
 
 # Load in data from previous spatial model and build this
 spatial_data <- readRDS(here("dev", 'dev_data', "Spatial Sablefish Model", "data_3_area.RDS"))

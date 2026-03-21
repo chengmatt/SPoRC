@@ -24,7 +24,7 @@ test_that("Three-region Sablefish RTMB model produces expected results", {
                               n_pop = three_rg_sable_data$n_pop,
                               natal_region = three_rg_sable_data$natal_region,
                               # population stuff
-                              verbose = TRUE
+                              verbose = FALSE
   )
 
   # Setup recruitment stuff (using defaults for other stuff)

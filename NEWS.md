@@ -5,6 +5,7 @@
 - Incorporated ability to simulate and estimate both population-specific (natal homing) and seasonal dynamics.
 - Recoded tagging module to allow fleet-specific tag reporting rates, as well as missing attributes in tagged fish. 
 - Reference points for local density-dependence in both meta-population and natal homing contexts.
+- Added ability to simulate and fit to population-specific catches, indices, compositions, and tagging data. 
 
 ## Improvements
 - Allowed both numeric and character codes for specifying dynamics in simulator, so as to be more consistent with how estimation models are specified, while maintaining backwards compatibility. 

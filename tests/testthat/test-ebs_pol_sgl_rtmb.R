@@ -24,7 +24,7 @@ test_that("Single-region EBS Pollock RTMB model produces expected results", {
     # Populaiton stuff
     n_pop = sgl_rg_ebswp_data$n_pop,
     natal_region = sgl_rg_ebswp_data$natal_region,
-    verbose = TRUE
+    verbose = FALSE
   )
 
   inv_steepness <- function(s) qlogis((s - 0.2) / 0.8)

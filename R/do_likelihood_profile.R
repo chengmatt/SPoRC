@@ -1,16 +1,51 @@
 #' Run Likelihood Profile
 #'
-#' @param data data list from model
-#' @param parameters parameter list from model
-#' @param mapping mapping list from model
-#' @param random character vector of random effects to estimate
-#' @param what parameter name we want to profile
-#' @param idx Index for an parameter array, pointing to the value we want to map off (index is relative to a flattened array)
-#' @param min_val minimum value of profile
-#' @param max_val maximum value of profile
-#' @param inc increment value between min and max value
-#' @param do_par logical, whether to use parallel processing (default FALSE)
-#' @param n_cores integer, number of cores to use for parallel processing (default is detectCores() - 1)
+#' Profiles the joint negative log-likelihood and all individual likelihood
+#' components across a range of fixed values for a single parameter. Supports
+#' both sequential and parallel execution.
+#'
+#' @param data Data list from the fitted model.
+#' @param parameters Parameter list from the fitted model.
+#' @param mapping Mapping list from the fitted model.
+#' @param random Character vector of random effects to estimate. Default
+#'   \code{NULL}.
+#' @param what Character string. Name of the parameter to profile.
+#' @param idx Vector pointing to the
+#'   specific elements to fix when \code{parameters[[what]]} is an array.
+#'   \code{NULL} for scalar parameters.
+#' @param min_val Numeric. Minimum value of the profile range.
+#' @param max_val Numeric. Maximum value of the profile range.
+#' @param inc Numeric. Increment between profile values. Default \code{0.05}.
+#' @param do_par Logical. Whether to use parallel processing. Default
+#'   \code{FALSE}.
+#' @param n_cores Integer. Number of parallel workers. If \code{NULL}
+#'   (default), \code{parallel::detectCores() - 1} is used.
+#'
+#' @return A named list containing one dataframe per likelihood component,
+#'   each with a \code{prof_val} column indicating the profiled parameter
+#'   value, plus \code{agg_nLL} which aggregates all components across their
+#'   respective dimensions. Components include:
+#'   \describe{
+#'     \item{Scalar penalties and priors}{\code{jnLL_df}, \code{rec_nLL_df},
+#'       \code{M_nLL_df}, \code{sel_nLL_df}, \code{rec_prop_nLL_df},
+#'       \code{Movement_nLL_df}, \code{h_nLL_df}, \code{TagRep_nLL_df},
+#'       \code{Fmort_nLL_df}, \code{fish_q_nLL_df}, \code{srv_q_nLL_df}.}
+#'     \item{Pooled data likelihoods}{\code{Catch_nLL_df}
+#'       \code{[Region × Year × Seas × Fleet]},
+#'       \code{FishIdx_nLL_df} and \code{SrvIdx_nLL_df}
+#'       \code{[Region × Year × Seas × Fleet]},
+#'       \code{FishAge_nLL_df}, \code{FishLen_nLL_df},
+#'       \code{SrvAge_nLL_df}, \code{SrvLen_nLL_df}
+#'       \code{[Region × Year × Seas × Sex × Fleet]},
+#'       \code{conv_fish_tag_nLL_df}
+#'       \code{[Recap_Year × Recap_Seas × Tag_Cohort × Region × Fleet]}.}
+#'     \item{Population-specific data likelihoods}{\code{Catch_pop_nLL_df},
+#'       \code{FishIdx_pop_nLL_df}, \code{SrvIdx_pop_nLL_df}
+#'       \code{[Pop × Region × Year × Seas × Fleet]},
+#'       \code{FishAge_pop_nLL_df}, \code{FishLen_pop_nLL_df},
+#'       \code{SrvAge_pop_nLL_df}, \code{SrvLen_pop_nLL_df}
+#'       \code{[Pop × Region × Year × Seas × Sex × Fleet]}.}
+#'   }
 #'
 #' @import dplyr
 #' @import RTMB
@@ -20,7 +55,6 @@
 #' @importFrom future.apply future_lapply
 #' @importFrom progressr with_progress progressor
 #' @importFrom parallel detectCores
-#' @returns Returns a list of likelihood profiled values for each data component with their respective dimensions (e.g., likelihood profiles by fleet, region, year, etc.) as well likelihood profiles for each data component, aggregated across all their respective dimensions.
 #' @export do_likelihood_profile
 #' @family Model Diagnostics
 do_likelihood_profile <- function(data,
@@ -61,25 +95,37 @@ do_likelihood_profile <- function(data,
   FishLen_nLL <- data.frame()
   FishIdx_nLL <- data.frame()
   SrvIdx_nLL <- data.frame()
+  Catch_pop_nLL <- data.frame()
+  FishAge_pop_nLL <- data.frame()
+  FishLen_pop_nLL <- data.frame()
+  SrvAge_pop_nLL <- data.frame()
+  SrvLen_pop_nLL <- data.frame()
+  FishIdx_pop_nLL <- data.frame()
+  SrvIdx_pop_nLL <- data.frame()
+  fish_q_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
+  srv_q_nLL  <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
 
   # If there is more than one value in this parameter
   if(do_par == FALSE) {
     for(j in 1:length(vals)) {
       if(!is.null(dim(parameters[[what]]))) {
-
-        # Input fixed value into parameter list
-        parameters[[what]] <- do.call(`[<-`, c(list(parameters[[what]]), idx, list(vals[j])))
-
-        # Now, figure out which parameter to map off
+        # Input fixed values for all indices
+        for(k in 1:length(idx)) {
+          parameters[[what]] <- do.call(`[<-`, c(list(parameters[[what]]), idx[k], list(vals[j])))
+        }
+        # Build map with all target indices set to NA at once
+        map_parameter <- parameters[[what]]
+        for(k in 1:length(idx)) {
+          map_parameter <- do.call(`[<-`, c(list(map_parameter), idx[k], list(NA)))
+        }
+        # Renumber non-NA positions
         counter <- 1
-        map_parameter <- do.call(`[<-`, c(list(parameters[[what]]), idx, list(NA))) # input NA
-        non_na <- which(!is.na(map_parameter)) # figure out non NA positions and fill with unique numbers
+        non_na <- which(!is.na(map_parameter))
         for(i in 1:length(non_na)) {
           map_parameter[non_na[i]] <- counter
-          counter <- counter + 1 # update counter
-        } # end i
-        mapping[[what]] <- factor(map_parameter) # input NA into mapping list
-
+          counter <- counter + 1
+        }
+        mapping[[what]] <- factor(map_parameter)
       } else { # else, there is only one value in this parameter
         parameters[[what]] <- vals[j]
         mapping[[what]] <- factor(NA)
@@ -114,6 +160,15 @@ do_likelihood_profile <- function(data,
         FishLen_nLL <- rbind(FishLen_nLL, reshape2::melt(report$FishLenComps_nLL) %>% dplyr::mutate(prof_val = vals[j]))
         FishIdx_nLL <- rbind(FishIdx_nLL, reshape2::melt(data$Wt_FishIdx * report$FishIdx_nLL) %>% dplyr::mutate(prof_val = vals[j]))
         SrvIdx_nLL <- rbind(SrvIdx_nLL, reshape2::melt(data$Wt_SrvIdx * report$SrvIdx_nLL) %>% dplyr::mutate(prof_val = vals[j]))
+        fish_q_nLL[j,1] <- report$fish_q_nLL
+        srv_q_nLL[j,1]  <- report$srv_q_nLL
+        Catch_pop_nLL   <- rbind(Catch_pop_nLL,   reshape2::melt(data$Wt_Catch_pop   * report$Catch_pop_nLL) %>% dplyr::mutate(prof_val = vals[j]))
+        FishIdx_pop_nLL <- rbind(FishIdx_pop_nLL, reshape2::melt(data$Wt_FishIdx_pop * report$FishIdx_pop_nLL) %>% dplyr::mutate(prof_val = vals[j]))
+        SrvIdx_pop_nLL  <- rbind(SrvIdx_pop_nLL,  reshape2::melt(data$Wt_SrvIdx_pop  * report$SrvIdx_pop_nLL)  %>% dplyr::mutate(prof_val = vals[j]))
+        FishAge_pop_nLL <- rbind(FishAge_pop_nLL, reshape2::melt(report$FishAgeComps_pop_nLL) %>% dplyr::mutate(prof_val = vals[j]))
+        FishLen_pop_nLL <- rbind(FishLen_pop_nLL, reshape2::melt(report$FishLenComps_pop_nLL) %>% dplyr::mutate(prof_val = vals[j]))
+        SrvAge_pop_nLL  <- rbind(SrvAge_pop_nLL,  reshape2::melt(report$SrvAgeComps_pop_nLL) %>% dplyr::mutate(prof_val = vals[j]))
+        SrvLen_pop_nLL  <- rbind(SrvLen_pop_nLL,  reshape2::melt(report$SrvLenComps_pop_nLL) %>% dplyr::mutate(prof_val = vals[j]))
 
         print(paste("Likelihood profile is at:", round(j / length(vals) * 100, 2), "%"))
 
@@ -161,24 +216,36 @@ do_likelihood_profile <- function(data,
           SrvLen_nLL = data.frame(),
           FishLen_nLL = data.frame(),
           FishIdx_nLL = data.frame(),
-          SrvIdx_nLL = data.frame()
+          SrvIdx_nLL = data.frame(),
+          fish_q_nLL = NA,
+          srv_q_nLL  = NA,
+          Catch_pop_nLL   = data.frame(),
+          FishIdx_pop_nLL = data.frame(),
+          SrvIdx_pop_nLL  = data.frame(),
+          FishAge_pop_nLL = data.frame(),
+          FishLen_pop_nLL = data.frame(),
+          SrvAge_pop_nLL  = data.frame(),
+          SrvLen_pop_nLL  = data.frame()
         )
 
-        if(!is.null(dim(local_parameters[[what]]))) {
-
-          # Input fixed value into parameter list
-          local_parameters[[what]] <- do.call(`[<-`, c(list(local_parameters[[what]]), idx, list(vals[j])))
-
-          # Now, figure out which parameter to map off
+        if(!is.null(dim(parameters[[what]]))) {
+          # Input fixed values for all indices
+          for(k in 1:length(idx)) {
+            parameters[[what]] <- do.call(`[<-`, c(list(parameters[[what]]), idx[k], list(vals[j])))
+          }
+          # Build map with all target indices set to NA at once
+          map_parameter <- parameters[[what]]
+          for(k in 1:length(idx)) {
+            map_parameter <- do.call(`[<-`, c(list(map_parameter), idx[k], list(NA)))
+          }
+          # Renumber non-NA positions
           counter <- 1
-          map_parameter <- do.call(`[<-`, c(list(local_parameters[[what]]), idx, list(NA))) # input NA
-          non_na <- which(!is.na(map_parameter)) # figure out non NA positions and fill with unique numbers
+          non_na <- which(!is.na(map_parameter))
           for(i in 1:length(non_na)) {
             map_parameter[non_na[i]] <- counter
-            counter <- counter + 1 # update counter
-          } # end i
-          local_mapping[[what]] <- factor(map_parameter) # input NA into mapping list
-
+            counter <- counter + 1
+          }
+          mapping[[what]] <- factor(map_parameter)
         } else { # else, there is only one value in this parameter
           local_parameters[[what]] <- vals[j]
           local_mapping[[what]] <- factor(NA)
@@ -212,6 +279,15 @@ do_likelihood_profile <- function(data,
           result$FishLen_nLL <- reshape2::melt(report$FishLenComps_nLL) %>% dplyr::mutate(prof_val = vals[j])
           result$FishIdx_nLL <- reshape2::melt(data$Wt_FishIdx * report$FishIdx_nLL) %>% dplyr::mutate(prof_val = vals[j])
           result$SrvIdx_nLL <- reshape2::melt(data$Wt_SrvIdx * report$SrvIdx_nLL) %>% dplyr::mutate(prof_val = vals[j])
+          result$fish_q_nLL    <- report$fish_q_nLL
+          result$srv_q_nLL     <- report$srv_q_nLL
+          result$Catch_pop_nLL   <- reshape2::melt(data$Wt_Catch_pop   * report$Catch_pop_nLL)   %>% dplyr::mutate(prof_val = vals[j])
+          result$FishIdx_pop_nLL <- reshape2::melt(data$Wt_FishIdx_pop * report$FishIdx_pop_nLL) %>% dplyr::mutate(prof_val = vals[j])
+          result$SrvIdx_pop_nLL  <- reshape2::melt(data$Wt_SrvIdx_pop  * report$SrvIdx_pop_nLL)  %>% dplyr::mutate(prof_val = vals[j])
+          result$FishAge_pop_nLL <- reshape2::melt(report$FishAgeComps_pop_nLL) %>% dplyr::mutate(prof_val = vals[j])
+          result$FishLen_pop_nLL <- reshape2::melt(report$FishLenComps_pop_nLL) %>% dplyr::mutate(prof_val = vals[j])
+          result$SrvAge_pop_nLL  <- reshape2::melt(report$SrvAgeComps_pop_nLL) %>% dplyr::mutate(prof_val = vals[j])
+          result$SrvLen_pop_nLL  <- reshape2::melt(report$SrvLenComps_pop_nLL) %>% dplyr::mutate(prof_val = vals[j])
           result$success <- TRUE
 
         }, error = function(e) {
@@ -248,6 +324,16 @@ do_likelihood_profile <- function(data,
         FishLen_nLL <- rbind(FishLen_nLL, res$FishLen_nLL)
         FishIdx_nLL <- rbind(FishIdx_nLL, res$FishIdx_nLL)
         SrvIdx_nLL <- rbind(SrvIdx_nLL, res$SrvIdx_nLL)
+        fish_q_nLL[j,1]  <- res$fish_q_nLL
+        srv_q_nLL[j,1]   <- res$srv_q_nLL
+        Catch_pop_nLL   <- rbind(Catch_pop_nLL,   res$Catch_pop_nLL)
+        FishIdx_pop_nLL <- rbind(FishIdx_pop_nLL, res$FishIdx_pop_nLL)
+        SrvIdx_pop_nLL  <- rbind(SrvIdx_pop_nLL,  res$SrvIdx_pop_nLL)
+        FishAge_pop_nLL <- rbind(FishAge_pop_nLL, res$FishAge_pop_nLL)
+        FishLen_pop_nLL <- rbind(FishLen_pop_nLL, res$FishLen_pop_nLL)
+        SrvAge_pop_nLL  <- rbind(SrvAge_pop_nLL,  res$SrvAge_pop_nLL)
+        SrvLen_pop_nLL  <- rbind(SrvLen_pop_nLL,  res$SrvLen_pop_nLL)
+
       } else {
         message("Failed iteration ", res$j, " (value = ", res$prof_val, "): ", res$error_msg)
       }
@@ -317,6 +403,31 @@ do_likelihood_profile <- function(data,
   conv_fish_tag_nLL_df <- conv_fish_tag_nLL %>%
     dplyr::rename(Recap_Year = Var1, Recap_Seas = Var2, Tag_Cohort = Var3, Region = Var4, Fleet = Var5) %>%
     dplyr::mutate(type = 'Tagging')
+  fish_q_nLL_df <- reshape2::melt(fish_q_nLL) %>%
+    dplyr::select(-Var2) %>% dplyr::rename(prof_val = Var1) %>% dplyr::mutate(type = 'FishQ Prior')
+  srv_q_nLL_df <- reshape2::melt(srv_q_nLL) %>%
+    dplyr::select(-Var2) %>% dplyr::rename(prof_val = Var1) %>% dplyr::mutate(type = 'SrvQ Prior')
+  Catch_pop_nLL_df <- Catch_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'CatchPop')
+  FishIdx_pop_nLL_df <- FishIdx_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'FishIdxPop')
+  SrvIdx_pop_nLL_df <- SrvIdx_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'SrvIdxPop')
+  FishAge_pop_nLL_df <- FishAge_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'FishAgePop')
+  FishLen_pop_nLL_df <- FishLen_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'FishLenPop')
+  SrvAge_pop_nLL_df <- SrvAge_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'SrvAgePop')
+  SrvLen_pop_nLL_df <- SrvLen_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'SrvLenPop')
 
   # Get likelihoods aggregated across all dimensions
   agg_nLL <- rbind(jnLL_df, rec_nLL_df, M_nLL_df, rec_prop_nLL_df, Movement_nLL_df, h_nLL_df,
@@ -336,7 +447,16 @@ do_likelihood_profile <- function(data,
                    FishIdx_nLL_df %>% dplyr::group_by(prof_val, type) %>%
                      dplyr::summarize(value = sum(value, na.rm = T)),
                    SrvIdx_nLL_df %>% dplyr::group_by(prof_val, type) %>%
-                     dplyr::summarize(value = sum(value, na.rm = T))
+                     dplyr::summarize(value = sum(value, na.rm = T)),
+                   fish_q_nLL_df,
+                   srv_q_nLL_df,
+                   Catch_pop_nLL_df   %>% dplyr::group_by(prof_val, type) %>% dplyr::summarize(value = sum(value, na.rm = T)),
+                   FishIdx_pop_nLL_df %>% dplyr::group_by(prof_val, type) %>% dplyr::summarize(value = sum(value, na.rm = T)),
+                   SrvIdx_pop_nLL_df  %>% dplyr::group_by(prof_val, type) %>% dplyr::summarize(value = sum(value, na.rm = T)),
+                   FishAge_pop_nLL_df %>% dplyr::group_by(prof_val, type) %>% dplyr::summarize(value = sum(value, na.rm = T)),
+                   FishLen_pop_nLL_df %>% dplyr::group_by(prof_val, type) %>% dplyr::summarize(value = sum(value, na.rm = T)),
+                   SrvAge_pop_nLL_df  %>% dplyr::group_by(prof_val, type) %>% dplyr::summarize(value = sum(value, na.rm = T)),
+                   SrvLen_pop_nLL_df  %>% dplyr::group_by(prof_val, type) %>% dplyr::summarize(value = sum(value, na.rm = T))
   )
 
   profile_list <- list(jnLL_df = jnLL_df,
@@ -356,13 +476,17 @@ do_likelihood_profile <- function(data,
                        SrvLen_nLL_df = SrvLen_nLL_df,
                        FishIdx_nLL_df = FishIdx_nLL_df,
                        SrvIdx_nLL_df = SrvIdx_nLL_df,
-                       agg_nLL = agg_nLL
+                       agg_nLL = agg_nLL,
+                       fish_q_nLL_df    = fish_q_nLL_df,
+                       srv_q_nLL_df     = srv_q_nLL_df,
+                       Catch_pop_nLL_df   = Catch_pop_nLL_df,
+                       FishIdx_pop_nLL_df = FishIdx_pop_nLL_df,
+                       SrvIdx_pop_nLL_df  = SrvIdx_pop_nLL_df,
+                       FishAge_pop_nLL_df = FishAge_pop_nLL_df,
+                       FishLen_pop_nLL_df = FishLen_pop_nLL_df,
+                       SrvAge_pop_nLL_df  = SrvAge_pop_nLL_df,
+                       SrvLen_pop_nLL_df  = SrvLen_pop_nLL_df
   )
 
   return(profile_list)
 }
-
-
-
-
-

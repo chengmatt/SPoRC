@@ -983,7 +983,7 @@ Considering the complexity of integrated population models, several
 priors can be specified to help inform the estimation of parameters by
 providing additional knowledge. Priors can currently be specified for
 natural mortality, fishery and survey catchability, fishery and survey
-selectivity, steepness, recruitment proportions, movement rates, and tag
+selectivity, steepness, recruitment proportions, stray rates, movement rates, and tag
 reporting rates.
 
 #### Natural Mortality
@@ -1063,6 +1063,38 @@ $\alpha_{p,r}$ is the concentration parameter governing the spread of the
 Dirichlet distribution. Similarly, seasonal recruitment proportions
 $\chi_{p,\tau}$ can be constrained with Dirichlet priors when estimated.
 
+#### Stray Rates
+When stray rates are estimated ($n_p > 1$ and `use_fixed_stray_rate = 0`),
+a standard beta prior can be applied to regularize estimation. The prior
+is parameterized via method-of-moments in terms of a mean and standard deviation:
+
+$$\kappa_{p,b}^{(\phi)} = \frac{\mu_{p,b}^{(\phi)}\left(1 - \mu_{p,b}^{(\phi)}\right)}{\left(\sigma_{p,b}^{(\phi)}\right)^{2}} - 1$$
+
+$$a_{p,b}^{(\phi)} = \mu_{p,b}^{(\phi)} \cdot \kappa_{p,b}^{(\phi)}$$
+
+$$b_{p,b}^{(\phi)} = \left(1 - \mu_{p,b}^{(\phi)}\right) \cdot \kappa_{p,b}^{(\phi)}$$
+
+where $\kappa_{p,b}^{(\phi)}$ is the concentration parameter. The stray rate is
+numerically stabilized by squishing the logistic transform away from the boundaries:
+
+$$\tilde{\phi}_{p,b} = \epsilon + (1 - 2\epsilon) \cdot \text{logistic}\left(\phi_{p,b}^{*}\right)$$
+
+where $\phi_{p,b}^{*}$ is the logit-scale parameter and $\epsilon$ is a small
+constant (e.g. $10^{-4}$) ensuring $\tilde{\phi}_{p,b} \in (\epsilon, 1-\epsilon)$.
+The prior is then:
+
+$$P\left(\tilde{\phi}_{p,b}\right) = \frac{\Gamma\left(a_{p,b}^{(\phi)} + b_{p,b}^{(\phi)}\right)}{\Gamma\left(a_{p,b}^{(\phi)}\right)\Gamma\left(b_{p,b}^{(\phi)}\right)}\tilde{\phi}_{p,b}^{a_{p,b}^{(\phi)} - 1}\left(1 - \tilde{\phi}_{p,b}\right)^{b_{p,b}^{(\phi)} - 1}$$
+
+where $\sigma_{p,b}^{(\phi)}$ is the literal standard deviation of the Beta
+distribution and must satisfy $\sigma_{p,b}^{(\phi)} < \sqrt{\mu_{p,b}^{(\phi)}\left(1 - \mu_{p,b}^{(\phi)}\right)}$
+to ensure $\kappa_{p,b}^{(\phi)} > 0$. Because stray rates are generally not
+identifiable from fisheries data alone, this prior serves primarily as a
+regularizing constraint rather than an informative prior, and tight
+values of $\sigma_{p,b}^{(\phi)}$ are recommended. Note that when $\sigma_{p,b}^{(\phi)}$ is large relative to $\mu_{p,b}^{(\phi)}(1 - \mu_{p,b}^{(\phi)})$,
+$a$ and $b$ approach zero and the Beta density becomes U-shaped, placing mass near 0 and 1.
+In this regime numerical instability can occur during optimization, which is why
+$\tilde{\phi}_{p,b}$ is squished away from the boundaries via the $\epsilon$ transformation.
+
 #### Movement
 
 Likewise, priors on movement values can be assumed to arise from a
@@ -1090,19 +1122,27 @@ parameter and determines how strongly to penalize estimates when they
 approach the bounds of $\lbrack 0,1\rbrack$. Smaller values of
 $\sigma_{r,y,f}^{(\beta)}$ result in larger penalties, and vice versa.
 
-Tag reporting rate priors can also be specified as a standard beta
-distribution:
+Tag reporting rate priors can also be specified as a standard beta distribution,
+parameterized via method-of-moments in terms of a mean and standard deviation:
 
-$${\begin{matrix}
-a_{r,f}^{(\beta)} = \frac{\mu_{r,y,f}^{(\beta)}}{\left( \sigma_{r,y,f}^{(\beta)} \right)^{2}} \\
-\end{matrix}
-}{b_{r,f}^{(\beta)} = \left\lbrack \frac{1 - \mu_{r,y,f}^{(\beta)}}{\left( \sigma_{r,y,f}^{(\beta)} \right)^{2}} \right\rbrack
-}{P\left( \beta_{r,y,f} \right) = \frac{\Gamma\left( a_{r,f}^{(\beta)} \right)\Gamma\left( b_{r,f}^{(\beta)} \right)}{\Gamma\left( a_{r,f}^{(\beta)} + b_{r,f}^{(\beta)} \right)}\beta_{r,y,f}^{a - 1}\left( 1 - \beta_{r,y,f} \right)^{b - 1}}$$
+$$\kappa_{r,f}^{(\beta)} = \frac{\mu_{r,y,f}^{(\beta)}\left(1 - \mu_{r,y,f}^{(\beta)}\right)}{\left(\sigma_{r,y,f}^{(\beta)}\right)^{2}} - 1$$
 
-Here, $a_{r,f}^{(\beta)}$ and $b_{r,f}^{(\beta)}$ are the parameters describing
-the beta distribution, $\mu_{r,y,f}^{(\beta)}$ denotes the prior mean for
-tag reporting rates and $\sigma_{r,y,f}^{(\beta)}$ is the prior standard
-deviation.
+$$a_{r,f}^{(\beta)} = \mu_{r,y,f}^{(\beta)} \cdot \kappa_{r,f}^{(\beta)}$$
+
+$$b_{r,f}^{(\beta)} = \left(1 - \mu_{r,y,f}^{(\beta)}\right) \cdot \kappa_{r,f}^{(\beta)}$$
+
+$$P\left(\tilde{\beta}_{r,y,f}\right) = \frac{\Gamma\left(a_{r,f}^{(\beta)} + b_{r,f}^{(\beta)}\right)}{\Gamma\left(a_{r,f}^{(\beta)}\right)\Gamma\left(b_{r,f}^{(\beta)}\right)}\tilde{\beta}_{r,y,f}^{a_{r,f}^{(\beta)} - 1}\left(1 - \tilde{\beta}_{r,y,f}\right)^{b_{r,f}^{(\beta)} - 1}$$
+
+where $\tilde{\beta}_{r,y,f} = \epsilon + (1 - 2\epsilon) \cdot \text{logistic}\left(\beta_{r,y,f}^{*}\right)$
+is the numerically stabilized reporting rate with $\beta_{r,y,f}^{*}$ the
+logit-scale parameter and $\epsilon$ a small constant (e.g. $10^{-4}$).
+Here $\sigma_{r,y,f}^{(\beta)}$ is the literal standard deviation of the Beta
+distribution and must satisfy $\sigma_{r,y,f}^{(\beta)} < \sqrt{\mu_{r,y,f}^{(\beta)}\left(1 - \mu_{r,y,f}^{(\beta)}\right)}$
+to ensure $\kappa_{r,f}^{(\beta)} > 0$. Note that when $\sigma_{r,y,f}^{(\beta)}$ is large relative to $\mu_{r,y,f}^{(\beta)}(1 - \mu_{r,y,f}^{(\beta)})$,
+$a$ and $b$ approach zero and the Beta density becomes U-shaped, placing mass near 0 and 1.
+In this case, numerical instability can occur during optimization, which is why
+$\tilde{\beta}_{r,y,f}$ is squished away from the boundaries via the $\epsilon$ transformation.
+
 
 ### Process Error Penalties
 

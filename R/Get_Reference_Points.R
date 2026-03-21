@@ -758,8 +758,10 @@ single_region_BH_Fmsy <- function(pars, data) {
   # Plus group (scalar, no movement)
   Z_plus = natmort[,n_ages] + sum(colSums(F_fract_flt) * Fmsy * fish_sel[n_ages,])
   M_plus = natmort[,n_ages]
-  Nspr[1, ,n_ages] = Nspr[1, ,n_ages - 1] * exp(-M_plus) / (1 - exp(-M_plus))
-  Nspr[2, ,n_ages] = Nspr[2, ,n_ages - 1] * exp(-Z_plus) / (1 - exp(-Z_plus))
+  M_penult = natmort[, n_ages - 1]
+  Z_penult = natmort[, n_ages - 1] + sum(colSums(F_fract_flt) * Fmsy * fish_sel[n_ages - 1, ])
+  Nspr[1, ,n_ages] = Nspr[1, ,n_ages - 1] * exp(-M_penult) / (1 - exp(-M_plus))
+  Nspr[2, ,n_ages] = Nspr[2, ,n_ages - 1] * exp(-Z_penult) / (1 - exp(-Z_plus))
 
   # Plus group catch
   tmp_unfished = Nspr[1,, n_ages]

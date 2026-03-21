@@ -127,8 +127,12 @@ check_data_dimensions <- function(x,
       stop(paste(what, " is not the correct dimension. Should be n_regions, n_years, n_seas, n_fish_fleets"))
   }
 
+  if(what %in% c('ObsCatch_pop', "UseCatch_pop", 'ObsFishIdx_pop', 'ObsFishIdx_pop_SE', 'UseFishIdx_pop', 'UseFishAgeComps_pop', 'UseFishLenComps_pop')) {
+    if(sum(dim(x) == c(n_pop, n_regions, n_years, n_seas, n_fish_fleets)) != 5)
+      stop(paste(what, " is not the correct dimension. Should be n_pop, n_regions, n_years, n_seas, n_fish_fleets"))
+  }
 
-  if(what %in% c("FishAgeComps_LikeType", "FishLenComps_LikeType")) {
+  if(what %in% c("FishAgeComps_LikeType", "FishLenComps_LikeType", "pop_FishAgeComps_LikeType", "pop_FishLenComps_LikeType")) {
     if(length(x) != n_fish_fleets)
       stop(paste(what, "needs to have a length of n_fish_fleets"))
   }
@@ -143,9 +147,24 @@ check_data_dimensions <- function(x,
       stop(paste("ObsFishLenComps is not the correct dimension. Should be n_regions, n_years, n_seas, n_lens, n_sexes, n_fish_fleets"))
   }
 
+  if(what == "ObsFishAgeComps_pop") { # Not checking the age dimension
+    if(sum(dim(x)[-5] == c(n_pop, n_regions, n_years, n_seas, n_sexes, n_fish_fleets)) != 6)
+      stop(paste("ObsFishAgeComps_pop is not the correct dimension. Should be n_pop, n_regions, n_years, n_seas, number of observed composition ages, n_sexes, n_fish_fleets"))
+  }
+
+  if(what == "ObsFishLenComps_pop") {
+    if(sum(dim(x) == c(n_pop, n_regions, n_years, n_seas, n_lens, n_sexes, n_fish_fleets)) != 7)
+      stop(paste("ObsFishLenComps is not the correct dimension. Should be n_pop, n_regions, n_years, n_seas, n_lens, n_sexes, n_fish_fleets"))
+  }
+
   if(what %in% c('ISS_FishLenComps', 'ISS_FishAgeComps')) {
     if(sum(dim(x) == c(n_regions, n_years, n_seas, n_sexes, n_fish_fleets)) != 5)
       stop(paste(what, " is not the correct dimension. Should be n_regions, n_years, n_seas, n_sexes, n_fish_fleets"))
+  }
+
+  if(what %in% c('ISS_FishLenComps_pop', 'ISS_FishAgeComps_pop')) {
+    if(sum(dim(x) == c(n_pop, n_regions, n_years, n_seas, n_sexes, n_fish_fleets)) != 6)
+      stop(paste(what, " is not the correct dimension. Should be n_pop, n_regions, n_years, n_seas, n_sexes, n_fish_fleets"))
   }
 
 
@@ -154,6 +173,11 @@ check_data_dimensions <- function(x,
   if(what %in% c('ObsSrvIdx', 'ObsSrvIdx_SE', 'UseSrvIdx', 'UseSrvAgeComps', 'UseSrvLenComps')) {
     if(sum(dim(x) == c(n_regions, n_years, n_seas, n_srv_fleets)) != 4)
       stop(paste(what, " is not the correct dimension. Should be n_regions, n_years, n_seas, n_srv_fleets"))
+  }
+
+  if(what %in% c('ObsSrvIdx_pop', 'ObsSrvIdx_pop_SE', 'UseSrvIdx_pop', 'UseSrvAgeComps_pop', 'UseSrvLenComps_pop')) {
+    if(sum(dim(x) == c(n_pop, n_regions, n_years, n_seas, n_srv_fleets)) != 5)
+      stop(paste(what, " is not the correct dimension. Should be n_pop, n_regions, n_years, n_seas, n_srv_fleets"))
   }
 
   if(what %in% c("SrvAgeComps_LikeType", "SrvLenComps_LikeType")) {
@@ -305,10 +329,21 @@ check_sim_dimensions <- function(x,
       stop(paste("Dimensions of", what, "are not correct. Should be n_regions, n_years, n_seas, n_fish_fleets"))
   }
 
+  if(what %in% c('ln_sigmaC_pop', 'ObsFishIdx_pop_SE')) {
+    if(sum(dim(x) == c(n_pop, n_regions, n_years, n_seas, n_fish_fleets)) != 5)
+      stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_regions, n_years, n_seas, n_fish_fleets"))
+  }
+
   if(what %in% c('comp_fishage_like', 'ln_FishAge_theta_agg', 'FishAge_corr_pars_agg',
-                 'comp_fishlen_like', 'ln_FishLen_theta_agg', 'FishLen_corr_pars_agg')) {
+                 'comp_fishlen_like', 'ln_FishLen_theta_agg', 'FishLen_corr_pars_agg',
+                 "pop_comp_fishage_like", "pop_comp_fishlen_like")) {
     if(length(x) != n_fish_fleets)
       stop(paste(what, "needs to have a length of n_fish_fleets"))
+  }
+
+  if(what %in% c("FishAge_pop_corr_pars_agg", "FishLen_pop_corr_pars_agg", "ln_FishAge_pop_theta_agg", "ln_FishLen_pop_theta_agg")) {
+    if(sum(dim(x) == c(n_pop, n_fish_fleets)) != 2)
+      stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_fish_fleets"))
   }
 
   if(what %in% c('ISS_FishAgeComps', 'ISS_FishLenComps')) {
@@ -316,9 +351,19 @@ check_sim_dimensions <- function(x,
       stop(paste("Dimensions of", what, "are not correct. Should be n_regions, n_years, n_seas, n_sexes, n_fish_fleets, n_sims"))
   }
 
+  if(what %in% c('ISS_FishAgeComps_pop', 'ISS_FishLenComps_pop')) {
+    if(sum(dim(x) == c(n_pop, n_regions, n_years, n_seas, n_sexes, n_fish_fleets, n_sims)) != 7)
+      stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_regions, n_years, n_seas, n_sexes, n_fish_fleets, n_sims"))
+  }
+
   if(what %in% c('ln_FishAge_theta', 'ln_FishLen_theta')) {
     if(sum(dim(x) == c(n_regions, n_sexes, n_fish_fleets)) != 3)
       stop(paste("Dimensions of", what, "are not correct. Should be n_regions, n_sexes, n_fish_fleets"))
+  }
+
+  if(what %in% c('ln_FishAge_pop_theta', 'ln_FishLen_pop_theta')) {
+    if(sum(dim(x) == c(n_pop, n_regions, n_sexes, n_fish_fleets)) != 4)
+      stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_regions, n_sexes, n_fish_fleets"))
   }
 
   if(what %in% c('FishAge_corr_pars', 'FishLen_corr_pars')) {
@@ -326,7 +371,12 @@ check_sim_dimensions <- function(x,
       stop(paste("Dimensions of", what, "are not correct. Should be n_regions, n_sexes, n_fish_fleets, 2"))
   }
 
-  if(what %in% c('FishAgeComps_Type', 'FishLenComps_Type')) {
+  if(what %in% c('FishAge_pop_corr_pars', 'FishLen_pop_corr_pars')) {
+    if(sum(dim(x) == c(n_pop, n_regions, n_sexes, n_fish_fleets, 2)) != 5)
+      stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_regions, n_sexes, n_fish_fleets, 2"))
+  }
+
+  if(what %in% c('FishAgeComps_Type', 'FishLenComps_Type', "pop_FishAgeComps_Type", "pop_FishLenComps_Type")) {
     if(sum(dim(x) == c(n_years, n_fish_fleets)) != 2)
       stop(paste("Dimensions of", what, "are not correct. Should be n_years, n_fish_fleets"))
   }
@@ -347,8 +397,14 @@ check_sim_dimensions <- function(x,
       stop(paste("Dimensions of", what, "are not correct. Should be n_regions, n_years, n_seas, n_srv_fleets"))
   }
 
+  if(what %in% c('ObsSrvIdx_pop_SE')) {
+    if(sum(dim(x) == c(n_pop, n_regions, n_years, n_seas, n_srv_fleets)) != 5)
+      stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_regions, n_years, n_seas, n_srv_fleets"))
+  }
+
   if(what %in% c('comp_srvage_like', 'ln_SrvAge_theta_agg', 'SrvAge_corr_pars_agg',
-                 'comp_srvlen_like', 'ln_SrvLen_theta_agg', 'SrvLen_corr_pars_agg')) {
+                 'comp_srvlen_like', 'ln_SrvLen_theta_agg', 'SrvLen_corr_pars_agg',
+                 "pop_comp_srvage_like", "pop_comp_srvlen_like")) {
     if(length(x) != n_srv_fleets)
       stop(paste(what, "needs to have a length of n_srv_fleets"))
   }
@@ -358,14 +414,29 @@ check_sim_dimensions <- function(x,
       stop(paste("Dimensions of", what, "are not correct. Should be n_regions, n_years, n_seas, n_sexes, n_srv_fleets, n_sims"))
   }
 
+  if(what %in% c('ISS_SrvAgeComps_pop', 'ISS_SrvLenComps_pop')) {
+    if(sum(dim(x) == c(n_pop, n_regions, n_years, n_seas, n_sexes, n_srv_fleets, n_sims)) != 7)
+      stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_regions, n_years, n_seas, n_sexes, n_srv_fleets, n_sims"))
+  }
+
   if(what %in% c('ln_SrvAge_theta', 'ln_SrvLen_theta')) {
     if(sum(dim(x) == c(n_regions, n_sexes, n_srv_fleets)) != 3)
       stop(paste("Dimensions of", what, "are not correct. Should be n_regions, n_sexes, n_srv_fleets"))
   }
 
+  if(what %in% c('ln_SrvAge_pop_theta', 'ln_SrvLen_pop_theta')) {
+    if(sum(dim(x) == c(n_pop, n_regions, n_sexes, n_srv_fleets)) != 4)
+      stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_regions, n_sexes, n_srv_fleets"))
+  }
+
   if(what %in% c('SrvAge_corr_pars', 'SrvLen_corr_pars')) {
     if(sum(dim(x) == c(n_regions, n_sexes, n_srv_fleets, 2)) != 4)
       stop(paste("Dimensions of", what, "are not correct. Should be n_regions, n_sexes, n_srv_fleets, 2"))
+  }
+
+  if(what %in% c("SrvAge_pop_corr_pars_agg", "SrvLen_pop_corr_pars_agg", "ln_SrvAge_pop_theta_agg", "ln_SrvLen_pop_theta_agg")) {
+    if(sum(dim(x) == c(n_pop, n_srv_fleets)) != 2)
+      stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_srv_fleets"))
   }
 
   if(what %in% c('SrvAgeComps_Type', 'SrvLenComps_Type')) {
@@ -377,6 +448,21 @@ check_sim_dimensions <- function(x,
   if(what %in% c('t_srv')) {
     if(sum(dim(x) == c(n_regions, n_seas, n_srv_fleets)) != 3)
       stop(paste("Dimensions of", what, "are not correct. Should be n_regions, n_seas, n_srv_fleets"))
+  }
+
+  if(what %in% c('SrvAge_pop_corr_pars', 'SrvLen_pop_corr_pars')) {
+    if(sum(dim(x) == c(n_pop, n_regions, n_sexes, n_srv_fleets, 2)) != 5)
+      stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_regions, n_sexes, n_srv_fleets, 2"))
+  }
+
+  if(what %in% c('SrvAge_pop_corr_pars', 'SrvLen_pop_corr_pars')) {
+    if(sum(dim(x) == c(n_pop, n_regions, n_sexes, n_srv_fleets, 2)) != 5)
+      stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_regions, n_sexes, n_srv_fleets, 2"))
+  }
+
+  if(what %in% c('SrvAgeComps_Type', 'SrvLenComps_Type', "pop_SrvAgeComps_Type", "pop_SrvLenComps_Type")) {
+    if(sum(dim(x) == c(n_years, n_srv_fleets)) != 2)
+      stop(paste("Dimensions of", what, "are not correct. Should be n_years, n_srv_fleets"))
   }
 
   # Recruitment Stuff  -------------------------

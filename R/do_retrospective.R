@@ -61,6 +61,51 @@ truncate_yr <- function(j,
   retro_parameters$ln_RecDevs <- parameters$ln_RecDevs[,,1:(dim(parameters$ln_RecDevs)[3] - j), drop = FALSE] # Recruitment deviations
   if(any(names(retro_mapping) == 'ln_RecDevs')) retro_mapping$ln_RecDevs <- factor(array(mapping$ln_RecDevs, dim = dim(parameters$ln_RecDevs))[,,1:(dim(parameters$ln_RecDevs)[3] - j), drop = FALSE]) # modify mapping if we have recruitment map
 
+# Stray Rates -------------------------------------------------------------
+
+  if(data$n_pop > 1) {
+
+    # Truncate year-indexed stray rate blocks
+    retro_data$stray_rate_blocks <- data$stray_rate_blocks[, 1:(length(data$years) - j), drop = FALSE]
+
+    # Truncate fixed stray rate array if using fixed values
+    if(data$use_fixed_stray_rate == 1) {
+      retro_data$fixed_stray_rate <- data$fixed_stray_rate[, 1:(length(data$years) - j), drop = FALSE]
+    }
+
+    # Truncate estimated stray rate pars and mapping to match truncated blocks
+    if(data$use_fixed_stray_rate == 0) {
+      retro_parameters$stray_rate_pars <- parameters$stray_rate_pars[, 1:max(retro_data$stray_rate_blocks), drop = FALSE]
+      retro_mapping$stray_rate_pars <- factor(array(mapping$stray_rate_pars, dim = dim(parameters$stray_rate_pars))[, 1:max(retro_data$stray_rate_blocks), drop = FALSE])
+    }
+
+  }
+
+# Sex Ratio ---------------------------------------------------------------
+
+  retro_data$sexratio_blocks <- data$sexratio_blocks[,, 1:(length(data$years) - j), drop = FALSE]
+
+  # Truncate sexratio_pars and mapping to match truncated blocks
+  max_sexratio_blks <- max(apply(retro_data$sexratio_blocks, c(1,2), function(x) length(unique(x))))
+  retro_parameters$sexratio_pars <- parameters$sexratio_pars[,, 1:max_sexratio_blks, drop = FALSE]
+  retro_mapping$sexratio_pars <- factor(array(mapping$sexratio_pars, dim = dim(parameters$sexratio_pars))[,, 1:max_sexratio_blks, drop = FALSE])
+
+# Natural Mortality -------------------------------------------------------
+
+  # Truncate year-indexed M blocks
+  retro_data$M_blocks <- data$M_blocks[,, 1:(length(data$years) - j),,, drop = FALSE]
+
+  # Truncate fixed natmort array if using fixed values
+  if(data$use_fixed_natmort == 1) {
+    retro_data$Fixed_natmort <- data$Fixed_natmort[,, 1:(length(data$years) - j),,, drop = FALSE]
+  }
+
+  # Truncate estimated ln_M pars and mapping to match truncated blocks
+  if(data$use_fixed_natmort == 0) {
+    retro_parameters$ln_M <- parameters$ln_M[1:max(retro_data$M_blocks), drop = FALSE]
+    retro_mapping$ln_M <- factor(array(mapping$ln_M, dim = dim(parameters$ln_M))[1:max(retro_data$M_blocks), drop = FALSE])
+  }
+
 # Fishery -----------------------------------------------------------------
 
   # Catch, Fishery Index, and Compositions
@@ -91,6 +136,14 @@ truncate_yr <- function(j,
   retro_mapping$ln_fish_q <- factor(array(mapping$ln_fish_q, dim = dim(parameters$ln_fish_q))[,1:max(retro_data$fish_q_blocks),,drop = FALSE])
   retro_mapping$ln_fish_fixed_sel_pars <- factor(array(mapping$ln_fish_fixed_sel_pars, dim = dim(parameters$ln_fish_fixed_sel_pars))[,,1:max(retro_data$fish_sel_blocks),,,drop = FALSE])
 
+  # Population-specific Fishery ---------------------------------------------
+  if(any(data$UseFishIdx_pop == 1) || any(data$UseFishAgeComps_pop == 1) || any(data$UseFishLenComps_pop == 1)) {
+    retro_data$ObsFishIdx_pop    <- data$ObsFishIdx_pop[,,1:(length(data$years) - j),,,drop = FALSE]
+    retro_data$ObsFishIdx_pop_SE <- data$ObsFishIdx_pop_SE[,,1:(length(data$years) - j),,,drop = FALSE]
+    retro_data$ObsFishAgeComps_pop <- data$ObsFishAgeComps_pop[,,1:(length(data$years) - j),,,,,drop = FALSE]
+    retro_data$ObsFishLenComps_pop <- data$ObsFishLenComps_pop[,,1:(length(data$years) - j),,,,,drop = FALSE]
+  }
+
 # Survey ------------------------------------------------------------------
 
   # Survey index and compositions
@@ -115,6 +168,14 @@ truncate_yr <- function(j,
   # Adjust survey mapping
   retro_mapping$ln_srv_q <- factor(array(mapping$ln_srv_q, dim = dim(parameters$ln_srv_q))[,1:max(retro_data$srv_q_blocks),,drop = FALSE])
   retro_mapping$ln_srv_fixed_sel_pars <- factor(array(mapping$ln_srv_fixed_sel_pars, dim = dim(parameters$ln_srv_fixed_sel_pars))[,,1:max(retro_data$srv_sel_blocks),,,drop = FALSE])
+
+# Population-specific Survey ----------------------------------------------
+if(any(data$UseSrvIdx_pop == 1) || any(data$UseSrvAgeComps_pop == 1) || any(data$UseSrvLenComps_pop == 1)) {
+  retro_data$ObsSrvIdx_pop    <- data$ObsSrvIdx_pop[,,1:(length(data$years) - j),,,drop = FALSE]
+  retro_data$ObsSrvIdx_pop_SE <- data$ObsSrvIdx_pop_SE[,,1:(length(data$years) - j),,,drop = FALSE]
+  retro_data$ObsSrvAgeComps_pop <- data$ObsSrvAgeComps_pop[,,1:(length(data$years) - j),,,,,drop = FALSE]
+  retro_data$ObsSrvLenComps_pop <- data$ObsSrvLenComps_pop[,,1:(length(data$years) - j),,,,,drop = FALSE]
+}
 
 # Movement ----------------------------------------------------------------
 
@@ -172,6 +233,32 @@ truncate_yr <- function(j,
   retro_data$UseSrvIdx <- data$UseSrvIdx[,1:(length(data$years) - j),,,drop = FALSE]
   retro_data$UseSrvLenComps <- data$UseSrvLenComps[,1:(length(data$years) - j),,,drop = FALSE]
 
+  # Pop-specific weights
+  if(length(dim(data$Wt_Catch_pop)) == 5) retro_data$Wt_Catch_pop <- data$Wt_Catch_pop[,,1:(length(data$years) - j),,,drop = FALSE]
+  retro_data$Wt_FishAgeComps_pop <- data$Wt_FishAgeComps_pop[,,1:(length(data$years) - j),,,,drop = FALSE]
+  retro_data$Wt_FishLenComps_pop <- data$Wt_FishLenComps_pop[,,1:(length(data$years) - j),,,,drop = FALSE]
+  retro_data$Wt_SrvAgeComps_pop  <- data$Wt_SrvAgeComps_pop[,,1:(length(data$years) - j),,,,drop = FALSE]
+  retro_data$Wt_SrvLenComps_pop  <- data$Wt_SrvLenComps_pop[,,1:(length(data$years) - j),,,,drop = FALSE]
+
+  # Pop-specific composition types
+  retro_data$pop_FishAgeComps_Type <- data$pop_FishAgeComps_Type[1:(length(data$years) - j),,drop = FALSE]
+  retro_data$pop_FishLenComps_Type <- data$pop_FishLenComps_Type[1:(length(data$years) - j),,drop = FALSE]
+  retro_data$pop_SrvAgeComps_Type  <- data$pop_SrvAgeComps_Type[1:(length(data$years) - j),,drop = FALSE]
+  retro_data$pop_SrvLenComps_Type  <- data$pop_SrvLenComps_Type[1:(length(data$years) - j),,drop = FALSE]
+
+  # Pop-specific ISS
+  retro_data$ISS_FishAgeComps_pop <- data$ISS_FishAgeComps_pop[,,1:(length(data$years) - j),,,,drop = FALSE]
+  retro_data$ISS_FishLenComps_pop <- data$ISS_FishLenComps_pop[,,1:(length(data$years) - j),,,,drop = FALSE]
+  retro_data$ISS_SrvAgeComps_pop  <- data$ISS_SrvAgeComps_pop[,,1:(length(data$years) - j),,,,drop = FALSE]
+  retro_data$ISS_SrvLenComps_pop  <- data$ISS_SrvLenComps_pop[,,1:(length(data$years) - j),,,,drop = FALSE]
+
+  # Pop-specific use indicators
+  retro_data$UseFishAgeComps_pop <- data$UseFishAgeComps_pop[,,1:(length(data$years) - j),,,drop = FALSE]
+  retro_data$UseFishLenComps_pop <- data$UseFishLenComps_pop[,,1:(length(data$years) - j),,,drop = FALSE]
+  retro_data$UseFishIdx_pop      <- data$UseFishIdx_pop[,,1:(length(data$years) - j),,,drop = FALSE]
+  retro_data$UseSrvAgeComps_pop  <- data$UseSrvAgeComps_pop[,,1:(length(data$years) - j),,,drop = FALSE]
+  retro_data$UseSrvLenComps_pop  <- data$UseSrvLenComps_pop[,,1:(length(data$years) - j),,,drop = FALSE]
+  retro_data$UseSrvIdx_pop       <- data$UseSrvIdx_pop[,,1:(length(data$years) - j),,,drop = FALSE]
 
   return(list(retro_data = retro_data,
               retro_parameters = retro_parameters,
@@ -229,6 +316,24 @@ truncate_yr <- function(j,
 #'   length-composition data \eqn{[region \times fleet]}. Default is zeros.
 #' @param conv_tag_datalag Integer specifying the lag applied to conventional
 #'   tagging data. Default is \code{0}.
+#' @param fishidx_pop_datalag Integer array specifying lags applied to
+#'   population-specific fishery index data
+#'   \eqn{[n\_pop \times region \times fleet]}. Default is zeros.
+#' @param fishage_pop_datalag Integer array specifying lags applied to
+#'   population-specific fishery age-composition data
+#'   \eqn{[n\_pop \times region \times fleet]}. Default is zeros.
+#' @param fishlen_pop_datalag Integer array specifying lags applied to
+#'   population-specific fishery length-composition data
+#'   \eqn{[n\_pop \times region \times fleet]}. Default is zeros.
+#' @param srvidx_pop_datalag Integer array specifying lags applied to
+#'   population-specific survey index data
+#'   \eqn{[n\_pop \times region \times fleet]}. Default is zeros.
+#' @param srvage_pop_datalag Integer array specifying lags applied to
+#'   population-specific survey age-composition data
+#'   \eqn{[n\_pop \times region \times fleet]}. Default is zeros.
+#' @param srvlen_pop_datalag Integer array specifying lags applied to
+#'   population-specific survey length-composition data
+#'   \eqn{[n\_pop \times region \times fleet]}. Default is zeros.
 #'
 #' @return A long-format \code{data.frame} containing retrospective estimates
 #'   of spawning stock biomass and recruitment. Columns include:
@@ -273,6 +378,12 @@ do_retrospective <- function(n_retro,
                              srvidx_datalag = array(0, dim = c(data$n_regions, data$n_srv_fleets)),
                              srvage_datalag = array(0, dim = c(data$n_regions, data$n_srv_fleets)),
                              srvlen_datalag = array(0, dim = c(data$n_regions, data$n_srv_fleets)),
+                             fishidx_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_fish_fleets)),
+                             fishage_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_fish_fleets)),
+                             fishlen_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_fish_fleets)),
+                             srvidx_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_srv_fleets)),
+                             srvage_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_srv_fleets)),
+                             srvlen_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_srv_fleets)),
                              conv_tag_datalag = 0
                              ) {
 
@@ -285,8 +396,6 @@ do_retrospective <- function(n_retro,
 
       # truncate data
       init <- truncate_yr(j = j, data = data, parameters = parameters, mapping = mapping)
-      init$retro_data$conv_tagged_fish
-      SPoRC_rtmb(pars = init$retro_parameters, data = init$retro_data)
 
       # Fishery Data Lags
       start_col <- length(init$retro_data$years) # get start index
@@ -338,6 +447,46 @@ do_retrospective <- function(n_retro,
           }
         } # end r loop
       } # end f loop
+
+      # Population-specific Fishery Data Lags
+      for(p in 1:data$n_pop) {
+        for(f in 1:data$n_fish_fleets) {
+          for(r in 1:data$n_regions) {
+            if(fishage_pop_datalag[p,r,f] > 0) {
+              fishage_pop_end_col <- max(start_col - fishage_pop_datalag[p,r,f] + 1, 1)
+              init$retro_data$UseFishAgeComps_pop[p, r, start_col:fishage_pop_end_col,, f] <- 0
+            }
+            if(fishlen_pop_datalag[p,r,f] > 0) {
+              fishlen_pop_end_col <- max(start_col - fishlen_pop_datalag[p,r,f] + 1, 1)
+              init$retro_data$UseFishLenComps_pop[p, r, start_col:fishlen_pop_end_col,, f] <- 0
+            }
+            if(fishidx_pop_datalag[p,r,f] > 0) {
+              fishidx_pop_end_col <- max(start_col - fishidx_pop_datalag[p,r,f] + 1, 1)
+              init$retro_data$UseFishIdx_pop[p, r, start_col:fishidx_pop_end_col,, f] <- 0
+            }
+          }
+        }
+      }
+
+      # Population-specific Survey Data Lags
+      for(p in 1:data$n_pop) {
+        for(f in 1:data$n_srv_fleets) {
+          for(r in 1:data$n_regions) {
+            if(srvage_pop_datalag[p,r,f] > 0) {
+              srvage_pop_end_col <- max(start_col - srvage_pop_datalag[p,r,f] + 1, 1)
+              init$retro_data$UseSrvAgeComps_pop[p, r, start_col:srvage_pop_end_col,, f] <- 0
+            }
+            if(srvlen_pop_datalag[p,r,f] > 0) {
+              srvlen_pop_end_col <- max(start_col - srvlen_pop_datalag[p,r,f] + 1, 1)
+              init$retro_data$UseSrvLenComps_pop[p, r, start_col:srvlen_pop_end_col,, f] <- 0
+            }
+            if(srvidx_pop_datalag[p,r,f] > 0) {
+              srvidx_pop_end_col <- max(start_col - srvidx_pop_datalag[p,r,f] + 1, 1)
+              init$retro_data$UseSrvIdx_pop[p, r, start_col:srvidx_pop_end_col,, f] <- 0
+            }
+          }
+        }
+      }
 
       # Tagging Data Lags
       if(conv_tag_datalag > 0) {
@@ -453,20 +602,60 @@ do_retrospective <- function(n_retro,
             # survey ages
             if(srvage_tmp_lag > 0) {
               srvage_end_col <- max(start_col - srvage_tmp_lag + 1, 1) # get end index
-              init$retro_data$UsesrvAgeComps[r, start_col:srvage_end_col,, f] <- 0 # input 0 to lag incoming data into assessment
+              init$retro_data$UseSrvAgeComps[r, start_col:srvage_end_col,, f] <- 0 # input 0 to lag incoming data into assessment
             }
             # survey lengths
             if(srvlen_tmp_lag > 0) {
               srvlen_end_col <- max(start_col - srvlen_tmp_lag + 1, 1) # get end index
-              init$retro_data$UsesrvLenComps[r, start_col:srvlen_end_col,, f] <- 0 # input 0 to lag incoming data into assessment
+              init$retro_data$UseSrvLenComps[r, start_col:srvlen_end_col,, f] <- 0 # input 0 to lag incoming data into assessment
             }
             # survey index
             if(srvidx_tmp_lag > 0) {
               srvidx_end_col <- max(start_col - srvidx_tmp_lag + 1, 1) # get end index
-              init$retro_data$UsesrvIdx[r, start_col:srvidx_end_col,, f] <- 0 # input 0 to lag incoming data into assessment
+              init$retro_data$UseSrvIdx[r, start_col:srvidx_end_col,, f] <- 0 # input 0 to lag incoming data into assessment
             }
           } # end r loop
         } # end f loop
+
+        # Population-specific Fishery Data Lags
+        for(p in 1:data$n_pop) {
+          for(f in 1:data$n_fish_fleets) {
+            for(r in 1:data$n_regions) {
+              if(fishage_pop_datalag[p,r,f] > 0) {
+                fishage_pop_end_col <- max(start_col - fishage_pop_datalag[p,r,f] + 1, 1)
+                init$retro_data$UseFishAgeComps_pop[p, r, start_col:fishage_pop_end_col,, f] <- 0
+              }
+              if(fishlen_pop_datalag[p,r,f] > 0) {
+                fishlen_pop_end_col <- max(start_col - fishlen_pop_datalag[p,r,f] + 1, 1)
+                init$retro_data$UseFishLenComps_pop[p, r, start_col:fishlen_pop_end_col,, f] <- 0
+              }
+              if(fishidx_pop_datalag[p,r,f] > 0) {
+                fishidx_pop_end_col <- max(start_col - fishidx_pop_datalag[p,r,f] + 1, 1)
+                init$retro_data$UseFishIdx_pop[p, r, start_col:fishidx_pop_end_col,, f] <- 0
+              }
+            }
+          }
+        }
+
+        # Population-specific Survey Data Lags
+        for(p in 1:data$n_pop) {
+          for(f in 1:data$n_srv_fleets) {
+            for(r in 1:data$n_regions) {
+              if(srvage_pop_datalag[p,r,f] > 0) {
+                srvage_pop_end_col <- max(start_col - srvage_pop_datalag[p,r,f] + 1, 1)
+                init$retro_data$UseSrvAgeComps_pop[p, r, start_col:srvage_pop_end_col,, f] <- 0
+              }
+              if(srvlen_pop_datalag[p,r,f] > 0) {
+                srvlen_pop_end_col <- max(start_col - srvlen_pop_datalag[p,r,f] + 1, 1)
+                init$retro_data$UseSrvLenComps_pop[p, r, start_col:srvlen_pop_end_col,, f] <- 0
+              }
+              if(srvidx_pop_datalag[p,r,f] > 0) {
+                srvidx_pop_end_col <- max(start_col - srvidx_pop_datalag[p,r,f] + 1, 1)
+                init$retro_data$UseSrvIdx_pop[p, r, start_col:srvidx_pop_end_col,, f] <- 0
+              }
+            }
+          }
+        }
 
         # Tagging Data Lags
         if(conv_tag_datalag > 0) {

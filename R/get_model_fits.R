@@ -2,31 +2,46 @@
 #'
 #' Generates a tidy dataframe of observed and predicted survey and fishery
 #' indices from a fitted RTMB model, including standard errors, confidence
-#' intervals, residuals, and catchability blocks.
+#' intervals, residuals, and catchability blocks. Both pooled and
+#' population-specific indices are returned when the corresponding
+#' \code{Use*_pop} flags contain any ones.
 #'
-#' @param data List; input data used in the RTMB model. Must contain
-#'   \code{ObsSrvIdx}, \code{ObsSrvIdx_SE}, \code{ObsFishIdx}, \code{ObsFishIdx_SE},
-#'   \code{Wt_SrvIdx}, \code{Wt_FishIdx}, \code{srv_q_blocks}, and \code{fish_q_blocks}.
-#' @param rep List; RTMB report output containing \code{PredSrvIdx} and \code{PredFishIdx}.
-#' @param year_labs Vector; year labels to assign to the third dimension of the
-#'   predicted indices and the columns of observed indices.
+#' @param data List. Input data used in the RTMB model. Must contain
+#'   \code{ObsSrvIdx}, \code{ObsSrvIdx_SE}, \code{ObsFishIdx},
+#'   \code{ObsFishIdx_SE}, \code{Wt_SrvIdx}, \code{Wt_FishIdx},
+#'   \code{srv_q_blocks}, \code{fish_q_blocks}, \code{UseFishIdx}, and
+#'   \code{UseSrvIdx}. For population-specific indices, also requires
+#'   \code{ObsSrvIdx_pop}, \code{ObsSrvIdx_pop_SE}, \code{ObsFishIdx_pop},
+#'   \code{ObsFishIdx_pop_SE}, \code{Wt_SrvIdx_pop}, \code{Wt_FishIdx_pop},
+#'   \code{UseSrvIdx_pop}, and \code{UseFishIdx_pop}.
+#' @param rep List. RTMB report output containing \code{PredSrvIdx} and
+#'   \code{PredFishIdx}, both dimensioned
+#'   \code{[n_pop × n_regions × n_years × n_seas × n_fleets]}. Pooled indices
+#'   are obtained by summing across the population dimension; population-specific
+#'   indices use each population slice directly.
+#' @param year_labs Vector. Year labels assigned to the year dimension of
+#'   predicted and observed index arrays.
 #'
-#' @return A dataframe containing combined survey and fishery indices with the
-#' following columns:
-#' \itemize{
-#'   \item \code{Region} – Region label (prefixed with "Region")
-#'   \item \code{Year} – Year
-#'   \item \code{Seas} – Season
-#'   \item \code{Fleet} – Fleet identifier
-#'   \item \code{Type} – Either "Survey" or "Fishery"
-#'   \item \code{obs} – Observed index
-#'   \item \code{value} – Predicted index
-#'   \item \code{se} – Standard error of the observed index
-#'   \item \code{lci}, \code{uci} – 95% confidence interval for the observed index
-#'   \item \code{q_block} – Catchability block value
-#'   \item \code{resid} – Log-scale residual (\eqn{\log(obs) - \log(predicted)})
-#'   \item \code{Category} – Combined Type, Fleet, Season, and Q-block label
-#' }
+#' @return A dataframe containing pooled and, when active, population-specific
+#'   survey and fishery indices with the following columns:
+#'   \describe{
+#'     \item{\code{Region}}{Region label (prefixed with \code{"Region"}).}
+#'     \item{\code{Year}}{Year.}
+#'     \item{\code{Seas}}{Season.}
+#'     \item{\code{Fleet}}{Fleet identifier.}
+#'     \item{\code{Type}}{One of \code{"Survey"}, \code{"Fishery"},
+#'       \code{"Pop Survey"}, or \code{"Pop Fishery"}.}
+#'     \item{\code{obs}}{Observed index value.}
+#'     \item{\code{value}}{Predicted index value.}
+#'     \item{\code{se}}{Standard error of the observed index (weight-adjusted).}
+#'     \item{\code{lci}, \code{uci}}{95\% log-normal confidence interval for
+#'       the observed index.}
+#'     \item{\code{q_block}}{Catchability block identifier.}
+#'     \item{\code{resid}}{Log-scale residual
+#'       (\eqn{\log(\text{obs}) - \log(\text{predicted})}).}
+#'     \item{\code{Category}}{Combined label of Type, population (for pop
+#'       rows), Fleet, Season, and Q-block.}
+#'   }
 #'
 #' @examples
 #' \dontrun{
@@ -55,11 +70,30 @@ get_idx_fits <- function(data,
   colnames(data$fish_q_blocks) <- year_labs
   dimnames(rep$PredFishIdx)[3] <- list(year_labs)
 
-  # Remove data not used(i.e., removing ghost fits)
+  # Pop-specific dimnames — year is dim 3
+  if(any(data$UseFishIdx_pop == 1)) {
+    dimnames(data$ObsFishIdx_pop)[3]    <- list(year_labs)
+    dimnames(data$ObsFishIdx_pop_SE)[3] <- list(year_labs)
+  }
+  if(any(data$UseSrvIdx_pop == 1)) {
+    dimnames(data$ObsSrvIdx_pop)[3]    <- list(year_labs)
+    dimnames(data$ObsSrvIdx_pop_SE)[3] <- list(year_labs)
+  }
+
+  # Remove data not used
   data$ObsFishIdx[which(data$UseFishIdx == 0)] <- NA
   data$ObsSrvIdx[which(data$UseSrvIdx == 0)] <- NA
   data$ObsFishIdx_SE[which(data$UseFishIdx == 0)] <- NA
   data$ObsSrvIdx_SE[which(data$UseSrvIdx == 0)] <- NA
+
+  if(any(data$UseFishIdx_pop == 1)) {
+    data$ObsFishIdx_pop[which(data$UseFishIdx_pop == 0)]    <- NA
+    data$ObsFishIdx_pop_SE[which(data$UseFishIdx_pop == 0)] <- NA
+  }
+  if(any(data$UseSrvIdx_pop == 1)) {
+    data$ObsSrvIdx_pop[which(data$UseSrvIdx_pop == 0)]    <- NA
+    data$ObsSrvIdx_pop_SE[which(data$UseSrvIdx_pop == 0)] <- NA
+  }
 
   # Observed survey index
   obs_srv <- reshape2::melt(data$ObsSrvIdx) %>% dplyr::rename(obs = value) %>%
@@ -118,6 +152,66 @@ get_idx_fits <- function(data,
   all_idx <- rbind(all_fish, all_srv) %>%
     dplyr::mutate(Category = paste(Type, Fleet, ", Seas", Seas, ", Q", q_block, sep = ''),
                   Region = paste("Region", Region))
+
+  # Population-specific Survey Index
+  if(any(data$UseSrvIdx_pop == 1)) {
+
+    data$ObsSrvIdx_pop[which(data$UseSrvIdx_pop == 0)] <- NA
+    data$ObsSrvIdx_pop_SE[which(data$UseSrvIdx_pop == 0)] <- NA
+
+    obs_srv_pop <- reshape2::melt(data$ObsSrvIdx_pop) %>%
+      dplyr::rename(obs = value) %>%
+      dplyr::left_join(reshape2::melt(data$ObsSrvIdx_pop_SE / sqrt(data$Wt_SrvIdx_pop)) %>%
+                         dplyr::rename(se = value), by = c("Var1", "Var2", "Var3", "Var4", "Var5")) %>%
+      dplyr::mutate(lci = exp(log(obs) - (1.96 * se)), uci = exp(log(obs) + (1.96 * se)), Type = 'Pop Survey') %>%
+      tidyr::drop_na() %>%
+      dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5)
+
+    pred_srv_pop <- reshape2::melt(rep$PredSrvIdx) %>%
+      dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+      dplyr::mutate(Type = 'Pop Survey') %>%
+      dplyr::filter(Year %in% unique(obs_srv_pop$Year), value != 0)
+
+    all_srv_pop <- obs_srv_pop %>%
+      dplyr::left_join(pred_srv_pop, by = c("Pop", "Region", "Year", "Seas", "Fleet", "Type")) %>%
+      dplyr::left_join(srv_q %>% dplyr::mutate(Type = 'Pop Survey'),
+                       by = c("Region", "Year", "Fleet", "Type")) %>% # modifying to allow joining
+      dplyr::mutate(resid = log(obs) - log(value),
+                    Category = paste(Type, " Pop", Pop, ", Fleet", Fleet, ", Seas", Seas, ", Q", q_block, sep = ''),
+                    Region = paste("Region", Region))
+
+    all_idx <- rbind(all_idx, all_srv_pop %>% dplyr::select(-Pop))
+  }
+
+  # Population-specific Fishery Index
+  if(any(data$UseFishIdx_pop == 1)) {
+
+    data$ObsFishIdx_pop[which(data$UseFishIdx_pop == 0)] <- NA
+    data$ObsFishIdx_pop_SE[which(data$UseFishIdx_pop == 0)] <- NA
+
+    obs_fish_pop <- reshape2::melt(data$ObsFishIdx_pop) %>%
+      dplyr::rename(obs = value) %>%
+      dplyr::left_join(reshape2::melt(data$ObsFishIdx_pop_SE / sqrt(data$Wt_FishIdx_pop)) %>%
+                         dplyr::rename(se = value), by = c("Var1", "Var2", "Var3", "Var4", "Var5")) %>%
+      dplyr::mutate(lci = exp(log(obs) - (1.96 * se)), uci = exp(log(obs) + (1.96 * se)), Type = 'Pop Fishery') %>%
+      tidyr::drop_na() %>%
+      dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5)
+
+    pred_fish_pop <- reshape2::melt(rep$PredFishIdx) %>%
+      dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+      dplyr::mutate(Type = 'Pop Fishery') %>%
+      dplyr::filter(Year %in% unique(obs_fish_pop$Year), value != 0)
+
+    all_fish_pop <- obs_fish_pop %>%
+      dplyr::left_join(pred_fish_pop, by = c("Pop", "Region", "Year", "Seas", "Fleet", "Type")) %>%
+      dplyr::left_join(fish_q %>% dplyr::mutate(Type = 'Pop Fishery'),
+                       by = c("Region", "Year", "Fleet", "Type")) %>% # modifying to allow joining
+      dplyr::mutate(resid = log(obs) - log(value),
+                    Category = paste(Type, " Pop", Pop, ", Fleet", Fleet, ", Seas", Seas, ", Q", q_block, sep = ''),
+                    Region = paste("Region", Region))
+
+    all_idx <- rbind(all_idx, all_fish_pop %>% dplyr::select(-Pop))
+  }
 
   return(all_idx)
 }
@@ -235,27 +329,48 @@ Restrc_Comps <- function(Exp,
 
 #' Get Composition Proportions from RTMB Output
 #'
-#' Extracts and normalizes age and length composition data for fishery and survey
-#' fleets according to the assessment specifications from RTMB. This includes
-#' both observed and expected compositions and returns them in array and
-#' long-dataframe formats.
+#' Extracts and normalizes age and length composition data for fishery and
+#' survey fleets according to the assessment specifications from RTMB. This
+#' includes both observed and expected compositions for pooled and
+#' population-specific data streams, returned in array and long-dataframe
+#' formats.
 #'
-#' @param data List; data inputs used by RTMB, containing observed compositions,
-#'   composition types, aggregation types, ageing errors, and fleet/region/season info.
-#' @param rep List; report output from RTMB containing predicted compositions (CAA, CAL, SrvIAA, SrvIAL).
-#' @param year_labels Vector; year labels corresponding to the assessment years.
-#' @param age_labels Vector; observed age labels used in the assessment.
-#' @param len_labels Vector; observed length labels used in the assessment.
+#' @param data List. Data inputs used by RTMB, containing observed
+#'   compositions, composition types, ageing errors, usage flags, and
+#'   fleet/region/season/population dimensions.
+#' @param rep List. Report output from RTMB containing predicted compositions
+#'   (\code{CAA}, \code{CAL}, \code{SrvIAA}, \code{SrvIAL}) with a leading
+#'   population dimension that is summed across populations for pooled outputs.
+#' @param year_labels Vector. Year labels corresponding to the assessment years.
+#' @param age_labels Vector. Observed age bin labels used in the assessment.
+#' @param len_labels Vector. Observed length bin labels used in the assessment.
 #'
-#' @return List containing:
-#' \itemize{
-#'   \item \strong{Fishery_Ages, Fishery_Lens, Survey_Ages, Survey_Lens}: Dataframes with
-#'         observed (`obs`) and expected (`pred`) compositions and associated metadata.
-#'   \item \strong{Obs_FishAge_mat, Obs_FishLen_mat, Obs_SrvAge_mat, Obs_SrvLen_mat}:
-#'         Arrays of observed compositions (dimensioned by region, year, season, bin, sex, fleet).
-#'   \item \strong{Pred_FishAge_mat, Pred_FishLen_mat, Pred_SrvAge_mat, Pred_SrvLen_mat}:
-#'         Arrays of expected compositions (dimensioned by region, year, season, bin, sex, fleet).
-#' }
+#' @return A named list containing:
+#'   \describe{
+#'     \item{\code{Fishery_Ages}, \code{Fishery_Lens}, \code{Survey_Ages},
+#'       \code{Survey_Lens}}{Long-format dataframes with observed (\code{obs})
+#'       and expected (\code{pred}) pooled compositions and metadata columns
+#'       \code{Region}, \code{Year}, \code{Seas}, \code{Age}/\code{Len},
+#'       \code{Sex}, \code{Fleet}, \code{Type}.}
+#'     \item{\code{Pop_Fishery_Ages}, \code{Pop_Fishery_Lens},
+#'       \code{Pop_Survey_Ages}, \code{Pop_Survey_Lens}}{Same structure as
+#'       the pooled dataframes with an additional \code{Pop} column.}
+#'     \item{\code{Obs_FishAge_mat}, \code{Obs_FishLen_mat},
+#'       \code{Obs_SrvAge_mat}, \code{Obs_SrvLen_mat}}{Arrays of observed
+#'       pooled compositions
+#'       \code{[n_regions × n_years × n_seas × n_bins × n_sexes × n_fleets]}.}
+#'     \item{\code{Pred_FishAge_mat}, \code{Pred_FishLen_mat},
+#'       \code{Pred_SrvAge_mat}, \code{Pred_SrvLen_mat}}{Arrays of expected
+#'       pooled compositions, same dimensions as the observed counterparts.}
+#'     \item{\code{Obs_FishAge_pop_mat}, \code{Obs_FishLen_pop_mat},
+#'       \code{Obs_SrvAge_pop_mat}, \code{Obs_SrvLen_pop_mat}}{Arrays of
+#'       observed population-specific compositions
+#'       \code{[n_pop × n_regions × n_years × n_seas × n_bins × n_sexes × n_fleets]}.}
+#'     \item{\code{Pred_FishAge_pop_mat}, \code{Pred_FishLen_pop_mat},
+#'       \code{Pred_SrvAge_pop_mat}, \code{Pred_SrvLen_pop_mat}}{Arrays of
+#'       expected population-specific compositions, same dimensions as the
+#'       observed pop counterparts.}
+#'   }
 #'
 #' @import dplyr
 #' @importFrom tidyr drop_na
@@ -279,6 +394,7 @@ get_comp_prop <- function(data,
                           ) {
 
   # dimensinoing
+  n_pop <- data$n_pop
   n_regions <- data$n_regions
   n_yrs <- length(data$years)
   n_seas <- data$n_seas
@@ -298,6 +414,14 @@ get_comp_prop <- function(data,
   Pred_FishLen <- array(data = NA, dim = c(n_regions, n_yrs, n_seas, n_lens, n_sexes, n_fish_fleets), dimnames = list(NULL, year_labels, NULL,  len_labels, NULL, NULL)) # Predicted fishery lengths
   Pred_SrvAge <- array(data = NA, dim = c(n_regions, n_yrs, n_seas, n_srv_ages, n_sexes, n_srv_fleets), dimnames = list(NULL, year_labels, NULL, age_labels, NULL, NULL)) # Predicted survey ages
   Pred_SrvLen <- array(data = NA, dim = c(n_regions, n_yrs, n_seas, n_lens, n_sexes, n_srv_fleets), dimnames = list(NULL, year_labels, NULL, len_labels, NULL, NULL)) # Predicted survey lengths
+  Obs_FishAge_pop  <- array(NA, dim = c(n_pop, n_regions, n_yrs, n_seas, n_fish_ages, n_sexes, n_fish_fleets))
+  Pred_FishAge_pop <- array(NA, dim = c(n_pop, n_regions, n_yrs, n_seas, n_fish_ages, n_sexes, n_fish_fleets))
+  Obs_FishLen_pop  <- array(NA, dim = c(n_pop, n_regions, n_yrs, n_seas, n_lens,      n_sexes, n_fish_fleets))
+  Pred_FishLen_pop <- array(NA, dim = c(n_pop, n_regions, n_yrs, n_seas, n_lens,      n_sexes, n_fish_fleets))
+  Obs_SrvAge_pop   <- array(NA, dim = c(n_pop, n_regions, n_yrs, n_seas, n_srv_ages,  n_sexes, n_srv_fleets))
+  Pred_SrvAge_pop  <- array(NA, dim = c(n_pop, n_regions, n_yrs, n_seas, n_srv_ages,  n_sexes, n_srv_fleets))
+  Obs_SrvLen_pop   <- array(NA, dim = c(n_pop, n_regions, n_yrs, n_seas, n_lens,      n_sexes, n_srv_fleets))
+  Pred_SrvLen_pop  <- array(NA, dim = c(n_pop, n_regions, n_yrs, n_seas, n_lens,      n_sexes, n_srv_fleets))
 
   # Get quantities
   # setup ageing error if user-supplied is not year specific
@@ -309,10 +433,18 @@ get_comp_prop <- function(data,
   if(length(dim(data$AgeingError)) == 3) AgeingError_t <-  data$AgeingError
 
   AgeingError <- AgeingError_t # ageing errors
+
+  # sum across pops
   CAA <- apply(rep$CAA, 2:7, sum) # catch at age
   CAL <- apply(rep$CAL, 2:7, sum) # catch at len
   SrvIAA <- apply(rep$SrvIAA, 2:7, sum) # survey at age
   SrvIAL <- apply(rep$SrvIAL, 2:7, sum) # survey at length
+
+  # pop-specific quantities
+  CAA_pop <- rep$CAA
+  CAL_pop <- rep$CAL
+  SrvIAA_pop <- rep$SrvIAA
+  SrvIAL_pop <- rep$SrvIAL
 
   # Observed quantities
   ObsFishAgeComps <- data$ObsFishAgeComps
@@ -320,23 +452,32 @@ get_comp_prop <- function(data,
   ObsSrvAgeComps <- data$ObsSrvAgeComps
   ObsSrvLenComps <- data$ObsSrvLenComps
 
+  ObsFishAgeComps_pop <- data$ObsFishAgeComps_pop
+  ObsFishLenComps_pop <- data$ObsFishLenComps_pop
+  ObsSrvAgeComps_pop <- data$ObsSrvAgeComps_pop
+  ObsSrvLenComps_pop <- data$ObsSrvLenComps_pop
+
   # Composition Types
   FishAge_CompType <- data$FishAgeComps_Type
   SrvAge_CompType <- data$SrvAgeComps_Type
   FishLen_CompType <- data$FishLenComps_Type
   SrvLen_CompType <- data$SrvLenComps_Type
 
-  # Aggregation Types
-  FishAge_comp_agg_type <- data$FishAge_comp_agg_type
-  FishLen_comp_agg_type <- data$FishLen_comp_agg_type
-  SrvAge_comp_agg_type <- data$SrvAge_comp_agg_type
-  SrvLen_comp_agg_type <- data$SrvLen_comp_agg_type
+  pop_FishAge_CompType <- data$pop_FishAgeComps_Type
+  pop_SrvAge_CompType <- data$pop_SrvAgeComps_Type
+  pop_FishLen_CompType <- data$pop_FishLenComps_Type
+  pop_SrvLen_CompType <- data$pop_SrvLenComps_Type
 
   # Whether ouse comp data
   UseFishAgeComps <- data$UseFishAgeComps
   UseFishLenComps <- data$UseFishLenComps
   UseSrvAgeComps <- data$UseSrvAgeComps
   UseSrvLenComps <- data$UseSrvLenComps
+
+  UseFishAgeComps_pop <- data$UseFishAgeComps_pop
+  UseFishLenComps_pop <- data$UseFishLenComps_pop
+  UseSrvAgeComps_pop <- data$UseSrvAgeComps_pop
+  UseSrvLenComps_pop <- data$UseSrvLenComps_pop
 
   # Fishery Ages
   for(y in 1:n_yrs) {
@@ -437,6 +578,83 @@ get_comp_prop <- function(data,
     } # end f
   } # end y
 
+  # Pop Fishery Ages
+  for(p in 1:n_pop) {
+    for(y in 1:n_yrs) {
+      for(f in 1:n_fish_fleets) {
+        for(seas in 1:n_seas) {
+          use_regions <- which(UseFishAgeComps_pop[p,,y,seas,f] == 1)
+          if(length(use_regions) > 0) {
+            Exp <- array(CAA_pop[p,,y,seas,,,f], dim = c(n_regions, 1, 1, n_fish_ages, n_sexes, 1))
+            Obs <- array(ObsFishAgeComps_pop[p,,y,seas,,,f], dim = c(n_regions, 1, 1, n_fish_ages, n_sexes, 1))
+            tmp_comps <- Restrc_Comps(Exp = Exp, Obs = Obs, Comp_Type = pop_FishAge_CompType[y,f],
+                                      age_or_len = 0, AgeingError = AgeingError_t[y,,])
+            Obs_FishAge_pop[p,,y,seas,,,f]  <- tmp_comps$Obs
+            Pred_FishAge_pop[p,,y,seas,,,f] <- tmp_comps$Exp
+          }
+        }
+      }
+    }
+  }
+
+  # Pop Fishery Lengths
+  for(p in 1:n_pop) {
+    for(y in 1:n_yrs) {
+      for(f in 1:n_fish_fleets) {
+        for(seas in 1:n_seas) {
+          use_regions <- which(UseFishLenComps_pop[p,,y,seas,f] == 1)
+          if(length(use_regions) > 0) {
+            Exp <- array(CAL_pop[p,,y,seas,,,f], dim = c(n_regions, 1, 1, n_lens, n_sexes, 1))
+            Obs <- array(ObsFishLenComps_pop[p,,y,seas,,,f], dim = c(n_regions, 1, 1, n_lens, n_sexes, 1))
+            tmp_comps <- Restrc_Comps(Exp = Exp, Obs = Obs, Comp_Type = pop_FishLen_CompType[y,f],
+                                      age_or_len = 1, AgeingError = NA)
+            Obs_FishLen_pop[p,,y,seas,,,f]  <- tmp_comps$Obs
+            Pred_FishLen_pop[p,,y,seas,,,f] <- tmp_comps$Exp
+          }
+        }
+      }
+    }
+  }
+
+  # Pop Survey Ages
+  for(p in 1:n_pop) {
+    for(y in 1:n_yrs) {
+      for(f in 1:n_srv_fleets) {
+        for(seas in 1:n_seas) {
+          use_regions <- which(UseSrvAgeComps_pop[p,,y,seas,f] == 1)
+          if(length(use_regions) > 0) {
+            Exp <- array(SrvIAA_pop[p,,y,seas,,,f], dim = c(n_regions, 1, 1, n_srv_ages, n_sexes, 1))
+            Obs <- array(ObsSrvAgeComps_pop[p,,y,seas,,,f], dim = c(n_regions, 1, 1, n_srv_ages, n_sexes, 1))
+            tmp_comps <- Restrc_Comps(Exp = Exp, Obs = Obs, Comp_Type = pop_SrvAge_CompType[y,f],
+                                      age_or_len = 0, AgeingError = AgeingError_t[y,,])
+            Obs_SrvAge_pop[p,,y,seas,,,f]  <- tmp_comps$Obs
+            Pred_SrvAge_pop[p,,y,seas,,,f] <- tmp_comps$Exp
+          }
+        }
+      }
+    }
+  }
+
+  # Pop Survey Lengths
+  for(p in 1:n_pop) {
+    for(y in 1:n_yrs) {
+      for(f in 1:n_srv_fleets) {
+        for(seas in 1:n_seas) {
+          use_regions <- which(UseSrvLenComps_pop[p,,y,seas,f] == 1)
+          if(length(use_regions) > 0) {
+            Exp <- array(SrvIAL_pop[p,,y,seas,,,f], dim = c(n_regions, 1, 1, n_lens, n_sexes, 1))
+            Obs <- array(ObsSrvLenComps_pop[p,,y,seas,,,f], dim = c(n_regions, 1, 1, n_lens, n_sexes, 1))
+            tmp_comps <- Restrc_Comps(Exp = Exp, Obs = Obs, Comp_Type = pop_SrvLen_CompType[y,f],
+                                      age_or_len = 1, AgeingError = NA)
+            Obs_SrvLen_pop[p,,y,seas,,,f]  <- tmp_comps$Obs
+            Pred_SrvLen_pop[p,,y,seas,,,f] <- tmp_comps$Exp
+          }
+        }
+      }
+    }
+  }
+
+
   # Process outputs
   all_fishages <- reshape2::melt(Obs_FishAge) %>%
     dplyr::rename(obs = value) %>%
@@ -469,23 +687,64 @@ get_comp_prop <- function(data,
     dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Len = Var4, Sex = Var5, Fleet = Var6) %>%
     dplyr::mutate(Type = 'Survey Lengths')
 
-  return(list(# data frames of observed and expected comps
-              Fishery_Ages = all_fishages,
-              Fishery_Lens = all_fishlens,
-              Survey_Ages = all_srvages,
-              Survey_Lens = all_srvlens,
+  # Pop Fishery Ages
+  all_fishages_pop <- reshape2::melt(Obs_FishAge_pop) %>%
+    dplyr::rename(obs = value) %>%
+    tidyr::drop_na() %>%
+    dplyr::left_join(reshape2::melt(Pred_FishAge_pop) %>% dplyr::rename(pred = value), by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6", "Var7")) %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Age = Var5, Sex = Var6, Fleet = Var7) %>%
+    dplyr::mutate(Type = 'Pop Fishery Ages')
 
-              # Arrays of observed comps
-              Obs_FishAge_mat = Obs_FishAge,
-              Obs_FishLen_mat = Obs_FishLen,
-              Obs_SrvAge_mat = Obs_SrvAge,
-              Obs_SrvLen_mat = Obs_SrvLen,
+  # Pop Fishery Lengths
+  all_fishlens_pop <- reshape2::melt(Obs_FishLen_pop) %>%
+    dplyr::rename(obs = value) %>%
+    tidyr::drop_na() %>%
+    dplyr::left_join(reshape2::melt(Pred_FishLen_pop) %>% dplyr::rename(pred = value), by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6", "Var7")) %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Len = Var5, Sex = Var6, Fleet = Var7) %>%
+    dplyr::mutate(Type = 'Pop Fishery Lengths')
 
-              # Arrays of expected comps
-              Pred_FishAge_mat = Pred_FishAge,
-              Pred_FishLen_mat = Pred_FishLen,
-              Pred_SrvAge_mat = Pred_SrvAge,
-              Pred_SrvLen_mat = Pred_SrvLen))
+  # Pop Survey Ages
+  all_srvages_pop <- reshape2::melt(Obs_SrvAge_pop) %>%
+    dplyr::rename(obs = value) %>%
+    tidyr::drop_na() %>%
+    dplyr::left_join(reshape2::melt(Pred_SrvAge_pop) %>% dplyr::rename(pred = value), by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6", "Var7")) %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Age = Var5, Sex = Var6, Fleet = Var7) %>%
+    dplyr::mutate(Type = 'Pop Survey Ages')
+
+  # Pop Survey Lengths
+  all_srvlens_pop <- reshape2::melt(Obs_SrvLen_pop) %>%
+    dplyr::rename(obs = value) %>%
+    tidyr::drop_na() %>%
+    dplyr::left_join(reshape2::melt(Pred_SrvLen_pop) %>% dplyr::rename(pred = value), by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6", "Var7")) %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Len = Var5, Sex = Var6, Fleet = Var7) %>%
+    dplyr::mutate(Type = 'Pop Survey Lengths')
+
+  return(list(Fishery_Ages     = all_fishages,
+              Fishery_Lens     = all_fishlens,
+              Survey_Ages      = all_srvages,
+              Survey_Lens      = all_srvlens,
+              Pop_Fishery_Ages = all_fishages_pop,
+              Pop_Fishery_Lens = all_fishlens_pop,
+              Pop_Survey_Ages  = all_srvages_pop,
+              Pop_Survey_Lens  = all_srvlens_pop,
+
+              Obs_FishAge_mat      = Obs_FishAge,
+              Obs_FishLen_mat      = Obs_FishLen,
+              Obs_SrvAge_mat       = Obs_SrvAge,
+              Obs_SrvLen_mat       = Obs_SrvLen,
+              Obs_FishAge_pop_mat  = Obs_FishAge_pop,
+              Obs_FishLen_pop_mat  = Obs_FishLen_pop,
+              Obs_SrvAge_pop_mat   = Obs_SrvAge_pop,
+              Obs_SrvLen_pop_mat   = Obs_SrvLen_pop,
+
+              Pred_FishAge_mat     = Pred_FishAge,
+              Pred_FishLen_mat     = Pred_FishLen,
+              Pred_SrvAge_mat      = Pred_SrvAge,
+              Pred_SrvLen_mat      = Pred_SrvLen,
+              Pred_FishAge_pop_mat = Pred_FishAge_pop,
+              Pred_FishLen_pop_mat = Pred_FishLen_pop,
+              Pred_SrvAge_pop_mat  = Pred_SrvAge_pop,
+              Pred_SrvLen_pop_mat  = Pred_SrvLen_pop))
 
 } # end function
 
@@ -685,6 +944,23 @@ run_osa <- function(obs,
 #'   Use [get_logistN_Sigma()] to help construct this input.
 #' @param addtocomp Constant that is added to compositions
 #' @param seas Season index
+#'
+#' @details
+#' When computing OSA residuals for population-specific composition data,
+#' slice the leading population dimension from the \code{obs_mat} and
+#' \code{exp_mat} arrays before passing them to this function. For example,
+#' to compute residuals for population \code{p}:
+#'
+#' \preformatted{
+#' get_osa(obs_mat = Obs_FishAge_pop_mat[p,,,,,,],
+#'         exp_mat = Pred_FishAge_pop_mat[p,,,,,,],
+#'         ...)
+#' }
+#'
+#' Population-specific composition arrays returned by
+#' \code{\link{get_comp_prop}} are dimensioned
+#' \code{[n_pop × n_regions × n_years × n_seas × n_bins × n_sexes × n_fleets]}.
+#' Slicing on \code{p} yields a 6D array matching the expected input dimensions.
 #'
 #' @return A list with one element:
 #' \describe{

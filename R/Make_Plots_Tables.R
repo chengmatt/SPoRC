@@ -476,22 +476,28 @@ get_biological_plot <- function(data,
 #' across model configurations.
 #'
 #' @param data List of length \code{n_models}, where each element is a SPoRC
-#'   data list. The following \code{Use*} indicator arrays are extracted from
-#'   each element, all with dimensions
-#'   \code{[n_regions, n_yrs, n_seas, n_fleets]}:
+#'   data list. Pooled \code{Use*} indicator arrays are extracted with
+#'   dimensions \code{[n_regions × n_years × n_seas × n_fleets]}:
 #'   \code{UseSrvLenComps}, \code{UseSrvAgeComps}, \code{UseFishLenComps},
 #'   \code{UseFishAgeComps}, \code{UseCatch}, \code{UseFishIdx},
-#'   \code{UseSrvIdx}. If \code{use_conv_fish_tagging} contains any 1s,
+#'   \code{UseSrvIdx}. Population-specific \code{Use*_pop} indicator arrays
+#'   with dimensions \code{[n_pop × n_regions × n_years × n_seas × n_fleets]}
+#'   are included when any element equals 1:
+#'   \code{UseFishAgeComps_pop}, \code{UseFishLenComps_pop},
+#'   \code{UseFishIdx_pop}, \code{UseSrvAgeComps_pop},
+#'   \code{UseSrvLenComps_pop}, \code{UseSrvIdx_pop}. If
+#'   \code{use_conv_fish_tagging} contains any 1s,
 #'   \code{conv_tag_release_indicator} is also used to construct a tagging
 #'   activity indicator array.
 #' @param model_names Character vector of length \code{n_models} giving display
 #'   names for each model run. Used as row facet labels.
 #'
 #' @return A single \code{ggplot} object: a dot-plot with Year on the x-axis
-#'   and data type (labelled by source, season, and fleet) on the y-axis,
-#'   faceted by Model × Region. Points appear only in years where the
-#'   corresponding \code{Use*} indicator is 1. The legend is suppressed; data
-#'   types are distinguished by y-axis position and fill colour.
+#'   and data type (labelled by source, population where applicable, season,
+#'   and fleet) on the y-axis, faceted by Model × Region. Points appear only
+#'   in years where the corresponding \code{Use*} indicator is 1. The legend
+#'   is suppressed; data types are distinguished by y-axis position and fill
+#'   colour.
 #'
 #' @export get_data_fitted_plot
 #' @family Plotting
@@ -560,7 +566,52 @@ get_data_fitted_plot <- function(data,
       data_plot_df <- dplyr::bind_rows(data_plot_df, tag_df)
     }
 
-    # remove data not fitted to
+    # Population-specific data indicators
+    pop_plot_df <- data.frame()
+
+    if(any(data[[i]]$UseFishAgeComps_pop == 1)) {
+      pop_plot_df <- dplyr::bind_rows(pop_plot_df,
+                                      reshape2::melt(data[[i]]$UseFishAgeComps_pop) %>%
+                                        dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+                                        dplyr::mutate(Type = paste('Pop Fishery Ages', "Seas", Seas, "Fleet", Fleet)))
+    }
+    if(any(data[[i]]$UseFishLenComps_pop == 1)) {
+      pop_plot_df <- dplyr::bind_rows(pop_plot_df,
+                                      reshape2::melt(data[[i]]$UseFishLenComps_pop) %>%
+                                        dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+                                        dplyr::mutate(Type = paste('Pop Fishery Lengths', "Seas", Seas, "Fleet", Fleet)))
+    }
+    if(any(data[[i]]$UseFishIdx_pop == 1)) {
+      pop_plot_df <- dplyr::bind_rows(pop_plot_df,
+                                      reshape2::melt(data[[i]]$UseFishIdx_pop) %>%
+                                        dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+                                        dplyr::mutate(Type = paste('Pop Fishery Index', "Seas", Seas, "Fleet", Fleet)))
+    }
+    if(any(data[[i]]$UseSrvAgeComps_pop == 1)) {
+      pop_plot_df <- dplyr::bind_rows(pop_plot_df,
+                                      reshape2::melt(data[[i]]$UseSrvAgeComps_pop) %>%
+                                        dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+                                        dplyr::mutate(Type = paste('Pop Survey Ages', "Seas", Seas, "Fleet", Fleet)))
+    }
+    if(any(data[[i]]$UseSrvLenComps_pop == 1)) {
+      pop_plot_df <- dplyr::bind_rows(pop_plot_df,
+                                      reshape2::melt(data[[i]]$UseSrvLenComps_pop) %>%
+                                        dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+                                        dplyr::mutate(Type = paste('Pop Survey Lengths', "Seas", Seas, "Fleet", Fleet)))
+    }
+    if(any(data[[i]]$UseSrvIdx_pop == 1)) {
+      pop_plot_df <- dplyr::bind_rows(pop_plot_df,
+                                      reshape2::melt(data[[i]]$UseSrvIdx_pop) %>%
+                                        dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+                                        dplyr::mutate(Type = paste('Pop Survey Index', "Seas", Seas, "Fleet", Fleet)))
+    }
+
+    if(nrow(pop_plot_df) > 0) {
+      pop_plot_df <- pop_plot_df %>% dplyr::select(-Pop)
+      data_plot_df <- dplyr::bind_rows(data_plot_df, pop_plot_df)
+    }
+
+    # Remove data not fitted to
     data_plot_df <- data_plot_df %>%
       dplyr::filter(value != 0) %>%
       dplyr::mutate(Region = paste("Region", Region),
@@ -596,13 +647,17 @@ get_data_fitted_plot <- function(data,
 #' @param rep List of length \code{n_models}, where each element is a SPoRC
 #'   report list (i.e. the output of \code{obj$report()} after optimisation).
 #'   The following nLL components are extracted: \code{jnLL}, \code{h_nLL},
-#'   \code{M_nLL}, \code{rec_region_prop_nLL}, \code{Rec_nLL}, \code{Init_Rec_nLL},
-#'   \code{sel_nLL}, \code{conv_fish_tag_nLL}, \code{Catch_nLL},
-#'   \code{Fmort_nLL}, \code{srv_q_nLL}, \code{fish_q_nLL}, \code{SrvIdx_nLL},
-#'   \code{FishIdx_nLL}, \code{TagRep_nLL}, \code{Movement_nLL},
-#'   \code{SrvAgeComps_nLL}, \code{FishAgeComps_nLL}, \code{SrvLenComps_nLL},
-#'   and \code{FishLenComps_nLL}. Missing components are handled gracefully via
-#'   \code{safe_extract}.
+#'   \code{M_nLL}, \code{rec_region_prop_nLL}, \code{Rec_nLL},
+#'   \code{Init_Rec_nLL}, \code{sel_nLL}, \code{conv_fish_tag_nLL},
+#'   \code{Catch_nLL}, \code{Fmort_nLL}, \code{srv_q_nLL}, \code{fish_q_nLL},
+#'   \code{SrvIdx_nLL}, \code{FishIdx_nLL}, \code{TagRep_nLL},
+#'   \code{Movement_nLL}, \code{SrvAgeComps_nLL}, \code{FishAgeComps_nLL},
+#'   \code{SrvLenComps_nLL}, \code{FishLenComps_nLL}, and the
+#'   population-specific counterparts \code{Catch_pop_nLL},
+#'   \code{FishIdx_pop_nLL}, \code{SrvIdx_pop_nLL},
+#'   \code{FishAgeComps_pop_nLL}, \code{FishLenComps_pop_nLL},
+#'   \code{SrvAgeComps_pop_nLL}, \code{SrvLenComps_pop_nLL}. Missing
+#'   components are handled via \code{safe_extract}.
 #' @param model_names Character vector of length \code{n_models} giving display
 #'   names for each model run. Used as facet labels on the bar chart.
 #'
@@ -639,10 +694,9 @@ get_nLL_plot <- function(data,
   nLL_all_df <- data.frame() # empty dataframe
   for(i in 1:length(rep)) {
 
-    # Negative log likelihoods
+    # nLL values
     nLL_df <- data.frame(
 
-      # nLL values
       value = c(safe_extract(rep[[i]], "jnLL"),
                 safe_extract(rep[[i]], "h_nLL"),
                 safe_extract(rep[[i]], "M_nLL"),
@@ -662,24 +716,34 @@ get_nLL_plot <- function(data,
                 sum(safe_extract(rep[[i]], "SrvAgeComps_nLL")),
                 sum(safe_extract(rep[[i]], "FishAgeComps_nLL")),
                 sum(safe_extract(rep[[i]], "SrvLenComps_nLL")),
-                sum(safe_extract(rep[[i]], "FishLenComps_nLL"))),
+                sum(safe_extract(rep[[i]], "FishLenComps_nLL")),
+                # population-specific
+                sum(data[[i]]$Wt_Catch_pop    * safe_extract(rep[[i]], "Catch_pop_nLL")),
+                sum(data[[i]]$Wt_FishIdx_pop   * safe_extract(rep[[i]], "FishIdx_pop_nLL")),
+                sum(data[[i]]$Wt_SrvIdx_pop    * safe_extract(rep[[i]], "SrvIdx_pop_nLL")),
+                sum(safe_extract(rep[[i]], "FishAgeComps_pop_nLL")),
+                sum(safe_extract(rep[[i]], "FishLenComps_pop_nLL")),
+                sum(safe_extract(rep[[i]], "SrvAgeComps_pop_nLL")),
+                sum(safe_extract(rep[[i]], "SrvLenComps_pop_nLL"))),
 
-      # nLL names
       name = c("jnLL", "Steepness Prior", "M Prior", "Recruitment Prop Prior", "Recruitment Penalty",
                "Selectivity Penalty", "Conventional Tagging nLL", "Catch nLL", "Fishing Mortality Penalty",
                "Survey Q Prior", "Fishery Q Prior", "Survey Index nLL", "Tag Reporting Prior",
                "Fishery Index nLL", "Initial Age Penalty", "Movement Prior",
-               "Survey Age nLL", "Fishery Age nLL", "Survey Length nLL", "Fishery Length nLL"),
+               "Survey Age nLL", "Fishery Age nLL", "Survey Length nLL", "Fishery Length nLL",
+               "Pop Catch nLL", "Pop Fishery Index nLL", "Pop Survey Index nLL",
+               "Pop Fishery Age nLL", "Pop Fishery Length nLL",
+               "Pop Survey Age nLL", "Pop Survey Length nLL"),
 
-      # nLL types
       type = c('jnLL', 'Prior', "Prior", "Prior", "Penalty", "Penalty", "Tagging",
                "Catch", "Penalty", "Prior", "Prior", "Index",
                "Prior", "Index", "Penalty", "Prior", "Age",
-               "Age", "Length", "Length"),
+               "Age", "Length", "Length",
+               "Catch", "Index", "Index",
+               "Age", "Length", "Age", "Length"),
 
       Model = model_names[i]
     )
-
     nLL_all_df <- rbind(nLL_all_df, nLL_df)
   }
 
@@ -767,55 +831,67 @@ get_idx_fits_plot <- function(data,
 #' Get Catch Fits Plot
 #'
 #' Plots observed catch time series alongside model-predicted values for one or
-#' more SPoRC model runs. Predicted catch is summed across populations before
-#' comparison with observations. Observed values are shown as points with
-#' approximate 95% log-normal confidence intervals derived from
-#' \code{ln_sigmaC}; predicted trajectories are overlaid as lines coloured by
-#' model. Years where observed catch is zero (i.e. \code{UseCatch = 0}) are
-#' excluded from both layers.
+#' more SPoRC model runs, for both pooled (region-level) and population-specific
+#' data streams. Pooled predicted catch is summed across populations before
+#' comparison with observations. Years where observed catch is zero are excluded
+#' from both layers.
 #'
 #' @param data List of length \code{n_models}, where each element is a SPoRC
-#'   data list. \code{ObsCatch} (dimensions
-#'   \code{[n_regions, n_yrs, n_seas, n_fish_fleets]}) provides observed catch
-#'   values. \code{Wt_Catch} is used alongside \code{ln_sigmaC} from the report
-#'   to recover the unweighted observation-error SD for confidence interval
-#'   construction (\code{se = exp(ln_sigmaC) / Wt_Catch}).
+#'   data list. \code{ObsCatch}
+#'   \code{[n_regions × n_yrs × n_seas × n_fish_fleets]} provides pooled
+#'   observed catch. \code{Wt_Catch} is used alongside \code{ln_sigmaC} from
+#'   the report to recover the unweighted observation-error SD for CI
+#'   construction. When \code{UseCatch_pop} contains any ones,
+#'   \code{ObsCatch_pop}
+#'   \code{[n_pop × n_regions × n_yrs × n_seas × n_fish_fleets]} and
+#'   \code{Wt_Catch_pop} are also used.
 #' @param rep List of length \code{n_models}, where each element is a SPoRC
 #'   report list (i.e. the output of \code{obj$report()} after optimisation).
-#'   \code{PredCatch} (dimensions
-#'   \code{[n_pop, n_regions, n_yrs, n_seas, n_fish_fleets]}) is summed across
-#'   populations to produce region-level predicted catch. \code{ln_sigmaC} is
-#'   used for CI construction.
+#'   \code{PredCatch}
+#'   \code{[n_pop × n_regions × n_yrs × n_seas × n_fish_fleets]} is summed
+#'   across populations for pooled trajectories and used directly by population
+#'   for pop-specific trajectories. \code{ln_sigmaC} and \code{ln_sigmaC_pop}
+#'   are used for CI construction.
 #' @param model_names Character vector of length \code{n_models} giving display
 #'   names for each model run. Used as the colour legend label on predicted
 #'   trajectories.
 #'
-#' @return A single \code{ggplot} object. Observed catch is shown as
-#'   \code{geom_pointrange} (black) with 95% log-normal confidence intervals
-#'   (\code{exp(log(obs) ± 1.96 * se)}). Predicted catch is shown as
-#'   \code{geom_line} coloured by model. The plot is faceted by
-#'   (Season + Fleet) × Region with free y-scales, and the y-axis is
-#'   constrained to [0, NA].
+#' @return A list of two \code{ggplot} objects:
+#'   \describe{
+#'     \item{[[1]] catch_fit_rg_plot}{Pooled catch plot, produced when any
+#'       element of \code{UseCatch} is 1. Observed catch shown as
+#'       \code{geom_pointrange} (black) with 95\% log-normal confidence
+#'       intervals; predicted catch shown as \code{geom_line} coloured by
+#'       model. Faceted by (Season + Fleet) × Region with free y-scales.}
+#'     \item{[[2]] catch_fit_pop_plot}{Population-specific catch plot, produced
+#'       when any element of \code{UseCatch_pop} is 1. Same geometry as the
+#'       pooled plot, faceted by (Population + Season + Fleet) × Region with
+#'       free y-scales. \code{NULL} when no pop-specific catch is active.}
+#'   }
 #'
 #' @export get_catch_fits_plot
 #' @family Model Diagnostics
 #'
 #' @examples
 #' \dontrun{
-#'   get_catch_fits_plot(
+#'   out <- get_catch_fits_plot(
 #'     data        = list(data1, data2),
 #'     rep         = list(rep1, rep2),
 #'     model_names = c("Base", "Sensitivity")
 #'   )
+#'   out[[1]]  # pooled catch
+#'   out[[2]]  # population-specific catch
 #' }
 get_catch_fits_plot <- function(data,
                                 rep,
                                 model_names
                                 ) {
 
-  catch_fits_all <- data.frame()
+  catch_fits_rg_all <- data.frame()
+
   # get catch fits data
   for(i in 1:length(rep)) {
+
     # Get catch fits
     catch_fits <- reshape2::melt(rep[[i]]$PredCatch) %>%
       dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
@@ -835,22 +911,66 @@ get_catch_fits_plot <- function(data,
                     Seas = paste("Seas", Seas),
                     Fleet = paste('Fleet', Fleet),
                     Seas_Fleet = paste(Seas, Fleet))
-    catch_fits_all <- rbind(catch_fits_all, catch_fits) # bind
+
+    catch_fits_rg_all <- rbind(catch_fits_rg_all, catch_fits) # bind
+
+  }
+
+  catch_fits_pop_all <- data.frame()
+
+  # get catch fits data
+  for(i in 1:length(rep)) {
+
+    # Get catch fits
+    catch_fits <- reshape2::melt(rep[[i]]$PredCatch) %>%
+      dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+      dplyr::left_join(
+        reshape2::melt(data[[i]]$ObsCatch_pop) %>%
+          dplyr::left_join(reshape2::melt(exp(rep[[i]]$ln_sigmaC_pop) / data[[i]]$Wt_Catch_pop) %>%
+                             dplyr::rename(se = value),
+                           by = c("Var1", "Var2", "Var3", "Var4", "Var5")) %>%
+          dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5, obs = value),
+        by = c("Pop", "Region", "Year", "Seas", "Fleet")
+      ) %>%
+      dplyr::mutate(Model = model_names[i],
+                    Pop = paste('Pop', Pop),
+                    Region = paste('Region', Region),
+                    Seas = paste("Seas", Seas),
+                    Fleet = paste('Fleet', Fleet),
+                    Pop_Seas_Fleet = paste(Pop, Seas, Fleet))
+
+    catch_fits_pop_all <- rbind(catch_fits_pop_all, catch_fits) # bind
+
   }
 
   # Plot catch fits
-  catch_fit_plot <- ggplot2::ggplot() +
-    ggplot2::geom_line(catch_fits_all %>% dplyr::filter(obs != 0),
-                       mapping = ggplot2::aes(x = Year, y = value, color = factor(Model)), lwd = 1.3) +
-    ggplot2::geom_pointrange(catch_fits_all %>% dplyr::filter(obs != 0),
-                             mapping = ggplot2::aes(x = Year, y = obs, ymin = exp(log(obs) - 1.96 * se),
-                                                    ymax = exp(log(obs) + 1.96 * se)), color = 'black') +
-    ggplot2::labs(x = "Year", y = 'Catch', color = 'Model') +
-    theme_sablefish() +
-    ggplot2::coord_cartesian(ylim = c(0,NA)) +
-    ggplot2::facet_grid(Seas_Fleet~Region, scales = 'free_y')
+  if(any(data[[1]]$UseCatch == 1)) {
+    catch_fit_rg_plot <- ggplot2::ggplot() +
+      ggplot2::geom_line(catch_fits_rg_all %>% dplyr::filter(obs != 0),
+                         mapping = ggplot2::aes(x = Year, y = value, color = factor(Model)), lwd = 1.3) +
+      ggplot2::geom_pointrange(catch_fits_rg_all %>% dplyr::filter(obs != 0),
+                               mapping = ggplot2::aes(x = Year, y = obs, ymin = exp(log(obs) - 1.96 * se),
+                                                      ymax = exp(log(obs) + 1.96 * se)), color = 'black') +
+      ggplot2::labs(x = "Year", y = 'Catch', color = 'Model') +
+      theme_sablefish() +
+      ggplot2::coord_cartesian(ylim = c(0,NA)) +
+      ggplot2::facet_grid(Seas_Fleet~Region, scales = 'free_y')
+  } else NULL
 
-  return(catch_fit_plot)
+  if(any(data[[1]]$UseCatch_pop == 1)) {
+    catch_fit_pop_plot <- ggplot2::ggplot() +
+      ggplot2::geom_line(catch_fits_pop_all %>% dplyr::filter(obs != 0),
+                         mapping = ggplot2::aes(x = Year, y = value, color = factor(Model)), lwd = 1.3) +
+      ggplot2::geom_pointrange(catch_fits_pop_all %>% dplyr::filter(obs != 0),
+                               mapping = ggplot2::aes(x = Year, y = obs, ymin = exp(log(obs) - 1.96 * se),
+                                                      ymax = exp(log(obs) + 1.96 * se)), color = 'black') +
+      ggplot2::labs(x = "Year", y = 'Population-Specific Catch', color = 'Model') +
+      theme_sablefish() +
+      ggplot2::coord_cartesian(ylim = c(0,NA)) +
+      ggplot2::facet_grid(Pop_Seas_Fleet~Region, scales = 'free_y')
+  } else NULL
+
+  return(list(catch_fit_rg_plot, catch_fit_pop_plot))
 }
 
 

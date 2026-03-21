@@ -901,6 +901,103 @@ do_rec_region_prop_mapping <- function(input_list, rec_region_prop_spec) {
   return(input_list)
 }
 
+#' Map stray rate parameters
+#'
+#' Internal helper called by \code{\link{Setup_Mod_Rec}} to construct the
+#' TMB/RTMB factor map for \code{stray_rate_pars}, the logit-scale stray rate
+#' parameters. The array has dimensions \code{[n_pop × max_stray_blocks]},
+#' where \code{max_stray_blocks} is the maximum number of time blocks across
+#' all populations as defined by \code{$data$stray_rate_blocks}.
+#'
+#' When \code{n_pop = 1}, straying is not applicable and all parameters are
+#' automatically fixed to \code{NA}. When \code{use_fixed_stray_rate = 1},
+#' the objective function reads from \code{fixed_stray_rate} directly and
+#' \code{stray_rate_pars} are not used — all elements are fixed regardless
+#' of \code{stray_rate_spec}.
+#'
+#' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
+#'   sublists. Requires \code{$data$n_pop}, \code{$data$stray_rate_blocks},
+#'   and \code{$data$use_fixed_stray_rate} to be set by upstream functions.
+#' @param stray_rate_spec Character string specifying the estimation structure.
+#'   One of:
+#'   \describe{
+#'     \item{\code{"fix"}}{All parameters fixed at starting values (mapped to
+#'       \code{NA}).}
+#'     \item{\code{"est_all"}}{Estimate independently per population × block.
+#'       Produces \code{n_pop × n_unique_blocks} estimated parameters.}
+#'     \item{\code{"est_shared_pop"}}{Single parameter per block, shared across
+#'       all populations. Requires identical block structures across all
+#'       populations — an error is raised if block indices differ.}
+#'   }
+#'
+#' @return The input \code{input_list} with \code{$map$stray_rate_pars} set to
+#'   a factor vector of length \code{prod(dim(par$stray_rate_pars))}. Active
+#'   parameters receive sequential integer indices; fixed parameters are
+#'   \code{NA}.
+#'
+#' @keywords internal
+do_stray_rate_mapping <- function(input_list, stray_rate_spec) {
+
+  map_stray      <- input_list$par$stray_rate_pars
+  map_stray[]    <- NA
+  stray_counter  <- 1
+
+  valid_specs <- c("fix", "est_all", "est_shared_pop")
+  if (!stray_rate_spec %in% valid_specs)
+    stop("Invalid stray_rate_spec. Must be one of: ", paste(valid_specs, collapse = ", "))
+
+  # Not applicable for single population
+  if (input_list$data$n_pop == 1) {
+    input_list$map$stray_rate_pars <- factor(map_stray)
+    collect_message("Stray rates fixed (n_pop == 1, straying not applicable).")
+    return(input_list)
+  }
+
+  # Externally fixed — pars not used by objective function
+  if (input_list$data$use_fixed_stray_rate == 1) {
+    input_list$map$stray_rate_pars <- factor(map_stray)
+    collect_message("Stray rates are externally fixed (use_fixed_stray_rate == 1).")
+    return(input_list)
+  }
+
+  if (stray_rate_spec == "fix") {
+    input_list$map$stray_rate_pars <- factor(map_stray)
+    collect_message("Stray rates fixed at starting values.")
+    return(input_list)
+  }
+
+  # Validate block consistency for shared estimation
+  if (stray_rate_spec == "est_shared_pop") {
+    ref_blks <- sort(unique(as.vector(input_list$data$stray_rate_blocks[1, ])))
+    for (p in seq_len(input_list$data$n_pop)) {
+      if (!identical(sort(unique(as.vector(input_list$data$stray_rate_blocks[p, ]))), ref_blks))
+        stop("est_shared_pop requires identical stray rate block structure across all populations.")
+    }
+  }
+
+  for (p in seq_len(input_list$data$n_pop)) {
+
+    blks <- unique(as.vector(input_list$data$stray_rate_blocks[p, ]))
+
+    for (b in blks) {
+
+      if (stray_rate_spec == "est_all") {
+        map_stray[p, b] <- stray_counter
+        stray_counter    <- stray_counter + 1
+      }
+
+      if (stray_rate_spec == "est_shared_pop" && p == 1) {
+        for (pp in seq_len(input_list$data$n_pop)) map_stray[pp, b] <- stray_counter
+        stray_counter <- stray_counter + 1
+      }
+    }
+  }
+
+  input_list$map$stray_rate_pars <- factor(map_stray)
+  collect_message("Stray rates specified as: ", stray_rate_spec)
+  return(input_list)
+}
+
 #' Map recruitment seasonal apportionment parameters
 #'
 #' Internal helper called by \code{\link{Setup_Mod_Rec}} to construct the
@@ -925,7 +1022,7 @@ do_rec_region_prop_mapping <- function(input_list, rec_region_prop_spec) {
 #'   independently across populations and seasons. Options when
 #'   non-\code{NULL}:
 #'   \describe{
-#'     \item{\code{"est_shared_p"}}{Estimate seasonal proportions but share
+#'     \item{\code{"est_shared_pop"}}{Estimate seasonal proportions but share
 #'       them across populations, so a single set of \code{n_seas - 1}
 #'       parameters applies to all populations. Only valid for seasonal models
 #'       (\code{n_seas > 1}). Also resets \code{use_fixed_rec_seas_prop} to
@@ -948,24 +1045,24 @@ do_rec_region_prop_mapping <- function(input_list, rec_region_prop_spec) {
 do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 
   # Validate spec options
-  valid_specs <- c("fix", "est_shared_p")
+  valid_specs <- c("fix", "est_shared_pop")
   if(!is.null(rec_seas_prop_spec) && !rec_seas_prop_spec %in% valid_specs) {
     stop("Invalid rec_seas_prop_spec: '", rec_seas_prop_spec, "'. Valid options are: ", paste(valid_specs, collapse=", "), ", or NULL to estimate all.")
   }
 
-  if((is.null(rec_seas_prop_spec) || rec_seas_prop_spec == 'est_shared_p') && input_list$data$use_fixed_rec_seas_prop == 1) {
+  if((is.null(rec_seas_prop_spec) || rec_seas_prop_spec == 'est_shared_pop') && input_list$data$use_fixed_rec_seas_prop == 1) {
     input_list$data$use_fixed_rec_seas_prop <- 0
     warning("Recruitment seasonal apportionment is specified as estimated, but use_fixed_rec_seas_prop == 1 (fixed). Changing to use_fixed_rec_seas_prop == 0.")
   }
 
   # estimating recruitment seasonal apporitonment is only valid for seasonal models
-  if(!is.null(rec_seas_prop_spec) && rec_seas_prop_spec == 'est_shared_p' && input_list$data$n_seas == 1)
+  if(!is.null(rec_seas_prop_spec) && rec_seas_prop_spec == 'est_shared_pop' && input_list$data$n_seas == 1)
     stop("Estimating recruitment seasonal apportionment is only applicable for seasonal models. ")
 
   # estimate all recruitment seasonal proportions if n_seas > 1
   if(is.null(rec_seas_prop_spec)) {
     input_list$map$rec_seas_prop_pars <- factor(1:length(input_list$par$rec_seas_prop_pars))
-  } else if(rec_seas_prop_spec == 'est_shared_p') { # estimate recruitment seasonal proportions but share across populations
+  } else if(rec_seas_prop_spec == 'est_shared_pop') { # estimate recruitment seasonal proportions but share across populations
     counter <- 1
     tmp_map = input_list$par$rec_seas_prop_pars
     for(seas in 1:(input_list$data$n_seas - 1)) {
@@ -1100,7 +1197,7 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #' @param rec_seas_prop_spec Character or \code{NULL}. Seasonal recruitment
 #'   apportionment structure. Default \code{"fix"}. See
 #'   \code{\link{do_rec_seas_prop_mapping}} for full option descriptions
-#'   including \code{"est_shared_p"}.
+#'   including \code{"est_shared_pop"}.
 #' @param use_fixed_rec_seas_prop Integer (0/1). Whether fixed (non-estimated)
 #'   seasonal proportions from \code{fixed_rec_seas_prop} are used. Automatically
 #'   reset to \code{0} with a warning if \code{rec_seas_prop_spec} requests
@@ -1143,9 +1240,59 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   giving the probability of fish from each origin region spawning in region
 #'   \code{r}. If \code{NA} (default), 100\% natal homing is assumed and the
 #'   array is constructed internally.
-#' @param stray_rate Array \code{[n_pop × n_years]}. Proportion of fish that
-#'   stray from their natal region during spawning. Values in \eqn{[0, 1]}.
-#'   Default: \code{0} (No individuals stray.).
+#'
+#'
+#' @section Stray Rate Dynamics:
+#'
+#' @param use_fixed_stray_rate Integer (0/1). Whether stray rates are supplied
+#'   as a fixed external array (\code{fixed_stray_rate}) rather than estimated
+#'   as model parameters. Default \code{1} (fixed), preserving existing
+#'   behaviour. Set to \code{0} to estimate stray rates via
+#'   \code{stray_rate_pars}.
+#' @param fixed_stray_rate Array \code{[n_pop × n_years]}. Fixed stray rate
+#'   values used when \code{use_fixed_stray_rate = 1}. Values should be in
+#'   \eqn{[0, 1]}. Default: \code{0} (no straying) for all populations and
+#'   years. Ignored when \code{use_fixed_stray_rate = 0}.
+#' @param stray_rate_spec Character string. Estimation structure for
+#'   \code{stray_rate_pars} \code{[n_pop × max_stray_blocks]}, parameterised
+#'   on the logit scale. Ignored when \code{use_fixed_stray_rate = 1} or
+#'   \code{n_pop = 1}. Default \code{"fix"}. Options:
+#'   \describe{
+#'     \item{\code{"fix"}}{All parameters fixed at starting values (mapped to
+#'       \code{NA}). Use this alongside \code{use_fixed_stray_rate = 0} to
+#'       hold stray rates at a specified value without estimating.}
+#'     \item{\code{"est_all"}}{Estimate independently per population × block.
+#'       Produces one parameter per population per unique block.}
+#'     \item{\code{"est_shared_pop"}}{Single parameter per block, shared across
+#'       all populations. Requires identical block structures across all
+#'       populations — an error is raised if block indices differ.}
+#'   }
+#' @param stray_rate_blocks Character vector of length \code{n_pop} defining
+#'   the temporal block structure for stray rate parameters. Valid formats:
+#'   \describe{
+#'     \item{\code{"none_Pop_x"}}{Constant stray rate for population \code{x}
+#'       across all years (single block).}
+#'     \item{\code{"Block_k_Year_a-b_Pop_x"}}{Block \code{k} applies to years
+#'       \code{a} through \code{b} for population \code{x}. Use
+#'       \code{"terminal"} in place of the end year to extend through the
+#'       final model year.}
+#'   }
+#'   Default: a single constant block for every population.
+#'   \strong{Note:} stray rate is generally unidentifiable from fisheries data
+#'   alone. Time-blocking is provided for completeness but regularisation via
+#'   \code{use_stray_rate_prior} in the penalty setup is strongly recommended
+#'   whenever \code{stray_rate_spec != "fix"}.
+#' @param use_stray_rate_prior Integer (0/1). Whether Beta priors are applied
+#'   to estimated stray rate parameters. Only relevant when
+#'   \code{use_fixed_stray_rate = 0} and \code{n_pop > 1}. An error is raised
+#'   if \code{use_stray_rate_prior = 1} alongside \code{use_fixed_stray_rate = 1}
+#'   since \code{stray_rate_pars} would not be estimated. Default \code{0}.
+#' @param stray_rate_prior Data frame of Beta prior parameters for stray rates.
+#'   Required columns: \code{pop} (population index), \code{block} (block
+#'   index matching \code{stray_rate_blocks}), \code{mu} (prior mean, in
+#'   \eqn{(0,1)}), \code{sd} (prior standard deviation). One row per
+#'   population × block combination to penalise. Ignored when
+#'   \code{use_stray_rate_prior = 0}. Default \code{NULL}.
 #'
 #' @section Sex Ratio Dynamics:
 #'
@@ -1191,7 +1338,7 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   populated in \code{$data} and \code{$par}, and factor maps constructed
 #'   in \code{$map} for: \code{rec_region_prop_pars}, \code{rec_seas_prop_pars},
 #'   \code{ln_sigmaR}, \code{ln_InitDevs}, \code{ln_RecDevs},
-#'   \code{steepness_h}, and \code{sexratio_pars}. Character-coded inputs
+#'   \code{steepness_h}, \code{sexratio_pars}, and \code{stray_rate_pars}. Character-coded inputs
 #'   for \code{init_age_strc} and \code{equil_init_age_strc} are converted to
 #'   integer codes before storage.
 #'
@@ -1227,7 +1374,12 @@ Setup_Mod_Rec <- function(input_list,
                           h_spec = NULL,
                           sgl_seas_spawning_movement = NA,
                           t_spawn = 0,
-                          stray_rate = array(0, dim = c(input_list$data$n_pop, length(input_list$data$years))),
+                          stray_rate_spec = "fix",
+                          stray_rate_blocks = paste0("none_Pop_", seq_len(input_list$data$n_pop)),
+                          use_fixed_stray_rate = if(stray_rate_spec != 'fix') 0 else 1,
+                          fixed_stray_rate = array(0, dim = c(input_list$data$n_pop, length(input_list$data$years))),
+                          use_stray_rate_prior = 0,
+                          stray_rate_prior = NULL,
                           spawn_seas = 1,
                           sexratio_spec = 'fix',
                           sexratio_blocks = {
@@ -1308,8 +1460,57 @@ Setup_Mod_Rec <- function(input_list,
 
 
   # Straying Rates ----------------------------------------------------------
-  check_data_dimensions(stray_rate, n_pop = input_list$data$n_pop, n_years = length(input_list$data$years),  what = 'stray_rate')
+  stray_rate_blocks_mat <- array(NA, dim = c(input_list$data$n_pop,
+                                             length(input_list$data$years)))
 
+  for (i in seq_along(stray_rate_blocks)) {
+
+    # parse
+    tmp     <- stray_rate_blocks[i]
+    tmp_vec <- unlist(strsplit(tmp, "_"))
+
+    if (!tmp_vec[1] %in% c("none", "Block"))
+      stop("stray_rate_blocks not correctly specified. ",
+           "Use 'none_Pop_x' or 'Block_k_Year_a-b_Pop_x'.")
+
+    # if none
+    if (tmp_vec[1] == "none") {
+      pop <- as.numeric(tmp_vec[3])
+      stray_rate_blocks_mat[pop, ] <- 1
+    }
+
+    # if blocks
+    if (tmp_vec[1] == "Block") {
+      block_val <- as.numeric(tmp_vec[2])
+      pop        <- as.numeric(tmp_vec[6])
+      if (!str_detect(tmp, "terminal")) {
+        year_range <- as.numeric(unlist(strsplit(tmp_vec[4], "-")))
+        yrs        <- year_range[1]:year_range[2]
+      } else {
+        yrs <- as.numeric(unlist(strsplit(tmp_vec[4], "-"))[1]):length(input_list$data$years)
+      }
+      stray_rate_blocks_mat[pop, yrs] <- block_val
+    }
+  }
+
+  for (p in seq_len(input_list$data$n_pop))
+    collect_message("Stray rates for population ", p, " specified with ", length(unique(stray_rate_blocks_mat[p, ])), " block(s).")
+
+  # validate priors
+  if (!use_stray_rate_prior %in% c(0, 1)) stop("use_stray_rate_prior must be 0 or 1")
+  if (use_stray_rate_prior == 1 && input_list$data$n_pop == 1)
+    stop("Stray rate priors are not applicable when n_pop == 1.")
+  if (use_stray_rate_prior == 1 && use_fixed_stray_rate == 1)
+    stop("use_stray_rate_prior == 1 but use_fixed_stray_rate == 1 — stray_rate_pars are not estimated so a prior has no effect.")
+  if (use_stray_rate_prior == 1) {
+    required_cols <- c("pop", "block", "mu", "sd")
+    missing_cols  <- setdiff(required_cols, names(stray_rate_prior))
+    if (length(missing_cols) > 0)
+      stop("stray_rate_prior is missing columns: ", paste(missing_cols, collapse = ", "))
+    if (any(stray_rate_prior$mu <= 0 | stray_rate_prior$mu >= 1))
+      stop("stray_rate_prior$mu must be in (0, 1).")
+  }
+  collect_message("Stray rate prior is: ", ifelse(use_stray_rate_prior == 1, "Used", "Not Used"))
 
   # Steepness Settings ------------------------------------------------------
   if (rec_model == "bh_rec") {
@@ -1414,12 +1615,16 @@ Setup_Mod_Rec <- function(input_list,
   input_list$data$use_rec_region_prop_prior <- use_rec_region_prop_prior
   input_list$data$rec_region_prop_spec <- ifelse(is.null(rec_region_prop_spec), 0, 1) # 0 = Full dispersal, 1 = no dispersal
   input_list$data$rec_region_prop_prior <- rec_region_prop_prior
-  input_list$data$stray_rate <- stray_rate
+  input_list$data$use_fixed_stray_rate <- use_fixed_stray_rate
+  input_list$data$fixed_stray_rate     <- fixed_stray_rate
+  input_list$data$stray_rate_blocks    <- stray_rate_blocks_mat
   input_list$data$sexratio_blocks <- sexratio_blocks_mat
   input_list$data$use_fixed_rec_seas_prop <- use_fixed_rec_seas_prop
   input_list$data$fixed_rec_seas_prop <- fixed_rec_seas_prop
   input_list$data$use_rec_seas_prop_prior <- use_rec_seas_prop_prior
   input_list$data$rec_seas_prop_prior <- rec_seas_prop_prior
+  input_list$data$use_stray_rate_prior <- use_stray_rate_prior
+  input_list$data$stray_rate_prior     <- stray_rate_prior
 
   # Populate Parameter List -------------------------------------------------
 
@@ -1456,6 +1661,14 @@ Setup_Mod_Rec <- function(input_list,
   if("sexratio_pars" %in% names(starting_values)) input_list$par$sexratio_pars <- starting_values$sexratio_pars
   else input_list$par$sexratio_pars <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, max_sexratio_blks)) # specified at 0.5 in inverse logit space
 
+  # Stray rate parameters (logit scale)
+  max_stray_blks <- if (input_list$data$n_pop > 1) max(apply(stray_rate_blocks_mat, 1, function(x) length(unique(x))))
+  else 1
+
+  max_stray_blks <- if (input_list$data$n_pop > 1)  max(apply(stray_rate_blocks_mat, 1, function(x) length(unique(x)))) else 1
+  if ("stray_rate_pars" %in% names(starting_values)) input_list$par$stray_rate_pars <- starting_values$stray_rate_pars
+  else input_list$par$stray_rate_pars <- array(0,  dim = c(input_list$data$n_pop, max_stray_blks))
+
   # Mapping Options -----------------------------------------------------------
 
   input_list <- do_rec_region_prop_mapping(input_list, rec_region_prop_spec) # Recruitment regional proportion mapping
@@ -1465,6 +1678,7 @@ Setup_Mod_Rec <- function(input_list,
   input_list <- do_RecDevs_mapping(input_list, RecDevs_spec, rec_dd) # RevDevs mapping
   input_list <- do_h_mapping(input_list, h_spec, rec_dd) # steepness mapping
   input_list <- do_sexratio_pars_mapping(input_list, sexratio_spec) # sex ratio parameters
+  input_list <- do_stray_rate_mapping(input_list, stray_rate_spec) # stray rates
 
   # Print Messages ----------------------------------------------------------
   if(input_list$verbose) for(msg in messages_list) message(msg)

@@ -22,6 +22,7 @@ desc::desc_del_dep("remotes", "Imports")
 
 # pkgdown Site ------------------------------------------------------------
 pkgdown::clean_cache()
+pkgdown::clean_site(force = TRUE)
 pkgdown::check_pkgdown()
 pkgdown::build_site()
 pkgdown::build_news()

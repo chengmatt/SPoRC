@@ -55,7 +55,6 @@ The following tables describe all elements contained within `input_list$data`, w
 | `t_spawn` | Fraction of year in which spawning occurs |
 | `use_fixed_stray_rate` | Integer specifying whether stray rates are supplied as a fixed external array (1) or estimated as model parameters via `stray_rate_pars` (0). Default 1. Only relevant when `n_pop > 1` |
 | `fixed_stray_rate` | Array dimensioned by `n_pop`, `n_years` specifying fixed stray rate values used when `use_fixed_stray_rate = 1`. Values should be in [0, 1]. Ignored when `use_fixed_stray_rate = 0` |
-| `stray_rate` | Derived array dimensioned by `n_pop`, `n_years` containing the stray rate values used in the model. When `use_fixed_stray_rate = 0`, populated from `stray_rate_pars` via inverse-logit transform indexed by `stray_rate_blocks`; otherwise copied directly from `fixed_stray_rate` |
 | `stray_rate_blocks` | Array dimensioned by `n_pop`, `n_years` specifying the time block index for stray rate parameters for each population and year. Unique integer values denote distinct stray rate parameter blocks |
 | `use_stray_rate_prior` | Integer specifying whether a Beta prior is placed on estimated stray rate parameters. 0: Don't use prior, 1: Use prior. Only relevant when `use_fixed_stray_rate = 0` and `n_pop > 1`. Prior contributions accumulate into `rec_prop_nLL` |
 | `stray_rate_prior` | Data frame specifying Beta prior parameters for stray rates. Must include columns: `pop` (population index), `block` (time block index matching `stray_rate_blocks`), `mu` (prior mean in (0,1)), and `sd` (prior standard deviation). One row per population × block combination when `stray_rate_spec = "est_all"`; one row per block only when `stray_rate_spec = "est_shared_p"` |
@@ -141,12 +140,16 @@ The following tables describe all elements contained within `input_list$data`, w
 
 | Name | Description |
 |-------------------------|------------------------------------------------------|
-| `ObsCatch` | Observed catch data dimensioned by `n_regions`, `n_years`, `n_seas`, `n_fish_fleets` |
+| `ObsCatch` | Observed catch data dimensioned by `n_regions`, `n_years`, `n_seas`, `n_fish_fleets`. Used in region-aggregated catch likelihoods |
+| `ObsCatch_pop` | Population-specific observed catch data dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_fish_fleets`. Used in population-specific catch likelihoods |
 | `catch_units` | Array dimensioned by `n_fish_fleets` describing catch units. 0 == Abundance, 1 == Biomass (default) |
 | `UseCatch` | Array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_fish_fleets` describing whether to fit to catch data in a given year, season, and fleet. 0: Don't fit catch, 1: Fit catch |
+| `UseCatch_pop` | Array dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_fish_fleets` describing whether to fit to population-specific catch data. 0: Don't fit catch, 1: Fit catch |
 | `Use_F_pen` | Value specifying whether to use a fishing mortality penalty to regularize fishing mortality deviations. 0: Don't use regularity penalty, 1: Use regularity penalty |
 
 ## Data Inputs for Defining Fishery Indices and Compositions
+
+Region-aggregated observations (summed across populations) and population-specific observations are handled separately. Region-aggregated inputs use dimensions beginning with `n_regions`; population-specific inputs use dimensions beginning with `n_pop`, `n_regions`.
 
 | Name | Description |
 |-------------------------|------------------------------------------------------|
@@ -154,20 +157,37 @@ The following tables describe all elements contained within `input_list$data`, w
 | `ObsFishIdx_SE` | Fishery index standard errors dimensioned by `n_regions`, `n_years`, `n_seas`, `n_fish_fleets` |
 | `UseFishIdx` | Array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_fish_fleets` describing whether to fit to the fishery index in a given year, season, and fleet. 0: Don't fit fishery index, 1: Fit fishery index |
 | `fish_idx_type` | Matrix dimensioned by `n_fish_fleets` specifying the index type for a given fishery fleet. 0: Abundance index, 1: Biomass index (uses `WAA_fish` for calculations), 999: None Available |
+| `ObsFishIdx_pop` | Population-specific fishery index dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_fish_fleets` |
+| `ObsFishIdx_pop_SE` | Population-specific fishery index standard errors dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_fish_fleets` |
+| `UseFishIdx_pop` | Array dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_fish_fleets` describing whether to fit to population-specific fishery indices. 0: Don't fit, 1: Fit |
 | `ObsFishAgeComps` | Observed fishery age compositions dimensioned by `n_regions`, `n_years`, `n_seas`, `n_ages`, `n_sexes`, `n_fish_fleets`. Can be input as proportions or numbers, as these are normalized within the model |
 | `UseFishAgeComps` | Array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_fish_fleets` specifying whether or not to fit to fishery age compositions. 0: Don't fit, 1: Fit |
 | `ISS_FishAgeComps` | Array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_sexes`, `n_fish_fleets` specifying the input sample size for a multinomial or Dirichlet-multinomial likelihood |
 | `Wt_FishAgeComps` | Array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_sexes`, `n_fish_fleets` specifying a multinomial weight to apply to fishery age compositions, ideally derived using Francis re-weighting |
+| `ObsFishAgeComps_pop` | Population-specific observed fishery age compositions dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_ages`, `n_sexes`, `n_fish_fleets`. Can be input as proportions or numbers |
+| `UseFishAgeComps_pop` | Array dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_fish_fleets` specifying whether to fit to population-specific fishery age compositions. 0: Don't fit, 1: Fit |
+| `ISS_FishAgeComps_pop` | Array dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_sexes`, `n_fish_fleets` specifying the input sample size for population-specific fishery age composition likelihoods |
+| `Wt_FishAgeComps_pop` | Array dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_sexes`, `n_fish_fleets` specifying a multinomial weight to apply to population-specific fishery age compositions |
 | `ObsFishLenComps` | Observed fishery length compositions dimensioned by `n_regions`, `n_years`, `n_seas`, `n_lens`, `n_sexes`, `n_fish_fleets`. Can be input as proportions or numbers, as these are normalized within the model |
 | `UseFishLenComps` | Array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_fish_fleets` specifying whether or not to fit to fishery length compositions. 0: Don't fit, 1: Fit |
 | `ISS_FishLenComps` | Array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_fish_fleets` specifying the input sample size for a multinomial or Dirichlet-multinomial likelihood |
 | `Wt_FishLenComps` | Array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_sexes`, `n_fish_fleets` specifying a multinomial weight to apply to fishery length compositions, ideally derived using Francis re-weighting |
-| `FishAgeComps_LikeType` | Vector dimensioned by `n_fish_fleets` specifying the likelihood for fishery age compositions. 0: Multinomial, 1: Dirichlet-multinomial, 2: Logistic-normal with iid covariance, 999: None Available. Further options in `Get_Comp_Likelihoods.R` |
-| `FishLenComps_LikeType` | Vector dimensioned by `n_fish_fleets` specifying the likelihood for fishery length compositions. 0: Multinomial, 1: Dirichlet-multinomial, 2: Logistic-normal with iid covariance, 999: None Available. Further options in `Get_Comp_Likelihoods.R` |
-| `FishAgeComps_Type` | Matrix dimensioned by `n_years`, `n_fish_fleets` specifying how age composition data should be structured. 0: Aggregated across sexes and regions, 1: Split by sexes and regions, 2: Joint by sex but split by region, 999: None Available. Further options in `Get_Comp_Likelihoods.R` |
-| `FishLenComps_Type` | Matrix dimensioned by `n_years`, `n_fish_fleets` specifying how length composition data should be structured. 0: Aggregated across sexes and regions, 1: Split by sexes and regions, 2: Joint by sex but split by region, 999: None Available. Further options in `Get_Comp_Likelihoods.R` |
+| `ObsFishLenComps_pop` | Population-specific observed fishery length compositions dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_lens`, `n_sexes`, `n_fish_fleets`. Can be input as proportions or numbers |
+| `UseFishLenComps_pop` | Array dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_fish_fleets` specifying whether to fit to population-specific fishery length compositions. 0: Don't fit, 1: Fit |
+| `ISS_FishLenComps_pop` | Array dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_fish_fleets` specifying the input sample size for population-specific fishery length composition likelihoods |
+| `Wt_FishLenComps_pop` | Array dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_sexes`, `n_fish_fleets` specifying a multinomial weight to apply to population-specific fishery length compositions |
+| `FishAgeComps_LikeType` | Vector dimensioned by `n_fish_fleets` specifying the likelihood for region-aggregated fishery age compositions. 0: Multinomial, 1: Dirichlet-multinomial, 2: Logistic-normal with iid covariance, 999: None Available. Further options in `Get_Comp_Likelihoods.R` |
+| `pop_FishAgeComps_LikeType` | Vector dimensioned by `n_fish_fleets` specifying the likelihood for population-specific fishery age compositions. Same options as `FishAgeComps_LikeType` |
+| `FishLenComps_LikeType` | Vector dimensioned by `n_fish_fleets` specifying the likelihood for region-aggregated fishery length compositions. 0: Multinomial, 1: Dirichlet-multinomial, 2: Logistic-normal with iid covariance, 999: None Available. Further options in `Get_Comp_Likelihoods.R` |
+| `pop_FishLenComps_LikeType` | Vector dimensioned by `n_fish_fleets` specifying the likelihood for population-specific fishery length compositions. Same options as `FishLenComps_LikeType` |
+| `FishAgeComps_Type` | Matrix dimensioned by `n_years`, `n_fish_fleets` specifying how region-aggregated age composition data should be structured. 0: Aggregated across sexes and regions, 1: Split by sexes and regions, 2: Joint by sex but split by region, 999: None Available. Further options in `Get_Comp_Likelihoods.R` |
+| `pop_FishAgeComps_Type` | Matrix dimensioned by `n_years`, `n_fish_fleets` specifying how population-specific age composition data should be structured. Same options as `FishAgeComps_Type` |
+| `FishLenComps_Type` | Matrix dimensioned by `n_years`, `n_fish_fleets` specifying how region-aggregated length composition data should be structured. 0: Aggregated across sexes and regions, 1: Split by sexes and regions, 2: Joint by sex but split by region, 999: None Available. Further options in `Get_Comp_Likelihoods.R` |
+| `pop_FishLenComps_Type` | Matrix dimensioned by `n_years`, `n_fish_fleets` specifying how population-specific length composition data should be structured. Same options as `FishLenComps_Type` |
 
 ## Data Inputs for Defining Survey Indices and Compositions
+
+Region-aggregated observations (summed across populations) and population-specific observations are handled separately. Region-aggregated inputs use dimensions beginning with `n_regions`; population-specific inputs use dimensions beginning with `n_pop`, `n_regions`.
 
 | Name | Description |
 |-------------------------|------------------------------------------------------|
@@ -175,18 +195,33 @@ The following tables describe all elements contained within `input_list$data`, w
 | `ObsSrvIdx_SE` | Survey index standard errors dimensioned by `n_regions`, `n_years`, `n_seas`, `n_srv_fleets` |
 | `UseSrvIdx` | Array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_srv_fleets` describing whether to fit to the survey index in a given year, season, and fleet. 0: Don't fit, 1: Fit |
 | `srv_idx_type` | Matrix dimensioned by `n_srv_fleets` specifying the index type for a given survey fleet. 0: Abundance index, 1: Biomass index (uses `WAA_srv` for calculations), 999: None Available |
+| `ObsSrvIdx_pop` | Population-specific survey index dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_srv_fleets` |
+| `ObsSrvIdx_pop_SE` | Population-specific survey index standard errors dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_srv_fleets` |
+| `UseSrvIdx_pop` | Array dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_srv_fleets` describing whether to fit to population-specific survey indices. 0: Don't fit, 1: Fit |
 | `ObsSrvAgeComps` | Observed survey age compositions dimensioned by `n_regions`, `n_years`, `n_seas`, `n_ages`, `n_sexes`, `n_srv_fleets`. Can be input as proportions or numbers, as these are normalized within the model |
 | `UseSrvAgeComps` | Array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_srv_fleets` specifying whether or not to fit to survey age compositions. 0: Don't fit, 1: Fit |
 | `ISS_SrvAgeComps` | Array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_sexes`, `n_srv_fleets` specifying the input sample size for a multinomial or Dirichlet-multinomial likelihood |
 | `Wt_SrvAgeComps` | Array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_sexes`, `n_srv_fleets` specifying a multinomial weight to apply to survey age compositions, ideally derived using Francis re-weighting |
+| `ObsSrvAgeComps_pop` | Population-specific observed survey age compositions dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_ages`, `n_sexes`, `n_srv_fleets`. Can be input as proportions or numbers |
+| `UseSrvAgeComps_pop` | Array dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_srv_fleets` specifying whether to fit to population-specific survey age compositions. 0: Don't fit, 1: Fit |
+| `ISS_SrvAgeComps_pop` | Array dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_sexes`, `n_srv_fleets` specifying the input sample size for population-specific survey age composition likelihoods |
+| `Wt_SrvAgeComps_pop` | Array dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_sexes`, `n_srv_fleets` specifying a multinomial weight to apply to population-specific survey age compositions |
 | `ObsSrvLenComps` | Observed survey length compositions dimensioned by `n_regions`, `n_years`, `n_seas`, `n_lens`, `n_sexes`, `n_srv_fleets`. Can be input as proportions or numbers, as these are normalized within the model |
 | `UseSrvLenComps` | Array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_srv_fleets` specifying whether or not to fit to survey length compositions. 0: Don't fit, 1: Fit |
 | `ISS_SrvLenComps` | Array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_srv_fleets` specifying the input sample size for a multinomial or Dirichlet-multinomial likelihood |
 | `Wt_SrvLenComps` | Array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_sexes`, `n_srv_fleets` specifying a multinomial weight to apply to survey length compositions, ideally derived using Francis re-weighting |
-| `SrvAgeComps_LikeType` | Vector dimensioned by `n_srv_fleets` specifying the likelihood for survey age compositions. 0: Multinomial, 1: Dirichlet-multinomial, 2: Logistic-normal with iid covariance, 999: None Available. Further options in `Get_Comp_Likelihoods.R` |
-| `SrvLenComps_LikeType` | Vector dimensioned by `n_srv_fleets` specifying the likelihood for survey length compositions. 0: Multinomial, 1: Dirichlet-multinomial, 2: Logistic-normal with iid covariance, 999: None Available. Further options in `Get_Comp_Likelihoods.R` |
-| `SrvAgeComps_Type` | Matrix dimensioned by `n_years`, `n_srv_fleets` specifying how age composition data should be structured. 0: Aggregated across sexes and regions, 1: Split by sexes and regions, 2: Joint by sex but split by region, 999: None Available. Further options in `Get_Comp_Likelihoods.R` |
-| `SrvLenComps_Type` | Matrix dimensioned by `n_years`, `n_srv_fleets` specifying how length composition data should be structured. 0: Aggregated across sexes and regions, 1: Split by sexes and regions, 2: Joint by sex but split by region, 999: None Available. Further options in `Get_Comp_Likelihoods.R` |
+| `ObsSrvLenComps_pop` | Population-specific observed survey length compositions dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_lens`, `n_sexes`, `n_srv_fleets`. Can be input as proportions or numbers |
+| `UseSrvLenComps_pop` | Array dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_srv_fleets` specifying whether to fit to population-specific survey length compositions. 0: Don't fit, 1: Fit |
+| `ISS_SrvLenComps_pop` | Array dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_srv_fleets` specifying the input sample size for population-specific survey length composition likelihoods |
+| `Wt_SrvLenComps_pop` | Array dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_sexes`, `n_srv_fleets` specifying a multinomial weight to apply to population-specific survey length compositions |
+| `SrvAgeComps_LikeType` | Vector dimensioned by `n_srv_fleets` specifying the likelihood for region-aggregated survey age compositions. 0: Multinomial, 1: Dirichlet-multinomial, 2: Logistic-normal with iid covariance, 999: None Available. Further options in `Get_Comp_Likelihoods.R` |
+| `pop_SrvAgeComps_LikeType` | Vector dimensioned by `n_srv_fleets` specifying the likelihood for population-specific survey age compositions. Same options as `SrvAgeComps_LikeType` |
+| `SrvLenComps_LikeType` | Vector dimensioned by `n_srv_fleets` specifying the likelihood for region-aggregated survey length compositions. 0: Multinomial, 1: Dirichlet-multinomial, 2: Logistic-normal with iid covariance, 999: None Available. Further options in `Get_Comp_Likelihoods.R` |
+| `pop_SrvLenComps_LikeType` | Vector dimensioned by `n_srv_fleets` specifying the likelihood for population-specific survey length compositions. Same options as `SrvLenComps_LikeType` |
+| `SrvAgeComps_Type` | Matrix dimensioned by `n_years`, `n_srv_fleets` specifying how region-aggregated age composition data should be structured. 0: Aggregated across sexes and regions, 1: Split by sexes and regions, 2: Joint by sex but split by region, 999: None Available. Further options in `Get_Comp_Likelihoods.R` |
+| `pop_SrvAgeComps_Type` | Matrix dimensioned by `n_years`, `n_srv_fleets` specifying how population-specific survey age composition data should be structured. Same options as `SrvAgeComps_Type` |
+| `SrvLenComps_Type` | Matrix dimensioned by `n_years`, `n_srv_fleets` specifying how region-aggregated length composition data should be structured. 0: Aggregated across sexes and regions, 1: Split by sexes and regions, 2: Joint by sex but split by region, 999: None Available. Further options in `Get_Comp_Likelihoods.R` |
+| `pop_SrvLenComps_Type` | Matrix dimensioned by `n_years`, `n_srv_fleets` specifying how population-specific survey length composition data should be structured. Same options as `SrvLenComps_Type` |
 | `t_srv` | Array dimensioned by `n_regions`, `n_seas`, `n_srv_fleets` specifying survey timing as a proportion of the season |
 | `do_srv_q_cov` | Numeric value indicating whether a survey catchability covariate is used. 0 == Not used, 1 == Used |
 | `srv_q_cov` | Array dimensioned by `n_regions`, `n_years`, `n_srv_fleets`, `n_covariates` representing the covariates used to compute survey catchability |
@@ -225,13 +260,20 @@ The following tables describe all elements contained within `input_list$data`, w
 
 | Name | Description |
 |-------------------------|------------------------------------------------------|
-| `Wt_Catch` | Weight applied to fishery catch likelihoods. Either a numeric scalar or an array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_fish_fleets` |
-| `Wt_FishIdx` | Weight applied to fishery index likelihoods. Either a numeric scalar or an array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_fish_fleets` |
-| `Wt_SrvIdx` | Weight applied to survey index likelihoods. Either a numeric scalar or an array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_srv_fleets` |
+| `Wt_Catch` | Weight applied to region-aggregated fishery catch likelihoods. Either a numeric scalar or an array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_fish_fleets` |
+| `Wt_Catch_pop` | Weight applied to population-specific fishery catch likelihoods. Either a numeric scalar or an array dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_fish_fleets` |
+| `Wt_FishIdx` | Weight applied to region-aggregated fishery index likelihoods. Either a numeric scalar or an array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_fish_fleets` |
+| `Wt_FishIdx_pop` | Weight applied to population-specific fishery index likelihoods. Either a numeric scalar or an array dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_fish_fleets` |
+| `Wt_SrvIdx` | Weight applied to region-aggregated survey index likelihoods. Either a numeric scalar or an array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_srv_fleets` |
+| `Wt_SrvIdx_pop` | Weight applied to population-specific survey index likelihoods. Either a numeric scalar or an array dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_srv_fleets` |
 | `Wt_Rec` | Weight applied to initial age deviations and recruitment deviations |
 | `Wt_F` | Weight applied to fishing mortality deviations |
 | `Wt_Tagging` | Weight applied to tagging data likelihoods |
-| `Wt_FishAgeComps` | Array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_sexes`, `n_fish_fleets` specifying a multinomial weight applied to fishery age compositions, ideally derived using Francis re-weighting |
-| `Wt_FishLenComps` | Array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_sexes`, `n_fish_fleets` specifying a multinomial weight applied to fishery length compositions, ideally derived using Francis re-weighting |
-| `Wt_SrvAgeComps` | Array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_sexes`, `n_srv_fleets` specifying a multinomial weight applied to survey age compositions, ideally derived using Francis re-weighting |
-| `Wt_SrvLenComps` | Array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_sexes`, `n_srv_fleets` specifying a multinomial weight applied to survey length compositions, ideally derived using Francis re-weighting |
+| `Wt_FishAgeComps` | Array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_sexes`, `n_fish_fleets` specifying a multinomial weight applied to region-aggregated fishery age compositions, ideally derived using Francis re-weighting |
+| `Wt_FishAgeComps_pop` | Array dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_sexes`, `n_fish_fleets` specifying a multinomial weight applied to population-specific fishery age compositions |
+| `Wt_FishLenComps` | Array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_sexes`, `n_fish_fleets` specifying a multinomial weight applied to region-aggregated fishery length compositions, ideally derived using Francis re-weighting |
+| `Wt_FishLenComps_pop` | Array dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_sexes`, `n_fish_fleets` specifying a multinomial weight applied to population-specific fishery length compositions |
+| `Wt_SrvAgeComps` | Array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_sexes`, `n_srv_fleets` specifying a multinomial weight applied to region-aggregated survey age compositions, ideally derived using Francis re-weighting |
+| `Wt_SrvAgeComps_pop` | Array dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_sexes`, `n_srv_fleets` specifying a multinomial weight applied to population-specific survey age compositions |
+| `Wt_SrvLenComps` | Array dimensioned by `n_regions`, `n_years`, `n_seas`, `n_sexes`, `n_srv_fleets` specifying a multinomial weight applied to region-aggregated survey length compositions, ideally derived using Francis re-weighting |
+| `Wt_SrvLenComps_pop` | Array dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_sexes`, `n_srv_fleets` specifying a multinomial weight applied to population-specific survey length compositions |

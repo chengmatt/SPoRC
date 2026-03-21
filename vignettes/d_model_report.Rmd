@@ -37,78 +37,89 @@ The following tables describe all elements contained within `obj$rep`, which is 
 | `sgl_seas_spawning_movement` | Spawning movement matrix applied during the spawning event when `n_seas == 1` and `n_pop > 1`                                                   | `n_pop × n_regions × n_regions × n_years × n_ages × n_sexes`                                 |
 
 ## Fishery Processes
-| Name          | Description                                                              | Dimensions                                                                                    |
-| ------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
-| `init_F`      | Initial fishing mortality applied to equilibrium age structure           | `n_seas`                                                                                      |
-| `ln_sigmaC`   | Log-scale standard deviation for the catch likelihood                    | `n_regions × n_years × n_seas × n_fish_fleets`                                               |
-| `Fmort`       | Fishing mortality scalar                                                 | `n_regions × n_years × n_seas × n_fish_fleets`                                               |
-| `FAA`         | Fishing mortality at age                                                 | `n_regions × n_years × n_seas × n_ages × n_sexes × n_fish_fleets`                            |
-| `CAA`         | Catch-at-age                                                             | `n_pop × n_regions × n_years × n_seas × n_ages × n_sexes × n_fish_fleets`                    |
-| `CAL`         | Catch-at-length                                                          | `n_pop × n_regions × n_years × n_seas × n_lens × n_sexes × n_fish_fleets`                    |
-| `PredCatch`   | Predicted catch (summed across populations)                              | `n_pop × n_regions × n_years × n_seas × n_fish_fleets`                                       |
-| `PredFishIdx` | Predicted fishery index (summed across populations)                      | `n_pop × n_regions × n_years × n_seas × n_fish_fleets`                                       |
-| `fish_sel`    | Fishery age-based selectivity                                            | `n_regions × (n_years + n_proj_yrs_devs) × n_ages × n_sexes × n_fish_fleets`                 |
-| `fish_q`      | Fishery catchability                                                     | `n_regions × n_years × n_fish_fleets`                                                        |
+| Name              | Description                                                                      | Dimensions                                                                                    |
+| ----------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `init_F`          | Initial fishing mortality applied to equilibrium age structure                   | `n_seas`                                                                                      |
+| `ln_sigmaC`       | Log-scale standard deviation for the region-aggregated catch likelihood          | `n_regions × n_years × n_seas × n_fish_fleets`                                               |
+| `ln_sigmaC_pop`   | Log-scale standard deviation for the population-specific catch likelihood        | `n_pop × n_regions × n_years × n_seas × n_fish_fleets`                                       |
+| `Fmort`           | Fishing mortality scalar                                                         | `n_regions × n_years × n_seas × n_fish_fleets`                                               |
+| `FAA`             | Fishing mortality at age                                                         | `n_regions × n_years × n_seas × n_ages × n_sexes × n_fish_fleets`                            |
+| `CAA`             | Catch-at-age                                                                     | `n_pop × n_regions × n_years × n_seas × n_ages × n_sexes × n_fish_fleets`                    |
+| `CAL`             | Catch-at-length                                                                  | `n_pop × n_regions × n_years × n_seas × n_lens × n_sexes × n_fish_fleets`                    |
+| `PredCatch`       | Predicted catch (population-specific; summed across populations for aggregated likelihood) | `n_pop × n_regions × n_years × n_seas × n_fish_fleets`                              |
+| `PredFishIdx`     | Predicted fishery index (population-specific; summed across populations for aggregated likelihood) | `n_pop × n_regions × n_years × n_seas × n_fish_fleets`                     |
+| `fish_sel`        | Fishery age-based selectivity                                                    | `n_regions × (n_years + n_proj_yrs_devs) × n_ages × n_sexes × n_fish_fleets`                 |
+| `fish_q`          | Fishery catchability                                                             | `n_regions × n_years × n_fish_fleets`                                                        |
 
 ## Survey Processes
-| Name         | Description                                             | Dimensions                                                                                     |
-| ------------ | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `PredSrvIdx` | Predicted survey index (summed across populations)      | `n_pop × n_regions × n_years × n_seas × n_srv_fleets`                                         |
-| `srv_sel`    | Survey age-based selectivity                            | `n_regions × (n_years + n_proj_yrs_devs) × n_ages × n_sexes × n_srv_fleets`                   |
-| `srv_q`      | Survey catchability                                     | `n_regions × n_years × n_srv_fleets`                                                          |
-| `SrvIAA`     | Survey index-at-age                                     | `n_pop × n_regions × n_years × n_seas × n_ages × n_sexes × n_srv_fleets`                      |
-| `SrvIAL`     | Survey index-at-length                                  | `n_pop × n_regions × n_years × n_seas × n_lens × n_sexes × n_srv_fleets`                      |
+| Name         | Description                                                                                          | Dimensions                                                                                     |
+| ------------ | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `PredSrvIdx` | Predicted survey index (population-specific; summed across populations for aggregated likelihood)    | `n_pop × n_regions × n_years × n_seas × n_srv_fleets`                                         |
+| `srv_sel`    | Survey age-based selectivity                                                                         | `n_regions × (n_years + n_proj_yrs_devs) × n_ages × n_sexes × n_srv_fleets`                   |
+| `srv_q`      | Survey catchability                                                                                  | `n_regions × n_years × n_srv_fleets`                                                          |
+| `SrvIAA`     | Survey index-at-age                                                                                  | `n_pop × n_regions × n_years × n_seas × n_ages × n_sexes × n_srv_fleets`                      |
+| `SrvIAL`     | Survey index-at-length                                                                               | `n_pop × n_regions × n_years × n_seas × n_lens × n_sexes × n_srv_fleets`                      |
 
 Note: Length-based selectivity arrays (`fish_sel_l`, `srv_sel_l`) are only reported when `Selex_Type = 1` and share the same dimension structure as their age-based counterparts, replacing `n_ages` with `n_lens`.
 
 ## Tagging Processes
-| Name                      | Description                                                                                                                   | Dimensions                                                                                         |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `pred_conv_tag_fish_recap` | Predicted conventional tag recaptures                                                                                        | `conv_tag_max_liberty × n_seas × n_conv_tag_cohorts × n_pop × n_regions × n_ages × n_sexes × n_fish_fleets` |
-| `conv_tag_fish_avail`     | Number of tagged fish available for recapture at each time step                                                               | `(conv_tag_max_liberty + 1) × n_seas × n_conv_tag_cohorts × n_pop × n_regions × n_ages × n_sexes` |
-| `conv_tag_fish_reporting` | Tag reporting rate by region, year, and fleet                                                                                 | `n_regions × n_years × n_fish_fleets`                                                             |
+| Name                       | Description                                                                   | Dimensions                                                                                         |
+| -------------------------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `pred_conv_tag_fish_recap` | Predicted conventional tag recaptures                                         | `conv_tag_max_liberty × n_seas × n_conv_tag_cohorts × n_pop × n_regions × n_ages × n_sexes × n_fish_fleets` |
+| `conv_tag_fish_avail`      | Number of tagged fish available for recapture at each time step               | `(conv_tag_max_liberty + 1) × n_seas × n_conv_tag_cohorts × n_pop × n_regions × n_ages × n_sexes` |
+| `conv_tag_fish_reporting`  | Tag reporting rate by region, year, and fleet                                 | `n_regions × n_years × n_fish_fleets`                                                             |
 
 ## Parameter Deviations
 | Name              | Description                                                                                      | Dimensions                                                                              |
 | ----------------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
 | `ln_RecDevs`      | Log-scale recruitment deviations by population, region, and year (including projection years)    | `n_pop × n_regions × (n_est_rec_devs + n_proj_yrs_devs)`                               |
-| `move_devs`       | Movement deviations by population, region pair, year, age, and sex (including projection years)              | `n_pop x n_regions × (n_regions - 1) × (n_years + n_proj_yrs_devs) × n_ages × n_sexes`        |
+| `move_devs`       | Movement deviations by population, region pair, year, age, and sex (including projection years)  | `n_pop × n_regions × (n_regions - 1) × (n_years + n_proj_yrs_devs) × n_ages × n_sexes` |
 | `ln_fishsel_devs` | Log-scale fishery selectivity deviations by region, year, bin, sex, and fleet                   | `n_regions × (n_years + n_proj_yrs_devs) × n_bins × n_sexes × n_fish_fleets`           |
 | `ln_srvsel_devs`  | Log-scale survey selectivity deviations by region, year, bin, sex, and fleet                    | `n_regions × (n_years + n_proj_yrs_devs) × n_bins × n_sexes × n_srv_fleets`            |
 
 ## Likelihoods
-| Name                | Description                                                   | Dimensions                                                        |
-| ------------------- | ------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `Catch_nLL`         | Negative log-likelihood for catch                             | `n_regions × n_years × n_seas × n_fish_fleets`                    |
-| `FishIdx_nLL`       | Negative log-likelihood for fishery index                     | `n_regions × n_years × n_seas × n_fish_fleets`                    |
-| `SrvIdx_nLL`        | Negative log-likelihood for survey index                      | `n_regions × n_years × n_seas × n_srv_fleets`                     |
-| `FishAgeComps_nLL`  | Negative log-likelihood for fishery age compositions          | `n_regions × n_years × n_seas × n_sexes × n_fish_fleets`          |
-| `SrvAgeComps_nLL`   | Negative log-likelihood for survey age compositions           | `n_regions × n_years × n_seas × n_sexes × n_srv_fleets`           |
-| `FishLenComps_nLL`  | Negative log-likelihood for fishery length compositions       | `n_regions × n_years × n_seas × n_sexes × n_fish_fleets`          |
-| `SrvLenComps_nLL`   | Negative log-likelihood for survey length compositions        | `n_regions × n_years × n_seas × n_sexes × n_srv_fleets`           |
-| `M_nLL`             | Negative log-likelihood (prior) for natural mortality         | scalar                                                            |
-| `Fmort_nLL`         | Negative log-likelihood (penalty) for fishing mortality devs  | `n_regions × n_years × n_seas × n_fish_fleets`                    |
-| `Rec_nLL`           | Negative log-likelihood (penalty) for recruitment deviations  | `n_pop × n_regions × n_est_rec_devs`                              |
-| `Init_Rec_nLL`      | Negative log-likelihood (penalty) for initial age deviations  | `n_pop × n_regions × (n_ages - 2)`                                |
-| `conv_fish_tag_nLL` | Negative log-likelihood for conventional tag recaptures       | `conv_tag_max_liberty × n_seas × n_conv_tag_cohorts × n_regions × n_fish_fleets` |
-| `h_nLL`             | Negative log-likelihood (prior) for steepness                 | scalar                                                            |
-| `fish_q_nLL`        | Negative log-likelihood (prior) for fishery catchability      | scalar                                                            |
-| `sel_nLL`           | Negative log-likelihood (penalty/prior) for selectivity       | scalar                                                            |
-| `srv_q_nLL`         | Negative log-likelihood (prior) for survey catchability       | scalar                                                            |
-| `Movement_nLL`      | Negative log-likelihood (penalty/prior) for movement          | scalar                                                            |
-| `TagRep_nLL`        | Negative log-likelihood (prior) for tag reporting rate        | scalar                                                            |
-| `rec_prop_nLL`      | Negative log-likelihood (prior) for recruitment proportions   | scalar                                                            |
-| `jnLL`              | Joint negative log-likelihood                                 | scalar                                                            |
+
+Region-aggregated likelihoods combine contributions across all populations; population-specific likelihoods (`_pop_`) are only computed when the corresponding `UseCatch_pop`, `UseFishIdx_pop`, `UseSrvIdx_pop`, or composition `_pop` use-arrays contain active observations.
+
+| Name                      | Description                                                                    | Dimensions                                                                        |
+| ------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| `Catch_nLL`               | Negative log-likelihood for region-aggregated catch                            | `n_regions × n_years × n_seas × n_fish_fleets`                                   |
+| `Catch_pop_nLL`           | Negative log-likelihood for population-specific catch                          | `n_pop × n_regions × n_years × n_seas × n_fish_fleets`                           |
+| `FishIdx_nLL`             | Negative log-likelihood for region-aggregated fishery index                    | `n_regions × n_years × n_seas × n_fish_fleets`                                   |
+| `FishIdx_pop_nLL`         | Negative log-likelihood for population-specific fishery index                  | `n_pop × n_regions × n_years × n_seas × n_fish_fleets`                           |
+| `SrvIdx_nLL`              | Negative log-likelihood for region-aggregated survey index                     | `n_regions × n_years × n_seas × n_srv_fleets`                                    |
+| `SrvIdx_pop_nLL`          | Negative log-likelihood for population-specific survey index                   | `n_pop × n_regions × n_years × n_seas × n_srv_fleets`                            |
+| `FishAgeComps_nLL`        | Negative log-likelihood for region-aggregated fishery age compositions         | `n_regions × n_years × n_seas × n_sexes × n_fish_fleets`                         |
+| `FishAgeComps_pop_nLL`    | Negative log-likelihood for population-specific fishery age compositions       | `n_pop × n_regions × n_years × n_seas × n_sexes × n_fish_fleets`                 |
+| `SrvAgeComps_nLL`         | Negative log-likelihood for region-aggregated survey age compositions          | `n_regions × n_years × n_seas × n_sexes × n_srv_fleets`                          |
+| `SrvAgeComps_pop_nLL`     | Negative log-likelihood for population-specific survey age compositions        | `n_pop × n_regions × n_years × n_seas × n_sexes × n_srv_fleets`                  |
+| `FishLenComps_nLL`        | Negative log-likelihood for region-aggregated fishery length compositions      | `n_regions × n_years × n_seas × n_sexes × n_fish_fleets`                         |
+| `FishLenComps_pop_nLL`    | Negative log-likelihood for population-specific fishery length compositions    | `n_pop × n_regions × n_years × n_seas × n_sexes × n_fish_fleets`                 |
+| `SrvLenComps_nLL`         | Negative log-likelihood for region-aggregated survey length compositions       | `n_regions × n_years × n_seas × n_sexes × n_srv_fleets`                          |
+| `SrvLenComps_pop_nLL`     | Negative log-likelihood for population-specific survey length compositions     | `n_pop × n_regions × n_years × n_seas × n_sexes × n_srv_fleets`                  |
+| `M_nLL`                   | Negative log-likelihood (prior) for natural mortality                          | scalar                                                                            |
+| `Fmort_nLL`               | Negative log-likelihood (penalty) for fishing mortality deviations             | `n_regions × n_years × n_seas × n_fish_fleets`                                   |
+| `Rec_nLL`                 | Negative log-likelihood (penalty) for recruitment deviations                   | `n_pop × n_regions × n_est_rec_devs`                                             |
+| `Init_Rec_nLL`            | Negative log-likelihood (penalty) for initial age deviations                  | `n_pop × n_regions × (n_ages - 2)`                                               |
+| `conv_fish_tag_nLL`       | Negative log-likelihood for conventional tag recaptures                        | `conv_tag_max_liberty × n_seas × n_conv_tag_cohorts × n_regions × n_fish_fleets` |
+| `h_nLL`                   | Negative log-likelihood (prior) for steepness                                  | scalar                                                                            |
+| `fish_q_nLL`              | Negative log-likelihood (prior) for fishery catchability                       | scalar                                                                            |
+| `sel_nLL`                 | Negative log-likelihood (penalty/prior) for selectivity                        | scalar                                                                            |
+| `srv_q_nLL`               | Negative log-likelihood (prior) for survey catchability                        | scalar                                                                            |
+| `Movement_nLL`            | Negative log-likelihood (penalty/prior) for movement                           | scalar                                                                            |
+| `TagRep_nLL`              | Negative log-likelihood (prior) for tag reporting rate                         | scalar                                                                            |
+| `rec_prop_nLL`            | Negative log-likelihood (prior) for recruitment proportions                    | scalar                                                                            |
+| `jnLL`                    | Joint negative log-likelihood                                                  | scalar                                                                            |
 
 ## Derived Quantities (also reported via ADREPORT)
-| Name                        | Description                                                                                                              | Dimensions                |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------- |
+| Name                        | Description                                                                                                              | Dimensions                    |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----------------------------- |
 | `Total_Biom`                | Total biomass                                                                                                            | `n_pop × n_regions × n_years` |
 | `SSB`                       | Spawning stock biomass by population and region                                                                          | `n_pop × n_regions × n_years` |
-| `eff_SSB`                   | Effective spawning stock biomass at each population's natal region, including stray contributions from other populations | `n_pop × n_years`         |
+| `eff_SSB`                   | Effective spawning stock biomass at each population's natal region, including stray contributions from other populations | `n_pop × n_years`             |
 | `Dynamic_SSB0`              | Unfished spawning stock biomass by population and region                                                                 | `n_pop × n_regions × n_years` |
-| `Aggregated_SSB`            | Spawning stock biomass summed across populations and regions                                                             | `n_years`                 |
-| `Dynamic_Aggregated_SSB0`   | Unfished spawning stock biomass summed across populations and regions                                                    | `n_years`                 |
+| `Aggregated_SSB`            | Spawning stock biomass summed across populations and regions                                                             | `n_years`                     |
+| `Dynamic_Aggregated_SSB0`   | Unfished spawning stock biomass summed across populations and regions                                                    | `n_years`                     |
 | `Rec`                       | Recruitment by population and region                                                                                     | `n_pop × n_regions × n_years` |
 
 Note: All derived quantities are additionally reported in log space via `ADREPORT` (e.g., `log_SSB`, `log_eff_SSB`, `log_Total_Biom`, etc.) to facilitate delta-method standard error estimation. A small constant (1e-5) is added before log transformation to avoid numerical issues in regions or populations with zero biomass.

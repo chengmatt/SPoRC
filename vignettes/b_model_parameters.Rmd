@@ -43,16 +43,26 @@ The following table describes all elements contained within `input_list$pars`, w
 
 ## Fishery Composition Likelihoods
 
+Region-aggregated and population-specific composition likelihoods have separate overdispersion and correlation parameters. The `_pop_` variants mirror the structure of their region-aggregated counterparts with an added leading `n_pop` dimension.
+
 | Parameter | Dimension | Description | Default |
 |-----------|-----------|-------------|---------|
-| `ln_FishAge_theta` | `n_regions × n_fish_fleets × n_sexes` | Log-scale overdispersion parameter for fishery age compositions | 0 |
-| `ln_FishAge_theta_agg` | `n_fish_fleets` | Log-scale overdispersion for region-aggregated fishery age compositions | 0 |
-| `FishAge_corr_pars` | `n_regions × n_sexes × n_fish_fleets × 2` | Correlation parameters for logistic-normal fishery age composition likelihood | 0.01 |
-| `FishAge_corr_pars_agg` | `n_fish_fleets` | Correlation parameters for region-aggregated logistic-normal fishery age compositions | 0.01 |
-| `ln_FishLen_theta` | `n_regions × n_fish_fleets × n_sexes` | Log-scale overdispersion parameter for fishery length compositions | 0 |
-| `ln_FishLen_theta_agg` | `n_fish_fleets` | Log-scale overdispersion for region-aggregated fishery length compositions | 0 |
-| `FishLen_corr_pars` | `n_regions × n_sexes × n_fish_fleets × 2` | Correlation parameters for logistic-normal fishery length composition likelihood. The first parameter represents bin correlations, while the second parameter represents sex correlations (if specified) | 0.01 |
-| `FishLen_corr_pars_agg` | `n_fish_fleets` | Correlation parameters for region- and sex-aggregated logistic-normal fishery length compositions. The correlation represents bin correlations. | 0.01 |
+| `ln_FishAge_theta` | `n_regions × n_fish_fleets × n_sexes` | Log-scale overdispersion parameter for region-aggregated fishery age compositions | 0 |
+| `ln_FishAge_theta_agg` | `n_fish_fleets` | Log-scale overdispersion for region- and sex-aggregated fishery age compositions | 0 |
+| `FishAge_corr_pars` | `n_regions × n_sexes × n_fish_fleets × 2` | Correlation parameters for logistic-normal region-aggregated fishery age composition likelihood | 0.01 |
+| `FishAge_corr_pars_agg` | `n_fish_fleets` | Correlation parameters for region- and sex-aggregated logistic-normal fishery age compositions | 0.01 |
+| `ln_FishAge_pop_theta` | `n_pop × n_regions × n_fish_fleets × n_sexes` | Log-scale overdispersion parameter for population-specific fishery age compositions | 0 |
+| `ln_FishAge_pop_theta_agg` | `n_pop × n_fish_fleets` | Log-scale overdispersion for population-specific sex-aggregated fishery age compositions | 0 |
+| `FishAge_pop_corr_pars` | `n_pop × n_regions × n_sexes × n_fish_fleets × 2` | Correlation parameters for logistic-normal population-specific fishery age composition likelihood | 0.01 |
+| `FishAge_pop_corr_pars_agg` | `n_pop × n_fish_fleets` | Correlation parameters for population-specific sex-aggregated logistic-normal fishery age compositions | 0.01 |
+| `ln_FishLen_theta` | `n_regions × n_fish_fleets × n_sexes` | Log-scale overdispersion parameter for region-aggregated fishery length compositions | 0 |
+| `ln_FishLen_theta_agg` | `n_fish_fleets` | Log-scale overdispersion for region- and sex-aggregated fishery length compositions | 0 |
+| `FishLen_corr_pars` | `n_regions × n_sexes × n_fish_fleets × 2` | Correlation parameters for logistic-normal region-aggregated fishery length composition likelihood. The first parameter represents bin correlations, while the second represents sex correlations (if specified) | 0.01 |
+| `FishLen_corr_pars_agg` | `n_fish_fleets` | Correlation parameters for region- and sex-aggregated logistic-normal fishery length compositions. The correlation represents bin correlations | 0.01 |
+| `ln_FishLen_pop_theta` | `n_pop × n_regions × n_fish_fleets × n_sexes` | Log-scale overdispersion parameter for population-specific fishery length compositions | 0 |
+| `ln_FishLen_pop_theta_agg` | `n_pop × n_fish_fleets` | Log-scale overdispersion for population-specific sex-aggregated fishery length compositions | 0 |
+| `FishLen_pop_corr_pars` | `n_pop × n_regions × n_sexes × n_fish_fleets × 2` | Correlation parameters for logistic-normal population-specific fishery length composition likelihood. The first parameter represents bin correlations, while the second represents sex correlations (if specified) | 0.01 |
+| `FishLen_pop_corr_pars_agg` | `n_pop × n_fish_fleets` | Correlation parameters for population-specific sex-aggregated logistic-normal fishery length compositions. The correlation represents bin correlations | 0.01 |
 
 ## Survey Selectivity
 
@@ -71,17 +81,27 @@ The following table describes all elements contained within `input_list$pars`, w
 
 ## Survey Composition Likelihoods
 
+Region-aggregated and population-specific composition likelihoods have separate overdispersion and correlation parameters. The `_pop_` variants mirror the structure of their region-aggregated counterparts with an added leading `n_pop` dimension.
+
 | Parameter | Dimension | Description | Default |
 |-----------|-----------|-------------|---------|
-| `ln_SrvAge_theta` | `n_regions × n_srv_fleets × n_sexes` | Log-scale overdispersion parameter for survey age compositions | 0 |
-| `ln_SrvAge_theta_agg` | `n_srv_fleets` | Log-scale overdispersion for region-aggregated survey age compositions | 0 |
-| `SrvAge_corr_pars` | `n_regions × n_sexes × n_srv_fleets × 2` | Correlation parameters for logistic-normal survey age composition likelihood | 0.01 |
+| `ln_SrvAge_theta` | `n_regions × n_srv_fleets × n_sexes` | Log-scale overdispersion parameter for region-aggregated survey age compositions | 0 |
+| `ln_SrvAge_theta_agg` | `n_srv_fleets` | Log-scale overdispersion for region- and sex-aggregated survey age compositions | 0 |
+| `SrvAge_corr_pars` | `n_regions × n_sexes × n_srv_fleets × 2` | Correlation parameters for logistic-normal region-aggregated survey age composition likelihood | 0.01 |
 | `SrvAge_corr_pars_agg` | `n_srv_fleets` | Correlation parameters for region-aggregated logistic-normal survey age compositions | 0.01 |
-| `ln_SrvLen_theta` | `n_regions × n_srv_fleets × n_sexes` | Log-scale overdispersion parameter for survey length compositions | 0 |
-| `ln_SrvLen_theta_agg` | `n_srv_fleets` | Log-scale overdispersion for region-aggregated survey length compositions | 0 |
-| `SrvLen_corr_pars` | `n_regions × n_sexes × n_srv_fleets × 2` | Correlation parameters for logistic-normal survey length composition likelihood. The first parameter represents bin correlations, while the second parameter represents sex correlations (if specified) | 0.01 |
-| `SrvLen_corr_pars_agg` | `n_srv_fleets` | Correlation parameters for region- and sex-aggregated logistic-normal survey length compositions. The correlation represents bin correlations. | 0.01 |
-  
+| `ln_SrvAge_pop_theta` | `n_pop × n_regions × n_srv_fleets × n_sexes` | Log-scale overdispersion parameter for population-specific survey age compositions | 0 |
+| `ln_SrvAge_pop_theta_agg` | `n_pop × n_srv_fleets` | Log-scale overdispersion for population-specific sex-aggregated survey age compositions | 0 |
+| `SrvAge_pop_corr_pars` | `n_pop × n_regions × n_sexes × n_srv_fleets × 2` | Correlation parameters for logistic-normal population-specific survey age composition likelihood | 0.01 |
+| `SrvAge_pop_corr_pars_agg` | `n_pop × n_srv_fleets` | Correlation parameters for population-specific sex-aggregated logistic-normal survey age compositions | 0.01 |
+| `ln_SrvLen_theta` | `n_regions × n_srv_fleets × n_sexes` | Log-scale overdispersion parameter for region-aggregated survey length compositions | 0 |
+| `ln_SrvLen_theta_agg` | `n_srv_fleets` | Log-scale overdispersion for region- and sex-aggregated survey length compositions | 0 |
+| `SrvLen_corr_pars` | `n_regions × n_sexes × n_srv_fleets × 2` | Correlation parameters for logistic-normal region-aggregated survey length composition likelihood. The first parameter represents bin correlations, while the second represents sex correlations (if specified) | 0.01 |
+| `SrvLen_corr_pars_agg` | `n_srv_fleets` | Correlation parameters for region- and sex-aggregated logistic-normal survey length compositions. The correlation represents bin correlations | 0.01 |
+| `ln_SrvLen_pop_theta` | `n_pop × n_regions × n_srv_fleets × n_sexes` | Log-scale overdispersion parameter for population-specific survey length compositions | 0 |
+| `ln_SrvLen_pop_theta_agg` | `n_pop × n_srv_fleets` | Log-scale overdispersion for population-specific sex-aggregated survey length compositions | 0 |
+| `SrvLen_pop_corr_pars` | `n_pop × n_regions × n_sexes × n_srv_fleets × 2` | Correlation parameters for logistic-normal population-specific survey length composition likelihood. The first parameter represents bin correlations, while the second represents sex correlations (if specified) | 0.01 |
+| `SrvLen_pop_corr_pars_agg` | `n_pop × n_srv_fleets` | Correlation parameters for population-specific sex-aggregated logistic-normal survey length compositions. The correlation represents bin correlations | 0.01 |
+
 ## Natural Mortality
 
 | Parameter | Dimension | Description | Default |
@@ -111,7 +131,6 @@ The following table describes all elements contained within `input_list$pars`, w
 | `move_preference_pars` | (Vector; depends on formula) | Preference parameters for CTMC movement (move_type = 1) | 0 |
 | `move_devs` | `n_pop × n_regions × (n_regions - 1) × (n_years + n_proj_yrs_devs) × n_ages × n_sexes` | Movement deviations w/ projection years (can be specified as random effects) | 0 |
 | `move_pe_pars` | `n_regions × max(4, n_ages) × n_sexes` | Process error parameters for continuously varying movement | 0 |
-
 
 ## Tagging
 

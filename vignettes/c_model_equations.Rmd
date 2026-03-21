@@ -398,6 +398,12 @@ $$\begin{matrix}
 \text{Catch}_{r,y,\tau,f} = \sum_{p}^{n_p}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}C_{p,r,y,\tau,a,s,f}^{a}}W_{p,r,y,\tau,a,s,f}^{fish} \\
 \end{matrix}$$
 
+Population-specific predicted catch ($\text{Catch}_{p,r,y,\tau,f}$) retains the population index and is not summed across $p$:
+
+$$\begin{matrix}
+\text{Catch}_{p,r,y,\tau,f} = \sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}C_{p,r,y,\tau,a,s,f}^{a}}W_{p,r,y,\tau,a,s,f}^{fish} \\
+\end{matrix}$$
+
 Similarly, expected fishery indices ($\text{FshIdx}_{p,r,y,\tau,f}$) can be computed
 as either abundance-based or biomass-based. For abundance-based fishery indices:
 
@@ -414,8 +420,9 @@ $$\begin{matrix}
 \text{FshIdx}_{p,r,y,\tau,f} = q_{r,y,f}^{\text{Fsh}}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}N_{p,r,y,\tau,a,s}}\text{Sel}_{r,y,a,s,f}^{\text{Fsh}}W_{p,r,y,\tau,a,s,f}^{fish} \\
 \end{matrix}$$
 
-The observed fishery index is compared to the sum of predicted indices
-across populations: $\sum_p \text{FshIdx}_{p,r,y,\tau,f}$.
+The observed region-aggregated fishery index is compared to the sum of predicted indices
+across populations: $\sum_p \text{FshIdx}_{p,r,y,\tau,f}$. Population-specific
+fishery indices are compared directly to $\text{FshIdx}_{p,r,y,\tau,f}$ without summation.
 
 ### Survey Observation Model
 
@@ -453,8 +460,9 @@ $$\begin{matrix}
 
 Here, $W_{p,r,y,\tau,a,s,sf}^{srv}$ is the weight-at-age for a given survey,
 $q_{r,y,sf}^{\text{Srv}}$ represents the survey catchability coefficient.
-The observed survey index is compared to the sum of predicted indices
-across populations: $\sum_p \text{SrvIdx}_{p,r,y,\tau,sf}$.
+The observed region-aggregated survey index is compared to the sum of predicted indices
+across populations: $\sum_p \text{SrvIdx}_{p,r,y,\tau,sf}$. Population-specific
+survey indices are compared directly to $\text{SrvIdx}_{p,r,y,\tau,sf}$ without summation.
 
 For survey catchability, environmental linkage can be specified:
 
@@ -657,16 +665,23 @@ details on how selectivity deviations arise can be found in the
 Currently, `SPoRC` incorporates data likelihood components for the
 following data sources:
 
-1.  fishery catches,
-2.  fishery indices,
-3.  fishery age compositions,
-4.  fishery length compositions,
-5.  survey indices,
-6.  survey age compositions,
-7.  survey length compositions, and
-8.  conventional tagging data.
+1.  region-aggregated fishery catches (summed across populations),
+2.  population-specific fishery catches,
+3.  region-aggregated fishery indices (summed across populations),
+4.  population-specific fishery indices,
+5.  region-aggregated fishery age compositions (summed across populations),
+6.  population-specific fishery age compositions,
+7.  region-aggregated fishery length compositions (summed across populations),
+8.  population-specific fishery length compositions,
+9.  region-aggregated survey indices (summed across populations),
+10. population-specific survey indices,
+11. region-aggregated survey age compositions (summed across populations),
+12. population-specific survey age compositions,
+13. region-aggregated survey length compositions (summed across populations),
+14. population-specific survey length compositions, and
+15. conventional tagging data.
 
-The total likelihood (objective function) is the sum of the individual
+Region-aggregated likelihoods compare observed data to predicted quantities summed across all populations ($\sum_p$), while population-specific likelihoods compare observed data to predicted quantities for a single population $p$ directly. The total likelihood (objective function) is the sum of the individual
 likelihood contributions from these data sources along with priors and
 penalties, where the objective function is minimized using a non-linear
 optimization algorithm to estimate model parameters.
@@ -676,8 +691,8 @@ optimization algorithm to estimate model parameters.
 ### Fishery Catches
 
 Fishery catches can be fit using a lognormal likelihood. The
-log-likelihood for observed catch,
-$\ell\left( \log\left( \text{ObsCatch}_{r,y,\tau,f} \right) \right)$ is defined
+log-likelihood for region-aggregated observed catch,
+$\ell\left( \log\left( \text{ObsCatch}_{r,y,\tau,f} \right) \right)$, is defined
 as:
 
 $$\begin{matrix}
@@ -688,13 +703,23 @@ $$\lambda_{\text{ObsCatch}_{r,y,\tau,f}} \cdot \frac{1}{\sqrt{2\pi\sigma_{\text{
 
 Here, $\lambda_{\text{ObsCatch}_{r,y,\tau,f}}$ is the likelihood weight,
 $\text{ObsCatch}_{r,y,\tau,f}$ is the observed catch, $\text{Catch}_{r,y,\tau,f}$
-is the predicted catch (summed over populations), and $\sigma_{\text{ObsCatch}_{r,y,\tau,f}}^{2}$ is
+is the predicted catch summed over populations, and $\sigma_{\text{ObsCatch}_{r,y,\tau,f}}^{2}$ is
 the variance of catch on the log scale.
+
+Population-specific catch observations can additionally be fit using the same lognormal form, comparing observed catch for a single population to the predicted catch for that population without summing across populations:
+
+$$\begin{matrix}
+\ell\left( \log\left( \text{ObsCatch}_{p,r,y,\tau,f} \right) \right) = \\
+\end{matrix}$$
+
+$$\lambda_{\text{ObsCatch}_{p,r,y,\tau,f}} \cdot \frac{1}{\sqrt{2\pi\sigma_{\text{ObsCatch}_{p,r,y,\tau,f}}^{2}}\,}\exp\left( - \frac{\left\lbrack \log\left( \text{ObsCatch}_{p,r,y,\tau,f} \right) - log\left( \text{Catch}_{p,r,y,\tau,f} \right) \right\rbrack^{2}}{2\sigma_{\text{ObsCatch}_{p,r,y,\tau,f}}^{2}} \right)$$
+
+where $\text{Catch}_{p,r,y,\tau,f}$ is the predicted catch for population $p$ only.
 
 ### Fishery and Survey Indices
 
 Fishery indices can also be fit assuming a lognormal likelihood. The
-log-likelihood for observed fishery indices is:
+log-likelihood for region-aggregated observed fishery indices is:
 
 $$\begin{matrix}
 \ell\left( \log\left( \text{ObsFshIdx}_{r,y,\tau,f} \right) \right) = \\
@@ -709,8 +734,18 @@ fishery index summed across populations, and
 $\sigma_{\text{ObsFshIdx}_{r,y,\tau,f}}^{2}$ denotes the variance of the
 fishery index.
 
-Likewise, survey indices can be fit assuming a lognormal likelihood
-given by:
+Population-specific fishery indices can additionally be fit, comparing observed population-specific indices to the predicted index for that population directly:
+
+$$\begin{matrix}
+\ell\left( \log\left( \text{ObsFshIdx}_{p,r,y,\tau,f} \right) \right) = \\
+\end{matrix}$$
+
+$$\lambda_{\text{ObsFshIdx}_{p,r,y,\tau,f}} \cdot \frac{1}{\sqrt{2\pi\sigma_{\text{ObsFshIdx}_{p,r,y,\tau,f}}^{2}}\,}\exp\left( - \frac{\left\lbrack \log\left( \text{ObsFshIdx}_{p,r,y,\tau,f} \right) - log\left( \text{FshIdx}_{p,r,y,\tau,f} \right) \right\rbrack^{2}}{2\sigma_{\text{ObsFshIdx}_{p,r,y,\tau,f}}^{2}} \right)$$
+
+where $\text{FshIdx}_{p,r,y,\tau,f}$ is the predicted fishery index for population $p$ only.
+
+Likewise, survey indices can be fit assuming a lognormal likelihood.
+The log-likelihood for region-aggregated survey indices is:
 
 $$\begin{matrix}
 \ell\left( \log\left( \text{ObsSrvIdx}_{r,y,\tau,sf} \right) \right) = \\
@@ -723,6 +758,16 @@ to survey indices, $\text{ObsSrvIdx}_{r,y,\tau,sf}$ are the observed survey
 indices, $\text{SrvIdx}_{r,y,\tau,sf}$ is the predicted survey index summed across
 populations, and $\sigma_{\text{ObsSrvIdx}_{r,y,\tau,sf}}^{2}$ indicates the
 variance of the survey index.
+
+Population-specific survey indices can additionally be fit, comparing observed population-specific indices to the predicted index for that population directly:
+
+$$\begin{matrix}
+\ell\left( \log\left( \text{ObsSrvIdx}_{p,r,y,\tau,sf} \right) \right) = \\
+\end{matrix}$$
+
+$$\lambda_{\text{ObsSrvIdx}_{p,r,y,\tau,sf}} \cdot \frac{1}{\sqrt{2\pi\sigma_{\text{ObsSrvIdx}_{p,r,y,\tau,sf}}^{2}}\,}\exp\left( - \frac{\left\lbrack \log\left( \text{ObsSrvIdx}_{p,r,y,\tau,sf} \right) - log\left( \text{SrvIdx}_{p,r,y,\tau,sf} \right) \right\rbrack^{2}}{2\sigma_{\text{ObsSrvIdx}_{p,r,y,\tau,sf}}^{2}} \right)$$
+
+where $\text{SrvIdx}_{p,r,y,\tau,sf}$ is the predicted survey index for population $p$ only.
 
 ### Fishery and Survey Compositions
 
@@ -830,6 +875,8 @@ correlation structure, where $\rho_{C}^{|i - j|}$ defines the
 correlation across age/length categories. $\mathbf{\bigotimes}$ denotes
 the Kronecker product.
 
+All three composition likelihood forms (multinomial, Dirichlet-multinomial, logistic-normal) can be applied to both region-aggregated and population-specific composition data. For region-aggregated compositions, expected values $E_{r,y,\tau,b,j}$ are derived from catch-at-age or survey index-at-age quantities summed across populations ($\sum_p$). For population-specific compositions, expected values $E_{p,r,y,\tau,b,j}$ are derived from the quantities for a single population $p$ directly, with the population index $p$ carrying through all composition structuring and likelihood calculations. Each likelihood form and covariance structure described above applies identically to both cases; population-specific likelihoods additionally carry separate overdispersion ($\theta_{p,r,j}$) and correlation parameters ($\rho_{p,r,j}$) estimated independently from their region-aggregated counterparts.
+
 #### Structuring Compositions and Ageing Error
 
 Related to the use of composition data likelihoods, composition data can
@@ -880,7 +927,7 @@ where the expected compositions sum to one jointly across bins and
 sexes, thus preserving implicit sex-ratio information. Ageing error is
 then applied by taking the Kronecker product of a $n_{s}\ \times\ n_{s}$
 identity matrix with the ageing error matrix, followed by matrix
-multiplication.
+multiplication. These three structuring options apply identically to both region-aggregated and population-specific composition likelihoods.
 
 ### Tagging
 

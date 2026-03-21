@@ -286,4 +286,70 @@ input_list <- Setup_Mod_Rec(
 ## Recruitment Seasonal Apportionment
 Likewise, priors on recruitment seasonal apportionment can be applied in an analogous manner. This is done by setting `use_rec_seas_prop_prior = 1` and providing a dataframe to `rec_seas_prop_prior`. Note that seasonal recruitment proportion priors are only relevant when `n_seas > 1` and `use_fixed_rec_seas_prop = 0` (i.e., seasonal proportions are being estimated rather than fixed). Each row of the dataframe corresponds to a population and contains a list-column `alpha` specifying the Dirichlet concentration parameters for the seasonal apportionment of recruitment.
 
-## Stray Rates (in development)
+## Stray Rates 
+
+When stray rates are estimated (`stray_rate_spec` is not `"fix"`), a beta prior should almost always be used to keep estimation stable. Estimation of stray rates are only applicable when `n_pop > 1`. The prior is specified via a dataframe passed to `stray_rate_prior`, with columns `pop`, `block`, `mu`, and `sd`. The mean (`mu`) and standard deviation (`sd`) are supplied in probability space and are internally converted to beta shape parameters via method-of-moments. Note that `sd` must satisfy $\sigma < \sqrt{\mu(1-\mu)}$ to ensure a valid (unimodal) beta density.
+
+In the example below, stray rates are estimated independently per population using a single time block, with population 1 given a prior centred at 0.1 and population 2 centred at 0.5:
+
+```{r, eval = FALSE}
+
+input_list$data$n_pop <- 2 # modify to two populations for demo purposes
+
+stray_prior <- data.frame(
+  pop   = c(1, 2),
+  block = c(1, 1),
+  mu    = c(0.1, 0.5),
+  sd    = c(0.1, 0.1)
+)
+
+input_list <- Setup_Mod_Rec(
+  input_list       = input_list,
+  do_rec_bias_ramp = 0,
+  rec_model        = "bh_rec",
+  rec_dd           = "local",
+  stray_rate_blocks = c(
+    "Block_1_Year_1-terminal_Pop_1",
+    "Block_1_Year_1-terminal_Pop_2"
+  ),
+  stray_rate_spec      = "est_all",
+  use_fixed_stray_rate = 0,
+  use_stray_rate_prior = 1,
+  stray_rate_prior     = stray_prior
+)
+```
+
+Tighter values of `sd` produce a stronger regularizing effect and are recommended when data contain little information about cross-population spawning contributions. If `sd` is set too large relative to `mu * (1 - mu)`, the beta density becomes U-shaped (mass near 0 and 1), which can cause numerical instability during optimization; `SPoRC` guards against this internally by squishing the logistic transform away from the boundaries, but specifying a sensible `sd` is still good practice.
+
+## Time-varying stray rates
+
+Stray rates can also be allowed to vary over time by defining multiple blocks. The `stray_rate_blocks` argument follows the same blocking syntax used elsewhere in `SPoRC`. For example, to allow stray rates to differ between an early and late period for each population:
+
+```{r, eval = FALSE}
+stray_prior_tv <- data.frame(
+  pop   = c(1, 1, 2, 2),
+  block = c(1, 2, 1, 2),
+  mu    = c(0.1, 0.2, 0.4, 0.5),
+  sd    = c(0.05, 0.05, 0.1, 0.1)
+)
+
+input_list <- Setup_Mod_Rec(
+  input_list       = input_list,
+  do_rec_bias_ramp = 0,
+  rec_model        = "bh_rec",
+  rec_dd           = "local",
+  stray_rate_blocks = c(
+    "Block_1_Year_1-20_Pop_1",
+    "Block_2_Year_21-terminal_Pop_1",
+    "Block_1_Year_1-20_Pop_2",
+    "Block_2_Year_21-terminal_Pop_2"
+  ),
+  stray_rate_spec      = "est_all",
+  use_fixed_stray_rate = 0,
+  use_stray_rate_prior = 1,
+  stray_rate_prior     = stray_prior_tv
+)
+```
+
+Each unique block index in `stray_rate_blocks` requires a corresponding row in `stray_rate_prior`, one per population × block combination.
+

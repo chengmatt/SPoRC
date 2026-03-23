@@ -15,13 +15,17 @@ data list. Likelihood weights are extracted from \code{Wt_Catch},
 \item{rep}{List of length \code{n_models}, where each element is a SPoRC
 report list (i.e. the output of \code{obj$report()} after optimisation).
 The following nLL components are extracted: \code{jnLL}, \code{h_nLL},
-\code{M_nLL}, \code{rec_region_prop_nLL}, \code{Rec_nLL}, \code{Init_Rec_nLL},
-\code{sel_nLL}, \code{conv_fish_tag_nLL}, \code{Catch_nLL},
-\code{Fmort_nLL}, \code{srv_q_nLL}, \code{fish_q_nLL}, \code{SrvIdx_nLL},
-\code{FishIdx_nLL}, \code{TagRep_nLL}, \code{Movement_nLL},
-\code{SrvAgeComps_nLL}, \code{FishAgeComps_nLL}, \code{SrvLenComps_nLL},
-and \code{FishLenComps_nLL}. Missing components are handled gracefully via
-\code{safe_extract}.}
+\code{M_nLL}, \code{rec_region_prop_nLL}, \code{Rec_nLL},
+\code{Init_Rec_nLL}, \code{sel_nLL}, \code{conv_fish_tag_nLL},
+\code{Catch_nLL}, \code{Fmort_nLL}, \code{srv_q_nLL}, \code{fish_q_nLL},
+\code{SrvIdx_nLL}, \code{FishIdx_nLL}, \code{TagRep_nLL},
+\code{Movement_nLL}, \code{SrvAgeComps_nLL}, \code{FishAgeComps_nLL},
+\code{SrvLenComps_nLL}, \code{FishLenComps_nLL}, and the
+population-specific counterparts \code{Catch_pop_nLL},
+\code{FishIdx_pop_nLL}, \code{SrvIdx_pop_nLL},
+\code{FishAgeComps_pop_nLL}, \code{FishLenComps_pop_nLL},
+\code{SrvAgeComps_pop_nLL}, \code{SrvLenComps_pop_nLL}. Missing
+components are handled via \code{safe_extract}.}
 
 \item{model_names}{Character vector of length \code{n_models} giving display
 names for each model run. Used as facet labels on the bar chart.}

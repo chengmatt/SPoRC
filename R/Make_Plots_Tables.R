@@ -887,65 +887,39 @@ get_catch_fits_plot <- function(data,
                                 model_names
                                 ) {
 
-  catch_fits_rg_all <- data.frame()
-
-  # get catch fits data
-  for(i in 1:length(rep)) {
-
-    # Get catch fits
-    catch_fits <- reshape2::melt(rep[[i]]$PredCatch) %>%
-      dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
-      dplyr::group_by(Region, Year, Seas, Fleet) %>%
-      dplyr::summarize(value = sum(value)) %>%
-      dplyr::ungroup() %>%
-      dplyr::left_join(
-        reshape2::melt(data[[i]]$ObsCatch) %>%
-          dplyr::left_join(reshape2::melt(exp(rep[[i]]$ln_sigmaC) / data[[i]]$Wt_Catch) %>%
-                             dplyr::rename(se = value),
-                           by = c("Var1", "Var2", "Var3", "Var4")) %>%
-          dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4, obs = value),
-        by = c("Region", "Year", "Seas", "Fleet")
-      ) %>%
-      dplyr::mutate(Model = model_names[i],
-                    Region = paste('Region', Region),
-                    Seas = paste("Seas", Seas),
-                    Fleet = paste('Fleet', Fleet),
-                    Seas_Fleet = paste(Seas, Fleet))
-
-    catch_fits_rg_all <- rbind(catch_fits_rg_all, catch_fits) # bind
-
-  }
-
-  catch_fits_pop_all <- data.frame()
-
-  # get catch fits data
-  for(i in 1:length(rep)) {
-
-    # Get catch fits
-    catch_fits <- reshape2::melt(rep[[i]]$PredCatch) %>%
-      dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
-      dplyr::left_join(
-        reshape2::melt(data[[i]]$ObsCatch_pop) %>%
-          dplyr::left_join(reshape2::melt(exp(rep[[i]]$ln_sigmaC_pop) / data[[i]]$Wt_Catch_pop) %>%
-                             dplyr::rename(se = value),
-                           by = c("Var1", "Var2", "Var3", "Var4", "Var5")) %>%
-          dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5, obs = value),
-        by = c("Pop", "Region", "Year", "Seas", "Fleet")
-      ) %>%
-      dplyr::mutate(Model = model_names[i],
-                    Pop = paste('Pop', Pop),
-                    Region = paste('Region', Region),
-                    Seas = paste("Seas", Seas),
-                    Fleet = paste('Fleet', Fleet),
-                    Pop_Seas_Fleet = paste(Pop, Seas, Fleet))
-
-    catch_fits_pop_all <- rbind(catch_fits_pop_all, catch_fits) # bind
-
-  }
-
   # Plot catch fits
-  if(any(data[[1]]$UseCatch == 1)) {
-    catch_fit_rg_plot <- ggplot2::ggplot() +
+  catch_fit_rg_plot <- if(any(data[[1]]$UseCatch == 1)) {
+
+    catch_fits_rg_all <- data.frame()
+
+    # get catch fits data
+    for(i in 1:length(rep)) {
+
+      # Get catch fits
+      catch_fits <- reshape2::melt(rep[[i]]$PredCatch) %>%
+        dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+        dplyr::group_by(Region, Year, Seas, Fleet) %>%
+        dplyr::summarize(value = sum(value)) %>%
+        dplyr::ungroup() %>%
+        dplyr::left_join(
+          reshape2::melt(data[[i]]$ObsCatch) %>%
+            dplyr::left_join(reshape2::melt(exp(rep[[i]]$ln_sigmaC) / data[[i]]$Wt_Catch) %>%
+                               dplyr::rename(se = value),
+                             by = c("Var1", "Var2", "Var3", "Var4")) %>%
+            dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4, obs = value),
+          by = c("Region", "Year", "Seas", "Fleet")
+        ) %>%
+        dplyr::mutate(Model = model_names[i],
+                      Region = paste('Region', Region),
+                      Seas = paste("Seas", Seas),
+                      Fleet = paste('Fleet', Fleet),
+                      Seas_Fleet = paste(Seas, Fleet))
+
+      catch_fits_rg_all <- rbind(catch_fits_rg_all, catch_fits) # bind
+
+    }
+
+     ggplot2::ggplot() +
       ggplot2::geom_line(catch_fits_rg_all %>% dplyr::filter(obs != 0),
                          mapping = ggplot2::aes(x = Year, y = value, color = factor(Model)), lwd = 1.3) +
       ggplot2::geom_pointrange(catch_fits_rg_all %>% dplyr::filter(obs != 0),
@@ -957,8 +931,35 @@ get_catch_fits_plot <- function(data,
       ggplot2::facet_grid(Seas_Fleet~Region, scales = 'free_y')
   } else NULL
 
-  if(any(data[[1]]$UseCatch_pop == 1)) {
-    catch_fit_pop_plot <- ggplot2::ggplot() +
+  catch_fit_pop_plot <- if(any(data[[1]]$UseCatch_pop == 1)) {
+
+    catch_fits_pop_all <- data.frame()
+
+    # get catch fits data
+    for(i in 1:length(rep)) {
+
+      # Get catch fits
+      catch_fits <- reshape2::melt(rep[[i]]$PredCatch) %>%
+        dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+        dplyr::left_join(
+          reshape2::melt(data[[i]]$ObsCatch_pop) %>%
+            dplyr::left_join(reshape2::melt(exp(rep[[i]]$ln_sigmaC_pop) / data[[i]]$Wt_Catch_pop) %>%
+                               dplyr::rename(se = value),
+                             by = c("Var1", "Var2", "Var3", "Var4", "Var5")) %>%
+            dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5, obs = value),
+          by = c("Pop", "Region", "Year", "Seas", "Fleet")
+        ) %>%
+        dplyr::mutate(Model = model_names[i],
+                      Pop = paste('Pop', Pop),
+                      Region = paste('Region', Region),
+                      Seas = paste("Seas", Seas),
+                      Fleet = paste('Fleet', Fleet),
+                      Pop_Seas_Fleet = paste(Pop, Seas, Fleet))
+
+      catch_fits_pop_all <- rbind(catch_fits_pop_all, catch_fits) # bind
+    }
+
+    ggplot2::ggplot() +
       ggplot2::geom_line(catch_fits_pop_all %>% dplyr::filter(obs != 0),
                          mapping = ggplot2::aes(x = Year, y = value, color = factor(Model)), lwd = 1.3) +
       ggplot2::geom_pointrange(catch_fits_pop_all %>% dplyr::filter(obs != 0),

@@ -7,37 +7,52 @@
 get_idx_fits(data, rep, year_labs)
 }
 \arguments{
-\item{data}{List; input data used in the RTMB model. Must contain
-\code{ObsSrvIdx}, \code{ObsSrvIdx_SE}, \code{ObsFishIdx}, \code{ObsFishIdx_SE},
-\code{Wt_SrvIdx}, \code{Wt_FishIdx}, \code{srv_q_blocks}, and \code{fish_q_blocks}.}
+\item{data}{List. Input data used in the RTMB model. Must contain
+\code{ObsSrvIdx}, \code{ObsSrvIdx_SE}, \code{ObsFishIdx},
+\code{ObsFishIdx_SE}, \code{Wt_SrvIdx}, \code{Wt_FishIdx},
+\code{srv_q_blocks}, \code{fish_q_blocks}, \code{UseFishIdx}, and
+\code{UseSrvIdx}. For population-specific indices, also requires
+\code{ObsSrvIdx_pop}, \code{ObsSrvIdx_pop_SE}, \code{ObsFishIdx_pop},
+\code{ObsFishIdx_pop_SE}, \code{Wt_SrvIdx_pop}, \code{Wt_FishIdx_pop},
+\code{UseSrvIdx_pop}, and \code{UseFishIdx_pop}.}
 
-\item{rep}{List; RTMB report output containing \code{PredSrvIdx} and \code{PredFishIdx}.}
+\item{rep}{List. RTMB report output containing \code{PredSrvIdx} and
+\code{PredFishIdx}, both dimensioned
+\code{[n_pop × n_regions × n_years × n_seas × n_fleets]}. Pooled indices
+are obtained by summing across the population dimension; population-specific
+indices use each population slice directly.}
 
-\item{year_labs}{Vector; year labels to assign to the third dimension of the
-predicted indices and the columns of observed indices.}
+\item{year_labs}{Vector. Year labels assigned to the year dimension of
+predicted and observed index arrays.}
 }
 \value{
-A dataframe containing combined survey and fishery indices with the
-following columns:
-\itemize{
-  \item \code{Region} – Region label (prefixed with "Region")
-  \item \code{Year} – Year
-  \item \code{Seas} – Season
-  \item \code{Fleet} – Fleet identifier
-  \item \code{Type} – Either "Survey" or "Fishery"
-  \item \code{obs} – Observed index
-  \item \code{value} – Predicted index
-  \item \code{se} – Standard error of the observed index
-  \item \code{lci}, \code{uci} – 95% confidence interval for the observed index
-  \item \code{q_block} – Catchability block value
-  \item \code{resid} – Log-scale residual (\eqn{\log(obs) - \log(predicted)})
-  \item \code{Category} – Combined Type, Fleet, Season, and Q-block label
-}
+A dataframe containing pooled and, when active, population-specific
+  survey and fishery indices with the following columns:
+  \describe{
+    \item{\code{Region}}{Region label (prefixed with \code{"Region"}).}
+    \item{\code{Year}}{Year.}
+    \item{\code{Seas}}{Season.}
+    \item{\code{Fleet}}{Fleet identifier.}
+    \item{\code{Type}}{One of \code{"Survey"}, \code{"Fishery"},
+      \code{"Pop Survey"}, or \code{"Pop Fishery"}.}
+    \item{\code{obs}}{Observed index value.}
+    \item{\code{value}}{Predicted index value.}
+    \item{\code{se}}{Standard error of the observed index (weight-adjusted).}
+    \item{\code{lci}, \code{uci}}{95\% log-normal confidence interval for
+      the observed index.}
+    \item{\code{q_block}}{Catchability block identifier.}
+    \item{\code{resid}}{Log-scale residual
+      (\eqn{\log(\text{obs}) - \log(\text{predicted})}).}
+    \item{\code{Category}}{Combined label of Type, population (for pop
+      rows), Fleet, Season, and Q-block.}
+  }
 }
 \description{
 Generates a tidy dataframe of observed and predicted survey and fishery
 indices from a fitted RTMB model, including standard errors, confidence
-intervals, residuals, and catchability blocks.
+intervals, residuals, and catchability blocks. Both pooled and
+population-specific indices are returned when the corresponding
+\code{Use*_pop} flags contain any ones.
 }
 \examples{
 \dontrun{

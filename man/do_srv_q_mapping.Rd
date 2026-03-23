@@ -9,7 +9,7 @@ do_srv_q_mapping(input_list, srv_q_spec)
 \arguments{
 \item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
 sublists. Requires \code{$data$n_srv_fleets}, \code{$data$n_regions},
-\code{$data$srv_q_blocks}, and \code{$data$UseSrvIdx}.}
+\code{$data$srv_q_blocks}, \code{$data$UseSrvIdx}, and \code{$data$UseSrvIdx_pop}.}
 
 \item{srv_q_spec}{Character vector \code{[n_srv_fleets]} specifying the
 sharing structure for catchability. One of:
@@ -32,7 +32,7 @@ the TMB/RTMB factor map for \code{ln_srv_q}
 \code{[n_regions × max_q_blocks × n_srv_fleets]}, the log-scale survey
 catchability parameters. Parameters are only activated for region–fleet
 combinations where survey index data are used
-(\code{sum(UseSrvIdx[r,,,f]) > 0}); unused combinations are mapped to
+(\code{sum(UseSrvIdx[r,,,f]) > 0}) \code{sum(input_list$data$UseSrvIdx_pop[,r,,,f] > 0)}; unused combinations are mapped to
 \code{NA}.
 }
 \keyword{internal}

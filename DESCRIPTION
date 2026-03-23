@@ -18,7 +18,6 @@ Depends:
     RTMB
 Imports: 
     abind,
-    compResidual,
     cowplot,
     data.table,
     dplyr,
@@ -35,13 +34,13 @@ Imports:
     parallel,
     progressr,
     randtests,
-    remotes,
     reshape2,
     stats,
     stringr,
     tidyr,
     TMB
 Suggests: 
+    compResidual,
     igraph,
     knitr,
     purrr,

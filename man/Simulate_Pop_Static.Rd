@@ -19,11 +19,18 @@ written.}
 A named list containing all simulation outputs, including (among
   others): \code{NAA}, \code{NAA0}, \code{SSB}, \code{Dynamic_SSB0},
   \code{eff_SSB}, \code{Rec}, \code{ln_RecDevs}, \code{ln_InitDevs},
-  \code{ZAA}, \code{TrueCatch}, \code{ObsCatch}, \code{CAA}, \code{CAL},
-  \code{ObsFishAgeComps}, \code{ObsFishLenComps}, \code{ObsFishIdx},
-  \code{TrueFishIdx}, \code{SrvIAA}, \code{SrvIAL},
-  \code{ObsSrvAgeComps}, \code{ObsSrvLenComps}, \code{ObsSrvIdx},
-  \code{TrueSrvIdx}, \code{conv_tagged_fish}, \code{conv_tagged_fish_attr},
+  \code{ZAA}, \code{TrueCatch}, \code{ObsCatch}, \code{TrueCatch_pop},
+  \code{ObsCatch_pop}, \code{CAA}, \code{CAL},
+  \code{ObsFishAgeComps}, \code{ObsFishAgeComps_pop},
+  \code{ObsFishLenComps}, \code{ObsFishLenComps_pop},
+  \code{ObsFishIdx}, \code{TrueFishIdx},
+  \code{ObsFishIdx_pop}, \code{TrueFishIdx_pop},
+  \code{SrvIAA}, \code{SrvIAL},
+  \code{ObsSrvAgeComps}, \code{ObsSrvAgeComps_pop},
+  \code{ObsSrvLenComps}, \code{ObsSrvLenComps_pop},
+  \code{ObsSrvIdx}, \code{TrueSrvIdx},
+  \code{ObsSrvIdx_pop}, \code{TrueSrvIdx_pop},
+  \code{conv_tagged_fish}, \code{conv_tagged_fish_attr},
   \code{conv_tag_fish_avail}, \code{pred_conv_tag_fish_recap},
   \code{obs_conv_tag_fish_recap}, and key dimension scalars
   (\code{n_regions}, \code{n_pop}, \code{n_yrs}, \code{n_ages}, etc.).

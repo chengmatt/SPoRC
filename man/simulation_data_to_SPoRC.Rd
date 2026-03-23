@@ -28,14 +28,23 @@ Named list with the following elements (all arrays have \code{y}
   \code{conv_tagged_fish}, \code{conv_tagged_fish_attr},
   \code{n_tag_cohorts} (all \code{NULL} when tagging inactive),
   \code{ObsCatch}, \code{ln_sigmaC}, \code{UseCatch},
+  \code{ObsCatch_pop}, \code{UseCatch_pop},
   \code{ObsFishIdx}, \code{ObsFishIdx_SE}, \code{UseFishIdx},
+  \code{ObsFishIdx_pop}, \code{UseFishIdx_pop},
   \code{ObsFishAgeComps}, \code{ISS_FishAgeComps}, \code{UseFishAgeComps},
+  \code{ObsFishAgeComps_pop}, \code{ISS_FishAgeComps_pop},
+  \code{UseFishAgeComps_pop},
   \code{ObsFishLenComps} (or \code{NULL}), \code{ISS_FishLenComps},
   \code{UseFishLenComps},
+  \code{ObsFishLenComps_pop} (or \code{NULL}), \code{UseFishLenComps_pop},
   \code{ObsSrvIdx}, \code{ObsSrvIdx_SE}, \code{UseSrvIdx},
+  \code{ObsSrvIdx_pop}, \code{UseSrvIdx_pop},
   \code{ObsSrvAgeComps}, \code{ISS_SrvAgeComps}, \code{UseSrvAgeComps},
+  \code{ObsSrvAgeComps_pop}, \code{ISS_SrvAgeComps_pop},
+  \code{UseSrvAgeComps_pop},
   \code{ObsSrvLenComps} (or \code{NULL}), \code{ISS_SrvLenComps},
-  \code{UseSrvLenComps}.
+  \code{UseSrvLenComps},
+  \code{ObsSrvLenComps_pop} (or \code{NULL}), \code{UseSrvLenComps_pop}.
 }
 \description{
 Subsets and reshapes biological, tagging, fishery, and survey arrays from a
@@ -44,9 +53,16 @@ simulation replicate \code{sim}, producing a named list ready for direct
 use in \code{Setup_Mod_Biologicals}, \code{Setup_Mod_Catch_and_F},
 \code{Setup_Mod_SrvIdx_and_Comps}, and \code{Setup_Mod_Tagging}. Binary
 \code{Use*} indicator arrays are derived automatically from the extracted
-observation arrays (non-NA, positive values set to 1). Length composition
-outputs (\code{ObsFishLenComps}, \code{ObsSrvLenComps}) and
-\code{SizeAgeTrans} are \code{NULL} when no size-age transition matrix is
+observation arrays (non-NA, positive values set to 1). Population-specific
+arrays (\code{ObsCatch_pop}, \code{ObsFishIdx_pop}, \code{ObsFishAgeComps_pop},
+\code{ObsFishLenComps_pop}, \code{ObsSrvIdx_pop}, \code{ObsSrvAgeComps_pop},
+\code{ObsSrvLenComps_pop}) are extracted when present in \code{sim_env};
+corresponding \code{Use*_PopSpec} flags are derived automatically.
+Input sample sizes for population-specific age compositions
+(\code{ISS_FishAgeComps_pop}, \code{ISS_SrvAgeComps_pop}) are extracted
+when present in \code{sim_env}.
+Length composition outputs (\code{ObsFishLenComps}, \code{ObsSrvLenComps})
+and \code{SizeAgeTrans} are \code{NULL} when no size-age transition matrix is
 present in \code{sim_env}. Tagging outputs are \code{NULL} when
 \code{use_conv_fish_tagging = 0}; otherwise, only cohorts with release
 years in \code{1:y} are retained.

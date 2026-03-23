@@ -2,12 +2,14 @@
 % Please edit documentation in R/Setup_Fishery.R
 \name{Setup_Sim_Fishing}
 \alias{Setup_Sim_Fishing}
-\title{Set up fishing process inputs for the operating model simulation}
+\title{Setup Simulation Fishing Inputs}
 \usage{
 Setup_Sim_Fishing(
   sim_list,
   ln_sigmaC = array(log(0.02), dim = c(sim_list$n_regions, sim_list$n_yrs,
     sim_list$n_seas, sim_list$n_fish_fleets)),
+  ln_sigmaC_pop = array(log(0.02), dim = c(sim_list$n_pop, sim_list$n_regions,
+    sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
   catch_units = array(1, dim = c(sim_list$n_fish_fleets)),
   init_F_val = rep(0, sim_list$n_seas),
   Fmort_input = array(0.1, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
@@ -17,6 +19,8 @@ Setup_Sim_Fishing(
     sim_list$n_fish_fleets, sim_list$n_sims)),
   ObsFishIdx_SE = array(0.2, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
     sim_list$n_fish_fleets)),
+  ObsFishIdx_pop_SE = array(0.2, dim = c(sim_list$n_pop, sim_list$n_regions,
+    sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
   fish_idx_type = array(1, dim = c(sim_list$n_regions, sim_list$n_fish_fleets)),
   comp_fishage_like = rep(0, sim_list$n_fish_fleets),
   ISS_FishAgeComps = array(100, dim = c(sim_list$n_regions, sim_list$n_yrs,
@@ -37,146 +41,156 @@ Setup_Sim_Fishing(
   FishLen_corr_pars_agg = rep(0.01, sim_list$n_fish_fleets),
   FishLen_corr_pars = array(0.01, dim = c(sim_list$n_regions, sim_list$n_sexes,
     sim_list$n_fish_fleets, 2)),
-  FishLenComps_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_fish_fleets))
+  FishLenComps_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_fish_fleets)),
+  pop_comp_fishage_like = rep(0, sim_list$n_fish_fleets),
+  ISS_FishAgeComps_pop = array(100, dim = c(sim_list$n_pop, sim_list$n_regions,
+    sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes, sim_list$n_fish_fleets,
+    sim_list$n_sims)),
+  ln_FishAge_pop_theta = array(log(1), dim = c(sim_list$n_pop, sim_list$n_regions,
+    sim_list$n_sexes, sim_list$n_fish_fleets)),
+  ln_FishAge_pop_theta_agg = array(log(1), dim = c(sim_list$n_pop,
+    sim_list$n_fish_fleets)),
+  FishAge_pop_corr_pars = array(0.01, dim = c(sim_list$n_pop, sim_list$n_regions,
+    sim_list$n_sexes, sim_list$n_fish_fleets, 2)),
+  FishAge_pop_corr_pars_agg = array(0.01, dim = c(sim_list$n_pop,
+    sim_list$n_fish_fleets)),
+  pop_FishAgeComps_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_fish_fleets)),
+  pop_comp_fishlen_like = rep(0, sim_list$n_fish_fleets),
+  ISS_FishLenComps_pop = array(100, dim = c(sim_list$n_pop, sim_list$n_regions,
+    sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes, sim_list$n_fish_fleets,
+    sim_list$n_sims)),
+  ln_FishLen_pop_theta = array(log(1), dim = c(sim_list$n_pop, sim_list$n_regions,
+    sim_list$n_sexes, sim_list$n_fish_fleets)),
+  ln_FishLen_pop_theta_agg = array(log(1), dim = c(sim_list$n_pop,
+    sim_list$n_fish_fleets)),
+  FishLen_pop_corr_pars = array(0.01, dim = c(sim_list$n_pop, sim_list$n_regions,
+    sim_list$n_sexes, sim_list$n_fish_fleets, 2)),
+  FishLen_pop_corr_pars_agg = array(0.01, dim = c(sim_list$n_pop,
+    sim_list$n_fish_fleets)),
+  pop_FishLenComps_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_fish_fleets))
 )
 }
 \arguments{
-\item{sim_list}{Simulation list returned by \code{\link{Setup_Sim_Dim}}.}
+\item{sim_list}{A list containing simulation settings, including the number of populations
+(`n_pop`), regions (`n_regions`), years (`n_yrs`), seasons (`n_seas`), ages (`n_ages`),
+sexes (`n_sexes`), fishing fleets (`n_fish_fleets`), and simulations (`n_sims`).}
+
+\item{ln_sigmaC}{Numeric array. Observation SD for fishery catch (log-scale),
+dimensions `n_regions x n_yrs x n_seas x n_fish_fleets`. Default: log(0.02).}
+
+\item{ln_sigmaC_pop}{Numeric array. Observation SD for population-specific catch (log-scale),
+dimensions `n_pop x n_regions x n_yrs x n_seas x n_fish_fleets`. Default: log(0.02).}
+
+\item{catch_units}{Numeric vector. Units for catch (0 = abundance, 1 = biomass). Default: 1.}
+
+\item{init_F_val}{Numeric vector. Initial fishing mortality by season (`n_seas`). Default: 0.}
+
+\item{Fmort_input}{Numeric array. Fishing mortality pattern,
+dimensions `n_regions x n_yrs x n_seas x n_fish_fleets x n_sims`. Default: 0.1.}
+
+\item{fish_sel_input}{Numeric array. Fishery selectivity,
+dimensions `n_regions x n_yrs x n_ages x n_sexes x n_fish_fleets x n_sims`.}
+
+\item{fish_q_input}{Numeric array. Fishery catchability,
+dimensions `n_regions x n_yrs x n_fish_fleets x n_sims`. Default: 1.}
+
+\item{ObsFishIdx_SE}{Numeric array. Observation SD for fishery indices,
+dimensions `n_regions x n_yrs x n_seas x n_fish_fleets`. Default: 0.2.}
+
+\item{ObsFishIdx_pop_SE}{Numeric array. Population-specific observation SD,
+dimensions `n_pop x n_regions x n_yrs x n_seas x n_fish_fleets`. Default: 0.2.}
+
+\item{fish_idx_type}{Numeric array. Type of fishery index (0 = abundance, 1 = biomass),
+dimensions `n_regions x n_fish_fleets`. Default: 1.}
+
+\item{comp_fishage_like}{Numeric vector. Likelihood type for fishery age composition,
+length `n_fish_fleets`. Default: 0.}
+
+\item{ISS_FishAgeComps}{Numeric array. Effective sample sizes for fishery age comps,
+dimensions `n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x n_sims`. Default: 100.}
+
+\item{ln_FishAge_theta}{Numeric array. Log-scale overdispersion for fishery age comps,
+dimensions `n_regions x n_sexes x n_fish_fleets`. Default: 1.}
+
+\item{ln_FishAge_theta_agg}{Numeric vector. Aggregated fishery age theta (log-scale),
+length `n_fish_fleets`. Default: 1.}
+
+\item{FishAge_corr_pars_agg}{Numeric vector. Aggregated fishery age correlation parameters,
+length `n_fish_fleets`. Default: 0.01.}
+
+\item{FishAge_corr_pars}{Numeric array. Fishery age correlation parameters,
+dimensions `n_regions x n_sexes x n_fish_fleets x 2`. Default: 0.01.}
+
+\item{FishAgeComps_Type}{Numeric array. Type of fishery age composition, `n_yrs x n_fish_fleets`. Default: 2.}
+
+\item{comp_fishlen_like}{Numeric vector. Likelihood type for fishery length composition,
+length `n_fish_fleets`. Default: 0.}
+
+\item{ISS_FishLenComps}{Numeric array. Effective sample sizes for fishery length comps,
+dimensions `n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x n_sims`. Default: 100.}
+
+\item{ln_FishLen_theta}{Numeric array. Log-scale overdispersion for fishery length comps,
+dimensions `n_regions x n_sexes x n_fish_fleets`. Default: 1.}
+
+\item{ln_FishLen_theta_agg}{Numeric vector. Aggregated fishery length theta (log-scale),
+length `n_fish_fleets`. Default: 1.}
+
+\item{FishLen_corr_pars_agg}{Numeric vector. Aggregated fishery length correlation parameters,
+length `n_fish_fleets`. Default: 0.01.}
+
+\item{FishLen_corr_pars}{Numeric array. Fishery length correlation parameters,
+dimensions `n_regions x n_sexes x n_fish_fleets x 2`. Default: 0.01.}
+
+\item{FishLenComps_Type}{Numeric array. Type of fishery length composition, `n_yrs x n_fish_fleets`. Default: 2.}
+
+\item{pop_comp_fishage_like}{Numeric vector. Likelihood type for population-specific age comps,
+length `n_fish_fleets`. Default: 0.}
+
+\item{ISS_FishAgeComps_pop}{Numeric array. Pop-specific age comp effective sample sizes,
+dimensions `n_pop x n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x n_sims`. Default: 100.}
+
+\item{ln_FishAge_pop_theta}{Numeric array. Pop-specific age theta (log-scale),
+dimensions `n_pop x n_regions x n_sexes x n_fish_fleets`. Default: 1.}
+
+\item{ln_FishAge_pop_theta_agg}{Numeric array. Aggregated pop-specific age theta (log-scale),
+dimensions `n_pop x n_fish_fleets`. Default: 1.}
+
+\item{FishAge_pop_corr_pars}{Numeric array. Pop-specific age correlation parameters,
+dimensions `n_pop x n_regions x n_sexes x n_fish_fleets x 2`. Default: 0.01.}
+
+\item{FishAge_pop_corr_pars_agg}{Numeric array. Aggregated pop-specific age correlation parameters,
+dimensions `n_pop x n_fish_fleets`. Default: 0.01.}
+
+\item{pop_FishAgeComps_Type}{Numeric array. Type of pop-specific age composition, `n_yrs x n_fish_fleets`. Default: 2.}
+
+\item{pop_comp_fishlen_like}{Numeric vector. Likelihood type for population-specific length comps,
+length `n_fish_fleets`. Default: 0.}
+
+\item{ISS_FishLenComps_pop}{Numeric array. Pop-specific length comp effective sample sizes,
+dimensions `n_pop x n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x n_sims`. Default: 100.}
+
+\item{ln_FishLen_pop_theta}{Numeric array. Pop-specific length theta (log-scale),
+dimensions `n_pop x n_regions x n_sexes x n_fish_fleets`. Default: 1.}
+
+\item{ln_FishLen_pop_theta_agg}{Numeric array. Aggregated pop-specific length theta (log-scale),
+dimensions `n_pop x n_fish_fleets`. Default: 1.}
+
+\item{FishLen_pop_corr_pars}{Numeric array. Pop-specific length correlation parameters,
+dimensions `n_pop x n_regions x n_sexes x n_fish_fleets x 2`. Default: 0.01.}
+
+\item{FishLen_pop_corr_pars_agg}{Numeric array. Aggregated pop-specific length correlation parameters,
+dimensions `n_pop x n_fish_fleets`. Default: 0.01.}
+
+\item{pop_FishLenComps_Type}{Numeric array. Type of pop-specific length composition, `n_yrs x n_fish_fleets`. Default: 2.}
 }
 \value{
-The input \code{sim_list} with all fishery fields appended under their
-  respective names (e.g., \code{$Fmort}, \code{$fish_sel}, \code{$ln_sigmaC},
-  \code{$comp_fishage_like}, \code{$ISS_FishAgeComps}, etc.). Character-coded
-  inputs are converted to their integer equivalents before storage.
+A list (`sim_list`) with all fishing-related variables added and validated.
 }
 \description{
-Populates \code{sim_list} with all fishery-related inputs needed by the
-operating model: fishing mortality schedules, selectivity, catchability,
-catch observation error, fishery indices, and age and length composition
-simulation settings (likelihoods, sample sizes, overdispersion, and
-correlation parameters). Must be called after \code{\link{Setup_Sim_Dim}}.
+Initializes and validates fishing-related inputs for a simulation list (`sim_list`).
+This includes fishing mortality, selectivity, catchability, observation error,
+and age/length composition parameters for both general and population-specific data.
 }
-\details{
-Most array arguments accept either numeric codes or their character string
-equivalents (e.g., \code{"biom"} instead of \code{1}); these are converted
-internally via \code{convert_to_numeric()}.
-}
-\section{Fishing mortality}{
-
-\describe{
-  \item{\code{Fmort_input}}{Instantaneous fishing mortality array
-    \code{[n_regions × n_yrs × n_seas × n_fish_fleets × n_sims]}.
-    Default: \code{0.1} for all cells.}
-  \item{\code{init_F_val}}{Numeric vector of length \code{n_seas} giving the
-    initial fishing mortality used during equilibrium initialisation for the
-    dominant fleet. Default: \code{rep(0, n_seas)} (unfished initialisation).}
-  \item{\code{fish_sel_input}}{Fishery selectivity-at-age array
-    \code{[n_regions × n_yrs × n_ages × n_sexes × n_fish_fleets × n_sims]}.
-    No default; must be provided.}
-  \item{\code{fish_q_input}}{Fishery catchability array
-    \code{[n_regions × n_yrs × n_fish_fleets × n_sims]}.
-    Default: \code{1} for all cells.}
-  \item{\code{catch_units}}{Integer array \code{[n_fish_fleets]} specifying
-    the units in which catch is recorded per fleet.
-    \code{0}/\code{"abd"} = abundance; \code{1}/\code{"biom"} = biomass
-    (default).}
-}
-}
-
-\section{Catch observation error}{
-
-\describe{
-  \item{\code{ln_sigmaC}}{Log-scale standard deviation of lognormal catch
-    observation error, array
-    \code{[n_regions × n_yrs × n_seas × n_fish_fleets]}.
-    Default: \code{log(0.02)}.}
-}
-}
-
-\section{Fishery index}{
-
-\describe{
-  \item{\code{ObsFishIdx_SE}}{Standard error of the observed fishery index
-    (lognormal scale), array
-    \code{[n_regions × n_yrs × n_seas × n_fish_fleets]}.
-    Default: \code{0.2}.}
-  \item{\code{fish_idx_type}}{Integer array \code{[n_regions × n_fish_fleets]}
-    specifying whether each fleet's index is an abundance or biomass index.
-    \code{0}/\code{"abd"} = abundance; \code{1}/\code{"biom"} = biomass
-    (default).}
-}
-}
-
-\section{Fishery age composition}{
-
-\describe{
-  \item{\code{FishAgeComps_Type}}{Integer array \code{[n_yrs × n_fish_fleets]}
-    controlling how age compositions are structured before simulation.
-    \code{0}/\code{"agg"} = aggregated across regions and sexes;
-    \code{1}/\code{"spltRspltS"} = split by region and sex;
-    \code{2}/\code{"spltRjntS"} = split by region, joint across sexes (default);
-    \code{999}/\code{"none"} = not simulated.}
-  \item{\code{comp_fishage_like}}{Integer vector \code{[n_fish_fleets]}
-    specifying the composition likelihood used to simulate age observations.
-    \code{0}/\code{"Multinomial"} (default);
-    \code{1}/\code{"Dirichlet-Multinomial"};
-    \code{2}/\code{"iid-Logistic-Normal"};
-    \code{3}/\code{"1d-Logistic-Normal"} (AR1 by age);
-    \code{4}/\code{"2d-Logistic-Normal"} (AR1 by age, constant by sex).}
-  \item{\code{ISS_FishAgeComps}}{Input sample sizes for age composition
-    simulation, array
-    \code{[n_regions × n_yrs × n_seas × n_sexes × n_fish_fleets × n_sims]}.
-    Interpreted as the Dirichlet-Multinomial or multinomial sample size
-    depending on \code{comp_fishage_like}. Default: \code{100}.}
-  \item{\code{ln_FishAge_theta}}{Log-scale overdispersion parameters for
-    fleet- region- and sex-specific compositions, array
-    \code{[n_regions × n_sexes × n_fish_fleets]}.
-    Only used for Dirichlet-Multinomial and logistic-normal likelihoods.
-    Default: \code{log(1)}.}
-  \item{\code{ln_FishAge_theta_agg}}{Log-scale overdispersion parameters
-    for aggregated compositions, vector \code{[n_fish_fleets]}.
-    Default: \code{log(1)}.}
-  \item{\code{FishAge_corr_pars}}{Correlation parameters for 1D/2D
-    logistic-normal likelihoods, array
-    \code{[n_regions × n_sexes × n_fish_fleets × 2]}.
-    The two trailing elements correspond to the age AR1 coefficient and
-    the sex correlation. Default: \code{0.01}.}
-  \item{\code{FishAge_corr_pars_agg}}{Correlation parameters for aggregated
-    compositions under options 3–4, vector \code{[n_fish_fleets]}.
-    Default: \code{0.01}.}
-}
-}
-
-\section{Fishery length composition}{
-
-\describe{
-  \item{\code{FishLenComps_Type}}{Integer array \code{[n_yrs × n_fish_fleets]}
-    with the same coding as \code{FishAgeComps_Type} but applied to length
-    compositions. Default: \code{2} (split by region, joint across sexes).}
-  \item{\code{comp_fishlen_like}}{Integer vector \code{[n_fish_fleets]}
-    with the same likelihood codes as \code{comp_fishage_like} applied to
-    length compositions. Default: \code{0} (Multinomial).}
-  \item{\code{ISS_FishLenComps}}{Input sample sizes for length composition
-    simulation, array
-    \code{[n_regions × n_yrs × n_seas × n_sexes × n_fish_fleets × n_sims]}.
-    Default: \code{100}.}
-  \item{\code{ln_FishLen_theta}}{Log-scale overdispersion parameters for
-    length compositions, array
-    \code{[n_regions × n_sexes × n_fish_fleets]}.
-    Default: \code{log(1)}.}
-  \item{\code{ln_FishLen_theta_agg}}{Log-scale overdispersion for aggregated
-    length compositions, vector \code{[n_fish_fleets]}.
-    Default: \code{log(1)}.}
-  \item{\code{FishLen_corr_pars}}{Correlation parameters for 1D/2D
-    logistic-normal length likelihoods, array
-    \code{[n_regions × n_sexes × n_fish_fleets × 2]}.
-    Default: \code{0.01}.}
-  \item{\code{FishLen_corr_pars_agg}}{Correlation parameters for aggregated
-    length compositions, vector \code{[n_fish_fleets]}.
-    Default: \code{0.01}.}
-}
-}
-
 \seealso{
 Other Simulation Setup: 
 \code{\link{Setup_Sim_Biologicals}()},

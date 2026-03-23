@@ -34,7 +34,13 @@ Setup_Mod_Rec(
   h_spec = NULL,
   sgl_seas_spawning_movement = NA,
   t_spawn = 0,
-  stray_rate = array(0, dim = c(input_list$data$n_pop, length(input_list$data$years))),
+  stray_rate_spec = "fix",
+  stray_rate_blocks = paste0("none_Pop_", seq_len(input_list$data$n_pop)),
+  use_fixed_stray_rate = if (stray_rate_spec != "fix") 0 else 1,
+  fixed_stray_rate = array(0, dim = c(input_list$data$n_pop,
+    length(input_list$data$years))),
+  use_stray_rate_prior = 0,
+  stray_rate_prior = NULL,
   spawn_seas = 1,
   sexratio_spec = "fix",
   sexratio_blocks = {
@@ -99,7 +105,7 @@ Ignored when \code{use_rec_region_prop_prior = 0}. Default \code{NULL}.}
 \item{rec_seas_prop_spec}{Character or \code{NULL}. Seasonal recruitment
 apportionment structure. Default \code{"fix"}. See
 \code{\link{do_rec_seas_prop_mapping}} for full option descriptions
-including \code{"est_shared_p"}.}
+including \code{"est_shared_pop"}.}
 
 \item{use_rec_seas_prop_prior}{Integer (0/1). Whether Dirichlet priors are
 applied to seasonal recruitment proportions. Not valid when
@@ -203,9 +209,60 @@ array is constructed internally.}
 before spawning. \code{0} (default) = spawning before any mortality;
 \code{1} = spawning after all mortality.}
 
-\item{stray_rate}{Array \code{[n_pop × n_years]}. Proportion of fish that
-stray from their natal region during spawning. Values in \eqn{[0, 1]}.
-Default: \code{0} (No individuals stray.).}
+\item{stray_rate_spec}{Character string. Estimation structure for
+\code{stray_rate_pars} \code{[n_pop × max_stray_blocks]}, parameterised
+on the logit scale. Ignored when \code{use_fixed_stray_rate = 1} or
+\code{n_pop = 1}. Default \code{"fix"}. Options:
+\describe{
+  \item{\code{"fix"}}{All parameters fixed at starting values (mapped to
+    \code{NA}). Use this alongside \code{use_fixed_stray_rate = 0} to
+    hold stray rates at a specified value without estimating.}
+  \item{\code{"est_all"}}{Estimate independently per population × block.
+    Produces one parameter per population per unique block.}
+  \item{\code{"est_shared_pop"}}{Single parameter per block, shared across
+    all populations. Requires identical block structures across all
+    populations — an error is raised if block indices differ.}
+}}
+
+\item{stray_rate_blocks}{Character vector of length \code{n_pop} defining
+the temporal block structure for stray rate parameters. Valid formats:
+\describe{
+  \item{\code{"none_Pop_x"}}{Constant stray rate for population \code{x}
+    across all years (single block).}
+  \item{\code{"Block_k_Year_a-b_Pop_x"}}{Block \code{k} applies to years
+    \code{a} through \code{b} for population \code{x}. Use
+    \code{"terminal"} in place of the end year to extend through the
+    final model year.}
+}
+Default: a single constant block for every population.
+\strong{Note:} stray rate is generally unidentifiable from fisheries data
+alone. Time-blocking is provided for completeness but regularisation via
+\code{use_stray_rate_prior} in the penalty setup is strongly recommended
+whenever \code{stray_rate_spec != "fix"}.}
+
+\item{use_fixed_stray_rate}{Integer (0/1). Whether stray rates are supplied
+as a fixed external array (\code{fixed_stray_rate}) rather than estimated
+as model parameters. Default \code{1} (fixed), preserving existing
+behaviour. Set to \code{0} to estimate stray rates via
+\code{stray_rate_pars}.}
+
+\item{fixed_stray_rate}{Array \code{[n_pop × n_years]}. Fixed stray rate
+values used when \code{use_fixed_stray_rate = 1}. Values should be in
+\eqn{[0, 1]}. Default: \code{0} (no straying) for all populations and
+years. Ignored when \code{use_fixed_stray_rate = 0}.}
+
+\item{use_stray_rate_prior}{Integer (0/1). Whether Beta priors are applied
+to estimated stray rate parameters. Only relevant when
+\code{use_fixed_stray_rate = 0} and \code{n_pop > 1}. An error is raised
+if \code{use_stray_rate_prior = 1} alongside \code{use_fixed_stray_rate = 1}
+since \code{stray_rate_pars} would not be estimated. Default \code{0}.}
+
+\item{stray_rate_prior}{Data frame of Beta prior parameters for stray rates.
+Required columns: \code{pop} (population index), \code{block} (block
+index matching \code{stray_rate_blocks}), \code{mu} (prior mean, in
+\eqn{(0,1)}), \code{sd} (prior standard deviation). One row per
+population × block combination to penalise. Ignored when
+\code{use_stray_rate_prior = 0}. Default \code{NULL}.}
 
 \item{spawn_seas}{Integer. Season index in which spawning occurs. Default
 \code{1}.}
@@ -243,7 +300,7 @@ The input \code{input_list} with all recruitment-related fields
   populated in \code{$data} and \code{$par}, and factor maps constructed
   in \code{$map} for: \code{rec_region_prop_pars}, \code{rec_seas_prop_pars},
   \code{ln_sigmaR}, \code{ln_InitDevs}, \code{ln_RecDevs},
-  \code{steepness_h}, and \code{sexratio_pars}. Character-coded inputs
+  \code{steepness_h}, \code{sexratio_pars}, and \code{stray_rate_pars}. Character-coded inputs
   for \code{init_age_strc} and \code{equil_init_age_strc} are converted to
   integer codes before storage.
 }
@@ -288,6 +345,10 @@ before model compilation.
 }
 
 \section{Spawning Processes}{
+
+}
+
+\section{Stray Rate Dynamics}{
 
 }
 

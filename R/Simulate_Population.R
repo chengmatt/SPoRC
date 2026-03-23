@@ -2538,6 +2538,9 @@ simulation_self_test <- function(data,
 #' \code{ObsFishLenComps_pop}, \code{ObsSrvIdx_pop}, \code{ObsSrvAgeComps_pop},
 #' \code{ObsSrvLenComps_pop}) are extracted when present in \code{sim_env};
 #' corresponding \code{Use*_PopSpec} flags are derived automatically.
+#' Input sample sizes for population-specific age compositions
+#' (\code{ISS_FishAgeComps_pop}, \code{ISS_SrvAgeComps_pop}) are extracted
+#' when present in \code{sim_env}.
 #' Length composition outputs (\code{ObsFishLenComps}, \code{ObsSrvLenComps})
 #' and \code{SizeAgeTrans} are \code{NULL} when no size-age transition matrix is
 #' present in \code{sim_env}. Tagging outputs are \code{NULL} when
@@ -2566,14 +2569,16 @@ simulation_self_test <- function(data,
 #'   \code{ObsFishIdx}, \code{ObsFishIdx_SE}, \code{UseFishIdx},
 #'   \code{ObsFishIdx_pop}, \code{UseFishIdx_pop},
 #'   \code{ObsFishAgeComps}, \code{ISS_FishAgeComps}, \code{UseFishAgeComps},
-#'   \code{ObsFishAgeComps_pop}, \code{UseFishAgeComps_pop},
+#'   \code{ObsFishAgeComps_pop}, \code{ISS_FishAgeComps_pop},
+#'   \code{UseFishAgeComps_pop},
 #'   \code{ObsFishLenComps} (or \code{NULL}), \code{ISS_FishLenComps},
 #'   \code{UseFishLenComps},
 #'   \code{ObsFishLenComps_pop} (or \code{NULL}), \code{UseFishLenComps_pop},
 #'   \code{ObsSrvIdx}, \code{ObsSrvIdx_SE}, \code{UseSrvIdx},
 #'   \code{ObsSrvIdx_pop}, \code{UseSrvIdx_pop},
 #'   \code{ObsSrvAgeComps}, \code{ISS_SrvAgeComps}, \code{UseSrvAgeComps},
-#'   \code{ObsSrvAgeComps_pop}, \code{UseSrvAgeComps_pop},
+#'   \code{ObsSrvAgeComps_pop}, \code{ISS_SrvAgeComps_pop},
+#'   \code{UseSrvAgeComps_pop},
 #'   \code{ObsSrvLenComps} (or \code{NULL}), \code{ISS_SrvLenComps},
 #'   \code{UseSrvLenComps},
 #'   \code{ObsSrvLenComps_pop} (or \code{NULL}), \code{UseSrvLenComps_pop}.
@@ -2645,6 +2650,7 @@ simulation_data_to_SPoRC <- function(sim_env,
   ObsFishLenComps_pop <- if(!is.null(sim_env$n_lens)) {
     array(sim_env$ObsFishLenComps_pop[,,1:y,,,,,sim, drop = FALSE], dim = c(sim_env$n_pop, sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_lens, sim_env$n_sexes, sim_env$n_fish_fleets))
   } else NULL
+  ISS_FishAgeComps_pop <- array(sim_env$ISS_FishAgeComps_pop[,,1:y,,,, sim, drop = FALSE], dim = c(sim_env$n_pop, sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_sexes, sim_env$n_fish_fleets))
   UseFishAgeComps_pop <- apply(ObsFishAgeComps_pop, c(1,2,3,4,7), sum)  # sum over obs_ages and sexes
   UseFishAgeComps_pop[!is.na(UseFishAgeComps_pop) & UseFishAgeComps_pop > 0] <- 1
   if(!is.null(sim_env$n_lens)) {
@@ -2681,6 +2687,7 @@ simulation_data_to_SPoRC <- function(sim_env,
   ObsSrvLenComps_pop <- if(!is.null(sim_env$n_lens)) {
     array(sim_env$ObsSrvLenComps_pop[,,1:y,,,,,sim, drop = FALSE], dim = c(sim_env$n_pop, sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_lens, sim_env$n_sexes, sim_env$n_srv_fleets))
   } else NULL
+  ISS_SrvAgeComps_pop <- array(sim_env$ISS_SrvAgeComps_pop[,,1:y,,,, sim, drop = FALSE], dim = c(sim_env$n_pop, sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_sexes, sim_env$n_srv_fleets))
   UseSrvAgeComps_pop <- apply(ObsSrvAgeComps_pop, c(1,2,3,4,7), sum)  # sum over obs_ages and sexes
   UseSrvAgeComps_pop[!is.na(UseSrvAgeComps_pop) & UseSrvAgeComps_pop > 0] <- 1
   if(!is.null(sim_env$n_lens)) {
@@ -2721,6 +2728,7 @@ simulation_data_to_SPoRC <- function(sim_env,
               ObsFishIdx_pop = ObsFishIdx_pop,
               UseFishIdx_pop = UseFishIdx_pop,
               ObsFishAgeComps_pop = ObsFishAgeComps_pop,
+              ISS_FishAgeComps_pop = ISS_FishAgeComps_pop,
               UseFishAgeComps_pop = UseFishAgeComps_pop,
               ObsFishLenComps_pop = ObsFishLenComps_pop,
               UseFishLenComps_pop = UseFishLenComps_pop,
@@ -2739,6 +2747,7 @@ simulation_data_to_SPoRC <- function(sim_env,
               ObsSrvIdx_pop = ObsSrvIdx_pop,
               UseSrvIdx_pop = UseSrvIdx_pop,
               ObsSrvAgeComps_pop = ObsSrvAgeComps_pop,
+              ISS_SrvAgeComps_pop = ISS_SrvAgeComps_pop,
               UseSrvAgeComps_pop = UseSrvAgeComps_pop,
               ObsSrvLenComps_pop = ObsSrvLenComps_pop,
               UseSrvLenComps_pop = UseSrvLenComps_pop

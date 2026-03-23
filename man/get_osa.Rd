@@ -98,6 +98,23 @@ Formats observed and expected composition data and calculates one-step-ahead
 likelihoods. This function is the main interface for residual diagnostics,
 internally calling [run_osa()] to perform the residual calculations.
 }
+\details{
+When computing OSA residuals for population-specific composition data,
+slice the leading population dimension from the \code{obs_mat} and
+\code{exp_mat} arrays before passing them to this function. For example,
+to compute residuals for population \code{p}:
+
+\preformatted{
+get_osa(obs_mat = Obs_FishAge_pop_mat[p,,,,,,],
+        exp_mat = Pred_FishAge_pop_mat[p,,,,,,],
+        ...)
+}
+
+Population-specific composition arrays returned by
+\code{\link{get_comp_prop}} are dimensioned
+\code{[n_pop × n_regions × n_years × n_seas × n_bins × n_sexes × n_fleets]}.
+Slicing on \code{p} yields a 6D array matching the expected input dimensions.
+}
 \seealso{
 Other Model Diagnostics: 
 \code{\link{do_jitter}()},

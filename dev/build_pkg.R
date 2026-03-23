@@ -62,6 +62,7 @@ unloadNamespace("SPoRC")
 # usethis::use_vignette("o_get_started")
 # usethis::use_vignette("p_single_region_dusky_alt_mp_testing")
 # usethis::use_vignette("q_movement_param")
+# usethis::use_vignette("r_natal-homing-pop-lrgr-rg")
 
 
 # Unit Tests --------------------------------------------------------------

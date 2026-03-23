@@ -1726,7 +1726,7 @@ do_srv_fixed_sel_pars_mapping <- function(input_list, srv_fixed_sel_pars_spec) {
     for(r in 1:input_list$data$n_regions) {
 
       # Only add a counter if caatches are avaliable in some years for a given region and fleet combination
-      if(sum(input_list$data$UseSrvIdx[r,,,f]) > 0) {
+      if(sum(input_list$data$UseSrvIdx[r,,,f]) > 0 || sum(input_list$data$UseSrvIdx_pop[,r,,,f] > 0)) {
 
         # Extract number of survey selectivity blocks
         srvsel_blocks_tmp <- unique(as.vector(input_list$data$srv_sel_blocks[r,,f]))
@@ -1823,12 +1823,12 @@ do_srv_fixed_sel_pars_mapping <- function(input_list, srv_fixed_sel_pars_spec) {
 #' \code{[n_regions × max_q_blocks × n_srv_fleets]}, the log-scale survey
 #' catchability parameters. Parameters are only activated for region–fleet
 #' combinations where survey index data are used
-#' (\code{sum(UseSrvIdx[r,,,f]) > 0}); unused combinations are mapped to
+#' (\code{sum(UseSrvIdx[r,,,f]) > 0}) \code{sum(input_list$data$UseSrvIdx_pop[,r,,,f] > 0)}; unused combinations are mapped to
 #' \code{NA}.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
 #'   sublists. Requires \code{$data$n_srv_fleets}, \code{$data$n_regions},
-#'   \code{$data$srv_q_blocks}, and \code{$data$UseSrvIdx}.
+#'   \code{$data$srv_q_blocks}, \code{$data$UseSrvIdx}, and \code{$data$UseSrvIdx_pop}.
 #' @param srv_q_spec Character vector \code{[n_srv_fleets]} specifying the
 #'   sharing structure for catchability. One of:
 #'   \describe{
@@ -1862,7 +1862,7 @@ do_srv_q_mapping <- function(input_list, srv_q_spec) {
 
     for(r in 1:input_list$data$n_regions) {
 
-      if(sum(input_list$data$UseSrvIdx[r,,,f]) == 0) {
+      if(sum(input_list$data$UseSrvIdx[r,,,f]) == 0 && sum(input_list$data$UseSrvIdx_pop[,r,,,f] == 0)) {
         map_srv_q[r,,f] <- NA # fix parameters if we are not using survey indices for these fleets and regions
       } else {
 
@@ -1932,7 +1932,7 @@ do_srv_q_mapping <- function(input_list, srv_q_spec) {
 #' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
 #'   sublists. Requires \code{$data$n_srv_fleets}, \code{$data$n_regions},
 #'   \code{$data$n_sexes}, \code{$data$cont_tv_srv_sel},
-#'   \code{$data$srv_sel_model}, \code{$data$UseSrvIdx}, and
+#'   \code{$data$srv_sel_model}, \code{$data$UseSrvIdx}, \code{$data$UseSrvIdx_pop}, and
 #'   \code{$data$Selex_Type}.
 #' @param srvsel_pe_pars_spec Character vector \code{[n_srv_fleets]} specifying
 #'   the sharing structure. Same options as
@@ -1978,7 +1978,7 @@ do_srvsel_pe_pars_mapping <- function(input_list, srvsel_pe_pars_spec, corr_opt_
     for(r in 1:input_list$data$n_regions) {
 
       # if no time-variation, then fix all parameters for this fleet
-      if(input_list$data$cont_tv_srv_sel[r,f] == 0 || sum(input_list$data$UseSrvIdx[r,,,f]) == 0) {
+      if(input_list$data$cont_tv_srv_sel[r,f] == 0 || (sum(input_list$data$UseSrvIdx[r,,,f]) == 0 && sum(input_list$data$UseSrvIdx_pop[,r,,,f] == 0))) {
         map_srvsel_pe_pars[r,,,f] <- NA
       } else { # if we have time-variation
 
@@ -2152,7 +2152,7 @@ do_srvsel_pe_pars_mapping <- function(input_list, srvsel_pe_pars_spec, corr_opt_
 #' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
 #'   sublists. Requires \code{$data$n_srv_fleets}, \code{$data$n_regions},
 #'   \code{$data$n_sexes}, \code{$data$cont_tv_srv_sel},
-#'   \code{$data$srv_sel_model}, \code{$data$UseSrvIdx},
+#'   \code{$data$srv_sel_model}, \code{$data$UseSrvIdx}, \code{$data$UseSrvIdx_pop},
 #'   \code{$data$n_proj_yrs_devs}, and \code{$data$Selex_Type}.
 #' @param srv_sel_devs_spec Character vector \code{[n_srv_fleets]} specifying
 #'   the sharing structure for selectivity deviations. One of:
@@ -2217,7 +2217,7 @@ do_srvsel_devs_mapping <- function(input_list, srv_sel_devs_spec, srvsel_devs_sh
         for(y in 1:(length(input_list$data$years) + input_list$data$n_proj_yrs_devs)) {
 
           # if no time-variation, then fix all parameters for this fleet
-          if(input_list$data$cont_tv_srv_sel[r,f] == 0 || sum(input_list$data$UseSrvIdx[r,,,f]) == 0) {
+          if(input_list$data$cont_tv_srv_sel[r,f] == 0 || (sum(input_list$data$UseSrvIdx[r,,,f]) == 0 && sum(input_list$data$UseSrvIdx_pop[,r,,,f] == 0))) {
             map_srvsel_devs[r,y,,s,f] <- NA
           } else {
 

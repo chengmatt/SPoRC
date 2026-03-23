@@ -8,6 +8,11 @@ Setup_Mod_FishIdx_and_Comps(
   input_list,
   ObsFishIdx,
   ObsFishIdx_SE,
+  ObsFishIdx_pop = NULL,
+  ObsFishIdx_pop_SE = NULL,
+  UseFishIdx_pop = array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions,
+    length(input_list$data$years), input_list$data$n_seas,
+    input_list$data$n_fish_fleets)),
   fish_idx_type,
   UseFishIdx,
   ObsFishAgeComps,
@@ -20,6 +25,22 @@ Setup_Mod_FishIdx_and_Comps(
   FishLenComps_LikeType,
   FishAgeComps_Type,
   FishLenComps_Type,
+  ObsFishAgeComps_pop = NULL,
+  UseFishAgeComps_pop = array(0, dim = c(input_list$data$n_pop,
+    input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
+    input_list$data$n_fish_fleets)),
+  ISS_FishAgeComps_pop = NULL,
+  ObsFishLenComps_pop = NULL,
+  UseFishLenComps_pop = array(0, dim = c(input_list$data$n_pop,
+    input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
+    input_list$data$n_fish_fleets)),
+  ISS_FishLenComps_pop = NULL,
+  pop_FishAgeComps_LikeType = rep("none", input_list$data$n_fish_fleets),
+  pop_FishLenComps_LikeType = rep("none", input_list$data$n_fish_fleets),
+  pop_FishAgeComps_Type = paste("none_Year_1-terminal_Fleet_",
+    1:input_list$data$n_fish_fleets, sep = ""),
+  pop_FishLenComps_Type = paste("none_Year_1-terminal_Fleet_",
+    1:input_list$data$n_fish_fleets, sep = ""),
   ...
 )
 }
@@ -32,6 +53,17 @@ and \code{$verbose} sublists, as returned by upstream setup functions.}
 
 \item{ObsFishIdx_SE}{Standard errors of \code{ObsFishIdx} on the log scale,
 same dimensions as \code{ObsFishIdx}.}
+
+\item{ObsFishIdx_pop}{Observed population-specific fishery index array
+\code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]}.}
+
+\item{ObsFishIdx_pop_SE}{Lognormal standard errors for \code{ObsFishIdx_pop},
+same dimensions \code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]}.}
+
+\item{UseFishIdx_pop}{Binary indicator array
+\code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]}. \code{1} =
+include population-specific index in likelihood; \code{0} = exclude.
+Default: all zeros.}
 
 \item{fish_idx_type}{Character vector of length \code{n_fish_fleets} specifying
 the index type for each fleet. \code{"biom"} = biomass; \code{"abd"} =
@@ -51,8 +83,8 @@ Values may be raw counts or proportions; if proportions, supply
 
 \item{ISS_FishAgeComps}{Input sample size array
 \code{[n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
-If \code{NULL} (default), sample sizes are computed automatically by
-summing \code{ObsFishAgeComps} within each year–fleet–season–region cell
+If \code{NULL} (default), computed automatically by summing
+\code{ObsFishAgeComps} within each year–fleet–season–region cell
 according to \code{FishAgeComps_Type}.}
 
 \item{ObsFishLenComps}{Observed fishery length composition array
@@ -63,7 +95,7 @@ Only required when \code{input_list$data$fit_lengths == 1}.}
 \code{[n_regions × n_years × n_seas × n_fish_fleets]}.
 \code{1} = fit length compositions; \code{0} = exclude.}
 
-\item{ISS_FishLenComps}{Input sample size array for length compositions,
+\item{ISS_FishLenComps}{Input sample size array for length compositions
 \code{[n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
 If \code{NULL} (default), derived automatically from \code{ObsFishLenComps}.}
 
@@ -92,6 +124,60 @@ Example: \code{c("spltRjntS_Year_1-10_Fleet_1", "agg_Year_11-terminal_Fleet_1")}
 \item{FishLenComps_Type}{Same format and options as \code{FishAgeComps_Type}
 but applied to length compositions.}
 
+\item{ObsFishAgeComps_pop}{Observed population-specific fishery age
+composition array
+\code{[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes × n_fish_fleets]}.
+Required when any element of \code{UseFishAgeComps_pop} is \code{1}.}
+
+\item{UseFishAgeComps_pop}{Binary indicator array
+\code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]}.
+\code{1} = fit population-specific age compositions; \code{0} = exclude.
+Default: all zeros.}
+
+\item{ISS_FishAgeComps_pop}{Input sample size array for population-specific
+age compositions
+\code{[n_pop × n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
+If \code{NULL} (default), computed automatically by summing
+\code{ObsFishAgeComps_pop} within each population–year–fleet–season–region
+cell according to \code{pop_FishAgeComps_Type}.}
+
+\item{ObsFishLenComps_pop}{Observed population-specific fishery length
+composition array
+\code{[n_pop × n_regions × n_years × n_seas × n_lens × n_sexes × n_fish_fleets]}.
+Required when \code{input_list$data$fit_lengths == 1} and any element of
+\code{UseFishLenComps_pop} is \code{1}.}
+
+\item{UseFishLenComps_pop}{Binary indicator array
+\code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]}.
+\code{1} = fit population-specific length compositions; \code{0} = exclude.
+Default: all zeros.}
+
+\item{ISS_FishLenComps_pop}{Input sample size array for population-specific
+length compositions
+\code{[n_pop × n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
+If \code{NULL} (default), derived automatically from
+\code{ObsFishLenComps_pop}.}
+
+\item{pop_FishAgeComps_LikeType}{Character vector of length
+\code{n_fish_fleets} specifying the likelihood for population-specific
+fishery age compositions. Same options as \code{FishAgeComps_LikeType}.
+Default: \code{"none"} for all fleets.}
+
+\item{pop_FishLenComps_LikeType}{Character vector of length
+\code{n_fish_fleets} specifying the likelihood for population-specific
+fishery length compositions. Same options as \code{FishLenComps_LikeType}.
+Default: \code{"none"} for all fleets.}
+
+\item{pop_FishAgeComps_Type}{Character vector defining the composition
+structure for population-specific age compositions. Same format and options
+as \code{FishAgeComps_Type}. Default: \code{"none"} for all fleets across
+all years.}
+
+\item{pop_FishLenComps_Type}{Character vector defining the composition
+structure for population-specific length compositions. Same format and
+options as \code{FishLenComps_Type}. Default: \code{"none"} for all fleets
+across all years.}
+
 \item{...}{Optional starting value overrides for overdispersion and
 correlation parameters. Recognised arguments:
 \describe{
@@ -111,26 +197,52 @@ correlation parameters. Recognised arguments:
     \code{[n_regions × n_sexes × n_fish_fleets × 2]}. Default: \code{0.01}.}
   \item{\code{FishLen_corr_pars_agg}}{Aggregated length correlation
     \code{[n_fish_fleets]}. Default: \code{0.01}.}
+  \item{\code{ln_FishAge_pop_theta}}{Log-scale overdispersion for
+    population-specific age compositions
+    \code{[n_pop × n_regions × n_sexes × n_fish_fleets]}. Default: \code{0}.}
+  \item{\code{ln_FishAge_pop_theta_agg}}{Aggregated overdispersion for
+    population-specific age compositions
+    \code{[n_pop × n_fish_fleets]}. Default: \code{0}.}
+  \item{\code{FishAge_pop_corr_pars}}{Correlation parameters for
+    population-specific age compositions
+    \code{[n_pop × n_regions × n_sexes × n_fish_fleets × 2]}. Default: \code{0.01}.}
+  \item{\code{FishAge_pop_corr_pars_agg}}{Aggregated correlation parameters
+    for population-specific age compositions
+    \code{[n_pop × n_fish_fleets]}. Default: \code{0.01}.}
+  \item{\code{ln_FishLen_pop_theta}}{Log-scale overdispersion for
+    population-specific length compositions
+    \code{[n_pop × n_regions × n_sexes × n_fish_fleets]}. Default: \code{0}.}
+  \item{\code{ln_FishLen_pop_theta_agg}}{Aggregated overdispersion for
+    population-specific length compositions
+    \code{[n_pop × n_fish_fleets]}. Default: \code{0}.}
+  \item{\code{FishLen_pop_corr_pars}}{Correlation parameters for
+    population-specific length compositions
+    \code{[n_pop × n_regions × n_sexes × n_fish_fleets × 2]}. Default: \code{0.01}.}
+  \item{\code{FishLen_pop_corr_pars_agg}}{Aggregated correlation parameters
+    for population-specific length compositions
+    \code{[n_pop × n_fish_fleets]}. Default: \code{0.01}.}
 }}
 }
 \value{
 The input \code{input_list} with \code{$data}, \code{$par}, and
   \code{$map} updated with all fishery index and composition fields, including
-  computed or supplied ISS arrays, integer-coded likelihood and composition
-  type matrices, overdispersion parameters, and their factor maps.
+  pooled and population-specific observed arrays, computed or supplied ISS
+  arrays, integer-coded likelihood and composition type matrices,
+  overdispersion parameters, and their factor maps.
 }
 \description{
 Populates \code{input_list} with observed fishery indices, age compositions,
-and length compositions along with their usage indicators, likelihood types,
-composition structure types, input sample sizes, and overdispersion and
-correlation parameter starting values and mappings. Must be called after
-\code{\link{Setup_Mod_Catch_and_F}}.
+and length compositions (both pooled and population-specific) along with
+their usage indicators, likelihood types, composition structure types, input
+sample sizes, and overdispersion and correlation parameter starting values
+and mappings. Must be called after \code{\link{Setup_Mod_Catch_and_F}}.
 }
 \details{
-When \code{ISS_FishAgeComps} or \code{ISS_FishLenComps} are \code{NULL},
+When \code{ISS_FishAgeComps}, \code{ISS_FishLenComps},
+\code{ISS_FishAgeComps_pop}, or \code{ISS_FishLenComps_pop} are \code{NULL},
 input sample sizes are derived automatically by summing the observed
 composition arrays within each year–fleet–season–region cell, consistent
-with the specified \code{FishAgeComps_Type} or \code{FishLenComps_Type}.
+with the specified composition type.
 }
 \seealso{
 Other Model Setup: 

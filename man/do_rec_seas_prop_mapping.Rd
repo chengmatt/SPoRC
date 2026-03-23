@@ -17,7 +17,7 @@ apportionment structure, or \code{NULL} to estimate all proportions
 independently across populations and seasons. Options when
 non-\code{NULL}:
 \describe{
-  \item{\code{"est_shared_p"}}{Estimate seasonal proportions but share
+  \item{\code{"est_shared_pop"}}{Estimate seasonal proportions but share
     them across populations, so a single set of \code{n_seas - 1}
     parameters applies to all populations. Only valid for seasonal models
     (\code{n_seas > 1}). Also resets \code{use_fixed_rec_seas_prop} to

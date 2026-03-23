@@ -488,7 +488,7 @@ do_sigmaC_mapping <- function(input_list, sigmaC_spec) {
 #' dimensions with observed catch.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
-#'   sublists. Requires \code{$data$UseCatch} to be populated by
+#'   sublists. Requires \code{$data$UseCatch} and \code{$data$UseCatch_pop} to be populated by
 #'   \code{\link{Setup_Mod_Catch_and_F}}.
 #'
 #' @return The input \code{input_list} with \code{$map$ln_F_devs} set to a
@@ -2307,7 +2307,7 @@ do_fish_fixed_sel_pars_mapping <- function(input_list, fish_fixed_sel_pars_spec)
     for(r in 1:input_list$data$n_regions) {
 
       # Only add a counter if caatches are avaliable in some years for a given region and fleet combination
-      if(sum(input_list$data$UseCatch[r,,,f]) > 0) {
+      if(sum(input_list$data$UseCatch[r,,,f]) > 0 || sum(input_list$data$UseCatch_pop[,r,,,f]) > 0) {
 
         # Extract number of fishery selectivity blocks
         fishsel_blocks_tmp <- unique(as.vector(input_list$data$fish_sel_blocks[r,,f]))
@@ -2434,7 +2434,7 @@ do_fish_q_mapping <- function(input_list, fish_q_spec) {
 
     for(r in 1:input_list$data$n_regions) {
 
-      if(sum(input_list$data$UseFishIdx[r,,,f]) == 0) {
+      if(sum(input_list$data$UseFishIdx[r,,,f]) == 0 && sum(input_list$data$UseFishIdx_pop[,r,,,f]) == 0) {
         map_fish_q[r,,f] <- NA # fix parameters if we are not using fishery indices for these fleets and regions
       } else {
 
@@ -2536,7 +2536,7 @@ do_fishsel_pe_pars_mapping <- function(input_list, fishsel_pe_pars_spec, corr_op
     for(r in 1:input_list$data$n_regions) {
 
       # if no time-variation, then fix all parameters for this fleet
-      if(input_list$data$cont_tv_fish_sel[r,f] == 0 || sum(input_list$data$UseCatch[r,,,f]) == 0) {
+      if(input_list$data$cont_tv_fish_sel[r,f] == 0 || (sum(input_list$data$UseCatch[r,,,f]) == 0 && sum(input_list$data$UseCatch_pop[,r,,,f]) == 0)) {
         map_fishsel_pe_pars[r,,,f] <- NA
       } else { # if we have time-variation
 
@@ -2758,7 +2758,7 @@ do_fishsel_devs_mapping <- function(input_list, fish_sel_devs_spec, fishsel_devs
         for(y in 1:(length(input_list$data$years) + input_list$data$n_proj_yrs_devs)) {
 
           # if no time-variation, then fix all parameters for this fleet
-          if(input_list$data$cont_tv_fish_sel[r,f] == 0 || sum(input_list$data$UseCatch[r,,,f]) == 0) {
+          if(input_list$data$cont_tv_fish_sel[r,f] == 0 || (sum(input_list$data$UseCatch[r,,,f]) == 0 && sum(input_list$data$UseCatch_pop[,r,,,f]) == 0) ) {
             map_fishsel_devs[r,y,,s,f] <- NA
           } else {
 

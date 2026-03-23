@@ -7,6 +7,8 @@
 Setup_Sim_Survey(
   ObsSrvIdx_SE = array(0.2, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
     sim_list$n_srv_fleets)),
+  ObsSrvIdx_pop_SE = array(0.2, dim = c(sim_list$n_pop, sim_list$n_regions,
+    sim_list$n_yrs, sim_list$n_seas, sim_list$n_srv_fleets)),
   sim_list,
   srv_sel_input,
   srv_q_input = array(1, dim = c(sim_list$n_regions, sim_list$n_yrs,
@@ -32,13 +34,37 @@ Setup_Sim_Survey(
   SrvLen_corr_pars_agg = rep(0.01, sim_list$n_srv_fleets),
   SrvLen_corr_pars = array(0.01, dim = c(sim_list$n_regions, sim_list$n_sexes,
     sim_list$n_srv_fleets, 2)),
-  SrvLenComps_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_srv_fleets))
+  SrvLenComps_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_srv_fleets)),
+  pop_comp_srvage_like = rep(0, sim_list$n_srv_fleets),
+  ISS_SrvAgeComps_pop = array(100, dim = c(sim_list$n_pop, sim_list$n_regions,
+    sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes, sim_list$n_srv_fleets,
+    sim_list$n_sims)),
+  ln_SrvAge_pop_theta = array(log(1), dim = c(sim_list$n_pop, sim_list$n_regions,
+    sim_list$n_sexes, sim_list$n_srv_fleets)),
+  ln_SrvAge_pop_theta_agg = array(log(1), dim = c(sim_list$n_pop, sim_list$n_srv_fleets)),
+  SrvAge_pop_corr_pars = array(0.01, dim = c(sim_list$n_pop, sim_list$n_regions,
+    sim_list$n_sexes, sim_list$n_srv_fleets, 2)),
+  SrvAge_pop_corr_pars_agg = array(0.01, dim = c(sim_list$n_pop, sim_list$n_srv_fleets)),
+  pop_SrvAgeComps_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_srv_fleets)),
+  pop_comp_srvlen_like = rep(0, sim_list$n_srv_fleets),
+  ISS_SrvLenComps_pop = array(100, dim = c(sim_list$n_pop, sim_list$n_regions,
+    sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes, sim_list$n_srv_fleets,
+    sim_list$n_sims)),
+  ln_SrvLen_pop_theta = array(log(1), dim = c(sim_list$n_pop, sim_list$n_regions,
+    sim_list$n_sexes, sim_list$n_srv_fleets)),
+  ln_SrvLen_pop_theta_agg = array(log(1), dim = c(sim_list$n_pop, sim_list$n_srv_fleets)),
+  SrvLen_pop_corr_pars = array(0.01, dim = c(sim_list$n_pop, sim_list$n_regions,
+    sim_list$n_sexes, sim_list$n_srv_fleets, 2)),
+  SrvLen_pop_corr_pars_agg = array(0.01, dim = c(sim_list$n_pop, sim_list$n_srv_fleets)),
+  pop_SrvLenComps_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_srv_fleets))
 )
 }
 \arguments{
-\item{ObsSrvIdx_SE}{Lognormal observation error standard deviation for the
-survey index, array \code{[n_regions × n_yrs × n_seas × n_srv_fleets]}.
-Default: \code{0.2}.}
+\item{ObsSrvIdx_SE}{Lognormal observation error SD for survey index,
+array \code{[n_regions × n_yrs × n_seas × n_srv_fleets]}. Default: 0.2.}
+
+\item{ObsSrvIdx_pop_SE}{As above, but for population-specific indices,
+array \code{[n_pop × n_regions × n_yrs × n_seas × n_srv_fleets]}.}
 
 \item{sim_list}{Simulation list returned by \code{\link{Setup_Sim_Dim}}.}
 
@@ -47,115 +73,124 @@ Default: \code{0.2}.}
 No default; must be provided.}
 
 \item{srv_q_input}{Survey catchability array
-\code{[n_regions × n_yrs × n_srv_fleets × n_sims]}. Default: \code{1}
-for all cells.}
+\code{[n_regions × n_yrs × n_srv_fleets × n_sims]}. Default: 1 for all cells.}
 
-\item{t_srv}{Survey timing as a fraction of the year (annual models) or
-fraction of the season (seasonal models) at which the survey is conducted,
-array \code{[n_regions × n_seas × n_srv_fleets]}. Default: \code{1}
-(end of period).}
+\item{t_srv}{Survey timing as fraction of year or season, array
+\code{[n_regions × n_seas × n_srv_fleets]}. Default: 1.}
 
-\item{srv_idx_type}{Integer vector \code{[n_srv_fleets]} specifying the
-survey index type. Default: all \code{1} (biomass). Options:
-\describe{
-  \item{\code{0}/\code{"abd"}}{Abundance index.}
-  \item{\code{1}/\code{"biom"}}{Biomass index.}
-}}
+\item{srv_idx_type}{Integer vector \code{[n_srv_fleets]} specifying survey
+index type. Default: all 1 (biomass). Options: 0/“abd” (abundance),
+1/“biom” (biomass).}
 
 \item{comp_srvage_like}{Integer or character vector \code{[n_srv_fleets]}
-specifying the likelihood for simulating survey age compositions. Default:
-all \code{0} (multinomial). Options:
-\describe{
-  \item{\code{0}/\code{"Multinomial"}}{Multinomial.}
-  \item{\code{1}/\code{"Dirichlet-Multinomial"}}{Dirichlet-multinomial.}
-  \item{\code{2}/\code{"iid-Logistic-Normal"}}{Logistic-normal iid.}
-  \item{\code{3}/\code{"1d-Logistic-Normal"}}{Logistic-normal 1D AR1.}
-  \item{\code{4}/\code{"2d-Logistic-Normal"}}{Logistic-normal 2D (constant
-    by sex, AR1 by age).}
-}}
+specifying likelihood for survey age compositions. Default: all 0
+(multinomial). Options: 0/“Multinomial”, 1/“Dirichlet-Multinomial”,
+2/“iid-Logistic-Normal”, 3/“1d-Logistic-Normal”, 4/“2d-Logistic-Normal”.}
 
-\item{ISS_SrvAgeComps}{Input sample sizes for survey age compositions, array
-\code{[n_regions × n_yrs × n_seas × n_sexes × n_srv_fleets × n_sims]}.
-Interpretation depends on the likelihood: effective sample size for
-multinomial; overdispersion scale for Dirichlet-multinomial; variance
-scale for logistic-normal. Default: \code{100}.}
+\item{ISS_SrvAgeComps}{Array \code{[n_regions × n_yrs × n_seas × n_sexes × n_srv_fleets × n_sims]}
+of sample sizes or overdispersion for survey age compositions. Default: 100.}
 
-\item{ln_SrvAge_theta}{Log-scale overdispersion parameters for
-region/sex-specific survey age compositions, array
-\code{[n_regions × n_sexes × n_srv_fleets]}. Only used for likelihoods
-\code{1}–\code{4}. Default: \code{log(1)}.}
+\item{ln_SrvAge_theta}{Log-scale overdispersion array
+\code{[n_regions × n_sexes × n_srv_fleets]}. Used for likelihoods 1–4.
+Default: log(1).}
 
-\item{ln_SrvAge_theta_agg}{Log-scale overdispersion parameters for
-aggregated (across regions and sexes) survey age compositions, vector
-\code{[n_srv_fleets]}. Only used for likelihoods \code{1}–\code{4}.
-Default: \code{log(1)}.}
+\item{ln_SrvAge_theta_agg}{Log-scale overdispersion for aggregated survey
+age compositions, vector \code{[n_srv_fleets]}. Default: log(1).}
 
-\item{SrvAge_corr_pars_agg}{Correlation parameters for aggregated survey
-age compositions, vector \code{[n_srv_fleets]}. Only used for likelihood
-\code{3}. Default: \code{0.01}.}
+\item{SrvAge_corr_pars_agg}{Vector \code{[n_srv_fleets]} for aggregated
+survey age correlations. Only for likelihood 3. Default: 0.01.}
 
-\item{SrvAge_corr_pars}{Correlation parameters for region/sex-specific
-survey age compositions, array
-\code{[n_regions × n_sexes × n_srv_fleets × 2]}. The trailing dimension
-holds the age AR1 correlation (index 1) and the sex correlation
-(index 2). Only used for likelihoods \code{3}–\code{4}. Default:
-\code{0.01}.}
+\item{SrvAge_corr_pars}{Correlation parameters array
+\code{[n_regions × n_sexes × n_srv_fleets × 2]} (age AR1, sex). Only for
+likelihoods 3–4. Default: 0.01.}
 
-\item{SrvAgeComps_Type}{Integer or character array \code{[n_yrs × n_srv_fleets]}
-specifying the composition structure for each year and fleet. Default:
-\code{2} (joint by sex, split by region). Options:
-\describe{
-  \item{\code{0}/\code{"agg"}}{Aggregated across regions and sexes.}
-  \item{\code{1}/\code{"spltRspltS"}}{Split by region and sex.}
-  \item{\code{2}/\code{"spltRjntS"}}{Split by region, joint across sexes.}
-  \item{\code{999}/\code{"none"}}{Not simulated.}
-}}
+\item{SrvAgeComps_Type}{Array \code{[n_yrs × n_srv_fleets]} specifying
+composition structure. Default: 2 (split by region, joint sexes).
+Options: 0/“agg”, 1/“spltRspltS”, 2/“spltRjntS”, 999/“none”.}
 
 \item{comp_srvlen_like}{Integer or character vector \code{[n_srv_fleets]}
-specifying the likelihood for simulating survey length compositions.
-Same options as \code{comp_srvage_like}. Default: all \code{0}.}
+specifying likelihood for survey length compositions. Default: all 0.}
 
-\item{ISS_SrvLenComps}{Input sample sizes for survey length compositions,
-array \code{[n_regions × n_yrs × n_seas × n_sexes × n_srv_fleets × n_sims]}.
-Same interpretation as \code{ISS_SrvAgeComps}. Default: \code{100}.}
+\item{ISS_SrvLenComps}{Array \code{[n_regions × n_yrs × n_seas × n_sexes × n_srv_fleets × n_sims]}
+of sample sizes or overdispersion for survey length compositions. Default: 100.}
 
-\item{ln_SrvLen_theta}{Log-scale overdispersion parameters for
-region/sex-specific survey length compositions, array
-\code{[n_regions × n_sexes × n_srv_fleets]}. Default: \code{log(1)}.}
+\item{ln_SrvLen_theta}{Log-scale overdispersion array
+\code{[n_regions × n_sexes × n_srv_fleets]}. Default: log(1).}
 
-\item{ln_SrvLen_theta_agg}{Log-scale overdispersion parameters for
-aggregated survey length compositions, vector \code{[n_srv_fleets]}.
-Default: \code{log(1)}.}
+\item{ln_SrvLen_theta_agg}{Vector \code{[n_srv_fleets]} for aggregated
+length composition overdispersion. Default: log(1).}
 
-\item{SrvLen_corr_pars_agg}{Correlation parameters for aggregated survey
-length compositions, vector \code{[n_srv_fleets]}. Default: \code{0.01}.}
+\item{SrvLen_corr_pars_agg}{Vector \code{[n_srv_fleets]} for aggregated
+length composition correlations. Default: 0.01.}
 
-\item{SrvLen_corr_pars}{Correlation parameters for region/sex-specific
-survey length compositions, array
-\code{[n_regions × n_sexes × n_srv_fleets × 2]}. Same structure as
-\code{SrvAge_corr_pars}. Default: \code{0.01}.}
+\item{SrvLen_corr_pars}{Array \code{[n_regions × n_sexes × n_srv_fleets × 2]}
+correlation parameters for length comps. Default: 0.01.}
 
-\item{SrvLenComps_Type}{Integer or character array \code{[n_yrs × n_srv_fleets]}
-specifying the length composition structure. Same options as
-\code{SrvAgeComps_Type}. Default: \code{2}.}
+\item{SrvLenComps_Type}{Array \code{[n_yrs × n_srv_fleets]} specifying
+length composition structure. Default: 2.}
+
+\item{pop_comp_srvage_like}{Integer or character vector \code{[n_srv_fleets]}
+specifying likelihood for population-specific survey age compositions. Default: all 0.}
+
+\item{ISS_SrvAgeComps_pop}{Array \code{[n_pop × n_regions × n_yrs × n_seas × n_sexes × n_srv_fleets × n_sims]}
+of population-specific sample sizes or overdispersion. Default: 100.}
+
+\item{ln_SrvAge_pop_theta}{Log-scale overdispersion array
+\code{[n_pop × n_regions × n_sexes × n_srv_fleets]}. Default: log(1).}
+
+\item{ln_SrvAge_pop_theta_agg}{Array \code{[n_pop × n_srv_fleets]} for
+aggregated population-specific overdispersion. Default: log(1).}
+
+\item{SrvAge_pop_corr_pars}{Array \code{[n_pop × n_regions × n_sexes × n_srv_fleets × 2]}
+correlation parameters (age AR1, sex) for population-specific age compositions. Default: 0.01.}
+
+\item{SrvAge_pop_corr_pars_agg}{Array \code{[n_pop × n_srv_fleets]} for
+aggregated population-specific age correlations. Default: 0.01.}
+
+\item{pop_SrvAgeComps_Type}{Array \code{[n_yrs × n_srv_fleets]} specifying
+population-specific age composition structure. Default: 2.}
+
+\item{pop_comp_srvlen_like}{Integer or character vector \code{[n_srv_fleets]}
+specifying likelihood for population-specific survey length compositions. Default: all 0.}
+
+\item{ISS_SrvLenComps_pop}{Array \code{[n_pop × n_regions × n_yrs × n_seas × n_sexes × n_srv_fleets × n_sims]}
+of population-specific sample sizes or overdispersion. Default: 100.}
+
+\item{ln_SrvLen_pop_theta}{Array \code{[n_pop × n_regions × n_sexes × n_srv_fleets]}
+log-scale overdispersion for population-specific lengths. Default: log(1).}
+
+\item{ln_SrvLen_pop_theta_agg}{Array \code{[n_pop × n_srv_fleets]} for
+aggregated population-specific length overdispersion. Default: log(1).}
+
+\item{SrvLen_pop_corr_pars}{Array \code{[n_pop × n_regions × n_sexes × n_srv_fleets × 2]}
+correlation parameters for population-specific length comps. Default: 0.01.}
+
+\item{SrvLen_pop_corr_pars_agg}{Array \code{[n_pop × n_srv_fleets]} for
+aggregated population-specific length correlations. Default: 0.01.}
+
+\item{pop_SrvLenComps_Type}{Array \code{[n_yrs × n_srv_fleets]} specifying
+population-specific length composition structure. Default: 2.}
 }
 \value{
 The input \code{sim_list} with survey-related fields appended:
-  \code{$srv_sel}, \code{$srv_q}, \code{$ObsSrvIdx_SE}, \code{$t_srv},
-  \code{$srv_idx_type}, \code{$comp_srvage_like}, \code{$ISS_SrvAgeComps},
-  \code{$ln_SrvAge_theta}, \code{$ln_SrvAge_theta_agg},
-  \code{$SrvAge_corr_pars_agg}, \code{$SrvAge_corr_pars},
-  \code{$SrvAgeComps_Type}, \code{$comp_srvlen_like},
-  \code{$ISS_SrvLenComps}, \code{$ln_SrvLen_theta},
-  \code{$ln_SrvLen_theta_agg}, \code{$SrvLen_corr_pars_agg},
-  \code{$SrvLen_corr_pars}, \code{$SrvLenComps_Type}. Character-coded
-  inputs are converted to their integer equivalents before storage.
+  \code{$srv_sel}, \code{$srv_q}, \code{$ObsSrvIdx_SE}, \code{$ObsSrvIdx_pop_SE},
+  \code{$t_srv}, \code{$srv_idx_type}, \code{$comp_srvage_like}, \code{$ISS_SrvAgeComps},
+  \code{$ln_SrvAge_theta}, \code{$ln_SrvAge_theta_agg}, \code{$SrvAge_corr_pars_agg},
+  \code{$SrvAge_corr_pars}, \code{$SrvAgeComps_Type}, \code{$comp_srvlen_like},
+  \code{$ISS_SrvLenComps}, \code{$ln_SrvLen_theta}, \code{$ln_SrvLen_theta_agg},
+  \code{$SrvLen_corr_pars_agg}, \code{$SrvLen_corr_pars}, \code{$SrvLenComps_Type},
+  \code{$pop_comp_srvage_like}, \code{$ISS_SrvAgeComps_pop}, \code{$ln_SrvAge_pop_theta},
+  \code{$ln_SrvAge_pop_theta_agg}, \code{$SrvAge_pop_corr_pars_agg}, \code{$SrvAge_pop_corr_pars},
+  \code{$pop_SrvAgeComps_Type}, \code{$pop_comp_srvlen_like}, \code{$ISS_SrvLenComps_pop},
+  \code{$ln_SrvLen_pop_theta}, \code{$ln_SrvLen_pop_theta_agg}, \code{$SrvLen_pop_corr_pars_agg},
+  \code{$SrvLen_pop_corr_pars}, \code{$pop_SrvLenComps_Type}. Character-coded
+  inputs are converted to integer equivalents before storage.
 }
 \description{
 Populates \code{sim_list} with all survey-related inputs needed by the
 operating model: catchability, selectivity, survey timing, index type,
-and age/length composition likelihood settings including overdispersion and
-correlation parameters. Must be called after \code{\link{Setup_Sim_Dim}}.
+and age/length composition likelihood settings including overdispersion
+and correlation parameters. Must be called after \code{\link{Setup_Sim_Dim}}.
 }
 \seealso{
 Other Simulation Setup: 

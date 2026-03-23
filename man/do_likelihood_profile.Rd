@@ -19,33 +19,64 @@ do_likelihood_profile(
 )
 }
 \arguments{
-\item{data}{data list from model}
+\item{data}{Data list from the fitted model.}
 
-\item{parameters}{parameter list from model}
+\item{parameters}{Parameter list from the fitted model.}
 
-\item{mapping}{mapping list from model}
+\item{mapping}{Mapping list from the fitted model.}
 
-\item{random}{character vector of random effects to estimate}
+\item{random}{Character vector of random effects to estimate. Default
+\code{NULL}.}
 
-\item{what}{parameter name we want to profile}
+\item{what}{Character string. Name of the parameter to profile.}
 
-\item{idx}{Index for an parameter array, pointing to the value we want to map off (index is relative to a flattened array)}
+\item{idx}{Vector pointing to the
+specific elements to fix when \code{parameters[[what]]} is an array.
+\code{NULL} for scalar parameters.}
 
-\item{min_val}{minimum value of profile}
+\item{min_val}{Numeric. Minimum value of the profile range.}
 
-\item{max_val}{maximum value of profile}
+\item{max_val}{Numeric. Maximum value of the profile range.}
 
-\item{inc}{increment value between min and max value}
+\item{inc}{Numeric. Increment between profile values. Default \code{0.05}.}
 
-\item{do_par}{logical, whether to use parallel processing (default FALSE)}
+\item{do_par}{Logical. Whether to use parallel processing. Default
+\code{FALSE}.}
 
-\item{n_cores}{integer, number of cores to use for parallel processing (default is detectCores() - 1)}
+\item{n_cores}{Integer. Number of parallel workers. If \code{NULL}
+(default), \code{parallel::detectCores() - 1} is used.}
 }
 \value{
-Returns a list of likelihood profiled values for each data component with their respective dimensions (e.g., likelihood profiles by fleet, region, year, etc.) as well likelihood profiles for each data component, aggregated across all their respective dimensions.
+A named list containing one dataframe per likelihood component,
+  each with a \code{prof_val} column indicating the profiled parameter
+  value, plus \code{agg_nLL} which aggregates all components across their
+  respective dimensions. Components include:
+  \describe{
+    \item{Scalar penalties and priors}{\code{jnLL_df}, \code{rec_nLL_df},
+      \code{M_nLL_df}, \code{sel_nLL_df}, \code{rec_prop_nLL_df},
+      \code{Movement_nLL_df}, \code{h_nLL_df}, \code{TagRep_nLL_df},
+      \code{Fmort_nLL_df}, \code{fish_q_nLL_df}, \code{srv_q_nLL_df}.}
+    \item{Pooled data likelihoods}{\code{Catch_nLL_df}
+      \code{[Region × Year × Seas × Fleet]},
+      \code{FishIdx_nLL_df} and \code{SrvIdx_nLL_df}
+      \code{[Region × Year × Seas × Fleet]},
+      \code{FishAge_nLL_df}, \code{FishLen_nLL_df},
+      \code{SrvAge_nLL_df}, \code{SrvLen_nLL_df}
+      \code{[Region × Year × Seas × Sex × Fleet]},
+      \code{conv_fish_tag_nLL_df}
+      \code{[Recap_Year × Recap_Seas × Tag_Cohort × Region × Fleet]}.}
+    \item{Population-specific data likelihoods}{\code{Catch_pop_nLL_df},
+      \code{FishIdx_pop_nLL_df}, \code{SrvIdx_pop_nLL_df}
+      \code{[Pop × Region × Year × Seas × Fleet]},
+      \code{FishAge_pop_nLL_df}, \code{FishLen_pop_nLL_df},
+      \code{SrvAge_pop_nLL_df}, \code{SrvLen_pop_nLL_df}
+      \code{[Pop × Region × Year × Seas × Sex × Fleet]}.}
+  }
 }
 \description{
-Run Likelihood Profile
+Profiles the joint negative log-likelihood and all individual likelihood
+components across a range of fixed values for a single parameter. Supports
+both sequential and parallel execution.
 }
 \seealso{
 Other Model Diagnostics: 

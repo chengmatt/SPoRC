@@ -10,7 +10,7 @@ do_srvsel_pe_pars_mapping(input_list, srvsel_pe_pars_spec, corr_opt_semipar)
 \item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
 sublists. Requires \code{$data$n_srv_fleets}, \code{$data$n_regions},
 \code{$data$n_sexes}, \code{$data$cont_tv_srv_sel},
-\code{$data$srv_sel_model}, \code{$data$UseSrvIdx}, and
+\code{$data$srv_sel_model}, \code{$data$UseSrvIdx}, \code{$data$UseSrvIdx_pop}, and
 \code{$data$Selex_Type}.}
 
 \item{srvsel_pe_pars_spec}{Character vector \code{[n_srv_fleets]} specifying

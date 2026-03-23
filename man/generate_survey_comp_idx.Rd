@@ -2,7 +2,7 @@
 % Please edit documentation in R/Simulate_Population.R
 \name{generate_survey_comp_idx}
 \alias{generate_survey_comp_idx}
-\title{Generate survey indices and compositions in simulation}
+\title{Generate survey indices and compositions in a simulation}
 \usage{
 generate_survey_comp_idx(y, sim, sim_env)
 }
@@ -11,14 +11,19 @@ generate_survey_comp_idx(y, sim, sim_env)
 
 \item{sim}{Integer. Simulation replicate index.}
 
-\item{sim_env}{Simulation environment created by
-\code{\link{Setup_sim_env}}. Modified in place: \code{$SrvIAA},
-\code{$SrvIAL} (if \code{SizeAgeTrans} present), \code{$TrueSrvIdx},
-\code{$ObsSrvIdx}, \code{$ObsSrvAgeComps}, and
-\code{$ObsSrvLenComps} are updated.}
+\item{sim_env}{Simulation environment created by \code{\link{Setup_sim_env}}.
+Modified in place. The following elements are updated:
+\describe{
+  \item{\code{SrvIAA}}{Survey index-at-age for all populations.}
+  \item{\code{SrvIAL}}{Survey index-at-length if \code{SizeAgeTrans} is present.}
+  \item{\code{TrueSrvIdx}, \code{ObsSrvIdx}}{Aggregated survey index values.}
+  \item{\code{TrueSrvIdx_pop}, \code{ObsSrvIdx_pop}}{Population-specific survey index values.}
+  \item{\code{ObsSrvAgeComps}, \code{ObsSrvAgeComps_pop}}{Observed survey age compositions.}
+  \item{\code{ObsSrvLenComps}, \code{ObsSrvLenComps_pop}}{Observed survey length compositions if \code{SizeAgeTrans} is available.}
+}}
 }
 \value{
-\code{invisible(NULL)}. All modifications are made by reference
+\code{invisible(NULL)}. All modifications are performed by reference
   within \code{sim_env}.
 }
 \description{
@@ -28,5 +33,15 @@ derives index-at-length (\code{SrvIAL}) when a size-age transition matrix
 is available, generates observed survey indices (with lognormal error) as
 abundance or biomass depending on \code{srv_idx_type}, and draws age and
 length composition samples via \code{\link{simulate_comps}}.
+}
+\details{
+This function loops over seasons, regions, and survey fleets for all
+populations and replicates. It computes mid-period abundance, applies survey
+selectivity, calculates true survey indices (abundance or biomass), applies
+lognormal observation error, and simulates age and length composition samples.
+Population-specific compositions are also generated if requested.
+}
+\seealso{
+\code{\link{simulate_comps}}, \code{\link{Setup_sim_env}}
 }
 \keyword{internal}

@@ -23,6 +23,12 @@ do_retrospective(
   srvidx_datalag = array(0, dim = c(data$n_regions, data$n_srv_fleets)),
   srvage_datalag = array(0, dim = c(data$n_regions, data$n_srv_fleets)),
   srvlen_datalag = array(0, dim = c(data$n_regions, data$n_srv_fleets)),
+  fishidx_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_fish_fleets)),
+  fishage_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_fish_fleets)),
+  fishlen_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_fish_fleets)),
+  srvidx_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_srv_fleets)),
+  srvage_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_srv_fleets)),
+  srvlen_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_srv_fleets)),
   conv_tag_datalag = 0
 )
 }
@@ -79,6 +85,30 @@ age-composition data \eqn{[region \times fleet]}. Default is zeros.}
 
 \item{srvlen_datalag}{Integer array specifying lags applied to survey
 length-composition data \eqn{[region \times fleet]}. Default is zeros.}
+
+\item{fishidx_pop_datalag}{Integer array specifying lags applied to
+population-specific fishery index data
+\eqn{[n\_pop \times region \times fleet]}. Default is zeros.}
+
+\item{fishage_pop_datalag}{Integer array specifying lags applied to
+population-specific fishery age-composition data
+\eqn{[n\_pop \times region \times fleet]}. Default is zeros.}
+
+\item{fishlen_pop_datalag}{Integer array specifying lags applied to
+population-specific fishery length-composition data
+\eqn{[n\_pop \times region \times fleet]}. Default is zeros.}
+
+\item{srvidx_pop_datalag}{Integer array specifying lags applied to
+population-specific survey index data
+\eqn{[n\_pop \times region \times fleet]}. Default is zeros.}
+
+\item{srvage_pop_datalag}{Integer array specifying lags applied to
+population-specific survey age-composition data
+\eqn{[n\_pop \times region \times fleet]}. Default is zeros.}
+
+\item{srvlen_pop_datalag}{Integer array specifying lags applied to
+population-specific survey length-composition data
+\eqn{[n\_pop \times region \times fleet]}. Default is zeros.}
 
 \item{conv_tag_datalag}{Integer specifying the lag applied to conventional
 tagging data. Default is \code{0}.}

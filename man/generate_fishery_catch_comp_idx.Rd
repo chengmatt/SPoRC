@@ -11,31 +11,50 @@ generate_fishery_catch_comp_idx(y, sim, sim_env)
 
 \item{sim}{Integer. Simulation replicate index.}
 
-\item{sim_env}{Simulation environment created by
-\code{\link{Setup_sim_env}}. Modified in place: \code{$CAA},
-\code{$CAL} (if \code{SizeAgeTrans} present), \code{$TrueCatch},
-\code{$ObsCatch}, \code{$TrueFishIdx}, \code{$ObsFishIdx},
-\code{$ObsFishAgeComps}, \code{$ObsFishLenComps}, and (when
-\code{ISS_FishAgeComps_fill = "F_pattern"}) \code{$ISS_FishAgeComps}
-and \code{$ISS_FishLenComps} are updated.}
+\item{sim_env}{Simulation environment created by \code{\link{Setup_sim_env}}.
+Modified in place. The following elements are updated:
+\describe{
+  \item{\code{CAA}}{Catch-at-age for all populations, regions, seasons, and fleets.}
+  \item{\code{CAL}}{Catch-at-length if \code{SizeAgeTrans} is present.}
+  \item{\code{TrueCatch}, \code{ObsCatch}}{Regional catch indices (abundance or biomass).}
+  \item{\code{TrueCatch_pop}, \code{ObsCatch_pop}}{Population-specific catch indices.}
+  \item{\code{TrueFishIdx}, \code{ObsFishIdx}}{Regional fishery indices (abundance or biomass).}
+  \item{\code{TrueFishIdx_pop}, \code{ObsFishIdx_pop}}{Population-specific fishery indices.}
+  \item{\code{ObsFishAgeComps}, \code{ObsFishAgeComps_pop}}{Observed fishery age compositions.}
+  \item{\code{ObsFishLenComps}, \code{ObsFishLenComps_pop}}{Observed fishery length compositions if \code{SizeAgeTrans} is available.}
+  \item{\code{ISS_FishAgeComps}, \code{ISS_FishAgeComps_pop},
+        \code{ISS_FishLenComps}, \code{ISS_FishLenComps_pop}}{Updated sample sizes when \code{ISS_FishAgeComps_fill = "F_pattern"} and feedback is active.}
+}}
 }
 \value{
 \code{invisible(NULL)}. All modifications are made by reference
   within \code{sim_env}.
 }
 \description{
-Applies Baranov's catch equation to compute catch-at-age
-(\code{CAA}) for all populations, regions, seasons, and fleets, derives
-catch-at-length (\code{CAL}) when a size-age transition matrix is
-available, and generates observed catch (with lognormal error), fishery
-abundance or biomass indices, and age and length composition samples.
-Composition sampling calls \code{\link{simulate_comps}} and respects
-the likelihood type (\code{comp_fishage_like}, \code{comp_fishlen_like})
-and aggregation structure (\code{FishAgeComps_Type},
-\code{FishLenComps_Type}) specified in \code{sim_env}. Composition draws
-are skipped for fleet–season cells with \code{Fmort = 0}. When
-\code{ISS_FishAgeComps_fill = "F_pattern"} and feedback is active,
-sample sizes for the current and all prior years are updated via
-\code{\link{predict_sim_fish_iss_fmort}} before sampling.
+Applies Baranov's catch equation to compute catch-at-age (\code{CAA}) for
+all populations, regions, seasons, and fleets, derives catch-at-length
+(\code{CAL}) when a size-age transition matrix is available, and generates
+observed catch (with lognormal error), fishery abundance or biomass indices,
+and age and length composition samples. Composition sampling calls
+\code{\link{simulate_comps}} and respects the likelihood type
+(\code{comp_fishage_like}, \code{comp_fishlen_like}) and aggregation
+structure (\code{FishAgeComps_Type}, \code{FishLenComps_Type}) specified in
+\code{sim_env}.
+}
+\details{
+Composition draws are skipped for fleet–season cells with zero fishing
+mortality (\code{Fmort = 0}). When \code{ISS_FishAgeComps_fill = "F_pattern"}
+and feedback is active, sample sizes for the current and prior years are
+updated via \code{\link{predict_sim_fish_iss_fmort}} before sampling.
+
+For each combination of season, region, and fleet, the function:
+\enumerate{
+  \item Computes mid-period exploitable abundance and applies Baranov's catch equation.
+  \item Converts catch-at-age to catch-at-length if \code{SizeAgeTrans} is available.
+  \item Calculates true regional and population-specific catch and fishery indices.
+  \item Applies lognormal observation error to generate observed indices.
+  \item Simulates age and length compositions using \code{\link{simulate_comps}}, skipping fleet–season cells with zero fishing mortality.
+  \item Optionally updates sample sizes dynamically if feedback is active and \code{ISS_FishAgeComps_fill = "F_pattern"}.
+}
 }
 \keyword{internal}

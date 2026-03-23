@@ -7,50 +7,67 @@
 do_francis_reweighting(data, rep, age_labels, len_labels, year_labels)
 }
 \arguments{
-\item{data}{List of data inputs}
+\item{data}{List of model data inputs containing observed compositions,
+usage flags, input sample sizes, weight arrays, and composition type
+matrices for both pooled and population-specific data streams.}
 
-\item{rep}{Report file list}
+\item{rep}{Report list from a fitted RTMB model containing predicted
+compositions (\code{CAA}, \code{CAL}, \code{SrvIAA}, \code{SrvIAL})
+with a leading population dimension.}
 
-\item{age_labels}{Age labels}
+\item{age_labels}{Vector of observed age bin labels.}
 
-\item{len_labels}{Length labels}
+\item{len_labels}{Vector of observed length bin labels.}
 
-\item{year_labels}{Year labels}
+\item{year_labels}{Vector of assessment year labels.}
 }
 \value{
-A list object of francis weights (note that it will be NAs for some, if using jnt composition approaches - i.e., only uses one dimension), as well as a dataframe of francis mean fits
+A named list containing:
+  \describe{
+    \item{\code{new_fish_age_wts}, \code{new_fish_len_wts},
+      \code{new_srv_age_wts}, \code{new_srv_len_wts}}{Updated Francis
+      weight arrays for pooled compositions, same dimensions as the
+      corresponding \code{Wt_*} arrays in \code{data}.}
+    \item{\code{new_fish_age_wts_pop}, \code{new_fish_len_wts_pop},
+      \code{new_srv_age_wts_pop}, \code{new_srv_len_wts_pop}}{Updated
+      Francis weight arrays for population-specific compositions, same
+      dimensions as the corresponding \code{Wt_*_pop} arrays in
+      \code{data}. Cells remain \code{NA} when the corresponding
+      \code{Use*_pop} flag contains no ones.}
+    \item{\code{mean_francis}}{Long-format dataframe of observed and
+      expected composition means across all data streams and populations,
+      with columns \code{Region}, \code{Comp_Year}, \code{Comp_Seas},
+      \code{Sex}, \code{Fleet}, \code{obs}, \code{pred}, \code{Type},
+      and \code{Pop} (pooled rows have \code{Pop = NA}).}
+  }
 }
 \description{
-Get Francis Weights
-}
-\details{
-Function to get francis weights. Used inside the wrapper function run_francis(), or can be defined by the user as a loop to extract Francis weights (see example).
+Computes Francis composition reweighting factors for pooled and
+population-specific fishery and survey age and length compositions.
+Used inside \code{\link{run_francis}} or directly in a user-defined
+reweighting loop.
 }
 \examples{
 \dontrun{
 for(j in 1:5) {
-
-  if(j == 1) { # reset weights at 1
-    data$Wt_FishAgeComps[] <- 1
-    data$Wt_FishLenComps[] <- 1
-    data$Wt_SrvAgeComps[] <- 1
-    data$Wt_SrvLenComps[] <- 1
+  if(j == 1) {
+    data$Wt_FishAgeComps[] <- 1; data$Wt_FishLenComps[] <- 1
+    data$Wt_SrvAgeComps[]  <- 1; data$Wt_SrvLenComps[]  <- 1
+    data$Wt_FishAgeComps_pop[] <- 0; data$Wt_FishLenComps_pop[] <- 0
+    data$Wt_SrvAgeComps_pop[]  <- 0; data$Wt_SrvLenComps_pop[]  <- 0
   } else {
     data$Wt_FishAgeComps[] <- wts$new_fish_age_wts
     data$Wt_FishLenComps[] <- wts$new_fish_len_wts
-    data$Wt_SrvAgeComps[] <- wts$new_srv_age_wts
-    data$Wt_SrvLenComps[] <- wts$new_srv_len_wts
+    data$Wt_SrvAgeComps[]  <- wts$new_srv_age_wts
+    data$Wt_SrvLenComps[]  <- wts$new_srv_len_wts
+    if(any(data$UseFishAgeComps_pop == 1)) data$Wt_FishAgeComps_pop[] <- wts$new_fish_age_wts_pop
+    if(any(data$UseFishLenComps_pop == 1)) data$Wt_FishLenComps_pop[] <- wts$new_fish_len_wts_pop
+    if(any(data$UseSrvAgeComps_pop  == 1)) data$Wt_SrvAgeComps_pop[]  <- wts$new_srv_age_wts_pop
+    if(any(data$UseSrvLenComps_pop  == 1)) data$Wt_SrvLenComps_pop[]  <- wts$new_srv_len_wts_pop
   }
-
-  sabie_rtmb_model <- fit_model(data,
-                                parameters,
-                                mapping,
-                                random = NULL,
-                                newton_loops = 3,
-                                silent = TRUE
-  )
-
-  rep <- sabie_rtmb_model$report(sabie_rtmb_model$env$last.par.best) # Get report
+  obj <- fit_model(data, parameters, mapping, random = NULL,
+                   newton_loops = 3, silent = TRUE)
+  rep <- obj$report(obj$env$last.par.best)
   wts <- do_francis_reweighting(data = data, rep = rep, age_labels = 2:31,
                                 len_labels = seq(41, 99, 2), year_labels = 1960:2024)
 }

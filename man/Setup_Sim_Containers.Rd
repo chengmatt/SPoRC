@@ -42,37 +42,66 @@ The input \code{sim_list} with the following zero-filled arrays appended:
 
   **Fishery containers**
   \describe{
-    \item{\code{$ObsCatch}}{Observed (noisy) catch in weight
+    \item{\code{$ObsCatch}}{Observed (noisy) catch aggregated across populations
       \code{[n_regions × n_yrs × n_seas × n_fish_fleets × n_sims]}.}
-    \item{\code{$TrueCatch}}{True (error-free) catch in weight, same dimensions as
-      \code{$ObsCatch}.}
-    \item{\code{$ObsFishIdx}}{Observed fishery CPUE index, same dimensions as
-      \code{$ObsCatch}.}
-    \item{\code{$TrueFishIdx}}{True fishery index, same dimensions as \code{$ObsCatch}.}
+    \item{\code{$TrueCatch}}{True (error-free) catch aggregated across populations,
+      same dimensions as \code{$ObsCatch}.}
+    \item{\code{$ObsCatch_pop}}{Observed population-specific catch
+      \code{[n_pop × n_regions × n_yrs × n_seas × n_fish_fleets × n_sims]}.
+      Used when \code{UseCatch_PopSpec[y,f] == 1}.}
+    \item{\code{$TrueCatch_pop}}{True population-specific catch, same dimensions
+      as \code{$ObsCatch_pop}.}
+    \item{\code{$ObsFishIdx}}{Observed fishery CPUE index aggregated across populations
+      \code{[n_regions × n_yrs × n_seas × n_fish_fleets × n_sims]}.}
+    \item{\code{$TrueFishIdx}}{True fishery index aggregated across populations,
+      same dimensions as \code{$ObsFishIdx}.}
+    \item{\code{$ObsFishIdx_pop}}{Observed population-specific fishery CPUE index
+      \code{[n_pop × n_regions × n_yrs × n_seas × n_fish_fleets × n_sims]}.
+      Used when \code{UseFishIdx_PopSpec[y,f] == 1}.}
+    \item{\code{$TrueFishIdx_pop}}{True population-specific fishery index, same
+      dimensions as \code{$ObsFishIdx_pop}.}
     \item{\code{$CAA}}{Catch-at-age (true)
       \code{[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_fish_fleets × n_sims]}.}
     \item{\code{$CAL}}{Catch-at-length (true)
       \code{[n_pop × n_regions × n_yrs × n_seas × n_lens × n_sexes × n_fish_fleets × n_sims]}.}
-    \item{\code{$ObsFishAgeComps}}{Observed fishery age compositions
-      \code{[n_regions × n_yrs × n_seas × n_obs_ages × n_sexes × n_fish_fleets × n_sims]}.
-      Uses \code{n_obs_ages} rather than \code{n_ages} to reflect the observed (binned) age structure.}
-    \item{\code{$ObsFishLenComps}}{Observed fishery length compositions
+    \item{\code{$ObsFishAgeComps}}{Observed fishery age compositions aggregated across populations
+      \code{[n_regions × n_yrs × n_seas × n_obs_ages × n_sexes × n_fish_fleets × n_sims]}.}
+    \item{\code{$ObsFishAgeComps_pop}}{Observed population-specific fishery age compositions
+      \code{[n_pop × n_regions × n_yrs × n_seas × n_obs_ages × n_sexes × n_fish_fleets × n_sims]}.
+      Used when \code{UseFishAgeComps_PopSpec[y,f] == 1}.}
+    \item{\code{$ObsFishLenComps}}{Observed fishery length compositions aggregated across populations
       \code{[n_regions × n_yrs × n_seas × n_lens × n_sexes × n_fish_fleets × n_sims]}.}
+    \item{\code{$ObsFishLenComps_pop}}{Observed population-specific fishery length compositions
+      \code{[n_pop × n_regions × n_yrs × n_seas × n_lens × n_sexes × n_fish_fleets × n_sims]}.
+      Used when \code{UseFishLenComps_PopSpec[y,f] == 1}.}
   }
 
   **Survey containers**
   \describe{
-    \item{\code{$ObsSrvIdx}}{Observed survey abundance or biomass index
+    \item{\code{$ObsSrvIdx}}{Observed survey abundance or biomass index aggregated
+      across populations
       \code{[n_regions × n_yrs × n_seas × n_srv_fleets × n_sims]}.}
-    \item{\code{$TrueSrvIdx}}{True survey index, same dimensions as \code{$ObsSrvIdx}.}
+    \item{\code{$TrueSrvIdx}}{True survey index aggregated across populations,
+      same dimensions as \code{$ObsSrvIdx}.}
+    \item{\code{$ObsSrvIdx_pop}}{Observed population-specific survey index
+      \code{[n_pop × n_regions × n_yrs × n_seas × n_srv_fleets × n_sims]}.
+      Used when \code{UseSrvIdx_PopSpec[y,sf] == 1}.}
+    \item{\code{$TrueSrvIdx_pop}}{True population-specific survey index, same
+      dimensions as \code{$ObsSrvIdx_pop}.}
     \item{\code{$SrvIAA}}{Survey index-at-age (true)
       \code{[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_srv_fleets × n_sims]}.}
     \item{\code{$SrvIAL}}{Survey index-at-length (true), same dimensions as
       \code{$SrvIAA} but with \code{n_lens} replacing \code{n_ages}.}
-    \item{\code{$ObsSrvAgeComps}}{Observed survey age compositions
+    \item{\code{$ObsSrvAgeComps}}{Observed survey age compositions aggregated across populations
       \code{[n_regions × n_yrs × n_seas × n_obs_ages × n_sexes × n_srv_fleets × n_sims]}.}
-    \item{\code{$ObsSrvLenComps}}{Observed survey length compositions
+    \item{\code{$ObsSrvAgeComps_pop}}{Observed population-specific survey age compositions
+      \code{[n_pop × n_regions × n_yrs × n_seas × n_obs_ages × n_sexes × n_srv_fleets × n_sims]}.
+      Used when \code{UseSrvAgeComps_PopSpec[y,sf] == 1}.}
+    \item{\code{$ObsSrvLenComps}}{Observed survey length compositions aggregated across populations
       \code{[n_regions × n_yrs × n_seas × n_lens × n_sexes × n_srv_fleets × n_sims]}.}
+    \item{\code{$ObsSrvLenComps_pop}}{Observed population-specific survey length compositions
+      \code{[n_pop × n_regions × n_yrs × n_seas × n_lens × n_sexes × n_srv_fleets × n_sims]}.
+      Used when \code{UseSrvLenComps_PopSpec[y,sf] == 1}.}
   }
 }
 \description{

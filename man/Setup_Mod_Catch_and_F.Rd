@@ -7,10 +7,15 @@
 Setup_Mod_Catch_and_F(
   input_list,
   ObsCatch,
-  catch_units = array("biom", dim = c(input_list$data$n_fish_fleets)),
   UseCatch,
+  catch_units = array("biom", dim = c(input_list$data$n_fish_fleets)),
+  UseCatch_pop = array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions,
+    length(input_list$data$years), input_list$data$n_seas,
+    input_list$data$n_fish_fleets)),
+  ObsCatch_pop = NULL,
   Use_F_pen = 1,
   sigmaC_spec = "fix",
+  sigmaC_pop_spec = "fix",
   sigmaF_spec = "fix",
   ...
 )
@@ -19,70 +24,118 @@ Setup_Mod_Catch_and_F(
 \item{input_list}{Named list with \code{$data}, \code{$par}, \code{$map},
 and \code{$verbose} sublists, as returned by upstream setup functions.}
 
-\item{ObsCatch}{Observed catch array \code{[n_regions × n_years × n_seas × n_fish_fleets]}.
+\item{ObsCatch}{Observed aggregated catch array
+\code{[n_regions × n_years × n_seas × n_fish_fleets]}.
 Values should be in the units specified by \code{catch_units}.}
 
-\item{catch_units}{Character array \code{[n_fish_fleets]} specifying catch
-units per fleet. \code{"biom"} = biomass (default); \code{"abd"} = abundance.
-Converted internally to \code{0}/\code{1} integer codes.}
+\item{UseCatch}{Binary indicator array
+\code{[n_regions × n_years × n_seas × n_fish_fleets]} controlling which
+aggregated catch observations enter the likelihood and whether
+\code{ln_F_devs} are estimated for each cell. \code{1} = use;
+\code{0} = exclude (corresponding \code{ln_F_devs} will be mapped to
+\code{NA}).}
 
-\item{UseCatch}{Binary indicator array \code{[n_regions × n_years × n_seas × n_fish_fleets]}
-controlling which catch observations enter the likelihood and whether
-\code{ln_F_devs} are estimated for each cell. \code{1} = use; \code{0} = exclude
-(corresponding \code{ln_F_devs} will be mapped to \code{NA}).}
+\item{catch_units}{Character array \code{[n_fish_fleets]} specifying catch
+units per fleet. \code{"biom"} = biomass (default); \code{"abd"} =
+abundance. Converted internally to \code{0}/\code{1} integer codes.}
+
+\item{UseCatch_pop}{Binary indicator array
+\code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]} controlling
+which population-specific catch observations enter the likelihood.
+\code{1} = use; \code{0} = exclude.}
+
+\item{ObsCatch_pop}{Observed population-specific catch array
+\code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]}.
+Values should be in the units specified by \code{catch_units}.}
 
 \item{Use_F_pen}{Integer flag for applying a fishing mortality penalty to
-penalise large deviations in \code{ln_F_devs}. \code{1} = apply (default);
-\code{0} = do not apply.}
+penalise large deviations in \code{ln_F_devs}. \code{1} = apply
+(default); \code{0} = do not apply.}
 
 \item{sigmaC_spec}{Character string specifying the sharing structure for
-\code{ln_sigmaC} (catch observation error SD). Default \code{"fix"} holds
-\code{ln_sigmaC} at its starting value (\code{log(0.01)} unless overridden
-via \code{...}). See \code{\link{do_sigmaC_mapping}} for all sharing options
-(\code{"est_shared_r"}, \code{"est_shared_y"}, \code{"est_all"}, etc.).
-A warning is issued if \code{"fix"} is selected without providing a starting
-value in \code{...}.}
+\code{ln_sigmaC} (aggregated catch observation error SD). Default
+\code{"fix"} holds \code{ln_sigmaC} at its starting value
+(\code{log(0.01)} unless overridden via \code{...}). Sharing options
+follow the convention \code{"est_shared_<dims>"} where \code{<dims>} is
+an underscore-separated list of dimensions to collapse: \code{"r"}
+(regions), \code{"y"} (years), \code{"seas"} (seasons), \code{"f"}
+(fleets), or any combination (e.g., \code{"est_shared_r_y"},
+\code{"est_shared_r_y_seas_f"}). Use \code{"est_all"} for a fully
+independent parameter per cell. A warning is issued if \code{"fix"} is
+selected without providing a starting value in \code{...}.}
+
+\item{sigmaC_pop_spec}{Character string specifying the sharing structure for
+\code{ln_sigmaC_pop} (population-specific catch observation error SD).
+Default \code{"fix"} holds \code{ln_sigmaC_pop} at its starting value
+(\code{log(0.01)} unless overridden via \code{...}). Sharing options
+follow the same convention as \code{sigmaC_spec} but with an additional
+population dimension: e.g., \code{"est_shared_pop"} shares across
+populations, \code{"est_shared_pop_r"} shares across populations and
+regions, and \code{"est_shared_pop_r_y_seas_f"} collapses all dimensions
+into a single parameter. A warning is issued if \code{"fix"} is selected
+without providing a starting value in \code{...}.}
 
 \item{sigmaF_spec}{Character string specifying the sharing structure for
-\code{ln_sigmaF} (fishing mortality process error SD). Default \code{"fix"}
-holds \code{ln_sigmaF} at its starting value (\code{log(1)}, i.e.,
-\eqn{\sigma_F = 1}, unless overridden via \code{...}). See
-\code{\link{do_sigmaF_mapping}} for all sharing options. A warning is issued
-if \code{"fix"} is selected without providing a starting value in \code{...}.}
+\code{ln_sigmaF} (fishing mortality process error SD). Default
+\code{"fix"} holds \code{ln_sigmaF} at its starting value (\code{log(1)},
+i.e., \eqn{\sigma_F = 1}, unless overridden via \code{...}). See
+\code{\link{do_sigmaF_mapping}} for all sharing options. A warning is
+issued if \code{"fix"} is selected without providing a starting value
+in \code{...}.}
 
 \item{...}{Optional starting value overrides, passed by name. Recognised
 arguments:
 \describe{
-  \item{\code{ln_sigmaC}}{Array of log-scale starting values for catch
-    observation error, dimensioned
+  \item{\code{ln_sigmaC}}{Array of log-scale starting values for
+    aggregated catch observation error, dimensioned
     \code{[n_regions × n_years × n_seas × n_fish_fleets]}.
+    Default: \code{log(0.01)}.}
+  \item{\code{ln_sigmaC_pop}}{Array of log-scale starting values for
+    population-specific catch observation error, dimensioned
+    \code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]}.
     Default: \code{log(0.01)}.}
   \item{\code{ln_sigmaF}}{Array of log-scale starting values for fishing
     mortality process error, dimensioned
     \code{[n_regions × n_seas × n_fish_fleets]}.
     Default: \code{log(1)}.}
-  \item{\code{ln_F_mean}}{Array of log-scale mean fishing mortality starting
-    values, dimensioned \code{[n_regions × n_seas × n_fish_fleets]}.
+  \item{\code{ln_F_mean}}{Array of log-scale mean fishing mortality
+    starting values, dimensioned
+    \code{[n_regions × n_seas × n_fish_fleets]}.
     Default: \code{log(0.1)}.}
   \item{\code{ln_F_devs}}{Array of log-scale annual fishing mortality
     deviation starting values, dimensioned
     \code{[n_regions × n_years × n_seas × n_fish_fleets]}.
     Default: \code{0}.}
 }}
+
+\item{Wt_Catch}{Likelihood weight applied to aggregated catch observations.
+Scalar or array conformable to \code{Catch_nLL}. Default: \code{1}.}
+
+\item{Wt_Catch_pop}{Likelihood weight applied to population-specific catch
+observations. Scalar or array conformable to \code{Catch_pop_nLL}.
+Default: \code{1}.}
 }
 \value{
 The input \code{input_list} with \code{$data}, \code{$par}, and
-  \code{$map} updated. Key additions: \code{$data$ObsCatch},
-  \code{$data$UseCatch}, \code{$data$Use_F_pen}, \code{$data$catch_units},
-  \code{$par$ln_sigmaC}, \code{$par$ln_sigmaF}, \code{$par$ln_F_mean},
-  \code{$par$ln_F_devs}, \code{$map$ln_sigmaC}, \code{$map$ln_sigmaF},
-  \code{$map$ln_F_devs}.
+  \code{$map} updated. Key additions:
+  \describe{
+    \item{\code{$data}}{
+      \code{ObsCatch}, \code{ObsCatch_pop}, \code{UseCatch},
+      \code{UseCatch_pop}, \code{Use_F_pen}, \code{catch_units},
+      \code{Wt_Catch}, \code{Wt_Catch_pop}.}
+    \item{\code{$par}}{
+      \code{ln_sigmaC}, \code{ln_sigmaC_pop}, \code{ln_sigmaF},
+      \code{ln_F_mean}, \code{ln_F_devs}.}
+    \item{\code{$map}}{
+      \code{ln_sigmaC}, \code{ln_sigmaC_pop}, \code{ln_sigmaF},
+      \code{ln_F_devs}.}
+  }
 }
 \description{
 Populates \code{input_list} with observed catch, catch usage indicators,
 fishing mortality parameters (\code{ln_F_mean}, \code{ln_F_devs}), and
-observation/process error structures (\code{ln_sigmaC}, \code{ln_sigmaF}).
-Must be called after \code{\link{Setup_Mod_Biologicals}}.
+observation/process error structures (\code{ln_sigmaC}, \code{ln_sigmaC_pop},
+\code{ln_sigmaF}). Must be called after \code{\link{Setup_Mod_Biologicals}}.
 }
 \seealso{
 Other Model Setup: 

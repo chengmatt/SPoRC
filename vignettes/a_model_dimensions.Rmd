@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-The following tables describe all elements contained within `input_list$data`, which is generated using the `SPoRC::Setup_x` functions. Note that they do not detail how the `SPoRC::Setup_x` functions should be utilized. Rather, they detail the components of `input_list$data`. Thus, for further details on how arguments for `SPoRC::Setup_x` functions should be defined, users should refer to the function documentation. Furthermore, note that when `n_sexes > 1`, the first dimension will always be females and the second dimension will always be males. Similarly, when `n_pop > 1`, populations are indexed in the order they are defined. 
+  The following tables describe all elements contained within `input_list$data`, which is generated using the `SPoRC::Setup_x` functions. Note that they do not detail how the `SPoRC::Setup_x` functions should be utilized. Rather, they detail the components of `input_list$data`. Thus, for further details on how arguments for `SPoRC::Setup_x` functions should be defined, users should refer to the function documentation. Furthermore, note that when `n_sexes > 1`, the first dimension will always be females and the second dimension will always be males. Similarly, when `n_pop > 1`, populations are indexed in the order they are defined. 
 
 ## Data Inputs for Defining Model Dimensions
 

@@ -15,10 +15,16 @@ condition_closed_loop_simulations(
   random = random,
   FishIdx_SE_fill = "mean",
   SrvIdx_SE_fill = "mean",
+  FishIdx_SE_pop_fill = "mean",
+  SrvIdx_SE_pop_fill = "mean",
   ISS_FishAgeComps_fill = "mean",
   ISS_FishLenComps_fill = "mean",
   ISS_SrvAgeComps_fill = "mean",
   ISS_SrvLenComps_fill = "mean",
+  ISS_FishAgeComps_pop_fill = "mean",
+  ISS_FishLenComps_pop_fill = "mean",
+  ISS_SrvAgeComps_pop_fill = "mean",
+  ISS_SrvLenComps_pop_fill = "mean",
   ...
 )
 }
@@ -40,45 +46,70 @@ the fitted data period.}
 
 \item{random}{Character vector of estimated random effects.}
 
-\item{FishIdx_SE_fill}{Character or numeric specifying how fishery index
-standard errors are extended into projection years.}
+\item{FishIdx_SE_fill}{Character or numeric specifying how pooled fishery
+index standard errors are extended into projection years.}
 
-\item{SrvIdx_SE_fill}{Character or numeric specifying how survey index
-standard errors are extended into projection years.}
+\item{SrvIdx_SE_fill}{Character or numeric specifying how pooled survey
+index standard errors are extended into projection years.}
 
-\item{ISS_FishAgeComps_fill}{Character or numeric specifying how fishery
-age-composition input sample sizes are extended into projection years.}
+\item{FishIdx_SE_pop_fill}{Character or numeric specifying how
+population-specific fishery index standard errors are extended into
+projection years. Default \code{"mean"}.}
 
-\item{ISS_FishLenComps_fill}{Same behavior as `ISS_FishAgeComps_fill` for
-fishery length compositions.}
+\item{SrvIdx_SE_pop_fill}{Character or numeric specifying how
+population-specific survey index standard errors are extended into
+projection years. Default \code{"mean"}.}
 
-\item{ISS_SrvAgeComps_fill}{Character or numeric specifying how survey
-age-composition input sample sizes are extended into projection years.}
+\item{ISS_FishAgeComps_fill}{Character or numeric specifying how pooled
+fishery age-composition input sample sizes are extended into projection
+years.}
 
-\item{ISS_SrvLenComps_fill}{Same behavior as `ISS_SrvAgeComps_fill` for
-  survey length compositions.
+\item{ISS_FishLenComps_fill}{Same behavior as \code{ISS_FishAgeComps_fill}
+for pooled fishery length compositions.}
 
-Extension rules may be:
+\item{ISS_SrvAgeComps_fill}{Character or numeric specifying how pooled
+survey age-composition input sample sizes are extended into projection
+years.}
+
+\item{ISS_SrvLenComps_fill}{Same behavior as \code{ISS_SrvAgeComps_fill}
+for pooled survey length compositions.}
+
+\item{ISS_FishAgeComps_pop_fill}{Character or numeric specifying how
+population-specific fishery age-composition input sample sizes are
+extended into projection years. Default \code{"mean"}.}
+
+\item{ISS_FishLenComps_pop_fill}{Same behavior as
+\code{ISS_FishAgeComps_pop_fill} for population-specific fishery length
+compositions. Default \code{"mean"}.}
+
+\item{ISS_SrvAgeComps_pop_fill}{Character or numeric specifying how
+population-specific survey age-composition input sample sizes are
+extended into projection years. Default \code{"mean"}.}
+
+\item{ISS_SrvLenComps_pop_fill}{Same behavior as
+  \code{ISS_SrvAgeComps_pop_fill} for population-specific survey length
+  compositions. Default \code{"mean"}.
+
+Extension rules for all \code{*_fill} arguments may be:
 
 \describe{
-  \item{"zeros"}{Fill projection years with zeros}
-  \item{"last"}{Repeat the final observed year}
-  \item{"mean"}{Use the mean of the historical series}
-  \item{"F_pattern"}{Scale fishery composition sample sizes with the
-  simulated fishing mortality pattern}
-  \item{numeric}{Use a supplied constant or array}
-}}
+  \item{\code{"zeros"}}{Fill projection years with zeros.}
+  \item{\code{"last"}}{Repeat the final observed year.}
+  \item{\code{"mean"}}{Use the mean of the historical series.}
+  \item{\code{"F_pattern"}}{Scale fishery composition sample sizes
+    proportionally to the simulated fishing mortality pattern (pooled
+    fishery ISS only).}
+  \item{numeric}{Use a supplied constant or array.}
+}
+
+If a fill argument receives an array directly, it is interpreted as the
+fully specified input and stored accordingly; the fill rule is ignored.}
 
 \item{...}{Optional named simulation inputs that override internally
-  generated components. Any argument expected by:
-
-  \code{Setup_Sim_Fishing()},
-  \code{Setup_Sim_Survey()},
-  \code{Setup_Sim_Biologicals()},
-  \code{Setup_Sim_Rec()},
-  or \code{Setup_Sim_Tagging()}
-
-  may be provided.
+  generated components. Any argument expected by
+  \code{\link{Setup_Sim_Fishing}}, \code{\link{Setup_Sim_Survey}},
+  \code{\link{Setup_Sim_Biologicals}}, \code{\link{Setup_Sim_Rec}}, or
+  \code{\link{Setup_Sim_Tagging}} may be provided.
 
   Common overrides include:
 
@@ -120,20 +151,20 @@ Extension rules may be:
   }
 
   Supplied objects must have dimensions consistent with model structure,
-  the total number of years (`length(data$years) + closed_loop_yrs`), and
-  the number of simulations (`n_sims`).}
+  the total number of years (\code{length(data$years) + closed_loop_yrs}),
+  and the number of simulations (\code{n_sims}).}
 }
 \value{
-A fully initialized `sim_list` object containing:
+A fully initialized \code{sim_list} object containing:
 
 \itemize{
   \item model dimensions and simulation containers
   \item biological process inputs
-  \item fishing and survey processes
+  \item pooled and population-specific fishing and survey processes
   \item recruitment dynamics
   \item tagging processes
   \item spatial movement structures
-  \item replicated arrays across `n_sims`
+  \item replicated arrays across \code{n_sims}
 }
 }
 \description{
@@ -150,32 +181,35 @@ projection years are initialized using extension rules or user-supplied
 overrides.
 
 Users may replace any internally generated component by supplying a
-correctly named object via `...`.
+correctly named object via \code{...}.
 
 
 Simulation years consist of two periods:
 
 \itemize{
   \item \strong{Conditioning years} — historical years corresponding to
-  the fitted assessment model.
-  \item \strong{Projection years} — future years simulated under closed-loop
-  management.
+    the fitted assessment model.
+  \item \strong{Projection years} — future years simulated under
+    closed-loop management.
 }
 
 During conditioning years, model processes are reconstructed from the
 fitted model report objects. For projection years, quantities are extended
-using specified fill rules or user-supplied inputs.
+using the specified fill rules or user-supplied inputs.
 
 By default:
 
 \itemize{
-  \item Biological inputs, selectivity, and catchability are extended using
-  values from the final estimated year.
+  \item Biological inputs, selectivity, and catchability are extended
+    using values from the final estimated year.
   \item Fishing mortality is initialized to zero in projection years.
   \item Recruitment is simulated forward when not fully specified by
-  `Rec_input`.
+    \code{Rec_input}.
+  \item Population-specific data streams (\code{ObsFishIdx_pop_SE},
+    \code{ObsSrvIdx_pop_SE}, and all \code{*_pop} ISS arrays) fall back
+    to uninformative defaults when the corresponding \code{Use*_pop}
+    flags contain no ones.
 }
-
 
 Closed-loop feedback begins in the first projection year and allows
 management actions (e.g., fishing mortality adjustments) to update

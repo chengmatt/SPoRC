@@ -8,47 +8,57 @@ get_catch_fits_plot(data, rep, model_names)
 }
 \arguments{
 \item{data}{List of length \code{n_models}, where each element is a SPoRC
-data list. \code{ObsCatch} (dimensions
-\code{[n_regions, n_yrs, n_seas, n_fish_fleets]}) provides observed catch
-values. \code{Wt_Catch} is used alongside \code{ln_sigmaC} from the report
-to recover the unweighted observation-error SD for confidence interval
-construction (\code{se = exp(ln_sigmaC) / Wt_Catch}).}
+data list. \code{ObsCatch}
+\code{[n_regions × n_yrs × n_seas × n_fish_fleets]} provides pooled
+observed catch. \code{Wt_Catch} is used alongside \code{ln_sigmaC} from
+the report to recover the unweighted observation-error SD for CI
+construction. When \code{UseCatch_pop} contains any ones,
+\code{ObsCatch_pop}
+\code{[n_pop × n_regions × n_yrs × n_seas × n_fish_fleets]} and
+\code{Wt_Catch_pop} are also used.}
 
 \item{rep}{List of length \code{n_models}, where each element is a SPoRC
 report list (i.e. the output of \code{obj$report()} after optimisation).
-\code{PredCatch} (dimensions
-\code{[n_pop, n_regions, n_yrs, n_seas, n_fish_fleets]}) is summed across
-populations to produce region-level predicted catch. \code{ln_sigmaC} is
-used for CI construction.}
+\code{PredCatch}
+\code{[n_pop × n_regions × n_yrs × n_seas × n_fish_fleets]} is summed
+across populations for pooled trajectories and used directly by population
+for pop-specific trajectories. \code{ln_sigmaC} and \code{ln_sigmaC_pop}
+are used for CI construction.}
 
 \item{model_names}{Character vector of length \code{n_models} giving display
 names for each model run. Used as the colour legend label on predicted
 trajectories.}
 }
 \value{
-A single \code{ggplot} object. Observed catch is shown as
-  \code{geom_pointrange} (black) with 95% log-normal confidence intervals
-  (\code{exp(log(obs) ± 1.96 * se)}). Predicted catch is shown as
-  \code{geom_line} coloured by model. The plot is faceted by
-  (Season + Fleet) × Region with free y-scales, and the y-axis is
-  constrained to [0, NA].
+A list of two \code{ggplot} objects:
+  \describe{
+    \item{[[1]] catch_fit_rg_plot}{Pooled catch plot, produced when any
+      element of \code{UseCatch} is 1. Observed catch shown as
+      \code{geom_pointrange} (black) with 95\% log-normal confidence
+      intervals; predicted catch shown as \code{geom_line} coloured by
+      model. Faceted by (Season + Fleet) × Region with free y-scales.}
+    \item{[[2]] catch_fit_pop_plot}{Population-specific catch plot, produced
+      when any element of \code{UseCatch_pop} is 1. Same geometry as the
+      pooled plot, faceted by (Population + Season + Fleet) × Region with
+      free y-scales. \code{NULL} when no pop-specific catch is active.}
+  }
 }
 \description{
 Plots observed catch time series alongside model-predicted values for one or
-more SPoRC model runs. Predicted catch is summed across populations before
-comparison with observations. Observed values are shown as points with
-approximate 95% log-normal confidence intervals derived from
-\code{ln_sigmaC}; predicted trajectories are overlaid as lines coloured by
-model. Years where observed catch is zero (i.e. \code{UseCatch = 0}) are
-excluded from both layers.
+more SPoRC model runs, for both pooled (region-level) and population-specific
+data streams. Pooled predicted catch is summed across populations before
+comparison with observations. Years where observed catch is zero are excluded
+from both layers.
 }
 \examples{
 \dontrun{
-  get_catch_fits_plot(
+  out <- get_catch_fits_plot(
     data        = list(data1, data2),
     rep         = list(rep1, rep2),
     model_names = c("Base", "Sensitivity")
   )
+  out[[1]]  # pooled catch
+  out[[2]]  # population-specific catch
 }
 }
 \seealso{

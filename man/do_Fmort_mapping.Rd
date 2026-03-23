@@ -8,7 +8,7 @@ do_Fmort_mapping(input_list)
 }
 \arguments{
 \item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
-sublists. Requires \code{$data$UseCatch} to be populated by
+sublists. Requires \code{$data$UseCatch} and \code{$data$UseCatch_pop} to be populated by
 \code{\link{Setup_Mod_Catch_and_F}}.}
 }
 \value{

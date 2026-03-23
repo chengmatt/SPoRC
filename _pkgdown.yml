@@ -28,13 +28,14 @@ articles:
       - l_simulation_testing
       - m_simulation_dimensions
 
-  - title: "Advanced"
+  - title: "Advanced: Setup"
     contents:
-      - j_starting_mapping
-      - k_defining_priors
-      - n_single_region_ebs_pollock_randomeff_case_study
-      - p_single_region_dusky_alt_mp_testing
-      - q_movement_param
+    - j_starting_mapping
+    - k_defining_priors
+    - q_movement_param
+    - n_single_region_ebs_pollock_randomeff_case_study
+    - p_single_region_dusky_alt_mp_testing
+    - r_natal-homing-pop-lrgr-rg
 
 reference:
   - title: "Model Setup"

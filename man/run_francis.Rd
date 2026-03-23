@@ -14,52 +14,57 @@ run_francis(
 )
 }
 \arguments{
-\item{data}{A list of model input data, including at least observed
-compositions (`ObsFishAgeComps`, `ObsFishLenComps`, `ObsSrvAgeComps`,
-`ObsSrvLenComps`) and corresponding weights
-(`Wt_FishAgeComps`, `Wt_FishLenComps`, `Wt_SrvAgeComps`,
-`Wt_SrvLenComps`).}
+\item{data}{A list of model input data containing observed compositions,
+usage flags, input sample sizes, and weight arrays for both pooled
+(\code{Wt_FishAgeComps}, \code{Wt_FishLenComps}, \code{Wt_SrvAgeComps},
+\code{Wt_SrvLenComps}) and population-specific
+(\code{Wt_FishAgeComps_pop}, \code{Wt_FishLenComps_pop},
+\code{Wt_SrvAgeComps_pop}, \code{Wt_SrvLenComps_pop}) data streams.}
 
-\item{parameters}{A list of model parameters to be passed to
-[fit_model()].}
+\item{parameters}{A list of model parameters passed to \code{\link{fit_model}}.}
 
-\item{mapping}{A list or mapping object used to specify fixed or
-estimated parameters in [fit_model()].}
+\item{mapping}{A list or mapping object passed to \code{\link{fit_model}}.}
 
-\item{random}{A character string of random effects passed to [fit_model()].}
+\item{random}{Character vector of random effects passed to
+\code{\link{fit_model}}. Default \code{NULL}.}
 
-\item{n_francis_iter}{Integer. Number of Francis reweighting
-iterations to perform. Default is `10`.}
+\item{n_francis_iter}{Integer. Number of Francis reweighting iterations.
+Default \code{10}.}
 
-\item{newton_loops}{Integer. Number of Newton loops passed to
-[fit_model()]. Default is `0`.}
+\item{newton_loops}{Integer. Number of Newton refinement steps passed to
+\code{\link{fit_model}}. Default \code{0}.}
 }
 \value{
-A list with three elements:
-\describe{
-  \item{obj}{The fitted model object returned by [fit_model()],
-  including all elements of a TMB object, data, parameters, mapping, random effects specified, and report.}
-  \item{end_mean_francis}{A summary of the mean Francis weights from the first iteration.}
-  \item{end_mean_francis}{A summary of the mean Francis weights from the final iteration.}
-  \item{recorded_weights}{A summary of recorded francis weights from each iteartion.}
-}
+A named list with:
+  \describe{
+    \item{\code{obj}}{The fitted model object from the final iteration,
+      augmented with \code{$data}, \code{$parameters}, \code{$mapping},
+      \code{$random}, and \code{$rep}.}
+    \item{\code{start_mean_francis}}{Mean composition fits from the first
+      iteration, as returned by \code{\link{do_francis_reweighting}}.}
+    \item{\code{end_mean_francis}}{Mean composition fits from the final
+      iteration.}
+    \item{\code{recorded_weights}}{Long-format dataframe of Francis weights
+      from every iteration for all pooled and population-specific data
+      streams, with columns \code{Region}, \code{Year}, \code{Seas},
+      \code{Sex}, \code{Fleet}, \code{Weight}, \code{Type}, \code{Pop}
+      (pooled rows have \code{Pop = NA}), and \code{iter}.}
+  }
 }
 \description{
-Runs an iterative Francis reweighting procedure for composition data
-(fishery and survey age- and length-compositions). The function
-reweights input data, repeatedly fits the model, and computes
-updated Francis weights.
+Runs an iterative Francis reweighting procedure for pooled and
+population-specific fishery and survey age and length compositions.
+Repeatedly fits the model and updates composition weights until the
+specified number of iterations is reached.
 }
 \examples{
 \dontrun{
-  out <- run_francis(data = data,
-                     parameters = parameters,
-                     mapping = mapping,
-                     random = NULL,
-                     n_francis_iter = 5,
-                     newton_loops = 3)
+  out <- run_francis(data = data, parameters = parameters,
+                     mapping = mapping, random = NULL,
+                     n_francis_iter = 5, newton_loops = 3)
   out$obj
-  out$mean_francis
+  out$end_mean_francis
+  out$recorded_weights
 }
 }
 \seealso{

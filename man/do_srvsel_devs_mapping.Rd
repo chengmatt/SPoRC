@@ -10,7 +10,7 @@ do_srvsel_devs_mapping(input_list, srv_sel_devs_spec, srvsel_devs_shared_ages)
 \item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
 sublists. Requires \code{$data$n_srv_fleets}, \code{$data$n_regions},
 \code{$data$n_sexes}, \code{$data$cont_tv_srv_sel},
-\code{$data$srv_sel_model}, \code{$data$UseSrvIdx},
+\code{$data$srv_sel_model}, \code{$data$UseSrvIdx}, \code{$data$UseSrvIdx_pop},
 \code{$data$n_proj_yrs_devs}, and \code{$data$Selex_Type}.}
 
 \item{srv_sel_devs_spec}{Character vector \code{[n_srv_fleets]} specifying

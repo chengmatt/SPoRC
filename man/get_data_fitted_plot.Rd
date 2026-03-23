@@ -8,12 +8,17 @@ get_data_fitted_plot(data, model_names)
 }
 \arguments{
 \item{data}{List of length \code{n_models}, where each element is a SPoRC
-data list. The following \code{Use*} indicator arrays are extracted from
-each element, all with dimensions
-\code{[n_regions, n_yrs, n_seas, n_fleets]}:
+data list. Pooled \code{Use*} indicator arrays are extracted with
+dimensions \code{[n_regions × n_years × n_seas × n_fleets]}:
 \code{UseSrvLenComps}, \code{UseSrvAgeComps}, \code{UseFishLenComps},
 \code{UseFishAgeComps}, \code{UseCatch}, \code{UseFishIdx},
-\code{UseSrvIdx}. If \code{use_conv_fish_tagging} contains any 1s,
+\code{UseSrvIdx}. Population-specific \code{Use*_pop} indicator arrays
+with dimensions \code{[n_pop × n_regions × n_years × n_seas × n_fleets]}
+are included when any element equals 1:
+\code{UseFishAgeComps_pop}, \code{UseFishLenComps_pop},
+\code{UseFishIdx_pop}, \code{UseSrvAgeComps_pop},
+\code{UseSrvLenComps_pop}, \code{UseSrvIdx_pop}. If
+\code{use_conv_fish_tagging} contains any 1s,
 \code{conv_tag_release_indicator} is also used to construct a tagging
 activity indicator array.}
 
@@ -22,10 +27,11 @@ names for each model run. Used as row facet labels.}
 }
 \value{
 A single \code{ggplot} object: a dot-plot with Year on the x-axis
-  and data type (labelled by source, season, and fleet) on the y-axis,
-  faceted by Model × Region. Points appear only in years where the
-  corresponding \code{Use*} indicator is 1. The legend is suppressed; data
-  types are distinguished by y-axis position and fill colour.
+  and data type (labelled by source, population where applicable, season,
+  and fleet) on the y-axis, faceted by Model × Region. Points appear only
+  in years where the corresponding \code{Use*} indicator is 1. The legend
+  is suppressed; data types are distinguished by y-axis position and fill
+  colour.
 }
 \description{
 Produces a dot-plot showing which data types were fitted to in each year,

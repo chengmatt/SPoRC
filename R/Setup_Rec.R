@@ -1358,8 +1358,11 @@ Setup_Mod_Rec <- function(input_list,
                           use_rec_seas_prop_prior = 0,
                           rec_seas_prop_prior = NULL,
                           use_fixed_rec_seas_prop = 1,
-                          fixed_rec_seas_prop = array(rep(c(1, rep(0, input_list$data$n_seas - 1)),
-                                                          each = input_list$data$n_seas), dim = c(input_list$data$n_pop, input_list$data$n_seas)),
+                          fixed_rec_seas_prop = {
+                            rec_seas_prop = array(0, dim = c(input_list$data$n_pop, input_list$data$n_seas))
+                            rec_seas_prop[, 1] <- 1
+                            rec_seas_prop
+                          },
                           do_rec_bias_ramp = 0,
                           bias_year = NA,
                           max_bias_ramp_fct = 1,

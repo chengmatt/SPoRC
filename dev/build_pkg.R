@@ -19,7 +19,7 @@ roxygenise()
 desc::desc_del_dep("compResidual", "Imports")
 desc::desc_set_dep("compResidual", "Suggests")
 desc::desc_del_dep("remotes", "Imports")
-desc::desc_set("Remotes", "fishfollower/compResidual")
+desc::desc_set("Remotes", "fishfollower/compResidual/compResidual")
 
 # pkgdown Site ------------------------------------------------------------
 pkgdown::clean_cache()

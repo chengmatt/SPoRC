@@ -35,7 +35,7 @@ Ensure the following packages are installed:
 
 ### Publications
 
-1.  Cheng, M.Lh., Goethel, D.R., Cunningham, C.J., Hulson, P.F.,
+1.  Cheng, M.LH., Goethel, D.R., Cunningham, C.J., Hulson, P.F.,
     Ianelli, J.N., Omori, K.L., 2026. The SPoRC Stock Assessment
     Package: A Generalized Next‐Generation Platform to Assess Spatial,
     Age and Sex‐Structured Populations. Fish and Fisheries faf.70082.

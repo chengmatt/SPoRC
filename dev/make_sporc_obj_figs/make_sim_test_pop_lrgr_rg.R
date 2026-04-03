@@ -499,10 +499,10 @@ setup_em <- function(sim_obj, sim, use_pop_specific_cat_comps) {
 
 
 
-# Run EM ------------------------------------------------------------------
+# Run EM w/ single sim ------------------------------------------------------------------
 
 # setup EM (w/o pop-specific data)
-input_list <- setup_em(sim_obj, sim = sim, use_pop_specific_cat_comps = FALSE)
+input_list <- setup_em(sim_obj, sim = 1, use_pop_specific_cat_comps = FALSE)
 
 # extract data, pars, and mapping
 data <- input_list$data
@@ -514,7 +514,7 @@ non_pop_obj <- fit_model(data, pars, map, NULL, 3, silent =F, do_optim = T)
 non_pop_obj$sd_rep <- sdreport(non_pop_obj)
 
 # setup EM (w/ pop-specific data)
-input_list <- setup_em(sim_obj, sim = sim, use_pop_specific_cat_comps = TRUE)
+input_list <- setup_em(sim_obj, sim = 1, use_pop_specific_cat_comps = TRUE)
 
 # extract data, pars, and mapping
 data <- input_list$data
@@ -525,8 +525,7 @@ map <- input_list$map
 pop_obj <- fit_model(data, pars, map, NULL, 3, silent =F, do_optim = T)
 pop_obj$sd_rep <- sdreport(pop_obj)
 
-
-# Comparison --------------------------------------------------------------
+# Comparison w/ single sim --------------------------------------------------------------
 
 # SSB Comparison
 ssb_comp <- rbind(reshape2::melt(non_pop_obj$rep$SSB) %>% mutate(type = 'no_pop_data', se = non_pop_obj$sd_rep$sd[names( non_pop_obj$sd_rep$value) == 'log_SSB'] ),
@@ -577,6 +576,151 @@ ggplot(rec_comp, aes(x = Year, y = value, color = type, fill = type)) +
   theme_sablefish() +
   labs(y = 'Recruitment')
 dev.off()
+
+
+
+# Run EMs w/ multiple sims (parrallel) ------------------------------------
+
+# Helper function to run sims
+run_sims <- function(sims = 50,
+                     sim_list,
+                     n_cores = parallel::detectCores() - 2,
+                     use_pop_specific_cat_comps = FALSE) {
+
+  sim_list_1 <- sim_list
+  sim_list_1$n_sims <- 1
+
+  # set up cores and parralellizaiton framework
+  future::plan(future::multisession, workers = n_cores)
+  options(future.globals.maxSize = 5e3 * 1024^2)
+  on.exit(future::plan(future::sequential), add = TRUE)
+
+  results <- future.apply::future_lapply(seq_len(sims), function(i) {
+
+    devtools::load_all(here::here("R")) # load in via dev tools
+
+    tryCatch({
+
+      # simulate single sim
+      sim_obj    <- Simulate_Pop_Static(sim_list = sim_list_1, output_path = NULL)
+
+      # get EM data
+      input_list <- setup_em(sim_obj, sim = 1,
+                             use_pop_specific_cat_comps = use_pop_specific_cat_comps)
+
+      # fit model
+      obj <- fit_model(input_list$data, input_list$par, input_list$map,
+                       NULL, 3, silent = TRUE, do_optim = TRUE)
+
+      # get sdreport
+      obj$sd_rep <- RTMB::sdreport(obj)
+
+      # output object
+      list(
+        em_Rec    = obj$rep$Rec,
+        em_SSB    = obj$rep$SSB,
+        om_Rec    = sim_obj$Rec[,,, 1],
+        om_SSB    = sim_obj$SSB[,,, 1],
+        max_grad  = max(abs(obj$gr(obj$opt$par)))
+      )
+
+    }, error = function(e) {
+
+      # return NA if faile
+      message(sprintf("sim %d failed: %s", i, conditionMessage(e)))
+      list(em_Rec = NA, em_SSB = NA, om_Rec = NA, om_SSB = NA,
+           converged = FALSE, max_grad = NA)
+    })
+
+  }, future.seed = TRUE)
+
+  # Combine results
+  collate <- function(field) {
+    vals <- lapply(results, `[[`, field)
+    if (any(sapply(vals, \(x) identical(x, NA)))) vals
+    else simplify2array(vals)  # last dim = n_sims
+  }
+
+  list(
+    em_Rec    = collate("em_Rec"),
+    em_SSB    = collate("em_SSB"),
+    om_Rec    = collate("om_Rec"),
+    om_SSB    = collate("om_SSB"),
+    max_grad  = sapply(results, `[[`, "max_grad")
+  )
+
+}
+
+# Helper to tidy one array with labels
+tidy_bias <- function(em_arr, om_arr, quantity, model_type) {
+  melt(em_arr) %>%
+    left_join(
+      melt(om_arr) %>% rename(true = value),
+      by = c("Var1", "Var2", "Var3", "Var4")
+    ) %>%
+    mutate(
+      rel_bias  = (value - true) / true,
+      quantity   = quantity,
+      model_type = model_type
+    )
+}
+
+# Run Sims ----------------------------------------------------------------
+non_pop_obj <- run_sims(50,sim_list, n_cores = 16, use_pop_specific_cat_comps = FALSE) # no population-specific data
+pop_obj <- run_sims(50,sim_list, n_cores = 16, use_pop_specific_cat_comps = TRUE) # population-specific data
+
+# Plot Sim Results --------------------------------------------------------
+df_all <- bind_rows(
+  tidy_bias(non_pop_obj$em_Rec, non_pop_obj$om_Rec, "Recruitment", "Non-Population"),
+  tidy_bias(pop_obj$em_Rec,     pop_obj$om_Rec,     "Recruitment", "Population"),
+  tidy_bias(non_pop_obj$em_SSB, non_pop_obj$om_SSB, "SSB",         "Non-Population"),
+  tidy_bias(pop_obj$em_SSB,     pop_obj$om_SSB,     "SSB",         "Population")
+) %>%
+  rename(pop = Var1, region = Var2, year = Var3, sim = Var4) %>%
+  mutate(pop = paste("Population", pop),
+         region = paste("Region", region)
+         )
+
+# summarize
+df_summary <- df_all %>%
+  group_by(pop, region, year, quantity, model_type) %>%
+  summarise(
+    med   = median(rel_bias, na.rm = TRUE),
+    lo    = quantile(rel_bias, 0.025, na.rm = TRUE),
+    hi    = quantile(rel_bias, 0.975, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# SSB plot
+png(here("vignettes", "figures", "r_natal_home_ssb_plot_multisim.png"), width = 1000, height = 1000)
+ggplot(df_summary %>% filter(quantity == 'SSB'), aes(x = year, colour = model_type, fill = model_type)) +
+  geom_ribbon(aes(ymin = lo, ymax = hi), alpha = 0.2, colour = NA) +
+  geom_line(aes(y = med), linewidth = 1.3) +
+  geom_hline(yintercept = 0, linetype = "dashed", linewidth = 1, colour = "black") +
+  scale_colour_manual(values = c("#E07B39", "#3A86C8")) +
+  scale_fill_manual(  values = c("#E07B39", "#3A86C8")) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  facet_grid(pop ~ region, scales = "free_y") +
+  labs(x = "Year", y = "Relative error (SSB)", color = 'Data Scenario', fill = 'Data Scenario')+
+  theme_bw(base_size = 15) +
+  theme(legend.position = 'top')
+dev.off()
+
+# Rec plot
+png(here("vignettes", "figures", "r_natal_home_rec_plot_multisim.png"), width = 1000, height = 1000)
+ggplot(df_summary %>% filter(quantity == 'Recruitment'), aes(x = year, colour = model_type, fill = model_type)) +
+  geom_ribbon(aes(ymin = lo, ymax = hi), alpha = 0.2, colour = NA) +
+  geom_line(aes(y = med), linewidth = 1.3) +
+  geom_hline(yintercept = 0, linetype = "dashed", linewidth = 1, colour = "black") +
+  scale_colour_manual(values = c("#E07B39", "#3A86C8")) +
+  scale_fill_manual(  values = c("#E07B39", "#3A86C8")) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  facet_grid(pop ~ region, scales = "free_y") +
+  labs(x = "Year", y = "Relative error (Recruitment)", color = 'Data Scenario', fill = 'Data Scenario')+
+  theme_bw(base_size = 15) +
+  theme(legend.position = 'top')
+dev.off()
+
 
 
 

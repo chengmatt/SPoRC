@@ -532,6 +532,10 @@ Get_Det_Recruitment <- function(recruitment_model,
     # Local Density Dependence w/ more than 1 population (using h[p,p] since a given population has the same steepness)
     if(rec_dd == 0 && n_pop > 1) {
 
+      # count number of populations in a given region
+      n_pop_in_region = array(0, dim = n_region)
+      for(p in 1:n_pop) n_pop_in_region[natal_region[p]] = n_pop_in_region[natal_region[p]] + 1
+
       effective_SSB = array(0, dim = n_pop)
       effective_S0  = array(0, dim = n_pop)
 
@@ -542,11 +546,12 @@ Get_Det_Recruitment <- function(recruitment_model,
             effective_SSB[p2] = effective_SSB[p2] + SSB[p, natal_region[p2]]
             effective_S0[p2]  = effective_S0[p2]  + S0[p, natal_region[p2]]
           } else {
+            n_receivers = n_pop_in_region[natal_region[p2]] # get number of populations in a givenr egion
             # Cross-population contribution scaled by stray_rate
             # SSB[p, natal_region[p2]] already reflects skip spawning via spawning migration
             # stray_rate[p] controls what fraction of those actually contribute here
-            effective_SSB[p2] = effective_SSB[p2] + stray_rate[p] * SSB[p, natal_region[p2]]
-            effective_S0[p2]  = effective_S0[p2]  + stray_rate[p] * S0[p, natal_region[p2]]
+            effective_SSB[p2] = effective_SSB[p2] + (stray_rate[p] / n_receivers) * SSB[p, natal_region[p2]]
+            effective_S0[p2]  = effective_S0[p2]  + (stray_rate[p] / n_receivers) * S0[p, natal_region[p2]]
           }
         }
       }

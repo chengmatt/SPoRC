@@ -603,15 +603,21 @@
           # Accumulate effective SSB at each population's natal region
           # across all source populations (captures stray contributions)
           if(n_pop > 1) {
+
+            # get number of pops in a given region
+            n_pop_in_region = array(0, dim = n_region)
+            for(p in 1:n_pop) n_pop_in_region[natal_region[p]] = n_pop_in_region[natal_region[p]] + 1
+
             for(p2 in 1:n_pop) {
               for(p in 1:n_pop) {
                 if(p == p2) {
                   eff_SSB[p2, y] = eff_SSB[p2, y] + SSB[p, natal_region[p2], y]
                 } else {
-                  eff_SSB[p2, y] = eff_SSB[p2, y] + stray_rate[p,y] * SSB[p, natal_region[p2], y]
+                  n_receivers = n_pop_in_region[natal_region[p2]]
+                  eff_SSB[p2, y] = eff_SSB[p2, y] + (stray_rate[p,y] / n_receivers) * SSB[p, natal_region[p2], y]
                 }
-              } # end p loop
-            } # end p2 loop
+              }
+            }
           } else eff_SSB[1, y] = sum(SSB[1,,y])
 
         }

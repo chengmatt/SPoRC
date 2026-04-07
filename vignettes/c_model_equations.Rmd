@@ -224,14 +224,14 @@ biomass at each population's natal region accounts for stray
 contributions from other populations:
 
 $$\begin{matrix}
-\text{effSSB}_{p,y} = SSB_{p, r^{\text{natal}}_p, y} + \sum_{p' \neq p} \phi_{p',y} \cdot SSB_{p', r^{\text{natal}}_p, y}
+\text{effSSB}_{p,y} = SSB_{p, r^{\text{natal}}_p, y} + \sum_{p' \neq p} \frac{\phi_{p',y}}{npop_r} \cdot SSB_{p', r^{\text{natal}}_p, y}
 \end{matrix}$$
 
 where $r^{\text{natal}}_p$ is the natal region of population $p$,
 $\phi_{p',y}$ is the stray rate of population $p'$ (the fraction of
 its spawning biomass contributing to non-natal regions), and the sum
 is taken over all other populations $p' \neq p$. For a single population,
-$\text{effSSB}_{1,y} = \sum_r SSB_{1,r,y}$.
+$\text{effSSB}_{1,y} = \sum_r SSB_{1,r,y}$. Note that $npop_r$ is the number of populations in a given region, where the contribution of $\phi_{p',y}$ is split evenly among populations. 
 
 #### Single-Season Spawning Movement
 

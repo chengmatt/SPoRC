@@ -10,7 +10,8 @@
 ## Improvements
 - Allowed both numeric and character codes for specifying dynamics in simulator, so as to be more consistent with how estimation models are specified, while maintaining backwards compatibility. 
 
-# version 1.1.0 (dev-movement)
+# version 1.1.0
+Release Date: 2026-3-31
 
 ## Major changes
 - Added capability to estimate movement using continuous time Markov chains (CTMC) using preference functions. 

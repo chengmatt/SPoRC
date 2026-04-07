@@ -93,8 +93,8 @@ optim_ref_pts <- function(model_name, data_list, pars_list) {
 #'
 #' @keywords internal
 build_plus_group_T <- function(M_penult, M_plus, F_penult, F_plus,
-                                Mov_penult, Mov_plus,
-                                n_regions, n_seas, seasdur) {
+                               Mov_penult, Mov_plus,
+                               n_regions, n_seas, seasdur) {
 
   # initialize transition matrices
   T_pu <- T_lu <- T_pf <- T_lf <- diag(n_regions)
@@ -189,6 +189,10 @@ solve_plus_group <- function(Ts, N_penult_u, N_penult_f, n_regions) {
 #'       Proportion of annual recruitment entering in each season.}
 #'     \item{\code{stray_rate}}{Numeric vector \code{[n_pop]}. Per-population
 #'       stray rate used to compute effective SSB across populations.}
+#'     \item{\code{natal_region}}{Integer vector \code{[n_pop]}. Natal region
+#'       index for each population.}
+#'     \item{\code{n_pop_in_region}}{Integer vector \code{[n_region]}. Number
+#'       of populations per natal region.}
 #'     \item{\code{SPR_x}}{Numeric. Target SPR fraction (e.g. 0.4).}
 #'   }
 #'
@@ -236,9 +240,9 @@ single_region_SPR <- function(pars,
         ## Spawning biomass
         if (seas == spawn_seas) {
           SB_age[1, p, j - 1] = tmp_unfished * WAA[p, spawn_seas, j - 1] *
-                                MatAA[p, spawn_seas, j - 1] * exp(-t_spawn * M_seas)
+            MatAA[p, spawn_seas, j - 1] * exp(-t_spawn * M_seas)
           SB_age[2, p, j - 1] = tmp_fished * WAA[p, spawn_seas, j - 1] *
-                                MatAA[p, spawn_seas, j - 1] * exp(-t_spawn * Z_seas)
+            MatAA[p, spawn_seas, j - 1] * exp(-t_spawn * Z_seas)
         }
 
         ## Mortality and ageing
@@ -274,10 +278,10 @@ single_region_SPR <- function(pars,
 
   # Get spawning biomass of penultimate age
   SB_age[1, , n_ages - 1] = tmp_unfished * WAA[,spawn_seas, n_ages - 1] * MatAA[,spawn_seas, n_ages - 1] *
-                            exp(-t_spawn * natmort[,n_ages - 1] * seasdur[spawn_seas])
+    exp(-t_spawn * natmort[,n_ages - 1] * seasdur[spawn_seas])
   SB_age[2, , n_ages - 1] = tmp_fished * WAA[,spawn_seas, n_ages - 1] * MatAA[,spawn_seas, n_ages - 1] *
-                            exp(-t_spawn * (natmort[,n_ages - 1] * seasdur[spawn_seas] +
-                            sum(F_fract_flt[spawn_seas,] * F_x * fish_sel[n_ages-1,]) ))
+    exp(-t_spawn * (natmort[,n_ages - 1] * seasdur[spawn_seas] +
+                      sum(F_fract_flt[spawn_seas,] * F_x * fish_sel[n_ages-1,]) ))
 
 
   # Plus group (scalar, no movement)
@@ -290,7 +294,7 @@ single_region_SPR <- function(pars,
   Nspr[1,,n_ages] = Nspr[1,,n_ages-1] * exp(-M_penult) / (1 - exp(-M_plus))
   Nspr[2,,n_ages] = Nspr[2,,n_ages-1] * exp(-Z_penult) / (1 - exp(-Z_plus))
 
-  # Advance plus gorup to spawning season
+  # Advance plus group to spawning season
   tmp_unfished = Nspr[1,,n_ages]
   tmp_fished = Nspr[2,,n_ages]
 
@@ -308,9 +312,9 @@ single_region_SPR <- function(pars,
 
   ## Plus group spawning biomass
   SB_age[1,,n_ages] = tmp_unfished * WAA[,spawn_seas, n_ages] * MatAA[,spawn_seas, n_ages] *
-                      exp(-t_spawn * natmort[,n_ages] * seasdur[spawn_seas])
+    exp(-t_spawn * natmort[,n_ages] * seasdur[spawn_seas])
   SB_age[2,,n_ages] = tmp_fished * WAA[,spawn_seas, n_ages] * MatAA[,spawn_seas, n_ages] *
-                      exp(-t_spawn * (natmort[,n_ages] * seasdur[spawn_seas] +
+    exp(-t_spawn * (natmort[,n_ages] * seasdur[spawn_seas] +
                       sum(F_fract_flt[spawn_seas,] * F_x * fish_sel[n_ages,])))
 
   # Get effective SB after straying
@@ -321,10 +325,11 @@ single_region_SPR <- function(pars,
   SB = apply(SB_age[2,,,drop = FALSE], 2, sum)
   SB0 = apply(SB_age[1,,,drop = FALSE], 2, sum)
 
-  # compute effective SSB after straying
+  # compute effective SSB after straying (divide by n_pop_in_region to preserve mass balance)
   for(p2 in 1:n_pop) {
+    r <- natal_region[p2]
     for(p in 1:n_pop) {
-      sc <- if(p == p2) 1 else stray_rate[p] # accumulate into own pop if p == p2, otherwise, based on stray rate
+      sc <- if(p == p2) 1 else stray_rate[p] / n_pop_in_region[r]
       effective_SB[p2]  <- effective_SB[p2]  + sc * SB[p]
       effective_SB0[p2] <- effective_SB0[p2] + sc * SB0[p]
     }
@@ -402,6 +407,8 @@ single_region_SPR <- function(pars,
 #'       stray rate.}
 #'     \item{\code{natal_region}}{Integer vector \code{[n_pop]}. Natal region
 #'       index for each population.}
+#'     \item{\code{n_pop_in_region}}{Integer vector \code{[n_regions]}. Number
+#'       of populations per natal region.}
 #'     \item{\code{SPR_x}}{Numeric. Target SPR fraction.}
 #'   }
 #'
@@ -469,9 +476,9 @@ global_SPR <- function(pars,
 
           # Get spawning biomass per recruit
           SB_age[1,p,, j - 1] = tmp_unfished_spawn * WAA[p,, spawn_seas, j - 1] * MatAA[p,, spawn_seas, j - 1] *
-                                exp(-t_spawn * M_seas)
+            exp(-t_spawn * M_seas)
           SB_age[2,p,, j - 1] = tmp_fished_spawn * WAA[p,, spawn_seas, j - 1] * MatAA[p,, spawn_seas, j - 1] *
-                                exp(-t_spawn * Z_seas )
+            exp(-t_spawn * Z_seas )
 
         }
 
@@ -600,9 +607,9 @@ global_SPR <- function(pars,
 
   # Get spawning biomass per recruit
   SB_age[1,,,n_ages] = tmp_unfished_spawn * WAA[,,spawn_seas,n_ages] * MatAA[,,spawn_seas,n_ages] *
-                       exp(-t_spawn * natmort[,,n_ages] * seasdur[spawn_seas])
+    exp(-t_spawn * natmort[,,n_ages] * seasdur[spawn_seas])
   SB_age[2,,,n_ages] = tmp_fished_spawn  * WAA[,,spawn_seas,n_ages] * MatAA[,,spawn_seas,n_ages] *
-                       exp(-t_spawn * (natmort[,,n_ages] * seasdur[spawn_seas] + F_plus[,spawn_seas]))
+    exp(-t_spawn * (natmort[,,n_ages] * seasdur[spawn_seas] + F_plus[,spawn_seas]))
 
   # Get effective SB after straying
   effective_SB = array(0, dim = n_pop)
@@ -612,11 +619,13 @@ global_SPR <- function(pars,
 
   # Accumulate effective SSB at each population's natal region
   # across all source populations (captures stray contributions)
+  # divide by n_pop_in_region to preserve mass balance when multiple pops share a natal region
   for(p2 in 1:n_pop) {
+    r <- natal_region[p2]
     for(p in 1:n_pop) {
-      sc <- if(p == p2) 1 else stray_rate[p] # accumulate if in own pop, otherwise, allow straying
-      effective_SB[p2]  <- effective_SB[p2]  + sc * SB[p,  natal_region[p2]]
-      effective_SB0[p2] <- effective_SB0[p2] + sc * SB0[p, natal_region[p2]]
+      sc <- if(p == p2) 1 else stray_rate[p] / n_pop_in_region[r]
+      effective_SB[p2]  <- effective_SB[p2]  + sc * SB[p,  r]
+      effective_SB0[p2] <- effective_SB0[p2] + sc * SB0[p, r]
     }
   }
 
@@ -753,7 +762,7 @@ single_region_BH_Fmsy <- function(pars, data) {
     exp(-t_spawn * natmort[,n_ages - 1] * seasdur[spawn_seas])
   SB_age[2,, n_ages - 1] = tmp_fished * WAA[,spawn_seas, n_ages - 1] * MatAA[,spawn_seas, n_ages - 1] *
     exp(-t_spawn * (natmort[,n_ages - 1] * seasdur[spawn_seas] +
-        sum(F_fract_flt[spawn_seas,] * Fmsy * fish_sel[n_ages-1,])))
+                      sum(F_fract_flt[spawn_seas,] * Fmsy * fish_sel[n_ages-1,])))
 
   # Plus group (scalar, no movement)
   Z_plus = natmort[,n_ages] + sum(colSums(F_fract_flt) * Fmsy * fish_sel[n_ages,])
@@ -797,10 +806,11 @@ single_region_BH_Fmsy <- function(pars, data) {
   SB = apply(SB_age[2,,,drop = FALSE], 2, sum)
   SB0 = apply(SB_age[1,,,drop = FALSE], 2, sum)
 
-  # compute effective SSB after straying
+  # compute effective SSB after straying (divide by n_pop_in_region to preserve mass balance)
   for(p2 in 1:n_pop) {
-    for(p in 1:n_pop) { # accumulate stray rates and own pop dy
-      sc <- if(p == p2) 1 else stray_rate[p]
+    r <- natal_region[p2]
+    for(p in 1:n_pop) {
+      sc <- if(p == p2) 1 else stray_rate[p] / n_pop_in_region[r]
       effective_SB[p2]  <- effective_SB[p2]  + sc * SB[p]
       effective_SB0[p2] <- effective_SB0[p2] + sc * SB0[p]
     }
@@ -1418,6 +1428,8 @@ local_BH_Fmsy_sglpop <- function(pars, data) {
 #'       stray rate controlling cross-population SSB contributions.}
 #'     \item{\code{natal_region}}{Integer vector \code{[n_pop]}. Natal region
 #'       index for each population.}
+#'     \item{\code{n_pop_in_region}}{Integer vector \code{[n_regions]}. Number
+#'       of populations per natal region.}
 #'     \item{\code{newton_steps}}{Integer. Number of Newton-Raphson iterations
 #'       used to solve for equilibrium recruitment by population.}
 #'   }
@@ -1688,11 +1700,12 @@ local_BH_Fmsy_multipop <- function(pars, data) {
   }
 
   # Virgin effective SSB at each pop's natal region
+  # divide stray contributions by n_pop_in_region to preserve mass balance
   eff_SSB0_virgin = rep(0, n_pop)
   for(p2 in 1:n_pop) {
     r = natal_region[p2]
     for(p in 1:n_pop) {
-      sc = if(p == p2) 1 else stray_rate[p]
+      sc = if(p == p2) 1 else stray_rate[p] / n_pop_in_region[r]
       eff_SSB0_virgin[p2] = eff_SSB0_virgin[p2] + sc * SBPR_unfished[p, r] * R0[p]
     }
   }
@@ -1707,11 +1720,12 @@ local_BH_Fmsy_multipop <- function(pars, data) {
   for(nit in 1:newton_steps) {
 
     # Effective fished SSB at each pop's natal region
+    # divide stray contributions by n_pop_in_region to preserve mass balance
     eff_SSB_fished <- rep(0, n_pop)
     for(p2 in 1:n_pop) {
       r <- natal_region[p2]
       for(p in 1:n_pop) {
-        sc <- if(p == p2) 1 else stray_rate[p]
+        sc <- if(p == p2) 1 else stray_rate[p] / n_pop_in_region[r]
         eff_SSB_fished[p2] <- eff_SSB_fished[p2] + sc * SBPR_fished[p, r] * Req_o[p]
       }
     }
@@ -1728,7 +1742,7 @@ local_BH_Fmsy_multipop <- function(pars, data) {
     for(p2 in 1:n_pop) {
       r <- natal_region[p2]
       for(p in 1:n_pop) {
-        sc <- if(p == p2) 1 else stray_rate[p]
+        sc <- if(p == p2) 1 else stray_rate[p] / n_pop_in_region[r]
         J[p2, p] <- J[p2, p] - dg_deff[p2] * sc * SBPR_fished[p, r]
       }
     }
@@ -1888,9 +1902,13 @@ Get_Reference_Points <- function(data,
   f_ref_pt <- vector()
   virgin_pop_b_ref_pt <- pop_b_ref_pt <- virgin_b_ref_pt <- b_ref_pt <- array(0, dim = c(n_pop, n_regions))
 
-  # determine years to average over demogrphaics
+  # determine years to average over demographics
   n_yrs <- length(data$years)
   avg_yrs <- (n_yrs - n_avg_yrs + 1):n_yrs
+
+  # precompute number of populations per natal region (used throughout for mass-balance stray scaling)
+  n_pop_in_region <- rep(0, n_regions)
+  for(p in 1:n_pop) n_pop_in_region[data$natal_region[p]] <- n_pop_in_region[data$natal_region[p]] + 1
 
   if(type == "single_region") {
 
@@ -1922,9 +1940,11 @@ Get_Reference_Points <- function(data,
     data_list$MatAA <- array(MatAA_avg, dim = c(n_pop, data$n_seas, n_ages)) # maturity at age for females
 
     # Other recruitment stuff
-    data_list$sex_ratio_f <- sex_ratio_f # recritment sex ratio
+    data_list$sex_ratio_f <- sex_ratio_f # recruitment sex ratio
     data_list$stray_rate <- array(apply(rep$stray_rate[,avg_yrs, drop = FALSE], 1, mean), dim = n_pop) # stray rate
     data_list$rec_seas_prop <- array(rep$rec_seas_prop[,], dim = c(n_pop, data$n_seas)) # recruitment seasonal proportion
+    data_list$natal_region <- data$natal_region
+    data_list$n_pop_in_region <- n_pop_in_region
 
     if(what == 'SPR') {
 
@@ -1940,17 +1960,19 @@ Get_Reference_Points <- function(data,
 
       # Compute population specific reference points, by using stray rates
       mean_rec <- apply(rep$Rec[,1,calc_rec_st_yr:(n_years-rec_age),drop=FALSE], 1, mean)
-      print(mean_rec)
+
       for(p2 in 1:n_pop) {
+        r <- data$natal_region[p2]
         pop_b_ref_pt[p2,1]        <- tmp_obj$rep$SB[p2]  * mean_rec[p2]
         virgin_pop_b_ref_pt[p2,1] <- tmp_obj$rep$SB0[p2] * mean_rec[p2]
         for(p in 1:n_pop) {
           if(p != p2) {
-            pop_b_ref_pt[p2,1]        <- pop_b_ref_pt[p2,1]        + data_list$stray_rate[p] * tmp_obj$rep$SB[p]  * mean_rec[p]
-            virgin_pop_b_ref_pt[p2,1] <- virgin_pop_b_ref_pt[p2,1] + data_list$stray_rate[p] * tmp_obj$rep$SB0[p] * mean_rec[p]
-          } # end if
-        } # end p loop
-      } # end p2 loop
+            sc <- data_list$stray_rate[p] / n_pop_in_region[r]
+            pop_b_ref_pt[p2,1]        <- pop_b_ref_pt[p2,1]        + sc * tmp_obj$rep$SB[p]  * mean_rec[p]
+            virgin_pop_b_ref_pt[p2,1] <- virgin_pop_b_ref_pt[p2,1] + sc * tmp_obj$rep$SB0[p] * mean_rec[p]
+          }
+        }
+      }
 
       # Compute global reference points (sum across populations)
       b_ref_pt[,1] <- tmp_obj$rep$SB * apply(rep$Rec[,1,calc_rec_st_yr:(n_years - rec_age), drop = F], 1, mean)
@@ -1967,7 +1989,7 @@ Get_Reference_Points <- function(data,
       par_list <- list() # set up parameter list
       par_list$log_Fmsy <- log(0.1) # Fmsy starting value
 
-      # make adfun ect
+      # make adfun etc
       tmp_obj <- optim_ref_pts(single_region_BH_Fmsy, data_list, par_list)
 
       # Output reference points
@@ -1975,12 +1997,14 @@ Get_Reference_Points <- function(data,
 
       # Accumulate biomass reference points
       for(p2 in 1:n_pop) {
+        r <- data$natal_region[p2]
         pop_b_ref_pt[p2,1]        <- tmp_obj$rep$SB[p2]  * tmp_obj$rep$Req[p2]
         virgin_pop_b_ref_pt[p2,1] <- tmp_obj$rep$SB0[p2] * rep$R0[p2]
         for(p in 1:n_pop) {
           if(p != p2) {
-            pop_b_ref_pt[p2,1]        <- pop_b_ref_pt[p2,1]        + data_list$stray_rate[p] * tmp_obj$rep$SB[p]  * tmp_obj$rep$Req[p]
-            virgin_pop_b_ref_pt[p2,1] <- virgin_pop_b_ref_pt[p2,1] + data_list$stray_rate[p] * tmp_obj$rep$SB0[p] * data_list$R0[p]
+            sc <- data_list$stray_rate[p] / n_pop_in_region[r]
+            pop_b_ref_pt[p2,1]        <- pop_b_ref_pt[p2,1]        + sc * tmp_obj$rep$SB[p]  * tmp_obj$rep$Req[p]
+            virgin_pop_b_ref_pt[p2,1] <- virgin_pop_b_ref_pt[p2,1] + sc * tmp_obj$rep$SB0[p] * data_list$R0[p]
           }
         }
       }
@@ -2025,9 +2049,11 @@ Get_Reference_Points <- function(data,
         data_list$WAA <- array(WAA_avg, dim = c(n_pop, data$n_seas, n_ages)) # weight at age for females
         MatAA_avg <- apply(data$MatAA[,r,avg_yrs,,,1,drop = FALSE], c(1,4,5), mean)
         data_list$MatAA <- array(MatAA_avg, dim = c(n_pop, data$n_seas, n_ages)) # maturity at age for females
-        data_list$sex_ratio_f <- array(sex_ratio_f[,r], dim = n_pop) # recritment sex ratio
+        data_list$sex_ratio_f <- array(sex_ratio_f[,r], dim = n_pop) # recruitment sex ratio
         data_list$stray_rate <- array(apply(rep$stray_rate[,avg_yrs, drop = FALSE], 1, mean), dim = n_pop) # stray rate
         data_list$rec_seas_prop <- array(rep$rec_seas_prop, dim = c(n_pop, data$n_seas)) # recruitment seasonal proportion
+        data_list$natal_region <- data$natal_region
+        data_list$n_pop_in_region <- n_pop_in_region
 
         if(what == 'independent_SPR') {
 
@@ -2046,12 +2072,14 @@ Get_Reference_Points <- function(data,
           mean_rec <- apply(rep$Rec[,r,calc_rec_st_yr:(n_years-rec_age),drop=FALSE], 1, mean)
           if(n_pop > 1) {
             for(p2 in 1:n_pop) {
+              rn <- data$natal_region[p2]
               pop_b_ref_pt[p2,r]        <- tmp_obj[[r]]$rep$SB[p2]  * mean_rec[p2]
               virgin_pop_b_ref_pt[p2,r] <- tmp_obj[[r]]$rep$SB0[p2] * mean_rec[p2]
               for(p in 1:n_pop) {
                 if(p != p2) {
-                  pop_b_ref_pt[p2,r]        <- pop_b_ref_pt[p2,r]        + data_list$stray_rate[p] * tmp_obj[[r]]$rep$SB[p]  * mean_rec[p]
-                  virgin_pop_b_ref_pt[p2,r] <- virgin_pop_b_ref_pt[p2,r] + data_list$stray_rate[p] * tmp_obj[[r]]$rep$SB0[p] * mean_rec[p]
+                  sc <- data_list$stray_rate[p] / n_pop_in_region[rn]
+                  pop_b_ref_pt[p2,r]        <- pop_b_ref_pt[p2,r]        + sc * tmp_obj[[r]]$rep$SB[p]  * mean_rec[p]
+                  virgin_pop_b_ref_pt[p2,r] <- virgin_pop_b_ref_pt[p2,r] + sc * tmp_obj[[r]]$rep$SB0[p] * mean_rec[p]
                 } # end if
               } # end p loop
             } # end p2 loop
@@ -2079,12 +2107,14 @@ Get_Reference_Points <- function(data,
           # get and accumulate biomass reference points
           if(n_pop > 1) {
             for(p2 in 1:n_pop) {
+              rn <- data$natal_region[p2]
               pop_b_ref_pt[p2,r]        <- tmp_obj[[r]]$rep$SB[p2]  * tmp_obj[[r]]$rep$Req[p2]
               virgin_pop_b_ref_pt[p2,r] <- tmp_obj[[r]]$rep$SB0[p2] * rep$R0[p2]
               for(p in 1:n_pop) {
                 if(p != p2) {
-                  pop_b_ref_pt[p2,r]        <- pop_b_ref_pt[p2,r]        + data_list$stray_rate[p] * tmp_obj[[r]]$rep$SB[p]  * tmp_obj[[r]]$rep$Req[p]
-                  virgin_pop_b_ref_pt[p2,r] <- virgin_pop_b_ref_pt[p2,r] + data_list$stray_rate[p] * tmp_obj[[r]]$rep$SB0[p] * data_list$R0[p]
+                  sc <- data_list$stray_rate[p] / n_pop_in_region[rn]
+                  pop_b_ref_pt[p2,r]        <- pop_b_ref_pt[p2,r]        + sc * tmp_obj[[r]]$rep$SB[p]  * tmp_obj[[r]]$rep$Req[p]
+                  virgin_pop_b_ref_pt[p2,r] <- virgin_pop_b_ref_pt[p2,r] + sc * tmp_obj[[r]]$rep$SB0[p] * data_list$R0[p]
                 }
               }
             }
@@ -2126,12 +2156,13 @@ Get_Reference_Points <- function(data,
 
       # Recruitment options
       data_list$do_recruits_move <- data$do_recruits_move # whether recruits move
-      data_list$sex_ratio_f <- sex_ratio_f # recritment sex ratio
+      data_list$sex_ratio_f <- sex_ratio_f # recruitment sex ratio
       data_list$rec_seas_prop <- array(rep$rec_seas_prop[,], dim = c(n_pop, data$n_seas)) # recruitment seasonal proportion
       data_list$stray_rate <- array(apply(rep$stray_rate[,avg_yrs, drop = FALSE], 1, mean), dim = n_pop) # stray rate
       sgl_seas_spawning_movement_avg <- apply(rep$sgl_seas_spawning_movement[,,,avg_yrs,,1,drop = FALSE], c(1,2,3,5), mean)
       data_list$sgl_seas_spawning_movement <- array(sgl_seas_spawning_movement_avg, dim = c(n_pop, n_regions, n_regions, n_ages)) # Movement
       data_list$natal_region <- data$natal_region
+      data_list$n_pop_in_region <- n_pop_in_region
 
       data_list$SPR_x <- SPR_x # SPR fraction
       mean_rec <- apply(rep$Rec[,,calc_rec_st_yr:(n_years-rec_age),drop=FALSE], c(1,2), mean) # [n_pop, n_regions]
@@ -2156,13 +2187,14 @@ Get_Reference_Points <- function(data,
       # Population-specific effective SSB at natal region
       if(n_pop > 1) {
         for(p2 in 1:n_pop) {
-          r_natal <- natal_region[p2]
+          r_natal <- data$natal_region[p2]
           pop_b_ref_pt[p2, r_natal]        <- tmp_obj$rep$SB[p2, r_natal]  * total_mean_rec[p2]
           virgin_pop_b_ref_pt[p2, r_natal] <- tmp_obj$rep$SB0[p2, r_natal] * total_mean_rec[p2]
           for(p in 1:n_pop) {
             if(p != p2) {
-              pop_b_ref_pt[p2, r_natal]        <- pop_b_ref_pt[p2, r_natal]        + data_list$stray_rate[p] * tmp_obj$rep$SB[p, r_natal]  * total_mean_rec[p]
-              virgin_pop_b_ref_pt[p2, r_natal] <- virgin_pop_b_ref_pt[p2, r_natal] + data_list$stray_rate[p] * tmp_obj$rep$SB0[p, r_natal] * total_mean_rec[p]
+              sc <- data_list$stray_rate[p] / n_pop_in_region[r_natal]
+              pop_b_ref_pt[p2, r_natal]        <- pop_b_ref_pt[p2, r_natal]        + sc * tmp_obj$rep$SB[p, r_natal]  * total_mean_rec[p]
+              virgin_pop_b_ref_pt[p2, r_natal] <- virgin_pop_b_ref_pt[p2, r_natal] + sc * tmp_obj$rep$SB0[p, r_natal] * total_mean_rec[p]
             }
           }
         }
@@ -2179,7 +2211,7 @@ Get_Reference_Points <- function(data,
       # Error out if invalid recruitment density dependent option
       if(n_pop > 1) stop("Invalid reference point option! When n_pop > 1 reference points must either be independent_SPR, independent_BH_MSY, global_SPR, or local_BH_MSY.")
 
-      # createa data list
+      # create a data list
       fratio <- array(0, dim = c(n_regions, data$n_seas, data$n_fish_fleets))
       terminal_F <- array(rep$Fmort[,n_years,,], dim = dim(fratio))
       for(r in 1:n_regions) for(seas in 1:data$n_seas) for(f in 1:data$n_fish_fleets) fratio[r,seas,f] <- terminal_F[r,seas,f] / sum(terminal_F[r,,])
@@ -2246,6 +2278,7 @@ Get_Reference_Points <- function(data,
       data_list$stray_rate <- array(apply(rep$stray_rate[,avg_yrs, drop = FALSE], 1, mean), dim = data$n_pop) # stray rate
       data_list$newton_steps <- local_bh_msy_newton_steps # number of newton steps to take
       data_list$natal_region <- data$natal_region
+      data_list$n_pop_in_region <- n_pop_in_region
       sgl_seas_spawning_movement_avg <- apply(rep$sgl_seas_spawning_movement[,,,avg_yrs,,1,drop = FALSE], c(1,2,3,5), mean)
       data_list$sgl_seas_spawning_movement <- array(sgl_seas_spawning_movement_avg, dim = c(n_pop, n_regions, n_regions, n_ages)) # Movement
 
@@ -2265,7 +2298,7 @@ Get_Reference_Points <- function(data,
           virgin_b_ref_pt[,r] <- tmp_obj$rep$SB0[,r] * data_list$R0
         }
 
-        # accumulate stray rates
+        # accumulate stray rates (divided by n_pop_in_region for mass balance)
         for(p2 in 1:n_pop) {
           r_natal <- data$natal_region[p2]
           pop_b_ref_pt[p2, r_natal]        <- tmp_obj$rep$SB[p2, r_natal]  * tmp_obj$rep$Req_o[p2]
@@ -2273,12 +2306,13 @@ Get_Reference_Points <- function(data,
 
           for(p in 1:n_pop) {
             if(p != p2) {
-              pop_b_ref_pt[p2, r_natal]        <- pop_b_ref_pt[p2, r_natal]        + data_list$stray_rate[p] * tmp_obj$rep$SB[p, r_natal]  * tmp_obj$rep$Req_o[p]
-              virgin_pop_b_ref_pt[p2, r_natal] <- virgin_pop_b_ref_pt[p2, r_natal] + data_list$stray_rate[p] * tmp_obj$rep$SB0[p, r_natal] * data_list$R0[p]
+              sc <- data_list$stray_rate[p] / n_pop_in_region[r_natal]
+              pop_b_ref_pt[p2, r_natal]        <- pop_b_ref_pt[p2, r_natal]        + sc * tmp_obj$rep$SB[p, r_natal]  * tmp_obj$rep$Req_o[p]
+              virgin_pop_b_ref_pt[p2, r_natal] <- virgin_pop_b_ref_pt[p2, r_natal] + sc * tmp_obj$rep$SB0[p, r_natal] * data_list$R0[p]
             }
           }
         }
-      } else{ # single population reference points
+      } else { # single population reference points
         for(r in 1:n_regions) {
           b_ref_pt[1, r]        <- sum(tmp_obj$rep$SB_fished_mat[, r]   * tmp_obj$rep$Req_o)
           virgin_b_ref_pt[1, r] <- sum(tmp_obj$rep$SB_unfished_mat[, r] * data_list$R0 * data_list$rec_region_prop)
@@ -2302,99 +2336,3 @@ Get_Reference_Points <- function(data,
               obj = tmp_obj))
 
 }
-
-
-
-
-
-# Fleet fraction F
-# fratio <- array(0, dim = c(n_regions, data$n_seas, data$n_fish_fleets))
-# terminal_F <- array(rep$Fmort[,n_years,,], dim = dim(fratio))
-# for(r in 1:n_regions) for(seas in 1:data$n_seas) for(f in 1:data$n_fish_fleets) fratio[r,seas,f] <- terminal_F[r,seas,f] / sum(terminal_F[r,,])
-# data_list$F_fract_flt <- fratio
-#
-# # fishery selectivity
-# fish_sel_avg <- apply(rep$fish_sel[,avg_yrs,,1,,drop = FALSE], c(1,3,5), mean)
-# data_list$fish_sel <- array(fish_sel_avg, dim = c(n_regions, n_ages, data$n_fish_fleets)) # get female selectivity for all fleets
-#
-# # natural mortality
-# natmort_avg <- apply(rep$natmort[,,avg_yrs,,1,drop = FALSE], c(1,2,4), mean)
-# data_list$natmort <- array(natmort_avg, dim = c(if(n_pop > 1) n_pop else NULL, n_regions, n_ages)) # get female natural mortality
-#
-# # weight at age
-# WAA_avg <- apply(data$WAA[,,avg_yrs,,,1,drop = FALSE], c(1, 2, 4, 5), mean)
-# data_list$WAA <- array(WAA_avg, dim = c(if(n_pop > 1) n_pop else NULL, n_regions, data$n_seas, n_ages)) # weight at age for females
-#
-# # maturity at age
-# MatAA_avg <- apply(data$MatAA[,,avg_yrs,,,1,drop = FALSE], c(1, 2, 4, 5), mean)
-# data_list$MatAA <- array(MatAA_avg, dim = c(if(n_pop > 1) n_pop else NULL, n_regions, data$n_seas, n_ages)) # maturity at age for females
-#
-# # Movement
-# Movement_avg <- apply(rep$Movement[,,,avg_yrs,,,1,drop = FALSE], c(1,2,3,5,6), mean)
-# data_list$Movement <- array(Movement_avg, dim = c(if(n_pop > 1) n_pop else NULL, n_regions, n_regions, n_seas, n_ages)) # Movement
-#
-# # Recruitment options
-# data_list$do_recruits_move <- data$do_recruits_move # whether recruits move
-# data_list$rec_region_prop <- array(rep$rec_region_prop, dim = c(if(n_pop > 1) n_pop else NULL, n_regions)) # recruitment proportions
-# data_list$sex_ratio_f <- array(sex_ratio_f, dim = c(if(n_pop > 1) n_pop else NULL, n_regions)) # recruitment sex ratio to use
-# data_list$rec_seas_prop <- array(rep$rec_seas_prop, dim = c(if(n_pop > 1) n_pop else NULL, data$n_seas)) # seasonal recruitment
-# data_list$h <- array(rep$h_trans, dim = c(if(n_pop > 1) n_pop else NULL, n_regions)) # steepness
-# data_list$R0 <- rep$R0  # unfished recruitment
-# data_list$stray_rate <- array(apply(rep$stray_rate[,avg_yrs, drop = FALSE], 1, mean), dim = data$n_pop) # stray rate
-# data_list$newton_steps <- local_bh_msy_newton_steps # number of newton steps to take
-# data_list$natal_region <- data$natal_region
-# sgl_seas_spawning_movement_avg <- apply(rep$sgl_seas_spawning_movement[,,,avg_yrs,,1,drop = FALSE], c(1,2,3,5), mean)
-# data_list$sgl_seas_spawning_movement <- array(sgl_seas_spawning_movement_avg, dim = c(n_pop, n_regions, n_regions, n_ages)) # Movement
-#
-#
-# par_list <- list() # set up parameter list
-# par_list$log_Fmsy <- rep(log(0.1), n_regions) # Fmsy starting value
-
-# data_list$h[] <- 0.5
-# # data_list$Movement[1,,,1,] <- data_list$Movement[2,,,1,] <- diag(1, 2)
-# data_list$Movement[1,,,2,] <-  c(1,1,0,0)
-# data_list$Movement[2,,,2,] <-  c(0,0,1,1)
-# data_list$rec_seas_prop[] <- 0.5
-# data_list$R0[] <- 5
-# data_list$stray_rate[] <- 0
-
-# Make adfun object
-# if(n_pop == 1) tmp_obj <- RTMB::MakeADFun(cmb(local_BH_Fmsy_sglpop, data_list), parameters = par_list, map = NULL, silent = TRUE)
-# if(n_pop > 1) tmp_obj <- RTMB::MakeADFun(cmb(local_BH_Fmsy_multipop, data_list), parameters = par_list, map = NULL, silent = TRUE)
-# tmp_obj$optim <- stats::nlminb(tmp_obj$par, tmp_obj$fn, tmp_obj$gr, control = list(iter.max = 1e6, eval.max = 1e6, rel.tol = 1e-15))
-# tmp_obj$rep <- tmp_obj$report(tmp_obj$env$last.par.best) # get report
-
-# Output reference points
-# f_ref_pt <- tmp_obj$rep$Fmsy
-
-# grid <- expand.grid(f1 = seq(0.01, 0.2, 0.01),
-#                     f2 = seq(0.01, 0.2, 0.01))
-#
-# dat <- purrr::map_dfr(1:nrow(grid), function(i) {
-#   pars   <- log(as.numeric(grid[i,]))
-#   tmp_rep <- tmp_obj$report(pars) # pass pars directly
-#
-#   # melt Yield_pr [n_pop, n_regions] into long format
-#   reshape2::melt(tmp_rep$Yield_pr,
-#                  varnames = c("pop", "region"),
-#                  value.name = "yield") %>%
-#     mutate(f1          = grid[i, "f1"],
-#            f2          = grid[i, "f2"],
-#            yield_total = tmp_rep$Yield_total)
-# })
-#
-# fmsy_pts <- data.frame(f1 = tmp_obj$rep$Fmsy[1],
-#                        f2 = tmp_obj$rep$Fmsy[2])
-#
-# dat %>%
-#   distinct(f1, f2, yield_total) %>%
-#   ggplot(aes(x = f1, y = f2)) +
-#   geom_tile(aes(fill = yield_total)) +
-#   geom_contour(aes(z = yield_total), colour = "white", alpha = 1, linewidth = 1) +
-#   geom_point(data = fmsy_pts, aes(x = f1, y = f2),
-#              shape = 23, fill = "red", colour = "white", size = 3) +
-#   scale_fill_viridis_c(name = "Total yield") +
-#   labs(x = expression(F[region~1]), y = expression(F[region~2]),
-#        title = "Yield isopleth — total") +
-#   theme_bw()
-

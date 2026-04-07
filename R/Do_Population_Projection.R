@@ -395,6 +395,8 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
 
         # Accumulate effective SSB at each population's natal region across all source populations to capture stray contributions
         if(n_pop > 1) {
+          n_pop_in_region <- rep(0, n_regions)
+          for(p in 1:n_pop) n_pop_in_region[natal_region[p]] <- n_pop_in_region[natal_region[p]] + 1
           for(p2 in 1:n_pop) {
             for(p in 1:n_pop) {
               if(p == p2) {
@@ -402,13 +404,14 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
                 proj_eff_SSB[p2, y] = proj_eff_SSB[p2, y] + proj_SSB[p, natal_region[p2], y]
               } else {
                 # Cross-population contribution scaled by stray_rate
-                proj_eff_SSB[p2, y] = proj_eff_SSB[p2, y] + stray_rate[p, y] * proj_SSB[p, natal_region[p2], y]
+                proj_eff_SSB[p2, y] = proj_eff_SSB[p2, y] + (stray_rate[p, y] / n_pop_in_region[natal_region[p2]]) * proj_SSB[p, natal_region[p2], y]
               }
             } # end p loop
           } # end p2 loop
         } else proj_eff_SSB[1,y] = sum(proj_SSB[1,,y])
 
       } # calculate biomass
+
 
       # Derive Catches ----------------------------------------------------------
       for(p in 1:n_pop) {

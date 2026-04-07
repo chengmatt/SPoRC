@@ -48,6 +48,8 @@ global_SPR(pars, data)
     stray rate.}
   \item{\code{natal_region}}{Integer vector \code{[n_pop]}. Natal region
     index for each population.}
+  \item{\code{n_pop_in_region}}{Integer vector \code{[n_regions]}. Number
+    of populations per natal region.}
   \item{\code{SPR_x}}{Numeric. Target SPR fraction.}
 }}
 }

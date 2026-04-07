@@ -1059,16 +1059,20 @@ apply_pop_dy <- function(y, sim, sim_env) {
 
         # Accumulate effective SSB at each population's natal region
         # across all source populations (captures stray contributions)
+        # then inside y/sim loops:
         if(n_pop > 1) {
+          n_pop_in_region = array(0, dim = n_region)
+          for(p in 1:n_pop) n_pop_in_region[natal_region[p]] = n_pop_in_region[natal_region[p]] + 1
           for(p2 in 1:n_pop) {
             for(p in 1:n_pop) {
               if(p == p2) {
                 sim_env$eff_SSB[p2, y, sim] = sim_env$eff_SSB[p2, y, sim] + SSB[p, natal_region[p2], y, sim]
               } else {
-                sim_env$eff_SSB[p2, y, sim] = sim_env$eff_SSB[p2, y, sim] + stray_rate[p,y,sim] * SSB[p, natal_region[p2], y, sim]
+                n_receivers = n_pop_in_region[natal_region[p2]]
+                sim_env$eff_SSB[p2, y, sim] = sim_env$eff_SSB[p2, y, sim] + (stray_rate[p,y,sim] / n_receivers) * SSB[p, natal_region[p2], y, sim]
               }
-            } # end p loop
-          } # end p2 loop
+            }
+          }
         } else sim_env$eff_SSB[1, y, sim] = sum(SSB[1,,y,sim])
 
       } # if season = spawning season

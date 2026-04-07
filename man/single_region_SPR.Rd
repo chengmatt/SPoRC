@@ -37,6 +37,10 @@ single_region_SPR(pars, data)
     Proportion of annual recruitment entering in each season.}
   \item{\code{stray_rate}}{Numeric vector \code{[n_pop]}. Per-population
     stray rate used to compute effective SSB across populations.}
+  \item{\code{natal_region}}{Integer vector \code{[n_pop]}. Natal region
+    index for each population.}
+  \item{\code{n_pop_in_region}}{Integer vector \code{[n_region]}. Number
+    of populations per natal region.}
   \item{\code{SPR_x}}{Numeric. Target SPR fraction (e.g. 0.4).}
 }}
 }

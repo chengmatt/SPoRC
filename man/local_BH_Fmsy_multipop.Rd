@@ -24,6 +24,8 @@ local_BH_Fmsy_multipop(pars, data)
     stray rate controlling cross-population SSB contributions.}
   \item{\code{natal_region}}{Integer vector \code{[n_pop]}. Natal region
     index for each population.}
+  \item{\code{n_pop_in_region}}{Integer vector \code{[n_regions]}. Number
+    of populations per natal region.}
   \item{\code{newton_steps}}{Integer. Number of Newton-Raphson iterations
     used to solve for equilibrium recruitment by population.}
 }}

@@ -17,6 +17,9 @@ sgl_rg_sable_data$spawn_seas <- 1
 sgl_rg_sable_data$seasdur <- 1
 sgl_rg_sable_data$n_pop <- 1
 sgl_rg_sable_data$lens <- seq(41,99,2)
+sgl_rg_sable_data$n_pop <- 1
+sgl_rg_sable_data$natal_region <- 1
+
 
 # Dimensions to use in current R file
 n_regions <- sgl_rg_sable_data$n_regions

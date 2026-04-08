@@ -654,8 +654,6 @@ sgl_ref_pt <- Get_Reference_Points(data = sgl_rg_sable_data,
                                    what = 'SPR',
                                    calc_rec_st_yr = 20,
                                    rec_age = 2,
-                                   t_spawn = 0,
-                                   sex_ratio_f = array(0.5, dim = c(sgl_rg_sable_data$n_pop, sgl_rg_sable_data$n_regions))
                                    )
 sgl_ref_pt$f_ref_pt # F40
 sgl_ref_pt$b_ref_pt # B40
@@ -677,7 +675,6 @@ mlt_ref_pt_indp <- Get_Reference_Points(data = mlt_rg_sable_data,
                                         what = 'independent_SPR',
                                         calc_rec_st_yr = 20,
                                         rec_age = 2,
-                                        t_spawn = 0,
                                         sex_ratio_f = array(0.5, dim = c(mlt_rg_sable_data$n_pop,
                                                                          mlt_rg_sable_data$n_regions))
                                         )
@@ -699,7 +696,6 @@ mlt_ref_pt_global <- Get_Reference_Points(data = mlt_rg_sable_data,
                                           what = 'global_SPR',
                                           calc_rec_st_yr = 20,
                                           rec_age = 2,
-                                          t_spawn = 0,
                                           sex_ratio_f = array(0.5, dim = c(
                                             mlt_rg_sable_data$n_pop,
                                             mlt_rg_sable_data$n_regions

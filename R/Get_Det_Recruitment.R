@@ -533,7 +533,7 @@ Get_Det_Recruitment <- function(recruitment_model,
     if(rec_dd == 0 && n_pop > 1) {
 
       # count number of populations in a given region
-      n_pop_in_region = array(0, dim = n_region)
+      n_pop_in_region = array(0, dim = n_regions)
       for(p in 1:n_pop) n_pop_in_region[natal_region[p]] = n_pop_in_region[natal_region[p]] + 1
 
       effective_SSB = array(0, dim = n_pop)

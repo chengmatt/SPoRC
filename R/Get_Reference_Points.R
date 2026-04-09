@@ -191,7 +191,7 @@ solve_plus_group <- function(Ts, N_penult_u, N_penult_f, n_regions) {
 #'       stray rate used to compute effective SSB across populations.}
 #'     \item{\code{natal_region}}{Integer vector \code{[n_pop]}. Natal region
 #'       index for each population.}
-#'     \item{\code{n_pop_in_region}}{Integer vector \code{[n_region]}. Number
+#'     \item{\code{n_pop_in_region}}{Integer vector \code{[n_regions]}. Number
 #'       of populations per natal region.}
 #'     \item{\code{SPR_x}}{Numeric. Target SPR fraction (e.g. 0.4).}
 #'   }

@@ -605,7 +605,7 @@
           if(n_pop > 1) {
 
             # get number of pops in a given region
-            n_pop_in_region = array(0, dim = n_region)
+            n_pop_in_region = array(0, dim = n_regions)
             for(p in 1:n_pop) n_pop_in_region[natal_region[p]] = n_pop_in_region[natal_region[p]] + 1
 
             for(p2 in 1:n_pop) {

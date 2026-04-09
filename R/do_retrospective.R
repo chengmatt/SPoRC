@@ -136,6 +136,12 @@ truncate_yr <- function(j,
   retro_mapping$ln_fish_q <- factor(array(mapping$ln_fish_q, dim = dim(parameters$ln_fish_q))[,1:max(retro_data$fish_q_blocks),,drop = FALSE])
   retro_mapping$ln_fish_fixed_sel_pars <- factor(array(mapping$ln_fish_fixed_sel_pars, dim = dim(parameters$ln_fish_fixed_sel_pars))[,,1:max(retro_data$fish_sel_blocks),,,drop = FALSE])
 
+  # Adjust sigmaC
+  retro_parameters$ln_sigmaC <- parameters$ln_sigmaC[,1:(length(data$years) - j),,,drop = FALSE]
+  retro_mapping$ln_sigmaC <- factor(array(mapping$ln_sigmaC, dim = dim(parameters$ln_sigmaC))[,1:(length(data$years) - j),,,drop = FALSE])
+  retro_parameters$ln_sigmaC_pop <- parameters$ln_sigmaC_pop[,,1:(length(data$years) - j),,,drop = FALSE]
+  retro_mapping$ln_sigmaC_pop <- factor(array(mapping$ln_sigmaC_pop, dim = dim(parameters$ln_sigmaC_pop))[,,1:(length(data$years) - j),,,drop = FALSE])
+
   # Population-specific Fishery ---------------------------------------------
   if(any(data$UseFishIdx_pop == 1) || any(data$UseFishAgeComps_pop == 1) || any(data$UseFishLenComps_pop == 1)) {
     retro_data$ObsFishIdx_pop    <- data$ObsFishIdx_pop[,,1:(length(data$years) - j),,,drop = FALSE]
@@ -259,6 +265,18 @@ if(any(data$UseSrvIdx_pop == 1) || any(data$UseSrvAgeComps_pop == 1) || any(data
   retro_data$UseSrvAgeComps_pop  <- data$UseSrvAgeComps_pop[,,1:(length(data$years) - j),,,drop = FALSE]
   retro_data$UseSrvLenComps_pop  <- data$UseSrvLenComps_pop[,,1:(length(data$years) - j),,,drop = FALSE]
   retro_data$UseSrvIdx_pop       <- data$UseSrvIdx_pop[,,1:(length(data$years) - j),,,drop = FALSE]
+
+  # Input sample sizes
+  retro_data$ISS_FishAgeComps <- data$ISS_FishAgeComps[,1:(length(data$years) - j),,,,drop = FALSE]
+  retro_data$ISS_SrvAgeComps <- data$ISS_SrvAgeComps[,1:(length(data$years) - j),,,,drop = FALSE]
+  retro_data$ISS_FishLenComps <- data$ISS_FishLenComps[,1:(length(data$years) - j),,,,drop = FALSE]
+  retro_data$ISS_SrvLenComps <- data$ISS_SrvLenComps[,1:(length(data$years) - j),,,,drop = FALSE]
+
+  retro_data$ISS_FishAgeComps_pop <- data$ISS_FishAgeComps_pop[,,1:(length(data$years) - j),,,,drop = FALSE]
+  retro_data$ISS_SrvAgeComps_pop <- data$ISS_SrvAgeComps_pop[,,1:(length(data$years) - j),,,,drop = FALSE]
+  retro_data$ISS_FishLenComps_pop <- data$ISS_FishLenComps_pop[,,1:(length(data$years) - j),,,,drop = FALSE]
+  retro_data$ISS_SrvLenComps_pop <- data$ISS_SrvLenComps_pop[,,1:(length(data$years) - j),,,,drop = FALSE]
+
 
   return(list(retro_data = retro_data,
               retro_parameters = retro_parameters,

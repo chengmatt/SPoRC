@@ -160,7 +160,7 @@ Setup_Mod_Biologicals(
 
   Specification of sex blocking for natural mortality. Either a
   character string ("constant") or a list of index vectors, e.g.,
-  `list(1:2)`, which specifies sex-invariant M.
+  `list(1,2)`, which specifies sex-invariant M.
 
 - Fixed_natmort:
 

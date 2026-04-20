@@ -108,6 +108,7 @@ Setup_Mod_Weighting <- function(input_list,
                                 ) {
 
   messages_list <<- character(0) # string to attach to for printing messages
+  if(input_list$store_config) input_list$config$Setup_Mod_Weighting <- mget(names(formals()))[-1]
 
   input_list$data$Wt_Catch <- Wt_Catch
   input_list$data$Wt_FishIdx <- Wt_FishIdx

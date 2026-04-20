@@ -555,6 +555,7 @@ Setup_Mod_Movement <- function(input_list,
 
   messages_list <<- character(0) # string to attach to for printing messages
   starting_values <- list(...) # get starting values if there are any
+  if(input_list$store_config) input_list$config$Setup_Mod_Movement <- mget(names(formals()))[-1]
 
   # Input Validation --------------------------------------------------------
 

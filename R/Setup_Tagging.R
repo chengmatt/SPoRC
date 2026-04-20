@@ -581,6 +581,7 @@ Setup_Mod_Tagging <- function(input_list,
 
   messages_list <<- character(0) # string to attach to for printing messages
   starting_values <- list(...)
+  if(input_list$store_config) input_list$config$Setup_Mod_Tagging <- mget(names(formals()))[-1]
 
   # Input Validation --------------------------------------------------------
 

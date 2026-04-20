@@ -167,6 +167,7 @@ Setup_Sim_Dim <- function(n_sims,
 #' @param verbose Logical. If \code{TRUE}, prints a summary of all dimension
 #'   settings to the console via \code{message()} after setup. Default
 #'   \code{FALSE}.
+#' @param store_config Logical. If \code{TRUE}, stores configuration of the model. Default is \code{FALSE}
 #'
 #' @return A named list (\code{input_list}) with three sublists:
 #'   \describe{
@@ -198,13 +199,18 @@ Setup_Mod_Dim <- function(years,
                           n_fish_fleets,
                           n_srv_fleets,
                           n_proj_yrs_devs = 0,
-                          verbose = FALSE
+                          verbose = FALSE,
+                          store_config = FALSE
                           ) {
 
   messages_list <<- character(0) # string to attach to for printing messages
 
   # Create empty list
   input_list <- list(data = list(), par = list(), map = list())
+  if(store_config) {
+    input_list$config <- list()
+    input_list$config$Setup_Mod_Dim <- mget(names(formals()))
+  }
 
   if(is.null(natal_region)) {
     if(n_regions == 1) {
@@ -232,6 +238,7 @@ Setup_Mod_Dim <- function(years,
   input_list$data$n_seas <- n_seas
   input_list$data$seasdur <- seasdur
   input_list$verbose <- verbose
+  input_list$store_config <- store_config
 
   collect_message("Number of Years: ", length(years))
   collect_message("Number of Seasons: ", n_seas)

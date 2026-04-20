@@ -24,7 +24,8 @@ test_that("Dusky RTMB model produces expected results", {
     # number of fishery fleets
     n_srv_fleets = sgl_rg_dusky_data$n_srv_fleets, # number of survey fleets
     n_seas = sgl_rg_dusky_data$n_seas,
-    verbose = TRUE # whether to output messages
+    verbose = TRUE, # whether to output messages
+    store_config = TRUE # whether to store configuration
   )
 
   # Setup recruitment stuff (using defaults for other stuff)

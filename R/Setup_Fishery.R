@@ -822,6 +822,7 @@ Setup_Mod_Catch_and_F <- function(input_list,
 
   messages_list <<- character(0) # string to attach to for printing messages
   starting_values <- list(...)
+  if(input_list$store_config) input_list$config$Setup_Mod_Catch_and_F <- mget(names(formals()))[-1]
 
   # Input Validation --------------------------------------------------------
 
@@ -1790,6 +1791,7 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
 
   messages_list <<- character(0) # string to attach to for printing messages
   starting_values <- list(...)
+  if(input_list$store_config) input_list$config$Setup_Mod_FishIdx_and_Comps <- mget(names(formals()))[-1]
 
   # Input Validation ---------------------------------------------------------
 
@@ -3034,6 +3036,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
 
   messages_list <<- character(0) # string to attach to for printing messages
   starting_values <- list(...)
+  if(input_list$store_config) input_list$config$Setup_Mod_Fishsel_and_Q <- mget(names(formals()))[-1]
 
   # Input Validation --------------------------------------------------------
 

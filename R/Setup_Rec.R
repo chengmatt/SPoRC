@@ -1395,6 +1395,7 @@ Setup_Mod_Rec <- function(input_list,
 
   messages_list <<- character(0)
   starting_values <- list(...)
+  if(input_list$store_config) input_list$config$Setup_Mod_Rec <- mget(names(formals()))[-1]
 
   # Convert character inputs to numeric codes for init_age_strc and equil_init_age_strc
   init_age_strc <- convert_to_numeric(init_age_strc, list(iterative = 0, scalar_no_move = 1, matrix = 2, scalar_plus_only = 3))

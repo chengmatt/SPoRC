@@ -130,7 +130,7 @@ three_ref_pt <- Get_Reference_Points(data = three_dat,
 n_sims <- 1
 t_spawn <- 0
 sexratio <- 0.5
-n_proj_yrs <- 30
+n_proj_yrs <- 500
 n_regions <- 3
 n_ages <- length(three_dat$ages)
 n_sexes <- three_dat$n_sexes
@@ -225,7 +225,7 @@ five_ref_pt <- Get_Reference_Points(data = five_dat,
 n_sims <- 1
 t_spawn <- 0
 sexratio <- 0.5
-n_proj_yrs <- 30
+n_proj_yrs <- 500
 n_regions <- 5
 n_ages <- length(five_dat$ages)
 n_sexes <- five_dat$n_sexes
@@ -638,7 +638,7 @@ three_hcr_df <- expand.grid(j = 1:3, i = seq(0, 100, 0.01)) %>%
   j = factor(j, levels = c("BS + AI + WGOA", "CGOA", "EGOA")))
 
 # Five Region HCR
-five_hcr_df <- expand.grid(j = 1:5, i = seq(0, 50, 0.01)) %>%
+five_hcr_df <- expand.grid(j = 1:5, i = seq(0, 100, 0.01)) %>%
   mutate(
     frp = mapply(function(j) five_ref_pt$f_ref_pt[j], j),
     brp = mapply(function(j) five_ref_pt$b_ref_pt[j], j),

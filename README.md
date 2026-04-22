@@ -30,4 +30,5 @@ remotes::install_github("fishfollower/compResidual/compResidual") # Optional OSA
 devtools::install_github("chengmatt/SPoRC", dependencies = c("Depends", "Imports"))
 ```
 
-**Note**: `SPoRC` is under active development. Users should exercise caution as features are subject to change without notice.
+### Publications
+1. Cheng, M.LH., Goethel, D.R., Cunningham, C.J., Hulson, P.F., Ianelli, J.N., Omori, K.L., 2026. The SPoRC Stock Assessment Package: A Generalized Next‐Generation Platform to Assess Spatial, Age and Sex‐Structured Populations. Fish and Fisheries faf.70082. https://doi.org/10.1111/faf.70082

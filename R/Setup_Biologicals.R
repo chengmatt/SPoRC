@@ -205,10 +205,10 @@ do_M_mapping <- function(input_list,
 #' needed by the TMB/RTMB objective function: weight-at-age (spawning, fishery,
 #' and survey), maturity-at-age, ageing error, the size-age transition matrix
 #' (optional), small constants for numerical stability, and the natural mortality
-#' block structure and mapping. Called after \code{\link{Setup_Mod_Dimensions}}.
+#' block structure and mapping. Called after \code{\link{Setup_Mod_Dim}}.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par}, \code{$map}, and
-#'   \code{$verbose} sublists, as returned by \code{\link{Setup_Mod_Dimensions}}.
+#'   \code{$verbose} sublists, as returned by \code{\link{Setup_Mod_Dim}}.
 #' @param WAA Numeric array of spawning weight-at-age with dimensions
 #'   \code{[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes]}.
 #'   Used to compute spawning stock biomass. Also serves as the fallback for

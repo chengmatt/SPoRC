@@ -40,7 +40,6 @@ Imports:
     tidyr,
     TMB
 Suggests: 
-    compResidual,
     igraph,
     knitr,
     purrr,

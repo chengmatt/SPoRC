@@ -59,13 +59,15 @@ test_that("Single-region Sablefish RTMB model produces expected results", {
   )
 
   # Setup catch and fishing mortality stuff
-  input_list <- Setup_Mod_Catch_and_F(input_list = input_list,
-                                      # Data inputs
-                                      ObsCatch = sgl_rg_sable_data$ObsCatch,
-                                      UseCatch = sgl_rg_sable_data$UseCatch,
-                                      # Model options
-                                      Use_F_pen = 1, # whether to use f penalty, == 0 don't use, == 1 use
-                                      sigmaC_spec = 'fix'
+  suppressWarnings(
+    input_list <- Setup_Mod_Catch_and_F(input_list = input_list,
+                                        # Data inputs
+                                        ObsCatch = sgl_rg_sable_data$ObsCatch,
+                                        UseCatch = sgl_rg_sable_data$UseCatch,
+                                        # Model options
+                                        Use_F_pen = 1, # whether to use f penalty, == 0 don't use, == 1 use
+                                        sigmaC_spec = 'fix'
+    )
   )
 
   # Setup fishery indices and compositions

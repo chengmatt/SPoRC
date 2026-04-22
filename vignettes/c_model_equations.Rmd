@@ -58,7 +58,7 @@ $$\begin{matrix}
 N_{p,r,a,s}^{'} = \mu_p^{\text{Rec}}\exp\left( - (a - 1) \cdot Z_{p,r,a,s}^{'} \right)\psi_{p,r,y = 1,s}\zeta_{p,r},\quad\text{for }2 \leq a < a_{+} \\
 \end{matrix}$$
 
-$$Z_{p,r,a,s}^{'} = \text{Natmort}_{p,r,y = 1,a,s} + \mu_{r,\tau = 1,f = 1}^{\text{Fsh}}\text{Fmort}^{\text{InitProp}}\text{Sel}_{r,y = 1,a,s,f = 1}^{\text{Fsh}}$$
+$$Z_{p,r,a,s}^{'} = \text{Natmort}_{p,r,y = 1,a,s} + \mu_{r,\tau = 1,f = 1}^{\text{Fsh}}\text{Fmort}^{\text{InitProp}}\text{Sel}_{p,r,y = 1,\tau,a,s,f = 1}^{\text{Fsh}}$$
 
 where:
 
@@ -74,7 +74,7 @@ where:
 -   $\text{Fmort}^{\text{InitProp}}$ is a user-defined value describing
     the proportion of the mean fishing mortality from the first fleet
     applied during the initialization stage,
--   $\text{Sel}_{r,y = 1,a,s,f = 1}^{\text{Fsh}}$ is the fishery
+-   $\text{Sel}_{p,r,y = 1,\tau,a,s,f = 1}^{\text{Fsh}}$ is the fishery
     selectivity-at-age for the first fleet,
 -   $\psi_{r,y,s}$ describes the recruitment sex-ratio,
 -   $\zeta_{r}$ apportions the global recruitment parameter across
@@ -281,7 +281,7 @@ is defined as the combination of natural mortality
 and fishing mortality ($\text{Fmort}_{r,y,\tau,f}$):
 
 $$\begin{matrix}
-Z_{p,r,y,\tau,a,s} = \text{Natmort}_{p,r,y,a,s} \cdot \Delta\tau + \sum_{f}^{}\text{Sel}_{r,y,a,s,f}^{\text{Fsh}}\text{Fmort}_{r,y,\tau,f} \\
+Z_{p,r,y,\tau,a,s} = \text{Natmort}_{p,r,y,a,s} \cdot \Delta\tau + \sum_{f}^{}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}}\text{Fmort}_{r,y,\tau,f} \\
 \end{matrix}$$
 
 The seasonal instantaneous fishing mortality rate is then defined as:
@@ -373,7 +373,7 @@ Expected catch-at-age ($C_{p,r,y,\tau,a,s,f}^{a}$) for a given fishery fleet is
 calculated using Baranov's catch equation:
 
 $$\begin{matrix}
-C_{p,r,y,\tau,a,s,f}^{a} = \dfrac{\text{Fmort}_{r,y,\tau,f}\text{Sel}_{r,y,a,s,f}^{\text{Fsh}}}{Z_{p,r,y,\tau,a,s}}N_{p,r,y,\tau,a,s}\left\lbrack 1 - \exp\left( - Z_{p,r,y,\tau,a,s} \right) \right\rbrack \\
+C_{p,r,y,\tau,a,s,f}^{a} = \dfrac{\text{Fmort}_{r,y,\tau,f}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}}}{Z_{p,r,y,\tau,a,s}}N_{p,r,y,\tau,a,s}\left\lbrack 1 - \exp\left( - Z_{p,r,y,\tau,a,s} \right) \right\rbrack \\
 \end{matrix}$$
 
 To track length-based dynamics, catch-at-length ($C_{p,r,y,\tau,l,s,f}^{l}$)
@@ -408,7 +408,7 @@ Similarly, expected fishery indices ($\text{FshIdx}_{p,r,y,\tau,f}$) can be comp
 as either abundance-based or biomass-based. For abundance-based fishery indices:
 
 $$\begin{matrix}
-\text{FshIdx}_{p,r,y,\tau,f} = q_{r,y,f}^{\text{Fsh}}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}N_{p,r,y,\tau,a,s}}\text{Sel}_{r,y,a,s,f}^{\text{Fsh}} \\
+\text{FshIdx}_{p,r,y,\tau,f} = q_{r,y,f}^{\text{Fsh}}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}N_{p,r,y,\tau,a,s}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}} \\
 \end{matrix}$$
 
 where $q_{r,y,f}^{\text{Fsh}}$ is the catchability coefficient for a
@@ -417,7 +417,7 @@ is computed directly from numbers-at-age without applying additional survival
 discounting. Biomass-based fishery indices are computed as:
 
 $$\begin{matrix}
-\text{FshIdx}_{p,r,y,\tau,f} = q_{r,y,f}^{\text{Fsh}}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}N_{p,r,y,\tau,a,s}}\text{Sel}_{r,y,a,s,f}^{\text{Fsh}}W_{p,r,y,\tau,a,s,f}^{fish} \\
+\text{FshIdx}_{p,r,y,\tau,f} = q_{r,y,f}^{\text{Fsh}}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}N_{p,r,y,\tau,a,s}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}}W_{p,r,y,\tau,a,s,f}^{fish} \\
 \end{matrix}$$
 
 The observed region-aggregated fishery index is compared to the sum of predicted indices
@@ -431,12 +431,12 @@ catch-at-age, survey catch-at-length, and survey indices. Expected
 survey catch-at-age ($I_{p,r,y,\tau,a,s,sf}^{a}$) is calculated as follows:
 
 $$\begin{matrix}
-I_{p,r,y,\tau,a,s,sf}^{a} = N_{p,r,y,\tau,a,s}\exp\left( - Z_{p,r,y,\tau,a,s} \cdot t_{r,\tau,sf}^{srv} \right)\text{Sel}_{r,y,a,s,sf}^{\text{Srv}} \\
+I_{p,r,y,\tau,a,s,sf}^{a} = N_{p,r,y,\tau,a,s}\exp\left( - Z_{p,r,y,\tau,a,s} \cdot t_{r,\tau,sf}^{srv} \right)\text{Sel}_{p,r,y,\tau,a,s,sf}^{\text{Srv}} \\
 \end{matrix}$$
 
 where subscript $sf$ denotes a given survey fleet, $t_{r,\tau,sf}^{srv}$ is the
 survey timing as a fraction of the season, and
-$\text{Sel}_{r,y,a,s,sf}^{\text{Srv}}$ is the survey selectivity-at-age
+$\text{Sel}_{p,r,y,\tau,a,s,sf}^{\text{Srv}}$ is the survey selectivity-at-age
 pattern. Expected survey catch-at-length ($I_{p,r,y,\tau,l,s,sf}^{l}$) is given
 by:
 
@@ -474,7 +474,7 @@ a vector of regression coefficients, $\iota_{m}p_{m}$ are orthogonal
 polynomial coefficients along with its basis functions, and $z_{r,y,sf}$
 are the covariates for which a polynomial term is assumed.
 
-## Tagging Observation Model
+### Tagging Observation Model
 
 The tagging observation model tracks tag cohorts ($T_{p,r,y,\tau,a,s}^{k}$) by
 the combination of release region, release year, and release season ($k$) and follows a
@@ -487,53 +487,48 @@ the process dynamics for the tagged cohort mimic those specified for
 the overall population. Immediately following release, tag cohorts are
 decremented by an initial tag-induced mortality rate:
 
-$$\begin{matrix}
-T_{p,r,y,\tau,a,s}^{k} = T_{p,r,y,\tau,a,s}^{k}\exp( - \eta^{\text{mort}}) \\
-\end{matrix}$$
+$$T_{p,r,y,\tau,a,s}^{k} = T_{p,r,y,\tau,a,s}^{k}\exp( - \eta^{\text{mort}})$$
 
 where $\eta^{\text{mort}}$ is the initial tag-induced mortality rate. If tagged
-cohorts are released at the beginning of a season ($t^{tag} = 1$), Markovian
+cohorts are released at the beginning of a season ($t^{\text{tag}} = 1$), Markovian
 movement occurs before mortality is applied; otherwise, movement is skipped
 in the release season:
 
-$$\begin{matrix}
-\mathbf{T}_{p,y,\tau,a,s}^{k} = \left( \mathbf{T}_{p,y,\tau,a,s}^{k} \right)^{\text{T}}\mathbf{M}_{p,y,\tau,a,s} \\
-\end{matrix}$$
+$$\mathbf{T}_{p,y,\tau,a,s}^{k} = \left( \mathbf{T}_{p,y,\tau,a,s}^{k} \right)^{\text{T}}\mathbf{M}_{p,y,\tau,a,s}$$
 
 Within-season mortality and ageing of the tagged cohort then occurs.
 For seasons within a year ($\tau < n_\tau$):
 
-$$\begin{matrix}
-T_{p,r,y,\tau + 1,a,s}^{k} = T_{p,r,y,\tau,a,s}^{k}\exp\left( - Z_{p,r,y,\tau,a,s}^{\text{Tag}} \right) \\
-\end{matrix}$$
+$$T_{p,r,y,\tau + 1,a,s}^{k} = T_{p,r,y,\tau,a,s}^{k}\exp\left( - Z_{p,r,y,\tau,a,s}^{\text{Tag}} \right)$$
 
 At the end of the final season ($\tau = n_\tau$), individuals advance in age:
 
-$$\begin{matrix}
-T_{p,r,y + 1,1,a + 1,s}^{k} = T_{p,r,y,n_\tau,a,s}^{k}\exp\left( - Z_{p,r,y,n_\tau,a,s}^{\text{Tag}} \right),\quad\text{for }1 \leq a < a_{+} \\
-T_{p,r,y + 1,1,a_{+},s}^{k} = T_{p,r,y+1,1,a_{+},s}^{k} + T_{p,r,y,n_\tau,a_{+},s}^{k}\exp\left( - Z_{p,r,y,n_\tau,a_{+},s}^{\text{Tag}} \right)
-\end{matrix}$$
+$$T_{p,r,y + 1,1,a + 1,s}^{k} = T_{p,r,y,n_\tau,a,s}^{k}\exp\left( - Z_{p,r,y,n_\tau,a,s}^{\text{Tag}} \right),\quad\text{for }1 \leq a < a_{+}$$
+
+$$T_{p,r,y + 1,1,a_{+},s}^{k} = T_{p,r,y+1,1,a_{+},s}^{k} + T_{p,r,y,n_\tau,a_{+},s}^{k}\exp\left( - Z_{p,r,y,n_\tau,a_{+},s}^{k}\right)$$
 
 where tagged cohorts follow an exponential mortality model with
 accumulation of individuals in the plus-group. Total mortality for the
 tagged cohort ($Z_{p,r,y,\tau,a,s}^{\text{Tag}}$) is specified as:
 
-$$\begin{matrix}
-Z_{p,r,y,\tau,a,s}^{\text{Tag}} = \left( \kappa \cdot \Delta\tau + \text{NatMort}_{p,r,y,a,s} \cdot \Delta\tau + \sum_{f}^{}\text{Sel}_{r,y,a,s,f}^{\text{Fsh}}\text{Fmort}_{r,y,\tau,f} \right) \\
-\end{matrix}$$
+$$Z_{p,r,y,\tau,a,s}^{\text{Tag}} = \kappa \cdot \Delta\tau + \text{NatMort}_{p,r,y,a,s} \cdot \Delta\tau + \sum_{f \in \mathcal{F}^{\text{Tag}}} \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}} \text{Fmort}_{r,y,\tau,f}$$
 
 where $\kappa$ is a parameter describing chronic tag loss (i.e., annual
-tag shedding). Similar to computations for catch-at-age, tag recaptures
+tag shedding) and $\mathcal{F}^{\text{Tag}}$ denotes the subset of fishing fleets
+that contribute tagging data. The summation over $\mathcal{F}^{\text{Tag}}$ rather
+than all fleets is intentional: restricting the tag mortality calculation
+to fleets with tagging data prevents non-tagging fleets from unintentionally
+influencing tag-based parameter estimates (e.g., selectivity, reporting rates).
+
+Similar to computations for catch-at-age, tag recaptures
 are calculated using a modified version of Baranov's catch equation,
 with fleet-specific tag reporting rates:
 
-$$\begin{matrix}
-\text{Recap}_{p,r,y,\tau,a,s,f}^{k} = \beta_{r,y,f}\dfrac{\text{Fmort}_{r,y,\tau,f}\text{Sel}_{r,y,a,s,f}^{\text{Fsh}}}{Z_{p,r,y,\tau,a,s}^{\text{Tag}}}T_{p,r,y,\tau,a,s}^{k}\left\lbrack 1 - \exp\left( - Z_{p,r,y,\tau,a,s}^{\text{Tag}} \right) \right\rbrack \\
-\end{matrix}$$
+$$\text{Recap}_{p,r,y,\tau,a,s,f}^{k} = \beta_{r,y,f}\dfrac{\text{Fmort}_{r,y,\tau,f}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}}}{Z_{p,r,y,\tau,a,s}^{\text{Tag}}}T_{p,r,y,\tau,a,s}^{k}\left\lbrack 1 - \exp\left( - Z_{p,r,y,\tau,a,s}^{\text{Tag}} \right) \right\rbrack$$
 
-$\beta_{r,y,f}$ represents a fleet-specific tag reporting rate parameter that can vary
+where $\beta_{r,y,f}$ represents a fleet-specific tag reporting rate parameter that can vary
 across space, time, and fleet, which is estimated in logit space such that it is
-constrained between $\lbrack 0,1\rbrack$.
+constrained between $[0,1]$. Recaptures are computed only for fleets in $\mathcal{F}^{\text{Tag}}$.
 
 ## Fishery and Survey Selectivity
 
@@ -541,19 +536,26 @@ In the following descriptions of selectivity, we omit subscripts for
 sexes and fleets for brevity, although note that the equations remain
 specific to those model partitions. Several approaches are available for
 parameterizing fishery and survey selectivity. Selectivity can be
-defined as either age- or length-based. For age-based selectivity, an
-age vector is applied directly with a chosen functional form. For
-length-based selectivity, a length vector is used to compute
-selectivity, which is then combined with a size--age transition matrix
-through a dot product to obtain selectivity-at-age.
+defined as either age- or length-based. Selectivity parameters are
+estimated by region ($r$), year ($y$), sex ($s$), and fleet, and are
+explicitly invariant across populations ($p$) and seasons ($\tau$).
 
-$$\begin{matrix}
-\mathbf{Se}\mathbf{l}^{a}\mathbf{=}\left( \mathbf{A}_{p,r,y,\tau,s}^{l} \right)^{\text{T}}\mathbf{Se}\mathbf{l}^{l} \\
-\end{matrix}$$
+For age-based selectivity, an age vector is applied directly with a
+chosen functional form, and the resulting selectivity-at-age
+($\text{Sel}_{p,r,y,\tau,a,s,f}$) is likewise invariant across populations
+and seasons. For length-based selectivity, a length vector is used to
+compute selectivity-at-length ($\text{Sel}^l_{r,y,s,f}$), which is
+then converted to selectivity-at-age via a dot product with the
+size-age transition matrix:
 
-Given the age-based nature of the model, selectivity-at-age is utilized
-for all subsequent calculations. Various functional forms can also be
-specified for selectivity processes. In the following we use the
+$$\mathbf{Sel}^{a}_{p,r,y,\tau,s,f} = \left( \mathbf{A}_{p,r,y,\tau,s}^{l} \right)^{T} \mathbf{Sel}^{l}_{r,y,s,f}$$
+
+Because the size-age transition matrix $\mathbf{A}_{p,r,y,\tau,s}^{l}$
+varies across populations and seasons, the derived selectivity-at-age
+inherits population and season specificity upon conversion, even though
+the underlying selectivity-at-length parameters remain shared across
+these dimensions. Given the age-based nature of the model,
+selectivity-at-age is utilized for all subsequent calculations. In the following we use the
 subscript $b$ to denote a generalized bin number.
 
 Two forms of logistic selectivity can be specified. The first form is
@@ -647,6 +649,7 @@ $${\begin{matrix}
 }{b_{y}^{50} = b^{50} \cdot exp(\epsilon_{y,2}^{Sel})}$$
 
 where the parameters of the logistic form are allowed to vary over time.
+
 In the context of semi-parametric selectivity, the following equation is
 used:
 
@@ -656,10 +659,23 @@ $${\begin{matrix}
 }{{Sel}_{y,b} = \frac{{Sel}_{y,b}^{'}}{mean(\mathbf{Se}\mathbf{l}^{\mathbf{'}})}}$$
 
 where deviations are placed about the parametric form and selectivity
-values are mean standardized to aid with interpretability. Further
-details on how selectivity deviations arise can be found in the
-"Selectivity Process Error" section of this document.
+values are mean standardized to aid with interpretability. Mean
+standardization is applied only when semi-parametric deviations are
+specified (process error models 3–5). For age-based selectivity, the
+mean is computed from a single population and season reference
+($p = 1, \tau = 1$) since the underlying selectivity is invariant across
+these dimensions, and the standardization is then applied identically
+across all populations and seasons:
 
+$${Sel}_{r,y,b,s,j} = \exp\left(\log\left({Sel}_{r,y,b,s,j}\right) - \overline{\log\left(\mathbf{Sel}_{r,s,j}\right)}\right)$$
+
+where $\overline{\log\left(\mathbf{Sel}_{r,s,j}\right)}$ is the mean of
+log-selectivity across all years and bins for a given region, sex, and
+fleet. For length-based selectivity, mean standardization is applied
+directly to the selectivity-at-length values before conversion to the
+age domain via the size–age transition matrix. Further details on how
+selectivity deviations arise can be found in the "Selectivity Process
+Error" section of this document.
 # Likelihoods
 
 Currently, `SPoRC` incorporates data likelihood components for the

@@ -47,7 +47,7 @@
 #' @param do_recruits_move Indicator for whether recruits move in their first year.
 #' @param t_spawn Fraction of the spawning season that occurs before spawning.
 #' @param init_F Numeric vector (\code{n_seas}) of fishing mortality.
-#' @param fish_sel Matrix (\code{n_regions × n_ages}) of fishery selectivity.
+#' @param fish_sel Matrix (\code{n_pop x n_regions × n_seas x n_ages}) of fishery selectivity.
 #' @param n_seas Number of seasons per year.
 #' @param spawn_seas Season index in which spawning occurs.
 #' @param natal_region Integer vector (\code{n_pop}) mapping each population
@@ -208,9 +208,9 @@ Get_Det_Recruitment <- function(recruitment_model,
                 # Get spawning biomass per recruit by age
                 for(d in 1:n_regions) {
                   SB_age[p,o,d,j-1] = tmp_unfished_spawn[d] * WAA[p,d,spawn_seas,j-1] * MatAA[p,d,spawn_seas,j-1] *
-                    exp(-(t_spawn * natmort[p,d,j-1] * seasdur[seas]))
+                    exp(-(t_spawn * natmort[p,d,j-1] * seasdur[spawn_seas]))
                   SB_fished_age[p,o,d,j-1] = tmp_fished_spawn[d] * WAA[p,d,spawn_seas,j-1] * MatAA[p,d,spawn_seas,j-1] *
-                    exp(-t_spawn * ((natmort[p,d,j-1] * seasdur[seas]) + init_F[seas] * fish_sel[d,j-1]))
+                    exp(-t_spawn * ((natmort[p,d,j-1] * seasdur[spawn_seas]) + init_F[seas] * fish_sel[p,d,spawn_seas,j-1]))
                 }
               }
 
@@ -218,11 +218,11 @@ Get_Det_Recruitment <- function(recruitment_model,
               if(seas < n_seas) {
                 # Within-season mortality, no ageing yet
                 Nspr[p,o,,j-1] = tmp_unfished * exp(-(natmort[p,,j-1] * seasdur[seas]))
-                Nspr_fished[p,o,,j-1] = tmp_fished * exp(-(natmort[p,,j-1] * seasdur[seas] + init_F[seas] * fish_sel[,j-1]))
+                Nspr_fished[p,o,,j-1] = tmp_fished * exp(-(natmort[p,,j-1] * seasdur[seas] + init_F[seas] * fish_sel[p,,seas,j-1]))
               } else {
                 # Last season: mortality + ageing
                 Nspr[p,o,,j] = tmp_unfished * exp(-(natmort[p,,j-1] * seasdur[seas]))
-                Nspr_fished[p,o,,j] = tmp_fished * exp(-(natmort[p,,j-1] * seasdur[seas] + init_F[seas] * fish_sel[,j-1]))
+                Nspr_fished[p,o,,j] = tmp_fished * exp(-(natmort[p,,j-1] * seasdur[seas] + init_F[seas] * fish_sel[p,,seas,j-1]))
               }
             } # end o loop
           } # end p loop
@@ -247,7 +247,7 @@ Get_Det_Recruitment <- function(recruitment_model,
 
               # Apply seasonal mortality
               tmp_unfished = tmp_unfished * exp(-(natmort[p,,n_ages-1] * seasdur[seas]))
-              tmp_fished = tmp_fished * exp(-(natmort[p,,n_ages-1] * seasdur[seas] + init_F[seas] * fish_sel[,n_ages-1]))
+              tmp_fished = tmp_fished * exp(-(natmort[p,,n_ages-1] * seasdur[seas] + init_F[seas] * fish_sel[p,,seas,n_ages-1]))
 
             } # end seas loop
           }
@@ -272,7 +272,7 @@ Get_Det_Recruitment <- function(recruitment_model,
             SB_age[p,o,d,n_ages-1] = tmp_unfished_spawn[d] * WAA[p,d,spawn_seas,n_ages-1] * MatAA[p,d,spawn_seas,n_ages-1] *
               exp(-(t_spawn * natmort[p,d,n_ages-1] * seasdur[spawn_seas]))
             SB_fished_age[p,o,d,n_ages-1] = tmp_fished_spawn[d] * WAA[p,d,spawn_seas,n_ages-1] * MatAA[p,d,spawn_seas,n_ages-1] *
-              exp(-t_spawn * ((natmort[p,d,n_ages-1] * seasdur[spawn_seas]) + init_F[spawn_seas] * fish_sel[d,n_ages-1]))
+              exp(-t_spawn * ((natmort[p,d,n_ages-1] * seasdur[spawn_seas]) + init_F[spawn_seas] * fish_sel[p,d,spawn_seas,n_ages-1]))
           }
         }
       }
@@ -292,8 +292,8 @@ Get_Det_Recruitment <- function(recruitment_model,
           T_plus_unfished = S_plus_unfished %*% t(Movement[p,,,seas,n_ages]) %*% T_plus_unfished
 
           # Fished
-          S_penult_fished = diag(exp(-(natmort[p,,n_ages-1] * seasdur[seas] + init_F[seas] * fish_sel[,n_ages-1])), n_regions)
-          S_plus_fished = diag(exp(-(natmort[p,,n_ages] * seasdur[seas] + init_F[seas] * fish_sel[,n_ages])), n_regions)
+          S_penult_fished = diag(exp(-(natmort[p,,n_ages-1] * seasdur[seas] + init_F[seas] * fish_sel[p,,seas,n_ages-1])), n_regions)
+          S_plus_fished = diag(exp(-(natmort[p,,n_ages] * seasdur[seas] + init_F[seas] * fish_sel[p,,seas,n_ages])), n_regions)
           T_penult_fished = S_penult_fished %*% t(Movement[p,,,seas,n_ages-1]) %*% T_penult_fished
           T_plus_fished = S_plus_fished %*% t(Movement[p,,,seas,n_ages]) %*% T_plus_fished
         } # end seas loop
@@ -326,7 +326,7 @@ Get_Det_Recruitment <- function(recruitment_model,
 
               # Apply seasonal mortality
               tmp_unfished = tmp_unfished * exp(-(natmort[p,,n_ages] * seasdur[seas]))
-              tmp_fished = tmp_fished * exp(-(natmort[p,,n_ages] * seasdur[seas] + init_F[seas] * fish_sel[,n_ages]))
+              tmp_fished = tmp_fished * exp(-(natmort[p,,n_ages] * seasdur[seas] + init_F[seas] * fish_sel[p,,seas,n_ages]))
 
             } # end seas loop
           }
@@ -351,7 +351,7 @@ Get_Det_Recruitment <- function(recruitment_model,
             SB_age[p,o,d,n_ages] = tmp_unfished_spawn[d] * WAA[p,d,spawn_seas,n_ages] * MatAA[p,d,spawn_seas,n_ages] *
               exp(-(t_spawn * natmort[p,d,n_ages] * seasdur[spawn_seas]))
             SB_fished_age[p,o,d,n_ages] = tmp_fished_spawn[d] * WAA[p,d,spawn_seas,n_ages] * MatAA[p,d,spawn_seas,n_ages] *
-              exp(-t_spawn * ((natmort[p,d,n_ages] * seasdur[spawn_seas]) + init_F[spawn_seas] * fish_sel[d,n_ages]))
+              exp(-t_spawn * ((natmort[p,d,n_ages] * seasdur[spawn_seas]) + init_F[spawn_seas] * fish_sel[p,d,spawn_seas,n_ages]))
           } # end d loop
 
         } # end o loop
@@ -415,17 +415,17 @@ Get_Det_Recruitment <- function(recruitment_model,
           if (seas == spawn_seas) {
             SB_age[, j - 1] = tmp_unfished * WAA[1,, spawn_seas, j - 1] * MatAA[1,, spawn_seas, j - 1] * exp(-t_spawn * natmort[1,, j - 1] * seasdur[seas])
             SB_fished_age[, j - 1] = tmp_fished * WAA[1,, spawn_seas, j - 1] * MatAA[1,, spawn_seas, j - 1] *
-              exp(-t_spawn * (natmort[1,, j - 1] * seasdur[seas] + init_F[seas] * fish_sel[, j - 1]))
+              exp(-t_spawn * (natmort[1,, j - 1] * seasdur[seas] + init_F[seas] * fish_sel[1,,seas, j - 1]))
           }
 
           ## Mortality and ageing
           if (seas < n_seas) { # Within season mortality
             Nspr[, j - 1] = tmp_unfished * exp(-natmort[1,, j - 1] * seasdur[seas])
-            Nspr_fished[, j - 1] = tmp_fished * exp(-(natmort[1,, j - 1] * seasdur[seas] + init_F[seas] * fish_sel[, j - 1]))
+            Nspr_fished[, j - 1] = tmp_fished * exp(-(natmort[1,, j - 1] * seasdur[seas] + init_F[seas] * fish_sel[1,,seas, j - 1]))
           } else {
             # Ageing
             Nspr[, j] = tmp_unfished * exp(-natmort[1,, j - 1] * seasdur[seas])
-            Nspr_fished[, j] = tmp_fished * exp(-(natmort[1,, j - 1] * seasdur[seas] +  init_F[seas] * fish_sel[, j - 1]))
+            Nspr_fished[, j] = tmp_fished * exp(-(natmort[1,, j - 1] * seasdur[seas] +  init_F[seas] * fish_sel[1,,seas, j - 1]))
           }
         } # end seas loop
       } # end j loop
@@ -443,7 +443,7 @@ Get_Det_Recruitment <- function(recruitment_model,
 
           # Apply seasonal mortality
           tmp_unfished = tmp_unfished * exp(-(natmort[1,,n_ages-1] * seasdur[seas]))
-          tmp_fished = tmp_fished * exp(-(natmort[1,,n_ages-1] * seasdur[seas] + init_F[seas] * fish_sel[,n_ages-1]))
+          tmp_fished = tmp_fished * exp(-(natmort[1,,n_ages-1] * seasdur[seas] + init_F[seas] * fish_sel[1,,seas,n_ages-1]))
 
         } # end seas loop
       } # end if spawn_seas > 1
@@ -454,7 +454,7 @@ Get_Det_Recruitment <- function(recruitment_model,
       SB_age[, n_ages - 1] = tmp_unfished * WAA[1,, spawn_seas, n_ages - 1] * MatAA[1,, spawn_seas, n_ages - 1] *
         exp(-t_spawn * natmort[1,, n_ages - 1] * seasdur[spawn_seas])
       SB_fished_age[, n_ages - 1] = tmp_fished * WAA[1,, spawn_seas, n_ages - 1] * MatAA[1,, spawn_seas, n_ages - 1] *
-        exp(-t_spawn * (natmort[1,, n_ages - 1] * seasdur[spawn_seas] + init_F[spawn_seas] * fish_sel[, n_ages - 1]))
+        exp(-t_spawn * (natmort[1,, n_ages - 1] * seasdur[spawn_seas] + init_F[spawn_seas] * fish_sel[1,,spawn_seas, n_ages - 1]))
 
       ## Plus group analytical solution
       T_plus_fished = T_penult_fished = T_plus_unfished = T_penult_unfished = diag(n_regions)
@@ -463,8 +463,8 @@ Get_Det_Recruitment <- function(recruitment_model,
         # Get survival
         S_penult_unfished = diag(exp(-natmort[1,, n_ages - 1] * seasdur[seas]), n_regions)
         S_plus_unfished = diag(exp(-natmort[1,, n_ages] * seasdur[seas]), n_regions)
-        S_penult_fished = diag(exp(-(natmort[1,, n_ages - 1] * seasdur[seas] +  init_F[seas] * fish_sel[, n_ages - 1])), n_regions)
-        S_plus_fished = diag(exp(-(natmort[1,, n_ages] * seasdur[seas] + init_F[seas] * fish_sel[, n_ages])), n_regions)
+        S_penult_fished = diag(exp(-(natmort[1,, n_ages - 1] * seasdur[seas] +  init_F[seas] * fish_sel[1,,seas, n_ages - 1])), n_regions)
+        S_plus_fished = diag(exp(-(natmort[1,, n_ages] * seasdur[seas] + init_F[seas] * fish_sel[1,,seas, n_ages])), n_regions)
 
         # Get transition matrices
         T_penult_unfished = S_penult_unfished %*% t(Movement[1,,,seas, n_ages - 1]) %*% T_penult_unfished
@@ -491,7 +491,7 @@ Get_Det_Recruitment <- function(recruitment_model,
 
           # Apply seasonal mortality
           tmp_unfished = tmp_unfished * exp(-(natmort[1,,n_ages] * seasdur[seas]))
-          tmp_fished = tmp_fished * exp(-(natmort[1,,n_ages] * seasdur[seas] + init_F[seas] * fish_sel[,n_ages]))
+          tmp_fished = tmp_fished * exp(-(natmort[1,,n_ages] * seasdur[seas] + init_F[seas] * fish_sel[1,,seas,n_ages]))
 
         } # end seas loop
       }
@@ -500,7 +500,7 @@ Get_Det_Recruitment <- function(recruitment_model,
       SB_age[, n_ages] = tmp_unfished * WAA[1,, spawn_seas, n_ages] * MatAA[1,, spawn_seas, n_ages] *
         exp(-t_spawn * natmort[1,, n_ages] * seasdur[spawn_seas])
       SB_fished_age[, n_ages] = tmp_fished * WAA[1,, spawn_seas, n_ages] * MatAA[1,, spawn_seas, n_ages] *
-        exp(-t_spawn * (natmort[1,, n_ages] * seasdur[spawn_seas] + init_F[spawn_seas] * fish_sel[, n_ages]))
+        exp(-t_spawn * (natmort[1,, n_ages] * seasdur[spawn_seas] + init_F[spawn_seas] * fish_sel[1,,spawn_seas, n_ages]))
 
       # Get global spawning biomass per recruit (scalar)
       S0 = sum(SB_age) * R0[1]

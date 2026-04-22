@@ -17,11 +17,6 @@ Must contain \code{Movement} and \code{natmort}.}
 
 \item{model_names}{Character vector of length \code{n_models} giving display
 names for each model run. Used as colour legend labels across all plots.}
-
-\item{year_indx}{Integer giving the year index at which to slice biological
-quantities for plotting. Defaults to the terminal year if \code{NULL}.
-Movement plots show all seasons for the specified year; natural mortality,
-weight-at-age, and maturity-at-age plots show all seasons via faceting.}
 }
 \value{
 A list of four elements:

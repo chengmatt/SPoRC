@@ -32,21 +32,21 @@
 #' @param init_dd Density-dependence structure for equilibrium age-structure
 #'   initialisation. Default \code{"global"}. Same options as \code{rec_dd}.
 #' @param R0_input Unfished equilibrium recruitment array
-#'   \code{[n_pop × n_regions × n_yrs × n_sims]}. Default: \code{10} for all
+#'   \code{[n_pop x n_regions x n_yrs x n_sims]}. Default: \code{10} for all
 #'   cells.
 #' @param h_input Beverton-Holt steepness array
-#'   \code{[n_pop × n_regions × n_yrs × n_sims]}. Values should be in
+#'   \code{[n_pop x n_regions x n_yrs x n_sims]}. Values should be in
 #'   \eqn{(0.2, 1)}. Default: \code{0.8}.
 #' @param sexratio_input Proportion of recruits assigned to each sex, array
-#'   \code{[n_pop × n_regions × n_yrs × n_sexes × n_sims]}. Default: \code{1}
+#'   \code{[n_pop x n_regions x n_yrs x n_sexes x n_sims]}. Default: \code{1}
 #'   when \code{n_sexes = 1}; \code{0.5} per sex when \code{n_sexes = 2}.
 #' @param ln_sigmaR Log-scale standard deviation of recruitment deviations,
-#'   array \code{[n_pop × n_regions]}. The first element controls the SD for
+#'   array \code{[n_pop x n_regions]}. The first element controls the SD for
 #'   initial age-structure deviations (\code{ln_InitDevs}); the second controls
 #'   the SD for annual recruitment deviations (\code{ln_RecDevs}). Default:
 #'   \code{log(1)} for both.
 #' @param rec_seas_prop_input Seasonal allocation of annual recruitment, array
-#'   \code{[n_pop × n_seas × n_sims]}. Each population's values should sum to
+#'   \code{[n_pop x n_seas x n_sims]}. Each population's values should sum to
 #'   1 across seasons. Default: all recruitment assigned to season 1.
 #' @param spawn_seas Integer index of the season in which spawning occurs.
 #'   Default \code{1}.
@@ -74,16 +74,16 @@
 #'   (default); movement begins at age 2. \code{1} = recruits participate in
 #'   movement from age 1.
 #' @param stray_rate_input Natal-homing stray rate array
-#'   \code{[n_pop × n_yrs × n_sims]}. Proportion of individuals that stray
+#'   \code{[n_pop x n_yrs x n_sims]}. Proportion of individuals that stray
 #'   from their natal region during spawning. Default: \code{0} (No individuals stray).
 #' @param Rec_input External recruitment array
-#'   \code{[n_pop x n_regions × n_yrs × n_sims]}. Required when
+#'   \code{[n_pop x n_regions x n_yrs x n_sims]}. Required when
 #'   \code{recruitment_opt = "resample_from_input"}; projection years beyond
 #'   the length of \code{Rec_input} are filled by resampling historical years
 #'   with replacement. Ignored for other recruitment options. Default
 #'   \code{NULL}.
 #' @param ln_InitDevs_input Optional log-scale initial age-structure deviations
-#'   array \code{[n_pop × n_regions × (n_ages - 1) × n_sims]}. The
+#'   array \code{[n_pop x n_regions x (n_ages - 1) x n_sims]}. The
 #'   \code{n_ages - 1} dimension excludes the reference age used during
 #'   initialisation. If \code{NULL} (default), deviations are initialised to
 #'   zero.
@@ -180,10 +180,10 @@ Setup_Sim_Rec <- function(
 
 #' Map recruitment variability (sigma_R) parameters
 #'
-#' Internal helper called by \code{\link{Setup_Mod_Recruitment}} to construct
+#' Internal helper called by \code{\link{Setup_Mod_Rec}} to construct
 #' the TMB/RTMB factor map for \code{ln_sigmaR}, the log-scale standard
 #' deviation of recruitment deviations. The \code{ln_sigmaR} array has
-#' dimensions \code{[2 × n_pop × n_regions]}, where the first index
+#' dimensions \code{[2 x n_pop x n_regions]}, where the first index
 #' distinguishes initial age-structure deviations (\code{i = 1}) from annual
 #' recruitment deviations (\code{i = 2}).
 #'
@@ -273,10 +273,10 @@ do_sigmaR_mapping <- function(input_list, sigmaR_spec) {
 
 #' Map initial age-structure deviation parameters
 #'
-#' Internal helper called by \code{\link{Setup_Mod_Recruitment}} to construct
+#' Internal helper called by \code{\link{Setup_Mod_Rec}} to construct
 #' the TMB/RTMB factor map for \code{ln_InitDevs}, the log-scale deviations
 #' from the equilibrium initial age structure. The \code{ln_InitDevs} array has
-#' dimensions \code{[n_pop × n_regions × (n_ages - 1)]}, where the age
+#' dimensions \code{[n_pop x n_regions x (n_ages - 1)]}, where the age
 #' dimension excludes the plus group by default (see \code{equil_init_age_strc}
 #' below).
 #'
@@ -322,7 +322,7 @@ do_sigmaR_mapping <- function(input_list, sigmaR_spec) {
 #'       regions have no recruitment.}
 #'   }
 #' @param rec_dd Recruitment density-dependence structure inherited from
-#'   \code{\link{Setup_Mod_Recruitment}}. \code{"global"} restricts valid
+#'   \code{\link{Setup_Mod_Rec}}. \code{"global"} restricts valid
 #'   \code{InitDevs_spec} choices to \code{"est_shared_r"} or
 #'   \code{"est_shared_pop_r"} when \code{n_regions > 1}.
 #'
@@ -479,10 +479,10 @@ do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd) {
 
 #' Map annual recruitment deviation parameters
 #'
-#' Internal helper called by \code{\link{Setup_Mod_Recruitment}} to construct
+#' Internal helper called by \code{\link{Setup_Mod_Rec}} to construct
 #' the TMB/RTMB factor map for \code{ln_RecDevs}, the log-scale annual
 #' recruitment deviations. The \code{ln_RecDevs} array has dimensions
-#' \code{[n_pop × n_regions × n_years]}.
+#' \code{[n_pop x n_regions x n_years]}.
 #'
 #' Mapping behaviour is governed by two interacting considerations:
 #' \enumerate{
@@ -522,7 +522,7 @@ do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd) {
 #'       regions have no recruitment.}
 #'   }
 #' @param rec_dd Recruitment density-dependence structure inherited from
-#'   \code{\link{Setup_Mod_Recruitment}}. \code{"global"} restricts valid
+#'   \code{\link{Setup_Mod_Rec}}. \code{"global"} restricts valid
 #'   \code{RecDevs_spec} choices to \code{"est_shared_r"} or
 #'   \code{"est_shared_pop_r"} when \code{n_regions > 1}.
 #'
@@ -617,10 +617,10 @@ do_RecDevs_mapping <- function(input_list, RecDevs_spec, rec_dd) {
 
 #' Map Beverton-Holt steepness parameters
 #'
-#' Internal helper called by \code{\link{Setup_Mod_Recruitment}} to construct
+#' Internal helper called by \code{\link{Setup_Mod_Rec}} to construct
 #' the TMB/RTMB factor map for \code{steepness_h}, the Beverton-Holt
 #' steepness parameter. The \code{steepness_h} array has dimensions
-#' \code{[n_pop × n_regions]}.
+#' \code{[n_pop x n_regions]}.
 #'
 #' When \code{rec_model = 0} (mean recruitment), steepness has no role in the
 #' stock-recruit relationship and all elements are mapped to \code{NA}
@@ -654,7 +654,7 @@ do_RecDevs_mapping <- function(input_list, RecDevs_spec, rec_dd) {
 #'       \code{rec_dd = "global"} and \code{n_regions > 1}.}
 #'   }
 #' @param rec_dd Recruitment density-dependence structure inherited from
-#'   \code{\link{Setup_Mod_Recruitment}}. \code{"global"} restricts valid
+#'   \code{\link{Setup_Mod_Rec}}. \code{"global"} restricts valid
 #'   \code{h_spec} values to \code{"est_shared_r"}, \code{"est_shared_pop_r"},
 #'   or \code{"fix"}, and prohibits \code{NULL}.
 #'
@@ -711,19 +711,19 @@ do_h_mapping <- function(input_list, h_spec, rec_dd) {
 
 #' Map sex ratio parameters
 #'
-#' Internal helper called by \code{\link{Setup_Mod_Recruitment}} to construct
+#' Internal helper called by \code{\link{Setup_Mod_Rec}} to construct
 #' the TMB/RTMB factor map for \code{sexratio_pars}, the proportion of
 #' recruits assigned to the first sex. The \code{sexratio_pars} array has
-#' dimensions \code{[n_pop × n_regions × n_sexratio_blocks]}, where
+#' dimensions \code{[n_pop x n_regions x n_sexratio_blocks]}, where
 #' \code{n_sexratio_blocks} is the maximum number of time blocks across all
-#' population–region combinations as defined in \code{$data$sexratio_blocks}.
+#' population-region combinations as defined in \code{$data$sexratio_blocks}.
 #'
 #' When \code{n_sexes = 1}, estimation is meaningless and \code{sexratio_spec}
 #' must be \code{"fix"}. Under the no-dispersal constraint
 #' (\code{rec_region_prop_spec = 1} with \code{n_pop > 1}), \code{"est_all"}
 #' is prohibited because non-natal regions receive no recruitment and cannot
 #' support independent sex ratio estimates. The \code{"est_shared_pop_r"}
-#' option additionally requires that all population–region combinations share
+#' option additionally requires that all population-region combinations share
 #' the same block structure; a mismatch raises an error.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
@@ -733,15 +733,15 @@ do_h_mapping <- function(input_list, h_spec, rec_dd) {
 #' @param sexratio_spec Character string specifying the estimation structure
 #'   for \code{sexratio_pars}. One of:
 #'   \describe{
-#'     \item{\code{"est_all"}}{Separate sex ratio parameter per population ×
-#'       region × block. Not permitted when \code{rec_region_prop_spec = 1}
+#'     \item{\code{"est_all"}}{Separate sex ratio parameter per population x
+#'       region x block. Not permitted when \code{rec_region_prop_spec = 1}
 #'       and \code{n_pop > 1}.}
-#'     \item{\code{"est_shared_r"}}{Separate sex ratio per population × block,
+#'     \item{\code{"est_shared_r"}}{Separate sex ratio per population x block,
 #'       shared across regions within each population. Block membership is
 #'       checked per region to ensure only valid blocks are assigned.}
 #'     \item{\code{"est_shared_pop_r"}}{Single sex ratio per block, shared
 #'       across all populations and regions. Requires identical block
-#'       structures across all population–region combinations.}
+#'       structures across all population-region combinations.}
 #'     \item{\code{"fix"}}{All \code{sexratio_pars} fixed at their starting
 #'       values (mapped to \code{NA}). Required when \code{n_sexes = 1}.}
 #'   }
@@ -835,7 +835,7 @@ do_sexratio_pars_mapping <- function(input_list, sexratio_spec) {
 #' Internal helper called by \code{\link{Setup_Mod_Rec}} to construct the
 #' TMB/RTMB factor map for \code{rec_region_prop_pars}, the logit-scale
 #' parameters controlling the proportion of recruits assigned to each region.
-#' The array has dimensions \code{[n_pop × (n_regions - 1)]}, using a
+#' The array has dimensions \code{[n_pop x (n_regions - 1)]}, using a
 #' sum-to-one soft-max parameterisation with one reference region omitted.
 #'
 #' When \code{n_regions = 1}, the parameter is structurally irrelevant and
@@ -905,14 +905,14 @@ do_rec_region_prop_mapping <- function(input_list, rec_region_prop_spec) {
 #'
 #' Internal helper called by \code{\link{Setup_Mod_Rec}} to construct the
 #' TMB/RTMB factor map for \code{stray_rate_pars}, the logit-scale stray rate
-#' parameters. The array has dimensions \code{[n_pop × max_stray_blocks]},
+#' parameters. The array has dimensions \code{[n_pop x max_stray_blocks]},
 #' where \code{max_stray_blocks} is the maximum number of time blocks across
 #' all populations as defined by \code{$data$stray_rate_blocks}.
 #'
 #' When \code{n_pop = 1}, straying is not applicable and all parameters are
 #' automatically fixed to \code{NA}. When \code{use_fixed_stray_rate = 1},
 #' the objective function reads from \code{fixed_stray_rate} directly and
-#' \code{stray_rate_pars} are not used — all elements are fixed regardless
+#' \code{stray_rate_pars} are not used -- all elements are fixed regardless
 #' of \code{stray_rate_spec}.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
@@ -923,11 +923,11 @@ do_rec_region_prop_mapping <- function(input_list, rec_region_prop_spec) {
 #'   \describe{
 #'     \item{\code{"fix"}}{All parameters fixed at starting values (mapped to
 #'       \code{NA}).}
-#'     \item{\code{"est_all"}}{Estimate independently per population × block.
-#'       Produces \code{n_pop × n_unique_blocks} estimated parameters.}
+#'     \item{\code{"est_all"}}{Estimate independently per population x block.
+#'       Produces \code{n_pop x n_unique_blocks} estimated parameters.}
 #'     \item{\code{"est_shared_pop"}}{Single parameter per block, shared across
 #'       all populations. Requires identical block structures across all
-#'       populations — an error is raised if block indices differ.}
+#'       populations -- an error is raised if block indices differ.}
 #'   }
 #'
 #' @return The input \code{input_list} with \code{$map$stray_rate_pars} set to
@@ -953,7 +953,7 @@ do_stray_rate_mapping <- function(input_list, stray_rate_spec) {
     return(input_list)
   }
 
-  # Externally fixed — pars not used by objective function
+  # Externally fixed -- pars not used by objective function
   if (input_list$data$use_fixed_stray_rate == 1) {
     input_list$map$stray_rate_pars <- factor(map_stray)
     collect_message("Stray rates are externally fixed (use_fixed_stray_rate == 1).")
@@ -1003,7 +1003,7 @@ do_stray_rate_mapping <- function(input_list, stray_rate_spec) {
 #' Internal helper called by \code{\link{Setup_Mod_Rec}} to construct the
 #' TMB/RTMB factor map for \code{rec_seas_prop_pars}, the logit-scale
 #' parameters controlling the proportion of annual recruitment assigned to
-#' each season. The array has dimensions \code{[n_pop × (n_seas - 1)]},
+#' each season. The array has dimensions \code{[n_pop x (n_seas - 1)]},
 #' using a sum-to-one soft-max parameterisation with one reference season
 #' omitted.
 #'
@@ -1029,7 +1029,7 @@ do_stray_rate_mapping <- function(input_list, stray_rate_spec) {
 #'       \code{0} if it was previously \code{1}.}
 #'     \item{\code{"fix"}}{All \code{rec_seas_prop_pars} fixed at their
 #'       starting values (mapped to \code{NA}).}
-#'     \item{\code{NULL}}{Estimate all \code{n_pop × (n_seas - 1)} parameters
+#'     \item{\code{NULL}}{Estimate all \code{n_pop x (n_seas - 1)} parameters
 #'       independently. Also resets \code{use_fixed_rec_seas_prop} to
 #'       \code{0} if it was previously \code{1}.}
 #'   }
@@ -1103,8 +1103,6 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   Population, region, age, year, and season dimensions must already be
 #'   defined in \code{$data}.
 #'
-#' @section Recruitment Model:
-#'
 #' @param rec_model Character string (required). Stock-recruit relationship:
 #'   \describe{
 #'     \item{\code{"mean_rec"}}{Fixed mean recruitment; no stock-recruit
@@ -1123,10 +1121,8 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #' @param rec_lag Integer. Lag between spawning biomass and age-1
 #'   recruitment (in seasons). Must be \eqn{\geq 1}. Default \code{1}.
 #'
-#' @section Recruitment Variability:
-#'
 #' @param sigmaR_spec Character. Estimation structure for \eqn{\sigma_R},
-#'   stored in \code{ln_sigmaR} \code{[2 × n_pop × n_regions]}, where index
+#'   stored in \code{ln_sigmaR} \code{[2 x n_pop x n_regions]}, where index
 #'   1 = initial deviation period and index 2 = annual deviation period.
 #'   Default \code{"est_all"}. See \code{\link{do_sigmaR_mapping}} for full
 #'   option descriptions.
@@ -1135,7 +1131,7 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   If \eqn{\leq 1}, a single \eqn{\sigma_R} is applied throughout. Default
 #'   \code{1}.
 #' @param RecDevs_spec Character or \code{NULL}. Sharing structure for annual
-#'   recruitment deviations \code{ln_RecDevs} \code{[n_pop × n_regions ×
+#'   recruitment deviations \code{ln_RecDevs} \code{[n_pop x n_regions x
 #'   n_years]}. Default \code{NULL} (estimate all independently). See
 #'   \code{\link{do_RecDevs_mapping}} for full option descriptions.
 #' @param dont_est_recdev_last Non-negative integer. Number of terminal years
@@ -1143,8 +1139,6 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   overridden to \code{0} if \code{n_proj_yrs_devs > 0}, since projected
 #'   deviation years are penalised toward the mean and are effectively
 #'   estimated regardless. Default \code{0}.
-#'
-#' @section Initial Age Structure:
 #'
 #' @param init_age_strc Equilibrium initialisation method. Default \code{2}.
 #'   \describe{
@@ -1168,15 +1162,13 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'       including the plus group.}
 #'   }
 #' @param InitDevs_spec Character or \code{NULL}. Sharing structure for
-#'   initial age-structure deviations \code{ln_InitDevs} \code{[n_pop ×
-#'   n_regions × (n_ages - 1)]}. Default \code{NULL} (estimate all
+#'   initial age-structure deviations \code{ln_InitDevs} \code{[n_pop x
+#'   n_regions x (n_ages - 1)]}. Default \code{NULL} (estimate all
 #'   independently). See \code{\link{do_InitDevs_mapping}} for full option
 #'   descriptions.
 #' @param init_F_prop Numeric vector \code{[n_seas]}. Seasonal distribution of
 #'   fishing mortality applied during equilibrium initialisation. Default:
 #'   zero for all seasons.
-#'
-#' @section Recruitment Spatial Structure:
 #'
 #' @param rec_region_prop_spec Character or \code{NULL}. Regional recruitment
 #'   dispersal structure. Default \code{NULL} (estimate all proportions
@@ -1192,7 +1184,6 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   \code{alpha} is a list-column of length-\code{n_regions} vectors.
 #'   Ignored when \code{use_rec_region_prop_prior = 0}. Default \code{NULL}.
 #'
-#' @section Recruitment Seasonal Structure:
 #'
 #' @param rec_seas_prop_spec Character or \code{NULL}. Seasonal recruitment
 #'   apportionment structure. Default \code{"fix"}. See
@@ -1202,7 +1193,7 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   seasonal proportions from \code{fixed_rec_seas_prop} are used. Automatically
 #'   reset to \code{0} with a warning if \code{rec_seas_prop_spec} requests
 #'   estimation. Default \code{1}.
-#' @param fixed_rec_seas_prop Array \code{[n_pop × n_seas]}. Fixed seasonal
+#' @param fixed_rec_seas_prop Array \code{[n_pop x n_seas]}. Fixed seasonal
 #'   recruitment proportions used when \code{use_fixed_rec_seas_prop = 1}.
 #'   Default: all recruitment assigned to season 1.
 #' @param use_rec_seas_prop_prior Integer (0/1). Whether Dirichlet priors are
@@ -1213,10 +1204,8 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   \code{alpha}. Ignored when \code{use_rec_seas_prop_prior = 0}. Default
 #'   \code{NULL}.
 #'
-#' @section Steepness:
-#'
 #' @param h_spec Character or \code{NULL}. Sharing structure for
-#'   Beverton-Holt steepness \code{steepness_h} \code{[n_pop × n_regions]},
+#'   Beverton-Holt steepness \code{steepness_h} \code{[n_pop x n_regions]},
 #'   parameterised in bounded logit space \eqn{(0.2, 1)}. Default \code{NULL}
 #'   (estimate by population when \code{n_pop > 1}, by region when
 #'   \code{n_pop = 1}). Ignored when \code{rec_model = "mean_rec"}. See
@@ -1227,45 +1216,40 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   \code{pop}, \code{region}, \code{mu}, \code{sd}. Ignored when
 #'   \code{Use_h_prior = 0}. Default \code{NULL}.
 #'
-#' @section Spawning Processes:
-#'
 #' @param spawn_seas Integer. Season index in which spawning occurs. Default
 #'   \code{1}.
 #' @param t_spawn Numeric. Spawn timing as a fraction of the season elapsed
 #'   before spawning. \code{0} (default) = spawning before any mortality;
 #'   \code{1} = spawning after all mortality.
 #' @param sgl_seas_spawning_movement Spawning movement array
-#'   \code{[n_pop × n_regions × n_regions × n_years × n_ages × n_sexes]}.
+#'   \code{[n_pop x n_regions x n_regions x n_years x n_ages x n_sexes]}.
 #'   Each \code{[p, , r, y, a, s]} slice is a row-stochastic movement matrix
 #'   giving the probability of fish from each origin region spawning in region
 #'   \code{r}. If \code{NA} (default), 100\% natal homing is assumed and the
 #'   array is constructed internally.
-#'
-#'
-#' @section Stray Rate Dynamics:
 #'
 #' @param use_fixed_stray_rate Integer (0/1). Whether stray rates are supplied
 #'   as a fixed external array (\code{fixed_stray_rate}) rather than estimated
 #'   as model parameters. Default \code{1} (fixed), preserving existing
 #'   behaviour. Set to \code{0} to estimate stray rates via
 #'   \code{stray_rate_pars}.
-#' @param fixed_stray_rate Array \code{[n_pop × n_years]}. Fixed stray rate
+#' @param fixed_stray_rate Array \code{[n_pop x n_years]}. Fixed stray rate
 #'   values used when \code{use_fixed_stray_rate = 1}. Values should be in
 #'   \eqn{[0, 1]}. Default: \code{0} (no straying) for all populations and
 #'   years. Ignored when \code{use_fixed_stray_rate = 0}.
 #' @param stray_rate_spec Character string. Estimation structure for
-#'   \code{stray_rate_pars} \code{[n_pop × max_stray_blocks]}, parameterised
+#'   \code{stray_rate_pars} \code{[n_pop x max_stray_blocks]}, parameterised
 #'   on the logit scale. Ignored when \code{use_fixed_stray_rate = 1} or
 #'   \code{n_pop = 1}. Default \code{"fix"}. Options:
 #'   \describe{
 #'     \item{\code{"fix"}}{All parameters fixed at starting values (mapped to
 #'       \code{NA}). Use this alongside \code{use_fixed_stray_rate = 0} to
 #'       hold stray rates at a specified value without estimating.}
-#'     \item{\code{"est_all"}}{Estimate independently per population × block.
+#'     \item{\code{"est_all"}}{Estimate independently per population x block.
 #'       Produces one parameter per population per unique block.}
 #'     \item{\code{"est_shared_pop"}}{Single parameter per block, shared across
 #'       all populations. Requires identical block structures across all
-#'       populations — an error is raised if block indices differ.}
+#'       populations -- an error is raised if block indices differ.}
 #'   }
 #' @param stray_rate_blocks Character vector of length \code{n_pop} defining
 #'   the temporal block structure for stray rate parameters. Valid formats:
@@ -1291,13 +1275,11 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   Required columns: \code{pop} (population index), \code{block} (block
 #'   index matching \code{stray_rate_blocks}), \code{mu} (prior mean, in
 #'   \eqn{(0,1)}), \code{sd} (prior standard deviation). One row per
-#'   population × block combination to penalise. Ignored when
+#'   population x block combination to penalise. Ignored when
 #'   \code{use_stray_rate_prior = 0}. Default \code{NULL}.
 #'
-#' @section Sex Ratio Dynamics:
-#'
 #' @param sexratio_spec Character. Estimation structure for sex ratio
-#'   parameters \code{sexratio_pars} \code{[n_pop × n_regions × n_blocks]}.
+#'   parameters \code{sexratio_pars} \code{[n_pop x n_regions x n_blocks]}.
 #'   Default \code{"fix"}. See \code{\link{do_sexratio_pars_mapping}} for
 #'   full option descriptions. Must be \code{"fix"} when \code{n_sexes = 1}.
 #' @param sexratio_blocks Character vector defining temporal block structure
@@ -1311,9 +1293,6 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'       in place of the end year to extend through the final model year.}
 #'   }
 #'   Default: a single constant block for every population-region combination.
-#'
-#' @section Bias Ramp:
-#'
 #' @param do_rec_bias_ramp Integer (0/1). Whether a recruitment bias ramp is
 #'   applied to \code{ln_RecDevs} to account for reduced information in early
 #'   and terminal years. Default \code{0}.
@@ -1325,13 +1304,13 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'
 #' @param ... Optional named starting values for parameters. Any of:
 #'   \code{ln_global_R0} \code{[n_pop]},
-#'   \code{rec_region_prop_pars} \code{[n_pop × (n_regions - 1)]},
-#'   \code{rec_seas_prop_pars} \code{[n_pop × (n_seas - 1)]},
-#'   \code{steepness_h} \code{[n_pop × n_regions]} (bounded logit scale),
-#'   \code{ln_InitDevs} \code{[n_pop × n_regions × (n_ages - 1)]},
-#'   \code{ln_RecDevs} \code{[n_pop × n_regions × n_years]},
-#'   \code{ln_sigmaR} \code{[2 × n_pop × n_regions]},
-#'   \code{sexratio_pars} \code{[n_pop × n_regions × n_blocks]}.
+#'   \code{rec_region_prop_pars} \code{[n_pop x (n_regions - 1)]},
+#'   \code{rec_seas_prop_pars} \code{[n_pop x (n_seas - 1)]},
+#'   \code{steepness_h} \code{[n_pop x n_regions]} (bounded logit scale),
+#'   \code{ln_InitDevs} \code{[n_pop x n_regions x (n_ages - 1)]},
+#'   \code{ln_RecDevs} \code{[n_pop x n_regions x n_years]},
+#'   \code{ln_sigmaR} \code{[2 x n_pop x n_regions]},
+#'   \code{sexratio_pars} \code{[n_pop x n_regions x n_blocks]}.
 #'   Unspecified parameters use internal defaults.
 #'
 #' @return The input \code{input_list} with all recruitment-related fields
@@ -1505,7 +1484,7 @@ Setup_Mod_Rec <- function(input_list,
   if (use_stray_rate_prior == 1 && input_list$data$n_pop == 1)
     stop("Stray rate priors are not applicable when n_pop == 1.")
   if (use_stray_rate_prior == 1 && use_fixed_stray_rate == 1)
-    stop("use_stray_rate_prior == 1 but use_fixed_stray_rate == 1 — stray_rate_pars are not estimated so a prior has no effect.")
+    stop("use_stray_rate_prior == 1 but use_fixed_stray_rate == 1 - stray_rate_pars are not estimated so a prior has no effect.")
   if (use_stray_rate_prior == 1) {
     required_cols <- c("pop", "block", "mu", "sd")
     missing_cols  <- setdiff(required_cols, names(stray_rate_prior))

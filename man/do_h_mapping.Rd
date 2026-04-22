@@ -32,7 +32,7 @@ across all relevant dimensions. Options when non-\code{NULL}:
 }}
 
 \item{rec_dd}{Recruitment density-dependence structure inherited from
-\code{\link{Setup_Mod_Recruitment}}. \code{"global"} restricts valid
+\code{\link{Setup_Mod_Rec}}. \code{"global"} restricts valid
 \code{h_spec} values to \code{"est_shared_r"}, \code{"est_shared_pop_r"},
 or \code{"fix"}, and prohibits \code{NULL}.}
 }
@@ -43,10 +43,10 @@ The input \code{input_list} with \code{$map$steepness_h} set to a
   (mean recruitment model or fixed steepness) are \code{NA}.
 }
 \description{
-Internal helper called by \code{\link{Setup_Mod_Recruitment}} to construct
+Internal helper called by \code{\link{Setup_Mod_Rec}} to construct
 the TMB/RTMB factor map for \code{steepness_h}, the Beverton-Holt
 steepness parameter. The \code{steepness_h} array has dimensions
-\code{[n_pop × n_regions]}.
+\code{[n_pop x n_regions]}.
 }
 \details{
 When \code{rec_model = 0} (mean recruitment), steepness has no role in the

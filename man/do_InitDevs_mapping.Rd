@@ -35,7 +35,7 @@ across all dimensions. Options when non-\code{NULL}:
 }}
 
 \item{rec_dd}{Recruitment density-dependence structure inherited from
-\code{\link{Setup_Mod_Recruitment}}. \code{"global"} restricts valid
+\code{\link{Setup_Mod_Rec}}. \code{"global"} restricts valid
 \code{InitDevs_spec} choices to \code{"est_shared_r"} or
 \code{"est_shared_pop_r"} when \code{n_regions > 1}.}
 }
@@ -48,10 +48,10 @@ The input \code{input_list} with \code{$map$ln_InitDevs} set to a
   \code{$par$ln_InitDevs} are also reset to \code{0} for any fixed cells.
 }
 \description{
-Internal helper called by \code{\link{Setup_Mod_Recruitment}} to construct
+Internal helper called by \code{\link{Setup_Mod_Rec}} to construct
 the TMB/RTMB factor map for \code{ln_InitDevs}, the log-scale deviations
 from the equilibrium initial age structure. The \code{ln_InitDevs} array has
-dimensions \code{[n_pop × n_regions × (n_ages - 1)]}, where the age
+dimensions \code{[n_pop x n_regions x (n_ages - 1)]}, where the age
 dimension excludes the plus group by default (see \code{equil_init_age_strc}
 below).
 }

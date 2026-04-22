@@ -17,9 +17,8 @@ roxygenise()
 
 # Dependency adjustments
 desc::desc_del_dep("compResidual", "Imports")
-desc::desc_set_dep("compResidual", "Suggests")
 desc::desc_del_dep("remotes", "Imports")
-
+desc::desc_del_dep("compResidual", "Suggests")
 
 # pkgdown Site ------------------------------------------------------------
 pkgdown::clean_cache()
@@ -38,6 +37,7 @@ use_build_ignore("dev")
 usethis::use_build_ignore("_pkgdown.yml")
 
 # Check, Build & Install --------------------------------------------------
+devtools::build_vignettes() # making sure vignetes build
 check()
 build()
 install()
@@ -75,6 +75,13 @@ unloadNamespace("SPoRC")
 # usethis::use_test("ebs_pol_sgl_rtmb")
 # usethis::use_test("sabie_three_rg_rtmb")
 # usethis::use_test("sgl_rg_simple_sim_test")
+# usethis::use_test("sgl_rg_spr_sabie_test")
+# usethis::use_test("sgl_rg_bh_msy_sabie_test")
+# usethis::use_test("mlt_rg_global_spr_sabie_test")
+# usethis::use_test("mlt_rg_global_bh_msy_sabie_test")
+# usethis::use_test("mlt_rg_local_bh_msy_sabie_test")
+# usethis::use_test("mlt_rg_pop_seas_global_spr_test")
+# usethis::use_test("mlt_rg_pop_seas_local_bh_msy_test")
 
 
 # Misc One-Time Setup -----------------------------------------------------

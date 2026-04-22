@@ -303,7 +303,7 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
 
   # Fishery selectivity
   fish_sel_input <- if(!"fish_sel_input" %in% names(args)) {
-    extend_years(replicate(n = sim_list$n_sims, rep$fish_sel[,1:length(data$years),,,,drop = FALSE]), n_years = closed_loop_yrs, 2, fill = 'last')
+    extend_years(replicate(n = sim_list$n_sims, rep$fish_sel[,,1:length(data$years),,,,,drop = FALSE]), n_years = closed_loop_yrs, 3, fill = 'last')
   } else args$fish_sel_input
   # Fishery catchability
   fish_q_input <- if(!"fish_q_input" %in% names(args)) {
@@ -432,7 +432,7 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   # Setup Survey Processes --------------------------------------------------
   # Survey selectivity
   srv_sel_input <- if(!"srv_sel_input" %in% names(args)) {
-    extend_years(replicate(n = sim_list$n_sims, rep$srv_sel[,1:length(data$years),,,,drop = FALSE]), closed_loop_yrs, 2, 'last')
+    extend_years(replicate(n = sim_list$n_sims, rep$srv_sel[,,1:length(data$years),,,,,drop = FALSE]), closed_loop_yrs, 3, 'last')
   } else args$srv_sel_input
   # Survey catchability / q
   srv_q_input <- if(!"srv_q_input" %in% names(args)) {
@@ -758,13 +758,17 @@ get_closed_loop_reference_points <- function(use_true_values,
     # Build rep list if not doing assessment (using truth)
     rep_obj <- list(
       Fmort = array(sim_env$Fmort[, 1:y,, , sim], dim = c(sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_fish_fleets)),
-      fish_sel = array(sim_env$fish_sel[, 1:y, , , , sim, drop = FALSE], dim = c(sim_env$n_regions, length(1:y), sim_env$n_ages, sim_env$n_sexes, sim_env$n_fish_fleets)),
+      fish_sel = array(sim_env$fish_sel[,, 1:y,, , , , sim, drop = FALSE], dim = c(sim_env$n_pop, sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes, sim_env$n_fish_fleets)),
       natmort = array(sim_env$natmort[,, 1:y, , , sim], dim = c(sim_env$n_pop, sim_env$n_regions, length(1:y), sim_env$n_ages, sim_env$n_sexes)),
       h_trans = array(sim_env$h[,, y, sim], dim = c(sim_env$n_pop, sim_env$n_regions)),
       R0 = apply(sim_env$R0[,, y, sim, drop = FALSE], 1, sum),
       stray_rate = array(sim_env$stray_rate[,1:y,sim], dim = c(sim_env$n_pop, length(1:y))),
       rec_seas_prop = array(sim_env$rec_seas_prop[,,sim], dim = c(sim_env$n_pop, sim_env$n_seas)),
-      rec_region_prop = sweep(sim_env$R0[,, y, sim], 1, apply(sim_env$R0[,, y, sim, drop = FALSE], 1, sum), "/"),
+      rec_region_prop = {
+        R0_slice <- sim_env$R0[,, y, sim, drop = FALSE]
+        row_sums <- rowSums(R0_slice)
+        R0_prop <- array(R0_slice / row_sums, dim = c(sim_env$n_pop, sim_env$n_regions))
+      },
       Rec = array(sim_env$Rec[, , 1:y, sim], dim = c(sim_env$n_pop, sim_env$n_regions, length(1:y))),
       Movement = array(sim_env$Movement[, , , 1:y, , , , sim],  dim = c(sim_env$n_pop, sim_env$n_regions, sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes)),
       sgl_seas_spawning_movement = array(sim_env$sgl_seas_spawning_movement[, , , 1:y, , , sim],  dim = c(sim_env$n_pop, sim_env$n_regions, sim_env$n_regions, length(1:y), sim_env$n_ages, sim_env$n_sexes))
@@ -778,9 +782,6 @@ get_closed_loop_reference_points <- function(use_true_values,
     rep_obj <- asmt_rep
     tmp_sex_ratio_f <- if(data_obj$n_sexes == 1) array(0.5, dim = c(sim_env$n_pop, sim_env$n_regions)) else rep_obj$sexratio[,,y,1]
   }
-
-  reference_points_opt$what = 'local_BH_MSY'
-  reference_points_opt$type = 'multi_region'
 
   # get reference points based on true values
   reference_points <- Get_Reference_Points(data = data_obj,

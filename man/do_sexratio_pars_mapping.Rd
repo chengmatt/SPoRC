@@ -15,15 +15,15 @@ sublists. Requires \code{$data$n_sexes}, \code{$data$n_pop},
 \item{sexratio_spec}{Character string specifying the estimation structure
 for \code{sexratio_pars}. One of:
 \describe{
-  \item{\code{"est_all"}}{Separate sex ratio parameter per population ×
-    region × block. Not permitted when \code{rec_region_prop_spec = 1}
+  \item{\code{"est_all"}}{Separate sex ratio parameter per population x
+    region x block. Not permitted when \code{rec_region_prop_spec = 1}
     and \code{n_pop > 1}.}
-  \item{\code{"est_shared_r"}}{Separate sex ratio per population × block,
+  \item{\code{"est_shared_r"}}{Separate sex ratio per population x block,
     shared across regions within each population. Block membership is
     checked per region to ensure only valid blocks are assigned.}
   \item{\code{"est_shared_pop_r"}}{Single sex ratio per block, shared
     across all populations and regions. Requires identical block
-    structures across all population–region combinations.}
+    structures across all population-region combinations.}
   \item{\code{"fix"}}{All \code{sexratio_pars} fixed at their starting
     values (mapped to \code{NA}). Required when \code{n_sexes = 1}.}
 }}
@@ -35,12 +35,12 @@ The input \code{input_list} with \code{$map$sexratio_pars} set to
   are \code{NA}.
 }
 \description{
-Internal helper called by \code{\link{Setup_Mod_Recruitment}} to construct
+Internal helper called by \code{\link{Setup_Mod_Rec}} to construct
 the TMB/RTMB factor map for \code{sexratio_pars}, the proportion of
 recruits assigned to the first sex. The \code{sexratio_pars} array has
-dimensions \code{[n_pop × n_regions × n_sexratio_blocks]}, where
+dimensions \code{[n_pop x n_regions x n_sexratio_blocks]}, where
 \code{n_sexratio_blocks} is the maximum number of time blocks across all
-population–region combinations as defined in \code{$data$sexratio_blocks}.
+population-region combinations as defined in \code{$data$sexratio_blocks}.
 }
 \details{
 When \code{n_sexes = 1}, estimation is meaningless and \code{sexratio_spec}
@@ -48,7 +48,7 @@ must be \code{"fix"}. Under the no-dispersal constraint
 (\code{rec_region_prop_spec = 1} with \code{n_pop > 1}), \code{"est_all"}
 is prohibited because non-natal regions receive no recruitment and cannot
 support independent sex ratio estimates. The \code{"est_shared_pop_r"}
-option additionally requires that all population–region combinations share
+option additionally requires that all population-region combinations share
 the same block structure; a mismatch raises an error.
 }
 \keyword{internal}

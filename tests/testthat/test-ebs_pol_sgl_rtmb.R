@@ -60,20 +60,22 @@ test_that("Single-region EBS Pollock RTMB model produces expected results", {
   fix_natmort[,,,2,] <- 0.45 # age 2 M
   fix_natmort[,,,-c(1,2),] <- 0.3 # age 3+ M
 
-  input_list <- Setup_Mod_Biologicals(
-    input_list = input_list,
+  suppressWarnings(
+    input_list <- Setup_Mod_Biologicals(
+      input_list = input_list,
 
-    # Data inputs
-    WAA = sgl_rg_ebswp_data$WAA,
-    MatAA = sgl_rg_ebswp_data$MatAA,
+      # Data inputs
+      WAA = sgl_rg_ebswp_data$WAA,
+      MatAA = sgl_rg_ebswp_data$MatAA,
 
-    # Model options
-    # mean and sd for M prior
-    fit_lengths = 0,
-    # don't fit length compositions
-    M_spec = "fix",
-    # fixing natural mortality
-    Fixed_natmort = fix_natmort
+      # Model options
+      # mean and sd for M prior
+      fit_lengths = 0,
+      # don't fit length compositions
+      M_spec = "fix",
+      # fixing natural mortality
+      Fixed_natmort = fix_natmort
+    )
   )
 
   # Setup movement stuff (using defaults for other stuff)
@@ -84,20 +86,22 @@ test_that("Single-region EBS Pollock RTMB model produces expected results", {
     do_recruits_move = 0
   )
 
-  input_list <- Setup_Mod_Catch_and_F(
-    input_list = input_list,
+  suppressWarnings(
+    input_list <- Setup_Mod_Catch_and_F(
+      input_list = input_list,
 
-    # Data inputs
-    ObsCatch = sgl_rg_ebswp_data$ObsCatch,
-    UseCatch = sgl_rg_ebswp_data$UseCatch,
+      # Data inputs
+      ObsCatch = sgl_rg_ebswp_data$ObsCatch,
+      UseCatch = sgl_rg_ebswp_data$UseCatch,
 
-    # Model options
-    Use_F_pen = 1,
-    # whether to use f penalty, == 0 don't use, == 1 use
-    sigmaC_spec = "fix",
-    # fixing catch standard deviation
-    ln_sigmaC = array(log(0.05), dim = c(1, length(input_list$data$years), input_list$data$n_seas, 1))
-    # starting / fixed value for catch standard deviation
+      # Model options
+      Use_F_pen = 1,
+      # whether to use f penalty, == 0 don't use, == 1 use
+      sigmaC_spec = "fix",
+      # fixing catch standard deviation
+      ln_sigmaC = array(log(0.05), dim = c(1, length(input_list$data$years), input_list$data$n_seas, 1))
+      # starting / fixed value for catch standard deviation
+    )
   )
 
   input_list <- Setup_Mod_FishIdx_and_Comps(

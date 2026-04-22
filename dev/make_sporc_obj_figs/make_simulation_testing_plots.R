@@ -33,7 +33,7 @@ sim_list <- Setup_Sim_Fishing(sim_list = sim_list, # update simulate list
                               fish_sel_input = replicate(
                                 n = sim_list$n_sims,
                                 array(rep(1 / (1 + exp(-3 * ((1:sim_list$n_ages) - 5))), each = sim_list$n_yrs),
-                                      dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_ages,
+                                      dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages,
                                               sim_list$n_sexes, sim_list$n_fish_fleets))
                               )
 )
@@ -45,7 +45,7 @@ sim_list <- Setup_Sim_Survey(
   srv_sel_input = replicate(
     n = sim_list$n_sims,
     array(rep(1 / (1 + exp(-1 * ((1:sim_list$n_ages) - 3))), each = sim_list$n_yrs),
-          dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_ages,
+          dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages,
                   sim_list$n_sexes, sim_list$n_srv))
   )
 )
@@ -298,11 +298,11 @@ self_test <- simulation_self_test(
   random = NULL,
   rep = dusky_rtmb_model$rep,
   sd_rep = dusky_rtmb_model$sdrep,
-  n_sims = 10,
+  n_sims = 500,
   newton_loops = 3,
   do_sdrep = FALSE,
-  do_par = F,
-  n_cores = 8,
+  do_par = T,
+  n_cores = 13,
   output_path = NULL,
   what = c("SSB", "Rec")
 )

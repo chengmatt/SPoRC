@@ -320,8 +320,8 @@ check_sim_dimensions <- function(x,
   }
 
   if(what == 'fish_sel_input') {
-    if(sum(dim(x) == c(n_regions, n_years, n_ages, n_sexes, n_fish_fleets, n_sims)) != 6)
-      stop(paste("Dimensions of", what, "are not correct. Should be n_regions, n_years, n_ages, n_sexes, n_fish_fleets, n_sims"))
+    if(sum(dim(x) == c(n_pop, n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets, n_sims)) != 8)
+      stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets, n_sims"))
   }
 
   if(what %in% c('ln_sigmaC', 'ObsFishIdx_SE')) {
@@ -388,8 +388,8 @@ check_sim_dimensions <- function(x,
   }
 
   if(what == 'srv_sel_input') {
-    if(sum(dim(x) == c(n_regions, n_years, n_ages, n_sexes, n_srv_fleets, n_sims)) != 6)
-      stop(paste("Dimensions of", what, "are not correct. Should be n_regions, n_years, n_ages, n_sexes, n_srv_fleets, n_sims"))
+    if(sum(dim(x) == c(n_pop, n_regions, n_years, n_seas, n_ages, n_sexes, n_srv_fleets, n_sims)) != 8)
+      stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_regions, n_years, n_seas, n_ages, n_sexes, n_srv_fleets, n_sims"))
   }
 
   if(what %in% c('ObsSrvIdx_SE')) {

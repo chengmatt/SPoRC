@@ -336,7 +336,7 @@ dev.off()
 png(here("vignettes", "figures", "f_ebs_pol_fishsel_comparison.png"), width = 1000, height = 500)
 reshape2::melt(ebswp_rtmb_model$rep$fish_sel) %>%
   mutate(value = value/max(value)) %>%
-  rename(Region = Var1, Year = Var2, Age = Var3, Sex = Var4, Fleet = Var5) %>%
+  rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Age = Var5, Sex = Var6, Fleet = Var7) %>%
   filter(Age %in% 3:11) %>%
   ggplot(aes(x = Year + 1963, y = value)) +
   geom_point() +

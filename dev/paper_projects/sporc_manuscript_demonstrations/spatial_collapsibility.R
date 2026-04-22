@@ -61,13 +61,18 @@ n_pop <- 1
 do_recruits_move <- 0 # recruits don't move
 terminal_NAA <- array(sgl_rep$NAA[,,length(sgl_dat$years),,,], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes)) # terminal numbers at age
 terminal_NAA0 <- array(sgl_rep$NAA0[,,length(sgl_dat$years),,,], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes)) # terminal numbers at age
-WAA <- array(rep(sgl_dat$WAA[,,length(sgl_dat$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # weight at age
-WAA_fish <- array(rep(sgl_dat$WAA[,,length(sgl_dat$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # weight at age fishery
-MatAA <- array(rep(sgl_dat$MatAA[,,length(sgl_dat$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # maturity at age
-fish_sel <- array(rep(sgl_rep$fish_sel[,length(sgl_dat$years),,,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_ages, n_sexes, n_fish_fleets)) # selectivity
+WAA <- array(0, dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes))
+for(y in 1:n_proj_yrs) WAA[,,y,,,] <- sgl_rg_sable_data$WAA[,,length(sgl_rg_sable_data$years),,,]
+WAA_fish <- array(0, dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets))
+for(y in 1:n_proj_yrs) WAA_fish[,,y,,,,] <- sgl_rg_sable_data$WAA[,,length(sgl_rg_sable_data$years),,,]
+MatAA <- array(0, dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes))
+for(y in 1:n_proj_yrs) MatAA[,,y,,,] <- sgl_rg_sable_data$MatAA[,,length(sgl_rg_sable_data$years),,,]
+fish_sel <- array(0, dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets))
+for(y in 1:n_proj_yrs) fish_sel[,,y,,,,] <- sgl_rg_sable_rep$fish_sel[,,length(sgl_rg_sable_data$years),,,,]
 Movement <- array(rep(sgl_rep$Movement[,,,length(sgl_dat$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_regions, n_seas, n_proj_yrs, n_ages, n_sexes)) # movement
 terminal_F <- array(sgl_rep$Fmort[,length(sgl_dat$years),,], dim = c(n_regions, n_seas, n_fish_fleets)) # terminal F
-natmort <- array(sgl_rep$natmort[,,length(sgl_dat$years),,], dim = c(n_pop, n_regions, n_proj_yrs, n_ages, n_sexes)) # natural mortality
+natmort_slice <- sgl_rep$natmort[,, length(sgl_dat$years), , ]  # [n_pop, n_regions, n_ages, n_sexes]
+natmort <- array(rep(natmort_slice, each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_ages, n_sexes))
 recruitment <- array(sgl_rep$Rec[,,20:(length(sgl_dat$years) - 2)], dim = c(n_pop, n_regions, length(20:(length(sgl_dat$years) - 2)))) # recruitment values to use for mean recruitment calculations or inverse gaussian parameterization
 sexratio <- array(0.5, dim = c(n_pop, n_regions, n_proj_yrs, n_sexes)) # recruitment sex ratio
 
@@ -102,7 +107,7 @@ for(sim in 1:n_sims) {
                                   b_ref_pt = array(sgl_ref_pt$b_ref_pt, dim = c(sgl_dat$n_pop, sgl_dat$n_regions, n_proj_yrs)),
                                   HCR_function = HCR_function,
                                   recruitment_opt = "mean_rec",
-                                  fmort_opt = "Input",
+                                  fmort_opt = "HCR",
                                   t_spawn = t_spawn
   )
 
@@ -137,7 +142,7 @@ terminal_NAA0 <- array(three_rep$NAA0[,,length(three_dat$years),,,], dim = c(1, 
 WAA <- array(rep(three_dat$WAA[,,length(three_dat$years),,,], each = n_proj_yrs), dim = c(1, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # weight at age
 WAA_fish <- array(rep(three_dat$WAA[,,length(sgl_dat$years),,,], each = n_proj_yrs), dim = c(1, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # weight at age
 MatAA <- array(rep(three_dat$MatAA[,,length(three_dat$years),,,], each = n_proj_yrs), dim = c(1, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # maturity at age
-fish_sel <- array(rep(three_rep$fish_sel[,length(three_dat$years),,,], each = n_proj_yrs), dim = c( n_regions, n_proj_yrs, n_ages, n_sexes, n_fish_fleets)) # selectivity
+fish_sel <- array(rep(three_rep$fish_sel[,,length(three_dat$years),,,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # selectivity
 Movement <- abind::abind(replicate(n_proj_yrs,  three_rep$Movement[,,,length(three_dat$years),,,,drop = FALSE],  simplify = FALSE), along = 4) # movement
 terminal_F <- array(three_rep$Fmort[,length(three_dat$years),,], dim = c(n_regions, n_seas, n_fish_fleets))
 natmort <- array(three_rep$natmort[,,length(three_dat$years),,], dim = c(1,n_regions, n_proj_yrs, n_ages, n_sexes))
@@ -207,7 +212,6 @@ for(sim in 1:n_sims) {
 
 }
 
-
 # five area model
 five_ref_pt <- Get_Reference_Points(data = five_dat,
                                     rep = five_rep,
@@ -233,7 +237,7 @@ terminal_NAA0 <- array(five_rep$NAA0[,,length(five_dat$years),,,], dim = c(1, n_
 WAA <- array(rep(five_dat$WAA[,,length(five_dat$years),,,], each = n_proj_yrs), dim = c(1, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # weight at age
 WAA_fish <- array(rep(five_dat$WAA[,,length(sgl_dat$years),,,], each = n_proj_yrs), dim = c(1, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # weight at age
 MatAA <- array(rep(five_dat$MatAA[,,length(five_dat$years),,,], each = n_proj_yrs), dim = c(1, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # maturity at age
-fish_sel <- array(rep(five_rep$fish_sel[,length(five_dat$years),,,], each = n_proj_yrs), dim = c( n_regions, n_proj_yrs, n_ages, n_sexes, n_fish_fleets)) # selectivity
+fish_sel <- array(rep(five_rep$fish_sel[,,length(five_dat$years),,,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # selectivity
 Movement <- abind::abind(replicate(n_proj_yrs,  five_rep$Movement[,,,length(five_dat$years),,,,drop = FALSE],  simplify = FALSE), along = 4) # movement
 terminal_F <- array(five_rep$Fmort[,length(five_dat$years),,], dim = c(n_regions, n_seas, n_fish_fleets))
 natmort <- array(five_rep$natmort[,,length(five_dat$years),,], dim = c(1,n_regions, n_proj_yrs, n_ages, n_sexes))
@@ -280,7 +284,6 @@ for(sim in 1:n_sims) {
   five_f_proj[,,sim] <- out$proj_F[,-(n_proj_yrs+1)] # remove last year, since it's not used
 
 }
-
 
 # Combine Projections -----------------------------------------------------
 

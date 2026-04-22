@@ -36,7 +36,7 @@
 #'   Fishery weight-at-age used in catch biomass calculations.
 #' @param MatAA Array `[n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes]`.
 #'   Maturity-at-age.
-#' @param fish_sel Array `[n_regions, n_proj_yrs, n_ages, n_sexes, n_fish_fleets]`.
+#' @param fish_sel Array `[n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets]`.
 #'   Fishery selectivity-at-age.
 #' @param Movement Array
 #'   `[n_pop, n_regions, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes]`.
@@ -106,6 +106,10 @@
 #' @param spawn_seas Integer. Spawning season index. Default = 1.
 #' @param init_F Numeric vector `[n_seas]`. Initial seasonal F values used
 #'   when deriving Beverton-Holt equilibrium quantities.
+#' @param natal_region Integer vector `[n_pop]`. Index of the natal region
+#'   for each population. Used to map populations to their spawning regions
+#'   when accumulating effective SSB and for Beverton-Holt recruitment
+#'   calculations under natal homing.
 #'
 #' @return A named list containing:
 #'   \describe{
@@ -210,7 +214,7 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
   proj_NAA <- array(0, dim = c(n_pop, n_regions, n_proj_yrs + 1, n_seas, n_ages, n_sexes))
   proj_NAA0 <- array(0, dim = c(n_pop, n_regions, n_proj_yrs + 1, n_seas, n_ages, n_sexes))
   proj_ZAA <- array(0, dim = c(n_pop, n_regions, n_proj_yrs + 1, n_seas, n_ages, n_sexes))
-  proj_FAA <- array(0, dim = c(n_regions, n_proj_yrs + 1, n_seas, n_ages, n_sexes, n_fish_fleets))
+  proj_FAA <- array(0, dim = c(n_pop, n_regions, n_proj_yrs + 1, n_seas, n_ages, n_sexes, n_fish_fleets))
   proj_CAA <- array(0, dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets))
   proj_Catch <- array(0, dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_fish_fleets))
   proj_SSB <- array(0, dim = c(n_pop, n_regions, n_proj_yrs))
@@ -281,7 +285,7 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
                                               t_spawn = t_spawn,
                                               sexratio_f = bh_rec_opt$sex_ratio_f,
                                               init_F = init_F,
-                                              fish_sel = array(fish_sel[,1,,1,1], dim = c(n_regions, n_ages))
+                                              fish_sel = array(fish_sel[,,1,,,1,1], dim = c(n_pop, n_regions, n_seas, n_ages))
                           )
                         }
       )
@@ -314,21 +318,23 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
       } # end if
 
       # Construct Mortality Processes -------------------------------------------
-      for(a in 1:n_ages) {
-        for(s in 1:n_sexes) {
-          for(f in 1:n_fish_fleets) {
-            # get fishing mortality at age
-            proj_FAA[,y,seas,a,s,f] <- proj_F[,y] * fratio[,seas,f] * fish_sel[,y,a,s,f]
-          } # end f loop
+      for(r in 1:n_regions) {
+        for(a in 1:n_ages) {
+          for(s in 1:n_sexes) {
+            for(f in 1:n_fish_fleets) {
+              # get fishing mortality at age
+              for(p in 1:n_pop)
+                proj_FAA[p,r,y,seas,a,s,f] <- proj_F[r,y] * fratio[r,seas,f] * fish_sel[p,r,y,seas,a,s,f]
+            } # end f loop
 
-          # Get Total Mortality at Age
-          for(p in 1:n_pop) {
-            proj_ZAA[p,,y,seas,a,s] <- (natmort[p,,y,a,s] * seasdur[seas]) +
-              apply(proj_FAA[,y,seas,a,s,,drop = FALSE], 1, sum) # M and sum F across fleets
-          } # end p loop
+            # Get Total Mortality at Age
+            for(p in 1:n_pop) {
+              proj_ZAA[p,r,y,seas,a,s] <- (natmort[p,r,y,a,s] * seasdur[seas]) + sum(proj_FAA[p,r,y,seas,a,s,])
+            }
 
-        } # end s loop
-      } # end a loop
+          } # end s loop
+        } # end a loop
+      }
 
       # Movement Processes ------------------------------------------------------
       # Only apply movement if more than 1 region, or if y > 1 (because terminal proj_NAA already has movement applied)
@@ -420,7 +426,7 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
             for(a in 1:n_ages) {
               for(s in 1:n_sexes) {
                 # Get catch at age with Baranov's
-                proj_CAA[p,r,y,seas,a,s,f] <- (proj_FAA[r,y,seas,a,s,f] / proj_ZAA[p,r,y,seas,a,s]) *
+                proj_CAA[p,r,y,seas,a,s,f] <- (proj_FAA[p,r,y,seas,a,s,f] / proj_ZAA[p,r,y,seas,a,s]) *
                   proj_NAA[p,r,y,seas,a,s] * (1 - exp(-proj_ZAA[p,r,y,seas,a,s]))
               } # end s loop
             } # end a loop

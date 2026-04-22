@@ -125,7 +125,7 @@ seasonal proportions from \code{fixed_rec_seas_prop} are used. Automatically
 reset to \code{0} with a warning if \code{rec_seas_prop_spec} requests
 estimation. Default \code{1}.}
 
-\item{fixed_rec_seas_prop}{Array \code{[n_pop × n_seas]}. Fixed seasonal
+\item{fixed_rec_seas_prop}{Array \code{[n_pop x n_seas]}. Fixed seasonal
 recruitment proportions used when \code{use_fixed_rec_seas_prop = 1}.
 Default: all recruitment assigned to season 1.}
 
@@ -179,31 +179,31 @@ fishing mortality applied during equilibrium initialisation. Default:
 zero for all seasons.}
 
 \item{sigmaR_spec}{Character. Estimation structure for \eqn{\sigma_R},
-stored in \code{ln_sigmaR} \code{[2 × n_pop × n_regions]}, where index
+stored in \code{ln_sigmaR} \code{[2 x n_pop x n_regions]}, where index
 1 = initial deviation period and index 2 = annual deviation period.
 Default \code{"est_all"}. See \code{\link{do_sigmaR_mapping}} for full
 option descriptions.}
 
 \item{InitDevs_spec}{Character or \code{NULL}. Sharing structure for
-initial age-structure deviations \code{ln_InitDevs} \code{[n_pop ×
-n_regions × (n_ages - 1)]}. Default \code{NULL} (estimate all
+initial age-structure deviations \code{ln_InitDevs} \code{[n_pop x
+n_regions x (n_ages - 1)]}. Default \code{NULL} (estimate all
 independently). See \code{\link{do_InitDevs_mapping}} for full option
 descriptions.}
 
 \item{RecDevs_spec}{Character or \code{NULL}. Sharing structure for annual
-recruitment deviations \code{ln_RecDevs} \code{[n_pop × n_regions ×
+recruitment deviations \code{ln_RecDevs} \code{[n_pop x n_regions x
 n_years]}. Default \code{NULL} (estimate all independently). See
 \code{\link{do_RecDevs_mapping}} for full option descriptions.}
 
 \item{h_spec}{Character or \code{NULL}. Sharing structure for
-Beverton-Holt steepness \code{steepness_h} \code{[n_pop × n_regions]},
+Beverton-Holt steepness \code{steepness_h} \code{[n_pop x n_regions]},
 parameterised in bounded logit space \eqn{(0.2, 1)}. Default \code{NULL}
 (estimate by population when \code{n_pop > 1}, by region when
 \code{n_pop = 1}). Ignored when \code{rec_model = "mean_rec"}. See
 \code{\link{do_h_mapping}} for full option descriptions.}
 
 \item{sgl_seas_spawning_movement}{Spawning movement array
-\code{[n_pop × n_regions × n_regions × n_years × n_ages × n_sexes]}.
+\code{[n_pop x n_regions x n_regions x n_years x n_ages x n_sexes]}.
 Each \code{[p, , r, y, a, s]} slice is a row-stochastic movement matrix
 giving the probability of fish from each origin region spawning in region
 \code{r}. If \code{NA} (default), 100\% natal homing is assumed and the
@@ -214,18 +214,18 @@ before spawning. \code{0} (default) = spawning before any mortality;
 \code{1} = spawning after all mortality.}
 
 \item{stray_rate_spec}{Character string. Estimation structure for
-\code{stray_rate_pars} \code{[n_pop × max_stray_blocks]}, parameterised
+\code{stray_rate_pars} \code{[n_pop x max_stray_blocks]}, parameterised
 on the logit scale. Ignored when \code{use_fixed_stray_rate = 1} or
 \code{n_pop = 1}. Default \code{"fix"}. Options:
 \describe{
   \item{\code{"fix"}}{All parameters fixed at starting values (mapped to
     \code{NA}). Use this alongside \code{use_fixed_stray_rate = 0} to
     hold stray rates at a specified value without estimating.}
-  \item{\code{"est_all"}}{Estimate independently per population × block.
+  \item{\code{"est_all"}}{Estimate independently per population x block.
     Produces one parameter per population per unique block.}
   \item{\code{"est_shared_pop"}}{Single parameter per block, shared across
     all populations. Requires identical block structures across all
-    populations — an error is raised if block indices differ.}
+    populations -- an error is raised if block indices differ.}
 }}
 
 \item{stray_rate_blocks}{Character vector of length \code{n_pop} defining
@@ -250,7 +250,7 @@ as model parameters. Default \code{1} (fixed), preserving existing
 behaviour. Set to \code{0} to estimate stray rates via
 \code{stray_rate_pars}.}
 
-\item{fixed_stray_rate}{Array \code{[n_pop × n_years]}. Fixed stray rate
+\item{fixed_stray_rate}{Array \code{[n_pop x n_years]}. Fixed stray rate
 values used when \code{use_fixed_stray_rate = 1}. Values should be in
 \eqn{[0, 1]}. Default: \code{0} (no straying) for all populations and
 years. Ignored when \code{use_fixed_stray_rate = 0}.}
@@ -265,14 +265,14 @@ since \code{stray_rate_pars} would not be estimated. Default \code{0}.}
 Required columns: \code{pop} (population index), \code{block} (block
 index matching \code{stray_rate_blocks}), \code{mu} (prior mean, in
 \eqn{(0,1)}), \code{sd} (prior standard deviation). One row per
-population × block combination to penalise. Ignored when
+population x block combination to penalise. Ignored when
 \code{use_stray_rate_prior = 0}. Default \code{NULL}.}
 
 \item{spawn_seas}{Integer. Season index in which spawning occurs. Default
 \code{1}.}
 
 \item{sexratio_spec}{Character. Estimation structure for sex ratio
-parameters \code{sexratio_pars} \code{[n_pop × n_regions × n_blocks]}.
+parameters \code{sexratio_pars} \code{[n_pop x n_regions x n_blocks]}.
 Default \code{"fix"}. See \code{\link{do_sexratio_pars_mapping}} for
 full option descriptions. Must be \code{"fix"} when \code{n_sexes = 1}.}
 
@@ -290,13 +290,13 @@ Default: a single constant block for every population-region combination.}
 
 \item{...}{Optional named starting values for parameters. Any of:
 \code{ln_global_R0} \code{[n_pop]},
-\code{rec_region_prop_pars} \code{[n_pop × (n_regions - 1)]},
-\code{rec_seas_prop_pars} \code{[n_pop × (n_seas - 1)]},
-\code{steepness_h} \code{[n_pop × n_regions]} (bounded logit scale),
-\code{ln_InitDevs} \code{[n_pop × n_regions × (n_ages - 1)]},
-\code{ln_RecDevs} \code{[n_pop × n_regions × n_years]},
-\code{ln_sigmaR} \code{[2 × n_pop × n_regions]},
-\code{sexratio_pars} \code{[n_pop × n_regions × n_blocks]}.
+\code{rec_region_prop_pars} \code{[n_pop x (n_regions - 1)]},
+\code{rec_seas_prop_pars} \code{[n_pop x (n_seas - 1)]},
+\code{steepness_h} \code{[n_pop x n_regions]} (bounded logit scale),
+\code{ln_InitDevs} \code{[n_pop x n_regions x (n_ages - 1)]},
+\code{ln_RecDevs} \code{[n_pop x n_regions x n_years]},
+\code{ln_sigmaR} \code{[2 x n_pop x n_regions]},
+\code{sexratio_pars} \code{[n_pop x n_regions x n_blocks]}.
 Unspecified parameters use internal defaults.}
 }
 \value{
@@ -324,46 +324,6 @@ bias ramp. Delegates parameter mapping to a family of internal helpers
 \code{\link{Setup_Mod_Dim}} and \code{\link{Setup_Mod_Biologicals}}, and
 before model compilation.
 }
-\section{Recruitment Model}{
-
-}
-
-\section{Recruitment Variability}{
-
-}
-
-\section{Initial Age Structure}{
-
-}
-
-\section{Recruitment Spatial Structure}{
-
-}
-
-\section{Recruitment Seasonal Structure}{
-
-}
-
-\section{Steepness}{
-
-}
-
-\section{Spawning Processes}{
-
-}
-
-\section{Stray Rate Dynamics}{
-
-}
-
-\section{Sex Ratio Dynamics}{
-
-}
-
-\section{Bias Ramp}{
-
-}
-
 \seealso{
 Other Model Setup: 
 \code{\link{Setup_Mod_Biologicals}()},

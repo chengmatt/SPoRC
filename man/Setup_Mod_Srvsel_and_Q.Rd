@@ -24,7 +24,7 @@ Setup_Mod_Srvsel_and_Q(
   t_srv = array(1, dim = c(input_list$data$n_regions, input_list$data$n_seas,
     input_list$data$n_srv_fleets)),
   cont_tv_srv_sel_penalty = TRUE,
-  srvsel_devs_shared_ages = NULL,
+  srvsel_devs_shared_bins = NULL,
   ...
 )
 }
@@ -146,10 +146,10 @@ season (seasonal models), array
 \item{cont_tv_srv_sel_penalty}{Logical. Whether to apply penalties to
 continuous time-varying selectivity deviations. Default \code{TRUE}.}
 
-\item{srvsel_devs_shared_ages}{List of integer vectors defining bin groups
+\item{srvsel_devs_shared_bins}{List of integer vectors defining bin groups
 for age/length-sharing of deviations under semi-parametric forms (e.g.,
 \code{list(1:5, 6:10, 11:30)}). Required when \code{srv_sel_devs_spec}
-includes any \code{"est_shared_a"} variant. Default \code{NULL}.}
+includes any \code{"est_shared_b"} variant. Default \code{NULL}.}
 
 \item{...}{Optional named starting values for selectivity and catchability
 parameters. Supported names and default dimensions:
@@ -187,22 +187,6 @@ internal helpers (\code{\link{do_srv_fixed_sel_pars_mapping}},
 \code{\link{do_srvsel_devs_mapping}}). Must be called after
 \code{\link{Setup_Mod_SrvIdx_and_Comps}} and before model compilation.
 }
-\section{Survey Selectivity Model}{
-
-}
-
-\section{Continuous Time-Varying Selectivity}{
-
-}
-
-\section{Survey Catchability}{
-
-}
-
-\section{Survey Timing and Priors}{
-
-}
-
 \seealso{
 Other Model Setup: 
 \code{\link{Setup_Mod_Biologicals}()},

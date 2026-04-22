@@ -83,12 +83,16 @@ sim_list <- Setup_Sim_Fishing(
   fish_sel_input = replicate(
     n = sim_list$n_sims,
     {
-      arr <- array(NA, dim = c(sim_list$n_regions, sim_list$n_yrs,
+      arr <- array(NA, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
                                sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets))
       for (r in 1:sim_list$n_regions)
         for (y in 1:sim_list$n_yrs)
           for (s in 1:sim_list$n_sexes) {
-            arr[r, y, , s, 1] <-  1 / (1 + exp(-1.5 * (1:sim_list$n_ages - 4)))
+            for(p in 1:sim_list$n_pop) {
+              for(seas in 1:sim_list$n_seas) {
+                arr[p,r, y,seas, , s, 1] <-  1 / (1 + exp(-1.5 * (1:sim_list$n_ages - 4)))
+              }
+            }
           }
       arr
     }
@@ -111,6 +115,7 @@ sim_list <- Setup_Sim_Fishing(
                                                                sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes,
                                                                sim_list$n_fish_fleets, sim_list$n_sims)),
 
+
   # Sigma for catch
   ln_sigmaC = array(log(0.01), dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
   ln_sigmaC_pop = array(log(0.01), dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets))
@@ -129,12 +134,17 @@ sim_list <- Setup_Sim_Survey(
   srv_sel_input = replicate(
     n = sim_list$n_sims,
     {
-      arr <- array(NA, dim = c(sim_list$n_regions, sim_list$n_yrs,
+      arr <- array(NA, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
                                sim_list$n_ages, sim_list$n_sexes, sim_list$n_srv_fleets))
       for (r in 1:sim_list$n_regions)
         for (y in 1:sim_list$n_yrs)
           for (s in 1:sim_list$n_sexes) {
-            arr[r, y, , s, 1] <-  1 / (1 + exp(-1 * (1:sim_list$n_ages - 2.5)))
+            for(p in 1:sim_list$n_pop) {
+              for(seas in 1:sim_list$n_seas) {
+                arr[p,r, y,seas, , s, 1] <-  1 / (1 + exp(-1 * (1:sim_list$n_ages - 2.5)))
+
+              }
+            }
           }
       arr
     }

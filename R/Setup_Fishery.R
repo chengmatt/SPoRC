@@ -14,7 +14,7 @@
 #' @param catch_units Numeric vector. Units for catch (0 = abundance, 1 = biomass). Default: 1.
 #' @param init_F_val Numeric vector. Initial fishing mortality by season (`n_seas`). Default: 0.
 #' @param Fmort_input Numeric array. Fishing mortality pattern,
-#'   dimensions `n_regions x n_yrs x n_seas x n_fish_fleets x n_sims`. Default: 0.1.
+#'   dimensions `n_pop x n_regions x n_yrs x n_seas x n_seas x n_fish_fleets x n_sims`. Default: 0.1.
 #' @param fish_sel_input Numeric array. Fishery selectivity,
 #'   dimensions `n_regions x n_yrs x n_ages x n_sexes x n_fish_fleets x n_sims`.
 #' @param fish_q_input Numeric array. Fishery catchability,
@@ -141,7 +141,7 @@ Setup_Sim_Fishing <- function(sim_list,
   check_sim_dimensions(Fmort_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
                        n_fish_fleets = sim_list$n_fish_fleets, n_sims = sim_list$n_sims, what = "Fmort_input")
   check_sim_dimensions(fish_sel_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs,
-                       n_ages = sim_list$n_ages, n_sexes = sim_list$n_sexes,
+                       n_ages = sim_list$n_ages, n_sexes = sim_list$n_sexes, n_pop = sim_list$n_pop, n_seas = sim_list$n_seas,
                        n_fish_fleets = sim_list$n_fish_fleets, n_sims = sim_list$n_sims, what = "fish_sel_input")
   check_sim_dimensions(fish_q_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs,
                        n_fish_fleets = sim_list$n_fish_fleets, n_sims = sim_list$n_sims, what = "fish_q_input")
@@ -728,11 +728,6 @@ do_sigmaC_pop_mapping <- function(input_list, sigmaC_pop_spec) {
 #' @param catch_units Character array \code{[n_fish_fleets]} specifying catch
 #'   units per fleet. \code{"biom"} = biomass (default); \code{"abd"} =
 #'   abundance. Converted internally to \code{0}/\code{1} integer codes.
-#' @param Wt_Catch Likelihood weight applied to aggregated catch observations.
-#'   Scalar or array conformable to \code{Catch_nLL}. Default: \code{1}.
-#' @param Wt_Catch_pop Likelihood weight applied to population-specific catch
-#'   observations. Scalar or array conformable to \code{Catch_pop_nLL}.
-#'   Default: \code{1}.
 #' @param Use_F_pen Integer flag for applying a fishing mortality penalty to
 #'   penalise large deviations in \code{ln_F_devs}. \code{1} = apply
 #'   (default); \code{0} = do not apply.
@@ -2699,8 +2694,8 @@ do_fishsel_pe_pars_mapping <- function(input_list, fishsel_pe_pars_spec, corr_op
 #' to age or length bins. Cells with no time-variation
 #' (\code{cont_tv_fish_sel == 0}) or no catch data are mapped to \code{NA}.
 #'
-#' Age-sharing (\code{"est_shared_a"} and related options) groups bins into
-#' blocks defined by \code{fishsel_devs_shared_ages}, reducing the number of
+#' Bin-sharing (\code{"est_shared_b"} and related options) groups bins into
+#' blocks defined by \code{fishsel_devs_shared_bins}, reducing the number of
 #' estimated deviation series. Fleet sharing (\code{"est_shared_f_x"}) is handled
 #' in a second pass. The resulting integer map is also stored as
 #' \code{$data$map_ln_fishsel_devs} for use in the RTMB objective function.
@@ -2714,27 +2709,27 @@ do_fishsel_pe_pars_mapping <- function(input_list, fishsel_pe_pars_spec, corr_op
 #'     \item{\code{"est_shared_r"}}{Shared across regions.}
 #'     \item{\code{"est_shared_s"}}{Shared across sexes.}
 #'     \item{\code{"est_shared_r_s"}}{Shared across regions and sexes.}
-#'     \item{\code{"est_shared_a"}}{Shared across age/bin groups defined by
-#'       \code{fishsel_devs_shared_ages}.}
-#'     \item{\code{"est_shared_r_a"}}{Shared across regions and age groups.}
-#'     \item{\code{"est_shared_a_s"}}{Shared across age groups and sexes.}
-#'     \item{\code{"est_shared_r_a_s"}}{Shared across regions, age groups, and sexes.}
+#'     \item{\code{"est_shared_b"}}{Shared across bin groups defined by
+#'       \code{fishsel_devs_shared_bins}.}
+#'     \item{\code{"est_shared_r_b"}}{Shared across regions and bin groups.}
+#'     \item{\code{"est_shared_b_s"}}{Shared across bin groups and sexes.}
+#'     \item{\code{"est_shared_r_b_s"}}{Shared across regions, bin groups, and sexes.}
 #'     \item{\code{"est_shared_f_x"}}{Copy deviation map from fleet \code{x}.}
 #'     \item{\code{"fix"} or \code{"none"}}{All deviations fixed at zero (mapped to \code{NA}).}
 #'   }
-#'   Age-sharing options (\code{"est_shared_a"}, etc.) are only valid with
+#'   Bin-sharing options (\code{"est_shared_b"}, etc.) are only valid with
 #'   semi-parametric time-varying forms (\code{cont_tv_fish_sel} is in \code{c(3,4,5)}).
-#' @param fishsel_devs_shared_ages List of integer vectors defining age/bin
-#'   groupings for age-sharing options. Each element groups bins that share a
+#' @param fishsel_devs_shared_bins List of integer vectors defining bin
+#'   groupings for bin-sharing options. Each element groups bins that share a
 #'   single deviation series, e.g., \code{list(1:5, 6:10, 11:30)}.
-#'   Only used when \code{fish_sel_devs_spec} includes \code{"est_shared_a"}.
+#'   Only used when \code{fish_sel_devs_spec} includes \code{"est_shared_b"}.
 #'
 #' @return The input \code{input_list} with \code{$map$ln_fishsel_devs} set to a
 #'   factor vector and \code{$data$map_ln_fishsel_devs} set to the corresponding
 #'   integer array (for use in the RTMB template).
 #'
 #' @keywords internal
-do_fishsel_devs_mapping <- function(input_list, fish_sel_devs_spec, fishsel_devs_shared_ages) {
+do_fishsel_devs_mapping <- function(input_list, fish_sel_devs_spec, fishsel_devs_shared_bins) {
 
   # Initialize counter and mapping array for fishery selectivity deviations
   fishsel_devs_counter <- 1
@@ -2746,10 +2741,10 @@ do_fishsel_devs_mapping <- function(input_list, fish_sel_devs_spec, fishsel_devs
 
       # Validate options
       if(!is.null(fish_sel_devs_spec)) {
-        if(!fish_sel_devs_spec[f] %in% c("fix", "none", "est_all", "est_shared_r", "est_shared_s", "est_shared_r_s", "est_shared_a", "est_shared_r_a", "est_shared_r_a_s", "est_shared_a_s") &&
+        if(!fish_sel_devs_spec[f] %in% c("fix", "none", "est_all", "est_shared_r", "est_shared_s", "est_shared_r_s", "est_shared_b", "est_shared_r_b", "est_shared_r_b_s", "est_shared_b_s") &&
            !stringr::str_detect(fish_sel_devs_spec[f], "est_shared_f_\\d+"))
-          stop("fish_sel_devs_spec not correctly specfied. Should be one of these: est_all, est_shared_r, est_shared_r_s, est_shared_s, est_shared_a, est_shared_r_a, est_shared_r_a_s, est_shared_r_s, fix, or est_shared_f_# (where # is fleet number)")
-        if(fish_sel_devs_spec[f] %in% c("est_shared_a", "est_shared_r_a", "est_shared_r_a_s", "est_shared_a_s") &&
+          stop("fish_sel_devs_spec not correctly specfied. Should be one of these: est_all, est_shared_r, est_shared_r_s, est_shared_s, est_shared_b, est_shared_r_b, est_shared_r_b_s, est_shared_r_s, fix, or est_shared_f_# (where # is fleet number)")
+        if(fish_sel_devs_spec[f] %in% c("est_shared_b", "est_shared_r_b", "est_shared_r_b_s", "est_shared_b_s") &&
            !input_list$data$cont_tv_fish_sel[r,f] %in% c(3,4,5)) stop("Sharing age deviations with iid or random walk parametric forms is not supported!")
        }
 
@@ -2828,30 +2823,30 @@ do_fishsel_devs_mapping <- function(input_list, fish_sel_devs_spec, fishsel_devs
                   fishsel_devs_counter <- fishsel_devs_counter + 1
                 }
 
-                if(fish_sel_devs_spec[f] == 'est_shared_a') {
-                  for(k in 1:length(fishsel_devs_shared_ages)) {
-                    map_fishsel_devs[r,y,fishsel_devs_shared_ages[[k]],s,f] <- fishsel_devs_counter
+                if(fish_sel_devs_spec[f] == 'est_shared_b') {
+                  for(k in 1:length(fishsel_devs_shared_bins)) {
+                    map_fishsel_devs[r,y,fishsel_devs_shared_bins[[k]],s,f] <- fishsel_devs_counter
                     fishsel_devs_counter <- fishsel_devs_counter + 1
                   } # end k loop
                 }
 
-                if(fish_sel_devs_spec[f] == 'est_shared_r_a' && r == 1) {
-                  for(k in 1:length(fishsel_devs_shared_ages)) {
-                    map_fishsel_devs[,y,fishsel_devs_shared_ages[[k]],s,f] <- fishsel_devs_counter
+                if(fish_sel_devs_spec[f] == 'est_shared_r_b' && r == 1) {
+                  for(k in 1:length(fishsel_devs_shared_bins)) {
+                    map_fishsel_devs[,y,fishsel_devs_shared_bins[[k]],s,f] <- fishsel_devs_counter
                     fishsel_devs_counter <- fishsel_devs_counter + 1
                   } # end k loop
                 }
 
-                if(fish_sel_devs_spec[f] == 'est_shared_a_s' && s == 1) {
-                  for(k in 1:length(fishsel_devs_shared_ages)) {
-                    map_fishsel_devs[r,y,fishsel_devs_shared_ages[[k]],,f] <- fishsel_devs_counter
+                if(fish_sel_devs_spec[f] == 'est_shared_b_s' && s == 1) {
+                  for(k in 1:length(fishsel_devs_shared_bins)) {
+                    map_fishsel_devs[r,y,fishsel_devs_shared_bins[[k]],,f] <- fishsel_devs_counter
                     fishsel_devs_counter <- fishsel_devs_counter + 1
                   } # end k loop
                 }
 
-                if(fish_sel_devs_spec[f] == 'est_shared_r_a_s' && s == 1 && r == 1) {
-                  for(k in 1:length(fishsel_devs_shared_ages)) {
-                    map_fishsel_devs[,y,fishsel_devs_shared_ages[[k]],,f] <- fishsel_devs_counter
+                if(fish_sel_devs_spec[f] == 'est_shared_r_b_s' && s == 1 && r == 1) {
+                  for(k in 1:length(fishsel_devs_shared_bins)) {
+                    map_fishsel_devs[,y,fishsel_devs_shared_bins[[k]],,f] <- fishsel_devs_counter
                     fishsel_devs_counter <- fishsel_devs_counter + 1
                   } # end k loop
                 }
@@ -2962,9 +2957,9 @@ do_fishsel_devs_mapping <- function(input_list, fish_sel_devs_spec, fishsel_devs
 #'   Required when any fleet has continuous time-variation. See
 #'   \code{\link{do_fishsel_devs_mapping}} for all options including age-sharing
 #'   options for semi-parametric forms.
-#' @param fishsel_devs_shared_ages List of integer vectors grouping age or length
+#' @param fishsel_devs_shared_bins List of integer vectors grouping age or length
 #'   bins that share a single deviation series. Only used when
-#'   \code{fish_sel_devs_spec} contains one of the \code{"est_shared_a"} variants.
+#'   \code{fish_sel_devs_spec} contains one of the \code{"est_shared_b"} variants.
 #'   Example: \code{list(1:5, 6:10, 11:30)}.
 #' @param corr_opt_semipar Character vector of length \code{n_fish_fleets}
 #'   controlling which correlation components to suppress in semi-parametric
@@ -3030,7 +3025,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
                                     Use_fish_selex_prior = 0,
                                     fish_selex_prior = NULL,
                                     cont_tv_fish_sel_penalty = TRUE,
-                                    fishsel_devs_shared_ages = NULL,
+                                    fishsel_devs_shared_bins = NULL,
                                     ...
                                     ) {
 
@@ -3259,7 +3254,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
   input_list <- do_fish_fixed_sel_pars_mapping(input_list, fish_fixed_sel_pars_spec)
   input_list <- do_fish_q_mapping(input_list, fish_q_spec)
   input_list <- do_fishsel_pe_pars_mapping(input_list, fishsel_pe_pars_spec, corr_opt_semipar)
-  input_list <- do_fishsel_devs_mapping(input_list, fish_sel_devs_spec, fishsel_devs_shared_ages)
+  input_list <- do_fishsel_devs_mapping(input_list, fish_sel_devs_spec, fishsel_devs_shared_bins)
 
   # Print Messages ----------------------------------------------------------
   if(input_list$verbose) for(msg in messages_list) message(msg)

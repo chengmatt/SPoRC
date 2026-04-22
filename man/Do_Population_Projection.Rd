@@ -81,6 +81,11 @@ F ratio applied in subsequent years.}
 \item{natmort}{Array `[n_pop, n_regions, n_proj_yrs, n_ages, n_sexes]`.
 Annual natural mortality-at-age, scaled internally by season duration.}
 
+\item{natal_region}{Integer vector `[n_pop]`. Index of the natal region
+for each population. Used to map populations to their spawning regions
+when accumulating effective SSB and for Beverton-Holt recruitment
+calculations under natal homing.}
+
 \item{WAA}{Array `[n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes]`.
 Weight-at-age used in spawning biomass calculations.}
 
@@ -91,7 +96,7 @@ Fishery weight-at-age used in catch biomass calculations.}
 \item{MatAA}{Array `[n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes]`.
 Maturity-at-age.}
 
-\item{fish_sel}{Array `[n_regions, n_proj_yrs, n_ages, n_sexes, n_fish_fleets]`.
+\item{fish_sel}{Array `[n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets]`.
 Fishery selectivity-at-age.}
 
 \item{Movement}{Array

@@ -1,4 +1,5 @@
 library(SPoRC)
+library(testthat)
 library(reshape2)
 library(dplyr)
 
@@ -26,7 +27,7 @@ test_that("Simulation self-test produces approximately unbiased SSB results", {
                                 fish_sel_input = replicate(
                                   n = sim_list$n_sims,
                                   array(rep(1 / (1 + exp(-3 * ((1:sim_list$n_ages) - 5))), each = sim_list$n_yrs),
-                                        dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_ages,
+                                        dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages,
                                                 sim_list$n_sexes, sim_list$n_fish_fleets))
                                 )
   )
@@ -38,7 +39,7 @@ test_that("Simulation self-test produces approximately unbiased SSB results", {
     srv_sel_input = replicate(
       n = sim_list$n_sims,
       array(rep(1 / (1 + exp(-1 * ((1:sim_list$n_ages) - 3))), each = sim_list$n_yrs),
-            dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_ages,
+            dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages,
                     sim_list$n_sexes, sim_list$n_srv))
     )
   )

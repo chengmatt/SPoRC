@@ -7,7 +7,7 @@
 #'
 #' @param sim_list Simulation list returned by \code{\link{Setup_Sim_Dim}}.
 #' @param srv_sel_input Survey selectivity array
-#'   \code{[n_regions × n_yrs × n_ages × n_sexes × n_srv_fleets × n_sims]}.
+#'   \code{[n_pop x n_regions x n_yrs x n_seas × n_ages × n_sexes × n_srv_fleets × n_sims]}.
 #'   No default; must be provided.
 #' @param srv_q_input Survey catchability array
 #'   \code{[n_regions × n_yrs × n_srv_fleets × n_sims]}. Default: 1 for all cells.
@@ -147,7 +147,7 @@ Setup_Sim_Survey <- function(ObsSrvIdx_SE = array(0.2, dim = c(sim_list$n_region
 
   # Validate dimensions of all input parameters
   check_sim_dimensions(srv_sel_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs,
-                       n_ages = sim_list$n_ages, n_sexes = sim_list$n_sexes,
+                       n_ages = sim_list$n_ages, n_sexes = sim_list$n_sexes, n_pop = sim_list$n_pop, n_seas = sim_list$n_seas,
                        n_srv_fleets = sim_list$n_srv_fleets, n_sims = sim_list$n_sims, what = "srv_sel_input")
   check_sim_dimensions(srv_q_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs,
                        n_srv_fleets = sim_list$n_srv_fleets, n_sims = sim_list$n_sims, what = "srv_q_input")
@@ -2141,8 +2141,8 @@ do_srvsel_pe_pars_mapping <- function(input_list, srvsel_pe_pars_spec, corr_opt_
 #' functional form); for semi-parametric forms (3D GMRF, 2D AR1), it indexes
 #' age or length bins directly.
 #'
-#' Age-sharing options (\code{"est_shared_a"} and variants) are only valid for
-#' semi-parametric forms and require \code{srvsel_devs_shared_ages} to define
+#' Bin-sharing options (\code{"est_shared_b"} and variants) are only valid for
+#' semi-parametric forms and require \code{srvsel_devs_shared_bins} to define
 #' which bin groups share a common deviation. Fleet-sharing
 #' (\code{"est_shared_f_x"}) is handled in a second pass. Parameters are
 #' automatically fixed for fleets with no continuous time-variation or no
@@ -2164,23 +2164,23 @@ do_srvsel_pe_pars_mapping <- function(input_list, srvsel_pe_pars_spec, corr_opt_
 #'     \item{\code{"est_shared_s"}}{Shared across sexes; separate by region
 #'       and bin.}
 #'     \item{\code{"est_shared_r_s"}}{Shared across regions and sexes.}
-#'     \item{\code{"est_shared_a"}}{Shared across bin groups defined by
-#'       \code{srvsel_devs_shared_ages}. Semi-parametric forms only.}
-#'     \item{\code{"est_shared_r_a"}}{Shared across regions and bin groups.
+#'     \item{\code{"est_shared_b"}}{Shared across bin groups defined by
+#'       \code{srvsel_devs_shared_bins}. Semi-parametric forms only.}
+#'     \item{\code{"est_shared_r_b"}}{Shared across regions and bin groups.
 #'       Semi-parametric forms only.}
-#'     \item{\code{"est_shared_a_s"}}{Shared across bin groups and sexes.
+#'     \item{\code{"est_shared_b_s"}}{Shared across bin groups and sexes.
 #'       Semi-parametric forms only.}
-#'     \item{\code{"est_shared_r_a_s"}}{Shared across regions, bin groups,
+#'     \item{\code{"est_shared_r_b_s"}}{Shared across regions, bin groups,
 #'       and sexes. Semi-parametric forms only.}
 #'     \item{\code{"est_shared_f_x"}}{Copy the map from fleet \code{x}.
 #'       Fleet \code{x} must not itself use \code{"est_shared_f_x"}.}
 #'     \item{\code{"fix"}/\code{"none"}}{All deviations fixed at zero
 #'       (mapped to \code{NA}).}
 #'   }
-#' @param srvsel_devs_shared_ages List of integer vectors defining bin groups
+#' @param srvsel_devs_shared_bins List of integer vectors defining bin groups
 #'   for age/length sharing. Each element specifies the bin indices within one
 #'   group (e.g., \code{list(1:5, 6:10, 11:30)}). Required when
-#'   \code{srv_sel_devs_spec} includes \code{"est_shared_a"} or its
+#'   \code{srv_sel_devs_spec} includes \code{"est_shared_b"} or its
 #'   variants; ignored otherwise.
 #'
 #' @return The input \code{input_list} with \code{$map$ln_srvsel_devs} set to
@@ -2191,7 +2191,7 @@ do_srvsel_pe_pars_mapping <- function(input_list, srvsel_pe_pars_spec, corr_opt_
 #'
 #'
 #' @keywords internal
-do_srvsel_devs_mapping <- function(input_list, srv_sel_devs_spec, srvsel_devs_shared_ages) {
+do_srvsel_devs_mapping <- function(input_list, srv_sel_devs_spec, srvsel_devs_shared_bins) {
 
   # Initialize counter and mapping array for survey selectivity deviations
   srvsel_devs_counter <- 1
@@ -2203,10 +2203,10 @@ do_srvsel_devs_mapping <- function(input_list, srv_sel_devs_spec, srvsel_devs_sh
 
       # Validate options
       if(!is.null(srv_sel_devs_spec)) {
-        if(!srv_sel_devs_spec[f] %in% c("fix", "none", "est_all", "est_shared_r", "est_shared_s", "est_shared_r_s", "est_shared_a", "est_shared_r_a", "est_shared_r_a_s", "est_shared_a_s") &&
+        if(!srv_sel_devs_spec[f] %in% c("fix", "none", "est_all", "est_shared_r", "est_shared_s", "est_shared_r_s", "est_shared_b", "est_shared_r_b", "est_shared_r_b_s", "est_shared_b_s") &&
            !stringr::str_detect(srv_sel_devs_spec[f], "est_shared_f_\\d+"))
-          stop("srv_sel_devs_spec not correctly specfied. Should be one of these: est_all, est_shared_r, est_shared_r_s, est_shared_s, est_shared_a, est_shared_r_a, est_shared_r_a_s, est_shared_r_s, fix, or est_shared_f_# (where # is fleet number)")
-        if(srv_sel_devs_spec[f] %in% c("est_shared_a", "est_shared_r_a", "est_shared_r_a_s", "est_shared_a_s") &&
+          stop("srv_sel_devs_spec not correctly specfied. Should be one of these: est_all, est_shared_r, est_shared_r_s, est_shared_s, est_shared_b, est_shared_r_b, est_shared_r_b_s, est_shared_r_s, fix, or est_shared_f_# (where # is fleet number)")
+        if(srv_sel_devs_spec[f] %in% c("est_shared_b", "est_shared_r_b", "est_shared_r_b_s", "est_shared_b_s") &&
            !input_list$data$cont_tv_srv_sel[r,f] %in% c(3,4,5)) stop("Sharing age deviations with iid or random walk parametric forms is not supported!")
       }
 
@@ -2285,30 +2285,30 @@ do_srvsel_devs_mapping <- function(input_list, srv_sel_devs_spec, srvsel_devs_sh
                   srvsel_devs_counter <- srvsel_devs_counter + 1
                 }
 
-                if(srv_sel_devs_spec[f] == 'est_shared_a') {
-                  for(k in 1:length(srvsel_devs_shared_ages)) {
-                    map_srvsel_devs[r,y,srvsel_devs_shared_ages[[k]],s,f] <- srvsel_devs_counter
+                if(srv_sel_devs_spec[f] == 'est_shared_b') {
+                  for(k in 1:length(srvsel_devs_shared_bins)) {
+                    map_srvsel_devs[r,y,srvsel_devs_shared_bins[[k]],s,f] <- srvsel_devs_counter
                     srvsel_devs_counter <- srvsel_devs_counter + 1
                   } # end k loop
                 }
 
-                if(srv_sel_devs_spec[f] == 'est_shared_r_a' && r == 1) {
-                  for(k in 1:length(srvsel_devs_shared_ages)) {
-                    map_srvsel_devs[,y,srvsel_devs_shared_ages[[k]],s,f] <- srvsel_devs_counter
+                if(srv_sel_devs_spec[f] == 'est_shared_r_b' && r == 1) {
+                  for(k in 1:length(srvsel_devs_shared_bins)) {
+                    map_srvsel_devs[,y,srvsel_devs_shared_bins[[k]],s,f] <- srvsel_devs_counter
                     srvsel_devs_counter <- srvsel_devs_counter + 1
                   } # end k loop
                 }
 
-                if(srv_sel_devs_spec[f] == 'est_shared_a_s' && s == 1) {
-                  for(k in 1:length(srvsel_devs_shared_ages)) {
-                    map_srvsel_devs[r,y,srvsel_devs_shared_ages[[k]],,f] <- srvsel_devs_counter
+                if(srv_sel_devs_spec[f] == 'est_shared_b_s' && s == 1) {
+                  for(k in 1:length(srvsel_devs_shared_bins)) {
+                    map_srvsel_devs[r,y,srvsel_devs_shared_bins[[k]],,f] <- srvsel_devs_counter
                     srvsel_devs_counter <- srvsel_devs_counter + 1
                   } # end k loop
                 }
 
-                if(srv_sel_devs_spec[f] == 'est_shared_r_a_s' && s == 1 && r == 1) {
-                  for(k in 1:length(srvsel_devs_shared_ages)) {
-                    map_srvsel_devs[,y,srvsel_devs_shared_ages[[k]],,f] <- srvsel_devs_counter
+                if(srv_sel_devs_spec[f] == 'est_shared_r_b_s' && s == 1 && r == 1) {
+                  for(k in 1:length(srvsel_devs_shared_bins)) {
+                    map_srvsel_devs[,y,srvsel_devs_shared_bins[[k]],,f] <- srvsel_devs_counter
                     srvsel_devs_counter <- srvsel_devs_counter + 1
                   } # end k loop
                 }
@@ -2366,8 +2366,6 @@ do_srvsel_devs_mapping <- function(input_list, srv_sel_devs_spec, srvsel_devs_sh
 #'   \code{$data$Selex_Type} must already be set by
 #'   \code{\link{Setup_Mod_Biologicals}}.
 #'
-#' @section Survey Selectivity Model:
-#'
 #' @param srv_sel_model Character vector specifying the selectivity functional
 #'   form per fleet, and optionally per time block. Each element follows one
 #'   of:
@@ -2401,8 +2399,6 @@ do_srvsel_devs_mapping <- function(input_list, srv_sel_devs_spec, srvsel_devs_sh
 #'   continuous time-varying selectivity are mutually exclusive for a given
 #'   fleet. Default: \code{"none_Fleet_x"} for each fleet.
 #'
-#' @section Continuous Time-Varying Selectivity:
-#'
 #' @param cont_tv_srv_sel Character vector defining the continuous
 #'   time-variation form per fleet. Each element follows
 #'   \code{"<type>_Fleet_x"}. Options:
@@ -2427,16 +2423,14 @@ do_srvsel_devs_mapping <- function(input_list, srv_sel_devs_spec, srvsel_devs_sh
 #'   \code{NULL}. Sharing structure for selectivity deviation time series.
 #'   See \code{\link{do_srvsel_devs_mapping}} for full option descriptions.
 #'   Default \code{NULL}.
-#' @param srvsel_devs_shared_ages List of integer vectors defining bin groups
+#' @param srvsel_devs_shared_bins List of integer vectors defining bin groups
 #'   for age/length-sharing of deviations under semi-parametric forms (e.g.,
 #'   \code{list(1:5, 6:10, 11:30)}). Required when \code{srv_sel_devs_spec}
-#'   includes any \code{"est_shared_a"} variant. Default \code{NULL}.
+#'   includes any \code{"est_shared_b"} variant. Default \code{NULL}.
 #' @param corr_opt_semipar Character vector \code{[n_srv_fleets]} or
 #'   \code{NULL}. Specifies correlation components to suppress for 3D GMRF or
 #'   2D AR1 forms. See \code{\link{do_srvsel_pe_pars_mapping}} for valid
 #'   values. Default \code{NULL}.
-#'
-#' @section Survey Catchability:
 #'
 #' @param srv_q_blocks Character vector defining discrete time blocks for
 #'   survey catchability. Same format as \code{srv_sel_blocks}:
@@ -2463,8 +2457,6 @@ do_srvsel_devs_mapping <- function(input_list, srv_sel_devs_spec, srvsel_devs_sh
 #'   All vectors must be the same length and contain no missing values; set
 #'   values to \code{0} for years when the survey is not active. If
 #'   \code{NULL}, covariate effects are excluded. Default \code{NULL}.
-#'
-#' @section Survey Timing and Priors:
 #'
 #' @param t_srv Survey timing fraction within a given year (annual models) or
 #'   season (seasonal models), array
@@ -2522,7 +2514,7 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
                                    srv_selex_prior = NULL,
                                    t_srv = array(1, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_srv_fleets)),
                                    cont_tv_srv_sel_penalty = TRUE,
-                                   srvsel_devs_shared_ages = NULL,
+                                   srvsel_devs_shared_bins = NULL,
                                    ...
                                    ) {
 
@@ -2816,7 +2808,7 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
   input_list <- do_srv_fixed_sel_pars_mapping(input_list, srv_fixed_sel_pars_spec)
   input_list <- do_srv_q_mapping(input_list, srv_q_spec)
   input_list <- do_srvsel_pe_pars_mapping(input_list, srvsel_pe_pars_spec, corr_opt_semipar)
-  input_list <- do_srvsel_devs_mapping(input_list, srv_sel_devs_spec, srvsel_devs_shared_ages)
+  input_list <- do_srvsel_devs_mapping(input_list, srv_sel_devs_spec, srvsel_devs_shared_bins)
 
 
   # Print Messages ----------------------------------------------------------

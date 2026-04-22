@@ -20,7 +20,7 @@ Setup_Mod_Fishsel_and_Q(
   Use_fish_selex_prior = 0,
   fish_selex_prior = NULL,
   cont_tv_fish_sel_penalty = TRUE,
-  fishsel_devs_shared_ages = NULL,
+  fishsel_devs_shared_bins = NULL,
   ...
 )
 }
@@ -121,9 +121,9 @@ Only used when \code{Use_fish_selex_prior = 1}.}
 penalty on the continuous time-varying selectivity deviations to regularise
 the process.}
 
-\item{fishsel_devs_shared_ages}{List of integer vectors grouping age or length
+\item{fishsel_devs_shared_bins}{List of integer vectors grouping age or length
 bins that share a single deviation series. Only used when
-\code{fish_sel_devs_spec} contains one of the \code{"est_shared_a"} variants.
+\code{fish_sel_devs_spec} contains one of the \code{"est_shared_b"} variants.
 Example: \code{list(1:5, 6:10, 11:30)}.}
 
 \item{...}{Optional starting value overrides, passed by name. Recognised

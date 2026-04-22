@@ -59,7 +59,7 @@ mortality rates.}
 in each season during initialization. Set to zero for an unfished population.}
 
 \item{fish_sel}{Array
-(\code{n_regions × n_ages × n_sexes × fleets}) of fishery selectivity.
+(\code{n_pop x n_regions x n_seas × n_ages × n_sexes × fleets}) of fishery selectivity.
 Only fleet 1 is used during initialization.}
 
 \item{R0_r}{Matrix (\code{n_pop × n_regions}) giving unfished recruitment

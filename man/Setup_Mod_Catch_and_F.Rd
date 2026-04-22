@@ -107,13 +107,6 @@ arguments:
     \code{[n_regions × n_years × n_seas × n_fish_fleets]}.
     Default: \code{0}.}
 }}
-
-\item{Wt_Catch}{Likelihood weight applied to aggregated catch observations.
-Scalar or array conformable to \code{Catch_nLL}. Default: \code{1}.}
-
-\item{Wt_Catch_pop}{Likelihood weight applied to population-specific catch
-observations. Scalar or array conformable to \code{Catch_pop_nLL}.
-Default: \code{1}.}
 }
 \value{
 The input \code{input_list} with \code{$data}, \code{$par}, and

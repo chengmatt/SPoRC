@@ -48,19 +48,19 @@ The following tables describe all elements contained within `obj$rep`, which is 
 | `CAL`             | Catch-at-length                                                                  | `n_pop × n_regions × n_years × n_seas × n_lens × n_sexes × n_fish_fleets`                    |
 | `PredCatch`       | Predicted catch (population-specific; summed across populations for aggregated likelihood) | `n_pop × n_regions × n_years × n_seas × n_fish_fleets`                              |
 | `PredFishIdx`     | Predicted fishery index (population-specific; summed across populations for aggregated likelihood) | `n_pop × n_regions × n_years × n_seas × n_fish_fleets`                     |
-| `fish_sel`        | Fishery age-based selectivity                                                    | `n_regions × (n_years + n_proj_yrs_devs) × n_ages × n_sexes × n_fish_fleets`                 |
+| `fish_sel`        | Fishery age-based selectivity                                                    | `n_pop x n_regions × (n_years + n_proj_yrs_devs) × n_seas x n_ages × n_sexes × n_fish_fleets`                 |
 | `fish_q`          | Fishery catchability                                                             | `n_regions × n_years × n_fish_fleets`                                                        |
 
 ## Survey Processes
 | Name         | Description                                                                                          | Dimensions                                                                                     |
 | ------------ | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `PredSrvIdx` | Predicted survey index (population-specific; summed across populations for aggregated likelihood)    | `n_pop × n_regions × n_years × n_seas × n_srv_fleets`                                         |
-| `srv_sel`    | Survey age-based selectivity                                                                         | `n_regions × (n_years + n_proj_yrs_devs) × n_ages × n_sexes × n_srv_fleets`                   |
+| `srv_sel`    | Survey age-based selectivity                                                                         | `n_pop x n_regions × (n_years + n_proj_yrs_devs) × n_seas x n_ages × n_sexes × n_srv_fleets`                   |
 | `srv_q`      | Survey catchability                                                                                  | `n_regions × n_years × n_srv_fleets`                                                          |
 | `SrvIAA`     | Survey index-at-age                                                                                  | `n_pop × n_regions × n_years × n_seas × n_ages × n_sexes × n_srv_fleets`                      |
 | `SrvIAL`     | Survey index-at-length                                                                               | `n_pop × n_regions × n_years × n_seas × n_lens × n_sexes × n_srv_fleets`                      |
 
-Note: Length-based selectivity arrays (`fish_sel_l`, `srv_sel_l`) are only reported when `Selex_Type = 1` and share the same dimension structure as their age-based counterparts, replacing `n_ages` with `n_lens`.
+Note: Length-based selectivity arrays (`fish_sel_l`, `srv_sel_l`) are only reported when `Selex_Type = 1` and share the same dimension structure as their age-based counterparts, replacing `n_ages` with `n_lens`. Note that age-based selectivity is dimensioned with an extra population and season dimension, given that conversion from length to ages requires a size-age transition matrix that is population and season specific (i.e., length-based selectivity does not have such dimensions).
 
 ## Tagging Processes
 | Name                       | Description                                                                   | Dimensions                                                                                         |

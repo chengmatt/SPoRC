@@ -69,7 +69,7 @@ array \code{[n_pop × n_regions × n_yrs × n_seas × n_srv_fleets]}.}
 \item{sim_list}{Simulation list returned by \code{\link{Setup_Sim_Dim}}.}
 
 \item{srv_sel_input}{Survey selectivity array
-\code{[n_regions × n_yrs × n_ages × n_sexes × n_srv_fleets × n_sims]}.
+\code{[n_pop x n_regions x n_yrs x n_seas × n_ages × n_sexes × n_srv_fleets × n_sims]}.
 No default; must be provided.}
 
 \item{srv_q_input}{Survey catchability array

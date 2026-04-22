@@ -121,11 +121,11 @@ Setup_Sim_Dim <- function(n_sims,
 #'
 #' Creates the foundational \code{input_list} object used throughout the estimation
 #' model setup. All downstream configuration functions
-#' (\code{\link{Setup_Mod_Biologicals}}, \code{\link{Setup_Mod_Fishery}},
-#' \code{\link{Setup_Mod_Survey}}, etc.) expect an \code{input_list} produced by
+#' (\code{\link{Setup_Mod_Biologicals}}, etc.) expect an \code{input_list} produced by
 #' this function. Dimension vectors and scalars are stored in \code{$data}, with
 #' empty \code{$par} and \code{$map} sublists ready to be populated by subsequent
-#' setup calls.
+#' setup calls. Optionally, a \code{$config} sublist can be stored to retain
+#' model configuration options.
 #'
 #' @param years Numeric vector of calendar years included in the model (e.g.,
 #'   \code{1990:2024}). The length of this vector determines \code{n_years}

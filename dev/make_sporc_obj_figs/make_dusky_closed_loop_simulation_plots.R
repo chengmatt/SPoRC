@@ -203,7 +203,7 @@ sd_rep <- dusky_rtmb_model$sdrep
 # Define Operating Model (Simulation Options) -----------------------------
 closed_loop_yrs <- 30 # number of closed loop years to do
 burnin_years <- 1:length(data$years) # number of conditioning years
-n_sims <- 50 # number of simulations to do
+n_sims <- 100 # number of simulations to do
 assess_freq <- 5 # assessments every 5 years
 data_yr_freq <- 5 # data year frequency
 
@@ -315,7 +315,7 @@ for (sim in 1:sim_env$n_sims) {
         tmp_WAA <- array(rep(asmt_data$WAA[,,y,,,], each = proj_opt$n_proj_yrs), dim = c(asmt_data$n_pop, asmt_data$n_regions, proj_opt$n_proj_yrs, asmt_data$n_seas, length(asmt_data$ages), asmt_data$n_sexes)) # weight at age
         tmp_WAA_fish <- array(rep(asmt_data$WAA_fish[,,y,,,,], each = proj_opt$n_proj_yrs), dim = c(asmt_data$n_pop, asmt_data$n_regions, proj_opt$n_proj_yrs, asmt_data$n_seas, length(asmt_data$ages), asmt_data$n_sexes, asmt_data$n_fish_fleets)) # weight at age fishery
         tmp_MatAA <- array(rep(asmt_data$MatAA[,,y,,,], each = proj_opt$n_proj_yrs), dim = c(asmt_data$n_pop, asmt_data$n_regions, proj_opt$n_proj_yrs, asmt_data$n_seas, length(asmt_data$ages), asmt_data$n_sexes)) # maturity at age
-        tmp_fish_sel <- array(rep(obj$rep$fish_sel[,y,,,], each = proj_opt$n_proj_yrs), dim = c(asmt_data$n_regions, proj_opt$n_proj_yrs, length(asmt_data$ages), asmt_data$n_sexes, asmt_data$n_fish_fleets)) # selectivity
+        tmp_fish_sel <- array(rep(obj$rep$fish_sel[,,y,,,,], each = proj_opt$n_proj_yrs), dim = c(asmt_data$n_pop, asmt_data$n_regions, proj_opt$n_proj_yrs, asmt_data$n_seas, length(asmt_data$ages), asmt_data$n_sexes, asmt_data$n_fish_fleets)) # selectivity
         tmp_terminal_F <- array(obj$rep$Fmort[,y,,], dim = c(asmt_data$n_regions, asmt_data$n_seas, asmt_data$n_fish_fleets)) # terminal fishing mortality
         tmp_natmort <- array(rep(obj$rep$natmort[,,y,,], each = proj_opt$n_proj_yrs), dim = c(asmt_data$n_pop, asmt_data$n_regions, proj_opt$n_proj_yrs, length(asmt_data$ages), asmt_data$n_sexes)) # natural mortality
         tmp_recruitment <- array(obj$rep$Rec[,,1:y], dim = c(asmt_data$n_pop, asmt_data$n_regions, length(1:y))) # recruitment to use for projections
@@ -368,7 +368,7 @@ for (sim in 1:sim_env$n_sims) {
             NAA = sim_env$NAA[1, r, y+1,,, , sim], # numbers at age in simulation (truth)
             WAA = sim_env$WAA[1, r, y+1,, , , sim], # weight-at-age in simulation (truth)
             natmort  = sim_env$natmort[1, r, y+1, , , sim], # natural mortality in simulation (truth)
-            fish_sel = sim_env$fish_sel[r, y+1, , , f, sim] # fishery selectivity in simulation (truth)
+            fish_sel = sim_env$fish_sel[1,r, y+1,1, , , f, sim] # fishery selectivity in simulation (truth)
           )
         }, r = rf_grid$r, f = rf_grid$f)
         sim_env$Fmort[,y+1,,,sim] <- array(tmp_f, dim = c(sim_env$n_regions, sim_env$n_seas, sim_env$n_fish_fleets)) # assign bisection values back into simulation
@@ -377,7 +377,6 @@ for (sim in 1:sim_env$n_sims) {
     } # feedback year
   } # end y loop
 } # end sim loop
-
 
 # Trajectories of spawning biomass
 png(here("vignettes", "figures", "h_ssb_closed_loop.png"), width = 800, height = 400)

@@ -17,7 +17,8 @@ Setup_Mod_Dim(
   n_fish_fleets,
   n_srv_fleets,
   n_proj_yrs_devs = 0,
-  verbose = FALSE
+  verbose = FALSE,
+  store_config = FALSE
 )
 }
 \arguments{
@@ -73,6 +74,8 @@ required.}
 \item{verbose}{Logical. If \code{TRUE}, prints a summary of all dimension
 settings to the console via \code{message()} after setup. Default
 \code{FALSE}.}
+
+\item{store_config}{Logical. If \code{TRUE}, stores configuration of the model. Default is \code{FALSE}}
 }
 \value{
 A named list (\code{input_list}) with three sublists:
@@ -93,11 +96,11 @@ A named list (\code{input_list}) with three sublists:
 \description{
 Creates the foundational \code{input_list} object used throughout the estimation
 model setup. All downstream configuration functions
-(\code{\link{Setup_Mod_Biologicals}}, \code{\link{Setup_Mod_Fishery}},
-\code{\link{Setup_Mod_Survey}}, etc.) expect an \code{input_list} produced by
+(\code{\link{Setup_Mod_Biologicals}}, etc.) expect an \code{input_list} produced by
 this function. Dimension vectors and scalars are stored in \code{$data}, with
 empty \code{$par} and \code{$map} sublists ready to be populated by subsequent
-setup calls.
+setup calls. Optionally, a \code{$config} sublist can be stored to retain
+model configuration options.
 }
 \seealso{
 Other Model Setup: 

@@ -237,3 +237,4 @@ three_rg_sable_data$do_recruits_move <- 0 # recruit's don't move
 
 # Write data
 usethis::use_data(three_rg_sable_data, internal = FALSE, overwrite = TRUE)
+

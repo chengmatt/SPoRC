@@ -22,8 +22,8 @@ single_region_SPR(pars, data)
   \item{\code{t_spawn}}{Numeric. Fraction of spawning season elapsed
     before spawning (used for mid-season mortality correction).}
   \item{\code{F_fract_flt}}{Numeric array \code{[n_seas, n_fish_fleets]}.
-    Fleet F fractions (see \code{\link{make_fratio}}).}
-  \item{\code{fish_sel}}{Numeric array \code{[n_ages, n_fish_fleets]}.
+    Fleet F fractions.}
+  \item{\code{fish_sel}}{Numeric array \code{[n_pop, n_seas, n_ages, n_fish_fleets]}.
     Fishery selectivity at age for females.}
   \item{\code{natmort}}{Numeric array \code{[n_pop, n_ages]}. Female
     natural mortality at age.}

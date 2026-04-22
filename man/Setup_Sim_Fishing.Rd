@@ -86,7 +86,7 @@ dimensions `n_pop x n_regions x n_yrs x n_seas x n_fish_fleets`. Default: log(0.
 \item{init_F_val}{Numeric vector. Initial fishing mortality by season (`n_seas`). Default: 0.}
 
 \item{Fmort_input}{Numeric array. Fishing mortality pattern,
-dimensions `n_regions x n_yrs x n_seas x n_fish_fleets x n_sims`. Default: 0.1.}
+dimensions `n_pop x n_regions x n_yrs x n_seas x n_seas x n_fish_fleets x n_sims`. Default: 0.1.}
 
 \item{fish_sel_input}{Numeric array. Fishery selectivity,
 dimensions `n_regions x n_yrs x n_ages x n_sexes x n_fish_fleets x n_sims`.}

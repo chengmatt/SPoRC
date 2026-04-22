@@ -92,18 +92,22 @@ release_conv_tag_attr <- function(tagged_fish,
   weights = if(platform == "population") {
     array(NAA[, tr, ty, tseas, , ], dim = c(n_pop, n_ages, n_sexes))
   } else if(platform == "fishery") {
-    NAA_slice  =NAA[, tr, ty, tseas, , , drop = FALSE]
-    dim(NAA_slice) =c(n_pop, n_ages, n_sexes)
-    sel_slice  =fish_sel[tr, ty, , , fleet, drop = FALSE]
-    dim(sel_slice) =c(n_ages, n_sexes)
-    sweep(NAA_slice, 2:3, sel_slice, "*")
-  } else if(platform == "survey") {
-    NAA_slice  =NAA[, tr, ty, tseas, , , drop = FALSE]
-    dim(NAA_slice) =c(n_pop, n_ages, n_sexes)
-    sel_slice  =srv_sel[tr, ty, , , fleet, drop = FALSE]
-    dim(sel_slice) =c(n_ages, n_sexes)
-    sweep(NAA_slice, 2:3, sel_slice, "*")
+    NAA_slice = array(NAA[, tr, ty, tseas, , ], dim = c(n_pop, n_ages, n_sexes))
+    wt = array(0, dim = c(n_pop, n_ages, n_sexes))
+    for(p in 1:n_pop) {
+      sel_slice = array(fish_sel[p, tr, ty, tseas, , , fleet], dim = c(n_ages, n_sexes))
+      wt[p,,] = NAA_slice[p,,] * sel_slice
     }
+    wt
+  } else if(platform == "survey") {
+    NAA_slice = array(NAA[, tr, ty, tseas, , ], dim = c(n_pop, n_ages, n_sexes))
+    wt = array(0, dim = c(n_pop, n_ages, n_sexes))
+    for(p in 1:n_pop) {
+      sel_slice = array(srv_sel[p, tr, ty, tseas, , , fleet], dim = c(n_ages, n_sexes))
+      wt[p,,] = NAA_slice[p,,] * sel_slice
+    }
+    wt
+  }
 
   # Normalize weights within attended dimensions.
   # The denominator sums over unattended dims only, preserving totals

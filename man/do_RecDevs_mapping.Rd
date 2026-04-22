@@ -35,7 +35,7 @@ across all dimensions. Options when non-\code{NULL}:
 }}
 
 \item{rec_dd}{Recruitment density-dependence structure inherited from
-\code{\link{Setup_Mod_Recruitment}}. \code{"global"} restricts valid
+\code{\link{Setup_Mod_Rec}}. \code{"global"} restricts valid
 \code{RecDevs_spec} choices to \code{"est_shared_r"} or
 \code{"est_shared_pop_r"} when \code{n_regions > 1}.}
 }
@@ -48,10 +48,10 @@ The input \code{input_list} with \code{$map$ln_RecDevs} set to a
   \code{0} for any fixed cells.
 }
 \description{
-Internal helper called by \code{\link{Setup_Mod_Recruitment}} to construct
+Internal helper called by \code{\link{Setup_Mod_Rec}} to construct
 the TMB/RTMB factor map for \code{ln_RecDevs}, the log-scale annual
 recruitment deviations. The \code{ln_RecDevs} array has dimensions
-\code{[n_pop × n_regions × n_years]}.
+\code{[n_pop x n_regions x n_years]}.
 }
 \details{
 Mapping behaviour is governed by two interacting considerations:

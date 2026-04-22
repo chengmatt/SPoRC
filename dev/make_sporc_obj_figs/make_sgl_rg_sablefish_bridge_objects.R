@@ -352,82 +352,82 @@ opt_ts_df_v3 <- rbind(ssb_se_series,rec_series, f_series, females_series, males_
 
 # Get selectivities
 dom_ll_fish_f1 <- data.frame(Age = 1:30,
-                             TMB = sabie_rtmb_model$rep$fish_sel[1,1,,1,1],
+                             TMB = sabie_rtmb_model$rep$fish_sel[1,1,1,1,,1,1],
                              ADMB = tem_dat$agesel$fish1sel.f,
                              Type = "Domestic LL Fishery Female Block 1")
 
 dom_ll_fish_m1 <- data.frame(Age = 1:30,
-                             TMB = sabie_rtmb_model$rep$fish_sel[1,1,,2,1],
+                             TMB = sabie_rtmb_model$rep$fish_sel[1,1,1,1,,2,1],
                              ADMB = tem_dat$agesel$fish1sel.m,
                              Type = "Domestic LL Fishery Male Block 1")
 
 dom_ll_fish_f2 <- data.frame(Age = 1:30,
-                             TMB = sabie_rtmb_model$rep$fish_sel[1,40,,1,1],
+                             TMB = sabie_rtmb_model$rep$fish_sel[1,1,40,1,,1,1],
                              ADMB = tem_dat$agesel$fish4sel.f,
                              Type = "Domestic LL Fishery Female Block 2")
 
 dom_ll_fish_m2 <- data.frame(Age = 1:30,
-                             TMB = sabie_rtmb_model$rep$fish_sel[1,40,,2,1],
+                             TMB = sabie_rtmb_model$rep$fish_sel[1,1,40,1,,2,1],
                              ADMB = tem_dat$agesel$fish4sel.m,
                              Type = "Domestic LL Fishery Male Block 2")
 
 dom_ll_fish_f3 <- data.frame(Age = 1:30,
-                             TMB = sabie_rtmb_model$rep$fish_sel[1,60,,1,1],
+                             TMB = sabie_rtmb_model$rep$fish_sel[1,1,60,1,,1,1],
                              ADMB = tem_dat$agesel$fish5sel.f,
                              Type = "Domestic LL Fishery Female Block 3")
 
 dom_ll_fish_m3 <- data.frame(Age = 1:30,
-                             TMB = sabie_rtmb_model$rep$fish_sel[1,60,,2,1],
+                             TMB = sabie_rtmb_model$rep$fish_sel[1,1,60,1,,2,1],
                              ADMB = tem_dat$agesel$fish5sel.m,
                              Type = "Domestic LL Fishery Male Block 3")
 
 dom_trwl_fish_f <- data.frame(Age = 1:30,
-                              TMB = sabie_rtmb_model$rep$fish_sel[1,1,,1,2],
+                              TMB = sabie_rtmb_model$rep$fish_sel[1,1,1,1,,1,2],
                               ADMB = tem_dat$agesel$fish3sel.f,
                               Type = "Domestic Trawl Female")
 
 dom_trwl_fish_m <- data.frame(Age = 1:30,
-                              TMB = sabie_rtmb_model$rep$fish_sel[1,1,,2,2],
+                              TMB = sabie_rtmb_model$rep$fish_sel[1,1,1,1,,2,2],
                               ADMB = tem_dat$agesel$fish3sel.m,
                               Type = "Domestic Trawl Male")
 
 dom_ll_srv_f1 <- data.frame(Age = 1:30,
-                            TMB = sabie_rtmb_model$rep$srv_sel[1,1,,1,1],
+                            TMB = sabie_rtmb_model$rep$srv_sel[1,1,1,1,,1,1],
                             ADMB = tem_dat$agesel$srv1sel.f,
                             Type = "Domestic LL Survey Female Block 1")
 
 dom_ll_srv_m1 <- data.frame(Age = 1:30,
-                            TMB = sabie_rtmb_model$rep$srv_sel[1,1,,2,1],
+                            TMB = sabie_rtmb_model$rep$srv_sel[1,1,1,1,,2,1],
                             ADMB = tem_dat$agesel$srv1sel.m,
                             Type = "Domestic LL Survey Male Block 1")
 
 dom_ll_srv_f2 <- data.frame(Age = 1:30,
-                            TMB = sabie_rtmb_model$rep$srv_sel[1,60,,1,1],
+                            TMB = sabie_rtmb_model$rep$srv_sel[1,1,60,1,,1,1],
                             ADMB = tem_dat$agesel$srv10sel.f,
                             Type = "Domestic LL Survey Female Block 2")
 
 dom_ll_srv_m2 <- data.frame(Age = 1:30,
-                            TMB = sabie_rtmb_model$rep$srv_sel[1,60,,2,1],
+                            TMB = sabie_rtmb_model$rep$srv_sel[1,1,60,1,,2,1],
                             ADMB = tem_dat$agesel$srv10sel.m,
                             Type = "Domestic LL Survey Male Block 2")
 
 dom_trwl_srv_f2 <- data.frame(Age = 1:30,
-                              TMB = sabie_rtmb_model$rep$srv_sel[1,60,,1,2],
+                              TMB = sabie_rtmb_model$rep$srv_sel[1,1,60,1,,1,2],
                               ADMB = tem_dat$agesel$srv7sel.f,
                               Type = "Domestic Trawl Survey Female")
 
 dom_trwl_srv_m2 <- data.frame(Age = 1:30,
-                              TMB = sabie_rtmb_model$rep$srv_sel[1,60,,2,2],
+                              TMB = sabie_rtmb_model$rep$srv_sel[1,1,60,1,,2,2],
                               ADMB = tem_dat$agesel$srv7sel.m,
                               Type = "Domestic Trawl Survey Male")
 
 coop_ll_srv_f2 <- data.frame(Age = 1:30,
-                             TMB = sabie_rtmb_model$rep$srv_sel[1,60,,1,3],
+                             TMB = sabie_rtmb_model$rep$srv_sel[1,1,60,1,,1,3],
                              ADMB = tem_dat$agesel$srv2sel.f,
                              Type = "Coop LL Survey Female")
 
 coop_ll_srv_m2 <- data.frame(Age = 1:30,
-                             TMB = sabie_rtmb_model$rep$srv_sel[1,60,,2,3],
+                             TMB = sabie_rtmb_model$rep$srv_sel[1,1,60,1,,2,3],
                              ADMB = tem_dat$agesel$srv2sel.m,
                              Type = "Coop LL Survey Male")
 

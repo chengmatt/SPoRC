@@ -289,9 +289,9 @@ run_projection <- function(sim_env, obj, reference_points, asmt_data, mp_config,
   )
 
   tmp_fish_sel <- array(
-    rep(obj$rep$fish_sel[, y, , , ], each = n_proj),
-    dim = c(asmt_data$n_regions, n_proj, length(asmt_data$ages),
-            asmt_data$n_sexes, asmt_data$n_fish_fleets)
+    rep(obj$rep$fish_sel[,, y,, , , ], each = n_proj),
+    dim = c(asmt_data$n_pop, asmt_data$n_regions, n_proj, asmt_data$n_seas,
+            length(asmt_data$ages),  asmt_data$n_sexes, asmt_data$n_fish_fleets)
   )
 
   tmp_natmort <- array(
@@ -419,7 +419,7 @@ tac_to_fmort <- function(sim_env, tmp_TAC, y, sim, assessment_years) {
         NAA = sim_env$NAA[1, r, y + 1, 1, , , sim],
         WAA = sim_env$WAA[1, r, y + 1, 1, , , sim],
         natmort = sim_env$natmort[1, r, y + 1, , , sim],
-        fish_sel = sim_env$fish_sel[r, y + 1, , , f, sim]
+        fish_sel = sim_env$fish_sel[1,r, y + 1, 1, , , f, sim]
       )
     },
     r = rf_grid$r,
@@ -890,12 +890,6 @@ sim_all <- list(rand = sim_res_rand) # combine scenarios
 # Process Results
 After simulations have been performed, we can extract results and summarize them for visualization. Below, we extract spawning stock biomass, recruitment, catch, fishing mortality rates. We then summarize these quantities across their time-series (and within each time point) as the median and their associated 95% simulation intervals.
 ```{r, eval = FALSE}
-# Process results
-ssb_results <- data.frame()
-rec_results <- data.frame()
-catch_results <- data.frame()
-f_results <- data.frame()
-
 for(i in 1:length(sim_all)) {
 
   # extract out recruitment scenario
@@ -1029,8 +1023,6 @@ period_summary <- ssb_results %>%
 We can visualize results using line and radar plots. Across MPs, trade-offs are apparent: under the `rand` recruitment scenario, catch remained stable, with lower harvest for capped MPs (**f40_hybrid**) and higher harvest for uncapped MPs. Spawning stock biomass was higher where harvest was lower, and catch AAV was lowest for capped MPs. Under the `crash` scenario, differences became larger: MPs with higher biomass reference points (e.g., **f40_hybrid**) reduced catch early, maintaining higher SSB (but at the cost of increased catch variability), while **f40_const** allowed higher catch during low recruitment but lower catch after recovery. Overall, **f40_hybrid** offered balanced trade-offs, supporting intermediate catch, improved spawning stock biomass, and reduced catch variability.
 
 ```{r, eval = FALSE}
-cols <- c("#E69F00", "#56B4E9", "#009E73", "#0072B2", "#D55E00", "#CC79A7") # colors
-
 # plot time series
 lineplot_with_legend <- ggplot() +
   geom_ribbon(sumry %>% filter(Year > 2024, !Type %in% c('Fishing Mortality', "Recruitment"), MP == 'f40_thresh'),
@@ -1041,8 +1033,8 @@ lineplot_with_legend <- ggplot() +
   geom_line(sumry %>% filter(Year < 2025, !Type %in% c('Fishing Mortality', "Recruitment")),
             mapping = aes(x = Year, y = median), lwd = 1.1, color = 'black') +
   geom_vline(xintercept = 2024.5, lty = 2, lwd = 1) +
-  scale_color_manual(values = cols) +
-  scale_fill_manual(values = cols) +
+  scale_color_manual(values = c("#E69F00", "#56B4E9", "#009E73", "#0072B2")) +
+  scale_fill_manual(values = c("#E69F00", "#56B4E9", "#009E73", "#0072B2")) +
   coord_cartesian(ylim = c(0, NA)) +
   ggh4x::facet_grid2(Scenario ~ Type, scales = "free", independent = "y") +
   theme_bw(base_size = 17) +
@@ -1075,7 +1067,7 @@ radar1 <- ggradar(
   gridline.min.colour = "gray60",
   gridline.mid.colour = "gray60",
   gridline.max.colour = "gray60",
-  group.colours = cols,
+  group.colours = c("#E69F00", "#56B4E9", "#009E73", "#0072B2"),
   legend.position = 'none'
 ) +
   theme(
@@ -1103,7 +1095,7 @@ radar2 <- ggradar(
   gridline.min.colour = "gray60",
   gridline.mid.colour = "gray60",
   gridline.max.colour = "gray60",
-  group.colours = cols,
+  group.colours = c("#E69F00", "#56B4E9", "#009E73", "#0072B2"),
   legend.position = 'none'
 ) +
   theme(

@@ -39,29 +39,29 @@ Setup_Sim_Rec(
 movement from age 1.}
 
 \item{sexratio_input}{Proportion of recruits assigned to each sex, array
-\code{[n_pop × n_regions × n_yrs × n_sexes × n_sims]}. Default: \code{1}
+\code{[n_pop x n_regions x n_yrs x n_sexes x n_sims]}. Default: \code{1}
 when \code{n_sexes = 1}; \code{0.5} per sex when \code{n_sexes = 2}.}
 
 \item{R0_input}{Unfished equilibrium recruitment array
-\code{[n_pop × n_regions × n_yrs × n_sims]}. Default: \code{10} for all
+\code{[n_pop x n_regions x n_yrs x n_sims]}. Default: \code{10} for all
 cells.}
 
 \item{h_input}{Beverton-Holt steepness array
-\code{[n_pop × n_regions × n_yrs × n_sims]}. Values should be in
+\code{[n_pop x n_regions x n_yrs x n_sims]}. Values should be in
 \eqn{(0.2, 1)}. Default: \code{0.8}.}
 
 \item{stray_rate_input}{Natal-homing stray rate array
-\code{[n_pop × n_yrs × n_sims]}. Proportion of individuals that stray
+\code{[n_pop x n_yrs x n_sims]}. Proportion of individuals that stray
 from their natal region during spawning. Default: \code{0} (No individuals stray).}
 
 \item{ln_sigmaR}{Log-scale standard deviation of recruitment deviations,
-array \code{[n_pop × n_regions]}. The first element controls the SD for
+array \code{[n_pop x n_regions]}. The first element controls the SD for
 initial age-structure deviations (\code{ln_InitDevs}); the second controls
 the SD for annual recruitment deviations (\code{ln_RecDevs}). Default:
 \code{log(1)} for both.}
 
 \item{rec_seas_prop_input}{Seasonal allocation of annual recruitment, array
-\code{[n_pop × n_seas × n_sims]}. Each population's values should sum to
+\code{[n_pop x n_seas x n_sims]}. Each population's values should sum to
 1 across seasons. Default: all recruitment assigned to season 1.}
 
 \item{recruitment_opt}{Recruitment model. Default \code{"bh_rec"}. Options:
@@ -119,14 +119,14 @@ of age-1 fish. Must be \eqn{\geq 1}; \code{0} is not permitted. Default
 \code{1}.}
 
 \item{Rec_input}{External recruitment array
-\code{[n_pop x n_regions × n_yrs × n_sims]}. Required when
+\code{[n_pop x n_regions x n_yrs x n_sims]}. Required when
 \code{recruitment_opt = "resample_from_input"}; projection years beyond
 the length of \code{Rec_input} are filled by resampling historical years
 with replacement. Ignored for other recruitment options. Default
 \code{NULL}.}
 
 \item{ln_InitDevs_input}{Optional log-scale initial age-structure deviations
-array \code{[n_pop × n_regions × (n_ages - 1) × n_sims]}. The
+array \code{[n_pop x n_regions x (n_ages - 1) x n_sims]}. The
 \code{n_ages - 1} dimension excludes the reference age used during
 initialisation. If \code{NULL} (default), deviations are initialised to
 zero.}

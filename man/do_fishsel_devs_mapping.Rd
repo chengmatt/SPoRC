@@ -7,7 +7,7 @@
 do_fishsel_devs_mapping(
   input_list,
   fish_sel_devs_spec,
-  fishsel_devs_shared_ages
+  fishsel_devs_shared_bins
 )
 }
 \arguments{
@@ -21,21 +21,21 @@ Options:
   \item{\code{"est_shared_r"}}{Shared across regions.}
   \item{\code{"est_shared_s"}}{Shared across sexes.}
   \item{\code{"est_shared_r_s"}}{Shared across regions and sexes.}
-  \item{\code{"est_shared_a"}}{Shared across age/bin groups defined by
-    \code{fishsel_devs_shared_ages}.}
-  \item{\code{"est_shared_r_a"}}{Shared across regions and age groups.}
-  \item{\code{"est_shared_a_s"}}{Shared across age groups and sexes.}
-  \item{\code{"est_shared_r_a_s"}}{Shared across regions, age groups, and sexes.}
+  \item{\code{"est_shared_b"}}{Shared across bin groups defined by
+    \code{fishsel_devs_shared_bins}.}
+  \item{\code{"est_shared_r_b"}}{Shared across regions and bin groups.}
+  \item{\code{"est_shared_b_s"}}{Shared across bin groups and sexes.}
+  \item{\code{"est_shared_r_b_s"}}{Shared across regions, bin groups, and sexes.}
   \item{\code{"est_shared_f_x"}}{Copy deviation map from fleet \code{x}.}
   \item{\code{"fix"} or \code{"none"}}{All deviations fixed at zero (mapped to \code{NA}).}
 }
-Age-sharing options (\code{"est_shared_a"}, etc.) are only valid with
+Bin-sharing options (\code{"est_shared_b"}, etc.) are only valid with
 semi-parametric time-varying forms (\code{cont_tv_fish_sel} is in \code{c(3,4,5)}).}
 
-\item{fishsel_devs_shared_ages}{List of integer vectors defining age/bin
-groupings for age-sharing options. Each element groups bins that share a
+\item{fishsel_devs_shared_bins}{List of integer vectors defining bin
+groupings for bin-sharing options. Each element groups bins that share a
 single deviation series, e.g., \code{list(1:5, 6:10, 11:30)}.
-Only used when \code{fish_sel_devs_spec} includes \code{"est_shared_a"}.}
+Only used when \code{fish_sel_devs_spec} includes \code{"est_shared_b"}.}
 }
 \value{
 The input \code{input_list} with \code{$map$ln_fishsel_devs} set to a
@@ -51,8 +51,8 @@ to age or length bins. Cells with no time-variation
 (\code{cont_tv_fish_sel == 0}) or no catch data are mapped to \code{NA}.
 }
 \details{
-Age-sharing (\code{"est_shared_a"} and related options) groups bins into
-blocks defined by \code{fishsel_devs_shared_ages}, reducing the number of
+Bin-sharing (\code{"est_shared_b"} and related options) groups bins into
+blocks defined by \code{fishsel_devs_shared_bins}, reducing the number of
 estimated deviation series. Fleet sharing (\code{"est_shared_f_x"}) is handled
 in a second pass. The resulting integer map is also stored as
 \code{$data$map_ln_fishsel_devs} for use in the RTMB objective function.

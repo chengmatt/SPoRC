@@ -239,9 +239,9 @@ run_projection <- function(sim_env, obj, reference_points, asmt_data, mp_config,
   )
 
   tmp_fish_sel <- array(
-    rep(obj$rep$fish_sel[, y, , , ], each = n_proj),
-    dim = c(asmt_data$n_regions, n_proj, length(asmt_data$ages),
-            asmt_data$n_sexes, asmt_data$n_fish_fleets)
+    rep(obj$rep$fish_sel[,, y,, , , ], each = n_proj),
+    dim = c(asmt_data$n_pop, asmt_data$n_regions, n_proj, asmt_data$n_seas,
+            length(asmt_data$ages),  asmt_data$n_sexes, asmt_data$n_fish_fleets)
   )
 
   tmp_natmort <- array(
@@ -357,7 +357,7 @@ tac_to_fmort <- function(sim_env, tmp_TAC, y, sim, assessment_years) {
         NAA = sim_env$NAA[1, r, y + 1, 1, , , sim],
         WAA = sim_env$WAA[1, r, y + 1, 1, , , sim],
         natmort = sim_env$natmort[1, r, y + 1, , , sim],
-        fish_sel = sim_env$fish_sel[r, y + 1, , , f, sim]
+        fish_sel = sim_env$fish_sel[1,r, y + 1, 1, , , f, sim]
       )
     },
     r = rf_grid$r,
@@ -820,8 +820,8 @@ mp_list <- list(
 
 # Run all management procedures in parallel
 set.seed(123)
-sim_res_rand <- run_parallel_simulations(mp_list, sim_list_rand, n_cores = 8)
-sim_res_crash <- run_parallel_simulations(mp_list, sim_list_crash, n_cores = 8)
+sim_res_rand <- run_parallel_simulations(mp_list, sim_list_rand, n_cores = 10)
+sim_res_crash <- run_parallel_simulations(mp_list, sim_list_crash, n_cores = 10)
 
 # combine scenarios
 sim_all <- list(
@@ -863,12 +863,12 @@ for(i in 1:length(sim_all)) {
 
     # get catch
     tmp_catch <- reshape2::melt(sim_tmp[[j]]$catch) %>%
-      rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4, Sim = Var5, cat = value) %>%
+      rename(Region = Var1, Year = Var2, Fleet = Var3, Sim = Var4, cat = value) %>%
       mutate(MP = sim_tmp[[j]]$mp_name,
              Scenario = names(sim_all)[i])
     # get f
     tmp_f <- reshape2::melt(sim_tmp[[j]]$fmort) %>%
-      rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4, Sim = Var5, f = value) %>%
+      rename(Region = Var1, Year = Var2, Fleet = Var3, Sim = Var4, f = value) %>%
       mutate(MP = sim_tmp[[j]]$mp_name,
              Scenario = names(sim_all)[i])
 
@@ -970,8 +970,6 @@ period_summary <- ssb_results %>%
   ) %>%
   mutate(MP = factor(MP, levels = c("f0", "f40_thresh", "f40_const", "f40_hybrid")))
 
-cols <- c("#E69F00", "#56B4E9", "#009E73", "#0072B2", "#D55E00", "#CC79A7") # colors
-
 # plot time series (without legend)
 lineplot_no_legend <- ggplot() +
   geom_ribbon(sumry %>% filter(Year > 2024, !Type %in% c('Fishing Mortality', "Recruitment"), MP == 'f40_thresh'),
@@ -1060,7 +1058,7 @@ radar1 <- ggradar(
   gridline.min.colour = "gray60",
   gridline.mid.colour = "gray60",
   gridline.max.colour = "gray60",
-  group.colours = cols,
+  group.colours = c("#E69F00", "#56B4E9", "#009E73", "#0072B2"),
   legend.position = 'none'
 ) +
   theme(
@@ -1088,7 +1086,7 @@ radar2 <- ggradar(
   gridline.min.colour = "gray60",
   gridline.mid.colour = "gray60",
   gridline.max.colour = "gray60",
-  group.colours = cols,
+  group.colours = c("#E69F00", "#56B4E9", "#009E73", "#0072B2"),
   legend.position = 'none'
 ) +
   theme(
@@ -1131,8 +1129,8 @@ lineplot_no_legend_filt <- ggplot() +
   geom_line(sumry %>% filter(Year < 2025, !Type %in% c('Fishing Mortality', "Recruitment"),  MP %in% c("f0", "f40_const", "f40_thresh", "f40_hybrid")),
             mapping = aes(x = Year, y = median), lwd = 1.1, color = 'black') +
   geom_vline(xintercept = 2024.5, lty = 2, lwd = 1) +
-  scale_color_manual(values = cols) +
-  scale_fill_manual(values = cols) +
+  scale_color_manual(values = c("#E69F00", "#56B4E9", "#009E73", "#0072B2")) +
+  scale_fill_manual(values = c("#E69F00", "#56B4E9", "#009E73", "#0072B2")) +
   coord_cartesian(ylim = c(0, NA)) +
   ggh4x::facet_grid2(Scenario ~ Type, scales = "free", independent = "y") +
   theme_bw(base_size = 17) +
@@ -1153,8 +1151,8 @@ lineplot_with_legend_filt <- ggplot() +
   geom_line(sumry %>% filter(Year < 2025, !Type %in% c('Fishing Mortality', "Recruitment"),  MP %in% c("f0", "f40_const", "f40_thresh", "f40_hybrid")),
             mapping = aes(x = Year, y = median), lwd = 1.1, color = 'black') +
   geom_vline(xintercept = 2024.5, lty = 2, lwd = 1) +
-  scale_color_manual(values = cols) +
-  scale_fill_manual(values = cols) +
+  scale_color_manual(values = c("#E69F00", "#56B4E9", "#009E73", "#0072B2")) +
+  scale_fill_manual(values = c("#E69F00", "#56B4E9", "#009E73", "#0072B2")) +
   coord_cartesian(ylim = c(0, NA)) +
   ggh4x::facet_grid2(Scenario ~ Type, scales = "free", independent = "y") +
   theme_bw(base_size = 17) +

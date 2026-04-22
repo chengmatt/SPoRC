@@ -33,12 +33,16 @@ sim_list <- Setup_Sim_Fishing(
   fish_sel_input = replicate(
     n = sim_list$n_sims,
     {
-      arr <- array(NA, dim = c(sim_list$n_regions, sim_list$n_yrs,
+      arr <- array(NA, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
                                sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets))
       for (r in 1:sim_list$n_regions)
         for (y in 1:sim_list$n_yrs)
           for (s in 1:sim_list$n_sexes) {
-            arr[r, y, , s, 1] <-  1 / (1 + exp(-1.5 * (1:sim_list$n_ages - 4)))
+            for(p in 1:sim_list$n_pop) {
+              for(seas in 1:sim_list$n_seas) {
+                arr[p,r, y,seas, , s, 1] <-  1 / (1 + exp(-1.5 * (1:sim_list$n_ages - 4)))
+              }
+            }
           }
       arr
     }
@@ -76,12 +80,17 @@ sim_list <- Setup_Sim_Survey(
   srv_sel_input = replicate(
     n = sim_list$n_sims,
     {
-      arr <- array(NA, dim = c(sim_list$n_regions, sim_list$n_yrs,
+      arr <- array(NA, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
                                sim_list$n_ages, sim_list$n_sexes, sim_list$n_srv_fleets))
       for (r in 1:sim_list$n_regions)
         for (y in 1:sim_list$n_yrs)
           for (s in 1:sim_list$n_sexes) {
-            arr[r, y, , s, 1] <-  1 / (1 + exp(-1 * (1:sim_list$n_ages - 2.5)))
+            for(p in 1:sim_list$n_pop) {
+              for(seas in 1:sim_list$n_seas) {
+                arr[p,r, y,seas, , s, 1] <-  1 / (1 + exp(-1 * (1:sim_list$n_ages - 2.5)))
+
+              }
+            }
           }
       arr
     }
@@ -226,27 +235,26 @@ sim_list <- Setup_Sim_Rec(
 
 
 ## Simulate Data -----------------------------------------------------------
-sim_obj <- Simulate_Pop_Static(sim_list = sim_list, output_path = NULL) # get simulated datasets
-
+sim_pop_obj <- Simulate_Pop_Static(sim_list = sim_list, output_path = NULL) # get simulated datasets
 
 # Define Estimation Model -------------------------------------------------
-setup_em <- function(sim_obj, sim, use_pop_specific_cat_comps) {
+setup_em <- function(sim_pop_obj, sim, use_pop_specific_cat_comps) {
 
   # Extract simulation data for current year and replicate
-  sim_data <- simulation_data_to_SPoRC(sim_env = sim_obj, y = sim_obj$n_yrs, sim = sim)
+  sim_data <- simulation_data_to_SPoRC(sim_env = sim_pop_obj, y = sim_pop_obj$n_yrs, sim = sim)
 
   # Setup model dimensions
   input_list <- Setup_Mod_Dim(
-    years = 1:sim_obj$n_years,
-    ages = 1:sim_obj$n_ages,
-    lens = sim_obj$n_lens,
-    n_regions = sim_obj$n_regions,
-    n_sexes = sim_obj$n_sexes,
-    n_fish_fleets = sim_obj$n_fish_fleets,
-    n_srv_fleets = sim_obj$n_srv_fleets,
-    n_seas = sim_obj$n_seas,
-    n_pop = sim_obj$n_pop,
-    seasdur = sim_obj$seasdur,
+    years = 1:sim_pop_obj$n_years,
+    ages = 1:sim_pop_obj$n_ages,
+    lens = sim_pop_obj$n_lens,
+    n_regions = sim_pop_obj$n_regions,
+    n_sexes = sim_pop_obj$n_sexes,
+    n_fish_fleets = sim_pop_obj$n_fish_fleets,
+    n_srv_fleets = sim_pop_obj$n_srv_fleets,
+    n_seas = sim_pop_obj$n_seas,
+    n_pop = sim_pop_obj$n_pop,
+    seasdur = sim_pop_obj$seasdur,
     natal_region = c(1,1,2),
     verbose = FALSE
   )
@@ -259,8 +267,8 @@ setup_em <- function(sim_obj, sim, use_pop_specific_cat_comps) {
     equil_init_age_strc = "stoch_all", # estimating all intial age deviations
 
     # spawning dynamics
-    spawn_seas = sim_obj$spawn_seas,
-    t_spawn = sim_obj$t_spawn,
+    spawn_seas = sim_pop_obj$spawn_seas,
+    t_spawn = sim_pop_obj$t_spawn,
 
     rec_model = "bh_rec",
     sigmaR_spec = "fix",
@@ -502,7 +510,7 @@ setup_em <- function(sim_obj, sim, use_pop_specific_cat_comps) {
 # Run EM w/ single sim ------------------------------------------------------------------
 
 # setup EM (w/o pop-specific data)
-input_list <- setup_em(sim_obj, sim = 1, use_pop_specific_cat_comps = FALSE)
+input_list <- setup_em(sim_pop_obj, sim = 1, use_pop_specific_cat_comps = FALSE)
 
 # extract data, pars, and mapping
 data <- input_list$data
@@ -514,7 +522,7 @@ non_pop_obj <- fit_model(data, pars, map, NULL, 3, silent =F, do_optim = T)
 non_pop_obj$sd_rep <- sdreport(non_pop_obj)
 
 # setup EM (w/ pop-specific data)
-input_list <- setup_em(sim_obj, sim = 1, use_pop_specific_cat_comps = TRUE)
+input_list <- setup_em(sim_pop_obj, sim = 1, use_pop_specific_cat_comps = TRUE)
 
 # extract data, pars, and mapping
 data <- input_list$data
@@ -530,7 +538,7 @@ pop_obj$sd_rep <- sdreport(pop_obj)
 # SSB Comparison
 ssb_comp <- rbind(reshape2::melt(non_pop_obj$rep$SSB) %>% mutate(type = 'no_pop_data', se = non_pop_obj$sd_rep$sd[names( non_pop_obj$sd_rep$value) == 'log_SSB'] ),
                   reshape2::melt(pop_obj$rep$SSB) %>% mutate(type = 'pop_data', se = pop_obj$sd_rep$sd[names( pop_obj$sd_rep$value) == 'log_SSB']),
-                  reshape2::melt(sim_obj$SSB[,,,1]) %>% mutate(type = 'truth',  se = NA)) %>%
+                  reshape2::melt(sim_pop_obj$SSB[,,,1]) %>% mutate(type = 'truth',  se = NA)) %>%
   rename(Pop = Var1, Region = Var2, Year = Var3) %>%
   mutate(Pop = paste("Pop", Pop), Region = paste("Region", Region))
 
@@ -555,7 +563,7 @@ dev.off()
 # Recruitment Comparison
 rec_comp <- rbind(reshape2::melt(non_pop_obj$rep$Rec) %>% mutate(type = 'no_pop_data', se = non_pop_obj$sd_rep$sd[names( non_pop_obj$sd_rep$value) == 'log_Rec'] ),
                   reshape2::melt(pop_obj$rep$Rec) %>% mutate(type = 'pop_data', se = pop_obj$sd_rep$sd[names( pop_obj$sd_rep$value) == 'log_Rec']),
-                  reshape2::melt(sim_obj$Rec[,,,1]) %>% mutate(type = 'truth',  se = NA)) %>%
+                  reshape2::melt(sim_pop_obj$Rec[,,,1]) %>% mutate(type = 'truth',  se = NA)) %>%
   rename(Pop = Var1, Region = Var2, Year = Var3) %>%
   mutate(Pop = paste("Pop", Pop), Region = paste("Region", Region))
 
@@ -602,26 +610,26 @@ run_sims <- function(sims = 50,
     tryCatch({
 
       # simulate single sim
-      sim_obj    <- Simulate_Pop_Static(sim_list = sim_list_1, output_path = NULL)
+      sim_pop_obj    <- Simulate_Pop_Static(sim_list = sim_list_1, output_path = NULL)
 
       # get EM data
-      input_list <- setup_em(sim_obj, sim = 1,
+      input_list <- setup_em(sim_pop_obj, sim = 1,
                              use_pop_specific_cat_comps = use_pop_specific_cat_comps)
 
       # fit model
-      obj <- fit_model(input_list$data, input_list$par, input_list$map,
+      pop_obj <- fit_model(input_list$data, input_list$par, input_list$map,
                        NULL, 3, silent = TRUE, do_optim = TRUE)
 
       # get sdreport
-      obj$sd_rep <- RTMB::sdreport(obj)
+      pop_obj$sd_rep <- RTMB::sdreport(pop_obj)
 
-      # output object
+      # output pop_object
       list(
-        em_Rec    = obj$rep$Rec,
-        em_SSB    = obj$rep$SSB,
-        om_Rec    = sim_obj$Rec[,,, 1],
-        om_SSB    = sim_obj$SSB[,,, 1],
-        max_grad  = max(abs(obj$gr(obj$opt$par)))
+        em_Rec    = pop_obj$rep$Rec,
+        em_SSB    = pop_obj$rep$SSB,
+        om_Rec    = sim_pop_obj$Rec[,,, 1],
+        om_SSB    = sim_pop_obj$SSB[,,, 1],
+        max_grad  = max(abs(pop_obj$gr(pop_obj$opt$par)))
       )
 
     }, error = function(e) {
@@ -666,8 +674,8 @@ tidy_bias <- function(em_arr, om_arr, quantity, model_type) {
 }
 
 # Run Sims ----------------------------------------------------------------
-non_pop_obj <- run_sims(50,sim_list, n_cores = 16, use_pop_specific_cat_comps = FALSE) # no population-specific data
-pop_obj <- run_sims(50,sim_list, n_cores = 16, use_pop_specific_cat_comps = TRUE) # population-specific data
+non_pop_obj <- run_sims(50, sim_list, n_cores = 16, use_pop_specific_cat_comps = FALSE) # no population-specific data
+pop_obj <- run_sims(50, sim_list, n_cores = 16, use_pop_specific_cat_comps = TRUE) # population-specific data
 
 # Plot Sim Results --------------------------------------------------------
 df_all <- bind_rows(
@@ -720,7 +728,3 @@ ggplot(df_summary %>% filter(quantity == 'Recruitment'), aes(x = year, colour = 
   theme_bw(base_size = 15) +
   theme(legend.position = 'top')
 dev.off()
-
-
-
-

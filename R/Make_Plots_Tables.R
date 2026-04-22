@@ -254,7 +254,18 @@ get_selex_plot <- function(rep, model_names, Selex_Type = 'age', year_indx = NUL
                       length = rep[[i]]$srv_sel_l)
 
     # Define helper for reshaping and annotating
-    reshape_and_annotate <- function(df, model) {
+    reshape_and_annotate_age <- function(df, model) {
+      reshape2::melt(df) %>%
+        dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Bin = Var5, Sex = Var6, Fleet = Var7) %>%
+        dplyr::mutate(Pop = paste('Pop', Pop),
+                      Seas = paste('Seas', Seas),
+                      Region = paste("Region", Region),
+                      Fleet  = paste("Fleet", Fleet),
+                      Sex    = paste("Sex", Sex),
+                      Model  = model)
+    }
+
+    reshape_and_annotate_len <- function(df, model) {
       reshape2::melt(df) %>%
         dplyr::rename(Region = Var1, Year = Var2, Bin = Var3, Sex = Var4, Fleet = Var5) %>%
         dplyr::mutate(Region = paste("Region", Region),
@@ -263,20 +274,29 @@ get_selex_plot <- function(rep, model_names, Selex_Type = 'age', year_indx = NUL
                       Model  = model)
     }
 
-    fishsel_plot_df <- rbind(fishsel_plot_df, reshape_and_annotate(fish_sel, model_names[i]))
-    srvsel_plot_df  <- rbind(srvsel_plot_df, reshape_and_annotate(srv_sel,  model_names[i]))
+    if(Selex_Type == 'age') {
+      fishsel_plot_df <- rbind(fishsel_plot_df, reshape_and_annotate_age(fish_sel, model_names[i]))
+      srvsel_plot_df  <- rbind(srvsel_plot_df, reshape_and_annotate_age(srv_sel,  model_names[i]))
+    } else {
+      fishsel_plot_df <- rbind(fishsel_plot_df, reshape_and_annotate_len(fish_sel, model_names[i]))
+      srvsel_plot_df  <- rbind(srvsel_plot_df, reshape_and_annotate_len(srv_sel,  model_names[i]))
+    }
   }
 
   if(is.null(year_indx)) year_indx <- max(fishsel_plot_df$Year)
 
   # fishery selectivity plot
+  # Set up facet based on selectivity type
+  if(Selex_Type == 'age') facet <- ggplot2::facet_grid(Pop + Sex ~ Region + Fleet + Seas)
+  if(Selex_Type == 'length') facet <- ggplot2::facet_grid(Sex ~ Region + Fleet)
+
   fish_sel_plot <- ggplot2::ggplot(
     fishsel_plot_df %>%
       dplyr::filter(Year %in% c(year_indx)),
     ggplot2::aes(x = Bin, y = value, group = interaction(Year, Model), color = Year)
   ) +
     ggplot2::geom_line(aes(linetype = factor(Model)), linewidth = 1.3, alpha = 0.8) +
-    ggplot2::facet_grid(Sex ~ Region + Fleet) +
+    facet +
     ggplot2::scale_color_viridis_c() +
     ggplot2::labs(x = 'Bin', y = 'Fishery selectivity', linetype = 'Model', color = 'Year') +
     ggplot2::coord_cartesian(ylim = c(0, NA)) +
@@ -290,7 +310,7 @@ get_selex_plot <- function(rep, model_names, Selex_Type = 'age', year_indx = NUL
     ggplot2::aes(x = Bin, y = value, group = interaction(Year, Model), color = Year)
   ) +
     ggplot2::geom_line(aes(linetype = factor(Model)), linewidth = 1.3, alpha = 0.8) +
-    ggplot2::facet_grid(Sex ~ Region + Fleet) +
+    facet +
     ggplot2::scale_color_viridis_c() +
     ggplot2::labs(x = 'Bin', y = 'Survey selectivity', linetype = 'Model', color = 'Year') +
     ggplot2::coord_cartesian(ylim = c(0, NA)) +
@@ -315,10 +335,6 @@ get_selex_plot <- function(rep, model_names, Selex_Type = 'age', year_indx = NUL
 #'   Must contain \code{Movement} and \code{natmort}.
 #' @param model_names Character vector of length \code{n_models} giving display
 #'   names for each model run. Used as colour legend labels across all plots.
-#' @param year_indx Integer giving the year index at which to slice biological
-#'   quantities for plotting. Defaults to the terminal year if \code{NULL}.
-#'   Movement plots show all seasons for the specified year; natural mortality,
-#'   weight-at-age, and maturity-at-age plots show all seasons via faceting.
 #'
 #' @return A list of four elements:
 #' \describe{

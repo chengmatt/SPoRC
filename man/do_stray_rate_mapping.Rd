@@ -16,11 +16,11 @@ One of:
 \describe{
   \item{\code{"fix"}}{All parameters fixed at starting values (mapped to
     \code{NA}).}
-  \item{\code{"est_all"}}{Estimate independently per population × block.
-    Produces \code{n_pop × n_unique_blocks} estimated parameters.}
+  \item{\code{"est_all"}}{Estimate independently per population x block.
+    Produces \code{n_pop x n_unique_blocks} estimated parameters.}
   \item{\code{"est_shared_pop"}}{Single parameter per block, shared across
     all populations. Requires identical block structures across all
-    populations — an error is raised if block indices differ.}
+    populations -- an error is raised if block indices differ.}
 }}
 }
 \value{
@@ -32,7 +32,7 @@ The input \code{input_list} with \code{$map$stray_rate_pars} set to
 \description{
 Internal helper called by \code{\link{Setup_Mod_Rec}} to construct the
 TMB/RTMB factor map for \code{stray_rate_pars}, the logit-scale stray rate
-parameters. The array has dimensions \code{[n_pop × max_stray_blocks]},
+parameters. The array has dimensions \code{[n_pop x max_stray_blocks]},
 where \code{max_stray_blocks} is the maximum number of time blocks across
 all populations as defined by \code{$data$stray_rate_blocks}.
 }
@@ -40,7 +40,7 @@ all populations as defined by \code{$data$stray_rate_blocks}.
 When \code{n_pop = 1}, straying is not applicable and all parameters are
 automatically fixed to \code{NA}. When \code{use_fixed_stray_rate = 1},
 the objective function reads from \code{fixed_stray_rate} directly and
-\code{stray_rate_pars} are not used — all elements are fixed regardless
+\code{stray_rate_pars} are not used -- all elements are fixed regardless
 of \code{stray_rate_spec}.
 }
 \keyword{internal}

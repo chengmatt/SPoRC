@@ -4,7 +4,7 @@
 \alias{do_srvsel_devs_mapping}
 \title{Map survey selectivity deviation parameters}
 \usage{
-do_srvsel_devs_mapping(input_list, srv_sel_devs_spec, srvsel_devs_shared_ages)
+do_srvsel_devs_mapping(input_list, srv_sel_devs_spec, srvsel_devs_shared_bins)
 }
 \arguments{
 \item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
@@ -23,13 +23,13 @@ the sharing structure for selectivity deviations. One of:
   \item{\code{"est_shared_s"}}{Shared across sexes; separate by region
     and bin.}
   \item{\code{"est_shared_r_s"}}{Shared across regions and sexes.}
-  \item{\code{"est_shared_a"}}{Shared across bin groups defined by
-    \code{srvsel_devs_shared_ages}. Semi-parametric forms only.}
-  \item{\code{"est_shared_r_a"}}{Shared across regions and bin groups.
+  \item{\code{"est_shared_b"}}{Shared across bin groups defined by
+    \code{srvsel_devs_shared_bins}. Semi-parametric forms only.}
+  \item{\code{"est_shared_r_b"}}{Shared across regions and bin groups.
     Semi-parametric forms only.}
-  \item{\code{"est_shared_a_s"}}{Shared across bin groups and sexes.
+  \item{\code{"est_shared_b_s"}}{Shared across bin groups and sexes.
     Semi-parametric forms only.}
-  \item{\code{"est_shared_r_a_s"}}{Shared across regions, bin groups,
+  \item{\code{"est_shared_r_b_s"}}{Shared across regions, bin groups,
     and sexes. Semi-parametric forms only.}
   \item{\code{"est_shared_f_x"}}{Copy the map from fleet \code{x}.
     Fleet \code{x} must not itself use \code{"est_shared_f_x"}.}
@@ -37,10 +37,10 @@ the sharing structure for selectivity deviations. One of:
     (mapped to \code{NA}).}
 }}
 
-\item{srvsel_devs_shared_ages}{List of integer vectors defining bin groups
+\item{srvsel_devs_shared_bins}{List of integer vectors defining bin groups
 for age/length sharing. Each element specifies the bin indices within one
 group (e.g., \code{list(1:5, 6:10, 11:30)}). Required when
-\code{srv_sel_devs_spec} includes \code{"est_shared_a"} or its
+\code{srv_sel_devs_spec} includes \code{"est_shared_b"} or its
 variants; ignored otherwise.}
 }
 \value{
@@ -61,8 +61,8 @@ functional form); for semi-parametric forms (3D GMRF, 2D AR1), it indexes
 age or length bins directly.
 }
 \details{
-Age-sharing options (\code{"est_shared_a"} and variants) are only valid for
-semi-parametric forms and require \code{srvsel_devs_shared_ages} to define
+Bin-sharing options (\code{"est_shared_b"} and variants) are only valid for
+semi-parametric forms and require \code{srvsel_devs_shared_bins} to define
 which bin groups share a common deviation. Fleet-sharing
 (\code{"est_shared_f_x"}) is handled in a second pass. Parameters are
 automatically fixed for fleets with no continuous time-variation or no

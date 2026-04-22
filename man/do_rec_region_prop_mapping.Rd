@@ -36,7 +36,7 @@ The input \code{input_list} with \code{$map$rec_region_prop_pars}
 Internal helper called by \code{\link{Setup_Mod_Rec}} to construct the
 TMB/RTMB factor map for \code{rec_region_prop_pars}, the logit-scale
 parameters controlling the proportion of recruits assigned to each region.
-The array has dimensions \code{[n_pop × (n_regions - 1)]}, using a
+The array has dimensions \code{[n_pop x (n_regions - 1)]}, using a
 sum-to-one soft-max parameterisation with one reference region omitted.
 }
 \details{

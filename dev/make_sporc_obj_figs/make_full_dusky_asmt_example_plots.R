@@ -622,7 +622,7 @@ pairs(mcmc)
 dev.off()
 
 png(here("vignettes", "figures", "o_mcmc_dens.png"), width = 1000, height = 800)
-plot_marginals(mcmc)
+plot_marginals(mcmc, pars = 'ln_srv_q')
 dev.off()
 
 png(here("vignettes", "figures", "o_mcmc_mle_comp.png"), width = 1000, height = 800)
@@ -736,7 +736,7 @@ terminal_NAA0 <- array(francis_model$rep$NAA0[,,length(francis_data$years),,,], 
 WAA <- array(rep(francis_data$WAA[,,length(francis_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # weight at age
 WAA_fish <- array(rep(francis_data$WAA[,,length(francis_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # weight at age for fishery
 MatAA <- array(rep(francis_data$MatAA[,,length(francis_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # maturity at age
-fish_sel <- array(rep(francis_model$rep$fish_sel[,length(francis_data$years),,,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_ages, n_sexes, n_fish_fleets)) # selectivity
+fish_sel <- array(rep(francis_model$rep$fish_sel[,,length(francis_data$years),,,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # selectivity
 Movement <- array(rep(francis_model$rep$Movement[,,,length(francis_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # movement - not used
 terminal_F <- array(francis_model$rep$Fmort[,length(francis_data$years),,], dim = c(n_regions, n_seas, n_fish_fleets)) # terminal F
 natmort <- array(rep(francis_model$rep$natmort[,,length(francis_data$years),,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_ages, n_sexes)) # natural mortaility

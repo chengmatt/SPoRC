@@ -49,8 +49,11 @@ input_list <- Setup_Mod_Rec(input_list = input_list, # input data list from abov
                             ln_sigmaR = array(log(c(0.4, 1.2)), dim = c(2, input_list$data$n_pop, input_list$data$n_regions)),
                             # values to fix sigmaR at, or starting values
                             ln_global_R0 = log(20),
+                            use_rec_region_prop_prior = 1,
+                            rec_region_prop_prior = data.frame(pop = 1, alpha = I(list(rep(3, input_list$data$n_regions)))),
                             # starting value for global R0
-                            rec_region_prop_pars = array(c(0.2, 0.2, 0.2, 0.2), dim = c(input_list$data$n_pop, input_list$data$n_regions - 1))
+                            rec_region_prop_pars = array(c(0.2, 0.2, 0.2, 0.2),
+                                                         dim = c(input_list$data$n_pop, input_list$data$n_regions - 1))
                             # starting value for R0 proportions in multinomial logit space
 )
 
@@ -128,13 +131,13 @@ input_list <- Setup_Mod_Tagging(input_list = input_list,
                                 # ages, and sexes
 
                                 # Model options
-                                conv_fish_tag_like = "NegBin", # Negative Binomial
+                                conv_fish_tag_like = "Multinomial_Release", # Negative Binomial
                                 conv_tag_mixing_period = 2, # Don't fit tagging until release year + 1
                                 conv_tag_t_tagging = 0.5, # tagging happens midway through the year,
                                 # movement does not occur within that year
                                 use_conv_tag_fishrep_prior = 1, # tag reporting rate priors are used
                                 conv_tag_fishrep_prior = tag_prior,
-                                conv_tag_age_pool = list(c(1:6), c(7:15), c(16:30)), # whether or
+                                conv_tag_age_pool = as.list(1:30), # whether or
                                 # not to pool tagging data when fitting (for computational cost)
                                 conv_tag_sex_pool = list(c(1:2)), # whether or not to pool
                                 # sex-specific data when fitting
@@ -245,6 +248,41 @@ input_list <- Setup_Mod_SrvIdx_and_Comps(input_list = input_list,
 )
 
 # Fishery Selectivity and Catchability
+
+# defining priors
+sex_par <- expand.grid(sex = 1:2, par = 1:2)
+fleet_blocks <- data.frame(
+  fleet = c(1, 2),
+  block = 1
+)
+
+# merge together (note that unlike the operational assessment, selectivity
+# blocks are reduced from 3 to 2)
+fish_selex_structure <- merge(fleet_blocks, sex_par)
+
+# Merge to get all valid combinations
+fish_selex_structure <- merge(fleet_blocks, sex_par) %>%
+  dplyr::filter(!(fleet == 1 & block == 1 & sex == 2 & par == 2)) %>%              # remove priors for any unestimated pars -- par1=a50, par2=delta; NEEDS TO MATCH PARAMETER MAPPING
+  dplyr::filter(!(fleet == 2 & block == 1 & sex == 2 & par == 1))                  # remove priors for any unestimated pars -- par1=a50, par2=delta; NEEDS TO MATCH PARAMETER MAPPING
+
+# Add the lognormal prior values - creates a dataframe, each row is a unique parameter combination to apply the prior to
+fish_selex_prior <- cbind(
+  region = 1,
+  fish_selex_structure,
+  mu = 2,                                                                      # All selex means = 1 (means should be defined in normal space)
+  sd = 3                                                                       # All selex sd = 5
+)
+
+fish_selex_prior_tf <- fish_selex_prior %>%                                    # set tighter selex prior for TF
+  dplyr::filter((fleet == 2 & par == 1)) %>%
+  dplyr::mutate(mu = 2, sd = 1) %>%
+  dplyr::full_join(fish_selex_prior %>%  dplyr::filter(!(fleet == 2 & par == 1 )))
+
+fish_selex_prior_tf <- fish_selex_prior_tf %>%                                    # set tighter selex prior for TF
+  dplyr::filter((fleet == 2 & par == 2)) %>%
+  dplyr::mutate(mu = 5, sd = 2) %>%
+  dplyr::full_join(fish_selex_prior_tf %>%  dplyr::filter(!(fleet == 2 & par == 2)))
+
 input_list <- Setup_Mod_Fishsel_and_Q(input_list = input_list,
 
                                       # Model options
@@ -253,69 +291,55 @@ input_list <- Setup_Mod_Fishsel_and_Q(input_list = input_list,
 
                                       # fishery selectivity blocks
                                       fish_sel_blocks =
-                                        c("Block_1_Year_1-56_Fleet_1",
-                                          # block 1, fishery ll selex
-                                          "Block_2_Year_57-terminal_Fleet_1",
-                                          # block 3 fishery ll selex
+                                        c("none_Fleet_1",
                                           "none_Fleet_2"),
                                       # no blocks for trawl fishery
 
                                       # fishery selectivity form
                                       fish_sel_model =
-                                        c("logist1_Fleet_1",
-                                          "gamma_Fleet_2"),
+                                        c("logist1_Fleet_1", "gamma_Fleet_2"),
 
                                       # fishery catchability blocks
                                       fish_q_blocks =
-                                        c("none_Fleet_1",
-                                          "none_Fleet_2"),
+                                        c("none_Fleet_1", "none_Fleet_2"),
                                       # no blocks since q is not estimated
 
-                                      # whether to estimate all fixed effects
-                                      # for fishery selectivity and later modify
-                                      # to fix and share parameters
-                                      fish_fixed_sel_pars_spec =
-                                        c("est_all", "est_all"),
+                                      # sharing fishery selex parameters
+                                      fish_fixed_sel_pars =
+                                        c("est_shared_r", "est_shared_r"),
 
                                       # whether to estimate all fixed effects
                                       # for fishery catchability
                                       fish_q_spec =
-                                        c("fix", "fix")
-                                      # fix fishery q since not used
+                                        c("fix", "fix"),
+                                      Use_fish_selex_prior = 1,
+                                      fish_selex_prior = fish_selex_prior
 )
 
 
-# Custom parameter sharing for fishery selectivity
-map_ln_fish_fixed_sel_pars <- input_list$par$ln_fish_fixed_sel_pars # mapping fishery selectivity
+# setup survey selectivity
+# Define sex and parameter combinations
+sex_par <- expand.grid(sex = 1:2, par = 1:2)
 
-# Fixed gear fleet, unique parameters for each sex (time block 1)
-map_ln_fish_fixed_sel_pars[,1,1,1,1] <- 1 # a50, female, time block 1, fixed gear
-map_ln_fish_fixed_sel_pars[,2,1,1,1] <- 2 # delta, female, time block 1, fixed gear
-# (shared with time block 2 and sex)
-map_ln_fish_fixed_sel_pars[,1,1,2,1] <- 3 # a50, male, time block 1, fixed gear
-map_ln_fish_fixed_sel_pars[,2,1,2,1] <- 2 # delta, male, time block 1, fixed gear
-# (shared with time block 2 and sex)
+# Define valid fleet-block combinations (only estimating domestic and jp LLS)
+fleet_blocks <- data.frame(
+  fleet = c(1, 2),
+  block = c(1, 1)
+)
 
-# time block 2, fixed gear fishery
-map_ln_fish_fixed_sel_pars[,1,2,1,1] <- 4 # a50, female, time block 2, fixed gear
-map_ln_fish_fixed_sel_pars[,2,2,1,1] <- 2 # delta, female, time block 2, fixed gear
-# (shared with time block 1 and sex)
-map_ln_fish_fixed_sel_pars[,1,2,2,1] <- 5 # a50, male, time block 2, fixed gear
-map_ln_fish_fixed_sel_pars[,2,2,2,1] <- 2 # delta, male, time block 2, fixed gear
-# (shared with time block 1 and sex)
+# Merge to get all valid combinations
+srv_selex_structure <- merge(fleet_blocks, sex_par)
 
-# time block 1 and 2, trawl gear fishery
-map_ln_fish_fixed_sel_pars[,1,1,1,2] <- 6 # amax, female, time block 1, trawl gear
-map_ln_fish_fixed_sel_pars[,2,1,1,2] <- 7 # delta, female, time block 1, trawl gear
-# (shared by sex)
-map_ln_fish_fixed_sel_pars[,1,1,2,2] <- 8 # amax, male, time block 1, trawl gear
-map_ln_fish_fixed_sel_pars[,2,1,2,2] <- 7 # delta, male, time block 1, trawl gear
-# (shared by sex)
-map_ln_fish_fixed_sel_pars[,,2,,2] <- NA # no parameters estimated for time block 2 trawl gear
-
-input_list$map$ln_fish_fixed_sel_pars <- factor(map_ln_fish_fixed_sel_pars) # input into map list
-input_list$par$ln_fish_fixed_sel_pars[,,,,1] <- log(3) # some more inforamtive starting values
-input_list$par$ln_fish_fixed_sel_pars[,,,,2] <- log(6) # some more inforamtive starting values
+# Add the lognormal prior values - creates a dataframe, each row is a unique parameter combination to apply the prior to
+srv_selex_prior <- cbind(
+  region = 1,
+  srv_selex_structure,
+  mu = 1,
+  sd = 5
+) %>%
+  filter(!(fleet == 2 & par == 2 & sex == 2)) %>%
+  mutate(mu = ifelse(fleet == 2, 2, mu),
+         sd = ifelse(fleet == 2, 3, sd))
 
 input_list <- Setup_Mod_Srvsel_and_Q(input_list = input_list,
 
@@ -323,65 +347,45 @@ input_list <- Setup_Mod_Srvsel_and_Q(input_list = input_list,
                                      # survey selectivity, whether continuous time-varying
                                      cont_tv_srv_sel =
                                        c("none_Fleet_1",
-                                         "none_Fleet_2"),
+                                         "none_Fleet_2"
+                                       ),
 
                                      # survey selectivity blocks
-                                     srv_sel_blocks =
+                                     srv_sel_blocks =                          # survey selectivity time blocks if not TV specified above for a given fleet
                                        c("none_Fleet_1",
-                                         "none_Fleet_2"
-                                       ), # no blocks for jp and domestic survey
+                                         "none_Fleet_2"                        # No blocks for JPN LLS
+                                       ),
 
                                      # survey selectivity form
                                      srv_sel_model =
                                        c("logist1_Fleet_1",
-                                         "logist1_Fleet_2"),
+                                         "logist1_Fleet_2"
+                                       ),
 
                                      # survey catchability blocks
                                      srv_q_blocks =
                                        c("none_Fleet_1",
-                                         "none_Fleet_2"),
+                                         "none_Fleet_2"
+                                       ),
 
                                      # whether to estiamte all fixed effects
                                      # for survey selectivity and later
                                      # modify to fix/share parameters
                                      srv_fixed_sel_pars_spec =
-                                       c("est_all",
-                                         "est_all"),
+                                       c("est_shared_r",
+                                         "est_shared_r"
+                                       ),
 
                                      # whether to estiamte all
                                      # fixed effects for survey catchability
                                      # spatially-invariant q
                                      srv_q_spec =
                                        c("est_shared_r",
-                                         "est_shared_r"),
-
-                                     # Starting values for survey catchability
-                                     ln_srv_q = array(8.75,
-                                                      dim = c(input_list$data$n_regions, 1,
-                                                              input_list$data$n_srv_fleets))
+                                         "est_shared_r"
+                                       ),
+                                     Use_srv_selex_prior = 1,
+                                     srv_selex_prior = srv_selex_prior
 )
-
-# Custom mapping survey selectivity stuff
-map_ln_srv_fixed_sel_pars <- input_list$par$ln_srv_fixed_sel_pars # set up mapping factor stuff
-
-# Coop survey (japanese)
-map_ln_srv_fixed_sel_pars[,1,1,1,1] <- 1 # a50, coop survey, time block 1, female
-map_ln_srv_fixed_sel_pars[,2,1,1,1] <- 2 # delta, coop survey, time block 1, female
-# (sharing with domestic survey)
-map_ln_srv_fixed_sel_pars[,1,1,2,1] <- 3 # a50, coop survey, time block 1, male
-map_ln_srv_fixed_sel_pars[,2,1,2,1] <- 4 # delta, coop survey, time block 1, male
-# (sharing with domestic survey)
-
-# domestic survey
-map_ln_srv_fixed_sel_pars[,1,1,1,2] <- 5 # a50, domestic survey, time block 1, female
-map_ln_srv_fixed_sel_pars[,2,1,1,2] <- 2 # delta, domestic survey, time block 1, female
-# (sharing with coop survey)
-map_ln_srv_fixed_sel_pars[,1,1,2,2] <- 6 # a50, domestic survey, time block 1, male
-map_ln_srv_fixed_sel_pars[,2,1,2,2] <- 4 # delta, domestic survey, time block 1, male
-# (sharing with coop survey)
-
-input_list$map$ln_srv_fixed_sel_pars <- factor(map_ln_srv_fixed_sel_pars)  # input into map list
-input_list$par$ln_srv_fixed_sel_pars[] <- log(3) # some more informative starting values
 
 # set up model weighting stuff
 input_list <- Setup_Mod_Weighting(input_list = input_list,
@@ -390,7 +394,7 @@ input_list <- Setup_Mod_Weighting(input_list = input_list,
                                   Wt_SrvIdx = 1,
                                   Wt_Rec = 1,
                                   Wt_F = 1,
-                                  Wt_Tagging = 1,
+                                  Wt_Tagging = 0.5,
                                   # Composition model weighting
                                   Wt_FishAgeComps =
                                     array(1, dim = c(input_list$data$n_regions,
@@ -422,8 +426,53 @@ input_list <- Setup_Mod_Weighting(input_list = input_list,
 data <- input_list$data
 parameters <- input_list$par
 mapping <- input_list$map
-data$t_srv[] = 0.5
 
+
+# Additional Model Specifications -----------------------------------------
+
+# Survey Ages (~100 total across all regions)
+data$ISS_SrvAgeComps[] <- 20
+
+# Fishery Ages
+data$ISS_FishAgeComps[1,,,,] <- 25  # BS
+data$ISS_FishAgeComps[2,,,,] <- 20  # AI
+data$ISS_FishAgeComps[3,,,,] <- 14  # WGOA
+data$ISS_FishAgeComps[4,,,,] <- 18  # CGOA
+data$ISS_FishAgeComps[5,,,,] <- 18  # EGOA
+
+# Fishery Lengths - Fixed Gear
+data$ISS_FishLenComps[1,,,,] <- 12  # BS
+data$ISS_FishLenComps[2,,,,] <- 12  # AI
+data$ISS_FishLenComps[3,,,,] <-  7  # WGOA
+data$ISS_FishLenComps[4,,,,] <-  7  # CGOA
+data$ISS_FishLenComps[5,,,,] <-  7  # EGOA
+
+# Fishery Lengths - Trawl Gear
+data$ISS_FishLenComps[1,,,,] <- 24  # BS
+data$ISS_FishLenComps[2,,,,] <- 8  # AI
+data$ISS_FishLenComps[3,,,,] <-  4  # WGOA
+data$ISS_FishLenComps[4,,,,] <-  4  # CGOA
+data$ISS_FishLenComps[5,,,,] <-  4  # EGOA
+
+# Map off early delta for fishery
+map_fish_fixed <- array(mapping$ln_fish_fixed_sel_pars, dim = dim(parameters$ln_fish_fixed_sel_pars))
+map_fish_fixed[,2,1,2,1]  <- map_fish_fixed[,2,1,1,1] # share deltas
+
+# Map off bmax for trawl females
+map_fish_fixed[,1,1,2,2]  <- map_fish_fixed[,1,1,1,2] # share deltas
+mapping$ln_fish_fixed_sel_pars <- factor(map_fish_fixed)
+
+# Map off delta for JP LLS
+map_srv_fixed <- array(mapping$ln_srv_fixed_sel_pars, dim = dim(parameters$ln_srv_fixed_sel_pars))
+map_srv_fixed[,2,1,2,2]  <- map_srv_fixed[,2,1,1,2] # share deltas
+mapping$ln_srv_fixed_sel_pars <- factor(map_srv_fixed)
+
+# Some starting values to help out the model
+parameters$ln_srv_fixed_sel_pars[] <- log(5)
+parameters$ln_fish_fixed_sel_pars[,,,,1] <- log(5) # fixed gear
+parameters$ln_fish_fixed_sel_pars[,,,,2] <- log(5) # trawl gear
+
+# make AD model function
 # Fit model
 st <- Sys.time()
 sabie_rtmb_model <- fit_model(data,
@@ -436,10 +485,8 @@ sabie_rtmb_model <- fit_model(data,
 en <- Sys.time()
 print(en - st)
 
-sabie_rtmb_model$sd_rep <- sdreport(sabie_rtmb_model)
-
+sd_rep <- sdreport(sabie_rtmb_model)
 rep <- sabie_rtmb_model$rep
-sd_rep <- sabie_rtmb_model$sd_rep
 
 saveRDS(data, here("dev", "dev_output", "5_Region_Model_Sablefish", "data.RDS"))
 saveRDS(sd_rep, here("dev", "dev_output", "5_Region_Model_Sablefish", "sd_rep.RDS"))
@@ -480,4 +527,7 @@ ggplot(ts_df, aes(x = Year, y = value, color = Region)) +
   theme_bw(base_size = 13) +
   theme(legend.position = 'none')
 dev.off()
+
+get_idx_fits_plot(list(data), list(rep), 1)
+get_selex_plot(list(rep), 1)
 

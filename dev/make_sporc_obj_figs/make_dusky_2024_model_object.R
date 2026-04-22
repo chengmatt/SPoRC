@@ -356,7 +356,7 @@ pred_fishsel <- pred_fishsel[!is.na(pred_fishsel)]
 
 fishsel_comp <- data.frame(
   Age = data$ages,
-  RTMB = dusky_rtmb_model$rep$fish_sel[1,1,,1,1],
+  RTMB = dusky_rtmb_model$rep$fish_sel[1,1,1,1,,1,1],
   ADMB = pred_fishsel,
   Type = 'Fishery Selectivity'
 )
@@ -366,7 +366,7 @@ pred_srvsel <- pred_srvsel[!is.na(pred_srvsel)]
 
 srvsel_comp <- data.frame(
   Age = data$ages,
-  RTMB = dusky_rtmb_model$rep$srv_sel[1,1,,1,1],
+  RTMB = dusky_rtmb_model$rep$srv_sel[1,1,1,1,,1,1],
   ADMB = pred_srvsel,
   Type = 'Survey Selectivity'
 )

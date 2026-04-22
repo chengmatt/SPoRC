@@ -33,10 +33,10 @@ The input \code{input_list} with \code{$map$ln_sigmaR} set to a
   receive sequential integer indices; fixed parameters are \code{NA}.
 }
 \description{
-Internal helper called by \code{\link{Setup_Mod_Recruitment}} to construct
+Internal helper called by \code{\link{Setup_Mod_Rec}} to construct
 the TMB/RTMB factor map for \code{ln_sigmaR}, the log-scale standard
 deviation of recruitment deviations. The \code{ln_sigmaR} array has
-dimensions \code{[2 × n_pop × n_regions]}, where the first index
+dimensions \code{[2 x n_pop x n_regions]}, where the first index
 distinguishes initial age-structure deviations (\code{i = 1}) from annual
 recruitment deviations (\code{i = 2}).
 }

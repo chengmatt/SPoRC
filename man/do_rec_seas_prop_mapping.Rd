@@ -24,7 +24,7 @@ non-\code{NULL}:
     \code{0} if it was previously \code{1}.}
   \item{\code{"fix"}}{All \code{rec_seas_prop_pars} fixed at their
     starting values (mapped to \code{NA}).}
-  \item{\code{NULL}}{Estimate all \code{n_pop × (n_seas - 1)} parameters
+  \item{\code{NULL}}{Estimate all \code{n_pop x (n_seas - 1)} parameters
     independently. Also resets \code{use_fixed_rec_seas_prop} to
     \code{0} if it was previously \code{1}.}
 }}
@@ -40,7 +40,7 @@ The input \code{input_list} with \code{$map$rec_seas_prop_pars}
 Internal helper called by \code{\link{Setup_Mod_Rec}} to construct the
 TMB/RTMB factor map for \code{rec_seas_prop_pars}, the logit-scale
 parameters controlling the proportion of annual recruitment assigned to
-each season. The array has dimensions \code{[n_pop × (n_seas - 1)]},
+each season. The array has dimensions \code{[n_pop x (n_seas - 1)]},
 using a sum-to-one soft-max parameterisation with one reference season
 omitted.
 }

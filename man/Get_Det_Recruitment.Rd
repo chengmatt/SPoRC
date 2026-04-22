@@ -92,7 +92,7 @@ when a single season is used and \code{n_pop > 1}.}
 
 \item{init_F}{Numeric vector (\code{n_seas}) of fishing mortality.}
 
-\item{fish_sel}{Matrix (\code{n_regions × n_ages}) of fishery selectivity.}
+\item{fish_sel}{Matrix (\code{n_pop x n_regions × n_seas x n_ages}) of fishery selectivity.}
 
 \item{n_seas}{Number of seasons per year.}
 

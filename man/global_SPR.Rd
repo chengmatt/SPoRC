@@ -23,7 +23,7 @@ global_SPR(pars, data)
   \item{\code{t_spawn}}{Numeric. Mid-season spawning timing correction.}
   \item{\code{F_fract_flt}}{Numeric array \code{[n_regions, n_seas, n_fish_fleets]}.
     Fleet F fractions by region.}
-  \item{\code{fish_sel}}{Numeric array \code{[n_regions, n_ages, n_fish_fleets]}.
+  \item{\code{fish_sel}}{Numeric array \code{[n_pop, n_regions, n_seas, n_ages, n_fish_fleets]}.
     Female fishery selectivity.}
   \item{\code{natmort}}{Numeric array \code{[n_pop, n_regions, n_ages]}.
     Female natural mortality.}

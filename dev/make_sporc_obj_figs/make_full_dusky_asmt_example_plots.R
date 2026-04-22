@@ -666,7 +666,9 @@ ggplot() +
 dev.off()
 
 # Reference Points and Projections -------------------------------------------------------------
-
+# Notes: To match assessment reference points exactly, need to make a few changes.
+# t_spawn = 2/12
+# calc_rec_st_yr = 5
 ### Reference Points --------------------------------------------------------
 
 # get reference points

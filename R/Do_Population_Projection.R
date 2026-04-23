@@ -90,6 +90,7 @@
 #'       by region.}
 #'     \item{`WAA`}{Reference weight-at-age, indexing the first year.}
 #'     \item{`MatAA`}{Reference maturity-at-age, indexing the first year.}
+#'     \item{`fish_sel`}{Reference fishery selectivity, indexing the first year and fleet (dominant fleet).}
 #'     \item{`natmort`}{Reference natural mortality, indexing the first year.}
 #'     \item{`SSB`}{Historical SSB array `[n_pop, n_regions, n_yrs]`.
 #'       Projection SSBs are appended internally.}
@@ -203,7 +204,7 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
   if(recruitment_opt == "bh_rec") {
     required_fields <- c("rec_dd", "rec_lag", "R0", "h", "rec_region_prop",
                          "WAA", "MatAA", "natmort", "SSB", "Movement",
-                         "sex_ratio_f", "stray_rate")
+                         "sex_ratio_f", "stray_rate", "fish_sel")
     diff <- setdiff(required_fields, names(bh_rec_opt)) # find difference
     if(length(diff) > 0) stop(paste("bh_rec_opt is missing the following required fields:", paste(diff)))
   }
@@ -285,7 +286,7 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
                                               t_spawn = t_spawn,
                                               sexratio_f = bh_rec_opt$sex_ratio_f,
                                               init_F = init_F,
-                                              fish_sel = array(fish_sel[,,1,,,1,1], dim = c(n_pop, n_regions, n_seas, n_ages))
+                                              fish_sel = bh_rec_opt$fish_sel
                           )
                         }
       )

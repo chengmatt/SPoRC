@@ -318,7 +318,8 @@ test_that("Multi-region, population, and seasonal local BH MSY reference points 
     sex_ratio_f = array(0.5, dim = c(n_pop, n_regions)),
     sgl_seas_spawning_movement = sgl_seas_spawning_movement[,,,1,,],
     stray_rate = array(0.5, dim = c(n_pop)),
-    natmort    = array(natmort[,,1,,], dim = c(n_pop, n_regions, n_ages))
+    natmort    = array(natmort[,,1,,], dim = c(n_pop, n_regions, n_ages)),
+    fish_sel = array(fish_sel[,,1,,,1,1], dim = c(n_pop, n_regions, n_seas, n_ages))
   )
 
 

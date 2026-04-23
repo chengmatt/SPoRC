@@ -91,7 +91,8 @@ test_that("Single Region BH MSY (mock) Reference Points Sablefish Model Converge
     sex_ratio_f = array(0.5, dim = c(sgl_rg_sable_data$n_pop, n_regions)),
     sgl_seas_spawning_movement = NULL,
     stray_rate = array(0, dim = c(sgl_rg_sable_data$n_pop)),
-    natmort = array(natmort[,,1,,1], dim = c(sgl_rg_sable_data$n_pop, sgl_rg_sable_data$n_regions, length(sgl_rg_sable_data$ages) ))
+    natmort = array(natmort[,,1,,1], dim = c(sgl_rg_sable_data$n_pop, sgl_rg_sable_data$n_regions, length(sgl_rg_sable_data$ages) )),
+    fish_sel = array(fish_sel[,,1,,,1,1], dim = c(sgl_rg_sable_data$n_pop, sgl_rg_sable_data$n_regions, sgl_rg_sable_data$n_seas, length(sgl_rg_sable_data$ages)))
   )
 
 

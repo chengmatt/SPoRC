@@ -130,7 +130,7 @@ three_ref_pt <- Get_Reference_Points(data = three_dat,
 n_sims <- 1
 t_spawn <- 0
 sexratio <- 0.5
-n_proj_yrs <- 500
+n_proj_yrs <- 30
 n_regions <- 3
 n_ages <- length(three_dat$ages)
 n_sexes <- three_dat$n_sexes
@@ -170,7 +170,8 @@ bh_rec_opt <- list(
   sgl_seas_spawning_movement = three_dat$sgl_seas_spawning_movement[,,,1,,],
   stray_rate = array(1, dim = c(1)),
   # rec_seas_prop = rec_seas_prop,
-  natmort = array(natmort[,,1,,1], dim = c(1, 3, 30))
+  natmort = array(natmort[,,1,,1], dim = c(1, 3, 30)),
+  fish_sel = array(fish_sel[,,1,1,,1,1], dim = c(1,3,1,30))
 
 )
 
@@ -225,7 +226,7 @@ five_ref_pt <- Get_Reference_Points(data = five_dat,
 n_sims <- 1
 t_spawn <- 0
 sexratio <- 0.5
-n_proj_yrs <- 500
+n_proj_yrs <- 30
 n_regions <- 5
 n_ages <- length(five_dat$ages)
 n_sexes <- five_dat$n_sexes

@@ -368,7 +368,8 @@ test_that("Multi-region, population, and seasonal local BH MSY reference points 
                                   sgl_seas_spawning_movement = sgl_seas_spawning_movement,
                                   stray_rate = stray_rate,
                                   seasdur = seasdur,
-                                  bh_rec_opt = bh_rec_opt
+                                  bh_rec_opt = bh_rec_opt,
+                                  init_F = sim_pop_obj$init_F
   )
 
   # Check if F equilibriates back at F40%
@@ -381,8 +382,6 @@ test_that("Multi-region, population, and seasonal local BH MSY reference points 
   # Check to see if SSB equilibriates
   expect_equal(round(as.numeric(out$proj_SSB[,,n_proj_yrs]), 10),
                round(as.numeric(out$proj_SSB[,,n_proj_yrs-1]), 10), tolerance = 0)
-
-
 
 
 })

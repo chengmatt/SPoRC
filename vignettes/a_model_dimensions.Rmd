@@ -240,6 +240,7 @@ Region-aggregated observations (summed across populations) and population-specif
 | `map_ln_fishsel_devs` | Array dimensioned by `n_regions`, `n_years`, `n_ages`, `n_sexes`, `n_fish_fleets` indicating which continuous time-varying selectivity deviation values are fixed (mapped off) |
 | `Use_fish_selex_prior` | Integer (0 or 1). Flag to enable log-normal priors on fishery selectivity parameters as specified in `fish_selex_prior` |
 | `fish_selex_prior` | Data frame containing prior specifications for fishery selectivity parameters. Must include columns: `region`, `fleet`, `block`, `sex`, `par` (parameter index), `mu` (prior mean on natural scale), and `sd` (prior standard deviation on log scale). Each row specifies a log-normal prior for one selectivity parameter |
+| `fishsel_devs_min_shared_bins` | Integer vector specifying the reference (minimum) bin index within each shared deviation group, used to subset the bin dimension when evaluating GMRF or 2D AR(1) likelihoods (PE models 3--5). Defaults to `1:n_ages` when no bin sharing is specified |
 
 ## Data Inputs for Defining Survey Selectivity and Catchability
 
@@ -255,6 +256,7 @@ Region-aggregated observations (summed across populations) and population-specif
 | `map_ln_srvsel_devs` | Array dimensioned by `n_regions`, `n_years`, `n_ages`, `n_sexes`, `n_srv_fleets` indicating which continuous time-varying selectivity deviation values are fixed (mapped off) |
 | `Use_srv_selex_prior` | Integer (0 or 1). Flag to enable log-normal priors on survey selectivity parameters as specified in `srv_selex_prior` |
 | `srv_selex_prior` | Data frame containing prior specifications for survey selectivity parameters. Must include columns: `region`, `fleet`, `block`, `sex`, `par` (parameter index), `mu` (prior mean on natural scale), and `sd` (prior standard deviation on log scale). Each row specifies a log-normal prior for one selectivity parameter |
+| `srvsel_devs_min_shared_bins` | Integer vector specifying the reference (minimum) bin index within each shared deviation group, used to subset the bin dimension when evaluating GMRF or 2D AR(1) likelihoods (PE models 3--5). Defaults to `1:n_ages` when no bin sharing is specified |
 
 ## Data Inputs for Defining Model Weighting
 

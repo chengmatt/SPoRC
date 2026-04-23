@@ -386,6 +386,7 @@ ggplot(ts_comp) +
   geom_line(aes(x = Year, y = (RTMB - ADMB) / ADMB), size = 1) +
   geom_hline(yintercept = 0, lty = 2, size = 1.3) +
   scale_y_continuous(labels = scales::percent) +
+  # coord_cartesian(ylim = c(-0.005,0.005)) +
   facet_wrap(~Type, scales = "free_y") +
   labs(y = "Relative difference (%)") +
   theme_sablefish()

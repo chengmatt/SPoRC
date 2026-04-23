@@ -3214,6 +3214,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
   input_list$data$Use_fish_q_prior <- Use_fish_q_prior
   input_list$data$Use_fish_selex_prior <- Use_fish_selex_prior
   input_list$data$fish_selex_prior <- fish_selex_prior
+  input_list$data$fishsel_devs_min_shared_bins <- if(!is.null(fishsel_devs_shared_bins)) unlist(lapply(fishsel_devs_shared_bins, min)) else 1:length(input_list$data$ages)
 
   # Populate Parameter List -------------------------------------------------
 

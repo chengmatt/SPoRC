@@ -10,7 +10,8 @@ Get_sel_PE_loglik(
   ln_devs,
   map_sel_devs,
   sel_vals,
-  do_sel_pen
+  do_sel_pen,
+  min_sel_devs_shared_bins
 )
 }
 \arguments{
@@ -55,6 +56,11 @@ used on the log scale when computing bin and year smoothness penalties
 beyond the process error likelihood. For models 1--2, penalizes first differences
 of log-deviations across years. For models 3--5, penalizes second differences
 (curvature) of log-selectivity across bins and across years.}
+
+\item{min_sel_devs_shared_bins}{Integer vector. Indices of the reference (minimum) bin
+within each shared deviation group, used to subset the bin dimension when
+evaluating GMRF or 2D AR(1) likelihoods (PE models 3-5). When no bin sharing
+is specified, defaults to \code{1:n_bins} (i.e., all bins are included).}
 }
 \value{
 Numeric scalar: the positive log-likelihood contribution from selectivity

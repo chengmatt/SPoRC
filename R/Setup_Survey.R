@@ -2766,7 +2766,7 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
   input_list$data$Use_srv_selex_prior <- Use_srv_selex_prior
   input_list$data$srv_selex_prior <- srv_selex_prior
   input_list$data$t_srv <- t_srv
-
+  input_list$data$srvsel_devs_min_shared_bins <- if(!is.null(srvsel_devs_shared_bins)) unlist(lapply(srvsel_devs_shared_bins, min)) else 1:length(input_list$data$ages)
 
   # Populate Parameter List -------------------------------------------------
   # Figure out number of selectivity parameters for a given functional form

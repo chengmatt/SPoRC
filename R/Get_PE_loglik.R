@@ -64,6 +64,10 @@
 #'   beyond the process error likelihood. For models 1--2, penalizes first differences
 #'   of log-deviations across years. For models 3--5, penalizes second differences
 #'   (curvature) of log-selectivity across bins and across years.
+#' @param min_sel_devs_shared_bins Integer vector. Indices of the reference (minimum) bin
+#'   within each shared deviation group, used to subset the bin dimension when
+#'   evaluating GMRF or 2D AR(1) likelihoods (PE models 3-5). When no bin sharing
+#'   is specified, defaults to \code{1:n_bins} (i.e., all bins are included).
 #'
 #' @return Numeric scalar: the positive log-likelihood contribution from selectivity
 #'   process error. Negated externally to form the negative log-likelihood.
@@ -75,7 +79,8 @@ Get_sel_PE_loglik <- function(PE_model,
                               ln_devs,
                               map_sel_devs,
                               sel_vals,
-                              do_sel_pen
+                              do_sel_pen,
+                              min_sel_devs_shared_bins
                               ) {
 
   "c" <- RTMB::ADoverload("c")
@@ -146,16 +151,17 @@ Get_sel_PE_loglik <- function(PE_model,
 
       # Construct precision matrix for 3d gmrf
       if(PE_model %in% c(3,4)) {
-        Q = Get_3d_precision(n_ages = n_bins, # number of ages
+        Q = Get_3d_precision(n_ages = n_bins[min_sel_devs_shared_bins], # number of ages
                              n_yrs = n_yrs,  # number of years
                              pcorr_age = PE_pars[1,1,s,1], # unconstrained partial correlation by age
                              pcorr_year = PE_pars[1,2,s,1], # unconstrained partial correlation by year
                              pcorr_cohort = PE_pars[1,3,s,1], # unconstrained partial correlation by cohort
                              ln_var_value = PE_pars[1,4,s,1], # log variance
-                             Var_Type = Var_Type) # variance type, == 0 (marginal), == 1 (conditional)
+                             Var_Type = Var_Type
+                             ) # variance type, == 0 (marginal), == 1 (conditional)
 
         # apply gmrf likelihood
-        eps_ay = as.vector(t(ln_devs[1,,,s,1])) # convert to vector
+        eps_ay = as.vector(t(ln_devs[1,,min_sel_devs_shared_bins,s,1])) # convert to vector
         ll = ll + RTMB::dgmrf(x = eps_ay, mu = 0, Q = Q, log = TRUE)
       } # end if
 
@@ -165,7 +171,7 @@ Get_sel_PE_loglik <- function(PE_model,
         rho_trans = function(x) 2/(1+ exp(-2 * x)) - 1
 
         # Extract out varaibles and transform into appropriate space
-        eps_ya = ln_devs[1,,,s,1] # needs to be in matrix format for dseparable
+        eps_ya = ln_devs[1,,min_sel_devs_shared_bins,s,1] # needs to be in matrix format for dseparable
         rho_b = rho_trans(PE_pars[1,1,s,1]) # correlation across bins
         rho_y = rho_trans(PE_pars[1,2,s,1]) # correlation across years
         sigma2 = exp(PE_pars[1,4,s,1])^2 # get sigma

@@ -1408,7 +1408,9 @@ SPoRC_rtmb = function(pars, data) {
                                                 ln_devs = ln_fishsel_devs[r,,,,f, drop = FALSE], # extract out process error deviations for a given fleet
                                                 map_sel_devs = map_ln_fishsel_devs[r,,,,f, drop = FALSE],
                                                 sel_vals = tmp_sel_vals,
-                                                do_sel_pen = cont_tv_fish_sel_penalty
+                                                do_sel_pen = cont_tv_fish_sel_penalty,
+                                                min_sel_devs_shared_bins = fishsel_devs_min_shared_bins
+
         )
       } # end if
 
@@ -1435,7 +1437,9 @@ SPoRC_rtmb = function(pars, data) {
                                                 ln_devs = ln_srvsel_devs[r,,,,sf, drop = FALSE], # extract out process error deviations for a given fleet
                                                 map_sel_devs = map_ln_srvsel_devs[r,,,,sf, drop = FALSE],
                                                 sel_vals = tmp_sel_vals,
-                                                do_sel_pen = cont_tv_srv_sel_penalty
+                                                do_sel_pen = cont_tv_srv_sel_penalty,
+                                                min_sel_devs_shared_bins = srvsel_devs_min_shared_bins
+
         )
       } # end if
 

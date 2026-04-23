@@ -105,7 +105,7 @@
 #' @param seasdur Numeric vector `[n_seas]`. Duration of each season as a
 #'   fraction of the year. Default = equal fractions.
 #' @param spawn_seas Integer. Spawning season index. Default = 1.
-#' @param init_F Numeric vector `[n_seas]`. Initial seasonal F values used
+#' @param init_F Numeric array `[n_regions x n_seas x n_fish_fleets]`. Initial seasonal F values used
 #'   when deriving Beverton-Holt equilibrium quantities.
 #' @param natal_region Integer vector `[n_pop]`. Index of the natal region
 #'   for each population. Used to map populations to their spawning regions
@@ -193,7 +193,7 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
                                        rec_seas_prop[] <- 1 / n_seas
                                        rec_seas_prop
                                      },
-                                     init_F = rep(0, n_seas)
+                                     init_F = array(0, dim = c(n_regions, n_seas, n_fish_fleets))
                                      ) {
 
 
@@ -286,6 +286,7 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
                                               t_spawn = t_spawn,
                                               sexratio_f = bh_rec_opt$sex_ratio_f,
                                               init_F = init_F,
+                                              n_fish_fleets = n_fish_fleets,
                                               fish_sel = bh_rec_opt$fish_sel
                           )
                         }

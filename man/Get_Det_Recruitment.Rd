@@ -16,6 +16,7 @@ Get_Det_Recruitment(
   n_pop,
   n_regions,
   n_ages,
+  n_fish_fleets,
   WAA,
   MatAA,
   natmort,
@@ -68,6 +69,8 @@ proportions.}
 
 \item{n_ages}{Number of age classes (including the plus group).}
 
+\item{n_fish_fleets}{Integer. Number of fishery fleets.}
+
 \item{WAA}{Array (\code{n_pop × n_regions × n_seas × n_ages}) of weight-at-age.}
 
 \item{MatAA}{Array (\code{n_pop × n_regions × n_seas × n_ages}) of maturity-at-age.}
@@ -90,9 +93,9 @@ when a single season is used and \code{n_pop > 1}.}
 
 \item{t_spawn}{Fraction of the spawning season that occurs before spawning.}
 
-\item{init_F}{Numeric vector (\code{n_seas}) of fishing mortality.}
+\item{init_F}{Array (\code{n_regions × n_seas × n_fish_fleets}) of initial fishing mortality.}
 
-\item{fish_sel}{Matrix (\code{n_pop x n_regions × n_seas x n_ages}) of fishery selectivity.}
+\item{fish_sel}{Array (\code{n_pop x n_regions × n_seas x n_ages x n_fish_fleets}) of fishery selectivity.}
 
 \item{n_seas}{Number of seasons per year.}
 

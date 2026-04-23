@@ -42,7 +42,7 @@ Do_Population_Projection(
     rec_seas_prop[] <- 1/n_seas
      rec_seas_prop
  },
-  init_F = rep(0, n_seas)
+  init_F = array(0, dim = c(n_regions, n_seas, n_fish_fleets))
 )
 }
 \arguments{
@@ -160,6 +160,7 @@ Must contain:
     by region.}
   \item{`WAA`}{Reference weight-at-age, indexing the first year.}
   \item{`MatAA`}{Reference maturity-at-age, indexing the first year.}
+  \item{`fish_sel`}{Reference fishery selectivity, indexing the first year and fleet (dominant fleet).}
   \item{`natmort`}{Reference natural mortality, indexing the first year.}
   \item{`SSB`}{Historical SSB array `[n_pop, n_regions, n_yrs]`.
     Projection SSBs are appended internally.}
@@ -181,7 +182,7 @@ fraction of the year. Default = equal fractions.}
 \item{rec_seas_prop}{Array `[n_pop, n_seas]`. Proportion of annual
 recruitment entering in each season.}
 
-\item{init_F}{Numeric vector `[n_seas]`. Initial seasonal F values used
+\item{init_F}{Numeric array `[n_regions x n_seas x n_fish_fleets]`. Initial seasonal F values used
 when deriving Beverton-Holt equilibrium quantities.}
 }
 \value{

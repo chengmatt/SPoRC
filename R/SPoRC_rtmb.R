@@ -94,7 +94,10 @@ SPoRC_rtmb = function(pars, data) {
   pred_conv_tag_fish_recap = array(data = 0, dim = c(conv_tag_max_liberty, n_seas, n_conv_tag_cohorts, n_pop, n_regions, n_ages, n_sexes, n_fish_fleets)) # predicted recaptures
 
   # Fishery Processes
-  init_F = init_F_prop * exp(ln_F_mean[1]) # initial F for age structure
+  catch_flag_base = array(UseCatch[,1,,], dim = c(n_regions, n_seas, n_fish_fleets))
+  catch_flag_pop = apply(UseCatch_pop[,,1,,,drop = FALSE], c(2,4,5), max)
+  catch_flag = pmax(catch_flag_base, catch_flag_pop)
+  init_F = init_F_prop * exp(ln_F_mean) * catch_flag # initial F for age structure
   Fmort = array(0, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets)) # Fishing mortality scalar
   FAA = array(data = 0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # Fishing mortality at age
   CAA = array(data = 0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # Catch at age
@@ -144,7 +147,7 @@ SPoRC_rtmb = function(pars, data) {
   Movement_nLL = 0 # Penalty for movement rates
   TagRep_nLL = 0 # penalty for tag reporting rate
   rec_prop_nLL = # penalty / prior for recruitment proportions
-    jnLL = 0 # Joint negative log likelihood
+  jnLL = 0 # Joint negative log likelihood
 
   # Model Process Equations -------------------------------------------------
   ## Movement Parameters (Set up) --------------------------------------------
@@ -418,6 +421,7 @@ SPoRC_rtmb = function(pars, data) {
     n_sexes = n_sexes, # sexes
     n_ages = n_ages, # ages
     n_seas = n_seas, # seasons
+    n_fish_fleets = n_fish_fleets, # fleets
     seasdur = seasdur, # seasonal duration
     rec_seas_prop = rec_seas_prop,
     natmort = array(natmort[,,1,,], dim = c(n_pop, n_regions, n_ages, n_sexes)), # natural mortality in first year
@@ -438,11 +442,12 @@ SPoRC_rtmb = function(pars, data) {
     n_regions = n_regions, # regions
     n_sexes = n_sexes, # sexes
     n_ages = n_ages, # ages
+    n_fish_fleets = n_fish_fleets, # fleets
     n_seas = n_seas, # seasons
     seasdur = seasdur, # seasonal duration
     rec_seas_prop = rec_seas_prop,
     natmort = array(natmort[,,1,,], dim = c(n_pop, n_regions, n_ages, n_sexes)), # natural mortality in first year
-    init_F = rep(0, n_seas), # initial F applied (0 for unfished)
+    init_F = array(0, dim = c(n_regions, n_seas, n_fish_fleets)), # initial F applied (0 for unfished)
     fish_sel = array(fish_sel[,,1,,,,], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets)), # fishery selectivity in first year
     R0_r = R0_r, # regional mean or virgin recruitment
     sexratio = array(sexratio[,,1,], dim = c(n_pop, n_regions, n_sexes)), # sex ratio in first year
@@ -486,8 +491,9 @@ SPoRC_rtmb = function(pars, data) {
                                       spawn_seas = spawn_seas,
                                       seasdur = seasdur,
                                       rec_lag = rec_lag,
+                                      n_fish_fleets = n_fish_fleets,
                                       init_F = init_F, # initF for dominant fleet
-                                      fish_sel = array(fish_sel[,,1,,,1,1], dim = c(n_pop, n_regions, n_seas, n_ages)) # uses dominant fleet
+                                      fish_sel = array(fish_sel[,,1,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets))
     )
 
     for(p in 1:n_pop) {

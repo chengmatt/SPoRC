@@ -47,7 +47,7 @@ input_list <- Setup_Mod_Rec(input_list = input_list, # input data list from abov
                             InitDevs_spec = NULL, # estimate all initial deviations
                             RecDevs_spec = NULL, # stiamte all recruitment deivations
                             init_age_strc = 1,
-                            init_F_prop = 0.1
+                            init_F_prop = array(0.1, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
 )
 
 # Specificying natural mortality fixed array
@@ -273,13 +273,13 @@ sabie_rtmb_model$sd_rep <- RTMB::sdreport(sabie_rtmb_model)
 rep <- sabie_rtmb_model$rep
 sd_rep <- sabie_rtmb_model$sd_rep
 
-saveRDS(data, here("dev", "dev_output", "1_Region_Model_Sablefish", "data.RDS"))
-saveRDS(sd_rep, here("dev", "dev_output", "1_Region_Model_Sablefish", "sd_rep.RDS"))
-saveRDS(rep, here("dev", "dev_output", "1_Region_Model_Sablefish", "rep.RDS"))
-
-# Write Region Sablefish Report
-sgl_rg_sable_rep <- rep
-usethis::use_data(sgl_rg_sable_rep, internal = FALSE, overwrite = TRUE)
+# saveRDS(data, here("dev", "dev_output", "1_Region_Model_Sablefish", "data.RDS"))
+# saveRDS(sd_rep, here("dev", "dev_output", "1_Region_Model_Sablefish", "sd_rep.RDS"))
+# saveRDS(rep, here("dev", "dev_output", "1_Region_Model_Sablefish", "rep.RDS"))
+#
+# # Write Region Sablefish Report
+# sgl_rg_sable_rep <- rep
+# usethis::use_data(sgl_rg_sable_rep, internal = FALSE, overwrite = TRUE)
 
 # Compare to ADMB (23.5b) -------------------------------------------------
 # Read in data

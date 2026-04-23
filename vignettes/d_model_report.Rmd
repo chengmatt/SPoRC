@@ -39,7 +39,7 @@ The following tables describe all elements contained within `obj$rep`, which is 
 ## Fishery Processes
 | Name              | Description                                                                      | Dimensions                                                                                    |
 | ----------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `init_F`          | Initial fishing mortality applied to equilibrium age structure                   | `n_seas`                                                                                      |
+| `init_F`          | Initial fishing mortality applied to equilibrium age structure                   | `n_regions x n_seas x n_fish_fleets`                                                                                      |
 | `ln_sigmaC`       | Log-scale standard deviation for the region-aggregated catch likelihood          | `n_regions × n_years × n_seas × n_fish_fleets`                                               |
 | `ln_sigmaC_pop`   | Log-scale standard deviation for the population-specific catch likelihood        | `n_pop × n_regions × n_years × n_seas × n_fish_fleets`                                       |
 | `Fmort`           | Fishing mortality scalar                                                         | `n_regions × n_years × n_seas × n_fish_fleets`                                               |

@@ -37,7 +37,7 @@ use_build_ignore("dev")
 usethis::use_build_ignore("_pkgdown.yml")
 
 # Check, Build & Install --------------------------------------------------
-devtools::build_vignettes() # making sure vignetes build
+test()
 check()
 build()
 install()
@@ -66,7 +66,7 @@ unloadNamespace("SPoRC")
 # usethis::use_vignette("r_natal-homing-pop-lrgr-rg")
 
 
-# Unit Tests --------------------------------------------------------------
+# Integration Tests --------------------------------------------------------------
 # devtools::test()
 
 # usethis::use_testthat()

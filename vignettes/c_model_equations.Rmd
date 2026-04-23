@@ -54,38 +54,38 @@ In `SPoRC`, three primary methods exist to initialize the equilibrium
 population of the model. The first method derives the equilibrium
 population using the following process:
 
-$$\begin{matrix}
-N_{p,r,a,s}^{'} = \mu_p^{\text{Rec}}\exp\left( - (a - 1) \cdot Z_{p,r,a,s}^{'} \right)\psi_{p,r,y = 1,s}\zeta_{p,r},\quad\text{for }2 \leq a < a_{+} \\
-\end{matrix}$$
+$$N_{p,r,a,s}^{'} = \mu_p^{\text{Rec}}\exp\left( - (a - 1) \cdot Z_{p,r,a,s}^{'} \right)\psi_{p,r,y = 1,s}\zeta_{p,r},\quad\text{for }2 \leq a < a_{+}$$
 
-$$Z_{p,r,a,s}^{'} = \text{Natmort}_{p,r,y = 1,a,s} + \mu_{r,\tau = 1,f = 1}^{\text{Fsh}}\text{Fmort}^{\text{InitProp}}\text{Sel}_{p,r,y = 1,\tau,a,s,f = 1}^{\text{Fsh}}$$
+$$Z_{p,r,a,s}^{'} = \text{Natmort}_{p,r,y = 1,a,s} + \sum_{f=1}^{n_f} \text{Fmort}^{\text{InitProp}} \cdot \exp\left(\mu_{r,\tau,f}^{\text{Fsh}}\right) \cdot \mathbb{1}_{r,\tau,f}^{\text{Catch}} \cdot \text{Sel}_{p,r,y = 1,\tau,a,s,f}^{\text{Fsh}}$$
 
 where:
 
--   $N_{r,a,s}^{'}$ are the equilibrium numbers-at-age,
--   $\mu^{\text{Rec}}$ is a global recruitment parameter (either virgin
+-   $N_{p,r,a,s}^{'}$ are the equilibrium numbers-at-age,
+-   $\mu_p^{\text{Rec}}$ is a global recruitment parameter (either virgin
     or mean recruitment depending on the parameterization of stock
     recruitment dynamics),
--   $Z_{r,a,s}^{'}$ is the initial instantaneous total mortality rate,
--   $\text{Natmort}_{r,y = 1,a,s}$ is the instantaneous natural
+-   $Z_{p,r,a,s}^{'}$ is the initial instantaneous total mortality rate,
+-   $\text{Natmort}_{p,r,y = 1,a,s}$ is the instantaneous natural
     mortality rate,
--   $\mu_{r,f = 1}^{\text{Fsh}}$ is the mean fishing mortality rate from
-    the first fleet ($f$ denotes fishery fleet),
--   $\text{Fmort}^{\text{InitProp}}$ is a user-defined value describing
-    the proportion of the mean fishing mortality from the first fleet
-    applied during the initialization stage,
--   $\text{Sel}_{p,r,y = 1,\tau,a,s,f = 1}^{\text{Fsh}}$ is the fishery
-    selectivity-at-age for the first fleet,
--   $\psi_{r,y,s}$ describes the recruitment sex-ratio,
--   $\zeta_{r}$ apportions the global recruitment parameter across
+-   $\mu_{r,\tau,f}^{\text{Fsh}}$ is the log-mean fishing mortality rate
+    for fleet $f$ in region $r$ and season $\tau$,
+-   $\text{Fmort}^{\text{InitProp}}$ is a user-defined scalar describing
+    the proportion of the mean fishing mortality applied uniformly across
+    all fleets during the initialization stage,
+-   $\mathbb{1}_{r,\tau,f}^{\text{Catch}}$ is an indicator variable equal
+    to 1 if fleet $f$ is active in region $r$ and season $\tau$ in year 1,
+    and 0 otherwise,
+-   $\text{Sel}_{p,r,y = 1,\tau,a,s,f}^{\text{Fsh}}$ is the fishery
+    selectivity-at-age for fleet $f$,
+-   $n_f$ is the number of fishing fleets,
+-   $\psi_{p,r,y,s}$ describes the recruitment sex-ratio,
+-   $\zeta_{p,r}$ apportions the global recruitment parameter across
     regions (estimated using a multinomial logit transform to ensure
     proportions sum to one).
 
 The plus group ($a_{+}$) of the initial population is then computed as:
 
-$$\begin{matrix}
-N_{r,a_{+},s}^{'} = N_{r,a_{+} - 1,s}^{'}\dfrac{\exp\left( - Z_{r,a = a_{+} - 1,s}^{'} \right)}{1 - \exp\left( Z_{r,a = a_{+},s}^{'} \right)} \\
-\end{matrix}$$
+$$N_{p,r,a_{+},s}^{'} = N_{p,r,a_{+} - 1,s}^{'}\dfrac{\exp\left( - Z_{p,r,a = a_{+} - 1,s}^{'} \right)}{1 - \exp\left( - Z_{p,r,a = a_{+},s}^{'} \right)}$$
 
 However, this scalar geometric series solution assumes that the plus
 group accumulates in a closed system. Therefore, when movement dynamics

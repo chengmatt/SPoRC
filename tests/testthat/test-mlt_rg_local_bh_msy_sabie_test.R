@@ -89,7 +89,7 @@ test_that("Multi Region Local BH MSY (mock) Reference Points Sablefish Model Con
     sgl_seas_spawning_movement = NULL,
     stray_rate = array(0, dim = c(mlt_rg_sable_data$n_pop)),
     natmort = array(natmort[,,1,,1], dim = c(mlt_rg_sable_data$n_pop, mlt_rg_sable_data$n_regions, length(mlt_rg_sable_data$ages) )),
-    fish_sel = array(fish_sel[,,1,,,1,1], dim = c(mlt_rg_sable_data$n_pop, mlt_rg_sable_data$n_regions, mlt_rg_sable_data$n_seas, length(mlt_rg_sable_data$ages)))
+    fish_sel = array(fish_sel[,,1,,,1,], dim = c(mlt_rg_sable_data$n_pop, mlt_rg_sable_data$n_regions, mlt_rg_sable_data$n_seas, length(mlt_rg_sable_data$ages), mlt_rg_sable_data$n_fish_fleets))
   )
 
   # do projection

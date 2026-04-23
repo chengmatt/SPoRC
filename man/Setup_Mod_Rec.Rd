@@ -31,7 +31,8 @@ Setup_Mod_Rec(
   dont_est_recdev_last = 0,
   init_age_strc = 2,
   equil_init_age_strc = 1,
-  init_F_prop = rep(0, input_list$data$n_seas),
+  init_F_prop = array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas,
+    input_list$data$n_fish_fleets)),
   sigmaR_spec = "est_all",
   InitDevs_spec = NULL,
   RecDevs_spec = NULL,
@@ -174,9 +175,9 @@ initialisation. Default \code{1}.
     including the plus group.}
 }}
 
-\item{init_F_prop}{Numeric vector \code{[n_seas]}. Seasonal distribution of
-fishing mortality applied during equilibrium initialisation. Default:
-zero for all seasons.}
+\item{init_F_prop}{Numeric array \code{[n_regions x n_seas x n_fish_fleets]}. Seasonal distribution of
+fishing mortality applied during equilibrium initialisation by fleet. Default:
+zero for all seasons and fleets.}
 
 \item{sigmaR_spec}{Character. Estimation structure for \eqn{\sigma_R},
 stored in \code{ln_sigmaR} \code{[2 x n_pop x n_regions]}, where index

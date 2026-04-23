@@ -12,6 +12,7 @@ Get_Init_NAA(
   n_sexes,
   n_ages,
   n_seas,
+  n_fish_fleets,
   seasdur,
   rec_seas_prop,
   natmort,
@@ -46,30 +47,33 @@ Get_Init_NAA(
 
 \item{n_seas}{Integer; number of seasons per year.}
 
+\item{n_fish_fleets}{Integer; number of fishing fleets.}
+
 \item{seasdur}{Numeric vector (\code{n_seas}) giving the fraction of the year
 represented by each season.}
 
-\item{rec_seas_prop}{Matrix (\code{n_pop × n_seas}) giving seasonal recruitment
+\item{rec_seas_prop}{Matrix (\code{n_pop x n_seas}) giving seasonal recruitment
 proportions.}
 
-\item{natmort}{Array (\code{n_pop × n_regions × n_ages × n_sexes}) of natural
+\item{natmort}{Array (\code{n_pop x n_regions x n_ages x n_sexes}) of natural
 mortality rates.}
 
-\item{init_F}{Numeric vector (\code{n_seas}) giving fishing mortality applied
-in each season during initialization. Set to zero for an unfished population.}
+\item{init_F}{Numeric array (\code{n_regions x n_seas x n_fish_fleets})
+giving fishing mortality applied in each region, season, and fleet during
+initialization. Set to zero for an unfished population.}
 
 \item{fish_sel}{Array
-(\code{n_pop x n_regions x n_seas × n_ages × n_sexes × fleets}) of fishery selectivity.
-Only fleet 1 is used during initialization.}
+(\code{n_pop x n_regions x n_seas x n_ages x n_sexes x n_fish_fleets})
+of fishery selectivity at age.}
 
-\item{R0_r}{Matrix (\code{n_pop × n_regions}) giving unfished recruitment
+\item{R0_r}{Matrix (\code{n_pop x n_regions}) giving unfished recruitment
 allocated to each region.}
 
-\item{sexratio}{Array (\code{n_pop × n_regions × n_sexes}) giving the
+\item{sexratio}{Array (\code{n_pop x n_regions x n_sexes}) giving the
 proportion of recruits by sex.}
 
 \item{Movement}{Array
-(\code{n_pop × origin × destination × n_seas × n_ages × n_sexes})
+(\code{n_pop x origin x destination x n_seas x n_ages x n_sexes})
 containing seasonal movement probabilities.}
 
 \item{do_recruits_move}{Integer indicator:
@@ -78,7 +82,7 @@ containing seasonal movement probabilities.}
 \item \code{1} Recruits move according to the movement matrix
 }}
 
-\item{ln_InitDevs}{Array (\code{n_pop × n_regions × (n_ages - 1)}) containing
+\item{ln_InitDevs}{Array (\code{n_pop x n_regions x (n_ages - 1)}) containing
 log-scale deviations applied to ages 2 through \eqn{A}.}
 }
 \description{
@@ -132,6 +136,12 @@ The plus group accumulates survivors from the terminal age:
 N_{A^+} =
 N_{A-1} e^{-Z_{A-1}} +
 N_{A^+} e^{-Z_{A^+}}
+}
+
+Fishing mortality at age is computed by summing across all fleets:
+
+\deqn{
+F_{p,r,s,a} = \sum_{f=1}^{n_f} F^{init}_{r,s,f} \times sel_{p,r,s,a,f}
 }
 
 ### Scalar geometric-series solution

@@ -1166,9 +1166,9 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   n_regions x (n_ages - 1)]}. Default \code{NULL} (estimate all
 #'   independently). See \code{\link{do_InitDevs_mapping}} for full option
 #'   descriptions.
-#' @param init_F_prop Numeric vector \code{[n_seas]}. Seasonal distribution of
-#'   fishing mortality applied during equilibrium initialisation. Default:
-#'   zero for all seasons.
+#' @param init_F_prop Numeric array \code{[n_regions x n_seas x n_fish_fleets]}. Seasonal distribution of
+#'   fishing mortality applied during equilibrium initialisation by fleet. Default:
+#'   zero for all seasons and fleets.
 #'
 #' @param rec_region_prop_spec Character or \code{NULL}. Regional recruitment
 #'   dispersal structure. Default \code{NULL} (estimate all proportions
@@ -1349,7 +1349,7 @@ Setup_Mod_Rec <- function(input_list,
                           dont_est_recdev_last = 0,
                           init_age_strc = 2,
                           equil_init_age_strc = 1,
-                          init_F_prop = rep(0, input_list$data$n_seas),
+                          init_F_prop = array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets)),
                           sigmaR_spec = "est_all",
                           InitDevs_spec = NULL,
                           RecDevs_spec = NULL,

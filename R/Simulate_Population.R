@@ -753,6 +753,7 @@ generate_initial_age_structure <- function(y,
       n_sexes = n_sexes, # sexes
       n_ages = n_ages, # ages
       n_seas = n_seas, # seasons
+      n_fish_fleets = n_fish_fleets, # number of fishery fleets
       seasdur = seasdur,  # fracion of time in season
       natmort = array(natmort[,,1,,,sim], dim = c(n_pop, n_regions, n_ages, n_sexes)), # natural mortality in first year
       init_F = init_F, # initial F applied (0 for unfished)
@@ -774,8 +775,9 @@ generate_initial_age_structure <- function(y,
       n_sexes = n_sexes, # sexes
       n_ages = n_ages, # ages
       natmort = array(natmort[,,1,,,sim], dim = c(n_pop, n_regions, n_ages, n_sexes)), # natural mortality in first year
-      init_F = rep(0, n_seas), # initial F applied (0 for unfished)
+      init_F = array(0, dim = c(n_regions, n_seas, n_fish_fleets)), # initial F applied (0 for unfished)
       n_seas = n_seas, # seasons
+      n_fish_fleets = n_fish_fleets, # number of fishery fleets
       seasdur = seasdur,  # fracion of time in season
       rec_seas_prop = array(rec_seas_prop[,,sim], dim = c(n_pop, n_seas)), # recruitment seasonal apportionment
       fish_sel = array(fish_sel[,,1,,,,,sim], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets)), # fishery selectivity in first year
@@ -857,13 +859,14 @@ generate_recruitment <- function(y,
                                        Movement = array(Movement[,,,1,,,1,sim], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
                                        sgl_seas_spawning_movement = array(sgl_seas_spawning_movement[,,,1,,1,sim], dim = c(n_pop, n_regions, n_regions, n_ages)),
                                        SSB_vals = array(SSB[,,,sim], dim = c(n_pop, n_regions, n_yrs)),
+                                       n_fish_fleets = n_fish_fleets,
                                        t_spawn = t_spawn,
                                        n_seas = n_seas,
                                        spawn_seas = spawn_seas,
                                        seasdur = seasdur,
                                        do_recruits_move = do_recruits_move,
                                        init_F = init_F, # initial F applied
-                                       fish_sel = array(fish_sel[,,1,,,1,1,sim], dim = c(n_pop, n_regions, n_seas, n_ages)) # fishery selectivity in first year
+                                       fish_sel = array(fish_sel[,,1,,,1,,sim], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)) # fishery selectivity in first year
     )
 
 

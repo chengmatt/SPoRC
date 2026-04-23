@@ -319,7 +319,7 @@ test_that("Multi-region, population, and seasonal local BH MSY reference points 
     sgl_seas_spawning_movement = sgl_seas_spawning_movement[,,,1,,],
     stray_rate = array(0.5, dim = c(n_pop)),
     natmort    = array(natmort[,,1,,], dim = c(n_pop, n_regions, n_ages)),
-    fish_sel = array(fish_sel[,,1,,,1,1], dim = c(n_pop, n_regions, n_seas, n_ages))
+    fish_sel = array(fish_sel[,,1,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets))
   )
 
 
@@ -370,10 +370,6 @@ test_that("Multi-region, population, and seasonal local BH MSY reference points 
                                   seasdur = seasdur,
                                   bh_rec_opt = bh_rec_opt
   )
-
-  out$proj_SSB[1,1,1]
-  sim_pop_obj$SSB[1,1,30,1]
-
 
   # Check if F equilibriates back at F40%
   expect_equal(as.numeric(out$proj_F[,n_proj_yrs]), as.numeric(ref_pts$f_ref_pt), tolerance = 0)

@@ -12,7 +12,7 @@
 #' @param ln_sigmaC_pop Numeric array. Observation SD for population-specific catch (log-scale),
 #'   dimensions `n_pop x n_regions x n_yrs x n_seas x n_fish_fleets`. Default: log(0.02).
 #' @param catch_units Numeric vector. Units for catch (0 = abundance, 1 = biomass). Default: 1.
-#' @param init_F_val Numeric vector. Initial fishing mortality by season (`n_seas`). Default: 0.
+#' @param init_F_val Numeric array Initial fishing mortality by season and fleet (`n_regions x n_seas x n_fish_fleets`). Default: 0.
 #' @param Fmort_input Numeric array. Fishing mortality pattern,
 #'   dimensions `n_pop x n_regions x n_yrs x n_seas x n_seas x n_fish_fleets x n_sims`. Default: 0.1.
 #' @param fish_sel_input Numeric array. Fishery selectivity,
@@ -86,7 +86,7 @@ Setup_Sim_Fishing <- function(sim_list,
                               ln_sigmaC = array(log(0.02), dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
                               ln_sigmaC_pop = array(log(0.02), dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
                               catch_units = array(1, dim = c(sim_list$n_fish_fleets)),
-                              init_F_val = rep(0, sim_list$n_seas),
+                              init_F_val = array(0, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_fish_fleets)),
                               Fmort_input = array(0.1, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets, sim_list$n_sims)),
                               fish_sel_input,
                               fish_q_input = array(1, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_fish_fleets, sim_list$n_sims)),

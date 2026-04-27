@@ -21,7 +21,7 @@ The `SPoRC` package offers multiple approaches for modeling fish movement betwee
 
 The following demonstrations use the three region sablefish dataset as a basis (`three_rg_sable_data`). The initial setup establishes the general model dimensions. Note that `n_pop = 1` and `n_seas = 1` are specified here, but movement can be configured for multi-population and multi-season models in an analogous fashion.
 
-```{r setup, message = FALSE, eval = TRUE}
+```{r setup, message = FALSE, eval = FALSE}
 # Load in packages
 library(SPoRC) 
 data("three_rg_sable_data") # load in data
@@ -46,7 +46,7 @@ Like previous vignettes, the `Setup_Mod_Dim()` function initializes the model st
 
 In the simplest case, movement can be parameterized as an unstructured Markov model (`move_type = 0`), where movement parameters are constant across model partitions and are estimated as discrete transitions between regions. This results in `n_regions × (n_regions - 1)` parameters estimated.
 
-```{r}
+```{r, eval = FALSE}
 # Setup movement
 input_list <- Setup_Mod_Movement(
   input_list = input_list,
@@ -60,7 +60,7 @@ length(unique(input_list$map$move_pars)) # number of parameters estimated
 
 The unstructured Markov model can be extended to incorporate blocking structures, with parameter sharing within blocks to reduce parameter load. In the following, we specify an unstructured Markov model with 2 age blocks, but constant movement across years and sexes. This results in `n_regions × (n_regions - 1) × 2` parameters estimated.
 
-```{r}
+```{r, eval = FALSE}
 # define age blocks
 age_blk <- list(c(1:15), c(16:30))
 age_blk
@@ -82,7 +82,7 @@ length(unique(input_list$map$move_pars)) # number of parameters estimated
 
 Year blocks can be specified in a similar fashion. Here, 5 year blocks are specified, resulting in `n_regions × (n_regions - 1) × 5` parameters estimated.
 
-```{r}
+```{r, eval = FALSE}
 # define year blocks
 yr_blk <- list(c(1:15), c(16:30), c(31:45), c(46:60), c(61:62))
 yr_blk
@@ -104,7 +104,7 @@ length(unique(input_list$map$move_pars)) # number of parameters estimated
 
 Sex blocks are specified similarly. The following example shows sex-specific movement, resulting in `n_regions × (n_regions - 1) × n_sexes` parameters estimated.
 
-```{r}
+```{r, eval = FALSE}
 # define sex blocks
 sx_blk <- as.list(1:2)
 sx_blk
@@ -124,7 +124,7 @@ input_list <- Setup_Mod_Movement(
 
 Building on the principles described above, movement blocks can also be defined simultaneously across ages, years, and sexes. The example below specifies two age blocks, five year blocks, and sex-specific movement. This configuration results in `n_regions × (n_regions - 1) × 2 × 5 × n_sexes` movement parameters being estimated. However, this parameterization is likely excessive and may lead to an unstable model solution. Note that this model uses 1 population and 1 season, but population-specific and season-specific movement rates can be specified in an analogous fashion using `Movement_popblk_spec` and `Movement_seasblk_spec`.
 
-```{r}
+```{r, eval = FALSE}
 # define blocks across all dimensions
 age_blk <- list(c(1:15), c(16:30))
 yr_blk  <- list(c(1:15), c(16:30), c(31:45), c(46:60), c(61:62))
@@ -173,7 +173,7 @@ In the code chunk below, movement is defined as arising from a purely diffusive 
 
 The argument `area_r = rep(1, 3)` specifies how diffusive processes scale with area size. Here, all areas are assumed to be equal. However, when areas differ in size, `area_r` should be defined as proportional to area, such that smaller areas are associated with higher diffusion rates.
 
-```{r}
+```{r, eval = FALSE}
 # constant diffusion, no preference
 diffusion_formula  <- ~0 + factor(regions)
 preference_formula <- ~0
@@ -202,7 +202,7 @@ Movement can also be specified to vary across model partitions. The examples bel
 
 In this example, diffusion is assumed constant across ages, while preference varies linearly by age within each region. This specification results in the estimation of a single diffusion parameter, along with `n_regions` additional parameters describing age-specific movement preferences.
 
-```{r}
+```{r, eval = FALSE}
 # constant diffusion, linear age preference
 diffusion_formula  <- ~1
 preference_formula <- ~0 + factor(regions):ages
@@ -227,7 +227,7 @@ length(input_list$par$move_preference_pars)
 
 In some cases, age-specific movement patterns may be more complex than a simple linear relationship can represent. To capture nonlinear variation, spline-based age-specific movement can be modeled using a spline basis. In the example below, one diffusion parameter is estimated, along with `n_regions × 4` parameters describing age-specific movement preferences.
 
-```{r}
+```{r, eval = FALSE}
 # constant diffusion, spline-based age preference
 diffusion_formula  <- ~1
 preference_formula <- ~0 + factor(regions):splines2::bSpline(ages, df = 4, intercept = TRUE)
@@ -252,7 +252,7 @@ length(input_list$par$move_preference_pars)
 
 Movement can also be specified to vary continuously across all model dimensions. In this example, movement is modeled as a function of region, age, year, and sex. For multi-population models, `factor(pop)` can be added to the formula in an analogous fashion. This specification results in the estimation of `n_regions × 4 × 6 × n_sexes` preference parameters.
 
-```{r}
+```{r, eval = FALSE}
 # spline-based age and year preference, sex-specific
 diffusion_formula  <- ~1
 preference_formula <- ~0 + factor(regions):
@@ -282,7 +282,7 @@ Lastly, process error deviations can also be incorporated into movement estimate
 
 Users may alternatively treat these variance parameters as random effects (integrated out via the Laplace approximation) or as penalized likelihood terms, depending on how `Movement_cont_pe_pars_spec` is defined. When `Movement_cont_pe_pars_spec = 'fix'`, users can supply a fixed variance value directly through `input_list$par$move_pe_pars`. Note that deviations are only estimated for destination regions (i.e., `n_regions - 1`), as no deviation term is defined for the source region.
 
-```{r}
+```{r, eval = FALSE}
 # spline age preference with iid year deviations
 diffusion_formula  <- ~1
 preference_formula <- ~0 + factor(regions):splines2::bSpline(ages, df = 4, intercept = TRUE)

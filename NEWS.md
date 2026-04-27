@@ -6,6 +6,11 @@
 - Recoded tagging module to allow fleet-specific tag reporting rates, as well as missing attributes in tagged fish. 
 - Reference points for local density-dependence in both meta-population and natal homing contexts.
 - Added ability to simulate and fit to population-specific catches, indices, compositions, and tagging data. 
+- Added ability to simulate and fit to population-specific discards and discarded compositions. 
+
+## Minor changes
+- Changed parameter names of ln_srv_fixed_sel_pars and ln_fish_fixed_sel_pars to srv_fixed_sel_pars and fish_fixed_sel_pars for clarity.
+- Included new options to estimate non-parametric selectivity, logistic selectivity with an asymptote parameter, as well as provide fixed selectivity (fishery, retention, and survey) inputs. 
 
 ## Improvements
 - Allowed both numeric and character codes for specifying dynamics in simulator, so as to be more consistent with how estimation models are specified, while maintaining backwards compatibility. 

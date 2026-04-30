@@ -36,6 +36,7 @@ articles:
     - n_single_region_ebs_pollock_randomeff_case_study
     - p_single_region_dusky_alt_mp_testing
     - r_natal-homing-pop-lrgr-rg
+    - s_discard_retention
 
 reference:
   - title: "Model Setup"

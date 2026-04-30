@@ -283,10 +283,10 @@ Survey selectivity is setup in a similar way. Here, we specify that the first su
 
     # Model options
     # survey selectivity, whether continuous time-varying
-    cont_tv_srv_sel = c("iid_Fleet_1", "2dar1_Fleet_2", "2dar1_Fleet_3"),
+    cont_tv_srv_sel = c("2dar1_Fleet_1", "2dar1_Fleet_2", "2dar1_Fleet_3"),
     srvsel_pe_pars_spec = c("fix", "fix", "fix"), # penalize survey selex devs
     srv_sel_devs_spec = c("est_all", "est_all", "est_shared_f_2"), # estimating all srv selex devs but sharing fleet 3 and 2 together
-    corr_opt_semipar = c(NA, "corr_zero_y_b", "corr_zero_y_b"), # setting correlations at 0, so 2dar1 collapses to simple iid semi-parametric devs
+    corr_opt_semipar = c("corr_zero_y_b", "corr_zero_y_b", "corr_zero_y_b"), # setting correlations at 0, so 2dar1 collapses to simple iid semi-parametric devs
 
     # survey selectivity blocks
     srv_sel_blocks = c("none_Fleet_1", "none_Fleet_2", "none_Fleet_3"),
@@ -352,9 +352,9 @@ parameters <- input_list$par
 mapping <- input_list$map
 
 # selex sigma to fix at, given penalized likelihood
-parameters$fishsel_pe_pars[,4,,] <- log(0.075) # fishery selex variance
-parameters$srvsel_pe_pars[,1:2,,1] <- log(0.075) # survey BTS - a50 and delta variance
-parameters$srvsel_pe_pars[,4,,2] <- log(0.15) # survey ATS and ato variance
+parameters$fishsel_pe_pars[,4,,] <- log(0.3) # fishery selex variance
+parameters$srvsel_pe_pars[,1:2,,1] <- log(0.3) # survey BTS - a50 and delta variance
+parameters$srvsel_pe_pars[,4,,2] <- log(0.3) # survey ATS and ato variance
 
 # Fit model
 ebswp_rtmb_model <- fit_model(data,
@@ -433,7 +433,7 @@ Lastly, we can also inspect estimates of fishery selectivity from `SPoRC`. Here,
 ```{r, eval = F}
 reshape2::melt(ebswp_rtmb_model$rep$fish_sel) %>%
   mutate(value = value/max(value)) %>%
-  rename(Region = Var1, Year = Var2, Age = Var3, Sex = Var4, Fleet = Var5) %>%
+  rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Age = Var5, Sex = Var6, Fleet = Var7) %>%
   filter(Age %in% 3:11) %>%
   ggplot(aes(x = Year + 1963, y = value)) +
   geom_point() +

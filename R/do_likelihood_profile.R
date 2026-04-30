@@ -87,17 +87,25 @@ do_likelihood_profile <- function(data,
   Movement_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
   TagRep_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
   Fmort_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
+  dmr_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
   conv_fish_tag_nLL <- data.frame()
   Catch_nLL <- data.frame()
+  Discard_nLL <- data.frame()
+  Discard_pop_nLL_df <- data.frame()
   FishAge_nLL <- data.frame()
+  FishAgeComps_discard_nLL <- data.frame()
   SrvAge_nLL <- data.frame()
   SrvLen_nLL <- data.frame()
   FishLen_nLL <- data.frame()
+  FishLenComps_discard_nLL <- data.frame()
   FishIdx_nLL <- data.frame()
   SrvIdx_nLL <- data.frame()
   Catch_pop_nLL <- data.frame()
+  Discard_pop_nLL <- data.frame()
   FishAge_pop_nLL <- data.frame()
   FishLen_pop_nLL <- data.frame()
+  FishAge_discard_pop_nLL <- data.frame()
+  FishLen_discard_pop_nLL <- data.frame()
   SrvAge_pop_nLL <- data.frame()
   SrvLen_pop_nLL <- data.frame()
   FishIdx_pop_nLL <- data.frame()
@@ -142,7 +150,7 @@ do_likelihood_profile <- function(data,
         # Get report
         report <- SPoRC_rtmb_model$report(SPoRC_rtmb_model$env$last.par.best)
 
-        # Store values and save
+        # Store values and save (note, some need to save wt*nLL, because of how nlL are combined in the jnLL for the model)
         jnLL[j,1] <- report$jnLL
         rec_nLL[j,1] <- sum(data$Wt_Rec * report$Init_Rec_nLL, data$Wt_Rec * report$Rec_nLL)
         M_nLL[j,1] <- report$M_nLL
@@ -152,21 +160,28 @@ do_likelihood_profile <- function(data,
         h_nLL[j,1] <- report$h_nLL
         TagRep_nLL[j,1] <- report$TagRep_nLL
         Fmort_nLL[j,1] <- sum(data$Wt_F * report$Fmort_nLL)
+        dmr_nLL[j,1] <- sum(data$Wt_D * report$dmr_nLL)
         conv_fish_tag_nLL <- rbind(conv_fish_tag_nLL, reshape2::melt(data$Wt_Tagging * report$conv_fish_tag_nLL) %>% dplyr::mutate(prof_val = vals[j]))
         Catch_nLL <- rbind(Catch_nLL, reshape2::melt(data$Wt_Catch * report$Catch_nLL) %>% dplyr::mutate(prof_val = vals[j]))
+        Discard_nLL <- rbind(Discard_nLL, reshape2::melt(data$Wt_Discard * report$Discard_nLL) %>% dplyr::mutate(prof_val = vals[j]))
         FishAge_nLL <- rbind(FishAge_nLL, reshape2::melt(report$FishAgeComps_nLL) %>% dplyr::mutate(prof_val = vals[j]))
+        FishAgeComps_discard_nLL <- rbind(FishAgeComps_discard_nLL, reshape2::melt(report$FishAgeComps_discard_nLL) %>% dplyr::mutate(prof_val = vals[j]))
         SrvAge_nLL <- rbind(SrvAge_nLL, reshape2::melt(report$SrvAgeComps_nLL) %>% dplyr::mutate(prof_val = vals[j]))
         SrvLen_nLL <- rbind(SrvLen_nLL, reshape2::melt(report$SrvLenComps_nLL) %>% dplyr::mutate(prof_val = vals[j]))
         FishLen_nLL <- rbind(FishLen_nLL, reshape2::melt(report$FishLenComps_nLL) %>% dplyr::mutate(prof_val = vals[j]))
+        FishLenComps_discard_nLL <- rbind(FishLenComps_discard_nLL, reshape2::melt(report$FishLenComps_discard_nLL) %>% dplyr::mutate(prof_val = vals[j]))
         FishIdx_nLL <- rbind(FishIdx_nLL, reshape2::melt(data$Wt_FishIdx * report$FishIdx_nLL) %>% dplyr::mutate(prof_val = vals[j]))
         SrvIdx_nLL <- rbind(SrvIdx_nLL, reshape2::melt(data$Wt_SrvIdx * report$SrvIdx_nLL) %>% dplyr::mutate(prof_val = vals[j]))
         fish_q_nLL[j,1] <- report$fish_q_nLL
         srv_q_nLL[j,1]  <- report$srv_q_nLL
         Catch_pop_nLL   <- rbind(Catch_pop_nLL,   reshape2::melt(data$Wt_Catch_pop   * report$Catch_pop_nLL) %>% dplyr::mutate(prof_val = vals[j]))
+        Discard_pop_nLL   <- rbind(Discard_pop_nLL,   reshape2::melt(data$Wt_Discard_pop   * report$Discard_pop_nLL) %>% dplyr::mutate(prof_val = vals[j]))
         FishIdx_pop_nLL <- rbind(FishIdx_pop_nLL, reshape2::melt(data$Wt_FishIdx_pop * report$FishIdx_pop_nLL) %>% dplyr::mutate(prof_val = vals[j]))
         SrvIdx_pop_nLL  <- rbind(SrvIdx_pop_nLL,  reshape2::melt(data$Wt_SrvIdx_pop  * report$SrvIdx_pop_nLL)  %>% dplyr::mutate(prof_val = vals[j]))
         FishAge_pop_nLL <- rbind(FishAge_pop_nLL, reshape2::melt(report$FishAgeComps_pop_nLL) %>% dplyr::mutate(prof_val = vals[j]))
         FishLen_pop_nLL <- rbind(FishLen_pop_nLL, reshape2::melt(report$FishLenComps_pop_nLL) %>% dplyr::mutate(prof_val = vals[j]))
+        FishAge_discard_pop_nLL <- rbind(FishAge_discard_pop_nLL, reshape2::melt(report$FishAgeComps_discard_pop_nLL) %>% dplyr::mutate(prof_val = vals[j]))
+        FishLen_discard_pop_nLL <- rbind(FishLen_discard_pop_nLL, reshape2::melt(report$FishLenComps_discard_pop_nLL) %>% dplyr::mutate(prof_val = vals[j]))
         SrvAge_pop_nLL  <- rbind(SrvAge_pop_nLL,  reshape2::melt(report$SrvAgeComps_pop_nLL) %>% dplyr::mutate(prof_val = vals[j]))
         SrvLen_pop_nLL  <- rbind(SrvLen_pop_nLL,  reshape2::melt(report$SrvLenComps_pop_nLL) %>% dplyr::mutate(prof_val = vals[j]))
 
@@ -192,6 +207,7 @@ do_likelihood_profile <- function(data,
       profile_results <- future.apply::future_lapply(1:length(vals), function(j) {
 
         # Create local copies to avoid conflicts
+        local_data <- data
         local_parameters <- parameters
         local_mapping <- mapping
 
@@ -209,21 +225,28 @@ do_likelihood_profile <- function(data,
           h_nLL = NA,
           TagRep_nLL = NA,
           Fmort_nLL = NA,
+          dmr_nLL = NA,
           conv_fish_tag_nLL = data.frame(),
           Catch_nLL = data.frame(),
+          Discard_nLL = data.frame(),
           FishAge_nLL = data.frame(),
+          FishAgeComps_discard_nLL = data.frame(),
           SrvAge_nLL = data.frame(),
           SrvLen_nLL = data.frame(),
           FishLen_nLL = data.frame(),
+          FishLenComps_discard_nLL = data.frame(),
           FishIdx_nLL = data.frame(),
           SrvIdx_nLL = data.frame(),
           fish_q_nLL = NA,
           srv_q_nLL  = NA,
           Catch_pop_nLL   = data.frame(),
+          Discard_pop_nLL = data.frame(),
           FishIdx_pop_nLL = data.frame(),
           SrvIdx_pop_nLL  = data.frame(),
           FishAge_pop_nLL = data.frame(),
           FishLen_pop_nLL = data.frame(),
+          FishAge_discard_pop_nLL = data.frame(),
+          FishLen_discard_pop_nLL = data.frame(),
           SrvAge_pop_nLL  = data.frame(),
           SrvLen_pop_nLL  = data.frame()
         )
@@ -253,7 +276,7 @@ do_likelihood_profile <- function(data,
 
         # make adfun
         tryCatch({
-          SPoRC_rtmb_model <- RTMB::MakeADFun(cmb(SPoRC_rtmb, data), parameters = local_parameters, map = local_mapping, random = random, silent = TRUE)
+          SPoRC_rtmb_model <- RTMB::MakeADFun(cmb(SPoRC_rtmb, local_data), parameters = local_parameters, map = local_mapping, random = random, silent = TRUE)
 
           SPoRC_optim <- stats::nlminb(SPoRC_rtmb_model$par, SPoRC_rtmb_model$fn, SPoRC_rtmb_model$gr,
                                        control = list(iter.max = 1e6, eval.max = 1e6, rel.tol = 1e-15))
@@ -271,21 +294,28 @@ do_likelihood_profile <- function(data,
           result$h_nLL <- report$h_nLL
           result$TagRep_nLL <- report$TagRep_nLL
           result$Fmort_nLL <- sum(data$Wt_F * report$Fmort_nLL)
+          result$dmr_nLL <- sum(data$Wt_D * report$dmr_nLL)
           result$conv_fish_tag_nLL <- reshape2::melt(data$Wt_Tagging * report$conv_fish_tag_nLL) %>% dplyr::mutate(prof_val = vals[j])
           result$Catch_nLL <- reshape2::melt(data$Wt_Catch * report$Catch_nLL) %>% dplyr::mutate(prof_val = vals[j])
+          result$Discard_nLL <- reshape2::melt(data$Wt_Discard * report$Discard_nLL) %>% dplyr::mutate(prof_val = vals[j])
           result$FishAge_nLL <- reshape2::melt(report$FishAgeComps_nLL) %>% dplyr::mutate(prof_val = vals[j])
+          result$FishAgeComps_discard_nLL <- reshape2::melt(report$FishAgeComps_discard_nLL) %>% dplyr::mutate(prof_val = vals[j])
           result$SrvAge_nLL <- reshape2::melt(report$SrvAgeComps_nLL) %>% dplyr::mutate(prof_val = vals[j])
           result$SrvLen_nLL <- reshape2::melt(report$SrvLenComps_nLL) %>% dplyr::mutate(prof_val = vals[j])
           result$FishLen_nLL <- reshape2::melt(report$FishLenComps_nLL) %>% dplyr::mutate(prof_val = vals[j])
+          result$FishLenComps_discard_nLL <- reshape2::melt(report$FishLenComps_discard_nLL) %>% dplyr::mutate(prof_val = vals[j])
           result$FishIdx_nLL <- reshape2::melt(data$Wt_FishIdx * report$FishIdx_nLL) %>% dplyr::mutate(prof_val = vals[j])
           result$SrvIdx_nLL <- reshape2::melt(data$Wt_SrvIdx * report$SrvIdx_nLL) %>% dplyr::mutate(prof_val = vals[j])
           result$fish_q_nLL    <- report$fish_q_nLL
           result$srv_q_nLL     <- report$srv_q_nLL
           result$Catch_pop_nLL   <- reshape2::melt(data$Wt_Catch_pop   * report$Catch_pop_nLL)   %>% dplyr::mutate(prof_val = vals[j])
+          result$Discard_pop_nLL   <- reshape2::melt(data$Wt_Discard_pop   * report$Discard_pop_nLL)   %>% dplyr::mutate(prof_val = vals[j])
           result$FishIdx_pop_nLL <- reshape2::melt(data$Wt_FishIdx_pop * report$FishIdx_pop_nLL) %>% dplyr::mutate(prof_val = vals[j])
           result$SrvIdx_pop_nLL  <- reshape2::melt(data$Wt_SrvIdx_pop  * report$SrvIdx_pop_nLL)  %>% dplyr::mutate(prof_val = vals[j])
           result$FishAge_pop_nLL <- reshape2::melt(report$FishAgeComps_pop_nLL) %>% dplyr::mutate(prof_val = vals[j])
           result$FishLen_pop_nLL <- reshape2::melt(report$FishLenComps_pop_nLL) %>% dplyr::mutate(prof_val = vals[j])
+          result$FishAge_discard_pop_nLL <- reshape2::melt(report$FishAgeComps_discard_pop_nLL) %>% dplyr::mutate(prof_val = vals[j])
+          result$FishLen_discard_pop_nLL <- reshape2::melt(report$FishLenComps_discard_pop_nLL) %>% dplyr::mutate(prof_val = vals[j])
           result$SrvAge_pop_nLL  <- reshape2::melt(report$SrvAgeComps_pop_nLL) %>% dplyr::mutate(prof_val = vals[j])
           result$SrvLen_pop_nLL  <- reshape2::melt(report$SrvLenComps_pop_nLL) %>% dplyr::mutate(prof_val = vals[j])
           result$success <- TRUE
@@ -316,21 +346,28 @@ do_likelihood_profile <- function(data,
         h_nLL[j,1] <- res$h_nLL
         TagRep_nLL[j,1] <- res$TagRep_nLL
         Fmort_nLL[j,1] <- res$Fmort_nLL
+        dmr_nLL[j,1] <- res$dmr_nLL
         conv_fish_tag_nLL <- rbind(conv_fish_tag_nLL, res$conv_fish_tag_nLL)
         Catch_nLL <- rbind(Catch_nLL, res$Catch_nLL)
+        Discard_nLL <- rbind(Discard_nLL, res$Discard_nLL)
         FishAge_nLL <- rbind(FishAge_nLL, res$FishAge_nLL)
+        FishAgeComps_discard_nLL <- rbind(FishAgeComps_discard_nLL, res$FishAgeComps_discard_nLL)
         SrvAge_nLL <- rbind(SrvAge_nLL, res$SrvAge_nLL)
         SrvLen_nLL <- rbind(SrvLen_nLL, res$SrvLen_nLL)
         FishLen_nLL <- rbind(FishLen_nLL, res$FishLen_nLL)
+        FishLenComps_discard_nLL <- rbind(FishLenComps_discard_nLL, res$FishLenComps_discard_nLL)
         FishIdx_nLL <- rbind(FishIdx_nLL, res$FishIdx_nLL)
         SrvIdx_nLL <- rbind(SrvIdx_nLL, res$SrvIdx_nLL)
         fish_q_nLL[j,1]  <- res$fish_q_nLL
         srv_q_nLL[j,1]   <- res$srv_q_nLL
         Catch_pop_nLL   <- rbind(Catch_pop_nLL,   res$Catch_pop_nLL)
+        Discard_pop_nLL   <- rbind(Discard_pop_nLL,   res$Discard_pop_nLL)
         FishIdx_pop_nLL <- rbind(FishIdx_pop_nLL, res$FishIdx_pop_nLL)
         SrvIdx_pop_nLL  <- rbind(SrvIdx_pop_nLL,  res$SrvIdx_pop_nLL)
         FishAge_pop_nLL <- rbind(FishAge_pop_nLL, res$FishAge_pop_nLL)
         FishLen_pop_nLL <- rbind(FishLen_pop_nLL, res$FishLen_pop_nLL)
+        FishAge_discard_pop_nLL <- rbind(FishAge_discard_pop_nLL, res$FishAge_discard_pop_nLL)
+        FishLen_discard_pop_nLL <- rbind(FishLen_discard_pop_nLL, res$FishLen_discard_pop_nLL)
         SrvAge_pop_nLL  <- rbind(SrvAge_pop_nLL,  res$SrvAge_pop_nLL)
         SrvLen_pop_nLL  <- rbind(SrvLen_pop_nLL,  res$SrvLen_pop_nLL)
 
@@ -379,18 +416,31 @@ do_likelihood_profile <- function(data,
     dplyr::select(-Var2) %>%
     dplyr::rename(prof_val = Var1) %>%
     dplyr::mutate(type = 'FmortPen')
+  dmr_nLL_df <- reshape2::melt(dmr_nLL) %>%
+    dplyr::select(-Var2) %>%
+    dplyr::rename(prof_val = Var1) %>%
+    dplyr::mutate(type = 'dmrPen')
   Catch_nLL_df <- Catch_nLL %>%
     dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
     dplyr::mutate(type = 'Catch')
+  Discard_nLL_df <- Discard_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+    dplyr::mutate(type = 'Discard')
   FishAge_nLL_df <- FishAge_nLL %>%
     dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
     dplyr::mutate(type = 'FishAge')
+  FishAgeComps_discard_nLL_df <- FishAgeComps_discard_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'FishAgeDiscard')
   SrvAge_nLL_df <- SrvAge_nLL %>%
     dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
     dplyr::mutate(type = 'SrvAge')
   FishLen_nLL_df <- FishLen_nLL %>%
     dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
     dplyr::mutate(type = 'FishLen')
+  FishLenComps_discard_nLL_df <- FishLenComps_discard_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'FishLenDiscard')
   SrvLen_nLL_df <- SrvLen_nLL %>%
     dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
     dplyr::mutate(type = 'SrvLen')
@@ -410,6 +460,9 @@ do_likelihood_profile <- function(data,
   Catch_pop_nLL_df <- Catch_pop_nLL %>%
     dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
     dplyr::mutate(type = 'CatchPop')
+  Discard_pop_nLL_df <- Discard_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'DiscardPop')
   FishIdx_pop_nLL_df <- FishIdx_pop_nLL %>%
     dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
     dplyr::mutate(type = 'FishIdxPop')
@@ -419,9 +472,15 @@ do_likelihood_profile <- function(data,
   FishAge_pop_nLL_df <- FishAge_pop_nLL %>%
     dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
     dplyr::mutate(type = 'FishAgePop')
+  FishAge_discard_pop_nLL_df <- FishAge_discard_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'FishAgeDiscardPop')
   FishLen_pop_nLL_df <- FishLen_pop_nLL %>%
     dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
     dplyr::mutate(type = 'FishLenPop')
+  FishLen_discard_pop_nLL_df <- FishLen_discard_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'FishLenDiscardPop')
   SrvAge_pop_nLL_df <- SrvAge_pop_nLL %>%
     dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
     dplyr::mutate(type = 'SrvAgePop')
@@ -431,16 +490,22 @@ do_likelihood_profile <- function(data,
 
   # Get likelihoods aggregated across all dimensions
   agg_nLL <- rbind(jnLL_df, rec_nLL_df, M_nLL_df, rec_prop_nLL_df, Movement_nLL_df, h_nLL_df,
-                   TagRep_nLL_df,Fmort_nLL_df, sel_nLL_df,
+                   TagRep_nLL_df,Fmort_nLL_df, dmr_nLL_df, sel_nLL_df,
                    Catch_nLL_df %>% dplyr::group_by(prof_val, type) %>%
+                     dplyr::summarize(value = sum(value)),
+                   Discard_nLL_df %>% dplyr::group_by(prof_val, type) %>%
                      dplyr::summarize(value = sum(value)),
                    conv_fish_tag_nLL_df %>% dplyr::group_by(prof_val, type) %>%
                      dplyr::summarize(value = sum(value, na.rm = T)),
                    FishAge_nLL_df %>% dplyr::group_by(prof_val, type) %>%
                      dplyr::summarize(value = sum(value, na.rm = T)),
+                   FishAgeComps_discard_nLL_df %>% dplyr::group_by(prof_val, type) %>%
+                     dplyr::summarize(value = sum(value, na.rm = T)),
                    SrvAge_nLL_df %>% dplyr::group_by(prof_val, type) %>%
                      dplyr::summarize(value = sum(value, na.rm = T)),
                    FishLen_nLL_df %>% dplyr::group_by(prof_val, type) %>%
+                     dplyr::summarize(value = sum(value, na.rm = T)),
+                   FishLenComps_discard_nLL_df %>% dplyr::group_by(prof_val, type) %>%
                      dplyr::summarize(value = sum(value, na.rm = T)),
                    SrvLen_nLL_df %>% dplyr::group_by(prof_val, type) %>%
                      dplyr::summarize(value = sum(value, na.rm = T)),
@@ -451,10 +516,13 @@ do_likelihood_profile <- function(data,
                    fish_q_nLL_df,
                    srv_q_nLL_df,
                    Catch_pop_nLL_df   %>% dplyr::group_by(prof_val, type) %>% dplyr::summarize(value = sum(value, na.rm = T)),
+                   Discard_pop_nLL_df   %>% dplyr::group_by(prof_val, type) %>% dplyr::summarize(value = sum(value, na.rm = T)),
                    FishIdx_pop_nLL_df %>% dplyr::group_by(prof_val, type) %>% dplyr::summarize(value = sum(value, na.rm = T)),
                    SrvIdx_pop_nLL_df  %>% dplyr::group_by(prof_val, type) %>% dplyr::summarize(value = sum(value, na.rm = T)),
                    FishAge_pop_nLL_df %>% dplyr::group_by(prof_val, type) %>% dplyr::summarize(value = sum(value, na.rm = T)),
                    FishLen_pop_nLL_df %>% dplyr::group_by(prof_val, type) %>% dplyr::summarize(value = sum(value, na.rm = T)),
+                   FishAge_discard_pop_nLL_df %>% dplyr::group_by(prof_val, type) %>% dplyr::summarize(value = sum(value, na.rm = T)),
+                   FishLen_discard_pop_nLL_df %>% dplyr::group_by(prof_val, type) %>% dplyr::summarize(value = sum(value, na.rm = T)),
                    SrvAge_pop_nLL_df  %>% dplyr::group_by(prof_val, type) %>% dplyr::summarize(value = sum(value, na.rm = T)),
                    SrvLen_pop_nLL_df  %>% dplyr::group_by(prof_val, type) %>% dplyr::summarize(value = sum(value, na.rm = T))
   )
@@ -468,11 +536,15 @@ do_likelihood_profile <- function(data,
                        h_nLL_df = h_nLL_df,
                        TagRep_nLL_df = TagRep_nLL_df,
                        Fmort_nLL_df = Fmort_nLL_df,
+                       dmr_nLL_df = dmr_nLL_df,
                        Catch_nLL_df = Catch_nLL_df,
+                       Discard_nLL_df = Discard_nLL_df,
                        conv_fish_tag_nLL_df = conv_fish_tag_nLL_df,
                        FishAge_nLL_df = FishAge_nLL_df,
+                       FishAgeComps_discard_nLL_df = FishAgeComps_discard_nLL_df,
                        SrvAge_nLL_df = SrvAge_nLL_df,
                        FishLen_nLL_df = FishLen_nLL_df,
+                       FishLenComps_discard_nLL_df = FishLenComps_discard_nLL_df,
                        SrvLen_nLL_df = SrvLen_nLL_df,
                        FishIdx_nLL_df = FishIdx_nLL_df,
                        SrvIdx_nLL_df = SrvIdx_nLL_df,
@@ -480,10 +552,13 @@ do_likelihood_profile <- function(data,
                        fish_q_nLL_df    = fish_q_nLL_df,
                        srv_q_nLL_df     = srv_q_nLL_df,
                        Catch_pop_nLL_df   = Catch_pop_nLL_df,
+                       Discard_pop_nLL_df   = Discard_pop_nLL_df,
                        FishIdx_pop_nLL_df = FishIdx_pop_nLL_df,
                        SrvIdx_pop_nLL_df  = SrvIdx_pop_nLL_df,
                        FishAge_pop_nLL_df = FishAge_pop_nLL_df,
                        FishLen_pop_nLL_df = FishLen_pop_nLL_df,
+                       FishAge_discard_pop_nLL_df = FishAge_discard_pop_nLL_df,
+                       FishLen_discard_pop_nLL_df = FishLen_discard_pop_nLL_df,
                        SrvAge_pop_nLL_df  = SrvAge_pop_nLL_df,
                        SrvLen_pop_nLL_df  = SrvLen_pop_nLL_df
   )

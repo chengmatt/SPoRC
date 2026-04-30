@@ -4,14 +4,19 @@
 \alias{do_srvsel_devs_mapping}
 \title{Map survey selectivity deviation parameters}
 \usage{
-do_srvsel_devs_mapping(input_list, srv_sel_devs_spec, srvsel_devs_shared_bins)
+do_srvsel_devs_mapping(
+  input_list,
+  srv_sel_devs_spec,
+  srvsel_devs_shared_bins,
+  bins
+)
 }
 \arguments{
 \item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
 sublists. Requires \code{$data$n_srv_fleets}, \code{$data$n_regions},
 \code{$data$n_sexes}, \code{$data$cont_tv_srv_sel},
 \code{$data$srv_sel_model}, \code{$data$UseSrvIdx}, \code{$data$UseSrvIdx_pop},
-\code{$data$n_proj_yrs_devs}, and \code{$data$Selex_Type}.}
+\code{$data$n_proj_yrs_devs}, and \code{$data$srv_selex_type}.}
 
 \item{srv_sel_devs_spec}{Character vector \code{[n_srv_fleets]} specifying
 the sharing structure for selectivity deviations. One of:
@@ -42,6 +47,8 @@ for age/length sharing. Each element specifies the bin indices within one
 group (e.g., \code{list(1:5, 6:10, 11:30)}). Required when
 \code{srv_sel_devs_spec} includes \code{"est_shared_b"} or its
 variants; ignored otherwise.}
+
+\item{bins}{Number of seletivity bins}
 }
 \value{
 The input \code{input_list} with \code{$map$ln_srvsel_devs} set to

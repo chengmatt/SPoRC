@@ -94,18 +94,22 @@ SPoRC_rtmb = function(pars, data) {
   pred_conv_tag_fish_recap = array(data = 0, dim = c(conv_tag_max_liberty, n_seas, n_conv_tag_cohorts, n_pop, n_regions, n_ages, n_sexes, n_fish_fleets)) # predicted recaptures
 
   # Fishery Processes
-  catch_flag_base = array(UseCatch[,1,,], dim = c(n_regions, n_seas, n_fish_fleets))
-  catch_flag_pop = apply(UseCatch_pop[,,1,,,drop = FALSE], c(2,4,5), max)
-  catch_flag = pmax(catch_flag_base, catch_flag_pop)
-  init_F = init_F_prop * exp(ln_F_mean) * catch_flag # initial F for age structure
   Fmort = array(0, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets)) # Fishing mortality scalar
-  FAA = array(data = 0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # Fishing mortality at age
-  CAA = array(data = 0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # Catch at age
-  CAL = array(data = 0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_lens, n_sexes, n_fish_fleets)) # Catch at length
-  PredCatch = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_fish_fleets)) # Predicted catch in weight
+  dmr = array(0, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets)) # Discard mortality rate
+  tot_FAA = array(data = 0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # Total Fishing mortality at age
+  ret_FAA = array(data = 0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # Retained Fishing mortality at age
+  disc_FAA = array(data = 0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # Discarded Fishing mortality at age
+  CAA = array(data = 0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # Retained Catch at age
+  DAA = array(data = 0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # Discarded Catch at age
+  CAL = array(data = 0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_lens, n_sexes, n_fish_fleets)) # Retained Catch at length
+  DAL = array(data = 0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_lens, n_sexes, n_fish_fleets)) # Discarded Catch at length
+  PredCatch = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_fish_fleets)) # Predicted retained catch (can be abundance or biomass)
+  PredDiscard = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_fish_fleets)) # Predicted discarded catch (can be abundance, biomass, or abdunance or biomass fraction of retained catch)
   PredFishIdx = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_fish_fleets)) # Predicted fishery index
-  fish_sel = array(data = 0, dim = c(n_pop, n_regions, n_yrs + n_proj_yrs_devs, n_seas, n_ages, n_sexes, n_fish_fleets)) # Fishery selectivity
-  fish_sel_l = array(data = 0, dim = c(n_regions, n_yrs + n_proj_yrs_devs, n_lens, n_sexes, n_fish_fleets)) # Fishery selectivity (lengths)
+  fish_sel = array(data = 0, dim = c(n_pop, n_regions, n_yrs + n_proj_yrs_devs, n_seas, n_ages, n_sexes, n_fish_fleets)) # Total Fishery selectivity
+  fish_sel_l = array(data = 0, dim = c(n_regions, n_yrs + n_proj_yrs_devs, n_lens, n_sexes, n_fish_fleets)) # Retained Fishery selectivity (lengths)
+  ret_sel = array(data = 0, dim = c(n_pop, n_regions, n_yrs + n_proj_yrs_devs, n_seas, n_ages, n_sexes, n_fish_fleets)) # Fishery selectivity
+  ret_sel_l = array(data = 0, dim = c(n_regions, n_yrs + n_proj_yrs_devs, n_lens, n_sexes, n_fish_fleets)) # Fishery selectivity (lengths)
   fish_q = array(0, dim = c(n_regions, n_yrs, n_fish_fleets)) # Fishery catchability
 
   # Survey Processes
@@ -117,10 +121,13 @@ SPoRC_rtmb = function(pars, data) {
   srv_q = array(0, dim = c(n_regions, n_yrs, n_srv_fleets)) # Survey catchability
 
   # Likelihoods (Not population-specific)
-  Catch_nLL = array(0, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets)) # Fishery Catch Likelihoods
+  Catch_nLL = array(0, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets)) # Retained Fishery Catch Likelihoods
+  Discard_nLL = array(0, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets)) # Discarded Fishery Likelihoods
   FishIdx_nLL = array(0, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets)) # Fishery Index Likelihoods
-  FishAgeComps_nLL = array(data = 0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_fish_fleets)) # Fishery Age Comps Likelihoods
-  FishLenComps_nLL = array(data = 0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_fish_fleets)) # Fishery Length Comps Likelihoods
+  FishAgeComps_nLL = array(data = 0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_fish_fleets)) # Retained Fishery Age Comps Likelihoods
+  FishLenComps_nLL = array(data = 0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_fish_fleets)) # Retained Fishery Length Comps Likelihoods
+  FishAgeComps_discard_nLL = array(data = 0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_fish_fleets)) # Discarded Fishery Age Comps Likelihoods
+  FishLenComps_discard_nLL = array(data = 0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_fish_fleets)) # Discarded Fishery Length Comps Likelihoods
   SrvIdx_nLL = array(0, dim = c(n_regions, n_yrs, n_seas, n_srv_fleets)) # Survey Index Likelihoods
   SrvAgeComps_nLL = array(data = 0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_srv_fleets)) # Survey Age Comps Likelihoods
   SrvLenComps_nLL = array(data = 0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_srv_fleets)) # Survey Length Comps Likelihoods
@@ -128,15 +135,19 @@ SPoRC_rtmb = function(pars, data) {
 
   # Likelihoods (population-specific)
   Catch_pop_nLL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_fish_fleets)) # Pop-specific Catch Likelihoods
+  Discard_pop_nLL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_fish_fleets)) # Pop-specific Discarded Fishery Likelihoods
   FishIdx_pop_nLL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_fish_fleets)) # Pop-specific Fishery Index Likelihoods
-  FishAgeComps_pop_nLL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_sexes, n_fish_fleets)) # Pop-specific Fishery Age Comps Likelihoods
-  FishLenComps_pop_nLL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_sexes, n_fish_fleets)) # Pop-specific Fishery Length Comps Likelihoods
+  FishAgeComps_pop_nLL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_sexes, n_fish_fleets)) # Pop-specific Retained Fishery Age Comps Likelihoods
+  FishLenComps_pop_nLL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_sexes, n_fish_fleets)) # Pop-specific Retained Fishery Length Comps Likelihoods
+  FishAgeComps_discard_pop_nLL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_sexes, n_fish_fleets)) # Pop-specific Discarded Fishery Age Comps Likelihoods
+  FishLenComps_discard_pop_nLL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_sexes, n_fish_fleets)) # Pop-specific Discarded Fishery Length Comps Likelihoods
   SrvIdx_pop_nLL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_srv_fleets)) # Pop-specific Survey Index Likelihoods
   SrvAgeComps_pop_nLL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_sexes, n_srv_fleets)) # Pop-specific Survey Age Comps Likelihoods
   SrvLenComps_pop_nLL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_sexes, n_srv_fleets)) # Pop-specific Survey Length Comps Likelihoods
 
   # Penalties and Priors
   Fmort_nLL = array(0, dim = dim(ln_F_devs)) # Fishing Mortality Deviation penalty
+  dmr_nLL = array(0, dim = dim(logit_dmr_devs)) # Discard Mortality Deviation penalty
   Rec_nLL = array(0, dim = dim(ln_RecDevs)) # Recruitment penalty
   Init_Rec_nLL = array(0, dim = dim(ln_InitDevs)) # Initial Recruitment penalty
   sel_nLL = 0 # Penalty for selectivity deviations
@@ -147,7 +158,7 @@ SPoRC_rtmb = function(pars, data) {
   Movement_nLL = 0 # Penalty for movement rates
   TagRep_nLL = 0 # penalty for tag reporting rate
   rec_prop_nLL = # penalty / prior for recruitment proportions
-  jnLL = 0 # Joint negative log likelihood
+    jnLL = 0 # Joint negative log likelihood
 
   # Model Process Equations -------------------------------------------------
   ## Movement Parameters (Set up) --------------------------------------------
@@ -204,90 +215,176 @@ SPoRC_rtmb = function(pars, data) {
 
   if(use_fixed_natmort == 1) natmort = Fixed_natmort # Using fixed natural mortality
 
-  ## Fishery Selectivity -----------------------------------------------------
-  if(Selex_Type == 0) selex_bins = ages # if age-based selectivity
-  if(Selex_Type == 1) selex_bins = lens # if length-based selectivity
+  ## Total Fishery Selectivity -----------------------------------------------------
+  if(srv_selex_type == 0) srv_selex_bins = ages # if age-based selectivity
+  if(srv_selex_type == 1) srv_selex_bins = lens # if length-based selectivity
+  if(fish_selex_type == 0) fish_selex_bins = ages # if age-based selectivity
+  if(fish_selex_type == 1) fish_selex_bins = lens # if length-based selectivity
+  if(ret_selex_type == 0) fish_selex_bins = ages # if age-based selectivity
+  if(ret_selex_type == 1) fish_selex_bins = lens # if length-based selectivity
 
   for(r in 1:n_regions) {
     for(y in 1:(n_yrs + n_proj_yrs_devs)) {
       for(f in 1:n_fish_fleets) {
-        for(s in 1:n_sexes) {
 
-          # Extract variables
-          if(y <= n_yrs) { # non-projection years
-            fish_sel_blk_idx = fish_sel_blocks[r,y,f] # selectivity block indices
-            tmp_fish_sel_model = fish_sel_model[r,y,f] # fishery selectivity model
-          } else {
-            fish_sel_blk_idx = fish_sel_blocks[r,n_yrs,f] # selectivity block indices
-            tmp_fish_sel_model = fish_sel_model[r,n_yrs,f] # fishery selectivity model
-          }
+        # estimating fishery selex
+        if(use_fixed_fish_sel[f] == 0) {
+          for(s in 1:n_sexes) {
 
-          # Extract out fixed-effect selectivity parameters for a given block
-          tmp_fish_sel_vec = ln_fish_fixed_sel_pars[r,,fish_sel_blk_idx,s,f]
+            # Extract variables
+            if(y <= n_yrs) { # non-projection years
+              fish_sel_blk_idx = fish_sel_blocks[r,y,f] # selectivity block indices
+              tmp_fish_sel_model = fish_sel_model[r,y,f] # fishery selectivity model
+            } else {
+              fish_sel_blk_idx = fish_sel_blocks[r,n_yrs,f] # selectivity block indices
+              tmp_fish_sel_model = fish_sel_model[r,n_yrs,f] # fishery selectivity model
+            }
 
-          # Compute selectivity functional form
-          tmp_sel = Get_Selex(Selex_Model = tmp_fish_sel_model, # selectivity model
-                              TimeVary_Model = cont_tv_fish_sel[r,f], # time varying model
-                              ln_Pars = tmp_fish_sel_vec, # fixed effect selectivity parameters
-                              ln_seldevs = ln_fishsel_devs[,,,,f, drop = FALSE], # Selectivity deviations
-                              Region = r, # region index
-                              Year = y, # year index
-                              Bin = selex_bins, # bin vector
-                              Sex = s # sex index
-          )
+            # Extract out fixed-effect selectivity parameters for a given block
+            tmp_fish_sel_vec = fish_fixed_sel_pars[r,,fish_sel_blk_idx,s,f]
 
-          # Compute selectivity
+            # Compute selectivity functional form
+            tmp_sel = Get_Selex(Selex_Model = tmp_fish_sel_model, # selectivity model
+                                TimeVary_Model = cont_tv_fish_sel[r,f], # time varying model
+                                pars = tmp_fish_sel_vec, # fixed effect selectivity parameters
+                                ln_seldevs = ln_fishsel_devs[,,,,f, drop = FALSE], # Selectivity deviations
+                                Region = r, # region index
+                                Year = y, # year index
+                                Bin = fish_selex_bins, # bin vector
+                                Sex = s # sex index
+            )
+
+            # Compute selectivity
+            for(p in 1:n_pop) {
+              for(seas in 1:n_seas) {
+                if(fish_selex_type == 0) fish_sel[p,r,y,seas,,s,f] = tmp_sel # age-based selectivity
+              } # end seas loop
+            } # end p loop
+            if(fish_selex_type == 1) fish_sel_l[r,y,,s,f] = tmp_sel # input into length-based fishery selectivity
+
+          } # end s loop
+        } else {
+
+          # Input fixed selectivity
           for(p in 1:n_pop) {
             for(seas in 1:n_seas) {
-              if(Selex_Type == 0) fish_sel[p,r,y,seas,,s,f] = tmp_sel # age-based selectivity
+              if(fish_selex_type == 0) fish_sel[p,r,y,seas,,,f] = fish_sel_input[p,r,y,seas,,,f] # age-based selectivity
             } # end seas loop
           } # end p loop
-          if(Selex_Type == 1) fish_sel_l[r,y,,s,f] = tmp_sel # input into length-based fishery selectivity
+          if(fish_selex_type == 1) fish_sel_l[r,y,,,f] = fish_sel_input[r,y,seas,,,f] # input into length-based fishery selectivity
+        } # end if else for whether or not using fixed selex inputs
 
-        } # end s loop
       } # end f loop
     } # end y loop
   } # end r loop
 
+  if(ret_selex_type == 0) ret_selex_bins = ages # if age-based selectivity
+  if(ret_selex_type == 1) ret_selex_bins = lens # if length-based selectivity
+
+  for(r in 1:n_regions) {
+    for(y in 1:(n_yrs + n_proj_yrs_devs)) {
+      for(f in 1:n_fish_fleets) {
+
+        if(use_fixed_ret_sel[f] == 0) {
+          for(s in 1:n_sexes) {
+
+            # Extract variables
+            if(y <= n_yrs) { # non-projection years
+              ret_sel_blk_idx = ret_sel_blocks[r,y,f] # selectivity block indices
+              tmp_ret_sel_model = ret_sel_model[r,y,f] # fishery selectivity model
+            } else {
+              ret_sel_blk_idx = ret_sel_blocks[r,n_yrs,f] # selectivity block indices
+              tmp_ret_sel_model = ret_sel_model[r,n_yrs,f] # fishery selectivity model
+            }
+
+            # Extract out fixed-effect selectivity parameters for a given block
+            tmp_ret_sel_vec = ret_fixed_sel_pars[r,,ret_sel_blk_idx,s,f]
+
+            # Compute selectivity functional form
+            tmp_sel = Get_Selex(Selex_Model = tmp_ret_sel_model, # selectivity model
+                                TimeVary_Model = cont_tv_ret_sel[r,f], # time varying model
+                                pars = tmp_ret_sel_vec, # fixed effect selectivity parameters
+                                ln_seldevs = ln_retsel_devs[,,,,f, drop = FALSE], # Selectivity deviations
+                                Region = r, # region index
+                                Year = y, # year index
+                                Bin = ret_selex_bins, # bin vector
+                                Sex = s # sex index
+            )
+
+            # Compute selectivity
+            for(p in 1:n_pop) {
+              for(seas in 1:n_seas) {
+                if(ret_selex_type == 0) ret_sel[p,r,y,seas,,s,f] = tmp_sel # age-based selectivity
+              } # end seas loop
+            } # end p loop
+            if(ret_selex_type == 1) ret_sel_l[r,y,,s,f] = tmp_sel # input into length-based fishery selectivity
+
+          } # end s loop
+        } else {
+
+          # Input fixed retention selectivity
+          for(p in 1:n_pop) {
+            for(seas in 1:n_seas) {
+              if(ret_selex_type == 0) ret_sel[p,r,y,seas,,,f] = ret_sel_input[p,r,y,seas,,,f] # age-based selectivity
+            } # end seas loop
+          } # end p loop
+          if(ret_selex_type == 1) ret_sel_l[r,y,,,f] = ret_sel_input[r,y,seas,,,f] # input into length-based fishery selectivity
+        } # end if else for fixed retention selectivity
+
+      } # end f loop
+    } # end y loop
+  } # end r loop
 
   ## Survey Selectivity ------------------------------------------------------
   for(r in 1:n_regions) {
     for(y in 1:(n_yrs + n_proj_yrs_devs)) {
       for(sf in 1:n_srv_fleets) {
-        for(s in 1:n_sexes) {
 
-          # Extract variables
-          if(y <= n_yrs) { # non-projection years
-            srv_sel_blk_idx = srv_sel_blocks[r,y,sf] # selectivity block indices
-            tmp_srv_sel_model = srv_sel_model[r,y,sf] # survey selectivity model
-          } else {
-            srv_sel_blk_idx = srv_sel_blocks[r,n_yrs,sf] # selectivity block indices
-            tmp_srv_sel_model = srv_sel_model[r,n_yrs,sf] # survey selectivity model
-          }
+        if(use_fixed_srv_sel[sf] == 0) {
+          for(s in 1:n_sexes) {
 
-          # Extract out fixed-effect selectivity parameters for a given block
-          tmp_srv_sel_vec = ln_srv_fixed_sel_pars[r,,srv_sel_blk_idx,s,sf]
+            # Extract variables
+            if(y <= n_yrs) { # non-projection years
+              srv_sel_blk_idx = srv_sel_blocks[r,y,sf] # selectivity block indices
+              tmp_srv_sel_model = srv_sel_model[r,y,sf] # survey selectivity model
+            } else {
+              srv_sel_blk_idx = srv_sel_blocks[r,n_yrs,sf] # selectivity block indices
+              tmp_srv_sel_model = srv_sel_model[r,n_yrs,sf] # survey selectivity model
+            }
 
-          # Compute selectivity functional form
-          tmp_sel = Get_Selex(Selex_Model = tmp_srv_sel_model, # selectivity model
-                              TimeVary_Model = cont_tv_srv_sel[r,sf], # time varying model
-                              ln_Pars = tmp_srv_sel_vec, # fixed effect selectivity parameters
-                              ln_seldevs = ln_srvsel_devs[,,,,sf, drop = FALSE], # Selectivity deviations
-                              Region = r, # region index
-                              Year = y, # year index
-                              Bin = selex_bins, # bin vector
-                              Sex = s # sex index
-          )
+            # Extract out fixed-effect selectivity parameters for a given block
+            tmp_srv_sel_vec = srv_fixed_sel_pars[r,,srv_sel_blk_idx,s,sf]
 
-          # Calculate selectivity
+            # Compute selectivity functional form
+            tmp_sel = Get_Selex(Selex_Model = tmp_srv_sel_model, # selectivity model
+                                TimeVary_Model = cont_tv_srv_sel[r,sf], # time varying model
+                                pars = tmp_srv_sel_vec, # fixed effect selectivity parameters
+                                ln_seldevs = ln_srvsel_devs[,,,,sf, drop = FALSE], # Selectivity deviations
+                                Region = r, # region index
+                                Year = y, # year index
+                                Bin = srv_selex_bins, # bin vector
+                                Sex = s # sex index
+            )
+
+            # Calculate selectivity
+            for(p in 1:n_pop) {
+              for(seas in 1:n_seas) {
+                if(srv_selex_type == 0) srv_sel[p,r,y,seas,,s,sf] = tmp_sel # age-based selectivity
+              } # end seas loop
+            } # end p loop
+            if(srv_selex_type == 1) srv_sel_l[r,y,,s,sf] = tmp_sel # input into length-based fishery selectivity
+
+          } # end s loop
+        } else {
+          # Input fixed survey selectivity
           for(p in 1:n_pop) {
             for(seas in 1:n_seas) {
-              if(Selex_Type == 0) srv_sel[p,r,y,seas,,s,sf] = tmp_sel # age-based selectivity
+              if(srv_selex_type == 0) srv_sel[p,r,y,seas,,,sf] = srv_sel_input[p,r,y,seas,,,sf] # age-based selectivity
             } # end seas loop
           } # end p loop
-          if(Selex_Type == 1) srv_sel_l[r,y,,s,sf] = tmp_sel # input into length-based fishery selectivity
+          if(srv_selex_type == 1) srv_sel_l[r,y,,,sf] = srv_sel_input[r,y,seas,,,sf] # input into length-based fishery selectivity
+        } # end if for whether to estiamte or fix survey selex
 
-        } # end s loop
       } # end sf loop
     } # end y loop
   } # end r loop
@@ -298,27 +395,37 @@ SPoRC_rtmb = function(pars, data) {
       for(seas in 1:n_seas) {
         for(f in 1:n_fish_fleets) {
 
-          # get annual fishing mortality rate
+          # get annual total fishing mortality rate
           if(UseCatch[r,y,seas,f] == 0 && any(UseCatch_pop[,r,y,seas,f] == 0)) {
             Fmort[r,y,seas,f] = 0
           } else {
             Fmort[r,y,seas,f] = exp(ln_F_mean[r,seas,f] + ln_F_devs[r,y,seas,f])
           }
 
+          # get discard mortality rate
+          if(UseCatch[r,y,seas,f] == 0 && all(UseCatch_pop[,r,y,seas,f] == 0)) {
+            dmr[r,y,seas,f] = 0
+          } else {
+            dmr[r,y,seas,f] = RTMB::plogis(logit_dmr_mean[r,seas,f] + logit_dmr_devs[r,y,seas,f])
+          }
+
           # get fishing mortality at age
           for(p in 1:n_pop) {
-            if(Selex_Type == 1) for(s in 1:n_sexes) fish_sel[p,r,y,seas,,s,f] = fish_sel_l[r,y,,s,f] %*% SizeAgeTrans[p,r,y,seas,,,s]
-            FAA[p,r,y,seas,,,f] = Fmort[r,y,seas,f] * fish_sel[p,r,y,seas,,,f]
+            if(fish_selex_type == 1) for(s in 1:n_sexes) fish_sel[p,r,y,seas,,s,f] = fish_sel_l[r,y,,s,f] %*% SizeAgeTrans[p,r,y,seas,,,s]
+            if(ret_selex_type == 1) for(s in 1:n_sexes) ret_sel[p,r,y,seas,,s,f] = ret_sel_l[r,y,,s,f] %*% SizeAgeTrans[p,r,y,seas,,,s]
+            tot_FAA[p,r,y,seas,,,f] = Fmort[r,y,seas,f] * fish_sel[p,r,y,seas,,,f] # Total fishing mortality at age
+            ret_FAA[p,r,y,seas,,,f] = Fmort[r,y,seas,f] * fish_sel[p,r,y,seas,,,f] * ret_sel[p,r,y,seas,,,f] # Retained fishing mortality at age
+            disc_FAA[p,r,y,seas,,,f] = Fmort[r,y,seas,f] * fish_sel[p,r,y,seas,,,f] * (1 - ret_sel[p,r,y,seas,,,f]) * dmr[r,y,seas,f] # Discarded fishing mortality at age
           }
 
         } # f loop
 
         # get total mortality
         for(p1 in 1:n_pop) for(a in 1:n_ages) for(s in 1:n_sexes)
-          ZAA[p1,r,y,seas,a,s] = sum(FAA[p1,r,y,seas,a,s,]) + (natmort[p1,r,y,a,s] * seasdur[seas])
-      }
-    }
-  }
+          ZAA[p1,r,y,seas,a,s] = sum(ret_FAA[p1,r,y,seas,a,s,]) + sum(disc_FAA[p1,r,y,seas,a,s,]) + (natmort[p1,r,y,a,s] * seasdur[seas])
+      } # end seas loop
+    } # end y loop
+  } # end r loop
 
 
   ## Recruitment Transformations and Bias Ramp (Methot and Taylor) -------------------------------
@@ -411,6 +518,11 @@ SPoRC_rtmb = function(pars, data) {
   } # end if doing bias ramp
 
   ## Initial Age Structure ---------------------------------------------------
+  # Get initial F for age structure
+  catch_flag_base = array(UseCatch[,1,,], dim = c(n_regions, n_seas, n_fish_fleets))
+  catch_flag_pop = apply(UseCatch_pop[,,1,,,drop = FALSE], c(2,4,5), max)
+  catch_flag = pmax(catch_flag_base, catch_flag_pop)
+  init_F = init_F_prop * exp(ln_F_mean) * catch_flag
 
   # Get initial fished NAA
   Init_Fished_NAA = Get_Init_NAA(
@@ -426,12 +538,14 @@ SPoRC_rtmb = function(pars, data) {
     rec_seas_prop = rec_seas_prop,
     natmort = array(natmort[,,1,,], dim = c(n_pop, n_regions, n_ages, n_sexes)), # natural mortality in first year
     init_F = init_F, # initial F applied
-    fish_sel = array(fish_sel[,,1,,,,], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets)), # fishery selectivity in first year
+    fish_sel = array(fish_sel[,,1,,,,], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets)), # total fishery selectivity in first year
     R0_r = R0_r, # regional mean or virgin recruitment
     sexratio = array(sexratio[,,1,], dim = c(n_pop, n_regions, n_sexes)), # sex ratio in first year
     Movement = array(Movement[,,,1,,,], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages, n_sexes)), # movement in first year
     do_recruits_move = do_recruits_move, # whether recruits move
-    ln_InitDevs = ln_InitDevs # initial deviations
+    ln_InitDevs = ln_InitDevs, # initial deviations
+    ret_sel = array(ret_sel[,,1,,,,], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets)), # retained fishery selectivity in first year
+    dmr = array(dmr[,1,,], dim = c(n_regions, n_seas, n_fish_fleets))
   )
 
   # Get initial unfished NAA
@@ -448,12 +562,14 @@ SPoRC_rtmb = function(pars, data) {
     rec_seas_prop = rec_seas_prop,
     natmort = array(natmort[,,1,,], dim = c(n_pop, n_regions, n_ages, n_sexes)), # natural mortality in first year
     init_F = array(0, dim = c(n_regions, n_seas, n_fish_fleets)), # initial F applied (0 for unfished)
-    fish_sel = array(fish_sel[,,1,,,,], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets)), # fishery selectivity in first year
+    fish_sel = array(fish_sel[,,1,,,,], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets)), # total fishery selectivity in first year
     R0_r = R0_r, # regional mean or virgin recruitment
     sexratio = array(sexratio[,,1,], dim = c(n_pop, n_regions, n_sexes)), # sex ratio in first year
     Movement = array(Movement[,,,1,,,], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages, n_sexes)), # movement in first year
     do_recruits_move = do_recruits_move, # whether recruits move
-    ln_InitDevs = ln_InitDevs # initial deviations
+    ln_InitDevs = ln_InitDevs, # initial deviations
+    ret_sel = array(ret_sel[,,1,,,,], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets)), # retained fishery selectivity in first year
+    dmr = array(0, dim = c(n_regions, n_seas, n_fish_fleets)) # unfished
   )
 
   # Input into model arrays (first year and season)
@@ -492,8 +608,10 @@ SPoRC_rtmb = function(pars, data) {
                                       seasdur = seasdur,
                                       rec_lag = rec_lag,
                                       n_fish_fleets = n_fish_fleets,
-                                      init_F = init_F, # initF for dominant fleet
-                                      fish_sel = array(fish_sel[,,1,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets))
+                                      init_F = init_F, # initF
+                                      fish_sel = array(fish_sel[,,1,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)), # total fishery selectivity
+                                      ret_sel = array(ret_sel[,,1,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)), # retained fishery selectivity in first year
+                                      dmr = array(dmr[,1,,], dim = c(n_regions, n_seas, n_fish_fleets))
     )
 
     for(p in 1:n_pop) {
@@ -650,11 +768,17 @@ SPoRC_rtmb = function(pars, data) {
           fish_q[r,y,f] = exp(ln_fish_q[r,fish_q_blk_idx,f]) # Input into fishery catchability container
 
           for(seas in 1:n_seas) {
-            CAA[p,r,y,seas,,,f] = FAA[p,r,y,seas,,,f] / ZAA[p,r,y,seas,,] * NAA[p,r,y,seas,,] * (1 - exp(-ZAA[p,r,y,seas,,])) # Catch at age (Baranov's)
+
+            # Retained Catch at Age
+            CAA[p,r,y,seas,,,f] = ret_FAA[p,r,y,seas,,,f] / ZAA[p,r,y,seas,,] * NAA[p,r,y,seas,,] * (1 - exp(-ZAA[p,r,y,seas,,]))
+
+            # Dead Discarded Catch at Age
+            DAA[p,r,y,seas,,,f] = disc_FAA[p,r,y,seas,,,f] / ZAA[p,r,y,seas,,] * NAA[p,r,y,seas,,] * (1 - exp(-ZAA[p,r,y,seas,,]))
 
             if(fit_lengths == 1) {
               for(s in 1:n_sexes) {
-                CAL[p,r,y,seas,,s,f] = SizeAgeTrans[p,r,y,seas,,,s] %*% CAA[p,r,y,seas,,s,f] # Catch at length
+                CAL[p,r,y,seas,,s,f] = SizeAgeTrans[p,r,y,seas,,,s] %*% CAA[p,r,y,seas,,s,f] # Retained Catch at length
+                DAL[p,r,y,seas,,s,f] = SizeAgeTrans[p,r,y,seas,,,s] %*% DAA[p,r,y,seas,,s,f] # Discarded Catch at length
               } # end s loop
             } # fitting lengths
 
@@ -662,9 +786,21 @@ SPoRC_rtmb = function(pars, data) {
             if(catch_units[f] == 0) PredCatch[p,r,y,seas,f] = sum(CAA[p,r,y,seas,,,f]) # abundance
             if(catch_units[f] == 1) PredCatch[p,r,y,seas,f] = sum(CAA[p,r,y,seas,,,f] * WAA_fish[p,r,y,seas,,,f]) # biomass
 
+            # Get discards
+            if(discard_units[f] == 0) PredDiscard[p,r,y,seas,f] = sum(DAA[p,r,y,seas,,,f] / dmr[r,y,seas,f])  # total discard abundance
+            if(discard_units[f] == 1) PredDiscard[p,r,y,seas,f] = sum(DAA[p,r,y,seas,,,f] / dmr[r,y,seas,f] * WAA_fish[p,r,y,seas,,,f])  # total discard biomass
+            if(discard_units[f] == 2) {
+              total_catch = CAA[p,r,y,seas,,,f] + DAA[p,r,y,seas,,,f] / dmr[r,y,seas,f]
+              PredDiscard[p,r,y,seas,f] = 1 - sum(CAA[p,r,y,seas,,,f]) / sum(total_catch)
+            } # abundance fraction
+            if(discard_units[f] == 3) {
+              total_catch = CAA[p,r,y,seas,,,f] + DAA[p,r,y,seas,,,f] / dmr[r,y,seas,f]
+              PredDiscard[p,r,y,seas,f] = 1 - sum(CAA[p,r,y,seas,,,f] * WAA_fish[p,r,y,seas,,,f]) / sum(total_catch * WAA_fish[p,r,y,seas,,,f])
+            } # biomass fraction
+
             # Get fishery index
-            if(fish_idx_type[f] == 0) PredFishIdx[p,r,y,seas,f] = fish_q[r,y,f] * sum(NAA[p,r,y,seas,,] * fish_sel[p,r,y,seas,,,f]) # abundance
-            if(fish_idx_type[f] == 1) PredFishIdx[p,r,y,seas,f] = fish_q[r,y,f] * sum(NAA[p,r,y,seas,,] * fish_sel[p,r,y,seas,,,f] * WAA_fish[p,r,y,seas,,,f]) # biomass
+            if(fish_idx_type[f] == 0) PredFishIdx[p,r,y,seas,f] = fish_q[r,y,f] * sum(NAA[p,r,y,seas,,] * fish_sel[p,r,y,seas,,,f] * ret_sel[p,r,y,seas,,,f]) # retained abundance
+            if(fish_idx_type[f] == 1) PredFishIdx[p,r,y,seas,f] = fish_q[r,y,f] * sum(NAA[p,r,y,seas,,] * fish_sel[p,r,y,seas,,,f] * ret_sel[p,r,y,seas,,,f] * WAA_fish[p,r,y,seas,,,f]) # retained biomass
           } # end seas loop
 
         } # end f loop
@@ -685,7 +821,7 @@ SPoRC_rtmb = function(pars, data) {
           for(seas in 1:n_seas) {
 
             # Convert length-selex to age-selex
-            if(Selex_Type == 1) for(s in 1:n_sexes) srv_sel[p,r,y,seas,,s,sf] = srv_sel_l[r,y,,s,sf] %*% SizeAgeTrans[p,r,y,seas,,,s]
+            if(srv_selex_type == 1) for(s in 1:n_sexes) srv_sel[p,r,y,seas,,s,sf] = srv_sel_l[r,y,,s,sf] %*% SizeAgeTrans[p,r,y,seas,,,s]
 
             SrvIAA[p,r,y,seas,,,sf] = NAA[p,r,y,seas,,] * srv_sel[p,r,y,seas,,,sf] * exp(-t_srv[r,seas,sf] * ZAA[p,r,y,seas,,]) # Survey index at age
 
@@ -731,7 +867,15 @@ SPoRC_rtmb = function(pars, data) {
 
           # get fishing mortality
           tmp_FAA = array(0, dim = c(n_pop, n_regions, 1, n_ages, n_sexes, n_fish_fleets))
-          for(p in 1:n_pop) for(f in 1:n_fish_fleets) if(use_conv_fish_tagging[f] == 1) tmp_FAA[p,,1,,,f] = Fmort[, y, rseas, f] * fish_sel[p,,y,rseas,,,f]
+          tmp_ret_FAA = array(0, dim = c(n_pop, n_regions, 1, n_ages, n_sexes, n_fish_fleets))
+          tmp_disc_DAA = array(0, dim = c(n_pop, n_regions, 1, n_ages, n_sexes, n_fish_fleets))
+          for(p in 1:n_pop) for(f in 1:n_fish_fleets) {
+            if(use_conv_fish_tagging[f] == 1) {
+              tmp_ret_FAA[p,,1,,,f] = Fmort[, y, rseas, f] * fish_sel[p,,y,rseas,,,f] * ret_sel[p,,y,rseas,,,f]  # Retained fishing mortality
+              tmp_disc_DAA[p,,1,,,f] = Fmort[, y, rseas, f] * fish_sel[p,,y,rseas,,,f] * (1 - ret_sel[p,,y,rseas,,,f]) * dmr[,y,rseas,f] # Dead discard fishing mortality
+              tmp_FAA[p,,1,,,f] = tmp_ret_FAA[p,,1,,,f] + tmp_disc_DAA[p,,1,,,f] # Total fishing mortality
+            } # end if
+          } # end p loop
 
           # get total mortality
           tmp_natmort = array(natmort[,,y,,], dim = c(n_pop, n_regions, 1, n_ages, n_sexes))
@@ -803,7 +947,7 @@ SPoRC_rtmb = function(pars, data) {
           for(f in 1:n_fish_fleets) {
             for(p in 1:n_pop) {
               pred_conv_tag_fish_recap[ry,rseas,tc,p,,,,f] = conv_tag_fish_reporting[,y,f] *
-                (tmp_FAA[p,,1,,,f] / tmp_ZAA[p,,1,,]) *
+                (tmp_ret_FAA[p,,1,,,f] / tmp_ZAA[p,,1,,]) *
                 conv_tag_fish_avail[ry,rseas,tc,p,,,] *
                 (1 - tmp_SAA[p,,1,,])
             } # end p loop
@@ -818,8 +962,10 @@ SPoRC_rtmb = function(pars, data) {
 
 
   # Likelihood Equations -------------------------------------------------------------
+
   ## Fishery Likelihoods -----------------------------------------------------
-  ### Fishery Catches (Regional) ---------------------------------------------------------
+
+  ### Retained Fishery Catches (Regional) ---------------------------------------------------------
   for(y in 1:n_yrs) {
     for(f in 1:n_fish_fleets) {
       for(r in 1:n_regions) {
@@ -836,7 +982,7 @@ SPoRC_rtmb = function(pars, data) {
     } # end f loop
   } # end y loop
 
-  ### Fishery Catches (Population-Specific) ---------------------------------------------------------
+  ### Retained Fishery Catches (Population-Specific) ---------------------------------------------------------
   for(p in 1:n_pop) {
     for(y in 1:n_yrs) {
       for(r in 1:n_regions) {
@@ -856,8 +1002,45 @@ SPoRC_rtmb = function(pars, data) {
   } # end p loop
 
 
+  ### Discarded Fishery Discards (Regional) ---------------------------------------------------------
+  for(y in 1:n_yrs) {
+    for(f in 1:n_fish_fleets) {
+      for(r in 1:n_regions) {
 
-  ### Fishery Indices (Regional) ---------------------------------------------------------
+        for(seas in 1:n_seas) {
+          if(UseDiscard[r,y,seas,f] == 1) {
+            Discard_nLL[r,y,seas,f] = -1 * RTMB::dnorm(log(ObsDiscard[r,y,seas,f]),
+                                                       log(sum(PredDiscard[,r,y,seas,f])),
+                                                       exp(ln_sigmaD[r,y,seas,f]), TRUE)
+          } # if no 0s for fishery Discards
+
+        } # end seas loop
+      } # end r loop
+    } # end f loop
+  } # end y loop
+
+  ### Discarded Fishery Discards (Population-Specific) ---------------------------------------------------------
+  for(p in 1:n_pop) {
+    for(y in 1:n_yrs) {
+      for(r in 1:n_regions) {
+        for(f in 1:n_fish_fleets) {
+          for(seas in 1:n_seas) {
+
+            if(UseDiscard_pop[p,r,y,seas,f] == 1) {
+              Discard_pop_nLL[p,r,y,seas,f] = -1 * RTMB::dnorm(log(ObsDiscard_pop[p,r,y,seas,f]),
+                                                               log(PredDiscard[p,r,y,seas,f]),
+                                                               exp(ln_sigmaD_pop[p,r,y,seas,f]), TRUE)
+            } # if we have fishery indices
+
+          } # end seas loop
+        } # end f loop
+      } # end r loop
+    } # end y loop
+  } # end p loop
+
+
+
+  ### Retained Fishery Indices (Regional) ---------------------------------------------------------
   for(y in 1:n_yrs) {
     for(r in 1:n_regions) {
       for(f in 1:n_fish_fleets) {
@@ -874,7 +1057,7 @@ SPoRC_rtmb = function(pars, data) {
     } # end r loop
   } # end y loop
 
-  ### Fishery Indices (Population-Specific) ---------------------------------------------------------
+  ### Retained Fishery Indices (Population-Specific) ---------------------------------------------------------
   for(p in 1:n_pop) {
     for(y in 1:n_yrs) {
       for(r in 1:n_regions) {
@@ -894,7 +1077,7 @@ SPoRC_rtmb = function(pars, data) {
   } # end p loop
 
 
-  ### Fishery Compositions (Region-Specific) ------------------------------------------------
+  ### Retained Fishery Compositions (Region-Specific) ------------------------------------------------
   for(y in 1:n_yrs) {
     for(f in 1:n_fish_fleets) {
 
@@ -966,7 +1149,7 @@ SPoRC_rtmb = function(pars, data) {
   } # end y loop
 
 
-  ### Fishery Compositions (Population-Specific) ------------------------------------------------
+  ### Retained Fishery Compositions (Population-Specific) ------------------------------------------------
   for(p in 1:n_pop) {
     for(y in 1:n_yrs) {
       for(f in 1:n_fish_fleets) {
@@ -985,8 +1168,8 @@ SPoRC_rtmb = function(pars, data) {
               Wt_Mltnml = Wt_FishAgeComps_pop[p,,y,seas,,f],
 
               # Composition and Likelihood Type
-              Comp_Type = pop_FishAgeComps_Type[y,f],
-              Likelihood_Type = pop_FishAgeComps_LikeType[f],
+              Comp_Type = FishAgeComps_pop_Type[y,f],
+              Likelihood_Type = FishAgeComps_pop_LikeType[f],
 
               # overdispersion pars, Number of sexes, regions, age or length comps, and ageing error
               ln_theta = ln_FishAge_pop_theta[p,,,f],
@@ -1017,8 +1200,8 @@ SPoRC_rtmb = function(pars, data) {
               Wt_Mltnml = Wt_FishLenComps_pop[p,,y,seas,,f],
 
               # Composition and Likelihood Type
-              Comp_Type = pop_FishLenComps_Type[y,f],
-              Likelihood_Type = pop_FishLenComps_LikeType[f],
+              Comp_Type = FishLenComps_pop_Type[y,f],
+              Likelihood_Type = FishLenComps_pop_LikeType[f],
 
               # overdispersion, Number of sexes, regions age or length comps, and ageing error
               ln_theta = ln_FishLen_pop_theta[p,,,f],
@@ -1040,6 +1223,154 @@ SPoRC_rtmb = function(pars, data) {
       } # end f loop
     } # end y loop
   }
+
+  ### Discarded Fishery Compositions (Region-Specific) ------------------------------------------------
+  for(y in 1:n_yrs) {
+    for(f in 1:n_fish_fleets) {
+
+      for(seas in 1:n_seas) {
+        # Fishery Age Compositions
+        if(sum(UseFishAgeComps_discard[,y,seas,f]) >= 1) {
+          FishAgeComps_discard_nLL[,y,seas,,f] = Get_Comp_Likelihoods(
+
+            # Expected and Observed values
+            Exp = apply(DAA[,,y,seas,,,f, drop = FALSE], 2:7, sum),
+            Obs = ObsFishAgeComps_discard[,y,seas,,,f],
+
+            # Input sample size and multinomial weight
+            ISS = ISS_FishAgeComps_discard[,y,seas,,f],
+            Wt_Mltnml = Wt_FishAgeComps_discard[,y,seas,,f],
+            # Composition and Likelihood Type
+            Comp_Type = FishAgeComps_discard_Type[y,f],
+            Likelihood_Type = FishAgeComps_discard_LikeType[f],
+
+            # overdispersion pars, Number of sexes, regions, age or length comps, and ageing error
+            ln_theta = ln_FishAge_discard_theta[,,f],
+            ln_theta_agg = ln_FishAge_discard_theta_agg[f],
+            LN_corr_pars = FishAge_discard_corr_pars[,,f,],
+            LN_corr_pars_agg = FishAge_discard_corr_pars_agg[f],
+            n_regions = n_regions, n_sexes = n_sexes, age_or_len = 0,
+            AgeingError = AgeingError[y,,],
+            use = UseFishAgeComps_discard[,y,seas,f],
+            n_model_bins = n_ages,
+            n_obs_bins = dim(ObsFishAgeComps_discard)[4],
+            addtocomp = addtocomp
+          )
+
+        } # if we have fishery age comps
+
+        # Fishery Length Compositions
+        if(sum(UseFishLenComps_discard[,y,seas,f]) >= 1 && fit_lengths == 1) {
+          FishLenComps_discard_nLL[,y,seas,,f] = Get_Comp_Likelihoods(
+
+            # Expected and Observed values
+            Exp = apply(DAL[,,y,seas,,,f, drop = FALSE], 2:7, sum),
+            Obs = ObsFishLenComps_discard[,y,seas,,,f],
+
+            # Input sample size and multinomial weight
+            ISS = ISS_FishLenComps_discard[,y,seas,,f],
+            Wt_Mltnml = Wt_FishLenComps_discard[,y,seas,,f],
+
+            # Composition and Likelihood Type
+            Comp_Type = FishLenComps_discard_Type[y,f],
+            Likelihood_Type = FishLenComps_discard_LikeType[f],
+
+            # overdispersion, Number of sexes, regions age or length comps, and ageing error
+            ln_theta = ln_FishLen_discard_theta[,,f],
+            ln_theta_agg = ln_FishLen_discard_theta_agg[f],
+            LN_corr_pars = FishLen_discard_corr_pars[,,f,],
+            LN_corr_pars_agg = FishLen_discard_corr_pars_agg[f],
+            n_regions = n_regions, n_sexes = n_sexes,
+            age_or_len = 1,
+            AgeingError = NA,
+            use = UseFishLenComps_discard[,y,seas,f],
+            n_model_bins = n_lens,
+            n_obs_bins = dim(ObsFishLenComps_discard)[4],
+            addtocomp = addtocomp
+          )
+
+        } # if we have fishery length comps
+      } # end seas loop
+
+    } # end f loop
+  } # end y loop
+
+
+  ### Discarded Fishery Compositions (Population-Specific) ------------------------------------------------
+  for(p in 1:n_pop) {
+    for(y in 1:n_yrs) {
+      for(f in 1:n_fish_fleets) {
+
+        for(seas in 1:n_seas) {
+          # Fishery Age Compositions
+          if(sum(UseFishAgeComps_discard_pop[p,,y,seas,f]) >= 1) {
+            FishAgeComps_discard_pop_nLL[p,,y,seas,,f] = Get_Comp_Likelihoods(
+
+              # Expected and Observed values
+              Exp = DAA[p,,y,seas,,,f],
+              Obs = ObsFishAgeComps_discard_pop[p,,y,seas,,,f],
+
+              # Input sample size and multinomial weight
+              ISS = ISS_FishAgeComps_discard_pop[p,,y,seas,,f],
+              Wt_Mltnml = Wt_FishAgeComps_discard_pop[p,,y,seas,,f],
+
+              # Composition and Likelihood Type
+              Comp_Type = FishAgeComps_discard_pop_Type[y,f],
+              Likelihood_Type = FishAgeComps_discard_pop_LikeType[f],
+
+              # overdispersion pars, Number of sexes, regions, age or length comps, and ageing error
+              ln_theta = ln_FishAge_discard_pop_theta[p,,,f],
+              ln_theta_agg = ln_FishAge_discard_pop_theta_agg[p,f],
+              LN_corr_pars = FishAge_discard_pop_corr_pars[p,,,f,],
+              LN_corr_pars_agg = FishAge_discard_pop_corr_pars_agg[p,f],
+              n_regions = n_regions, n_sexes = n_sexes,
+              age_or_len = 0,
+              AgeingError = AgeingError[y,,],
+              use = UseFishAgeComps_discard_pop[p,,y,seas,f],
+              n_model_bins = n_ages,
+              n_obs_bins = dim(ObsFishAgeComps_discard_pop)[5],
+              addtocomp = addtocomp
+            )
+
+          } # if we have fishery age comps
+
+          # Fishery Length Compositions
+          if(sum(UseFishLenComps_discard_pop[p,,y,seas,f]) >= 1 && fit_lengths == 1) {
+            FishLenComps_discard_pop_nLL[p,,y,seas,,f] = Get_Comp_Likelihoods(
+
+              # Expected and Observed values
+              Exp = DAL[p,,y,seas,,,f],
+              Obs = ObsFishLenComps_discard_pop[p,,y,seas,,,f],
+
+              # Input sample size and multinomial weight
+              ISS = ISS_FishLenComps_discard_pop[p,,y,seas,,f],
+              Wt_Mltnml = Wt_FishLenComps_discard_pop[p,,y,seas,,f],
+
+              # Composition and Likelihood Type
+              Comp_Type = FishLenComps_discard_pop_Type[y,f],
+              Likelihood_Type = FishLenComps_discard_pop_LikeType[f],
+
+              # overdispersion, Number of sexes, regions age or length comps, and ageing error
+              ln_theta = ln_FishLen_discard_pop_theta[p,,,f],
+              ln_theta_agg = ln_FishLen_discard_pop_theta_agg[p,f],
+              LN_corr_pars = FishLen_discard_pop_corr_pars[p,,,f,],
+              LN_corr_pars_agg = FishLen_discard_pop_corr_pars_agg[p,f],
+              n_regions = n_regions, n_sexes = n_sexes,
+              age_or_len = 1,
+              AgeingError = NA,
+              use = UseFishLenComps_discard_pop[p,,y,seas,f],
+              n_model_bins = n_lens,
+              n_obs_bins = dim(ObsFishLenComps_discard_pop)[5],
+              addtocomp = addtocomp
+            )
+
+          } # if we have fishery length comps
+        } # end seas loop
+
+      } # end f loop
+    } # end y loop
+  }
+
 
 
   ## Survey Likelihoods ------------------------------------------------------
@@ -1172,8 +1503,8 @@ SPoRC_rtmb = function(pars, data) {
               Wt_Mltnml = Wt_SrvAgeComps_pop[p,,y,seas,,sf],
 
               # Composition and Likelihood Type
-              Comp_Type = pop_SrvAgeComps_Type[y,sf],
-              Likelihood_Type = pop_SrvAgeComps_LikeType[sf],
+              Comp_Type = SrvAgeComps_pop_Type[y,sf],
+              Likelihood_Type = SrvAgeComps_pop_LikeType[sf],
 
               # overdispersion pars, Number of sexes, regions, age or length comps, and ageing error
               ln_theta = ln_SrvAge_pop_theta[p,,,sf],
@@ -1204,8 +1535,8 @@ SPoRC_rtmb = function(pars, data) {
               Wt_Mltnml = Wt_SrvLenComps_pop[p,,y,seas,,sf],
 
               # Composition and Likelihood Type
-              Comp_Type = pop_SrvLenComps_Type[y,sf],
-              Likelihood_Type = pop_SrvLenComps_LikeType[sf],
+              Comp_Type = SrvLenComps_pop_Type[y,sf],
+              Likelihood_Type = SrvLenComps_pop_LikeType[sf],
 
               # overdispersion, Number of sexes, regions age or length comps, and ageing error
               ln_theta = ln_SrvLen_pop_theta[p,,,sf],
@@ -1398,16 +1729,34 @@ SPoRC_rtmb = function(pars, data) {
     } # f loop
   } #  if using fishing mortality penalty
 
+  ### Discard Mortality Rate (Penalty) ---------------------------------------------
+  if(Use_dmr_pen == 1) {
+    for(f in 1:n_fish_fleets) {
+      for(y in 1:n_yrs) {
+        for(r in 1:n_regions) {
+          for(seas in 1:n_seas) {
+
+            if(UseDiscard[r,y,seas,f] == 1 || any(UseDiscard_pop[,r,y,seas,f] == 1)) {
+              dmr_nLL[r,y,seas,f] = -RTMB::dnorm(logit_dmr_devs[r,y,seas,f], 0, exp(ln_sigma_dmr[r,seas,f]), TRUE)
+            } # end if have catch
+
+          } # end seas loop
+        } # end r loop
+      } # y loop
+    } # f loop
+  } #  if using discard mortality rate penalty
+
+
   ### Selectivity (Penalty) ---------------------------------------------------
   for(r in 1:n_regions) {
 
-    # Fishery Selectivity Deviations
     for(f in 1:n_fish_fleets) {
 
+      # Total Fishery Selectivity Deviations
       if(cont_tv_fish_sel[r,f] > 0) {
 
-        if(Selex_Type == 0) tmp_sel_vals = array(fish_sel[1,r,,1,,,f, drop = FALSE], dim = c(1, n_yrs + n_proj_yrs_devs, n_ages, n_sexes, 1)) # age-based selectivity
-        if(Selex_Type == 1) tmp_sel_vals = fish_sel_l[r,,,,f, drop = FALSE] # length-based selectivity
+        if(fish_selex_type == 0) tmp_sel_vals = array(fish_sel[1,r,,1,,,f, drop = FALSE], dim = c(1, n_yrs + n_proj_yrs_devs, n_ages, n_sexes, 1)) # age-based selectivity
+        if(fish_selex_type == 1) tmp_sel_vals = fish_sel_l[r,,,,f, drop = FALSE] # length-based selectivity
 
         sel_nLL = sel_nLL + - Get_sel_PE_loglik(PE_model = cont_tv_fish_sel[r,f], # process error model
                                                 PE_pars = fishsel_pe_pars[r,,,f, drop = FALSE], # process error parameters for a given fleet (correlaiton and sigmas)
@@ -1421,13 +1770,37 @@ SPoRC_rtmb = function(pars, data) {
       } # end if
 
       # Mean Standardizing to help with interpretability
-      if(Selex_Type == 0) if(cont_tv_fish_sel[r,f] %in% 3:5) for(s in 1:n_sexes) {
+      if(fish_selex_type == 0) if(cont_tv_fish_sel[r,f] %in% 3:5) for(s in 1:n_sexes) {
         tmp_mean = log(mean(fish_sel[1,r,,1,,s,f]))
         for(p in 1:n_pop) for(seas in 1:n_seas)
           fish_sel[p,r,,seas,,s,f] = exp(log(fish_sel[p,r,,seas,,s,f]) - tmp_mean)
       }
-      if(Selex_Type == 1) if(cont_tv_fish_sel[r,f] %in% 3:5) for(s in 1:n_sexes) fish_sel_l[r,,,s,f] = exp(log(fish_sel_l[r,,,s,f]) - log(mean(fish_sel_l[r,,,s,f]))) # length-based selectivity
+      if(fish_selex_type == 1) if(cont_tv_fish_sel[r,f] %in% 3:5) for(s in 1:n_sexes) fish_sel_l[r,,,s,f] = exp(log(fish_sel_l[r,,,s,f]) - log(mean(fish_sel_l[r,,,s,f]))) # length-based selectivity
 
+      # Retained Fishery Selectivity Deviations
+      if(cont_tv_ret_sel[r,f] > 0) {
+
+        if(ret_selex_type == 0) tmp_sel_vals = array(ret_sel[1,r,,1,,,f, drop = FALSE], dim = c(1, n_yrs + n_proj_yrs_devs, n_ages, n_sexes, 1)) # age-based selectivity
+        if(ret_selex_type == 1) tmp_sel_vals = ret_sel_l[r,,,,f, drop = FALSE] # length-based selectivity
+
+        sel_nLL = sel_nLL + - Get_sel_PE_loglik(PE_model = cont_tv_ret_sel[r,f], # process error model
+                                                PE_pars = retsel_pe_pars[r,,,f, drop = FALSE], # process error parameters for a given fleet (correlaiton and sigmas)
+                                                ln_devs = ln_retsel_devs[r,,,,f, drop = FALSE], # extract out process error deviations for a given fleet
+                                                map_sel_devs = map_ln_retsel_devs[r,,,,f, drop = FALSE],
+                                                sel_vals = tmp_sel_vals,
+                                                do_sel_pen = cont_tv_ret_sel_penalty,
+                                                min_sel_devs_shared_bins = retsel_devs_min_shared_bins
+
+        )
+      } # end if
+
+      # Mean Standardizing to help with interpretability
+      if(ret_selex_type == 0) if(cont_tv_ret_sel[r,f] %in% 3:5) for(s in 1:n_sexes) {
+        tmp_mean = log(mean(ret_sel[1,r,,1,,s,f]))
+        for(p in 1:n_pop) for(seas in 1:n_seas)
+          ret_sel[p,r,,seas,,s,f] = exp(log(ret_sel[p,r,,seas,,s,f]) - tmp_mean)
+      }
+      if(ret_selex_type == 1) if(cont_tv_ret_sel[r,f] %in% 3:5) for(s in 1:n_sexes) ret_sel_l[r,,,s,f] = exp(log(ret_sel_l[r,,,s,f]) - log(mean(ret_sel_l[r,,,s,f]))) # length-based selectivity
     } # end f loop
 
     # Survey Selectivity Deviations
@@ -1435,8 +1808,8 @@ SPoRC_rtmb = function(pars, data) {
 
       if(cont_tv_srv_sel[r,sf] > 0) {
 
-        if(Selex_Type == 0) tmp_sel_vals = array(srv_sel[1,r,,1,,,sf, drop = FALSE], dim = c(1, n_yrs + n_proj_yrs_devs, n_ages, n_sexes, 1)) # age-based selectivity
-        if(Selex_Type == 1) tmp_sel_vals = srv_sel_l[r,,,,sf, drop = FALSE] # length-based selectivity
+        if(srv_selex_type == 0) tmp_sel_vals = array(srv_sel[1,r,,1,,,sf, drop = FALSE], dim = c(1, n_yrs + n_proj_yrs_devs, n_ages, n_sexes, 1)) # age-based selectivity
+        if(srv_selex_type == 1) tmp_sel_vals = srv_sel_l[r,,,,sf, drop = FALSE] # length-based selectivity
 
         sel_nLL = sel_nLL + - Get_sel_PE_loglik(PE_model = cont_tv_srv_sel[r,sf], # process error model
                                                 PE_pars = srvsel_pe_pars[r,,,sf, drop = FALSE], # process error parameters for a given fleet (correlaiton and sigmas)
@@ -1450,19 +1823,19 @@ SPoRC_rtmb = function(pars, data) {
       } # end if
 
       # Mean Standardizing to help with interpretability
-      if(Selex_Type == 0) if(cont_tv_srv_sel[r,sf] %in% 3:5) for(s in 1:n_sexes) {
+      if(srv_selex_type == 0) if(cont_tv_srv_sel[r,sf] %in% 3:5) for(s in 1:n_sexes) {
         tmp_mean = log(mean(srv_sel[1,r,,1,,s,sf]))
         for(p in 1:n_pop) for(seas in 1:n_seas)
           srv_sel[p,r,,seas,,s,sf] = exp(log(srv_sel[p,r,,seas,,s,sf]) - tmp_mean)
       }
-      if(Selex_Type == 1) if(cont_tv_srv_sel[r,sf] %in% 3:5) for(s in 1:n_sexes) srv_sel_l[r,,,s,sf] = exp(log(srv_sel_l[r,,,s,sf]) - log(mean(srv_sel_l[r,,,s,sf])))
+      if(srv_selex_type == 1) if(cont_tv_srv_sel[r,sf] %in% 3:5) for(s in 1:n_sexes) srv_sel_l[r,,,s,sf] = exp(log(srv_sel_l[r,,,s,sf]) - log(mean(srv_sel_l[r,,,s,sf])))
 
     } # end sf loop
   } # end r loop
 
 
   ### Selectivity (Prior) -----------------------------------------------------
-  # Fishery selectivity parameters
+  # Total Fishery selectivity parameters
   if(Use_fish_selex_prior == 1) {
     for(i in 1:nrow(fish_selex_prior)) {
       # Extract indices
@@ -1472,7 +1845,21 @@ SPoRC_rtmb = function(pars, data) {
       s = fish_selex_prior$sex[i]
       f = fish_selex_prior$fleet[i]
       # Compute penalty / prior here
-      sel_nLL = sel_nLL - RTMB::dnorm(ln_fish_fixed_sel_pars[r,p,b,s,f], log(fish_selex_prior$mu[i]), fish_selex_prior$sd[i], TRUE)
+      sel_nLL = sel_nLL - RTMB::dnorm(fish_fixed_sel_pars[r,p,b,s,f], log(fish_selex_prior$mu[i]), fish_selex_prior$sd[i], TRUE)
+    } # end i loop
+  } # end if using selex priors
+
+  # Retained Fishery selectivity parameters
+  if(Use_ret_selex_prior == 1) {
+    for(i in 1:nrow(ret_selex_prior)) {
+      # Extract indices
+      r = ret_selex_prior$region[i]
+      p = ret_selex_prior$par[i]
+      b = ret_selex_prior$block[i]
+      s = ret_selex_prior$sex[i]
+      f = ret_selex_prior$fleet[i]
+      # Compute penalty / prior here
+      sel_nLL = sel_nLL - RTMB::dnorm(ret_fixed_sel_pars[r,p,b,s,f], log(ret_selex_prior$mu[i]), ret_selex_prior$sd[i], TRUE)
     } # end i loop
   } # end if using selex priors
 
@@ -1486,7 +1873,7 @@ SPoRC_rtmb = function(pars, data) {
       s = srv_selex_prior$sex[i]
       sf = srv_selex_prior$fleet[i]
       # Compute penalty / prior here
-      sel_nLL = sel_nLL - RTMB::dnorm(ln_srv_fixed_sel_pars[r,p,b,s,sf], log(srv_selex_prior$mu[i]), srv_selex_prior$sd[i], TRUE)
+      sel_nLL = sel_nLL - RTMB::dnorm(srv_fixed_sel_pars[r,p,b,s,sf], log(srv_selex_prior$mu[i]), srv_selex_prior$sd[i], TRUE)
     } # end i loop
   } # end if using selex priors
 
@@ -1501,8 +1888,7 @@ SPoRC_rtmb = function(pars, data) {
       if(rec_region_prop_spec == 1 && as.numeric(rec_region_prop[p,r]) == 0) next
 
       # Initial age deviations
-      if(equil_init_age_strc %in% c(1,2))
-        Init_Rec_nLL[p,r,] = -RTMB::dnorm(ln_InitDevs[p,r,], 0, exp(ln_sigmaR[1,p,sigma_idx]), TRUE)
+      Init_Rec_nLL[p,r,] = -RTMB::dnorm(ln_InitDevs[p,r,], 0, exp(ln_sigmaR[1,p,sigma_idx]), TRUE)
 
       # Early recruitment deviations
       if(sigmaR_switch > 1) {
@@ -1659,9 +2045,11 @@ SPoRC_rtmb = function(pars, data) {
     } # end i loop
   } # if use tag reporting prior
 
-  # Apply likelihood weights here and compute joint negative log likelihood
+  # Sum up nLL
   jnLL = sum(Wt_Catch * Catch_nLL) +             # Aggregated catch likelihoods
     sum(Wt_Catch_pop * Catch_pop_nLL) +      # Pop-specific catch likelihoods
+    sum(Wt_Discard * Discard_nLL) +           # Aggregated discard likelihoods
+    sum(Wt_Discard_pop * Discard_pop_nLL) +   # Pop-specific discard likelihoods
     sum(Wt_FishIdx * FishIdx_nLL) +           # Aggregated fishery index likelihoods
     sum(Wt_FishIdx_pop * FishIdx_pop_nLL) +   # Pop-specific fishery index likelihoods
     sum(Wt_SrvIdx * SrvIdx_nLL) +             # Aggregated survey index likelihoods
@@ -1670,12 +2058,17 @@ SPoRC_rtmb = function(pars, data) {
     sum(FishAgeComps_pop_nLL) +               # Pop-specific fishery age likelihoods
     sum(FishLenComps_nLL) +                   # Aggregated fishery length likelihoods
     sum(FishLenComps_pop_nLL) +               # Pop-specific fishery length likelihoods
+    sum(FishAgeComps_discard_nLL) +            # Aggregated discard age likelihoods
+    sum(FishAgeComps_discard_pop_nLL) +        # Pop-specific discard age likelihoods
+    sum(FishLenComps_discard_nLL) +            # Aggregated discard length likelihoods
+    sum(FishLenComps_discard_pop_nLL) +        # Pop-specific discard length likelihoods
     sum(SrvAgeComps_nLL) +                    # Aggregated survey age likelihoods
     sum(SrvAgeComps_pop_nLL) +                # Pop-specific survey age likelihoods
     sum(SrvLenComps_nLL) +                    # Aggregated survey length likelihoods
     sum(SrvLenComps_pop_nLL) +                # Pop-specific survey length likelihoods
     (Wt_Tagging * sum(conv_fish_tag_nLL)) +   # Tagging likelihood
     (Wt_F * sum(Fmort_nLL)) +                 # Fishing mortality penalty
+    (Wt_D * sum(dmr_nLL)) +                   # Discard mortality rate penalty
     (Wt_Rec * sum(Rec_nLL)) +                 # Recruitment penalty
     (Wt_Rec * sum(Init_Rec_nLL)) +            # Initial age penalty
     sel_nLL +                                  # Selectivity penalty
@@ -1686,8 +2079,6 @@ SPoRC_rtmb = function(pars, data) {
     fish_q_nLL +                               # Fishery q prior
     srv_q_nLL +                                # Survey q prior
     rec_prop_nLL                               # Recruitment proportion prior
-
-
 
   # Report Section ----------------------------------------------------------
   # Biological Processes
@@ -1713,12 +2104,19 @@ SPoRC_rtmb = function(pars, data) {
   RTMB::REPORT(ln_sigmaC)
   RTMB::REPORT(ln_sigmaC_pop)
   RTMB::REPORT(Fmort)
-  RTMB::REPORT(FAA)
+  RTMB::REPORT(dmr)
+  RTMB::REPORT(tot_FAA)
+  RTMB::REPORT(ret_FAA)
+  RTMB::REPORT(disc_FAA)
   RTMB::REPORT(CAA)
+  RTMB::REPORT(DAA)
   RTMB::REPORT(CAL)
+  RTMB::REPORT(DAL)
   RTMB::REPORT(PredCatch)
+  RTMB::REPORT(PredDiscard)
   RTMB::REPORT(PredFishIdx)
   RTMB::REPORT(fish_sel)
+  RTMB::REPORT(ret_sel)
   RTMB::REPORT(fish_q)
 
   # Survey Processes
@@ -1729,10 +2127,9 @@ SPoRC_rtmb = function(pars, data) {
   RTMB::REPORT(SrvIAL)
 
   # Report length-based selectivity
-  if(Selex_Type == 1) {
-    RTMB::REPORT(fish_sel_l)
-    RTMB::REPORT(srv_sel_l)
-  }
+  if(fish_selex_type == 1) RTMB::REPORT(fish_sel_l)
+  if(ret_selex_type == 1) RTMB::REPORT(ret_sel_l)
+  if(srv_selex_type == 1) RTMB::REPORT(srv_sel_l)
 
   # Tagging Processes
   if(any(use_conv_fish_tagging == 1)) {
@@ -1749,23 +2146,32 @@ SPoRC_rtmb = function(pars, data) {
 
   # Aggregated Likelihoods
   RTMB::REPORT(Catch_nLL)
+  RTMB::REPORT(Discard_nLL)
   RTMB::REPORT(FishIdx_nLL)
   RTMB::REPORT(SrvIdx_nLL)
   RTMB::REPORT(FishAgeComps_nLL)
+  RTMB::REPORT(FishAgeComps_discard_nLL)
   RTMB::REPORT(SrvAgeComps_nLL)
   RTMB::REPORT(FishLenComps_nLL)
+  RTMB::REPORT(FishLenComps_discard_nLL)
   RTMB::REPORT(SrvLenComps_nLL)
+
   # Population-specific Likelihoods
   RTMB::REPORT(Catch_pop_nLL)
+  RTMB::REPORT(Discard_pop_nLL)
   RTMB::REPORT(FishIdx_pop_nLL)
   RTMB::REPORT(SrvIdx_pop_nLL)
   RTMB::REPORT(FishAgeComps_pop_nLL)
+  RTMB::REPORT(FishAgeComps_discard_pop_nLL)
   RTMB::REPORT(SrvAgeComps_pop_nLL)
   RTMB::REPORT(FishLenComps_pop_nLL)
+  RTMB::REPORT(FishLenComps_discard_pop_nLL)
   RTMB::REPORT(SrvLenComps_pop_nLL)
+
   # Penalties and priors
   RTMB::REPORT(M_nLL)
   RTMB::REPORT(Fmort_nLL)
+  RTMB::REPORT(dmr_nLL)
   RTMB::REPORT(Rec_nLL)
   RTMB::REPORT(Init_Rec_nLL)
   RTMB::REPORT(conv_fish_tag_nLL)

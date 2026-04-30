@@ -455,22 +455,22 @@ data$ISS_FishLenComps[4,,,,] <-  4  # CGOA
 data$ISS_FishLenComps[5,,,,] <-  4  # EGOA
 
 # Map off early delta for fishery
-map_fish_fixed <- array(mapping$ln_fish_fixed_sel_pars, dim = dim(parameters$ln_fish_fixed_sel_pars))
+map_fish_fixed <- array(mapping$fish_fixed_sel_pars, dim = dim(parameters$fish_fixed_sel_pars))
 map_fish_fixed[,2,1,2,1]  <- map_fish_fixed[,2,1,1,1] # share deltas
 
 # Map off bmax for trawl females
 map_fish_fixed[,1,1,2,2]  <- map_fish_fixed[,1,1,1,2] # share deltas
-mapping$ln_fish_fixed_sel_pars <- factor(map_fish_fixed)
+mapping$fish_fixed_sel_pars <- factor(map_fish_fixed)
 
 # Map off delta for JP LLS
-map_srv_fixed <- array(mapping$ln_srv_fixed_sel_pars, dim = dim(parameters$ln_srv_fixed_sel_pars))
+map_srv_fixed <- array(mapping$srv_fixed_sel_pars, dim = dim(parameters$srv_fixed_sel_pars))
 map_srv_fixed[,2,1,2,2]  <- map_srv_fixed[,2,1,1,2] # share deltas
-mapping$ln_srv_fixed_sel_pars <- factor(map_srv_fixed)
+mapping$srv_fixed_sel_pars <- factor(map_srv_fixed)
 
 # Some starting values to help out the model
-parameters$ln_srv_fixed_sel_pars[] <- log(5)
-parameters$ln_fish_fixed_sel_pars[,,,,1] <- log(5) # fixed gear
-parameters$ln_fish_fixed_sel_pars[,,,,2] <- log(5) # trawl gear
+parameters$srv_fixed_sel_pars[] <- log(5)
+parameters$fish_fixed_sel_pars[,,,,1] <- log(5) # fixed gear
+parameters$fish_fixed_sel_pars[,,,,2] <- log(5) # trawl gear
 
 # make AD model function
 # Fit model

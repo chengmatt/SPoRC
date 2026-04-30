@@ -4,7 +4,12 @@
 \alias{do_srv_fixed_sel_pars_mapping}
 \title{Map survey selectivity fixed-effect parameters}
 \usage{
-do_srv_fixed_sel_pars_mapping(input_list, srv_fixed_sel_pars_spec)
+do_srv_fixed_sel_pars_mapping(
+  input_list,
+  srv_fixed_sel_pars_spec,
+  bins,
+  srv_sel_nonpar_est_bins
+)
 }
 \arguments{
 \item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
@@ -29,16 +34,18 @@ One of:
   \item{\code{"fix"}}{All parameters fixed at starting values
     (mapped to \code{NA}).}
 }}
+
+\item{bins}{Number of selectivity bins}
 }
 \value{
-The input \code{input_list} with \code{$map$ln_srv_fixed_sel_pars}
+The input \code{input_list} with \code{$map$srv_fixed_sel_pars}
   set to a factor vector. Active parameters receive sequential integer
   indices; inactive region–fleet combinations and fixed parameters are
   \code{NA}.
 }
 \description{
 Internal helper called by \code{\link{Setup_Mod_Srvsel_and_Q}} to construct
-the TMB/RTMB factor map for \code{ln_srv_fixed_sel_pars}
+the TMB/RTMB factor map for \code{srv_fixed_sel_pars}
 \code{[n_regions × max_sel_pars × max_sel_blocks × n_sexes × n_srv_fleets]},
 the log-scale fixed-effect parameters of the survey selectivity functional
 forms (e.g., \eqn{a_{50}}, \eqn{k}, \eqn{a_{max}}). The number of active

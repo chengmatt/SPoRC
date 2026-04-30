@@ -18,6 +18,11 @@ single_region_BH_Fmsy(pars, data)
   \item{\code{h}}{Numeric vector \code{[n_pop]}. Beverton-Holt steepness.}
   \item{\code{R0}}{Numeric vector \code{[n_pop]}. Unfished equilibrium
     recruitment.}
+  \item{\code{is_discard_fleet}}{Integer vector \code{[n_fish_fleets]}.
+    Indicator for fleets whose catch is excluded from landed yield
+    (0 = landing fleet, 1 = discard-only fleet). These fleets still
+    contribute to total fishing mortality \code{Z} and affect population
+    dynamics and spawning biomass.}
 }}
 }
 \value{
@@ -30,6 +35,8 @@ Beverton-Holt stock-recruit relationship. Yield is computed from
 spawning biomass per recruit (\eqn{\phi_F}), the BH equilibrium
 recruitment formula, and catch-at-age integrated across all seasons.
 Supports multiple populations via stray rates but does not include
-spatial movement.
+spatial movement. Yield includes only landings from fleets where
+\code{is_discard_fleet == 0}; discard-only fleets contribute to total
+mortality but not to the yield being maximised.
 }
 \keyword{internal}

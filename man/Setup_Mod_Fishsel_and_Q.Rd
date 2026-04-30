@@ -2,7 +2,7 @@
 % Please edit documentation in R/Setup_Fishery.R
 \name{Setup_Mod_Fishsel_and_Q}
 \alias{Setup_Mod_Fishsel_and_Q}
-\title{Set up fishery selectivity and catchability specifications}
+\title{Set up total and retained fishery selectivity and catchability specifications}
 \usage{
 Setup_Mod_Fishsel_and_Q(
   input_list,
@@ -21,6 +21,27 @@ Setup_Mod_Fishsel_and_Q(
   fish_selex_prior = NULL,
   cont_tv_fish_sel_penalty = TRUE,
   fishsel_devs_shared_bins = NULL,
+  fish_selex_type = "age",
+  use_fixed_fish_sel = rep(0, input_list$data$n_fish_fleets),
+  fish_sel_input = NULL,
+  fish_sel_nonpar_est_bins = NULL,
+  cont_tv_ret_sel = paste("none_Fleet_", 1:input_list$data$n_fish_fleets, sep = ""),
+  ret_sel_blocks = paste("none_Fleet_", 1:input_list$data$n_fish_fleets, sep = ""),
+  ret_sel_model = paste("logist1_Fleet_", 1:input_list$data$n_fish_fleets, sep = ""),
+  retsel_pe_pars_spec = NULL,
+  ret_fixed_sel_pars_spec = rep("fix_ret_sel_input", input_list$data$n_fish_fleets),
+  ret_sel_devs_spec = NULL,
+  ret_sel_corr_opt_semipar = NULL,
+  Use_ret_selex_prior = 0,
+  ret_selex_prior = NULL,
+  cont_tv_ret_sel_penalty = TRUE,
+  retsel_devs_shared_bins = NULL,
+  ret_selex_type = "age",
+  use_fixed_ret_sel = rep(1, input_list$data$n_fish_fleets),
+  ret_sel_input = array(1, dim = c(input_list$data$n_pop, input_list$data$n_regions,
+    length(input_list$data$years), input_list$data$n_seas, length(input_list$data$ages),
+    input_list$data$n_sexes, input_list$data$n_fish_fleets)),
+  ret_sel_nonpar_est_bins = NULL,
   ...
 )
 }
@@ -65,6 +86,9 @@ Available models:
   \item{\code{"gamma"}}{Dome-shaped gamma with \eqn{a_{max}} and \eqn{\delta} (2 parameters).}
   \item{\code{"exponential"}}{Exponential with a single power parameter (1 parameter).}
   \item{\code{"dbnrml"}}{Double-normal with 6 parameters.}
+  \item{\code{"nonpar"}}{Non-parametric selectivity defined over discrete age or length bins, where selectivity is estimated as independent parameters (or grouped bins if specified via nonparametric bin mapping). No fixed functional form is imposed.}
+  \item{\code{"asymplogist1"}}{Logistic selectivity with \eqn{a_{50}} and slope \eqn{k} and asymptotic control (3 parameters).}
+  \item{\code{"asymplogist2"}}{Logistic selectivity with with \eqn{a_{50}} and \eqn{a_{95}} and asymptotic control (3 parameters).}
 }
 See the model equations vignette for mathematical definitions.}
 
@@ -126,22 +150,133 @@ bins that share a single deviation series. Only used when
 \code{fish_sel_devs_spec} contains one of the \code{"est_shared_b"} variants.
 Example: \code{list(1:5, 6:10, 11:30)}.}
 
-\item{...}{Optional starting value overrides, passed by name. Recognised
-arguments:
+\item{fish_selex_type}{Character scalar specifying whether selectivity is
+age- or length-based. Options:
 \describe{
-  \item{\code{ln_fish_fixed_sel_pars}}{Array dimensioned
-    \code{[n_regions × max_pars × max_blocks × n_sexes × n_fish_fleets]}.
-    Default: \code{0}.}
-  \item{\code{ln_fish_q}}{Array dimensioned
-    \code{[n_regions × max_q_blocks × n_fish_fleets]}.
-    Default: \code{0}.}
-  \item{\code{fishsel_pe_pars}}{Array dimensioned
-    \code{[n_regions × 4 × n_sexes × n_fish_fleets]}.
-    Default: \code{0}.}
-  \item{\code{ln_fishsel_devs}}{Array dimensioned
-    \code{[n_regions × (n_years + n_proj_yrs_devs) × n_bins × n_sexes × n_fish_fleets]}.
-    Default: \code{0}.}
-}}
+  \item{\code{"age"}}{Selectivity is defined over age bins.}
+  \item{\code{"length"}}{Selectivity is defined over length bins.}
+}
+Determines the bin dimension used for all fishery selectivity functions,
+including parametric, time-varying, and non-parametric forms.}
+
+\item{use_fixed_fish_sel}{Integer vector of length \code{n_fish_fleets}
+indicating whether fishery selectivity is fixed (\code{1}) or estimated
+(\code{0}) for each fleet.}
+
+\item{fish_sel_input}{Array of fixed fishery selectivity values with
+dimensions:
+\code{[n_pop × n_regions × n_years × n_seas × n_bins × n_sexes × n_fish_fleets]}.
+Required when any element of \code{use_fixed_fish_sel == 1}.}
+
+\item{fish_sel_nonpar_est_bins}{Optional list defining bin groupings for
+non-parametric fishery selectivity. Structure is \code{[[fleet]][[block]]}, where each
+element is a list of integer vectors. Each vector defines a group of bins that
+share a single estimated selectivity parameter. Indices must correspond to the
+bin dimension defined by \code{fish_selex_type}.}
+
+\item{cont_tv_ret_sel}{Character vector of length \code{n_fish_fleets}
+specifying continuous time-varying selectivity per fleet. Each element
+must be \code{"<type>_Fleet_<f>"}. Valid types:
+\describe{
+  \item{\code{"none"}}{No continuous time-variation (default).}
+  \item{\code{"iid"}}{IID annual deviations on selectivity parameters.}
+  \item{\code{"rw"}}{Random walk in selectivity parameters over time.}
+  \item{\code{"3dmarg"}}{3D GMRF with marginal variance parameterisation.}
+  \item{\code{"3dcond"}}{3D GMRF with conditional variance parameterisation.}
+  \item{\code{"2dar1"}}{2D separable AR1 in bin and year dimensions.}
+}
+If any fleet has \code{cont_tv_ret_sel != "none"}, both
+\code{retsel_pe_pars_spec} and \code{ret_sel_devs_spec} must also be
+provided.}
+
+\item{ret_sel_blocks}{Character vector defining discrete selectivity time
+blocks per fleet. Each element follows \code{"Block_<b>_Year_<s>-<e>_Fleet_<f>"}
+or \code{"Block_<b>_Year_<s>-terminal_Fleet_<f>"}. Use
+\code{"none_Fleet_<f>"} (default) for a single constant block. Blocks must
+be non-overlapping and together span all model years for the specified fleet.
+Mutually exclusive with \code{cont_tv_ret_sel != "none"} for the same fleet.}
+
+\item{ret_sel_model}{Character vector specifying the selectivity functional
+form for each fleet (and optionally each time block). Each element must
+follow one of:
+\itemize{
+  \item \code{"<model>_Fleet_<f>"} — single form for all years of fleet \code{f}.
+  \item \code{"<model>_Fleet_<f>_Block_<b>"} — form specific to block \code{b}
+    of fleet \code{f}, as defined in \code{ret_sel_blocks}.
+}
+Available models:
+\describe{
+  \item{\code{"logist1"}}{Logistic with \eqn{a_{50}} and slope \eqn{k} (2 parameters).}
+  \item{\code{"logist2"}}{Logistic with \eqn{a_{50}} and \eqn{a_{95}} (2 parameters).}
+  \item{\code{"gamma"}}{Dome-shaped gamma with \eqn{a_{max}} and \eqn{\delta} (2 parameters).}
+  \item{\code{"exponential"}}{Exponential with a single power parameter (1 parameter).}
+  \item{\code{"dbnrml"}}{Double-normal with 6 parameters.}
+  \item{\code{"nonpar"}}{Non-parametric selectivity defined over discrete age or length bins, where selectivity is estimated as independent parameters (or grouped bins if specified via nonparametric bin mapping). No fixed functional form is imposed.}
+  \item{\code{"asymplogist1"}}{Logistic selectivity with \eqn{a_{50}} and slope \eqn{k} and asymptotic control (3 parameters).}
+  \item{\code{"asymplogist2"}}{Logistic selectivity with with \eqn{a_{50}} and \eqn{a_{95}} and asymptotic control (3 parameters).}
+}
+See the model equations vignette for mathematical definitions.}
+
+\item{retsel_pe_pars_spec}{Character vector of length \code{n_fish_fleets}
+specifying the estimation structure for selectivity process error
+hyperparameters. Required when any fleet has continuous time-variation.
+See \code{\link{do_retsel_pe_pars_mapping}} for all options.}
+
+\item{ret_fixed_sel_pars_spec}{Character vector of length \code{n_fish_fleets}
+specifying how fixed-effect selectivity parameters are estimated. See
+\code{\link{do_ret_fixed_sel_pars_mapping}} for all options
+(\code{"est_all"}, \code{"est_shared_r"}, \code{"est_shared_s"},
+\code{"est_shared_r_s"}, \code{"est_shared_f_x"}, \code{"fix"}).}
+
+\item{ret_sel_devs_spec}{Character vector of length \code{n_fish_fleets}
+specifying the estimation structure for annual selectivity deviations.
+Required when any fleet has continuous time-variation. See
+\code{\link{do_retsel_devs_mapping}} for all options including age-sharing
+options for semi-parametric forms.}
+
+\item{ret_sel_corr_opt_semipar}{Character vector of length \code{n_fish_fleets}
+controlling which correlation components to suppress in semi-parametric
+(3D GMRF or 2D AR1) time-varying selectivity. Set to \code{NA} (default)
+for no suppression. See \code{\link{do_retsel_pe_pars_mapping}} for valid
+suppression codes. Cohort-correlation options are invalid for \code{"2dar1"}.}
+
+\item{Use_ret_selex_prior}{Integer flag. \code{1} = apply lognormal priors to
+selectivity parameters; \code{0} = no priors (default). Requires
+\code{ret_selex_prior}.}
+
+\item{ret_selex_prior}{Data frame of selectivity prior hyperparameters.
+Required columns: \code{region}, \code{fleet}, \code{block}, \code{sex},
+\code{par}, \code{mu}, \code{sd}.}
+
+\item{cont_tv_ret_sel_penalty}{Logical. If \code{TRUE} (default), applies a
+penalty on the continuous time-varying selectivity deviations to regularise
+the process.}
+
+\item{retsel_devs_shared_bins}{List of integer vectors grouping age or length
+bins that share a single deviation series. Only used when
+\code{ret_sel_devs_spec} contains one of the \code{"est_shared_b"} variants.
+Example: \code{list(1:5, 6:10, 11:30)}.}
+
+\item{ret_selex_type}{Character scalar specifying whether retained selectivity
+is age- or length-based. Options:
+\describe{
+  \item{\code{"age"}}{Selectivity is defined over age bins.}
+  \item{\code{"length"}}{Selectivity is defined over length bins.}
+}
+Determines the bin dimension used for all retained selectivity functions,
+including parametric, time-varying, and non-parametric forms.}
+
+\item{use_fixed_ret_sel}{Integer vector of length \code{n_fish_fleets}
+indicating whether to fix selectivity (\code{1}) or estimate it (\code{0}).}
+
+\item{ret_sel_input}{Array of fixed selectivity values with dimensions
+\code{[n_pop × n_regions × n_years × n_seas × n_bins × n_sexes × n_fish_fleets]}.}
+
+\item{ret_sel_nonpar_est_bins}{Optional list specifying bin groupings for
+non-parametric retained selectivity. Structure is \code{[[fleet]][[block]]}, where each
+element is a list of bin index vectors defining grouped parameters.}
+
+\item{...}{Optional starting value overrides for selectivity parameters.}
 }
 \value{
 The input \code{input_list} with \code{$data}, \code{$par}, and
@@ -166,9 +301,11 @@ Other Model Setup:
 \code{\link{Setup_Mod_Biologicals}()},
 \code{\link{Setup_Mod_Catch_and_F}()},
 \code{\link{Setup_Mod_Dim}()},
+\code{\link{Setup_Mod_Discard_Comps}()},
 \code{\link{Setup_Mod_FishIdx_and_Comps}()},
 \code{\link{Setup_Mod_Movement}()},
 \code{\link{Setup_Mod_Rec}()},
+\code{\link{Setup_Mod_Retsel}()},
 \code{\link{Setup_Mod_SrvIdx_and_Comps}()},
 \code{\link{Setup_Mod_Srvsel_and_Q}()},
 \code{\link{Setup_Mod_Tagging}()},

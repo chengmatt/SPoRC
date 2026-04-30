@@ -19,10 +19,14 @@ condition_closed_loop_simulations(
   SrvIdx_SE_pop_fill = "mean",
   ISS_FishAgeComps_fill = "mean",
   ISS_FishLenComps_fill = "mean",
+  ISS_FishAgeComps_discard_fill = "mean",
+  ISS_FishLenComps_discard_fill = "mean",
   ISS_SrvAgeComps_fill = "mean",
   ISS_SrvLenComps_fill = "mean",
   ISS_FishAgeComps_pop_fill = "mean",
   ISS_FishLenComps_pop_fill = "mean",
+  ISS_FishAgeComps_discard_pop_fill = "mean",
+  ISS_FishLenComps_discard_pop_fill = "mean",
   ISS_SrvAgeComps_pop_fill = "mean",
   ISS_SrvLenComps_pop_fill = "mean",
   ...
@@ -67,6 +71,12 @@ years.}
 \item{ISS_FishLenComps_fill}{Same behavior as \code{ISS_FishAgeComps_fill}
 for pooled fishery length compositions.}
 
+\item{ISS_FishAgeComps_discard_fill}{Same behavior as \code{ISS_FishAgeComps_fill}
+for pooled fishery length compositions.}
+
+\item{ISS_FishLenComps_discard_fill}{Same behavior as \code{ISS_FishAgeComps_fill}
+for pooled fishery length compositions.}
+
 \item{ISS_SrvAgeComps_fill}{Character or numeric specifying how pooled
 survey age-composition input sample sizes are extended into projection
 years.}
@@ -82,12 +92,12 @@ extended into projection years. Default \code{"mean"}.}
 \code{ISS_FishAgeComps_pop_fill} for population-specific fishery length
 compositions. Default \code{"mean"}.}
 
-\item{ISS_SrvAgeComps_pop_fill}{Character or numeric specifying how
-population-specific survey age-composition input sample sizes are
-extended into projection years. Default \code{"mean"}.}
+\item{ISS_FishAgeComps_discard_pop_fill}{Same behavior as
+\code{ISS_FishAgeComps_pop_fill} for population-specific fishery length
+compositions. Default \code{"mean"}.}
 
-\item{ISS_SrvLenComps_pop_fill}{Same behavior as
-  \code{ISS_SrvAgeComps_pop_fill} for population-specific survey length
+\item{ISS_FishLenComps_discard_pop_fill}{Same behavior as
+  \code{ISS_FishLenComps_pop_fill} for population-specific fishery length
   compositions. Default \code{"mean"}.
 
 Extension rules for all \code{*_fill} arguments may be:
@@ -104,6 +114,14 @@ Extension rules for all \code{*_fill} arguments may be:
 
 If a fill argument receives an array directly, it is interpreted as the
 fully specified input and stored accordingly; the fill rule is ignored.}
+
+\item{ISS_SrvAgeComps_pop_fill}{Character or numeric specifying how
+population-specific survey age-composition input sample sizes are
+extended into projection years. Default \code{"mean"}.}
+
+\item{ISS_SrvLenComps_pop_fill}{Same behavior as
+\code{ISS_SrvAgeComps_pop_fill} for population-specific survey length
+compositions. Default \code{"mean"}.}
 
 \item{...}{Optional named simulation inputs that override internally
   generated components. Any argument expected by

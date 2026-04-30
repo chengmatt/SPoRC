@@ -844,60 +844,73 @@ get_idx_fits_plot <- function(data,
   return(idx_fit_plot)
 }
 
-#' Get Catch Fits Plot
+#' Get Catch and Discard Fits Plot
 #'
-#' Plots observed catch time series alongside model-predicted values for one or
-#' more SPoRC model runs, for both pooled (region-level) and population-specific
-#' data streams. Pooled predicted catch is summed across populations before
-#' comparison with observations. Years where observed catch is zero are excluded
-#' from both layers.
+#' Plots observed catch and discard time series alongside model-predicted
+#' values for one or more SPoRC model runs, for both pooled (region-level)
+#' and population-specific data streams.
+#'
+#' Pooled predictions are summed across populations before comparison with
+#' observed data. Years where observed values are zero are excluded from both
+#' observed and predicted layers to avoid issues in lognormal confidence
+#' interval construction.
 #'
 #' @param data List of length \code{n_models}, where each element is a SPoRC
 #'   data list. \code{ObsCatch}
-#'   \code{[n_regions × n_yrs × n_seas × n_fish_fleets]} provides pooled
-#'   observed catch. \code{Wt_Catch} is used alongside \code{ln_sigmaC} from
-#'   the report to recover the unweighted observation-error SD for CI
-#'   construction. When \code{UseCatch_pop} contains any ones,
-#'   \code{ObsCatch_pop}
-#'   \code{[n_pop × n_regions × n_yrs × n_seas × n_fish_fleets]} and
-#'   \code{Wt_Catch_pop} are also used.
-#' @param rep List of length \code{n_models}, where each element is a SPoRC
-#'   report list (i.e. the output of \code{obj$report()} after optimisation).
-#'   \code{PredCatch}
-#'   \code{[n_pop × n_regions × n_yrs × n_seas × n_fish_fleets]} is summed
-#'   across populations for pooled trajectories and used directly by population
-#'   for pop-specific trajectories. \code{ln_sigmaC} and \code{ln_sigmaC_pop}
-#'   are used for CI construction.
-#' @param model_names Character vector of length \code{n_models} giving display
-#'   names for each model run. Used as the colour legend label on predicted
-#'   trajectories.
+#'   \code{[n_regions × n_yrs × n_seas × n_fish_fleets]} provides pooled observed
+#'   catch, and \code{ObsDiscard} provides pooled observed discards.
+#'   \code{Wt_Catch} and \code{Wt_Discard}, together with \code{ln_sigmaC},
+#'   are used to reconstruct observation-error standard deviations for
+#'   confidence interval construction.
 #'
-#' @return A list of two \code{ggplot} objects:
-#'   \describe{
-#'     \item{[[1]] catch_fit_rg_plot}{Pooled catch plot, produced when any
-#'       element of \code{UseCatch} is 1. Observed catch shown as
-#'       \code{geom_pointrange} (black) with 95\% log-normal confidence
-#'       intervals; predicted catch shown as \code{geom_line} coloured by
-#'       model. Faceted by (Season + Fleet) × Region with free y-scales.}
-#'     \item{[[2]] catch_fit_pop_plot}{Population-specific catch plot, produced
-#'       when any element of \code{UseCatch_pop} is 1. Same geometry as the
-#'       pooled plot, faceted by (Population + Season + Fleet) × Region with
-#'       free y-scales. \code{NULL} when no pop-specific catch is active.}
-#'   }
+#'   When \code{UseCatch_pop} or \code{UseDiscard_pop} contain active elements,
+#'   population-level data (\code{ObsCatch_pop}, \code{ObsDiscard_pop}) and
+#'   corresponding weights are also used.
+#'
+#' @param rep List of length \code{n_models}, where each element is a SPoRC
+#'   model report (output of \code{obj$report()} after optimisation).
+#'   \code{PredCatch} and \code{PredDiscard}
+#'   \code{[n_pop × n_regions × n_yrs × n_seas × n_fish_fleets]} are summed
+#'   across populations for pooled trajectories and used directly for
+#'   population-specific trajectories.
+#'   \code{ln_sigmaC} and \code{ln_sigmaC_pop} are used for confidence interval
+#'   construction.
+#'
+#' @param model_names Character vector of length \code{n_models} giving display
+#'   names for each model run. Used in the legend for predicted trajectories.
+#'
+#' @return A list of \code{ggplot} objects:
+#' \describe{
+#'   \item{[[1]] catch_fit_rg_plot}{Pooled catch fits (region-level). Produced
+#'   when \code{UseCatch == 1}. Observations shown as \code{geom_pointrange}
+#'   with 95\% lognormal confidence intervals; predictions shown as lines
+#'   colored by model. Faceted by (Season × Fleet) × Region with free y-scales.}
+#'
+#'   \item{[[2]] catch_fit_pop_plot}{Population-specific catch fits. Produced
+#'   when \code{UseCatch_pop == 1}. Faceted by (Population × Season × Fleet) ×
+#'   Region. Returns \code{NULL} if not used.}
+#'
+#'   \item{[[3]] discard_fit_rg_plot}{Pooled discard fits (region-level).
+#'   Produced when \code{UseDiscard == 1}. Same structure as catch plots.}
+#'
+#'   \item{[[4]] discard_fit_pop_plot}{Population-specific discard fits.
+#'   Produced when \code{UseDiscard_pop == 1}. Returns \code{NULL} if not used.}
+#' }
+#'
+#' @details
+#' This function produces diagnostic plots for both catch and discard data.
+#' Observed and predicted time series are shown for each, with lognormal
+#' confidence intervals derived from \code{ln_sigmaC} (or population-level
+#' equivalents) and sampling weights.
+#'
+#' Observations equal to zero are excluded prior to plotting to avoid issues
+#' in log-space confidence interval construction.
+#'
+#' Predicted catch and discard are aggregated across populations for pooled
+#' diagnostics, while population-specific plots use unaggregated outputs.
 #'
 #' @export get_catch_fits_plot
 #' @family Model Diagnostics
-#'
-#' @examples
-#' \dontrun{
-#'   out <- get_catch_fits_plot(
-#'     data        = list(data1, data2),
-#'     rep         = list(rep1, rep2),
-#'     model_names = c("Base", "Sensitivity")
-#'   )
-#'   out[[1]]  # pooled catch
-#'   out[[2]]  # population-specific catch
-#' }
 get_catch_fits_plot <- function(data,
                                 rep,
                                 model_names
@@ -947,6 +960,50 @@ get_catch_fits_plot <- function(data,
       ggplot2::facet_grid(Seas_Fleet~Region, scales = 'free_y')
   } else NULL
 
+  # Plot discards fits
+  discard_fit_rg_plot <- if(any(data[[1]]$UseDiscard == 1)) {
+
+    discard_fits_rg_all <- data.frame()
+
+    # get discard fits data
+    for(i in 1:length(rep)) {
+
+      # Get discard fits
+      discard_fits <- reshape2::melt(rep[[i]]$PredDiscard) %>%
+        dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+        dplyr::group_by(Region, Year, Seas, Fleet) %>%
+        dplyr::summarize(value = sum(value)) %>%
+        dplyr::ungroup() %>%
+        dplyr::left_join(
+          reshape2::melt(data[[i]]$ObsDiscard) %>%
+            dplyr::left_join(reshape2::melt(exp(rep[[i]]$ln_sigmaC) / data[[i]]$Wt_Discard) %>%
+                               dplyr::rename(se = value),
+                             by = c("Var1", "Var2", "Var3", "Var4")) %>%
+            dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4, obs = value),
+          by = c("Region", "Year", "Seas", "Fleet")
+        ) %>%
+        dplyr::mutate(Model = model_names[i],
+                      Region = paste('Region', Region),
+                      Seas = paste("Seas", Seas),
+                      Fleet = paste('Fleet', Fleet),
+                      Seas_Fleet = paste(Seas, Fleet))
+
+      discard_fits_rg_all <- rbind(discard_fits_rg_all, discard_fits) # bind
+
+    }
+
+    ggplot2::ggplot() +
+      ggplot2::geom_line(discard_fits_rg_all %>% dplyr::filter(obs != 0),
+                         mapping = ggplot2::aes(x = Year, y = value, color = factor(Model)), lwd = 1.3) +
+      ggplot2::geom_pointrange(discard_fits_rg_all %>% dplyr::filter(obs != 0),
+                               mapping = ggplot2::aes(x = Year, y = obs, ymin = exp(log(obs) - 1.96 * se),
+                                                      ymax = exp(log(obs) + 1.96 * se)), color = 'black') +
+      ggplot2::labs(x = "Year", y = 'Discard', color = 'Model') +
+      theme_sablefish() +
+      ggplot2::coord_cartesian(ylim = c(0,NA)) +
+      ggplot2::facet_grid(Seas_Fleet~Region, scales = 'free_y')
+  } else NULL
+
   catch_fit_pop_plot <- if(any(data[[1]]$UseCatch_pop == 1)) {
 
     catch_fits_pop_all <- data.frame()
@@ -987,7 +1044,47 @@ get_catch_fits_plot <- function(data,
       ggplot2::facet_grid(Pop_Seas_Fleet~Region, scales = 'free_y')
   } else NULL
 
-  return(list(catch_fit_rg_plot, catch_fit_pop_plot))
+  discard_fit_pop_plot <- if(any(data[[1]]$UseDiscard_pop == 1)) {
+
+    discard_fits_pop_all <- data.frame()
+
+    # get discard fits data
+    for(i in 1:length(rep)) {
+
+      # Get discard fits
+      discard_fits <- reshape2::melt(rep[[i]]$PredDiscard) %>%
+        dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+        dplyr::left_join(
+          reshape2::melt(data[[i]]$ObsDiscard_pop) %>%
+            dplyr::left_join(reshape2::melt(exp(rep[[i]]$ln_sigmaC_pop) / data[[i]]$Wt_Discard_pop) %>%
+                               dplyr::rename(se = value),
+                             by = c("Var1", "Var2", "Var3", "Var4", "Var5")) %>%
+            dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5, obs = value),
+          by = c("Pop", "Region", "Year", "Seas", "Fleet")
+        ) %>%
+        dplyr::mutate(Model = model_names[i],
+                      Pop = paste('Pop', Pop),
+                      Region = paste('Region', Region),
+                      Seas = paste("Seas", Seas),
+                      Fleet = paste('Fleet', Fleet),
+                      Pop_Seas_Fleet = paste(Pop, Seas, Fleet))
+
+      discard_fits_pop_all <- rbind(discard_fits_pop_all, discard_fits) # bind
+    }
+
+    ggplot2::ggplot() +
+      ggplot2::geom_line(discard_fits_pop_all %>% dplyr::filter(obs != 0),
+                         mapping = ggplot2::aes(x = Year, y = value, color = factor(Model)), lwd = 1.3) +
+      ggplot2::geom_pointrange(discard_fits_pop_all %>% dplyr::filter(obs != 0),
+                               mapping = ggplot2::aes(x = Year, y = obs, ymin = exp(log(obs) - 1.96 * se),
+                                                      ymax = exp(log(obs) + 1.96 * se)), color = 'black') +
+      ggplot2::labs(x = "Year", y = 'Population-Specific Discard', color = 'Model') +
+      theme_sablefish() +
+      ggplot2::coord_cartesian(ylim = c(0,NA)) +
+      ggplot2::facet_grid(Pop_Seas_Fleet~Region, scales = 'free_y')
+  } else NULL
+
+  return(list(catch_fit_rg_plot, catch_fit_pop_plot, discard_fit_rg_plot, discard_fit_pop_plot))
 }
 
 

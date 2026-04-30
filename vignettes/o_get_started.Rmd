@@ -729,7 +729,8 @@ plot_uncertainties(mcmc)
 Time series of recruitment and spawning stock biomass derived from posterior samples can also readily be plotted. 
 ```{r eval = FALSE}
 # get mcmc time series plots
-mcmc_ts_plot <- get_model_rep_from_mcmc(rtmb_obj = francis_model, adnuts_obj = mcmc_short, what = c("SSB", "Rec"), n_cores = 3)
+mcmc_ts_plot <- get_model_rep_from_mcmc(rtmb_obj = francis_model, 
+                                        adnuts_obj = mcmc, what = c("SSB", "Rec"), n_cores = 3)
 
 # ssb plot
 # summarize results

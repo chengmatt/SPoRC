@@ -165,7 +165,7 @@ input_list <- Setup_Mod_Fishsel_and_Q(input_list = input_list,
 # mapping for fishery selectivity
 # sharing delta across sexes from early domestic fishery (first time block)
 # also fixing parameters so that no time block for trawl fishery
-input_list$map$ln_fish_fixed_sel_pars <- factor(c(1:7, 2, 8:11, rep(12:13,3), rep(c(14,13),3)))
+input_list$map$fish_fixed_sel_pars <- factor(c(1:7, 2, 8:11, rep(12:13,3), rep(c(14,13),3)))
 
 # Setup survey selectivity and catchability
 input_list <- Setup_Mod_Srvsel_and_Q(input_list = input_list,
@@ -198,11 +198,11 @@ input_list <- Setup_Mod_Srvsel_and_Q(input_list = input_list,
 # ll survey, share delta male (index 5) across time blocks and to the coop jp ll survey delta
 # coop jp survey does not estimate parameters and shares deltas with longline survey
 # single time block with trawl survey and only one parameter hence, only one parameter estimated across blocks (indices 7 and 8)
-input_list$map$ln_srv_fixed_sel_pars <- factor(c(1:3, 2, 4:6, 5,rep(7,4), rep(8, 4), rep(c(NA,2), 2), rep(c(NA, 5), 2)))
+input_list$map$srv_fixed_sel_pars <- factor(c(1:3, 2, 4:6, 5,rep(7,4), rep(8, 4), rep(c(NA,2), 2), rep(c(NA, 5), 2)))
 
 # Coop JP Survey (Logistic) Single time block (these estimates are fixed!)
-input_list$par$ln_srv_fixed_sel_pars[1,,,1,3] <- c(0.980660760456, tem_par$coefficients[names(tem_par$coefficients) == "log_delta_srv1_f"])
-input_list$par$ln_srv_fixed_sel_pars[1,,,2,3] <- c(1.22224502478, tem_par$coefficients[names(tem_par$coefficients) == "log_delta_srv1_m"])
+input_list$par$srv_fixed_sel_pars[1,,,1,3] <- c(0.980660760456, tem_par$coefficients[names(tem_par$coefficients) == "log_delta_srv1_f"])
+input_list$par$srv_fixed_sel_pars[1,,,2,3] <- c(1.22224502478, tem_par$coefficients[names(tem_par$coefficients) == "log_delta_srv1_m"])
 
 # Setup tagging stuff
 input_list <- Setup_Mod_Tagging(input_list = input_list,
@@ -273,13 +273,13 @@ sabie_rtmb_model$sd_rep <- RTMB::sdreport(sabie_rtmb_model)
 rep <- sabie_rtmb_model$rep
 sd_rep <- sabie_rtmb_model$sd_rep
 
-# saveRDS(data, here("dev", "dev_output", "1_Region_Model_Sablefish", "data.RDS"))
-# saveRDS(sd_rep, here("dev", "dev_output", "1_Region_Model_Sablefish", "sd_rep.RDS"))
-# saveRDS(rep, here("dev", "dev_output", "1_Region_Model_Sablefish", "rep.RDS"))
-#
-# # Write Region Sablefish Report
-# sgl_rg_sable_rep <- rep
-# usethis::use_data(sgl_rg_sable_rep, internal = FALSE, overwrite = TRUE)
+saveRDS(data, here("dev", "dev_output", "1_Region_Model_Sablefish", "data.RDS"))
+saveRDS(sd_rep, here("dev", "dev_output", "1_Region_Model_Sablefish", "sd_rep.RDS"))
+saveRDS(rep, here("dev", "dev_output", "1_Region_Model_Sablefish", "rep.RDS"))
+
+# Write Region Sablefish Report
+sgl_rg_sable_rep <- rep
+usethis::use_data(sgl_rg_sable_rep, internal = FALSE, overwrite = TRUE)
 
 # Compare to ADMB (23.5b) -------------------------------------------------
 # Read in data

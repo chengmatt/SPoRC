@@ -25,13 +25,17 @@ Setup_Mod_Srvsel_and_Q(
     input_list$data$n_srv_fleets)),
   cont_tv_srv_sel_penalty = TRUE,
   srvsel_devs_shared_bins = NULL,
+  srv_selex_type = "age",
+  use_fixed_srv_sel = rep(0, input_list$data$n_srv_fleets),
+  srv_sel_input = NULL,
+  srv_sel_nonpar_est_bins = NULL,
   ...
 )
 }
 \arguments{
 \item{input_list}{Named list with \code{$data}, \code{$par}, \code{$map},
 and \code{$verbose} sublists, as returned by upstream setup functions.
-\code{$data$Selex_Type} must already be set by
+\code{$data$srv_selex_type} must already be set by
 \code{\link{Setup_Mod_Biologicals}}.}
 
 \item{cont_tv_srv_sel}{Character vector defining the continuous
@@ -69,13 +73,14 @@ of:
 }
 Available models (see the model equations vignette for parameterisations):
 \describe{
-  \item{\code{"logist1"}}{Logistic: \eqn{a_{50}} and \eqn{k}. 2 params.}
-  \item{\code{"logist2"}}{Logistic: \eqn{a_{50}} and \eqn{a_{95}}.
-    2 params.}
-  \item{\code{"gamma"}}{Dome-shaped gamma: \eqn{a_{max}} and
-    \eqn{\delta}. 2 params.}
-  \item{\code{"exponential"}}{Exponential with power parameter. 1 param.}
-  \item{\code{"dbnrml"}}{Double-normal. 6 params.}
+  \item{\code{"logist1"}}{Logistic with \eqn{a_{50}} and slope \eqn{k} (2 parameters).}
+  \item{\code{"logist2"}}{Logistic with \eqn{a_{50}} and \eqn{a_{95}} (2 parameters).}
+  \item{\code{"gamma"}}{Dome-shaped gamma with \eqn{a_{max}} and \eqn{\delta} (2 parameters).}
+  \item{\code{"exponential"}}{Exponential with a single power parameter (1 parameter).}
+  \item{\code{"dbnrml"}}{Double-normal with 6 parameters.}
+  \item{\code{"nonpar"}}{Non-parametric selectivity defined over discrete age or length bins, where selectivity is estimated as independent parameters (or grouped bins if specified via nonparametric bin mapping). No fixed functional form is imposed.}
+  \item{\code{"asymplogist1"}}{Logistic selectivity with \eqn{a_{50}} and slope \eqn{k} and asymptotic control (3 parameters).}
+  \item{\code{"asymplogist2"}}{Logistic selectivity with with \eqn{a_{50}} and \eqn{a_{95}} and asymptotic control (3 parameters).}
 }
 No default; must be provided.}
 
@@ -151,18 +156,26 @@ for age/length-sharing of deviations under semi-parametric forms (e.g.,
 \code{list(1:5, 6:10, 11:30)}). Required when \code{srv_sel_devs_spec}
 includes any \code{"est_shared_b"} variant. Default \code{NULL}.}
 
+\item{srv_selex_type}{Character. Whether survey selectivity type is 'age' or 'length' based. Default: \code{age}.}
+
+\item{use_fixed_srv_sel}{Integer vector of length \code{n_srv_fleets}
+indicating whether survey selectivity is fixed (\code{1}) or estimated
+(\code{0}) for each survey index.}
+
+\item{srv_sel_input}{Array of fixed survey selectivity values used when
+\code{use_fixed_srv_sel == 1}. Dimensions:
+\code{[n_pop × n_regions × n_years × n_seas × n_bins × n_sexes × n_srv_fleets]}.
+Required whenever any survey has fixed selectivity specified.}
+
+\item{srv_sel_nonpar_est_bins}{Optional list defining bin groupings for
+non-parametric survey selectivity. Structure is
+\code{[[survey]][[block]]}, where each element is a list of integer vectors.
+Each vector defines a group of bins that share a single estimated
+selectivity parameter. Indices must correspond to the bin dimension
+defined by the survey selectivity type (age or length).}
+
 \item{...}{Optional named starting values for selectivity and catchability
-parameters. Supported names and default dimensions:
-\code{ln_srv_fixed_sel_pars}
-  \code{[n_regions × max_sel_pars × max_sel_blocks × n_sexes × n_srv_fleets]},
-\code{ln_srv_q}
-  \code{[n_regions × max_q_blocks × n_srv_fleets]},
-\code{srvsel_pe_pars}
-  \code{[n_regions × max(max_sel_pars, 4) × n_sexes × n_srv_fleets]},
-\code{ln_srvsel_devs}
-  \code{[n_regions × (n_years + n_proj_yrs_devs) × n_bins × n_sexes × n_srv_fleets]},
-\code{srv_q_coeff}
-  \code{[n_regions × n_srv_fleets × n_covariates]}.}
+parameters.}
 }
 \value{
 The input \code{input_list} with selectivity and catchability
@@ -171,7 +184,7 @@ The input \code{input_list} with selectivity and catchability
   \code{srv_sel_model}, \code{srv_q_blocks}, \code{srv_q_prior},
   \code{Use_srv_q_prior}, \code{do_srv_q_cov}, \code{srv_q_cov},
   \code{Use_srv_selex_prior}, \code{srv_selex_prior}, \code{t_srv});
-  starting values in \code{$par} for \code{ln_srv_fixed_sel_pars},
+  starting values in \code{$par} for \code{srv_fixed_sel_pars},
   \code{ln_srv_q}, \code{srvsel_pe_pars}, \code{ln_srvsel_devs}, and
   \code{srv_q_coeff}; and factor maps in \code{$map} for all five
   parameter arrays plus \code{srv_q_coeff}.
@@ -192,10 +205,12 @@ Other Model Setup:
 \code{\link{Setup_Mod_Biologicals}()},
 \code{\link{Setup_Mod_Catch_and_F}()},
 \code{\link{Setup_Mod_Dim}()},
+\code{\link{Setup_Mod_Discard_Comps}()},
 \code{\link{Setup_Mod_FishIdx_and_Comps}()},
 \code{\link{Setup_Mod_Fishsel_and_Q}()},
 \code{\link{Setup_Mod_Movement}()},
 \code{\link{Setup_Mod_Rec}()},
+\code{\link{Setup_Mod_Retsel}()},
 \code{\link{Setup_Mod_SrvIdx_and_Comps}()},
 \code{\link{Setup_Mod_Tagging}()},
 \code{\link{Setup_Mod_Weighting}()}

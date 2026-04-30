@@ -17,41 +17,84 @@ local_BH_Fmsy_multipop(pars, data)
 \code{\link{global_SPR}} plus:
 \describe{
   \item{\code{h}}{Numeric array \code{[n_pop, n_regions]}. Beverton-Holt
-    steepness; indexed at the natal region via \code{natal_region}.}
+    steepness evaluated at each population's natal region.}
   \item{\code{R0}}{Numeric vector \code{[n_pop]}. Unfished equilibrium
     recruitment per population.}
-  \item{\code{stray_rate}}{Numeric vector \code{[n_pop]}. Per-population
-    stray rate controlling cross-population SSB contributions.}
+  \item{\code{stray_rate}}{Numeric vector \code{[n_pop]}. Fraction of
+    individuals contributing to non-natal spawning regions.}
   \item{\code{natal_region}}{Integer vector \code{[n_pop]}. Natal region
     index for each population.}
   \item{\code{n_pop_in_region}}{Integer vector \code{[n_regions]}. Number
-    of populations per natal region.}
+    of populations sharing each natal region (used to normalise straying).}
   \item{\code{newton_steps}}{Integer. Number of Newton-Raphson iterations
-    used to solve for equilibrium recruitment by population.}
+    used to solve for equilibrium recruitment.}
+  \item{\code{is_discard_fleet}}{Integer vector \code{[n_fish_fleets]}.
+    Indicator for fleets whose catch is excluded from landed yield
+    (0 = landing fleet, 1 = discard-only fleet). These fleets still
+    contribute to total fishing mortality \code{Z} and affect population
+    dynamics and spawning biomass.}
 }}
 }
 \value{
-Numeric scalar. Negative total equilibrium yield across all regions
-  (minimised to find the vector of regional \eqn{F_{MSY}} values).
+Numeric scalar. Negative total equilibrium yield across all regions.
+  This objective is minimised to obtain the vector of regional
+  \eqn{F_{MSY}} values.
 }
 \description{
-Multi-population extension of \code{\link{local_BH_Fmsy_sglpop}}. Finds
-region-specific \eqn{F_{MSY}} values that jointly maximise total
-equilibrium yield when multiple populations with distinct natal regions,
-movement schedules, and Beverton-Holt parameters co-occupy the same spatial
+Multi-population extension of \code{\link{local_BH_Fmsy_sglpop}}. Estimates a
+vector of region-specific \eqn{F_{MSY}} values that jointly maximise total
+equilibrium yield when multiple populations, each with distinct natal regions,
+movement schedules, and Beverton-Holt parameters, co-occupy a shared spatial
 domain.
 }
 \details{
-Each population's cohorts are tracked separately using a
-\code{[population x origin x destination]} per-recruit accounting
-framework. Effective SSB at each population's natal region accumulates
-contributions from all source populations scaled by stray rates.
-Equilibrium recruitment by population is solved via a Newton-Raphson
-algorithm whose Jacobian accounts for cross-population SSB coupling through
-straying. The plus-group is solved analytically using
-\code{\link{build_plus_group_T}} and \code{\link{solve_plus_group}}.
+Cohorts are tracked using a per-recruit framework indexed by
+\code{[population x origin x destination x age x season]}. Recruitment is
+distributed across seasons (\code{rec_seas_prop}), regions
+(\code{rec_region_prop}), and sex (\code{sex_ratio_f}). Initial recruits are
+assigned in the first season at age-1, with additional seasonal recruitment
+contributions added within the first age class prior to movement and mortality.
 
-When \code{n_seas = 1}, \code{sgl_seas_spawning_movement} redistributes
-fish to natal spawning grounds before SSB is computed.
+Movement is applied at each seasonal step using region- and age-specific
+transition matrices. Fishing mortality is decomposed into retained and
+discarded components, and total mortality is applied continuously within each
+season. Catch-at-age is accumulated across fleets, seasons, and regions using
+only the landed fraction of fishing mortality (excluding fleets flagged as
+discard-only via \code{is_discard_fleet}), while total mortality \code{Z}
+includes all fleets.
+
+Spawning biomass per recruit (SBPR) is computed at the spawning season after
+applying movement and partial mortality up to the spawning time
+(\code{t_spawn}). For single-season models with multiple populations,
+\code{sgl_seas_spawning_movement} redistributes individuals to natal spawning
+regions prior to SSB calculation.
+
+The plus group is solved analytically using
+\code{\link{build_plus_group_T}} and \code{\link{solve_plus_group}}, ensuring
+a consistent equilibrium solution for the terminal age class.
+
+Effective spawning biomass at each population's natal region includes
+contributions from all populations via straying. Stray contributions are
+scaled by \code{stray_rate} and normalised by
+\code{n_pop_in_region} to preserve mass balance.
+
+Equilibrium recruitment by population is obtained via a Newton-Raphson
+algorithm that solves the coupled Beverton-Holt system. The Jacobian accounts
+for cross-population dependence of spawning biomass induced by straying.
+
+Total equilibrium yield is computed by integrating catch-at-age over all
+populations, regions, and seasons, scaled by equilibrium recruitment and
+origin-region proportions.
+
+
+Recruitment is implemented as a per-recruit process and later scaled by
+equilibrium recruitment. Seasonal recruitment proportions are applied within
+the first age class, allowing intra-annual timing of recruitment before
+movement and mortality are applied.
+
+The objective function is the negative of total yield, summed across all
+populations and regions. Yield includes only landings from fleets where
+\code{is_discard_fleet == 0}; discard-only fleets contribute to mortality
+but not to the yield being maximised.
 }
 \keyword{internal}

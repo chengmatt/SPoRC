@@ -419,12 +419,12 @@ input_list <- Setup_Mod_Fishsel_and_Q(input_list = input_list,
 )
 
 # Map off early delta for fishery
-map_fish_fixed <- array(input_list$map$ln_fish_fixed_sel_pars, dim = dim(input_list$par$ln_fish_fixed_sel_pars))
+map_fish_fixed <- array(input_list$map$fish_fixed_sel_pars, dim = dim(input_list$par$fish_fixed_sel_pars))
 map_fish_fixed[,2,1,2,1]  <- map_fish_fixed[,2,1,1,1] # share deltas
 
 # Map off bmax for trawl females
 map_fish_fixed[,1,1,2,2]  <- map_fish_fixed[,1,1,1,2] # share deltas
-input_list$map$ln_fish_fixed_sel_pars <- factor(map_fish_fixed)
+input_list$map$fish_fixed_sel_pars <- factor(map_fish_fixed)
 
 ```
 
@@ -502,9 +502,9 @@ input_list <- Setup_Mod_Srvsel_and_Q(input_list = input_list,
 )
 
 # Map off delta for JP LLS
-map_srv_fixed <- array(input_list$map$ln_srv_fixed_sel_pars, dim = dim(input_list$par$ln_srv_fixed_sel_pars))
+map_srv_fixed <- array(input_list$map$srv_fixed_sel_pars, dim = dim(input_list$par$srv_fixed_sel_pars))
 map_srv_fixed[,2,1,2,2]  <- map_srv_fixed[,2,1,1,2] # share deltas
-input_list$map$ln_srv_fixed_sel_pars <- factor(map_srv_fixed)
+input_list$map$srv_fixed_sel_pars <- factor(map_srv_fixed)
 
 ```
 

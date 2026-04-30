@@ -41,7 +41,7 @@
 #'
 #' @param fish_sel Array
 #'   (\code{n_pop x n_regions x n_seas x n_ages x n_sexes x n_fish_fleets})
-#'   of fishery selectivity at age.
+#'   of total fishery selectivity at age.
 #'
 #' @param R0_r Matrix (\code{n_pop x n_regions}) giving unfished recruitment
 #'   allocated to each region.
@@ -62,6 +62,12 @@
 #' @param ln_InitDevs Array (\code{n_pop x n_regions x (n_ages - 1)}) containing
 #'   log-scale deviations applied to ages 2 through \eqn{A}.
 #'
+#' @param dmr Numeric array (\code{n_regions x n_seas x n_fish_fleets})
+#'   giving discard mortality rate applied in each region, season, and fleet during
+#'   initialization (first year). Set to zero for an unfished population.
+#' @param ret_sel Array
+#'   (\code{n_pop x n_regions x n_seas x n_ages x n_sexes x n_fish_fleets})
+#'   of retained fishery selectivity at age.
 #'
 #' @details
 #'
@@ -73,7 +79,7 @@
 #' \itemize{
 #' \item \eqn{N_{p,r,a,s}} denote numbers-at-age
 #' \item \eqn{M_{p,r,a}} denote natural mortality
-#' \item \eqn{F_{r,a,s}} denote fishing mortality
+#' \item \eqn{F_{r,a,s}} denote total fishing mortality (retained + dead discards)
 #' \item \eqn{Z = M + F} denote total mortality
 #' }
 #'
@@ -106,11 +112,18 @@
 #' N_{A^+} e^{-Z_{A^+}}
 #' }
 #'
-#' Fishing mortality at age is computed by summing across all fleets:
+#' Fishing mortality at age is decomposed into retained and dead discard
+#' components, summed across all fleets:
 #'
 #' \deqn{
-#' F_{p,r,s,a} = \sum_{f=1}^{n_f} F^{init}_{r,s,f} \times sel_{p,r,s,a,f}
+#' F_{p,r,s,a} = \sum_{f=1}^{n_f} F^{init}_{r,s,f} \left[
+#' sel_{p,r,s,a,f} \cdot ret_{p,r,s,a,f} +
+#' sel_{p,r,s,a,f} \cdot (1 - ret_{p,r,s,a,f}) \cdot dmr_{r,s,f}
+#' \right]
 #' }
+#'
+#' where \eqn{sel} is total fishery selectivity, \eqn{ret} is retention
+#' selectivity, and \eqn{dmr} is the discard mortality rate.
 #'
 #' ### Scalar geometric-series solution
 #'
@@ -177,7 +190,9 @@ Get_Init_NAA <- function(init_age_strc,
                          rec_seas_prop,
                          natmort,
                          init_F,
+                         dmr,
                          fish_sel,
+                         ret_sel,
                          R0_r,
                          sexratio,
                          Movement,
@@ -200,7 +215,11 @@ Get_Init_NAA <- function(init_age_strc,
     for(p in 1:n_pop) {
       for(r in 1:n_regions) {
         for(s in 1:n_sexes) {
-          tmp_F = rowSums(array(sweep(fish_sel[p,r,1,1:(n_ages-1),s,], 2, init_F[r,1,], "*"), dim = c(n_ages - 1, n_fish_fleets) ))
+          # retained F
+          tmp_ret_F = rowSums(array(sweep(fish_sel[p,r,1,1:(n_ages-1),s,] * ret_sel[p,r,1,1:(n_ages-1),s,], 2, init_F[r,1,], "*"), dim = c(n_ages - 1, n_fish_fleets)))
+          # discarded F
+          tmp_disc_F = rowSums(array(sweep(fish_sel[p,r,1,1:(n_ages-1),s,] * (1 - ret_sel[p,r,1,1:(n_ages-1),s,]) * dmr[r,1,], 2, init_F[r,1,], "*"), dim = c(n_ages - 1, n_fish_fleets)))
+          tmp_F = tmp_ret_F + tmp_disc_F # total F
           tmp_cumsum_Z = cumsum(natmort[p,r,1:(n_ages-1),s] + tmp_F)
           Init_NAA[p,r,,s] = c(R0_r[p,r] * sexratio[p,r,s] * rec_seas_prop[p,1], R0_r[p,r] * sexratio[p,r,s] * rec_seas_prop[p,1] * exp(-tmp_cumsum_Z))
         } # end s loop
@@ -225,7 +244,9 @@ Get_Init_NAA <- function(init_age_strc,
             for(r in 1:n_regions) {
 
               # get tmp F
-              tmp_F = rowSums(array(sweep(fish_sel[p,r,seas,1:n_ages,s,], 2, init_F[r,seas,], "*"), dim = c(n_ages, n_fish_fleets)))
+              tmp_ret_F = rowSums(array(sweep(fish_sel[p,r,seas,1:n_ages,s,] * ret_sel[p,r,seas,1:n_ages,s,], 2, init_F[r,seas,], "*"), dim = c(n_ages, n_fish_fleets)))
+              tmp_disc_F = rowSums(array(sweep(fish_sel[p,r,seas,1:n_ages,s,] * (1 - ret_sel[p,r,seas,1:n_ages,s,]) * dmr[r,seas,], 2, init_F[r,seas,], "*"), dim = c(n_ages, n_fish_fleets)))
+              tmp_F = tmp_ret_F + tmp_disc_F
 
               # mortality wtihin season
               if(seas < n_seas) {
@@ -268,8 +289,11 @@ Get_Init_NAA <- function(init_age_strc,
             else Init_NAA[p,,1,s] = Init_NAA[p,,1,s] + (R0_r[p,] * sexratio[p,,s] * rec_seas_prop[p,seas]) # recruitment not in the first season
 
             for(r in 1:n_regions) {
-              tmp_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,], dim = c(n_ages, n_fish_fleets)),
-                                    2, array(init_F[r,seas,], dim = n_fish_fleets), "*"))
+              tmp_ret_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,] * ret_sel[p,r,seas,1:n_ages,s,], dim = c(n_ages, n_fish_fleets)),
+                                        2, array(init_F[r,seas,], dim = n_fish_fleets), "*")) # retained F
+              tmp_disc_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,] * (1 - ret_sel[p,r,seas,1:n_ages,s,]) * dmr[r,seas,], dim = c(n_ages, n_fish_fleets)),
+                                         2, array(init_F[r,seas,], dim = n_fish_fleets), "*")) # discarded F
+              tmp_F = tmp_ret_F + tmp_disc_F # total F
               # within season mortality
               if(seas < n_seas) {
                 Init_NAA[p,r,1:n_ages,s] = Init_NAA[p,r,1:n_ages,s] *
@@ -291,8 +315,12 @@ Get_Init_NAA <- function(init_age_strc,
       for(r in 1:n_regions) {
         for(s in 1:n_sexes) {
           # Plus group - scalar geometric series (summing annual F across seasons and fleets)
-          F_annual_penult = sum(array(init_F[r,,] * fish_sel[p,r,,n_ages-1,s,], dim = c(n_seas, n_fish_fleets)))
-          F_annual_plus = sum(array(init_F[r,,] * fish_sel[p,r,,n_ages,s,], dim = c(n_seas, n_fish_fleets)))
+          F_annual_penult = sum(array(init_F[r,,] * (fish_sel[p,r,,n_ages-1,s,] * ret_sel[p,r,,n_ages-1,s,] + # retained
+                                      fish_sel[p,r,,n_ages-1,s,] * (1 - ret_sel[p,r,,n_ages-1,s,]) * dmr[r,,]), # discarded
+                                      dim = c(n_seas, n_fish_fleets)))
+          F_annual_plus = sum(array(init_F[r,,] * (fish_sel[p,r,,n_ages,s,] * ret_sel[p,r,,n_ages,s,] + # retained
+                                    fish_sel[p,r,,n_ages,s,] * (1 - ret_sel[p,r,,n_ages,s,]) * dmr[r,,]), # discarded
+                                    dim = c(n_seas, n_fish_fleets)))
           Z_penult = natmort[p,r,n_ages-1,s] + F_annual_penult
           Z_plus = natmort[p,r,n_ages,s] + F_annual_plus
           Init_NAA[p,r,n_ages,s] = Init_NAA[p,r,n_ages-1,s] * exp(-Z_penult) / (1 - exp(-Z_plus))
@@ -323,8 +351,11 @@ Get_Init_NAA <- function(init_age_strc,
             if(do_recruits_move == 1) for(a in 1:n_ages) Init_NAA[p,,a,s] = t(Init_NAA[p,,a,s]) %*% Movement[p,,,seas,a,s] # recruits move
 
             for(r in 1:n_regions) {
-              tmp_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,], dim = c(n_ages, n_fish_fleets)),
-                                    2, array(init_F[r,seas,], dim = n_fish_fleets), "*"))
+              tmp_ret_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,] * ret_sel[p,r,seas,1:n_ages,s,], dim = c(n_ages, n_fish_fleets)),
+                                        2, array(init_F[r,seas,], dim = n_fish_fleets), "*")) # retained F
+              tmp_disc_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,] * (1 - ret_sel[p,r,seas,1:n_ages,s,]) * dmr[r,seas,], dim = c(n_ages, n_fish_fleets)),
+                                         2, array(init_F[r,seas,], dim = n_fish_fleets), "*")) # discarded F
+              tmp_F = tmp_ret_F + tmp_disc_F # total F
               # within season mortality
               if(seas < n_seas) {
                 Init_NAA[p,r,1:n_ages,s] = Init_NAA[p,r,1:n_ages,s] *
@@ -350,8 +381,12 @@ Get_Init_NAA <- function(init_age_strc,
         T_plus = diag(n_regions)
 
         for(seas in 1:n_seas) {
-          F_penult = rowSums(array(init_F[,seas,] * fish_sel[p,,seas,n_ages-1,s,], dim = c(n_regions, n_fish_fleets)))
-          F_plus = rowSums(array(init_F[,seas,] * fish_sel[p,,seas,n_ages,s,], dim = c(n_regions, n_fish_fleets)))
+          F_penult = rowSums(array(init_F[,seas,] * (fish_sel[p,,seas,n_ages-1,s,] * ret_sel[p,,seas,n_ages-1,s,] + # retained
+                                   fish_sel[p,,seas,n_ages-1,s,] * (1 - ret_sel[p,,seas,n_ages-1,s,]) * dmr[,seas,]), # discarded
+                                   dim = c(n_regions, n_fish_fleets)))
+          F_plus = rowSums(array(init_F[,seas,] * (fish_sel[p,,seas,n_ages,s,] * ret_sel[p,,seas,n_ages,s,] + # retained
+                                 fish_sel[p,,seas,n_ages,s,] * (1 - ret_sel[p,,seas,n_ages,s,]) * dmr[,seas,]), # discarded
+                                 dim = c(n_regions, n_fish_fleets)))
           S_penult = diag(exp(-((natmort[p,,n_ages-1,s] * seasdur[seas]) + F_penult)), n_regions)
           S_plus = diag(exp(-((natmort[p,,n_ages,s] * seasdur[seas]) + F_plus)), n_regions)
           T_penult = T_penult %*% t(Movement[p,,,seas,n_ages-1,s]) %*% S_penult
@@ -388,8 +423,11 @@ Get_Init_NAA <- function(init_age_strc,
             if(do_recruits_move == 1) for(a in 1:n_ages) Init_NAA[p,,a,s] = t(Init_NAA[p,,a,s]) %*% Movement[p,,,seas,a,s] # recruits move
 
             for(r in 1:n_regions) {
-              tmp_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,], dim = c(n_ages, n_fish_fleets)),
-                                    2, array(init_F[r,seas,], dim = n_fish_fleets), "*"))
+              tmp_ret_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,] * ret_sel[p,r,seas,1:n_ages,s,], dim = c(n_ages, n_fish_fleets)),
+                                        2, array(init_F[r,seas,], dim = n_fish_fleets), "*")) # retained F
+              tmp_disc_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,] * (1 - ret_sel[p,r,seas,1:n_ages,s,]) * dmr[r,seas,], dim = c(n_ages, n_fish_fleets)),
+                                         2, array(init_F[r,seas,], dim = n_fish_fleets), "*")) # discarded F
+              tmp_F = tmp_ret_F + tmp_disc_F # total F
               # within season mortality
               if(seas < n_seas) {
                 Init_NAA[p,r,1:n_ages,s] = Init_NAA[p,r,1:n_ages,s] *
@@ -411,8 +449,12 @@ Get_Init_NAA <- function(init_age_strc,
       for(r in 1:n_regions) {
         for(s in 1:n_sexes) {
           # Plus group - scalar geometric series (summing annual F across seasons and fleets)
-          F_annual_penult = sum(array(init_F[r,,] * fish_sel[p,r,,n_ages-1,s,], dim = c(n_seas, n_fish_fleets)))
-          F_annual_plus = sum(array(init_F[r,,] * fish_sel[p,r,,n_ages,s,], dim = c(n_seas, n_fish_fleets)))
+          F_annual_penult = sum(array(init_F[r,,] * (fish_sel[p,r,,n_ages-1,s,] * ret_sel[p,r,,n_ages-1,s,] + # retained
+                                                       fish_sel[p,r,,n_ages-1,s,] * (1 - ret_sel[p,r,,n_ages-1,s,]) * dmr[r,,]), # discarded
+                                      dim = c(n_seas, n_fish_fleets)))
+          F_annual_plus = sum(array(init_F[r,,] * (fish_sel[p,r,,n_ages,s,] * ret_sel[p,r,,n_ages,s,] + # retained
+                                                     fish_sel[p,r,,n_ages,s,] * (1 - ret_sel[p,r,,n_ages,s,]) * dmr[r,,]), # discarded
+                                    dim = c(n_seas, n_fish_fleets)))
           Z_penult = natmort[p,r,n_ages-1,s] + F_annual_penult
           Z_plus = natmort[p,r,n_ages,s] + F_annual_plus
           Init_NAA[p,r,n_ages,s] = Init_NAA[p,r,n_ages-1,s] * exp(-Z_penult) / (1 - exp(-Z_plus))

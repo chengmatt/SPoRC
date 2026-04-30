@@ -133,25 +133,31 @@ collect_message <- function(...) {
 is_package_available <- function(pkg) {
   nzchar(system.file(package = pkg))
 }
-
 #' Convert a target catch to fishing mortality for a single fleet via bisection
 #'
 #' Uses interval bisection to find the scalar fishing mortality \eqn{F} that
 #' produces a predicted catch (Baranov catch equation, summed over ages and
-#' sexes in biomass) equal to \code{catch}. Intended for closed-loop MSE
-#' harvest control rules where a TAC must be translated into an \eqn{F} for
-#' the operating model.
+#' sexes in biomass) equal to \code{catch}. Retained and discarded catch
+#' components are handled separately via retention selectivity and discard
+#' mortality. Intended for closed-loop MSE harvest control rules where a TAC
+#' must be translated into an \eqn{F} for the operating model.
 #'
 #' @param f_guess Numeric. Initial \eqn{F} guess (not used directly by the
 #'   bisection algorithm but retained for API consistency).
 #' @param catch Numeric. Target catch in biomass units.
-#' @param NAA Numeric matrix \code{[n_ages × n_sexes]}. Numbers-at-age at
+#' @param NAA Numeric matrix \code{[n_ages x n_sexes]}. Numbers-at-age at
 #'   the start of the time step.
-#' @param WAA Numeric matrix \code{[n_ages × n_sexes]}. Weight-at-age.
-#' @param natmort Numeric matrix \code{[n_ages × n_sexes]}. Instantaneous
+#' @param WAA Numeric matrix \code{[n_ages x n_sexes]}. Weight-at-age.
+#' @param natmort Numeric matrix \code{[n_ages x n_sexes]}. Instantaneous
 #'   natural mortality rate.
-#' @param fish_sel Numeric matrix \code{[n_ages × n_sexes]}. Fishery
+#' @param fish_sel Numeric matrix \code{[n_ages x n_sexes]}. Fishery
 #'   selectivity (scaled to a maximum of 1).
+#' @param ret_sel Numeric matrix \code{[n_ages x n_sexes]}. Retention
+#'   selectivity, i.e. the proportion of selected catch that is retained
+#'   (vs. discarded). Default is an array of 1s matching \code{dim(fish_sel)}
+#'   (full retention).
+#' @param dmr Numeric scalar. Discard mortality rate, i.e. the fraction of
+#'   discarded fish that die. Default \code{0} (all discards survive).
 #' @param n.iter Integer. Number of bisection iterations. Default \code{20};
 #'   approximately \eqn{\log_2((ub - lb) / \epsilon)} iterations are required
 #'   for tolerance \eqn{\epsilon}.
@@ -163,18 +169,24 @@ is_package_available <- function(pkg) {
 #' @return Scalar numeric. The \eqn{F} value at the final bisection midpoint
 #'   that most closely produces \code{catch}.
 #'
-#'
 #' @export catch_to_F_singlefleet
 #' @family Closed Loop Simulations
 catch_to_F_singlefleet <- function(f_guess,
-                                    catch,
-                                    NAA,
-                                    WAA,
-                                    natmort,
-                                    fish_sel,
-                                    n.iter = 20,
-                                    lb = 0,
-                                    ub = 2) {
+                                   catch,
+                                   NAA,
+                                   WAA,
+                                   natmort,
+                                   fish_sel,
+                                   ret_sel = {
+                                     # fill dimensions of fish_sel with 1s
+                                     tmp = fish_sel[]
+                                     tmp[] <- 1
+                                     tmp
+                                   },
+                                   dmr = 0,
+                                   n.iter = 20,
+                                   lb = 0,
+                                   ub = 2) {
 
   range <- vector(length=2) # F range
   range[1] <- lb # Lower bound
@@ -186,9 +198,10 @@ catch_to_F_singlefleet <- function(f_guess,
     midpoint <- mean(range)
 
     # Caclulate baranov's
-    FAA <- (midpoint * fish_sel)
-    ZAA <- FAA + natmort
-    pred_catch <- sum((FAA / ZAA * NAA * (1 - exp(-ZAA))) * WAA)
+    ret_FAA <- (midpoint * fish_sel * ret_sel)
+    disc_FAA <- (midpoint * fish_sel * (1 - ret_sel) * dmr)
+    ZAA <- ret_FAA + natmort + disc_FAA
+    pred_catch <- sum((ret_FAA / ZAA * NAA * (1 - exp(-ZAA))) * WAA)
 
     if(pred_catch < catch) {
       range[1] <- midpoint
@@ -208,33 +221,49 @@ catch_to_F_singlefleet <- function(f_guess,
 #' Solves for the vector of fleet-specific fishing mortality rates
 #' \eqn{\mathbf{F} = (F_1, \ldots, F_k)} that simultaneously satisfy the
 #' Baranov catch equations for all fleets, given a vector of target catches.
-#' Total mortality at age accounts for contributions from all fleets:
-#' \eqn{Z_a = M_a + \sum_f F_f s_{a,f}}. The system of equations is solved
-#' via \code{nleqslv::nleqslv}. Intended for closed-loop MSE harvest control
-#' rules with multiple interacting fishery fleets.
+#' Total mortality at age accounts for retained and discard mortality
+#' contributions from all fleets:
+#' \eqn{Z_a = M_a + \sum_f (F_f \, s_{a,f} \, r_{a,f} + F_f \, s_{a,f} \, (1 - r_{a,f}) \, d_f)},
+#' where \eqn{r_{a,f}} is retention selectivity and \eqn{d_f} is fleet-specific
+#' discard mortality. The system of equations is solved via
+#' \code{\link[nleqslv]{nleqslv}}. Intended for closed-loop MSE harvest
+#' control rules with multiple interacting fishery fleets.
 #'
 #' @param target_catch Numeric vector \code{[n_fleets]}. Target catch in
 #'   biomass units for each fleet.
-#' @param NAA Numeric matrix \code{[n_ages × n_sexes]}. Numbers-at-age.
-#' @param WAA Numeric matrix \code{[n_ages × n_sexes]}. Weight-at-age.
-#' @param natmort Numeric matrix \code{[n_ages × n_sexes]}. Instantaneous
+#' @param NAA Numeric matrix \code{[n_ages x n_sexes]}. Numbers-at-age.
+#' @param WAA Numeric matrix \code{[n_ages x n_sexes]}. Weight-at-age.
+#' @param natmort Numeric matrix \code{[n_ages x n_sexes]}. Instantaneous
 #'   natural mortality rate.
-#' @param fish_sel Numeric array \code{[n_ages × n_sexes × n_fleets]}.
+#' @param fish_sel Numeric array \code{[n_ages x n_sexes x n_fleets]}.
 #'   Fishery selectivity for each fleet.
+#' @param ret_sel Numeric array \code{[n_ages x n_sexes x n_fleets]}.
+#'   Retention selectivity for each fleet, i.e. the proportion of selected
+#'   catch that is retained. Default is an array of 1s matching
+#'   \code{dim(fish_sel)} (full retention for all fleets).
+#' @param dmr Numeric vector \code{[n_fleets]}. Fleet-specific discard
+#'   mortality rates, i.e. the fraction of discarded fish that die.
+#'   Default \code{rep(0, length(target_catch))} (all discards survive).
 #' @param f_init Numeric scalar or vector \code{[n_fleets]}. Starting values
 #'   for the \eqn{F} solver. If a scalar is supplied it is recycled across
 #'   all fleets. Default \code{0.05}.
 #' @param control Named list of control parameters passed to
-#'   \code{nleqslv::nleqslv}. Default \code{list(btol = 1e-6)}.
+#'   \code{\link[nleqslv]{nleqslv}}. Default \code{list(btol = 1e-6)}.
 #'
 #' @return Numeric vector \code{[n_fleets]} of solved fishing mortality rates,
 #'   one per fleet.
 #'
-#'
 #' @export catch_to_F_multifleet
 #' @family Closed Loop Simulations
-catch_to_F_multifleet <- function(target_catch, NAA, WAA, natmort, fish_sel,
-                               f_init = 0.05, control = list(btol = 1e-6)) {
+catch_to_F_multifleet <- function(target_catch,
+                                  NAA,
+                                  WAA,
+                                  natmort,
+                                  fish_sel,
+                                  ret_sel = array(1, dim = dim(fish_sel)),
+                                  dmr = rep(0, length(target_catch)),
+                                  f_init = 0.05,
+                                  control = list(btol = 1e-6)) {
 
   n_fleets <- length(target_catch)
 
@@ -246,17 +275,20 @@ catch_to_F_multifleet <- function(target_catch, NAA, WAA, natmort, fish_sel,
     pred_catches <- numeric(n_fleets)
 
     for(f in 1:n_fleets) {
-      # F-at-age for this fleet
-      FAA <- f_vec[f] * fish_sel[, , f]
+
+      # retained F-at-age for this fleet
+      ret_FAA <- f_vec[f] * fish_sel[, , f] * ret_sel[,, f]
+      disc_FAA <- f_vec[f] * fish_sel[, , f] * (1 - ret_sel[,, f]) * dmr[f]
 
       # Total Z includes F from ALL fleets
       ZAA_total <- natmort
       for(ff in 1:n_fleets) {
-        ZAA_total <- ZAA_total + f_vec[ff] * fish_sel[, , ff]
+        ZAA_total <- ZAA_total + (f_vec[ff] * fish_sel[, , ff] * ret_sel[,, ff]) +  # retained F
+          (f_vec[ff] * fish_sel[, , ff] * (1 - ret_sel[,, ff]) * dmr[ff]) # discarded F
       }
 
       # Predicted catch for this fleet (Baranov catch equation)
-      pred_catches[f] <- sum((FAA / ZAA_total * NAA * (1 - exp(-ZAA_total))) * WAA)
+      pred_catches[f] <- sum((ret_FAA / ZAA_total * NAA * (1 - exp(-ZAA_total))) * WAA)
     }
 
     return(pred_catches - target_catch)  # Difference from target
@@ -637,12 +669,25 @@ extend_years <- function(arr, n_years, yr_dim, fill = "zeros") {
 #' @param what Character vector. Data types to modify. Any combination of:
 #'   \describe{
 #'     \item{\code{"Catch"}}{Sets \code{UseCatch[, unused_years, , ] <- 0}.}
+#'     \item{\code{"Catch_pop"}}{Sets \code{UseCatch_pop[, , unused_years, , ] <- 0}.}
+#'     \item{\code{"Discard"}}{Sets \code{UseDiscard[, unused_years, , ] <- 0}.}
+#'     \item{\code{"Discard_pop"}}{Sets \code{UseDiscard_pop[, , unused_years, , ] <- 0}.}
 #'     \item{\code{"FishIdx"}}{Sets \code{UseFishIdx[, unused_years, , ] <- 0}.}
+#'     \item{\code{"FishIdx_pop"}}{Sets \code{UseFishIdx_pop[, , unused_years, , ] <- 0}.}
 #'     \item{\code{"FishAgeComps"}}{Sets \code{UseFishAgeComps[, unused_years, , ] <- 0}.}
+#'     \item{\code{"FishAgeComps_pop"}}{Sets \code{UseFishAgeComps_pop[, , unused_years, , ] <- 0}.}
 #'     \item{\code{"FishLenComps"}}{Sets \code{UseFishLenComps[, unused_years, , ] <- 0}.}
+#'     \item{\code{"FishLenComps_pop"}}{Sets \code{UseFishLenComps_pop[, , unused_years, , ] <- 0}.}
+#'     \item{\code{"FishAgeComps_discard"}}{Sets \code{UseFishAgeComps_discard[, unused_years, , ] <- 0}.}
+#'     \item{\code{"FishAgeComps_discard_pop"}}{Sets \code{UseFishAgeComps_discard_pop[, , unused_years, , ] <- 0}.}
+#'     \item{\code{"FishLenComps_discard"}}{Sets \code{UseFishLenComps_discard[, unused_years, , ] <- 0}.}
+#'     \item{\code{"FishLenComps_discard_pop"}}{Sets \code{UseFishLenComps_discard_pop[, , unused_years, , ] <- 0}.}
 #'     \item{\code{"SrvIdx"}}{Sets \code{UseSrvIdx[, unused_years, , ] <- 0}.}
+#'     \item{\code{"SrvIdx_pop"}}{Sets \code{UseSrvIdx_pop[, , unused_years, , ] <- 0}.}
 #'     \item{\code{"SrvAgeComps"}}{Sets \code{UseSrvAgeComps[, unused_years, , ] <- 0}.}
+#'     \item{\code{"SrvAgeComps_pop"}}{Sets \code{UseSrvAgeComps_pop[, , unused_years, , ] <- 0}.}
 #'     \item{\code{"SrvLenComps"}}{Sets \code{UseSrvLenComps[, unused_years, , ] <- 0}.}
+#'     \item{\code{"SrvLenComps_pop"}}{Sets \code{UseSrvLenComps_pop[, , unused_years, , ] <- 0}.}
 #'     \item{\code{"conv_tagging"}}{Removes tag cohorts whose release year
 #'       falls in \code{unused_years} from \code{conv_tagged_fish},
 #'       \code{obs_conv_tag_fish_recap}, \code{conv_tag_release_indicator},
@@ -658,9 +703,16 @@ extend_years <- function(arr, n_years, yr_dim, fill = "zeros") {
 #' @family Utility
 set_data_indicator_unused <- function(data,
                                       unused_years,
-                                      what = c('Catch', "FishIdx",
-                                               "FishAgeComps", "FishLenComps",
-                                               "SrvIdx", "SrvAgeComps", "SrvLenComps",
+                                      what = c("Catch", "Catch_pop",
+                                               "Discard", "Discard_pop",
+                                               "FishIdx", "FishIdx_pop",
+                                               "FishAgeComps", "FishAgeComps_pop",
+                                               "FishLenComps", "FishLenComps_pop",
+                                               "FishAgeComps_discard", "FishAgeComps_discard_pop",
+                                               "FishLenComps_discard", "FishLenComps_discard_pop",
+                                               "SrvIdx", "SrvIdx_pop",
+                                               "SrvAgeComps", "SrvAgeComps_pop",
+                                               "SrvLenComps", "SrvLenComps_pop",
                                                "conv_tagging")) {
 
   # figure out year dimensions
@@ -670,22 +722,36 @@ set_data_indicator_unused <- function(data,
   if(length(unused_years) > 0) {
     # set to not use
     if("Catch" %in% what) data$UseCatch[,unused_years,,] <- 0
+    if("Catch_pop" %in% what) data$UseCatch_pop[,,unused_years,,] <- 0
+    if("Discard" %in% what) data$UseDiscard[,unused_years,,] <- 0
+    if("Discard_pop" %in% what) data$UseDiscard_pop[,,unused_years,,] <- 0
     if("FishIdx" %in% what) data$UseFishIdx[,unused_years,,] <- 0
+    if("FishIdx_pop" %in% what) data$UseFishIdx_pop[,,unused_years,,] <- 0
     if("FishAgeComps" %in% what) data$UseFishAgeComps[,unused_years,,] <- 0
+    if("FishAgeComps_pop" %in% what) data$UseFishAgeComps_pop[,,unused_years,,] <- 0
     if("FishLenComps" %in% what) data$UseFishLenComps[,unused_years,,] <- 0
+    if("FishLenComps_pop" %in% what) data$UseFishLenComps_pop[,,unused_years,,] <- 0
+    if("FishAgeComps_discard" %in% what) data$UseFishAgeComps_discard[,unused_years,,] <- 0
+    if("FishAgeComps_discard_pop" %in% what) data$UseFishAgeComps_discard_pop[,,unused_years,,] <- 0
+    if("FishLenComps_discard" %in% what) data$UseFishLenComps_discard[,unused_years,,] <- 0
+    if("FishLenComps_discard_pop" %in% what) data$UseFishLenComps_discard_pop[,,unused_years,,] <- 0
     if("SrvIdx" %in% what) data$UseSrvIdx[,unused_years,,] <- 0
+    if("SrvIdx_pop" %in% what) data$UseSrvIdx_pop[,,unused_years,,] <- 0
     if("SrvAgeComps" %in% what) data$UseSrvAgeComps[,unused_years,,] <- 0
+    if("SrvAgeComps_pop" %in% what) data$UseSrvAgeComps_pop[,,unused_years,,] <- 0
     if("SrvLenComps" %in% what) data$UseSrvLenComps[,unused_years,,] <- 0
+    if("SrvLenComps_pop" %in% what) data$UseSrvLenComps_pop[,,unused_years,,] <- 0
+
   }
 
   # modify tagging stuff
   if(any(data$use_conv_fish_tagging == 1) && "conv_tagging" %in% what) {
     tags_to_remove <- which(data$conv_tag_release_indicator[,2] %in% unused_years)
     if(length(tags_to_remove) > 0) {
-      data$conv_tagged_fish <- data$Tagged_Fish[-tags_to_remove,,,,drop=FALSE]
-      data$obs_conv_tag_fish_recap <- data$Obs_Tag_Recap[,,-tags_to_remove,,,,,,drop=FALSE]
+      data$conv_tagged_fish <- data$conv_tagged_fish[-tags_to_remove,,,,drop=FALSE]
+      data$obs_conv_tag_fish_recap <- data$obs_conv_tag_fish_recap[,,-tags_to_remove,,,,,,drop=FALSE]
       data$conv_tag_release_indicator <- data$conv_tag_release_indicator[-tags_to_remove,,drop=FALSE]
-      data$n_conv_tag_cohorts <- nrow(data$tag_release_indicator)
+      data$n_conv_tag_cohorts <- nrow(data$conv_tag_release_indicator)
     }
   }
 

@@ -1,5 +1,5 @@
 # version 1.2.0 (dev-popn-seasons)
-- Follows the dev-movement branch with updates to incorporate population-specific and seasonal dynamics.
+- Incorporates population-specific, seasonal, and discarding dynamics.
 
 ## Major changes
 - Incorporated ability to simulate and estimate both population-specific (natal homing) and seasonal dynamics.
@@ -11,6 +11,7 @@
 ## Minor changes
 - Changed parameter names of ln_srv_fixed_sel_pars and ln_fish_fixed_sel_pars to srv_fixed_sel_pars and fish_fixed_sel_pars for clarity.
 - Included new options to estimate non-parametric selectivity, logistic selectivity with an asymptote parameter, as well as provide fixed selectivity (fishery, retention, and survey) inputs. 
+- Changed dimensions of init_F_prop to be region, season, and fleet-specific (as opposed to just being based on the first fishery fleet).
 
 ## Improvements
 - Allowed both numeric and character codes for specifying dynamics in simulator, so as to be more consistent with how estimation models are specified, while maintaining backwards compatibility. 

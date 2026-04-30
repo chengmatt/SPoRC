@@ -17,7 +17,9 @@ Get_Init_NAA(
   rec_seas_prop,
   natmort,
   init_F,
+  dmr,
   fish_sel,
+  ret_sel,
   R0_r,
   sexratio,
   Movement,
@@ -62,9 +64,17 @@ mortality rates.}
 giving fishing mortality applied in each region, season, and fleet during
 initialization. Set to zero for an unfished population.}
 
+\item{dmr}{Numeric array (\code{n_regions x n_seas x n_fish_fleets})
+giving discard mortality rate applied in each region, season, and fleet during
+initialization (first year). Set to zero for an unfished population.}
+
 \item{fish_sel}{Array
 (\code{n_pop x n_regions x n_seas x n_ages x n_sexes x n_fish_fleets})
-of fishery selectivity at age.}
+of total fishery selectivity at age.}
+
+\item{ret_sel}{Array
+(\code{n_pop x n_regions x n_seas x n_ages x n_sexes x n_fish_fleets})
+of retained fishery selectivity at age.}
 
 \item{R0_r}{Matrix (\code{n_pop x n_regions}) giving unfished recruitment
 allocated to each region.}
@@ -105,7 +115,7 @@ Let
 \itemize{
 \item \eqn{N_{p,r,a,s}} denote numbers-at-age
 \item \eqn{M_{p,r,a}} denote natural mortality
-\item \eqn{F_{r,a,s}} denote fishing mortality
+\item \eqn{F_{r,a,s}} denote total fishing mortality (retained + dead discards)
 \item \eqn{Z = M + F} denote total mortality
 }
 
@@ -138,11 +148,18 @@ N_{A-1} e^{-Z_{A-1}} +
 N_{A^+} e^{-Z_{A^+}}
 }
 
-Fishing mortality at age is computed by summing across all fleets:
+Fishing mortality at age is decomposed into retained and dead discard
+components, summed across all fleets:
 
 \deqn{
-F_{p,r,s,a} = \sum_{f=1}^{n_f} F^{init}_{r,s,f} \times sel_{p,r,s,a,f}
+F_{p,r,s,a} = \sum_{f=1}^{n_f} F^{init}_{r,s,f} \left[
+sel_{p,r,s,a,f} \cdot ret_{p,r,s,a,f} +
+sel_{p,r,s,a,f} \cdot (1 - ret_{p,r,s,a,f}) \cdot dmr_{r,s,f}
+\right]
 }
+
+where \eqn{sel} is total fishery selectivity, \eqn{ret} is retention
+selectivity, and \eqn{dmr} is the discard mortality rate.
 
 ### Scalar geometric-series solution
 

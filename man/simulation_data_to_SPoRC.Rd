@@ -18,52 +18,80 @@ environment) containing all operating model arrays.}
 \value{
 Named list with the following elements (all arrays have \code{y}
   in the year dimension unless noted):
-  \code{WAA} \code{[n_pop × n_regions × y × n_seas × n_ages × n_sexes]},
-  \code{WAA_fish} \code{[... × n_fish_fleets]},
-  \code{WAA_srv} \code{[... × n_srv_fleets]},
+  \code{WAA} \code{[n_pop x n_regions x y x n_seas x n_ages x n_sexes]},
+  \code{WAA_fish} \code{[... x n_fish_fleets]},
+  \code{WAA_srv} \code{[... x n_srv_fleets]},
   \code{MatAA}, \code{SizeAgeTrans} (or \code{NULL}),
-  \code{AgeingError} \code{[y × n_obs_ages × n_ages]},
+  \code{AgeingError} \code{[y x n_obs_ages x n_ages]},
   \code{use_conv_fish_tagging},
   \code{conv_tag_release_indicator}, \code{obs_conv_tag_fish_recap},
   \code{conv_tagged_fish}, \code{conv_tagged_fish_attr},
   \code{n_tag_cohorts} (all \code{NULL} when tagging inactive),
   \code{ObsCatch}, \code{ln_sigmaC}, \code{UseCatch},
-  \code{ObsCatch_pop}, \code{UseCatch_pop},
+  \code{ObsCatch_pop}, \code{ln_sigmaC_pop}, \code{UseCatch_pop},
+  \code{ObsDiscard}, \code{ln_sigmaD}, \code{UseDiscard},
+  \code{ObsDiscard_pop}, \code{ln_sigmaD_pop}, \code{UseDiscard_pop},
   \code{ObsFishIdx}, \code{ObsFishIdx_SE}, \code{UseFishIdx},
-  \code{ObsFishIdx_pop}, \code{UseFishIdx_pop},
+  \code{ObsFishIdx_pop}, \code{ObsFishIdx_pop_SE}, \code{UseFishIdx_pop},
   \code{ObsFishAgeComps}, \code{ISS_FishAgeComps}, \code{UseFishAgeComps},
   \code{ObsFishAgeComps_pop}, \code{ISS_FishAgeComps_pop},
   \code{UseFishAgeComps_pop},
-  \code{ObsFishLenComps} (or \code{NULL}), \code{ISS_FishLenComps},
+  \code{ObsFishLenComps} (or \code{NULL}), \code{ISS_FishLenComps} (or \code{NULL}),
   \code{UseFishLenComps},
-  \code{ObsFishLenComps_pop} (or \code{NULL}), \code{UseFishLenComps_pop},
+  \code{ObsFishLenComps_pop} (or \code{NULL}), \code{ISS_FishLenComps_pop} (or \code{NULL}),
+  \code{UseFishLenComps_pop},
+  \code{ObsFishAgeComps_discard}, \code{ISS_FishAgeComps_discard}, \code{UseFishAgeComps_discard},
+  \code{ObsFishAgeComps_discard_pop}, \code{ISS_FishAgeComps_discard_pop},
+  \code{UseFishAgeComps_discard_pop},
+  \code{ObsFishLenComps_discard} (or \code{NULL}), \code{ISS_FishLenComps_discard} (or \code{NULL}),
+  \code{UseFishLenComps_discard},
+  \code{ObsFishLenComps_discard_pop} (or \code{NULL}), \code{ISS_FishLenComps_discard_pop} (or \code{NULL}),
+  \code{UseFishLenComps_discard_pop},
   \code{ObsSrvIdx}, \code{ObsSrvIdx_SE}, \code{UseSrvIdx},
-  \code{ObsSrvIdx_pop}, \code{UseSrvIdx_pop},
+  \code{ObsSrvIdx_pop}, \code{ObsSrvIdx_pop_SE}, \code{UseSrvIdx_pop},
   \code{ObsSrvAgeComps}, \code{ISS_SrvAgeComps}, \code{UseSrvAgeComps},
   \code{ObsSrvAgeComps_pop}, \code{ISS_SrvAgeComps_pop},
   \code{UseSrvAgeComps_pop},
-  \code{ObsSrvLenComps} (or \code{NULL}), \code{ISS_SrvLenComps},
+  \code{ObsSrvLenComps} (or \code{NULL}), \code{ISS_SrvLenComps} (or \code{NULL}),
   \code{UseSrvLenComps},
-  \code{ObsSrvLenComps_pop} (or \code{NULL}), \code{UseSrvLenComps_pop}.
+  \code{ObsSrvLenComps_pop} (or \code{NULL}), \code{ISS_SrvLenComps_pop} (or \code{NULL}),
+  \code{UseSrvLenComps_pop}.
 }
 \description{
 Subsets and reshapes biological, tagging, fishery, and survey arrays from a
 simulation environment or output list to cover years \code{1:y} and
 simulation replicate \code{sim}, producing a named list ready for direct
-use in \code{Setup_Mod_Biologicals}, \code{Setup_Mod_Catch_and_F},
-\code{Setup_Mod_SrvIdx_and_Comps}, and \code{Setup_Mod_Tagging}. Binary
-\code{Use*} indicator arrays are derived automatically from the extracted
-observation arrays (non-NA, positive values set to 1). Population-specific
-arrays (\code{ObsCatch_pop}, \code{ObsFishIdx_pop}, \code{ObsFishAgeComps_pop},
-\code{ObsFishLenComps_pop}, \code{ObsSrvIdx_pop}, \code{ObsSrvAgeComps_pop},
-\code{ObsSrvLenComps_pop}) are extracted when present in \code{sim_env};
-corresponding \code{Use*_PopSpec} flags are derived automatically.
-Input sample sizes for population-specific age compositions
-(\code{ISS_FishAgeComps_pop}, \code{ISS_SrvAgeComps_pop}) are extracted
-when present in \code{sim_env}.
-Length composition outputs (\code{ObsFishLenComps}, \code{ObsSrvLenComps})
-and \code{SizeAgeTrans} are \code{NULL} when no size-age transition matrix is
-present in \code{sim_env}. Tagging outputs are \code{NULL} when
+use in \code{\link{Setup_Mod_Biologicals}}, \code{\link{Setup_Mod_Catch_and_F}},
+\code{\link{Setup_Mod_SrvIdx_and_Comps}}, and \code{\link{Setup_Mod_Tagging}}.
+Binary \code{Use*} indicator arrays are derived automatically from the
+extracted observation arrays (non-NA, positive values set to 1).
+}
+\details{
+Population-specific arrays (\code{ObsCatch_pop}, \code{ObsFishIdx_pop},
+\code{ObsFishAgeComps_pop}, \code{ObsFishLenComps_pop}, \code{ObsSrvIdx_pop},
+\code{ObsSrvAgeComps_pop}, \code{ObsSrvLenComps_pop}) are extracted when
+present in \code{sim_env}; corresponding \code{Use*_PopSpec} flags are
+derived automatically.
+
+Input sample sizes for age and length compositions are extracted for both
+aggregate and population-specific data streams, including retained
+(\code{ISS_FishAgeComps}, \code{ISS_FishLenComps}, \code{ISS_FishAgeComps_pop},
+\code{ISS_FishLenComps_pop}, \code{ISS_SrvAgeComps}, \code{ISS_SrvLenComps},
+\code{ISS_SrvAgeComps_pop}, \code{ISS_SrvLenComps_pop}) and discard
+(\code{ISS_FishAgeComps_discard}, \code{ISS_FishLenComps_discard},
+\code{ISS_FishAgeComps_discard_pop}, \code{ISS_FishLenComps_discard_pop})
+data streams.
+
+Length composition outputs (\code{ObsFishLenComps}, \code{ObsSrvLenComps},
+and their population-specific and discard variants) and \code{SizeAgeTrans}
+are \code{NULL} when no size-age transition matrix is present in
+\code{sim_env}. Tagging outputs are \code{NULL} when
 \code{use_conv_fish_tagging = 0}; otherwise, only cohorts with release
 years in \code{1:y} are retained.
 }
+\seealso{
+\code{\link{Setup_Mod_Biologicals}}, \code{\link{Setup_Mod_Catch_and_F}},
+  \code{\link{Setup_Mod_SrvIdx_and_Comps}}, \code{\link{Setup_Mod_Tagging}},
+  \code{\link{Simulate_Pop_Static}}, \code{\link{Setup_sim_env}}
+}
+\concept{Simulation Utilities}

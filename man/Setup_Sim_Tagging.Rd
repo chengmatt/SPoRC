@@ -5,6 +5,7 @@
 \title{Set up conventional tagging dynamics for the operating model simulation}
 \usage{
 Setup_Sim_Tagging(
+  sim_list,
   n_tags = NULL,
   n_tags_rel_input = NULL,
   use_conv_fish_tagging = 0,
@@ -21,11 +22,12 @@ Setup_Sim_Tagging(
   conv_tag_fish_reporting_input = array(0.5, dim = c(sim_list$n_regions, sim_list$n_yrs,
     sim_list$n_fish_fleets, sim_list$n_sims)),
   conv_fish_tag_like = 0,
-  ln_conv_fish_tag_theta = log(1),
-  sim_list
+  ln_conv_fish_tag_theta = log(1)
 )
 }
 \arguments{
+\item{sim_list}{Simulation list returned by \code{\link{Setup_Sim_Dim}}.}
+
 \item{n_tags}{Numeric scalar. Constant number of tags released per release
 event. Cannot be specified simultaneously with \code{n_tags_rel_input}.
 Default \code{NULL}.}
@@ -105,8 +107,6 @@ recapture likelihood. Default \code{0} (Poisson). Options:
 negative-binomial (\code{1}) or Dirichlet-multinomial (\code{4},
 \code{5}) likelihoods. Ignored for Poisson and multinomial likelihoods.
 Default \code{log(1)}.}
-
-\item{sim_list}{Simulation list returned by \code{\link{Setup_Sim_Dim}}.}
 }
 \value{
 The input \code{sim_list} with tagging-related fields appended:

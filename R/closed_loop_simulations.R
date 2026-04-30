@@ -56,6 +56,16 @@
 #' @param ISS_SrvLenComps_pop_fill Same behavior as
 #'   \code{ISS_SrvAgeComps_pop_fill} for population-specific survey length
 #'   compositions. Default \code{"mean"}.
+#' @param ISS_FishAgeComps_discard_fill Same behavior as \code{ISS_FishAgeComps_fill}
+#'   for pooled fishery length compositions.
+#' @param ISS_FishLenComps_discard_fill Same behavior as \code{ISS_FishAgeComps_fill}
+#'   for pooled fishery length compositions.
+#' @param ISS_FishAgeComps_discard_pop_fill Same behavior as
+#'   \code{ISS_FishAgeComps_pop_fill} for population-specific fishery length
+#'   compositions. Default \code{"mean"}.
+#' @param ISS_FishLenComps_discard_pop_fill Same behavior as
+#'   \code{ISS_FishLenComps_pop_fill} for population-specific fishery length
+#'   compositions. Default \code{"mean"}.
 #'
 #' Extension rules for all \code{*_fill} arguments may be:
 #'
@@ -182,10 +192,14 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
                                               SrvIdx_SE_pop_fill = "mean",
                                               ISS_FishAgeComps_fill = "mean",
                                               ISS_FishLenComps_fill = "mean",
+                                              ISS_FishAgeComps_discard_fill = "mean",
+                                              ISS_FishLenComps_discard_fill = "mean",
                                               ISS_SrvAgeComps_fill = "mean",
                                               ISS_SrvLenComps_fill = "mean",
                                               ISS_FishAgeComps_pop_fill = "mean",
                                               ISS_FishLenComps_pop_fill = "mean",
+                                              ISS_FishAgeComps_discard_pop_fill = "mean",
+                                              ISS_FishLenComps_discard_pop_fill = "mean",
                                               ISS_SrvAgeComps_pop_fill = "mean",
                                               ISS_SrvLenComps_pop_fill = "mean",
                                               ...
@@ -202,6 +216,14 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   if(is.array(ISS_FishLenComps_fill)) {
     args$ISS_FishLenComps <- ISS_FishLenComps_fill
     ISS_FishLenComps_fill <- "placeholder"
+  }
+  if(is.array(ISS_FishAgeComps_discard_fill)) {
+    args$ISS_FishAgeComps_discard <- ISS_FishAgeComps_discard_fill
+    ISS_FishAgeComps_discard_fill <- "placeholder"
+  }
+  if(is.array(ISS_FishLenComps_discard_fill)) {
+    args$ISS_FishLenComps_discard <- ISS_FishLenComps_discard_fill
+    ISS_FishLenComps_discard_fill <- "placeholder"
   }
   if(is.array(ISS_SrvAgeComps_fill)) {
     args$ISS_SrvAgeComps <- ISS_SrvAgeComps_fill
@@ -226,6 +248,14 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   if(is.array(ISS_FishLenComps_pop_fill)) {
     args$ISS_FishLenComps_pop <- ISS_FishLenComps_pop_fill
     ISS_FishLenComps_pop_fill <- "placeholder"
+  }
+  if(is.array(ISS_FishAgeComps_discard_pop_fill)) {
+    args$ISS_FishAgeComps_discard_pop <- ISS_FishAgeComps_discard_pop_fill
+    ISS_FishAgeComps_discard_pop_fill <- "placeholder"
+  }
+  if(is.array(ISS_FishLenComps_discard_pop_fill)) {
+    args$ISS_FishLenComps_discard_pop <- ISS_FishLenComps_discard_pop_fill
+    ISS_FishLenComps_discard_pop_fill <- "placeholder"
   }
   if(is.array(ISS_SrvAgeComps_pop_fill)) {
     args$ISS_SrvAgeComps_pop <- ISS_SrvAgeComps_pop_fill
@@ -301,10 +331,39 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     tmp
   } else args$ln_sigmaC_pop
 
+  # Catch uncertainty
+  ln_sigmaD <- if(!"ln_sigmaD" %in% names(args)) {
+    tmp <- array(NA, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets))
+    for(r in 1:sim_list$n_regions) for(f in 1:sim_list$n_fish_fleets) {
+      if(!is.vector(data$Wt_Discard)) {
+        tmp[r,,,f] <- mean(log(exp(optim_parameters_list$ln_sigmaD[r,,,f]) / sqrt(data$Wt_Discard[r,,,f])))
+      } else {
+        tmp[r,,,f] <- mean(log(exp(optim_parameters_list$ln_sigmaD[r,,,f]) / sqrt(data$Wt_Discard)))
+      }
+    }
+    tmp
+  } else args$ln_sigmaD
+
+  ln_sigmaD_pop <- if(!"ln_sigmaD_pop" %in% names(args)) {
+    tmp <- array(NA, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets))
+    for(p in 1:sim_list$n_pop) for(r in 1:sim_list$n_regions) for(f in 1:sim_list$n_fish_fleets) {
+      if(!is.vector(data$Wt_Discard_pop)) {
+        tmp[p,r,,,f] <- mean(log(exp(optim_parameters_list$ln_sigmaD_pop[p,r,,,f]) / sqrt(data$Wt_Discard_pop[p,r,,,f])))
+      } else {
+        tmp[p,r,,,f] <- mean(log(exp(optim_parameters_list$ln_sigmaD_pop[p,r,,,f]) / sqrt(data$Wt_Discard_pop)))
+      }
+    }
+    tmp
+  } else args$ln_sigmaD_pop
+
   # Fishery selectivity
   fish_sel_input <- if(!"fish_sel_input" %in% names(args)) {
     extend_years(replicate(n = sim_list$n_sims, rep$fish_sel[,,1:length(data$years),,,,,drop = FALSE]), n_years = closed_loop_yrs, 3, fill = 'last')
   } else args$fish_sel_input
+  # Retained selectivity
+  ret_sel_input <- if(!"ret_sel_input" %in% names(args)) {
+    extend_years(replicate(n = sim_list$n_sims, rep$ret_sel[,,1:length(data$years),,,,,drop = FALSE]), n_years = closed_loop_yrs, 3, fill = 'last')
+  } else args$ret_sel_input
   # Fishery catchability
   fish_q_input <- if(!"fish_q_input" %in% names(args)) {
     extend_years(replicate(n = sim_list$n_sims, rep$fish_q[,1:length(data$years),,drop = FALSE]), n_years = closed_loop_yrs, 2, fill = 'last')
@@ -336,6 +395,28 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   FishLen_corr_pars_agg <- if(!"FishLen_corr_pars_agg" %in% names(args)) optim_parameters_list$FishLen_corr_pars_agg else args$FishLen_corr_pars_agg
   FishLen_corr_pars <- if(!"FishLen_corr_pars" %in% names(args)) optim_parameters_list$FishLen_corr_pars[,,,,drop = FALSE] else args$FishLen_corr_pars
 
+  # Discard Fishery age compositions
+  comp_fishage_discard_like <- if(!"comp_fishage_discard_like" %in% names(args)) data$FishAgeComps_discard_LikeType else args$comp_fishage_discard_like
+  FishAgeComps_discard_Type <- if(!"FishAgeComps_discard_Type" %in% names(args)) extend_years(data$FishAgeComps_discard_Type, closed_loop_yrs, 1, 'last') else args$FishAgeComps_discard_Type
+  ISS_FishAgeComps_discard <- if(!"ISS_FishAgeComps_discard" %in% names(args)) {
+    extend_years(replicate(sim_list$n_sims, data$ISS_FishAgeComps_discard[,,,,,drop = FALSE] * data$Wt_FishAgeComps_discard), closed_loop_yrs, 2, fill = ISS_FishAgeComps_discard_fill)
+  } else args$ISS_FishAgeComps_discard_fill
+  ln_FishAge_discard_theta <- if(!"ln_FishAge_discard_theta" %in% names(args)) optim_parameters_list$ln_FishAge_discard_theta[,,,drop = FALSE] else args$ln_FishAge_discard_theta
+  ln_FishAge_discard_theta_agg <- if(!"ln_FishAge_discard_theta_agg" %in% names(args)) optim_parameters_list$ln_FishAge_discard_theta_agg else args$ln_FishAge_discard_theta_agg
+  FishAge_discard_corr_pars_agg <- if(!"FishAge_discard_corr_pars_agg" %in% names(args)) optim_parameters_list$FishAge_discard_corr_pars_agg else args$FishAge_discard_corr_pars_agg
+  FishAge_discard_corr_pars <- if(!"FishAge_discard_corr_pars" %in% names(args)) optim_parameters_list$FishAge_discard_corr_pars[,,,,drop = FALSE] else args$FishAge_discard_corr_pars
+
+  # Discard Fishery length compositions
+  comp_fishlen_discard_like <- if(!"comp_fishlen_discard_like" %in% names(args)) data$FishLenComps_discard_LikeType else args$comp_fishlen_discard_like
+  FishLenComps_discard_Type <- if(!"FishLenComps_discard_Type" %in% names(args)) extend_years(data$FishLenComps_discard_Type, closed_loop_yrs, 1, 'last') else args$FishLenComps_discard_Type
+  ISS_FishLenComps_discard <- if(!"ISS_FishLenComps_discard" %in% names(args)) {
+    extend_years(replicate(sim_list$n_sims, data$ISS_FishLenComps_discard[,,,,,drop = FALSE] * data$Wt_FishLenComps_discard), closed_loop_yrs, 2, fill = ISS_FishLenComps_discard_fill)
+  } else args$ISS_FishLenComps_discard_fill
+  ln_FishLen_discard_theta <- if(!"ln_FishLen_discard_theta" %in% names(args)) optim_parameters_list$ln_FishLen_discard_theta[,,,drop = FALSE] else args$ln_FishLen_discard_theta
+  ln_FishLen_discard_theta_agg <- if(!"ln_FishLen_discard_theta_agg" %in% names(args)) optim_parameters_list$ln_FishLen_discard_theta_agg else args$ln_FishLen_discard_theta_agg
+  FishLen_discard_corr_pars_agg <- if(!"FishLen_discard_corr_pars_agg" %in% names(args)) optim_parameters_list$FishLen_discard_corr_pars_agg else args$FishLen_discard_corr_pars_agg
+  FishLen_discard_corr_pars <- if(!"FishLen_discard_corr_pars" %in% names(args)) optim_parameters_list$FishLen_discard_corr_pars[,,,,drop = FALSE] else args$FishLen_discard_corr_pars
+
   # Population-specific fishery index SE
   ObsFishIdx_pop_SE <- if(!"ObsFishIdx_pop_SE" %in% names(args)) {
     if(any(data$UseFishIdx_pop == 1)) {
@@ -346,34 +427,40 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   } else args$ObsFishIdx_pop_SE
 
   # Population-specific fishery age compositions
-  pop_comp_fishage_like <- if(!"pop_comp_fishage_like" %in% names(args)) data$pop_FishAgeComps_LikeType else args$pop_comp_fishage_like
-  pop_FishAgeComps_Type <- if(!"pop_FishAgeComps_Type" %in% names(args)) extend_years(data$pop_FishAgeComps_Type, closed_loop_yrs, 1, 'last') else args$pop_FishAgeComps_Type
-  ISS_FishAgeComps_pop <- if(!"ISS_FishAgeComps_pop" %in% names(args)) {
-    if(any(data$UseFishAgeComps_pop == 1)) {
-      extend_years(replicate(sim_list$n_sims, data$ISS_FishAgeComps_pop[,,,,,,drop = FALSE] * data$Wt_FishAgeComps_pop), closed_loop_yrs, 3, fill = ISS_FishAgeComps_pop_fill)
-    } else {
-      array(100, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims))
-    }
-  } else args$ISS_FishAgeComps_pop
+  comp_fishage_pop_like <- if(!"comp_fishage_pop_like" %in% names(args)) data$ishAgeComps_pop_LikeType else args$comp_fishage_pop_like
+  FishAgeComps_pop_Type <- if(!"FishAgeComps_pop_Type" %in% names(args)) extend_years(data$FishAgeComps_pop_Type, closed_loop_yrs, 1, 'last') else args$FishAgeComps_pop_Type
+  ISS_FishAgeComps_pop <- if(!"ISS_FishAgeComps_pop" %in% names(args)) extend_years(replicate(sim_list$n_sims, data$ISS_FishAgeComps_pop[,,,,,,drop = FALSE] * data$Wt_FishAgeComps_pop), closed_loop_yrs, 3, fill = ISS_FishAgeComps_pop_fill) else args$ISS_FishAgeComps_pop
   ln_FishAge_pop_theta <- if(!"ln_FishAge_pop_theta" %in% names(args)) optim_parameters_list$ln_FishAge_pop_theta[,,,,drop = FALSE] else args$ln_FishAge_pop_theta
   ln_FishAge_pop_theta_agg <- if(!"ln_FishAge_pop_theta_agg" %in% names(args)) optim_parameters_list$ln_FishAge_pop_theta_agg else args$ln_FishAge_pop_theta_agg
   FishAge_pop_corr_pars_agg <- if(!"FishAge_pop_corr_pars_agg" %in% names(args)) optim_parameters_list$FishAge_pop_corr_pars_agg else args$FishAge_pop_corr_pars_agg
   FishAge_pop_corr_pars <- if(!"FishAge_pop_corr_pars" %in% names(args)) optim_parameters_list$FishAge_pop_corr_pars[,,,,,drop = FALSE] else args$FishAge_pop_corr_pars
 
   # Population-specific fishery length compositions
-  pop_comp_fishlen_like <- if(!"pop_comp_fishlen_like" %in% names(args)) data$pop_FishLenComps_LikeType else args$pop_comp_fishlen_like
-  pop_FishLenComps_Type <- if(!"pop_FishLenComps_Type" %in% names(args)) extend_years(data$pop_FishLenComps_Type, closed_loop_yrs, 1, 'last') else args$pop_FishLenComps_Type
-  ISS_FishLenComps_pop <- if(!"ISS_FishLenComps_pop" %in% names(args)) {
-    if(any(data$UseFishLenComps_pop == 1)) {
-      extend_years(replicate(sim_list$n_sims, data$ISS_FishLenComps_pop[,,,,,,drop = FALSE] * data$Wt_FishLenComps_pop), closed_loop_yrs, 3, fill = ISS_FishLenComps_pop_fill)
-    } else {
-      array(100, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims))
-    }
-  } else args$ISS_FishLenComps_pop
+  comp_fishlen_pop_like <- if(!"comp_fishlen_pop_like" %in% names(args)) data$FishLenComps_pop_LikeType else args$comp_fishlen_pop_like
+  FishLenComps_pop_Type <- if(!"FishLenComps_pop_Type" %in% names(args)) extend_years(data$FishLenComps_pop_Type, closed_loop_yrs, 1, 'last') else args$FishLenComps_pop_Type
+  ISS_FishLenComps_pop <- if(!"ISS_FishLenComps_pop" %in% names(args)) extend_years(replicate(sim_list$n_sims, data$ISS_FishLenComps_pop[,,,,,,drop = FALSE] * data$Wt_FishLenComps_pop), closed_loop_yrs, 3, fill = ISS_FishLenComps_pop_fill) else args$ISS_FishLenComps_pop
   ln_FishLen_pop_theta <- if(!"ln_FishLen_pop_theta" %in% names(args)) optim_parameters_list$ln_FishLen_pop_theta[,,,,drop = FALSE] else args$ln_FishLen_pop_theta
   ln_FishLen_pop_theta_agg <- if(!"ln_FishLen_pop_theta_agg" %in% names(args)) optim_parameters_list$ln_FishLen_pop_theta_agg else args$ln_FishLen_pop_theta_agg
   FishLen_pop_corr_pars_agg <- if(!"FishLen_pop_corr_pars_agg" %in% names(args)) optim_parameters_list$FishLen_pop_corr_pars_agg else args$FishLen_pop_corr_pars_agg
   FishLen_pop_corr_pars <- if(!"FishLen_pop_corr_pars" %in% names(args)) optim_parameters_list$FishLen_pop_corr_pars[,,,,,drop = FALSE] else args$FishLen_pop_corr_pars
+
+  # Discarded Population-specific fishery age compositions
+  comp_fishage_discard_pop_like <- if(!"comp_fishage_discard_pop_like" %in% names(args)) data$FishAgeComps_pop_LikeType else args$comp_fishage_discard_pop_like
+  FishAgeComps_discard_pop_Type <- if(!"FishAgeComps_discard_pop_Type" %in% names(args)) extend_years(data$FishAgeComps_discard_pop_Type, closed_loop_yrs, 1, 'last') else args$FishAgeComps_discard_pop_Type
+  ISS_FishAgeComps_discard_pop <- if(!"ISS_FishAgeComps_discard_pop" %in% names(args)) extend_years(replicate(sim_list$n_sims, data$ISS_FishAgeComps_discard_pop[,,,,,,drop = FALSE] * data$Wt_FishAgeComps_discard_pop), closed_loop_yrs, 3, fill = ISS_FishAgeComps_discard_pop_fill) else args$ISS_FishAgeComps_discard_pop
+  ln_FishAge_discard_pop_theta <- if(!"ln_FishAge_discard_pop_theta" %in% names(args)) optim_parameters_list$ln_FishAge_discard_pop_theta[,,,,drop = FALSE] else args$ln_FishAge_discard_pop_theta
+  ln_FishAge_discard_pop_theta_agg <- if(!"ln_FishAge_discard_pop_theta_agg" %in% names(args)) optim_parameters_list$ln_FishAge_discard_pop_theta_agg else args$ln_FishAge_discard_pop_theta_agg
+  FishAge_discard_pop_corr_pars_agg <- if(!"FishAge_discard_pop_corr_pars_agg" %in% names(args)) optim_parameters_list$FishAge_discard_pop_corr_pars_agg else args$FishAge_discard_pop_corr_pars_agg
+  FishAge_discard_pop_corr_pars <- if(!"FishAge_discard_pop_corr_pars" %in% names(args)) optim_parameters_list$FishAge_discard_pop_corr_pars[,,,,,drop = FALSE] else args$FishAge_discard_pop_corr_pars
+
+  # Discarded Population-specific fishery length compositions
+  comp_fishlen_discard_pop_like <- if(!"comp_fishlen_discard_pop_like" %in% names(args)) data$FishLenComps_pop_LikeType else args$comp_fishlen_discard_pop_like
+  FishLenComps_discard_pop_Type <- if(!"FishLenComps_discard_pop_Type" %in% names(args)) extend_years(data$FishLenComps_discard_pop_Type, closed_loop_yrs, 1, 'last') else args$FishLenComps_discard_pop_Type
+  ISS_FishLenComps_discard_pop <- if(!"ISS_FishLenComps_discard_pop" %in% names(args)) extend_years(replicate(sim_list$n_sims, data$ISS_FishLenComps_discard_pop[,,,,,,drop = FALSE] * data$Wt_FishLenComps_discard_pop), closed_loop_yrs, 3, fill = ISS_FishLenComps_discard_pop_fill) else args$ISS_FishLenComps_discard_pop
+  ln_FishLen_discard_pop_theta <- if(!"ln_FishLen_discard_pop_theta" %in% names(args)) optim_parameters_list$ln_FishLen_discard_pop_theta[,,,,drop = FALSE] else args$ln_FishLen_discard_pop_theta
+  ln_FishLen_discard_pop_theta_agg <- if(!"ln_FishLen_discard_pop_theta_agg" %in% names(args)) optim_parameters_list$ln_FishLen_discard_pop_theta_agg else args$ln_FishLen_discard_pop_theta_agg
+  FishLen_discard_pop_corr_pars_agg <- if(!"FishLen_discard_pop_corr_pars_agg" %in% names(args)) optim_parameters_list$FishLen_discard_pop_corr_pars_agg else args$FishLen_discard_pop_corr_pars_agg
+  FishLen_discard_pop_corr_pars <- if(!"FishLen_discard_pop_corr_pars" %in% names(args)) optim_parameters_list$FishLen_discard_pop_corr_pars[,,,,,drop = FALSE] else args$FishLen_discard_pop_corr_pars
 
   # setup fishery simulation processes
   sim_list <- Setup_Sim_Fishing(
@@ -381,12 +468,18 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     ln_sigmaC = ln_sigmaC,
     ln_sigmaC_pop = ln_sigmaC_pop,
     Fmort_input = extend_years(replicate(n = sim_list$n_sims, rep$Fmort[,1:length(data$years),,,drop = FALSE]), n_years = closed_loop_yrs, 2, fill = 'zeros'),
+    ln_sigmaD = ln_sigmaD,
+    ln_sigmaD_pop = ln_sigmaD_pop,
+    dmr_input = extend_years(replicate(n = sim_list$n_sims, rep$dmr[,1:length(data$years),,,drop = FALSE]), n_years = closed_loop_yrs, 2, fill = 'zeros'),
     fish_sel_input = fish_sel_input,
+    ret_sel_input = ret_sel_input,
     fish_q_input = fish_q_input,
     ObsFishIdx_SE = ObsFishIdx_SE,
     ObsFishIdx_pop_SE = ObsFishIdx_pop_SE,
     fish_idx_type = data$fish_idx_type,
     init_F_val = rep$init_F,
+    catch_units = data$catch_units,
+    discard_units = data$discard_units,
 
     # fishery age composition specifications
     comp_fishage_like = comp_fishage_like,
@@ -407,8 +500,8 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     FishLen_corr_pars = FishLen_corr_pars,
 
     # population-specific age composition specifications
-    pop_comp_fishage_like = pop_comp_fishage_like,
-    pop_FishAgeComps_Type = pop_FishAgeComps_Type,
+    comp_fishage_pop_like = comp_fishage_pop_like,
+    FishAgeComps_pop_Type = FishAgeComps_pop_Type,
     ISS_FishAgeComps_pop = ISS_FishAgeComps_pop,
     ln_FishAge_pop_theta = ln_FishAge_pop_theta,
     ln_FishAge_pop_theta_agg = ln_FishAge_pop_theta_agg,
@@ -416,18 +509,60 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     FishAge_pop_corr_pars = FishAge_pop_corr_pars,
 
     # population-specific length composition specifications
-    pop_comp_fishlen_like = pop_comp_fishlen_like,
-    pop_FishLenComps_Type = pop_FishLenComps_Type,
+    comp_fishlen_pop_like = comp_fishlen_pop_like,
+    FishLenComps_pop_Type = FishLenComps_pop_Type,
     ISS_FishLenComps_pop = ISS_FishLenComps_pop,
     ln_FishLen_pop_theta = ln_FishLen_pop_theta,
     ln_FishLen_pop_theta_agg = ln_FishLen_pop_theta_agg,
     FishLen_pop_corr_pars_agg = FishLen_pop_corr_pars_agg,
-    FishLen_pop_corr_pars = FishLen_pop_corr_pars
+    FishLen_pop_corr_pars = FishLen_pop_corr_pars,
+
+    # discarded fishery age composition specifications
+    comp_fishage_discard_like = comp_fishage_discard_like,
+    FishAgeComps_discard_Type = FishAgeComps_discard_Type,
+    ISS_FishAgeComps_discard = ISS_FishAgeComps_discard,
+    ln_FishAge_discard_theta = ln_FishAge_discard_theta ,
+    ln_FishAge_discard_theta_agg = ln_FishAge_discard_theta_agg,
+    FishAge_discard_corr_pars_agg = FishAge_discard_corr_pars_agg,
+    FishAge_discard_corr_pars = FishAge_discard_corr_pars,
+
+    # discarded fishery length composition specifications
+    comp_fishlen_discard_like = comp_fishlen_discard_like,
+    FishLenComps_discard_Type = FishLenComps_discard_Type,
+    ISS_FishLenComps_discard =ISS_FishLenComps_discard,
+    ln_FishLen_discard_theta = ln_FishLen_discard_theta,
+    ln_FishLen_discard_theta_agg = ln_FishLen_discard_theta_agg,
+    FishLen_discard_corr_pars_agg = FishLen_discard_corr_pars_agg,
+    FishLen_discard_corr_pars = FishLen_discard_corr_pars,
+
+    # discarded population-specific age composition specifications
+    comp_fishage_discard_pop_like = comp_fishage_discard_pop_like,
+    FishAgeComps_discard_pop_Type = FishAgeComps_discard_pop_Type,
+    ISS_FishAgeComps_discard_pop = ISS_FishAgeComps_discard_pop,
+    ln_FishAge_discard_pop_theta = ln_FishAge_discard_pop_theta,
+    ln_FishAge_discard_pop_theta_agg = ln_FishAge_discard_pop_theta_agg,
+    FishAge_discard_pop_corr_pars_agg = FishAge_discard_pop_corr_pars_agg,
+    FishAge_discard_pop_corr_pars = FishAge_discard_pop_corr_pars,
+
+    # discarded population-specific length composition specifications
+    comp_fishlen_discard_pop_like = comp_fishlen_discard_pop_like,
+    FishLenComps_discard_pop_Type = FishLenComps_discard_pop_Type,
+    ISS_FishLenComps_discard_pop = ISS_FishLenComps_discard_pop,
+    ln_FishLen_discard_pop_theta = ln_FishLen_discard_pop_theta,
+    ln_FishLen_discard_pop_theta_agg = ln_FishLen_discard_pop_theta_agg,
+    FishLen_discard_pop_corr_pars_agg = FishLen_discard_pop_corr_pars_agg,
+    FishLen_discard_pop_corr_pars = FishLen_discard_pop_corr_pars
   )
 
   # add in ISS F pattern into simulation list
   if(ISS_FishAgeComps_fill == 'F_pattern') sim_list$ISS_FishAgeComps_fill <- "F_pattern"
   if(ISS_FishLenComps_fill == 'F_pattern') sim_list$ISS_FishLenComps_fill <- "F_pattern"
+  if(ISS_FishAgeComps_pop_fill == 'F_pattern') sim_list$ISS_FishAgeComps_pop_fill <- "F_pattern"
+  if(ISS_FishLenComps_pop_fill == 'F_pattern') sim_list$ISS_FishLenComps_pop_fill <- "F_pattern"
+  if(ISS_FishAgeComps_discard_fill == 'F_pattern') sim_list$ISS_FishAgeComps_discard_fill <- "F_pattern"
+  if(ISS_FishLenComps_discard_fill == 'F_pattern') sim_list$ISS_FishLenComps_discard_fill <- "F_pattern"
+  if(ISS_FishAgeComps_discard_pop_fill == 'F_pattern') sim_list$ISS_FishAgeComps_discard_pop_fill <- "F_pattern"
+  if(ISS_FishLenComps_discard_pop_fill == 'F_pattern') sim_list$ISS_FishLenComps_discard_pop_fill <- "F_pattern"
 
   # Setup Survey Processes --------------------------------------------------
   # Survey selectivity
@@ -475,8 +610,8 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   } else args$ObsSrvIdx_pop_SE
 
   # Population-specific survey age compositions
-  pop_comp_srvage_like <- if(!"pop_comp_srvage_like" %in% names(args)) data$pop_SrvAgeComps_LikeType else args$pop_comp_srvage_like
-  pop_SrvAgeComps_Type <- if(!"pop_SrvAgeComps_Type" %in% names(args)) extend_years(data$pop_SrvAgeComps_Type, closed_loop_yrs, 1, 'last') else args$pop_SrvAgeComps_Type
+  comp_srvage_pop_like <- if(!"comp_srvage_pop_like" %in% names(args)) data$SrvAgeComps_pop_LikeType else args$comp_srvage_pop_like
+  SrvAgeComps_pop_Type <- if(!"SrvAgeComps_pop_Type" %in% names(args)) extend_years(data$SrvAgeComps_pop_Type, closed_loop_yrs, 1, 'last') else args$SrvAgeComps_pop_Type
   ISS_SrvAgeComps_pop <- if(!"ISS_SrvAgeComps_pop" %in% names(args)) {
     if(any(data$UseSrvAgeComps_pop == 1)) {
       extend_years(replicate(sim_list$n_sims, data$ISS_SrvAgeComps_pop[,,,,,,drop = FALSE] * data$Wt_SrvAgeComps_pop), closed_loop_yrs, 3, fill = ISS_SrvAgeComps_pop_fill)
@@ -490,8 +625,8 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   SrvAge_pop_corr_pars <- if(!"SrvAge_pop_corr_pars" %in% names(args)) optim_parameters_list$SrvAge_pop_corr_pars[,,,,,drop = FALSE] else args$SrvAge_pop_corr_pars
 
   # Population-specific survey length compositions
-  pop_comp_srvlen_like <- if(!"pop_comp_srvlen_like" %in% names(args)) data$pop_SrvLenComps_LikeType else args$pop_comp_srvlen_like
-  pop_SrvLenComps_Type <- if(!"pop_SrvLenComps_Type" %in% names(args)) extend_years(data$pop_SrvLenComps_Type, closed_loop_yrs, 1, 'last') else args$pop_SrvLenComps_Type
+  comp_srvlen_pop_like <- if(!"comp_srvlen_pop_like" %in% names(args)) data$SrvLenComps_pop_LikeType else args$comp_srvlen_pop_like
+  SrvLenComps_pop_Type <- if(!"SrvLenComps_pop_Type" %in% names(args)) extend_years(data$SrvLenComps_pop_Type, closed_loop_yrs, 1, 'last') else args$SrvLenComps_pop_Type
   ISS_SrvLenComps_pop <- if(!"ISS_SrvLenComps_pop" %in% names(args)) {
     if(any(data$UseSrvLenComps_pop == 1)) {
       extend_years(replicate(sim_list$n_sims, data$ISS_SrvLenComps_pop[,,,,,,drop = FALSE] * data$Wt_SrvLenComps_pop), closed_loop_yrs, 3, fill = ISS_SrvLenComps_pop_fill)
@@ -533,8 +668,8 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     SrvLen_corr_pars = SrvLen_corr_pars,
 
     # population-specific age composition specifications
-    pop_comp_srvage_like = pop_comp_srvage_like,
-    pop_SrvAgeComps_Type = pop_SrvAgeComps_Type,
+    comp_srvage_pop_like = comp_srvage_pop_like,
+    SrvAgeComps_pop_Type = SrvAgeComps_pop_Type,
     ISS_SrvAgeComps_pop = ISS_SrvAgeComps_pop,
     ln_SrvAge_pop_theta = ln_SrvAge_pop_theta,
     ln_SrvAge_pop_theta_agg = ln_SrvAge_pop_theta_agg,
@@ -542,8 +677,8 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     SrvAge_pop_corr_pars = SrvAge_pop_corr_pars,
 
     # population-specific length composition specifications
-    pop_comp_srvlen_like = pop_comp_srvlen_like,
-    pop_SrvLenComps_Type = pop_SrvLenComps_Type,
+    comp_srvlen_pop_like = comp_srvlen_pop_like,
+    SrvLenComps_pop_Type = SrvLenComps_pop_Type,
     ISS_SrvLenComps_pop = ISS_SrvLenComps_pop,
     ln_SrvLen_pop_theta = ln_SrvLen_pop_theta,
     ln_SrvLen_pop_theta_agg = ln_SrvLen_pop_theta_agg,
@@ -705,17 +840,25 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
 #'     \item{calc_rec_st_yr}{Year to start calculating mean recruitment. Default is 1.}
 #'     \item{rec_age}{Age at recruitment. Default is 1.}
 #'     \item{type}{Reference point type: "single_region" or "multi_region". Default is "single_region".}
-#'     \item{what}{Method for reference point calculation. Options include "SPR", "BH_MSY", "independent_SPR", "independent_BH_MSY", "global_SPR", "global_BH_MSY". Default is "SPR".}
+#'     \item{what}{Method for reference point calculation. Options include "SPR", "BH_MSY",
+#'       "independent_SPR", "independent_BH_MSY", "global_SPR", "global_BH_MSY". Default is "SPR".}
+#'     \item{is_discard_fleet}{Integer vector \code{[n_fish_fleets]}. Indicator for
+#'       fleets whose catch should be excluded from landed yield in reference point
+#'       calculations (0 = landing fleet, 1 = discard-only fleet). These fleets still
+#'       contribute to total fishing mortality and population dynamics. Default is
+#'       \code{NULL}, which treats all fleets as landing fleets.}
 #'   }
 #' @param sim_env Simulation environment
 #' @param n_proj_yrs Number of projection years
-#' @param t_spawn Spawn timing wihtin a given season / year, default uses sim_env true values
+#' @param t_spawn Spawn timing within a given season / year, default uses sim_env true values
 #'
 #' @return A list with elements:
 #'   \describe{
 #'     \item{f_ref_pt}{Array of fishing reference points by region and projection year.}
 #'     \item{b_ref_pt}{Array of biological reference points by region and projection year.}
 #'     \item{virgin_b_ref_pt}{Array of unfished biological reference points by region and projection year.}
+#'     \item{pop_b_ref_pt}{Array of population-level biological reference points by population, region, and projection year.}
+#'     \item{virgin_pop_b_ref_pt}{Array of unfished population-level biological reference points by population, region, and projection year.}
 #'   }
 #'
 #' @export get_closed_loop_reference_points
@@ -733,12 +876,14 @@ get_closed_loop_reference_points <- function(use_true_values,
                                                calc_rec_st_yr = 1,
                                                rec_age = 1,
                                                type = 'single_region',
-                                               what = "SPR"
+                                               what = "SPR",
+                                               is_discard_fleet = NULL
                                              ),
                                              n_proj_yrs
                                              ) {
 
   if(use_true_values) {
+
     # Build data and report objects to feed into reference points
     data_obj <- list(
       ages = 1:sim_env$n_ages,
@@ -758,7 +903,9 @@ get_closed_loop_reference_points <- function(use_true_values,
     # Build rep list if not doing assessment (using truth)
     rep_obj <- list(
       Fmort = array(sim_env$Fmort[, 1:y,, , sim], dim = c(sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_fish_fleets)),
+      dmr = array(sim_env$dmr[, 1:y,, , sim], dim = c(sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_fish_fleets)),
       fish_sel = array(sim_env$fish_sel[,, 1:y,, , , , sim, drop = FALSE], dim = c(sim_env$n_pop, sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes, sim_env$n_fish_fleets)),
+      ret_sel = array(sim_env$ret_sel[,, 1:y,, , , , sim, drop = FALSE], dim = c(sim_env$n_pop, sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes, sim_env$n_fish_fleets)),
       natmort = array(sim_env$natmort[,, 1:y, , , sim], dim = c(sim_env$n_pop, sim_env$n_regions, length(1:y), sim_env$n_ages, sim_env$n_sexes)),
       h_trans = array(sim_env$h[,, y, sim], dim = c(sim_env$n_pop, sim_env$n_regions)),
       R0 = apply(sim_env$R0[,, y, sim, drop = FALSE], 1, sum),
@@ -783,6 +930,13 @@ get_closed_loop_reference_points <- function(use_true_values,
     tmp_sex_ratio_f <- if(data_obj$n_sexes == 1) array(0.5, dim = c(sim_env$n_pop, sim_env$n_regions)) else rep_obj$sexratio[,,y,1]
   }
 
+  # dealing with whether there are any discard fleets
+  reference_points_opt$is_discard_fleet <- if(!is.null(reference_points_opt$is_discard_fleet)) {
+    reference_points_opt$is_discard_fleet
+  } else {
+    rep(0, data_obj$n_fish_fleets)
+  }
+
   # get reference points based on true values
   reference_points <- Get_Reference_Points(data = data_obj,
                                            rep = rep_obj,
@@ -793,7 +947,8 @@ get_closed_loop_reference_points <- function(use_true_values,
                                            rec_age = reference_points_opt$rec_age,
                                            type = reference_points_opt$type,
                                            what = reference_points_opt$what,
-                                           n_avg_yrs = reference_points_opt$n_avg_yrs
+                                           n_avg_yrs = reference_points_opt$n_avg_yrs,
+                                           is_discard_fleet = reference_points_opt$is_discard_fleet
   )
 
   # extract fishery and biological reference points

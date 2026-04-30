@@ -101,6 +101,7 @@
 #' @export Setup_Sim_Rec
 #' @family Simulation Setup
 Setup_Sim_Rec <- function(
+    sim_list,
     do_recruits_move = 0,
     sexratio_input = array(if(sim_list$n_sexes == 1) 1 else 0.5, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sexes, sim_list$n_sims)),
     R0_input = array(10, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)),
@@ -115,7 +116,6 @@ Setup_Sim_Rec <- function(
     recruitment_opt = 'bh_rec',
     rec_dd = 'global',
     init_dd = 'global',
-    sim_list,
     init_age_strc = 2,
     spawn_seas = 1,
     t_spawn = 0,

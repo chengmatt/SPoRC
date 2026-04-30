@@ -2,7 +2,7 @@
 % Please edit documentation in R/Setup_Fishery.R
 \name{Setup_Mod_Catch_and_F}
 \alias{Setup_Mod_Catch_and_F}
-\title{Set up fishing mortality and catch observation inputs}
+\title{Set up fishing mortality, discard mortality, and catch observation inputs}
 \usage{
 Setup_Mod_Catch_and_F(
   input_list,
@@ -17,6 +17,20 @@ Setup_Mod_Catch_and_F(
   sigmaC_spec = "fix",
   sigmaC_pop_spec = "fix",
   sigmaF_spec = "fix",
+  ObsDiscard = NULL,
+  UseDiscard = array(0, dim = c(input_list$data$n_regions, length(input_list$data$years),
+    input_list$data$n_seas, input_list$data$n_fish_fleets)),
+  discard_units = array("biom_frac", dim = c(input_list$data$n_fish_fleets)),
+  UseDiscard_pop = array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions,
+    length(input_list$data$years), input_list$data$n_seas,
+    input_list$data$n_fish_fleets)),
+  ObsDiscard_pop = NULL,
+  Use_dmr_pen = 0,
+  sigmaD_spec = "fix",
+  sigmaD_pop_spec = "fix",
+  sigma_dmr_spec = "fix",
+  dmr_mean_spec = "fix",
+  dmr_dev_spec = "fix",
   ...
 )
 }
@@ -25,11 +39,11 @@ Setup_Mod_Catch_and_F(
 and \code{$verbose} sublists, as returned by upstream setup functions.}
 
 \item{ObsCatch}{Observed aggregated catch array
-\code{[n_regions × n_years × n_seas × n_fish_fleets]}.
+\code{[n_regions x n_years x n_seas x n_fish_fleets]}.
 Values should be in the units specified by \code{catch_units}.}
 
 \item{UseCatch}{Binary indicator array
-\code{[n_regions × n_years × n_seas × n_fish_fleets]} controlling which
+\code{[n_regions x n_years x n_seas x n_fish_fleets]} controlling which
 aggregated catch observations enter the likelihood and whether
 \code{ln_F_devs} are estimated for each cell. \code{1} = use;
 \code{0} = exclude (corresponding \code{ln_F_devs} will be mapped to
@@ -40,12 +54,12 @@ units per fleet. \code{"biom"} = biomass (default); \code{"abd"} =
 abundance. Converted internally to \code{0}/\code{1} integer codes.}
 
 \item{UseCatch_pop}{Binary indicator array
-\code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]} controlling
+\code{[n_pop x n_regions x n_years x n_seas x n_fish_fleets]} controlling
 which population-specific catch observations enter the likelihood.
 \code{1} = use; \code{0} = exclude.}
 
 \item{ObsCatch_pop}{Observed population-specific catch array
-\code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]}.
+\code{[n_pop x n_regions x n_years x n_seas x n_fish_fleets]}.
 Values should be in the units specified by \code{catch_units}.}
 
 \item{Use_F_pen}{Integer flag for applying a fishing mortality penalty to
@@ -78,35 +92,80 @@ without providing a starting value in \code{...}.}
 \item{sigmaF_spec}{Character string specifying the sharing structure for
 \code{ln_sigmaF} (fishing mortality process error SD). Default
 \code{"fix"} holds \code{ln_sigmaF} at its starting value (\code{log(1)},
-i.e., \eqn{\sigma_F = 1}, unless overridden via \code{...}). See
-\code{\link{do_sigmaF_mapping}} for all sharing options. A warning is
+i.e., \eqn{\sigma_F = 1}, unless overridden via \code{...}). A warning is
 issued if \code{"fix"} is selected without providing a starting value
 in \code{...}.}
 
-\item{...}{Optional starting value overrides, passed by name. Recognised
-arguments:
-\describe{
-  \item{\code{ln_sigmaC}}{Array of log-scale starting values for
-    aggregated catch observation error, dimensioned
-    \code{[n_regions × n_years × n_seas × n_fish_fleets]}.
-    Default: \code{log(0.01)}.}
-  \item{\code{ln_sigmaC_pop}}{Array of log-scale starting values for
-    population-specific catch observation error, dimensioned
-    \code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]}.
-    Default: \code{log(0.01)}.}
-  \item{\code{ln_sigmaF}}{Array of log-scale starting values for fishing
-    mortality process error, dimensioned
-    \code{[n_regions × n_seas × n_fish_fleets]}.
-    Default: \code{log(1)}.}
-  \item{\code{ln_F_mean}}{Array of log-scale mean fishing mortality
-    starting values, dimensioned
-    \code{[n_regions × n_seas × n_fish_fleets]}.
-    Default: \code{log(0.1)}.}
-  \item{\code{ln_F_devs}}{Array of log-scale annual fishing mortality
-    deviation starting values, dimensioned
-    \code{[n_regions × n_years × n_seas × n_fish_fleets]}.
-    Default: \code{0}.}
-}}
+\item{ObsDiscard}{Observed aggregated discard array
+\code{[n_regions x n_years x n_seas x n_fish_fleets]}.
+Values should be in the units specified by \code{discard_units}.
+Default: \code{NULL} (no discard observations).}
+
+\item{UseDiscard}{Binary indicator array
+\code{[n_regions x n_years x n_seas x n_fish_fleets]} controlling which
+aggregated discard observations enter the likelihood. \code{1} = use;
+\code{0} = exclude. Default: all zeros.}
+
+\item{discard_units}{Character array \code{[n_fish_fleets]} specifying
+discard units per fleet. \code{"abd"} = abundance (\code{0}),
+\code{"biom"} = biomass (\code{1}), \code{"abd_frac"} = abundance
+fraction (\code{2}), \code{"biom_frac"} = biomass fraction (\code{3},
+default). Converted internally to integer codes.}
+
+\item{UseDiscard_pop}{Binary indicator array
+\code{[n_pop x n_regions x n_years x n_seas x n_fish_fleets]} controlling
+which population-specific discard observations enter the likelihood.
+\code{1} = use; \code{0} = exclude. Default: all zeros.}
+
+\item{ObsDiscard_pop}{Observed population-specific discard array
+\code{[n_pop x n_regions x n_years x n_seas x n_fish_fleets]}.
+Values should be in the units specified by \code{discard_units}.
+Default: \code{NULL} (no population-specific discard observations).}
+
+\item{Use_dmr_pen}{Integer flag for applying a discard mortality rate
+penalty to penalise large deviations in \code{logit_dmr_devs}.
+\code{1} = apply; \code{0} = do not apply (default). Must be \code{1}
+when \code{dmr_dev_spec = "est_all"} and \code{0} when
+\code{dmr_dev_spec = "fix"}.}
+
+\item{sigmaD_spec}{Character string specifying the sharing structure for
+\code{ln_sigmaD} (aggregated discard observation error SD). Default
+\code{"fix"} holds \code{ln_sigmaD} at its starting value
+(\code{log(0.01)} unless overridden via \code{...}). Sharing options
+follow the same convention as \code{sigmaC_spec}. A warning is issued
+if \code{"fix"} is selected without providing a starting value in
+\code{...}.}
+
+\item{sigmaD_pop_spec}{Character string specifying the sharing structure for
+\code{ln_sigmaD_pop} (population-specific discard observation error SD).
+Default \code{"fix"} holds \code{ln_sigmaD_pop} at its starting value
+(\code{log(0.01)} unless overridden via \code{...}). Sharing options
+follow the same convention as \code{sigmaC_pop_spec}. A warning is
+issued if \code{"fix"} is selected without providing a starting value
+in \code{...}.}
+
+\item{sigma_dmr_spec}{Character string specifying the sharing structure for
+\code{ln_sigma_dmr} (discard mortality rate process error SD). Default
+\code{"fix"} holds \code{ln_sigma_dmr} at its starting value
+(\code{log(1)} unless overridden via \code{...}). Sharing options
+follow the same convention as \code{sigmaF_spec}. A warning is issued
+if \code{"fix"} is selected without providing a starting value in
+\code{...}.}
+
+\item{dmr_mean_spec}{Character string specifying the sharing/estimation
+structure for \code{logit_dmr_mean} (logit-scale mean discard mortality
+rate). Default \code{"fix"} holds at its starting value (\code{0},
+i.e., DMR = 0.5 on the natural scale, unless overridden via \code{...}).
+See \code{\link{do_dmr_mean_mapping}} for sharing options.}
+
+\item{dmr_dev_spec}{Character string specifying the sharing/estimation
+structure for \code{logit_dmr_devs} (logit-scale annual discard mortality
+rate deviations). Default \code{"fix"} holds deviations at zero
+(unless overridden via \code{...}). Use \code{"est"} to estimate
+deviations; requires \code{Use_dmr_pen = 1}. See
+\code{\link{do_dmr_dev_mapping}} for sharing options.}
+
+\item{...}{Optional starting value overrides for catch and discard related parameters.}
 }
 \value{
 The input \code{input_list} with \code{$data}, \code{$par}, and
@@ -115,29 +174,40 @@ The input \code{input_list} with \code{$data}, \code{$par}, and
     \item{\code{$data}}{
       \code{ObsCatch}, \code{ObsCatch_pop}, \code{UseCatch},
       \code{UseCatch_pop}, \code{Use_F_pen}, \code{catch_units},
-      \code{Wt_Catch}, \code{Wt_Catch_pop}.}
+      \code{ObsDiscard}, \code{ObsDiscard_pop}, \code{UseDiscard},
+      \code{UseDiscard_pop}, \code{Use_dmr_pen}, \code{discard_units}.}
     \item{\code{$par}}{
       \code{ln_sigmaC}, \code{ln_sigmaC_pop}, \code{ln_sigmaF},
-      \code{ln_F_mean}, \code{ln_F_devs}.}
+      \code{ln_F_mean}, \code{ln_F_devs},
+      \code{ln_sigmaD}, \code{ln_sigmaD_pop}, \code{ln_sigma_dmr},
+      \code{logit_dmr_mean}, \code{logit_dmr_devs}.}
     \item{\code{$map}}{
       \code{ln_sigmaC}, \code{ln_sigmaC_pop}, \code{ln_sigmaF},
-      \code{ln_F_devs}.}
+      \code{ln_F_devs},
+      \code{ln_sigmaD}, \code{ln_sigmaD_pop}, \code{ln_sigma_dmr},
+      \code{logit_dmr_mean}, \code{logit_dmr_devs}.}
   }
 }
 \description{
 Populates \code{input_list} with observed catch, catch usage indicators,
 fishing mortality parameters (\code{ln_F_mean}, \code{ln_F_devs}), and
 observation/process error structures (\code{ln_sigmaC}, \code{ln_sigmaC_pop},
-\code{ln_sigmaF}). Must be called after \code{\link{Setup_Mod_Biologicals}}.
+\code{ln_sigmaF}). Also populates discard observations, discard mortality
+rate parameters (\code{logit_dmr_mean}, \code{logit_dmr_devs}), and
+discard observation/process error structures (\code{ln_sigmaD},
+\code{ln_sigmaD_pop}, \code{ln_sigma_dmr}).
+Must be called after \code{\link{Setup_Mod_Biologicals}}.
 }
 \seealso{
 Other Model Setup: 
 \code{\link{Setup_Mod_Biologicals}()},
 \code{\link{Setup_Mod_Dim}()},
+\code{\link{Setup_Mod_Discard_Comps}()},
 \code{\link{Setup_Mod_FishIdx_and_Comps}()},
 \code{\link{Setup_Mod_Fishsel_and_Q}()},
 \code{\link{Setup_Mod_Movement}()},
 \code{\link{Setup_Mod_Rec}()},
+\code{\link{Setup_Mod_Retsel}()},
 \code{\link{Setup_Mod_SrvIdx_and_Comps}()},
 \code{\link{Setup_Mod_Srvsel_and_Q}()},
 \code{\link{Setup_Mod_Tagging}()},

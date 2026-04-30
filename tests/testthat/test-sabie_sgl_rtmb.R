@@ -151,7 +151,7 @@ test_that("Single-region Sablefish RTMB model produces expected results", {
   # mapping for fishery selectivity
   # sharing delta across sexes from early domestic fishery (first time block)
   # also fixing parameters so that no time block for trawl fishery
-  input_list$map$ln_fish_fixed_sel_pars <- factor(c(1:7, 2, 8:11, rep(12:13,3), rep(c(14,13),3)))
+  input_list$map$fish_fixed_sel_pars <- factor(c(1:7, 2, 8:11, rep(12:13,3), rep(c(14,13),3)))
 
   # Setup survey selectivity and catchability
   input_list <- Setup_Mod_Srvsel_and_Q(input_list = input_list,
@@ -184,11 +184,11 @@ test_that("Single-region Sablefish RTMB model produces expected results", {
   # ll survey, share delta male (index 5) across time blocks and to the coop jp ll survey delta
   # coop jp survey does not estimate parameters and shares deltas with longline survey
   # single time block with trawl survey and only one parameter hence, only one parameter estimated across blocks (indices 7 and 8)
-  input_list$map$ln_srv_fixed_sel_pars <- factor(c(1:3, 2, 4:6, 5,rep(7,4), rep(8, 4), rep(c(NA,2), 2), rep(c(NA, 5), 2)))
+  input_list$map$srv_fixed_sel_pars <- factor(c(1:3, 2, 4:6, 5,rep(7,4), rep(8, 4), rep(c(NA,2), 2), rep(c(NA, 5), 2)))
 
   # Coop JP Survey (Logistic) Single time block (these estimates are fixed!)
-  input_list$par$ln_srv_fixed_sel_pars[1,,,1,3] <- c(0.980660760456, 0.9287775)
-  input_list$par$ln_srv_fixed_sel_pars[1,,,2,3] <- c(1.22224502478, 0.8831787)
+  input_list$par$srv_fixed_sel_pars[1,,,1,3] <- c(0.980660760456, 0.9287775)
+  input_list$par$srv_fixed_sel_pars[1,,,2,3] <- c(1.22224502478, 0.8831787)
 
   # Setup tagging stuff
   input_list <- Setup_Mod_Tagging(input_list = input_list,

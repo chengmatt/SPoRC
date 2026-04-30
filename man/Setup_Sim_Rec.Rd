@@ -5,6 +5,7 @@
 \title{Set up recruitment dynamics for the operating model simulation}
 \usage{
 Setup_Sim_Rec(
+  sim_list,
   do_recruits_move = 0,
   sexratio_input = array(if (sim_list$n_sexes == 1) 1 else 0.5, dim = c(sim_list$n_pop,
     sim_list$n_regions, sim_list$n_yrs, sim_list$n_sexes, sim_list$n_sims)),
@@ -24,7 +25,6 @@ Setup_Sim_Rec(
   recruitment_opt = "bh_rec",
   rec_dd = "global",
   init_dd = "global",
-  sim_list,
   init_age_strc = 2,
   spawn_seas = 1,
   t_spawn = 0,
@@ -34,6 +34,8 @@ Setup_Sim_Rec(
 )
 }
 \arguments{
+\item{sim_list}{Simulation list returned by \code{\link{Setup_Sim_Dim}}.}
+
 \item{do_recruits_move}{Integer flag. \code{0} = age-1 fish do not move
 (default); movement begins at age 2. \code{1} = recruits participate in
 movement from age 1.}
@@ -89,8 +91,6 @@ relationship. Default \code{"global"}. Options:
 
 \item{init_dd}{Density-dependence structure for equilibrium age-structure
 initialisation. Default \code{"global"}. Same options as \code{rec_dd}.}
-
-\item{sim_list}{Simulation list returned by \code{\link{Setup_Sim_Dim}}.}
 
 \item{init_age_strc}{Integer specifying the equilibrium age-structure
 initialisation method. Default \code{2}. Options:

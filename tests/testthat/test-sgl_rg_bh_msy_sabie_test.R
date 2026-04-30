@@ -54,11 +54,18 @@ test_that("Single Region BH MSY (mock) Reference Points Sablefish Model Converge
   fish_sel <- array(0, dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets))
   for(y in 1:n_proj_yrs) fish_sel[,,y,,,,] <- sgl_rg_sable_rep$fish_sel[,,length(sgl_rg_sable_data$years),,,,]
 
+  # retained Selectivity
+  ret_sel <- array(0, dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets))
+  for(y in 1:n_proj_yrs) ret_sel[,,y,,,,] <- sgl_rg_sable_rep$ret_sel[,,length(sgl_rg_sable_data$years),,,,]
+
   # Movement
   Movement <- array(1, dim = c(n_pop, n_regions, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # movement
 
   # Fishing Mortality
   terminal_F <- array(sgl_rg_sable_rep$Fmort[,length(sgl_rg_sable_data$years),,], dim = c(n_regions, n_seas, n_fish_fleets)) # terminal F
+
+  # dmr
+  terminal_dmr <- array(sgl_rg_sable_rep$dmr[,length(sgl_rg_sable_data$years),,], dim = c(n_regions, n_seas, n_fish_fleets)) # terminal F
 
   # Natural Mortality
   natmort_slice <- sgl_rg_sable_rep$natmort[,, length(sgl_rg_sable_data$years), , ]  # [n_pop, n_regions, n_ages, n_sexes]
@@ -92,7 +99,10 @@ test_that("Single Region BH MSY (mock) Reference Points Sablefish Model Converge
     sgl_seas_spawning_movement = NULL,
     stray_rate = array(0, dim = c(sgl_rg_sable_data$n_pop)),
     natmort = array(natmort[,,1,,1], dim = c(sgl_rg_sable_data$n_pop, sgl_rg_sable_data$n_regions, length(sgl_rg_sable_data$ages) )),
-    fish_sel = array(fish_sel[,,1,,,1,], dim = c(sgl_rg_sable_data$n_pop, sgl_rg_sable_data$n_regions, sgl_rg_sable_data$n_seas, length(sgl_rg_sable_data$ages), sgl_rg_sable_data$n_fish_fleets))
+    fish_sel = array(fish_sel[,,1,,,1,], dim = c(sgl_rg_sable_data$n_pop, sgl_rg_sable_data$n_regions, sgl_rg_sable_data$n_seas, length(sgl_rg_sable_data$ages), sgl_rg_sable_data$n_fish_fleets)),
+    ret_sel = array(ret_sel[,,1,,,1,], dim = c(sgl_rg_sable_data$n_pop, sgl_rg_sable_data$n_regions, sgl_rg_sable_data$n_seas, length(sgl_rg_sable_data$ages), sgl_rg_sable_data$n_fish_fleets)),
+    init_F = array(0, dim = c(sgl_rg_sable_data$n_regions, sgl_rg_sable_data$n_seas, sgl_rg_sable_data$n_fish_fleets)),
+    dmr = array(0, dim = c(sgl_rg_sable_data$n_regions, sgl_rg_sable_data$n_seas, sgl_rg_sable_data$n_fish_fleets))
   )
 
 
@@ -108,12 +118,14 @@ test_that("Single Region BH MSY (mock) Reference Points Sablefish Model Converge
                                   terminal_NAA = terminal_NAA,
                                   terminal_NAA0 = terminal_NAA0,
                                   terminal_F = terminal_F,
+                                  dmr = terminal_dmr,
                                   natmort = natmort,
                                   WAA = WAA,
                                   n_pop = n_pop,
                                   WAA_fish = WAA_fish,
                                   MatAA = MatAA,
                                   fish_sel = fish_sel,
+                                  ret_sel = ret_sel,
                                   Movement = Movement,
                                   f_ref_pt = array(sgl_ref_pt$f_ref_pt, dim = c(n_regions, n_proj_yrs)),
                                   b_ref_pt = array(sgl_ref_pt$b_ref_pt, dim = c(n_pop, n_regions, n_proj_yrs)),

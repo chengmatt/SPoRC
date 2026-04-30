@@ -19,7 +19,6 @@ Setup_Mod_Biologicals(
   M_prior = NA,
   fit_lengths = 0,
   SizeAgeTrans = NA,
-  Selex_Type = "age",
   M_spec = "est_ln_M",
   M_popblk_spec = "constant",
   M_ageblk_spec = "constant",
@@ -99,12 +98,6 @@ Only used when \code{Use_M_prior = 1}.}
 \code{[n_pop × n_regions × n_years × n_seas × n_lens × n_ages × n_sexes]}.
 Required when \code{fit_lengths = 1}; ignored otherwise.}
 
-\item{Selex_Type}{Character string specifying the selectivity basis. One of:
-\describe{
-  \item{\code{"age"} (default)}{Age-based selectivity.}
-  \item{\code{"length"}}{Length-based selectivity. Requires \code{fit_lengths = 1}.}
-}}
-
 \item{M_spec}{Character string controlling natural mortality estimation. One of:
 \describe{
   \item{\code{"est_ln_M"} (default)}{Estimate \code{ln_M} across the defined blocks.}
@@ -159,10 +152,12 @@ block structure and mapping. Called after \code{\link{Setup_Mod_Dim}}.
 Other Model Setup: 
 \code{\link{Setup_Mod_Catch_and_F}()},
 \code{\link{Setup_Mod_Dim}()},
+\code{\link{Setup_Mod_Discard_Comps}()},
 \code{\link{Setup_Mod_FishIdx_and_Comps}()},
 \code{\link{Setup_Mod_Fishsel_and_Q}()},
 \code{\link{Setup_Mod_Movement}()},
 \code{\link{Setup_Mod_Rec}()},
+\code{\link{Setup_Mod_Retsel}()},
 \code{\link{Setup_Mod_SrvIdx_and_Comps}()},
 \code{\link{Setup_Mod_Srvsel_and_Q}()},
 \code{\link{Setup_Mod_Tagging}()},

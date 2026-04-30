@@ -2,7 +2,7 @@
 % Please edit documentation in R/Simulate_Population.R
 \name{predict_sim_fish_iss_fmort}
 \alias{predict_sim_fish_iss_fmort}
-\title{Predict fishery ISS under projected fishing mortality}
+\title{Predict fishery and discarded ISS under projected fishing mortality}
 \usage{
 predict_sim_fish_iss_fmort(ISS_FishComps, Fmort, y, seas, sim)
 }

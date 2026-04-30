@@ -40,11 +40,9 @@ Imports:
     tidyr,
     TMB
 Suggests: 
-    igraph,
     knitr,
     purrr,
     rmarkdown,
-    splines2,
     testthat (>= 3.0.0)
 VignetteBuilder: 
     knitr

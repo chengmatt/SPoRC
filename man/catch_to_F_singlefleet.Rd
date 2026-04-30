@@ -11,6 +11,12 @@ catch_to_F_singlefleet(
   WAA,
   natmort,
   fish_sel,
+  ret_sel = {
+     tmp = fish_sel[]
+     tmp[] <- 1
+     tmp
+ },
+  dmr = 0,
   n.iter = 20,
   lb = 0,
   ub = 2
@@ -22,16 +28,24 @@ bisection algorithm but retained for API consistency).}
 
 \item{catch}{Numeric. Target catch in biomass units.}
 
-\item{NAA}{Numeric matrix \code{[n_ages × n_sexes]}. Numbers-at-age at
+\item{NAA}{Numeric matrix \code{[n_ages x n_sexes]}. Numbers-at-age at
 the start of the time step.}
 
-\item{WAA}{Numeric matrix \code{[n_ages × n_sexes]}. Weight-at-age.}
+\item{WAA}{Numeric matrix \code{[n_ages x n_sexes]}. Weight-at-age.}
 
-\item{natmort}{Numeric matrix \code{[n_ages × n_sexes]}. Instantaneous
+\item{natmort}{Numeric matrix \code{[n_ages x n_sexes]}. Instantaneous
 natural mortality rate.}
 
-\item{fish_sel}{Numeric matrix \code{[n_ages × n_sexes]}. Fishery
+\item{fish_sel}{Numeric matrix \code{[n_ages x n_sexes]}. Fishery
 selectivity (scaled to a maximum of 1).}
+
+\item{ret_sel}{Numeric matrix \code{[n_ages x n_sexes]}. Retention
+selectivity, i.e. the proportion of selected catch that is retained
+(vs. discarded). Default is an array of 1s matching \code{dim(fish_sel)}
+(full retention).}
+
+\item{dmr}{Numeric scalar. Discard mortality rate, i.e. the fraction of
+discarded fish that die. Default \code{0} (all discards survive).}
 
 \item{n.iter}{Integer. Number of bisection iterations. Default \code{20};
 approximately \eqn{\log_2((ub - lb) / \epsilon)} iterations are required
@@ -50,9 +64,10 @@ Scalar numeric. The \eqn{F} value at the final bisection midpoint
 \description{
 Uses interval bisection to find the scalar fishing mortality \eqn{F} that
 produces a predicted catch (Baranov catch equation, summed over ages and
-sexes in biomass) equal to \code{catch}. Intended for closed-loop MSE
-harvest control rules where a TAC must be translated into an \eqn{F} for
-the operating model.
+sexes in biomass) equal to \code{catch}. Retained and discarded catch
+components are handled separately via retention selectivity and discard
+mortality. Intended for closed-loop MSE harvest control rules where a TAC
+must be translated into an \eqn{F} for the operating model.
 }
 \seealso{
 Other Closed Loop Simulations: 

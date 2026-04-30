@@ -11,10 +11,15 @@ generate_fishery_conv_tags_recap(y, sim, sim_env)
 
 \item{sim}{Integer. Simulation replicate index.}
 
-\item{sim_env}{Simulation environment created by
-\code{\link{Setup_sim_env}}. Modified in place:
-\code{$conv_tag_fish_avail}, \code{$pred_conv_tag_fish_recap}, and
-\code{$obs_conv_tag_fish_recap} are updated.}
+\item{sim_env}{Simulation environment created by \code{\link{Setup_sim_env}}.
+Modified in place. The following elements are updated:
+\describe{
+  \item{\code{conv_tag_fish_avail}}{Available tagged fish at age/region/season/fleet for each cohort.}
+  \item{\code{pred_conv_tag_fish_recap}}{Predicted conventional tag recaptures by fleet, region, season, and cohort.}
+  \item{\code{obs_conv_tag_fish_recap}}{Observed conventional tag recaptures after sampling error.}
+  \item{\code{conv_tag_fish_surv}}{Surviving tagged fish after mortality and movement.}
+  \item{\code{conv_tag_fish_reported}}{Reporting-adjusted recapture counts by fleet and region.}
+}}
 }
 \value{
 \code{invisible(NULL)}. All modifications are made by reference
@@ -31,6 +36,13 @@ already at \code{conv_tag_max_liberty}, or with release year in the future
 are silently skipped.
 }
 \details{
+Total fishing mortality entering Z is decomposed into retained
+(\eqn{F \cdot s_{\text{fish}} \cdot s_{\text{ret}}}) and dead discard
+(\eqn{F \cdot s_{\text{fish}} \cdot (1 - s_{\text{ret}}) \cdot \text{dmr}})
+components, consistent with \code{\link{apply_pop_dy}}. Predicted
+recaptures use only the retained component in the Baranov numerator,
+reflecting that tags are recovered from retained catch only.
+
 At initial release (\code{ry = 1}, \code{rseas = tseas}), tags are
 placed into \code{conv_tag_fish_avail[1, rseas, tc, ...]} after discounting
 for initial tag-induced mortality (\code{ln_init_conv_tag_mort}). When
@@ -41,5 +53,11 @@ and fishing mortality. At the end of each season, survivors advance to the
 next season or the next year's first season with plus-group accumulation.
 Tag reporting rates from \code{conv_tag_fish_reporting} are applied fleet-
 and region-specifically.
+
+Tagged fish dynamics follow the same seasonal progression logic
+as the population projection, including natural mortality, fishing mortality,
+movement, and tag shedding. Recaptures are computed only from the retained
+catch component, consistent with tag return processes. Cohorts exceeding
+\code{conv_tag_max_liberty} are removed from the active tracking pool.
 }
 \keyword{internal}

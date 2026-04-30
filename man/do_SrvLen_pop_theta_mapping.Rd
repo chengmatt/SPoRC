@@ -8,7 +8,7 @@ do_SrvLen_pop_theta_mapping(input_list)
 }
 \arguments{
 \item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
-sublists. Requires \code{pop_SrvLenComps_Type}, \code{pop_SrvLenComps_LikeType},
+sublists. Requires \code{SrvLenComps_pop_Type}, \code{SrvLenComps_pop_LikeType},
 and \code{UseSrvLenComps_pop} to be set by
 \code{\link{Setup_Mod_SrvIdx_and_Comps}}.}
 }
@@ -21,7 +21,7 @@ The input \code{input_list} with \code{$map$ln_SrvLen_pop_theta} and
 Constructs factor maps for \code{ln_SrvLen_pop_theta} (fleet- region- and
 sex-specific overdispersion) and \code{ln_SrvLen_pop_theta_agg} (aggregated
 overdispersion) based on the composition type and likelihood specified in
-\code{$data$pop_SrvLenComps_Type} and \code{$data$pop_SrvLenComps_LikeType}.
+\code{$data$SrvLenComps_pop_Type} and \code{$data$SrvLenComps_pop_LikeType}.
 Parameters are mapped to \code{NA} for fleets using multinomial likelihoods
 (\code{LikeType == 0}) or with no observed len compositions.
 }

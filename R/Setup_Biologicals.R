@@ -142,7 +142,7 @@ Setup_Sim_Biologicals <- function(
 #'   }
 #'
 #' @keywords internal
-do_M_mapping <- function(input_list,
+do_natmort_mapping <- function(input_list,
                          M_spec,
                          M_popblk_spec_vals,
                          M_regionblk_spec_vals,
@@ -261,11 +261,6 @@ do_M_mapping <- function(input_list,
 #'   (column-stochastic; each age column sums to 1) with dimensions
 #'   \code{[n_pop × n_regions × n_years × n_seas × n_lens × n_ages × n_sexes]}.
 #'   Required when \code{fit_lengths = 1}; ignored otherwise.
-#' @param Selex_Type Character string specifying the selectivity basis. One of:
-#'   \describe{
-#'     \item{\code{"age"} (default)}{Age-based selectivity.}
-#'     \item{\code{"length"}}{Length-based selectivity. Requires \code{fit_lengths = 1}.}
-#'   }
 #' @param M_spec Character string controlling natural mortality estimation. One of:
 #'   \describe{
 #'     \item{\code{"est_ln_M"} (default)}{Estimate \code{ln_M} across the defined blocks.}
@@ -317,7 +312,6 @@ Setup_Mod_Biologicals <- function(input_list,
                                   M_prior = NA,
                                   fit_lengths = 0,
                                   SizeAgeTrans = NA,
-                                  Selex_Type = 'age',
                                   M_spec = "est_ln_M",
                                   M_popblk_spec = 'constant',
                                   M_ageblk_spec = 'constant',
@@ -383,22 +377,6 @@ Setup_Mod_Biologicals <- function(input_list,
     if(length(dim(AgeingError)) == 3) check_data_dimensions(AgeingError, n_ages = length(input_list$data$ages), n_years = length(input_list$data$years), what = 'AgeingError_t') # user supplied ageing error is time-varying
   }
 
-  # Selectivity Options -----------------------------------------------------
-
-  # Age based selectivity
-  if(Selex_Type == 'age') {
-    Selex_Type <- 0
-    collect_message("Selectivity is aged-based.")
-  } # if age based
-
-  # Length based selectivity
-  if(Selex_Type == 'length') {
-    if(fit_lengths == 0) stop("Length composition data are not fit, but selectivity is length-based. This is not allowed. Please change to a valid option (either fit lengths or use age-based selectivity).")
-    Selex_Type <- 1
-    collect_message("Selectivity is length-based")
-  } # if length based
-
-
   # Weight at Age Options ---------------------------------------------------
 
   # setup fishery and survey specific weight at age (if not specified - just uses the WAA (spawning) already supplied)
@@ -450,7 +428,6 @@ Setup_Mod_Biologicals <- function(input_list,
   input_list$data$Use_M_prior <- Use_M_prior
   input_list$data$M_prior <- M_prior
   input_list$data$Fixed_natmort <- Fixed_natmort
-  input_list$data$Selex_Type <- Selex_Type
   input_list$data$addtocomp <- addtocomp
   input_list$data$addtofishidx <- addtofishidx
   input_list$data$addtosrvidx <- addtosrvidx
@@ -491,7 +468,7 @@ Setup_Mod_Biologicals <- function(input_list,
                                                       length(M_sexblk_spec_vals)))
 
   # Mapping Options ---------------------------------------------------------
-  input_list <- do_M_mapping(input_list, M_spec, M_popblk_spec_vals, M_regionblk_spec_vals,
+  input_list <- do_natmort_mapping(input_list, M_spec, M_popblk_spec_vals, M_regionblk_spec_vals,
                              M_yearblk_spec_vals, M_ageblk_spec_vals, M_sexblk_spec_vals) # natural mortality mapping
 
   # Print Messages ----------------------------------------------------------

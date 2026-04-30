@@ -17,9 +17,12 @@ run_francis(
 \item{data}{A list of model input data containing observed compositions,
 usage flags, input sample sizes, and weight arrays for both pooled
 (\code{Wt_FishAgeComps}, \code{Wt_FishLenComps}, \code{Wt_SrvAgeComps},
-\code{Wt_SrvLenComps}) and population-specific
+\code{Wt_SrvLenComps}, \code{Wt_FishAgeComps_discard},
+\code{Wt_FishLenComps_discard}) and population-specific
 (\code{Wt_FishAgeComps_pop}, \code{Wt_FishLenComps_pop},
-\code{Wt_SrvAgeComps_pop}, \code{Wt_SrvLenComps_pop}) data streams.}
+\code{Wt_SrvAgeComps_pop}, \code{Wt_SrvLenComps_pop},
+\code{Wt_FishAgeComps_discard_pop}, \code{Wt_FishLenComps_discard_pop})
+data streams.}
 
 \item{parameters}{A list of model parameters passed to \code{\link{fit_model}}.}
 

@@ -2,64 +2,76 @@
 % Please edit documentation in R/Make_Plots_Tables.R
 \name{get_catch_fits_plot}
 \alias{get_catch_fits_plot}
-\title{Get Catch Fits Plot}
+\title{Get Catch and Discard Fits Plot}
 \usage{
 get_catch_fits_plot(data, rep, model_names)
 }
 \arguments{
 \item{data}{List of length \code{n_models}, where each element is a SPoRC
-data list. \code{ObsCatch}
-\code{[n_regions × n_yrs × n_seas × n_fish_fleets]} provides pooled
-observed catch. \code{Wt_Catch} is used alongside \code{ln_sigmaC} from
-the report to recover the unweighted observation-error SD for CI
-construction. When \code{UseCatch_pop} contains any ones,
-\code{ObsCatch_pop}
-\code{[n_pop × n_regions × n_yrs × n_seas × n_fish_fleets]} and
-\code{Wt_Catch_pop} are also used.}
+  data list. \code{ObsCatch}
+  \code{[n_regions × n_yrs × n_seas × n_fish_fleets]} provides pooled observed
+  catch, and \code{ObsDiscard} provides pooled observed discards.
+  \code{Wt_Catch} and \code{Wt_Discard}, together with \code{ln_sigmaC},
+  are used to reconstruct observation-error standard deviations for
+  confidence interval construction.
+
+  When \code{UseCatch_pop} or \code{UseDiscard_pop} contain active elements,
+  population-level data (\code{ObsCatch_pop}, \code{ObsDiscard_pop}) and
+  corresponding weights are also used.}
 
 \item{rep}{List of length \code{n_models}, where each element is a SPoRC
-report list (i.e. the output of \code{obj$report()} after optimisation).
-\code{PredCatch}
-\code{[n_pop × n_regions × n_yrs × n_seas × n_fish_fleets]} is summed
-across populations for pooled trajectories and used directly by population
-for pop-specific trajectories. \code{ln_sigmaC} and \code{ln_sigmaC_pop}
-are used for CI construction.}
+model report (output of \code{obj$report()} after optimisation).
+\code{PredCatch} and \code{PredDiscard}
+\code{[n_pop × n_regions × n_yrs × n_seas × n_fish_fleets]} are summed
+across populations for pooled trajectories and used directly for
+population-specific trajectories.
+\code{ln_sigmaC} and \code{ln_sigmaC_pop} are used for confidence interval
+construction.}
 
 \item{model_names}{Character vector of length \code{n_models} giving display
-names for each model run. Used as the colour legend label on predicted
-trajectories.}
+names for each model run. Used in the legend for predicted trajectories.}
 }
 \value{
-A list of two \code{ggplot} objects:
-  \describe{
-    \item{[[1]] catch_fit_rg_plot}{Pooled catch plot, produced when any
-      element of \code{UseCatch} is 1. Observed catch shown as
-      \code{geom_pointrange} (black) with 95\% log-normal confidence
-      intervals; predicted catch shown as \code{geom_line} coloured by
-      model. Faceted by (Season + Fleet) × Region with free y-scales.}
-    \item{[[2]] catch_fit_pop_plot}{Population-specific catch plot, produced
-      when any element of \code{UseCatch_pop} is 1. Same geometry as the
-      pooled plot, faceted by (Population + Season + Fleet) × Region with
-      free y-scales. \code{NULL} when no pop-specific catch is active.}
-  }
+A list of \code{ggplot} objects:
+\describe{
+  \item{[[1]] catch_fit_rg_plot}{Pooled catch fits (region-level). Produced
+  when \code{UseCatch == 1}. Observations shown as \code{geom_pointrange}
+  with 95\% lognormal confidence intervals; predictions shown as lines
+  colored by model. Faceted by (Season × Fleet) × Region with free y-scales.}
+
+  \item{[[2]] catch_fit_pop_plot}{Population-specific catch fits. Produced
+  when \code{UseCatch_pop == 1}. Faceted by (Population × Season × Fleet) ×
+  Region. Returns \code{NULL} if not used.}
+
+  \item{[[3]] discard_fit_rg_plot}{Pooled discard fits (region-level).
+  Produced when \code{UseDiscard == 1}. Same structure as catch plots.}
+
+  \item{[[4]] discard_fit_pop_plot}{Population-specific discard fits.
+  Produced when \code{UseDiscard_pop == 1}. Returns \code{NULL} if not used.}
+}
 }
 \description{
-Plots observed catch time series alongside model-predicted values for one or
-more SPoRC model runs, for both pooled (region-level) and population-specific
-data streams. Pooled predicted catch is summed across populations before
-comparison with observations. Years where observed catch is zero are excluded
-from both layers.
+Plots observed catch and discard time series alongside model-predicted
+values for one or more SPoRC model runs, for both pooled (region-level)
+and population-specific data streams.
 }
-\examples{
-\dontrun{
-  out <- get_catch_fits_plot(
-    data        = list(data1, data2),
-    rep         = list(rep1, rep2),
-    model_names = c("Base", "Sensitivity")
-  )
-  out[[1]]  # pooled catch
-  out[[2]]  # population-specific catch
-}
+\details{
+Pooled predictions are summed across populations before comparison with
+observed data. Years where observed values are zero are excluded from both
+observed and predicted layers to avoid issues in lognormal confidence
+interval construction.
+
+
+This function produces diagnostic plots for both catch and discard data.
+Observed and predicted time series are shown for each, with lognormal
+confidence intervals derived from \code{ln_sigmaC} (or population-level
+equivalents) and sampling weights.
+
+Observations equal to zero are excluded prior to plotting to avoid issues
+in log-space confidence interval construction.
+
+Predicted catch and discard are aggregated across populations for pooled
+diagnostics, while population-specific plots use unaggregated outputs.
 }
 \seealso{
 Other Model Diagnostics: 

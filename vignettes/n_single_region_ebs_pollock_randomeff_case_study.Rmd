@@ -389,7 +389,7 @@ for(i in 1:nrow(pol_model_var)) {
                                 mapping,
                                 random = random,
                                 newton_loops = 3,
-                                silent = FALSE
+                                silent = T
   )
 
   ebswp_rtmb_model$sdrep <- RTMB::sdreport(ebswp_rtmb_model)

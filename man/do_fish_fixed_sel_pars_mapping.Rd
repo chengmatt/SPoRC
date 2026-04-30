@@ -4,7 +4,12 @@
 \alias{do_fish_fixed_sel_pars_mapping}
 \title{Map fishery selectivity fixed-effect parameters}
 \usage{
-do_fish_fixed_sel_pars_mapping(input_list, fish_fixed_sel_pars_spec)
+do_fish_fixed_sel_pars_mapping(
+  input_list,
+  fish_fixed_sel_pars_spec,
+  bins,
+  fish_sel_nonpar_est_bins
+)
 }
 \arguments{
 \item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
@@ -13,27 +18,36 @@ sublists.}
 \item{fish_fixed_sel_pars_spec}{Character vector of length \code{n_fish_fleets}.
 Each element specifies the estimation structure for one fleet. Options:
 \describe{
-  \item{\code{"est_all"}}{Separate parameters per region × sex × block.}
-  \item{\code{"est_shared_r"}}{Parameters shared across regions; unique per sex × block.}
-  \item{\code{"est_shared_s"}}{Parameters shared across sexes; unique per region × block.}
-  \item{\code{"est_shared_r_s"}}{Parameters shared across regions and sexes; unique per block.}
-  \item{\code{"est_shared_f_x"}}{Copy parameters from fleet \code{x} (e.g.,
-    \code{"est_shared_f_2"} shares with fleet 2). Fleet \code{x} must not
-    itself use \code{"est_shared_f_y"}.}
+  \item{\code{"est_all"}}{Separate parameters per region × sex × block × bin.}
+  \item{\code{"est_shared_r"}}{Parameters shared across regions; unique per sex × block × bin.}
+  \item{\code{"est_shared_s"}}{Parameters shared across sexes; unique per region × block × bin.}
+  \item{\code{"est_shared_r_s"}}{Parameters shared across regions and sexes; unique per block × bin.}
+  \item{\code{"est_shared_f_x"}}{Copy parameter mapping from fleet \code{x}. Fleet \code{x}
+    must not itself use \code{"est_shared_f_y"}.}
   \item{\code{"fix"}}{All parameters fixed at starting values (mapped to \code{NA}).}
 }}
+
+\item{bins}{Number of selectivity bins.}
+
+\item{fish_sel_nonpar_est_bins}{Optional list defining bin groupings for
+non-parametric selectivity. Structure is \code{[[fleet]][[block]]}, where each
+element is a list of bin index vectors representing grouped parameters.}
 }
 \value{
-The input \code{input_list} with \code{$map$ln_fish_fixed_sel_pars}
-  set to a factor vector.
+Updated \code{input_list} with \code{$map$fish_fixed_sel_pars}
+  as a factor array.
 }
 \description{
-Constructs the factor map for #' \code{ln_fish_fixed_sel_pars} (e.g., \eqn{a_50}, \eqn{k}, \eqn{a_max}),
-controlling whether selectivity shape parameters are
-estimated independently or shared across regions, sexes, or fleets. Cells with
-no catch data (\code{UseCatch == 0}) are automatically mapped to \code{NA}.
+Constructs the factor map for \code{fish_fixed_sel_pars} (e.g., \eqn{a_{50}}, \eqn{k}, \eqn{a_{max}}),
+controlling whether selectivity shape parameters are estimated independently or shared across
+regions, sexes, or fleets. Cells with no catch data (\code{UseCatch == 0}) are automatically
+mapped to \code{NA}.
 }
 \details{
+Non-parametric selectivity (model \code{sel_model == 5}) is supported via
+\code{fish_sel_nonpar_est_bins}, which defines bin groupings that are treated as
+individual estimated parameters.
+
 Fleet sharing (\code{"est_shared_f_x"}) is handled in a second pass after all
 base fleet mappings are established, copying the reference fleet's index
 assignments into the sharing fleet.

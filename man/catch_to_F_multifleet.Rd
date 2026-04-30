@@ -10,6 +10,8 @@ catch_to_F_multifleet(
   WAA,
   natmort,
   fish_sel,
+  ret_sel = array(1, dim = dim(fish_sel)),
+  dmr = rep(0, length(target_catch)),
   f_init = 0.05,
   control = list(btol = 1e-06)
 )
@@ -18,22 +20,31 @@ catch_to_F_multifleet(
 \item{target_catch}{Numeric vector \code{[n_fleets]}. Target catch in
 biomass units for each fleet.}
 
-\item{NAA}{Numeric matrix \code{[n_ages × n_sexes]}. Numbers-at-age.}
+\item{NAA}{Numeric matrix \code{[n_ages x n_sexes]}. Numbers-at-age.}
 
-\item{WAA}{Numeric matrix \code{[n_ages × n_sexes]}. Weight-at-age.}
+\item{WAA}{Numeric matrix \code{[n_ages x n_sexes]}. Weight-at-age.}
 
-\item{natmort}{Numeric matrix \code{[n_ages × n_sexes]}. Instantaneous
+\item{natmort}{Numeric matrix \code{[n_ages x n_sexes]}. Instantaneous
 natural mortality rate.}
 
-\item{fish_sel}{Numeric array \code{[n_ages × n_sexes × n_fleets]}.
+\item{fish_sel}{Numeric array \code{[n_ages x n_sexes x n_fleets]}.
 Fishery selectivity for each fleet.}
+
+\item{ret_sel}{Numeric array \code{[n_ages x n_sexes x n_fleets]}.
+Retention selectivity for each fleet, i.e. the proportion of selected
+catch that is retained. Default is an array of 1s matching
+\code{dim(fish_sel)} (full retention for all fleets).}
+
+\item{dmr}{Numeric vector \code{[n_fleets]}. Fleet-specific discard
+mortality rates, i.e. the fraction of discarded fish that die.
+Default \code{rep(0, length(target_catch))} (all discards survive).}
 
 \item{f_init}{Numeric scalar or vector \code{[n_fleets]}. Starting values
 for the \eqn{F} solver. If a scalar is supplied it is recycled across
 all fleets. Default \code{0.05}.}
 
 \item{control}{Named list of control parameters passed to
-\code{nleqslv::nleqslv}. Default \code{list(btol = 1e-6)}.}
+\code{\link[nleqslv]{nleqslv}}. Default \code{list(btol = 1e-6)}.}
 }
 \value{
 Numeric vector \code{[n_fleets]} of solved fishing mortality rates,
@@ -43,10 +54,13 @@ Numeric vector \code{[n_fleets]} of solved fishing mortality rates,
 Solves for the vector of fleet-specific fishing mortality rates
 \eqn{\mathbf{F} = (F_1, \ldots, F_k)} that simultaneously satisfy the
 Baranov catch equations for all fleets, given a vector of target catches.
-Total mortality at age accounts for contributions from all fleets:
-\eqn{Z_a = M_a + \sum_f F_f s_{a,f}}. The system of equations is solved
-via \code{nleqslv::nleqslv}. Intended for closed-loop MSE harvest control
-rules with multiple interacting fishery fleets.
+Total mortality at age accounts for retained and discard mortality
+contributions from all fleets:
+\eqn{Z_a = M_a + \sum_f (F_f \, s_{a,f} \, r_{a,f} + F_f \, s_{a,f} \, (1 - r_{a,f}) \, d_f)},
+where \eqn{r_{a,f}} is retention selectivity and \eqn{d_f} is fleet-specific
+discard mortality. The system of equations is solved via
+\code{\link[nleqslv]{nleqslv}}. Intended for closed-loop MSE harvest
+control rules with multiple interacting fishery fleets.
 }
 \seealso{
 Other Closed Loop Simulations: 

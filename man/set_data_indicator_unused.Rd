@@ -7,8 +7,11 @@
 set_data_indicator_unused(
   data,
   unused_years,
-  what = c("Catch", "FishIdx", "FishAgeComps", "FishLenComps", "SrvIdx", "SrvAgeComps",
-    "SrvLenComps", "conv_tagging")
+  what = c("Catch", "Catch_pop", "Discard", "Discard_pop", "FishIdx", "FishIdx_pop",
+    "FishAgeComps", "FishAgeComps_pop", "FishLenComps", "FishLenComps_pop",
+    "FishAgeComps_discard", "FishAgeComps_discard_pop", "FishLenComps_discard",
+    "FishLenComps_discard_pop", "SrvIdx", "SrvIdx_pop", "SrvAgeComps", "SrvAgeComps_pop",
+    "SrvLenComps", "SrvLenComps_pop", "conv_tagging")
 )
 }
 \arguments{
@@ -22,12 +25,25 @@ set_data_indicator_unused(
 \item{what}{Character vector. Data types to modify. Any combination of:
 \describe{
   \item{\code{"Catch"}}{Sets \code{UseCatch[, unused_years, , ] <- 0}.}
+  \item{\code{"Catch_pop"}}{Sets \code{UseCatch_pop[, , unused_years, , ] <- 0}.}
+  \item{\code{"Discard"}}{Sets \code{UseDiscard[, unused_years, , ] <- 0}.}
+  \item{\code{"Discard_pop"}}{Sets \code{UseDiscard_pop[, , unused_years, , ] <- 0}.}
   \item{\code{"FishIdx"}}{Sets \code{UseFishIdx[, unused_years, , ] <- 0}.}
+  \item{\code{"FishIdx_pop"}}{Sets \code{UseFishIdx_pop[, , unused_years, , ] <- 0}.}
   \item{\code{"FishAgeComps"}}{Sets \code{UseFishAgeComps[, unused_years, , ] <- 0}.}
+  \item{\code{"FishAgeComps_pop"}}{Sets \code{UseFishAgeComps_pop[, , unused_years, , ] <- 0}.}
   \item{\code{"FishLenComps"}}{Sets \code{UseFishLenComps[, unused_years, , ] <- 0}.}
+  \item{\code{"FishLenComps_pop"}}{Sets \code{UseFishLenComps_pop[, , unused_years, , ] <- 0}.}
+  \item{\code{"FishAgeComps_discard"}}{Sets \code{UseFishAgeComps_discard[, unused_years, , ] <- 0}.}
+  \item{\code{"FishAgeComps_discard_pop"}}{Sets \code{UseFishAgeComps_discard_pop[, , unused_years, , ] <- 0}.}
+  \item{\code{"FishLenComps_discard"}}{Sets \code{UseFishLenComps_discard[, unused_years, , ] <- 0}.}
+  \item{\code{"FishLenComps_discard_pop"}}{Sets \code{UseFishLenComps_discard_pop[, , unused_years, , ] <- 0}.}
   \item{\code{"SrvIdx"}}{Sets \code{UseSrvIdx[, unused_years, , ] <- 0}.}
+  \item{\code{"SrvIdx_pop"}}{Sets \code{UseSrvIdx_pop[, , unused_years, , ] <- 0}.}
   \item{\code{"SrvAgeComps"}}{Sets \code{UseSrvAgeComps[, unused_years, , ] <- 0}.}
+  \item{\code{"SrvAgeComps_pop"}}{Sets \code{UseSrvAgeComps_pop[, , unused_years, , ] <- 0}.}
   \item{\code{"SrvLenComps"}}{Sets \code{UseSrvLenComps[, unused_years, , ] <- 0}.}
+  \item{\code{"SrvLenComps_pop"}}{Sets \code{UseSrvLenComps_pop[, , unused_years, , ] <- 0}.}
   \item{\code{"conv_tagging"}}{Removes tag cohorts whose release year
     falls in \code{unused_years} from \code{conv_tagged_fish},
     \code{obs_conv_tag_fish_recap}, \code{conv_tag_release_indicator},

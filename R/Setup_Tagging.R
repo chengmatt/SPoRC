@@ -91,7 +91,9 @@
 #'
 #' @export Setup_Sim_Tagging
 #' @family Simulation Setup
-Setup_Sim_Tagging <- function(n_tags = NULL,
+Setup_Sim_Tagging <- function(
+                              sim_list,
+                              n_tags = NULL,
                               n_tags_rel_input = NULL,
                               use_conv_fish_tagging = 0,
                               conv_tag_max_liberty = sim_list$n_ages / 2,
@@ -103,8 +105,7 @@ Setup_Sim_Tagging <- function(n_tags = NULL,
                               conv_fish_tag_attr = 'p_a_s',
                               conv_tag_fish_reporting_input = array(0.5, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_fish_fleets, sim_list$n_sims)),
                               conv_fish_tag_like = 0,
-                              ln_conv_fish_tag_theta = log(1),
-                              sim_list
+                              ln_conv_fish_tag_theta = log(1)
                               ) {
 
   if(any(use_conv_fish_tagging == 1)) {

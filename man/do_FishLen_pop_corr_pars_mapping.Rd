@@ -23,7 +23,7 @@ composition likelihoods.
 }
 \details{
 Parameters are activated only when
-\code{pop_FishLenComps_LikeType} is in \code{c(3, 4)}.
+\code{FishLenComps_pop_LikeType} is in \code{c(3, 4)}.
 These correspond to the 1D and 2D logistic-normal likelihoods.
 All other likelihoods map correlation parameters to \code{NA}.
 

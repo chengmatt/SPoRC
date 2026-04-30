@@ -15,7 +15,8 @@ Get_Reference_Points(
   type,
   what,
   n_avg_yrs = 1,
-  local_bh_msy_newton_steps = 6
+  local_bh_msy_newton_steps = 6,
+  is_discard_fleet = array(0, dim = data$n_fish_fleets)
 )
 }
 \arguments{
@@ -79,6 +80,15 @@ averaged before computing reference points. Default = 1.}
 iterations used to solve for equilibrium recruitment by origin region
 when \code{what = "local_BH_MSY"}. Increase if convergence is suspect.
 Default = 6.}
+
+\item{is_discard_fleet}{Integer vector \code{[n_fish_fleets]}. Indicator
+for fleets whose catch should be excluded from landed yield when
+computing MSY-based reference points (0 = landing fleet, 1 = discard-only
+fleet). These fleets still contribute to total fishing mortality \code{Z}
+and affect population dynamics and spawning biomass. Only used by
+Beverton–Holt MSY methods (\code{"BH_MSY"}, \code{"independent_BH_MSY"},
+\code{"global_BH_MSY"}, \code{"local_BH_MSY"}); ignored for SPR-based
+methods. Default is all zeros (all fleets are landing fleets).}
 }
 \value{
 A named list:

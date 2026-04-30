@@ -4,7 +4,12 @@
 \alias{do_fishsel_pe_pars_mapping}
 \title{Map fishery selectivity process error hyperparameters}
 \usage{
-do_fishsel_pe_pars_mapping(input_list, fishsel_pe_pars_spec, corr_opt_semipar)
+do_fishsel_pe_pars_mapping(
+  input_list,
+  fishsel_pe_pars_spec,
+  corr_opt_semipar,
+  bins
+)
 }
 \arguments{
 \item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
@@ -29,6 +34,8 @@ models. Valid values per fleet: \code{NA} (no suppression),
 \code{"corr_zero_y_b_c"}. Cohort options (\code{"corr_zero_c"}, etc.) are
 only valid for 3D GMRF forms and will error if applied to the 2D AR1
 (\code{cont_tv_fish_sel == 5}).}
+
+\item{bins}{Number of selectivity bins}
 }
 \value{
 The input \code{input_list} with \code{$map$fishsel_pe_pars} set to a

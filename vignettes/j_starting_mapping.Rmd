@@ -50,7 +50,7 @@ Starting values can be specified in two ways:
   *ln_SrvLen_theta*, *SrvLen_corr_pars*, *ln_SrvLen_theta_agg*, *SrvLen_corr_pars_agg*
 
 - `Setup_Mod_Fishsel_and_Q`  
-  *ln_fish_fixed_sel_pars*, *ln_fish_q*, *fishsel_pe_pars*, *ln_fishsel_devs*
+  *fish_fixed_sel_pars*, *ln_fish_q*, *fishsel_pe_pars*, *ln_fishsel_devs*
 
 - `Setup_Mod_Srvsel_and_Q`  
   *ln_srv_fixed_sel_pars*, *ln_srv_q*, *srvsel_pe_pars*, *ln_srvsel_devs*
@@ -197,7 +197,6 @@ Below, we demonstrate both approaches using fishery selectivity as an example. W
 We first use `fish_fixed_sel_pars_spec = "est_all"` to estimate all selectivity parameters independently across all model partitions. With 2 sexes, 2 parameters per fleet, and 2 fleets, we expect 8 unique values in the map.
 
 ```{r}
-input_list$data$Selex_Type <- 0 # specifying age-based selectivity for demonstration purposes
 input_list <- SPoRC::Setup_Mod_Fishsel_and_Q(input_list = input_list,
 
                                       # Model options
@@ -210,7 +209,7 @@ input_list <- SPoRC::Setup_Mod_Fishsel_and_Q(input_list = input_list,
                                       # Share selectivity parameters across all partitions
                                       fish_fixed_sel_pars_spec = c("est_all", "est_all"))
 
-input_list$map$ln_fish_fixed_sel_pars # 8 unique numbers, 4 for each sex and fleet combination
+input_list$map$fish_fixed_sel_pars # 8 unique numbers, 4 for each sex and fleet combination
 ```
 
 **Built-in sharing: share parameters across sexes**
@@ -218,7 +217,6 @@ input_list$map$ln_fish_fixed_sel_pars # 8 unique numbers, 4 for each sex and fle
 Using `fish_fixed_sel_pars_spec = "est_shared_s"` links selectivity parameters between sexes within each fleet. The same two parameters are used for both sexes, so we expect only 4 unique values (2 per fleet).
 
 ```{r}
-input_list$data$Selex_Type <- 0 # specifying age-based selectivity for demonstration purposes
 input_list <- SPoRC::Setup_Mod_Fishsel_and_Q(input_list = input_list,
 
                                       # Model options
@@ -231,7 +229,7 @@ input_list <- SPoRC::Setup_Mod_Fishsel_and_Q(input_list = input_list,
                                       # Share selectivity parameters across all partitions
                                       fish_fixed_sel_pars_spec = c("est_shared_s", "est_shared_s"))
 
-input_list$map$ln_fish_fixed_sel_pars # 4 unique numbers, 2 for each sex and fleet combination
+input_list$map$fish_fixed_sel_pars # 4 unique numbers, 2 for each sex and fleet combination
 ```
 
 **Manual sharing: fine-grained control**
@@ -241,7 +239,7 @@ For sharing structures not supported by the convenience arguments, the map can b
 - Fleet 1 (logistic): *a50* is sex-specific, but the slope is shared across sexes
 - Fleet 2 (gamma): all parameters are sex-specific
 
-We start from `est_all` to get the correctly dimensioned parameter array, then overwrite the map. The parameter array `ln_fish_fixed_sel_pars` has dimensions `[n_regions, n_max_sel_pars, n_max_sel_blocks, n_sexes, n_fish_fleets]` — in this example `1 × 2 × 1 × 2 × 2`. The table below summarises the intended sharing structure before we implement it:
+We start from `est_all` to get the correctly dimensioned parameter array, then overwrite the map. The parameter array `fish_fixed_sel_pars` has dimensions `[n_regions, n_max_sel_pars, n_max_sel_blocks, n_sexes, n_fish_fleets]` — in this example `1 × 2 × 1 × 2 × 2`. The table below summarises the intended sharing structure before we implement it:
 
 | Fleet | Parameter | Female index | Male index | Shared? |
 |-------|-----------|-------------|------------|---------|
@@ -262,21 +260,21 @@ input_list <- Setup_Mod_Fishsel_and_Q(
 )
 
 # Extract the parameter array to use as a mapping template
-map_ln_fish_fixed_sel_pars <- input_list$par$ln_fish_fixed_sel_pars
+map_fish_fixed_sel_pars <- input_list$par$fish_fixed_sel_pars
 
 # Fleet 1 (logistic): a50 sex-specific, slope shared
-map_ln_fish_fixed_sel_pars[1, 1, 1, , 1] <- c(1, 2)  # a50: unique per sex
-map_ln_fish_fixed_sel_pars[1, 2, 1, , 1] <- c(3, 3)  # slope: same integer = shared
+map_fish_fixed_sel_pars[1, 1, 1, , 1] <- c(1, 2)  # a50: unique per sex
+map_fish_fixed_sel_pars[1, 2, 1, , 1] <- c(3, 3)  # slope: same integer = shared
 
 # Fleet 2 (gamma): all parameters sex-specific
-map_ln_fish_fixed_sel_pars[1, 1, 1, , 2] <- c(4, 5)  # amax: unique per sex
-map_ln_fish_fixed_sel_pars[1, 2, 1, , 2] <- c(6, 7)  # slope: unique per sex
+map_fish_fixed_sel_pars[1, 1, 1, , 2] <- c(4, 5)  # amax: unique per sex
+map_fish_fixed_sel_pars[1, 2, 1, , 2] <- c(6, 7)  # slope: unique per sex
 
 # Flatten to a factor vector and assign to the map
-input_list$map$ln_fish_fixed_sel_pars <- factor(as.vector(map_ln_fish_fixed_sel_pars))
+input_list$map$fish_fixed_sel_pars <- factor(as.vector(map_fish_fixed_sel_pars))
 
 # Inspect: 7 unique integers (slope for Fleet 1 appears twice with the same value)
-input_list$map$ln_fish_fixed_sel_pars
+input_list$map$fish_fixed_sel_pars
 ```
 
 This custom mapping approach gives full control over parameter sharing structures beyond what the high-level convenience arguments provide. The key principle is always the same: positions in the flattened map with the same integer are estimated as a single shared parameter, while `NA` positions are fixed at their value in `input_list$par`.

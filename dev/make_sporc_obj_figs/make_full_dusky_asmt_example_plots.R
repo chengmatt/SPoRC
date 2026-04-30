@@ -8,7 +8,6 @@
 library(here)
 library(SPoRC)
 library(tidyverse)
-library(PBSmodelling)
 devtools::load_all(here("R"))
 
 # load in data
@@ -456,11 +455,12 @@ francis_retro <- do_retrospective(
   parameters = parameters, # parameters list
   mapping = mapping, # mapping list
   random = NULL, # random effects
-  do_par = TRUE, # whether to parallellize
+  do_par = F, # whether to parallellize
   n_cores = 8,  # number of cores to use
   do_francis = TRUE,  # whether to do francis within a given retrospective peel
   n_francis_iter = 10 # number of francis iterations to run within a given retrospective peel
 )
+
 
 # default plots
 francis_retro_plot <- get_retrospective_plot(francis_retro, 4)
@@ -484,7 +484,7 @@ nofrancis_retro <- do_retrospective(
   parameters = parameters, # parameters list
   mapping = mapping, # mapping list
   random = NULL, # random effects
-  do_par = TRUE, # whether to parallellize
+  do_par = F, # whether to parallellize
   n_cores = 8,  # number of cores to use
   do_francis = FALSE,  # whether to do francis within a given retrospective peel
 )

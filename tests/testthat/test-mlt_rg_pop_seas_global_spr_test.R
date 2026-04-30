@@ -266,8 +266,10 @@ test_that("Multi-region, population, and seasonal global SPR reference points co
                     dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes))
   fish_sel <- array(rep(sim_pop_obj$fish_sel[,,n_yrs,,,,,1], each = n_proj_yrs),
                     dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets))
+  ret_sel <- array(rep(sim_pop_obj$ret_sel[,,n_yrs,,,,,1], each = n_proj_yrs),
+                    dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets))
   terminal_F <- array(sim_pop_obj$Fmort[,n_yrs,,,1], dim = c(n_regions, n_seas, n_fish_fleets))
-
+  terminal_dmr <- array(sim_pop_obj$dmr[,n_yrs,,,1], dim = c(n_regions, n_seas, n_fish_fleets))
   sexratio <- array(1, dim = c(n_pop, n_regions, n_proj_yrs, n_sexes))
   rec_seas_prop <- sim_pop_obj$rec_seas_prop[,,1]
   recruitment <- array(sim_pop_obj$Rec[,,1:(n_yrs - 1), 1], dim = c(n_pop, n_regions, n_yrs - 1))
@@ -334,6 +336,8 @@ test_that("Multi-region, population, and seasonal global SPR reference points co
                                   WAA_fish = WAA_fish,
                                   MatAA = MatAA,
                                   fish_sel = fish_sel,
+                                  ret_sel = ret_sel,
+                                  dmr = terminal_dmr,
                                   Movement = Movement,
                                   f_ref_pt = array(ref_pts$f_ref_pt, dim = c(n_regions, n_proj_yrs)),
                                   b_ref_pt = array(ref_pts$b_ref_pt, dim = c(n_pop, n_regions, n_proj_yrs)),
@@ -347,7 +351,6 @@ test_that("Multi-region, population, and seasonal global SPR reference points co
                                   stray_rate = stray_rate,
                                   seasdur = seasdur
   )
-
 
   # Check if F equilibriates back at F40%
   expect_equal(as.numeric(out$proj_F[,n_proj_yrs]), as.numeric(ref_pts$f_ref_pt), tolerance = 0)

@@ -8,7 +8,7 @@ do_FishLen_pop_theta_mapping(input_list)
 }
 \arguments{
 \item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
-sublists. Requires \code{pop_FishLenComps_Type}, \code{pop_FishLenComps_LikeType},
+sublists. Requires \code{FishLenComps_pop_Type}, \code{FishLenComps_pop_LikeType},
 and \code{UseFishLenComps_pop} to be set by
 \code{\link{Setup_Mod_FishIdx_and_Comps}}.}
 }
@@ -21,7 +21,7 @@ The input \code{input_list} with \code{$map$ln_FishLen_pop_theta} and
 Constructs factor maps for \code{ln_FishLen_pop_theta} (fleet- region- and
 sex-specific overdispersion) and \code{ln_FishLen_pop_theta_agg} (aggregated
 overdispersion) based on the composition type and likelihood specified in
-\code{$data$pop_FishLenComps_Type} and \code{$data$pop_FishLenComps_LikeType}.
+\code{$data$FishLenComps_pop_Type} and \code{$data$FishLenComps_pop_LikeType}.
 Parameters are mapped to \code{NA} for fleets using multinomial likelihoods
 (\code{LikeType == 0}) or with no observed len compositions.
 }

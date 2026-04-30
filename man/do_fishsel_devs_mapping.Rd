@@ -7,7 +7,8 @@
 do_fishsel_devs_mapping(
   input_list,
   fish_sel_devs_spec,
-  fishsel_devs_shared_bins
+  fishsel_devs_shared_bins,
+  bins
 )
 }
 \arguments{
@@ -36,6 +37,8 @@ semi-parametric time-varying forms (\code{cont_tv_fish_sel} is in \code{c(3,4,5)
 groupings for bin-sharing options. Each element groups bins that share a
 single deviation series, e.g., \code{list(1:5, 6:10, 11:30)}.
 Only used when \code{fish_sel_devs_spec} includes \code{"est_shared_b"}.}
+
+\item{bins}{Number of selectivity bins}
 }
 \value{
 The input \code{input_list} with \code{$map$ln_fishsel_devs} set to a

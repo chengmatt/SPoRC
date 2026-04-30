@@ -141,17 +141,19 @@ test_that("Simulation self-test produces approximately unbiased SSB results", {
     )
 
     # Fishery catch & fishing mortality
-    input_list <- Setup_Mod_Catch_and_F(
-      input_list = input_list,
-      # Data inputs
-      ObsCatch = sim_data$ObsCatch,
-      UseCatch = sim_data$UseCatch,
-      # Model options
-      Use_F_pen = 1,
-      sigmaC_spec = "fix",
-      # Fixing sigma C and F
-      ln_sigmaC = sim_data$ln_sigmaC,
-      ln_sigmaF = array(log(1), dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
+    suppressWarnings(
+      input_list <- Setup_Mod_Catch_and_F(
+        input_list = input_list,
+        # Data inputs
+        ObsCatch = sim_data$ObsCatch,
+        UseCatch = sim_data$UseCatch,
+        # Model options
+        Use_F_pen = 1,
+        sigmaC_spec = "fix",
+        # Fixing sigma C and F
+        ln_sigmaC = sim_data$ln_sigmaC,
+        ln_sigmaF = array(log(1), dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
+      )
     )
 
     # Survey selectivity and catchability

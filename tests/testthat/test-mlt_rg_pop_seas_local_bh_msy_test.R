@@ -267,8 +267,10 @@ test_that("Multi-region, population, and seasonal local BH MSY reference points 
                     dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes))
   fish_sel <- array(rep(sim_pop_obj$fish_sel[,,n_yrs,,,,,1], each = n_proj_yrs),
                     dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets))
+  ret_sel <- array(rep(sim_pop_obj$ret_sel[,,n_yrs,,,,,1], each = n_proj_yrs),
+                    dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets))
   terminal_F <- array(sim_pop_obj$Fmort[,n_yrs,,,1], dim = c(n_regions, n_seas, n_fish_fleets))
-
+  terminal_dmr <- array(sim_pop_obj$dmr[,n_yrs,,,1], dim = c(n_regions, n_seas, n_fish_fleets))
   sexratio <- array(1, dim = c(n_pop, n_regions, n_proj_yrs, n_sexes))
   rec_seas_prop <- sim_pop_obj$rec_seas_prop[,,1]
   recruitment <- array(sim_pop_obj$Rec[,,1:(n_yrs - 1), 1], dim = c(n_pop, n_regions, n_yrs - 1))
@@ -319,7 +321,10 @@ test_that("Multi-region, population, and seasonal local BH MSY reference points 
     sgl_seas_spawning_movement = sgl_seas_spawning_movement[,,,1,,],
     stray_rate = array(0.5, dim = c(n_pop)),
     natmort    = array(natmort[,,1,,], dim = c(n_pop, n_regions, n_ages)),
-    fish_sel = array(fish_sel[,,1,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets))
+    fish_sel = array(fish_sel[,,1,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)),
+    ret_sel = array(ret_sel[,,1,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)),
+    init_F = array(0, dim = c(n_regions, n_seas, n_fish_fleets)),
+    dmr = array(0, dim = c(n_regions, n_seas, n_fish_fleets))
   )
 
 
@@ -349,6 +354,7 @@ test_that("Multi-region, population, and seasonal local BH MSY reference points 
                                   terminal_NAA = terminal_NAA,
                                   terminal_NAA0 = terminal_NAA0,
                                   terminal_F = terminal_F,
+                                  dmr = terminal_dmr,
                                   natmort = natmort,
                                   rec_seas_prop = rec_seas_prop,
                                   natal_region = natal_region,
@@ -356,6 +362,7 @@ test_that("Multi-region, population, and seasonal local BH MSY reference points 
                                   WAA_fish = WAA_fish,
                                   MatAA = MatAA,
                                   fish_sel = fish_sel,
+                                  ret_sel = ret_sel,
                                   Movement = Movement,
                                   f_ref_pt = array(ref_pts$f_ref_pt, dim = c(n_regions, n_proj_yrs)),
                                   b_ref_pt = NULL,
@@ -368,8 +375,7 @@ test_that("Multi-region, population, and seasonal local BH MSY reference points 
                                   sgl_seas_spawning_movement = sgl_seas_spawning_movement,
                                   stray_rate = stray_rate,
                                   seasdur = seasdur,
-                                  bh_rec_opt = bh_rec_opt,
-                                  init_F = sim_pop_obj$init_F
+                                  bh_rec_opt = bh_rec_opt
   )
 
   # Check if F equilibriates back at F40%

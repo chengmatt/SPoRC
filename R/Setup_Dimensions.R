@@ -1,7 +1,7 @@
 #' Initialise simulation dimension settings
 #'
 #' Creates the foundational \code{sim_list} object used throughout a closed-loop
-#' simulation or management strategy evaluation (MSE). All downstream setup
+#' simulation or static simulation. All downstream setup
 #' functions (\code{\link{Setup_Sim_Biologicals}}, \code{\link{Setup_Sim_Containers}},
 #' etc.) expect a \code{sim_list} produced by this function. Dimension scalars are
 #' validated on input and stored alongside derived quantities such as
@@ -24,39 +24,39 @@
 #'   and \code{n_regions > 1}, as multiple populations would share a natal region
 #'   and no sensible default exists.
 #' @param n_seas Positive integer. Number of seasons within each year (default \code{1}).
-#' @param seasdur Numeric vector of length \code{n_seas} giving the duration of each
-#'   season as a fraction of a year (values should sum to 1). Defaults to \code{1}
-#'   for a single season or \code{rep(1 / n_seas, n_seas)} for equal-length seasons
-#'   when \code{n_seas > 1}.
+#' @param seasdur Numeric vector of length \code{n_seas} giving the duration of
+#'   each season as a fraction of a year. Values must sum to 1. Defaults to
+#'   \code{1} when \code{n_seas == 1}, or \code{rep(1 / n_seas, n_seas)} for
+#'   equal-length seasons otherwise.
 #' @param n_ages Positive integer. Number of modelled age classes.
 #' @param n_obs_ages Positive integer. Number of observed age bins in composition
 #'   data. Can differ from \code{n_ages} when the plus group or youngest ages are
 #'   pooled differently in observations. Defaults to \code{n_ages}.
 #' @param n_lens Positive integer. Number of length bins. Set to \code{NULL}
 #'   (default) when length compositions are not simulated.
-#' @param n_sexes Integer. Number of sexes; must be \code{1} (sex-aggregated) or
-#'   \code{2} (sex-structured).
+#' @param n_sexes Integer. Number of sexes; must be either \code{1}
+#'   (sex-aggregated) or \code{2} (sex-structured).
 #' @param n_fish_fleets Positive integer. Number of fishery fleets.
 #' @param n_srv_fleets Positive integer. Number of survey fleets.
-#' @param run_feedback Logical. Whether to run a closed-loop feedback MSE in which
-#'   an estimation model and harvest control rule are applied each year to update
-#'   simulated fishing mortality. Default \code{FALSE} (open-loop simulation).
-#' @param feedback_start_yr Integer. First year in which the feedback loop is
-#'   activated. Required when \code{run_feedback = TRUE}; ignored otherwise.
+#' @param run_feedback Logical. Whether to run a closed-loop feedback MSE in
+#'   which an estimation model and harvest control rule update fishing mortality
+#'   each year. Default \code{FALSE} (open-loop simulation).
+#' @param feedback_start_yr Integer. First year in which feedback is applied.
+#'   Required when \code{run_feedback = TRUE}; ignored otherwise.
 #'
-#' @return A named list (\code{sim_list}) with the following elements:
+#' @return A named list (\code{sim_list}) containing:
 #'   \describe{
 #'     \item{\code{n_sims}, \code{n_yrs}, \code{n_pop}, \code{n_regions},
 #'       \code{n_seas}, \code{n_ages}, \code{n_obs_ages}, \code{n_lens},
-#'       \code{n_sexes}, \code{n_fish_fleets}, \code{n_srv_fleets}}{Dimension
-#'       scalars passed directly from arguments.}
-#'     \item{\code{natal_region}}{Integer vector of length \code{n_pop} giving the
-#'       natal region for each population (see argument description for defaults).}
-#'     \item{\code{seasdur}}{Numeric vector of season durations summing to 1.}
-#'     \item{\code{init_iter}}{Derived scalar equal to \code{n_ages * 10}, giving
-#'       the number of years used to spin up equilibrium initial conditions.}
-#'     \item{\code{run_feedback}, \code{feedback_start_yr}}{Feedback control
-#'       settings passed directly from arguments.}
+#'       \code{n_sexes}, \code{n_fish_fleets}, \code{n_srv_fleets}}{
+#'       Dimension scalars supplied as inputs.}
+#'     \item{\code{natal_region}}{Integer vector of length \code{n_pop}
+#'       defining natal regions.}
+#'     \item{\code{seasdur}}{Season durations summing to 1.}
+#'     \item{\code{init_iter}}{Derived value \code{n_ages * 10} used to initialise
+#'       equilibrium conditions.}
+#'     \item{\code{run_feedback}, \code{feedback_start_yr}}{
+#'       Feedback control settings.}
 #'   }
 #'
 #'

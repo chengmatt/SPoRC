@@ -160,10 +160,37 @@ solve_plus_group <- function(Ts, N_penult_u, N_penult_f, n_regions) {
 #' \eqn{F_{SPR_x}}. Supports multiple populations via stray rates but does not
 #' include spatial movement.
 #'
+#' @details
+#' **Fishing mortality decomposition**
+#'
+#' Fishing mortality at age is split into:
+#'
+#' - retained fishing mortality
+#'   \code{F_ret = F * selectivity * retention}
+#'
+#' - discard fishing mortality (dead discards only)
+#'   \code{F_disc = F * selectivity * (1 - retention) * dmr}
+#'
+#' where \code{dmr} is the discard mortality rate (fraction of discarded fish
+#' that die). Only the dead fraction contributes to total instantaneous
+#' mortality \code{Z}.
+#'
+#' The total mortality used for survival is:
+#'
+#' \code{Z = M + F_ret + F_disc}
+#'
+#' This formulation assumes:
+#'
+#' - retained fish always die,
+#' - only a fraction \code{dmr} of discarded fish die,
+#' - the surviving fraction \code{(1 - dmr)} of discards remains in the
+#'   population and continues aging and contributing to spawning biomass.
+#'
 #' @param pars Named list of RTMB parameters. Must contain:
 #'   \describe{
 #'     \item{\code{log_F_x}}{Log-scale trial fishing mortality.}
 #'   }
+#'
 #' @param data Named list of RTMB data. Must contain:
 #'   \describe{
 #'     \item{\code{n_pop}}{Integer. Number of populations.}
@@ -172,27 +199,49 @@ solve_plus_group <- function(Ts, N_penult_u, N_penult_f, n_regions) {
 #'     \item{\code{seasdur}}{Numeric vector \code{[n_seas]}. Season durations.}
 #'     \item{\code{spawn_seas}}{Integer. Index of the spawning season.}
 #'     \item{\code{t_spawn}}{Numeric. Fraction of spawning season elapsed
-#'       before spawning (used for mid-season mortality correction).}
-#'     \item{\code{F_fract_flt}}{Numeric array \code{[n_seas, n_fish_fleets]}.
-#'       Fleet F fractions.}
-#'     \item{\code{fish_sel}}{Numeric array \code{[n_pop, n_seas, n_ages, n_fish_fleets]}.
+#'       before spawning (mid-season mortality correction).}
+#'
+#'     \item{\code{F_fract_flt}}{Numeric array
+#'       \code{[n_seas, n_fish_fleets]}. Fleet F fractions.}
+#'
+#'     \item{\code{fish_sel}}{Numeric array
+#'       \code{[n_pop, n_seas, n_ages, n_fish_fleets]}.
 #'       Fishery selectivity at age for females.}
-#'     \item{\code{natmort}}{Numeric array \code{[n_pop, n_ages]}. Female
-#'       natural mortality at age.}
-#'     \item{\code{WAA}}{Numeric array \code{[n_pop, n_seas, n_ages]}. Female
-#'       weight at age.}
-#'     \item{\code{MatAA}}{Numeric array \code{[n_pop, n_seas, n_ages]}.
-#'       Maturity at age.}
-#'     \item{\code{sex_ratio_f}}{Numeric vector \code{[n_pop]}. Female sex
-#'       ratio at recruitment.}
-#'     \item{\code{rec_seas_prop}}{Numeric array \code{[n_pop, n_seas]}.
-#'       Proportion of annual recruitment entering in each season.}
-#'     \item{\code{stray_rate}}{Numeric vector \code{[n_pop]}. Per-population
-#'       stray rate used to compute effective SSB across populations.}
-#'     \item{\code{natal_region}}{Integer vector \code{[n_pop]}. Natal region
-#'       index for each population.}
-#'     \item{\code{n_pop_in_region}}{Integer vector \code{[n_regions]}. Number
-#'       of populations per natal region.}
+#'
+#'     \item{\code{ret_sel}}{Numeric array
+#'       \code{[n_pop, n_seas, n_ages, n_fish_fleets]}.
+#'       Retention selectivity (fraction of selected fish retained).}
+#'
+#'     \item{\code{dmr}}{Numeric array
+#'       \code{[n_seas, n_fish_fleets]}. Discard mortality rate (fraction of
+#'       discarded fish that die).}
+#'
+#'     \item{\code{natmort}}{Numeric array
+#'       \code{[n_pop, n_ages]}. Female natural mortality at age.}
+#'
+#'     \item{\code{WAA}}{Numeric array
+#'       \code{[n_pop, n_seas, n_ages]}. Female weight at age.}
+#'
+#'     \item{\code{MatAA}}{Numeric array
+#'       \code{[n_pop, n_seas, n_ages]}. Maturity at age.}
+#'
+#'     \item{\code{sex_ratio_f}}{Numeric vector
+#'       \code{[n_pop]}. Female sex ratio at recruitment.}
+#'
+#'     \item{\code{rec_seas_prop}}{Numeric array
+#'       \code{[n_pop, n_seas]}. Proportion of annual recruitment entering
+#'       in each season.}
+#'
+#'     \item{\code{stray_rate}}{Numeric vector
+#'       \code{[n_pop]}. Per-population stray rate used to compute effective
+#'       SSB across populations.}
+#'
+#'     \item{\code{natal_region}}{Integer vector
+#'       \code{[n_pop]}. Natal region index for each population.}
+#'
+#'     \item{\code{n_pop_in_region}}{Integer vector
+#'       \code{[n_regions]}. Number of populations per natal region.}
+#'
 #'     \item{\code{SPR_x}}{Numeric. Target SPR fraction (e.g. 0.4).}
 #'   }
 #'
@@ -202,6 +251,7 @@ solve_plus_group <- function(Ts, N_penult_u, N_penult_f, n_regions) {
 #' @seealso \code{\link{Get_Reference_Points}}
 #' @keywords internal
 #' @import RTMB
+
 single_region_SPR <- function(pars,
                               data
 ) {
@@ -223,7 +273,8 @@ single_region_SPR <- function(pars,
       for (seas in 1:n_seas) {
 
         # compute mortality
-        F_seas = sum(F_fract_flt[seas, ] * F_x * fish_sel[p,seas,j - 1, ])
+        F_seas = sum(F_fract_flt[seas, ] * F_x * fish_sel[p,seas,j - 1, ] * ret_sel[p,seas,j - 1,]) + # retained F
+          sum(F_fract_flt[seas, ] * F_x * fish_sel[p,seas,j - 1, ] * (1 - ret_sel[p,seas,j - 1,]) * dmr[seas,]) # discard F
         M_seas = natmort[p, j - 1] * seasdur[seas]
         Z_seas = F_seas + M_seas
 
@@ -270,8 +321,8 @@ single_region_SPR <- function(pars,
         # Apply seasonal mortality
         tmp_unfished[p] = tmp_unfished[p] * exp(-(natmort[p,n_ages-1] * seasdur[seas]))
         tmp_fished[p] = tmp_fished[p] * exp(-(natmort[p,n_ages-1] * seasdur[seas] +
-                                                sum(F_fract_flt[seas,] * F_x * fish_sel[p,seas,n_ages-1,]) ))
-
+                                                sum(F_fract_flt[seas,] * F_x * fish_sel[p,seas,n_ages-1,] * ret_sel[p,seas,n_ages-1, ]) +
+                                                sum(F_fract_flt[seas,] * F_x * fish_sel[p,seas,n_ages-1,] * (1 - ret_sel[p,seas,n_ages-1, ]) * dmr[seas,] )))
       } # end seas loop
     } # end p loop
   }
@@ -282,15 +333,18 @@ single_region_SPR <- function(pars,
       exp(-t_spawn * natmort[p,n_ages - 1] * seasdur[spawn_seas])
     SB_age[2, p, n_ages - 1] = tmp_fished[p] * WAA[p,spawn_seas, n_ages - 1] * MatAA[p,spawn_seas, n_ages - 1] *
       exp(-t_spawn * (natmort[p,n_ages - 1] * seasdur[spawn_seas] +
-                        sum(F_fract_flt[spawn_seas,] * F_x * fish_sel[p,spawn_seas,n_ages-1,]) ))
-  }
+                        sum(F_fract_flt[spawn_seas,] * F_x * fish_sel[p,spawn_seas,n_ages-1,] * ret_sel[p,spawn_seas,n_ages-1, ]) +
+                        sum(F_fract_flt[spawn_seas,] * F_x * fish_sel[p,spawn_seas,n_ages-1,] * (1 - ret_sel[p,spawn_seas,n_ages-1, ]) * dmr[spawn_seas,] )))
+    }
 
   # Plus group (scalar, no movement)
   for(p in 1:n_pop) {
     F_annual_penult = 0; F_annual_plus = 0
     for(seas in 1:n_seas) {
-      F_annual_penult = F_annual_penult + sum(F_fract_flt[seas,] * F_x * fish_sel[p,seas,n_ages-1,])
-      F_annual_plus = F_annual_plus + sum(F_fract_flt[seas,] * F_x * fish_sel[p,seas,n_ages,])
+      F_annual_penult = F_annual_penult + sum(F_fract_flt[seas,] * F_x * fish_sel[p,seas,n_ages-1,] * ret_sel[p,seas,n_ages-1,]) +
+        sum(F_fract_flt[seas, ] * F_x * fish_sel[p,seas,n_ages - 1, ] * (1 - ret_sel[p,seas,n_ages - 1,]) * dmr[seas,])
+      F_annual_plus = F_annual_plus + sum(F_fract_flt[seas,] * F_x * fish_sel[p,seas,n_ages,] * ret_sel[p,seas,n_ages,]) +
+        sum(F_fract_flt[seas, ] * F_x * fish_sel[p,seas,n_ages, ] * (1 - ret_sel[p,seas,n_ages,]) * dmr[seas,])
     }
     M_penult = natmort[p,n_ages - 1]
     M_plus = natmort[p,n_ages]
@@ -308,7 +362,9 @@ single_region_SPR <- function(pars,
 
         # Apply seasonal mortality
         tmp_unfished[p] = tmp_unfished[p] * exp(-(natmort[p,n_ages] * seasdur[seas]))
-        tmp_fished[p] = tmp_fished[p] * exp(-(natmort[p,n_ages] * seasdur[seas] + sum(F_fract_flt[seas,] * F_x * fish_sel[p,seas,n_ages,]) ))
+        tmp_fished[p] = tmp_fished[p] * exp(-(natmort[p,n_ages] * seasdur[seas] +
+                                                sum(F_fract_flt[seas,] * F_x * fish_sel[p,seas,n_ages,] * ret_sel[p,seas,n_ages, ]) +
+                                                sum(F_fract_flt[seas,] * F_x * fish_sel[p,seas,n_ages,] * (1 - ret_sel[p,seas,n_ages, ]) * dmr[seas,] )))
 
       } # end seas loop
     } # end p loop
@@ -320,7 +376,8 @@ single_region_SPR <- function(pars,
       exp(-t_spawn * natmort[p,n_ages] * seasdur[spawn_seas])
     SB_age[2,p,n_ages] = tmp_fished[p] * WAA[p,spawn_seas, n_ages] * MatAA[p,spawn_seas, n_ages] *
       exp(-t_spawn * (natmort[p,n_ages] * seasdur[spawn_seas] +
-                        sum(F_fract_flt[spawn_seas,] * F_x * fish_sel[p,spawn_seas,n_ages,])))
+                        sum(F_fract_flt[spawn_seas,] * F_x * fish_sel[p,spawn_seas,n_ages,] * ret_sel[p,spawn_seas,n_ages, ]) +
+                        sum(F_fract_flt[spawn_seas,] * F_x * fish_sel[p,spawn_seas,n_ages,] * (1 - ret_sel[p,spawn_seas,n_ages, ]) * dmr[spawn_seas,] )))
   }
 
   # Get effective SB after straying
@@ -359,10 +416,10 @@ single_region_SPR <- function(pars,
 #' Compute global SPR reference point for a spatially explicit model
 #'
 #' Calculates a single, spatially-integrated SPR using a per-recruit cohort
-#' that is tracked across all regions and seasons under movement. A single
-#' scalar \eqn{F_x} is applied uniformly across regions (scaled by
-#' region-specific fleet fractions and selectivity). Returns the squared
-#' penalty \eqn{100(SPR - SPR_x)^2} for optimisation.
+#' tracked across all regions and seasons under movement. A single scalar
+#' \eqn{F_x} is applied uniformly across regions (scaled by region-specific
+#' fleet fractions and selectivity). Returns the squared penalty
+#' \eqn{100 (SPR - SPR_x)^2} for optimisation.
 #'
 #' Supports single- and multi-population models. When \code{n_pop > 1},
 #' effective SSB at each population's natal region accumulates straying
@@ -373,10 +430,38 @@ single_region_SPR <- function(pars,
 #' The plus-group is solved analytically using
 #' \code{\link{build_plus_group_T}} and \code{\link{solve_plus_group}}.
 #'
+#' @details
+#' **Fishing mortality decomposition**
+#'
+#' Fishing mortality at age is split into:
+#'
+#' - retained fishing mortality
+#'   \code{F_ret = F * selectivity * retention}
+#'
+#' - discard fishing mortality (dead discards only)
+#'   \code{F_disc = F * selectivity * (1 - retention) * dmr}
+#'
+#' where \code{dmr} is the discard mortality rate (fraction of discarded fish
+#' that die). Only the dead fraction contributes to total instantaneous
+#' mortality \code{Z}.
+#'
+#' The total mortality used for survival is:
+#'
+#' \code{Z = M + F_ret + F_disc}
+#'
+#' This formulation assumes:
+#'
+#' - retained fish always die,
+#' - only a fraction \code{dmr} of discarded fish die,
+#' - the surviving fraction \code{(1 - dmr)} of discards remains in the
+#'   population and continues aging, moving, and contributing to spawning
+#'   biomass.
+#'
 #' @param pars Named list of RTMB parameters. Must contain:
 #'   \describe{
 #'     \item{\code{log_F_x}}{Log-scale trial fishing mortality.}
 #'   }
+#'
 #' @param data Named list of RTMB data. Must contain:
 #'   \describe{
 #'     \item{\code{n_pop}}{Integer. Number of populations.}
@@ -386,40 +471,64 @@ single_region_SPR <- function(pars,
 #'     \item{\code{seasdur}}{Numeric vector \code{[n_seas]}. Season durations.}
 #'     \item{\code{spawn_seas}}{Integer. Index of the spawning season.}
 #'     \item{\code{t_spawn}}{Numeric. Mid-season spawning timing correction.}
-#'     \item{\code{F_fract_flt}}{Numeric array \code{[n_regions, n_seas, n_fish_fleets]}.
-#'       Fleet F fractions by region.}
-#'     \item{\code{fish_sel}}{Numeric array \code{[n_pop, n_regions, n_seas, n_ages, n_fish_fleets]}.
+#'
+#'     \item{\code{F_fract_flt}}{Numeric array
+#'       \code{[n_regions, n_seas, n_fish_fleets]}. Fleet F fractions by region.}
+#'
+#'     \item{\code{fish_sel}}{Numeric array
+#'       \code{[n_pop, n_regions, n_seas, n_ages, n_fish_fleets]}.
 #'       Female fishery selectivity.}
-#'     \item{\code{natmort}}{Numeric array \code{[n_pop, n_regions, n_ages]}.
-#'       Female natural mortality.}
-#'     \item{\code{WAA}}{Numeric array \code{[n_pop, n_regions, n_seas, n_ages]}.
-#'       Female weight at age.}
-#'     \item{\code{MatAA}}{Numeric array \code{[n_pop, n_regions, n_seas, n_ages]}.
-#'       Maturity at age.}
-#'     \item{\code{Movement}}{Numeric array \code{[n_pop, n_regions, n_regions, n_seas, n_ages]}.
+#'
+#'     \item{\code{ret_sel}}{Numeric array
+#'       \code{[n_pop, n_regions, n_seas, n_ages, n_fish_fleets]}.
+#'       Retention selectivity (fraction of selected fish that are retained).}
+#'
+#'     \item{\code{dmr}}{Numeric array
+#'       \code{[n_regions, n_seas, n_fish_fleets]}. Discard mortality rate
+#'       (fraction of discarded fish that die).}
+#'
+#'     \item{\code{natmort}}{Numeric array
+#'       \code{[n_pop, n_regions, n_ages]}. Female natural mortality.}
+#'
+#'     \item{\code{WAA}}{Numeric array
+#'       \code{[n_pop, n_regions, n_seas, n_ages]}. Female weight at age.}
+#'
+#'     \item{\code{MatAA}}{Numeric array
+#'       \code{[n_pop, n_regions, n_seas, n_ages]}. Maturity at age.}
+#'
+#'     \item{\code{Movement}}{Numeric array
+#'       \code{[n_pop, n_regions, n_regions, n_seas, n_ages]}.
 #'       Seasonal movement transition matrices.}
+#'
 #'     \item{\code{sgl_seas_spawning_movement}}{Numeric array
 #'       \code{[n_pop, n_regions, n_regions, n_ages]}. Spawning movement for
 #'       single-season natal homing models.}
+#'
 #'     \item{\code{do_recruits_move}}{Integer (0/1). Whether age-1 recruits
 #'       are subject to movement.}
-#'     \item{\code{rec_region_prop}}{Numeric array \code{[n_pop, n_regions]}.
-#'       Proportion of recruitment entering each region.}
-#'     \item{\code{sex_ratio_f}}{Numeric array \code{[n_pop, n_regions]}.
-#'       Female sex ratio at recruitment.}
-#'     \item{\code{rec_seas_prop}}{Numeric array \code{[n_pop, n_seas]}.
-#'       Seasonal recruitment proportions.}
+#'
+#'     \item{\code{rec_region_prop}}{Numeric array
+#'       \code{[n_pop, n_regions]}. Proportion of recruitment entering each region.}
+#'
+#'     \item{\code{sex_ratio_f}}{Numeric array
+#'       \code{[n_pop, n_regions]}. Female sex ratio at recruitment.}
+#'
+#'     \item{\code{rec_seas_prop}}{Numeric array
+#'       \code{[n_pop, n_seas]}. Seasonal recruitment proportions.}
+#'
 #'     \item{\code{stray_rate}}{Numeric vector \code{[n_pop]}. Per-population
 #'       stray rate.}
+#'
 #'     \item{\code{natal_region}}{Integer vector \code{[n_pop]}. Natal region
 #'       index for each population.}
+#'
 #'     \item{\code{n_pop_in_region}}{Integer vector \code{[n_regions]}. Number
 #'       of populations per natal region.}
+#'
 #'     \item{\code{SPR_x}}{Numeric. Target SPR fraction.}
 #'   }
 #'
 #' @return Numeric scalar. Squared penalty \eqn{(SPR - SPR_x)^2}.
-#'
 #'
 #' @keywords internal
 #' @import RTMB
@@ -434,11 +543,20 @@ global_SPR <- function(pars,
 
   F_x = exp(log_F_x) # Exponentiate reference points
 
-  # helper function to get f by region for a given age and season
-  F_by_region <- function(p, age, seas) {
+  # helper function to get retained f by region for a given age and season
+  ret_F_by_region <- function(p, age, seas) {
     Fr <- numeric(n_regions)
     for (f in seq_len(dim(fish_sel)[length(dim(fish_sel))])) {
-      Fr <- Fr + F_fract_flt[, seas, f] * F_x * fish_sel[p, , seas, age, f]
+      Fr <- Fr + (F_fract_flt[, seas, f] * F_x * fish_sel[p, , seas, age, f] * ret_sel[p,,seas,age,f])
+    }
+    Fr
+  }
+
+  # helper function to get discarded f by region for a given age and season
+  disc_F_by_region <- function(p, age, seas) {
+    Fr <- numeric(n_regions)
+    for (f in seq_len(dim(fish_sel)[length(dim(fish_sel))])) {
+      Fr <- Fr + (F_fract_flt[, seas, f] * F_x * fish_sel[p, , seas, age, f] * (1 - ret_sel[p,,seas,age,f]) * dmr[, seas, f])
     }
     Fr
   }
@@ -454,9 +572,10 @@ global_SPR <- function(pars,
       for (seas in 1:n_seas) {
 
         # get mortality
-        F_seas = F_by_region(p,j - 1, seas)
+        ret_F_seas = ret_F_by_region(p,j - 1, seas)
+        disc_F_seas = disc_F_by_region(p,j - 1, seas)
         M_seas = natmort[p,, j - 1] * seasdur[seas]
-        Z_seas = F_seas + M_seas
+        Z_seas = ret_F_seas + M_seas + disc_F_seas
 
         # extract out quantities
         tmp_unfished = Nspr[1,p,, j - 1]; tmp_fished = Nspr[2,p,, j - 1]
@@ -518,7 +637,8 @@ global_SPR <- function(pars,
 
         # Get mortality
         M_seas = natmort[p,,n_ages-1] * seasdur[seas]
-        F_seas = F_by_region(p, n_ages - 1, seas)
+        ret_F_seas = ret_F_by_region(p, n_ages - 1, seas)
+        disc_F_seas = disc_F_by_region(p, n_ages - 1, seas)
 
         # Apply seasonal movement
         tmp_unfished[p,] = tmp_unfished[p,] %*% Movement[p,,,seas,n_ages-1]
@@ -526,7 +646,7 @@ global_SPR <- function(pars,
 
         # Apply seasonal mortality
         tmp_unfished[p,] = tmp_unfished[p,] * exp(-M_seas)
-        tmp_fished[p,] = tmp_fished[p,] * exp(-(M_seas + F_seas))
+        tmp_fished[p,] = tmp_fished[p,] * exp(-(M_seas + ret_F_seas + disc_F_seas))
 
       } # end seas loop
     }
@@ -552,7 +672,7 @@ global_SPR <- function(pars,
       exp(-t_spawn * natmort[p,, n_ages - 1] * seasdur[spawn_seas])
     SB_age[2,p,, n_ages - 1] = tmp_fished_spawn[p,] * WAA[p,, spawn_seas, n_ages - 1] * MatAA[p,, spawn_seas, n_ages - 1] *
       exp(-t_spawn * (natmort[p,, n_ages - 1] * seasdur[spawn_seas] +
-                        F_by_region(p, n_ages - 1, spawn_seas)))
+                        ret_F_by_region(p, n_ages - 1, spawn_seas) + disc_F_by_region(p, n_ages - 1, spawn_seas)))
   }
 
   ## Plus group analytical solution
@@ -560,8 +680,8 @@ global_SPR <- function(pars,
 
     F_penult = F_plus = matrix(0, n_regions, n_seas)
     for(seas in 1:n_seas) {
-      F_penult[,seas] = F_by_region(p, n_ages - 1, seas)
-      F_plus[,seas] = F_by_region(p, n_ages, seas)
+      F_penult[,seas] = ret_F_by_region(p, n_ages - 1, seas) + disc_F_by_region(p, n_ages - 1, seas)
+      F_plus[,seas] = ret_F_by_region(p, n_ages, seas) + disc_F_by_region(p, n_ages, seas)
     }
 
     Ts <- build_plus_group_T(
@@ -589,7 +709,7 @@ global_SPR <- function(pars,
   if(spawn_seas > 1) {
     for(p in 1:n_pop) {
       for (seas in 1:(spawn_seas - 1)) {
-        F_seas_plus = F_by_region(p, n_ages, seas)
+        F_seas_plus = ret_F_by_region(p, n_ages, seas) + disc_F_by_region(p, n_ages, seas)
         tmp_unfished[p,] = tmp_unfished[p,] %*% Movement[p,,,seas,n_ages]
         tmp_fished[p,] = tmp_fished[p,] %*% Movement[p,,,seas,n_ages]
         tmp_unfished[p,] = tmp_unfished[p,] * exp(-(natmort[p,,n_ages] * seasdur[seas]))
@@ -620,7 +740,7 @@ global_SPR <- function(pars,
     SB_age[1,p,,n_ages] = tmp_unfished_spawn[p,] * WAA[p,,spawn_seas,n_ages] * MatAA[p,,spawn_seas,n_ages] *
       exp(-t_spawn * natmort[p,,n_ages] * seasdur[spawn_seas])
     SB_age[2,p,,n_ages] = tmp_fished_spawn[p,] * WAA[p,,spawn_seas,n_ages] * MatAA[p,,spawn_seas,n_ages] *
-      exp(-t_spawn * (natmort[p,,n_ages] * seasdur[spawn_seas] + F_by_region(p, n_ages, spawn_seas)))
+      exp(-t_spawn * (natmort[p,,n_ages] * seasdur[spawn_seas] + ret_F_by_region(p, n_ages, spawn_seas) + disc_F_by_region(p, n_ages, spawn_seas)))
   }
 
   # Get effective SB after straying
@@ -665,7 +785,9 @@ global_SPR <- function(pars,
 #' spawning biomass per recruit (\eqn{\phi_F}), the BH equilibrium
 #' recruitment formula, and catch-at-age integrated across all seasons.
 #' Supports multiple populations via stray rates but does not include
-#' spatial movement.
+#' spatial movement. Yield includes only landings from fleets where
+#' \code{is_discard_fleet == 0}; discard-only fleets contribute to total
+#' mortality but not to the yield being maximised.
 #'
 #' @param pars Named list of RTMB parameters. Must contain:
 #'   \describe{
@@ -677,11 +799,15 @@ global_SPR <- function(pars,
 #'     \item{\code{h}}{Numeric vector \code{[n_pop]}. Beverton-Holt steepness.}
 #'     \item{\code{R0}}{Numeric vector \code{[n_pop]}. Unfished equilibrium
 #'       recruitment.}
+#'     \item{\code{is_discard_fleet}}{Integer vector \code{[n_fish_fleets]}.
+#'       Indicator for fleets whose catch is excluded from landed yield
+#'       (0 = landing fleet, 1 = discard-only fleet). These fleets still
+#'       contribute to total fishing mortality \code{Z} and affect population
+#'       dynamics and spawning biomass.}
 #'   }
 #'
 #' @return Numeric scalar. Negative total equilibrium yield (minimised to
 #'   find \eqn{F_{MSY}}).
-#'
 #'
 #' @keywords internal
 #' @import RTMB
@@ -698,6 +824,7 @@ single_region_BH_Fmsy <- function(pars, data) {
   # set up containers
   SB_age = Nspr = array(0, dim = c(2, n_pop, n_ages))
   CAA = array(0, c(n_pop, n_seas, n_ages))
+  landed_fleets = which(is_discard_fleet == 0) # figure out discard fleets
 
   # initialize recruits
   for(p in 1:n_pop) Nspr[,p,1] = sex_ratio_f[p] * rec_seas_prop[p,1]
@@ -707,7 +834,10 @@ single_region_BH_Fmsy <- function(pars, data) {
       for (seas in 1:n_seas) {
 
         # get mortality
-        F_seas = sum(F_fract_flt[seas, ] * Fmsy * fish_sel[p, seas, j - 1, ])
+        # compute mortality
+        F_seas = sum(F_fract_flt[seas, ] * Fmsy * fish_sel[p,seas,j - 1, ] * ret_sel[p,seas,j - 1,]) + # retained F
+          sum(F_fract_flt[seas, ] * Fmsy * fish_sel[p,seas,j - 1, ] * (1 - ret_sel[p,seas,j - 1,]) * dmr[seas,]) # discard F
+        landed_F_seas = sum(F_fract_flt[seas, landed_fleets] * Fmsy * fish_sel[p,seas,j - 1, landed_fleets] * ret_sel[p,seas,j - 1,landed_fleets]) # landed F
         M_a_seas = natmort[p, j - 1] * seasdur[seas]
         Z_seas = F_seas + M_a_seas
 
@@ -729,7 +859,7 @@ single_region_BH_Fmsy <- function(pars, data) {
         }
 
         # Catch-at-age (Baranov)
-        CAA[p, seas, j - 1] = tmp_fished * (F_seas / Z_seas) * (1 - exp(-Z_seas))
+        CAA[p, seas, j - 1] = tmp_fished * (landed_F_seas / Z_seas) * (1 - exp(-Z_seas))
 
         # Mortality and ageing
         if (seas < n_seas) {
@@ -753,9 +883,11 @@ single_region_BH_Fmsy <- function(pars, data) {
   for(p in 1:n_pop) {
     tmp_fished_caa_p = tmp_fished[p]
     for (seas in 1:n_seas) {
-      F_seas = sum(F_fract_flt[seas,] * Fmsy * fish_sel[p, seas, n_ages-1,])
+      F_seas = sum(F_fract_flt[seas,] * Fmsy * fish_sel[p, seas, n_ages-1,] * ret_sel[p, seas, n_ages-1,]) +
+        sum(F_fract_flt[seas,] * Fmsy * fish_sel[p, seas, n_ages-1,] * (1 - ret_sel[p, seas, n_ages-1,]) * dmr[seas,])
+      landed_F_seas = sum(F_fract_flt[seas, landed_fleets] * Fmsy * fish_sel[p,seas,n_ages - 1, landed_fleets] * ret_sel[p,seas,n_ages - 1,landed_fleets]) # landed F
       Z_seas = natmort[p, n_ages-1] * seasdur[seas] + F_seas
-      CAA[p, seas, n_ages-1] = tmp_fished_caa_p * (F_seas / Z_seas) * (1 - exp(-Z_seas))
+      CAA[p, seas, n_ages-1] = tmp_fished_caa_p * (landed_F_seas / Z_seas) * (1 - exp(-Z_seas))
       tmp_fished_caa_p = tmp_fished_caa_p * exp(-Z_seas)
     }
   }
@@ -767,7 +899,8 @@ single_region_BH_Fmsy <- function(pars, data) {
         # Exponential mortality
         M_seas = natmort[p,n_ages - 1] * seasdur[seas]
         tmp_unfished[p] = tmp_unfished[p] * exp(-M_seas)
-        tmp_fished[p] = tmp_fished[p] * exp(-(sum(F_fract_flt[seas,] * Fmsy * fish_sel[p, seas, n_ages-1,]) + M_seas))
+        tmp_fished[p] = tmp_fished[p] * exp(-(sum(F_fract_flt[seas,] * Fmsy * fish_sel[p, seas, n_ages-1,] * ret_sel[p, seas, n_ages-1, ]) +
+                                              sum(F_fract_flt[seas,] * Fmsy * fish_sel[p, seas, n_ages-1,]  * (1 - ret_sel[p, seas, n_ages-1, ]) * dmr[seas,]) + M_seas))
       }
     }
   }
@@ -778,15 +911,18 @@ single_region_BH_Fmsy <- function(pars, data) {
       exp(-t_spawn * natmort[p,n_ages - 1] * seasdur[spawn_seas])
     SB_age[2, p, n_ages - 1] = tmp_fished[p] * WAA[p,spawn_seas, n_ages - 1] * MatAA[p,spawn_seas, n_ages - 1] *
       exp(-t_spawn * (natmort[p,n_ages - 1] * seasdur[spawn_seas] +
-                        sum(F_fract_flt[spawn_seas,] * Fmsy * fish_sel[p, spawn_seas, n_ages-1,])))
+                        sum(F_fract_flt[spawn_seas,] * Fmsy * fish_sel[p, spawn_seas, n_ages-1,] * ret_sel[p, spawn_seas, n_ages-1, ]) +
+                        sum(F_fract_flt[spawn_seas,] * Fmsy * fish_sel[p, spawn_seas, n_ages-1,] * (1 - ret_sel[p, spawn_seas, n_ages-1, ]) * dmr[spawn_seas, ]) ))
   }
 
   # Plus group (scalar, no movement)
   for(p in 1:n_pop) {
     F_annual_penult = 0; F_annual_plus = 0
     for(seas in 1:n_seas) {
-      F_annual_penult = F_annual_penult + sum(F_fract_flt[seas,] * Fmsy * fish_sel[p, seas, n_ages-1,])
-      F_annual_plus = F_annual_plus + sum(F_fract_flt[seas,] * Fmsy * fish_sel[p, seas, n_ages,])
+      F_annual_penult = F_annual_penult + sum(F_fract_flt[seas,] * Fmsy * fish_sel[p,seas,n_ages-1,] * ret_sel[p,seas,n_ages-1,]) +
+        sum(F_fract_flt[seas, ] * Fmsy * fish_sel[p,seas,n_ages - 1, ] * (1 - ret_sel[p,seas,n_ages - 1,]) * dmr[seas,])
+      F_annual_plus = F_annual_plus + sum(F_fract_flt[seas,] * Fmsy * fish_sel[p,seas,n_ages,] * ret_sel[p,seas,n_ages,]) +
+        sum(F_fract_flt[seas, ] * Fmsy * fish_sel[p,seas,n_ages, ] * (1 - ret_sel[p,seas,n_ages,]) * dmr[seas,])
     }
     M_penult = natmort[p, n_ages - 1]
     M_plus = natmort[p, n_ages]
@@ -803,9 +939,11 @@ single_region_BH_Fmsy <- function(pars, data) {
   for(p in 1:n_pop) {
     tmp_fished_caa_p = Nspr[2, p, n_ages]
     for (seas in 1:n_seas) {
-      F_seas = sum(F_fract_flt[seas,] * Fmsy * fish_sel[p, seas, n_ages,])
+      F_seas = sum(F_fract_flt[seas,] * Fmsy * fish_sel[p, seas, n_ages,] * ret_sel[p, seas, n_ages,]) +
+        sum(F_fract_flt[seas,] * Fmsy * fish_sel[p, seas, n_ages,] * (1 - ret_sel[p, seas, n_ages,]) * dmr[seas,])
+      landed_F_seas = sum(F_fract_flt[seas, landed_fleets] * Fmsy * fish_sel[p,seas,n_ages, landed_fleets] * ret_sel[p,seas,n_ages,landed_fleets]) # landed F
       Z_seas = natmort[p, n_ages] * seasdur[seas] + F_seas
-      CAA[p, seas, n_ages] = tmp_fished_caa_p * (F_seas / Z_seas) * (1 - exp(-Z_seas))
+      CAA[p, seas, n_ages] = tmp_fished_caa_p * (landed_F_seas / Z_seas) * (1 - exp(-Z_seas))
       tmp_fished_caa_p = tmp_fished_caa_p * exp(-Z_seas)
     }
   }
@@ -815,7 +953,10 @@ single_region_BH_Fmsy <- function(pars, data) {
     for(p in 1:n_pop) {
       for (seas in 1:(spawn_seas - 1)) {
         tmp_unfished[p] = tmp_unfished[p] * exp(-natmort[p,n_ages] * seasdur[seas])
-        tmp_fished[p] = tmp_fished[p] * exp(-(natmort[p,n_ages] * seasdur[seas] + sum(F_fract_flt[seas,] * Fmsy * fish_sel[p, seas, n_ages,])))
+        tmp_fished[p] = tmp_fished[p] * exp(-(natmort[p,n_ages] * seasdur[seas] +
+                                                sum(F_fract_flt[seas,] * Fmsy * fish_sel[p, seas, n_ages,] * ret_sel[p, seas, n_ages,]) +
+                                                sum(F_fract_flt[seas,] * Fmsy * fish_sel[p, seas, n_ages,] * (1 - ret_sel[p, seas, n_ages,]) * dmr[seas,])
+                                              ))
       }
     }
   }
@@ -824,7 +965,10 @@ single_region_BH_Fmsy <- function(pars, data) {
     SB_age[1, p, n_ages] = tmp_unfished[p] * WAA[p,spawn_seas, n_ages] * MatAA[p,spawn_seas, n_ages] *
       exp(-t_spawn * natmort[p,n_ages] * seasdur[spawn_seas])
     SB_age[2, p, n_ages] = tmp_fished[p] * WAA[p,spawn_seas, n_ages] * MatAA[p,spawn_seas, n_ages] *
-      exp(-t_spawn * (natmort[p,n_ages] * seasdur[spawn_seas] + sum(F_fract_flt[spawn_seas,] * Fmsy * fish_sel[p, spawn_seas, n_ages,])))
+      exp(-t_spawn * (natmort[p,n_ages] * seasdur[spawn_seas] +
+                        sum(F_fract_flt[spawn_seas,] * Fmsy * fish_sel[p, spawn_seas, n_ages,] * ret_sel[p, spawn_seas, n_ages, ]) +
+                        sum(F_fract_flt[spawn_seas,] * Fmsy * fish_sel[p, spawn_seas, n_ages,] * (1 - ret_sel[p, spawn_seas, n_ages, ]) * dmr[spawn_seas, ])
+                      ))
   }
 
   # Get effective SB after straying
@@ -865,32 +1009,113 @@ single_region_BH_Fmsy <- function(pars, data) {
   return(obj_fun)
 }
 
-#' Compute global Beverton-Holt Fmsy for a spatially explicit single-population model
+#' Compute Beverton-Holt Fmsy for a spatially explicit model
 #'
-#' Finds a single \eqn{F_{MSY}} that is applied uniformly across all regions
-#' by maximising total equilibrium yield under a Beverton-Holt stock-recruit
-#' relationship. Cohorts are tracked spatially across regions and seasons under
-#' movement. Only valid for single-population models (\code{n_pop = 1});
-#' multi-population models should use \code{\link{local_BH_Fmsy_multipop}}.
+#' Calculates \eqn{F_{MSY}} by maximising equilibrium yield under a
+#' Beverton-Holt stock-recruit relationship. Yield is computed from
+#' spawning biomass per recruit (\eqn{\phi_F}), the BH equilibrium
+#' recruitment formula, and catch-at-age integrated across all regions,
+#' seasons, and movement transitions. Yield includes only landings from
+#' fleets where \code{is_discard_fleet == 0}; discard-only fleets
+#' contribute to total mortality but not to the yield being maximised.
 #'
-#' The plus-group is solved analytically using
-#' \code{\link{build_plus_group_T}} and \code{\link{solve_plus_group}}.
+#' Supports multi-region, single-population models with seasonal movement.
+#' Straying is not included here (use \code{single_region_BH_Fmsy} for
+#' multi-population non-spatial models).
+#'
+#' @details
+#' **Fishing mortality decomposition**
+#'
+#' Fishing mortality at age is split into:
+#'
+#' - retained fishing mortality
+#'   \code{F_ret = F * selectivity * retention}
+#'
+#' - discard fishing mortality (dead discards only)
+#'   \code{F_disc = F * selectivity * (1 - retention) * dmr}
+#'
+#' where \code{dmr} is the discard mortality rate (fraction of discarded fish
+#' that die). Only the dead fraction contributes to total instantaneous
+#' mortality \code{Z}.
+#'
+#' The total mortality used for survival is:
+#'
+#' \code{Z = M + F_ret + F_disc}
+#'
+#' This formulation assumes:
+#'
+#' - retained fish always die,
+#' - only a fraction \code{dmr} of discarded fish die,
+#' - the surviving fraction \code{(1 - dmr)} of discards remains in the
+#'   population and continues aging, moving, and contributing to spawning
+#'   biomass.
+#'
+#' Landed yield used in the objective function is computed via the Baranov
+#' catch equation using only the landed fraction of fishing mortality
+#' (excluding fleets where \code{is_discard_fleet == 1}). The discard
+#' fleet's F remains in the Z denominator, so the partitioning correctly
+#' accounts for competition between landing and discard mortality sources.
 #'
 #' @param pars Named list of RTMB parameters. Must contain:
 #'   \describe{
 #'     \item{\code{log_Fmsy}}{Log-scale trial \eqn{F_{MSY}}.}
 #'   }
-#' @param data Named list of RTMB data. Must contain all spatial fields
-#'   required by \code{\link{global_SPR}} (excluding \code{SPR_x} and
-#'   \code{stray_rate}) plus:
+#'
+#' @param data Named list of RTMB data. Must contain:
 #'   \describe{
-#'     \item{\code{h}}{Numeric scalar. Beverton-Holt steepness.}
-#'     \item{\code{R0}}{Numeric scalar. Unfished equilibrium recruitment.}
-#'     \item{\code{rec_region_prop}}{Numeric vector \code{[n_regions]}.
-#'       Proportion of annual recruitment entering each region.}
-#'     \item{\code{rec_seas_prop}}{Numeric vector \code{[n_seas]}. Seasonal
-#'       recruitment proportions (no population dimension for single-pop).}
-#'     \item{\code{sex_ratio_f}}{Numeric scalar or vector. Female sex ratio.}
+#'     \item{\code{n_regions}}{Integer. Number of spatial regions.}
+#'     \item{\code{n_ages}}{Integer. Number of age classes.}
+#'     \item{\code{n_seas}}{Integer. Number of seasons.}
+#'     \item{\code{seasdur}}{Numeric vector \code{[n_seas]}. Season durations.}
+#'     \item{\code{spawn_seas}}{Integer. Index of the spawning season.}
+#'     \item{\code{t_spawn}}{Numeric. Mid-season spawning timing correction.}
+#'
+#'     \item{\code{F_fract_flt}}{Numeric array
+#'       \code{[n_regions, n_seas, n_fish_fleets]}. Fleet F fractions by region.}
+#'
+#'     \item{\code{fish_sel}}{Numeric array
+#'       \code{[1, n_regions, n_seas, n_ages, n_fish_fleets]}.
+#'       Fishery selectivity at age for females.}
+#'
+#'     \item{\code{ret_sel}}{Numeric array
+#'       \code{[1, n_regions, n_seas, n_ages, n_fish_fleets]}.
+#'       Retention selectivity (fraction of selected fish retained).}
+#'
+#'     \item{\code{dmr}}{Numeric array
+#'       \code{[n_regions, n_seas, n_fish_fleets]}. Discard mortality rate
+#'       (fraction of discarded fish that die).}
+#'
+#'     \item{\code{natmort}}{Numeric array
+#'       \code{[n_regions, n_ages]}. Female natural mortality at age.}
+#'
+#'     \item{\code{WAA}}{Numeric array
+#'       \code{[n_regions, n_seas, n_ages]}. Female weight at age.}
+#'
+#'     \item{\code{MatAA}}{Numeric array
+#'       \code{[n_regions, n_seas, n_ages]}. Maturity at age.}
+#'
+#'     \item{\code{Movement}}{Numeric array
+#'       \code{[n_regions, n_regions, n_seas, n_ages]}. Seasonal movement
+#'       transition matrices.}
+#'
+#'     \item{\code{rec_region_prop}}{Numeric vector
+#'       \code{[n_regions]}. Proportion of recruitment entering each region.}
+#'
+#'     \item{\code{sex_ratio_f}}{Numeric vector
+#'       \code{[n_regions]}. Female sex ratio at recruitment.}
+#'
+#'     \item{\code{rec_seas_prop}}{Numeric vector
+#'       \code{[n_seas]}. Seasonal recruitment proportions.}
+#'
+#'     \item{\code{h}}{Numeric. Beverton-Holt steepness.}
+#'
+#'     \item{\code{R0}}{Numeric. Unfished equilibrium recruitment.}
+#'
+#'     \item{\code{is_discard_fleet}}{Integer vector
+#'       \code{[n_fish_fleets]}. Indicator for fleets whose catch is excluded
+#'       from landed yield (0 = landing fleet, 1 = discard-only fleet). These
+#'       fleets still contribute to total fishing mortality \code{Z} and
+#'       affect population dynamics and spawning biomass.}
 #'   }
 #'
 #' @return Numeric scalar. Negative total equilibrium yield (minimised to
@@ -909,11 +1134,29 @@ global_BH_Fmsy <- function(pars,
   # exponentitate reference points to "estimate"
   Fmsy = exp(log_Fmsy)
 
-  # Helper to get total F by region for a given (age, season)
-  F_by_region <- function(age, seas) {
+  # Helper to get retained F by region for a given (age, season)
+  ret_F_by_region <- function(age, seas) {
     Fr <- numeric(n_regions)
     for (f in seq_len(dim(fish_sel)[length(dim(fish_sel))])) {
-      Fr <- Fr + F_fract_flt[, seas, f] * Fmsy * fish_sel[1, , seas, age, f]
+      Fr <- Fr + F_fract_flt[, seas, f] * Fmsy * fish_sel[1, , seas, age, f] * ret_sel[1 ,, seas, age, f]
+    }
+    Fr
+  }
+
+  # Helper to get discarded F by region for a given (age, season)
+  disc_F_by_region <- function(age, seas) {
+    Fr <- numeric(n_regions)
+    for (f in seq_len(dim(fish_sel)[length(dim(fish_sel))])) {
+      Fr <- Fr + F_fract_flt[, seas, f] * Fmsy * fish_sel[1, , seas, age, f] * (1 - ret_sel[1 ,, seas, age, f]) * dmr[,seas,f]
+    }
+    Fr
+  }
+
+  # get landed F
+  landed_F_by_region <- function(age, seas, is_discard_fleet) {
+    Fr <- numeric(n_regions)
+    for (f in seq_len(dim(fish_sel)[length(dim(fish_sel))])) {
+      if (is_discard_fleet[f] == 0)  Fr <- Fr + F_fract_flt[, seas, f] * Fmsy * fish_sel[1, , seas, age, f] * ret_sel[1,,seas, age, f]
     }
     Fr
   }
@@ -930,9 +1173,11 @@ global_BH_Fmsy <- function(pars,
     for (seas in 1:n_seas) {
 
       # get mortality
-      F_seas = F_by_region(j - 1, seas)
+      ret_F_seas = ret_F_by_region(j - 1, seas)
+      disc_F_seas = disc_F_by_region(j - 1, seas)
+      landed_F_seas = landed_F_by_region(j - 1, seas, is_discard_fleet)
       M_a_seas = natmort[,j - 1] * seasdur[seas]
-      Z_seas = M_a_seas + F_seas
+      Z_seas = M_a_seas + ret_F_seas + disc_F_seas
 
       # extract quantities
       tmp_unfished = Nspr[1,, j - 1]
@@ -955,11 +1200,13 @@ global_BH_Fmsy <- function(pars,
       if (seas == spawn_seas) {
         SB_age[1,, j - 1] = tmp_unfished * WAA[, spawn_seas, j - 1] * MatAA[, spawn_seas, j - 1] * exp(-t_spawn * natmort[, j - 1] * seasdur[seas])
         SB_age[2,, j - 1] = tmp_fished * WAA[, spawn_seas, j - 1] * MatAA[, spawn_seas, j - 1] * exp(-t_spawn *
-                                                                                                       (natmort[, j - 1] * seasdur[seas] + F_by_region(j - 1, seas) ))
+                                                                                                       (natmort[, j - 1] * seasdur[seas] +
+                                                                                                          ret_F_by_region(j - 1, seas) +
+                                                                                                          disc_F_by_region(j - 1, seas) ))
       }
 
       # Catch-at-age (Baranov)
-      CAA[,seas, j - 1] = tmp_fished * (F_seas / Z_seas) * (1 - exp(-Z_seas))
+      CAA[,seas, j - 1] = tmp_fished * (landed_F_seas / Z_seas) * (1 - exp(-Z_seas))
 
       ## Mortality and ageing
       if (seas < n_seas) { # Within season mortality
@@ -980,18 +1227,21 @@ global_BH_Fmsy <- function(pars,
   # Catch-at-age for penultimate age
   for (seas in 1:n_seas) {
     # Compute F and Z for this age/season
-    F_seas = F_by_region(n_ages - 1, seas)
-    Z_seas = natmort[,n_ages - 1] * seasdur[seas] + F_seas
-    CAA[,seas, n_ages - 1] = tmp_fished * (F_seas / Z_seas) * (1 - exp(-Z_seas))
+    ret_F_seas = ret_F_by_region(n_ages - 1, seas)
+    disc_F_seas = disc_F_by_region(n_ages - 1, seas)
+    landed_F_seas = landed_F_by_region(n_ages - 1, seas, is_discard_fleet)
+    Z_seas = natmort[,n_ages - 1] * seasdur[seas] + ret_F_seas + disc_F_seas
+    CAA[,seas, n_ages - 1] = tmp_fished * (landed_F_seas / Z_seas) * (1 - exp(-Z_seas))
   }
 
   # advance into spawning season
   if(spawn_seas > 1) {
     for (seas in 1:(spawn_seas - 1)) {
 
-      F_seas = F_by_region(n_ages - 1, seas)
+      ret_F_seas = ret_F_by_region(n_ages - 1, seas)
+      disc_F_seas = disc_F_by_region(n_ages - 1, seas)
       M_seas = natmort[,n_ages-1] * seasdur[seas]
-      Z_seas = M_seas + F_seas
+      Z_seas = M_seas + ret_F_seas + disc_F_seas
 
       # Apply seasonal movement and mortality
       tmp_unfished = tmp_unfished %*% Movement[,,seas,n_ages-1] * exp(-M_seas)
@@ -1007,13 +1257,13 @@ global_BH_Fmsy <- function(pars,
     exp(-t_spawn * natmort[, n_ages - 1] * seasdur[spawn_seas])
   SB_age[2,, n_ages - 1] = tmp_fished * WAA[, spawn_seas, n_ages - 1] * MatAA[, spawn_seas, n_ages - 1] *
     exp(-t_spawn * (natmort[, n_ages - 1] * seasdur[spawn_seas] +
-                      F_by_region(j - 1, spawn_seas) ))
+                      ret_F_by_region(n_ages - 1, spawn_seas) + disc_F_by_region(n_ages - 1, spawn_seas) ))
 
   # Get fishing mortality for plus group calculations
   F_penult = F_plus = matrix(0, n_regions, n_seas)
   for(seas in 1:n_seas) {
-    F_penult[, seas] = F_by_region(n_ages - 1, seas)
-    F_plus[, seas] = F_by_region(n_ages,     seas)
+    F_penult[, seas] = ret_F_by_region(n_ages - 1, seas) + disc_F_by_region(n_ages - 1, seas)
+    F_plus[, seas] = ret_F_by_region(n_ages, seas) + disc_F_by_region(n_ages, seas)
   }
 
   ## Plus group analytical solution
@@ -1039,9 +1289,11 @@ global_BH_Fmsy <- function(pars,
 
   # Catch-at-age for plus group
   for (seas in 1:n_seas) {
-    F_seas = F_plus[seas, ]
-    Z_seas = natmort[,n_ages] * seasdur[seas] + F_seas
-    CAA[,seas, n_ages] = tmp_fished * (F_seas / Z_seas) * (1 - exp(-Z_seas))
+    ret_F_seas = ret_F_by_region(n_ages, seas)
+    disc_F_seas = disc_F_by_region(n_ages, seas)
+    landed_F_seas = landed_F_by_region(n_ages, seas, is_discard_fleet)
+    Z_seas = natmort[,n_ages] * seasdur[seas] + ret_F_seas + disc_F_seas
+    CAA[,seas, n_ages] = tmp_fished * (landed_F_seas / Z_seas) * (1 - exp(-Z_seas))
   }
 
 
@@ -1050,8 +1302,9 @@ global_BH_Fmsy <- function(pars,
 
       # get mortality
       M_seas = natmort[,n_ages] * seasdur[seas]
-      F_seas = rowSums(F_fract_flt[,seas,,drop = F] * Fmsy * fish_sel[1,,seas,n_ages,,drop = F])
-      Z_seas = F_seas + M_seas
+      ret_F_seas = ret_F_by_region(n_ages, seas)
+      disc_F_seas = disc_F_by_region(n_ages, seas)
+      Z_seas = ret_F_seas + M_seas + disc_F_seas
 
       # Apply seasonal movement and mortality
       tmp_unfished = tmp_unfished %*% Movement[,,seas,n_ages] * exp(-M_seas)
@@ -1067,7 +1320,7 @@ global_BH_Fmsy <- function(pars,
     exp(-t_spawn * natmort[, n_ages] * seasdur[spawn_seas])
   SB_age[2,, n_ages] = tmp_fished * WAA[, spawn_seas, n_ages] * MatAA[, spawn_seas, n_ages] *
     exp(-t_spawn * (natmort[, n_ages] * seasdur[spawn_seas] +
-                      F_by_region(j, spawn_seas) ))
+                      ret_F_by_region(n_ages, spawn_seas) + disc_F_by_region(n_ages, spawn_seas) ))
 
   # Get spawning biomass per recruit to get spawning potential ratio
   SBPR_0 = sum(SB_age[1,,])
@@ -1097,52 +1350,91 @@ global_BH_Fmsy <- function(pars,
   return(obj_fun)
 }
 
-#' Compute local Beverton-Holt Fmsy for a spatially explicit single-population model
+#' Compute region-specific Beverton-Holt Fmsy for a spatially explicit
+#' single-population model
 #'
-#' Finds region-specific \eqn{F_{MSY}} values that jointly maximise total
-#' equilibrium yield across all regions under a spatially explicit
+#' Computes the vector of regional \eqn{F_{MSY}} values that jointly maximise
+#' total equilibrium yield across all regions under a spatially explicit
 #' Beverton-Holt stock-recruit relationship. Unlike \code{\link{global_BH_Fmsy}},
-#' which constrains all regions to a single F, this function allows each region
-#' to have its own optimal fishing mortality.
+#' which constrains all regions to share a single fishing mortality, this
+#' function allows each region to have its own optimal \eqn{F}.
 #'
-#' Cohorts originating from each region are tracked separately through
-#' movement, mortality, and ageing using a \code{[origin x destination]}
-#' per-recruit accounting framework. The equilibrium recruitment vector
-#' \eqn{R_{eq,o}} (recruits by origin region) is solved iteratively via a
-#' Newton-Raphson algorithm that accounts for the full spatial redistribution
-#' of spawning biomass. The plus-group is solved analytically using
-#' \code{\link{build_plus_group_T}} and \code{\link{solve_plus_group}}.
+#' Cohorts originating in each region are tracked separately through seasonal
+#' movement, mortality, and ageing using an \code{[origin, destination]}
+#' per-recruit accounting framework. Spawning biomass per recruit is accumulated
+#' by origin and destination region, and the plus group is solved analytically
+#' using \code{\link{build_plus_group_T}} and \code{\link{solve_plus_group}}.
+#'
+#' Equilibrium recruitment by origin region \eqn{R_{eq,o}} is solved using a
+#' Newton-Raphson algorithm applied to the fixed-point condition that
+#' recruitment produced at each destination region (via the BH relationship
+#' applied to effective SSB) equals the recruitment attributed to that origin.
+#' The Jacobian is derived analytically using the quotient rule and the chain
+#' rule through the spatial redistribution of spawning biomass.
+#'
+#' Yield is computed using only the landed fraction of fishing mortality,
+#' excluding fleets flagged as discard-only via \code{is_discard_fleet}.
+#' Discard-only fleets still contribute to total mortality \code{Z} and
+#' affect population dynamics and spawning biomass.
 #'
 #' @param pars Named list of RTMB parameters. Must contain:
 #'   \describe{
-#'     \item{\code{log_Fmsy}}{Log-scale trial \eqn{F_{MSY}} values, one per
-#'       region (length \code{n_regions}).}
+#'     \item{\code{log_Fmsy}}{Numeric vector \code{[n_regions]}. Log-scale
+#'       trial \eqn{F_{MSY}} values, one per region.}
 #'   }
-#' @param data Named list of RTMB data. Must contain all spatial fields
-#'   required by \code{\link{global_SPR}} (excluding \code{SPR_x},
-#'   \code{stray_rate}, and \code{natal_region}) plus:
+#'
+#' @param data Named list of RTMB data. Must contain all spatial fields required
+#'   by \code{\link{global_SPR}} (excluding \code{SPR_x}, \code{stray_rate},
+#'   and \code{natal_region}) plus:
 #'   \describe{
 #'     \item{\code{h}}{Numeric vector \code{[n_regions]}. Beverton-Holt
 #'       steepness by region.}
-#'     \item{\code{R0}}{Numeric scalar. Total unfished equilibrium
-#'       recruitment.}
+#'     \item{\code{R0}}{Numeric scalar. Total unfished equilibrium recruitment.}
 #'     \item{\code{rec_region_prop}}{Numeric vector \code{[n_regions]}.
 #'       Proportion of annual recruitment entering each region.}
 #'     \item{\code{newton_steps}}{Integer. Number of Newton-Raphson iterations
 #'       used to solve for equilibrium recruitment by origin region.}
+#'     \item{\code{is_discard_fleet}}{Integer vector \code{[n_fish_fleets]}.
+#'       Indicator for fleets whose catch is excluded from landed yield
+#'       (0 = landing fleet, 1 = discard-only fleet). These fleets still
+#'       contribute to total fishing mortality \code{Z} and affect population
+#'       dynamics and spawning biomass.}
 #'   }
 #'
-#' @return Numeric scalar. Negative total equilibrium yield across all regions
-#'   (minimised to find the vector of regional \eqn{F_{MSY}} values).
+#' @return Numeric scalar. Negative total equilibrium yield across all regions.
+#'   This is minimised to obtain the vector of regional \eqn{F_{MSY}} values.
 #'
 #' @details
-#' The Newton-Raphson solver finds the origin-region recruitment vector
-#' \eqn{R_{eq,o}} satisfying the fixed-point condition that recruitment
-#' produced at each destination region (via the BH relationship applied to
-#' effective SSB) equals the recruitment attributed to that origin region.
-#' The Jacobian is derived analytically from the quotient rule applied to the
-#' BH formula and the chain rule through the spatial redistribution of SSB.
+#' Fishing mortality is decomposed into retained and discarded components:
 #'
+#' \itemize{
+#'   \item Retained fishing mortality:
+#'     \deqn{F^{\mathrm{ret}}_{r,a,s,f} = F_{MSY,r} \, F_{\mathrm{fract},r,s,f} \,
+#'           \mathrm{sel}_{r,a,s,f} \, \mathrm{ret}_{r,a,s,f}}
+#'
+#'   \item Discard fishing mortality (dead discards only):
+#'     \deqn{F^{\mathrm{disc}}_{r,a,s,f} =
+#'           F_{MSY,r} \, F_{\mathrm{fract},r,s,f} \,
+#'           \mathrm{sel}_{r,a,s,f} \, (1 - \mathrm{ret}_{r,a,s,f}) \,
+#'           \mathrm{dmr}_{r,s,f}}
+#'
+#'   \item Total instantaneous mortality:
+#'     \deqn{Z_{r,a,s} = M_{r,a} \, \mathrm{seasdur}_s +
+#'           F^{\mathrm{ret}}_{r,a,s} + F^{\mathrm{disc}}_{r,a,s}}
+#' }
+#'
+#' Landed yield used in the objective function excludes catch from fleets
+#' where \code{is_discard_fleet == 1}. The Baranov catch equation partitions
+#' landed F out of total Z, so the discard fleet's contribution to mortality
+#' is properly accounted for in the denominator.
+#'
+#' Seasonal movement is applied using the \code{Movement[origin, dest, seas, age]}
+#' array. Recruitment may move immediately or only after age-1 depending on
+#' \code{do_recruits_move}. Spawning biomass is accumulated at
+#' \code{spawn_seas} with fractional mortality \code{t_spawn}.
+#'
+#' The plus group is solved analytically using the transition matrices produced
+#' by \code{\link{build_plus_group_T}} and the solver \code{\link{solve_plus_group}}.
 #'
 #' @keywords internal
 #' @import RTMB
@@ -1156,11 +1448,29 @@ local_BH_Fmsy_sglpop <- function(pars, data) {
   # exponentitate reference points
   Fmsy = exp(log_Fmsy)
 
-  # helper function to get f by region for a given age and season
-  F_by_region <- function(age, seas) {
+  # helper function to get f by region for a given age and season (retained)
+  ret_F_by_region <- function(age, seas) {
     Fr <- numeric(n_regions)
     for (f in seq_len(dim(fish_sel)[length(dim(fish_sel))])) {
-      Fr <- Fr + F_fract_flt[, seas, f] * Fmsy * fish_sel[1, , seas, age, f]
+      Fr <- Fr + F_fract_flt[, seas, f] * Fmsy * fish_sel[1, , seas, age, f] * ret_sel[1,,seas, age, f]
+    }
+    Fr
+  }
+
+  # helper function to get f by region (discarded)
+  disc_F_by_region <- function(age, seas) {
+    Fr <- numeric(n_regions)
+    for (f in seq_len(dim(fish_sel)[length(dim(fish_sel))])) {
+      Fr <- Fr + F_fract_flt[, seas, f] * Fmsy * fish_sel[1, , seas, age, f] * (1 - ret_sel[1,,seas, age, f]) * dmr[,seas, f]
+    }
+    Fr
+  }
+
+  # get landed F
+  landed_F_by_region <- function(age, seas, is_discard_fleet) {
+    Fr <- numeric(n_regions)
+    for (f in seq_len(dim(fish_sel)[length(dim(fish_sel))])) {
+      if (is_discard_fleet[f] == 0)  Fr <- Fr + F_fract_flt[, seas, f] * Fmsy * fish_sel[1, , seas, age, f] * ret_sel[1,,seas, age, f]
     }
     Fr
   }
@@ -1186,9 +1496,11 @@ local_BH_Fmsy_sglpop <- function(pars, data) {
       for(o in 1:n_regions) {
 
         # get mortality
-        F_seas = F_by_region(j - 1, seas)
+        ret_F_seas = ret_F_by_region(j - 1, seas)
+        disc_F_seas = disc_F_by_region(j - 1, seas)
+        landed_F_seas = landed_F_by_region(j - 1, seas, is_discard_fleet)
         M_seas = natmort[, j - 1] * seasdur[seas]
-        Z_seas = F_seas + M_seas
+        Z_seas = ret_F_seas + M_seas + disc_F_seas
 
         # extract out quantities
         tmp_unfished = Nspr[1, o,, j - 1]; tmp_fished = Nspr[2, o,, j - 1]
@@ -1202,7 +1514,7 @@ local_BH_Fmsy_sglpop <- function(pars, data) {
         ## Movement
         if(do_recruits_move == 1 || (do_recruits_move == 0 && j > 2)) {
           tmp_unfished = as.vector(tmp_unfished %*% Movement[,,seas, j - 1])
-          tmp_fished   = as.vector(tmp_fished   %*% Movement[,,seas, j - 1])
+          tmp_fished   = as.vector(tmp_fished %*% Movement[,,seas, j - 1])
         }
 
         ## Spawning biomass
@@ -1214,7 +1526,7 @@ local_BH_Fmsy_sglpop <- function(pars, data) {
         }
 
         # Catch-at-age (Baranov)
-        CAA[o,, seas, j - 1] = tmp_fished * (F_seas / Z_seas) * (1 - exp(-Z_seas))
+        CAA[o,, seas, j - 1] = tmp_fished * (landed_F_seas / Z_seas) * (1 - exp(-Z_seas))
 
         ## Mortality and ageing
         if(seas < n_seas) { # Within season mortality
@@ -1237,9 +1549,11 @@ local_BH_Fmsy_sglpop <- function(pars, data) {
   for(o in 1:n_regions) {
     # Catch-at-age for penultimate age
     for(seas in 1:n_seas) {
-      F_seas = F_by_region(n_ages - 1, seas)
-      Z_seas = natmort[, n_ages - 1] * seasdur[seas] + F_seas
-      CAA[o,, seas, n_ages - 1] = tmp_fished[o,] * (F_seas / Z_seas) * (1 - exp(-Z_seas))
+      ret_F_seas = ret_F_by_region(n_ages - 1, seas)
+      disc_F_seas = disc_F_by_region(n_ages - 1, seas)
+      landed_F_seas = landed_F_by_region(n_ages - 1, seas, is_discard_fleet)
+      Z_seas = natmort[, n_ages - 1] * seasdur[seas] + ret_F_seas + disc_F_seas
+      CAA[o,, seas, n_ages - 1] = tmp_fished[o,] * (landed_F_seas / Z_seas) * (1 - exp(-Z_seas))
     }
   }
 
@@ -1249,7 +1563,8 @@ local_BH_Fmsy_sglpop <- function(pars, data) {
 
         # get mortality
         M_seas = natmort[, n_ages - 1] * seasdur[seas]
-        F_seas = F_by_region(n_ages - 1, seas)
+        ret_F_seas = ret_F_by_region(n_ages - 1, seas)
+        disc_F_seas = disc_F_by_region(n_ages - 1, seas)
 
         # Apply seasonal movement
         tmp_unfished[o,] = tmp_unfished[o,] %*% Movement[,,seas, n_ages - 1]
@@ -1257,7 +1572,7 @@ local_BH_Fmsy_sglpop <- function(pars, data) {
 
         # Apply seasonal mortality
         tmp_unfished[o,] = tmp_unfished[o,] * exp(-M_seas)
-        tmp_fished[o,]   = tmp_fished[o,]   * exp(-(M_seas + F_seas))
+        tmp_fished[o,]   = tmp_fished[o,]   * exp(-(M_seas + ret_F_seas + disc_F_seas))
 
       } # end seas loop
     } # end o loop
@@ -1275,14 +1590,14 @@ local_BH_Fmsy_sglpop <- function(pars, data) {
     exp(-t_spawn * natmort[, n_ages - 1] * seasdur[spawn_seas])
   SB_age[2,,, n_ages - 1] = tmp_fished_spawn * WAA[, spawn_seas, n_ages - 1] * MatAA[, spawn_seas, n_ages - 1] *
     exp(-t_spawn * (natmort[, n_ages - 1] * seasdur[spawn_seas] +
-                      F_by_region(n_ages - 1, spawn_seas)))
+                      ret_F_by_region(n_ages - 1, spawn_seas) + disc_F_by_region(n_ages - 1, spawn_seas) ))
 
   ## Plus group analytical solution
   # Get fishing mortality for penultimate and plus ages
   F_penult = F_plus = matrix(0, n_regions, n_seas)
   for(seas in 1:n_seas) {
-    F_penult[, seas] = F_by_region(n_ages - 1, seas)
-    F_plus[, seas]   = F_by_region(n_ages,     seas)
+    F_penult[, seas] = ret_F_by_region(n_ages - 1, seas) + disc_F_by_region(n_ages - 1, seas)
+    F_plus[, seas]   = ret_F_by_region(n_ages, seas) + disc_F_by_region(n_ages, seas)
   }
 
   # Build transition matrices
@@ -1312,9 +1627,11 @@ local_BH_Fmsy_sglpop <- function(pars, data) {
   for(o in 1:n_regions) {
     # Catch-at-age for plus group
     for(seas in 1:n_seas) {
-      F_seas = F_plus[, seas]
-      Z_seas = natmort[, n_ages] * seasdur[seas] + F_seas
-      CAA[o,, seas, n_ages] = tmp_fished[o,] * (F_seas / Z_seas) * (1 - exp(-Z_seas))
+      ret_F_seas = ret_F_by_region(n_ages, seas)
+      disc_F_seas = disc_F_by_region(n_ages, seas)
+      landed_F_seas = landed_F_by_region(n_ages, seas, is_discard_fleet)
+      Z_seas = natmort[, n_ages] * seasdur[seas] + ret_F_seas + disc_F_seas
+      CAA[o,, seas, n_ages] = tmp_fished[o,] * (landed_F_seas / Z_seas) * (1 - exp(-Z_seas))
     }
   }
 
@@ -1434,23 +1751,49 @@ local_BH_Fmsy_sglpop <- function(pars, data) {
 
 #' Compute local Beverton-Holt Fmsy for a spatially explicit multi-population model
 #'
-#' Multi-population extension of \code{\link{local_BH_Fmsy_sglpop}}. Finds
-#' region-specific \eqn{F_{MSY}} values that jointly maximise total
-#' equilibrium yield when multiple populations with distinct natal regions,
-#' movement schedules, and Beverton-Holt parameters co-occupy the same spatial
+#' Multi-population extension of \code{\link{local_BH_Fmsy_sglpop}}. Estimates a
+#' vector of region-specific \eqn{F_{MSY}} values that jointly maximise total
+#' equilibrium yield when multiple populations, each with distinct natal regions,
+#' movement schedules, and Beverton-Holt parameters, co-occupy a shared spatial
 #' domain.
 #'
-#' Each population's cohorts are tracked separately using a
-#' \code{[population x origin x destination]} per-recruit accounting
-#' framework. Effective SSB at each population's natal region accumulates
-#' contributions from all source populations scaled by stray rates.
-#' Equilibrium recruitment by population is solved via a Newton-Raphson
-#' algorithm whose Jacobian accounts for cross-population SSB coupling through
-#' straying. The plus-group is solved analytically using
-#' \code{\link{build_plus_group_T}} and \code{\link{solve_plus_group}}.
+#' Cohorts are tracked using a per-recruit framework indexed by
+#' \code{[population x origin x destination x age x season]}. Recruitment is
+#' distributed across seasons (\code{rec_seas_prop}), regions
+#' (\code{rec_region_prop}), and sex (\code{sex_ratio_f}). Initial recruits are
+#' assigned in the first season at age-1, with additional seasonal recruitment
+#' contributions added within the first age class prior to movement and mortality.
 #'
-#' When \code{n_seas = 1}, \code{sgl_seas_spawning_movement} redistributes
-#' fish to natal spawning grounds before SSB is computed.
+#' Movement is applied at each seasonal step using region- and age-specific
+#' transition matrices. Fishing mortality is decomposed into retained and
+#' discarded components, and total mortality is applied continuously within each
+#' season. Catch-at-age is accumulated across fleets, seasons, and regions using
+#' only the landed fraction of fishing mortality (excluding fleets flagged as
+#' discard-only via \code{is_discard_fleet}), while total mortality \code{Z}
+#' includes all fleets.
+#'
+#' Spawning biomass per recruit (SBPR) is computed at the spawning season after
+#' applying movement and partial mortality up to the spawning time
+#' (\code{t_spawn}). For single-season models with multiple populations,
+#' \code{sgl_seas_spawning_movement} redistributes individuals to natal spawning
+#' regions prior to SSB calculation.
+#'
+#' The plus group is solved analytically using
+#' \code{\link{build_plus_group_T}} and \code{\link{solve_plus_group}}, ensuring
+#' a consistent equilibrium solution for the terminal age class.
+#'
+#' Effective spawning biomass at each population's natal region includes
+#' contributions from all populations via straying. Stray contributions are
+#' scaled by \code{stray_rate} and normalised by
+#' \code{n_pop_in_region} to preserve mass balance.
+#'
+#' Equilibrium recruitment by population is obtained via a Newton-Raphson
+#' algorithm that solves the coupled Beverton-Holt system. The Jacobian accounts
+#' for cross-population dependence of spawning biomass induced by straying.
+#'
+#' Total equilibrium yield is computed by integrating catch-at-age over all
+#' populations, regions, and seasons, scaled by equilibrium recruitment and
+#' origin-region proportions.
 #'
 #' @param pars Named list of RTMB parameters. Must contain:
 #'   \describe{
@@ -1461,21 +1804,38 @@ local_BH_Fmsy_sglpop <- function(pars, data) {
 #'   \code{\link{global_SPR}} plus:
 #'   \describe{
 #'     \item{\code{h}}{Numeric array \code{[n_pop, n_regions]}. Beverton-Holt
-#'       steepness; indexed at the natal region via \code{natal_region}.}
+#'       steepness evaluated at each population's natal region.}
 #'     \item{\code{R0}}{Numeric vector \code{[n_pop]}. Unfished equilibrium
 #'       recruitment per population.}
-#'     \item{\code{stray_rate}}{Numeric vector \code{[n_pop]}. Per-population
-#'       stray rate controlling cross-population SSB contributions.}
+#'     \item{\code{stray_rate}}{Numeric vector \code{[n_pop]}. Fraction of
+#'       individuals contributing to non-natal spawning regions.}
 #'     \item{\code{natal_region}}{Integer vector \code{[n_pop]}. Natal region
 #'       index for each population.}
 #'     \item{\code{n_pop_in_region}}{Integer vector \code{[n_regions]}. Number
-#'       of populations per natal region.}
+#'       of populations sharing each natal region (used to normalise straying).}
 #'     \item{\code{newton_steps}}{Integer. Number of Newton-Raphson iterations
-#'       used to solve for equilibrium recruitment by population.}
+#'       used to solve for equilibrium recruitment.}
+#'     \item{\code{is_discard_fleet}}{Integer vector \code{[n_fish_fleets]}.
+#'       Indicator for fleets whose catch is excluded from landed yield
+#'       (0 = landing fleet, 1 = discard-only fleet). These fleets still
+#'       contribute to total fishing mortality \code{Z} and affect population
+#'       dynamics and spawning biomass.}
 #'   }
 #'
-#' @return Numeric scalar. Negative total equilibrium yield across all regions
-#'   (minimised to find the vector of regional \eqn{F_{MSY}} values).
+#' @return Numeric scalar. Negative total equilibrium yield across all regions.
+#'   This objective is minimised to obtain the vector of regional
+#'   \eqn{F_{MSY}} values.
+#'
+#' @details
+#' Recruitment is implemented as a per-recruit process and later scaled by
+#' equilibrium recruitment. Seasonal recruitment proportions are applied within
+#' the first age class, allowing intra-annual timing of recruitment before
+#' movement and mortality are applied.
+#'
+#' The objective function is the negative of total yield, summed across all
+#' populations and regions. Yield includes only landings from fleets where
+#' \code{is_discard_fleet == 0}; discard-only fleets contribute to mortality
+#' but not to the yield being maximised.
 #'
 #' @keywords internal
 #' @import RTMB
@@ -1490,11 +1850,29 @@ local_BH_Fmsy_multipop <- function(pars, data) {
   Fmsy = exp(log_Fmsy)
 
   # helper function to get f by region for a given age and season
-  # helper function to get f by region for a given age and season
-  F_by_region <- function(p, age, seas) {
+  ret_F_by_region <- function(p, age, seas) {
     Fr <- numeric(n_regions)
     for (f in seq_len(dim(fish_sel)[length(dim(fish_sel))])) {
-      Fr <- Fr + F_fract_flt[, seas, f] * Fmsy * fish_sel[p, , seas, age, f]
+      Fr <- Fr + F_fract_flt[, seas, f] * Fmsy * fish_sel[p, , seas, age, f] * ret_sel[p,, seas, age, f]
+    }
+    Fr
+  }
+
+  disc_F_by_region <- function(p, age, seas) {
+    Fr <- numeric(n_regions)
+    for (f in seq_len(dim(fish_sel)[length(dim(fish_sel))])) {
+      Fr <- Fr + F_fract_flt[, seas, f] * Fmsy * fish_sel[p, , seas, age, f] * (1 - ret_sel[p,, seas, age, f]) * dmr[, seas, f]
+    }
+    Fr
+  }
+
+  # get landed F
+  landed_F_by_region <- function(p, age, seas, is_discard_fleet) {
+    Fr <- numeric(n_regions)
+    for (f in seq_len(dim(fish_sel)[length(dim(fish_sel))])) {
+      if (is_discard_fleet[f] == 0) {
+        Fr <- Fr + F_fract_flt[, seas, f] * Fmsy * fish_sel[p, , seas, age, f] * ret_sel[p,, seas, age, f]
+      }
     }
     Fr
   }
@@ -1523,8 +1901,10 @@ local_BH_Fmsy_multipop <- function(pars, data) {
       for(p in 1:n_pop) {
         for(o in 1:n_regions) {
 
-          F_a_seas = F_by_region(p, j -1, seas)
-          Z_a_seas = natmort[p,,j - 1] * seasdur[seas] + F_a_seas
+          ret_F_a_seas = ret_F_by_region(p, j -1, seas)
+          disc_F_a_seas = disc_F_by_region(p, j -1, seas)
+          landed_F_a_seas = landed_F_by_region(p, j - 1, seas, is_discard_fleet)
+          Z_a_seas = natmort[p,,j - 1] * seasdur[seas] + ret_F_a_seas + disc_F_a_seas
 
           # Get temporary values from origin region
           tmp_unfished = Nspr[1,p,o,,j-1]
@@ -1561,22 +1941,22 @@ local_BH_Fmsy_multipop <- function(pars, data) {
                 exp(-(t_spawn * natmort[p,d,j-1] * seasdur[spawn_seas]))
               SB_age[2,p,o,d,j-1] =
                 tmp_fished_spawn[d] * WAA[p,d,spawn_seas,j-1] * MatAA[p,d,spawn_seas,j-1] *
-                exp(-t_spawn * (natmort[p,d,j-1] * seasdur[spawn_seas] + F_a_seas[d]))
+                exp(-t_spawn * (natmort[p,d,j-1] * seasdur[spawn_seas] + ret_F_a_seas[d] + disc_F_a_seas[d] ))
             }
           }
 
           # Compute F and Z for this age/season
-          CAA[p,o,,seas,j-1] = tmp_fished * (F_a_seas / Z_a_seas) * (1 - exp(-Z_a_seas))
+          CAA[p,o,,seas,j-1] = tmp_fished * (landed_F_a_seas / Z_a_seas) * (1 - exp(-Z_a_seas))
 
           # Apply mortality
           if(seas < n_seas) {
             # Within-season mortality, no ageing yet
             Nspr[1,p,o,,j-1] = tmp_unfished * exp(-(natmort[p,,j-1] * seasdur[seas]))
-            Nspr[2,p,o,,j-1] = tmp_fished * exp(-(natmort[p,,j-1] * seasdur[seas] + F_by_region(p, j - 1, seas) ))
+            Nspr[2,p,o,,j-1] = tmp_fished * exp(-( Z_a_seas ))
           } else {
             # Last season: mortality + ageing
             Nspr[1,p,o,,j] = tmp_unfished * exp(-(natmort[p,,j-1] * seasdur[seas]))
-            Nspr[2,p,o,,j] = tmp_fished * exp(-(natmort[p,,j-1] * seasdur[seas] + F_by_region(p, j - 1, seas) ))
+            Nspr[2,p,o,,j] = tmp_fished * exp(-( Z_a_seas ))
           }
 
         } # end o loop
@@ -1594,9 +1974,11 @@ local_BH_Fmsy_multipop <- function(pars, data) {
     for(o in 1:n_regions) {
       # Catch-at-age for penultimate age
       for(seas in 1:n_seas) {
-        F_seas = F_by_region(p, n_ages - 1, seas)
-        Z_seas = natmort[p,, n_ages - 1] * seasdur[seas] + F_seas
-        CAA[p, o,, seas, n_ages - 1] = tmp_fished[o,] * (F_seas / Z_seas) * (1 - exp(-Z_seas))
+        ret_F_seas = ret_F_by_region(p, n_ages - 1, seas)
+        disc_F_seas = disc_F_by_region(p, n_ages - 1, seas)
+        landed_F_seas = landed_F_by_region(p, n_ages - 1, seas, is_discard_fleet)
+        Z_seas = natmort[p,, n_ages - 1] * seasdur[seas] + ret_F_seas + disc_F_seas
+        CAA[p, o,, seas, n_ages - 1] = tmp_fished[o,] * (landed_F_seas / Z_seas) * (1 - exp(-Z_seas))
       }
     }
 
@@ -1606,7 +1988,8 @@ local_BH_Fmsy_multipop <- function(pars, data) {
 
           # get mortality
           M_seas = natmort[p,, n_ages - 1] * seasdur[seas]
-          F_seas = F_by_region(p, n_ages - 1, seas)
+          ret_F_seas = ret_F_by_region(p, n_ages - 1, seas)
+          disc_F_seas = disc_F_by_region(p, n_ages - 1, seas)
 
           # Apply seasonal movement
           tmp_unfished[o,] = tmp_unfished[o,] %*% Movement[p,,,seas, n_ages - 1]
@@ -1614,7 +1997,7 @@ local_BH_Fmsy_multipop <- function(pars, data) {
 
           # Apply seasonal mortality
           tmp_unfished[o,] = tmp_unfished[o,] * exp(-M_seas)
-          tmp_fished[o,]   = tmp_fished[o,]   * exp(-(M_seas + F_seas))
+          tmp_fished[o,]   = tmp_fished[o,]   * exp(-(M_seas + ret_F_seas + disc_F_seas))
 
         } # end seas loop
       } # end o loop
@@ -1641,14 +2024,14 @@ local_BH_Fmsy_multipop <- function(pars, data) {
     SB_age[2, p,,, n_ages - 1] = t(t(tmp_fished_spawn) * WAA[p,, spawn_seas, n_ages - 1] *
                                      MatAA[p,, spawn_seas, n_ages - 1] *
                                      exp(-t_spawn * (natmort[p,, n_ages - 1] * seasdur[spawn_seas] +
-                                                       F_by_region(p, n_ages - 1, spawn_seas))))
+                                                       ret_F_by_region(p, n_ages - 1, spawn_seas) + disc_F_by_region(p, n_ages - 1, spawn_seas) )))
 
     ## Plus group analytical solution
     # Get fishing mortality for penultimate and plus ages
     F_penult = F_plus = matrix(0, n_regions, n_seas)
     for(seas in 1:n_seas) {
-      F_penult[, seas] = F_by_region(p, n_ages - 1, seas)
-      F_plus[, seas]   = F_by_region(p, n_ages,     seas)
+      F_penult[, seas] = ret_F_by_region(p, n_ages - 1, seas) + disc_F_by_region(p, n_ages - 1, seas)
+      F_plus[, seas]   = ret_F_by_region(p, n_ages,     seas) + disc_F_by_region(p, n_ages,     seas)
     }
 
     # Build transition matrices
@@ -1678,9 +2061,11 @@ local_BH_Fmsy_multipop <- function(pars, data) {
     for(o in 1:n_regions) {
       # Catch-at-age for plus group
       for(seas in 1:n_seas) {
-        F_seas = F_plus[, seas]
-        Z_seas = natmort[p,, n_ages] * seasdur[seas] + F_seas
-        CAA[p, o,, seas, n_ages] = tmp_fished[o,] * (F_seas / Z_seas) * (1 - exp(-Z_seas))
+        ret_F_seas = ret_F_by_region(p, n_ages,     seas)
+        disc_F_seas = disc_F_by_region(p, n_ages,     seas)
+        landed_F_seas = landed_F_by_region(p, n_ages, seas, is_discard_fleet)
+        Z_seas = natmort[p,, n_ages] * seasdur[seas] + ret_F_seas + disc_F_seas
+        CAA[p, o,, seas, n_ages] = tmp_fished[o,] * (landed_F_seas / Z_seas) * (1 - exp(-Z_seas))
       }
     }
 
@@ -1898,6 +2283,14 @@ local_BH_Fmsy_multipop <- function(pars, data) {
 #'   iterations used to solve for equilibrium recruitment by origin region
 #'   when \code{what = "local_BH_MSY"}. Increase if convergence is suspect.
 #'   Default = 6.
+#' @param is_discard_fleet Integer vector \code{[n_fish_fleets]}. Indicator
+#'   for fleets whose catch should be excluded from landed yield when
+#'   computing MSY-based reference points (0 = landing fleet, 1 = discard-only
+#'   fleet). These fleets still contribute to total fishing mortality \code{Z}
+#'   and affect population dynamics and spawning biomass. Only used by
+#'   Beverton–Holt MSY methods (\code{"BH_MSY"}, \code{"independent_BH_MSY"},
+#'   \code{"global_BH_MSY"}, \code{"local_BH_MSY"}); ignored for SPR-based
+#'   methods. Default is all zeros (all fleets are landing fleets).
 #'
 #' @return A named list:
 #'   \describe{
@@ -1924,7 +2317,6 @@ local_BH_Fmsy_multipop <- function(pars, data) {
 #' @import RTMB
 #' @export Get_Reference_Points
 #' @family Reference Points and Projections
-
 Get_Reference_Points <- function(data,
                                  rep,
                                  SPR_x = NULL,
@@ -1935,8 +2327,11 @@ Get_Reference_Points <- function(data,
                                  type,
                                  what,
                                  n_avg_yrs = 1,
-                                 local_bh_msy_newton_steps = 6
-) {
+                                 local_bh_msy_newton_steps = 6,
+                                 is_discard_fleet = array(0, dim = data$n_fish_fleets)
+                                 ) {
+
+  if(all(is_discard_fleet == 1)) stop("is_discard_fleet is all 1's! At least one fleet needs to be a retention fleet (0).")
 
   # Dimensions
   n_years <- length(data$years) # number of years
@@ -1977,8 +2372,11 @@ Get_Reference_Points <- function(data,
 
     # setup shared data lists
     data_list$F_fract_flt <- array(rep$Fmort[1,n_years,,] / sum(rep$Fmort[1,n_years,,]), dim = c(data$n_seas, data$n_fish_fleets)) # fishing mortality fraction
+    data_list$dmr <- array(rep$dmr[1,n_years,,], dim = c(data$n_seas, data$n_fish_fleets)) # discard mortality rate (fraction)
     fish_sel_avg <- apply(rep$fish_sel[, 1, avg_yrs, , , 1, , drop = FALSE], c(1, 4, 5, 7), mean)
     data_list$fish_sel <- array(fish_sel_avg, dim = c(n_pop, n_seas, n_ages, data$n_fish_fleets)) # get female selectivity for all fleets
+    ret_sel_avg <- apply(rep$ret_sel[, 1, avg_yrs, , , 1, , drop = FALSE], c(1, 4, 5, 7), mean)
+    data_list$ret_sel <- array(ret_sel_avg, dim = c(n_pop, n_seas, n_ages, data$n_fish_fleets)) # get female retention selectivity for all fleets
     natmort_avg <- apply(rep$natmort[,1,avg_yrs,,1,drop = FALSE], c(1,4), mean)
     data_list$natmort <- natmort_avg # get female natural mortality
     WAA_avg <- apply(data$WAA[,1,avg_yrs,,,1,drop = FALSE], c(1,4,5), mean)
@@ -2032,6 +2430,7 @@ Get_Reference_Points <- function(data,
       # extract out beverton-holt parameters
       data_list$h <- array(rep$h_trans[,1], dim = n_pop) # steepness
       data_list$R0 <- array(rep$R0, dim = n_pop) # unfished recruitment
+      data_list$is_discard_fleet <- is_discard_fleet # discarding
 
       par_list <- list() # set up parameter list
       par_list$log_Fmsy <- log(0.1) # Fmsy starting value
@@ -2088,8 +2487,11 @@ Get_Reference_Points <- function(data,
 
         # create shared data lists
         data_list$F_fract_flt <- array(rep$Fmort[r,n_years,,] / sum(rep$Fmort[r,n_years,,]), dim = c(data$n_seas, data$n_fish_fleets)) # get fleet F fraction to derive population level selectivity
+        data_list$dmr <- array(rep$dmr[r,n_years,,], dim = c(data$n_seas, data$n_fish_fleets)) # get dmr
         fish_sel_avg <- apply(rep$fish_sel[, r, avg_yrs, , , 1, , drop = FALSE], c(1, 4, 5, 7), mean)
-        data_list$fish_sel <- array(fish_sel_avg, dim = c(n_pop, n_seas, n_ages, data$n_fish_fleets)) # get female selectivity for all fleets
+        data_list$fish_sel <- array(fish_sel_avg, dim = c(n_pop, n_seas, n_ages, data$n_fish_fleets)) # get female total selectivity for all fleets
+        ret_sel_avg <- apply(rep$ret_sel[, r, avg_yrs, , , 1, , drop = FALSE], c(1, 4, 5, 7), mean)
+        data_list$ret_sel <- array(ret_sel_avg, dim = c(n_pop, n_seas, n_ages, data$n_fish_fleets)) # get female retained selectivity for all fleets
         natmort_avg <- apply(rep$natmort[,r,avg_yrs,,1,drop = FALSE], c(1,4), mean)
         data_list$natmort <- array(natmort_avg, dim = c(n_pop, n_ages)) # get female natural mortality
         WAA_avg <- apply(data$WAA[,r,avg_yrs,,,1,drop = FALSE], c(1,4,5), mean)
@@ -2143,6 +2545,7 @@ Get_Reference_Points <- function(data,
           # Beverton Holt parameters
           data_list$h <- array(rep$h_trans[,r], dim = n_pop) # steepness
           data_list$R0 <- array(rep$R0 * rep$rec_region_prop[,r], dim = n_pop) # unfished recruitment by region
+          data_list$is_discard_fleet <- is_discard_fleet # discarding
 
           par_list <- list() # set up parameter list
           par_list$log_Fmsy <- log(0.1) # Fmsy starting value
@@ -2190,8 +2593,11 @@ Get_Reference_Points <- function(data,
       terminal_F <- array(rep$Fmort[,n_years,,], dim = dim(fratio))
       for(r in 1:n_regions) for(seas in 1:data$n_seas) for(f in 1:data$n_fish_fleets) fratio[r,seas,f] <- terminal_F[r,seas,f] / sum(terminal_F[r,,])
       data_list$F_fract_flt <- fratio
+      data_list$dmr <- array(rep$dmr[,n_years,,], dim = c(data$n_regions, data$n_seas, data$n_fish_fleets)) # get dmr
       fish_sel_avg <- apply(rep$fish_sel[, , avg_yrs, , , 1, , drop = FALSE], c(1, 2, 4, 5, 7), mean)
-      data_list$fish_sel <- array(fish_sel_avg, dim = c(n_pop, n_regions, n_seas, n_ages, data$n_fish_fleets)) # get female selectivity for all fleets
+      data_list$fish_sel <- array(fish_sel_avg, dim = c(n_pop, n_regions, n_seas, n_ages, data$n_fish_fleets)) # get female total selectivity for all fleets
+      ret_sel_avg <- apply(rep$ret_sel[, , avg_yrs, , , 1, , drop = FALSE], c(1, 2, 4, 5, 7), mean)
+      data_list$ret_sel <- array(ret_sel_avg, dim = c(n_pop, n_regions, n_seas, n_ages, data$n_fish_fleets)) # get female retained selectivity for all fleets
       natmort_avg <- apply(rep$natmort[,,avg_yrs,,1,drop = FALSE], c(1,2,4), mean)
       data_list$natmort <- array(natmort_avg, dim = c(n_pop, n_regions, n_ages)) # get female natural mortality
       WAA_avg <- apply(data$WAA[,,avg_yrs,,,1,drop = FALSE], c(1, 2, 4, 5), mean)
@@ -2263,8 +2669,11 @@ Get_Reference_Points <- function(data,
       terminal_F <- array(rep$Fmort[,n_years,,], dim = dim(fratio))
       for(r in 1:n_regions) for(seas in 1:data$n_seas) for(f in 1:data$n_fish_fleets) fratio[r,seas,f] <- terminal_F[r,seas,f] / sum(terminal_F[r,,])
       data_list$F_fract_flt <- fratio
+      data_list$dmr <- array(rep$dmr[,n_years,,], dim = c(data$n_regions, data$n_seas, data$n_fish_fleets)) # get dmr
       fish_sel_avg <- apply(rep$fish_sel[, , avg_yrs, , , 1, , drop = FALSE], c(1, 2, 4, 5, 7), mean)
-      data_list$fish_sel <- array(fish_sel_avg, dim = c(n_pop, n_regions, n_seas, n_ages, data$n_fish_fleets)) # get female selectivity for all fleets
+      data_list$fish_sel <- array(fish_sel_avg, dim = c(n_pop, n_regions, n_seas, n_ages, data$n_fish_fleets)) # get female total selectivity for all fleets
+      ret_sel_avg <- apply(rep$ret_sel[, , avg_yrs, , , 1, , drop = FALSE], c(1, 2, 4, 5, 7), mean)
+      data_list$ret_sel <- array(ret_sel_avg, dim = c(n_pop, n_regions, n_seas, n_ages, data$n_fish_fleets)) # get female retained selectivity for all fleets
       natmort_avg <- apply(rep$natmort[1,,avg_yrs,,1,drop = FALSE], c(2,4), mean)
       data_list$natmort <- array(natmort_avg, dim = c(n_regions, n_ages)) # get female natural mortality
       WAA_avg <- apply(data$WAA[,,avg_yrs,,,1,drop = FALSE], c(2, 4, 5), mean)
@@ -2273,6 +2682,7 @@ Get_Reference_Points <- function(data,
       data_list$MatAA <- array(MatAA_avg, dim = c(n_regions, data$n_seas, n_ages)) # maturity at age for females
       Movement_avg <- apply(rep$Movement[1,,,avg_yrs,,,1,drop = FALSE], c(1,2,3,5,6), mean)
       data_list$Movement <- array(Movement_avg, dim = c(n_regions, n_regions, n_seas, n_ages)) # Movement
+      data_list$is_discard_fleet <- is_discard_fleet
 
       # Recruitment options
       data_list$do_recruits_move <- data$do_recruits_move # whether recruits move
@@ -2304,8 +2714,11 @@ Get_Reference_Points <- function(data,
       terminal_F <- array(rep$Fmort[,n_years,,], dim = dim(fratio))
       for(r in 1:n_regions) for(seas in 1:data$n_seas) for(f in 1:data$n_fish_fleets) fratio[r,seas,f] <- terminal_F[r,seas,f] / sum(terminal_F[r,,])
       data_list$F_fract_flt <- fratio
+      data_list$dmr <- array(rep$dmr[,n_years,,], dim = c(data$n_regions, data$n_seas, data$n_fish_fleets)) # get dmr
       fish_sel_avg <- apply(rep$fish_sel[, , avg_yrs, , , 1, , drop = FALSE], c(1, 2, 4, 5, 7), mean)
-      data_list$fish_sel <- array(fish_sel_avg, dim = c(n_pop, n_regions, n_seas, n_ages, data$n_fish_fleets)) # get female selectivity for all fleets
+      data_list$fish_sel <- array(fish_sel_avg, dim = c(n_pop, n_regions, n_seas, n_ages, data$n_fish_fleets)) # get female total selectivity for all fleets
+      ret_sel_avg <- apply(rep$ret_sel[, , avg_yrs, , , 1, , drop = FALSE], c(1, 2, 4, 5, 7), mean)
+      data_list$ret_sel <- array(ret_sel_avg, dim = c(n_pop, n_regions, n_seas, n_ages, data$n_fish_fleets)) # get female retained selectivity for all fleets
       natmort_avg <- apply(rep$natmort[,,avg_yrs,,1,drop = FALSE], c(1,2,4), mean)
       data_list$natmort <- array(natmort_avg, dim = c(if(n_pop > 1) n_pop else NULL, n_regions, n_ages)) # get female natural mortality
       WAA_avg <- apply(data$WAA[,,avg_yrs,,,1,drop = FALSE], c(1, 2, 4, 5), mean)
@@ -2314,6 +2727,7 @@ Get_Reference_Points <- function(data,
       data_list$MatAA <- array(MatAA_avg, dim = c(if(n_pop > 1) n_pop else NULL, n_regions, data$n_seas, n_ages)) # maturity at age for females
       Movement_avg <- apply(rep$Movement[,,,avg_yrs,,,1,drop = FALSE], c(1,2,3,5,6), mean)
       data_list$Movement <- array(Movement_avg, dim = c(if(n_pop > 1) n_pop else NULL, n_regions, n_regions, n_seas, n_ages)) # Movement
+      data_list$is_discard_fleet <- is_discard_fleet
 
       # Recruitment options
       data_list$do_recruits_move <- data$do_recruits_move # whether recruits move

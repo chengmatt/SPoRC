@@ -56,6 +56,10 @@ test_that("Multi Region Global SPR Reference Points Sablefish Model Converges to
   fish_sel <- array(0, dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets))
   for(y in 1:n_proj_yrs) fish_sel[,,y,,,,] <- mlt_rg_sable_rep$fish_sel[,,length(mlt_rg_sable_data$years),,,,]
 
+  # retained Selectivity
+  ret_sel <- array(0, dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets))
+  for(y in 1:n_proj_yrs) ret_sel[,,y,,,,] <- mlt_rg_sable_rep$ret_sel[,,length(mlt_rg_sable_data$years),,,,]
+
   # Movement
   moveslice <- mlt_rg_sable_rep$Movement[,,,length(mlt_rg_sable_data$years),,,]
   tmp <- array(rep(moveslice, n_proj_yrs), dim = c(n_pop, n_regions, n_regions, n_seas, n_ages, n_sexes, n_proj_yrs))
@@ -63,6 +67,9 @@ test_that("Multi Region Global SPR Reference Points Sablefish Model Converges to
 
   # Fishing Mortality
   terminal_F <- array(mlt_rg_sable_rep$Fmort[,length(mlt_rg_sable_data$years),,], dim = c(n_regions, n_seas, n_fish_fleets)) # terminal F
+
+  # dmr
+  terminal_dmr <- array(mlt_rg_sable_rep$dmr[,length(mlt_rg_sable_data$years),,], dim = c(n_regions, n_seas, n_fish_fleets)) # terminal dmr
 
   # Natural Mortality
   natmort_slice <- mlt_rg_sable_rep$natmort[,, length(mlt_rg_sable_data$years), , ]  # [n_pop, n_regions, n_ages, n_sexes]
@@ -87,12 +94,14 @@ test_that("Multi Region Global SPR Reference Points Sablefish Model Converges to
                                   terminal_NAA = terminal_NAA,
                                   terminal_NAA0 = terminal_NAA0,
                                   terminal_F = terminal_F,
+                                  dmr = terminal_dmr,
                                   natmort = natmort,
                                   WAA = WAA,
                                   n_pop = n_pop,
                                   WAA_fish = WAA_fish,
                                   MatAA = MatAA,
                                   fish_sel = fish_sel,
+                                  ret_sel = ret_sel,
                                   Movement = Movement,
                                   f_ref_pt = array(ref_pt$f_ref_pt, dim = c(n_regions, n_proj_yrs)),
                                   b_ref_pt = array(ref_pt$b_ref_pt, dim = c(n_pop, n_regions, n_proj_yrs)),
@@ -104,7 +113,7 @@ test_that("Multi Region Global SPR Reference Points Sablefish Model Converges to
 
 
   # Check if F equilibriates back at F40%
-  expect_equal(out$proj_F[,n_proj_yrs], ref_pt$f_ref_pt, tolerance = 0)
+  expect_equal(round(as.numeric(out$proj_F[,n_proj_yrs]), 10), round(as.numeric(ref_pt$f_ref_pt), 10), tolerance = 0)
 
   # Check if SSB equilibriates at Bx%
   expect_equal(round(as.numeric(out$proj_SSB[1,,n_proj_yrs]), 10),

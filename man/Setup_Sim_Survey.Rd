@@ -5,12 +5,12 @@
 \title{Set up survey parameterisation for the operating model simulation}
 \usage{
 Setup_Sim_Survey(
+  sim_list,
+  srv_sel_input,
   ObsSrvIdx_SE = array(0.2, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
     sim_list$n_srv_fleets)),
   ObsSrvIdx_pop_SE = array(0.2, dim = c(sim_list$n_pop, sim_list$n_regions,
     sim_list$n_yrs, sim_list$n_seas, sim_list$n_srv_fleets)),
-  sim_list,
-  srv_sel_input,
   srv_q_input = array(1, dim = c(sim_list$n_regions, sim_list$n_yrs,
     sim_list$n_srv_fleets, sim_list$n_sims)),
   t_srv = array(1, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_srv_fleets)),
@@ -35,7 +35,7 @@ Setup_Sim_Survey(
   SrvLen_corr_pars = array(0.01, dim = c(sim_list$n_regions, sim_list$n_sexes,
     sim_list$n_srv_fleets, 2)),
   SrvLenComps_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_srv_fleets)),
-  pop_comp_srvage_like = rep(0, sim_list$n_srv_fleets),
+  comp_srvage_pop_like = rep(0, sim_list$n_srv_fleets),
   ISS_SrvAgeComps_pop = array(100, dim = c(sim_list$n_pop, sim_list$n_regions,
     sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes, sim_list$n_srv_fleets,
     sim_list$n_sims)),
@@ -45,8 +45,8 @@ Setup_Sim_Survey(
   SrvAge_pop_corr_pars = array(0.01, dim = c(sim_list$n_pop, sim_list$n_regions,
     sim_list$n_sexes, sim_list$n_srv_fleets, 2)),
   SrvAge_pop_corr_pars_agg = array(0.01, dim = c(sim_list$n_pop, sim_list$n_srv_fleets)),
-  pop_SrvAgeComps_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_srv_fleets)),
-  pop_comp_srvlen_like = rep(0, sim_list$n_srv_fleets),
+  SrvAgeComps_pop_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_srv_fleets)),
+  comp_srvlen_pop_like = rep(0, sim_list$n_srv_fleets),
   ISS_SrvLenComps_pop = array(100, dim = c(sim_list$n_pop, sim_list$n_regions,
     sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes, sim_list$n_srv_fleets,
     sim_list$n_sims)),
@@ -56,21 +56,21 @@ Setup_Sim_Survey(
   SrvLen_pop_corr_pars = array(0.01, dim = c(sim_list$n_pop, sim_list$n_regions,
     sim_list$n_sexes, sim_list$n_srv_fleets, 2)),
   SrvLen_pop_corr_pars_agg = array(0.01, dim = c(sim_list$n_pop, sim_list$n_srv_fleets)),
-  pop_SrvLenComps_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_srv_fleets))
+  SrvLenComps_pop_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_srv_fleets))
 )
 }
 \arguments{
-\item{ObsSrvIdx_SE}{Lognormal observation error SD for survey index,
-array \code{[n_regions × n_yrs × n_seas × n_srv_fleets]}. Default: 0.2.}
-
-\item{ObsSrvIdx_pop_SE}{As above, but for population-specific indices,
-array \code{[n_pop × n_regions × n_yrs × n_seas × n_srv_fleets]}.}
-
 \item{sim_list}{Simulation list returned by \code{\link{Setup_Sim_Dim}}.}
 
 \item{srv_sel_input}{Survey selectivity array
 \code{[n_pop x n_regions x n_yrs x n_seas × n_ages × n_sexes × n_srv_fleets × n_sims]}.
 No default; must be provided.}
+
+\item{ObsSrvIdx_SE}{Lognormal observation error SD for survey index,
+array \code{[n_regions × n_yrs × n_seas × n_srv_fleets]}. Default: 0.2.}
+
+\item{ObsSrvIdx_pop_SE}{As above, but for population-specific indices,
+array \code{[n_pop × n_regions × n_yrs × n_seas × n_srv_fleets]}.}
 
 \item{srv_q_input}{Survey catchability array
 \code{[n_regions × n_yrs × n_srv_fleets × n_sims]}. Default: 1 for all cells.}
@@ -129,7 +129,7 @@ correlation parameters for length comps. Default: 0.01.}
 \item{SrvLenComps_Type}{Array \code{[n_yrs × n_srv_fleets]} specifying
 length composition structure. Default: 2.}
 
-\item{pop_comp_srvage_like}{Integer or character vector \code{[n_srv_fleets]}
+\item{comp_srvage_pop_like}{Integer or character vector \code{[n_srv_fleets]}
 specifying likelihood for population-specific survey age compositions. Default: all 0.}
 
 \item{ISS_SrvAgeComps_pop}{Array \code{[n_pop × n_regions × n_yrs × n_seas × n_sexes × n_srv_fleets × n_sims]}
@@ -147,10 +147,10 @@ correlation parameters (age AR1, sex) for population-specific age compositions. 
 \item{SrvAge_pop_corr_pars_agg}{Array \code{[n_pop × n_srv_fleets]} for
 aggregated population-specific age correlations. Default: 0.01.}
 
-\item{pop_SrvAgeComps_Type}{Array \code{[n_yrs × n_srv_fleets]} specifying
+\item{SrvAgeComps_pop_Type}{Array \code{[n_yrs × n_srv_fleets]} specifying
 population-specific age composition structure. Default: 2.}
 
-\item{pop_comp_srvlen_like}{Integer or character vector \code{[n_srv_fleets]}
+\item{comp_srvlen_pop_like}{Integer or character vector \code{[n_srv_fleets]}
 specifying likelihood for population-specific survey length compositions. Default: all 0.}
 
 \item{ISS_SrvLenComps_pop}{Array \code{[n_pop × n_regions × n_yrs × n_seas × n_sexes × n_srv_fleets × n_sims]}
@@ -168,7 +168,7 @@ correlation parameters for population-specific length comps. Default: 0.01.}
 \item{SrvLen_pop_corr_pars_agg}{Array \code{[n_pop × n_srv_fleets]} for
 aggregated population-specific length correlations. Default: 0.01.}
 
-\item{pop_SrvLenComps_Type}{Array \code{[n_yrs × n_srv_fleets]} specifying
+\item{SrvLenComps_pop_Type}{Array \code{[n_yrs × n_srv_fleets]} specifying
 population-specific length composition structure. Default: 2.}
 }
 \value{
@@ -179,11 +179,11 @@ The input \code{sim_list} with survey-related fields appended:
   \code{$SrvAge_corr_pars}, \code{$SrvAgeComps_Type}, \code{$comp_srvlen_like},
   \code{$ISS_SrvLenComps}, \code{$ln_SrvLen_theta}, \code{$ln_SrvLen_theta_agg},
   \code{$SrvLen_corr_pars_agg}, \code{$SrvLen_corr_pars}, \code{$SrvLenComps_Type},
-  \code{$pop_comp_srvage_like}, \code{$ISS_SrvAgeComps_pop}, \code{$ln_SrvAge_pop_theta},
+  \code{$comp_srvage_pop_like}, \code{$ISS_SrvAgeComps_pop}, \code{$ln_SrvAge_pop_theta},
   \code{$ln_SrvAge_pop_theta_agg}, \code{$SrvAge_pop_corr_pars_agg}, \code{$SrvAge_pop_corr_pars},
-  \code{$pop_SrvAgeComps_Type}, \code{$pop_comp_srvlen_like}, \code{$ISS_SrvLenComps_pop},
+  \code{$SrvAgeComps_pop_Type}, \code{$comp_srvlen_pop_like}, \code{$ISS_SrvLenComps_pop},
   \code{$ln_SrvLen_pop_theta}, \code{$ln_SrvLen_pop_theta_agg}, \code{$SrvLen_pop_corr_pars_agg},
-  \code{$SrvLen_pop_corr_pars}, \code{$pop_SrvLenComps_Type}. Character-coded
+  \code{$SrvLen_pop_corr_pars}, \code{$SrvLenComps_pop_Type}. Character-coded
   inputs are converted to integer equivalents before storage.
 }
 \description{

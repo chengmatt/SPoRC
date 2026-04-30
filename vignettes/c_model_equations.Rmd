@@ -56,7 +56,7 @@ population using the following process:
 
 $$N_{p,r,a,s}^{'} = \mu_p^{\text{Rec}}\exp\left( - (a - 1) \cdot Z_{p,r,a,s}^{'} \right)\psi_{p,r,y = 1,s}\zeta_{p,r},\quad\text{for }2 \leq a < a_{+}$$
 
-$$Z_{p,r,a,s}^{'} = \text{Natmort}_{p,r,y = 1,a,s} + \sum_{f=1}^{n_f} \text{Fmort}^{\text{InitProp}} \cdot \exp\left(\mu_{r,\tau,f}^{\text{Fsh}}\right) \cdot \mathbb{1}_{r,\tau,f}^{\text{Catch}} \cdot \text{Sel}_{p,r,y = 1,\tau,a,s,f}^{\text{Fsh}}$$
+$$Z_{p,r,a,s}^{'} = \text{Natmort}_{p,r,y = 1,a,s} + \sum_{f=1}^{n_f} \text{Fmort}_{r,\tau,f}^{\text{InitProp}} \cdot \exp\left(\mu_{r,\tau,f}^{\text{Fsh}}\right) \cdot \mathbb{1}_{r,\tau,f}^{\text{Catch}} \cdot \left[\text{Sel}_{p,r,y=1,\tau,a,s,f}^{\text{Fsh}} \cdot \text{Sel}_{p,r,y=1,\tau,a,s,f}^{\text{Ret}} + \text{Sel}_{p,r,y=1,\tau,a,s,f}^{\text{Fsh}} \cdot \left(1 - \text{Sel}_{p,r,y=1,\tau,a,s,f}^{\text{Ret}}\right) \cdot \delta_{r,\tau,f}\right]$$
 
 where:
 
@@ -69,14 +69,16 @@ where:
     mortality rate,
 -   $\mu_{r,\tau,f}^{\text{Fsh}}$ is the log-mean fishing mortality rate
     for fleet $f$ in region $r$ and season $\tau$,
--   $\text{Fmort}^{\text{InitProp}}$ is a user-defined scalar describing
-    the proportion of the mean fishing mortality applied uniformly across
-    all fleets during the initialization stage,
+-   $\text{Fmort}_{r,\tau,f}^{\text{InitProp}}$ is a parameter (or user-defined) describing the proportion of the mean fishing mortality for a given fleet applied across during the initialization stage,
 -   $\mathbb{1}_{r,\tau,f}^{\text{Catch}}$ is an indicator variable equal
     to 1 if fleet $f$ is active in region $r$ and season $\tau$ in year 1,
     and 0 otherwise,
--   $\text{Sel}_{p,r,y = 1,\tau,a,s,f}^{\text{Fsh}}$ is the fishery
+-   $\text{Sel}_{p,r,y = 1,\tau,a,s,f}^{\text{Fsh}}$ is the total fishery
     selectivity-at-age for fleet $f$,
+-   $\text{Sel}_{p,r,y = 1,\tau,a,s,f}^{\text{Ret}}$ is the retention
+    selectivity-at-age for fleet $f$,
+-   $\delta_{r,\tau,f}$ is the discard mortality rate for fleet $f$ in
+    region $r$ and season $\tau$,
 -   $n_f$ is the number of fishing fleets,
 -   $\psi_{p,r,y,s}$ describes the recruitment sex-ratio,
 -   $\zeta_{p,r}$ apportions the global recruitment parameter across
@@ -278,13 +280,25 @@ $$N_{p,r,y + 1,1,a_{+},s} = N_{p,r,y+1,1,a_{+},s} + N_{p,r,y,n_\tau,a_{+},s}\exp
 $Z_{p,r,y,\tau,a,s}$ denotes the seasonal total instantaneous mortality rate and
 is defined as the combination of natural mortality
 ($\text{Natmort}_{p,r,y,a,s}$) scaled by seasonal duration $\Delta\tau$,
-and fishing mortality ($\text{Fmort}_{r,y,\tau,f}$):
+retained fishing mortality ($\text{retFmort}_{p,r,y,\tau,a,s,f}$), and dead
+discard fishing mortality ($\text{discFmort}_{p,r,y,\tau,a,s,f}$):
 
 $$\begin{matrix}
-Z_{p,r,y,\tau,a,s} = \text{Natmort}_{p,r,y,a,s} \cdot \Delta\tau + \sum_{f}^{}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}}\text{Fmort}_{r,y,\tau,f} \\
+Z_{p,r,y,\tau,a,s} = \text{Natmort}_{p,r,y,a,s} \cdot \Delta\tau + \sum_{f}^{}\left[\text{retFmort}_{p,r,y,\tau,a,s,f} + \text{discFmort}_{p,r,y,\tau,a,s,f}\right] \\
 \end{matrix}$$
 
-The seasonal instantaneous fishing mortality rate is then defined as:
+where the retained and dead discard fishing mortality rates at age are:
+
+$$\text{retFmort}_{p,r,y,\tau,a,s,f} = \text{Fmort}_{r,y,\tau,f} \cdot \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}} \cdot \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}}$$
+
+$$\text{discFmort}_{p,r,y,\tau,a,s,f} = \text{Fmort}_{r,y,\tau,f} \cdot \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}} \cdot \left(1 - \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}}\right) \cdot \delta_{r,y,\tau,f}$$
+
+Here, $\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}}$ is the total fishery selectivity
+(governing encounter probability), $\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}}$ is
+the retention selectivity (governing the probability of retention given encounter),
+and $\delta_{r,y,\tau,f}$ is the discard mortality rate for fleet $f$. Only the
+dead fraction of discards contributes to total mortality. The seasonal instantaneous
+fishing mortality rate is defined as:
 
 $$\begin{matrix}
 \text{Fmort}_{r,y,\tau,f} = \mu_{r,\tau,f}^{\text{Fsh}}\text{exp}\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} \right) \\
@@ -296,6 +310,14 @@ mortality parameter for a given region, season, and fishery fleet
 ($\mu_{r,\tau,f}^{\text{Fsh}}$). When no catch data are available for a
 given region, season, and fleet, fishing mortality is set to zero.
 
+The discard mortality rate is parameterized analogously via logistic deviations
+about a mean logit-scale discard mortality rate:
+
+$$\delta_{r,y,\tau,f} = \text{logistic}\left(\mu_{r,\tau,f}^{\delta} + \epsilon_{r,y,\tau,f}^{\delta}\right)$$
+
+where $\mu_{r,\tau,f}^{\delta}$ is the logit-scale mean discard mortality rate and
+$\epsilon_{r,y,\tau,f}^{\delta}$ are annual deviations. The discard mortality rate
+is bounded between 0 and 1.
 
 ### Movement Processes
 
@@ -367,24 +389,33 @@ where $\Delta t$ is the duration of the movement interval.
 
 ### Fishery Observation Model
 
-The fishery observation model describes the expected catch-at-age,
-catch-at-length, catch (in units of biomass or abundance), and fishery indices.
-Expected catch-at-age ($C_{p,r,y,\tau,a,s,f}^{a}$) for a given fishery fleet is
-calculated using Baranov's catch equation:
+The fishery observation model describes the expected retained catch-at-age,
+retained catch-at-length, discarded catch-at-age, discarded catch-at-length,
+catch and discard (in units of biomass or abundance), and fishery indices.
+
+Expected retained catch-at-age ($C_{p,r,y,\tau,a,s,f}^{a}$) for a given fishery fleet is
+calculated using Baranov's catch equation applied to the retained fishing mortality:
 
 $$\begin{matrix}
-C_{p,r,y,\tau,a,s,f}^{a} = \dfrac{\text{Fmort}_{r,y,\tau,f}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}}}{Z_{p,r,y,\tau,a,s}}N_{p,r,y,\tau,a,s}\left\lbrack 1 - \exp\left( - Z_{p,r,y,\tau,a,s} \right) \right\rbrack \\
+C_{p,r,y,\tau,a,s,f}^{a} = \dfrac{\text{retFmort}_{p,r,y,\tau,a,s,f}}{Z_{p,r,y,\tau,a,s}}N_{p,r,y,\tau,a,s}\left\lbrack 1 - \exp\left( - Z_{p,r,y,\tau,a,s} \right) \right\rbrack \\
 \end{matrix}$$
 
-To track length-based dynamics, catch-at-length ($C_{p,r,y,\tau,l,s,f}^{l}$)
-can then be derived using the following equation:
+Expected dead discarded catch-at-age ($D_{p,r,y,\tau,a,s,f}^{a}$) is similarly:
+
+$$\begin{matrix}
+D_{p,r,y,\tau,a,s,f}^{a} = \dfrac{\text{discFmort}_{p,r,y,\tau,a,s,f}}{Z_{p,r,y,\tau,a,s}}N_{p,r,y,\tau,a,s}\left\lbrack 1 - \exp\left( - Z_{p,r,y,\tau,a,s} \right) \right\rbrack \\
+\end{matrix}$$
+
+To track length-based dynamics, retained catch-at-length ($C_{p,r,y,\tau,l,s,f}^{l}$)
+and discarded catch-at-length ($D_{p,r,y,\tau,l,s,f}^{l}$) are derived using:
 
 $$\begin{matrix}
 C_{p,r,y,\tau,l,s,f}^{l} = \mathbf{A}_{p,r,y,\tau,s}^{l}{\mathbf{C}^{\mathbf{a}}}_{p,r,y,\tau,s,f} \\
+D_{p,r,y,\tau,l,s,f}^{l} = \mathbf{A}_{p,r,y,\tau,s}^{l}{\mathbf{D}^{\mathbf{a}}}_{p,r,y,\tau,s,f} \\
 \end{matrix}$$
 
 where $\mathbf{A}_{p,r,y,\tau,s}^{l}$ is a user-defined size-age transition
-matrix to convert ages to lengths. Expected catch
+matrix to convert ages to lengths. Expected retained catch
 ($\text{Catch}_{r,y,\tau,f}$) is computed by summing over populations and then
 either as abundance:
 
@@ -398,17 +429,30 @@ $$\begin{matrix}
 \text{Catch}_{r,y,\tau,f} = \sum_{p}^{n_p}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}C_{p,r,y,\tau,a,s,f}^{a}}W_{p,r,y,\tau,a,s,f}^{fish} \\
 \end{matrix}$$
 
-Population-specific predicted catch ($\text{Catch}_{p,r,y,\tau,f}$) retains the population index and is not summed across $p$:
+Population-specific predicted retained catch ($\text{Catch}_{p,r,y,\tau,f}$) retains the population index and is not summed across $p$:
 
 $$\begin{matrix}
 \text{Catch}_{p,r,y,\tau,f} = \sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}C_{p,r,y,\tau,a,s,f}^{a}}W_{p,r,y,\tau,a,s,f}^{fish} \\
 \end{matrix}$$
 
-Similarly, expected fishery indices ($\text{FshIdx}_{p,r,y,\tau,f}$) can be computed
-as either abundance-based or biomass-based. For abundance-based fishery indices:
+Expected total discards ($\text{Discard}_{r,y,\tau,f}$) are computed from the dead discarded catch-at-age scaled back by the discard mortality rate to yield total discarded individuals (dead and released alive):
 
 $$\begin{matrix}
-\text{FshIdx}_{p,r,y,\tau,f} = q_{r,y,f}^{\text{Fsh}}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}N_{p,r,y,\tau,a,s}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}} \\
+\text{Discard}_{r,y,\tau,f} = \sum_{p}^{n_p}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}\frac{D_{p,r,y,\tau,a,s,f}^{a}}{\delta_{r,y,\tau,f}}} \quad \text{(abundance)} \\
+\end{matrix}$$
+
+$$\begin{matrix}
+\text{Discard}_{r,y,\tau,f} = \sum_{p}^{n_p}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}\frac{D_{p,r,y,\tau,a,s,f}^{a}}{\delta_{r,y,\tau,f}}}W_{p,r,y,\tau,a,s,f}^{fish} \quad \text{(biomass)} \\
+\end{matrix}$$
+
+Discards can also be expressed as a fraction of total catch (abundance or biomass). Population-specific discards follow the same structure without summing across $p$.
+
+Similarly, expected fishery indices ($\text{FshIdx}_{p,r,y,\tau,f}$) can be computed
+as either abundance-based or biomass-based, using the product of total fishery
+selectivity and retention selectivity:
+
+$$\begin{matrix}
+\text{FshIdx}_{p,r,y,\tau,f} = q_{r,y,f}^{\text{Fsh}}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}N_{p,r,y,\tau,a,s}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}} \\
 \end{matrix}$$
 
 where $q_{r,y,f}^{\text{Fsh}}$ is the catchability coefficient for a
@@ -417,7 +461,7 @@ is computed directly from numbers-at-age without applying additional survival
 discounting. Biomass-based fishery indices are computed as:
 
 $$\begin{matrix}
-\text{FshIdx}_{p,r,y,\tau,f} = q_{r,y,f}^{\text{Fsh}}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}N_{p,r,y,\tau,a,s}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}}W_{p,r,y,\tau,a,s,f}^{fish} \\
+\text{FshIdx}_{p,r,y,\tau,f} = q_{r,y,f}^{\text{Fsh}}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}N_{p,r,y,\tau,a,s}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}}W_{p,r,y,\tau,a,s,f}^{fish} \\
 \end{matrix}$$
 
 The observed region-aggregated fishery index is compared to the sum of predicted indices
@@ -511,7 +555,7 @@ where tagged cohorts follow an exponential mortality model with
 accumulation of individuals in the plus-group. Total mortality for the
 tagged cohort ($Z_{p,r,y,\tau,a,s}^{\text{Tag}}$) is specified as:
 
-$$Z_{p,r,y,\tau,a,s}^{\text{Tag}} = \kappa \cdot \Delta\tau + \text{NatMort}_{p,r,y,a,s} \cdot \Delta\tau + \sum_{f \in \mathcal{F}^{\text{Tag}}} \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}} \text{Fmort}_{r,y,\tau,f}$$
+$$Z_{p,r,y,\tau,a,s}^{\text{Tag}} = \kappa \cdot \Delta\tau + \text{NatMort}_{p,r,y,a,s} \cdot \Delta\tau + \sum_{f \in \mathcal{F}^{\text{Tag}}} \left[\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}} \cdot \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}} \cdot \text{Fmort}_{r,y,\tau,f} + \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}} \cdot \left(1 - \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}}\right) \cdot \delta_{r,y,\tau,f} \cdot \text{Fmort}_{r,y,\tau,f}\right]$$
 
 where $\kappa$ is a parameter describing chronic tag loss (i.e., annual
 tag shedding) and $\mathcal{F}^{\text{Tag}}$ denotes the subset of fishing fleets
@@ -520,11 +564,11 @@ than all fleets is intentional: restricting the tag mortality calculation
 to fleets with tagging data prevents non-tagging fleets from unintentionally
 influencing tag-based parameter estimates (e.g., selectivity, reporting rates).
 
-Similar to computations for catch-at-age, tag recaptures
+Similar to computations for retained catch-at-age, tag recaptures
 are calculated using a modified version of Baranov's catch equation,
-with fleet-specific tag reporting rates:
+with fleet-specific tag reporting rates applied to the retained component:
 
-$$\text{Recap}_{p,r,y,\tau,a,s,f}^{k} = \beta_{r,y,f}\dfrac{\text{Fmort}_{r,y,\tau,f}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}}}{Z_{p,r,y,\tau,a,s}^{\text{Tag}}}T_{p,r,y,\tau,a,s}^{k}\left\lbrack 1 - \exp\left( - Z_{p,r,y,\tau,a,s}^{\text{Tag}} \right) \right\rbrack$$
+$$\text{Recap}_{p,r,y,\tau,a,s,f}^{k} = \beta_{r,y,f}\dfrac{\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}} \cdot \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}} \cdot \text{Fmort}_{r,y,\tau,f}}{Z_{p,r,y,\tau,a,s}^{\text{Tag}}}T_{p,r,y,\tau,a,s}^{k}\left\lbrack 1 - \exp\left( - Z_{p,r,y,\tau,a,s}^{\text{Tag}} \right) \right\rbrack$$
 
 where $\beta_{r,y,f}$ represents a fleet-specific tag reporting rate parameter that can vary
 across space, time, and fleet, which is estimated in logit space such that it is
@@ -635,6 +679,33 @@ The double normal functional form is incredibly flexible and is able to
 reduce to both flat-topped and dome-shaped selectivity forms, depending
 on the values of the parameters.
 
+Non-parametric selectivity can also be specified, where bin-specific logit-scale
+parameters are transformed via the logistic function:
+
+$$\begin{matrix}
+{Sel}_{b} = \text{logistic}\left( \eta_{b} \right)
+\end{matrix}$$
+
+where $\eta_{b}$ is a freely estimated logit-scale selectivity parameter for each bin.
+
+Two additional logistic forms with a freely estimated asymptote parameter
+$\alpha \in (0, 1)$ are also available. The first uses the bin-at-50% and slope
+parameterization:
+
+$$\begin{matrix}
+{Sel}_{b} = \frac{\alpha}{1 + \exp\left\lbrack - k\left( b - b^{50} \right) \right\rbrack}
+\end{matrix}$$
+
+The second uses the bin-at-50% and bin-at-95% parameterization:
+
+$$\begin{matrix}
+{Sel}_{b} = \frac{\alpha}{1 + 19^{\left( \frac{b^{50} - b}{b^{95}} \right)}}
+\end{matrix}$$
+
+where $\alpha$ is estimated on the logit scale, allowing the asymptotic selectivity
+to be less than 1. These forms are useful for fleets where full vulnerability
+is not achieved even at the largest observed sizes or ages.
+
 In addition to the functional forms that can be specified to describe
 selectivity processes, several options exist to specify continuous
 time-varying processes. In particular, options to specify time-varying
@@ -676,6 +747,7 @@ directly to the selectivity-at-length values before conversion to the
 age domain via the size–age transition matrix. Further details on how
 selectivity deviations arise can be found in the "Selectivity Process
 Error" section of this document.
+
 # Likelihoods
 
 Currently, `SPoRC` incorporates data likelihood components for the
@@ -683,19 +755,25 @@ following data sources:
 
 1.  region-aggregated fishery catches (summed across populations),
 2.  population-specific fishery catches,
-3.  region-aggregated fishery indices (summed across populations),
-4.  population-specific fishery indices,
-5.  region-aggregated fishery age compositions (summed across populations),
-6.  population-specific fishery age compositions,
-7.  region-aggregated fishery length compositions (summed across populations),
-8.  population-specific fishery length compositions,
-9.  region-aggregated survey indices (summed across populations),
-10. population-specific survey indices,
-11. region-aggregated survey age compositions (summed across populations),
-12. population-specific survey age compositions,
-13. region-aggregated survey length compositions (summed across populations),
-14. population-specific survey length compositions, and
-15. conventional tagging data.
+3.  region-aggregated fishery discards (summed across populations),
+4.  population-specific fishery discards,
+5.  region-aggregated fishery indices (summed across populations),
+6.  population-specific fishery indices,
+7.  region-aggregated fishery age compositions (summed across populations),
+8.  population-specific fishery age compositions,
+9.  region-aggregated fishery length compositions (summed across populations),
+10. population-specific fishery length compositions,
+11. region-aggregated discard age compositions (summed across populations),
+12. population-specific discard age compositions,
+13. region-aggregated discard length compositions (summed across populations),
+14. population-specific discard length compositions,
+15. region-aggregated survey indices (summed across populations),
+16. population-specific survey indices,
+17. region-aggregated survey age compositions (summed across populations),
+18. population-specific survey age compositions,
+19. region-aggregated survey length compositions (summed across populations),
+20. population-specific survey length compositions, and
+21. conventional tagging data.
 
 Region-aggregated likelihoods compare observed data to predicted quantities summed across all populations ($\sum_p$), while population-specific likelihoods compare observed data to predicted quantities for a single population $p$ directly. The total likelihood (objective function) is the sum of the individual
 likelihood contributions from these data sources along with priors and
@@ -731,6 +809,23 @@ $$\begin{matrix}
 $$\lambda_{\text{ObsCatch}_{p,r,y,\tau,f}} \cdot \frac{1}{\sqrt{2\pi\sigma_{\text{ObsCatch}_{p,r,y,\tau,f}}^{2}}\,}\exp\left( - \frac{\left\lbrack \log\left( \text{ObsCatch}_{p,r,y,\tau,f} \right) - log\left( \text{Catch}_{p,r,y,\tau,f} \right) \right\rbrack^{2}}{2\sigma_{\text{ObsCatch}_{p,r,y,\tau,f}}^{2}} \right)$$
 
 where $\text{Catch}_{p,r,y,\tau,f}$ is the predicted catch for population $p$ only.
+
+### Fishery Discards
+
+Fishery discards are fit using the same lognormal likelihood form as catches. The
+log-likelihood for region-aggregated observed discards is:
+
+$$\begin{matrix}
+\ell\left( \log\left( \text{ObsDiscard}_{r,y,\tau,f} \right) \right) = \\
+\end{matrix}$$
+
+$$\lambda_{\text{ObsDiscard}_{r,y,\tau,f}} \cdot \frac{1}{\sqrt{2\pi\sigma_{\text{ObsDiscard}_{r,y,\tau,f}}^{2}}\,}\exp\left( - \frac{\left\lbrack \log\left( \text{ObsDiscard}_{r,y,\tau,f} \right) - log\left( \text{Discard}_{r,y,\tau,f} \right) \right\rbrack^{2}}{2\sigma_{\text{ObsDiscard}_{r,y,\tau,f}}^{2}} \right)$$
+
+where $\lambda_{\text{ObsDiscard}_{r,y,\tau,f}}$ is the likelihood weight,
+$\text{ObsDiscard}_{r,y,\tau,f}$ is the observed discard, $\text{Discard}_{r,y,\tau,f}$
+is the predicted discard summed over populations, and $\sigma_{\text{ObsDiscard}_{r,y,\tau,f}}^{2}$ is
+the variance of discards on the log scale. Population-specific discard observations
+follow the same lognormal form with $\text{Discard}_{p,r,y,\tau,f}$ for population $p$ only.
 
 ### Fishery and Survey Indices
 
@@ -891,7 +986,7 @@ correlation structure, where $\rho_{C}^{|i - j|}$ defines the
 correlation across age/length categories. $\mathbf{\bigotimes}$ denotes
 the Kronecker product.
 
-All three composition likelihood forms (multinomial, Dirichlet-multinomial, logistic-normal) can be applied to both region-aggregated and population-specific composition data. For region-aggregated compositions, expected values $E_{r,y,\tau,b,j}$ are derived from catch-at-age or survey index-at-age quantities summed across populations ($\sum_p$). For population-specific compositions, expected values $E_{p,r,y,\tau,b,j}$ are derived from the quantities for a single population $p$ directly, with the population index $p$ carrying through all composition structuring and likelihood calculations. Each likelihood form and covariance structure described above applies identically to both cases; population-specific likelihoods additionally carry separate overdispersion ($\theta_{p,r,j}$) and correlation parameters ($\rho_{p,r,j}$) estimated independently from their region-aggregated counterparts.
+All three composition likelihood forms (multinomial, Dirichlet-multinomial, logistic-normal) can be applied to retained fishery, discarded fishery, and survey composition data, as well as to both region-aggregated and population-specific variants. For region-aggregated compositions, expected values $E_{r,y,\tau,b,j}$ are derived from catch-at-age or survey index-at-age quantities summed across populations ($\sum_p$). For population-specific compositions, expected values $E_{p,r,y,\tau,b,j}$ are derived from the quantities for a single population $p$ directly. For discard compositions, expected values are derived from discarded catch-at-age ($D_{p,r,y,\tau,a,s,f}^{a}$) or discarded catch-at-length quantities analogously. Each likelihood form and covariance structure described above applies identically across all composition data types; population-specific likelihoods additionally carry separate overdispersion ($\theta_{p,r,j}$) and correlation parameters ($\rho_{p,r,j}$) estimated independently from their region-aggregated counterparts.
 
 #### Structuring Compositions and Ageing Error
 
@@ -943,7 +1038,7 @@ where the expected compositions sum to one jointly across bins and
 sexes, thus preserving implicit sex-ratio information. Ageing error is
 then applied by taking the Kronecker product of a $n_{s}\ \times\ n_{s}$
 identity matrix with the ageing error matrix, followed by matrix
-multiplication. These three structuring options apply identically to both region-aggregated and population-specific composition likelihoods.
+multiplication. These three structuring options apply identically to retained fishery, discarded fishery, and survey composition likelihoods, as well as to both region-aggregated and population-specific variants.
 
 ### Tagging
 
@@ -1213,7 +1308,7 @@ In addition to priors, penalties are also utilized to aid in the
 estimation of process errors (either penalized likelihood or integrating
 random effects via Laplace Approximation are possible). Currently,
 process errors can be specified to arise for initial age deviations,
-recruitment, fishing mortality, fishery and survey selectivity, and
+recruitment, fishing mortality, discard mortality rate, fishery and survey selectivity, and
 movement.
 
 #### Initial Age Deviations
@@ -1246,6 +1341,16 @@ $$\ell\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} \right) = \frac{1}{\sqrt{2\pi{\s
 Here, fishing mortality deviations are assumed to arise from a normal
 distribution, with mean 0 and a variance of
 ${\sigma_{r,\tau,f}^{2}}_{\text{Fsh}}$.
+
+#### Discard Mortality Rate Deviations
+
+Discard mortality rate deviations are penalized analogously on the logit scale:
+
+$$\ell\left( \epsilon_{r,y,\tau,f}^{\delta} \right) = \frac{1}{\sqrt{2\pi{\sigma_{r,\tau,f}^{2}}_{\delta}}\,}\exp\left( - \frac{\left( \epsilon_{r,y,\tau,f}^{\delta} \right)^{2}}{2{\sigma_{r,\tau,f}^{2}}_{\delta}} \right)$$
+
+where ${\sigma_{r,\tau,f}^{2}}_{\delta}$ is the variance of the discard mortality
+rate deviations. The penalty is only applied in years and fleets where discard data
+are available.
 
 #### Fishery and Survey Selectivity
 

@@ -7,59 +7,64 @@
 get_comp_prop(data, rep, age_labels, len_labels, year_labels)
 }
 \arguments{
-\item{data}{List. Data inputs used by RTMB, containing observed
-compositions, composition types, ageing errors, usage flags, and
-fleet/region/season/population dimensions.}
+\item{data}{List. RTMB input data containing observed compositions, usage
+flags, composition types, ageing error matrices, and fleet/region/season/
+population dimensions.}
 
-\item{rep}{List. Report output from RTMB containing predicted compositions
-(\code{CAA}, \code{CAL}, \code{SrvIAA}, \code{SrvIAL}) with a leading
-population dimension that is summed across populations for pooled outputs.}
+\item{rep}{List. RTMB model output containing predicted compositions
+(\code{CAA}, \code{CAL}, \code{DAA}, \code{DAL}, \code{SrvIAA}, \code{SrvIAL})
+with a leading population dimension that is summed to produce pooled outputs.}
 
-\item{age_labels}{Vector. Observed age bin labels used in the assessment.}
+\item{age_labels}{Vector. Age bin labels used in composition data.}
 
-\item{len_labels}{Vector. Observed length bin labels used in the assessment.}
+\item{len_labels}{Vector. Length bin labels used in composition data.}
 
-\item{year_labels}{Vector. Year labels corresponding to the assessment years.}
+\item{year_labels}{Vector. Labels for model years corresponding to projection
+or estimation periods.}
 }
 \value{
 A named list containing:
-  \describe{
-    \item{\code{Fishery_Ages}, \code{Fishery_Lens}, \code{Survey_Ages},
-      \code{Survey_Lens}}{Long-format dataframes with observed (\code{obs})
-      and expected (\code{pred}) pooled compositions and metadata columns
-      \code{Region}, \code{Year}, \code{Seas}, \code{Age}/\code{Len},
-      \code{Sex}, \code{Fleet}, \code{Type}.}
-    \item{\code{Pop_Fishery_Ages}, \code{Pop_Fishery_Lens},
-      \code{Pop_Survey_Ages}, \code{Pop_Survey_Lens}}{Same structure as
-      the pooled dataframes with an additional \code{Pop} column.}
-    \item{\code{Obs_FishAge_mat}, \code{Obs_FishLen_mat},
-      \code{Obs_SrvAge_mat}, \code{Obs_SrvLen_mat}}{Arrays of observed
-      pooled compositions
-      \code{[n_regions × n_years × n_seas × n_bins × n_sexes × n_fleets]}.}
-    \item{\code{Pred_FishAge_mat}, \code{Pred_FishLen_mat},
-      \code{Pred_SrvAge_mat}, \code{Pred_SrvLen_mat}}{Arrays of expected
-      pooled compositions, same dimensions as the observed counterparts.}
-    \item{\code{Obs_FishAge_pop_mat}, \code{Obs_FishLen_pop_mat},
-      \code{Obs_SrvAge_pop_mat}, \code{Obs_SrvLen_pop_mat}}{Arrays of
-      observed population-specific compositions
-      \code{[n_pop × n_regions × n_years × n_seas × n_bins × n_sexes × n_fleets]}.}
-    \item{\code{Pred_FishAge_pop_mat}, \code{Pred_FishLen_pop_mat},
-      \code{Pred_SrvAge_pop_mat}, \code{Pred_SrvLen_pop_mat}}{Arrays of
-      expected population-specific compositions, same dimensions as the
-      observed pop counterparts.}
-  }
+
+\describe{
+  \item{Fishery_Ages, Fishery_Lens}{Long-format data frames of observed and
+  predicted pooled fishery age and length compositions, including metadata
+  (Region, Year, Season, Age/Len, Sex, Fleet, Type).}
+
+  \item{Fishery_Discard_Ages, Fishery_Discard_Lens}{Long-format data frames
+  for discard compositions.}
+
+  \item{Survey_Ages, Survey_Lens}{Long-format data frames for survey-based
+  compositions.}
+
+  \item{Pop_Fishery_Ages, Pop_Fishery_Lens, Pop_Survey_Ages, Pop_Survey_Lens}{Population-specific
+  long-format composition outputs with an additional Pop column.}
+
+  \item{Obs_*_mat}{Arrays of observed compositions indexed by
+  Region × Year × Season × Bin × Sex × Fleet (and Pop where applicable).}
+
+  \item{Pred_*_mat}{Arrays of model-predicted compositions with matching
+  dimensions to observed arrays.}
+}
 }
 \description{
-Extracts and normalizes age and length composition data for fishery and
-survey fleets according to the assessment specifications from RTMB. This
-includes both observed and expected compositions for pooled and
-population-specific data streams, returned in array and long-dataframe
-formats.
+Extracts and standardizes age and length composition data for fishery and
+survey fleets from RTMB model output. The function processes both observed
+and expected compositions for pooled (all populations combined) and
+population-specific data streams, returning results in both long-format
+data frames and array formats suitable for diagnostics and likelihood
+evaluation.
+}
+\details{
+Compositions include retained catch, discard catch, and survey observations,
+and are aligned across regions, years, seasons, fleets, sexes, and age/length
+bins. Observed compositions are optionally filtered by usage flags defined in
+the input data object.
 }
 \examples{
 \dontrun{
 comp_props <- get_comp_prop(
-  data = data, rep = rep,
+  data = data,
+  rep = rep,
   age_labels = 2:31,
   len_labels = seq(41, 99, 2),
   year_labels = 1960:2024

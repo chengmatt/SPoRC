@@ -27,7 +27,9 @@ Get_Det_Recruitment(
   do_recruits_move,
   t_spawn,
   init_F,
+  dmr,
   fish_sel,
+  ret_sel,
   n_seas,
   spawn_seas,
   natal_region,
@@ -95,7 +97,11 @@ when a single season is used and \code{n_pop > 1}.}
 
 \item{init_F}{Array (\code{n_regions × n_seas × n_fish_fleets}) of initial fishing mortality.}
 
-\item{fish_sel}{Array (\code{n_pop x n_regions × n_seas x n_ages x n_fish_fleets}) of fishery selectivity.}
+\item{dmr}{Array (\code{n_regions × n_seas × n_fish_fleets}) of initial (first year) discard mortality.}
+
+\item{fish_sel}{Array (\code{n_pop x n_regions × n_seas x n_ages x n_fish_fleets}) of total fishery selectivity.}
+
+\item{ret_sel}{Array (\code{n_pop x n_regions × n_seas x n_ages x n_fish_fleets}) of retained fishery selectivity.}
 
 \item{n_seas}{Number of seasons per year.}
 
@@ -157,7 +163,10 @@ unfished and fished conditions. The algorithm:
 \enumerate{
 \item Allocates a recruit across regions and seasons.
 \item Applies seasonal movement.
-\item Applies natural and fishing mortality.
+\item Applies natural and fishing mortality, where fishing mortality
+  is decomposed into retained
+  (\eqn{F \cdot sel \cdot ret}) and dead discard
+  (\eqn{F \cdot sel \cdot (1 - ret) \cdot dmr}) components.
 \item Computes spawning biomass during the spawning season.
 \item Solves the plus group analytically using annual transition matrices.
 }

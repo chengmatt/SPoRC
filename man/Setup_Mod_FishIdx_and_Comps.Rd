@@ -2,7 +2,7 @@
 % Please edit documentation in R/Setup_Fishery.R
 \name{Setup_Mod_FishIdx_and_Comps}
 \alias{Setup_Mod_FishIdx_and_Comps}
-\title{Set up fishery index, age composition, and length composition inputs}
+\title{Set up discards, fishery index, age composition, and length composition inputs}
 \usage{
 Setup_Mod_FishIdx_and_Comps(
   input_list,
@@ -35,11 +35,47 @@ Setup_Mod_FishIdx_and_Comps(
     input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
     input_list$data$n_fish_fleets)),
   ISS_FishLenComps_pop = NULL,
-  pop_FishAgeComps_LikeType = rep("none", input_list$data$n_fish_fleets),
-  pop_FishLenComps_LikeType = rep("none", input_list$data$n_fish_fleets),
-  pop_FishAgeComps_Type = paste("none_Year_1-terminal_Fleet_",
+  FishAgeComps_pop_LikeType = rep("none", input_list$data$n_fish_fleets),
+  FishLenComps_pop_LikeType = rep("none", input_list$data$n_fish_fleets),
+  FishAgeComps_pop_Type = paste("none_Year_1-terminal_Fleet_",
     1:input_list$data$n_fish_fleets, sep = ""),
-  pop_FishLenComps_Type = paste("none_Year_1-terminal_Fleet_",
+  FishLenComps_pop_Type = paste("none_Year_1-terminal_Fleet_",
+    1:input_list$data$n_fish_fleets, sep = ""),
+  ObsFishAgeComps_discard = array(0, dim = c(input_list$data$n_regions,
+    length(input_list$data$years), input_list$data$n_seas, length(input_list$data$ages),
+    input_list$data$n_sexes, input_list$data$n_fish_fleets)),
+  UseFishAgeComps_discard = array(0, dim = c(input_list$data$n_regions,
+    length(input_list$data$years), input_list$data$n_seas,
+    input_list$data$n_fish_fleets)),
+  ISS_FishAgeComps_discard = NULL,
+  ObsFishLenComps_discard = array(0, dim = c(input_list$data$n_regions,
+    length(input_list$data$years), input_list$data$n_seas, length(input_list$data$lens),
+    input_list$data$n_sexes, input_list$data$n_fish_fleets)),
+  UseFishLenComps_discard = array(0, dim = c(input_list$data$n_regions,
+    length(input_list$data$years), input_list$data$n_seas,
+    input_list$data$n_fish_fleets)),
+  ISS_FishLenComps_discard = NULL,
+  FishAgeComps_discard_LikeType = rep("none", input_list$data$n_fish_fleets),
+  FishLenComps_discard_LikeType = rep("none", input_list$data$n_fish_fleets),
+  FishAgeComps_discard_Type = paste("none_Year_1-terminal_Fleet_",
+    1:input_list$data$n_fish_fleets, sep = ""),
+  FishLenComps_discard_Type = paste("none_Year_1-terminal_Fleet_",
+    1:input_list$data$n_fish_fleets, sep = ""),
+  ObsFishAgeComps_discard_pop = NULL,
+  UseFishAgeComps_discard_pop = array(0, dim = c(input_list$data$n_pop,
+    input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
+    input_list$data$n_fish_fleets)),
+  ISS_FishAgeComps_discard_pop = NULL,
+  ObsFishLenComps_discard_pop = NULL,
+  UseFishLenComps_discard_pop = array(0, dim = c(input_list$data$n_pop,
+    input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
+    input_list$data$n_fish_fleets)),
+  ISS_FishLenComps_discard_pop = NULL,
+  FishAgeComps_discard_pop_LikeType = rep("none", input_list$data$n_fish_fleets),
+  FishLenComps_discard_pop_LikeType = rep("none", input_list$data$n_fish_fleets),
+  FishAgeComps_discard_pop_Type = paste("none_Year_1-terminal_Fleet_",
+    1:input_list$data$n_fish_fleets, sep = ""),
+  FishLenComps_discard_pop_Type = paste("none_Year_1-terminal_Fleet_",
     1:input_list$data$n_fish_fleets, sep = ""),
   ...
 )
@@ -139,7 +175,7 @@ age compositions
 \code{[n_pop × n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
 If \code{NULL} (default), computed automatically by summing
 \code{ObsFishAgeComps_pop} within each population–year–fleet–season–region
-cell according to \code{pop_FishAgeComps_Type}.}
+cell according to \code{FishAgeComps_pop_Type}.}
 
 \item{ObsFishLenComps_pop}{Observed population-specific fishery length
 composition array
@@ -158,70 +194,124 @@ length compositions
 If \code{NULL} (default), derived automatically from
 \code{ObsFishLenComps_pop}.}
 
-\item{pop_FishAgeComps_LikeType}{Character vector of length
+\item{FishAgeComps_pop_LikeType}{Character vector of length
 \code{n_fish_fleets} specifying the likelihood for population-specific
 fishery age compositions. Same options as \code{FishAgeComps_LikeType}.
 Default: \code{"none"} for all fleets.}
 
-\item{pop_FishLenComps_LikeType}{Character vector of length
+\item{FishLenComps_pop_LikeType}{Character vector of length
 \code{n_fish_fleets} specifying the likelihood for population-specific
 fishery length compositions. Same options as \code{FishLenComps_LikeType}.
 Default: \code{"none"} for all fleets.}
 
-\item{pop_FishAgeComps_Type}{Character vector defining the composition
+\item{FishAgeComps_pop_Type}{Character vector defining the composition
 structure for population-specific age compositions. Same format and options
 as \code{FishAgeComps_Type}. Default: \code{"none"} for all fleets across
 all years.}
 
-\item{pop_FishLenComps_Type}{Character vector defining the composition
+\item{FishLenComps_pop_Type}{Character vector defining the composition
 structure for population-specific length compositions. Same format and
 options as \code{FishLenComps_Type}. Default: \code{"none"} for all fleets
 across all years.}
 
-\item{...}{Optional starting value overrides for overdispersion and
-correlation parameters. Recognised arguments:
+\item{ObsFishAgeComps_discard}{Observed fishery age composition from discards
+\code{[n_regions × n_years × n_seas × n_ages × n_sexes × n_fish_fleets]}.
+Structure must match \code{ObsFishAgeComps}.}
+
+\item{UseFishAgeComps_discard}{Binary indicator array for discard age compositions
+\code{[n_regions × n_years × n_seas × n_fish_fleets]}.
+\code{1} = include discard age compositions in likelihood; \code{0} = exclude.}
+
+\item{ISS_FishAgeComps_discard}{Input sample size array for discard age compositions
+\code{[n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
+If \code{NULL}, derived automatically from \code{ObsFishAgeComps_discard}
+using \code{FishAgeComps_discard_Type}.}
+
+\item{ObsFishLenComps_discard}{Observed fishery length composition from discards
+\code{[n_regions × n_years × n_seas × n_lens × n_sexes × n_fish_fleets]}.
+Required if \code{input_list$data$fit_lengths == 1}.}
+
+\item{UseFishLenComps_discard}{Binary indicator array for discard length compositions
+\code{[n_regions × n_years × n_seas × n_fish_fleets]}.
+\code{1} = include discard length compositions in likelihood; \code{0} = exclude.}
+
+\item{ISS_FishLenComps_discard}{Input sample size array for discard length compositions
+\code{[n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
+If \code{NULL}, derived automatically from \code{ObsFishLenComps_discard}.}
+
+\item{FishAgeComps_discard_LikeType}{Character vector of length
+\code{n_fish_fleets} specifying likelihood type for discard age compositions.
+Options:
 \describe{
-  \item{\code{ln_FishAge_theta}}{Log-scale overdispersion starting values
-    \code{[n_regions × n_sexes × n_fish_fleets]}. Default: \code{0}.}
-  \item{\code{ln_FishAge_theta_agg}}{Aggregated overdispersion starting
-    values \code{[n_fish_fleets]}. Default: \code{0}.}
-  \item{\code{FishAge_corr_pars}}{Correlation parameter starting values
-    \code{[n_regions × n_sexes × n_fish_fleets × 2]}. Default: \code{0.01}.}
-  \item{\code{FishAge_corr_pars_agg}}{Aggregated correlation starting values
-    \code{[n_fish_fleets]}. Default: \code{0.01}.}
-  \item{\code{ln_FishLen_theta}}{Length composition overdispersion
-    \code{[n_regions × n_sexes × n_fish_fleets]}. Default: \code{0}.}
-  \item{\code{ln_FishLen_theta_agg}}{Aggregated length overdispersion
-    \code{[n_fish_fleets]}. Default: \code{0}.}
-  \item{\code{FishLen_corr_pars}}{Length correlation parameters
-    \code{[n_regions × n_sexes × n_fish_fleets × 2]}. Default: \code{0.01}.}
-  \item{\code{FishLen_corr_pars_agg}}{Aggregated length correlation
-    \code{[n_fish_fleets]}. Default: \code{0.01}.}
-  \item{\code{ln_FishAge_pop_theta}}{Log-scale overdispersion for
-    population-specific age compositions
-    \code{[n_pop × n_regions × n_sexes × n_fish_fleets]}. Default: \code{0}.}
-  \item{\code{ln_FishAge_pop_theta_agg}}{Aggregated overdispersion for
-    population-specific age compositions
-    \code{[n_pop × n_fish_fleets]}. Default: \code{0}.}
-  \item{\code{FishAge_pop_corr_pars}}{Correlation parameters for
-    population-specific age compositions
-    \code{[n_pop × n_regions × n_sexes × n_fish_fleets × 2]}. Default: \code{0.01}.}
-  \item{\code{FishAge_pop_corr_pars_agg}}{Aggregated correlation parameters
-    for population-specific age compositions
-    \code{[n_pop × n_fish_fleets]}. Default: \code{0.01}.}
-  \item{\code{ln_FishLen_pop_theta}}{Log-scale overdispersion for
-    population-specific length compositions
-    \code{[n_pop × n_regions × n_sexes × n_fish_fleets]}. Default: \code{0}.}
-  \item{\code{ln_FishLen_pop_theta_agg}}{Aggregated overdispersion for
-    population-specific length compositions
-    \code{[n_pop × n_fish_fleets]}. Default: \code{0}.}
-  \item{\code{FishLen_pop_corr_pars}}{Correlation parameters for
-    population-specific length compositions
-    \code{[n_pop × n_regions × n_sexes × n_fish_fleets × 2]}. Default: \code{0.01}.}
-  \item{\code{FishLen_pop_corr_pars_agg}}{Aggregated correlation parameters
-    for population-specific length compositions
-    \code{[n_pop × n_fish_fleets]}. Default: \code{0.01}.}
+  \item{\code{"Multinomial"}}{Standard multinomial likelihood}
+  \item{\code{"Dirichlet-Multinomial"}}{Overdispersed multinomial}
+  \item{\code{"iid-Logistic-Normal"}}{Independent logistic-normal}
+  \item{\code{"1d-Logistic-Normal"}}{1D correlated logistic-normal}
+  \item{\code{"2d-Logistic-Normal"}}{2D correlated logistic-normal}
+  \item{\code{"none"}}{No discard age composition likelihood}
 }}
+
+\item{FishLenComps_discard_LikeType}{Same specification as
+\code{FishAgeComps_discard_LikeType}, but for discard length compositions.}
+
+\item{FishAgeComps_discard_Type}{Character vector defining discard age composition
+structure by fleet and year block.
+Format:
+\code{"<type>_Year_<start>-<end>_Fleet_<f>"} or
+\code{"<type>_Year_<start>-terminal_Fleet_<f>"}.
+Valid types:
+\describe{
+  \item{\code{"agg"}}{Aggregated across regions and sexes}
+  \item{\code{"spltRspltS"}}{Split by region and sex}
+  \item{\code{"spltRjntS"}}{Split by region, joint across sexes}
+  \item{\code{"none"}}{No discard age composition}
+}}
+
+\item{FishLenComps_discard_Type}{Same format and options as
+\code{FishAgeComps_discard_Type}, applied to discard length compositions.}
+
+\item{ObsFishAgeComps_discard_pop}{Observed population-specific discard age
+composition array
+\code{[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes × n_fish_fleets]}.}
+
+\item{UseFishAgeComps_discard_pop}{Binary indicator array for population-specific
+discard age compositions
+\code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]}.}
+
+\item{ISS_FishAgeComps_discard_pop}{Input sample size array for population-specific
+discard age compositions
+\code{[n_pop × n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
+If \code{NULL}, computed from \code{ObsFishAgeComps_discard_pop}.}
+
+\item{ObsFishLenComps_discard_pop}{Observed population-specific discard length
+composition array
+\code{[n_pop × n_regions × n_years × n_seas × n_lens × n_sexes × n_fish_fleets]}.}
+
+\item{UseFishLenComps_discard_pop}{Binary indicator array for population-specific
+discard length compositions
+\code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]}.}
+
+\item{ISS_FishLenComps_discard_pop}{Input sample size array for population-specific
+discard length compositions
+\code{[n_pop × n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
+If \code{NULL}, derived from \code{ObsFishLenComps_discard_pop}.}
+
+\item{FishAgeComps_discard_pop_LikeType}{Character vector of length
+\code{n_fish_fleets} specifying likelihood type for population-specific
+discard age compositions. Same options as \code{FishAgeComps_discard_LikeType}.}
+
+\item{FishLenComps_discard_pop_LikeType}{Same as above but for discard length compositions.}
+
+\item{FishAgeComps_discard_pop_Type}{Character vector defining structure for
+population-specific discard age compositions. Same format as
+\code{FishAgeComps_discard_Type}.}
+
+\item{FishLenComps_discard_pop_Type}{Character vector defining structure for
+population-specific discard length compositions. Same format as
+\code{FishLenComps_discard_Type}.}
+
+\item{...}{Optional starting value overrides for overdispersion and
+correlation parameters.}
 }
 \value{
 The input \code{input_list} with \code{$data}, \code{$par}, and
@@ -249,9 +339,11 @@ Other Model Setup:
 \code{\link{Setup_Mod_Biologicals}()},
 \code{\link{Setup_Mod_Catch_and_F}()},
 \code{\link{Setup_Mod_Dim}()},
+\code{\link{Setup_Mod_Discard_Comps}()},
 \code{\link{Setup_Mod_Fishsel_and_Q}()},
 \code{\link{Setup_Mod_Movement}()},
 \code{\link{Setup_Mod_Rec}()},
+\code{\link{Setup_Mod_Retsel}()},
 \code{\link{Setup_Mod_SrvIdx_and_Comps}()},
 \code{\link{Setup_Mod_Srvsel_and_Q}()},
 \code{\link{Setup_Mod_Tagging}()},

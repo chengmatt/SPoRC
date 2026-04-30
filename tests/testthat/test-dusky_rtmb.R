@@ -24,7 +24,7 @@ test_that("Dusky RTMB model produces expected results", {
     # number of fishery fleets
     n_srv_fleets = sgl_rg_dusky_data$n_srv_fleets, # number of survey fleets
     n_seas = sgl_rg_dusky_data$n_seas,
-    verbose = TRUE, # whether to output messages
+    verbose = FALSE, # whether to output messages
     store_config = TRUE # whether to store configuration
   )
 
@@ -79,21 +79,23 @@ test_that("Dusky RTMB model produces expected results", {
   input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
 
 
-  input_list <- Setup_Mod_Catch_and_F(
-    input_list = input_list,
+  suppressWarnings(
+    input_list <- Setup_Mod_Catch_and_F(
+      input_list = input_list,
 
-    # Data inputs
-    ObsCatch = sgl_rg_dusky_data$ObsCatch,
-    UseCatch = sgl_rg_dusky_data$UseCatch,
+      # Data inputs
+      ObsCatch = sgl_rg_dusky_data$ObsCatch,
+      UseCatch = sgl_rg_dusky_data$UseCatch,
 
-    # Model options
-    Use_F_pen = 1,
-    # whether to use f penalty, == 0 don't use, == 1 use
-    sigmaC_spec = "fix",
+      # Model options
+      Use_F_pen = 1,
+      # whether to use f penalty, == 0 don't use, == 1 use
+      sigmaC_spec = "fix",
 
-    # Fixing sigma C and F
-    ln_sigmaC = array(log(sqrt(1/2)), dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets)),
-    ln_sigmaF = array(log(sqrt(1/2)), dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
+      # Fixing sigma C and F
+      ln_sigmaC = array(log(sqrt(1/2)), dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets)),
+      ln_sigmaF = array(log(sqrt(1/2)), dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
+    )
   )
 
   input_list <- Setup_Mod_FishIdx_and_Comps(

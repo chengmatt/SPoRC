@@ -4,14 +4,19 @@
 \alias{do_srvsel_pe_pars_mapping}
 \title{Map survey selectivity process error (variance/correlation) parameters}
 \usage{
-do_srvsel_pe_pars_mapping(input_list, srvsel_pe_pars_spec, corr_opt_semipar)
+do_srvsel_pe_pars_mapping(
+  input_list,
+  srvsel_pe_pars_spec,
+  corr_opt_semipar,
+  bins
+)
 }
 \arguments{
 \item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
 sublists. Requires \code{$data$n_srv_fleets}, \code{$data$n_regions},
 \code{$data$n_sexes}, \code{$data$cont_tv_srv_sel},
 \code{$data$srv_sel_model}, \code{$data$UseSrvIdx}, \code{$data$UseSrvIdx_pop}, and
-\code{$data$Selex_Type}.}
+\code{$data$srv_selex_type}.}
 
 \item{srvsel_pe_pars_spec}{Character vector \code{[n_srv_fleets]} specifying
 the sharing structure. Same options as
@@ -28,6 +33,8 @@ indices to \code{NA}. Valid values: \code{NA}, \code{"corr_zero_y"},
 \code{"corr_zero_b_c"} (3D GMRF only), \code{"corr_zero_y_b_c"}
 (3D GMRF only). After suppression, remaining non-\code{NA} parameters
 are re-indexed sequentially.}
+
+\item{bins}{Number of selectivity bins}
 }
 \value{
 The input \code{input_list} with \code{$map$srvsel_pe_pars} set to

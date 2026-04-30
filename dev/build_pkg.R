@@ -24,8 +24,8 @@ desc::desc_del_dep("compResidual", "Suggests")
 pkgdown::clean_cache()
 pkgdown::clean_site(force = TRUE)
 pkgdown::check_pkgdown()
-pkgdown::build_site()
 pkgdown::build_news()
+pkgdown::build_site()
 servr::httd("docs")
 
 # One-time setup
@@ -35,10 +35,11 @@ servr::httd("docs")
 # Build Ignore ------------------------------------------------------------
 use_build_ignore("dev")
 usethis::use_build_ignore("_pkgdown.yml")
+usethis::use_build_ignore(".claude")
 
 # Check, Build & Install --------------------------------------------------
 test()
-check()
+devtools::check(args = c("--no-tests"))
 build()
 install()
 unloadNamespace("SPoRC")

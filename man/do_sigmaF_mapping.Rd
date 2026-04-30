@@ -2,7 +2,7 @@
 % Please edit documentation in R/Setup_Fishery.R
 \name{do_sigmaF_mapping}
 \alias{do_sigmaF_mapping}
-\title{Map sigma_F (fishing mortality process error SD) parameters}
+\title{Map sigmaF (fishing mortality process error SD) parameters}
 \usage{
 do_sigmaF_mapping(input_list, sigmaF_spec)
 }

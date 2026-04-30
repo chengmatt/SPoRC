@@ -311,34 +311,34 @@ input_list <- Setup_Mod_Fishsel_and_Q(input_list = input_list,
 
 
 # Custom parameter sharing for fishery selectivity
-map_ln_fish_fixed_sel_pars <- input_list$par$ln_fish_fixed_sel_pars # mapping fishery selectivity
+map_fish_fixed_sel_pars <- input_list$par$fish_fixed_sel_pars # mapping fishery selectivity
 
 # Fixed gear fleet, unique parameters for each sex (time block 1)
-map_ln_fish_fixed_sel_pars[,1,1,1,1] <- 1 # a50, female, time block 1, fixed gear
-map_ln_fish_fixed_sel_pars[,2,1,1,1] <- 2 # delta, female, time block 1, fixed gear
+map_fish_fixed_sel_pars[,1,1,1,1] <- 1 # a50, female, time block 1, fixed gear
+map_fish_fixed_sel_pars[,2,1,1,1] <- 2 # delta, female, time block 1, fixed gear
 # (shared with time block 2 and sex)
-map_ln_fish_fixed_sel_pars[,1,1,2,1] <- 3 # a50, male, time block 1, fixed gear
-map_ln_fish_fixed_sel_pars[,2,1,2,1] <- 2 # delta, male, time block 1, fixed gear
+map_fish_fixed_sel_pars[,1,1,2,1] <- 3 # a50, male, time block 1, fixed gear
+map_fish_fixed_sel_pars[,2,1,2,1] <- 2 # delta, male, time block 1, fixed gear
 # (shared with time block 2 and sex)
 
 # time block 2, fixed gear fishery
-map_ln_fish_fixed_sel_pars[,1,2,1,1] <- 4 # a50, female, time block 2, fixed gear
-map_ln_fish_fixed_sel_pars[,2,2,1,1] <- 2 # delta, female, time block 2, fixed gear
+map_fish_fixed_sel_pars[,1,2,1,1] <- 4 # a50, female, time block 2, fixed gear
+map_fish_fixed_sel_pars[,2,2,1,1] <- 2 # delta, female, time block 2, fixed gear
 # (shared with time block 1 and sex)
-map_ln_fish_fixed_sel_pars[,1,2,2,1] <- 5 # a50, male, time block 2, fixed gear
-map_ln_fish_fixed_sel_pars[,2,2,2,1] <- 2 # delta, male, time block 2, fixed gear
+map_fish_fixed_sel_pars[,1,2,2,1] <- 5 # a50, male, time block 2, fixed gear
+map_fish_fixed_sel_pars[,2,2,2,1] <- 2 # delta, male, time block 2, fixed gear
 # (shared with time block 1 and sex)
 
 # time block 1 and 2, trawl gear fishery
-map_ln_fish_fixed_sel_pars[,1,1,1,2] <- 6 # amax, female, time block 1, trawl gear
-map_ln_fish_fixed_sel_pars[,2,1,1,2] <- 7 # delta, female, time block 1, trawl gear
+map_fish_fixed_sel_pars[,1,1,1,2] <- 6 # amax, female, time block 1, trawl gear
+map_fish_fixed_sel_pars[,2,1,1,2] <- 7 # delta, female, time block 1, trawl gear
 # (shared by sex)
-map_ln_fish_fixed_sel_pars[,1,1,2,2] <- 8 # amax, male, time block 1, trawl gear
-map_ln_fish_fixed_sel_pars[,2,1,2,2] <- 7 # delta, male, time block 1, trawl gear
+map_fish_fixed_sel_pars[,1,1,2,2] <- 8 # amax, male, time block 1, trawl gear
+map_fish_fixed_sel_pars[,2,1,2,2] <- 7 # delta, male, time block 1, trawl gear
 # (shared by sex)
-map_ln_fish_fixed_sel_pars[,,2,,2] <- NA # no parameters estimated for time block 2 trawl gear
+map_fish_fixed_sel_pars[,,2,,2] <- NA # no parameters estimated for time block 2 trawl gear
 
-input_list$map$ln_fish_fixed_sel_pars <- factor(map_ln_fish_fixed_sel_pars) # input into map list
+input_list$map$fish_fixed_sel_pars <- factor(map_fish_fixed_sel_pars) # input into map list
 
 input_list <- Setup_Mod_Srvsel_and_Q(input_list = input_list,
 
@@ -385,26 +385,26 @@ input_list <- Setup_Mod_Srvsel_and_Q(input_list = input_list,
 )
 
 # Custom mapping survey selectivity stuff
-map_ln_srv_fixed_sel_pars <- input_list$par$ln_srv_fixed_sel_pars # set up mapping factor stuff
+map_srv_fixed_sel_pars <- input_list$par$srv_fixed_sel_pars # set up mapping factor stuff
 
 # Coop survey (japanese)
-map_ln_srv_fixed_sel_pars[,1,1,1,1] <- 1 # a50, coop survey, time block 1, female
-map_ln_srv_fixed_sel_pars[,2,1,1,1] <- 2 # delta, coop survey, time block 1, female
+map_srv_fixed_sel_pars[,1,1,1,1] <- 1 # a50, coop survey, time block 1, female
+map_srv_fixed_sel_pars[,2,1,1,1] <- 2 # delta, coop survey, time block 1, female
 # (sharing with domestic survey)
-map_ln_srv_fixed_sel_pars[,1,1,2,1] <- 3 # a50, coop survey, time block 1, male
-map_ln_srv_fixed_sel_pars[,2,1,2,1] <- 4 # delta, coop survey, time block 1, male
+map_srv_fixed_sel_pars[,1,1,2,1] <- 3 # a50, coop survey, time block 1, male
+map_srv_fixed_sel_pars[,2,1,2,1] <- 4 # delta, coop survey, time block 1, male
 # (sharing with domestic survey)
 
 # domestic survey
-map_ln_srv_fixed_sel_pars[,1,1,1,2] <- 5 # a50, domestic survey, time block 1, female
-map_ln_srv_fixed_sel_pars[,2,1,1,2] <- 2 # delta, domestic survey, time block 1, female
+map_srv_fixed_sel_pars[,1,1,1,2] <- 5 # a50, domestic survey, time block 1, female
+map_srv_fixed_sel_pars[,2,1,1,2] <- 2 # delta, domestic survey, time block 1, female
 # (sharing with coop survey)
-map_ln_srv_fixed_sel_pars[,1,1,2,2] <- 6 # a50, domestic survey, time block 1, male
-map_ln_srv_fixed_sel_pars[,2,1,2,2] <- 4 # delta, domestic survey, time block 1, male
+map_srv_fixed_sel_pars[,1,1,2,2] <- 6 # a50, domestic survey, time block 1, male
+map_srv_fixed_sel_pars[,2,1,2,2] <- 4 # delta, domestic survey, time block 1, male
 # (sharing with coop survey)
 
-input_list$map$ln_srv_fixed_sel_pars <- factor(map_ln_srv_fixed_sel_pars)  # input into map list
-input_list$par$ln_srv_fixed_sel_pars[] <- log(3) # some more informative starting values
+input_list$map$srv_fixed_sel_pars <- factor(map_srv_fixed_sel_pars)  # input into map list
+input_list$par$srv_fixed_sel_pars[] <- log(3) # some more informative starting values
 
 # set up model weighting stuff
 input_list <- Setup_Mod_Weighting(input_list = input_list,
@@ -446,8 +446,8 @@ data <- input_list$data
 parameters <- input_list$par
 mapping <- input_list$map
 
-parameters$ln_fish_fixed_sel_pars[,,,,1] <- log(1) # some more informative starting values
-parameters$ln_fish_fixed_sel_pars[,,,,2] <- log(5)
+parameters$fish_fixed_sel_pars[,,,,1] <- log(1) # some more informative starting values
+parameters$fish_fixed_sel_pars[,,,,2] <- log(5)
 
 # Fit model
 st <- Sys.time()

@@ -17,12 +17,15 @@ Do_Population_Projection(
   terminal_NAA,
   terminal_NAA0,
   terminal_F,
+  dmr = array(0, dim = c(n_regions, n_seas, n_fish_fleets)),
   natmort,
   natal_region,
   WAA,
   WAA_fish,
   MatAA,
   fish_sel,
+  ret_sel = array(1, dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes,
+    n_fish_fleets)),
   Movement,
   sgl_seas_spawning_movement,
   stray_rate,
@@ -41,8 +44,7 @@ Do_Population_Projection(
     
     rec_seas_prop[] <- 1/n_seas
      rec_seas_prop
- },
-  init_F = array(0, dim = c(n_regions, n_seas, n_fish_fleets))
+ }
 )
 }
 \arguments{
@@ -76,15 +78,17 @@ Unfished numbers-at-age in the terminal assessment year.}
 
 \item{terminal_F}{Array `[n_regions, n_seas, n_fish_fleets]`. Terminal
 fishing mortality; sets F in projection year 1 and defines the seasonal
-F ratio applied in subsequent years.}
+F ratios applied in subsequent years.}
+
+\item{dmr}{Array \code{[n_regions, n_seas, n_fish_fleets]}. Discard mortality rate.
+Default behavior is no discard mortality (\code{dmr = 0}). When combined with
+\code{ret_sel = 1}, this implies no discarding within a given fleet (all catch is retained).}
 
 \item{natmort}{Array `[n_pop, n_regions, n_proj_yrs, n_ages, n_sexes]`.
 Annual natural mortality-at-age, scaled internally by season duration.}
 
-\item{natal_region}{Integer vector `[n_pop]`. Index of the natal region
-for each population. Used to map populations to their spawning regions
-when accumulating effective SSB and for Beverton-Holt recruitment
-calculations under natal homing.}
+\item{natal_region}{Integer vector `[n_pop]`. Natal region for each
+population.}
 
 \item{WAA}{Array `[n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes]`.
 Weight-at-age used in spawning biomass calculations.}
@@ -99,11 +103,13 @@ Maturity-at-age.}
 \item{fish_sel}{Array `[n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets]`.
 Fishery selectivity-at-age.}
 
+\item{ret_sel}{Array \code{[n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets]}. Retention
+selectivity-at-age. Default behavior corresponds to full retention (\code{ret_sel = 1}),
+meaning all captured fish are retained unless otherwise specified.}
+
 \item{Movement}{Array
 `[n_pop, n_regions, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes]`.
-Seasonal movement transition matrices. Entry `[p, r1, r2, y, s, a, sx]`
-is the probability of a fish in population `p` moving from region `r1`
-to region `r2`.}
+Seasonal movement transition matrices.}
 
 \item{sgl_seas_spawning_movement}{Array
 `[n_pop, n_regions, n_regions, n_proj_yrs, n_ages, n_sexes]`.
@@ -118,121 +124,132 @@ reference point (e.g., F_MSY) or fixed input F, depending on
 `fmort_opt`.}
 
 \item{b_ref_pt}{Array `[n_pop, n_regions, n_proj_yrs]`. Biomass reference
-point. For `"HCR_global"`, values are summed internally across
-populations and regions.}
+point used in harvest control rules.}
 
 \item{HCR_function}{Function. Harvest control rule with arguments `x`
-(SSB), `frp` (F reference point), and `brp` (B reference point).
-Required when `fmort_opt` is `"HCR"` or `"HCR_global"`.}
+(SSB), `frp` (F reference point), and `brp` (B reference point).}
 
-\item{recruitment_opt}{Character. Recruitment scenario. One of:
-\describe{
-  \item{`"inv_gauss"`}{Stochastic draws from an inverse Gaussian
-    distribution conditioned on historical recruitment.}
-  \item{`"mean_rec"`}{Mean historical recruitment by population and
-    region.}
-  \item{`"zero"`}{No recruitment.}
-  \item{`"bh_rec"`}{Deterministic Beverton-Holt recruitment. Requires
-    `bh_rec_opt`.}
-}}
+\item{recruitment_opt}{Character. Recruitment scenario:
+`"inv_gauss"`, `"mean_rec"`, `"zero"`, or `"bh_rec"`.}
 
-\item{fmort_opt}{Character. Fishing mortality scenario. One of:
-\describe{
-  \item{`"HCR"`}{Region-specific harvest control rule applied to
-    regional SSB.}
-  \item{`"HCR_global"`}{Harvest control rule applied to global SSB
-    (summed across all populations and regions).}
-  \item{`"Input"`}{Fixed F supplied directly via `f_ref_pt`.}
-}}
+\item{fmort_opt}{Character. Fishing mortality scenario:
+`"HCR"`, `"HCR_global"`, or `"Input"`.}
 
 \item{t_spawn}{Numeric scalar. Fraction of the spawning season elapsed
-before spawning; used in the mid-season SSB calculation.}
+before spawning; used for mid-season SSB calculations.}
 
-\item{bh_rec_opt}{Named list. Required when `recruitment_opt = "bh_rec"`.
-Must contain:
-\describe{
-  \item{`rec_dd`}{Density dependence structure: 1 = global SSB,
-    0 = local SSB.}
-  \item{`rec_lag`}{Recruitment lag in years.}
-  \item{`R0`}{Unfished equilibrium recruitment.}
-  \item{`h`}{Steepness by region.}
-  \item{`rec_region_prop`}{Proportional recruitment apportionment
-    by region.}
-  \item{`WAA`}{Reference weight-at-age, indexing the first year.}
-  \item{`MatAA`}{Reference maturity-at-age, indexing the first year.}
-  \item{`fish_sel`}{Reference fishery selectivity, indexing the first year and fleet (dominant fleet).}
-  \item{`natmort`}{Reference natural mortality, indexing the first year.}
-  \item{`SSB`}{Historical SSB array `[n_pop, n_regions, n_yrs]`.
-    Projection SSBs are appended internally.}
-  \item{`Movement`}{Movement array for recruitment distribution,
-    indexing the first year.}
-  \item{`sgl_seas_spawning_movement`}{Single-season spawning movement
-    array, indexing the first year.}
-  \item{`stray_rate`}{Stray rates by population, indexing the first
-    year.}
-}}
+\item{bh_rec_opt}{Named list of inputs for deterministic Beverton–Holt
+  recruitment when `recruitment_opt = "bh_rec"`. This list is passed
+  directly to \code{\link{Get_Det_Recruitment}} and must contain all
+  required arguments for that function.
+
+  Required elements and their expected dimensions include:
+  \describe{
+    \item{\code{R0}}{Numeric vector \code{[n_pop]}. Unfished recruitment.}
+    \item{\code{h}}{Numeric array \code{[n_pop, n_regions]}. Steepness.}
+    \item{\code{rec_region_prop}}{Numeric array
+      \code{[n_pop, n_regions]}. Recruitment allocation across regions
+      (sums to 1 across regions).}
+    \item{\code{rec_seas_prop}}{Numeric array
+      \code{[n_pop, n_seas]}. Seasonal recruitment proportions
+      (sums to 1 across seasons).}
+    \item{\code{SSB}}{Numeric array
+      \code{[n_pop, n_regions, n_yrs]}. Historical spawning biomass,
+      to which projected SSB is appended internally.}
+    \item{\code{WAA}}{Array
+      \code{[n_pop, n_regions, n_seas, n_ages]}. Weight-at-age.}
+    \item{\code{MatAA}}{Array
+      \code{[n_pop, n_regions, n_seas, n_ages]}. Maturity-at-age.}
+    \item{\code{natmort}}{Array
+      \code{[n_pop, n_regions, n_ages]}. Natural mortality.}
+    \item{\code{Movement}}{Array
+      \code{[n_pop, n_regions, n_regions, n_seas, n_ages]}. Movement
+      transition matrices.}
+    \item{\code{sgl_seas_spawning_movement}}{Array
+      \code{[n_pop, n_regions, n_regions, n_ages]}. Spawning movement
+      (single-season case).}
+    \item{\code{stray_rate}}{Numeric vector \code{[n_pop]}. Straying rates.}
+    \item{\code{init_F}}{Array
+      \code{[n_regions, n_seas, n_fish_fleets]}. Initial fishing mortality.}
+    \item{\code{fish_sel}}{Array
+      \code{[n_pop, n_regions, n_seas, n_ages, n_fish_fleets]}. Total selectivity.}
+    \item{\code{ret_sel}}{Array
+      \code{[n_pop, n_regions, n_seas, n_ages, n_fish_fleets]}. Retention selectivity.}
+    \item{\code{dmr}}{Array
+      \code{[n_regions, n_seas, n_fish_fleets]}. Discard mortality rates.}
+    \item{\code{sex_ratio_f}}{Numeric array
+      \code{[n_pop, n_regions]}. Female recruitment proportion.}
+  }
+
+  Additional scalar inputs include \code{rec_dd}, \code{rec_lag},
+  \code{n_pop}, \code{n_regions}, \code{n_ages}, \code{n_seas},
+  \code{spawn_seas}, \code{seasdur}, \code{t_spawn}, and
+  \code{do_recruits_move}.
+
+  Spawning biomass used in recruitment is constructed internally by
+  combining \code{bh_rec_opt$SSB} with projected SSB values during the
+  simulation.}
 
 \item{n_seas}{Integer. Number of seasons. Default = 1.}
 
 \item{seasdur}{Numeric vector `[n_seas]`. Duration of each season as a
-fraction of the year. Default = equal fractions.}
+fraction of the year.}
 
-\item{spawn_seas}{Integer. Spawning season index. Default = 1.}
+\item{spawn_seas}{Integer. Spawning season index.}
 
 \item{rec_seas_prop}{Array `[n_pop, n_seas]`. Proportion of annual
-recruitment entering in each season.}
-
-\item{init_F}{Numeric array `[n_regions x n_seas x n_fish_fleets]`. Initial seasonal F values used
-when deriving Beverton-Holt equilibrium quantities.}
+recruitment entering in each season. Must sum to 1 across seasons for
+each population.}
 }
 \value{
-A named list containing:
-  \describe{
-    \item{`proj_F`}{Array `[n_regions, n_proj_yrs + 1]`. Annual fishing
-      mortality. Year 1 holds terminal F; subsequent years are HCR- or
-      input-derived.}
-    \item{`proj_Catch`}{Array
-      `[n_pop, n_regions, n_proj_yrs, n_seas, n_fish_fleets]`. Catch
-      biomass by population, region, year, season, and fleet.}
-    \item{`proj_SSB`}{Array `[n_pop, n_regions, n_proj_yrs]`. Spawning
-      stock biomass.}
-    \item{`proj_eff_SSB`}{Array `[n_pop, n_proj_yrs]`. Effective SSB at
-      each population's natal region, accumulating straying contributions
-      scaled by `stray_rate`.}
-    \item{`proj_Dynamic_SSB0`}{Array `[n_pop, n_regions, n_proj_yrs]`.
-      Dynamic unfished spawning biomass.}
-    \item{`proj_NAA`}{Array
-      `[n_pop, n_regions, n_proj_yrs + 1, n_seas, n_ages, n_sexes]`.
-      Fished numbers-at-age. Index 1 holds terminal values.}
-    \item{`proj_NAA0`}{Same dimensions as `proj_NAA`. Unfished
-      numbers-at-age.}
-    \item{`proj_ZAA`}{Same dimensions as `proj_NAA`. Total
-      mortality-at-age.}
-  }
+A named list containing projected fishing mortality, catch,
+  spawning biomass, effective spawning biomass, dynamic unfished biomass,
+  and numbers-at-age for fished and unfished states.
 }
 \description{
 Projects population dynamics forward in time under alternative recruitment
-and fishing mortality scenarios. Initializes from terminal assessment
-quantities and advances numbers-at-age through survival, movement,
-recruitment, ageing, and harvest control rules across seasons and years.
+and fishing mortality scenarios. The model initializes from terminal
+assessment quantities and advances numbers-at-age through recruitment,
+seasonal movement, mortality, ageing, and harvest control rules across
+multiple seasons and years.
 }
 \details{
-Each projection year proceeds through the following steps: (1) recruitment
-is generated and allocated to populations, regions, sexes, and seasons;
-(2) fishing mortality-at-age is assembled from the current-year F, the
-terminal-year seasonal F ratio, and fishery selectivity; (3) numbers-at-age
-are redistributed among regions via the movement transition matrices
-(recruits optionally excluded); (4) within-season survival is applied via
-exponential decay, and at the end of the final season the population ages
-by one year with plus-group accumulation; (5) spawning biomass is
-calculated in `spawn_seas` with a mid-season survival correction; and
-(6) catch is derived from the Baranov equation. Fishing mortality for the
-following year is then set by the HCR or taken directly from `f_ref_pt`.
+Population dynamics are tracked at full resolution over
+\code{[population x region x year x season x age x sex]}. Recruitment is
+generated annually and then distributed across seasons using
+\code{rec_seas_prop}, allowing intra-annual timing of recruitment within
+the first age class.
 
-Single-sex models receive a 0.5 multiplier applied to SSB. When
-`n_regions = 1`, movement steps are skipped. When `n_seas = 1` and
-`n_pop > 1`, `sgl_seas_spawning_movement` redistributes fish to natal
-spawning grounds before SSB is calculated.
+
+Each projection year proceeds as follows:
+\enumerate{
+  \item Annual recruitment is generated and allocated across regions and
+  sexes. Seasonal recruitment is then distributed within the first age
+  class using \code{rec_seas_prop}, with additional recruits entering in
+  seasons \code{seas > 1}.
+  \item Fishing mortality-at-age is constructed from annual F, seasonal
+  F ratios derived from the terminal year, and selectivity.
+  \item Movement is applied at each seasonal step via transition matrices.
+  Age-1 movement is optional via \code{do_recruits_move}.
+  \item Within-season mortality is applied using exponential decay. At the
+  end of the final season, individuals age forward and the plus group
+  accumulates survivors.
+  \item Spawning biomass is computed in \code{spawn_seas} using a
+  mid-season mortality correction. For natal homing models with a single
+  season, spawning movement is applied prior to SSB calculation.
+  \item Catch is calculated using the Baranov equation and aggregated to
+  biomass using fishery-specific weights.
+  \item Fishing mortality for the next year is updated via the specified
+  harvest control rule or fixed input.
+}
+
+Effective spawning biomass at each population's natal region aggregates
+contributions from all populations, with cross-population contributions
+scaled by \code{stray_rate} and normalised by the number of populations
+in each natal region.
+
+When \code{n_sexes = 1}, spawning biomass is multiplied by 0.5. When
+\code{n_regions = 1}, movement is skipped.
 }
 \seealso{
 Other Reference Points and Projections: 

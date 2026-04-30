@@ -28,8 +28,8 @@ A named list containing:
       \code{new_srv_age_wts}, \code{new_srv_len_wts}}{Updated Francis
       weight arrays for pooled compositions, same dimensions as the
       corresponding \code{Wt_*} arrays in \code{data}.}
-    \item{\code{new_fish_age_wts_pop}, \code{new_fish_len_wts_pop},
-      \code{new_srv_age_wts_pop}, \code{new_srv_len_wts_pop}}{Updated
+    \item{\code{new_fish_age_pop_wts}, \code{new_fish_len_pop_wts},
+      \code{new_srv_age_pop_wts}, \code{new_srv_len_pop_wts}}{Updated
       Francis weight arrays for population-specific compositions, same
       dimensions as the corresponding \code{Wt_*_pop} arrays in
       \code{data}. Cells remain \code{NA} when the corresponding
@@ -60,10 +60,10 @@ for(j in 1:5) {
     data$Wt_FishLenComps[] <- wts$new_fish_len_wts
     data$Wt_SrvAgeComps[]  <- wts$new_srv_age_wts
     data$Wt_SrvLenComps[]  <- wts$new_srv_len_wts
-    if(any(data$UseFishAgeComps_pop == 1)) data$Wt_FishAgeComps_pop[] <- wts$new_fish_age_wts_pop
-    if(any(data$UseFishLenComps_pop == 1)) data$Wt_FishLenComps_pop[] <- wts$new_fish_len_wts_pop
-    if(any(data$UseSrvAgeComps_pop  == 1)) data$Wt_SrvAgeComps_pop[]  <- wts$new_srv_age_wts_pop
-    if(any(data$UseSrvLenComps_pop  == 1)) data$Wt_SrvLenComps_pop[]  <- wts$new_srv_len_wts_pop
+    if(any(data$UseFishAgeComps_pop == 1)) data$Wt_FishAgeComps_pop[] <- wts$new_fish_age_pop_wts
+    if(any(data$UseFishLenComps_pop == 1)) data$Wt_FishLenComps_pop[] <- wts$new_fish_len_pop_wts
+    if(any(data$UseSrvAgeComps_pop  == 1)) data$Wt_SrvAgeComps_pop[]  <- wts$new_srv_age_pop_wts
+    if(any(data$UseSrvLenComps_pop  == 1)) data$Wt_SrvLenComps_pop[]  <- wts$new_srv_len_pop_wts
   }
   obj <- fit_model(data, parameters, mapping, random = NULL,
                    newton_loops = 3, silent = TRUE)

@@ -10,7 +10,7 @@ get_francis_weights(
   n_fleets,
   n_years,
   n_seas,
-  n_ages,
+  n_bins,
   Use,
   ISS,
   Pred_array,
@@ -31,15 +31,15 @@ get_francis_weights(
 
 \item{n_seas}{Number of seasons}
 
-\item{n_ages}{Number of ages}
+\item{n_bins}{Number of bins}
 
 \item{Use}{Array from data list that specifies whether to use data that year}
 
 \item{ISS}{Input sample size array}
 
-\item{Pred_array}{Predicted values array dimensioned by n_regions, n_years, n_seas, n_ages, n_sexes, n_fleets}
+\item{Pred_array}{Predicted values array dimensioned by n_regions, n_years, n_seas, n_bins, n_sexes, n_fleets}
 
-\item{Obs_array}{Observed values array dimensioned by n_regions, n_years, n_seas, n_ages, n_sexes, n_fleets}
+\item{Obs_array}{Observed values array dimensioned by n_regions, n_years, n_seas, n_bins, n_sexes, n_fleets}
 
 \item{weights}{Array of francis weights (NAs) to apply dimensioned by n_regions, n_years, n_seas, n_sexes, n_fleets}
 

@@ -20,12 +20,18 @@ do_retrospective(
   fishidx_datalag = array(0, dim = c(data$n_regions, data$n_fish_fleets)),
   fishage_datalag = array(0, dim = c(data$n_regions, data$n_fish_fleets)),
   fishlen_datalag = array(0, dim = c(data$n_regions, data$n_fish_fleets)),
+  fishage_discard_datalag = array(0, dim = c(data$n_regions, data$n_fish_fleets)),
+  fishlen_discard_datalag = array(0, dim = c(data$n_regions, data$n_fish_fleets)),
   srvidx_datalag = array(0, dim = c(data$n_regions, data$n_srv_fleets)),
   srvage_datalag = array(0, dim = c(data$n_regions, data$n_srv_fleets)),
   srvlen_datalag = array(0, dim = c(data$n_regions, data$n_srv_fleets)),
   fishidx_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_fish_fleets)),
   fishage_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_fish_fleets)),
   fishlen_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_fish_fleets)),
+  fishage_discard_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions,
+    data$n_fish_fleets)),
+  fishlen_discard_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions,
+    data$n_fish_fleets)),
   srvidx_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_srv_fleets)),
   srvage_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_srv_fleets)),
   srvlen_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_srv_fleets)),
@@ -77,6 +83,14 @@ age-composition data \eqn{[region \times fleet]}. Default is zeros.}
 \item{fishlen_datalag}{Integer array specifying lags applied to fishery
 length-composition data \eqn{[region \times fleet]}. Default is zeros.}
 
+\item{fishage_discard_datalag}{Integer array specifying lags applied to
+fishery discard age-composition data \eqn{[region \times fleet]}.
+Default is zeros.}
+
+\item{fishlen_discard_datalag}{Integer array specifying lags applied to
+fishery discard length-composition data \eqn{[region \times fleet]}.
+Default is zeros.}
+
 \item{srvidx_datalag}{Integer array specifying lags applied to survey
 index data \eqn{[region \times fleet]}. Default is zeros.}
 
@@ -96,6 +110,14 @@ population-specific fishery age-composition data
 
 \item{fishlen_pop_datalag}{Integer array specifying lags applied to
 population-specific fishery length-composition data
+\eqn{[n\_pop \times region \times fleet]}. Default is zeros.}
+
+\item{fishage_discard_pop_datalag}{Integer array specifying lags applied to
+population-specific fishery discard age-composition data
+\eqn{[n\_pop \times region \times fleet]}. Default is zeros.}
+
+\item{fishlen_discard_pop_datalag}{Integer array specifying lags applied to
+population-specific fishery discard length-composition data
 \eqn{[n\_pop \times region \times fleet]}. Default is zeros.}
 
 \item{srvidx_pop_datalag}{Integer array specifying lags applied to
@@ -120,13 +142,13 @@ A long-format \code{data.frame} containing retrospective estimates
     \item \code{Pop} – Population index.
     \item \code{Region} – Region index.
     \item \code{Year} – Model year.
-    \item \code{Type} – Quantity reported ("SSB" or "Recruitment").
+    \item \code{Type} – Quantity reported (\code{"SSB"} or \code{"Recruitment"}).
     \item \code{peel} – Retrospective peel number (0 = full data, 1 = one-year peel, etc.).
     \item \code{value} – Estimated value of the quantity.
     \item \code{pdHess} – Logical indicator of positive-definite Hessian
-    (returned when \code{do_sdrep = TRUE}).
+      (only present when \code{do_sdrep = TRUE}).
     \item \code{max_grad} – Maximum absolute gradient of fixed effects
-    (returned when \code{do_sdrep = TRUE}).
+      (only present when \code{do_sdrep = TRUE}).
   }
 }
 \description{

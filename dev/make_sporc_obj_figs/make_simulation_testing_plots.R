@@ -300,8 +300,8 @@ self_test <- simulation_self_test(
   sd_rep = dusky_rtmb_model$sdrep,
   n_sims = 500,
   newton_loops = 3,
-  do_sdrep = FALSE,
-  do_par = T,
+  do_sdrep = TRUE,
+  do_par = F,
   n_cores = 13,
   output_path = NULL,
   what = c("SSB", "Rec")

@@ -2,7 +2,7 @@
 % Please edit documentation in R/Get_Reference_Points.R
 \name{global_BH_Fmsy}
 \alias{global_BH_Fmsy}
-\title{Compute global Beverton-Holt Fmsy for a spatially explicit single-population model}
+\title{Compute Beverton-Holt Fmsy for a spatially explicit model}
 \usage{
 global_BH_Fmsy(pars, data)
 }
@@ -12,32 +12,112 @@ global_BH_Fmsy(pars, data)
   \item{\code{log_Fmsy}}{Log-scale trial \eqn{F_{MSY}}.}
 }}
 
-\item{data}{Named list of RTMB data. Must contain all spatial fields
-required by \code{\link{global_SPR}} (excluding \code{SPR_x} and
-\code{stray_rate}) plus:
-\describe{
-  \item{\code{h}}{Numeric scalar. Beverton-Holt steepness.}
-  \item{\code{R0}}{Numeric scalar. Unfished equilibrium recruitment.}
-  \item{\code{rec_region_prop}}{Numeric vector \code{[n_regions]}.
-    Proportion of annual recruitment entering each region.}
-  \item{\code{rec_seas_prop}}{Numeric vector \code{[n_seas]}. Seasonal
-    recruitment proportions (no population dimension for single-pop).}
-  \item{\code{sex_ratio_f}}{Numeric scalar or vector. Female sex ratio.}
-}}
+\item{data}{Named list of RTMB data. Must contain:
+  \describe{
+    \item{\code{n_regions}}{Integer. Number of spatial regions.}
+    \item{\code{n_ages}}{Integer. Number of age classes.}
+    \item{\code{n_seas}}{Integer. Number of seasons.}
+    \item{\code{seasdur}}{Numeric vector \code{[n_seas]}. Season durations.}
+    \item{\code{spawn_seas}}{Integer. Index of the spawning season.}
+    \item{\code{t_spawn}}{Numeric. Mid-season spawning timing correction.}
+
+    \item{\code{F_fract_flt}}{Numeric array
+      \code{[n_regions, n_seas, n_fish_fleets]}. Fleet F fractions by region.}
+
+    \item{\code{fish_sel}}{Numeric array
+      \code{[1, n_regions, n_seas, n_ages, n_fish_fleets]}.
+      Fishery selectivity at age for females.}
+
+    \item{\code{ret_sel}}{Numeric array
+      \code{[1, n_regions, n_seas, n_ages, n_fish_fleets]}.
+      Retention selectivity (fraction of selected fish retained).}
+
+    \item{\code{dmr}}{Numeric array
+      \code{[n_regions, n_seas, n_fish_fleets]}. Discard mortality rate
+      (fraction of discarded fish that die).}
+
+    \item{\code{natmort}}{Numeric array
+      \code{[n_regions, n_ages]}. Female natural mortality at age.}
+
+    \item{\code{WAA}}{Numeric array
+      \code{[n_regions, n_seas, n_ages]}. Female weight at age.}
+
+    \item{\code{MatAA}}{Numeric array
+      \code{[n_regions, n_seas, n_ages]}. Maturity at age.}
+
+    \item{\code{Movement}}{Numeric array
+      \code{[n_regions, n_regions, n_seas, n_ages]}. Seasonal movement
+      transition matrices.}
+
+    \item{\code{rec_region_prop}}{Numeric vector
+      \code{[n_regions]}. Proportion of recruitment entering each region.}
+
+    \item{\code{sex_ratio_f}}{Numeric vector
+      \code{[n_regions]}. Female sex ratio at recruitment.}
+
+    \item{\code{rec_seas_prop}}{Numeric vector
+      \code{[n_seas]}. Seasonal recruitment proportions.}
+
+    \item{\code{h}}{Numeric. Beverton-Holt steepness.}
+
+    \item{\code{R0}}{Numeric. Unfished equilibrium recruitment.}
+
+    \item{\code{is_discard_fleet}}{Integer vector
+      \code{[n_fish_fleets]}. Indicator for fleets whose catch is excluded
+      from landed yield (0 = landing fleet, 1 = discard-only fleet). These
+      fleets still contribute to total fishing mortality \code{Z} and
+      affect population dynamics and spawning biomass.}
+  }}
 }
 \value{
 Numeric scalar. Negative total equilibrium yield (minimised to
   find \eqn{F_{MSY}}).
 }
 \description{
-Finds a single \eqn{F_{MSY}} that is applied uniformly across all regions
-by maximising total equilibrium yield under a Beverton-Holt stock-recruit
-relationship. Cohorts are tracked spatially across regions and seasons under
-movement. Only valid for single-population models (\code{n_pop = 1});
-multi-population models should use \code{\link{local_BH_Fmsy_multipop}}.
+Calculates \eqn{F_{MSY}} by maximising equilibrium yield under a
+Beverton-Holt stock-recruit relationship. Yield is computed from
+spawning biomass per recruit (\eqn{\phi_F}), the BH equilibrium
+recruitment formula, and catch-at-age integrated across all regions,
+seasons, and movement transitions. Yield includes only landings from
+fleets where \code{is_discard_fleet == 0}; discard-only fleets
+contribute to total mortality but not to the yield being maximised.
 }
 \details{
-The plus-group is solved analytically using
-\code{\link{build_plus_group_T}} and \code{\link{solve_plus_group}}.
+Supports multi-region, single-population models with seasonal movement.
+Straying is not included here (use \code{single_region_BH_Fmsy} for
+multi-population non-spatial models).
+
+
+**Fishing mortality decomposition**
+
+Fishing mortality at age is split into:
+
+- retained fishing mortality
+  \code{F_ret = F * selectivity * retention}
+
+- discard fishing mortality (dead discards only)
+  \code{F_disc = F * selectivity * (1 - retention) * dmr}
+
+where \code{dmr} is the discard mortality rate (fraction of discarded fish
+that die). Only the dead fraction contributes to total instantaneous
+mortality \code{Z}.
+
+The total mortality used for survival is:
+
+\code{Z = M + F_ret + F_disc}
+
+This formulation assumes:
+
+- retained fish always die,
+- only a fraction \code{dmr} of discarded fish die,
+- the surviving fraction \code{(1 - dmr)} of discards remains in the
+  population and continues aging, moving, and contributing to spawning
+  biomass.
+
+Landed yield used in the objective function is computed via the Baranov
+catch equation using only the landed fraction of fishing mortality
+(excluding fleets where \code{is_discard_fleet == 1}). The discard
+fleet's F remains in the Z denominator, so the partitioning correctly
+accounts for competition between landing and discard mortality sources.
 }
 \keyword{internal}

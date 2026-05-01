@@ -269,8 +269,8 @@ mapping <- input_list$map
 # parameters$ln_InitDevs[,,1:(n_ages - 2)] <- rev(par_dat$coefficients[str_detect(names(par_dat$coefficients), "log_rec_dev")][1:(n_ages - 2)])
 # parameters$ln_RecDevs[] <- par_dat$coefficients[str_detect(names(par_dat$coefficients), "log_rec_dev")][-c(1:(n_ages - 2))]
 # parameters$ln_srv_q[] <- par_dat$coefficients[str_detect(names(par_dat$coefficients), "q_srv1")]
-# parameters$ln_fish_fixed_sel_pars[] <- log(c(par_dat$coefficients[str_detect(names(par_dat$coefficients), "a50")][1], par_dat$coefficients[str_detect(names(par_dat$coefficients), "delta")][1]))
-# parameters$ln_srv_fixed_sel_pars[] <- log(c(par_dat$coefficients[str_detect(names(par_dat$coefficients), "a50")][3], par_dat$coefficients[str_detect(names(par_dat$coefficients), "delta")][3]))
+# parameters$fish_fixed_sel_pars[] <- log(c(par_dat$coefficients[str_detect(names(par_dat$coefficients), "a50")][1], par_dat$coefficients[str_detect(names(par_dat$coefficients), "delta")][1]))
+# parameters$srv_fixed_sel_pars[] <- log(c(par_dat$coefficients[str_detect(names(par_dat$coefficients), "a50")][3], par_dat$coefficients[str_detect(names(par_dat$coefficients), "delta")][3]))
 #
 # # Fit model
 # dusky_rtmb_model <- fit_model(data,

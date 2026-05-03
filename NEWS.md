@@ -16,6 +16,9 @@
 ## Improvements
 - Allowed both numeric and character codes for specifying dynamics in simulator, so as to be more consistent with how estimation models are specified, while maintaining backwards compatibility. 
 
+## Bug Fixes
+- Fixed bug on smoothing penalty of time-varying selectivity where it was not being applied in the first year. 
+
 # version 1.1.0
 Release Date: 2026-3-31
 

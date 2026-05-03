@@ -670,7 +670,7 @@ do_h_mapping <- function(input_list, h_spec, rec_dd) {
   if(input_list$data$rec_model != 0 && !is.null(rec_dd) && rec_dd == "global") {
     if(is.null(h_spec)) {
       stop("When rec_dd == `global` (global density dependence), h_spec cannot be NULL. ",
-           "Steepness must be shared across the global SR relationship: use 'est_shared_pop_r' or 'est_shared_r'.")
+           "Steepness must be shared across the global SR relationship: use 'est_shared_pop_r' or 'est_shared_r', or 'fix'.")
     }
     if(!h_spec %in% c("est_shared_pop_r", "est_shared_r", "fix")) {
       stop("When rec_dd == `global` (global density dependence), h_spec must be ",

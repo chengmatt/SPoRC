@@ -189,7 +189,7 @@ Get_sel_PE_loglik <- function(PE_model,
     if(do_sel_pen == TRUE) {
       # Regularity on bins
       for(s in 1:n_sexes) {
-        for (y in 2:n_yrs) {
+        for (y in 1:n_yrs) {
           if (n_bins >= 3) {
             for (b in 2:(n_bins - 1)) {
               bin_penalty = log(sel_vals[1,y,b+1,s,1]) - 2 * log(sel_vals[1,y,b,s,1]) + log(sel_vals[1,y,b-1,s,1])

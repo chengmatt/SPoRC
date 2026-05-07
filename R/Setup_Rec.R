@@ -41,7 +41,7 @@
 #'   \code{[n_pop x n_regions x n_yrs x n_sexes x n_sims]}. Default: \code{1}
 #'   when \code{n_sexes = 1}; \code{0.5} per sex when \code{n_sexes = 2}.
 #' @param ln_sigmaR Log-scale standard deviation of recruitment deviations,
-#'   array \code{[n_pop x n_regions]}. The first element controls the SD for
+#'   array \code{[2 x n_pop x n_regions]}. The first element controls the SD for
 #'   initial age-structure deviations (\code{ln_InitDevs}); the second controls
 #'   the SD for annual recruitment deviations (\code{ln_RecDevs}). Default:
 #'   \code{log(1)} for both.
@@ -107,7 +107,7 @@ Setup_Sim_Rec <- function(
     R0_input = array(10, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)),
     h_input = array(0.8, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)),
     stray_rate_input = array(0, dim = c(sim_list$n_pop, sim_list$n_yrs, sim_list$n_sims)),
-    ln_sigmaR = array(log(1), dim = c(sim_list$n_pop, sim_list$n_regions)),
+    ln_sigmaR = array(log(1), dim = c(2, sim_list$n_pop, sim_list$n_regions)),
     rec_seas_prop_input = {
       rec_seas_prop = array(0, dim = c(sim_list$n_pop, sim_list$n_seas, sim_list$n_sims))
       rec_seas_prop[, 1, ] <- 1

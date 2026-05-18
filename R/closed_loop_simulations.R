@@ -427,7 +427,7 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   } else args$ObsFishIdx_pop_SE
 
   # Population-specific fishery age compositions
-  comp_fishage_pop_like <- if(!"comp_fishage_pop_like" %in% names(args)) data$ishAgeComps_pop_LikeType else args$comp_fishage_pop_like
+  comp_fishage_pop_like <- if(!"comp_fishage_pop_like" %in% names(args)) data$FishAgeComps_pop_LikeType else args$comp_fishage_pop_like
   FishAgeComps_pop_Type <- if(!"FishAgeComps_pop_Type" %in% names(args)) extend_years(data$FishAgeComps_pop_Type, closed_loop_yrs, 1, 'last') else args$FishAgeComps_pop_Type
   ISS_FishAgeComps_pop <- if(!"ISS_FishAgeComps_pop" %in% names(args)) extend_years(replicate(sim_list$n_sims, data$ISS_FishAgeComps_pop[,,,,,,drop = FALSE] * data$Wt_FishAgeComps_pop), closed_loop_yrs, 3, fill = ISS_FishAgeComps_pop_fill) else args$ISS_FishAgeComps_pop
   ln_FishAge_pop_theta <- if(!"ln_FishAge_pop_theta" %in% names(args)) optim_parameters_list$ln_FishAge_pop_theta[,,,,drop = FALSE] else args$ln_FishAge_pop_theta

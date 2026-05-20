@@ -1067,13 +1067,13 @@ apply_pop_dy <- function(y, sim, sim_env) {
                                                  exp(-ZAA[,,y,spawn_seas,,,sim,drop = FALSE] * t_spawn), c(1,2), sum)
 
         # Spawning Stock Biomass
-        sim_env$SSB[,, y, sim] <- apply(tmp_NAA_spawn *
+        sim_env$SSB[,, y, sim] <- apply(tmp_NAA_spawn[,, , , , 1, sim,drop = FALSE] *
                                           WAA[,, y, spawn_seas, , 1, sim,drop = FALSE] *
                                           MatAA[,, y, spawn_seas, , 1, sim,drop = FALSE] *
                                           exp(-ZAA[,, y, spawn_seas, , 1, sim,drop = FALSE] * t_spawn), c(1,2), sum)
 
         # Get dynamic B0
-        SSB0_array <- tmp_NAA0_spawn *  WAA[,,  y, spawn_seas, , 1, sim, drop = FALSE] * MatAA[,,y, spawn_seas, , 1, sim, drop = FALSE]
+        SSB0_array <- tmp_NAA0_spawn[,, , , , 1, sim,drop = FALSE] *  WAA[,,  y, spawn_seas, , 1, sim, drop = FALSE] * MatAA[,,y, spawn_seas, , 1, sim, drop = FALSE]
         mort_spawn <- exp(-natmort[,, y, , 1, sim, drop = FALSE] * t_spawn * seasdur[spawn_seas])
         mort_spawn <- array(mort_spawn, dim = dim(SSB0_array) ) # coerce array
         sim_env$Dynamic_SSB0[,,y,sim] <- apply(SSB0_array * mort_spawn, c(1,2), sum) # Dynamic B0

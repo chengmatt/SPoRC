@@ -267,7 +267,7 @@ test_that("Single-region EBS Pollock RTMB model produces expected results", {
   ebswp_rtmb_model <- fit_model(data,
                                 parameters,
                                 mapping,
-                                # random = NULL,
+                                random = NULL,
                                 newton_loops = 3,
                                 silent = TRUE
   )

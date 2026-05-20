@@ -363,5 +363,6 @@ Get_Comp_Likelihoods = function(Exp,
     } # end r loop
   } # end if 'Joint' comps by sex, but 'Split' by region
 
+
   return(comp_nLL) # return negative log likelihood
 } # end function

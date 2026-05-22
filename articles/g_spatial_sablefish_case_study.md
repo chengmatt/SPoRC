@@ -16,6 +16,7 @@ Alaska, and biennially between the BS and AI regions. Let us first load
 in the necessary packages and data files.
 
 ``` r
+
 # Load in packages
 library(SPoRC) 
 library(RTMB)
@@ -35,6 +36,7 @@ number of fishery fleets (n_fish_fleets), and number of survey fleets
 (n_srv_fleets)
 
 ``` r
+
 # Initialize model dimensions and data list
 input_list <- Setup_Mod_Dim(years = 1:length(mlt_rg_sable_data$years),
                             # vector of years (1 - 62)
@@ -77,6 +79,7 @@ sablefish, recruitment is parameterized as such:
     convergence
 
 ``` r
+
 # Setup recruitment stuff (using defaults for other stuff)
 input_list <- Setup_Mod_Rec(input_list = input_list, # input data list from above
                             do_rec_bias_ramp = 0, # not using bias ramp
@@ -117,6 +120,7 @@ mortality `M_spec = "fix"` at a value of `0.104884`, which is specified
 to be sex-invariant.
 
 ``` r
+
 # Setup biological stuff (using defaults for other stuff)
 input_list <- Setup_Mod_Biologicals(input_list = input_list,
                                     WAA = mlt_rg_sable_data$WAA, # weight at age
@@ -186,6 +190,7 @@ This approach preserves the intended structure of the Dirichlet
 hyperparameters for each movement row.
 
 ``` r
+
 # setting up movement parameterization
 Movement_prior <- expand.grid(
   region_from = 1:5, # regions
@@ -266,6 +271,7 @@ time-varying (estimated as 2 blocks; see input supplied to the
 (`TagRep_spec = "est_shared_r"`).
 
 ``` r
+
 # setup tagging priors
 tag_prior <- data.frame(
   region = 1,
@@ -347,6 +353,7 @@ all fleets, years, and regions
 (`ln_sigmaC = array(log(0.05), dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets))`).
 
 ``` r
+
 input_list <- Setup_Mod_Catch_and_F(input_list = input_list,
                                     # Data inputs
                                     ObsCatch = mlt_rg_sable_data$ObsCatch,
@@ -401,6 +408,7 @@ are availiable to indicate that compositions sum to 1 jointly across
 sexes, split by a given region.
 
 ``` r
+
 input_list <- Setup_Mod_FishIdx_and_Comps(input_list = input_list,
                                           # data inputs
                                           ObsFishIdx = mlt_rg_sable_data$ObsFishIdx,
@@ -439,6 +447,7 @@ split by region, while length compositions are not used. All
 compositions for the survey fleets assume a Mulinomial likelihood.
 
 ``` r
+
 # Survey Indices and Compositions
 input_list <- Setup_Mod_SrvIdx_and_Comps(input_list = input_list,
                                          # data inputs
@@ -508,6 +517,7 @@ options, which include:
     not estimated as no fishery indices are utilized (`fix`).
 
 ``` r
+
 # Fishery Selectivity and Catchability
 input_list <- Setup_Mod_Fishsel_and_Q(input_list = input_list,
 
@@ -586,6 +596,7 @@ selectivity, and there are similarly some nuanced parameter fixing and
 sharing to help facilitate model stability.
 
 ``` r
+
 input_list <- Setup_Mod_Srvsel_and_Q(input_list = input_list,
 
                                      # Model options
@@ -659,6 +670,7 @@ Finally, we can specify how we want model weighting to be conducted.
 Here, all weights are specified at 1.
 
 ``` r
+
 # set up model weighting stuff
 input_list <- Setup_Mod_Weighting(input_list = input_list,
                                   Wt_Catch = 1,
@@ -702,6 +714,7 @@ can then be extracted using the `RTMB::sdreport` function. As a word of
 caution, this could take a while to run!
 
 ``` r
+
 # extract out lists updated with helper functions
 data <- input_list$data
 parameters <- input_list$par
@@ -727,6 +740,7 @@ biomass. Additionally, western regions (BS and AI) along with the CGOA
 appear to exhibit the highest recruitment levels.
 
 ``` r
+
 # Get recruitment time-series
 rec_series <- reshape2::melt((sabie_rtmb_model$rep$Rec))
 rec_series$Par <- "Recruitment"

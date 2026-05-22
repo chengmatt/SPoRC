@@ -17,17 +17,17 @@ constraints.
 In this vignette, six MPs will be evaluated:
 
 1.  **f0** – No fishing, serving as a baseline for comparison.  
-2.  **f40_thresh** – A threshold control rule using $F_{40\%}$ and
-    $B_{40\%}$ as reference points.  
-    Fishing mortality is set at $F_{40\%}$ when $SSB \geq B_{40\%}$ and
-    declines linearly as $SSB$ falls below $B_{40\%}$.  
-    No fishing occurs if $SSB \leq B_{5\%}$.  
+2.  **f40_thresh** – A threshold control rule using $`F_{40\%}`$ and
+    $`B_{40\%}`$ as reference points.  
+    Fishing mortality is set at $`F_{40\%}`$ when $`SSB \ge B_{40\%}`$
+    and declines linearly as $`SSB`$ falls below $`B_{40\%}`$.  
+    No fishing occurs if $`SSB \le B_{5\%}`$.  
     This rule represents the default strategy used for Gulf of Alaska
     Dusky Rockfish management (Omori et al., 2024).  
 3.  **f40_const** – A constant fishing mortality rate fixed at
-    $F_{40\%}$, regardless of $SSB$.  
+    $`F_{40\%}`$, regardless of $`SSB`$.  
 4.  **f40_steep** – Similar to **f40_thresh**, but with a steeper ramp,
-    where the target biomass reference point is set at $B_{60\%}$.  
+    where the target biomass reference point is set at $`B_{60\%}`$.  
 5.  **f40_thresh_cap** – As in **f40_thresh**, but with catches capped
     at 3,000 t, approximating the mean of the historical catch time
     series.  
@@ -42,9 +42,9 @@ Two demographic (recruitment) scenarios will be evaluated:
     sharply to mimic environmentally driven recruitment collapses.  
     During the first 23 years of the simulation period (2025–2046),
     recruitment is simulated at reduced values  
-    ($R_{0} = 2.5,h = 0.5$), followed by a recovery phase (2047–2074)
+    ($`R_0 = 2.5, h = 0.5`$), followed by a recovery phase (2047–2074)
     with higher productivity  
-    ($R_{0} = 12,h = 0.75$).
+    ($`R_0 = 12, h = 0.75`$).
 
 The performance metrics evaluated in this vignette include:
 
@@ -56,6 +56,7 @@ Let us first set up the simulation by loading the requisite packages and
 data files.
 
 ``` r
+
 library(parallel)      
 library(foreach)       
 library(doParallel)    
@@ -90,6 +91,7 @@ Additionally, the survey index is fit with a prior on catchability (`q`)
 to stabilize estimation.
 
 ``` r
+
 #' Setup Estimation Model Inputs for Gulf of Alaska Dusky Rockfish
 #'
 #' Prepares the estimation model input list for a given simulation year
@@ -274,6 +276,7 @@ the following function extracts estimates from the terminal year to
 condition the population projections and derive catch advice.
 
 ``` r
+
 #' Run Population Projection
 #'
 #' Performs forward projection of the population using assessment model outputs
@@ -402,6 +405,7 @@ function `catch_opt_func`, which modifies the input catch advice based
 on management procedures defined later.
 
 ``` r
+
 #' Apply Catch Constraints
 #'
 #' Applies management procedure catch constraints (e.g., caps) to projected catch.
@@ -427,6 +431,7 @@ simulation environment for use in the next time step of the closed-loop
 cycle.
 
 ``` r
+
 #' Convert TAC to Fishing Mortality
 #'
 #' Uses bisection method to find fishing mortality rate that achieves target TAC.
@@ -485,6 +490,7 @@ reference point, while the *constant* rule maintains fishing mortality
 at a fixed rate regardless of biomass status.
 
 ``` r
+
 #' Threshold Harvest Control Rule
 #'
 #' Implements a threshold HCR where F is reduced linearly as biomass declines
@@ -544,6 +550,7 @@ Users have flexibility to modify and extend this structure to fit their
 specific modeling objectives.
 
 ``` r
+
 assess_freq <- 2           # Assessment frequency (every 2 years)
 
 mp_list <- list(
@@ -704,6 +711,7 @@ to evaluate the robustness and performance of different MPs under
 repeated simulations.
 
 ``` r
+
 #' Run Single Simulation Replicate
 #'
 #' Executes one complete closed-loop simulation replicate including population
@@ -833,6 +841,7 @@ custom manner to extract additional results necessary for their unique
 applications.
 
 ``` r
+
 #' Run Parallel Simulations
 #'
 #' Executes multiple management procedures in parallel across all replicates.
@@ -953,6 +962,7 @@ years) after the burn-in period, and data are available at specified
 intervals (`data_yr_freq`; 2 years),
 
 ``` r
+
 # Extract model components from dusky model
 data <- dusky_rtmb_model$data
 rep <- dusky_rtmb_model$rep
@@ -1031,6 +1041,7 @@ Results from both scenarios are combined into a single object
 (`sim_all`) for subsequent analysis and comparison of MP performance.
 
 ``` r
+
 sim_res_rand <- run_parallel_simulations(mp_list, sim_list_rand, n_cores = 8)
 sim_res_crash <- run_parallel_simulations(mp_list, sim_list_crash, n_cores = 8)
 sim_all <- list(rand = sim_res_rand, crash = sim_res_crash) # combine scenarios
@@ -1045,6 +1056,7 @@ these quantities across their time-series (and within each time point)
 as the median and their associated 95% simulation intervals.
 
 ``` r
+
 # Process results
 ssb_results <- data.frame()
 rec_results <- data.frame()
@@ -1198,6 +1210,7 @@ and **f40_hybrid** offered balanced trade-offs, supporting intermediate
 catch, improved spawning stock biomass, and reduced catch variability.
 
 ``` r
+
 cols <- c("#E69F00", "#56B4E9", "#009E73", "#0072B2", "#D55E00", "#CC79A7") # colors
 
 # plot time series

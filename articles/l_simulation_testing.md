@@ -32,6 +32,7 @@ observation model uses default settings:
 We start by defining the structural dimensions of the operating model.
 
 ``` r
+
 sim_list <- Setup_Sim_Dim(
   n_sims        = 50,  # number of simulations
   n_yrs         = 30,  # number of years
@@ -52,6 +53,7 @@ sim_list <- Setup_Sim_Containers(sim_list)
 The fishery selectivity in the OM is logistic, centered around age 5.
 
 ``` r
+
 sim_list <- Setup_Sim_Fishing(sim_list = sim_list, # update simulate list
                               # Logistic selectivity
                               fish_sel_input = replicate(
@@ -68,6 +70,7 @@ sim_list <- Setup_Sim_Fishing(sim_list = sim_list, # update simulate list
 We specify survey selectivity as logistic, centered around age 3.
 
 ``` r
+
 sim_list <- Setup_Sim_Survey(
   sim_list = sim_list,
   # Logistic selectivity
@@ -87,6 +90,7 @@ and weight-at-age. These values are relatively arbitrary and are
 specified to generically represent a fairly short-lived species.
 
 ``` r
+
 sim_list <- Setup_Sim_Biologicals(
   sim_list = sim_list, # simualtion list
   natmort_input = replicate(n = sim_list$n_sims, array(0.3, dim = c(sim_list$n_regions, sim_list$n_yrs,
@@ -107,6 +111,7 @@ sim_list <- Setup_Sim_Biologicals(
 For this example, tagging is disabled and no movement is modeled.
 
 ``` r
+
 sim_list <- Setup_Sim_Tagging(
   sim_list = sim_list, # simulation list
   UseTagging = 0
@@ -122,6 +127,7 @@ Recruitment is modeled with mean recruitment dynamics, where `R0_input`
 is the mean recruitment parameter centered at a value of 5.
 
 ``` r
+
 sim_list <- Setup_Sim_Rec(
   sim_list = sim_list,
   R0_input = replicate(n = sim_list$n_sims, expr = array(5, dim = c(sim_list$n_regions, sim_list$n_yrs))), # R0
@@ -134,6 +140,7 @@ sim_list <- Setup_Sim_Rec(
 ### Run the Operating Model
 
 ``` r
+
 set.seed(123)
 sim_obj <- Simulate_Pop_Static(sim_list = sim_list, output_path = NULL) # get simulated datasets
 ```
@@ -151,6 +158,7 @@ even though the OM used logistic selectivity. In general, EM settings
 are identical to the OM, except for fishery selectivity.
 
 ``` r
+
 setup_em <- function(sim_obj, sim) {
 
   # Extract simulation data for current year and replicate
@@ -312,6 +320,7 @@ We store the resulting spawning stock biomass (SSB) estimates for
 comparison with the OM.
 
 ``` r
+
 ssb_results <- array(NA, dim = c(sim_list$n_yrs, sim_list$n_sims)) # storage container
 for(i in 1:sim_obj$n_sims) {
 
@@ -339,6 +348,7 @@ portion of the population as invulnerable to the fishery, leading to an
 overestimation of stock size.
 
 ``` r
+
 # Process SSB results
 ssb_df_res <- reshape2::melt(ssb_results) %>%
   rename(Year = Var1, Sim = Var2, Est = value) %>%
@@ -380,6 +390,7 @@ a fitted `SPoRC` model (i.e., providing `data`, `parameters`, `mapping`,
 simulations across 8 cores and output estimates of SSB and recruitment.
 
 ``` r
+
 # load in dusky rockfish model
 data("dusky_rtmb_model")
 
@@ -407,6 +418,7 @@ periods, likely due to uncertainty in catch data in the early period and
 a lack of age composition data during these periods.
 
 ``` r
+
 # Process self test results
 self_test_res <- reshape2::melt(self_test$SSB) %>%
   dplyr::rename(Region = Var1, Year = Var2, Sim = Var3, Est = value) %>%

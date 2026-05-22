@@ -6,6 +6,7 @@ effects might be set up, using Eastern Bering Sea (EBS) as a case study.
 We will first load in the relevant packages and datasets.
 
 ``` r
+
 library(SPoRC)
 library(here)
 library(tidyverse)
@@ -33,6 +34,7 @@ all process error parameters, with no correlation suppression and full
 estimation of deviations:
 
 ``` r
+
 model_inputs <- Setup_Mod_Fishsel_and_Q(
   input_list           = inputs, 
   fish_sel_model       = "logist1_Fleet_1",
@@ -60,6 +62,7 @@ Single Region Model (Eastern Bering Sea Pollock)”, so here we only
 highlight the sections that differ.
 
 ``` r
+
 #' Setup Single-Region Population Model for EBS Pollock
 #'
 #' Constructs a single-region population model input list, tailored to the
@@ -366,6 +369,7 @@ in the specification of fishery selectivity random effects:
 The dataframe below specifies the argument settings for each scenario.
 
 ``` r
+
 # models to iterate through
 pol_model_var <- data.frame(
   cont_tv_fish_sel = c("none_Fleet_1", "iid_Fleet_1", "rw_Fleet_1", "2dar1_Fleet_1", "3dcond_Fleet_1", "3dcond_Fleet_1"),
@@ -385,6 +389,7 @@ is set to `"ln_fishsel_devs"` whenever selectivity deviations are
 modeled as random; otherwise, it is `NULL.`
 
 ``` r
+
 # model storage
 models <- list()
 
@@ -430,6 +435,7 @@ estimates and inference. In this example, we focus on differences in
 recruitment, spawning stock biomass, and fishery selectivity estimates.
 
 ``` r
+
 model_names <- c("constant", "iid_p", "rw_p", "2dar1_sp", "3dgmrf_sp", "iid_sp")
 fishsel_all_df <- data.frame() # empty dataframe to bind to
 ts_all_df <- data.frame() # empty dataframe to bind to
@@ -478,6 +484,7 @@ option generally yields the lowest biomass estimates, while the
 `constant` selectivity option produces the highest.
 
 ``` r
+
 cols <- c("#E69F00", "#56B4E9", "#009E73", "#0072B2", "#D55E00", "#CC79A7") # colors
 ggplot(ts_all_df, aes(x = Year, y = value,
                       ymin = value - (1.96 * se), ymax = value + (1.96 * se),
@@ -508,6 +515,7 @@ selectivity, both the `iid_p` and `rw_p` selectivity options appear
 relatively different (i.e., constrained to remain logistic).
 
 ``` r
+
 ggplot(fishsel_all_df, aes(x = Year, y = Age, fill = value)) +
   geom_tile() +
   scale_fill_continuous(palette = "magma") +

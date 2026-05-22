@@ -11,14 +11,15 @@ survey fleet. It spans the years 1977–2024, includes 33 modeled ages,
 and assumes a fixed natural mortality rate. Both fishery and survey
 selectivity follow a logistic, time-invariant form. Catch advice is
 based on spawning potential ratio reference points, targeting a
-population level corresponding to $B_{40\%}$. First, let us load in any
-necessary packages as well as data files. The Dusky Rockfish data file
-is provided within the `SPoRC` package and is called
+population level corresponding to $`B_{40\%}`$. First, let us load in
+any necessary packages as well as data files. The Dusky Rockfish data
+file is provided within the `SPoRC` package and is called
 `sgl_rg_dusky_data`.
 
 ## Load data and packages
 
 ``` r
+
 library(SPoRC)
 data("sgl_rg_dusky_data")
 ```
@@ -33,6 +34,7 @@ ages, and lengths. Users must also specify the number of modeled regions
 survey fleets (`n_srv_fleets`).
 
 ``` r
+
 input_list <- Setup_Mod_Dim(
   years = sgl_rg_dusky_data$years,
   # vector of years
@@ -64,6 +66,7 @@ Dusky Rockfish model, recruitment is specified as follows:
 4.  Spawning is assumed to occur at the start of the year.
 
 ``` r
+
 input_list <- Setup_Mod_Rec(
   input_list = input_list,
 
@@ -95,6 +98,7 @@ maturity-at-age (`MatAA`) inputs, each dimensioned by `n_regions`,
 assumed to be constant and fixed at 0.07.
 
 ``` r
+
 input_list <- Setup_Mod_Biologicals(
   input_list = input_list,
 
@@ -125,6 +129,7 @@ parameterized. In this example, movement is not estimated
 `input_list` is updated and the `UseTagging` argument is set to 0.
 
 ``` r
+
 # setup movement
   input_list <- Setup_Mod_Movement(
     input_list = input_list,
@@ -151,12 +156,13 @@ deviation is fixed or estimated (`sigmaC_spec`), and a small constant
 added to avoid problems with zero catches (`Catch_Constant`). Finally,
 fixed values for the observation error of catch (`ln_sigmaC`) and the
 penalty on fishing mortality (`ln_sigmaF`) are provided. Note that these
-are specified as $log\left( \sqrt{(1/2)} \right)$ because the model was
-originally written in ADMB where these values were computed as sum of
-squares, and the standard deviation of these terms were implicitly
-assumed to be set at 1.
+are specified as $`log(\sqrt{(1/2)})`$ because the model was originally
+written in ADMB where these values were computed as sum of squares, and
+the standard deviation of these terms were implicitly assumed to be set
+at 1.
 
 ``` r
+
 input_list <- Setup_Mod_Catch_and_F(
   input_list = input_list,
 
@@ -191,6 +197,7 @@ single sex model, composition structures should be specified as such,
 wherein these data are aggregated across model partitions).
 
 ``` r
+
 input_list <- Setup_Mod_FishIdx_and_Comps(
   input_list = input_list,
 
@@ -226,6 +233,7 @@ previous code chunk, but instead, updates the `input_list` with survey
 indices and composition data.
 
 ``` r
+
 input_list <- Setup_Mod_SrvIdx_and_Comps(
   input_list = input_list,
 
@@ -264,10 +272,11 @@ input_list <- Setup_Mod_SrvIdx_and_Comps(
 Following defining the data inputs into the model, we can specify the
 fishery selectivity and catchability parameterizations. Here, no
 time-varying selectivity is specified, and selectivity is modelled as
-logistic with parameters $b_{50}$ and $b_{95}$. Catchability is fixed
-because no fishery indices are included in the model.
+logistic with parameters $`b_{50}`$ and $`b_{95}`$. Catchability is
+fixed because no fishery indices are included in the model.
 
 ``` r
+
 input_list <- Setup_Mod_Fishsel_and_Q(
 
   input_list = input_list,
@@ -293,12 +302,14 @@ input_list <- Setup_Mod_Fishsel_and_Q(
 Similar to the `Setup_Mod_Fishsel_and_Q` function, we can define the
 survey selectivity and catchability parameterizations. Again, no
 time-vaying selectivity is specified, and selectivity is modelled as
-logistic with parameters $b_{50}$ and $b_{95}$. However, catchabiltiy is
-estiamted with a estimated for the survey index. Note that the survey
-prior specifications must be passed into the function as a dataframe
-with column names: `region`, `block`, `fleet`, `mu`, and `sd.`
+logistic with parameters $`b_{50}`$ and $`b_{95}`$. However,
+catchabiltiy is estiamted with a estimated for the survey index. Note
+that the survey prior specifications must be passed into the function as
+a dataframe with column names: `region`, `block`, `fleet`, `mu`, and
+`sd.`
 
 ``` r
+
 
 # Set up prior for survey catchability
 srv_q_prior <- data.frame(
@@ -335,13 +346,13 @@ input_list <- Setup_Mod_Srvsel_and_Q(
 
 Finally, the model weighting scheme can be defined to control the
 relative influence of different data sources on the assessment. In the
-GOA Dusky Rockfish model, weighting is applied using $\lambda$ emphasis
-factors, which allow certain data types to have more or less influence
-on model fitting. If users prefer not to apply differential weighting,
-all values can be set to 1. For catch data, a different weighting scheme
-is applied for the early years of the model: catches from 1977–1991 are
-given a weight of 2, while catches in later years are assigned a higher
-weight of 50.
+GOA Dusky Rockfish model, weighting is applied using $`\lambda`$
+emphasis factors, which allow certain data types to have more or less
+influence on model fitting. If users prefer not to apply differential
+weighting, all values can be set to 1. For catch data, a different
+weighting scheme is applied for the early years of the model: catches
+from 1977–1991 are given a weight of 2, while catches in later years are
+assigned a higher weight of 50.
 
 The weighting setup is implemented using the function
 `Setup_Mod_Weighting`, which accepts the constructed input_list along
@@ -355,6 +366,7 @@ fishery data and survey ages, while survey length compositions are set
 to 0.
 
 ``` r
+
 # catch weigthing 
 Wt_Catch <- array(0, dim = c(sgl_rg_dusky_data$n_regions, length(sgl_rg_dusky_data$years), sgl_rg_dusky_data$n_fish_fleets))
 Wt_Catch[,which(sgl_rg_dusky_data$years %in% 1977:1991),] <- 2
@@ -399,6 +411,7 @@ demonstrates the implementation of Francis re-weighting within the
 mapping lists constructed from the functions defined above.
 
 ``` r
+
 data <- input_list$data
 parameters <- input_list$par
 mapping <- input_list$map
@@ -415,6 +428,7 @@ standard error report from the model (i.e., standard errors derived from
 inverting the Hessian matrix).
 
 ``` r
+
 # Fit model
 nofrancis_model <- fit_model(data,
                              parameters,
@@ -441,6 +455,7 @@ procedure and the weights are saved inside the data list object
 (`francis_runs$obj$data`)
 
 ``` r
+
 francis_data <- data # redefine data list for francis (replacing data weights)
 
 # run francis reweighting
@@ -472,6 +487,7 @@ among parameters. The following models all appear to pass these sanity
 checks.
 
 ``` r
+
 # check no francis model
 post_optim_sanity_checks(nofrancis_model$sdrep,
                          nofrancis_model$rep,
@@ -500,6 +516,7 @@ presents combined time series across all metrics. The function can also
 be used for a single model.
 
 ``` r
+
 ts_plot <- get_ts_plot(rep = list(francis_model$rep, nofrancis_model$rep),
                        sd_rep = list(francis_model$sdrep, nofrancis_model$sdrep),
                        model_names = c("With Francis", "No Francis"))
@@ -517,6 +534,7 @@ functions. For fits to the catch data, this is given by the following
 code chunk.
 
 ``` r
+
 get_catch_fits_plot(list(data, francis_data),
                     list(nofrancis_model$rep, francis_model$rep),
                     c("No Francis", "With Francis"))
@@ -528,6 +546,7 @@ Fits to the index data can be illustrated in a similar manner and is
 given by the following code chunk.
 
 ``` r
+
 get_idx_fits_plot(list(data, francis_data),
                   list(nofrancis_model$rep, francis_model$rep),
                   c("No Francis", "With Francis"))
@@ -543,6 +562,7 @@ inspect these model fits, users can extract the observed and expected
 composition proportions using the `get_comp_prop` function.
 
 ``` r
+
 # Extract observed and expected compositions
 comp_prop <- get_comp_prop(francis_data,
                            francis_model$rep,
@@ -568,6 +588,7 @@ as a further diagnostic tool.
 #### Fishery Ages
 
 ``` r
+
 # get one step ahead fishery ages
 fishages <- get_osa(obs_mat = comp_prop$Obs_FishAge_mat, # observed fishery age compositions
                     exp_mat = comp_prop$Pred_FishAge_mat, # predicted fishery age compositions
@@ -604,6 +625,7 @@ cowplot::plot_grid(resid_plot[[2]], # Bubble
 #### Fishery Lengths
 
 ``` r
+
 # get one step ahead fishery lengths
 fishlens <- get_osa(obs_mat = comp_prop$Obs_FishLen_mat, # observed fishery length compositions
                     exp_mat = comp_prop$Pred_FishLen_mat, # predicted fishery length compositions
@@ -640,6 +662,7 @@ cowplot::plot_grid(resid_plot[[2]], # Bubble
 #### Survey Ages
 
 ``` r
+
 # get one step ahead survey ages
 srvages <- get_osa(obs_mat = comp_prop$Obs_SrvAge_mat, # observed survey age compositions
                    exp_mat = comp_prop$Pred_SrvAge_mat, # predicted survey age compositions
@@ -690,6 +713,7 @@ a squid plot of recruitment.
 ### Retrospectives (Without Francis)
 
 ``` r
+
 nofrancis_retro <- do_retrospective(
   n_retro = 10, # number of peels
   data = data, # data list (not francis data)
@@ -713,6 +737,7 @@ nofrancis_retro_plot[[3]]
 ### Retrospectives (With Francis)
 
 ``` r
+
 # do retrospective w/ francis
 francis_retro <- do_retrospective(
   n_retro = 10, # number of peels
@@ -749,6 +774,7 @@ profiles by fleet, region, year, etc.) as well likelihood profiles for
 each data component, aggregated across all their respective dimensions.
 
 ``` r
+
 # do likelihood profile with francis weights
 francis_meanrec_prof <- do_likelihood_profile(
   francis_data, # francis data list
@@ -804,6 +830,7 @@ converged, whether a better solution was achieved, and trajectories of
 spawning biomass and recruitment from these jitter results.
 
 ``` r
+
 # get jitter results
 jitter_res <- do_jitter(data = francis_data, # francis data list
                                parameters = parameters, # parameter list
@@ -829,6 +856,7 @@ final_mod <- reshape2::melt(francis_model$rep$SSB) %>% rename(Region = Var1, Yea
 ```
 
 ``` r
+
 ggplot() +
   geom_line(jitter_res, mapping = aes(x = Year + 1976, y = value, group = jitter, color = Hessian), lwd = 1) +
   geom_line(final_mod, mapping = aes(x = Year + 1976, y = value), color = "black", lwd = 1.3 , lty = 2) +
@@ -846,6 +874,7 @@ ggplot() +
 ![](figures/o_jiter_ts.png)
 
 ``` r
+
 ggplot(jitter_res, aes(x = jitter, y = jnLL, color = Max_Gradient, shape = Hessian)) +
   geom_point(size = 5, alpha = 0.3) +
   geom_hline(yintercept = min(francis_model$rep$jnLL), lty = 2, size = 2, color = "blue") +
@@ -878,6 +907,7 @@ models, which will be demonstrated in the following sections. First, let
 us install and load in the relevant packages.
 
 ``` r
+
 # load in adnuts ans associated packages for MCMC
 install.packages('StanEstimators', repos = c('<https://andrjohns.r-universe.dev>', '<https://cloud.r-project.org>'))
 devtools::install_github('Cole-Monnahan-NOAA/adnuts')
@@ -897,6 +927,7 @@ standard deviations, effective sample sizes (`n_eff`), and convergence
 diagnostics (`R_hat`).
 
 ``` r
+
 # run MCMC
 mcmc <- sample_snuts(francis_model, num_samples = 1e4, control = list(adapt_delta = 0.99))
 
@@ -909,6 +940,7 @@ comparisons of the marginal distributions between MLE and MCMC, trace
 plots, and comparisons of uncertainty between MCMC and MLE.
 
 ``` r
+
 pairs(mcmc)
 plot_marginals(mcmc)
 plot_uncertainties(mcmc)
@@ -920,6 +952,7 @@ Time series of recruitment and spawning stock biomass derived from
 posterior samples can also readily be plotted.
 
 ``` r
+
 # get mcmc time series plots
 mcmc_ts_plot <- get_model_rep_from_mcmc(rtmb_obj = francis_model, adnuts_obj = mcmc_short, what = c("SSB", "Rec"), n_cores = 4)
 
@@ -961,8 +994,8 @@ ggplot() +
 The final step in the assessment workflow is to provide management
 advice based on reference points derived from model estimates. For the
 GOA Dusky Rockfish model, reference points are based on spawning
-potential ratios, aiming to maintain the population at $B_{40\%}$ by
-fishing at or below $F_{40\%}$. These reference points are then
+potential ratios, aiming to maintain the population at $`B_{40\%}`$ by
+fishing at or below $`F_{40\%}`$. These reference points are then
 projected forward to generate catch advice for future years.
 Additionally, in compliance with the Magnuson-Stevens Reauthorization
 Act, a range of projection scenarios need to be conducted to evaluate
@@ -972,13 +1005,14 @@ whether the population is within sustainable limits.
 
 To derive reference points for catch advice and population projections,
 the `Get_Reference_Points` function is used. Reference points
-corresponding to $SPR_{35\%}$, $SPR_{40\%}$, and $SPR_{60\%}$ are
+corresponding to $`SPR_{35\%}`$, $`SPR_{40\%}`$, and $`SPR_{60\%}`$ are
 calculated. The `calc_rec_st_yr` argument specifies the vector of
 estimated recruitment starting from year 3 (which corresponds to 1979),
 and subtracts the terminal year by `rec_age = 4` to compute the mean
-recruitment used in calculating $B_{x\%}$.
+recruitment used in calculating $`B_{x\%}`$.
 
 ``` r
+
 # get reference points
 spr_35 <- Get_Reference_Points(data = francis_data,
                                rep = francis_model$rep,
@@ -1015,9 +1049,9 @@ f60 <- spr_60$f_ref_pt
 The reference points derived above can be used to provide catch advice
 through population projections. First, a harvest control rule (HCR) is
 defined with the `HCR_function`, which determines fishing mortality
-based on stock status relative to a reference biomass $B_{x\%}$. If
+based on stock status relative to a reference biomass $`B_{x\%}`$. If
 stock status is at or above the reference point, fishing occurs at the
-target $F_{x\%}$; if stock status falls between a lower threshold
+target $`F_{x\%}`$; if stock status falls between a lower threshold
 (`alpha`) and the reference point, fishing mortality is scaled linearly;
 and if stock status is below the threshold, fishing is set to zero.
 Projection parameters are then specified, including the number of
@@ -1032,6 +1066,7 @@ model. These inputs then form the basis for projecting future population
 dynamics and deriving catch advice under the specified HCR.
 
 ``` r
+
 # Define HCR to use for projections
 HCR_function <- function(x, frp, brp, alpha = 0.05) {
   stock_status <- x / brp # define stock status
@@ -1070,19 +1105,20 @@ sexratio <- array(1, dim = c(n_regions, n_proj_yrs, n_sexes)) # recruitment sex 
 Next, we can define the Alaska projection scenarios to understand if the
 stock is within sustainable limits. These scenarios vary in how fishing
 mortality is applied relative to biological reference points. Scenario 1
-applies the harvest control rule (HCR) using $F_{40\%}$ as the maximum
+applies the harvest control rule (HCR) using $`F_{40\%}`$ as the maximum
 allowable fishing mortality, with the annual mean of catch across
 simulations providing the annual catch advice. Scenario 2 also uses the
-HCR but scales $F_{40\%}$ based on the previous year’s fishing
+HCR but scales $`F_{40\%}`$ based on the previous year’s fishing
 mortality. Scenario 3 applies a constant fishing mortality equal to the
 average of the last five years. Scenario 4 applies fishing mortality
-using $F_{60\%}$, while Scenario 5 assumes no fishing. Scenario 6
-applies the HCR with $F_{35\%}$, representing the overfishing limit
-(`FOFL`). Finally, Scenario 7 applies the HCR with $F_{40\%}$ in the
-first two projection years and then transitions to $F_{35\%}$ in later
+using $`F_{60\%}`$, while Scenario 5 assumes no fishing. Scenario 6
+applies the HCR with $`F_{35\%}`$, representing the overfishing limit
+(`FOFL`). Finally, Scenario 7 applies the HCR with $`F_{40\%}`$ in the
+first two projection years and then transitions to $`F_{35\%}`$ in later
 years.
 
 ``` r
+
 # Define the F used for each scenario (Based on BSAI Intro Report - Alaska Scenarios)
 proj_inputs <- list(
   # Scenario 1 - Using HCR to adjust maxFABC
@@ -1130,6 +1166,7 @@ loops over all projection scenarios and simulation replicates, keeping
 record of spawning stock biomass, fishing mortality, and catch,
 
 ``` r
+
 # store outputs
 all_scenarios_f <- array(0, dim = c(n_regions, n_proj_yrs, n_sims, length(proj_inputs)))
 all_scenarios_ssb <- array(0, dim = c(n_regions, n_proj_yrs, n_sims, length(proj_inputs)))
@@ -1179,6 +1216,7 @@ mortality can then be visualized as follows.
 #### Spawning Biomass Projections
 
 ``` r
+
 # Get historical SSB
 historical <- reshape2::melt(array(rep(francis_model$rep$SSB, n_sims),
                                    dim = c(n_regions, length(francis_data$years), n_sims))) %>%
@@ -1213,6 +1251,7 @@ combined_ssb <- bind_rows(historical_expanded, scenarios)
 ```
 
 ``` r
+
 combined_ssb %>%
   ggplot(aes(x = Year, y = SSB, group = interaction(Scenario, Simulation), color = Type)) +
   geom_line(alpha = 0.05) +
@@ -1226,6 +1265,7 @@ combined_ssb %>%
 ![](figures/o_projall_ssb.png)
 
 ``` r
+
 combined_ssb %>%
   filter(Year > 2024) %>%
   group_by(Year, Scenario, Type) %>%
@@ -1247,6 +1287,7 @@ combined_ssb %>%
 #### Catch Projections
 
 ``` r
+
 # Get historical catch
 historical <- reshape2::melt(array(rep(francis_data$ObsCatch, n_sims),
                                    dim = c(n_regions, length(francis_data$years), francis_data$n_fish_fleets, n_sims))) %>%
@@ -1285,6 +1326,7 @@ combined_cat <- bind_rows(historical_expanded, scenarios)
 ```
 
 ``` r
+
 combined_cat %>%
   group_by(Year, Scenario, Simulation, Type, Region) %>%
   summarize(Catch = sum(Catch)) %>%
@@ -1300,6 +1342,7 @@ combined_cat %>%
 ![](figures/o_projall_catch.png)
 
 ``` r
+
 combined_cat %>%
   filter(Year > 2024) %>%
   group_by(Year, Scenario, Simulation, Type, Region) %>%
@@ -1319,15 +1362,16 @@ combined_cat %>%
 
 ![](figures/o_projzoom_catch.png)
 
-#### Catch Advice under $F_{40\%}$
+#### Catch Advice under $`F_{40\%}`$
 
 Catch advice is summarized by projecting forward under Scenario 1, which
-applies the harvest control rule with $F_{40\%}$ as the maximum
+applies the harvest control rule with $`F_{40\%}`$ as the maximum
 allowable fishing mortality. The plots show the mean projected catch
 with 95% uncertainty intervals across simulations, providing the
 expected range of allowable catch in future years under this strategy.
 
 ``` r
+
 combined_cat %>%
   filter(Year > 2024, Scenario == "S1: FABC (F40)") %>%
   group_by(Year, Scenario, Simulation, Type, Region) %>%
@@ -1339,6 +1383,7 @@ combined_cat %>%
 ```
 
 ``` r
+
 combined_cat %>%
   filter(Year > 2024, Scenario == "S1: FABC (F40)") %>%
   group_by(Year, Scenario, Simulation, Type, Region) %>%
@@ -1360,6 +1405,7 @@ combined_cat %>%
 #### Fishing Mortality Projections
 
 ``` r
+
 # Get historical F
 historical <- reshape2::melt(array(rep(as.vector(apply(francis_model$rep$Fmort, c(1,2), sum)), n_sims),
                                    dim = c(n_regions, length(francis_data$years), n_sims))) %>%
@@ -1394,6 +1440,7 @@ combined_fmort <- bind_rows(historical_expanded, scenarios)
 ```
 
 ``` r
+
 combined_fmort %>%
   ggplot(aes(x = Year, y = Fmort, group = interaction(Scenario, Simulation), color = Type)) +
   geom_line(alpha = 0.05) +
@@ -1407,6 +1454,7 @@ combined_fmort %>%
 ![](figures/o_projall_f.png)
 
 ``` r
+
 combined_fmort %>%
   filter(Year > 2024) %>%
   group_by(Year, Scenario, Type) %>%

@@ -15,6 +15,7 @@ males), 2 fishery fleets (fixed-gear and trawl), and 3 survey fleets
 First, let us load in any necessary packages.
 
 ``` r
+
 # Load in packages
 library(SPoRC) 
 library(here)
@@ -34,6 +35,7 @@ number of fishery fleets (n_fish_fleets), and number of survey fleets
 (n_srv_fleets)
 
 ``` r
+
 input_list <- Setup_Mod_Dim(years = 1:length(sgl_rg_sable_data$years), # vector of years 
                             # (corresponds to year 1960 - 2024)
                             ages = 1:length(sgl_rg_sable_data$ages), # vector of ages
@@ -74,6 +76,7 @@ parameterized as such:
     initalizing the age structure.
 
 ``` r
+
 input_list <- Setup_Mod_Rec(input_list = input_list, # input data list from above
                             # Model options
                             do_rec_bias_ramp = 1, # do bias ramp 
@@ -127,6 +130,7 @@ supplied, and the values provided to the parameter name represent the
 starting value.
 
 ``` r
+
 # Specificying natural mortality fixed array
 fixed_natmort <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), length(input_list$data$ages), input_list$data$n_sexes))
 fixed_natmort[,,,1] <- 0.1134156 # fix female M
@@ -156,6 +160,7 @@ following code chunk specifies that movement is not estimated
 (`do_recruits_move = 0`).
 
 ``` r
+
 input_list <- Setup_Mod_Movement(input_list = input_list,
                                  use_fixed_movement = 1, # don't est move
                                  Fixed_Movement = NA, # use identity move
@@ -168,6 +173,7 @@ this is a single-region model. All that is necessary is updating the
 `input_list` and setting the `UseTagging` argument to a value of 0.
 
 ``` r
+
 input_list <- Setup_Mod_Tagging(input_list = input_list,
                                 UseTagging = 0
                                 )
@@ -201,6 +207,7 @@ catches and fishing mortality (`sigmaC_spec = 'fix'`,
 `sigmaF_spec = 'fix'`).
 
 ``` r
+
 input_list <- Setup_Mod_Catch_and_F(input_list = input_list,
                                     # Data inputs
                                     ObsCatch = sgl_rg_sable_data$ObsCatch,
@@ -286,6 +293,7 @@ sum to 1 for each sex and each region, and no implicit sex-ratios can be
 inferred using these composition data from the model.
 
 ``` r
+
 input_list <- Setup_Mod_FishIdx_and_Comps(input_list = input_list,
                                           # data inputs
                                           ObsFishIdx = sgl_rg_sable_data$ObsFishIdx,
@@ -328,6 +336,7 @@ for all survey fleets. All compositions for the survey fleets assume a
 Multinomial likelihood.
 
 ``` r
+
 input_list <- Setup_Mod_SrvIdx_and_Comps(input_list = input_list,
                                          # data inputs
                                          ObsSrvIdx = sgl_rg_sable_data$ObsSrvIdx,
@@ -405,6 +414,7 @@ options, which include:
     trawl fishery (since no indices are available).
 
 ``` r
+
 input_list <- Setup_Mod_Fishsel_and_Q(input_list = input_list,
                                       
                                       # Model options
@@ -461,6 +471,7 @@ selectivity, and there are similarly some nuanced parameter fixing and
 sharing to help facilitate model stability.
 
 ``` r
+
 input_list <- Setup_Mod_Srvsel_and_Q(input_list = input_list,
 
                                      # Model options
@@ -526,15 +537,16 @@ input_list$par$ln_srv_fixed_sel_pars[1,,,2,3] <- c(1.22224502478, 0.8821623)
 
 The last helper function that needs to be utilized to setup and run the
 model is the `Setup_Mod_Weighting` function. Data sources can be
-weighted with a combination of $\lambda$ (which weights the entire data
-source likelihood, e.g., $\lambda*Catch_{nLL}$) and the specified
+weighted with a combination of $`\lambda`$ (which weights the entire
+data source likelihood, e.g., $`\lambda*Catch_{nLL}`$) and the specified
 “observed” standard errors / input sample sizes (defined in previous
-functions). In the context of composition data, these $\lambda$ values
+functions). In the context of composition data, these $`\lambda`$ values
 are determined using Francis reweighting to right-weight these data. If
 Francis-reweighting is not used, then values of 1 can be input for the
 weights of these data.
 
 ``` r
+
 # set up data weighting stuff
 Wt_FishAgeComps <- array(NA, dim = c(input_list$data$n_regions,
                                      length(input_list$data$years),
@@ -619,6 +631,7 @@ out internally from `fit_model` and standard errors can then be
 extracted using the `RTMB::sdreport` function.
 
 ``` r
+
 # extract out lists updated with helper functions
 data <- input_list$data
 parameters <- input_list$par
@@ -642,6 +655,7 @@ only show comparisons of spawning biomass and recruitment between the
 two models.
 
 ``` r
+
 # Get recruitment time-series
 rec_series <- data.frame(Par = "Recruitment",
                          Year = 1960:2024,
@@ -658,6 +672,7 @@ ts_df <- rbind(ssb_series,rec_series) # bind together
 ```
 
 ``` r
+
 ggplot() +
   geom_line(ts_df, mapping = aes(x = Year, y = RTMB, color = 'RTMB'), size = 1.3, lty = 1) +
   geom_line(ts_df, mapping = aes(x = Year, y = ADMB, color = 'ADMB'), size = 1.3, lty = 2) +

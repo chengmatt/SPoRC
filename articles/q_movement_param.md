@@ -17,6 +17,7 @@ basis (`three_rg_sable_data`). The initial setup establishes the genearl
 model dimensions.
 
 ``` r
+
 # Load in packages
 library(SPoRC) 
 data("three_rg_sable_data") # load in data
@@ -50,6 +51,7 @@ across model partitions and are estimated as discrete transitions
 between regions, with `nregions x nregions - 1` parameters estimated.
 
 ``` r
+
 # Setup movement
 input_list <- Setup_Mod_Movement(
   input_list = input_list,
@@ -78,6 +80,7 @@ age blocks, but constant movement across years and sexes. This results
 in `nregions x nregions - 1 x 2` parameters estimated.
 
 ``` r
+
 # define age block
 age_blk <- list(c(1:15), c(16:30))
 age_blk
@@ -117,6 +120,7 @@ are specified, resulting in `nregions x nregions - 1 x 5` parameters
 estimated.
 
 ``` r
+
 # define year blocks
 yr_blk <- list(c(1:15), c(16:30), c(31:45), c(46:60), c(61:62))
 yr_blk
@@ -165,6 +169,7 @@ sex-specific movement, resulting in `nregions x nregions - 1 x nsexes`
 parameters estimated.
 
 ``` r
+
 # define sex blocks
 sx_blk <- as.list(1:2)
 sx_blk
@@ -205,6 +210,7 @@ estimated. However, this parameterization is likely excessive and may
 lead to an unstable model solution.
 
 ``` r
+
 # define age block
 age_blk <- list(c(1:15), c(16:30))
 age_blk
@@ -281,6 +287,7 @@ define the `regions`, `years`, `ages`, `sexes`, and any additional
 covariates associated with movement preference.
 
 ``` r
+
 adjacency <- igraph::as_adjacency_matrix(
   igraph::make_graph(
     ~ 1 - 2,
@@ -316,6 +323,7 @@ area, such that smaller areas are associated with higher diffusion
 rates.
 
 ``` r
+
 # setup formulas for CTMC
 diffusion_formula = ~0 + factor(regions) # constant diffusion
 preference_formula = ~0
@@ -362,6 +370,7 @@ results in the estimation of a single diffusion parameter, along with
 preferences.
 
 ``` r
+
 # setup formulas for CTMC
 diffusion_formula = ~1 # constant diffusion
 preference_formula = ~0 + factor(regions):ages # linear age effects
@@ -403,6 +412,7 @@ parameter is estimated, along with `nregions × 4` parameters describing
 age-specific movement preferences.
 
 ``` r
+
 # setup formulas for CTMC
 diffusion_formula = ~1 # constant diffusion
 preference_formula = ~0 + factor(regions):splines2::bSpline(ages, df = 4, intercept = TRUE) # spline based age effect
@@ -441,6 +451,7 @@ region, age, year, and sex. This specification results in the estimation
 of `nregions × 4 × 6 × nsexes` parameters.
 
 ``` r
+
 # setup formulas for CTMC
 diffusion_formula = ~1 # constant diffusion
 preference_formula = ~0 + factor(regions):
@@ -498,6 +509,7 @@ deviations are only estimated for destination regions (i.e.,
 `nregions - 1`), as no deviation term is defined for the source region.
 
 ``` r
+
 # setup formulas for CTMC
 diffusion_formula = ~1 # constant diffusion
 preference_formula = ~0 + factor(regions):splines2::bSpline(ages, df = 4, intercept = TRUE) # spline based age effect

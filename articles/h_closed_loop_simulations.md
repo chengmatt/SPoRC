@@ -22,6 +22,7 @@ follow these steps:
 Let us first load in the `SPoRC` package.
 
 ``` r
+
 library(SPoRC)
 library(ggplot2)
 ```
@@ -34,6 +35,7 @@ rockfish. We will first load in the model list for Dusky rockfish and
 redefine variables for use to condition the closed loop simulation.
 
 ``` r
+
 data("dusky_rtmb_model") # load in dusky rtmb model for conditioning
 # define variables for use in setting up simulation
 data <- dusky_rtmb_model$data
@@ -54,6 +56,7 @@ burn-in period, while uncertainty in the composition data (input sample
 sizes) will follow the fishing mortality pattern.
 
 ``` r
+
 closed_loop_yrs <- 30 # number of closed loop years to do
 burnin_years <- 1:length(data$years) # number of conditioning years
 n_sims <- 50 # number of simulations to do
@@ -91,6 +94,7 @@ assumed to be deterministic at the mean, and projections extend over the
 assessment interval.
 
 ``` r
+
 # reference points options
 reference_points_opt <- list(
   n_avg_yrs = 1,           # number of years over which to average demographic rates
@@ -137,6 +141,7 @@ annual recruitment is set to the mean value with annual deviations
 constrained by `sigmaR.`
 
 ``` r
+
 #' Setup Estimation Model (EM) Inputs for SPoRC
 #'
 #' Prepares the estimation model input list for a given simulation year
@@ -357,6 +362,7 @@ TACs are converted to fishing mortality rates for the simulation to use
 in the next year, completing the feedback loop.
 
 ``` r
+
 set.seed(123) # set seed
 sim_env <- Setup_sim_env(sim_list) # Setup simulation environment using conditioned values
 
@@ -485,6 +491,7 @@ Plotted below are trajectories of catch, fishing mortality, and spawning
 stock biomass for a given simulation.
 
 ``` r
+
 # Trajectories of spawning biomass
 reshape2::melt(sim_env$SSB) %>%
   filter(value != 0) %>%

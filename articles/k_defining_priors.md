@@ -29,6 +29,7 @@ Let us first load in any required packages, data we may use, and define
 model dimensions.
 
 ``` r
+
 # Load in packages
 library(SPoRC) 
 #> Loading required package: RTMB
@@ -69,6 +70,7 @@ and 1. To activate steepness priors, set `Use_h_prior = 1` and provide
 the dataframe to the `h_prior` argument:
 
 ``` r
+
 # set up dataframe specifying the steepness prior and the dimensions it is applied to
 steepness_prior <- data.frame(
   region = 1, # apply steepness prior to region 1
@@ -105,6 +107,7 @@ row corresponds to a region-specific steepness parameter, along with its
 associated mean (`mu`) and standard deviation (`sd`). For instance:
 
 ``` r
+
 steepness_prior <- data.frame(
   region = c(1,2,3), # apply steepness prior to region 1, 2 and, 3
   mu = c(0.6, 0.8, 0.3), # mean of steepness prior corresponding to the regions defined
@@ -127,6 +130,7 @@ region, year, age, and sex blocks specified for natural mortality, along
 with their associated mean and standard deviation.
 
 ``` r
+
 # Define natural mortality prior
 M_prior <- data.frame( 
   regionblk = 1, # region block
@@ -178,6 +182,7 @@ activate the prior, and the dataframe is provided to the `srv_q_prior`
 argument.
 
 ``` r
+
 # set up dataframe specifying the survey catchability prior and the dimensions it is applied to
 srv_q_prior <- data.frame(
   region = 1, # apply catchability prior to region 1
@@ -253,6 +258,7 @@ fleet 1, and priors to the power parameter describing exponential
 selectivity in fleet 2.
 
 ``` r
+
 srv_selex_prior <- data.frame(
   region = 1, # only a single region
   par = c(1,2,1,2,1,1), # parameter to apply prior to
@@ -275,10 +281,10 @@ srv_selex_prior
 
 In the example provided above, the first row of the dataframe indicates
 that a prior is pplied to region 1, parameter 1, sex 1, fleet 1, and
-block 1, which corresponds to the $b_{50}$ parameter for logistic
+block 1, which corresponds to the $`b_50`$ parameter for logistic
 selectivity specified for the first survey fleet. The last row of the
 datframe indicates that a prior is applied to region 1, parameter 1, sex
-2, fleet 2, and block 1, which corresponds to the male $\phi$ power
+2, fleet 2, and block 1, which corresponds to the male $`\phi`$ power
 paramter for exponential selectivity specified for the second survey
 fleet.
 
@@ -287,6 +293,7 @@ Next, we can activate selectivity priors by setting
 dataframe to `srv_selex_prior`.
 
 ``` r
+
 # Setup survey selectivity and catchability
 input_list <- Setup_Mod_Srvsel_and_Q(input_list = input_list,
 
@@ -338,6 +345,7 @@ spatial model. Here, we will load in data from the multi-region
 sablefish case study to demonstrate defining priors for these processes.
 
 ``` r
+
 data(mlt_rg_sable_data) # load in data
 
 # Initialize model dimensions and data list
@@ -378,6 +386,7 @@ shape parameters that define the prior over movement probabilities to
 all destination regions.
 
 ``` r
+
 prior <- expand.grid(
     region_from = 1:input_list$data$n_regions, # regions
     age = 1, # age blocks
@@ -424,6 +433,7 @@ blocks in region 1. Because the symmetric form does not require a mean,
 the `mu` column is set to NA:
 
 ``` r
+
 # setup tagging priors
 tag_prior <- data.frame(
   region = 1,         # apply to region 1
@@ -449,6 +459,7 @@ setting `Use_TagRep_Prior = 1` and inputting the dataframe into the
 `TagRep_Prior` argument.
 
 ``` r
+
 # setting up tagging parameterization
 input_list <- Setup_Mod_Tagging(input_list = input_list,
                                 UseTagging = 1, # using tagging data
@@ -505,6 +516,7 @@ Dirichlet prior will be applied according to those concentration
 parameters.
 
 ``` r
+
 # Setup recruitment stuff (using defaults for other stuff)
 input_list <- Setup_Mod_Rec(input_list = input_list, # input data list from above
                             do_rec_bias_ramp = 0,

@@ -22,6 +22,7 @@ dynamics of the 2024 assessment relatively closely. First, let us load
 in any necessary packages.
 
 ``` r
+
 # Load in packages
 library(SPoRC) 
 library(here)
@@ -42,6 +43,7 @@ number of fishery fleets (n_fish_fleets), and number of survey fleets
 (n_srv_fleets)
 
 ``` r
+
   input_list <- Setup_Mod_Dim(
     years = sgl_rg_ebswp_data$years,
     # vector of years
@@ -79,6 +81,7 @@ recruitment is parameterized as such:
 6.  Individuals are assumed to spawn during March (`t_spawn = 0.25`)
 
 ``` r
+
 
   inv_steepness <- function(s) qlogis((s - 0.2) / 0.8)
 
@@ -120,6 +123,7 @@ also dimensioned by `n_regions`, `n_years`, `n_ages`, `n_sexes`.
 
 ``` r
 
+
   # Setup a fixed natural mortality array for use
   fix_natmort <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), length(input_list$data$ages), 1))
   fix_natmort[,,1,] <- 0.9 # age 1 M
@@ -158,6 +162,7 @@ necessary is updating the `input_list` and setting the `UseTagging`
 argument to a value of 0.
 
 ``` r
+
 
 # setup movement
   input_list <- Setup_Mod_Movement(
@@ -200,6 +205,7 @@ estimate deviations `Use_F_pen = 1`, and the `ln_sigmaC` values to fix
 at.
 
 ``` r
+
   input_list <- Setup_Mod_Catch_and_F(
     input_list = input_list,
 
@@ -235,6 +241,7 @@ data, and fishery age compositions are aggregatted across regions and
 sexes (because this is a single-region single-sex model).
 
 ``` r
+
 input_list <- Setup_Mod_FishIdx_and_Comps(
     input_list = input_list,
     # data inputs
@@ -280,6 +287,7 @@ survey does not have composition data, these are not fit to (and hence
 specified at none).
 
 ``` r
+
   # Setup survey indices and compositions
   input_list <- Setup_Mod_SrvIdx_and_Comps(
     input_list = input_list,
@@ -335,6 +343,7 @@ demonstrate how variance parameters can be fixed to allow for estimation
 in a penalized likelihood framework.
 
 ``` r
+
   # Setup fishery selectivity and catchability
   input_list <- Setup_Mod_Fishsel_and_Q(
 
@@ -374,6 +383,7 @@ deviations collapse to an iid formulation
 (`corr_opt_semipar = c(NA, "corr_zero_y_a_c", "corr_zero_y_a_c")`).
 
 ``` r
+
  # Setup survey selectivity and catchability
   input_list <- Setup_Mod_Srvsel_and_Q(
     input_list = input_list,
@@ -404,12 +414,13 @@ deviations collapse to an iid formulation
 
 ## Setup Model Weighting
 
-We will then set up how data should be weighted with $\lambda$ in this
-model. Here, all $\lambda$ values are set at 1. Thus, all data sources
+We will then set up how data should be weighted with $`\lambda`$ in this
+model. Here, all $`\lambda`$ values are set at 1. Thus, all data sources
 are weighted either using specified input sample sizes (for composition
 data) or specified variances (catch and abundance indices).
 
 ``` r
+
 input_list <- Setup_Mod_Weighting(
   input_list = input_list,
   Wt_Catch = 1,
@@ -450,6 +461,7 @@ specified variance of 0.15. For further details on the dimensionality of
 `Description of Model Parameters` page.
 
 ``` r
+
 # extract out lists updated with helper functions
 data <- input_list$data
 parameters <- input_list$par
@@ -477,6 +489,7 @@ Next, we can extract out parameter estimates of recruitment and spawning
 biomass and compare to the 2024 pollock model.
 
 ``` r
+
 # Get recruitment
 rec_series <- reshape2::melt((ebswp_rtmb_model$rep$Rec)) %>%
   mutate(se = ebswp_rtmb_model$sd_rep$sd[names(ebswp_rtmb_model$sd_rep$value) == 'log(Rec)'] * t(ebswp_rtmb_model$rep$Rec))
@@ -522,6 +535,7 @@ discrepancies between these estimates, likely due to the factors
 discussed at the start of this vignette.
 
 ``` r
+
 ggplot(ts_df, aes(x = Year, y = value, ymin = value - (1.96 * se),
                   ymax = value + (1.96 * se), color = type, fill = type)) +
   geom_point(size = 3) +
@@ -544,6 +558,7 @@ Lastly, we can also inspect estimates of fishery selectivity from
 normalize these values in the figure to improve interpretability
 
 ``` r
+
 reshape2::melt(ebswp_rtmb_model$rep$fish_sel) %>%
   mutate(value = value/max(value)) %>%
   rename(Region = Var1, Year = Var2, Age = Var3, Sex = Var4, Fleet = Var5) %>%

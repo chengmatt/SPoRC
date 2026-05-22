@@ -58,17 +58,7 @@ input_list <- Setup_Mod_Movement(
   do_recruits_move = 0, # recruits don't move
   move_type = 0 # unstructured markov
 )
-#> Movement is: Estimated
-#> Movement priors are: Not Used
-#> Recruits are: Not Moving
-#> Continuous movement specification is: none
-#> Continuous movement process error specification is: none
-#> Movement type is: Unstructured Markov
-#> Movement fixed effect blocks are sex-invariant
-#> Movement fixed effect blocks are time-invariant
-#> Movement fixed effect blocks are age-invariant
 length(unique(input_list$map$move_pars)) # number of parameters estimated
-#> [1] 6
 ```
 
 ### Age Blocks
@@ -84,11 +74,6 @@ in `nregions x nregions - 1 x 2` parameters estimated.
 # define age block
 age_blk <- list(c(1:15), c(16:30))
 age_blk
-#> [[1]]
-#>  [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
-#> 
-#> [[2]]
-#>  [1] 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30
 
 # Setup movement
 input_list <- Setup_Mod_Movement(
@@ -99,18 +84,8 @@ input_list <- Setup_Mod_Movement(
   Movement_yearblk_spec = "constant", # constant movement across years
   Movement_sexblk_spec = "constant" # constant movement across sexes
 )
-#> Movement is: Estimated
-#> Movement priors are: Not Used
-#> Recruits are: Not Moving
-#> Continuous movement specification is: none
-#> Continuous movement process error specification is: none
-#> Movement type is: Unstructured Markov
-#> Movement fixed effect blocks are sex-invariant
-#> Movement fixed effect blocks are time-invariant
-#> Movement fixed effect blocks are specified with 2 age blocks
 
 length(unique(input_list$map$move_pars)) # number of parameters estimated
-#> [1] 12
 ```
 
 ### Year Blocks
@@ -124,20 +99,6 @@ estimated.
 # define year blocks
 yr_blk <- list(c(1:15), c(16:30), c(31:45), c(46:60), c(61:62))
 yr_blk
-#> [[1]]
-#>  [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
-#> 
-#> [[2]]
-#>  [1] 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30
-#> 
-#> [[3]]
-#>  [1] 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45
-#> 
-#> [[4]]
-#>  [1] 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60
-#> 
-#> [[5]]
-#> [1] 61 62
 
 # Setup movement
 input_list <- Setup_Mod_Movement(
@@ -148,18 +109,8 @@ input_list <- Setup_Mod_Movement(
   Movement_yearblk_spec = yr_blk, # time blocks for movement
   Movement_sexblk_spec = "constant" # constant movement across sexes
 )
-#> Movement is: Estimated
-#> Movement priors are: Not Used
-#> Recruits are: Not Moving
-#> Continuous movement specification is: none
-#> Continuous movement process error specification is: none
-#> Movement type is: Unstructured Markov
-#> Movement fixed effect blocks are sex-invariant
-#> Movement fixed effect blocks are specified with 5 year blocks
-#> Movement fixed effect blocks are age-invariant
 
 length(unique(input_list$map$move_pars)) # number of parameters estimated
-#> [1] 30
 ```
 
 ### Sex Blocks
@@ -173,11 +124,6 @@ parameters estimated.
 # define sex blocks
 sx_blk <- as.list(1:2)
 sx_blk
-#> [[1]]
-#> [1] 1
-#> 
-#> [[2]]
-#> [1] 2
 
 # Setup movement
 input_list <- Setup_Mod_Movement(
@@ -188,15 +134,6 @@ input_list <- Setup_Mod_Movement(
   Movement_yearblk_spec = 'constant', # constant movement across years
   Movement_sexblk_spec = sx_blk # sex-specific movement
 )
-#> Movement is: Estimated
-#> Movement priors are: Not Used
-#> Recruits are: Not Moving
-#> Continuous movement specification is: none
-#> Continuous movement process error specification is: none
-#> Movement type is: Unstructured Markov
-#> Movement fixed effect blocks are specified with 2 sex blocks
-#> Movement fixed effect blocks are time-invariant
-#> Movement fixed effect blocks are age-invariant
 ```
 
 ### Blocks Across all Dimensions
@@ -214,38 +151,14 @@ lead to an unstable model solution.
 # define age block
 age_blk <- list(c(1:15), c(16:30))
 age_blk
-#> [[1]]
-#>  [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
-#> 
-#> [[2]]
-#>  [1] 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30
 
 # define year blocks
 yr_blk <- list(c(1:15), c(16:30), c(31:45), c(46:60), c(61:62))
 yr_blk
-#> [[1]]
-#>  [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
-#> 
-#> [[2]]
-#>  [1] 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30
-#> 
-#> [[3]]
-#>  [1] 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45
-#> 
-#> [[4]]
-#>  [1] 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60
-#> 
-#> [[5]]
-#> [1] 61 62
 
 # define sex blocks
 sx_blk <- as.list(1:2)
 sx_blk
-#> [[1]]
-#> [1] 1
-#> 
-#> [[2]]
-#> [1] 2
 
 # Setup movement
 input_list <- Setup_Mod_Movement(
@@ -258,15 +171,6 @@ input_list <- Setup_Mod_Movement(
   Movement_yearblk_spec = yr_blk,
   Movement_sexblk_spec = sx_blk
 )
-#> Movement is: Estimated
-#> Movement priors are: Not Used
-#> Recruits are: Not Moving
-#> Continuous movement specification is: none
-#> Continuous movement process error specification is: none
-#> Movement type is: Unstructured Markov
-#> Movement fixed effect blocks are specified with 2 sex blocks
-#> Movement fixed effect blocks are specified with 5 year blocks
-#> Movement fixed effect blocks are specified with 2 age blocks
 ```
 
 ## Continuous-Time Markov Chain (CTMC)
@@ -341,17 +245,9 @@ input_list <- Setup_Mod_Movement(
   diffusion_formula = diffusion_formula,
   preference_formula = preference_formula
 )
-#> Movement is: Estimated
-#> Movement priors are: Not Used
-#> Recruits are: Not Moving
-#> Continuous movement specification is: none
-#> Continuous movement process error specification is: none
-#> Movement type is: Continuous Time Markov Chain
 
 length(input_list$par$log_move_diffusion_pars)
-#> [1] 3
 length(input_list$par$move_preference_pars)
-#> [1] 0
 ```
 
 ### Age-Varying
@@ -388,17 +284,9 @@ input_list <- Setup_Mod_Movement(
   diffusion_formula = diffusion_formula,
   preference_formula = preference_formula
 )
-#> Movement is: Estimated
-#> Movement priors are: Not Used
-#> Recruits are: Not Moving
-#> Continuous movement specification is: none
-#> Continuous movement process error specification is: none
-#> Movement type is: Continuous Time Markov Chain
 
 length(input_list$par$log_move_diffusion_pars)
-#> [1] 1
 length(input_list$par$move_preference_pars)
-#> [1] 3
 ```
 
 #### Spline
@@ -430,17 +318,9 @@ input_list <- Setup_Mod_Movement(
   diffusion_formula = diffusion_formula,
   preference_formula = preference_formula
 )
-#> Movement is: Estimated
-#> Movement priors are: Not Used
-#> Recruits are: Not Moving
-#> Continuous movement specification is: none
-#> Continuous movement process error specification is: none
-#> Movement type is: Continuous Time Markov Chain
 
 length(input_list$par$log_move_diffusion_pars)
-#> [1] 1
 length(input_list$par$move_preference_pars)
-#> [1] 12
 ```
 
 #### Movement Across all Dimensions
@@ -472,17 +352,9 @@ input_list <- Setup_Mod_Movement(
   diffusion_formula = diffusion_formula,
   preference_formula = preference_formula
 )
-#> Movement is: Estimated
-#> Movement priors are: Not Used
-#> Recruits are: Not Moving
-#> Continuous movement specification is: none
-#> Continuous movement process error specification is: none
-#> Movement type is: Continuous Time Markov Chain
 
 length(input_list$par$log_move_diffusion_pars)
-#> [1] 1
 length(input_list$par$move_preference_pars)
-#> [1] 144
 ```
 
 ## Process Error
@@ -529,17 +401,8 @@ input_list <- Setup_Mod_Movement(
   cont_vary_movement = 'iid_y', 
   Movement_cont_pe_pars_spec = 'est_shared_r_a_s'
 )
-#> Movement is: Estimated
-#> Movement priors are: Not Used
-#> Recruits are: Not Moving
-#> Continuous movement specification is: iid_y
-#> Continuous movement process error specification is: est_shared_r_a_s
-#> Movement type is: Continuous Time Markov Chain
 
 length(input_list$par$log_move_diffusion_pars)
-#> [1] 1
 length(input_list$par$move_preference_pars)
-#> [1] 12
 length(unique(input_list$map$move_devs))
-#> [1] 372
 ```

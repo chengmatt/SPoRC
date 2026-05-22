@@ -32,3 +32,10 @@ devtools::install_github("chengmatt/SPoRC", dependencies = c("Depends", "Imports
 
 ### Publications
 1. Cheng, M.LH., Goethel, D.R., Cunningham, C.J., Hulson, P.F., Ianelli, J.N., Omori, K.L., 2026. The SPoRC Stock Assessment Package: A Generalized Next‐Generation Platform to Assess Spatial, Age and Sex‐Structured Populations. Fish and Fisheries faf.70082. https://doi.org/10.1111/faf.70082
+
+### Additional Code Examples
+1. Alaska Sablefish Spatial Closed Loop Simulations: https://github.com/chengmatt/sablefish_cie_sims_2026
+2. Alaska Sablefish 2026 CIE Review: https://github.com/dgoethel-noaa/2026_Sablefish_CIE
+3. Alaska Sabelfish 2025 Stock Assessment: https://github.com/dgoethel-noaa/2025_Sablefish_SAFE
+4. Continuous Time Markov Chain Movement: https://github.com/chengmatt/ctmc_movement
+

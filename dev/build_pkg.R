@@ -66,6 +66,7 @@ unloadNamespace("SPoRC")
 # usethis::use_vignette("q_movement_param")
 # usethis::use_vignette("r_natal-homing-pop-lrgr-rg")
 # usethis::use_vignette("s_discard_retention")
+# usethis::use_vignette('t_model_options')
 
 
 # Integration Tests --------------------------------------------------------------

@@ -41,7 +41,7 @@ Ensure the following packages are installed:
     Age and Sex‐Structured Populations. Fish and Fisheries faf.70082.
     <https://doi.org/10.1111/faf.70082>
 
-### Additional Code Examples
+### Code Examples
 
 1.  Alaska Sablefish Spatial Closed Loop Simulations:
     <https://github.com/chengmatt/sablefish_cie_sims_2026>
@@ -51,3 +51,5 @@ Ensure the following packages are installed:
     <https://github.com/dgoethel-noaa/2025_Sablefish_SAFE>
 4.  Continuous Time Markov Chain Movement:
     <https://github.com/chengmatt/ctmc_movement>
+5.  Northern Southeast Inside Waters Sablefish MSE:
+    <https://github.com/chengmatt/nsei_sablefish_mse>

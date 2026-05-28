@@ -10,6 +10,10 @@ library(here)
 # gitcreds::gitcreds_set()
 Sys.unsetenv("GITHUB_PAT") # unset before building vignettes
 
+
+# Code Coverage -----------------------------------------------------------
+# covr::package_coverage(quiet = FALSE)
+
 # Documentation -----------------------------------------------------------
 att_amend_desc(update = TRUE)
 document()
@@ -90,6 +94,7 @@ unloadNamespace("SPoRC")
 # Misc One-Time Setup -----------------------------------------------------
 # usethis::use_news_md()
 # usethis::edit_git_ignore()
+# usethis::use_github_action("test-coverage")
 
 # Undo dev/ build ignore:
 # rbuildignore <- readLines(".Rbuildignore")

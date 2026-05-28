@@ -10,9 +10,8 @@ library(here)
 # gitcreds::gitcreds_set()
 Sys.unsetenv("GITHUB_PAT") # unset before building vignettes
 
-
 # Code Coverage -----------------------------------------------------------
-# covr::package_coverage(quiet = FALSE)
+covr::package_coverage(quiet = FALSE, type = 'all')
 
 # Documentation -----------------------------------------------------------
 att_amend_desc(update = TRUE)

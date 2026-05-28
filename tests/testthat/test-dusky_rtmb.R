@@ -291,16 +291,24 @@ test_that("Dusky RTMB model produces expected results", {
     2.061323, 2.393618, 2.529818, 2.838106
   )
 
+  # Testing to see if we obtian same values back
   expect_equal(dusky_rtmb_model$rep$SSB[1,1,], ssb_expected_vec, tolerance = 1e-2)
   expect_equal(dusky_rtmb_model$rep$Rec[1,1,], rec_expected_vec, tolerance = 1e-2)
   expect_true(dusky_rtmb_model$sdrep$pdHess)
 
-  # Test whether index fits produces a plot
+  # Additional tests for functions --------------------------------------------
   test_that("get_model_fits and get_comp_prop runs", {
     idx_fits <- get_idx_fits_plot(list(data), list(dusky_rtmb_model$rep), 'Dusky Model')
     comp_fits <- get_comp_prop(data, dusky_rtmb_model$rep, age_labels = 1:27, len_labels = data$lens, year_labels = data$years)
     expect_type(idx_fits, "object")
     expect_type(comp_fits, "list")
+  })
+
+  # Test runs test
+  test_that("condition_closed_loop_simulations runs", {
+    idx_fits <- get_idx_fits(data, dusky_rtmb_model$rep, data$years)
+    resids <- do_runs_test(idx_fits$resid)
+    expect_type(resids, "list")
   })
 
   # Test whether retro function runs
@@ -319,5 +327,48 @@ test_that("Dusky RTMB model produces expected results", {
                                SPR_x = 0.4, what = 'SPR', type = 'single_region')
     expect_type(rp, "list")
   })
+
+  # Test likelihood profile
+  test_that("do_likelihood_profile runs", {
+    lp <- do_likelihood_profile(data, parameters, mapping, NULL,
+                                what = 'ln_global_R0', min = 1,
+                                max_val = 3,
+                                inc = 1)
+    expect_type(lp, "list")
+  })
+
+  # Test jitter analysis
+  test_that("do_jitter runs", {
+    jit_df <- do_jitter(data, parameters, mapping, NULL, sd = 0.1, n_jitter = 1, do_par = FALSE)
+    expect_type(jit_df, "list")
+  })
+
+  # Test francis
+  test_that("run_francis runs", {
+    francis_rewt <- run_francis(data, parameters, mapping, NULL, 1, 0)
+    expect_type(francis_rewt, "list")
+  })
+
+  # Test self tests
+  test_that("simulation_self_test runs", {
+    suppressWarnings(
+      self_test <-   # Test self tests
+        simulation_self_test(
+          data, parameters, mapping, NULL,
+          dusky_rtmb_model$rep, dusky_rtmb_model$sdrep, 1
+        )
+    )
+    expect_type(self_test, "list")
+  })
+
+  # Test condition closed loop simulations
+  test_that("condition_closed_loop_simulations runs", {
+    condition_cl_sim <- condition_closed_loop_simulations(
+      1, 1, data, parameters, mapping,
+      dusky_rtmb_model$sdrep, dusky_rtmb_model$rep, NULL
+    )
+    expect_type(condition_cl_sim, "list")
+  })
+
 
 })

@@ -1,5 +1,9 @@
 ## SPoRC: Stochastic Population Model Over Regional Components <a href='https://github.com/chengmatt/SPoRC'><img src='man/figures/SPoRC_hex.png' align="right" style="height:139px;"/></a>
 
+<!-- badges: start -->
+[![Codecov test coverage](https://codecov.io/gh/chengmatt/SPoRC/graph/badge.svg)](https://app.codecov.io/gh/chengmatt/SPoRC)
+<!-- badges: end -->
+  
 ### Overview
 `SPoRC` is a flexible modeling framework for spatially structured population dynamics. It accounts for stochasticity in vital rates and movement among geographically defined components. The framework supports:
 
@@ -33,9 +37,10 @@ devtools::install_github("chengmatt/SPoRC", dependencies = c("Depends", "Imports
 ### Publications
 1. Cheng, M.LH., Goethel, D.R., Cunningham, C.J., Hulson, P.F., Ianelli, J.N., Omori, K.L., 2026. The SPoRC Stock Assessment Package: A Generalized Next‐Generation Platform to Assess Spatial, Age and Sex‐Structured Populations. Fish and Fisheries faf.70082. https://doi.org/10.1111/faf.70082
 
-### Additional Code Examples
+### Code Examples
 1. Alaska Sablefish Spatial Closed Loop Simulations: https://github.com/chengmatt/sablefish_cie_sims_2026
 2. Alaska Sablefish 2026 CIE Review: https://github.com/dgoethel-noaa/2026_Sablefish_CIE
 3. Alaska Sabelfish 2025 Stock Assessment: https://github.com/dgoethel-noaa/2025_Sablefish_SAFE
 4. Continuous Time Markov Chain Movement: https://github.com/chengmatt/ctmc_movement
+5. Northern Southeast Inside Waters Sablefish MSE: https://github.com/chengmatt/nsei_sablefish_mse
 

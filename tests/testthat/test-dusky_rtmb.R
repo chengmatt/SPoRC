@@ -295,4 +295,29 @@ test_that("Dusky RTMB model produces expected results", {
   expect_equal(dusky_rtmb_model$rep$Rec[1,1,], rec_expected_vec, tolerance = 1e-2)
   expect_true(dusky_rtmb_model$sdrep$pdHess)
 
+  # Test whether index fits produces a plot
+  test_that("get_model_fits and get_comp_prop runs", {
+    idx_fits <- get_idx_fits_plot(list(data), list(dusky_rtmb_model$rep), 'Dusky Model')
+    comp_fits <- get_comp_prop(data, dusky_rtmb_model$rep, age_labels = 1:27, len_labels = data$lens, year_labels = data$years)
+    expect_type(idx_fits, "object")
+    expect_type(comp_fits, "list")
+  })
+
+  # Test whether retro function runs
+  test_that("do_retrospective and get_retrospective_plot runs", {
+    retro <- do_retrospective(data, parameters, mapping, do_par = FALSE,
+                              random = NULL, n_retro = 1,
+                              newton_loops = 1)
+    retro_plot <- get_retrospective_plot(retro, 4)
+    expect_type(retro, "list")
+    expect_type(retro_plot, "list")
+  })
+
+  # Test whether reference points runs
+  test_that("Get_Reference_Points runs", {
+    rp <- Get_Reference_Points(data = data, rep = dusky_rtmb_model$rep,
+                               SPR_x = 0.4, what = 'SPR', type = 'single_region')
+    expect_type(rp, "list")
+  })
+
 })

@@ -1888,7 +1888,7 @@ SPoRC_rtmb = function(pars, data) {
       if(rec_region_prop_spec == 1 && as.numeric(rec_region_prop[p,r]) == 0) next
 
       # Initial age deviations
-      Init_Rec_nLL[p,r,] = -RTMB::dnorm(ln_InitDevs[p,r,], 0, exp(ln_sigmaR[1,p,sigma_idx]), TRUE)
+      if(equil_init_age_strc != 0) Init_Rec_nLL[p,r,] = -RTMB::dnorm(ln_InitDevs[p,r,], 0, exp(ln_sigmaR[1,p,sigma_idx]), TRUE)
 
       # Early recruitment deviations
       if(sigmaR_switch > 1) {

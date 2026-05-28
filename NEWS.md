@@ -3,6 +3,7 @@
 
 ## Major changes
 - Incorporated ability to simulate and estimate both population-specific (natal homing) and seasonal dynamics.
+- Most model and simulation dimensions now include population- and season-specific indices, following the general dimension order: population, region, year, season, age, sex, fleet.
 - Recoded tagging module to allow fleet-specific tag reporting rates, as well as missing attributes in tagged fish. 
 - Reference points for local density-dependence in both meta-population and natal homing contexts.
 - Added ability to simulate and fit to population-specific catches, indices, compositions, and tagging data. 

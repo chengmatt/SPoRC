@@ -210,6 +210,7 @@ do_likelihood_profile <- function(data,
         local_data <- data
         local_parameters <- parameters
         local_mapping <- mapping
+        local_random <- random
 
         # Initialize result list
         result <- list(
@@ -276,7 +277,8 @@ do_likelihood_profile <- function(data,
 
         # make adfun
         tryCatch({
-          SPoRC_rtmb_model <- RTMB::MakeADFun(cmb(SPoRC_rtmb, local_data), parameters = local_parameters, map = local_mapping, random = random, silent = TRUE)
+          SPoRC_rtmb_model <- RTMB::MakeADFun(cmb(SPoRC_rtmb, local_data), parameters = local_parameters, map = local_mapping,
+                                              random = local_random, silent = TRUE)
 
           SPoRC_optim <- stats::nlminb(SPoRC_rtmb_model$par, SPoRC_rtmb_model$fn, SPoRC_rtmb_model$gr,
                                        control = list(iter.max = 1e6, eval.max = 1e6, rel.tol = 1e-15))

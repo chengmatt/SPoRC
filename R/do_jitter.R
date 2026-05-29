@@ -28,7 +28,7 @@
 #'   normal noise used to jitter parameters.
 #' @param n_jitter Integer specifying the number of jittered optimization runs.
 #' @param n_newton_loops Integer specifying the number of additional Newton
-#'   optimization steps performed after \code{nlminb()} convergence.
+#'   optimization steps performed after \code{nlminb()} convergence. Default = 0.
 #' @param do_par Logical indicating whether jitter iterations should be
 #'   executed in parallel.
 #' @param n_cores Integer specifying the number of parallel workers to use
@@ -64,7 +64,7 @@ do_jitter <- function(data,
                       random = NULL,
                       sd,
                       n_jitter,
-                      n_newton_loops,
+                      n_newton_loops = 0,
                       do_par,
                       n_cores,
                       par_vec = NULL

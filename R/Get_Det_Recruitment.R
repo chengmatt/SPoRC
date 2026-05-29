@@ -145,6 +145,9 @@ Get_Det_Recruitment <- function(recruitment_model,
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
+  # Pre-compute spawn_age_start outside loop since rec_lag doesn't change
+  spawn_age_start = ifelse(rec_lag == 0, 2, 1)
+
   if(recruitment_model == 0) {
     rec = array(0, dim = c(n_pop, n_regions))
     for(p in 1:n_pop) rec[p,] = R0[p] * rec_region_prop[p,] # mean recruitment apportioned across n_pop and n_regions
@@ -396,9 +399,9 @@ Get_Det_Recruitment <- function(recruitment_model,
         for(o in 1:n_regions) {
           for(d in 1:n_regions) {
             # unfished
-            SB_unfished_mat[p, o, d] = sum(SB_age[p, o, d, ])
+            SB_unfished_mat[p, o, d] = sum(SB_age[p, o, d, spawn_age_start:n_ages])
             # fished
-            SB_fished_mat[p, o, d] = sum(SB_fished_age[p, o, d, ])
+            SB_fished_mat[p, o, d] = sum(SB_fished_age[p, o, d, spawn_age_start:n_ages])
           } # end d
         } # end o
       } # end p
@@ -561,8 +564,8 @@ Get_Det_Recruitment <- function(recruitment_model,
                                         dim = c(n_regions, n_fish_fleets)))))
 
       # Get global spawning biomass per recruit (scalar)
-      S0 = sum(SB_age) * R0[1]
-      SF = sum(SB_fished_age) * R0[1]
+      S0 = sum(SB_age[,spawn_age_start:n_ages]) * R0[1]
+      SF = sum(SB_fished_age[,spawn_age_start:n_ages]) * R0[1]
     }
 
     # get SSB to use to predict recruitment

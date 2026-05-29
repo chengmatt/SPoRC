@@ -88,6 +88,12 @@ unloadNamespace("SPoRC")
 # usethis::use_test("mlt_rg_local_bh_msy_sabie_test")
 # usethis::use_test("mlt_rg_pop_seas_global_spr_test")
 # usethis::use_test("mlt_rg_pop_seas_local_bh_msy_test")
+# usethis::use_test("custom_distributions")
+# usethis::use_test("custom_simulate_distributions")
+# usethis::use_test("diag_util_func_dusky")
+# usethis::use_test('3d_precision_matrix')
+# usethis::use_test('logistN_utils')
+# usethis::use_test('release_tag_attr')
 
 
 # Misc One-Time Setup -----------------------------------------------------

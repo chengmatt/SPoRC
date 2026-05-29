@@ -13,6 +13,7 @@
 - Changed parameter names of ln_srv_fixed_sel_pars and ln_fish_fixed_sel_pars to srv_fixed_sel_pars and fish_fixed_sel_pars for clarity.
 - Included new options to estimate non-parametric selectivity, logistic selectivity with an asymptote parameter, as well as provide fixed selectivity (fishery, retention, and survey) inputs. 
 - Changed dimensions of init_F_prop to be region, season, and fleet-specific (as opposed to just being based on the first fishery fleet).
+- Coded in an argument in `do_retrospective` to return retrospective RTMB model objects (`return_models`).
 
 ## Improvements
 - Allowed both numeric and character codes for specifying dynamics in simulator, so as to be more consistent with how estimation models are specified, while maintaining backwards compatibility. 

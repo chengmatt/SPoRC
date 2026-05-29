@@ -2,7 +2,7 @@ Type: Package
 Package: SPoRC
 Title: A Generalized Stochastic (S) Population (Po) Model Over Regional
     (R) Components (C)
-Version: 1.1.0
+Version: 1.2.0
 Authors@R: c(
     person("Matthew", "Cheng", , "lhcheng@alaska.edu", role = c("aut", "cre")),
     person("Dan", "Goethel", role = "ctb"),

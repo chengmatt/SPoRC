@@ -409,6 +409,13 @@ if(any(data$UseSrvIdx_pop == 1) || any(data$UseSrvAgeComps_pop == 1) || any(data
 #'   \eqn{[n\_pop \times region \times fleet]}. Default is zeros.
 #' @param conv_tag_datalag Integer specifying the lag applied to conventional
 #'   tagging data. Default is \code{0}.
+#' @param return_models Logical indicating whether fitted model objects should
+#'   be returned for each retrospective peel. Default is \code{FALSE}. When
+#'   \code{TRUE}, the function returns a named list with two elements:
+#'   \code{retro_df} (the long-format \code{data.frame} of SSB and recruitment
+#'   estimates) and \code{retro_models} (a named list of fitted model objects,
+#'   indexed as \code{peel_0}, \code{peel_1}, ..., \code{peel_n}). When
+#'   \code{FALSE}, only the \code{data.frame} is returned.
 #'
 #' @return A long-format \code{data.frame} containing retrospective estimates
 #'   of spawning stock biomass and recruitment. Columns include:
@@ -463,13 +470,15 @@ do_retrospective <- function(n_retro,
                              srvidx_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_srv_fleets)),
                              srvage_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_srv_fleets)),
                              srvlen_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_srv_fleets)),
-                             conv_tag_datalag = 0
+                             conv_tag_datalag = 0,
+                             return_models = FALSE
                              ) {
 
   # Loop through retrospective (no parrallelization)
   if(do_par == FALSE) {
 
     retro_all <- data.frame()
+    retro_models <- list()
 
     for(j in 0:n_retro) {
 
@@ -638,7 +647,7 @@ do_retrospective <- function(n_retro,
 
       if(do_sdrep == TRUE) {
         sdrep <- RTMB::sdreport(SPoRC_rtmb_model) # get sdreport
-
+        SPoRC_rtmb_model$sd_rep <- sdrep
         # input info about pdHess and gradients
         retro_tmp <- retro_tmp %>%
           dplyr::mutate(pdHess = sdrep$pdHess,
@@ -646,6 +655,7 @@ do_retrospective <- function(n_retro,
       }
 
       retro_all <- rbind(retro_all, retro_tmp) # bind all rows
+      if(return_models) retro_models[[paste0("peel_", j)]] <- SPoRC_rtmb_model
 
     } # end j
   } # iterative loop
@@ -660,7 +670,7 @@ do_retrospective <- function(n_retro,
 
       p <- progressr::progressor(along = 0:n_retro) # progress bar
 
-      retro_all <- future.apply::future_lapply(0:n_retro, function(j) {
+      results <- future.apply::future_lapply(0:n_retro, function(j) {
 
         # truncate data
         init <- truncate_yr(j = j, data = data, parameters = parameters, mapping = mapping)
@@ -826,6 +836,7 @@ do_retrospective <- function(n_retro,
 
         if(do_sdrep == TRUE) {
           sdrep <- RTMB::sdreport(SPoRC_rtmb_model) # get sdreport
+          SPoRC_rtmb_model$sd_rep <- sdrep
 
           # input info about pdHess and gradients
           retro_tmp <- retro_tmp %>%
@@ -837,16 +848,33 @@ do_retrospective <- function(n_retro,
 
         p() # update progress
 
-        retro_tmp
+        out <- list(df = retro_tmp)
+        if(return_models) out$model <- SPoRC_rtmb_model
+        out
 
       }, future.seed = TRUE) %>% bind_rows() # bine rows to combine results
 
       future::plan(future::sequential)  # Reset
-
     })
+
+    # collate results
+    retro_all    <- lapply(results, `[[`, "df") %>% dplyr::bind_rows()
+    retro_models <- if(return_models) setNames(lapply(results, `[[`, "model"),
+                                               paste0("peel_", 0:n_retro)) else NULL
+
+
   } # do parrallelization for retrospective loop
 
-  return(retro_all)
+  # return models
+  if(return_models) {
+    return(list(
+      retro_df     = retro_all,
+      retro_models = retro_models
+    ))
+  } else {
+    return(retro_all)
+  }
+
 } # end function
 
 #' Derive relative difference from terminal year from a retrospective analysis.

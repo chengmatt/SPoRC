@@ -119,20 +119,6 @@ collect_message <- function(...) {
   messages_list <<- c(messages_list, paste(..., sep = ""))
 }
 
-#' Check whether an R package is installed
-#'
-#' Tests for package availability without loading it, using
-#' \code{system.file} to locate the package directory.
-#'
-#' @param pkg Character string. Name of the package to check.
-#'
-#' @return Logical. \code{TRUE} if the package is installed and findable;
-#'   \code{FALSE} otherwise.
-#'
-#' @keywords internal
-is_package_available <- function(pkg) {
-  nzchar(system.file(package = pkg))
-}
 #' Convert a target catch to fishing mortality for a single fleet via bisection
 #'
 #' Uses interval bisection to find the scalar fishing mortality \eqn{F} that
@@ -448,22 +434,23 @@ safe_extract <- function(obj, name) {
 #'   }
 #'
 #' @export get_par_est_info
+#' @import stringr str_replace
 #' @family Utility
 get_par_est_info <- function(parameters, mapping, sd_rep) {
 
   # get parameter names
   par_names <- reshape2::melt(parameters) %>%
-    dplyr::rename_with(~str_replace(., "^Var(\\d+)$", "Dim\\1")) %>%
+    dplyr::rename_with(~stringr::str_replace(., "^Var(\\d+)$", "Dim\\1")) %>%
     dplyr::rename(Init_Val = value, Par = L1) %>%
     dplyr::group_by(Par) %>%
     # unique parameters based on dimensions of parameter list
-    dplyr::mutate(Par_Num = paste(Par, row_number(), sep = "_"))
+    dplyr::mutate(Par_Num = paste(Par, dplyr::row_number(), sep = "_"))
 
   # get mapping names
   map_names <- reshape2::melt(mapping) %>%
     dplyr::rename(map = value, Par = L1) %>%
     dplyr::group_by(Par) %>%
-    dplyr::mutate(Par_Num = paste(Par, row_number(), sep = "_"),
+    dplyr::mutate(Par_Num = paste(Par, dplyr::row_number(), sep = "_"),
                   map = as.character(map), # make character
                   map = ifelse(is.na(map), 'NE', map) # denote NAs as NE (for not estimated instead)
     )
@@ -473,7 +460,7 @@ get_par_est_info <- function(parameters, mapping, sd_rep) {
     dplyr::left_join(map_names, by = c("Par", "Par_Num")) %>%
     dplyr::group_by(Par) %>%
     # make sure to turn NAs (they are estimated, but just were not in the mapping list)
-    dplyr::mutate(map = ifelse(is.na(map), as.character(row_number()), map))
+    dplyr::mutate(map = ifelse(is.na(map), as.character(dplyr::row_number()), map))
 
   # Make sure mapping numbers are sequential to match up with the sdreport
   par_map_names <- par_map_names %>%
@@ -488,7 +475,7 @@ get_par_est_info <- function(parameters, mapping, sd_rep) {
                           SE_Val = c(sqrt(diag(sd_rep$cov.fixed)), sd_rep$diag.cov.random),
                           Abs_Grad_Val = c(abs(as.vector(sd_rep$gradient.fixed)), rep(NA, length(sd_rep$diag.cov.random)))) %>%
     dplyr::group_by(Par) %>%
-    dplyr::mutate(Par_Num_map = paste(Par, row_number(), sep = '_'))
+    dplyr::mutate(Par_Num_map = paste(Par, dplyr::row_number(), sep = '_'))
 
   # join to get estimated parameters, along with initial starting values
   estimated_pars <- est_names %>%
@@ -767,7 +754,7 @@ set_data_indicator_unused <- function(data,
 #'
 #' @param rtmb_obj An RTMB \code{ADFun} object with a \code{$report()}
 #'   method, as returned by \code{RTMB::MakeADFun}.
-#' @param adnuts_obj An \code{adnuts} posterior object containing
+#' @param mcmc_obj An \code{adnuts} or \code{SparseNUTS} posterior object containing
 #'   \code{$samples} (array \code{[n_iter × n_chain × n_param]}) and
 #'   \code{$warmup} (number of warmup iterations to discard).
 #' @param what Character vector. Names of components in the model report
@@ -788,24 +775,24 @@ set_data_indicator_unused <- function(data,
 #' @examples
 #' \dontrun{
 #' model_reports <- get_model_rep_from_mcmc(
-#'   rtmb_obj, adnuts_obj,
+#'   rtmb_obj, mcmc_obj,
 #'   what = c("SSB", "Rec"),
 #'   n_cores = 4
 #' )
 #' }
-get_model_rep_from_mcmc <- function(rtmb_obj, adnuts_obj, what, n_cores) {
+get_model_rep_from_mcmc <- function(rtmb_obj, mcmc_obj, what, n_cores) {
 
   # discard warmup samples
-  adnuts_obj$samples <- adnuts_obj$samples[-c(1:adnuts_obj$warmup),,]
+  mcmc_obj$samples <- mcmc_obj$samples[-c(1:mcmc_obj$warmup),,]
 
   # define dimensions
-  n_iter <- dim(adnuts_obj$samples)[1]
-  n_chain <- dim(adnuts_obj$samples)[2]
-  n_param <- dim(adnuts_obj$samples)[3]
+  n_iter <- dim(mcmc_obj$samples)[1]
+  n_chain <- dim(mcmc_obj$samples)[2]
+  n_param <- dim(mcmc_obj$samples)[3]
 
   # collapse chains and iterations into a single posterior draw
-  samples_collapsed <- matrix(adnuts_obj$samples, nrow = n_iter * n_chain, ncol = n_param)
-  colnames(samples_collapsed) <- dimnames(adnuts_obj$samples)[[3]] # rename columns
+  samples_collapsed <- matrix(mcmc_obj$samples, nrow = n_iter * n_chain, ncol = n_param)
+  colnames(samples_collapsed) <- dimnames(mcmc_obj$samples)[[3]] # rename columns
   what_list <- vector("list", length(what)) # create list to store
   names(what_list) <- what # name list
 

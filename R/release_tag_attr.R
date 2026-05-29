@@ -67,13 +67,13 @@ release_conv_tag_attr <- function(tagged_fish,
                                   n_pop,
                                   n_ages,
                                   n_sexes
-                                  ) {
+) {
 
   "c" = RTMB::ADoverload("c")
   "[<-" = RTMB::ADoverload("[<-")
 
-  # reshape into array
-  tagged_fish = array(tagged_fish, dim = c(n_pop, n_ages, n_sexes))
+  # Keep the original collapsed input for safe indexing into attended dims.
+  tagged_fish_orig <- tagged_fish
 
   # get tagging attributes
   attr_parts = strsplit(tag_attr, "_")[[1]]
@@ -81,14 +81,17 @@ release_conv_tag_attr <- function(tagged_fish,
   attended_a = "a" %in% attr_parts
   attended_s = "s" %in% attr_parts
 
-  # return tagged_fish if p_a_s
-  if(attended_p && attended_a && attended_s) return(tagged_fish)
+  # return tagged_fish (reshaped to full dims) if p_a_s — all dims attended,
+  # no apportionment needed
+  if(attended_p && attended_a && attended_s) {
+    return(array(tagged_fish, dim = c(n_pop, n_ages, n_sexes)))
+  }
 
   # get platform and fleet release
   platform = tag_release_platform[1]
   fleet = as.integer(tag_release_platform[2])
 
-  # Get raw tag apportionment weights
+  # Get raw tag apportionment weights [n_pop, n_ages, n_sexes]
   weights = if(platform == "population") {
     array(NAA[, tr, ty, tseas, , ], dim = c(n_pop, n_ages, n_sexes))
   } else if(platform == "fishery") {
@@ -116,26 +119,25 @@ release_conv_tag_attr <- function(tagged_fish,
   for(p in seq_len(n_pop)) {
     for(a in seq_len(n_ages)) {
       for(s in seq_len(n_sexes)) {
-        # Denominator: sum weights over the unattended dims that share the
-        # same attended-dim indices as this [p, a, s] cell
         denom = 0
         for(pp in seq_len(n_pop)) {
           for(aa in seq_len(n_ages)) {
             for(ss in seq_len(n_sexes)) {
-              # Include this cell in the denominator only if it matches on
-              # all attended dimensions
               same_p = !attended_p || pp == p
               same_a = !attended_a || aa == a
               same_s = !attended_s || ss == s
               if(same_p && same_a && same_s) denom = denom + weights[pp, aa, ss]
-            } # end ss loop
-          } # end aa loop
-        } # end pp loop
+            }
+          }
+        }
         norm_weights[p, a, s] = weights[p, a, s] / denom
-      } # end s loop
-    } # end a loop
-  } # end p loop
+      }
+    }
+  }
 
+  # Build output by looking up the correct cell in the original collapsed input.
+  # Use index 1 for any unattended dim (those dims are collapsed to size 1 in
+  # tagged_fish_orig), and the actual loop index for attended dims.
   out = array(0, dim = c(n_pop, n_ages, n_sexes))
   for(p in seq_len(n_pop)) {
     for(a in seq_len(n_ages)) {
@@ -143,11 +145,11 @@ release_conv_tag_attr <- function(tagged_fish,
         pi = if(attended_p) p else 1
         ai = if(attended_a) a else 1
         si = if(attended_s) s else 1
-        out[p, a, s] = tagged_fish[pi, ai, si] * norm_weights[p, a, s]
-      } # end s loop
-    } # end a loop
-  } # end p loop
+        out[p, a, s] = tagged_fish_orig[pi, ai, si] * norm_weights[p, a, s]
+      }
+    }
+  }
 
   return(out)
 
-} # end function
+}

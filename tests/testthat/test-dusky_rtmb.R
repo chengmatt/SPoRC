@@ -253,6 +253,7 @@ test_that("Dusky RTMB model produces expected results", {
   mapping <- input_list$map
 
   # Fit model
+  mapping$ln_sigmaR <- factor(rep(1,2))
   dusky_rtmb_model <- fit_model(data,
                                 parameters,
                                 mapping,

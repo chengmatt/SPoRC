@@ -216,9 +216,17 @@ Get_Init_NAA <- function(init_age_strc,
       for(r in 1:n_regions) {
         for(s in 1:n_sexes) {
           # retained F
-          tmp_ret_F = rowSums(array(sweep(fish_sel[p,r,1,1:(n_ages-1),s,] * ret_sel[p,r,1,1:(n_ages-1),s,], 2, init_F[r,1,], "*"), dim = c(n_ages - 1, n_fish_fleets)))
+          tmp_ret_F = rowSums(array(
+            sweep(fish_sel[p,r,1,1:(n_ages-1),s,, drop=FALSE] * ret_sel[p,r,1,1:(n_ages-1),s,, drop=FALSE], 2, as.vector(init_F[r,1,]), "*"),
+            dim = c(n_ages - 1, n_fish_fleets)
+          ))
           # discarded F
-          tmp_disc_F = rowSums(array(sweep(fish_sel[p,r,1,1:(n_ages-1),s,] * (1 - ret_sel[p,r,1,1:(n_ages-1),s,]) * dmr[r,1,], 2, init_F[r,1,], "*"), dim = c(n_ages - 1, n_fish_fleets)))
+          tmp_disc_F = rowSums(array(
+            sweep(
+              fish_sel[p,r,1,1:(n_ages-1),s,, drop=FALSE] *
+                (1 - ret_sel[p,r,1,1:(n_ages-1),s,, drop=FALSE]) *
+                dmr[r,1,], 2, as.vector(init_F[r,1,]), "*"), dim = c(n_ages - 1, n_fish_fleets)
+          ))
           tmp_F = tmp_ret_F + tmp_disc_F # total F
           tmp_cumsum_Z = cumsum(natmort[p,r,1:(n_ages-1),s] + tmp_F)
           Init_NAA[p,r,,s] = c(R0_r[p,r] * sexratio[p,r,s] * rec_seas_prop[p,1], R0_r[p,r] * sexratio[p,r,s] * rec_seas_prop[p,1] * exp(-tmp_cumsum_Z))
@@ -244,10 +252,17 @@ Get_Init_NAA <- function(init_age_strc,
             for(r in 1:n_regions) {
 
               # get tmp F
-              tmp_ret_F = rowSums(array(sweep(fish_sel[p,r,seas,1:n_ages,s,] * ret_sel[p,r,seas,1:n_ages,s,], 2, init_F[r,seas,], "*"), dim = c(n_ages, n_fish_fleets)))
-              tmp_disc_F = rowSums(array(sweep(fish_sel[p,r,seas,1:n_ages,s,] * (1 - ret_sel[p,r,seas,1:n_ages,s,]) * dmr[r,seas,], 2, init_F[r,seas,], "*"), dim = c(n_ages, n_fish_fleets)))
-              tmp_F = tmp_ret_F + tmp_disc_F
+              tmp_ret_F = rowSums(array(
+                sweep(fish_sel[p,r,seas,1:n_ages,s,, drop=FALSE] * ret_sel[p,r,seas,1:n_ages,s,, drop=FALSE],
+                      2, as.vector(init_F[r,seas,]), "*"),
+                dim = c(n_ages, n_fish_fleets)))
 
+              tmp_disc_F = rowSums(array(
+                sweep(fish_sel[p,r,seas,1:n_ages,s,, drop=FALSE] * (1 - ret_sel[p,r,seas,1:n_ages,s,, drop=FALSE]) * dmr[r,seas,],
+                      2, as.vector(init_F[r,seas,]), "*"),
+                dim = c(n_ages, n_fish_fleets)))
+
+              tmp_F = tmp_ret_F + tmp_disc_F
               # mortality wtihin season
               if(seas < n_seas) {
                 Init_NAA_next_year[p,r,1:n_ages,s] = Init_NAA[p,r,1:n_ages,s] *

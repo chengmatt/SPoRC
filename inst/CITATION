@@ -1,0 +1,39 @@
+bibentry(
+  bibtype  = "Article",
+  title    = "The {SPoRC} Stock Assessment Package: A Generalized Next-Generation Platform to Assess Spatial, Age and Sex-Structured Populations",
+  author   = c(
+    person("Matthew L. H.", "Cheng"),
+    person("Daniel R.", "Goethel"),
+    person("Curry J.", "Cunningham"),
+    person("Peter-John F.", "Hulson"),
+    person("James N.", "Ianelli"),
+    person("Kristen L.", "Omori")
+  ),
+  journal  = "Fish and Fisheries",
+  year     = "2026",
+  volume   = "27",
+  number   = "3",
+  pages    = "754--770",
+  doi      = "10.1111/faf.70082",
+  textVersion = paste(
+    "Cheng MLH, Goethel DR, Cunningham CJ, Hulson P-JF, Ianelli JN, Omori KL (2026).",
+    "The SPoRC Stock Assessment Package: A Generalized Next-Generation Platform to",
+    "Assess Spatial, Age and Sex-Structured Populations.",
+    "Fish and Fisheries, 27(3), 754-770.",
+    "https://doi.org/10.1111/faf.70082"
+  )
+)
+
+bibentry(
+  bibtype  = "Manual",
+  title    = "SPoRC: A Generalized Stochastic (S) Population (Po) Model Over Regional (R) Components (C)",
+  author   = person("Matthew", "Cheng"),
+  year     = "2026",
+  note     = "R package version 1.1.0",
+  url      = "https://github.com/chengmatt/SPoRC/releases/tag/v1.1.0",
+  textVersion = paste(
+    "Cheng M (2026). SPoRC: A Generalized Stochastic (S) Population (Po)",
+    "Model Over Regional (R) Components (C). R package version 1.1.0.",
+    "https://github.com/chengmatt/SPoRC/releases/tag/v1.1.0"
+  )
+)

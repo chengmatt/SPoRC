@@ -4,10 +4,13 @@ Title: A Generalized Stochastic (S) Population (Po) Model Over Regional
     (R) Components (C)
 Version: 1.2.0
 Authors@R: c(
-    person("Matthew", "Cheng", , "lhcheng@alaska.edu", role = c("aut", "cre")),
-    person("Dan", "Goethel", role = "ctb"),
+    person("Matthew", "Cheng", , "your@email.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-2351-3402")),
+    person("Daniel", "Goethel", role = "ctb",
+           comment = c(ORCID = "0000-0003-0066-431X")),
     person("Pete", "Hulson", role = "ctb"),
-    person("Curry", "Cunningham", role = "ctb")
+    person("Curry", "Cunningham", role = "ctb",
+           comment = c(ORCID = "0000-0002-1234-1297"))
   )
 Description: A generalized spatial population model for stock assessment,
     written in RTMB.

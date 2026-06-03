@@ -468,7 +468,7 @@ test_that("Three-region Sablefish RTMB model produces expected results", {
                                   mapping,
                                   random = NULL,
                                   newton_loops = 3,
-                                  silent = TRUE, do_optim = F
+                                  silent = TRUE, do_optim = TRUE
     )
   )
 

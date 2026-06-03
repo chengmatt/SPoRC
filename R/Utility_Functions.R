@@ -434,7 +434,7 @@ safe_extract <- function(obj, name) {
 #'   }
 #'
 #' @export get_par_est_info
-#' @import stringr str_replace
+#' @importFrom stringr str_replace
 #' @family Utility
 get_par_est_info <- function(parameters, mapping, sd_rep) {
 

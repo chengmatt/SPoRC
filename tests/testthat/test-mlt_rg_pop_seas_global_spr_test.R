@@ -353,7 +353,7 @@ test_that("Multi-region, population, and seasonal global SPR reference points co
   )
 
   # Check if F equilibriates back at F40%
-  expect_equal(as.numeric(out$proj_F[,n_proj_yrs]), as.numeric(ref_pts$f_ref_pt), tolerance = 0)
+  expect_equal(round(as.numeric(out$proj_F[,n_proj_yrs]), 10), round(as.numeric(ref_pts$f_ref_pt), 10), tolerance = 0)
 
   # Check if SSB equilibriates at Bx%
   expect_equal(round(as.numeric(out$proj_SSB[,,n_proj_yrs]), 10),

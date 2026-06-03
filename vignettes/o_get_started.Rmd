@@ -816,27 +816,29 @@ HCR_function <- function(x, frp, brp, alpha = 0.05) {
 }
 
 # define projection parameters
-# n_sims <- 1e3 
+# n_sims <- 1e3
 n_sims <- 10 # for demo purposes
 t_spawn <- 0
 n_proj_yrs <- 25
 n_regions <- 1
 n_ages <- length(francis_data$ages)
-n_sexes <- 1
 n_fish_fleets <- 1
 n_sexes <- 1
+n_seas <- 1
+n_pop <- 1
 do_recruits_move <- 0
-terminal_NAA <- array(francis_model$rep$NAA[,length(francis_data$years),,], dim = c(n_regions, n_ages, n_sexes))
-terminal_NAA0 <- array(francis_model$rep$NAA0[,length(francis_data$years),,], dim = c(n_regions, n_ages, n_sexes))
-WAA <- array(rep(francis_data$WAA[,length(francis_data$years),,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_ages, n_sexes)) # weight at age
-WAA_fish <- array(rep(francis_data$WAA[,length(francis_data$years),,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_ages, n_sexes, n_fish_fleets)) # weight at age for fishery
-MatAA <- array(rep(francis_data$MatAA[,length(francis_data$years),,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_ages, n_sexes)) # maturity at age
-fish_sel <- array(rep(francis_model$rep$fish_sel[,length(francis_data$years),,,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_ages, n_sexes, n_fish_fleets)) # selectivity
-Movement <- array(rep(francis_model$rep$Movement[,,length(francis_data$years),,], each = n_proj_yrs), dim = c(n_regions, n_regions, n_proj_yrs, n_ages, n_sexes)) # movement - not used
-terminal_F <- array(francis_model$rep$Fmort[,length(francis_data$years),], dim = c(n_regions, n_fish_fleets)) # terminal F
-natmort <- array(rep(francis_model$rep$natmort[,length(francis_data$years),,], each = n_proj_yrs), dim = c(n_regions, n_proj_yrs, n_ages, n_sexes)) # natural mortaility
-recruitment <- array(francis_model$rep$Rec[,3:(length(francis_data$years) - 4)], dim = c(n_regions, length(3:(length(francis_data$years) - 4)))) # recruitment from years 3 - terminal (corresponds to 1979)
-sexratio <- array(1, dim = c(n_regions, n_proj_yrs, n_sexes)) # recruitment sex ratio 
+terminal_NAA <- array(francis_model$rep$NAA[,,length(francis_data$years),,,], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes))
+terminal_NAA0 <- array(francis_model$rep$NAA0[,,length(francis_data$years),,,], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes))
+WAA <- array(rep(francis_data$WAA[,,length(francis_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # weight at age
+WAA_fish <- array(rep(francis_data$WAA[,,length(francis_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # weight at age for fishery
+MatAA <- array(rep(francis_data$MatAA[,,length(francis_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # maturity at age
+fish_sel <- array(rep(francis_model$rep$fish_sel[,,length(francis_data$years),,,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # selectivity
+Movement <- array(rep(francis_model$rep$Movement[,,,length(francis_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # movement - not used
+terminal_F <- array(francis_model$rep$Fmort[,length(francis_data$years),,], dim = c(n_regions, n_seas, n_fish_fleets)) # terminal F
+natmort <- array(rep(francis_model$rep$natmort[,,length(francis_data$years),,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_ages, n_sexes)) # natural mortaility
+recruitment <- array(francis_model$rep$Rec[,,3:(length(francis_data$years) - 4)], dim = c(n_pop, n_regions, length(3:(length(francis_data$years) - 4)))) # recruitment from years 3 - terminal (corresponds to 1979)
+sexratio <- array(1, dim = c(n_pop, n_regions, n_proj_yrs, n_sexes)) # recruitment sex ratio
+rec_seas_prop <- array(1, dim = c(1,1)) # recruitment seasonal apportionment
 ```
 
 Next, we can define the Alaska projection scenarios to understand if the stock is within sustainable limits. These scenarios vary in how fishing mortality is applied relative to biological reference points. Scenario 1 applies the harvest control rule (HCR) using $F_{40\%}$ as the maximum allowable fishing mortality, with the annual mean of catch across simulations providing the annual catch advice. Scenario 2 also uses the HCR but scales $F_{40\%}$ based on the previous year’s fishing mortality. Scenario 3 applies a constant fishing mortality equal to the average of the last five years. Scenario 4 applies fishing mortality using $F_{60\%}$, while Scenario 5 assumes no fishing. Scenario 6 applies the HCR with $F_{35\%}$, representing the overfishing limit (`FOFL`). Finally, Scenario 7 applies the HCR with $F_{40\%}$ in the first two projection years and then transitions to $F_{35\%}$ in later years.

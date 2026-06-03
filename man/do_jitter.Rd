@@ -11,7 +11,7 @@ do_jitter(
   random = NULL,
   sd,
   n_jitter,
-  n_newton_loops,
+  n_newton_loops = 0,
   do_par,
   n_cores,
   par_vec = NULL
@@ -35,7 +35,7 @@ normal noise used to jitter parameters.}
 \item{n_jitter}{Integer specifying the number of jittered optimization runs.}
 
 \item{n_newton_loops}{Integer specifying the number of additional Newton
-optimization steps performed after \code{nlminb()} convergence.}
+optimization steps performed after \code{nlminb()} convergence. Default = 0.}
 
 \item{do_par}{Logical indicating whether jitter iterations should be
 executed in parallel.}

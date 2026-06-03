@@ -4,13 +4,13 @@
 \alias{get_model_rep_from_mcmc}
 \title{Extract model report quantities from MCMC posterior samples}
 \usage{
-get_model_rep_from_mcmc(rtmb_obj, adnuts_obj, what, n_cores)
+get_model_rep_from_mcmc(rtmb_obj, mcmc_obj, what, n_cores)
 }
 \arguments{
 \item{rtmb_obj}{An RTMB \code{ADFun} object with a \code{$report()}
 method, as returned by \code{RTMB::MakeADFun}.}
 
-\item{adnuts_obj}{An \code{adnuts} posterior object containing
+\item{mcmc_obj}{An \code{adnuts} or \code{SparseNUTS} posterior object containing
 \code{$samples} (array \code{[n_iter × n_chain × n_param]}) and
 \code{$warmup} (number of warmup iterations to discard).}
 
@@ -37,7 +37,7 @@ parallel, and returns the requested report components as tidy
 \examples{
 \dontrun{
 model_reports <- get_model_rep_from_mcmc(
-  rtmb_obj, adnuts_obj,
+  rtmb_obj, mcmc_obj,
   what = c("SSB", "Rec"),
   n_cores = 4
 )

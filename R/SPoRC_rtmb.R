@@ -572,7 +572,7 @@ SPoRC_rtmb = function(pars, data) {
     dmr = array(0, dim = c(n_regions, n_seas, n_fish_fleets)) # unfished
   )
 
-  # Input into model arrays (first year and season)
+  # Input into model arrays (first year and season) - and add lognormal mean adjustment
   NAA[,,1,1,,] = Init_Fished_NAA
   NAA0[,,1,1,,] = Init_Unfished_NAA
 
@@ -1887,18 +1887,19 @@ SPoRC_rtmb = function(pars, data) {
       # Skip penalty if no dispersal and p = r has no recruits
       if(rec_region_prop_spec == 1 && as.numeric(rec_region_prop[p,r]) == 0) next
 
-      # Initial age deviations
-      if(equil_init_age_strc != 0) Init_Rec_nLL[p,r,] = -RTMB::dnorm(ln_InitDevs[p,r,], 0, exp(ln_sigmaR[1,p,sigma_idx]), TRUE)
+      # Initial age deviations (if equil_init_age_strc == 0; don't penalize at all)
+      if(equil_init_age_strc == 1) Init_Rec_nLL[p,r,1:(n_ages - 2)] = -RTMB::dnorm(ln_InitDevs[p,r,1:(n_ages - 2)], -exp(ln_sigmaR[1,p,sigma_idx])^2/2 * bias_ramp[1], exp(ln_sigmaR[1,p,sigma_idx]), TRUE) # only penalize non plus group
+      if(equil_init_age_strc == 2) Init_Rec_nLL[p,r,] = -RTMB::dnorm(ln_InitDevs[p,r,], -exp(ln_sigmaR[1,p,sigma_idx])^2/2 * bias_ramp[1], exp(ln_sigmaR[1,p,sigma_idx]), TRUE) # penalize all
 
       # Early recruitment deviations
       if(sigmaR_switch > 1) {
         Rec_nLL[p,r,1:(sigmaR_switch-1)] = -RTMB::dnorm(ln_RecDevs[p,r,1:(sigmaR_switch-1)], 0, exp(ln_sigmaR[1,p,sigma_idx]), TRUE)
-        if(do_rec_bias_ramp == 1) Rec_nLL[p,r,1:(sigmaR_switch-1)] = Rec_nLL[p,r,1:(sigmaR_switch-1)] - (1 - 0.5 * bias_ramp[1:(sigmaR_switch-1)]) * ln_sigmaR[1,p,sigma_idx] # adjust w/ bias correction
+        if(do_rec_bias_ramp == 1 && any(bias_ramp != 0)) Rec_nLL[p,r,1:(sigmaR_switch-1)] = Rec_nLL[p,r,1:(sigmaR_switch-1)] - (1 - 0.5 * bias_ramp[1:(sigmaR_switch-1)]) * ln_sigmaR[1,p,sigma_idx] # adjust w/ bias correction
       }
 
       # Late recruitment deviations
       Rec_nLL[p,r,sigmaR_switch:n_est_rec_devs] = -RTMB::dnorm(ln_RecDevs[p,r,sigmaR_switch:n_est_rec_devs], 0, exp(ln_sigmaR[2,p,sigma_idx]), TRUE)
-      if(do_rec_bias_ramp == 1) Rec_nLL[p,r,sigmaR_switch:n_est_rec_devs] = Rec_nLL[p,r,sigmaR_switch:n_est_rec_devs] - (1 - 0.5 * bias_ramp[sigmaR_switch:n_est_rec_devs]) * ln_sigmaR[2,p,sigma_idx] # adjust w/ bias correction
+      if(do_rec_bias_ramp == 1 && any(bias_ramp != 0)) Rec_nLL[p,r,sigmaR_switch:n_est_rec_devs] = Rec_nLL[p,r,sigmaR_switch:n_est_rec_devs] - (1 - 0.5 * bias_ramp[sigmaR_switch:n_est_rec_devs]) * ln_sigmaR[2,p,sigma_idx] # adjust w/ bias correction
 
     } # end r loop
   } # end p loop

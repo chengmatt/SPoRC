@@ -426,6 +426,10 @@ map_fish_fixed[,2,1,2,1]  <- map_fish_fixed[,2,1,1,1] # share deltas
 map_fish_fixed[,1,1,2,2]  <- map_fish_fixed[,1,1,1,2] # share deltas
 input_list$map$fish_fixed_sel_pars <- factor(map_fish_fixed)
 
+# starting values
+parameters$fish_fixed_sel_pars[,,,,1] <- log(5) # fixed gear
+parameters$fish_fixed_sel_pars[,,,,2] <- log(8) # trawl gear
+
 ```
 
 Again, the same arguments are expected for setting up survey selectivity, and there are similarly some nuanced parameter fixing and sharing to help facilitate model stability.
@@ -505,6 +509,8 @@ input_list <- Setup_Mod_Srvsel_and_Q(input_list = input_list,
 map_srv_fixed <- array(input_list$map$srv_fixed_sel_pars, dim = dim(input_list$par$srv_fixed_sel_pars))
 map_srv_fixed[,2,1,2,2]  <- map_srv_fixed[,2,1,1,2] # share deltas
 input_list$map$srv_fixed_sel_pars <- factor(map_srv_fixed)
+parameters$srv_fixed_sel_pars[] <- log(5)
+
 
 ```
 

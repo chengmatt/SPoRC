@@ -3,6 +3,7 @@
 <!-- badges: start -->
 [![Codecov test coverage](https://codecov.io/gh/chengmatt/SPoRC/graph/badge.svg)](https://app.codecov.io/gh/chengmatt/SPoRC)
 [![DOI](https://img.shields.io/badge/doi-10.1111%2Ffaf.70082-blue)](https://doi.org/10.1111/faf.70082)
+[![R-CMD-check](https://github.com/chengmatt/SPoRC/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/chengmatt/SPoRC/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
   
 ### Overview

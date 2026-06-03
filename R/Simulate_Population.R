@@ -732,7 +732,7 @@ generate_initial_age_structure <- function(y,
           # get init devs devs
           sigma_idx <- ifelse(n_pop == 1 && rec_dd == 0, r, natal_region[p])
           # simulate initial age deviations
-          if(is.null(tmp_ln_init_devs)) tmp_ln_init_devs <- stats::rnorm(n_ages-1, 0, exp(ln_sigmaR[1,p,sigma_idx]))
+          if(is.null(tmp_ln_init_devs)) tmp_ln_init_devs <- stats::rnorm(n_ages-1, -exp(ln_sigmaR[1,p,sigma_idx])^2/2, exp(ln_sigmaR[1,p,sigma_idx]))
         }
 
         # input age deviations

@@ -403,3 +403,4 @@ dusky_rtmb_model$data <- data
 dusky_rtmb_model$parameters <- parameters
 dusky_rtmb_model$mapping <- mapping
 usethis::use_data(dusky_rtmb_model, internal = FALSE, overwrite = TRUE)
+

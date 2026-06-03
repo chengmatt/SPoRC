@@ -35,7 +35,8 @@ do_retrospective(
   srvidx_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_srv_fleets)),
   srvage_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_srv_fleets)),
   srvlen_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_srv_fleets)),
-  conv_tag_datalag = 0
+  conv_tag_datalag = 0,
+  return_models = FALSE
 )
 }
 \arguments{
@@ -134,6 +135,14 @@ population-specific survey length-composition data
 
 \item{conv_tag_datalag}{Integer specifying the lag applied to conventional
 tagging data. Default is \code{0}.}
+
+\item{return_models}{Logical indicating whether fitted model objects should
+be returned for each retrospective peel. Default is \code{FALSE}. When
+\code{TRUE}, the function returns a named list with two elements:
+\code{retro_df} (the long-format \code{data.frame} of SSB and recruitment
+estimates) and \code{retro_models} (a named list of fitted model objects,
+indexed as \code{peel_0}, \code{peel_1}, ..., \code{peel_n}). When
+\code{FALSE}, only the \code{data.frame} is returned.}
 }
 \value{
 A long-format \code{data.frame} containing retrospective estimates

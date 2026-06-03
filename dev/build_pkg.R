@@ -23,6 +23,10 @@ desc::desc_del_dep("compResidual", "Imports")
 desc::desc_del_dep("remotes", "Imports")
 desc::desc_del_dep("compResidual", "Suggests")
 
+# Add suggested packages
+usethis::use_package("igraph", type = "Suggests")
+usethis::use_package("splines2", type = "Suggests")
+
 # pkgdown Site ------------------------------------------------------------
 pkgdown::clean_cache()
 pkgdown::clean_site(force = TRUE)
@@ -32,8 +36,10 @@ pkgdown::build_site()
 servr::httd("docs")
 
 # One-time setup
+# usethis::use_github_action("check-standard")
 # usethis::use_pkgdown_github_pages()
 # pkgdown::build_site(preview = TRUE)
+# usethis::use_citation()
 
 # Build Ignore ------------------------------------------------------------
 use_build_ignore("dev")
@@ -42,10 +48,12 @@ usethis::use_build_ignore(".claude")
 
 # Check, Build & Install --------------------------------------------------
 test()
+rcmdcheck::rcmdcheck(args = c("--no-manual", "--as-cran"), error_on = "warning")
 devtools::check(args = c("--no-tests"))
 build()
 install()
 unloadNamespace("SPoRC")
+
 
 # Vignettes ---------------------------------------------------------------
 # build_vignettes()

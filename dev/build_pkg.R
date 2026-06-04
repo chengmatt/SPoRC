@@ -120,7 +120,6 @@ unloadNamespace("SPoRC")
 # usethis::use_github_action("check-standard")
 # usethis::use_github_action("pkgdown")
 # usethis::use_citation()
-# usethis::use_citation_cff()
 
 # Undo dev/ build ignore:
 # rbuildignore <- readLines(".Rbuildignore")

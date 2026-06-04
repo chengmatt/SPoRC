@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">SPoRC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,6 +49,8 @@
 <h2 id="sporc-stochastic-population-model-over-regional-components-">SPoRC: Stochastic Population Model Over Regional Components <a href="https://github.com/chengmatt/SPoRC" class="external-link"><img src="reference/figures/SPoRC_hex.png" align="right" style="height:139px;"></a>
 <a class="anchor" aria-label="anchor" href="#sporc-stochastic-population-model-over-regional-components-"></a>
 </h2>
+<!-- badges: start -->
+
 <div class="section level3">
 <h3 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h3>
@@ -79,7 +81,7 @@
 <div class="section level4">
 <h4 id="installing-sporc">Installing SPoRC<a class="anchor" aria-label="anchor" href="#installing-sporc"></a>
 </h4>
-<pre><code><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"chengmatt/SPoRC"</span>, dependencies <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Depends"</span>, <span class="st">"Imports"</span><span class="op">)</span><span class="op">)</span></span></code></pre>
+<pre><code><span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"chengmatt/SPoRC"</span><span class="op">)</span></span></code></pre>
 </div>
 </div>
 <div class="section level3">
@@ -107,6 +109,12 @@
 </ol>
 </div>
 </div>
+<div class="section level2">
+<h2 id="disclaimer">Disclaimer<a class="anchor" aria-label="anchor" href="#disclaimer"></a>
+</h2>
+<p>This repository is a scientific product and is not official communication of the National Oceanic and Atmospheric Administration, or the United States Department of Commerce. All NOAA GitHub project code is provided on an ‘as is’ basis and the user assumes responsibility for its use. Any claims against the Department of Commerce or Department of Commerce bureaus stemming from the use of this GitHub project will be governed by all applicable Federal law. Any reference to specific commercial products, processes, or services by service mark, trademark, manufacturer, or otherwise, does not constitute or imply their endorsement, recommendation or favoring by the Department of Commerce. The Department of Commerce seal and logo, or the seal and logo of a DOC bureau, shall not be used in any manner to imply endorsement of any commercial product or activity by DOC or the United States Government.</p>
+</div>
+
   </main><aside class="col-md-3"><div class="license">
 <h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
@@ -125,12 +133,19 @@
 <div class="developers">
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
-<li>Matthew Cheng <br><small class="roles"> Author, maintainer </small>   </li>
+<li>Matthew Cheng <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/0000-0002-2351-3402" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
 <li><a href="authors.html">More about authors...</a></li>
 </ul>
 </div>
 
-
+<div class="dev-status">
+<h2 data-toc-skip>Dev status</h2>
+<ul class="list-unstyled">
+<li><a href="https://app.codecov.io/gh/chengmatt/SPoRC" class="external-link"><img src="https://codecov.io/gh/chengmatt/SPoRC/graph/badge.svg" alt="Codecov test coverage"></a></li>
+<li><a href="https://doi.org/10.1111/faf.70082" class="external-link"><img src="https://img.shields.io/badge/doi-10.1111%2Ffaf.70082-blue" alt="DOI"></a></li>
+<li><a href="https://github.com/chengmatt/SPoRC/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/chengmatt/SPoRC/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
+</ul>
+</div>
 
   </aside>
 </div>

@@ -21,6 +21,7 @@ file is provided within the `SPoRC` package and is called
 ``` r
 
 library(SPoRC)
+library(tidyverse)
 data("sgl_rg_dusky_data")
 ```
 
@@ -721,7 +722,7 @@ nofrancis_retro <- do_retrospective(
   mapping = mapping, # mapping list
   random = NULL, # random effects
   do_par = TRUE, # whether to parallellize
-  n_cores = 8,  # number of cores to use
+  n_cores = parallel::detectCores() - 2,  # number of cores to use
   do_francis = FALSE,  # whether to do francis within a given retrospective peel
 )
 
@@ -746,7 +747,7 @@ francis_retro <- do_retrospective(
   mapping = mapping, # mapping list
   random = NULL, # random effects
   do_par = TRUE, # whether to parallellize
-  n_cores = 8,  # number of cores to use
+  n_cores = parallel::detectCores() - 2,  # number of cores to use
   do_francis = TRUE,  # whether to do francis within a given retrospective peel
   n_francis_iter = 10 # number of francis iterations to run within a given retrospective peel
 )
@@ -786,7 +787,7 @@ francis_meanrec_prof <- do_likelihood_profile(
   max_val = log(francis_model$rep$R0) * 2,  # max values to profile across
   inc = 0.1, # increment for min and max values to profile across
   do_par =  TRUE, # whether to parrallelize
-  n_cores = 8 # number of cores
+  n_cores = parallel::detectCores() - 2 # number of cores
 )
 
 # summarize profile
@@ -840,7 +841,7 @@ jitter_res <- do_jitter(data = francis_data, # francis data list
                                n_jitter = 50, # number of jitters
                                n_newton_loops = 3, # newton loops to od
                                do_par = TRUE, # whether to parrallelize
-                               n_cores = 8 # number of cores to use
+                               n_cores = parallel::detectCores() - 2 # number of cores to use
 )
 
 # get proportion converged
@@ -909,9 +910,9 @@ us install and load in the relevant packages.
 ``` r
 
 # load in adnuts ans associated packages for MCMC
-install.packages('StanEstimators', repos = c('<https://andrjohns.r-universe.dev>', '<https://cloud.r-project.org>'))
-devtools::install_github('Cole-Monnahan-NOAA/adnuts')
-library(adnuts)
+pak::pak("andrjohns/StanEstimators")
+pak::pak("noaa-afsc/SparseNUTS")
+library(SparseNUTS)
 ```
 
 The `sample_snuts` function in `adnuts` runs a Bayesian MCMC analysis
@@ -954,7 +955,7 @@ posterior samples can also readily be plotted.
 ``` r
 
 # get mcmc time series plots
-mcmc_ts_plot <- get_model_rep_from_mcmc(rtmb_obj = francis_model, adnuts_obj = mcmc_short, what = c("SSB", "Rec"), n_cores = 4)
+mcmc_ts_plot <- get_model_rep_from_mcmc(rtmb_obj = francis_model, adnuts_obj = mcmc_short, what = c("SSB", "Rec"), n_cores = parallel::detectCores() - 2)
 
 # ssb plot
 # summarize results
@@ -1080,7 +1081,8 @@ HCR_function <- function(x, frp, brp, alpha = 0.05) {
 }
 
 # define projection parameters
-n_sims <- 1e3
+# n_sims <- 1e3 
+n_sims <- 10 # for demo purposes
 t_spawn <- 0
 n_proj_yrs <- 25
 n_regions <- 1

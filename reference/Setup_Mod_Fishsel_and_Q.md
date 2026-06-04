@@ -370,6 +370,12 @@ Setup_Mod_Fishsel_and_Q(
   deviations are semi-parametric (e.g., list(1:5, 6:10, 11:30) specifies
   that ages 1-5, 6-10, and 11-30 have the same deviations.)
 
+- ...:
+
+  Additional arguments specifying starting values for fishery
+  selectivity and catchability parameters (fishsel_pe_pars,
+  ln_fishsel_devs, ln_fish_fixed_sel_pars, ln_fish_q, fish_q_coeff)
+
 ## See also
 
 Other Model Setup:

@@ -14,7 +14,8 @@ Setup_Mod_Dim(
   n_fish_fleets,
   n_srv_fleets,
   n_proj_yrs_devs = 0,
-  verbose = FALSE
+  verbose = FALSE,
+  store_config = FALSE
 )
 ```
 
@@ -59,6 +60,11 @@ Setup_Mod_Dim(
   Logical flag indicating whether to print progress messages (default
   `FALSE`).
 
+- store_config:
+
+  Logical flag indicating whether or not to store configuration (default
+  `FALSE`).
+
 ## Value
 
 A list containing three named elements:
@@ -74,6 +80,10 @@ A list containing three named elements:
 - `map`:
 
   List of parameter mappings for model fitting.
+
+- `config`:
+
+  List of arguments being supplied into the Setup_Mod\_\* functions.
 
 ## See also
 

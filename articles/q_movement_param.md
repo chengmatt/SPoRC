@@ -20,6 +20,8 @@ model dimensions.
 
 # Load in packages
 library(SPoRC) 
+library(igraph)
+library(splines2)
 data("three_rg_sable_data") # load in data
 
 # setup model dimensions
@@ -192,8 +194,8 @@ covariates associated with movement preference.
 
 ``` r
 
-adjacency <- igraph::as_adjacency_matrix(
-  igraph::make_graph(
+adjacency <- as_adjacency_matrix(
+  make_graph(
     ~ 1 - 2,
     2 - 3,
     1 - 3
@@ -303,7 +305,7 @@ age-specific movement preferences.
 
 # setup formulas for CTMC
 diffusion_formula = ~1 # constant diffusion
-preference_formula = ~0 + factor(regions):splines2::bSpline(ages, df = 4, intercept = TRUE) # spline based age effect
+preference_formula = ~0 + factor(regions):bSpline(ages, df = 4, intercept = TRUE) # spline based age effect
 
 # Setup movement
 input_list <- Setup_Mod_Movement(
@@ -335,8 +337,8 @@ of `nregions × 4 × 6 × nsexes` parameters.
 # setup formulas for CTMC
 diffusion_formula = ~1 # constant diffusion
 preference_formula = ~0 + factor(regions):
-  splines2::bSpline(ages, df = 4, intercept = TRUE):
-  splines2::bSpline(years, df = 6, intercept = TRUE):
+  bSpline(ages, df = 4, intercept = TRUE):
+  bSpline(years, df = 6, intercept = TRUE):
   factor(sexes)
 
 # Setup movement
@@ -384,7 +386,7 @@ deviations are only estimated for destination regions (i.e.,
 
 # setup formulas for CTMC
 diffusion_formula = ~1 # constant diffusion
-preference_formula = ~0 + factor(regions):splines2::bSpline(ages, df = 4, intercept = TRUE) # spline based age effect
+preference_formula = ~0 + factor(regions):bSpline(ages, df = 4, intercept = TRUE) # spline based age effect
 
 # Setup movement
 input_list <- Setup_Mod_Movement(

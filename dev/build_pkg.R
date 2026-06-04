@@ -14,6 +14,11 @@ Sys.unsetenv("GITHUB_PAT") # unset before building vignettes
 covr::package_coverage(quiet = FALSE, type = 'all')
 
 # Documentation -----------------------------------------------------------
+desc::desc_set_version("1.2.0")
+
+# Build Package -----------------------------------------------------------
+document() # document functions
+roxygenise() # make sure functions have roxygen documentation
 att_amend_desc(update = TRUE)
 document()
 roxygenise()
@@ -35,12 +40,6 @@ pkgdown::build_news()
 pkgdown::build_site()
 servr::httd("docs")
 
-# One-time setup
-# usethis::use_github_action("check-standard")
-# usethis::use_pkgdown_github_pages()
-# pkgdown::build_site(preview = TRUE)
-# usethis::use_citation()
-
 # Build Ignore ------------------------------------------------------------
 use_build_ignore("dev")
 usethis::use_build_ignore("_pkgdown.yml")
@@ -57,6 +56,16 @@ unloadNamespace("SPoRC")
 
 # Vignettes ---------------------------------------------------------------
 # build_vignettes()
+
+# Unit Tests --------------------------------------------------------------
+# usethis::use_testthat()
+# usethis::use_test("dusky_rtmb")
+# usethis::use_test("sabie_sgl_rtmb")
+# usethis::use_test("ebs_pol_sgl_rtmb")
+# usethis::use_test("sabie_three_rg_rtmb")
+# usethis::use_test("sgl_rg_simple_sim_test")
+
+# Build Vignettes ---------------------------------------------------------
 
 # usethis::use_vignette("a_model_dimensions")
 # usethis::use_vignette("b_model_parameters")
@@ -108,6 +117,10 @@ unloadNamespace("SPoRC")
 # usethis::use_news_md()
 # usethis::edit_git_ignore()
 # usethis::use_github_action("test-coverage")
+# usethis::use_github_action("check-standard")
+# usethis::use_github_action("pkgdown")
+# usethis::use_citation()
+# usethis::use_citation_cff()
 
 # Undo dev/ build ignore:
 # rbuildignore <- readLines(".Rbuildignore")

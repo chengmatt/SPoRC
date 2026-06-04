@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "SPoRC: A Generalized Stochastic Population Model Over Regional Components"
+version: 1.1.1
+date-released: 2026-06-04
+license: GPL-3.0
+url: https://chengmatt.github.io/SPoRC
+authors:
+  - family-names: Cheng
+    given-names: Matthew
+    orcid: https://orcid.org/0000-0002-2351-3402
+  - family-names: Goethel
+    given-names: Daniel
+    orcid: https://orcid.org/0000-0003-0066-431X
+  - family-names: Hulson
+    given-names: Pete
+  - family-names: Cunningham
+    given-names: Curry
+    orcid: https://orcid.org/0000-0002-1234-1297

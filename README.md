@@ -1,9 +1,11 @@
 ## SPoRC: Stochastic Population Model Over Regional Components <a href='https://github.com/chengmatt/SPoRC'><img src='man/figures/SPoRC_hex.png' align="right" style="height:139px;"/></a>
 
 <!-- badges: start -->
-[![Codecov test coverage](https://codecov.io/gh/chengmatt/SPoRC/graph/badge.svg)](https://app.codecov.io/gh/chengmatt/SPoRC)
-[![DOI](https://img.shields.io/badge/doi-10.1111%2Ffaf.70082-blue)](https://doi.org/10.1111/faf.70082)
-[![R-CMD-check](https://github.com/chengmatt/SPoRC/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/chengmatt/SPoRC/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://img.shields.io/github/actions/workflow/status/chengmatt/SPoRC/R-CMD-check.yaml?label=R-CMD-check)](https://github.com/chengmatt/SPoRC/actions/workflows/R-CMD-check.yaml)
+[![pkgdown](https://img.shields.io/github/actions/workflow/status/chengmatt/SPoRC/pkgdown.yaml?label=pkgdown)](https://github.com/chengmatt/SPoRC/actions/workflows/pkgdown.yaml)
+[![codecov](https://img.shields.io/codecov/c/github/chengmatt/SPoRC?label=codecov)](https://codecov.io/gh/chengmatt/SPoRC)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.20543805-blue)](https://doi.org/10.5281/zenodo.20543805)
+[![License: GPL-3](https://img.shields.io/badge/License-GPL3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 <!-- badges: end -->
   
 ### Overview

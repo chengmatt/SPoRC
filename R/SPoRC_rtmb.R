@@ -462,6 +462,11 @@ SPoRC_rtmb = function(pars, data) {
   R0 = exp(ln_global_R0) # exponentiate
   for(p in 1:n_pop) R0_r[p,] = R0[p] * rec_region_prop[p,]
 
+  # Global rinit
+  rinit_r = array(0, dim = c(n_pop, n_regions)) # container
+  rinit = exp(ln_rinit) # exponentiate
+  for(p in 1:n_pop) rinit_r[p,] = rinit[p] * rec_region_prop[p,]
+
   # Steepness
   h_trans = array(0, dim = c(n_pop, n_regions))
   for(p in 1:n_pop) for(r in 1:n_regions) h_trans[p,r] = 0.2 + (1 - 0.2) * RTMB::plogis(steepness_h[p,r]) # bound steepness between 0.2 and 1
@@ -539,7 +544,7 @@ SPoRC_rtmb = function(pars, data) {
     natmort = array(natmort[,,1,,], dim = c(n_pop, n_regions, n_ages, n_sexes)), # natural mortality in first year
     init_F = init_F, # initial F applied
     fish_sel = array(fish_sel[,,1,,,,], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets)), # total fishery selectivity in first year
-    R0_r = R0_r, # regional mean or virgin recruitment
+    R0_r = if(use_rinit == 0) R0_r else rinit_r, # regional mean or virgin recruitment
     sexratio = array(sexratio[,,1,], dim = c(n_pop, n_regions, n_sexes)), # sex ratio in first year
     Movement = array(Movement[,,,1,,,], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages, n_sexes)), # movement in first year
     do_recruits_move = do_recruits_move, # whether recruits move
@@ -563,7 +568,7 @@ SPoRC_rtmb = function(pars, data) {
     natmort = array(natmort[,,1,,], dim = c(n_pop, n_regions, n_ages, n_sexes)), # natural mortality in first year
     init_F = array(0, dim = c(n_regions, n_seas, n_fish_fleets)), # initial F applied (0 for unfished)
     fish_sel = array(fish_sel[,,1,,,,], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets)), # total fishery selectivity in first year
-    R0_r = R0_r, # regional mean or virgin recruitment
+    R0_r = if(use_rinit == 0) R0_r else rinit_r, # regional mean or virgin recruitment
     sexratio = array(sexratio[,,1,], dim = c(n_pop, n_regions, n_sexes)), # sex ratio in first year
     Movement = array(Movement[,,,1,,,], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages, n_sexes)), # movement in first year
     do_recruits_move = do_recruits_move, # whether recruits move
@@ -620,7 +625,7 @@ SPoRC_rtmb = function(pars, data) {
         for(s in 1:n_sexes) {
           if(y < sigmaR_switch) tmp_total_rec = tmp_Det_Rec[p,r] * exp(ln_RecDevs[p,r,y] - (sigmaR2_early[p,sigma_idx]/2 * bias_ramp[y]))
           if(y >= sigmaR_switch && y <= n_est_rec_devs) tmp_total_rec = tmp_Det_Rec[p,r] * exp(ln_RecDevs[p,r,y] - (sigmaR2_late[p,sigma_idx]/2 * bias_ramp[y]))
-          if(y > n_est_rec_devs) tmp_total_rec = tmp_Det_Rec[p,r]
+          if(y > n_est_rec_devs) tmp_total_rec = tmp_Det_Rec[p,r] * exp(sigmaR2_late[p,sigma_idx]/2)
           # season 1 fraction
           NAA[p,r,y,1,1,s] = tmp_total_rec * rec_seas_prop[p,1] * sexratio[p,r,y,s]
         }
@@ -1890,6 +1895,7 @@ SPoRC_rtmb = function(pars, data) {
       # Initial age deviations (if equil_init_age_strc == 0; don't penalize at all)
       if(equil_init_age_strc == 1) Init_Rec_nLL[p,r,1:(n_ages - 2)] = -RTMB::dnorm(ln_InitDevs[p,r,1:(n_ages - 2)], -exp(ln_sigmaR[1,p,sigma_idx])^2/2 * bias_ramp[1], exp(ln_sigmaR[1,p,sigma_idx]), TRUE) # only penalize non plus group
       if(equil_init_age_strc == 2) Init_Rec_nLL[p,r,] = -RTMB::dnorm(ln_InitDevs[p,r,], -exp(ln_sigmaR[1,p,sigma_idx])^2/2 * bias_ramp[1], exp(ln_sigmaR[1,p,sigma_idx]), TRUE) # penalize all
+      if(equil_init_age_strc == 3) Init_Rec_nLL[p,r,unique(init_age_devs_shared)] = -RTMB::dnorm(ln_InitDevs[p,r,unique(init_age_devs_shared)], -exp(ln_sigmaR[1,p,sigma_idx])^2/2 * bias_ramp[1], exp(ln_sigmaR[1,p,sigma_idx]), TRUE) # penalize all
 
       # Early recruitment deviations
       if(sigmaR_switch > 1) {
@@ -2084,6 +2090,7 @@ SPoRC_rtmb = function(pars, data) {
   # Report Section ----------------------------------------------------------
   # Biological Processes
   RTMB::REPORT(R0)
+  RTMB::REPORT(rinit)
   RTMB::REPORT(sexratio)
   RTMB::REPORT(rec_region_prop)
   RTMB::REPORT(rec_seas_prop)

@@ -529,6 +529,11 @@ check_sim_dimensions <- function(x,
       stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_regions, n_years, n_sims"))
   }
 
+  if(what %in% c("rinit_input")) {
+    if(sum(dim(x) == c(n_pop, n_regions, n_sims)) != 3)
+      stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_regions, n_sims"))
+  }
+
   if(what == 'ln_InitDevs_input') {
     if(sum(dim(x) == c(n_pop, n_regions, n_ages - 1, n_sims)) != 4)
       stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_regions, n_ages - 1, n_sims"))

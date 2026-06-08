@@ -47,7 +47,11 @@ The following tables describe all elements contained within `input_list$data`, w
 | bias_year | Vector of years specifying when to change the bias ramp. Can be specified with an NA if do_rec_bias_ramp = 0 |
 | sigmaR_switch | Value specifying when to transition between using an early period sigma and late period sigma R for penalizing initial age deviations and recruitment deviations. Specify as 0 if sigmaR early is equal to sigmaR late |
 | init_age_strc | Value specifying how the population age structure should be initialized. 0: Initialize via iteration to equilibrium, 1: Initialize with geometric series solution |
-| equil_init_age_strc | Value specifying how initial age deviations arise. 0 == equilibrium, 1 == stochastic except for plus group, 2 == stochastic for all ages (including the plus group) |
+| equil_init_age_strc | Value specifying how initial age deviations arise. 
+0 (`"equil"`) == deterministic equilibrium; 
+1 (`"stoch_no_plus"`) == stochastic for all ages except the plus group; 
+2 (`"stoch_all"`) == stochastic for all ages including the plus group; 
+3 (`"stoch_shared_ages"`) == stochastic with user-defined age sharing via `init_age_devs_shared` |
 | init_F_prop | Array specifying the proportion of fishing mortality to apply to the initial age deviations relative to the mean fishing mortality parameter for regions, seasons, and fishery fleets |
 | rec_model | Value specifying the recruitment model. 0 == Mean Recruitment, 1 == Beverton-Holt with steepness parameterization |
 | rec_dd | Value specifying the recruitment density dependence (only used when there is a stock-recruitment relationship). 0 == local density dependence (region-specific SSB drives regional recruitment), 1 == global density dependence (summed SSB across regions drives recruitment), 999 == no density-dependent stock-recruitment form is used |
@@ -65,6 +69,12 @@ The following tables describe all elements contained within `input_list$data`, w
 | use_rec_seas_prop_prior | Value specifying whether a Dirichlet prior is placed on estimated seasonal recruitment apportionment proportions. 0: Don't use prior, 1: Use prior. Only relevant when use_fixed_rec_seas_prop = 0 |
 | rec_seas_prop_prior | Data frame specifying Dirichlet prior parameters for seasonal recruitment apportionment. Must include columns: pop (population index) and alpha (list column containing Dirichlet concentration parameter vectors of length n_seas) |
 | sexratio_blocks | Array specifying sex-ratio blocks dimensioned by n_pop, n_regions, n_years |
+| use_rinit | Integer specifying whether a separate initial recruitment scalar is used to initialise the population independently of ln_global_R0. 0: Population initialised using `ln_global_R0` (default), 1: Population initialised using `ln_rinit`, with `ln_global_R0` governing only the recruitment relationship |
+| init_age_devs_shared | Integer vector of length `n_ages - 1` specifying explicit 
+age-sharing for `ln_InitDevs`. Positions with the same value share a single estimated 
+parameter (e.g. `c(1:42, rep(42, 9))` shares the last 9 ages with age 42, giving 42 
+free parameters). Required when `equil_init_age_strc = 3`; `NULL` (default) uses 
+standard behaviour. |
 
 ## Data Inputs for Defining Biological Processes
 

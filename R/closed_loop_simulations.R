@@ -113,6 +113,7 @@
 #'   \strong{Recruitment processes}
 #'   \itemize{
 #'     \item \code{R0_input}
+#'     \item \code{rinit_input}
 #'     \item \code{h_input}
 #'     \item \code{Rec_input}
 #'   }
@@ -731,6 +732,10 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     for(p in 1:sim_list$n_pop) R0_r[p,] = rep$R0 [p] * rep$rec_region_prop[p,]
     replicate(n = sim_list$n_sims, expr = array(R0_r, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs)))
   } else args$R0_input
+  rinit_input <- if(!"rinit_input" %in% names(args)) {
+    rinit_r = array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_sims)) # container
+    for(p in 1:sim_list$n_pop) for(s in 1:sim_list$n_sims) rinit_r[p,,sim] <- rep$rinit[p] * rep$rec_region_prop[p,]
+  } else args$rinit_input
   sexratio_input <- if(!"sexratio_input" %in% names(args)) {
     extend_years(replicate(n = sim_list$n_sims, expr = rep$sexratio[,,1:length(data$years),,drop = FALSE]), closed_loop_yrs, 3, 'last')
   } else args$sexratio_input
@@ -762,6 +767,8 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     init_age_strc = data$init_age_strc,
     h_input = h_input,
     R0_input = R0_input,
+    rinit_input = rinit_input,
+    use_rinit = data$use_rinit,
     sexratio_input = sexratio_input,
     ln_sigmaR = ln_sigmaR,
     Rec_input = Rec_input,

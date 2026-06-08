@@ -88,6 +88,7 @@ SPoRC offers four methods for deriving equilibrium numbers-at-age. All methods p
 | 0 | `"equil"` | None — strict equilibrium |
 | 1 | `"stoch_no_plus"` | All ages except the plus group. **Default** |
 | 2 | `"stoch_all"` | All ages including the plus group |
+| 3 | `"stoch_shared_ages"` | User-defined age sharing via `init_age_devs_shared` |
 
 `init_F_prop` (array `[n_regions × n_seas × n_fish_fleets]`) optionally introduces fishing mortality into the equilibrium calculation, producing a fished initial condition.
 
@@ -128,7 +129,7 @@ Controlled via `Setup_Mod_Rec()` (EM) or `Setup_Sim_Rec()` (OM).
 | `sexratio_spec` | Sex ratio at recruitment estimation. Default `"fix"` (equal or user-supplied) |
 | `sexratio_blocks` | Time blocks for sex-ratio parameters, specified as `"none_Pop_<p>_Region_<r>"` or `"Block_<b>_Year_<s>-<e>_Pop_<p>_Region_<r>"` |
 
-### Recruitment deviations
+### Recruitment and Initial age deviations
 
 | Argument | Description |
 |---|---|
@@ -139,6 +140,8 @@ Controlled via `Setup_Mod_Rec()` (EM) or `Setup_Sim_Rec()` (OM).
 | `do_rec_bias_ramp` | Methot & Taylor bias adjustment (0 = off, 1 = on) |
 | `bias_year`, `max_bias_ramp_fct` | Bias ramp breakpoints and maximum correction factor |
 | `dont_est_recdev_last` | Number of terminal-year recruitment deviations to fix at zero |
+| `init_age_devs_shared` | Integer vector of length `n_ages - 1` specifying age-sharing for `ln_InitDevs`. Positions with the same value share a single estimated parameter (e.g. `c(1:42, rep(42, 9))`). Required when `equil_init_age_strc = 3`; `NULL` (default) uses standard behaviour |
+| `use_rinit` | 0 = population initialised using `ln_global_R0` (default); 1 = separate `ln_rinit` used for initialisation, with `ln_global_R0` governing only the recruitment relationship |
 
 ### Steepness priors
 

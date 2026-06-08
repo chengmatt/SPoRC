@@ -54,16 +54,15 @@ In `SPoRC`, three primary methods exist to initialize the equilibrium
 population of the model. The first method derives the equilibrium
 population using the following process:
 
-$$N_{p,r,a,s}^{'} = \mu_p^{\text{Rec}}\exp\left( - (a - 1) \cdot Z_{p,r,a,s}^{'} \right)\psi_{p,r,y = 1,s}\zeta_{p,r},\quad\text{for }2 \leq a < a_{+}$$
+$$N_{p,r,a,s}^{'} = \mu_p^{\text{RecInit}}\exp\left( - (a - 1) \cdot Z_{p,r,a,s}^{'} \right)\psi_{p,r,y = 1,s}\zeta_{p,r},\quad\text{for }2 \leq a < a_{+}$$
 
 $$Z_{p,r,a,s}^{'} = \text{Natmort}_{p,r,y = 1,a,s} + \sum_{f=1}^{n_f} \text{Fmort}_{r,\tau,f}^{\text{InitProp}} \cdot \exp\left(\mu_{r,\tau,f}^{\text{Fsh}}\right) \cdot \mathbb{1}_{r,\tau,f}^{\text{Catch}} \cdot \left[\text{Sel}_{p,r,y=1,\tau,a,s,f}^{\text{Fsh}} \cdot \text{Sel}_{p,r,y=1,\tau,a,s,f}^{\text{Ret}} + \text{Sel}_{p,r,y=1,\tau,a,s,f}^{\text{Fsh}} \cdot \left(1 - \text{Sel}_{p,r,y=1,\tau,a,s,f}^{\text{Ret}}\right) \cdot \delta_{r,\tau,f}\right]$$
 
 where:
 
 -   $N_{p,r,a,s}^{'}$ are the equilibrium numbers-at-age,
--   $\mu_p^{\text{Rec}}$ is a global recruitment parameter (either virgin
-    or mean recruitment depending on the parameterization of stock
-    recruitment dynamics),
+-   $\mu_p^{\text{RecInit}}$ is a global recruitment parameter used to scale the equilibrium age structure
+    during initialisation. Users have the option to either initialize the population using the same               recruitment parameter that governs the stock-recruit relationship (either virgin or mean recruitment          depending on the parameterization), or to estimate a separate recruitment scalar exclusively for              initialization The latter is useful when the historical mean recruitment used to initialize the population     differs from the virgin recruitment implied by the stock-recruit relationship, or when the assumption that     the population was at unfished equilibrium at the start of the time series is not appropriate.
 -   $Z_{p,r,a,s}^{'}$ is the initial instantaneous total mortality rate,
 -   $\text{Natmort}_{p,r,y = 1,a,s}$ is the instantaneous natural
     mortality rate,
@@ -102,8 +101,8 @@ initialize the age structure at the first iteration:
 
 $$\begin{matrix}
 N_{p,r,a,s}^{'} = \left\{ \begin{matrix}
-\mu_p^{\text{Rec}}\,\psi_{p,r,y = 1,s}\,\zeta_{p,r}, & \text{if }a = 1 \\
-\mu_p^{\text{Rec}}\,\psi_{p,r,y = 1,s}\,\zeta_{p,r}\,\exp\left( - \sum_{a = 1}^{n_{a}}Z_{p,r,a,s}^{'} \right), & \text{if }a > 1 \\
+\mu_p^{\text{RecInit}}\,\psi_{p,r,y = 1,s}\,\zeta_{p,r}, & \text{if }a = 1 \\
+\mu_p^{\text{RecInit}}\,\psi_{p,r,y = 1,s}\,\zeta_{p,r}\,\exp\left( - \sum_{a = 1}^{n_{a}}Z_{p,r,a,s}^{'} \right), & \text{if }a > 1 \\
 \end{matrix} \right.\  \\
 \end{matrix}$$
 

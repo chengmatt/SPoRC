@@ -32,7 +32,7 @@
 #' @param init_dd Density-dependence structure for equilibrium age-structure
 #'   initialisation. Default \code{"global"}. Same options as \code{rec_dd}.
 #' @param R0_input Unfished equilibrium recruitment array
-#'   \code{[n_pop x n_regions x n_yrs x n_sims]}. Default: \code{10} for all
+#'   \code{[n_pop x n_regions x n_yrs x n_sims]}. Default: \code{15} for all
 #'   cells.
 #' @param h_input Beverton-Holt steepness array
 #'   \code{[n_pop x n_regions x n_yrs x n_sims]}. Values should be in
@@ -50,6 +50,17 @@
 #'   1 across seasons. Default: all recruitment assigned to season 1.
 #' @param spawn_seas Integer index of the season in which spawning occurs.
 #'   Default \code{1}.
+#' @param use_rinit Integer (0/1). Whether a separate initial recruitment
+#'   scalar \code{rinit_input} is used to initialise the population
+#'   independently of \code{R0_input}. When \code{0} (default),
+#'   \code{rinit_input} is ignored and \code{R0_input} governs both
+#'   initialisation and recruitment. When \code{1}, \code{rinit_input} is
+#'   used exclusively for equilibrium initialisation and \code{R0_input}
+#'   governs the recruitment relationship.
+#' @param rinit_input Unfished equilibrium recruitment scalar used for
+#'   population initialisation when \code{use_rinit = 1}, array
+#'   \code{[n_pop x n_regions x n_sims]}. Ignored when \code{use_rinit = 0}.
+#'   Default: \code{15} for all cells.
 #' @param t_spawn Spawn timing as a fraction of the season elapsed before
 #'   spawning within \code{spawn_seas}. \code{0} (default) = spawning occurs
 #'   before any mortality is applied in that season; \code{1} = spawning occurs
@@ -104,7 +115,8 @@ Setup_Sim_Rec <- function(
     sim_list,
     do_recruits_move = 0,
     sexratio_input = array(if(sim_list$n_sexes == 1) 1 else 0.5, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sexes, sim_list$n_sims)),
-    R0_input = array(10, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)),
+    R0_input = array(15, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)),
+    rinit_input = array(15, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_sims)),
     h_input = array(0.8, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)),
     stray_rate_input = array(0, dim = c(sim_list$n_pop, sim_list$n_yrs, sim_list$n_sims)),
     ln_sigmaR = array(log(1), dim = c(2, sim_list$n_pop, sim_list$n_regions)),
@@ -116,6 +128,7 @@ Setup_Sim_Rec <- function(
     recruitment_opt = 'bh_rec',
     rec_dd = 'global',
     init_dd = 'global',
+    use_rinit = 0,
     init_age_strc = 2,
     spawn_seas = 1,
     t_spawn = 0,
@@ -135,6 +148,7 @@ Setup_Sim_Rec <- function(
 
   check_sim_dimensions(sexratio_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_sexes = sim_list$n_sexes, n_sims = sim_list$n_sims, n_pop = sim_list$n_pop, what = "sexratio_input")
   check_sim_dimensions(R0_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_sims = sim_list$n_sims, n_pop = sim_list$n_pop, what = "R0_input")
+  check_sim_dimensions(rinit_input, n_regions = sim_list$n_regions, n_sims = sim_list$n_sims, n_pop = sim_list$n_pop, what = "rinit_input")
   check_sim_dimensions(h_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_sims  = sim_list$n_sims, n_pop = sim_list$n_pop, what = "h_input")
   check_sim_dimensions(stray_rate_input, n_years = sim_list$n_yrs, n_sims  = sim_list$n_sims, n_pop = sim_list$n_pop, what = "stray_rate_input")
   check_sim_dimensions(rec_seas_prop_input, n_seas = sim_list$n_seas, n_sims  = sim_list$n_sims, n_pop = sim_list$n_pop, what = "rec_seas_prop_input")
@@ -163,6 +177,8 @@ Setup_Sim_Rec <- function(
   sim_list$init_dd <- init_dd
   sim_list$h <- h_input
   sim_list$R0 <- R0_input
+  sim_list$use_rinit <- use_rinit
+  sim_list$rinit <- rinit_input
   sim_list$sexratio <- sexratio_input
   sim_list$rec_lag <- rec_lag
   sim_list$ln_sigmaR <- ln_sigmaR
@@ -325,6 +341,23 @@ do_sigmaR_mapping <- function(input_list, sigmaR_spec) {
 #'   \code{\link{Setup_Mod_Rec}}. \code{"global"} restricts valid
 #'   \code{InitDevs_spec} choices to \code{"est_shared_r"} or
 #'   \code{"est_shared_pop_r"} when \code{n_regions > 1}.
+#' @param init_age_devs_shared Integer vector of length \code{n_ages - 1}
+#'   specifying an explicit parameter-sharing structure for \code{ln_InitDevs}
+#'   along the age dimension. Each element gives the factor level assigned to
+#'   that age position; positions sharing the same integer value are constrained
+#'   to a single estimated parameter. Used in conjunction with
+#'   \code{equil_init_age_strc = 3} (\code{"stoch_shared_ages"}), which
+#'   activates user-defined age sharing while still estimating deviations
+#'   independently across populations and regions. The sharing structure is
+#'   also respected by \code{InitDevs_spec} options: \code{"est_shared_r"}
+#'   applies the vector per population (with a population-level offset so pops
+#'   remain independent), and \code{"est_shared_pop_r"} applies it globally
+#'   (no offset, all pops and regions share the same parameters). A typical
+#'   use case is replicating ADMB models where ages beyond the data plus group
+#'   share the last estimated deviation, e.g.
+#'   \code{c(1:42, rep(42, 9))} for a 52-age model with 43 data ages, giving
+#'   42 free parameters. When \code{NULL} (default), age sharing follows the
+#'   standard behaviour determined by \code{equil_init_age_strc} alone.
 #'
 #' @return The input \code{input_list} with \code{$map$ln_InitDevs} set to a
 #'   factor vector of length \code{prod(dim(par$ln_InitDevs))}. Active
@@ -334,7 +367,13 @@ do_sigmaR_mapping <- function(input_list, sigmaR_spec) {
 #'   \code{$par$ln_InitDevs} are also reset to \code{0} for any fixed cells.
 #'
 #' @keywords internal
-do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd) {
+do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd, init_age_devs_shared) {
+
+  # validate if stoch_shared_ages
+  if(input_list$data$equil_init_age_strc == 3) {
+    if(is.null(init_age_devs_shared)) stop("init_age_devs_shared is NULL, but equil_init_age_strc is stoch_shared_ages!")
+    if(length(init_age_devs_shared) != (length(input_list$data$ages) - 1)) stop("init_age_devs_shared must have length n_ages - 1 = ", n_age_dim, " but has length ", length(init_age_devs_shared))
+  }
 
   # Initial age deviations (equilibrium)
   if(input_list$data$equil_init_age_strc == 0) {
@@ -385,6 +424,13 @@ do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd) {
         collect_message("Initial age deviations are stochastic and estimated for all ages, including the plus group")
       }
 
+      # share parameters across regions, with stochastic deviations on user defined ages
+      if(input_list$data$equil_init_age_strc == 3) {
+        # get indices
+        for(p in 1:input_list$data$n_pop) for(r in 1:input_list$data$n_regions) map_InitDevs[p, r, ] <- init_age_devs_shared
+        collect_message("Initial age deviations are stochastic for user-defined age sharing structure.")
+      }
+
       input_list$map$ln_InitDevs <- factor(map_InitDevs) # input into map
     }
 
@@ -425,6 +471,16 @@ do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd) {
         collect_message("Initial age deviations are stochastic and estimated for all ages, including the plus group")
       }
 
+      # Share parameters across used-defined ages
+      if(input_list$data$equil_init_age_strc == 3) {
+        for(p in 1:input_list$data$n_pop) {
+          pop_offset <- (p - 1) * max(init_age_devs_shared, na.rm = TRUE)
+          for(r in 1:input_list$data$n_regions)
+            map_InitDevs[p, r, ] <- ifelse(is.na(init_age_devs_shared), NA, init_age_devs_shared + pop_offset)
+        }
+        collect_message("Initial age deviations are stochastic for user-defined age sharing structure.")
+      }
+
       input_list$map$ln_InitDevs <- factor(map_InitDevs) # input into map
     } # end if
 
@@ -448,6 +504,21 @@ do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd) {
       input_list$map$ln_InitDevs <- factor(1:length(map_InitDevs)) # input into map
       collect_message("Initial Age Deviations is estimated for all dimensions. They are are stochastic and estimated for all ages, including the plus group")
     }
+
+    # User-defined age sharing, estimated independently across all pops and regions
+    if(input_list$data$equil_init_age_strc == 3) {
+      max_age_idx <- max(init_age_devs_shared, na.rm = TRUE)
+      for(p in 1:input_list$data$n_pop) {
+        for(r in 1:input_list$data$n_regions) {
+          pr_offset <- ((p - 1) * input_list$data$n_regions + (r - 1)) * max_age_idx
+          map_InitDevs[p, r, ] <- ifelse(is.na(init_age_devs_shared), NA, init_age_devs_shared + pr_offset)
+        }
+      }
+      input_list$map$ln_InitDevs <- factor(map_InitDevs)
+      collect_message("Initial Age Deviations estimated independently per pop/region with user-defined age sharing structure.")
+    }
+
+
   }
 
   # When no_dispersal, non-natal regions have no recruitment so their
@@ -1160,6 +1231,15 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'       ages except the plus group.}
 #'     \item{\code{2}/\code{"stoch_all"}}{Stochastic deviations for all ages
 #'       including the plus group.}
+#'     \item{\code{3}/\code{"stoch_shared_ages"}}{Stochastic deviations with
+#'       user-defined age sharing via \code{init_age_devs_shared}. Deviations
+#'       are estimated independently across all populations and regions, but
+#'       ages sharing the same value in \code{init_age_devs_shared} are
+#'       constrained to a single parameter. The plus group is not automatically
+#'       fixed; include an \code{NA} in \code{init_age_devs_shared} at the
+#'       plus-group position to fix it, or share it with the preceding age by
+#'       repeating that index (e.g. \code{c(1:42, rep(42, 9))}). Requires
+#'       \code{init_age_devs_shared} to be non-\code{NULL}.}
 #'   }
 #' @param InitDevs_spec Character or \code{NULL}. Sharing structure for
 #'   initial age-structure deviations \code{ln_InitDevs} \code{[n_pop x
@@ -1304,6 +1384,7 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'
 #' @param ... Optional named starting values for parameters. Any of:
 #'   \code{ln_global_R0} \code{[n_pop]},
+#'   \code{ln_rinit} \code{[n_pop]},
 #'   \code{rec_region_prop_pars} \code{[n_pop x (n_regions - 1)]},
 #'   \code{rec_seas_prop_pars} \code{[n_pop x (n_seas - 1)]},
 #'   \code{steepness_h} \code{[n_pop x n_regions]} (bounded logit scale),
@@ -1312,6 +1393,32 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   \code{ln_sigmaR} \code{[2 x n_pop x n_regions]},
 #'   \code{sexratio_pars} \code{[n_pop x n_regions x n_blocks]}.
 #'   Unspecified parameters use internal defaults.
+#'
+#' @param use_rinit Integer (0/1). Whether a separate initial recruitment
+#'   scalar \code{ln_rinit} is used to initialise the population
+#'   independently of the recruitment \code{ln_global_R0}. When \code{0}
+#'   (default), \code{ln_rinit} is fixed and \code{ln_global_R0}
+#'   governs both initialisation and recruitment. When \code{1}, both
+#'   \code{ln_rinit} and \code{ln_global_R0} are estimated, with
+#'   \code{ln_rinit} used exclusively for equilibrium initialisation
+#'   and \code{ln_global_R0} used for the stock-recruit relationship.
+#' @param init_age_devs_shared Integer vector of length \code{n_ages - 1}
+#'   specifying an explicit parameter-sharing structure for \code{ln_InitDevs}
+#'   along the age dimension. Each element gives the factor level assigned to
+#'   that age position; positions sharing the same integer value are constrained
+#'   to a single estimated parameter. Used in conjunction with
+#'   \code{equil_init_age_strc = 3} (\code{"stoch_shared_ages"}), which
+#'   activates user-defined age sharing while still estimating deviations
+#'   independently across populations and regions. The sharing structure is
+#'   also respected by \code{InitDevs_spec} options: \code{"est_shared_r"}
+#'   applies the vector per population (with a population-level offset so pops
+#'   remain independent), and \code{"est_shared_pop_r"} applies it globally
+#'   (no offset, all pops and regions share the same parameters). A typical
+#'   use case is replicating ADMB models where ages beyond the data plus group
+#'   share the last estimated deviation, e.g.
+#'   \code{c(1:42, rep(42, 9))} for a 52-age model with 43 data ages, giving
+#'   42 free parameters. When \code{NULL} (default), age sharing follows the
+#'   standard behaviour determined by \code{equil_init_age_strc} alone.
 #'
 #' @return The input \code{input_list} with all recruitment-related fields
 #'   populated in \code{$data} and \code{$par}, and factor maps constructed
@@ -1369,6 +1476,8 @@ Setup_Mod_Rec <- function(input_list,
                             blks <- paste0("none_Pop_", grid$pop, "_Region_", grid$region)
                             blks
                           },
+                          use_rinit = 0,
+                          init_age_devs_shared = NULL,
                           ...
                           ) {
 
@@ -1378,7 +1487,7 @@ Setup_Mod_Rec <- function(input_list,
 
   # Convert character inputs to numeric codes for init_age_strc and equil_init_age_strc
   init_age_strc <- convert_to_numeric(init_age_strc, list(iterative = 0, scalar_no_move = 1, matrix = 2, scalar_plus_only = 3))
-  equil_init_age_strc <- convert_to_numeric(equil_init_age_strc, list(equil = 0, stoch_no_plus = 1, stoch_all = 2))
+  equil_init_age_strc <- convert_to_numeric(equil_init_age_strc, list(equil = 0, stoch_no_plus = 1, stoch_all = 2, stoch_shared_ages = 3))
 
   # Recruitment Model Type and Options --------------------------------------
 
@@ -1608,12 +1717,19 @@ Setup_Mod_Rec <- function(input_list,
   input_list$data$rec_seas_prop_prior <- rec_seas_prop_prior
   input_list$data$use_stray_rate_prior <- use_stray_rate_prior
   input_list$data$stray_rate_prior     <- stray_rate_prior
+  input_list$data$use_rinit <- use_rinit
+  input_list$data$init_age_devs_shared <- init_age_devs_shared
 
   # Populate Parameter List -------------------------------------------------
 
   # Global R0
   if("ln_global_R0" %in% names(starting_values)) input_list$par$ln_global_R0 <- starting_values$ln_global_R0
   else input_list$par$ln_global_R0 <- array(log(15), dim = c(input_list$data$n_pop))
+
+  # Global Initial R0
+  if("ln_rinit" %in% names(starting_values)) input_list$par$ln_rinit <- starting_values$ln_rinit
+  else input_list$par$ln_rinit <- array(log(15), dim = c(input_list$data$n_pop))
+  if (use_rinit == 0) input_list$map$ln_rinit <- factor(rep(NA, input_list$data$n_pop))
 
   # R0 regional proportion (not availiable when n_regions == 1; altered in do_rec_region_prop_mapping)
   if("rec_region_prop_pars" %in% names(starting_values)) input_list$par$rec_region_prop_pars <- starting_values$rec_region_prop_pars
@@ -1657,7 +1773,7 @@ Setup_Mod_Rec <- function(input_list,
   input_list <- do_rec_region_prop_mapping(input_list, rec_region_prop_spec) # Recruitment regional proportion mapping
   input_list <- do_rec_seas_prop_mapping(input_list, rec_seas_prop_spec) # Recruitment seasonal proportion mapping
   input_list <- do_sigmaR_mapping(input_list, sigmaR_spec) # sigmaR mapping
-  input_list <- do_InitDevs_mapping(input_list, InitDevs_spec, rec_dd) # InitDevs mapping
+  input_list <- do_InitDevs_mapping(input_list, InitDevs_spec, rec_dd, init_age_devs_shared) # InitDevs mapping
   input_list <- do_RecDevs_mapping(input_list, RecDevs_spec, rec_dd) # RevDevs mapping
   input_list <- do_h_mapping(input_list, h_spec, rec_dd) # steepness mapping
   input_list <- do_sexratio_pars_mapping(input_list, sexratio_spec) # sex ratio parameters

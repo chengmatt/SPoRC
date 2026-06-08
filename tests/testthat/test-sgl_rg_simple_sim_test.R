@@ -74,6 +74,8 @@ test_that("Simulation self-test produces approximately unbiased SSB results", {
   sim_list <- Setup_Sim_Rec(
     sim_list = sim_list,
     R0_input = replicate(n = sim_list$n_sims, expr = array(5, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs))), # R0
+    rinit_input = array(2, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_sims)), # rinit
+    use_rinit = 1,
     ln_sigmaR = array(log(1), dim = c(2, sim_list$n_pop, sim_list$n_region)),
     recruitment_opt = 'mean_rec',
     init_age_strc = 1
@@ -110,10 +112,12 @@ test_that("Simulation self-test produces approximately unbiased SSB results", {
       sigmaR_switch = 1, # when to switch from early to late sigmaR (switch in first year)
       ln_sigmaR = array(log(1), c(2, input_list$data$n_pop, input_list$data$n_regions)), # 2 values for early and late sigma
       rec_model = "mean_rec",
+      use_rinit = 1,
       sigmaR_spec = "fix", # fix early sigmaR and late sigmaR
       init_age_strc = 1, # scalar geometric series to derive initial age structure
       equil_init_age_strc = 2, # estimating all intial age deviations
-      ln_global_R0 = log(5)
+      ln_global_R0 = log(5),
+      ln_rinit = log(2)
     )
 
     # Biological setup
@@ -241,6 +245,9 @@ test_that("Simulation self-test produces approximately unbiased SSB results", {
   }
 
   ssb_results <- array(NA, dim = c(sim_list$n_yrs, sim_list$n_sims)) # storage container
+  rinit_results <- vector()
+  r0_results <- vector()
+
   for(i in 1:sim_obj$n_sims) {
 
     input_list <- setup_em(sim_obj, sim = i) # setup EM
@@ -254,6 +261,8 @@ test_that("Simulation self-test produces approximately unbiased SSB results", {
     )
 
     ssb_results[,i] <- as.vector(model$rep$SSB) # save results
+    rinit_results[i] <- model$rep$rinit
+    r0_results[i] <- model$rep$R0
 
   } # end i loop
 
@@ -267,8 +276,10 @@ test_that("Simulation self-test produces approximately unbiased SSB results", {
                      by = c("Year", "Sim")) %>%
     dplyr::mutate(RE = (Est - True) / True)
 
-  # check to see if median SSB relative error is within 2%
+  # check to see if relative error is within 2%
   expect_equal(median(ssb_df_res$RE), 0, tolerance = 0.02)
+  expect_equal(median(((rinit_results - 2) / 2) ), 0, tolerance = 0.05)
+  expect_equal(median(((r0_results - 5) / 5) ), 0, tolerance = 0.05)
 
 })
 

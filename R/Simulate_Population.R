@@ -760,7 +760,7 @@ generate_initial_age_structure <- function(y,
       dmr = array(dmr[,1,,,sim], dim = c(n_regions, n_seas, n_fish_fleets)), # discard mortality rate
       fish_sel = array(fish_sel[,,1,,,,,sim], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets)), # total fishery selectivity in first year
       ret_sel = array(ret_sel[,,1,,,,,sim], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets)), # retained selectivity in first year
-      R0_r = array(R0[,,1,sim], dim = c(n_pop, n_regions)), # regional mean or virgin recruitment
+      R0_r = if(use_rinit == 0) array(R0[,,1,sim], dim = c(n_pop, n_regions)) else array(rinit[,,sim], dim = c(n_pop, n_regions)), # regional mean or virgin recruitment
       rec_seas_prop = array(rec_seas_prop[,,sim], dim = c(n_pop, n_seas)), # recruitment seasonal apportionment
       sexratio = array(sexratio[,,1,,sim], dim = c(n_pop, n_regions, n_sexes)), # sex ratio in first year
       Movement = array(Movement[,,,1,,,,sim], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages, n_sexes)), # movement in first year
@@ -785,7 +785,7 @@ generate_initial_age_structure <- function(y,
       rec_seas_prop = array(rec_seas_prop[,,sim], dim = c(n_pop, n_seas)), # recruitment seasonal apportionment
       fish_sel = array(fish_sel[,,1,,,,,sim], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets)), # total fishery selectivity in first year
       ret_sel = array(ret_sel[,,1,,,,,sim], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets)), # retained selectivity in first year
-      R0_r = array(R0[,,1,sim], dim = c(n_pop, n_regions)), # regional mean or virgin recruitment
+      R0_r = if(use_rinit == 0) array(R0[,,1,sim], dim = c(n_pop, n_regions)) else array(rinit[,,sim], dim = c(n_pop, n_regions)), # regional mean or virgin recruitment
       sexratio = array(sexratio[,,1,,sim], dim = c(n_pop, n_regions, n_sexes)), # sex ratio in first year
       Movement = array(Movement[,,,1,,,,sim], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages, n_sexes)), # movement in first year
       do_recruits_move = do_recruits_move, # whether recruits move
@@ -2575,6 +2575,12 @@ simulation_self_test <- function(data,
       for(p in 1:sim_list$n_pop) for(r in 1:sim_list$n_regions) tmp[p,r,,] = rep$R0[p] * rep$rec_region_prop[p,r]
       tmp
     },
+    rinit_input = {
+      tmp = array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_sims))
+      for(p in 1:sim_list$n_pop) for(r in 1:sim_list$n_regions) tmp[p,r,] = rep$rinit[p] * rep$rec_region_prop[p,r]
+      tmp
+    },
+    use_rinit = data$use_rinit,
     sexratio_input = replicate(n = sim_list$n_sims, expr = rep$sexratio[,,1:length(data$years),,drop = FALSE]), # sex ratio
     ln_sigmaR = optim_parameters_list$ln_sigmaR / sqrt(data$Wt_Rec), # ln_sigmaR
     Rec_input = replicate(n = sim_list$n_sims, expr = rep$Rec[,,1:length(data$years),drop = FALSE]), # recruitment time series

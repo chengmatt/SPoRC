@@ -625,7 +625,7 @@ SPoRC_rtmb = function(pars, data) {
         for(s in 1:n_sexes) {
           if(y < sigmaR_switch) tmp_total_rec = tmp_Det_Rec[p,r] * exp(ln_RecDevs[p,r,y] - (sigmaR2_early[p,sigma_idx]/2 * bias_ramp[y]))
           if(y >= sigmaR_switch && y <= n_est_rec_devs) tmp_total_rec = tmp_Det_Rec[p,r] * exp(ln_RecDevs[p,r,y] - (sigmaR2_late[p,sigma_idx]/2 * bias_ramp[y]))
-          if(y > n_est_rec_devs) tmp_total_rec = tmp_Det_Rec[p,r] * exp(sigmaR2_late[p,sigma_idx]/2)
+          if(y > n_est_rec_devs) tmp_total_rec = tmp_Det_Rec[p,r]
           # season 1 fraction
           NAA[p,r,y,1,1,s] = tmp_total_rec * rec_seas_prop[p,1] * sexratio[p,r,y,s]
         }

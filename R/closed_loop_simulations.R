@@ -734,7 +734,8 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   } else args$R0_input
   rinit_input <- if(!"rinit_input" %in% names(args)) {
     rinit_r = array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_sims)) # container
-    for(p in 1:sim_list$n_pop) for(s in 1:sim_list$n_sims) rinit_r[p,,sim] <- rep$rinit[p] * rep$rec_region_prop[p,]
+    for(p in 1:sim_list$n_pop) for(s in 1:sim_list$n_sims) rinit_r[p,,s] <- rep$rinit[p] * rep$rec_region_prop[p,]
+    rinit_r
   } else args$rinit_input
   sexratio_input <- if(!"sexratio_input" %in% names(args)) {
     extend_years(replicate(n = sim_list$n_sims, expr = rep$sexratio[,,1:length(data$years),,drop = FALSE]), closed_loop_yrs, 3, 'last')

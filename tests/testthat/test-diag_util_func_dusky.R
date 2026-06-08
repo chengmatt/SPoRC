@@ -120,8 +120,8 @@ test_that("Diagnostic and utility functions run on fitted dusky model", {
   # Test condition closed loop simulations
   test_that("condition_closed_loop_simulations runs", {
     condition_cl_sim <- condition_closed_loop_simulations(
-      1, 1, data, parameters, mapping,
-      dusky_rtmb_model$sdrep, dusky_rtmb_model$rep, NULL
+      closed_loop_yrs = 1, n_sims = 1, data, parameters, mapping,
+      sd_rep = dusky_rtmb_model$sdrep, rep = dusky_rtmb_model$rep, random =  NULL
     )
     dusky_sim_env <- Setup_sim_env(condition_cl_sim)
     expect_type(condition_cl_sim, "list")

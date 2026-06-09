@@ -28,14 +28,16 @@ jobs:
           print(cov)
           covr::to_cobertura(cov)
         shell: Rscript {0}
-      - uses: codecov/codecov-action@v5
-        with:
-          # Fail if error if not on PR, or if on PR and token is given
-          fail_ci_if_error: ${{ github.event_name != 'pull_request' || secrets.CODECOV_TOKEN }}
-          files: ./cobertura.xml
-          plugins: noop
-          disable_search: true
-          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload coverage to Codecov
+        run: |
+          curl -Os https://cli.codecov.io/latest/linux/codecov
+          chmod +x codecov
+          ./codecov upload-process \
+            --token ${{ secrets.CODECOV_TOKEN }} \
+            --file ./cobertura.xml \
+            --disable-search \
+            --git-service github
+        shell: bash
       - name: Show testthat output
         if: always()
         run: |

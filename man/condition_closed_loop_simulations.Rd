@@ -154,6 +154,7 @@ compositions. Default \code{"mean"}.}
   \strong{Recruitment processes}
   \itemize{
     \item \code{R0_input}
+    \item \code{rinit_input}
     \item \code{h_input}
     \item \code{Rec_input}
   }

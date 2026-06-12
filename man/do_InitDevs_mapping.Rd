@@ -4,7 +4,7 @@
 \alias{do_InitDevs_mapping}
 \title{Map initial age-structure deviation parameters}
 \usage{
-do_InitDevs_mapping(input_list, InitDevs_spec, rec_dd)
+do_InitDevs_mapping(input_list, InitDevs_spec, rec_dd, init_age_devs_shared)
 }
 \arguments{
 \item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
@@ -38,6 +38,24 @@ across all dimensions. Options when non-\code{NULL}:
 \code{\link{Setup_Mod_Rec}}. \code{"global"} restricts valid
 \code{InitDevs_spec} choices to \code{"est_shared_r"} or
 \code{"est_shared_pop_r"} when \code{n_regions > 1}.}
+
+\item{init_age_devs_shared}{Integer vector of length \code{n_ages - 1}
+specifying an explicit parameter-sharing structure for \code{ln_InitDevs}
+along the age dimension. Each element gives the factor level assigned to
+that age position; positions sharing the same integer value are constrained
+to a single estimated parameter. Used in conjunction with
+\code{equil_init_age_strc = 3} (\code{"stoch_shared_ages"}), which
+activates user-defined age sharing while still estimating deviations
+independently across populations and regions. The sharing structure is
+also respected by \code{InitDevs_spec} options: \code{"est_shared_r"}
+applies the vector per population (with a population-level offset so pops
+remain independent), and \code{"est_shared_pop_r"} applies it globally
+(no offset, all pops and regions share the same parameters). A typical
+use case is replicating ADMB models where ages beyond the data plus group
+share the last estimated deviation, e.g.
+\code{c(1:42, rep(42, 9))} for a 52-age model with 43 data ages, giving
+42 free parameters. When \code{NULL} (default), age sharing follows the
+standard behaviour determined by \code{equil_init_age_strc} alone.}
 }
 \value{
 The input \code{input_list} with \code{$map$ln_InitDevs} set to a

@@ -55,6 +55,8 @@ Setup_Mod_Rec(
     grid$region)
      blks
  },
+  use_rinit = 0,
+  init_age_devs_shared = NULL,
   ...
 )
 }
@@ -173,6 +175,15 @@ initialisation. Default \code{1}.
     ages except the plus group.}
   \item{\code{2}/\code{"stoch_all"}}{Stochastic deviations for all ages
     including the plus group.}
+  \item{\code{3}/\code{"stoch_shared_ages"}}{Stochastic deviations with
+    user-defined age sharing via \code{init_age_devs_shared}. Deviations
+    are estimated independently across all populations and regions, but
+    ages sharing the same value in \code{init_age_devs_shared} are
+    constrained to a single parameter. The plus group is not automatically
+    fixed; include an \code{NA} in \code{init_age_devs_shared} at the
+    plus-group position to fix it, or share it with the preceding age by
+    repeating that index (e.g. \code{c(1:42, rep(42, 9))}). Requires
+    \code{init_age_devs_shared} to be non-\code{NULL}.}
 }}
 
 \item{init_F_prop}{Numeric array \code{[n_regions x n_seas x n_fish_fleets]}. Seasonal distribution of
@@ -289,8 +300,36 @@ Valid formats:
 }
 Default: a single constant block for every population-region combination.}
 
+\item{use_rinit}{Integer (0/1). Whether a separate initial recruitment
+scalar \code{ln_rinit} is used to initialise the population
+independently of the recruitment \code{ln_global_R0}. When \code{0}
+(default), \code{ln_rinit} is fixed and \code{ln_global_R0}
+governs both initialisation and recruitment. When \code{1}, both
+\code{ln_rinit} and \code{ln_global_R0} are estimated, with
+\code{ln_rinit} used exclusively for equilibrium initialisation
+and \code{ln_global_R0} used for the stock-recruit relationship.}
+
+\item{init_age_devs_shared}{Integer vector of length \code{n_ages - 1}
+specifying an explicit parameter-sharing structure for \code{ln_InitDevs}
+along the age dimension. Each element gives the factor level assigned to
+that age position; positions sharing the same integer value are constrained
+to a single estimated parameter. Used in conjunction with
+\code{equil_init_age_strc = 3} (\code{"stoch_shared_ages"}), which
+activates user-defined age sharing while still estimating deviations
+independently across populations and regions. The sharing structure is
+also respected by \code{InitDevs_spec} options: \code{"est_shared_r"}
+applies the vector per population (with a population-level offset so pops
+remain independent), and \code{"est_shared_pop_r"} applies it globally
+(no offset, all pops and regions share the same parameters). A typical
+use case is replicating ADMB models where ages beyond the data plus group
+share the last estimated deviation, e.g.
+\code{c(1:42, rep(42, 9))} for a 52-age model with 43 data ages, giving
+42 free parameters. When \code{NULL} (default), age sharing follows the
+standard behaviour determined by \code{equil_init_age_strc} alone.}
+
 \item{...}{Optional named starting values for parameters. Any of:
 \code{ln_global_R0} \code{[n_pop]},
+\code{ln_rinit} \code{[n_pop]},
 \code{rec_region_prop_pars} \code{[n_pop x (n_regions - 1)]},
 \code{rec_seas_prop_pars} \code{[n_pop x (n_seas - 1)]},
 \code{steepness_h} \code{[n_pop x n_regions]} (bounded logit scale),

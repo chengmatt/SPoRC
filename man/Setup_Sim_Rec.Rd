@@ -9,8 +9,9 @@ Setup_Sim_Rec(
   do_recruits_move = 0,
   sexratio_input = array(if (sim_list$n_sexes == 1) 1 else 0.5, dim = c(sim_list$n_pop,
     sim_list$n_regions, sim_list$n_yrs, sim_list$n_sexes, sim_list$n_sims)),
-  R0_input = array(10, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs,
+  R0_input = array(15, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs,
     sim_list$n_sims)),
+  rinit_input = array(15, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_sims)),
   h_input = array(0.8, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs,
     sim_list$n_sims)),
   stray_rate_input = array(0, dim = c(sim_list$n_pop, sim_list$n_yrs, sim_list$n_sims)),
@@ -25,6 +26,7 @@ Setup_Sim_Rec(
   recruitment_opt = "bh_rec",
   rec_dd = "global",
   init_dd = "global",
+  use_rinit = 0,
   init_age_strc = 2,
   spawn_seas = 1,
   t_spawn = 0,
@@ -45,8 +47,13 @@ movement from age 1.}
 when \code{n_sexes = 1}; \code{0.5} per sex when \code{n_sexes = 2}.}
 
 \item{R0_input}{Unfished equilibrium recruitment array
-\code{[n_pop x n_regions x n_yrs x n_sims]}. Default: \code{10} for all
+\code{[n_pop x n_regions x n_yrs x n_sims]}. Default: \code{15} for all
 cells.}
+
+\item{rinit_input}{Unfished equilibrium recruitment scalar used for
+population initialisation when \code{use_rinit = 1}, array
+\code{[n_pop x n_regions x n_sims]}. Ignored when \code{use_rinit = 0}.
+Default: \code{15} for all cells.}
 
 \item{h_input}{Beverton-Holt steepness array
 \code{[n_pop x n_regions x n_yrs x n_sims]}. Values should be in
@@ -91,6 +98,14 @@ relationship. Default \code{"global"}. Options:
 
 \item{init_dd}{Density-dependence structure for equilibrium age-structure
 initialisation. Default \code{"global"}. Same options as \code{rec_dd}.}
+
+\item{use_rinit}{Integer (0/1). Whether a separate initial recruitment
+scalar \code{rinit_input} is used to initialise the population
+independently of \code{R0_input}. When \code{0} (default),
+\code{rinit_input} is ignored and \code{R0_input} governs both
+initialisation and recruitment. When \code{1}, \code{rinit_input} is
+used exclusively for equilibrium initialisation and \code{R0_input}
+governs the recruitment relationship.}
 
 \item{init_age_strc}{Integer specifying the equilibrium age-structure
 initialisation method. Default \code{2}. Options:

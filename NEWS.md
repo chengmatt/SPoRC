@@ -14,6 +14,8 @@
 - Included new options to estimate non-parametric selectivity, logistic selectivity with an asymptote parameter, as well as provide fixed selectivity (fishery, retention, and survey) inputs. 
 - Changed dimensions of init_F_prop to be region, season, and fleet-specific (as opposed to just being based on the first fishery fleet).
 - Coded in an argument in `do_retrospective` to return retrospective RTMB model objects (`return_models`).
+- Added 95% confidence intervals for SDNR based on a Chi squared test for OSA residuals.
+- Force non-parametric selectivity to be mean-standardized.
 
 ## Improvements
 - Allowed both numeric and character codes for specifying dynamics in simulator, so as to be more consistent with how estimation models are specified, while maintaining backwards compatibility. 

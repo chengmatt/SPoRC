@@ -731,7 +731,7 @@ $${\begin{matrix}
 where deviations are placed about the parametric form and selectivity
 values are mean standardized to aid with interpretability. Mean
 standardization is applied only when semi-parametric deviations are
-specified (process error models 3–5). For age-based selectivity, the
+specified (process error models 3–5), or when non-parametric selectivity is specified. For age-based selectivity, the
 mean is computed from a single population and season reference
 ($p = 1, \tau = 1$) since the underlying selectivity is invariant across
 these dimensions, and the standardization is then applied identically

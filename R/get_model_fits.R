@@ -1298,7 +1298,16 @@ plot_resids <- function(osa_results) {
   if(unique(res$comp_type) == "Aggregated") {
 
     # Get standarized normal residuals
-    sdnr <- res %>% dplyr::summarise(sdnr = paste0("SDNR = ", formatC(round(sd(resid, na.rm = TRUE), 3), format = "f", digits = 2)))
+    sdnr <- res %>%
+    dplyr::summarise(
+      df=n()-1,
+      HCI = sqrt(qchisq(.975,df)/df),
+      LCI = sqrt(qchisq(.025,df)/df),
+      est= sd(resid))  %>%
+    dplyr::mutate(
+      sdnr=paste0('SDNR=',sprintf('%.2f', est)),
+      sdnr=paste0(sdnr,'\n(', sprintf('%.2f', LCI), '-', sprintf('%.2f', HCI),')')
+    )
 
     # sdnr plot
     sdnr_plot <- ggplot() +
@@ -1307,6 +1316,7 @@ plot_resids <- function(osa_results) {
       theme_bw(base_size = 20) +
       labs(x = "Theoretical quantiles", y = "Sample quantiles") +
       geom_text(data = sdnr, aes(x = -Inf, y = Inf, label = sdnr), hjust = -0.5, vjust = 2.5, size = 4)
+
   }
 
   # Split Sex and Split Region
@@ -1314,7 +1324,15 @@ plot_resids <- function(osa_results) {
 
     # Get standarized normal residuals
     sdnr <- res %>% dplyr::group_by(region, sex) %>%
-      dplyr::summarise(sdnr = paste0("SDNR = ", formatC(round(sd(resid, na.rm = TRUE), 3), format = "f", digits = 2)))
+      dplyr::summarise(
+        df=n()-1,
+        HCI = sqrt(qchisq(.975,df)/df),
+        LCI = sqrt(qchisq(.025,df)/df),
+        est= sd(resid))  %>%
+      dplyr::mutate(
+        sdnr=paste0('SDNR=',sprintf('%.2f', est)),
+        sdnr=paste0(sdnr,'\n(', sprintf('%.2f', LCI), '-', sprintf('%.2f', HCI),')')
+      )
 
     # sdnr plot
     sdnr_plot <- ggplot() +
@@ -1335,7 +1353,15 @@ plot_resids <- function(osa_results) {
 
     # Get standarized normal residuals
     sdnr <- res %>% dplyr::group_by(region) %>%
-      dplyr::summarise(sdnr = paste0("SDNR = ", formatC(round(sd(resid, na.rm = TRUE), 3), format = "f", digits = 2)))
+      dplyr::summarise(
+        df=n()-1,
+        HCI = sqrt(qchisq(.975,df)/df),
+        LCI = sqrt(qchisq(.025,df)/df),
+        est= sd(resid))  %>%
+      dplyr::mutate(
+        sdnr=paste0('SDNR=',sprintf('%.2f', est)),
+        sdnr=paste0(sdnr,'\n(', sprintf('%.2f', LCI), '-', sprintf('%.2f', HCI),')')
+      )
 
     # sdnr plot
     sdnr_plot <- ggplot() +

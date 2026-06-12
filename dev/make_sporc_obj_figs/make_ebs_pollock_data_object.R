@@ -32,6 +32,8 @@ yrs <- in_dat$styr:in_dat$endyr
 # Biologicals --------------------------------------------------------------
 # WAA: region, year, seas, age, sex
 ebswp_SPoRC_data$WAA <- array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
+ebswp_SPoRC_data$WAA_fish <- array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets))
+ebswp_SPoRC_data$WAA_srv <- array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_srv_fleets))
 # MatAA: region, year, seas, age, sex
 ebswp_SPoRC_data$MatAA <- array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
 for(y in 1:n_yrs) {
@@ -40,6 +42,12 @@ for(y in 1:n_yrs) {
     ebswp_SPoRC_data$MatAA[,1, y, seas, , 1] <- in_dat$p_mature[1:n_ages]
   }
 }
+
+# fleet specific waa
+ebswp_SPoRC_data$WAA_fish[,1, , seas, , 1, 1] <- in_dat$wt_fsh[, 1:n_ages]
+ebswp_SPoRC_data$WAA_srv[,1, which(yrs %in% in_dat$yrs_bts_data), seas, , 1, 1] <- in_dat$wt_bts[, 1:n_ages]
+ebswp_SPoRC_data$WAA_srv[,1, which(yrs %in% in_dat$yrs_ats_data), seas, , 1, 2] <- in_dat$wt_ats[, 1:n_ages]
+ebswp_SPoRC_data$WAA_srv[,1, which(yrs %in% in_dat$yrs_avo), seas, , 1, 3] <- in_dat$wt_avo[, 1:n_ages]
 
 # Ageing error
 ebswp_SPoRC_data$AgeingError <- as.matrix(in_dat$age_err)

@@ -1775,12 +1775,12 @@ SPoRC_rtmb = function(pars, data) {
       } # end if
 
       # Mean Standardizing to help with interpretability
-      if(fish_selex_type == 0) if(cont_tv_fish_sel[r,f] %in% 3:5) for(s in 1:n_sexes) {
+      if(fish_selex_type == 0) if(cont_tv_fish_sel[r,f] %in% 3:5 || any(fish_sel_model[r,,f] == 5)) for(s in 1:n_sexes) {
         tmp_mean = log(mean(fish_sel[1,r,,1,,s,f]))
         for(p in 1:n_pop) for(seas in 1:n_seas)
           fish_sel[p,r,,seas,,s,f] = exp(log(fish_sel[p,r,,seas,,s,f]) - tmp_mean)
       }
-      if(fish_selex_type == 1) if(cont_tv_fish_sel[r,f] %in% 3:5) for(s in 1:n_sexes) fish_sel_l[r,,,s,f] = exp(log(fish_sel_l[r,,,s,f]) - log(mean(fish_sel_l[r,,,s,f]))) # length-based selectivity
+      if(fish_selex_type == 1) if(cont_tv_fish_sel[r,f] %in% 3:5 || any(fish_sel_model[r,,f] == 5)) for(s in 1:n_sexes) fish_sel_l[r,,,s,f] = exp(log(fish_sel_l[r,,,s,f]) - log(mean(fish_sel_l[r,,,s,f]))) # length-based selectivity
 
       # Retained Fishery Selectivity Deviations
       if(cont_tv_ret_sel[r,f] > 0) {
@@ -1800,12 +1800,12 @@ SPoRC_rtmb = function(pars, data) {
       } # end if
 
       # Mean Standardizing to help with interpretability
-      if(ret_selex_type == 0) if(cont_tv_ret_sel[r,f] %in% 3:5) for(s in 1:n_sexes) {
+      if(ret_selex_type == 0) if(cont_tv_ret_sel[r,f] %in% 3:5 || any(ret_sel_model[r,,f] == 5)) for(s in 1:n_sexes) {
         tmp_mean = log(mean(ret_sel[1,r,,1,,s,f]))
         for(p in 1:n_pop) for(seas in 1:n_seas)
           ret_sel[p,r,,seas,,s,f] = exp(log(ret_sel[p,r,,seas,,s,f]) - tmp_mean)
       }
-      if(ret_selex_type == 1) if(cont_tv_ret_sel[r,f] %in% 3:5) for(s in 1:n_sexes) ret_sel_l[r,,,s,f] = exp(log(ret_sel_l[r,,,s,f]) - log(mean(ret_sel_l[r,,,s,f]))) # length-based selectivity
+      if(ret_selex_type == 1) if(cont_tv_ret_sel[r,f] %in% 3:5 || any(ret_sel_model[r,,f] == 5)) for(s in 1:n_sexes) ret_sel_l[r,,,s,f] = exp(log(ret_sel_l[r,,,s,f]) - log(mean(ret_sel_l[r,,,s,f]))) # length-based selectivity
     } # end f loop
 
     # Survey Selectivity Deviations
@@ -1828,12 +1828,12 @@ SPoRC_rtmb = function(pars, data) {
       } # end if
 
       # Mean Standardizing to help with interpretability
-      if(srv_selex_type == 0) if(cont_tv_srv_sel[r,sf] %in% 3:5) for(s in 1:n_sexes) {
+      if(srv_selex_type == 0) if(cont_tv_srv_sel[r,sf] %in% 3:5 || any(srv_sel_model[r,,sf] == 5)) for(s in 1:n_sexes) {
         tmp_mean = log(mean(srv_sel[1,r,,1,,s,sf]))
         for(p in 1:n_pop) for(seas in 1:n_seas)
           srv_sel[p,r,,seas,,s,sf] = exp(log(srv_sel[p,r,,seas,,s,sf]) - tmp_mean)
       }
-      if(srv_selex_type == 1) if(cont_tv_srv_sel[r,sf] %in% 3:5) for(s in 1:n_sexes) srv_sel_l[r,,,s,sf] = exp(log(srv_sel_l[r,,,s,sf]) - log(mean(srv_sel_l[r,,,s,sf])))
+      if(srv_selex_type == 1) if(cont_tv_srv_sel[r,sf] %in% 3:5 || any(srv_sel_model[r,,sf] == 5)) for(s in 1:n_sexes) srv_sel_l[r,,,s,sf] = exp(log(srv_sel_l[r,,,s,sf]) - log(mean(srv_sel_l[r,,,s,sf])))
 
     } # end sf loop
   } # end r loop

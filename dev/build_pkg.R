@@ -57,14 +57,6 @@ unloadNamespace("SPoRC")
 # Vignettes ---------------------------------------------------------------
 # build_vignettes()
 
-# Unit Tests --------------------------------------------------------------
-# usethis::use_testthat()
-# usethis::use_test("dusky_rtmb")
-# usethis::use_test("sabie_sgl_rtmb")
-# usethis::use_test("ebs_pol_sgl_rtmb")
-# usethis::use_test("sabie_three_rg_rtmb")
-# usethis::use_test("sgl_rg_simple_sim_test")
-
 # Build Vignettes ---------------------------------------------------------
 
 # usethis::use_vignette("a_model_dimensions")

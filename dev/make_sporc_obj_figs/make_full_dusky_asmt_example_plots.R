@@ -432,7 +432,8 @@ resid_plot <- SPoRC::plot_resids(osa_results = srvages)
 # Get Aggregated Plot
 srvage_agg <- comp_prop$Survey_Ages %>%
   group_by(Age, Fleet, Seas) %>%
-  summarize(obs = mean(obs), pred = mean(pred)) %>%
+  summarize(obs = mean(obs),
+            pred = mean(pred)) %>%
   filter(Fleet == 1) %>%
   ggplot() +
   geom_col(aes(x = Age, y = obs), fill = 'darkgreen', alpha = 0.8) +

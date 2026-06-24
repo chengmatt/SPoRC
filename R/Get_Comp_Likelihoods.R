@@ -96,6 +96,8 @@ Get_Comp_Likelihoods = function(Exp,
 
   # Making sure things are correctly formatted (and regions are not dropped)
   Obs = array(Obs, dim = c(n_regions, n_obs_bins, n_sexes))
+  dim(Obs) = c(n_regions, n_obs_bins, n_sexes)
+
   Exp = array(Exp, dim = c(n_regions, n_model_bins, n_sexes)) # using n_obs_bins, because non-square ageing error matrix will collapse to n_obs_bins
   ISS = array(ISS, dim = c(n_regions, n_sexes))
   Wt_Mltnml = array(Wt_Mltnml, dim = c(n_regions, n_sexes))
@@ -152,7 +154,7 @@ Get_Comp_Likelihoods = function(Exp,
       }
 
       Sigma = Sigma[-nrow(Sigma), -ncol(Sigma)] # remove last row and column
-      comp_nLL[1,1] = -1 * dlogistnormal(obs = tmp_Obs, pred = tmp_Exp, Sigma_or_Q = Sigma, type = 'dmvnorm', TRUE) # Logistic Normal likelihood (iid)
+      comp_nLL[1,1] = -1 * dlogistnormal(obs = tmp_Obs, pred = tmp_Exp, Sigma = Sigma, TRUE) # Logistic Normal likelihood (iid)
     } # end if logistic normal (iid)
 
     if(Likelihood_Type == 3) {
@@ -176,7 +178,7 @@ Get_Comp_Likelihoods = function(Exp,
       }
 
       Sigma = Sigma[-nrow(Sigma), -ncol(Sigma)] # remove last row and column
-      comp_nLL[1,1] = -1 * dlogistnormal(obs = tmp_Obs, pred = tmp_Exp, Sigma_or_Q = Sigma, type = 'dmvnorm', TRUE) # Logistic Normal likelihood (1dar1)
+      comp_nLL[1,1] = -1 * dlogistnormal(obs = tmp_Obs, pred = tmp_Exp, Sigma = Sigma, TRUE) # Logistic Normal likelihood (1dar1)
     } # end if logistic normal (1dar1)
 
   } # end if aggregated comps across sexes and regions
@@ -226,7 +228,7 @@ Get_Comp_Likelihoods = function(Exp,
           }
 
           Sigma = Sigma[-nrow(Sigma), -ncol(Sigma)] # remove last row and column
-          comp_nLL[r,s] = -1 * dlogistnormal(obs = tmp_Obs, pred = tmp_Exp, Sigma_or_Q = Sigma, type = 'dmvnorm', TRUE) # Logistic Normal likelihood (iid)
+          comp_nLL[r,s] = -1 * dlogistnormal(obs = tmp_Obs, pred = tmp_Exp, Sigma = Sigma, TRUE) # Logistic Normal likelihood (iid)
         } # end if logistic normal
 
         if(Likelihood_Type == 3) {
@@ -250,7 +252,7 @@ Get_Comp_Likelihoods = function(Exp,
           }
 
           Sigma = Sigma[-nrow(Sigma), -ncol(Sigma)] # remove last row and column
-          comp_nLL[r,s] = -1 * dlogistnormal(obs = tmp_Obs, pred = tmp_Exp, Sigma_or_Q = Sigma, type = 'dmvnorm', TRUE) # Logistic Normal likelihood (1dar1)
+          comp_nLL[r,s] = -1 * dlogistnormal(obs = tmp_Obs, pred = tmp_Exp, Sigma = Sigma, TRUE) # Logistic Normal likelihood (1dar1)
         } # end if logistic normal (1dar1)
 
       } # end r loop
@@ -302,7 +304,7 @@ Get_Comp_Likelihoods = function(Exp,
 
         Sigma = Sigma[-nrow(Sigma), -ncol(Sigma)] # remove last row and column
 
-        comp_nLL[r,1] = -1 * dlogistnormal(obs = tmp_Obs, pred = tmp_Exp, Sigma_or_Q = Sigma, type = 'dmvnorm', TRUE) # Logistic Normal likelihood (iid)
+        comp_nLL[r,1] = -1 * dlogistnormal(obs = tmp_Obs, pred = tmp_Exp, Sigma = Sigma, TRUE) # Logistic Normal likelihood (iid)
       } # end if logistic normal (iid)
 
       if(Likelihood_Type == 3) {
@@ -328,7 +330,7 @@ Get_Comp_Likelihoods = function(Exp,
 
         Sigma = Sigma[-nrow(Sigma), -ncol(Sigma)] # remove last row and column
 
-        comp_nLL[r,1] = -1 * dlogistnormal(obs = tmp_Obs, pred = tmp_Exp, Sigma_or_Q = Sigma, type = 'dmvnorm', TRUE) # Logistic Normal likelihood (1dar1)
+        comp_nLL[r,1] = -1 * dlogistnormal(obs = tmp_Obs, pred = tmp_Exp, Sigma = Sigma, TRUE) # Logistic Normal likelihood (1dar1)
       } # end if logistic normal (1dar1)
 
       if(Likelihood_Type == 4) {
@@ -357,7 +359,7 @@ Get_Comp_Likelihoods = function(Exp,
         Sigma = Sigma[-nrow(Sigma), -ncol(Sigma)] # remove last bins
 
         # likelihood
-        comp_nLL[r,1] = -1 * dlogistnormal(obs = tmp_Obs, pred = tmp_Exp, Sigma_or_Q = Sigma, type = 'dmvnorm', TRUE) # Logistic Normal likelihood (1dar1 by age, constant corr by sex)
+        comp_nLL[r,1] = -1 * dlogistnormal(obs = tmp_Obs, pred = tmp_Exp, Sigma = Sigma, TRUE) # Logistic Normal likelihood (1dar1 by age, constant corr by sex)
       }
 
     } # end r loop

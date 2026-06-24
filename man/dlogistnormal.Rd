@@ -4,7 +4,7 @@
 \alias{dlogistnormal}
 \title{Evaluate a logistic-normal log-likelihood}
 \usage{
-dlogistnormal(obs, pred, Sigma_or_Q, type = "dgmrf", give_log = TRUE)
+dlogistnormal(obs, pred, Sigma, give_log = TRUE)
 }
 \arguments{
 \item{obs}{Numeric vector of observed composition values of length
@@ -13,15 +13,7 @@ dlogistnormal(obs, pred, Sigma_or_Q, type = "dgmrf", give_log = TRUE)
 \item{pred}{Numeric vector of predicted proportions of length \eqn{K};
 the last element is the ALR reference.}
 
-\item{Sigma_or_Q}{Covariance matrix \eqn{\Sigma} (when
-\code{type = "dmvnorm"}) or precision matrix \eqn{Q = \Sigma^{-1}}
-(when \code{type = "dgmrf"}) of dimension \eqn{(K-1) \times (K-1)}.
-Use \code{\link{get_logistN_Sigma}} to construct \eqn{\Sigma} and
-invert for \eqn{Q}.}
-
-\item{type}{Character. \code{"dgmrf"} (default) evaluates via
-\code{RTMB::dgmrf} (preferred for AD efficiency); \code{"dmvnorm"}
-evaluates via \code{RTMB::dmvnorm}.}
+\item{Sigma}{Covariance matrix \eqn{\Sigma}}
 
 \item{give_log}{Logical. If \code{TRUE} (default), returns the
 log-likelihood; otherwise returns the likelihood.}
@@ -31,9 +23,7 @@ Numeric. Log-likelihood (or likelihood if \code{give_log = FALSE}).
 }
 \description{
 Applies the additive log-ratio (ALR) transformation to observed and
-predicted compositions (removing the last reference bin) and evaluates
-either a Gaussian Markov random field log-density (\code{RTMB::dgmrf},
-using a precision matrix) or a multivariate normal log-density
+predicted compositions (removing the last reference bin) and evaluates a multivariate normal log-density
 (\code{RTMB::dmvnorm}, using a covariance matrix). The ALR mean vector
 is \eqn{\mu_k = \log(\hat{p}_k / \hat{p}_K)}, \eqn{k = 1,\ldots,K-1}.
 }

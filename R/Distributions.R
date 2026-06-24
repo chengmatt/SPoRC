@@ -106,9 +106,7 @@ ddirmult = function(obs, pred, Ntotal, ln_theta, give_log = TRUE) {
 #' Evaluate a logistic-normal log-likelihood
 #'
 #' Applies the additive log-ratio (ALR) transformation to observed and
-#' predicted compositions (removing the last reference bin) and evaluates
-#' either a Gaussian Markov random field log-density (\code{RTMB::dgmrf},
-#' using a precision matrix) or a multivariate normal log-density
+#' predicted compositions (removing the last reference bin) and evaluates a multivariate normal log-density
 #' (\code{RTMB::dmvnorm}, using a covariance matrix). The ALR mean vector
 #' is \eqn{\mu_k = \log(\hat{p}_k / \hat{p}_K)}, \eqn{k = 1,\ldots,K-1}.
 #'
@@ -116,14 +114,7 @@ ddirmult = function(obs, pred, Ntotal, ln_theta, give_log = TRUE) {
 #'   \eqn{K}. Need not sum to 1; the last element is the ALR reference.
 #' @param pred Numeric vector of predicted proportions of length \eqn{K};
 #'   the last element is the ALR reference.
-#' @param Sigma_or_Q Covariance matrix \eqn{\Sigma} (when
-#'   \code{type = "dmvnorm"}) or precision matrix \eqn{Q = \Sigma^{-1}}
-#'   (when \code{type = "dgmrf"}) of dimension \eqn{(K-1) \times (K-1)}.
-#'   Use \code{\link{get_logistN_Sigma}} to construct \eqn{\Sigma} and
-#'   invert for \eqn{Q}.
-#' @param type Character. \code{"dgmrf"} (default) evaluates via
-#'   \code{RTMB::dgmrf} (preferred for AD efficiency); \code{"dmvnorm"}
-#'   evaluates via \code{RTMB::dmvnorm}.
+#' @param Sigma Covariance matrix \eqn{\Sigma}
 #' @param give_log Logical. If \code{TRUE} (default), returns the
 #'   log-likelihood; otherwise returns the likelihood.
 #'
@@ -132,19 +123,14 @@ ddirmult = function(obs, pred, Ntotal, ln_theta, give_log = TRUE) {
 #' @import RTMB
 #'
 #' @keywords internal
-dlogistnormal = function(obs, pred, Sigma_or_Q, type = 'dgmrf', give_log = TRUE) {
+dlogistnormal = function(obs, pred, Sigma, give_log = TRUE) {
   # do logistic transformation on observed values
   tmp_Obs = log(obs[-length(obs)])
   tmp_Obs = tmp_Obs - log(obs[length(obs)])
   # do logistic transformation on expected values
   mu = log(pred[-length(pred)]) # remove last bin since it's known
   mu = mu - log(pred[length(pred)]) # calculate log ratio
-  if(type == 'dgmrf') {
-    res = RTMB::dgmrf(x = as.vector(tmp_Obs), mu = as.vector(mu), Q = Sigma_or_Q, log = give_log)
-  }
-  if(type == 'dmvnorm') {
-    res = RTMB::dmvnorm(x = as.vector(tmp_Obs), mu = as.vector(mu), Sigma = Sigma_or_Q, log = give_log)
-  }
+  res = RTMB::dmvnorm(x = as.vector(tmp_Obs), mu = as.vector(mu), Sigma = Sigma, log = give_log)
   return(res)
 }
 

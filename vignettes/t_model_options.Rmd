@@ -153,6 +153,15 @@ When `rec_model = "bh_rec"`, steepness ($h$) can be penalised with a Beta distri
 | `h_prior` | Data frame with columns `pop`, `region`, `mu`, `sd` |
 | `h_spec` | Estimation structure for steepness parameters |
 
+### R0 priors
+
+A lognormal prior on $R_0$ can be applied per population:
+
+| Argument | Description |
+|---|---|
+| `use_r0_prior` | 0 = no prior (default), 1 = apply lognormal prior on $\ln R_0$ |
+| `r0_prior` | Data frame with columns `pop` (population index), `mu` (prior mean on natural scale), and `sd` (prior SD on log scale). Required when `use_r0_prior = 1` |
+
 ### Population straying
 
 When `n_pop > 1`, a fraction of recruits produced by population $p$ can "stray" and recruit into regions associated with other populations.

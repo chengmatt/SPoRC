@@ -1140,7 +1140,7 @@ Considering the complexity of integrated population models, several
 priors can be specified to help inform the estimation of parameters by
 providing additional knowledge. Priors can currently be specified for
 natural mortality, fishery and survey catchability, fishery and survey
-selectivity, steepness, recruitment proportions, stray rates, movement rates, and tag
+selectivity, steepness, recruitment population scale ($R_0$) and proportions, stray rates, movement rates, and tag
 reporting rates.
 
 #### Natural Mortality
@@ -1219,6 +1219,15 @@ estimated recruitment proportions across regions for population $p$, and
 $\alpha_{p,r}$ is the concentration parameter governing the spread of the
 Dirichlet distribution. Similarly, seasonal recruitment proportions
 $\chi_{p,\tau}$ can be constrained with Dirichlet priors when estimated.
+
+#### R0
+
+A lognormal prior can be placed on $R_0$ for any population:
+
+$$P\left(\ln R_{0,p}\right) = \frac{1}{\sigma_p^{(R_0)}\sqrt{2\pi}}\exp\left(-\frac{\left(\ln R_{0,p} - \ln \mu_p^{(R_0)}\right)^2}{2\left(\sigma_p^{(R_0)}\right)^2}\right)$$
+
+where $\mu_p^{(R_0)}$ is the prior mean on the natural scale and $\sigma_p^{(R_0)}$ is the
+standard deviation on the log scale.
 
 #### Stray Rates
 When stray rates are estimated ($n_p > 1$ and `use_fixed_stray_rate = 0`),

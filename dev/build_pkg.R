@@ -103,6 +103,7 @@ unloadNamespace("SPoRC")
 # usethis::use_test('3d_precision_matrix')
 # usethis::use_test('logistN_utils')
 # usethis::use_test('release_tag_attr')
+# usethis::use_test('external_osas')
 
 
 # Misc One-Time Setup -----------------------------------------------------

@@ -75,6 +75,8 @@ age-sharing for `ln_InitDevs`. Positions with the same value share a single esti
 parameter (e.g. `c(1:42, rep(42, 9))` shares the last 9 ages with age 42, giving 42 
 free parameters). Required when `equil_init_age_strc = 3`; `NULL` (default) uses 
 standard behaviour. |
+| use_r0_prior | Integer specifying whether a lognormal prior is placed on R0. 0: Don't use prior (default), 1: Use prior |
+| r0_prior | Data frame specifying lognormal prior parameters for R0. Must include columns: pop (population index), mu (prior mean on the natural scale), and sd (prior standard deviation on the log scale) |
 
 ## Data Inputs for Defining Biological Processes
 

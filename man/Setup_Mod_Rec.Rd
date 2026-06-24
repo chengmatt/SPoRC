@@ -57,6 +57,8 @@ Setup_Mod_Rec(
  },
   use_rinit = 0,
   init_age_devs_shared = NULL,
+  use_r0_prior = 0,
+  r0_prior = NULL,
   ...
 )
 }
@@ -326,6 +328,10 @@ share the last estimated deviation, e.g.
 \code{c(1:42, rep(42, 9))} for a 52-age model with 43 data ages, giving
 42 free parameters. When \code{NULL} (default), age sharing follows the
 standard behaviour determined by \code{equil_init_age_strc} alone.}
+
+\item{use_r0_prior}{Integer (0/1). Whether to apply a lognormal prior on R0 for any populations. Default 0.}
+
+\item{r0_prior}{Data frame with columns \code{pop} (population index), \code{mu} (prior mean on natural scale), and \code{sd} (prior SD on log scale). Required when \code{use_r0_prior = 1}.}
 
 \item{...}{Optional named starting values for parameters. Any of:
 \code{ln_global_R0} \code{[n_pop]},

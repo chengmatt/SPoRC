@@ -1419,6 +1419,8 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   \code{c(1:42, rep(42, 9))} for a 52-age model with 43 data ages, giving
 #'   42 free parameters. When \code{NULL} (default), age sharing follows the
 #'   standard behaviour determined by \code{equil_init_age_strc} alone.
+#' @param use_r0_prior Integer (0/1). Whether to apply a lognormal prior on R0 for any populations. Default 0.
+#' @param r0_prior Data frame with columns \code{pop} (population index), \code{mu} (prior mean on natural scale), and \code{sd} (prior SD on log scale). Required when \code{use_r0_prior = 1}.
 #'
 #' @return The input \code{input_list} with all recruitment-related fields
 #'   populated in \code{$data} and \code{$par}, and factor maps constructed
@@ -1478,6 +1480,8 @@ Setup_Mod_Rec <- function(input_list,
                           },
                           use_rinit = 0,
                           init_age_devs_shared = NULL,
+                          use_r0_prior = 0,
+                          r0_prior = NULL,
                           ...
                           ) {
 
@@ -1719,6 +1723,8 @@ Setup_Mod_Rec <- function(input_list,
   input_list$data$stray_rate_prior     <- stray_rate_prior
   input_list$data$use_rinit <- use_rinit
   input_list$data$init_age_devs_shared <- init_age_devs_shared
+  input_list$data$use_r0_prior <- use_r0_prior
+  input_list$data$r0_prior     <- r0_prior
 
   # Populate Parameter List -------------------------------------------------
 

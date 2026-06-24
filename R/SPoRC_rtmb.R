@@ -335,6 +335,30 @@ SPoRC_rtmb = function(pars, data) {
     } # end y loop
   } # end r loop
 
+  # Mean standardization for selectivity
+  for(r in 1:n_regions) {
+    for(f in 1:n_fish_fleets) {
+
+      # Mean Standardizing to help with interpretability (fishery total)
+      if(fish_selex_type == 0) if(cont_tv_fish_sel[r,f] %in% 3:5 || any(fish_sel_model[r,,f] == 5)) for(s in 1:n_sexes) {
+        tmp_mean = log(mean(fish_sel[1,r,,1,,s,f])) # indexing 1 for pop and season because those dims not estimated (depends on growth transition)
+        for(p in 1:n_pop) for(seas in 1:n_seas)
+          fish_sel[p,r,,seas,,s,f] = exp(log(fish_sel[p,r,,seas,,s,f]) - tmp_mean)
+      }
+      if(fish_selex_type == 1) if(cont_tv_fish_sel[r,f] %in% 3:5 || any(fish_sel_model[r,,f] == 5)) for(s in 1:n_sexes) fish_sel_l[r,,,s,f] = exp(log(fish_sel_l[r,,,s,f]) - log(mean(fish_sel_l[r,,,s,f]))) # length-based selectivity
+
+
+      # Mean Standardizing to help with interpretability (fishery retention)
+      if(ret_selex_type == 0) if(cont_tv_ret_sel[r,f] %in% 3:5 || any(ret_sel_model[r,,f] == 5)) for(s in 1:n_sexes) {
+        tmp_mean = log(mean(ret_sel[1,r,,1,,s,f])) # indexing 1 for pop and season because those dims not estimated (depends on growth transition)
+        for(p in 1:n_pop) for(seas in 1:n_seas)
+          ret_sel[p,r,,seas,,s,f] = exp(log(ret_sel[p,r,,seas,,s,f]) - tmp_mean)
+      }
+      if(ret_selex_type == 1) if(cont_tv_ret_sel[r,f] %in% 3:5 || any(ret_sel_model[r,,f] == 5)) for(s in 1:n_sexes) ret_sel_l[r,,,s,f] = exp(log(ret_sel_l[r,,,s,f]) - log(mean(ret_sel_l[r,,,s,f]))) # length-based selectivity
+
+    } # end f loop
+  } # end r loop
+
   ## Survey Selectivity ------------------------------------------------------
   for(r in 1:n_regions) {
     for(y in 1:(n_yrs + n_proj_yrs_devs)) {
@@ -389,6 +413,21 @@ SPoRC_rtmb = function(pars, data) {
     } # end y loop
   } # end r loop
 
+  # Mean standardization for survey selectivity
+  for(r in 1:n_regions) {
+    for(sf in 1:n_srv_fleets) {
+
+      # Mean Standardizing to help with interpretability (survey)
+      if(srv_selex_type == 0) if(cont_tv_srv_sel[r,sf] %in% 3:5 || any(srv_sel_model[r,,sf] == 5)) for(s in 1:n_sexes) {
+        tmp_mean = log(mean(srv_sel[1,r,,1,,s,sf])) # indexing 1 for pop and season because those dims not estimated (depends on growth transition)
+        for(p in 1:n_pop) for(seas in 1:n_seas)
+          srv_sel[p,r,,seas,,s,sf] = exp(log(srv_sel[p,r,,seas,,s,sf]) - tmp_mean)
+      }
+      if(srv_selex_type == 1) if(cont_tv_srv_sel[r,sf] %in% 3:5 || any(srv_sel_model[r,,sf] == 5)) for(s in 1:n_sexes) srv_sel_l[r,,,s,sf] = exp(log(srv_sel_l[r,,,s,sf]) - log(mean(srv_sel_l[r,,,s,sf])))
+
+    } # end sf
+  } # end r
+
   ## Mortality ---------------------------------------------------------------
   for(r in 1:n_regions) {
     for(y in 1:n_yrs) {
@@ -413,9 +452,10 @@ SPoRC_rtmb = function(pars, data) {
           for(p in 1:n_pop) {
             if(fish_selex_type == 1) for(s in 1:n_sexes) fish_sel[p,r,y,seas,,s,f] = fish_sel_l[r,y,,s,f] %*% SizeAgeTrans[p,r,y,seas,,,s]
             if(ret_selex_type == 1) for(s in 1:n_sexes) ret_sel[p,r,y,seas,,s,f] = ret_sel_l[r,y,,s,f] %*% SizeAgeTrans[p,r,y,seas,,,s]
-            tot_FAA[p,r,y,seas,,,f] = Fmort[r,y,seas,f] * fish_sel[p,r,y,seas,,,f] # Total fishing mortality at age
             ret_FAA[p,r,y,seas,,,f] = Fmort[r,y,seas,f] * fish_sel[p,r,y,seas,,,f] * ret_sel[p,r,y,seas,,,f] # Retained fishing mortality at age
             disc_FAA[p,r,y,seas,,,f] = Fmort[r,y,seas,f] * fish_sel[p,r,y,seas,,,f] * (1 - ret_sel[p,r,y,seas,,,f]) * dmr[r,y,seas,f] # Discarded fishing mortality at age
+            tot_FAA[p,r,y,seas,,,f] = ret_FAA[p,r,y,seas,,,f] +  disc_FAA[p,r,y,seas,,,f]# Total fishing mortality at age
+
           }
 
         } # f loop
@@ -836,7 +876,6 @@ SPoRC_rtmb = function(pars, data) {
               } # end s loop
             } # fitting lengths
 
-            # Get predicted survey index
             if(srv_idx_type[sf] == 0) PredSrvIdx[p,r,y,seas,sf] = srv_q[r,y,sf] * sum(SrvIAA[p,r,y,seas,,,sf]) # abundance
             if(srv_idx_type[sf] == 1) PredSrvIdx[p,r,y,seas,sf] = srv_q[r,y,sf] * sum(SrvIAA[p,r,y,seas,,,sf] * WAA_srv[p,r,y,seas,,,sf]) # biomass
 
@@ -1423,6 +1462,7 @@ SPoRC_rtmb = function(pars, data) {
 
         # Survey Age Compositions
         if(sum(UseSrvAgeComps[,y,seas,sf]) >= 1) {
+
           SrvAgeComps_nLL[,y,seas,,sf] = Get_Comp_Likelihoods(
 
             # Expected and Observed values
@@ -1774,14 +1814,6 @@ SPoRC_rtmb = function(pars, data) {
         )
       } # end if
 
-      # Mean Standardizing to help with interpretability
-      if(fish_selex_type == 0) if(cont_tv_fish_sel[r,f] %in% 3:5 || any(fish_sel_model[r,,f] == 5)) for(s in 1:n_sexes) {
-        tmp_mean = log(mean(fish_sel[1,r,,1,,s,f]))
-        for(p in 1:n_pop) for(seas in 1:n_seas)
-          fish_sel[p,r,,seas,,s,f] = exp(log(fish_sel[p,r,,seas,,s,f]) - tmp_mean)
-      }
-      if(fish_selex_type == 1) if(cont_tv_fish_sel[r,f] %in% 3:5 || any(fish_sel_model[r,,f] == 5)) for(s in 1:n_sexes) fish_sel_l[r,,,s,f] = exp(log(fish_sel_l[r,,,s,f]) - log(mean(fish_sel_l[r,,,s,f]))) # length-based selectivity
-
       # Retained Fishery Selectivity Deviations
       if(cont_tv_ret_sel[r,f] > 0) {
 
@@ -1798,14 +1830,6 @@ SPoRC_rtmb = function(pars, data) {
 
         )
       } # end if
-
-      # Mean Standardizing to help with interpretability
-      if(ret_selex_type == 0) if(cont_tv_ret_sel[r,f] %in% 3:5 || any(ret_sel_model[r,,f] == 5)) for(s in 1:n_sexes) {
-        tmp_mean = log(mean(ret_sel[1,r,,1,,s,f]))
-        for(p in 1:n_pop) for(seas in 1:n_seas)
-          ret_sel[p,r,,seas,,s,f] = exp(log(ret_sel[p,r,,seas,,s,f]) - tmp_mean)
-      }
-      if(ret_selex_type == 1) if(cont_tv_ret_sel[r,f] %in% 3:5 || any(ret_sel_model[r,,f] == 5)) for(s in 1:n_sexes) ret_sel_l[r,,,s,f] = exp(log(ret_sel_l[r,,,s,f]) - log(mean(ret_sel_l[r,,,s,f]))) # length-based selectivity
     } # end f loop
 
     # Survey Selectivity Deviations
@@ -1826,14 +1850,6 @@ SPoRC_rtmb = function(pars, data) {
 
         )
       } # end if
-
-      # Mean Standardizing to help with interpretability
-      if(srv_selex_type == 0) if(cont_tv_srv_sel[r,sf] %in% 3:5 || any(srv_sel_model[r,,sf] == 5)) for(s in 1:n_sexes) {
-        tmp_mean = log(mean(srv_sel[1,r,,1,,s,sf]))
-        for(p in 1:n_pop) for(seas in 1:n_seas)
-          srv_sel[p,r,,seas,,s,sf] = exp(log(srv_sel[p,r,,seas,,s,sf]) - tmp_mean)
-      }
-      if(srv_selex_type == 1) if(cont_tv_srv_sel[r,sf] %in% 3:5 || any(srv_sel_model[r,,sf] == 5)) for(s in 1:n_sexes) srv_sel_l[r,,,s,sf] = exp(log(srv_sel_l[r,,,s,sf]) - log(mean(srv_sel_l[r,,,s,sf])))
 
     } # end sf loop
   } # end r loop
@@ -1909,7 +1925,6 @@ SPoRC_rtmb = function(pars, data) {
 
     } # end r loop
   } # end p loop
-
 
   ### Fishery Catchability (Prior) -----------------------------------------------
   if(Use_fish_q_prior == 1) {
@@ -1988,7 +2003,7 @@ SPoRC_rtmb = function(pars, data) {
     } # end i loop
   }
 
-  ### Recruitment Proportions (Prior) -----------------------------------------
+  ### Recruitment R0 and Proportions (Prior) -----------------------------------------
   if(use_rec_region_prop_prior == 1) { # recruitment regional apportionment
     for(i in 1:nrow(rec_region_prop_prior)) {
       p = rec_region_prop_prior$pop[i] # population
@@ -1998,10 +2013,17 @@ SPoRC_rtmb = function(pars, data) {
   }
 
   if(use_rec_seas_prop_prior == 1 && use_fixed_rec_seas_prop == 0) { # recruitment seasonal apportionment
-    for(i in 1:nrow(rec_seas_prop_prior)) {
+    for(i in 1:nrow(rec_seas_prop_prior)) { # recruitment seasonal apportionment
       p = rec_seas_prop_prior$pop[i] # population
       alpha = rec_seas_prop_prior$alpha[[i]] # get concentration values
       rec_prop_nLL = -ddirichlet(x = rec_seas_prop[p,], alpha = alpha, log = TRUE) # dirichlet prior
+    }
+  }
+
+  if(use_r0_prior == 1) { # recruitment R0
+    for(i in 1:nrow(r0_prior)) {
+      p = r0_prior$pop[i] # population
+      rec_nLL = rec_nLL - RTMB::dnorm(ln_global_R0[p], log(r0_prior$mu[i]), r0_prior$sd[i], TRUE) # normal prior
     }
   }
 

@@ -1006,120 +1006,133 @@ SPoRC_rtmb = function(pars, data) {
 
 
   # Likelihood Equations -------------------------------------------------------------
-
   ## Fishery Likelihoods -----------------------------------------------------
-
   ### Retained Fishery Catches (Regional) ---------------------------------------------------------
-  for(y in 1:n_yrs) {
-    for(f in 1:n_fish_fleets) {
-      for(r in 1:n_regions) {
+  if(any(UseCatch == 1)) { # setup OSA
+    valid_idx = which(UseCatch == 1)
+    ObsCatch_map = arrayInd(valid_idx, dim(UseCatch))
+    ObsCatch = log(ObsCatch[valid_idx])
+    ObsCatch = RTMB::OBS(ObsCatch)
 
-        for(seas in 1:n_seas) {
-          if(UseCatch[r,y,seas,f] == 1) {
-            Catch_nLL[r,y,seas,f] = -1 * RTMB::dnorm(log(ObsCatch[r,y,seas,f]),
-                                                     log(sum(PredCatch[,r,y,seas,f])),
-                                                     exp(ln_sigmaC[r,y,seas,f]), TRUE)
-          } # if no 0s for fishery catches
+    # compute nLL
+    for(i in seq_along(ObsCatch)) {
+      r    = ObsCatch_map[i, 1]
+      y    = ObsCatch_map[i, 2]
+      seas = ObsCatch_map[i, 3]
+      f    = ObsCatch_map[i, 4]
 
-        } # end seas loop
-      } # end r loop
-    } # end f loop
-  } # end y loop
+      Catch_nLL[r,y,seas,f] = -1 * RTMB::dnorm(ObsCatch[i],
+                                               log(sum(PredCatch[,r,y,seas,f])),
+                                               exp(ln_sigmaC[r,y,seas,f]), TRUE)
+    }
+  }
 
-  ### Retained Fishery Catches (Population-Specific) ---------------------------------------------------------
-  for(p in 1:n_pop) {
-    for(y in 1:n_yrs) {
-      for(r in 1:n_regions) {
-        for(f in 1:n_fish_fleets) {
-          for(seas in 1:n_seas) {
+  ### Retained Fishery Catches (Population-Specific) -----------------------------------------------
+  if(any(UseCatch_pop == 1)) { # setup OSA
+    valid_idx_cp = which(UseCatch_pop == 1)
+    ObsCatch_pop_map = arrayInd(valid_idx_cp, dim(UseCatch_pop))
+    ObsCatch_pop = log(ObsCatch_pop[valid_idx_cp])
+    ObsCatch_pop = RTMB::OBS(ObsCatch_pop)
 
-            if(UseCatch_pop[p,r,y,seas,f] == 1) {
-              Catch_pop_nLL[p,r,y,seas,f] = -1 * RTMB::dnorm(log(ObsCatch_pop[p,r,y,seas,f]),
-                                                             log(PredCatch[p,r,y,seas,f]),
-                                                             exp(ln_sigmaC_pop[p,r,y,seas,f]), TRUE)
-            } # if we have fishery indices
+    # compute nLL
+    for(i in seq_along(ObsCatch_pop)) {
+      p    = ObsCatch_pop_map[i, 1]
+      r    = ObsCatch_pop_map[i, 2]
+      y    = ObsCatch_pop_map[i, 3]
+      seas = ObsCatch_pop_map[i, 4]
+      f    = ObsCatch_pop_map[i, 5]
 
-          } # end seas loop
-        } # end f loop
-      } # end r loop
-    } # end y loop
-  } # end p loop
-
-
-  ### Discarded Fishery Discards (Regional) ---------------------------------------------------------
-  for(y in 1:n_yrs) {
-    for(f in 1:n_fish_fleets) {
-      for(r in 1:n_regions) {
-
-        for(seas in 1:n_seas) {
-          if(UseDiscard[r,y,seas,f] == 1) {
-            Discard_nLL[r,y,seas,f] = -1 * RTMB::dnorm(log(ObsDiscard[r,y,seas,f]),
-                                                       log(sum(PredDiscard[,r,y,seas,f])),
-                                                       exp(ln_sigmaD[r,y,seas,f]), TRUE)
-          } # if no 0s for fishery Discards
-
-        } # end seas loop
-      } # end r loop
-    } # end f loop
-  } # end y loop
-
-  ### Discarded Fishery Discards (Population-Specific) ---------------------------------------------------------
-  for(p in 1:n_pop) {
-    for(y in 1:n_yrs) {
-      for(r in 1:n_regions) {
-        for(f in 1:n_fish_fleets) {
-          for(seas in 1:n_seas) {
-
-            if(UseDiscard_pop[p,r,y,seas,f] == 1) {
-              Discard_pop_nLL[p,r,y,seas,f] = -1 * RTMB::dnorm(log(ObsDiscard_pop[p,r,y,seas,f]),
-                                                               log(PredDiscard[p,r,y,seas,f]),
-                                                               exp(ln_sigmaD_pop[p,r,y,seas,f]), TRUE)
-            } # if we have fishery indices
-
-          } # end seas loop
-        } # end f loop
-      } # end r loop
-    } # end y loop
-  } # end p loop
+      Catch_pop_nLL[p,r,y,seas,f] = -1 * RTMB::dnorm(ObsCatch_pop[i],
+                                                     log(PredCatch[p,r,y,seas,f]),
+                                                     exp(ln_sigmaC_pop[p,r,y,seas,f]), TRUE)
+    }
+  }
 
 
+  ### Discarded Fishery Discards (Regional) --------------------------------------------------------
+  if(any(UseDiscard == 1)) { # setup OSA
+    valid_idx_dr = which(UseDiscard == 1)
+    ObsDiscard_map = arrayInd(valid_idx_dr, dim(UseDiscard))
+    ObsDiscard = log(ObsDiscard[valid_idx_dr])
+    ObsDiscard = RTMB::OBS(ObsDiscard)
 
-  ### Retained Fishery Indices (Regional) ---------------------------------------------------------
-  for(y in 1:n_yrs) {
-    for(r in 1:n_regions) {
-      for(f in 1:n_fish_fleets) {
-        for(seas in 1:n_seas) {
+    # compute nLL
+    for(i in seq_along(ObsDiscard)) {
+      r    = ObsDiscard_map[i, 1]
+      y    = ObsDiscard_map[i, 2]
+      seas = ObsDiscard_map[i, 3]
+      f    = ObsDiscard_map[i, 4]
 
-          if(UseFishIdx[r,y,seas,f] == 1) {
-            FishIdx_nLL[r,y,seas,f] = -1 * RTMB::dnorm(log(ObsFishIdx[r,y,seas,f] + addtofishidx),
-                                                       log(sum(PredFishIdx[,r,y,seas,f] + addtofishidx)),
-                                                       ObsFishIdx_SE[r,y,seas,f], TRUE)
-          } # if we have fishery indices
+      Discard_nLL[r,y,seas,f] = -1 * RTMB::dnorm(ObsDiscard[i],
+                                                 log(sum(PredDiscard[,r,y,seas,f])),
+                                                 exp(ln_sigmaD[r,y,seas,f]), TRUE)
+    }
+  }
 
-        } # end seas loop
-      } # end f loop
-    } # end r loop
-  } # end y loop
 
-  ### Retained Fishery Indices (Population-Specific) ---------------------------------------------------------
-  for(p in 1:n_pop) {
-    for(y in 1:n_yrs) {
-      for(r in 1:n_regions) {
-        for(f in 1:n_fish_fleets) {
-          for(seas in 1:n_seas) {
+  ### Discarded Fishery Discards (Population-Specific) ----------------------------------------------
+  if(any(UseDiscard_pop == 1)) { # setup OSA
+    valid_idx_dp = which(UseDiscard_pop == 1)
+    ObsDiscard_pop_map = arrayInd(valid_idx_dp, dim(UseDiscard_pop))
+    ObsDiscard_pop = log(ObsDiscard_pop[valid_idx_dp])
+    ObsDiscard_pop = RTMB::OBS(ObsDiscard_pop)
 
-            if(UseFishIdx_pop[p,r,y,seas,f] == 1) {
-              FishIdx_pop_nLL[p,r,y,seas,f] = -1 * RTMB::dnorm(log(ObsFishIdx_pop[p,r,y,seas,f] + addtofishidx),
-                                                               log(PredFishIdx[p,r,y,seas,f] + addtofishidx),
-                                                               ObsFishIdx_pop_SE[p,r,y,seas,f], TRUE)
-            } # if we have fishery indices
+    # compute nLL
+    for(i in seq_along(ObsDiscard_pop)) {
+      p    = ObsDiscard_pop_map[i, 1]
+      r    = ObsDiscard_pop_map[i, 2]
+      y    = ObsDiscard_pop_map[i, 3]
+      seas = ObsDiscard_pop_map[i, 4]
+      f    = ObsDiscard_pop_map[i, 5]
 
-          } # end seas loop
-        } # end f loop
-      } # end r loop
-    } # end y loop
-  } # end p loop
+      Discard_pop_nLL[p,r,y,seas,f] = -1 * RTMB::dnorm(ObsDiscard_pop[i],
+                                                       log(PredDiscard[p,r,y,seas,f]),
+                                                       exp(ln_sigmaD_pop[p,r,y,seas,f]), TRUE)
+    }
+  }
 
+
+  ### Retained Fishery Indices (Regional) -----------------------------------------------------------
+  if(any(UseFishIdx == 1)) { # setup OSA
+    valid_idx_ir = which(UseFishIdx == 1)
+    ObsFishIdx_map = arrayInd(valid_idx_ir, dim(UseFishIdx))
+    ObsFishIdx = log(ObsFishIdx[valid_idx_ir] + addtofishidx)
+    ObsFishIdx = RTMB::OBS(ObsFishIdx)
+
+    # compute nLL
+    for(i in seq_along(ObsFishIdx)) {
+      r    = ObsFishIdx_map[i, 1]
+      y    = ObsFishIdx_map[i, 2]
+      seas = ObsFishIdx_map[i, 3]
+      f    = ObsFishIdx_map[i, 4]
+
+      FishIdx_nLL[r,y,seas,f] = -1 * RTMB::dnorm(ObsFishIdx[i],
+                                                 log(sum(PredFishIdx[,r,y,seas,f] + addtofishidx)),
+                                                 ObsFishIdx_SE[r,y,seas,f], TRUE)
+    }
+  }
+
+
+  ### Retained Fishery Indices (Population-Specific) ------------------------------------------------
+  if(any(UseFishIdx_pop == 1)) { # setup OSA
+    valid_idx_ip = which(UseFishIdx_pop == 1)
+    ObsFishIdx_pop_map = arrayInd(valid_idx_ip, dim(UseFishIdx_pop))
+    ObsFishIdx_pop = log(ObsFishIdx_pop[valid_idx_ip] + addtofishidx)
+    ObsFishIdx_pop = RTMB::OBS(ObsFishIdx_pop)
+
+    # compute nLL
+    for(i in seq_along(ObsFishIdx_pop)) {
+      p    = ObsFishIdx_pop_map[i, 1]
+      r    = ObsFishIdx_pop_map[i, 2]
+      y    = ObsFishIdx_pop_map[i, 3]
+      seas = ObsFishIdx_pop_map[i, 4]
+      f    = ObsFishIdx_pop_map[i, 5]
+
+      FishIdx_pop_nLL[p,r,y,seas,f] = -1 * RTMB::dnorm(ObsFishIdx_pop[i],
+                                                       log(PredFishIdx[p,r,y,seas,f] + addtofishidx),
+                                                       ObsFishIdx_pop_SE[p,r,y,seas,f], TRUE)
+    }
+  }
 
   ### Retained Fishery Compositions (Region-Specific) ------------------------------------------------
   for(y in 1:n_yrs) {
@@ -1419,41 +1432,45 @@ SPoRC_rtmb = function(pars, data) {
 
   ## Survey Likelihoods ------------------------------------------------------
   ### Survey Indices (Regional) ---------------------------------------------------------
-  for(y in 1:n_yrs) {
-    for(r in 1:n_regions) {
-      for(sf in 1:n_srv_fleets) {
-        for(seas in 1:n_seas) {
+  if(any(UseSrvIdx == 1)) { # setup OSA
+    valid_idx_sr = which(UseSrvIdx == 1)
+    ObsSrvIdx_map = arrayInd(valid_idx_sr, dim(UseSrvIdx))
+    ObsSrvIdx = log(ObsSrvIdx[valid_idx_sr] + addtosrvidx)
+    ObsSrvIdx = RTMB::OBS(ObsSrvIdx)
 
-          if(UseSrvIdx[r,y,seas,sf] == 1) {
-            SrvIdx_nLL[r,y,seas,sf] = -1 * RTMB::dnorm(log(ObsSrvIdx[r,y,seas,sf] + addtosrvidx),
-                                                       log(sum(PredSrvIdx[,r,y,seas,sf] + addtosrvidx)),
-                                                       ObsSrvIdx_SE[r,y,seas,sf], TRUE)
-          } # if we have survey indices
+    # compute nLL
+    for(i in seq_along(ObsSrvIdx)) {
+      r    = ObsSrvIdx_map[i, 1]
+      y    = ObsSrvIdx_map[i, 2]
+      seas = ObsSrvIdx_map[i, 3]
+      sf   = ObsSrvIdx_map[i, 4]
 
-        } # end seas loop
-      } # end sf loop
-    } # end r loop
-  } # end y loop
+      SrvIdx_nLL[r,y,seas,sf] = -1 * RTMB::dnorm(ObsSrvIdx[i],
+                                                 log(sum(PredSrvIdx[,r,y,seas,sf] + addtosrvidx)),
+                                                 ObsSrvIdx_SE[r,y,seas,sf], TRUE)
+    }
+  }
 
   ### Survey Indices (Population-Specific) ---------------------------------------------------------
-  for(p in 1:n_pop) {
-    for(y in 1:n_yrs) {
-      for(r in 1:n_regions) {
-        for(sf in 1:n_srv_fleets) {
-          for(seas in 1:n_seas) {
+  if(any(UseSrvIdx_pop == 1)) { # setup OSA
+    valid_idx_sp = which(UseSrvIdx_pop == 1)
+    ObsSrvIdx_pop_map = arrayInd(valid_idx_sp, dim(UseSrvIdx_pop))
+    ObsSrvIdx_pop = log(ObsSrvIdx_pop[valid_idx_sp] + addtosrvidx)
+    ObsSrvIdx_pop = RTMB::OBS(ObsSrvIdx_pop)
 
-            if(UseSrvIdx_pop[p,r,y,seas,sf] == 1) {
-              SrvIdx_pop_nLL[p,r,y,seas,sf] = -1 * RTMB::dnorm(log(ObsSrvIdx_pop[p,r,y,seas,sf] + addtosrvidx),
-                                                               log(PredSrvIdx[p,r,y,seas,sf] + addtosrvidx),
-                                                               ObsSrvIdx_pop_SE[p,r,y,seas,sf], TRUE)
-            } # if we have survey indices
+    # compute nLL
+    for(i in seq_along(ObsSrvIdx_pop)) {
+      p    = ObsSrvIdx_pop_map[i, 1]
+      r    = ObsSrvIdx_pop_map[i, 2]
+      y    = ObsSrvIdx_pop_map[i, 3]
+      sf   = ObsSrvIdx_pop_map[i, 4]
+      seas = ObsSrvIdx_pop_map[i, 5]
 
-          } # end seas loop
-        } # end f loop
-      } # end r loop
-    } # end y loop
-  } # end p loop
-
+      SrvIdx_pop_nLL[p,r,y,seas,sf] = -1 * RTMB::dnorm(ObsSrvIdx_pop[i],
+                                                       log(PredSrvIdx[p,r,y,seas,sf] + addtosrvidx),
+                                                       ObsSrvIdx_pop_SE[p,r,y,seas,sf], TRUE)
+    }
+  }
 
   ### Survey Compositions (Region-Specific) ---------------------------------------------------------
   for(y in 1:n_yrs) {

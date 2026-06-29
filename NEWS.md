@@ -16,6 +16,7 @@
 - Coded in an argument in `do_retrospective` to return retrospective RTMB model objects (`return_models`).
 - Added 95% confidence intervals for SDNR based on a Chi squared test for OSA residuals.
 - Force non-parametric selectivity to be mean-standardized.
+- Added OSA residuals and `oneStepPredict` functionality to time-series observations (indices and catch).
 
 ## Improvements
 - Allowed both numeric and character codes for specifying dynamics in simulator, so as to be more consistent with how estimation models are specified, while maintaining backwards compatibility. 

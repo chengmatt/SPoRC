@@ -898,16 +898,15 @@ SPoRC_rtmb = function(pars, data) {
       } # end r loop
     } # end f loop
 
-    for(rseas in 1:n_seas) {
-      for(tc in 1:n_conv_tag_cohorts) {
+    for(tc in 1:n_conv_tag_cohorts) {
 
-        tr = conv_tag_release_indicator[tc,1] # extract tag release region
-        ty = conv_tag_release_indicator[tc,2] # extract tag release year
-        tseas = conv_tag_release_indicator[tc,3] # extract tag release season
+      tr = conv_tag_release_indicator[tc,1] # extract tag release region
+      ty = conv_tag_release_indicator[tc,2] # extract tag release year
+      tseas = conv_tag_release_indicator[tc,3] # extract tag release season
 
-        for(ry in 1:min(conv_tag_max_liberty, n_yrs - ty + 1)) {
-
-          y = ty + ry - 1 # Get index for actual year in the model (instead of tag year)
+      for(ry in 1:min(conv_tag_max_liberty, n_yrs - ty + 1)) {   # years
+        y = ty + ry - 1 # get real year
+        for(rseas in 1:n_seas) { # seasons
 
           # get fishing mortality
           tmp_FAA = array(0, dim = c(n_pop, n_regions, 1, n_ages, n_sexes, n_fish_fleets))
@@ -998,17 +997,19 @@ SPoRC_rtmb = function(pars, data) {
           } # end f loop
 
 
-        } # end ry loop
-      } # end tc loop
-    } # end rseas loop
+        }
+      }
+    }
 
   } # end if for using tagging data
+
 
 
   # Likelihood Equations -------------------------------------------------------------
   ## Fishery Likelihoods -----------------------------------------------------
   ### Retained Fishery Catches (Regional) ---------------------------------------------------------
   if(any(UseCatch == 1)) { # setup OSA
+
     valid_idx = which(UseCatch == 1)
     ObsCatch_map = arrayInd(valid_idx, dim(UseCatch))
     ObsCatch = log(ObsCatch[valid_idx])
@@ -1029,6 +1030,7 @@ SPoRC_rtmb = function(pars, data) {
 
   ### Retained Fishery Catches (Population-Specific) -----------------------------------------------
   if(any(UseCatch_pop == 1)) { # setup OSA
+
     valid_idx_cp = which(UseCatch_pop == 1)
     ObsCatch_pop_map = arrayInd(valid_idx_cp, dim(UseCatch_pop))
     ObsCatch_pop = log(ObsCatch_pop[valid_idx_cp])
@@ -1051,6 +1053,7 @@ SPoRC_rtmb = function(pars, data) {
 
   ### Discarded Fishery Discards (Regional) --------------------------------------------------------
   if(any(UseDiscard == 1)) { # setup OSA
+
     valid_idx_dr = which(UseDiscard == 1)
     ObsDiscard_map = arrayInd(valid_idx_dr, dim(UseDiscard))
     ObsDiscard = log(ObsDiscard[valid_idx_dr])
@@ -1072,6 +1075,7 @@ SPoRC_rtmb = function(pars, data) {
 
   ### Discarded Fishery Discards (Population-Specific) ----------------------------------------------
   if(any(UseDiscard_pop == 1)) { # setup OSA
+
     valid_idx_dp = which(UseDiscard_pop == 1)
     ObsDiscard_pop_map = arrayInd(valid_idx_dp, dim(UseDiscard_pop))
     ObsDiscard_pop = log(ObsDiscard_pop[valid_idx_dp])
@@ -1094,6 +1098,7 @@ SPoRC_rtmb = function(pars, data) {
 
   ### Retained Fishery Indices (Regional) -----------------------------------------------------------
   if(any(UseFishIdx == 1)) { # setup OSA
+
     valid_idx_ir = which(UseFishIdx == 1)
     ObsFishIdx_map = arrayInd(valid_idx_ir, dim(UseFishIdx))
     ObsFishIdx = log(ObsFishIdx[valid_idx_ir] + addtofishidx)
@@ -1115,6 +1120,7 @@ SPoRC_rtmb = function(pars, data) {
 
   ### Retained Fishery Indices (Population-Specific) ------------------------------------------------
   if(any(UseFishIdx_pop == 1)) { # setup OSA
+
     valid_idx_ip = which(UseFishIdx_pop == 1)
     ObsFishIdx_pop_map = arrayInd(valid_idx_ip, dim(UseFishIdx_pop))
     ObsFishIdx_pop = log(ObsFishIdx_pop[valid_idx_ip] + addtofishidx)
@@ -1135,300 +1141,563 @@ SPoRC_rtmb = function(pars, data) {
   }
 
   ### Retained Fishery Compositions (Region-Specific) ------------------------------------------------
-  for(y in 1:n_yrs) {
-    for(f in 1:n_fish_fleets) {
+  if(do_internal_comp_osa == FALSE) {
 
-      for(seas in 1:n_seas) {
-        # Fishery Age Compositions
-        if(sum(UseFishAgeComps[,y,seas,f]) >= 1) {
-          FishAgeComps_nLL[,y,seas,,f] = Get_Comp_Likelihoods(
+    for(y in 1:n_yrs) {
+      for(f in 1:n_fish_fleets) {
 
-            # Expected and Observed values
-            Exp = apply(CAA[,,y,seas,,,f, drop = FALSE], 2:7, sum),
-            Obs = ObsFishAgeComps[,y,seas,,,f],
+        for(seas in 1:n_seas) {
+          # Fishery Age Compositions
+          if(sum(UseFishAgeComps[,y,seas,f]) >= 1) {
+            FishAgeComps_nLL[,y,seas,,f] = Get_Comp_Likelihoods(
+              Exp = apply(CAA[,,y,seas,,,f, drop = FALSE], 2:7, sum),
+              Obs = ObsFishAgeComps[,y,seas,,,f], ISS = ISS_FishAgeComps[,y,seas,,f], Wt_Mltnml = Wt_FishAgeComps[,y,seas,,f],
+              Comp_Type = FishAgeComps_Type[y,f], Likelihood_Type = FishAgeComps_LikeType[f], ln_theta = ln_FishAge_theta[,,f],
+              ln_theta_agg = ln_FishAge_theta_agg[f], LN_corr_pars = FishAge_corr_pars[,,f,], LN_corr_pars_agg = FishAge_corr_pars_agg[f],
+              n_regions = n_regions, n_sexes = n_sexes, age_or_len = 0, AgeingError = AgeingError[y,,], use = UseFishAgeComps[,y,seas,f],
+              n_model_bins = n_ages, n_obs_bins = dim(ObsFishAgeComps)[4], addtocomp = addtocomp
+            )
+          } # if we have fishery age comps
 
-            # Input sample size and multinomial weight
-            ISS = ISS_FishAgeComps[,y,seas,,f],
-            Wt_Mltnml = Wt_FishAgeComps[,y,seas,,f],
-            # Composition and Likelihood Type
-            Comp_Type = FishAgeComps_Type[y,f],
-            Likelihood_Type = FishAgeComps_LikeType[f],
+          # Fishery Length Compositions
+          if(sum(UseFishLenComps[,y,seas,f]) >= 1 && fit_lengths == 1) {
+            FishLenComps_nLL[,y,seas,,f] = Get_Comp_Likelihoods(
+              Exp = apply(CAL[,,y,seas,,,f, drop = FALSE], 2:7, sum), Obs = ObsFishLenComps[,y,seas,,,f],
+              ISS = ISS_FishLenComps[,y,seas,,f], Wt_Mltnml = Wt_FishLenComps[,y,seas,,f], Comp_Type = FishLenComps_Type[y,f],
+              Likelihood_Type = FishLenComps_LikeType[f], ln_theta = ln_FishLen_theta[,,f], ln_theta_agg = ln_FishLen_theta_agg[f],
+              LN_corr_pars = FishLen_corr_pars[,,f,], LN_corr_pars_agg = FishLen_corr_pars_agg[f],
+              n_regions = n_regions, n_sexes = n_sexes, age_or_len = 1, AgeingError = NA,
+              use = UseFishLenComps[,y,seas,f], n_model_bins = n_lens, n_obs_bins = dim(ObsFishLenComps)[4], addtocomp = addtocomp
+            )
+          } # if we have fishery length comps
+        } # end seas loop
 
-            # overdispersion pars, Number of sexes, regions, age or length comps, and ageing error
-            ln_theta = ln_FishAge_theta[,,f],
-            ln_theta_agg = ln_FishAge_theta_agg[f],
-            LN_corr_pars = FishAge_corr_pars[,,f,],
-            LN_corr_pars_agg = FishAge_corr_pars_agg[f],
-            n_regions = n_regions, n_sexes = n_sexes, age_or_len = 0,
-            AgeingError = AgeingError[y,,],
-            use = UseFishAgeComps[,y,seas,f],
-            n_model_bins = n_ages,
-            n_obs_bins = dim(ObsFishAgeComps)[4],
-            addtocomp = addtocomp
-          )
+      } # end f loop
+    } # end y loop
 
-        } # if we have fishery age comps
+  } else {
 
-        # Fishery Length Compositions
-        if(sum(UseFishLenComps[,y,seas,f]) >= 1 && fit_lengths == 1) {
-          FishLenComps_nLL[,y,seas,,f] = Get_Comp_Likelihoods(
+    # Using OSA Compositions
+    # Fishery Age Compositions
+    if(any(UseFishAgeComps == 1)) {
 
-            # Expected and Observed values
-            Exp = apply(CAL[,,y,seas,,,f, drop = FALSE], 2:7, sum),
-            Obs = ObsFishLenComps[,y,seas,,,f],
+      # Discrete Likelihoods
+      ObsFishAgeComps_osa_discrete = NULL
+      ObsFishAgeComps_osa_discrete = pack_comp_osa(
+        ObsArr = ObsFishAgeComps, ISSArr = ISS_FishAgeComps, WtArr = Wt_FishAgeComps,
+        UseArr = UseFishAgeComps, TypeMat = FishAgeComps_Type, LikeTypeVec = FishAgeComps_LikeType,
+        n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+        addtocomp = addtocomp, family = "discrete"
+      )
 
-            # Input sample size and multinomial weight
-            ISS = ISS_FishLenComps[,y,seas,,f],
-            Wt_Mltnml = Wt_FishLenComps[,y,seas,,f],
+      if(!is.null(ObsFishAgeComps_osa_discrete)) {
+        ObsFishAgeComps_osa_discrete = RTMB::OBS(ObsFishAgeComps_osa_discrete)
+        FishAgeComps_nLL = eval_comp_osa(
+          nLL_arr = FishAgeComps_nLL, tracked = ObsFishAgeComps_osa_discrete,
+          ExpArrFn = function(p, y, seas, f) apply(CAA[,,y,seas,,,f, drop=FALSE], 2:7, sum),
+          UseArr = UseFishAgeComps, TypeMat = FishAgeComps_Type, LikeTypeVec = FishAgeComps_LikeType,
+          ISSArr = ISS_FishAgeComps, lnThetaArr = ln_FishAge_theta, lnThetaAggVec = ln_FishAge_theta_agg,
+          LNcorrArr = FishAge_corr_pars, LNcorrAggVec = FishAge_corr_pars_agg,
+          n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+          n_model_bins = n_ages, n_obs_bins = dim(ObsFishAgeComps)[4], age_or_len = 0,
+          AgeingErrorFn = function(y) AgeingError[y,,], addtocomp = addtocomp,
+          family = "discrete", zero_init = TRUE
+        )
+      }
 
-            # Composition and Likelihood Type
-            Comp_Type = FishLenComps_Type[y,f],
-            Likelihood_Type = FishLenComps_LikeType[f],
+      # Continuous
+      ObsFishAgeComps_osa_continuous = pack_comp_osa(
+        ObsArr = ObsFishAgeComps, ISSArr = ISS_FishAgeComps, WtArr = Wt_FishAgeComps,
+        UseArr = UseFishAgeComps, TypeMat = FishAgeComps_Type, LikeTypeVec = FishAgeComps_LikeType,
+        n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+        addtocomp = addtocomp, family = "continuous"
+      )
 
-            # overdispersion, Number of sexes, regions age or length comps, and ageing error
-            ln_theta = ln_FishLen_theta[,,f],
-            ln_theta_agg = ln_FishLen_theta_agg[f],
-            LN_corr_pars = FishLen_corr_pars[,,f,],
-            LN_corr_pars_agg = FishLen_corr_pars_agg[f],
-            n_regions = n_regions, n_sexes = n_sexes,
-            age_or_len = 1,
-            AgeingError = NA,
-            use = UseFishLenComps[,y,seas,f],
-            n_model_bins = n_lens,
-            n_obs_bins = dim(ObsFishLenComps)[4],
-            addtocomp = addtocomp
-          )
+      if(!is.null(ObsFishAgeComps_osa_continuous)) {
+        ObsFishAgeComps_osa_continuous = RTMB::OBS(ObsFishAgeComps_osa_continuous)
+        FishAgeComps_nLL = eval_comp_osa(
+          nLL_arr = FishAgeComps_nLL, tracked = ObsFishAgeComps_osa_continuous,
+          ExpArrFn = function(p, y, seas, f) apply(CAA[,,y,seas,,,f, drop=FALSE], 2:7, sum),
+          UseArr = UseFishAgeComps, TypeMat = FishAgeComps_Type, LikeTypeVec = FishAgeComps_LikeType,
+          ISSArr = ISS_FishAgeComps, lnThetaArr = ln_FishAge_theta, lnThetaAggVec = ln_FishAge_theta_agg,
+          LNcorrArr = FishAge_corr_pars, LNcorrAggVec = FishAge_corr_pars_agg,
+          n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+          n_model_bins = n_ages, n_obs_bins = dim(ObsFishAgeComps)[4], age_or_len = 0,
+          AgeingErrorFn = function(y) AgeingError[y,,], addtocomp = addtocomp,
+          family = "continuous", zero_init = is.null(ObsFishAgeComps_osa_discrete)
+        )
+      }
+    }
 
-        } # if we have fishery length comps
-      } # end seas loop
 
-    } # end f loop
-  } # end y loop
+    # Fishery Length Compositions
+    if(fit_lengths == 1 && any(UseFishLenComps == 1)) {
+
+      # Discrete
+      ObsFishLenComps_osa_discrete = NULL
+      ObsFishLenComps_osa_discrete = pack_comp_osa(
+        ObsArr = ObsFishLenComps, ISSArr = ISS_FishLenComps, WtArr = Wt_FishLenComps,
+        UseArr = UseFishLenComps, TypeMat = FishLenComps_Type, LikeTypeVec = FishLenComps_LikeType,
+        n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+        addtocomp = addtocomp, family = "discrete"
+      )
+      if(!is.null(ObsFishLenComps_osa_discrete)) {
+        ObsFishLenComps_osa_discrete = RTMB::OBS(ObsFishLenComps_osa_discrete)
+        FishLenComps_nLL = eval_comp_osa(
+          nLL_arr = FishLenComps_nLL, tracked = ObsFishLenComps_osa_discrete,
+          ExpArrFn = function(p, y, seas, f) apply(CAL[,,y,seas,,,f, drop=FALSE], 2:7, sum),
+          UseArr = UseFishLenComps, TypeMat = FishLenComps_Type, LikeTypeVec = FishLenComps_LikeType,
+          ISSArr = ISS_FishLenComps, lnThetaArr = ln_FishLen_theta, lnThetaAggVec = ln_FishLen_theta_agg,
+          LNcorrArr = FishLen_corr_pars, LNcorrAggVec = FishLen_corr_pars_agg,
+          n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+          n_model_bins = n_lens, n_obs_bins = dim(ObsFishLenComps)[4], age_or_len = 1,
+          AgeingErrorFn = NULL, addtocomp = addtocomp,
+          family = "discrete", zero_init = TRUE
+        )
+      }
+
+      # Continuous
+      ObsFishLenComps_osa_continuous = pack_comp_osa(
+        ObsArr = ObsFishLenComps, ISSArr = ISS_FishLenComps, WtArr = Wt_FishLenComps,
+        UseArr = UseFishLenComps, TypeMat = FishLenComps_Type, LikeTypeVec = FishLenComps_LikeType,
+        n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+        addtocomp = addtocomp, family = "continuous"
+      )
+
+      if(!is.null(ObsFishLenComps_osa_continuous)) {
+        ObsFishLenComps_osa_continuous = RTMB::OBS(ObsFishLenComps_osa_continuous)
+        FishLenComps_nLL = eval_comp_osa(
+          nLL_arr = FishLenComps_nLL, tracked = ObsFishLenComps_osa_continuous,
+          ExpArrFn = function(p, y, seas, f) apply(CAL[,,y,seas,,,f, drop=FALSE], 2:7, sum),
+          UseArr = UseFishLenComps, TypeMat = FishLenComps_Type, LikeTypeVec = FishLenComps_LikeType,
+          ISSArr = ISS_FishLenComps, lnThetaArr = ln_FishLen_theta, lnThetaAggVec = ln_FishLen_theta_agg,
+          LNcorrArr = FishLen_corr_pars, LNcorrAggVec = FishLen_corr_pars_agg,
+          n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+          n_model_bins = n_lens, n_obs_bins = dim(ObsFishLenComps)[4], age_or_len = 1,
+          AgeingErrorFn = NULL, addtocomp = addtocomp,
+          family = "continuous", zero_init = is.null(ObsFishLenComps_osa_discrete)
+        )
+      }
+    }
+
+  }
 
 
   ### Retained Fishery Compositions (Population-Specific) ------------------------------------------------
-  for(p in 1:n_pop) {
-    for(y in 1:n_yrs) {
-      for(f in 1:n_fish_fleets) {
+  if(do_internal_comp_osa == FALSE) {
 
-        for(seas in 1:n_seas) {
-          # Fishery Age Compositions
-          if(sum(UseFishAgeComps_pop[p,,y,seas,f]) >= 1) {
-            FishAgeComps_pop_nLL[p,,y,seas,,f] = Get_Comp_Likelihoods(
+    # Fishery Age Compositions
+    for(p in 1:n_pop) {
+      for(y in 1:n_yrs) {
+        for(f in 1:n_fish_fleets) {
+          for(seas in 1:n_seas) {
+            if(sum(UseFishAgeComps_pop[p,,y,seas,f]) >= 1) {
+              FishAgeComps_pop_nLL[p,,y,seas,,f] = Get_Comp_Likelihoods(
+                Exp = CAA[p,,y,seas,,,f], Obs = ObsFishAgeComps_pop[p,,y,seas,,,f], ISS = ISS_FishAgeComps_pop[p,,y,seas,,f],
+                Wt_Mltnml = Wt_FishAgeComps_pop[p,,y,seas,,f], Comp_Type = FishAgeComps_pop_Type[y,f],
+                Likelihood_Type = FishAgeComps_pop_LikeType[f], ln_theta = ln_FishAge_pop_theta[p,,,f],
+                ln_theta_agg = ln_FishAge_pop_theta_agg[p,f], LN_corr_pars = FishAge_pop_corr_pars[p,,,f,],
+                LN_corr_pars_agg = FishAge_pop_corr_pars_agg[p,f], n_regions = n_regions, n_sexes = n_sexes,
+                age_or_len = 0, AgeingError = AgeingError[y,,], use = UseFishAgeComps_pop[p,,y,seas,f],
+                n_model_bins = n_ages, n_obs_bins = dim(ObsFishAgeComps_pop)[5], addtocomp = addtocomp
+              )
+            }
 
-              # Expected and Observed values
-              Exp = CAA[p,,y,seas,,,f],
-              Obs = ObsFishAgeComps_pop[p,,y,seas,,,f],
+            # Fishery Length Compositions
+            if(sum(UseFishLenComps_pop[p,,y,seas,f]) >= 1 && fit_lengths == 1) {
+              FishLenComps_pop_nLL[p,,y,seas,,f] = Get_Comp_Likelihoods(
+                Exp = CAL[p,,y,seas,,,f], Obs = ObsFishLenComps_pop[p,,y,seas,,,f], ISS = ISS_FishLenComps_pop[p,,y,seas,,f],
+                Wt_Mltnml = Wt_FishLenComps_pop[p,,y,seas,,f], Comp_Type = FishLenComps_pop_Type[y,f],
+                Likelihood_Type = FishLenComps_pop_LikeType[f], ln_theta = ln_FishLen_pop_theta[p,,,f],
+                ln_theta_agg = ln_FishLen_pop_theta_agg[p,f], LN_corr_pars = FishLen_pop_corr_pars[p,,,f,],
+                LN_corr_pars_agg = FishLen_pop_corr_pars_agg[p,f], n_regions = n_regions,
+                n_sexes = n_sexes, age_or_len = 1, AgeingError = NA, use = UseFishLenComps_pop[p,,y,seas,f],
+                n_model_bins = n_lens, n_obs_bins = dim(ObsFishLenComps_pop)[5], addtocomp = addtocomp
+              )
+            }
+          }
+        }
+      }
+    }
+  } else {
 
-              # Input sample size and multinomial weight
-              ISS = ISS_FishAgeComps_pop[p,,y,seas,,f],
-              Wt_Mltnml = Wt_FishAgeComps_pop[p,,y,seas,,f],
+    # Using OSA Compositions
+    # Fishery Age Compositions
+    if(any(UseFishAgeComps_pop == 1)) {
 
-              # Composition and Likelihood Type
-              Comp_Type = FishAgeComps_pop_Type[y,f],
-              Likelihood_Type = FishAgeComps_pop_LikeType[f],
+      # Discrete
+      ObsFishAgeComps_pop_osa_discrete = NULL
+      ObsFishAgeComps_pop_osa_discrete = pack_comp_osa(
+        ObsArr = ObsFishAgeComps_pop, ISSArr = ISS_FishAgeComps_pop, WtArr = Wt_FishAgeComps_pop,
+        UseArr = UseFishAgeComps_pop, TypeMat = FishAgeComps_pop_Type, LikeTypeVec = FishAgeComps_pop_LikeType,
+        n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+        addtocomp = addtocomp, family = "discrete", pop = TRUE, n_pop = n_pop
+      )
+      if(!is.null(ObsFishAgeComps_pop_osa_discrete)) {
+        ObsFishAgeComps_pop_osa_discrete = RTMB::OBS(ObsFishAgeComps_pop_osa_discrete)
+        FishAgeComps_pop_nLL = eval_comp_osa(
+          nLL_arr = FishAgeComps_pop_nLL, tracked = ObsFishAgeComps_pop_osa_discrete,
+          ExpArrFn = function(p, y, seas, f) { e = CAA[p,,y,seas,,,f, drop=FALSE]; dim(e) = c(n_regions, n_ages, n_sexes); e },
+          UseArr = UseFishAgeComps_pop, TypeMat = FishAgeComps_pop_Type, LikeTypeVec = FishAgeComps_pop_LikeType,
+          ISSArr = ISS_FishAgeComps_pop, lnThetaArr = ln_FishAge_pop_theta, lnThetaAggVec = ln_FishAge_pop_theta_agg,
+          LNcorrArr = FishAge_pop_corr_pars, LNcorrAggVec = FishAge_pop_corr_pars_agg,
+          n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+          n_model_bins = n_ages, n_obs_bins = dim(ObsFishAgeComps_pop)[5], age_or_len = 0,
+          AgeingErrorFn = function(y) AgeingError[y,,], addtocomp = addtocomp,
+          family = "discrete", zero_init = TRUE, pop = TRUE, n_pop = n_pop
+        )
+      }
 
-              # overdispersion pars, Number of sexes, regions, age or length comps, and ageing error
-              ln_theta = ln_FishAge_pop_theta[p,,,f],
-              ln_theta_agg = ln_FishAge_pop_theta_agg[p,f],
-              LN_corr_pars = FishAge_pop_corr_pars[p,,,f,],
-              LN_corr_pars_agg = FishAge_pop_corr_pars_agg[p,f],
-              n_regions = n_regions, n_sexes = n_sexes,
-              age_or_len = 0,
-              AgeingError = AgeingError[y,,],
-              use = UseFishAgeComps_pop[p,,y,seas,f],
-              n_model_bins = n_ages,
-              n_obs_bins = dim(ObsFishAgeComps_pop)[5],
-              addtocomp = addtocomp
-            )
+      # Continuous
+      ObsFishAgeComps_pop_osa_continuous = pack_comp_osa(
+        ObsArr = ObsFishAgeComps_pop, ISSArr = ISS_FishAgeComps_pop, WtArr = Wt_FishAgeComps_pop,
+        UseArr = UseFishAgeComps_pop, TypeMat = FishAgeComps_pop_Type, LikeTypeVec = FishAgeComps_pop_LikeType,
+        n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+        addtocomp = addtocomp, family = "continuous", pop = TRUE, n_pop = n_pop
+      )
+      if(!is.null(ObsFishAgeComps_pop_osa_continuous)) {
+        ObsFishAgeComps_pop_osa_continuous = RTMB::OBS(ObsFishAgeComps_pop_osa_continuous)
+        FishAgeComps_pop_nLL = eval_comp_osa(
+          nLL_arr = FishAgeComps_pop_nLL, tracked = ObsFishAgeComps_pop_osa_continuous,
+          ExpArrFn = function(p, y, seas, f) { e = CAA[p,,y,seas,,,f, drop=FALSE]; dim(e) = c(n_regions, n_ages, n_sexes); e },
+          UseArr = UseFishAgeComps_pop, TypeMat = FishAgeComps_pop_Type, LikeTypeVec = FishAgeComps_pop_LikeType,
+          ISSArr = ISS_FishAgeComps_pop, lnThetaArr = ln_FishAge_pop_theta, lnThetaAggVec = ln_FishAge_pop_theta_agg,
+          LNcorrArr = FishAge_pop_corr_pars, LNcorrAggVec = FishAge_pop_corr_pars_agg,
+          n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+          n_model_bins = n_ages, n_obs_bins = dim(ObsFishAgeComps_pop)[5], age_or_len = 0,
+          AgeingErrorFn = function(y) AgeingError[y,,], addtocomp = addtocomp,
+          family = "continuous", zero_init = is.null(ObsFishAgeComps_pop_osa_discrete), pop = TRUE, n_pop = n_pop
+        )
+      }
+    }
 
-          } # if we have fishery age comps
+    # Fishery Length Compositions
+    if(fit_lengths == 1 && any(UseFishLenComps_pop == 1)) {
 
-          # Fishery Length Compositions
-          if(sum(UseFishLenComps_pop[p,,y,seas,f]) >= 1 && fit_lengths == 1) {
-            FishLenComps_pop_nLL[p,,y,seas,,f] = Get_Comp_Likelihoods(
+      # Discrete
+      ObsFishLenComps_pop_osa_discrete = NULL
+      ObsFishLenComps_pop_osa_discrete = pack_comp_osa(
+        ObsArr = ObsFishLenComps_pop, ISSArr = ISS_FishLenComps_pop, WtArr = Wt_FishLenComps_pop,
+        UseArr = UseFishLenComps_pop, TypeMat = FishLenComps_pop_Type, LikeTypeVec = FishLenComps_pop_LikeType,
+        n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+        addtocomp = addtocomp, family = "discrete", pop = TRUE, n_pop = n_pop
+      )
+      if(!is.null(ObsFishLenComps_pop_osa_discrete)) {
+        ObsFishLenComps_pop_osa_discrete = RTMB::OBS(ObsFishLenComps_pop_osa_discrete)
+        FishLenComps_pop_nLL = eval_comp_osa(
+          nLL_arr = FishLenComps_pop_nLL, tracked = ObsFishLenComps_pop_osa_discrete,
+          ExpArrFn = function(p, y, seas, f) { e = CAL[p,,y,seas,,,f, drop=FALSE]; dim(e) = c(n_regions, n_lens, n_sexes); e },
+          UseArr = UseFishLenComps_pop, TypeMat = FishLenComps_pop_Type, LikeTypeVec = FishLenComps_pop_LikeType,
+          ISSArr = ISS_FishLenComps_pop, lnThetaArr = ln_FishLen_pop_theta, lnThetaAggVec = ln_FishLen_pop_theta_agg,
+          LNcorrArr = FishLen_pop_corr_pars, LNcorrAggVec = FishLen_pop_corr_pars_agg,
+          n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+          n_model_bins = n_lens, n_obs_bins = dim(ObsFishLenComps_pop)[5], age_or_len = 1,
+          AgeingErrorFn = NULL, addtocomp = addtocomp,
+          family = "discrete", zero_init = TRUE, pop = TRUE, n_pop = n_pop
+        )
+      }
 
-              # Expected and Observed values
-              Exp = CAL[p,,y,seas,,,f],
-              Obs = ObsFishLenComps_pop[p,,y,seas,,,f],
+      # Continuous
+      ObsFishLenComps_pop_osa_continuous = pack_comp_osa(
+        ObsArr = ObsFishLenComps_pop, ISSArr = ISS_FishLenComps_pop, WtArr = Wt_FishLenComps_pop,
+        UseArr = UseFishLenComps_pop, TypeMat = FishLenComps_pop_Type, LikeTypeVec = FishLenComps_pop_LikeType,
+        n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+        addtocomp = addtocomp, family = "continuous", pop = TRUE, n_pop = n_pop
+      )
+      if(!is.null(ObsFishLenComps_pop_osa_continuous)) {
+        ObsFishLenComps_pop_osa_continuous = RTMB::OBS(ObsFishLenComps_pop_osa_continuous)
+        FishLenComps_pop_nLL = eval_comp_osa(
+          nLL_arr = FishLenComps_pop_nLL, tracked = ObsFishLenComps_pop_osa_continuous,
+          ExpArrFn = function(p, y, seas, f) { e = CAL[p,,y,seas,,,f, drop=FALSE]; dim(e) = c(n_regions, n_lens, n_sexes); e },
+          UseArr = UseFishLenComps_pop, TypeMat = FishLenComps_pop_Type, LikeTypeVec = FishLenComps_pop_LikeType,
+          ISSArr = ISS_FishLenComps_pop, lnThetaArr = ln_FishLen_pop_theta, lnThetaAggVec = ln_FishLen_pop_theta_agg,
+          LNcorrArr = FishLen_pop_corr_pars, LNcorrAggVec = FishLen_pop_corr_pars_agg,
+          n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+          n_model_bins = n_lens, n_obs_bins = dim(ObsFishLenComps_pop)[5], age_or_len = 1,
+          AgeingErrorFn = NULL, addtocomp = addtocomp,
+          family = "continuous", zero_init = is.null(ObsFishLenComps_pop_osa_discrete), pop = TRUE, n_pop = n_pop
+        )
+      }
+    }
 
-              # Input sample size and multinomial weight
-              ISS = ISS_FishLenComps[p,,y,seas,,f],
-              Wt_Mltnml = Wt_FishLenComps_pop[p,,y,seas,,f],
-
-              # Composition and Likelihood Type
-              Comp_Type = FishLenComps_pop_Type[y,f],
-              Likelihood_Type = FishLenComps_pop_LikeType[f],
-
-              # overdispersion, Number of sexes, regions age or length comps, and ageing error
-              ln_theta = ln_FishLen_pop_theta[p,,,f],
-              ln_theta_agg = ln_FishLen_pop_theta_agg[p,f],
-              LN_corr_pars = FishLen_pop_corr_pars[p,,,f,],
-              LN_corr_pars_agg = FishLen_pop_corr_pars_agg[p,f],
-              n_regions = n_regions, n_sexes = n_sexes,
-              age_or_len = 1,
-              AgeingError = NA,
-              use = UseFishLenComps_pop[p,,y,seas,f],
-              n_model_bins = n_lens,
-              n_obs_bins = dim(ObsFishLenComps_pop)[5],
-              addtocomp = addtocomp
-            )
-
-          } # if we have fishery length comps
-        } # end seas loop
-
-      } # end f loop
-    } # end y loop
   }
 
   ### Discarded Fishery Compositions (Region-Specific) ------------------------------------------------
-  for(y in 1:n_yrs) {
-    for(f in 1:n_fish_fleets) {
+  if(do_internal_comp_osa == FALSE) {
 
-      for(seas in 1:n_seas) {
-        # Fishery Age Compositions
-        if(sum(UseFishAgeComps_discard[,y,seas,f]) >= 1) {
-          FishAgeComps_discard_nLL[,y,seas,,f] = Get_Comp_Likelihoods(
-
-            # Expected and Observed values
-            Exp = apply(DAA[,,y,seas,,,f, drop = FALSE], 2:7, sum),
-            Obs = ObsFishAgeComps_discard[,y,seas,,,f],
-
-            # Input sample size and multinomial weight
-            ISS = ISS_FishAgeComps_discard[,y,seas,,f],
-            Wt_Mltnml = Wt_FishAgeComps_discard[,y,seas,,f],
-            # Composition and Likelihood Type
-            Comp_Type = FishAgeComps_discard_Type[y,f],
-            Likelihood_Type = FishAgeComps_discard_LikeType[f],
-
-            # overdispersion pars, Number of sexes, regions, age or length comps, and ageing error
-            ln_theta = ln_FishAge_discard_theta[,,f],
-            ln_theta_agg = ln_FishAge_discard_theta_agg[f],
-            LN_corr_pars = FishAge_discard_corr_pars[,,f,],
-            LN_corr_pars_agg = FishAge_discard_corr_pars_agg[f],
-            n_regions = n_regions, n_sexes = n_sexes, age_or_len = 0,
-            AgeingError = AgeingError[y,,],
-            use = UseFishAgeComps_discard[,y,seas,f],
-            n_model_bins = n_ages,
-            n_obs_bins = dim(ObsFishAgeComps_discard)[4],
-            addtocomp = addtocomp
-          )
-
-        } # if we have fishery age comps
-
-        # Fishery Length Compositions
-        if(sum(UseFishLenComps_discard[,y,seas,f]) >= 1 && fit_lengths == 1) {
-          FishLenComps_discard_nLL[,y,seas,,f] = Get_Comp_Likelihoods(
-
-            # Expected and Observed values
-            Exp = apply(DAL[,,y,seas,,,f, drop = FALSE], 2:7, sum),
-            Obs = ObsFishLenComps_discard[,y,seas,,,f],
-
-            # Input sample size and multinomial weight
-            ISS = ISS_FishLenComps_discard[,y,seas,,f],
-            Wt_Mltnml = Wt_FishLenComps_discard[,y,seas,,f],
-
-            # Composition and Likelihood Type
-            Comp_Type = FishLenComps_discard_Type[y,f],
-            Likelihood_Type = FishLenComps_discard_LikeType[f],
-
-            # overdispersion, Number of sexes, regions age or length comps, and ageing error
-            ln_theta = ln_FishLen_discard_theta[,,f],
-            ln_theta_agg = ln_FishLen_discard_theta_agg[f],
-            LN_corr_pars = FishLen_discard_corr_pars[,,f,],
-            LN_corr_pars_agg = FishLen_discard_corr_pars_agg[f],
-            n_regions = n_regions, n_sexes = n_sexes,
-            age_or_len = 1,
-            AgeingError = NA,
-            use = UseFishLenComps_discard[,y,seas,f],
-            n_model_bins = n_lens,
-            n_obs_bins = dim(ObsFishLenComps_discard)[4],
-            addtocomp = addtocomp
-          )
-
-        } # if we have fishery length comps
-      } # end seas loop
-
-    } # end f loop
-  } # end y loop
-
-
-  ### Discarded Fishery Compositions (Population-Specific) ------------------------------------------------
-  for(p in 1:n_pop) {
+    # Discarded Fishery Age Compositions
     for(y in 1:n_yrs) {
       for(f in 1:n_fish_fleets) {
-
         for(seas in 1:n_seas) {
-          # Fishery Age Compositions
-          if(sum(UseFishAgeComps_discard_pop[p,,y,seas,f]) >= 1) {
-            FishAgeComps_discard_pop_nLL[p,,y,seas,,f] = Get_Comp_Likelihoods(
-
-              # Expected and Observed values
-              Exp = DAA[p,,y,seas,,,f],
-              Obs = ObsFishAgeComps_discard_pop[p,,y,seas,,,f],
-
-              # Input sample size and multinomial weight
-              ISS = ISS_FishAgeComps_discard_pop[p,,y,seas,,f],
-              Wt_Mltnml = Wt_FishAgeComps_discard_pop[p,,y,seas,,f],
-
-              # Composition and Likelihood Type
-              Comp_Type = FishAgeComps_discard_pop_Type[y,f],
-              Likelihood_Type = FishAgeComps_discard_pop_LikeType[f],
-
-              # overdispersion pars, Number of sexes, regions, age or length comps, and ageing error
-              ln_theta = ln_FishAge_discard_pop_theta[p,,,f],
-              ln_theta_agg = ln_FishAge_discard_pop_theta_agg[p,f],
-              LN_corr_pars = FishAge_discard_pop_corr_pars[p,,,f,],
-              LN_corr_pars_agg = FishAge_discard_pop_corr_pars_agg[p,f],
-              n_regions = n_regions, n_sexes = n_sexes,
-              age_or_len = 0,
-              AgeingError = AgeingError[y,,],
-              use = UseFishAgeComps_discard_pop[p,,y,seas,f],
-              n_model_bins = n_ages,
-              n_obs_bins = dim(ObsFishAgeComps_discard_pop)[5],
+          if(sum(UseFishAgeComps_discard[,y,seas,f]) >= 1) {
+            FishAgeComps_discard_nLL[,y,seas,,f] = Get_Comp_Likelihoods(
+              Exp = apply(DAA[,,y,seas,,,f, drop = FALSE], 2:7, sum), Obs = ObsFishAgeComps_discard[,y,seas,,,f],
+              ISS = ISS_FishAgeComps_discard[,y,seas,,f], Wt_Mltnml = Wt_FishAgeComps_discard[,y,seas,,f],
+              Comp_Type = FishAgeComps_discard_Type[y,f], Likelihood_Type = FishAgeComps_discard_LikeType[f],
+              ln_theta = ln_FishAge_discard_theta[,,f], ln_theta_agg = ln_FishAge_discard_theta_agg[f],
+              LN_corr_pars = FishAge_discard_corr_pars[,,f,], LN_corr_pars_agg = FishAge_discard_corr_pars_agg[f],
+              n_regions = n_regions, n_sexes = n_sexes, age_or_len = 0, AgeingError = AgeingError[y,,],
+              use = UseFishAgeComps_discard[,y,seas,f], n_model_bins = n_ages, n_obs_bins = dim(ObsFishAgeComps_discard)[4],
               addtocomp = addtocomp
             )
+          }
 
-          } # if we have fishery age comps
-
-          # Fishery Length Compositions
-          if(sum(UseFishLenComps_discard_pop[p,,y,seas,f]) >= 1 && fit_lengths == 1) {
-            FishLenComps_discard_pop_nLL[p,,y,seas,,f] = Get_Comp_Likelihoods(
-
-              # Expected and Observed values
-              Exp = DAL[p,,y,seas,,,f],
-              Obs = ObsFishLenComps_discard_pop[p,,y,seas,,,f],
-
-              # Input sample size and multinomial weight
-              ISS = ISS_FishLenComps_discard_pop[p,,y,seas,,f],
-              Wt_Mltnml = Wt_FishLenComps_discard_pop[p,,y,seas,,f],
-
-              # Composition and Likelihood Type
-              Comp_Type = FishLenComps_discard_pop_Type[y,f],
-              Likelihood_Type = FishLenComps_discard_pop_LikeType[f],
-
-              # overdispersion, Number of sexes, regions age or length comps, and ageing error
-              ln_theta = ln_FishLen_discard_pop_theta[p,,,f],
-              ln_theta_agg = ln_FishLen_discard_pop_theta_agg[p,f],
-              LN_corr_pars = FishLen_discard_pop_corr_pars[p,,,f,],
-              LN_corr_pars_agg = FishLen_discard_pop_corr_pars_agg[p,f],
-              n_regions = n_regions, n_sexes = n_sexes,
-              age_or_len = 1,
-              AgeingError = NA,
-              use = UseFishLenComps_discard_pop[p,,y,seas,f],
-              n_model_bins = n_lens,
-              n_obs_bins = dim(ObsFishLenComps_discard_pop)[5],
+          # Discarded Fishery Length Compositions
+          if(sum(UseFishLenComps_discard[,y,seas,f]) >= 1 && fit_lengths == 1) {
+            FishLenComps_discard_nLL[,y,seas,,f] = Get_Comp_Likelihoods(
+              Exp = apply(DAL[,,y,seas,,,f, drop = FALSE], 2:7, sum), Obs = ObsFishLenComps_discard[,y,seas,,,f],
+              ISS = ISS_FishLenComps_discard[,y,seas,,f], Wt_Mltnml = Wt_FishLenComps_discard[,y,seas,,f],
+              Comp_Type = FishLenComps_discard_Type[y,f], Likelihood_Type = FishLenComps_discard_LikeType[f],
+              ln_theta = ln_FishLen_discard_theta[,,f], ln_theta_agg = ln_FishLen_discard_theta_agg[f],
+              LN_corr_pars = FishLen_discard_corr_pars[,,f,], LN_corr_pars_agg = FishLen_discard_corr_pars_agg[f],
+              n_regions = n_regions, n_sexes = n_sexes, age_or_len = 1, AgeingError = NA,
+              use = UseFishLenComps_discard[,y,seas,f], n_model_bins = n_lens, n_obs_bins = dim(ObsFishLenComps_discard)[4],
               addtocomp = addtocomp
             )
+          }
+        }
+      }
+    }
+  } else {
 
-          } # if we have fishery length comps
-        } # end seas loop
+    # Doing OSA Compositions
+    # Discarded Fishery Age Compositions
+    if(any(UseFishAgeComps_discard == 1)) {
 
-      } # end f loop
-    } # end y loop
+      # Discrete
+      ObsFishAgeComps_discard_osa_discrete = NULL
+      ObsFishAgeComps_discard_osa_discrete = pack_comp_osa(
+        ObsArr = ObsFishAgeComps_discard, ISSArr = ISS_FishAgeComps_discard, WtArr = Wt_FishAgeComps_discard,
+        UseArr = UseFishAgeComps_discard, TypeMat = FishAgeComps_discard_Type, LikeTypeVec = FishAgeComps_discard_LikeType,
+        n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+        addtocomp = addtocomp, family = "discrete"
+      )
+      if(!is.null(ObsFishAgeComps_discard_osa_discrete)) {
+        ObsFishAgeComps_discard_osa_discrete = RTMB::OBS(ObsFishAgeComps_discard_osa_discrete)
+        FishAgeComps_discard_nLL = eval_comp_osa(
+          nLL_arr = FishAgeComps_discard_nLL, tracked = ObsFishAgeComps_discard_osa_discrete,
+          ExpArrFn = function(p, y, seas, f) apply(DAA[,,y,seas,,,f, drop=FALSE], 2:7, sum),
+          UseArr = UseFishAgeComps_discard, TypeMat = FishAgeComps_discard_Type, LikeTypeVec = FishAgeComps_discard_LikeType,
+          ISSArr = ISS_FishAgeComps_discard, lnThetaArr = ln_FishAge_discard_theta, lnThetaAggVec = ln_FishAge_discard_theta_agg,
+          LNcorrArr = FishAge_discard_corr_pars, LNcorrAggVec = FishAge_discard_corr_pars_agg,
+          n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+          n_model_bins = n_ages, n_obs_bins = dim(ObsFishAgeComps_discard)[4], age_or_len = 0,
+          AgeingErrorFn = function(y) AgeingError[y,,], addtocomp = addtocomp,
+          family = "discrete", zero_init = TRUE
+        )
+      }
+
+      # Continuous
+      ObsFishAgeComps_discard_osa_continuous = pack_comp_osa(
+        ObsArr = ObsFishAgeComps_discard, ISSArr = ISS_FishAgeComps_discard, WtArr = Wt_FishAgeComps_discard,
+        UseArr = UseFishAgeComps_discard, TypeMat = FishAgeComps_discard_Type, LikeTypeVec = FishAgeComps_discard_LikeType,
+        n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+        addtocomp = addtocomp, family = "continuous"
+      )
+      if(!is.null(ObsFishAgeComps_discard_osa_continuous)) {
+        ObsFishAgeComps_discard_osa_continuous = RTMB::OBS(ObsFishAgeComps_discard_osa_continuous)
+        FishAgeComps_discard_nLL = eval_comp_osa(
+          nLL_arr = FishAgeComps_discard_nLL, tracked = ObsFishAgeComps_discard_osa_continuous,
+          ExpArrFn = function(p, y, seas, f) apply(DAA[,,y,seas,,,f, drop=FALSE], 2:7, sum),
+          UseArr = UseFishAgeComps_discard, TypeMat = FishAgeComps_discard_Type, LikeTypeVec = FishAgeComps_discard_LikeType,
+          ISSArr = ISS_FishAgeComps_discard, lnThetaArr = ln_FishAge_discard_theta, lnThetaAggVec = ln_FishAge_discard_theta_agg,
+          LNcorrArr = FishAge_discard_corr_pars, LNcorrAggVec = FishAge_discard_corr_pars_agg,
+          n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+          n_model_bins = n_ages, n_obs_bins = dim(ObsFishAgeComps_discard)[4], age_or_len = 0,
+          AgeingErrorFn = function(y) AgeingError[y,,], addtocomp = addtocomp,
+          family = "continuous", zero_init = is.null(ObsFishAgeComps_discard_osa_discrete)
+        )
+      }
+    }
+
+    # Fishery Length Compositions discards
+    if(fit_lengths == 1 && any(UseFishLenComps_discard == 1)) {
+
+      # Discrete
+      ObsFishLenComps_discard_osa_discrete = NULL
+      ObsFishLenComps_discard_osa_discrete = pack_comp_osa(
+        ObsArr = ObsFishLenComps_discard, ISSArr = ISS_FishLenComps_discard, WtArr = Wt_FishLenComps_discard,
+        UseArr = UseFishLenComps_discard, TypeMat = FishLenComps_discard_Type, LikeTypeVec = FishLenComps_discard_LikeType,
+        n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+        addtocomp = addtocomp, family = "discrete"
+      )
+      if(!is.null(ObsFishLenComps_discard_osa_discrete)) {
+        ObsFishLenComps_discard_osa_discrete = RTMB::OBS(ObsFishLenComps_discard_osa_discrete)
+        FishLenComps_discard_nLL = eval_comp_osa(
+          nLL_arr = FishLenComps_discard_nLL, tracked = ObsFishLenComps_discard_osa_discrete,
+          ExpArrFn = function(p, y, seas, f) apply(DAL[,,y,seas,,,f, drop=FALSE], 2:7, sum),
+          UseArr = UseFishLenComps_discard, TypeMat = FishLenComps_discard_Type, LikeTypeVec = FishLenComps_discard_LikeType,
+          ISSArr = ISS_FishLenComps_discard, lnThetaArr = ln_FishLen_discard_theta, lnThetaAggVec = ln_FishLen_discard_theta_agg,
+          LNcorrArr = FishLen_discard_corr_pars, LNcorrAggVec = FishLen_discard_corr_pars_agg,
+          n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+          n_model_bins = n_lens, n_obs_bins = dim(ObsFishLenComps_discard)[4], age_or_len = 1,
+          AgeingErrorFn = NULL, addtocomp = addtocomp,
+          family = "discrete", zero_init = TRUE
+        )
+      }
+
+      # Continuous
+      ObsFishLenComps_discard_osa_continuous = pack_comp_osa(
+        ObsArr = ObsFishLenComps_discard, ISSArr = ISS_FishLenComps_discard, WtArr = Wt_FishLenComps_discard,
+        UseArr = UseFishLenComps_discard, TypeMat = FishLenComps_discard_Type, LikeTypeVec = FishLenComps_discard_LikeType,
+        n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+        addtocomp = addtocomp, family = "continuous"
+      )
+      if(!is.null(ObsFishLenComps_discard_osa_continuous)) {
+        ObsFishLenComps_discard_osa_continuous = RTMB::OBS(ObsFishLenComps_discard_osa_continuous)
+        FishLenComps_discard_nLL = eval_comp_osa(
+          nLL_arr = FishLenComps_discard_nLL, tracked = ObsFishLenComps_discard_osa_continuous,
+          ExpArrFn = function(p, y, seas, f) apply(DAL[,,y,seas,,,f, drop=FALSE], 2:7, sum),
+          UseArr = UseFishLenComps_discard, TypeMat = FishLenComps_discard_Type, LikeTypeVec = FishLenComps_discard_LikeType,
+          ISSArr = ISS_FishLenComps_discard, lnThetaArr = ln_FishLen_discard_theta, lnThetaAggVec = ln_FishLen_discard_theta_agg,
+          LNcorrArr = FishLen_discard_corr_pars, LNcorrAggVec = FishLen_discard_corr_pars_agg,
+          n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+          n_model_bins = n_lens, n_obs_bins = dim(ObsFishLenComps_discard)[4], age_or_len = 1,
+          AgeingErrorFn = NULL, addtocomp = addtocomp,
+          family = "continuous", zero_init = is.null(ObsFishLenComps_discard_osa_discrete)
+        )
+      }
+    }
   }
 
 
+  ### Discarded Fishery Compositions (Population-Specific) ------------------------------------------------
+  if(do_internal_comp_osa == FALSE) {
+    for(p in 1:n_pop) {
+      for(y in 1:n_yrs) {
+        for(f in 1:n_fish_fleets) {
+          for(seas in 1:n_seas) {
+
+            # Discarded Fishery Age Compositions
+            if(sum(UseFishAgeComps_discard_pop[p,,y,seas,f]) >= 1) {
+              FishAgeComps_discard_pop_nLL[p,,y,seas,,f] = Get_Comp_Likelihoods(
+                Exp = DAA[p,,y,seas,,,f], Obs = ObsFishAgeComps_discard_pop[p,,y,seas,,,f], ISS = ISS_FishAgeComps_discard_pop[p,,y,seas,,f],
+                Wt_Mltnml = Wt_FishAgeComps_discard_pop[p,,y,seas,,f], Comp_Type = FishAgeComps_discard_pop_Type[y,f],
+                Likelihood_Type = FishAgeComps_discard_pop_LikeType[f], ln_theta = ln_FishAge_discard_pop_theta[p,,,f],
+                ln_theta_agg = ln_FishAge_discard_pop_theta_agg[p,f], LN_corr_pars = FishAge_discard_pop_corr_pars[p,,,f,],
+                LN_corr_pars_agg = FishAge_discard_pop_corr_pars_agg[p,f], n_regions = n_regions, n_sexes = n_sexes,
+                age_or_len = 0, AgeingError = AgeingError[y,,], use = UseFishAgeComps_discard_pop[p,,y,seas,f],
+                n_model_bins = n_ages, n_obs_bins = dim(ObsFishAgeComps_discard_pop)[5], addtocomp = addtocomp
+              )
+            }
+
+            # Discarded Fishery Length Compositions
+            if(sum(UseFishLenComps_discard_pop[p,,y,seas,f]) >= 1 && fit_lengths == 1) {
+              FishLenComps_discard_pop_nLL[p,,y,seas,,f] = Get_Comp_Likelihoods(
+                Exp = DAL[p,,y,seas,,,f], Obs = ObsFishLenComps_discard_pop[p,,y,seas,,,f], ISS = ISS_FishLenComps_discard_pop[p,,y,seas,,f],
+                Wt_Mltnml = Wt_FishLenComps_discard_pop[p,,y,seas,,f], Comp_Type = FishLenComps_discard_pop_Type[y,f],
+                Likelihood_Type = FishLenComps_discard_pop_LikeType[f], ln_theta = ln_FishLen_discard_pop_theta[p,,,f],
+                ln_theta_agg = ln_FishLen_discard_pop_theta_agg[p,f], LN_corr_pars = FishLen_discard_pop_corr_pars[p,,,f,],
+                LN_corr_pars_agg = FishLen_discard_pop_corr_pars_agg[p,f], n_regions = n_regions, n_sexes = n_sexes,
+                age_or_len = 1, AgeingError = NA, use = UseFishLenComps_discard_pop[p,,y,seas,f], n_model_bins = n_lens,
+                n_obs_bins = dim(ObsFishLenComps_discard_pop)[5], addtocomp = addtocomp
+              )
+            }
+          }
+        }
+      }
+    }
+  } else {
+
+    # Doing OSA Compositions
+    # Fishery Age Discard Compositions
+    if(any(UseFishAgeComps_discard_pop == 1)) {
+
+      # Discrete
+      ObsFishAgeComps_discard_pop_osa_discrete = NULL
+      ObsFishAgeComps_discard_pop_osa_discrete = pack_comp_osa(
+        ObsArr = ObsFishAgeComps_discard_pop, ISSArr = ISS_FishAgeComps_discard_pop, WtArr = Wt_FishAgeComps_discard_pop,
+        UseArr = UseFishAgeComps_discard_pop, TypeMat = FishAgeComps_discard_pop_Type, LikeTypeVec = FishAgeComps_discard_pop_LikeType,
+        n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+        addtocomp = addtocomp, family = "discrete", pop = TRUE, n_pop = n_pop
+      )
+      if(!is.null(ObsFishAgeComps_discard_pop_osa_discrete)) {
+        ObsFishAgeComps_discard_pop_osa_discrete = RTMB::OBS(ObsFishAgeComps_discard_pop_osa_discrete)
+        FishAgeComps_discard_pop_nLL = eval_comp_osa(
+          nLL_arr = FishAgeComps_discard_pop_nLL, tracked = ObsFishAgeComps_discard_pop_osa_discrete,
+          ExpArrFn = function(p, y, seas, f) { e = DAA[p,,y,seas,,,f, drop=FALSE]; dim(e) = c(n_regions, n_ages, n_sexes); e },
+          UseArr = UseFishAgeComps_discard_pop, TypeMat = FishAgeComps_discard_pop_Type, LikeTypeVec = FishAgeComps_discard_pop_LikeType,
+          ISSArr = ISS_FishAgeComps_discard_pop, lnThetaArr = ln_FishAge_discard_pop_theta, lnThetaAggVec = ln_FishAge_discard_pop_theta_agg,
+          LNcorrArr = FishAge_discard_pop_corr_pars, LNcorrAggVec = FishAge_discard_pop_corr_pars_agg,
+          n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+          n_model_bins = n_ages, n_obs_bins = dim(ObsFishAgeComps_discard_pop)[5], age_or_len = 0,
+          AgeingErrorFn = function(y) AgeingError[y,,], addtocomp = addtocomp,
+          family = "discrete", zero_init = TRUE, pop = TRUE, n_pop = n_pop
+        )
+      }
+
+      # Continuous
+      ObsFishAgeComps_discard_pop_osa_continuous = pack_comp_osa(
+        ObsArr = ObsFishAgeComps_discard_pop, ISSArr = ISS_FishAgeComps_discard_pop, WtArr = Wt_FishAgeComps_discard_pop,
+        UseArr = UseFishAgeComps_discard_pop, TypeMat = FishAgeComps_discard_pop_Type, LikeTypeVec = FishAgeComps_discard_pop_LikeType,
+        n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+        addtocomp = addtocomp, family = "continuous", pop = TRUE, n_pop = n_pop
+      )
+      if(!is.null(ObsFishAgeComps_discard_pop_osa_continuous)) {
+        ObsFishAgeComps_discard_pop_osa_continuous = RTMB::OBS(ObsFishAgeComps_discard_pop_osa_continuous)
+        FishAgeComps_discard_pop_nLL = eval_comp_osa(
+          nLL_arr = FishAgeComps_discard_pop_nLL, tracked = ObsFishAgeComps_discard_pop_osa_continuous,
+          ExpArrFn = function(p, y, seas, f) { e = DAA[p,,y,seas,,,f, drop=FALSE]; dim(e) = c(n_regions, n_ages, n_sexes); e },
+          UseArr = UseFishAgeComps_discard_pop, TypeMat = FishAgeComps_discard_pop_Type, LikeTypeVec = FishAgeComps_discard_pop_LikeType,
+          ISSArr = ISS_FishAgeComps_discard_pop, lnThetaArr = ln_FishAge_discard_pop_theta, lnThetaAggVec = ln_FishAge_discard_pop_theta_agg,
+          LNcorrArr = FishAge_discard_pop_corr_pars, LNcorrAggVec = FishAge_discard_pop_corr_pars_agg,
+          n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+          n_model_bins = n_ages, n_obs_bins = dim(ObsFishAgeComps_discard_pop)[5], age_or_len = 0,
+          AgeingErrorFn = function(y) AgeingError[y,,], addtocomp = addtocomp,
+          family = "continuous", zero_init = is.null(ObsFishAgeComps_discard_pop_osa_discrete), pop = TRUE, n_pop = n_pop
+        )
+      }
+    }
+
+    # Fishery Length Discarded Compositions
+    if(fit_lengths == 1 && any(UseFishLenComps_discard_pop == 1)) {
+
+      # Discrete
+      ObsFishLenComps_discard_pop_osa_discrete = NULL
+      ObsFishLenComps_discard_pop_osa_discrete = pack_comp_osa(
+        ObsArr = ObsFishLenComps_discard_pop, ISSArr = ISS_FishLenComps_discard_pop, WtArr = Wt_FishLenComps_discard_pop,
+        UseArr = UseFishLenComps_discard_pop, TypeMat = FishLenComps_discard_pop_Type, LikeTypeVec = FishLenComps_discard_pop_LikeType,
+        n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+        addtocomp = addtocomp, family = "discrete", pop = TRUE, n_pop = n_pop
+      )
+      if(!is.null(ObsFishLenComps_discard_pop_osa_discrete)) {
+        ObsFishLenComps_discard_pop_osa_discrete = RTMB::OBS(ObsFishLenComps_discard_pop_osa_discrete)
+        FishLenComps_discard_pop_nLL = eval_comp_osa(
+          nLL_arr = FishLenComps_discard_pop_nLL, tracked = ObsFishLenComps_discard_pop_osa_discrete,
+          ExpArrFn = function(p, y, seas, f) { e = DAL[p,,y,seas,,,f, drop=FALSE]; dim(e) = c(n_regions, n_lens, n_sexes); e },
+          UseArr = UseFishLenComps_discard_pop, TypeMat = FishLenComps_discard_pop_Type, LikeTypeVec = FishLenComps_discard_pop_LikeType,
+          ISSArr = ISS_FishLenComps_discard_pop, lnThetaArr = ln_FishLen_discard_pop_theta, lnThetaAggVec = ln_FishLen_discard_pop_theta_agg,
+          LNcorrArr = FishLen_discard_pop_corr_pars, LNcorrAggVec = FishLen_discard_pop_corr_pars_agg,
+          n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+          n_model_bins = n_lens, n_obs_bins = dim(ObsFishLenComps_discard_pop)[5], age_or_len = 1,
+          AgeingErrorFn = NULL, addtocomp = addtocomp,
+          family = "discrete", zero_init = TRUE, pop = TRUE, n_pop = n_pop
+        )
+      }
+
+      # Continuous
+      ObsFishLenComps_discard_pop_osa_continuous = pack_comp_osa(
+        ObsArr = ObsFishLenComps_discard_pop, ISSArr = ISS_FishLenComps_discard_pop, WtArr = Wt_FishLenComps_discard_pop,
+        UseArr = UseFishLenComps_discard_pop, TypeMat = FishLenComps_discard_pop_Type, LikeTypeVec = FishLenComps_discard_pop_LikeType,
+        n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+        addtocomp = addtocomp, family = "continuous", pop = TRUE, n_pop = n_pop
+      )
+      if(!is.null(ObsFishLenComps_discard_pop_osa_continuous)) {
+        ObsFishLenComps_discard_pop_osa_continuous = RTMB::OBS(ObsFishLenComps_discard_pop_osa_continuous)
+        FishLenComps_discard_pop_nLL = eval_comp_osa(
+          nLL_arr = FishLenComps_discard_pop_nLL, tracked = ObsFishLenComps_discard_pop_osa_continuous,
+          ExpArrFn = function(p, y, seas, f) { e = DAL[p,,y,seas,,,f, drop=FALSE]; dim(e) = c(n_regions, n_lens, n_sexes); e },
+          UseArr = UseFishLenComps_discard_pop, TypeMat = FishLenComps_discard_pop_Type, LikeTypeVec = FishLenComps_discard_pop_LikeType,
+          ISSArr = ISS_FishLenComps_discard_pop, lnThetaArr = ln_FishLen_discard_pop_theta, lnThetaAggVec = ln_FishLen_discard_pop_theta_agg,
+          LNcorrArr = FishLen_discard_pop_corr_pars, LNcorrAggVec = FishLen_discard_pop_corr_pars_agg,
+          n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
+          n_model_bins = n_lens, n_obs_bins = dim(ObsFishLenComps_discard_pop)[5], age_or_len = 1,
+          AgeingErrorFn = NULL, addtocomp = addtocomp,
+          family = "continuous", zero_init = is.null(ObsFishLenComps_discard_pop_osa_discrete), pop = TRUE, n_pop = n_pop
+        )
+      }
+    }
+  }
 
   ## Survey Likelihoods ------------------------------------------------------
   ### Survey Indices (Regional) ---------------------------------------------------------
@@ -1463,8 +1732,8 @@ SPoRC_rtmb = function(pars, data) {
       p    = ObsSrvIdx_pop_map[i, 1]
       r    = ObsSrvIdx_pop_map[i, 2]
       y    = ObsSrvIdx_pop_map[i, 3]
-      sf   = ObsSrvIdx_pop_map[i, 4]
-      seas = ObsSrvIdx_pop_map[i, 5]
+      seas   = ObsSrvIdx_pop_map[i, 4]
+      sf = ObsSrvIdx_pop_map[i, 5]
 
       SrvIdx_pop_nLL[p,r,y,seas,sf] = -1 * RTMB::dnorm(ObsSrvIdx_pop[i],
                                                        log(PredSrvIdx[p,r,y,seas,sf] + addtosrvidx),
@@ -1473,305 +1742,383 @@ SPoRC_rtmb = function(pars, data) {
   }
 
   ### Survey Compositions (Region-Specific) ---------------------------------------------------------
-  for(y in 1:n_yrs) {
-    for(sf in 1:n_srv_fleets) {
-      for(seas in 1:n_seas) {
+  if(do_internal_comp_osa == FALSE) {
 
-        # Survey Age Compositions
-        if(sum(UseSrvAgeComps[,y,seas,sf]) >= 1) {
-
-          SrvAgeComps_nLL[,y,seas,,sf] = Get_Comp_Likelihoods(
-
-            # Expected and Observed values
-            Exp = apply(SrvIAA[,,y,seas,,,sf, drop = FALSE], 2:7, sum),
-            Obs = ObsSrvAgeComps[,y,seas,,,sf],
-
-            # Input sample size and multinomial weight
-            ISS = ISS_SrvAgeComps[,y,seas,,sf],
-            Wt_Mltnml = Wt_SrvAgeComps[,y,seas,,sf],
-
-            # Composition and Likelihood Type
-            Comp_Type = SrvAgeComps_Type[y,sf],
-            Likelihood_Type = SrvAgeComps_LikeType[sf],
-
-            # overdispersion, Number of sexes, regions, age or length comps, and ageing error
-            ln_theta = ln_SrvAge_theta[,,sf],
-            ln_theta_agg = ln_SrvAge_theta_agg[sf],
-            LN_corr_pars = SrvAge_corr_pars[,,sf,],
-            LN_corr_pars_agg = SrvAge_corr_pars_agg[sf],
-            n_regions = n_regions, n_sexes = n_sexes,
-            age_or_len = 0,
-            AgeingError = AgeingError[y,,],
-            use = UseSrvAgeComps[,y,seas,sf],
-            n_model_bins = n_ages,
-            n_obs_bins = dim(ObsSrvAgeComps)[4],
-            addtocomp = addtocomp
-          )
-
-        } # if we have survey age comps
-
-        # Survey Length Compositions
-        if(sum(UseSrvLenComps[,y,seas,sf]) >= 1 && fit_lengths == 1) {
-          SrvLenComps_nLL[,y,seas,,sf] = Get_Comp_Likelihoods(
-
-            # Expected and Observed values
-            Exp = apply(SrvIAL[,,y,seas,,,sf, drop = FALSE], 2:7, sum),
-            Obs = ObsSrvLenComps[,y,seas,,,sf],
-
-            # Input sample size and multinomial weight
-            ISS = ISS_SrvLenComps[,y,seas,,sf],
-            Wt_Mltnml = Wt_SrvLenComps[,y,seas,,sf],
-
-            # Composition and Likelihood Type
-            Comp_Type = SrvLenComps_Type[y,sf],
-            Likelihood_Type = SrvLenComps_LikeType[sf],
-
-            # overdispersion, Number of sexes, regions, age or length comps, and ageing error
-            ln_theta = ln_SrvLen_theta[,,sf],
-            ln_theta_agg = ln_SrvLen_theta_agg[sf],
-            LN_corr_pars = SrvLen_corr_pars[,,sf,],
-            LN_corr_pars_agg = SrvLen_corr_pars_agg[sf],
-            n_regions = n_regions, n_sexes = n_sexes, age_or_len = 1,
-            AgeingError = NA,
-            use = UseSrvLenComps[,y,seas,sf],
-            n_model_bins = n_lens,
-            n_obs_bins = dim(ObsSrvLenComps)[4],
-            addtocomp = addtocomp
-          )
-
-        } # if we have survey length comps
-
-      } # end seas loop
-    } # end sf loop
-  } # end y loop
-
-
-  ### Survey Compositions (Population-Specific) -------------------------------
-  for(p in 1:n_pop) {
     for(y in 1:n_yrs) {
       for(sf in 1:n_srv_fleets) {
-
         for(seas in 1:n_seas) {
-          # Srvery Age Compositions
-          if(sum(UseSrvAgeComps_pop[p,,y,seas,sf]) >= 1) {
-            SrvAgeComps_pop_nLL[p,,y,seas,,sf] = Get_Comp_Likelihoods(
+          if(sum(UseSrvAgeComps[,y,seas,sf]) >= 1) {
 
-              # Expected and Observed values
-              Exp = SrvIAA[p,,y,seas,,,sf],
-              Obs = ObsSrvAgeComps_pop[p,,y,seas,,,sf],
-
-              # Input sample size and multinomial weight
-              ISS = ISS_SrvAgeComps_pop[p,,y,seas,,sf],
-              Wt_Mltnml = Wt_SrvAgeComps_pop[p,,y,seas,,sf],
-
-              # Composition and Likelihood Type
-              Comp_Type = SrvAgeComps_pop_Type[y,sf],
-              Likelihood_Type = SrvAgeComps_pop_LikeType[sf],
-
-              # overdispersion pars, Number of sexes, regions, age or length comps, and ageing error
-              ln_theta = ln_SrvAge_pop_theta[p,,,sf],
-              ln_theta_agg = ln_SrvAge_pop_theta_agg[p,sf],
-              LN_corr_pars = SrvAge_pop_corr_pars[p,,,sf,],
-              LN_corr_pars_agg = SrvAge_pop_corr_pars_agg[p,sf],
-              n_regions = n_regions, n_sexes = n_sexes,
-              age_or_len = 0,
-              AgeingError = AgeingError[y,,],
-              use = UseSrvAgeComps_pop[p,,y,seas,sf],
-              n_model_bins = n_ages,
-              n_obs_bins = dim(ObsSrvAgeComps_pop)[5],
-              addtocomp = addtocomp
+            # Survey Age Compositions
+            SrvAgeComps_nLL[,y,seas,,sf] = Get_Comp_Likelihoods(
+              Exp = apply(SrvIAA[,,y,seas,,,sf, drop = FALSE], 2:7, sum), Obs = ObsSrvAgeComps[,y,seas,,,sf],
+              ISS = ISS_SrvAgeComps[,y,seas,,sf], Wt_Mltnml = Wt_SrvAgeComps[,y,seas,,sf],
+              Comp_Type = SrvAgeComps_Type[y,sf], Likelihood_Type = SrvAgeComps_LikeType[sf],
+              ln_theta = ln_SrvAge_theta[,,sf], ln_theta_agg = ln_SrvAge_theta_agg[sf],
+              LN_corr_pars = SrvAge_corr_pars[,,sf,], LN_corr_pars_agg = SrvAge_corr_pars_agg[sf],
+              n_regions = n_regions, n_sexes = n_sexes, age_or_len = 0, AgeingError = AgeingError[y,,],
+              use = UseSrvAgeComps[,y,seas,sf], n_model_bins = n_ages, n_obs_bins = dim(ObsSrvAgeComps)[4], addtocomp = addtocomp
             )
+          }
 
-          } # if we have srvery age comps
-
-          # Srvery Length Compositions
-          if(sum(UseSrvLenComps_pop[p,,y,seas,sf]) >= 1 && fit_lengths == 1) {
-            SrvLenComps_pop_nLL[p,,y,seas,,sf] = Get_Comp_Likelihoods(
-
-              # Expected and Observed values
-              Exp = SrvIAL[p,,y,seas,,,sf],
-              Obs = ObsSrvLenComps_pop[p,,y,seas,,,sf],
-
-              # Input sample size and multinomial weight
-              ISS = ISS_SrvLenComps[p,,y,seas,,sf],
-              Wt_Mltnml = Wt_SrvLenComps_pop[p,,y,seas,,sf],
-
-              # Composition and Likelihood Type
-              Comp_Type = SrvLenComps_pop_Type[y,sf],
-              Likelihood_Type = SrvLenComps_pop_LikeType[sf],
-
-              # overdispersion, Number of sexes, regions age or length comps, and ageing error
-              ln_theta = ln_SrvLen_pop_theta[p,,,sf],
-              ln_theta_agg = ln_SrvLen_pop_theta_agg[p,sf],
-              LN_corr_pars = SrvLen_pop_corr_pars[p,,,sf,],
-              LN_corr_pars_agg = SrvLen_pop_corr_pars_agg[p,sf],
-              n_regions = n_regions, n_sexes = n_sexes,
-              age_or_len = 1,
-              AgeingError = NA,
-              use = UseSrvLenComps_pop[p,,y,seas,sf],
-              n_model_bins = n_lens,
-              n_obs_bins = dim(ObsSrvLenComps_pop)[5],
-              addtocomp = addtocomp
+          # Survey Length Compositions
+          if(sum(UseSrvLenComps[,y,seas,sf]) >= 1 && fit_lengths == 1) {
+            SrvLenComps_nLL[,y,seas,,sf] = Get_Comp_Likelihoods(
+              Exp = apply(SrvIAL[,,y,seas,,,sf, drop = FALSE], 2:7, sum), Obs = ObsSrvLenComps[,y,seas,,,sf],
+              ISS = ISS_SrvLenComps[,y,seas,,sf], Wt_Mltnml = Wt_SrvLenComps[,y,seas,,sf], Comp_Type = SrvLenComps_Type[y,sf],
+              Likelihood_Type = SrvLenComps_LikeType[sf], ln_theta = ln_SrvLen_theta[,,sf], ln_theta_agg = ln_SrvLen_theta_agg[sf],
+              LN_corr_pars = SrvLen_corr_pars[,,sf,], LN_corr_pars_agg = SrvLen_corr_pars_agg[sf], n_regions = n_regions,
+              n_sexes = n_sexes, age_or_len = 1, AgeingError = NA, use = UseSrvLenComps[,y,seas,sf],
+              n_model_bins = n_lens, n_obs_bins = dim(ObsSrvLenComps)[4], addtocomp = addtocomp
             )
+          }
+        }
+      }
+    }
+  } else {
 
-          } # if we have srvery length comps
-        } # end seas loop
+    # Doing OSA Compositions
+    # Survey Age Compositions
+    if(any(UseSrvAgeComps == 1)) {
 
-      } # end sf loop
-    } # end y loop
+      # Discrete
+      ObsSrvAgeComps_osa_discrete = NULL
+      ObsSrvAgeComps_osa_discrete = pack_comp_osa(
+        ObsArr = ObsSrvAgeComps, ISSArr = ISS_SrvAgeComps, WtArr = Wt_SrvAgeComps,
+        UseArr = UseSrvAgeComps, TypeMat = SrvAgeComps_Type, LikeTypeVec = SrvAgeComps_LikeType,
+        n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_srv_fleets, n_sexes = n_sexes,
+        addtocomp = addtocomp, family = "discrete"
+      )
+      if(!is.null(ObsSrvAgeComps_osa_discrete)) {
+        ObsSrvAgeComps_osa_discrete = RTMB::OBS(ObsSrvAgeComps_osa_discrete)
+        SrvAgeComps_nLL = eval_comp_osa(
+          nLL_arr = SrvAgeComps_nLL, tracked = ObsSrvAgeComps_osa_discrete,
+          ExpArrFn = function(p, y, seas, f) apply(SrvIAA[,,y,seas,,,f, drop=FALSE], 2:7, sum),
+          UseArr = UseSrvAgeComps, TypeMat = SrvAgeComps_Type, LikeTypeVec = SrvAgeComps_LikeType,
+          ISSArr = ISS_SrvAgeComps, lnThetaArr = ln_SrvAge_theta, lnThetaAggVec = ln_SrvAge_theta_agg,
+          LNcorrArr = SrvAge_corr_pars, LNcorrAggVec = SrvAge_corr_pars_agg,
+          n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_srv_fleets, n_sexes = n_sexes,
+          n_model_bins = n_ages, n_obs_bins = dim(ObsSrvAgeComps)[4], age_or_len = 0,
+          AgeingErrorFn = function(y) AgeingError[y,,], addtocomp = addtocomp,
+          family = "discrete", zero_init = TRUE
+        )
+      }
+
+      # Continuous
+      ObsSrvAgeComps_osa_continuous = pack_comp_osa(
+        ObsArr = ObsSrvAgeComps, ISSArr = ISS_SrvAgeComps, WtArr = Wt_SrvAgeComps,
+        UseArr = UseSrvAgeComps, TypeMat = SrvAgeComps_Type, LikeTypeVec = SrvAgeComps_LikeType,
+        n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_srv_fleets, n_sexes = n_sexes,
+        addtocomp = addtocomp, family = "continuous"
+      )
+      if(!is.null(ObsSrvAgeComps_osa_continuous)) {
+        ObsSrvAgeComps_osa_continuous = RTMB::OBS(ObsSrvAgeComps_osa_continuous)
+        SrvAgeComps_nLL = eval_comp_osa(
+          nLL_arr = SrvAgeComps_nLL, tracked = ObsSrvAgeComps_osa_continuous,
+          ExpArrFn = function(p, y, seas, f) apply(SrvIAA[,,y,seas,,,f, drop=FALSE], 2:7, sum),
+          UseArr = UseSrvAgeComps, TypeMat = SrvAgeComps_Type, LikeTypeVec = SrvAgeComps_LikeType,
+          ISSArr = ISS_SrvAgeComps, lnThetaArr = ln_SrvAge_theta, lnThetaAggVec = ln_SrvAge_theta_agg,
+          LNcorrArr = SrvAge_corr_pars, LNcorrAggVec = SrvAge_corr_pars_agg,
+          n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_srv_fleets, n_sexes = n_sexes,
+          n_model_bins = n_ages, n_obs_bins = dim(ObsSrvAgeComps)[4], age_or_len = 0,
+          AgeingErrorFn = function(y) AgeingError[y,,], addtocomp = addtocomp,
+          family = "continuous", zero_init = is.null(ObsSrvAgeComps_osa_discrete)
+        )
+      }
+    }
+
+    # Survey Length Compositions
+    if(fit_lengths == 1 && any(UseSrvLenComps == 1)) {
+
+      # Discrete
+      ObsSrvLenComps_osa_discrete = NULL
+      ObsSrvLenComps_osa_discrete = pack_comp_osa(
+        ObsArr = ObsSrvLenComps, ISSArr = ISS_SrvLenComps, WtArr = Wt_SrvLenComps,
+        UseArr = UseSrvLenComps, TypeMat = SrvLenComps_Type, LikeTypeVec = SrvLenComps_LikeType,
+        n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_srv_fleets, n_sexes = n_sexes,
+        addtocomp = addtocomp, family = "discrete"
+      )
+      if(!is.null(ObsSrvLenComps_osa_discrete)) {
+        ObsSrvLenComps_osa_discrete = RTMB::OBS(ObsSrvLenComps_osa_discrete)
+        SrvLenComps_nLL = eval_comp_osa(
+          nLL_arr = SrvLenComps_nLL, tracked = ObsSrvLenComps_osa_discrete,
+          ExpArrFn = function(p, y, seas, f) apply(SrvIAL[,,y,seas,,,f, drop=FALSE], 2:7, sum),
+          UseArr = UseSrvLenComps, TypeMat = SrvLenComps_Type, LikeTypeVec = SrvLenComps_LikeType,
+          ISSArr = ISS_SrvLenComps, lnThetaArr = ln_SrvLen_theta, lnThetaAggVec = ln_SrvLen_theta_agg,
+          LNcorrArr = SrvLen_corr_pars, LNcorrAggVec = SrvLen_corr_pars_agg,
+          n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_srv_fleets, n_sexes = n_sexes,
+          n_model_bins = n_lens, n_obs_bins = dim(ObsSrvLenComps)[4], age_or_len = 1,
+          AgeingErrorFn = NULL, addtocomp = addtocomp,
+          family = "discrete", zero_init = TRUE
+        )
+      }
+
+      # Continuous
+      ObsSrvLenComps_osa_continuous = pack_comp_osa(
+        ObsArr = ObsSrvLenComps, ISSArr = ISS_SrvLenComps, WtArr = Wt_SrvLenComps,
+        UseArr = UseSrvLenComps, TypeMat = SrvLenComps_Type, LikeTypeVec = SrvLenComps_LikeType,
+        n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_srv_fleets, n_sexes = n_sexes,
+        addtocomp = addtocomp, family = "continuous"
+      )
+      if(!is.null(ObsSrvLenComps_osa_continuous)) {
+        ObsSrvLenComps_osa_continuous = RTMB::OBS(ObsSrvLenComps_osa_continuous)
+        SrvLenComps_nLL = eval_comp_osa(
+          nLL_arr = SrvLenComps_nLL, tracked = ObsSrvLenComps_osa_continuous,
+          ExpArrFn = function(p, y, seas, f) apply(SrvIAL[,,y,seas,,,f, drop=FALSE], 2:7, sum),
+          UseArr = UseSrvLenComps, TypeMat = SrvLenComps_Type, LikeTypeVec = SrvLenComps_LikeType,
+          ISSArr = ISS_SrvLenComps, lnThetaArr = ln_SrvLen_theta, lnThetaAggVec = ln_SrvLen_theta_agg,
+          LNcorrArr = SrvLen_corr_pars, LNcorrAggVec = SrvLen_corr_pars_agg,
+          n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_srv_fleets, n_sexes = n_sexes,
+          n_model_bins = n_lens, n_obs_bins = dim(ObsSrvLenComps)[4], age_or_len = 1,
+          AgeingErrorFn = NULL, addtocomp = addtocomp,
+          family = "continuous", zero_init = is.null(ObsSrvLenComps_osa_discrete)
+        )
+      }
+    }
   }
 
+  ### Survey Compositions (Population-Specific) -------------------------------
+  if(do_internal_comp_osa == FALSE) {
+    for(p in 1:n_pop) {
+      for(y in 1:n_yrs) {
+        for(sf in 1:n_srv_fleets) {
+          for(seas in 1:n_seas) {
+
+            # Survey Age Compositions
+            if(sum(UseSrvAgeComps_pop[p,,y,seas,sf]) >= 1) {
+              SrvAgeComps_pop_nLL[p,,y,seas,,sf] = Get_Comp_Likelihoods(
+                Exp = SrvIAA[p,,y,seas,,,sf], Obs = ObsSrvAgeComps_pop[p,,y,seas,,,sf],
+                ISS = ISS_SrvAgeComps_pop[p,,y,seas,,sf], Wt_Mltnml = Wt_SrvAgeComps_pop[p,,y,seas,,sf],
+                Comp_Type = SrvAgeComps_pop_Type[y,sf], Likelihood_Type = SrvAgeComps_pop_LikeType[sf],
+                ln_theta = ln_SrvAge_pop_theta[p,,,sf], ln_theta_agg = ln_SrvAge_pop_theta_agg[p,sf],
+                LN_corr_pars = SrvAge_pop_corr_pars[p,,,sf,], LN_corr_pars_agg = SrvAge_pop_corr_pars_agg[p,sf],
+                n_regions = n_regions, n_sexes = n_sexes, age_or_len = 0, AgeingError = AgeingError[y,,],
+                use = UseSrvAgeComps_pop[p,,y,seas,sf], n_model_bins = n_ages, n_obs_bins = dim(ObsSrvAgeComps_pop)[5],
+                addtocomp = addtocomp
+              )
+            }
+
+            # Survey Length Compositions
+            if(sum(UseSrvLenComps_pop[p,,y,seas,sf]) >= 1 && fit_lengths == 1) {
+              SrvLenComps_pop_nLL[p,,y,seas,,sf] = Get_Comp_Likelihoods(
+                Exp = SrvIAL[p,,y,seas,,,sf], Obs = ObsSrvLenComps_pop[p,,y,seas,,,sf],
+                ISS = ISS_SrvLenComps_pop[p,,y,seas,,sf], Wt_Mltnml = Wt_SrvLenComps_pop[p,,y,seas,,sf],
+                Comp_Type = SrvLenComps_pop_Type[y,sf], Likelihood_Type = SrvLenComps_pop_LikeType[sf],
+                ln_theta = ln_SrvLen_pop_theta[p,,,sf], ln_theta_agg = ln_SrvLen_pop_theta_agg[p,sf],
+                LN_corr_pars = SrvLen_pop_corr_pars[p,,,sf,], LN_corr_pars_agg = SrvLen_pop_corr_pars_agg[p,sf],
+                n_regions = n_regions, n_sexes = n_sexes, age_or_len = 1, AgeingError = NA,
+                use = UseSrvLenComps_pop[p,,y,seas,sf], n_model_bins = n_lens,
+                n_obs_bins = dim(ObsSrvLenComps_pop)[5], addtocomp = addtocomp
+              )
+            }
+          }
+        }
+      }
+    }
+  } else {
+
+    # Doing OSA Compositions
+    # Survey Age Compositions
+    if(any(UseSrvAgeComps_pop == 1)) {
+
+      # Discrete
+      ObsSrvAgeComps_pop_osa_discrete = NULL
+      ObsSrvAgeComps_pop_osa_discrete = pack_comp_osa(
+        ObsArr = ObsSrvAgeComps_pop, ISSArr = ISS_SrvAgeComps_pop, WtArr = Wt_SrvAgeComps_pop,
+        UseArr = UseSrvAgeComps_pop, TypeMat = SrvAgeComps_pop_Type, LikeTypeVec = SrvAgeComps_pop_LikeType,
+        n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_srv_fleets, n_sexes = n_sexes,
+        addtocomp = addtocomp, family = "discrete", pop = TRUE, n_pop = n_pop
+      )
+      if(!is.null(ObsSrvAgeComps_pop_osa_discrete)) {
+        ObsSrvAgeComps_pop_osa_discrete = RTMB::OBS(ObsSrvAgeComps_pop_osa_discrete)
+        SrvAgeComps_pop_nLL = eval_comp_osa(
+          nLL_arr = SrvAgeComps_pop_nLL, tracked = ObsSrvAgeComps_pop_osa_discrete,
+          ExpArrFn = function(p, y, seas, f) { e = SrvIAA[p,,y,seas,,,f, drop=FALSE]; dim(e) = c(n_regions, n_ages, n_sexes); e },
+          UseArr = UseSrvAgeComps_pop, TypeMat = SrvAgeComps_pop_Type, LikeTypeVec = SrvAgeComps_pop_LikeType,
+          ISSArr = ISS_SrvAgeComps_pop, lnThetaArr = ln_SrvAge_pop_theta, lnThetaAggVec = ln_SrvAge_pop_theta_agg,
+          LNcorrArr = SrvAge_pop_corr_pars, LNcorrAggVec = SrvAge_pop_corr_pars_agg,
+          n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_srv_fleets, n_sexes = n_sexes,
+          n_model_bins = n_ages, n_obs_bins = dim(ObsSrvAgeComps_pop)[5], age_or_len = 0,
+          AgeingErrorFn = function(y) AgeingError[y,,], addtocomp = addtocomp,
+          family = "discrete", zero_init = TRUE, pop = TRUE, n_pop = n_pop
+        )
+      }
+
+      # Continuous
+      ObsSrvAgeComps_pop_osa_continuous = pack_comp_osa(
+        ObsArr = ObsSrvAgeComps_pop, ISSArr = ISS_SrvAgeComps_pop, WtArr = Wt_SrvAgeComps_pop,
+        UseArr = UseSrvAgeComps_pop, TypeMat = SrvAgeComps_pop_Type, LikeTypeVec = SrvAgeComps_pop_LikeType,
+        n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_srv_fleets, n_sexes = n_sexes,
+        addtocomp = addtocomp, family = "continuous", pop = TRUE, n_pop = n_pop
+      )
+      if(!is.null(ObsSrvAgeComps_pop_osa_continuous)) {
+        ObsSrvAgeComps_pop_osa_continuous = RTMB::OBS(ObsSrvAgeComps_pop_osa_continuous)
+        SrvAgeComps_pop_nLL = eval_comp_osa(
+          nLL_arr = SrvAgeComps_pop_nLL, tracked = ObsSrvAgeComps_pop_osa_continuous,
+          ExpArrFn = function(p, y, seas, f) { e = SrvIAA[p,,y,seas,,,f, drop=FALSE]; dim(e) = c(n_regions, n_ages, n_sexes); e },
+          UseArr = UseSrvAgeComps_pop, TypeMat = SrvAgeComps_pop_Type, LikeTypeVec = SrvAgeComps_pop_LikeType,
+          ISSArr = ISS_SrvAgeComps_pop, lnThetaArr = ln_SrvAge_pop_theta, lnThetaAggVec = ln_SrvAge_pop_theta_agg,
+          LNcorrArr = SrvAge_pop_corr_pars, LNcorrAggVec = SrvAge_pop_corr_pars_agg,
+          n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_srv_fleets, n_sexes = n_sexes,
+          n_model_bins = n_ages, n_obs_bins = dim(ObsSrvAgeComps_pop)[5], age_or_len = 0,
+          AgeingErrorFn = function(y) AgeingError[y,,], addtocomp = addtocomp,
+          family = "continuous", zero_init = is.null(ObsSrvAgeComps_pop_osa_discrete), pop = TRUE, n_pop = n_pop
+        )
+      }
+    }
+
+    # Survey Lengths
+    if(fit_lengths == 1 && any(UseSrvLenComps_pop == 1)) {
+
+      # Discrete
+      ObsSrvLenComps_pop_osa_discrete = NULL
+      ObsSrvLenComps_pop_osa_discrete = pack_comp_osa(
+        ObsArr = ObsSrvLenComps_pop, ISSArr = ISS_SrvLenComps_pop, WtArr = Wt_SrvLenComps_pop,
+        UseArr = UseSrvLenComps_pop, TypeMat = SrvLenComps_pop_Type, LikeTypeVec = SrvLenComps_pop_LikeType,
+        n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_srv_fleets, n_sexes = n_sexes,
+        addtocomp = addtocomp, family = "discrete", pop = TRUE, n_pop = n_pop
+      )
+      if(!is.null(ObsSrvLenComps_pop_osa_discrete)) {
+        ObsSrvLenComps_pop_osa_discrete = RTMB::OBS(ObsSrvLenComps_pop_osa_discrete)
+        SrvLenComps_pop_nLL = eval_comp_osa(
+          nLL_arr = SrvLenComps_pop_nLL, tracked = ObsSrvLenComps_pop_osa_discrete,
+          ExpArrFn = function(p, y, seas, f) { e = SrvIAL[p,,y,seas,,,f, drop=FALSE]; dim(e) = c(n_regions, n_lens, n_sexes); e },
+          UseArr = UseSrvLenComps_pop, TypeMat = SrvLenComps_pop_Type, LikeTypeVec = SrvLenComps_pop_LikeType,
+          ISSArr = ISS_SrvLenComps_pop, lnThetaArr = ln_SrvLen_pop_theta, lnThetaAggVec = ln_SrvLen_pop_theta_agg,
+          LNcorrArr = SrvLen_pop_corr_pars, LNcorrAggVec = SrvLen_pop_corr_pars_agg,
+          n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_srv_fleets, n_sexes = n_sexes,
+          n_model_bins = n_lens, n_obs_bins = dim(ObsSrvLenComps_pop)[5], age_or_len = 1,
+          AgeingErrorFn = NULL, addtocomp = addtocomp,
+          family = "discrete", zero_init = TRUE, pop = TRUE, n_pop = n_pop
+        )
+      }
+
+      # Continuous
+      ObsSrvLenComps_pop_osa_continuous = pack_comp_osa(
+        ObsArr = ObsSrvLenComps_pop, ISSArr = ISS_SrvLenComps_pop, WtArr = Wt_SrvLenComps_pop,
+        UseArr = UseSrvLenComps_pop, TypeMat = SrvLenComps_pop_Type, LikeTypeVec = SrvLenComps_pop_LikeType,
+        n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_srv_fleets, n_sexes = n_sexes,
+        addtocomp = addtocomp, family = "continuous", pop = TRUE, n_pop = n_pop
+      )
+      if(!is.null(ObsSrvLenComps_pop_osa_continuous)) {
+        ObsSrvLenComps_pop_osa_continuous = RTMB::OBS(ObsSrvLenComps_pop_osa_continuous)
+        SrvLenComps_pop_nLL = eval_comp_osa(
+          nLL_arr = SrvLenComps_pop_nLL, tracked = ObsSrvLenComps_pop_osa_continuous,
+          ExpArrFn = function(p, y, seas, f) { e = SrvIAL[p,,y,seas,,,f, drop=FALSE]; dim(e) = c(n_regions, n_lens, n_sexes); e },
+          UseArr = UseSrvLenComps_pop, TypeMat = SrvLenComps_pop_Type, LikeTypeVec = SrvLenComps_pop_LikeType,
+          ISSArr = ISS_SrvLenComps_pop, lnThetaArr = ln_SrvLen_pop_theta, lnThetaAggVec = ln_SrvLen_pop_theta_agg,
+          LNcorrArr = SrvLen_pop_corr_pars, LNcorrAggVec = SrvLen_pop_corr_pars_agg,
+          n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_srv_fleets, n_sexes = n_sexes,
+          n_model_bins = n_lens, n_obs_bins = dim(ObsSrvLenComps_pop)[5], age_or_len = 1,
+          AgeingErrorFn = NULL, addtocomp = addtocomp,
+          family = "continuous", zero_init = is.null(ObsSrvLenComps_pop_osa_discrete), pop = TRUE, n_pop = n_pop
+        )
+      }
+    }
+  }
 
   ## Tag Likelihoods ---------------------------------------------------------
-  if(any(use_conv_fish_tagging == 1)) {
-    for(tc in 1:n_conv_tag_cohorts) {
+  if(do_internal_conv_tag_osa == FALSE) {
+    if(any(use_conv_fish_tagging == 1)) {
 
-      # set up tagging cohort indexing
-      tr = conv_tag_release_indicator[tc,1] # extract tag release region
-      ty = conv_tag_release_indicator[tc,2] # extract tag release year
-      tseas = conv_tag_release_indicator[tc,3] # extract tag release season
+      conv_fish_tag_nLL <- get_conv_tag_likelihoods(
+        n_conv_tag_cohorts          = n_conv_tag_cohorts,
+        conv_tag_release_indicator  = conv_tag_release_indicator,
+        conv_tag_max_liberty        = conv_tag_max_liberty,
+        n_yrs                       = n_yrs,
+        n_seas                      = n_seas,
+        conv_tag_mixing_period      = conv_tag_mixing_period,
+        n_fish_fleets               = n_fish_fleets,
+        use_conv_fish_tagging       = use_conv_fish_tagging,
+        n_conv_tag_pop_pool         = n_conv_tag_pop_pool,
+        n_regions                   = n_regions,
+        n_conv_tag_age_pool         = n_conv_tag_age_pool,
+        n_conv_tag_sex_pool         = n_conv_tag_sex_pool,
+        conv_tag_pop_pool           = conv_tag_pop_pool,
+        conv_tag_age_pool           = conv_tag_age_pool,
+        conv_tag_sex_pool           = conv_tag_sex_pool,
+        conv_fish_tag_like          = conv_fish_tag_like,
+        conv_fish_tag_nLL           = conv_fish_tag_nLL,
+        obs_conv_tag_fish_recap     = obs_conv_tag_fish_recap,
+        pred_conv_tag_fish_recap    = pred_conv_tag_fish_recap,
+        addtotag                    = addtotag,
+        ln_conv_fish_tag_theta      = ln_conv_fish_tag_theta,
+        conv_tagged_fish            = conv_tagged_fish
+      )
 
-      for(ry in 1:min(conv_tag_max_liberty, n_yrs - ty + 1)) { # loop through recapture years
-        for(rseas in 1:n_seas) { # loop through recapture seasons
+    } # if we are using tagging data
+  } else {
 
-          # Dealing with tag mixing (not fitting to tags liberty < mixing period)
-          # Skip seasons before release in the first year at liberty
-          if(ry == 1 && rseas < tseas) next
-          # Total seasonal time steps since release
-          total_seas_at_liberty = (ry - 1) * n_seas + (rseas - tseas + 1)
-          # Skip if within mixing period (in seasonal units)
-          if(total_seas_at_liberty < conv_tag_mixing_period) next
+    if(any(use_conv_fish_tagging == 1)) {
 
-          for(f in 1:n_fish_fleets) {
-            if(use_conv_fish_tagging[f] == 1) {
-              for(p in 1:n_conv_tag_pop_pool) {
-                for(r in 1:n_regions) {
-                  for(a in 1:n_conv_tag_age_pool) {
-                    for(s in 1:n_conv_tag_sex_pool) {
+      tag_pack = pack_tag_osa(
+        family                     = tag_fam_of(conv_fish_tag_like),
+        like_type                  = conv_fish_tag_like,
+        obs_recap                  = obs_conv_tag_fish_recap,
+        pred_recap                 = pred_conv_tag_fish_recap,
+        tagged_fish                = conv_tagged_fish,
+        conv_tag_release_indicator = conv_tag_release_indicator,
+        conv_tag_max_liberty       = conv_tag_max_liberty,
+        n_conv_tag_cohorts         = n_conv_tag_cohorts,
+        n_yrs                      = n_yrs,
+        n_seas                     = n_seas,
+        n_regions                  = n_regions,
+        n_fish_fleets              = n_fish_fleets,
+        n_pop_pool                 = n_conv_tag_pop_pool,
+        n_age_pool                 = n_conv_tag_age_pool,
+        n_sex_pool                 = n_conv_tag_sex_pool,
+        pop_pool                   = conv_tag_pop_pool,
+        age_pool                   = conv_tag_age_pool,
+        sex_pool                   = conv_tag_sex_pool,
+        use_fish_tagging           = use_conv_fish_tagging,
+        conv_tag_mixing_period     = conv_tag_mixing_period,
+        addtotag                   = addtotag
+      )
 
-                      pop_pool_idx = conv_tag_pop_pool[[p]] # extract movement pop pool indices
-                      age_pool_idx = conv_tag_age_pool[[a]] # extract movement age pool indices
-                      sex_pool_idx = conv_tag_sex_pool[[s]] # extract movement sex pool indices
+      if(!is.null(tag_pack$vec)) {
 
-                      # Poisson likelihood
-                      if(conv_fish_tag_like == 0) {
-                        conv_fish_tag_nLL[ry,rseas,tc,r,f] = conv_fish_tag_nLL[ry,rseas,tc,r,f]  +
-                          -dpois_noint(sum(obs_conv_tag_fish_recap[ry,rseas,tc,pop_pool_idx,r,age_pool_idx,sex_pool_idx,f] + addtotag),
-                                       sum(pred_conv_tag_fish_recap[ry,rseas,tc,pop_pool_idx,r,age_pool_idx,sex_pool_idx,f] + addtotag),
-                                       give_log = TRUE)
-                      } # end if poisson likelihood
+        # Name the tracked object by family (used later in oneStepPredict)
+        if(tag_fam_of(conv_fish_tag_like) == "count") {
+          ObsConvTag_osa_count = tag_pack$vec
+          ObsConvTag_osa_count = RTMB::OBS(ObsConvTag_osa_count)
+        }
+        if(tag_fam_of(conv_fish_tag_like) == "comp") {
+          ObsConvTag_osa_comp = tag_pack$vec
+          ObsConvTag_osa_comp = RTMB::OBS(ObsConvTag_osa_comp)
+        }
 
-                      # Negative binomial likelihood
-                      if(conv_fish_tag_like == 1) {
-                        log_mu = log(sum(pred_conv_tag_fish_recap[ry,rseas,tc,pop_pool_idx,r,age_pool_idx,sex_pool_idx,f] + addtotag)) # log mu
-                        log_var_minus_mu = 2 * log_mu - ln_conv_fish_tag_theta # log var minus mu
-                        conv_fish_tag_nLL[ry,rseas,tc,r,f] = conv_fish_tag_nLL[ry,rseas,tc,r,f] +
-                          -dnbinom_robust_noint(x = sum(obs_conv_tag_fish_recap[ry,rseas,tc,pop_pool_idx,r,age_pool_idx,sex_pool_idx,f] + addtotag),
-                                                log_mu = log_mu, log_var_minus_mu = log_var_minus_mu, give_log = TRUE)
-                      } # end if for negative binomial likelihood
+        # Get tagging OSAs
+        conv_fish_tag_nLL = eval_tag_osa(
+          nLL_arr                    = conv_fish_tag_nLL,
+          tracked                    = switch(tag_fam_of(conv_fish_tag_like), count = ObsConvTag_osa_count, comp  = ObsConvTag_osa_comp),
+          family                     = tag_fam_of(conv_fish_tag_like),
+          like_type                  = conv_fish_tag_like,
+          pred_recap                 = pred_conv_tag_fish_recap,
+          tagged_fish                = conv_tagged_fish,
+          conv_tag_release_indicator = conv_tag_release_indicator,
+          conv_tag_max_liberty       = conv_tag_max_liberty,
+          n_conv_tag_cohorts         = n_conv_tag_cohorts,
+          n_yrs                      = n_yrs,
+          n_seas                     = n_seas,
+          n_regions                  = n_regions,
+          n_fish_fleets              = n_fish_fleets,
+          n_pop_pool                 = n_conv_tag_pop_pool,
+          n_age_pool                 = n_conv_tag_age_pool,
+          n_sex_pool                 = n_conv_tag_sex_pool,
+          pop_pool                   = conv_tag_pop_pool,
+          age_pool                   = conv_tag_age_pool,
+          sex_pool                   = conv_tag_sex_pool,
+          use_fish_tagging           = use_conv_fish_tagging,
+          conv_tag_mixing_period     = conv_tag_mixing_period,
+          addtotag                   = addtotag,
+          ln_theta                   = ln_conv_fish_tag_theta,
+          zero_init                  = TRUE
+        )
 
-                    } # end s loop
-                  } # end a loop
-                } # end r loop
-              } # end p loop
-            } # end if
-          } # end f loop
+      }
+    }
 
-          # # Release Conditioned for Multinomial or Dirichlet-Multinomial
-          if(conv_fish_tag_like %in% c(2, 4)) {
-
-            # Temporary vectors for recaptured individuals
-            tmp_pred_c_all = vector()
-            tmp_obs_c_all = vector()
-
-            # number of tags released for a given tag cohort
-            tmp_n_tags_released = sum(conv_tagged_fish[tc,,,] + addtotag)
-
-            # Loop through age and sex pooling and combine vectors into the correct format
-            for(f in 1:n_fish_fleets) {
-              if(use_conv_fish_tagging[f] == 1) {
-                for(p in 1:n_conv_tag_pop_pool) {
-                  for(a in 1:n_conv_tag_age_pool) {
-                    for(s in 1:n_conv_tag_sex_pool) {
-
-                      pop_pool_idx = conv_tag_pop_pool[[p]] # extract movement pop pool indices
-                      age_pool_idx = conv_tag_age_pool[[a]] # extract movement age pool indices
-                      sex_pool_idx = conv_tag_sex_pool[[s]] # extract movement sex pool indices
-
-                      # Pool observed and expected if any pooling
-                      for (r in 1:n_regions) {
-                        pred_val = sum(pred_conv_tag_fish_recap[ry, rseas, tc, pop_pool_idx, r, age_pool_idx, sex_pool_idx, f] + addtotag) # sum across age and sex groups
-                        obs_val  = sum(obs_conv_tag_fish_recap[ry, rseas, tc, pop_pool_idx, r, age_pool_idx, sex_pool_idx, f] + addtotag) # sum across age and sex groups
-                        tmp_pred_c_all = c(tmp_pred_c_all, pred_val) # combine predicted recaptures for a given age sex pooled group
-                        tmp_obs_c_all  = c(tmp_obs_c_all,  obs_val) # combine observed recaptures for a given age sex pooled group
-                      } # end r loop
-
-                    } # end a loop
-                  } # end s loop
-                } # end p loop
-              } # end if
-            } # end f loop
-
-            # Normalize observed and predicted recaptures
-            tmp_pred_c_all = tmp_pred_c_all / tmp_n_tags_released
-            tmp_obs_c_all = tmp_obs_c_all / tmp_n_tags_released
-
-            # Add in observed and predicted non-recaptures
-            tmp_pred = c(tmp_pred_c_all, 1 - sum(tmp_pred_c_all))
-            tmp_obs = c(tmp_obs_c_all, 1 - sum(tmp_obs_c_all))
-
-            if(conv_fish_tag_like == 2) conv_fish_tag_nLL[ry,rseas,tc,1,1] = -tmp_n_tags_released * sum((tmp_obs) * log(tmp_pred)) # multinomial
-            if(conv_fish_tag_like == 4) conv_fish_tag_nLL[ry,rseas,tc,1,1] =  -1 * ddirmult(obs = tmp_obs, pred = tmp_pred, Ntotal = tmp_n_tags_released, ln_theta = ln_conv_fish_tag_theta, TRUE) # Dirichlet Multinomial
-
-          } # end if release conditioned
-
-          # Recapture Conditioned (Multinomial or Dirichlet-Multinomial)
-          if(conv_fish_tag_like %in% c(3,5)) {
-            # Temporary vectors for recaptured individuals
-            tmp_pred_all = vector()
-            tmp_obs_all = vector()
-
-            # number of recaptures
-            tmp_n_tags_recap = sum(obs_conv_tag_fish_recap[ry,rseas,tc,,,,,] + addtotag)
-
-            # Loop through age and sex pooling and combine vectors into the correct format
-            for(f in 1:n_fish_fleets) {
-              if(use_conv_fish_tagging[f] == 1) {
-                for(p in 1:n_conv_tag_pop_pool) {
-                  for(a in 1:n_conv_tag_age_pool) {
-                    for(s in 1:n_conv_tag_sex_pool) {
-
-                      pop_pool_idx = conv_tag_pop_pool[[p]] # extract movement pop pool indices
-                      age_pool_idx = conv_tag_age_pool[[a]] # extract movement age pool indices
-                      sex_pool_idx = conv_tag_sex_pool[[s]] # extract movement sex pool indices
-
-                      for (r in 1:n_regions) {
-                        pred_val = sum(pred_conv_tag_fish_recap[ry, rseas, tc, pop_pool_idx, r, age_pool_idx, sex_pool_idx, f] + addtotag) # sum across age and sex groups
-                        obs_val  = sum(obs_conv_tag_fish_recap[ry, rseas, tc, pop_pool_idx, r, age_pool_idx, sex_pool_idx, f] + addtotag) # sum across age and sex groups
-                        tmp_pred_all = c(tmp_pred_all, pred_val) # combine predicted recaptures for a given age sex pooled group
-                        tmp_obs_all  = c(tmp_obs_all,  obs_val) # combine observed recaptures for a given age sex pooled group
-                      } # end r loop
-
-                    } # end a loop
-                  } # end s loop
-                } # end p loop
-              }
-            } # end f loop
-
-            # Normalize observed and predicted recaptures
-            tmp_pred_all = tmp_pred_all / sum(tmp_pred_all)
-            tmp_obs_all = tmp_obs_all / tmp_n_tags_recap
-
-            if(conv_fish_tag_like == 3) conv_fish_tag_nLL[ry,rseas,tc,1,1] = -1 * tmp_n_tags_recap * sum(((tmp_obs_all) * log(tmp_pred_all))) # Multinomial
-            if(conv_fish_tag_like == 5) conv_fish_tag_nLL[ry,rseas,tc,1,1] =  -1 * ddirmult(obs = tmp_obs_all, pred = tmp_pred_all, Ntotal = tmp_n_tags_recap, ln_theta = ln_conv_fish_tag_theta, TRUE) # Dirichlet Multinomial
-
-          } # end if recapture conditioned
-
-        } # end if rseas loop
-      } # end ry loop
-
-    } # end tc loop
-  } # if we are using tagging data
+  }
 
   ## Priors and Penalties ----------------------------------------------------
   ### Fishing Mortality (Penalty) ---------------------------------------------

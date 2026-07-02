@@ -8,6 +8,7 @@
 - Reference points for local density-dependence in both meta-population and natal homing contexts.
 - Added ability to simulate and fit to population-specific catches, indices, compositions, and tagging data. 
 - Added ability to simulate and fit to population-specific discards and discarded compositions. 
+- Added in ability to internally construct OSA residuals for catch, indices, compositions, and tagging data.
 
 ## Minor changes
 - Changed parameter names of ln_srv_fixed_sel_pars and ln_fish_fixed_sel_pars to srv_fixed_sel_pars and fish_fixed_sel_pars for clarity.

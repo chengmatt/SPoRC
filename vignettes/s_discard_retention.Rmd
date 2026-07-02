@@ -347,9 +347,7 @@ setup_em <- function(sim_obj, sim) {
     fish_q_spec             = "est_all",
     ret_sel_model           = "asymplogist1_Fleet_1",
     ret_fixed_sel_pars_spec = "est_all",
-    use_fixed_ret_sel       = 0,
-    fish_sel_nonpar_est_bins = list(list(list(1, 2, 3, 4, 5:10))),
-    ret_sel_nonpar_est_bins  = list(list(list(1, 2, 3, 4, 5:10)))
+    use_fixed_ret_sel       = 0
   )
 
   # Survey selectivity
@@ -357,8 +355,7 @@ setup_em <- function(sim_obj, sim) {
     input_list              = input_list,
     srv_sel_model           = "logist1_Fleet_1",
     srv_fixed_sel_pars_spec = "est_all",
-    srv_q_spec              = "est_all",
-    srv_sel_nonpar_est_bins = list(list(list(1, 2, 3, 4:10)))
+    srv_q_spec              = "est_all"
   )
 
   # Data weighting (no data weights used)

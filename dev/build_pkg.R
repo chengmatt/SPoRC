@@ -84,28 +84,6 @@ unloadNamespace("SPoRC")
 # Integration Tests --------------------------------------------------------------
 # devtools::test()
 
-# usethis::use_testthat()
-# usethis::use_test("dusky_rtmb")
-# usethis::use_test("sabie_sgl_rtmb")
-# usethis::use_test("ebs_pol_sgl_rtmb")
-# usethis::use_test("sabie_three_rg_rtmb")
-# usethis::use_test("sgl_rg_simple_sim_test")
-# usethis::use_test("sgl_rg_spr_sabie_test")
-# usethis::use_test("sgl_rg_bh_msy_sabie_test")
-# usethis::use_test("mlt_rg_global_spr_sabie_test")
-# usethis::use_test("mlt_rg_global_bh_msy_sabie_test")
-# usethis::use_test("mlt_rg_local_bh_msy_sabie_test")
-# usethis::use_test("mlt_rg_pop_seas_global_spr_test")
-# usethis::use_test("mlt_rg_pop_seas_local_bh_msy_test")
-# usethis::use_test("custom_distributions")
-# usethis::use_test("custom_simulate_distributions")
-# usethis::use_test("diag_util_func_dusky")
-# usethis::use_test('3d_precision_matrix')
-# usethis::use_test('logistN_utils')
-# usethis::use_test('release_tag_attr')
-# usethis::use_test('external_osas')
-
-
 # Misc One-Time Setup -----------------------------------------------------
 # usethis::use_news_md()
 # usethis::edit_git_ignore()

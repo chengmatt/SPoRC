@@ -486,8 +486,8 @@ setup_em <- function(sim_obj, sim, use_pop_specific_cat_comps) {
       ObsFishAgeComps_pop = sim_data$ObsFishAgeComps_pop,
       UseFishAgeComps_pop = sim_data$UseFishAgeComps_pop,
       ISS_FishAgeComps_pop = sim_data$ISS_FishAgeComps_pop,
-      pop_FishAgeComps_LikeType = c("Multinomial"),
-      pop_FishAgeComps_Type = c("spltRjntS_Year_1-terminal_Fleet_1"),
+      FishAgeComps_pop_LikeType = c("Multinomial"),
+      FishAgeComps_pop_Type = c("spltRjntS_Year_1-terminal_Fleet_1"),
       fish_idx_type = 'none',
       FishAgeComps_LikeType = c("Multinomial"),
       FishLenComps_LikeType = c("none"),
@@ -533,8 +533,8 @@ setup_em <- function(sim_obj, sim, use_pop_specific_cat_comps) {
       ObsSrvAgeComps_pop = sim_data$ObsSrvAgeComps_pop,
       UseSrvAgeComps_pop = sim_data$UseSrvAgeComps_pop,
       ISS_SrvAgeComps_pop = sim_data$ISS_SrvAgeComps_pop,
-      pop_SrvAgeComps_LikeType = c("Multinomial"),
-      pop_SrvAgeComps_Type = c("spltRjntS_Year_1-terminal_Fleet_1"),
+      SrvAgeComps_pop_LikeType = c("Multinomial"),
+      SrvAgeComps_pop_Type = c("spltRjntS_Year_1-terminal_Fleet_1"),
       srv_idx_type = c("biom"),
       SrvAgeComps_LikeType = c("Multinomial"),
       SrvLenComps_LikeType = c("none"),
@@ -631,7 +631,7 @@ non_pop_obj$sd_rep <- sdreport(non_pop_obj)
 # Population-disaggregated data
 input_list  <- setup_em(sim_obj, sim = 1, use_pop_specific_cat_comps = TRUE)
 pop_obj     <- fit_model(input_list$data, input_list$par, input_list$map,
-                         NULL, 3, silent = FALSE, do_optim = TRUE)
+                         NULL, 3, silent = FALSE, do_optim = T)
 pop_obj$sd_rep <- sdreport(pop_obj)
 ```
 

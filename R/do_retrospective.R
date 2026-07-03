@@ -231,8 +231,8 @@ if(any(data$UseSrvIdx_pop == 1) || any(data$UseSrvAgeComps_pop == 1) || any(data
 
     # Tag cohort stuff
     Tag_Release_Ind <- as.matrix(data$conv_tag_release_indicator)
-    retro_data$conv_tag_release_indicator <- as.matrix(Tag_Release_Ind[which(Tag_Release_Ind[,2] %in% 1:(length(data$years) - j)), ])
-    retro_data$conv_tag_release_platform <- data$conv_tag_release_platform[1:nrow(retro_data$conv_tag_release_indicator),]
+    retro_data$conv_tag_release_indicator <- as.matrix(Tag_Release_Ind[which(Tag_Release_Ind[,2] %in% 1:(length(data$years) - j)),,drop = FALSE ])
+    retro_data$conv_tag_release_platform <- data$conv_tag_release_platform[1:nrow(retro_data$conv_tag_release_indicator),,drop = FALSE]
     retro_data$n_conv_tag_cohorts <- nrow(retro_data$conv_tag_release_indicator)
     retro_data$conv_tagged_fish <- data$conv_tagged_fish[1:nrow(retro_data$conv_tag_release_indicator),,,,drop = FALSE] # remove data (not necessary, but helps with computational cost if using tagging)
     retro_data$obs_conv_tag_fish_recap <- data$obs_conv_tag_fish_recap[,,1:nrow(retro_data$conv_tag_release_indicator),,,,,,drop = FALSE] # remove data (not necessary, but helps with computational cost)

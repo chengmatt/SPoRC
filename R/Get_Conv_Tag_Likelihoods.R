@@ -444,6 +444,7 @@ pack_tag_osa = function(family, like_type,
 #'
 #' @return Updated \code{nLL_arr} array with OSA negative log-likelihood
 #'   contributions filled in loop/grid order.
+#' @importFrom RTMBdist ddirmult
 #' @keywords internal
 eval_tag_osa = function(nLL_arr, tracked, family, like_type,
                         pred_recap, tagged_fish,

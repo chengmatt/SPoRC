@@ -34,6 +34,8 @@ The following tables describe all elements contained within `input_list$data`, w
 | spawn_seas | Integer specifying which season spawning occurs in |
 | natal_region | Integer vector of length n_pop specifying the natal region for each population. Used when n_pop > 1 to define population-specific recruitment and density dependence |
 | n_proj_yrs_devs | Number of years to project deviations / random effect parameters forward |
+| do_internal_comp_osa | Boolean. Whether or not internal composition OSAs are planned to be used |
+| do_internal_conv_tag_osa | Boolean. Whether or not internal tagging OSAs are planned to be used |
 
 ## Data Inputs for Defining Recruitment Processes
 

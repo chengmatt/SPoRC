@@ -38,11 +38,13 @@ Imports:
     progressr,
     randtests,
     reshape2,
+    RTMBdist,
     stats,
     stringr,
     tidyr,
     TMB
 Suggests: 
+    devtools,
     igraph,
     knitr,
     purrr,

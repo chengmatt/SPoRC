@@ -11,7 +11,7 @@ library(here)
 Sys.unsetenv("GITHUB_PAT") # unset before building vignettes
 
 # Code Coverage -----------------------------------------------------------
-covr::package_coverage(quiet = FALSE, type = 'all')
+# covr::package_coverage(quiet = FALSE, type = 'all')
 
 # Documentation -----------------------------------------------------------
 desc::desc_set_version("1.2.0")
@@ -20,8 +20,6 @@ desc::desc_set_version("1.2.0")
 document() # document functions
 roxygenise() # make sure functions have roxygen documentation
 att_amend_desc(update = TRUE)
-document()
-roxygenise()
 
 # Dependency adjustments
 desc::desc_del_dep("compResidual", "Imports")

@@ -27,10 +27,6 @@
 #'   \code{stats::nlminb}. Default
 #'   \code{list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15)}.
 #' @param ... Additional arguments forwarded to \code{RTMB::MakeADFun}.
-#' @param do_internal_comp_osa Logical. If \code{TRUE}, allows OSA residuals for composition datasets.
-#' Default \code{FALSE}.
-#' @param do_internal_conv_tag_osa Logical. If \code{TRUE}, allows OSA residuals for tagging datasets.
-#' Default \code{FALSE}.
 #'
 #' @return The RTMB \code{ADFun} object with three additional fields:
 #'   \code{$optim} (the \code{nlminb} output list), and \code{$rep} (the
@@ -52,15 +48,9 @@ fit_model <- function(data,
                       newton_loops = 3,
                       silent = FALSE,
                       do_optim = TRUE,
-                      do_internal_comp_osa = FALSE,
-                      do_internal_conv_tag_osa = FALSE,
                       nlminb_control = list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15),
                       ...
                       ) {
-
-  # Flag for OSAs
-  data$do_internal_comp_osa <- do_internal_comp_osa
-  data$do_internal_conv_tag_osa <- do_internal_conv_tag_osa
 
   # make AD model function
   obj <- RTMB::MakeADFun(cmb(SPoRC_rtmb, data), parameters = parameters,

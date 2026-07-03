@@ -168,6 +168,10 @@ Setup_Sim_Dim <- function(n_sims,
 #'   settings to the console via \code{message()} after setup. Default
 #'   \code{FALSE}.
 #' @param store_config Logical. If \code{TRUE}, stores configuration of the model. Default is \code{FALSE}
+#' @param do_internal_comp_osa Logical. If \code{TRUE}, allows OSA residuals for composition datasets.
+#' Default \code{FALSE}.
+#' @param do_internal_conv_tag_osa Logical. If \code{TRUE}, allows OSA residuals for tagging datasets.
+#' Default \code{FALSE}.
 #'
 #' @return A named list (\code{input_list}) with three sublists:
 #'   \describe{
@@ -199,6 +203,8 @@ Setup_Mod_Dim <- function(years,
                           n_fish_fleets,
                           n_srv_fleets,
                           n_proj_yrs_devs = 0,
+                          do_internal_comp_osa = FALSE,
+                          do_internal_conv_tag_osa = FALSE,
                           verbose = FALSE,
                           store_config = FALSE
                           ) {
@@ -239,6 +245,8 @@ Setup_Mod_Dim <- function(years,
   input_list$data$seasdur <- seasdur
   input_list$verbose <- verbose
   input_list$store_config <- store_config
+  input_list$data$do_internal_comp_osa <- do_internal_comp_osa
+  input_list$data$do_internal_conv_tag_osa <- do_internal_conv_tag_osa
 
   collect_message("Number of Years: ", length(years))
   collect_message("Number of Seasons: ", n_seas)

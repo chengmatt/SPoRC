@@ -17,6 +17,8 @@ Setup_Mod_Dim(
   n_fish_fleets,
   n_srv_fleets,
   n_proj_yrs_devs = 0,
+  do_internal_comp_osa = FALSE,
+  do_internal_conv_tag_osa = FALSE,
   verbose = FALSE,
   store_config = FALSE
 )
@@ -70,6 +72,12 @@ which deviation parameters (\code{ln_RecDevs}, \code{move_devs},
 \code{ln_fishsel_devs}, \code{ln_srvsel_devs}) are allocated. Set to
 \code{0} (default) when projections beyond the assessment period are not
 required.}
+
+\item{do_internal_comp_osa}{Logical. If \code{TRUE}, allows OSA residuals for composition datasets.
+Default \code{FALSE}.}
+
+\item{do_internal_conv_tag_osa}{Logical. If \code{TRUE}, allows OSA residuals for tagging datasets.
+Default \code{FALSE}.}
 
 \item{verbose}{Logical. If \code{TRUE}, prints a summary of all dimension
 settings to the console via \code{message()} after setup. Default

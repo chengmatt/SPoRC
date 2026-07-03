@@ -401,6 +401,7 @@ Get_Comp_Likelihoods = function(Exp,
 #' @param LN_corr_pars LN correlation parameters [n_regions × n_sexes × 3].
 #' @param LN_corr_pars_agg LN aggregated correlation scalar(s).
 #' @inheritParams Get_Comp_Likelihoods
+#' @importFrom RTMBdist ddirmult
 #' @keywords internal
 Get_Comp_Likelihoods_OSA = function(Exp,
                                     Obs,

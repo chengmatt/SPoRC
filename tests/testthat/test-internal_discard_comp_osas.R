@@ -149,7 +149,8 @@ test_that("Internal composition OSAs are producing consistent results with an in
       n_srv_fleets   = sim_obj$n_srv_fleets,
       n_pop          = sim_obj$n_pop,
       natal_region   = sim_obj$natal_region,
-      verbose        = FALSE
+      verbose        = FALSE,
+      do_internal_comp_osa = TRUE
     )
 
     # Recruitment
@@ -331,9 +332,8 @@ test_that("Internal composition OSAs are producing consistent results with an in
     random       = NULL,
     silent       = TRUE,
     do_optim     = TRUE,
-    newton_loops = 3,
-    do_internal_comp_osa = TRUE
-  )
+    newton_loops = 3
+    )
 
   # index
   osa_idx_correct <- oneStepPredict(

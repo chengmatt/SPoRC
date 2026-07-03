@@ -508,7 +508,7 @@ test_that("OSA residuals are well-calibrated under correct EM and mis-calibrated
     }
 
     list(
-      mean = mean(resid), sd = sd_val, shapiro_p = shapiro_p, trend_p = trend_p,
+      mean = mean(resid), sd = sd_val, shapiro_p = shapiro_p,
       mean_ok = mean_ok, sd_ok = sd_ok, normal_ok = normal_ok,
       autocorr_ok = autocorr_ok,
       calibrated = mean_ok && sd_ok && normal_ok && autocorr_ok && trend_ok

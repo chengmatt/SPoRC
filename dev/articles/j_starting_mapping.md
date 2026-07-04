@@ -1,0 +1,374 @@
+# Starting Values and Fixing (and Sharing) Parameters
+
+In addition to the `Setup_xxx` functions, users can access several
+advanced model features. These include:
+
+- Specifying starting values (closely tied to parameter fixing)  
+- Fixing parameters  
+- Sharing parameters across model partitions
+
+## Starting Values
+
+Starting values can be specified in two ways:
+
+1.  Directly within the `Setup_xxx` functions. Each setup function
+    accepts starting values through the `...` argument. The inputs must
+    match the model’s parameter names and dimensions exactly. For more
+    information on parameter dimensions, see the *Description of Model
+    Parameters* vignette.
+
+- `Setup_Mod_Rec`  
+  *ln_global_R0*, *rec_region_prop_pars*, *rec_seas_prop_pars*,
+  *steepness_h*, *ln_InitDevs*, *ln_RecDevs*, *ln_sigmaR*
+
+- `Setup_Mod_Biologicals`  
+  *ln_M*, *M_offset*
+
+- `Setup_Mod_Movement`  
+  *move_pars*, *move_devs*, *move_pe_pars*, *log_move_diffusion_pars*,
+  *move_preference_pars*
+
+- `Setup_Mod_Tagging`  
+  *ln_init_conv_tag_mort*, *ln_conv_tag_shed*, *ln_conv_fish_tag_theta*,
+  *conv_tag_fish_reporting_pars*
+
+- `Setup_Mod_Catch_and_F`  
+  *ln_sigmaC*, *ln_sigmaF*, *ln_F_mean*, *ln_F_devs*
+
+- `Setup_Mod_FishIdx_and_Comps`  
+  *ln_FishAge_theta*, *FishAge_corr_pars*, *ln_FishAge_theta_agg*,
+  *FishAge_corr_pars_agg*,  
+  *ln_FishLen_theta*, *FishLen_corr_pars*, *ln_FishLen_theta_agg*,
+  *FishLen_corr_pars_agg*
+
+- `Setup_Mod_SrvIdx_and_Comps`  
+  *ln_SrvAge_theta*, *SrvAge_corr_pars*, *ln_SrvAge_theta_agg*,
+  *SrvAge_corr_pars_agg*,  
+  *ln_SrvLen_theta*, *SrvLen_corr_pars*, *ln_SrvLen_theta_agg*,
+  *SrvLen_corr_pars_agg*
+
+- `Setup_Mod_Fishsel_and_Q`  
+  *fish_fixed_sel_pars*, *ln_fish_q*, *fishsel_pe_pars*,
+  *ln_fishsel_devs*
+
+- `Setup_Mod_Srvsel_and_Q`  
+  *ln_srv_fixed_sel_pars*, *ln_srv_q*, *srvsel_pe_pars*,
+  *ln_srvsel_devs*
+
+2.  Post-hoc modification of starting values. Alternatively, you can
+    first call the setup functions without specifying starting values,
+    then access and modify the internally created parameter list
+    (`input_list$par`) before running the model.
+
+In the following, we will illustrate both methods using the recruitment
+module (`Setup_Mod_Rec`) and specify starting values for `ln_global_R0`
+and `ln_sigmaR`. First let us load in the package and define the model
+dimensions.
+
+``` r
+
+# Load in packages
+library(SPoRC) 
+data("sgl_rg_sable_data") # load in data
+
+input_list <- Setup_Mod_Dim(years = 1:length(sgl_rg_sable_data$years), # vector of years 
+                            # (corresponds to year 1960 - 2024)
+                            ages = 1:length(sgl_rg_sable_data$ages), # vector of ages
+                            lens = seq(41,99,2), # number of lengths
+                            n_regions = 1, # number of regions
+                            n_sexes = sgl_rg_sable_data$n_sexes, # number of sexes == 1,
+                            # female, == 2 male
+                            n_fish_fleets = sgl_rg_sable_data$n_fish_fleets, # number of fishery
+                            # fleet == 1, fixed gear, == 2 trawl gear
+                            n_srv_fleets = sgl_rg_sable_data$n_srv_fleets, # number of survey fleets
+                            n_pop = sgl_rg_sable_data$n_pop, # number of populations
+                            verbose = FALSE
+                            )
+```
+
+We can specify starting values directly using the `Setup_Mod_Rec`
+function. Note that all inputs passed via the `...` argument must
+exactly match the parameter names and their expected dimensions in the
+model (see the *Description of Model Parameters* vignette for details).
+
+``` r
+
+input_list <- Setup_Mod_Rec(
+  input_list = input_list,        # input data list from above
+  # Model options
+  do_rec_bias_ramp = 0,       # disable bias ramp
+  sigmaR_switch = as.integer(length(1960:1975)),  # switch from early to late sigmaR
+  dont_est_recdev_last = 1,       # do not estimate last recruitment deviate
+  rec_model = "mean_rec",         # recruitment model type
+  init_age_strc = 1,              # geometric series for initial age structure
+  
+  # Specify starting values
+  ln_global_R0 = log(30),         # starting value for global R0
+  ln_sigmaR = array(log(1.5), dim = c(2, input_list$data$n_pop, input_list$data$n_regions))  # starting values for early and late sigmaR
+)
+```
+
+In this example, the starting value for *ln_global_R0* is set to
+`log(30)`, while *ln_sigmaR* is set to `log(1.5)` for both the early
+(index 1 along the first dimension) and late (index 2) periods across
+all populations and regions.
+
+Alternatively, starting values can be assigned after running the setup
+functions. Users can extract the internal parameter list and modify
+starting values as needed:
+
+``` r
+
+input_list <- Setup_Mod_Rec(input_list = input_list, # input data list from above
+                            # Model options
+                            do_rec_bias_ramp = 0, # don't do bias ramp 
+                            sigmaR_switch = as.integer(length(1960:1975)), # when to switch from early to late sigmaR
+                            dont_est_recdev_last = 1, # don't estimate last recruitment deviate
+                            rec_model = "mean_rec", # recruitment model
+                            init_age_strc = 1 # geometric series to derive age structure
+                            )
+
+# Specify starting values post-hoc
+# R0
+input_list$par$ln_global_R0 # default starting value
+#> [1] 2.70805
+input_list$par$ln_global_R0 <- log(30) # user specified starting value
+
+# sigmaR
+input_list$par$ln_sigmaR # default starting value
+#> , , 1
+#> 
+#>      [,1]
+#> [1,]    0
+#> [2,]    0
+input_list$par$ln_sigmaR[,,] <- log(1.5) # user specified starting value
+```
+
+## Mapping
+
+Mapping is a core feature of TMB and RTMB models that controls which
+parameters are estimated and how they relate to each other. It works
+through a named list (`input_list$map`) where each entry corresponds to
+a parameter array flattened into a vector of factors. The rules are
+simple:
+
+- **`factor(NA)`** at a position means that parameter is **fixed** — it
+  is held at its value in `input_list$par` and not estimated.
+- **Shared integers** at two or more positions means those parameters
+  are **constrained to be equal** during estimation — only one value is
+  estimated for the group.
+- **Unique integers** at each position means each parameter is
+  **independently estimated**.
+
+Because fixing a parameter holds it at its current value in
+`input_list$par`, starting values and fixing must always be set
+together. If you fix a parameter without also setting a starting value,
+it will be held at the default value, which may not be what you intend.
+
+### Fixing Parameters
+
+The `Setup_xxx` functions include arguments that allow certain
+parameters to be fixed. As an example, we use `Setup_Mod_Rec` to show
+how *ln_sigmaR* can be fixed using the convenience argument
+`sigmaR_spec = "fix"`.
+
+``` r
+
+input_list <- Setup_Mod_Rec(input_list = input_list, # input data list from above
+                            # Model options
+                            do_rec_bias_ramp = 0, # don't do bias ramp 
+                            sigmaR_switch = as.integer(length(1960:1975)), # when to switch from early to late sigmaR
+                            dont_est_recdev_last = 1, # don't estimate last recruitment deviate
+                            rec_model = "mean_rec", # recruitment model
+                            init_age_strc = 1, # geometric series to derive age structure
+                            
+                            # Parameter Fixing
+                            sigmaR_spec = 'fix'
+                            )
+
+input_list$map$ln_sigmaR # both values are fixed and not estimated (specified as factor(rep(NA, 2)))
+#> [1] <NA> <NA>
+#> Levels:
+input_list$par$ln_sigmaR # ln_sigmaR is then fixed at the default starting value
+#> , , 1
+#> 
+#>      [,1]
+#> [1,]    0
+#> [2,]    0
+```
+
+To fix *ln_sigmaR* at a specific value rather than the default, supply
+the desired starting value at the same time:
+
+``` r
+
+input_list <- Setup_Mod_Rec(input_list = input_list, # input data list from above
+                            # Model options
+                            do_rec_bias_ramp = 0, # don't do bias ramp 
+                            sigmaR_switch = as.integer(length(1960:1975)), # when to switch from early to late sigmaR
+                            dont_est_recdev_last = 1, # don't estimate last recruitment deviate
+                            rec_model = "mean_rec", # recruitment model
+                            init_age_strc = 1, # geometric series to derive age structure
+                            
+                            # Parameter Fixing
+                            sigmaR_spec = 'fix',
+  ln_sigmaR = array(log(1.5), dim = c(2, input_list$data$n_pop, input_list$data$n_regions))  # starting values for early and late sigmaR
+  )
+
+input_list$map$ln_sigmaR # both values are fixed and not estimated (specified as factor(rep(NA, 2)))
+#> [1] <NA> <NA>
+#> Levels:
+input_list$par$ln_sigmaR # ln_sigmaR is then fixed at the user specified starting value
+#> , , 1
+#> 
+#>           [,1]
+#> [1,] 0.4054651
+#> [2,] 0.4054651
+```
+
+Not all parameters have a convenience argument like
+`sigmaR_spec = "fix"`. For example, *ln_global_R0* does not. In such
+cases, you can fix the parameter manually by setting its map entry to
+`NA` and assigning the desired value in the parameter list. Remember:
+the map entry fixes the parameter at whatever is currently in
+`input_list$par`, so always set the starting value first.
+
+``` r
+
+input_list <- Setup_Mod_Rec(input_list = input_list, # input data list from above
+                            # Model options
+                            do_rec_bias_ramp = 0, # don't do bias ramp 
+                            sigmaR_switch = as.integer(length(1960:1975)), # when to switch from early to late sigmaR
+                            dont_est_recdev_last = 1, # don't estimate last recruitment deviate
+                            rec_model = "mean_rec", # recruitment model
+                            init_age_strc = 1, # geometric series to derive age structure
+                            )
+
+input_list$map$ln_global_R0 <- factor(NA)
+input_list$par$ln_global_R0 <- log(30)
+```
+
+### Sharing Parameters
+
+The `Setup_xxx` functions also support sharing parameters across model
+partitions via built-in convenience arguments. These cover common
+sharing structures (e.g., sharing selectivity across sexes or regions),
+but for finer control — such as sharing a subset of parameters while
+estimating others independently — users can construct the map manually.
+
+Below, we demonstrate both approaches using fishery selectivity as an
+example. We define two fishery fleets: Fleet 1 uses a logistic
+selectivity model (2 parameters: *a50* and slope), and Fleet 2 uses a
+gamma dome-shaped model (2 parameters: *amax* and slope).
+
+**Built-in sharing: estimate all parameters independently**
+
+We first use `fish_fixed_sel_pars_spec = "est_all"` to estimate all
+selectivity parameters independently across all model partitions. With 2
+sexes, 2 parameters per fleet, and 2 fleets, we expect 8 unique values
+in the map.
+
+``` r
+
+input_list <- SPoRC::Setup_Mod_Fishsel_and_Q(input_list = input_list,
+
+                                      # Model options
+                                      cont_tv_fish_sel = c("none_Fleet_1", "none_Fleet_2"),
+                                      fish_sel_blocks = c("none_Fleet_1", "none_Fleet_2"),
+                                      fish_sel_model = c("logist1_Fleet_1", "gamma_Fleet_2"),
+                                      fish_q_blocks = c("none_Fleet_1", "none_Fleet_2"),
+                                      fish_q_spec = c("fix", "fix"),
+
+                                      # Share selectivity parameters across all partitions
+                                      fish_fixed_sel_pars_spec = c("est_all", "est_all"))
+
+input_list$map$fish_fixed_sel_pars # 8 unique numbers, 4 for each sex and fleet combination
+#> [1] <NA> <NA> <NA> <NA> <NA> <NA> <NA> <NA>
+#> Levels:
+```
+
+**Built-in sharing: share parameters across sexes**
+
+Using `fish_fixed_sel_pars_spec = "est_shared_s"` links selectivity
+parameters between sexes within each fleet. The same two parameters are
+used for both sexes, so we expect only 4 unique values (2 per fleet).
+
+``` r
+
+input_list <- SPoRC::Setup_Mod_Fishsel_and_Q(input_list = input_list,
+
+                                      # Model options
+                                      cont_tv_fish_sel = c("none_Fleet_1", "none_Fleet_2"),
+                                      fish_sel_blocks = c("none_Fleet_1", "none_Fleet_2"),
+                                      fish_sel_model = c("logist1_Fleet_1", "gamma_Fleet_2"),
+                                      fish_q_blocks = c("none_Fleet_1", "none_Fleet_2"),
+                                      fish_q_spec = c("fix", "fix"),
+
+                                      # Share selectivity parameters across all partitions
+                                      fish_fixed_sel_pars_spec = c("est_shared_s", "est_shared_s"))
+
+input_list$map$fish_fixed_sel_pars # 4 unique numbers, 2 for each sex and fleet combination
+#> [1] <NA> <NA> <NA> <NA> <NA> <NA> <NA> <NA>
+#> Levels:
+```
+
+**Manual sharing: fine-grained control**
+
+For sharing structures not supported by the convenience arguments, the
+map can be constructed manually. In this example, we want:
+
+- Fleet 1 (logistic): *a50* is sex-specific, but the slope is shared
+  across sexes
+- Fleet 2 (gamma): all parameters are sex-specific
+
+We start from `est_all` to get the correctly dimensioned parameter
+array, then overwrite the map. The parameter array `fish_fixed_sel_pars`
+has dimensions
+`[n_regions, n_max_sel_pars, n_max_sel_blocks, n_sexes, n_fish_fleets]`
+— in this example `1 × 2 × 1 × 2 × 2`. The table below summarises the
+intended sharing structure before we implement it:
+
+| Fleet | Parameter | Female index | Male index | Shared? |
+|-------|-----------|--------------|------------|---------|
+| 1     | *a50*     | 1            | 2          | No      |
+| 1     | slope     | 3            | 3          | Yes     |
+| 2     | *amax*    | 4            | 5          | No      |
+| 2     | slope     | 6            | 7          | No      |
+
+``` r
+
+input_list <- Setup_Mod_Fishsel_and_Q(
+  input_list = input_list,
+  cont_tv_fish_sel = c("none_Fleet_1", "none_Fleet_2"),
+  fish_sel_blocks = c("none_Fleet_1", "none_Fleet_2"),
+  fish_sel_model = c("logist1_Fleet_1", "gamma_Fleet_2"),
+  fish_q_blocks = c("none_Fleet_1", "none_Fleet_2"),
+  fish_q_spec = c("fix", "fix"),
+  fish_fixed_sel_pars_spec = c("est_all", "est_all")  # start with all independent
+)
+
+# Extract the parameter array to use as a mapping template
+map_fish_fixed_sel_pars <- input_list$par$fish_fixed_sel_pars
+
+# Fleet 1 (logistic): a50 sex-specific, slope shared
+map_fish_fixed_sel_pars[1, 1, 1, , 1] <- c(1, 2)  # a50: unique per sex
+map_fish_fixed_sel_pars[1, 2, 1, , 1] <- c(3, 3)  # slope: same integer = shared
+
+# Fleet 2 (gamma): all parameters sex-specific
+map_fish_fixed_sel_pars[1, 1, 1, , 2] <- c(4, 5)  # amax: unique per sex
+map_fish_fixed_sel_pars[1, 2, 1, , 2] <- c(6, 7)  # slope: unique per sex
+
+# Flatten to a factor vector and assign to the map
+input_list$map$fish_fixed_sel_pars <- factor(as.vector(map_fish_fixed_sel_pars))
+
+# Inspect: 7 unique integers (slope for Fleet 1 appears twice with the same value)
+input_list$map$fish_fixed_sel_pars
+#> [1] 1 3 2 3 4 6 5 7
+#> Levels: 1 2 3 4 5 6 7
+```
+
+This custom mapping approach gives full control over parameter sharing
+structures beyond what the high-level convenience arguments provide. The
+key principle is always the same: positions in the flattened map with
+the same integer are estimated as a single shared parameter, while `NA`
+positions are fixed at their value in `input_list$par`.

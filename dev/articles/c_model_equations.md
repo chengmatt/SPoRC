@@ -1,0 +1,2070 @@
+# Description of Model Equations
+
+The Stochastic Population over Regional Components (`SPoRC`) model is a
+generalized integrated population model written in `RTMB` (R bindings
+for Template Model Builder; Kristensen et al., 2016) that supports age,
+sex, population, seasonal, and spatially-structured dynamics. Population
+dynamics operate across an annual time step that is further subdivided
+into $`n_\tau`$ seasons of duration $`\Delta\tau`$ (where
+$`\sum_\tau \Delta\tau = 1`$). Within each annual–seasonal cycle,
+processes occur in sequential order:
+
+1.  Recruitment generally occurs in the first season, with additional
+    recruits apportioned to subsequent seasons according to seasonal
+    proportions,
+2.  Markovian movement of individuals then follows (movement only occurs
+    in the spatial model),
+3.  Total mortality occurs within each season; at the end of the final
+    season, individuals advance in age.
+
+Tag releases occur simultaneous to recruitment in the release year and
+season (i.e., recruits can be tagged), and tag recaptures are computed
+each season.
+
+These processes are modeled across five primary partitions: population
+($`p`$), region ($`r`$), year ($`y`$), season ($`\tau`$), age ($`a`$ and
+$`a_{+}`$, where $`a_{+}`$ is the plus group), and sex ($`s`$). In
+single-population, single-region and/or single-sex models, these
+equations generally reduce by setting $`p = 1`$, $`r = 1`$ and/or
+$`s = 1`$. In general, the same equations are used for both simulation
+and estimation.
+
+### Process Equations
+
+#### Population Initialization
+
+In `SPoRC`, three primary methods exist to initialize the equilibrium
+population of the model. The first method derives the equilibrium
+population using the following process:
+
+``` math
+N_{p,r,a,s}^{'} = \mu_p^{\text{RecInit}}\exp\left( - (a - 1) \cdot Z_{p,r,a,s}^{'} \right)\psi_{p,r,y = 1,s}\zeta_{p,r},\quad\text{for }2 \leq a < a_{+}
+```
+
+``` math
+Z_{p,r,a,s}^{'} = \text{Natmort}_{p,r,y = 1,a,s} + \sum_{f=1}^{n_f} \text{Fmort}_{r,\tau,f}^{\text{InitProp}} \cdot \exp\left(\mu_{r,\tau,f}^{\text{Fsh}}\right) \cdot \mathbb{1}_{r,\tau,f}^{\text{Catch}} \cdot \left[\text{Sel}_{p,r,y=1,\tau,a,s,f}^{\text{Fsh}} \cdot \text{Sel}_{p,r,y=1,\tau,a,s,f}^{\text{Ret}} + \text{Sel}_{p,r,y=1,\tau,a,s,f}^{\text{Fsh}} \cdot \left(1 - \text{Sel}_{p,r,y=1,\tau,a,s,f}^{\text{Ret}}\right) \cdot \delta_{r,\tau,f}\right]
+```
+
+where:
+
+- $`N_{p,r,a,s}^{'}`$ are the equilibrium numbers-at-age,
+- $`\mu_p^{\text{RecInit}}`$ is a global recruitment parameter used to
+  scale the equilibrium age structure during initialisation. Users have
+  the option to either initialize the population using the same
+  recruitment parameter that governs the stock-recruit relationship
+  (either virgin or mean recruitment depending on the parameterization),
+  or to estimate a separate recruitment scalar exclusively for
+  initialization The latter is useful when the historical mean
+  recruitment used to initialize the population differs from the virgin
+  recruitment implied by the stock-recruit relationship, or when the
+  assumption that the population was at unfished equilibrium at the
+  start of the time series is not appropriate.
+- $`Z_{p,r,a,s}^{'}`$ is the initial instantaneous total mortality rate,
+- $`\text{Natmort}_{p,r,y = 1,a,s}`$ is the instantaneous natural
+  mortality rate,
+- $`\mu_{r,\tau,f}^{\text{Fsh}}`$ is the log-mean fishing mortality rate
+  for fleet $`f`$ in region $`r`$ and season $`\tau`$,
+- $`\text{Fmort}_{r,\tau,f}^{\text{InitProp}}`$ is a parameter (or
+  user-defined) describing the proportion of the mean fishing mortality
+  for a given fleet applied across during the initialization stage,
+- $`\mathbb{1}_{r,\tau,f}^{\text{Catch}}`$ is an indicator variable
+  equal to 1 if fleet $`f`$ is active in region $`r`$ and season
+  $`\tau`$ in year 1, and 0 otherwise,
+- $`\text{Sel}_{p,r,y = 1,\tau,a,s,f}^{\text{Fsh}}`$ is the total
+  fishery selectivity-at-age for fleet $`f`$,
+- $`\text{Sel}_{p,r,y = 1,\tau,a,s,f}^{\text{Ret}}`$ is the retention
+  selectivity-at-age for fleet $`f`$,
+- $`\delta_{r,\tau,f}`$ is the discard mortality rate for fleet $`f`$ in
+  region $`r`$ and season $`\tau`$,
+- $`n_f`$ is the number of fishing fleets,
+- $`\psi_{p,r,y,s}`$ describes the recruitment sex-ratio,
+- $`\zeta_{p,r}`$ apportions the global recruitment parameter across
+  regions (estimated using a multinomial logit transform to ensure
+  proportions sum to one).
+
+The plus group ($`a_{+}`$) of the initial population is then computed
+as:
+
+``` math
+N_{p,r,a_{+},s}^{'} = N_{p,r,a_{+} - 1,s}^{'}\dfrac{\exp\left( - Z_{p,r,a = a_{+} - 1,s}^{'} \right)}{1 - \exp\left( - Z_{p,r,a = a_{+},s}^{'} \right)}
+```
+
+However, this scalar geometric series solution assumes that the plus
+group accumulates in a closed system. Therefore, when movement dynamics
+are present, this solution does not correctly accumulate individuals
+into the plus group.
+
+To address this, additional methods are provided to explicitly
+incorporate movement dynamics into the plus group calculation. In
+particular, the initial population can be derived by iterating the
+population to equilibrium. An exponential decay model is used to first
+initialize the age structure at the first iteration:
+
+``` math
+\begin{matrix}
+N_{p,r,a,s}^{'} = \left\{ \begin{matrix}
+\mu_p^{\text{RecInit}}\,\psi_{p,r,y = 1,s}\,\zeta_{p,r}, & \text{if }a = 1 \\
+\mu_p^{\text{RecInit}}\,\psi_{p,r,y = 1,s}\,\zeta_{p,r}\,\exp\left( - \sum_{a = 1}^{n_{a}}Z_{p,r,a,s}^{'} \right), & \text{if }a > 1 \\
+\end{matrix} \right.\  \\
+\end{matrix}
+```
+
+The initialized age structure is then iterated forward to equilibrium by
+applying recruitment, movement, and mortality and ageing processes in
+order (see Population Projection section for equations).
+
+While the iterative method correctly accumulates the plus group when
+movement is present, it can be computationally inefficient. Therefore,
+`SPoRC` enables users to compute the plus group using the matrix
+formulation of the geometric series, which correctly accounts for
+movement processes. The population is projected forward to the
+penultimate age ($`N_{p,r,a_{+} - 1,s}^{'}`$), and the penultimate age
+is then projected forward once more:
+
+``` math
+\mathbf{X}_{p,s}\mathbf{=}\left( \left( \mathbf{N}_{p,a_{+} - 1,s}^{'} \right)^{T}\mathbf{M}_{p,y = 1,a_{+} - 1,s} \right) \text{diag}\left( \exp\left( - \mathbf{Z}_{p,a = a_{+}-1,s}^{'} \right)\right)
+```
+
+where $`\mathbf{M}_{p,y,a,s}`$ is a first-order Markov matrix
+representing movement for population $`p`$, and $`\mathbf{X}_{p,s}`$
+represents the culmination of processes applied to the penultimate age.
+A transition matrix $`\mathbf{G}_{p,s}`$ is then constructed to
+represent the combined effects of survival and movement on the plus
+group:
+
+``` math
+\mathbf{G}_{p,s} = \text{diag}\left( \exp\left( - \mathbf{Z}_{p,a = a_{+},s}^{'} \right) \right)\left( \mathbf{M}_{p,y = 1,a_{+},s} \right)^{T}
+```
+
+The plus group solution incorporating movement is then given by:
+
+``` math
+\mathbf{N}_{p,a_{+},s}^{'} = \left( \mathbf{I -}\mathbf{G}_{p,s} \right)^{- 1}\mathbf{X}_{p,s}
+```
+
+When only a single region is modeled or no movement occurs (i.e., an
+identity matrix), the matrix formulation simplifies to the standard
+scalar geometric series solution.
+
+Following the definition of equilibrium age structure, initial age
+deviations can be applied:
+
+``` math
+\begin{matrix}
+N_{p,r,y = 1,a \neq 1,s} = N'_{p,r,a \neq 1,s}\text{exp}\left( \epsilon_{p,r,i}^{\text{Init}} \right) \\
+\end{matrix}
+```
+
+where $`N_{p,r,y = 1,a \neq 1,s}`$ represents the numbers-at-age in the
+first model year and season except for recruits ($`a \neq 1`$). These
+values can be treated as a stochastic process by applying multiplicative
+lognormal deviations $`\epsilon_{p,r,i}^{\text{Init}}`$ to the initial
+equilibrium age structure. Note that the index $`i`$ is introduced
+because users can determine whether initial age deviations are estimated
+up to the penultimate age class, or across all classes including the
+plus group.
+
+#### Recruitment Processes
+
+In the current iteration of `SPoRC`, two stock recruitment
+parameterizations can be specified. Recruitment can be specified to
+arise about a mean parameter ($`\mu_p^{\text{Rec}}`$):
+
+``` math
+\begin{matrix}
+N_{p,r,y,\tau = 1,a = 1,s} = \mu_p^{\text{Rec}}\exp\left( \epsilon_{p,r,y}^{\text{Rec}} - \frac{\sigma_{\text{Rec}}^{2}}{2}b_{y} \right)\chi_{p,\tau = 1}\psi_{p,r,y,s}\zeta_{p,r} \\
+\end{matrix}
+```
+
+where $`\epsilon_{p,r,y}`$ are annual, lognormally distributed
+recruitment deviations with a lognormal bias correction term
+($`\frac{\sigma_{\text{Rec}}^{2}}{2}b_{y}`$), with $`b_{y}`$
+representing the bias correction ramp from Methot and Taylor (2011), and
+$`\chi_{p,\tau}`$ is the proportion of annual recruitment assigned to
+season $`\tau`$ for population $`p`$ (with
+$`\sum_\tau \chi_{p,\tau} = 1`$). For seasons $`\tau > 1`$, recruits are
+added to the existing numbers at age 1:
+
+``` math
+N_{p,r,y,\tau > 1,a = 1,s} = N_{p,r,y,\tau > 1,a = 1,s} + \text{TotalRec}_{p,r,y} \cdot \chi_{p,\tau} \cdot \psi_{p,r,y,s}
+```
+where $`\text{TotalRec}_{p,r,y}`$ is the total annual recruitment
+(before seasonal apportionment) for population $`p`$ in region $`r`$ and
+year $`y`$.
+
+Recruitment can also be specified to arise from a Beverton-Holt stock
+recruitment function to invoke density-dependent population dynamics,
+following the steepness parameterization (Mace and Doonan, 1988).
+Localized density-dependent recruitment is defined as:
+
+``` math
+\begin{matrix}
+N_{p,r,y,\tau = 1,a = 1,s} = \dfrac{4\mu_p^{\text{Rec}}\zeta_{p,r}h_{p,r}{\text{effSSB}}_{p,y - RecLag}}{\left( 1 - h_{p,r} \right)\text{SSB0}_{p,r} + 5\left( h_{p,r} - 1 \right){\text{effSSB}}_{p,y - RecLag}}\exp\left( \epsilon_{p,r,y}^{\text{Rec}} - \frac{\sigma_{\text{Rec}}^{2}}{2}b_{y} \right)\chi_{p,\tau=1}\psi_{p,r,y,s} \\
+\end{matrix}
+```
+
+while global density-dependent recruitment can be defined as:
+
+``` math
+\begin{matrix}
+N_{p,r,y,\tau = 1,a = 1,s} = \dfrac{4\mu_p^{\text{Rec}}\zeta_{p,r}h_p\sum_{r}^{}{SSB}_{p,r,y - RecLag}}{(1 - h_p)\sum_{r}^{}{SSB0_{p,r}} + 5(h_p - 1)\sum_{r}^{}{SSB}_{p,r,y - RecLag}}\exp\left( \epsilon_{p,r,y}^{\text{Rec}} - \frac{\sigma_{\text{Rec}}^{2}}{2}b_{y} \right)\chi_{p,\tau=1}\psi_{p,r,y,s} \\
+\end{matrix}
+```
+
+where $`\mu_p^{\text{Rec}}`$ under this parameterization is the virgin
+unfished recruitment for population $`p`$, $`h_{p,r}`$ (or $`h_p`$) is
+the steepness parameter representing the fraction of
+$`\mu_p^{\text{Rec}}\zeta_{p,r}`$ that would be produced when at 20% of
+$`\text{SSB0}_{p,r}`$ (or $`\sum_{r}^{}{SSB0_{p,r}}`$). The steepness
+parameter is constrained to be between values of 0.2 and 1 and are
+estimated in bounded logit space. $`\text{SSB0}_{p,r}`$ is a derived
+variable that represents the unfished spawning stock biomass.
+$`{SSB}_{p,r,y - RecLag}`$ is the spawning stock biomass for population
+$`p`$ in region $`r`$, and $`\text{effSSB}_{p,y}`$ is the effective
+spawning stock biomass (see Spawning Biomass section below).
+
+The spawning stock biomass is the product of numbers-at-age, spawning
+weight-at-age, and maturity-at-age for females in the spawning season
+$`\tau^{spawn}`$:
+
+``` math
+\begin{matrix}
+SSB_{p,r,y} = \sum_{a = 1}^{a_{+}}{N_{p,r,y,\tau^{spawn},a,s = 1}W_{p,r,y,\tau^{spawn},a,s = 1}^{spawn}\text{Mat}_{p,r,y,\tau^{spawn},a,s = 1}}\exp\left(-Z_{p,r,y,\tau^{spawn},a,s=1} \cdot t^{spawn}\right) \\
+\end{matrix}
+```
+
+For single-sex models, SSB is multiplied by 0.5 to obtain female-only
+spawning biomass.
+
+Note that $`RecLag`$ denotes the delay between spawning and when
+recruits enter the population. Thus, if $`RecLag > y`$, `SPoRC` utilizes
+$`\text{SSB0}_{p,r}`$ instead of $`{SSB}_{p,r,y - RecLag}`$ to compute
+deterministic recruitment.
+
+##### Effective Spawning Biomass and Multi-Population Dynamics
+
+When multiple populations are modeled ($`n_p > 1`$), effective spawning
+biomass at each population’s natal region accounts for stray
+contributions from other populations:
+
+``` math
+\begin{matrix}
+\text{effSSB}_{p,y} = SSB_{p, r^{\text{natal}}_p, y} + \sum_{p' \neq p} \frac{\phi_{p',y}}{npop_r} \cdot SSB_{p', r^{\text{natal}}_p, y}
+\end{matrix}
+```
+
+where $`r^{\text{natal}}_p`$ is the natal region of population $`p`$,
+$`\phi_{p',y}`$ is the stray rate of population $`p'`$ (the fraction of
+its spawning biomass contributing to non-natal regions), and the sum is
+taken over all other populations $`p' \neq p`$. For a single population,
+$`\text{effSSB}_{1,y} = \sum_r SSB_{1,r,y}`$. Note that $`npop_r`$ is
+the number of populations in a given region, where the contribution of
+$`\phi_{p',y}`$ is split evenly among populations.
+
+##### Single-Season Spawning Movement
+
+When $`n_\tau = 1`$ and $`n_p > 1`$, a separate spawning movement matrix
+$`\mathbf{M}^{spawn}_{p,y,a,s}`$ is applied to both fished and unfished
+numbers-at-age prior to computing spawning biomass quantities,
+representing natal homing of individuals to their spawning grounds:
+
+``` math
+\mathbf{N}^{spawn}_{p,y,a,s} = \left(\mathbf{N}_{p,y,\tau^{spawn},a,s}\right)^T \mathbf{M}^{spawn}_{p,y,a,s}
+```
+
+This additional movement is applied only for spawning biomass
+calculations and does not alter the numbers-at-age array used for
+subsequent mortality and movement processes.
+
+#### Population Projection
+
+Following recruitment processes, the population is projected forward. In
+the context of the spatial model, Markovian movement dynamics are first
+applied within each season:
+
+``` math
+\begin{matrix}
+\mathbf{N}_{p,y,\tau,a,s} = \left( \mathbf{N}_{p,y,\tau,a,s} \right)^{T}\mathbf{M}_{p,y,\tau,a,s} \\
+\end{matrix}
+```
+
+Here, $`\mathbf{M}_{p,y,\tau,a,s}`$ is a first-order Markov matrix
+representing movement. In a single-region case, no movement is applied
+(i.e., $`\mathbf{M}_{p,y,\tau,a,s}`$ is an implied identity matrix). For
+each population, year, season, age, and sex combination, the movement
+matrix specifies bulk-transfer coefficients, with parameters transformed
+through a multinomial logit to ensure that proportions within each
+origin region sum to one.
+
+Following movement, mortality occurs. For seasons within a year
+($`\tau < n_\tau`$), within-season mortality is applied and individuals
+advance to the next season at the same age:
+
+``` math
+N_{p,r,y,\tau + 1,a,s} = N_{p,r,y,\tau,a,s}\exp\left( - Z_{p,r,y,\tau,a,s} \right)
+```
+
+At the end of the final season ($`\tau = n_\tau`$), individuals advance
+in age:
+
+``` math
+N_{p,r,y + 1,1,a + 1,s} = N_{p,r,y,n_\tau,a,s}\exp\left( - Z_{p,r,y,n_\tau,a,s} \right),\quad\text{for }1 \leq a < a_{+}
+```
+
+``` math
+N_{p,r,y + 1,1,a_{+},s} = N_{p,r,y+1,1,a_{+},s} + N_{p,r,y,n_\tau,a_{+},s}\exp\left( - Z_{p,r,y,n_\tau,a_{+},s} \right)
+```
+
+$`Z_{p,r,y,\tau,a,s}`$ denotes the seasonal total instantaneous
+mortality rate and is defined as the combination of natural mortality
+($`\text{Natmort}_{p,r,y,a,s}`$) scaled by seasonal duration
+$`\Delta\tau`$, retained fishing mortality
+($`\text{retFmort}_{p,r,y,\tau,a,s,f}`$), and dead discard fishing
+mortality ($`\text{discFmort}_{p,r,y,\tau,a,s,f}`$):
+
+``` math
+\begin{matrix}
+Z_{p,r,y,\tau,a,s} = \text{Natmort}_{p,r,y,a,s} \cdot \Delta\tau + \sum_{f}^{}\left[\text{retFmort}_{p,r,y,\tau,a,s,f} + \text{discFmort}_{p,r,y,\tau,a,s,f}\right] \\
+\end{matrix}
+```
+
+where the retained and dead discard fishing mortality rates at age are:
+
+``` math
+\text{retFmort}_{p,r,y,\tau,a,s,f} = \text{Fmort}_{r,y,\tau,f} \cdot \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}} \cdot \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}}
+```
+
+``` math
+\text{discFmort}_{p,r,y,\tau,a,s,f} = \text{Fmort}_{r,y,\tau,f} \cdot \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}} \cdot \left(1 - \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}}\right) \cdot \delta_{r,y,\tau,f}
+```
+
+Here, $`\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}}`$ is the total
+fishery selectivity (governing encounter probability),
+$`\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}}`$ is the retention
+selectivity (governing the probability of retention given encounter),
+and $`\delta_{r,y,\tau,f}`$ is the discard mortality rate for fleet
+$`f`$. Only the dead fraction of discards contributes to total
+mortality. The seasonal instantaneous fishing mortality rate is defined
+as:
+
+``` math
+\begin{matrix}
+\text{Fmort}_{r,y,\tau,f} = \mu_{r,\tau,f}^{\text{Fsh}}\text{exp}\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} \right) \\
+\end{matrix}
+```
+
+where $`\text{Fmort}_{r,y,\tau,f}`$ is parameterized based on lognormal
+deviations ($`\epsilon_{r,y,\tau,f}^{\text{Fsh}})`$ about a mean fishing
+mortality parameter for a given region, season, and fishery fleet
+($`\mu_{r,\tau,f}^{\text{Fsh}}`$). When no catch data are available for
+a given region, season, and fleet, fishing mortality is set to zero.
+
+The discard mortality rate is parameterized analogously via logistic
+deviations about a mean logit-scale discard mortality rate:
+
+``` math
+\delta_{r,y,\tau,f} = \text{logistic}\left(\mu_{r,\tau,f}^{\delta} + \epsilon_{r,y,\tau,f}^{\delta}\right)
+```
+
+where $`\mu_{r,\tau,f}^{\delta}`$ is the logit-scale mean discard
+mortality rate and $`\epsilon_{r,y,\tau,f}^{\delta}`$ are annual
+deviations. The discard mortality rate is bounded between 0 and 1.
+
+#### Movement Processes
+
+Movement processes can be parameterized as either an unstructured Markov
+process (discrete-time Markov) or as a Continuous-time Markov chain
+(CTMC) process. Movement parameterized as an unstructured Markov process
+is estimated using a multinomial logit link function, with
+$`n_r \times (n_r-1)`$ free parameters per stratum:
+
+``` math
+M_{p,r,k,y,\tau,a,s} = \frac{\exp(\omega_{p,r,k,y,\tau,a,s})}{\sum_k\exp(\omega_{p,r,k,y,\tau,a,s})}
+```
+
+where the reference region $`k = 1`$ is set as
+$`\omega_{p,r,k=1,y,\tau,a,s} = 0`$. Under this parameterization,
+movement fractions can be estimated independently for each stratum
+$`(p,y,\tau,a,s)`$, or grouped into blocks to reduce the number of
+parameters.
+
+Alternatively, movement can be specified as a continuous-time Markov
+chain (CTMC) process, which decomposes into diffusive and taxis
+components. Diffusive processes represent undirected movement of
+individuals, while taxis processes represent directed movement toward
+more preferred habitat. This CTMC movement parameterization is governed
+by an adjacency matrix ($`A_{r,k}`$), which defines neighboring regions
+that can receive individuals within a given time step. Diffusive
+processes are given by:
+
+``` math
+  \dot{D}_{p,r,k,y,\tau,a,s} =
+  \begin{cases} 
+  \dfrac{e^{2\theta}}{V_r}, & \text{if } A_{r,k} = 1 \text{ and } r \neq k, \\[0.5em]
+  - \sum_{j \neq r} \dot{D}_{p,r,j,y,\tau,a,s}, & \text{if } r = k, \\[0.5em]
+  0, & \text{otherwise.}
+  \end{cases}
+```
+
+where $`\dot{D}_{p,r,k,y,\tau,a,s}`$ represents diffusion, $`\theta`$ is
+the log diffusion rate, $`V_r`$ scales the log diffusion rate, such that
+smaller regions have higher diffusion rates, and $`j`$ in the second
+equation indexes all destinations except the source to ensure that the
+rows of the matrix sum to 0, thereby conserving abundance. Taxis
+processes (preference) can then be written as:
+
+``` math
+\dot{P}_{r,k,y,a,s} =
+\begin{cases} 
+h_{k,y,a,s} - h_{r,y,a,s}, & \text{if } A_{r,k} = 1 \text{ and } r \neq k, \\[0.5em]
+- \sum_{j \neq r} \dot{P}_{r,j,y,a,s}, & \text{if } r = k, \\[0.5em]
+0, & \text{otherwise.}
+\end{cases}
+```
+
+Here, $`\dot{P}_{p,r,k,y,\tau,a,s}`$ represents the taxis (preference)
+component of movement. Equation 1 determines local differences in the
+habitat preference function, $`\mathbf{h}_{y,a,s}`$, while equation 2
+ensures that the rows of the matrix sum to 0, conserving abundance.
+
+Habitat preference can be defined flexibly as a combination of linear
+effects and basis splines:
+
+``` math
+h_{p,r,y,\tau,a,s} = \sum_{k=1}^{n_k} \beta_{r,k} W_{p,r,k,y,\tau,a,s}
+```
+
+where $`\beta_{r,k}`$ are the estimated effects (incorporating linear or
+spline effects), and $`W_{p,r,k,y,\tau,a,s}`$ is the design matrix.
+
+Diffusive and taxis processes can then be combined to construct a
+generator matrix:
+
+``` math
+\dot{Q}_{p,r,k,y,\tau,a,s} = \dot{D}_{p,r,k,y,\tau,a,s} + \dot{P}_{p,r,k,y,\tau,a,s}
+```
+
+Here, $`\dot{Q}_{p,r,k,y,\tau,a,s}`$ represents instantaneous movement
+rates. The generator matrix $`\dot{\mathbf{Q}}_{p,y,\tau,a,s}`$ is
+Metzler, such that all off-diagonal elements satisfy:
+
+``` math
+\dot{Q}_{p,y,\tau,a,s} \ge 0 \quad \text{for } r \neq k.
+```
+
+Given that movement in `SPoRC` is defined sequentially, the
+instantaneous movement matrix can then be converted to annual movement
+fractions using the matrix exponential:
+
+``` math
+\mathbf{M}_{p,y,\tau,a,s} = \exp\Big( \dot{\mathbf{Q}}_{p,y,\tau,a,s} \, \Delta t \Big)
+```
+
+where $`\Delta t`$ is the duration of the movement interval.
+
+### Observation Equations
+
+#### Fishery Observation Model
+
+The fishery observation model describes the expected retained
+catch-at-age, retained catch-at-length, discarded catch-at-age,
+discarded catch-at-length, catch and discard (in units of biomass or
+abundance), and fishery indices.
+
+Expected retained catch-at-age ($`C_{p,r,y,\tau,a,s,f}^{a}`$) for a
+given fishery fleet is calculated using Baranov’s catch equation applied
+to the retained fishing mortality:
+
+``` math
+\begin{matrix}
+C_{p,r,y,\tau,a,s,f}^{a} = \dfrac{\text{retFmort}_{p,r,y,\tau,a,s,f}}{Z_{p,r,y,\tau,a,s}}N_{p,r,y,\tau,a,s}\left\lbrack 1 - \exp\left( - Z_{p,r,y,\tau,a,s} \right) \right\rbrack \\
+\end{matrix}
+```
+
+Expected dead discarded catch-at-age ($`D_{p,r,y,\tau,a,s,f}^{a}`$) is
+similarly:
+
+``` math
+\begin{matrix}
+D_{p,r,y,\tau,a,s,f}^{a} = \dfrac{\text{discFmort}_{p,r,y,\tau,a,s,f}}{Z_{p,r,y,\tau,a,s}}N_{p,r,y,\tau,a,s}\left\lbrack 1 - \exp\left( - Z_{p,r,y,\tau,a,s} \right) \right\rbrack \\
+\end{matrix}
+```
+
+To track length-based dynamics, retained catch-at-length
+($`C_{p,r,y,\tau,l,s,f}^{l}`$) and discarded catch-at-length
+($`D_{p,r,y,\tau,l,s,f}^{l}`$) are derived using:
+
+``` math
+\begin{matrix}
+C_{p,r,y,\tau,l,s,f}^{l} = \mathbf{A}_{p,r,y,\tau,s}^{l}{\mathbf{C}^{\mathbf{a}}}_{p,r,y,\tau,s,f} \\
+D_{p,r,y,\tau,l,s,f}^{l} = \mathbf{A}_{p,r,y,\tau,s}^{l}{\mathbf{D}^{\mathbf{a}}}_{p,r,y,\tau,s,f} \\
+\end{matrix}
+```
+
+where $`\mathbf{A}_{p,r,y,\tau,s}^{l}`$ is a user-defined size-age
+transition matrix to convert ages to lengths. Expected retained catch
+($`\text{Catch}_{r,y,\tau,f}`$) is computed by summing over populations
+and then either as abundance:
+
+``` math
+\begin{matrix}
+\text{Catch}_{r,y,\tau,f} = \sum_{p}^{n_p}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}C_{p,r,y,\tau,a,s,f}^{a}} \\
+\end{matrix}
+```
+
+or as biomass:
+
+``` math
+\begin{matrix}
+\text{Catch}_{r,y,\tau,f} = \sum_{p}^{n_p}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}C_{p,r,y,\tau,a,s,f}^{a}}W_{p,r,y,\tau,a,s,f}^{fish} \\
+\end{matrix}
+```
+
+Population-specific predicted retained catch
+($`\text{Catch}_{p,r,y,\tau,f}`$) retains the population index and is
+not summed across $`p`$:
+
+``` math
+\begin{matrix}
+\text{Catch}_{p,r,y,\tau,f} = \sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}C_{p,r,y,\tau,a,s,f}^{a}}W_{p,r,y,\tau,a,s,f}^{fish} \\
+\end{matrix}
+```
+
+Expected total discards ($`\text{Discard}_{r,y,\tau,f}`$) are computed
+from the dead discarded catch-at-age scaled back by the discard
+mortality rate to yield total discarded individuals (dead and released
+alive):
+
+``` math
+\begin{matrix}
+\text{Discard}_{r,y,\tau,f} = \sum_{p}^{n_p}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}\frac{D_{p,r,y,\tau,a,s,f}^{a}}{\delta_{r,y,\tau,f}}} \quad \text{(abundance)} \\
+\end{matrix}
+```
+
+``` math
+\begin{matrix}
+\text{Discard}_{r,y,\tau,f} = \sum_{p}^{n_p}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}\frac{D_{p,r,y,\tau,a,s,f}^{a}}{\delta_{r,y,\tau,f}}}W_{p,r,y,\tau,a,s,f}^{fish} \quad \text{(biomass)} \\
+\end{matrix}
+```
+
+Discards can also be expressed as a fraction of total catch (abundance
+or biomass). Population-specific discards follow the same structure
+without summing across $`p`$.
+
+Similarly, expected fishery indices ($`\text{FshIdx}_{p,r,y,\tau,f}`$)
+can be computed as either abundance-based or biomass-based, using the
+product of total fishery selectivity and retention selectivity:
+
+``` math
+\begin{matrix}
+\text{FshIdx}_{p,r,y,\tau,f} = q_{r,y,f}^{\text{Fsh}}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}N_{p,r,y,\tau,a,s}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}} \\
+\end{matrix}
+```
+
+where $`q_{r,y,f}^{\text{Fsh}}`$ is the catchability coefficient for a
+given fishery fleet. Note that unlike the survey index, the fishery
+index is computed directly from numbers-at-age without applying
+additional survival discounting. Biomass-based fishery indices are
+computed as:
+
+``` math
+\begin{matrix}
+\text{FshIdx}_{p,r,y,\tau,f} = q_{r,y,f}^{\text{Fsh}}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}N_{p,r,y,\tau,a,s}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}}W_{p,r,y,\tau,a,s,f}^{fish} \\
+\end{matrix}
+```
+
+The observed region-aggregated fishery index is compared to the sum of
+predicted indices across populations:
+$`\sum_p \text{FshIdx}_{p,r,y,\tau,f}`$. Population-specific fishery
+indices are compared directly to $`\text{FshIdx}_{p,r,y,\tau,f}`$
+without summation.
+
+#### Survey Observation Model
+
+Likewise, the survey observation model describes the expected survey
+catch-at-age, survey catch-at-length, and survey indices. Expected
+survey catch-at-age ($`I_{p,r,y,\tau,a,s,sf}^{a}`$) is calculated as
+follows:
+
+``` math
+\begin{matrix}
+I_{p,r,y,\tau,a,s,sf}^{a} = N_{p,r,y,\tau,a,s}\exp\left( - Z_{p,r,y,\tau,a,s} \cdot t_{r,\tau,sf}^{srv} \right)\text{Sel}_{p,r,y,\tau,a,s,sf}^{\text{Srv}} \\
+\end{matrix}
+```
+
+where subscript $`sf`$ denotes a given survey fleet,
+$`t_{r,\tau,sf}^{srv}`$ is the survey timing as a fraction of the
+season, and $`\text{Sel}_{p,r,y,\tau,a,s,sf}^{\text{Srv}}`$ is the
+survey selectivity-at-age pattern. Expected survey catch-at-length
+($`I_{p,r,y,\tau,l,s,sf}^{l}`$) is given by:
+
+``` math
+\begin{matrix}
+I_{p,r,y,\tau,l,s,sf}^{l} = \mathbf{A}_{p,r,y,\tau,s}^{l}{\mathbf{I}^{\mathbf{a}}}_{p,r,y,\tau,s,sf} \\
+\end{matrix}
+```
+
+Survey indices ($`\text{SrvIdx}_{p,r,y,\tau,sf}`$) can be computed as
+either abundance-based or biomass-based. Abundance-based survey indices
+are calculated as:
+
+``` math
+\begin{matrix}
+\text{SrvIdx}_{p,r,y,\tau,sf} = q_{r,y,sf}^{\text{Srv}}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}I_{p,r,y,\tau,a,s,sf}^{a}} \\
+\end{matrix}
+```
+
+while biomass-based indices are computed as:
+
+``` math
+\begin{matrix}
+\text{SrvIdx}_{p,r,y,\tau,sf} = q_{r,y,sf}^{\text{Srv}}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}I_{p,r,y,\tau,a,s,sf}^{a}}W_{p,r,y,\tau,a,s,sf}^{srv} \\
+\end{matrix}
+```
+
+Here, $`W_{p,r,y,\tau,a,s,sf}^{srv}`$ is the weight-at-age for a given
+survey, $`q_{r,y,sf}^{\text{Srv}}`$ represents the survey catchability
+coefficient. The observed region-aggregated survey index is compared to
+the sum of predicted indices across populations:
+$`\sum_p \text{SrvIdx}_{p,r,y,\tau,sf}`$. Population-specific survey
+indices are compared directly to $`\text{SrvIdx}_{p,r,y,\tau,sf}`$
+without summation.
+
+For survey catchability, environmental linkage can be specified:
+
+``` math
+q_{r,y,sf}^{\text{Srv}} = q_{r,sf}^{\text{Srv}}\exp\left( \mathbf{x}^{T}\mathbf{\beta +}\sum_{m}^{}{\iota_{m}p_{m}\left( z_{r,y,sf} \right)} \right)
+```
+
+where $`q_{r,sf}^{\text{Srv}}`$ is the base survey catchability (i.e.,
+intercept), $`\mathbf{x}`$ is a matrix of covariates, $`\mathbf{\beta}`$
+is a vector of regression coefficients, $`\iota_{m}p_{m}`$ are
+orthogonal polynomial coefficients along with its basis functions, and
+$`z_{r,y,sf}`$ are the covariates for which a polynomial term is
+assumed.
+
+#### Tagging Observation Model
+
+The tagging observation model tracks tag cohorts
+($`T_{p,r,y,\tau,a,s}^{k}`$) by the combination of release region,
+release year, and release season ($`k`$) and follows a Brownie tag
+attrition framework. Tag cohorts are tracked for a pre-defined maximum
+duration (maximum tag liberty; $`n_{L}`$), after which calculations for
+the tag cohort are no longer computed. Tag dynamics incorporate both
+population ($`p`$) and season ($`\tau`$) dimensions, and tag reporting
+rates are fleet-specific ($`\beta_{r,y,f}`$). In general, the process
+dynamics for the tagged cohort mimic those specified for the overall
+population. Immediately following release, tag cohorts are decremented
+by an initial tag-induced mortality rate:
+
+``` math
+T_{p,r,y,\tau,a,s}^{k} = T_{p,r,y,\tau,a,s}^{k}\exp( - \eta^{\text{mort}})
+```
+
+where $`\eta^{\text{mort}}`$ is the initial tag-induced mortality rate.
+If tagged cohorts are released at the beginning of a season
+($`t^{\text{tag}} = 1`$), Markovian movement occurs before mortality is
+applied; otherwise, movement is skipped in the release season:
+
+``` math
+\mathbf{T}_{p,y,\tau,a,s}^{k} = \left( \mathbf{T}_{p,y,\tau,a,s}^{k} \right)^{\text{T}}\mathbf{M}_{p,y,\tau,a,s}
+```
+
+Within-season mortality and ageing of the tagged cohort then occurs. For
+seasons within a year ($`\tau < n_\tau`$):
+
+``` math
+T_{p,r,y,\tau + 1,a,s}^{k} = T_{p,r,y,\tau,a,s}^{k}\exp\left( - Z_{p,r,y,\tau,a,s}^{\text{Tag}} \right)
+```
+
+At the end of the final season ($`\tau = n_\tau`$), individuals advance
+in age:
+
+``` math
+T_{p,r,y + 1,1,a + 1,s}^{k} = T_{p,r,y,n_\tau,a,s}^{k}\exp\left( - Z_{p,r,y,n_\tau,a,s}^{\text{Tag}} \right),\quad\text{for }1 \leq a < a_{+}
+```
+
+``` math
+T_{p,r,y + 1,1,a_{+},s}^{k} = T_{p,r,y+1,1,a_{+},s}^{k} + T_{p,r,y,n_\tau,a_{+},s}^{k}\exp\left( - Z_{p,r,y,n_\tau,a_{+},s}^{k}\right)
+```
+
+where tagged cohorts follow an exponential mortality model with
+accumulation of individuals in the plus-group. Total mortality for the
+tagged cohort ($`Z_{p,r,y,\tau,a,s}^{\text{Tag}}`$) is specified as:
+
+``` math
+Z_{p,r,y,\tau,a,s}^{\text{Tag}} = \kappa \cdot \Delta\tau + \text{NatMort}_{p,r,y,a,s} \cdot \Delta\tau + \sum_{f \in \mathcal{F}^{\text{Tag}}} \left[\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}} \cdot \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}} \cdot \text{Fmort}_{r,y,\tau,f} + \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}} \cdot \left(1 - \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}}\right) \cdot \delta_{r,y,\tau,f} \cdot \text{Fmort}_{r,y,\tau,f}\right]
+```
+
+where $`\kappa`$ is a parameter describing chronic tag loss (i.e.,
+annual tag shedding) and $`\mathcal{F}^{\text{Tag}}`$ denotes the subset
+of fishing fleets that contribute tagging data. The summation over
+$`\mathcal{F}^{\text{Tag}}`$ rather than all fleets is intentional:
+restricting the tag mortality calculation to fleets with tagging data
+prevents non-tagging fleets from unintentionally influencing tag-based
+parameter estimates (e.g., selectivity, reporting rates).
+
+Similar to computations for retained catch-at-age, tag recaptures are
+calculated using a modified version of Baranov’s catch equation, with
+fleet-specific tag reporting rates applied to the retained component:
+
+``` math
+\text{Recap}_{p,r,y,\tau,a,s,f}^{k} = \beta_{r,y,f}\dfrac{\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}} \cdot \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}} \cdot \text{Fmort}_{r,y,\tau,f}}{Z_{p,r,y,\tau,a,s}^{\text{Tag}}}T_{p,r,y,\tau,a,s}^{k}\left\lbrack 1 - \exp\left( - Z_{p,r,y,\tau,a,s}^{\text{Tag}} \right) \right\rbrack
+```
+
+where $`\beta_{r,y,f}`$ represents a fleet-specific tag reporting rate
+parameter that can vary across space, time, and fleet, which is
+estimated in logit space such that it is constrained between $`[0,1]`$.
+Recaptures are computed only for fleets in $`\mathcal{F}^{\text{Tag}}`$.
+
+### Fishery and Survey Selectivity
+
+In the following descriptions of selectivity, we omit subscripts for
+sexes and fleets for brevity, although note that the equations remain
+specific to those model partitions. Several approaches are available for
+parameterizing fishery and survey selectivity. Selectivity can be
+defined as either age- or length-based. Selectivity parameters are
+estimated by region ($`r`$), year ($`y`$), sex ($`s`$), and fleet, and
+are explicitly invariant across populations ($`p`$) and seasons
+($`\tau`$).
+
+For age-based selectivity, an age vector is applied directly with a
+chosen functional form, and the resulting selectivity-at-age
+($`\text{Sel}_{p,r,y,\tau,a,s,f}`$) is likewise invariant across
+populations and seasons. For length-based selectivity, a length vector
+is used to compute selectivity-at-length ($`\text{Sel}^l_{r,y,s,f}`$),
+which is then converted to selectivity-at-age via a dot product with the
+size-age transition matrix:
+
+``` math
+\mathbf{Sel}^{a}_{p,r,y,\tau,s,f} = \left( \mathbf{A}_{p,r,y,\tau,s}^{l} \right)^{T} \mathbf{Sel}^{l}_{r,y,s,f}
+```
+
+Because the size-age transition matrix $`\mathbf{A}_{p,r,y,\tau,s}^{l}`$
+varies across populations and seasons, the derived selectivity-at-age
+inherits population and season specificity upon conversion, even though
+the underlying selectivity-at-length parameters remain shared across
+these dimensions. Given the age-based nature of the model,
+selectivity-at-age is utilized for all subsequent calculations. In the
+following we use the subscript $`b`$ to denote a generalized bin number.
+
+Two forms of logistic selectivity can be specified. The first form is
+defined as:
+
+``` math
+\begin{matrix}
+{Sel}_{b} = \frac{1}{1 + \exp\left\lbrack - k\left( b - b^{50} \right) \right\rbrack} \\
+\end{matrix}
+```
+
+where $`k`$ determines the slope/steepness of the logistic curve and
+$`b^{50}`$ is the bin-at-50% selection. The second form can be expressed
+as:
+
+``` math
+\begin{matrix}
+{Sel}_{b} = \frac{1}{1 + 19^{\left( \frac{b^{50} - b}{b^{95}} \right)}} \\
+\end{matrix}
+```
+
+Here, $`b^{50}`$ is also the bin-at-50% selection and $`b^{95}`$ is the
+bin-at-95% selection. Beyond the specification of flat-topped
+selectivity, `SPoRC` also allows for dome-shaped selectivity. In
+particular, a reparametrized gamma function can be specified:
+
+``` math
+\begin{matrix}
+p = 0.5\left\lbrack \sqrt{b^{\max} + 4\gamma^{2}} - b^{\max} \right\rbrack \\
+\end{matrix}
+```
+
+``` math
+{Sel}_{b} = \left( \frac{b}{b^{\max}} \right)^{\frac{b^{\max}}{p}}\exp\left( \frac{b^{\max} - b}{p} \right)
+```
+
+In this parameterization, $`p`$ is a derived power parameter, $`\gamma`$
+is the shape parameter that describes the steepness of the descending
+limb, and $`b^{\max}`$ describes the bin-at-maximum selection.
+Dome-shaped selectivity can also be expressed as a power function:
+
+``` math
+\begin{matrix}
+{Sel}_{b} = \frac{1}{b^{\phi}} \\
+\end{matrix}
+```
+
+with $`\phi`$ being a power parameter that determines the descending
+limb of the curve (larger values are steeper). The last dome-shaped
+selectivity form that can be specified includes a 6 parameter (denoted
+as $`{\widehat{p}}_{1}`$ through $`{\widehat{p}}_{6}`$) double normal
+functional form with the following transformations applied:
+
+``` math
+\begin{matrix}
+p_{1} = \ \min(b) + \left\lbrack \max(b) - min(b) \right\rbrack \cdot \frac{1}{1 + \exp\left( {\widehat{p}}_{1} \right)} \\
+\end{matrix}
+```
+
+``` math
+p_{2} = \ p_{1} + 1 + \frac{0.99 + max(b) - p_{1} - 1}{1 + exp({\widehat{p}}_{2})}
+```
+
+``` math
+p_{3} = \exp\left( {\widehat{p}}_{3} \right),\ \ p_{4} = \exp\left( {\widehat{p}}_{4} \right)
+```
+
+``` math
+p_{5} = \frac{1}{1 + \exp\left( {\widehat{p}}_{5} \right)},\ \ p_{6} = \frac{1}{1 + \exp\left( {\widehat{p}}_{6} \right)}
+```
+
+$`p_{1}`$ represents the beginning of the plateau, $`p_{2}`$ describes
+the width of the plateau, $`p_{3}`$ and $`p_{4}`$ are parameters
+controlling the ascending and descending widths, and $`p_{5}`$ and
+$`p_{6}`$ control the selectivity at the first and last bins. The double
+normal function is then defined with a series of functions:
+
+``` math
+\begin{matrix}
+{asc}_{b} = \exp\left( - \frac{\left( b - p_{1} \right)^{2}}{p_{3}} \right) \\
+{ascscaled}_{b} = p_{5} + \left( 1 - p_{5} \right) \cdot {asc}_{b} \\
+{desc}_{b} = \exp\left( - \frac{\left( b - p_{2} \right)^{2}}{p_{4}} \right) \\
+stj = exp\left( - \frac{\left( 40 - p_{2} \right)^{2}}{p_{4}} \right) \\
+{descscaled}_{b} = 1 + \left( p_{6} - 1 \right) \cdot \frac{{desc}_{b} - 1}{stj - 1} \\
+join1_{b} = \frac{1}{1 + \exp\left( - 20 \cdot \frac{b - p_{1}}{1 + \left| b - p_{1} \right|} \right)} \\
+join2_{b} = \frac{1}{1 + \exp\left( - 20 \cdot \frac{b - p_{2}}{1 + \left| b - p_{2} \right|} \right)} \\
+\end{matrix}
+```
+
+and are joined together as:
+
+``` math
+\begin{matrix}
+{Sel}_{b} = {asc}_{b} \cdot \left( 1 - join1_{b} \right) + join1_{b} \cdot \left\lbrack \left( 1 - join2_{b} \right) + {descscaled}_{b} \cdot join2_{b} \right\rbrack \\
+\end{matrix}
+```
+
+The double normal functional form is incredibly flexible and is able to
+reduce to both flat-topped and dome-shaped selectivity forms, depending
+on the values of the parameters.
+
+Non-parametric selectivity can also be specified, where bin-specific
+logit-scale parameters are transformed via the logistic function:
+
+``` math
+\begin{matrix}
+{Sel}_{b} = \text{logistic}\left( \eta_{b} \right)
+\end{matrix}
+```
+
+where $`\eta_{b}`$ is a freely estimated logit-scale selectivity
+parameter for each bin.
+
+Two additional logistic forms with a freely estimated asymptote
+parameter $`\alpha \in (0, 1)`$ are also available. The first uses the
+bin-at-50% and slope parameterization:
+
+``` math
+\begin{matrix}
+{Sel}_{b} = \frac{\alpha}{1 + \exp\left\lbrack - k\left( b - b^{50} \right) \right\rbrack}
+\end{matrix}
+```
+
+The second uses the bin-at-50% and bin-at-95% parameterization:
+
+``` math
+\begin{matrix}
+{Sel}_{b} = \frac{\alpha}{1 + 19^{\left( \frac{b^{50} - b}{b^{95}} \right)}}
+\end{matrix}
+```
+
+where $`\alpha`$ is estimated on the logit scale, allowing the
+asymptotic selectivity to be less than 1. These forms are useful for
+fleets where full vulnerability is not achieved even at the largest
+observed sizes or ages.
+
+In addition to the functional forms that can be specified to describe
+selectivity processes, several options exist to specify continuous
+time-varying processes. In particular, options to specify time-varying
+parametric selectivity and time-varying semi-parametric selectivity are
+available. To illustrate, if logistic selectivity is specified and
+parametric deviations are invoked, the following expression is used:
+
+``` math
+{\begin{matrix}
+{Sel}_{y,b} = \frac{1}{1 + \exp\left\lbrack - k_{y}\left( b - b_{y}^{50} \right) \right\rbrack} \\
+\end{matrix}
+}{k_{y} = k \cdot \exp\left( \epsilon_{y,1}^{Sel} \right)
+}{b_{y}^{50} = b^{50} \cdot exp(\epsilon_{y,2}^{Sel})}
+```
+
+where the parameters of the logistic form are allowed to vary over time.
+
+In the context of semi-parametric selectivity, the following equation is
+used:
+
+``` math
+{\begin{matrix}
+{Sel}_{y,b}^{'} = \frac{1}{1 + \exp\left( - k\left\lbrack b - b^{50} \right\rbrack \right)}\exp\left( {\epsilon_{y,b}}^{Sel} \right) \\
+\end{matrix}
+}{{Sel}_{y,b} = \frac{{Sel}_{y,b}^{'}}{mean(\mathbf{Se}\mathbf{l}^{\mathbf{'}})}}
+```
+
+where deviations are placed about the parametric form and selectivity
+values are mean standardized to aid with interpretability. Mean
+standardization is applied only when semi-parametric deviations are
+specified (process error models 3–5), or when non-parametric selectivity
+is specified. For age-based selectivity, the mean is computed from a
+single population and season reference ($`p = 1, \tau = 1`$) since the
+underlying selectivity is invariant across these dimensions, and the
+standardization is then applied identically across all populations and
+seasons:
+
+``` math
+{Sel}_{r,y,b,s,j} = \exp\left(\log\left({Sel}_{r,y,b,s,j}\right) - \overline{\log\left(\mathbf{Sel}_{r,s,j}\right)}\right)
+```
+
+where $`\overline{\log\left(\mathbf{Sel}_{r,s,j}\right)}`$ is the mean
+of log-selectivity across all years and bins for a given region, sex,
+and fleet. For length-based selectivity, mean standardization is applied
+directly to the selectivity-at-length values before conversion to the
+age domain via the size–age transition matrix. Further details on how
+selectivity deviations arise can be found in the “Selectivity Process
+Error” section of this document.
+
+## Likelihoods
+
+Currently, `SPoRC` incorporates data likelihood components for the
+following data sources:
+
+1.  region-aggregated fishery catches (summed across populations),
+2.  population-specific fishery catches,
+3.  region-aggregated fishery discards (summed across populations),
+4.  population-specific fishery discards,
+5.  region-aggregated fishery indices (summed across populations),
+6.  population-specific fishery indices,
+7.  region-aggregated fishery age compositions (summed across
+    populations),
+8.  population-specific fishery age compositions,
+9.  region-aggregated fishery length compositions (summed across
+    populations),
+10. population-specific fishery length compositions,
+11. region-aggregated discard age compositions (summed across
+    populations),
+12. population-specific discard age compositions,
+13. region-aggregated discard length compositions (summed across
+    populations),
+14. population-specific discard length compositions,
+15. region-aggregated survey indices (summed across populations),
+16. population-specific survey indices,
+17. region-aggregated survey age compositions (summed across
+    populations),
+18. population-specific survey age compositions,
+19. region-aggregated survey length compositions (summed across
+    populations),
+20. population-specific survey length compositions, and
+21. conventional tagging data.
+
+Region-aggregated likelihoods compare observed data to predicted
+quantities summed across all populations ($`\sum_p`$), while
+population-specific likelihoods compare observed data to predicted
+quantities for a single population $`p`$ directly. The total likelihood
+(objective function) is the sum of the individual likelihood
+contributions from these data sources along with priors and penalties,
+where the objective function is minimized using a non-linear
+optimization algorithm to estimate model parameters.
+
+### Observation Likelihoods
+
+#### Fishery Catches
+
+Fishery catches can be fit using a lognormal likelihood. The
+log-likelihood for region-aggregated observed catch,
+$`\ell\left( \log\left( \text{ObsCatch}_{r,y,\tau,f} \right) \right)`$,
+is defined as:
+
+``` math
+\begin{matrix}
+\ell\left( \log\left( \text{ObsCatch}_{r,y,\tau,f} \right) \right) = \\
+\end{matrix}
+```
+
+``` math
+\lambda_{\text{ObsCatch}_{r,y,\tau,f}} \cdot \frac{1}{\sqrt{2\pi\sigma_{\text{ObsCatch}_{r,y,\tau,f}}^{2}}\,}\exp\left( - \frac{\left\lbrack \log\left( \text{ObsCatch}_{r,y,\tau,f} \right) - log\left( \text{Catch}_{r,y,\tau,f} \right) \right\rbrack^{2}}{2\sigma_{\text{ObsCatch}_{r,y,\tau,f}}^{2}} \right)
+```
+
+Here, $`\lambda_{\text{ObsCatch}_{r,y,\tau,f}}`$ is the likelihood
+weight, $`\text{ObsCatch}_{r,y,\tau,f}`$ is the observed catch,
+$`\text{Catch}_{r,y,\tau,f}`$ is the predicted catch summed over
+populations, and $`\sigma_{\text{ObsCatch}_{r,y,\tau,f}}^{2}`$ is the
+variance of catch on the log scale.
+
+Population-specific catch observations can additionally be fit using the
+same lognormal form, comparing observed catch for a single population to
+the predicted catch for that population without summing across
+populations:
+
+``` math
+\begin{matrix}
+\ell\left( \log\left( \text{ObsCatch}_{p,r,y,\tau,f} \right) \right) = \\
+\end{matrix}
+```
+
+``` math
+\lambda_{\text{ObsCatch}_{p,r,y,\tau,f}} \cdot \frac{1}{\sqrt{2\pi\sigma_{\text{ObsCatch}_{p,r,y,\tau,f}}^{2}}\,}\exp\left( - \frac{\left\lbrack \log\left( \text{ObsCatch}_{p,r,y,\tau,f} \right) - log\left( \text{Catch}_{p,r,y,\tau,f} \right) \right\rbrack^{2}}{2\sigma_{\text{ObsCatch}_{p,r,y,\tau,f}}^{2}} \right)
+```
+
+where $`\text{Catch}_{p,r,y,\tau,f}`$ is the predicted catch for
+population $`p`$ only.
+
+#### Fishery Discards
+
+Fishery discards are fit using the same lognormal likelihood form as
+catches. The log-likelihood for region-aggregated observed discards is:
+
+``` math
+\begin{matrix}
+\ell\left( \log\left( \text{ObsDiscard}_{r,y,\tau,f} \right) \right) = \\
+\end{matrix}
+```
+
+``` math
+\lambda_{\text{ObsDiscard}_{r,y,\tau,f}} \cdot \frac{1}{\sqrt{2\pi\sigma_{\text{ObsDiscard}_{r,y,\tau,f}}^{2}}\,}\exp\left( - \frac{\left\lbrack \log\left( \text{ObsDiscard}_{r,y,\tau,f} \right) - log\left( \text{Discard}_{r,y,\tau,f} \right) \right\rbrack^{2}}{2\sigma_{\text{ObsDiscard}_{r,y,\tau,f}}^{2}} \right)
+```
+
+where $`\lambda_{\text{ObsDiscard}_{r,y,\tau,f}}`$ is the likelihood
+weight, $`\text{ObsDiscard}_{r,y,\tau,f}`$ is the observed discard,
+$`\text{Discard}_{r,y,\tau,f}`$ is the predicted discard summed over
+populations, and $`\sigma_{\text{ObsDiscard}_{r,y,\tau,f}}^{2}`$ is the
+variance of discards on the log scale. Population-specific discard
+observations follow the same lognormal form with
+$`\text{Discard}_{p,r,y,\tau,f}`$ for population $`p`$ only.
+
+#### Fishery and Survey Indices
+
+Fishery indices can also be fit assuming a lognormal likelihood. The
+log-likelihood for region-aggregated observed fishery indices is:
+
+``` math
+\begin{matrix}
+\ell\left( \log\left( \text{ObsFshIdx}_{r,y,\tau,f} \right) \right) = \\
+\end{matrix}
+```
+
+``` math
+\lambda_{\text{ObsFshIdx}_{r,y,\tau,f}} \cdot \frac{1}{\sqrt{2\pi\sigma_{\text{ObsFshIdx}_{r,y,\tau,f}}^{2}}\,}\exp\left( - \frac{\left\lbrack \log\left( \text{ObsFshIdx}_{r,y,\tau,f} \right) - log\left( \text{FshIdx}_{r,y,\tau,f} \right) \right\rbrack^{2}}{2\sigma_{\text{ObsFshIdx}_{r,y,\tau,f}}^{2}} \right)
+```
+
+where $`\lambda_{\text{ObsFshIdx}_{r,y,\tau,f}}`$ controls the weight of
+fishery indices to the objective function,
+$`\text{ObsFshIdx}_{r,y,\tau,f}`$ represents the observed fishery
+indices, $`\text{FshIdx}_{r,y,\tau,f}`$ is the predicted fishery index
+summed across populations, and
+$`\sigma_{\text{ObsFshIdx}_{r,y,\tau,f}}^{2}`$ denotes the variance of
+the fishery index.
+
+Population-specific fishery indices can additionally be fit, comparing
+observed population-specific indices to the predicted index for that
+population directly:
+
+``` math
+\begin{matrix}
+\ell\left( \log\left( \text{ObsFshIdx}_{p,r,y,\tau,f} \right) \right) = \\
+\end{matrix}
+```
+
+``` math
+\lambda_{\text{ObsFshIdx}_{p,r,y,\tau,f}} \cdot \frac{1}{\sqrt{2\pi\sigma_{\text{ObsFshIdx}_{p,r,y,\tau,f}}^{2}}\,}\exp\left( - \frac{\left\lbrack \log\left( \text{ObsFshIdx}_{p,r,y,\tau,f} \right) - log\left( \text{FshIdx}_{p,r,y,\tau,f} \right) \right\rbrack^{2}}{2\sigma_{\text{ObsFshIdx}_{p,r,y,\tau,f}}^{2}} \right)
+```
+
+where $`\text{FshIdx}_{p,r,y,\tau,f}`$ is the predicted fishery index
+for population $`p`$ only.
+
+Likewise, survey indices can be fit assuming a lognormal likelihood. The
+log-likelihood for region-aggregated survey indices is:
+
+``` math
+\begin{matrix}
+\ell\left( \log\left( \text{ObsSrvIdx}_{r,y,\tau,sf} \right) \right) = \\
+\end{matrix}
+```
+
+``` math
+\lambda_{\text{ObsSrvIdx}_{r,y,\tau,sf}} \cdot \frac{1}{\sqrt{2\pi\sigma_{\text{ObsSrvIdx}_{r,y,\tau,sf}}^{2}}\,}\exp\left( - \frac{\left\lbrack \log\left( \text{ObsSrvIdx}_{r,y,\tau,sf} \right) - log\left( \text{SrvIdx}_{r,y,\tau,sf} \right) \right\rbrack^{2}}{2\sigma_{\text{ObsSrvIdx}_{r,y,\tau,sf}}^{2}} \right)
+```
+
+$`\lambda_{\text{ObsSrvIdx}_{r,y,\tau,sf}}`$ is the likelihood weight
+applied to survey indices, $`\text{ObsSrvIdx}_{r,y,\tau,sf}`$ are the
+observed survey indices, $`\text{SrvIdx}_{r,y,\tau,sf}`$ is the
+predicted survey index summed across populations, and
+$`\sigma_{\text{ObsSrvIdx}_{r,y,\tau,sf}}^{2}`$ indicates the variance
+of the survey index.
+
+Population-specific survey indices can additionally be fit, comparing
+observed population-specific indices to the predicted index for that
+population directly:
+
+``` math
+\begin{matrix}
+\ell\left( \log\left( \text{ObsSrvIdx}_{p,r,y,\tau,sf} \right) \right) = \\
+\end{matrix}
+```
+
+``` math
+\lambda_{\text{ObsSrvIdx}_{p,r,y,\tau,sf}} \cdot \frac{1}{\sqrt{2\pi\sigma_{\text{ObsSrvIdx}_{p,r,y,\tau,sf}}^{2}}\,}\exp\left( - \frac{\left\lbrack \log\left( \text{ObsSrvIdx}_{p,r,y,\tau,sf} \right) - log\left( \text{SrvIdx}_{p,r,y,\tau,sf} \right) \right\rbrack^{2}}{2\sigma_{\text{ObsSrvIdx}_{p,r,y,\tau,sf}}^{2}} \right)
+```
+
+where $`\text{SrvIdx}_{p,r,y,\tau,sf}`$ is the predicted survey index
+for population $`p`$ only.
+
+#### Fishery and Survey Compositions
+
+Several options for fitting composition data are available in `SPoRC`.
+These include the multinomial, the Dirichlet-multinomial, and the
+logistic-normal likelihoods. In the case of the multinomial likelihood,
+the following expression is used:
+
+``` math
+{\begin{matrix}
+\ell\left( \text{ObsCompositionData}_{r,y,\tau,j} \right) = \\
+\end{matrix}
+}{\lambda_{\text{ObsCompositionData}_{r,y,\tau,j}} \cdot \text{ISS}_{r,y,\tau,j} \cdot \prod_{b = 1}^{n_{b}}E_{r,y,\tau,b,j}^{O_{r,y,\tau,b,j}}}
+```
+
+where subscript $`j`$ is used to indicate a fishery or survey fleet and
+the $`b`$ subscript generically indicates a bin number.
+$`\lambda_{\text{ObsCompositionData}_{r,y,\tau,j}}`$ are likelihood
+weights applied to composition data, $`ISS_{r,y,\tau,j}`$ is the input
+sample size, $`E_{r,y,\tau,b,j}`$ denotes the expected composition
+proportions, and $`O_{r,y,\tau,b,j}`$ are the observed composition
+proportions.
+
+If a Dirichlet-multinomial likelihood is assumed, the following
+parameterization (linear) is used:
+
+``` math
+\begin{matrix}
+\ell\left( \text{ObsCompositionData}_{r,y,\tau,j} \right) = \\
+\lambda_{\text{ObsCompositionData}_{r,y,\tau,j}} \cdot \frac{\Gamma\left( \text{ISS}_{r,y,\tau,j} + 1 \right)}{\text{ISS}_{r,y,\tau,j} \cdot O_{r,y,\tau,b,j} + 1} \cdot \frac{\Gamma\left( \text{ISS}_{r,y,\tau,j}\theta_{r,j} \right)}{\text{Γ(}\text{ISS}_{r,y,\tau,j}\text{+}\text{ISS}_{r,y,\tau,j}\theta_{r,j}\text{)}} \cdot \\
+\prod_{b = 1}^{n_{b}}\frac{\Gamma(\text{ISS}_{r,y,\tau,j}O_{r,y,\tau,b,j} + \text{ISS}_{r,y,\tau,j}\theta_{r,j}E_{r,y,\tau,b,j})}{\text{ISS}_{r,y,\tau,j}\theta_{r,j}E_{r,y,\tau,b,j}} \\
+\end{matrix}
+```
+
+Here, $`\theta_{r,j}`$ is the overdispersion parameter of the
+Dirichlet-multinomial that adjusts the input sample size. The effective
+sample size ($`\text{ESS}_{r,y,\tau,j})`$ can then be derived as:
+
+``` math
+\begin{matrix}
+\text{ESS}_{r,y,\tau,j} = \frac{1}{1 + \theta_{r,j}\ } + \text{ISS}_{r,y,\tau,j}\frac{\theta_{r,j}}{1 + \theta_{r,j}\ } \\
+\end{matrix}
+```
+
+A multivariate logistic-normal likelihood can also be assumed, which is
+given by:
+
+``` math
+{\begin{matrix}
+\ell\left( \text{ObsCompositionData}_{r,y,\tau,j} \right) = \\
+\end{matrix}
+}{\frac{1}{(2\pi)^{\frac{B - 1}{2}}\left| \mathbf{\Sigma} \right|^{\frac{1}{2}}}\exp\left( - \frac{1}{2}\left\{ \mathbf{O}_{r,y,\tau,j}^{\mathbf{'}} - \mathbf{E}_{r,y,\tau,j}^{\mathbf{'}} \right\}^{T}\mathbf{\Sigma}^{- 1}\left\{ \mathbf{O}_{r,y,\tau,j}^{\mathbf{'}} - \mathbf{E}_{r,y,\tau,j}^{\mathbf{'}} \right\} \right)}
+```
+
+Both $`\mathbf{O}_{r,y,\tau,j}^{\mathbf{'}}`$ and
+$`\mathbf{E}_{r,y,\tau,j}^{\mathbf{'}}`$ are $`(B - 1)`$ dimensional
+vectors, while $`\mathbf{\Sigma}`$ is a $`(B - 1) \times (B - 1)`$
+covariance matrix (see below for further details).
+$`\mathbf{O}_{r,y,\tau,j}^{\mathbf{'}}`$ and
+$`\mathbf{E}_{r,y,\tau,j}^{\mathbf{'}}`$ are derived via an additive
+logistic function:
+
+``` math
+\begin{matrix}
+O_{r,y,\tau,b,j}^{'} = \log\left( O_{r,y,\tau, - B,j} \right) - log(O_{r,y,\tau,B,j}) \\
+E_{r,y,\tau,b,j}^{'} = \log\left( E_{r,y,\tau, - B,j} \right) - log(E_{r,y,\tau,B,j}) \\
+\end{matrix}
+```
+
+where $`O_{r,y,\tau,b,j}^{'}`$ and $`E_{r,y,\tau,b,j}^{'}`$ are
+transformed proportions using the last bin $`B`$ as the reference
+category. Because the logarithm of zero is undefined, all untransformed
+proportions must be strictly positive. If any observed proportion is
+zero, both the observed and corresponding expected values are removed,
+and the remaining proportions are renormalized to ensure that they sum
+to one before applying the transformation. The covariance matrix of the
+logistic-normal likelihood can be specified in various ways. In the
+simplest case, the covariance matrix can be assumed to be independent
+and identically distributed (iid):
+
+``` math
+\begin{matrix}
+\mathbf{\Sigma =}\left( \mathbf{I}_{B} \cdot \theta^{2} \right)_{\mathbf{-}B} \\
+\end{matrix}
+```
+
+where $`\mathbf{I}_{B}`$ is a $`B \times B`$ identity matrix and
+$`\theta^{2}`$ is an estimated overdispersion parameter representing the
+variance. The simple iid case can be further extended to incorporate a
+one-dimensional lag-1 autoregressive structure:
+
+``` math
+\begin{matrix}
+\mathbf{\Sigma =}\left( \mathbf{R}_{B} \cdot \frac{\theta^{2}}{1-\rho^2_B} \right)_{- B} \\
+\left( \mathbf{R}_{B} \right)_{i,j}\mathbf{=}\rho_{B}^{|i - j|},\ \ i,j = \ 1,\ \cdots,\ B \\
+\end{matrix}
+```
+
+Here, $`\mathbf{R}_{B}`$ is a $`B \times B`$ correlation matrix with a
+lag-1 autoregressive structure, where $`\rho_{B}^{|i - j|}`$ defines the
+correlation across bins. Lastly, if the model is specified to be
+sex-structured and sex-composition data are utilized, a two-dimensional
+autoregressive structure can be specified:
+
+``` math
+\begin{matrix}
+\mathbf{\Sigma =}\left( {\mathbf{R}_{S}\mathbf{\ \bigotimes\ R}}_{C} \cdot \frac{\theta^{2}}{(1-\rho^2_S)(1-\rho^2_C)} \right)_{- B} \\
+\end{matrix}
+```
+
+``` math
+\left( \mathbf{R}_{C} \right)_{i,j}\mathbf{=}\rho_{C}^{|i - j|},\ \ i,j = \ 1,\ \cdots,\ C
+```
+
+``` math
+\left( \mathbf{R}_{S} \right)_{i,j}\mathbf{=}\left\{ \begin{matrix}
+1,\ \ if i = j \\
+\rho_{s},\ \ if i \neq j \\
+\end{matrix} \right.\ ,\ \ i,j = 1,\ldots,n_{s}
+```
+
+$`\mathbf{R}_{S}`$ is a constant correlation matrix dimensioned by
+$`n_{s} \times n_{s}`$ for sexes, with off-diagonal elements
+$`\rho_{s}`$ controlling the correlation of age/length categories across
+sexes, while $`\mathbf{R}_{C}`$ is a $`n_{c} \times n_{c}`$ lag-1
+autoregressive correlation structure, where $`\rho_{C}^{|i - j|}`$
+defines the correlation across age/length categories.
+$`\mathbf{\bigotimes}`$ denotes the Kronecker product.
+
+All three composition likelihood forms (multinomial,
+Dirichlet-multinomial, logistic-normal) can be applied to retained
+fishery, discarded fishery, and survey composition data, as well as to
+both region-aggregated and population-specific variants. For
+region-aggregated compositions, expected values $`E_{r,y,\tau,b,j}`$ are
+derived from catch-at-age or survey index-at-age quantities summed
+across populations ($`\sum_p`$). For population-specific compositions,
+expected values $`E_{p,r,y,\tau,b,j}`$ are derived from the quantities
+for a single population $`p`$ directly. For discard compositions,
+expected values are derived from discarded catch-at-age
+($`D_{p,r,y,\tau,a,s,f}^{a}`$) or discarded catch-at-length quantities
+analogously. Each likelihood form and covariance structure described
+above applies identically across all composition data types;
+population-specific likelihoods additionally carry separate
+overdispersion ($`\theta_{p,r,j}`$) and correlation parameters
+($`\rho_{p,r,j}`$) estimated independently from their region-aggregated
+counterparts.
+
+##### Structuring Compositions and Ageing Error
+
+Related to the use of composition data likelihoods, composition data can
+be structured differently depending on model assumptions and data
+constraints. In particular, three options are available to fit to
+composition data:
+
+1.  ‘Aggregated’ compositions across regions and sexes,
+
+2.  ‘Split’ compositions for each region and sex (i.e., no implicit
+    information about sex-ratios), and
+
+3.  ‘Joint’ compositions across sexes (i.e., implicit information is
+    provided about sex-ratios).
+
+The expected compositions (i.e., catch-at-age, catch-at-length, survey
+catch-at-age, survey catch-at-length) when specified as ‘aggregated’ are
+derived with the following:
+
+``` math
+{\begin{matrix}
+E_{y,\tau,b}^{'} = \frac{\sum_{r = 1}^{n_{r}}{\sum_{s = 1}^{n_{s}}E_{r,y,\tau,b,s}^{'}}}{n_{s} \cdot n_{r}} \\
+\end{matrix}
+}{\mathbf{E}_{y,\tau} = \mathbf{E}_{y,\tau}^{\mathbf{'}}\mathbf{\Theta}_{y}}
+```
+
+where compositions are summed across regions and sexes and normalized to
+sum to one. Ageing error ($`\mathbf{\Theta}_{y}`$) can then be applied
+using standard matrix multiplication. Expected compositions that are
+specified as ‘Split’ by sexes and regions are computed as:
+
+``` math
+\begin{matrix}
+E_{y,\tau,b,s}^{'} = \frac{E_{r,y,\tau,b,s}^{'}}{\sum_{b = 1}^{n_{B}}E_{r,y,\tau,b,s}^{'}} \\
+\end{matrix}
+```
+
+``` math
+\mathbf{E}_{y,\tau,s} = \mathbf{E}_{y,\tau,s}^{\mathbf{'}}\mathbf{\Theta}_{y}
+```
+
+Here, expected compositions sum to one within a given region and sex
+combination and ageing error is similarly applied via matrix
+multiplication. In the case where expected compositions are specified as
+‘Joint’, they are calculated as:
+
+``` math
+\begin{matrix}
+E_{y,\tau,b,s}^{'} = \frac{E_{r,y,\tau,b,s}^{'}}{\sum_{s = 1}^{n_{s}}{\sum_{b = 1}^{n_{B}}E_{r,y,\tau,b,s}^{'}}} \\
+\end{matrix}
+```
+
+``` math
+\mathbf{E}_{y,\tau} = \left( \mathbf{E}_{y,\tau} \right)^{T}(\mathbf{I}_{s}\mathbf{\ \bigotimes\ \Theta}_{y})
+```
+
+where the expected compositions sum to one jointly across bins and
+sexes, thus preserving implicit sex-ratio information. Ageing error is
+then applied by taking the Kronecker product of a
+$`n_{s}\ \times\ n_{s}`$ identity matrix with the ageing error matrix,
+followed by matrix multiplication. These three structuring options apply
+identically to retained fishery, discarded fishery, and survey
+composition likelihoods, as well as to both region-aggregated and
+population-specific variants.
+
+#### Tagging
+
+`SPoRC` currently allows for various tagging likelihoods, ranging from
+the Poisson, Negative Binomial, multinomial, and Dirichlet-multinomial
+likelihood. Additionally, `SPoRC` also allows for both release- and
+recapture-conditioned dynamics (McGarvey and Feenstra, 2002). The
+Poisson tag likelihood is given by:
+
+``` math
+\begin{matrix}
+\ell\left( {ObsRecap}_{p,r,y,\tau,a,s,f}^{k} \right) = \lambda_{\text{Tagging}}\frac{\exp\left( - {Recap}_{p,r,y,\tau,a,s,f}^{k} \right)\left( {Recap}_{p,r,y,\tau,a,s,f}^{k} \right)^{{ObsRecap}_{p,r,y,\tau,a,s,f}^{k}}}{{ObsRecap}_{p,r,y,\tau,a,s,f}^{k}!} \\
+\end{matrix}
+```
+
+where $`{ObsRecap}_{p,r,y,\tau,a,s,f}^{k}`$ are the observed tag
+recaptures and $`\lambda_{\text{Tagging}}`$ is the likelihood weight
+applied to tagging data. In the case where the Negative Binomial is
+invoked, the following expression is used:
+
+``` math
+\begin{matrix}
+\ell\left( {ObsRecap}_{p,r,y,\tau,a,s,f}^{k} \right) = \\
+\lambda_{\text{Tagging}}\frac{\Gamma\left( {ObsRecap}_{p,r,y,\tau,a,s,f}^{k} + \eta \right)}{\Gamma(\eta)\Gamma\left( {ObsRecap}_{p,r,y,\tau,a,s,f}^{k} + 1 \right)}\left( \frac{\eta}{{Recap}_{p,r,y,\tau,a,s,f}^{k} + \eta} \right)^{\eta}\left( \frac{{Recap}_{p,r,y,\tau,a,s,f}^{k}}{{Recap}_{p,r,y,\tau,a,s,f}^{k} + \eta} \right)^{{ObsRecap}_{p,r,y,\tau,a,s,f}^{k}} \\
+\end{matrix}
+```
+
+Here, $`\eta`$ represents the estimated overdispersion parameter for
+tagging data.
+
+Under release conditioned dynamics, both recaptured and non-recaptured
+states are fit to. Proportions of observed
+($`{PObsRecap}_{p,r,y,\tau,a,s,f}^{k}`$) and expected recaptured
+($`{PRecap}_{p,r,y,\tau,a,s,f}^{k})`$ individuals are given by:
+
+``` math
+\begin{matrix}
+{PObsRecap}_{p,r,y,\tau,a,s,f}^{k} = \frac{{ObsRecap}_{p,r,y,\tau,a,s,f}^{k}}{{InitTag}^{k}} \\
+\end{matrix}
+```
+
+``` math
+{PRecap}_{p,r,y,\tau,a,s,f}^{k} = \frac{{Recap}_{p,r,y,\tau,a,s,f}^{k}}{{InitTag}^{k}}
+```
+
+$`{InitTag}^{k}`$ denotes the total tags released for a given tag cohort
+(combination of release region, year, and season). Non-recaptured states
+can then be written as:
+
+``` math
+\begin{matrix}
+{PObsNonRecap}^{k} = 1 - \sum_{p}^{}{\sum_{r}^{}{\sum_{y}^{}{\sum_{\tau}^{}{\sum_{a}^{}{\sum_{s}^{}{\sum_{f}^{}{PObsRecap}_{p,r,y,\tau,a,s,f}^{k}}}}}}} \\
+\end{matrix}
+```
+
+``` math
+{PNonRecap}^{k} = 1 - \sum_{p}^{}{\sum_{r}^{}{\sum_{y}^{}{\sum_{\tau}^{}{\sum_{a}^{}{\sum_{s}^{}{\sum_{f}^{}{PRecap}_{p,r,y,\tau,a,s,f}^{k}}}}}}}
+```
+
+where $`{PObsNonRecap}^{k}`$ and $`{PNonRecap}^{k}`$ are the observed
+and expected non-recaptured states, respectively. These states are then
+combined into a single vector of observed and expected values:
+
+``` math
+\begin{matrix}
+\mathbf{O}_{Tagging}^{k} = \left\{ \mathbf{PObsReca}\mathbf{p}^{k},{PObsNonRecap}^{k} \right\} \\
+\end{matrix}
+```
+
+``` math
+\mathbf{E}_{Tagging}^{k} = \{\mathbf{PReca}\mathbf{p}^{k},{PNonRecap}^{k}\}
+```
+
+If a Multinomial likelihood is assumed for release conditioned dynamics,
+this is given by:
+
+``` math
+\begin{matrix}
+\ell\left( {ObsRecap}^{k} \right) = {\lambda_{\text{Tagging}}InitTag}^{k}\prod_{i}^{}\left( E_{i,Tagging}^{k} \right)^{O_{i,Tagging}^{k}} \\
+\end{matrix}
+```
+
+Here, the subscript $`i`$ is used to generically denote a given element.
+If a Dirichlet-multinomial with released-condition dynamics was assumed,
+the tagging likelihood would be written as:
+
+``` math
+\begin{matrix}
+\ell\left( {ObsRecap}^{k} \right) = \\
+\lambda_{\text{Tagging}} \cdot \frac{\Gamma\left( {InitTag}^{k}\  + 1 \right)}{{InitTag}^{k}\  \cdot O_{i,Tagging}^{k} + 1} \cdot \frac{\Gamma\left( {InitTag}^{k}\ \eta \right)}{\text{Γ(}{InitTag}^{k}\text{+}{InitTag}^{k}\eta\text{)}} \cdot \\
+\prod_{i}^{}\frac{\Gamma({InitTag}^{k} \cdot O_{i,Tagging}^{k} + {InitTag}^{k} \cdot \eta \cdot E_{i,Tagging}^{k})}{{InitTag}^{k} \cdot \eta \cdot E_{i,Tagging}^{k}} \\
+\end{matrix}
+```
+
+The $`\eta`$ parameter in the Dirichlet-multinomial likelihood
+represents the overdispersion parameter for tagging data.
+
+Under recapture-conditioned dynamics, tag shedding, tag induced
+mortality, and tag reporting rates are assumed to be spatially-invariant
+and do not need to be estimated, given that these terms cancel out in
+the denominator (McGarvey and Feenstra, 2002). Unlike
+release-conditioned dynamics, assuming recaptured-conditioned processes
+does not require fitting to non-recaptured states. Thus, the observed
+and expected recaptured proportions can be written as:
+
+``` math
+{\begin{matrix}
+{PObsRecap}_{p,r,y,\tau,a,s,f}^{k} = \frac{{ObsRecap}_{p,r,y,\tau,a,s,f}^{k}}{\sum_{p}^{}{\sum_{r}^{}{\sum_{a}^{}{\sum_{s}^{}{ObsRecap}_{p,r,y,\tau,a,s,f}^{k}}}}} \\
+\end{matrix}
+}{{PRecap}_{p,r,y,\tau,a,s,f}^{k} = \frac{{Recap}_{p,r,y,\tau,a,s,f}^{k}}{\sum_{p}^{}{\sum_{r}^{}{\sum_{a}^{}{\sum_{s}^{}{Recap}_{p,r,y,\tau,a,s,f}^{k}}}}}}
+```
+
+where recapture probabilities are normalized by the total number of
+recaptures across populations, regions, ages, and sexes in a given year
+and season.
+
+### Parameter Priors and Process Error Penalties
+
+#### Parameter Priors
+
+Considering the complexity of integrated population models, several
+priors can be specified to help inform the estimation of parameters by
+providing additional knowledge. Priors can currently be specified for
+natural mortality, fishery and survey catchability, fishery and survey
+selectivity, steepness, recruitment population scale ($`R_0`$) and
+proportions, stray rates, movement rates, and tag reporting rates.
+
+##### Natural Mortality
+
+In the case of natural mortality, a lognormal prior is utilized:
+
+``` math
+\begin{matrix}
+P\left( \log\left( \text{NatMort}_{p,r,y,a,s} \right) \right) = \frac{1}{\sqrt{2\pi\sigma_{p,r,y,a,s}^{2\ (Natmort)}}\,}\exp\left( - \frac{\left\lbrack \log\left( \text{NatMort}_{p,r,y,a,s} \right) - log\left( \mu_{p,r,y,a,s}^{\text{(NatMort)}} \right) \right\rbrack^{2}}{2\sigma_{p,r,y,a,s}^{2\ (Natmort)}} \right) \\
+\end{matrix}
+```
+
+where the variance of the prior is given by
+$`\sigma_{p,r,y,a,s}^{2\ (Natmort)}`$, and
+$`\mu_{p,r,y,a,s}^{\text{(NatMort)}}`$ denotes the prior mean.
+
+##### Fishery and Survey Catchability
+
+For fishery and survey catchability, a lognormal prior can also be
+specified:
+
+``` math
+\begin{matrix}
+P\left( \log\text{(}q_{r,y,j}\text{)} \right) = \frac{1}{\sqrt{2\pi\sigma_{r,y,j}^{2\ (qPrior)}}\,}\exp\left( - \frac{\left\lbrack \log\left( q_{r,y,j} \right) - log\left( \mu_{r,y,j}^{\text{(qPrior)}} \right) \right\rbrack^{2}}{2\sigma_{r,y,j}^{2\ (qPrior)}} \right) \\
+\end{matrix}
+```
+
+where $`j`$ here represents either a fishery or survey fleet,
+$`\sigma_{r,y,j}^{2\ (qPrior)}`$ is the variance of the prior, and
+$`\mu_{r,y,j}^{\text{(qPrior)}}`$ indicates the prior mean for
+catchability.
+
+##### Fishery and Survey Selectivity
+
+In general, selectivity priors can be utilized to serve as regularizing
+priors to facilitate stable parameter estimation (Monnahan, 2024). These
+priors are assumed to be lognormal and are applied to the selectivity
+parameters themselves:
+
+``` math
+\begin{matrix}
+P\left( \log\left( \theta_{r,p,y,s,j} \right) \right) = \frac{1}{\sqrt{2\pi{\sigma^{2}}_{r,p,y,s,j}^{\text{(Sel)}}}\,}\exp\left( - \frac{\left\lbrack \ln\left( \theta_{r,p,y,s,j} \right) - ln\left( \mu_{r,p,y,s,j}^{\text{(Sel)}} \right) \right\rbrack^{2}}{2{\sigma^{2}}_{r,p,y,s,j}^{\text{(Sel)}}} \right) \\
+\end{matrix}
+```
+
+where $`\theta_{r,p,y,s,j}`$ is a selectivity parameter for a given
+functional form specified, $`{\sigma^{2}}_{r,p,y,s,j}^{\text{(Sel)}}`$
+is the prior variance, and $`\mu_{r,p,y,s,j}^{\text{(Sel)}}`$ is the
+prior mean for the specific selectivity parameter.
+
+##### Steepness
+
+If a Beverton-Holt stock recruitment relationship is assumed, priors for
+steepness can be specified. Currently, a scaled beta prior (bounded
+between 0.2 and 1) can be invoked:
+
+``` math
+{\begin{matrix}
+a_{p,r}^{(h)} = \left( \frac{\mu_{p,r}^{\text{(}\text{h}\text{)}} - 0.2}{1 - 0.2} \right)\left( \frac{\sigma_{p,r}^{(h)}}{1 - 0.2} \right)^{2} \\
+\end{matrix}
+}{b_{p,r}^{(h)} = \left\lbrack 1 - \ \left( \frac{\mu_{p,r}^{\text{(}\text{h}\text{)}} - 0.2}{1 - 0.2} \right) \right\rbrack\left\lbrack \left( \frac{\sigma_{p,r}^{(h)}}{1 - 0.2} \right)^{2} \right\rbrack
+}{P\left( h_{p,r} \right) = \frac{\Gamma\left( a_{p,r}^{(h)} \right)\Gamma\left( b_{p,r}^{(h)} \right)}{\Gamma\left( a_{p,r}^{(h)} + b_{p,r}^{(h)} \right)}h_{p,r}^{a - 1}\left( 1 - h_{p,r} \right)^{b - 1}}
+```
+
+Here, $`a_{p,r}^{(h)}`$ and $`b_{p,r}^{(h)}`$ are parameters of the beta
+distribution, $`\mu_{p,r}^{\text{(}\text{h}\text{)}}`$ is the prior mean
+steepness for a given population and region (bounded between 0.2 and 1)
+while $`\sigma_{p,r}^{(h)}`$ is the standard deviation for these priors.
+
+##### Recruitment Proportions
+
+Regional recruitment is derived by apportioning a global recruitment
+parameter using regional recruitment proportions for each population
+(i.e., $`\mu_p^{\text{Rec}} \cdot \zeta_{p,r}`$). Here, $`\zeta_{p,r}`$
+is derived via a multinomial logit transformation and Dirichlet priors
+can be used to help constrain estimation:
+
+``` math
+\begin{matrix}
+P\left( \mathbf{\zeta}_p \right) = \frac{\Gamma\left( \sum_{r}^{n_{r}}\alpha_{p,r} \right)}{\prod_{r}^{n_{r}}{\Gamma(\alpha_{p,r})}}\prod_{r = 1}^{n_{r}}\zeta_{p,r}^{\alpha_{p,r} - 1} \\
+\end{matrix}
+```
+
+$`\mathbf{\zeta}_p = \{\zeta_{p,1},\zeta_{p,2},\ldots,\zeta_{p,n_{r}}\}`$
+are the estimated recruitment proportions across regions for population
+$`p`$, and $`\alpha_{p,r}`$ is the concentration parameter governing the
+spread of the Dirichlet distribution. Similarly, seasonal recruitment
+proportions $`\chi_{p,\tau}`$ can be constrained with Dirichlet priors
+when estimated.
+
+##### R0
+
+A lognormal prior can be placed on $`R_0`$ for any population:
+
+``` math
+P\left(\ln R_{0,p}\right) = \frac{1}{\sigma_p^{(R_0)}\sqrt{2\pi}}\exp\left(-\frac{\left(\ln R_{0,p} - \ln \mu_p^{(R_0)}\right)^2}{2\left(\sigma_p^{(R_0)}\right)^2}\right)
+```
+
+where $`\mu_p^{(R_0)}`$ is the prior mean on the natural scale and
+$`\sigma_p^{(R_0)}`$ is the standard deviation on the log scale.
+
+##### Stray Rates
+
+When stray rates are estimated ($`n_p > 1`$ and
+`use_fixed_stray_rate = 0`), a standard beta prior can be applied to
+regularize estimation. The prior is parameterized via method-of-moments
+in terms of a mean and standard deviation:
+
+``` math
+\kappa_{p,b}^{(\phi)} = \frac{\mu_{p,b}^{(\phi)}\left(1 - \mu_{p,b}^{(\phi)}\right)}{\left(\sigma_{p,b}^{(\phi)}\right)^{2}} - 1
+```
+
+``` math
+a_{p,b}^{(\phi)} = \mu_{p,b}^{(\phi)} \cdot \kappa_{p,b}^{(\phi)}
+```
+
+``` math
+b_{p,b}^{(\phi)} = \left(1 - \mu_{p,b}^{(\phi)}\right) \cdot \kappa_{p,b}^{(\phi)}
+```
+
+where $`\kappa_{p,b}^{(\phi)}`$ is the concentration parameter. The
+stray rate is numerically stabilized by squishing the logistic transform
+away from the boundaries:
+
+``` math
+\tilde{\phi}_{p,b} = \epsilon + (1 - 2\epsilon) \cdot \text{logistic}\left(\phi_{p,b}^{*}\right)
+```
+
+where $`\phi_{p,b}^{*}`$ is the logit-scale parameter and $`\epsilon`$
+is a small constant (e.g. $`10^{-4}`$) ensuring
+$`\tilde{\phi}_{p,b} \in (\epsilon, 1-\epsilon)`$. The prior is then:
+
+``` math
+P\left(\tilde{\phi}_{p,b}\right) = \frac{\Gamma\left(a_{p,b}^{(\phi)} + b_{p,b}^{(\phi)}\right)}{\Gamma\left(a_{p,b}^{(\phi)}\right)\Gamma\left(b_{p,b}^{(\phi)}\right)}\tilde{\phi}_{p,b}^{a_{p,b}^{(\phi)} - 1}\left(1 - \tilde{\phi}_{p,b}\right)^{b_{p,b}^{(\phi)} - 1}
+```
+
+where $`\sigma_{p,b}^{(\phi)}`$ is the literal standard deviation of the
+Beta distribution and must satisfy
+$`\sigma_{p,b}^{(\phi)} < \sqrt{\mu_{p,b}^{(\phi)}\left(1 - \mu_{p,b}^{(\phi)}\right)}`$
+to ensure $`\kappa_{p,b}^{(\phi)} > 0`$. Because stray rates are
+generally not identifiable from fisheries data alone, this prior serves
+primarily as a regularizing constraint rather than an informative prior,
+and tight values of $`\sigma_{p,b}^{(\phi)}`$ are recommended. Note that
+when $`\sigma_{p,b}^{(\phi)}`$ is large relative to
+$`\mu_{p,b}^{(\phi)}(1 - \mu_{p,b}^{(\phi)})`$, $`a`$ and $`b`$ approach
+zero and the Beta density becomes U-shaped, placing mass near 0 and 1.
+In this regime numerical instability can occur during optimization,
+which is why $`\tilde{\phi}_{p,b}`$ is squished away from the boundaries
+via the $`\epsilon`$ transformation.
+
+##### Movement
+
+Likewise, priors on movement values can be assumed to arise from a
+Dirichlet process:
+
+``` math
+\begin{matrix}
+P\left( \mathbf{M}_{p,.,k,y,\tau,a,s} \right) = \frac{\Gamma\left( \sum_{r}^{n_{r}}c_{p,r,k,y,\tau,a,s} \right)}{\prod_{r}^{n_{r}}{\Gamma\left( c_{p,r,k,y,\tau,a,s} \right)}}\prod_{r = 1}^{n_{r}}M_{p,r,k,y,\tau,a,s}^{c_{p,r,k,y,\tau,a,s} - 1} \\
+\end{matrix}
+```
+
+where $`r`$ is the origin region, $`k`$ is the destination, and
+$`c_{p,r,k,y,\tau,a,s}`$ are the concentration parameters that control
+the Dirichlet distribution.
+
+##### Tag Reporting Rates
+
+Two types of priors can be specified for tag reporting rates. In
+particular, a symmetric beta distribution is applied:
+
+``` math
+\begin{matrix}
+P\left( \beta_{r,y,f} \right) = \left( \beta_{r,y,f} + 1e - 4 \right)^{\sigma_{r,y,f}^{(\beta)}}\left( 1 - \beta_{r,y,f} + 1e - 4 \right)^{\sigma_{r,y,f}^{(\beta)}} \\
+\end{matrix}
+```
+
+Here, $`\sigma_{r,y,f}^{(\beta)}`$ determines the scale of the tag
+reporting parameter and determines how strongly to penalize estimates
+when they approach the bounds of $`\lbrack 0,1\rbrack`$. Smaller values
+of $`\sigma_{r,y,f}^{(\beta)}`$ result in larger penalties, and vice
+versa.
+
+Tag reporting rate priors can also be specified as a standard beta
+distribution, parameterized via method-of-moments in terms of a mean and
+standard deviation:
+
+``` math
+\kappa_{r,f}^{(\beta)} = \frac{\mu_{r,y,f}^{(\beta)}\left(1 - \mu_{r,y,f}^{(\beta)}\right)}{\left(\sigma_{r,y,f}^{(\beta)}\right)^{2}} - 1
+```
+
+``` math
+a_{r,f}^{(\beta)} = \mu_{r,y,f}^{(\beta)} \cdot \kappa_{r,f}^{(\beta)}
+```
+
+``` math
+b_{r,f}^{(\beta)} = \left(1 - \mu_{r,y,f}^{(\beta)}\right) \cdot \kappa_{r,f}^{(\beta)}
+```
+
+``` math
+P\left(\tilde{\beta}_{r,y,f}\right) = \frac{\Gamma\left(a_{r,f}^{(\beta)} + b_{r,f}^{(\beta)}\right)}{\Gamma\left(a_{r,f}^{(\beta)}\right)\Gamma\left(b_{r,f}^{(\beta)}\right)}\tilde{\beta}_{r,y,f}^{a_{r,f}^{(\beta)} - 1}\left(1 - \tilde{\beta}_{r,y,f}\right)^{b_{r,f}^{(\beta)} - 1}
+```
+
+where
+$`\tilde{\beta}_{r,y,f} = \epsilon + (1 - 2\epsilon) \cdot \text{logistic}\left(\beta_{r,y,f}^{*}\right)`$
+is the numerically stabilized reporting rate with $`\beta_{r,y,f}^{*}`$
+the logit-scale parameter and $`\epsilon`$ a small constant
+(e.g. $`10^{-4}`$). Here $`\sigma_{r,y,f}^{(\beta)}`$ is the literal
+standard deviation of the Beta distribution and must satisfy
+$`\sigma_{r,y,f}^{(\beta)} < \sqrt{\mu_{r,y,f}^{(\beta)}\left(1 - \mu_{r,y,f}^{(\beta)}\right)}`$
+to ensure $`\kappa_{r,f}^{(\beta)} > 0`$. Note that when
+$`\sigma_{r,y,f}^{(\beta)}`$ is large relative to
+$`\mu_{r,y,f}^{(\beta)}(1 - \mu_{r,y,f}^{(\beta)})`$, $`a`$ and $`b`$
+approach zero and the Beta density becomes U-shaped, placing mass near 0
+and 1. In this case, numerical instability can occur during
+optimization, which is why $`\tilde{\beta}_{r,y,f}`$ is squished away
+from the boundaries via the $`\epsilon`$ transformation.
+
+#### Process Error Penalties
+
+In addition to priors, penalties are also utilized to aid in the
+estimation of process errors (either penalized likelihood or integrating
+random effects via Laplace Approximation are possible). Currently,
+process errors can be specified to arise for initial age deviations,
+recruitment, fishing mortality, discard mortality rate, fishery and
+survey selectivity, and movement.
+
+##### Initial Age Deviations
+
+To estimate non-equilibrium initial age deviations, multiplicative
+deviations can be specified:
+
+``` math
+\ell\left( \epsilon_{p,r,i}^{\text{Init}} \right) = \frac{1}{\sqrt{2\pi\sigma_{\text{Init}}^{2}}\,}\exp\left( - \frac{\left( \epsilon_{p,r,i}^{\text{Init}} \right)^{2}}{2\sigma_{\text{Init}}^{2}} \right)
+```
+
+where deviations arise from a normal distribution with a mean of 0 and
+variance of $`\sigma_{\text{Init}}^{2}`$.
+
+##### Recruitment Deviations
+
+Annual recruitment deviations can also be specified, where
+multiplicative deviations are assumed:
+
+``` math
+\ell\left( \epsilon_{p,r,y}^{\text{Rec}} \right) = \frac{1}{\sqrt{2\pi}\sigma_{\text{Rec}}^{2}\,}\exp\left( - \frac{\left( \epsilon_{p,r,y}^{\text{Rec}} \right)^{2}}{2\sigma_{\text{Rec}}^{2}} \right)
+```
+
+and deviations are assumed to be normally distributed, with a mean of 0
+and variance of $`\sigma_{\text{Rec}}^{2}`$.
+
+##### Fishing Mortality Deviations
+
+Fishing mortality deviations assume multiplicative deviations about a
+mean rate. One of three process error structures can be specified via
+`Fdev_model`: independent (`"iid"`), random walk (`"rw"`), or
+first-order autoregressive (`"ar1"`). In all three cases, the penalty is
+only evaluated in region $`r`$, season $`\tau`$, and fleet $`f`$
+combinations with observed catch (i.e.,
+$`\text{UseCatch}_{r,y,\tau,f} = 1`$ or any
+$`\text{UseCatch\_pop}_{p,r,y,\tau,f} = 1`$).
+
+###### IID
+
+``` math
+\ell\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} \right) = \frac{1}{\sqrt{2\pi\sigma_{r,\tau,f,\text{Fsh}}^{2}}\,}\exp\left( - \frac{\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} \right)^{2}}{2\sigma_{r,\tau,f,\text{Fsh}}^{2}} \right)
+```
+
+Fishing mortality deviations are assumed to arise from a normal
+distribution, with mean 0 and a variance of
+$`\sigma_{r,\tau,f,\text{Fsh}}^{2}`$.
+
+###### Random Walk
+
+Catch-active years need not be contiguous under the random walk (a
+fishery may close for several years and reopen later). Let $`y'`$ denote
+the previous catch-active year for a given region, season, and fleet,
+and $`d = y - y'`$ the number of elapsed years between them ($`d = 1`$
+when catch is available every year). The first catch-active year is
+initialized with a large, diffuse variance; every subsequent
+catch-active year follows a random walk about the previous active year’s
+value, with variance inflated by the elapsed gap $`d`$:
+
+``` math
+\ell\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} \right) = \left\{ \begin{matrix}
+\frac{1}{\sqrt{2\pi \cdot 5^{2}}\,}\exp\left( - \frac{\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} \right)^{2}}{2 \cdot 5^{2}} \right),\ y\ \text{is the first catch-active year} \\
+\frac{1}{\sqrt{2\pi d\sigma_{r,\tau,f,\text{Fsh}}^{2}}\,}\exp\left( - \frac{\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} - \epsilon_{r,y',\tau,f}^{\text{Fsh}} \right)^{2}}{2d\sigma_{r,\tau,f,\text{Fsh}}^{2}} \right),\ \text{otherwise} \\
+\end{matrix} \right.\ 
+```
+
+When catch is available every year ($`d = 1`$ throughout), this reduces
+exactly to a standard single-step random walk. When years are closed
+(e.g., a fishery closure), inflating the variance by $`d`$ gives exactly
+the same marginal distribution that would be obtained by estimating
+deviations for the closed years and integrating them out – without
+actually estimating them, so no deviation parameters exist for closed
+years.
+
+###### AR1
+
+The AR1 form additionally estimates a correlation parameter,
+$`\rho_{r,\tau,f,\text{Fsh}} \in (-1,1)`$ (from an unconstrained
+parameter `Fdev_rho`, transformed via $`\rho = 2/(1+e^{-2x}) - 1`$). As
+with the random walk, catch-active years need not be contiguous. The
+first catch-active year is drawn from the process’s stationary marginal
+distribution, and every subsequent catch-active year follows an AR1
+transition over the elapsed gap $`d`$ since the previous active year:
+
+``` math
+\ell\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} \right) = \left\{ \begin{matrix}
+\frac{1}{\sqrt{2\pi\sigma_{r,\tau,f,\text{Fsh}}^{2}/\left(1 - \rho_{r,\tau,f,\text{Fsh}}^{2}\right)}\,}\exp\left( - \frac{\left(1 - \rho_{r,\tau,f,\text{Fsh}}^{2}\right)\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} \right)^{2}}{2\sigma_{r,\tau,f,\text{Fsh}}^{2}} \right),\ y\ \text{is the first catch-active year} \\
+\frac{1}{\sqrt{2\pi V_{d}}\,}\exp\left( - \frac{\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} - \rho_{r,\tau,f,\text{Fsh}}^{d}\epsilon_{r,y',\tau,f}^{\text{Fsh}} \right)^{2}}{2V_{d}} \right),\ \text{otherwise} \\
+\end{matrix} \right.\ 
+```
+
+where
+``` math
+V_{d} = \sigma_{r,\tau,f,\text{Fsh}}^{2}\sum_{i = 0}^{d - 1}{\rho_{r,\tau,f,\text{Fsh}}^{2i}} = \sigma_{r,\tau,f,\text{Fsh}}^{2}\frac{1 - \rho_{r,\tau,f,\text{Fsh}}^{2d}}{1 - \rho_{r,\tau,f,\text{Fsh}}^{2}}
+```
+is the exact variance of the sum of the $`d`$ intervening (unestimated)
+innovations that would have occurred during the closed years, and
+$`\rho_{r,\tau,f,\text{Fsh}}^{d}`$ is the corresponding decay of the
+mean across the same gap. As with the random walk, this reduces exactly
+to the standard single-step AR1 transition when $`d = 1`$.
+
+##### Discard Mortality Rate Deviations
+
+Discard mortality rate deviations are penalized analogously on the logit
+scale:
+
+``` math
+\ell\left( \epsilon_{r,y,\tau,f}^{\delta} \right) = \frac{1}{\sqrt{2\pi{\sigma_{r,\tau,f}^{2}}_{\delta}}\,}\exp\left( - \frac{\left( \epsilon_{r,y,\tau,f}^{\delta} \right)^{2}}{2{\sigma_{r,\tau,f}^{2}}_{\delta}} \right)
+```
+
+where $`{\sigma_{r,\tau,f}^{2}}_{\delta}`$ is the variance of the
+discard mortality rate deviations. The penalty is only applied in years
+and fleets where discard data are available.
+
+##### Fishery and Survey Selectivity
+
+A variety of process error parameterizations can be specified for
+fishery and survey selectivity. Across all parameterizations,
+multiplicative deviations are assumed. In the most basic case, iid
+deviations can be assumed to vary about a parameter on a given
+selectivity functional form:
+
+``` math
+\ell\left( \epsilon_{r,y,i,s,j}^{\text{Sel}} \right) = \frac{1}{\sqrt{2\pi\sigma_{r,i,s,j,Sel}^{2}}\,}\exp\left( - \frac{\left( \epsilon_{r,y,i,s,j}^{\text{Sel}} \right)^{2}}{2\sigma_{r,i,s,j,Sel}^{2}} \right)
+```
+
+where $`\epsilon_{r,y,i,s,j}^{\text{Sel}}`$ are selectivity deviations
+about a given parameter for region $`r`$, year $`y`$, parameter $`i`$,
+sex $`s`$, and fleet $`j`$. Deviations are assumed to have a mean of 0
+and a variance of $`\sigma_{r,i,s,j,Sel}^{2}`$, constrained by a normal
+distribution.
+
+Extending the iid case, random walk selectivity deviations can also be
+specified about a given parameter, assuming a normal distribution:
+
+``` math
+\ell\left( \epsilon_{r,y,i,s,j}^{\text{Sel}} \right) = \left\{ \begin{matrix}
+\frac{1}{\sqrt{2\pi \cdot 5^{2}}\,}\exp\left( - \frac{\left( \epsilon_{r,y = 1,i,s,j}^{\text{Sel}} \right)^{2}}{2{\cdot 5}^{2}} \right),\ if\ y = 1 \\
+\frac{1}{\sqrt{2\pi\sigma_{r,i,s,j,Sel}^{2}}\,}\exp\left( - \frac{\left( \epsilon_{r,y,i,s,j}^{\text{Sel}} - \epsilon_{r,y - 1,i,s,j}^{\text{Sel}} \right)^{2}}{2\sigma_{r,i,s,j,Sel}^{2}} \right),\ if\ y > 1 \\
+\end{matrix} \right.\ 
+```
+
+where process error deviations for the first year are initialized with a
+large variance. Following the first year, process error deviations
+follow a random walk process with a mean conditional on the previous
+year’s value ($`\epsilon_{r,y - 1,i,s,j}^{\text{Sel}}`$) and a variance
+of $`\sigma_{r,i,s,j,Sel}^{2}`$.
+
+In addition to being constrained by a normal distribution, both iid and
+random walk cases have an optional additional smoothness penalty
+applied:
+
+``` math
+P_{SelYrSmooth} = \sum_{r = 1}^{n_{r}}{\sum_{j = 1}^{n_{j}}{\sum_{s = 1}^{n_{s}}{\sum_{y = 2}^{n_{y}}{\sum_{i = 1}^{n_{i}}\left( \epsilon_{r,y,i,s,j}^{\text{Sel}}- \epsilon_{r,y - 1,i,s,j}^{\text{Sel}} \right)^{2}}}}}
+```
+
+Additionally, semi-parametric deviations can also be specified. In
+total, there are three options that can be utilized, two of which allow
+age, year, and cohort correlations, while one allows for only age or
+length and year correlations. In the case where age, year, and cohort
+correlations are specified (note that this is only possible when
+age-based selectivity is specified), marginal stationary variance and a
+conditional non-stationary variance can be invoked. The following
+equations describe the conditional variance version:
+
+``` math
+\mathbf{\epsilon}_{r,s,j}^{\text{Sel}}\mathbf{=}vec\left( \epsilon_{r,y,a,s,j}^{\text{Sel}} \right)
+```
+
+where we vectorize the selectivity deviations across its year and age
+dimensions. These deviations are then assumed to arise from a
+multivariate normal distribution (or Gaussian Markov Random Field) with
+a covariance matrix ($`\mathbf{\Sigma} = \mathbf{Q}^{- 1}`$) determined
+by:
+
+``` math
+\begin{matrix}
+\text{Q} = \left( \text{I} - \left( \text{B} \right)^{T} \right)\mathbf{\Omega}\left( \text{I} - \text{B} \right) \\
+\text{diag}\left( \mathbf{\Omega} \right) = \sigma_{r,s,j,Sel}^{- 2} \\
+\end{matrix}
+```
+
+Here, $`\text{I}`$ is an identity matrix and $`\mathbf{\Omega}`$ is a
+diagonal matrix that determines the variance of the multivariate normal
+process. $`\text{B}`$ is a square matrix representing the partial effect
+of $`\mathbf{\epsilon}_{r,s,j}^{\text{Sel}}`$ on preceding ages and/or
+years, governed by partial correlation coefficients for ages, years, and
+cohorts. To demonstrate the formulation of $`\text{B}`$, a simplified
+example is provided with rows representing ages
+$`a\ \epsilon\ \{ 1,2\}`$ and columns representing years
+$`y\ \epsilon\ \{ 1,2\}`$. In this example, $`\text{B}`$ is a
+$`4\ \times\ 4`$ matrix, where both the rows and columns represent
+combinations of age and year:
+
+``` math
+\begin{matrix}
+\mathbf{B} = \begin{bmatrix}
+1 & 0 & 0 & 0 \\
+\rho_{y} & 0 & 0 & 0 \\
+\rho_{a} & 0 & 0 & 0 \\
+\rho_{c} & \rho_{a} & \rho_{y} & 0 \\
+\end{bmatrix} \\
+\end{matrix}
+```
+
+where $`\rho_{y}`$, $`\rho_{a}`$, and $`\rho_{c}`$ are parameters
+describing the partial autocorrelation among years within a given age,
+among ages within a given year, and years within a cohort, respectively.
+The multivariate likelihood is then defined as:
+
+``` math
+\ell\left( \mathbf{\epsilon}_{r,s,j}^{\text{Sel}} \right) = \frac{\left| \mathbf{Q} \right|^{1/2}}{(2\pi)^{\frac{n}{2}}}\exp\left( - \frac{1}{2}\left( \mathbf{\epsilon}_{r,s,j}^{\text{Sel}} \right)^{T}\mathbf{Q}\left( \mathbf{\epsilon}_{r,s,j}^{\text{Sel}} \right) \right)
+```
+
+If age or length and year correlations are specified (i.e., a
+two-dimensional autoregressive structure), a multivariate normal
+likelihood is similarly assumed, but the covariance structure of this
+process is defined as:
+
+``` math
+\text{Q}^{- 1} = \frac{\sigma_{r,s,j,Sel}^{2}}{\left( 1 - \rho_{y} \right)^{2}\left( 1 - \rho_{b} \right)^{2}}\text{R}_{y} \otimes \text{R}_{b}
+```
+
+where $`\rho_{y}`$ and $`\rho_{b}`$ are correlation coefficients across
+years and bins, respectively. Moreover, when semi-parametric deviations
+are specified, additional optional penalties can be applied across bins
+and years to enforce curvature control:
+
+``` math
+P_{SelBinCurve} = \sum_{r = 1}^{n_{r}}{\sum_{j = 1}^{n_{j}}{\sum_{s = 1}^{n_{s}}{\sum_{y = 1}^{n_{y}}{\sum_{b = 2}^{n_{b} - 1}\left( \log\left( {Sel}_{r,y,b + 1,s,j} \right) - 2\log\left( {Sel}_{r,y,b,s,j} \right)\log\left( {Sel}_{r,y,b - 1,s,j} \right) \right)^{2}}}}}
+```
+
+``` math
+P_{SelYrCurve} = \sum_{r = 1}^{n_{r}}{\sum_{j = 1}^{n_{j}}{\sum_{s = 1}^{n_{s}}{\sum_{y = 2}^{n_{y} - 1}{\sum_{b = 1}^{n_{b}}\left( \log\left( {Sel}_{r,y + 1,b,s,j} \right) - 2\log\left( {Sel}_{r,y,b,s,j} \right)\log\left( {Sel}_{r,y - 1,b,s,j} \right) \right)^{2}}}}}
+```
+
+##### Movement
+
+Time-varying movement is introduced through process error deviations,
+$`\epsilon^{\text{Move}}`$, which modify baseline movement parameters.
+The interpretation of these deviations depends on the movement
+formulation, but their stochastic structure is shared.
+
+###### General Structure
+
+Movement deviations are assumed to be independent and normally
+distributed:
+
+``` math
+\epsilon^{\text{Move}}_{p,r,r',y,\tau,a,s}
+\sim
+N\left(0, \sigma^2_{p,r,\tau,a,s,\text{Move}}\right)
+```
+
+where $`\sigma_{p,r,\tau,a,s,\text{Move}}`$ may be shared across
+dimensions depending on the selected process error model.
+
+Only valid origin–destination pairs (i.e., adjacent regions) are
+assigned deviations.
+
+###### Unstructured Markov Movement
+
+For multinomial logit movement, deviations enter additively in logit
+space:
+
+``` math
+\omega_{p,r,k,y,\tau,a,s}
+=
+\omega_{p,r,k,\tau,s}
++
+\epsilon^{\text{Move}}_{p,r,k,y,\tau,a,s}
+```
+
+Thus, time variation is expressed as year-specific perturbations around
+a mean logit, and movement probabilities are obtained via the softmax
+transform.
+
+###### CTMC Movement
+
+For CTMC movement, deviations act on the transition rates rather than
+logits. Specifically, deviations are applied multiplicatively to the
+off-diagonal diffusion terms:
+
+``` math
+D_{p,r \to r',y,\tau,a,s}
+=
+\bar{D}_{p,r \to r',y^*,\tau,a,s}
+\cdot
+\exp\left(
+\epsilon^{\text{Move}}_{p,r,r',y,\tau,a,s}
+\right)
+\quad \text{for } r \ne r'
+```
+
+where: - $`\bar{D}_{p,r \to r',y^*,\tau,a,s}`$ is the baseline diffusion
+rate (constructed from covariates and parameters, with year lookups
+capped at $`y^* = \min(y, n_{\text{yrs}})`$), -
+$`\epsilon^{\text{Move}}_{p,r,r',y,\tau,a,s}`$ is the deviation applied
+on the log scale.
+
+This formulation implies that: - deviations are log-multiplicative on
+movement rates, - $`\exp(\epsilon^{\text{Move}})`$ acts as a
+proportional scaling factor, - time variation persists into projection
+years even when baseline covariates are held fixed.
+
+Importantly, deviations are applied only to off-diagonal elements (i.e.,
+actual transitions), and the diagonal of the generator matrix is
+recomputed to preserve mass balance.
+
+###### Likelihood for Deviations
+
+The movement process error contribution to the log-likelihood can be
+written explicitly as:
+
+``` math
+\ell_{\text{Move}}
+=
+\sum_{p,r,r',y,\tau,a,s}
+\left[
+-\frac{1}{2}\log\left(2\pi \sigma^2_{p,r,\tau,a,s,\text{Move}}\right)
+-
+\frac{
+\left(\epsilon^{\text{Move}}_{p,r,r',y,\tau,a,s}\right)^2
+}{
+2\sigma^2_{p,r,\tau,a,s,\text{Move}}
+}
+\right]
+```
+
+where the summation is taken over all valid origin–destination pairs
+(i.e., $`r \neq r'`$ and adjacency$`(r,r') = 1`$), and over all indices
+of population ($`p`$), year ($`y`$), season ($`\tau`$), age ($`a`$), and
+sex ($`s`$).
+
+###### Variance Structures
+
+Different process error models specify how $`\sigma`$ is shared across
+dimensions. These correspond to IID assumptions over subsets of:
+
+- population ($`p`$),
+- year ($`y`$),
+- season ($`\tau`$),
+- age ($`a`$),
+- sex ($`s`$).
+
+For example: - IID across years: $`\sigma_{p,r}`$, - IID across years
+and ages: $`\sigma_{p,r,a}`$, - Fully stratified:
+$`\sigma_{p,r,\tau,a,s}`$.
+
+These structures control the degree of temporal and demographic
+heterogeneity in movement variability.
+
+#### Joint Likelihood
+
+Lastly, the joint likelihood to be minimized represents the sum of all
+observational likelihood components, priors, and penalties defined
+above:
+
+``` math
+\begin{matrix}
+\text{Joint Likelihood} = \sum\text{Observation Likelihoods} + \sum\text{Priors} + \sum\text{Penalties} \\
+\end{matrix}
+```
+
+Note that some of these components may be zero (i.e., if no priors are
+used) depending on the configuration of the model.
+
+## References
+
+Kristensen, K., Nielsen, A., Berg, C.W., Skaug, H., Bell, B., 2016. TMB:
+Automatic Differentiation and Laplace Approximation. J. Stat. Soft. 70.
+<https://doi.org/10.18637/jss.v070.i05>
+
+Mace, P.M., Doonan, I.J., 1988. A Generalised Bioeconomic Simulation
+Model for Fish Population Dynamics. MAFFish, N.Z. Ministry of
+Agriculture and Fisheries.
+
+McGarvey, R., Feenstra, J.E., 2002. Estimating rates of fish movement
+from tag recoveries: conditioning by recapture. Can. J. Fish. Aquat.
+Sci. 59, 1054–1064. <https://doi.org/10.1139/f02-080>
+
+Methot, R.D., Taylor, I.G., 2011. Adjusting for bias due to variability
+of estimated recruitments in fishery assessment models. Can. J. Fish.
+Aquat. Sci. 68, 1744–1760. <https://doi.org/10.1139/f2011-092>
+
+Monnahan, C.C., 2024. Toward good practices for Bayesian data-rich
+fisheries stock assessments using a modern statistical workflow.
+Fisheries Research 275, 107024.
+<https://doi.org/10.1016/j.fishres.2024.107024>
+
+Thorson, J.T., Johnson, K.F., Methot, R.D., Taylor, I.G., 2017.
+Model-based estimates of effective sample size in stock assessment
+models using the Dirichlet-multinomial distribution. Fisheries Research
+192, 84–93. <https://doi.org/10.1016/j.fishres.2016.06.005>

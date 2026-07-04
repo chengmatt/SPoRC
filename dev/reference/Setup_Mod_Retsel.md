@@ -1,0 +1,214 @@
+# Set up retained fishery selectivity
+
+Configures all aspects of retained fishery selectivity and catchability
+for the estimation model, including functional forms, time blocks,
+continuous time-varying selectivity, process error structure, annual
+deviations, and fixed or estimated selectivity parameters. Must be
+called after
+[`Setup_Mod_FishIdx_and_Comps`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_FishIdx_and_Comps.md).
+
+## Usage
+
+``` r
+Setup_Mod_Retsel(
+  input_list,
+  cont_tv_ret_sel,
+  ret_sel_blocks,
+  ret_sel_model,
+  retsel_pe_pars_spec,
+  ret_fixed_sel_pars_spec,
+  ret_sel_devs_spec,
+  ret_sel_corr_opt_semipar,
+  Use_ret_selex_prior,
+  ret_selex_prior,
+  cont_tv_ret_sel_penalty,
+  retsel_devs_shared_bins,
+  ret_selex_type,
+  use_fixed_ret_sel,
+  ret_sel_input,
+  ret_sel_nonpar_est_bins,
+  ...
+)
+```
+
+## Arguments
+
+- input_list:
+
+  Named list containing `$data`, `$par`, `$map`, and `$verbose` sublists
+  as created by upstream setup functions.
+
+- cont_tv_ret_sel:
+
+  Character vector defining continuous time-varying selectivity
+  structure per fleet. Format: `"<type>_Fleet_<f>"` where `type` is one
+  of:
+
+  `"none"`
+
+  :   No time variation
+
+  `"iid"`
+
+  :   Independent year effects
+
+  `"rw"`
+
+  :   Random walk process
+
+  `"3dmarg"`
+
+  :   3D marginal structure
+
+  `"3dcond"`
+
+  :   3D conditional structure
+
+  `"2dar1"`
+
+  :   2D AR1 structure
+
+  Output is mapped to integer codes internally.
+
+- ret_sel_blocks:
+
+  Character vector defining discrete selectivity blocks. Format:
+  `"none_Fleet_<f>"` or `"Block_<b>_Year_<start>-<end>_Fleet_<f>"` (or
+  terminal year version). Values are expanded into a 3D array:
+  `[n_regions × n_years × n_fish_fleets]`.
+
+- ret_sel_model:
+
+  Character vector defining selectivity functional forms. Format:
+  `"<type>_Fleet_<f>"` or `"<type>_Fleet_<f>_Block_<b>"`. Supported
+  types:
+
+  `"logist1"`
+
+  :   Logistic with \\a\_{50}\\ and slope \\k\\ (2 parameters).
+
+  `"logist2"`
+
+  :   Logistic with \\a\_{50}\\ and \\a\_{95}\\ (2 parameters).
+
+  `"gamma"`
+
+  :   Dome-shaped gamma with \\a\_{max}\\ and \\\delta\\ (2 parameters).
+
+  `"exponential"`
+
+  :   Exponential with a single power parameter (1 parameter).
+
+  `"dbnrml"`
+
+  :   Double-normal with 6 parameters.
+
+  `"nonpar"`
+
+  :   Non-parametric selectivity defined over discrete age or length
+      bins, where selectivity is estimated as independent parameters (or
+      grouped bins if specified via nonparametric bin mapping). No fixed
+      functional form is imposed.
+
+  `"asymplogist1"`
+
+  :   Logistic selectivity with \\a\_{50}\\ and slope \\k\\ and
+      asymptotic control (3 parameters).
+
+  `"asymplogist2"`
+
+  :   Logistic selectivity with with \\a\_{50}\\ and \\a\_{95}\\ and
+      asymptotic control (3 parameters).
+
+- retsel_pe_pars_spec:
+
+  Specification of process error parameters for time-varying
+  selectivity. Length must equal `n_fish_fleets`.
+
+- ret_fixed_sel_pars_spec:
+
+  Specification controlling which fixed selectivity parameters are
+  estimated vs fixed.
+
+- ret_sel_devs_spec:
+
+  Specification of annual selectivity deviations structure per fleet.
+
+- ret_sel_corr_opt_semipar:
+
+  Optional correlation structure for semi-parametric selectivity
+  deviations. Length must equal `n_fish_fleets`.
+
+- Use_ret_selex_prior:
+
+  Integer flag (`0/1`) indicating whether selectivity priors are used.
+
+- ret_selex_prior:
+
+  Data frame of priors for selectivity parameters. Must include columns:
+  `region`, `fleet`, `block`, `sex`, `par`, `mu`, `sd`.
+
+- cont_tv_ret_sel_penalty:
+
+  Penalty value applied to continuous time-varying selectivity
+  deviations.
+
+- retsel_devs_shared_bins:
+
+  Vector defining shared bins for selectivity deviation estimation
+  (e.g., age or length grouping structure).
+
+- ret_selex_type:
+
+  Character string indicating selectivity domain: `"age"` or `"length"`.
+
+- use_fixed_ret_sel:
+
+  Binary indicator array
+  `[n_pop × n_regions × n_years × n_seas × n_fish_fleets]`. `1` = use
+  fixed selectivity input; `0` = estimate.
+
+- ret_sel_input:
+
+  Fixed selectivity input array:
+  `[n_pop × n_regions × n_years × n_seas × (ages or lengths) × n_sexes × n_fish_fleets]`.
+
+- ret_sel_nonpar_est_bins:
+
+  Vector defining estimated bins for non-parametric selectivity.
+
+- ...:
+
+  Optional starting values for selectivity parameters and deviations.
+
+## Value
+
+The updated `input_list` with:
+
+- Parsed selectivity structure arrays in `$data`
+
+- Starting parameter arrays in `$par`
+
+- Factor mapping objects in `$map`
+
+## Details
+
+Selectivity time-variation via `cont_tv_ret_sel` and blocked selectivity
+via `ret_sel_blocks` are mutually exclusive within a fleet. Specifying
+both for the same fleet will result in an error.
+
+## See also
+
+Other Model Setup:
+[`Setup_Mod_Biologicals()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Biologicals.md),
+[`Setup_Mod_Catch_and_F()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Catch_and_F.md),
+[`Setup_Mod_Dim()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Dim.md),
+[`Setup_Mod_Discard_Comps()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Discard_Comps.md),
+[`Setup_Mod_FishIdx_and_Comps()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_FishIdx_and_Comps.md),
+[`Setup_Mod_Fishsel_and_Q()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Fishsel_and_Q.md),
+[`Setup_Mod_Movement()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Movement.md),
+[`Setup_Mod_Rec()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Rec.md),
+[`Setup_Mod_SrvIdx_and_Comps()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_SrvIdx_and_Comps.md),
+[`Setup_Mod_Srvsel_and_Q()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Srvsel_and_Q.md),
+[`Setup_Mod_Tagging()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Tagging.md),
+[`Setup_Mod_Weighting()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Weighting.md)

@@ -1,0 +1,772 @@
+# Overview of Model Options
+
+SPoRC models are assembled through a pipeline of `Setup_Mod_*` functions
+(for the estimation model) and `Setup_Sim_*` functions (for the
+operating model / simulation). Each function appends to an `input_list`
+(or `sim_list`) that accumulates data, parameter starting values, and
+RTMB factor maps. This vignette catalogues every user-facing option
+across that pipeline. Where both an integer code and a string alias
+exist, either is accepted. Strings are generally preferred for
+readability. When `n_sexes > 1`, the first sex index is always female.
+When `n_pop > 1`, populations follow the order in which they are
+defined. Throughout this document, the notation
+`[p × r × y × τ × a × s]` is shorthand for array dimensions: population,
+region, year, seasons, age, sex.
+
+## Parameter sharing conventions
+
+Many hyperparameters throughout the pipeline (process-error standard
+deviations, catchability, natural mortality, tag reporting rates, …) are
+controlled by a `_spec` string argument that follows the same
+convention: a single named dimension (e.g. region, season, fleet, sex)
+is either estimated independently for every level, shared across some
+subset of levels, or fixed. Concretely, for a hyperparameter varying
+across dimensions abbreviated `r` (region), `seas` (season), and `f`
+(fleet), the accepted strings are:
+
+| String | Meaning |
+|----|----|
+| `"est_all"` | Independent parameter for every combination of dimensions |
+| `"est_shared_r"` | Shared across regions; independent per remaining dimension |
+| `"est_shared_seas"` | Shared across seasons |
+| `"est_shared_f"` | Shared across fleets |
+| `"est_shared_r_seas"`, `"est_shared_r_f"`, `"est_shared_seas_f"` | Shared across the named pair of dimensions |
+| `"est_shared_r_seas_f"` | A single parameter shared across everything |
+| `"fix"` | Held at its starting value (not estimated) |
+
+Which dimension abbreviations are valid, and in what order they can be
+combined, depends on the specific parameter (see each section below for
+its abbreviations, e.g. `sigmaC_spec` additionally has a `y` (year)
+dimension). `sigmaF_spec`, `sigmaC_spec`, `sigmaR_spec`, and
+`Fdev_rho_spec` all follow this convention via a single shared internal
+helper (`build_pe_map`/`build_shared_spec_map`), so they behave
+identically. Other `_spec` arguments using the same string vocabulary
+(e.g. `sigmaC_pop_spec`, and selectivity’s `fish_fixed_sel_pars_spec`,
+`fishsel_pe_pars_spec`, `fish_sel_devs_spec`, and their retention/survey
+equivalents) are implemented separately with their own hand-written
+logic, and some additionally support a fleet-sharing escape hatch,
+`"est_shared_f_<n>"`, which copies the sharing structure of fleet `<n>`
+wholesale rather than collapsing a dimension.
+
+------------------------------------------------------------------------
+
+## Spatial and Demographic Structure
+
+Everything starts with
+[`Setup_Mod_Dim()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Dim.md)
+(estimation model) or
+[`Setup_Sim_Dim()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Dim.md)
+(operating model; simulation). These functions define the skeleton that
+every subsequent setup call validates against.
+
+**Core dimensions**
+
+| Argument | Type | Description |
+|----|----|----|
+| `years` | integer vector | Calendar years included in the assessment (length determines $`n_y`$) |
+| `ages` | integer vector | Modelled age classes; the final element is the plus group |
+| `lens` | numeric vector or `NULL` | Length-bin midpoints; `NULL` disables length-based features |
+| `n_regions` | integer | Spatial regions |
+| `n_sexes` | integer | `1` (aggregated) or `2` (sex-structured) |
+| `n_fish_fleets` | integer | Fishery fleets |
+| `n_srv_fleets` | integer | Survey fleets |
+
+**Multi-population structure**
+
+SPoRC decouples biological populations from spatial regions. Populations
+have their own stock–recruit dynamics and natal assignment; regions
+define the arena through which all populations move.
+
+| Argument | Type | Description |
+|----|----|----|
+| `n_pop` | integer | Number of biological populations (default `1`) |
+| `natal_region` | integer vector (length `n_pop`) | Maps each population to its home region. Inferred automatically when `n_pop == n_regions` (one-to-one) or `n_regions == 1` (all share region 1). Must be supplied explicitly otherwise |
+
+When `n_pop > n_regions`, multiple populations share a natal region — a
+contingent-population or mixed-stock structure. When
+`n_pop < n_regions`, the model represents a single population spread
+across more regions than there are spawning origins.
+
+**Seasonal sub-stepping**
+
+| Argument | Type | Description |
+|----|----|----|
+| `n_seas` | integer | Seasons per year (default `1`) |
+| `seasdur` | numeric vector (length `n_seas`) | Duration of each season as a fraction of the year (must sum to 1). Defaults to equal-length seasons |
+
+Within each year, processes execute in sequence: recruitment → movement
+→ mortality (with age advancement at the end of the final season).
+
+**Other dimension controls** (EM only)
+
+| Argument | Description |
+|----|----|
+| `n_proj_yrs_devs` | How many projection-year slots to pre-allocate for deviation parameters (`ln_RecDevs`, `move_devs`, selectivity deviations). Default `0` |
+| `store_config` | If `TRUE`, archives all `Setup_Mod_*` arguments inside `input_list$config` for reproducibility |
+
+**Additional simulation dimensions** (OM only)
+
+| Argument | Description |
+|----|----|
+| `n_sims` | Number of Monte Carlo replicates |
+| `n_yrs` | Projection horizon (years) |
+| `n_obs_ages` | Number of observed age bins (can differ from `n_ages` when compositions pool ages differently) |
+| `run_feedback` | `TRUE` for closed-loop MSE; `FALSE` (default) for open-loop simulation |
+| `feedback_start_yr` | First year of feedback when `run_feedback = TRUE` |
+
+------------------------------------------------------------------------
+
+## Population Initialisation
+
+Controlled via
+[`Setup_Mod_Rec()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Rec.md)
+(argument `init_age_strc`) and
+[`Setup_Sim_Rec()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Rec.md).
+
+SPoRC offers four methods for deriving equilibrium numbers-at-age. All
+methods project a constant recruitment ($`R_0`$) through seasonal
+mortality, fishing, and (optionally) movement until the age structure
+stabilises. After the equilibrium is computed, multiplicative log-scale
+initial deviations (`ln_InitDevs`) are applied to ages $`2, \ldots, A`$.
+
+#### Equilibrium solution method (`init_age_strc`)
+
+| Value | String | How the equilibrium is solved |
+|----|----|----|
+| 0 | `"iterative"` | Brute-force iteration: runs the full seasonal cycle $`n_\text{ages} \times 10`$ times |
+| 1 | `"scalar_no_move"` | Closed-form geometric series assuming no movement at any age. Plus group: $`N_{A^+} = N_{A-1} e^{-Z_{A-1}} / (1 - e^{-Z_{A^+}})`$ |
+| 2 | `"matrix"` | Builds seasonal transition matrices $`\mathbf{T}_a = \prod_\tau \mathbf{M}_{a,\tau} \mathbf{S}_{a,\tau}`$ that combine movement and survival, then solves $`\mathbf{N}_{A^+} = (\mathbf{I} - \mathbf{T}_{A^+})^{-1} \mathbf{T}_{A-1} \mathbf{N}_{A-1}`$. **Default** |
+| 3 | `"scalar_plus_only"` | Hybrid: uses the matrix approach for ages below the plus group but switches to the scalar geometric-series for the plus group itself |
+
+#### Initial deviation structure (`equil_init_age_strc`)
+
+| Value | String | Which ages receive initial deviations |
+|----|----|----|
+| 0 | `"equil"` | None — strict equilibrium |
+| 1 | `"stoch_no_plus"` | All ages except the plus group. **Default** |
+| 2 | `"stoch_all"` | All ages including the plus group |
+| 3 | `"stoch_shared_ages"` | User-defined age sharing via `init_age_devs_shared` |
+
+`init_F_prop` (array `[n_regions × n_seas × n_fish_fleets]`) optionally
+introduces fishing mortality into the equilibrium calculation, producing
+a fished initial condition.
+
+------------------------------------------------------------------------
+
+## Recruitment
+
+Controlled via
+[`Setup_Mod_Rec()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Rec.md)
+(EM) or
+[`Setup_Sim_Rec()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Rec.md)
+(OM).
+
+#### Stock–recruit function (`rec_model`)
+
+| String | Description |
+|----|----|
+| `"mean_rec"` | Estimate mean $`\ln R_0`$ with annual deviations; no SSB feedback |
+| `"bh_rec"` | Beverton–Holt: $`R = 4hR_0 \cdot \text{SSB} / \left[(1-h)S_0 + (5h-1)\text{SSB}\right]`$. Unfished spawning biomass per recruit ($`S_0`$) is computed internally by projecting a single recruit through all ages and seasons with movement |
+
+#### Density dependence scope (`rec_dd`)
+
+| String | When to use |
+|----|----|
+| `"local"` | SSB and $`S_0`$ computed per population and/or per region. **Required** when `n_pop > 1` with BH recruitment |
+| `"global"` | SSB summed across all regions before entering the SRR. Single-population only |
+
+#### Spawning timing
+
+| Argument | Description |
+|----|----|
+| `spawn_seas` | Season index in which spawning occurs |
+| `t_spawn` | Fraction of the spawning season elapsed before spawning occurs (0 = start, 0.5 = midpoint) |
+| `rec_lag` | Delay in years between spawning and recruitment entry. Must be ≥ 1 |
+
+#### Recruitment allocation
+
+| Argument | Description |
+|----|----|
+| `rec_region_prop_spec` | How regional recruitment proportions are estimated/fixed |
+| `rec_seas_prop_spec` | How seasonal recruitment proportions are estimated. Default `"fix"` (all recruitment enters in season 1) |
+| `sexratio_spec` | Sex ratio at recruitment estimation. Default `"fix"` (equal or user-supplied) |
+| `sexratio_blocks` | Time blocks for sex-ratio parameters, specified as `"none_Pop_<p>_Region_<r>"` or `"Block_<b>_Year_<s>-<e>_Pop_<p>_Region_<r>"` |
+
+#### Recruitment and Initial age deviations
+
+| Argument | Description |
+|----|----|
+| `RecDevs_spec` | Estimation structure for annual $`\ln(\text{RecDevs})`$ |
+| `InitDevs_spec` | Estimation structure for initial age deviations |
+| `sigmaR_spec` | Recruitment variability: `"est_all"`, `"fix_early_est_late"`, `"est_shared_all"`, `"fix"` |
+| `sigmaR_switch` | Year index separating the early and late $`\sigma_R`$ periods |
+| `do_rec_bias_ramp` | Methot & Taylor bias adjustment (0 = off, 1 = on) |
+| `bias_year`, `max_bias_ramp_fct` | Bias ramp breakpoints and maximum correction factor |
+| `dont_est_recdev_last` | Number of terminal-year recruitment deviations to fix at zero |
+| `init_age_devs_shared` | Integer vector of length `n_ages - 1` specifying age-sharing for `ln_InitDevs`. Positions with the same value share a single estimated parameter (e.g. `c(1:42, rep(42, 9))`). Required when `equil_init_age_strc = 3`; `NULL` (default) uses standard behaviour |
+| `use_rinit` | 0 = population initialised using `ln_global_R0` (default); 1 = separate `ln_rinit` used for initialisation, with `ln_global_R0` governing only the recruitment relationship |
+
+#### Steepness priors
+
+When `rec_model = "bh_rec"`, steepness ($`h`$) can be penalised with a
+Beta distribution scaled to \[0.2, 1\]:
+
+| Argument      | Description                                         |
+|---------------|-----------------------------------------------------|
+| `Use_h_prior` | 0 = no prior, 1 = apply prior                       |
+| `h_prior`     | Data frame with columns `pop`, `region`, `mu`, `sd` |
+| `h_spec`      | Estimation structure for steepness parameters       |
+
+#### R0 priors
+
+A lognormal prior on $`R_0`$ can be applied per population:
+
+| Argument | Description |
+|----|----|
+| `use_r0_prior` | 0 = no prior (default), 1 = apply lognormal prior on $`\ln R_0`$ |
+| `r0_prior` | Data frame with columns `pop` (population index), `mu` (prior mean on natural scale), and `sd` (prior SD on log scale). Required when `use_r0_prior = 1` |
+
+#### Population straying
+
+When `n_pop > 1`, a fraction of recruits produced by population $`p`$
+can “stray” and recruit into regions associated with other populations.
+
+| Argument | Description |
+|----|----|
+| `stray_rate_spec` | `"fix"` (default), `"est_all"`, etc. |
+| `stray_rate_blocks` | Time blocks: `"none_Pop_<p>"` or `"Block_<b>_Year_<s>-<e>_Pop_<p>"` |
+| `use_stray_rate_prior` | 0/1 toggle for Beta priors on stray rates |
+| `stray_rate_prior` | Data frame with columns `pop`, `block`, `mu` (in (0,1)), `sd` |
+
+#### Spawning movement (single-season, multi-population)
+
+When `n_pop > 1` and `n_seas == 1`, individuals cannot physically move
+to their natal region within the seasonal cycle, so a separate
+spawning-movement matrix (`sgl_seas_spawning_movement`) routes SSB back
+to natal regions for the SRR calculation. If not supplied, SPoRC
+defaults to 100% natal homing.
+
+------------------------------------------------------------------------
+
+## Selectivity
+
+Selectivity configuration is shared across fishery fleets
+([`Setup_Mod_Fishsel_and_Q()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Fishsel_and_Q.md)),
+survey fleets
+([`Setup_Mod_Srvsel_and_Q()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Srvsel_and_Q.md)),
+and retention curves (`ret_sel_model` within
+[`Setup_Mod_Fishsel_and_Q()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Fishsel_and_Q.md)).
+All three accept the same functional forms and time-varying structures.
+
+#### Functional forms
+
+Specified as character strings following the pattern
+`"<form>_Fleet_<f>"` (constant across all time blocks) or
+`"<form>_Fleet_<f>_Block_<b>"` (block-specific). The available forms
+are:
+
+| String | Functional form | Free parameters |
+|----|----|----|
+| `"logist1"` | Ascending logistic: $`1 / (1 + \exp(-k(\text{bin} - a_{50})))`$ | 2 ($`\ln a_{50}`$, $`\ln k`$) |
+| `"logist2"` | Ascending logistic using $`a_{50}`$ and $`a_{95}`$: $`1 / (1 + 19^{(a_{50} - \text{bin})/a_{95}})`$ | 2 ($`\ln a_{50}`$, $`\ln a_{95}`$) |
+| `"gamma"` | Dome-shaped gamma: $`(b/a_\text{max})^{a_\text{max}/p} \exp((a_\text{max} - b)/p)`$ | 2 ($`\ln a_\text{max}`$, $`\ln \delta`$) |
+| `"exponential"` | Descending power: $`1/\text{bin}^\beta`$ | 1 ($`\ln \beta`$) |
+| `"dbnrml"` | Double-normal with ascending and descending widths, plateau, and endpoint control | 6 |
+| `"nonpar"` | Non-parametric: one logit-scale parameter per bin, transformed via $`\text{logit}^{-1}`$ | $`n_\text{bins}`$ |
+| `"asymplogist1"` | Logistic with asymptote $`\alpha \in (0,1)`$: $`\alpha / (1 + \exp(-k(\text{bin} - a_{50})))`$ | 3 ($`\text{logit}(\alpha)`$, $`\ln a_{50}`$, $`\ln k`$) |
+| `"asymplogist2"` | Logistic with asymptote, $`a_{50}/a_{95}`$ parameterisation | 3 ($`\text{logit}(\alpha)`$, $`\ln a_{50}`$, $`\ln a_{95}`$) |
+
+#### Temporal variation
+
+SPoRC provides two mutually exclusive mechanisms for time-varying
+selectivity within a fleet. You can use **discrete blocks** or
+**continuous deviations**, but not both on the same fleet.
+
+**Discrete blocks** (`fish_sel_blocks` / `srv_sel_blocks` /
+`ret_sel_blocks`): defined as `"Block_<b>_Year_<s>-<e>_Fleet_<f>"` or
+`"Block_<b>_Year_<s>-terminal_Fleet_<f>"`. Blocks must be
+non-overlapping and collectively span all model years. Each block gets
+its own set of fixed-effect selectivity parameters (and can even use a
+different functional form).
+
+**Continuous deviations** (`cont_tv_fish_sel` / `cont_tv_srv_sel` /
+`cont_tv_ret_sel`): specified as `"<type>_Fleet_<f>"`. For parametric
+forms (`"logist1"`, `"gamma"`, etc.), IID and random-walk deviations act
+multiplicatively on the transformed base parameters. For semi-parametric
+forms (`"3dmarg"`, `"3dcond"`, `"2dar1"`), deviations act
+multiplicatively on the selectivity curve at the bin level.
+
+| String | Description |
+|----|----|
+| `"none"` | Time-invariant (default) |
+| `"iid"` | Independent annual deviations on selectivity parameters |
+| `"rw"` | Random walk on selectivity parameters |
+| `"3dmarg"` | 3D Gaussian Markov random field — marginal variance parameterisation |
+| `"3dcond"` | 3D GMRF — conditional variance parameterisation |
+| `"2dar1"` | Separable 2D AR(1) over bin × year |
+
+Ancillary controls for continuous time-variation include
+`fishsel_pe_pars_spec` (hyperparameter estimation), `fish_sel_devs_spec`
+(deviation estimation structure), `fishsel_devs_shared_bins` (bin
+grouping for shared deviations), and `corr_opt_semipar` (which
+correlation components to suppress in semi-parametric forms).
+
+#### Parameter sharing and fixing
+
+The `fish_fixed_sel_pars_spec` / `srv_fixed_sel_pars_spec` argument
+controls how base selectivity parameters are estimated:
+
+| String             | Meaning                                 |
+|--------------------|-----------------------------------------|
+| `"est_all"`        | Fully region-, sex-, and fleet-specific |
+| `"est_shared_r"`   | Shared across regions                   |
+| `"est_shared_s"`   | Shared across sexes                     |
+| `"est_shared_r_s"` | Shared across both regions and sexes    |
+| `"fix"`            | Fixed at starting values                |
+
+#### Normalisation and length-based selectivity
+
+Selectivity can be normalised relative to a specific bin, to the
+maximum, or to the mean across a bin range. When `fit_lengths = 1`,
+selectivity operates on length bins and is mapped to age-space via a
+user-supplied size–age transition matrix (`SizeAgeTrans`).
+
+#### Selectivity priors
+
+Lognormal priors on selectivity parameters are toggled via
+`Use_fish_selex_prior` / `Use_srv_selex_prior`, with hyperparameters
+supplied in a data frame (`fish_selex_prior` / `srv_selex_prior`)
+containing `region`, `fleet`, `block`, `sex`, `par`, `mu`, and `sd`.
+
+------------------------------------------------------------------------
+
+## Catchability
+
+Configured alongside selectivity in
+[`Setup_Mod_Fishsel_and_Q()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Fishsel_and_Q.md)
+/
+[`Setup_Mod_Srvsel_and_Q()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Srvsel_and_Q.md).
+
+#### Estimation structure (`fish_q_spec` / `srv_q_spec`)
+
+| String           | Description                                        |
+|------------------|----------------------------------------------------|
+| `"est_all"`      | Free parameter for each region × fleet combination |
+| `"est_shared_r"` | One parameter shared across regions (per fleet)    |
+| `"fix"`          | Held at user-supplied value                        |
+
+#### Time blocks (`fish_q_blocks` / `srv_q_blocks`)
+
+Same syntax as selectivity blocks: `"none_Fleet_<f>"` for a single
+block, or `"Block_<b>_Year_<s>-<e>_Fleet_<f>"` for structured change
+points.
+
+#### Priors
+
+| Argument | Description |
+|----|----|
+| `Use_fish_q_prior` / `Use_srv_q_prior` | 0/1 toggle |
+| `fish_q_prior` / `srv_q_prior` | Data frame with `region`, `fleet`, `block`, `mu` (natural scale), `sd` (log scale). Penalty: $`\text{Normal}(\ln(\mu), \sigma)`$ |
+
+------------------------------------------------------------------------
+
+## Natural Mortality
+
+Controlled via
+[`Setup_Mod_Biologicals()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Biologicals.md).
+
+#### Estimation vs. fixing (`M_spec`)
+
+| String | Description |
+|----|----|
+| `"est_ln_M"` | Estimate $`\ln M`$ across the defined block structure |
+| `"fix"` | Fix at values supplied via `Fixed_natmort` (array `[p × r × y × a × s]`) |
+
+#### Block structure
+
+Natural mortality parameters can be shared or made specific along any
+combination of five axes. Each argument takes either `'constant'` (all
+levels pooled) or a list of integer vectors defining blocks:
+
+| Argument | Axis | Example |
+|----|----|----|
+| `M_popblk_spec` | Population | `list(c(1,2), 3)` → pops 1–2 share $`M`$, pop 3 is separate |
+| `M_regionblk_spec` | Region | `list(1:3, 4:5)` |
+| `M_yearblk_spec` | Year | `list(1:20, 21:40)` |
+| `M_ageblk_spec` | Age | `list(1:5, 6:30)` → young vs. old |
+| `M_sexblk_spec` | Sex | `list(1, 2)` → sex-specific $`M`$ |
+
+All block specifications are crossed to produce unique $`M`$ parameters.
+For instance, two age blocks × two sex blocks = four estimated $`\ln M`$
+values (assuming everything else is `'constant'`).
+
+#### Priors
+
+Lognormal priors on $`M`$ are activated via `Use_M_prior = 1`, supplying
+a data frame with columns `popblk`, `regionblk`, `yearblk`, `ageblk`,
+`sexblk`, `mu`, and `sd`.
+
+------------------------------------------------------------------------
+
+## Movement
+
+Configured via
+[`Setup_Mod_Movement()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Movement.md)
+(EM) or `Setup_Sim_Movement()` (OM).
+
+SPoRC implements two movement parameterisations, plus a fixed-matrix
+escape hatch.
+
+#### Movement type (`move_type`)
+
+| Value | Description |
+|----|----|
+| 0 | **Unstructured Markov.** Transition probabilities estimated via multinomial logit (softmax), with region 1 as the implicit reference category. Supports blocking along population, age, year, season, and sex dimensions |
+| 1 | **CTMC.** A continuous-time Markov chain builds an instantaneous rate matrix $`Q = D + Z`$ from diffusion ($`D`$, isotropic dispersal scaled by region area) and taxis ($`Z`$, directional preference). Transition probabilities are obtained by matrix exponentiation: $`\mathbf{P} = \exp(Q)`$ |
+
+#### Fixed movement (`use_fixed_movement = 1`)
+
+Bypasses estimation entirely. Supply `Fixed_Movement` as an array
+`[p × r_\text{from} × r_\text{to} × y × \tau × a × s]`.
+
+#### Unstructured Markov block structure (`move_type = 0`)
+
+Each dimension can be pooled (`'constant'`) or blocked:
+
+| Argument | Description |
+|----|----|
+| `Movement_popblk_spec` | Population blocks |
+| `Movement_ageblk_spec` | Age blocks (e.g., `list(1:5, 6:30)` for age-dependent movement) |
+| `Movement_yearblk_spec` | Year blocks |
+| `Movement_seasblk_spec` | Season blocks |
+| `Movement_sexblk_spec` | Sex blocks |
+
+#### CTMC configuration (`move_type = 1`)
+
+| Argument | Description |
+|----|----|
+| `ctmc_move_dat` | Data frame of covariates with required columns `pop`, `regions`, `years`, `seas`, `ages`, `sexes`, plus any variables referenced in the formulas. For projection years, covariate lookups are capped at the last historical year unless extended rows are supplied |
+| `diffusion_formula` | R formula for diffusion (e.g., `~ 1`, `~ bs(years, df = 4)`) |
+| `preference_formula` | R formula for taxis/preference |
+| `adjacency_mat` | Square `[n_regions × n_regions]` binary connectivity matrix |
+| `area_r` | Numeric vector of region areas (scales diffusion rates) |
+| `ctmc_diffusion_bounds` | 0/1: if `1`, shifts diffusion columns to guarantee all off-diagonal generator-matrix entries are non-negative |
+
+#### Continuous movement deviations (`cont_vary_movement`)
+
+Origin–destination deviations applied multiplicatively to off-diagonal
+rates (CTMC) or additively on the logit scale (unstructured).
+
+| String               | Deviation structure                    |
+|----------------------|----------------------------------------|
+| `"none"`             | No deviations (default)                |
+| `"iid_y"`            | Year only                              |
+| `"iid_a"`            | Age only                               |
+| `"iid_y_a"`          | Year × age                             |
+| `"iid_y_a_s"`        | Year × age × sex                       |
+| `"iid_y_seas_a_s"`   | Year × season × age × sex              |
+| `"iid_p_y"`          | Population × year                      |
+| `"iid_p_a"`          | Population × age                       |
+| `"iid_p_y_a"`        | Population × year × age                |
+| `"iid_p_y_a_s"`      | Population × year × age × sex          |
+| `"iid_p_y_seas_a_s"` | Population × year × season × age × sex |
+
+#### Additional movement controls
+
+| Argument | Description |
+|----|----|
+| `do_recruits_move` | 0 = age-1 fish do not move; 1 = recruits follow the movement matrix |
+| `Use_Movement_Prior` | 0/1 toggle for Dirichlet movement priors (unstructured) |
+| `Movement_prior` | Data frame with `pop`, `region_from`, `year`, `seas`, `age`, `sex`, `alpha` (Dirichlet concentration vector of length `n_regions`) |
+| `Movement_cont_pe_pars_spec` | Estimation structure for process-error hyperparameters: `"none"`, `"fix"`, `"est_all"`, `"est_shared"` |
+
+------------------------------------------------------------------------
+
+## Catch, Fishing Mortality, and Discards
+
+Configured via
+[`Setup_Mod_Catch_and_F()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Catch_and_F.md).
+
+#### Catch conditioning
+
+| Argument | Description |
+|----|----|
+| `ObsCatch` | Observed aggregate catch `[r × y × τ × f]` |
+| `ObsCatch_pop` | Population-specific catch `[p × r × y × τ × f]` |
+| `catch_units` | Per-fleet: 0 = abundance, 1 = biomass |
+| `Use_F_pen` | 0/1 toggle for the fishing mortality deviation penalty (`Fmort_nLL`) |
+| `sigmaC_spec` / `sigmaC_pop_spec` | Catch observation-error estimation |
+
+#### Fishing mortality process error
+
+`ln_F_devs` (annual log-scale deviations about `ln_F_mean`) can follow
+one of three process-error structures, set via `Fdev_model`:
+
+| String  | Description                             |
+|---------|-----------------------------------------|
+| `"iid"` | Independent annual deviations (default) |
+| `"rw"`  | Random walk                             |
+| `"ar1"` | First-order autoregressive              |
+
+`sigmaF_spec` controls sharing/fixing of the process-error standard
+deviation (`ln_sigmaF`) across region × season × fleet, using the same
+`"est_all"` / `"est_shared_<dims>"` / `"fix"` convention described in
+[Parameter sharing conventions](#parameter-sharing-conventions).
+`Fdev_rho_spec` analogously controls the AR1 correlation parameter
+(`Fdev_rho`) and is only active when `Fdev_model = "ar1"`; for `"iid"`
+or `"rw"`, `Fdev_rho` is unused and mapped to `NA` regardless of what is
+supplied.
+
+Catch-active years (`UseCatch == 1` or any `UseCatch_pop == 1`) do
+**not** need to be contiguous under `"rw"` or `"ar1"` — a fishery may
+close for several years and reopen later. The transition between two
+active years separated by a gap of $`d`$ closed years is taken directly
+over the elapsed gap (the same marginal transition obtained by
+estimating deviations for the closed years and integrating them out,
+without actually estimating them). See \[Fishing Mortality Deviations\]
+in
+[`vignette("c_model_equations")`](https://chengmatt.github.io/SPoRC/dev/articles/c_model_equations.md)
+for the exact equations.
+
+#### Discard and retention framework
+
+SPoRC decomposes total fishing mortality at age into retained and
+dead-discard components:
+
+``` math
+F_{p,r,\tau,a,s} = \sum_f F_{r,\tau,f} \left[\underbrace{\text{sel}_{a,f} \cdot \text{ret}_{a,f}}_{\text{retained}} + \underbrace{\text{sel}_{a,f} \cdot (1 - \text{ret}_{a,f}) \cdot \text{dmr}_f}_{\text{dead discards}}\right]
+```
+
+| Argument | Description |
+|----|----|
+| `ret_sel_model` | Retention selectivity functional form (same options as `fish_sel_model`) |
+| `ret_sel_blocks` | Retention selectivity time blocks |
+| `cont_tv_ret_sel` | Continuous time-varying retention selectivity |
+| `dmr_mean_spec` | Estimation structure for dead discard mortality rate means |
+| `dmr_dev_spec` | Estimation structure for DMR deviations |
+| `discard_units` | Per-fleet: 0 = abundance, 1 = biomass, 2 = abundance fraction, 3 = biomass fraction |
+| `ObsDiscard` / `ObsDiscard_pop` | Observed aggregate and population-specific discards |
+| `sigmaD_spec` / `sigmaD_pop_spec` | Discard observation-error estimation |
+
+------------------------------------------------------------------------
+
+## Biological Inputs
+
+Supplied via
+[`Setup_Mod_Biologicals()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Biologicals.md)
+(EM) or
+[`Setup_Sim_Biologicals()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Biologicals.md)
+(OM).
+
+| Input | Dimensions | Description |
+|----|----|----|
+| `WAA` | `[p × r × y × τ × a × s]` | Spawning weight-at-age (used for SSB) |
+| `WAA_fish` | `[p × r × y × τ × a × s × f]` | Fishery-specific weight-at-age. Defaults to `WAA` if `NULL` |
+| `WAA_srv` | `[p × r × y × τ × a × s × f]` | Survey-specific weight-at-age. Defaults to `WAA` if `NULL` |
+| `MatAA` | `[p × r × y × τ × a × s]` | Maturity-at-age (proportions in \[0, 1\]) |
+| `AgeingError` | `[a_\text{model} × a_\text{obs}]` or `[y × a_\text{model} × a_\text{obs}]` | Row-stochastic matrix mapping true ages to observed bins. Defaults to identity. Supply explicitly when observed ages are a subset of modelled ages |
+| `SizeAgeTrans` | `[p × r × y × τ × l × a × s]` | Size–age transition matrix. Required when `fit_lengths = 1` |
+| `fit_lengths` | 0/1 | Toggle for fitting length compositions |
+
+------------------------------------------------------------------------
+
+## Observation Model: Indices and Compositions
+
+Indices and compositions are configured together for fishery fleets
+([`Setup_Mod_FishIdx_and_Comps()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_FishIdx_and_Comps.md))
+and survey fleets
+([`Setup_Mod_SrvIdx_and_Comps()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_SrvIdx_and_Comps.md)).
+
+#### Indices of abundance
+
+| Argument | Description |
+|----|----|
+| `ObsFishIdx` / `ObsSrvIdx` | Observed index values |
+| `ObsFishIdx_SE` / `ObsSrvIdx_SE` | Log-scale standard errors |
+| `fish_idx_type` / `srv_idx_type` | 0 = abundance, 1 = biomass |
+| `ObsFishIdx_pop` / `ObsSrvIdx_pop` | Population-specific indices (separate likelihood contribution) |
+| `ObsFishIdx_pop_SE` / `ObsSrvIdx_pop_SE` | Population-specific index SEs |
+
+#### Composition likelihood families
+
+Age and length compositions each accept one of five likelihood families:
+
+| Value | Likelihood |
+|----|----|
+| 0 | Multinomial |
+| 1 | Dirichlet–multinomial (overdispersion parameter $`\theta`$ estimated per fleet) |
+| 2 | Logistic-normal, independent bins |
+| 3 | Logistic-normal with AR(1) correlation across bins |
+| 4 | Logistic-normal with AR(1) bin correlation and constant cross-sex correlation |
+
+These are set per data stream via `comp_fishage_like`,
+`comp_fishlen_like`, `comp_srvage_like`, `comp_srvlen_like`, and their
+`_pop` and `_discard` variants.
+
+#### Composition structure types
+
+Each composition data stream has a “type” controlling how data are
+aggregated:
+
+| Value | Structure |
+|----|----|
+| 0 | Aggregated across sexes and regions |
+| 1 | Split by sex and region (no implicit sex-ratio information) |
+| 2 | Joint across sexes, split by region (preserves sex-ratio information) |
+| 999 | No data for this fleet/year |
+
+#### Data streams
+
+SPoRC supports a full matrix of composition data streams, each
+independently configurable:
+
+| Category | Aggregate | Population-specific |
+|----|----|----|
+| Fishery age | `comp_fishage_like` | `comp_fishage_pop_like` |
+| Fishery length | `comp_fishlen_like` | `comp_fishlen_pop_like` |
+| Fishery discard age | `comp_fishage_discard_like` | `comp_fishage_discard_pop_like` |
+| Fishery discard length | `comp_fishlen_discard_like` | `comp_fishlen_discard_pop_like` |
+| Survey age | `comp_srvage_like` | `comp_srvage_pop_like` |
+| Survey length | `comp_srvlen_like` | `comp_srvlen_pop_like` |
+
+Each stream carries its own ISS arrays, $`\theta`$ parameters (log-scale
+overdispersion), and correlation parameters.
+
+------------------------------------------------------------------------
+
+## Tagging
+
+Configured via
+[`Setup_Mod_Tagging()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Tagging.md)
+(EM) or
+[`Setup_Sim_Tagging()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Tagging.md)
+(OM).
+
+SPoRC implements a conventional mark–recapture framework (Brownie-type
+likelihood) where tagged individuals follow the full seasonal population
+dynamics — movement, mortality, and fishing — after release.
+
+| Feature | Description |
+|----|----|
+| Release structure | Tags released by population, region, season, age, and sex |
+| Recapture structure | Fleet-specific recaptures with release-cohort × recapture-year likelihood |
+| Tag shedding | Chronic tag-loss rate (estimated or fixed) |
+| Initial tag mortality | Immediate post-release mortality parameter |
+| Reporting rates | Fleet-specific tag-reporting rates (estimated or fixed) |
+| Population/age/sex attribution | Tags can carry population, age, and sex information at release |
+
+------------------------------------------------------------------------
+
+## Reference Points
+
+Computed post-estimation via
+[`Get_Reference_Points()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Reference_Points.md).
+
+The function accepts a `type` argument for spatial structure and a
+`what` argument for the reference-point method. All methods project a
+single recruit through the full age, season, and spatial structure to
+compute SBPR and YPR.
+
+#### Available methods
+
+| `type` | `what` | Description | Multi-pop? |
+|----|----|----|----|
+| `"single_region"` | `"SPR"` | $`F_{\text{SPR}_x}`$ — no movement | — |
+| `"single_region"` | `"BH_MSY"` | Beverton–Holt $`F_\text{MSY}`$ — no movement | — |
+| `"multi_region"` | `"independent_SPR"` | Per-region $`F_{\text{SPR}_x}`$ ignoring movement | ✓ |
+| `"multi_region"` | `"independent_BH_MSY"` | Per-region $`F_\text{MSY}`$ ignoring movement | ✓ |
+| `"multi_region"` | `"global_SPR"` | Single $`F_{\text{SPR}_x}`$ applied uniformly across regions, with movement | ✓ |
+| `"multi_region"` | `"global_BH_MSY"` | Single $`F_\text{MSY}`$ with movement (single-pop only) | — |
+| `"multi_region"` | `"local_BH_MSY"` | Region-specific $`F_\text{MSY}`$ values jointly maximising total yield under movement. Uses Newton–Raphson to solve equilibrium recruitment by origin | ✓ |
+
+#### Controls
+
+| Argument | Description |
+|----|----|
+| `SPR_x` | Target SPR fraction (e.g., 0.4 for $`B_{40\%}`$) |
+| `n_avg_yrs` | Terminal years to average demographic rates (selectivity, $`M`$, WAA, maturity, movement) |
+| `calc_rec_st_yr` | First year for computing mean historical recruitment |
+| `rec_age` | Recruitment lag used to exclude most-recent years from the mean |
+| `is_discard_fleet` | Integer vector (per fleet) flagging discard-only fleets to exclude from landed yield in MSY calculations |
+| `local_bh_msy_newton_steps` | Newton iterations for the local $`F_\text{MSY}`$ solve (default 6) |
+
+------------------------------------------------------------------------
+
+## Simulation and Closed-Loop MSE
+
+The operating-model side uses a parallel set of `Setup_Sim_*` functions
+that mirror the estimation-model pipeline but populate a `sim_list`
+rather than `input_list`. Key simulation-specific functions:
+
+| Function | Purpose |
+|----|----|
+| [`Simulate_Pop_Static()`](https://chengmatt.github.io/SPoRC/dev/reference/Simulate_Pop_Static.md) | Forward-project the OM without feedback (open-loop) |
+| [`condition_closed_loop_simulations()`](https://chengmatt.github.io/SPoRC/dev/reference/condition_closed_loop_simulations.md) | Closed-loop MSE: periodically re-fits the EM, applies an HCR, and updates $`F`$ |
+| [`simulation_data_to_SPoRC()`](https://chengmatt.github.io/SPoRC/dev/reference/simulation_data_to_SPoRC.md) | Converts OM output (with observation error) to `input_list` format for the EM |
+| [`simulation_self_test()`](https://chengmatt.github.io/SPoRC/dev/reference/simulation_self_test.md) | Simulation–estimation test: fits the EM back to OM-generated data |
+| [`get_closed_loop_reference_points()`](https://chengmatt.github.io/SPoRC/dev/reference/get_closed_loop_reference_points.md) | Computes reference points inside the MSE feedback loop |
+
+Key closed-loop arguments in
+[`condition_closed_loop_simulations()`](https://chengmatt.github.io/SPoRC/dev/reference/condition_closed_loop_simulations.md):
+
+| Argument | Description |
+|----|----|
+| `closed_loop_yrs` | Year range over which feedback is active |
+| `assessment_period` | Frequency of EM re-fitting (e.g., every 2 years) |
+| `use_true_values` | If `TRUE`, the HCR uses OM-truth instead of EM estimates (perfect-information benchmark) |
+
+------------------------------------------------------------------------
+
+## Estimation and Optimisation
+
+[`fit_model()`](https://chengmatt.github.io/SPoRC/dev/reference/fit_model.md)
+constructs the RTMB automatic-differentiation function, optimises via
+`nlminb`, and refines with Newton steps.
+
+| Argument | Default | Description |
+|----|----|----|
+| `data` | — | `input_list$data` |
+| `parameters` | — | `input_list$par` |
+| `mapping` | — | `input_list$map` |
+| `random` | `NULL` | Parameter names to marginalise as random effects (Laplace approximation) |
+| `newton_loops` | `3` | Post-convergence Newton steps ($`\Delta\theta = -H^{-1}g`$) to reduce residual gradients |
+| `do_optim` | `TRUE` | `FALSE` returns the un-optimised `MakeADFun` object for debugging |
+| `nlminb_control` | `list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15)` | Passed to [`stats::nlminb`](https://rdrr.io/r/stats/nlminb.html) |
+
+------------------------------------------------------------------------
+
+## Diagnostics
+
+| Function | What it does |
+|----|----|
+| [`do_retrospective()`](https://chengmatt.github.io/SPoRC/dev/reference/do_retrospective.md) | Sequentially peels terminal years and re-fits; reports Mohn’s $`\rho`$ per quantity |
+| [`do_jitter()`](https://chengmatt.github.io/SPoRC/dev/reference/do_jitter.md) | Refits from perturbed starting values to test convergence stability |
+| [`do_likelihood_profile()`](https://chengmatt.github.io/SPoRC/dev/reference/do_likelihood_profile.md) | Profiles the likelihood surface over user-specified parameters |
+| [`do_francis_reweighting()`](https://chengmatt.github.io/SPoRC/dev/reference/do_francis_reweighting.md) | Computes Francis TA1.8 weights for composition data |
+| [`run_francis()`](https://chengmatt.github.io/SPoRC/dev/reference/run_francis.md) | Iterative Francis reweighting loop (re-fits after each adjustment) |
+| [`run_osa()`](https://chengmatt.github.io/SPoRC/dev/reference/run_osa.md) / [`get_osa()`](https://chengmatt.github.io/SPoRC/dev/reference/get_osa.md) | One-step-ahead residuals for composition data |
+| [`do_runs_test()`](https://chengmatt.github.io/SPoRC/dev/reference/do_runs_test.md) | Runs test for serial correlation in residuals |
+| [`get_model_rep_from_mcmc()`](https://chengmatt.github.io/SPoRC/dev/reference/get_model_rep_from_mcmc.md) | Extracts model report quantities across MCMC posterior draws (compatible with `adnuts` / `tmbstan`) |
+| [`marg_AIC()`](https://chengmatt.github.io/SPoRC/dev/reference/marg_AIC.md) | Marginal AIC for models with random effects |
+
+------------------------------------------------------------------------
+
+## Plotting
+
+| Function | Output |
+|----|----|
+| [`plot_all_basic()`](https://chengmatt.github.io/SPoRC/dev/reference/plot_all_basic.md) | Multi-panel diagnostic overview |
+| [`get_ts_plot()`](https://chengmatt.github.io/SPoRC/dev/reference/get_ts_plot.md) | Time series: SSB, recruitment, $`F`$, catch, depletion |
+| [`get_idx_fits_plot()`](https://chengmatt.github.io/SPoRC/dev/reference/get_idx_fits_plot.md) | Index fits (observed vs. predicted) |
+| [`get_catch_fits_plot()`](https://chengmatt.github.io/SPoRC/dev/reference/get_catch_fits_plot.md) | Catch fits |
+| [`get_comp_prop()`](https://chengmatt.github.io/SPoRC/dev/reference/get_comp_prop.md) | Composition fits (bubble plots / proportion plots) |
+| [`get_selex_plot()`](https://chengmatt.github.io/SPoRC/dev/reference/get_selex_plot.md) | Selectivity-at-age or selectivity-at-length |
+| [`get_biological_plot()`](https://chengmatt.github.io/SPoRC/dev/reference/get_biological_plot.md) | WAA, maturity, natural mortality |
+| [`get_nLL_plot()`](https://chengmatt.github.io/SPoRC/dev/reference/get_nLL_plot.md) | Likelihood component breakdown |
+| [`get_retrospective_plot()`](https://chengmatt.github.io/SPoRC/dev/reference/get_retrospective_plot.md) | Retrospective trajectories |
+| [`get_data_fitted_plot()`](https://chengmatt.github.io/SPoRC/dev/reference/get_data_fitted_plot.md) | Data-availability timeline |
+| [`plot_resids()`](https://chengmatt.github.io/SPoRC/dev/reference/plot_resids.md) | Residual diagnostics |
+| [`get_retrospective_relative_difference()`](https://chengmatt.github.io/SPoRC/dev/reference/get_retrospective_relative_difference.md) | Relative difference plots for retrospective analyses |
+
+All plotting functions accept either a single fitted model or a list of
+models for side-by-side comparison.

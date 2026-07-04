@@ -1,0 +1,28 @@
+pandoc: 3.8.3
+pkgdown: 2.2.0
+pkgdown_sha: ~
+articles:
+  a_model_dimensions: a_model_dimensions.html
+  b_model_parameters: b_model_parameters.html
+  c_model_equations: c_model_equations.html
+  d_model_report: d_model_report.html
+  e_single_region_sablefish_case_study: e_single_region_sablefish_case_study.html
+  f_single_region_ebs_pollock_case_study: f_single_region_ebs_pollock_case_study.html
+  g_spatial_sablefish_case_study: g_spatial_sablefish_case_study.html
+  h_closed_loop_simulations: h_closed_loop_simulations.html
+  i_reference_points: i_reference_points.html
+  j_starting_mapping: j_starting_mapping.html
+  k_defining_priors: k_defining_priors.html
+  l_simulation_testing: l_simulation_testing.html
+  m_simulation_dimensions: m_simulation_dimensions.html
+  n_single_region_ebs_pollock_randomeff_case_study: n_single_region_ebs_pollock_randomeff_case_study.html
+  o_get_started: o_get_started.html
+  p_single_region_dusky_alt_mp_testing: p_single_region_dusky_alt_mp_testing.html
+  q_movement_param: q_movement_param.html
+  r_natal-homing-pop-lrgr-rg: r_natal-homing-pop-lrgr-rg.html
+  s_discard_retention: s_discard_retention.html
+  t_model_options: t_model_options.html
+last_built: 2026-07-04T18:30Z
+urls:
+  reference: https://chengmatt.github.io/SPoRC/reference
+  article: https://chengmatt.github.io/SPoRC/articles

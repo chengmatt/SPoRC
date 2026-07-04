@@ -209,149 +209,45 @@ do_cont_vary_move_mapping <- function(input_list, cont_vary_movement, Movement_c
   map_move_devs <- array(NA, dim = dim(input_list$par$move_devs))
   map_move_pe_pars <- array(NA, dim = dim(input_list$par$move_pe_pars))
 
-  # Whether or not recruits move
-  age_start <- ifelse(input_list$data$do_recruits_move == 0 && length(input_list$data$ages) >= 2, 2, 1)
-
   # Movement Deviations -----------------------------------------------
   if(input_list$data$n_regions > 1 && # if spatial model
      input_list$data$cont_vary_movement > 0 && # if continuous varying movement
      input_list$data$use_fixed_movement == 0 # if not using fixed movement matrix
   ) {
 
-    # Dimensions
-    n_pop <- input_list$data$n_pop
-    n_yrs_devs <- length(input_list$data$years) + input_list$data$n_proj_yrs_devs
-    n_seas <- input_list$data$n_seas
-    n_ages <- length(input_list$data$ages)
-    n_sexes <- input_list$data$n_sexes
+    # Dimensions (region_from/region_to are always "key": every region pair
+    # gets its own set of estimated deviations, never shared with another pair)
+    dims <- c(pop = input_list$data$n_pop,
+              region_from = input_list$data$n_regions,
+              region_to = n_regions_to,
+              year = length(input_list$data$years) + input_list$data$n_proj_yrs_devs,
+              season = input_list$data$n_seas,
+              age = length(input_list$data$ages),
+              sex = input_list$data$n_sexes)
 
-    counter <- 1 # setup counter
+    # dims named in the spec (e.g. "iid_y_a_s" -> year, age, sex) are "key"
+    # dims (unique value per combination); dims not named are shared/broadcast
+    dim_abbrev <- c(p = "pop", y = "year", seas = "season", a = "age", s = "sex")
+    key_extra <- unname(dim_abbrev[strsplit(sub("^iid_", "", cont_vary_movement), "_")[[1]]])
+    share_over <- setdiff(dim_abbrev, key_extra)
 
-    for(r in 1:input_list$data$n_regions) {
-      for(rr in 1:n_regions_to) {
+    map_move_devs <- build_pe_map(dims, share_over = share_over)
 
-        # if regions are not adjacent or residency (CTMC), input NA and restart loop
-        if(input_list$data$move_type == 1 & input_list$data$adjacency_collapsed[r,rr] == 0) {
-          map_move_devs[,r,rr,,,,] <- NA
-          next
-        }
+    # Whether or not recruits (age 1) move: only relevant when age is itself
+    # a key dim of the spec -- when age is a broadcast dim, age 1 shares the
+    # same tied deviation as every other age instead of being masked out.
+    if("age" %in% key_extra && input_list$data$do_recruits_move == 0 && dims["age"] >= 2) {
+      map_move_devs[,,,,,1,] <- NA
+    }
 
-        # --- Year only ---
-        if(cont_vary_movement %in% c('iid_y')) {
-          for(y in 1:n_yrs_devs) {
-            map_move_devs[,r,rr,y,,,] <- counter
-            counter <- counter + 1
-          } # end y loop
-        } # end if iid_y
-
-        # --- Age only ---
-        if(cont_vary_movement %in% c('iid_a')) {
-          for(a in age_start:n_ages) {
-            map_move_devs[,r,rr,,,a,] <- counter
-            counter <- counter + 1
-          } # end a loop
-        } # end if iid_a
-
-        # --- Year x Age ---
-        if(cont_vary_movement %in% c('iid_y_a')) {
-          for(y in 1:n_yrs_devs) {
-            for(a in age_start:n_ages) {
-              map_move_devs[,r,rr,y,,a,] <- counter
-              counter <- counter + 1
-            } # end a loop
-          } # end y loop
-        } # end if iid_y_a
-
-        # --- Year x Age x Sex ---
-        if(cont_vary_movement %in% c('iid_y_a_s')) {
-          for(y in 1:n_yrs_devs) {
-            for(a in age_start:n_ages) {
-              for(s in 1:n_sexes) {
-                map_move_devs[,r,rr,y,,a,s] <- counter
-                counter <- counter + 1
-              } # end s loop
-            } # end a loop
-          } # end y loop
-        } # end if iid_y_a_s
-
-        # --- Year x Season x Age x Sex ---
-        if(cont_vary_movement %in% c('iid_y_seas_a_s')) {
-          for(y in 1:n_yrs_devs) {
-            for(seas in 1:n_seas) {
-              for(a in age_start:n_ages) {
-                for(s in 1:n_sexes) {
-                  map_move_devs[,r,rr,y,seas,a,s] <- counter
-                  counter <- counter + 1
-                } # end s loop
-              } # end a loop
-            } # end seas loop
-          } # end y loop
-        } # end if iid_y_seas_a_s
-
-        # --- pop x Year only ---
-        if(cont_vary_movement %in% c('iid_p_y')) {
-          for(p in 1:n_pop) {
-            for(y in 1:n_yrs_devs) {
-              map_move_devs[p,r,rr,y,,,] <- counter
-              counter <- counter + 1
-            } # end y loop
-          } # end p loop
-        } # end if iid_p_y
-
-        # --- pop x Age only ---
-        if(cont_vary_movement %in% c('iid_p_a')) {
-          for(p in 1:n_pop) {
-            for(a in age_start:n_ages) {
-              map_move_devs[p,r,rr,,,a,] <- counter
-              counter <- counter + 1
-            } # end a loop
-          } # end p loop
-        } # end iid_p_a
-
-        # --- pop x Year x Age ---
-        if(cont_vary_movement %in% c('iid_p_y_a')) {
-          for(p in 1:n_pop) {
-            for(y in 1:n_yrs_devs) {
-              for(a in age_start:n_ages) {
-                map_move_devs[p,r,rr,y,,a,] <- counter
-                counter <- counter + 1
-              } # end a loop
-            } # end y loop
-          } # end p loop
-        } # end iid_p_y_a
-
-        # --- popp x Year x Age x Sex ---
-        if(cont_vary_movement %in% c('iid_p_y_a_s')) {
-          for(p in 1:n_pop) {
-            for(y in 1:n_yrs_devs) {
-              for(a in age_start:n_ages) {
-                for(s in 1:n_sexes) {
-                  map_move_devs[p,r,rr,y,,a,s] <- counter
-                  counter <- counter + 1
-                } # end s loop
-              } # end a loop
-            } # end y loop
-          } # end p loop
-        } # end iid_p_y_a_s
-
-        # --- pop x Year x Season x Age x Sex ---
-        if(cont_vary_movement %in% c('iid_p_y_seas_a_s')) {
-          for(p in 1:n_pop) {
-            for(y in 1:n_yrs_devs) {
-              for(seas in 1:n_seas) {
-                for(a in age_start:n_ages) {
-                  for(s in 1:n_sexes) {
-                    map_move_devs[p,r,rr,y,seas,a,s] <- counter
-                    counter <- counter + 1
-                  } # end s loop
-                } # end a loop
-              } # end seas loop
-            } # end y loop
-          } # end p loop
-        } # end iid_p_y_seas_a_s
-
-      } # end rr
-    } # end r loop
+    # if regions are not adjacent or residency (CTMC), no deviation is estimated
+    if(input_list$data$move_type == 1) {
+      for(r in 1:input_list$data$n_regions) {
+        for(rr in 1:n_regions_to) {
+          if(input_list$data$adjacency_collapsed[r,rr] == 0) map_move_devs[,r,rr,,,,] <- NA
+        } # end rr
+      } # end r
+    }
   }
 
     # Movement Process Error Parameters ---------------------------------------
@@ -362,7 +258,7 @@ do_cont_vary_move_mapping <- function(input_list, cont_vary_movement, Movement_c
     if(Movement_cont_pe_pars_spec == 'est_shared') map_move_pe_pars[] <- 1
 
     # return to input list
-    input_list$map$move_devs <- factor(map_move_devs)
+    input_list$map$move_devs <- factor(as.vector(map_move_devs))
     input_list$data$map_move_devs <- array(as.numeric(input_list$map$move_devs), dim = dim(input_list$par$move_devs))
     input_list$map$move_pe_pars <- factor(map_move_pe_pars)
     return(input_list)

@@ -635,31 +635,20 @@ do_sigmaC_mapping <- function(input_list, sigmaC_spec) {
 #' @keywords internal
 do_Fmort_mapping <- function(input_list) {
 
-  F_dev_map <- input_list$par$ln_F_devs
-  F_dev_map[] <- NA
-  F_dev_counter <- 1
+  dims <- c(region = input_list$data$n_regions,
+            year   = length(input_list$data$years),
+            season = input_list$data$n_seas,
+            fleet  = input_list$data$n_fish_fleets)
 
-  for(r in 1:input_list$data$n_regions) {
-    for(y in 1:length(input_list$data$years)) {
-      for(seas in 1:input_list$data$n_seas) {
-        for(f in 1:input_list$data$n_fish_fleets) {
+  # Estimate F devs if aggregated catch OR any pop-specific catch is used
+  # for a given region/year/season/fleet combination
+  has_catch <- input_list$data$UseCatch == 1 |
+    apply(input_list$data$UseCatch_pop == 1, c(2,3,4,5), any)
 
-          # Estimate F devs if aggregated catch OR any pop-specific catch
-          # is used for this r/y/seas/f combination
-          has_agg_catch <- input_list$data$UseCatch[r,y,seas,f] == 1
-          has_pop_catch <- any(input_list$data$UseCatch_pop[,r,y,seas,f] == 1)
+  F_dev_map <- build_pe_map(dims, share_over = character(0))
+  F_dev_map[!has_catch] <- NA
 
-          if(has_agg_catch || has_pop_catch) {
-            F_dev_map[r,y,seas,f] <- F_dev_counter
-            F_dev_counter <- F_dev_counter + 1
-          }
-
-        } # end f
-      } # end seas
-    } # end y
-  } # end r
-
-  input_list$map$ln_F_devs <- factor(F_dev_map)
+  input_list$map$ln_F_devs <- factor(as.vector(F_dev_map))
   return(input_list)
 }
 

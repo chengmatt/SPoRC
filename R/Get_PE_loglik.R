@@ -313,105 +313,41 @@ Get_move_PE_loglik <- function(PE_model,
   # whether recruits move
   age_start = ifelse(do_recruits_move == 0 && n_ages >= 2, 2, 1)
 
+  # Dimensions named in each PE_model's spec (see cont_move_map in
+  # Setup_Movement.R for the type <-> integer correspondence); dims absent
+  # from a model's name are shared/broadcast across (held fixed at index 1
+  # for PE_pars, which has no region_to or year dimension of its own).
+  key_dims_by_model <- list(
+    `1` = "year", `2` = "age", `3` = c("year","age"), `4` = c("year","age","sex"),
+    `5` = c("year","season","age","sex"),
+    `6` = c("pop","year"), `7` = c("pop","age"), `8` = c("pop","year","age"),
+    `9` = c("pop","year","age","sex"), `10` = c("pop","year","season","age","sex")
+  )
+  key_dims <- key_dims_by_model[[as.character(PE_model)]]
+
+  pop_idx  = if("pop"    %in% key_dims) 1:n_pop   else 1
+  yr_idx   = if("year"   %in% key_dims) 1:n_yrs   else 1
+  seas_idx = if("season" %in% key_dims) 1:n_seas  else 1
+  age_idx  = if("age"    %in% key_dims) age_start:n_ages else 1
+  sex_idx  = if("sex"    %in% key_dims) 1:n_sexes else 1
+
   # Penalize Deviations
   for(rr in 1:n_regions_to) {
     for(r in 1:n_regions_from) {
 
       if(adjacency_collapsed[r,rr] == 0) next # skip
 
-      if(PE_model == 1) {
-        for(y in 1:n_yrs) {
-          ll = ll + RTMB::dnorm(move_devs[1,r,rr,y,1,1,1], 0, exp(PE_pars[1,r,1,1,1]), TRUE)
-        } # end y loop
-      } # iid_y
-
-      if(PE_model == 2) {
-        for(a in age_start:n_ages) {
-          ll = ll + RTMB::dnorm(move_devs[1,r,rr,1,1,a,1], 0, exp(PE_pars[1,r,1,a,1]), TRUE)
-        } # end a loop
-      } # iid_a
-
-      if(PE_model == 3) {
-        for(y in 1:n_yrs) {
-          for(a in age_start:n_ages) {
-            ll = ll + RTMB::dnorm(move_devs[1,r,rr,y,1,a,1], 0, exp(PE_pars[1,r,1,a,1]), TRUE)
-          } # end a loop
-        } # end y loop
-      } # iid_y_a
-
-      if(PE_model == 4) {
-        for(y in 1:n_yrs) {
-          for(a in age_start:n_ages) {
-            for(s in 1:n_sexes) {
-              ll = ll + RTMB::dnorm(move_devs[1,r,rr,y,1,a,s], 0, exp(PE_pars[1,r,1,a,s]), TRUE)
-            } # end s loop
-          } # end a loop
-        } # end y loop
-      } # iid_y_a_s
-
-      if(PE_model == 5) {
-        for(y in 1:n_yrs) {
-          for(a in age_start:n_ages) {
-            for(s in 1:n_sexes) {
-              for(seas in 1:n_seas) {
-                ll = ll + RTMB::dnorm(move_devs[1,r,rr,y,seas,a,s], 0, exp(PE_pars[1,r,seas,a,s]), TRUE)
-              } # end seas loop
-            } # end s loop
-          } # end a loop
-        } # end y loop
-      } # iid_y_seas_a_s
-
-      if(PE_model == 6) {
-        for(p in 1:n_pop) {
-          for(y in 1:n_yrs) {
-            ll = ll + RTMB::dnorm(move_devs[p,r,rr,y,1,1,1], 0, exp(PE_pars[p,r,1,1,1]), TRUE)
-          } # end y loop
-        } # end p loop
-      } # iid_p_y
-
-      if(PE_model == 7) {
-        for(p in 1:n_pop) {
-          for(a in age_start:n_ages) {
-            ll = ll + RTMB::dnorm(move_devs[p,r,rr,1,1,a,1], 0, exp(PE_pars[p,r,1,a,1]), TRUE)
-          } # end a loop
-        } # end p loop
-      } # iid_p_a
-
-      if(PE_model == 8) {
-        for(p in 1:n_pop) {
-          for(y in 1:n_yrs) {
-            for(a in age_start:n_ages) {
-              ll = ll + RTMB::dnorm(move_devs[p,r,rr,y,1,a,1], 0, exp(PE_pars[p,r,1,a,1]), TRUE)
-            } # end a loop
-          } # end y loop
-        } # end p loop
-      } # iid_p_y_a
-
-      if(PE_model == 9) {
-        for(p in 1:n_pop) {
-          for(y in 1:n_yrs) {
-            for(a in age_start:n_ages) {
-              for(s in 1:n_sexes) {
-                ll = ll + RTMB::dnorm(move_devs[p,r,rr,y,1,a,s], 0, exp(PE_pars[p,r,1,a,s]), TRUE)
+      for(p in pop_idx) {
+        for(y in yr_idx) {
+          for(seas in seas_idx) {
+            for(a in age_idx) {
+              for(s in sex_idx) {
+                ll = ll + RTMB::dnorm(move_devs[p,r,rr,y,seas,a,s], 0, exp(PE_pars[p,r,seas,a,s]), TRUE)
               } # end s loop
             } # end a loop
-          } # end y loop
-        } # end p loop
-      } # iid_p_y_a_s
-
-      if(PE_model == 10) {
-        for(p in 1:n_pop) {
-          for(y in 1:n_yrs) {
-            for(a in age_start:n_ages) {
-              for(s in 1:n_sexes) {
-                for(seas in 1:n_seas) {
-                  ll = ll + RTMB::dnorm(move_devs[p,r,rr,y,seas,a,s], 0, exp(PE_pars[p,r,seas,a,s]), TRUE)
-                } # end seas loop
-              } # end s loop
-            } # end a loop
-          } # end y loop
-        } # end p loop
-      } # iid_p_y_seas_a_s
+          } # end seas loop
+        } # end y loop
+      } # end p loop
 
     } # end r loop
   } # end rr loop

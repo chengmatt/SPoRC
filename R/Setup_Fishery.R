@@ -1666,6 +1666,15 @@ Setup_Mod_Catch_and_F <- function(input_list,
   if(!Fdev_model %in% c("iid", "rw", "ar1")) stop("Fdev_model incorrectly specified. Must be one of 'iid', 'rw', or 'ar1'")
   else collect_message("Fdev_model is specified as: ", Fdev_model)
 
+  if(Fdev_model %in% c("rw", "ar1") && Use_F_pen == 0)
+    warning("Fdev_model = '", Fdev_model, "' but Use_F_pen = 0 -- the fishing mortality deviation penalty is never evaluated, so the ", Fdev_model, " process error structure has no effect on the model. Set Use_F_pen = 1 to actually apply it.")
+
+  if(Fdev_model %in% c("rw", "ar1") && sigmaF_spec == "fix")
+    warning("Fdev_model = '", Fdev_model, "' but sigmaF_spec = 'fix' -- the process error standard deviation (ln_sigmaF) driving the ", Fdev_model, " process is not being estimated. This may be intentional (e.g. fixing sigma at a known value), but if not, consider estimating ln_sigmaF via sigmaF_spec.")
+
+  if(Fdev_model == "ar1" && Fdev_rho_spec == "fix")
+    warning("Fdev_model = 'ar1' but Fdev_rho_spec = 'fix' -- the AR1 correlation parameter (Fdev_rho) is not being estimated. This may be intentional (e.g. fixing rho at a known value), but if not, consider estimating Fdev_rho via Fdev_rho_spec.")
+
   # Discard Mortality checking
   if(!Use_dmr_pen %in% c(0,1)) stop("Use_dmr_pen incorrectly specified. Either set at 0 (don't use D penalty) or 1 (use D penalty)")
   else collect_message("Discard mortality penalty is: ", ifelse(Use_dmr_pen == 0, 'Not Used', "Used"))

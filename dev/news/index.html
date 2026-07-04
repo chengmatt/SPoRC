@@ -33,10 +33,10 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="1.2.0" id="version-120-dev-popn-seasons">version 1.2.0 (dev-popn-seasons)<a class="anchor" aria-label="anchor" href="#version-120-dev-popn-seasons"></a></h2>
+<h2 class="pkg-version" data-toc-text="1.2.0.9000" id="version-1209000-dev-popn-seasons">version 1.2.0.9000 (dev-popn-seasons)<a class="anchor" aria-label="anchor" href="#version-1209000-dev-popn-seasons"></a></h2>
 <ul><li>Incorporates population-specific, seasonal, and discarding dynamics.</li>
 </ul><div class="section level3">
-<h3 id="major-changes-1-2-0">Major changes<a class="anchor" aria-label="anchor" href="#major-changes-1-2-0"></a></h3>
+<h3 id="major-changes-1-2-0-9000">Major changes<a class="anchor" aria-label="anchor" href="#major-changes-1-2-0-9000"></a></h3>
 <ul><li>Incorporated ability to simulate and estimate both population-specific (natal homing) and seasonal dynamics.</li>
 <li>Most model and simulation dimensions now include population- and season-specific indices, following the general dimension order: population, region, year, season, age, sex, fleet.</li>
 <li>Recoded tagging module to allow fleet-specific tag reporting rates, as well as missing attributes in tagged fish.</li>
@@ -49,7 +49,7 @@
 <li>Fishing mortality deviations now distinguish a genuinely missing aggregate catch observation from a true recorded zero. If <code>ObsCatch</code> is <code>NA</code> at a cell where <code>UseCatch == 0</code> (and no population-specific catch is used), fishing is assumed to have continued and <code>Fmort</code>/<code>ln_F_devs</code> are estimated as an ordinary active year; if <code>ObsCatch</code> holds a real value (typically <code>0</code>), the cell is treated as a genuine closure (<code>Fmort</code> forced to zero, no deviation estimated), matching prior behavior. See <code>@param ObsCatch</code> in <code>Setup_Mod_Catch_and_F</code> and <code>Get_Fdev_PE_loglik</code>.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="minor-changes-1-2-0">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-2-0"></a></h3>
+<h3 id="minor-changes-1-2-0-9000">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-2-0-9000"></a></h3>
 <ul><li>Changed parameter names of ln_srv_fixed_sel_pars and ln_fish_fixed_sel_pars to srv_fixed_sel_pars and fish_fixed_sel_pars for clarity.</li>
 <li>Included new options to estimate non-parametric selectivity, logistic selectivity with an asymptote parameter, as well as provide fixed selectivity (fishery, retention, and survey) inputs.</li>
 <li>Changed dimensions of init_F_prop to be region, season, and fleet-specific (as opposed to just being based on the first fishery fleet).</li>
@@ -59,13 +59,13 @@
 <li>Added OSA residuals and <code>oneStepPredict</code> functionality to time-series observations (indices and catch).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="improvements-1-2-0">Improvements<a class="anchor" aria-label="anchor" href="#improvements-1-2-0"></a></h3>
+<h3 id="improvements-1-2-0-9000">Improvements<a class="anchor" aria-label="anchor" href="#improvements-1-2-0-9000"></a></h3>
 <ul><li>Allowed both numeric and character codes for specifying dynamics in simulator, so as to be more consistent with how estimation models are specified, while maintaining backwards compatibility.</li>
 <li>Added a generic internal process-error sharing-spec helper (<code>build_pe_map</code>/<code>build_shared_spec_map</code>) and migrated <code>sigmaF_spec</code>, <code>sigmaC_spec</code>, <code>sigmaR_spec</code>, <code>Fdev_rho_spec</code>, and the fishing mortality deviation map (<code>do_Fmort_mapping</code>) onto it, replacing hand-enumerated per-combination branches with a single dimension-collapsing implementation (no change in behavior for existing models).</li>
 <li>Refactored movement’s continuous process-error map (<code>do_cont_vary_move_mapping</code>) and log-likelihood (<code>Get_move_PE_loglik</code>) to use the same generic sharing-spec machinery and a single dimension-aware likelihood loop, replacing 10 hand-written <code>iid_*</code> branches in each (no change in behavior for existing models; new dedicated tests added since this module previously had no coverage).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="bug-fixes-1-2-0">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-2-0"></a></h3>
+<h3 id="bug-fixes-1-2-0-9000">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-2-0-9000"></a></h3>
 <ul><li>Fixed bug on smoothing penalty of time-varying selectivity where it was not being applied in the first year.</li>
 <li>Fixed inconsistent logic between the fishing mortality and discard mortality rate zeroing conditions for population-specific catch: <code>Fmort</code> was forced to zero if <em>any</em> population’s catch was unused, while the parallel discard mortality rate condition correctly required <em>all</em> populations to be unused. Both now consistently use the latter.</li>
 <li>Fixed a data issue in the bundled <code>sgl_rg_sable_data</code> dataset where 3 cells of <code>ObsCatch</code> (fleet 2, years 1-3, representing a fleet that had not yet started fishing) were <code>NA</code>; corrected to <code>0</code> to represent a true closure under the new missing-vs-true-zero convention above (prior fitted results for this dataset are unaffected).</li>

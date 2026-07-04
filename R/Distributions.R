@@ -264,113 +264,152 @@ osa_extract_values <- function(xobs) {
   }
 }
 
+#' #' Squeeze a probability onto the open unit interval
+#'
+#' Maps values in \eqn{[0, 1]} onto the open interval to avoid boundary
+#' evaluations (\code{log(0)}, division by zero). Matches TMB's
+#' \code{convenience.hpp} \code{squeeze()}.
+#'
+#' @param u Numeric/AD scalar or vector of probabilities.
+#' @return Values mapped into \eqn{(eps, 1 - eps)}.
+#' @keywords internal
+osa_squeeze <- function(u) {
+  eps <- .Machine$double.eps
+  (1 - eps) * (u - 0.5) + 0.5
+}
+
+#' Extract frozen numeric values from an OSA observation (WHAM asDouble analogue)
+#' @param xobs An \code{"osa"} object or plain numeric vector.
+#' @return Plain numeric vector of observed counts.
+#' @keywords internal
+osa_extract_values <- function(xobs) {
+  if (is(xobs, "osa")) {
+    v <- try(RTMB::getValues(xobs@x), silent = TRUE)
+    if (inherits(v, "try-error")) v <- try(asDouble(xobs@x), silent = TRUE)
+    if (inherits(v, "try-error")) v <- as.numeric(xobs@x)
+    as.numeric(v)
+  } else as.numeric(xobs)
+}
+
 #' Extract the keep indicator from an OSA observation
-#'
-#' Returns the per-bin \code{keep} indicator carried by an OSA-tagged
-#' observation slice. During ordinary fitting (plain numeric input) all bins
-#' are treated as kept.
-#'
-#' @param xobs Either an object of class \code{"osa"} or a plain numeric vector.
-#' @param n Integer length used to construct the default all-ones indicator
-#'   when \code{xobs} is not an \code{"osa"} object.
-#'
-#' @return A numeric/AD vector of keep indicators (length \code{n}).
+#' @param xobs An \code{"osa"} object or plain numeric vector.
+#' @param n Length for the default all-ones indicator.
+#' @return Numeric/AD keep vector.
 #' @keywords internal
 osa_extract_keep <- function(xobs, n) {
-  if (is(xobs, "osa")) xobs@keep else rep(1, n)
+  if (is(xobs, "osa")) {
+    K <- xobs@keep
+    if (is.matrix(K)) K[, 1] else K
+  } else rep(1, n)
+}
+
+
+#' Extract the lower/upper CDF indicators from an OSA observation
+#'
+#' Returns the \code{cdf_lower} / \code{cdf_upper} data indicators that the
+#' \code{"cdf"} method of \code{\link[RTMB]{oneStepPredict}} toggles. When
+#' \code{xobs} is a plain numeric vector (ordinary fitting) these are all zero,
+#' so the CDF terms contribute nothing and the density reduces to the ordinary
+#' likelihood.
+#'
+#' @param xobs An \code{"osa"} object or plain numeric vector.
+#' @param n Length for the default all-zero indicators.
+#' @return A list with numeric/AD vectors \code{lower} and \code{upper}.
+#' @keywords internal
+osa_extract_cdf <- function(xobs, n) {
+  if (is(xobs, "osa")) {
+    K <- xobs@keep
+    if (is.matrix(K) && ncol(K) >= 3) {
+      return(list(lower = K[, 2], upper = K[, 3]))
+    }
+  }
+  list(lower = rep(0, n), upper = rep(0, n))
 }
 
 #' Extract the (AD) values slot from an OSA observation
-#'
-#' Returns the observation values with their AD class preserved, so the single
-#' bin being peeled by \code{oneStepPredict} remains differentiable. Contrast
-#' with \code{\link{osa_extract_values}}, which deliberately detaches the AD
-#' class to freeze the running remainder.
-#'
-#' @param xobs Either an object of class \code{"osa"} or a plain numeric vector.
-#'
-#' @return The AD (or numeric) values of the observation.
+#' @param xobs An \code{"osa"} object or plain numeric vector.
+#' @return AD (or numeric) values.
 #' @keywords internal
 osa_extract_x <- function(xobs) {
   if (is(xobs, "osa")) xobs@x else xobs
 }
 
-#' Keep-aware multinomial log-density for OSA residuals
+#' Binomial CDF, P(X <= x), via the regularized incomplete beta
 #'
-#' Computes the multinomial log-density of a single composition using the
-#' conditional decomposition required by \code{\link[RTMB]{oneStepPredict}}.
-#' Following Trijoulet et al. (2023) and WHAM (\code{src/age_comp_osa.hpp}), an
-#' \eqn{A}-bin multinomial is written as \eqn{A - 1} conditional two-category
-#' multinomials, each gated by its \code{keep} element. The final bin is fixed
-#' by the sum-to-\eqn{N} constraint and contributes nothing (its residual is
-#' undefined and reported as \code{NA}).
+#' \eqn{P(X \le x) = 1 - I_p(x + 1, n - x)}, matching Trijoulet et al. (2023)
+#' \code{dists::pbinom}. AD-safe through \code{RTMB::pbeta}.
 #'
-#' With all \code{keep} equal to one, the sum of the conditional log-densities
-#' equals the joint multinomial log-density; enabling OSA therefore changes how
-#' the likelihood is decomposed, not its value. The running remainder is frozen
-#' to the observed total (see \code{\link{osa_extract_values}}) so that peeling
-#' a late bin cannot drive the remaining count negative.
+#' @param x Count.
+#' @param n Number of trials.
+#' @param prob Success probability.
+#' @return Lower-tail CDF value.
+#' @keywords internal
+osa_pbinom <- function(x, n, prob) {
+  1 - RTMB::pbeta(prob, x + 1, n - x)
+}
+
+#' Keep-aware multinomial log-density for OSA residuals (cdf-capable)
 #'
-#' Intended for use with \code{method = "oneStepGeneric"}; the two-category
-#' conditionals carry no analytic CDF hooks, so the \code{"cdf"} method is not
-#' supported (consistent with WHAM, which omits it for compositions).
+#' Conditional-binomial decomposition of an \eqn{A}-bin multinomial for
+#' \code{\link[RTMB]{oneStepPredict}}, following Trijoulet et al. (2023). Each
+#' of the first \eqn{A-1} bins is a binomial conditional on the running
+#' remainder, gated by its \code{keep} element; the final bin is fixed by the
+#' sum-to-\eqn{N} constraint. In addition to the density term, the analytic
+#' conditional binomial CDF is accumulated through the \code{cdf_lower} /
+#' \code{cdf_upper} indicators, so this density supports \strong{both}
+#' \code{method = "cdf"} and \code{method = "oneStepGeneric"}.
 #'
-#' @param xobs Either an object of class \code{"osa"} supplied by
-#'   \code{oneStepPredict}, or a plain numeric vector of observed counts
-#'   (length \eqn{A}) during ordinary fitting.
+#' The running remainder is frozen to the observed total so peeling a late bin
+#' cannot drive the remaining count negative.
+#'
+#' @param xobs An \code{"osa"} object from \code{oneStepPredict}, or a plain
+#'   numeric count vector (length \eqn{A}) during fitting.
 #' @param p Predicted proportions (length \eqn{A}); normalized internally.
-#' @param log Boolean on whether to return nLL
-#'
-#' @return Scalar log-density contribution for the composition.
+#' @param log Logical; return the log-density (default) or the density.
+#' @return Scalar (log-)density contribution.
 #' @keywords internal
 dmultinom_osa <- function(xobs, p, log = TRUE) {
   "[<-" <- RTMB::ADoverload("[<-")
   "c"   <- RTMB::ADoverload("c")
 
-  x    <- osa_extract_x(xobs)              # AD (peeled) values
+  x    <- osa_extract_x(xobs)
   kk   <- osa_extract_keep(xobs, length(p))
-  xval <- osa_extract_values(xobs)         # frozen numeric values (WHAM asDouble)
+  cdfi <- osa_extract_cdf(xobs, length(p))
+  l    <- cdfi$lower
+  h    <- cdfi$upper
+  xval <- osa_extract_values(xobs)          # frozen values
 
   A    <- length(xval)
   p_x  <- p / (sum(p) + 1e-300)
-  Ntot <- sum(xval)                        # frozen total
+  Ntot <- sum(xval)
 
   logres <- 0
   pUsed  <- 0
   for (i in 1:A) {
     if (i != A) {
-      rem_fixed <- Ntot - sum(xval[seq_len(i)])   # frozen remainder after bin i
+      rem_fixed <- Ntot - sum(xval[seq_len(i)])
       q  <- osa_squeeze(p_x[i]) / osa_squeeze(1 - pUsed)
       q  <- osa_squeeze(q)
-      x2 <- c(x[i], rem_fixed)                    # peeled bin AD, remainder frozen
-      p2 <- c(q, 1 - q)
-      logres <- logres + kk[i] * RTMB::dmultinom(x2, prob = p2, log = TRUE)
+      # density: binomial( x_i ; nUnused , q ), nUnused frozen to remaining count
+      n_i <- x[i] + rem_fixed                 # = frozen remaining total at bin i
+      logres <- logres + kk[i] * RTMB::dbinom(x[i], size = n_i, prob = q, log = TRUE)
+      # analytic conditional CDF hook (Trijoulet dists::pbinom)
+      cdf <- osa_squeeze(osa_pbinom(x[i], n_i, q))
+      logres <- logres + l[i] * log(cdf) + h[i] * log(1 - cdf)
       pUsed  <- osa_squeeze(pUsed + p_x[i])
     } else {
-      logres <- logres + kk[i] * 0                # last bin fixed by sum-to-N
+      logres <- logres + kk[i] * 0            # last bin: density fixed by sum-to-N
+      cdf <- osa_squeeze(1)                    # CDF of a determined bin is 1
+      logres <- logres + l[i] * log(cdf) + h[i] * log(1 - cdf)
     }
   }
-  if(log == TRUE) logres else exp(logres)
+  if (log) logres else exp(logres)
 }
 
-#' Two-category Dirichlet-multinomial log-density
-#'
-#' Computes the log-probability mass function of a two-category
-#' Dirichlet-multinomial (beta-binomial) distribution. AD-safe and intended for
-#' use as the conditional building block of \code{\link{ddirmult_osa}}.
-#'
-#' The closed-form log-pmf is
-#' \deqn{\log\Gamma(N + 1) - \sum_i \log\Gamma(x_i + 1)
-#'       + \log\Gamma(A_0) - \log\Gamma(N + A_0)
-#'       + \sum_i \left[ \log\Gamma(x_i + \alpha_i) - \log\Gamma(\alpha_i) \right],}
-#' with \eqn{N = \sum_i x_i} and \eqn{A_0 = \sum_i \alpha_i}.
-#'
-#' @param obs2 Numeric/AD vector of length 2 with observed counts
-#'   \code{c(count_a, count_remaining)}.
-#' @param alpha2 Numeric/AD vector of length 2 with Dirichlet concentration
-#'   parameters \code{c(alpha_a, alpha_remaining)}.
-#'
-#' @return Scalar log-likelihood contribution.
+#' Two-category Dirichlet-multinomial (beta-binomial) log-density
+#' @param obs2 Length-2 count vector \code{c(count_a, count_remaining)}.
+#' @param alpha2 Length-2 concentration \code{c(alpha_a, alpha_remaining)}.
+#' @return Scalar log-density.
 #' @keywords internal
 ddirmult2 <- function(obs2, alpha2) {
   "c" <- RTMB::ADoverload("c")
@@ -381,56 +420,80 @@ ddirmult2 <- function(obs2, alpha2) {
     sum(lgamma(obs2 + alpha2) - lgamma(alpha2))
 }
 
-#' Keep-aware Dirichlet-multinomial log-density for OSA residuals
+#' Beta-binomial CDF, P(X <= x), by summation
 #'
-#' Computes the Dirichlet-multinomial log-density of a single composition using
-#' the conditional decomposition required by
-#' \code{\link[RTMB]{oneStepPredict}}. An \eqn{A}-bin Dirichlet-multinomial is
-#' written as \eqn{A - 1} conditional two-category Dirichlet-multinomials
-#' (beta-binomials), each gated by its \code{keep} element. The final bin is
-#' fixed by the sum-to-\eqn{N} constraint and contributes nothing (its residual
-#' is undefined and reported as \code{NA}).
+#' Sums two-category Dirichlet-multinomial (beta-binomial) probabilities over
+#' \eqn{0, \ldots, x}, matching Trijoulet et al. (2023) \code{pbetabinom}.
+#' Clamped at 1 to guard against floating-point overshoot.
 #'
-#' With all \code{keep} equal to one, the sum of the conditional log-densities
-#' equals the joint Dirichlet-multinomial log-density. The running remainder is
-#' frozen to the observed total (see \code{\link{osa_extract_values}}) so that
-#' peeling a late bin cannot drive the remaining count negative.
+#' @param x Count (upper summation limit; taken from frozen observed values).
+#' @param N Number of trials.
+#' @param alpha First beta-binomial shape.
+#' @param beta Second beta-binomial shape.
+#' @return Lower-tail CDF value.
+#' @keywords internal
+osa_pbetabinom <- function(x, N, alpha, beta) {
+  "c" <- RTMB::ADoverload("c")
+  x_int <- as.integer(round(osa_extract_values(x)))   # summation limit is data
+  Fx <- 0
+  for (i in 0:x_int) {
+    Fx <- Fx + exp(ddirmult2(c(i, N - i), c(alpha, beta)))
+  }
+  # clamp to 1 without an AD comparison
+  Fx <- Fx - osa_squeeze(0) * 0   # no-op to keep AD class
+  pmin_ad <- function(a, b) 0.5 * (a + b - abs(a - b))
+  pmin_ad(Fx, 1)
+}
+
+#' Keep-aware Dirichlet-multinomial log-density for OSA residuals (cdf-capable)
 #'
-#' Intended for use with \code{method = "oneStepGeneric"}.
+#' Conditional beta-binomial decomposition of an \eqn{A}-bin
+#' Dirichlet-multinomial for \code{\link[RTMB]{oneStepPredict}}, following
+#' Trijoulet et al. (2023). Each of the first \eqn{A-1} bins is a beta-binomial
+#' conditional on the running remainder, gated by its \code{keep} element; the
+#' analytic conditional beta-binomial CDF is accumulated through
+#' \code{cdf_lower} / \code{cdf_upper}, so this density supports \strong{both}
+#' \code{method = "cdf"} and \code{method = "oneStepGeneric"}.
 #'
-#' @param xobs Either an object of class \code{"osa"} supplied by
-#'   \code{oneStepPredict}, or a plain numeric vector of observed counts
-#'   (length \eqn{A}) during ordinary fitting.
-#' @param alpha Dirichlet concentration parameters (length \eqn{A}). Typically
-#'   \eqn{\alpha = \hat{p} \times \exp(\ln\theta) \times N_{total}}; this must
-#'   match the parameterization used by the fitting likelihood.
-#' @param log Boolean on whether to return nLL
-#'
-#' @return Scalar log-density contribution for the composition.
+#' @param xobs An \code{"osa"} object from \code{oneStepPredict}, or a plain
+#'   numeric count vector (length \eqn{A}) during fitting.
+#' @param alpha Concentration parameters (length \eqn{A}). Typically
+#'   \eqn{\alpha = \hat{p}\,\exp(\ln\theta)\,N_{total}}; must match the fitting
+#'   parameterization.
+#' @param log Logical; return the log-density (default) or the density.
+#' @return Scalar (log-)density contribution.
 #' @keywords internal
 ddirmult_osa <- function(xobs, alpha, log = TRUE) {
   "[<-" <- RTMB::ADoverload("[<-")
   "c"   <- RTMB::ADoverload("c")
 
-  obs  <- osa_extract_x(xobs)              # AD (peeled) values
+  obs  <- osa_extract_x(xobs)
   kk   <- osa_extract_keep(xobs, length(alpha))
-  oval <- osa_extract_values(xobs)         # frozen numeric values
+  cdfi <- osa_extract_cdf(xobs, length(alpha))
+  l    <- cdfi$lower
+  h    <- cdfi$upper
+  oval <- osa_extract_values(xobs)          # frozen values
 
   A       <- length(oval)
-  Ntot    <- sum(oval)                     # frozen total
+  Ntot    <- sum(oval)
   alp_rem <- sum(alpha)
 
   ll <- 0
   for (a in 1:A) {
     if (a != A) {
-      obs_rem_fixed <- Ntot - sum(oval[seq_len(a)])   # frozen remainder after bin a
+      obs_rem_fixed <- Ntot - sum(oval[seq_len(a)])
       alp_rem       <- alp_rem - alpha[a]
-      obs2   <- c(obs[a],   obs_rem_fixed)            # peeled bin AD, remainder frozen
+      obs2   <- c(obs[a],   obs_rem_fixed)
       alpha2 <- c(alpha[a], alp_rem)
       ll <- ll + kk[a] * ddirmult2(obs2, alpha2)
+      # analytic conditional beta-binomial CDF hook
+      cdf <- osa_squeeze(osa_pbetabinom(obs[a], obs[a] + obs_rem_fixed, alpha[a], alp_rem))
+      ll <- ll + l[a] * log(cdf) + h[a] * log(1 - cdf)
     } else {
-      ll <- ll + kk[a] * 0                            # last bin fixed by sum-to-N
+      ll <- ll + kk[a] * 0
+      cdf <- osa_squeeze(1)
+      ll <- ll + l[a] * log(cdf) + h[a] * log(1 - cdf)
     }
   }
-  if(log == TRUE) ll else exp(ll)
+  if (log) ll else exp(ll)
 }

@@ -546,68 +546,17 @@ Setup_Sim_Fishing <- function(sim_list,
 do_sigmaF_mapping <- function(input_list, sigmaF_spec) {
 
   # Sigma F -----------------------------------------------------------------
-  map_sigmaF <- input_list$par$ln_sigmaF
-  n_regions <- input_list$data$n_regions
-  n_seas <- input_list$data$n_seas
-  n_fish_fleets <- input_list$data$n_fish_fleets
+  dims <- c(region = input_list$data$n_regions,
+            season = input_list$data$n_seas,
+            fleet  = input_list$data$n_fish_fleets)
 
-  shared_specs <- c("est_shared_r", "est_shared_seas", "est_shared_f",
-                    "est_shared_r_seas", "est_shared_r_f", "est_shared_seas_f",
-                    "est_shared_r_seas_f")
-
-  # In do_sigmaF_mapping, after defining shared_specs:
-  valid_specs <- c(shared_specs, "fix", "est_all")
-  if(!sigmaF_spec %in% valid_specs) stop("sigmaF_spec '", sigmaF_spec, "' not recognized. Valid options: ", paste(valid_specs, collapse = ", "))
-
-  if(sigmaF_spec %in% shared_specs) {
-
-    counter <- 1
-    for(r in 1:n_regions) {
-      for(seas in 1:n_seas) {
-        for(f in 1:n_fish_fleets) {
-
-          # --- Single dimension sharing ---
-          if(sigmaF_spec == "est_shared_r" && r == 1) {
-            map_sigmaF[, seas, f] <- counter; counter <- counter + 1
-          }
-          if(sigmaF_spec == "est_shared_seas" && seas == 1) {
-            map_sigmaF[r, , f] <- counter; counter <- counter + 1
-          }
-          if(sigmaF_spec == "est_shared_f" && f == 1) {
-            map_sigmaF[r, seas, ] <- counter; counter <- counter + 1
-          }
-
-          # --- Two dimension sharing ---
-          if(sigmaF_spec == "est_shared_r_seas" && r == 1 && seas == 1) {
-            map_sigmaF[, , f] <- counter; counter <- counter + 1
-          }
-          if(sigmaF_spec == "est_shared_r_f" && r == 1 && f == 1) {
-            map_sigmaF[, seas, ] <- counter; counter <- counter + 1
-          }
-          if(sigmaF_spec == "est_shared_seas_f" && seas == 1 && f == 1) {
-            map_sigmaF[r, , ] <- counter; counter <- counter + 1
-          }
-
-          # --- Three dimension sharing (single parameter) ---
-          if(sigmaF_spec == "est_shared_r_seas_f" && r == 1 && seas == 1 && f == 1) {
-            map_sigmaF[, , ] <- counter; counter <- counter + 1
-          }
-
-        } # end f
-      } # end seas
-    } # end r
-
-    input_list$map$ln_sigmaF <- factor(map_sigmaF)
-  }
-
-  # Fixing sigmaF
-  if(sigmaF_spec == "fix") input_list$map$ln_sigmaF <- factor(rep(NA, length(input_list$par$ln_sigmaF)))
-  # Estimating all sigmaF
-  if(sigmaF_spec == "est_all") input_list$map$ln_sigmaF <- factor(1:length(input_list$par$ln_sigmaF))
+  input_list$map$ln_sigmaF <- build_shared_spec_map(
+    dims = dims, spec = sigmaF_spec,
+    dim_abbrev = c(r = "region", seas = "season", f = "fleet")
+  )
 
   # Print Message
   collect_message("sigmaF is specified as: ", sigmaF_spec)
-
 
   return(input_list)
 }
@@ -651,99 +600,18 @@ do_sigmaF_mapping <- function(input_list, sigmaF_spec) {
 do_sigmaC_mapping <- function(input_list, sigmaC_spec) {
 
   # Sigma C -----------------------------------------------------------------
-  map_sigmaC <- input_list$par$ln_sigmaC
-  n_regions <- input_list$data$n_regions
-  n_years <- length(input_list$data$years)
-  n_seas <- input_list$data$n_seas
-  n_fish_fleets <- input_list$data$n_fish_fleets
+  dims <- c(region = input_list$data$n_regions,
+            year   = length(input_list$data$years),
+            season = input_list$data$n_seas,
+            fleet  = input_list$data$n_fish_fleets)
 
-  shared_specs <- c("est_shared_r", "est_shared_y", "est_shared_seas", "est_shared_f",
-                    "est_shared_r_y", "est_shared_r_seas", "est_shared_r_f",
-                    "est_shared_y_seas", "est_shared_y_f", "est_shared_seas_f",
-                    "est_shared_r_y_seas", "est_shared_r_y_f", "est_shared_r_seas_f", "est_shared_y_seas_f",
-                    "est_shared_r_y_seas_f")
-
-  # In do_sigmaF_mapping, after defining shared_specs:
-  valid_specs <- c(shared_specs, "fix", "est_all")
-  if(!sigmaC_spec %in% valid_specs) stop("sigmaF_spec '", sigmaC_spec, "' not recognized. Valid options: ", paste(valid_specs, collapse = ", "))
-
-  if(sigmaC_spec %in% shared_specs) {
-
-    counter <- 1
-    for(r in 1:n_regions) {
-      for(y in 1:n_years) {
-        for(seas in 1:n_seas) {
-          for(f in 1:n_fish_fleets) {
-
-            # --- Single dimension sharing ---
-            if(sigmaC_spec == "est_shared_r" && r == 1) {
-              map_sigmaC[, y, seas, f] <- counter; counter <- counter + 1
-            }
-            if(sigmaC_spec == "est_shared_y" && y == 1) {
-              map_sigmaC[r, , seas, f] <- counter; counter <- counter + 1
-            }
-            if(sigmaC_spec == "est_shared_seas" && seas == 1) {
-              map_sigmaC[r, y, , f] <- counter; counter <- counter + 1
-            }
-            if(sigmaC_spec == "est_shared_f" && f == 1) {
-              map_sigmaC[r, y, seas, ] <- counter; counter <- counter + 1
-            }
-
-            # --- Two dimension sharing ---
-            if(sigmaC_spec == "est_shared_r_y" && r == 1 && y == 1) {
-              map_sigmaC[, , seas, f] <- counter; counter <- counter + 1
-            }
-            if(sigmaC_spec == "est_shared_r_seas" && r == 1 && seas == 1) {
-              map_sigmaC[, y, , f] <- counter; counter <- counter + 1
-            }
-            if(sigmaC_spec == "est_shared_r_f" && r == 1 && f == 1) {
-              map_sigmaC[, y, seas, ] <- counter; counter <- counter + 1
-            }
-            if(sigmaC_spec == "est_shared_y_seas" && y == 1 && seas == 1) {
-              map_sigmaC[r, , , f] <- counter; counter <- counter + 1
-            }
-            if(sigmaC_spec == "est_shared_y_f" && y == 1 && f == 1) {
-              map_sigmaC[r, , seas, ] <- counter; counter <- counter + 1
-            }
-            if(sigmaC_spec == "est_shared_seas_f" && seas == 1 && f == 1) {
-              map_sigmaC[r, y, , ] <- counter; counter <- counter + 1
-            }
-
-            # --- Three dimension sharing ---
-            if(sigmaC_spec == "est_shared_r_y_seas" && r == 1 && y == 1 && seas == 1) {
-              map_sigmaC[, , , f] <- counter; counter <- counter + 1
-            }
-            if(sigmaC_spec == "est_shared_r_y_f" && r == 1 && y == 1 && f == 1) {
-              map_sigmaC[, , seas, ] <- counter; counter <- counter + 1
-            }
-            if(sigmaC_spec == "est_shared_r_seas_f" && r == 1 && seas == 1 && f == 1) {
-              map_sigmaC[, y, , ] <- counter; counter <- counter + 1
-            }
-            if(sigmaC_spec == "est_shared_y_seas_f" && y == 1 && seas == 1 && f == 1) {
-              map_sigmaC[r, , , ] <- counter; counter <- counter + 1
-            }
-
-            # --- Four dimension sharing (single parameter) ---
-            if(sigmaC_spec == "est_shared_r_y_seas_f" && r == 1 && y == 1 && seas == 1 && f == 1) {
-              map_sigmaC[, , , ] <- counter; counter <- counter + 1
-            }
-
-          } # end f
-        } # end seas
-      } # end y
-    } # end r
-
-    input_list$map$ln_sigmaC <- factor(map_sigmaC)
-  }
-
-  # Fixing sigmaC
-  if(sigmaC_spec == "fix") input_list$map$ln_sigmaC <- factor(rep(NA, length(input_list$par$ln_sigmaC)))
-  # Estimating all sigmaC
-  if(sigmaC_spec == "est_all") input_list$map$ln_sigmaC <- factor(1:length(input_list$par$ln_sigmaC))
+  input_list$map$ln_sigmaC <- build_shared_spec_map(
+    dims = dims, spec = sigmaC_spec,
+    dim_abbrev = c(r = "region", y = "year", seas = "season", f = "fleet")
+  )
 
   # Print Message
   collect_message("sigmaC is specified as: ", sigmaC_spec)
-
 
   return(input_list)
 }

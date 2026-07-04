@@ -235,54 +235,32 @@ Setup_Sim_Rec <- function(
 #' @keywords internal
 do_sigmaR_mapping <- function(input_list, sigmaR_spec) {
 
-  map_sigmaR = input_list$par$ln_sigmaR
-  map_sigmaR[] = NA
-
   # Define valid sigmaR options
   valid_options <- c("est_all", "est_shared_all", "fix_early_est_late", "fix")
 
   # Checking to see if valid options
   if (!sigmaR_spec %in% valid_options) stop("Invalid sigmaR_spec. Must be one of: ", paste(valid_options, collapse = ", "))
 
-    # SigmaR specifications
-    sigmaR_counter <- 1
-    for(i in 1:2) {
-      for(p in 1:input_list$data$n_pop) {
+  dims <- c(period = 2, pop = input_list$data$n_pop, region = input_list$data$n_regions)
 
-        if(sigmaR_spec == 'est_all') {
-          if(input_list$data$n_pop == 1 && input_list$data$rec_dd == 0) {
-            # single pop + local DD: each region gets its own sigmaR
-            for(r in 1:input_list$data$n_regions) {
-              map_sigmaR[i,p,r] <- sigmaR_counter
-              sigmaR_counter <- sigmaR_counter + 1
-            }
-          } else {
-            # multi-pop or global DD: each population gets its own sigmaR, shared across regions
-            for(r in 1:input_list$data$n_regions) map_sigmaR[i,p,r] <- sigmaR_counter
-            sigmaR_counter <- sigmaR_counter + 1
-          }
-        }
+  # Single population w/ locally density-dependent recruitment: each region
+  # gets its own sigmaR. Otherwise sigmaR is shared across regions (unique
+  # per population instead).
+  region_shared <- !(input_list$data$n_pop == 1 && input_list$data$rec_dd == 0)
+  share_over <- if(region_shared) "region" else character(0)
 
-        if(sigmaR_spec == 'fix_early_est_late' && i == 2) {
-          if(input_list$data$n_pop == 1 && input_list$data$rec_dd == 0) {
-            # single pop + local DD: each region gets its own sigmaR
-            for(r in 1:input_list$data$n_regions) {
-              map_sigmaR[i,p,r] <- sigmaR_counter
-              sigmaR_counter <- sigmaR_counter + 1
-            }
-          } else {
-            # multi-pop or global DD: each population gets its own sigmaR, shared across regions
-            for(r in 1:input_list$data$n_regions) map_sigmaR[i,p,r] <- sigmaR_counter
-            sigmaR_counter <- sigmaR_counter + 1
-          }
-        }
-      } # end p loop
-    } # end i loop
+  if(sigmaR_spec == 'fix') {
+    input_list$map$ln_sigmaR <- factor(rep(NA, prod(dims)))
+  } else if(sigmaR_spec == 'est_shared_all') {
+    input_list$map$ln_sigmaR <- factor(rep(1, prod(dims)))
+  } else {
+    # "est_all" or "fix_early_est_late"
+    map_sigmaR <- build_pe_map(dims, share_over = share_over)
+    if(sigmaR_spec == 'fix_early_est_late') map_sigmaR[1,,] <- NA # fix early period, keep late period estimated
+    input_list$map$ln_sigmaR <- factor(as.vector(map_sigmaR))
+  }
 
-    if(sigmaR_spec == 'est_shared_all') map_sigmaR[] <- 1
-    if(sigmaR_spec == 'fix') map_sigmaR[] <- NA
-    input_list$map$ln_sigmaR <- factor(map_sigmaR)
-    collect_message("Recruitment Variability is specified as: ", sigmaR_spec)
+  collect_message("Recruitment Variability is specified as: ", sigmaR_spec)
 
   return(input_list)
 }

@@ -1,4 +1,4 @@
-# version 1.2.0 (dev-popn-seasons)
+# version 1.2.0.9000 (dev-popn-seasons)
 - Incorporates population-specific, seasonal, and discarding dynamics.
 
 ## Major changes

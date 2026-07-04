@@ -3,7 +3,8 @@
 <!-- badges: start -->
 [![R-CMD-check](https://img.shields.io/github/actions/workflow/status/chengmatt/SPoRC/R-CMD-check.yaml?label=R-CMD-check)](https://github.com/chengmatt/SPoRC/actions/workflows/R-CMD-check.yaml)
 [![pkgdown](https://img.shields.io/github/actions/workflow/status/chengmatt/SPoRC/pkgdown.yaml?label=pkgdown)](https://github.com/chengmatt/SPoRC/actions/workflows/pkgdown.yaml)
-[![codecov](https://img.shields.io/codecov/c/github/chengmatt/SPoRC?label=codecov)](https://codecov.io/gh/chengmatt/SPoRC)
+[![docs (dev)](https://img.shields.io/badge/docs-dev-orange)](https://chengmatt.github.io/SPoRC/dev/)
+[![codecov](https://img.shields.io/codecov/c/github/chengmatt/SPoRC/dev-popn-seasons?label=codecov)](https://codecov.io/gh/chengmatt/SPoRC/tree/dev-popn-seasons)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.20543805-blue)](https://doi.org/10.5281/zenodo.20543805)
 [![License: GPL-3](https://img.shields.io/badge/License-GPL3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 <!-- badges: end -->

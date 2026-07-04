@@ -561,6 +561,47 @@ do_sigmaF_mapping <- function(input_list, sigmaF_spec) {
   return(input_list)
 }
 
+#' Map AR1 correlation parameter for fishing mortality deviations
+#'
+#' Constructs the \code{Fdev_rho} factor map. \code{Fdev_rho} is only
+#' meaningful when \code{Fdev_model = "ar1"} (see
+#' \code{\link{Setup_Mod_Catch_and_F}}); for any other \code{Fdev_model}, all
+#' \code{Fdev_rho} parameters are mapped to \code{NA} regardless of
+#' \code{Fdev_rho_spec}, since they are unused by \code{\link{Get_Fdev_PE_loglik}}.
+#'
+#' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
+#'   sublists, as constructed by upstream setup functions.
+#' @param Fdev_rho_spec Character string controlling the sharing and
+#'   estimation structure for \code{Fdev_rho}, following the same convention
+#'   as \code{\link{do_sigmaF_mapping}}'s \code{sigmaF_spec}: one of
+#'   \code{"est_all"}, \code{"est_shared_r"}, \code{"est_shared_seas"},
+#'   \code{"est_shared_f"}, \code{"est_shared_r_seas"}, \code{"est_shared_r_f"},
+#'   \code{"est_shared_seas_f"}, \code{"est_shared_r_seas_f"}, or \code{"fix"}.
+#'
+#' @return The input \code{input_list} with \code{$map$Fdev_rho} set to a
+#'   factor vector of length \code{prod(dim(par$Fdev_rho))}.
+#'
+#' @keywords internal
+do_Fdev_rho_mapping <- function(input_list, Fdev_rho_spec) {
+
+  dims <- c(region = input_list$data$n_regions,
+            season = input_list$data$n_seas,
+            fleet  = input_list$data$n_fish_fleets)
+
+  if(input_list$data$Fdev_model != 3) { # only AR1 uses Fdev_rho
+    input_list$map$Fdev_rho <- factor(rep(NA, prod(dims)))
+  } else {
+    input_list$map$Fdev_rho <- build_shared_spec_map(
+      dims = dims, spec = Fdev_rho_spec,
+      dim_abbrev = c(r = "region", seas = "season", f = "fleet")
+    )
+  }
+
+  collect_message("Fdev_rho is specified as: ", Fdev_rho_spec)
+
+  return(input_list)
+}
+
 #' Map sigma_C (catch observation error SD) parameters
 #'
 #' Constructs the \code{ln_sigmaC} factor map used by the TMB/RTMB objective
@@ -640,10 +681,14 @@ do_Fmort_mapping <- function(input_list) {
             season = input_list$data$n_seas,
             fleet  = input_list$data$n_fish_fleets)
 
-  # Estimate F devs if aggregated catch OR any pop-specific catch is used
-  # for a given region/year/season/fleet combination
+  # Estimate F devs if aggregated catch OR any pop-specific catch is used, or
+  # if the aggregate catch observation is missing (NA) rather than a true
+  # recorded zero -- fishing is assumed to have continued through a missing
+  # observation, whereas a recorded zero (or no catch data used at all) with
+  # no missing observation indicates a true closure
   has_catch <- input_list$data$UseCatch == 1 |
-    apply(input_list$data$UseCatch_pop == 1, c(2,3,4,5), any)
+    apply(input_list$data$UseCatch_pop == 1, c(2,3,4,5), any) |
+    is.na(input_list$data$ObsCatch)
 
   F_dev_map <- build_pe_map(dims, share_over = character(0))
   F_dev_map[!has_catch] <- NA
@@ -1395,7 +1440,14 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
 #'   and \code{$verbose} sublists, as returned by upstream setup functions.
 #' @param ObsCatch Observed aggregated catch array
 #'   \code{[n_regions x n_years x n_seas x n_fish_fleets]}.
-#'   Values should be in the units specified by \code{catch_units}.
+#'   Values should be in the units specified by \code{catch_units}. For a
+#'   cell with \code{UseCatch == 0} (and no population-specific catch
+#'   used), an \code{NA} entry here is treated as a genuinely missing
+#'   observation -- fishing is assumed to have continued and \code{Fmort}/
+#'   \code{ln_F_devs} are estimated normally for that year -- whereas a
+#'   true recorded value (typically \code{0}) is treated as a real
+#'   closure: \code{Fmort} is forced to zero and no deviation is estimated.
+#'   See \code{\link{Get_Fdev_PE_loglik}}.
 #' @param ObsCatch_pop Observed population-specific catch array
 #'   \code{[n_pop x n_regions x n_years x n_seas x n_fish_fleets]}.
 #'   Values should be in the units specified by \code{catch_units}.
@@ -1403,8 +1455,10 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
 #'   \code{[n_regions x n_years x n_seas x n_fish_fleets]} controlling which
 #'   aggregated catch observations enter the likelihood and whether
 #'   \code{ln_F_devs} are estimated for each cell. \code{1} = use;
-#'   \code{0} = exclude (corresponding \code{ln_F_devs} will be mapped to
-#'   \code{NA}).
+#'   \code{0} = exclude, unless \code{ObsCatch} is \code{NA} at that cell
+#'   (see \code{ObsCatch} above), in which case \code{ln_F_devs} is still
+#'   estimated as an ordinary active year despite not being fit against an
+#'   observation.
 #' @param UseCatch_pop Binary indicator array
 #'   \code{[n_pop x n_regions x n_years x n_seas x n_fish_fleets]} controlling
 #'   which population-specific catch observations enter the likelihood.
@@ -1442,6 +1496,22 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
 #'   i.e., \eqn{\sigma_F = 1}, unless overridden via \code{...}). A warning is
 #'   issued if \code{"fix"} is selected without providing a starting value
 #'   in \code{...}.
+#' @param Fdev_model Character string specifying the process error structure
+#'   for \code{ln_F_devs}. One of \code{"iid"} (default; independent
+#'   deviations), \code{"rw"} (random walk; the first catch-active year per
+#'   region/season/fleet is initialized with a diffuse \eqn{N(0,5)} prior),
+#'   or \code{"ar1"} (first-order autoregressive; the first catch-active year
+#'   is drawn from its stationary marginal distribution, and \code{Fdev_rho_spec}
+#'   controls the AR1 correlation parameter). Catch-active years do not need
+#'   to be contiguous for \code{"rw"} or \code{"ar1"}: the transition between
+#'   two active years spanning a gap of \eqn{d} closed years is taken over
+#'   the elapsed gap directly (the same marginal transition as estimating
+#'   deviations for the closed years and integrating them out, without
+#'   actually estimating them) -- see \code{\link{Get_Fdev_PE_loglik}}.
+#' @param Fdev_rho_spec Character string specifying the sharing structure for
+#'   the AR1 correlation parameter \code{Fdev_rho}, following the same
+#'   convention as \code{sigmaF_spec}. Only used when \code{Fdev_model =
+#'   "ar1"}; ignored (and mapped entirely to \code{NA}) otherwise.
 #' @param ObsDiscard Observed aggregated discard array
 #'   \code{[n_regions x n_years x n_seas x n_fish_fleets]}.
 #'   Values should be in the units specified by \code{discard_units}.
@@ -1508,15 +1578,18 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
 #'     \item{\code{$data}}{
 #'       \code{ObsCatch}, \code{ObsCatch_pop}, \code{UseCatch},
 #'       \code{UseCatch_pop}, \code{Use_F_pen}, \code{catch_units},
+#'       \code{Fdev_model},
 #'       \code{ObsDiscard}, \code{ObsDiscard_pop}, \code{UseDiscard},
 #'       \code{UseDiscard_pop}, \code{Use_dmr_pen}, \code{discard_units}.}
 #'     \item{\code{$par}}{
 #'       \code{ln_sigmaC}, \code{ln_sigmaC_pop}, \code{ln_sigmaF},
+#'       \code{Fdev_rho},
 #'       \code{ln_F_mean}, \code{ln_F_devs},
 #'       \code{ln_sigmaD}, \code{ln_sigmaD_pop}, \code{ln_sigma_dmr},
 #'       \code{logit_dmr_mean}, \code{logit_dmr_devs}.}
 #'     \item{\code{$map}}{
 #'       \code{ln_sigmaC}, \code{ln_sigmaC_pop}, \code{ln_sigmaF},
+#'       \code{Fdev_rho},
 #'       \code{ln_F_devs},
 #'       \code{ln_sigmaD}, \code{ln_sigmaD_pop}, \code{ln_sigma_dmr},
 #'       \code{logit_dmr_mean}, \code{logit_dmr_devs}.}
@@ -1537,6 +1610,8 @@ Setup_Mod_Catch_and_F <- function(input_list,
                                   sigmaC_spec = "fix",
                                   sigmaC_pop_spec = 'fix',
                                   sigmaF_spec = "fix",
+                                  Fdev_model = "iid",
+                                  Fdev_rho_spec = "fix",
 
                                   # Discarded Catch Stuff
                                   ObsDiscard = NULL,
@@ -1587,6 +1662,10 @@ Setup_Mod_Catch_and_F <- function(input_list,
   if(sigmaC_pop_spec == "fix" && !("ln_sigmaC_pop" %in% names(starting_values))) warning("sigmaC_pop is specified as fix, but no starting values / fixed values are provided. Either do this post-hoc, or use the ... argument if you do not want to use default values")
   if(sigmaF_spec == "fix" && !("ln_sigmaF" %in% names(starting_values))) warning("sigmaF_spec is specified as fix, but no starting values / fixed values are provided. Either do this post-hoc, or use the ... argument if you do not want to use default values")
 
+  # Fdev_model checking
+  if(!Fdev_model %in% c("iid", "rw", "ar1")) stop("Fdev_model incorrectly specified. Must be one of 'iid', 'rw', or 'ar1'")
+  else collect_message("Fdev_model is specified as: ", Fdev_model)
+
   # Discard Mortality checking
   if(!Use_dmr_pen %in% c(0,1)) stop("Use_dmr_pen incorrectly specified. Either set at 0 (don't use D penalty) or 1 (use D penalty)")
   else collect_message("Discard mortality penalty is: ", ifelse(Use_dmr_pen == 0, 'Not Used', "Used"))
@@ -1622,6 +1701,7 @@ Setup_Mod_Catch_and_F <- function(input_list,
   input_list$data$UseCatch_pop <- UseCatch_pop
   input_list$data$Use_F_pen <- Use_F_pen
   input_list$data$catch_units <- catch_units
+  input_list$data$Fdev_model <- match(Fdev_model, c("iid", "rw", "ar1")) # 1 = iid, 2 = rw, 3 = ar1
 
   # Discarded Catch Stuff
   input_list$data$ObsDiscard <- ObsDiscard
@@ -1643,6 +1723,10 @@ Setup_Mod_Catch_and_F <- function(input_list,
   # Process error fishing deviations
   if("ln_sigmaF" %in% names(starting_values)) input_list$par$ln_sigmaF <- starting_values$ln_sigmaF
   else input_list$par$ln_sigmaF <- array(log(1), dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
+
+  # AR1 correlation for fishing mortality deviations (only used when Fdev_model = "ar1")
+  if("Fdev_rho" %in% names(starting_values)) input_list$par$Fdev_rho <- starting_values$Fdev_rho
+  else input_list$par$Fdev_rho <- array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
 
   # Log mean fishing mortality
   if("ln_F_mean" %in% names(starting_values)) input_list$par$ln_F_mean <- starting_values$ln_F_mean
@@ -1677,6 +1761,7 @@ Setup_Mod_Catch_and_F <- function(input_list,
   input_list <- do_sigmaC_mapping(input_list, sigmaC_spec)
   input_list <- do_sigmaC_pop_mapping(input_list, sigmaC_pop_spec)
   input_list <- do_sigmaF_mapping(input_list, sigmaF_spec)
+  input_list <- do_Fdev_rho_mapping(input_list, Fdev_rho_spec)
   input_list <- do_Fmort_mapping(input_list)
 
   # Discard Catch Stuff

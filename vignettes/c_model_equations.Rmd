@@ -1341,14 +1341,68 @@ variance of $\sigma_{\text{Rec}}^{2}$.
 
 #### Fishing Mortality Deviations
 
-Fishing mortality deviations similarly assume multiplicative
-deviations:
+Fishing mortality deviations assume multiplicative deviations about a
+mean rate. One of three process error structures can be specified via
+`Fdev_model`: independent (`"iid"`), random walk (`"rw"`), or
+first-order autoregressive (`"ar1"`). In all three cases, the penalty is
+only evaluated in region $r$, season $\tau$, and fleet $f$ combinations
+with observed catch (i.e., $\text{UseCatch}_{r,y,\tau,f} = 1$ or any
+$\text{UseCatch\_pop}_{p,r,y,\tau,f} = 1$).
 
-$$\ell\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} \right) = \frac{1}{\sqrt{2\pi{\sigma_{r,\tau,f}^{2}}_{\text{Fsh}}}\,}\exp\left( - \frac{\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} \right)^{2}}{2{\sigma_{r,\tau,f}^{2}}_{\text{Fsh}}} \right)$$
+##### IID
 
-Here, fishing mortality deviations are assumed to arise from a normal
+$$\ell\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} \right) = \frac{1}{\sqrt{2\pi\sigma_{r,\tau,f,\text{Fsh}}^{2}}\,}\exp\left( - \frac{\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} \right)^{2}}{2\sigma_{r,\tau,f,\text{Fsh}}^{2}} \right)$$
+
+Fishing mortality deviations are assumed to arise from a normal
 distribution, with mean 0 and a variance of
-${\sigma_{r,\tau,f}^{2}}_{\text{Fsh}}$.
+$\sigma_{r,\tau,f,\text{Fsh}}^{2}$.
+
+##### Random Walk
+
+Catch-active years need not be contiguous under the random walk (a
+fishery may close for several years and reopen later). Let $y'$ denote
+the previous catch-active year for a given region, season, and fleet,
+and $d = y - y'$ the number of elapsed years between them ($d = 1$ when
+catch is available every year). The first catch-active year is
+initialized with a large, diffuse variance; every subsequent
+catch-active year follows a random walk about the previous active
+year's value, with variance inflated by the elapsed gap $d$:
+
+$$\ell\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} \right) = \left\{ \begin{matrix}
+\frac{1}{\sqrt{2\pi \cdot 5^{2}}\,}\exp\left( - \frac{\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} \right)^{2}}{2 \cdot 5^{2}} \right),\ y\ \text{is the first catch-active year} \\
+\frac{1}{\sqrt{2\pi d\sigma_{r,\tau,f,\text{Fsh}}^{2}}\,}\exp\left( - \frac{\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} - \epsilon_{r,y',\tau,f}^{\text{Fsh}} \right)^{2}}{2d\sigma_{r,\tau,f,\text{Fsh}}^{2}} \right),\ \text{otherwise} \\
+\end{matrix} \right.\ $$
+
+When catch is available every year ($d = 1$ throughout), this reduces
+exactly to a standard single-step random walk. When years are closed
+(e.g., a fishery closure), inflating the variance by $d$ gives exactly
+the same marginal distribution that would be obtained by estimating
+deviations for the closed years and integrating them out -- without
+actually estimating them, so no deviation parameters exist for closed
+years.
+
+##### AR1
+
+The AR1 form additionally estimates a correlation parameter,
+$\rho_{r,\tau,f,\text{Fsh}} \in (-1,1)$ (from an unconstrained parameter
+`Fdev_rho`, transformed via $\rho = 2/(1+e^{-2x}) - 1$). As with the
+random walk, catch-active years need not be contiguous. The first
+catch-active year is drawn from the process's stationary marginal
+distribution, and every subsequent catch-active year follows an AR1
+transition over the elapsed gap $d$ since the previous active year:
+
+$$\ell\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} \right) = \left\{ \begin{matrix}
+\frac{1}{\sqrt{2\pi\sigma_{r,\tau,f,\text{Fsh}}^{2}/\left(1 - \rho_{r,\tau,f,\text{Fsh}}^{2}\right)}\,}\exp\left( - \frac{\left(1 - \rho_{r,\tau,f,\text{Fsh}}^{2}\right)\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} \right)^{2}}{2\sigma_{r,\tau,f,\text{Fsh}}^{2}} \right),\ y\ \text{is the first catch-active year} \\
+\frac{1}{\sqrt{2\pi V_{d}}\,}\exp\left( - \frac{\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} - \rho_{r,\tau,f,\text{Fsh}}^{d}\epsilon_{r,y',\tau,f}^{\text{Fsh}} \right)^{2}}{2V_{d}} \right),\ \text{otherwise} \\
+\end{matrix} \right.\ $$
+
+where
+$$V_{d} = \sigma_{r,\tau,f,\text{Fsh}}^{2}\sum_{i = 0}^{d - 1}{\rho_{r,\tau,f,\text{Fsh}}^{2i}} = \sigma_{r,\tau,f,\text{Fsh}}^{2}\frac{1 - \rho_{r,\tau,f,\text{Fsh}}^{2d}}{1 - \rho_{r,\tau,f,\text{Fsh}}^{2}}$$
+is the exact variance of the sum of the $d$ intervening (unestimated)
+innovations that would have occurred during the closed years, and
+$\rho_{r,\tau,f,\text{Fsh}}^{d}$ is the corresponding decay of the mean
+across the same gap. As with the random walk, this reduces exactly to
+the standard single-step AR1 transition when $d = 1$.
 
 #### Discard Mortality Rate Deviations
 

@@ -429,22 +429,31 @@ SPoRC_rtmb = function(pars, data) {
   } # end r
 
   ## Mortality ---------------------------------------------------------------
+
+  # Precomputed here (before ObsCatch is overwritten by the catch likelihood
+  # block below, which reuses the ObsCatch variable in place for OSA
+  # residuals) so it can also be passed to Get_Fdev_PE_loglik downstream.
+  missing_catch = is.na(ObsCatch) # TRUE = aggregate catch observation is missing (not a true recorded zero)
+
   for(r in 1:n_regions) {
     for(y in 1:n_yrs) {
       for(seas in 1:n_seas) {
         for(f in 1:n_fish_fleets) {
 
-          # get annual total fishing mortality rate
-          if(UseCatch[r,y,seas,f] == 0 && any(UseCatch_pop[,r,y,seas,f] == 0)) {
-            Fmort[r,y,seas,f] = 0
-          } else {
-            Fmort[r,y,seas,f] = exp(ln_F_mean[r,seas,f] + ln_F_devs[r,y,seas,f])
-          }
+          # A cell is a true closure only when no catch is fit (aggregate or
+          # population-specific) AND the aggregate catch observation is a
+          # real recorded value (not missing) -- Fmort/dmr are forced to
+          # zero and no deviation is estimated for that year. A cell with
+          # UseCatch == 0 but a missing (NA) aggregate observation is
+          # treated as an ordinary active year instead (fishing presumably
+          # continued; we simply lack an observation to fit against).
+          is_closed = (UseCatch[r,y,seas,f] == 0) && all(UseCatch_pop[,r,y,seas,f] == 0) && !missing_catch[r,y,seas,f]
 
-          # get discard mortality rate
-          if(UseCatch[r,y,seas,f] == 0 && all(UseCatch_pop[,r,y,seas,f] == 0)) {
+          if(is_closed) {
+            Fmort[r,y,seas,f] = 0
             dmr[r,y,seas,f] = 0
           } else {
+            Fmort[r,y,seas,f] = exp(ln_F_mean[r,seas,f] + ln_F_devs[r,y,seas,f])
             dmr[r,y,seas,f] = RTMB::plogis(logit_dmr_mean[r,seas,f] + logit_dmr_devs[r,y,seas,f])
           }
 
@@ -2124,19 +2133,9 @@ SPoRC_rtmb = function(pars, data) {
   ## Priors and Penalties ----------------------------------------------------
   ### Fishing Mortality (Penalty) ---------------------------------------------
   if(Use_F_pen == 1) {
-    for(f in 1:n_fish_fleets) {
-      for(y in 1:n_yrs) {
-        for(r in 1:n_regions) {
-          for(seas in 1:n_seas) {
-
-            if(UseCatch[r,y,seas,f] == 1 || any(UseCatch_pop[,r,y,seas,f] == 1)) {
-              Fmort_nLL[r,y,seas,f] = -RTMB::dnorm(ln_F_devs[r,y,seas,f], 0, exp(ln_sigmaF[r,seas,f]), TRUE)
-            } # end if have catch
-
-          } # end seas loop
-        } # end r loop
-      } # y loop
-    } # f loop
+    Fmort_nLL = Get_Fdev_PE_loglik(PE_model = Fdev_model, ln_sigmaF = ln_sigmaF, Fdev_rho = Fdev_rho,
+                                   ln_F_devs = ln_F_devs, UseCatch = UseCatch, UseCatch_pop = UseCatch_pop,
+                                   missing_catch = missing_catch)
   } #  if using fishing mortality penalty
 
   ### Discard Mortality Rate (Penalty) ---------------------------------------------

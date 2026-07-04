@@ -354,3 +354,120 @@ Get_move_PE_loglik <- function(PE_model,
 
   return(ll)
 }
+
+#' Compute Fishing Mortality Deviation Process Error Log-Likelihood (Negative Scale)
+#'
+#' Calculates the negative log-likelihood contribution for fishing mortality
+#' deviations (\code{ln_F_devs}) under an iid, random walk, or AR1 process
+#' error structure.
+#'
+#' \strong{Note:} Unlike \code{\link{Get_sel_PE_loglik}} and
+#' \code{\link{Get_move_PE_loglik}}, which return a single positive
+#' log-likelihood scalar to be negated by the caller, this function returns
+#' an already-negated array with the same dimensions as \code{ln_F_devs}
+#' (one value per region/year/season/fleet cell, \code{0} where catch is not
+#' used), matching the existing \code{Fmort_nLL} reporting convention.
+#'
+#' Random walk and AR1 do not require catch-active years to be contiguous.
+#' Instead, the transition between two active years is taken over the
+#' elapsed gap \eqn{d} between them -- exactly the marginal transition you
+#' would get from estimating deviations for the closed years in between and
+#' integrating them out, without actually estimating them:
+#' \describe{
+#'   \item{Random walk}{\eqn{\delta_t \mid \delta_s \sim N(\delta_s, d\sigma^2)}}
+#'   \item{AR1}{\eqn{\delta_t \mid \delta_s \sim N(\rho^d \delta_s, \sigma^2
+#'     \sum_{i=0}^{d-1} \rho^{2i})}, where the sum has closed form
+#'     \eqn{(1 - \rho^{2d}) / (1 - \rho^2)}}
+#' }
+#' Both reduce exactly to the standard single-step transition when \eqn{d = 1}.
+#'
+#' @param PE_model Integer specifying the process error structure: \code{1} =
+#'   IID (deviations drawn independently as \eqn{N(0, \sigma^2)}); \code{2} =
+#'   random walk (first active year initialized with a diffuse \eqn{N(0, 5)}
+#'   prior); \code{3} = AR1 (first active year drawn from its stationary
+#'   marginal distribution \eqn{N(0, \sigma^2 / (1 - \rho^2))}).
+#' @param ln_sigmaF Array \code{[n_regions x n_seas x n_fish_fleets]} of
+#'   log-scale process error SD.
+#' @param Fdev_rho Array \code{[n_regions x n_seas x n_fish_fleets]} of
+#'   unconstrained AR1 partial correlation (only used when \code{PE_model ==
+#'   3}); transformed to \eqn{(-1, 1)} via \eqn{2 / (1 + e^{-2x}) - 1}.
+#' @param ln_F_devs Array \code{[n_regions x n_years x n_seas x
+#'   n_fish_fleets]} of log-scale fishing mortality deviations.
+#' @param UseCatch,UseCatch_pop Same binary catch-usage indicators as
+#'   elsewhere; a cell is penalized if aggregated catch or any
+#'   population-specific catch is used.
+#' @param missing_catch Logical array \code{[n_regions x n_years x n_seas x
+#'   n_fish_fleets]}, \code{TRUE} where the aggregate catch observation
+#'   (\code{ObsCatch}) is missing (\code{NA}) rather than a true recorded
+#'   zero. A cell with \code{UseCatch == 0} (and no population-specific
+#'   catch used) is still penalized as an ordinary active year when
+#'   \code{missing_catch} is \code{TRUE} there (fishing presumably
+#'   continued, we simply lack a value to fit), as opposed to a true
+#'   recorded zero, which is treated as a real closure and excluded from
+#'   the gap count.
+#'
+#' @return Array with the same dimensions as \code{ln_F_devs}: the negative
+#'   log-likelihood contribution per cell.
+#'
+#' @keywords internal
+#' @import RTMB
+Get_Fdev_PE_loglik <- function(PE_model, ln_sigmaF, Fdev_rho, ln_F_devs, UseCatch, UseCatch_pop, missing_catch) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  rho_trans <- function(x) 2 / (1 + exp(-2 * x)) - 1 # constrain to (-1, 1)
+
+  n_regions <- dim(ln_F_devs)[1]
+  n_yrs <- dim(ln_F_devs)[2]
+  n_seas <- dim(ln_F_devs)[3]
+  n_fish_fleets <- dim(ln_F_devs)[4]
+
+  # a cell is penalized if aggregated OR any population-specific catch is
+  # used, or if the aggregate observation is missing (see missing_catch above)
+  has_catch <- UseCatch == 1 | apply(UseCatch_pop == 1, c(2,3,4,5), any) | missing_catch
+
+  Fmort_nLL <- array(0, dim = dim(ln_F_devs))
+
+  for(f in 1:n_fish_fleets) {
+    for(r in 1:n_regions) {
+      for(seas in 1:n_seas) {
+
+        sigma <- exp(ln_sigmaF[r,seas,f])
+        if(PE_model == 3) rho <- rho_trans(Fdev_rho[r,seas,f])
+
+        last_active_y <- NA # calendar year of the previous catch-active year (NA until the first one)
+        for(y in 1:n_yrs) {
+
+          if(!has_catch[r,y,seas,f]) next # skip cells without catch
+
+          if(PE_model == 1) { # iid
+            Fmort_nLL[r,y,seas,f] <- -RTMB::dnorm(ln_F_devs[r,y,seas,f], 0, sigma, TRUE)
+          }
+
+          if(PE_model == 2) { # random walk
+            if(is.na(last_active_y)) Fmort_nLL[r,y,seas,f] <- -RTMB::dnorm(ln_F_devs[r,y,seas,f], 0, 5, TRUE) # diffuse init
+            else {
+              d <- y - last_active_y # elapsed years since the previous active year
+              Fmort_nLL[r,y,seas,f] <- -RTMB::dnorm(ln_F_devs[r,y,seas,f], ln_F_devs[r,last_active_y,seas,f], sigma * sqrt(d), TRUE)
+            }
+          }
+
+          if(PE_model == 3) { # ar1
+            if(is.na(last_active_y)) Fmort_nLL[r,y,seas,f] <- -RTMB::dnorm(ln_F_devs[r,y,seas,f], 0, sigma / sqrt(1 - rho^2), TRUE) # stationary marginal sd
+            else {
+              d <- y - last_active_y # elapsed years since the previous active year
+              trans_sd <- sigma * sqrt((1 - rho^(2*d)) / (1 - rho^2))
+              Fmort_nLL[r,y,seas,f] <- -RTMB::dnorm(ln_F_devs[r,y,seas,f], rho^d * ln_F_devs[r,last_active_y,seas,f], trans_sd, TRUE)
+            }
+          }
+
+          last_active_y <- y
+
+        } # end y loop
+      } # end seas loop
+    } # end r loop
+  } # end f loop
+
+  return(Fmort_nLL)
+}

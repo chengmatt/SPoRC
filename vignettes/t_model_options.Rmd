@@ -9,6 +9,41 @@ vignette: >
 
 SPoRC models are assembled through a pipeline of `Setup_Mod_*` functions (for the estimation model) and `Setup_Sim_*` functions (for the operating model / simulation). Each function appends to an `input_list` (or `sim_list`) that accumulates data, parameter starting values, and RTMB factor maps. This vignette catalogues every user-facing option across that pipeline. Where both an integer code and a string alias exist, either is accepted. Strings are generally preferred for readability. When `n_sexes > 1`, the first sex index is always female. When `n_pop > 1`, populations follow the order in which they are defined. Throughout this document, the notation `[p × r × y × τ × a × s]` is shorthand for array dimensions: population, region, year, seasons, age, sex.
 
+# Parameter sharing conventions
+
+Many hyperparameters throughout the pipeline (process-error standard
+deviations, catchability, natural mortality, tag reporting rates, ...)
+are controlled by a `_spec` string argument that follows the same
+convention: a single named dimension (e.g. region, season, fleet, sex)
+is either estimated independently for every level, shared across some
+subset of levels, or fixed. Concretely, for a hyperparameter varying
+across dimensions abbreviated `r` (region), `seas` (season), and `f`
+(fleet), the accepted strings are:
+
+| String | Meaning |
+|---|---|
+| `"est_all"` | Independent parameter for every combination of dimensions |
+| `"est_shared_r"` | Shared across regions; independent per remaining dimension |
+| `"est_shared_seas"` | Shared across seasons |
+| `"est_shared_f"` | Shared across fleets |
+| `"est_shared_r_seas"`, `"est_shared_r_f"`, `"est_shared_seas_f"` | Shared across the named pair of dimensions |
+| `"est_shared_r_seas_f"` | A single parameter shared across everything |
+| `"fix"` | Held at its starting value (not estimated) |
+
+Which dimension abbreviations are valid, and in what order they can be
+combined, depends on the specific parameter (see each section below for
+its abbreviations, e.g. `sigmaC_spec` additionally has a `y` (year)
+dimension). `sigmaF_spec`, `sigmaC_spec`, `sigmaR_spec`, and
+`Fdev_rho_spec` all follow this convention via a single shared internal
+helper (`build_pe_map`/`build_shared_spec_map`), so they behave
+identically. Other `_spec` arguments using the same string vocabulary
+(e.g. `sigmaC_pop_spec`, and selectivity's `fish_fixed_sel_pars_spec`,
+`fishsel_pe_pars_spec`, `fish_sel_devs_spec`, and their retention/survey
+equivalents) are implemented separately with their own hand-written
+logic, and some additionally support a fleet-sharing escape hatch,
+`"est_shared_f_<n>"`, which copies the sharing structure of fleet `<n>`
+wholesale rather than collapsing a dimension.
+
 ---
 
 # Spatial and Demographic Structure
@@ -375,8 +410,36 @@ Configured via `Setup_Mod_Catch_and_F()`.
 | `ObsCatch` | Observed aggregate catch `[r × y × τ × f]` |
 | `ObsCatch_pop` | Population-specific catch `[p × r × y × τ × f]` |
 | `catch_units` | Per-fleet: 0 = abundance, 1 = biomass |
-| `Fmort_spec` | Estimation structure for log $F$ parameters |
+| `Use_F_pen` | 0/1 toggle for the fishing mortality deviation penalty (`Fmort_nLL`) |
 | `sigmaC_spec` / `sigmaC_pop_spec` | Catch observation-error estimation |
+
+### Fishing mortality process error
+
+`ln_F_devs` (annual log-scale deviations about `ln_F_mean`) can follow one
+of three process-error structures, set via `Fdev_model`:
+
+| String | Description |
+|---|---|
+| `"iid"` | Independent annual deviations (default) |
+| `"rw"` | Random walk |
+| `"ar1"` | First-order autoregressive |
+
+`sigmaF_spec` controls sharing/fixing of the process-error standard
+deviation (`ln_sigmaF`) across region × season × fleet, using the same
+`"est_all"` / `"est_shared_<dims>"` / `"fix"` convention described in
+[Parameter sharing conventions]. `Fdev_rho_spec` analogously controls the
+AR1 correlation parameter (`Fdev_rho`) and is only active when
+`Fdev_model = "ar1"`; for `"iid"` or `"rw"`, `Fdev_rho` is unused and
+mapped to `NA` regardless of what is supplied.
+
+Catch-active years (`UseCatch == 1` or any `UseCatch_pop == 1`) do **not**
+need to be contiguous under `"rw"` or `"ar1"` — a fishery may close for
+several years and reopen later. The transition between two active years
+separated by a gap of $d$ closed years is taken directly over the
+elapsed gap (the same marginal transition obtained by estimating
+deviations for the closed years and integrating them out, without
+actually estimating them). See [Fishing Mortality Deviations] in
+`vignette("c_model_equations")` for the exact equations.
 
 ### Discard and retention framework
 

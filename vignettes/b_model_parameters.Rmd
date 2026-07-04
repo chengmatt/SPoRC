@@ -23,9 +23,10 @@ The following table describes all elements contained within `input_list$pars`, w
 |-----------|-----------|-------------|---------|
 | `ln_sigmaC` | `n_regions × n_years × n_seas × n_fish_fleets` | Log-scale standard deviation for aggregated (regional) catch likelihood | 0.01 |
 | `ln_sigmaC_pop` | `n_pop × n_regions × n_years × n_seas × n_fish_fleets` | Log-scale standard deviation for population-specific catch likelihood. Only used when `UseCatch_pop[p,r,y,seas,f] == 1`. | 0.01 |
-| `ln_sigmaF` | `n_regions × n_seas × n_fish_fleets` | Log-scale standard deviation for fishing mortality process error | 0 |
+| `ln_sigmaF` | `n_regions × n_seas × n_fish_fleets` | Log-scale standard deviation for fishing mortality process error (used under all three `Fdev_model` structures: `"iid"`, `"rw"`, `"ar1"`) | 0 |
+| `Fdev_rho` | `n_regions × n_seas × n_fish_fleets` | Unconstrained AR1 correlation parameter for fishing mortality deviations, transformed to `(-1, 1)` via `2 / (1 + exp(-2x)) - 1`. Only used when `Fdev_model = "ar1"`; mapped to `NA` (unused) otherwise regardless of `Fdev_rho_spec` | 0 |
 | `ln_F_mean` | `n_regions × n_seas × n_fish_fleets` | Log-scale mean fishing mortality rate | 0.1 |
-| `ln_F_devs` | `n_regions × n_years × n_seas × n_fish_fleets` | Log-scale annual fishing mortality deviations (can be specified as random effects) | 0 |
+| `ln_F_devs` | `n_regions × n_years × n_seas × n_fish_fleets` | Log-scale annual fishing mortality deviations (can be specified as random effects). Process error structure set via `Fdev_model`: `"iid"` (default), `"rw"`, or `"ar1"`; catch-active years need not be contiguous for `"rw"`/`"ar1"` (see `vignette("c_model_equations")`) | 0 |
 | `ln_sigmaD` | `n_regions × n_years × n_seas × n_fish_fleets` | Log-scale standard deviation for aggregated (regional) discard likelihood | 0.01 |
 | `ln_sigmaD_pop` | `n_pop × n_regions × n_years × n_seas × n_fish_fleets` | Log-scale standard deviation for population-specific discard likelihood | 0.01 |
 | `ln_sigma_dmr` | `n_regions × n_seas × n_fish_fleets` | Log-scale standard deviation for discard mortality rate process error | 0 |
@@ -37,10 +38,10 @@ The following table describes all elements contained within `input_list$pars`, w
 | Parameter | Dimension | Description | Default |
 |-----------|-----------|-------------|---------|
 | `fish_fixed_sel_pars` | `n_regions × max_fish_pars × max_fishsel_blks × n_sexes × n_fish_fleets` | Log-scale selectivity curve parameters | 0 |
-| `fishsel_pe_pars` | `n_regions × 4 × n_sexes × n_fish_fleets` | Process error parameters for time-varying selectivity | 0 |
+| `fishsel_pe_pars` | `n_regions × max(4, n_sel_pars) × n_sexes × n_fish_fleets` | Process error parameters for time-varying selectivity: sigma (iid/rw), or partial correlations + log-variance (semi-parametric forms), see [Fishery and Survey Selectivity] in `vignette("c_model_equations")`. Second dimension is 4 unless the selectivity form itself needs more parameters (e.g. double-normal, non-parametric) | 0 |
 | `ln_fishsel_devs` | `n_regions × (n_years + n_proj_yrs_devs) × n_bins × n_sexes × n_fish_fleets` | Log-scale selectivity deviations w/ projection years (n_bins = n_ages or n_lens depending on selectivity type) (can be specified as random effects) | 0 |
 | `ret_fixed_sel_pars` | `n_regions × max_ret_pars × max_retsel_blks × n_sexes × n_fish_fleets` | Retention selectivity curve parameters | 0 |
-| `retsel_pe_pars` | `n_regions × 4 × n_sexes × n_fish_fleets` | Process error parameters for time-varying retention selectivity | 0 |
+| `retsel_pe_pars` | `n_regions × max(4, n_sel_pars) × n_sexes × n_fish_fleets` | Process error parameters for time-varying retention selectivity (see `fishsel_pe_pars` above) | 0 |
 | `ln_retsel_devs` | `n_regions × (n_years + n_proj_yrs_devs) × n_bins × n_sexes × n_fish_fleets` | Log-scale retention selectivity deviations w/ projection years (can be specified as random effects) | 0 |
 
 ## Fishery Catchability
@@ -94,7 +95,7 @@ Region-aggregated and population-specific composition likelihoods have separate 
 | Parameter | Dimension | Description | Default |
 |-----------|-----------|-------------|---------|
 | `srv_fixed_sel_pars` | `n_regions × max_srv_pars × max_srv_blks × n_sexes × n_srv_fleets` | Log-scale selectivity curve parameters | 0 |
-| `srvsel_pe_pars` | `n_regions × 4 × n_sexes × n_srv_fleets` | Process error parameters for time-varying selectivity | 0 |
+| `srvsel_pe_pars` | `n_regions × max(4, n_sel_pars) × n_sexes × n_srv_fleets` | Process error parameters for time-varying survey selectivity (see `fishsel_pe_pars` in [Fishery Selectivity]) | 0 |
 | `ln_srvsel_devs` | `n_regions × (n_years + n_proj_yrs_devs) × n_bins × n_sexes × n_srv_fleets` | Log-scale selectivity deviations w/ projection years (n_bins = n_ages or n_lens depending on selectivity type) (can be specified as random effects) | 0 |
 
 ## Survey Catchability
@@ -152,11 +153,11 @@ Region-aggregated and population-specific composition likelihoods have separate 
 
 | Parameter | Dimension | Description | Default |
 |-----------|-----------|-------------|---------|
-| `move_pars` | `n_pop × n_regions × (n_regions - 1) × n_years × n_ages × n_sexes` | Logit-scale movement probabilities (unstructured Markov; move_type = 0) | 0 |
+| `move_pars` | `n_pop × n_regions × (n_regions - 1) × n_years × n_seas × n_ages × n_sexes` | Logit-scale movement probabilities (unstructured Markov; move_type = 0) | 0 |
 | `log_move_diffusion_pars` | (Vector; depends on formula) | Log-scale diffusion parameters for CTMC movement (move_type = 1) | log(0.1) |
 | `move_preference_pars` | (Vector; depends on formula) | Preference parameters for CTMC movement (move_type = 1) | 0 |
-| `move_devs` | `n_pop × n_regions × (n_regions - 1) × (n_years + n_proj_yrs_devs) × n_ages × n_sexes` | Movement deviations w/ projection years (can be specified as random effects) | 0 |
-| `move_pe_pars` | `n_regions × max(4, n_ages) × n_sexes` | Process error parameters for continuously varying movement | 0 |
+| `move_devs` | `n_pop × n_regions × (n_regions - 1) × (n_years + n_proj_yrs_devs) × n_seas × n_ages × n_sexes` | Movement deviations w/ projection years (can be specified as random effects); IID process error only, sharing structure set via `cont_vary_movement` | 0 |
+| `move_pe_pars` | `n_pop × n_regions × n_seas × n_ages × n_sexes` | Standard deviations for continuously varying movement (IID). Which dimensions are actively estimated vs. held fixed at index 1 is determined by `cont_vary_movement` (e.g. `"iid_y"` only varies over year) | 0 |
 
 ## Tagging
 

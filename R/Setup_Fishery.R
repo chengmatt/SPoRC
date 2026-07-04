@@ -1508,6 +1508,13 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
 #'   the elapsed gap directly (the same marginal transition as estimating
 #'   deviations for the closed years and integrating them out, without
 #'   actually estimating them) -- see \code{\link{Get_Fdev_PE_loglik}}.
+#'   A warning is issued if \code{"rw"} or \code{"ar1"} is selected but
+#'   \code{Use_F_pen = 0} (the penalty is never evaluated, so the process
+#'   structure has no effect), \code{sigmaF_spec = "fix"} (the process error
+#'   SD is not estimated), or (for \code{"ar1"}) \code{Fdev_rho_spec =
+#'   "fix"} (the correlation is not estimated) -- any of these may be
+#'   intentional, but are common oversights when switching away from
+#'   \code{"iid"}.
 #' @param Fdev_rho_spec Character string specifying the sharing structure for
 #'   the AR1 correlation parameter \code{Fdev_rho}, following the same
 #'   convention as \code{sigmaF_spec}. Only used when \code{Fdev_model =

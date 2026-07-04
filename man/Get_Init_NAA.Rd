@@ -212,5 +212,164 @@ converges to equilibrium.
 After equilibrium is derived, log-scale initial age deviations
 (\code{ln_InitDevs}) are applied multiplicatively to ages
 \eqn{2,\dots,A}.
+
+
+
+
+Initial numbers-at-age are derived assuming constant recruitment
+(\eqn{R_0}) and constant mortality and movement.
+
+Let
+
+\itemize{
+\item \eqn{N_{p,r,a,s}} denote numbers-at-age
+\item \eqn{M_{p,r,a}} denote natural mortality
+\item \eqn{F_{r,a,s}} denote total fishing mortality (retained + dead discards)
+\item \eqn{Z = M + F} denote total mortality
 }
+
+Recruitment at age 1 is
+
+\deqn{
+N_{p,r,1,s} = R_{0,p,r} \times sexratio_{p,r,s}
+}
+
+Within-season survival follows
+
+\deqn{
+N_{p,r,a,s+1} =
+N_{p,r,a,s}\exp(-Z_{p,r,a,s})
+}
+
+Ages advance at the end of the final season of the year:
+
+\deqn{
+N_{p,r,a+1,1} =
+N_{p,r,a,n_{seas}}
+\exp(-Z_{p,r,a,n_{seas}})
+}
+
+The plus group accumulates survivors from the terminal age:
+
+\deqn{
+N_{A^+} =
+N_{A-1} e^{-Z_{A-1}} +
+N_{A^+} e^{-Z_{A^+}}
+}
+
+Fishing mortality at age is decomposed into retained and dead discard
+components, summed across all fleets:
+
+\deqn{
+F_{p,r,s,a} = \sum_{f=1}^{n_f} F^{init}_{r,s,f} \left[
+sel_{p,r,s,a,f} \cdot ret_{p,r,s,a,f} +
+sel_{p,r,s,a,f} \cdot (1 - ret_{p,r,s,a,f}) \cdot dmr_{r,s,f}
+\right]
+}
+
+where \eqn{sel} is total fishery selectivity, \eqn{ret} is retention
+selectivity, and \eqn{dmr} is the discard mortality rate.
+
+### Scalar geometric-series solution
+
+When movement is absent, equilibrium abundance follows
+
+\deqn{
+N_a =
+N_1 \exp\left(-\sum_{i=1}^{a-1} Z_i \right)
+}
+
+The plus group has a closed-form solution
+
+\deqn{
+N_{A^+} =
+\frac{N_{A-1} e^{-Z_{A-1}}}
+{1 - e^{-Z_{A^+}}}
+}
+
+### Matrix geometric-series solution
+
+When movement occurs, survival and movement are combined into
+seasonal transition matrices:
+
+\deqn{
+\mathbf{T}_a =
+\prod_{s=1}^{n_{seas}}
+\mathbf{M}_{a,s}\mathbf{S}_{a,s}
+}
+
+where
+
+\itemize{
+\item \eqn{\mathbf{M}} is the movement transition matrix
+\item \eqn{\mathbf{S}} is a diagonal matrix of survival probabilities
+}
+
+The plus group equilibrium satisfies
+
+\deqn{
+\mathbf{N}_{A^+} =
+(\mathbf{I} - \mathbf{T}_{A^+})^{-1}
+\mathbf{T}_{A-1}
+\mathbf{N}_{A-1}
+}
+
+The iterative method (\code{init_age_strc = 0}) numerically applies
+the full seasonal population dynamics repeatedly until the population
+converges to equilibrium.
+
+After equilibrium is derived, log-scale initial age deviations
+(\code{ln_InitDevs}) are applied multiplicatively to ages
+\eqn{2,\dots,A}.
+}
+\keyword{(NAA)}
+\keyword{(\eqn{R_0}),}
+\keyword{Computes}
+\keyword{Initialize}
+\keyword{Model}
+\keyword{Numbers-at-Age}
+\keyword{Population}
+\keyword{Several}
+\keyword{The}
+\keyword{a}
+\keyword{across}
+\keyword{age}
+\keyword{ages.}
+\keyword{an}
+\keyword{analytical}
+\keyword{and}
+\keyword{are}
+\keyword{constant}
+\keyword{equilibrium}
+\keyword{fishing}
+\keyword{for}
+\keyword{from}
+\keyword{geometric-series}
+\keyword{incorporate}
+\keyword{initial}
+\keyword{initialization}
 \keyword{internal}
+\keyword{iteration}
+\keyword{methods}
+\keyword{model}
+\keyword{mortality,}
+\keyword{movement.}
+\keyword{numbers-at-age}
+\keyword{numerical}
+\keyword{optionally}
+\keyword{population}
+\keyword{populations,}
+\keyword{ranging}
+\keyword{recruitment}
+\keyword{regions,}
+\keyword{represents}
+\keyword{resulting}
+\keyword{seasonal}
+\keyword{sexes,}
+\keyword{solutions}
+\keyword{structure}
+\keyword{structured}
+\keyword{supported,}
+\keyword{that}
+\keyword{to}
+\keyword{under}

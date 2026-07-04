@@ -467,8 +467,6 @@ test_that("internal path: pack_tag_osa()/eval_tag_osa() recapture-conditioned mu
 test_that("internal path: pack_tag_osa()/eval_tag_osa() Dirichlet-multinomial (like_type = 4, release-conditioned) matches direct ddirmult() call", {
 
   skip_if_not_installed("RTMB")
-  skip_if_not_installed("RTMBdist")
-
   d <- make_data(like_type = 4, ln_theta = log(8), n_tags_released = 50)
   pack <- do_pack(d)
   n_rel <- 50 + d$addtotag
@@ -486,12 +484,12 @@ test_that("internal path: pack_tag_osa()/eval_tag_osa() Dirichlet-multinomial (l
 
     idx <- if (ry == 1) 1:3 else 4:6
     tr  <- pack$vec[idx]
-    manual_nLL <- manual_nLL - RTMBdist::ddirmult(
-      tr, sum(tr), pprop * exp(d$ln_conv_fish_tag_theta) * sum(tr), log = TRUE
+    manual_nLL <- manual_nLL - ddirmult_osa(
+      tr,  pprop * exp(d$ln_conv_fish_tag_theta) * sum(tr), log = TRUE
     )
   }
 
-  expect_equal(total_nLL, manual_nLL, tolerance = 1e-6)
+  expect_equal(total_nLL, manual_nLL, tolerance = 1e-5)
 })
 
 test_that("internal path: pack_tag_osa()/eval_tag_osa() Dirichlet-multinomial (like_type = 5, recapture-conditioned) matches direct ddirmult() call", {

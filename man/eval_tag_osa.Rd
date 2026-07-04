@@ -10,6 +10,7 @@ eval_tag_osa(
   family,
   like_type,
   pred_recap,
+  obs_recap,
   tagged_fish,
   conv_tag_release_indicator,
   conv_tag_max_liberty,
@@ -38,9 +39,12 @@ eval_tag_osa(
 
 \item{family}{Character, either \code{"count"} or \code{"comp"}.}
 
-\item{like_type}{Integer likelihood type code (0–5).}
+\item{like_type}{Integer likelihood type code (0-5).}
 
 \item{pred_recap}{Predicted recapture array.}
+
+\item{obs_recap}{Observed recapture array. Used to derive the recapture total
+\eqn{N} for recapture-conditioned Dirichlet-multinomial (\code{like_type} 5).}
 
 \item{tagged_fish}{Array of numbers of tagged fish released.}
 
@@ -76,7 +80,8 @@ eval_tag_osa(
 
 \item{addtotag}{Small constant added to avoid zeros.}
 
-\item{ln_theta}{Log overdispersion parameter for NB/Dirichlet-multinomial (composition family).}
+\item{ln_theta}{Log overdispersion parameter for the Dirichlet-multinomial
+composition family.}
 
 \item{zero_init}{Logical; if \code{TRUE}, zero \code{nLL_arr} on entry.}
 }
@@ -88,5 +93,13 @@ Updated \code{nLL_arr} array with OSA negative log-likelihood
 Evaluates the one-step-ahead (OSA) negative log-likelihood for a single
 conventional-tag likelihood family from a flat tracked observation vector.
 Fills \code{nLL_arr} in the same grid order used by \code{pack_tag_osa()}.
+}
+\details{
+The Dirichlet-multinomial concentration matches the fitting likelihood: the
+total \eqn{N} is the number of tags released for release-conditioned
+families (\code{like_type} 2, 4) and the total recaptures for
+recapture-conditioned families (\code{like_type} 3, 5). Both totals are taken
+from raw data (\code{tagged_fish}, \code{obs_recap}) rather than from the
+tracked observation, since summing an OSA-tagged S4 object is not permitted.
 }
 \keyword{internal}

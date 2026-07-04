@@ -14,7 +14,7 @@ Sys.unsetenv("GITHUB_PAT") # unset before building vignettes
 # covr::package_coverage(quiet = FALSE, type = 'all')
 
 # Documentation -----------------------------------------------------------
-desc::desc_set_version("1.2.0")
+desc::desc_set_version("1.2.0.9000")
 
 # Build Package -----------------------------------------------------------
 document() # document functions

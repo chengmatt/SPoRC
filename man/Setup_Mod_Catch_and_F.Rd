@@ -17,6 +17,8 @@ Setup_Mod_Catch_and_F(
   sigmaC_spec = "fix",
   sigmaC_pop_spec = "fix",
   sigmaF_spec = "fix",
+  Fdev_model = "iid",
+  Fdev_rho_spec = "fix",
   ObsDiscard = NULL,
   UseDiscard = array(0, dim = c(input_list$data$n_regions, length(input_list$data$years),
     input_list$data$n_seas, input_list$data$n_fish_fleets)),
@@ -40,14 +42,23 @@ and \code{$verbose} sublists, as returned by upstream setup functions.}
 
 \item{ObsCatch}{Observed aggregated catch array
 \code{[n_regions x n_years x n_seas x n_fish_fleets]}.
-Values should be in the units specified by \code{catch_units}.}
+Values should be in the units specified by \code{catch_units}. For a
+cell with \code{UseCatch == 0} (and no population-specific catch
+used), an \code{NA} entry here is treated as a genuinely missing
+observation -- fishing is assumed to have continued and \code{Fmort}/
+\code{ln_F_devs} are estimated normally for that year -- whereas a
+true recorded value (typically \code{0}) is treated as a real
+closure: \code{Fmort} is forced to zero and no deviation is estimated.
+See \code{\link{Get_Fdev_PE_loglik}}.}
 
 \item{UseCatch}{Binary indicator array
 \code{[n_regions x n_years x n_seas x n_fish_fleets]} controlling which
 aggregated catch observations enter the likelihood and whether
 \code{ln_F_devs} are estimated for each cell. \code{1} = use;
-\code{0} = exclude (corresponding \code{ln_F_devs} will be mapped to
-\code{NA}).}
+\code{0} = exclude, unless \code{ObsCatch} is \code{NA} at that cell
+(see \code{ObsCatch} above), in which case \code{ln_F_devs} is still
+estimated as an ordinary active year despite not being fit against an
+observation.}
 
 \item{catch_units}{Character array \code{[n_fish_fleets]} specifying catch
 units per fleet. \code{"biom"} = biomass (default); \code{"abd"} =
@@ -95,6 +106,31 @@ without providing a starting value in \code{...}.}
 i.e., \eqn{\sigma_F = 1}, unless overridden via \code{...}). A warning is
 issued if \code{"fix"} is selected without providing a starting value
 in \code{...}.}
+
+\item{Fdev_model}{Character string specifying the process error structure
+for \code{ln_F_devs}. One of \code{"iid"} (default; independent
+deviations), \code{"rw"} (random walk; the first catch-active year per
+region/season/fleet is initialized with a diffuse \eqn{N(0,5)} prior),
+or \code{"ar1"} (first-order autoregressive; the first catch-active year
+is drawn from its stationary marginal distribution, and \code{Fdev_rho_spec}
+controls the AR1 correlation parameter). Catch-active years do not need
+to be contiguous for \code{"rw"} or \code{"ar1"}: the transition between
+two active years spanning a gap of \eqn{d} closed years is taken over
+the elapsed gap directly (the same marginal transition as estimating
+deviations for the closed years and integrating them out, without
+actually estimating them) -- see \code{\link{Get_Fdev_PE_loglik}}.
+A warning is issued if \code{"rw"} or \code{"ar1"} is selected but
+\code{Use_F_pen = 0} (the penalty is never evaluated, so the process
+structure has no effect), \code{sigmaF_spec = "fix"} (the process error
+SD is not estimated), or (for \code{"ar1"}) \code{Fdev_rho_spec =
+"fix"} (the correlation is not estimated) -- any of these may be
+intentional, but are common oversights when switching away from
+\code{"iid"}.}
+
+\item{Fdev_rho_spec}{Character string specifying the sharing structure for
+the AR1 correlation parameter \code{Fdev_rho}, following the same
+convention as \code{sigmaF_spec}. Only used when \code{Fdev_model =
+"ar1"}; ignored (and mapped entirely to \code{NA}) otherwise.}
 
 \item{ObsDiscard}{Observed aggregated discard array
 \code{[n_regions x n_years x n_seas x n_fish_fleets]}.
@@ -174,15 +210,18 @@ The input \code{input_list} with \code{$data}, \code{$par}, and
     \item{\code{$data}}{
       \code{ObsCatch}, \code{ObsCatch_pop}, \code{UseCatch},
       \code{UseCatch_pop}, \code{Use_F_pen}, \code{catch_units},
+      \code{Fdev_model},
       \code{ObsDiscard}, \code{ObsDiscard_pop}, \code{UseDiscard},
       \code{UseDiscard_pop}, \code{Use_dmr_pen}, \code{discard_units}.}
     \item{\code{$par}}{
       \code{ln_sigmaC}, \code{ln_sigmaC_pop}, \code{ln_sigmaF},
+      \code{Fdev_rho},
       \code{ln_F_mean}, \code{ln_F_devs},
       \code{ln_sigmaD}, \code{ln_sigmaD_pop}, \code{ln_sigma_dmr},
       \code{logit_dmr_mean}, \code{logit_dmr_devs}.}
     \item{\code{$map}}{
       \code{ln_sigmaC}, \code{ln_sigmaC_pop}, \code{ln_sigmaF},
+      \code{Fdev_rho},
       \code{ln_F_devs},
       \code{ln_sigmaD}, \code{ln_sigmaD_pop}, \code{ln_sigma_dmr},
       \code{logit_dmr_mean}, \code{logit_dmr_devs}.}

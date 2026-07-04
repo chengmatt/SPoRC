@@ -401,7 +401,6 @@ Get_Comp_Likelihoods = function(Exp,
 #' @param LN_corr_pars LN correlation parameters [n_regions × n_sexes × 3].
 #' @param LN_corr_pars_agg LN aggregated correlation scalar(s).
 #' @inheritParams Get_Comp_Likelihoods
-#' @importFrom RTMBdist ddirmult
 #' @keywords internal
 Get_Comp_Likelihoods_OSA = function(Exp,
                                     Obs,
@@ -455,10 +454,10 @@ Get_Comp_Likelihoods_OSA = function(Exp,
     tmp_Exp = tmp_Exp / sum(tmp_Exp)
 
     if(Likelihood_Type == 0) { # Multinomial
-      comp_nLL[1,1] = -RTMB::dmultinom(Obs, prob = tmp_Exp, log = TRUE)
+      comp_nLL[1,1] = -dmultinom_osa(Obs, tmp_Exp, log = TRUE)
     }
     if(Likelihood_Type == 1) { # Dirichlet-multinomial
-      comp_nLL[1,1] = -RTMBdist::ddirmult(Obs, sum(Obs), tmp_Exp * exp(ln_theta_agg) * sum(Obs), log = TRUE)
+      comp_nLL[1,1] = -ddirmult_osa(Obs, tmp_Exp * exp(ln_theta_agg) * ISS[1,1], log = TRUE)
     }
     if(Likelihood_Type %in% c(2,3)) { # Logistic-normal (Obs already ALR)
       if(Likelihood_Type == 2) {
@@ -495,10 +494,10 @@ Get_Comp_Likelihoods_OSA = function(Exp,
           idx = seq(from = r + (s - 1) * n_ru * (n_obs_bins - 1), by = n_ru, length.out = n_obs_bins - 1)
         }
         if(Likelihood_Type == 0) { # Multinomial
-          comp_nLL[r,s] = -RTMB::dmultinom(Obs[idx], prob = tmp_Exp, log = TRUE)
+          comp_nLL[r,s] = -dmultinom_osa(Obs[idx], tmp_Exp, log = TRUE)
         }
         if(Likelihood_Type == 1) { # Dirichlet-multinomial
-          comp_nLL[r,s] = -RTMBdist::ddirmult(Obs[idx], sum(Obs[idx]), tmp_Exp * exp(ln_theta[r,s]) * sum(Obs[idx]), log = TRUE)
+          comp_nLL[r,s] = -ddirmult_osa(Obs[idx], tmp_Exp * exp(ln_theta[r,s]) * ISS[r,s], log = TRUE)
         }
         if(Likelihood_Type %in% c(2,3)) { # Logistic-normal (Obs already ALR)
           if(Likelihood_Type == 2) {
@@ -557,10 +556,10 @@ Get_Comp_Likelihoods_OSA = function(Exp,
       }
 
       if(Likelihood_Type == 0) { # Multinomial
-        comp_nLL[r,1] = -RTMB::dmultinom(Obs[idx], prob = tmp_Exp, log = TRUE)
+        comp_nLL[r,1] = -dmultinom_osa(Obs[idx], tmp_Exp, log = TRUE)
       }
       if(Likelihood_Type == 1) { # Dirichlet-multinomial
-        comp_nLL[r,1] = -RTMBdist::ddirmult(Obs[idx], sum(Obs[idx]), tmp_Exp * exp(ln_theta[r,1]) * sum(Obs[idx]), log = TRUE)
+        comp_nLL[r,1] = -ddirmult_osa(Obs[idx], tmp_Exp * exp(ln_theta[r,1]) * ISS[r,1], log = TRUE)
       }
       if(Likelihood_Type %in% c(2,3,4)) { # Logistic-normal (Obs already ALR)
         comp_nLL[r,1] = -RTMB::dmvnorm(x = Obs[idx], mu = mu, Sigma = Sigma, log = TRUE)

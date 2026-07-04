@@ -2095,6 +2095,7 @@ SPoRC_rtmb = function(pars, data) {
           like_type                  = conv_fish_tag_like,
           pred_recap                 = pred_conv_tag_fish_recap,
           tagged_fish                = conv_tagged_fish,
+          obs_recap                  = obs_conv_tag_fish_recap,
           conv_tag_release_indicator = conv_tag_release_indicator,
           conv_tag_max_liberty       = conv_tag_max_liberty,
           n_conv_tag_cohorts         = n_conv_tag_cohorts,

@@ -417,11 +417,20 @@ pack_tag_osa = function(family, like_type,
 #' conventional-tag likelihood family from a flat tracked observation vector.
 #' Fills \code{nLL_arr} in the same grid order used by \code{pack_tag_osa()}.
 #'
+#' The Dirichlet-multinomial concentration matches the fitting likelihood: the
+#' total \eqn{N} is the number of tags released for release-conditioned
+#' families (\code{like_type} 2, 4) and the total recaptures for
+#' recapture-conditioned families (\code{like_type} 3, 5). Both totals are taken
+#' from raw data (\code{tagged_fish}, \code{obs_recap}) rather than from the
+#' tracked observation, since summing an OSA-tagged S4 object is not permitted.
+#'
 #' @param nLL_arr Array of negative log-likelihood values to update.
 #' @param tracked Flat tracked observation vector produced by \code{pack_tag_osa()}.
 #' @param family Character, either \code{"count"} or \code{"comp"}.
-#' @param like_type Integer likelihood type code (0–5).
+#' @param like_type Integer likelihood type code (0-5).
 #' @param pred_recap Predicted recapture array.
+#' @param obs_recap Observed recapture array. Used to derive the recapture total
+#'   \eqn{N} for recapture-conditioned Dirichlet-multinomial (\code{like_type} 5).
 #' @param tagged_fish Array of numbers of tagged fish released.
 #' @param conv_tag_release_indicator Matrix giving release region, year, season for each cohort.
 #' @param conv_tag_max_liberty Maximum years at liberty to evaluate.
@@ -439,15 +448,15 @@ pack_tag_osa = function(family, like_type,
 #' @param use_fish_tagging Vector indicating which fleets use conventional tagging.
 #' @param conv_tag_mixing_period Minimum seasons at liberty before tags are modeled.
 #' @param addtotag Small constant added to avoid zeros.
-#' @param ln_theta Log overdispersion parameter for NB/Dirichlet-multinomial (composition family).
+#' @param ln_theta Log overdispersion parameter for the Dirichlet-multinomial
+#'   composition family.
 #' @param zero_init Logical; if \code{TRUE}, zero \code{nLL_arr} on entry.
 #'
 #' @return Updated \code{nLL_arr} array with OSA negative log-likelihood
 #'   contributions filled in loop/grid order.
-#' @importFrom RTMBdist ddirmult
 #' @keywords internal
 eval_tag_osa = function(nLL_arr, tracked, family, like_type,
-                        pred_recap, tagged_fish,
+                        pred_recap, obs_recap, tagged_fish,
                         conv_tag_release_indicator, conv_tag_max_liberty,
                         n_conv_tag_cohorts, n_yrs, n_seas, n_regions, n_fish_fleets,
                         n_pop_pool, n_age_pool, n_sex_pool,
@@ -489,7 +498,8 @@ eval_tag_osa = function(nLL_arr, tracked, family, like_type,
       }
 
     } else {
-      # composition: rebuild predicted proportions in the same order, then dmultinom / ddirmult.
+      # composition: rebuild predicted proportions in the same order, then
+      # dmultinom_osa / ddirmult_osa.
       # Preallocate an AD vector (don't grow from empty c() -- the ADoverloaded c()
       # cannot advector() a NULL seed).
       n_active_f = sum(use_fish_tagging[1:n_fish_fleets] == 1)
@@ -506,22 +516,25 @@ eval_tag_osa = function(nLL_arr, tracked, family, like_type,
         }
       }
 
+      # DM total N matches fitting: released (2,4) vs total recaptures (3,5).
+      # Both taken from RAW data -- never sum(tracked[idx]) (S4 not summable).
       if(like_type %in% c(2,4)) {
-        n_rel = sum(tagged_fish[tc,,,] + addtotag)
-        pprop = pred_cells / n_rel
-        pprop = c(pprop, 1 - sum(pprop))            # non-recap tail
+        Ntot_dm = sum(tagged_fish[tc, , , ] + addtotag)          # tags released
+        pprop   = pred_cells / Ntot_dm
+        pprop   = c(pprop, 1 - sum(pprop))                        # non-recap tail (determined)
       } else {
-        pprop = pred_cells / sum(pred_cells)
+        Ntot_dm = sum(obs_recap[ry, rseas, tc, , , , , ] + addtotag)  # total recaptures
+        pprop   = pred_cells / sum(pred_cells)
       }
-      pprop = pprop / sum(pprop)                    # ensure sums to 1
+      pprop = pprop / sum(pprop)                                  # ensure sums to 1
 
-      L = length(pprop)
+      L   = length(pprop)
       idx = k:(k + L - 1)
 
       if(like_type %in% c(2,3)) {                   # Multinomial (discrete)
-        nLL_arr[ry,rseas,tc,1,1] = -RTMB::dmultinom(tracked[idx], prob = pprop, log = TRUE)
-      } else {                                      # DM (4,5): fit works, OSA gated externally
-        nLL_arr[ry,rseas,tc,1,1] = -RTMBdist::ddirmult(tracked[idx], sum(tracked[idx]), pprop * exp(ln_theta) * sum(tracked[idx]), log = TRUE)
+        nLL_arr[ry,rseas,tc,1,1] = -dmultinom_osa(tracked[idx], pprop, log = TRUE)
+      } else {                                      # Dirichlet-multinomial (4,5)
+        nLL_arr[ry,rseas,tc,1,1] = -ddirmult_osa(tracked[idx], pprop * exp(ln_theta) * Ntot_dm, log = TRUE)
       }
       k = k + L
     }

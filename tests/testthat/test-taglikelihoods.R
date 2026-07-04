@@ -44,6 +44,7 @@ make_data <- function(like_type, ln_theta = log(5), n_tags_released = 50) {
     conv_tag_pop_pool = conv_tag_pop_pool, conv_tag_age_pool = conv_tag_age_pool,
     conv_tag_sex_pool = conv_tag_sex_pool, conv_fish_tag_like = like_type,
     conv_fish_tag_nLL = conv_fish_tag_nLL,
+    obs_recap = obs,
     obs_conv_tag_fish_recap = obs, pred_conv_tag_fish_recap = pred,
     addtotag = addtotag, ln_conv_fish_tag_theta = ln_theta,
     conv_tagged_fish = conv_tagged_fish
@@ -312,6 +313,7 @@ run_internal <- function(d) {
       conv_tag_max_liberty       = d$conv_tag_max_liberty,
       n_conv_tag_cohorts         = d$n_conv_tag_cohorts,
       n_yrs                      = d$n_yrs,
+      obs_recap                   = d$obs_recap,
       n_seas                     = d$n_seas,
       n_regions                  = d$n_regions,
       n_fish_fleets                = d$n_fish_fleets,
@@ -495,8 +497,6 @@ test_that("internal path: pack_tag_osa()/eval_tag_osa() Dirichlet-multinomial (l
 test_that("internal path: pack_tag_osa()/eval_tag_osa() Dirichlet-multinomial (like_type = 5, recapture-conditioned) matches direct ddirmult() call", {
 
   skip_if_not_installed("RTMB")
-  skip_if_not_installed("RTMBdist")
-
   d <- make_data(like_type = 5, ln_theta = log(8))
   pack <- do_pack(d)
 
@@ -511,8 +511,12 @@ test_that("internal path: pack_tag_osa()/eval_tag_osa() Dirichlet-multinomial (l
 
     idx <- if (ry == 1) 1:2 else 3:4
     tr  <- pack$vec[idx]
-    manual_nLL <- manual_nLL - RTMBdist::ddirmult(
-      tr, sum(tr), pprop * exp(d$ln_conv_fish_tag_theta) * sum(tr), log = TRUE
+
+    # N matches fitting/eval_tag_osa: raw recapture total (not sum(tr) of rounded counts)
+    n_recap <- sum(d$obs_conv_tag_fish_recap[ry, 1, 1, 1, , 1, 1, 1] + d$addtotag)
+
+    manual_nLL <- manual_nLL - ddirmult_osa(
+      tr, pprop * exp(d$ln_conv_fish_tag_theta) * n_recap, log = TRUE
     )
   }
 

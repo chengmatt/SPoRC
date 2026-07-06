@@ -695,10 +695,8 @@ SPoRC_rtmb = function(pars, data) {
 
       for(p in 1:n_pop) {
         for(r in 1:n_regions) {
-          sigma_idx = ifelse(n_pop == 1 && rec_dd == 0, r, natal_region[p])
           for(s in 1:n_sexes) {
-            if(y < sigmaR_switch) tmp_total_rec = tmp_Det_Rec[p,r] * exp(ln_RecDevs[p,r,y] - (sigmaR2_early[p,sigma_idx]/2 * bias_ramp[y]))
-            if(y >= sigmaR_switch && y <= n_est_rec_devs) tmp_total_rec = tmp_Det_Rec[p,r] * exp(ln_RecDevs[p,r,y] - (sigmaR2_late[p,sigma_idx]/2 * bias_ramp[y]))
+            if(y <= n_est_rec_devs) tmp_total_rec = tmp_Det_Rec[p,r] * exp(ln_RecDevs[p,r,y])
             if(y > n_est_rec_devs) tmp_total_rec = tmp_Det_Rec[p,r]
             # season 1 fraction
             NAA[p,r,y,1,1,s] = tmp_total_rec * rec_seas_prop[p,1] * sexratio[p,r,y,s]
@@ -799,10 +797,8 @@ SPoRC_rtmb = function(pars, data) {
 
         for(p in 1:n_pop) {
           for(r in 1:n_regions) {
-            sigma_idx = ifelse(n_pop == 1 && rec_dd == 0, r, natal_region[p])
             for(s in 1:n_sexes) {
-              if(y < sigmaR_switch) tmp_total_rec = tmp_Det_Rec[p,r] * exp(ln_RecDevs[p,r,y] - (sigmaR2_early[p,sigma_idx]/2 * bias_ramp[y]))
-              if(y >= sigmaR_switch && y <= n_est_rec_devs) tmp_total_rec = tmp_Det_Rec[p,r] * exp(ln_RecDevs[p,r,y] - (sigmaR2_late[p,sigma_idx]/2 * bias_ramp[y]))
+              if(y <= n_est_rec_devs) tmp_total_rec = tmp_Det_Rec[p,r] * exp(ln_RecDevs[p,r,y])
               if(y > n_est_rec_devs) tmp_total_rec = tmp_Det_Rec[p,r]
               NAA[p,r,y,spawn_seas,1,s]  = tmp_total_rec * rec_seas_prop[p,spawn_seas] * sexratio[p,r,y,s]
               NAA0[p,r,y,spawn_seas,1,s] = tmp_total_rec * rec_seas_prop[p,spawn_seas] * sexratio[p,r,y,s]
@@ -2409,12 +2405,12 @@ SPoRC_rtmb = function(pars, data) {
 
       # Early recruitment deviations
       if(sigmaR_switch > 1) {
-        Rec_nLL[p,r,1:(sigmaR_switch-1)] = -RTMB::dnorm(ln_RecDevs[p,r,1:(sigmaR_switch-1)], 0, exp(ln_sigmaR[1,p,sigma_idx]), TRUE)
+        Rec_nLL[p,r,1:(sigmaR_switch-1)] = -RTMB::dnorm(ln_RecDevs[p,r,1:(sigmaR_switch-1)], -sigmaR2_early[p,sigma_idx]/2 * bias_ramp[1:(sigmaR_switch-1)], exp(ln_sigmaR[1,p,sigma_idx]), TRUE)
         if(do_rec_bias_ramp == 1 && any(bias_ramp != 0)) Rec_nLL[p,r,1:(sigmaR_switch-1)] = Rec_nLL[p,r,1:(sigmaR_switch-1)] - (1 - 0.5 * bias_ramp[1:(sigmaR_switch-1)]) * ln_sigmaR[1,p,sigma_idx] # adjust w/ bias correction
       }
 
       # Late recruitment deviations
-      Rec_nLL[p,r,sigmaR_switch:n_est_rec_devs] = -RTMB::dnorm(ln_RecDevs[p,r,sigmaR_switch:n_est_rec_devs], 0, exp(ln_sigmaR[2,p,sigma_idx]), TRUE)
+      Rec_nLL[p,r,sigmaR_switch:n_est_rec_devs] = -RTMB::dnorm(ln_RecDevs[p,r,sigmaR_switch:n_est_rec_devs], -sigmaR2_late[p,sigma_idx]/2 * bias_ramp[sigmaR_switch:n_est_rec_devs], exp(ln_sigmaR[2,p,sigma_idx]), TRUE)
       if(do_rec_bias_ramp == 1 && any(bias_ramp != 0)) Rec_nLL[p,r,sigmaR_switch:n_est_rec_devs] = Rec_nLL[p,r,sigmaR_switch:n_est_rec_devs] - (1 - 0.5 * bias_ramp[sigmaR_switch:n_est_rec_devs]) * ln_sigmaR[2,p,sigma_idx] # adjust w/ bias correction
 
     } # end r loop

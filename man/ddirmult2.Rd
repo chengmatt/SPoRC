@@ -2,30 +2,19 @@
 % Please edit documentation in R/Distributions.R
 \name{ddirmult2}
 \alias{ddirmult2}
-\title{Two-category Dirichlet-multinomial log-density}
+\title{Two-category Dirichlet-multinomial (beta-binomial) log-density}
 \usage{
 ddirmult2(obs2, alpha2)
 }
 \arguments{
-\item{obs2}{Numeric/AD vector of length 2 with observed counts
-\code{c(count_a, count_remaining)}.}
+\item{obs2}{Length-2 count vector \code{c(count_a, count_remaining)}.}
 
-\item{alpha2}{Numeric/AD vector of length 2 with Dirichlet concentration
-parameters \code{c(alpha_a, alpha_remaining)}.}
+\item{alpha2}{Length-2 concentration \code{c(alpha_a, alpha_remaining)}.}
 }
 \value{
-Scalar log-likelihood contribution.
+Scalar log-density.
 }
 \description{
-Computes the log-probability mass function of a two-category
-Dirichlet-multinomial (beta-binomial) distribution. AD-safe and intended for
-use as the conditional building block of \code{\link{ddirmult_osa}}.
-}
-\details{
-The closed-form log-pmf is
-\deqn{\log\Gamma(N + 1) - \sum_i \log\Gamma(x_i + 1)
-      + \log\Gamma(A_0) - \log\Gamma(N + A_0)
-      + \sum_i \left[ \log\Gamma(x_i + \alpha_i) - \log\Gamma(\alpha_i) \right],}
-with \eqn{N = \sum_i x_i} and \eqn{A_0 = \sum_i \alpha_i}.
+Two-category Dirichlet-multinomial (beta-binomial) log-density
 }
 \keyword{internal}

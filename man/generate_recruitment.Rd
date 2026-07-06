@@ -4,7 +4,7 @@
 \alias{generate_recruitment}
 \title{Generate recruitment for a simulation year}
 \usage{
-generate_recruitment(y, sim, sim_env)
+generate_recruitment(y, sim, sim_env, seas = 1)
 }
 \arguments{
 \item{y}{Integer. Year index for which recruitment is generated.}
@@ -14,8 +14,16 @@ generate_recruitment(y, sim, sim_env)
 \item{sim_env}{Simulation environment created by
 \code{\link{Setup_sim_env}}. Modified in place:
 \code{$ln_RecDevs[p, r, y, sim]}, \code{$Rec[p, r, y, sim]},
-\code{$NAA[p, r, y, 1, 1, s, sim]}, and
-\code{$NAA0[p, r, y, 1, 1, s, sim]} are updated.}
+\code{$NAA[p, r, y, seas, 1, s, sim]}, and
+\code{$NAA0[p, r, y, seas, 1, s, sim]} are updated.}
+
+\item{seas}{Integer. Season this recruitment first enters the population
+in, using \code{rec_seas_prop[p, seas, sim]}. Default \code{1}, matching
+the classic \code{rec_lag >= 1} case where recruitment for the whole year
+is already known before season 1 starts. \code{rec_lag = 0} (age-0
+recruitment) instead calls this with \code{seas = spawn_seas}, since that
+is the earliest season this year's own SSB (and hence recruitment) is
+knowable -- see \code{\link{apply_pop_dy}}.}
 }
 \value{
 \code{invisible(NULL)}. All modifications are made by reference

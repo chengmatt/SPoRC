@@ -2,40 +2,33 @@
 % Please edit documentation in R/Distributions.R
 \name{dmultinom_osa}
 \alias{dmultinom_osa}
-\title{Keep-aware multinomial log-density for OSA residuals}
+\title{Keep-aware multinomial log-density for OSA residuals (cdf-capable)}
 \usage{
 dmultinom_osa(xobs, p, log = TRUE)
 }
 \arguments{
-\item{xobs}{Either an object of class \code{"osa"} supplied by
-\code{oneStepPredict}, or a plain numeric vector of observed counts
-(length \eqn{A}) during ordinary fitting.}
+\item{xobs}{An \code{"osa"} object from \code{oneStepPredict}, or a plain
+numeric count vector (length \eqn{A}) during fitting.}
 
 \item{p}{Predicted proportions (length \eqn{A}); normalized internally.}
 
-\item{log}{Boolean on whether to return nLL}
+\item{log}{Logical; return the log-density (default) or the density.}
 }
 \value{
-Scalar log-density contribution for the composition.
+Scalar (log-)density contribution.
 }
 \description{
-Computes the multinomial log-density of a single composition using the
-conditional decomposition required by \code{\link[RTMB]{oneStepPredict}}.
-Following Trijoulet et al. (2023) and WHAM (\code{src/age_comp_osa.hpp}), an
-\eqn{A}-bin multinomial is written as \eqn{A - 1} conditional two-category
-multinomials, each gated by its \code{keep} element. The final bin is fixed
-by the sum-to-\eqn{N} constraint and contributes nothing (its residual is
-undefined and reported as \code{NA}).
+Conditional-binomial decomposition of an \eqn{A}-bin multinomial for
+\code{\link[RTMB]{oneStepPredict}}, following Trijoulet et al. (2023). Each
+of the first \eqn{A-1} bins is a binomial conditional on the running
+remainder, gated by its \code{keep} element; the final bin is fixed by the
+sum-to-\eqn{N} constraint. In addition to the density term, the analytic
+conditional binomial CDF is accumulated through the \code{cdf_lower} /
+\code{cdf_upper} indicators, so this density supports \strong{both}
+\code{method = "cdf"} and \code{method = "oneStepGeneric"}.
 }
 \details{
-With all \code{keep} equal to one, the sum of the conditional log-densities
-equals the joint multinomial log-density; enabling OSA therefore changes how
-the likelihood is decomposed, not its value. The running remainder is frozen
-to the observed total (see \code{\link{osa_extract_values}}) so that peeling
-a late bin cannot drive the remaining count negative.
-
-Intended for use with \code{method = "oneStepGeneric"}; the two-category
-conditionals carry no analytic CDF hooks, so the \code{"cdf"} method is not
-supported (consistent with WHAM, which omits it for compositions).
+The running remainder is frozen to the observed total so peeling a late bin
+cannot drive the remaining count negative.
 }
 \keyword{internal}

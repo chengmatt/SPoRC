@@ -53,7 +53,15 @@ only valid when \code{n_pop = 1})
 
 \item{y}{Current model year index.}
 
-\item{rec_lag}{Recruitment lag in years between spawning and recruitment.}
+\item{rec_lag}{Recruitment lag (in seasons) between spawning and
+recruitment. \code{1} is the classic lagged case: recruitment uses
+\code{SSB_vals} from \code{rec_lag} seasons prior. \code{0} is age-0
+recruitment: recruitment uses the SAME year's SSB
+(\code{SSB_vals[,,y]}). The caller is responsible for supplying that
+value already computed from survivors only (i.e. before this year's
+recruits exist) when \code{rec_lag = 0} -- see \code{SPoRC_rtmb.R},
+\code{Simulate_Population.R}, and \code{Do_Population_Projection.R} for
+how each population-dynamics loop does this.}
 
 \item{R0}{Numeric vector (\code{n_pop}) of unfished recruitment by population.}
 
@@ -61,7 +69,10 @@ only valid when \code{n_pop = 1})
 of recruitment allocated to each region.}
 
 \item{rec_seas_prop}{Matrix (\code{n_pop × n_seas}) giving seasonal recruitment
-proportions.}
+proportions. When \code{rec_lag = 0}, must be zero for every season
+before \code{spawn_seas} (age-0 recruits can't predate the spawning
+event that produced them) -- validated at setup by
+\code{Setup_Mod_Rec}/\code{Setup_Sim_Rec}.}
 
 \item{h}{Matrix (\code{n_pop × n_regions}) of Beverton–Holt steepness values.}
 
@@ -151,10 +162,20 @@ R = \frac{4hR_0SSB}{(1-h)S_0 + (5h-1)SSB}
 
 where:
 \itemize{
-\item \eqn{SSB} is spawning biomass lagged by \code{rec_lag}
+\item \eqn{SSB} is spawning biomass lagged by \code{rec_lag} seasons
+  (or, when \code{rec_lag = 0}, the current year's own spawning biomass --
+  see the \code{rec_lag} parameter above)
 \item \eqn{S_0} is unfished spawning biomass per recruit
 \item \eqn{h} is steepness
 }
+
+\eqn{S_0} (and the age-composition of spawning biomass per recruit more
+generally) does not depend on \code{rec_lag} -- it is a pure per-recruit,
+equilibrium quantity. The recruit age class (the first age) is always
+included in the sum; when \code{rec_lag = 0}, maturity at that age is
+required to be exactly zero (validated at setup by
+\code{Setup_Mod_Biologicals}/\code{Setup_Sim_Biologicals}), so it
+contributes nothing regardless.
 
 Spawning biomass per recruit (\eqn{S_0}) is computed internally by
 projecting a single recruit through all ages and seasons under both

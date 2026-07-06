@@ -2,39 +2,30 @@
 % Please edit documentation in R/Distributions.R
 \name{ddirmult_osa}
 \alias{ddirmult_osa}
-\title{Keep-aware Dirichlet-multinomial log-density for OSA residuals}
+\title{Keep-aware Dirichlet-multinomial log-density for OSA residuals (cdf-capable)}
 \usage{
 ddirmult_osa(xobs, alpha, log = TRUE)
 }
 \arguments{
-\item{xobs}{Either an object of class \code{"osa"} supplied by
-\code{oneStepPredict}, or a plain numeric vector of observed counts
-(length \eqn{A}) during ordinary fitting.}
+\item{xobs}{An \code{"osa"} object from \code{oneStepPredict}, or a plain
+numeric count vector (length \eqn{A}) during fitting.}
 
-\item{alpha}{Dirichlet concentration parameters (length \eqn{A}). Typically
-\eqn{\alpha = \hat{p} \times \exp(\ln\theta) \times N_{total}}; this must
-match the parameterization used by the fitting likelihood.}
+\item{alpha}{Concentration parameters (length \eqn{A}). Typically
+\eqn{\alpha = \hat{p}\,\exp(\ln\theta)\,N_{total}}; must match the fitting
+parameterization.}
 
-\item{log}{Boolean on whether to return nLL}
+\item{log}{Logical; return the log-density (default) or the density.}
 }
 \value{
-Scalar log-density contribution for the composition.
+Scalar (log-)density contribution.
 }
 \description{
-Computes the Dirichlet-multinomial log-density of a single composition using
-the conditional decomposition required by
-\code{\link[RTMB]{oneStepPredict}}. An \eqn{A}-bin Dirichlet-multinomial is
-written as \eqn{A - 1} conditional two-category Dirichlet-multinomials
-(beta-binomials), each gated by its \code{keep} element. The final bin is
-fixed by the sum-to-\eqn{N} constraint and contributes nothing (its residual
-is undefined and reported as \code{NA}).
-}
-\details{
-With all \code{keep} equal to one, the sum of the conditional log-densities
-equals the joint Dirichlet-multinomial log-density. The running remainder is
-frozen to the observed total (see \code{\link{osa_extract_values}}) so that
-peeling a late bin cannot drive the remaining count negative.
-
-Intended for use with \code{method = "oneStepGeneric"}.
+Conditional beta-binomial decomposition of an \eqn{A}-bin
+Dirichlet-multinomial for \code{\link[RTMB]{oneStepPredict}}, following
+Trijoulet et al. (2023). Each of the first \eqn{A-1} bins is a beta-binomial
+conditional on the running remainder, gated by its \code{keep} element; the
+analytic conditional beta-binomial CDF is accumulated through
+\code{cdf_lower} / \code{cdf_upper}, so this density supports \strong{both}
+\code{method = "cdf"} and \code{method = "oneStepGeneric"}.
 }
 \keyword{internal}

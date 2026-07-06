@@ -29,7 +29,9 @@ processes occur in sequential order:
 
 1.  Recruitment generally occurs in the first season, with additional
     recruits apportioned to subsequent seasons according to seasonal
-    proportions,
+    proportions. The exception is age-0 recruitment (no lag between
+    spawning and recruitment; see Recruitment Processes below), where
+    recruits instead enter no earlier than the spawning season,
 2.  Markovian movement of individuals then follows (movement only occurs
     in the spatial model),
 3.  Total mortality occurs within each season; at the end of the final
@@ -213,10 +215,49 @@ SSB_{p,r,y} = \sum_{a = 1}^{a_{+}}{N_{p,r,y,\tau^{spawn},a,s = 1}W_{p,r,y,\tau^{
 For single-sex models, SSB is multiplied by 0.5 to obtain female-only
 spawning biomass.
 
-Note that $RecLag$ denotes the delay between spawning and when recruits
-enter the population. Thus, if $RecLag > y$, `SPoRC` utilizes
+Note that $RecLag$ denotes the delay (in seasons) between spawning and
+when recruits enter the population, and is user-specified as $RecLag \geq 1$
+(the classic case above) or $RecLag = 0$ (age-0 recruitment, described
+below). For $RecLag \geq 1$: if $RecLag > y$ (i.e. there is not yet enough
+model history to look back $RecLag$ seasons), `SPoRC` utilizes
 $\text{SSB0}_{p,r}$ instead of ${SSB}_{p,r,y - RecLag}$ to compute
 deterministic recruitment.
+
+#### Age-0 Recruitment ($RecLag = 0$)
+
+When $RecLag = 0$, recruitment for year $y$ is driven by that same
+year's own spawning biomass rather than a prior year's. The
+Beverton-Holt equations above still apply, but with $\text{effSSB}_{p,y}$
+(or $\sum_r SSB_{p,r,y}$ for global density dependence) in place of
+$\text{effSSB}_{p,y - RecLag}$, and recruits enter starting at the
+spawning season $\tau^{spawn}$ rather than season 1:
+
+$$\begin{matrix}
+N_{p,r,y,\tau = \tau^{spawn},a = 1,s} = \dfrac{4\mu_p^{\text{Rec}}\zeta_{p,r}h_{p,r}{\text{effSSB}}_{p,y}}{\left( 1 - h_{p,r} \right)\text{SSB0}_{p,r} + 5\left( h_{p,r} - 1 \right){\text{effSSB}}_{p,y}}\exp\left( \epsilon_{p,r,y}^{\text{Rec}} - \frac{\sigma_{\text{Rec}}^{2}}{2}b_{y} \right)\chi_{p,\tau^{spawn}}\psi_{p,r,y,s} \\
+\end{matrix}$$
+
+with any remaining seasonal share ($\tau > \tau^{spawn}$) added to the
+existing numbers at age 1 exactly as in the $\tau > 1$ equation above.
+
+Because $\text{effSSB}_{p,y}$/$SSB_{p,r,y}$ is not knowable until season
+$\tau^{spawn}$ is actually reached within year $y$, this timing
+constraint is enforced structurally rather than left to the user:
+
+-   $\chi_{p,\tau} = 0$ for every season before $\tau^{spawn}$ (validated
+    at setup; recruits cannot predate the spawning event that produced
+    them), and
+-   $\text{Mat}_{p,r,y,\tau,a = 1,s} = 0$ for all $\tau$ (validated at
+    setup; age-0 fish cannot be mature), which guarantees the $a = 1$
+    term in the $SSB_{p,r,y}$ sum is always zero regardless of whether
+    this year's recruits have been added to $N_{p,r,y,\tau^{spawn},a=1,s}$
+    yet at the point $SSB_{p,r,y}$ is evaluated.
+
+$\text{SSB0}_{p,r}$ itself is a pure per-recruit, equilibrium quantity
+and does not depend on $RecLag$ -- the same value is used whether
+recruitment is lagged or age-0. Unlike the $RecLag \geq 1$ case, there is
+no burn-in substitution of $\text{SSB0}_{p,r}$ for early years: since
+$RecLag = 0$, $SSB_{p,r,y}$ (this year's own survivor biomass) is always
+available by the time it is needed, including in year 1.
 
 #### Effective Spawning Biomass and Multi-Population Dynamics
 
@@ -263,6 +304,13 @@ $\mathbf{M}_{p,y,\tau,a,s}$ is an implied identity matrix). For each population,
 and sex combination, the movement matrix specifies bulk-transfer
 coefficients, with parameters transformed through a multinomial logit to
 ensure that proportions within each origin region sum to one.
+
+For age-0 recruitment ($RecLag = 0$), this movement step at season
+$\tau^{spawn}$ is applied to the survivor population before that
+season's $SSB_{p,r,y}$/recruitment are computed (see Age-0 Recruitment
+above); the resulting recruits are then inserted immediately afterward,
+so they still experience that season's mortality below like any other
+seasonal recruit pulse.
 
 Following movement, mortality occurs. For seasons within a year
 ($\tau < n_\tau$), within-season mortality is applied and individuals
@@ -1219,6 +1267,12 @@ estimated recruitment proportions across regions for population $p$, and
 $\alpha_{p,r}$ is the concentration parameter governing the spread of the
 Dirichlet distribution. Similarly, seasonal recruitment proportions
 $\chi_{p,\tau}$ can be constrained with Dirichlet priors when estimated.
+When $RecLag = 0$ and $\tau^{spawn} > 1$, $\chi_{p,\tau}$ is instead
+parameterized via a multinomial logit restricted to seasons
+$\tau^{spawn},\ldots,n_\tau$ (seasons before $\tau^{spawn}$ are fixed at
+exactly zero rather than estimated, per the timing constraint described
+under Age-0 Recruitment above), and any Dirichlet prior is evaluated only
+over that same restricted support.
 
 #### R0
 

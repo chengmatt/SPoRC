@@ -50,5 +50,15 @@ When \code{n_seas = 1}, the parameter is structurally irrelevant and both
 to \code{NULL}. If estimation is requested but
 \code{use_fixed_rec_seas_prop = 1}, a warning is issued and
 \code{$data$use_fixed_rec_seas_prop} is automatically reset to \code{0}.
+
+When \code{$data$rec_lag = 0} (age-0 recruitment) and
+\code{$data$spawn_seas > 1}, seasons before \code{spawn_seas} are
+structurally fixed at zero by a restricted softmax in the RTMB model
+function (recruits can't predate the spawning event that produced them),
+so only the first \code{n_seas - spawn_seas} columns of
+\code{rec_seas_prop_pars} are ever used as free logits. This function
+forces the remaining, structurally-unused trailing columns to \code{NA}
+regardless of \code{rec_seas_prop_spec}, so they can't silently soak up
+estimation/gradient.
 }
 \keyword{internal}

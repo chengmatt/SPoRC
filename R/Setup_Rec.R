@@ -47,7 +47,9 @@
 #'   \code{log(1)} for both.
 #' @param rec_seas_prop_input Seasonal allocation of annual recruitment, array
 #'   \code{[n_pop x n_seas x n_sims]}. Each population's values should sum to
-#'   1 across seasons. Default: all recruitment assigned to season 1.
+#'   1 across seasons. Default: all recruitment assigned to season 1. When
+#'   \code{rec_lag = 0} and \code{spawn_seas > 1}, must be zero for every
+#'   season before \code{spawn_seas} -- an error is raised otherwise.
 #' @param spawn_seas Integer index of the season in which spawning occurs.
 #'   Default \code{1}.
 #' @param use_rinit Integer (0/1). Whether a separate initial recruitment
@@ -65,9 +67,14 @@
 #'   spawning within \code{spawn_seas}. \code{0} (default) = spawning occurs
 #'   before any mortality is applied in that season; \code{1} = spawning occurs
 #'   after all mortality.
-#' @param rec_lag Integer. Number of seasons between spawning and recruitment
-#'   of age-1 fish. Must be \eqn{\geq 1}; \code{0} is not permitted. Default
-#'   \code{1}.
+#' @param rec_lag Integer. Number of seasons between spawning and recruitment.
+#'   \code{1} (default) is the classic lagged case: recruits enter the
+#'   population using SSB from \code{rec_lag} seasons prior, in any season.
+#'   \code{0} is age-0 recruitment: recruits enter using the SAME year's SSB.
+#'   Because that SSB isn't known until \code{spawn_seas} is reached, age-0
+#'   recruits may only enter in \code{spawn_seas} itself or a later season in
+#'   the same year -- \code{rec_seas_prop_input} must be zero for every season
+#'   before \code{spawn_seas} when \code{rec_lag = 0}.
 #' @param init_age_strc Integer specifying the equilibrium age-structure
 #'   initialisation method. Default \code{2}. Options:
 #'   \describe{
@@ -138,7 +145,7 @@ Setup_Sim_Rec <- function(
     ) {
 
   if(rec_dd == 'global' && sim_list$n_pop > 1 && recruitment_opt == 'bh_rec') stop("Invalid recruitment density-dependence option! When n_pop > 1 and recruitment_opt == 'bh_rec', rec_dd must be local (0).")
-  if(rec_lag == 0) stop("rec_lag cannot be 0!")
+  if(rec_lag < 0) stop("rec_lag cannot be negative!")
 
   # Convert character inputs to numeric codes
   recruitment_opt <- convert_to_numeric(recruitment_opt, list(mean_rec = 0, bh_rec = 1, resample_from_input = 999))
@@ -153,6 +160,13 @@ Setup_Sim_Rec <- function(
   check_sim_dimensions(stray_rate_input, n_years = sim_list$n_yrs, n_sims  = sim_list$n_sims, n_pop = sim_list$n_pop, what = "stray_rate_input")
   check_sim_dimensions(rec_seas_prop_input, n_seas = sim_list$n_seas, n_sims  = sim_list$n_sims, n_pop = sim_list$n_pop, what = "rec_seas_prop_input")
   if(!is.null(ln_InitDevs_input)) check_sim_dimensions(ln_InitDevs_input, n_regions = sim_list$n_regions, n_ages = sim_list$n_ages, n_sims = sim_list$n_sims, n_pop = sim_list$n_pop, what = "ln_InitDevs_input")
+
+  # Age-0 (rec_lag = 0) recruitment: recruits produced by this year's spawning
+  # cannot appear in the population before spawn_seas within the same year
+  # (SSB/recruitment aren't known yet at that point). Enforce this up front.
+  if(rec_lag == 0 && spawn_seas > 1 && any(rec_seas_prop_input[, seq_len(spawn_seas - 1), , drop = FALSE] != 0)) {
+    stop("rec_lag = 0 requires rec_seas_prop_input to be zero in every season before spawn_seas (age-0 recruits can't predate the spawning event that produced them).")
+  }
 
   # Recruitment options
   sim_list$do_recruits_move <- do_recruits_move
@@ -1062,6 +1076,16 @@ do_stray_rate_mapping <- function(input_list, stray_rate_spec) {
 #' \code{use_fixed_rec_seas_prop = 1}, a warning is issued and
 #' \code{$data$use_fixed_rec_seas_prop} is automatically reset to \code{0}.
 #'
+#' When \code{$data$rec_lag = 0} (age-0 recruitment) and
+#' \code{$data$spawn_seas > 1}, seasons before \code{spawn_seas} are
+#' structurally fixed at zero by a restricted softmax in the RTMB model
+#' function (recruits can't predate the spawning event that produced them),
+#' so only the first \code{n_seas - spawn_seas} columns of
+#' \code{rec_seas_prop_pars} are ever used as free logits. This function
+#' forces the remaining, structurally-unused trailing columns to \code{NA}
+#' regardless of \code{rec_seas_prop_spec}, so they can't silently soak up
+#' estimation/gradient.
+#'
 #' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
 #'   sublists. Requires \code{$data$n_pop}, \code{$data$n_seas}, and
 #'   \code{$data$use_fixed_rec_seas_prop} to be set by upstream setup
@@ -1127,6 +1151,24 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
     input_list$map$rec_seas_prop_pars <- NULL
   }
 
+  # Age-0 (rec_lag = 0) recruitment with spawning after season 1: seasons
+  # before spawn_seas are structurally fixed at zero (see the restricted
+  # softmax in SPoRC_rtmb.R), so only the first (n_seas - spawn_seas)
+  # columns of rec_seas_prop_pars are ever used as free logits. Force the
+  # remaining, structurally-unused columns to NA regardless of
+  # rec_seas_prop_spec so they can't silently soak up gradient/estimation.
+  if(!is.null(input_list$map$rec_seas_prop_pars) &&
+     input_list$data$rec_lag == 0 && input_list$data$spawn_seas > 1) {
+    n_allowed <- input_list$data$n_seas - input_list$data$spawn_seas + 1
+    n_unused <- (input_list$data$n_seas - 1) - (n_allowed - 1) # trailing unused columns per population
+    if(n_unused > 0) {
+      tmp_map <- matrix(as.numeric(as.character(input_list$map$rec_seas_prop_pars)),
+                         nrow = input_list$data$n_pop)
+      tmp_map[, (n_allowed):(input_list$data$n_seas - 1)] <- NA
+      input_list$map$rec_seas_prop_pars <- factor(tmp_map)
+    }
+  }
+
   return(input_list)
 }
 
@@ -1167,8 +1209,16 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'       \code{RecDevs_spec}, and \code{InitDevs_spec} to shared or fixed
 #'       options when \code{n_regions > 1}.}
 #'   }
-#' @param rec_lag Integer. Lag between spawning biomass and age-1
-#'   recruitment (in seasons). Must be \eqn{\geq 1}. Default \code{1}.
+#' @param rec_lag Integer. Lag between spawning biomass and recruitment (in
+#'   seasons). \code{1} (default) is the classic lagged case: recruitment uses
+#'   SSB from \code{rec_lag} seasons prior and may enter in any season.
+#'   \code{0} is age-0 recruitment: recruitment uses the SAME year's SSB, and
+#'   because that SSB isn't known until \code{spawn_seas} is reached, recruits
+#'   may only enter in \code{spawn_seas} itself or a later season -- when
+#'   \code{use_fixed_rec_seas_prop = 1}, \code{fixed_rec_seas_prop} must be
+#'   zero before \code{spawn_seas}; when estimated, this is enforced
+#'   structurally via a restricted softmax (see
+#'   \code{\link{do_rec_seas_prop_mapping}}).
 #'
 #' @param sigmaR_spec Character. Estimation structure for \eqn{\sigma_R},
 #'   stored in \code{ln_sigmaR} \code{[2 x n_pop x n_regions]}, where index
@@ -1253,10 +1303,15 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   estimation. Default \code{1}.
 #' @param fixed_rec_seas_prop Array \code{[n_pop x n_seas]}. Fixed seasonal
 #'   recruitment proportions used when \code{use_fixed_rec_seas_prop = 1}.
-#'   Default: all recruitment assigned to season 1.
+#'   Default: all recruitment assigned to season 1. When \code{rec_lag = 0}
+#'   and \code{spawn_seas > 1}, must be zero for every season before
+#'   \code{spawn_seas} -- an error is raised otherwise.
 #' @param use_rec_seas_prop_prior Integer (0/1). Whether Dirichlet priors are
 #'   applied to seasonal recruitment proportions. Not valid when
-#'   \code{n_seas = 1}. Default \code{0}.
+#'   \code{n_seas = 1}. When \code{rec_lag = 0} and \code{spawn_seas > 1}, the
+#'   prior is evaluated only over seasons \code{spawn_seas:n_seas} (the
+#'   seasons before \code{spawn_seas} are structurally zero, not estimated).
+#'   Default \code{0}.
 #' @param rec_seas_prop_prior Data frame of Dirichlet prior concentration
 #'   parameters for seasonal proportions. Required columns: \code{pop} and
 #'   \code{alpha}. Ignored when \code{use_rec_seas_prop_prior = 0}. Default
@@ -1491,7 +1546,18 @@ Setup_Mod_Rec <- function(input_list,
 
   # Recruitment lag
   if(rec_model != "mean_rec") collect_message("Recruitment and SSB lag is specified as: ", rec_lag)
-  if(rec_lag == 0) stop("rec_lag cannot be 0!")
+  if(rec_lag < 0) stop("rec_lag cannot be negative!")
+
+  # Age-0 (rec_lag = 0) recruitment: recruits produced by this year's spawning
+  # cannot appear in the population before spawn_seas within the same year
+  # (SSB/recruitment aren't known yet at that point). When seasonal proportions
+  # are fixed (not estimated), enforce this directly; when estimated, the
+  # restricted softmax in do_rec_seas_prop_mapping()/SPoRC_rtmb.R guarantees it
+  # structurally instead.
+  if(rec_lag == 0 && spawn_seas > 1 && use_fixed_rec_seas_prop == 1 &&
+     any(fixed_rec_seas_prop[, seq_len(spawn_seas - 1), drop = FALSE] != 0)) {
+    stop("rec_lag = 0 requires fixed_rec_seas_prop to be zero in every season before spawn_seas (age-0 recruits can't predate the spawning event that produced them).")
+  }
 
   # Recruitment regional proportion prior
   if(!use_rec_region_prop_prior %in% c(0,1)) stop("use_rec_region_prop_prior must be 0 or 1")

@@ -188,7 +188,20 @@ before spawning; used for mid-season SSB calculations.}
 
   Spawning biomass used in recruitment is constructed internally by
   combining \code{bh_rec_opt$SSB} with projected SSB values during the
-  simulation.}
+  simulation.
+
+  \code{bh_rec_opt$rec_lag = 1} is the classic lagged case: each
+  projection year's recruitment is computed up front from the prior
+  year's SSB, exactly as \code{recruitment_opt = "inv_gauss"}/
+  \code{"mean_rec"} are. \code{bh_rec_opt$rec_lag = 0} is age-0
+  recruitment: recruitment for year \code{y} is computed from year
+  \code{y}'s own SSB once \code{spawn_seas} is reached within that year's
+  season loop, and is inserted no earlier than \code{spawn_seas}
+  (\code{rec_seas_prop} must be zero for every season before
+  \code{spawn_seas} in that case). Reference points and the seasonal SBPR
+  calculation used to get \code{bh_rec_opt$WAA}/\code{MatAA}/etc. are
+  unaffected by this choice -- \code{rec_lag} only changes which year's
+  SSB feeds the Beverton-Holt curve, not the per-recruit math itself.}
 
 \item{n_seas}{Integer. Number of seasons. Default = 1.}
 
@@ -221,7 +234,9 @@ generated annually and then distributed across seasons using
 the first age class.
 
 
-Each projection year proceeds as follows:
+Each projection year proceeds as follows when
+\code{recruitment_opt != "bh_rec"} or \code{bh_rec_opt$rec_lag != 0}
+(the classic case):
 \enumerate{
   \item Annual recruitment is generated and allocated across regions and
   sexes. Seasonal recruitment is then distributed within the first age
@@ -242,6 +257,17 @@ Each projection year proceeds as follows:
   \item Fishing mortality for the next year is updated via the specified
   harvest control rule or fixed input.
 }
+
+When \code{bh_rec_opt$rec_lag == 0} (age-0 recruitment), steps 1 and 5
+above are reordered within \code{spawn_seas}: movement is applied first,
+spawning biomass is computed from the survivor population alone (no new
+recruits exist yet), that SSB is used to generate this year's
+recruitment, and only then are the recruits inserted (no earlier than
+\code{spawn_seas}) - immediately before mortality/ageing runs for that
+season, so the new cohort is carried forward exactly like any other
+seasonal recruit pulse. Years \code{y > 1} generate recruitment this way;
+year 1 carries the supplied terminal assessment state forward with no new
+recruitment event, matching the classic case.
 
 Effective spawning biomass at each population's natal region aggregates
 contributions from all populations, with cross-population contributions

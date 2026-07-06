@@ -23,12 +23,23 @@
 #'   }
 #'
 #' @param y Current model year index.
-#' @param rec_lag Recruitment lag in years between spawning and recruitment.
+#' @param rec_lag Recruitment lag (in seasons) between spawning and
+#'   recruitment. \code{1} is the classic lagged case: recruitment uses
+#'   \code{SSB_vals} from \code{rec_lag} seasons prior. \code{0} is age-0
+#'   recruitment: recruitment uses the SAME year's SSB
+#'   (\code{SSB_vals[,,y]}). The caller is responsible for supplying that
+#'   value already computed from survivors only (i.e. before this year's
+#'   recruits exist) when \code{rec_lag = 0} -- see \code{SPoRC_rtmb.R},
+#'   \code{Simulate_Population.R}, and \code{Do_Population_Projection.R} for
+#'   how each population-dynamics loop does this.
 #' @param R0 Numeric vector (\code{n_pop}) of unfished recruitment by population.
 #' @param rec_region_prop Matrix (\code{n_pop × n_regions}) giving the proportion
 #'   of recruitment allocated to each region.
 #' @param rec_seas_prop Matrix (\code{n_pop × n_seas}) giving seasonal recruitment
-#'   proportions.
+#'   proportions. When \code{rec_lag = 0}, must be zero for every season
+#'   before \code{spawn_seas} (age-0 recruits can't predate the spawning
+#'   event that produced them) -- validated at setup by
+#'   \code{Setup_Mod_Rec}/\code{Setup_Sim_Rec}.
 #' @param h Matrix (\code{n_pop × n_regions}) of Beverton–Holt steepness values.
 #' @param n_pop Number of populations.
 #' @param n_regions Number of spatial regions.
@@ -84,10 +95,20 @@
 #'
 #' where:
 #' \itemize{
-#' \item \eqn{SSB} is spawning biomass lagged by \code{rec_lag}
+#' \item \eqn{SSB} is spawning biomass lagged by \code{rec_lag} seasons
+#'   (or, when \code{rec_lag = 0}, the current year's own spawning biomass --
+#'   see the \code{rec_lag} parameter above)
 #' \item \eqn{S_0} is unfished spawning biomass per recruit
 #' \item \eqn{h} is steepness
 #' }
+#'
+#' \eqn{S_0} (and the age-composition of spawning biomass per recruit more
+#' generally) does not depend on \code{rec_lag} -- it is a pure per-recruit,
+#' equilibrium quantity. The recruit age class (the first age) is always
+#' included in the sum; when \code{rec_lag = 0}, maturity at that age is
+#' required to be exactly zero (validated at setup by
+#' \code{Setup_Mod_Biologicals}/\code{Setup_Sim_Biologicals}), so it
+#' contributes nothing regardless.
 #'
 #' Spawning biomass per recruit (\eqn{S_0}) is computed internally by
 #' projecting a single recruit through all ages and seasons under both
@@ -144,9 +165,6 @@ Get_Det_Recruitment <- function(recruitment_model,
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
-
-  # Pre-compute spawn_age_start outside loop since rec_lag doesn't change
-  spawn_age_start = ifelse(rec_lag == 0, 2, 1)
 
   if(recruitment_model == 0) {
     rec = array(0, dim = c(n_pop, n_regions))
@@ -399,9 +417,9 @@ Get_Det_Recruitment <- function(recruitment_model,
         for(o in 1:n_regions) {
           for(d in 1:n_regions) {
             # unfished
-            SB_unfished_mat[p, o, d] = sum(SB_age[p, o, d, spawn_age_start:n_ages])
+            SB_unfished_mat[p, o, d] = sum(SB_age[p, o, d, 1:n_ages])
             # fished
-            SB_fished_mat[p, o, d] = sum(SB_fished_age[p, o, d, spawn_age_start:n_ages])
+            SB_fished_mat[p, o, d] = sum(SB_fished_age[p, o, d, 1:n_ages])
           } # end d
         } # end o
       } # end p
@@ -564,11 +582,16 @@ Get_Det_Recruitment <- function(recruitment_model,
                                         dim = c(n_regions, n_fish_fleets)))))
 
       # Get global spawning biomass per recruit (scalar)
-      S0 = sum(SB_age[,spawn_age_start:n_ages]) * R0[1]
-      SF = sum(SB_fished_age[,spawn_age_start:n_ages]) * R0[1]
+      S0 = sum(SB_age[,1:n_ages]) * R0[1]
+      SF = sum(SB_fished_age[,1:n_ages]) * R0[1]
     }
 
-    # get SSB to use to predict recruitment
+    # get SSB to use to predict recruitment. When rec_lag == 0 (age-0
+    # recruitment), y <= rec_lag is never true for y >= 1, so this always
+    # takes the SSB_vals[,,y-rec_lag] = SSB_vals[,,y] branch -- the CURRENT
+    # year's SSB. The caller (SPoRC_rtmb.R) is responsible for computing
+    # SSB_vals[,,y] from survivors only (before this year's recruits exist)
+    # and passing it in before calling this function in that case.
     if(y <= rec_lag) SSB = SF else SSB = array(SSB_vals[,,y-rec_lag], dim = c(n_pop, n_regions))
 
     # Get recruitment based on SSB and R0
@@ -630,4 +653,150 @@ Get_Det_Recruitment <- function(recruitment_model,
   rec = array(rec, dim = c(n_pop, n_regions))
 
   return(rec)
+}
+
+#' Compute Biomass
+#'
+# Computes spawning-time biomass quantities (Total_Biom, SSB, Dynamic_SSB0,
+# eff_SSB) for year y using the current NAA/NAA0 state at season "seas"
+# (always called with seas == spawn_seas). Takes all inputs explicitly
+# (rather than relying on lexical scoping) since it's called from the main
+# RTMB model function's local frame but defined at the top level of a
+# different file.
+#'
+#'
+#' @param y Year integer
+#' @param seas Season integer
+#' @keywords internal
+compute_biom_y = function(y, seas, NAA, NAA0, WAA, MatAA, ZAA, natmort, t_spawn, seasdur,
+                          n_seas, n_pop, n_regions, n_ages, n_sexes,
+                          sgl_seas_spawning_movement, natal_region, stray_rate) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  # Get NAA for spawning
+  tmp_NAA_spawn = NAA[,,y,seas,,, drop = FALSE]
+  tmp_NAA0_spawn = NAA0[,,y,seas,,, drop = FALSE]
+
+  # If we we are natal homing with 1 season
+  if(n_seas == 1 && n_pop > 1) {
+    # Get NAA during spawning
+    for(p in 1:n_pop) for(a in 1:n_ages) for(s in 1:n_sexes) {
+      tmp_NAA_spawn[p,,1,1,a,s] = tmp_NAA_spawn[p,,1,1,a,s] %*% sgl_seas_spawning_movement[p,,,y,a,s]
+      tmp_NAA0_spawn[p,,1,1,a,s] = tmp_NAA0_spawn[p,,1,1,a,s] %*% sgl_seas_spawning_movement[p,,,y,a,s]
+    } # end s loop
+  }
+
+  # Total Biomass
+  Total_Biom_y = apply(tmp_NAA_spawn *
+                         WAA[,, y, seas, , ,drop = FALSE] *
+                         exp(-ZAA[,,y,seas,,,drop = FALSE] * t_spawn), c(1,2), sum)
+
+  # Spawning Stock Biomass
+  SSB_y = apply(tmp_NAA_spawn[,, 1, 1, , 1,drop = FALSE] *
+                  WAA[,, y, seas, , 1,drop = FALSE] *
+                  MatAA[,, y, seas, , 1,drop = FALSE] *
+                  exp(-ZAA[,, y, seas, , 1,drop = FALSE] * t_spawn), c(1,2), sum)
+
+  # Get dynamic B0
+  SSB0_array = tmp_NAA0_spawn[,, 1, 1, , 1,drop = FALSE] *  WAA[,,  y, seas, , 1, drop = FALSE] * MatAA[,,y, seas, , 1, drop = FALSE]
+  mort_spawn = exp(-natmort[,, y, , 1, drop = FALSE] * t_spawn * seasdur[seas])
+  mort_spawn = array(mort_spawn, dim = dim(SSB0_array) ) # coerce array
+  Dynamic_SSB0_y = apply(SSB0_array * mort_spawn, c(1,2), sum) # Dynamic B0
+
+  if(n_sexes == 1) { # If single sex model, multiply SSB calculations by 0.5
+    SSB_y = SSB_y * 0.5
+    Dynamic_SSB0_y = Dynamic_SSB0_y * 0.5
+  }
+
+  # Accumulate effective SSB at each population's natal region
+  # across all source populations (captures stray contributions)
+  eff_SSB_y = array(0, dim = n_pop)
+  if(n_pop > 1) {
+
+    # get number of pops in a given region
+    n_pop_in_region = array(0, dim = n_regions)
+    for(p in 1:n_pop) n_pop_in_region[natal_region[p]] = n_pop_in_region[natal_region[p]] + 1
+
+    for(p2 in 1:n_pop) {
+      for(p in 1:n_pop) {
+        if(p == p2) {
+          eff_SSB_y[p2] = eff_SSB_y[p2] + SSB_y[p, natal_region[p2]]
+        } else {
+          n_receivers = n_pop_in_region[natal_region[p2]]
+          eff_SSB_y[p2] = eff_SSB_y[p2] + (stray_rate[p,y] / n_receivers) * SSB_y[p, natal_region[p2]]
+        }
+      }
+    }
+  } else eff_SSB_y[1] = sum(SSB_y[1,])
+
+  list(Total_Biom_y = Total_Biom_y, SSB_y = SSB_y, Dynamic_SSB0_y = Dynamic_SSB0_y, eff_SSB_y = eff_SSB_y)
+}
+
+#' Compute Biomass for Population Projections
+#'
+# Computes SSB / Dynamic_SSB0 / eff_SSB for projection year y at season seas
+# (always called with seas == spawn_seas) from the current proj_NAA/proj_NAA0
+# state in Do_Population_Projection(). Factored out (plain R, no RTMB/AD
+# concerns since Do_Population_Projection is never used inside an AD tape) so
+# it can run either before or after that season's mortality/ageing step
+# depending on whether rec_lag == 0 (age0_bh), without duplicating the math.
+# Mirrors compute_biom_y() above, which serves the same role for the RTMB
+# estimation model.
+#'
+#' @param y Projection year integer
+#' @param seas Season integer (always spawn_seas)
+#' @keywords internal
+derive_proj_biom = function(y, seas, proj_NAA, proj_NAA0, WAA, MatAA, proj_ZAA, natmort, t_spawn, seasdur,
+                            n_seas, n_pop, n_regions, n_ages, n_sexes,
+                            sgl_seas_spawning_movement, natal_region, stray_rate) {
+
+  tmp_NAA_spawn = proj_NAA[,,y,seas,,, drop = FALSE]
+  tmp_NAA0_spawn = proj_NAA0[,,y,seas,,, drop = FALSE]
+
+  # If we we are natal homing with 1 season
+  if(n_seas == 1 && n_pop > 1) {
+    for(p in 1:n_pop) for(a in 1:n_ages) for(s in 1:n_sexes) {
+      tmp_NAA_spawn[p,,1,1,a,s] = tmp_NAA_spawn[p,,1,1,a,s] %*% sgl_seas_spawning_movement[p,,,y,a,s]
+      tmp_NAA0_spawn[p,,1,1,a,s] = tmp_NAA0_spawn[p,,1,1,a,s] %*% sgl_seas_spawning_movement[p,,,y,a,s]
+    } # end s loop
+  }
+
+  # get SSB
+  SSB_y = apply(tmp_NAA_spawn[,, 1, 1, , 1,drop = FALSE] *
+                  WAA[,, y, seas, , 1,drop = FALSE] *
+                  MatAA[,, y, seas, , 1,drop = FALSE] *
+                  exp(-proj_ZAA[,, y, seas, , 1,drop = FALSE] * t_spawn), c(1,2), sum)
+
+  # Get dynamic B0
+  SSB0_array = tmp_NAA0_spawn[,, 1, 1, , 1,drop = FALSE] *  WAA[,,  y, seas, , 1, drop = FALSE] * MatAA[,,y, seas, , 1, drop = FALSE]
+  mort_spawn = exp(-natmort[,, y, , 1, drop = FALSE] * t_spawn * seasdur[seas])
+  mort_spawn = array(mort_spawn, dim = dim(SSB0_array) ) # coerce array
+  Dynamic_SSB0_y = apply(SSB0_array * mort_spawn, c(1,2), sum) # Dynamic B0
+
+  if(n_sexes == 1) { # If single sex model, multiply SSB calculations by 0.5
+    SSB_y = SSB_y * 0.5
+    Dynamic_SSB0_y = Dynamic_SSB0_y * 0.5
+  }
+
+  # Accumulate effective SSB at each population's natal region across all source populations to capture stray contributions
+  eff_SSB_y <- rep(0, n_pop)
+  if(n_pop > 1) {
+    n_pop_in_region <- rep(0, n_regions)
+    for(p in 1:n_pop) n_pop_in_region[natal_region[p]] <- n_pop_in_region[natal_region[p]] + 1
+    for(p2 in 1:n_pop) {
+      for(p in 1:n_pop) {
+        if(p == p2) {
+          # Own population contribution - no stray scaling
+          eff_SSB_y[p2] = eff_SSB_y[p2] + SSB_y[p, natal_region[p2]]
+        } else {
+          # Cross-population contribution scaled by stray_rate
+          eff_SSB_y[p2] = eff_SSB_y[p2] + (stray_rate[p, y] / n_pop_in_region[natal_region[p2]]) * SSB_y[p, natal_region[p2]]
+        }
+      } # end p loop
+    } # end p2 loop
+  } else eff_SSB_y[1] = sum(SSB_y[1,])
+
+  list(SSB_y = SSB_y, Dynamic_SSB0_y = Dynamic_SSB0_y, eff_SSB_y = eff_SSB_y)
 }

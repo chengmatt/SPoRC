@@ -264,33 +264,6 @@ osa_extract_values <- function(xobs) {
   }
 }
 
-#' #' Squeeze a probability onto the open unit interval
-#'
-#' Maps values in \eqn{[0, 1]} onto the open interval to avoid boundary
-#' evaluations (\code{log(0)}, division by zero). Matches TMB's
-#' \code{convenience.hpp} \code{squeeze()}.
-#'
-#' @param u Numeric/AD scalar or vector of probabilities.
-#' @return Values mapped into \eqn{(eps, 1 - eps)}.
-#' @keywords internal
-osa_squeeze <- function(u) {
-  eps <- .Machine$double.eps
-  (1 - eps) * (u - 0.5) + 0.5
-}
-
-#' Extract frozen numeric values from an OSA observation (WHAM asDouble analogue)
-#' @param xobs An \code{"osa"} object or plain numeric vector.
-#' @return Plain numeric vector of observed counts.
-#' @keywords internal
-osa_extract_values <- function(xobs) {
-  if (is(xobs, "osa")) {
-    v <- try(RTMB::getValues(xobs@x), silent = TRUE)
-    if (inherits(v, "try-error")) v <- try(asDouble(xobs@x), silent = TRUE)
-    if (inherits(v, "try-error")) v <- as.numeric(xobs@x)
-    as.numeric(v)
-  } else as.numeric(xobs)
-}
-
 #' Extract the keep indicator from an OSA observation
 #' @param xobs An \code{"osa"} object or plain numeric vector.
 #' @param n Length for the default all-ones indicator.

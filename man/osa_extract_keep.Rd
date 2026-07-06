@@ -7,17 +7,14 @@
 osa_extract_keep(xobs, n)
 }
 \arguments{
-\item{xobs}{Either an object of class \code{"osa"} or a plain numeric vector.}
+\item{xobs}{An \code{"osa"} object or plain numeric vector.}
 
-\item{n}{Integer length used to construct the default all-ones indicator
-when \code{xobs} is not an \code{"osa"} object.}
+\item{n}{Length for the default all-ones indicator.}
 }
 \value{
-A numeric/AD vector of keep indicators (length \code{n}).
+Numeric/AD keep vector.
 }
 \description{
-Returns the per-bin \code{keep} indicator carried by an OSA-tagged
-observation slice. During ordinary fitting (plain numeric input) all bins
-are treated as kept.
+Extract the keep indicator from an OSA observation
 }
 \keyword{internal}

@@ -7,15 +7,12 @@
 osa_extract_x(xobs)
 }
 \arguments{
-\item{xobs}{Either an object of class \code{"osa"} or a plain numeric vector.}
+\item{xobs}{An \code{"osa"} object or plain numeric vector.}
 }
 \value{
-The AD (or numeric) values of the observation.
+AD (or numeric) values.
 }
 \description{
-Returns the observation values with their AD class preserved, so the single
-bin being peeled by \code{oneStepPredict} remains differentiable. Contrast
-with \code{\link{osa_extract_values}}, which deliberately detaches the AD
-class to freeze the running remainder.
+Extract the (AD) values slot from an OSA observation
 }
 \keyword{internal}

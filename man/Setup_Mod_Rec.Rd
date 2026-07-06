@@ -85,8 +85,16 @@ defined in \code{$data}.}
     options when \code{n_regions > 1}.}
 }}
 
-\item{rec_lag}{Integer. Lag between spawning biomass and age-1
-recruitment (in seasons). Must be \eqn{\geq 1}. Default \code{1}.}
+\item{rec_lag}{Integer. Lag between spawning biomass and recruitment (in
+seasons). \code{1} (default) is the classic lagged case: recruitment uses
+SSB from \code{rec_lag} seasons prior and may enter in any season.
+\code{0} is age-0 recruitment: recruitment uses the SAME year's SSB, and
+because that SSB isn't known until \code{spawn_seas} is reached, recruits
+may only enter in \code{spawn_seas} itself or a later season -- when
+\code{use_fixed_rec_seas_prop = 1}, \code{fixed_rec_seas_prop} must be
+zero before \code{spawn_seas}; when estimated, this is enforced
+structurally via a restricted softmax (see
+\code{\link{do_rec_seas_prop_mapping}}).}
 
 \item{Use_h_prior}{Integer (0/1). Whether normal priors on steepness are
 applied. Only relevant for \code{rec_model = "bh_rec"}. Default \code{0}.}
@@ -118,7 +126,10 @@ including \code{"est_shared_pop"}.}
 
 \item{use_rec_seas_prop_prior}{Integer (0/1). Whether Dirichlet priors are
 applied to seasonal recruitment proportions. Not valid when
-\code{n_seas = 1}. Default \code{0}.}
+\code{n_seas = 1}. When \code{rec_lag = 0} and \code{spawn_seas > 1}, the
+prior is evaluated only over seasons \code{spawn_seas:n_seas} (the
+seasons before \code{spawn_seas} are structurally zero, not estimated).
+Default \code{0}.}
 
 \item{rec_seas_prop_prior}{Data frame of Dirichlet prior concentration
 parameters for seasonal proportions. Required columns: \code{pop} and
@@ -132,7 +143,9 @@ estimation. Default \code{1}.}
 
 \item{fixed_rec_seas_prop}{Array \code{[n_pop x n_seas]}. Fixed seasonal
 recruitment proportions used when \code{use_fixed_rec_seas_prop = 1}.
-Default: all recruitment assigned to season 1.}
+Default: all recruitment assigned to season 1. When \code{rec_lag = 0}
+and \code{spawn_seas > 1}, must be zero for every season before
+\code{spawn_seas} -- an error is raised otherwise.}
 
 \item{do_rec_bias_ramp}{Integer (0/1). Whether a recruitment bias ramp is
 applied to \code{ln_RecDevs} to account for reduced information in early

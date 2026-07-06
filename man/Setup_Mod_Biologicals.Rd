@@ -47,7 +47,12 @@ If \code{NULL} (default), \code{WAA} is broadcast across all fishery fleets.}
 If \code{NULL} (default), \code{WAA} is broadcast across all survey fleets.}
 
 \item{MatAA}{Numeric array of maturity-at-age proportions (\eqn{\in [0,1]}) with
-dimensions \code{[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes]}.}
+dimensions \code{[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes]}.
+When \code{rec_lag = 0} (age-0 recruitment, set via \code{\link{Setup_Mod_Rec}}),
+maturity at the recruit age (the first age class) must be exactly \code{0}
+for all populations, regions, years, seasons, and sexes -- an error is
+raised otherwise. Requires \code{\link{Setup_Mod_Rec}} to have been called
+first so \code{rec_lag} is already set.}
 
 \item{addtocomp}{Small constant added to composition proportions before likelihood
 evaluation to avoid \code{log(0)}. Default \code{1e-3}. Ignored when a

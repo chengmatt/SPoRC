@@ -39,5 +39,12 @@ Pre- and post-movement snapshots are stored in \code{NAA_bef} and
 \code{NAA_aft} respectively. Movement is only applied when
 \code{n_regions > 1}; recruits (\code{a = 1}) are excluded from movement
 when \code{do_recruits_move = 0}.
+
+When \code{rec_lag == 0} (age-0 recruitment), this year's recruitment
+can't be known until \code{spawn_seas} is reached (it depends on this
+year's own SSB), so \code{\link{generate_recruitment}} is called from
+inside this function at \code{seas == spawn_seas} instead of beforehand -
+see the "rec_lag == 0" block below, which mirrors the equivalent
+restructuring in the estimation model (\code{SPoRC_rtmb.R}).
 }
 \keyword{internal}

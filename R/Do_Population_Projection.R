@@ -120,6 +120,19 @@
 #'   combining \code{bh_rec_opt$SSB} with projected SSB values during the
 #'   simulation.
 #'
+#'   \code{bh_rec_opt$rec_lag = 1} is the classic lagged case: each
+#'   projection year's recruitment is computed up front from the prior
+#'   year's SSB, exactly as \code{recruitment_opt = "inv_gauss"}/
+#'   \code{"mean_rec"} are. \code{bh_rec_opt$rec_lag = 0} is age-0
+#'   recruitment: recruitment for year \code{y} is computed from year
+#'   \code{y}'s own SSB once \code{spawn_seas} is reached within that year's
+#'   season loop, and is inserted no earlier than \code{spawn_seas}
+#'   (\code{rec_seas_prop} must be zero for every season before
+#'   \code{spawn_seas} in that case). Reference points and the seasonal SBPR
+#'   calculation used to get \code{bh_rec_opt$WAA}/\code{MatAA}/etc. are
+#'   unaffected by this choice -- \code{rec_lag} only changes which year's
+#'   SSB feeds the Beverton-Holt curve, not the per-recruit math itself.
+#'
 #' @param n_seas Integer. Number of seasons. Default = 1.
 #' @param seasdur Numeric vector `[n_seas]`. Duration of each season as a
 #'   fraction of the year.
@@ -138,7 +151,9 @@
 #'   and numbers-at-age for fished and unfished states.
 #'
 #' @details
-#' Each projection year proceeds as follows:
+#' Each projection year proceeds as follows when
+#' \code{recruitment_opt != "bh_rec"} or \code{bh_rec_opt$rec_lag != 0}
+#' (the classic case):
 #' \enumerate{
 #'   \item Annual recruitment is generated and allocated across regions and
 #'   sexes. Seasonal recruitment is then distributed within the first age
@@ -159,6 +174,17 @@
 #'   \item Fishing mortality for the next year is updated via the specified
 #'   harvest control rule or fixed input.
 #' }
+#'
+#' When \code{bh_rec_opt$rec_lag == 0} (age-0 recruitment), steps 1 and 5
+#' above are reordered within \code{spawn_seas}: movement is applied first,
+#' spawning biomass is computed from the survivor population alone (no new
+#' recruits exist yet), that SSB is used to generate this year's
+#' recruitment, and only then are the recruits inserted (no earlier than
+#' \code{spawn_seas}) - immediately before mortality/ageing runs for that
+#' season, so the new cohort is carried forward exactly like any other
+#' seasonal recruit pulse. Years \code{y > 1} generate recruitment this way;
+#' year 1 carries the supplied terminal assessment state forward with no new
+#' recruitment event, matching the classic case.
 #'
 #' Effective spawning biomass at each population's natal region aggregates
 #' contributions from all populations, with cross-population contributions
@@ -246,13 +272,21 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
   proj_NAA[,,1,,,] <- terminal_NAA
   proj_NAA0[,,1,,,] <- terminal_NAA0
 
+  # Age-0 (rec_lag = 0) BH recruitment: this year's own SSB determines this
+  # year's recruitment, which isn't known until spawn_seas is reached within
+  # the season loop - see the "rec_lag == 0" handling below, mirroring the
+  # equivalent restructuring in SPoRC_rtmb.R and Simulate_Population.R.
+  age0_bh <- recruitment_opt == "bh_rec" && !is.null(bh_rec_opt) && bh_rec_opt$rec_lag == 0
+
   for(y in 1:n_proj_yrs) {
 
     # use terminal F in the first year (subsequent years use F derived from reference points and HCR)
     if(y == 1) proj_F[,y] <- rowSums(terminal_F)
 
-    # Recruitment Processes ---------------------------------------------------
-    if(y > 1) {
+    # Recruitment Processes (rec_lag != 0, or non-BH recruitment) -------------
+    # For age0_bh, recruitment for the year is instead generated inline once
+    # spawn_seas is reached within the season loop below.
+    if(y > 1 && !age0_bh) {
 
       # Get annual recruitment
       tmp_rec <- switch(recruitment_opt,
@@ -327,8 +361,14 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
 
     for(seas in 1:n_seas) {
 
-      # Insert seasonal recruits at seas > 1
-      if(seas > 1 && y > 1) {
+      # Insert seasonal recruits already known from earlier this year:
+      # - rec_lag != 0 (or non-BH recruitment): the year's recruitment is
+      #   already known (computed above), so any season past the first gets
+      #   its share here, as before.
+      # - age0_bh (rec_lag == 0): recruitment isn't known until spawn_seas is
+      #   reached (below), so only seasons strictly after spawn_seas are
+      #   handled here; spawn_seas itself generates and inserts its own share.
+      if(y > 1 && (if(age0_bh) seas > spawn_seas else seas > 1)) {
         for(p in 1:n_pop) {
           for(r in 1:n_regions) {
             for(s in 1:n_sexes) {
@@ -379,6 +419,81 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
         } # end p loop
       } # only compute if spatial
 
+      # Derive Biomass + Recruitment (age0_bh only) ------------------------------
+      # This year's SSB is now fully determined by the survivor population
+      # (age-0 recruits have not been produced yet, and couldn't affect SSB
+      # even if they had - rec_lag == 0 requires MatAA == 0 at the recruit
+      # age). Compute it now, generate this year's recruitment from it, and
+      # insert the spawn_seas share BEFORE mortality/ageing runs below, so the
+      # new cohort is carried forward exactly like any other seasonal recruit
+      # pulse.
+      if(age0_bh && seas == spawn_seas) {
+
+        biom <- derive_proj_biom(y, seas, proj_NAA, proj_NAA0, WAA, MatAA, proj_ZAA, natmort, t_spawn, seasdur,
+                                n_seas, n_pop, n_regions, n_ages, n_sexes,
+                                sgl_seas_spawning_movement, natal_region, stray_rate)
+        proj_SSB[,, y] <- biom$SSB_y
+        proj_Dynamic_SSB0[,,y] <- biom$Dynamic_SSB0_y
+        proj_eff_SSB[,y] <- biom$eff_SSB_y
+
+        if(y > 1) {
+
+          tmp_rec <- Get_Det_Recruitment(recruitment_model = 1,
+                                         rec_dd = bh_rec_opt$rec_dd,
+                                         n_pop = n_pop,
+                                         sgl_seas_spawning_movement = bh_rec_opt$sgl_seas_spawning_movement,
+                                         natal_region = natal_region,
+                                         y = y + dim(bh_rec_opt$SSB)[3],
+                                         rec_lag = bh_rec_opt$rec_lag,
+                                         R0 = bh_rec_opt$R0,
+                                         rec_region_prop = bh_rec_opt$rec_region_prop,
+                                         rec_seas_prop = rec_seas_prop,
+                                         h = bh_rec_opt$h,
+                                         n_regions = n_regions,
+                                         n_ages = n_ages,
+                                         WAA = bh_rec_opt$WAA,
+                                         MatAA = bh_rec_opt$MatAA,
+                                         n_seas = n_seas,
+                                         seasdur = seasdur,
+                                         spawn_seas = spawn_seas,
+                                         natmort = bh_rec_opt$natmort,
+                                         SSB_vals = abind::abind(bh_rec_opt$SSB, proj_SSB, along = 3),
+                                         Movement = bh_rec_opt$Movement,
+                                         stray_rate = bh_rec_opt$stray_rate,
+                                         do_recruits_move = do_recruits_move,
+                                         t_spawn = t_spawn,
+                                         sexratio_f = bh_rec_opt$sex_ratio_f,
+                                         init_F = bh_rec_opt$init_F,
+                                         n_fish_fleets = n_fish_fleets,
+                                         fish_sel = bh_rec_opt$fish_sel,
+                                         ret_sel = bh_rec_opt$ret_sel,
+                                         dmr = bh_rec_opt$dmr
+          )
+          tmp_rec <- array(tmp_rec, dim = c(n_pop, n_regions))
+
+          for(p in 1:n_pop) {
+            for(r in 1:n_regions) {
+              proj_NAA[p,r,y,spawn_seas,1,]  <- proj_NAA[p,r,y,spawn_seas,1,]  + tmp_rec[p,r] * rec_seas_prop[p,spawn_seas] * sexratio[p,r,y,]
+              proj_NAA0[p,r,y,spawn_seas,1,] <- proj_NAA0[p,r,y,spawn_seas,1,] + tmp_rec[p,r] * rec_seas_prop[p,spawn_seas] * sexratio[p,r,y,]
+            } # end r loop
+          } # end p loop
+
+          # Recruits just inserted above missed this season's movement step
+          # (which already ran, since it had to happen before this year's
+          # SSB, and hence recruitment, was knowable). Catch age index 1 up
+          # to the rest of the cohort when recruits are supposed to move from
+          # birth.
+          if(do_recruits_move == 1 && n_regions > 1) {
+            for(p in 1:n_pop) {
+              for(s in 1:n_sexes) proj_NAA[p,,y,seas,1,s] = t(proj_NAA[p,,y,seas,1,s]) %*% Movement[p,,,y,seas,1,s]
+              for(s in 1:n_sexes) proj_NAA0[p,,y,seas,1,s] = t(proj_NAA0[p,,y,seas,1,s]) %*% Movement[p,,,y,seas,1,s]
+            } # end p loop
+          }
+
+        } # end if y > 1
+
+      } # end if age0_bh && seas == spawn_seas
+
       # Mortality and Ageing ----------------------------------------------------
       if(seas < n_seas && y > 1) { # within season mortality
         proj_NAA[,,y,seas+1,1:n_ages,] = proj_NAA[,,y,seas,1:n_ages,] * exp(-proj_ZAA[,,y,seas,1:n_ages,])
@@ -391,56 +506,14 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
         proj_NAA0[,,y+1,1,n_ages,] = proj_NAA0[,,y+1,1,n_ages,] + proj_NAA0[,,y,n_seas,n_ages,] * exp(-natmort[,,y,n_ages,] * seasdur[n_seas]) # Acuumulate plus group
       }
 
-      # Derive Biomass ----------------------------------------------------------
-      if(seas == spawn_seas) {
-
-        # Get proj_NAA for spawning
-        tmp_NAA_spawn = proj_NAA[,,y,spawn_seas,,, drop = FALSE]
-        tmp_NAA0_spawn = proj_NAA0[,,y,spawn_seas,,, drop = FALSE]
-
-        # If we we are natal homing with 1 season
-        if(n_seas == 1 && n_pop > 1) {
-          # Get proj_NAA during spawning
-          for(p in 1:n_pop) for(a in 1:n_ages) for(s in 1:n_sexes) {
-            tmp_NAA_spawn[p,,1,1,a,s] = tmp_NAA_spawn[p,,1,1,a,s] %*% sgl_seas_spawning_movement[p,,,y,a,s]
-            tmp_NAA0_spawn[p,,1,1,a,s] = tmp_NAA0_spawn[p,,1,1,a,s] %*% sgl_seas_spawning_movement[p,,,y,a,s]
-          } # end s loop
-        }
-
-        # get SSB
-        proj_SSB[,, y] = apply(tmp_NAA_spawn[,, 1, 1, , 1,drop = FALSE] *
-                                 WAA[,, y, spawn_seas, , 1,drop = FALSE] *
-                                 MatAA[,, y, spawn_seas, , 1,drop = FALSE] *
-                                 exp(-proj_ZAA[,, y, spawn_seas, , 1,drop = FALSE] * t_spawn), c(1,2), sum)
-
-        # Get dynamic B0
-        SSB0_array = tmp_NAA0_spawn[,, 1, 1, , 1,drop = FALSE] *  WAA[,,  y, spawn_seas, , 1, drop = FALSE] * MatAA[,,y, spawn_seas, , 1, drop = FALSE]
-        mort_spawn = exp(-natmort[,, y, , 1, drop = FALSE] * t_spawn * seasdur[spawn_seas])
-        mort_spawn = array(mort_spawn, dim = dim(SSB0_array) ) # coerce array
-        proj_Dynamic_SSB0[,,y] = apply(SSB0_array * mort_spawn, c(1,2), sum) # Dynamic B0
-
-        if(n_sexes == 1) { # If single sex model, multiply SSB calculations by 0.5
-          proj_SSB[,,y] = proj_SSB[,,y] * 0.5
-          proj_Dynamic_SSB0[,,y] = proj_Dynamic_SSB0[,,y] * 0.5
-        }
-
-        # Accumulate effective SSB at each population's natal region across all source populations to capture stray contributions
-        if(n_pop > 1) {
-          n_pop_in_region <- rep(0, n_regions)
-          for(p in 1:n_pop) n_pop_in_region[natal_region[p]] <- n_pop_in_region[natal_region[p]] + 1
-          for(p2 in 1:n_pop) {
-            for(p in 1:n_pop) {
-              if(p == p2) {
-                # Own population contribution - no stray scaling
-                proj_eff_SSB[p2, y] = proj_eff_SSB[p2, y] + proj_SSB[p, natal_region[p2], y]
-              } else {
-                # Cross-population contribution scaled by stray_rate
-                proj_eff_SSB[p2, y] = proj_eff_SSB[p2, y] + (stray_rate[p, y] / n_pop_in_region[natal_region[p2]]) * proj_SSB[p, natal_region[p2], y]
-              }
-            } # end p loop
-          } # end p2 loop
-        } else proj_eff_SSB[1,y] = sum(proj_SSB[1,,y])
-
+      # Derive Biomass (age0_bh: already computed above, before mortality/ageing) --
+      if(seas == spawn_seas && !age0_bh) {
+        biom <- derive_proj_biom(y, seas, proj_NAA, proj_NAA0, WAA, MatAA, proj_ZAA, natmort, t_spawn, seasdur,
+                                n_seas, n_pop, n_regions, n_ages, n_sexes,
+                                sgl_seas_spawning_movement, natal_region, stray_rate)
+        proj_SSB[,, y] <- biom$SSB_y
+        proj_Dynamic_SSB0[,,y] <- biom$Dynamic_SSB0_y
+        proj_eff_SSB[,y] <- biom$eff_SSB_y
       } # calculate biomass
 
 

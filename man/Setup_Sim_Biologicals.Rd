@@ -38,7 +38,11 @@ Used to compute survey biomass indices.}
 
 \item{MatAA_input}{Maturity-at-age array with dimensions
 \code{[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]}.
-Values should be proportions in \eqn{[0, 1]}.}
+Values should be proportions in \eqn{[0, 1]}. When \code{rec_lag = 0}
+(age-0 recruitment, set via \code{\link{Setup_Sim_Rec}}), maturity at
+the recruit age (the first age class) must be exactly \code{0} for all
+populations, regions, years, seasons, and sexes -- an error is raised
+otherwise.}
 
 \item{AgeingError_input}{Ageing error (age-length transition) array with
 dimensions \code{[n_yrs × n_model_ages × n_obs_ages × n_sims]}, where each

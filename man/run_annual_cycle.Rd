@@ -28,6 +28,15 @@ compositions; releases conventional tags; generates fishery tag
 recaptures (when any \code{use_conv_fish_tagging = 1}); and generates
 recruitment for the following year (\code{y + 1}) when \code{y < n_yrs}.
 }
+\details{
+The two standalone \code{generate_recruitment()} calls described above
+(at \code{y = 1} and for \code{y + 1}) only run when \code{rec_lag != 0}.
+For \code{rec_lag = 0} (age-0 recruitment), recruitment for year \code{y}
+depends on year \code{y}'s own SSB, which isn't known until
+\code{\link{apply_pop_dy}} reaches \code{spawn_seas} within that year -
+\code{generate_recruitment()} is called from inside \code{apply_pop_dy()}
+instead, once that SSB is available.
+}
 \seealso{
 Other Simulation Setup: 
 \code{\link{Setup_Sim_Biologicals}()},

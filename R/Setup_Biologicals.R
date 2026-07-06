@@ -23,7 +23,11 @@
 #'   Used to compute survey biomass indices.
 #' @param MatAA_input Maturity-at-age array with dimensions
 #'   \code{[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]}.
-#'   Values should be proportions in \eqn{[0, 1]}.
+#'   Values should be proportions in \eqn{[0, 1]}. When \code{rec_lag = 0}
+#'   (age-0 recruitment, set via \code{\link{Setup_Sim_Rec}}), maturity at
+#'   the recruit age (the first age class) must be exactly \code{0} for all
+#'   populations, regions, years, seasons, and sexes -- an error is raised
+#'   otherwise.
 #' @param AgeingError_input Ageing error (age-length transition) array with
 #'   dimensions \code{[n_yrs × n_model_ages × n_obs_ages × n_sims]}, where each
 #'   \code{[n_model_ages × n_obs_ages]} slice is a row-stochastic matrix mapping
@@ -78,6 +82,13 @@ Setup_Sim_Biologicals <- function(
                        n_sims = sim_list$n_sims, what = 'WAA_srv_input')
   check_sim_dimensions(MatAA_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas, n_pop = sim_list$n_pop,
                        n_ages = sim_list$n_ages, n_sexes = sim_list$n_sexes, n_sims = sim_list$n_sims, what = 'MatAA_input')
+
+  # Age-0 (rec_lag = 0) recruitment requires the recruit age class (the first
+  # age) to be immature everywhere -- age-0 fish can't spawn the year they're
+  # born. Requires Setup_Sim_Rec() to have run first so $rec_lag is already set.
+  if(!is.null(sim_list$rec_lag) && sim_list$rec_lag == 0 && any(MatAA_input[,,,,1,,] != 0)) {
+    stop("rec_lag = 0 (age-0 recruitment) requires MatAA_input to be zero at the recruit age (the first age class) for all populations, regions, years, seasons, and sexes -- age-0 fish cannot be mature.")
+  }
   if(!is.null(SizeAgeTrans_input)) check_sim_dimensions(SizeAgeTrans_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_lens = sim_list$n_lens, n_seas = sim_list$n_seas, n_pop = sim_list$n_pop,
                                                         n_ages = sim_list$n_ages, n_sexes = sim_list$n_sexes, n_sims = sim_list$n_sims, what = 'SizeAgeTrans_input')
 
@@ -221,6 +232,11 @@ do_natmort_mapping <- function(input_list,
 #'   If \code{NULL} (default), \code{WAA} is broadcast across all survey fleets.
 #' @param MatAA Numeric array of maturity-at-age proportions (\eqn{\in [0,1]}) with
 #'   dimensions \code{[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes]}.
+#'   When \code{rec_lag = 0} (age-0 recruitment, set via \code{\link{Setup_Mod_Rec}}),
+#'   maturity at the recruit age (the first age class) must be exactly \code{0}
+#'   for all populations, regions, years, seasons, and sexes -- an error is
+#'   raised otherwise. Requires \code{\link{Setup_Mod_Rec}} to have been called
+#'   first so \code{rec_lag} is already set.
 #' @param addtocomp Small constant added to composition proportions before likelihood
 #'   evaluation to avoid \code{log(0)}. Default \code{1e-3}. Ignored when a
 #'   logistic-normal likelihood is specified, as that family handles zeros internally.
@@ -335,6 +351,15 @@ Setup_Mod_Biologicals <- function(input_list,
 
   # Maturity at age checking
   check_data_dimensions(MatAA, n_pop = input_list$data$n_pop,  n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas,  n_ages = length(input_list$data$ages), n_sexes = input_list$data$n_sexes, what = 'MatAA')
+
+  # Age-0 (rec_lag = 0) recruitment requires the recruit age class (the first
+  # age) to be immature everywhere -- age-0 fish can't spawn the year they're
+  # born. This is relied on (rather than special-cased) when excluding age-0
+  # from spawning biomass per recruit. Requires Setup_Mod_Rec() to have run
+  # first so $data$rec_lag is already set.
+  if(!is.null(input_list$data$rec_lag) && input_list$data$rec_lag == 0 && any(MatAA[,,,,1,] != 0)) {
+    stop("rec_lag = 0 (age-0 recruitment) requires MatAA to be zero at the recruit age (the first age class) for all populations, regions, years, seasons, and sexes -- age-0 fish cannot be mature.")
+  }
 
   # Length checking
   if(!fit_lengths %in% c(0,1)) stop("Values for fit_lengths are not valid. They are == 0 (not used), or == 1 (used)")

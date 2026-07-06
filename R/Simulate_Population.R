@@ -823,8 +823,15 @@ generate_initial_age_structure <- function(y,
 #' @param sim_env Simulation environment created by
 #'   \code{\link{Setup_sim_env}}. Modified in place:
 #'   \code{$ln_RecDevs[p, r, y, sim]}, \code{$Rec[p, r, y, sim]},
-#'   \code{$NAA[p, r, y, 1, 1, s, sim]}, and
-#'   \code{$NAA0[p, r, y, 1, 1, s, sim]} are updated.
+#'   \code{$NAA[p, r, y, seas, 1, s, sim]}, and
+#'   \code{$NAA0[p, r, y, seas, 1, s, sim]} are updated.
+#' @param seas Integer. Season this recruitment first enters the population
+#'   in, using \code{rec_seas_prop[p, seas, sim]}. Default \code{1}, matching
+#'   the classic \code{rec_lag >= 1} case where recruitment for the whole year
+#'   is already known before season 1 starts. \code{rec_lag = 0} (age-0
+#'   recruitment) instead calls this with \code{seas = spawn_seas}, since that
+#'   is the earliest season this year's own SSB (and hence recruitment) is
+#'   knowable -- see \code{\link{apply_pop_dy}}.
 #'
 #' @return \code{invisible(NULL)}. All modifications are made by reference
 #'   within \code{sim_env}.
@@ -833,10 +840,12 @@ generate_initial_age_structure <- function(y,
 #' @keywords internal
 generate_recruitment <- function(y,
                                  sim,
-                                 sim_env) {
+                                 sim_env,
+                                 seas = 1) {
 
-  sim_env$y   <- y
-  sim_env$sim <- sim
+  sim_env$y    <- y
+  sim_env$sim  <- sim
+  sim_env$seas <- seas
 
   with(sim_env, {
 
@@ -909,15 +918,95 @@ generate_recruitment <- function(y,
           tmp_total_rec <- tmp_det_rec[p,r] * exp(sim_env$ln_RecDevs[p,r,y,sim] - exp(ln_sigmaR[2,p,sigma_idx])^2/2)
         }
 
-        # input recruitment into first season
-        for(s in 1:n_sexes) sim_env$NAA[p,r,y,1,1,s,sim] <- tmp_total_rec * rec_seas_prop[p,1,sim] * sexratio[p,r,y,s,sim]
+        # input recruitment into the season it first enters the population
+        for(s in 1:n_sexes) sim_env$NAA[p,r,y,seas,1,s,sim] <- tmp_total_rec * rec_seas_prop[p,seas,sim] * sexratio[p,r,y,s,sim]
 
         sim_env$Rec[p,r,y,sim] <- tmp_total_rec # Save annual recruitment estimates
-        sim_env$NAA0[p,r,y,1,1,,sim] = NAA[p,r,y,1,1,,sim] # populate unfished NAA
+        sim_env$NAA0[p,r,y,seas,1,,sim] = NAA[p,r,y,seas,1,,sim] # populate unfished NAA
 
       } # end r loop
     } # end p loop
   })
+}
+
+#' Compute spawning-time biomass quantities for one simulation year/season
+#'
+#' Computes Total_Biom, SSB, Dynamic_SSB0, and eff_SSB for year \code{y} at
+#' season \code{seas} (always called with \code{seas == spawn_seas}) from the
+#' current \code{NAA}/\code{NAA0} state in \code{sim_env}. Factored out of
+#' \code{\link{apply_pop_dy}} so it can be evaluated either before or after
+#' that season's mortality/ageing step depending on \code{rec_lag}, without
+#' duplicating the underlying math. Pure/read-only: returns a list rather
+#' than modifying \code{sim_env}.
+#'
+#' @param y Year integer
+#' @param seas Season integer
+#' @param sim Simulation integer
+#' @param sim_env Simulation environment
+#'
+#' @keywords internal
+compute_spawn_biomass_sim <- function(y, seas, sim, sim_env) {
+
+  NAA <- sim_env$NAA; NAA0 <- sim_env$NAA0
+  WAA <- sim_env$WAA; MatAA <- sim_env$MatAA; ZAA <- sim_env$ZAA
+  natmort <- sim_env$natmort; t_spawn <- sim_env$t_spawn; seasdur <- sim_env$seasdur
+  n_pop <- sim_env$n_pop; n_regions <- sim_env$n_regions; n_seas <- sim_env$n_seas
+  n_ages <- sim_env$n_ages; n_sexes <- sim_env$n_sexes
+  natal_region <- sim_env$natal_region; stray_rate <- sim_env$stray_rate
+  sgl_seas_spawning_movement <- sim_env$sgl_seas_spawning_movement
+
+  tmp_NAA_spawn <- NAA[,,y,seas,,,sim, drop = FALSE]
+  tmp_NAA0_spawn <- NAA0[,,y,seas,,,sim, drop = FALSE]
+
+  # If we we are natal homing with 1 season
+  if(n_seas == 1 && n_pop > 1) {
+    for(p in 1:n_pop) for(a in 1:n_ages) for(s in 1:n_sexes) {
+      tmp_NAA_spawn[p,,1,1,a,s,1] <- tmp_NAA_spawn[p,,1,1,a,s,1] %*% sgl_seas_spawning_movement[p,,,y,a,s,sim]
+      tmp_NAA0_spawn[p,,1,1,a,s,1] <- tmp_NAA0_spawn[p,,1,1,a,s,1] %*% sgl_seas_spawning_movement[p,,,y,a,s,sim]
+    } # end s loop
+  }
+
+  # Total Biomass
+  Total_Biom_y <- apply(tmp_NAA_spawn *
+                          WAA[,, y, seas, , , sim,drop = FALSE] *
+                          exp(-ZAA[,,y,seas,,,sim,drop = FALSE] * t_spawn), c(1,2), sum)
+
+  # Spawning Stock Biomass
+  SSB_y <- apply(tmp_NAA_spawn[,, , , , 1, 1,drop = FALSE] *
+                   WAA[,, y, seas, , 1, sim,drop = FALSE] *
+                   MatAA[,, y, seas, , 1, sim,drop = FALSE] *
+                   exp(-ZAA[,, y, seas, , 1, sim,drop = FALSE] * t_spawn), c(1,2), sum)
+
+  # Get dynamic B0
+  SSB0_array <- tmp_NAA0_spawn[,, , , , 1, 1,drop = FALSE] *  WAA[,,  y, seas, , 1, sim, drop = FALSE] * MatAA[,,y, seas, , 1, sim, drop = FALSE]
+  mort_spawn <- exp(-natmort[,, y, , 1, sim, drop = FALSE] * t_spawn * seasdur[seas])
+  mort_spawn <- array(mort_spawn, dim = dim(SSB0_array) ) # coerce array
+  Dynamic_SSB0_y <- apply(SSB0_array * mort_spawn, c(1,2), sum) # Dynamic B0
+
+  if(n_sexes == 1) { # If single sex model, multiply SSB calculations by 0.5
+    SSB_y <- SSB_y * 0.5
+    Dynamic_SSB0_y <- Dynamic_SSB0_y * 0.5
+  }
+
+  # Accumulate effective SSB at each population's natal region
+  # across all source populations (captures stray contributions)
+  eff_SSB_y <- array(0, dim = n_pop)
+  if(n_pop > 1) {
+    n_pop_in_region = array(0, dim = n_regions)
+    for(p in 1:n_pop) n_pop_in_region[natal_region[p]] = n_pop_in_region[natal_region[p]] + 1
+    for(p2 in 1:n_pop) {
+      for(p in 1:n_pop) {
+        if(p == p2) {
+          eff_SSB_y[p2] = eff_SSB_y[p2] + SSB_y[p, natal_region[p2]]
+        } else {
+          n_receivers = n_pop_in_region[natal_region[p2]]
+          eff_SSB_y[p2] = eff_SSB_y[p2] + (stray_rate[p,y,sim] / n_receivers) * SSB_y[p, natal_region[p2]]
+        }
+      }
+    }
+  } else eff_SSB_y[1] = sum(SSB_y[1,])
+
+  list(Total_Biom_y = Total_Biom_y, SSB_y = SSB_y, Dynamic_SSB0_y = Dynamic_SSB0_y, eff_SSB_y = eff_SSB_y)
 }
 
 #' Apply population dynamics within a simulation year
@@ -938,6 +1027,13 @@ generate_recruitment <- function(y,
 #' \code{NAA_aft} respectively. Movement is only applied when
 #' \code{n_regions > 1}; recruits (\code{a = 1}) are excluded from movement
 #' when \code{do_recruits_move = 0}.
+#'
+#' When \code{rec_lag == 0} (age-0 recruitment), this year's recruitment
+#' can't be known until \code{spawn_seas} is reached (it depends on this
+#' year's own SSB), so \code{\link{generate_recruitment}} is called from
+#' inside this function at \code{seas == spawn_seas} instead of beforehand -
+#' see the "rec_lag == 0" block below, which mirrors the equivalent
+#' restructuring in the estimation model (\code{SPoRC_rtmb.R}).
 #'
 #' @param y Integer. Year index.
 #' @param sim Integer. Simulation replicate index.
@@ -961,8 +1057,15 @@ apply_pop_dy <- function(y, sim, sim_env) {
 
     for(seas in 1:n_seas) {
 
-      # apportion recruitment across seasons
-      if(seas > 1) {
+      # apportion recruitment across seasons already known from earlier this
+      # year:
+      # - rec_lag != 0: the year's recruitment is already known (computed by
+      #   generate_recruitment() before this function ran), so any season
+      #   past the first gets its share here, as before.
+      # - rec_lag == 0: recruitment isn't known until spawn_seas is reached
+      #   (below), so only seasons strictly after spawn_seas are handled here;
+      #   spawn_seas itself generates and inserts its own share.
+      if(if(rec_lag != 0) seas > 1 else seas > spawn_seas) {
         for(p in 1:n_pop) {
           for(r in 1:n_regions) {
             for(s in 1:n_sexes) {
@@ -978,7 +1081,7 @@ apply_pop_dy <- function(y, sim, sim_env) {
             } # end s loop
           } # end r loop
         } # end p loop
-      } # end if seas > 1
+      }
 
       # Mortality and Ageing
       tmp_Fmort <- array(Fmort[,y,seas,,sim], dim = c(n_regions, n_fish_fleets))
@@ -1034,6 +1137,35 @@ apply_pop_dy <- function(y, sim, sim_env) {
 
       } # only compute if spatial
 
+      # Compute Biomass Quantities + Recruitment (rec_lag == 0 only) --------
+      if(rec_lag == 0 && seas == spawn_seas) {
+
+        # SSB from survivors only, used to feed generate_recruitment() below.
+        spawn_biom <- compute_spawn_biomass_sim(y, seas, sim, sim_env)
+        sim_env$SSB[,, y, sim] <- spawn_biom$SSB_y
+
+        generate_recruitment(y, sim, sim_env, seas = spawn_seas)
+
+        # Recruits just generated above missed this season's movement step so apply movement if needed
+        if(do_recruits_move == 1 && n_regions > 1) {
+          for(p in 1:n_pop) {
+            for(s in 1:n_sexes) {
+              sim_env$NAA[p,,y,seas,1,s,sim] <- t(NAA[p,,y,seas,1,s,sim]) %*% Movement[p,,,y,seas,1,s,sim]
+              sim_env$NAA0[p,,y,seas,1,s,sim] <- t(NAA0[p,,y,seas,1,s,sim]) %*% Movement[p,,,y,seas,1,s,sim]
+            } # end s loop
+          } # end p loop
+          NAA_aft[,,y,seas,1,,sim] <- NAA[,,y,seas,1,,sim]
+        }
+
+        # Recompute now that this year's recruits are included
+        spawn_biom <- compute_spawn_biomass_sim(y, seas, sim, sim_env)
+        sim_env$Total_Biom[,, y, sim] <- spawn_biom$Total_Biom_y
+        sim_env$SSB[,, y, sim] <- spawn_biom$SSB_y
+        sim_env$Dynamic_SSB0[,,y,sim] <- spawn_biom$Dynamic_SSB0_y
+        sim_env$eff_SSB[,y,sim] <- spawn_biom$eff_SSB_y
+
+      } # end if rec_lag == 0 && seas == spawn_seas
+
       if(seas < n_seas) { # Within year seasonal mortality
         sim_env$NAA[,,y,seas + 1,1:n_ages,,sim] = NAA[,,y,seas,1:n_ages,,sim] * exp(-ZAA[,,y,seas,1:n_ages,,sim]) # fished
         sim_env$NAA0[,,y,seas + 1,1:n_ages,,sim] <- NAA0[,,y,seas,1:n_ages,,sim] * exp(-(tmp_natmort[,,1:n_ages,])) # unfished
@@ -1045,62 +1177,13 @@ apply_pop_dy <- function(y, sim, sim_env) {
         sim_env$NAA0[,,y+1,1,n_ages,,sim] = NAA0[,,y+1,1,n_ages,,sim] + NAA0[,,y,seas,n_ages,,sim] * exp(-(tmp_natmort[,,n_ages,])) # Acuumulate plus group (unfished)
       }
 
-      # Compute Biomass Quantities
-      if(seas == spawn_seas) {
-
-        # Get NAA for spawning
-        tmp_NAA_spawn <- NAA[,,y,spawn_seas,,,sim, drop = FALSE]
-        tmp_NAA0_spawn <- NAA0[,,y,spawn_seas,,,sim, drop = FALSE]
-
-        # If we we are natal homing with 1 season
-        if(n_seas == 1 && n_pop > 1) {
-          # Get NAA during spawning
-          for(p in 1:n_pop) for(a in 1:n_ages) for(s in 1:n_sexes) {
-            tmp_NAA_spawn[p,,1,1,a,s,1] <- tmp_NAA_spawn[p,,1,1,a,s,1] %*% sgl_seas_spawning_movement[p,,,y,a,s,sim]
-            tmp_NAA0_spawn[p,,1,1,a,s,1] <- tmp_NAA0_spawn[p,,1,1,a,s,1] %*% sgl_seas_spawning_movement[p,,,y,a,s,sim]
-          } # end s loop
-        }
-
-        # Total Biomass
-        sim_env$Total_Biom[,, y, sim] <- apply(tmp_NAA_spawn *
-                                                 WAA[,, y, spawn_seas, , , sim,drop = FALSE] *
-                                                 exp(-ZAA[,,y,spawn_seas,,,sim,drop = FALSE] * t_spawn), c(1,2), sum)
-
-        # Spawning Stock Biomass
-        sim_env$SSB[,, y, sim] <- apply(tmp_NAA_spawn[,, , , , 1, 1,drop = FALSE] *
-                                          WAA[,, y, spawn_seas, , 1, sim,drop = FALSE] *
-                                          MatAA[,, y, spawn_seas, , 1, sim,drop = FALSE] *
-                                          exp(-ZAA[,, y, spawn_seas, , 1, sim,drop = FALSE] * t_spawn), c(1,2), sum)
-
-        # Get dynamic B0
-        SSB0_array <- tmp_NAA0_spawn[,, , , , 1, 1,drop = FALSE] *  WAA[,,  y, spawn_seas, , 1, sim, drop = FALSE] * MatAA[,,y, spawn_seas, , 1, sim, drop = FALSE]
-        mort_spawn <- exp(-natmort[,, y, , 1, sim, drop = FALSE] * t_spawn * seasdur[spawn_seas])
-        mort_spawn <- array(mort_spawn, dim = dim(SSB0_array) ) # coerce array
-        sim_env$Dynamic_SSB0[,,y,sim] <- apply(SSB0_array * mort_spawn, c(1,2), sum) # Dynamic B0
-
-        if(n_sexes == 1) { # If single sex model, multiply SSB calculations by 0.5
-          sim_env$SSB[,,y,sim] <- SSB[,,y,sim] * 0.5
-          sim_env$Dynamic_SSB0[,,y,sim] <- Dynamic_SSB0[,,y,sim] * 0.5
-        }
-
-        # Accumulate effective SSB at each population's natal region
-        # across all source populations (captures stray contributions)
-        # then inside y/sim loops:
-        if(n_pop > 1) {
-          n_pop_in_region = array(0, dim = n_regions)
-          for(p in 1:n_pop) n_pop_in_region[natal_region[p]] = n_pop_in_region[natal_region[p]] + 1
-          for(p2 in 1:n_pop) {
-            for(p in 1:n_pop) {
-              if(p == p2) {
-                sim_env$eff_SSB[p2, y, sim] = sim_env$eff_SSB[p2, y, sim] + SSB[p, natal_region[p2], y, sim]
-              } else {
-                n_receivers = n_pop_in_region[natal_region[p2]]
-                sim_env$eff_SSB[p2, y, sim] = sim_env$eff_SSB[p2, y, sim] + (stray_rate[p,y,sim] / n_receivers) * SSB[p, natal_region[p2], y, sim]
-              }
-            }
-          }
-        } else sim_env$eff_SSB[1, y, sim] = sum(SSB[1,,y,sim])
-
+      # Compute Biomass Quantities (rec_lag != 0: unchanged original timing)
+      if(rec_lag != 0 && seas == spawn_seas) {
+        spawn_biom <- compute_spawn_biomass_sim(y, seas, sim, sim_env)
+        sim_env$Total_Biom[,, y, sim] <- spawn_biom$Total_Biom_y
+        sim_env$SSB[,, y, sim] <- spawn_biom$SSB_y
+        sim_env$Dynamic_SSB0[,,y,sim] <- spawn_biom$Dynamic_SSB0_y
+        sim_env$eff_SSB[,y,sim] <- spawn_biom$eff_SSB_y
       } # if season = spawning season
     } # end seas loop
   })
@@ -1968,6 +2051,14 @@ generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {
 #' recaptures (when any \code{use_conv_fish_tagging = 1}); and generates
 #' recruitment for the following year (\code{y + 1}) when \code{y < n_yrs}.
 #'
+#' The two standalone \code{generate_recruitment()} calls described above
+#' (at \code{y = 1} and for \code{y + 1}) only run when \code{rec_lag != 0}.
+#' For \code{rec_lag = 0} (age-0 recruitment), recruitment for year \code{y}
+#' depends on year \code{y}'s own SSB, which isn't known until
+#' \code{\link{apply_pop_dy}} reaches \code{spawn_seas} within that year -
+#' \code{generate_recruitment()} is called from inside \code{apply_pop_dy()}
+#' instead, once that SSB is available.
+#'
 #' @param y Integer. Year index.
 #' @param sim Integer. Simulation replicate index.
 #' @param sim_env Simulation environment created by
@@ -1986,7 +2077,11 @@ run_annual_cycle <- function(y,
 
   if(y == 1) {
     generate_initial_age_structure(y = 1, sim, sim_env) # Initialize age structure
-    generate_recruitment(y = 1, sim, sim_env) # Get recruitment in the first year
+    # rec_lag == 0 (age-0 recruitment): recruitment for year y depends on
+    # year y's own SSB, which isn't known until apply_pop_dy(y) reaches
+    # spawn_seas - generate_recruitment() is called from inside apply_pop_dy
+    # in that case instead (see apply_pop_dy / compute_spawn_biomass_sim).
+    if(sim_env$rec_lag != 0) generate_recruitment(y = 1, sim, sim_env) # Get recruitment in the first year
   }
 
   apply_pop_dy(y, sim, sim_env) # Apply population dynamics (movement, mortality, and biomass calculations)
@@ -1998,7 +2093,7 @@ run_annual_cycle <- function(y,
     generate_fishery_conv_tags_recap(y, sim, sim_env) # Generate fishery conventional tag recaptures
   }
 
-  if(y < sim_env$n_yrs) generate_recruitment(y = y + 1, sim, sim_env) # Get recruitment in the following year
+  if(y < sim_env$n_yrs && sim_env$rec_lag != 0) generate_recruitment(y = y + 1, sim, sim_env) # Get recruitment in the following year
 
 
   return(invisible(NULL))

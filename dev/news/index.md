@@ -44,6 +44,11 @@
   a genuine closure (`Fmort` forced to zero, no deviation estimated),
   matching prior behavior. See `@param ObsCatch` in
   `Setup_Mod_Catch_and_F` and `Get_Fdev_PE_loglik`.
+- Added age-0 (`rec_lag = 0`) Beverton-Holt recruitment, set via
+  `rec_lag` in `Setup_Mod_Rec`/`Setup_Sim_Rec`. Previously `rec_lag` had
+  to be `>= 1` (recruitment driven by SSB from `rec_lag` seasons prior,
+  entering in any season). With `rec_lag = 0`, recruitment for a year is
+  driven by that *same* year’s own SSB.
 
 ### Minor changes
 
@@ -75,14 +80,14 @@
   mortality deviation map (`do_Fmort_mapping`) onto it, replacing
   hand-enumerated per-combination branches with a single
   dimension-collapsing implementation (no change in behavior for
-  existing models).
+  existing models) (for developers).
 - Refactored movement’s continuous process-error map
   (`do_cont_vary_move_mapping`) and log-likelihood
   (`Get_move_PE_loglik`) to use the same generic sharing-spec machinery
   and a single dimension-aware likelihood loop, replacing 10
   hand-written `iid_*` branches in each (no change in behavior for
   existing models; new dedicated tests added since this module
-  previously had no coverage).
+  previously had no coverage) (for developers).
 
 ### Bug Fixes
 

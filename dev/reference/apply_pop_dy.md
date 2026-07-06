@@ -44,3 +44,11 @@ apply_pop_dy(y, sim, sim_env)
 Pre- and post-movement snapshots are stored in `NAA_bef` and `NAA_aft`
 respectively. Movement is only applied when `n_regions > 1`; recruits
 (`a = 1`) are excluded from movement when `do_recruits_move = 0`.
+
+When `rec_lag == 0` (age-0 recruitment), this year's recruitment can't
+be known until `spawn_seas` is reached (it depends on this year's own
+SSB), so
+[`generate_recruitment`](https://chengmatt.github.io/SPoRC/dev/reference/generate_recruitment.md)
+is called from inside this function at `seas == spawn_seas` instead of
+beforehand - see the "rec_lag == 0" block below, which mirrors the
+equivalent restructuring in the estimation model (`SPoRC_rtmb.R`).

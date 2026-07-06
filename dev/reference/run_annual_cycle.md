@@ -36,6 +36,20 @@ run_annual_cycle(y, sim, sim_env)
 
 `invisible(NULL)`.
 
+## Details
+
+The two standalone
+[`generate_recruitment()`](https://chengmatt.github.io/SPoRC/dev/reference/generate_recruitment.md)
+calls described above (at `y = 1` and for `y + 1`) only run when
+`rec_lag != 0`. For `rec_lag = 0` (age-0 recruitment), recruitment for
+year `y` depends on year `y`'s own SSB, which isn't known until
+[`apply_pop_dy`](https://chengmatt.github.io/SPoRC/dev/reference/apply_pop_dy.md)
+reaches `spawn_seas` within that year -
+[`generate_recruitment()`](https://chengmatt.github.io/SPoRC/dev/reference/generate_recruitment.md)
+is called from inside
+[`apply_pop_dy()`](https://chengmatt.github.io/SPoRC/dev/reference/apply_pop_dy.md)
+instead, once that SSB is available.
+
 ## See also
 
 Other Simulation Setup:

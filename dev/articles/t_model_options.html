@@ -532,8 +532,16 @@ start, 0.5 = midpoint)</td>
 </tr>
 <tr class="odd">
 <td><code>rec_lag</code></td>
-<td>Delay in years between spawning and recruitment entry. Must be ≥
-1</td>
+<td>Delay (in seasons) between spawning and recruitment entry.
+<code>1</code> (default): recruitment driven by SSB from
+<code>rec_lag</code> seasons prior, may enter in any season.
+<code>0</code>: age-0 recruitment – recruitment driven by that
+<em>same</em> year’s own SSB. Since that SSB isn’t known until
+<code>spawn_seas</code> is reached, recruits may only enter in
+<code>spawn_seas</code> itself or a later season in the same year
+(<code>rec_seas_prop</code> must be zero for every season before
+<code>spawn_seas</code>), and the recruit age class must have zero
+maturity everywhere</td>
 </tr>
 </tbody>
 </table>

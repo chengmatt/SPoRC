@@ -1,8 +1,6 @@
 # Extract the keep indicator from an OSA observation
 
-Returns the per-bin `keep` indicator carried by an OSA-tagged
-observation slice. During ordinary fitting (plain numeric input) all
-bins are treated as kept.
+Extract the keep indicator from an OSA observation
 
 ## Usage
 
@@ -14,13 +12,12 @@ osa_extract_keep(xobs, n)
 
 - xobs:
 
-  Either an object of class `"osa"` or a plain numeric vector.
+  An `"osa"` object or plain numeric vector.
 
 - n:
 
-  Integer length used to construct the default all-ones indicator when
-  `xobs` is not an `"osa"` object.
+  Length for the default all-ones indicator.
 
 ## Value
 
-A numeric/AD vector of keep indicators (length `n`).
+Numeric/AD keep vector.

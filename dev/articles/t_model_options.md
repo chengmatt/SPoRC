@@ -181,7 +181,7 @@ Controlled via
 |----|----|
 | `spawn_seas` | Season index in which spawning occurs |
 | `t_spawn` | Fraction of the spawning season elapsed before spawning occurs (0 = start, 0.5 = midpoint) |
-| `rec_lag` | Delay in years between spawning and recruitment entry. Must be ≥ 1 |
+| `rec_lag` | Delay (in seasons) between spawning and recruitment entry. `1` (default): recruitment driven by SSB from `rec_lag` seasons prior, may enter in any season. `0`: age-0 recruitment – recruitment driven by that *same* year’s own SSB. Since that SSB isn’t known until `spawn_seas` is reached, recruits may only enter in `spawn_seas` itself or a later season in the same year (`rec_seas_prop` must be zero for every season before `spawn_seas`), and the recruit age class must have zero maturity everywhere |
 
 #### Recruitment allocation
 

@@ -96,7 +96,9 @@ rec_seas_prop[, 1, ] <- 1
 
   Seasonal allocation of annual recruitment, array
   `[n_pop x n_seas x n_sims]`. Each population's values should sum to 1
-  across seasons. Default: all recruitment assigned to season 1.
+  across seasons. Default: all recruitment assigned to season 1. When
+  `rec_lag = 0` and `spawn_seas > 1`, must be zero for every season
+  before `spawn_seas` – an error is raised otherwise.
 
 - recruitment_opt:
 
@@ -186,8 +188,14 @@ rec_seas_prop[, 1, ] <- 1
 
 - rec_lag:
 
-  Integer. Number of seasons between spawning and recruitment of age-1
-  fish. Must be \\\geq 1\\; `0` is not permitted. Default `1`.
+  Integer. Number of seasons between spawning and recruitment. `1`
+  (default) is the classic lagged case: recruits enter the population
+  using SSB from `rec_lag` seasons prior, in any season. `0` is age-0
+  recruitment: recruits enter using the SAME year's SSB. Because that
+  SSB isn't known until `spawn_seas` is reached, age-0 recruits may only
+  enter in `spawn_seas` itself or a later season in the same year –
+  `rec_seas_prop_input` must be zero for every season before
+  `spawn_seas` when `rec_lag = 0`.
 
 - Rec_input:
 

@@ -67,7 +67,14 @@ Setup_Mod_Biologicals(
 
   Numeric array of maturity-at-age proportions (\\\in \[0,1\]\\) with
   dimensions
-  `[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes]`.
+  `[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes]`. When
+  `rec_lag = 0` (age-0 recruitment, set via
+  [`Setup_Mod_Rec`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Rec.md)),
+  maturity at the recruit age (the first age class) must be exactly `0`
+  for all populations, regions, years, seasons, and sexes – an error is
+  raised otherwise. Requires
+  [`Setup_Mod_Rec`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Rec.md)
+  to have been called first so `rec_lag` is already set.
 
 - addtocomp:
 

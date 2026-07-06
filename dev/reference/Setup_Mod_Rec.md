@@ -121,8 +121,16 @@ rec_seas_prop[, 1] <- 1
 
 - rec_lag:
 
-  Integer. Lag between spawning biomass and age-1 recruitment (in
-  seasons). Must be \\\geq 1\\. Default `1`.
+  Integer. Lag between spawning biomass and recruitment (in seasons).
+  `1` (default) is the classic lagged case: recruitment uses SSB from
+  `rec_lag` seasons prior and may enter in any season. `0` is age-0
+  recruitment: recruitment uses the SAME year's SSB, and because that
+  SSB isn't known until `spawn_seas` is reached, recruits may only enter
+  in `spawn_seas` itself or a later season – when
+  `use_fixed_rec_seas_prop = 1`, `fixed_rec_seas_prop` must be zero
+  before `spawn_seas`; when estimated, this is enforced structurally via
+  a restricted softmax (see
+  [`do_rec_seas_prop_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_rec_seas_prop_mapping.md)).
 
 - Use_h_prior:
 
@@ -165,7 +173,10 @@ rec_seas_prop[, 1] <- 1
 - use_rec_seas_prop_prior:
 
   Integer (0/1). Whether Dirichlet priors are applied to seasonal
-  recruitment proportions. Not valid when `n_seas = 1`. Default `0`.
+  recruitment proportions. Not valid when `n_seas = 1`. When
+  `rec_lag = 0` and `spawn_seas > 1`, the prior is evaluated only over
+  seasons `spawn_seas:n_seas` (the seasons before `spawn_seas` are
+  structurally zero, not estimated). Default `0`.
 
 - rec_seas_prop_prior:
 
@@ -183,7 +194,8 @@ rec_seas_prop[, 1] <- 1
 
   Array `[n_pop x n_seas]`. Fixed seasonal recruitment proportions used
   when `use_fixed_rec_seas_prop = 1`. Default: all recruitment assigned
-  to season 1.
+  to season 1. When `rec_lag = 0` and `spawn_seas > 1`, must be zero for
+  every season before `spawn_seas` – an error is raised otherwise.
 
 - do_rec_bias_ramp:
 

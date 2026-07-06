@@ -103,6 +103,12 @@ spawning biomass.</p>
 <code>NAA_aft</code> respectively. Movement is only applied when
 <code>n_regions &gt; 1</code>; recruits (<code>a = 1</code>) are excluded from movement
 when <code>do_recruits_move = 0</code>.</p>
+<p>When <code>rec_lag == 0</code> (age-0 recruitment), this year's recruitment
+can't be known until <code>spawn_seas</code> is reached (it depends on this
+year's own SSB), so <code><a href="generate_recruitment.html">generate_recruitment</a></code> is called from
+inside this function at <code>seas == spawn_seas</code> instead of beforehand -
+see the "rec_lag == 0" block below, which mirrors the equivalent
+restructuring in the estimation model (<code>SPoRC_rtmb.R</code>).</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -69,6 +69,8 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/check_sim_dimensions.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/cmb.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/collect_message.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/compute_biom_y.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/compute_spawn_biomass_sim.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/condition_closed_loop_simulations.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/convert_to_numeric.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/dbeta_symmetric.html</loc></url>
@@ -76,6 +78,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/ddirmult.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/ddirmult2.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/ddirmult_osa.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/derive_proj_biom.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/dlogistnormal.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/dmultinom_osa.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/dnbinom_robust_noint.html</loc></url>
@@ -189,9 +192,12 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/mlt_rg_sable_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/mlt_rg_sable_rep.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/optim_ref_pts.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/osa_extract_cdf.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/osa_extract_keep.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/osa_extract_values.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/osa_extract_x.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/osa_pbetabinom.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/osa_pbinom.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/osa_squeeze.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/pack_comp_osa.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/pack_tag_osa.html</loc></url>

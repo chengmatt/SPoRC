@@ -86,6 +86,16 @@ helper functions modify this environment in place.</p></dd>
     <p><code>invisible(NULL)</code>.</p>
     </div>
     <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>The two standalone <code><a href="generate_recruitment.html">generate_recruitment()</a></code> calls described above
+(at <code>y = 1</code> and for <code>y + 1</code>) only run when <code>rec_lag != 0</code>.
+For <code>rec_lag = 0</code> (age-0 recruitment), recruitment for year <code>y</code>
+depends on year <code>y</code>'s own SSB, which isn't known until
+<code><a href="apply_pop_dy.html">apply_pop_dy</a></code> reaches <code>spawn_seas</code> within that year -
+<code><a href="generate_recruitment.html">generate_recruitment()</a></code> is called from inside <code><a href="apply_pop_dy.html">apply_pop_dy()</a></code>
+instead, once that SSB is available.</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p>Other Simulation Setup:
 <code><a href="Setup_Sim_Biologicals.html">Setup_Sim_Biologicals()</a></code>,

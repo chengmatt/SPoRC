@@ -325,7 +325,19 @@ before spawning; used for mid-season SSB calculations.</p></dd>
   <code>do_recruits_move</code>.</p>
 <p>Spawning biomass used in recruitment is constructed internally by
   combining <code>bh_rec_opt$SSB</code> with projected SSB values during the
-  simulation.</p></dd>
+  simulation.</p>
+<p><code>bh_rec_opt$rec_lag = 1</code> is the classic lagged case: each
+  projection year's recruitment is computed up front from the prior
+  year's SSB, exactly as <code>recruitment_opt = "inv_gauss"</code>/
+  <code>"mean_rec"</code> are. <code>bh_rec_opt$rec_lag = 0</code> is age-0
+  recruitment: recruitment for year <code>y</code> is computed from year
+  <code>y</code>'s own SSB once <code>spawn_seas</code> is reached within that year's
+  season loop, and is inserted no earlier than <code>spawn_seas</code>
+  (<code>rec_seas_prop</code> must be zero for every season before
+  <code>spawn_seas</code> in that case). Reference points and the seasonal SBPR
+  calculation used to get <code>bh_rec_opt$WAA</code>/<code>MatAA</code>/etc. are
+  unaffected by this choice – <code>rec_lag</code> only changes which year's
+  SSB feeds the Beverton-Holt curve, not the per-recruit math itself.</p></dd>
 
 
 <dt id="arg-n-seas">n_seas<a class="anchor" aria-label="anchor" href="#arg-n-seas"></a></dt>
@@ -361,7 +373,9 @@ generated annually and then distributed across seasons using
 <code>rec_seas_prop</code>, allowing intra-annual timing of recruitment within
 the first age class.</p>
 
-<p>Each projection year proceeds as follows:</p><ol><li><p>Annual recruitment is generated and allocated across regions and
+<p>Each projection year proceeds as follows when
+<code>recruitment_opt != "bh_rec"</code> or <code>bh_rec_opt$rec_lag != 0</code>
+(the classic case):</p><ol><li><p>Annual recruitment is generated and allocated across regions and
   sexes. Seasonal recruitment is then distributed within the first age
   class using <code>rec_seas_prop</code>, with additional recruits entering in
   seasons <code>seas &gt; 1</code>.</p></li>
@@ -379,7 +393,17 @@ the first age class.</p>
   biomass using fishery-specific weights.</p></li>
 <li><p>Fishing mortality for the next year is updated via the specified
   harvest control rule or fixed input.</p></li>
-</ol><p>Effective spawning biomass at each population's natal region aggregates
+</ol><p>When <code>bh_rec_opt$rec_lag == 0</code> (age-0 recruitment), steps 1 and 5
+above are reordered within <code>spawn_seas</code>: movement is applied first,
+spawning biomass is computed from the survivor population alone (no new
+recruits exist yet), that SSB is used to generate this year's
+recruitment, and only then are the recruits inserted (no earlier than
+<code>spawn_seas</code>) - immediately before mortality/ageing runs for that
+season, so the new cohort is carried forward exactly like any other
+seasonal recruit pulse. Years <code>y &gt; 1</code> generate recruitment this way;
+year 1 carries the supplied terminal assessment state forward with no new
+recruitment event, matching the classic case.</p>
+<p>Effective spawning biomass at each population's natal region aggregates
 contributions from all populations, with cross-population contributions
 scaled by <code>stray_rate</code> and normalised by the number of populations
 in each natal region.</p>

@@ -35,7 +35,7 @@ the order they are defined.
 
 | Name | Description |
 |----|----|
-| rec_lag | Value specifying the delay between spawning and when recruits enter the population. For example, if recruits enter the population as age 2, rec_lag would be specified as 2, such that the spawning biomass from year – 2 produces these recruits |
+| rec_lag | Value specifying the delay between spawning and when recruits enter the population. For example, if recruits enter the population as age 2, rec_lag would be specified as 2, such that the spawning biomass from year – 2 produces these recruits. A special case, rec_lag = 0 (age-0 recruitment), uses the *same* year’s own spawning biomass instead of a prior year’s; because that year’s SSB isn’t known until the spawning season is reached, recruits may only enter in the spawning season itself or later that same year |
 | Use_h_prior | Value specifying whether steepness priors are used. 0: Don’t use priors, 1: Use Priors. Steepness priors are bounded between 0.2 and 1 with a scaled beta penalty |
 | h_prior | Data frame specifying prior distributions for steepness parameters. Must include columns: pop (population index), region (region index), mu (mean of the prior in normal space), and sd (standard deviation of the prior in normal space). For each row, a beta distribution is scaled to the interval \[0.2, 1\], and the corresponding h_trans value is transformed and penalized using the log-density from the scaled beta distribution |
 | do_rec_bias_ramp | Value specifying whether or not the Methot and Taylor recruitment bias ramp is conducted. 0: Don’t do bias ramp, 1: Do bias ramp |

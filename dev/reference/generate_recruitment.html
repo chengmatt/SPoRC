@@ -60,7 +60,7 @@ recruitment. If <code>Rec_input</code> exists in the environment and covers year
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">generate_recruitment</span><span class="op">(</span><span class="va">y</span>, <span class="va">sim</span>, <span class="va">sim_env</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">generate_recruitment</span><span class="op">(</span><span class="va">y</span>, <span class="va">sim</span>, <span class="va">sim_env</span>, seas <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -79,8 +79,18 @@ recruitment. If <code>Rec_input</code> exists in the environment and covers year
 <dd><p>Simulation environment created by
 <code><a href="Setup_sim_env.html">Setup_sim_env</a></code>. Modified in place:
 <code>$ln_RecDevs[p, r, y, sim]</code>, <code>$Rec[p, r, y, sim]</code>,
-<code>$NAA[p, r, y, 1, 1, s, sim]</code>, and
-<code>$NAA0[p, r, y, 1, 1, s, sim]</code> are updated.</p></dd>
+<code>$NAA[p, r, y, seas, 1, s, sim]</code>, and
+<code>$NAA0[p, r, y, seas, 1, s, sim]</code> are updated.</p></dd>
+
+
+<dt id="arg-seas">seas<a class="anchor" aria-label="anchor" href="#arg-seas"></a></dt>
+<dd><p>Integer. Season this recruitment first enters the population
+in, using <code>rec_seas_prop[p, seas, sim]</code>. Default <code>1</code>, matching
+the classic <code>rec_lag &gt;= 1</code> case where recruitment for the whole year
+is already known before season 1 starts. <code>rec_lag = 0</code> (age-0
+recruitment) instead calls this with <code>seas = spawn_seas</code>, since that
+is the earliest season this year's own SSB (and hence recruitment) is
+knowable – see <code><a href="apply_pop_dy.html">apply_pop_dy</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -293,6 +293,18 @@ rec_seas_prop[] <- 1/n_seas
   combining `bh_rec_opt$SSB` with projected SSB values during the
   simulation.
 
+  `bh_rec_opt$rec_lag = 1` is the classic lagged case: each projection
+  year's recruitment is computed up front from the prior year's SSB,
+  exactly as `recruitment_opt = "inv_gauss"`/ `"mean_rec"` are.
+  `bh_rec_opt$rec_lag = 0` is age-0 recruitment: recruitment for year
+  `y` is computed from year `y`'s own SSB once `spawn_seas` is reached
+  within that year's season loop, and is inserted no earlier than
+  `spawn_seas` (`rec_seas_prop` must be zero for every season before
+  `spawn_seas` in that case). Reference points and the seasonal SBPR
+  calculation used to get `bh_rec_opt$WAA`/`MatAA`/etc. are unaffected
+  by this choice – `rec_lag` only changes which year's SSB feeds the
+  Beverton-Holt curve, not the per-recruit math itself.
+
 - n_seas:
 
   Integer. Number of seasons. Default = 1.
@@ -325,7 +337,9 @@ generated annually and then distributed across seasons using
 `rec_seas_prop`, allowing intra-annual timing of recruitment within the
 first age class.
 
-Each projection year proceeds as follows:
+Each projection year proceeds as follows when
+`recruitment_opt != "bh_rec"` or `bh_rec_opt$rec_lag != 0` (the classic
+case):
 
 1.  Annual recruitment is generated and allocated across regions and
     sexes. Seasonal recruitment is then distributed within the first age
@@ -351,6 +365,17 @@ Each projection year proceeds as follows:
 
 7.  Fishing mortality for the next year is updated via the specified
     harvest control rule or fixed input.
+
+When `bh_rec_opt$rec_lag == 0` (age-0 recruitment), steps 1 and 5 above
+are reordered within `spawn_seas`: movement is applied first, spawning
+biomass is computed from the survivor population alone (no new recruits
+exist yet), that SSB is used to generate this year's recruitment, and
+only then are the recruits inserted (no earlier than `spawn_seas`) -
+immediately before mortality/ageing runs for that season, so the new
+cohort is carried forward exactly like any other seasonal recruit pulse.
+Years `y > 1` generate recruitment this way; year 1 carries the supplied
+terminal assessment state forward with no new recruitment event,
+matching the classic case.
 
 Effective spawning biomass at each population's natal region aggregates
 contributions from all populations, with cross-population contributions

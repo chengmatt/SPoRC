@@ -60,7 +60,12 @@ Setup_Sim_Biologicals(
 
   Maturity-at-age array with dimensions
   `[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]`.
-  Values should be proportions in \\\[0, 1\]\\.
+  Values should be proportions in \\\[0, 1\]\\. When `rec_lag = 0`
+  (age-0 recruitment, set via
+  [`Setup_Sim_Rec`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Rec.md)),
+  maturity at the recruit age (the first age class) must be exactly `0`
+  for all populations, regions, years, seasons, and sexes – an error is
+  raised otherwise.
 
 - AgeingError_input:
 

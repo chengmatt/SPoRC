@@ -107,7 +107,12 @@ If <code>NULL</code> (default), <code>WAA</code> is broadcast across all survey 
 
 <dt id="arg-mataa">MatAA<a class="anchor" aria-label="anchor" href="#arg-mataa"></a></dt>
 <dd><p>Numeric array of maturity-at-age proportions (\(\in [0,1]\)) with
-dimensions <code>[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes]</code>.</p></dd>
+dimensions <code>[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes]</code>.
+When <code>rec_lag = 0</code> (age-0 recruitment, set via <code><a href="Setup_Mod_Rec.html">Setup_Mod_Rec</a></code>),
+maturity at the recruit age (the first age class) must be exactly <code>0</code>
+for all populations, regions, years, seasons, and sexes – an error is
+raised otherwise. Requires <code><a href="Setup_Mod_Rec.html">Setup_Mod_Rec</a></code> to have been called
+first so <code>rec_lag</code> is already set.</p></dd>
 
 
 <dt id="arg-addtocomp">addtocomp<a class="anchor" aria-label="anchor" href="#arg-addtocomp"></a></dt>

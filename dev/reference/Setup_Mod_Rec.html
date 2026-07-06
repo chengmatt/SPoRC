@@ -176,8 +176,16 @@ defined in <code>$data</code>.</p></dd>
 
 
 <dt id="arg-rec-lag">rec_lag<a class="anchor" aria-label="anchor" href="#arg-rec-lag"></a></dt>
-<dd><p>Integer. Lag between spawning biomass and age-1
-recruitment (in seasons). Must be \(\geq 1\). Default <code>1</code>.</p></dd>
+<dd><p>Integer. Lag between spawning biomass and recruitment (in
+seasons). <code>1</code> (default) is the classic lagged case: recruitment uses
+SSB from <code>rec_lag</code> seasons prior and may enter in any season.
+<code>0</code> is age-0 recruitment: recruitment uses the SAME year's SSB, and
+because that SSB isn't known until <code>spawn_seas</code> is reached, recruits
+may only enter in <code>spawn_seas</code> itself or a later season – when
+<code>use_fixed_rec_seas_prop = 1</code>, <code>fixed_rec_seas_prop</code> must be
+zero before <code>spawn_seas</code>; when estimated, this is enforced
+structurally via a restricted softmax (see
+<code><a href="do_rec_seas_prop_mapping.html">do_rec_seas_prop_mapping</a></code>).</p></dd>
 
 
 <dt id="arg-use-h-prior">Use_h_prior<a class="anchor" aria-label="anchor" href="#arg-use-h-prior"></a></dt>
@@ -223,7 +231,10 @@ including <code>"est_shared_pop"</code>.</p></dd>
 <dt id="arg-use-rec-seas-prop-prior">use_rec_seas_prop_prior<a class="anchor" aria-label="anchor" href="#arg-use-rec-seas-prop-prior"></a></dt>
 <dd><p>Integer (0/1). Whether Dirichlet priors are
 applied to seasonal recruitment proportions. Not valid when
-<code>n_seas = 1</code>. Default <code>0</code>.</p></dd>
+<code>n_seas = 1</code>. When <code>rec_lag = 0</code> and <code>spawn_seas &gt; 1</code>, the
+prior is evaluated only over seasons <code>spawn_seas:n_seas</code> (the
+seasons before <code>spawn_seas</code> are structurally zero, not estimated).
+Default <code>0</code>.</p></dd>
 
 
 <dt id="arg-rec-seas-prop-prior">rec_seas_prop_prior<a class="anchor" aria-label="anchor" href="#arg-rec-seas-prop-prior"></a></dt>
@@ -243,7 +254,9 @@ estimation. Default <code>1</code>.</p></dd>
 <dt id="arg-fixed-rec-seas-prop">fixed_rec_seas_prop<a class="anchor" aria-label="anchor" href="#arg-fixed-rec-seas-prop"></a></dt>
 <dd><p>Array <code>[n_pop x n_seas]</code>. Fixed seasonal
 recruitment proportions used when <code>use_fixed_rec_seas_prop = 1</code>.
-Default: all recruitment assigned to season 1.</p></dd>
+Default: all recruitment assigned to season 1. When <code>rec_lag = 0</code>
+and <code>spawn_seas &gt; 1</code>, must be zero for every season before
+<code>spawn_seas</code> – an error is raised otherwise.</p></dd>
 
 
 <dt id="arg-do-rec-bias-ramp">do_rec_bias_ramp<a class="anchor" aria-label="anchor" href="#arg-do-rec-bias-ramp"></a></dt>

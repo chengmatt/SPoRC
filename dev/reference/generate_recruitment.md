@@ -13,7 +13,7 @@ recruitment. If `Rec_input` exists in the environment and covers year
 ## Usage
 
 ``` r
-generate_recruitment(y, sim, sim_env)
+generate_recruitment(y, sim, sim_env, seas = 1)
 ```
 
 ## Arguments
@@ -31,8 +31,19 @@ generate_recruitment(y, sim, sim_env)
   Simulation environment created by
   [`Setup_sim_env`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_sim_env.md).
   Modified in place: `$ln_RecDevs[p, r, y, sim]`, `$Rec[p, r, y, sim]`,
-  `$NAA[p, r, y, 1, 1, s, sim]`, and `$NAA0[p, r, y, 1, 1, s, sim]` are
-  updated.
+  `$NAA[p, r, y, seas, 1, s, sim]`, and
+  `$NAA0[p, r, y, seas, 1, s, sim]` are updated.
+
+- seas:
+
+  Integer. Season this recruitment first enters the population in, using
+  `rec_seas_prop[p, seas, sim]`. Default `1`, matching the classic
+  `rec_lag >= 1` case where recruitment for the whole year is already
+  known before season 1 starts. `rec_lag = 0` (age-0 recruitment)
+  instead calls this with `seas = spawn_seas`, since that is the
+  earliest season this year's own SSB (and hence recruitment) is
+  knowable – see
+  [`apply_pop_dy`](https://chengmatt.github.io/SPoRC/dev/reference/apply_pop_dy.md).
 
 ## Value
 

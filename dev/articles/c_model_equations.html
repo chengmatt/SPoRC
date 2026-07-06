@@ -76,7 +76,9 @@ order:</p>
 <ol style="list-style-type: decimal">
 <li>Recruitment generally occurs in the first season, with additional
 recruits apportioned to subsequent seasons according to seasonal
-proportions,</li>
+proportions. The exception is age-0 recruitment (no lag between spawning
+and recruitment; see Recruitment Processes below), where recruits
+instead enter no earlier than the spawning season,</li>
 <li>Markovian movement of individuals then follows (movement only occurs
 in the spatial model),</li>
 <li>Total mortality occurs within each season; at the end of the final
@@ -349,14 +351,93 @@ SSB_{p,r,y} = \sum_{a = 1}^{a_{+}}{N_{p,r,y,\tau^{spawn},a,s = 1}W_{p,r,y,\tau^{
 spawning biomass.</p>
 <p>Note that
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mi>e</mi><mi>c</mi><mi>L</mi><mi>a</mi><mi>g</mi></mrow><annotation encoding="application/x-tex">RecLag</annotation></semantics></math>
-denotes the delay between spawning and when recruits enter the
-population. Thus, if
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mi>e</mi><mi>c</mi><mi>L</mi><mi>a</mi><mi>g</mi><mo>&gt;</mo><mi>y</mi></mrow><annotation encoding="application/x-tex">RecLag &gt; y</annotation></semantics></math>,
-<code>SPoRC</code> utilizes
+denotes the delay (in seasons) between spawning and when recruits enter
+the population, and is user-specified as
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mi>e</mi><mi>c</mi><mi>L</mi><mi>a</mi><mi>g</mi><mo>≥</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">RecLag \geq 1</annotation></semantics></math>
+(the classic case above) or
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mi>e</mi><mi>c</mi><mi>L</mi><mi>a</mi><mi>g</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">RecLag = 0</annotation></semantics></math>
+(age-0 recruitment, described below). For
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mi>e</mi><mi>c</mi><mi>L</mi><mi>a</mi><mi>g</mi><mo>≥</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">RecLag \geq 1</annotation></semantics></math>:
+if
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mi>e</mi><mi>c</mi><mi>L</mi><mi>a</mi><mi>g</mi><mo>&gt;</mo><mi>y</mi></mrow><annotation encoding="application/x-tex">RecLag &gt; y</annotation></semantics></math>
+(i.e. there is not yet enough model history to look back
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mi>e</mi><mi>c</mi><mi>L</mi><mi>a</mi><mi>g</mi></mrow><annotation encoding="application/x-tex">RecLag</annotation></semantics></math>
+seasons), <code>SPoRC</code> utilizes
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mtext mathvariant="normal">SSB0</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow></msub><annotation encoding="application/x-tex">\text{SSB0}_{p,r}</annotation></semantics></math>
 instead of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mrow><mi>S</mi><mi>S</mi><mi>B</mi></mrow><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>−</mo><mi>R</mi><mi>e</mi><mi>c</mi><mi>L</mi><mi>a</mi><mi>g</mi></mrow></msub><annotation encoding="application/x-tex">{SSB}_{p,r,y - RecLag}</annotation></semantics></math>
 to compute deterministic recruitment.</p>
+<div class="section level5">
+<h5 id="age-0-recruitment-reclag-0">Age-0 Recruitment
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mi>e</mi><mi>c</mi><mi>L</mi><mi>a</mi><mi>g</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">RecLag = 0</annotation></semantics></math>)<a class="anchor" aria-label="anchor" href="#age-0-recruitment-reclag-0"></a>
+</h5>
+<p>When
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mi>e</mi><mi>c</mi><mi>L</mi><mi>a</mi><mi>g</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">RecLag = 0</annotation></semantics></math>,
+recruitment for year
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>y</mi><annotation encoding="application/x-tex">y</annotation></semantics></math>
+is driven by that same year’s own spawning biomass rather than a prior
+year’s. The Beverton-Holt equations above still apply, but with
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mtext mathvariant="normal">effSSB</mtext><mrow><mi>p</mi><mo>,</mo><mi>y</mi></mrow></msub><annotation encoding="application/x-tex">\text{effSSB}_{p,y}</annotation></semantics></math>
+(or
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mo>∑</mo><mi>r</mi></msub><mi>S</mi><mi>S</mi><msub><mi>B</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\sum_r SSB_{p,r,y}</annotation></semantics></math>
+for global density dependence) in place of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mtext mathvariant="normal">effSSB</mtext><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>−</mo><mi>R</mi><mi>e</mi><mi>c</mi><mi>L</mi><mi>a</mi><mi>g</mi></mrow></msub><annotation encoding="application/x-tex">\text{effSSB}_{p,y - RecLag}</annotation></semantics></math>,
+and recruits enter starting at the spawning season
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><annotation encoding="application/x-tex">\tau^{spawn}</annotation></semantics></math>
+rather than season 1:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="center" style="text-align: center"><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>=</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><mstyle displaystyle="true"><mfrac><mrow><mn>4</mn><msubsup><mi>μ</mi><mi>p</mi><mtext mathvariant="normal">Rec</mtext></msubsup><msub><mi>ζ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow></msub><msub><mi>h</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow></msub><msub><mtext mathvariant="normal">effSSB</mtext><mrow><mi>p</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>h</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><msub><mtext mathvariant="normal">SSB0</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow></msub><mo>+</mo><mn>5</mn><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>h</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow></msub><mo>−</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow><msub><mtext mathvariant="normal">effSSB</mtext><mrow><mi>p</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow></mfrac></mstyle><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow><mtext mathvariant="normal">Rec</mtext></msubsup><mo>−</mo><mfrac><msubsup><mi>σ</mi><mtext mathvariant="normal">Rec</mtext><mn>2</mn></msubsup><mn>2</mn></mfrac><msub><mi>b</mi><mi>y</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>χ</mi><mrow><mi>p</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup></mrow></msub><msub><mi>ψ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>s</mi></mrow></msub></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{matrix}
+N_{p,r,y,\tau = \tau^{spawn},a = 1,s} = \dfrac{4\mu_p^{\text{Rec}}\zeta_{p,r}h_{p,r}{\text{effSSB}}_{p,y}}{\left( 1 - h_{p,r} \right)\text{SSB0}_{p,r} + 5\left( h_{p,r} - 1 \right){\text{effSSB}}_{p,y}}\exp\left( \epsilon_{p,r,y}^{\text{Rec}} - \frac{\sigma_{\text{Rec}}^{2}}{2}b_{y} \right)\chi_{p,\tau^{spawn}}\psi_{p,r,y,s} \\
+\end{matrix}</annotation></semantics></math></p>
+<p>with any remaining seasonal share
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi><mo>&gt;</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup></mrow><annotation encoding="application/x-tex">\tau &gt; \tau^{spawn}</annotation></semantics></math>)
+added to the existing numbers at age 1 exactly as in the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi><mo>&gt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\tau &gt; 1</annotation></semantics></math>
+equation above.</p>
+<p>Because
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mtext mathvariant="normal">effSSB</mtext><mrow><mi>p</mi><mo>,</mo><mi>y</mi></mrow></msub><annotation encoding="application/x-tex">\text{effSSB}_{p,y}</annotation></semantics></math>/<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mi>S</mi><msub><mi>B</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">SSB_{p,r,y}</annotation></semantics></math>
+is not knowable until season
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><annotation encoding="application/x-tex">\tau^{spawn}</annotation></semantics></math>
+is actually reached within year
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>y</mi><annotation encoding="application/x-tex">y</annotation></semantics></math>,
+this timing constraint is enforced structurally rather than left to the
+user:</p>
+<ul>
+<li>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>χ</mi><mrow><mi>p</mi><mo>,</mo><mi>τ</mi></mrow></msub><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\chi_{p,\tau} = 0</annotation></semantics></math>
+for every season before
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><annotation encoding="application/x-tex">\tau^{spawn}</annotation></semantics></math>
+(validated at setup; recruits cannot predate the spawning event that
+produced them), and</li>
+<li>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mtext mathvariant="normal">Mat</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\text{Mat}_{p,r,y,\tau,a = 1,s} = 0</annotation></semantics></math>
+for all
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>
+(validated at setup; age-0 fish cannot be mature), which guarantees the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">a = 1</annotation></semantics></math>
+term in the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mi>S</mi><msub><mi>B</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">SSB_{p,r,y}</annotation></semantics></math>
+sum is always zero regardless of whether this year’s recruits have been
+added to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">N_{p,r,y,\tau^{spawn},a=1,s}</annotation></semantics></math>
+yet at the point
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mi>S</mi><msub><mi>B</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">SSB_{p,r,y}</annotation></semantics></math>
+is evaluated.</li>
+</ul>
+<p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mtext mathvariant="normal">SSB0</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow></msub><annotation encoding="application/x-tex">\text{SSB0}_{p,r}</annotation></semantics></math>
+itself is a pure per-recruit, equilibrium quantity and does not depend
+on
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mi>e</mi><mi>c</mi><mi>L</mi><mi>a</mi><mi>g</mi></mrow><annotation encoding="application/x-tex">RecLag</annotation></semantics></math>
+– the same value is used whether recruitment is lagged or age-0. Unlike
+the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mi>e</mi><mi>c</mi><mi>L</mi><mi>a</mi><mi>g</mi><mo>≥</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">RecLag \geq 1</annotation></semantics></math>
+case, there is no burn-in substitution of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mtext mathvariant="normal">SSB0</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow></msub><annotation encoding="application/x-tex">\text{SSB0}_{p,r}</annotation></semantics></math>
+for early years: since
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mi>e</mi><mi>c</mi><mi>L</mi><mi>a</mi><mi>g</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">RecLag = 0</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mi>S</mi><msub><mi>B</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">SSB_{p,r,y}</annotation></semantics></math>
+(this year’s own survivor biomass) is always available by the time it is
+needed, including in year 1.</p>
+</div>
 <div class="section level5">
 <h5 id="effective-spawning-biomass-and-multi-population-dynamics">Effective Spawning Biomass and Multi-Population Dynamics<a class="anchor" aria-label="anchor" href="#effective-spawning-biomass-and-multi-population-dynamics"></a>
 </h5>
@@ -422,6 +503,15 @@ is an implied identity matrix). For each population, year, season, age,
 and sex combination, the movement matrix specifies bulk-transfer
 coefficients, with parameters transformed through a multinomial logit to
 ensure that proportions within each origin region sum to one.</p>
+<p>For age-0 recruitment
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mi>e</mi><mi>c</mi><mi>L</mi><mi>a</mi><mi>g</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">RecLag = 0</annotation></semantics></math>),
+this movement step at season
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><annotation encoding="application/x-tex">\tau^{spawn}</annotation></semantics></math>
+is applied to the survivor population before that season’s
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mi>S</mi><msub><mi>B</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">SSB_{p,r,y}</annotation></semantics></math>/recruitment
+are computed (see Age-0 Recruitment above); the resulting recruits are
+then inserted immediately afterward, so they still experience that
+season’s mortality below like any other seasonal recruit pulse.</p>
 <p>Following movement, mortality occurs. For seasons within a year
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi><mo>&lt;</mo><msub><mi>n</mi><mi>τ</mi></msub></mrow><annotation encoding="application/x-tex">\tau &lt; n_\tau</annotation></semantics></math>),
 within-season mortality is applied and individuals advance to the next
@@ -1541,7 +1631,18 @@ and
 is the concentration parameter governing the spread of the Dirichlet
 distribution. Similarly, seasonal recruitment proportions
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>χ</mi><mrow><mi>p</mi><mo>,</mo><mi>τ</mi></mrow></msub><annotation encoding="application/x-tex">\chi_{p,\tau}</annotation></semantics></math>
-can be constrained with Dirichlet priors when estimated.</p>
+can be constrained with Dirichlet priors when estimated. When
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mi>e</mi><mi>c</mi><mi>L</mi><mi>a</mi><mi>g</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">RecLag = 0</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>&gt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\tau^{spawn} &gt; 1</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>χ</mi><mrow><mi>p</mi><mo>,</mo><mi>τ</mi></mrow></msub><annotation encoding="application/x-tex">\chi_{p,\tau}</annotation></semantics></math>
+is instead parameterized via a multinomial logit restricted to seasons
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>n</mi><mi>τ</mi></msub></mrow><annotation encoding="application/x-tex">\tau^{spawn},\ldots,n_\tau</annotation></semantics></math>
+(seasons before
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><annotation encoding="application/x-tex">\tau^{spawn}</annotation></semantics></math>
+are fixed at exactly zero rather than estimated, per the timing
+constraint described under Age-0 Recruitment above), and any Dirichlet
+prior is evaluated only over that same restricted support.</p>
 </div>
 <div class="section level5">
 <h5 id="r0">R0<a class="anchor" aria-label="anchor" href="#r0"></a>

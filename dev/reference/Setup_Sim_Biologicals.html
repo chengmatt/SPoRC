@@ -100,7 +100,11 @@ Used to compute survey biomass indices.</p></dd>
 <dt id="arg-mataa-input">MatAA_input<a class="anchor" aria-label="anchor" href="#arg-mataa-input"></a></dt>
 <dd><p>Maturity-at-age array with dimensions
 <code>[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]</code>.
-Values should be proportions in \([0, 1]\).</p></dd>
+Values should be proportions in \([0, 1]\). When <code>rec_lag = 0</code>
+(age-0 recruitment, set via <code><a href="Setup_Sim_Rec.html">Setup_Sim_Rec</a></code>), maturity at
+the recruit age (the first age class) must be exactly <code>0</code> for all
+populations, regions, years, seasons, and sexes – an error is raised
+otherwise.</p></dd>
 
 
 <dt id="arg-ageingerror-input">AgeingError_input<a class="anchor" aria-label="anchor" href="#arg-ageingerror-input"></a></dt>

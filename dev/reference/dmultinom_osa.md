@@ -1,13 +1,14 @@
-# Keep-aware multinomial log-density for OSA residuals
+# Keep-aware multinomial log-density for OSA residuals (cdf-capable)
 
-Computes the multinomial log-density of a single composition using the
-conditional decomposition required by
-[`oneStepPredict`](https://rdrr.io/pkg/RTMB/man/OSA-residuals.html).
-Following Trijoulet et al. (2023) and WHAM (`src/age_comp_osa.hpp`), an
-\\A\\-bin multinomial is written as \\A - 1\\ conditional two-category
-multinomials, each gated by its `keep` element. The final bin is fixed
-by the sum-to-\\N\\ constraint and contributes nothing (its residual is
-undefined and reported as `NA`).
+Conditional-binomial decomposition of an \\A\\-bin multinomial for
+[`oneStepPredict`](https://rdrr.io/pkg/RTMB/man/OSA-residuals.html),
+following Trijoulet et al. (2023). Each of the first \\A-1\\ bins is a
+binomial conditional on the running remainder, gated by its `keep`
+element; the final bin is fixed by the sum-to-\\N\\ constraint. In
+addition to the density term, the analytic conditional binomial CDF is
+accumulated through the `cdf_lower` / `cdf_upper` indicators, so this
+density supports **both** `method = "cdf"` and
+`method = "oneStepGeneric"`.
 
 ## Usage
 
@@ -19,9 +20,8 @@ dmultinom_osa(xobs, p, log = TRUE)
 
 - xobs:
 
-  Either an object of class `"osa"` supplied by `oneStepPredict`, or a
-  plain numeric vector of observed counts (length \\A\\) during ordinary
-  fitting.
+  An `"osa"` object from `oneStepPredict`, or a plain numeric count
+  vector (length \\A\\) during fitting.
 
 - p:
 
@@ -29,21 +29,13 @@ dmultinom_osa(xobs, p, log = TRUE)
 
 - log:
 
-  Boolean on whether to return nLL
+  Logical; return the log-density (default) or the density.
 
 ## Value
 
-Scalar log-density contribution for the composition.
+Scalar (log-)density contribution.
 
 ## Details
 
-With all `keep` equal to one, the sum of the conditional log-densities
-equals the joint multinomial log-density; enabling OSA therefore changes
-how the likelihood is decomposed, not its value. The running remainder
-is frozen to the observed total (see
-[`osa_extract_values`](https://chengmatt.github.io/SPoRC/dev/reference/osa_extract_values.md))
-so that peeling a late bin cannot drive the remaining count negative.
-
-Intended for use with `method = "oneStepGeneric"`; the two-category
-conditionals carry no analytic CDF hooks, so the `"cdf"` method is not
-supported (consistent with WHAM, which omits it for compositions).
+The running remainder is frozen to the observed total so peeling a late
+bin cannot drive the remaining count negative.

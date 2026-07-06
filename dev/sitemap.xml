@@ -31,8 +31,10 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Get_Fdev_PE_loglik.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Get_Init_NAA.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Get_Movement.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Get_Natural_Cubic_Spline_Weights.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Get_Reference_Points.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex_Smoothness_Penalty.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Get_move_PE_loglik.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Get_sel_PE_loglik.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Restrc_Comps.html</loc></url>
@@ -208,6 +210,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/rdirM.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/release_conv_tag_attr.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/release_conv_tags.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/resolve_sel_pen_wts.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/rho_trans.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/rinvgauss_rec.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/rlogistnormal.html</loc></url>

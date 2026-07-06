@@ -1,4 +1,4 @@
-# Safely extract a named element from a TMB report object
+# Safely extract a named element from a list object
 
 Returns the named element if it exists and is non-`NULL`; returns `0`
 otherwise. Used to guard against missing or `NULL` report fields when

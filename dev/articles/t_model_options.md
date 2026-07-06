@@ -124,10 +124,22 @@ Controlled via
 [`Setup_Sim_Rec()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Rec.md).
 
 SPoRC offers four methods for deriving equilibrium numbers-at-age. All
-methods project a constant recruitment ($`R_0`$) through seasonal
-mortality, fishing, and (optionally) movement until the age structure
-stabilises. After the equilibrium is computed, multiplicative log-scale
-initial deviations (`ln_InitDevs`) are applied to ages $`2, \ldots, A`$.
+methods project a constant recruitment ($`R_0`$, or a separate
+`ln_rinit` scalar when `use_rinit = 1`) through seasonal mortality,
+fishing, and (optionally) movement until the age structure stabilises.
+After the equilibrium is computed, multiplicative log-scale initial
+deviations (`ln_InitDevs`) are applied to ages $`2, \ldots, A`$.
+
+When `use_rinit = 1`, the regional recruitment scalar feeding the
+equilibrium calculation is bias-corrected:
+$`\zeta_{p,r}\,\text{rinit}_p\exp(-\sigma_{\text{Rec,early}}^2/2)`$,
+treating `ln_rinit` as the median of the assumed lognormal recruitment
+process and converting to the corresponding mean before it is used as a
+deterministic (non-stochastic) equilibrium seed. This mirrors the same
+correction applied to
+[`Setup_Sim_Rec()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Rec.md)’s
+equivalent `rinit_input` pathway during simulation, so fitted and
+simulated equilibria remain on a consistent scale.
 
 #### Equilibrium solution method (`init_age_strc`)
 
@@ -204,7 +216,7 @@ Controlled via
 | `bias_year`, `max_bias_ramp_fct` | Bias ramp breakpoints and maximum correction factor |
 | `dont_est_recdev_last` | Number of terminal-year recruitment deviations to fix at zero |
 | `init_age_devs_shared` | Integer vector of length `n_ages - 1` specifying age-sharing for `ln_InitDevs`. Positions with the same value share a single estimated parameter (e.g. `c(1:42, rep(42, 9))`). Required when `equil_init_age_strc = 3`; `NULL` (default) uses standard behaviour |
-| `use_rinit` | 0 = population initialised using `ln_global_R0` (default); 1 = separate `ln_rinit` used for initialisation, with `ln_global_R0` governing only the recruitment relationship |
+| `use_rinit` | 0 = population initialised using `ln_global_R0` (default); 1 = separate `ln_rinit` used for initialisation, with `ln_global_R0` governing only the recruitment relationship. |
 
 #### Steepness priors
 
@@ -275,6 +287,53 @@ are:
 | `"nonpar"` | Non-parametric: one logit-scale parameter per bin, transformed via $`\text{logit}^{-1}`$ | $`n_\text{bins}`$ |
 | `"asymplogist1"` | Logistic with asymptote $`\alpha \in (0,1)`$: $`\alpha / (1 + \exp(-k(\text{bin} - a_{50})))`$ | 3 ($`\text{logit}(\alpha)`$, $`\ln a_{50}`$, $`\ln k`$) |
 | `"asymplogist2"` | Logistic with asymptote, $`a_{50}/a_{95}`$ parameterisation | 3 ($`\text{logit}(\alpha)`$, $`\ln a_{50}`$, $`\ln a_{95}`$) |
+| `"bicubic"` | Bicubic natural-cubic-spline surface over a bin-node $`\times`$ year-node grid | $`n_\text{bin\_nodes} \times n_\text{yr\_nodes}`$ (see below) |
+
+#### Bicubic spline selectivity (`"bicubic"`)
+
+Unlike the other functional forms above, `"bicubic"` selectivity is
+specified with its own extended syntax:
+
+    "bicubic_Bin_<n_bin_nodes>_Yr_<n_yr_nodes>_Fleet_<f>[_Block_<b>][_SelStyr_<year>][_NSelBins_<n>]"
+
+A smooth 2-dimensional selectivity-at-bin-and-year surface is built from
+a small grid of $`n_\text{bin\_nodes} \times n_\text{yr\_nodes}`$ freely
+estimated log-scale node values (`fish_fixed_sel_pars` /
+`srv_fixed_sel_pars`, flattened column-major into a
+`[yr_node × bin_node]` matrix). Two natural-cubic-spline weight matrices
+are precomputed once at setup:
+
+- $`\mathbf{W}^{\text{bin}}`$
+  ($`n_\text{bins} \times n_\text{bin\_nodes}`$), mapping bin-node
+  values onto every bin,
+- $`\mathbf{W}^{\text{yr}}`$
+  ($`n_\text{yrs} \times n_\text{yr\_nodes}`$), mapping year-node values
+  onto every year,
+
+and combined via a two-pass tensor product (bin-node values
+spline-interpolated across bins for every year-node, then those curves
+spline-interpolated across years) to give the full log-selectivity
+surface, which is then exponentiated. Setting `n_yr_nodes = 1` collapses
+the surface to a time-invariant bin-only spline; combining
+`n_yr_nodes = 1` with `fish_sel_blocks`/`srv_sel_blocks` re-fits an
+independent bin-only spline within each block.
+
+Two optional suffixes restrict the fitted region of the surface,
+edge-holding (flat-lining) outside it:
+
+- `_SelStyr_<year>`: a calendar year within the block. Only years from
+  `SelStyr` through the block’s end are actually spline-fit across the
+  year dimension; years within the block before `SelStyr` are held
+  constant at the `SelStyr` year’s fitted curve (“previous years are
+  filled”).
+- `_NSelBins_<n>`: restricts the spline fit to the first `n` bins (ages
+  or lengths, per `fish_selex_type`/`srv_selex_type`). Bins beyond `n`
+  are held constant at the last fitted bin’s value (a plateau), rather
+  than continuing the spline extrapolation.
+
+Both suffixes only change which years/bins are considered part of the
+*fitted* surface; they do not change the total number of estimated node
+parameters.
 
 #### Temporal variation
 
@@ -337,6 +396,33 @@ Lognormal priors on selectivity parameters are toggled via
 `Use_fish_selex_prior` / `Use_srv_selex_prior`, with hyperparameters
 supplied in a data frame (`fish_selex_prior` / `srv_selex_prior`)
 containing `region`, `fleet`, `block`, `sex`, `par`, `mu`, and `sd`.
+
+#### Selectivity smoothness penalty weights
+
+All selectivity smoothness/regularisation penalty weights are configured
+in a single place,
+[`Setup_Mod_Weighting()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Weighting.md),
+via the `fish_sel_pen_wts`, `ret_sel_pen_wts`, and `srv_sel_pen_wts`
+arguments (one list per selectivity surface). Each is a named
+list/vector; unset names default to `0` (off), except the three legacy
+terms below, whose default (`1` if any deviation-based penalty is
+active, `0` otherwise) reproduces pre-existing behaviour when
+`pen_wts = NULL`.
+
+| Name | Applies to | Description |
+|----|----|----|
+| `yr_devs` | Continuous time-varying deviations (`cont_tv_*_sel`, process error models 1–2) | First-difference penalty across years on deviation parameters |
+| `bin_curve` | Semi-parametric deviations (process error models 3–5) | Second-difference (curvature) penalty across bins on log-selectivity |
+| `yr_curve` | Semi-parametric deviations (process error models 3–5) | Second-difference (curvature) penalty across years on log-selectivity |
+| `smooth_dome` | Any selectivity form (see below) | Hinge penalty discouraging decreases across adjacent bins (dome-shape control) |
+| `smooth_bin_curve` | Any selectivity form (see below) | Second-difference penalty across bins, normalised by the number of fitted bins |
+| `smooth_bin_diff` | Any selectivity form (see below) | Unconditional first-difference penalty across bins (both increases *and* decreases contribute, unlike `smooth_dome`), normalised by the number of fitted bins |
+| `smooth_yr_diff` | Any selectivity form (see below) | First-difference penalty across years, normalised by the number of fitted years |
+| `smooth_yr_curve` | Any selectivity form (see below) | Second-difference penalty across years, normalised by the number of fitted years |
+| `smooth_mean_center` | Any selectivity form (see below) | Penalises the per-year mean of log-selectivity away from zero; resolves the scale indeterminacy of the bicubic surface (a uniform per-year shift in log-selectivity otherwise trades off exactly against that year’s fishing mortality) |
+
+The six `smooth_*` terms are evaluated directly on a fleet’s *realized*
+selectivity-at-bin-at-year surface.
 
 ------------------------------------------------------------------------
 

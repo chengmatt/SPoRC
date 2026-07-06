@@ -84,6 +84,21 @@ where:
   regions (estimated using a multinomial logit transform to ensure
   proportions sum to one).
 
+Because the equilibrium calculation above is a purely deterministic
+(non-stochastic) projection, $`\text{rinit}_p`$ is treated as the median
+of the assumed lognormal recruitment process (consistent with how
+$`\mu_p^{\text{Rec}}`$ is interpreted elsewhere; see Recruitment
+Processes), and the same lognormal bias-correction term used for
+recruitment deviations is applied here as a static offset rather than
+about an estimated deviation. This keeps the equilibrium age structure
+on a scale consistent with the rest of the recruitment process even
+though no annual deviation is estimated at initialization. The same
+correction is applied when the operating model constructs an equivalent
+equilibrium seed during closed-loop simulation
+([`Setup_Sim_Rec()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Rec.md)’s
+`rinit_input` pathway), so fitted and simulated equilibria remain on a
+consistent scale.
+
 The plus group ($`a_{+}`$) of the initial population is then computed
 as:
 
@@ -280,11 +295,12 @@ timing constraint is enforced structurally rather than left to the user:
   evaluated.
 
 $`\text{SSB0}_{p,r}`$ itself is a pure per-recruit, equilibrium quantity
-and does not depend on $`RecLag`$ – the same value is used whether
-recruitment is lagged or age-0. Unlike the $`RecLag \geq 1`$ case, there
-is no burn-in substitution of $`\text{SSB0}_{p,r}`$ for early years:
-since $`RecLag = 0`$, $`SSB_{p,r,y}`$ (this year’s own survivor biomass)
-is always available by the time it is needed, including in year 1.
+and does not depend on $`RecLag`$ which is the same value is used
+whether recruitment is lagged or age-0. Unlike the $`RecLag \geq 1`$
+case, there is no burn-in substitution of $`\text{SSB0}_{p,r}`$ for
+early years: since $`RecLag = 0`$, $`SSB_{p,r,y}`$ (this year’s own
+survivor biomass) is always available by the time it is needed,
+including in year 1.
 
 ##### Effective Spawning Biomass and Multi-Population Dynamics
 
@@ -933,6 +949,89 @@ where $`\alpha`$ is estimated on the logit scale, allowing the
 asymptotic selectivity to be less than 1. These forms are useful for
 fleets where full vulnerability is not achieved even at the largest
 observed sizes or ages.
+
+##### Bicubic Spline Selectivity
+
+Rather than a fixed functional form, selectivity can instead be
+constructed as a smooth two-dimensional surface over bins and years
+using a bicubic natural cubic spline. A sparse grid of
+$`n_{\hat{b}} \times n_{\hat{y}}`$ freely estimated log-scale node
+parameters, $`\eta_{\hat{y},\hat{b}}`$, indexed by bin-node
+$`\hat{b} = 1,\ldots,n_{\hat{b}}`$ and year-node
+$`\hat{y} = 1,\ldots,n_{\hat{y}}`$, is expanded to the full bin-by-year
+surface via two successive natural cubic spline interpolations.
+
+Bin-nodes and evaluation bins are first placed on a common
+$`\lbrack 0,1 \rbrack`$ scale, equally spaced by index:
+
+``` math
+\tilde{b}_{\hat{b}} = \frac{\hat{b} - 1}{n_{\hat{b}} - 1},\qquad \tilde{b}_{b} = \frac{b - 1}{n_{b} - 1}
+```
+
+and a natural cubic spline is fit through the $`n_{\hat{b}}`$ node
+positions $`\tilde{b}_{\hat{b}}`$, producing an
+$`n_{b} \times n_{\hat{b}}`$ interpolation weight matrix
+$`\mathbf{W}^{\text{bin}}`$ such that, for any vector of node values,
+$`\mathbf{W}^{\text{bin}}`$ maps those node values onto all $`n_{b}`$
+evaluation bins while passing exactly through the node values
+themselves. An analogous weight matrix $`\mathbf{W}^{\text{yr}}`$
+($`n_{y} \times n_{\hat{y}}`$) is constructed for the year dimension
+using year-nodes similarly placed on $`\lbrack0,1\rbrack`$. The full
+surface is then obtained by a two-pass tensor-product spline: first
+interpolating across bins for every year-node,
+
+``` math
+\mathbf{\Xi} = \mathbf{N}\left(\mathbf{W}^{\text{bin}}\right)^{T}
+```
+
+where $`\mathbf{N}`$ is the $`n_{\hat{y}} \times n_{\hat{b}}`$ matrix of
+node parameters
+($`\mathbf{N}_{\hat{y},\hat{b}} = \eta_{\hat{y},\hat{b}}`$) and
+$`\mathbf{\Xi}`$ is $`n_{\hat{y}} \times n_{b}`$, and then interpolating
+the resulting bin-interpolated year-node curves across years for a given
+year $`y`$:
+
+``` math
+\log\left(\text{Sel}_{y,b}\right) = \mathbf{W}_{y,}^{\text{yr}}\mathbf{\Xi}_{,b}
+```
+
+so that
+$`\text{Sel}_{y,b} = \exp\left(\log\left(\text{Sel}_{y,b}\right)\right)`$
+for every bin $`b = 1,\ldots,n_{b}`$. Setting $`n_{\hat{y}} = 1`$
+collapses the year dimension to a single node (equal weight $`1`$ for
+every year), yielding a time-invariant bin-only spline; combining
+$`n_{\hat{y}} = 1`$ with discrete time blocks (see Temporal Variation
+below) re-fits an independent bin-only spline within each block.
+
+Two optional restrictions can be applied to the range over which the
+surface is actually spline-fit, with everything outside that range held
+constant (edge-held) rather than continuing the spline.
+
+The first restricts the year dimension: given a user-specified calendar
+year $`y^{\text{SelStyr}}`$ within a given block, only years from
+$`y^{\text{SelStyr}}`$ through the block’s final year are used to place
+year-nodes and evaluate the spline. Years within the block prior to
+$`y^{\text{SelStyr}}`$ are assigned the same interpolation weights as
+$`y^{\text{SelStyr}}`$ itself (the boundary node),
+
+``` math
+\text{Sel}_{y,b} = \text{Sel}_{y^{\text{SelStyr}},b},\qquad y < y^{\text{SelStyr}}
+```
+
+i.e., “filled” forward from the first actually-fitted year.
+
+The second restricts the bin dimension: given a user-specified number of
+bins $`n_{b}^{\text{fit}} \leq n_{b}`$, bin-nodes and the spline are
+only evaluated over bins $`1,\ldots,n_{b}^{\text{fit}}`$; any remaining
+bins are held at the last fitted bin’s value,
+
+``` math
+\text{Sel}_{y,b} = \text{Sel}_{y,n_{b}^{\text{fit}}},\qquad b > n_{b}^{\text{fit}}
+```
+
+This is useful, for example, when the observed age or length range used
+to originally fit the surface is narrower than the full number of ages
+or lengths represented in the population dynamics.
 
 In addition to the functional forms that can be specified to describe
 selectivity processes, several options exist to specify continuous
@@ -1801,7 +1900,7 @@ When catch is available every year ($`d = 1`$ throughout), this reduces
 exactly to a standard single-step random walk. When years are closed
 (e.g., a fishery closure), inflating the variance by $`d`$ gives exactly
 the same marginal distribution that would be obtained by estimating
-deviations for the closed years and integrating them out – without
+deviations for the closed years and integrating them out without
 actually estimating them, so no deviation parameters exist for closed
 years.
 
@@ -1960,12 +2059,80 @@ are specified, additional optional penalties can be applied across bins
 and years to enforce curvature control:
 
 ``` math
-P_{SelBinCurve} = \sum_{r = 1}^{n_{r}}{\sum_{j = 1}^{n_{j}}{\sum_{s = 1}^{n_{s}}{\sum_{y = 1}^{n_{y}}{\sum_{b = 2}^{n_{b} - 1}\left( \log\left( {Sel}_{r,y,b + 1,s,j} \right) - 2\log\left( {Sel}_{r,y,b,s,j} \right)\log\left( {Sel}_{r,y,b - 1,s,j} \right) \right)^{2}}}}}
+P_{SelBinCurve} = \sum_{r = 1}^{n_{r}}{\sum_{j = 1}^{n_{j}}{\sum_{s = 1}^{n_{s}}{\sum_{y = 1}^{n_{y}}{\sum_{b = 2}^{n_{b} - 1}\left( \log\left( {Sel}_{r,y,b + 1,s,j} \right) - 2\log\left( {Sel}_{r,y,b,s,j} \right) + \log\left( {Sel}_{r,y,b - 1,s,j} \right) \right)^{2}}}}}
 ```
 
 ``` math
-P_{SelYrCurve} = \sum_{r = 1}^{n_{r}}{\sum_{j = 1}^{n_{j}}{\sum_{s = 1}^{n_{s}}{\sum_{y = 2}^{n_{y} - 1}{\sum_{b = 1}^{n_{b}}\left( \log\left( {Sel}_{r,y + 1,b,s,j} \right) - 2\log\left( {Sel}_{r,y,b,s,j} \right)\log\left( {Sel}_{r,y - 1,b,s,j} \right) \right)^{2}}}}}
+P_{SelYrCurve} = \sum_{r = 1}^{n_{r}}{\sum_{j = 1}^{n_{j}}{\sum_{s = 1}^{n_{s}}{\sum_{y = 2}^{n_{y} - 1}{\sum_{b = 1}^{n_{b}}\left( \log\left( {Sel}_{r,y + 1,b,s,j} \right) - 2\log\left( {Sel}_{r,y,b,s,j} \right) + \log\left( {Sel}_{r,y - 1,b,s,j} \right) \right)^{2}}}}}
 ```
+
+##### Selectivity Smoothness Penalties
+
+A set of six penalty terms, evaluated directly on a fleet’s realized
+selectivity-at-bin-at-year surface rather than on any particular
+selectivity parameterization, can be independently weighted and applied
+to any selectivity functional form.
+
+The dome-shape penalty discourages the selectivity curve from decreasing
+across adjacent bins within a year (i.e., encourages flat-topped or
+asymptotic rather than dome-shaped curves, when desired), applied only
+where an actual decrease occurs:
+
+``` math
+P_{SelSmoothDome} = \sum_{r = 1}^{n_{r}}{\sum_{j = 1}^{n_{j}}{\sum_{s = 1}^{n_{s}}{\sum_{y}{\sum_{b}{\left\lbrack \max\left( \log\left( {Sel}_{r,y,b,s,j} \right) - \log\left( {Sel}_{r,y,b + 1,s,j} \right),\ 0 \right) \right\rbrack^{2}}}}}}
+```
+
+The bin (age or length) curvature penalty is a second-difference
+smoothness penalty across bins, normalized by the number of fitted bins
+$`n_{b}^{\text{fit}}`$:
+
+``` math
+P_{SelSmoothBinCurve} = \frac{1}{n_{b}^{\text{fit}}}\sum_{r = 1}^{n_{r}}{\sum_{j = 1}^{n_{j}}{\sum_{s = 1}^{n_{s}}{\sum_{y}{\sum_{b}\left( \log\left( {Sel}_{r,y,b + 1,s,j} \right) - 2\log\left( {Sel}_{r,y,b,s,j} \right) + \log\left( {Sel}_{r,y,b - 1,s,j} \right) \right)^{2}}}}}
+```
+
+A related, unconditional first-difference penalty across bins where both
+increases and decreases contribute, unlike the dome-shape penalty above
+which is normalized the same way:
+
+``` math
+P_{SelSmoothBinDiff} = \frac{1}{n_{b}^{\text{fit}}}\sum_{r = 1}^{n_{r}}{\sum_{j = 1}^{n_{j}}{\sum_{s = 1}^{n_{s}}{\sum_{y}{\sum_{b}\left( \log\left( {Sel}_{r,y,b,s,j} \right) - \log\left( {Sel}_{r,y,b + 1,s,j} \right) \right)^{2}}}}}
+```
+
+Inter-annual variation is penalized with a first-difference penalty
+across years, normalized by the number of fitted years
+$`n_{y}^{\text{fit}}`$:
+
+``` math
+P_{SelSmoothYrDiff} = \frac{1}{n_{y}^{\text{fit}}}\sum_{r = 1}^{n_{r}}{\sum_{j = 1}^{n_{j}}{\sum_{s = 1}^{n_{s}}{\sum_{b}{\sum_{y}\left( \log\left( {Sel}_{r,y,b,s,j} \right) - \log\left( {Sel}_{r,y - 1,b,s,j} \right) \right)^{2}}}}}
+```
+
+and inter-annual smoothness with an analogous second-difference penalty
+across years:
+
+``` math
+P_{SelSmoothYrCurve} = \frac{1}{n_{y}^{\text{fit}}}\sum_{r = 1}^{n_{r}}{\sum_{j = 1}^{n_{j}}{\sum_{s = 1}^{n_{s}}{\sum_{b}{\sum_{y}\left( \log\left( {Sel}_{r,y + 1,b,s,j} \right) - 2\log\left( {Sel}_{r,y,b,s,j} \right) + \log\left( {Sel}_{r,y - 1,b,s,j} \right) \right)^{2}}}}}
+```
+
+Finally, because some selectivity forms (e.g. the bicubic spline) have
+no built-in scale identifiability constraint (a uniform per-year shift
+in log-selectivity trades off exactly against that year’s fishing
+mortality), a mean-centering penalty regularizes the per-year mean of
+log-selectivity toward zero:
+
+``` math
+P_{SelSmoothMeanCenter} = \sum_{r = 1}^{n_{r}}{\sum_{j = 1}^{n_{j}}{\sum_{s = 1}^{n_{s}}{\sum_{y}\left\lbrack \frac{1}{n_{b}^{\text{fit}}}\sum_{b}{\log\left( {Sel}_{r,y,b,s,j} \right)} \right\rbrack^{2}}}}
+```
+
+Each of the six terms above ($`P_{SelSmoothDome}`$,
+$`P_{SelSmoothBinCurve}`$, $`P_{SelSmoothBinDiff}`$,
+$`P_{SelSmoothYrDiff}`$, $`P_{SelSmoothYrCurve}`$,
+$`P_{SelSmoothMeanCenter}`$) is scaled by its own
+independently-specified weight before being added to the joint negative
+log-likelihood, allowing each to be turned on or off and tuned
+separately. In code, these six weights use a `smooth_` prefix
+(e.g. `smooth_bin_curve`, `smooth_yr_diff`) rather than referencing the
+bicubic spline specifically, since, as described above, they apply to
+any selectivity form.
 
 ##### Movement
 

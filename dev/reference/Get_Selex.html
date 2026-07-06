@@ -53,7 +53,11 @@ fully flexible selectivity structures.</p>
 <span>  <span class="va">Region</span>,</span>
 <span>  <span class="va">Year</span>,</span>
 <span>  <span class="va">Bin</span>,</span>
-<span>  <span class="va">Sex</span></span>
+<span>  <span class="va">Sex</span>,</span>
+<span>  Wbin_bicubic <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  Wyr_bicubic <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  n_bin_nodes_bicubic <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  n_yr_nodes_bicubic <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -90,6 +94,18 @@ fully flexible selectivity structures.</p>
 <dd><p>Logistic selectivity with asymptote (b50, b95 parameterization):
            \(\alpha / (1 + 19^{(b_{50} - \text{bin})/b_{95}})\).
            Equivalent to Model 3 scaled by asymptote \(\alpha\).</p></dd>
+
+  <dt>8</dt>
+<dd><p>Bicubic spline over a bin-node x year-node grid (see
+           <code>Wbin_bicubic</code>, <code>Wyr_bicubic</code>). One generalized form
+           covers three cases depending on how the caller constructs the
+           node grid and interpolation weights: a single smooth bin x
+           year surface (bicubic), a time-invariant bin-only spline
+           (<code>n_yr_nodes == 1</code>), or a bin-only spline re-fit
+           independently within each of several year blocks
+           (<code>n_yr_nodes == 1</code> within each of SPoRC's existing
+           selectivity blocks). No <code>TimeVary_Model</code> deviation
+           layering applies to this model.</p></dd>
 
 
 </dl></dd>
@@ -144,6 +160,12 @@ Parameters are exponentiated or transformed depending on model specification:</p
     <dt>Model 7</dt>
 <dd><p><code>c(logit_alpha, ln_b50, ln_b95)</code></p></dd>
 
+    <dt>Model 8</dt>
+<dd><p>Flattened bin-node x year-node log-selectivity grid,
+      length <code>ncol(Wyr_bicubic) * ncol(Wbin_bicubic)</code>, filled
+      column-major into a <code>ncol(Wyr_bicubic)</code> (rows, year nodes) by
+      <code>ncol(Wbin_bicubic)</code> (columns, bin nodes) matrix.</p></dd>
+
 
 </dl></dd>
 
@@ -164,7 +186,9 @@ Parameters are exponentiated or transformed depending on model specification:</p
 
 
 <dt id="arg-year">Year<a class="anchor" aria-label="anchor" href="#arg-year"></a></dt>
-<dd><p>Integer year index.</p></dd>
+<dd><p>Integer year index (absolute, i.e. a row index into
+<code>Wyr_bicubic</code>). Only used directly by <code>Selex_Model == 8</code>;
+otherwise only used to index <code>ln_seldevs</code>.</p></dd>
 
 
 <dt id="arg-bin">Bin<a class="anchor" aria-label="anchor" href="#arg-bin"></a></dt>
@@ -173,6 +197,43 @@ Parameters are exponentiated or transformed depending on model specification:</p
 
 <dt id="arg-sex">Sex<a class="anchor" aria-label="anchor" href="#arg-sex"></a></dt>
 <dd><p>Integer sex index.</p></dd>
+
+
+<dt id="arg-wbin-bicubic">Wbin_bicubic<a class="anchor" aria-label="anchor" href="#arg-wbin-bicubic"></a></dt>
+<dd><p>Numeric <code>length(Bin) x n_bin_nodes</code> natural cubic
+spline weight matrix (see <code><a href="Get_Natural_Cubic_Spline_Weights.html">Get_Natural_Cubic_Spline_Weights</a></code>),
+mapping bin-node log-selectivity values onto <code>Bin</code>. Only used when
+<code>Selex_Model == 8</code>; ignored (may be <code>NULL</code>) otherwise. Zero
+padding in unused columns (e.g. when a shared parameter array is padded
+to a common width across fleets/blocks) contributes nothing, since it is
+multiplied through to zero.</p></dd>
+
+
+<dt id="arg-wyr-bicubic">Wyr_bicubic<a class="anchor" aria-label="anchor" href="#arg-wyr-bicubic"></a></dt>
+<dd><p>Numeric <code>n_yrs_total x n_yr_nodes</code> interpolation
+weight matrix mapping year-node log-selectivity values onto every
+absolute model year (rows beyond the fitted block are typically
+constructed to hold the boundary node constant). Row <code>Year</code> is used
+for this call. Only used when <code>Selex_Model == 8</code>; ignored (may be
+<code>NULL</code>) otherwise. A single-column matrix of all-1s (<code>n_yr_nodes
+== 1</code>) yields a time-invariant bin-only spline, since every year maps
+onto the same single node.</p></dd>
+
+
+<dt id="arg-n-bin-nodes-bicubic-n-yr-nodes-bicubic">n_bin_nodes_bicubic, n_yr_nodes_bicubic<a class="anchor" aria-label="anchor" href="#arg-n-bin-nodes-bicubic-n-yr-nodes-bicubic"></a></dt>
+<dd><p>Integer. This fleet/block's
+own true number of bin nodes / year nodes. Only used when
+<code>Selex_Model == 8</code>. <strong>Must</strong> be supplied whenever
+<code>Wbin_bicubic</code>/<code>Wyr_bicubic</code> may have been zero-padded wider
+than this specific block's own grid (e.g. because some <em>other</em>
+fleet/block shares the same padded storage array but uses a larger
+bicubic grid) – <code>ncol(Wbin_bicubic)</code>/<code>ncol(Wyr_bicubic)</code> give
+the padded (shared) width, not this block's true node counts, and using
+the padded width to reshape <code>pars</code> would misassign which flattened
+parameter values land in which (bin-node, year-node) cell. Default
+<code>NULL</code> falls back to <code>ncol(Wbin_bicubic)</code>/<code>ncol(Wyr_bicubic)</code>
+for backward compatibility when no padding-width mismatch is possible
+(e.g. a single bicubic block/fleet, or direct unit testing).</p></dd>
 
 </dl></div>
     <div class="section level2">

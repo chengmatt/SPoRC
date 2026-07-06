@@ -13,7 +13,7 @@ Get_sel_PE_loglik(
   ln_devs,
   map_sel_devs,
   sel_vals,
-  do_sel_pen,
+  pen_wts,
   min_sel_devs_shared_bins
 )
 ```
@@ -71,13 +71,18 @@ Get_sel_PE_loglik(
   on the log scale when computing bin and year smoothness penalties
   (`do_sel_pen = TRUE`).
 
-- do_sel_pen:
+- pen_wts:
 
-  Logical. If `TRUE`, applies additional regularization penalties beyond
-  the process error likelihood. For models 1–2, penalizes first
-  differences of log-deviations across years. For models 3–5, penalizes
-  second differences (curvature) of log-selectivity across bins and
-  across years.
+  Named numeric vector with elements `"yr_devs"`, `"bin_curve"`,
+  `"yr_curve"` (any missing name is treated as `0`). Independently
+  weights the additional regularization penalties applied beyond the
+  process error likelihood: `"yr_devs"` weights a
+  first-difference-across-years penalty on `ln_devs` (models 1–2 only);
+  `"bin_curve"` and `"yr_curve"` weight second-difference (curvature)
+  penalties on log-selectivity across bins and across years,
+  respectively (models 3–5 only, via
+  [`Get_Selex_Smoothness_Penalty`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex_Smoothness_Penalty.md)).
+  A weight of `0` disables that term.
 
 - min_sel_devs_shared_bins:
 
@@ -106,14 +111,21 @@ The function supports:
 
 - Separable 2D AR(1) models
 
-When `do_sel_pen = TRUE`, additional regularization penalties are
-applied:
+Independently-weighted regularization penalties can also be applied via
+`pen_wts` (see
+[`Get_Selex_Smoothness_Penalty`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex_Smoothness_Penalty.md)
+for the bin/year curvature terms, which this function delegates to for
+`PE_model` 3–5):
 
-- For `PE_model` 1–2: first-difference penalty on log-deviations across
-  years.
+- For `PE_model` 1–2: `pen_wts["yr_devs"]` weights a first-difference
+  penalty on log-deviations across years.
 
-- For `PE_model` 3–5: second-difference (smoothness) penalty on
-  log-selectivity across bins and across years.
+- For `PE_model` 3–5: `pen_wts["bin_curve"]` and `pen_wts["yr_curve"]`
+  independently weight second-difference (smoothness) penalties on
+  log-selectivity across bins and across years, respectively.
+
+Each weight defaults to `0` (off); set any subset of them to apply only
+the penalty terms desired, rather than one shared on/off flag.
 
 **Note:** The returned value is on the *positive* log-likelihood scale.
 It must be negated to obtain a negative log-likelihood contribution,

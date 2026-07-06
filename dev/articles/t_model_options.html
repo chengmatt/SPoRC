@@ -343,12 +343,22 @@ for open-loop simulation</td>
 <code>init_age_strc</code>) and <code><a href="../reference/Setup_Sim_Rec.html">Setup_Sim_Rec()</a></code>.</p>
 <p>SPoRC offers four methods for deriving equilibrium numbers-at-age.
 All methods project a constant recruitment
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>0</mn></msub><annotation encoding="application/x-tex">R_0</annotation></semantics></math>)
-through seasonal mortality, fishing, and (optionally) movement until the
-age structure stabilises. After the equilibrium is computed,
-multiplicative log-scale initial deviations (<code>ln_InitDevs</code>)
-are applied to ages
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>0</mn></msub><annotation encoding="application/x-tex">R_0</annotation></semantics></math>,
+or a separate <code>ln_rinit</code> scalar when
+<code>use_rinit = 1</code>) through seasonal mortality, fishing, and
+(optionally) movement until the age structure stabilises. After the
+equilibrium is computed, multiplicative log-scale initial deviations
+(<code>ln_InitDevs</code>) are applied to ages
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>2</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>A</mi></mrow><annotation encoding="application/x-tex">2, \ldots, A</annotation></semantics></math>.</p>
+<p>When <code>use_rinit = 1</code>, the regional recruitment scalar
+feeding the equilibrium calculation is bias-corrected:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ζ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow></msub><mspace width="0.167em"></mspace><msub><mtext mathvariant="normal">rinit</mtext><mi>p</mi></msub><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>−</mi><msubsup><mi>σ</mi><mtext mathvariant="normal">Rec,early</mtext><mn>2</mn></msubsup><mi>/</mi><mn>2</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\zeta_{p,r}\,\text{rinit}_p\exp(-\sigma_{\text{Rec,early}}^2/2)</annotation></semantics></math>,
+treating <code>ln_rinit</code> as the median of the assumed lognormal
+recruitment process and converting to the corresponding mean before it
+is used as a deterministic (non-stochastic) equilibrium seed. This
+mirrors the same correction applied to <code><a href="../reference/Setup_Sim_Rec.html">Setup_Sim_Rec()</a></code>’s
+equivalent <code>rinit_input</code> pathway during simulation, so fitted
+and simulated equilibria remain on a consistent scale.</p>
 <div class="section level4">
 <h4 id="equilibrium-solution-method-init_age_strc">Equilibrium solution method (<code>init_age_strc</code>)<a class="anchor" aria-label="anchor" href="#equilibrium-solution-method-init_age_strc"></a>
 </h4>
@@ -647,7 +657,7 @@ standard behaviour</td>
 <td>0 = population initialised using <code>ln_global_R0</code>
 (default); 1 = separate <code>ln_rinit</code> used for initialisation,
 with <code>ln_global_R0</code> governing only the recruitment
-relationship</td>
+relationship.</td>
 </tr>
 </tbody>
 </table>
@@ -868,8 +878,69 @@ parameterisation</td>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><msub><mi>a</mi><mn>50</mn></msub></mrow><annotation encoding="application/x-tex">\ln a_{50}</annotation></semantics></math>,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><msub><mi>a</mi><mn>95</mn></msub></mrow><annotation encoding="application/x-tex">\ln a_{95}</annotation></semantics></math>)</td>
 </tr>
+<tr class="odd">
+<td><code>"bicubic"</code></td>
+<td>Bicubic natural-cubic-spline surface over a bin-node
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>×</mi><annotation encoding="application/x-tex">\times</annotation></semantics></math>
+year-node grid</td>
+<td>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mtext mathvariant="normal">bin_nodes</mtext></msub><mo>×</mo><msub><mi>n</mi><mtext mathvariant="normal">yr_nodes</mtext></msub></mrow><annotation encoding="application/x-tex">n_\text{bin\_nodes} \times n_\text{yr\_nodes}</annotation></semantics></math>
+(see below)</td>
+</tr>
 </tbody>
 </table>
+</div>
+<div class="section level4">
+<h4 id="bicubic-spline-selectivity-bicubic">Bicubic spline selectivity (<code>"bicubic"</code>)<a class="anchor" aria-label="anchor" href="#bicubic-spline-selectivity-bicubic"></a>
+</h4>
+<p>Unlike the other functional forms above, <code>"bicubic"</code>
+selectivity is specified with its own extended syntax:</p>
+<pre><code><span><span class="st">"bicubic_Bin_&lt;n_bin_nodes&gt;_Yr_&lt;n_yr_nodes&gt;_Fleet_&lt;f&gt;[_Block_&lt;b&gt;][_SelStyr_&lt;year&gt;][_NSelBins_&lt;n&gt;]"</span></span></code></pre>
+<p>A smooth 2-dimensional selectivity-at-bin-and-year surface is built
+from a small grid of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mtext mathvariant="normal">bin_nodes</mtext></msub><mo>×</mo><msub><mi>n</mi><mtext mathvariant="normal">yr_nodes</mtext></msub></mrow><annotation encoding="application/x-tex">n_\text{bin\_nodes} \times n_\text{yr\_nodes}</annotation></semantics></math>
+freely estimated log-scale node values (<code>fish_fixed_sel_pars</code>
+/ <code>srv_fixed_sel_pars</code>, flattened column-major into a
+<code>[yr_node × bin_node]</code> matrix). Two natural-cubic-spline
+weight matrices are precomputed once at setup:</p>
+<ul>
+<li>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>𝐖</mi><mtext mathvariant="normal">bin</mtext></msup><annotation encoding="application/x-tex">\mathbf{W}^{\text{bin}}</annotation></semantics></math>
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mtext mathvariant="normal">bins</mtext></msub><mo>×</mo><msub><mi>n</mi><mtext mathvariant="normal">bin_nodes</mtext></msub></mrow><annotation encoding="application/x-tex">n_\text{bins} \times n_\text{bin\_nodes}</annotation></semantics></math>),
+mapping bin-node values onto every bin,</li>
+<li>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>𝐖</mi><mtext mathvariant="normal">yr</mtext></msup><annotation encoding="application/x-tex">\mathbf{W}^{\text{yr}}</annotation></semantics></math>
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mtext mathvariant="normal">yrs</mtext></msub><mo>×</mo><msub><mi>n</mi><mtext mathvariant="normal">yr_nodes</mtext></msub></mrow><annotation encoding="application/x-tex">n_\text{yrs} \times n_\text{yr\_nodes}</annotation></semantics></math>),
+mapping year-node values onto every year,</li>
+</ul>
+<p>and combined via a two-pass tensor product (bin-node values
+spline-interpolated across bins for every year-node, then those curves
+spline-interpolated across years) to give the full log-selectivity
+surface, which is then exponentiated. Setting
+<code>n_yr_nodes = 1</code> collapses the surface to a time-invariant
+bin-only spline; combining <code>n_yr_nodes = 1</code> with
+<code>fish_sel_blocks</code>/<code>srv_sel_blocks</code> re-fits an
+independent bin-only spline within each block.</p>
+<p>Two optional suffixes restrict the fitted region of the surface,
+edge-holding (flat-lining) outside it:</p>
+<ul>
+<li>
+<code>_SelStyr_&lt;year&gt;</code>: a calendar year within the
+block. Only years from <code>SelStyr</code> through the block’s end are
+actually spline-fit across the year dimension; years within the block
+before <code>SelStyr</code> are held constant at the
+<code>SelStyr</code> year’s fitted curve (“previous years are
+filled”).</li>
+<li>
+<code>_NSelBins_&lt;n&gt;</code>: restricts the spline fit to the
+first <code>n</code> bins (ages or lengths, per
+<code>fish_selex_type</code>/<code>srv_selex_type</code>). Bins beyond
+<code>n</code> are held constant at the last fitted bin’s value (a
+plateau), rather than continuing the spline extrapolation.</li>
+</ul>
+<p>Both suffixes only change which years/bins are considered part of the
+<em>fitted</em> surface; they do not change the total number of
+estimated node parameters.</p>
 </div>
 <div class="section level4">
 <h4 id="temporal-variation">Temporal variation<a class="anchor" aria-label="anchor" href="#temporal-variation"></a>
@@ -992,6 +1063,92 @@ with hyperparameters supplied in a data frame
 containing <code>region</code>, <code>fleet</code>, <code>block</code>,
 <code>sex</code>, <code>par</code>, <code>mu</code>, and
 <code>sd</code>.</p>
+</div>
+<div class="section level4">
+<h4 id="selectivity-smoothness-penalty-weights">Selectivity smoothness penalty weights<a class="anchor" aria-label="anchor" href="#selectivity-smoothness-penalty-weights"></a>
+</h4>
+<p>All selectivity smoothness/regularisation penalty weights are
+configured in a single place, <code><a href="../reference/Setup_Mod_Weighting.html">Setup_Mod_Weighting()</a></code>, via
+the <code>fish_sel_pen_wts</code>, <code>ret_sel_pen_wts</code>, and
+<code>srv_sel_pen_wts</code> arguments (one list per selectivity
+surface). Each is a named list/vector; unset names default to
+<code>0</code> (off), except the three legacy terms below, whose default
+(<code>1</code> if any deviation-based penalty is active, <code>0</code>
+otherwise) reproduces pre-existing behaviour when
+<code>pen_wts = NULL</code>.</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th>Name</th>
+<th>Applies to</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>yr_devs</code></td>
+<td>Continuous time-varying deviations (<code>cont_tv_*_sel</code>,
+process error models 1–2)</td>
+<td>First-difference penalty across years on deviation parameters</td>
+</tr>
+<tr class="even">
+<td><code>bin_curve</code></td>
+<td>Semi-parametric deviations (process error models 3–5)</td>
+<td>Second-difference (curvature) penalty across bins on
+log-selectivity</td>
+</tr>
+<tr class="odd">
+<td><code>yr_curve</code></td>
+<td>Semi-parametric deviations (process error models 3–5)</td>
+<td>Second-difference (curvature) penalty across years on
+log-selectivity</td>
+</tr>
+<tr class="even">
+<td><code>smooth_dome</code></td>
+<td>Any selectivity form (see below)</td>
+<td>Hinge penalty discouraging decreases across adjacent bins
+(dome-shape control)</td>
+</tr>
+<tr class="odd">
+<td><code>smooth_bin_curve</code></td>
+<td>Any selectivity form (see below)</td>
+<td>Second-difference penalty across bins, normalised by the number of
+fitted bins</td>
+</tr>
+<tr class="even">
+<td><code>smooth_bin_diff</code></td>
+<td>Any selectivity form (see below)</td>
+<td>Unconditional first-difference penalty across bins (both increases
+<em>and</em> decreases contribute, unlike <code>smooth_dome</code>),
+normalised by the number of fitted bins</td>
+</tr>
+<tr class="odd">
+<td><code>smooth_yr_diff</code></td>
+<td>Any selectivity form (see below)</td>
+<td>First-difference penalty across years, normalised by the number of
+fitted years</td>
+</tr>
+<tr class="even">
+<td><code>smooth_yr_curve</code></td>
+<td>Any selectivity form (see below)</td>
+<td>Second-difference penalty across years, normalised by the number of
+fitted years</td>
+</tr>
+<tr class="odd">
+<td><code>smooth_mean_center</code></td>
+<td>Any selectivity form (see below)</td>
+<td>Penalises the per-year mean of log-selectivity away from zero;
+resolves the scale indeterminacy of the bicubic surface (a uniform
+per-year shift in log-selectivity otherwise trades off exactly against
+that year’s fishing mortality)</td>
+</tr>
+</tbody>
+</table>
+<p>The six <code>smooth_*</code> terms are evaluated directly on a
+fleet’s <em>realized</em> selectivity-at-bin-at-year surface.</p>
 <hr>
 </div>
 </div>

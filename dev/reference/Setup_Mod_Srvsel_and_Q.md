@@ -153,6 +153,25 @@ Setup_Mod_Srvsel_and_Q(
   :   Logistic selectivity with with \\a\_{50}\\ and \\a\_{95}\\ and
       asymptotic control (3 parameters).
 
+  `"bicubic"`
+
+  :   Bicubic spline over a bin-node x year-node grid (see
+      [`Get_Selex`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex.md),
+      `Selex_Model == 8`). Specified as
+      `"bicubic_Bin_<n_bin_nodes>_Yr_<n_yr_nodes>_Fleet_x"` (optionally
+      with `_Block_k`). One generalized form covers a smooth bin x year
+      surface (`n_yr_nodes > 1`), a time-invariant bin-only spline
+      (`n_yr_nodes == 1`), or a bin-only spline re-fit independently per
+      year-block (`n_yr_nodes == 1` within each of several blocks
+      defined via `srv_sel_blocks`). An optional `_SelStyr_<year>`
+      suffix (a calendar year within the block) restricts the actual
+      spline fit to `SelStyr`:block-end; years within the block before
+      `SelStyr` are held constant at the `SelStyr` year's fitted curve,
+      rather than fitting the surface over the whole block. An optional
+      `_NSelBins_<n>` suffix restricts the actual spline fit to the
+      first `n` bins (ages or lengths, per `srv_selex_type`); bins
+      beyond `n` are held constant at the last fitted bin's curve.
+
   No default; must be provided.
 
 - Use_srv_q_prior:

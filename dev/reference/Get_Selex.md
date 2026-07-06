@@ -15,7 +15,11 @@ Get_Selex(
   Region,
   Year,
   Bin,
-  Sex
+  Sex,
+  Wbin_bicubic = NULL,
+  Wyr_bicubic = NULL,
+  n_bin_nodes_bicubic = NULL,
+  n_yr_nodes_bicubic = NULL
 )
 ```
 
@@ -64,6 +68,18 @@ Get_Selex(
   :   Logistic selectivity with asymptote (b50, b95 parameterization):
       \\\alpha / (1 + 19^{(b\_{50} - \text{bin})/b\_{95}})\\. Equivalent
       to Model 3 scaled by asymptote \\\alpha\\.
+
+  8
+
+  :   Bicubic spline over a bin-node x year-node grid (see
+      `Wbin_bicubic`, `Wyr_bicubic`). One generalized form covers three
+      cases depending on how the caller constructs the node grid and
+      interpolation weights: a single smooth bin x year surface
+      (bicubic), a time-invariant bin-only spline (`n_yr_nodes == 1`),
+      or a bin-only spline re-fit independently within each of several
+      year blocks (`n_yr_nodes == 1` within each of SPoRC's existing
+      selectivity blocks). No `TimeVary_Model` deviation layering
+      applies to this model.
 
 - TimeVary_Model:
 
@@ -134,6 +150,13 @@ Get_Selex(
 
   :   `c(logit_alpha, ln_b50, ln_b95)`
 
+  Model 8
+
+  :   Flattened bin-node x year-node log-selectivity grid, length
+      `ncol(Wyr_bicubic) * ncol(Wbin_bicubic)`, filled column-major into
+      a `ncol(Wyr_bicubic)` (rows, year nodes) by `ncol(Wbin_bicubic)`
+      (columns, bin nodes) matrix.
+
 - ln_seldevs:
 
   Array of log-scale selectivity deviations with dimension
@@ -154,7 +177,9 @@ Get_Selex(
 
 - Year:
 
-  Integer year index.
+  Integer year index (absolute, i.e. a row index into `Wyr_bicubic`).
+  Only used directly by `Selex_Model == 8`; otherwise only used to index
+  `ln_seldevs`.
 
 - Bin:
 
@@ -163,6 +188,42 @@ Get_Selex(
 - Sex:
 
   Integer sex index.
+
+- Wbin_bicubic:
+
+  Numeric `length(Bin) x n_bin_nodes` natural cubic spline weight matrix
+  (see
+  [`Get_Natural_Cubic_Spline_Weights`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Natural_Cubic_Spline_Weights.md)),
+  mapping bin-node log-selectivity values onto `Bin`. Only used when
+  `Selex_Model == 8`; ignored (may be `NULL`) otherwise. Zero padding in
+  unused columns (e.g. when a shared parameter array is padded to a
+  common width across fleets/blocks) contributes nothing, since it is
+  multiplied through to zero.
+
+- Wyr_bicubic:
+
+  Numeric `n_yrs_total x n_yr_nodes` interpolation weight matrix mapping
+  year-node log-selectivity values onto every absolute model year (rows
+  beyond the fitted block are typically constructed to hold the boundary
+  node constant). Row `Year` is used for this call. Only used when
+  `Selex_Model == 8`; ignored (may be `NULL`) otherwise. A single-column
+  matrix of all-1s (`n_yr_nodes == 1`) yields a time-invariant bin-only
+  spline, since every year maps onto the same single node.
+
+- n_bin_nodes_bicubic, n_yr_nodes_bicubic:
+
+  Integer. This fleet/block's own true number of bin nodes / year nodes.
+  Only used when `Selex_Model == 8`. **Must** be supplied whenever
+  `Wbin_bicubic`/`Wyr_bicubic` may have been zero-padded wider than this
+  specific block's own grid (e.g. because some *other* fleet/block
+  shares the same padded storage array but uses a larger bicubic grid) –
+  `ncol(Wbin_bicubic)`/`ncol(Wyr_bicubic)` give the padded (shared)
+  width, not this block's true node counts, and using the padded width
+  to reshape `pars` would misassign which flattened parameter values
+  land in which (bin-node, year-node) cell. Default `NULL` falls back to
+  `ncol(Wbin_bicubic)`/`ncol(Wyr_bicubic)` for backward compatibility
+  when no padding-width mismatch is possible (e.g. a single bicubic
+  block/fleet, or direct unit testing).
 
 ## Value
 

@@ -168,6 +168,24 @@ follow one of:</p><ul><li><p><code>"&lt;model&gt;_Fleet_&lt;f&gt;"</code> — si
   <dt><code>"asymplogist2"</code></dt>
 <dd><p>Logistic selectivity with with \(a_{50}\) and \(a_{95}\) and asymptotic control (3 parameters).</p></dd>
 
+  <dt><code>"bicubic"</code></dt>
+<dd><p>Bicubic spline over a bin-node x year-node grid
+    (see <code><a href="Get_Selex.html">Get_Selex</a></code>, <code>Selex_Model == 8</code>). Specified as
+    <code>"bicubic_Bin_&lt;n_bin_nodes&gt;_Yr_&lt;n_yr_nodes&gt;_Fleet_x"</code> (optionally
+    with <code>_Block_k</code>). One generalized form covers a smooth bin x year
+    surface (<code>n_yr_nodes &gt; 1</code>), a time-invariant bin-only spline
+    (<code>n_yr_nodes == 1</code>), or a bin-only spline re-fit independently
+    per year-block (<code>n_yr_nodes == 1</code> within each of several blocks
+    defined via <code>fish_sel_blocks</code>). An optional <code>_SelStyr_&lt;year&gt;</code>
+    suffix (a calendar year within the block) restricts the actual spline
+    fit to <code>SelStyr</code>:block-end; years within the block before
+    <code>SelStyr</code> are held constant at the <code>SelStyr</code> year's fitted
+    curve, rather than fitting the surface over the whole block. An
+    optional <code>_NSelBins_&lt;n&gt;</code> suffix restricts the actual spline fit
+    to the first <code>n</code> bins (ages or lengths, per <code>fish_selex_type</code>);
+    bins beyond <code>n</code> are held constant at the last fitted bin's
+    curve.</p></dd>
+
 
 </dl><p>See the model equations vignette for mathematical definitions.</p></dd>
 

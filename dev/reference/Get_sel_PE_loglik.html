@@ -51,7 +51,7 @@ structures.</p>
 <span>  <span class="va">ln_devs</span>,</span>
 <span>  <span class="va">map_sel_devs</span>,</span>
 <span>  <span class="va">sel_vals</span>,</span>
-<span>  <span class="va">do_sel_pen</span>,</span>
+<span>  <span class="va">pen_wts</span>,</span>
 <span>  <span class="va">min_sel_devs_shared_bins</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -103,11 +103,15 @@ used on the log scale when computing bin and year smoothness penalties
 (<code>do_sel_pen = TRUE</code>).</p></dd>
 
 
-<dt id="arg-do-sel-pen">do_sel_pen<a class="anchor" aria-label="anchor" href="#arg-do-sel-pen"></a></dt>
-<dd><p>Logical. If <code>TRUE</code>, applies additional regularization penalties
-beyond the process error likelihood. For models 1–2, penalizes first differences
-of log-deviations across years. For models 3–5, penalizes second differences
-(curvature) of log-selectivity across bins and across years.</p></dd>
+<dt id="arg-pen-wts">pen_wts<a class="anchor" aria-label="anchor" href="#arg-pen-wts"></a></dt>
+<dd><p>Named numeric vector with elements <code>"yr_devs"</code>, <code>"bin_curve"</code>,
+<code>"yr_curve"</code> (any missing name is treated as <code>0</code>). Independently weights
+the additional regularization penalties applied beyond the process error
+likelihood: <code>"yr_devs"</code> weights a first-difference-across-years penalty on
+<code>ln_devs</code> (models 1–2 only); <code>"bin_curve"</code> and <code>"yr_curve"</code> weight
+second-difference (curvature) penalties on log-selectivity across bins and across
+years, respectively (models 3–5 only, via <code><a href="Get_Selex_Smoothness_Penalty.html">Get_Selex_Smoothness_Penalty</a></code>).
+A weight of <code>0</code> disables that term.</p></dd>
 
 
 <dt id="arg-min-sel-devs-shared-bins">min_sel_devs_shared_bins<a class="anchor" aria-label="anchor" href="#arg-min-sel-devs-shared-bins"></a></dt>
@@ -128,10 +132,16 @@ is specified, defaults to <code>1:n_bins</code> (i.e., all bins are included).</
 <li><p>Random walk process error</p></li>
 <li><p>3D Gaussian Markov Random Field (GMRF) models (marginal or conditional variance)</p></li>
 <li><p>Separable 2D AR(1) models</p></li>
-</ul><p>When <code>do_sel_pen = TRUE</code>, additional regularization penalties are applied:</p><ul><li><p>For <code>PE_model</code> 1–2: first-difference penalty on log-deviations across years.</p></li>
-<li><p>For <code>PE_model</code> 3–5: second-difference (smoothness) penalty on log-selectivity
-    across bins and across years.</p></li>
-</ul><p><strong>Note:</strong> The returned value is on the <em>positive</em> log-likelihood scale.
+</ul><p>Independently-weighted regularization penalties can also be applied via
+<code>pen_wts</code> (see <code><a href="Get_Selex_Smoothness_Penalty.html">Get_Selex_Smoothness_Penalty</a></code> for the bin/year
+curvature terms, which this function delegates to for <code>PE_model</code> 3–5):</p><ul><li><p>For <code>PE_model</code> 1–2: <code>pen_wts["yr_devs"]</code> weights a first-difference
+    penalty on log-deviations across years.</p></li>
+<li><p>For <code>PE_model</code> 3–5: <code>pen_wts["bin_curve"]</code> and <code>pen_wts["yr_curve"]</code>
+    independently weight second-difference (smoothness) penalties on log-selectivity
+    across bins and across years, respectively.</p></li>
+</ul><p>Each weight defaults to <code>0</code> (off); set any subset of them to apply only the
+penalty terms desired, rather than one shared on/off flag.</p>
+<p><strong>Note:</strong> The returned value is on the <em>positive</em> log-likelihood scale.
 It must be negated to obtain a negative log-likelihood contribution, which is
 handled outside this function.</p>
     </div>

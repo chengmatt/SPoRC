@@ -103,7 +103,10 @@ its weight to <code>1</code>. Must be called after all data setup functions.</p>
 <span>    <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_sexes</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  Wt_FishLenComps_discard_pop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">1</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_pop</span>,</span>
 <span>    <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>,</span>
-<span>    <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_sexes</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span></span>
+<span>    <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_sexes</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  fish_sel_pen_wts <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ret_sel_pen_wts <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  srv_sel_pen_wts <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -273,6 +276,56 @@ population-specific discard fishery length composition likelihood.
 Same format as <code>Wt_FishAgeComps_discard_pop</code>,
 <code>[n_pop × n_regions × n_years × n_seas × n_sexes × n_fish_fleets]</code>.
 Default: array of <code>1</code>s.</p></dd>
+
+
+<dt id="arg-fish-sel-pen-wts">fish_sel_pen_wts<a class="anchor" aria-label="anchor" href="#arg-fish-sel-pen-wts"></a></dt>
+<dd><p><code>NULL</code> (default), or a named numeric vector/list
+with independent weights for any subset of nine selectivity penalty terms
+(see <code><a href="resolve_sel_pen_wts.html">resolve_sel_pen_wts</a></code>), replacing single implicit-weight-1
+on/off flags with independently settable weights for the total fishery
+selectivity penalty:</p><dl><dt><code>"yr_devs"</code></dt>
+<dd><p>First-difference-across-years penalty on the
+    continuous time-varying deviations (<code>TimeVary_Model</code> 1-2 only).</p></dd>
+
+  <dt><code>"bin_curve"</code>, <code>"yr_curve"</code></dt>
+<dd><p>Second-difference (curvature)
+    penalties on the realized log-selectivity surface across bins and
+    across years, respectively (<code>TimeVary_Model</code> 3-5 only).</p></dd>
+
+  <dt><code>"smooth_bin_curve"</code>, <code>"smooth_bin_diff"</code>,
+    <code>"smooth_yr_diff"</code>, <code>"smooth_yr_curve"</code>, <code>"smooth_dome"</code>,
+    <code>"smooth_mean_center"</code></dt>
+<dd><p>see
+    <code><a href="Get_Selex_Smoothness_Penalty.html">Get_Selex_Smoothness_Penalty</a></code>: bin curvature, unconditional bin
+    first difference, inter-annual first difference, inter-annual second
+    difference, dome-shape, and a per-year mean-centering regularization.
+    These six terms operate directly on the fleet's <em>realized</em>
+    selectivity surface (not on any particular parameterization's
+    deviations), so they apply to <em>any</em> selectivity functional form
+    – e.g. a nonparametric (<code>Selex_Model == 5</code>) fleet with discrete
+    time blocks can use them to regularize curvature/stability across
+    those blocks, bridging an ADMB assessment's coefficient selectivity
+    held constant between "selectivity change years" (see the model
+    equations vignette for a worked example).</p></dd>
+
+
+</dl><p>When <code>NULL</code>, the first three terms fall back to weight <code>1</code> and the six <code>"smooth_*"</code> terms are always
+<code>0</code>. Must be called after <code>Setup_Mod_Fishsel_and_Q</code>.</p></dd>
+
+
+<dt id="arg-ret-sel-pen-wts">ret_sel_pen_wts<a class="anchor" aria-label="anchor" href="#arg-ret-sel-pen-wts"></a></dt>
+<dd><p>Same format as <code>fish_sel_pen_wts</code>, for the
+retained fishery selectivity penalty. Falls back to the legacy
+<code>cont_tv_ret_sel_penalty</code> flag (set via
+<code><a href="Setup_Mod_Fishsel_and_Q.html">Setup_Mod_Fishsel_and_Q</a></code>) when <code>NULL</code>.</p></dd>
+
+
+<dt id="arg-srv-sel-pen-wts">srv_sel_pen_wts<a class="anchor" aria-label="anchor" href="#arg-srv-sel-pen-wts"></a></dt>
+<dd><p>Same format as <code>fish_sel_pen_wts</code>, for the
+survey selectivity penalty. Falls back to the legacy
+<code>cont_tv_srv_sel_penalty</code> flag (set via
+<code><a href="Setup_Mod_Srvsel_and_Q.html">Setup_Mod_Srvsel_and_Q</a></code>) when <code>NULL</code>. Must be called
+after <code>Setup_Mod_Srvsel_and_Q</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

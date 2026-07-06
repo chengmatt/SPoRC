@@ -225,6 +225,186 @@ test_that("Get_Selex works", {
     expect_equal(res3, res7, tolerance = 1e-3)
   })
 
+  # ── Model 8: bicubic spline (age node x year node grid) ──────────────────────
+
+  bicubic_selex <- function(pars, Wbin, Wyr, year = 1) {
+    Get_Selex(
+      Selex_Model    = 8,
+      TimeVary_Model = 0,
+      pars           = pars,
+      ln_seldevs     = zero_devs(1),
+      Region         = 1,
+      Year           = year,
+      Bin            = ages,
+      Sex            = 1,
+      Wbin_bicubic   = Wbin,
+      Wyr_bicubic    = Wyr
+    )
+  }
+
+  test_that("output length equals length(Bin)", {
+    bin_nodes <- seq(0, 1, length.out = 4)
+    Wbin <- Get_Natural_Cubic_Spline_Weights(bin_nodes, seq(0, 1, length.out = length(ages)))
+    Wyr  <- matrix(1, nrow = 5, ncol = 1) # single year node -> time-invariant
+    pars <- c(0, 1, 0.5, -0.5)
+    res <- bicubic_selex(pars, Wbin, Wyr)
+    expect_equal(length(res), length(ages))
+  })
+
+  test_that("values are strictly positive (log-scale spline, exponentiated)", {
+    bin_nodes <- seq(0, 1, length.out = 4)
+    Wbin <- Get_Natural_Cubic_Spline_Weights(bin_nodes, seq(0, 1, length.out = length(ages)))
+    Wyr  <- matrix(1, nrow = 3, ncol = 1)
+    res <- bicubic_selex(c(-2, 1, 0.5, -3), Wbin, Wyr)
+    expect_true(all(res > 0))
+  })
+
+  test_that("n_yr_nodes == 1 gives a time-invariant age-only natural cubic spline", {
+    bin_nodes <- seq(0, 1, length.out = 5)
+    age_bins  <- seq(0, 1, length.out = length(ages))
+    Wbin <- Get_Natural_Cubic_Spline_Weights(bin_nodes, age_bins)
+    Wyr  <- matrix(1, nrow = 6, ncol = 1) # every year maps to the single node
+
+    log_node_vals <- c(-1, 0.5, 1.2, 0.3, -0.8)
+    res_y1 <- bicubic_selex(log_node_vals, Wbin, Wyr, year = 1)
+    res_y6 <- bicubic_selex(log_node_vals, Wbin, Wyr, year = 6)
+
+    # matches direct age-only spline evaluation
+    expect_equal(res_y1, exp(as.vector(Wbin %*% log_node_vals)), tolerance = 1e-8)
+    # constant across years
+    expect_equal(res_y1, res_y6)
+  })
+
+  test_that("full bicubic surface matches manual two-pass (age-then-year) spline construction", {
+    n_bin_nodes <- 4
+    n_yr_nodes  <- 3
+    n_yrs <- 7
+
+    bin_nodes <- seq(0, 1, length.out = n_bin_nodes)
+    yr_nodes  <- seq(0, 1, length.out = n_yr_nodes)
+    age_bins  <- seq(0, 1, length.out = length(ages))
+    yr_bins   <- seq(0, 1, length.out = n_yrs)
+
+    Wbin <- Get_Natural_Cubic_Spline_Weights(bin_nodes, age_bins)
+    Wyr  <- Get_Natural_Cubic_Spline_Weights(yr_nodes, yr_bins)
+
+    set.seed(42)
+    node_par <- matrix(rnorm(n_yr_nodes * n_bin_nodes), nrow = n_yr_nodes, ncol = n_bin_nodes)
+
+    # manual two-pass construction: age-spline each year-node row, then year-spline each age column
+    age_interp <- node_par %*% t(Wbin)      # n_yr_nodes x n_ages
+    full_surface <- Wyr %*% age_interp      # n_yrs x n_ages
+    expected <- exp(full_surface)
+
+    for (y in 1:n_yrs) {
+      res <- bicubic_selex(as.vector(node_par), Wbin, Wyr, year = y)
+      expect_equal(res, expected[y, ], tolerance = 1e-8, label = sprintf("year %d", y))
+    }
+  })
+
+  test_that("zero-padded extra node columns/rows are harmless (padding convention used by setup code)", {
+    n_bin_nodes <- 3
+    n_yr_nodes  <- 2
+    bin_nodes <- seq(0, 1, length.out = n_bin_nodes)
+    yr_nodes  <- seq(0, 1, length.out = n_yr_nodes)
+    age_bins  <- seq(0, 1, length.out = length(ages))
+    yr_bins   <- seq(0, 1, length.out = 4)
+
+    Wbin <- Get_Natural_Cubic_Spline_Weights(bin_nodes, age_bins)
+    Wyr  <- Get_Natural_Cubic_Spline_Weights(yr_nodes, yr_bins)
+    node_par <- matrix(c(0.2, -0.3, 0.1, 0.4, -0.1, 0.6), nrow = n_yr_nodes, ncol = n_bin_nodes)
+
+    res_unpadded <- bicubic_selex(as.vector(node_par), Wbin, Wyr, year = 2)
+
+    # pad with an extra all-zero age-node column and year-node column
+    Wbin_pad <- cbind(Wbin, 0)
+    Wyr_pad  <- cbind(Wyr, 0)
+    node_par_pad <- rbind(cbind(node_par, 999), 999) # padded parameter slots can hold any value
+
+    res_padded <- bicubic_selex(as.vector(node_par_pad), Wbin_pad, Wyr_pad, year = 2)
+
+    expect_equal(res_unpadded, res_padded, tolerance = 1e-8)
+  })
+
+  test_that("Wbin/Wyr padded to a *different* fleet/block's larger grid does not scramble this block's own node values", {
+    # Regression test: in Setup_Fishery.R/Setup_Survey.R, Wbin_bicubic/Wyr_bicubic are stored in
+    # arrays shared across all fleets/blocks using Selex_Model == 8, padded to the *global* max
+    # bin-node/year-node width across all of them independently. A block whose own true grid is
+    # smaller than that global max (in either dimension) receives Wbin_bicubic/Wyr_bicubic wider
+    # than its own true n_bin_nodes/n_yr_nodes, while its own flattened parameter vector only ever
+    # holds its own true n_bin_nodes * n_yr_nodes estimated values (see
+    # do_fish_fixed_sel_pars_mapping's "max_sel_pars <- n_bin_nodes_this * n_yr_nodes_this").
+    # Get_Selex must use this block's own true node counts (n_bin_nodes_bicubic/n_yr_nodes_bicubic)
+    # to reshape pars, not ncol(Wbin_bicubic)/ncol(Wyr_bicubic), which reflect only the padded width.
+    n_bin_nodes_true <- 3
+    n_yr_nodes_true  <- 2
+    n_yrs <- 5
+
+    bin_nodes <- seq(0, 1, length.out = n_bin_nodes_true)
+    yr_nodes  <- seq(0, 1, length.out = n_yr_nodes_true)
+    age_bins  <- seq(0, 1, length.out = length(ages))
+    yr_bins   <- seq(0, 1, length.out = n_yrs)
+
+    Wbin_true <- Get_Natural_Cubic_Spline_Weights(bin_nodes, age_bins) # n_ages x 3
+    Wyr_true  <- Get_Natural_Cubic_Spline_Weights(yr_nodes, yr_bins)   # n_yrs x 2
+
+    set.seed(7)
+    node_par_true <- matrix(rnorm(n_bin_nodes_true * n_yr_nodes_true), nrow = n_yr_nodes_true, ncol = n_bin_nodes_true)
+    expected <- exp(Wyr_true %*% (node_par_true %*% t(Wbin_true))) # n_yrs x n_ages, computed with no padding at all
+
+    # Simulate the shared, globally-padded storage: some *other* fleet/block elsewhere uses a
+    # larger bicubic grid (e.g. Bin_5_Yr_4), so this block's own Wbin/Wyr get zero-padded out to
+    # that wider shared width, independent of this block's own true node counts.
+    n_bin_nodes_padded <- 5
+    n_yr_nodes_padded  <- 4
+    Wbin_padded <- cbind(Wbin_true, matrix(0, nrow = nrow(Wbin_true), ncol = n_bin_nodes_padded - n_bin_nodes_true))
+    Wyr_padded  <- cbind(Wyr_true,  matrix(0, nrow = nrow(Wyr_true),  ncol = n_yr_nodes_padded  - n_yr_nodes_true))
+
+    # This block's own parameter storage: its true node values in the first n_bin_nodes_true *
+    # n_yr_nodes_true slots (simple sequential 1:max_sel_pars mapping), everything else fixed at 0.
+    pars_flat <- c(as.vector(node_par_true), rep(0, 40))
+
+    for (y in 1:n_yrs) {
+      res <- Get_Selex(
+        Selex_Model = 8, TimeVary_Model = 0, pars = pars_flat, ln_seldevs = zero_devs(1),
+        Region = 1, Year = y, Bin = ages, Sex = 1,
+        Wbin_bicubic = Wbin_padded, Wyr_bicubic = Wyr_padded,
+        n_bin_nodes_bicubic = n_bin_nodes_true, n_yr_nodes_bicubic = n_yr_nodes_true
+      )
+      expect_equal(res, expected[y, ], tolerance = 1e-8, label = sprintf("year %d, padded-vs-true grid mismatch", y))
+    }
+  })
+
+  test_that("year-block (nearest-node indicator) Wyr gives piecewise-constant-in-year, smooth-in-age selectivity", {
+    # mirrors ADMB sel_option==4: independent age-only spline per year-block, held constant within the block
+    n_bin_nodes <- 4
+    bin_nodes <- seq(0, 1, length.out = n_bin_nodes)
+    age_bins  <- seq(0, 1, length.out = length(ages))
+    Wbin <- Get_Natural_Cubic_Spline_Weights(bin_nodes, age_bins)
+
+    n_yrs <- 6
+    block_of_year <- c(1, 1, 1, 2, 2, 2) # first 3 years -> block 1, last 3 -> block 2
+    Wyr <- matrix(0, nrow = n_yrs, ncol = 2)
+    for (y in 1:n_yrs) Wyr[y, block_of_year[y]] <- 1
+
+    node_par <- matrix(c(-1, 0.5, 1, -0.3,   # block 1 age-node values
+                         0.2, -0.6, 0.8, 1.1), # block 2 age-node values
+                       nrow = 2, ncol = n_bin_nodes, byrow = TRUE)
+
+    res <- lapply(1:n_yrs, function(y) bicubic_selex(as.vector(node_par), Wbin, Wyr, year = y))
+
+    # constant within each block
+    expect_equal(res[[1]], res[[2]])
+    expect_equal(res[[2]], res[[3]])
+    expect_equal(res[[4]], res[[5]])
+    expect_equal(res[[5]], res[[6]])
+    # differs across blocks
+    expect_false(isTRUE(all.equal(res[[1]], res[[4]])))
+    # matches direct age-only spline for each block's own node values
+    expect_equal(res[[1]], exp(as.vector(Wbin %*% node_par[1, ])), tolerance = 1e-8)
+    expect_equal(res[[4]], exp(as.vector(Wbin %*% node_par[2, ])), tolerance = 1e-8)
+  })
+
   # ── TimeVary_Model = 0: no devs → same as base ───────────────────────────────
 
   test_that("TimeVary_Model=0 with zero devs equals base model (Model 0)", {

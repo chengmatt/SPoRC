@@ -1,3 +1,142 @@
+#' Compute a model-agnostic selectivity smoothness / dome-shape penalty (Positive Scale)
+#'
+#' Regularization penalty operating directly on a realized selectivity-at-bin-at-year
+#' surface, rather than on any particular parameterization's deviations. Because it
+#' only ever looks at the resulting selectivity values, it applies uniformly to any
+#' selectivity functional form -- semi-parametric process-error models
+#' (\code{TimeVary_Model} 3--5, via \code{\link{Get_sel_PE_loglik}}) and the bicubic /
+#' cubic spline (\code{Selex_Model == 8}, via \code{\link{Get_Selex}}) alike. This is
+#' the "modular" building block behind SPoRC's independently-weighted selectivity
+#' penalty terms: each term below is switched off by setting its weight to 0, and
+#' terms can be combined freely without one implicit shared on/off flag.
+#'
+#' @param sel_vals Array of selectivity values dimensioned \code{[1, year, bin, sex, 1]}.
+#'   Evaluated on the log scale internally.
+#' @param wt_bin_curve Non-negative weight on the age/bin curvature penalty: the
+#'   sum of squared second differences of log-selectivity across bins, within each
+#'   year, normalized by the number of bins. Penalizes jagged (non-smooth)
+#'   selectivity-at-age curves. \code{0} (default) disables this term. Requires at
+#'   least 3 bins to have any effect.
+#' @param wt_bin_diff Non-negative weight on the unconditional bin first-difference
+#'   penalty: the sum of squared first differences of log-selectivity across bins,
+#'   within each year, normalized by the number of bins. Unlike \code{wt_dome}
+#'   (which only penalizes decreases), both increases and decreases contribute. Requires at least 2 bins to have any
+#'   effect.
+#' @param wt_yr_diff Non-negative weight on the inter-annual first-difference
+#'   penalty: the sum of squared first differences of log-selectivity across years,
+#'   within each bin, normalized by the number of years. Penalizes abrupt year-to-year jumps in
+#'   selectivity-at-bin. \code{0} (default) disables this term. Requires at least 2
+#'   years to have any effect.
+#' @param wt_yr_curve Non-negative weight on the inter-annual second-difference
+#'   (smoothness) penalty: the sum of squared second differences of log-selectivity
+#'   across years, within each bin, normalized by the number of years. Penalizes jagged (non-smooth) year-to-year
+#'   selectivity trajectories. \code{0} (default) disables this term. Requires at
+#'   least 3 years to have any effect.
+#' @param wt_dome Non-negative weight on the dome-shape (non-monotonicity) penalty:
+#'   for each year, penalizes any decrease in log-selectivity moving from one bin to
+#'   the next (i.e. discourages, but does not forbid, dome shapes), matching ADMB's
+#'   \code{sel_like} dome penalty (\code{lambda(3)}) for double-logistic / spline
+#'   selectivity forms. \code{0} (default) disables this term. Uses \code{max(., 0)}
+#'   (an RTMB/CppAD-safe smooth hinge; direct \code{if()} branching on AD types is
+#'   unsupported) so only decreases, not increases, are penalized.
+#' @param wt_mean_center Non-negative weight on a per-year mean-centering
+#'   (sum-to-zero) regularization: for each year, penalizes the squared mean of
+#'   log-selectivity across bins. \code{0} (default) disables this term;
+#'   set to \code{10000}.
+#' @param normalize Logical. If \code{TRUE} (default), \code{wt_bin_curve} is
+#'   divided by the number of bins and \code{wt_yr_diff}/\code{wt_yr_curve} are
+#'   divided by the number of years. Set to \code{FALSE} to reproduce the
+#'   older, unnormalized bin/year curvature penalty used by
+#'   \code{\link{Get_sel_PE_loglik}} for the semi-parametric process-error
+#'   models (\code{TimeVary_Model} 3--5) -- \code{Get_sel_PE_loglik} always
+#'   calls this with \code{normalize = FALSE}.
+#'
+#' @return Numeric scalar: the positive log-likelihood contribution from the
+#'   requested penalty terms. Negated externally to form the negative log-likelihood.
+#'
+#' @keywords internal
+#' @import RTMB
+Get_Selex_Smoothness_Penalty <- function(sel_vals, wt_bin_curve = 0, wt_bin_diff = 0, wt_yr_diff = 0, wt_yr_curve = 0, wt_dome = 0, wt_mean_center = 0, normalize = TRUE) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  ll = 0 # initialize likelihood (positive scale, negated by the caller)
+
+  n_yrs = dim(sel_vals)[2]
+  n_bins = dim(sel_vals)[3]
+  n_sexes = dim(sel_vals)[4]
+
+  bin_norm = if(normalize) n_bins else 1
+  yr_norm = if(normalize) n_yrs else 1
+
+  if(wt_bin_curve != 0 && n_bins >= 3) { # age/bin curvature (second difference across bins), normalized by n_bins as in ADMB
+    for(s in 1:n_sexes) {
+      for(y in 1:n_yrs) {
+        for(b in 2:(n_bins - 1)) {
+          bin_penalty = log(sel_vals[1,y,b+1,s,1]) - 2 * log(sel_vals[1,y,b,s,1]) + log(sel_vals[1,y,b-1,s,1])
+          ll = ll - wt_bin_curve / bin_norm * bin_penalty^2
+        } # end b loop
+      } # end y loop
+    } # end s loop
+  }
+
+  if(wt_bin_diff != 0 && n_bins >= 2) { # unconditional bin first-difference (both directions penalized, unlike wt_dome), normalized by n_bins
+    for(s in 1:n_sexes) {
+      for(y in 1:n_yrs) {
+        for(b in 1:(n_bins - 1)) {
+          bin_diff_penalty = log(sel_vals[1,y,b,s,1]) - log(sel_vals[1,y,b+1,s,1])
+          ll = ll - wt_bin_diff / bin_norm * bin_diff_penalty^2
+        } # end b loop
+      } # end y loop
+    } # end s loop
+  }
+
+  if(wt_yr_diff != 0 && n_yrs >= 2) { # inter-annual first difference, normalized by n_yrs as in ADMB
+    for(s in 1:n_sexes) {
+      for(b in 1:n_bins) {
+        for(y in 2:n_yrs) {
+          yr_diff_penalty = log(sel_vals[1,y,b,s,1]) - log(sel_vals[1,y-1,b,s,1])
+          ll = ll - wt_yr_diff / yr_norm * yr_diff_penalty^2
+        } # end y loop
+      } # end b loop
+    } # end s loop
+  }
+
+  if(wt_yr_curve != 0 && n_yrs >= 3) { # inter-annual second difference / smoothness, normalized by n_yrs as in ADMB
+    for(s in 1:n_sexes) {
+      for(b in 1:n_bins) {
+        for(y in 2:(n_yrs - 1)) {
+          year_penalty = log(sel_vals[1,y+1,b,s,1]) - 2 * log(sel_vals[1,y,b,s,1]) + log(sel_vals[1,y-1,b,s,1])
+          ll = ll - wt_yr_curve / yr_norm * year_penalty^2
+        } # end y loop
+      } # end b loop
+    } # end s loop
+  }
+
+  if(wt_dome != 0 && n_bins >= 2) { # dome-shape / non-monotonicity, within each year
+    for(s in 1:n_sexes) {
+      for(y in 1:n_yrs) {
+        for(b in 1:(n_bins - 1)) {
+          decrease = max(log(sel_vals[1,y,b,s,1]) - log(sel_vals[1,y,b+1,s,1]), 0) # only decreases contribute
+          ll = ll - wt_dome * decrease^2
+        } # end b loop
+      } # end y loop
+    } # end s loop
+  }
+
+  if(wt_mean_center != 0) { # per-year mean-centering / sum-to-zero regularization
+    for(s in 1:n_sexes) {
+      for(y in 1:n_yrs) {
+        z = mean(log(sel_vals[1,y,,s,1]))
+        ll = ll - wt_mean_center * z^2
+      } # end y loop
+    } # end s loop
+  }
+
+  return(ll)
+} # return log likelihood
+
 #' Compute Selectivity Process Error Log-Likelihood (Positive Scale)
 #'
 #' Calculates the positive log-likelihood contribution for selectivity
@@ -12,12 +151,18 @@
 #'   \item Separable 2D AR(1) models
 #' }
 #'
-#' When \code{do_sel_pen = TRUE}, additional regularization penalties are applied:
+#' Independently-weighted regularization penalties can also be applied via
+#' \code{pen_wts} (see \code{\link{Get_Selex_Smoothness_Penalty}} for the bin/year
+#' curvature terms, which this function delegates to for \code{PE_model} 3--5):
 #' \itemize{
-#'   \item For \code{PE_model} 1--2: first-difference penalty on log-deviations across years.
-#'   \item For \code{PE_model} 3--5: second-difference (smoothness) penalty on log-selectivity
-#'     across bins and across years.
+#'   \item For \code{PE_model} 1--2: \code{pen_wts["yr_devs"]} weights a first-difference
+#'     penalty on log-deviations across years.
+#'   \item For \code{PE_model} 3--5: \code{pen_wts["bin_curve"]} and \code{pen_wts["yr_curve"]}
+#'     independently weight second-difference (smoothness) penalties on log-selectivity
+#'     across bins and across years, respectively.
 #' }
+#' Each weight defaults to \code{0} (off); set any subset of them to apply only the
+#' penalty terms desired, rather than one shared on/off flag.
 #'
 #' \strong{Note:} The returned value is on the \emph{positive} log-likelihood scale.
 #' It must be negated to obtain a negative log-likelihood contribution, which is
@@ -60,10 +205,14 @@
 #'   used on the log scale when computing bin and year smoothness penalties
 #'   (\code{do_sel_pen = TRUE}).
 #'
-#' @param do_sel_pen Logical. If \code{TRUE}, applies additional regularization penalties
-#'   beyond the process error likelihood. For models 1--2, penalizes first differences
-#'   of log-deviations across years. For models 3--5, penalizes second differences
-#'   (curvature) of log-selectivity across bins and across years.
+#' @param pen_wts Named numeric vector with elements \code{"yr_devs"}, \code{"bin_curve"},
+#'   \code{"yr_curve"} (any missing name is treated as \code{0}). Independently weights
+#'   the additional regularization penalties applied beyond the process error
+#'   likelihood: \code{"yr_devs"} weights a first-difference-across-years penalty on
+#'   \code{ln_devs} (models 1--2 only); \code{"bin_curve"} and \code{"yr_curve"} weight
+#'   second-difference (curvature) penalties on log-selectivity across bins and across
+#'   years, respectively (models 3--5 only, via \code{\link{Get_Selex_Smoothness_Penalty}}).
+#'   A weight of \code{0} disables that term.
 #' @param min_sel_devs_shared_bins Integer vector. Indices of the reference (minimum) bin
 #'   within each shared deviation group, used to subset the bin dimension when
 #'   evaluating GMRF or 2D AR(1) likelihoods (PE models 3-5). When no bin sharing
@@ -79,7 +228,7 @@ Get_sel_PE_loglik <- function(PE_model,
                               ln_devs,
                               map_sel_devs,
                               sel_vals,
-                              do_sel_pen,
+                              pen_wts,
                               min_sel_devs_shared_bins
                               ) {
 
@@ -88,6 +237,11 @@ Get_sel_PE_loglik <- function(PE_model,
 
   # Note that the likelihood calculations are positive within the function,
   # because it gets converted to negative outside the wrapper function
+
+  # Named weights default to 0 (off) for any term not supplied
+  wt_yr_devs = if("yr_devs" %in% names(pen_wts)) pen_wts[["yr_devs"]] else 0
+  wt_bin_curve = if("bin_curve" %in% names(pen_wts)) pen_wts[["bin_curve"]] else 0
+  wt_yr_curve = if("yr_curve" %in% names(pen_wts)) pen_wts[["yr_curve"]] else 0
 
   ll = 0 # initialize likelihood
 
@@ -118,13 +272,13 @@ Get_sel_PE_loglik <- function(PE_model,
 
     } # end dev_idx loop
 
-    # Temporal Stability Penalty
-    if(do_sel_pen == TRUE) {
+    # Temporal Stability Penalty (independently weighted; 0 disables it)
+    if(wt_yr_devs != 0) {
       for(y in 2:n_yrs) {
         for(s in 1:n_sexes) {
           for(b in 1:n_bins) {
             year_penalty = ln_devs[1,y,b,s,1] - ln_devs[1,y-1,b,s,1]
-            ll = ll - year_penalty^2
+            ll = ll - wt_yr_devs * year_penalty^2
           } # end b loop
         } # end s loop
       } # end y loop
@@ -186,31 +340,12 @@ Get_sel_PE_loglik <- function(PE_model,
       } # end if
     } # end idx loop
 
-    if(do_sel_pen == TRUE) {
-      # Regularity on bins
-      for(s in 1:n_sexes) {
-        for (y in 1:n_yrs) {
-          if (n_bins >= 3) {
-            for (b in 2:(n_bins - 1)) {
-              bin_penalty = log(sel_vals[1,y,b+1,s,1]) - 2 * log(sel_vals[1,y,b,s,1]) + log(sel_vals[1,y,b-1,s,1])
-              ll = ll - bin_penalty^2
-            } # end b loop
-          } # end if
-        } # end y loop
-      } # end s loop
-
-      # Regularity on years
-      for(s in 1:n_sexes) {
-        for(b in 1:n_bins) {
-          if(n_yrs >= 3) {
-            for(y in 2:(n_yrs - 1)) {
-              year_penalty = log(sel_vals[1,y+1,b,s,1]) - 2 * log(sel_vals[1,y,b,s,1]) + log(sel_vals[1,y-1,b,s,1])
-              ll = ll - year_penalty^2
-            } # end y loop
-          } # end if n_yrs >= 3
-        } # end a loop
-      }
-    }
+    # Age/bin curvature and year curvature penalties, independently weighted (0 disables a term);
+    # delegated to the model-agnostic Get_Selex_Smoothness_Penalty so the same terms can also be
+    # applied directly to non-devs-based selectivity forms (e.g. the bicubic spline). normalize =
+    # FALSE preserves the exact (unnormalized) penalty magnitude this always used, predating the
+    # ADMB-aligned smoothness penalty package (smooth_*), which normalizes by n_bins/n_yrs (normalize = TRUE).
+    ll = ll + Get_Selex_Smoothness_Penalty(sel_vals, wt_bin_curve = wt_bin_curve, wt_yr_curve = wt_yr_curve, normalize = FALSE)
 
   } # end 3dgrmf or 2dar1 process error
 

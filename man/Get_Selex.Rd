@@ -12,7 +12,11 @@ Get_Selex(
   Region,
   Year,
   Bin,
-  Sex
+  Sex,
+  Wbin_bicubic = NULL,
+  Wyr_bicubic = NULL,
+  n_bin_nodes_bicubic = NULL,
+  n_yr_nodes_bicubic = NULL
 )
 }
 \arguments{
@@ -31,6 +35,16 @@ Get_Selex(
   \item{7}{Logistic selectivity with asymptote (b50, b95 parameterization):
            \eqn{\alpha / (1 + 19^{(b_{50} - \text{bin})/b_{95}})}.
            Equivalent to Model 3 scaled by asymptote \eqn{\alpha}.}
+  \item{8}{Bicubic spline over a bin-node x year-node grid (see
+           \code{Wbin_bicubic}, \code{Wyr_bicubic}). One generalized form
+           covers three cases depending on how the caller constructs the
+           node grid and interpolation weights: a single smooth bin x
+           year surface (bicubic), a time-invariant bin-only spline
+           (\code{n_yr_nodes == 1}), or a bin-only spline re-fit
+           independently within each of several year blocks
+           (\code{n_yr_nodes == 1} within each of SPoRC's existing
+           selectivity blocks). No \code{TimeVary_Model} deviation
+           layering applies to this model.}
 }}
 
 \item{TimeVary_Model}{Integer specifying temporal structure:
@@ -54,6 +68,10 @@ Parameters are exponentiated or transformed depending on model specification:
     \item{Model 5}{\code{c(logit_sel_1, ..., logit_sel_nbins)}}
     \item{Model 6}{\code{c(logit_alpha, ln_b50, ln_k)}}
     \item{Model 7}{\code{c(logit_alpha, ln_b50, ln_b95)}}
+    \item{Model 8}{Flattened bin-node x year-node log-selectivity grid,
+      length \code{ncol(Wyr_bicubic) * ncol(Wbin_bicubic)}, filled
+      column-major into a \code{ncol(Wyr_bicubic)} (rows, year nodes) by
+      \code{ncol(Wbin_bicubic)} (columns, bin nodes) matrix.}
   }}
 
 \item{ln_seldevs}{Array of log-scale selectivity deviations with dimension
@@ -70,11 +88,44 @@ Parameters are exponentiated or transformed depending on model specification:
 
 \item{Region}{Integer region index.}
 
-\item{Year}{Integer year index.}
+\item{Year}{Integer year index (absolute, i.e. a row index into
+\code{Wyr_bicubic}). Only used directly by \code{Selex_Model == 8};
+otherwise only used to index \code{ln_seldevs}.}
 
 \item{Bin}{Numeric vector of bins (ages or lengths).}
 
 \item{Sex}{Integer sex index.}
+
+\item{Wbin_bicubic}{Numeric \code{length(Bin) x n_bin_nodes} natural cubic
+spline weight matrix (see \code{\link{Get_Natural_Cubic_Spline_Weights}}),
+mapping bin-node log-selectivity values onto \code{Bin}. Only used when
+\code{Selex_Model == 8}; ignored (may be \code{NULL}) otherwise. Zero
+padding in unused columns (e.g. when a shared parameter array is padded
+to a common width across fleets/blocks) contributes nothing, since it is
+multiplied through to zero.}
+
+\item{Wyr_bicubic}{Numeric \code{n_yrs_total x n_yr_nodes} interpolation
+weight matrix mapping year-node log-selectivity values onto every
+absolute model year (rows beyond the fitted block are typically
+constructed to hold the boundary node constant). Row \code{Year} is used
+for this call. Only used when \code{Selex_Model == 8}; ignored (may be
+\code{NULL}) otherwise. A single-column matrix of all-1s (\code{n_yr_nodes
+== 1}) yields a time-invariant bin-only spline, since every year maps
+onto the same single node.}
+
+\item{n_bin_nodes_bicubic, n_yr_nodes_bicubic}{Integer. This fleet/block's
+own true number of bin nodes / year nodes. Only used when
+\code{Selex_Model == 8}. \strong{Must} be supplied whenever
+\code{Wbin_bicubic}/\code{Wyr_bicubic} may have been zero-padded wider
+than this specific block's own grid (e.g. because some \emph{other}
+fleet/block shares the same padded storage array but uses a larger
+bicubic grid) -- \code{ncol(Wbin_bicubic)}/\code{ncol(Wyr_bicubic)} give
+the padded (shared) width, not this block's true node counts, and using
+the padded width to reshape \code{pars} would misassign which flattened
+parameter values land in which (bin-node, year-node) cell. Default
+\code{NULL} falls back to \code{ncol(Wbin_bicubic)}/\code{ncol(Wyr_bicubic)}
+for backward compatibility when no padding-width mismatch is possible
+(e.g. a single bicubic block/fleet, or direct unit testing).}
 }
 \value{
 Numeric vector of selectivity values corresponding to \code{Bin}.

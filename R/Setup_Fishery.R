@@ -4603,6 +4603,11 @@ do_fish_fixed_sel_pars_mapping <- function(input_list, fish_fixed_sel_pars_spec,
             if(sel_model_this_block %in% c(0,1,3)) max_sel_pars <- 2 # logistic or gamma
             if(sel_model_this_block == 4) max_sel_pars <- 6 # double normal
             if(sel_model_this_block %in% c(6,7)) max_sel_pars <- 3 # logistic w/ asymptotic selectivity
+            if(sel_model_this_block == 8) { # bicubic spline: flattened bin-node x year-node grid (group_bins below reduces to a plain 1:max_sel_pars mapping, same as other parametric forms)
+              n_bin_nodes_this <- unique(input_list$data$fish_sel_bicubic_binnodes[r, block_years, f])
+              n_yr_nodes_this <- unique(input_list$data$fish_sel_bicubic_yrnodes[r, block_years, f])
+              max_sel_pars <- n_bin_nodes_this * n_yr_nodes_this
+            }
 
             # non-parametric selectivity
             if(sel_model_this_block == 5) {
@@ -6134,6 +6139,22 @@ Setup_Mod_Retsel <- function(input_list,
 #'     \item{\code{"nonpar"}}{Non-parametric selectivity defined over discrete age or length bins, where selectivity is estimated as independent parameters (or grouped bins if specified via nonparametric bin mapping). No fixed functional form is imposed.}
 #'     \item{\code{"asymplogist1"}}{Logistic selectivity with \eqn{a_{50}} and slope \eqn{k} and asymptotic control (3 parameters).}
 #'     \item{\code{"asymplogist2"}}{Logistic selectivity with with \eqn{a_{50}} and \eqn{a_{95}} and asymptotic control (3 parameters).}
+#'     \item{\code{"bicubic"}}{Bicubic spline over a bin-node x year-node grid
+#'       (see \code{\link{Get_Selex}}, \code{Selex_Model == 8}). Specified as
+#'       \code{"bicubic_Bin_<n_bin_nodes>_Yr_<n_yr_nodes>_Fleet_x"} (optionally
+#'       with \code{_Block_k}). One generalized form covers a smooth bin x year
+#'       surface (\code{n_yr_nodes > 1}), a time-invariant bin-only spline
+#'       (\code{n_yr_nodes == 1}), or a bin-only spline re-fit independently
+#'       per year-block (\code{n_yr_nodes == 1} within each of several blocks
+#'       defined via \code{fish_sel_blocks}). An optional \code{_SelStyr_<year>}
+#'       suffix (a calendar year within the block) restricts the actual spline
+#'       fit to \code{SelStyr}:block-end; years within the block before
+#'       \code{SelStyr} are held constant at the \code{SelStyr} year's fitted
+#'       curve, rather than fitting the surface over the whole block. An
+#'       optional \code{_NSelBins_<n>} suffix restricts the actual spline fit
+#'       to the first \code{n} bins (ages or lengths, per \code{fish_selex_type});
+#'       bins beyond \code{n} are held constant at the last fitted bin's
+#'       curve.}
 #'   }
 #'   See the model equations vignette for mathematical definitions.
 #' @param cont_tv_fish_sel Character vector of length \code{n_fish_fleets}
@@ -6499,8 +6520,12 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
   for(f in 1:input_list$data$n_fish_fleets) collect_message(paste("Fishery Selectivity Time Blocks for fishery", f, "is specified at:", length(unique(fish_sel_blocks_arr[,,f]))))
 
   # Selectivity Functional Forms --------------------------------------------
-  sel_map <- data.frame(sel = c('logist1', "gamma", "exponential", "logist2", "dbnrml", 'nonpar', 'asymplogist1', "asymplogist2"), num = c(0,1,2,3,4,5,6,7)) # set up values we can map to
+  sel_map <- data.frame(sel = c('logist1', "gamma", "exponential", "logist2", "dbnrml", 'nonpar', 'asymplogist1', "asymplogist2", "bicubic"), num = c(0,1,2,3,4,5,6,7,8)) # set up values we can map to
   fish_sel_model_arr <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets))
+  fish_sel_bicubic_binnodes_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets)) # number of bin nodes, only set where fish_sel_model == 8 (bicubic)
+  fish_sel_bicubic_yrnodes_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets)) # number of year nodes, only set where fish_sel_model == 8 (bicubic)
+  fish_sel_bicubic_selstyr_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets)) # calendar year the bicubic surface is actually fit from (0 = block's own start year, i.e. no offset); years within the block before this are edge-held at this year's fitted curve
+  fish_sel_bicubic_nselbins_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets)) # number of bins (starting from the first) the bicubic surface is actually fit over (0 = all bins, i.e. no truncation); bins beyond this are held flat at the last fitted bin's value
 
   for(i in 1:length(fish_sel_model)) {
 
@@ -6509,18 +6534,55 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
     tmp_sel_form_vec <- unlist(strsplit(tmp_sel_form, "_")) # split string
     sel_form <- tmp_sel_form_vec[1] # get selectivity type
 
-    # get fleet index
-    tmp_fleet <- if(length(tmp_sel_form_vec) == 3) as.numeric(tmp_sel_form_vec[3]) else as.numeric(tmp_sel_form_vec[5]) # fleet index changes if block is included in character vector
-    # get block index
-    tmp_block <- if(length(tmp_sel_form_vec) == 5) as.numeric(tmp_sel_form_vec[3]) else NULL
+    if(sel_form == "bicubic") {
+      # bicubic spline: bicubic_Bin_<n_bin_nodes>_Yr_<n_yr_nodes>_Fleet_<f>[_Block_<b>][_SelStyr_<year>][_NSelBins_<n>]
+      bin_pos <- which(tmp_sel_form_vec == "Bin")
+      yr_pos <- which(tmp_sel_form_vec == "Yr")
+      fleet_pos <- which(tmp_sel_form_vec == "Fleet")
+      block_pos <- which(tmp_sel_form_vec == "Block")
+      selstyr_pos <- which(tmp_sel_form_vec == "SelStyr")
+      nselbins_pos <- which(tmp_sel_form_vec == "NSelBins")
+      if(length(bin_pos) != 1 || length(yr_pos) != 1 || length(fleet_pos) != 1)
+        stop("fish_sel_model 'bicubic' entries must be specified as bicubic_Bin_<n_bin_nodes>_Yr_<n_yr_nodes>_Fleet_<f> or bicubic_Bin_<n_bin_nodes>_Yr_<n_yr_nodes>_Block_<b>_Fleet_<f>, optionally with _SelStyr_<year> and/or _NSelBins_<n>")
+      tmp_n_bin_nodes <- suppressWarnings(as.numeric(tmp_sel_form_vec[bin_pos + 1]))
+      tmp_n_yr_nodes <- suppressWarnings(as.numeric(tmp_sel_form_vec[yr_pos + 1]))
+      tmp_fleet <- suppressWarnings(as.numeric(tmp_sel_form_vec[fleet_pos + 1]))
+      tmp_block <- if(length(block_pos) == 1) suppressWarnings(as.numeric(tmp_sel_form_vec[block_pos + 1])) else NULL
+      tmp_selstyr <- if(length(selstyr_pos) == 1) suppressWarnings(as.numeric(tmp_sel_form_vec[selstyr_pos + 1])) else 0
+      tmp_nselbins <- if(length(nselbins_pos) == 1) suppressWarnings(as.numeric(tmp_sel_form_vec[nselbins_pos + 1])) else 0
+      if(is.na(tmp_n_bin_nodes) || tmp_n_bin_nodes < 2) stop("bicubic fish_sel_model requires at least 2 bin nodes (n_bin_nodes >= 2)")
+      if(is.na(tmp_n_yr_nodes) || tmp_n_yr_nodes < 1) stop("bicubic fish_sel_model requires at least 1 year node (n_yr_nodes >= 1). Use n_yr_nodes == 1 for a time-invariant bin-only spline.")
+      if(length(selstyr_pos) == 1 && (is.na(tmp_selstyr) || !tmp_selstyr %in% input_list$data$years)) stop("bicubic fish_sel_model SelStyr must be a calendar year within the modeled years")
+      if(length(nselbins_pos) == 1 && (is.na(tmp_nselbins) || tmp_nselbins < 2 || tmp_nselbins > bins)) stop("bicubic fish_sel_model NSelBins must be an integer between 2 and the total number of bins (ages or lengths)")
+    } else {
+      # get fleet index
+      tmp_fleet <- if(length(tmp_sel_form_vec) == 3) as.numeric(tmp_sel_form_vec[3]) else as.numeric(tmp_sel_form_vec[5]) # fleet index changes if block is included in character vector
+      # get block index
+      tmp_block <- if(length(tmp_sel_form_vec) == 5) as.numeric(tmp_sel_form_vec[3]) else NULL
+    }
 
     # validate options
-    if(!sel_form %in% c(sel_map$sel)) stop("fish_sel_model is not correctly specified. This needs to be one of these: logist1, gamma, exponential, logist2, dbnrml, nonpar, asymplogist1, asymplogist2 (the seltypes) and specified as seltype_Fleet_x")
+    if(!sel_form %in% c(sel_map$sel)) stop("fish_sel_model is not correctly specified. This needs to be one of these: logist1, gamma, exponential, logist2, dbnrml, nonpar, asymplogist1, asymplogist2, bicubic (the seltypes) and specified as seltype_Fleet_x")
     if(!tmp_fleet %in% c(1:input_list$data$n_fish_fleets)) stop("Invalid fleet specified for fish_sel_model This needs to be specified as seltype_Fleet_x or seltype_Fleet_x_Block_x (if blocks are specified to change for a fleet)")
 
     # Input options
-    if(is.null(tmp_block)) fish_sel_model_arr[,,tmp_fleet] <- sel_map$num[which(sel_map$sel == sel_form)] # same selectivity form across blocks
-    else fish_sel_model_arr[,which(fish_sel_blocks_arr[,,tmp_fleet] == tmp_block),tmp_fleet] <- sel_map$num[which(sel_map$sel == sel_form)]
+    if(is.null(tmp_block)) {
+      fish_sel_model_arr[,,tmp_fleet] <- sel_map$num[which(sel_map$sel == sel_form)] # same selectivity form across blocks
+      if(sel_form == "bicubic") {
+        fish_sel_bicubic_binnodes_arr[,,tmp_fleet] <- tmp_n_bin_nodes
+        fish_sel_bicubic_yrnodes_arr[,,tmp_fleet] <- tmp_n_yr_nodes
+        fish_sel_bicubic_selstyr_arr[,,tmp_fleet] <- tmp_selstyr
+        fish_sel_bicubic_nselbins_arr[,,tmp_fleet] <- tmp_nselbins
+      }
+    } else {
+      fish_sel_model_arr[,which(fish_sel_blocks_arr[,,tmp_fleet] == tmp_block),tmp_fleet] <- sel_map$num[which(sel_map$sel == sel_form)]
+      if(sel_form == "bicubic") {
+        fish_sel_bicubic_binnodes_arr[,which(fish_sel_blocks_arr[,,tmp_fleet] == tmp_block),tmp_fleet] <- tmp_n_bin_nodes
+        fish_sel_bicubic_yrnodes_arr[,which(fish_sel_blocks_arr[,,tmp_fleet] == tmp_block),tmp_fleet] <- tmp_n_yr_nodes
+        fish_sel_bicubic_selstyr_arr[,which(fish_sel_blocks_arr[,,tmp_fleet] == tmp_block),tmp_fleet] <- tmp_selstyr
+        fish_sel_bicubic_nselbins_arr[,which(fish_sel_blocks_arr[,,tmp_fleet] == tmp_block),tmp_fleet] <- tmp_nselbins
+      }
+    }
     rm(tmp_block) # remove tmp block to start next loop
     collect_message("Fishery selectivity functional form specified as:", sel_form, " for fishery fleet ", tmp_fleet)
   }
@@ -6578,6 +6640,10 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
   input_list$data$cont_tv_fish_sel_penalty <- cont_tv_fish_sel_penalty
   input_list$data$fish_sel_blocks <- fish_sel_blocks_arr
   input_list$data$fish_sel_model <- fish_sel_model_arr
+  input_list$data$fish_sel_bicubic_binnodes <- fish_sel_bicubic_binnodes_arr
+  input_list$data$fish_sel_bicubic_yrnodes <- fish_sel_bicubic_yrnodes_arr
+  input_list$data$fish_sel_bicubic_selstyr <- fish_sel_bicubic_selstyr_arr
+  input_list$data$fish_sel_bicubic_nselbins <- fish_sel_bicubic_nselbins_arr
   input_list$data$fish_q_blocks <- fish_q_blocks_arr
   input_list$data$fish_q_prior <- fish_q_prior
   input_list$data$Use_fish_q_prior <- Use_fish_q_prior
@@ -6600,10 +6666,86 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
     if(unique_fishsel_vals[i] %in% c(4)) sel_pars_vec[i] <- 6 # double normal
     if(unique_fishsel_vals[i] == 5) sel_pars_vec[i] <- bins # non-parametric selex
     if(unique_fishsel_vals[i] %in% c(6,7)) sel_pars_vec[i] <- 3 # logistic selex w/ asymptote
+    if(unique_fishsel_vals[i] == 8) sel_pars_vec[i] <- max(input_list$data$fish_sel_bicubic_binnodes * input_list$data$fish_sel_bicubic_yrnodes) # bicubic: flattened bin-node x year-node grid
   } # end i loop
 
   # figure out maximum number of fishery selectivity blocks for a given reigon and fleet
   max_fishsel_blks <- max(apply(input_list$data$fish_sel_blocks, c(1,3), FUN = function(x) length(unique(x))))
+
+  # Bicubic spline interpolation weight matrices (bin node x year node grid), built here so they can be
+  # threaded through SPoRC_rtmb.R alongside the flattened node parameters (see Get_Selex, Selex_Model == 8).
+  # Padded with zeros to a common width across regions/blocks/fleets; padding is harmless because unused
+  # (zero-weight) columns/rows never contribute to the resulting selectivity (see Get_Selex documentation).
+  has_bicubic_fish_sel <- any(input_list$data$fish_sel_model == 8)
+  max_bin_nodes_bicubic <- if(has_bicubic_fish_sel) max(input_list$data$fish_sel_bicubic_binnodes) else 1
+  max_yr_nodes_bicubic <- if(has_bicubic_fish_sel) max(input_list$data$fish_sel_bicubic_yrnodes) else 1
+  n_yrs_total_bicubic <- length(input_list$data$years) + input_list$data$n_proj_yrs_devs
+
+  fish_sel_bicubic_Wbin <- array(0, dim = c(input_list$data$n_regions, bins, max_bin_nodes_bicubic, max_fishsel_blks, input_list$data$n_fish_fleets))
+  fish_sel_bicubic_Wyr <- array(0, dim = c(input_list$data$n_regions, n_yrs_total_bicubic, max_yr_nodes_bicubic, max_fishsel_blks, input_list$data$n_fish_fleets))
+
+  if(has_bicubic_fish_sel) {
+    for(f in 1:input_list$data$n_fish_fleets) {
+      for(r in 1:input_list$data$n_regions) {
+
+        fishsel_blocks_tmp <- unique(as.vector(input_list$data$fish_sel_blocks[r,,f]))
+
+        for(b in 1:length(fishsel_blocks_tmp)) {
+
+          block_years <- which(input_list$data$fish_sel_blocks[r,,f] == fishsel_blocks_tmp[b])
+          if(unique(input_list$data$fish_sel_model[r, block_years, f]) != 8) next # only bicubic blocks need weight matrices
+
+          n_bin_nodes_this <- unique(input_list$data$fish_sel_bicubic_binnodes[r, block_years, f])
+          n_yr_nodes_this <- unique(input_list$data$fish_sel_bicubic_yrnodes[r, block_years, f])
+
+          # Age/length dimension: nodes evenly spaced over [0,1]. By default (NSelBins unset, i.e. 0)
+          # the spline is evaluated over all bins, as before. When NSelBins is set , the spline surface is only actually fit over the first NSelBins bins;
+          # bins beyond that are edge-held at the last fitted bin's weights ("plateau")
+          nselbins_this <- unique(input_list$data$fish_sel_bicubic_nselbins[r, block_years, f])
+          n_fit_bins <- if(nselbins_this == 0) bins else nselbins_this
+
+          bin_nodes_scaled <- seq(0, 1, length.out = n_bin_nodes_this)
+          fit_bin_scaled <- seq(0, 1, length.out = n_fit_bins)
+          Wbin_fit <- Get_Natural_Cubic_Spline_Weights(bin_nodes_scaled, fit_bin_scaled)
+
+          Wbin_this <- matrix(0, nrow = bins, ncol = n_bin_nodes_this)
+          Wbin_this[1:n_fit_bins, ] <- Wbin_fit
+          if(n_fit_bins < bins) Wbin_this[(n_fit_bins + 1):bins, ] <- matrix(Wbin_fit[nrow(Wbin_fit), ], nrow = bins - n_fit_bins, ncol = n_bin_nodes_this, byrow = TRUE)
+
+          fish_sel_bicubic_Wbin[r, , 1:n_bin_nodes_this, b, f] <- Wbin_this
+
+          # Year dimension: nodes evenly spaced over the block's own contiguous fit range. By default
+          # (SelStyr unset, i.e. 0) the fit range is the whole block, as before. When SelStyr is set, only years from SelStyr through the block's end are
+          # actually spline-fit; years within the block before SelStyr are edge-held at the SelStyr
+          # row's weights ("previous years are filled"). Years outside the block entirely (before it,
+          # after it, and any projection years, since projections reuse the terminal modeled year's
+          # block) hold the boundary node weights constant, which for a spline evaluated exactly at
+          # its first/last node reduces to full weight on that node.
+          selstyr_this <- unique(input_list$data$fish_sel_bicubic_selstyr[r, block_years, f])
+          selstyr_idx <- if(selstyr_this == 0) min(block_years) else which(input_list$data$years == selstyr_this)
+          fit_years <- block_years[block_years >= selstyr_idx]
+          pre_fit_years <- block_years[block_years < selstyr_idx]
+
+          yr_nodes_scaled <- seq(0, 1, length.out = n_yr_nodes_this)
+          fit_yr_scaled <- seq(0, 1, length.out = length(fit_years))
+          Wyr_block <- Get_Natural_Cubic_Spline_Weights(yr_nodes_scaled, fit_yr_scaled)
+
+          Wyr_this <- matrix(0, nrow = n_yrs_total_bicubic, ncol = n_yr_nodes_this)
+          Wyr_this[fit_years, ] <- Wyr_block
+          if(length(pre_fit_years) > 0) Wyr_this[pre_fit_years, ] <- matrix(Wyr_block[1, ], nrow = length(pre_fit_years), ncol = n_yr_nodes_this, byrow = TRUE)
+          if(min(block_years) > 1) Wyr_this[1:(min(block_years) - 1), ] <- matrix(Wyr_block[1, ], nrow = min(block_years) - 1, ncol = n_yr_nodes_this, byrow = TRUE)
+          if(max(block_years) < n_yrs_total_bicubic) Wyr_this[(max(block_years) + 1):n_yrs_total_bicubic, ] <- matrix(Wyr_block[nrow(Wyr_block), ], nrow = n_yrs_total_bicubic - max(block_years), ncol = n_yr_nodes_this, byrow = TRUE)
+
+          fish_sel_bicubic_Wyr[r, , 1:n_yr_nodes_this, b, f] <- Wyr_this
+
+        } # end b loop
+      } # end r loop
+    } # end f loop
+  } # end if has_bicubic_fish_sel
+
+  input_list$data$fish_sel_bicubic_Wbin <- fish_sel_bicubic_Wbin
+  input_list$data$fish_sel_bicubic_Wyr <- fish_sel_bicubic_Wyr
+
   # maximum number of selectivity parameters across all forms
   max_fishsel_pars <- max(sel_pars_vec)
   if("fish_fixed_sel_pars" %in% names(starting_values)) input_list$par$fish_fixed_sel_pars <- starting_values$fish_fixed_sel_pars

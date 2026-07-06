@@ -84,6 +84,158 @@ get_Constant_CorrMat <- function(n, rho) {
   return(corrMatrix)
 }
 
+#' Construct a natural cubic spline interpolation weight matrix
+#'
+#' Precomputes a linear operator \eqn{W} such that \code{W \%*\% y_nodes}
+#' reproduces natural cubic spline interpolation (zero second derivative at
+#' the endpoints) of the node values \code{y_nodes} (defined at
+#' \code{x_nodes}) onto the query points \code{x_out}. Because natural cubic
+#' spline interpolation is linear in the node values for fixed node/query
+#' positions, \eqn{W} depends only on \code{x_nodes} and \code{x_out} (both
+#' treated as fixed data), never on the node values themselves. This lets
+#' bicubic/cubic selectivity splines (see \code{\link{Get_Selex}},
+#' \code{Selex_Model == 8}) be evaluated as a pair of matrix multiplications
+#' against AD parameter vectors, rather than re-solving a spline system on
+#' every function evaluation.
+#'
+#' @param x_nodes Numeric vector of strictly increasing node (knot)
+#'   positions, length \eqn{n \ge 1}. Typically bin or year positions
+#'   rescaled to \eqn{[0,1]}.
+#' @param x_out Numeric vector of query positions at which the spline is to
+#'   be evaluated, length \eqn{m}. Values are clamped to the innermost
+#'   spline segment if they fall outside \code{range(x_nodes)} (no
+#'   extrapolation).
+#'
+#' @return Numeric \eqn{m \times n} weight matrix \eqn{W}. When \eqn{n == 1}
+#'   (a single node), \eqn{W} is a column of ones (the interpolated curve is
+#'   constant, equal to the single node value). When \eqn{n == 2}, natural
+#'   boundary conditions force the spline to reduce to linear interpolation.
+#'
+#' @details
+#' Natural cubic spline second derivatives \eqn{M} at the nodes solve a
+#' tridiagonal linear system \eqn{A M = R y} where \eqn{A} and \eqn{R} depend
+#' only on the node spacing \code{diff(x_nodes)} (data), so
+#' \eqn{M = A^{-1} R y = \text{Mmat} \, y} is itself linear in \eqn{y}.
+#' Substituting into the standard piecewise-cubic evaluation formula for each
+#' query point yields one row of \eqn{W} per query point, each a fixed linear
+#' combination of the node basis vectors and rows of \code{Mmat}.
+#'
+#' @keywords internal
+#'
+#' @examples
+#' \dontrun{
+#' x_nodes <- seq(0, 1, length.out = 4)
+#' x_out <- seq(0, 1, length.out = 20)
+#' W <- Get_Natural_Cubic_Spline_Weights(x_nodes, x_out)
+#' y_nodes <- c(0.1, 0.8, 0.6, 0.3)
+#' W %*% y_nodes # interpolated curve at x_out
+#' }
+Get_Natural_Cubic_Spline_Weights <- function(x_nodes, x_out) {
+
+  n <- length(x_nodes)
+
+  if(n == 1) return(matrix(1, nrow = length(x_out), ncol = 1)) # constant curve
+
+  if(is.unsorted(x_nodes, strictly = TRUE)) stop("x_nodes must be strictly increasing")
+
+  h <- diff(x_nodes) # node spacing, length n - 1
+
+  # Tridiagonal system A %*% M = Rm %*% y for natural (M_1 = M_n = 0) second derivatives
+  A <- matrix(0, n, n)
+  Rm <- matrix(0, n, n)
+  A[1,1] <- 1
+  A[n,n] <- 1
+  if(n > 2) {
+    for(i in 2:(n-1)) {
+      A[i, i-1] <- h[i-1]
+      A[i, i]   <- 2 * (h[i-1] + h[i])
+      A[i, i+1] <- h[i]
+
+      Rm[i, i-1] <- 6 / h[i-1]
+      Rm[i, i]   <- -6 * (1 / h[i-1] + 1 / h[i])
+      Rm[i, i+1] <- 6 / h[i]
+    } # end i loop
+  } # end if
+
+  Mmat <- solve(A, Rm) # n x n operator mapping node values y -> second derivatives M
+
+  m <- length(x_out)
+  W <- matrix(0, m, n)
+  for(k in 1:m) {
+    x0 <- min(max(x_out[k], x_nodes[1]), x_nodes[n]) # clamp query to node range (no extrapolation)
+    i <- findInterval(x0, x_nodes, all.inside = TRUE) # clamp segment index to innermost segment
+    hi <- h[i]
+    t <- (x0 - x_nodes[i]) / hi
+    a <- 1 - t
+    b <- t
+
+    row <- (a^3 - a) * hi^2 / 6 * Mmat[i, ] + (b^3 - b) * hi^2 / 6 * Mmat[i+1, ]
+    row[i]   <- row[i]   + a
+    row[i+1] <- row[i+1] + b
+    W[k, ] <- row
+  } # end k loop
+
+  return(W)
+}
+
+#' Resolve a modular selectivity penalty weight vector
+#'
+#' Converts a user-supplied selectivity penalty weight specification into the
+#' complete named weight vector consumed by \code{\link{Get_sel_PE_loglik}} and
+#' \code{\link{Get_Selex_Smoothness_Penalty}}. Preserves exact backward
+#' compatibility with the older single on/off \code{cont_tv_*_sel_penalty} flag
+#' (which only ever covered \code{"yr_devs"}, \code{"bin_curve"}, \code{"yr_curve"}
+#' -- the process-error-deviation-based penalty terms used when a fleet has a
+#' continuous time-varying selectivity model active) when no explicit weights
+#' are supplied. Six additional \code{"smooth_*"} terms are included for
+#' \code{\link{Get_Selex_Smoothness_Penalty}}'s modular terms, which operate
+#' directly on a fleet's \emph{realized} selectivity surface and so apply to
+#' any selectivity functional form (not just the bicubic/cubic spline,
+#' \code{Selex_Model == 8}, that originally motivated them) -- for example,
+#' a nonparametric (\code{Selex_Model == 5}) fleet with discrete time blocks
+#' (mirroring an ADMB assessment's "selectivity change years") can use these
+#' same terms to regularize curvature/stability across those blocks.
+#'
+#' @param pen_wts \code{NULL}, or a named numeric vector/list giving independent
+#'   weights for any subset of \code{"yr_devs"}, \code{"bin_curve"},
+#'   \code{"yr_curve"}, \code{"smooth_bin_curve"}, \code{"smooth_bin_diff"},
+#'   \code{"smooth_yr_diff"}, \code{"smooth_yr_curve"}, \code{"smooth_dome"},
+#'   \code{"smooth_mean_center"}.
+#'   When supplied, any term \emph{not} named is set to \code{0} (disabled)
+#'   rather than falling back to \code{penalty_flag} -- i.e. supplying
+#'   \code{pen_wts} opts fully into the explicit, modular weight system rather
+#'   than partially retaining the old implicit behavior.
+#' @param penalty_flag Logical. Used only when \code{pen_wts} is \code{NULL}:
+#'   the legacy terms (\code{"yr_devs"}, \code{"bin_curve"}, \code{"yr_curve"})
+#'   are set to \code{1} if \code{TRUE}, \code{0} if \code{FALSE}. The
+#'   \code{"smooth_*"} terms are always \code{0} in this fallback, regardless
+#'   of \code{penalty_flag}.
+#'
+#' @return Named numeric vector of length 9: \code{c(yr_devs, bin_curve,
+#'   yr_curve, smooth_bin_curve, smooth_bin_diff, smooth_yr_diff,
+#'   smooth_yr_curve, smooth_dome, smooth_mean_center)}.
+#'
+#' @keywords internal
+resolve_sel_pen_wts <- function(pen_wts, penalty_flag) {
+
+  legacy_terms <- c("yr_devs", "bin_curve", "yr_curve")
+  new_terms <- c("smooth_bin_curve", "smooth_bin_diff", "smooth_yr_diff", "smooth_yr_curve", "smooth_dome", "smooth_mean_center")
+  term_names <- c(legacy_terms, new_terms)
+
+  if(is.null(pen_wts)) {
+    out <- stats::setNames(rep(0, length(term_names)), term_names)
+    out[legacy_terms] <- as.numeric(penalty_flag)
+    return(out)
+  }
+
+  if(is.null(names(pen_wts)) || !all(names(pen_wts) %in% term_names))
+    stop("pen_wts must be a named numeric vector/list with names in: ", paste(term_names, collapse = ", "))
+
+  out <- stats::setNames(rep(0, length(term_names)), term_names)
+  out[names(pen_wts)] <- unlist(pen_wts)
+  return(out)
+}
+
 #' Combine a parameter function and a data list for RTMB
 #'
 #' Returns a closure that calls \code{f(p, d)}, allowing the data list to be
@@ -380,7 +532,7 @@ post_optim_sanity_checks <- function(sd_rep,
 
 }
 
-#' Safely extract a named element from a TMB report object
+#' Safely extract a named element from a list object
 #'
 #' Returns the named element if it exists and is non-\code{NULL}; returns
 #' \code{0} otherwise. Used to guard against missing or \code{NULL} report

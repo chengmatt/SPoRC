@@ -2,7 +2,7 @@
 % Please edit documentation in R/Utility_Functions.R
 \name{safe_extract}
 \alias{safe_extract}
-\title{Safely extract a named element from a TMB report object}
+\title{Safely extract a named element from a list object}
 \usage{
 safe_extract(obj, name)
 }

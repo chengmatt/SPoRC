@@ -158,7 +158,7 @@ SPoRC_rtmb = function(pars, data) {
   Movement_nLL = 0 # Penalty for movement rates
   TagRep_nLL = 0 # penalty for tag reporting rate
   rec_prop_nLL = # penalty / prior for recruitment proportions
-    jnLL = 0 # Joint negative log likelihood
+  jnLL = 0 # Joint negative log likelihood
 
   # Model Process Equations -------------------------------------------------
   ## Movement Parameters (Set up) --------------------------------------------
@@ -235,13 +235,21 @@ SPoRC_rtmb = function(pars, data) {
             if(y <= n_yrs) { # non-projection years
               fish_sel_blk_idx = fish_sel_blocks[r,y,f] # selectivity block indices
               tmp_fish_sel_model = fish_sel_model[r,y,f] # fishery selectivity model
+              tmp_n_bin_nodes_bicubic = fish_sel_bicubic_binnodes[r,y,f] # true bin-node count for this block (Selex_Model == 8 only)
+              tmp_n_yr_nodes_bicubic = fish_sel_bicubic_yrnodes[r,y,f] # true year-node count for this block (Selex_Model == 8 only)
             } else {
               fish_sel_blk_idx = fish_sel_blocks[r,n_yrs,f] # selectivity block indices
               tmp_fish_sel_model = fish_sel_model[r,n_yrs,f] # fishery selectivity model
+              tmp_n_bin_nodes_bicubic = fish_sel_bicubic_binnodes[r,n_yrs,f] # true bin-node count for this block (Selex_Model == 8 only)
+              tmp_n_yr_nodes_bicubic = fish_sel_bicubic_yrnodes[r,n_yrs,f] # true year-node count for this block (Selex_Model == 8 only)
             }
 
             # Extract out fixed-effect selectivity parameters for a given block
             tmp_fish_sel_vec = fish_fixed_sel_pars[r,,fish_sel_blk_idx,s,f]
+
+            # Extract bicubic spline interpolation weight matrices for this block.
+            tmp_Wbin_bicubic = array(fish_sel_bicubic_Wbin[r,,,fish_sel_blk_idx,f], dim = dim(fish_sel_bicubic_Wbin)[c(2,3)])
+            tmp_Wyr_bicubic = array(fish_sel_bicubic_Wyr[r,,,fish_sel_blk_idx,f], dim = dim(fish_sel_bicubic_Wyr)[c(2,3)])
 
             # Compute selectivity functional form
             tmp_sel = Get_Selex(Selex_Model = tmp_fish_sel_model, # selectivity model
@@ -251,7 +259,11 @@ SPoRC_rtmb = function(pars, data) {
                                 Region = r, # region index
                                 Year = y, # year index
                                 Bin = fish_selex_bins, # bin vector
-                                Sex = s # sex index
+                                Sex = s, # sex index
+                                Wbin_bicubic = tmp_Wbin_bicubic, # bicubic spline bin-node weight matrix (Selex_Model == 8 only)
+                                Wyr_bicubic = tmp_Wyr_bicubic, # bicubic spline year-node weight matrix (Selex_Model == 8 only)
+                                n_bin_nodes_bicubic = tmp_n_bin_nodes_bicubic, # true bin-node count for this block (Selex_Model == 8 only)
+                                n_yr_nodes_bicubic = tmp_n_yr_nodes_bicubic # true year-node count for this block (Selex_Model == 8 only)
             )
 
             # Compute selectivity
@@ -371,13 +383,21 @@ SPoRC_rtmb = function(pars, data) {
             if(y <= n_yrs) { # non-projection years
               srv_sel_blk_idx = srv_sel_blocks[r,y,sf] # selectivity block indices
               tmp_srv_sel_model = srv_sel_model[r,y,sf] # survey selectivity model
+              tmp_n_bin_nodes_bicubic = srv_sel_bicubic_binnodes[r,y,sf] # true bin-node count for this block (Selex_Model == 8 only)
+              tmp_n_yr_nodes_bicubic = srv_sel_bicubic_yrnodes[r,y,sf] # true year-node count for this block (Selex_Model == 8 only)
             } else {
               srv_sel_blk_idx = srv_sel_blocks[r,n_yrs,sf] # selectivity block indices
               tmp_srv_sel_model = srv_sel_model[r,n_yrs,sf] # survey selectivity model
+              tmp_n_bin_nodes_bicubic = srv_sel_bicubic_binnodes[r,n_yrs,sf] # true bin-node count for this block (Selex_Model == 8 only)
+              tmp_n_yr_nodes_bicubic = srv_sel_bicubic_yrnodes[r,n_yrs,sf] # true year-node count for this block (Selex_Model == 8 only)
             }
 
             # Extract out fixed-effect selectivity parameters for a given block
             tmp_srv_sel_vec = srv_fixed_sel_pars[r,,srv_sel_blk_idx,s,sf]
+
+            # Extract bicubic spline interpolation weight matrices for this block.
+            tmp_Wbin_bicubic = array(srv_sel_bicubic_Wbin[r,,,srv_sel_blk_idx,sf], dim = dim(srv_sel_bicubic_Wbin)[c(2,3)])
+            tmp_Wyr_bicubic = array(srv_sel_bicubic_Wyr[r,,,srv_sel_blk_idx,sf], dim = dim(srv_sel_bicubic_Wyr)[c(2,3)])
 
             # Compute selectivity functional form
             tmp_sel = Get_Selex(Selex_Model = tmp_srv_sel_model, # selectivity model
@@ -387,7 +407,11 @@ SPoRC_rtmb = function(pars, data) {
                                 Region = r, # region index
                                 Year = y, # year index
                                 Bin = srv_selex_bins, # bin vector
-                                Sex = s # sex index
+                                Sex = s, # sex index
+                                Wbin_bicubic = tmp_Wbin_bicubic, # bicubic spline bin-node weight matrix (Selex_Model == 8 only)
+                                Wyr_bicubic = tmp_Wyr_bicubic, # bicubic spline year-node weight matrix (Selex_Model == 8 only)
+                                n_bin_nodes_bicubic = tmp_n_bin_nodes_bicubic, # true bin-node count for this block (Selex_Model == 8 only)
+                                n_yr_nodes_bicubic = tmp_n_yr_nodes_bicubic # true year-node count for this block (Selex_Model == 8 only)
             )
 
             # Calculate selectivity
@@ -429,10 +453,6 @@ SPoRC_rtmb = function(pars, data) {
   } # end r
 
   ## Mortality ---------------------------------------------------------------
-
-  # Precomputed here (before ObsCatch is overwritten by the catch likelihood
-  # block below, which reuses the ObsCatch variable in place for OSA
-  # residuals) so it can also be passed to Get_Fdev_PE_loglik downstream.
   missing_catch = is.na(ObsCatch) # TRUE = aggregate catch observation is missing (not a true recorded zero)
 
   for(r in 1:n_regions) {
@@ -440,13 +460,7 @@ SPoRC_rtmb = function(pars, data) {
       for(seas in 1:n_seas) {
         for(f in 1:n_fish_fleets) {
 
-          # A cell is a true closure only when no catch is fit (aggregate or
-          # population-specific) AND the aggregate catch observation is a
-          # real recorded value (not missing) -- Fmort/dmr are forced to
-          # zero and no deviation is estimated for that year. A cell with
-          # UseCatch == 0 but a missing (NA) aggregate observation is
-          # treated as an ordinary active year instead (fishing presumably
-          # continued; we simply lack an observation to fit against).
+          # A cell is a true closure only when no catch is fit
           is_closed = (UseCatch[r,y,seas,f] == 0) && all(UseCatch_pop[,r,y,seas,f] == 0) && !missing_catch[r,y,seas,f]
 
           if(is_closed) {
@@ -790,13 +804,6 @@ SPoRC_rtmb = function(pars, data) {
               if(y < sigmaR_switch) tmp_total_rec = tmp_Det_Rec[p,r] * exp(ln_RecDevs[p,r,y] - (sigmaR2_early[p,sigma_idx]/2 * bias_ramp[y]))
               if(y >= sigmaR_switch && y <= n_est_rec_devs) tmp_total_rec = tmp_Det_Rec[p,r] * exp(ln_RecDevs[p,r,y] - (sigmaR2_late[p,sigma_idx]/2 * bias_ramp[y]))
               if(y > n_est_rec_devs) tmp_total_rec = tmp_Det_Rec[p,r]
-              # Overwrite (not accumulate): for y == 1, age index 1 already
-              # holds Get_Init_NAA's R0-based equilibrium seed, which has
-              # nothing to do with this year's actual (SSB-driven) age-0
-              # recruitment and must be replaced, not added to - exactly like
-              # the rec_lag != 0 branch's up-front season-1 assignment above.
-              # For y > 1 this slot is always 0 beforehand, so overwriting is
-              # equivalent to the old accumulating behavior.
               NAA[p,r,y,spawn_seas,1,s]  = tmp_total_rec * rec_seas_prop[p,spawn_seas] * sexratio[p,r,y,s]
               NAA0[p,r,y,spawn_seas,1,s] = tmp_total_rec * rec_seas_prop[p,spawn_seas] * sexratio[p,r,y,s]
             }
@@ -1058,7 +1065,6 @@ SPoRC_rtmb = function(pars, data) {
     }
 
   } # end if for using tagging data
-
 
 
   # Likelihood Equations -------------------------------------------------------------
@@ -2219,7 +2225,7 @@ SPoRC_rtmb = function(pars, data) {
                                                 ln_devs = ln_fishsel_devs[r,,,,f, drop = FALSE], # extract out process error deviations for a given fleet
                                                 map_sel_devs = map_ln_fishsel_devs[r,,,,f, drop = FALSE],
                                                 sel_vals = tmp_sel_vals,
-                                                do_sel_pen = cont_tv_fish_sel_penalty,
+                                                pen_wts = fish_sel_pen_wts,
                                                 min_sel_devs_shared_bins = fishsel_devs_min_shared_bins
 
         )
@@ -2236,7 +2242,7 @@ SPoRC_rtmb = function(pars, data) {
                                                 ln_devs = ln_retsel_devs[r,,,,f, drop = FALSE], # extract out process error deviations for a given fleet
                                                 map_sel_devs = map_ln_retsel_devs[r,,,,f, drop = FALSE],
                                                 sel_vals = tmp_sel_vals,
-                                                do_sel_pen = cont_tv_ret_sel_penalty,
+                                                pen_wts = ret_sel_pen_wts,
                                                 min_sel_devs_shared_bins = retsel_devs_min_shared_bins
 
         )
@@ -2256,13 +2262,90 @@ SPoRC_rtmb = function(pars, data) {
                                                 ln_devs = ln_srvsel_devs[r,,,,sf, drop = FALSE], # extract out process error deviations for a given fleet
                                                 map_sel_devs = map_ln_srvsel_devs[r,,,,sf, drop = FALSE],
                                                 sel_vals = tmp_sel_vals,
-                                                do_sel_pen = cont_tv_srv_sel_penalty,
+                                                pen_wts = srv_sel_pen_wts,
                                                 min_sel_devs_shared_bins = srvsel_devs_min_shared_bins
 
         )
       } # end if
 
     } # end sf loop
+  } # end r loop
+
+
+  ### Selectivity Smoothness Penalty ----
+  smooth_pen_terms = c("smooth_bin_curve", "smooth_bin_diff", "smooth_yr_diff", "smooth_yr_curve", "smooth_dome", "smooth_mean_center")
+  for(r in 1:n_regions) {
+
+    for(f in 1:n_fish_fleets) {
+
+      # If Bicubic spline
+      bicubic_yrs = which(fish_sel_model[r,,f] == 8)
+      has_bicubic = length(bicubic_yrs) > 0
+      has_nonzero_pen = any(sapply(smooth_pen_terms, function(nm) safe_extract(fish_sel_pen_wts, nm)) != 0)
+
+      if(has_bicubic || has_nonzero_pen) {
+        if(has_bicubic) {
+          block_yrs = min(bicubic_yrs):max(bicubic_yrs)
+          # Restrict to the actual fit range and bins from the penalty
+          selstyr_this = unique(fish_sel_bicubic_selstyr[r, block_yrs, f])
+          y_range = if(selstyr_this == 0) block_yrs else block_yrs[block_yrs >= which(data$years == selstyr_this)]
+          nselbins_this = unique(fish_sel_bicubic_nselbins[r, block_yrs, f])
+          n_fit_bins = if(nselbins_this == 0) (if(fish_selex_type == 0) n_ages else dim(fish_sel_l)[3]) else nselbins_this
+        } else {
+          # non-bicubic fleet: no sub-range restriction, use the fleet's whole modeled history
+          y_range = 1:n_yrs
+          n_fit_bins = if(fish_selex_type == 0) n_ages else dim(fish_sel_l)[3]
+        }
+
+        # get sel values
+        if(fish_selex_type == 0) tmp_sel_vals = array(fish_sel[1,r,y_range,1,1:n_fit_bins,,f, drop = FALSE], dim = c(1, length(y_range), n_fit_bins, n_sexes, 1))
+        if(fish_selex_type == 1) tmp_sel_vals = array(fish_sel_l[r,y_range,1:n_fit_bins,,f, drop = FALSE], dim = c(1, length(y_range), n_fit_bins, n_sexes, 1))
+
+        sel_nLL = sel_nLL - Get_Selex_Smoothness_Penalty(tmp_sel_vals,
+                                                         wt_bin_curve = safe_extract(fish_sel_pen_wts, "smooth_bin_curve"),
+                                                         wt_bin_diff = safe_extract(fish_sel_pen_wts, "smooth_bin_diff"),
+                                                         wt_yr_diff = safe_extract(fish_sel_pen_wts, "smooth_yr_diff"),
+                                                         wt_yr_curve = safe_extract(fish_sel_pen_wts, "smooth_yr_curve"),
+                                                         wt_dome = safe_extract(fish_sel_pen_wts, "smooth_dome"),
+                                                         wt_mean_center = safe_extract(fish_sel_pen_wts, "smooth_mean_center"),
+                                                         normalize = TRUE)
+      } # end if
+    } # end f loop
+
+    for(sf in 1:n_srv_fleets) {
+
+      # if bicubic
+      bicubic_yrs = which(srv_sel_model[r,,sf] == 8)
+      has_bicubic = length(bicubic_yrs) > 0
+      has_nonzero_pen = any(sapply(smooth_pen_terms, function(nm) safe_extract(srv_sel_pen_wts, nm)) != 0)
+      if(has_bicubic || has_nonzero_pen) {
+        if(has_bicubic) {
+          block_yrs = min(bicubic_yrs):max(bicubic_yrs)
+          selstyr_this = unique(srv_sel_bicubic_selstyr[r, block_yrs, sf])
+          y_range = if(selstyr_this == 0) block_yrs else block_yrs[block_yrs >= which(data$years == selstyr_this)]
+          nselbins_this = unique(srv_sel_bicubic_nselbins[r, block_yrs, sf])
+          n_fit_bins = if(nselbins_this == 0) (if(srv_selex_type == 0) n_ages else dim(srv_sel_l)[3]) else nselbins_this
+        } else {
+          # non-bicubic fleet: no sub-range restriction, use the fleet's whole modeled history
+          y_range = 1:n_yrs
+          n_fit_bins = if(srv_selex_type == 0) n_ages else dim(srv_sel_l)[3]
+        }
+
+        # get sel values
+        if(srv_selex_type == 0) tmp_sel_vals = array(srv_sel[1,r,y_range,1,1:n_fit_bins,,sf, drop = FALSE], dim = c(1, length(y_range), n_fit_bins, n_sexes, 1))
+        if(srv_selex_type == 1) tmp_sel_vals = array(srv_sel_l[r,y_range,1:n_fit_bins,,sf, drop = FALSE], dim = c(1, length(y_range), n_fit_bins, n_sexes, 1))
+
+        sel_nLL = sel_nLL - Get_Selex_Smoothness_Penalty(tmp_sel_vals,
+                                                         wt_bin_curve = safe_extract(srv_sel_pen_wts, "smooth_bin_curve"),
+                                                         wt_bin_diff = safe_extract(srv_sel_pen_wts, "smooth_bin_diff"),
+                                                         wt_yr_diff = safe_extract(srv_sel_pen_wts, "smooth_yr_diff"),
+                                                         wt_yr_curve = safe_extract(srv_sel_pen_wts, "smooth_yr_curve"),
+                                                         wt_dome = safe_extract(srv_sel_pen_wts, "smooth_dome"),
+                                                         wt_mean_center = safe_extract(srv_sel_pen_wts, "smooth_mean_center"),
+                                                         normalize = TRUE)
+      } # end if
+    } # end sf loop
+
   } # end r loop
 
 
@@ -2370,8 +2453,9 @@ SPoRC_rtmb = function(pars, data) {
       b = M_prior$yearblk[i]
       a = M_prior$ageblk[i]
       s = M_prior$sexblk[i]
+      idx = M_blocks[p,r,y,a,s]
       # Compute prior
-      M_nLL = M_nLL + -RTMB::dnorm(ln_M[p,r,b,a,s], log(M_prior$mu[i]), M_prior$sd[i], TRUE) # TMB likelihood
+      M_nLL = M_nLL + -RTMB::dnorm(ln_M[idx], log(M_prior$mu[i]), M_prior$sd[i], TRUE) # TMB likelihood
     }
   } # end if using natural mortality prior
 

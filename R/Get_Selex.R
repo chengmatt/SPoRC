@@ -19,6 +19,16 @@
 #'     \item{7}{Logistic selectivity with asymptote (b50, b95 parameterization):
 #'              \eqn{\alpha / (1 + 19^{(b_{50} - \text{bin})/b_{95}})}.
 #'              Equivalent to Model 3 scaled by asymptote \eqn{\alpha}.}
+#'     \item{8}{Bicubic spline over a bin-node x year-node grid (see
+#'              \code{Wbin_bicubic}, \code{Wyr_bicubic}). One generalized form
+#'              covers three cases depending on how the caller constructs the
+#'              node grid and interpolation weights: a single smooth bin x
+#'              year surface (bicubic), a time-invariant bin-only spline
+#'              (\code{n_yr_nodes == 1}), or a bin-only spline re-fit
+#'              independently within each of several year blocks
+#'              (\code{n_yr_nodes == 1} within each of SPoRC's existing
+#'              selectivity blocks). No \code{TimeVary_Model} deviation
+#'              layering applies to this model.}
 #'   }
 #'
 #' @param TimeVary_Model Integer specifying temporal structure:
@@ -42,6 +52,10 @@
 #'     \item{Model 5}{\code{c(logit_sel_1, ..., logit_sel_nbins)}}
 #'     \item{Model 6}{\code{c(logit_alpha, ln_b50, ln_k)}}
 #'     \item{Model 7}{\code{c(logit_alpha, ln_b50, ln_b95)}}
+#'     \item{Model 8}{Flattened bin-node x year-node log-selectivity grid,
+#'       length \code{ncol(Wyr_bicubic) * ncol(Wbin_bicubic)}, filled
+#'       column-major into a \code{ncol(Wyr_bicubic)} (rows, year nodes) by
+#'       \code{ncol(Wbin_bicubic)} (columns, bin nodes) matrix.}
 #'   }
 #'
 #' @param ln_seldevs Array of log-scale selectivity deviations with dimension
@@ -57,9 +71,39 @@
 #'   selectivity parameters prior to logistic transformation.
 #'
 #' @param Region Integer region index.
-#' @param Year Integer year index.
+#' @param Year Integer year index (absolute, i.e. a row index into
+#'   \code{Wyr_bicubic}). Only used directly by \code{Selex_Model == 8};
+#'   otherwise only used to index \code{ln_seldevs}.
 #' @param Bin Numeric vector of bins (ages or lengths).
 #' @param Sex Integer sex index.
+#' @param Wbin_bicubic Numeric \code{length(Bin) x n_bin_nodes} natural cubic
+#'   spline weight matrix (see \code{\link{Get_Natural_Cubic_Spline_Weights}}),
+#'   mapping bin-node log-selectivity values onto \code{Bin}. Only used when
+#'   \code{Selex_Model == 8}; ignored (may be \code{NULL}) otherwise. Zero
+#'   padding in unused columns (e.g. when a shared parameter array is padded
+#'   to a common width across fleets/blocks) contributes nothing, since it is
+#'   multiplied through to zero.
+#' @param Wyr_bicubic Numeric \code{n_yrs_total x n_yr_nodes} interpolation
+#'   weight matrix mapping year-node log-selectivity values onto every
+#'   absolute model year (rows beyond the fitted block are typically
+#'   constructed to hold the boundary node constant). Row \code{Year} is used
+#'   for this call. Only used when \code{Selex_Model == 8}; ignored (may be
+#'   \code{NULL}) otherwise. A single-column matrix of all-1s (\code{n_yr_nodes
+#'   == 1}) yields a time-invariant bin-only spline, since every year maps
+#'   onto the same single node.
+#' @param n_bin_nodes_bicubic,n_yr_nodes_bicubic Integer. This fleet/block's
+#'   own true number of bin nodes / year nodes. Only used when
+#'   \code{Selex_Model == 8}. \strong{Must} be supplied whenever
+#'   \code{Wbin_bicubic}/\code{Wyr_bicubic} may have been zero-padded wider
+#'   than this specific block's own grid (e.g. because some \emph{other}
+#'   fleet/block shares the same padded storage array but uses a larger
+#'   bicubic grid) -- \code{ncol(Wbin_bicubic)}/\code{ncol(Wyr_bicubic)} give
+#'   the padded (shared) width, not this block's true node counts, and using
+#'   the padded width to reshape \code{pars} would misassign which flattened
+#'   parameter values land in which (bin-node, year-node) cell. Default
+#'   \code{NULL} falls back to \code{ncol(Wbin_bicubic)}/\code{ncol(Wyr_bicubic)}
+#'   for backward compatibility when no padding-width mismatch is possible
+#'   (e.g. a single bicubic block/fleet, or direct unit testing).
 #'
 #' @return Numeric vector of selectivity values corresponding to \code{Bin}.
 #' Values are on the natural scale and are not normalized unless specified
@@ -94,7 +138,11 @@ Get_Selex = function(Selex_Model,
                      Region,
                      Year,
                      Bin,
-                     Sex) {
+                     Sex,
+                     Wbin_bicubic = NULL,
+                     Wyr_bicubic = NULL,
+                     n_bin_nodes_bicubic = NULL,
+                     n_yr_nodes_bicubic = NULL) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -227,6 +275,23 @@ Get_Selex = function(Selex_Model,
 
   } # end if logistic selex with an asymptotic parameter, w/ b50 b95 parameterization
 
+  if(Selex_Model == 8) { # bicubic spline (bin node x year node grid); generalizes bicubic, bin-only, and blocked-bin-only cubic spline forms
+
+    n_bin_nodes = if(is.null(n_bin_nodes_bicubic)) ncol(Wbin_bicubic) else n_bin_nodes_bicubic
+    n_yr_nodes = if(is.null(n_yr_nodes_bicubic)) ncol(Wyr_bicubic) else n_yr_nodes_bicubic
+
+    # flattened log-selectivity grid -> (n_yr_nodes rows) x (n_bin_nodes cols) matrix
+    node_par = matrix(pars[1:(n_yr_nodes * n_bin_nodes)], nrow = n_yr_nodes, ncol = n_bin_nodes)
+
+    # trim Wbin_bicubic/Wyr_bicubic down to this block's true node-column width before
+    # multiplying, in case they were zero-padded wider than n_bin_nodes/n_yr_nodes above
+    bin_interp = node_par %*% t(Wbin_bicubic[, 1:n_bin_nodes, drop = FALSE]) # spline across bin nodes, evaluated at Bin, for every year node row: n_yr_nodes x length(Bin)
+    yr_row = Wyr_bicubic[Year, 1:n_yr_nodes, drop = FALSE] # spline (or constant/blocked) weights across year nodes for this specific Year: 1 x n_yr_nodes
+    log_sel = yr_row %*% bin_interp # 1 x length(Bin)
+
+    selex = exp(as.vector(log_sel)) # return spline
+
+  } # end if bicubic spline selectivity
 
   # 3dgmrf model or 2dar1 (sel devs dimensioned as region, year, bin, sex)
   if(TimeVary_Model %in% c(3:5)) selex = selex * exp(ln_seldevs[Region,Year,,Sex, 1]) # varies semi-parametriclly

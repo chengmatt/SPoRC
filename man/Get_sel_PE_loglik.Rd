@@ -10,7 +10,7 @@ Get_sel_PE_loglik(
   ln_devs,
   map_sel_devs,
   sel_vals,
-  do_sel_pen,
+  pen_wts,
   min_sel_devs_shared_bins
 )
 }
@@ -52,10 +52,14 @@ and excluded from likelihood evaluation.}
 used on the log scale when computing bin and year smoothness penalties
 (\code{do_sel_pen = TRUE}).}
 
-\item{do_sel_pen}{Logical. If \code{TRUE}, applies additional regularization penalties
-beyond the process error likelihood. For models 1--2, penalizes first differences
-of log-deviations across years. For models 3--5, penalizes second differences
-(curvature) of log-selectivity across bins and across years.}
+\item{pen_wts}{Named numeric vector with elements \code{"yr_devs"}, \code{"bin_curve"},
+\code{"yr_curve"} (any missing name is treated as \code{0}). Independently weights
+the additional regularization penalties applied beyond the process error
+likelihood: \code{"yr_devs"} weights a first-difference-across-years penalty on
+\code{ln_devs} (models 1--2 only); \code{"bin_curve"} and \code{"yr_curve"} weight
+second-difference (curvature) penalties on log-selectivity across bins and across
+years, respectively (models 3--5 only, via \code{\link{Get_Selex_Smoothness_Penalty}}).
+A weight of \code{0} disables that term.}
 
 \item{min_sel_devs_shared_bins}{Integer vector. Indices of the reference (minimum) bin
 within each shared deviation group, used to subset the bin dimension when
@@ -80,12 +84,18 @@ The function supports:
   \item Separable 2D AR(1) models
 }
 
-When \code{do_sel_pen = TRUE}, additional regularization penalties are applied:
+Independently-weighted regularization penalties can also be applied via
+\code{pen_wts} (see \code{\link{Get_Selex_Smoothness_Penalty}} for the bin/year
+curvature terms, which this function delegates to for \code{PE_model} 3--5):
 \itemize{
-  \item For \code{PE_model} 1--2: first-difference penalty on log-deviations across years.
-  \item For \code{PE_model} 3--5: second-difference (smoothness) penalty on log-selectivity
-    across bins and across years.
+  \item For \code{PE_model} 1--2: \code{pen_wts["yr_devs"]} weights a first-difference
+    penalty on log-deviations across years.
+  \item For \code{PE_model} 3--5: \code{pen_wts["bin_curve"]} and \code{pen_wts["yr_curve"]}
+    independently weight second-difference (smoothness) penalties on log-selectivity
+    across bins and across years, respectively.
 }
+Each weight defaults to \code{0} (off); set any subset of them to apply only the
+penalty terms desired, rather than one shared on/off flag.
 
 \strong{Note:} The returned value is on the \emph{positive} log-likelihood scale.
 It must be negated to obtain a negative log-likelihood contribution, which is

@@ -89,6 +89,22 @@ Available models:
   \item{\code{"nonpar"}}{Non-parametric selectivity defined over discrete age or length bins, where selectivity is estimated as independent parameters (or grouped bins if specified via nonparametric bin mapping). No fixed functional form is imposed.}
   \item{\code{"asymplogist1"}}{Logistic selectivity with \eqn{a_{50}} and slope \eqn{k} and asymptotic control (3 parameters).}
   \item{\code{"asymplogist2"}}{Logistic selectivity with with \eqn{a_{50}} and \eqn{a_{95}} and asymptotic control (3 parameters).}
+  \item{\code{"bicubic"}}{Bicubic spline over a bin-node x year-node grid
+    (see \code{\link{Get_Selex}}, \code{Selex_Model == 8}). Specified as
+    \code{"bicubic_Bin_<n_bin_nodes>_Yr_<n_yr_nodes>_Fleet_x"} (optionally
+    with \code{_Block_k}). One generalized form covers a smooth bin x year
+    surface (\code{n_yr_nodes > 1}), a time-invariant bin-only spline
+    (\code{n_yr_nodes == 1}), or a bin-only spline re-fit independently
+    per year-block (\code{n_yr_nodes == 1} within each of several blocks
+    defined via \code{fish_sel_blocks}). An optional \code{_SelStyr_<year>}
+    suffix (a calendar year within the block) restricts the actual spline
+    fit to \code{SelStyr}:block-end; years within the block before
+    \code{SelStyr} are held constant at the \code{SelStyr} year's fitted
+    curve, rather than fitting the surface over the whole block. An
+    optional \code{_NSelBins_<n>} suffix restricts the actual spline fit
+    to the first \code{n} bins (ages or lengths, per \code{fish_selex_type});
+    bins beyond \code{n} are held constant at the last fitted bin's
+    curve.}
 }
 See the model equations vignette for mathematical definitions.}
 

@@ -53,7 +53,10 @@ Setup_Mod_Weighting(
     input_list$data$n_sexes, input_list$data$n_fish_fleets)),
   Wt_FishLenComps_discard_pop = array(1, dim = c(input_list$data$n_pop,
     input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
-    input_list$data$n_sexes, input_list$data$n_fish_fleets))
+    input_list$data$n_sexes, input_list$data$n_fish_fleets)),
+  fish_sel_pen_wts = NULL,
+  ret_sel_pen_wts = NULL,
+  srv_sel_pen_wts = NULL
 )
 }
 \arguments{
@@ -170,6 +173,46 @@ population-specific discard fishery length composition likelihood.
 Same format as \code{Wt_FishAgeComps_discard_pop},
 \code{[n_pop × n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
 Default: array of \code{1}s.}
+
+\item{fish_sel_pen_wts}{\code{NULL} (default), or a named numeric vector/list
+with independent weights for any subset of nine selectivity penalty terms
+(see \code{\link{resolve_sel_pen_wts}}), replacing single implicit-weight-1
+on/off flags with independently settable weights for the total fishery
+selectivity penalty:
+\describe{
+  \item{\code{"yr_devs"}}{First-difference-across-years penalty on the
+    continuous time-varying deviations (\code{TimeVary_Model} 1-2 only).}
+  \item{\code{"bin_curve"}, \code{"yr_curve"}}{Second-difference (curvature)
+    penalties on the realized log-selectivity surface across bins and
+    across years, respectively (\code{TimeVary_Model} 3-5 only).}
+  \item{\code{"smooth_bin_curve"}, \code{"smooth_bin_diff"},
+    \code{"smooth_yr_diff"}, \code{"smooth_yr_curve"}, \code{"smooth_dome"},
+    \code{"smooth_mean_center"}}{see
+    \code{\link{Get_Selex_Smoothness_Penalty}}: bin curvature, unconditional bin
+    first difference, inter-annual first difference, inter-annual second
+    difference, dome-shape, and a per-year mean-centering regularization.
+    These six terms operate directly on the fleet's \emph{realized}
+    selectivity surface (not on any particular parameterization's
+    deviations), so they apply to \emph{any} selectivity functional form
+    -- e.g. a nonparametric (\code{Selex_Model == 5}) fleet with discrete
+    time blocks can use them to regularize curvature/stability across
+    those blocks, bridging an ADMB assessment's coefficient selectivity
+    held constant between "selectivity change years" (see the model
+    equations vignette for a worked example).}
+}
+When \code{NULL}, the first three terms fall back to weight \code{1} and the six \code{"smooth_*"} terms are always
+\code{0}. Must be called after \code{Setup_Mod_Fishsel_and_Q}.}
+
+\item{ret_sel_pen_wts}{Same format as \code{fish_sel_pen_wts}, for the
+retained fishery selectivity penalty. Falls back to the legacy
+\code{cont_tv_ret_sel_penalty} flag (set via
+\code{\link{Setup_Mod_Fishsel_and_Q}}) when \code{NULL}.}
+
+\item{srv_sel_pen_wts}{Same format as \code{fish_sel_pen_wts}, for the
+survey selectivity penalty. Falls back to the legacy
+\code{cont_tv_srv_sel_penalty} flag (set via
+\code{\link{Setup_Mod_Srvsel_and_Q}}) when \code{NULL}. Must be called
+after \code{Setup_Mod_Srvsel_and_Q}.}
 }
 \value{
 The input \code{input_list} with all weight values stored in

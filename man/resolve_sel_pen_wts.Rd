@@ -4,45 +4,22 @@
 \alias{resolve_sel_pen_wts}
 \title{Resolve a modular selectivity penalty weight vector}
 \usage{
-resolve_sel_pen_wts(pen_wts, penalty_flag)
+resolve_sel_pen_wts(pen_wts)
 }
 \arguments{
 \item{pen_wts}{\code{NULL}, or a named numeric vector/list giving independent
-weights for any subset of \code{"yr_devs"}, \code{"bin_curve"},
-\code{"yr_curve"}, \code{"smooth_bin_curve"}, \code{"smooth_bin_diff"},
+weights for any subset of \code{"smooth_bin_curve"}, \code{"smooth_bin_diff"},
 \code{"smooth_yr_diff"}, \code{"smooth_yr_curve"}, \code{"smooth_dome"},
-\code{"smooth_mean_center"}.
-When supplied, any term \emph{not} named is set to \code{0} (disabled)
-rather than falling back to \code{penalty_flag} -- i.e. supplying
-\code{pen_wts} opts fully into the explicit, modular weight system rather
-than partially retaining the old implicit behavior.}
-
-\item{penalty_flag}{Logical. Used only when \code{pen_wts} is \code{NULL}:
-the legacy terms (\code{"yr_devs"}, \code{"bin_curve"}, \code{"yr_curve"})
-are set to \code{1} if \code{TRUE}, \code{0} if \code{FALSE}. The
-\code{"smooth_*"} terms are always \code{0} in this fallback, regardless
-of \code{penalty_flag}.}
+\code{"smooth_mean_center"}. Any name not supplied defaults to \code{0}.}
 }
 \value{
-Named numeric vector of length 9: \code{c(yr_devs, bin_curve,
-  yr_curve, smooth_bin_curve, smooth_bin_diff, smooth_yr_diff,
-  smooth_yr_curve, smooth_dome, smooth_mean_center)}.
+Named numeric vector of length 6: \code{c(smooth_bin_curve,
+  smooth_bin_diff, smooth_yr_diff, smooth_yr_curve, smooth_dome,
+  smooth_mean_center)}.
 }
 \description{
 Converts a user-supplied selectivity penalty weight specification into the
-complete named weight vector consumed by \code{\link{Get_sel_PE_loglik}} and
-\code{\link{Get_Selex_Smoothness_Penalty}}. Preserves exact backward
-compatibility with the older single on/off \code{cont_tv_*_sel_penalty} flag
-(which only ever covered \code{"yr_devs"}, \code{"bin_curve"}, \code{"yr_curve"}
--- the process-error-deviation-based penalty terms used when a fleet has a
-continuous time-varying selectivity model active) when no explicit weights
-are supplied. Six additional \code{"smooth_*"} terms are included for
-\code{\link{Get_Selex_Smoothness_Penalty}}'s modular terms, which operate
-directly on a fleet's \emph{realized} selectivity surface and so apply to
-any selectivity functional form (not just the bicubic/cubic spline,
-\code{Selex_Model == 8}, that originally motivated them) -- for example,
-a nonparametric (\code{Selex_Model == 5}) fleet with discrete time blocks
-(mirroring an ADMB assessment's "selectivity change years") can use these
-same terms to regularize curvature/stability across those blocks.
+complete named weight vector consumed by
+\code{\link{Get_Selex_Smoothness_Penalty}}.
 }
 \keyword{internal}

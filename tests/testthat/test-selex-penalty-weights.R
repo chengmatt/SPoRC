@@ -3,43 +3,32 @@ library(testthat)
 
 test_that("resolve_sel_pen_wts works", {
 
-  zeros_new_terms <- c(smooth_bin_curve = 0, smooth_bin_diff = 0, smooth_yr_diff = 0, smooth_yr_curve = 0, smooth_dome = 0, smooth_mean_center = 0)
+  zeros_all_terms <- c(smooth_bin_curve = 0, smooth_bin_diff = 0, smooth_yr_diff = 0, smooth_yr_curve = 0, smooth_dome = 0, smooth_mean_center = 0)
 
-  test_that("NULL pen_wts falls back to the legacy boolean for the three legacy terms; smooth_* terms always 0", {
-    expect_equal(resolve_sel_pen_wts(NULL, TRUE), c(yr_devs = 1, bin_curve = 1, yr_curve = 1, zeros_new_terms))
-    expect_equal(resolve_sel_pen_wts(NULL, FALSE), c(yr_devs = 0, bin_curve = 0, yr_curve = 0, zeros_new_terms))
+  test_that("NULL pen_wts defaults every term to 0", {
+    expect_equal(resolve_sel_pen_wts(NULL), zeros_all_terms)
   })
 
   test_that("explicit pen_wts overrides named terms and zeroes unnamed ones", {
-    out <- resolve_sel_pen_wts(list(bin_curve = 5), TRUE)
-    expect_equal(out, c(yr_devs = 0, bin_curve = 5, yr_curve = 0, zeros_new_terms))
+    out <- resolve_sel_pen_wts(list(smooth_bin_curve = 5))
+    expect_equal(out, c(smooth_bin_curve = 5, smooth_bin_diff = 0, smooth_yr_diff = 0, smooth_yr_curve = 0, smooth_dome = 0, smooth_mean_center = 0))
   })
 
-  test_that("explicit pen_wts can set all legacy terms independently", {
-    out <- resolve_sel_pen_wts(c(yr_devs = 2, bin_curve = 0, yr_curve = 3), FALSE)
-    expect_equal(out, c(yr_devs = 2, bin_curve = 0, yr_curve = 3, zeros_new_terms))
-  })
-
-  test_that("explicit pen_wts can set the ADMB-aligned smooth_* terms independently of the legacy terms", {
-    out <- resolve_sel_pen_wts(list(smooth_yr_diff = 1, smooth_dome = 30, smooth_mean_center = 10000), TRUE)
-    expect_equal(out, c(yr_devs = 0, bin_curve = 0, yr_curve = 0, smooth_bin_curve = 0, smooth_bin_diff = 0,
+  test_that("explicit pen_wts can set multiple terms independently", {
+    out <- resolve_sel_pen_wts(list(smooth_yr_diff = 1, smooth_dome = 30, smooth_mean_center = 10000))
+    expect_equal(out, c(smooth_bin_curve = 0, smooth_bin_diff = 0,
                         smooth_yr_diff = 1, smooth_yr_curve = 0, smooth_dome = 30, smooth_mean_center = 10000))
   })
 
   test_that("explicit pen_wts can set the smooth_bin_diff term independently of the other smooth_* terms", {
-    out <- resolve_sel_pen_wts(list(smooth_bin_diff = 7), TRUE)
-    expect_equal(out, c(yr_devs = 0, bin_curve = 0, yr_curve = 0, smooth_bin_curve = 0, smooth_bin_diff = 7,
+    out <- resolve_sel_pen_wts(list(smooth_bin_diff = 7))
+    expect_equal(out, c(smooth_bin_curve = 0, smooth_bin_diff = 7,
                         smooth_yr_diff = 0, smooth_yr_curve = 0, smooth_dome = 0, smooth_mean_center = 0))
   })
 
-  test_that("legacy TRUE default does not leak into the smooth_* terms (regression: naming collision)", {
-    out <- resolve_sel_pen_wts(NULL, TRUE)
-    expect_equal(unname(out[c("smooth_bin_curve", "smooth_bin_diff", "smooth_yr_diff", "smooth_yr_curve", "smooth_dome", "smooth_mean_center")]),
-                rep(0, 6))
-  })
-
   test_that("errors on unrecognized term names", {
-    expect_error(resolve_sel_pen_wts(list(bogus = 1), TRUE))
+    expect_error(resolve_sel_pen_wts(list(bogus = 1)))
+    expect_error(resolve_sel_pen_wts(list(bin_curve = 1))) # removed legacy name
   })
 
 })
@@ -133,7 +122,7 @@ test_that("Get_Selex_Smoothness_Penalty works", {
     expect_equal(pen, -raw_ss / n_bins, tolerance = 1e-10)
   })
 
-  test_that("bin_curve and yr_curve penalties are normalized by n_bins / n_yrs, matching ADMB's lambda(4)/(6) scaling", {
+  test_that("bin_curve and yr_curve penalties are normalized by n_bins / n_yrs", {
     set.seed(4)
     sel_vals_jagged <- array(exp(matrix(rnorm(n_yrs * n_bins), nrow = n_yrs)), dim = c(1, n_yrs, n_bins, 1, 1))
     pen_bin <- Get_Selex_Smoothness_Penalty(sel_vals_jagged, wt_bin_curve = 1)
@@ -184,46 +173,38 @@ test_that("Get_Selex_Smoothness_Penalty works", {
 
 test_that("Get_sel_PE_loglik modular penalty weights work", {
 
-  test_that("pen_wts = c(1,1,1) reproduces the pre-refactor unweighted penalty for PE_model 3-5", {
+  test_that("bin_curve/yr_curve pen_wts are ignored by Get_sel_PE_loglik (caller's responsibility now)", {
     n_yrs <- 5; n_bins <- 4; n_sexes <- 1
     map_sel_devs <- array(0, dim = c(1, n_yrs, n_bins, n_sexes))
     map_sel_devs[1,,,1] <- matrix(rep(1:n_bins, each = n_yrs), nrow = n_yrs) # one unique dev per bin, shared across years
     set.seed(10)
     ln_devs <- array(rnorm(n_yrs * n_bins) * 0.1, dim = c(1, n_yrs, n_bins, n_sexes, 1))
-    sel_vals <- array(exp(matrix(rnorm(n_yrs * n_bins), nrow = n_yrs)), dim = c(1, n_yrs, n_bins, n_sexes, 1))
     PE_pars <- array(0, dim = c(1, 4, n_sexes, 1))
 
     ll_zero <- Get_sel_PE_loglik(PE_model = 3, PE_pars = PE_pars, ln_devs = ln_devs, map_sel_devs = map_sel_devs,
-                                 sel_vals = sel_vals, pen_wts = c(yr_devs = 0, bin_curve = 0, yr_curve = 0),
+                                 pen_wts = c(yr_devs = 0, bin_curve = 0, yr_curve = 0),
                                  min_sel_devs_shared_bins = 1:n_bins)
     ll_pen <- Get_sel_PE_loglik(PE_model = 3, PE_pars = PE_pars, ln_devs = ln_devs, map_sel_devs = map_sel_devs,
-                                sel_vals = sel_vals, pen_wts = c(yr_devs = 1, bin_curve = 1, yr_curve = 1),
+                                pen_wts = c(yr_devs = 1, bin_curve = 1, yr_curve = 1),
                                 min_sel_devs_shared_bins = 1:n_bins)
 
-    # Get_sel_PE_loglik always calls with normalize = FALSE to preserve its original (pre-ADMB-alignment) scale
-    expected_extra <- Get_Selex_Smoothness_Penalty(sel_vals, wt_bin_curve = 1, wt_yr_curve = 1, normalize = FALSE)
-    expect_equal(ll_pen - ll_zero, expected_extra, tolerance = 1e-10)
+    # PE_model = 3: yr_devs only applies to PE_model 1-2, and bin_curve/yr_curve are no
+    # longer read here at all -> all three weights are inert, so results must be identical
+    expect_equal(ll_pen, ll_zero, tolerance = 1e-10)
   })
 
-  test_that("bin_curve and yr_curve weights are independent for PE_model 3-5", {
+  test_that("bin_curve and yr_curve are now applied by the caller via Get_Selex_Smoothness_Penalty, normalized", {
     n_yrs <- 5; n_bins <- 4; n_sexes <- 1
-    map_sel_devs <- array(0, dim = c(1, n_yrs, n_bins, n_sexes))
-    map_sel_devs[1,,,1] <- matrix(rep(1:n_bins, each = n_yrs), nrow = n_yrs) # one unique dev per bin, shared across years
-    ln_devs <- array(0, dim = c(1, n_yrs, n_bins, n_sexes, 1))
     set.seed(11)
     sel_vals <- array(exp(matrix(rnorm(n_yrs * n_bins), nrow = n_yrs)), dim = c(1, n_yrs, n_bins, n_sexes, 1))
-    PE_pars <- array(0, dim = c(1, 4, n_sexes, 1))
 
-    ll_base <- Get_sel_PE_loglik(3, PE_pars, ln_devs, map_sel_devs, sel_vals,
-                                 pen_wts = c(yr_devs = 0, bin_curve = 0, yr_curve = 0), 1:n_bins)
-    ll_age  <- Get_sel_PE_loglik(3, PE_pars, ln_devs, map_sel_devs, sel_vals,
-                                 pen_wts = c(yr_devs = 0, bin_curve = 1, yr_curve = 0), 1:n_bins)
-    ll_yr   <- Get_sel_PE_loglik(3, PE_pars, ln_devs, map_sel_devs, sel_vals,
-                                 pen_wts = c(yr_devs = 0, bin_curve = 0, yr_curve = 1), 1:n_bins)
+    pen_base <- Get_Selex_Smoothness_Penalty(sel_vals, wt_bin_curve = 0, wt_yr_curve = 0, normalize = TRUE)
+    pen_age  <- Get_Selex_Smoothness_Penalty(sel_vals, wt_bin_curve = 1, wt_yr_curve = 0, normalize = TRUE)
+    pen_yr   <- Get_Selex_Smoothness_Penalty(sel_vals, wt_bin_curve = 0, wt_yr_curve = 1, normalize = TRUE)
 
-    expect_true(ll_age != ll_base)
-    expect_true(ll_yr != ll_base)
-    expect_true(ll_age != ll_yr)
+    expect_true(pen_age != pen_base)
+    expect_true(pen_yr != pen_base)
+    expect_true(pen_age != pen_yr)
   })
 
   test_that("yr_devs weight only affects PE_model 1-2, not 3-5", {
@@ -232,12 +213,11 @@ test_that("Get_sel_PE_loglik modular penalty weights work", {
     map_sel_devs[1,,,1] <- matrix(rep(1:n_bins, each = n_yrs), nrow = n_yrs) # one unique dev per bin, shared across years
     set.seed(12)
     ln_devs <- array(rnorm(n_yrs * n_bins) * 0.1, dim = c(1, n_yrs, n_bins, n_sexes, 1))
-    sel_vals <- array(1, dim = c(1, n_yrs, n_bins, n_sexes, 1))
     PE_pars <- array(0, dim = c(1, 4, n_sexes, 1))
 
-    ll_no_yrdevs <- Get_sel_PE_loglik(1, PE_pars, ln_devs, map_sel_devs, sel_vals,
+    ll_no_yrdevs <- Get_sel_PE_loglik(1, PE_pars, ln_devs, map_sel_devs,
                                       pen_wts = c(yr_devs = 0, bin_curve = 0, yr_curve = 0), 1:n_bins)
-    ll_yrdevs <- Get_sel_PE_loglik(1, PE_pars, ln_devs, map_sel_devs, sel_vals,
+    ll_yrdevs <- Get_sel_PE_loglik(1, PE_pars, ln_devs, map_sel_devs,
                                    pen_wts = c(yr_devs = 1, bin_curve = 0, yr_curve = 0), 1:n_bins)
     expect_true(ll_yrdevs != ll_no_yrdevs)
   })

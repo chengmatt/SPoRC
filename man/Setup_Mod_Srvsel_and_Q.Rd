@@ -23,7 +23,6 @@ Setup_Mod_Srvsel_and_Q(
   srv_selex_prior = NULL,
   t_srv = array(1, dim = c(input_list$data$n_regions, input_list$data$n_seas,
     input_list$data$n_srv_fleets)),
-  cont_tv_srv_sel_penalty = TRUE,
   srvsel_devs_shared_bins = NULL,
   srv_selex_type = "age",
   use_fixed_srv_sel = rep(0, input_list$data$n_srv_fleets),
@@ -164,9 +163,6 @@ season (seasonal models), array
 \code{[n_regions × n_seas × n_srv_fleets]}. Default: \code{1}
 (end of period).}
 
-\item{cont_tv_srv_sel_penalty}{Logical. Whether to apply penalties to
-continuous time-varying selectivity deviations. Default \code{TRUE}.}
-
 \item{srvsel_devs_shared_bins}{List of integer vectors defining bin groups
 for age/length-sharing of deviations under semi-parametric forms (e.g.,
 \code{list(1:5, 6:10, 11:30)}). Required when \code{srv_sel_devs_spec}
@@ -195,8 +191,7 @@ parameters.}
 }
 \value{
 The input \code{input_list} with selectivity and catchability
-  configuration stored in \code{$data} (\code{cont_tv_srv_sel},
-  \code{cont_tv_srv_sel_penalty}, \code{srv_sel_blocks},
+  configuration stored in \code{$data} (\code{cont_tv_srv_sel}, \code{srv_sel_blocks},
   \code{srv_sel_model}, \code{srv_q_blocks}, \code{srv_q_prior},
   \code{Use_srv_q_prior}, \code{do_srv_q_cov}, \code{srv_q_cov},
   \code{Use_srv_selex_prior}, \code{srv_selex_prior}, \code{t_srv});

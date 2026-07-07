@@ -9,7 +9,6 @@ Get_sel_PE_loglik(
   PE_pars,
   ln_devs,
   map_sel_devs,
-  sel_vals,
   pen_wts,
   min_sel_devs_shared_bins
 )
@@ -48,18 +47,9 @@ mapping deviations to unique estimated parameters. Shared deviations
 carry the same integer value; \code{NA} entries are treated as fixed
 and excluded from likelihood evaluation.}
 
-\item{sel_vals}{Array of selectivity values dimensioned \code{[1, year, bin, sex, 1]},
-used on the log scale when computing bin and year smoothness penalties
-(\code{do_sel_pen = TRUE}).}
-
-\item{pen_wts}{Named numeric vector with elements \code{"yr_devs"}, \code{"bin_curve"},
-\code{"yr_curve"} (any missing name is treated as \code{0}). Independently weights
-the additional regularization penalties applied beyond the process error
-likelihood: \code{"yr_devs"} weights a first-difference-across-years penalty on
-\code{ln_devs} (models 1--2 only); \code{"bin_curve"} and \code{"yr_curve"} weight
-second-difference (curvature) penalties on log-selectivity across bins and across
-years, respectively (models 3--5 only, via \code{\link{Get_Selex_Smoothness_Penalty}}).
-A weight of \code{0} disables that term.}
+\item{pen_wts}{Named numeric vector with element \code{"yr_devs"} (any missing
+name is treated as \code{0}). Weights a first-difference-across-years penalty
+on \code{ln_devs} (models 1--2 only). A weight of \code{0} disables it.}
 
 \item{min_sel_devs_shared_bins}{Integer vector. Indices of the reference (minimum) bin
 within each shared deviation group, used to subset the bin dimension when
@@ -84,18 +74,12 @@ The function supports:
   \item Separable 2D AR(1) models
 }
 
-Independently-weighted regularization penalties can also be applied via
-\code{pen_wts} (see \code{\link{Get_Selex_Smoothness_Penalty}} for the bin/year
-curvature terms, which this function delegates to for \code{PE_model} 3--5):
-\itemize{
-  \item For \code{PE_model} 1--2: \code{pen_wts["yr_devs"]} weights a first-difference
-    penalty on log-deviations across years.
-  \item For \code{PE_model} 3--5: \code{pen_wts["bin_curve"]} and \code{pen_wts["yr_curve"]}
-    independently weight second-difference (smoothness) penalties on log-selectivity
-    across bins and across years, respectively.
-}
-Each weight defaults to \code{0} (off); set any subset of them to apply only the
-penalty terms desired, rather than one shared on/off flag.
+An independently-weighted regularization penalty can also be applied via
+\code{pen_wts["yr_devs"]} (\code{PE_model} 1--2 only): a first-difference
+penalty on log-deviations across years. It defaults to \code{0} (off).
+Bin/year curvature and other realized-selectivity-surface penalties are
+handled separately, via \code{\link{Get_Selex_Smoothness_Penalty}} in the
+"Selectivity Smoothness Penalty" section of \code{SPoRC_rtmb.R}.
 
 \strong{Note:} The returned value is on the \emph{positive} log-likelihood scale.
 It must be negated to obtain a negative log-likelihood contribution, which is

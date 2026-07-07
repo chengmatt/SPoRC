@@ -45,11 +45,7 @@ least 3 years to have any effect.}
 
 \item{wt_dome}{Non-negative weight on the dome-shape (non-monotonicity) penalty:
 for each year, penalizes any decrease in log-selectivity moving from one bin to
-the next (i.e. discourages, but does not forbid, dome shapes), matching ADMB's
-\code{sel_like} dome penalty (\code{lambda(3)}) for double-logistic / spline
-selectivity forms. \code{0} (default) disables this term. Uses \code{max(., 0)}
-(an RTMB/CppAD-safe smooth hinge; direct \code{if()} branching on AD types is
-unsupported) so only decreases, not increases, are penalized.}
+the next (i.e. discourages, but does not forbid, dome shaped dynamics. \code{0} (default) disables this term.}
 
 \item{wt_mean_center}{Non-negative weight on a per-year mean-centering
 (sum-to-zero) regularization: for each year, penalizes the squared mean of
@@ -58,11 +54,8 @@ set to \code{10000}.}
 
 \item{normalize}{Logical. If \code{TRUE} (default), \code{wt_bin_curve} is
 divided by the number of bins and \code{wt_yr_diff}/\code{wt_yr_curve} are
-divided by the number of years. Set to \code{FALSE} to reproduce the
-older, unnormalized bin/year curvature penalty used by
-\code{\link{Get_sel_PE_loglik}} for the semi-parametric process-error
-models (\code{TimeVary_Model} 3--5) -- \code{Get_sel_PE_loglik} always
-calls this with \code{normalize = FALSE}.}
+divided by the number of years. \code{SPoRC_rtmb.R} always calls this with
+\code{normalize = TRUE}.}
 }
 \value{
 Numeric scalar: the positive log-likelihood contribution from the
@@ -72,11 +65,7 @@ Numeric scalar: the positive log-likelihood contribution from the
 Regularization penalty operating directly on a realized selectivity-at-bin-at-year
 surface, rather than on any particular parameterization's deviations. Because it
 only ever looks at the resulting selectivity values, it applies uniformly to any
-selectivity functional form -- semi-parametric process-error models
-(\code{TimeVary_Model} 3--5, via \code{\link{Get_sel_PE_loglik}}) and the bicubic /
-cubic spline (\code{Selex_Model == 8}, via \code{\link{Get_Selex}}) alike. This is
-the "modular" building block behind SPoRC's independently-weighted selectivity
-penalty terms: each term below is switched off by setting its weight to 0, and
-terms can be combined freely without one implicit shared on/off flag.
+selectivity functional form and any fleet, called once per fleet from the
+"Selectivity Smoothness Penalty" section of \code{SPoRC_rtmb.R}.
 }
 \keyword{internal}

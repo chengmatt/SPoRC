@@ -67,7 +67,8 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
 
   build_input_list <- function(fish_sel_model, fish_fixed_sel_pars_spec = "fix",
                                srv_sel_model = c("logist2_Fleet_1"), srv_fixed_sel_pars_spec = c("est_all"),
-                               srv_extra_args = list(), fish_sel_pen_wts = NULL, srv_sel_pen_wts = NULL, ...) {
+                               srv_extra_args = list(), fish_sel_pen_wts = NULL, srv_sel_pen_wts = NULL,
+                               ret_sel_pen_wts = NULL, ...) {
 
     input_list <- Setup_Mod_Dim(
       years = 1:sim_obj$n_years, ages = 1:sim_obj$n_ages, lens = sim_obj$n_lens,
@@ -141,7 +142,7 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
       Wt_FishLenComps = array(1, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_sexes, input_list$data$n_fish_fleets)),
       Wt_SrvAgeComps = array(1, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_sexes, input_list$data$n_srv_fleets)),
       Wt_SrvLenComps = array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_sexes, input_list$data$n_srv_fleets)),
-      fish_sel_pen_wts = fish_sel_pen_wts, srv_sel_pen_wts = srv_sel_pen_wts
+      fish_sel_pen_wts = fish_sel_pen_wts, srv_sel_pen_wts = srv_sel_pen_wts, ret_sel_pen_wts = ret_sel_pen_wts
     )
 
     return(input_list)
@@ -620,6 +621,239 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
                                         map = input_list_explicit_zero$map, silent = TRUE)
 
     expect_equal(obj_default$report(obj_default$par)$jnLL, obj_explicit_zero$report(obj_explicit_zero$par)$jnLL, tolerance = 1e-10)
+  })
+
+  # ── Retention selectivity: same bicubic wiring, mirrored for ret_sel_model ───
+
+  test_that("retention bicubic model builds, evaluates, and differentiates without error with a single block", {
+    n_bin_nodes <- 4; n_yr_nodes <- 3
+    node_par <- matrix(c(-1.1, 0.2, 0.8, -0.4,
+                         0.5, -0.6, 0.3, 1.0,
+                         -0.2, 0.7, -0.5, 0.4),
+                       nrow = n_yr_nodes, ncol = n_bin_nodes, byrow = TRUE)
+    fixed_pars_init <- array(0, dim = c(1, n_bin_nodes * n_yr_nodes, 1, 1, 1))
+    fixed_pars_init[1, , 1, 1, 1] <- as.vector(node_par)
+
+    input_list <- build_input_list(
+      fish_sel_model = "logist2_Fleet_1",
+      ret_sel_model = paste0("bicubic_Bin_", n_bin_nodes, "_Yr_", n_yr_nodes, "_Fleet_1"),
+      ret_fixed_sel_pars_spec = "est_all",
+      ret_fixed_sel_pars = fixed_pars_init,
+      use_fixed_ret_sel = 0
+    )
+
+    obj <- RTMB::MakeADFun(cmb(SPoRC_rtmb, input_list$data), parameters = input_list$par,
+                           map = input_list$map, silent = TRUE)
+
+    expect_no_error(obj$fn(obj$par))
+    expect_no_error(obj$gr(obj$par))
+
+    rep <- obj$report(obj$par)
+
+    # manual computation using the exact weight matrices Setup_Mod_Fishsel_and_Q constructed
+    Wbin <- input_list$data$ret_sel_bicubic_Wbin[1, , 1:n_bin_nodes, 1, 1]
+    Wyr  <- input_list$data$ret_sel_bicubic_Wyr[1, , 1:n_yr_nodes, 1, 1]
+    expected_surface <- exp(Wyr %*% (node_par %*% t(Wbin))) # n_yrs_total x n_ages
+
+    n_yrs <- length(input_list$data$years)
+    for (y in 1:n_yrs) {
+      expect_equal(as.vector(rep$ret_sel[1, 1, y, 1, , 1, 1]), expected_surface[y, ],
+                  tolerance = 1e-8, label = sprintf("ret_sel year %d", y))
+    }
+  })
+
+  test_that("retention bicubic n_yr_nodes == 1 gives a time-invariant selectivity surface end-to-end", {
+    n_bin_nodes <- 5
+    node_par <- c(-0.7, 0.1, 0.9, -0.3, 0.5)
+    fixed_pars_init <- array(0, dim = c(1, n_bin_nodes, 1, 1, 1))
+    fixed_pars_init[1, , 1, 1, 1] <- node_par
+
+    input_list <- build_input_list(
+      fish_sel_model = "logist2_Fleet_1",
+      ret_sel_model = paste0("bicubic_Bin_", n_bin_nodes, "_Yr_1_Fleet_1"),
+      ret_fixed_sel_pars_spec = "est_all",
+      ret_fixed_sel_pars = fixed_pars_init,
+      use_fixed_ret_sel = 0
+    )
+
+    obj <- RTMB::MakeADFun(cmb(SPoRC_rtmb, input_list$data), parameters = input_list$par,
+                           map = input_list$map, silent = TRUE)
+    rep <- obj$report(obj$par)
+
+    n_yrs <- length(input_list$data$years)
+    sel_y1 <- as.vector(rep$ret_sel[1, 1, 1, 1, , 1, 1])
+    for (y in 2:n_yrs) {
+      expect_equal(as.vector(rep$ret_sel[1, 1, y, 1, , 1, 1]), sel_y1, tolerance = 1e-8)
+    }
+
+    Wbin <- input_list$data$ret_sel_bicubic_Wbin[1, , 1:n_bin_nodes, 1, 1]
+    expect_equal(sel_y1, exp(as.vector(Wbin %*% node_par)), tolerance = 1e-8)
+  })
+
+  test_that("retention SelStyr holds pre-fit years constant and fits the spline only from SelStyr onward", {
+    n_bin_nodes <- 4; n_yr_nodes <- 3
+    selstyr_year <- 5 # years 1:4 should be edge-held; the spline is fit only over years 5:n_years
+    set.seed(303)
+    node_par <- matrix(rnorm(n_bin_nodes * n_yr_nodes, sd = 0.5), nrow = n_yr_nodes, ncol = n_bin_nodes)
+    fixed_pars_init <- array(0, dim = c(1, n_bin_nodes * n_yr_nodes, 1, 1, 1))
+    fixed_pars_init[1, , 1, 1, 1] <- as.vector(node_par)
+
+    input_list <- build_input_list(
+      fish_sel_model = "logist2_Fleet_1",
+      ret_sel_model = paste0("bicubic_Bin_", n_bin_nodes, "_Yr_", n_yr_nodes, "_SelStyr_", selstyr_year, "_Fleet_1"),
+      ret_fixed_sel_pars_spec = "est_all",
+      ret_fixed_sel_pars = fixed_pars_init,
+      use_fixed_ret_sel = 0
+    )
+
+    expect_equal(input_list$data$ret_sel_bicubic_selstyr[1, 1, 1], selstyr_year)
+
+    obj <- RTMB::MakeADFun(cmb(SPoRC_rtmb, input_list$data), parameters = input_list$par,
+                           map = input_list$map, silent = TRUE)
+    rep <- obj$report(obj$par)
+
+    n_yrs <- length(input_list$data$years)
+    fit_years <- selstyr_year:n_yrs
+
+    Wbin <- input_list$data$ret_sel_bicubic_Wbin[1, , 1:n_bin_nodes, 1, 1]
+    Wyr_fit <- Get_Natural_Cubic_Spline_Weights(seq(0, 1, length.out = n_yr_nodes), seq(0, 1, length.out = length(fit_years)))
+    expected_fit_surface <- exp(Wyr_fit %*% (node_par %*% t(Wbin)))
+
+    # years before SelStyr are all identical to the SelStyr year's fitted curve
+    sel_at_selstyr <- as.vector(rep$ret_sel[1, 1, selstyr_year, 1, , 1, 1])
+    for (y in 1:(selstyr_year - 1)) {
+      expect_equal(as.vector(rep$ret_sel[1, 1, y, 1, , 1, 1]), sel_at_selstyr, tolerance = 1e-8, label = sprintf("pre-SelStyr year %d", y))
+    }
+    expect_equal(sel_at_selstyr, expected_fit_surface[1, ], tolerance = 1e-8)
+
+    # years from SelStyr onward follow the spline fit over the sub-range only
+    for (y in fit_years) {
+      expect_equal(as.vector(rep$ret_sel[1, 1, y, 1, , 1, 1]), expected_fit_surface[y - selstyr_year + 1, ],
+                  tolerance = 1e-8, label = sprintf("fit year %d", y))
+    }
+  })
+
+  test_that("retention NSelBins holds post-fit bins constant (plateau) and fits the spline only over the first NSelBins bins", {
+    n_bin_nodes <- 4; n_yr_nodes <- 1
+    n_fit_bins <- sim_obj$n_ages - 2 # ages 1:(n_ages-2) are actually fit; the last 2 ages plateau
+    set.seed(404)
+    node_par <- rnorm(n_bin_nodes, sd = 0.5)
+    fixed_pars_init <- array(0, dim = c(1, n_bin_nodes, 1, 1, 1))
+    fixed_pars_init[1, , 1, 1, 1] <- node_par
+
+    input_list <- build_input_list(
+      fish_sel_model = "logist2_Fleet_1",
+      ret_sel_model = paste0("bicubic_Bin_", n_bin_nodes, "_Yr_", n_yr_nodes, "_NSelBins_", n_fit_bins, "_Fleet_1"),
+      ret_fixed_sel_pars_spec = "est_all",
+      ret_fixed_sel_pars = fixed_pars_init,
+      use_fixed_ret_sel = 0
+    )
+
+    expect_equal(input_list$data$ret_sel_bicubic_nselbins[1, 1, 1], n_fit_bins)
+
+    obj <- RTMB::MakeADFun(cmb(SPoRC_rtmb, input_list$data), parameters = input_list$par,
+                           map = input_list$map, silent = TRUE)
+    rep <- obj$report(obj$par)
+
+    n_ages <- sim_obj$n_ages
+    sel_y1 <- as.vector(rep$ret_sel[1, 1, 1, 1, , 1, 1])
+
+    # bins beyond n_fit_bins plateau at the last fitted bin's value
+    for (b in (n_fit_bins + 1):n_ages) {
+      expect_equal(sel_y1[b], sel_y1[n_fit_bins], tolerance = 1e-8, label = sprintf("plateau bin %d", b))
+    }
+
+    # bins 1:n_fit_bins follow the spline fit over the sub-range only
+    Wbin_fit <- Get_Natural_Cubic_Spline_Weights(seq(0, 1, length.out = n_bin_nodes), seq(0, 1, length.out = n_fit_bins))
+    expected_fit <- exp(as.vector(Wbin_fit %*% node_par))
+    expect_equal(sel_y1[1:n_fit_bins], expected_fit, tolerance = 1e-8)
+  })
+
+  test_that("retention, survey, and fishery fleets can each independently use bicubic selectivity at once", {
+    n_bin_nodes <- 4
+    fish_node_par <- c(-0.5, 0.5, 0.9, -0.3)
+    srv_node_par  <- c(0.6, -0.8, 0.2, 1.0)
+    ret_node_par  <- c(-0.9, 0.4, -0.2, 0.7)
+
+    fish_fixed_pars_init <- array(0, dim = c(1, n_bin_nodes, 1, 1, 1))
+    fish_fixed_pars_init[1, , 1, 1, 1] <- fish_node_par
+    srv_fixed_pars_init <- array(0, dim = c(1, n_bin_nodes, 1, 1, 1))
+    srv_fixed_pars_init[1, , 1, 1, 1] <- srv_node_par
+    ret_fixed_pars_init <- array(0, dim = c(1, n_bin_nodes, 1, 1, 1))
+    ret_fixed_pars_init[1, , 1, 1, 1] <- ret_node_par
+
+    input_list <- build_input_list(
+      fish_sel_model = paste0("bicubic_Bin_", n_bin_nodes, "_Yr_1_Fleet_1"),
+      fish_fixed_sel_pars_spec = "est_all",
+      fish_fixed_sel_pars = fish_fixed_pars_init,
+      srv_sel_model = paste0("bicubic_Bin_", n_bin_nodes, "_Yr_1_Fleet_1"),
+      srv_fixed_sel_pars_spec = "est_all",
+      srv_extra_args = list(srv_fixed_sel_pars = srv_fixed_pars_init),
+      ret_sel_model = paste0("bicubic_Bin_", n_bin_nodes, "_Yr_1_Fleet_1"),
+      ret_fixed_sel_pars_spec = "est_all",
+      ret_fixed_sel_pars = ret_fixed_pars_init,
+      use_fixed_ret_sel = 0
+    )
+
+    obj <- RTMB::MakeADFun(cmb(SPoRC_rtmb, input_list$data), parameters = input_list$par,
+                           map = input_list$map, silent = TRUE)
+    expect_no_error(obj$fn(obj$par))
+    rep <- obj$report(obj$par)
+
+    Wbin_fish <- input_list$data$fish_sel_bicubic_Wbin[1, , 1:n_bin_nodes, 1, 1]
+    Wbin_srv  <- input_list$data$srv_sel_bicubic_Wbin[1, , 1:n_bin_nodes, 1, 1]
+    Wbin_ret  <- input_list$data$ret_sel_bicubic_Wbin[1, , 1:n_bin_nodes, 1, 1]
+
+    expect_equal(as.vector(rep$fish_sel[1, 1, 1, 1, , 1, 1]), exp(as.vector(Wbin_fish %*% fish_node_par)), tolerance = 1e-8)
+    expect_equal(as.vector(rep$srv_sel[1, 1, 1, 1, , 1, 1]), exp(as.vector(Wbin_srv %*% srv_node_par)), tolerance = 1e-8)
+    expect_equal(as.vector(rep$ret_sel[1, 1, 1, 1, , 1, 1]), exp(as.vector(Wbin_ret %*% ret_node_par)), tolerance = 1e-8)
+  })
+
+  test_that("setting retention bicubic penalty weights matches manual Get_Selex_Smoothness_Penalty computation", {
+    n_bin_nodes <- 4; n_yr_nodes <- 3
+    set.seed(505)
+    node_par <- matrix(rnorm(n_bin_nodes * n_yr_nodes, sd = 0.5), nrow = n_yr_nodes, ncol = n_bin_nodes)
+    fixed_pars_init <- array(0, dim = c(1, n_bin_nodes * n_yr_nodes, 1, 1, 1))
+    fixed_pars_init[1, , 1, 1, 1] <- as.vector(node_par)
+
+    pen_wts <- list(smooth_bin_curve = 10, smooth_yr_diff = 1, smooth_yr_curve = 300, smooth_dome = 30, smooth_mean_center = 10000)
+
+    build_with_pen <- function(wts) {
+      build_input_list(
+        fish_sel_model = "logist2_Fleet_1",
+        ret_sel_model = paste0("bicubic_Bin_", n_bin_nodes, "_Yr_", n_yr_nodes, "_Fleet_1"),
+        ret_fixed_sel_pars_spec = "est_all",
+        ret_fixed_sel_pars = fixed_pars_init,
+        use_fixed_ret_sel = 0,
+        ret_sel_pen_wts = wts
+      )
+    }
+
+    input_list_zero <- build_with_pen(list(smooth_bin_curve = 0, smooth_yr_diff = 0, smooth_yr_curve = 0, smooth_dome = 0, smooth_mean_center = 0))
+    obj_zero <- RTMB::MakeADFun(cmb(SPoRC_rtmb, input_list_zero$data), parameters = input_list_zero$par,
+                                map = input_list_zero$map, silent = TRUE)
+    jnLL_zero <- obj_zero$report(obj_zero$par)$jnLL
+
+    input_list_pen <- build_with_pen(pen_wts)
+    obj_pen <- RTMB::MakeADFun(cmb(SPoRC_rtmb, input_list_pen$data), parameters = input_list_pen$par,
+                              map = input_list_pen$map, silent = TRUE)
+    rep_pen <- obj_pen$report(obj_pen$par)
+
+    n_yrs <- length(input_list_pen$data$years)
+    Wbin <- input_list_pen$data$ret_sel_bicubic_Wbin[1, , 1:n_bin_nodes, 1, 1]
+    Wyr  <- input_list_pen$data$ret_sel_bicubic_Wyr[1, , 1:n_yr_nodes, 1, 1]
+    surface <- exp(Wyr %*% (node_par %*% t(Wbin)))
+    sel_vals <- array(surface, dim = c(1, n_yrs, ncol(surface), 1, 1))
+
+    manual_penalty <- Get_Selex_Smoothness_Penalty(sel_vals,
+                                                   wt_bin_curve = pen_wts$smooth_bin_curve,
+                                                   wt_yr_diff = pen_wts$smooth_yr_diff,
+                                                   wt_yr_curve = pen_wts$smooth_yr_curve,
+                                                   wt_dome = pen_wts$smooth_dome,
+                                                   wt_mean_center = pen_wts$smooth_mean_center,
+                                                   normalize = TRUE)
+
+    expect_equal(rep_pen$jnLL - jnLL_zero, -manual_penalty, tolerance = 1e-6)
   })
 
 })

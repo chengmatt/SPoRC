@@ -19,7 +19,6 @@ Setup_Mod_Fishsel_and_Q(
   corr_opt_semipar = NULL,
   Use_fish_selex_prior = 0,
   fish_selex_prior = NULL,
-  cont_tv_fish_sel_penalty = TRUE,
   fishsel_devs_shared_bins = NULL,
   fish_selex_type = "age",
   use_fixed_fish_sel = rep(0, input_list$data$n_fish_fleets),
@@ -34,7 +33,6 @@ Setup_Mod_Fishsel_and_Q(
   ret_sel_corr_opt_semipar = NULL,
   Use_ret_selex_prior = 0,
   ret_selex_prior = NULL,
-  cont_tv_ret_sel_penalty = TRUE,
   retsel_devs_shared_bins = NULL,
   ret_selex_type = "age",
   use_fixed_ret_sel = rep(1, input_list$data$n_fish_fleets),
@@ -157,10 +155,6 @@ Required columns: \code{region}, \code{fleet}, \code{block}, \code{sex},
 \code{par} (parameter index within the functional form), \code{mu}, \code{sd}.
 Only used when \code{Use_fish_selex_prior = 1}.}
 
-\item{cont_tv_fish_sel_penalty}{Logical. If \code{TRUE} (default), applies a
-penalty on the continuous time-varying selectivity deviations to regularise
-the process.}
-
 \item{fishsel_devs_shared_bins}{List of integer vectors grouping age or length
 bins that share a single deviation series. Only used when
 \code{fish_sel_devs_spec} contains one of the \code{"est_shared_b"} variants.
@@ -230,6 +224,10 @@ Available models:
   \item{\code{"nonpar"}}{Non-parametric selectivity defined over discrete age or length bins, where selectivity is estimated as independent parameters (or grouped bins if specified via nonparametric bin mapping). No fixed functional form is imposed.}
   \item{\code{"asymplogist1"}}{Logistic selectivity with \eqn{a_{50}} and slope \eqn{k} and asymptotic control (3 parameters).}
   \item{\code{"asymplogist2"}}{Logistic selectivity with with \eqn{a_{50}} and \eqn{a_{95}} and asymptotic control (3 parameters).}
+  \item{\code{"bicubic"}}{Bicubic spline over a bin-node x year-node grid, specified as
+    \code{"bicubic_Bin_<n_bin_nodes>_Yr_<n_yr_nodes>_Fleet_x"} (optionally with \code{_Block_k},
+    \code{_SelStyr_<year>}, and/or \code{_NSelBins_<n>}); see \code{fish_sel_model} above for the
+    full syntax and \code{\link{Get_Selex}} (\code{Selex_Model == 8}) for the underlying math.}
 }
 See the model equations vignette for mathematical definitions.}
 
@@ -263,10 +261,6 @@ selectivity parameters; \code{0} = no priors (default). Requires
 \item{ret_selex_prior}{Data frame of selectivity prior hyperparameters.
 Required columns: \code{region}, \code{fleet}, \code{block}, \code{sex},
 \code{par}, \code{mu}, \code{sd}.}
-
-\item{cont_tv_ret_sel_penalty}{Logical. If \code{TRUE} (default), applies a
-penalty on the continuous time-varying selectivity deviations to regularise
-the process.}
 
 \item{retsel_devs_shared_bins}{List of integer vectors grouping age or length
 bins that share a single deviation series. Only used when

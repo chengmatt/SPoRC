@@ -299,21 +299,16 @@ Lognormal priors on selectivity parameters are toggled via `Use_fish_selex_prior
 
 ### Selectivity smoothness penalty weights
 
-All selectivity smoothness/regularisation penalty weights are configured in a single place, `Setup_Mod_Weighting()`, via the `fish_sel_pen_wts`, `ret_sel_pen_wts`, and `srv_sel_pen_wts` arguments (one list per selectivity surface). Each is a named list/vector; unset names default to `0` (off), except the three legacy terms below, whose default (`1` if any deviation-based penalty is active, `0` otherwise) reproduces pre-existing behaviour when `pen_wts = NULL`.
+All selectivity smoothness/regularisation penalty weights are configured in a single place, `Setup_Mod_Weighting()`, via the `fish_sel_pen_wts`, `ret_sel_pen_wts`, and `srv_sel_pen_wts` arguments (one list per selectivity surface). Each is a named list/vector; any name not supplied defaults to `0` (off). All six terms are evaluated directly on a fleet's *realized* selectivity-at-bin-at-year surface, so they apply to any selectivity functional form and any fleet, regardless of block/deviation structure.
 
-| Name | Applies to | Description |
-|---|---|---|
-| `yr_devs` | Continuous time-varying deviations (`cont_tv_*_sel`, process error models 1--2) | First-difference penalty across years on deviation parameters |
-| `bin_curve` | Semi-parametric deviations (process error models 3--5) | Second-difference (curvature) penalty across bins on log-selectivity |
-| `yr_curve` | Semi-parametric deviations (process error models 3--5) | Second-difference (curvature) penalty across years on log-selectivity |
-| `smooth_dome` | Any selectivity form (see below) | Hinge penalty discouraging decreases across adjacent bins (dome-shape control) |
-| `smooth_bin_curve` | Any selectivity form (see below) | Second-difference penalty across bins, normalised by the number of fitted bins |
-| `smooth_bin_diff` | Any selectivity form (see below) | Unconditional first-difference penalty across bins (both increases *and* decreases contribute, unlike `smooth_dome`), normalised by the number of fitted bins |
-| `smooth_yr_diff` | Any selectivity form (see below) | First-difference penalty across years, normalised by the number of fitted years |
-| `smooth_yr_curve` | Any selectivity form (see below) | Second-difference penalty across years, normalised by the number of fitted years |
-| `smooth_mean_center` | Any selectivity form (see below) | Penalises the per-year mean of log-selectivity away from zero; resolves the scale indeterminacy of the bicubic surface (a uniform per-year shift in log-selectivity otherwise trades off exactly against that year's fishing mortality) |
-
-The six `smooth_*` terms are evaluated directly on a fleet's *realized* selectivity-at-bin-at-year surface.
+| Name | Description |
+|---|---|
+| `smooth_dome` | Hinge penalty discouraging decreases across adjacent bins (dome-shape control) |
+| `smooth_bin_curve` | Second-difference penalty across bins, normalised by the number of fitted bins |
+| `smooth_bin_diff` | Unconditional first-difference penalty across bins (both increases *and* decreases contribute, unlike `smooth_dome`), normalised by the number of fitted bins |
+| `smooth_yr_diff` | First-difference penalty across years, normalised by the number of fitted years |
+| `smooth_yr_curve` | Second-difference penalty across years, normalised by the number of fitted years |
+| `smooth_mean_center` | Penalises the per-year mean of log-selectivity away from zero; resolves the scale indeterminacy of the bicubic surface (a uniform per-year shift in log-selectivity otherwise trades off exactly against that year's fishing mortality) |
 
 ---
 

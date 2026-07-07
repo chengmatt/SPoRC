@@ -2437,8 +2437,6 @@ do_srvsel_devs_mapping <- function(input_list, srv_sel_devs_spec, srvsel_devs_sh
 #'   When any fleet uses a non-\code{"none"} type, both
 #'   \code{srvsel_pe_pars_spec} and \code{srv_sel_devs_spec} must be
 #'   specified. Default: \code{"none_Fleet_x"} for each fleet.
-#' @param cont_tv_srv_sel_penalty Logical. Whether to apply penalties to
-#'   continuous time-varying selectivity deviations. Default \code{TRUE}.
 #' @param srvsel_pe_pars_spec Character vector \code{[n_srv_fleets]} or
 #'   \code{NULL}. Sharing structure for process error hyperparameters. See
 #'   \code{\link{do_srvsel_pe_pars_mapping}} for full option descriptions.
@@ -2513,8 +2511,7 @@ do_srvsel_devs_mapping <- function(input_list, srv_sel_devs_spec, srvsel_devs_sh
 #'   defined by the survey selectivity type (age or length).
 #'
 #' @return The input \code{input_list} with selectivity and catchability
-#'   configuration stored in \code{$data} (\code{cont_tv_srv_sel},
-#'   \code{cont_tv_srv_sel_penalty}, \code{srv_sel_blocks},
+#'   configuration stored in \code{$data} (\code{cont_tv_srv_sel}, \code{srv_sel_blocks},
 #'   \code{srv_sel_model}, \code{srv_q_blocks}, \code{srv_q_prior},
 #'   \code{Use_srv_q_prior}, \code{do_srv_q_cov}, \code{srv_q_cov},
 #'   \code{Use_srv_selex_prior}, \code{srv_selex_prior}, \code{t_srv});
@@ -2543,7 +2540,6 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
                                    Use_srv_selex_prior = 0,
                                    srv_selex_prior = NULL,
                                    t_srv = array(1, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_srv_fleets)),
-                                   cont_tv_srv_sel_penalty = TRUE,
                                    srvsel_devs_shared_bins = NULL,
                                    srv_selex_type = 'age',
                                    use_fixed_srv_sel = rep(0, input_list$data$n_srv_fleets),
@@ -2847,7 +2843,6 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
 
   # Populate Data List ------------------------------------------------------
   input_list$data$cont_tv_srv_sel <- cont_tv_srv_sel_mat
-  input_list$data$cont_tv_srv_sel_penalty <- cont_tv_srv_sel_penalty
   input_list$data$srv_sel_blocks <- srv_sel_blocks_arr
   input_list$data$srv_sel_model <- srv_sel_model_arr
   input_list$data$srv_sel_bicubic_binnodes <- srv_sel_bicubic_binnodes_arr

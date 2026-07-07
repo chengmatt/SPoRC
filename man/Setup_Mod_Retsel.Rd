@@ -15,7 +15,6 @@ Setup_Mod_Retsel(
   ret_sel_corr_opt_semipar,
   Use_ret_selex_prior,
   ret_selex_prior,
-  cont_tv_ret_sel_penalty,
   retsel_devs_shared_bins,
   ret_selex_type,
   use_fixed_ret_sel,
@@ -62,6 +61,7 @@ Supported types:
   \item{\code{"nonpar"}}{Non-parametric selectivity defined over discrete age or length bins, where selectivity is estimated as independent parameters (or grouped bins if specified via nonparametric bin mapping). No fixed functional form is imposed.}
   \item{\code{"asymplogist1"}}{Logistic selectivity with \eqn{a_{50}} and slope \eqn{k} and asymptotic control (3 parameters).}
   \item{\code{"asymplogist2"}}{Logistic selectivity with with \eqn{a_{50}} and \eqn{a_{95}} and asymptotic control (3 parameters).}
+  \item{\code{"bicubic"}}{Bicubic spline over a bin-node x year-node grid; see \code{ret_sel_model} in \code{\link{Setup_Mod_Fishsel_and_Q}} for full syntax.}
 }}
 
 \item{retsel_pe_pars_spec}{Specification of process error parameters for
@@ -82,9 +82,6 @@ selectivity priors are used.}
 \item{ret_selex_prior}{Data frame of priors for selectivity parameters.
 Must include columns: \code{region}, \code{fleet}, \code{block}, \code{sex},
 \code{par}, \code{mu}, \code{sd}.}
-
-\item{cont_tv_ret_sel_penalty}{Penalty value applied to continuous
-time-varying selectivity deviations.}
 
 \item{retsel_devs_shared_bins}{Vector defining shared bins for selectivity
 deviation estimation (e.g., age or length grouping structure).}

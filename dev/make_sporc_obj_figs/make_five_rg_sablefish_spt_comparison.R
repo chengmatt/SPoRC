@@ -469,8 +469,6 @@ mapping$srv_fixed_sel_pars <- factor(map_srv_fixed)
 
 # Some starting values to help out the model
 parameters$srv_fixed_sel_pars[] <- log(5)
-parameters$fish_fixed_sel_pars[,,,,1] <- log(5) # fixed gear
-parameters$fish_fixed_sel_pars[,,,,2] <- log(8) # trawl gear
 
 # make AD model function
 # Fit model

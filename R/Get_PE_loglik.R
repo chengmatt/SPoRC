@@ -45,7 +45,8 @@
 #'
 #' @keywords internal
 #' @import RTMB
-Get_Selex_Smoothness_Penalty <- function(sel_vals, wt_bin_curve = 0, wt_bin_diff = 0, wt_yr_diff = 0, wt_yr_curve = 0, wt_dome = 0, wt_mean_center = 0, normalize = TRUE) {
+Get_Selex_Smoothness_Penalty <- function(sel_vals, wt_bin_curve = 0, wt_bin_diff = 0,
+                                         wt_yr_diff = 0, wt_yr_curve = 0, wt_dome = 0, wt_mean_center = 0, normalize = TRUE) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -140,12 +141,6 @@ Get_Selex_Smoothness_Penalty <- function(sel_vals, wt_bin_curve = 0, wt_bin_diff
 #'   \item Separable 2D AR(1) models
 #' }
 #'
-#' An independently-weighted regularization penalty can also be applied via
-#' \code{pen_wts["yr_devs"]} (\code{PE_model} 1--2 only): a first-difference
-#' penalty on log-deviations across years. It defaults to \code{0} (off).
-#' Bin/year curvature and other realized-selectivity-surface penalties are
-#' handled separately, via \code{\link{Get_Selex_Smoothness_Penalty}} in the
-#' "Selectivity Smoothness Penalty" section of \code{SPoRC_rtmb.R}.
 #'
 #' \strong{Note:} The returned value is on the \emph{positive} log-likelihood scale.
 #' It must be negated to obtain a negative log-likelihood contribution, which is
@@ -184,9 +179,6 @@ Get_Selex_Smoothness_Penalty <- function(sel_vals, wt_bin_curve = 0, wt_bin_diff
 #'   carry the same integer value; \code{NA} entries are treated as fixed
 #'   and excluded from likelihood evaluation.
 #'
-#' @param pen_wts Named numeric vector with element \code{"yr_devs"} (any missing
-#'   name is treated as \code{0}). Weights a first-difference-across-years penalty
-#'   on \code{ln_devs} (models 1--2 only). A weight of \code{0} disables it.
 #' @param min_sel_devs_shared_bins Integer vector. Indices of the reference (minimum) bin
 #'   within each shared deviation group, used to subset the bin dimension when
 #'   evaluating GMRF or 2D AR(1) likelihoods (PE models 3-5). When no bin sharing
@@ -201,7 +193,6 @@ Get_sel_PE_loglik <- function(PE_model,
                               PE_pars,
                               ln_devs,
                               map_sel_devs,
-                              pen_wts,
                               min_sel_devs_shared_bins
                               ) {
 
@@ -210,10 +201,6 @@ Get_sel_PE_loglik <- function(PE_model,
 
   # Note that the likelihood calculations are positive within the function,
   # because it gets converted to negative outside the wrapper function
-
-  # Named weight defaults to 0 (off) if not supplied. bin_curve/yr_curve (PE_model 3-5)
-  # are handled by the caller directly via Get_Selex_Smoothness_Penalty, not here.
-  wt_yr_devs = if("yr_devs" %in% names(pen_wts)) pen_wts[["yr_devs"]] else 0
 
   ll = 0 # initialize likelihood
 
@@ -243,18 +230,6 @@ Get_sel_PE_loglik <- function(PE_model,
       } # end random walk process error
 
     } # end dev_idx loop
-
-    # Temporal Stability Penalty (independently weighted; 0 disables it)
-    if(wt_yr_devs != 0) {
-      for(y in 2:n_yrs) {
-        for(s in 1:n_sexes) {
-          for(b in 1:n_bins) {
-            year_penalty = ln_devs[1,y,b,s,1] - ln_devs[1,y-1,b,s,1]
-            ll = ll - wt_yr_devs * year_penalty^2
-          } # end b loop
-        } # end s loop
-      } # end y loop
-    }
 
   } # end iid or random walk process error
 

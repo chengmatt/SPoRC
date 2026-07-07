@@ -171,29 +171,13 @@ test_that("Get_Selex_Smoothness_Penalty works", {
 
 })
 
-test_that("Get_sel_PE_loglik modular penalty weights work", {
+test_that("Get_sel_PE_loglik has no penalty-weight arguments (caller's responsibility now)", {
 
-  test_that("bin_curve/yr_curve pen_wts are ignored by Get_sel_PE_loglik (caller's responsibility now)", {
-    n_yrs <- 5; n_bins <- 4; n_sexes <- 1
-    map_sel_devs <- array(0, dim = c(1, n_yrs, n_bins, n_sexes))
-    map_sel_devs[1,,,1] <- matrix(rep(1:n_bins, each = n_yrs), nrow = n_yrs) # one unique dev per bin, shared across years
-    set.seed(10)
-    ln_devs <- array(rnorm(n_yrs * n_bins) * 0.1, dim = c(1, n_yrs, n_bins, n_sexes, 1))
-    PE_pars <- array(0, dim = c(1, 4, n_sexes, 1))
-
-    ll_zero <- Get_sel_PE_loglik(PE_model = 3, PE_pars = PE_pars, ln_devs = ln_devs, map_sel_devs = map_sel_devs,
-                                 pen_wts = c(yr_devs = 0, bin_curve = 0, yr_curve = 0),
-                                 min_sel_devs_shared_bins = 1:n_bins)
-    ll_pen <- Get_sel_PE_loglik(PE_model = 3, PE_pars = PE_pars, ln_devs = ln_devs, map_sel_devs = map_sel_devs,
-                                pen_wts = c(yr_devs = 1, bin_curve = 1, yr_curve = 1),
-                                min_sel_devs_shared_bins = 1:n_bins)
-
-    # PE_model = 3: yr_devs only applies to PE_model 1-2, and bin_curve/yr_curve are no
-    # longer read here at all -> all three weights are inert, so results must be identical
-    expect_equal(ll_pen, ll_zero, tolerance = 1e-10)
+  test_that("Get_sel_PE_loglik signature no longer accepts pen_wts", {
+    expect_false("pen_wts" %in% names(formals(SPoRC:::Get_sel_PE_loglik)))
   })
 
-  test_that("bin_curve and yr_curve are now applied by the caller via Get_Selex_Smoothness_Penalty, normalized", {
+  test_that("bin_curve and yr_curve smoothness penalties are applied by the caller via Get_Selex_Smoothness_Penalty, normalized", {
     n_yrs <- 5; n_bins <- 4; n_sexes <- 1
     set.seed(11)
     sel_vals <- array(exp(matrix(rnorm(n_yrs * n_bins), nrow = n_yrs)), dim = c(1, n_yrs, n_bins, n_sexes, 1))
@@ -205,21 +189,6 @@ test_that("Get_sel_PE_loglik modular penalty weights work", {
     expect_true(pen_age != pen_base)
     expect_true(pen_yr != pen_base)
     expect_true(pen_age != pen_yr)
-  })
-
-  test_that("yr_devs weight only affects PE_model 1-2, not 3-5", {
-    n_yrs <- 5; n_bins <- 4; n_sexes <- 1
-    map_sel_devs <- array(0, dim = c(1, n_yrs, n_bins, n_sexes))
-    map_sel_devs[1,,,1] <- matrix(rep(1:n_bins, each = n_yrs), nrow = n_yrs) # one unique dev per bin, shared across years
-    set.seed(12)
-    ln_devs <- array(rnorm(n_yrs * n_bins) * 0.1, dim = c(1, n_yrs, n_bins, n_sexes, 1))
-    PE_pars <- array(0, dim = c(1, 4, n_sexes, 1))
-
-    ll_no_yrdevs <- Get_sel_PE_loglik(1, PE_pars, ln_devs, map_sel_devs,
-                                      pen_wts = c(yr_devs = 0, bin_curve = 0, yr_curve = 0), 1:n_bins)
-    ll_yrdevs <- Get_sel_PE_loglik(1, PE_pars, ln_devs, map_sel_devs,
-                                   pen_wts = c(yr_devs = 1, bin_curve = 0, yr_curve = 0), 1:n_bins)
-    expect_true(ll_yrdevs != ll_no_yrdevs)
   })
 
 })

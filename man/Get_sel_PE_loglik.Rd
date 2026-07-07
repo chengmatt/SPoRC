@@ -9,7 +9,6 @@ Get_sel_PE_loglik(
   PE_pars,
   ln_devs,
   map_sel_devs,
-  pen_wts,
   min_sel_devs_shared_bins
 )
 }
@@ -47,10 +46,6 @@ mapping deviations to unique estimated parameters. Shared deviations
 carry the same integer value; \code{NA} entries are treated as fixed
 and excluded from likelihood evaluation.}
 
-\item{pen_wts}{Named numeric vector with element \code{"yr_devs"} (any missing
-name is treated as \code{0}). Weights a first-difference-across-years penalty
-on \code{ln_devs} (models 1--2 only). A weight of \code{0} disables it.}
-
 \item{min_sel_devs_shared_bins}{Integer vector. Indices of the reference (minimum) bin
 within each shared deviation group, used to subset the bin dimension when
 evaluating GMRF or 2D AR(1) likelihoods (PE models 3-5). When no bin sharing
@@ -74,12 +69,6 @@ The function supports:
   \item Separable 2D AR(1) models
 }
 
-An independently-weighted regularization penalty can also be applied via
-\code{pen_wts["yr_devs"]} (\code{PE_model} 1--2 only): a first-difference
-penalty on log-deviations across years. It defaults to \code{0} (off).
-Bin/year curvature and other realized-selectivity-surface penalties are
-handled separately, via \code{\link{Get_Selex_Smoothness_Penalty}} in the
-"Selectivity Smoothness Penalty" section of \code{SPoRC_rtmb.R}.
 
 \strong{Note:} The returned value is on the \emph{positive} log-likelihood scale.
 It must be negated to obtain a negative log-likelihood contribution, which is

@@ -2223,7 +2223,6 @@ SPoRC_rtmb = function(pars, data) {
                                                 PE_pars = fishsel_pe_pars[r,,,f, drop = FALSE], # process error parameters for a given fleet (correlaiton and sigmas)
                                                 ln_devs = ln_fishsel_devs[r,,,,f, drop = FALSE], # extract out process error deviations for a given fleet
                                                 map_sel_devs = map_ln_fishsel_devs[r,,,,f, drop = FALSE],
-                                                pen_wts = fish_sel_pen_wts,
                                                 min_sel_devs_shared_bins = fishsel_devs_min_shared_bins
 
         )
@@ -2236,7 +2235,6 @@ SPoRC_rtmb = function(pars, data) {
                                                 PE_pars = retsel_pe_pars[r,,,f, drop = FALSE], # process error parameters for a given fleet (correlaiton and sigmas)
                                                 ln_devs = ln_retsel_devs[r,,,,f, drop = FALSE], # extract out process error deviations for a given fleet
                                                 map_sel_devs = map_ln_retsel_devs[r,,,,f, drop = FALSE],
-                                                pen_wts = ret_sel_pen_wts,
                                                 min_sel_devs_shared_bins = retsel_devs_min_shared_bins
 
         )
@@ -2252,7 +2250,6 @@ SPoRC_rtmb = function(pars, data) {
                                                 PE_pars = srvsel_pe_pars[r,,,sf, drop = FALSE], # process error parameters for a given fleet (correlaiton and sigmas)
                                                 ln_devs = ln_srvsel_devs[r,,,,sf, drop = FALSE], # extract out process error deviations for a given fleet
                                                 map_sel_devs = map_ln_srvsel_devs[r,,,,sf, drop = FALSE],
-                                                pen_wts = srv_sel_pen_wts,
                                                 min_sel_devs_shared_bins = srvsel_devs_min_shared_bins
 
         )
@@ -2262,7 +2259,7 @@ SPoRC_rtmb = function(pars, data) {
   } # end r loop
 
 
-  ### Selectivity Smoothness Penalty ----
+  ### Selectivity Smoothness (Penalty) --------------------------------------------------
   smooth_pen_terms = c("smooth_bin_curve", "smooth_bin_diff", "smooth_yr_diff", "smooth_yr_curve", "smooth_dome", "smooth_mean_center")
   for(r in 1:n_regions) {
 

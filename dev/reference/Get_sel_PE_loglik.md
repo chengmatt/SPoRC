@@ -12,7 +12,6 @@ Get_sel_PE_loglik(
   PE_pars,
   ln_devs,
   map_sel_devs,
-  pen_wts,
   min_sel_devs_shared_bins
 )
 ```
@@ -64,12 +63,6 @@ Get_sel_PE_loglik(
   integer value; `NA` entries are treated as fixed and excluded from
   likelihood evaluation.
 
-- pen_wts:
-
-  Named numeric vector with element `"yr_devs"` (any missing name is
-  treated as `0`). Weights a first-difference-across-years penalty on
-  `ln_devs` (models 1–2 only). A weight of `0` disables it.
-
 - min_sel_devs_shared_bins:
 
   Integer vector. Indices of the reference (minimum) bin within each
@@ -96,14 +89,6 @@ The function supports:
   variance)
 
 - Separable 2D AR(1) models
-
-An independently-weighted regularization penalty can also be applied via
-`pen_wts["yr_devs"]` (`PE_model` 1–2 only): a first-difference penalty
-on log-deviations across years. It defaults to `0` (off). Bin/year
-curvature and other realized-selectivity-surface penalties are handled
-separately, via
-[`Get_Selex_Smoothness_Penalty`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex_Smoothness_Penalty.md)
-in the "Selectivity Smoothness Penalty" section of `SPoRC_rtmb.R`.
 
 **Note:** The returned value is on the *positive* log-likelihood scale.
 It must be negated to obtain a negative log-likelihood contribution,

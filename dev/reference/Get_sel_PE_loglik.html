@@ -50,7 +50,6 @@ structures.</p>
 <span>  <span class="va">PE_pars</span>,</span>
 <span>  <span class="va">ln_devs</span>,</span>
 <span>  <span class="va">map_sel_devs</span>,</span>
-<span>  <span class="va">pen_wts</span>,</span>
 <span>  <span class="va">min_sel_devs_shared_bins</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -96,12 +95,6 @@ carry the same integer value; <code>NA</code> entries are treated as fixed
 and excluded from likelihood evaluation.</p></dd>
 
 
-<dt id="arg-pen-wts">pen_wts<a class="anchor" aria-label="anchor" href="#arg-pen-wts"></a></dt>
-<dd><p>Named numeric vector with element <code>"yr_devs"</code> (any missing
-name is treated as <code>0</code>). Weights a first-difference-across-years penalty
-on <code>ln_devs</code> (models 1–2 only). A weight of <code>0</code> disables it.</p></dd>
-
-
 <dt id="arg-min-sel-devs-shared-bins">min_sel_devs_shared_bins<a class="anchor" aria-label="anchor" href="#arg-min-sel-devs-shared-bins"></a></dt>
 <dd><p>Integer vector. Indices of the reference (minimum) bin
 within each shared deviation group, used to subset the bin dimension when
@@ -120,13 +113,7 @@ is specified, defaults to <code>1:n_bins</code> (i.e., all bins are included).</
 <li><p>Random walk process error</p></li>
 <li><p>3D Gaussian Markov Random Field (GMRF) models (marginal or conditional variance)</p></li>
 <li><p>Separable 2D AR(1) models</p></li>
-</ul><p>An independently-weighted regularization penalty can also be applied via
-<code>pen_wts["yr_devs"]</code> (<code>PE_model</code> 1–2 only): a first-difference
-penalty on log-deviations across years. It defaults to <code>0</code> (off).
-Bin/year curvature and other realized-selectivity-surface penalties are
-handled separately, via <code><a href="Get_Selex_Smoothness_Penalty.html">Get_Selex_Smoothness_Penalty</a></code> in the
-"Selectivity Smoothness Penalty" section of <code>SPoRC_rtmb.R</code>.</p>
-<p><strong>Note:</strong> The returned value is on the <em>positive</em> log-likelihood scale.
+</ul><p><strong>Note:</strong> The returned value is on the <em>positive</em> log-likelihood scale.
 It must be negated to obtain a negative log-likelihood contribution, which is
 handled outside this function.</p>
     </div>

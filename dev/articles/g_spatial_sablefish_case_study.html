@@ -672,11 +672,7 @@ catchability is not estimated as no fishery indices are utilized
 <span></span>
 <span><span class="co"># Map off bmax for trawl females</span></span>
 <span><span class="va">map_fish_fixed</span><span class="op">[</span>,<span class="fl">1</span>,<span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">2</span><span class="op">]</span>  <span class="op">&lt;-</span> <span class="va">map_fish_fixed</span><span class="op">[</span>,<span class="fl">1</span>,<span class="fl">1</span>,<span class="fl">1</span>,<span class="fl">2</span><span class="op">]</span> <span class="co"># share deltas</span></span>
-<span><span class="va">input_list</span><span class="op">$</span><span class="va">map</span><span class="op">$</span><span class="va">fish_fixed_sel_pars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">map_fish_fixed</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># starting values</span></span>
-<span><span class="va">parameters</span><span class="op">$</span><span class="va">fish_fixed_sel_pars</span><span class="op">[</span>,,,,<span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span> <span class="co"># fixed gear</span></span>
-<span><span class="va">parameters</span><span class="op">$</span><span class="va">fish_fixed_sel_pars</span><span class="op">[</span>,,,,<span class="fl">2</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">8</span><span class="op">)</span> <span class="co"># trawl gear</span></span></code></pre></div>
+<span><span class="va">input_list</span><span class="op">$</span><span class="va">map</span><span class="op">$</span><span class="va">fish_fixed_sel_pars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">map_fish_fixed</span><span class="op">)</span></span></code></pre></div>
 <p>Again, the same arguments are expected for setting up survey
 selectivity, and there are similarly some nuanced parameter fixing and
 sharing to help facilitate model stability.</p>

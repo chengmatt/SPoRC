@@ -599,10 +599,6 @@ map_fish_fixed[,2,1,2,1]  <- map_fish_fixed[,2,1,1,1] # share deltas
 # Map off bmax for trawl females
 map_fish_fixed[,1,1,2,2]  <- map_fish_fixed[,1,1,1,2] # share deltas
 input_list$map$fish_fixed_sel_pars <- factor(map_fish_fixed)
-
-# starting values
-parameters$fish_fixed_sel_pars[,,,,1] <- log(5) # fixed gear
-parameters$fish_fixed_sel_pars[,,,,2] <- log(8) # trawl gear
 ```
 
 Again, the same arguments are expected for setting up survey

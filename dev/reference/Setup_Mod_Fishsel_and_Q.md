@@ -24,7 +24,6 @@ Setup_Mod_Fishsel_and_Q(
   corr_opt_semipar = NULL,
   Use_fish_selex_prior = 0,
   fish_selex_prior = NULL,
-  cont_tv_fish_sel_penalty = TRUE,
   fishsel_devs_shared_bins = NULL,
   fish_selex_type = "age",
   use_fixed_fish_sel = rep(0, input_list$data$n_fish_fleets),
@@ -39,7 +38,6 @@ Setup_Mod_Fishsel_and_Q(
   ret_sel_corr_opt_semipar = NULL,
   Use_ret_selex_prior = 0,
   ret_selex_prior = NULL,
-  cont_tv_ret_sel_penalty = TRUE,
   retsel_devs_shared_bins = NULL,
   ret_selex_type = "age",
   use_fixed_ret_sel = rep(1, input_list$data$n_fish_fleets),
@@ -243,11 +241,6 @@ Setup_Mod_Fishsel_and_Q(
   functional form), `mu`, `sd`. Only used when
   `Use_fish_selex_prior = 1`.
 
-- cont_tv_fish_sel_penalty:
-
-  Logical. If `TRUE` (default), applies a penalty on the continuous
-  time-varying selectivity deviations to regularise the process.
-
 - fishsel_devs_shared_bins:
 
   List of integer vectors grouping age or length bins that share a
@@ -383,6 +376,15 @@ Setup_Mod_Fishsel_and_Q(
   :   Logistic selectivity with with \\a\_{50}\\ and \\a\_{95}\\ and
       asymptotic control (3 parameters).
 
+  `"bicubic"`
+
+  :   Bicubic spline over a bin-node x year-node grid, specified as
+      `"bicubic_Bin_<n_bin_nodes>_Yr_<n_yr_nodes>_Fleet_x"` (optionally
+      with `_Block_k`, `_SelStyr_<year>`, and/or `_NSelBins_<n>`); see
+      `fish_sel_model` above for the full syntax and
+      [`Get_Selex`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex.md)
+      (`Selex_Model == 8`) for the underlying math.
+
   See the model equations vignette for mathematical definitions.
 
 - retsel_pe_pars_spec:
@@ -429,11 +431,6 @@ Setup_Mod_Fishsel_and_Q(
 
   Data frame of selectivity prior hyperparameters. Required columns:
   `region`, `fleet`, `block`, `sex`, `par`, `mu`, `sd`.
-
-- cont_tv_ret_sel_penalty:
-
-  Logical. If `TRUE` (default), applies a penalty on the continuous
-  time-varying selectivity deviations to regularise the process.
 
 - retsel_devs_shared_bins:
 

@@ -4,15 +4,8 @@ Regularization penalty operating directly on a realized
 selectivity-at-bin-at-year surface, rather than on any particular
 parameterization's deviations. Because it only ever looks at the
 resulting selectivity values, it applies uniformly to any selectivity
-functional form – semi-parametric process-error models (`TimeVary_Model`
-3–5, via
-[`Get_sel_PE_loglik`](https://chengmatt.github.io/SPoRC/dev/reference/Get_sel_PE_loglik.md))
-and the bicubic / cubic spline (`Selex_Model == 8`, via
-[`Get_Selex`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex.md))
-alike. This is the "modular" building block behind SPoRC's
-independently-weighted selectivity penalty terms: each term below is
-switched off by setting its weight to 0, and terms can be combined
-freely without one implicit shared on/off flag.
+functional form and any fleet, called once per fleet from the
+"Selectivity Smoothness Penalty" section of `SPoRC_rtmb.R`.
 
 ## Usage
 
@@ -73,12 +66,8 @@ Get_Selex_Smoothness_Penalty(
 
   Non-negative weight on the dome-shape (non-monotonicity) penalty: for
   each year, penalizes any decrease in log-selectivity moving from one
-  bin to the next (i.e. discourages, but does not forbid, dome shapes),
-  matching ADMB's `sel_like` dome penalty (`lambda(3)`) for
-  double-logistic / spline selectivity forms. `0` (default) disables
-  this term. Uses `max(., 0)` (an RTMB/CppAD-safe smooth hinge; direct
-  `if()` branching on AD types is unsupported) so only decreases, not
-  increases, are penalized.
+  bin to the next (i.e. discourages, but does not forbid, dome shaped
+  dynamics. `0` (default) disables this term.
 
 - wt_mean_center:
 
@@ -91,11 +80,7 @@ Get_Selex_Smoothness_Penalty(
 
   Logical. If `TRUE` (default), `wt_bin_curve` is divided by the number
   of bins and `wt_yr_diff`/`wt_yr_curve` are divided by the number of
-  years. Set to `FALSE` to reproduce the older, unnormalized bin/year
-  curvature penalty used by
-  [`Get_sel_PE_loglik`](https://chengmatt.github.io/SPoRC/dev/reference/Get_sel_PE_loglik.md)
-  for the semi-parametric process-error models (`TimeVary_Model` 3–5) –
-  `Get_sel_PE_loglik` always calls this with `normalize = FALSE`.
+  years. `SPoRC_rtmb.R` always calls this with `normalize = TRUE`.
 
 ## Value
 

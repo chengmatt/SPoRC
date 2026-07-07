@@ -82,7 +82,6 @@ internal helpers (<code><a href="do_srv_fixed_sel_pars_mapping.html">do_srv_fixe
 <span>  srv_selex_prior <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  t_srv <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">1</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>,</span>
 <span>    <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  cont_tv_srv_sel_penalty <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  srvsel_devs_shared_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  srv_selex_type <span class="op">=</span> <span class="st">"age"</span>,</span>
 <span>  use_fixed_srv_sel <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span>,</span>
@@ -289,11 +288,6 @@ season (seasonal models), array
 (end of period).</p></dd>
 
 
-<dt id="arg-cont-tv-srv-sel-penalty">cont_tv_srv_sel_penalty<a class="anchor" aria-label="anchor" href="#arg-cont-tv-srv-sel-penalty"></a></dt>
-<dd><p>Logical. Whether to apply penalties to
-continuous time-varying selectivity deviations. Default <code>TRUE</code>.</p></dd>
-
-
 <dt id="arg-srvsel-devs-shared-bins">srvsel_devs_shared_bins<a class="anchor" aria-label="anchor" href="#arg-srvsel-devs-shared-bins"></a></dt>
 <dd><p>List of integer vectors defining bin groups
 for age/length-sharing of deviations under semi-parametric forms (e.g.,
@@ -335,8 +329,7 @@ parameters.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>The input <code>input_list</code> with selectivity and catchability
-  configuration stored in <code>$data</code> (<code>cont_tv_srv_sel</code>,
-  <code>cont_tv_srv_sel_penalty</code>, <code>srv_sel_blocks</code>,
+  configuration stored in <code>$data</code> (<code>cont_tv_srv_sel</code>, <code>srv_sel_blocks</code>,
   <code>srv_sel_model</code>, <code>srv_q_blocks</code>, <code>srv_q_prior</code>,
   <code>Use_srv_q_prior</code>, <code>do_srv_q_cov</code>, <code>srv_q_cov</code>,
   <code>Use_srv_selex_prior</code>, <code>srv_selex_prior</code>, <code>t_srv</code>);

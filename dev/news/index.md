@@ -55,9 +55,9 @@
 - Changed parameter names of ln_srv_fixed_sel_pars and
   ln_fish_fixed_sel_pars to srv_fixed_sel_pars and fish_fixed_sel_pars
   for clarity.
-- Included new options to estimate non-parametric selectivity, logistic
-  selectivity with an asymptote parameter, as well as provide fixed
-  selectivity (fishery, retention, and survey) inputs.
+- Included new options to estimate non-parametric selectivity, bicubic
+  selectivity, logistic selectivity with an asymptote parameter, as well
+  as provide fixed selectivity (fishery, retention, and survey) inputs.
 - Changed dimensions of init_F_prop to be region, season, and
   fleet-specific (as opposed to just being based on the first fishery
   fleet).
@@ -68,6 +68,16 @@
 - Force non-parametric selectivity to be mean-standardized.
 - Added OSA residuals and `oneStepPredict` functionality to time-series
   observations (indices and catch).
+- Consolidated selectivity smoothness/regularization penalties into a
+  single set of six weights (`smooth_bin_curve`, `smooth_bin_diff`,
+  `smooth_yr_diff`, `smooth_yr_curve`, `smooth_dome`,
+  `smooth_mean_center`) set via
+  `fish_sel_pen_wts`/`ret_sel_pen_wts`/`srv_sel_pen_wts` in
+  `Setup_Mod_Weighting`, evaluated directly on the realized selectivity
+  surface so they apply uniformly to any selectivity functional form and
+  fleet. Removed the old `cont_tv_*_sel_penalty` on/off flags and the
+  legacy `bin_curve`/`yr_curve` terms; all six weights now default to
+  `0` (off) unless explicitly set.
 
 ### Improvements
 

@@ -228,56 +228,50 @@ Setup_Mod_Weighting(
 - fish_sel_pen_wts:
 
   `NULL` (default), or a named numeric vector/list with independent
-  weights for any subset of nine selectivity penalty terms (see
-  [`resolve_sel_pen_wts`](https://chengmatt.github.io/SPoRC/dev/reference/resolve_sel_pen_wts.md)),
-  replacing single implicit-weight-1 on/off flags with independently
-  settable weights for the total fishery selectivity penalty:
+  weights for any subset of six selectivity smoothness penalty terms
+  (see
+  [`resolve_sel_pen_wts`](https://chengmatt.github.io/SPoRC/dev/reference/resolve_sel_pen_wts.md)
+  and
+  [`Get_Selex_Smoothness_Penalty`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex_Smoothness_Penalty.md)),
+  evaluated directly on the fleet's realized selectivity-at-bin-at-year
+  surface and so applicable to any selectivity functional form:
 
-  `"yr_devs"`
+  `"smooth_bin_curve"`
 
-  :   First-difference-across-years penalty on the continuous
-      time-varying deviations (`TimeVary_Model` 1-2 only).
+  :   Second-difference (curvature) penalty across bins.
 
-  `"bin_curve"`, `"yr_curve"`
+  `"smooth_bin_diff"`
 
-  :   Second-difference (curvature) penalties on the realized
-      log-selectivity surface across bins and across years, respectively
-      (`TimeVary_Model` 3-5 only).
+  :   Unconditional first-difference penalty across bins.
 
-  `"smooth_bin_curve"`, `"smooth_bin_diff"`, `"smooth_yr_diff"`, `"smooth_yr_curve"`, `"smooth_dome"`, `"smooth_mean_center"`
+  `"smooth_yr_diff"`
 
-  :   see
-      [`Get_Selex_Smoothness_Penalty`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex_Smoothness_Penalty.md):
-      bin curvature, unconditional bin first difference, inter-annual
-      first difference, inter-annual second difference, dome-shape, and
-      a per-year mean-centering regularization. These six terms operate
-      directly on the fleet's *realized* selectivity surface (not on any
-      particular parameterization's deviations), so they apply to *any*
-      selectivity functional form – e.g. a nonparametric
-      (`Selex_Model == 5`) fleet with discrete time blocks can use them
-      to regularize curvature/stability across those blocks, bridging an
-      ADMB assessment's coefficient selectivity held constant between
-      "selectivity change years" (see the model equations vignette for a
-      worked example).
+  :   First-difference penalty across years.
 
-  When `NULL`, the first three terms fall back to weight `1` and the six
-  `"smooth_*"` terms are always `0`. Must be called after
+  `"smooth_yr_curve"`
+
+  :   Second-difference (curvature) penalty across years.
+
+  `"smooth_dome"`
+
+  :   Dome-shape (non-monotonicity) penalty across bins.
+
+  `"smooth_mean_center"`
+
+  :   Per-year mean-centering regularization.
+
+  Any name not supplied defaults to `0` (off). Must be called after
   `Setup_Mod_Fishsel_and_Q`.
 
 - ret_sel_pen_wts:
 
   Same format as `fish_sel_pen_wts`, for the retained fishery
-  selectivity penalty. Falls back to the legacy
-  `cont_tv_ret_sel_penalty` flag (set via
-  [`Setup_Mod_Fishsel_and_Q`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Fishsel_and_Q.md))
-  when `NULL`.
+  selectivity penalty.
 
 - srv_sel_pen_wts:
 
   Same format as `fish_sel_pen_wts`, for the survey selectivity penalty.
-  Falls back to the legacy `cont_tv_srv_sel_penalty` flag (set via
-  [`Setup_Mod_Srvsel_and_Q`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Srvsel_and_Q.md))
-  when `NULL`. Must be called after `Setup_Mod_Srvsel_and_Q`.
+  Must be called after `Setup_Mod_Srvsel_and_Q`.
 
 ## Value
 

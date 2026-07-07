@@ -280,51 +280,41 @@ Default: array of <code>1</code>s.</p></dd>
 
 <dt id="arg-fish-sel-pen-wts">fish_sel_pen_wts<a class="anchor" aria-label="anchor" href="#arg-fish-sel-pen-wts"></a></dt>
 <dd><p><code>NULL</code> (default), or a named numeric vector/list
-with independent weights for any subset of nine selectivity penalty terms
-(see <code><a href="resolve_sel_pen_wts.html">resolve_sel_pen_wts</a></code>), replacing single implicit-weight-1
-on/off flags with independently settable weights for the total fishery
-selectivity penalty:</p><dl><dt><code>"yr_devs"</code></dt>
-<dd><p>First-difference-across-years penalty on the
-    continuous time-varying deviations (<code>TimeVary_Model</code> 1-2 only).</p></dd>
+with independent weights for any subset of six selectivity smoothness
+penalty terms (see <code><a href="resolve_sel_pen_wts.html">resolve_sel_pen_wts</a></code> and
+<code><a href="Get_Selex_Smoothness_Penalty.html">Get_Selex_Smoothness_Penalty</a></code>), evaluated directly on the
+fleet's realized selectivity-at-bin-at-year surface and so applicable to
+any selectivity functional form:</p><dl><dt><code>"smooth_bin_curve"</code></dt>
+<dd><p>Second-difference (curvature) penalty across bins.</p></dd>
 
-  <dt><code>"bin_curve"</code>, <code>"yr_curve"</code></dt>
-<dd><p>Second-difference (curvature)
-    penalties on the realized log-selectivity surface across bins and
-    across years, respectively (<code>TimeVary_Model</code> 3-5 only).</p></dd>
+  <dt><code>"smooth_bin_diff"</code></dt>
+<dd><p>Unconditional first-difference penalty across bins.</p></dd>
 
-  <dt><code>"smooth_bin_curve"</code>, <code>"smooth_bin_diff"</code>,
-    <code>"smooth_yr_diff"</code>, <code>"smooth_yr_curve"</code>, <code>"smooth_dome"</code>,
-    <code>"smooth_mean_center"</code></dt>
-<dd><p>see
-    <code><a href="Get_Selex_Smoothness_Penalty.html">Get_Selex_Smoothness_Penalty</a></code>: bin curvature, unconditional bin
-    first difference, inter-annual first difference, inter-annual second
-    difference, dome-shape, and a per-year mean-centering regularization.
-    These six terms operate directly on the fleet's <em>realized</em>
-    selectivity surface (not on any particular parameterization's
-    deviations), so they apply to <em>any</em> selectivity functional form
-    – e.g. a nonparametric (<code>Selex_Model == 5</code>) fleet with discrete
-    time blocks can use them to regularize curvature/stability across
-    those blocks, bridging an ADMB assessment's coefficient selectivity
-    held constant between "selectivity change years" (see the model
-    equations vignette for a worked example).</p></dd>
+  <dt><code>"smooth_yr_diff"</code></dt>
+<dd><p>First-difference penalty across years.</p></dd>
+
+  <dt><code>"smooth_yr_curve"</code></dt>
+<dd><p>Second-difference (curvature) penalty across years.</p></dd>
+
+  <dt><code>"smooth_dome"</code></dt>
+<dd><p>Dome-shape (non-monotonicity) penalty across bins.</p></dd>
+
+  <dt><code>"smooth_mean_center"</code></dt>
+<dd><p>Per-year mean-centering regularization.</p></dd>
 
 
-</dl><p>When <code>NULL</code>, the first three terms fall back to weight <code>1</code> and the six <code>"smooth_*"</code> terms are always
-<code>0</code>. Must be called after <code>Setup_Mod_Fishsel_and_Q</code>.</p></dd>
+</dl><p>Any name not supplied defaults to <code>0</code> (off). Must be called after
+<code>Setup_Mod_Fishsel_and_Q</code>.</p></dd>
 
 
 <dt id="arg-ret-sel-pen-wts">ret_sel_pen_wts<a class="anchor" aria-label="anchor" href="#arg-ret-sel-pen-wts"></a></dt>
 <dd><p>Same format as <code>fish_sel_pen_wts</code>, for the
-retained fishery selectivity penalty. Falls back to the legacy
-<code>cont_tv_ret_sel_penalty</code> flag (set via
-<code><a href="Setup_Mod_Fishsel_and_Q.html">Setup_Mod_Fishsel_and_Q</a></code>) when <code>NULL</code>.</p></dd>
+retained fishery selectivity penalty.</p></dd>
 
 
 <dt id="arg-srv-sel-pen-wts">srv_sel_pen_wts<a class="anchor" aria-label="anchor" href="#arg-srv-sel-pen-wts"></a></dt>
 <dd><p>Same format as <code>fish_sel_pen_wts</code>, for the
-survey selectivity penalty. Falls back to the legacy
-<code>cont_tv_srv_sel_penalty</code> flag (set via
-<code><a href="Setup_Mod_Srvsel_and_Q.html">Setup_Mod_Srvsel_and_Q</a></code>) when <code>NULL</code>. Must be called
+survey selectivity penalty. Must be called
 after <code>Setup_Mod_Srvsel_and_Q</code>.</p></dd>
 
 </dl></div>

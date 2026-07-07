@@ -1296,22 +1296,36 @@ deviations, 2: random walk, 3: 3D GMRF with marginal variance
 Get_3d_precision.R, and Get_Selex.R</td>
 </tr>
 <tr class="even">
-<td>cont_tv_fish_sel_penalty</td>
-<td>Boolean specifying whether penalties are applied to continuous
-time-varying fishery selectivity deviations</td>
-</tr>
-<tr class="odd">
 <td>fish_sel_blocks</td>
 <td>Array dimensioned by n_regions, n_years, n_fish_fleets specifying
 selectivity time blocks. Unique integers denote distinct selectivity
 parameter blocks</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>fish_sel_model</td>
 <td>Array dimensioned by n_regions, n_years, n_fish_fleets specifying
 the selectivity functional form. 0: Logistic (a50 and slope), 1: Gamma
 dome-shaped, 2: Power function, 3: Logistic (a50 and a95), 4: Double
-Normal (6 parameters). Further details in Get_Selex.R</td>
+Normal (6 parameters), 5: Non-parametric, 6/7: Logistic with asymptote,
+8: Bicubic spline. Further details in Get_Selex.R</td>
+</tr>
+<tr class="even">
+<td>fish_sel_bicubic_binnodes, fish_sel_bicubic_yrnodes</td>
+<td>Arrays dimensioned by n_regions, n_years, n_fish_fleets giving the
+number of bin/year spline nodes where fish_sel_model == 8; 0
+elsewhere</td>
+</tr>
+<tr class="odd">
+<td>fish_sel_bicubic_selstyr, fish_sel_bicubic_nselbins</td>
+<td>Arrays dimensioned by n_regions, n_years, n_fish_fleets giving the
+optional fitted-region restrictions (start year, number of bins) for
+bicubic blocks; 0 means unrestricted</td>
+</tr>
+<tr class="even">
+<td>fish_sel_bicubic_Wbin, fish_sel_bicubic_Wyr</td>
+<td>Precomputed natural-cubic-spline interpolation weight matrices
+mapping bin-node/year-node values onto every bin/year, for bicubic
+blocks</td>
 </tr>
 <tr class="odd">
 <td>fish_selex_type</td>
@@ -1366,6 +1380,14 @@ each shared deviation group, used to subset the bin dimension when
 evaluating GMRF or 2D AR(1) likelihoods (PE models 3–5). Defaults to
 1:n_ages when no bin sharing is specified</td>
 </tr>
+<tr class="even">
+<td>fish_sel_pen_wts</td>
+<td>Named list/vector of smoothness penalty weights (smooth_bin_curve,
+smooth_bin_diff, smooth_yr_diff, smooth_yr_curve, smooth_dome,
+smooth_mean_center) evaluated on the realized fishery selectivity
+surface; unset names default to 0. See
+Get_Selex_Smoothness_Penalty.R</td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -1389,21 +1411,23 @@ and how continuous time-varying retention selectivity is applied. Same
 options as cont_tv_fish_sel</td>
 </tr>
 <tr class="even">
-<td>cont_tv_ret_sel_penalty</td>
-<td>Boolean specifying whether penalties are applied to continuous
-time-varying retention selectivity deviations</td>
-</tr>
-<tr class="odd">
 <td>ret_sel_blocks</td>
 <td>Array dimensioned by n_regions, n_years, n_fish_fleets specifying
 retention selectivity time blocks. Unique integers denote distinct
 retention selectivity parameter blocks</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>ret_sel_model</td>
 <td>Array dimensioned by n_regions, n_years, n_fish_fleets specifying
 the retention selectivity functional form. Same options as
-fish_sel_model</td>
+fish_sel_model, including bicubic (8)</td>
+</tr>
+<tr class="even">
+<td>ret_sel_bicubic_binnodes, ret_sel_bicubic_yrnodes,
+ret_sel_bicubic_selstyr, ret_sel_bicubic_nselbins, ret_sel_bicubic_Wbin,
+ret_sel_bicubic_Wyr</td>
+<td>Same meaning as their fish_sel_bicubic_* counterparts, for
+retention</td>
 </tr>
 <tr class="odd">
 <td>ret_selex_type</td>
@@ -1437,6 +1461,11 @@ bin sharing is specified</td>
 <td>Array indicating which continuous time-varying retention selectivity
 deviation values are fixed (mapped off)</td>
 </tr>
+<tr class="odd">
+<td>ret_sel_pen_wts</td>
+<td>Same format as fish_sel_pen_wts, evaluated on the realized retention
+selectivity surface</td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -1463,22 +1492,23 @@ deviations, 2: random walk, 3: 3D GMRF with marginal variance
 Get_3d_precision.R, and Get_Selex.R</td>
 </tr>
 <tr class="even">
-<td>cont_tv_srv_sel_penalty</td>
-<td>Boolean specifying whether penalties are applied to continuous
-time-varying survey selectivity deviations</td>
-</tr>
-<tr class="odd">
 <td>srv_sel_blocks</td>
 <td>Array dimensioned by n_regions, n_years, n_srv_fleets specifying
 selectivity time blocks. Unique integers denote distinct selectivity
 parameter blocks</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>srv_sel_model</td>
 <td>Array dimensioned by n_regions, n_years, n_srv_fleets specifying the
-selectivity functional form. 0: Logistic (a50 and slope), 1: Gamma
-dome-shaped, 2: Power function, 3: Logistic (a50 and a95), 4: Double
-Normal (6 parameters). Further details in Get_Selex.R</td>
+selectivity functional form. Same options as fish_sel_model, including
+bicubic (8). Further details in Get_Selex.R</td>
+</tr>
+<tr class="even">
+<td>srv_sel_bicubic_binnodes, srv_sel_bicubic_yrnodes,
+srv_sel_bicubic_selstyr, srv_sel_bicubic_nselbins, srv_sel_bicubic_Wbin,
+srv_sel_bicubic_Wyr</td>
+<td>Same meaning as their fish_sel_bicubic_* counterparts, for survey
+selectivity</td>
 </tr>
 <tr class="odd">
 <td>srv_selex_type</td>
@@ -1532,6 +1562,11 @@ for one selectivity parameter</td>
 each shared deviation group, used to subset the bin dimension when
 evaluating GMRF or 2D AR(1) likelihoods (PE models 3–5). Defaults to
 1:n_ages when no bin sharing is specified</td>
+</tr>
+<tr class="even">
+<td>srv_sel_pen_wts</td>
+<td>Same format as fish_sel_pen_wts, evaluated on the realized survey
+selectivity surface</td>
 </tr>
 </tbody>
 </table>

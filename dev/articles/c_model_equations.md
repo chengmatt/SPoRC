@@ -2054,17 +2054,7 @@ process is defined as:
 ```
 
 where $`\rho_{y}`$ and $`\rho_{b}`$ are correlation coefficients across
-years and bins, respectively. Moreover, when semi-parametric deviations
-are specified, additional optional penalties can be applied across bins
-and years to enforce curvature control:
-
-``` math
-P_{SelBinCurve} = \sum_{r = 1}^{n_{r}}{\sum_{j = 1}^{n_{j}}{\sum_{s = 1}^{n_{s}}{\sum_{y = 1}^{n_{y}}{\sum_{b = 2}^{n_{b} - 1}\left( \log\left( {Sel}_{r,y,b + 1,s,j} \right) - 2\log\left( {Sel}_{r,y,b,s,j} \right) + \log\left( {Sel}_{r,y,b - 1,s,j} \right) \right)^{2}}}}}
-```
-
-``` math
-P_{SelYrCurve} = \sum_{r = 1}^{n_{r}}{\sum_{j = 1}^{n_{j}}{\sum_{s = 1}^{n_{s}}{\sum_{y = 2}^{n_{y} - 1}{\sum_{b = 1}^{n_{b}}\left( \log\left( {Sel}_{r,y + 1,b,s,j} \right) - 2\log\left( {Sel}_{r,y,b,s,j} \right) + \log\left( {Sel}_{r,y - 1,b,s,j} \right) \right)^{2}}}}}
-```
+years and bins, respectively.
 
 ##### Selectivity Smoothness Penalties
 

@@ -21,7 +21,6 @@ Setup_Mod_Retsel(
   ret_sel_corr_opt_semipar,
   Use_ret_selex_prior,
   ret_selex_prior,
-  cont_tv_ret_sel_penalty,
   retsel_devs_shared_bins,
   ret_selex_type,
   use_fixed_ret_sel,
@@ -120,6 +119,13 @@ Setup_Mod_Retsel(
   :   Logistic selectivity with with \\a\_{50}\\ and \\a\_{95}\\ and
       asymptotic control (3 parameters).
 
+  `"bicubic"`
+
+  :   Bicubic spline over a bin-node x year-node grid; see
+      `ret_sel_model` in
+      [`Setup_Mod_Fishsel_and_Q`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Fishsel_and_Q.md)
+      for full syntax.
+
 - retsel_pe_pars_spec:
 
   Specification of process error parameters for time-varying
@@ -147,11 +153,6 @@ Setup_Mod_Retsel(
 
   Data frame of priors for selectivity parameters. Must include columns:
   `region`, `fleet`, `block`, `sex`, `par`, `mu`, `sd`.
-
-- cont_tv_ret_sel_penalty:
-
-  Penalty value applied to continuous time-varying selectivity
-  deviations.
 
 - retsel_devs_shared_bins:
 

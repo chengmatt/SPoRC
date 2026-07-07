@@ -36,7 +36,6 @@ Setup_Mod_Srvsel_and_Q(
   srv_selex_prior = NULL,
   t_srv = array(1, dim = c(input_list$data$n_regions, input_list$data$n_seas,
     input_list$data$n_srv_fleets)),
-  cont_tv_srv_sel_penalty = TRUE,
   srvsel_devs_shared_bins = NULL,
   srv_selex_type = "age",
   use_fixed_srv_sel = rep(0, input_list$data$n_srv_fleets),
@@ -263,11 +262,6 @@ Setup_Mod_Srvsel_and_Q(
   (seasonal models), array `[n_regions × n_seas × n_srv_fleets]`.
   Default: `1` (end of period).
 
-- cont_tv_srv_sel_penalty:
-
-  Logical. Whether to apply penalties to continuous time-varying
-  selectivity deviations. Default `TRUE`.
-
 - srvsel_devs_shared_bins:
 
   List of integer vectors defining bin groups for age/length-sharing of
@@ -309,13 +303,12 @@ Setup_Mod_Srvsel_and_Q(
 ## Value
 
 The input `input_list` with selectivity and catchability configuration
-stored in `$data` (`cont_tv_srv_sel`, `cont_tv_srv_sel_penalty`,
-`srv_sel_blocks`, `srv_sel_model`, `srv_q_blocks`, `srv_q_prior`,
-`Use_srv_q_prior`, `do_srv_q_cov`, `srv_q_cov`, `Use_srv_selex_prior`,
-`srv_selex_prior`, `t_srv`); starting values in `$par` for
-`srv_fixed_sel_pars`, `ln_srv_q`, `srvsel_pe_pars`, `ln_srvsel_devs`,
-and `srv_q_coeff`; and factor maps in `$map` for all five parameter
-arrays plus `srv_q_coeff`.
+stored in `$data` (`cont_tv_srv_sel`, `srv_sel_blocks`, `srv_sel_model`,
+`srv_q_blocks`, `srv_q_prior`, `Use_srv_q_prior`, `do_srv_q_cov`,
+`srv_q_cov`, `Use_srv_selex_prior`, `srv_selex_prior`, `t_srv`);
+starting values in `$par` for `srv_fixed_sel_pars`, `ln_srv_q`,
+`srvsel_pe_pars`, `ln_srvsel_devs`, and `srv_q_coeff`; and factor maps
+in `$map` for all five parameter arrays plus `srv_q_coeff`.
 
 ## See also
 

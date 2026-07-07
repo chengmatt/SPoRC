@@ -62,7 +62,6 @@ selectivity parameters. Must be called after
 <span>  <span class="va">ret_sel_corr_opt_semipar</span>,</span>
 <span>  <span class="va">Use_ret_selex_prior</span>,</span>
 <span>  <span class="va">ret_selex_prior</span>,</span>
-<span>  <span class="va">cont_tv_ret_sel_penalty</span>,</span>
 <span>  <span class="va">retsel_devs_shared_bins</span>,</span>
 <span>  <span class="va">ret_selex_type</span>,</span>
 <span>  <span class="va">use_fixed_ret_sel</span>,</span>
@@ -144,6 +143,9 @@ Supported types:</p><dl><dt><code>"logist1"</code></dt>
   <dt><code>"asymplogist2"</code></dt>
 <dd><p>Logistic selectivity with with \(a_{50}\) and \(a_{95}\) and asymptotic control (3 parameters).</p></dd>
 
+  <dt><code>"bicubic"</code></dt>
+<dd><p>Bicubic spline over a bin-node x year-node grid; see <code>ret_sel_model</code> in <code><a href="Setup_Mod_Fishsel_and_Q.html">Setup_Mod_Fishsel_and_Q</a></code> for full syntax.</p></dd>
+
 
 </dl></dd>
 
@@ -177,11 +179,6 @@ selectivity priors are used.</p></dd>
 <dd><p>Data frame of priors for selectivity parameters.
 Must include columns: <code>region</code>, <code>fleet</code>, <code>block</code>, <code>sex</code>,
 <code>par</code>, <code>mu</code>, <code>sd</code>.</p></dd>
-
-
-<dt id="arg-cont-tv-ret-sel-penalty">cont_tv_ret_sel_penalty<a class="anchor" aria-label="anchor" href="#arg-cont-tv-ret-sel-penalty"></a></dt>
-<dd><p>Penalty value applied to continuous
-time-varying selectivity deviations.</p></dd>
 
 
 <dt id="arg-retsel-devs-shared-bins">retsel_devs_shared_bins<a class="anchor" aria-label="anchor" href="#arg-retsel-devs-shared-bins"></a></dt>

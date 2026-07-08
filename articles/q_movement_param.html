@@ -241,8 +241,8 @@ define the <code>regions</code>, <code>years</code>, <code>ages</code>,
 <code>sexes</code>, and any additional covariates associated with
 movement preference.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">adjacency</span> <span class="op">&lt;-</span> <span class="fu">as_adjacency_matrix</span><span class="op">(</span></span>
-<span>  <span class="fu">make_graph</span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">adjacency</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r.igraph.org/reference/as_adjacency_matrix.html" class="external-link">as_adjacency_matrix</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://r.igraph.org/reference/make_graph.html" class="external-link">make_graph</a></span><span class="op">(</span></span>
 <span>    <span class="op">~</span> <span class="fl">1</span> <span class="op">-</span> <span class="fl">2</span>,</span>
 <span>    <span class="fl">2</span> <span class="op">-</span> <span class="fl">3</span>,</span>
 <span>    <span class="fl">1</span> <span class="op">-</span> <span class="fl">3</span></span>
@@ -344,7 +344,7 @@ describing age-specific movement preferences.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># setup formulas for CTMC</span></span>
 <span><span class="va">diffusion_formula</span> <span class="op">=</span> <span class="op">~</span><span class="fl">1</span> <span class="co"># constant diffusion</span></span>
-<span><span class="va">preference_formula</span> <span class="op">=</span> <span class="op">~</span><span class="fl">0</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">regions</span><span class="op">)</span><span class="op">:</span><span class="fu">bSpline</span><span class="op">(</span><span class="va">ages</span>, df <span class="op">=</span> <span class="fl">4</span>, intercept <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="co"># spline based age effect</span></span>
+<span><span class="va">preference_formula</span> <span class="op">=</span> <span class="op">~</span><span class="fl">0</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">regions</span><span class="op">)</span><span class="op">:</span><span class="fu"><a href="https://wwenjie.org/splines2/reference/bSpline.html" class="external-link">bSpline</a></span><span class="op">(</span><span class="va">ages</span>, df <span class="op">=</span> <span class="fl">4</span>, intercept <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="co"># spline based age effect</span></span>
 <span></span>
 <span><span class="co"># Setup movement</span></span>
 <span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Movement.html">Setup_Mod_Movement</a></span><span class="op">(</span></span>
@@ -374,8 +374,8 @@ of <code>nregions × 4 × 6 × nsexes</code> parameters.</p>
 <code class="sourceCode R"><span><span class="co"># setup formulas for CTMC</span></span>
 <span><span class="va">diffusion_formula</span> <span class="op">=</span> <span class="op">~</span><span class="fl">1</span> <span class="co"># constant diffusion</span></span>
 <span><span class="va">preference_formula</span> <span class="op">=</span> <span class="op">~</span><span class="fl">0</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">regions</span><span class="op">)</span><span class="op">:</span></span>
-<span>  <span class="fu">bSpline</span><span class="op">(</span><span class="va">ages</span>, df <span class="op">=</span> <span class="fl">4</span>, intercept <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">:</span></span>
-<span>  <span class="fu">bSpline</span><span class="op">(</span><span class="va">years</span>, df <span class="op">=</span> <span class="fl">6</span>, intercept <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">:</span></span>
+<span>  <span class="fu"><a href="https://wwenjie.org/splines2/reference/bSpline.html" class="external-link">bSpline</a></span><span class="op">(</span><span class="va">ages</span>, df <span class="op">=</span> <span class="fl">4</span>, intercept <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">:</span></span>
+<span>  <span class="fu"><a href="https://wwenjie.org/splines2/reference/bSpline.html" class="external-link">bSpline</a></span><span class="op">(</span><span class="va">years</span>, df <span class="op">=</span> <span class="fl">6</span>, intercept <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">:</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">sexes</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Setup movement</span></span>
@@ -425,7 +425,7 @@ no deviation term is defined for the source region.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># setup formulas for CTMC</span></span>
 <span><span class="va">diffusion_formula</span> <span class="op">=</span> <span class="op">~</span><span class="fl">1</span> <span class="co"># constant diffusion</span></span>
-<span><span class="va">preference_formula</span> <span class="op">=</span> <span class="op">~</span><span class="fl">0</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">regions</span><span class="op">)</span><span class="op">:</span><span class="fu">bSpline</span><span class="op">(</span><span class="va">ages</span>, df <span class="op">=</span> <span class="fl">4</span>, intercept <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="co"># spline based age effect</span></span>
+<span><span class="va">preference_formula</span> <span class="op">=</span> <span class="op">~</span><span class="fl">0</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">regions</span><span class="op">)</span><span class="op">:</span><span class="fu"><a href="https://wwenjie.org/splines2/reference/bSpline.html" class="external-link">bSpline</a></span><span class="op">(</span><span class="va">ages</span>, df <span class="op">=</span> <span class="fl">4</span>, intercept <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="co"># spline based age effect</span></span>
 <span></span>
 <span><span class="co"># Setup movement</span></span>
 <span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Movement.html">Setup_Mod_Movement</a></span><span class="op">(</span></span>
@@ -458,7 +458,7 @@ no deviation term is defined for the source region.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

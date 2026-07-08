@@ -489,9 +489,9 @@ get_comp_prop <- function(data,
   FishLenComps_discard_Type <- data$FishLenComps_discard_Type
   SrvLen_CompType <- data$SrvLenComps_Type
 
-  FishAge_pop_CompType <- data$pop_FishAgeComps_Type
+  FishAge_pop_CompType <- data$FishAgeComps_pop_Type
   FishAgeComps_discard_pop_Type <- data$FishAgeComps_discard_pop_Type
-  SrvAge_pop_CompType <- data$pop_SrvAgeComps_Type
+  SrvAge_pop_CompType <- data$SrvAgeComps_pop_Type
   FishLen_pop_CompType <- data$FishLenComps_pop_Type
   FishLenComps_discard_pop_Type <- data$FishLenComps_discard_pop_Type
   SrvLen_pop_CompType <- data$SrvLenComps_pop_Type

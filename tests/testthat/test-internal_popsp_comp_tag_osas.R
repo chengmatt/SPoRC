@@ -529,6 +529,7 @@ test_that("OSA residuals are well-calibrated under correct EM and mis-calibrated
   # correct EM
   input_correct <- setup_em_variant(sim_obj, 1, TRUE, misspecify_movement = FALSE)
   obj_correct   <- fit_model(input_correct$data, input_correct$par, input_correct$map, NULL, 3, silent = TRUE, do_optim = TRUE)
+  obj_francis_correct <- run_francis(data = input_correct$data, parameters = input_correct$par, mapping = input_correct$map, random = NULL, n_francis_iter = 2, 0) # also test francis to make sure running
   osa_tag_correct <- oneStepPredict(obj_correct, 'ObsConvTag_osa_count', method = 'cdf', discrete = TRUE)
   chk_correct <- check_osa_calibration(osa_tag_correct$residual)
 
@@ -536,6 +537,7 @@ test_that("OSA residuals are well-calibrated under correct EM and mis-calibrated
   expect_true(chk_correct$sd_ok)
   expect_true(chk_correct$normal_ok)
   expect_true(sdreport(obj_correct)$pdHess)
+  expect_true((sdreport(obj_francis_correct$obj))$pdHess)
 
   # misspecified EM
   input_wrong <- setup_em_variant(sim_obj, 1, TRUE, misspecify_movement = TRUE)

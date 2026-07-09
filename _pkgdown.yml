@@ -40,6 +40,7 @@ articles:
     - p_single_region_dusky_alt_mp_testing
     - r_natal-homing-pop-lrgr-rg
     - s_discard_retention
+    - u_osa_residuals
 
 reference:
   - title: "Model Setup"

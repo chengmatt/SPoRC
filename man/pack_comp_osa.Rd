@@ -18,7 +18,8 @@ pack_comp_osa(
   addtocomp,
   family = "discrete",
   pop = FALSE,
-  n_pop = 1
+  n_pop = 1,
+  return_labels = FALSE
 )
 }
 \arguments{
@@ -49,9 +50,20 @@ pack_comp_osa(
 \item{pop}{Logical; if TRUE, the population dimension is treated as the outermost layer.}
 
 \item{n_pop}{Number of population structures or pools.}
+
+\item{return_labels}{Logical; if TRUE, also builds a per-element label
+data.frame identifying the origin (pop, region, year, season, fleet, sex,
+bin, comp_type, likelihood_type, family, last_in_group) of every entry in
+the tracked vector, in the same order. Intended for post-hoc relabeling of
+\code{TMB::oneStepPredict()} residuals (see [get_osa()]); left \code{FALSE}
+(default) inside the model itself to avoid the extra bookkeeping cost.}
 }
 \value{
-Flat OBS vector or NULL if no fleet of this family is present.
+If \code{return_labels = FALSE} (default): flat OBS vector, or
+  \code{NULL} if no fleet of this family is present (unchanged behavior).
+  If \code{return_labels = TRUE}: a list with elements \code{vec} (the flat
+  OBS vector) and \code{labels} (a data.frame with one row per element of
+  \code{vec}), or \code{NULL} if no fleet of this family is present.
 }
 \description{
 Produces the flat tracked OBS vector required by \code{RTMB::oneStepPredict}.

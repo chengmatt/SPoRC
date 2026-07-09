@@ -50,9 +50,18 @@ A dataframe containing pooled and, when active, population-specific
 \description{
 Generates a tidy dataframe of observed and predicted survey and fishery
 indices from a fitted RTMB model, including standard errors, confidence
-intervals, residuals, and catchability blocks. Both pooled and
-population-specific indices are returned when the corresponding
-\code{Use*_pop} flags contain any ones.
+intervals, a raw log-scale (Pearson-style) residual, and catchability
+blocks. Both pooled and population-specific indices are returned when the
+corresponding \code{Use*_pop} flags contain any ones.
+}
+\details{
+The \code{resid} column here is the simple log-scale residual
+\eqn{\log(\text{obs}) - \log(\text{predicted})} -- \emph{not} a
+one-step-ahead (OSA) residual. For properly decorrelated OSA index
+residuals (with QQ-plots and SDNR diagnostics via \code{\link{plot_resids}}),
+use \code{\link{get_osa}} with \code{index_source = }. The observed-vs-
+predicted \emph{fit} plot built from this function's output is
+\code{\link{get_idx_fits_plot}}.
 }
 \examples{
 \dontrun{

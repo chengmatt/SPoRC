@@ -14,7 +14,7 @@ test_that("OSA residuals are calibrated (SDNR ≈ 1) for all composition likelih
   # --- Multinomial ---
   N_mn   <- 500
   obs_mn <- t(replicate(n_years, as.vector(rmultinom(1, N_mn, true_p))))
-  res_mn <- run_osa(
+  res_mn <- run_external_comp_osa(
     obs         = obs_mn,
     exp         = matrix(true_p, nrow = n_years, ncol = n_bins, byrow = TRUE),
     N           = N_mn,
@@ -32,7 +32,7 @@ test_that("OSA residuals are calibrated (SDNR ≈ 1) for all composition likelih
   N_dm   <- 500
   theta  <- 0.5
   obs_dm <- t(rdirM(n_years, N_dm, theta * N_dm * true_p))
-  res_dm <- run_osa(
+  res_dm <- run_external_comp_osa(
     obs         = obs_dm,
     exp         = matrix(true_p, nrow = n_years, ncol = n_bins, byrow = TRUE),
     N           = N_dm,
@@ -50,7 +50,7 @@ test_that("OSA residuals are calibrated (SDNR ≈ 1) for all composition likelih
   # --- Logistic-normal iid ---
   sigma_ln <- 0.1
   obs_ln2  <- t(replicate(n_years, rlogistnormal(true_p, sigma_ln, comp_like = 2, n_sexes = 1)))
-  res_ln2  <- run_osa(
+  res_ln2  <- run_external_comp_osa(
     obs         = obs_ln2,
     exp         = matrix(true_p, nrow = n_years, ncol = n_bins, byrow = TRUE),
     LN_Sigma    = diag(n_bins) * sigma_ln^2,  # K x K; run_osa strips last row/col
@@ -67,7 +67,7 @@ test_that("OSA residuals are calibrated (SDNR ≈ 1) for all composition likelih
   # --- Logistic-normal AR1 ---
   rho_ln3  <- 0.7
   obs_ln3  <- t(replicate(n_years, rlogistnormal(true_p, c(sigma_ln, rho_ln3), comp_like = 3, n_sexes = 1)))
-  res_ln3  <- run_osa(
+  res_ln3  <- run_external_comp_osa(
     obs         = obs_ln3,
     exp         = matrix(true_p, nrow = n_years, ncol = n_bins, byrow = TRUE),
     LN_Sigma    = get_AR1_CorrMat(n_bins, rho_ln3) * (sigma_ln^2 / (1 - rho_ln3^2)),  # K x K
@@ -95,7 +95,7 @@ test_that("OSA residuals are calibrated (SDNR ≈ 1) for all composition likelih
     get_AR1_CorrMat(n_bins, rho_ln3)
   ) * (sigma_ln^2 / (1 - rho_ln3^2) / (1 - rho_sex^2))  # K*n_sexes x K*n_sexes
 
-  res_ln4 <- run_osa(
+  res_ln4 <- run_external_comp_osa(
     obs         = obs_ln4,
     exp         = matrix(true_p_sex, nrow = n_years, ncol = n_bins_sex, byrow = TRUE),
     LN_Sigma    = Sigma_ln4,  # K x K (full); run_osa strips last row/col

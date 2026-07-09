@@ -665,7 +665,7 @@ Key closed-loop arguments in `condition_closed_loop_simulations()`:
 | `do_likelihood_profile()` | Profiles the likelihood surface over user-specified parameters |
 | `do_francis_reweighting()` | Computes Francis TA1.8 weights for composition data |
 | `run_francis()` | Iterative Francis reweighting loop (re-fits after each adjustment) |
-| `run_osa()` / `get_osa()` | One-step-ahead residuals for composition data |
+| `get_osa()` | One-step-ahead residuals -- compositions, conventional tagging, and Catch/Discard/FishIdx/SrvIdx indices (external post-hoc, or internal model-based via `do_internal_comp_osa`/`do_internal_conv_tag_osa`). See `vignette("u_osa_residuals")` |
 | `do_runs_test()` | Runs test for serial correlation in residuals |
 | `get_model_rep_from_mcmc()` | Extracts model report quantities across MCMC posterior draws (compatible with `adnuts` / `tmbstan`) |
 | `marg_AIC()` | Marginal AIC for models with random effects |

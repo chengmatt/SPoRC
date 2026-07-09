@@ -5,19 +5,29 @@
 \title{Compute OSA residuals for composition data}
 \usage{
 get_osa(
-  obs_mat,
-  exp_mat,
+  obs_mat = NULL,
+  exp_mat = NULL,
   N = NULL,
   DM_theta = NULL,
   LN_Sigma = NULL,
-  years,
-  seas,
-  fleet,
-  bins,
-  comp_type,
-  bin_label,
+  years = NULL,
+  seas = NULL,
+  fleet = NULL,
+  bins = NULL,
+  comp_type = NULL,
+  bin_label = NULL,
   comp_like = 0,
-  addtocomp = 0
+  addtocomp = 0,
+  model = NULL,
+  data = NULL,
+  comp_source = NULL,
+  index_source = NULL,
+  family = "discrete",
+  pop = FALSE,
+  discard = FALSE,
+  tag = FALSE,
+  osa_method = NULL,
+  parallel = FALSE
 )
 }
 \arguments{
@@ -83,20 +93,80 @@ lengths.}
 }}
 
 \item{addtocomp}{Constant that is added to compositions}
+
+\item{model}{A fitted RTMB model object from \code{\link{fit_model}}
+(built with \code{do_internal_comp_osa = TRUE} or
+\code{do_internal_conv_tag_osa = TRUE}). Supplying \code{model} switches
+\code{get_osa()} from the default external (post-hoc, compResidual-based)
+path to the internal path, which calls \code{RTMB::oneStepPredict()}
+directly on the model's internally tracked OSA vector. All \code{obs_mat}/
+\code{exp_mat}/\code{N}/\code{DM_theta}/\code{LN_Sigma}/\code{years}/
+\code{comp_type}/\code{comp_like} arguments above are ignored in this mode.}
+
+\item{data}{The model \code{data} list (e.g. \code{input_list$data}) used to
+build \code{model}. Required when \code{model} is supplied.}
+
+\item{comp_source}{One of \code{"FishAge"}, \code{"FishLen"}, \code{"SrvAge"},
+\code{"SrvLen"}, identifying which composition data source to pull
+internal OSA residuals for. Required when \code{model} is supplied and
+\code{index_source} is \code{NULL} and \code{tag = FALSE}.}
+
+\item{index_source}{One of \code{"Catch"}, \code{"Discard"}, \code{"FishIdx"},
+\code{"SrvIdx"}, identifying which continuous (log-normal) index-type
+data source to pull internal OSA residuals for. When supplied, takes
+precedence over \code{comp_source}/\code{tag}. Only used when
+\code{model} is supplied.}
+
+\item{family}{Character, \code{"discrete"} or \code{"continuous"}; which of
+the two internally-tracked OSA vectors to use for \code{comp_source} (a
+source can have both, e.g. some fleets multinomial and others
+logistic-normal). Only used when \code{model} is supplied, \code{tag =
+FALSE}, and \code{index_source} is \code{NULL}.}
+
+\item{pop}{Logical; population-specific composition or index source. Only
+used when \code{model} is supplied and \code{tag = FALSE}. Default \code{FALSE}.}
+
+\item{discard}{Logical; discard composition source (only valid for
+\code{comp_source \%in\% c("FishAge","FishLen")}). Only used when
+\code{model} is supplied, \code{tag = FALSE}, and \code{index_source} is
+\code{NULL}. Default \code{FALSE}.}
+
+\item{tag}{Logical; if \code{TRUE} (and \code{model} is supplied, and
+\code{index_source} is \code{NULL}), compute internal OSA residuals for
+conventional tag recapture data instead of composition data. Default
+\code{FALSE}.}
+
+\item{osa_method}{Optional override for \code{RTMB::oneStepPredict}'s
+\code{method}, used only in internal mode. Must be one of
+\code{"oneStepGeneric"}, \code{"oneStepGaussianOffMode"}, or
+\code{"oneStepGaussian"}; the \code{"cdf"} method is not permitted (it is
+numerically fragile for the discrete likelihoods used here). Defaults to
+\code{"oneStepGeneric"} for discrete families/tags and
+\code{"oneStepGaussianOffMode"} for continuous (logistic-normal)
+composition families.}
+
+\item{parallel}{Whether or not to parallelize OSA computation in internal
+mode. Defaults to \code{FALSE}.}
 }
 \value{
 A list with one element:
 \describe{
   \item{res}{Data frame of OSA residuals. Columns include:
     \code{fleet}, \code{index_label}, \code{year}, \code{index},
-    \code{resid}, \code{region}, \code{seas}, \code{sex}, and \code{comp_type}.}
+    \code{resid}, \code{region}, \code{seas}, \code{sex}, and \code{comp_type}
+    (composition sources, external or internal); \code{fleet}, \code{region},
+    \code{cohort}, \code{release_year}/\code{release_region}/\code{release_season},
+    \code{recovery_year}/\code{recovery_season}, \code{years_at_liberty}, \code{resid},
+    and \code{comp_type = "Tag"} (\code{tag = TRUE}); or \code{fleet}, \code{region},
+    \code{year}, \code{season}, \code{pop}, \code{resid}, and \code{idx_type}
+    set to \code{index_source} (\code{index_source} supplied.}
 }
 }
 \description{
 Formats observed and expected composition data and calculates one-step-ahead
 (OSA) residuals using multinomial, Dirichlet-multinomial, or logistic-normal
 likelihoods. This function is the main interface for residual diagnostics,
-internally calling [run_osa()] to perform the residual calculations.
+internally calling [run_external_comp_osa()] to perform the residual calculations.
 }
 \details{
 When computing OSA residuals for population-specific composition data,
@@ -114,6 +184,17 @@ Population-specific composition arrays returned by
 \code{\link{get_comp_prop}} are dimensioned
 \code{[n_pop × n_regions × n_years × n_seas × n_bins × n_sexes × n_fleets]}.
 Slicing on \code{p} yields a 6D array matching the expected input dimensions.
+
+For internal (model-based) OSA residuals, fit the model with
+\code{do_internal_comp_osa = TRUE} and/or \code{do_internal_conv_tag_osa =
+TRUE} (set in \code{\link{Setup_Mod_Dim}}), then call, e.g.:
+
+\preformatted{
+get_osa(model = fitted_obj, data = input_list$data, comp_source = "FishAge",
+        family = "discrete", bins = input_list$data$ages, bin_label = "Age")
+get_osa(model = fitted_obj, data = input_list$data, tag = TRUE)
+get_osa(model = fitted_obj, data = input_list$data, index_source = "SrvIdx")
+}
 }
 \seealso{
 Other Model Diagnostics: 

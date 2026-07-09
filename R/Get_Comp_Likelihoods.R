@@ -613,12 +613,23 @@ Get_Comp_Likelihoods_OSA = function(Exp,
 #' @param family Character string specifying the likelihood type, either "discrete" or "continuous".
 #' @param pop Logical; if TRUE, the population dimension is treated as the outermost layer.
 #' @param n_pop Number of population structures or pools.
+#' @param return_labels Logical; if TRUE, also builds a per-element label
+#'   data.frame identifying the origin (pop, region, year, season, fleet, sex,
+#'   bin, comp_type, likelihood_type, family, last_in_group) of every entry in
+#'   the tracked vector, in the same order. Intended for post-hoc relabeling of
+#'   \code{TMB::oneStepPredict()} residuals (see [get_osa()]); left \code{FALSE}
+#'   (default) inside the model itself to avoid the extra bookkeeping cost.
 #'
-#' @return Flat OBS vector or NULL if no fleet of this family is present.
+#' @return If \code{return_labels = FALSE} (default): flat OBS vector, or
+#'   \code{NULL} if no fleet of this family is present (unchanged behavior).
+#'   If \code{return_labels = TRUE}: a list with elements \code{vec} (the flat
+#'   OBS vector) and \code{labels} (a data.frame with one row per element of
+#'   \code{vec}), or \code{NULL} if no fleet of this family is present.
 #' @keywords internal
 pack_comp_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
                          n_yrs, n_seas, n_fleets, n_sexes, addtocomp,
-                         family = "discrete", pop = FALSE, n_pop = 1) {
+                         family = "discrete", pop = FALSE, n_pop = 1,
+                         return_labels = FALSE) {
 
   "c"   <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -630,7 +641,52 @@ pack_comp_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
   # additive log-ratio: drop last element as reference
   alr = function(p) log(p[-length(p)]) - log(p[length(p)])
 
+  # build the per-element label rows for one accepted (p,y,f,seas) group,
+  # mirroring the exact element order used to build 'g' below
+  make_labels = function(used, n_ru, ct, lt, p, y, seas, f, len) {
+    if(lt %in% c(0,1)) { # discrete: full n_obs_bins retained
+      if(ct == 0) {
+        region = rep(used[1], n_obs_bins); sex = rep(1L, n_obs_bins); bin = 1:n_obs_bins
+        last_in_group = (bin == n_obs_bins)
+      } else {
+        region = rep(used, times = n_obs_bins * n_sexes)
+        bin    = rep(rep(1:n_obs_bins, each = n_ru), times = n_sexes)
+        sex    = rep(1:n_sexes, each = n_ru * n_obs_bins)
+        if(ct == 1) {
+          # split by sex: each (region,sex) is its own independent multinomial,
+          # so each has its own redundant/determined bin.
+          last_in_group = (bin == n_obs_bins)
+        } else {
+          # ct == 2, joint by sex: the whole [bin x sex] stack per region is
+          # one multinomial (matches the joint scaling in the packing step
+          # above), so only the single last cell is redundant/determined --
+          # not one per sex. 
+          last_in_group = (bin == n_obs_bins) & (sex == n_sexes)
+        }
+      }
+    } else { # continuous (LN): reference bin already ALR-dropped during packing
+      if(ct == 0) {
+        region = rep(used[1], n_obs_bins - 1); sex = rep(1L, n_obs_bins - 1); bin = 1:(n_obs_bins - 1)
+      } else if(ct == 1) {
+        region = rep(used, times = (n_obs_bins - 1) * n_sexes)
+        bin    = rep(rep(1:(n_obs_bins - 1), each = n_ru), times = n_sexes)
+        sex    = rep(1:n_sexes, each = n_ru * (n_obs_bins - 1))
+      } else {
+        Lred = n_obs_bins * n_sexes - 1
+        region = rep(used, times = Lred)
+        pos_in_stack = rep(1:Lred, each = n_ru)
+        bin = ((pos_in_stack - 1) %% n_obs_bins) + 1
+        sex = ((pos_in_stack - 1) %/% n_obs_bins) + 1
+      }
+      last_in_group = rep(FALSE, len)
+    }
+    data.frame(pop = p, region = region, year = y, season = seas, fleet = f,
+               sex = sex, bin = bin, comp_type = ct, likelihood_type = lt,
+               family = family, last_in_group = last_in_group)
+  }
+
   clean = list()
+  label_rows = list()
   for(p in 1:n_pop) {
     for(y in 1:n_yrs) {
       for(f in 1:n_fleets) {
@@ -650,27 +706,41 @@ pack_comp_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
             dim(obs_slice) = c(n_ru, n_obs_bins, n_sexes)
 
             if(lt %in% c(0,1)) {
-              # Discrete: scale to counts, per region/sex
-              for(rr in 1:n_ru) {
-                r_orig = used[rr]
-                for(s in 1:n_sexes) {
-                  iss = if(pop) ISSArr[p, r_orig, y, seas, s, f] else ISSArr[r_orig, y, seas, s, f]
-                  wt  = if(pop) WtArr[p, r_orig, y, seas, s, f]  else WtArr[r_orig, y, seas, s, f]
-                  pr  = (obs_slice[rr, , s] + addtocomp) / sum(obs_slice[rr, , s] + addtocomp)
-                  if(lt == 0) obs_slice[rr, , s] = round(pr * iss * wt)  # multinomial
-                  if(lt == 1) obs_slice[rr, , s] = round(pr * iss)       # DM (no Wt)
+              # Discrete: scale to counts
+              if(ct == 2) {
+                # Joint by sex: the true sample is one joint draw across sexes
+                for(rr in 1:n_ru) {
+                  r_orig = used[rr]
+                  iss = if(pop) ISSArr[p, r_orig, y, seas, 1, f] else ISSArr[r_orig, y, seas, 1, f]
+                  wt  = if(pop) WtArr[p, r_orig, y, seas, 1, f]  else WtArr[r_orig, y, seas, 1, f]
+                  v   = as.vector(obs_slice[rr, , ])             # bin-fastest-then-sex
+                  pr  = (v + addtocomp) / sum(v + addtocomp)
+                  if(lt == 0) v = round(pr * iss * wt)  # multinomial
+                  if(lt == 1) v = round(pr * iss)       # DM (no Wt)
+                  for(s in 1:n_sexes) obs_slice[rr, , s] = v[((s - 1) * n_obs_bins + 1):(s * n_obs_bins)]
+                }
+              } else {
+                # Aggregated (ct 0) / split by region and sex (ct 1): each
+                # region/sex cell is its own independent sample.
+                for(rr in 1:n_ru) {
+                  r_orig = used[rr]
+                  for(s in 1:n_sexes) {
+                    iss = if(pop) ISSArr[p, r_orig, y, seas, s, f] else ISSArr[r_orig, y, seas, s, f]
+                    wt  = if(pop) WtArr[p, r_orig, y, seas, s, f]  else WtArr[r_orig, y, seas, s, f]
+                    pr  = (obs_slice[rr, , s] + addtocomp) / sum(obs_slice[rr, , s] + addtocomp)
+                    if(lt == 0) obs_slice[rr, , s] = round(pr * iss * wt)  # multinomial
+                    if(lt == 1) obs_slice[rr, , s] = round(pr * iss)       # DM (no Wt)
+                  }
                 }
               }
               g = if(ct == 0) as.vector(obs_slice[1, , 1]) else as.vector(obs_slice)
 
             } else {
               # Continuous (LN): ALR-transform per block, drop reference bin
-              # Layout mirrors the discrete path so the likelihood's strided idx
-              # works unchanged (just n_obs_bins-1 instead of n_obs_bins):
+              # Layout mirrors the discrete path so the likelihood(just n_obs_bins-1 instead of n_obs_bins):
               #   ct 0: single vector, length n_obs_bins-1
               #   ct 1: [n_ru, n_obs_bins-1, n_sexes] as.vector (region-fastest)
-              #   ct 2: per region, ALR of the full [bin x sex] stack
-              #         (length n_obs_bins*n_sexes-1), region-fastest via seq stride
+              #   ct 2: per region, ALR of the full [bin x sex] stack (length n_obs_bins*n_sexes-1), region-fastest via seq
               if(ct == 0) {
                 pr = (obs_slice[1, , 1] + addtocomp) / sum(obs_slice[1, , 1] + addtocomp)
                 g  = alr(as.vector(pr))
@@ -689,8 +759,6 @@ pack_comp_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
                 # joint: per region ALR of [bin x sex] stack. Store as
                 # [n_ru, (n_obs_bins*n_sexes - 1)] and as.vector region-fastest,
                 # matching idx = seq(from=r, by=n_ru, length.out=(n_obs_bins-1)*n_sexes)
-                # NOTE: joint drops ONE ref for the whole stack -> length
-                #       n_obs_bins*n_sexes - 1, NOT (n_obs_bins-1)*n_sexes.
                 Lred = n_obs_bins * n_sexes - 1
                 arr = array(0, dim = c(n_ru, Lred))
                 arr = RTMB::AD(arr); dim(arr) = c(n_ru, Lred)
@@ -704,13 +772,18 @@ pack_comp_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
             }
 
             clean[[length(clean) + 1]] = g
+            if(return_labels) {
+              label_rows[[length(label_rows) + 1]] = make_labels(used, n_ru, ct, lt, p, y, seas, f, length(g))
+            }
           }
         }
       }
     }
   }
   if(length(clean) == 0) return(NULL)
-  do.call(c, clean)
+  vec = do.call(c, clean)
+  if(!return_labels) return(vec)
+  list(vec = vec, labels = do.call(rbind, label_rows))
 }
 
 #' Evaluate OSA composition negative log-likelihood from a flat tracked vector

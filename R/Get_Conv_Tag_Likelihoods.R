@@ -288,9 +288,14 @@ tag_grid = function(n_conv_tag_cohorts, conv_tag_release_indicator,
 #' one-step-ahead (OSA) analysis for a single likelihood family.
 #'
 #' For \code{family == "count"}, each valid event contributes one integer
-#' observation per \code{[region, fleet]} with \code{use_fish_tagging[f] == 1},
-#' in region-fastest then fleet order within each event, and events in
-#' \code{tag_grid} order.
+#' observation per \code{[fleet, pop_pool, region, age_pool, sex_pool]} cell
+#' with \code{use_fish_tagging[f] == 1}, in \code{(f, p, r, a, s)} loop order
+#' within each event, and events in \code{tag_grid} order. This mirrors
+#' \code{get_conv_tag_likelihoods()}'s exact accumulation structure -- a
+#' separate Poisson/NB term is fit per pool/age/sex cell and their
+#' -log-likelihoods summed -- so packing one count per \code{[region, fleet]}
+#' pre-summed across pools would evaluate a different (non-equivalent)
+#' likelihood whenever more than one pool is used.
 #'
 #' For \code{family == "comp"}, each valid event contributes one composition
 #' vector:
@@ -323,6 +328,13 @@ tag_grid = function(n_conv_tag_cohorts, conv_tag_release_indicator,
 #' @param use_fish_tagging Vector indicating which fleets use conventional tagging.
 #' @param conv_tag_mixing_period Minimum seasons at liberty before tags are modeled.
 #' @param addtotag Small constant added to avoid zeros.
+#' @param return_labels Logical; if TRUE, also builds a per-element label
+#'   data.frame identifying the origin (family, like_type, tag cohort/release
+#'   region-year-season, recovery year/season, fleet, region, pop/age/sex pool,
+#'   is_tail, last_in_group) of every entry in \code{vec}, in the same order.
+#'   Intended for post-hoc relabeling of \code{TMB::oneStepPredict()} residuals
+#'   (see [get_osa()]); left \code{FALSE} (default) inside the model itself to
+#'   avoid the extra bookkeeping cost.
 #'
 #' @return A list with components:
 #' \itemize{
@@ -330,6 +342,8 @@ tag_grid = function(n_conv_tag_cohorts, conv_tag_release_indicator,
 #'   \item \code{grp_end}: integer vector of end indices for each composition group
 #'     (empty for \code{family == "count"}).
 #'   \item \code{lengths}: integer vector of per-group lengths.
+#'   \item \code{labels}: data.frame with one row per element of \code{vec}
+#'     (\code{NULL} unless \code{return_labels = TRUE}).
 #' }
 #' @keywords internal
 pack_tag_osa = function(family, like_type,
@@ -338,47 +352,83 @@ pack_tag_osa = function(family, like_type,
                         n_conv_tag_cohorts, n_yrs, n_seas, n_regions, n_fish_fleets,
                         n_pop_pool, n_age_pool, n_sex_pool,
                         pop_pool, age_pool, sex_pool,
-                        use_fish_tagging, conv_tag_mixing_period, addtotag) {
+                        use_fish_tagging, conv_tag_mixing_period, addtotag,
+                        return_labels = FALSE) {
   "c" <- RTMB::ADoverload("c")
 
   grid = tag_grid(n_conv_tag_cohorts, conv_tag_release_indicator,
                   conv_tag_max_liberty, n_yrs, n_seas, conv_tag_mixing_period)
-  if(is.null(grid) || nrow(grid) == 0) return(list(vec = NULL, grp_end = integer(0), lengths = integer(0)))
+  if(is.null(grid) || nrow(grid) == 0) return(list(vec = NULL, grp_end = integer(0), lengths = integer(0), labels = NULL))
 
   clean = list(); grp_end = integer(0); lengths = integer(0); pos = 0L
+  label_rows = list()
+
+  # one label row per element, mirroring the exact loop order used to build 'clean'
+  tag_label_row = function(fleet, region, pop_pool_i, age_pool_i, sex_pool_i,
+                           tc, ry, rseas, tr, ty, tseas, is_tail, last_in_group) {
+    data.frame(family = family, like_type = like_type,
+               tc = tc, ry = ry, rseas = rseas, tr = tr, ty = ty, tseas = tseas,
+               fleet = fleet, region = region,
+               pop_pool = pop_pool_i, age_pool = age_pool_i, sex_pool = sex_pool_i,
+               is_tail = is_tail, last_in_group = last_in_group)
+  }
 
   for(g in 1:nrow(grid)) {
     tc = grid$tc[g]; ry = grid$ry[g]; rseas = grid$rseas[g]
+    tr = grid$tr[g]; ty = grid$ty[g]; tseas = grid$tseas[g]
 
     if(family == "count") {
-      # one cell per [r,f] with active fleet
+      # one cell per [f,p,r,a,s] -- must mirror get_conv_tag_likelihoods()'s
+      # exact accumulation structure: a SEPARATE Poisson/NB term is evaluated
+      # per (pool, age_pool, sex_pool, region, fleet) cell and their
+      # -log-likelihoods summed. Packing one combined count per [r,f] (summed
+      # across pools first, as this used to do) is a DIFFERENT likelihood --
+      # not equivalent even for Poisson -- whenever n_pop_pool/n_age_pool/
+      # n_sex_pool > 1, and also destroys population identity before it ever
+      # reaches the residual/label, so downstream plots can't facet by pop.
       for(f in 1:n_fish_fleets) {
         if(use_fish_tagging[f] != 1) next
-        for(r in 1:n_regions) {
-          v = 0
-          for(p in 1:n_pop_pool) for(a in 1:n_age_pool) for(s in 1:n_sex_pool) {
-            v = v + sum(obs_recap[ry, rseas, tc, pop_pool[[p]], r, age_pool[[a]], sex_pool[[s]], f] + addtotag)
+        for(p in 1:n_pop_pool) {
+          for(r in 1:n_regions) {
+            for(a in 1:n_age_pool) {
+              for(s in 1:n_sex_pool) {
+                v = sum(obs_recap[ry, rseas, tc, pop_pool[[p]], r, age_pool[[a]], sex_pool[[s]], f] + addtotag)
+                clean[[length(clean)+1]] = round(v)   # integer count for cdf
+                pos = pos + 1L
+                if(return_labels) {
+                  label_rows[[length(label_rows)+1]] = tag_label_row(
+                    fleet = f, region = r, pop_pool_i = p, age_pool_i = a, sex_pool_i = s,
+                    tc = tc, ry = ry, rseas = rseas, tr = tr, ty = ty, tseas = tseas,
+                    is_tail = FALSE, last_in_group = NA
+                  )
+                }
+              }
+            }
           }
-          clean[[length(clean)+1]] = round(v)   # integer count for cdf
-          pos = pos + 1L
         }
       }
       lengths = c(lengths, 0L)  # count has no per-group determined bin
 
     } else {
-      # composition (comp or dm): build recap-cell vector in fit-loop order (f,p,a,s,r).
-      # obs are DATA (numeric). Preallocate to avoid growing from a NULL seed (the
-      # ADoverloaded c() cannot advector() NULL).
+      # composition (multinomial or dm): build recap-cell vector in fit-loop order (f,p,a,s,r). Preallocate to avoid growing from a NULL.
       n_active_f = sum(use_fish_tagging[1:n_fish_fleets] == 1)
       n_cells = n_active_f * n_pop_pool * n_age_pool * n_sex_pool * n_regions
       obs_cells = numeric(n_cells)
       ci = 0
+      if(return_labels) cell_labels = vector("list", n_cells)
       for(f in 1:n_fish_fleets) {
         if(use_fish_tagging[f] != 1) next
         for(p in 1:n_pop_pool) for(a in 1:n_age_pool) for(s in 1:n_sex_pool) {
           for(r in 1:n_regions) {
             ci = ci + 1
             obs_cells[ci] = sum(obs_recap[ry, rseas, tc, pop_pool[[p]], r, age_pool[[a]], sex_pool[[s]], f] + addtotag)
+            if(return_labels) {
+              cell_labels[[ci]] = tag_label_row(
+                fleet = f, region = r, pop_pool_i = p, age_pool_i = a, sex_pool_i = s,
+                tc = tc, ry = ry, rseas = rseas, tr = tr, ty = ty, tseas = tseas,
+                is_tail = FALSE, last_in_group = FALSE
+              )
+            }
           }
         }
       }
@@ -392,11 +442,19 @@ pack_tag_osa = function(family, like_type,
         prop  = c(prop, tail)                     # non-recap tail (determined)
         prop  = prop / sum(prop)                  # renormalize after guard
         g_counts = round(prop * n_rel)
+        if(return_labels) {
+          cell_labels[[length(cell_labels)+1]] = tag_label_row(
+            fleet = NA_integer_, region = NA_integer_, pop_pool_i = NA_integer_, age_pool_i = NA_integer_, sex_pool_i = NA_integer_,
+            tc = tc, ry = ry, rseas = rseas, tr = tr, ty = ty, tseas = tseas,
+            is_tail = TRUE, last_in_group = TRUE
+          )
+        }
       } else {
         # recapture-conditioned: normalize by total recaptures, no tail
         n_recap = sum(obs_recap[ry, rseas, tc, , , , , ] + addtotag)
         prop = obs_cells / n_recap
         g_counts = round(prop * n_recap)          # last cell determined
+        if(return_labels) cell_labels[[n_cells]]$last_in_group = TRUE
       }
 
       L = length(g_counts)
@@ -404,11 +462,13 @@ pack_tag_osa = function(family, like_type,
       lengths = c(lengths, L)
       grp_end = c(grp_end, pos + L)               # determined bin = last element
       pos = pos + L
+      if(return_labels) label_rows[[length(label_rows)+1]] = do.call(rbind, cell_labels)
     }
   }
 
   vec = do.call(c, clean)
-  list(vec = vec, grp_end = grp_end, lengths = lengths)
+  labels = if(return_labels) do.call(rbind, label_rows) else NULL
+  list(vec = vec, grp_end = grp_end, lengths = lengths, labels = labels)
 }
 
 #' Evaluate conventional-tag OSA likelihood from a tracked vector
@@ -480,20 +540,28 @@ eval_tag_osa = function(nLL_arr, tracked, family, like_type,
     tc = grid$tc[g]; ry = grid$ry[g]; rseas = grid$rseas[g]
 
     if(family == "count") {
+      # mirrors pack_tag_osa()'s [f,p,r,a,s] cell order -- one Poisson/NB
+      # term per (pool, age_pool, sex_pool, region, fleet) cell, accumulated
+      # into the same [ry,rseas,tc,r,f] nLL_arr cell (matching
+      # get_conv_tag_likelihoods()'s `+=` accumulation across pools).
       for(f in 1:n_fish_fleets) {
         if(use_fish_tagging[f] != 1) next
-        for(r in 1:n_regions) {
-          mu = 0
-          for(p in 1:n_pop_pool) for(a in 1:n_age_pool) for(s in 1:n_sex_pool) {
-            mu = mu + sum(pred_recap[ry, rseas, tc, pop_pool[[p]], r, age_pool[[a]], sex_pool[[s]], f] + addtotag)
+        for(p in 1:n_pop_pool) {
+          for(r in 1:n_regions) {
+            for(a in 1:n_age_pool) {
+              for(s in 1:n_sex_pool) {
+                mu = sum(pred_recap[ry, rseas, tc, pop_pool[[p]], r, age_pool[[a]], sex_pool[[s]], f] + addtotag)
+                if(like_type == 0) {          # Poisson
+                  term = -RTMB::dpois(tracked[k], mu, log = TRUE)
+                } else {                      # NB (robust): var = mu + mu^2/theta -> size = exp(ln_theta)
+                  term = -RTMB::dnbinom_robust(x = tracked[k], log_mu = log(mu),
+                                               log_var_minus_mu = 2 * log(mu) - ln_theta, log = TRUE)
+                }
+                nLL_arr[ry,rseas,tc,r,f] = nLL_arr[ry,rseas,tc,r,f] + term
+                k = k + 1
+              }
+            }
           }
-          if(like_type == 0) {          # Poisson
-            nLL_arr[ry,rseas,tc,r,f] = -RTMB::dpois(tracked[k], mu, log = TRUE)
-          } else {                      # NB (robust): var = mu + mu^2/theta -> size = exp(ln_theta)
-            nLL_arr[ry,rseas,tc,r,f] = -RTMB::dnbinom_robust(x = tracked[k], log_mu = log(mu),
-                                                             log_var_minus_mu = 2 * log(mu) - ln_theta, log = TRUE)
-          }
-          k = k + 1
         }
       }
 

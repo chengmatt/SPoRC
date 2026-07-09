@@ -25,7 +25,8 @@ pack_tag_osa(
   sex_pool,
   use_fish_tagging,
   conv_tag_mixing_period,
-  addtotag
+  addtotag,
+  return_labels = FALSE
 )
 }
 \arguments{
@@ -70,6 +71,14 @@ pack_tag_osa(
 \item{conv_tag_mixing_period}{Minimum seasons at liberty before tags are modeled.}
 
 \item{addtotag}{Small constant added to avoid zeros.}
+
+\item{return_labels}{Logical; if TRUE, also builds a per-element label
+data.frame identifying the origin (family, like_type, tag cohort/release
+region-year-season, recovery year/season, fleet, region, pop/age/sex pool,
+is_tail, last_in_group) of every entry in \code{vec}, in the same order.
+Intended for post-hoc relabeling of \code{TMB::oneStepPredict()} residuals
+(see [get_osa()]); left \code{FALSE} (default) inside the model itself to
+avoid the extra bookkeeping cost.}
 }
 \value{
 A list with components:
@@ -78,6 +87,8 @@ A list with components:
   \item \code{grp_end}: integer vector of end indices for each composition group
     (empty for \code{family == "count"}).
   \item \code{lengths}: integer vector of per-group lengths.
+  \item \code{labels}: data.frame with one row per element of \code{vec}
+    (\code{NULL} unless \code{return_labels = TRUE}).
 }
 }
 \description{
@@ -86,9 +97,14 @@ one-step-ahead (OSA) analysis for a single likelihood family.
 }
 \details{
 For \code{family == "count"}, each valid event contributes one integer
-observation per \code{[region, fleet]} with \code{use_fish_tagging[f] == 1},
-in region-fastest then fleet order within each event, and events in
-\code{tag_grid} order.
+observation per \code{[fleet, pop_pool, region, age_pool, sex_pool]} cell
+with \code{use_fish_tagging[f] == 1}, in \code{(f, p, r, a, s)} loop order
+within each event, and events in \code{tag_grid} order. This mirrors
+\code{get_conv_tag_likelihoods()}'s exact accumulation structure -- a
+separate Poisson/NB term is fit per pool/age/sex cell and their
+-log-likelihoods summed -- so packing one count per \code{[region, fleet]}
+pre-summed across pools would evaluate a different (non-equivalent)
+likelihood whenever more than one pool is used.
 
 For \code{family == "comp"}, each valid event contributes one composition
 vector:

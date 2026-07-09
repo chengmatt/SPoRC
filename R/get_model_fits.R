@@ -2,9 +2,17 @@
 #'
 #' Generates a tidy dataframe of observed and predicted survey and fishery
 #' indices from a fitted RTMB model, including standard errors, confidence
-#' intervals, residuals, and catchability blocks. Both pooled and
-#' population-specific indices are returned when the corresponding
-#' \code{Use*_pop} flags contain any ones.
+#' intervals, a raw log-scale (Pearson-style) residual, and catchability
+#' blocks. Both pooled and population-specific indices are returned when the
+#' corresponding \code{Use*_pop} flags contain any ones.
+#'
+#' The \code{resid} column here is the simple log-scale residual
+#' \eqn{\log(\text{obs}) - \log(\text{predicted})} -- \emph{not} a
+#' one-step-ahead (OSA) residual. For properly decorrelated OSA index
+#' residuals (with QQ-plots and SDNR diagnostics via \code{\link{plot_resids}}),
+#' use \code{\link{get_osa}} with \code{index_source = }. The observed-vs-
+#' predicted \emph{fit} plot built from this function's output is
+#' \code{\link{get_idx_fits_plot}}.
 #'
 #' @param data List. Input data used in the RTMB model. Must contain
 #'   \code{ObsSrvIdx}, \code{ObsSrvIdx_SE}, \code{ObsFishIdx},
@@ -940,7 +948,7 @@ get_comp_prop <- function(data,
 #' }
 #'
 #' @keywords internal
-run_osa <- function(obs,
+run_external_comp_osa <- function(obs,
                     exp,
                     N = NULL,
                     DM_theta = NULL,
@@ -1052,12 +1060,349 @@ run_osa <- function(obs,
 
 }
 
+#' Map a composition data source to its internal-OSA field names
+#'
+#' Translates a composition data source identifier into the exact field names
+#' used in the model \code{data} list and the RTMB-tracked OSA vector name,
+#' following the naming convention used throughout \code{SPoRC_rtmb.R} (e.g.
+#' \code{ObsFishAgeComps}, \code{ISS_FishAgeComps}, \code{FishAgeComps_Type},
+#' \code{ObsFishAgeComps_osa_discrete}).
+#'
+#' @param comp_source One of \code{"FishAge"}, \code{"FishLen"}, \code{"SrvAge"}, \code{"SrvLen"}.
+#' @param pop Logical; population-specific composition source.
+#' @param discard Logical; discard composition source (only valid for Fish* sources).
+#'
+#' @return A named list of field names: \code{Obs}, \code{ISS}, \code{Wt}, \code{Use},
+#'   \code{Type}, \code{LikeType}, \code{n_fleets_field}.
+#' @keywords internal
+comp_osa_field_map <- function(comp_source, pop = FALSE, discard = FALSE) {
+  valid_sources <- c("FishAge", "FishLen", "SrvAge", "SrvLen")
+  if(!comp_source %in% valid_sources) {
+    stop("`comp_source` must be one of: ", paste(valid_sources, collapse = ", "))
+  }
+  if(discard && grepl("^Srv", comp_source)) {
+    stop("`discard = TRUE` is only valid for Fish* sources (FishAge, FishLen).")
+  }
+  suffix <- paste0(if(discard) "_discard" else "", if(pop) "_pop" else "")
+  list(
+    Obs      = paste0("Obs", comp_source, "Comps", suffix),
+    ISS      = paste0("ISS_", comp_source, "Comps", suffix),
+    Wt       = paste0("Wt_", comp_source, "Comps", suffix),
+    Use      = paste0("Use", comp_source, "Comps", suffix),
+    Type     = paste0(comp_source, "Comps", suffix, "_Type"),
+    LikeType = paste0(comp_source, "Comps", suffix, "_LikeType"),
+    n_fleets_field = if(grepl("^Srv", comp_source)) "n_srv_fleets" else "n_fish_fleets"
+  )
+}
+
+#' Keep-subset for internal OSA residuals
+#'
+#' Elements flagged \code{last_in_group == TRUE} are the statistically
+#' determined/reference cell of their group (excluded from the discrete OSA
+#' evaluation).
+#'
+#' @param last_in_group Logical vector (with possible NAs), as produced by
+#'   \code{pack_comp_osa(..., return_labels = TRUE)} or
+#'   \code{pack_tag_osa(..., return_labels = TRUE)}.
+#' @return Integer vector of positions to keep.
+#' @keywords internal
+osa_keep_subset <- function(last_in_group) {
+  which(is.na(last_in_group) | !last_in_group)
+}
+
+#' Validate an internal-OSA \code{method}
+#'
+#' The internal OSA path deliberately restricts \code{RTMB::oneStepPredict()}'s
+#' \code{method} to the generic/Gaussian family. In particular the \code{"cdf"}
+#' method is disallowed: it is numerically fragile for the discrete
+#' (multinomial / count) likelihoods used here and can silently return
+#' mis-calibrated residuals, so only \code{"oneStepGeneric"},
+#' \code{"oneStepGaussian"}, and \code{"oneStepGaussianOffMode"} are accepted.
+#'
+#' @param method Character scalar method name.
+#' @return \code{method} invisibly, if valid; otherwise an error is raised.
+#' @keywords internal
+validate_osa_method <- function(method) {
+  allowed <- c("oneStepGeneric", "oneStepGaussianOffMode", "oneStepGaussian")
+  if(!method %in% allowed) {
+    stop("OSA method '", method, "' is invalid! Must be one of: ",
+         paste(allowed, collapse = ", "),
+         " (the 'cdf' method is not permitted for internal OSA residuals).")
+  }
+  invisible(method)
+}
+
+#' Run internal (model-based) OSA residuals for a composition data source
+#'
+#' Internal counterpart to \code{\link{run_external_comp_osa}}'s external (post-hoc,
+#' compResidual-based) path, called by \code{\link{get_osa}} when a fitted
+#' \code{model} is supplied. Calls \code{RTMB::oneStepPredict()} directly on
+#' the model's internally tracked OSA vector (built via
+#' \code{do_internal_comp_osa = TRUE} in \code{\link{Setup_Mod_Dim}}), and
+#' relabels the resulting residuals using \code{\link{pack_comp_osa}}'s
+#' \code{return_labels = TRUE} output so the result matches the same
+#' \code{res} schema produced by the external path.
+#'
+#' @param model A fitted RTMB model object from \code{\link{fit_model}}, built
+#'   with \code{do_internal_comp_osa = TRUE}.
+#' @param data The model \code{data} list (e.g. \code{input_list$data}) used
+#'   to build \code{model}.
+#' @param comp_source One of \code{"FishAge"}, \code{"FishLen"}, \code{"SrvAge"}, \code{"SrvLen"}.
+#' @param family Character, \code{"discrete"} or \code{"continuous"}.
+#' @param pop Logical; population-specific composition source. Default \code{FALSE}.
+#' @param discard Logical; discard composition source. Default \code{FALSE}.
+#' @param bins Vector of age or length bin labels for display.
+#' @param bin_label Character label describing whether bins represent ages or lengths.
+#' @param parallel Whether or not to parallelize OSA computation. Defaults to \code{FALSE}.
+#' @param osa_method Optional override for \code{RTMB::oneStepPredict}'s \code{method}.
+#'   Must be one of \code{"oneStepGeneric"}, \code{"oneStepGaussianOffMode"}, or
+#'   \code{"oneStepGaussian"}; the \code{"cdf"} method is not permitted (it is
+#'   numerically fragile for the discrete likelihoods used here). Defaults to
+#'   \code{"oneStepGeneric"} for discrete data and \code{"oneStepGaussianOffMode"}
+#'   for continuous (logistic-normal) data. See
+#'   \code{\link[TMB:oneStepPredict]{TMB::oneStepPredict}} for further details.
+#'   Note that if data are discrete, the only valid option is \code{"oneStepGeneric"}.
+#'
+#' @return A list with one element \code{res}, matching \code{\link{get_osa}}'s
+#'   external-mode schema (columns \code{fleet}, \code{index_label}, \code{year},
+#'   \code{index}, \code{resid}, \code{region}, \code{sex}, \code{seas},
+#'   \code{comp_type}) plus a \code{pop} column (population index; always 1 for
+#'   \code{pop = FALSE} sources), or \code{NULL} if no data of the requested
+#'   family/source is present.
+#' @keywords internal
+run_internal_comp_osa <- function(model, data, comp_source, family,
+                                  pop = FALSE, discard = FALSE, parallel = FALSE,
+                                  bins, bin_label, osa_method = NULL) {
+
+  fm <- comp_osa_field_map(comp_source, pop = pop, discard = discard)
+  n_pop <- if(pop) data$n_pop else 1
+
+  packed <- pack_comp_osa(
+    ObsArr = data[[fm$Obs]], ISSArr = data[[fm$ISS]], WtArr = data[[fm$Wt]],
+    UseArr = data[[fm$Use]], TypeMat = data[[fm$Type]], LikeTypeVec = data[[fm$LikeType]],
+    n_yrs = length(data$years), n_seas = data$n_seas, n_fleets = data[[fm$n_fleets_field]],
+    n_sexes = data$n_sexes, addtocomp = data$addtocomp, family = family,
+    pop = pop, n_pop = n_pop, return_labels = TRUE
+  )
+
+  if(is.null(packed)) {
+    warning("No '", family, "' family data found for comp_source '", comp_source, "'; returning NULL.")
+    return(NULL)
+  }
+
+  tracked_name <- paste0(fm$Obs, "_osa_", family)
+  discrete <- (family == "discrete")
+  method <- if(!is.null(osa_method)) osa_method else if(discrete) "oneStepGeneric" else "oneStepGaussianOffMode"
+  validate_osa_method(method)
+  subset_idx <- osa_keep_subset(packed$labels$last_in_group)
+
+  osa <- RTMB::oneStepPredict(model, observation.name = tracked_name, method = method,
+                              discrete = discrete, parallel = parallel,
+                              subset = subset_idx, trace = FALSE,
+                              discreteSupport = if(discrete) 0:max(model$env$obs[[tracked_name]]) else NULL)
+
+  lab <- packed$labels[subset_idx, ]
+  lab$resid <- osa$residual
+
+  res <- lab %>%
+    dplyr::transmute(
+      fleet = as.character(fleet),
+      index_label = bin_label,
+      year = year,
+      index = bins[bin],
+      resid = resid,
+      region = region,
+      sex = sex,
+      seas = season,
+      pop = pop,
+      comp_type = dplyr::case_when(
+        comp_type == 0 ~ "Aggregated",
+        comp_type == 1 ~ "SpltR_SpltS",
+        TRUE           ~ "SpltR_JntS"
+      )
+    )
+
+  list(res = res)
+}
+
+#' Run internal (model-based) OSA residuals for conventional tagging data
+#'
+#' Internal counterpart to \code{\link{run_internal_comp_osa}} for
+#' conventional tag recapture data packed via \code{\link{pack_tag_osa}}
+#' (requires \code{do_internal_conv_tag_osa = TRUE} in
+#' \code{\link{Setup_Mod_Dim}}). Called by \code{\link{get_osa}} when
+#' \code{tag = TRUE} and a fitted \code{model} is supplied.
+#'
+#' @param model A fitted RTMB model object from \code{\link{fit_model}}, built
+#'   with \code{do_internal_conv_tag_osa = TRUE}.
+#' @param data The model \code{data} list (e.g. \code{input_list$data}) used
+#'   to build \code{model}.
+#' @param osa_method Optional override for \code{RTMB::oneStepPredict}'s \code{method}.
+#'   Must be one of \code{"oneStepGeneric"}, \code{"oneStepGaussianOffMode"}, or
+#'   \code{"oneStepGaussian"} (the \code{"cdf"} method is not permitted). Defaults
+#'   to \code{"oneStepGeneric"} (tag recapture data are always discrete/count-valued).
+#' @param parallel Whether or not to parallelize OSA computation. Defaults to \code{FALSE}.
+#'
+#' @return A list with one element \code{res}: columns \code{fleet}, \code{region},
+#'   \code{pop_pool}, \code{age_pool}, \code{sex_pool}, \code{cohort},
+#'   \code{release_year}, \code{release_region}, \code{release_season},
+#'   \code{recovery_year}, \code{recovery_season}, \code{years_at_liberty},
+#'   \code{is_tail}, \code{resid}, \code{family}, \code{comp_type = "Tag"},
+#'   or \code{NULL} if no tagging data is present.
+#' @keywords internal
+run_internal_tag_osa <- function(model, data, osa_method = NULL, parallel = FALSE) {
+
+  family <- tag_fam_of(data$conv_fish_tag_like)
+
+  packed <- pack_tag_osa(
+    family = family, like_type = data$conv_fish_tag_like,
+    obs_recap = data$obs_conv_tag_fish_recap, pred_recap = data$obs_conv_tag_fish_recap,
+    tagged_fish = data$conv_tagged_fish,
+    conv_tag_release_indicator = data$conv_tag_release_indicator,
+    conv_tag_max_liberty = data$conv_tag_max_liberty,
+    n_conv_tag_cohorts = data$n_conv_tag_cohorts,
+    n_yrs = length(data$years), n_seas = data$n_seas, n_regions = data$n_regions,
+    n_fish_fleets = data$n_fish_fleets,
+    n_pop_pool = length(data$conv_tag_pop_pool), n_age_pool = length(data$conv_tag_age_pool),
+    n_sex_pool = length(data$conv_tag_sex_pool),
+    pop_pool = data$conv_tag_pop_pool, age_pool = data$conv_tag_age_pool, sex_pool = data$conv_tag_sex_pool,
+    use_fish_tagging = data$use_conv_fish_tagging, conv_tag_mixing_period = data$conv_tag_mixing_period,
+    addtotag = data$addtotag, return_labels = TRUE
+  )
+
+  if(is.null(packed$vec)) {
+    warning("No conventional tagging data found; returning NULL.")
+    return(NULL)
+  }
+
+  tracked_name <- paste0("ObsConvTag_osa_", family)
+  method <- if(!is.null(osa_method)) osa_method else "oneStepGeneric"
+  validate_osa_method(method)
+  subset_idx <- osa_keep_subset(packed$labels$last_in_group)
+
+  osa <- RTMB::oneStepPredict(model, observation.name = tracked_name, method = method,
+                              discreteSupport = 0:max(model$env$obs[[tracked_name]]),
+                              discrete = TRUE, parallel = parallel, subset = subset_idx, trace = FALSE)
+
+  lab <- packed$labels[subset_idx, ]
+  lab$resid <- osa$residual
+
+  res <- lab %>%
+    dplyr::mutate(
+      fleet = as.character(fleet),
+      region = region,
+      pop_pool = pop_pool,
+      age_pool = age_pool,
+      sex_pool = sex_pool,
+      cohort = tc,
+      release_year = data$years[ty],
+      release_region = tr,
+      release_season = tseas,
+      recovery_year = data$years[ty + ry - 1],
+      recovery_season = rseas,
+      years_at_liberty = ry,
+      is_tail = is_tail,
+      resid = resid,
+      family = family,
+      comp_type = "Tag",
+      .keep = 'none'
+    )
+
+  list(res = res)
+}
+
+#' Map an index-type data source to its internal-OSA field names
+#'
+#' Translates an index-type data source identifier into the exact field names
+#' used in the model \code{data} list, following the naming convention used
+#' throughout \code{SPoRC_rtmb.R} (e.g. \code{ObsFishIdx}, \code{UseFishIdx}).
+#'
+#' @param index_source One of \code{"Catch"}, \code{"Discard"}, \code{"FishIdx"}, \code{"SrvIdx"}.
+#' @param pop Logical; population-specific index source.
+#'
+#' @return A named list of field names: \code{Obs}, \code{Use}.
+#' @keywords internal
+index_osa_field_map <- function(index_source, pop = FALSE) {
+  valid_sources <- c("Catch", "Discard", "FishIdx", "SrvIdx")
+  if(!index_source %in% valid_sources) {
+    stop("`index_source` must be one of: ", paste(valid_sources, collapse = ", "))
+  }
+  suffix <- if(pop) "_pop" else ""
+  list(
+    Obs = paste0("Obs", index_source, suffix),
+    Use = paste0("Use", index_source, suffix)
+  )
+}
+
+#' Run internal (model-based) OSA residuals for an index-type data source
+#'
+#' Internal counterpart to \code{\link{run_internal_comp_osa}} for
+#' catch/discard/index data (\code{ObsCatch}, \code{ObsDiscard},
+#' \code{ObsFishIdx}, \code{ObsSrvIdx}, and their \code{_pop} variants). These
+#' are always continuous observations.
+#'
+#' @param model A fitted RTMB model object from \code{\link{fit_model}}.
+#' @param data The model \code{data} list (e.g. \code{input_list$data}) used
+#'   to build \code{model}.
+#' @param index_source One of \code{"Catch"}, \code{"Discard"}, \code{"FishIdx"}, \code{"SrvIdx"}.
+#' @param pop Logical; population-specific index source. Default \code{FALSE}.
+#' @param osa_method Optional override for \code{RTMB::oneStepPredict}'s
+#'   \code{method}. Must be one of \code{"oneStepGeneric"},
+#'   \code{"oneStepGaussianOffMode"}, or \code{"oneStepGaussian"} (the
+#'   \code{"cdf"} method is not permitted). Defaults to \code{"oneStepGeneric"}.
+#' @param parallel Whether or not to parallelize OSA computation. Defaults to \code{FALSE}.
+#'
+#' @return A list with one element \code{res}: columns \code{fleet},
+#'   \code{region}, \code{year}, \code{season}, \code{pop}, \code{resid}, and
+#'   \code{idx_type} (set to \code{index_source}; named \code{idx_type} rather
+#'   than \code{comp_type} because index-type sources are not compositions), or
+#'   \code{NULL} if no data of the requested source is present.
+#' @keywords internal
+run_internal_index_osa <- function(model, data, index_source, pop = FALSE,
+                                   osa_method = NULL, parallel = FALSE) {
+
+  fm <- index_osa_field_map(index_source, pop = pop)
+  use_arr <- data[[fm$Use]]
+
+  if(is.null(use_arr) || !any(use_arr == 1, na.rm = TRUE)) {
+    warning("No data found for index_source '", index_source, "'", if(pop) " (pop)" else "", "; returning NULL.")
+    return(NULL)
+  }
+
+  valid_idx <- which(use_arr == 1)
+  dim_names <- if(pop) c("pop", "region", "year", "season", "fleet") else c("region", "year", "season", "fleet")
+  map <- as.data.frame(arrayInd(valid_idx, dim(use_arr)))
+  colnames(map) <- dim_names
+
+  tracked_name <- fm$Obs
+  method <- if(!is.null(osa_method)) osa_method else "oneStepGeneric"
+  validate_osa_method(method)
+
+  osa <- RTMB::oneStepPredict(model, observation.name = tracked_name, method = method,
+                              discrete = FALSE, parallel = parallel, trace = FALSE)
+
+  res <- data.frame(
+    fleet = as.character(map$fleet),
+    region = map$region,
+    year = data$years[map$year],
+    season = map$season,
+    pop = if(pop) map$pop else 1L,
+    resid = osa$residual,
+    # index-type sources are not compositions, so the discriminator column is
+    # named idx_type (values "Catch"/"Discard"/"FishIdx"/"SrvIdx") rather than
+    # comp_type; plot_resids() dispatches on whichever discriminator is present.
+    idx_type = index_source
+  )
+
+  list(res = res)
+}
+
 #' Compute OSA residuals for composition data
 #'
 #' Formats observed and expected composition data and calculates one-step-ahead
 #' (OSA) residuals using multinomial, Dirichlet-multinomial, or logistic-normal
 #' likelihoods. This function is the main interface for residual diagnostics,
-#' internally calling [run_osa()] to perform the residual calculations.
+#' internally calling [run_external_comp_osa()] to perform the residual calculations.
 #'
 #' @param obs_mat Array of observed compositions, dimensioned by
 #'   \code{[region, year, bin, sex, fleet]}. May contain \code{NA}s, which are
@@ -1109,6 +1454,50 @@ run_osa <- function(obs,
 #'   Use [get_logistN_Sigma()] to help construct this input.
 #' @param addtocomp Constant that is added to compositions
 #' @param seas Season index
+#' @param model A fitted RTMB model object from \code{\link{fit_model}}
+#'   (built with \code{do_internal_comp_osa = TRUE} or
+#'   \code{do_internal_conv_tag_osa = TRUE}). Supplying \code{model} switches
+#'   \code{get_osa()} from the default external (post-hoc, compResidual-based)
+#'   path to the internal path, which calls \code{RTMB::oneStepPredict()}
+#'   directly on the model's internally tracked OSA vector. All \code{obs_mat}/
+#'   \code{exp_mat}/\code{N}/\code{DM_theta}/\code{LN_Sigma}/\code{years}/
+#'   \code{comp_type}/\code{comp_like} arguments above are ignored in this mode.
+#' @param data The model \code{data} list (e.g. \code{input_list$data}) used to
+#'   build \code{model}. Required when \code{model} is supplied.
+#' @param comp_source One of \code{"FishAge"}, \code{"FishLen"}, \code{"SrvAge"},
+#'   \code{"SrvLen"}, identifying which composition data source to pull
+#'   internal OSA residuals for. Required when \code{model} is supplied and
+#'   \code{index_source} is \code{NULL} and \code{tag = FALSE}.
+#' @param index_source One of \code{"Catch"}, \code{"Discard"}, \code{"FishIdx"},
+#'   \code{"SrvIdx"}, identifying which continuous (log-normal) index-type
+#'   data source to pull internal OSA residuals for. When supplied, takes
+#'   precedence over \code{comp_source}/\code{tag}. Only used when
+#'   \code{model} is supplied.
+#' @param family Character, \code{"discrete"} or \code{"continuous"}; which of
+#'   the two internally-tracked OSA vectors to use for \code{comp_source} (a
+#'   source can have both, e.g. some fleets multinomial and others
+#'   logistic-normal). Only used when \code{model} is supplied, \code{tag =
+#'   FALSE}, and \code{index_source} is \code{NULL}.
+#' @param pop Logical; population-specific composition or index source. Only
+#'   used when \code{model} is supplied and \code{tag = FALSE}. Default \code{FALSE}.
+#' @param discard Logical; discard composition source (only valid for
+#'   \code{comp_source \%in\% c("FishAge","FishLen")}). Only used when
+#'   \code{model} is supplied, \code{tag = FALSE}, and \code{index_source} is
+#'   \code{NULL}. Default \code{FALSE}.
+#' @param tag Logical; if \code{TRUE} (and \code{model} is supplied, and
+#'   \code{index_source} is \code{NULL}), compute internal OSA residuals for
+#'   conventional tag recapture data instead of composition data. Default
+#'   \code{FALSE}.
+#' @param osa_method Optional override for \code{RTMB::oneStepPredict}'s
+#'   \code{method}, used only in internal mode. Must be one of
+#'   \code{"oneStepGeneric"}, \code{"oneStepGaussianOffMode"}, or
+#'   \code{"oneStepGaussian"}; the \code{"cdf"} method is not permitted (it is
+#'   numerically fragile for the discrete likelihoods used here). Defaults to
+#'   \code{"oneStepGeneric"} for discrete families/tags and
+#'   \code{"oneStepGaussianOffMode"} for continuous (logistic-normal)
+#'   composition families.
+#' @param parallel Whether or not to parallelize OSA computation in internal
+#'   mode. Defaults to \code{FALSE}.
 #'
 #' @details
 #' When computing OSA residuals for population-specific composition data,
@@ -1127,30 +1516,71 @@ run_osa <- function(obs,
 #' \code{[n_pop × n_regions × n_years × n_seas × n_bins × n_sexes × n_fleets]}.
 #' Slicing on \code{p} yields a 6D array matching the expected input dimensions.
 #'
+#' For internal (model-based) OSA residuals, fit the model with
+#' \code{do_internal_comp_osa = TRUE} and/or \code{do_internal_conv_tag_osa =
+#' TRUE} (set in \code{\link{Setup_Mod_Dim}}), then call, e.g.:
+#'
+#' \preformatted{
+#' get_osa(model = fitted_obj, data = input_list$data, comp_source = "FishAge",
+#'         family = "discrete", bins = input_list$data$ages, bin_label = "Age")
+#' get_osa(model = fitted_obj, data = input_list$data, tag = TRUE)
+#' get_osa(model = fitted_obj, data = input_list$data, index_source = "SrvIdx")
+#' }
+#'
 #' @return A list with one element:
 #' \describe{
 #'   \item{res}{Data frame of OSA residuals. Columns include:
 #'     \code{fleet}, \code{index_label}, \code{year}, \code{index},
-#'     \code{resid}, \code{region}, \code{seas}, \code{sex}, and \code{comp_type}.}
+#'     \code{resid}, \code{region}, \code{seas}, \code{sex}, and \code{comp_type}
+#'     (composition sources, external or internal); \code{fleet}, \code{region},
+#'     \code{cohort}, \code{release_year}/\code{release_region}/\code{release_season},
+#'     \code{recovery_year}/\code{recovery_season}, \code{years_at_liberty}, \code{resid},
+#'     and \code{comp_type = "Tag"} (\code{tag = TRUE}); or \code{fleet}, \code{region},
+#'     \code{year}, \code{season}, \code{pop}, \code{resid}, and \code{idx_type}
+#'     set to \code{index_source} (\code{index_source} supplied.}
 #' }
 #'
 #' @family Model Diagnostics
 #' @import dplyr
 #' @export get_osa
-get_osa <- function(obs_mat,
-                    exp_mat,
+get_osa <- function(obs_mat = NULL,
+                    exp_mat = NULL,
                     N = NULL,
                     DM_theta = NULL,
                     LN_Sigma = NULL,
-                    years,
-                    seas,
-                    fleet,
-                    bins,
-                    comp_type,
-                    bin_label,
+                    years = NULL,
+                    seas = NULL,
+                    fleet = NULL,
+                    bins = NULL,
+                    comp_type = NULL,
+                    bin_label = NULL,
                     comp_like = 0,
-                    addtocomp = 0
+                    addtocomp = 0,
+                    model = NULL,
+                    data = NULL,
+                    comp_source = NULL,
+                    index_source = NULL,
+                    family = "discrete",
+                    pop = FALSE,
+                    discard = FALSE,
+                    tag = FALSE,
+                    osa_method = NULL,
+                    parallel = FALSE
                     ) {
+
+  # Internal (model-based) OSA path, via RTMB::oneStepPredict
+  if(!is.null(model)) {
+    if(!is.null(index_source)) {
+      return(run_internal_index_osa(model = model, data = data, index_source = index_source,
+                                    pop = pop, osa_method = osa_method, parallel = parallel))
+    } else if(tag) {
+      return(run_internal_tag_osa(model = model, data = data, osa_method = osa_method, parallel = parallel))
+    } else {
+      return(run_internal_comp_osa(model = model, data = data, comp_source = comp_source, family = family,
+                                   pop = pop, discard = discard, bins = bins, bin_label = bin_label,
+                                   osa_method = osa_method, parallel = parallel))
+    }
+  }
 
   if (!requireNamespace("compResidual", quietly = TRUE)) {
     stop("Package 'compResidual' is required for get_osa(). Please follow installation instructions from https://github.com/fishfollower/compResidual/compResidual")
@@ -1173,7 +1603,7 @@ get_osa <- function(obs_mat,
       tmp_exp <- (tmp_exp + addtocomp) / rowSums(tmp_exp + addtocomp)
 
       # compute OSA
-      tmp_osa <- run_osa(obs = tmp_obs, exp = tmp_exp, N = N, DM_theta = DM_theta,
+      tmp_osa <- run_external_comp_osa(obs = tmp_obs, exp = tmp_exp, N = N, DM_theta = DM_theta,
                          years = years, comp_like = comp_like, LN_Sigma = LN_Sigma,
                          index = bins, fleet = as.character(fleet), index_label = bin_label)
 
@@ -1206,7 +1636,7 @@ get_osa <- function(obs_mat,
           tmp_exp <- (tmp_exp + addtocomp) / rowSums(tmp_exp + addtocomp)
 
           # compute OSA
-          tmp_osa <- run_osa(obs = tmp_obs, exp = tmp_exp, N = N[r,years[[r]],s], DM_theta = DM_theta[r,s],
+          tmp_osa <- run_external_comp_osa(obs = tmp_obs, exp = tmp_exp, N = N[r,years[[r]],s], DM_theta = DM_theta[r,s],
                              years = years[[r]], comp_like = comp_like, LN_Sigma = LN_Sigma[r,,,s],
                              index = bins, fleet = as.character(fleet), index_label = bin_label)
 
@@ -1251,7 +1681,7 @@ get_osa <- function(obs_mat,
         tmp_exp <- (tmp_exp + addtocomp) / rowSums(tmp_exp + addtocomp)
 
         # compute OSA
-        tmp_osa <- run_osa(obs = tmp_obs, exp = tmp_exp, N = N[r,years[[r]]],
+        tmp_osa <- run_external_comp_osa(obs = tmp_obs, exp = tmp_exp, N = N[r,years[[r]]],
                            DM_theta = DM_theta[r], years = years[[r]], comp_like = comp_like, LN_Sigma = LN_Sigma[r,,],
                            index = paste(rep(1:n_sexes, each = length(bins)), "_", rep(bins, times = n_sexes), sep = ""),
                            fleet = as.character(fleet), index_label = bin_label)
@@ -1280,11 +1710,39 @@ get_osa <- function(obs_mat,
 #' Plot OSA residuals from outputs of get_osa
 #'
 #' Generates diagnostic plots for one-step-ahead (OSA) residuals. Includes
-#' QQ-plots with SDNR annotations and bubble plots showing residual magnitude and sign.
+#' QQ-plots with SDNR annotations and bubble plots showing residual magnitude
+#' and sign.
+#'
+#' Panels are faceted by every structural dimension the residual data frame
+#' actually spans. Composition plots always facet by \code{region}/\code{sex} and additionally facet by \code{fleet}, \code{pop}, and \code{seas}
+#' whenever \code{osa_results$res} contains more than one of each (\code{seas} matters because
+#' \code{year} + bin alone don't uniquely place a bubble-plot point when compositions are
+#' collected in more than one season). Tagging plots facet
+#' by \code{region}, \code{recovery_season}, \code{fleet}, and
+#' \code{pop_pool} (movement/tag population-pooling group, when more than one
+#' is present) whenever those span more than one level. The release-conditioned "tail"
+#' (non-recapture) row has no \code{pop_pool} of its own and gets its own
+#' \code{"Tail (non-recap)"} panel rather than being dropped or blended in.
+#' \code{recovery_year} + \code{years_at_liberty} alone don't uniquely place a
+#' bubble-plot point -- cohorts released in different regions/seasons of the
+#' same release year can share both -- so the bubble plot (but not the
+#' QQ-plot/SDNR grouping) jitters point positions slightly to keep
+#' coincidentally co-located residuals visible rather than fully overplotted.
+#' Index-type residuals (from \code{get_osa(..., index_source = ...)}, carrying
+#' an \code{idx_type} column \code{\%in\% c("Catch","Discard","FishIdx","SrvIdx")}
+#' instead of \code{comp_type}) facet by \code{region},
+#' \code{season}, \code{fleet}, and \code{pop} whenever those span more than
+#' one level, and pair the QQ-plot with a residual-vs-year point plot instead
+#' of a bubble plot (there is no bin/age/length dimension to plot against).
+#' Note: these are one-step-ahead residuals; for the simpler raw log-scale
+#' (Pearson-style) index residual and the observed-vs-predicted index fit, see
+#' \code{\link{get_idx_fits}} / \code{\link{get_idx_fits_plot}} instead.
 #'
 #' @param osa_results List obtained from get_osa() containing residuals dataframe.
 #'
-#' @return List of plots: \code{sdnr_plot} (QQ-plot) and \code{bubble_plot} (bubble residuals).
+#' @return List of plots: \code{sdnr_plot} (QQ-plot) and a second element
+#'   that is a \code{bubble_plot} (composition/tag residual magnitude and
+#'   sign) or a \code{resid_plot} (index-type residual vs. year).
 #' @export plot_resids
 #' @family Model Diagnostics
 #' @import dplyr
@@ -1294,99 +1752,160 @@ plot_resids <- function(osa_results) {
   # extract results
   res <- osa_results$res %>% dplyr::mutate(sign = ifelse(resid < 0, "Neg", "Pos"))
 
-  # Aggregated Comps
-  if(unique(res$comp_type) == "Aggregated") {
+  # Single dispatch discriminator. Composition/tag residuals carry a
+  # `comp_type` column; index-type residuals (Catch/Discard/FishIdx/SrvIdx)
+  # carry an `idx_type` column instead (they are not compositions).
+  res_type <- if("idx_type" %in% names(res)) as.character(unique(res$idx_type)) else as.character(unique(res$comp_type))
 
-    # Get standarized normal residuals
-    sdnr <- res %>%
-    dplyr::summarise(
-      df=n()-1,
-      HCI = sqrt(qchisq(.975,df)/df),
-      LCI = sqrt(qchisq(.025,df)/df),
-      est= sd(resid))  %>%
-    dplyr::mutate(
-      sdnr=paste0('SDNR=',sprintf('%.2f', est)),
-      sdnr=paste0(sdnr,'\n(', sprintf('%.2f', LCI), '-', sprintf('%.2f', HCI),')')
-    )
+  # Which optional structural dimensions does this result actually span?
+  has_multi <- function(v) v %in% names(res) && dplyr::n_distinct(res[[v]], na.rm = TRUE) > 1
+  multi_fleet <- has_multi("fleet")
+  multi_pop   <- has_multi("pop")
+  multi_comp_seas <- has_multi("seas")
 
-    # sdnr plot
-    sdnr_plot <- ggplot() +
-      geom_abline(slope = 1, intercept = 0, lty = 2, lwd = 1.3) +
-      stat_qq(data = res, aes(sample = resid), col = "blue", size = 2, alpha = 0.5) +
-      theme_bw(base_size = 20) +
-      labs(x = "Theoretical quantiles", y = "Sample quantiles") +
-      geom_text(data = sdnr, aes(x = -Inf, y = Inf, label = sdnr), hjust = -0.5, vjust = 2.5, size = 4)
+  # Facet labels for every dimension we might facet on (only used when present).
+  lab_fns <- list(
+    region          = function(x) paste0("Region ", x),
+    sex             = function(x) paste0("Sex ", x),
+    fleet           = function(x) paste0("Fleet ", x),
+    pop             = function(x) paste0("Pop ", x),
+    recovery_season = function(x) paste0("Seas ", x),
+    season          = function(x) paste0("Seas ", x),
+    seas            = function(x) paste0("Seas ", x),
+    pop_pool        = function(x) ifelse(x == "tail", "Tail (non-recap)", paste0("Pool ", x))
+  )
 
+  # Build a facet_grid() from character vectors of row/column facet variables
+  # (empty -> no faceting on that axis; both empty -> no facet layer at all).
+  build_facet <- function(row_vars, col_vars) {
+    used <- c(row_vars, col_vars)
+    if(length(used) == 0) return(NULL)
+    lhs <- if(length(row_vars)) paste(row_vars, collapse = " + ") else "."
+    rhs <- if(length(col_vars)) paste(col_vars, collapse = " + ") else "."
+    facet_grid(stats::as.formula(paste(lhs, "~", rhs)),
+               labeller = do.call(labeller, lab_fns[used]))
   }
 
-  # Split Sex and Split Region
-  if(unique(res$comp_type) == "SpltR_SpltS") {
-
-    # Get standarized normal residuals
-    sdnr <- res %>% dplyr::group_by(region, sex) %>%
+  # SDNR annotation table, grouped by whatever facet variables are in play.
+  sdnr_table <- function(res, grp_vars) {
+    grouped <- if(length(grp_vars)) dplyr::group_by(res, dplyr::across(dplyr::all_of(grp_vars))) else res
+    grouped %>%
       dplyr::summarise(
-        df=n()-1,
-        HCI = sqrt(qchisq(.975,df)/df),
-        LCI = sqrt(qchisq(.025,df)/df),
-        est= sd(resid))  %>%
+        df  = n() - 1,
+        HCI = sqrt(qchisq(.975, df) / df),
+        LCI = sqrt(qchisq(.025, df) / df),
+        est = sd(resid), .groups = "drop") %>%
       dplyr::mutate(
-        sdnr=paste0('SDNR=',sprintf('%.2f', est)),
-        sdnr=paste0(sdnr,'\n(', sprintf('%.2f', LCI), '-', sprintf('%.2f', HCI),')')
+        sdnr = paste0('SDNR=', sprintf('%.2f', est)),
+        sdnr = paste0(sdnr, '\n(', sprintf('%.2f', LCI), '-', sprintf('%.2f', HCI), ')')
       )
+  }
 
-    # sdnr plot
-    sdnr_plot <- ggplot() +
+  qq_base <- function(res, sdnr) {
+    ggplot() +
       geom_abline(slope = 1, intercept = 0, lty = 2, lwd = 1.3) +
       stat_qq(data = res, aes(sample = resid), col = "blue", size = 2, alpha = 0.5) +
-      labs(x = "Theoretical quantiles", y = "Sample quantiles") +
-      facet_grid(region ~ sex, labeller = labeller(
-        region = function(x) paste0("Region ", x),
-        sex = function(x) paste0("Sex ", x)
-      )) +
       theme_bw(base_size = 20) +
+      labs(x = "Theoretical quantiles", y = "Sample quantiles") +
       geom_text(data = sdnr, aes(x = -Inf, y = Inf, label = sdnr), hjust = -0.5, vjust = 2.5, size = 4)
   }
 
+  # Extra (non-structural) composition facet columns, in a stable order.
+  # `seas` matters here because year + bin alone don't uniquely place a
+  # bubble-plot point when compositions are collected in more than one
+  # season -- without faceting on it, residuals from different seasons
+  # collide on the same (year, bin) coordinate.
+  comp_extra_cols <- c(if(multi_fleet) "fleet", if(multi_pop) "pop", if(multi_comp_seas) "seas")
 
-  # Joint Sex and Split Region
-  if(unique(res$comp_type) == "SpltR_JntS") {
+  # Conventional Tagging OSA Residuals ----------------------------------------
+  if(res_type == "Tag") {
 
-    # Get standarized normal residuals
-    sdnr <- res %>% dplyr::group_by(region) %>%
-      dplyr::summarise(
-        df=n()-1,
-        HCI = sqrt(qchisq(.975,df)/df),
-        LCI = sqrt(qchisq(.025,df)/df),
-        est= sd(resid))  %>%
-      dplyr::mutate(
-        sdnr=paste0('SDNR=',sprintf('%.2f', est)),
-        sdnr=paste0(sdnr,'\n(', sprintf('%.2f', LCI), '-', sprintf('%.2f', HCI),')')
-      )
+    multi_region   <- has_multi("region")
+    multi_seas     <- has_multi("recovery_season")
+    multi_pop_pool <- has_multi("pop_pool")
 
-    # sdnr plot
-    sdnr_plot <- ggplot() +
-      geom_abline(slope = 1, intercept = 0, lty = 2, lwd = 1.3) +
-      stat_qq(data = res, aes(sample = resid), col = "blue", size = 2, alpha = 0.5) +
-      labs(x = "Theoretical quantiles", y = "Sample quantiles") +
-      facet_grid(~region, labeller = labeller(
-        region = function(x) paste0("Region ", x)
-      )) +
+    if(multi_pop_pool) {
+      # the release-conditioned "tail" (non-recap) has no pop_pool of its own
+      res <- res %>% dplyr::mutate(pop_pool = ifelse(is.na(pop_pool), "tail", as.character(pop_pool)))
+    }
+    tag_row_vars <- if(multi_region) "region"
+    tag_col_vars <- c(if(multi_seas) "recovery_season", if(multi_fleet) "fleet", if(multi_pop_pool) "pop_pool")
+
+    sdnr <- sdnr_table(res, c(tag_row_vars, tag_col_vars))
+    sdnr_plot <- qq_base(res, sdnr) + build_facet(tag_row_vars, tag_col_vars)
+
+    # recovery_year + years_at_liberty alone don't uniquely place a point --
+    # cohorts released in different regions/seasons of the same release year
+    # can share both, so distinct residuals can legitimately land on the same
+    # coordinate. Faceting on release_region/release_season too would explode
+    # the panel count (region x release_region x season x release_season x
+    # fleet x pop_pool), so instead jitter x/y slightly to keep coincidentally
+    # co-located points visible rather than fully overplotted.
+    bubble_plot <- ggplot(data = res, aes(x = recovery_year, y = years_at_liberty,
+                                          color = sign, size = abs(resid), alpha = abs(resid))) +
+      geom_point(position = position_jitter(width = 0.15, height = 0.15, seed = 1)) +
+      scale_color_manual(values = c("blue", "red")) +
+      labs(x = "Recovery Year", y = "Years at Liberty", color = "Sign", size = "abs(Resid)", alpha = "abs(Resid)") +
       theme_bw(base_size = 20) +
-      geom_text(data = sdnr, aes(x = -Inf, y = Inf, label = sdnr), hjust = -0.5, vjust = 2.5, size = 4)
+      theme(legend.position = 'top') +
+      build_facet(tag_row_vars, tag_col_vars)
+
+    return(list(sdnr_plot, bubble_plot))
   }
 
-  # bubble plot
+  # Index-type OSA Residuals (Catch/Discard/FishIdx/SrvIdx) -------------------
+  if(res_type %in% c("Catch", "Discard", "FishIdx", "SrvIdx")) {
+
+    multi_region <- has_multi("region")
+    multi_seas   <- has_multi("season")
+
+    idx_row_vars <- if(multi_region) "region"
+    idx_col_vars <- c(if(multi_seas) "season", if(multi_fleet) "fleet", if(multi_pop) "pop")
+
+    sdnr <- sdnr_table(res, c(idx_row_vars, idx_col_vars))
+    sdnr_plot <- qq_base(res, sdnr) + build_facet(idx_row_vars, idx_col_vars)
+
+    resid_plot <- ggplot(data = res, aes(x = year, y = resid, color = sign)) +
+      geom_point(size = 2.5) +
+      geom_hline(yintercept = 0, lty = 2) +
+      scale_color_manual(values = c("blue", "red")) +
+      labs(x = "Year", y = "OSA Residual", color = "Sign") +
+      theme_bw(base_size = 20) +
+      theme(legend.position = 'top') +
+      build_facet(idx_row_vars, idx_col_vars)
+
+    return(list(sdnr_plot, resid_plot))
+  }
+
+  # Aggregated Comps ----------------------------------------------------------
+  if(res_type == "Aggregated") {
+    sdnr <- sdnr_table(res, comp_extra_cols)
+    sdnr_plot <- qq_base(res, sdnr) + build_facet(character(0), comp_extra_cols)
+  }
+
+  # Split Sex and Split Region ------------------------------------------------
+  if(res_type == "SpltR_SpltS") {
+    grp <- c("region", "sex", comp_extra_cols)
+    sdnr <- sdnr_table(res, grp)
+    sdnr_plot <- qq_base(res, sdnr) + build_facet("region", c("sex", comp_extra_cols))
+  }
+
+  # Joint Sex and Split Region ------------------------------------------------
+  if(res_type == "SpltR_JntS") {
+    grp <- c("region", comp_extra_cols)
+    sdnr <- sdnr_table(res, grp)
+    sdnr_plot <- qq_base(res, sdnr) + build_facet(character(0), c("region", comp_extra_cols))
+  }
+
+  # bubble plot (shared across composition comp types) ------------------------
   bubble_plot <- ggplot(data = res, aes(x = year, y = as.numeric(index),
                                         color = sign, size = abs(resid), alpha = abs(resid))) +
     geom_point() +
     scale_color_manual(values = c("blue", "red")) +
     labs(x = "Year", y = unique(res$index_label), color = "Sign", size = "abs(Resid)", alpha = "abs(Resid)") +
-    facet_grid(region ~ sex, labeller = labeller(
-      region = function(x) paste0("Region ", x),
-      sex = function(x) paste0("Sex ", x)
-    )) +
     theme_bw(base_size = 20) +
-    theme(legend.position = 'top')
+    theme(legend.position = 'top') +
+    build_facet("region", c("sex", comp_extra_cols))
 
   return(list(sdnr_plot, bubble_plot))
 

@@ -27,7 +27,8 @@ pack_tag_osa(
   sex_pool,
   use_fish_tagging,
   conv_tag_mixing_period,
-  addtotag
+  addtotag,
+  return_labels = FALSE
 )
 ```
 
@@ -117,6 +118,17 @@ pack_tag_osa(
 
   Small constant added to avoid zeros.
 
+- return_labels:
+
+  Logical; if TRUE, also builds a per-element label data.frame
+  identifying the origin (family, like_type, tag cohort/release
+  region-year-season, recovery year/season, fleet, region, pop/age/sex
+  pool, is_tail, last_in_group) of every entry in `vec`, in the same
+  order. Intended for post-hoc relabeling of
+  [`TMB::oneStepPredict()`](https://rdrr.io/pkg/TMB/man/oneStepPredict.html)
+  residuals (see \[get_osa()\]); left `FALSE` (default) inside the model
+  itself to avoid the extra bookkeeping cost.
+
 ## Value
 
 A list with components:
@@ -129,12 +141,21 @@ A list with components:
 
 - `lengths`: integer vector of per-group lengths.
 
+- `labels`: data.frame with one row per element of `vec` (`NULL` unless
+  `return_labels = TRUE`).
+
 ## Details
 
 For `family == "count"`, each valid event contributes one integer
-observation per `[region, fleet]` with `use_fish_tagging[f] == 1`, in
-region-fastest then fleet order within each event, and events in
-`tag_grid` order.
+observation per `[fleet, pop_pool, region, age_pool, sex_pool]` cell
+with `use_fish_tagging[f] == 1`, in `(f, p, r, a, s)` loop order within
+each event, and events in `tag_grid` order. This mirrors
+[`get_conv_tag_likelihoods()`](https://chengmatt.github.io/SPoRC/dev/reference/get_conv_tag_likelihoods.md)'s
+exact accumulation structure – a separate Poisson/NB term is fit per
+pool/age/sex cell and their -log-likelihoods summed – so packing one
+count per `[region, fleet]` pre-summed across pools would evaluate a
+different (non-equivalent) likelihood whenever more than one pool is
+used.
 
 For `family == "comp"`, each valid event contributes one composition
 vector:

@@ -2,9 +2,9 @@
 
 Generates a tidy dataframe of observed and predicted survey and fishery
 indices from a fitted RTMB model, including standard errors, confidence
-intervals, residuals, and catchability blocks. Both pooled and
-population-specific indices are returned when the corresponding
-`Use*_pop` flags contain any ones.
+intervals, a raw log-scale (Pearson-style) residual, and catchability
+blocks. Both pooled and population-specific indices are returned when
+the corresponding `Use*_pop` flags contain any ones.
 
 ## Usage
 
@@ -90,6 +90,19 @@ survey and fishery indices with the following columns:
 
   Combined label of Type, population (for pop rows), Fleet, Season, and
   Q-block.
+
+## Details
+
+The `resid` column here is the simple log-scale residual
+\\\log(\text{obs}) - \log(\text{predicted})\\ – *not* a one-step-ahead
+(OSA) residual. For properly decorrelated OSA index residuals (with
+QQ-plots and SDNR diagnostics via
+[`plot_resids`](https://chengmatt.github.io/SPoRC/dev/reference/plot_resids.md)),
+use
+[`get_osa`](https://chengmatt.github.io/SPoRC/dev/reference/get_osa.md)
+with `index_source = `. The observed-vs- predicted *fit* plot built from
+this function's output is
+[`get_idx_fits_plot`](https://chengmatt.github.io/SPoRC/dev/reference/get_idx_fits_plot.md).
 
 ## See also
 

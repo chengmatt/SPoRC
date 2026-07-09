@@ -67,7 +67,20 @@
   for OSA residuals.
 - Force non-parametric selectivity to be mean-standardized.
 - Added OSA residuals and `oneStepPredict` functionality to time-series
-  observations (indices and catch).
+  observations (indices and catch) as well as composition and tagging
+  data. `get_osa` and `plot_resids` modified to accomodate plotting of
+  OSA residuals for the aforementioned data sources. The internal-OSA
+  `osa_method` is restricted to `"oneStepGeneric"`,
+  `"oneStepGaussianOffMode"`, and `"oneStepGaussian"`; the `"cdf"`
+  method is disallowed as it is numerically fragile for the discrete
+  likelihoods used here and can silently return mis-calibrated
+  residuals. Index-type OSA output (`get_osa(index_source = ...)`) now
+  carries an `idx_type` discriminator column (values
+  `"Catch"`/`"Discard"`/`"FishIdx"`/`"SrvIdx"`) instead of `comp_type`,
+  since these sources are not compositions. Clarified in
+  `get_idx_fits`’s documentation that its `resid` column is a raw
+  log-scale (Pearson-style) residual, distinct from the one-step-ahead
+  residuals produced by `get_osa`/`plot_resids`.
 - Consolidated selectivity smoothness/regularization penalties into a
   single set of six weights (`smooth_bin_curve`, `smooth_bin_diff`,
   `smooth_yr_diff`, `smooth_yr_curve`, `smooth_dome`,

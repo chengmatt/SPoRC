@@ -824,7 +824,7 @@ constructs the RTMB automatic-differentiation function, optimises via
 | [`do_likelihood_profile()`](https://chengmatt.github.io/SPoRC/dev/reference/do_likelihood_profile.md) | Profiles the likelihood surface over user-specified parameters |
 | [`do_francis_reweighting()`](https://chengmatt.github.io/SPoRC/dev/reference/do_francis_reweighting.md) | Computes Francis TA1.8 weights for composition data |
 | [`run_francis()`](https://chengmatt.github.io/SPoRC/dev/reference/run_francis.md) | Iterative Francis reweighting loop (re-fits after each adjustment) |
-| [`run_osa()`](https://chengmatt.github.io/SPoRC/dev/reference/run_osa.md) / [`get_osa()`](https://chengmatt.github.io/SPoRC/dev/reference/get_osa.md) | One-step-ahead residuals for composition data |
+| [`get_osa()`](https://chengmatt.github.io/SPoRC/dev/reference/get_osa.md) | One-step-ahead residuals – compositions, conventional tagging, and Catch/Discard/FishIdx/SrvIdx indices (external post-hoc, or internal model-based via `do_internal_comp_osa`/`do_internal_conv_tag_osa`). See [`vignette("u_osa_residuals")`](https://chengmatt.github.io/SPoRC/dev/articles/u_osa_residuals.md) |
 | [`do_runs_test()`](https://chengmatt.github.io/SPoRC/dev/reference/do_runs_test.md) | Runs test for serial correlation in residuals |
 | [`get_model_rep_from_mcmc()`](https://chengmatt.github.io/SPoRC/dev/reference/get_model_rep_from_mcmc.md) | Extracts model report quantities across MCMC posterior draws (compatible with `adnuts` / `tmbstan`) |
 | [`marg_AIC()`](https://chengmatt.github.io/SPoRC/dev/reference/marg_AIC.md) | Marginal AIC for models with random effects |

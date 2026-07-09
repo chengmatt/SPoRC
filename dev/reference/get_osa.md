@@ -3,26 +3,36 @@
 Formats observed and expected composition data and calculates
 one-step-ahead (OSA) residuals using multinomial, Dirichlet-multinomial,
 or logistic-normal likelihoods. This function is the main interface for
-residual diagnostics, internally calling \[run_osa()\] to perform the
-residual calculations.
+residual diagnostics, internally calling \[run_external_comp_osa()\] to
+perform the residual calculations.
 
 ## Usage
 
 ``` r
 get_osa(
-  obs_mat,
-  exp_mat,
+  obs_mat = NULL,
+  exp_mat = NULL,
   N = NULL,
   DM_theta = NULL,
   LN_Sigma = NULL,
-  years,
-  seas,
-  fleet,
-  bins,
-  comp_type,
-  bin_label,
+  years = NULL,
+  seas = NULL,
+  fleet = NULL,
+  bins = NULL,
+  comp_type = NULL,
+  bin_label = NULL,
   comp_like = 0,
-  addtocomp = 0
+  addtocomp = 0,
+  model = NULL,
+  data = NULL,
+  comp_source = NULL,
+  index_source = NULL,
+  family = "discrete",
+  pop = FALSE,
+  discard = FALSE,
+  tag = FALSE,
+  osa_method = NULL,
+  parallel = FALSE
 )
 ```
 
@@ -127,6 +137,81 @@ get_osa(
 
   Constant that is added to compositions
 
+- model:
+
+  A fitted RTMB model object from
+  [`fit_model`](https://chengmatt.github.io/SPoRC/dev/reference/fit_model.md)
+  (built with `do_internal_comp_osa = TRUE` or
+  `do_internal_conv_tag_osa = TRUE`). Supplying `model` switches
+  `get_osa()` from the default external (post-hoc, compResidual-based)
+  path to the internal path, which calls
+  [`RTMB::oneStepPredict()`](https://rdrr.io/pkg/RTMB/man/OSA-residuals.html)
+  directly on the model's internally tracked OSA vector. All `obs_mat`/
+  `exp_mat`/`N`/`DM_theta`/`LN_Sigma`/`years`/ `comp_type`/`comp_like`
+  arguments above are ignored in this mode.
+
+- data:
+
+  The model `data` list (e.g. `input_list$data`) used to build `model`.
+  Required when `model` is supplied.
+
+- comp_source:
+
+  One of `"FishAge"`, `"FishLen"`, `"SrvAge"`, `"SrvLen"`, identifying
+  which composition data source to pull internal OSA residuals for.
+  Required when `model` is supplied and `index_source` is `NULL` and
+  `tag = FALSE`.
+
+- index_source:
+
+  One of `"Catch"`, `"Discard"`, `"FishIdx"`, `"SrvIdx"`, identifying
+  which continuous (log-normal) index-type data source to pull internal
+  OSA residuals for. When supplied, takes precedence over
+  `comp_source`/`tag`. Only used when `model` is supplied.
+
+- family:
+
+  Character, `"discrete"` or `"continuous"`; which of the two
+  internally-tracked OSA vectors to use for `comp_source` (a source can
+  have both, e.g. some fleets multinomial and others logistic-normal).
+  Only used when `model` is supplied, `tag = FALSE`, and `index_source`
+  is `NULL`.
+
+- pop:
+
+  Logical; population-specific composition or index source. Only used
+  when `model` is supplied and `tag = FALSE`. Default `FALSE`.
+
+- discard:
+
+  Logical; discard composition source (only valid for
+  `comp_source %in% c("FishAge","FishLen")`). Only used when `model` is
+  supplied, `tag = FALSE`, and `index_source` is `NULL`. Default
+  `FALSE`.
+
+- tag:
+
+  Logical; if `TRUE` (and `model` is supplied, and `index_source` is
+  `NULL`), compute internal OSA residuals for conventional tag recapture
+  data instead of composition data. Default `FALSE`.
+
+- osa_method:
+
+  Optional override for
+  [`RTMB::oneStepPredict`](https://rdrr.io/pkg/RTMB/man/OSA-residuals.html)'s
+  `method`, used only in internal mode. Must be one of
+  `"oneStepGeneric"`, `"oneStepGaussianOffMode"`, or
+  `"oneStepGaussian"`; the `"cdf"` method is not permitted (it is
+  numerically fragile for the discrete likelihoods used here). Defaults
+  to `"oneStepGeneric"` for discrete families/tags and
+  `"oneStepGaussianOffMode"` for continuous (logistic-normal)
+  composition families.
+
+- parallel:
+
+  Whether or not to parallelize OSA computation in internal mode.
+  Defaults to `FALSE`.
+
 ## Value
 
 A list with one element:
@@ -134,7 +219,13 @@ A list with one element:
 - res:
 
   Data frame of OSA residuals. Columns include: `fleet`, `index_label`,
-  `year`, `index`, `resid`, `region`, `seas`, `sex`, and `comp_type`.
+  `year`, `index`, `resid`, `region`, `seas`, `sex`, and `comp_type`
+  (composition sources, external or internal); `fleet`, `region`,
+  `cohort`, `release_year`/`release_region`/`release_season`,
+  `recovery_year`/`recovery_season`, `years_at_liberty`, `resid`, and
+  `comp_type = "Tag"` (`tag = TRUE`); or `fleet`, `region`, `year`,
+  `season`, `pop`, `resid`, and `idx_type` set to `index_source`
+  (`index_source` supplied.
 
 ## Details
 
@@ -153,6 +244,18 @@ Population-specific composition arrays returned by
 are dimensioned
 `[n_pop × n_regions × n_years × n_seas × n_bins × n_sexes × n_fleets]`.
 Slicing on `p` yields a 6D array matching the expected input dimensions.
+
+For internal (model-based) OSA residuals, fit the model with
+`do_internal_comp_osa = TRUE` and/or `do_internal_conv_tag_osa = TRUE`
+(set in
+[`Setup_Mod_Dim`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Dim.md)),
+then call, e.g.:
+
+
+    get_osa(model = fitted_obj, data = input_list$data, comp_source = "FishAge",
+            family = "discrete", bins = input_list$data$ages, bin_label = "Age")
+    get_osa(model = fitted_obj, data = input_list$data, tag = TRUE)
+    get_osa(model = fitted_obj, data = input_list$data, index_source = "SrvIdx")
 
 ## See also
 

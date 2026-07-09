@@ -63,7 +63,8 @@ one-step-ahead (OSA) analysis for a single likelihood family.</p>
 <span>  <span class="va">sex_pool</span>,</span>
 <span>  <span class="va">use_fish_tagging</span>,</span>
 <span>  <span class="va">conv_tag_mixing_period</span>,</span>
-<span>  <span class="va">addtotag</span></span>
+<span>  <span class="va">addtotag</span>,</span>
+<span>  return_labels <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -154,6 +155,16 @@ one-step-ahead (OSA) analysis for a single likelihood family.</p>
 <dt id="arg-addtotag">addtotag<a class="anchor" aria-label="anchor" href="#arg-addtotag"></a></dt>
 <dd><p>Small constant added to avoid zeros.</p></dd>
 
+
+<dt id="arg-return-labels">return_labels<a class="anchor" aria-label="anchor" href="#arg-return-labels"></a></dt>
+<dd><p>Logical; if TRUE, also builds a per-element label
+data.frame identifying the origin (family, like_type, tag cohort/release
+region-year-season, recovery year/season, fleet, region, pop/age/sex pool,
+is_tail, last_in_group) of every entry in <code>vec</code>, in the same order.
+Intended for post-hoc relabeling of <code><a href="https://rdrr.io/pkg/TMB/man/oneStepPredict.html" class="external-link">TMB::oneStepPredict()</a></code> residuals
+(see [get_osa()]); left <code>FALSE</code> (default) inside the model itself to
+avoid the extra bookkeeping cost.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -161,13 +172,20 @@ one-step-ahead (OSA) analysis for a single likelihood family.</p>
 <li><p><code>grp_end</code>: integer vector of end indices for each composition group
     (empty for <code>family == "count"</code>).</p></li>
 <li><p><code>lengths</code>: integer vector of per-group lengths.</p></li>
+<li><p><code>labels</code>: data.frame with one row per element of <code>vec</code>
+    (<code>NULL</code> unless <code>return_labels = TRUE</code>).</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>For <code>family == "count"</code>, each valid event contributes one integer
-observation per <code>[region, fleet]</code> with <code>use_fish_tagging[f] == 1</code>,
-in region-fastest then fleet order within each event, and events in
-<code>tag_grid</code> order.</p>
+observation per <code>[fleet, pop_pool, region, age_pool, sex_pool]</code> cell
+with <code>use_fish_tagging[f] == 1</code>, in <code>(f, p, r, a, s)</code> loop order
+within each event, and events in <code>tag_grid</code> order. This mirrors
+<code><a href="get_conv_tag_likelihoods.html">get_conv_tag_likelihoods()</a></code>'s exact accumulation structure – a
+separate Poisson/NB term is fit per pool/age/sex cell and their
+-log-likelihoods summed – so packing one count per <code>[region, fleet]</code>
+pre-summed across pools would evaluate a different (non-equivalent)
+likelihood whenever more than one pool is used.</p>
 <p>For <code>family == "comp"</code>, each valid event contributes one composition
 vector:</p><ul><li><p>release-conditioned (<code>like_type</code> 2, 4): recap cells in
     <code>(f, p, a, s, r)</code> loop order plus a non-recapture tail; counts

@@ -59,7 +59,8 @@ vector with a single pointer.</p>
 <span>  <span class="va">addtocomp</span>,</span>
 <span>  family <span class="op">=</span> <span class="st">"discrete"</span>,</span>
 <span>  pop <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  n_pop <span class="op">=</span> <span class="fl">1</span></span>
+<span>  n_pop <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  return_labels <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -122,10 +123,23 @@ vector with a single pointer.</p>
 <dt id="arg-n-pop">n_pop<a class="anchor" aria-label="anchor" href="#arg-n-pop"></a></dt>
 <dd><p>Number of population structures or pools.</p></dd>
 
+
+<dt id="arg-return-labels">return_labels<a class="anchor" aria-label="anchor" href="#arg-return-labels"></a></dt>
+<dd><p>Logical; if TRUE, also builds a per-element label
+data.frame identifying the origin (pop, region, year, season, fleet, sex,
+bin, comp_type, likelihood_type, family, last_in_group) of every entry in
+the tracked vector, in the same order. Intended for post-hoc relabeling of
+<code><a href="https://rdrr.io/pkg/TMB/man/oneStepPredict.html" class="external-link">TMB::oneStepPredict()</a></code> residuals (see [get_osa()]); left <code>FALSE</code>
+(default) inside the model itself to avoid the extra bookkeeping cost.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Flat OBS vector or NULL if no fleet of this family is present.</p>
+    <p>If <code>return_labels = FALSE</code> (default): flat OBS vector, or
+  <code>NULL</code> if no fleet of this family is present (unchanged behavior).
+  If <code>return_labels = TRUE</code>: a list with elements <code>vec</code> (the flat
+  OBS vector) and <code>labels</code> (a data.frame with one row per element of
+  <code>vec</code>), or <code>NULL</code> if no fleet of this family is present.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

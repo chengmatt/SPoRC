@@ -22,7 +22,8 @@ pack_comp_osa(
   addtocomp,
   family = "discrete",
   pop = FALSE,
-  n_pop = 1
+  n_pop = 1,
+  return_labels = FALSE
 )
 ```
 
@@ -86,9 +87,24 @@ pack_comp_osa(
 
   Number of population structures or pools.
 
+- return_labels:
+
+  Logical; if TRUE, also builds a per-element label data.frame
+  identifying the origin (pop, region, year, season, fleet, sex, bin,
+  comp_type, likelihood_type, family, last_in_group) of every entry in
+  the tracked vector, in the same order. Intended for post-hoc
+  relabeling of
+  [`TMB::oneStepPredict()`](https://rdrr.io/pkg/TMB/man/oneStepPredict.html)
+  residuals (see \[get_osa()\]); left `FALSE` (default) inside the model
+  itself to avoid the extra bookkeeping cost.
+
 ## Value
 
-Flat OBS vector or NULL if no fleet of this family is present.
+If `return_labels = FALSE` (default): flat OBS vector, or `NULL` if no
+fleet of this family is present (unchanged behavior). If
+`return_labels = TRUE`: a list with elements `vec` (the flat OBS vector)
+and `labels` (a data.frame with one row per element of `vec`), or `NULL`
+if no fleet of this family is present.
 
 ## Details
 

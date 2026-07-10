@@ -43,81 +43,28 @@ the order they are defined.
 | bias_year | Vector of years specifying when to change the bias ramp. Can be specified with an NA if do_rec_bias_ramp = 0 |
 | sigmaR_switch | Value specifying when to transition between using an early period sigma and late period sigma R for penalizing initial age deviations and recruitment deviations. Specify as 0 if sigmaR early is equal to sigmaR late |
 | init_age_strc | Value specifying how the population age structure should be initialized. 0: Initialize via iteration to equilibrium, 1: Initialize with geometric series solution |
-| equil_init_age_strc | Value specifying how initial age deviations arise. |
-
-0 (`"equil"`) == deterministic equilibrium; 1 (`"stoch_no_plus"`) ==
-stochastic for all ages except the plus group; 2 (`"stoch_all"`) ==
-stochastic for all ages including the plus group; 3
-(`"stoch_shared_ages"`) == stochastic with user-defined age sharing via
-`init_age_devs_shared` \| \| init_F_prop \| Array specifying the
-proportion of fishing mortality to apply to the initial age deviations
-relative to the mean fishing mortality parameter for regions, seasons,
-and fishery fleets \| \| rec_model \| Value specifying the recruitment
-model. 0 == Mean Recruitment, 1 == Beverton-Holt with steepness
-parameterization \| \| rec_dd \| Value specifying the recruitment
-density dependence (only used when there is a stock-recruitment
-relationship). 0 == local density dependence (region-specific SSB drives
-regional recruitment), 1 == global density dependence (summed SSB across
-regions drives recruitment), 999 == no density-dependent
-stock-recruitment form is used \| \| rec_region_prop_spec \| Integer
-specifying how recruitment regional apportionment is handled when n_pop
-\> 1. 0 == recruitment dispersal (recruits can be distributed across
-regions via estimated proportions), 1 == strict natal homing (recruits
-are assigned entirely to each population’s natal region) \| \| t_spawn
-\| Fraction of year in which spawning occurs \| \| use_fixed_stray_rate
-\| Integer specifying whether stray rates are supplied as a fixed
-external array (1) or estimated as model parameters via stray_rate_pars
-(0). Default 1. Only relevant when n_pop \> 1 \| \| fixed_stray_rate \|
-Array dimensioned by n_pop, n_years specifying fixed stray rate values
-used when use_fixed_stray_rate = 1. Values should be in \[0, 1\].
-Ignored when use_fixed_stray_rate = 0 \| \| stray_rate_blocks \| Array
-dimensioned by n_pop, n_years specifying the time block index for stray
-rate parameters for each population and year. Unique integer values
-denote distinct stray rate parameter blocks \| \| use_stray_rate_prior
-\| Integer specifying whether a Beta prior is placed on estimated stray
-rate parameters. 0: Don’t use prior, 1: Use prior. Only relevant when
-use_fixed_stray_rate = 0 and n_pop \> 1. Prior contributions accumulate
-into rec_prop_nLL \| \| stray_rate_prior \| Data frame specifying Beta
-prior parameters for stray rates. Must include columns: pop (population
-index), block (time block index matching stray_rate_blocks), mu (prior
-mean in (0,1)), and sd (prior standard deviation). One row per
-population × block combination when stray_rate_spec = “est_all”; one row
-per block only when stray_rate_spec = “est_shared_p” \| \|
-use_rec_region_prop_prior \| Value specifying whether a Dirichlet prior
-is placed on recruitment regional apportionment proportions. 0: Don’t
-use prior, 1: Use prior \| \| rec_region_prop_prior \| Data frame
-specifying Dirichlet prior parameters for recruitment regional
-apportionment. Must include columns: pop (population index) and alpha
-(list column containing Dirichlet concentration parameter vectors of
-length n_regions) \| \| use_fixed_rec_seas_prop \| Integer specifying
-whether seasonal recruitment apportionment proportions are fixed (1) or
-estimated (0) \| \| fixed_rec_seas_prop \| Array dimensioned by n_pop,
-n_seas specifying fixed seasonal recruitment proportions when
-use_fixed_rec_seas_prop = 1. Ignored otherwise \| \|
-use_rec_seas_prop_prior \| Value specifying whether a Dirichlet prior is
-placed on estimated seasonal recruitment apportionment proportions. 0:
-Don’t use prior, 1: Use prior. Only relevant when
-use_fixed_rec_seas_prop = 0 \| \| rec_seas_prop_prior \| Data frame
-specifying Dirichlet prior parameters for seasonal recruitment
-apportionment. Must include columns: pop (population index) and alpha
-(list column containing Dirichlet concentration parameter vectors of
-length n_seas) \| \| sexratio_blocks \| Array specifying sex-ratio
-blocks dimensioned by n_pop, n_regions, n_years \| \| use_rinit \|
-Integer specifying whether a separate initial recruitment scalar is used
-to initialise the population independently of ln_global_R0. 0:
-Population initialised using `ln_global_R0` (default), 1: Population
-initialised using `ln_rinit`, with `ln_global_R0` governing only the
-recruitment relationship \| \| init_age_devs_shared \| Integer vector of
-length `n_ages - 1` specifying explicit age-sharing for `ln_InitDevs`.
-Positions with the same value share a single estimated parameter
-(e.g. `c(1:42, rep(42, 9))` shares the last 9 ages with age 42, giving
-42 free parameters). Required when `equil_init_age_strc = 3`; `NULL`
-(default) uses standard behaviour. \| \| use_r0_prior \| Integer
-specifying whether a lognormal prior is placed on R0. 0: Don’t use prior
-(default), 1: Use prior \| \| r0_prior \| Data frame specifying
-lognormal prior parameters for R0. Must include columns: pop (population
-index), mu (prior mean on the natural scale), and sd (prior standard
-deviation on the log scale) \|
+| equil_init_age_strc | Value specifying how initial age deviations arise. 0 (`"equil"`) == deterministic equilibrium; 1 (`"stoch_no_plus"`) == stochastic for all ages except the plus group; 2 (`"stoch_all"`) == stochastic for all ages including the plus group; 3 (`"stoch_shared_ages"`) == stochastic with user-defined age sharing via `init_age_devs_shared` |
+| init_F_prop | Array specifying the proportion of fishing mortality to apply to the initial age deviations relative to the mean fishing mortality parameter for regions, seasons, and fishery fleets |
+| rec_model | Value specifying the recruitment model. 0 == Mean Recruitment, 1 == Beverton-Holt with steepness parameterization |
+| rec_dd | Value specifying the recruitment density dependence (only used when there is a stock-recruitment relationship). 0 == local density dependence (region-specific SSB drives regional recruitment), 1 == global density dependence (summed SSB across regions drives recruitment), 999 == no density-dependent stock-recruitment form is used |
+| rec_region_prop_spec | Integer specifying how recruitment regional apportionment is handled when n_pop \> 1. 0 == recruitment dispersal (recruits can be distributed across regions via estimated proportions), 1 == strict natal homing (recruits are assigned entirely to each population’s natal region) |
+| t_spawn | Fraction of year in which spawning occurs |
+| use_fixed_stray_rate | Integer specifying whether stray rates are supplied as a fixed external array (1) or estimated as model parameters via stray_rate_pars (0). Default 1. Only relevant when n_pop \> 1 |
+| fixed_stray_rate | Array dimensioned by n_pop, n_years specifying fixed stray rate values used when use_fixed_stray_rate = 1. Values should be in \[0, 1\]. Ignored when use_fixed_stray_rate = 0 |
+| stray_rate_blocks | Array dimensioned by n_pop, n_years specifying the time block index for stray rate parameters for each population and year. Unique integer values denote distinct stray rate parameter blocks |
+| use_stray_rate_prior | Integer specifying whether a Beta prior is placed on estimated stray rate parameters. 0: Don’t use prior, 1: Use prior. Only relevant when use_fixed_stray_rate = 0 and n_pop \> 1. Prior contributions accumulate into rec_prop_nLL |
+| stray_rate_prior | Data frame specifying Beta prior parameters for stray rates. Must include columns: pop (population index), block (time block index matching stray_rate_blocks), mu (prior mean in (0,1)), and sd (prior standard deviation). One row per population × block combination when stray_rate_spec = “est_all”; one row per block only when stray_rate_spec = “est_shared_p” |
+| use_rec_region_prop_prior | Value specifying whether a Dirichlet prior is placed on recruitment regional apportionment proportions. 0: Don’t use prior, 1: Use prior |
+| rec_region_prop_prior | Data frame specifying Dirichlet prior parameters for recruitment regional apportionment. Must include columns: pop (population index) and alpha (list column containing Dirichlet concentration parameter vectors of length n_regions) |
+| use_fixed_rec_seas_prop | Integer specifying whether seasonal recruitment apportionment proportions are fixed (1) or estimated (0) |
+| fixed_rec_seas_prop | Array dimensioned by n_pop, n_seas specifying fixed seasonal recruitment proportions when use_fixed_rec_seas_prop = 1. Ignored otherwise |
+| use_rec_seas_prop_prior | Value specifying whether a Dirichlet prior is placed on estimated seasonal recruitment apportionment proportions. 0: Don’t use prior, 1: Use prior. Only relevant when use_fixed_rec_seas_prop = 0 |
+| rec_seas_prop_prior | Data frame specifying Dirichlet prior parameters for seasonal recruitment apportionment. Must include columns: pop (population index) and alpha (list column containing Dirichlet concentration parameter vectors of length n_seas) |
+| sexratio_blocks | Array specifying sex-ratio blocks dimensioned by n_pop, n_regions, n_years |
+| use_rinit | Integer specifying whether a separate initial recruitment scalar is used to initialise the population independently of ln_global_R0. 0: Population initialised using `ln_global_R0` (default), 1: Population initialised using `ln_rinit`, with `ln_global_R0` governing only the recruitment relationship |
+| init_age_devs_shared | Integer vector of length `n_ages - 1` specifying explicit age-sharing for `ln_InitDevs`. Positions with the same value share a single estimated parameter (e.g. `c(1:42, rep(42, 9))` shares the last 9 ages with age 42, giving 42 free parameters). Required when `equil_init_age_strc = 3`; `NULL` (default) uses standard behaviour. |
+| use_r0_prior | Integer specifying whether a lognormal prior is placed on R0. 0: Don’t use prior (default), 1: Use prior |
+| r0_prior | Data frame specifying lognormal prior parameters for R0. Must include columns: pop (population index), mu (prior mean on the natural scale), and sd (prior standard deviation on the log scale) |
 
 ## Data Inputs for Defining Biological Processes
 

@@ -220,8 +220,8 @@ SPoRC_rtmb = function(pars, data) {
   if(srv_selex_type == 1) srv_selex_bins = lens # if length-based selectivity
   if(fish_selex_type == 0) fish_selex_bins = ages # if age-based selectivity
   if(fish_selex_type == 1) fish_selex_bins = lens # if length-based selectivity
-  if(ret_selex_type == 0) fish_selex_bins = ages # if age-based selectivity
-  if(ret_selex_type == 1) fish_selex_bins = lens # if length-based selectivity
+  if(ret_selex_type == 0) ret_selex_bins = ages # if age-based selectivity
+  if(ret_selex_type == 1) ret_selex_bins = lens # if length-based selectivity
 
   for(r in 1:n_regions) {
     for(y in 1:(n_yrs + n_proj_yrs_devs)) {
@@ -289,9 +289,6 @@ SPoRC_rtmb = function(pars, data) {
       } # end f loop
     } # end y loop
   } # end r loop
-
-  if(ret_selex_type == 0) ret_selex_bins = ages # if age-based selectivity
-  if(ret_selex_type == 1) ret_selex_bins = lens # if length-based selectivity
 
   for(r in 1:n_regions) {
     for(y in 1:(n_yrs + n_proj_yrs_devs)) {

@@ -1036,7 +1036,7 @@ do_SrvLen_pop_corr_pars_mapping <- function(input_list) {
 #'   across the age dimension each year, respecting \code{SrvAgeComps_Type}.
 #' @param ObsSrvLenComps Observed survey length compositions, array
 #'   \code{[n_regions × n_years × n_seas × n_lens × n_sexes × n_srv_fleets]}.
-#'   Only validated when \code{fit_lengths = 1} in \code{$data}.
+#'   Only validated when \code{input_list$data$fit_lengths = 1} in \code{$data}.
 #' @param UseSrvLenComps Binary indicator array
 #'   \code{[n_regions × n_years × n_seas × n_srv_fleets]}. \code{1} = fit
 #'   length compositions; \code{0} = exclude.
@@ -2598,7 +2598,7 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
 
   # Length based selectivity
   if(srv_selex_type == 'length') {
-    if(fit_lengths == 0) stop("Length composition data are not fit, but survey selectivity is length-based. This is not allowed. Please change to a valid option (either fit lengths or use age-based selectivity).")
+    if(input_list$data$fit_lengths == 0) stop("Length composition data are not fit, but survey selectivity is length-based. This is not allowed. Please change to a valid option (either fit lengths or use age-based selectivity).")
     srv_selex_type <- 1
     bins <- length(input_list$data$lens)
     collect_message("Survey Selectivity is length-based")

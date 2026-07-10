@@ -491,10 +491,9 @@ resid_comp_pop <- plot_resids(comp_pop)
 Conventional tag recovery OSA (`tag = TRUE`) — faceted by region,
 recovery season, fleet, and movement/tag pooling group whenever the
 residual data span more than one level of each. This is a bit unwieldy
-to inspect and would recommend inspecting the qqplot to assess goodness
-of fit rather than bubble plots. In general, diagnostics for spatial
-models and tagging data are an active area of research and we do not
-discuss / explore this further:
+to inspect given the number of dimensions (release cohort, recapture
+region, age, year at liberty etc) and so only qqplot’s are shown for
+tagging data.
 
 ``` r
 

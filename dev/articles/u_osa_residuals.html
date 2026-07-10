@@ -569,10 +569,9 @@ joint-sex in this example):</p>
 <p>Conventional tag recovery OSA (<code>tag = TRUE</code>) — faceted by
 region, recovery season, fleet, and movement/tag pooling group whenever
 the residual data span more than one level of each. This is a bit
-unwieldy to inspect and would recommend inspecting the qqplot to assess
-goodness of fit rather than bubble plots. In general, diagnostics for
-spatial models and tagging data are an active area of research and we do
-not discuss / explore this further:</p>
+unwieldy to inspect given the number of dimensions (release cohort,
+recapture region, age, year at liberty etc) and so only qqplot’s are
+shown for tagging data.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tag_osa</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_osa.html">get_osa</a></span><span class="op">(</span>model <span class="op">=</span> <span class="va">model_pop</span>, data <span class="op">=</span> <span class="va">input_pop</span><span class="op">$</span><span class="va">data</span>, tag <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">resid_tag</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_resids.html">plot_resids</a></span><span class="op">(</span><span class="va">tag_osa</span><span class="op">)</span></span></code></pre></div>

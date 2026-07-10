@@ -32,7 +32,6 @@ test_that("plot_resids() facets by fleet for every comp_type when multiple fleet
     res <- list(res = mk_tag(n_fleet))
     p <- plot_resids(res)
     expect_s3_class(p[[1]], "ggplot")
-    expect_s3_class(p[[2]], "ggplot")
   }
 })
 

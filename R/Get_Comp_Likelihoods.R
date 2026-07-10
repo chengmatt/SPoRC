@@ -104,9 +104,15 @@ Get_Comp_Likelihoods = function(Exp,
   ln_theta = array(ln_theta, dim = c(n_regions, n_sexes))
   LN_corr_pars = array(LN_corr_pars, dim = c(n_regions, n_sexes, 3))
 
-  # filter regions that have obs
-  Obs = Obs[which(use == 1),,,drop = FALSE]
-  Exp = Exp[which(use == 1),,,drop = FALSE]
+  # Filter every per-region input down to the regions that have observations, so the
+  # loop index r lines up across Obs/Exp/ISS/Wt_Mltnml/ln_theta/LN_corr_pars
+  used = which(use == 1)
+  Obs = Obs[used,,,drop = FALSE]
+  Exp = Exp[used,,,drop = FALSE]
+  ISS = ISS[used,,drop = FALSE]
+  Wt_Mltnml = Wt_Mltnml[used,,drop = FALSE]
+  ln_theta = ln_theta[used,,drop = FALSE]
+  LN_corr_pars = LN_corr_pars[used,,,drop = FALSE]
 
   # Aggregated comps by sex and region
   if(Comp_Type == 0) {
@@ -365,8 +371,17 @@ Get_Comp_Likelihoods = function(Exp,
     } # end r loop
   } # end if 'Joint' comps by sex, but 'Split' by region
 
+  # Input the split-comp results (Comp_Type 1/2) from the compacted region slots
+  # 1:n_regions_obs_use, that the loop above wrote to, back to their true region slots.
+  if(Comp_Type %in% c(1, 2) && n_regions_obs_use < n_regions) {
+    reordered = RTMB::AD(array(0, dim = c(n_regions, n_sexes)))
+    dim(reordered) = c(n_regions, n_sexes)
+    reordered[used, ] = comp_nLL[seq_len(n_regions_obs_use), ]
+    comp_nLL = reordered
+  }
 
   return(comp_nLL) # return negative log likelihood
+  
 } # end function
 
 #' Composition Data Likelihood (OSA variant)
@@ -494,10 +509,10 @@ Get_Comp_Likelihoods_OSA = function(Exp,
           idx = seq(from = r + (s - 1) * n_ru * (n_obs_bins - 1), by = n_ru, length.out = n_obs_bins - 1)
         }
         if(Likelihood_Type == 0) { # Multinomial
-          comp_nLL[r,s] = -dmultinom_osa(Obs[idx], tmp_Exp, log = TRUE)
+          comp_nLL[used[r],s] = -dmultinom_osa(Obs[idx], tmp_Exp, log = TRUE)
         }
         if(Likelihood_Type == 1) { # Dirichlet-multinomial
-          comp_nLL[r,s] = -ddirmult_osa(Obs[idx], tmp_Exp * exp(ln_theta[r,s]) * ISS[r,s], log = TRUE)
+          comp_nLL[used[r],s] = -ddirmult_osa(Obs[idx], tmp_Exp * exp(ln_theta[r,s]) * ISS[r,s], log = TRUE)
         }
         if(Likelihood_Type %in% c(2,3)) { # Logistic-normal (Obs already ALR)
           if(Likelihood_Type == 2) {
@@ -508,7 +523,7 @@ Get_Comp_Likelihoods_OSA = function(Exp,
           }
           Sigma = Sigma[-nrow(Sigma), -ncol(Sigma)]
           mu = alr_mu(tmp_Exp)
-          comp_nLL[r,s] = -RTMB::dmvnorm(x = Obs[idx], mu = mu, Sigma = Sigma, log = TRUE)
+          comp_nLL[used[r],s] = -RTMB::dmvnorm(x = Obs[idx], mu = mu, Sigma = Sigma, log = TRUE)
         }
 
       } # r
@@ -556,13 +571,13 @@ Get_Comp_Likelihoods_OSA = function(Exp,
       }
 
       if(Likelihood_Type == 0) { # Multinomial
-        comp_nLL[r,1] = -dmultinom_osa(Obs[idx], tmp_Exp, log = TRUE)
+        comp_nLL[used[r],1] = -dmultinom_osa(Obs[idx], tmp_Exp, log = TRUE)
       }
       if(Likelihood_Type == 1) { # Dirichlet-multinomial
-        comp_nLL[r,1] = -ddirmult_osa(Obs[idx], tmp_Exp * exp(ln_theta[r,1]) * ISS[r,1], log = TRUE)
+        comp_nLL[used[r],1] = -ddirmult_osa(Obs[idx], tmp_Exp * exp(ln_theta[r,1]) * ISS[r,1], log = TRUE)
       }
       if(Likelihood_Type %in% c(2,3,4)) { # Logistic-normal (Obs already ALR)
-        comp_nLL[r,1] = -RTMB::dmvnorm(x = Obs[idx], mu = mu, Sigma = Sigma, log = TRUE)
+        comp_nLL[used[r],1] = -RTMB::dmvnorm(x = Obs[idx], mu = mu, Sigma = Sigma, log = TRUE)
       }
 
     } # r

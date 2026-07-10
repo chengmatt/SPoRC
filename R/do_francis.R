@@ -31,6 +31,15 @@ get_francis_weights <- function(n_regions,
                                 comp_type
 ) {
 
+# Inverse variance calculations used in Francis reweighting (makes it so that it doesn't take variance from vector of length 1)
+safe_inv_var <- function(x) {
+  x <- x[!is.na(x)]
+  if(length(x) < 2) return(1)
+  v <- stats::var(x)
+  if(!is.finite(v) || v == 0) return(1)
+  1 / v
+}
+
   mean_francis <- data.frame()
 
   for(f in 1:n_fleets) {
@@ -114,13 +123,13 @@ get_francis_weights <- function(n_regions,
 
       for(seas in 1:n_seas) {
         # if aggregated or joint by region and sex
-        if(unique_comp_type[j] == 0) weights[1,data_yrs,seas,1,f] <- 1 / var(w_denom[1,year_pointer,seas,1], na.rm = TRUE)
+        if(unique_comp_type[j] == 0) weights[1,data_yrs,seas,1,f] <- safe_inv_var(w_denom[1,year_pointer,seas,1])
 
         # if split by sex and region
-        if(unique_comp_type[j] == 1) for(r in 1:n_regions) for(s in 1:n_sexes) weights[r,data_yrs,seas,s,f] <- 1 / var(w_denom[r,year_pointer,seas,s], na.rm = TRUE)
+        if(unique_comp_type[j] == 1) for(r in 1:n_regions) for(s in 1:n_sexes) weights[r,data_yrs,seas,s,f] <- safe_inv_var(w_denom[r,year_pointer,seas,s])
 
         # if split by region, joint by sex
-        if(unique_comp_type[j] == 2) for(r in 1:n_regions) weights[r,data_yrs,seas,1,f] <- 1 / var(w_denom[r,year_pointer,seas,1], na.rm = TRUE)
+        if(unique_comp_type[j] == 2) for(r in 1:n_regions) weights[r,data_yrs,seas,1,f] <- safe_inv_var(w_denom[r,year_pointer,seas,1])
       } # end seas loop
 
     } # end j loop

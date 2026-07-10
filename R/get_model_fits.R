@@ -1717,17 +1717,7 @@ get_osa <- function(obs_mat = NULL,
 #' actually spans. Composition plots always facet by \code{region}/\code{sex} and additionally facet by \code{fleet}, \code{pop}, and \code{seas}
 #' whenever \code{osa_results$res} contains more than one of each (\code{seas} matters because
 #' \code{year} + bin alone don't uniquely place a bubble-plot point when compositions are
-#' collected in more than one season). Tagging plots facet
-#' by \code{region}, \code{recovery_season}, \code{fleet}, and
-#' \code{pop_pool} (movement/tag population-pooling group, when more than one
-#' is present) whenever those span more than one level. The release-conditioned "tail"
-#' (non-recapture) row has no \code{pop_pool} of its own and gets its own
-#' \code{"Tail (non-recap)"} panel rather than being dropped or blended in.
-#' \code{recovery_year} + \code{years_at_liberty} alone don't uniquely place a
-#' bubble-plot point -- cohorts released in different regions/seasons of the
-#' same release year can share both -- so the bubble plot (but not the
-#' QQ-plot/SDNR grouping) jitters point positions slightly to keep
-#' coincidentally co-located residuals visible rather than fully overplotted.
+#' collected in more than one season). Tagging plots only show QQ plots given the number of dimensions in tagging data.
 #' Index-type residuals (from \code{get_osa(..., index_source = ...)}, carrying
 #' an \code{idx_type} column \code{\%in\% c("Catch","Discard","FishIdx","SrvIdx")}
 #' instead of \code{comp_type}) facet by \code{region},
@@ -1834,23 +1824,7 @@ plot_resids <- function(osa_results) {
     sdnr <- sdnr_table(res, c(tag_row_vars, tag_col_vars))
     sdnr_plot <- qq_base(res, sdnr) + build_facet(tag_row_vars, tag_col_vars)
 
-    # recovery_year + years_at_liberty alone don't uniquely place a point --
-    # cohorts released in different regions/seasons of the same release year
-    # can share both, so distinct residuals can legitimately land on the same
-    # coordinate. Faceting on release_region/release_season too would explode
-    # the panel count (region x release_region x season x release_season x
-    # fleet x pop_pool), so instead jitter x/y slightly to keep coincidentally
-    # co-located points visible rather than fully overplotted.
-    bubble_plot <- ggplot(data = res, aes(x = recovery_year, y = years_at_liberty,
-                                          color = sign, size = abs(resid), alpha = abs(resid))) +
-      geom_point(position = position_jitter(width = 0.15, height = 0.15, seed = 1)) +
-      scale_color_manual(values = c("blue", "red")) +
-      labs(x = "Recovery Year", y = "Years at Liberty", color = "Sign", size = "abs(Resid)", alpha = "abs(Resid)") +
-      theme_bw(base_size = 20) +
-      theme(legend.position = 'top') +
-      build_facet(tag_row_vars, tag_col_vars)
-
-    return(list(sdnr_plot, bubble_plot))
+    return(list(sdnr_plot))
   }
 
   # Index-type OSA Residuals (Catch/Discard/FishIdx/SrvIdx) -------------------

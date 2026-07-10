@@ -463,7 +463,7 @@ tag_osa <- get_osa(model = model_pop, data = input_pop$data, tag = TRUE)
 resid_tag <- plot_resids(tag_osa)
 
 png(here("vignettes", "figures", "u_internal_tag.png"), width = 1600, height = 600)
-cowplot::plot_grid(resid_tag[[1]], resid_tag[[2]], ncol = 2)
+cowplot::plot_grid(resid_tag[[1]], ncol = 2)
 dev.off()
 
 # Population-specific index OSA (pop = TRUE) ----------------------------

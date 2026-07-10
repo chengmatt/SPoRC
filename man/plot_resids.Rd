@@ -24,17 +24,7 @@ Panels are faceted by every structural dimension the residual data frame
 actually spans. Composition plots always facet by \code{region}/\code{sex} and additionally facet by \code{fleet}, \code{pop}, and \code{seas}
 whenever \code{osa_results$res} contains more than one of each (\code{seas} matters because
 \code{year} + bin alone don't uniquely place a bubble-plot point when compositions are
-collected in more than one season). Tagging plots facet
-by \code{region}, \code{recovery_season}, \code{fleet}, and
-\code{pop_pool} (movement/tag population-pooling group, when more than one
-is present) whenever those span more than one level. The release-conditioned "tail"
-(non-recapture) row has no \code{pop_pool} of its own and gets its own
-\code{"Tail (non-recap)"} panel rather than being dropped or blended in.
-\code{recovery_year} + \code{years_at_liberty} alone don't uniquely place a
-bubble-plot point -- cohorts released in different regions/seasons of the
-same release year can share both -- so the bubble plot (but not the
-QQ-plot/SDNR grouping) jitters point positions slightly to keep
-coincidentally co-located residuals visible rather than fully overplotted.
+collected in more than one season). Tagging plots only show QQ plots given the number of dimensions in tagging data.
 Index-type residuals (from \code{get_osa(..., index_source = ...)}, carrying
 an \code{idx_type} column \code{\%in\% c("Catch","Discard","FishIdx","SrvIdx")}
 instead of \code{comp_type}) facet by \code{region},

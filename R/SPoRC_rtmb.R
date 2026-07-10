@@ -992,7 +992,7 @@ SPoRC_rtmb = function(pars, data) {
             if(conv_tag_t_tagging != 1) tmp_ZAA = tmp_ZAA * conv_tag_t_tagging
 
             # apportion tagged fish out to appropriate dimensions if necessary
-            tmp_tagged_fish = release_conv_tag_attr(conv_tagged_fish[tc, , , ],
+            tmp_tagged_fish = release_conv_tag_attr(array(conv_tagged_fish[tc, , , ], dim = c(n_pop, n_ages, n_sexes)),
                                                     conv_fish_tag_attr,
                                                     conv_tag_release_platform[tc,],
                                                     srv_sel, fish_sel, NAA_bef,

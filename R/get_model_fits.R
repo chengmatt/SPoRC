@@ -1388,9 +1388,6 @@ run_internal_index_osa <- function(model, data, index_source, pop = FALSE,
     season = map$season,
     pop = if(pop) map$pop else 1L,
     resid = osa$residual,
-    # index-type sources are not compositions, so the discriminator column is
-    # named idx_type (values "Catch"/"Discard"/"FishIdx"/"SrvIdx") rather than
-    # comp_type; plot_resids() dispatches on whichever discriminator is present.
     idx_type = index_source
   )
 
@@ -1766,7 +1763,6 @@ plot_resids <- function(osa_results) {
   )
 
   # Build a facet_grid() from character vectors of row/column facet variables
-  # (empty -> no faceting on that axis; both empty -> no facet layer at all).
   build_facet <- function(row_vars, col_vars) {
     used <- c(row_vars, col_vars)
     if(length(used) == 0) return(NULL)
@@ -1776,7 +1772,7 @@ plot_resids <- function(osa_results) {
                labeller = do.call(labeller, lab_fns[used]))
   }
 
-  # SDNR annotation table, grouped by whatever facet variables are in play.
+  # SDNR annotation table
   sdnr_table <- function(res, grp_vars) {
     grouped <- if(length(grp_vars)) dplyr::group_by(res, dplyr::across(dplyr::all_of(grp_vars))) else res
     grouped %>%
@@ -1800,11 +1796,7 @@ plot_resids <- function(osa_results) {
       geom_text(data = sdnr, aes(x = -Inf, y = Inf, label = sdnr), hjust = -0.5, vjust = 2.5, size = 4)
   }
 
-  # Extra (non-structural) composition facet columns, in a stable order.
-  # `seas` matters here because year + bin alone don't uniquely place a
-  # bubble-plot point when compositions are collected in more than one
-  # season -- without faceting on it, residuals from different seasons
-  # collide on the same (year, bin) coordinate.
+  # Extra (non-structural) composition facet columns
   comp_extra_cols <- c(if(multi_fleet) "fleet", if(multi_pop) "pop", if(multi_comp_seas) "seas")
 
   # Conventional Tagging OSA Residuals ----------------------------------------

@@ -243,10 +243,6 @@ osa_squeeze <- function(u) {
 #' \code{NaN} density evaluations (most visibly with random effects switched
 #' off, where the generic integrator sweeps the full support).
 #'
-#' Accessors are attempted in order of preference
-#' (\code{RTMB::getValues}, \code{asDouble}, \code{as.numeric}) so that the
-#' function is robust to AD class-loss behaviour across RTMB versions.
-#'
 #' @param xobs Either an object of class \code{"osa"} (with slots \code{@x} and
 #'   \code{@keep}) supplied by \code{oneStepPredict}, or a plain numeric vector
 #'   used during ordinary fitting.
@@ -254,14 +250,10 @@ osa_squeeze <- function(u) {
 #' @return A plain numeric vector of observed counts.
 #' @keywords internal
 osa_extract_values <- function(xobs) {
-  if (is(xobs, "osa")) {
-    v <- try(RTMB::getValues(xobs@x), silent = TRUE)
-    if (inherits(v, "try-error")) v <- try(asDouble(xobs@x), silent = TRUE)
-    if (inherits(v, "try-error")) v <- as.numeric(xobs@x)
-    as.numeric(v)
-  } else {
-    as.numeric(xobs)
-  }
+  x <- if (is(xobs, "osa")) xobs@x else xobs
+  v <- try(RTMB:::getValues(x), silent = TRUE)
+  if (inherits(v, "try-error")) v <- as.numeric(x)
+  as.numeric(v)
 }
 
 #' Extract the keep indicator from an OSA observation

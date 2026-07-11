@@ -212,7 +212,7 @@ Get_Movement <- function(move_type,
     for( index in seq_len(nrow(loop)) ){
 
       # get pop, year, age, and sex specific indices for a given stratum combination
-      which_rows = expand.grid(1:n_pop, 1:n_regions, loop[index,"years"], loop[index,'seas'], loop[index,"ages"], loop[index,"sexes"] )
+      which_rows = expand.grid(loop[index,"pop"], 1:n_regions, loop[index,"years"], loop[index,'seas'], loop[index,"ages"], loop[index,"sexes"] )
       which_rows$index = NA
       colnames(which_rows) = c("pop", "regions", "years", "seas", "ages", "sexes", "index" )
 

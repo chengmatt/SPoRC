@@ -24,9 +24,4 @@ running remainder can be driven negative on candidate values, producing
 \code{NaN} density evaluations (most visibly with random effects switched
 off, where the generic integrator sweeps the full support).
 }
-\details{
-Accessors are attempted in order of preference
-(\code{RTMB::getValues}, \code{asDouble}, \code{as.numeric}) so that the
-function is robust to AD class-loss behaviour across RTMB versions.
-}
 \keyword{internal}

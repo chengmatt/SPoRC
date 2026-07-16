@@ -81,7 +81,7 @@ compositions; \code{0} = exclude.}
 
 \item{ObsSrvLenComps}{Observed survey length compositions, array
 \code{[n_regions × n_years × n_seas × n_lens × n_sexes × n_srv_fleets]}.
-Only validated when \code{fit_lengths = 1} in \code{$data}.}
+Only validated when \code{input_list$data$fit_lengths = 1} in \code{$data}.}
 
 \item{UseSrvLenComps}{Binary indicator array
 \code{[n_regions × n_years × n_seas × n_srv_fleets]}. \code{1} = fit

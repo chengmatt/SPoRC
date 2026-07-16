@@ -29,7 +29,7 @@ Setup_sim_env(sim_list)
 A new environment (parent = calling frame) containing every element of
 `sim_list` as a named object, plus bound references to the following
 SPoRC simulation functions: `generate_initial_age_structure`,
-`generate_recruitment`, `apply_pop_dy`,
+`generate_recruitment`, `apply_pop_dy`, `compute_biom_y_sim`,
 `generate_fishery_catch_comp_idx`, `generate_survey_comp_idx`,
 `release_conv_tags`, `generate_fishery_conv_tags_recap`,
 `Get_Det_Recruitment`, `Get_Init_NAA`, `predict_sim_fish_iss_fmort`,

@@ -137,7 +137,10 @@ Setup_Sim_Tagging <- function(
   sim_list$conv_tag_max_liberty <- conv_tag_max_liberty
   sim_list$conv_tag_release_indicator <- conv_tag_release_indicator # tag release indicator (by tag years and regions = a tag cohort)
   sim_list$conv_tag_release_platform <- conv_tag_release_platform # how tags are released
-  sim_list$n_tag_rel_events <- nrow(conv_tag_release_indicator) # number of tag release events - tag years x tag region (tag cohorts)
+  # number of tag release events - tag years x tag region (tag cohorts).
+  # When tagging is inactive, conv_tag_release_indicator may arrive as NA/NULL
+  # (no rows); fall back to a length-1 placeholder so scalar recycling is valid.
+  sim_list$n_tag_rel_events <- if(is.null(nrow(conv_tag_release_indicator))) 1L else nrow(conv_tag_release_indicator)
 
   # Per-release-event timing / mortality / shedding (scalars are recycled to all events)
   sim_list$conv_tag_t_tagging <- recycle_tag_event_par(conv_tag_t_tagging, sim_list$n_tag_rel_events, "conv_tag_t_tagging") # time of tagging

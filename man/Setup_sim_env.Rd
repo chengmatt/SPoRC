@@ -15,7 +15,7 @@ new environment via \code{list2env}.}
 A new environment (parent = calling frame) containing every element
   of \code{sim_list} as a named object, plus bound references to the
   following SPoRC simulation functions: \code{generate_initial_age_structure},
-  \code{generate_recruitment}, \code{apply_pop_dy},
+  \code{generate_recruitment}, \code{apply_pop_dy}, \code{compute_biom_y_sim},
   \code{generate_fishery_catch_comp_idx}, \code{generate_survey_comp_idx},
   \code{release_conv_tags}, \code{generate_fishery_conv_tags_recap},
   \code{Get_Det_Recruitment}, \code{Get_Init_NAA},

@@ -27,9 +27,3 @@ osa_extract_values(xobs)
 ## Value
 
 A plain numeric vector of observed counts.
-
-## Details
-
-Accessors are attempted in order of preference (`RTMB::getValues`,
-`asDouble`, `as.numeric`) so that the function is robust to AD
-class-loss behaviour across RTMB versions.

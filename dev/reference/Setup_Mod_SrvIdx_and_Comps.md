@@ -120,7 +120,7 @@ Setup_Mod_SrvIdx_and_Comps(
 
   Observed survey length compositions, array
   `[n_regions × n_years × n_seas × n_lens × n_sexes × n_srv_fleets]`.
-  Only validated when `fit_lengths = 1` in `$data`.
+  Only validated when `input_list$data$fit_lengths = 1` in `$data`.
 
 - UseSrvLenComps:
 

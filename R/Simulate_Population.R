@@ -1887,14 +1887,18 @@ release_conv_tags <- function(y, sim, sim_env) {
 #'
 #' At initial release (\code{ry = 1}, \code{rseas = tseas}), tags are
 #' placed into \code{conv_tag_fish_avail[1, rseas, tc, ...]} after discounting
-#' for initial tag-induced mortality (\code{ln_init_conv_tag_mort}). When
-#' \code{conv_tag_t_tagging < 1}, total mortality is scaled by the fraction of
-#' the season remaining at release for that cell only. Chronic shedding
-#' (\code{ln_conv_tag_shed}) enters the total mortality rate alongside natural
-#' and fishing mortality. At the end of each season, survivors advance to the
-#' next season or the next year's first season with plus-group accumulation.
-#' Tag reporting rates from \code{conv_tag_fish_reporting} are applied fleet-
-#' and region-specifically.
+#' for initial tag-induced mortality (\code{ln_init_conv_tag_mort[tc]}). When
+#' \code{conv_tag_t_tagging[tc] < 1}, total mortality is scaled by the
+#' fraction of the season remaining at release for that cell only. Chronic
+#' shedding (\code{ln_conv_tag_shed[tc]}) enters the total mortality rate
+#' alongside natural and fishing mortality. \code{conv_tag_t_tagging},
+#' \code{ln_init_conv_tag_mort}, and \code{ln_conv_tag_shed} are each vectors
+#' of length \code{n_tag_rel_events}, indexed by release event (\code{tc}),
+#' so timing, initial mortality, and shedding can differ across release
+#' cohorts. At the end of each season, survivors advance to the next season
+#' or the next year's first season with plus-group accumulation. Tag
+#' reporting rates from \code{conv_tag_fish_reporting} are applied fleet- and
+#' region-specifically.
 #'
 #' @param y Integer. Year index.
 #' @param sim Integer. Simulation replicate index.
@@ -1952,20 +1956,20 @@ generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {
 
           # get total mortality
           tmp_natmort = array(natmort[,,y,,,sim], dim = c(n_pop, n_regions, 1, n_ages, n_sexes))
-          tmp_ZAA = (tmp_natmort * seasdur[rseas]) + apply(tmp_FAA, 1:5, sum) + (exp(ln_conv_tag_shed) * seasdur[rseas])
+          tmp_ZAA = (tmp_natmort * seasdur[rseas]) + apply(tmp_FAA, 1:5, sum) + (exp(ln_conv_tag_shed[tc]) * seasdur[rseas])
 
           # Discount with tagging time (conv_tag_t_tagging) if it doesn't happen at the start of the season / year
           if(ry == 1 && rseas == tseas) {
-            if(conv_tag_t_tagging != 1) tmp_ZAA <- tmp_ZAA * conv_tag_t_tagging
+            if(conv_tag_t_tagging[tc] != 1) tmp_ZAA <- tmp_ZAA * conv_tag_t_tagging[tc]
             # Input tagged fish into available tags for recapture and adjust initial number of tagged fish for tag induced mortality (exponential mortality process)
-            sim_env$conv_tag_fish_avail[1, rseas, tc, , tr, , , sim] <- array(conv_tagged_fish[tc, , , , sim] * exp(-exp(ln_init_conv_tag_mort)), dim = c(n_pop, n_ages, n_sexes))
+            sim_env$conv_tag_fish_avail[1, rseas, tc, , tr, , , sim] <- array(conv_tagged_fish[tc, , , , sim] * exp(-exp(ln_init_conv_tag_mort[tc])), dim = c(n_pop, n_ages, n_sexes))
           }
 
           # get temporary survival value
           tmp_SAA <- exp(-tmp_ZAA)
 
           # Move tagged fish around (skip only in first release year + tagging season when tagging occurs mid-season)
-          if(conv_tag_t_tagging == 1 || ry != 1 || rseas != tseas) {
+          if(conv_tag_t_tagging[tc] == 1 || ry != 1 || rseas != tseas) {
             for(p in 1:n_pop) {
               # Movement of tag cohorts
               if(do_recruits_move == 0) {

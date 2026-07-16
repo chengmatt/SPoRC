@@ -5,6 +5,7 @@
 - Incorporated ability to simulate and estimate both population-specific (natal homing) and seasonal dynamics.
 - Most model and simulation dimensions now include population- and season-specific indices, following the general dimension order: population, region, year, season, age, sex, fleet.
 - Recoded tagging module to allow fleet-specific tag reporting rates, as well as missing attributes in tagged fish. 
+- `conv_tag_t_tagging`, `ln_init_conv_tag_mort`, and `ln_conv_tag_shed` (in both `Setup_Sim_Tagging`/`Simulate_Population` and `Setup_Mod_Tagging`/the RTMB model) are now per-tag-release-event vectors (length `n_conv_tag_cohorts`/`n_tag_rel_events`) rather than global scalars, so time-of-tagging, tag-induced mortality, and chronic shedding can differ across release cohorts. Scalars are still accepted and recycled to all release events, so existing calls are unaffected. `init_conv_tag_mort_spec`/`conv_tag_shed_spec` in `Setup_Mod_Tagging` now accept `"fix"`, `"est_shared"` (one value estimated across all events, replacing the old `"est"`), or `"est_all"` (an independent value estimated per release event).
 - Reference points for local density-dependence in both meta-population and natal homing contexts.
 - Added ability to simulate and fit to population-specific catches, indices, compositions, and tagging data. 
 - Added ability to simulate and fit to population-specific discards and discarded compositions. 

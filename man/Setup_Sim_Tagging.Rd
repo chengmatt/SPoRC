@@ -65,16 +65,23 @@ of:
 }
 Default: \code{"survey"} platform with fleet \code{1} for every cohort.}
 
-\item{conv_tag_t_tagging}{Numeric scalar in \eqn{[0, 1]}. Fraction of the
-season remaining at the time of tag release. \code{1} = start of season;
-\code{0.5} = mid-season; \code{0} = end of season. Default \code{1}.}
+\item{conv_tag_t_tagging}{Numeric scalar or vector of length
+\code{n_tag_rel_events} (one value per row of
+\code{conv_tag_release_indicator}), each in \eqn{[0, 1]}. Fraction of the
+season remaining at the time of tag release for that release event.
+\code{1} = start of season; \code{0.5} = mid-season; \code{0} = end of
+season. A scalar is recycled to all release events. Default \code{1}.}
 
 \item{ln_init_conv_tag_mort}{Log-scale initial tag-induced mortality
-applied at the moment of release. Default \code{-1000} (approximately
+applied at the moment of release. Numeric scalar or vector of length
+\code{n_tag_rel_events}, one value per release event. A scalar is
+recycled to all release events. Default \code{-1000} (approximately
 zero mortality).}
 
 \item{ln_conv_tag_shed}{Log-scale annual chronic tag shedding rate.
-Default \code{-1000} (approximately no shedding).}
+Numeric scalar or vector of length \code{n_tag_rel_events}, one value per
+release event. A scalar is recycled to all release events. Default
+\code{-1000} (approximately no shedding).}
 
 \item{conv_fish_tag_attr}{Character string specifying which biological
 dimensions are retained at recapture. Built from any combination of
@@ -111,8 +118,10 @@ Default \code{log(1)}.}
 \value{
 The input \code{sim_list} with tagging-related fields appended:
   \code{$n_tags} or \code{$n_tags_rel_input} (depending on which is
-  provided), \code{$conv_tag_max_liberty}, \code{$conv_tag_t_tagging},
-  \code{$ln_init_conv_tag_mort}, \code{$ln_conv_tag_shed},
+  provided), \code{$conv_tag_max_liberty}, \code{$conv_tag_t_tagging}
+  (length \code{n_tag_rel_events}), \code{$ln_init_conv_tag_mort} (length
+  \code{n_tag_rel_events}), \code{$ln_conv_tag_shed} (length
+  \code{n_tag_rel_events}),
   \code{$conv_tag_release_indicator}, \code{$conv_tag_release_platform},
   \code{$n_tag_rel_events}, \code{$use_conv_fish_tagging},
   \code{$conv_fish_tag_like}, \code{$conv_fish_tag_attr},

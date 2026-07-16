@@ -45,14 +45,18 @@ reflecting that tags are recovered from retained catch only.
 
 At initial release (\code{ry = 1}, \code{rseas = tseas}), tags are
 placed into \code{conv_tag_fish_avail[1, rseas, tc, ...]} after discounting
-for initial tag-induced mortality (\code{ln_init_conv_tag_mort}). When
-\code{conv_tag_t_tagging < 1}, total mortality is scaled by the fraction of
-the season remaining at release for that cell only. Chronic shedding
-(\code{ln_conv_tag_shed}) enters the total mortality rate alongside natural
-and fishing mortality. At the end of each season, survivors advance to the
-next season or the next year's first season with plus-group accumulation.
-Tag reporting rates from \code{conv_tag_fish_reporting} are applied fleet-
-and region-specifically.
+for initial tag-induced mortality (\code{ln_init_conv_tag_mort[tc]}). When
+\code{conv_tag_t_tagging[tc] < 1}, total mortality is scaled by the
+fraction of the season remaining at release for that cell only. Chronic
+shedding (\code{ln_conv_tag_shed[tc]}) enters the total mortality rate
+alongside natural and fishing mortality. \code{conv_tag_t_tagging},
+\code{ln_init_conv_tag_mort}, and \code{ln_conv_tag_shed} are each vectors
+of length \code{n_tag_rel_events}, indexed by release event (\code{tc}),
+so timing, initial mortality, and shedding can differ across release
+cohorts. At the end of each season, survivors advance to the next season
+or the next year's first season with plus-group accumulation. Tag
+reporting rates from \code{conv_tag_fish_reporting} are applied fleet- and
+region-specifically.
 
 Tagged fish dynamics follow the same seasonal progression logic
 as the population projection, including natural mortality, fishing mortality,

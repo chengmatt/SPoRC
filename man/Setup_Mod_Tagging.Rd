@@ -68,9 +68,12 @@ in seasonal models) post-release before recaptures contribute to the
 likelihood. Allows time for tags to mix within the population before
 informing movement estimation. Default \code{1}.}
 
-\item{conv_tag_t_tagging}{Numeric scalar in \eqn{[0, 1]}. Fraction of the
-season remaining at tag release. \code{1} = start of season;
-\code{0.5} = mid-season; \code{0} = end of season. Default \code{1}.}
+\item{conv_tag_t_tagging}{Numeric scalar or vector of length
+\code{n_conv_tag_cohorts} (one value per row of
+\code{conv_tag_release_indicator}), each in \eqn{[0, 1]}. Fraction of the
+season remaining at tag release for that release event. \code{1} = start
+of season; \code{0.5} = mid-season; \code{0} = end of season. A scalar is
+recycled to all release events. Default \code{1}.}
 
 \item{use_conv_tag_fishrep_prior}{Integer (0/1). Whether priors are applied
 to reporting rate parameters. Default \code{0}.}
@@ -96,14 +99,18 @@ Custom groupings (e.g., \code{list(1:5, 6:10)}) are supported when
 groups. When \code{"s"} is not attended, use \code{list(1:n_sexes)}.
 Default: \code{as.list(1:n_sexes)}.}
 
-\item{init_conv_tag_mort_spec}{Character string (\code{"fix"} or
-\code{"est"}). Whether initial tag-induced mortality is fixed at its
-starting value or estimated. See
-\code{\link{do_conv_init_tag_mort_mapping}}. Default \code{NULL}.}
+\item{init_conv_tag_mort_spec}{Character string (\code{"fix"},
+\code{"est_shared"}, or \code{"est_all"}). Whether initial tag-induced
+mortality is fixed at its starting values, estimated as a single value
+shared across all release events, or estimated independently for every
+release event. See \code{\link{do_conv_init_tag_mort_mapping}}. Default
+\code{NULL}.}
 
-\item{conv_tag_shed_spec}{Character string (\code{"fix"} or \code{"est"}).
-Whether chronic tag shedding is fixed or estimated. See
-\code{\link{do_conv_tag_shed_mapping}}. Default \code{NULL}.}
+\item{conv_tag_shed_spec}{Character string (\code{"fix"},
+\code{"est_shared"}, or \code{"est_all"}). Whether chronic tag shedding
+is fixed at its starting values, estimated as a single value shared
+across all release events, or estimated independently for every release
+event. See \code{\link{do_conv_tag_shed_mapping}}. Default \code{NULL}.}
 
 \item{conv_tagrep_spec}{Character string. Sharing structure for reporting
 rate parameters \code{conv_tag_fish_reporting_pars}
@@ -144,8 +151,12 @@ Default \code{NULL}.}
 
 \item{...}{Optional named starting values for parameters. Supported names
 and defaults:
-\code{ln_init_conv_tag_mort} (scalar, default \code{-1000}),
-\code{ln_conv_tag_shed} (scalar, default \code{-1000}),
+\code{ln_init_conv_tag_mort} (scalar or length \code{n_conv_tag_cohorts}
+  vector; a scalar is recycled to all release events; default
+  \code{-1000}),
+\code{ln_conv_tag_shed} (scalar or length \code{n_conv_tag_cohorts}
+  vector; a scalar is recycled to all release events; default
+  \code{-1000}),
 \code{ln_conv_fish_tag_theta} (scalar, default \code{0}),
 \code{conv_tag_fish_reporting_pars}
   \code{[n_regions × max_tagrep_blocks × n_fish_fleets]},
@@ -163,7 +174,8 @@ The input \code{input_list} with tagging configuration stored in
   \code{conv_tag_age_pool}, \code{conv_tag_sex_pool},
   \code{conv_tag_fish_reporting_blocks}, \code{conv_fish_tag_attr},
   \code{conv_tag_release_platform}); starting values in \code{$par} for
-  \code{ln_init_conv_tag_mort}, \code{ln_conv_tag_shed},
+  \code{ln_init_conv_tag_mort} and \code{ln_conv_tag_shed} (each length
+  \code{n_conv_tag_cohorts}, or length 1 when tagging is inactive),
   \code{ln_conv_fish_tag_theta}, and \code{conv_tag_fish_reporting_pars};
   and factor maps in \code{$map} for all four parameter arrays.
 }

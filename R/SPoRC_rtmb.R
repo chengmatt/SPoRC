@@ -982,12 +982,12 @@ SPoRC_rtmb = function(pars, data) {
 
           # get total mortality
           tmp_natmort = array(natmort[,,y,,], dim = c(n_pop, n_regions, 1, n_ages, n_sexes))
-          tmp_ZAA = (tmp_natmort * seasdur[rseas]) + apply(tmp_FAA, 1:5, sum) + (exp(ln_conv_tag_shed) * seasdur[rseas])
+          tmp_ZAA = (tmp_natmort * seasdur[rseas]) + apply(tmp_FAA, 1:5, sum) + (exp(ln_conv_tag_shed[tc]) * seasdur[rseas])
 
           # Discount with tagging time (conv_tag_t_tagging) if it doesn't happen at the start of the season / year
           if(ry == 1 && rseas == tseas) {
 
-            if(conv_tag_t_tagging != 1) tmp_ZAA = tmp_ZAA * conv_tag_t_tagging
+            if(conv_tag_t_tagging[tc] != 1) tmp_ZAA = tmp_ZAA * conv_tag_t_tagging[tc]
 
             # apportion tagged fish out to appropriate dimensions if necessary
             tmp_tagged_fish = release_conv_tag_attr(array(conv_tagged_fish[tc, , , ], dim = c(n_pop, n_ages, n_sexes)),
@@ -998,14 +998,14 @@ SPoRC_rtmb = function(pars, data) {
                                                     n_ages, n_sexes)
 
             # Input tagged fish into available tags for recapture and adjust initial number of tagged fish for tag induced mortality (exponential mortality process)
-            conv_tag_fish_avail[1, rseas, tc, , tr, , ] = array(tmp_tagged_fish * exp(-exp(ln_init_conv_tag_mort)), dim = c(n_pop, n_ages, n_sexes))
+            conv_tag_fish_avail[1, rseas, tc, , tr, , ] = array(tmp_tagged_fish * exp(-exp(ln_init_conv_tag_mort[tc])), dim = c(n_pop, n_ages, n_sexes))
           }
 
           # get temporary survival value
           tmp_SAA = exp(-tmp_ZAA)
 
           # Move tagged fish around (skip only in first release year + tagging season when tagging occurs mid-season)
-          if(conv_tag_t_tagging == 1 || ry != 1 || rseas != tseas) {
+          if(conv_tag_t_tagging[tc] == 1 || ry != 1 || rseas != tseas) {
             for(p in 1:n_pop) {
               # Movement of tag cohorts
               if(do_recruits_move == 0) {

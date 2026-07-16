@@ -8,25 +8,36 @@ do_conv_init_tag_mort_mapping(input_list, init_conv_tag_mort_spec)
 }
 \arguments{
 \item{input_list}{Named list with \code{$data}, \code{$par}, and
-\code{$map} sublists. Requires \code{$data$use_conv_fish_tagging}.}
+\code{$map} sublists. Requires \code{$data$use_conv_fish_tagging} and
+\code{$par$ln_init_conv_tag_mort}.}
 
 \item{init_conv_tag_mort_spec}{Character string. One of:
 \describe{
   \item{\code{"fix"}}{Fix \code{ln_init_conv_tag_mort} at its starting
-    value (mapped to \code{NA}).}
-  \item{\code{"est"}}{Estimate \code{ln_init_conv_tag_mort} (mapped to
-    factor level \code{1}).}
+    values for every release event (mapped to \code{NA}).}
+  \item{\code{"est_shared"}}{Estimate a single value of
+    \code{ln_init_conv_tag_mort} shared across all release events
+    (mapped to factor level \code{1} for every event).}
+  \item{\code{"est_all"}}{Estimate an independent value of
+    \code{ln_init_conv_tag_mort} for every release event (mapped to
+    distinct factor levels \code{1:n_conv_tag_cohorts}). Issues a
+    warning, as per-event initial tag mortality is frequently
+    non-identifiable.}
 }}
 }
 \value{
 The input \code{input_list} with \code{$map$ln_init_conv_tag_mort}
-  set to a length-1 factor. Active: factor level \code{1}; fixed: \code{NA}.
+  set to a factor vector the same length as
+  \code{$par$ln_init_conv_tag_mort}. Fixed: all \code{NA}; shared: all
+  factor level \code{1}; independent: distinct levels per event.
 }
 \description{
 Internal helper called by \code{\link{Setup_Mod_Tagging}} to construct the
 TMB/RTMB factor map for \code{ln_init_conv_tag_mort}, the log-scale
-mortality applied to fish at the moment of tag release. This is a scalar
-parameter (not dimensioned by fleet or region).
+mortality applied to fish at the moment of tag release. This parameter is
+a vector of length \code{n_conv_tag_cohorts} (one element per tag release
+event / row of \code{conv_tag_release_indicator}); when tagging is
+inactive it is a length-1 placeholder.
 }
 \details{
 When no fishery fleet uses conventional tagging

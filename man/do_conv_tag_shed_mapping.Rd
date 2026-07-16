@@ -8,28 +8,39 @@ do_conv_tag_shed_mapping(input_list, conv_tag_shed_spec)
 }
 \arguments{
 \item{input_list}{Named list with \code{$data}, \code{$par}, and
-\code{$map} sublists. Requires \code{$data$use_conv_fish_tagging}.}
+\code{$map} sublists. Requires \code{$data$use_conv_fish_tagging} and
+\code{$par$ln_conv_tag_shed}.}
 
 \item{conv_tag_shed_spec}{Character string. One of:
 \describe{
-  \item{\code{"fix"}}{Fix \code{ln_conv_tag_shed} at its starting value
-    (mapped to \code{NA}).}
-  \item{\code{"est"}}{Estimate \code{ln_conv_tag_shed} (mapped to factor
-    level \code{1}).}
+  \item{\code{"fix"}}{Fix \code{ln_conv_tag_shed} at its starting values
+    for every release event (mapped to \code{NA}).}
+  \item{\code{"est_shared"}}{Estimate a single value of
+    \code{ln_conv_tag_shed} shared across all release events (mapped to
+    factor level \code{1} for every event).}
+  \item{\code{"est_all"}}{Estimate an independent value of
+    \code{ln_conv_tag_shed} for every release event (mapped to distinct
+    factor levels \code{1:n_conv_tag_cohorts}). Issues a warning, as
+    per-event chronic shedding is frequently non-identifiable.}
 }}
 }
 \value{
 The input \code{input_list} with \code{$map$ln_conv_tag_shed} set
-  to a length-1 factor. Active: factor level \code{1}; fixed: \code{NA}.
+  to a factor vector the same length as \code{$par$ln_conv_tag_shed}.
+  Fixed: all \code{NA}; shared: all factor level \code{1}; independent:
+  distinct levels per event.
 }
 \description{
 Internal helper called by \code{\link{Setup_Mod_Tagging}} to construct the
 TMB/RTMB factor map for \code{ln_conv_tag_shed}, the log-scale annual
-chronic tag shedding rate. This is a scalar parameter.
+chronic tag shedding rate. This parameter is a vector of length
+\code{n_conv_tag_cohorts} (one element per tag release event / row of
+\code{conv_tag_release_indicator}); when tagging is inactive it is a
+length-1 placeholder.
 }
 \details{
-When any fishery fleet has tagging disabled
-(\code{any(use_conv_fish_tagging == 0)}), the parameter is automatically
+When no fishery fleet uses conventional tagging
+(\code{all(use_conv_fish_tagging == 0)}), the parameter is automatically
 mapped to \code{NA} regardless of \code{conv_tag_shed_spec}.
 }
 \keyword{internal}

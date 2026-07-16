@@ -39,14 +39,21 @@
 #'       \code{fleet} column gives the fleet index.}
 #'   }
 #'   Default: \code{"survey"} platform with fleet \code{1} for every cohort.
-#' @param conv_tag_t_tagging Numeric scalar in \eqn{[0, 1]}. Fraction of the
-#'   season remaining at the time of tag release. \code{1} = start of season;
-#'   \code{0.5} = mid-season; \code{0} = end of season. Default \code{1}.
+#' @param conv_tag_t_tagging Numeric scalar or vector of length
+#'   \code{n_tag_rel_events} (one value per row of
+#'   \code{conv_tag_release_indicator}), each in \eqn{[0, 1]}. Fraction of the
+#'   season remaining at the time of tag release for that release event.
+#'   \code{1} = start of season; \code{0.5} = mid-season; \code{0} = end of
+#'   season. A scalar is recycled to all release events. Default \code{1}.
 #' @param ln_init_conv_tag_mort Log-scale initial tag-induced mortality
-#'   applied at the moment of release. Default \code{-1000} (approximately
+#'   applied at the moment of release. Numeric scalar or vector of length
+#'   \code{n_tag_rel_events}, one value per release event. A scalar is
+#'   recycled to all release events. Default \code{-1000} (approximately
 #'   zero mortality).
 #' @param ln_conv_tag_shed Log-scale annual chronic tag shedding rate.
-#'   Default \code{-1000} (approximately no shedding).
+#'   Numeric scalar or vector of length \code{n_tag_rel_events}, one value per
+#'   release event. A scalar is recycled to all release events. Default
+#'   \code{-1000} (approximately no shedding).
 #' @param conv_fish_tag_like Integer or character scalar specifying the tag
 #'   recapture likelihood. Default \code{0} (Poisson). Options:
 #'   \describe{
@@ -78,8 +85,10 @@
 #'
 #' @return The input \code{sim_list} with tagging-related fields appended:
 #'   \code{$n_tags} or \code{$n_tags_rel_input} (depending on which is
-#'   provided), \code{$conv_tag_max_liberty}, \code{$conv_tag_t_tagging},
-#'   \code{$ln_init_conv_tag_mort}, \code{$ln_conv_tag_shed},
+#'   provided), \code{$conv_tag_max_liberty}, \code{$conv_tag_t_tagging}
+#'   (length \code{n_tag_rel_events}), \code{$ln_init_conv_tag_mort} (length
+#'   \code{n_tag_rel_events}), \code{$ln_conv_tag_shed} (length
+#'   \code{n_tag_rel_events}),
 #'   \code{$conv_tag_release_indicator}, \code{$conv_tag_release_platform},
 #'   \code{$n_tag_rel_events}, \code{$use_conv_fish_tagging},
 #'   \code{$conv_fish_tag_like}, \code{$conv_fish_tag_attr},
@@ -126,12 +135,14 @@ Setup_Sim_Tagging <- function(
   if(!is.null(n_tags)) sim_list$n_tags <- n_tags
   if(!is.null(n_tags_rel_input)) sim_list$n_tags_rel_input <- n_tags_rel_input
   sim_list$conv_tag_max_liberty <- conv_tag_max_liberty
-  sim_list$conv_tag_t_tagging <- conv_tag_t_tagging # time of tagging
-  sim_list$ln_init_conv_tag_mort <- ln_init_conv_tag_mort # tag induced mortality
-  sim_list$ln_conv_tag_shed <- ln_conv_tag_shed # tag shedding
   sim_list$conv_tag_release_indicator <- conv_tag_release_indicator # tag release indicator (by tag years and regions = a tag cohort)
   sim_list$conv_tag_release_platform <- conv_tag_release_platform # how tags are released
   sim_list$n_tag_rel_events <- nrow(conv_tag_release_indicator) # number of tag release events - tag years x tag region (tag cohorts)
+
+  # Per-release-event timing / mortality / shedding (scalars are recycled to all events)
+  sim_list$conv_tag_t_tagging <- recycle_tag_event_par(conv_tag_t_tagging, sim_list$n_tag_rel_events, "conv_tag_t_tagging") # time of tagging
+  sim_list$ln_init_conv_tag_mort <- recycle_tag_event_par(ln_init_conv_tag_mort, sim_list$n_tag_rel_events, "ln_init_conv_tag_mort") # tag induced mortality
+  sim_list$ln_conv_tag_shed <- recycle_tag_event_par(ln_conv_tag_shed, sim_list$n_tag_rel_events, "ln_conv_tag_shed") # tag shedding
 
   # Containers
   sim_list$conv_tagged_fish <- sim_list$conv_tagged_fish_attr <-
@@ -157,40 +168,77 @@ Setup_Sim_Tagging <- function(
   return(sim_list)
 }
 
+#' Recycle a per-tag-release-event scalar or vector to the full event count
+#'
+#' Internal helper shared by \code{\link{Setup_Sim_Tagging}} and
+#' \code{\link{Setup_Mod_Tagging}}. Accepts either a scalar (recycled to all
+#' release events) or a vector already of length \code{n_events}, and errors
+#' on any other length.
+#'
+#' @param x Numeric scalar or vector.
+#' @param n_events Integer. Number of tag release events (cohorts).
+#' @param what Character string used in the error message to identify the
+#'   offending argument.
+#'
+#' @return Numeric vector of length \code{n_events}.
+#'
+#' @keywords internal
+recycle_tag_event_par <- function(x, n_events, what) {
+  if(length(x) == 1) return(rep(x, n_events))
+  if(length(x) != n_events) stop(what, " must be length 1 (recycled to all release events) or length n_tag_rel_events (", n_events, "). Got length ", length(x), ".")
+  x
+}
+
 #' Map initial tag-induced mortality parameter
 #'
 #' Internal helper called by \code{\link{Setup_Mod_Tagging}} to construct the
 #' TMB/RTMB factor map for \code{ln_init_conv_tag_mort}, the log-scale
-#' mortality applied to fish at the moment of tag release. This is a scalar
-#' parameter (not dimensioned by fleet or region).
+#' mortality applied to fish at the moment of tag release. This parameter is
+#' a vector of length \code{n_conv_tag_cohorts} (one element per tag release
+#' event / row of \code{conv_tag_release_indicator}); when tagging is
+#' inactive it is a length-1 placeholder.
 #'
 #' When no fishery fleet uses conventional tagging
 #' (\code{all(use_conv_fish_tagging == 0)}), the parameter is automatically
 #' mapped to \code{NA} regardless of \code{init_conv_tag_mort_spec}.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par}, and
-#'   \code{$map} sublists. Requires \code{$data$use_conv_fish_tagging}.
+#'   \code{$map} sublists. Requires \code{$data$use_conv_fish_tagging} and
+#'   \code{$par$ln_init_conv_tag_mort}.
 #' @param init_conv_tag_mort_spec Character string. One of:
 #'   \describe{
 #'     \item{\code{"fix"}}{Fix \code{ln_init_conv_tag_mort} at its starting
-#'       value (mapped to \code{NA}).}
-#'     \item{\code{"est"}}{Estimate \code{ln_init_conv_tag_mort} (mapped to
-#'       factor level \code{1}).}
+#'       values for every release event (mapped to \code{NA}).}
+#'     \item{\code{"est_shared"}}{Estimate a single value of
+#'       \code{ln_init_conv_tag_mort} shared across all release events
+#'       (mapped to factor level \code{1} for every event).}
+#'     \item{\code{"est_all"}}{Estimate an independent value of
+#'       \code{ln_init_conv_tag_mort} for every release event (mapped to
+#'       distinct factor levels \code{1:n_conv_tag_cohorts}). Issues a
+#'       warning, as per-event initial tag mortality is frequently
+#'       non-identifiable.}
 #'   }
 #'
 #' @return The input \code{input_list} with \code{$map$ln_init_conv_tag_mort}
-#'   set to a length-1 factor. Active: factor level \code{1}; fixed: \code{NA}.
+#'   set to a factor vector the same length as
+#'   \code{$par$ln_init_conv_tag_mort}. Fixed: all \code{NA}; shared: all
+#'   factor level \code{1}; independent: distinct levels per event.
 #'
 #'
 #' @keywords internal
 do_conv_init_tag_mort_mapping <- function(input_list, init_conv_tag_mort_spec) {
-  if(all(input_list$data$use_conv_fish_tagging == 0)) input_list$map$ln_init_conv_tag_mort <- factor(NA) # initial tag mortality
+  n_events <- length(input_list$par$ln_init_conv_tag_mort)
+  if(all(input_list$data$use_conv_fish_tagging == 0)) input_list$map$ln_init_conv_tag_mort <- factor(rep(NA, n_events)) # initial tag mortality
   if(any(input_list$data$use_conv_fish_tagging == 1)) {
     # Validate input
-    if(!init_conv_tag_mort_spec %in% c("fix", "est")) stop("init_conv_tag_mort_spec is incorrectly specified. Should be one of these: fix, est")
+    if(!init_conv_tag_mort_spec %in% c("fix", "est_shared", "est_all")) stop("init_conv_tag_mort_spec is incorrectly specified. Should be one of these: fix, est_shared, est_all")
     # Initial tag mortality
-    if(init_conv_tag_mort_spec == "fix") input_list$map$ln_init_conv_tag_mort <- factor(NA)
-    if(init_conv_tag_mort_spec == "est") input_list$map$ln_init_conv_tag_mort <- factor(1)
+    if(init_conv_tag_mort_spec == "fix") input_list$map$ln_init_conv_tag_mort <- factor(rep(NA, n_events))
+    if(init_conv_tag_mort_spec == "est_shared") input_list$map$ln_init_conv_tag_mort <- factor(rep(1, n_events))
+    if(init_conv_tag_mort_spec == "est_all") {
+      input_list$map$ln_init_conv_tag_mort <- factor(1:n_events)
+      warning("init_conv_tag_mort_spec = 'est_all' estimates an independent initial tag-induced mortality for each of the ", n_events, " tag release events. This is frequently non-identifiable (initial tag mortality is confounded with natural and fishing mortality, and per-event recaptures are often sparse). Consider 'est_shared' or fixing the parameter unless you have strong prior/data support for event-specific values.")
+    }
     collect_message("Conventional Initial Tag Mortality is specified as: ", init_conv_tag_mort_spec)
   }
   return(input_list)
@@ -200,35 +248,51 @@ do_conv_init_tag_mort_mapping <- function(input_list, init_conv_tag_mort_spec) {
 #'
 #' Internal helper called by \code{\link{Setup_Mod_Tagging}} to construct the
 #' TMB/RTMB factor map for \code{ln_conv_tag_shed}, the log-scale annual
-#' chronic tag shedding rate. This is a scalar parameter.
+#' chronic tag shedding rate. This parameter is a vector of length
+#' \code{n_conv_tag_cohorts} (one element per tag release event / row of
+#' \code{conv_tag_release_indicator}); when tagging is inactive it is a
+#' length-1 placeholder.
 #'
-#' When any fishery fleet has tagging disabled
-#' (\code{any(use_conv_fish_tagging == 0)}), the parameter is automatically
+#' When no fishery fleet uses conventional tagging
+#' (\code{all(use_conv_fish_tagging == 0)}), the parameter is automatically
 #' mapped to \code{NA} regardless of \code{conv_tag_shed_spec}.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par}, and
-#'   \code{$map} sublists. Requires \code{$data$use_conv_fish_tagging}.
+#'   \code{$map} sublists. Requires \code{$data$use_conv_fish_tagging} and
+#'   \code{$par$ln_conv_tag_shed}.
 #' @param conv_tag_shed_spec Character string. One of:
 #'   \describe{
-#'     \item{\code{"fix"}}{Fix \code{ln_conv_tag_shed} at its starting value
-#'       (mapped to \code{NA}).}
-#'     \item{\code{"est"}}{Estimate \code{ln_conv_tag_shed} (mapped to factor
-#'       level \code{1}).}
+#'     \item{\code{"fix"}}{Fix \code{ln_conv_tag_shed} at its starting values
+#'       for every release event (mapped to \code{NA}).}
+#'     \item{\code{"est_shared"}}{Estimate a single value of
+#'       \code{ln_conv_tag_shed} shared across all release events (mapped to
+#'       factor level \code{1} for every event).}
+#'     \item{\code{"est_all"}}{Estimate an independent value of
+#'       \code{ln_conv_tag_shed} for every release event (mapped to distinct
+#'       factor levels \code{1:n_conv_tag_cohorts}). Issues a warning, as
+#'       per-event chronic shedding is frequently non-identifiable.}
 #'   }
 #'
 #' @return The input \code{input_list} with \code{$map$ln_conv_tag_shed} set
-#'   to a length-1 factor. Active: factor level \code{1}; fixed: \code{NA}.
+#'   to a factor vector the same length as \code{$par$ln_conv_tag_shed}.
+#'   Fixed: all \code{NA}; shared: all factor level \code{1}; independent:
+#'   distinct levels per event.
 #'
 #'
 #' @keywords internal
 do_conv_tag_shed_mapping <- function(input_list, conv_tag_shed_spec) {
-  if(any(input_list$data$use_conv_fish_tagging == 0)) input_list$map$ln_conv_tag_shed <- factor(NA) # chronic tag shedding
-  if(all(input_list$data$use_conv_fish_tagging == 1)) {
+  n_events <- length(input_list$par$ln_conv_tag_shed)
+  if(all(input_list$data$use_conv_fish_tagging == 0)) input_list$map$ln_conv_tag_shed <- factor(rep(NA, n_events)) # chronic tag shedding
+  if(any(input_list$data$use_conv_fish_tagging == 1)) {
     # Validate input
-    if(!conv_tag_shed_spec %in% c("fix", "est")) stop("conv_tag_shed_spec is incorrectly specified. Should be one of these: fix, est")
+    if(!conv_tag_shed_spec %in% c("fix", "est_shared", "est_all")) stop("conv_tag_shed_spec is incorrectly specified. Should be one of these: fix, est_shared, est_all")
     # Tag Shedding
-    if(conv_tag_shed_spec == "fix" || use_conv_fish_tagging == 0) input_list$map$ln_conv_tag_shed <- factor(NA)
-    if(conv_tag_shed_spec == "est") input_list$map$ln_conv_tag_shed <- factor(1)
+    if(conv_tag_shed_spec == "fix") input_list$map$ln_conv_tag_shed <- factor(rep(NA, n_events))
+    if(conv_tag_shed_spec == "est_shared") input_list$map$ln_conv_tag_shed <- factor(rep(1, n_events))
+    if(conv_tag_shed_spec == "est_all") {
+      input_list$map$ln_conv_tag_shed <- factor(1:n_events)
+      warning("conv_tag_shed_spec = 'est_all' estimates an independent chronic tag shedding rate for each of the ", n_events, " tag release events. This is frequently non-identifiable (shedding is confounded with natural and fishing mortality, and per-event recaptures are often sparse). Consider 'est_shared' or fixing the parameter unless you have strong prior/data support for event-specific values.")
+    }
     collect_message("Conventional Chronic Tag Shedding is specified as: ", conv_tag_shed_spec)
   }
   return(input_list)
@@ -468,9 +532,12 @@ do_conv_tag_fish_reporting_pars_mapping <- function(input_list, conv_tagrep_spec
 #'   in seasonal models) post-release before recaptures contribute to the
 #'   likelihood. Allows time for tags to mix within the population before
 #'   informing movement estimation. Default \code{1}.
-#' @param conv_tag_t_tagging Numeric scalar in \eqn{[0, 1]}. Fraction of the
-#'   season remaining at tag release. \code{1} = start of season;
-#'   \code{0.5} = mid-season; \code{0} = end of season. Default \code{1}.
+#' @param conv_tag_t_tagging Numeric scalar or vector of length
+#'   \code{n_conv_tag_cohorts} (one value per row of
+#'   \code{conv_tag_release_indicator}), each in \eqn{[0, 1]}. Fraction of the
+#'   season remaining at tag release for that release event. \code{1} = start
+#'   of season; \code{0.5} = mid-season; \code{0} = end of season. A scalar is
+#'   recycled to all release events. Default \code{1}.
 #' @param conv_fish_tag_attr Character string specifying which biological
 #'   dimensions are attended (resolved) in the recapture likelihood. Built
 #'   from any combination of \code{"p"} (population), \code{"a"} (age), and
@@ -499,13 +566,17 @@ do_conv_tag_fish_reporting_pars_mapping <- function(input_list, conv_tagrep_spec
 #' @param conv_tag_sex_pool List of integer vectors defining sex pooling
 #'   groups. When \code{"s"} is not attended, use \code{list(1:n_sexes)}.
 #'   Default: \code{as.list(1:n_sexes)}.
-#' @param init_conv_tag_mort_spec Character string (\code{"fix"} or
-#'   \code{"est"}). Whether initial tag-induced mortality is fixed at its
-#'   starting value or estimated. See
-#'   \code{\link{do_conv_init_tag_mort_mapping}}. Default \code{NULL}.
-#' @param conv_tag_shed_spec Character string (\code{"fix"} or \code{"est"}).
-#'   Whether chronic tag shedding is fixed or estimated. See
-#'   \code{\link{do_conv_tag_shed_mapping}}. Default \code{NULL}.
+#' @param init_conv_tag_mort_spec Character string (\code{"fix"},
+#'   \code{"est_shared"}, or \code{"est_all"}). Whether initial tag-induced
+#'   mortality is fixed at its starting values, estimated as a single value
+#'   shared across all release events, or estimated independently for every
+#'   release event. See \code{\link{do_conv_init_tag_mort_mapping}}. Default
+#'   \code{NULL}.
+#' @param conv_tag_shed_spec Character string (\code{"fix"},
+#'   \code{"est_shared"}, or \code{"est_all"}). Whether chronic tag shedding
+#'   is fixed at its starting values, estimated as a single value shared
+#'   across all release events, or estimated independently for every release
+#'   event. See \code{\link{do_conv_tag_shed_mapping}}. Default \code{NULL}.
 #' @param conv_tag_fish_reporting_blocks Character vector defining time blocks
 #'   for fishery tag reporting rates. Each element follows one of:
 #'   \describe{
@@ -532,8 +603,12 @@ do_conv_tag_fish_reporting_pars_mapping <- function(input_list, conv_tagrep_spec
 #'   \code{use_conv_tag_fishrep_prior = 0}. Default \code{NULL}.
 #' @param ... Optional named starting values for parameters. Supported names
 #'   and defaults:
-#'   \code{ln_init_conv_tag_mort} (scalar, default \code{-1000}),
-#'   \code{ln_conv_tag_shed} (scalar, default \code{-1000}),
+#'   \code{ln_init_conv_tag_mort} (scalar or length \code{n_conv_tag_cohorts}
+#'     vector; a scalar is recycled to all release events; default
+#'     \code{-1000}),
+#'   \code{ln_conv_tag_shed} (scalar or length \code{n_conv_tag_cohorts}
+#'     vector; a scalar is recycled to all release events; default
+#'     \code{-1000}),
 #'   \code{ln_conv_fish_tag_theta} (scalar, default \code{0}),
 #'   \code{conv_tag_fish_reporting_pars}
 #'     \code{[n_regions × max_tagrep_blocks × n_fish_fleets]},
@@ -550,7 +625,8 @@ do_conv_tag_fish_reporting_pars_mapping <- function(input_list, conv_tagrep_spec
 #'   \code{conv_tag_age_pool}, \code{conv_tag_sex_pool},
 #'   \code{conv_tag_fish_reporting_blocks}, \code{conv_fish_tag_attr},
 #'   \code{conv_tag_release_platform}); starting values in \code{$par} for
-#'   \code{ln_init_conv_tag_mort}, \code{ln_conv_tag_shed},
+#'   \code{ln_init_conv_tag_mort} and \code{ln_conv_tag_shed} (each length
+#'   \code{n_conv_tag_cohorts}, or length 1 when tagging is inactive),
 #'   \code{ln_conv_fish_tag_theta}, and \code{conv_tag_fish_reporting_pars};
 #'   and factor maps in \code{$map} for all four parameter arrays.
 #'
@@ -723,7 +799,7 @@ Setup_Mod_Tagging <- function(input_list,
   input_list$data$obs_conv_tag_fish_recap <- obs_conv_tag_fish_recap
   input_list$data$conv_fish_tag_like <- conv_fish_tag_like_vals
   input_list$data$conv_tag_mixing_period <- conv_tag_mixing_period
-  input_list$data$conv_tag_t_tagging <- conv_tag_t_tagging
+  input_list$data$conv_tag_t_tagging <- recycle_tag_event_par(conv_tag_t_tagging, max(input_list$data$n_conv_tag_cohorts, 1), "conv_tag_t_tagging")
   input_list$data$use_conv_tag_fishrep_prior <- use_conv_tag_fishrep_prior
   input_list$data$conv_tag_fishrep_prior <- conv_tag_fishrep_prior
   input_list$data$conv_tag_pop_pool <- move_pop_tag_pool_vals
@@ -735,13 +811,15 @@ Setup_Mod_Tagging <- function(input_list,
 
   # Populate Parameter List ------------------------------------------------------
 
+  n_tag_par_events <- max(input_list$data$n_conv_tag_cohorts, 1) # one value per release event; length-1 placeholder when tagging is inactive
+
   # Initial tag induced mortality
-  if("ln_init_conv_tag_mort" %in% names(starting_values)) input_list$par$ln_init_conv_tag_mort <- starting_values$ln_init_conv_tag_mort
-  else input_list$par$ln_init_conv_tag_mort <- -1000
+  if("ln_init_conv_tag_mort" %in% names(starting_values)) input_list$par$ln_init_conv_tag_mort <- recycle_tag_event_par(starting_values$ln_init_conv_tag_mort, n_tag_par_events, "ln_init_conv_tag_mort")
+  else input_list$par$ln_init_conv_tag_mort <- rep(-1000, n_tag_par_events)
 
   # Chronic tag shedding
-  if("ln_conv_tag_shed" %in% names(starting_values)) input_list$par$ln_conv_tag_shed <- starting_values$ln_conv_tag_shed
-  else input_list$par$ln_conv_tag_shed <- -1000
+  if("ln_conv_tag_shed" %in% names(starting_values)) input_list$par$ln_conv_tag_shed <- recycle_tag_event_par(starting_values$ln_conv_tag_shed, n_tag_par_events, "ln_conv_tag_shed")
+  else input_list$par$ln_conv_tag_shed <- rep(-1000, n_tag_par_events)
 
   # tag overdispersion parameter
   if("ln_conv_fish_tag_theta" %in% names(starting_values)) input_list$par$ln_conv_fish_tag_theta <- starting_values$ln_conv_fish_tag_theta

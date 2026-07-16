@@ -945,7 +945,7 @@ generate_recruitment <- function(y,
 #' @param sim_env Simulation environment
 #'
 #' @keywords internal
-compute_spawn_biomass_sim <- function(y, seas, sim, sim_env) {
+compute_biom_y_sim <- function(y, seas, sim, sim_env) {
 
   NAA <- sim_env$NAA; NAA0 <- sim_env$NAA0
   WAA <- sim_env$WAA; MatAA <- sim_env$MatAA; ZAA <- sim_env$ZAA
@@ -1141,7 +1141,7 @@ apply_pop_dy <- function(y, sim, sim_env) {
       if(rec_lag == 0 && seas == spawn_seas) {
 
         # SSB from survivors only, used to feed generate_recruitment() below.
-        spawn_biom <- compute_spawn_biomass_sim(y, seas, sim, sim_env)
+        spawn_biom <- compute_biom_y_sim(y, seas, sim, sim_env)
         sim_env$SSB[,, y, sim] <- spawn_biom$SSB_y
 
         generate_recruitment(y, sim, sim_env, seas = spawn_seas)
@@ -1158,7 +1158,7 @@ apply_pop_dy <- function(y, sim, sim_env) {
         }
 
         # Recompute now that this year's recruits are included
-        spawn_biom <- compute_spawn_biomass_sim(y, seas, sim, sim_env)
+        spawn_biom <- compute_biom_y_sim(y, seas, sim, sim_env)
         sim_env$Total_Biom[,, y, sim] <- spawn_biom$Total_Biom_y
         sim_env$SSB[,, y, sim] <- spawn_biom$SSB_y
         sim_env$Dynamic_SSB0[,,y,sim] <- spawn_biom$Dynamic_SSB0_y
@@ -1179,7 +1179,7 @@ apply_pop_dy <- function(y, sim, sim_env) {
 
       # Compute Biomass Quantities (rec_lag != 0: unchanged original timing)
       if(rec_lag != 0 && seas == spawn_seas) {
-        spawn_biom <- compute_spawn_biomass_sim(y, seas, sim, sim_env)
+        spawn_biom <- compute_biom_y_sim(y, seas, sim, sim_env)
         sim_env$Total_Biom[,, y, sim] <- spawn_biom$Total_Biom_y
         sim_env$SSB[,, y, sim] <- spawn_biom$SSB_y
         sim_env$Dynamic_SSB0[,,y,sim] <- spawn_biom$Dynamic_SSB0_y
@@ -2006,10 +2006,11 @@ generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {
           }
 
           # # Apply Baranov's to get predicted recaptures
+          # (add tiny epsilon to avoid 0/0 when tmp_ZAA == 0, e.g. conv_tag_t_tagging == 0 at release)
           for(f in 1:n_fish_fleets) {
             for(p in 1:n_pop) {
               sim_env$pred_conv_tag_fish_recap[ry,rseas,tc,p,,,,f,sim] <- conv_tag_fish_reporting[,y,f,sim] *
-                (tmp_ret_FAA[p,,1,,,f] / tmp_ZAA[p,,1,,]) *
+                (tmp_ret_FAA[p,,1,,,f] / (tmp_ZAA[p,,1,,] + 1e-10)) *
                 conv_tag_fish_avail[ry,rseas,tc,p,,,,sim] *
                 (1 - tmp_SAA[p,,1,,])
             } # end p loop
@@ -2080,7 +2081,7 @@ run_annual_cycle <- function(y,
     # rec_lag == 0 (age-0 recruitment): recruitment for year y depends on
     # year y's own SSB, which isn't known until apply_pop_dy(y) reaches
     # spawn_seas - generate_recruitment() is called from inside apply_pop_dy
-    # in that case instead (see apply_pop_dy / compute_spawn_biomass_sim).
+    # in that case instead (see apply_pop_dy / compute_biom_y_sim).
     if(sim_env$rec_lag != 0) generate_recruitment(y = 1, sim, sim_env) # Get recruitment in the first year
   }
 

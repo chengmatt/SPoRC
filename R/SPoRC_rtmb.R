@@ -736,7 +736,6 @@ SPoRC_rtmb = function(pars, data) {
             for(a in 2:n_ages) {
               for(s in 1:n_sexes) {
                 NAA[p,,y,seas,a,s] = t(NAA[p,,y,seas,a,s]) %*% Movement[p,,,y,seas,a,s] # Fished
-                NAA0[p,,y,seas,a,s] = t(NAA0[p,,y,seas,a,s]) %*% Movement[p,,,y,seas,a,s] # Unfished
               } # end s loop
             } # end a loop
           } # end if recruits don't move
@@ -746,7 +745,6 @@ SPoRC_rtmb = function(pars, data) {
             for(a in 1:n_ages) {
               for(s in 1:n_sexes) {
                 NAA[p,,y,seas,a,s] = t(NAA[p,,y,seas,a,s]) %*% Movement[p,,,y,seas,a,s] # Fished
-                NAA0[p,,y,seas,a,s] = t(NAA0[p,,y,seas,a,s]) %*% Movement[p,,,y,seas,a,s] # Unfished
               } # end s loop
             } # end a loop
           } # end if

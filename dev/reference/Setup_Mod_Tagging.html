@@ -151,9 +151,12 @@ informing movement estimation. Default <code>1</code>.</p></dd>
 
 
 <dt id="arg-conv-tag-t-tagging">conv_tag_t_tagging<a class="anchor" aria-label="anchor" href="#arg-conv-tag-t-tagging"></a></dt>
-<dd><p>Numeric scalar in \([0, 1]\). Fraction of the
-season remaining at tag release. <code>1</code> = start of season;
-<code>0.5</code> = mid-season; <code>0</code> = end of season. Default <code>1</code>.</p></dd>
+<dd><p>Numeric scalar or vector of length
+<code>n_conv_tag_cohorts</code> (one value per row of
+<code>conv_tag_release_indicator</code>), each in \([0, 1]\). Fraction of the
+season remaining at tag release for that release event. <code>1</code> = start
+of season; <code>0.5</code> = mid-season; <code>0</code> = end of season. A scalar is
+recycled to all release events. Default <code>1</code>.</p></dd>
 
 
 <dt id="arg-use-conv-tag-fishrep-prior">use_conv_tag_fishrep_prior<a class="anchor" aria-label="anchor" href="#arg-use-conv-tag-fishrep-prior"></a></dt>
@@ -191,16 +194,20 @@ Default: <code>as.list(1:n_sexes)</code>.</p></dd>
 
 
 <dt id="arg-init-conv-tag-mort-spec">init_conv_tag_mort_spec<a class="anchor" aria-label="anchor" href="#arg-init-conv-tag-mort-spec"></a></dt>
-<dd><p>Character string (<code>"fix"</code> or
-<code>"est"</code>). Whether initial tag-induced mortality is fixed at its
-starting value or estimated. See
-<code><a href="do_conv_init_tag_mort_mapping.html">do_conv_init_tag_mort_mapping</a></code>. Default <code>NULL</code>.</p></dd>
+<dd><p>Character string (<code>"fix"</code>,
+<code>"est_shared"</code>, or <code>"est_all"</code>). Whether initial tag-induced
+mortality is fixed at its starting values, estimated as a single value
+shared across all release events, or estimated independently for every
+release event. See <code><a href="do_conv_init_tag_mort_mapping.html">do_conv_init_tag_mort_mapping</a></code>. Default
+<code>NULL</code>.</p></dd>
 
 
 <dt id="arg-conv-tag-shed-spec">conv_tag_shed_spec<a class="anchor" aria-label="anchor" href="#arg-conv-tag-shed-spec"></a></dt>
-<dd><p>Character string (<code>"fix"</code> or <code>"est"</code>).
-Whether chronic tag shedding is fixed or estimated. See
-<code><a href="do_conv_tag_shed_mapping.html">do_conv_tag_shed_mapping</a></code>. Default <code>NULL</code>.</p></dd>
+<dd><p>Character string (<code>"fix"</code>,
+<code>"est_shared"</code>, or <code>"est_all"</code>). Whether chronic tag shedding
+is fixed at its starting values, estimated as a single value shared
+across all release events, or estimated independently for every release
+event. See <code><a href="do_conv_tag_shed_mapping.html">do_conv_tag_shed_mapping</a></code>. Default <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-conv-tagrep-spec">conv_tagrep_spec<a class="anchor" aria-label="anchor" href="#arg-conv-tagrep-spec"></a></dt>
@@ -253,8 +260,12 @@ Default <code>NULL</code>.</p></dd>
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Optional named starting values for parameters. Supported names
 and defaults:
-<code>ln_init_conv_tag_mort</code> (scalar, default <code>-1000</code>),
-<code>ln_conv_tag_shed</code> (scalar, default <code>-1000</code>),
+<code>ln_init_conv_tag_mort</code> (scalar or length <code>n_conv_tag_cohorts</code>
+  vector; a scalar is recycled to all release events; default
+  <code>-1000</code>),
+<code>ln_conv_tag_shed</code> (scalar or length <code>n_conv_tag_cohorts</code>
+  vector; a scalar is recycled to all release events; default
+  <code>-1000</code>),
 <code>ln_conv_fish_tag_theta</code> (scalar, default <code>0</code>),
 <code>conv_tag_fish_reporting_pars</code>
   <code>[n_regions × max_tagrep_blocks × n_fish_fleets]</code>,
@@ -274,7 +285,8 @@ fleet slots overwritten to <code>-1000</code>).</p></dd>
   <code>conv_tag_age_pool</code>, <code>conv_tag_sex_pool</code>,
   <code>conv_tag_fish_reporting_blocks</code>, <code>conv_fish_tag_attr</code>,
   <code>conv_tag_release_platform</code>); starting values in <code>$par</code> for
-  <code>ln_init_conv_tag_mort</code>, <code>ln_conv_tag_shed</code>,
+  <code>ln_init_conv_tag_mort</code> and <code>ln_conv_tag_shed</code> (each length
+  <code>n_conv_tag_cohorts</code>, or length 1 when tagging is inactive),
   <code>ln_conv_fish_tag_theta</code>, and <code>conv_tag_fish_reporting_pars</code>;
   and factor maps in <code>$map</code> for all four parameter arrays.</p>
     </div>

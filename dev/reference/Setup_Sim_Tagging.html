@@ -138,20 +138,27 @@ of:</p><dl><dt><code>"population"</code></dt>
 
 
 <dt id="arg-conv-tag-t-tagging">conv_tag_t_tagging<a class="anchor" aria-label="anchor" href="#arg-conv-tag-t-tagging"></a></dt>
-<dd><p>Numeric scalar in \([0, 1]\). Fraction of the
-season remaining at the time of tag release. <code>1</code> = start of season;
-<code>0.5</code> = mid-season; <code>0</code> = end of season. Default <code>1</code>.</p></dd>
+<dd><p>Numeric scalar or vector of length
+<code>n_tag_rel_events</code> (one value per row of
+<code>conv_tag_release_indicator</code>), each in \([0, 1]\). Fraction of the
+season remaining at the time of tag release for that release event.
+<code>1</code> = start of season; <code>0.5</code> = mid-season; <code>0</code> = end of
+season. A scalar is recycled to all release events. Default <code>1</code>.</p></dd>
 
 
 <dt id="arg-ln-init-conv-tag-mort">ln_init_conv_tag_mort<a class="anchor" aria-label="anchor" href="#arg-ln-init-conv-tag-mort"></a></dt>
 <dd><p>Log-scale initial tag-induced mortality
-applied at the moment of release. Default <code>-1000</code> (approximately
+applied at the moment of release. Numeric scalar or vector of length
+<code>n_tag_rel_events</code>, one value per release event. A scalar is
+recycled to all release events. Default <code>-1000</code> (approximately
 zero mortality).</p></dd>
 
 
 <dt id="arg-ln-conv-tag-shed">ln_conv_tag_shed<a class="anchor" aria-label="anchor" href="#arg-ln-conv-tag-shed"></a></dt>
 <dd><p>Log-scale annual chronic tag shedding rate.
-Default <code>-1000</code> (approximately no shedding).</p></dd>
+Numeric scalar or vector of length <code>n_tag_rel_events</code>, one value per
+release event. A scalar is recycled to all release events. Default
+<code>-1000</code> (approximately no shedding).</p></dd>
 
 
 <dt id="arg-conv-fish-tag-attr">conv_fish_tag_attr<a class="anchor" aria-label="anchor" href="#arg-conv-fish-tag-attr"></a></dt>
@@ -209,8 +216,10 @@ Default <code>log(1)</code>.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>The input <code>sim_list</code> with tagging-related fields appended:
   <code>$n_tags</code> or <code>$n_tags_rel_input</code> (depending on which is
-  provided), <code>$conv_tag_max_liberty</code>, <code>$conv_tag_t_tagging</code>,
-  <code>$ln_init_conv_tag_mort</code>, <code>$ln_conv_tag_shed</code>,
+  provided), <code>$conv_tag_max_liberty</code>, <code>$conv_tag_t_tagging</code>
+  (length <code>n_tag_rel_events</code>), <code>$ln_init_conv_tag_mort</code> (length
+  <code>n_tag_rel_events</code>), <code>$ln_conv_tag_shed</code> (length
+  <code>n_tag_rel_events</code>),
   <code>$conv_tag_release_indicator</code>, <code>$conv_tag_release_platform</code>,
   <code>$n_tag_rel_events</code>, <code>$use_conv_fish_tagging</code>,
   <code>$conv_fish_tag_like</code>, <code>$conv_fish_tag_attr</code>,

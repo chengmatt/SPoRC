@@ -97,9 +97,11 @@ Setup_Mod_Tagging(
 
 - conv_tag_t_tagging:
 
-  Numeric scalar in \\\[0, 1\]\\. Fraction of the season remaining at
-  tag release. `1` = start of season; `0.5` = mid-season; `0` = end of
-  season. Default `1`.
+  Numeric scalar or vector of length `n_conv_tag_cohorts` (one value per
+  row of `conv_tag_release_indicator`), each in \\\[0, 1\]\\. Fraction
+  of the season remaining at tag release for that release event. `1` =
+  start of season; `0.5` = mid-season; `0` = end of season. A scalar is
+  recycled to all release events. Default `1`.
 
 - use_conv_tag_fishrep_prior:
 
@@ -135,15 +137,19 @@ Setup_Mod_Tagging(
 
 - init_conv_tag_mort_spec:
 
-  Character string (`"fix"` or `"est"`). Whether initial tag-induced
-  mortality is fixed at its starting value or estimated. See
+  Character string (`"fix"`, `"est_shared"`, or `"est_all"`). Whether
+  initial tag-induced mortality is fixed at its starting values,
+  estimated as a single value shared across all release events, or
+  estimated independently for every release event. See
   [`do_conv_init_tag_mort_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_conv_init_tag_mort_mapping.md).
   Default `NULL`.
 
 - conv_tag_shed_spec:
 
-  Character string (`"fix"` or `"est"`). Whether chronic tag shedding is
-  fixed or estimated. See
+  Character string (`"fix"`, `"est_shared"`, or `"est_all"`). Whether
+  chronic tag shedding is fixed at its starting values, estimated as a
+  single value shared across all release events, or estimated
+  independently for every release event. See
   [`do_conv_tag_shed_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_conv_tag_shed_mapping.md).
   Default `NULL`.
 
@@ -196,9 +202,12 @@ Setup_Mod_Tagging(
 - ...:
 
   Optional named starting values for parameters. Supported names and
-  defaults: `ln_init_conv_tag_mort` (scalar, default `-1000`),
-  `ln_conv_tag_shed` (scalar, default `-1000`), `ln_conv_fish_tag_theta`
-  (scalar, default `0`), `conv_tag_fish_reporting_pars`
+  defaults: `ln_init_conv_tag_mort` (scalar or length
+  `n_conv_tag_cohorts` vector; a scalar is recycled to all release
+  events; default `-1000`), `ln_conv_tag_shed` (scalar or length
+  `n_conv_tag_cohorts` vector; a scalar is recycled to all release
+  events; default `-1000`), `ln_conv_fish_tag_theta` (scalar, default
+  `0`), `conv_tag_fish_reporting_pars`
   `[n_regions × max_tagrep_blocks × n_fish_fleets]`, default `0` (logit
   scale ≈ 0.5 reporting probability; inactive fleet slots overwritten to
   `-1000`).
@@ -214,9 +223,10 @@ The input `input_list` with tagging configuration stored in `$data`
 `conv_tag_pop_pool`, `conv_tag_age_pool`, `conv_tag_sex_pool`,
 `conv_tag_fish_reporting_blocks`, `conv_fish_tag_attr`,
 `conv_tag_release_platform`); starting values in `$par` for
-`ln_init_conv_tag_mort`, `ln_conv_tag_shed`, `ln_conv_fish_tag_theta`,
-and `conv_tag_fish_reporting_pars`; and factor maps in `$map` for all
-four parameter arrays.
+`ln_init_conv_tag_mort` and `ln_conv_tag_shed` (each length
+`n_conv_tag_cohorts`, or length 1 when tagging is inactive),
+`ln_conv_fish_tag_theta`, and `conv_tag_fish_reporting_pars`; and factor
+maps in `$map` for all four parameter arrays.
 
 ## See also
 

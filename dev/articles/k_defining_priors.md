@@ -488,6 +488,7 @@ input_list <- Setup_Mod_Tagging(
 #> Conventional Tag Reporting estimated with 2 blocks for region 4 and fleet 2
 #> Conventional Tag Reporting estimated with 2 blocks for region 5 and fleet 2
 #> Conventional Initial Tag Mortality is specified as: fix
+#> Conventional Chronic Tag Shedding is specified as: fix
 #> Conventional Tag Reporting is specified as: est_shared_r_f
 ```
 

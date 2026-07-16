@@ -93,19 +93,25 @@ Setup_Sim_Tagging(
 
 - conv_tag_t_tagging:
 
-  Numeric scalar in \\\[0, 1\]\\. Fraction of the season remaining at
-  the time of tag release. `1` = start of season; `0.5` = mid-season;
-  `0` = end of season. Default `1`.
+  Numeric scalar or vector of length `n_tag_rel_events` (one value per
+  row of `conv_tag_release_indicator`), each in \\\[0, 1\]\\. Fraction
+  of the season remaining at the time of tag release for that release
+  event. `1` = start of season; `0.5` = mid-season; `0` = end of season.
+  A scalar is recycled to all release events. Default `1`.
 
 - ln_init_conv_tag_mort:
 
   Log-scale initial tag-induced mortality applied at the moment of
-  release. Default `-1000` (approximately zero mortality).
+  release. Numeric scalar or vector of length `n_tag_rel_events`, one
+  value per release event. A scalar is recycled to all release events.
+  Default `-1000` (approximately zero mortality).
 
 - ln_conv_tag_shed:
 
-  Log-scale annual chronic tag shedding rate. Default `-1000`
-  (approximately no shedding).
+  Log-scale annual chronic tag shedding rate. Numeric scalar or vector
+  of length `n_tag_rel_events`, one value per release event. A scalar is
+  recycled to all release events. Default `-1000` (approximately no
+  shedding).
 
 - conv_fish_tag_attr:
 
@@ -161,8 +167,9 @@ Setup_Sim_Tagging(
 
 The input `sim_list` with tagging-related fields appended: `$n_tags` or
 `$n_tags_rel_input` (depending on which is provided),
-`$conv_tag_max_liberty`, `$conv_tag_t_tagging`,
-`$ln_init_conv_tag_mort`, `$ln_conv_tag_shed`,
+`$conv_tag_max_liberty`, `$conv_tag_t_tagging` (length
+`n_tag_rel_events`), `$ln_init_conv_tag_mort` (length
+`n_tag_rel_events`), `$ln_conv_tag_shed` (length `n_tag_rel_events`),
 `$conv_tag_release_indicator`, `$conv_tag_release_platform`,
 `$n_tag_rel_events`, `$use_conv_fish_tagging`, `$conv_fish_tag_like`,
 `$conv_fish_tag_attr`, `$ln_conv_fish_tag_theta`,

@@ -83,12 +83,17 @@ Numeric scalar or vector of length \code{n_tag_rel_events}, one value per
 release event. A scalar is recycled to all release events. Default
 \code{-1000} (approximately no shedding).}
 
-\item{conv_fish_tag_attr}{Character string specifying which biological
-dimensions are retained at recapture. Built from any combination of
-\code{"p"} (population), \code{"a"} (age), and \code{"s"} (sex), joined
-by underscores. Region and fleet are always retained. Valid values:
-\code{"p_a_s"}, \code{"a_s"}, \code{"p_a"}, \code{"p_s"}, \code{"a"},
-\code{"s"}, \code{"p"}, \code{"none"}. Default \code{"p_a_s"}.}
+\item{conv_fish_tag_attr}{Character scalar or character vector of length
+\code{n_tag_rel_events} specifying which biological
+dimensions are resolved at release (and hence retained at recapture) for
+each tag release event. A scalar is recycled to every event; a vector
+lets different events resolve different dimensions (e.g. event 1 known at
+\code{"p_a_s"}, event 2 only at \code{"p_a"}). Each element is built from
+any combination of \code{"p"} (population), \code{"a"} (age), and
+\code{"s"} (sex), joined by underscores. Region and fleet are always
+retained. Valid values: \code{"p_a_s"}, \code{"a_s"}, \code{"p_a"},
+\code{"p_s"}, \code{"a"}, \code{"s"}, \code{"p"}, \code{"none"}. Default
+\code{"p_a_s"}.}
 
 \item{conv_tag_fish_reporting_input}{Fishery tag reporting rate array
 \code{[n_regions × n_yrs × n_fish_fleets × n_sims]}. Values represent

@@ -132,14 +132,20 @@ Parsed into an array \code{[n_regions × n_years × n_fish_fleets]}.
 If \code{NULL}, a single constant block is used for all region–fleet
 combinations. Default \code{NULL}.}
 
-\item{conv_fish_tag_attr}{Character string specifying which biological
-dimensions are attended (resolved) in the recapture likelihood. Built
+\item{conv_fish_tag_attr}{Character scalar or character vector of length
+\code{n_conv_tag_cohorts} specifying which biological
+dimensions are attended (resolved) at release for each tag release event.
+A scalar is recycled to every event; a vector lets different events
+resolve different dimensions (e.g. event 1 known at \code{"p_a_s"},
+event 2 only at \code{"p_a"}). Each element is built
 from any combination of \code{"p"} (population), \code{"a"} (age), and
 \code{"s"} (sex), joined by underscores. Region and fleet are always
-retained. When a dimension is not attended, all released and recaptured
-fish must be placed into index 1 of that dimension, and the
-corresponding pooling argument must pool all indices into a single group.
-The likelihood then marginalises over the unattended dimension. Valid
+retained. When a dimension is not attended for an event, all released
+fish for that event are placed into index 1 of that dimension and
+apportioned to full resolution via the release platform. A dimension may
+only be split into more than one pooling group if it is attended in
+\emph{every} release event; otherwise the corresponding pooling argument
+is overridden to a single group (with a warning). Valid
 values: \code{"p_a_s"}, \code{"a_s"}, \code{"p_a"}, \code{"p_s"},
 \code{"a"}, \code{"s"}, \code{"p"}, \code{"none"}. Default
 \code{"p_a_s"}.}

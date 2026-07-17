@@ -72,12 +72,17 @@
 #'   negative-binomial (\code{1}) or Dirichlet-multinomial (\code{4},
 #'   \code{5}) likelihoods. Ignored for Poisson and multinomial likelihoods.
 #'   Default \code{log(1)}.
-#' @param conv_fish_tag_attr Character string specifying which biological
-#'   dimensions are retained at recapture. Built from any combination of
-#'   \code{"p"} (population), \code{"a"} (age), and \code{"s"} (sex), joined
-#'   by underscores. Region and fleet are always retained. Valid values:
-#'   \code{"p_a_s"}, \code{"a_s"}, \code{"p_a"}, \code{"p_s"}, \code{"a"},
-#'   \code{"s"}, \code{"p"}, \code{"none"}. Default \code{"p_a_s"}.
+#' @param conv_fish_tag_attr Character scalar or character vector of length
+#'   \code{n_tag_rel_events} specifying which biological
+#'   dimensions are resolved at release (and hence retained at recapture) for
+#'   each tag release event. A scalar is recycled to every event; a vector
+#'   lets different events resolve different dimensions (e.g. event 1 known at
+#'   \code{"p_a_s"}, event 2 only at \code{"p_a"}). Each element is built from
+#'   any combination of \code{"p"} (population), \code{"a"} (age), and
+#'   \code{"s"} (sex), joined by underscores. Region and fleet are always
+#'   retained. Valid values: \code{"p_a_s"}, \code{"a_s"}, \code{"p_a"},
+#'   \code{"p_s"}, \code{"a"}, \code{"s"}, \code{"p"}, \code{"none"}. Default
+#'   \code{"p_a_s"}.
 #' @param conv_tag_fish_reporting_input Fishery tag reporting rate array
 #'   \code{[n_regions × n_yrs × n_fish_fleets × n_sims]}. Values represent
 #'   the probability that a recaptured tag is reported and must be in
@@ -165,7 +170,7 @@ Setup_Sim_Tagging <- function(
   sim_list$conv_tag_fish_reporting <- conv_tag_fish_reporting_input # output this into list
   sim_list$use_conv_fish_tagging <- use_conv_fish_tagging # output into list
   sim_list$conv_fish_tag_like <- conv_fish_tag_like # tag likelihood
-  sim_list$conv_fish_tag_attr <- conv_fish_tag_attr # tag recpature attributes for fishery conventional tags
+  sim_list$conv_fish_tag_attr <- recycle_tag_event_par(conv_fish_tag_attr, sim_list$n_tag_rel_events, "conv_fish_tag_attr") # tag release/recapture attributes for fishery conventional tags (one per release event; scalar recycled)
   sim_list$ln_conv_fish_tag_theta <- ln_conv_fish_tag_theta # tag likelihood overdispersion parameter
 
   return(sim_list)
@@ -541,14 +546,20 @@ do_conv_tag_fish_reporting_pars_mapping <- function(input_list, conv_tagrep_spec
 #'   season remaining at tag release for that release event. \code{1} = start
 #'   of season; \code{0.5} = mid-season; \code{0} = end of season. A scalar is
 #'   recycled to all release events. Default \code{1}.
-#' @param conv_fish_tag_attr Character string specifying which biological
-#'   dimensions are attended (resolved) in the recapture likelihood. Built
+#' @param conv_fish_tag_attr Character scalar or character vector of length
+#'   \code{n_conv_tag_cohorts} specifying which biological
+#'   dimensions are attended (resolved) at release for each tag release event.
+#'   A scalar is recycled to every event; a vector lets different events
+#'   resolve different dimensions (e.g. event 1 known at \code{"p_a_s"},
+#'   event 2 only at \code{"p_a"}). Each element is built
 #'   from any combination of \code{"p"} (population), \code{"a"} (age), and
 #'   \code{"s"} (sex), joined by underscores. Region and fleet are always
-#'   retained. When a dimension is not attended, all released and recaptured
-#'   fish must be placed into index 1 of that dimension, and the
-#'   corresponding pooling argument must pool all indices into a single group.
-#'   The likelihood then marginalises over the unattended dimension. Valid
+#'   retained. When a dimension is not attended for an event, all released
+#'   fish for that event are placed into index 1 of that dimension and
+#'   apportioned to full resolution via the release platform. A dimension may
+#'   only be split into more than one pooling group if it is attended in
+#'   \emph{every} release event; otherwise the corresponding pooling argument
+#'   is overridden to a single group (with a warning). Valid
 #'   values: \code{"p_a_s"}, \code{"a_s"}, \code{"p_a"}, \code{"p_s"},
 #'   \code{"a"}, \code{"s"}, \code{"p"}, \code{"none"}. Default
 #'   \code{"p_a_s"}.
@@ -721,25 +732,36 @@ Setup_Mod_Tagging <- function(input_list,
     if(conv_tag_sex_pool == "all") move_sex_tag_pool_vals = list(1:input_list$data$n_sexes)
   } else move_sex_tag_pool_vals = conv_tag_sex_pool
 
-  # Enforce consistency between pooling structure and conv_fish_tag_attr.
-  # If a dimension is not attended, it must be fully pooled (single group).
-  # Warn the user and correct automatically if not.
-  attr_parts <- strsplit(conv_fish_tag_attr, "_")[[1]]
+  # Recycle conv_fish_tag_attr to one attended-dimension string per release event
+  # (scalar recycled to all events). Different release events may resolve
+  # different dimensions (e.g. event 1 known at p_a_s, event 2 only at p_a).
+  # n_conv_tag_cohorts is populated further below, so derive the event count
+  # locally here (matching that later logic) since the pooling check needs it.
+  n_events_attr <- if(all(use_conv_fish_tagging == 0)) 1L else nrow(conv_tag_release_indicator)
+  conv_fish_tag_attr <- recycle_tag_event_par(conv_fish_tag_attr, max(n_events_attr, 1), "conv_fish_tag_attr")
 
-  if(!"p" %in% attr_parts && length(move_pop_tag_pool_vals) > 1) {
-    warning("conv_tag_pop_pool has more than one group but 'p' is not attended in conv_fish_tag_attr. ",
+  # Enforce consistency between pooling structure and conv_fish_tag_attr.
+  # A dimension may only be split into >1 pooling group if it is attended in
+  # EVERY release event; if any event does not resolve that dimension, the
+  # recapture likelihood cannot distinguish groups along it, so pool fully.
+  # Warn the user and correct automatically if not.
+  attr_parts_list <- strsplit(conv_fish_tag_attr, "_")
+  attended_all <- function(dim) all(vapply(attr_parts_list, function(x) dim %in% x, logical(1)))
+
+  if(!attended_all("p") && length(move_pop_tag_pool_vals) > 1) {
+    warning("conv_tag_pop_pool has more than one group but 'p' is not attended in every release event's conv_fish_tag_attr. ",
             "Overriding to list(1:n_pop) to pool all populations.")
     move_pop_tag_pool_vals <- list(1:input_list$data$n_pop)
   }
 
-  if(!"a" %in% attr_parts && length(move_age_tag_pool_vals) > 1) {
-    warning("conv_tag_age_pool has more than one group but 'a' is not attended in conv_fish_tag_attr. ",
+  if(!attended_all("a") && length(move_age_tag_pool_vals) > 1) {
+    warning("conv_tag_age_pool has more than one group but 'a' is not attended in every release event's conv_fish_tag_attr. ",
             "Overriding to list(1:n_ages) to pool all ages.")
     move_age_tag_pool_vals <- list(seq_along(input_list$data$ages))
   }
 
-  if(!"s" %in% attr_parts && length(move_sex_tag_pool_vals) > 1) {
-    warning("conv_tag_sex_pool has more than one group but 's' is not attended in conv_fish_tag_attr. ",
+  if(!attended_all("s") && length(move_sex_tag_pool_vals) > 1) {
+    warning("conv_tag_sex_pool has more than one group but 's' is not attended in every release event's conv_fish_tag_attr. ",
             "Overriding to list(1:n_sexes) to pool all sexes.")
     move_sex_tag_pool_vals <- list(1:input_list$data$n_sexes)
   }

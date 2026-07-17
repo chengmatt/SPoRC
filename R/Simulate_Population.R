@@ -1858,7 +1858,7 @@ release_conv_tags <- function(y, sim, sim_env) {
 
           # marginalize across appropriate dimensions of what recaptures attributes are and report out
           sim_env$conv_tagged_fish_attr[tag_rel, , , , sim] <- marginalize_conv_fish_tags(conv_tagged_fish[tag_rel, , , , sim],
-                                                                                              conv_fish_tag_attr, n_pop, n_ages, n_sexes)
+                                                                                              conv_fish_tag_attr[tag_rel], n_pop, n_ages, n_sexes)
 
         } # end if no tag releases
 
@@ -2024,7 +2024,7 @@ generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {
           # Simulate Tag Recoveries
           sim_env$obs_conv_tag_fish_recap <- simulate_conv_tag_fish_recaptures(
             conv_fish_tag_like = conv_fish_tag_like,
-            tag_recaptures_attr = conv_fish_tag_attr,
+            tag_recaptures_attr = conv_fish_tag_attr[tc],
             conv_tagged_fish = conv_tagged_fish,
             pred_conv_tag_fish_recap = pred_conv_tag_fish_recap,
             obs_conv_tag_fish_recap = obs_conv_tag_fish_recap,

@@ -115,11 +115,16 @@ Setup_Sim_Tagging(
 
 - conv_fish_tag_attr:
 
-  Character string specifying which biological dimensions are retained
-  at recapture. Built from any combination of `"p"` (population), `"a"`
-  (age), and `"s"` (sex), joined by underscores. Region and fleet are
-  always retained. Valid values: `"p_a_s"`, `"a_s"`, `"p_a"`, `"p_s"`,
-  `"a"`, `"s"`, `"p"`, `"none"`. Default `"p_a_s"`.
+  Character scalar or character vector of length `n_tag_rel_events`
+  specifying which biological dimensions are resolved at release (and
+  hence retained at recapture) for each tag release event. A scalar is
+  recycled to every event; a vector lets different events resolve
+  different dimensions (e.g. event 1 known at `"p_a_s"`, event 2 only at
+  `"p_a"`). Each element is built from any combination of `"p"`
+  (population), `"a"` (age), and `"s"` (sex), joined by underscores.
+  Region and fleet are always retained. Valid values: `"p_a_s"`,
+  `"a_s"`, `"p_a"`, `"p_s"`, `"a"`, `"s"`, `"p"`, `"none"`. Default
+  `"p_a_s"`.
 
 - conv_tag_fish_reporting_input:
 

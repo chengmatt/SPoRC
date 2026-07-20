@@ -2471,7 +2471,7 @@ SPoRC_rtmb = function(pars, data) {
       b = M_prior$yearblk[i]
       a = M_prior$ageblk[i]
       s = M_prior$sexblk[i]
-      idx = M_blocks[p,r,y,a,s]
+      idx = M_blocks[p,r,b,a,s]
       # Compute prior
       M_nLL = M_nLL + -RTMB::dnorm(ln_M[idx], log(M_prior$mu[i]), M_prior$sd[i], TRUE) # TMB likelihood
     }

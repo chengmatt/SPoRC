@@ -14,6 +14,10 @@ supports:
 Thus, `SPoRC` is suitable for both single-region and spatial stock
 assessment applications.
 
+For an overview of how the codebase itself is organized (aimed at
+contributors, not users), see
+[ARCHITECTURE.md](https://chengmatt.github.io/SPoRC/dev/ARCHITECTURE.md).
+
 ### Installation
 
 `SPoRC` is implemented in `RTMB` and optionally relies on additional

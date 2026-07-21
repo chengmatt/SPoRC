@@ -1,0 +1,179 @@
+# SPoRC Architecture
+
+The purpose of this document is for people editing the `SPoRC` codebase
+(contributors, successors, future-you). The goal here is to keep the
+package navigable as it grows, especially as spatial model development
+adds more moving parts. It should be updated whenever the pipeline below
+changes shape (a new `Setup_Mod_*` stage, a new section of
+`SPoRC_rtmb.R`, a new post-fit diagnostic) — treat a stale architecture
+doc as a bug.
+
+## Mental model
+
+In general, `SPoRC` has three phases, in this order:
+
+1.  **Setup** — a chain of R functions builds up three plain lists:
+    `data`, `parameters`, `mapping`. No likelihood is evaluated yet;
+    this phase is pure data wrangling and input validation.
+2.  **Fit** — `data` and `parameters` are handed to `RTMB::MakeADFun`
+    wrapped around a single objective function,
+    [`SPoRC_rtmb()`](https://chengmatt.github.io/SPoRC/reference/SPoRC_rtmb.md),
+    which is optimized with `nlminb` + Newton refinement.
+3.  **Post-fit** — the fitted object (`obj$rep`, `obj$sdrep`,
+    `obj$optim`) is passed to diagnostics, reference-point, plotting,
+    and resampling routines.
+
+&nbsp;
+
+    Setup_Mod_Dim()
+       -> Setup_Mod_Rec()
+       -> Setup_Mod_Biologicals()
+       -> Setup_Mod_Movement()
+       -> Setup_Mod_Tagging()
+       -> Setup_Mod_Catch_and_F()
+       -> Setup_Mod_SrvIdx_and_Comps()
+       -> Setup_Mod_Srvsel_and_Q()
+       -> Setup_Mod_Weighting()
+            |
+            v  input_list$data, input_list$par, input_list$map
+       fit_model(data, parameters, mapping)
+            |  RTMB::MakeADFun(cmb(SPoRC_rtmb, data), parameters, map = mapping)
+            |  nlminb() + Newton steps
+            v
+       obj  (obj$rep, obj$sdrep, obj$optim)
+            |
+            +--> Get_Reference_Points()      (SPR / MSY / Fmsy by structure)
+            +--> get_model_fits() / plot_*   (index, comp, OSA residual diagnostics)
+            +--> do_retrospective(), do_jitter(), do_likelihood_profile(), run_francis()
+            +--> Do_Population_Projection(), closed_loop_simulations()
+
+### The `input_list` accumulator pattern
+
+Every `Setup_Mod_*` function takes an `input_list` (initialized by
+[`Setup_Mod_Dim()`](https://chengmatt.github.io/SPoRC/reference/Setup_Mod_Dim.md)
+as `list(data = list(), par = list(), map = list())`) and returns it
+with more keys filled in. This is the central structure of the package:
+setup functions are pipeline stages that thread one growing list through
+each other, not independent builders. Order generally matters — later
+stages read dimensions (`input_list$data$n_regions`, etc.) set by
+earlier ones, and default arguments frequently reference
+`input_list$data$...` in their own definitions (see
+[`Setup_Mod_Rec()`](https://chengmatt.github.io/SPoRC/reference/Setup_Mod_Rec.md)’s
+defaults for an example).
+
+At the end of the chain, `input_list$data`, `input_list$par`, and
+`input_list$map` are unpacked and passed to
+[`fit_model()`](https://chengmatt.github.io/SPoRC/reference/fit_model.md).
+`Setup_Sim_*` functions (in the same files as their `Setup_Mod_*`
+counterparts) follow the identical accumulator pattern but build inputs
+for `Simulate_Population.R`’s operating model instead of for fitting.
+
+### `SPoRC_rtmb()` — the objective function
+
+[R/SPoRC_rtmb.R](https://chengmatt.github.io/SPoRC/R/SPoRC_rtmb.R) is
+the one RTMB objective function for every model configuration the
+package supports; there is no per-model-type branching at the file
+level; instead the objective always runs but is regulated by the `data`
+switches set during Setup (e.g. `rec_model`, `move_type`, which
+likelihood/OSA flags are on). Concretely it moves through, in order:
+parameter transforms (movement, natural mortality, selectivity) -\>
+mortality -\> recruitment -\> initial age structure -\> population
+projection -\> observation models (fishery, survey, tagging) -\>
+likelihood components (retained/discarded catch, indices, compositions,
+tags) -\> priors and penalties.
+
+If you’re adding a new data source or process to the model, this is the
+file where its likelihood contribution gets wired in; the corresponding
+`Setup_Mod_*` function is where its data/parameters/mapping get prepared
+beforehand.
+
+## Naming conventions
+
+The prefix on a function name generally tells you its role in the
+pipeline:
+
+| Prefix | Role |
+|----|----|
+| `Setup_Mod_*` | Builds `data`/`parameters`/`mapping` for a real fit, one life-history process or data source per file (`Setup_Rec.R`, `Setup_Biologicals.R`, `Setup_Movement.R`, `Setup_Fishery.R`, `Setup_Survey.R`, `Setup_Tagging.R`, `Setup_Observation_Processes.R`). |
+| `Setup_Sim_*` | Same role, but for the **operating model** in `Simulate_Population.R` (self-tests, closed-loop simulation). Lives alongside its `Setup_Mod_*` counterpart in the same file. |
+| `do_*_mapping` | Private helper (not exported) inside a `Setup_*` file that builds the RTMB `map` factor list for one parameter block — this is how parameters get fixed, shared across blocks, or turned into random-effect deviations. |
+| `Get_*` | Pulls a derived quantity out of already-set-up data/parameters/a fitted object: `Get_Movement`, `Get_Selex`, `Get_Reference_Points`, `Get_Init_NAA`, `Get_Det_Recruitment`. |
+| `do_*` (lowercase, top-level) | A post-fit procedure that re-runs or perturbs a fitted model: `do_retrospective`, `do_jitter`, `do_likelihood_profile`, `do_runs_test`, `do_francis`. |
+| `get_*_plot` / `get_*_fits` | Post-fit plotting/tabulation, mostly in `Make_Plots_Tables.R` and `get_model_fits.R`. |
+
+Within `SPoRC_rtmb.R` the same `## Section` / `### Subsection` comment
+banner style is used consistently — keep using it there if you extend
+the file, since it’s the only navigation aid for a ~2,800-line function.
+
+## File map
+
+    R/
+      Setup_Dimensions.R          entry point: n_regions, n_pop, ages, years, seasons...
+      Setup_Rec.R                 recruitment model, steepness, rec devs, stray/season/sex-ratio pars
+      Setup_Biologicals.R         growth, weight-at-age, maturity, natural mortality
+      Setup_Movement.R            movement parameterization (rates, blocks, continuous PE)
+      Setup_Tagging.R             conventional tagging design, reporting, shedding
+      Setup_Fishery.R             catch, F, discard mortality, fishery comps setup
+      Setup_Survey.R              survey indices, comps, selectivity, catchability
+      Setup_Observation_Processes.R  likelihood weighting across data sources
+      Setup_Containers.R          shared array/container scaffolding for Setup_Sim_*
+      SPoRC_rtmb.R                the RTMB objective function (see above)
+      fit_model.R                 MakeADFun + nlminb + Newton refinement wrapper
+      Get_Movement.R, Get_Selex.R, Get_Det_Recruitment.R, Get_Init_NAA.R
+                                   derived-quantity helpers used inside SPoRC_rtmb.R
+      Get_PE_loglik.R             process-error / random-effect log-likelihood + penalty helpers
+      Get_Comp_Likelihoods.R, Get_Conv_Tag_Likelihoods.R
+                                   composition and tag-recapture likelihood assembly
+      Get_Reference_Points.R      SPR/BH-MSY solvers (single-region, global, local x sgl/multi-pop)
+      Get_3d_precision.R          GMRF/precision-matrix helpers for correlated deviations
+      Distributions.R             custom density functions (Dirichlet, Dirichlet-multinomial,
+                                   negative binomial, OSA residual machinery) used by RTMB and sims
+      Build_PE_Map.R              shared process-error map-building across parameter blocks
+      Do_Population_Projection.R  forward projection off a fitted model
+      Simulate_Population.R       operating model: simulate data forward given true dynamics
+      Simulate_RV.R                random-variate generators used by the simulator
+      closed_loop_simulations.R   condition + run closed-loop MSE, given an OM and estimator
+      do_retrospective.R, do_jitter.R, do_likelihood_profile.R, do_runs_test.R, do_francis.R
+                                   post-fit diagnostics / resampling procedures
+      get_model_fits.R            OSA residuals, fitted vs. observed comps/indices
+      Make_Plots_Tables.R         ggplot2 plotting and summary tables
+      Utility_Functions.R         cross-cutting helpers (cmb() currying, safe_extract,
+                                   parameter-mapping introspection, misc math)
+      check_dimensions.R          input validation for data/sim dimension lists
+      release_tag_attr.R          tag-release attribute bookkeeping
+      data.R                      documents the bundled example datasets in data/
+
+Test files in `tests/testthat/` mirror this structure loosely by feature
+(`test-movement.R`, `test-fdev_pe.R`, `test-getselex.R`, …) plus a set
+of end-to-end regression tests against bundled example fits
+(`test-mlt_rg_*`, `test-ebs_pol_sgl_rtmb*.R`, `test-dusky_rtmb.R`) that
+pin down `obj$rep`/`nll` values for known configurations — these are the
+tests most likely to catch an accidental change in `SPoRC_rtmb.R`’s
+numerics.
+
+## Extending the model: a checklist
+
+Adding a new process, fleet type, or data source touches the pipeline in
+a predictable set of places:
+
+1.  **Setup**: add or extend a `Setup_Mod_*` function to accept the new
+    spec, validate it, and append the resulting entries to
+    `input_list$data` / `$par` / `$map`. If parameters need
+    fixing/sharing, add a `do_*_mapping` helper in the same file.
+2.  **Objective**: add a `## Section` in `SPoRC_rtmb.R` that consumes
+    the new `data`/`parameters` entries and contributes to `jnll`/`nll`
+    — put it in the section it belongs to (transform, observation model,
+    or likelihood/prior) rather than appending to the end.
+3.  **Sim counterpart**: if the process should be simulate-able, add the
+    matching `Setup_Sim_*` inputs and generation logic in
+    `Simulate_Population.R`.
+4.  **Post-fit**: expose derived output through `Get_*` (if other code
+    needs to reuse the derived quantity) and/or `Make_Plots_Tables.R` /
+    `get_model_fits.R` (if it needs to be seen).
+5.  **Tests**: add a targeted `testthat` test near the feature, and
+    check whether the `test-mlt_rg_*` / `test-*_rtmb.R` regression tests
+    need updated reference values.
+6.  **Vignette**: if the feature is user-facing, document it in the
+    relevant lettered vignette (see
+    [vignettes/](https://chengmatt.github.io/SPoRC/vignettes/)) rather
+    than only in code comments.

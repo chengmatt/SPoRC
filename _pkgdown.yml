@@ -7,12 +7,12 @@ template:
 
 navbar:
   structure:
-    left:  [reference, articles, news, architecture]
+    left:  [reference, articles, architecture, news]
     right: [search, github]
   components:
     architecture:
       text: Architecture
-      href: https://github.com/chengmatt/SPoRC/blob/main/ARCHITECTURE.md
+      href: articles/architecture.html
 
 articles:
   - title: "Getting Started"
@@ -50,6 +50,10 @@ articles:
     - r_natal-homing-pop-lrgr-rg
     - s_discard_retention
     - u_osa_residuals
+
+  - title: "For Contributors"
+    contents:
+      - architecture
 
 reference:
   - title: "Model Setup"

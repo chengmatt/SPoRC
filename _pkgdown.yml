@@ -52,10 +52,6 @@ articles:
     - s_discard_retention
     - u_osa_residuals
 
-  - title: "For Contributors"
-    contents:
-      - architecture
-
 reference:
   - title: "Model Setup"
     desc: "Functions for setting up a `SPoRC` model"

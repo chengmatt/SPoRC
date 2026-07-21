@@ -26,11 +26,16 @@
 #' @param nlminb_control Named list of control parameters passed to
 #'   \code{stats::nlminb}. Default
 #'   \code{list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15)}.
+#' @param model Function with signature \code{function(pars, data)} passed to
+#'   \code{RTMB::MakeADFun} via \code{\link{cmb}}. Default \code{\link{SPoRC_rtmb}}.
+#'   Allows non-SPoRC RTMB models to be fit with the same optimisation and
+#'   Newton-refinement machinery.
 #' @param ... Additional arguments forwarded to \code{RTMB::MakeADFun}.
 #'
-#' @return The RTMB \code{ADFun} object with three additional fields:
-#'   \code{$optim} (the \code{nlminb} output list), and \code{$rep} (the
-#'   model report evaluated at \code{obj$env$last.par.best}).
+#' @return The RTMB \code{ADFun} object with additional fields: \code{$optim}
+#'   (the \code{nlminb} output list), \code{$rep} (the model report evaluated
+#'   at \code{obj$env$last.par.best}), and \code{$data}, \code{$parameters},
+#'   \code{$mapping}, \code{$random}.
 #'
 #' @importFrom stats nlminb optimHess
 #' @export fit_model
@@ -49,11 +54,12 @@ fit_model <- function(data,
                       silent = FALSE,
                       do_optim = TRUE,
                       nlminb_control = list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15),
+                      model = SPoRC_rtmb,
                       ...
                       ) {
 
   # make AD model function
-  obj <- RTMB::MakeADFun(cmb(SPoRC_rtmb, data), parameters = parameters,
+  obj <- RTMB::MakeADFun(cmb(model, data), parameters = parameters,
                          map = mapping, random = random, silent = silent, ...)
 
   if(do_optim == TRUE) {
@@ -76,6 +82,12 @@ fit_model <- function(data,
 
   # save report
   obj$rep <- obj$report(obj$env$last.par.best)
+
+  # attach inputs used to construct the model for reference, reuse, and serialization
+  obj$data <- data
+  obj$parameters <- parameters
+  obj$mapping <- mapping
+  obj$random <- random
 
   return(obj)
 }

@@ -13,6 +13,7 @@ fit_model(
   silent = FALSE,
   do_optim = TRUE,
   nlminb_control = list(iter.max = 1e+05, eval.max = 1e+05, rel.tol = 1e-15),
+  model = SPoRC_rtmb,
   ...
 )
 }
@@ -45,12 +46,18 @@ and Newton refinement. If \code{FALSE}, returns the un-optimised
 \code{stats::nlminb}. Default
 \code{list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15)}.}
 
+\item{model}{Function with signature \code{function(pars, data)} passed to
+\code{RTMB::MakeADFun} via \code{\link{cmb}}. Default \code{\link{SPoRC_rtmb}}.
+Allows non-SPoRC RTMB models to be fit with the same optimisation and
+Newton-refinement machinery.}
+
 \item{...}{Additional arguments forwarded to \code{RTMB::MakeADFun}.}
 }
 \value{
-The RTMB \code{ADFun} object with three additional fields:
-  \code{$optim} (the \code{nlminb} output list), and \code{$rep} (the
-  model report evaluated at \code{obj$env$last.par.best}).
+The RTMB \code{ADFun} object with additional fields: \code{$optim}
+  (the \code{nlminb} output list), \code{$rep} (the model report evaluated
+  at \code{obj$env$last.par.best}), and \code{$data}, \code{$parameters},
+  \code{$mapping}, \code{$random}.
 }
 \description{
 Constructs an RTMB automatic differentiation function via

@@ -317,3 +317,7 @@ Data objects provided by SPoRC
   Rockfish)](https://chengmatt.github.io/SPoRC/articles/p_single_region_dusky_alt_mp_testing.md):
 - [Alternative Approaches for Movement
   Parameterization](https://chengmatt.github.io/SPoRC/articles/q_movement_param.md):
+
+### For Contributors
+
+- [Architecture](https://chengmatt.github.io/SPoRC/articles/architecture.md):

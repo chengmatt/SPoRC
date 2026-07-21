@@ -1,0 +1,275 @@
+---
+title: "Structuring Your Data for SPoRC"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Structuring Your Data for SPoRC}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+`vignette("a_model_dimensions")` already lists, field by field, every element of
+`input_list$data`, including its name, its dimensions, and what it means. What it doesn't show
+is the step most people actually get stuck on: turning raw
+observations into an array with those exact dimensions, in that exact order. This
+vignette walks through that step with a worked example. Consider `a_model_dimensions` as
+the reference and this vignette as the "how to build" companion.
+
+## The core convention
+
+Every array that goes into `Setup_Mod_` is built from the same pool of axes, always
+in the same relative order, with only the axes relevant to that particular quantity
+included:
+
+```
+population < region < year < season < age or length < sex < fleet
+```
+
+For example, a fishery abundance/biomass index is `[region, year, season, fleet]`,
+with no population, age, or sex axis. A fishery age composition is
+`[region, year, season, age, sex, fleet]`. A population-specific weight-at-age is
+`[population, region, year, season, age, sex]`. The exact axes for a given argument
+are documented in that `Setup_Mod_` function's `?help` page and in
+`vignette("a_model_dimensions")` but the relative pattern does not really change. Some potential issues that might arise include:
+
+1. Array positions are positional, not literal. Index `i` along the age axis
+   means `ages[i]` from your `Setup_Mod_Dim()` call, not "age `i`". For instance, if
+   `ages <- 2:20`, the first slice along that axis is age 2. The same applies to
+   `years` and `lens`. Indexing with a raw age/year value instead of its position
+   in the corresponding vector is the single most common way to build an incompatible array.
+2. Sex order is fixed. When `n_sexes == 2`, index 1 is always female and index 2
+   is always male.
+3. Every `Obs` array has a paired `Use` indicator array. `Use` is 0/1-valued
+   and marks which region/year/season/fleet cells actually have data and should
+   enter the likelihood. Getting `Obs` shaped correctly is necessary but not
+   sufficient. In particular, a cell with `Obs == 0` because there's genuinely no data there
+   still needs `Use == 0`, or the model will interpret it as an observed zero.
+
+## Worked example: fishery catch and age composition
+
+Suppose you have two raw data files: a time series of annual catch, and a table of
+fishery age composition counts. First, define the model dimensions you're targeting
+(normally the output of `Setup_Mod_Dim()`, shown here as plain vectors for clarity):
+
+```{r, eval = F}
+years <- 2016:2020
+ages  <- 2:6
+n_regions <- 1
+n_seas <- 1
+n_sexes <- 1
+n_fish_fleets <- 1
+```
+
+### Catch
+
+```{r, eval = F}
+raw_catch <- data.frame(
+  year = 2016:2020,
+  fleet = 1,
+  catch_mt = c(120, 135, 98, 150, 142)
+)
+raw_catch
+```
+
+`ObsCatch` needs dimensions `[n_regions, n_years, n_seas, n_fish_fleets]`. Build an
+empty array of that shape, then place each raw observation using `match()` against
+your dimension vectors rather than the raw year value itself:
+
+```{r, eval = F}
+ObsCatch <- array(0, dim = c(n_regions, length(years), n_seas, n_fish_fleets))
+
+for (i in seq_len(nrow(raw_catch))) {
+  yr_idx <- match(raw_catch$year[i], years)
+  ObsCatch[1, yr_idx, 1, raw_catch$fleet[i]] <- raw_catch$catch_mt[i]
+}
+
+ObsCatch[1, , 1, 1]
+```
+
+`UseCatch` shares `ObsCatch`'s dimensions and flags which cells are real:
+
+```{r, eval = F}
+UseCatch <- array(0, dim = dim(ObsCatch))
+UseCatch[ObsCatch > 0] <- 1
+```
+
+### Age composition
+
+Composition data adds an age axis, so the target shape becomes
+`[n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets]`:
+
+```{r, eval = F}
+raw_agecomp <- expand.grid(year = years, age = ages)
+set.seed(1)
+raw_agecomp$count <- rpois(nrow(raw_agecomp), lambda = 20)
+head(raw_agecomp)
+```
+
+```{r, eval = F}
+ObsFishAgeComps <- array(
+  0,
+  dim = c(n_regions, length(years), n_seas, length(ages), n_sexes, n_fish_fleets)
+)
+
+for (i in seq_len(nrow(raw_agecomp))) {
+  yr_idx  <- match(raw_agecomp$year[i], years)
+  age_idx <- match(raw_agecomp$age[i], ages)
+  ObsFishAgeComps[1, yr_idx, 1, age_idx, 1, 1] <- raw_agecomp$count[i]
+}
+
+ObsFishAgeComps[1, 1, 1, , 1, 1] # full age vector for the first modeled year
+```
+
+Note that `UseFishAgeComps` only needs the non-age axes, `[n_regions, n_years, n_seas, n_fish_fleets]`, since it flags whole region/year/season/fleet cells, not individual ages:
+
+```{r, eval = F}
+UseFishAgeComps <- array(0, dim = c(n_regions, length(years), n_seas, n_fish_fleets))
+UseFishAgeComps[1, , 1, 1] <- 1
+```
+
+## Structuring tagging data
+
+Conventional tagging data is the most structurally involved input SPoRC accepts.
+Releases are organized into cohorts, recaptures are tracked by time-at-liberty
+rather than by calendar year, and whether a release's population, age, or sex is
+even known depends on how the tagging program was run. The same reshape approach
+from above still applies; it's just spread across more axes.
+
+### Release cohorts
+
+Every release event ("cohort") is one row of `conv_tag_release_indicator`, an
+integer matrix with columns region, year, and season. As with the arrays above,
+region and year are positions, not literal values: year `1` means `years[1]`, not
+the calendar year 2016.
+
+```{r, eval = F}
+conv_tag_release_indicator <- matrix(
+  c(1, 1, 1,   # region 1, year index 1, season 1
+    2, 2, 1),  # region 2, year index 2, season 1
+  ncol = 3, byrow = TRUE,
+  dimnames = list(NULL, c("region", "year", "season"))
+)
+n_conv_tag_cohorts <- nrow(conv_tag_release_indicator)
+```
+
+`conv_tagged_fish`, dimensioned `[n_conv_tag_cohorts, n_pop, n_ages, n_sexes]`,
+records how many fish were released per cohort. Which of the population, age, and
+sex axes actually get used depends on `conv_fish_tag_attr`, which tells SPoRC which
+of those dimensions were actually resolved at the point of tagging. A tagging
+program that doesn't record age or sex at release (`conv_fish_tag_attr = "none"`)
+pools every released fish for a cohort into index 1 of the population, age, and sex
+axes, leaving the rest of those axes at zero:
+
+```{r, eval = F}
+conv_tagged_fish <- array(0, dim = c(n_conv_tag_cohorts, n_pop, length(ages), n_sexes))
+conv_tagged_fish[1, 1, 1, 1] <- 50 # 50 fish released in cohort 1
+conv_tagged_fish[2, 1, 1, 1] <- 30 # 30 fish released in cohort 2
+```
+
+If your tagging program does record age and sex at release, set `conv_fish_tag_attr`
+to include `"a"`/`"s"` and fill each cohort's actual age/sex slot directly instead of
+pooling into index 1. Region and fleet are always retained regardless of
+`conv_fish_tag_attr`; only population, age, and sex are optional.
+
+### Recaptures
+
+`obs_conv_tag_fish_recap` is where the complexity concentrates:
+`[conv_tag_max_liberty, n_seas, n_conv_tag_cohorts, n_pop, n_regions, n_ages, n_sexes, n_fish_fleets]`.
+The first axis is time-at-liberty (periods since release): a fish recaptured one
+period after release goes in position 1, two periods later in position 2, and so
+on, up to `conv_tag_max_liberty`. Recaptures beyond that horizon simply have nowhere
+to go and are ignored / not included in the array.
+
+Given raw recapture records (which cohort, how many periods at liberty, which
+region it was recaptured in, and how many fish):
+
+```{r, eval = F}
+conv_tag_max_liberty <- 3
+
+raw_recaps <- data.frame(
+  cohort       = c(1, 1, 1, 2, 2),
+  liberty      = c(1, 2, 3, 1, 2),
+  recap_region = c(1, 1, 2, 2, 2),
+  count        = c(5, 3, 1, 4, 2)
+)
+```
+
+the same reshape pattern builds the array, indexing directly by cohort and liberty
+(both already positions) and by recapture region, with age, sex, and fleet pooled
+into index 1 since this example's `conv_fish_tag_attr = "none"` and it only has one
+fishery fleet:
+
+```{r, eval = F}
+obs_conv_tag_fish_recap <- array(
+  0,
+  dim = c(conv_tag_max_liberty, n_seas, n_conv_tag_cohorts, n_pop, n_regions, length(ages), n_sexes, n_fish_fleets)
+)
+
+for (i in seq_len(nrow(raw_recaps))) {
+  obs_conv_tag_fish_recap[
+    raw_recaps$liberty[i], 1, raw_recaps$cohort[i], 1,
+    raw_recaps$recap_region[i], 1, 1, 1
+  ] <- raw_recaps$count[i]
+}
+```
+
+Note that a cohort released in one region can be recaptured in a different region;
+region moves freely on the recapture side even when it's fixed on the release side,
+and that movement between release and recapture region is exactly the signal
+tagging data provides for estimating movement. If tagging data is primarily there to
+inform movement, the recapture region axis is the one most worth double-checking.
+
+## Common pitfalls
+
+- Wrong axis order. Swapping, e.g., the year and age axes doesn't throw an error
+  on its own. R will happily assign into a differently-shaped array as long as the
+  total element count is compatible via recycling, silently producing garbage. Check
+  `dim()` against the function's documented order immediately after building each
+  array.
+- Indexing by value instead of position. `ObsFishAgeComps[1, 2020, ...]` will
+  either error (if `2020` is out of range for that axis) or silently write to the
+  wrong slot. We would recommend using `match(2020, years)` instead.
+- `Use` left out of sync with `Obs`. A zero in `Obs` is ambiguous between "we
+  observed zero" and "we have no data here"; only `Use` disambiguates it. Building
+  `Use` from `Obs > 0` (as above) is a reasonable default only when a true
+  zero-count observation genuinely can't occur in your data; otherwise set it
+  explicitly from which cells you actually sampled.
+- Sex order reversed. Because `n_sexes == 2` always means female-then-male, a
+  reversed sex axis won't error. It'll just fit a model where sex-specific
+  parameters are swapped.
+- `ages`/`lens`/`years` not sorted or not matching `Setup_Mod_Dim()` exactly.
+  Every axis position is defined relative to these vectors, so they need to be the
+  same vectors (order and values) you pass to `Setup_Mod_Dim()`.
+- Recaptures placed past `conv_tag_max_liberty`. Anything recaptured further from
+  release than `conv_tag_max_liberty` periods has nowhere to go in the array and is
+  silently dropped from the likelihood. Set it generously relative to your tag
+  return data rather than trimming it to a typical case.
+- `conv_fish_tag_attr` inconsistent with how the array is actually filled. If
+  `conv_fish_tag_attr = "none"` for a given axis but counts are still spread across
+  more than index 1 of that axis, SPoRC has no way to know those extra indices are
+  meaningful. Pool fully into index 1 for whichever axes aren't attended.
+
+## Validating before you fit
+
+Every `Setup_Mod_` function checks the dimensions of what you hand it internally and
+fails fast with a specific message (e.g. "ObsFishAgeComps is not the correct
+dimension. Should be n_regions, n_years, n_seas, ... ") rather than letting a
+misshapen array propagate into a cryptic RTMB error. s
+
+## See also
+
+- `vignette("a_model_dimensions")`: the full field-by-field reference for every
+  `input_list$data` element.
+- `vignette("o_get_started")`: an end-to-end example that puts already-structured
+  data through the full `Setup_Mod_` pipeline.
+- `vignette("j_starting_mapping")`: the `"fix"`/`"est_shared"`/`"est_all"` spec
+  pattern used for tagging mortality, shedding, and reporting rate parameters,
+  among others.
+- `vignette("architecture")`: how the `Setup_Mod_` pipeline itself is organized,
+  for anyone extending it to a new data source.

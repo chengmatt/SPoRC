@@ -18,6 +18,7 @@ articles:
   - title: "Getting Started"
     contents:
       - o_get_started
+      - v_structuring_your_data
       - t_model_options
 
   - title: "Model Descriptions"

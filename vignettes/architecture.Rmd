@@ -1,10 +1,20 @@
-# SPoRC Architecture
+---
+title: "Architecture"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Architecture}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
 
 The purpose of this document is for people editing the `SPoRC` codebase (contributors, successors,
 future-you). The goal here is to keep the package navigable as it grows, especially as spatial
 model development adds more moving parts. It should be updated whenever the pipeline
 below changes shape (a new `Setup_Mod_*` stage, a new section of `SPoRC_rtmb.R`, a
 new post-fit diagnostic) — treat a stale architecture doc as a bug.
+
+The source for this page lives at [ARCHITECTURE.md](https://github.com/chengmatt/SPoRC/blob/main/ARCHITECTURE.md)
+in the repo root.
 
 ## Mental model
 
@@ -60,7 +70,7 @@ build inputs for `Simulate_Population.R`'s operating model instead of for fittin
 
 ### `SPoRC_rtmb()` — the objective function
 
-[R/SPoRC_rtmb.R](R/SPoRC_rtmb.R) is the one RTMB objective function for every model
+[R/SPoRC_rtmb.R](https://github.com/chengmatt/SPoRC/blob/main/R/SPoRC_rtmb.R) is the one RTMB objective function for every model
 configuration the package supports; there is no per-model-type branching at the file
 level; instead the objective always runs but is regulated by the `data` switches set
 during Setup (e.g. `rec_model`, `move_type`, which likelihood/OSA flags are on).
@@ -68,7 +78,7 @@ Concretely it moves through, in order: parameter transforms (movement, natural
 mortality, selectivity) -> mortality -> recruitment -> initial age structure ->
 population projection -> observation models (fishery, survey, tagging) -> likelihood
 components (retained/discarded catch, indices, compositions, tags) -> priors and
-penalties. 
+penalties.
 
 If you're adding a new data source or process to the model, this is the file where
 its likelihood contribution gets wired in; the corresponding `Setup_Mod_*` function is
@@ -158,5 +168,4 @@ predictable set of places:
 5. **Tests**: add a targeted `testthat` test near the feature, and check whether the
    `test-mlt_rg_*` / `test-*_rtmb.R` regression tests need updated reference values.
 6. **Vignette**: if the feature is user-facing, document it in the relevant
-   lettered vignette (see [vignettes/](vignettes/)) rather than only in code comments.
-
+   lettered vignette (see the [Articles index](index.html)) rather than only in code comments.

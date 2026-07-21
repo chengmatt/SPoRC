@@ -3,6 +3,15 @@ template:
   bootstrap: 5
   bootswatch: flatly
 
+navbar:
+  structure:
+    left:  [reference, articles, architecture, news]
+    right: [search, github]
+  components:
+    architecture:
+      text: Architecture
+      href: articles/architecture.html
+
 articles:
   - title: "Getting Started"
     contents:

@@ -61,6 +61,7 @@ optimiser output, and model report are attached to the returned object.</p>
 <span>  silent <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  do_optim <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  nlminb_control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>iter.max <span class="op">=</span> <span class="fl">1e+05</span>, eval.max <span class="op">=</span> <span class="fl">1e+05</span>, rel.tol <span class="op">=</span> <span class="fl">1e-15</span><span class="op">)</span>,</span>
+<span>  model <span class="op">=</span> <span class="va">SPoRC_rtmb</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -113,15 +114,23 @@ and Newton refinement. If <code>FALSE</code>, returns the un-optimised
 <code>list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15)</code>.</p></dd>
 
 
+<dt id="arg-model">model<a class="anchor" aria-label="anchor" href="#arg-model"></a></dt>
+<dd><p>Function with signature <code>function(pars, data)</code> passed to
+<code>RTMB::MakeADFun</code> via <code><a href="cmb.html">cmb</a></code>. Default <code><a href="SPoRC_rtmb.html">SPoRC_rtmb</a></code>.
+Allows non-SPoRC RTMB models to be fit with the same optimisation and
+Newton-refinement machinery.</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Additional arguments forwarded to <code>RTMB::MakeADFun</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>The RTMB <code>ADFun</code> object with three additional fields:
-  <code>$optim</code> (the <code>nlminb</code> output list), and <code>$rep</code> (the
-  model report evaluated at <code>obj$env$last.par.best</code>).</p>
+    <p>The RTMB <code>ADFun</code> object with additional fields: <code>$optim</code>
+  (the <code>nlminb</code> output list), <code>$rep</code> (the model report evaluated
+  at <code>obj$env$last.par.best</code>), and <code>$data</code>, <code>$parameters</code>,
+  <code>$mapping</code>, <code>$random</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

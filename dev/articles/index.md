@@ -4,6 +4,8 @@
 
 - [Running a Simple Assessment (The
   Basics)](https://chengmatt.github.io/SPoRC/dev/articles/o_get_started.md):
+- [Structuring Your Data for
+  SPoRC](https://chengmatt.github.io/SPoRC/dev/articles/v_structuring_your_data.md):
 - [Overview of Model
   Options](https://chengmatt.github.io/SPoRC/dev/articles/t_model_options.md):
 

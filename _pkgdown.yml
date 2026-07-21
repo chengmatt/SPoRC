@@ -45,10 +45,6 @@ articles:
       - p_single_region_dusky_alt_mp_testing
       - q_movement_param
 
-  - title: "For Contributors"
-    contents:
-      - architecture
-
 reference:
   - title: "Model Setup"
     desc: "Functions for setting up a `SPoRC` model"

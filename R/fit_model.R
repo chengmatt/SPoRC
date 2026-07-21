@@ -26,6 +26,14 @@
 #' @param nlminb_control Named list of control parameters passed to
 #'   \code{stats::nlminb}. Default
 #'   \code{list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15)}.
+#' @param lower Numeric vector of lower bounds for \code{obj$par} (the
+#'   estimated parameter vector, i.e. after mapping and random-effects
+#'   marginalisation), passed to \code{stats::nlminb} and used to clamp each
+#'   Newton refinement step. \code{NULL} (default) is unbounded
+#'   (\code{-Inf} for every element).
+#' @param upper Numeric vector of upper bounds for \code{obj$par}, passed to
+#'   \code{stats::nlminb} and used to clamp each Newton refinement step.
+#'   \code{NULL} (default) is unbounded (\code{Inf} for every element).
 #' @param model Function with signature \code{function(pars, data)} passed to
 #'   \code{RTMB::MakeADFun} via \code{\link{cmb}}. Default \code{\link{SPoRC_rtmb}}.
 #'   Allows non-SPoRC RTMB models to be fit with the same optimisation and
@@ -33,8 +41,9 @@
 #' @param ... Additional arguments forwarded to \code{RTMB::MakeADFun}.
 #'
 #' @return The RTMB \code{ADFun} object with additional fields: \code{$optim}
-#'   (the \code{nlminb} output list), \code{$rep} (the model report evaluated
-#'   at \code{obj$env$last.par.best}), and \code{$data}, \code{$parameters},
+#'   (the \code{nlminb} output list, with \code{$lower}/\code{$upper} recording
+#'   the bounds used), \code{$rep} (the model report evaluated at
+#'   \code{obj$env$last.par.best}), and \code{$data}, \code{$parameters},
 #'   \code{$mapping}, \code{$random}.
 #'
 #' @importFrom stats nlminb optimHess
@@ -54,6 +63,8 @@ fit_model <- function(data,
                       silent = FALSE,
                       do_optim = TRUE,
                       nlminb_control = list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15),
+                      lower = NULL,
+                      upper = NULL,
                       model = SPoRC_rtmb,
                       ...
                       ) {
@@ -63,18 +74,29 @@ fit_model <- function(data,
                          map = mapping, random = random, silent = silent, ...)
 
   if(do_optim == TRUE) {
+
+    # set bounds on optimizaiton
+    if(is.null(lower)) lower <- rep(-Inf, length(obj$par))
+    if(is.null(upper)) upper <- rep(Inf, length(obj$par))
+
     # Now, optimize the function
     optim <- stats::nlminb(obj$par, obj$fn, obj$gr,
-                           control = nlminb_control)
+                           control = nlminb_control,
+                           lower = lower, upper = upper)
     # newton steps
     try_improve <- tryCatch(expr =
                               for(i in 1:newton_loops) {
                                 g = as.numeric(obj$gr(optim$par))
                                 h = optimHess(optim$par, fn = obj$fn, gr = obj$gr)
-                                optim$par = optim$par - solve(h,g)
+                                new_par = optim$par - solve(h,g)
+                                optim$par = pmax(lower, pmin(upper, new_par)) # keep Newton step within bounds
                                 optim$objective = obj$fn(optim$par)
                               }
                             , error = function(e){e}, warning = function(w){w})
+
+    # record bounds used alongside optim output
+    optim$lower <- lower
+    optim$upper <- upper
 
     # save optim
     obj$optim <- optim

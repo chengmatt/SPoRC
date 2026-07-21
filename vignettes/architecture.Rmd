@@ -13,9 +13,6 @@ model development adds more moving parts. It should be updated whenever the pipe
 below changes shape (a new `Setup_Mod_*` stage, a new section of `SPoRC_rtmb.R`, a
 new post-fit diagnostic) — treat a stale architecture doc as a bug.
 
-The source for this page lives at [ARCHITECTURE.md](https://github.com/chengmatt/SPoRC/blob/main/ARCHITECTURE.md)
-in the repo root.
-
 ## Mental model
 
 In general, `SPoRC` has three phases, in this order:

@@ -2542,7 +2542,7 @@ SPoRC_rtmb = function(pars, data) {
   if(use_r0_prior == 1) { # recruitment R0
     for(i in 1:nrow(r0_prior)) {
       p = r0_prior$pop[i] # population
-      rec_nLL = rec_nLL - RTMB::dnorm(ln_global_R0[p], log(r0_prior$mu[i]), r0_prior$sd[i], TRUE) # normal prior
+      Rec_nLL = Rec_nLL - RTMB::dnorm(ln_global_R0[p], log(r0_prior$mu[i]), r0_prior$sd[i], TRUE) # normal prior
     }
   }
 

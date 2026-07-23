@@ -102,6 +102,12 @@ fit_model <- function(data,
     obj$optim <- optim
   }
 
+  # make sure to rename if naming got stripped by nlminb
+  if (is.null(names(obj$env$last.par.best)) && !is.null(names(obj$par)) &&
+      length(obj$env$last.par.best) == length(obj$par)) {
+    names(obj$env$last.par.best) <- names(obj$par)
+  }
+
   # save report
   obj$rep <- obj$report(obj$env$last.par.best)
 

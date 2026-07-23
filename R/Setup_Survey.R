@@ -306,16 +306,21 @@ do_SrvAge_theta_mapping <- function(input_list) {
 
     # Loop through to make sure mapping stuff off correctly
     for(r in 1:input_list$data$n_regions) {
+
+      # a region with no active comps for this fleet never contributes to the likelihood, so
+      # its theta cell must stay NA (fixed) -- otherwise it's a free, unidentifiable parameter
+      region_has_data <- sum(input_list$data$UseSrvAgeComps[r,,,f]) > 0
+
       for(s in 1:input_list$data$n_sexes) {
 
         # if split by sex and region
-        if(any(srvage_comp_type == 1) && input_list$data$SrvAgeComps_LikeType[f] != 0) {
+        if(any(srvage_comp_type == 1) && input_list$data$SrvAgeComps_LikeType[f] != 0 && region_has_data) {
           map_SrvAge_theta[r,s,f] <- counter_srvage
           counter_srvage <- counter_srvage + 1 # split by sex and region
         }
 
         # joint by sex, split by region
-        if(any(srvage_comp_type == 2) && input_list$data$SrvAgeComps_LikeType[f] != 0 && s == 1) {
+        if(any(srvage_comp_type == 2) && input_list$data$SrvAgeComps_LikeType[f] != 0 && s == 1 && region_has_data) {
           map_SrvAge_theta[r,1,f] <- counter_srvage
           counter_srvage <- counter_srvage + 1 # joint by sex, split by region
         }

@@ -31,8 +31,7 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
-<li class="active nav-item"><a class="nav-link" href="../articles/architecture.html">Architecture</a></li>
+<li class="active nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -152,6 +151,23 @@ tags) -&gt; priors and penalties.</p>
 the file where its likelihood contribution gets wired in; the
 corresponding <code>Setup_Mod_*</code> function is where its
 data/parameters/mapping get prepared beforehand.</p>
+<p>Most of the heavier sections don’t do their own array-crunching
+inline — they delegate to a helper function (i.e., a separate module)
+that takes the relevant state as named arguments and returns it,
+following the same pattern as the pre-existing
+<code><a href="../reference/Get_Movement.html">Get_Movement()</a></code> / <code><a href="../reference/Get_Selex.html">Get_Selex()</a></code> /
+<code><a href="../reference/Get_Det_Recruitment.html">Get_Det_Recruitment()</a></code> / <code><a href="../reference/Get_Init_NAA.html">Get_Init_NAA()</a></code> calls:
+population projection (<code>get_population_projection()</code> in
+<code>Get_Population_Dynamics.R</code>), the fishery and survey
+observation models (<code>get_fishery_observation_model()</code> /
+<code>get_survey_observation_model()</code> in
+<code>Get_Observation_Models.R</code>), the tagging observation model
+(<code>get_tagging_observation_model()</code> in
+<code>Get_Tagging_Observation_Model.R</code>), composition likelihoods
+(<code>Get_Comp_Likelihoods.R</code>), tag likelihoods
+(<code><a href="../reference/get_conv_tag_likelihoods.html">get_conv_tag_likelihoods()</a></code> in
+<code>Get_Conv_Tag_Likelihoods.R</code>), and priors/penalties (one
+function per prior in <code>Get_PE_loglik.R</code>).</p>
 </div>
 </div>
 <div class="section level2">
@@ -220,7 +236,7 @@ fitted object: <code>Get_Movement</code>, <code>Get_Selex</code>,
 <p>Within <code>SPoRC_rtmb.R</code> the same <code>## Section</code> /
 <code>### Subsection</code> comment banner style is used consistently —
 keep using it there if you extend the file, since it’s the only
-navigation aid for a ~2,800-line function.</p>
+navigation aid for a ~2,300-line function.</p>
 </div>
 <div class="section level2">
 <h2 id="file-map">File map<a class="anchor" aria-label="anchor" href="#file-map"></a>
@@ -239,7 +255,17 @@ navigation aid for a ~2,800-line function.</p>
   fit_model.R                 MakeADFun + nlminb + Newton refinement wrapper
   Get_Movement.R, Get_Selex.R, Get_Det_Recruitment.R, Get_Init_NAA.R
                                derived-quantity helpers used inside SPoRC_rtmb.R
-  Get_PE_loglik.R             process-error / random-effect log-likelihood + penalty helpers
+  Get_Population_Dynamics.R   get_population_projection(): the core NAA / movement /
+                               mortality forward simulation, one year-season at a time
+  Get_Observation_Models.R    get_fishery_observation_model(), get_survey_observation_model():
+                               predicted catch/discard/index-at-age/length from population state
+  Get_Tagging_Observation_Model.R  get_tagging_observation_model(): tag cohort release,
+                               movement, mortality/ageing, and predicted recaptures
+  Get_PE_loglik.R             process-error / random-effect log-likelihood helpers, plus the
+                               rest of the priors and penalties (natural mortality, steepness,
+                               movement, catchability, R0, recruitment proportions, tag
+                               reporting rate, discard mortality rate, fixed selectivity) —
+                               one small function per prior/penalty
   Get_Comp_Likelihoods.R, Get_Conv_Tag_Likelihoods.R
                                composition and tag-recapture likelihood assembly
   Get_Reference_Points.R      SPR/BH-MSY solvers (single-region, global, local x sgl/multi-pop)
@@ -288,7 +314,11 @@ entries to <code>input_list$data</code> / <code>$par</code> /
 <code>data</code>/<code>parameters</code> entries and contributes to
 <code>jnll</code>/<code>nll</code> — put it in the section it belongs to
 (transform, observation model, or likelihood/prior) rather than
-appending to the end.</li>
+appending to the end. If the logic is more than a few lines, extract it
+into a <code>get_*()</code> helper (see
+<code>Get_Population_Dynamics.R</code>,
+<code>Get_Observation_Models.R</code>, or <code>Get_PE_loglik.R</code>
+for the pattern) instead of growing the objective function inline.</li>
 <li>
 <strong>Sim counterpart</strong>: if the process should be
 simulate-able, add the matching <code>Setup_Sim_*</code> inputs and
@@ -308,6 +338,8 @@ values.</li>
 it in the relevant lettered vignette (see the <a href="index.html">Articles index</a>) rather than only in code
 comments.</li>
 </ol>
+<p>For the mechanics of actually getting a change in — branch naming,
+running tests locally, CI, and opening a PR — see the <a href="contributing.html">Contributing</a> guide.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

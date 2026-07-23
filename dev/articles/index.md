@@ -59,3 +59,8 @@
   Modeling](https://chengmatt.github.io/SPoRC/dev/articles/s_discard_retention.md):
 - [One-Step-Ahead (OSA)
   Residuals](https://chengmatt.github.io/SPoRC/dev/articles/u_osa_residuals.md):
+
+### For Developers
+
+- [Architecture](https://chengmatt.github.io/SPoRC/dev/articles/architecture.md):
+- [Contributing](https://chengmatt.github.io/SPoRC/dev/articles/contributing.md):

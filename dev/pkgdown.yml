@@ -6,6 +6,7 @@ articles:
   architecture: architecture.html
   b_model_parameters: b_model_parameters.html
   c_model_equations: c_model_equations.html
+  contributing: contributing.html
   d_model_report: d_model_report.html
   e_single_region_sablefish_case_study: e_single_region_sablefish_case_study.html
   f_single_region_ebs_pollock_case_study: f_single_region_ebs_pollock_case_study.html
@@ -25,7 +26,7 @@ articles:
   t_model_options: t_model_options.html
   u_osa_residuals: u_osa_residuals.html
   v_structuring_your_data: v_structuring_your_data.html
-last_built: 2026-07-23T20:01Z
+last_built: 2026-07-23T23:22Z
 urls:
   reference: https://chengmatt.github.io/SPoRC/reference
   article: https://chengmatt.github.io/SPoRC/articles

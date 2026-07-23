@@ -87,6 +87,28 @@ file where its likelihood contribution gets wired in; the corresponding
 `Setup_Mod_*` function is where its data/parameters/mapping get prepared
 beforehand.
 
+Most of the heavier sections don’t do their own array-crunching inline —
+they delegate to a helper function (i.e., a separate module) that takes
+the relevant state as named arguments and returns it, following the same
+pattern as the pre-existing
+[`Get_Movement()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Movement.md)
+/
+[`Get_Selex()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex.md)
+/
+[`Get_Det_Recruitment()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Det_Recruitment.md)
+/
+[`Get_Init_NAA()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Init_NAA.md)
+calls: population projection (`get_population_projection()` in
+`Get_Population_Dynamics.R`), the fishery and survey observation models
+(`get_fishery_observation_model()` / `get_survey_observation_model()` in
+`Get_Observation_Models.R`), the tagging observation model
+(`get_tagging_observation_model()` in
+`Get_Tagging_Observation_Model.R`), composition likelihoods
+(`Get_Comp_Likelihoods.R`), tag likelihoods
+([`get_conv_tag_likelihoods()`](https://chengmatt.github.io/SPoRC/dev/reference/get_conv_tag_likelihoods.md)
+in `Get_Conv_Tag_Likelihoods.R`), and priors/penalties (one function per
+prior in `Get_PE_loglik.R`).
+
 ## Naming conventions
 
 The prefix on a function name generally tells you its role in the
@@ -103,7 +125,7 @@ pipeline:
 
 Within `SPoRC_rtmb.R` the same `## Section` / `### Subsection` comment
 banner style is used consistently — keep using it there if you extend
-the file, since it’s the only navigation aid for a ~2,800-line function.
+the file, since it’s the only navigation aid for a ~2,300-line function.
 
 ## File map
 
@@ -121,7 +143,17 @@ the file, since it’s the only navigation aid for a ~2,800-line function.
       fit_model.R                 MakeADFun + nlminb + Newton refinement wrapper
       Get_Movement.R, Get_Selex.R, Get_Det_Recruitment.R, Get_Init_NAA.R
                                    derived-quantity helpers used inside SPoRC_rtmb.R
-      Get_PE_loglik.R             process-error / random-effect log-likelihood + penalty helpers
+      Get_Population_Dynamics.R   get_population_projection(): the core NAA / movement /
+                                   mortality forward simulation, one year-season at a time
+      Get_Observation_Models.R    get_fishery_observation_model(), get_survey_observation_model():
+                                   predicted catch/discard/index-at-age/length from population state
+      Get_Tagging_Observation_Model.R  get_tagging_observation_model(): tag cohort release,
+                                   movement, mortality/ageing, and predicted recaptures
+      Get_PE_loglik.R             process-error / random-effect log-likelihood helpers, plus the
+                                   rest of the priors and penalties (natural mortality, steepness,
+                                   movement, catchability, R0, recruitment proportions, tag
+                                   reporting rate, discard mortality rate, fixed selectivity) —
+                                   one small function per prior/penalty
       Get_Comp_Likelihoods.R, Get_Conv_Tag_Likelihoods.R
                                    composition and tag-recapture likelihood assembly
       Get_Reference_Points.R      SPR/BH-MSY solvers (single-region, global, local x sgl/multi-pop)
@@ -163,7 +195,11 @@ a predictable set of places:
 2.  **Objective**: add a `## Section` in `SPoRC_rtmb.R` that consumes
     the new `data`/`parameters` entries and contributes to `jnll`/`nll`
     — put it in the section it belongs to (transform, observation model,
-    or likelihood/prior) rather than appending to the end.
+    or likelihood/prior) rather than appending to the end. If the logic
+    is more than a few lines, extract it into a `get_*()` helper (see
+    `Get_Population_Dynamics.R`, `Get_Observation_Models.R`, or
+    `Get_PE_loglik.R` for the pattern) instead of growing the objective
+    function inline.
 3.  **Sim counterpart**: if the process should be simulate-able, add the
     matching `Setup_Sim_*` inputs and generation logic in
     `Simulate_Population.R`.
@@ -177,3 +213,8 @@ a predictable set of places:
     relevant lettered vignette (see the [Articles
     index](https://chengmatt.github.io/SPoRC/dev/articles/index.md))
     rather than only in code comments.
+
+For the mechanics of actually getting a change in — branch naming,
+running tests locally, CI, and opening a PR — see the
+[Contributing](https://chengmatt.github.io/SPoRC/dev/articles/contributing.md)
+guide.

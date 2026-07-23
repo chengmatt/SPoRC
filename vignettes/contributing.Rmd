@@ -1,0 +1,107 @@
+---
+title: "Contributing"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Contributing}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+This document is for people making changes to the `SPoRC` codebase — where things
+live and *why* is covered in [Architecture](architecture.html); this page covers the
+mechanics of actually getting a change in: environment setup, branching, testing, and
+what CI checks before a change lands.
+
+## Getting set up
+
+`SPoRC` is a standard R package built around [RTMB](https://github.com/kaskr/RTMB).
+There's no compiled code to build (RTMB traces plain R at runtime rather than
+compiling C++), so getting started is just:
+
+## Branching
+
+Work happens on `dev-*` branches off `main` (e.g. `dev-movement`, `dev-popn-seasons`),
+merged in when ready. `dev-*` is not just convention — the GitHub Actions workflows
+(`R-CMD-check`, `test-coverage`, `pkgdown`) are configured to trigger on pushes to
+branches matching that pattern, so a differently-named branch won't get CI feedback
+until you open a PR against `main`.
+
+## Making a change
+
+The [Architecture](architecture.html) doc's "Extending the model: a checklist"
+section walks through where a new process, fleet type, or data source touches the
+pipeline (Setup function → objective section → sim counterpart → post-fit exposure →
+tests → vignette). Two conventions worth internalizing before you start:
+
+- Naming tells you the role. `Setup_Mod_*` builds data/parameters/mapping,
+  `Get_*` / `get_*` derives a quantity from already-built state, `do_*` re-runs or
+  perturbs a fitted model, `do_*_mapping` builds an RTMB parameter map. Match an
+  existing prefix rather than inventing a new one — see the naming conventions table
+  in Architecture.
+- Extract non-trivial logic out of `SPoRC_rtmb.R` into a helper. The objective
+  function is already large; sections that do real array-crunching (population
+  projection, observation models, priors/penalties) call out to a `get_*()` helper
+  that takes the relevant state as named arguments and returns it, rather than
+  computing inline. This is safe under RTMB — it's just an R function call, not a
+  macro — as long as every array the block reads or writes is threaded through as an
+  argument/return value. Prefer named arguments over positional ones for these calls;
+  the signatures tend to be long, and named arguments make it obvious at the call
+  site which variable feeds which parameter.
+
+## Testing
+
+Tests live in `tests/testthat/` (`Config/testthat/edition: 3`). Run the full suite
+with:
+
+```r
+devtools::test()
+```
+
+or a single file while iterating:
+
+```r
+testthat::test_file("tests/testthat/test-getselex.R")
+```
+
+Most test files are narrowly scoped (`test-movement.R`, `test-fdev_pe.R`,
+`test-getselex.R`, ...), but a second category — `test-dusky_rtmb.R`,
+`test-ebs_pol_sgl_rtmb*.R`, `test-mlt_rg_*.R`, `test-sabie_three_rg_rtmb.R` — fits a
+full model end-to-end against a bundled example dataset and checks the resulting
+`obj$rep` values (e.g. `SSB`, `Rec`) against pinned reference vectors. These are the
+tests most likely to catch an accidental change in `SPoRC_rtmb.R`'s numerics, and
+they're also the slowest (each one runs a real optimization) — expect a full local
+run of just that subset to take several minutes to tens of minutes depending on your
+machine. If you touch anything in `SPoRC_rtmb.R` or a helper it calls, run at least
+one of these before opening a PR, even if your change looks purely mechanical (e.g. a
+refactor that moves code into a helper function without intending to change any
+values) — a subtle argument-order or indexing mistake in that kind of change won't
+show up any other way.
+
+For a new feature, add a targeted test near it, and check whether the reference
+values in the `*_rtmb.R` regression tests need updating (they should only change if
+your feature is expected to change model output for the bundled example data — if a
+"pure refactor" changes them, that's a bug in the refactor, not a test that needs
+updating).
+
+## Documentation
+
+Roxygen comments (`RoxygenNote: 7.3.3`) generate both `man/*.Rd` and the
+[pkgdown](https://pkgdown.r-lib.org/) reference site. After adding or changing a
+roxygen block:
+
+```r
+devtools::document()
+```
+
+Internal helpers (not meant for users to call directly) should carry
+`@keywords internal` rather than `@export`. If you add a new exported function, add
+it to the appropriate section of `reference:` in `_pkgdown.yml` too. pkgdown won't
+list a function on the reference index just because it's exported, it needs to be in
+that config.
+
+User-facing vignettes are the lettered `.Rmd` files in `vignettes/`
+(`a_model_dimensions.Rmd`, `b_model_parameters.Rmd`, ...), grouped under `articles:`
+in `_pkgdown.yml`. This document and [Architecture](architecture.html) are
+unlettered and live under the same `articles:` listing, grouped separately since
+they're about the package's internals rather than how to use it.
+

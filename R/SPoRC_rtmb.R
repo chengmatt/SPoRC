@@ -157,7 +157,8 @@ SPoRC_rtmb = function(pars, data) {
   h_nLL = 0 # Prior for steepness
   Movement_nLL = 0 # Penalty for movement rates
   TagRep_nLL = 0 # penalty for tag reporting rate
-  rec_prop_nLL = # penalty / prior for recruitment proportions
+  rec_prop_nLL = 0 # penalty / prior for recruitment proportions
+  R0_nLL = 0 # prior for global R0
   jnLL = 0 # Joint negative log likelihood
 
   # Model Process Equations -------------------------------------------------
@@ -657,409 +658,74 @@ SPoRC_rtmb = function(pars, data) {
   NAA0[,,1,1,,] = Init_Unfished_NAA
 
   ## Population Projection ---------------------------------------------------
-  for(y in 1:n_yrs) {
+  tmp_pop_proj = get_population_projection(
+    n_pop = n_pop, n_regions = n_regions, n_seas = n_seas, n_ages = n_ages, n_sexes = n_sexes,
+    n_yrs = n_yrs, n_fish_fleets = n_fish_fleets, n_est_rec_devs = n_est_rec_devs,
+    rec_lag = rec_lag, rec_model = rec_model, rec_dd = rec_dd, R0 = R0,
+    rec_region_prop = rec_region_prop, rec_seas_prop = rec_seas_prop, h_trans = h_trans,
+    natal_region = natal_region, t_spawn = t_spawn, spawn_seas = spawn_seas, seasdur = seasdur,
+    init_F = init_F, ln_RecDevs = ln_RecDevs,
+    sexratio = sexratio, WAA = WAA, MatAA = MatAA, natmort = natmort, Movement = Movement,
+    stray_rate = stray_rate, sgl_seas_spawning_movement = sgl_seas_spawning_movement,
+    do_recruits_move = do_recruits_move, fish_sel = fish_sel, ret_sel = ret_sel, dmr = dmr, ZAA = ZAA,
+    NAA = NAA, NAA0 = NAA0, NAA_bef = NAA_bef, NAA_aft = NAA_aft, Rec = Rec,
+    SSB = SSB, Total_Biom = Total_Biom, Dynamic_SSB0 = Dynamic_SSB0, eff_SSB = eff_SSB
+  )
 
-    ### Annual Recruitment (rec_lag != 0 only) -----------------------------------
-    if(rec_lag != 0) {
-
-      # Get Deterministic Recruitment
-      tmp_Det_Rec = Get_Det_Recruitment(recruitment_model = rec_model,
-                                        rec_dd = rec_dd,
-                                        R0 = R0,
-                                        rec_region_prop = rec_region_prop,
-                                        rec_seas_prop = rec_seas_prop,
-                                        h = h_trans,
-                                        n_pop = n_pop,
-                                        n_ages = n_ages,
-                                        n_regions = n_regions,
-                                        # Note: Using first year and female quantities to compute unfished SSB0
-                                        sexratio_f = if(n_sexes == 1) array(0.5, dim = c(n_pop, n_regions)) else array(sexratio[,,1,1], dim = c(n_pop, n_regions)),
-                                        WAA = array(WAA[,,1,,,1], dim = c(n_pop, n_regions, n_seas, n_ages)),
-                                        MatAA = array(MatAA[,,1,,,1], dim = c(n_pop, n_regions, n_seas, n_ages)),
-                                        natmort = array(natmort[,,1,,1], dim = c(n_pop, n_regions, n_ages)),
-                                        Movement = array(Movement[,,,1,,,1], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
-                                        stray_rate = array(stray_rate[,1], dim = c(n_pop)),
-                                        sgl_seas_spawning_movement = array(sgl_seas_spawning_movement[,,,1,,1], dim = c(n_pop, n_regions, n_regions, n_ages)),
-                                        do_recruits_move = do_recruits_move,
-                                        natal_region = natal_region,
-                                        t_spawn = t_spawn,
-                                        SSB_vals = SSB,
-                                        y = y,
-                                        n_seas = n_seas,
-                                        spawn_seas = spawn_seas,
-                                        seasdur = seasdur,
-                                        rec_lag = rec_lag,
-                                        n_fish_fleets = n_fish_fleets,
-                                        init_F = init_F, # initF
-                                        fish_sel = array(fish_sel[,,1,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)), # total fishery selectivity
-                                        ret_sel = array(ret_sel[,,1,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)), # retained fishery selectivity in first year
-                                        dmr = array(dmr[,1,,], dim = c(n_regions, n_seas, n_fish_fleets))
-      )
-
-      for(p in 1:n_pop) {
-        for(r in 1:n_regions) {
-          for(s in 1:n_sexes) {
-            if(y <= n_est_rec_devs) tmp_total_rec = tmp_Det_Rec[p,r] * exp(ln_RecDevs[p,r,y])
-            if(y > n_est_rec_devs) tmp_total_rec = tmp_Det_Rec[p,r]
-            # season 1 fraction
-            NAA[p,r,y,1,1,s] = tmp_total_rec * rec_seas_prop[p,1] * sexratio[p,r,y,s]
-          }
-          Rec[p,r,y] = tmp_total_rec  # store total before seasonal split
-          NAA0[p,r,y,1,1,] = NAA[p,r,y,1,1,]
-        } # end r loop
-      } # end p loop
-    } # end if rec_lag != 0
-
-    for(seas in 1:n_seas) {
-
-      # Insert seasonal recruits
-      if(if(rec_lag != 0) seas > 1 else seas > spawn_seas) {
-        for(p in 1:n_pop) {
-          for(r in 1:n_regions) {
-            for(s in 1:n_sexes) {
-              NAA[p,r,y,seas,1,s]  = NAA[p,r,y,seas,1,s]  + Rec[p,r,y] * rec_seas_prop[p,seas] * sexratio[p,r,y,s]
-              NAA0[p,r,y,seas,1,s] = NAA0[p,r,y,seas,1,s] + Rec[p,r,y] * rec_seas_prop[p,seas] * sexratio[p,r,y,s]
-            } # end s loop
-          } # end r loop
-        } # end p loop
-      }
-
-      ### Movement ----------------------------------------------------------------
-      # Record values prior to movement
-      NAA_bef[,,y,seas,,] = NAA[,,y,seas,,]
-
-      if(n_regions > 1) {
-        for(p in 1:n_pop) {
-          # Recruits don't move
-          if(do_recruits_move == 0) {
-            # Apply movement after ageing processes - start movement at age 2
-            for(a in 2:n_ages) {
-              for(s in 1:n_sexes) {
-                NAA[p,,y,seas,a,s] = t(NAA[p,,y,seas,a,s]) %*% Movement[p,,,y,seas,a,s] # Fished
-              } # end s loop
-            } # end a loop
-          } # end if recruits don't move
-
-          # Recruits move here
-          if(do_recruits_move == 1) {
-            for(a in 1:n_ages) {
-              for(s in 1:n_sexes) {
-                NAA[p,,y,seas,a,s] = t(NAA[p,,y,seas,a,s]) %*% Movement[p,,,y,seas,a,s] # Fished
-              } # end s loop
-            } # end a loop
-          } # end if
-        } # end p loop
-
-        # Record values after movement
-        NAA_aft[,,y,seas,,] = NAA[,,y,seas,,]
-
-      } # only compute if spatial
-
-      ### Compute Biomass Quantities + Recruitment (rec_lag == 0 only) ------------
-      if(rec_lag == 0 && seas == spawn_seas) {
-
-        # SSB from survivors only
-        biom = compute_biom_y(y, seas, NAA, NAA0, WAA, MatAA, ZAA, natmort, t_spawn, seasdur,
-                              n_seas, n_pop, n_regions, n_ages, n_sexes,
-                              sgl_seas_spawning_movement, natal_region, stray_rate)
-        SSB[,, y] = biom$SSB_y
-
-        tmp_Det_Rec = Get_Det_Recruitment(recruitment_model = rec_model,
-                                          rec_dd = rec_dd,
-                                          R0 = R0,
-                                          rec_region_prop = rec_region_prop,
-                                          rec_seas_prop = rec_seas_prop,
-                                          h = h_trans,
-                                          n_pop = n_pop,
-                                          n_ages = n_ages,
-                                          n_regions = n_regions,
-                                          sexratio_f = if(n_sexes == 1) array(0.5, dim = c(n_pop, n_regions)) else array(sexratio[,,1,1], dim = c(n_pop, n_regions)),
-                                          WAA = array(WAA[,,1,,,1], dim = c(n_pop, n_regions, n_seas, n_ages)),
-                                          MatAA = array(MatAA[,,1,,,1], dim = c(n_pop, n_regions, n_seas, n_ages)),
-                                          natmort = array(natmort[,,1,,1], dim = c(n_pop, n_regions, n_ages)),
-                                          Movement = array(Movement[,,,1,,,1], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
-                                          stray_rate = array(stray_rate[,1], dim = c(n_pop)),
-                                          sgl_seas_spawning_movement = array(sgl_seas_spawning_movement[,,,1,,1], dim = c(n_pop, n_regions, n_regions, n_ages)),
-                                          do_recruits_move = do_recruits_move,
-                                          natal_region = natal_region,
-                                          t_spawn = t_spawn,
-                                          SSB_vals = SSB,
-                                          y = y,
-                                          n_seas = n_seas,
-                                          spawn_seas = spawn_seas,
-                                          seasdur = seasdur,
-                                          rec_lag = rec_lag,
-                                          n_fish_fleets = n_fish_fleets,
-                                          init_F = init_F, # initF
-                                          fish_sel = array(fish_sel[,,1,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)), # total fishery selectivity
-                                          ret_sel = array(ret_sel[,,1,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)), # retained fishery selectivity in first year
-                                          dmr = array(dmr[,1,,], dim = c(n_regions, n_seas, n_fish_fleets))
-        )
-
-        for(p in 1:n_pop) {
-          for(r in 1:n_regions) {
-            for(s in 1:n_sexes) {
-              if(y <= n_est_rec_devs) tmp_total_rec = tmp_Det_Rec[p,r] * exp(ln_RecDevs[p,r,y])
-              if(y > n_est_rec_devs) tmp_total_rec = tmp_Det_Rec[p,r]
-              NAA[p,r,y,spawn_seas,1,s]  = tmp_total_rec * rec_seas_prop[p,spawn_seas] * sexratio[p,r,y,s]
-              NAA0[p,r,y,spawn_seas,1,s] = tmp_total_rec * rec_seas_prop[p,spawn_seas] * sexratio[p,r,y,s]
-            }
-            Rec[p,r,y] = tmp_total_rec # store total before seasonal split
-          } # end r loop
-        } # end p loop
-
-        # Recruits just inserted above missed this season's movement step. Move recruits if allowed.
-        if(do_recruits_move == 1 && n_regions > 1) {
-          for(p in 1:n_pop) {
-            for(s in 1:n_sexes) {
-              NAA[p,,y,seas,1,s] = t(NAA[p,,y,seas,1,s]) %*% Movement[p,,,y,seas,1,s]
-              NAA0[p,,y,seas,1,s] = t(NAA0[p,,y,seas,1,s]) %*% Movement[p,,,y,seas,1,s]
-            } # end s loop
-          } # end p loop
-          NAA_aft[,,y,seas,1,] = NAA[,,y,seas,1,]
-        }
-
-        # Recompute biomass quantities now that this year's recruits are included
-        biom = compute_biom_y(y, seas, NAA, NAA0, WAA, MatAA, ZAA, natmort, t_spawn, seasdur,
-                              n_seas, n_pop, n_regions, n_ages, n_sexes,
-                              sgl_seas_spawning_movement, natal_region, stray_rate)
-        Total_Biom[,, y] = biom$Total_Biom_y
-        SSB[,, y] = biom$SSB_y
-        Dynamic_SSB0[,,y] = biom$Dynamic_SSB0_y
-        eff_SSB[,y] = biom$eff_SSB_y
-
-      } # end if rec_lag == 0 && seas == spawn_seas
-
-      ### Mortality and Ageing ------------------------------------------------------
-      if(seas < n_seas) {
-        # within year / seasonal mortality
-        NAA[,,y,seas+1,1:n_ages,] = NAA[,,y,seas,1:n_ages,] * exp(-ZAA[,,y,seas,1:n_ages,])
-        NAA0[,,y,seas+1,1:n_ages,] = NAA0[,,y,seas,1:n_ages,] * exp(-(natmort[,,y,1:n_ages,] * seasdur[seas]))
-      } else {
-        # age advancement and enter into first season of next year
-        # Fished
-        NAA[,,y+1,1,2:n_ages,] = NAA[,,y,n_seas,1:(n_ages-1),] * exp(-ZAA[,,y,seas,1:(n_ages-1),]) # Exponential mortality for individuals not in plus group
-        NAA[,,y+1,1,n_ages,] = NAA[,,y+1,1,n_ages,] + NAA[,,y,seas,n_ages,] * exp(-ZAA[,,y,seas,n_ages,]) # Acuumulate plus group
-        # Unfished
-        NAA0[,,y+1,1,2:n_ages,] = NAA0[,,y,n_seas,1:(n_ages-1),] * exp(-natmort[,,y,1:(n_ages-1),] * seasdur[n_seas]) # Exponential mortality for individuals not in plus group
-        NAA0[,,y+1,1,n_ages,] = NAA0[,,y+1,1,n_ages,] + NAA0[,,y,n_seas,n_ages,] * exp(-natmort[,,y,n_ages,] * seasdur[n_seas]) # Acuumulate plus group
-      }
-
-      ### Compute Biomass Quantities (rec_lag != 0: unchanged original timing) ----
-      if(rec_lag != 0 && seas == spawn_seas) {
-        spawn_biom = compute_biom_y(y, seas, NAA, NAA0, WAA, MatAA, ZAA, natmort, t_spawn, seasdur,
-                                    n_seas, n_pop, n_regions, n_ages, n_sexes,
-                                    sgl_seas_spawning_movement, natal_region, stray_rate)
-        Total_Biom[,, y] = spawn_biom$Total_Biom_y
-        SSB[,, y] = spawn_biom$SSB_y
-        Dynamic_SSB0[,,y] = spawn_biom$Dynamic_SSB0_y
-        eff_SSB[,y] = spawn_biom$eff_SSB_y
-      }
-
-    } # end seas loop
-  } # end y loop
-
-  # Get aggregated SSB values
-  Aggregated_SSB = apply(SSB, 3, sum)
-  Dynamic_Aggregated_SSB0 = apply(Dynamic_SSB0, 3, sum)
+  NAA = tmp_pop_proj$NAA; NAA0 = tmp_pop_proj$NAA0; NAA_bef = tmp_pop_proj$NAA_bef; NAA_aft = tmp_pop_proj$NAA_aft
+  Rec = tmp_pop_proj$Rec; SSB = tmp_pop_proj$SSB; Total_Biom = tmp_pop_proj$Total_Biom
+  Dynamic_SSB0 = tmp_pop_proj$Dynamic_SSB0; eff_SSB = tmp_pop_proj$eff_SSB
+  Aggregated_SSB = tmp_pop_proj$Aggregated_SSB; Dynamic_Aggregated_SSB0 = tmp_pop_proj$Dynamic_Aggregated_SSB0
 
   ## Fishery Observation Model -----------------------------------------------
-  for(p in 1:n_pop) {
-    for(r in 1:n_regions) {
-      for(y in 1:n_yrs) {
-        for(f in 1:n_fish_fleets) {
+  tmp_fish_obs = get_fishery_observation_model(
+    n_pop = n_pop, n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fish_fleets = n_fish_fleets, n_sexes = n_sexes,
+    fish_q_blocks = fish_q_blocks, ln_fish_q = ln_fish_q, fish_q = fish_q,
+    ret_FAA = ret_FAA, disc_FAA = disc_FAA, ZAA = ZAA, NAA = NAA,
+    CAA = CAA, DAA = DAA, CAL = CAL, DAL = DAL, PredCatch = PredCatch, PredDiscard = PredDiscard, PredFishIdx = PredFishIdx,
+    fit_lengths = fit_lengths, SizeAgeTrans = SizeAgeTrans,
+    catch_units = catch_units, discard_units = discard_units, WAA_fish = WAA_fish, dmr = dmr,
+    fish_idx_type = fish_idx_type, fish_sel = fish_sel, ret_sel = ret_sel
+  )
 
-          fish_q_blk_idx = fish_q_blocks[r,y,f] # get time-block catchability index
-          fish_q[r,y,f] = exp(ln_fish_q[r,fish_q_blk_idx,f]) # Input into fishery catchability container
-
-          for(seas in 1:n_seas) {
-
-            # Retained Catch at Age
-            CAA[p,r,y,seas,,,f] = ret_FAA[p,r,y,seas,,,f] / ZAA[p,r,y,seas,,] * NAA[p,r,y,seas,,] * (1 - exp(-ZAA[p,r,y,seas,,]))
-
-            # Dead Discarded Catch at Age
-            DAA[p,r,y,seas,,,f] = disc_FAA[p,r,y,seas,,,f] / ZAA[p,r,y,seas,,] * NAA[p,r,y,seas,,] * (1 - exp(-ZAA[p,r,y,seas,,]))
-
-            if(fit_lengths == 1) {
-              for(s in 1:n_sexes) {
-                CAL[p,r,y,seas,,s,f] = SizeAgeTrans[p,r,y,seas,,,s] %*% CAA[p,r,y,seas,,s,f] # Retained Catch at length
-                DAL[p,r,y,seas,,s,f] = SizeAgeTrans[p,r,y,seas,,,s] %*% DAA[p,r,y,seas,,s,f] # Discarded Catch at length
-              } # end s loop
-            } # fitting lengths
-
-            # Get catch
-            if(catch_units[f] == 0) PredCatch[p,r,y,seas,f] = sum(CAA[p,r,y,seas,,,f]) # abundance
-            if(catch_units[f] == 1) PredCatch[p,r,y,seas,f] = sum(CAA[p,r,y,seas,,,f] * WAA_fish[p,r,y,seas,,,f]) # biomass
-
-            # Get discards
-            if(discard_units[f] == 0) PredDiscard[p,r,y,seas,f] = sum(DAA[p,r,y,seas,,,f] / dmr[r,y,seas,f])  # total discard abundance
-            if(discard_units[f] == 1) PredDiscard[p,r,y,seas,f] = sum(DAA[p,r,y,seas,,,f] / dmr[r,y,seas,f] * WAA_fish[p,r,y,seas,,,f])  # total discard biomass
-            if(discard_units[f] == 2) {
-              total_catch = CAA[p,r,y,seas,,,f] + DAA[p,r,y,seas,,,f] / dmr[r,y,seas,f]
-              PredDiscard[p,r,y,seas,f] = 1 - sum(CAA[p,r,y,seas,,,f]) / sum(total_catch)
-            } # abundance fraction
-            if(discard_units[f] == 3) {
-              total_catch = CAA[p,r,y,seas,,,f] + DAA[p,r,y,seas,,,f] / dmr[r,y,seas,f]
-              PredDiscard[p,r,y,seas,f] = 1 - sum(CAA[p,r,y,seas,,,f] * WAA_fish[p,r,y,seas,,,f]) / sum(total_catch * WAA_fish[p,r,y,seas,,,f])
-            } # biomass fraction
-
-            # Get fishery index
-            if(fish_idx_type[f] == 0) PredFishIdx[p,r,y,seas,f] = fish_q[r,y,f] * sum(NAA[p,r,y,seas,,] * fish_sel[p,r,y,seas,,,f] * ret_sel[p,r,y,seas,,,f]) # retained abundance
-            if(fish_idx_type[f] == 1) PredFishIdx[p,r,y,seas,f] = fish_q[r,y,f] * sum(NAA[p,r,y,seas,,] * fish_sel[p,r,y,seas,,,f] * ret_sel[p,r,y,seas,,,f] * WAA_fish[p,r,y,seas,,,f]) # retained biomass
-          } # end seas loop
-
-        } # end f loop
-      } # end y loop
-    } # end r loop
-  } # end p loop
+  fish_q = tmp_fish_obs$fish_q; CAA = tmp_fish_obs$CAA; DAA = tmp_fish_obs$DAA
+  CAL = tmp_fish_obs$CAL; DAL = tmp_fish_obs$DAL
+  PredCatch = tmp_fish_obs$PredCatch; PredDiscard = tmp_fish_obs$PredDiscard; PredFishIdx = tmp_fish_obs$PredFishIdx
 
   ## Survey Observation Model ------------------------------------------------
-  for(p in 1:n_pop) {
-    for(r in 1:n_regions) {
-      for(y in 1:n_yrs) {
-        for(sf in 1:n_srv_fleets) {
+  tmp_srv_obs = get_survey_observation_model(
+    n_pop = n_pop, n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_srv_fleets = n_srv_fleets, n_sexes = n_sexes,
+    srv_q_blocks = srv_q_blocks, ln_srv_q = ln_srv_q, srv_q = srv_q, do_srv_q_cov = do_srv_q_cov, srv_q_cov = srv_q_cov, srv_q_coeff = srv_q_coeff,
+    srv_selex_type = srv_selex_type, srv_sel = srv_sel, srv_sel_l = srv_sel_l, SizeAgeTrans = SizeAgeTrans,
+    NAA = NAA, ZAA = ZAA, t_srv = t_srv, SrvIAA = SrvIAA, fit_lengths = fit_lengths, SrvIAL = SrvIAL,
+    srv_idx_type = srv_idx_type, WAA_srv = WAA_srv, PredSrvIdx = PredSrvIdx
+  )
 
-          srv_q_blk_idx = srv_q_blocks[r,y,sf] # get time-block catchability index
-          srv_q[r,y,sf] = exp(ln_srv_q[r,srv_q_blk_idx,sf]) # Input into survey catchability container
-          if(do_srv_q_cov == 1) srv_q[r,y,sf] = srv_q[r,y,sf] * exp(sum(srv_q_cov[r,y,sf,] * srv_q_coeff[r,sf,])) # adding covariate effects
-
-          for(seas in 1:n_seas) {
-
-            # Convert length-selex to age-selex
-            if(srv_selex_type == 1) for(s in 1:n_sexes) srv_sel[p,r,y,seas,,s,sf] = srv_sel_l[r,y,,s,sf] %*% SizeAgeTrans[p,r,y,seas,,,s]
-
-            SrvIAA[p,r,y,seas,,,sf] = NAA[p,r,y,seas,,] * srv_sel[p,r,y,seas,,,sf] * exp(-t_srv[r,seas,sf] * ZAA[p,r,y,seas,,]) # Survey index at age
-
-            if(fit_lengths == 1) {
-              for(s in 1:n_sexes) {
-                SrvIAL[p,r,y,seas,,s,sf] = SizeAgeTrans[p,r,y,seas,,,s] %*% SrvIAA[p,r,y,seas,,s,sf] # Survey index at length
-              } # end s loop
-            } # fitting lengths
-
-            if(srv_idx_type[sf] == 0) PredSrvIdx[p,r,y,seas,sf] = srv_q[r,y,sf] * sum(SrvIAA[p,r,y,seas,,,sf]) # abundance
-            if(srv_idx_type[sf] == 1) PredSrvIdx[p,r,y,seas,sf] = srv_q[r,y,sf] * sum(SrvIAA[p,r,y,seas,,,sf] * WAA_srv[p,r,y,seas,,,sf]) # biomass
-
-          } # end seas loop
-
-        } # end sf loop
-      } # end y loop
-    } # end r loop
-  } # end p loop
+  srv_q = tmp_srv_obs$srv_q; srv_sel = tmp_srv_obs$srv_sel
+  SrvIAA = tmp_srv_obs$SrvIAA; SrvIAL = tmp_srv_obs$SrvIAL; PredSrvIdx = tmp_srv_obs$PredSrvIdx
 
 
   ## Tagging Observation Model -----------------------------------------------
   if(any(use_conv_fish_tagging == 1)) {
 
-    # Set up tag reporting rates
-    for(f in 1:n_fish_fleets) {
-      for(r in 1:n_regions) {
-        conv_tagrep_blk_idx = conv_tag_fish_reporting_blocks[r,,f]  # Get all blocks for this region
-        conv_tag_fish_reporting[r,,f] = RTMB::plogis(conv_tag_fish_reporting_pars[r,conv_tagrep_blk_idx,f])  # inverse logit transform
-      } # end r loop
-    } # end f loop
+    tmp_tag_obs = get_tagging_observation_model(
+      n_fish_fleets = n_fish_fleets, n_regions = n_regions, n_conv_tag_cohorts = n_conv_tag_cohorts,
+      n_yrs = n_yrs, n_seas = n_seas, n_pop = n_pop, n_ages = n_ages, n_sexes = n_sexes,
+      conv_tag_fish_reporting_blocks = conv_tag_fish_reporting_blocks,
+      conv_tag_fish_reporting_pars = conv_tag_fish_reporting_pars, conv_tag_fish_reporting = conv_tag_fish_reporting,
+      conv_tag_release_indicator = conv_tag_release_indicator, conv_tag_max_liberty = conv_tag_max_liberty,
+      use_conv_fish_tagging = use_conv_fish_tagging,
+      Fmort = Fmort, fish_sel = fish_sel, ret_sel = ret_sel, dmr = dmr, natmort = natmort, seasdur = seasdur,
+      ln_conv_tag_shed = ln_conv_tag_shed, conv_tag_t_tagging = conv_tag_t_tagging, conv_tagged_fish = conv_tagged_fish,
+      conv_fish_tag_attr = conv_fish_tag_attr, conv_tag_release_platform = conv_tag_release_platform,
+      srv_sel = srv_sel, NAA_bef = NAA_bef, ln_init_conv_tag_mort = ln_init_conv_tag_mort,
+      do_recruits_move = do_recruits_move, Movement = Movement,
+      conv_tag_fish_avail = conv_tag_fish_avail, pred_conv_tag_fish_recap = pred_conv_tag_fish_recap
+    )
 
-    for(tc in 1:n_conv_tag_cohorts) {
-
-      tr = conv_tag_release_indicator[tc,1] # extract tag release region
-      ty = conv_tag_release_indicator[tc,2] # extract tag release year
-      tseas = conv_tag_release_indicator[tc,3] # extract tag release season
-
-      for(ry in 1:min(conv_tag_max_liberty, n_yrs - ty + 1)) {   # years
-        y = ty + ry - 1 # get real year
-        for(rseas in 1:n_seas) { # seasons
-
-          # get fishing mortality
-          tmp_FAA = array(0, dim = c(n_pop, n_regions, 1, n_ages, n_sexes, n_fish_fleets))
-          tmp_ret_FAA = array(0, dim = c(n_pop, n_regions, 1, n_ages, n_sexes, n_fish_fleets))
-          tmp_disc_DAA = array(0, dim = c(n_pop, n_regions, 1, n_ages, n_sexes, n_fish_fleets))
-          for(p in 1:n_pop) for(f in 1:n_fish_fleets) {
-            if(use_conv_fish_tagging[f] == 1) {
-              tmp_ret_FAA[p,,1,,,f] = Fmort[, y, rseas, f] * fish_sel[p,,y,rseas,,,f] * ret_sel[p,,y,rseas,,,f]  # Retained fishing mortality
-              tmp_disc_DAA[p,,1,,,f] = Fmort[, y, rseas, f] * fish_sel[p,,y,rseas,,,f] * (1 - ret_sel[p,,y,rseas,,,f]) * dmr[,y,rseas,f] # Dead discard fishing mortality
-              tmp_FAA[p,,1,,,f] = tmp_ret_FAA[p,,1,,,f] + tmp_disc_DAA[p,,1,,,f] # Total fishing mortality
-            } # end if
-          } # end p loop
-
-          # get total mortality
-          tmp_natmort = array(natmort[,,y,,], dim = c(n_pop, n_regions, 1, n_ages, n_sexes))
-          tmp_ZAA = (tmp_natmort * seasdur[rseas]) + apply(tmp_FAA, 1:5, sum) + (exp(ln_conv_tag_shed[tc]) * seasdur[rseas])
-
-          # Discount with tagging time (conv_tag_t_tagging) if it doesn't happen at the start of the season / year
-          if(ry == 1 && rseas == tseas) {
-
-            if(conv_tag_t_tagging[tc] != 1) tmp_ZAA = tmp_ZAA * conv_tag_t_tagging[tc]
-
-            # apportion tagged fish out to appropriate dimensions if necessary
-            tmp_tagged_fish = release_conv_tag_attr(array(conv_tagged_fish[tc, , , ], dim = c(n_pop, n_ages, n_sexes)),
-                                                    conv_fish_tag_attr[tc],
-                                                    conv_tag_release_platform[tc,],
-                                                    srv_sel, fish_sel, NAA_bef,
-                                                    ty, tseas, tr, n_pop,
-                                                    n_ages, n_sexes)
-
-            # Input tagged fish into available tags for recapture and adjust initial number of tagged fish for tag induced mortality (exponential mortality process)
-            conv_tag_fish_avail[1, rseas, tc, , tr, , ] = array(tmp_tagged_fish * exp(-exp(ln_init_conv_tag_mort[tc])), dim = c(n_pop, n_ages, n_sexes))
-          }
-
-          # get temporary survival value
-          tmp_SAA = exp(-tmp_ZAA)
-
-          # Move tagged fish around (skip only in first release year + tagging season when tagging occurs mid-season)
-          if(conv_tag_t_tagging[tc] == 1 || ry != 1 || rseas != tseas) {
-            for(p in 1:n_pop) {
-              # Movement of tag cohorts
-              if(do_recruits_move == 0) {
-                for(a in 2:n_ages) for(s in 1:n_sexes) {
-                  conv_tag_fish_avail[ry, rseas, tc, p, , a, s] =
-                    t(conv_tag_fish_avail[ry, rseas, tc, p, , a, s]) %*%
-                    Movement[p, , , y, rseas, a, s]
-                }
-              } else { # if recruits move
-                for(a in 1:n_ages) for(s in 1:n_sexes) {
-                  conv_tag_fish_avail[ry, rseas, tc, p, , a, s] =
-                    t(conv_tag_fish_avail[ry, rseas, tc, p, , a, s]) %*%
-                    Movement[p, , , y, rseas, a, s]
-                } # end s loop
-              } # end else
-            } # end p loop
-          } # end if
-
-          # Apply mortality and ageing to tagged fish
-          if(rseas < n_seas) {
-
-            # Season mortality within a given year, advance to next season same year/age
-            conv_tag_fish_avail[ry, rseas + 1, tc, , , , ] =
-              conv_tag_fish_avail[ry, rseas, tc, , , , ] *
-              tmp_SAA[,,1,,]
-
-          } else {
-
-            # End of year mortality and age advancement (end of season)
-            conv_tag_fish_avail[ry + 1, 1, tc, , , 2:n_ages, ] =
-              conv_tag_fish_avail[ry, n_seas, tc, , , 1:(n_ages-1), ] *
-              tmp_SAA[,,1,1:(n_ages - 1),]
-
-            # Accumulate plus group
-            conv_tag_fish_avail[ry + 1, 1, tc, , , n_ages, ] =
-              conv_tag_fish_avail[ry + 1, 1, tc, , , n_ages, ] +
-              conv_tag_fish_avail[ry, n_seas, tc, , , n_ages, ] *
-              tmp_SAA[,,1,n_ages,]
-          }
-
-          # # Apply Baranov's to get predicted recaptures
-          for(f in 1:n_fish_fleets) {
-            for(p in 1:n_pop) {
-              pred_conv_tag_fish_recap[ry,rseas,tc,p,,,,f] = conv_tag_fish_reporting[,y,f] *
-                (tmp_ret_FAA[p,,1,,,f] / tmp_ZAA[p,,1,,]) *
-                conv_tag_fish_avail[ry,rseas,tc,p,,,] *
-                (1 - tmp_SAA[p,,1,,])
-            } # end p loop
-          } # end f loop
-
-
-        }
-      }
-    }
+    conv_tag_fish_reporting = tmp_tag_obs$conv_tag_fish_reporting
+    conv_tag_fish_avail = tmp_tag_obs$conv_tag_fish_avail
+    pred_conv_tag_fish_recap = tmp_tag_obs$pred_conv_tag_fish_recap
 
   } # end if for using tagging data
 
@@ -2190,19 +1856,9 @@ SPoRC_rtmb = function(pars, data) {
 
   ### Discard Mortality Rate (Penalty) ---------------------------------------------
   if(Use_dmr_pen == 1) {
-    for(f in 1:n_fish_fleets) {
-      for(y in 1:n_yrs) {
-        for(r in 1:n_regions) {
-          for(seas in 1:n_seas) {
-
-            if(UseDiscard[r,y,seas,f] == 1 || any(UseDiscard_pop[,r,y,seas,f] == 1)) {
-              dmr_nLL[r,y,seas,f] = -RTMB::dnorm(logit_dmr_devs[r,y,seas,f], 0, exp(ln_sigma_dmr[r,seas,f]), TRUE)
-            } # end if have catch
-
-          } # end seas loop
-        } # end r loop
-      } # y loop
-    } # f loop
+    dmr_nLL = get_dmr_penalty(logit_dmr_devs = logit_dmr_devs, ln_sigma_dmr = ln_sigma_dmr,
+                              UseDiscard = UseDiscard, UseDiscard_pop = UseDiscard_pop,
+                              n_fish_fleets = n_fish_fleets, n_yrs = n_yrs, n_regions = n_regions, n_seas = n_seas)
   } #  if using discard mortality rate penalty
 
 
@@ -2369,125 +2025,37 @@ SPoRC_rtmb = function(pars, data) {
 
   ### Selectivity (Prior) -----------------------------------------------------
   # Total Fishery selectivity parameters
-  if(Use_fish_selex_prior == 1) {
-    for(i in 1:nrow(fish_selex_prior)) {
-      # Extract indices
-      r = fish_selex_prior$region[i]
-      p = fish_selex_prior$par[i]
-      b = fish_selex_prior$block[i]
-      s = fish_selex_prior$sex[i]
-      f = fish_selex_prior$fleet[i]
-      # Compute penalty / prior here
-      sel_nLL = sel_nLL - RTMB::dnorm(fish_fixed_sel_pars[r,p,b,s,f], log(fish_selex_prior$mu[i]), fish_selex_prior$sd[i], TRUE)
-    } # end i loop
-  } # end if using selex priors
+  if(Use_fish_selex_prior == 1) sel_nLL = sel_nLL + get_selex_fixed_prior(fish_selex_prior, fish_fixed_sel_pars)
 
   # Retained Fishery selectivity parameters
-  if(Use_ret_selex_prior == 1) {
-    for(i in 1:nrow(ret_selex_prior)) {
-      # Extract indices
-      r = ret_selex_prior$region[i]
-      p = ret_selex_prior$par[i]
-      b = ret_selex_prior$block[i]
-      s = ret_selex_prior$sex[i]
-      f = ret_selex_prior$fleet[i]
-      # Compute penalty / prior here
-      sel_nLL = sel_nLL - RTMB::dnorm(ret_fixed_sel_pars[r,p,b,s,f], log(ret_selex_prior$mu[i]), ret_selex_prior$sd[i], TRUE)
-    } # end i loop
-  } # end if using selex priors
+  if(Use_ret_selex_prior == 1) sel_nLL = sel_nLL + get_selex_fixed_prior(ret_selex_prior, ret_fixed_sel_pars)
 
   # Survey selectivity parameters
-  if(Use_srv_selex_prior == 1) {
-    for(i in 1:nrow(srv_selex_prior)) {
-      # Extract indices
-      r = srv_selex_prior$region[i]
-      p = srv_selex_prior$par[i]
-      b = srv_selex_prior$block[i]
-      s = srv_selex_prior$sex[i]
-      sf = srv_selex_prior$fleet[i]
-      # Compute penalty / prior here
-      sel_nLL = sel_nLL - RTMB::dnorm(srv_fixed_sel_pars[r,p,b,s,sf], log(srv_selex_prior$mu[i]), srv_selex_prior$sd[i], TRUE)
-    } # end i loop
-  } # end if using selex priors
+  if(Use_srv_selex_prior == 1) sel_nLL = sel_nLL + get_selex_fixed_prior(srv_selex_prior, srv_fixed_sel_pars)
 
   ### Recruitment (Penalty) ----------------------------------------------------
-  for(p in 1:n_pop) {
-    for(r in 1:n_regions) {
-
-      # get sigma index
-      sigma_idx = ifelse(n_pop == 1 && rec_dd == 0, r, natal_region[p])
-
-      # Skip penalty if no dispersal and p = r has no recruits
-      if(rec_region_prop_spec == 1 && as.numeric(rec_region_prop[p,r]) == 0) next
-
-      # Initial age deviations (if equil_init_age_strc == 0; don't penalize at all)
-      if(equil_init_age_strc == 1) Init_Rec_nLL[p,r,1:(n_ages - 2)] = -RTMB::dnorm(ln_InitDevs[p,r,1:(n_ages - 2)], -exp(ln_sigmaR[1,p,sigma_idx])^2/2 * bias_ramp[1], exp(ln_sigmaR[1,p,sigma_idx]), TRUE) # only penalize non plus group
-      if(equil_init_age_strc == 2) Init_Rec_nLL[p,r,] = -RTMB::dnorm(ln_InitDevs[p,r,], -exp(ln_sigmaR[1,p,sigma_idx])^2/2 * bias_ramp[1], exp(ln_sigmaR[1,p,sigma_idx]), TRUE) # penalize all
-      if(equil_init_age_strc == 3) Init_Rec_nLL[p,r,unique(init_age_devs_shared)] = -RTMB::dnorm(ln_InitDevs[p,r,unique(init_age_devs_shared)], -exp(ln_sigmaR[1,p,sigma_idx])^2/2 * bias_ramp[1], exp(ln_sigmaR[1,p,sigma_idx]), TRUE) # penalize all
-
-      # Early recruitment deviations
-      if(sigmaR_switch > 1) {
-        Rec_nLL[p,r,1:(sigmaR_switch-1)] = -RTMB::dnorm(ln_RecDevs[p,r,1:(sigmaR_switch-1)], -sigmaR2_early[p,sigma_idx]/2 * bias_ramp[1:(sigmaR_switch-1)], exp(ln_sigmaR[1,p,sigma_idx]), TRUE)
-        if(do_rec_bias_ramp == 1 && any(bias_ramp != 0)) Rec_nLL[p,r,1:(sigmaR_switch-1)] = Rec_nLL[p,r,1:(sigmaR_switch-1)] - (1 - 0.5 * bias_ramp[1:(sigmaR_switch-1)]) * ln_sigmaR[1,p,sigma_idx] # adjust w/ bias correction
-      }
-
-      # Late recruitment deviations
-      Rec_nLL[p,r,sigmaR_switch:n_est_rec_devs] = -RTMB::dnorm(ln_RecDevs[p,r,sigmaR_switch:n_est_rec_devs], -sigmaR2_late[p,sigma_idx]/2 * bias_ramp[sigmaR_switch:n_est_rec_devs], exp(ln_sigmaR[2,p,sigma_idx]), TRUE)
-      if(do_rec_bias_ramp == 1 && any(bias_ramp != 0)) Rec_nLL[p,r,sigmaR_switch:n_est_rec_devs] = Rec_nLL[p,r,sigmaR_switch:n_est_rec_devs] - (1 - 0.5 * bias_ramp[sigmaR_switch:n_est_rec_devs]) * ln_sigmaR[2,p,sigma_idx] # adjust w/ bias correction
-
-    } # end r loop
-  } # end p loop
+  tmp_rec_pen = get_recruitment_penalty(n_pop = n_pop, n_regions = n_regions, n_ages = n_ages,
+                                        n_est_rec_devs = n_est_rec_devs, rec_dd = rec_dd, natal_region = natal_region,
+                                        rec_region_prop_spec = rec_region_prop_spec, rec_region_prop = rec_region_prop,
+                                        equil_init_age_strc = equil_init_age_strc, ln_InitDevs = ln_InitDevs,
+                                        init_age_devs_shared = init_age_devs_shared, ln_sigmaR = ln_sigmaR,
+                                        bias_ramp = bias_ramp, sigmaR_switch = sigmaR_switch, ln_RecDevs = ln_RecDevs,
+                                        sigmaR2_early = sigmaR2_early, sigmaR2_late = sigmaR2_late,
+                                        do_rec_bias_ramp = do_rec_bias_ramp)
+  Init_Rec_nLL = tmp_rec_pen$Init_Rec_nLL
+  Rec_nLL = tmp_rec_pen$Rec_nLL
 
   ### Fishery Catchability (Prior) -----------------------------------------------
-  if(Use_fish_q_prior == 1) {
-    for(i in 1:nrow(fish_q_prior)) {
-      # Extract indices
-      r = fish_q_prior$region[i]
-      b = fish_q_prior$block[i]
-      f = fish_q_prior$fleet[i]
-      # Compute penalty / prior here
-      fish_q_nLL = fish_q_nLL - sum(RTMB::dnorm(ln_fish_q[r,b,f], log(fish_q_prior$mu[i]), fish_q_prior$sd[i], TRUE))
-    } # end i loop
-  } # end if using survey catchability prior
+  if(Use_fish_q_prior == 1) fish_q_nLL = fish_q_nLL + get_q_prior(fish_q_prior, ln_fish_q)
 
   ### Survey Catchability (Prior) -----------------------------------------------
-  if(Use_srv_q_prior == 1) {
-    for(i in 1:nrow(srv_q_prior)) {
-      # Extract indices
-      r = srv_q_prior$region[i]
-      b = srv_q_prior$block[i]
-      sf = srv_q_prior$fleet[i]
-      # Compute penalty / prior here
-      srv_q_nLL = srv_q_nLL - sum(RTMB::dnorm(ln_srv_q[r,b,sf], log(srv_q_prior$mu[i]), srv_q_prior$sd[i], TRUE))
-    } # end i loop
-  } # end if using survey catchability prior
+  if(Use_srv_q_prior == 1) srv_q_nLL = srv_q_nLL + get_q_prior(srv_q_prior, ln_srv_q)
 
   ## Natural Mortality (Prior) -----------------------------------------------
-  if(Use_M_prior == 1) {
-    for(i in 1:nrow(M_prior)) {
-      # Extract indices
-      p = M_prior$popblk[i]
-      r = M_prior$regionblk[i]
-      b = M_prior$yearblk[i]
-      a = M_prior$ageblk[i]
-      s = M_prior$sexblk[i]
-      idx = M_blocks[p,r,b,a,s]
-      # Compute prior
-      M_nLL = M_nLL + -RTMB::dnorm(ln_M[idx], log(M_prior$mu[i]), M_prior$sd[i], TRUE) # TMB likelihood
-    }
-  } # end if using natural mortality prior
+  if(Use_M_prior == 1) M_nLL = M_nLL + get_natmort_prior(M_prior, ln_M, M_blocks)
 
   ### Steepness (Prior) -----------------------------------------------
-  if(Use_h_prior == 1) {
-    for(i in 1:nrow(h_prior)) {
-      # Extract indicies
-      p = h_prior$pop[i]
-      r = h_prior$region[i]
-      tmp_h_beta_pars = get_beta_scaled_pars(low = 0.2, high = 1, mu = h_prior$mu[i], sigma = h_prior$sd[i]) # get alpha and beta parameters
-      tmp_h_trans = (h_trans[p,r] - 0.2) / (1 - 0.2) # transform random variable
-      h_nLL = h_nLL - RTMB::dbeta(x = tmp_h_trans, shape1 = tmp_h_beta_pars[1], shape2 = tmp_h_beta_pars[2], log = TRUE) # penalize
-    } # end i
-  } # end if using steepness prior
+  if(Use_h_prior == 1) h_nLL = h_nLL + get_steepness_prior(h_prior, h_trans)
 
 
   ### Movement Rates (Penalty) ------------------------------------------------
@@ -2503,95 +2071,21 @@ SPoRC_rtmb = function(pars, data) {
   }
 
   ### Movement Rates (Prior) ------------------------------------------------
-  if(Use_Movement_Prior == 1) {
-    for(i in 1:nrow(Movement_prior)) {
-      p = Movement_prior$pop[i] # population
-      region_from = Movement_prior$region_from[i] # region from
-      y = Movement_prior$year[i] # year
-      seas = Movement_prior$seas[i] # seas
-      a = Movement_prior$age[i] # age
-      s = Movement_prior$sex[i] # sex
-      alpha = Movement_prior$alpha[[i]] # get prior values
-      Movement_nLL = Movement_nLL - ddirichlet(x = Movement[p, region_from,,y,seas,a,s], alpha = alpha, log = TRUE) # dirichlet prior
-    } # end i loop
-  }
+  if(Use_Movement_Prior == 1) Movement_nLL = Movement_nLL + get_movement_dirichlet_prior(Movement_prior, Movement)
 
   ### Recruitment R0 and Proportions (Prior) -----------------------------------------
-  if(use_rec_region_prop_prior == 1) { # recruitment regional apportionment
-    for(i in 1:nrow(rec_region_prop_prior)) {
-      p = rec_region_prop_prior$pop[i] # population
-      alpha = rec_region_prop_prior$alpha[[i]] # get concentration values
-      rec_prop_nLL = -ddirichlet(x = rec_region_prop[p,], alpha = alpha, log = TRUE) # dirichlet prior
-    }
-  }
+  # Regional/seasonal apportionment and stray rate priors all feed rec_prop_nLL
+  rec_prop_nLL = get_recruitment_proportion_priors(
+    use_rec_region_prop_prior = use_rec_region_prop_prior, rec_region_prop_prior = rec_region_prop_prior, rec_region_prop = rec_region_prop,
+    use_rec_seas_prop_prior = use_rec_seas_prop_prior, use_fixed_rec_seas_prop = use_fixed_rec_seas_prop, rec_seas_prop_prior = rec_seas_prop_prior,
+    rec_seas_prop = rec_seas_prop, rec_lag = rec_lag, spawn_seas = spawn_seas, n_seas = n_seas,
+    use_stray_rate_prior = use_stray_rate_prior, stray_rate_prior = stray_rate_prior, stray_rate_pars = stray_rate_pars
+  )
 
-  if(use_rec_seas_prop_prior == 1 && use_fixed_rec_seas_prop == 0) { # recruitment seasonal apportionment
-    for(i in 1:nrow(rec_seas_prop_prior)) { # recruitment seasonal apportionment
-      p = rec_seas_prop_prior$pop[i] # population
-      alpha = rec_seas_prop_prior$alpha[[i]] # get concentration values
-      if(rec_lag == 0 && spawn_seas > 1) {
-        # seasons before spawn_seas are structurally zero (age-0 recruits
-        # can't predate the spawning event that produced them); not evaluating then ...
-        rec_prop_nLL = rec_prop_nLL -ddirichlet(x = rec_seas_prop[p, spawn_seas:n_seas], alpha = alpha, log = TRUE) # dirichlet prior
-      } else {
-        rec_prop_nLL = rec_prop_nLL -ddirichlet(x = rec_seas_prop[p,], alpha = alpha, log = TRUE) # dirichlet prior
-      }
-    }
-  }
-
-  if(use_r0_prior == 1) { # recruitment R0
-    for(i in 1:nrow(r0_prior)) {
-      p = r0_prior$pop[i] # population
-      Rec_nLL = Rec_nLL - RTMB::dnorm(ln_global_R0[p], log(r0_prior$mu[i]), r0_prior$sd[i], TRUE) # normal prior
-    }
-  }
-
-  ### Stray Rates (Prior) -----------------------------------------------------
-  if(use_stray_rate_prior == 1) {
-    for(i in 1:nrow(stray_rate_prior)) {
-      # extract indices
-      p = stray_rate_prior$pop[i]
-      b = stray_rate_prior$block[i]
-      # extract beta pars
-      mu = stray_rate_prior$mu[i]
-      sd = stray_rate_prior$sd[i]
-      # derive beta pars
-      concentration = mu * (1 - mu) / sd^2 - 1
-      alpha = mu * concentration
-      beta  = (1 - mu) * concentration
-      # extract values
-      stray_rate_val = 1e-4 + (1 - 2*1e-4) * RTMB::plogis(stray_rate_pars[p,b])
-      rec_prop_nLL = rec_prop_nLL -RTMB::dbeta(x = stray_rate_val, shape1 = alpha, shape2 = beta, log = TRUE) # penalize
-    }
-  }
+  if(use_r0_prior == 1) R0_nLL = get_r0_prior(r0_prior, ln_global_R0) # recruitment R0 (global scalar prior, unweighted by Wt_Rec)
 
   ### Tag Reporting Rate (Prior) --------------------------------------------
-  if(use_conv_tag_fishrep_prior == 1) {
-    for(i in 1:nrow(conv_tag_fishrep_prior)) {
-
-      # Extract indices
-      r = conv_tag_fishrep_prior$region[i]
-      b = conv_tag_fishrep_prior$block[i]
-      f = conv_tag_fishrep_prior$fleet[i]
-
-      conv_tag_fishrep_val = RTMB::plogis(conv_tag_fish_reporting_pars[r,b,f]) # extract tag reporting rate value
-      if(conv_tag_fishrep_prior$type[i] == 0) {
-        TagRep_nLL = TagRep_nLL - dbeta_symmetric(p_val = conv_tag_fishrep_val, p_ub = 1, p_lb = 0, p_prsd = conv_tag_fishrep_prior$sd[i], log = TRUE) # penalize
-      } # end if symmetric beta
-
-      if(conv_tag_fishrep_prior$type[i] == 1) {
-        # extract pars
-        mu = conv_tag_fishrep_prior$mu[i]
-        sd = conv_tag_fishrep_prior$sd[i]
-        # derive beta pars
-        concentration = mu * (1 - mu) / sd^2 - 1
-        alpha = mu * concentration
-        beta  = (1 - mu) * concentration
-        TagRep_nLL = TagRep_nLL -RTMB::dbeta(x = conv_tag_fishrep_val, shape1 = alpha, shape2 = beta, log = TRUE) # penalize
-      } # end if for full beta
-
-    } # end i loop
-  } # if use tag reporting prior
+  if(use_conv_tag_fishrep_prior == 1) TagRep_nLL = TagRep_nLL + get_tagrep_prior(conv_tag_fishrep_prior, conv_tag_fish_reporting_pars)
 
   # Sum up nLL
   jnLL = sum(Wt_Catch * Catch_nLL) +             # Aggregated catch likelihoods
@@ -2621,6 +2115,7 @@ SPoRC_rtmb = function(pars, data) {
     (Wt_Rec * sum(Init_Rec_nLL)) +            # Initial age penalty
     sel_nLL +                                  # Selectivity penalty
     M_nLL +                                    # Natural mortality prior
+    R0_nLL +                                   # Global R0 prior
     h_nLL +                                    # Steepness prior
     Movement_nLL +                             # Movement prior
     TagRep_nLL +                               # Tag reporting rate prior
@@ -2725,6 +2220,7 @@ SPoRC_rtmb = function(pars, data) {
   RTMB::REPORT(Init_Rec_nLL)
   RTMB::REPORT(conv_fish_tag_nLL)
   RTMB::REPORT(h_nLL)
+  RTMB::REPORT(R0_nLL)
   RTMB::REPORT(fish_q_nLL)
   RTMB::REPORT(sel_nLL)
   RTMB::REPORT(srv_q_nLL)

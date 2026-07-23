@@ -546,3 +546,475 @@ Get_Fdev_PE_loglik <- function(PE_model, ln_sigmaF, Fdev_rho, ln_F_devs, UseCatc
 
   return(Fmort_nLL)
 }
+
+#' Discard mortality rate deviation penalty
+#'
+#' IID penalty on discard mortality rate deviations for region-year-season-fleet
+#' cells with active discard data, called once from the "Discard Mortality Rate
+#' (Penalty)" section of \code{SPoRC_rtmb.R}.
+#'
+#' @param logit_dmr_devs Array \code{[region, year, season, fish_fleet]} of
+#'   discard mortality rate deviations on the logit scale.
+#' @param ln_sigma_dmr Array \code{[region, season, fish_fleet]} of log-sigma
+#'   for the deviation penalty.
+#' @param UseDiscard Array \code{[region, year, season, fish_fleet]} flagging
+#'   aggregated discard observations in use.
+#' @param UseDiscard_pop Array \code{[pop, region, year, season, fish_fleet]}
+#'   flagging population-specific discard observations in use.
+#' @param n_fish_fleets,n_yrs,n_regions,n_seas Dimension sizes.
+#'
+#' @return Array \code{[region, year, season, fish_fleet]} of negative
+#'   log-likelihood penalties (0 where discard data are not in use).
+#'
+#' @keywords internal
+#' @import RTMB
+get_dmr_penalty <- function(logit_dmr_devs, ln_sigma_dmr, UseDiscard, UseDiscard_pop,
+                             n_fish_fleets, n_yrs, n_regions, n_seas) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  dmr_nLL <- array(0, dim = dim(logit_dmr_devs))
+
+  for(f in 1:n_fish_fleets) {
+    for(y in 1:n_yrs) {
+      for(r in 1:n_regions) {
+        for(seas in 1:n_seas) {
+
+          if(UseDiscard[r,y,seas,f] == 1 || any(UseDiscard_pop[,r,y,seas,f] == 1)) {
+            dmr_nLL[r,y,seas,f] <- -RTMB::dnorm(logit_dmr_devs[r,y,seas,f], 0, exp(ln_sigma_dmr[r,seas,f]), TRUE)
+          } # end if have catch
+
+        } # end seas loop
+      } # end r loop
+    } # y loop
+  } # f loop
+
+  return(dmr_nLL)
+}
+
+#' Normal prior on fixed selectivity parameters
+#'
+#' Shared across the total fishery, retained fishery, and survey fixed
+#' selectivity parameter priors in \code{SPoRC_rtmb.R} (the three "Selectivity
+#' (Prior)" blocks) since all three prior tables and their corresponding
+#' parameter arrays share the same \code{[region, par, block, sex, fleet]}
+#' layout.
+#'
+#' @param selex_prior Data frame with columns \code{region}, \code{par},
+#'   \code{block}, \code{sex}, \code{fleet}, \code{mu} (prior mean, natural
+#'   scale), \code{sd} (prior SD, log scale) — one row per penalized parameter.
+#' @param fixed_sel_pars Array \code{[region, par, block, sex, fleet]} of fixed
+#'   selectivity parameters on the log scale.
+#'
+#' @return Numeric scalar negative log-likelihood contribution, summed across
+#'   all rows of \code{selex_prior}.
+#'
+#' @keywords internal
+#' @import RTMB
+get_selex_fixed_prior <- function(selex_prior, fixed_sel_pars) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  nLL <- 0
+  for(i in 1:nrow(selex_prior)) {
+    r <- selex_prior$region[i]
+    p <- selex_prior$par[i]
+    b <- selex_prior$block[i]
+    s <- selex_prior$sex[i]
+    f <- selex_prior$fleet[i]
+    nLL <- nLL - RTMB::dnorm(fixed_sel_pars[r,p,b,s,f], log(selex_prior$mu[i]), selex_prior$sd[i], TRUE)
+  } # end i loop
+
+  return(nLL)
+}
+
+#' Recruitment and initial age deviation penalties
+#'
+#' Population/region-specific IID penalties on initial age deviations
+#' (\code{ln_InitDevs}) and on early/late recruitment deviations
+#' (\code{ln_RecDevs}), including the Methot & Taylor bias-ramp adjustment.
+#' Called once from the "Recruitment (Penalty)" section of \code{SPoRC_rtmb.R}.
+#'
+#' @param n_pop,n_regions,n_ages,n_est_rec_devs Dimension sizes.
+#' @param rec_dd Integer recruitment density-dependence switch (used only to
+#'   pick \code{sigma_idx} when \code{n_pop == 1}).
+#' @param natal_region Integer vector \code{[pop]} of natal region indices.
+#' @param rec_region_prop_spec Integer switch; when \code{1}, populations/regions
+#'   with a fixed zero recruitment proportion are skipped.
+#' @param rec_region_prop Array \code{[pop, region]} of recruitment regional
+#'   apportionment.
+#' @param equil_init_age_strc Integer switch selecting which initial age
+#'   deviations are penalized (\code{1}: all but plus group, \code{2}: all,
+#'   \code{3}: shared subset).
+#' @param ln_InitDevs Array \code{[pop, region, age]} of initial age deviations.
+#' @param init_age_devs_shared Integer vector of shared initial age deviation
+#'   indices (used when \code{equil_init_age_strc == 3}).
+#' @param ln_sigmaR Array \code{[early/late, pop, region]} of log-sigma for
+#'   recruitment deviations.
+#' @param bias_ramp Numeric vector \code{[year]} of bias-ramp adjustment factors.
+#' @param sigmaR_switch Integer year index at which recruitment deviations
+#'   switch from the early to the late sigma regime.
+#' @param ln_RecDevs Array \code{[pop, region, year]} of recruitment deviations.
+#' @param sigmaR2_early,sigmaR2_late Arrays \code{[pop, region]} of squared
+#'   sigma used for the bias-ramp mean offset.
+#' @param do_rec_bias_ramp Integer switch enabling the bias-ramp log-sigma
+#'   adjustment.
+#'
+#' @return List with elements \code{Init_Rec_nLL} (array \code{[pop, region,
+#'   age]}) and \code{Rec_nLL} (array \code{[pop, region, year]}), each holding
+#'   negative log-likelihood penalties (0 where not penalized).
+#'
+#' @keywords internal
+#' @import RTMB
+get_recruitment_penalty <- function(n_pop, n_regions, n_ages, n_est_rec_devs, rec_dd, natal_region,
+                                     rec_region_prop_spec, rec_region_prop, equil_init_age_strc,
+                                     ln_InitDevs, init_age_devs_shared, ln_sigmaR, bias_ramp,
+                                     sigmaR_switch, ln_RecDevs, sigmaR2_early, sigmaR2_late,
+                                     do_rec_bias_ramp) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  Init_Rec_nLL <- array(0, dim = dim(ln_InitDevs))
+  Rec_nLL <- array(0, dim = dim(ln_RecDevs))
+
+  for(p in 1:n_pop) {
+    for(r in 1:n_regions) {
+
+      # get sigma index
+      sigma_idx <- ifelse(n_pop == 1 && rec_dd == 0, r, natal_region[p])
+
+      # Skip penalty if no dispersal and p = r has no recruits
+      if(rec_region_prop_spec == 1 && as.numeric(rec_region_prop[p,r]) == 0) next
+
+      # Initial age deviations (if equil_init_age_strc == 0; don't penalize at all)
+      if(equil_init_age_strc == 1) Init_Rec_nLL[p,r,1:(n_ages - 2)] <- -RTMB::dnorm(ln_InitDevs[p,r,1:(n_ages - 2)], -exp(ln_sigmaR[1,p,sigma_idx])^2/2 * bias_ramp[1], exp(ln_sigmaR[1,p,sigma_idx]), TRUE) # only penalize non plus group
+      if(equil_init_age_strc == 2) Init_Rec_nLL[p,r,] <- -RTMB::dnorm(ln_InitDevs[p,r,], -exp(ln_sigmaR[1,p,sigma_idx])^2/2 * bias_ramp[1], exp(ln_sigmaR[1,p,sigma_idx]), TRUE) # penalize all
+      if(equil_init_age_strc == 3) Init_Rec_nLL[p,r,unique(init_age_devs_shared)] <- -RTMB::dnorm(ln_InitDevs[p,r,unique(init_age_devs_shared)], -exp(ln_sigmaR[1,p,sigma_idx])^2/2 * bias_ramp[1], exp(ln_sigmaR[1,p,sigma_idx]), TRUE) # penalize all
+
+      # Early recruitment deviations
+      if(sigmaR_switch > 1) {
+        Rec_nLL[p,r,1:(sigmaR_switch-1)] <- -RTMB::dnorm(ln_RecDevs[p,r,1:(sigmaR_switch-1)], -sigmaR2_early[p,sigma_idx]/2 * bias_ramp[1:(sigmaR_switch-1)], exp(ln_sigmaR[1,p,sigma_idx]), TRUE)
+        if(do_rec_bias_ramp == 1 && any(bias_ramp != 0)) Rec_nLL[p,r,1:(sigmaR_switch-1)] <- Rec_nLL[p,r,1:(sigmaR_switch-1)] - (1 - 0.5 * bias_ramp[1:(sigmaR_switch-1)]) * ln_sigmaR[1,p,sigma_idx] # adjust w/ bias correction
+      }
+
+      # Late recruitment deviations
+      Rec_nLL[p,r,sigmaR_switch:n_est_rec_devs] <- -RTMB::dnorm(ln_RecDevs[p,r,sigmaR_switch:n_est_rec_devs], -sigmaR2_late[p,sigma_idx]/2 * bias_ramp[sigmaR_switch:n_est_rec_devs], exp(ln_sigmaR[2,p,sigma_idx]), TRUE)
+      if(do_rec_bias_ramp == 1 && any(bias_ramp != 0)) Rec_nLL[p,r,sigmaR_switch:n_est_rec_devs] <- Rec_nLL[p,r,sigmaR_switch:n_est_rec_devs] - (1 - 0.5 * bias_ramp[sigmaR_switch:n_est_rec_devs]) * ln_sigmaR[2,p,sigma_idx] # adjust w/ bias correction
+
+    } # end r loop
+  } # end p loop
+
+  return(list(Init_Rec_nLL = Init_Rec_nLL, Rec_nLL = Rec_nLL))
+}
+
+#' Normal prior on log catchability
+#'
+#' Shared across the fishery and survey catchability prior blocks in
+#' \code{SPoRC_rtmb.R}, since both prior tables and their corresponding
+#' catchability arrays share the same \code{[region, block, fleet]} layout.
+#'
+#' @param q_prior Data frame with columns \code{region}, \code{block},
+#'   \code{fleet}, \code{mu} (prior mean, natural scale), \code{sd} (prior SD,
+#'   log scale) — one row per penalized parameter.
+#' @param ln_q Array \code{[region, block, fleet]} of log catchability.
+#'
+#' @return Numeric scalar negative log-likelihood contribution, summed across
+#'   all rows of \code{q_prior}.
+#'
+#' @keywords internal
+#' @import RTMB
+get_q_prior <- function(q_prior, ln_q) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  nLL <- 0
+  for(i in 1:nrow(q_prior)) {
+    r <- q_prior$region[i]
+    b <- q_prior$block[i]
+    f <- q_prior$fleet[i]
+    nLL <- nLL - sum(RTMB::dnorm(ln_q[r,b,f], log(q_prior$mu[i]), q_prior$sd[i], TRUE))
+  } # end i loop
+
+  return(nLL)
+}
+
+#' Normal prior on natural mortality
+#'
+#' Called once from the "Natural Mortality (Prior)" section of
+#' \code{SPoRC_rtmb.R}.
+#'
+#' @param M_prior Data frame with columns \code{popblk}, \code{regionblk},
+#'   \code{yearblk}, \code{ageblk}, \code{sexblk} (block indices into
+#'   \code{M_blocks}), \code{mu} (prior mean, natural scale), \code{sd} (prior
+#'   SD, log scale) — one row per penalized parameter.
+#' @param ln_M Vector of estimated log natural mortality values, indexed by
+#'   \code{M_blocks}.
+#' @param M_blocks Array \code{[pop, region, year, age, sex]} mapping each
+#'   population/region/year/age/sex cell to an index into \code{ln_M}.
+#'
+#' @return Numeric scalar negative log-likelihood contribution, summed across
+#'   all rows of \code{M_prior}.
+#'
+#' @keywords internal
+#' @import RTMB
+get_natmort_prior <- function(M_prior, ln_M, M_blocks) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  nLL <- 0
+  for(i in 1:nrow(M_prior)) {
+    p <- M_prior$popblk[i]
+    r <- M_prior$regionblk[i]
+    b <- M_prior$yearblk[i]
+    a <- M_prior$ageblk[i]
+    s <- M_prior$sexblk[i]
+    idx <- M_blocks[p,r,b,a,s]
+    nLL <- nLL + -RTMB::dnorm(ln_M[idx], log(M_prior$mu[i]), M_prior$sd[i], TRUE) # TMB likelihood
+  } # end i loop
+
+  return(nLL)
+}
+
+#' Scaled beta prior on steepness
+#'
+#' Called once from the "Steepness (Prior)" section of \code{SPoRC_rtmb.R}.
+#'
+#' @param h_prior Data frame with columns \code{pop}, \code{region}, \code{mu}
+#'   (prior mean steepness, natural scale), \code{sd} (prior SD, natural scale)
+#'   — one row per penalized parameter.
+#' @param h_trans Array \code{[pop, region]} of steepness on its transformed
+#'   (0.2, 1) scale.
+#'
+#' @return Numeric scalar negative log-likelihood contribution, summed across
+#'   all rows of \code{h_prior}.
+#'
+#' @keywords internal
+#' @import RTMB
+get_steepness_prior <- function(h_prior, h_trans) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  nLL <- 0
+  for(i in 1:nrow(h_prior)) {
+    p <- h_prior$pop[i]
+    r <- h_prior$region[i]
+    beta_pars <- get_beta_scaled_pars(low = 0.2, high = 1, mu = h_prior$mu[i], sigma = h_prior$sd[i]) # get alpha and beta parameters
+    h_trans_i <- (h_trans[p,r] - 0.2) / (1 - 0.2) # transform random variable
+    nLL <- nLL - RTMB::dbeta(x = h_trans_i, shape1 = beta_pars[1], shape2 = beta_pars[2], log = TRUE) # penalize
+  } # end i loop
+
+  return(nLL)
+}
+
+#' Dirichlet prior on movement rates
+#'
+#' Called once from the "Movement Rates (Prior)" section of \code{SPoRC_rtmb.R}.
+#'
+#' @param Movement_prior Data frame with columns \code{pop}, \code{region_from},
+#'   \code{year}, \code{seas}, \code{age}, \code{sex}, and \code{alpha} (list
+#'   column of Dirichlet concentration vectors) — one row per penalized
+#'   movement-from vector.
+#' @param Movement Array \code{[pop, region_from, region_to, year, season, age,
+#'   sex]} of movement rates.
+#'
+#' @return Numeric scalar negative log-likelihood contribution, summed across
+#'   all rows of \code{Movement_prior}.
+#'
+#' @keywords internal
+#' @import RTMB
+get_movement_dirichlet_prior <- function(Movement_prior, Movement) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  nLL <- 0
+  for(i in 1:nrow(Movement_prior)) {
+    p <- Movement_prior$pop[i] # population
+    region_from <- Movement_prior$region_from[i] # region from
+    y <- Movement_prior$year[i] # year
+    seas <- Movement_prior$seas[i] # seas
+    a <- Movement_prior$age[i] # age
+    s <- Movement_prior$sex[i] # sex
+    alpha <- Movement_prior$alpha[[i]] # get prior values
+    nLL <- nLL - ddirichlet(x = Movement[p, region_from,,y,seas,a,s], alpha = alpha, log = TRUE) # dirichlet prior
+  } # end i loop
+
+  return(nLL)
+}
+
+#' Normal prior on global R0
+#'
+#' Called once from the "Recruitment R0 (Prior)" section of \code{SPoRC_rtmb.R}.
+#' Returns a scalar contribution added directly (unweighted by \code{Wt_Rec})
+#' into the joint negative log-likelihood, alongside the other scalar priors
+#' (\code{M_nLL}, \code{h_nLL}, etc.) — it is not part of the \code{Rec_nLL}
+#' recruitment-deviation array, since it penalizes a single global parameter
+#' rather than a per-year deviation.
+#'
+#' @param r0_prior Data frame with columns \code{pop}, \code{mu} (prior mean R0,
+#'   natural scale), \code{sd} (prior SD, log scale) — one row per penalized
+#'   population.
+#' @param ln_global_R0 Vector \code{[pop]} of log mean recruitment (R0).
+#'
+#' @return Numeric scalar negative log-likelihood contribution, summed across
+#'   all rows of \code{r0_prior}.
+#'
+#' @keywords internal
+#' @import RTMB
+get_r0_prior <- function(r0_prior, ln_global_R0) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  nLL <- 0
+  for(i in 1:nrow(r0_prior)) {
+    p <- r0_prior$pop[i] # population
+    nLL <- nLL - RTMB::dnorm(ln_global_R0[p], log(r0_prior$mu[i]), r0_prior$sd[i], TRUE) # normal prior
+  } # end i loop
+
+  return(nLL)
+}
+
+#' Dirichlet/beta priors on recruitment apportionment
+#'
+#' Combines the recruitment regional apportionment prior, seasonal
+#' apportionment prior, and stray rate prior, since all three feed the single
+#' \code{rec_prop_nLL} accumulator in \code{SPoRC_rtmb.R}. Called once from the
+#' "Recruitment Proportions (Prior)" / "Stray Rates (Prior)" sections.
+#'
+#' @param use_rec_region_prop_prior Integer (0/1) switch for the regional
+#'   apportionment prior.
+#' @param rec_region_prop_prior Data frame with columns \code{pop} and
+#'   \code{alpha} (list column of Dirichlet concentration vectors).
+#' @param rec_region_prop Array \code{[pop, region]} of recruitment regional
+#'   apportionment.
+#' @param use_rec_seas_prop_prior,use_fixed_rec_seas_prop Integer (0/1)
+#'   switches; the seasonal apportionment prior is skipped when seasonal
+#'   apportionment is fixed rather than estimated.
+#' @param rec_seas_prop_prior Data frame with columns \code{pop} and
+#'   \code{alpha} (list column of Dirichlet concentration vectors).
+#' @param rec_seas_prop Array \code{[pop, season]} of recruitment seasonal
+#'   apportionment.
+#' @param rec_lag,spawn_seas,n_seas Integers controlling which seasons are
+#'   structurally zero (age-0 recruits before the spawning event) and so
+#'   excluded from the seasonal Dirichlet prior.
+#' @param use_stray_rate_prior Integer (0/1) switch for the stray rate prior.
+#' @param stray_rate_prior Data frame with columns \code{pop}, \code{block},
+#'   \code{mu} (prior mean, natural scale), \code{sd} (prior SD, natural scale).
+#' @param stray_rate_pars Array \code{[pop, block]} of stray rate parameters on
+#'   the logit scale.
+#'
+#' @return Numeric scalar negative log-likelihood contribution, summed across
+#'   all three prior sources.
+#'
+#' @keywords internal
+#' @import RTMB
+get_recruitment_proportion_priors <- function(use_rec_region_prop_prior, rec_region_prop_prior, rec_region_prop,
+                                               use_rec_seas_prop_prior, use_fixed_rec_seas_prop, rec_seas_prop_prior,
+                                               rec_seas_prop, rec_lag, spawn_seas, n_seas,
+                                               use_stray_rate_prior, stray_rate_prior, stray_rate_pars) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  nLL <- 0
+
+  if(use_rec_region_prop_prior == 1) { # recruitment regional apportionment
+    for(i in 1:nrow(rec_region_prop_prior)) {
+      p <- rec_region_prop_prior$pop[i] # population
+      alpha <- rec_region_prop_prior$alpha[[i]] # get concentration values
+      nLL <- nLL - ddirichlet(x = rec_region_prop[p,], alpha = alpha, log = TRUE) # dirichlet prior
+    }
+  }
+
+  if(use_rec_seas_prop_prior == 1 && use_fixed_rec_seas_prop == 0) { # recruitment seasonal apportionment
+    for(i in 1:nrow(rec_seas_prop_prior)) { # recruitment seasonal apportionment
+      p <- rec_seas_prop_prior$pop[i] # population
+      alpha <- rec_seas_prop_prior$alpha[[i]] # get concentration values
+      if(rec_lag == 0 && spawn_seas > 1) {
+        # seasons before spawn_seas are structurally zero (age-0 recruits
+        # can't predate the spawning event that produced them); not evaluating then ...
+        nLL <- nLL - ddirichlet(x = rec_seas_prop[p, spawn_seas:n_seas], alpha = alpha, log = TRUE) # dirichlet prior
+      } else {
+        nLL <- nLL - ddirichlet(x = rec_seas_prop[p,], alpha = alpha, log = TRUE) # dirichlet prior
+      }
+    }
+  }
+
+  if(use_stray_rate_prior == 1) {
+    for(i in 1:nrow(stray_rate_prior)) {
+      # extract indices
+      p <- stray_rate_prior$pop[i]
+      b <- stray_rate_prior$block[i]
+      # extract beta pars
+      mu <- stray_rate_prior$mu[i]
+      sd <- stray_rate_prior$sd[i]
+      # derive beta pars
+      concentration <- mu * (1 - mu) / sd^2 - 1
+      alpha <- mu * concentration
+      beta <- (1 - mu) * concentration
+      # extract values
+      stray_rate_val <- 1e-4 + (1 - 2*1e-4) * RTMB::plogis(stray_rate_pars[p,b])
+      nLL <- nLL - RTMB::dbeta(x = stray_rate_val, shape1 = alpha, shape2 = beta, log = TRUE) # penalize
+    }
+  }
+
+  return(nLL)
+}
+
+#' Beta prior on tag reporting rate
+#'
+#' Called once from the "Tag Reporting Rate (Prior)" section of
+#' \code{SPoRC_rtmb.R}. Supports both a symmetric-beta parameterization
+#' (\code{type == 0}) and a mean/sd beta parameterization (\code{type == 1}).
+#'
+#' @param conv_tag_fishrep_prior Data frame with columns \code{region},
+#'   \code{block}, \code{fleet}, \code{type} (0 = symmetric beta, 1 = mean/sd
+#'   beta), \code{mu}, \code{sd} — one row per penalized parameter.
+#' @param conv_tag_fish_reporting_pars Array \code{[region, block, fish_fleet]}
+#'   of tag reporting rate parameters on the logit scale.
+#'
+#' @return Numeric scalar negative log-likelihood contribution, summed across
+#'   all rows of \code{conv_tag_fishrep_prior}.
+#'
+#' @keywords internal
+#' @import RTMB
+get_tagrep_prior <- function(conv_tag_fishrep_prior, conv_tag_fish_reporting_pars) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  nLL <- 0
+  for(i in 1:nrow(conv_tag_fishrep_prior)) {
+
+    # Extract indices
+    r <- conv_tag_fishrep_prior$region[i]
+    b <- conv_tag_fishrep_prior$block[i]
+    f <- conv_tag_fishrep_prior$fleet[i]
+
+    conv_tag_fishrep_val <- RTMB::plogis(conv_tag_fish_reporting_pars[r,b,f]) # extract tag reporting rate value
+    if(conv_tag_fishrep_prior$type[i] == 0) {
+      nLL <- nLL - dbeta_symmetric(p_val = conv_tag_fishrep_val, p_ub = 1, p_lb = 0, p_prsd = conv_tag_fishrep_prior$sd[i], log = TRUE) # penalize
+    } # end if symmetric beta
+
+    if(conv_tag_fishrep_prior$type[i] == 1) {
+      # extract pars
+      mu <- conv_tag_fishrep_prior$mu[i]
+      sd <- conv_tag_fishrep_prior$sd[i]
+      # derive beta pars
+      concentration <- mu * (1 - mu) / sd^2 - 1
+      alpha <- mu * concentration
+      beta <- (1 - mu) * concentration
+      nLL <- nLL - RTMB::dbeta(x = conv_tag_fishrep_val, shape1 = alpha, shape2 = beta, log = TRUE) # penalize
+    } # end if for full beta
+
+  } # end i loop
+
+  return(nLL)
+}

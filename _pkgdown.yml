@@ -7,12 +7,8 @@ template:
 
 navbar:
   structure:
-    left:  [reference, articles, architecture, news]
+    left:  [reference, articles, news]
     right: [search, github]
-  components:
-    architecture:
-      text: Architecture
-      href: articles/architecture.html
 
 articles:
   - title: "Getting Started"
@@ -52,9 +48,10 @@ articles:
     - s_discard_retention
     - u_osa_residuals
 
-  - title: "internal"
+  - title: "For Developers"
     contents:
       - architecture
+      - contributing
 
 reference:
   - title: "Model Setup"

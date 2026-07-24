@@ -1177,7 +1177,7 @@ record of spawning stock biomass, fishing mortality, and catch,
 
 # store outputs
 all_scenarios_f <- array(0, dim = c(n_regions, n_proj_yrs, n_sims, length(proj_inputs)))
-all_scenarios_ssb <- array(0, dim = c(n_regions, n_proj_yrs, n_sims, length(proj_inputs)))
+all_scenarios_ssb <- array(0, dim = c(n_pop, n_regions, n_proj_yrs, n_sims, length(proj_inputs)))
 all_scenarios_catch <- array(0, dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_fish_fleets, n_sims, length(proj_inputs)))
 
 set.seed(123)
@@ -1211,7 +1211,7 @@ for (i in seq_along(proj_inputs)) {
                                            t_spawn = t_spawn
     )
 
-    all_scenarios_ssb[,,sim,i] <- out$proj_SSB
+    all_scenarios_ssb[,,,sim,i] <- out$proj_SSB
     all_scenarios_catch[,,,,,sim,i] <- out$proj_Catch
     all_scenarios_f[,,sim,i] <- out$proj_F[,-(n_proj_yrs+1)] # remove last year, since it's not used
   } # end sim loop

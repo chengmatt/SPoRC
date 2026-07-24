@@ -6,10 +6,10 @@ selectivity functional forms, catchability blocks and optional
 environmental covariate effects, process error and deviation mapping,
 and selectivity/catchability priors. Delegates parameter mapping to four
 internal helpers
-([`do_srv_fixed_sel_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_srv_fixed_sel_pars_mapping.md),
-[`do_srv_q_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_srv_q_mapping.md),
-[`do_srvsel_pe_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_srvsel_pe_pars_mapping.md),
-[`do_srvsel_devs_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_srvsel_devs_mapping.md)).
+([`do_fixed_sel_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_fixed_sel_pars_mapping.md),
+[`do_q_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_q_mapping.md),
+[`do_sel_pe_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_sel_pe_pars_mapping.md),
+[`do_sel_devs_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_sel_devs_mapping.md)).
 Must be called after
 [`Setup_Mod_SrvIdx_and_Comps`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_SrvIdx_and_Comps.md)
 and before model compilation.
@@ -198,35 +198,35 @@ Setup_Mod_Srvsel_and_Q(
 
   Character vector `[n_srv_fleets]` or `NULL`. Sharing structure for
   process error hyperparameters. See
-  [`do_srvsel_pe_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_srvsel_pe_pars_mapping.md)
+  [`do_sel_pe_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_sel_pe_pars_mapping.md)
   for full option descriptions. Default `NULL`.
 
 - srv_fixed_sel_pars_spec:
 
   Character vector `[n_srv_fleets]`. Sharing structure for fixed-effect
   selectivity parameters. See
-  [`do_srv_fixed_sel_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_srv_fixed_sel_pars_mapping.md)
+  [`do_fixed_sel_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_fixed_sel_pars_mapping.md)
   for full option descriptions. No default; must be provided.
 
 - srv_q_spec:
 
   Character vector `[n_srv_fleets]` or `NULL`. Sharing structure for
   catchability. See
-  [`do_srv_q_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_srv_q_mapping.md)
+  [`do_q_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_q_mapping.md)
   for full option descriptions. Default `NULL`.
 
 - srv_sel_devs_spec:
 
   Character vector `[n_srv_fleets]` or `NULL`. Sharing structure for
   selectivity deviation time series. See
-  [`do_srvsel_devs_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_srvsel_devs_mapping.md)
+  [`do_sel_devs_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_sel_devs_mapping.md)
   for full option descriptions. Default `NULL`.
 
 - corr_opt_semipar:
 
   Character vector `[n_srv_fleets]` or `NULL`. Specifies correlation
   components to suppress for 3D GMRF or 2D AR1 forms. See
-  [`do_srvsel_pe_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_srvsel_pe_pars_mapping.md)
+  [`do_sel_pe_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_sel_pe_pars_mapping.md)
   for valid values. Default `NULL`.
 
 - srv_q_formula:

@@ -19,6 +19,8 @@ fit_model(
   silent = FALSE,
   do_optim = TRUE,
   nlminb_control = list(iter.max = 1e+05, eval.max = 1e+05, rel.tol = 1e-15),
+  lower = NULL,
+  upper = NULL,
   model = SPoRC_rtmb,
   ...
 )
@@ -67,6 +69,21 @@ fit_model(
   [`stats::nlminb`](https://rdrr.io/r/stats/nlminb.html). Default
   `list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15)`.
 
+- lower:
+
+  Numeric vector of lower bounds for `obj$par` (the estimated parameter
+  vector, i.e. after mapping and random-effects marginalisation), passed
+  to [`stats::nlminb`](https://rdrr.io/r/stats/nlminb.html) and used to
+  clamp each Newton refinement step. `NULL` (default) is unbounded
+  (`-Inf` for every element).
+
+- upper:
+
+  Numeric vector of upper bounds for `obj$par`, passed to
+  [`stats::nlminb`](https://rdrr.io/r/stats/nlminb.html) and used to
+  clamp each Newton refinement step. `NULL` (default) is unbounded
+  (`Inf` for every element).
+
 - model:
 
   Function with signature `function(pars, data)` passed to
@@ -84,9 +101,9 @@ fit_model(
 ## Value
 
 The RTMB `ADFun` object with additional fields: `$optim` (the `nlminb`
-output list), `$rep` (the model report evaluated at
-`obj$env$last.par.best`), and `$data`, `$parameters`, `$mapping`,
-`$random`.
+output list, with `$lower`/`$upper` recording the bounds used), `$rep`
+(the model report evaluated at `obj$env$last.par.best`), and `$data`,
+`$parameters`, `$mapping`, `$random`.
 
 ## See also
 

@@ -157,12 +157,12 @@ that takes the relevant state as named arguments and returns it,
 following the same pattern as the pre-existing
 <code><a href="../reference/Get_Movement.html">Get_Movement()</a></code> / <code><a href="../reference/Get_Selex.html">Get_Selex()</a></code> /
 <code><a href="../reference/Get_Det_Recruitment.html">Get_Det_Recruitment()</a></code> / <code><a href="../reference/Get_Init_NAA.html">Get_Init_NAA()</a></code> calls:
-population projection (<code>get_population_projection()</code> in
+population projection (<code><a href="../reference/get_population_projection.html">get_population_projection()</a></code> in
 <code>Get_Population_Dynamics.R</code>), the fishery and survey
-observation models (<code>get_fishery_observation_model()</code> /
-<code>get_survey_observation_model()</code> in
+observation models (<code><a href="../reference/get_fishery_observation_model.html">get_fishery_observation_model()</a></code> /
+<code><a href="../reference/get_survey_observation_model.html">get_survey_observation_model()</a></code> in
 <code>Get_Observation_Models.R</code>), the tagging observation model
-(<code>get_tagging_observation_model()</code> in
+(<code><a href="../reference/get_tagging_observation_model.html">get_tagging_observation_model()</a></code> in
 <code>Get_Tagging_Observation_Model.R</code>), composition likelihoods
 (<code>Get_Comp_Likelihoods.R</code>), tag likelihoods
 (<code><a href="../reference/get_conv_tag_likelihoods.html">get_conv_tag_likelihoods()</a></code> in
@@ -272,7 +272,18 @@ navigation aid for a ~2,300-line function.</p>
   Get_3d_precision.R          GMRF/precision-matrix helpers for correlated deviations
   Distributions.R             custom density functions (Dirichlet, Dirichlet-multinomial,
                                negative binomial, OSA residual machinery) used by RTMB and sims
-  Build_PE_Map.R              shared process-error map-building across parameter blocks
+  build_shared_map.R           generic parameter-map builders shared across Setup_* files:
+                               build_pe_map()/build_shared_spec_map() (dimension-sharing spec
+                               strings); do_comp_theta_mapping()/do_comp_corr_pars_mapping()/
+                               do_q_mapping() (composition overdispersion/correlation, and
+                               catchability); do_fixed_sel_pars_mapping()/do_sel_pe_pars_mapping()/
+                               do_sel_devs_mapping() (fixed-effect, process-error, and deviation
+                               selectivity parameters, parameterized by prefix = "fish"/"ret"/"srv"
+                               plus a separate fleet_field/use_field pair since "ret" reuses
+                               fishery-side infrastructure rather than having its own). A
+                               do_*_mapping helper lives here only if more than one Setup_* file
+                               calls it; single-caller mapping helpers (e.g. do_sigmaC_mapping)
+                               stay in the Setup_* file that uses them.
   Do_Population_Projection.R  forward projection off a fitted model
   Simulate_Population.R       operating model: simulate data forward given true dynamics
   Simulate_RV.R                random-variate generators used by the simulator

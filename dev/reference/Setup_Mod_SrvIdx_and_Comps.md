@@ -4,15 +4,15 @@ Ingests observed survey index, age composition, and length composition
 data (both pooled and population-specific) into `input_list$data`,
 initialises overdispersion and correlation starting values in
 `input_list$par`, and constructs parameter maps via
-[`do_SrvAge_theta_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_SrvAge_theta_mapping.md),
-[`do_SrvLen_theta_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_SrvLen_theta_mapping.md),
-[`do_SrvAge_corr_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_SrvAge_corr_pars_mapping.md),
+[`do_comp_theta_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_comp_theta_mapping.md)
 and
-[`do_SrvLen_corr_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_SrvLen_corr_pars_mapping.md).
-When `ISS_SrvAgeComps`, `ISS_SrvLenComps`, `ISS_SrvAgeComps_pop`, or
-`ISS_SrvLenComps_pop` is `NULL`, input sample sizes are derived
-automatically by summing observed composition counts across the
-appropriate dimensions each year. Must be called after
+[`do_comp_corr_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_comp_corr_pars_mapping.md)
+(called with `comp_prefix = "SrvAge"`/`"SrvLen"` and
+`fleet_field = "n_srv_fleets"`). When `ISS_SrvAgeComps`,
+`ISS_SrvLenComps`, `ISS_SrvAgeComps_pop`, or `ISS_SrvLenComps_pop` is
+`NULL`, input sample sizes are derived automatically by summing observed
+composition counts across the appropriate dimensions each year. Must be
+called after
 [`Setup_Mod_Dim`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Dim.md)
 and before model compilation.
 

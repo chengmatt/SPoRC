@@ -4,17 +4,17 @@ estimation model: continuous and blocked time-varying selectivity,
 selectivity functional forms, catchability blocks and optional
 environmental covariate effects, process error and deviation mapping, and
 selectivity/catchability priors. Delegates parameter mapping to four
-internal helpers (do_srv_fixed_sel_pars_mapping,
-do_srv_q_mapping, do_srvsel_pe_pars_mapping,
-do_srvsel_devs_mapping). Must be called after
+internal helpers (do_fixed_sel_pars_mapping,
+do_q_mapping, do_sel_pe_pars_mapping,
+do_sel_devs_mapping). Must be called after
 Setup_Mod_SrvIdx_and_Comps and before model compilation."><meta property="og:description" content="Configures all survey selectivity and catchability components of the
 estimation model: continuous and blocked time-varying selectivity,
 selectivity functional forms, catchability blocks and optional
 environmental covariate effects, process error and deviation mapping, and
 selectivity/catchability priors. Delegates parameter mapping to four
-internal helpers (do_srv_fixed_sel_pars_mapping,
-do_srv_q_mapping, do_srvsel_pe_pars_mapping,
-do_srvsel_devs_mapping). Must be called after
+internal helpers (do_fixed_sel_pars_mapping,
+do_q_mapping, do_sel_pe_pars_mapping,
+do_sel_devs_mapping). Must be called after
 Setup_Mod_SrvIdx_and_Comps and before model compilation."><meta name="robots" content="noindex"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
@@ -55,9 +55,9 @@ estimation model: continuous and blocked time-varying selectivity,
 selectivity functional forms, catchability blocks and optional
 environmental covariate effects, process error and deviation mapping, and
 selectivity/catchability priors. Delegates parameter mapping to four
-internal helpers (<code><a href="do_srv_fixed_sel_pars_mapping.html">do_srv_fixed_sel_pars_mapping</a></code>,
-<code><a href="do_srv_q_mapping.html">do_srv_q_mapping</a></code>, <code><a href="do_srvsel_pe_pars_mapping.html">do_srvsel_pe_pars_mapping</a></code>,
-<code><a href="do_srvsel_devs_mapping.html">do_srvsel_devs_mapping</a></code>). Must be called after
+internal helpers (<code><a href="do_fixed_sel_pars_mapping.html">do_fixed_sel_pars_mapping</a></code>,
+<code><a href="do_q_mapping.html">do_q_mapping</a></code>, <code><a href="do_sel_pe_pars_mapping.html">do_sel_pe_pars_mapping</a></code>,
+<code><a href="do_sel_devs_mapping.html">do_sel_devs_mapping</a></code>). Must be called after
 <code><a href="Setup_Mod_SrvIdx_and_Comps.html">Setup_Mod_SrvIdx_and_Comps</a></code> and before model compilation.</p>
     </div>
 
@@ -222,34 +222,34 @@ an array <code>[n_regions × n_years × n_srv_fleets]</code>. Default:
 <dt id="arg-srvsel-pe-pars-spec">srvsel_pe_pars_spec<a class="anchor" aria-label="anchor" href="#arg-srvsel-pe-pars-spec"></a></dt>
 <dd><p>Character vector <code>[n_srv_fleets]</code> or
 <code>NULL</code>. Sharing structure for process error hyperparameters. See
-<code><a href="do_srvsel_pe_pars_mapping.html">do_srvsel_pe_pars_mapping</a></code> for full option descriptions.
+<code><a href="do_sel_pe_pars_mapping.html">do_sel_pe_pars_mapping</a></code> for full option descriptions.
 Default <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-srv-fixed-sel-pars-spec">srv_fixed_sel_pars_spec<a class="anchor" aria-label="anchor" href="#arg-srv-fixed-sel-pars-spec"></a></dt>
 <dd><p>Character vector <code>[n_srv_fleets]</code>.
 Sharing structure for fixed-effect selectivity parameters. See
-<code><a href="do_srv_fixed_sel_pars_mapping.html">do_srv_fixed_sel_pars_mapping</a></code> for full option descriptions.
+<code><a href="do_fixed_sel_pars_mapping.html">do_fixed_sel_pars_mapping</a></code> for full option descriptions.
 No default; must be provided.</p></dd>
 
 
 <dt id="arg-srv-q-spec">srv_q_spec<a class="anchor" aria-label="anchor" href="#arg-srv-q-spec"></a></dt>
 <dd><p>Character vector <code>[n_srv_fleets]</code> or <code>NULL</code>.
-Sharing structure for catchability. See <code><a href="do_srv_q_mapping.html">do_srv_q_mapping</a></code>
+Sharing structure for catchability. See <code><a href="do_q_mapping.html">do_q_mapping</a></code>
 for full option descriptions. Default <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-srv-sel-devs-spec">srv_sel_devs_spec<a class="anchor" aria-label="anchor" href="#arg-srv-sel-devs-spec"></a></dt>
 <dd><p>Character vector <code>[n_srv_fleets]</code> or
 <code>NULL</code>. Sharing structure for selectivity deviation time series.
-See <code><a href="do_srvsel_devs_mapping.html">do_srvsel_devs_mapping</a></code> for full option descriptions.
+See <code><a href="do_sel_devs_mapping.html">do_sel_devs_mapping</a></code> for full option descriptions.
 Default <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-corr-opt-semipar">corr_opt_semipar<a class="anchor" aria-label="anchor" href="#arg-corr-opt-semipar"></a></dt>
 <dd><p>Character vector <code>[n_srv_fleets]</code> or
 <code>NULL</code>. Specifies correlation components to suppress for 3D GMRF or
-2D AR1 forms. See <code><a href="do_srvsel_pe_pars_mapping.html">do_srvsel_pe_pars_mapping</a></code> for valid
+2D AR1 forms. See <code><a href="do_sel_pe_pars_mapping.html">do_sel_pe_pars_mapping</a></code> for valid
 values. Default <code>NULL</code>.</p></dd>
 
 

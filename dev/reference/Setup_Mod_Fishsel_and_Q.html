@@ -211,20 +211,20 @@ fleet, using the same format as <code>fish_sel_blocks</code>. Default
 <dd><p>Character vector of length <code>n_fish_fleets</code>
 specifying the estimation structure for selectivity process error
 hyperparameters. Required when any fleet has continuous time-variation.
-See <code><a href="do_fishsel_pe_pars_mapping.html">do_fishsel_pe_pars_mapping</a></code> for all options.</p></dd>
+See <code><a href="do_sel_pe_pars_mapping.html">do_sel_pe_pars_mapping</a></code> for all options.</p></dd>
 
 
 <dt id="arg-fish-fixed-sel-pars-spec">fish_fixed_sel_pars_spec<a class="anchor" aria-label="anchor" href="#arg-fish-fixed-sel-pars-spec"></a></dt>
 <dd><p>Character vector of length <code>n_fish_fleets</code>
 specifying how fixed-effect selectivity parameters are estimated. See
-<code><a href="do_fish_fixed_sel_pars_mapping.html">do_fish_fixed_sel_pars_mapping</a></code> for all options
+<code><a href="do_fixed_sel_pars_mapping.html">do_fixed_sel_pars_mapping</a></code> for all options
 (<code>"est_all"</code>, <code>"est_shared_r"</code>, <code>"est_shared_s"</code>,
 <code>"est_shared_r_s"</code>, <code>"est_shared_f_x"</code>, <code>"fix"</code>).</p></dd>
 
 
 <dt id="arg-fish-q-spec">fish_q_spec<a class="anchor" aria-label="anchor" href="#arg-fish-q-spec"></a></dt>
 <dd><p>Character vector of length <code>n_fish_fleets</code> specifying
-catchability estimation structure. See <code><a href="do_fish_q_mapping.html">do_fish_q_mapping</a></code> for
+catchability estimation structure. See <code><a href="do_q_mapping.html">do_q_mapping</a></code> for
 options (<code>"est_all"</code>, <code>"est_shared_r"</code>, <code>"fix"</code>).</p></dd>
 
 
@@ -232,7 +232,7 @@ options (<code>"est_all"</code>, <code>"est_shared_r"</code>, <code>"fix"</code>
 <dd><p>Character vector of length <code>n_fish_fleets</code>
 specifying the estimation structure for annual selectivity deviations.
 Required when any fleet has continuous time-variation. See
-<code><a href="do_fishsel_devs_mapping.html">do_fishsel_devs_mapping</a></code> for all options including age-sharing
+<code><a href="do_sel_devs_mapping.html">do_sel_devs_mapping</a></code> for all options including age-sharing
 options for semi-parametric forms.</p></dd>
 
 
@@ -240,7 +240,7 @@ options for semi-parametric forms.</p></dd>
 <dd><p>Character vector of length <code>n_fish_fleets</code>
 controlling which correlation components to suppress in semi-parametric
 (3D GMRF or 2D AR1) time-varying selectivity. Set to <code>NA</code> (default)
-for no suppression. See <code><a href="do_fishsel_pe_pars_mapping.html">do_fishsel_pe_pars_mapping</a></code> for valid
+for no suppression. See <code><a href="do_sel_pe_pars_mapping.html">do_sel_pe_pars_mapping</a></code> for valid
 suppression codes. Cohort-correlation options are invalid for <code>"2dar1"</code>.</p></dd>
 
 
@@ -378,13 +378,13 @@ follow one of:</p><ul><li><p><code>"&lt;model&gt;_Fleet_&lt;f&gt;"</code> — si
 <dd><p>Character vector of length <code>n_fish_fleets</code>
 specifying the estimation structure for selectivity process error
 hyperparameters. Required when any fleet has continuous time-variation.
-See <code><a href="do_retsel_pe_pars_mapping.html">do_retsel_pe_pars_mapping</a></code> for all options.</p></dd>
+See <code><a href="do_sel_pe_pars_mapping.html">do_sel_pe_pars_mapping</a></code> for all options.</p></dd>
 
 
 <dt id="arg-ret-fixed-sel-pars-spec">ret_fixed_sel_pars_spec<a class="anchor" aria-label="anchor" href="#arg-ret-fixed-sel-pars-spec"></a></dt>
 <dd><p>Character vector of length <code>n_fish_fleets</code>
 specifying how fixed-effect selectivity parameters are estimated. See
-<code><a href="do_ret_fixed_sel_pars_mapping.html">do_ret_fixed_sel_pars_mapping</a></code> for all options
+<code><a href="do_fixed_sel_pars_mapping.html">do_fixed_sel_pars_mapping</a></code> for all options
 (<code>"est_all"</code>, <code>"est_shared_r"</code>, <code>"est_shared_s"</code>,
 <code>"est_shared_r_s"</code>, <code>"est_shared_f_x"</code>, <code>"fix"</code>).</p></dd>
 
@@ -393,7 +393,7 @@ specifying how fixed-effect selectivity parameters are estimated. See
 <dd><p>Character vector of length <code>n_fish_fleets</code>
 specifying the estimation structure for annual selectivity deviations.
 Required when any fleet has continuous time-variation. See
-<code><a href="do_retsel_devs_mapping.html">do_retsel_devs_mapping</a></code> for all options including age-sharing
+<code><a href="do_sel_devs_mapping.html">do_sel_devs_mapping</a></code> for all options including age-sharing
 options for semi-parametric forms.</p></dd>
 
 
@@ -401,7 +401,7 @@ options for semi-parametric forms.</p></dd>
 <dd><p>Character vector of length <code>n_fish_fleets</code>
 controlling which correlation components to suppress in semi-parametric
 (3D GMRF or 2D AR1) time-varying selectivity. Set to <code>NA</code> (default)
-for no suppression. See <code><a href="do_retsel_pe_pars_mapping.html">do_retsel_pe_pars_mapping</a></code> for valid
+for no suppression. See <code><a href="do_sel_pe_pars_mapping.html">do_sel_pe_pars_mapping</a></code> for valid
 suppression codes. Cohort-correlation options are invalid for <code>"2dar1"</code>.</p></dd>
 
 

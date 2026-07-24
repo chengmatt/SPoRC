@@ -192,14 +192,14 @@ Setup_Mod_Fishsel_and_Q(
   Character vector of length `n_fish_fleets` specifying the estimation
   structure for selectivity process error hyperparameters. Required when
   any fleet has continuous time-variation. See
-  [`do_fishsel_pe_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_fishsel_pe_pars_mapping.md)
+  [`do_sel_pe_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_sel_pe_pars_mapping.md)
   for all options.
 
 - fish_fixed_sel_pars_spec:
 
   Character vector of length `n_fish_fleets` specifying how fixed-effect
   selectivity parameters are estimated. See
-  [`do_fish_fixed_sel_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_fish_fixed_sel_pars_mapping.md)
+  [`do_fixed_sel_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_fixed_sel_pars_mapping.md)
   for all options (`"est_all"`, `"est_shared_r"`, `"est_shared_s"`,
   `"est_shared_r_s"`, `"est_shared_f_x"`, `"fix"`).
 
@@ -207,7 +207,7 @@ Setup_Mod_Fishsel_and_Q(
 
   Character vector of length `n_fish_fleets` specifying catchability
   estimation structure. See
-  [`do_fish_q_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_fish_q_mapping.md)
+  [`do_q_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_q_mapping.md)
   for options (`"est_all"`, `"est_shared_r"`, `"fix"`).
 
 - fish_sel_devs_spec:
@@ -215,7 +215,7 @@ Setup_Mod_Fishsel_and_Q(
   Character vector of length `n_fish_fleets` specifying the estimation
   structure for annual selectivity deviations. Required when any fleet
   has continuous time-variation. See
-  [`do_fishsel_devs_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_fishsel_devs_mapping.md)
+  [`do_sel_devs_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_sel_devs_mapping.md)
   for all options including age-sharing options for semi-parametric
   forms.
 
@@ -225,7 +225,7 @@ Setup_Mod_Fishsel_and_Q(
   correlation components to suppress in semi-parametric (3D GMRF or 2D
   AR1) time-varying selectivity. Set to `NA` (default) for no
   suppression. See
-  [`do_fishsel_pe_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_fishsel_pe_pars_mapping.md)
+  [`do_sel_pe_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_sel_pe_pars_mapping.md)
   for valid suppression codes. Cohort-correlation options are invalid
   for `"2dar1"`.
 
@@ -392,14 +392,14 @@ Setup_Mod_Fishsel_and_Q(
   Character vector of length `n_fish_fleets` specifying the estimation
   structure for selectivity process error hyperparameters. Required when
   any fleet has continuous time-variation. See
-  [`do_retsel_pe_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_retsel_pe_pars_mapping.md)
+  [`do_sel_pe_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_sel_pe_pars_mapping.md)
   for all options.
 
 - ret_fixed_sel_pars_spec:
 
   Character vector of length `n_fish_fleets` specifying how fixed-effect
   selectivity parameters are estimated. See
-  [`do_ret_fixed_sel_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_ret_fixed_sel_pars_mapping.md)
+  [`do_fixed_sel_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_fixed_sel_pars_mapping.md)
   for all options (`"est_all"`, `"est_shared_r"`, `"est_shared_s"`,
   `"est_shared_r_s"`, `"est_shared_f_x"`, `"fix"`).
 
@@ -408,7 +408,7 @@ Setup_Mod_Fishsel_and_Q(
   Character vector of length `n_fish_fleets` specifying the estimation
   structure for annual selectivity deviations. Required when any fleet
   has continuous time-variation. See
-  [`do_retsel_devs_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_retsel_devs_mapping.md)
+  [`do_sel_devs_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_sel_devs_mapping.md)
   for all options including age-sharing options for semi-parametric
   forms.
 
@@ -418,7 +418,7 @@ Setup_Mod_Fishsel_and_Q(
   correlation components to suppress in semi-parametric (3D GMRF or 2D
   AR1) time-varying selectivity. Set to `NA` (default) for no
   suppression. See
-  [`do_retsel_pe_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_retsel_pe_pars_mapping.md)
+  [`do_sel_pe_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_sel_pe_pars_mapping.md)
   for valid suppression codes. Cohort-correlation options are invalid
   for `"2dar1"`.
 

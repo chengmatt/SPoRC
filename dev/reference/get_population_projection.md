@@ -1,0 +1,172 @@
+# Population projection (numbers-at-age dynamics)
+
+Advances numbers-at-age forward through all modeled years and seasons:
+inserts recruitment (timing controlled by `rec_lag`), applies movement,
+computes SSB/biomass quantities via `compute_biom_y`, and applies
+mortality/ageing. Called once from the "Population Projection" section
+of `SPoRC_rtmb.R`. `ZAA` (total mortality at age) must already be
+computed before calling this, since it is treated as an input here
+rather than derived from `NAA`.
+
+## Usage
+
+``` r
+get_population_projection(
+  n_pop,
+  n_regions,
+  n_seas,
+  n_ages,
+  n_sexes,
+  n_yrs,
+  n_fish_fleets,
+  n_est_rec_devs,
+  rec_lag,
+  rec_model,
+  rec_dd,
+  R0,
+  rec_region_prop,
+  rec_seas_prop,
+  h_trans,
+  natal_region,
+  t_spawn,
+  spawn_seas,
+  seasdur,
+  init_F,
+  ln_RecDevs,
+  sexratio,
+  WAA,
+  MatAA,
+  natmort,
+  Movement,
+  stray_rate,
+  sgl_seas_spawning_movement,
+  do_recruits_move,
+  fish_sel,
+  ret_sel,
+  dmr,
+  ZAA,
+  NAA,
+  NAA0,
+  NAA_bef,
+  NAA_aft,
+  Rec,
+  SSB,
+  Total_Biom,
+  Dynamic_SSB0,
+  eff_SSB
+)
+```
+
+## Arguments
+
+- n_pop, n_regions, n_seas, n_ages, n_sexes, n_yrs, n_fish_fleets,
+  n_est_rec_devs:
+
+  Dimension sizes.
+
+- n_est_rec_devs:
+
+  Number of estimated recruitment deviations.
+
+- rec_lag:
+
+  Integer. Recruitment timing: `0` inserts recruitment within the
+  spawning-season biomass computation; non-zero inserts recruitment once
+  per year ahead of the seasonal loop.
+
+- rec_model, rec_dd, R0, rec_region_prop, rec_seas_prop, h_trans,
+  natal_region, t_spawn, spawn_seas, seasdur, init_F:
+
+  Recruitment and timing arguments passed through to
+  `Get_Det_Recruitment`.
+
+- ln_RecDevs:
+
+  Array `[pop, region, year]` of log recruitment deviations; applied
+  multiplicatively to deterministic recruitment for
+  `y <= n_est_rec_devs`.
+
+- sexratio:
+
+  Array `[pop, region, year, sex]` of recruitment sex ratio.
+
+- WAA, MatAA:
+
+  Arrays `[pop, region, year, season, age, sex]` of weight-at-age and
+  maturity-at-age.
+
+- natmort:
+
+  Array `[pop, region, year, age, sex]` of natural mortality at age.
+
+- Movement:
+
+  Array `[pop, region_from, region_to, year, season, age, sex]` of
+  movement rates.
+
+- stray_rate:
+
+  Array `[pop, year]` of stray rate.
+
+- sgl_seas_spawning_movement:
+
+  Array `[pop, region_from, region_to, year, age, sex]` of
+  single-season-spawning movement rates.
+
+- do_recruits_move:
+
+  Integer (0/1) switch for whether age-1 recruits are subject to
+  movement.
+
+- fish_sel, ret_sel:
+
+  Arrays `[pop, region, year, season, age, sex, fish_fleet]` of
+  total/retained fishery selectivity.
+
+- dmr:
+
+  Array `[region, year, season, fish_fleet]` of discard mortality rate.
+
+- ZAA:
+
+  Array `[pop, region, year, season, age, sex]` of total mortality at
+  age (precomputed).
+
+- NAA, NAA0:
+
+  Arrays `[pop, region, year+1, season, age, sex]`, output containers
+  for fished/unfished numbers at age.
+
+- NAA_bef, NAA_aft:
+
+  Arrays `[pop, region, year+1, season, age, sex]`, output containers
+  for numbers at age immediately before/after movement.
+
+- Rec:
+
+  Array `[pop, region, year]`, output container for total recruitment
+  before seasonal apportionment.
+
+- SSB, Total_Biom, Dynamic_SSB0:
+
+  Arrays `[pop, region, year]`, output containers.
+
+- eff_SSB:
+
+  Array `[pop, year]`, output container for effective
+  (natal-homing-adjusted) SSB.
+
+## Value
+
+List with elements `NAA`, `NAA0`, `NAA_bef`, `NAA_aft`, `Rec`, `SSB`,
+`Total_Biom`, `Dynamic_SSB0`, `eff_SSB`, `Aggregated_SSB` (array
+`[year]`, SSB summed across pop/region), and `Dynamic_Aggregated_SSB0`
+(array `[year]`, likewise for `Dynamic_SSB0`).
+
+## Details
+
+All array arguments matching an output name (`NAA`, `NAA0`, `NAA_bef`,
+`NAA_aft`, `Rec`, `SSB`, `Total_Biom`, `Dynamic_SSB0`, `eff_SSB`) are
+passed in already dimensioned (typically all-zero, aside from any
+initial-year values already inserted upstream) and returned fully
+populated over `1:n_yrs`.

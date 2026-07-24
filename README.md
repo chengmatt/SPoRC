@@ -42,6 +42,8 @@ pak::pak("chengmatt/SPoRC")
 
 ### Publications
 1. Cheng, M.LH., Goethel, D.R., Cunningham, C.J., Hulson, P.F., Ianelli, J.N., Omori, K.L., 2026. The SPoRC Stock Assessment Package: A Generalized Next‐Generation Platform to Assess Spatial, Age and Sex‐Structured Populations. Fish and Fisheries faf.70082. https://doi.org/10.1111/faf.70082
+2. Cheng, M.L.H., Thorson, J.T., Goethel, D.R., Cunningham, C.J., 2026. Parsimonious estimation of environment- and demography-dependent movement in spatially stratified stock assessment models. ICES Journal of Marine Science 83, fsag147. https://doi.org/10.1093/icesjms/fsag147
+3. Cheng, M.L.H., Miller, T.J., Goethel, D.R., Cunningham, C.J., 2026. Ensuring consistency in spatially-stratified stock assessment models: An analytical solution for equilibrium population structure with connectivity for age-and size-structured models. Fisheries Research 300, 107800. https://doi.org/10.1016/j.fishres.2026.107800
 
 ### Code Examples
 1. Alaska Sablefish Spatial Closed Loop Simulations: https://github.com/chengmatt/sablefish_cie_sims_2026

@@ -1236,19 +1236,19 @@ historical <- reshape2::melt(array(rep(francis_model$rep$SSB, n_sims),
 
 # Get all scenario projections
 scenarios <- reshape2::melt(all_scenarios_ssb) %>%
-  mutate(Year = Var2 + 2023,
+  mutate(Year = Var3 + 2023,
          Scenario = case_when(
-           Var4 == 1 ~ "S1: FABC (F40)",
-           Var4 == 2 ~ "S2: FABC Ratio",
-           Var4 == 3 ~ "S3: F Last 5 Years",
-           Var4 == 4 ~ "S4: F60 SPR",
-           Var4 == 5 ~ "S5: No Fishing",
-           Var4 == 6 ~ "S6: FOFL",
-           Var4 == 7 ~ "S7: FABC -> FOFL",
-           TRUE ~ paste("Scenario", Var4)
+           Var5 == 1 ~ "S1: FABC (F40)",
+           Var5 == 2 ~ "S2: FABC Ratio",
+           Var5 == 3 ~ "S3: F Last 5 Years",
+           Var5 == 4 ~ "S4: F60 SPR",
+           Var5 == 5 ~ "S5: No Fishing",
+           Var5 == 6 ~ "S6: FOFL",
+           Var5 == 7 ~ "S7: FABC -> FOFL",
+           TRUE ~ paste("Scenario", Var5)
          ),
          Type = "Projection") %>%
-  rename(Region = Var1, Simulation = Var3, SSB = value)
+  rename(Region = Var2, Simulation = Var4, SSB = value)
 
 # expand historical SSB for plotting
 scenarios_unique <- unique(scenarios$Scenario)

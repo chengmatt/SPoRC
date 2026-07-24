@@ -66,7 +66,7 @@ input_list <- Setup_Mod_Rec(
   # do bias ramp (0 == don't do bias ramp, 1 == do bias ramp)
   sigmaR_switch = 1,
   # when to switch from early to late sigmaR (switch in first year)
-  ln_sigmaR = rep(-0.1068576 , 2), # 2 values for early and late sigma
+  ln_sigmaR = array(-0.1068576, dim = c(2, input_list$data$n_pop, input_list$data$n_regions)),
   # Starting values for early and late sigmaR
   rec_model = "mean_rec",
   sigmaR_spec = "fix",
@@ -137,8 +137,8 @@ input_list <- Setup_Mod_Catch_and_F(
   sigmaC_spec = "fix",
 
   # Fixing sigma C and F
-  ln_sigmaC = array(log(sqrt(1/2)), dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets)),
-  ln_sigmaF = array(log(sqrt(1/2)), dim = c(input_list$data$n_regions, input_list$data$n_fish_fleets))
+  ln_sigmaC = array(log(sqrt(1/2)), dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,  input_list$data$n_fish_fleets)),
+  ln_sigmaF = array(log(sqrt(1/2)), dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
 )
 ```
 
@@ -279,9 +279,9 @@ The weighting setup is implemented using the function `Setup_Mod_Weighting`, whi
 
 ```{r eval = FALSE}
 # catch weigthing 
-Wt_Catch <- array(0, dim = c(sgl_rg_dusky_data$n_regions, length(sgl_rg_dusky_data$years), sgl_rg_dusky_data$n_fish_fleets))
-Wt_Catch[,which(sgl_rg_dusky_data$years %in% 1977:1991),] <- 2
-Wt_Catch[,-which(sgl_rg_dusky_data$years %in% 1977:1991),] <- 50
+Wt_Catch <- array(0, dim = c(sgl_rg_dusky_data$n_regions, length(sgl_rg_dusky_data$years),                                    input_list$data$n_seas, sgl_rg_dusky_data$n_fish_fleets))
+Wt_Catch[,which(sgl_rg_dusky_data$years %in% 1977:1991),,] <- 2
+Wt_Catch[,-which(sgl_rg_dusky_data$years %in% 1977:1991),,] <- 50
 
 input_list <- Setup_Mod_Weighting(
   input_list = input_list,
@@ -293,18 +293,22 @@ input_list <- Setup_Mod_Weighting(
   Wt_Tagging = 0,
   Wt_FishAgeComps = array(1, dim = c(input_list$data$n_regions,
                                      length(input_list$data$years),
+                                    input_list$data$n_seas,
                                      input_list$data$n_sexes,
                                      input_list$data$n_fish_fleets)),
   Wt_FishLenComps = array(1, dim = c(input_list$data$n_regions,
                                      length(input_list$data$years),
+                                    input_list$data$n_seas,
                                      input_list$data$n_sexes,
                                      input_list$data$n_fish_fleets)),
   Wt_SrvAgeComps = array(1, dim = c(input_list$data$n_regions,
                                     length(input_list$data$years),
+                                    input_list$data$n_seas,
                                     input_list$data$n_sexes,
                                     input_list$data$n_srv_fleets)),
   Wt_SrvLenComps = array(0, dim = c(input_list$data$n_regions,
                                     length(input_list$data$years),
+                                    input_list$data$n_seas,
                                     input_list$data$n_sexes,
                                     input_list$data$n_srv_fleets))
 )
@@ -771,7 +775,7 @@ To derive reference points for catch advice and population projections, the `Get
 # get reference points
 spr_35 <- Get_Reference_Points(data = francis_data,
                                rep = francis_model$rep,
-                               SPR_x = 0.35, t_spwn = 0, sex_ratio_f = 0.5,
+                               SPR_x = 0.35, t_spawn = 0, sex_ratio_f = 0.5,
                                type = "single_region",
                                what = 'SPR',
                                calc_rec_st_yr = 3, rec_age = 4)
@@ -780,14 +784,14 @@ spr_40 <- Get_Reference_Points(data = francis_data,
                                rep = francis_model$rep,
                                type = "single_region",
                                what = 'SPR',
-                               SPR_x = 0.4, t_spwn = 0, sex_ratio_f = 0.5,
+                               SPR_x = 0.4, t_spawn = 0, sex_ratio_f = 0.5,
                                calc_rec_st_yr = 3, rec_age = 4)
 
 spr_60 <- Get_Reference_Points(data = francis_data,
                                rep = francis_model$rep,
                                type = "single_region",
                                what = 'SPR',
-                               SPR_x = 0.6, t_spwn = 0, sex_ratio_f = 0.5,
+                               SPR_x = 0.6, t_spawn = 0, sex_ratio_f = 0.5,
                                calc_rec_st_yr = 3, rec_age = 4)
 
 # Extract reference points
@@ -848,16 +852,16 @@ Next, we can define the Alaska projection scenarios to understand if the stock i
 proj_inputs <- list(
   # Scenario 1 - Using HCR to adjust maxFABC
   list(f_ref_pt = array(f40, dim = c(n_regions, n_proj_yrs)),
-       b_ref_pt = array(b40, dim = c(n_regions, n_proj_yrs)),
+       b_ref_pt = array(b40, dim = c(n_pop, n_regions, n_proj_yrs)),
        fmort_opt = 'HCR'
   ),
   # Scenario 2 - Using HCR to adjust maxFABC based on last year's value (constant fraction - author specified F)
   list(f_ref_pt = array(f40 * (f40 / 0.091), dim = c(n_regions, n_proj_yrs)),
-       b_ref_pt = array(b40, dim = c(n_regions, n_proj_yrs)),
+       b_ref_pt = array(b40, dim = c(n_pop, n_regions, n_proj_yrs)),
        fmort_opt = 'HCR'
   ),
   # Scenario 3 - Using an F input of last 5 years average F, and
-  list(f_ref_pt = array(mean(francis_model$rep$Fmort[1, 43:47,]), dim = c(n_regions, n_proj_yrs)),
+  list(f_ref_pt = array(mean(francis_model$rep$Fmort[1, 43:47,,]), dim = c(n_regions, n_proj_yrs)),
        b_ref_pt = NULL,
        fmort_opt = 'Input'
   ),
@@ -873,12 +877,12 @@ proj_inputs <- list(
   ),
   # Scenario 6 - Using HCR to adjust FOFL
   list(f_ref_pt = array(f35, dim = c(n_regions, n_proj_yrs)),
-       b_ref_pt = array(b35, dim = c(n_regions, n_proj_yrs)),
+       b_ref_pt = array(b35, dim = c(n_pop, n_regions, n_proj_yrs)),
        fmort_opt = 'HCR'
   ),
   # Scenario 7 - Using HCR to adjust FABC in first 2 projection years, and then later years are adjusting FOFL
   list(f_ref_pt = array(c(rep(f40, 2), rep(f35, n_proj_yrs - 2)), dim = c(n_regions, n_proj_yrs)),
-       b_ref_pt = array(c(rep(b40, 2), rep(b35, n_proj_yrs - 2)), dim = c(n_regions, n_proj_yrs)),
+       b_ref_pt = array(c(rep(b40, 2), rep(b35, n_proj_yrs - 2)), dim = c(n_pop, n_regions, n_proj_yrs)),
        fmort_opt = 'HCR'
   )
 )
@@ -890,7 +894,7 @@ Following the setup of the seven projection scenarios, we can then simulate the 
 # store outputs
 all_scenarios_f <- array(0, dim = c(n_regions, n_proj_yrs, n_sims, length(proj_inputs)))
 all_scenarios_ssb <- array(0, dim = c(n_regions, n_proj_yrs, n_sims, length(proj_inputs)))
-all_scenarios_catch <- array(0, dim = c(n_regions, n_proj_yrs, n_fish_fleets, n_sims, length(proj_inputs)))
+all_scenarios_catch <- array(0, dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_fish_fleets, n_sims, length(proj_inputs)))
 
 set.seed(123)
 for (i in seq_along(proj_inputs)) {
@@ -900,6 +904,7 @@ for (i in seq_along(proj_inputs)) {
     out <- SPoRC::Do_Population_Projection(n_proj_yrs = n_proj_yrs,
                                            n_regions = n_regions,
                                            n_ages = n_ages,
+                                           n_pop = n_pop,
                                            n_sexes = n_sexes,
                                            sexratio = sexratio,
                                            n_fish_fleets = n_fish_fleets,
@@ -923,7 +928,7 @@ for (i in seq_along(proj_inputs)) {
     )
 
     all_scenarios_ssb[,,sim,i] <- out$proj_SSB
-    all_scenarios_catch[,,,sim,i] <- out$proj_Catch
+    all_scenarios_catch[,,,,,sim,i] <- out$proj_Catch
     all_scenarios_f[,,sim,i] <- out$proj_F[,-(n_proj_yrs+1)] # remove last year, since it's not used
   } # end sim loop
   print(i)
@@ -1012,20 +1017,19 @@ historical$Catch[is.na(historical$Catch)] <- 0
 
 # Get all scenario projections
 scenarios <- reshape2::melt(all_scenarios_catch) %>%
-  mutate(Year = Var2 + 2023,
+  mutate(Year = Var3 + 2023,
          Scenario = case_when(
-           Var5 == 1 ~ "S1: FABC (F40)",
-           Var5 == 2 ~ "S2: FABC Ratio",
-           Var5 == 3 ~ "S3: F Last 5 Years",
-           Var5 == 4 ~ "S4: F60 SPR",
-           Var5 == 5 ~ "S5: No Fishing",
-           Var5 == 6 ~ "S6: FOFL",
-           Var5 == 7 ~ "S7: FABC -> FOFL",
-           TRUE ~ paste("Scenario", Var5)
+           Var7 == 1 ~ "S1: FABC (F40)",
+           Var7 == 2 ~ "S2: FABC Ratio",
+           Var7 == 3 ~ "S3: F Last 5 Years",
+           Var7 == 4 ~ "S4: F60 SPR",
+           Var7 == 5 ~ "S5: No Fishing",
+           Var7 == 6 ~ "S6: FOFL",
+           Var7 == 7 ~ "S7: FABC -> FOFL",
+           TRUE ~ paste("Scenario", Var7)
          ),
          Type = "Projection") %>%
-  rename(Region = Var1, Simulation = Var4, Catch = value, Fleet = Var3) %>%
-  select(-c(Var2, Var5))
+  rename(Region = Var2, Simulation = Var6, Catch = value, Fleet = Var5)
 
 # expand historical catch for plotting
 scenarios_unique <- unique(scenarios$Scenario)

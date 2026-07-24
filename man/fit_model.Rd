@@ -13,6 +13,8 @@ fit_model(
   silent = FALSE,
   do_optim = TRUE,
   nlminb_control = list(iter.max = 1e+05, eval.max = 1e+05, rel.tol = 1e-15),
+  lower = NULL,
+  upper = NULL,
   model = SPoRC_rtmb,
   ...
 )
@@ -46,6 +48,16 @@ and Newton refinement. If \code{FALSE}, returns the un-optimised
 \code{stats::nlminb}. Default
 \code{list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15)}.}
 
+\item{lower}{Numeric vector of lower bounds for \code{obj$par} (the
+estimated parameter vector, i.e. after mapping and random-effects
+marginalisation), passed to \code{stats::nlminb} and used to clamp each
+Newton refinement step. \code{NULL} (default) is unbounded
+(\code{-Inf} for every element).}
+
+\item{upper}{Numeric vector of upper bounds for \code{obj$par}, passed to
+\code{stats::nlminb} and used to clamp each Newton refinement step.
+\code{NULL} (default) is unbounded (\code{Inf} for every element).}
+
 \item{model}{Function with signature \code{function(pars, data)} passed to
 \code{RTMB::MakeADFun} via \code{\link{cmb}}. Default \code{\link{SPoRC_rtmb}}.
 Allows non-SPoRC RTMB models to be fit with the same optimisation and
@@ -55,8 +67,9 @@ Newton-refinement machinery.}
 }
 \value{
 The RTMB \code{ADFun} object with additional fields: \code{$optim}
-  (the \code{nlminb} output list), \code{$rep} (the model report evaluated
-  at \code{obj$env$last.par.best}), and \code{$data}, \code{$parameters},
+  (the \code{nlminb} output list, with \code{$lower}/\code{$upper} recording
+  the bounds used), \code{$rep} (the model report evaluated at
+  \code{obj$env$last.par.best}), and \code{$data}, \code{$parameters},
   \code{$mapping}, \code{$random}.
 }
 \description{

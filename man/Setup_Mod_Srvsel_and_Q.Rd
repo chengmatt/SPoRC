@@ -116,26 +116,26 @@ an array \code{[n_regions × n_years × n_srv_fleets]}. Default:
 
 \item{srvsel_pe_pars_spec}{Character vector \code{[n_srv_fleets]} or
 \code{NULL}. Sharing structure for process error hyperparameters. See
-\code{\link{do_srvsel_pe_pars_mapping}} for full option descriptions.
+\code{\link{do_sel_pe_pars_mapping}} for full option descriptions.
 Default \code{NULL}.}
 
 \item{srv_fixed_sel_pars_spec}{Character vector \code{[n_srv_fleets]}.
 Sharing structure for fixed-effect selectivity parameters. See
-\code{\link{do_srv_fixed_sel_pars_mapping}} for full option descriptions.
+\code{\link{do_fixed_sel_pars_mapping}} for full option descriptions.
 No default; must be provided.}
 
 \item{srv_q_spec}{Character vector \code{[n_srv_fleets]} or \code{NULL}.
-Sharing structure for catchability. See \code{\link{do_srv_q_mapping}}
+Sharing structure for catchability. See \code{\link{do_q_mapping}}
 for full option descriptions. Default \code{NULL}.}
 
 \item{srv_sel_devs_spec}{Character vector \code{[n_srv_fleets]} or
 \code{NULL}. Sharing structure for selectivity deviation time series.
-See \code{\link{do_srvsel_devs_mapping}} for full option descriptions.
+See \code{\link{do_sel_devs_mapping}} for full option descriptions.
 Default \code{NULL}.}
 
 \item{corr_opt_semipar}{Character vector \code{[n_srv_fleets]} or
 \code{NULL}. Specifies correlation components to suppress for 3D GMRF or
-2D AR1 forms. See \code{\link{do_srvsel_pe_pars_mapping}} for valid
+2D AR1 forms. See \code{\link{do_sel_pe_pars_mapping}} for valid
 values. Default \code{NULL}.}
 
 \item{srv_q_formula}{Named list of R formulas specifying environmental
@@ -206,9 +206,9 @@ estimation model: continuous and blocked time-varying selectivity,
 selectivity functional forms, catchability blocks and optional
 environmental covariate effects, process error and deviation mapping, and
 selectivity/catchability priors. Delegates parameter mapping to four
-internal helpers (\code{\link{do_srv_fixed_sel_pars_mapping}},
-\code{\link{do_srv_q_mapping}}, \code{\link{do_srvsel_pe_pars_mapping}},
-\code{\link{do_srvsel_devs_mapping}}). Must be called after
+internal helpers (\code{\link{do_fixed_sel_pars_mapping}},
+\code{\link{do_q_mapping}}, \code{\link{do_sel_pe_pars_mapping}},
+\code{\link{do_sel_devs_mapping}}). Must be called after
 \code{\link{Setup_Mod_SrvIdx_and_Comps}} and before model compilation.
 }
 \seealso{

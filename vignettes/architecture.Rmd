@@ -144,7 +144,18 @@ R/
   Get_3d_precision.R          GMRF/precision-matrix helpers for correlated deviations
   Distributions.R             custom density functions (Dirichlet, Dirichlet-multinomial,
                                negative binomial, OSA residual machinery) used by RTMB and sims
-  Build_PE_Map.R              shared process-error map-building across parameter blocks
+  build_shared_map.R           generic parameter-map builders shared across Setup_* files:
+                               build_pe_map()/build_shared_spec_map() (dimension-sharing spec
+                               strings); do_comp_theta_mapping()/do_comp_corr_pars_mapping()/
+                               do_q_mapping() (composition overdispersion/correlation, and
+                               catchability); do_fixed_sel_pars_mapping()/do_sel_pe_pars_mapping()/
+                               do_sel_devs_mapping() (fixed-effect, process-error, and deviation
+                               selectivity parameters, parameterized by prefix = "fish"/"ret"/"srv"
+                               plus a separate fleet_field/use_field pair since "ret" reuses
+                               fishery-side infrastructure rather than having its own). A
+                               do_*_mapping helper lives here only if more than one Setup_* file
+                               calls it; single-caller mapping helpers (e.g. do_sigmaC_mapping)
+                               stay in the Setup_* file that uses them.
   Do_Population_Projection.R  forward projection off a fitted model
   Simulate_Population.R       operating model: simulate data forward given true dynamics
   Simulate_RV.R                random-variate generators used by the simulator

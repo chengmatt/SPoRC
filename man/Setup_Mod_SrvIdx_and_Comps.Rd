@@ -204,9 +204,9 @@ Ingests observed survey index, age composition, and length composition data
 (both pooled and population-specific) into \code{input_list$data},
 initialises overdispersion and correlation starting values in
 \code{input_list$par}, and constructs parameter maps via
-\code{\link{do_SrvAge_theta_mapping}}, \code{\link{do_SrvLen_theta_mapping}},
-\code{\link{do_SrvAge_corr_pars_mapping}}, and
-\code{\link{do_SrvLen_corr_pars_mapping}}. When \code{ISS_SrvAgeComps},
+\code{\link{do_comp_theta_mapping}} and \code{\link{do_comp_corr_pars_mapping}}
+(called with \code{comp_prefix = "SrvAge"}/\code{"SrvLen"} and
+\code{fleet_field = "n_srv_fleets"}). When \code{ISS_SrvAgeComps},
 \code{ISS_SrvLenComps}, \code{ISS_SrvAgeComps_pop}, or
 \code{ISS_SrvLenComps_pop} is \code{NULL}, input sample sizes are derived
 automatically by summing observed composition counts across the appropriate

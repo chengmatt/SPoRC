@@ -933,8 +933,16 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
       for(s in 1:input_list$data$n_sexes) {
         for(y in 1:(length(input_list$data$years) + input_list$data$n_proj_yrs_devs)) {
 
+          # Which regions actually have data for this fleet
+          reg_has_dat <- sapply(1:input_list$data$n_regions, function(rr)
+            sum(input_list$data[[Use_nm]][rr,,,f]) > 0 || sum(input_list$data[[Use_pop_nm]][,rr,,,f]) > 0)
+          r_anchor <- if(any(reg_has_dat)) min(which(reg_has_dat)) else 1L
+          shares_r <- !is.null(sel_devs_spec) &&
+            sel_devs_spec[f] %in% c('est_shared_r', 'est_shared_r_s', 'est_shared_r_b', 'est_shared_r_b_s')
+          dat_ok <- if(shares_r) any(reg_has_dat) else reg_has_dat[r]
+
           # if no time-variation, then fix all parameters for this fleet
-          if(input_list$data[[cont_tv_nm]][r,f] == 0 || (sum(input_list$data[[Use_nm]][r,,,f]) == 0 && sum(input_list$data[[Use_pop_nm]][,r,,,f]) == 0) ) {
+          if(input_list$data[[cont_tv_nm]][r,f] == 0 || !dat_ok) {
             map_sel_devs[r,y,,s,f] <- NA
           } else {
 
@@ -956,7 +964,7 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
                 }
 
                 # Estimating selectivity deviations across sexes, fleets, and parameters, but shared across regions
-                if(sel_devs_spec[f] == 'est_shared_r' && r == 1) {
+                if(sel_devs_spec[f] == 'est_shared_r' && r == r_anchor) {
                   map_sel_devs[,y,i,s,f] <- sel_devs_counter
                   sel_devs_counter <- sel_devs_counter + 1
                 }
@@ -968,7 +976,7 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
                 }
 
                 # Estimating selectivity deviations across fleets, and parameters, but shared across sexes and regions
-                if(sel_devs_spec[f] == 'est_shared_r_s' && r == 1 && s == 1) {
+                if(sel_devs_spec[f] == 'est_shared_r_s' && r == r_anchor && s == 1) {
                   map_sel_devs[,y,i,,f] <- sel_devs_counter
                   sel_devs_counter <- sel_devs_counter + 1
                 }
@@ -987,7 +995,7 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
                 }
 
                 # Estimating all selectivity deviations across years and bins, but shared across regions
-                if(sel_devs_spec[f] == 'est_shared_r' && r == 1) {
+                if(sel_devs_spec[f] == 'est_shared_r' && r == r_anchor) {
                   map_sel_devs[,y,i,s,f] <- sel_devs_counter
                   sel_devs_counter <- sel_devs_counter + 1
                 }
@@ -999,7 +1007,7 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
                 }
 
                 # Estimating all selectivity deviations across years and bins, but shared across sexes and regions
-                if(sel_devs_spec[f] == 'est_shared_r_s' && s == 1 && r == 1) {
+                if(sel_devs_spec[f] == 'est_shared_r_s' && s == 1 && r == r_anchor) {
                   map_sel_devs[,y,i,,f] <- sel_devs_counter
                   sel_devs_counter <- sel_devs_counter + 1
                 }
@@ -1011,7 +1019,7 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
                   } # end k loop
                 }
 
-                if(sel_devs_spec[f] == 'est_shared_r_b' && r == 1) {
+                if(sel_devs_spec[f] == 'est_shared_r_b' && r == r_anchor) {
                   for(k in 1:length(sel_devs_shared_bins)) {
                     map_sel_devs[,y,sel_devs_shared_bins[[k]],s,f] <- sel_devs_counter
                     sel_devs_counter <- sel_devs_counter + 1
@@ -1025,7 +1033,7 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
                   } # end k loop
                 }
 
-                if(sel_devs_spec[f] == 'est_shared_r_b_s' && s == 1 && r == 1) {
+                if(sel_devs_spec[f] == 'est_shared_r_b_s' && s == 1 && r == r_anchor) {
                   for(k in 1:length(sel_devs_shared_bins)) {
                     map_sel_devs[,y,sel_devs_shared_bins[[k]],,f] <- sel_devs_counter
                     sel_devs_counter <- sel_devs_counter + 1

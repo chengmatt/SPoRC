@@ -206,6 +206,9 @@ Get_sel_PE_loglik <- function(PE_model,
 
   # find unique selectivity deviations to penalize (sort drops NAs)
   unique_sel_devs = sort(unique(as.vector(map_sel_devs)))
+
+  # Exit out fxn if this region x fleet slice has no estimated deviations at all.
+  if(length(unique_sel_devs) == 0) return(ll)
   n_yrs = dim(map_sel_devs)[2] # get years for indexing
   n_bins = dim(map_sel_devs)[3] # get bins / pars for indexing
   n_sexes = dim(map_sel_devs)[4] # get sexes for indexing

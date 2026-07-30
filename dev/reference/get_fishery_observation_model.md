@@ -39,7 +39,11 @@ get_fishery_observation_model(
   dmr,
   fish_idx_type,
   fish_sel,
-  ret_sel
+  ret_sel,
+  Mrate = NULL,
+  move_timing = 0,
+  seasdur = rep(1, n_seas),
+  NAA_int = NULL
 )
 ```
 

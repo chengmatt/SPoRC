@@ -391,6 +391,7 @@ input_list <- Setup_Mod_Movement(
 #> Continuous movement specification is: none
 #> Continuous movement process error specification is: none
 #> Movement type is: Unstructured Markov
+#> Movement timing is: Movement then mortality
 #> Movement fixed effect blocks are population-invariant
 #> Movement fixed effect blocks are season-invariant
 #> Movement fixed effect blocks are sex-invariant

@@ -531,6 +531,44 @@ Each dimension can be pooled (`'constant'`) or blocked:
 | `adjacency_mat` | Square `[n_regions × n_regions]` binary connectivity matrix |
 | `area_r` | Numeric vector of region areas (scales diffusion rates) |
 | `ctmc_diffusion_bounds` | 0/1: if `1`, shifts diffusion columns to guarantee all off-diagonal generator-matrix entries are non-negative |
+| `ctmc_scale_by_seasdur` | 0/1 (default `1`): if `1`, treats the generator as an annual rate and exponentiates `Q * seasdur[s]` each season, so movement and mortality share time units. `0` results in `Q * 1` each season. |
+
+#### Movement and mortality sequencing (`move_timing`)
+
+Controls how movement and mortality are ordered within a season. The
+three options coincide exactly when total mortality is constant across
+regions, when mortality is zero, and when movement is absent — so
+single-region models are unaffected by the setting.
+
+| Value | Sequencing |
+|----|----|
+| `0` (default) | Movement then mortality. Historical `SPoRC` behaviour |
+| `1` | Mortality then movement |
+| `2` | Continuous: movement and mortality act simultaneously, via `expm(Q * seasdur - diag(Z))` |
+
+`move_timing = 2` requires an estimated CTMC generator (`move_type = 1`
+with `use_fixed_movement = 0`); a discrete movement matrix has no
+guaranteed real generator, so it is rejected rather than approximated.
+
+The setting is not confined to the projection step. Anything observed
+partway through a season has to be evaluated consistently with it:
+
+| Quantity | `0` | `1` | `2` |
+|----|----|----|----|
+| Spawning biomass | Post-movement location | Pre-movement location | Partially redistributed, `expm(A * t_spawn)` |
+| Catch, discards | Baranov, post-movement | Baranov, pre-movement | Season-integrated abundance (spatial Baranov) |
+| Fishery index | Post-movement `N` | Pre-movement `N` | Season-integrated abundance |
+| Survey index | `N * exp(-t_srv * Z)` | `N * exp(-t_srv * Z)` | Snapshot, `expm(A * t_srv) N` |
+| Tag recaptures | Baranov on tag cohort | Baranov on tag cohort | Season-integrated tag abundance |
+
+where `A = t(Q) * seasdur - diag(Z)`. Equilibrium initialisation
+(including the matrix plus-group solution), per-recruit reference
+points, and projections all use the same seasonal operator, so they
+inherit the setting as well. Note the survey/fishery contrast: a survey
+is a snapshot at an instant within the season and so uses a partial
+propagation, whereas catch and the fishery index accumulate over the
+season and so use the integral of that propagation. Full equations are
+in the *Description of Model Equations* vignette.
 
 #### Continuous movement deviations (`cont_vary_movement`)
 

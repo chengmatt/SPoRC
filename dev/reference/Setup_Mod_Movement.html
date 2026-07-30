@@ -78,6 +78,8 @@ populates <code>input_list$data</code> accordingly. Must be called after
 <span>  diffusion_formula <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  preference_formula <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ctmc_diffusion_bounds <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  move_timing <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  ctmc_scale_by_seasdur <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -262,6 +264,26 @@ variables must be present in <code>ctmc_move_dat</code>. Required for
 diffusion parameters to ensure the CTMC generator matrix is a valid
 Metzler matrix (non-negative off-diagonal entries). <code>0</code> = no bounds
 (default).</p></dd>
+
+
+<dt id="arg-move-timing">move_timing<a class="anchor" aria-label="anchor" href="#arg-move-timing"></a></dt>
+<dd><p>Integer flag setting how movement and mortality are
+sequenced within a season. <code>0</code> = movement then mortality (default,
+historical SPoRC behaviour); <code>1</code> = mortality then movement;
+<code>2</code> = continuous, with movement and mortality acting simultaneously via
+the matrix exponential of \(Q\Delta - \mathrm{diag}(Z)\). <code>move_timing = 2</code>
+requires an estimated CTMC generator, i.e. <code>move_type = 1</code> and
+<code>use_fixed_movement = 0</code>.</p></dd>
+
+
+<dt id="arg-ctmc-scale-by-seasdur">ctmc_scale_by_seasdur<a class="anchor" aria-label="anchor" href="#arg-ctmc-scale-by-seasdur"></a></dt>
+<dd><p>Integer flag controlling the time units of the CTMC
+generator. <code>1</code> (default) treats \(Q\) as an annual rate, exponentiating
+\(Q \cdot \mathrm{seasdur}[s]\) in each season so that movement and mortality
+share time units. <code>0</code> exponentiates
+\(Q\) once per season regardless of duration. Only has an effect when
+<code>move_type = 1</code> and <code>n_seas &gt; 1</code>; forced to <code>1</code> when
+<code>move_timing = 2</code>.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

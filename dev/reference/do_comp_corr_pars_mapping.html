@@ -113,11 +113,11 @@ number of fleets to loop over. Default <code>"n_fish_fleets"</code>; pass
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Consolidates what were previously 8 near-identical functions
-(<code>do_FishAge_corr_pars_mapping</code>, <code>do_FishAge_pop_corr_pars_mapping</code>,
-<code>do_FishLen_corr_pars_mapping</code>, <code>do_FishLen_pop_corr_pars_mapping</code>,
-and their <code>_discard</code> counterparts) into one, parameterized the same way
-as <code><a href="do_comp_theta_mapping.html">do_comp_theta_mapping</a></code>.</p>
+    <p>One function serves every composition block. <code>comp_prefix</code> selects age
+versus length and fishery versus survey, <code>discard</code> selects the retained
+or discarded stream, <code>has_pop</code> selects the aggregated or population
+specific stream, and <code>fleet_field</code> names the fleet count to size the map
+by. Same parameterization as <code><a href="do_comp_theta_mapping.html">do_comp_theta_mapping</a></code>.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

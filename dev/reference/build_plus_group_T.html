@@ -57,7 +57,10 @@ the plus-group age, under either unfished or fished conditions.</p>
 <span>  <span class="va">Mov_plus</span>,</span>
 <span>  <span class="va">n_regions</span>,</span>
 <span>  <span class="va">n_seas</span>,</span>
-<span>  <span class="va">seasdur</span></span>
+<span>  <span class="va">seasdur</span>,</span>
+<span>  Mrate_penult <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  Mrate_plus <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  move_timing <span class="op">=</span> <span class="fl">0</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -110,6 +113,25 @@ Movement transition matrices for the plus-group age.</p></dd>
 <dt id="arg-seasdur">seasdur<a class="anchor" aria-label="anchor" href="#arg-seasdur"></a></dt>
 <dd><p>Numeric vector <code>[n_seas]</code>. Fractional duration of each
 season (must sum to one).</p></dd>
+
+
+<dt id="arg-mrate-penult">Mrate_penult<a class="anchor" aria-label="anchor" href="#arg-mrate-penult"></a></dt>
+<dd><p>Numeric array <code>[n_regions, n_regions, n_seas]</code>.
+Instantaneous movement rate matrices (generator \(Q\)) for the penultimate
+age, in the same <code>[from, to]</code> convention as <code>Mov_penult</code>. Required
+when <code>move_timing = 2</code>, ignored otherwise.</p></dd>
+
+
+<dt id="arg-mrate-plus">Mrate_plus<a class="anchor" aria-label="anchor" href="#arg-mrate-plus"></a></dt>
+<dd><p>Numeric array <code>[n_regions, n_regions, n_seas]</code>.
+Instantaneous movement rate matrices for the plus-group age. Required when
+<code>move_timing = 2</code>, ignored otherwise.</p></dd>
+
+
+<dt id="arg-move-timing">move_timing<a class="anchor" aria-label="anchor" href="#arg-move-timing"></a></dt>
+<dd><p>Integer flag for movement/mortality sequencing:
+<code>0</code> = movement then mortality (default), <code>1</code> = mortality then
+movement, <code>2</code> = continuous. See <code><a href="build_seas_operator.html">build_seas_operator</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

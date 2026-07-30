@@ -49,7 +49,9 @@ Do_Population_Projection(
     
 rec_seas_prop[] <- 1/n_seas
      rec_seas_prop
- }
+ },
+  Mrate = NULL,
+  move_timing = 0
 )
 ```
 
@@ -322,6 +324,24 @@ rec_seas_prop[] <- 1/n_seas
 
   Array \`\[n_pop, n_seas\]\`. Proportion of annual recruitment entering
   in each season. Must sum to 1 across seasons for each population.
+
+- Mrate:
+
+  Array dimensioned like \`Movement\`, holding the instantaneous
+  movement rates (the generator) rather than the realized transition
+  fractions. Only read when \`move_timing\` is 1 or 2. \`NULL\`
+  (default) is valid for \`move_timing = 0\`, where movement is applied
+  as a transition matrix and no generator is needed.
+
+- move_timing:
+
+  Integer. When movement happens relative to mortality within a season.
+  \`0\` (default) applies movement first and mortality afterwards; \`1\`
+  applies mortality first and movement afterwards; \`2\` runs the two
+  continuously and simultaneously, which also switches catch-at-age to
+  the spatial Baranov form built on season-integrated abundance. Must
+  match the timing used to derive the reference points the projection is
+  run against.
 
 ## Value
 

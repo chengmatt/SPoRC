@@ -29,7 +29,9 @@ Get_Init_NAA(
   sexratio,
   Movement,
   do_recruits_move,
-  ln_InitDevs
+  ln_InitDevs,
+  Mrate = NULL,
+  move_timing = 0
 )
 ```
 

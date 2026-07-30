@@ -91,7 +91,9 @@ multiple seasons and years.</p>
 <span>    </span>
 <span><span class="va">rec_seas_prop</span><span class="op">[</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">1</span><span class="op">/</span><span class="va">n_seas</span></span>
 <span>     <span class="va">rec_seas_prop</span></span>
-<span> <span class="op">}</span></span>
+<span> <span class="op">}</span>,</span>
+<span>  Mrate <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  move_timing <span class="op">=</span> <span class="fl">0</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -357,6 +359,24 @@ fraction of the year.</p></dd>
 <dd><p>Array `[n_pop, n_seas]`. Proportion of annual
 recruitment entering in each season. Must sum to 1 across seasons for
 each population.</p></dd>
+
+
+<dt id="arg-mrate">Mrate<a class="anchor" aria-label="anchor" href="#arg-mrate"></a></dt>
+<dd><p>Array dimensioned like `Movement`, holding the instantaneous
+movement rates (the generator) rather than the realized transition
+fractions. Only read when `move_timing` is 1 or 2. `NULL` (default) is
+valid for `move_timing = 0`, where movement is applied as a transition
+matrix and no generator is needed.</p></dd>
+
+
+<dt id="arg-move-timing">move_timing<a class="anchor" aria-label="anchor" href="#arg-move-timing"></a></dt>
+<dd><p>Integer. When movement happens relative to mortality
+within a season. `0` (default) applies movement first and mortality
+afterwards; `1` applies mortality first and movement afterwards; `2`
+runs the two continuously and simultaneously, which also switches
+catch-at-age to the spatial Baranov form built on season-integrated
+abundance. Must match the timing used to derive the reference points the
+projection is run against.</p></dd>
 
 </dl></div>
     <div class="section level2">

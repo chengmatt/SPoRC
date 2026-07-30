@@ -130,9 +130,10 @@ e.g. <code>"fishery fleet"</code> or <code>"survey fleet"</code>.</p></dd>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Consolidates what were previously three near-identical functions,
-<code>do_fish_fixed_sel_pars_mapping</code>, <code>do_ret_fixed_sel_pars_mapping</code>,
-and <code>do_srv_fixed_sel_pars_mapping</code>.</p>
+    <p>Serves fishery, retention, and survey selectivity. <code>prefix</code> is
+<code>"fish"</code>, <code>"ret"</code>, or <code>"srv"</code>; retention takes its own
+<code>use_field</code> because it is switched on by the fishery side rather than
+by a retention specific flag.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

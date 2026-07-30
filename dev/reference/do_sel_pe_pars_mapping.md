@@ -79,6 +79,6 @@ vector.
 
 ## Details
 
-Consolidates what were previously three near-identical functions,
-`do_fishsel_pe_pars_mapping`, `do_retsel_pe_pars_mapping`, and
-`do_srvsel_pe_pars_mapping`.
+Serves fishery, retention, and survey selectivity, selected by `prefix`
+exactly as in
+[`do_fixed_sel_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_fixed_sel_pars_mapping.md).

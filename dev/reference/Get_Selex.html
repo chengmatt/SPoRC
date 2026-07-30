@@ -232,8 +232,8 @@ the padded (shared) width, not this block's true node counts, and using
 the padded width to reshape <code>pars</code> would misassign which flattened
 parameter values land in which (bin-node, year-node) cell. Default
 <code>NULL</code> falls back to <code>ncol(Wbin_bicubic)</code>/<code>ncol(Wyr_bicubic)</code>
-for backward compatibility when no padding-width mismatch is possible
-(e.g. a single bicubic block/fleet, or direct unit testing).</p></dd>
+which is correct whenever no padding mismatch is possible (a single bicubic
+block or fleet, or direct unit testing).</p></dd>
 
 </dl></div>
     <div class="section level2">

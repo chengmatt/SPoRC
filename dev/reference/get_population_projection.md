@@ -53,7 +53,9 @@ get_population_projection(
   SSB,
   Total_Biom,
   Dynamic_SSB0,
-  eff_SSB
+  eff_SSB,
+  Mrate = NULL,
+  move_timing = 0
 )
 ```
 
@@ -160,8 +162,11 @@ get_population_projection(
 
 List with elements `NAA`, `NAA0`, `NAA_bef`, `NAA_aft`, `Rec`, `SSB`,
 `Total_Biom`, `Dynamic_SSB0`, `eff_SSB`, `Aggregated_SSB` (array
-`[year]`, SSB summed across pop/region), and `Dynamic_Aggregated_SSB0`
-(array `[year]`, likewise for `Dynamic_SSB0`).
+`[year]`, SSB summed across pop/region), `Dynamic_Aggregated_SSB0`
+(array `[year]`, likewise for `Dynamic_SSB0`), and `NAA_int` (array
+`[pop, region, year, season, age, sex]`). `NAA_int` holds the
+season-integrated abundance needed by the spatial Baranov catch equation
+and is populated only when `move_timing = 2`; it is all zeros otherwise.
 
 ## Details
 

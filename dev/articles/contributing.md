@@ -38,17 +38,12 @@ tests → vignette). Two conventions worth internalizing before you start:
   `do_*_mapping` builds an RTMB parameter map. Match an existing prefix
   rather than inventing a new one — see the naming conventions table in
   Architecture.
-- Extract non-trivial logic out of `SPoRC_rtmb.R` into a helper. The
-  objective function is already large; sections that do real
-  array-crunching (population projection, observation models,
+- Extract non-trivial logic out of `model_objective.R` into a helper.
+  The objective function is already large; sections that do complex
+  computations (population projection, observation models,
   priors/penalties) call out to a `get_*()` helper that takes the
   relevant state as named arguments and returns it, rather than
-  computing inline. This is safe under RTMB — it’s just an R function
-  call, not a macro — as long as every array the block reads or writes
-  is threaded through as an argument/return value. Prefer named
-  arguments over positional ones for these calls; the signatures tend to
-  be long, and named arguments make it obvious at the call site which
-  variable feeds which parameter.
+  computing inline.
 
 ## Testing
 
@@ -64,27 +59,36 @@ or a single file while iterating:
 
 ``` r
 
-testthat::test_file("tests/testthat/test-getselex.R")
+testthat::test_file("tests/testthat/test-model_selectivity.R")
 ```
 
-Most test files are narrowly scoped (`test-movement.R`,
-`test-fdev_pe.R`, `test-getselex.R`, …), but a second category —
-`test-dusky_rtmb.R`, `test-ebs_pol_sgl_rtmb*.R`, `test-mlt_rg_*.R`,
-`test-sabie_three_rg_rtmb.R` — fits a full model end-to-end against a
-bundled example dataset and checks the resulting `obj$rep` values
+or a whole group, since test files carry the same prefixes as `R/`:
+
+``` r
+
+testthat::test_dir("tests/testthat", filter = "model_")
+```
+
+`filter` is a regex matched against the file path, so use the bare
+prefix rather than anchoring it with `^`.
+
+Most test files are narrowly scoped (`test-model_movement.R`,
+`test-setup_fishery_fdev.R`, `test-model_selectivity.R`, …), but the
+`test-regression_*.R` files fit a full model end-to-end against a
+bundled example dataset and check the resulting `obj$rep` values
 (e.g. `SSB`, `Rec`) against pinned reference vectors. These are the
-tests most likely to catch an accidental change in `SPoRC_rtmb.R`’s
+tests most likely to catch an accidental change in `model_objective.R`’s
 numerics, and they’re also the slowest (each one runs a real
-optimization) — expect a full local run of just that subset to take
+optimization) so expect a full local run of just that subset to take
 several minutes to tens of minutes depending on your machine. If you
-touch anything in `SPoRC_rtmb.R` or a helper it calls, run at least one
-of these before opening a PR, even if your change looks purely
+touch anything in `model_objective.R` or a helper it calls, run at least
+one of these before opening a PR, even if your change looks purely
 mechanical (e.g. a refactor that moves code into a helper function
 without intending to change any values) — a subtle argument-order or
 indexing mistake in that kind of change won’t show up any other way.
 
 For a new feature, add a targeted test near it, and check whether the
-reference values in the `*_rtmb.R` regression tests need updating (they
+reference values in the `test-regression_*.R` tests need updating (they
 should only change if your feature is expected to change model output
 for the bundled example data — if a “pure refactor” changes them, that’s
 a bug in the refactor, not a test that needs updating).

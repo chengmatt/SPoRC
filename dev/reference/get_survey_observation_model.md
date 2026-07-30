@@ -34,7 +34,10 @@ get_survey_observation_model(
   SrvIAL,
   srv_idx_type,
   WAA_srv,
-  PredSrvIdx
+  PredSrvIdx,
+  Mrate = NULL,
+  move_timing = 0,
+  seasdur = rep(1, n_seas)
 )
 ```
 

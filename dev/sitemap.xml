@@ -65,10 +65,13 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Tagging.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Setup_sim_env.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Simulate_Pop_Static.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/advance_seas.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/apply_pop_dy.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/build_pe_map.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/build_plus_group_T.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/build_seas_operator.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/build_shared_spec_map.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/catch_at_age.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/catch_to_F_multifleet.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/catch_to_F_singlefleet.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/check_data_dimensions.html</loc></url>
@@ -178,6 +181,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/global_SPR.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/index.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/index_osa_field_map.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/integrate_seas_abundance.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/local_BH_Fmsy_multipop.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/local_BH_Fmsy_sglpop.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/marg_AIC.html</loc></url>
@@ -190,6 +194,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/osa_extract_values.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/osa_extract_x.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/osa_keep_subset.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/osa_one_step_predict.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/osa_pbetabinom.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/osa_pbinom.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/osa_squeeze.html</loc></url>
@@ -214,6 +219,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/run_internal_index_osa.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/run_internal_tag_osa.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/safe_extract.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/seas_operator_and_integral.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/set_data_indicator_unused.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_dusky_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_ebswp_data.html</loc></url>
@@ -226,6 +232,8 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/single_region_BH_Fmsy.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/single_region_SPR.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/solve_plus_group.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/spawn_state.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/survey_state.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/tag_fam_of.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/tag_grid.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/theme_sablefish.html</loc></url>

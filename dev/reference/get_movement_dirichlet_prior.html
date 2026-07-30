@@ -39,7 +39,7 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_movement_dirichlet_prior</span><span class="op">(</span><span class="va">Movement_prior</span>, <span class="va">Movement</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_movement_dirichlet_prior</span><span class="op">(</span><span class="va">Movement_prior</span>, <span class="va">Movement</span>, Mrate <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -50,18 +50,44 @@
 <dd><p>Data frame with columns <code>pop</code>, <code>region_from</code>,
 <code>year</code>, <code>seas</code>, <code>age</code>, <code>sex</code>, and <code>alpha</code> (list
 column of Dirichlet concentration vectors) — one row per penalized
-movement-from vector.</p></dd>
+movement-from vector. For CTMC movement, <code>seas</code> selects which season's
+generator supplies the annual fractions.</p></dd>
 
 
 <dt id="arg-movement">Movement<a class="anchor" aria-label="anchor" href="#arg-movement"></a></dt>
 <dd><p>Array <code>[pop, region_from, region_to, year, season, age,
 sex]</code> of movement rates.</p></dd>
 
+
+<dt id="arg-mrate">Mrate<a class="anchor" aria-label="anchor" href="#arg-mrate"></a></dt>
+<dd><p>Array of instantaneous movement rates (generator \(\dot{Q}\)),
+dimensioned like <code>Movement</code> and stored unscaled by season duration.
+<code>NULL</code> for unstructured movement, in which case <code>Movement</code> is used
+as-is.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>Numeric scalar negative log-likelihood contribution, summed across
   all rows of <code>Movement_prior</code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>For CTMC movement (<code>move_type = 1</code>) the prior is placed on the
+<em>annual</em> movement fractions \(\exp(\dot{\mathbf{Q}})\), not on the
+seasonal fractions \(\exp(\dot{\mathbf{Q}}\,\Delta t)\) stored in
+<code>Movement</code>. Those differ once <code>ctmc_scale_by_seasdur = 1</code>, and the
+difference is not benign: a season's movement matrix approaches the identity as
+the season shortens, so a fixed <code>alpha</code> silently becomes a much stronger
+constraint as <code>n_seas</code> grows. On a three-region fixture the same
+<code>alpha = 3</code> prior cost 1.04 nLL units at <code>n_seas = 1</code> but 9.91 at
+<code>n_seas = 12</code>. Evaluating on the annual matrix makes <code>alpha</code> mean the
+same thing regardless of seasonal structure, and matches how such priors are
+elicited ("what fraction of fish move per year"). Under
+<code>ctmc_scale_by_seasdur = 0</code> the two coincide, so nothing changes there.</p>
+<p>Unstructured movement (<code>move_type = 0</code>) has no generator; its
+<code>Movement</code> entries are transition fractions in their own right and are used
+directly, unchanged.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

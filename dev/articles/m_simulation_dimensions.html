@@ -206,12 +206,17 @@ non-natal regions</td>
 <tr class="even">
 <td><code>NAA_bef</code></td>
 <td><code>n_pop × n_regions × n_years × n_seas × n_ages × n_sexes × n_sims</code></td>
-<td>Numbers-at-age before movement is applied</td>
+<td>Numbers-at-age at the start of the season, before movement is
+applied</td>
 </tr>
 <tr class="odd">
 <td><code>NAA_aft</code></td>
 <td><code>n_pop × n_regions × n_years × n_seas × n_ages × n_sexes × n_sims</code></td>
-<td>Numbers-at-age after movement is applied</td>
+<td>Numbers-at-age after movement is applied. Under
+<code>move_timing = 0</code> this is post-movement but pre-mortality;
+under <code>move_timing</code> 1 and 2 movement is resolved at the end
+of the season, so it is the post-season state (movement and mortality
+together)</td>
 </tr>
 <tr class="even">
 <td><code>Dynamic_SSB0</code></td>

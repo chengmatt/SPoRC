@@ -221,9 +221,9 @@ Get_Selex(
   width, not this block's true node counts, and using the padded width
   to reshape `pars` would misassign which flattened parameter values
   land in which (bin-node, year-node) cell. Default `NULL` falls back to
-  `ncol(Wbin_bicubic)`/`ncol(Wyr_bicubic)` for backward compatibility
-  when no padding-width mismatch is possible (e.g. a single bicubic
-  block/fleet, or direct unit testing).
+  `ncol(Wbin_bicubic)`/`ncol(Wyr_bicubic)` which is correct whenever no
+  padding mismatch is possible (a single bicubic block or fleet, or
+  direct unit testing).
 
 ## Value
 

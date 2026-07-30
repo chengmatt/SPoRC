@@ -71,7 +71,7 @@ seasons of duration
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Δ</mi><mi>τ</mi></mrow><annotation encoding="application/x-tex">\Delta\tau</annotation></semantics></math>
 (where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mo>∑</mo><mi>τ</mi></msub><mi mathvariant="normal">Δ</mi><mi>τ</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\sum_\tau \Delta\tau = 1</annotation></semantics></math>).
-Within each annual–seasonal cycle, processes occur in sequential
+Within each annual–seasonal cycle, processes occur in the following
 order:</p>
 <ol style="list-style-type: decimal">
 <li>Recruitment generally occurs in the first season, with additional
@@ -79,11 +79,23 @@ recruits apportioned to subsequent seasons according to seasonal
 proportions. The exception is age-0 recruitment (no lag between spawning
 and recruitment; see Recruitment Processes below), where recruits
 instead enter no earlier than the spawning season,</li>
-<li>Markovian movement of individuals then follows (movement only occurs
-in the spatial model),</li>
-<li>Total mortality occurs within each season; at the end of the final
-season, individuals advance in age.</li>
+<li>Markovian movement of individuals (movement only occurs in the
+spatial model) and total mortality both act within the season; at the
+end of the final season, individuals advance in age.</li>
 </ol>
+<p>How movement and mortality are sequenced <em>within</em> step 2 is a
+user choice, set by <code>move_timing</code>: movement then mortality
+(<code>0</code>, the default and the historical <code>SPoRC</code>
+behaviour), mortality then movement (<code>1</code>), or the two acting
+simultaneously and continuously (<code>2</code>). This choice is not
+confined to the projection equations. It propagates to every quantity
+whose value depends on where fish are partway through a season –
+spawning biomass, catch-at-age, fishery and survey indices, tag
+recaptures, equilibrium initialisation, and per-recruit reference points
+– and each of those is given below. The three options coincide exactly
+when total mortality is constant across regions, when mortality is zero,
+and when movement is absent, so single-region models are unaffected by
+the setting.</p>
 <p>Tag releases occur simultaneous to recruitment in the release year
 and season (i.e., recruits can be tagged), and tag recaptures are
 computed each season.</p>
@@ -233,34 +245,56 @@ N_{p,r,a,s}^{'} = \left\{ \begin{matrix}
 \end{matrix} \right.\  \\
 \end{matrix}</annotation></semantics></math></p>
 <p>The initialized age structure is then iterated forward to equilibrium
-by applying recruitment, movement, and mortality and ageing processes in
-order (see Population Projection section for equations).</p>
+by applying recruitment, followed by the seasonal transition (movement
+and mortality) and ageing. That transition is the same operator
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝚽</mi><annotation encoding="application/x-tex">\mathbf{\Phi}</annotation></semantics></math>
+used by the main projection, so equilibrium initialization inherits
+whatever <code>move_timing</code> sequencing the model is configured
+with (see Population Projection section for equations).</p>
 <p>While the iterative method correctly accumulates the plus group when
 movement is present, it can be computationally inefficient. Therefore,
 <code>SPoRC</code> enables users to compute the plus group using the
 matrix formulation of the geometric series, which correctly accounts for
-movement processes. The population is projected forward to the
-penultimate age
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>−</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow><mi>′</mi></msubsup><annotation encoding="application/x-tex">N_{p,r,a_{+} - 1,s}^{'}</annotation></semantics></math>),
-and the penultimate age is then projected forward once more:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐗</mi><mrow><mi>p</mi><mo>,</mo><mi>s</mi></mrow></msub><mo mathvariant="bold">=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>−</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow><mi>′</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>=</mo><mn>1</mn><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>−</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mtext mathvariant="normal">diag</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">exp</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msubsup><mi>𝐙</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi><mo>=</mo><msub><mi>a</mi><mo>+</mo></msub><mo>−</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow><mi>′</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\mathbf{X}_{p,s}\mathbf{=}\left( \left( \mathbf{N}_{p,a_{+} - 1,s}^{'} \right)^{T}\mathbf{M}_{p,y = 1,a_{+} - 1,s} \right) \text{diag}\left( \exp\left( - \mathbf{Z}_{p,a = a_{+}-1,s}^{'} \right)\right)</annotation></semantics></math></p>
+movement processes. Let
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>𝚽</mi><mrow><mi>p</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mi>′</mi></msubsup><annotation encoding="application/x-tex">\mathbf{\Phi}_{p,\tau,a,s}^{'}</annotation></semantics></math>
+denote the seasonal transition operator of the Population Projection
+section evaluated at the equilibrium mortality
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>𝐙</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mi>′</mi></msubsup><annotation encoding="application/x-tex">\mathbf{Z}_{p,a,s}^{'}</annotation></semantics></math>,
+and define the year-long transition for age
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math>
+by composing seasons in order (season 1 applied first, hence
+rightmost):</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>𝐆</mi><mrow><mi>p</mi><mo>,</mo><mi>s</mi></mrow><mi>a</mi></msubsup><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>𝚽</mi><mrow><mi>p</mi><mo>,</mo><msub><mi>n</mi><mi>τ</mi></msub><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mi>′</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>𝚽</mi><mrow><mi>p</mi><mo>,</mo><msub><mi>n</mi><mi>τ</mi></msub><mo>−</mo><mn>1</mn><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mi>′</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><mi>⋯</mi><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>𝚽</mi><mrow><mi>p</mi><mo>,</mo><mn>1</mn><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mi>′</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup></mrow><annotation encoding="application/x-tex">\mathbf{G}_{p,s}^{a} = \left( \mathbf{\Phi}_{p,n_\tau,a,s}^{'} \right)^{T}\left( \mathbf{\Phi}_{p,n_\tau - 1,a,s}^{'} \right)^{T}\cdots\left( \mathbf{\Phi}_{p,1,a,s}^{'} \right)^{T}</annotation></semantics></math></p>
+<p>The transposes appear because
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝚽</mi><annotation encoding="application/x-tex">\mathbf{\Phi}</annotation></semantics></math>
+is stored in the row-vector convention
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>𝐍</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><mi>𝚽</mi></mrow><annotation encoding="application/x-tex">\left(\mathbf{N}\right)^{T}\mathbf{\Phi}</annotation></semantics></math>
+used above, whereas the recursion below is written as a column operator
+acting on
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐍</mi><annotation encoding="application/x-tex">\mathbf{N}</annotation></semantics></math>.
+The population is projected forward to the penultimate age
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>−</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow><mi>′</mi></msubsup><annotation encoding="application/x-tex">\mathbf{N}_{p,a_{+} - 1,s}^{'}</annotation></semantics></math>),
+and the penultimate age is then projected forward through one more
+year:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐗</mi><mrow><mi>p</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><msubsup><mi>𝐆</mi><mrow><mi>p</mi><mo>,</mo><mi>s</mi></mrow><mrow><msub><mi>a</mi><mo>+</mo></msub><mo>−</mo><mn>1</mn></mrow></msubsup><mspace width="0.167em"></mspace><msubsup><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>−</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow><mi>′</mi></msubsup></mrow><annotation encoding="application/x-tex">\mathbf{X}_{p,s} = \mathbf{G}_{p,s}^{a_{+} - 1}\,\mathbf{N}_{p,a_{+} - 1,s}^{'}</annotation></semantics></math></p>
 <p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">\mathbf{M}_{p,y,a,s}</annotation></semantics></math>
-is a first-order Markov matrix representing movement for population
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>p</mi><annotation encoding="application/x-tex">p</annotation></semantics></math>,
-and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐗</mi><mrow><mi>p</mi><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">\mathbf{X}_{p,s}</annotation></semantics></math>
 represents the culmination of processes applied to the penultimate age.
-A transition matrix
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐆</mi><mrow><mi>p</mi><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">\mathbf{G}_{p,s}</annotation></semantics></math>
-is then constructed to represent the combined effects of survival and
-movement on the plus group:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐆</mi><mrow><mi>p</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><mtext mathvariant="normal">diag</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">exp</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msubsup><mi>𝐙</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi><mo>=</mo><msub><mi>a</mi><mo>+</mo></msub><mo>,</mo><mi>s</mi></mrow><mi>′</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>=</mo><mn>1</mn><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup></mrow><annotation encoding="application/x-tex">\mathbf{G}_{p,s} = \text{diag}\left( \exp\left( - \mathbf{Z}_{p,a = a_{+},s}^{'} \right) \right)\left( \mathbf{M}_{p,y = 1,a_{+},s} \right)^{T}</annotation></semantics></math></p>
-<p>The plus group solution incorporating movement is then given by:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>,</mo><mi>s</mi></mrow><mi>′</mi></msubsup><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mrow><mi>𝐈</mi><mo mathvariant="bold">−</mo></mrow><msub><mi>𝐆</mi><mrow><mi>p</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mi>−</mi><mn>1</mn></mrow></msup><msub><mi>𝐗</mi><mrow><mi>p</mi><mo>,</mo><mi>s</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\mathbf{N}_{p,a_{+},s}^{'} = \left( \mathbf{I -}\mathbf{G}_{p,s} \right)^{- 1}\mathbf{X}_{p,s}</annotation></semantics></math></p>
-<p>When only a single region is modeled or no movement occurs (i.e., an
-identity matrix), the matrix formulation simplifies to the standard
-scalar geometric series solution.</p>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>𝐆</mi><mrow><mi>p</mi><mo>,</mo><mi>s</mi></mrow><msub><mi>a</mi><mo>+</mo></msub></msubsup><annotation encoding="application/x-tex">\mathbf{G}_{p,s}^{a_{+}}</annotation></semantics></math>
+plays the role of the survival ratio in the scalar series, representing
+the combined effects of survival and movement on the plus group over a
+full year, so the plus group solution incorporating movement is:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>,</mo><mi>s</mi></mrow><mi>′</mi></msubsup><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mrow><mi>𝐈</mi><mo mathvariant="bold">−</mo></mrow><msubsup><mi>𝐆</mi><mrow><mi>p</mi><mo>,</mo><mi>s</mi></mrow><msub><mi>a</mi><mo>+</mo></msub></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mi>−</mi><mn>1</mn></mrow></msup><msub><mi>𝐗</mi><mrow><mi>p</mi><mo>,</mo><mi>s</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\mathbf{N}_{p,a_{+},s}^{'} = \left( \mathbf{I -}\mathbf{G}_{p,s}^{a_{+}} \right)^{- 1}\mathbf{X}_{p,s}</annotation></semantics></math></p>
+<p>Under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 0</annotation></semantics></math>
+and a single season,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>𝐆</mi><mrow><mi>p</mi><mo>,</mo><mi>s</mi></mrow><mi>a</mi></msubsup><annotation encoding="application/x-tex">\mathbf{G}_{p,s}^{a}</annotation></semantics></math>
+is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">diag</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">exp</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msubsup><mi>𝐙</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mi>′</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup></mrow><annotation encoding="application/x-tex">\text{diag}\left( \exp\left( - \mathbf{Z}_{p,a,s}^{'} \right) \right)\left( \mathbf{M}_{p,y = 1,a,s} \right)^{T}</annotation></semantics></math>,
+the form used in earlier versions of <code>SPoRC</code>. When only a
+single region is modeled or no movement occurs (i.e., an identity
+matrix), the matrix formulation simplifies to the standard scalar
+geometric series solution under every <code>move_timing</code>.</p>
 <p>Following the definition of equilibrium age structure, initial age
 deviations can be applied:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="center" style="text-align: center"><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>a</mi><mo>≠</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><msubsup><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>a</mi><mo>≠</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow><mo>′</mo></msubsup><mtext mathvariant="normal">exp</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>i</mi></mrow><mtext mathvariant="normal">Init</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{matrix}
@@ -360,9 +394,22 @@ below).</p>
 <p>The spawning stock biomass is the product of numbers-at-age, spawning
 weight-at-age, and maturity-at-age for females in the spawning season
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><annotation encoding="application/x-tex">\tau^{spawn}</annotation></semantics></math>:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="center" style="text-align: center"><mi>S</mi><mi>S</mi><msub><mi>B</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub><mo>=</mo><munderover><mo>∑</mo><mrow><mi>a</mi><mo>=</mo><mn>1</mn></mrow><msub><mi>a</mi><mo>+</mo></msub></munderover><mrow><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow></msub><msubsup><mi>W</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msubsup><msub><mtext mathvariant="normal">Mat</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow></msub></mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msub><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow></msub><mo>⋅</mo><msup><mi>t</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{matrix}
-SSB_{p,r,y} = \sum_{a = 1}^{a_{+}}{N_{p,r,y,\tau^{spawn},a,s = 1}W_{p,r,y,\tau^{spawn},a,s = 1}^{spawn}\text{Mat}_{p,r,y,\tau^{spawn},a,s = 1}}\exp\left(-Z_{p,r,y,\tau^{spawn},a,s=1} \cdot t^{spawn}\right) \\
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="center" style="text-align: center"><mi>S</mi><mi>S</mi><msub><mi>B</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub><mo>=</mo><munderover><mo>∑</mo><mrow><mi>a</mi><mo>=</mo><mn>1</mn></mrow><msub><mi>a</mi><mo>+</mo></msub></munderover><mrow><msubsup><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msubsup><msubsup><mi>W</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msubsup><msub><mtext mathvariant="normal">Mat</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow></msub></mrow></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{matrix}
+SSB_{p,r,y} = \sum_{a = 1}^{a_{+}}{N_{p,r,y,\tau^{spawn},a,s = 1}^{spawn}W_{p,r,y,\tau^{spawn},a,s = 1}^{spawn}\text{Mat}_{p,r,y,\tau^{spawn},a,s = 1}} \\
 \end{matrix}</annotation></semantics></math></p>
+<p>where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>N</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><annotation encoding="application/x-tex">N^{spawn}</annotation></semantics></math>
+is the numbers-at-age propagated from the start of the spawning season
+to the spawning point
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>t</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><annotation encoding="application/x-tex">t^{spawn}</annotation></semantics></math>
+within it. That propagation depends on how movement and mortality are
+sequenced and is defined in the Spawning Biomass Timing section below.
+Under the default
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 0</annotation></semantics></math>
+it is simply
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow></msub><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msub><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow></msub><mo>⋅</mo><msup><mi>t</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">N_{p,r,y,\tau^{spawn},a,s = 1}\exp\left(-Z_{p,r,y,\tau^{spawn},a,s=1} \cdot t^{spawn}\right)</annotation></semantics></math>
+evaluated after that season’s movement has been applied, which is the
+familiar form.</p>
 <p>For single-sex models, SSB is multiplied by 0.5 to obtain female-only
 spawning biomass.</p>
 <p>Note that
@@ -453,6 +500,23 @@ for early years: since
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mi>S</mi><msub><mi>B</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">SSB_{p,r,y}</annotation></semantics></math>
 (this year’s own survivor biomass) is always available by the time it is
 needed, including in year 1.</p>
+<p>Because age-0 recruits are inserted in the middle of the spawning
+season rather than at its start, <code>move_timing</code> also
+determines whether they need a movement step of their own. Under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 0</annotation></semantics></math>
+the season’s movement has already been applied by the time
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mi>S</mi><msub><mi>B</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">SSB_{p,r,y}</annotation></semantics></math>
+is evaluated, so recruits inserted immediately afterwards would
+otherwise miss it entirely; when
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">do_recruits_move</mtext><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\text{do\_recruits\_move} = 1</annotation></semantics></math>
+they are therefore given that season’s movement step explicitly, and
+they then experience the rest of the season’s mortality like any other
+seasonal recruit pulse. Under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtext mathvariant="normal">move_timing</mtext><annotation encoding="application/x-tex">\text{move\_timing}</annotation></semantics></math>
+1 and 2 movement has not yet occurred at that point in the season, so
+the newly inserted recruits are carried by the end-of-season transition
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝚽</mi><annotation encoding="application/x-tex">\mathbf{\Phi}</annotation></semantics></math>
+along with every other age and no separate catch-up step is applied.</p>
 </div>
 <div class="section level5">
 <h5 id="effective-spawning-biomass-and-multi-population-dynamics">Effective Spawning Biomass and Multi-Population Dynamics<a class="anchor" aria-label="anchor" href="#effective-spawning-biomass-and-multi-population-dynamics"></a>
@@ -494,8 +558,24 @@ a separate spawning movement matrix
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msubsup><annotation encoding="application/x-tex">\mathbf{M}^{spawn}_{p,y,a,s}</annotation></semantics></math>
 is applied to both fished and unfished numbers-at-age prior to computing
 spawning biomass quantities, representing natal homing of individuals to
-their spawning grounds:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msubsup><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><msubsup><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msubsup></mrow><annotation encoding="application/x-tex">\mathbf{N}^{spawn}_{p,y,a,s} = \left(\mathbf{N}_{p,y,\tau^{spawn},a,s}\right)^T \mathbf{M}^{spawn}_{p,y,a,s}</annotation></semantics></math></p>
+their spawning grounds. It composes with, rather than replaces, whatever
+within-season movement <code>move_timing</code> implies: it acts on the
+numbers already propagated to the spawning point,</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mrow><mi>h</mi><mi>o</mi><mi>m</mi><mi>e</mi><mi>d</mi></mrow></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><msubsup><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msubsup></mrow><annotation encoding="application/x-tex">\left(\mathbf{N}^{homed}_{p,y,a,s}\right)^T = \left(\mathbf{N}^{spawn}_{p,y,\tau^{spawn},a,s}\right)^T \mathbf{M}^{spawn}_{p,y,a,s}</annotation></semantics></math></p>
+<p>with
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>𝐍</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><annotation encoding="application/x-tex">\mathbf{N}^{spawn}</annotation></semantics></math>
+as defined in the Spawning Biomass Timing section below. The ordering
+relative to the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>t</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><annotation encoding="application/x-tex">t^{spawn}</annotation></semantics></math>
+mortality discount differs by timing, and the two do not commute once
+movement redistributes fish: under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 0</annotation></semantics></math>
+natal homing is applied to the post-movement numbers and the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>t</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><annotation encoding="application/x-tex">t^{spawn}</annotation></semantics></math>
+discount is taken afterwards, at the destination region, whereas under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtext mathvariant="normal">move_timing</mtext><annotation encoding="application/x-tex">\text{move\_timing}</annotation></semantics></math>
+1 and 2 the propagation to the spawning point already carries that
+discount and natal homing is applied to the result.</p>
 <p>This additional movement is applied only for spawning biomass
 calculations and does not alter the numbers-at-age array used for
 subsequent mortality and movement processes.</p>
@@ -505,39 +585,261 @@ subsequent mortality and movement processes.</p>
 <h4 id="population-projection">Population Projection<a class="anchor" aria-label="anchor" href="#population-projection"></a>
 </h4>
 <p>Following recruitment processes, the population is projected forward.
-In the context of the spatial model, Markovian movement dynamics are
-first applied within each season:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="center" style="text-align: center"><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{matrix}
-\mathbf{N}_{p,y,\tau,a,s} = \left( \mathbf{N}_{p,y,\tau,a,s} \right)^{T}\mathbf{M}_{p,y,\tau,a,s} \\
-\end{matrix}</annotation></semantics></math></p>
-<p>Here,
+In the spatial model, each season advances the population under both
+Markovian movement and total mortality. Movement is described by a
+first-order Markov matrix
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">\mathbf{M}_{p,y,\tau,a,s}</annotation></semantics></math>
-is a first-order Markov matrix representing movement. In a single-region
-case, no movement is applied (i.e.,
+acting on the numbers-at-region vector,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\left( \mathbf{N}_{p,y,\tau,a,s} \right)^{T}\mathbf{M}_{p,y,\tau,a,s}</annotation></semantics></math>.
+In a single-region case, no movement is applied (i.e.,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">\mathbf{M}_{p,y,\tau,a,s}</annotation></semantics></math>
 is an implied identity matrix). For each population, year, season, age,
 and sex combination, the movement matrix specifies bulk-transfer
-coefficients, with parameters transformed through a multinomial logit to
-ensure that proportions within each origin region sum to one.</p>
-<p>For age-0 recruitment
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mi>e</mi><mi>c</mi><mi>L</mi><mi>a</mi><mi>g</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">RecLag = 0</annotation></semantics></math>),
-this movement step at season
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><annotation encoding="application/x-tex">\tau^{spawn}</annotation></semantics></math>
-is applied to the survivor population before that season’s
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mi>S</mi><msub><mi>B</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">SSB_{p,r,y}</annotation></semantics></math>/recruitment
-are computed (see Age-0 Recruitment above); the resulting recruits are
-then inserted immediately afterward, so they still experience that
-season’s mortality below like any other seasonal recruit pulse.</p>
-<p>Following movement, mortality occurs. For seasons within a year
+coefficients. <em>Where</em> within the season that transfer happens –
+before mortality, after it, or continuously alongside it – is set by
+<code>move_timing</code>, and is what the rest of this section makes
+explicit.</p>
+<p>Movement and mortality are therefore combined into a single seasonal
+transition operator
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝚽</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">\mathbf{\Phi}_{p,y,\tau,a,s}</annotation></semantics></math>.
+Writing
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐙</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">\mathbf{Z}_{p,y,\tau,a,s}</annotation></semantics></math>
+for the vector of seasonal total mortality across regions,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐬</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msub><mi>𝐙</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\mathbf{s}_{p,y,\tau,a,s} = \exp\left( -\mathbf{Z}_{p,y,\tau,a,s} \right)</annotation></semantics></math>
+for seasonal survival, and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>𝐐</mi><mo accent="true">̇</mo></mover><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">\dot{\mathbf{Q}}_{p,y,\tau,a,s}</annotation></semantics></math>
+for the CTMC generator:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝚽</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mspace width="0.167em"></mspace><mtext mathvariant="normal">diag</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐬</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>0</mn></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mtext mathvariant="normal">diag</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐬</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>1</mn></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><msup><mrow><mo stretchy="true" form="prefix">[</mo><mi mathvariant="normal">exp</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝚲</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow><mi>T</mi></msup></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>2</mn></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"></mtd></mtr></mtable></mrow></mrow><annotation encoding="application/x-tex">\mathbf{\Phi}_{p,y,\tau,a,s} = \begin{cases}
+\mathbf{M}_{p,y,\tau,a,s}\,\text{diag}\left( \mathbf{s}_{p,y,\tau,a,s} \right) &amp; \text{move\_timing} = 0 \\[4pt]
+\text{diag}\left( \mathbf{s}_{p,y,\tau,a,s} \right)\mathbf{M}_{p,y,\tau,a,s} &amp; \text{move\_timing} = 1 \\[4pt]
+\left[ \exp\left( \mathbf{\Lambda}_{p,y,\tau,a,s} \right) \right]^{T} &amp; \text{move\_timing} = 2 \\
+\end{cases}</annotation></semantics></math></p>
+<p>where</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝚲</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><msubsup><mover><mi>𝐐</mi><mo accent="true">̇</mo></mover><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mi>T</mi></msubsup><mspace width="0.167em"></mspace><mi mathvariant="normal">Δ</mi><mi>τ</mi><mo>−</mo><mtext mathvariant="normal">diag</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐙</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\mathbf{\Lambda}_{p,y,\tau,a,s} = \dot{\mathbf{Q}}_{p,y,\tau,a,s}^{T}\,\Delta\tau - \text{diag}\left( \mathbf{Z}_{p,y,\tau,a,s} \right)</annotation></semantics></math></p>
+<p>is the combined movement–mortality generator for the season,
+expressed in the column convention
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>𝐐</mi><mo accent="true">̇</mo></mover><annotation encoding="application/x-tex">\dot{\mathbf{Q}}</annotation></semantics></math>
+is stored row-wise, hence the transpose). Note that
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝚲</mi><annotation encoding="application/x-tex">\mathbf{\Lambda}</annotation></semantics></math>
+already carries the season duration in both of its terms
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Δ</mi><mi>τ</mi></mrow><annotation encoding="application/x-tex">\Delta\tau</annotation></semantics></math>
+explicitly on the generator, and implicitly in
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐙</mi><annotation encoding="application/x-tex">\mathbf{Z}</annotation></semantics></math>,
+which is itself a seasonal rate), so the season is parameterised on the
+unit interval throughout: propagating a fraction
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>
+of the way through the season means
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>𝚲</mi><mspace width="0.167em"></mspace><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\exp\left( \mathbf{\Lambda}\,t \right)</annotation></semantics></math>
+with
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi><mo>∈</mo><mo stretchy="false" form="prefix">[</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">t \in [0,1]</annotation></semantics></math>,
+and a full season is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">t = 1</annotation></semantics></math>.</p>
+<p>Under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 0</annotation></semantics></math>
+(sequential; movement then mortality) individuals move at the start of
+the season and then experience mortality in the destination region.
+Under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 1</annotation></semantics></math>
+(sequential; mortality then movement) they experience mortality in the
+origin region and move at the end of the season. Under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 2</annotation></semantics></math>
+(continuous) movement and mortality act simultaneously, with the
+generator and mortality rate combined inside a single matrix
+exponential;
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐌</mi><annotation encoding="application/x-tex">\mathbf{M}</annotation></semantics></math>
+does not appear at all, and this option requires an estimated CTMC
+generator
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_type</mtext><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\text{move\_type} = 1</annotation></semantics></math>).
+The three coincide when
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐙</mi><annotation encoding="application/x-tex">\mathbf{Z}</annotation></semantics></math>
+is constant across regions (a scalar multiple of the identity commutes
+with the generator), when
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝐙</mi><mo>=</mo><mn>𝟎</mn></mrow><annotation encoding="application/x-tex">\mathbf{Z} = \mathbf{0}</annotation></semantics></math>,
+and when
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝐌</mi><mo>=</mo><mi>𝐈</mi></mrow><annotation encoding="application/x-tex">\mathbf{M} = \mathbf{I}</annotation></semantics></math>
+(equivalently
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>𝐐</mi><mo accent="true">̇</mo></mover><mo>=</mo><mn>𝟎</mn></mrow><annotation encoding="application/x-tex">\dot{\mathbf{Q}} = \mathbf{0}</annotation></semantics></math>).</p>
+<p>For seasons within a year
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi><mo>&lt;</mo><msub><mi>n</mi><mi>τ</mi></msub></mrow><annotation encoding="application/x-tex">\tau &lt; n_\tau</annotation></semantics></math>),
-within-season mortality is applied and individuals advance to the next
-season at the same age:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>+</mo><mn>1</mn><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msub><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">N_{p,r,y,\tau + 1,a,s} = N_{p,r,y,\tau,a,s}\exp\left( - Z_{p,r,y,\tau,a,s} \right)</annotation></semantics></math></p>
+individuals advance to the next season at the same age:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>+</mo><mn>1</mn><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><msub><mi>𝚽</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\left( \mathbf{N}_{p,y,\tau + 1,a,s} \right)^{T} = \left( \mathbf{N}_{p,y,\tau,a,s} \right)^{T}\mathbf{\Phi}_{p,y,\tau,a,s}</annotation></semantics></math></p>
 <p>At the end of the final season
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi><mo>=</mo><msub><mi>n</mi><mi>τ</mi></msub></mrow><annotation encoding="application/x-tex">\tau = n_\tau</annotation></semantics></math>),
 individuals advance in age:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>+</mo><mn>1</mn><mo>,</mo><mn>1</mn><mo>,</mo><mi>a</mi><mo>+</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><msub><mi>n</mi><mi>τ</mi></msub><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><msub><mi>𝚽</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><msub><mi>n</mi><mi>τ</mi></msub><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>,</mo><mspace width="1.0em"></mspace><mrow><mtext mathvariant="normal">for </mtext><mspace width="0.333em"></mspace></mrow><mn>1</mn><mo>≤</mo><mi>a</mi><mo>&lt;</mo><msub><mi>a</mi><mo>+</mo></msub></mrow><annotation encoding="application/x-tex">\left( \mathbf{N}_{p,y + 1,1,a + 1,s} \right)^{T} = \left( \mathbf{N}_{p,y,n_\tau,a,s} \right)^{T}\mathbf{\Phi}_{p,y,n_\tau,a,s},\quad\text{for }1 \leq a &lt; a_{+}</annotation></semantics></math></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>+</mo><mn>1</mn><mo>,</mo><mn>1</mn><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>+</mo><mn>1</mn><mo>,</mo><mn>1</mn><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><mo>+</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><msub><mi>n</mi><mi>τ</mi></msub><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><msub><mi>𝚽</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><msub><mi>n</mi><mi>τ</mi></msub><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>,</mo><mi>s</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\left( \mathbf{N}_{p,y + 1,1,a_{+},s} \right)^{T} = \left( \mathbf{N}_{p,y + 1,1,a_{+},s} \right)^{T} + \left( \mathbf{N}_{p,y,n_\tau,a_{+},s} \right)^{T}\mathbf{\Phi}_{p,y,n_\tau,a_{+},s}</annotation></semantics></math></p>
+<p>When
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 0</annotation></semantics></math>
+these reduce to the elementwise sequential form, with movement applied
+first as
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\mathbf{N}_{p,y,\tau,a,s} = \left( \mathbf{N}_{p,y,\tau,a,s} \right)^{T}\mathbf{M}_{p,y,\tau,a,s}</annotation></semantics></math>
+and mortality applied afterwards as:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>+</mo><mn>1</mn><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msub><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">N_{p,r,y,\tau + 1,a,s} = N_{p,r,y,\tau,a,s}\exp\left( - Z_{p,r,y,\tau,a,s} \right)</annotation></semantics></math></p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>+</mo><mn>1</mn><mo>,</mo><mn>1</mn><mo>,</mo><mi>a</mi><mo>+</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><msub><mi>n</mi><mi>τ</mi></msub><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msub><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><msub><mi>n</mi><mi>τ</mi></msub><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="1.0em"></mspace><mrow><mtext mathvariant="normal">for </mtext><mspace width="0.333em"></mspace></mrow><mn>1</mn><mo>≤</mo><mi>a</mi><mo>&lt;</mo><msub><mi>a</mi><mo>+</mo></msub></mrow><annotation encoding="application/x-tex">N_{p,r,y + 1,1,a + 1,s} = N_{p,r,y,n_\tau,a,s}\exp\left( - Z_{p,r,y,n_\tau,a,s} \right),\quad\text{for }1 \leq a &lt; a_{+}</annotation></semantics></math></p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>+</mo><mn>1</mn><mo>,</mo><mn>1</mn><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>+</mo><mn>1</mn><mo>,</mo><mn>1</mn><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>,</mo><mi>s</mi></mrow></msub><mo>+</mo><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><msub><mi>n</mi><mi>τ</mi></msub><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>,</mo><mi>s</mi></mrow></msub><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msub><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><msub><mi>n</mi><mi>τ</mi></msub><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">N_{p,r,y + 1,1,a_{+},s} = N_{p,r,y+1,1,a_{+},s} + N_{p,r,y,n_\tau,a_{+},s}\exp\left( - Z_{p,r,y,n_\tau,a_{+},s} \right)</annotation></semantics></math></p>
+<p>If recruits do not move
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">do_recruits_move</mtext><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\text{do\_recruits\_move} = 0</annotation></semantics></math>),
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><mi>𝐈</mi></mrow><annotation encoding="application/x-tex">\mathbf{M}_{p,y,\tau,a=1,s} = \mathbf{I}</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>𝐐</mi><mo accent="true">̇</mo></mover><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><mn>𝟎</mn></mrow><annotation encoding="application/x-tex">\dot{\mathbf{Q}}_{p,y,\tau,a=1,s} = \mathbf{0}</annotation></semantics></math>,
+so
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝚽</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">\mathbf{\Phi}_{p,y,\tau,a=1,s}</annotation></semantics></math>
+reduces to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">diag</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐬</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\text{diag}\left( \mathbf{s}_{p,y,\tau,a=1,s} \right)</annotation></semantics></math>
+under all three cases.</p>
+<div class="section level5">
+<h5 id="where-in-the-season-each-quantity-is-evaluated">Where in the Season Each Quantity Is Evaluated<a class="anchor" aria-label="anchor" href="#where-in-the-season-each-quantity-is-evaluated"></a>
+</h5>
+<p>Because
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝚽</mi><annotation encoding="application/x-tex">\mathbf{\Phi}</annotation></semantics></math>
+resolves movement at a different point in the season under each option,
+every quantity that is observed <em>partway</em> through a season has to
+be evaluated consistently. The table below summarises where each one is
+taken; the equations follow in the sections indicated.</p>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+</colgroup>
+<thead><tr class="header">
+<th>Quantity</th>
+<th><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 0</annotation></semantics></math></th>
+<th><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 1</annotation></semantics></math></th>
+<th><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 2</annotation></semantics></math></th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Spawners,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>𝐍</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><annotation encoding="application/x-tex">\mathbf{N}^{spawn}</annotation></semantics></math>
+</td>
+<td>Post-movement location, discounted by
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>t</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><annotation encoding="application/x-tex">t^{spawn}</annotation></semantics></math>
+mortality</td>
+<td>Pre-movement (origin) location, discounted by
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>t</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><annotation encoding="application/x-tex">t^{spawn}</annotation></semantics></math>
+mortality</td>
+<td>Partially redistributed:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>𝚲</mi><mspace width="0.167em"></mspace><msup><mi>t</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(\mathbf{\Lambda}\,t^{spawn})</annotation></semantics></math>
+</td>
+</tr>
+<tr class="even">
+<td>Catch and discards</td>
+<td>Baranov at post-movement location</td>
+<td>Baranov at pre-movement location</td>
+<td>Season-integrated abundance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>𝐍</mi><mo>∫</mo></msup><annotation encoding="application/x-tex">\mathbf{N}^{\int}</annotation></semantics></math>
+(spatial Baranov)</td>
+</tr>
+<tr class="odd">
+<td>Fishery index</td>
+<td>Post-movement
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐍</mi><annotation encoding="application/x-tex">\mathbf{N}</annotation></semantics></math>,
+no discount</td>
+<td>Pre-movement
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐍</mi><annotation encoding="application/x-tex">\mathbf{N}</annotation></semantics></math>,
+no discount</td>
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>𝐍</mi><mo>∫</mo></msup><annotation encoding="application/x-tex">\mathbf{N}^{\int}</annotation></semantics></math></td>
+</tr>
+<tr class="even">
+<td>Survey index</td>
+<td>Post-movement
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐍</mi><annotation encoding="application/x-tex">\mathbf{N}</annotation></semantics></math>,
+discounted by
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>t</mi><mrow><mi>s</mi><mi>r</mi><mi>v</mi></mrow></msup><annotation encoding="application/x-tex">t^{srv}</annotation></semantics></math>
+mortality</td>
+<td>Pre-movement
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐍</mi><annotation encoding="application/x-tex">\mathbf{N}</annotation></semantics></math>,
+discounted by
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>t</mi><mrow><mi>s</mi><mi>r</mi><mi>v</mi></mrow></msup><annotation encoding="application/x-tex">t^{srv}</annotation></semantics></math>
+mortality</td>
+<td>Snapshot
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>𝚲</mi><mspace width="0.167em"></mspace><msup><mi>t</mi><mrow><mi>s</mi><mi>r</mi><mi>v</mi></mrow></msup><mo stretchy="false" form="postfix">)</mo><mi>𝐍</mi></mrow><annotation encoding="application/x-tex">\exp(\mathbf{\Lambda}\,t^{srv})\mathbf{N}</annotation></semantics></math>
+</td>
+</tr>
+<tr class="odd">
+<td>Tag recaptures</td>
+<td>Baranov on the tag cohort</td>
+<td>Baranov on the tag cohort</td>
+<td>Season-integrated tag abundance</td>
+</tr>
+</tbody>
+</table>
+<p>Under continuous movement, note that the survey index is treated
+differently from catch and the fishery index. A survey is a
+<em>snapshot</em> at an instant within the season, so it uses the
+partial propagation
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>𝚲</mi><mspace width="0.167em"></mspace><msup><mi>t</mi><mrow><mi>s</mi><mi>r</mi><mi>v</mi></mrow></msup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(\mathbf{\Lambda}\,t^{srv})</annotation></semantics></math>,
+whereas catch and the fishery index <em>accumulate</em> over the whole
+season, so they use the integral of that propagation. Under the
+sequential timings the distinction does not arise, because movement has
+already been resolved and the fish are stationary for the rest of the
+season.</p>
+</div>
+<div class="section level5">
+<h5 id="spawning-biomass-timing">Spawning Biomass Timing<a class="anchor" aria-label="anchor" href="#spawning-biomass-timing"></a>
+</h5>
+<p>Spawning biomass is computed from the population propagated a
+fraction
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>t</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><annotation encoding="application/x-tex">t^{spawn}</annotation></semantics></math>
+into the spawning season, consistently with the sequencing:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><mrow><mo stretchy="true" form="prefix">(</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mtext mathvariant="normal">diag</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">exp</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msup><mi>t</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><msub><mi>𝐙</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>0</mn></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><mtext mathvariant="normal">diag</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">exp</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msup><mi>t</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><msub><mi>𝐙</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>1</mn></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><msup><mrow><mo stretchy="true" form="prefix">[</mo><mi mathvariant="normal">exp</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝚲</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mspace width="0.167em"></mspace><msup><mi>t</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow><mi>T</mi></msup></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>2</mn></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"></mtd></mtr></mtable></mrow></mrow><annotation encoding="application/x-tex">\left( \mathbf{N}_{p,y,\tau^{spawn},a,s}^{spawn} \right)^{T} = \begin{cases}
+\left( \left( \mathbf{N}_{p,y,\tau^{spawn},a,s} \right)^{T}\mathbf{M}_{p,y,\tau^{spawn},a,s} \right)\text{diag}\left( \exp\left( - t^{spawn}\mathbf{Z}_{p,y,\tau^{spawn},a,s} \right) \right) &amp; \text{move\_timing} = 0 \\[4pt]
+\left( \mathbf{N}_{p,y,\tau^{spawn},a,s} \right)^{T}\text{diag}\left( \exp\left( - t^{spawn}\mathbf{Z}_{p,y,\tau^{spawn},a,s} \right) \right) &amp; \text{move\_timing} = 1 \\[4pt]
+\left( \mathbf{N}_{p,y,\tau^{spawn},a,s} \right)^{T}\left[ \exp\left( \mathbf{\Lambda}_{p,y,\tau^{spawn},a,s}\,t^{spawn} \right) \right]^{T} &amp; \text{move\_timing} = 2 \\
+\end{cases}</annotation></semantics></math></p>
+<p>so spawners are at their post-movement locations under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 0</annotation></semantics></math>,
+at their pre-movement locations under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 1</annotation></semantics></math>,
+and partially redistributed under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 2</annotation></semantics></math>.
+No extra convention is imposed to make the three agree: each timing has
+its own natural spawning state, and the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 0</annotation></semantics></math>
+case reproduces the historical <code>SPoRC</code> calculation exactly.
+The same
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>𝐍</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><annotation encoding="application/x-tex">\mathbf{N}^{spawn}</annotation></semantics></math>
+is used for
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mi>S</mi><msub><mi>B</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">SSB_{p,r,y}</annotation></semantics></math>,
+total biomass, and the unfished
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mtext mathvariant="normal">Dynamic_SSB0</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub><annotation encoding="application/x-tex">\text{Dynamic\_SSB0}_{p,r,y}</annotation></semantics></math>
+(the last with
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐙</mi><annotation encoding="application/x-tex">\mathbf{Z}</annotation></semantics></math>
+replaced by natural mortality alone).</p>
+</div>
+<div class="section level5">
+<h5 id="catch-under-continuous-movement">Catch Under Continuous Movement<a class="anchor" aria-label="anchor" href="#catch-under-continuous-movement"></a>
+</h5>
+<p>The Baranov catch equation assumes individuals remain in one region
+for the whole season, which does not hold under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 2</annotation></semantics></math>.
+Catch is instead taken from the season-integrated abundance:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mo>∫</mo></msubsup><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><msubsup><mo>∫</mo><mn>0</mn><mn>1</mn></msubsup><mi mathvariant="normal">exp</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝚲</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mspace width="0.167em"></mspace><mi>υ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>d</mi><mi>υ</mi><mo stretchy="true" form="postfix">]</mo></mrow><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\mathbf{N}_{p,y,\tau,a,s}^{\int} = \left[ \int_{0}^{1}\exp\left( \mathbf{\Lambda}_{p,y,\tau,a,s}\,\upsilon \right)d\upsilon \right]\mathbf{N}_{p,y,\tau,a,s}</annotation></semantics></math></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>C</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>=</mo><msub><mtext mathvariant="normal">retFmort</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>⋅</mo><msubsup><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mo>∫</mo></msubsup></mrow><annotation encoding="application/x-tex">C_{p,r,y,\tau,a,s,f} = \text{retFmort}_{p,r,y,\tau,a,s,f} \cdot N_{p,r,y,\tau,a,s}^{\int}</annotation></semantics></math></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>D</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>=</mo><msub><mtext mathvariant="normal">discFmort</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>⋅</mo><msubsup><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mo>∫</mo></msubsup></mrow><annotation encoding="application/x-tex">D_{p,r,y,\tau,a,s,f} = \text{discFmort}_{p,r,y,\tau,a,s,f} \cdot N_{p,r,y,\tau,a,s}^{\int}</annotation></semantics></math></p>
+<p>The integral runs over the unit interval rather than over
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><mn>0</mn><mo>,</mo><mi mathvariant="normal">Δ</mi><mi>τ</mi><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[0, \Delta\tau]</annotation></semantics></math>
+because, as noted above,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝚲</mi><annotation encoding="application/x-tex">\mathbf{\Lambda}</annotation></semantics></math>
+already carries the season duration;
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>υ</mi><annotation encoding="application/x-tex">\upsilon</annotation></semantics></math>
+is elapsed fraction of the season, not elapsed time.</p>
+<p>When
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>𝐐</mi><mo accent="true">̇</mo></mover><mo>=</mo><mn>𝟎</mn></mrow><annotation encoding="application/x-tex">\dot{\mathbf{Q}} = \mathbf{0}</annotation></semantics></math>
+the regions decouple and this reduces to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi mathvariant="normal">exp</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msub><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mi>/</mi><msub><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub></mrow><annotation encoding="application/x-tex">N_{p,r,y,\tau,a,s}\left( 1 - \exp\left( - Z_{p,r,y,\tau,a,s} \right) \right)/Z_{p,r,y,\tau,a,s}</annotation></semantics></math>,
+recovering the standard Baranov form used under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>∈</mo><mo stretchy="false" form="prefix">{</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">\text{move\_timing} \in \{0,1\}</annotation></semantics></math>
+– which makes explicit that
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>𝐍</mi><mo>∫</mo></msup><annotation encoding="application/x-tex">\mathbf{N}^{\int}</annotation></semantics></math>
+is simply what the familiar
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mi>−</mi><mi>Z</mi></mrow></msup><mo stretchy="false" form="postfix">)</mo><mi>/</mi><mi>Z</mi></mrow><annotation encoding="application/x-tex">(1 - e^{-Z})/Z</annotation></semantics></math>
+factor was always computing, namely the abundance accumulated over the
+season. The same season-integrated abundance is used for the fishery
+index and for predicted tag recaptures when movement is specified to be
+continuous.</p>
 <p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">Z_{p,r,y,\tau,a,s}</annotation></semantics></math>
 denotes the seasonal total instantaneous mortality rate and is defined
 as the combination of natural mortality
@@ -587,6 +889,7 @@ is the logit-scale mean discard mortality rate and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>ϵ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow><mi>δ</mi></msubsup><annotation encoding="application/x-tex">\epsilon_{r,y,\tau,f}^{\delta}</annotation></semantics></math>
 are annual deviations. The discard mortality rate is bounded between 0
 and 1.</p>
+</div>
 </div>
 <div class="section level4">
 <h4 id="movement-processes">Movement Processes<a class="anchor" aria-label="anchor" href="#movement-processes"></a>
@@ -673,15 +976,50 @@ is Metzler, such that all off-diagonal elements satisfy:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>Q</mi><mo accent="true">̇</mo></mover><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>≥</mo><mn>0</mn><mspace width="1.0em"></mspace><mrow><mtext mathvariant="normal">for </mtext><mspace width="0.333em"></mspace></mrow><mi>r</mi><mo>≠</mo><mi>k</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
 \dot{Q}_{p,y,\tau,a,s} \ge 0 \quad \text{for } r \neq k.
 </annotation></semantics></math></p>
-<p>Given that movement in <code>SPoRC</code> is defined sequentially,
-the instantaneous movement matrix can then be converted to annual
-movement fractions using the matrix exponential:</p>
+<p>Under the sequential timings
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtext mathvariant="normal">move_timing</mtext><annotation encoding="application/x-tex">\text{move\_timing}</annotation></semantics></math>
+0 and 1), the instantaneous movement matrix is converted to movement
+fractions using the matrix exponential:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo minsize="180%" maxsize="180%" stretchy="true" form="prefix">(</mo><msub><mover><mi>𝐐</mi><mo accent="true">̇</mo></mover><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mspace width="0.167em"></mspace><mi mathvariant="normal">Δ</mi><mi>t</mi><mo minsize="180%" maxsize="180%" stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">
 \mathbf{M}_{p,y,\tau,a,s} = \exp\Big( \dot{\mathbf{Q}}_{p,y,\tau,a,s} \, \Delta t \Big)
 </annotation></semantics></math></p>
 <p>where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Δ</mi><mi>t</mi></mrow><annotation encoding="application/x-tex">\Delta t</annotation></semantics></math>
-is the duration of the movement interval.</p>
+is the duration of the movement interval. When
+<code>ctmc_scale_by_seasdur = 1</code> (default),
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>𝐐</mi><mo accent="true">̇</mo></mover><annotation encoding="application/x-tex">\dot{\mathbf{Q}}</annotation></semantics></math>
+is an annual rate and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Δ</mi><mi>t</mi><mo>=</mo><mi mathvariant="normal">Δ</mi><mi>τ</mi></mrow><annotation encoding="application/x-tex">\Delta t = \Delta\tau</annotation></semantics></math>,
+so the generator and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Z</mi><annotation encoding="application/x-tex">Z</annotation></semantics></math>
+share time units; when <code>0</code>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Δ</mi><mi>t</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\Delta t = 1</annotation></semantics></math>
+irrespective of season duration.</p>
+<p>Under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 2</annotation></semantics></math>
+this exponential is never taken on its own. The generator enters the
+seasonal operator together with mortality, as
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msup><mover><mi>𝐐</mi><mo accent="true">̇</mo></mover><mi>T</mi></msup><mi mathvariant="normal">Δ</mi><mi>τ</mi><mo>−</mo><mtext mathvariant="normal">diag</mtext><mo stretchy="false" form="prefix">(</mo><mi>𝐙</mi><mo stretchy="false" form="postfix">)</mo><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\exp\left( \dot{\mathbf{Q}}^{T}\Delta\tau - \text{diag}(\mathbf{Z}) \right)</annotation></semantics></math>,
+which does not factor into a movement matrix times a survival matrix
+unless
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐙</mi><annotation encoding="application/x-tex">\mathbf{Z}</annotation></semantics></math>
+is constant across regions.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐌</mi><annotation encoding="application/x-tex">\mathbf{M}</annotation></semantics></math>
+is still computed and reported, but as a diagnostic – the movement
+fractions that <em>would</em> apply in the absence of spatially varying
+mortality – rather than as a term in the dynamics.
+<code>ctmc_scale_by_seasdur</code> is forced to <code>1</code> in this
+case, since combining an unscaled generator with seasdur-scaled
+mortality inside a single exponential is dimensionally inconsistent.</p>
+<p>Continuous movement also requires an <em>estimated</em> generator: it
+is available only for
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_type</mtext><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\text{move\_type} = 1</annotation></semantics></math>
+with
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">use_fixed_movement</mtext><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\text{use\_fixed\_movement} = 0</annotation></semantics></math>.
+Unstructured multinomial-logit movement supplies transition fractions
+with no guaranteed real generator behind them (the Markov embedding
+problem), so <code>SPoRC</code> rejects the combination rather than
+attempting a matrix logarithm.</p>
 </div>
 </div>
 <div class="section level3">
@@ -707,6 +1045,22 @@ is similarly:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="center" style="text-align: center"><msubsup><mi>D</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mi>a</mi></msubsup><mo>=</mo><mstyle displaystyle="true"><mfrac><msub><mtext mathvariant="normal">discFmort</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow></msub><msub><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub></mfrac></mstyle><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">[</mo><mn>1</mn><mo>−</mo><mi mathvariant="normal">exp</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msub><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{matrix}
 D_{p,r,y,\tau,a,s,f}^{a} = \dfrac{\text{discFmort}_{p,r,y,\tau,a,s,f}}{Z_{p,r,y,\tau,a,s}}N_{p,r,y,\tau,a,s}\left\lbrack 1 - \exp\left( - Z_{p,r,y,\tau,a,s} \right) \right\rbrack \\
 \end{matrix}</annotation></semantics></math></p>
+<p>These are the forms used under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtext mathvariant="normal">move_timing</mtext><annotation encoding="application/x-tex">\text{move\_timing}</annotation></semantics></math>
+0 and 1, where individuals occupy a single region for the whole season
+and catch is taken where they actually are: at the post-movement
+(destination) locations under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 0</annotation></semantics></math>,
+since movement happens at the start of the season, and at the
+pre-movement (origin) locations under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 1</annotation></semantics></math>,
+since it happens at the end. Under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 2</annotation></semantics></math>
+fish redistribute among regions while they are being caught, the
+region-local Baranov equation is no longer valid, and catch and discards
+are computed from the season-integrated abundance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>N</mi><mo>∫</mo></msup><annotation encoding="application/x-tex">N^{\int}</annotation></semantics></math>
+instead (see Catch Under Continuous Movement above).</p>
 <p>To track length-based dynamics, retained catch-at-length
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>C</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>l</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mi>l</mi></msubsup><annotation encoding="application/x-tex">C_{p,r,y,\tau,l,s,f}^{l}</annotation></semantics></math>)
 and discarded catch-at-length
@@ -763,8 +1117,28 @@ product of total fishery selectivity and retention selectivity:</p>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>q</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><annotation encoding="application/x-tex">q_{r,y,f}^{\text{Fsh}}</annotation></semantics></math>
 is the catchability coefficient for a given fishery fleet. Note that
 unlike the survey index, the fishery index is computed directly from
-numbers-at-age without applying additional survival discounting.
-Biomass-based fishery indices are computed as:</p>
+numbers-at-age without applying additional survival discounting: fishing
+is spread across the whole season rather than occurring at a point
+within it, so there is no analogue of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>t</mi><mrow><mi>s</mi><mi>r</mi><mi>v</mi></mrow></msup><annotation encoding="application/x-tex">t^{srv}</annotation></semantics></math>
+to discount by.</p>
+<p>For the same reason, the fishery index follows catch rather than the
+survey when movement is continuous. Under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 2</annotation></semantics></math>
+the fleet encounters fish as they redistribute, so
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">N_{p,r,y,\tau,a,s}</annotation></semantics></math>
+above is replaced by the season-integrated abundance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mo>∫</mo></msubsup><annotation encoding="application/x-tex">N^{\int}_{p,r,y,\tau,a,s}</annotation></semantics></math>.
+The integral carries units of abundance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>×</mi><annotation encoding="application/x-tex">\times</annotation></semantics></math>
+time, and the resulting constant is absorbed by the estimated
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>q</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><annotation encoding="application/x-tex">q_{r,y,f}^{\text{Fsh}}</annotation></semantics></math>.
+Under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtext mathvariant="normal">move_timing</mtext><annotation encoding="application/x-tex">\text{move\_timing}</annotation></semantics></math>
+0 and 1 the index uses
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">N_{p,r,y,\tau,a,s}</annotation></semantics></math>
+as written, at the post-movement and pre-movement locations
+respectively. Biomass-based fishery indices are computed as:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="center" style="text-align: center"><msub><mtext mathvariant="normal">FshIdx</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>=</mo><msubsup><mi>q</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><munderover><mo>∑</mo><mi>a</mi><msub><mi>a</mi><mo>+</mo></msub></munderover><mrow><munderover><mo>∑</mo><mi>s</mi><msub><mi>n</mi><mi>s</mi></msub></munderover><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub></mrow><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Ret</mtext></msubsup><msubsup><mi>W</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mrow><mi>f</mi><mi>i</mi><mi>s</mi><mi>h</mi></mrow></msubsup></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{matrix}
 \text{FshIdx}_{p,r,y,\tau,f} = q_{r,y,f}^{\text{Fsh}}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}N_{p,r,y,\tau,a,s}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}}W_{p,r,y,\tau,a,s,f}^{fish} \\
 \end{matrix}</annotation></semantics></math></p>
@@ -792,8 +1166,45 @@ denotes a given survey fleet,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>t</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow><mrow><mi>s</mi><mi>r</mi><mi>v</mi></mrow></msubsup><annotation encoding="application/x-tex">t_{r,\tau,sf}^{srv}</annotation></semantics></math>
 is the survey timing as a fraction of the season, and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow><mtext mathvariant="normal">Srv</mtext></msubsup><annotation encoding="application/x-tex">\text{Sel}_{p,r,y,\tau,a,s,sf}^{\text{Srv}}</annotation></semantics></math>
-is the survey selectivity-at-age pattern. Expected survey
-catch-at-length
+is the survey selectivity-at-age pattern.</p>
+<p>This elementwise discount is exact under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtext mathvariant="normal">move_timing</mtext><annotation encoding="application/x-tex">\text{move\_timing}</annotation></semantics></math>
+0 and 1, because movement for the season has already been resolved and
+the fish are stationary within it (at their post-movement locations
+under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 0</annotation></semantics></math>
+and their pre-movement locations under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 1</annotation></semantics></math>).
+It is not exact under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 2</annotation></semantics></math>,
+where it would hold fish in place while they are in fact diffusing.
+There, the survey observes the population propagated a fraction
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>t</mi><mrow><mi>s</mi><mi>r</mi><mi>v</mi></mrow></msup><annotation encoding="application/x-tex">t^{srv}</annotation></semantics></math>
+into the season under the combined generator
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝚲</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">\mathbf{\Lambda}_{p,y,\tau,a,s}</annotation></semantics></math>
+of the Population Projection section:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="center" style="text-align: center"><msubsup><mi>I</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow><mi>a</mi></msubsup><mo>=</mo><msub><mrow><mo stretchy="true" form="prefix">[</mo><mi mathvariant="normal">exp</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝚲</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mspace width="0.167em"></mspace><msubsup><mi>t</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow><mrow><mi>s</mi><mi>r</mi><mi>v</mi></mrow></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">]</mo></mrow><mi>r</mi></msub><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow><mtext mathvariant="normal">Srv</mtext></msubsup></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{matrix}
+I_{p,r,y,\tau,a,s,sf}^{a} = \left\lbrack \exp\left( \mathbf{\Lambda}_{p,y,\tau,a,s}\,t_{r,\tau,sf}^{srv} \right)\mathbf{N}_{p,y,\tau,a,s} \right\rbrack_{r}\text{Sel}_{p,r,y,\tau,a,s,sf}^{\text{Srv}} \\
+\end{matrix}</annotation></semantics></math></p>
+<p>Note that a survey is a snapshot at an instant within the season
+rather than an accumulation over it, so this is the partial propagation
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>𝚲</mi><mspace width="0.167em"></mspace><msup><mi>t</mi><mrow><mi>s</mi><mi>r</mi><mi>v</mi></mrow></msup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(\mathbf{\Lambda}\,t^{srv})</annotation></semantics></math>
+and not the season integral used for catch. Selectivity applies at the
+destination region, i.e. after propagation.</p>
+<p>Survey timing may differ by region, which a single propagation
+operator cannot represent: fish observed in region
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>r</mi><annotation encoding="application/x-tex">r</annotation></semantics></math>
+arrived from regions whose elapsed times differ. The convention adopted
+is that the survey in region
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>r</mi><annotation encoding="application/x-tex">r</annotation></semantics></math>
+observes the population propagated to <em>that region’s</em> survey
+time, which is what the subscript
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>r</mi><annotation encoding="application/x-tex">r</annotation></semantics></math>
+outside the bracket denotes. When
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>t</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow><mrow><mi>s</mi><mi>r</mi><mi>v</mi></mrow></msubsup><annotation encoding="application/x-tex">t^{srv}_{r,\tau,sf}</annotation></semantics></math>
+is constant across regions – the usual case – this collapses to a single
+propagation and one matrix exponential.</p>
+<p>Expected survey catch-at-length
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>I</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>l</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow><mi>l</mi></msubsup><annotation encoding="application/x-tex">I_{p,r,y,\tau,l,s,sf}^{l}</annotation></semantics></math>)
 is given by:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="center" style="text-align: center"><msubsup><mi>I</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>l</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow><mi>l</mi></msubsup><mo>=</mo><msubsup><mi>𝐀</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>s</mi></mrow><mi>l</mi></msubsup><msub><msup><mi>𝐈</mi><mi>𝐚</mi></msup><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow></msub></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{matrix}
@@ -859,28 +1270,100 @@ cohorts are decremented by an initial tag-induced mortality rate:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>T</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mi>k</mi></msubsup><mo>=</mo><msubsup><mi>T</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mi>k</mi></msubsup><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>−</mi><msup><mi>η</mi><mtext mathvariant="normal">mort</mtext></msup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">T_{p,r,y,\tau,a,s}^{k} = T_{p,r,y,\tau,a,s}^{k}\exp( - \eta^{\text{mort}})</annotation></semantics></math></p>
 <p>where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>η</mi><mtext mathvariant="normal">mort</mtext></msup><annotation encoding="application/x-tex">\eta^{\text{mort}}</annotation></semantics></math>
-is the initial tag-induced mortality rate. If tagged cohorts are
-released at the beginning of a season
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>t</mi><mtext mathvariant="normal">tag</mtext></msup><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">t^{\text{tag}} = 1</annotation></semantics></math>),
-Markovian movement occurs before mortality is applied; otherwise,
-movement is skipped in the release season:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>𝐓</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mi>k</mi></msubsup><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>𝐓</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mi>k</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mtext mathvariant="normal">T</mtext></msup><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\mathbf{T}_{p,y,\tau,a,s}^{k} = \left( \mathbf{T}_{p,y,\tau,a,s}^{k} \right)^{\text{T}}\mathbf{M}_{p,y,\tau,a,s}</annotation></semantics></math></p>
-<p>Within-season mortality and ageing of the tagged cohort then occurs.
-For seasons within a year
+is the initial tag-induced mortality rate.</p>
+<p>Tag cohorts are then advanced across each season by the same seasonal
+transition operator as the population, but evaluated with the
+tag-specific total mortality
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>𝐙</mi><mtext mathvariant="normal">Tag</mtext></msup><annotation encoding="application/x-tex">\mathbf{Z}^{\text{Tag}}</annotation></semantics></math>
+and over the fraction of the season the cohort is actually at liberty
+for,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Δ</mi><mi>τ</mi><mspace width="0.167em"></mspace><msubsup><mi>ω</mi><mi>τ</mi><mi>k</mi></msubsup></mrow><annotation encoding="application/x-tex">\Delta\tau\,\omega^{k}_{\tau}</annotation></semantics></math>
+(with
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>ω</mi><mi>τ</mi><mi>k</mi></msubsup><annotation encoding="application/x-tex">\omega^{k}_{\tau}</annotation></semantics></math>
+defined below):</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>𝚽</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mtext mathvariant="normal">Tag</mtext></msubsup><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mspace width="0.167em"></mspace><mtext mathvariant="normal">diag</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">exp</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msubsup><mi>𝐙</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mtext mathvariant="normal">Tag</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>0</mn></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mtext mathvariant="normal">diag</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">exp</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msubsup><mi>𝐙</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mtext mathvariant="normal">Tag</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>1</mn></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><msup><mrow><mo stretchy="true" form="prefix">[</mo><mi mathvariant="normal">exp</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mover><mi>𝐐</mi><mo accent="true">̇</mo></mover><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mi>T</mi></msubsup><mspace width="0.167em"></mspace><mi mathvariant="normal">Δ</mi><mi>τ</mi><mspace width="0.167em"></mspace><msubsup><mi>ω</mi><mi>τ</mi><mi>k</mi></msubsup><mo>−</mo><mtext mathvariant="normal">diag</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>𝐙</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mtext mathvariant="normal">Tag</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow><mi>T</mi></msup></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>2</mn></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"></mtd></mtr></mtable></mrow></mrow><annotation encoding="application/x-tex">\mathbf{\Phi}_{p,y,\tau,a,s}^{\text{Tag}} = \begin{cases}
+\mathbf{M}_{p,y,\tau,a,s}\,\text{diag}\left( \exp\left( -\mathbf{Z}^{\text{Tag}}_{p,y,\tau,a,s} \right) \right) &amp; \text{move\_timing} = 0 \\[4pt]
+\text{diag}\left( \exp\left( -\mathbf{Z}^{\text{Tag}}_{p,y,\tau,a,s} \right) \right)\mathbf{M}_{p,y,\tau,a,s} &amp; \text{move\_timing} = 1 \\[4pt]
+\left[ \exp\left( \dot{\mathbf{Q}}_{p,y,\tau,a,s}^{T}\,\Delta\tau\,\omega^{k}_{\tau} - \text{diag}\left( \mathbf{Z}^{\text{Tag}}_{p,y,\tau,a,s} \right) \right) \right]^{T} &amp; \text{move\_timing} = 2 \\
+\end{cases}</annotation></semantics></math></p>
+<p>For seasons within a year
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi><mo>&lt;</mo><msub><mi>n</mi><mi>τ</mi></msub></mrow><annotation encoding="application/x-tex">\tau &lt; n_\tau</annotation></semantics></math>):</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>T</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>+</mo><mn>1</mn><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mi>k</mi></msubsup><mo>=</mo><msubsup><mi>T</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mi>k</mi></msubsup><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msubsup><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mtext mathvariant="normal">Tag</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">T_{p,r,y,\tau + 1,a,s}^{k} = T_{p,r,y,\tau,a,s}^{k}\exp\left( - Z_{p,r,y,\tau,a,s}^{\text{Tag}} \right)</annotation></semantics></math></p>
-<p>At the end of the final season
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi><mo>=</mo><msub><mi>n</mi><mi>τ</mi></msub></mrow><annotation encoding="application/x-tex">\tau = n_\tau</annotation></semantics></math>),
-individuals advance in age:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>T</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>+</mo><mn>1</mn><mo>,</mo><mn>1</mn><mo>,</mo><mi>a</mi><mo>+</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow><mi>k</mi></msubsup><mo>=</mo><msubsup><mi>T</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><msub><mi>n</mi><mi>τ</mi></msub><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mi>k</mi></msubsup><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msubsup><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><msub><mi>n</mi><mi>τ</mi></msub><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mtext mathvariant="normal">Tag</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="1.0em"></mspace><mrow><mtext mathvariant="normal">for </mtext><mspace width="0.333em"></mspace></mrow><mn>1</mn><mo>≤</mo><mi>a</mi><mo>&lt;</mo><msub><mi>a</mi><mo>+</mo></msub></mrow><annotation encoding="application/x-tex">T_{p,r,y + 1,1,a + 1,s}^{k} = T_{p,r,y,n_\tau,a,s}^{k}\exp\left( - Z_{p,r,y,n_\tau,a,s}^{\text{Tag}} \right),\quad\text{for }1 \leq a &lt; a_{+}</annotation></semantics></math></p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>T</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>+</mo><mn>1</mn><mo>,</mo><mn>1</mn><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>,</mo><mi>s</mi></mrow><mi>k</mi></msubsup><mo>=</mo><msubsup><mi>T</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>+</mo><mn>1</mn><mo>,</mo><mn>1</mn><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>,</mo><mi>s</mi></mrow><mi>k</mi></msubsup><mo>+</mo><msubsup><mi>T</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><msub><mi>n</mi><mi>τ</mi></msub><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>,</mo><mi>s</mi></mrow><mi>k</mi></msubsup><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msubsup><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><msub><mi>n</mi><mi>τ</mi></msub><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>,</mo><mi>s</mi></mrow><mi>k</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">T_{p,r,y + 1,1,a_{+},s}^{k} = T_{p,r,y+1,1,a_{+},s}^{k} + T_{p,r,y,n_\tau,a_{+},s}^{k}\exp\left( - Z_{p,r,y,n_\tau,a_{+},s}^{k}\right)</annotation></semantics></math></p>
-<p>where tagged cohorts follow an exponential mortality model with
-accumulation of individuals in the plus-group. Total mortality for the
-tagged cohort
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>𝐓</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>+</mo><mn>1</mn><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mi>k</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>𝐓</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mi>k</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><msubsup><mi>𝚽</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mtext mathvariant="normal">Tag</mtext></msubsup></mrow><annotation encoding="application/x-tex">\left( \mathbf{T}_{p,y,\tau + 1,a,s}^{k} \right)^{T} = \left( \mathbf{T}_{p,y,\tau,a,s}^{k} \right)^{T}\mathbf{\Phi}_{p,y,\tau,a,s}^{\text{Tag}}</annotation></semantics></math></p>
+<p>and at the end of the final season
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi><mo>=</mo><msub><mi>n</mi><mi>τ</mi></msub></mrow><annotation encoding="application/x-tex">\tau = n_\tau</annotation></semantics></math>)
+individuals advance in age, with accumulation of individuals in the plus
+group, exactly as for the population:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>𝐓</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>+</mo><mn>1</mn><mo>,</mo><mn>1</mn><mo>,</mo><mi>a</mi><mo>+</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow><mi>k</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>𝐓</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><msub><mi>n</mi><mi>τ</mi></msub><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mi>k</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><msubsup><mi>𝚽</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><msub><mi>n</mi><mi>τ</mi></msub><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mtext mathvariant="normal">Tag</mtext></msubsup><mo>,</mo><mspace width="1.0em"></mspace><mrow><mtext mathvariant="normal">for </mtext><mspace width="0.333em"></mspace></mrow><mn>1</mn><mo>≤</mo><mi>a</mi><mo>&lt;</mo><msub><mi>a</mi><mo>+</mo></msub></mrow><annotation encoding="application/x-tex">\left( \mathbf{T}_{p,y + 1,1,a + 1,s}^{k} \right)^{T} = \left( \mathbf{T}_{p,y,n_\tau,a,s}^{k} \right)^{T}\mathbf{\Phi}_{p,y,n_\tau,a,s}^{\text{Tag}},\quad\text{for }1 \leq a &lt; a_{+}</annotation></semantics></math></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>𝐓</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>+</mo><mn>1</mn><mo>,</mo><mn>1</mn><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>,</mo><mi>s</mi></mrow><mi>k</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>𝐓</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>+</mo><mn>1</mn><mo>,</mo><mn>1</mn><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>,</mo><mi>s</mi></mrow><mi>k</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><mo>+</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>𝐓</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><msub><mi>n</mi><mi>τ</mi></msub><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>,</mo><mi>s</mi></mrow><mi>k</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><msubsup><mi>𝚽</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><msub><mi>n</mi><mi>τ</mi></msub><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>,</mo><mi>s</mi></mrow><mtext mathvariant="normal">Tag</mtext></msubsup></mrow><annotation encoding="application/x-tex">\left( \mathbf{T}_{p,y + 1,1,a_{+},s}^{k} \right)^{T} = \left( \mathbf{T}_{p,y+1,1,a_{+},s}^{k} \right)^{T} + \left( \mathbf{T}_{p,y,n_\tau,a_{+},s}^{k} \right)^{T}\mathbf{\Phi}_{p,y,n_\tau,a_{+},s}^{\text{Tag}}</annotation></semantics></math></p>
+<p>Under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 0</annotation></semantics></math>
+these reduce to the historical sequential form, in which Markovian
+movement
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>𝐓</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mi>k</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mtext mathvariant="normal">T</mtext></msup><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\left( \mathbf{T}_{p,y,\tau,a,s}^{k} \right)^{\text{T}}\mathbf{M}_{p,y,\tau,a,s}</annotation></semantics></math>
+is applied first and the cohort then follows an elementwise exponential
+mortality model,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>T</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>+</mo><mn>1</mn><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mi>k</mi></msubsup><mo>=</mo><msubsup><mi>T</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mi>k</mi></msubsup><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msubsup><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mtext mathvariant="normal">Tag</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">T_{p,r,y,\tau + 1,a,s}^{k} = T_{p,r,y,\tau,a,s}^{k}\exp\left( - Z_{p,r,y,\tau,a,s}^{\text{Tag}} \right)</annotation></semantics></math>.</p>
+<p>Mid-season releases are handled differently by the two families of
+timings. Under the sequential timings, a cohort released partway through
+its release season
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>t</mi><mtext mathvariant="normal">tag</mtext></msup><mo>&lt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">t^{\text{tag}} &lt; 1</annotation></semantics></math>)
+skips the discrete movement step entirely for that season –
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐌</mi><annotation encoding="application/x-tex">\mathbf{M}</annotation></semantics></math>
+is replaced by the identity – because a full-season transition matrix
+cannot represent a partial interval. Such a cohort stays in its release
+region for the remainder of the release season, experiencing only the
+partial-interval mortality, and movement resumes normally from the
+following season.</p>
+<p>Continuous movement needs no such exemption, and imposing one would
+be inconsistent: the generator is scaled by
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Δ</mi><mi>τ</mi><mspace width="0.167em"></mspace><msubsup><mi>ω</mi><mi>τ</mi><mi>k</mi></msubsup></mrow><annotation encoding="application/x-tex">\Delta\tau\,\omega^{k}_{\tau}</annotation></semantics></math>,
+the same at-liberty fraction that already scales the cohort’s mortality,
+so tags released mid-season diffuse for exactly the fraction of the
+season they were at liberty for. Freezing them in place while still
+discounting their mortality partially would have tags dying on a partial
+season but holding station for a whole one.</p>
+<p>Total mortality for the tagged cohort
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mtext mathvariant="normal">Tag</mtext></msubsup><annotation encoding="application/x-tex">Z_{p,r,y,\tau,a,s}^{\text{Tag}}</annotation></semantics></math>)
 is specified as:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mtext mathvariant="normal">Tag</mtext></msubsup><mo>=</mo><mi>κ</mi><mo>⋅</mo><mi mathvariant="normal">Δ</mi><mi>τ</mi><mo>+</mo><msub><mtext mathvariant="normal">NatMort</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>⋅</mo><mi mathvariant="normal">Δ</mi><mi>τ</mi><mo>+</mo><munder><mo>∑</mo><mrow><mi>f</mi><mo>∈</mo><msup><mi>ℱ</mi><mtext mathvariant="normal">Tag</mtext></msup></mrow></munder><mrow><mo stretchy="true" form="prefix">[</mo><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><mo>⋅</mo><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Ret</mtext></msubsup><mo>⋅</mo><msub><mtext mathvariant="normal">Fmort</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>+</mo><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><mo>⋅</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Ret</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>⋅</mo><msub><mi>δ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>⋅</mo><msub><mtext mathvariant="normal">Fmort</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">Z_{p,r,y,\tau,a,s}^{\text{Tag}} = \kappa \cdot \Delta\tau + \text{NatMort}_{p,r,y,a,s} \cdot \Delta\tau + \sum_{f \in \mathcal{F}^{\text{Tag}}} \left[\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}} \cdot \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}} \cdot \text{Fmort}_{r,y,\tau,f} + \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}} \cdot \left(1 - \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}}\right) \cdot \delta_{r,y,\tau,f} \cdot \text{Fmort}_{r,y,\tau,f}\right]</annotation></semantics></math></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mtext mathvariant="normal">Tag</mtext></msubsup><mo>=</mo><msubsup><mi>ω</mi><mi>τ</mi><mi>k</mi></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mi>κ</mi><mo>⋅</mo><mi mathvariant="normal">Δ</mi><mi>τ</mi><mo>+</mo><msub><mtext mathvariant="normal">NatMort</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>⋅</mo><mi mathvariant="normal">Δ</mi><mi>τ</mi><mo>+</mo><munder><mo>∑</mo><mrow><mi>f</mi><mo>∈</mo><msup><mi>ℱ</mi><mtext mathvariant="normal">Tag</mtext></msup></mrow></munder><mrow><mo stretchy="true" form="prefix">[</mo><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><mo>⋅</mo><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Ret</mtext></msubsup><mo>⋅</mo><msub><mtext mathvariant="normal">Fmort</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>+</mo><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><mo>⋅</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Ret</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>⋅</mo><msub><mi>δ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>⋅</mo><msub><mtext mathvariant="normal">Fmort</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">Z_{p,r,y,\tau,a,s}^{\text{Tag}} = \omega^{k}_{\tau} \left( \kappa \cdot \Delta\tau + \text{NatMort}_{p,r,y,a,s} \cdot \Delta\tau + \sum_{f \in \mathcal{F}^{\text{Tag}}} \left[\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}} \cdot \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}} \cdot \text{Fmort}_{r,y,\tau,f} + \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}} \cdot \left(1 - \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}}\right) \cdot \delta_{r,y,\tau,f} \cdot \text{Fmort}_{r,y,\tau,f}\right] \right)</annotation></semantics></math></p>
 <p>where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>ω</mi><mi>τ</mi><mi>k</mi></msubsup><annotation encoding="application/x-tex">\omega^{k}_{\tau}</annotation></semantics></math>
+is the fraction of season
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>
+that cohort
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
+is actually at liberty for. It equals
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>t</mi><mi>k</mi><mtext mathvariant="normal">tag</mtext></msubsup><annotation encoding="application/x-tex">t^{\text{tag}}_{k}</annotation></semantics></math>
+in the release season of the release year, and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>1</mn><annotation encoding="application/x-tex">1</annotation></semantics></math>
+in every subsequent season:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>ω</mi><mi>τ</mi><mi>k</mi></msubsup><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><msubsup><mi>t</mi><mi>k</mi><mtext mathvariant="normal">tag</mtext></msubsup></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="normal">release season of the release year</mtext></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mn>1</mn></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="normal">otherwise</mtext></mtd></mtr></mtable></mrow></mrow><annotation encoding="application/x-tex">\omega^{k}_{\tau} = \begin{cases} t^{\text{tag}}_{k} &amp; \text{release season of the release year} \\ 1 &amp; \text{otherwise} \end{cases}</annotation></semantics></math></p>
+<p>Note that
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>ω</mi><mi>τ</mi><mi>k</mi></msubsup><annotation encoding="application/x-tex">\omega^{k}_{\tau}</annotation></semantics></math>
+multiplies <strong>every</strong> mortality component, fishing included,
+rather than only the total. This matters for the recapture equation
+below:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mi>/</mi><msup><mi>Z</mi><mtext mathvariant="normal">Tag</mtext></msup></mrow><annotation encoding="application/x-tex">F/Z^{\text{Tag}}</annotation></semantics></math>
+is the fraction of deaths owing to fishing and must lie in
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[0,1]</annotation></semantics></math>.
+Scaling
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>Z</mi><mtext mathvariant="normal">Tag</mtext></msup><annotation encoding="application/x-tex">Z^{\text{Tag}}</annotation></semantics></math>
+while leaving
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>F</mi><annotation encoding="application/x-tex">F</annotation></semantics></math>
+at full-season scale would give
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mi>/</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>Z</mi><mtext mathvariant="normal">Tag</mtext></msup><msup><mi>t</mi><mtext mathvariant="normal">tag</mtext></msup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">F/(Z^{\text{Tag}} t^{\text{tag}})</annotation></semantics></math>,
+which exceeds
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>1</mn><annotation encoding="application/x-tex">1</annotation></semantics></math>
+whenever
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>t</mi><mtext mathvariant="normal">tag</mtext></msup><mo>&lt;</mo><mi>F</mi><mi>/</mi><msup><mi>Z</mi><mtext mathvariant="normal">Tag</mtext></msup></mrow><annotation encoding="application/x-tex">t^{\text{tag}} &lt; F/Z^{\text{Tag}}</annotation></semantics></math>
+and would predict more recaptures than there are dead tags. Scaling both
+leaves the ratio at
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mi>/</mi><msup><mi>Z</mi><mtext mathvariant="normal">Tag</mtext></msup></mrow><annotation encoding="application/x-tex">F/Z^{\text{Tag}}</annotation></semantics></math>
+and lets the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>−</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>−</mi><msup><mi>Z</mi><mtext mathvariant="normal">Tag</mtext></msup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">1 - \exp(-Z^{\text{Tag}})</annotation></semantics></math>
+term carry the shorter exposure, which is the standard partial-interval
+form of Baranov’s equation.</p>
+<p>Here
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>κ</mi><annotation encoding="application/x-tex">\kappa</annotation></semantics></math>
 is a parameter describing chronic tag loss (i.e., annual tag shedding)
 and
@@ -897,7 +1380,33 @@ calculated using a modified version of Baranov’s catch equation, with
 fleet-specific tag reporting rates applied to the retained
 component:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mtext mathvariant="normal">Recap</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mi>k</mi></msubsup><mo>=</mo><msub><mi>β</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow></msub><mstyle displaystyle="true"><mfrac><mrow><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><mo>⋅</mo><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Ret</mtext></msubsup><mo>⋅</mo><msub><mtext mathvariant="normal">Fmort</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub></mrow><msubsup><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mtext mathvariant="normal">Tag</mtext></msubsup></mfrac></mstyle><msubsup><mi>T</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mi>k</mi></msubsup><mrow><mo stretchy="true" form="prefix">[</mo><mn>1</mn><mo>−</mo><mi mathvariant="normal">exp</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msubsup><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mtext mathvariant="normal">Tag</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">\text{Recap}_{p,r,y,\tau,a,s,f}^{k} = \beta_{r,y,f}\dfrac{\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}} \cdot \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}} \cdot \text{Fmort}_{r,y,\tau,f}}{Z_{p,r,y,\tau,a,s}^{\text{Tag}}}T_{p,r,y,\tau,a,s}^{k}\left\lbrack 1 - \exp\left( - Z_{p,r,y,\tau,a,s}^{\text{Tag}} \right) \right\rbrack</annotation></semantics></math></p>
-<p>where
+<p>As for the fishery, this region-local form applies under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtext mathvariant="normal">move_timing</mtext><annotation encoding="application/x-tex">\text{move\_timing}</annotation></semantics></math>
+0 and 1. Under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 2</annotation></semantics></math>
+tags redistribute among regions while they are being caught, so
+recaptures use the season-integrated tag abundance:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>𝐓</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mrow><mi>k</mi><mo>,</mo><mo>∫</mo></mrow></msubsup><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><msubsup><mo>∫</mo><mn>0</mn><mn>1</mn></msubsup><mi mathvariant="normal">exp</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>𝚲</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mtext mathvariant="normal">Tag</mtext></msubsup><mi>υ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>d</mi><mi>υ</mi><mo stretchy="true" form="postfix">]</mo></mrow><msubsup><mi>𝐓</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mi>k</mi></msubsup><mo>,</mo><mspace width="2.0em"></mspace><msubsup><mi>𝚲</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mtext mathvariant="normal">Tag</mtext></msubsup><mo>=</mo><msubsup><mover><mi>𝐐</mi><mo accent="true">̇</mo></mover><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mi>T</mi></msubsup><mi mathvariant="normal">Δ</mi><mi>τ</mi><mspace width="0.167em"></mspace><msubsup><mi>ω</mi><mi>τ</mi><mi>k</mi></msubsup><mo>−</mo><mtext mathvariant="normal">diag</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>𝐙</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mtext mathvariant="normal">Tag</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\mathbf{T}_{p,y,\tau,a,s}^{k,\int} = \left\lbrack \int_{0}^{1}\exp\left( \mathbf{\Lambda}^{\text{Tag}}_{p,y,\tau,a,s}\upsilon \right)d\upsilon \right\rbrack\mathbf{T}_{p,y,\tau,a,s}^{k},\qquad
+\mathbf{\Lambda}^{\text{Tag}}_{p,y,\tau,a,s} = \dot{\mathbf{Q}}_{p,y,\tau,a,s}^{T}\Delta\tau\,\omega^{k}_{\tau} - \text{diag}\left( \mathbf{Z}^{\text{Tag}}_{p,y,\tau,a,s} \right)</annotation></semantics></math></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mtext mathvariant="normal">Recap</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mi>k</mi></msubsup><mo>=</mo><msub><mi>β</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>⋅</mo><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><mo>⋅</mo><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Ret</mtext></msubsup><mo>⋅</mo><msub><mtext mathvariant="normal">Fmort</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>⋅</mo><msubsup><mi>T</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mrow><mi>k</mi><mo>,</mo><mo>∫</mo></mrow></msubsup></mrow><annotation encoding="application/x-tex">\text{Recap}_{p,r,y,\tau,a,s,f}^{k} = \beta_{r,y,f} \cdot \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}} \cdot \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}} \cdot \text{Fmort}_{r,y,\tau,f} \cdot T_{p,r,y,\tau,a,s}^{k,\int}</annotation></semantics></math></p>
+<p>The integral is evaluated by the same block-matrix construction used
+for the population, with
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>𝚲</mi><mtext mathvariant="normal">Tag</mtext></msup><annotation encoding="application/x-tex">\mathbf{\Lambda}^{\text{Tag}}</annotation></semantics></math>
+in place of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝚲</mi><annotation encoding="application/x-tex">\mathbf{\Lambda}</annotation></semantics></math>
+(see Evaluating the season integral above). Because both
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>𝐙</mi><mtext mathvariant="normal">Tag</mtext></msup><annotation encoding="application/x-tex">\mathbf{Z}^{\text{Tag}}</annotation></semantics></math>
+and the fishing mortality in the numerator carry the same
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>ω</mi><mi>τ</mi><mi>k</mi></msubsup><annotation encoding="application/x-tex">\omega^{k}_{\tau}</annotation></semantics></math>
+scaling, this integrates fishing mortality over exactly the at-liberty
+fraction of the season: the substitution
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>u</mi><mo>=</mo><msubsup><mi>ω</mi><mi>τ</mi><mi>k</mi></msubsup><mi>υ</mi></mrow><annotation encoding="application/x-tex">u = \omega^{k}_{\tau}\upsilon</annotation></semantics></math>
+turns the expression into
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mo>∫</mo><mn>0</mn><msubsup><mi>ω</mi><mi>τ</mi><mi>k</mi></msubsup></msubsup><mi>𝐅</mi><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>𝚲</mi><mi>u</mi><mo stretchy="true" form="postfix">)</mo></mrow><msup><mi>𝐓</mi><mi>k</mi></msup><mi>d</mi><mi>u</mi></mrow><annotation encoding="application/x-tex">\int_{0}^{\omega^{k}_{\tau}}\mathbf{F}\exp\left( \mathbf{\Lambda}u \right)\mathbf{T}^{k}du</annotation></semantics></math>
+on the unscaled full-season generator, which is the continuous-movement
+counterpart of the partial-interval Baranov equation described
+above.</p>
+<p>Here
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>β</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow></msub><annotation encoding="application/x-tex">\beta_{r,y,f}</annotation></semantics></math>
 represents a fleet-specific tag reporting rate parameter that can vary
 across space, time, and fleet, which is estimated in logit space such
@@ -1835,6 +2344,87 @@ is the destination, and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>c</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>k</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">c_{p,r,k,y,\tau,a,s}</annotation></semantics></math>
 are the concentration parameters that control the Dirichlet
 distribution.</p>
+<div class="section level6">
+<h6 id="what-the-prior-is-evaluated-on">What the prior is evaluated on<a class="anchor" aria-label="anchor" href="#what-the-prior-is-evaluated-on"></a>
+</h6>
+<p>For unstructured movement (<code>move_type = 0</code>) the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐌</mi><annotation encoding="application/x-tex">\mathbf{M}</annotation></semantics></math>
+above are the estimated transition fractions themselves, and the prior
+applies to them directly. For CTMC movement (<code>move_type = 1</code>)
+the model estimates a generator
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>𝐐</mi><mo accent="true">̇</mo></mover><annotation encoding="application/x-tex">\dot{\mathbf{Q}}</annotation></semantics></math>
+rather than fractions, and the prior is evaluated on the
+<strong>annual</strong> fractions obtained from it,</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐦</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>⋅</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><msub><mrow><mo stretchy="true" form="prefix">[</mo><mi mathvariant="normal">exp</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>𝐐</mi><mo accent="true">̇</mo></mover><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow><mrow><mi>r</mi><mo>,</mo><mi>⋅</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\mathbf{m}_{p,r,\cdot,y,\tau,a,s} = \left\lbrack \exp\left( \dot{\mathbf{Q}}_{p,y,\tau,a,s} \right) \right\rbrack_{r,\cdot}</annotation></semantics></math></p>
+<p>i.e. at
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Δ</mi><mi>t</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\Delta t = 1</annotation></semantics></math>,
+rather than on the seasonal fractions
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mover><mi>𝐐</mi><mo accent="true">̇</mo></mover><mi mathvariant="normal">Δ</mi><mi>t</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(\dot{\mathbf{Q}}\Delta t)</annotation></semantics></math>
+stored in
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐌</mi><annotation encoding="application/x-tex">\mathbf{M}</annotation></semantics></math>.
+The distinction matters once <code>ctmc_scale_by_seasdur = 1</code>: a
+season’s movement matrix approaches the identity as the season shortens,
+so a fixed
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐜</mi><annotation encoding="application/x-tex">\mathbf{c}</annotation></semantics></math>
+would silently become a far stronger constraint as
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>n</mi><mi>τ</mi></msub><annotation encoding="application/x-tex">n_{\tau}</annotation></semantics></math>
+grows. On a three-region example the same
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mo>=</mo><mn>3</mn></mrow><annotation encoding="application/x-tex">c = 3</annotation></semantics></math>
+prior costs 1.04 nLL units at
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mi>τ</mi></msub><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">n_{\tau} = 1</annotation></semantics></math>
+but 9.91 at
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mi>τ</mi></msub><mo>=</mo><mn>12</mn></mrow><annotation encoding="application/x-tex">n_{\tau} = 12</annotation></semantics></math>;
+evaluated annually it is 1.04 in both cases. Fixing the exponent at one
+year also matches how such priors are elicited — as a belief about the
+fraction of fish moving per <em>year</em>, independent of how the year
+is partitioned. Under the legacy <code>ctmc_scale_by_seasdur = 0</code>
+the two coincide.</p>
+<p>Because
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mover><mi>𝐐</mi><mo accent="true">̇</mo></mover><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(\dot{\mathbf{Q}})</annotation></semantics></math>
+is a deterministic function of the estimated CTMC parameters, the prior
+still informs
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>𝐐</mi><mo accent="true">̇</mo></mover><annotation encoding="application/x-tex">\dot{\mathbf{Q}}</annotation></semantics></math>
+under every <code>move_timing</code>. Note, however, that under
+<code>move_timing = 2</code> the seasonal operator is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msup><mover><mi>𝐐</mi><mo accent="true">̇</mo></mover><mi>T</mi></msup><mi mathvariant="normal">Δ</mi><mi>τ</mi><mo>−</mo><mtext mathvariant="normal">diag</mtext><mo stretchy="false" form="prefix">(</mo><mi>𝐙</mi><mo stretchy="false" form="postfix">)</mo><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\exp\left( \dot{\mathbf{Q}}^{T}\Delta\tau - \text{diag}(\mathbf{Z}) \right)</annotation></semantics></math>,
+which does not factor into movement and survival:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐌</mi><annotation encoding="application/x-tex">\mathbf{M}</annotation></semantics></math>
+is then a reported diagnostic rather than a term in the dynamics, and
+the prior acts as a reparameterised prior on the generator.</p>
+</div>
+<div class="section level6">
+<h6 id="choosing-the-concentration-parameters">Choosing the concentration parameters<a class="anchor" aria-label="anchor" href="#choosing-the-concentration-parameters"></a>
+</h6>
+<p>Writing
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐜</mi><annotation encoding="application/x-tex">\mathbf{c}</annotation></semantics></math>
+for the concentration vector of one origin region and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>n</mi><mi>r</mi></msub><annotation encoding="application/x-tex">n_{r}</annotation></semantics></math>
+for the number of regions:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mtext mathvariant="normal">mode</mtext><mi>k</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>c</mi><mi>k</mi></msub><mo>−</mo><mn>1</mn></mrow><mrow><munder><mo>∑</mo><mi>j</mi></munder><msub><mi>c</mi><mi>j</mi></msub><mo>−</mo><msub><mi>n</mi><mi>r</mi></msub></mrow></mfrac><mspace width="0.222em"></mspace><mspace width="0.222em"></mspace><mo stretchy="false" form="prefix">(</mo><msub><mi>c</mi><mi>k</mi></msub><mo>&gt;</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo><mo>,</mo><mspace width="2.0em"></mspace><msub><mtext mathvariant="normal">mean</mtext><mi>k</mi></msub><mo>=</mo><mfrac><msub><mi>c</mi><mi>k</mi></msub><mrow><munder><mo>∑</mo><mi>j</mi></munder><msub><mi>c</mi><mi>j</mi></msub></mrow></mfrac><mo>,</mo><mspace width="2.0em"></mspace><mi>κ</mi><mo>=</mo><munder><mo>∑</mo><mi>j</mi></munder><msub><mi>c</mi><mi>j</mi></msub><mo>−</mo><msub><mi>n</mi><mi>r</mi></msub></mrow><annotation encoding="application/x-tex">\text{mode}_{k} = \frac{c_{k} - 1}{\sum_{j} c_{j} - n_{r}}\ \ (c_{k} &gt; 1), \qquad \text{mean}_{k} = \frac{c_{k}}{\sum_{j} c_{j}}, \qquad \kappa = \sum_{j} c_{j} - n_{r}</annotation></semantics></math></p>
+<p>where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>κ</mi><annotation encoding="application/x-tex">\kappa</annotation></semantics></math>
+behaves as the number of prior pseudo-observations, so it is the natural
+handle on prior strength. Two cases are worth separating:</p>
+<ul>
+<li>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝐜</mi><mo>=</mo><mn>𝟏</mn></mrow><annotation encoding="application/x-tex">\mathbf{c} = \mathbf{1}</annotation></semantics></math>
+gives a <strong>uniform density over the simplex</strong>: every
+movement vector is equally likely, the contribution to the objective is
+constant, and the gradient is exactly zero. This is the uninformative
+choice.</li>
+<li>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝐜</mi><mo>=</mo><mi>c</mi><mn>𝟏</mn></mrow><annotation encoding="application/x-tex">\mathbf{c} = c\mathbf{1}</annotation></semantics></math>
+with
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mo>&gt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">c &gt; 1</annotation></semantics></math>
+is symmetric with its mode at
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><msub><mi>n</mi><mi>r</mi></msub></mrow><annotation encoding="application/x-tex">1/n_{r}</annotation></semantics></math>
+in every region — a prior centred on <em>equal movement among all
+regions</em>, which is informative and, for a residency-dominated stock,
+a strong assumption rather than a vague one.</li>
+</ul>
+<p>To target a particular movement vector with a chosen strength, set
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>c</mi><mi>k</mi></msub><mo>=</mo><mn>1</mn><mo>+</mo><mi>κ</mi><mspace width="0.167em"></mspace><msub><mtext mathvariant="normal">mode</mtext><mi>k</mi></msub></mrow><annotation encoding="application/x-tex">c_{k} = 1 + \kappa\,\text{mode}_{k}</annotation></semantics></math>.</p>
+</div>
 </div>
 <div class="section level5">
 <h5 id="tag-reporting-rates">Tag Reporting Rates<a class="anchor" aria-label="anchor" href="#tag-reporting-rates"></a>

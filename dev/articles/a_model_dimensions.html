@@ -1361,8 +1361,8 @@ representing the covariates used to compute survey catchability</td>
 and how continuous time-varying selectivity is applied. 0: None, 1: iid
 deviations, 2: random walk, 3: 3D GMRF with marginal variance
 (semi-parametric), 4: 3D GMRF with conditional variance
-(semi-parametric). Further details in Get_PE_loglik.R,
-Get_3d_precision.R, and Get_Selex.R</td>
+(semi-parametric). Further details in model_priors_penalties.R,
+model_precision.R, and model_selectivity.R</td>
 </tr>
 <tr class="even">
 <td>fish_sel_blocks</td>
@@ -1376,7 +1376,7 @@ parameter blocks</td>
 the selectivity functional form. 0: Logistic (a50 and slope), 1: Gamma
 dome-shaped, 2: Power function, 3: Logistic (a50 and a95), 4: Double
 Normal (6 parameters), 5: Non-parametric, 6/7: Logistic with asymptote,
-8: Bicubic spline. Further details in Get_Selex.R</td>
+8: Bicubic spline. Further details in model_selectivity.R</td>
 </tr>
 <tr class="even">
 <td>fish_sel_bicubic_binnodes, fish_sel_bicubic_yrnodes</td>
@@ -1557,8 +1557,8 @@ selectivity surface</td>
 how continuous time-varying selectivity is applied. 0: None, 1: iid
 deviations, 2: random walk, 3: 3D GMRF with marginal variance
 (semi-parametric), 4: 3D GMRF with conditional variance
-(semi-parametric). Further details in Get_PE_loglik.R,
-Get_3d_precision.R, and Get_Selex.R</td>
+(semi-parametric). Further details in model_priors_penalties.R,
+model_precision.R, and model_selectivity.R</td>
 </tr>
 <tr class="even">
 <td>srv_sel_blocks</td>
@@ -1570,7 +1570,7 @@ parameter blocks</td>
 <td>srv_sel_model</td>
 <td>Array dimensioned by n_regions, n_years, n_srv_fleets specifying the
 selectivity functional form. Same options as fish_sel_model, including
-bicubic (8). Further details in Get_Selex.R</td>
+bicubic (8). Further details in model_selectivity.R</td>
 </tr>
 <tr class="even">
 <td>srv_sel_bicubic_binnodes, srv_sel_bicubic_yrnodes,

@@ -32,7 +32,9 @@ Get_Movement(
   move_preference_pars,
   area_r,
   adjacency_mat,
-  ctmc_diffusion_bounds
+  ctmc_diffusion_bounds,
+  seasdur = rep(1, n_seas),
+  ctmc_scale_by_seasdur = 0
 )
 ```
 
@@ -150,6 +152,45 @@ Get_Movement(
   generator matrix entries are non-negative (valid generator); 0 = no
   bounds applied.
 
+- seasdur:
+
+  Numeric vector of length `n_seas` giving season durations (summing to
+  1). Used to scale the CTMC generator when
+  `ctmc_scale_by_seasdur == 1`. Defaults to `rep(1, n_seas)`, which
+  reproduces the unscaled behaviour.
+
+- ctmc_scale_by_seasdur:
+
+  Integer flag controlling the time units of the CTMC generator. `1` =
+  treat \\Q\\ as an annual rate and exponentiate \\Q \cdot
+  \mathrm{seasdur}\[s\]\\ for each season; `0` = treat \\Q\\ as a per
+  season rate and exponentiate it once per season irrespective of season
+  duration. Only affects `move_type == 1` with `n_seas > 1`. Defaults to
+  `0` here so that callers passing an unscaled generator get the
+  arithmetic they expect; the user facing default is `1`, set by
+  `Setup_Mod_Movement`.
+
+  Whether this flag changes the fit or only reparameterises it depends
+  on whether the generator varies by season. With a season-agnostic
+  generator it matters: the seasonal steps commute, so scaling on
+  composes across the year to \\\exp(Q)\\ regardless of `n_seas`,
+  whereas scaling off composes to \\\exp(n\_{seas} Q)\\ and inflates
+  movement as the seasonal time step shrinks. With a season-varying
+  generator the scaling is absorbed — \\Q\\ is linear in \\\theta\\, so
+  scaling \\Q\\ by `seasdur[s]` equals shifting
+  `log_move_diffusion_pars` by \\\tfrac{1}{2}\log
+  \mathrm{seasdur}\[s\]\\ — but only if *both* formulas carry a season
+  term, since the flag scales diffusion and taxis together while only
+  \\\theta\\ can absorb it.
+
+  Note that even where the scaling is absorbed, it changes what the
+  estimated diffusion means (per-season step vs annual rate, hence not
+  comparable across seasons of unequal length), and the Dirichlet
+  movement prior is evaluated on annual fractions \\\exp(Q)\\
+  irrespective of this flag. Under `move_timing = 2` the flag governs
+  only the reported `Movement` diagnostic: the dynamics take `Mrate` and
+  apply `seasdur[seas]` themselves.
+
 ## Value
 
 A list with components:
@@ -165,6 +206,9 @@ A list with components:
   Instantaneous rate matrix (generator \\Q\\) dimensioned
   `[pop, from_region, to_region, year, seas, age, sex]`. Populated only
   when `move_type == 1` and `use_fixed_movement == 0`; `NULL` otherwise.
+  Stored *unscaled* by season duration, so that consumers combining it
+  with mortality must apply `seasdur[seas]` themselves (see
+  `build_seas_operator`).
 
 - `move_pen`:
 

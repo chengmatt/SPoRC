@@ -32,6 +32,8 @@ Setup_Mod_Movement(
   diffusion_formula = NULL,
   preference_formula = NULL,
   ctmc_diffusion_bounds = 0,
+  move_timing = 0,
+  ctmc_scale_by_seasdur = 1,
   ...
 )
 ```
@@ -214,6 +216,25 @@ Setup_Mod_Movement(
   Integer flag. `1` = apply bounds to diffusion parameters to ensure the
   CTMC generator matrix is a valid Metzler matrix (non-negative
   off-diagonal entries). `0` = no bounds (default).
+
+- move_timing:
+
+  Integer flag setting how movement and mortality are sequenced within a
+  season. `0` = movement then mortality (default, historical SPoRC
+  behaviour); `1` = mortality then movement; `2` = continuous, with
+  movement and mortality acting simultaneously via the matrix
+  exponential of \\Q\Delta - \mathrm{diag}(Z)\\. `move_timing = 2`
+  requires an estimated CTMC generator, i.e. `move_type = 1` and
+  `use_fixed_movement = 0`.
+
+- ctmc_scale_by_seasdur:
+
+  Integer flag controlling the time units of the CTMC generator. `1`
+  (default) treats \\Q\\ as an annual rate, exponentiating \\Q \cdot
+  \mathrm{seasdur}\[s\]\\ in each season so that movement and mortality
+  share time units. `0` exponentiates \\Q\\ once per season regardless
+  of duration. Only has an effect when `move_type = 1` and `n_seas > 1`;
+  forced to `1` when `move_timing = 2`.
 
 - ...:
 

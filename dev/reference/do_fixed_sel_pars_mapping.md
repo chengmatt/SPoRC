@@ -78,6 +78,7 @@ factor vector.
 
 ## Details
 
-Consolidates what were previously three near-identical functions,
-`do_fish_fixed_sel_pars_mapping`, `do_ret_fixed_sel_pars_mapping`, and
-`do_srv_fixed_sel_pars_mapping`.
+Serves fishery, retention, and survey selectivity. `prefix` is `"fish"`,
+`"ret"`, or `"srv"`; retention takes its own `use_field` because it is
+switched on by the fishery side rather than by a retention specific
+flag.

@@ -37,7 +37,9 @@ Get_Det_Recruitment(
   spawn_seas,
   natal_region,
   seasdur,
-  sexratio_f
+  sexratio_f,
+  Mrate = NULL,
+  move_timing = 0
 )
 ```
 

@@ -44,7 +44,9 @@ get_tagging_observation_model(
   do_recruits_move,
   Movement,
   conv_tag_fish_avail,
-  pred_conv_tag_fish_recap
+  pred_conv_tag_fish_recap,
+  Mrate = NULL,
+  move_timing = 0
 )
 ```
 

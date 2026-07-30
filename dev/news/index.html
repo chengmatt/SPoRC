@@ -47,9 +47,9 @@
 <li>Added ability to simulate and fit to population-specific discards and discarded compositions.</li>
 <li>Added in ability to internally construct OSA residuals for catch, indices, compositions, and tagging data.</li>
 <li>Added <code>Fdev_model</code> option (<code>"iid"</code>, <code>"rw"</code>, <code>"ar1"</code>) to <code>Setup_Mod_Catch_and_F</code> for fishing mortality deviations (<code>ln_F_devs</code>), with a new AR1 correlation parameter <code>Fdev_rho</code> (shared/fixed via <code>Fdev_rho_spec</code>). Previously only IID deviations were supported.</li>
-<li>Random walk and AR1 fishing mortality deviations no longer require catch-active years to be contiguous. A fishery closure spanning multiple years is now handled via the exact closed-form marginal transition over the elapsed gap <code>d</code> (random walk: variance inflates to <code>d*sigma^2</code>; AR1: mean decays by <code>rho^d</code>, variance becomes <code>sigma^2 * sum_{i=0}^{d-1} rho^(2i)</code>) – mathematically identical to estimating deviations for the closed years and integrating them out, without actually estimating them. Both reduce exactly to the standard single-step transition when <code>d = 1</code>.</li>
 <li>Fishing mortality deviations now distinguish a genuinely missing aggregate catch observation from a true recorded zero. If <code>ObsCatch</code> is <code>NA</code> at a cell where <code>UseCatch == 0</code> (and no population-specific catch is used), fishing is assumed to have continued and <code>Fmort</code>/<code>ln_F_devs</code> are estimated as an ordinary active year; if <code>ObsCatch</code> holds a real value (typically <code>0</code>), the cell is treated as a genuine closure (<code>Fmort</code> forced to zero, no deviation estimated), matching prior behavior. See <code>@param ObsCatch</code> in <code>Setup_Mod_Catch_and_F</code> and <code>Get_Fdev_PE_loglik</code>.</li>
 <li>Added age-0 (<code>rec_lag = 0</code>) Beverton-Holt recruitment, set via <code>rec_lag</code> in <code>Setup_Mod_Rec</code>/<code>Setup_Sim_Rec</code>. Previously <code>rec_lag</code> had to be <code>&gt;= 1</code> (recruitment driven by SSB from <code>rec_lag</code> seasons prior, entering in any season). With <code>rec_lag = 0</code>, recruitment for a year is driven by that <em>same</em> year’s own SSB.</li>
+<li>Incorporated additional movement ordering options including: movement after mortality and continuous movement dynamics.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="minor-changes-1-2-0-9000">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-2-0-9000"></a></h3>
@@ -72,7 +72,6 @@
 <h3 id="bug-fixes-1-2-0-9000">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-2-0-9000"></a></h3>
 <ul><li>Fixed bug on smoothing penalty of time-varying selectivity where it was not being applied in the first year.</li>
 <li>Fixed inconsistent logic between the fishing mortality and discard mortality rate zeroing conditions for population-specific catch: <code>Fmort</code> was forced to zero if <em>any</em> population’s catch was unused, while the parallel discard mortality rate condition correctly required <em>all</em> populations to be unused. Both now consistently use the latter.</li>
-<li>Fixed a data issue in the bundled <code>sgl_rg_sable_data</code> dataset where 3 cells of <code>ObsCatch</code> (fleet 2, years 1-3, representing a fleet that had not yet started fishing) were <code>NA</code>; corrected to <code>0</code> to represent a true closure under the new missing-vs-true-zero convention above (prior fitted results for this dataset are unaffected).</li>
 </ul></div>
 </div>
     <div class="section level2">

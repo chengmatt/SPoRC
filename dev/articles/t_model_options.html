@@ -1438,8 +1438,116 @@ matrix</td>
 <td>0/1: if <code>1</code>, shifts diffusion columns to guarantee all
 off-diagonal generator-matrix entries are non-negative</td>
 </tr>
+<tr class="odd">
+<td><code>ctmc_scale_by_seasdur</code></td>
+<td>0/1 (default <code>1</code>): if <code>1</code>, treats the
+generator as an annual rate and exponentiates
+<code>Q * seasdur[s]</code> each season, so movement and mortality share
+time units. <code>0</code> results in <code>Q * 1</code> each
+season.</td>
+</tr>
 </tbody>
 </table>
+</div>
+<div class="section level4">
+<h4 id="movement-and-mortality-sequencing-move_timing">Movement and mortality sequencing (<code>move_timing</code>)<a class="anchor" aria-label="anchor" href="#movement-and-mortality-sequencing-move_timing"></a>
+</h4>
+<p>Controls how movement and mortality are ordered within a season. The
+three options coincide exactly when total mortality is constant across
+regions, when mortality is zero, and when movement is absent — so
+single-region models are unaffected by the setting.</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Value</th>
+<th>Sequencing</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>
+<code>0</code> (default)</td>
+<td>Movement then mortality. Historical <code>SPoRC</code>
+behaviour</td>
+</tr>
+<tr class="even">
+<td><code>1</code></td>
+<td>Mortality then movement</td>
+</tr>
+<tr class="odd">
+<td><code>2</code></td>
+<td>Continuous: movement and mortality act simultaneously, via
+<code>expm(Q * seasdur - diag(Z))</code>
+</td>
+</tr>
+</tbody>
+</table>
+<p><code>move_timing = 2</code> requires an estimated CTMC generator
+(<code>move_type = 1</code> with <code>use_fixed_movement = 0</code>); a
+discrete movement matrix has no guaranteed real generator, so it is
+rejected rather than approximated.</p>
+<p>The setting is not confined to the projection step. Anything observed
+partway through a season has to be evaluated consistently with it:</p>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+</colgroup>
+<thead><tr class="header">
+<th>Quantity</th>
+<th><code>0</code></th>
+<th><code>1</code></th>
+<th><code>2</code></th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Spawning biomass</td>
+<td>Post-movement location</td>
+<td>Pre-movement location</td>
+<td>Partially redistributed, <code>expm(A * t_spawn)</code>
+</td>
+</tr>
+<tr class="even">
+<td>Catch, discards</td>
+<td>Baranov, post-movement</td>
+<td>Baranov, pre-movement</td>
+<td>Season-integrated abundance (spatial Baranov)</td>
+</tr>
+<tr class="odd">
+<td>Fishery index</td>
+<td>Post-movement <code>N</code>
+</td>
+<td>Pre-movement <code>N</code>
+</td>
+<td>Season-integrated abundance</td>
+</tr>
+<tr class="even">
+<td>Survey index</td>
+<td><code>N * exp(-t_srv * Z)</code></td>
+<td><code>N * exp(-t_srv * Z)</code></td>
+<td>Snapshot, <code>expm(A * t_srv) N</code>
+</td>
+</tr>
+<tr class="odd">
+<td>Tag recaptures</td>
+<td>Baranov on tag cohort</td>
+<td>Baranov on tag cohort</td>
+<td>Season-integrated tag abundance</td>
+</tr>
+</tbody>
+</table>
+<p>where <code>A = t(Q) * seasdur - diag(Z)</code>. Equilibrium
+initialisation (including the matrix plus-group solution), per-recruit
+reference points, and projections all use the same seasonal operator, so
+they inherit the setting as well. Note the survey/fishery contrast: a
+survey is a snapshot at an instant within the season and so uses a
+partial propagation, whereas catch and the fishery index accumulate over
+the season and so use the integral of that propagation. Full equations
+are in the <em>Description of Model Equations</em> vignette.</p>
 </div>
 <div class="section level4">
 <h4 id="continuous-movement-deviations-cont_vary_movement">Continuous movement deviations

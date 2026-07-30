@@ -75,7 +75,9 @@ during projection unless <code>ctmc_move_dat</code> is extended with projection-
 <span>  <span class="va">move_preference_pars</span>,</span>
 <span>  <span class="va">area_r</span>,</span>
 <span>  <span class="va">adjacency_mat</span>,</span>
-<span>  <span class="va">ctmc_diffusion_bounds</span></span>
+<span>  <span class="va">ctmc_diffusion_bounds</span>,</span>
+<span>  seasdur <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="va">n_seas</span><span class="op">)</span>,</span>
+<span>  ctmc_scale_by_seasdur <span class="op">=</span> <span class="fl">0</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -191,6 +193,41 @@ connectivity among regions (1 = adjacent, 0 = not adjacent). Required when
 all off-diagonal generator matrix entries are non-negative (valid generator);
 0 = no bounds applied.</p></dd>
 
+
+<dt id="arg-seasdur">seasdur<a class="anchor" aria-label="anchor" href="#arg-seasdur"></a></dt>
+<dd><p>Numeric vector of length <code>n_seas</code> giving season durations
+(summing to 1). Used to scale the CTMC generator when
+<code>ctmc_scale_by_seasdur == 1</code>. Defaults to <code>rep(1, n_seas)</code>, which
+reproduces the unscaled behaviour.</p></dd>
+
+
+<dt id="arg-ctmc-scale-by-seasdur">ctmc_scale_by_seasdur<a class="anchor" aria-label="anchor" href="#arg-ctmc-scale-by-seasdur"></a></dt>
+<dd><p>Integer flag controlling the time units of the CTMC
+  generator. <code>1</code> = treat \(Q\) as an annual rate and exponentiate
+  \(Q \cdot \mathrm{seasdur}[s]\) for each season; <code>0</code> = treat \(Q\) as
+  a per season rate and exponentiate it once per season irrespective of season
+  duration. Only affects <code>move_type == 1</code> with <code>n_seas &gt; 1</code>. Defaults
+  to <code>0</code> here so that callers passing an unscaled generator get the
+  arithmetic they expect; the user facing default is <code>1</code>, set by
+  <code>Setup_Mod_Movement</code>.</p>
+<p>Whether this flag changes the fit or only reparameterises it depends on
+  whether the generator varies by season. With a season-agnostic generator it
+  matters: the seasonal steps commute, so scaling on composes across the year to
+  \(\exp(Q)\) regardless of <code>n_seas</code>, whereas scaling off composes to
+  \(\exp(n_{seas} Q)\) and inflates movement as the seasonal time step shrinks.
+  With a season-varying generator the scaling is absorbed — \(Q\) is linear in
+  \(\theta\), so scaling \(Q\) by <code>seasdur[s]</code> equals shifting
+  <code>log_move_diffusion_pars</code> by \(\tfrac{1}{2}\log \mathrm{seasdur}[s]\) —
+  but only if <em>both</em> formulas carry a season term, since the flag scales
+  diffusion and taxis together while only \(\theta\) can absorb it.</p>
+<p>Note that even where the scaling is absorbed, it changes what the estimated
+  diffusion means (per-season step vs annual rate, hence not comparable across
+  seasons of unequal length), and the Dirichlet movement prior is evaluated on
+  annual fractions \(\exp(Q)\) irrespective of this flag. Under
+  <code>move_timing = 2</code> the flag governs only the reported <code>Movement</code>
+  diagnostic: the dynamics take <code>Mrate</code> and apply <code>seasdur[seas]</code>
+  themselves.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -202,7 +239,10 @@ all off-diagonal generator matrix entries are non-negative (valid generator);
   <dt><code>Mrate</code></dt>
 <dd><p>Instantaneous rate matrix (generator \(Q\)) dimensioned
     <code>[pop, from_region, to_region, year, seas, age, sex]</code>. Populated only
-    when <code>move_type == 1</code> and <code>use_fixed_movement == 0</code>; <code>NULL</code> otherwise.</p></dd>
+    when <code>move_type == 1</code> and <code>use_fixed_movement == 0</code>; <code>NULL</code> otherwise.
+    Stored <em>unscaled</em> by season duration, so that consumers combining it with
+    mortality must apply <code>seasdur[seas]</code> themselves (see
+    <code>build_seas_operator</code>).</p></dd>
 
   <dt><code>move_pen</code></dt>
 <dd><p>Numeric movement penalty used for regularization.

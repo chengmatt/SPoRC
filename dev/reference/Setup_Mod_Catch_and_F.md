@@ -275,9 +275,9 @@ additions:
 
 - `$map`:
 
-  `ln_sigmaC`, `ln_sigmaC_pop`, `ln_sigmaF`, `Fdev_rho`, `ln_F_devs`,
-  `ln_sigmaD`, `ln_sigmaD_pop`, `ln_sigma_dmr`, `logit_dmr_mean`,
-  `logit_dmr_devs`.
+  `ln_sigmaC`, `ln_sigmaC_pop`, `ln_sigmaF`, `Fdev_rho`, `ln_F_mean`,
+  `ln_F_devs`, `ln_sigmaD`, `ln_sigmaD_pop`, `ln_sigma_dmr`,
+  `logit_dmr_mean`, `logit_dmr_devs`.
 
 ## See also
 

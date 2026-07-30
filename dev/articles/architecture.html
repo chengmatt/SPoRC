@@ -60,33 +60,32 @@
 
     
     
-<p>The purpose of this document is for people editing the
-<code>SPoRC</code> codebase (contributors, successors, future-you). The
-goal here is to keep the package navigable as it grows, especially as
-spatial model development adds more moving parts. It should be updated
-whenever the pipeline below changes shape (a new
-<code>Setup_Mod_*</code> stage, a new section of
-<code>SPoRC_rtmb.R</code>, a new post-fit diagnostic) — treat a stale
-architecture doc as a bug.</p>
+<p>This document is for people editing the <code>SPoRC</code> codebase:
+contributors, successors, future you. The goal is to keep the package
+navigable as it grows, especially as spatial model development adds more
+moving parts. Update it whenever the pipeline below changes shape (a new
+<code>Setup_Mod_*</code> stage, a new section of the objective function,
+a new post fit diagnostic). A stale architecture document should be
+treated as a bug.</p>
 <div class="section level2">
 <h2 id="mental-model">Mental model<a class="anchor" aria-label="anchor" href="#mental-model"></a>
 </h2>
-<p>In general, <code>SPoRC</code> has three phases, in this order:</p>
+<p><code>SPoRC</code> runs in three phases, in this order.</p>
 <ol style="list-style-type: decimal">
 <li>
-<strong>Setup</strong> — a chain of R functions builds up three
-plain lists: <code>data</code>, <code>parameters</code>,
-<code>mapping</code>. No likelihood is evaluated yet; this phase is pure
-data wrangling and input validation.</li>
+<strong>Setup.</strong> A chain of R functions builds up three plain
+lists: <code>data</code>, <code>parameters</code> and
+<code>mapping</code>. No likelihood is evaluated yet. This phase is data
+wrangling and input validation only.</li>
 <li>
-<strong>Fit</strong> — <code>data</code> and <code>parameters</code>
-are handed to <code>RTMB::MakeADFun</code> wrapped around a single
-objective function, <code><a href="../reference/SPoRC_rtmb.html">SPoRC_rtmb()</a></code>, which is optimized with
-<code>nlminb</code> + Newton refinement.</li>
+<strong>Fit.</strong> <code>data</code> and <code>parameters</code>
+go to <code>RTMB::MakeADFun</code> wrapped around a single objective
+function, <code><a href="../reference/SPoRC_rtmb.html">SPoRC_rtmb()</a></code>, which is optimized with
+<code>nlminb</code> plus Newton refinement.</li>
 <li>
-<strong>Post-fit</strong> — the fitted object (<code>obj$rep</code>,
+<strong>Post fit.</strong> The fitted object (<code>obj$rep</code>,
 <code>obj$sdrep</code>, <code>obj$optim</code>) is passed to
-diagnostics, reference-point, plotting, and resampling routines.</li>
+diagnostics, reference points, plotting and resampling routines.</li>
 </ol>
 <pre><code>Setup_Mod_Dim()
    -&gt; Setup_Mod_Rec()
@@ -94,6 +93,8 @@ diagnostics, reference-point, plotting, and resampling routines.</li>
    -&gt; Setup_Mod_Movement()
    -&gt; Setup_Mod_Tagging()
    -&gt; Setup_Mod_Catch_and_F()
+   -&gt; Setup_Mod_FishIdx_and_Comps()   [+ Setup_Mod_Discard_Comps()]
+   -&gt; Setup_Mod_Fishsel_and_Q()       [+ Setup_Mod_Retsel()]
    -&gt; Setup_Mod_SrvIdx_and_Comps()
    -&gt; Setup_Mod_Srvsel_and_Q()
    -&gt; Setup_Mod_Weighting()
@@ -105,76 +106,123 @@ diagnostics, reference-point, plotting, and resampling routines.</li>
         v
    obj  (obj$rep, obj$sdrep, obj$optim)
         |
-        +--&gt; Get_Reference_Points()      (SPR / MSY / Fmsy by structure)
-        +--&gt; get_model_fits() / plot_*   (index, comp, OSA residual diagnostics)
+        +--&gt; Get_Reference_Points()          SPR and MSY
+        +--&gt; get_idx_fits() / get_osa()      fit extraction and OSA residuals
+        +--&gt; plot_* / get_*_plot             figures and tables
         +--&gt; do_retrospective(), do_jitter(), do_likelihood_profile(), run_francis()
-        +--&gt; Do_Population_Projection(), closed_loop_simulations()</code></pre>
+        +--&gt; Do_Population_Projection(), condition_closed_loop_simulations()</code></pre>
 <div class="section level3">
-<h3 id="the-input_list-accumulator-pattern">The <code>input_list</code> accumulator pattern<a class="anchor" aria-label="anchor" href="#the-input_list-accumulator-pattern"></a>
+<h3 id="the-input_list-accumulator">The <code>input_list</code> accumulator<a class="anchor" aria-label="anchor" href="#the-input_list-accumulator"></a>
 </h3>
 <p>Every <code>Setup_Mod_*</code> function takes an
 <code>input_list</code> (initialized by <code><a href="../reference/Setup_Mod_Dim.html">Setup_Mod_Dim()</a></code> as
 <code>list(data = list(), par = list(), map = list())</code>) and
 returns it with more keys filled in. This is the central structure of
 the package: setup functions are pipeline stages that thread one growing
-list through each other, not independent builders. Order generally
-matters — later stages read dimensions
-(<code>input_list$data$n_regions</code>, etc.) set by earlier ones, and
-default arguments frequently reference <code>input_list$data$...</code>
-in their own definitions (see <code><a href="../reference/Setup_Mod_Rec.html">Setup_Mod_Rec()</a></code>’s defaults
-for an example).</p>
-<p>At the end of the chain, <code>input_list$data</code>,
-<code>input_list$par</code>, and <code>input_list$map</code> are
-unpacked and passed to <code><a href="../reference/fit_model.html">fit_model()</a></code>.
-<code>Setup_Sim_*</code> functions (in the same files as their
-<code>Setup_Mod_*</code> counterparts) follow the identical accumulator
-pattern but build inputs for <code>Simulate_Population.R</code>’s
-operating model instead of for fitting.</p>
+list through each other, not independent builders.</p>
+<p>Order matters. Later stages read dimensions
+(<code>input_list$data$n_regions</code> and friends) set by earlier
+ones, and default arguments frequently reference
+<code>input_list$data$...</code> in their own definitions. See
+<code><a href="../reference/Setup_Mod_Rec.html">Setup_Mod_Rec()</a></code>’s defaults for an example.</p>
+<p>At the end of the chain <code>input_list$data</code>,
+<code>input_list$par</code> and <code>input_list$map</code> are unpacked
+and passed to <code><a href="../reference/fit_model.html">fit_model()</a></code>. The <code>Setup_Sim_*</code>
+functions live in the same files as their <code>Setup_Mod_*</code>
+counterparts and follow the identical accumulator pattern, but build
+inputs for the operating model instead of for fitting.</p>
 </div>
 <div class="section level3">
-<h3 id="sporc_rtmb-the-objective-function">
-<code>SPoRC_rtmb()</code> — the objective function<a class="anchor" aria-label="anchor" href="#sporc_rtmb-the-objective-function"></a>
+<h3 id="the-objective-function">The objective function<a class="anchor" aria-label="anchor" href="#the-objective-function"></a>
 </h3>
-<p><a href="https://github.com/chengmatt/SPoRC/blob/main/R/SPoRC_rtmb.R" class="external-link">R/SPoRC_rtmb.R</a>
-is the one RTMB objective function for every model configuration the
-package supports; there is no per-model-type branching at the file
-level; instead the objective always runs but is regulated by the
-<code>data</code> switches set during Setup
-(e.g. <code>rec_model</code>, <code>move_type</code>, which
-likelihood/OSA flags are on). Concretely it moves through, in order:
-parameter transforms (movement, natural mortality, selectivity) -&gt;
-mortality -&gt; recruitment -&gt; initial age structure -&gt; population
-projection -&gt; observation models (fishery, survey, tagging) -&gt;
-likelihood components (retained/discarded catch, indices, compositions,
-tags) -&gt; priors and penalties.</p>
-<p>If you’re adding a new data source or process to the model, this is
-the file where its likelihood contribution gets wired in; the
-corresponding <code>Setup_Mod_*</code> function is where its
-data/parameters/mapping get prepared beforehand.</p>
-<p>Most of the heavier sections don’t do their own array-crunching
-inline — they delegate to a helper function (i.e., a separate module)
-that takes the relevant state as named arguments and returns it,
-following the same pattern as the pre-existing
-<code><a href="../reference/Get_Movement.html">Get_Movement()</a></code> / <code><a href="../reference/Get_Selex.html">Get_Selex()</a></code> /
-<code><a href="../reference/Get_Det_Recruitment.html">Get_Det_Recruitment()</a></code> / <code><a href="../reference/Get_Init_NAA.html">Get_Init_NAA()</a></code> calls:
-population projection (<code><a href="../reference/get_population_projection.html">get_population_projection()</a></code> in
-<code>Get_Population_Dynamics.R</code>), the fishery and survey
-observation models (<code><a href="../reference/get_fishery_observation_model.html">get_fishery_observation_model()</a></code> /
-<code><a href="../reference/get_survey_observation_model.html">get_survey_observation_model()</a></code> in
-<code>Get_Observation_Models.R</code>), the tagging observation model
-(<code><a href="../reference/get_tagging_observation_model.html">get_tagging_observation_model()</a></code> in
-<code>Get_Tagging_Observation_Model.R</code>), composition likelihoods
-(<code>Get_Comp_Likelihoods.R</code>), tag likelihoods
-(<code><a href="../reference/get_conv_tag_likelihoods.html">get_conv_tag_likelihoods()</a></code> in
-<code>Get_Conv_Tag_Likelihoods.R</code>), and priors/penalties (one
-function per prior in <code>Get_PE_loglik.R</code>).</p>
+<p><code>R/model_objective.R</code> holds the one RTMB objective
+function for every model configuration the package supports. There is no
+per model branching at the file level. The objective always runs end to
+end and is regulated by the switches set during setup, such as
+<code>rec_model</code>, <code>move_type</code>, and the likelihood and
+OSA flags.</p>
+<p>It moves through, in order: parameter transforms (movement, natural
+mortality, selectivity), then mortality, recruitment, initial age
+structure, population projection, the observation models (fishery,
+survey, tagging), the likelihood components (retained and discarded
+catch, indices, compositions, tags), and finally priors and
+penalties.</p>
+<p>Each section hands off to a module in one of the other
+<code>model_*.R</code> files, so the objective reads as an order of
+operations rather than as the arithmetic itself. If you are adding a new
+data source or process, this is where its likelihood contribution gets
+wired in, and the matching <code>Setup_Mod_*</code> function is where
+its data, parameters and mapping get prepared beforehand.</p>
+<p>Within <code>model_objective.R</code> the <code>## Section</code> and
+<code>### Subsection</code> comment banner style is used consistently.
+Keep using it if you extend the file, since it is the only navigation
+aid inside a function of this size.</p>
+<p>Note that <code>R/model_transition.R</code> is worth knowing about
+before anything else. It computes what happens to a vector of abundance
+over one season, given movement, mortality, season duration and a
+movement timing. Eleven other files go through it, including the
+objective function’s dynamics, the reference point solvers and the
+operating model.</p>
 </div>
 </div>
 <div class="section level2">
 <h2 id="naming-conventions">Naming conventions<a class="anchor" aria-label="anchor" href="#naming-conventions"></a>
 </h2>
-<p>The prefix on a function name generally tells you its role in the
-pipeline:</p>
+<div class="section level3">
+<h3 id="files">Files<a class="anchor" aria-label="anchor" href="#files"></a>
+</h3>
+<p>The prefix on a file name says which phase it belongs to.</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Prefix</th>
+<th>Phase</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>setup_</code></td>
+<td>Builds <code>data</code>, <code>parameters</code> and
+<code>mapping</code>, one process or data source per file</td>
+</tr>
+<tr class="even">
+<td><code>model_</code></td>
+<td>The objective function and the modules it delegates to</td>
+</tr>
+<tr class="odd">
+<td>
+<code>refpts_</code>, <code>projection</code>
+</td>
+<td>Reference points and forward projection off a fitted model</td>
+</tr>
+<tr class="even">
+<td><code>sim_</code></td>
+<td>The operating model: self testing and closed loop simulation</td>
+</tr>
+<tr class="odd">
+<td><code>diag_</code></td>
+<td>Post fit diagnostics and residuals</td>
+</tr>
+<tr class="even">
+<td><code>plot_</code></td>
+<td>Figures and summary tables</td>
+</tr>
+<tr class="odd">
+<td><code>utils_</code></td>
+<td>Helpers shared across phases</td>
+</tr>
+<tr class="even">
+<td><code>data_</code></td>
+<td>Roxygen documentation for the bundled datasets</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level3">
+<h3 id="functions">Functions<a class="anchor" aria-label="anchor" href="#functions"></a>
+</h3>
 <table class="table">
 <colgroup>
 <col width="50%">
@@ -187,170 +235,1003 @@ pipeline:</p>
 <tbody>
 <tr class="odd">
 <td><code>Setup_Mod_*</code></td>
-<td>Builds
-<code>data</code>/<code>parameters</code>/<code>mapping</code> for a
-real fit, one life-history process or data source per file
-(<code>Setup_Rec.R</code>, <code>Setup_Biologicals.R</code>,
-<code>Setup_Movement.R</code>, <code>Setup_Fishery.R</code>,
-<code>Setup_Survey.R</code>, <code>Setup_Tagging.R</code>,
-<code>Setup_Observation_Processes.R</code>).</td>
+<td>Builds inputs for a fitted object</td>
 </tr>
 <tr class="even">
 <td><code>Setup_Sim_*</code></td>
-<td>Same role, but for the <strong>operating model</strong> in
-<code>Simulate_Population.R</code> (self-tests, closed-loop simulation).
-Lives alongside its <code>Setup_Mod_*</code> counterpart in the same
-file.</td>
+<td>Same, for the operating model. Lives beside its
+<code>Setup_Mod_*</code> counterpart</td>
 </tr>
 <tr class="odd">
 <td><code>do_*_mapping</code></td>
-<td>Private helper (not exported) inside a <code>Setup_*</code> file
-that builds the RTMB <code>map</code> factor list for one parameter
-block — this is how parameters get fixed, shared across blocks, or
-turned into random-effect deviations.</td>
+<td>Internal helper that builds the RTMB <code>map</code> for one
+parameter block. This is how parameters get fixed, shared across blocks,
+or turned into random effect deviations</td>
 </tr>
 <tr class="even">
 <td><code>Get_*</code></td>
-<td>Pulls a derived quantity out of already-set-up data/parameters/a
-fitted object: <code>Get_Movement</code>, <code>Get_Selex</code>,
-<code>Get_Reference_Points</code>, <code>Get_Init_NAA</code>,
-<code>Get_Det_Recruitment</code>.</td>
+<td>Pulls a derived quantity out of set up data, parameters or a fitted
+object</td>
 </tr>
 <tr class="odd">
 <td>
-<code>do_*</code> (lowercase, top-level)</td>
-<td>A post-fit procedure that re-runs or perturbs a fitted model:
-<code>do_retrospective</code>, <code>do_jitter</code>,
-<code>do_likelihood_profile</code>, <code>do_runs_test</code>,
-<code>do_francis</code>.</td>
+<code>do_*</code> (top level)</td>
+<td>A post fit procedure that refits or perturbs a fitted model</td>
 </tr>
 <tr class="even">
 <td>
-<code>get_*_plot</code> / <code>get_*_fits</code>
+<code>get_*_plot</code>, <code>get_*_fits</code>
 </td>
-<td>Post-fit plotting/tabulation, mostly in
-<code>Make_Plots_Tables.R</code> and <code>get_model_fits.R</code>.</td>
+<td>Post fit plotting and tabulation</td>
 </tr>
 </tbody>
 </table>
-<p>Within <code>SPoRC_rtmb.R</code> the same <code>## Section</code> /
-<code>### Subsection</code> comment banner style is used consistently —
-keep using it there if you extend the file, since it’s the only
-navigation aid for a ~2,300-line function.</p>
+<p>A <code>do_*_mapping</code> helper lives in
+<code>setup_mapping.R</code> only if more than one <code>setup_*</code>
+file calls it. Single caller helpers stay in the file that uses
+them.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="file-map">File map<a class="anchor" aria-label="anchor" href="#file-map"></a>
 </h2>
-<pre><code>R/
-  Setup_Dimensions.R          entry point: n_regions, n_pop, ages, years, seasons...
-  Setup_Rec.R                 recruitment model, steepness, rec devs, stray/season/sex-ratio pars
-  Setup_Biologicals.R         growth, weight-at-age, maturity, natural mortality
-  Setup_Movement.R            movement parameterization (rates, blocks, continuous PE)
-  Setup_Tagging.R             conventional tagging design, reporting, shedding
-  Setup_Fishery.R             catch, F, discard mortality, fishery comps setup
-  Setup_Survey.R              survey indices, comps, selectivity, catchability
-  Setup_Observation_Processes.R  likelihood weighting across data sources
-  Setup_Containers.R          shared array/container scaffolding for Setup_Sim_*
-  SPoRC_rtmb.R                the RTMB objective function (see above)
-  fit_model.R                 MakeADFun + nlminb + Newton refinement wrapper
-  Get_Movement.R, Get_Selex.R, Get_Det_Recruitment.R, Get_Init_NAA.R
-                               derived-quantity helpers used inside SPoRC_rtmb.R
-  Get_Population_Dynamics.R   get_population_projection(): the core NAA / movement /
-                               mortality forward simulation, one year-season at a time
-  Get_Observation_Models.R    get_fishery_observation_model(), get_survey_observation_model():
-                               predicted catch/discard/index-at-age/length from population state
-  Get_Tagging_Observation_Model.R  get_tagging_observation_model(): tag cohort release,
-                               movement, mortality/ageing, and predicted recaptures
-  Get_PE_loglik.R             process-error / random-effect log-likelihood helpers, plus the
-                               rest of the priors and penalties (natural mortality, steepness,
-                               movement, catchability, R0, recruitment proportions, tag
-                               reporting rate, discard mortality rate, fixed selectivity) —
-                               one small function per prior/penalty
-  Get_Comp_Likelihoods.R, Get_Conv_Tag_Likelihoods.R
-                               composition and tag-recapture likelihood assembly
-  Get_Reference_Points.R      SPR/BH-MSY solvers (single-region, global, local x sgl/multi-pop)
-  Get_3d_precision.R          GMRF/precision-matrix helpers for correlated deviations
-  Distributions.R             custom density functions (Dirichlet, Dirichlet-multinomial,
-                               negative binomial, OSA residual machinery) used by RTMB and sims
-  build_shared_map.R           generic parameter-map builders shared across Setup_* files:
-                               build_pe_map()/build_shared_spec_map() (dimension-sharing spec
-                               strings); do_comp_theta_mapping()/do_comp_corr_pars_mapping()/
-                               do_q_mapping() (composition overdispersion/correlation, and
-                               catchability); do_fixed_sel_pars_mapping()/do_sel_pe_pars_mapping()/
-                               do_sel_devs_mapping() (fixed-effect, process-error, and deviation
-                               selectivity parameters, parameterized by prefix = "fish"/"ret"/"srv"
-                               plus a separate fleet_field/use_field pair since "ret" reuses
-                               fishery-side infrastructure rather than having its own). A
-                               do_*_mapping helper lives here only if more than one Setup_* file
-                               calls it; single-caller mapping helpers (e.g. do_sigmaC_mapping)
-                               stay in the Setup_* file that uses them.
-  Do_Population_Projection.R  forward projection off a fitted model
-  Simulate_Population.R       operating model: simulate data forward given true dynamics
-  Simulate_RV.R                random-variate generators used by the simulator
-  closed_loop_simulations.R   condition + run closed-loop MSE, given an OM and estimator
-  do_retrospective.R, do_jitter.R, do_likelihood_profile.R, do_runs_test.R, do_francis.R
-                               post-fit diagnostics / resampling procedures
-  get_model_fits.R            OSA residuals, fitted vs. observed comps/indices
-  Make_Plots_Tables.R         ggplot2 plotting and summary tables
-  Utility_Functions.R         cross-cutting helpers (cmb() currying, safe_extract,
-                               parameter-mapping introspection, misc math)
-  check_dimensions.R          input validation for data/sim dimension lists
-  release_tag_attr.R          tag-release attribute bookkeeping
-  data.R                      documents the bundled example datasets in data/</code></pre>
-<p>Test files in <code>tests/testthat/</code> mirror this structure
-loosely by feature (<code>test-movement.R</code>,
-<code>test-fdev_pe.R</code>, <code>test-getselex.R</code>, …) plus a set
-of end-to-end regression tests against bundled example fits
-(<code>test-mlt_rg_*</code>, <code>test-ebs_pol_sgl_rtmb*.R</code>,
-<code>test-dusky_rtmb.R</code>) that pin down
-<code>obj$rep</code>/<code>nll</code> values for known configurations —
-these are the tests most likely to catch an accidental change in
-<code>SPoRC_rtmb.R</code>’s numerics.</p>
+<p>Every script, what it defines, and what it talks to. This table is
+generated from the actual call graph, and shows “what interacts with
+what”. “Calls into” lists the files whose functions this one calls;
+“called from” is the reverse.</p>
+<p><img src="figures/arch_stage_diagram-1.png" class="r-plt" alt="Directed graph of SPoRC pipeline stages, with arrows pointing from each stage to the stages it calls into." width="100%"></p>
+<p>Edge labels count how many file to file dependencies sit behind each
+arrow. <code>Helpers</code> is a pure sink and <code>Plotting</code> a
+pure source, which is the shape you want: the objective function never
+reaches up into the post fit machinery.</p>
+<p>Below the same information at file resolution. A filled cell means
+the file on that row calls a function defined in the file in that
+column, and cells are grouped by stage. Empty rows call nothing else in
+the package, empty columns are called by nothing.</p>
+<p><img src="figures/arch_dependency_matrix-1.png" class="r-plt" alt="Dependency matrix of the 52 files in R/, grouped by pipeline stage, where a filled cell means the row file calls a function defined in the column file." width="100%"></p>
+<p>The <code>model_transition</code> column is the densest in the
+matrix, which is the point made above: everything that moves fish
+through a season goes through that one file.</p>
+<div class="section level3">
+<h3 id="per-stage-detail">Per stage detail<a class="anchor" aria-label="anchor" href="#per-stage-detail"></a>
+</h3>
+<div class="section level4">
+<h4 id="setup-build-data-parameters-and-mapping">Setup: build data, parameters and mapping<a class="anchor" aria-label="anchor" href="#setup-build-data-parameters-and-mapping"></a>
+</h4>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+</colgroup>
+<thead><tr class="header">
+<th>Script</th>
+<th>Defines</th>
+<th>Calls into</th>
+<th>Called from</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>setup_biologicals.R</code></td>
+<td>
+<code>do_natmort_mapping</code>, <code>Setup_Mod_Biologicals</code>,
+<code>Setup_Sim_Biologicals</code>
+</td>
+<td>
+<code>setup_checks.R</code>, <code>utils_setup.R</code>
+</td>
+<td>
+<code>sim_closed_loop.R</code>, <code>sim_self_test.R</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>setup_checks.R</code></td>
+<td>
+<code>check_data_dimensions</code>,
+<code>check_sim_dimensions</code>
+</td>
+<td>nothing</td>
+<td>
+<code>setup_biologicals.R</code>,
+<code>setup_fishery_catch.R</code>, <code>setup_fishery_comps.R</code>,
+<code>setup_fishery_selectivity.R</code>, <code>setup_movement.R</code>,
+<code>setup_recruitment.R</code>, <code>setup_survey.R</code>,
+<code>setup_tagging.R</code>
+</td>
+</tr>
+<tr class="odd">
+<td><code>setup_dimensions.R</code></td>
+<td>
+<code>Setup_Mod_Dim</code>, <code>Setup_Sim_Dim</code>
+</td>
+<td><code>utils_setup.R</code></td>
+<td>
+<code>sim_closed_loop.R</code>, <code>sim_self_test.R</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>setup_fishery_catch.R</code></td>
+<td>
+<code>do_dmr_dev_mapping</code>, <code>do_dmr_mean_mapping</code>,
+<code>do_Fdev_rho_mapping</code>, <code>do_Fmort_mapping</code>,
+<code>do_sigma_dmr_mapping</code>, <code>do_sigmaC_mapping</code>,
+<code>do_sigmaC_pop_mapping</code>, <code>do_sigmaD_mapping</code>,
+<code>do_sigmaD_pop_mapping</code>, <code>do_sigmaF_mapping</code>,
+<code>Setup_Mod_Catch_and_F</code>, <code>Setup_Sim_Fishing</code>
+</td>
+<td>
+<code>setup_checks.R</code>, <code>setup_mapping.R</code>,
+<code>utils_setup.R</code>
+</td>
+<td>
+<code>sim_closed_loop.R</code>, <code>sim_self_test.R</code>
+</td>
+</tr>
+<tr class="odd">
+<td><code>setup_fishery_comps.R</code></td>
+<td>
+<code>Setup_Mod_Discard_Comps</code>,
+<code>Setup_Mod_FishIdx_and_Comps</code>
+</td>
+<td>
+<code>setup_checks.R</code>, <code>setup_mapping.R</code>,
+<code>utils_setup.R</code>
+</td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>setup_fishery_selectivity.R</code></td>
+<td>
+<code>Setup_Mod_Fishsel_and_Q</code>,
+<code>Setup_Mod_Retsel</code>
+</td>
+<td>
+<code>setup_checks.R</code>, <code>setup_mapping.R</code>,
+<code>utils_math.R</code>, <code>utils_setup.R</code>
+</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><code>setup_mapping.R</code></td>
+<td>
+<code>build_pe_map</code>, <code>build_shared_spec_map</code>,
+<code>do_comp_corr_pars_mapping</code>,
+<code>do_comp_theta_mapping</code>,
+<code>do_fixed_sel_pars_mapping</code>, <code>do_q_mapping</code>,
+<code>do_sel_devs_mapping</code>,
+<code>do_sel_pe_pars_mapping</code>
+</td>
+<td><code>utils_setup.R</code></td>
+<td>
+<code>setup_fishery_catch.R</code>,
+<code>setup_fishery_comps.R</code>,
+<code>setup_fishery_selectivity.R</code>, <code>setup_movement.R</code>,
+<code>setup_recruitment.R</code>, <code>setup_survey.R</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>setup_movement.R</code></td>
+<td>
+<code>do_cont_vary_move_mapping</code>,
+<code>do_move_pars_mapping</code>, <code>Setup_Mod_Movement</code>
+</td>
+<td>
+<code>model_movement.R</code>, <code>setup_checks.R</code>,
+<code>setup_mapping.R</code>, <code>utils_setup.R</code>
+</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><code>setup_recruitment.R</code></td>
+<td>
+<code>do_h_mapping</code>, <code>do_InitDevs_mapping</code>,
+<code>do_rec_region_prop_mapping</code>,
+<code>do_rec_seas_prop_mapping</code>, <code>do_RecDevs_mapping</code>,
+<code>do_sexratio_pars_mapping</code>, <code>do_sigmaR_mapping</code>,
+<code>do_stray_rate_mapping</code>, <code>Setup_Mod_Rec</code>,
+<code>Setup_Sim_Rec</code>
+</td>
+<td>
+<code>setup_checks.R</code>, <code>setup_mapping.R</code>,
+<code>utils_setup.R</code>
+</td>
+<td>
+<code>sim_closed_loop.R</code>, <code>sim_self_test.R</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>setup_sim_containers.R</code></td>
+<td><code>Setup_Sim_Containers</code></td>
+<td>nothing</td>
+<td>
+<code>sim_closed_loop.R</code>, <code>sim_self_test.R</code>
+</td>
+</tr>
+<tr class="odd">
+<td><code>setup_survey.R</code></td>
+<td>
+<code>Setup_Mod_SrvIdx_and_Comps</code>,
+<code>Setup_Mod_Srvsel_and_Q</code>, <code>Setup_Sim_Survey</code>
+</td>
+<td>
+<code>setup_checks.R</code>, <code>setup_mapping.R</code>,
+<code>utils_math.R</code>, <code>utils_setup.R</code>
+</td>
+<td>
+<code>sim_closed_loop.R</code>, <code>sim_self_test.R</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>setup_tagging.R</code></td>
+<td>
+<code>do_conv_init_tag_mort_mapping</code>,
+<code>do_conv_tag_fish_reporting_pars_mapping</code>,
+<code>do_conv_tag_shed_mapping</code>,
+<code>do_conv_tag_theta_mapping</code>,
+<code>recycle_tag_event_par</code>, <code>Setup_Mod_Tagging</code>,
+<code>Setup_Sim_Tagging</code>
+</td>
+<td>
+<code>setup_checks.R</code>, <code>utils_setup.R</code>
+</td>
+<td>
+<code>sim_closed_loop.R</code>, <code>sim_self_test.R</code>
+</td>
+</tr>
+<tr class="odd">
+<td><code>setup_weighting.R</code></td>
+<td><code>Setup_Mod_Weighting</code></td>
+<td><code>utils_setup.R</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level4">
+<h4 id="objective-function-and-its-modules">Objective function and its modules<a class="anchor" aria-label="anchor" href="#objective-function-and-its-modules"></a>
+</h4>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+</colgroup>
+<thead><tr class="header">
+<th>Script</th>
+<th>Defines</th>
+<th>Calls into</th>
+<th>Called from</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>model_biomass.R</code></td>
+<td>
+<code>compute_biom_y</code>, <code>derive_proj_biom</code>
+</td>
+<td><code>model_transition.R</code></td>
+<td>
+<code>model_population_dynamics.R</code>,
+<code>projection.R</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>model_distributions.R</code></td>
+<td>
+<code>dbeta_symmetric</code>, <code>ddirichlet</code>,
+<code>ddirmult</code>, <code>dlogistnormal</code>,
+<code>dnbinom_robust_noint</code>, <code>dpois_noint</code>,
+<code>get_beta_scaled_pars</code>
+</td>
+<td>nothing</td>
+<td>
+<code>model_lik_comps.R</code>, <code>model_lik_tags.R</code>,
+<code>model_priors_penalties.R</code>
+</td>
+</tr>
+<tr class="odd">
+<td><code>model_fit.R</code></td>
+<td>
+<code>cmb</code>, <code>fit_model</code>
+</td>
+<td>nothing</td>
+<td>
+<code>diag_francis.R</code>, <code>diag_jitter.R</code>,
+<code>diag_likelihood_profile.R</code>,
+<code>diag_retrospective.R</code>, <code>refpts_main.R</code>,
+<code>sim_self_test.R</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>model_init_naa.R</code></td>
+<td><code>Get_Init_NAA</code></td>
+<td><code>model_transition.R</code></td>
+<td>
+<code>model_objective.R</code>, <code>sim_population.R</code>
+</td>
+</tr>
+<tr class="odd">
+<td><code>model_lik_comps.R</code></td>
+<td>
+<code>eval_comp_osa</code>, <code>Get_Comp_Likelihoods</code>,
+<code>Get_Comp_Likelihoods_OSA</code>, <code>pack_comp_osa</code>
+</td>
+<td>
+<code>model_distributions.R</code>, <code>model_osa.R</code>,
+<code>utils_math.R</code>
+</td>
+<td>
+<code>diag_osa_residuals.R</code>,
+<code>model_objective.R</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>model_lik_tags.R</code></td>
+<td>
+<code>eval_tag_osa</code>, <code>get_conv_tag_likelihoods</code>,
+<code>pack_tag_osa</code>, <code>tag_fam_of</code>,
+<code>tag_grid</code>
+</td>
+<td>
+<code>model_distributions.R</code>, <code>model_osa.R</code>
+</td>
+<td>
+<code>diag_osa_residuals.R</code>,
+<code>model_objective.R</code>
+</td>
+</tr>
+<tr class="odd">
+<td><code>model_movement.R</code></td>
+<td>
+<code>Get_Movement</code>,
+<code>get_movement_dp_design_matrix</code>
+</td>
+<td>nothing</td>
+<td>
+<code>model_objective.R</code>, <code>setup_movement.R</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>model_objective.R</code></td>
+<td><code>SPoRC_rtmb</code></td>
+<td>
+<code>model_init_naa.R</code>, <code>model_lik_comps.R</code>,
+<code>model_lik_tags.R</code>, <code>model_movement.R</code>,
+<code>model_obs_fishery_survey.R</code>,
+<code>model_obs_tagging.R</code>,
+<code>model_population_dynamics.R</code>,
+<code>model_priors_penalties.R</code>, <code>model_selectivity.R</code>,
+<code>utils_setup.R</code>
+</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><code>model_obs_fishery_survey.R</code></td>
+<td>
+<code>get_fishery_observation_model</code>,
+<code>get_survey_observation_model</code>
+</td>
+<td><code>model_transition.R</code></td>
+<td><code>model_objective.R</code></td>
+</tr>
+<tr class="even">
+<td><code>model_obs_tagging.R</code></td>
+<td>
+<code>get_tagging_observation_model</code>,
+<code>release_conv_tag_attr</code>
+</td>
+<td><code>model_transition.R</code></td>
+<td><code>model_objective.R</code></td>
+</tr>
+<tr class="odd">
+<td><code>model_osa.R</code></td>
+<td>
+<code>ddirmult_osa</code>, <code>ddirmult2</code>,
+<code>dmultinom_osa</code>, <code>osa_extract_cdf</code>,
+<code>osa_extract_keep</code>, <code>osa_extract_values</code>,
+<code>osa_extract_x</code>, <code>osa_pbetabinom</code>,
+<code>osa_pbinom</code>, <code>osa_squeeze</code>
+</td>
+<td>nothing</td>
+<td>
+<code>model_lik_comps.R</code>, <code>model_lik_tags.R</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>model_population_dynamics.R</code></td>
+<td><code>get_population_projection</code></td>
+<td>
+<code>model_biomass.R</code>, <code>model_recruitment.R</code>,
+<code>model_transition.R</code>
+</td>
+<td><code>model_objective.R</code></td>
+</tr>
+<tr class="odd">
+<td><code>model_precision.R</code></td>
+<td><code>Get_3d_precision</code></td>
+<td>nothing</td>
+<td><code>model_priors_penalties.R</code></td>
+</tr>
+<tr class="even">
+<td><code>model_priors_penalties.R</code></td>
+<td>
+<code>get_dmr_penalty</code>, <code>Get_Fdev_PE_loglik</code>,
+<code>Get_move_PE_loglik</code>,
+<code>get_movement_dirichlet_prior</code>,
+<code>get_natmort_prior</code>, <code>get_q_prior</code>,
+<code>get_r0_prior</code>, <code>get_recruitment_penalty</code>,
+<code>get_recruitment_proportion_priors</code>,
+<code>Get_sel_PE_loglik</code>, <code>get_selex_fixed_prior</code>,
+<code>Get_Selex_Smoothness_Penalty</code>,
+<code>get_steepness_prior</code>, <code>get_tagrep_prior</code>
+</td>
+<td>
+<code>model_distributions.R</code>, <code>model_precision.R</code>,
+<code>utils_math.R</code>
+</td>
+<td><code>model_objective.R</code></td>
+</tr>
+<tr class="odd">
+<td><code>model_recruitment.R</code></td>
+<td><code>Get_Det_Recruitment</code></td>
+<td><code>model_transition.R</code></td>
+<td>
+<code>model_population_dynamics.R</code>, <code>projection.R</code>,
+<code>sim_population.R</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>model_selectivity.R</code></td>
+<td><code>Get_Selex</code></td>
+<td>nothing</td>
+<td><code>model_objective.R</code></td>
+</tr>
+<tr class="odd">
+<td><code>model_transition.R</code></td>
+<td>
+<code>advance_seas</code>, <code>build_seas_operator</code>,
+<code>catch_at_age</code>, <code>integrate_seas_abundance</code>,
+<code>seas_operator_and_integral</code>, <code>spawn_state</code>,
+<code>survey_state</code>
+</td>
+<td>nothing</td>
+<td>
+<code>model_biomass.R</code>, <code>model_init_naa.R</code>,
+<code>model_obs_fishery_survey.R</code>,
+<code>model_obs_tagging.R</code>,
+<code>model_population_dynamics.R</code>,
+<code>model_recruitment.R</code>, <code>projection.R</code>,
+<code>refpts_main.R</code>, <code>refpts_msy.R</code>,
+<code>refpts_spr.R</code>, <code>sim_observations.R</code>,
+<code>sim_population.R</code>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level4">
+<h4 id="reference-points-and-projection">Reference points and projection<a class="anchor" aria-label="anchor" href="#reference-points-and-projection"></a>
+</h4>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+</colgroup>
+<thead><tr class="header">
+<th>Script</th>
+<th>Defines</th>
+<th>Calls into</th>
+<th>Called from</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>projection.R</code></td>
+<td><code>Do_Population_Projection</code></td>
+<td>
+<code>model_biomass.R</code>, <code>model_recruitment.R</code>,
+<code>model_transition.R</code>, <code>sim_random_variates.R</code>
+</td>
+<td><code>plot_figures_tables.R</code></td>
+</tr>
+<tr class="even">
+<td><code>refpts_main.R</code></td>
+<td>
+<code>build_plus_group_T</code>, <code>Get_Reference_Points</code>,
+<code>optim_ref_pts</code>, <code>solve_plus_group</code>
+</td>
+<td>
+<code>model_fit.R</code>, <code>model_transition.R</code>
+</td>
+<td>
+<code>plot_figures_tables.R</code>, <code>refpts_msy.R</code>,
+<code>refpts_spr.R</code>, <code>sim_closed_loop.R</code>
+</td>
+</tr>
+<tr class="odd">
+<td><code>refpts_msy.R</code></td>
+<td>
+<code>global_BH_Fmsy</code>, <code>local_BH_Fmsy_multipop</code>,
+<code>local_BH_Fmsy_sglpop</code>,
+<code>single_region_BH_Fmsy</code>
+</td>
+<td>
+<code>model_transition.R</code>, <code>refpts_main.R</code>
+</td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>refpts_spr.R</code></td>
+<td>
+<code>global_SPR</code>, <code>single_region_SPR</code>
+</td>
+<td>
+<code>model_transition.R</code>, <code>refpts_main.R</code>
+</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level4">
+<h4 id="operating-model">Operating model<a class="anchor" aria-label="anchor" href="#operating-model"></a>
+</h4>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+</colgroup>
+<thead><tr class="header">
+<th>Script</th>
+<th>Defines</th>
+<th>Calls into</th>
+<th>Called from</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>sim_closed_loop.R</code></td>
+<td>
+<code>catch_to_F_multifleet</code>,
+<code>catch_to_F_singlefleet</code>,
+<code>condition_closed_loop_simulations</code>,
+<code>get_closed_loop_reference_points</code>
+</td>
+<td>
+<code>refpts_main.R</code>, <code>setup_biologicals.R</code>,
+<code>setup_dimensions.R</code>, <code>setup_fishery_catch.R</code>,
+<code>setup_recruitment.R</code>, <code>setup_sim_containers.R</code>,
+<code>setup_survey.R</code>, <code>setup_tagging.R</code>,
+<code>utils_postfit.R</code>, <code>utils_setup.R</code>
+</td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>sim_observations.R</code></td>
+<td>
+<code>generate_fishery_catch_comp_idx</code>,
+<code>generate_fishery_conv_tags_recap</code>,
+<code>generate_survey_comp_idx</code>,
+<code>marginalize_conv_fish_tags</code>,
+<code>predict_sim_fish_iss_fmort</code>, <code>release_conv_tags</code>,
+<code>simulate_comps</code>,
+<code>simulate_conv_tag_fish_recaptures</code>
+</td>
+<td>
+<code>model_transition.R</code>, <code>sim_random_variates.R</code>,
+<code>utils_math.R</code>
+</td>
+<td><code>sim_population.R</code></td>
+</tr>
+<tr class="odd">
+<td><code>sim_population.R</code></td>
+<td>
+<code>apply_pop_dy</code>, <code>compute_biom_y_sim</code>,
+<code>generate_initial_age_structure</code>,
+<code>generate_recruitment</code>, <code>run_annual_cycle</code>,
+<code>Simulate_Pop_Static</code>
+</td>
+<td>
+<code>model_init_naa.R</code>, <code>model_recruitment.R</code>,
+<code>model_transition.R</code>, <code>sim_observations.R</code>,
+<code>sim_setup.R</code>
+</td>
+<td><code>sim_self_test.R</code></td>
+</tr>
+<tr class="even">
+<td><code>sim_random_variates.R</code></td>
+<td>
+<code>rdirM</code>, <code>rinvgauss_rec</code>,
+<code>rlogistnormal</code>
+</td>
+<td><code>utils_math.R</code></td>
+<td>
+<code>projection.R</code>, <code>sim_observations.R</code>
+</td>
+</tr>
+<tr class="odd">
+<td><code>sim_self_test.R</code></td>
+<td>
+<code>simulation_data_to_SPoRC</code>,
+<code>simulation_self_test</code>
+</td>
+<td>
+<code>model_fit.R</code>, <code>setup_biologicals.R</code>,
+<code>setup_dimensions.R</code>, <code>setup_fishery_catch.R</code>,
+<code>setup_recruitment.R</code>, <code>setup_sim_containers.R</code>,
+<code>setup_survey.R</code>, <code>setup_tagging.R</code>,
+<code>sim_population.R</code>, <code>utils_postfit.R</code>
+</td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>sim_setup.R</code></td>
+<td><code>Setup_sim_env</code></td>
+<td>nothing</td>
+<td><code>sim_population.R</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level4">
+<h4 id="diagnostics">Diagnostics<a class="anchor" aria-label="anchor" href="#diagnostics"></a>
+</h4>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+</colgroup>
+<thead><tr class="header">
+<th>Script</th>
+<th>Defines</th>
+<th>Calls into</th>
+<th>Called from</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>diag_fits.R</code></td>
+<td>
+<code>get_comp_prop</code>, <code>get_idx_fits</code>,
+<code>Restrc_Comps</code>
+</td>
+<td>nothing</td>
+<td>
+<code>diag_francis.R</code>, <code>plot_figures_tables.R</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>diag_francis.R</code></td>
+<td>
+<code>do_francis_reweighting</code>,
+<code>get_francis_weights</code>, <code>run_francis</code>,
+<code>safe_inv_var</code>
+</td>
+<td>
+<code>diag_fits.R</code>, <code>model_fit.R</code>
+</td>
+<td><code>diag_retrospective.R</code></td>
+</tr>
+<tr class="odd">
+<td><code>diag_jitter.R</code></td>
+<td><code>do_jitter</code></td>
+<td><code>model_fit.R</code></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>diag_likelihood_profile.R</code></td>
+<td><code>do_likelihood_profile</code></td>
+<td><code>model_fit.R</code></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><code>diag_osa_residuals.R</code></td>
+<td>
+<code>comp_osa_field_map</code>, <code>get_osa</code>,
+<code>index_osa_field_map</code>, <code>osa_keep_subset</code>,
+<code>osa_one_step_predict</code>, <code>plot_resids</code>,
+<code>run_external_comp_osa</code>, <code>run_internal_comp_osa</code>,
+<code>run_internal_index_osa</code>, <code>run_internal_tag_osa</code>,
+<code>validate_osa_method</code>
+</td>
+<td>
+<code>model_lik_comps.R</code>, <code>model_lik_tags.R</code>
+</td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>diag_retrospective.R</code></td>
+<td>
+<code>do_retrospective</code>,
+<code>get_retrospective_relative_difference</code>,
+<code>truncate_yr</code>
+</td>
+<td>
+<code>diag_francis.R</code>, <code>model_fit.R</code>
+</td>
+<td><code>plot_figures_tables.R</code></td>
+</tr>
+<tr class="odd">
+<td><code>diag_runs_test.R</code></td>
+<td><code>do_runs_test</code></td>
+<td>nothing</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level4">
+<h4 id="plotting">Plotting<a class="anchor" aria-label="anchor" href="#plotting"></a>
+</h4>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+</colgroup>
+<thead><tr class="header">
+<th>Script</th>
+<th>Defines</th>
+<th>Calls into</th>
+<th>Called from</th>
+</tr></thead>
+<tbody><tr class="odd">
+<td><code>plot_figures_tables.R</code></td>
+<td>
+<code>get_biological_plot</code>, <code>get_catch_fits_plot</code>,
+<code>get_data_fitted_plot</code>, <code>get_idx_fits_plot</code>,
+<code>get_key_quants</code>, <code>get_nLL_plot</code>,
+<code>get_retrospective_plot</code>, <code>get_selex_plot</code>,
+<code>get_ts_plot</code>, <code>plot_all_basic</code>,
+<code>theme_sablefish</code>
+</td>
+<td>
+<code>diag_fits.R</code>, <code>diag_retrospective.R</code>,
+<code>projection.R</code>, <code>refpts_main.R</code>,
+<code>utils_setup.R</code>
+</td>
+<td></td>
+</tr></tbody>
+</table>
+</div>
+<div class="section level4">
+<h4 id="shared-helpers">Shared helpers<a class="anchor" aria-label="anchor" href="#shared-helpers"></a>
+</h4>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+</colgroup>
+<thead><tr class="header">
+<th>Script</th>
+<th>Defines</th>
+<th>Calls into</th>
+<th>Called from</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>utils_math.R</code></td>
+<td>
+<code>get_AR1_CorrMat</code>, <code>get_Constant_CorrMat</code>,
+<code>get_logistN_Sigma</code>,
+<code>Get_Natural_Cubic_Spline_Weights</code>,
+<code>rho_trans</code>
+</td>
+<td>nothing</td>
+<td>
+<code>model_lik_comps.R</code>,
+<code>model_priors_penalties.R</code>,
+<code>setup_fishery_selectivity.R</code>, <code>setup_survey.R</code>,
+<code>sim_observations.R</code>, <code>sim_random_variates.R</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>utils_postfit.R</code></td>
+<td>
+<code>get_model_rep_from_mcmc</code>,
+<code>get_optim_param_list</code>, <code>get_par_est_info</code>,
+<code>marg_AIC</code>, <code>post_optim_sanity_checks</code>
+</td>
+<td>nothing</td>
+<td>
+<code>sim_closed_loop.R</code>, <code>sim_self_test.R</code>
+</td>
+</tr>
+<tr class="odd">
+<td><code>utils_setup.R</code></td>
+<td>
+<code>collect_message</code>, <code>convert_to_numeric</code>,
+<code>extend_years</code>, <code>resolve_sel_pen_wts</code>,
+<code>safe_extract</code>, <code>set_data_indicator_unused</code>
+</td>
+<td>nothing</td>
+<td>
+<code>model_objective.R</code>, <code>plot_figures_tables.R</code>,
+<code>setup_biologicals.R</code>, <code>setup_dimensions.R</code>,
+<code>setup_fishery_catch.R</code>, <code>setup_fishery_comps.R</code>,
+<code>setup_fishery_selectivity.R</code>, <code>setup_mapping.R</code>,
+<code>setup_movement.R</code>, <code>setup_recruitment.R</code>,
+<code>setup_survey.R</code>, <code>setup_tagging.R</code>,
+<code>setup_weighting.R</code>, <code>sim_closed_loop.R</code>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level4">
+<h4 id="package-data">Package data<a class="anchor" aria-label="anchor" href="#package-data"></a>
+</h4>
+<table class="table">
+<thead><tr class="header">
+<th>Script</th>
+<th>Defines</th>
+<th>Calls into</th>
+<th>Called from</th>
+</tr></thead>
+<tbody><tr class="odd">
+<td><code>data_documentation.R</code></td>
+<td>(documentation only)</td>
+<td>nothing</td>
+<td></td>
+</tr></tbody>
+</table>
+</div>
+</div>
 </div>
 <div class="section level2">
-<h2 id="extending-the-model-a-checklist">Extending the model: a checklist<a class="anchor" aria-label="anchor" href="#extending-the-model-a-checklist"></a>
+<h2 id="how-the-code-is-layered">How the code is layered<a class="anchor" aria-label="anchor" href="#how-the-code-is-layered"></a>
 </h2>
-<p>Adding a new process, fleet type, or data source touches the pipeline
-in a predictable set of places:</p>
+<p>The code is structured as follows and interacts in a hopefully
+intuitive fashion. Reading it as layers, lowest first:</p>
 <ol style="list-style-type: decimal">
 <li>
-<strong>Setup</strong>: add or extend a <code>Setup_Mod_*</code>
-function to accept the new spec, validate it, and append the resulting
-entries to <code>input_list$data</code> / <code>$par</code> /
-<code>$map</code>. If parameters need fixing/sharing, add a
-<code>do_*_mapping</code> helper in the same file.</li>
+<code>utils_math.R</code>, <code>utils_setup.R</code>,
+<code>utils_postfit.R</code>, <code>setup_checks.R</code>,
+<code>model_transition.R</code>, <code>model_distributions.R</code>,
+<code>model_osa.R</code>, <code>model_precision.R</code>. These call
+nothing else in the package.</li>
+<li>The model modules (<code>model_recruitment.R</code>,
+<code>model_biomass.R</code>, <code>model_init_naa.R</code>,
+<code>model_movement.R</code>, <code>model_selectivity.R</code>,
+<code>model_obs_*.R</code>, <code>model_lik_*.R</code>,
+<code>model_priors_penalties.R</code>,
+<code>model_population_dynamics.R</code>).</li>
 <li>
-<strong>Objective</strong>: add a <code>## Section</code> in
-<code>SPoRC_rtmb.R</code> that consumes the new
-<code>data</code>/<code>parameters</code> entries and contributes to
-<code>jnll</code>/<code>nll</code> — put it in the section it belongs to
-(transform, observation model, or likelihood/prior) rather than
-appending to the end. If the logic is more than a few lines, extract it
-into a <code>get_*()</code> helper (see
-<code>Get_Population_Dynamics.R</code>,
-<code>Get_Observation_Models.R</code>, or <code>Get_PE_loglik.R</code>
-for the pattern) instead of growing the objective function inline.</li>
+<code>model_objective.R</code>, which calls only downward into layer
+2.</li>
+<li>The post fit and simulation module: reference points, projection,
+diagnostics, plotting, operating model.</li>
+</ol>
+</div>
+<div class="section level2">
+<h2 id="tests">Tests<a class="anchor" aria-label="anchor" href="#tests"></a>
+</h2>
+<p>Test files in <code>tests/testthat/</code> carry the same prefixes as
+<code>R/</code>, so the tests for a given source file sort next to each
+other and the name says what is under test rather than which stock the
+fixture happens to use.</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th>Prefix</th>
+<th>Files</th>
+<th>What it covers</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>test-setup_*</code></td>
+<td>7</td>
+<td>Input building: the <code>map</code> factor builders and the
+<code>Setup_Mod_*</code> validation</td>
+</tr>
+<tr class="even">
+<td><code>test-model_*</code></td>
+<td>15</td>
+<td>One objective function module each: selectivity, movement,
+transition, observation models, likelihoods, distributions</td>
+</tr>
+<tr class="odd">
+<td><code>test-utils_*</code></td>
+<td>2</td>
+<td>Shared numerical helpers</td>
+</tr>
+<tr class="even">
+<td><code>test-sim_*</code></td>
+<td>4</td>
+<td>Operating model, including simulate then refit self tests</td>
+</tr>
+<tr class="odd">
+<td><code>test-refpts_*</code></td>
+<td>7</td>
+<td>SPR and MSY solvers, one file per spatial structure</td>
+</tr>
+<tr class="even">
+<td><code>test-projection_*</code></td>
+<td>2</td>
+<td>Forward projection off a fitted model</td>
+</tr>
+<tr class="odd">
+<td><code>test-diag_*</code></td>
+<td>8</td>
+<td>Post fit diagnostics: retrospectives and OSA residuals</td>
+</tr>
+<tr class="even">
+<td><code>test-integration_*</code></td>
+<td>4</td>
+<td>Cross cutting agreement between the objective, the reference points
+and the operating model</td>
+</tr>
+<tr class="odd">
+<td><code>test-regression_*</code></td>
+<td>5</td>
+<td>End to end fits pinning <code>obj$rep</code> and <code>nll</code>
+for known configurations</td>
+</tr>
+</tbody>
+</table>
+<p>That is 54 test files in total.</p>
+<p>Two groups are worth calling out. The <code>test-regression_*</code>
+files pin <code>obj$rep</code> and <code>nll</code> values for known
+configurations against bundled example fits, so they are the ones most
+likely to catch an accidental change in the objective function’s
+numerics. The <code>test-integration_move_timing_*</code> files are the
+tightest constraint on <code>model_transition.R</code> and everything
+built on it: they check that the reference points, the forward
+projection and the operating model all agree under each movement timing,
+to a tolerance that leaves no room for a sequencing mistake.</p>
+</div>
+<div class="section level2">
+<h2 id="extending-the-model">Extending the model<a class="anchor" aria-label="anchor" href="#extending-the-model"></a>
+</h2>
+<p>Adding a new process, fleet type or data source interacts with a
+predictable set of places.</p>
+<ol style="list-style-type: decimal">
 <li>
-<strong>Sim counterpart</strong>: if the process should be
-simulate-able, add the matching <code>Setup_Sim_*</code> inputs and
-generation logic in <code>Simulate_Population.R</code>.</li>
+<strong>Setup.</strong> Add or extend a <code>Setup_Mod_*</code>
+function to accept the new spec, validate it, and append the results to
+<code>input_list$data</code>, <code>$par</code> and <code>$map</code>.
+If parameters need fixing or sharing, add a <code>do_*_mapping</code>
+helper in the same file, or reach for the shared builders in
+<code>setup_mapping.R</code> if the pattern already exists.</li>
 <li>
-<strong>Post-fit</strong>: expose derived output through
-<code>Get_*</code> (if other code needs to reuse the derived quantity)
-and/or <code>Make_Plots_Tables.R</code> / <code>get_model_fits.R</code>
-(if it needs to be seen).</li>
+<strong>Objective.</strong> Add a <code>## Section</code> in
+<code>model_objective.R</code> that consumes the new entries and
+contributes to <code>jnll</code> or <code>nll</code>. Put it in the
+section it belongs to (transform, observation model, or likelihood and
+prior) rather than appending at the end. If the logic runs to more than
+a few lines, extract it into a <code>model_*.R</code> module instead of
+growing the objective inline.</li>
 <li>
-<strong>Tests</strong>: add a targeted <code>testthat</code> test
-near the feature, and check whether the <code>test-mlt_rg_*</code> /
-<code>test-*_rtmb.R</code> regression tests need updated reference
-values.</li>
+<strong>Simulation.</strong> If the process should be simulateable,
+add the matching <code>Setup_Sim_*</code> inputs and the generation
+logic in <code>sim_population.R</code> or
+<code>sim_observations.R</code>.</li>
 <li>
-<strong>Vignette</strong>: if the feature is user-facing, document
-it in the relevant lettered vignette (see the <a href="index.html">Articles index</a>) rather than only in code
+<strong>Post fit.</strong> Expose derived output through a
+<code>Get_*</code> function if other code needs to reuse it, and through
+<code>plot_figures_tables.R</code> or <code>diag_fits.R</code> if it
+needs to be seen.</li>
+<li>
+<strong>Tests.</strong> Add a targeted test near the feature, and
+check whether the regression tests need updated reference values.</li>
+<li>
+<strong>Vignette.</strong> If the feature is user facing, document
+it in the relevant lettered vignette rather than only in code
 comments.</li>
 </ol>
-<p>For the mechanics of actually getting a change in — branch naming,
-running tests locally, CI, and opening a PR — see the <a href="contributing.html">Contributing</a> guide.</p>
+<p>For the mechanics of getting a change in (branch naming, running
+tests locally, opening a PR) see the <a href="contributing.html">Contributing</a> guide.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

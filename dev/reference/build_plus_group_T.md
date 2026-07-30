@@ -17,7 +17,10 @@ build_plus_group_T(
   Mov_plus,
   n_regions,
   n_seas,
-  seasdur
+  seasdur,
+  Mrate_penult = NULL,
+  Mrate_plus = NULL,
+  move_timing = 0
 )
 ```
 
@@ -66,6 +69,26 @@ build_plus_group_T(
 
   Numeric vector `[n_seas]`. Fractional duration of each season (must
   sum to one).
+
+- Mrate_penult:
+
+  Numeric array `[n_regions, n_regions, n_seas]`. Instantaneous movement
+  rate matrices (generator \\Q\\) for the penultimate age, in the same
+  `[from, to]` convention as `Mov_penult`. Required when
+  `move_timing = 2`, ignored otherwise.
+
+- Mrate_plus:
+
+  Numeric array `[n_regions, n_regions, n_seas]`. Instantaneous movement
+  rate matrices for the plus-group age. Required when `move_timing = 2`,
+  ignored otherwise.
+
+- move_timing:
+
+  Integer flag for movement/mortality sequencing: `0` = movement then
+  mortality (default), `1` = mortality then movement, `2` = continuous.
+  See
+  [`build_seas_operator`](https://chengmatt.github.io/SPoRC/dev/reference/build_seas_operator.md).
 
 ## Value
 

@@ -97,17 +97,12 @@ a quantity from already-built state, <code>do_*</code> re-runs or
 perturbs a fitted model, <code>do_*_mapping</code> builds an RTMB
 parameter map. Match an existing prefix rather than inventing a new one
 — see the naming conventions table in Architecture.</li>
-<li>Extract non-trivial logic out of <code>SPoRC_rtmb.R</code> into a
-helper. The objective function is already large; sections that do real
-array-crunching (population projection, observation models,
+<li>Extract non-trivial logic out of <code>model_objective.R</code> into
+a helper. The objective function is already large; sections that do
+complex computations (population projection, observation models,
 priors/penalties) call out to a <code>get_*()</code> helper that takes
 the relevant state as named arguments and returns it, rather than
-computing inline. This is safe under RTMB — it’s just an R function
-call, not a macro — as long as every array the block reads or writes is
-threaded through as an argument/return value. Prefer named arguments
-over positional ones for these calls; the signatures tend to be long,
-and named arguments make it obvious at the call site which variable
-feeds which parameter.</li>
+computing inline.</li>
 </ul>
 </div>
 <div class="section level2">
@@ -119,26 +114,32 @@ feeds which parameter.</li>
 <code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/test.html" class="external-link">test</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>or a single file while iterating:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">testthat</span><span class="fu">::</span><span class="fu"><a href="https://testthat.r-lib.org/reference/test_file.html" class="external-link">test_file</a></span><span class="op">(</span><span class="st">"tests/testthat/test-getselex.R"</span><span class="op">)</span></span></code></pre></div>
-<p>Most test files are narrowly scoped (<code>test-movement.R</code>,
-<code>test-fdev_pe.R</code>, <code>test-getselex.R</code>, …), but a
-second category — <code>test-dusky_rtmb.R</code>,
-<code>test-ebs_pol_sgl_rtmb*.R</code>, <code>test-mlt_rg_*.R</code>,
-<code>test-sabie_three_rg_rtmb.R</code> — fits a full model end-to-end
-against a bundled example dataset and checks the resulting
+<code class="sourceCode R"><span><span class="fu">testthat</span><span class="fu">::</span><span class="fu"><a href="https://testthat.r-lib.org/reference/test_file.html" class="external-link">test_file</a></span><span class="op">(</span><span class="st">"tests/testthat/test-model_selectivity.R"</span><span class="op">)</span></span></code></pre></div>
+<p>or a whole group, since test files carry the same prefixes as
+<code>R/</code>:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">testthat</span><span class="fu">::</span><span class="fu"><a href="https://testthat.r-lib.org/reference/test_dir.html" class="external-link">test_dir</a></span><span class="op">(</span><span class="st">"tests/testthat"</span>, filter <span class="op">=</span> <span class="st">"model_"</span><span class="op">)</span></span></code></pre></div>
+<p><code>filter</code> is a regex matched against the file path, so use
+the bare prefix rather than anchoring it with <code>^</code>.</p>
+<p>Most test files are narrowly scoped
+(<code>test-model_movement.R</code>,
+<code>test-setup_fishery_fdev.R</code>,
+<code>test-model_selectivity.R</code>, …), but the
+<code>test-regression_*.R</code> files fit a full model end-to-end
+against a bundled example dataset and check the resulting
 <code>obj$rep</code> values (e.g. <code>SSB</code>, <code>Rec</code>)
 against pinned reference vectors. These are the tests most likely to
-catch an accidental change in <code>SPoRC_rtmb.R</code>’s numerics, and
-they’re also the slowest (each one runs a real optimization) — expect a
-full local run of just that subset to take several minutes to tens of
-minutes depending on your machine. If you touch anything in
-<code>SPoRC_rtmb.R</code> or a helper it calls, run at least one of
+catch an accidental change in <code>model_objective.R</code>’s numerics,
+and they’re also the slowest (each one runs a real optimization) so
+expect a full local run of just that subset to take several minutes to
+tens of minutes depending on your machine. If you touch anything in
+<code>model_objective.R</code> or a helper it calls, run at least one of
 these before opening a PR, even if your change looks purely mechanical
 (e.g. a refactor that moves code into a helper function without
 intending to change any values) — a subtle argument-order or indexing
 mistake in that kind of change won’t show up any other way.</p>
 <p>For a new feature, add a targeted test near it, and check whether the
-reference values in the <code>*_rtmb.R</code> regression tests need
+reference values in the <code>test-regression_*.R</code> tests need
 updating (they should only change if your feature is expected to change
 model output for the bundled example data — if a “pure refactor” changes
 them, that’s a bug in the refactor, not a test that needs updating).</p>
@@ -149,7 +150,7 @@ them, that’s a bug in the refactor, not a test that needs updating).</p>
 <p>Roxygen comments (<code>RoxygenNote: 7.3.3</code>) generate both
 <code>man/*.Rd</code> and the <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> reference site. After
 adding or changing a roxygen block:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/document.html" class="external-link">document</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>Internal helpers (not meant for users to call directly) should carry
 <code>@keywords internal</code> rather than <code>@export</code>. If you

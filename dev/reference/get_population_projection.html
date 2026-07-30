@@ -99,7 +99,9 @@ here rather than derived from <code>NAA</code>.</p>
 <span>  <span class="va">SSB</span>,</span>
 <span>  <span class="va">Total_Biom</span>,</span>
 <span>  <span class="va">Dynamic_SSB0</span>,</span>
-<span>  <span class="va">eff_SSB</span></span>
+<span>  <span class="va">eff_SSB</span>,</span>
+<span>  Mrate <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  move_timing <span class="op">=</span> <span class="fl">0</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -212,9 +214,12 @@ output containers.</p></dd>
     <p>List with elements <code>NAA</code>, <code>NAA0</code>, <code>NAA_bef</code>,
   <code>NAA_aft</code>, <code>Rec</code>, <code>SSB</code>, <code>Total_Biom</code>,
   <code>Dynamic_SSB0</code>, <code>eff_SSB</code>, <code>Aggregated_SSB</code> (array
-  <code>[year]</code>, SSB summed across pop/region), and
+  <code>[year]</code>, SSB summed across pop/region),
   <code>Dynamic_Aggregated_SSB0</code> (array <code>[year]</code>, likewise for
-  <code>Dynamic_SSB0</code>).</p>
+  <code>Dynamic_SSB0</code>), and <code>NAA_int</code> (array <code>[pop, region, year,
+  season, age, sex]</code>). <code>NAA_int</code> holds the season-integrated abundance
+  needed by the spatial Baranov catch equation and is populated only when
+  <code>move_timing = 2</code>; it is all zeros otherwise.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

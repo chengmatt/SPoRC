@@ -23,7 +23,11 @@ compute_biom_y(
   n_sexes,
   sgl_seas_spawning_movement,
   natal_region,
-  stray_rate
+  stray_rate,
+  Movement = NULL,
+  Mrate = NULL,
+  move_timing = 0,
+  do_recruits_move = 1
 )
 ```
 

@@ -56,8 +56,9 @@ The input `input_list` with the corresponding `$map$<...>_corr_pars` and
 
 ## Details
 
-Consolidates what were previously 8 near-identical functions
-(`do_FishAge_corr_pars_mapping`, `do_FishAge_pop_corr_pars_mapping`,
-`do_FishLen_corr_pars_mapping`, `do_FishLen_pop_corr_pars_mapping`, and
-their `_discard` counterparts) into one, parameterized the same way as
+One function serves every composition block. `comp_prefix` selects age
+versus length and fishery versus survey, `discard` selects the retained
+or discarded stream, `has_pop` selects the aggregated or population
+specific stream, and `fleet_field` names the fleet count to size the map
+by. Same parameterization as
 [`do_comp_theta_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_comp_theta_mapping.md).

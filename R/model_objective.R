@@ -56,8 +56,9 @@
 # Re-coded tagging module to include fleet-specific dynamics
 # Expanded model to include populations and season partitions (natal homing
 # and seasonality dynamics)
+# Incorporated functionality to allow movement to be a continuous process, in addition to movement after mortality
 
-#' Generalized RTMB model
+#' Generalized RTMB spatial age-structured model
 #'
 #' @param pars Parameter List
 #' @param data Data List
@@ -70,8 +71,7 @@ SPoRC_rtmb = function(pars, data) {
 
   RTMB::getAll(pars, data, warn = FALSE) # load in starting values and data
 
-  # Back-compatibility for input lists built before movement timing options existed.
-  # Both defaults reproduce the historical behaviour exactly.
+  # Backwards-compatibility for input lists built before movement timing options existed.
   if(!exists("move_timing", inherits = FALSE)) move_timing <- 0
   if(!exists("ctmc_scale_by_seasdur", inherits = FALSE)) ctmc_scale_by_seasdur <- 0
 

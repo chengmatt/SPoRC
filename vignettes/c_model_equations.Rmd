@@ -25,17 +25,29 @@ sex, population, seasonal, and spatially-structured dynamics. Population
 dynamics operate across an annual time step that is further subdivided
 into $n_\tau$ seasons of duration $\Delta\tau$ (where
 $\sum_\tau \Delta\tau = 1$). Within each annual–seasonal cycle,
-processes occur in sequential order:
+processes occur in the following order:
 
 1.  Recruitment generally occurs in the first season, with additional
     recruits apportioned to subsequent seasons according to seasonal
     proportions. The exception is age-0 recruitment (no lag between
     spawning and recruitment; see Recruitment Processes below), where
     recruits instead enter no earlier than the spawning season,
-2.  Markovian movement of individuals then follows (movement only occurs
-    in the spatial model),
-3.  Total mortality occurs within each season; at the end of the final
-    season, individuals advance in age.
+2.  Markovian movement of individuals (movement only occurs in the
+    spatial model) and total mortality both act within the season; at
+    the end of the final season, individuals advance in age.
+
+How movement and mortality are sequenced *within* step 2 is a user
+choice, set by `move_timing`: movement then mortality (`0`, the default
+and the historical `SPoRC` behaviour), mortality then movement (`1`), or
+the two acting simultaneously and continuously (`2`). This choice is not
+confined to the projection equations. It propagates to every quantity
+whose value depends on where fish are partway through a season -- spawning
+biomass, catch-at-age, fishery and survey indices, tag recaptures,
+equilibrium initialisation, and per-recruit reference points -- and each of
+those is given below. The three options coincide exactly when total
+mortality is constant across regions, when mortality is zero, and when
+movement is absent, so single-region models are unaffected by the
+setting.
 
 Tag releases occur simultaneous to recruitment in the release year and
 season (i.e., recruits can be tagged), and tag recaptures are computed
@@ -123,34 +135,47 @@ N_{p,r,a,s}^{'} = \left\{ \begin{matrix}
 \end{matrix}$$
 
 The initialized age structure is then iterated forward to equilibrium by
-applying recruitment, movement, and mortality and ageing processes in
-order (see Population Projection section for equations).
+applying recruitment, followed by the seasonal transition (movement and
+mortality) and ageing. That transition is the same operator
+$\mathbf{\Phi}$ used by the main projection, so equilibrium
+initialization inherits whatever `move_timing` sequencing the model is
+configured with (see Population Projection section for equations).
 
 While the iterative method correctly accumulates the plus group when
 movement is present, it can be computationally inefficient. Therefore,
 `SPoRC` enables users to compute the plus group using the matrix
 formulation of the geometric series, which correctly accounts for
-movement processes. The population is projected forward to the
-penultimate age ($N_{p,r,a_{+} - 1,s}^{'}$), and the penultimate age is
-then projected forward once more:
+movement processes. Let $\mathbf{\Phi}_{p,\tau,a,s}^{'}$ denote the
+seasonal transition operator of the Population Projection section
+evaluated at the equilibrium mortality $\mathbf{Z}_{p,a,s}^{'}$, and
+define the year-long transition for age $a$ by composing seasons in
+order (season 1 applied first, hence rightmost):
 
-$$\mathbf{X}_{p,s}\mathbf{=}\left( \left( \mathbf{N}_{p,a_{+} - 1,s}^{'} \right)^{T}\mathbf{M}_{p,y = 1,a_{+} - 1,s} \right) \text{diag}\left( \exp\left( - \mathbf{Z}_{p,a = a_{+}-1,s}^{'} \right)\right)$$
+$$\mathbf{G}_{p,s}^{a} = \left( \mathbf{\Phi}_{p,n_\tau,a,s}^{'} \right)^{T}\left( \mathbf{\Phi}_{p,n_\tau - 1,a,s}^{'} \right)^{T}\cdots\left( \mathbf{\Phi}_{p,1,a,s}^{'} \right)^{T}$$
 
-where $\mathbf{M}_{p,y,a,s}$ is a first-order Markov matrix representing
-movement for population $p$, and $\mathbf{X}_{p,s}$ represents the
-culmination of processes applied to the penultimate age. A transition
-matrix $\mathbf{G}_{p,s}$ is then constructed to represent the combined
-effects of survival and movement on the plus group:
+The transposes appear because $\mathbf{\Phi}$ is stored in the row-vector
+convention $\left(\mathbf{N}\right)^{T}\mathbf{\Phi}$ used above, whereas
+the recursion below is written as a column operator acting on
+$\mathbf{N}$. The population is projected forward to the penultimate age
+($\mathbf{N}_{p,a_{+} - 1,s}^{'}$), and the penultimate age is then
+projected forward through one more year:
 
-$$\mathbf{G}_{p,s} = \text{diag}\left( \exp\left( - \mathbf{Z}_{p,a = a_{+},s}^{'} \right) \right)\left( \mathbf{M}_{p,y = 1,a_{+},s} \right)^{T}$$
+$$\mathbf{X}_{p,s} = \mathbf{G}_{p,s}^{a_{+} - 1}\,\mathbf{N}_{p,a_{+} - 1,s}^{'}$$
 
-The plus group solution incorporating movement is then given by:
+where $\mathbf{X}_{p,s}$ represents the culmination of processes applied
+to the penultimate age. $\mathbf{G}_{p,s}^{a_{+}}$ plays the role of the
+survival ratio in the scalar series, representing the combined effects of
+survival and movement on the plus group over a full year, so the plus
+group solution incorporating movement is:
 
-$$\mathbf{N}_{p,a_{+},s}^{'} = \left( \mathbf{I -}\mathbf{G}_{p,s} \right)^{- 1}\mathbf{X}_{p,s}$$
+$$\mathbf{N}_{p,a_{+},s}^{'} = \left( \mathbf{I -}\mathbf{G}_{p,s}^{a_{+}} \right)^{- 1}\mathbf{X}_{p,s}$$
 
-When only a single region is modeled or no movement occurs (i.e., an
-identity matrix), the matrix formulation simplifies to the standard
-scalar geometric series solution.
+Under $\text{move\_timing} = 0$ and a single season, $\mathbf{G}_{p,s}^{a}$ is
+$\text{diag}\left( \exp\left( - \mathbf{Z}_{p,a,s}^{'} \right) \right)\left( \mathbf{M}_{p,y = 1,a,s} \right)^{T}$,
+the form used in earlier versions of `SPoRC`. When only a single region is
+modeled or no movement occurs (i.e., an identity matrix), the matrix
+formulation simplifies to the standard scalar geometric series solution
+under every `move_timing`.
 
 Following the definition of equilibrium age structure, initial age
 deviations can be applied:
@@ -223,8 +248,17 @@ weight-at-age, and maturity-at-age for females in the spawning season
 $\tau^{spawn}$:
 
 $$\begin{matrix}
-SSB_{p,r,y} = \sum_{a = 1}^{a_{+}}{N_{p,r,y,\tau^{spawn},a,s = 1}W_{p,r,y,\tau^{spawn},a,s = 1}^{spawn}\text{Mat}_{p,r,y,\tau^{spawn},a,s = 1}}\exp\left(-Z_{p,r,y,\tau^{spawn},a,s=1} \cdot t^{spawn}\right) \\
+SSB_{p,r,y} = \sum_{a = 1}^{a_{+}}{N_{p,r,y,\tau^{spawn},a,s = 1}^{spawn}W_{p,r,y,\tau^{spawn},a,s = 1}^{spawn}\text{Mat}_{p,r,y,\tau^{spawn},a,s = 1}} \\
 \end{matrix}$$
+
+where $N^{spawn}$ is the numbers-at-age propagated from the start of the
+spawning season to the spawning point $t^{spawn}$ within it. That
+propagation depends on how movement and mortality are sequenced and is
+defined in the Spawning Biomass Timing section below. Under the default
+$\text{move\_timing} = 0$ it is simply
+$N_{p,r,y,\tau^{spawn},a,s = 1}\exp\left(-Z_{p,r,y,\tau^{spawn},a,s=1} \cdot t^{spawn}\right)$
+evaluated after that season's movement has been applied, which is the
+familiar form.
 
 For single-sex models, SSB is multiplied by 0.5 to obtain female-only
 spawning biomass.
@@ -273,6 +307,19 @@ no burn-in substitution of $\text{SSB0}_{p,r}$ for early years: since
 $RecLag = 0$, $SSB_{p,r,y}$ (this year's own survivor biomass) is always
 available by the time it is needed, including in year 1.
 
+Because age-0 recruits are inserted in the middle of the spawning season
+rather than at its start, `move_timing` also determines whether they need
+a movement step of their own. Under $\text{move\_timing} = 0$ the season's
+movement has already been applied by the time $SSB_{p,r,y}$ is evaluated,
+so recruits inserted immediately afterwards would otherwise miss it
+entirely; when $\text{do\_recruits\_move} = 1$ they are therefore given
+that season's movement step explicitly, and they then experience the rest
+of the season's mortality like any other seasonal recruit pulse. Under
+$\text{move\_timing}$ 1 and 2 movement has not yet occurred at that point in
+the season, so the newly inserted recruits are carried by the
+end-of-season transition $\mathbf{\Phi}$ along with every other age and no
+separate catch-up step is applied.
+
 #### Effective Spawning Biomass and Multi-Population Dynamics
 
 When multiple populations are modeled ($n_p > 1$), effective spawning
@@ -294,9 +341,19 @@ $\text{effSSB}_{1,y} = \sum_r SSB_{1,r,y}$. Note that $npop_r$ is the number of 
 When $n_\tau = 1$ and $n_p > 1$, a separate spawning movement matrix
 $\mathbf{M}^{spawn}_{p,y,a,s}$ is applied to both fished and unfished numbers-at-age
 prior to computing spawning biomass quantities, representing natal homing
-of individuals to their spawning grounds:
+of individuals to their spawning grounds. It composes with, rather than
+replaces, whatever within-season movement `move_timing` implies: it acts on the
+numbers already propagated to the spawning point,
 
-$$\mathbf{N}^{spawn}_{p,y,a,s} = \left(\mathbf{N}_{p,y,\tau^{spawn},a,s}\right)^T \mathbf{M}^{spawn}_{p,y,a,s}$$
+$$\left(\mathbf{N}^{homed}_{p,y,a,s}\right)^T = \left(\mathbf{N}^{spawn}_{p,y,\tau^{spawn},a,s}\right)^T \mathbf{M}^{spawn}_{p,y,a,s}$$
+
+with $\mathbf{N}^{spawn}$ as defined in the Spawning Biomass Timing section
+below. The ordering relative to the $t^{spawn}$ mortality discount differs by
+timing, and the two do not commute once movement redistributes fish: under
+$\text{move\_timing} = 0$ natal homing is applied to the post-movement numbers and
+the $t^{spawn}$ discount is taken afterwards, at the destination region, whereas
+under $\text{move\_timing}$ 1 and 2 the propagation to the spawning point already
+carries that discount and natal homing is applied to the result.
 
 This additional movement is applied only for spawning biomass calculations
 and does not alter the numbers-at-age array used for subsequent mortality
@@ -304,39 +361,147 @@ and movement processes.
 
 ### Population Projection
 
-Following recruitment processes, the population is projected
-forward. In the context of the spatial model, Markovian movement
-dynamics are first applied within each season:
+Following recruitment processes, the population is projected forward. In the
+spatial model, each season advances the population under both Markovian movement
+and total mortality. Movement is described by a first-order Markov matrix
+$\mathbf{M}_{p,y,\tau,a,s}$ acting on the numbers-at-region vector,
+$\left( \mathbf{N}_{p,y,\tau,a,s} \right)^{T}\mathbf{M}_{p,y,\tau,a,s}$. In a
+single-region case, no movement is applied (i.e., $\mathbf{M}_{p,y,\tau,a,s}$ is an
+implied identity matrix). For each population, year, season, age, and sex
+combination, the movement matrix specifies bulk-transfer coefficients. *Where*
+within the season that transfer happens -- before mortality, after it, or
+continuously alongside it -- is set by `move_timing`, and is what the rest of this
+section makes explicit.
 
-$$\begin{matrix}
-\mathbf{N}_{p,y,\tau,a,s} = \left( \mathbf{N}_{p,y,\tau,a,s} \right)^{T}\mathbf{M}_{p,y,\tau,a,s} \\
-\end{matrix}$$
+Movement and mortality are therefore combined into a single seasonal transition
+operator $\mathbf{\Phi}_{p,y,\tau,a,s}$. Writing $\mathbf{Z}_{p,y,\tau,a,s}$ for the
+vector of seasonal total mortality across regions,
+$\mathbf{s}_{p,y,\tau,a,s} = \exp\left( -\mathbf{Z}_{p,y,\tau,a,s} \right)$ for
+seasonal survival, and $\dot{\mathbf{Q}}_{p,y,\tau,a,s}$ for the CTMC generator:
 
-Here, $\mathbf{M}_{p,y,\tau,a,s}$ is a first-order Markov matrix representing
-movement. In a single-region case, no movement is applied (i.e.,
-$\mathbf{M}_{p,y,\tau,a,s}$ is an implied identity matrix). For each population, year, season, age,
-and sex combination, the movement matrix specifies bulk-transfer
-coefficients, with parameters transformed through a multinomial logit to
-ensure that proportions within each origin region sum to one.
+$$\mathbf{\Phi}_{p,y,\tau,a,s} = \begin{cases}
+\mathbf{M}_{p,y,\tau,a,s}\,\text{diag}\left( \mathbf{s}_{p,y,\tau,a,s} \right) & \text{move\_timing} = 0 \\[4pt]
+\text{diag}\left( \mathbf{s}_{p,y,\tau,a,s} \right)\mathbf{M}_{p,y,\tau,a,s} & \text{move\_timing} = 1 \\[4pt]
+\left[ \exp\left( \mathbf{\Lambda}_{p,y,\tau,a,s} \right) \right]^{T} & \text{move\_timing} = 2 \\
+\end{cases}$$
 
-For age-0 recruitment ($RecLag = 0$), this movement step at season
-$\tau^{spawn}$ is applied to the survivor population before that
-season's $SSB_{p,r,y}$/recruitment are computed (see Age-0 Recruitment
-above); the resulting recruits are then inserted immediately afterward,
-so they still experience that season's mortality below like any other
-seasonal recruit pulse.
+where
 
-Following movement, mortality occurs. For seasons within a year
-($\tau < n_\tau$), within-season mortality is applied and individuals
-advance to the next season at the same age:
+$$\mathbf{\Lambda}_{p,y,\tau,a,s} = \dot{\mathbf{Q}}_{p,y,\tau,a,s}^{T}\,\Delta\tau - \text{diag}\left( \mathbf{Z}_{p,y,\tau,a,s} \right)$$
 
-$$N_{p,r,y,\tau + 1,a,s} = N_{p,r,y,\tau,a,s}\exp\left( - Z_{p,r,y,\tau,a,s} \right)$$
+is the combined movement–mortality generator for the season, expressed in the
+column convention ($\dot{\mathbf{Q}}$ is stored row-wise, hence the transpose).
+Note that $\mathbf{\Lambda}$ already carries the season duration in both of its
+terms ($\Delta\tau$ explicitly on the generator, and implicitly in
+$\mathbf{Z}$, which is itself a seasonal rate), so the season is parameterised on
+the unit interval throughout: propagating a fraction $t$ of the way through the
+season means $\exp\left( \mathbf{\Lambda}\,t \right)$ with $t \in [0,1]$, and a full
+season is $t = 1$.
+
+Under $\text{move\_timing} = 0$ (sequential; movement then mortality) individuals
+move at the start of the season and then experience mortality in the destination
+region. Under $\text{move\_timing} = 1$ (sequential; mortality then movement) they
+experience mortality in the origin region and move at the end of the season. Under
+$\text{move\_timing} = 2$ (continuous) movement and mortality act simultaneously,
+with the generator and mortality rate combined inside a single matrix exponential;
+$\mathbf{M}$ does not appear at all, and this option requires an estimated CTMC
+generator ($\text{move\_type} = 1$). The three coincide when $\mathbf{Z}$ is
+constant across regions (a scalar multiple of the identity commutes with the
+generator), when $\mathbf{Z} = \mathbf{0}$, and when $\mathbf{M} = \mathbf{I}$
+(equivalently $\dot{\mathbf{Q}} = \mathbf{0}$).
+
+For seasons within a year ($\tau < n_\tau$), individuals advance to the next season
+at the same age:
+
+$$\left( \mathbf{N}_{p,y,\tau + 1,a,s} \right)^{T} = \left( \mathbf{N}_{p,y,\tau,a,s} \right)^{T}\mathbf{\Phi}_{p,y,\tau,a,s}$$
 
 At the end of the final season ($\tau = n_\tau$), individuals advance in age:
+
+$$\left( \mathbf{N}_{p,y + 1,1,a + 1,s} \right)^{T} = \left( \mathbf{N}_{p,y,n_\tau,a,s} \right)^{T}\mathbf{\Phi}_{p,y,n_\tau,a,s},\quad\text{for }1 \leq a < a_{+}$$
+
+$$\left( \mathbf{N}_{p,y + 1,1,a_{+},s} \right)^{T} = \left( \mathbf{N}_{p,y + 1,1,a_{+},s} \right)^{T} + \left( \mathbf{N}_{p,y,n_\tau,a_{+},s} \right)^{T}\mathbf{\Phi}_{p,y,n_\tau,a_{+},s}$$
+
+When $\text{move\_timing} = 0$ these reduce to the elementwise sequential form, with
+movement applied first as
+$\mathbf{N}_{p,y,\tau,a,s} = \left( \mathbf{N}_{p,y,\tau,a,s} \right)^{T}\mathbf{M}_{p,y,\tau,a,s}$
+and mortality applied afterwards as:
+
+$$N_{p,r,y,\tau + 1,a,s} = N_{p,r,y,\tau,a,s}\exp\left( - Z_{p,r,y,\tau,a,s} \right)$$
 
 $$N_{p,r,y + 1,1,a + 1,s} = N_{p,r,y,n_\tau,a,s}\exp\left( - Z_{p,r,y,n_\tau,a,s} \right),\quad\text{for }1 \leq a < a_{+}$$
 
 $$N_{p,r,y + 1,1,a_{+},s} = N_{p,r,y+1,1,a_{+},s} + N_{p,r,y,n_\tau,a_{+},s}\exp\left( - Z_{p,r,y,n_\tau,a_{+},s} \right)$$
+
+If recruits do not move ($\text{do\_recruits\_move} = 0$), $\mathbf{M}_{p,y,\tau,a=1,s} = \mathbf{I}$
+and $\dot{\mathbf{Q}}_{p,y,\tau,a=1,s} = \mathbf{0}$, so $\mathbf{\Phi}_{p,y,\tau,a=1,s}$
+reduces to $\text{diag}\left( \mathbf{s}_{p,y,\tau,a=1,s} \right)$ under all three cases.
+
+#### Where in the Season Each Quantity Is Evaluated
+
+Because $\mathbf{\Phi}$ resolves movement at a different point in the season under
+each option, every quantity that is observed *partway* through a season has to be
+evaluated consistently. The table below summarises where each one is taken; the
+equations follow in the sections indicated.
+
+| Quantity | $\text{move\_timing} = 0$ | $\text{move\_timing} = 1$ | $\text{move\_timing} = 2$ |
+|---|---|---|---|
+| Spawners, $\mathbf{N}^{spawn}$ | Post-movement location, discounted by $t^{spawn}$ mortality | Pre-movement (origin) location, discounted by $t^{spawn}$ mortality | Partially redistributed: $\exp(\mathbf{\Lambda}\,t^{spawn})$ |
+| Catch and discards | Baranov at post-movement location | Baranov at pre-movement location | Season-integrated abundance $\mathbf{N}^{\int}$ (spatial Baranov) |
+| Fishery index | Post-movement $\mathbf{N}$, no discount | Pre-movement $\mathbf{N}$, no discount | $\mathbf{N}^{\int}$ |
+| Survey index | Post-movement $\mathbf{N}$, discounted by $t^{srv}$ mortality | Pre-movement $\mathbf{N}$, discounted by $t^{srv}$ mortality | Snapshot $\exp(\mathbf{\Lambda}\,t^{srv})\mathbf{N}$ |
+| Tag recaptures | Baranov on the tag cohort | Baranov on the tag cohort | Season-integrated tag abundance |
+
+Under continuous movement, note that the survey index is treated differently from
+catch and the fishery index. A survey is a *snapshot* at an instant within the
+season, so it uses the partial propagation $\exp(\mathbf{\Lambda}\,t^{srv})$,
+whereas catch and the fishery index *accumulate* over the whole season, so they
+use the integral of that propagation. Under the sequential timings the
+distinction does not arise, because movement has already been resolved and the
+fish are stationary for the rest of the season.
+
+#### Spawning Biomass Timing
+
+Spawning biomass is computed from the population propagated a fraction $t^{spawn}$
+into the spawning season, consistently with the sequencing:
+
+$$\left( \mathbf{N}_{p,y,\tau^{spawn},a,s}^{spawn} \right)^{T} = \begin{cases}
+\left( \left( \mathbf{N}_{p,y,\tau^{spawn},a,s} \right)^{T}\mathbf{M}_{p,y,\tau^{spawn},a,s} \right)\text{diag}\left( \exp\left( - t^{spawn}\mathbf{Z}_{p,y,\tau^{spawn},a,s} \right) \right) & \text{move\_timing} = 0 \\[4pt]
+\left( \mathbf{N}_{p,y,\tau^{spawn},a,s} \right)^{T}\text{diag}\left( \exp\left( - t^{spawn}\mathbf{Z}_{p,y,\tau^{spawn},a,s} \right) \right) & \text{move\_timing} = 1 \\[4pt]
+\left( \mathbf{N}_{p,y,\tau^{spawn},a,s} \right)^{T}\left[ \exp\left( \mathbf{\Lambda}_{p,y,\tau^{spawn},a,s}\,t^{spawn} \right) \right]^{T} & \text{move\_timing} = 2 \\
+\end{cases}$$
+
+so spawners are at their post-movement locations under $\text{move\_timing} = 0$, at
+their pre-movement locations under $\text{move\_timing} = 1$, and partially
+redistributed under $\text{move\_timing} = 2$. No extra convention is imposed to make
+the three agree: each timing has its own natural spawning state, and the
+$\text{move\_timing} = 0$ case reproduces the historical `SPoRC` calculation exactly.
+The same $\mathbf{N}^{spawn}$ is used for $SSB_{p,r,y}$, total biomass, and the
+unfished $\text{Dynamic\_SSB0}_{p,r,y}$ (the last with $\mathbf{Z}$ replaced by
+natural mortality alone).
+
+#### Catch Under Continuous Movement
+
+The Baranov catch equation assumes individuals remain in one region for the whole
+season, which does not hold under $\text{move\_timing} = 2$. Catch is instead taken
+from the season-integrated abundance:
+
+$$\mathbf{N}_{p,y,\tau,a,s}^{\int} = \left[ \int_{0}^{1}\exp\left( \mathbf{\Lambda}_{p,y,\tau,a,s}\,\upsilon \right)d\upsilon \right]\mathbf{N}_{p,y,\tau,a,s}$$
+
+$$C_{p,r,y,\tau,a,s,f} = \text{retFmort}_{p,r,y,\tau,a,s,f} \cdot N_{p,r,y,\tau,a,s}^{\int}$$
+
+$$D_{p,r,y,\tau,a,s,f} = \text{discFmort}_{p,r,y,\tau,a,s,f} \cdot N_{p,r,y,\tau,a,s}^{\int}$$
+
+The integral runs over the unit interval rather than over $[0, \Delta\tau]$ because,
+as noted above, $\mathbf{\Lambda}$ already carries the season duration; $\upsilon$ is
+elapsed fraction of the season, not elapsed time.
+
+When $\dot{\mathbf{Q}} = \mathbf{0}$ the regions decouple and this reduces to
+$N_{p,r,y,\tau,a,s}\left( 1 - \exp\left( - Z_{p,r,y,\tau,a,s} \right) \right)/Z_{p,r,y,\tau,a,s}$,
+recovering the standard Baranov form used under $\text{move\_timing} \in \{0,1\}$ --
+which makes explicit that $\mathbf{N}^{\int}$ is simply what the familiar
+$(1 - e^{-Z})/Z$ factor was always computing, namely the abundance accumulated over
+the season. The same season-integrated abundance is used for the fishery index and
+for predicted tag recaptures when movement is specified to be continuous.
 
 $Z_{p,r,y,\tau,a,s}$ denotes the seasonal total instantaneous mortality rate and
 is defined as the combination of natural mortality
@@ -437,13 +602,34 @@ $$
 \dot{Q}_{p,y,\tau,a,s} \ge 0 \quad \text{for } r \neq k.
 $$
 
-Given that movement in `SPoRC` is defined sequentially, the instantaneous movement matrix can then be converted to annual movement fractions using the matrix exponential:
+Under the sequential timings ($\text{move\_timing}$ 0 and 1), the instantaneous
+movement matrix is converted to movement fractions using the matrix exponential:
 
 $$
 \mathbf{M}_{p,y,\tau,a,s} = \exp\Big( \dot{\mathbf{Q}}_{p,y,\tau,a,s} \, \Delta t \Big)
 $$
 
-where $\Delta t$ is the duration of the movement interval.
+where $\Delta t$ is the duration of the movement interval. When
+`ctmc_scale_by_seasdur = 1` (default), $\dot{\mathbf{Q}}$ is an annual rate and
+$\Delta t = \Delta\tau$, so the generator and $Z$ share time units; when `0`,
+$\Delta t = 1$ irrespective of season duration.
+
+Under $\text{move\_timing} = 2$ this exponential is never taken on its own. The
+generator enters the seasonal operator together with mortality, as
+$\exp\left( \dot{\mathbf{Q}}^{T}\Delta\tau - \text{diag}(\mathbf{Z}) \right)$, which
+does not factor into a movement matrix times a survival matrix unless $\mathbf{Z}$
+is constant across regions. $\mathbf{M}$ is still computed and reported, but as a
+diagnostic -- the movement fractions that *would* apply in the absence of spatially
+varying mortality -- rather than as a term in the dynamics.
+`ctmc_scale_by_seasdur` is forced to `1` in this case, since combining an unscaled
+generator with seasdur-scaled mortality inside a single exponential is
+dimensionally inconsistent.
+
+Continuous movement also requires an *estimated* generator: it is available only
+for $\text{move\_type} = 1$ with $\text{use\_fixed\_movement} = 0$. Unstructured
+multinomial-logit movement supplies transition fractions with no guaranteed real
+generator behind them (the Markov embedding problem), so `SPoRC` rejects the
+combination rather than attempting a matrix logarithm.
 
 
 ## Observation Equations
@@ -466,6 +652,16 @@ Expected dead discarded catch-at-age ($D_{p,r,y,\tau,a,s,f}^{a}$) is similarly:
 $$\begin{matrix}
 D_{p,r,y,\tau,a,s,f}^{a} = \dfrac{\text{discFmort}_{p,r,y,\tau,a,s,f}}{Z_{p,r,y,\tau,a,s}}N_{p,r,y,\tau,a,s}\left\lbrack 1 - \exp\left( - Z_{p,r,y,\tau,a,s} \right) \right\rbrack \\
 \end{matrix}$$
+
+These are the forms used under $\text{move\_timing}$ 0 and 1, where individuals
+occupy a single region for the whole season and catch is taken where they
+actually are: at the post-movement (destination) locations under
+$\text{move\_timing} = 0$, since movement happens at the start of the season, and
+at the pre-movement (origin) locations under $\text{move\_timing} = 1$, since it
+happens at the end. Under $\text{move\_timing} = 2$ fish redistribute among regions
+while they are being caught, the region-local Baranov equation is no longer valid,
+and catch and discards are computed from the season-integrated abundance
+$N^{\int}$ instead (see Catch Under Continuous Movement above).
 
 To track length-based dynamics, retained catch-at-length ($C_{p,r,y,\tau,l,s,f}^{l}$)
 and discarded catch-at-length ($D_{p,r,y,\tau,l,s,f}^{l}$) are derived using:
@@ -519,7 +715,17 @@ $$\begin{matrix}
 where $q_{r,y,f}^{\text{Fsh}}$ is the catchability coefficient for a
 given fishery fleet. Note that unlike the survey index, the fishery index
 is computed directly from numbers-at-age without applying additional survival
-discounting. Biomass-based fishery indices are computed as:
+discounting: fishing is spread across the whole season rather than occurring
+at a point within it, so there is no analogue of $t^{srv}$ to discount by.
+
+For the same reason, the fishery index follows catch rather than the survey when
+movement is continuous. Under $\text{move\_timing} = 2$ the fleet encounters fish
+as they redistribute, so $N_{p,r,y,\tau,a,s}$ above is replaced by the
+season-integrated abundance $N^{\int}_{p,r,y,\tau,a,s}$. The integral carries units
+of abundance $\times$ time, and the resulting constant is absorbed by the estimated
+$q_{r,y,f}^{\text{Fsh}}$. Under $\text{move\_timing}$ 0 and 1 the index uses
+$N_{p,r,y,\tau,a,s}$ as written, at the post-movement and pre-movement locations
+respectively. Biomass-based fishery indices are computed as:
 
 $$\begin{matrix}
 \text{FshIdx}_{p,r,y,\tau,f} = q_{r,y,f}^{\text{Fsh}}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}N_{p,r,y,\tau,a,s}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}}W_{p,r,y,\tau,a,s,f}^{fish} \\
@@ -542,7 +748,35 @@ I_{p,r,y,\tau,a,s,sf}^{a} = N_{p,r,y,\tau,a,s}\exp\left( - Z_{p,r,y,\tau,a,s} \c
 where subscript $sf$ denotes a given survey fleet, $t_{r,\tau,sf}^{srv}$ is the
 survey timing as a fraction of the season, and
 $\text{Sel}_{p,r,y,\tau,a,s,sf}^{\text{Srv}}$ is the survey selectivity-at-age
-pattern. Expected survey catch-at-length ($I_{p,r,y,\tau,l,s,sf}^{l}$) is given
+pattern.
+
+This elementwise discount is exact under $\text{move\_timing}$ 0 and 1, because
+movement for the season has already been resolved and the fish are stationary
+within it (at their post-movement locations under $\text{move\_timing} = 0$ and
+their pre-movement locations under $\text{move\_timing} = 1$). It is not exact
+under $\text{move\_timing} = 2$, where it would hold fish in place while they are
+in fact diffusing. There, the survey observes the population propagated a
+fraction $t^{srv}$ into the season under the combined generator
+$\mathbf{\Lambda}_{p,y,\tau,a,s}$ of the Population Projection section:
+
+$$\begin{matrix}
+I_{p,r,y,\tau,a,s,sf}^{a} = \left\lbrack \exp\left( \mathbf{\Lambda}_{p,y,\tau,a,s}\,t_{r,\tau,sf}^{srv} \right)\mathbf{N}_{p,y,\tau,a,s} \right\rbrack_{r}\text{Sel}_{p,r,y,\tau,a,s,sf}^{\text{Srv}} \\
+\end{matrix}$$
+
+Note that a survey is a snapshot at an instant within the season rather than an
+accumulation over it, so this is the partial propagation $\exp(\mathbf{\Lambda}\,t^{srv})$
+and not the season integral used for catch. Selectivity applies at the
+destination region, i.e. after propagation.
+
+Survey timing may differ by region, which a single propagation operator cannot
+represent: fish observed in region $r$ arrived from regions whose elapsed times
+differ. The convention adopted is that the survey in region $r$ observes the
+population propagated to *that region's* survey time, which is what the subscript
+$r$ outside the bracket denotes. When $t^{srv}_{r,\tau,sf}$ is constant across
+regions -- the usual case -- this collapses to a single propagation and one matrix
+exponential.
+
+Expected survey catch-at-length ($I_{p,r,y,\tau,l,s,sf}^{l}$) is given
 by:
 
 $$\begin{matrix}
@@ -594,31 +828,74 @@ decremented by an initial tag-induced mortality rate:
 
 $$T_{p,r,y,\tau,a,s}^{k} = T_{p,r,y,\tau,a,s}^{k}\exp( - \eta^{\text{mort}})$$
 
-where $\eta^{\text{mort}}$ is the initial tag-induced mortality rate. If tagged
-cohorts are released at the beginning of a season ($t^{\text{tag}} = 1$), Markovian
-movement occurs before mortality is applied; otherwise, movement is skipped
-in the release season:
+where $\eta^{\text{mort}}$ is the initial tag-induced mortality rate.
 
-$$\mathbf{T}_{p,y,\tau,a,s}^{k} = \left( \mathbf{T}_{p,y,\tau,a,s}^{k} \right)^{\text{T}}\mathbf{M}_{p,y,\tau,a,s}$$
+Tag cohorts are then advanced across each season by the same seasonal transition
+operator as the population, but evaluated with the tag-specific total mortality
+$\mathbf{Z}^{\text{Tag}}$ and over the fraction of the season the cohort is
+actually at liberty for, $\Delta\tau\,\omega^{k}_{\tau}$ (with $\omega^{k}_{\tau}$
+defined below):
 
-Within-season mortality and ageing of the tagged cohort then occurs.
+$$\mathbf{\Phi}_{p,y,\tau,a,s}^{\text{Tag}} = \begin{cases}
+\mathbf{M}_{p,y,\tau,a,s}\,\text{diag}\left( \exp\left( -\mathbf{Z}^{\text{Tag}}_{p,y,\tau,a,s} \right) \right) & \text{move\_timing} = 0 \\[4pt]
+\text{diag}\left( \exp\left( -\mathbf{Z}^{\text{Tag}}_{p,y,\tau,a,s} \right) \right)\mathbf{M}_{p,y,\tau,a,s} & \text{move\_timing} = 1 \\[4pt]
+\left[ \exp\left( \dot{\mathbf{Q}}_{p,y,\tau,a,s}^{T}\,\Delta\tau\,\omega^{k}_{\tau} - \text{diag}\left( \mathbf{Z}^{\text{Tag}}_{p,y,\tau,a,s} \right) \right) \right]^{T} & \text{move\_timing} = 2 \\
+\end{cases}$$
+
 For seasons within a year ($\tau < n_\tau$):
 
-$$T_{p,r,y,\tau + 1,a,s}^{k} = T_{p,r,y,\tau,a,s}^{k}\exp\left( - Z_{p,r,y,\tau,a,s}^{\text{Tag}} \right)$$
+$$\left( \mathbf{T}_{p,y,\tau + 1,a,s}^{k} \right)^{T} = \left( \mathbf{T}_{p,y,\tau,a,s}^{k} \right)^{T}\mathbf{\Phi}_{p,y,\tau,a,s}^{\text{Tag}}$$
 
-At the end of the final season ($\tau = n_\tau$), individuals advance in age:
+and at the end of the final season ($\tau = n_\tau$) individuals advance in age,
+with accumulation of individuals in the plus group, exactly as for the population:
 
-$$T_{p,r,y + 1,1,a + 1,s}^{k} = T_{p,r,y,n_\tau,a,s}^{k}\exp\left( - Z_{p,r,y,n_\tau,a,s}^{\text{Tag}} \right),\quad\text{for }1 \leq a < a_{+}$$
+$$\left( \mathbf{T}_{p,y + 1,1,a + 1,s}^{k} \right)^{T} = \left( \mathbf{T}_{p,y,n_\tau,a,s}^{k} \right)^{T}\mathbf{\Phi}_{p,y,n_\tau,a,s}^{\text{Tag}},\quad\text{for }1 \leq a < a_{+}$$
 
-$$T_{p,r,y + 1,1,a_{+},s}^{k} = T_{p,r,y+1,1,a_{+},s}^{k} + T_{p,r,y,n_\tau,a_{+},s}^{k}\exp\left( - Z_{p,r,y,n_\tau,a_{+},s}^{k}\right)$$
+$$\left( \mathbf{T}_{p,y + 1,1,a_{+},s}^{k} \right)^{T} = \left( \mathbf{T}_{p,y+1,1,a_{+},s}^{k} \right)^{T} + \left( \mathbf{T}_{p,y,n_\tau,a_{+},s}^{k} \right)^{T}\mathbf{\Phi}_{p,y,n_\tau,a_{+},s}^{\text{Tag}}$$
 
-where tagged cohorts follow an exponential mortality model with
-accumulation of individuals in the plus-group. Total mortality for the
+Under $\text{move\_timing} = 0$ these reduce to the historical sequential form, in
+which Markovian movement
+$\left( \mathbf{T}_{p,y,\tau,a,s}^{k} \right)^{\text{T}}\mathbf{M}_{p,y,\tau,a,s}$
+is applied first and the cohort then follows an elementwise exponential mortality
+model, $T_{p,r,y,\tau + 1,a,s}^{k} = T_{p,r,y,\tau,a,s}^{k}\exp\left( - Z_{p,r,y,\tau,a,s}^{\text{Tag}} \right)$.
+
+Mid-season releases are handled differently by the two families of timings. Under
+the sequential timings, a cohort released partway through its release season
+($t^{\text{tag}} < 1$) skips the discrete movement step entirely for that season --
+$\mathbf{M}$ is replaced by the identity -- because a full-season transition matrix
+cannot represent a partial interval. Such a cohort stays in its release region for
+the remainder of the release season, experiencing only the partial-interval
+mortality, and movement resumes normally from the following season.
+
+Continuous movement needs no such exemption, and imposing one would be
+inconsistent: the generator is scaled by $\Delta\tau\,\omega^{k}_{\tau}$, the same
+at-liberty fraction that already scales the cohort's mortality, so tags released
+mid-season diffuse for exactly the fraction of the season they were at liberty
+for. Freezing them in place while still discounting their mortality partially
+would have tags dying on a partial season but holding station for a whole one.
+
+Total mortality for the
 tagged cohort ($Z_{p,r,y,\tau,a,s}^{\text{Tag}}$) is specified as:
 
-$$Z_{p,r,y,\tau,a,s}^{\text{Tag}} = \kappa \cdot \Delta\tau + \text{NatMort}_{p,r,y,a,s} \cdot \Delta\tau + \sum_{f \in \mathcal{F}^{\text{Tag}}} \left[\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}} \cdot \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}} \cdot \text{Fmort}_{r,y,\tau,f} + \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}} \cdot \left(1 - \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}}\right) \cdot \delta_{r,y,\tau,f} \cdot \text{Fmort}_{r,y,\tau,f}\right]$$
+$$Z_{p,r,y,\tau,a,s}^{\text{Tag}} = \omega^{k}_{\tau} \left( \kappa \cdot \Delta\tau + \text{NatMort}_{p,r,y,a,s} \cdot \Delta\tau + \sum_{f \in \mathcal{F}^{\text{Tag}}} \left[\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}} \cdot \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}} \cdot \text{Fmort}_{r,y,\tau,f} + \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}} \cdot \left(1 - \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}}\right) \cdot \delta_{r,y,\tau,f} \cdot \text{Fmort}_{r,y,\tau,f}\right] \right)$$
 
-where $\kappa$ is a parameter describing chronic tag loss (i.e., annual
+where $\omega^{k}_{\tau}$ is the fraction of season $\tau$ that cohort $k$ is
+actually at liberty for. It equals $t^{\text{tag}}_{k}$ in the release season of
+the release year, and $1$ in every subsequent season:
+
+$$\omega^{k}_{\tau} = \begin{cases} t^{\text{tag}}_{k} & \text{release season of the release year} \\ 1 & \text{otherwise} \end{cases}$$
+
+Note that $\omega^{k}_{\tau}$ multiplies **every** mortality component, fishing
+included, rather than only the total. This matters for the recapture equation
+below: $F/Z^{\text{Tag}}$ is the fraction of deaths owing to fishing and must lie
+in $[0,1]$. Scaling $Z^{\text{Tag}}$ while leaving $F$ at full-season scale would
+give $F/(Z^{\text{Tag}} t^{\text{tag}})$, which exceeds $1$ whenever
+$t^{\text{tag}} < F/Z^{\text{Tag}}$ and would predict more recaptures than there
+are dead tags. Scaling both leaves the ratio at $F/Z^{\text{Tag}}$ and lets the
+$1 - \exp(-Z^{\text{Tag}})$ term carry the shorter exposure, which is the standard
+partial-interval form of Baranov's equation.
+
+Here $\kappa$ is a parameter describing chronic tag loss (i.e., annual
 tag shedding) and $\mathcal{F}^{\text{Tag}}$ denotes the subset of fishing fleets
 that contribute tagging data. The summation over $\mathcal{F}^{\text{Tag}}$ rather
 than all fleets is intentional: restricting the tag mortality calculation
@@ -631,7 +908,26 @@ with fleet-specific tag reporting rates applied to the retained component:
 
 $$\text{Recap}_{p,r,y,\tau,a,s,f}^{k} = \beta_{r,y,f}\dfrac{\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}} \cdot \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}} \cdot \text{Fmort}_{r,y,\tau,f}}{Z_{p,r,y,\tau,a,s}^{\text{Tag}}}T_{p,r,y,\tau,a,s}^{k}\left\lbrack 1 - \exp\left( - Z_{p,r,y,\tau,a,s}^{\text{Tag}} \right) \right\rbrack$$
 
-where $\beta_{r,y,f}$ represents a fleet-specific tag reporting rate parameter that can vary
+As for the fishery, this region-local form applies under $\text{move\_timing}$ 0 and
+1. Under $\text{move\_timing} = 2$ tags redistribute among regions while they are
+being caught, so recaptures use the season-integrated tag abundance:
+
+$$\mathbf{T}_{p,y,\tau,a,s}^{k,\int} = \left\lbrack \int_{0}^{1}\exp\left( \mathbf{\Lambda}^{\text{Tag}}_{p,y,\tau,a,s}\upsilon \right)d\upsilon \right\rbrack\mathbf{T}_{p,y,\tau,a,s}^{k},\qquad
+\mathbf{\Lambda}^{\text{Tag}}_{p,y,\tau,a,s} = \dot{\mathbf{Q}}_{p,y,\tau,a,s}^{T}\Delta\tau\,\omega^{k}_{\tau} - \text{diag}\left( \mathbf{Z}^{\text{Tag}}_{p,y,\tau,a,s} \right)$$
+
+$$\text{Recap}_{p,r,y,\tau,a,s,f}^{k} = \beta_{r,y,f} \cdot \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}} \cdot \text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}} \cdot \text{Fmort}_{r,y,\tau,f} \cdot T_{p,r,y,\tau,a,s}^{k,\int}$$
+
+The integral is evaluated by the same block-matrix construction used for the
+population, with $\mathbf{\Lambda}^{\text{Tag}}$ in place of $\mathbf{\Lambda}$ (see
+Evaluating the season integral above). Because both $\mathbf{Z}^{\text{Tag}}$ and the
+fishing mortality in the numerator carry the same $\omega^{k}_{\tau}$ scaling, this
+integrates fishing mortality over exactly the at-liberty fraction of the season: the
+substitution $u = \omega^{k}_{\tau}\upsilon$ turns the expression into
+$\int_{0}^{\omega^{k}_{\tau}}\mathbf{F}\exp\left( \mathbf{\Lambda}u \right)\mathbf{T}^{k}du$
+on the unscaled full-season generator, which is the continuous-movement counterpart
+of the partial-interval Baranov equation described above.
+
+Here $\beta_{r,y,f}$ represents a fleet-specific tag reporting rate parameter that can vary
 across space, time, and fleet, which is estimated in logit space such that it is
 constrained between $[0,1]$. Recaptures are computed only for fleets in $\mathcal{F}^{\text{Tag}}$.
 
@@ -1412,6 +1708,59 @@ P\left( \mathbf{M}_{p,.,k,y,\tau,a,s} \right) = \frac{\Gamma\left( \sum_{r}^{n_{
 where $r$ is the origin region, $k$ is the destination, and $c_{p,r,k,y,\tau,a,s}$
 are the concentration parameters that control the Dirichlet
 distribution.
+
+##### What the prior is evaluated on
+
+For unstructured movement (`move_type = 0`) the $\mathbf{M}$ above are the
+estimated transition fractions themselves, and the prior applies to them
+directly. For CTMC movement (`move_type = 1`) the model estimates a
+generator $\dot{\mathbf{Q}}$ rather than fractions, and the prior is
+evaluated on the **annual** fractions obtained from it,
+
+$$\mathbf{m}_{p,r,\cdot,y,\tau,a,s} = \left\lbrack \exp\left( \dot{\mathbf{Q}}_{p,y,\tau,a,s} \right) \right\rbrack_{r,\cdot}$$
+
+i.e. at $\Delta t = 1$, rather than on the seasonal fractions
+$\exp(\dot{\mathbf{Q}}\Delta t)$ stored in $\mathbf{M}$. The distinction
+matters once `ctmc_scale_by_seasdur = 1`: a season's movement matrix
+approaches the identity as the season shortens, so a fixed $\mathbf{c}$
+would silently become a far stronger constraint as $n_{\tau}$ grows. On a
+three-region example the same $c = 3$ prior costs 1.04 nLL units at
+$n_{\tau} = 1$ but 9.91 at $n_{\tau} = 12$; evaluated annually it is 1.04
+in both cases. Fixing the exponent at one year also matches how such
+priors are elicited — as a belief about the fraction of fish moving per
+*year*, independent of how the year is partitioned. Under the legacy
+`ctmc_scale_by_seasdur = 0` the two coincide.
+
+Because $\exp(\dot{\mathbf{Q}})$ is a deterministic function of the
+estimated CTMC parameters, the prior still informs $\dot{\mathbf{Q}}$
+under every `move_timing`. Note, however, that under `move_timing = 2`
+the seasonal operator is
+$\exp\left( \dot{\mathbf{Q}}^{T}\Delta\tau - \text{diag}(\mathbf{Z}) \right)$,
+which does not factor into movement and survival: $\mathbf{M}$ is then a
+reported diagnostic rather than a term in the dynamics, and the prior acts
+as a reparameterised prior on the generator.
+
+##### Choosing the concentration parameters
+
+Writing $\mathbf{c}$ for the concentration vector of one origin region and
+$n_{r}$ for the number of regions:
+
+$$\text{mode}_{k} = \frac{c_{k} - 1}{\sum_{j} c_{j} - n_{r}}\ \ (c_{k} > 1), \qquad \text{mean}_{k} = \frac{c_{k}}{\sum_{j} c_{j}}, \qquad \kappa = \sum_{j} c_{j} - n_{r}$$
+
+where $\kappa$ behaves as the number of prior pseudo-observations, so it is
+the natural handle on prior strength. Two cases are worth separating:
+
+- $\mathbf{c} = \mathbf{1}$ gives a **uniform density over the simplex**:
+  every movement vector is equally likely, the contribution to the
+  objective is constant, and the gradient is exactly zero. This is the
+  uninformative choice.
+- $\mathbf{c} = c\mathbf{1}$ with $c > 1$ is symmetric with its mode at
+  $1/n_{r}$ in every region — a prior centred on *equal movement among all
+  regions*, which is informative and, for a residency-dominated stock, a
+  strong assumption rather than a vague one.
+
+To target a particular movement vector with a chosen strength, set
+$c_{k} = 1 + \kappa\,\text{mode}_{k}$.
 
 #### Tag Reporting Rates
 

@@ -259,9 +259,9 @@ Region-aggregated observations (summed across populations) and population-specif
 
 | Name | Description |
 |-------------------------|------------------------------------------------------|
-| cont_tv_fish_sel | Matrix dimensioned by n_regions, n_fish_fleets specifying whether and how continuous time-varying selectivity is applied. 0: None, 1: iid deviations, 2: random walk, 3: 3D GMRF with marginal variance (semi-parametric), 4: 3D GMRF with conditional variance (semi-parametric). Further details in Get_PE_loglik.R, Get_3d_precision.R, and Get_Selex.R |
+| cont_tv_fish_sel | Matrix dimensioned by n_regions, n_fish_fleets specifying whether and how continuous time-varying selectivity is applied. 0: None, 1: iid deviations, 2: random walk, 3: 3D GMRF with marginal variance (semi-parametric), 4: 3D GMRF with conditional variance (semi-parametric). Further details in model_priors_penalties.R, model_precision.R, and model_selectivity.R |
 | fish_sel_blocks | Array dimensioned by n_regions, n_years, n_fish_fleets specifying selectivity time blocks. Unique integers denote distinct selectivity parameter blocks |
-| fish_sel_model | Array dimensioned by n_regions, n_years, n_fish_fleets specifying the selectivity functional form. 0: Logistic (a50 and slope), 1: Gamma dome-shaped, 2: Power function, 3: Logistic (a50 and a95), 4: Double Normal (6 parameters), 5: Non-parametric, 6/7: Logistic with asymptote, 8: Bicubic spline. Further details in Get_Selex.R |
+| fish_sel_model | Array dimensioned by n_regions, n_years, n_fish_fleets specifying the selectivity functional form. 0: Logistic (a50 and slope), 1: Gamma dome-shaped, 2: Power function, 3: Logistic (a50 and a95), 4: Double Normal (6 parameters), 5: Non-parametric, 6/7: Logistic with asymptote, 8: Bicubic spline. Further details in model_selectivity.R |
 | fish_sel_bicubic_binnodes, fish_sel_bicubic_yrnodes | Arrays dimensioned by n_regions, n_years, n_fish_fleets giving the number of bin/year spline nodes where fish_sel_model == 8; 0 elsewhere |
 | fish_sel_bicubic_selstyr, fish_sel_bicubic_nselbins | Arrays dimensioned by n_regions, n_years, n_fish_fleets giving the optional fitted-region restrictions (start year, number of bins) for bicubic blocks; 0 means unrestricted |
 | fish_sel_bicubic_Wbin, fish_sel_bicubic_Wyr | Precomputed natural-cubic-spline interpolation weight matrices mapping bin-node/year-node values onto every bin/year, for bicubic blocks |
@@ -296,9 +296,9 @@ Region-aggregated observations (summed across populations) and population-specif
 
 | Name | Description |
 |-------------------------|------------------------------------------------------|
-| cont_tv_srv_sel | Matrix dimensioned by n_regions, n_srv_fleets specifying whether and how continuous time-varying selectivity is applied. 0: None, 1: iid deviations, 2: random walk, 3: 3D GMRF with marginal variance (semi-parametric), 4: 3D GMRF with conditional variance (semi-parametric). Further details in Get_PE_loglik.R, Get_3d_precision.R, and Get_Selex.R |
+| cont_tv_srv_sel | Matrix dimensioned by n_regions, n_srv_fleets specifying whether and how continuous time-varying selectivity is applied. 0: None, 1: iid deviations, 2: random walk, 3: 3D GMRF with marginal variance (semi-parametric), 4: 3D GMRF with conditional variance (semi-parametric). Further details in model_priors_penalties.R, model_precision.R, and model_selectivity.R |
 | srv_sel_blocks | Array dimensioned by n_regions, n_years, n_srv_fleets specifying selectivity time blocks. Unique integers denote distinct selectivity parameter blocks |
-| srv_sel_model | Array dimensioned by n_regions, n_years, n_srv_fleets specifying the selectivity functional form. Same options as fish_sel_model, including bicubic (8). Further details in Get_Selex.R |
+| srv_sel_model | Array dimensioned by n_regions, n_years, n_srv_fleets specifying the selectivity functional form. Same options as fish_sel_model, including bicubic (8). Further details in model_selectivity.R |
 | srv_sel_bicubic_binnodes, srv_sel_bicubic_yrnodes, srv_sel_bicubic_selstyr, srv_sel_bicubic_nselbins, srv_sel_bicubic_Wbin, srv_sel_bicubic_Wyr | Same meaning as their fish_sel_bicubic_* counterparts, for survey selectivity |
 | srv_selex_type | Integer specifying whether survey selectivity is age-based (0) or length-based (1) |
 | use_fixed_srv_sel | Integer specifying whether survey selectivity is fixed externally (1) or estimated (0) |

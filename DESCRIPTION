@@ -41,7 +41,8 @@ Imports:
     stats,
     stringr,
     tidyr,
-    TMB
+    TMB,
+    utils
 Suggests: 
     igraph,
     knitr,

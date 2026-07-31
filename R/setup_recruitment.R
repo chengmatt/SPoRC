@@ -1282,9 +1282,45 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   n_regions x (n_ages - 1)]}. Default \code{NULL} (estimate all
 #'   independently). See \code{\link{do_InitDevs_mapping}} for full option
 #'   descriptions.
-#' @param init_F_prop Numeric array \code{[n_regions x n_seas x n_fish_fleets]}. Seasonal distribution of
-#'   fishing mortality applied during equilibrium initialisation by fleet. Default:
-#'   zero for all seasons and fleets.
+#' @param init_F_prop Numeric array \code{[n_regions x n_seas x n_fish_fleets]}.
+#'   \strong{Legacy interface, retained for backwards compatibility.} A fixed
+#'   proportion of the estimated mean F applied during equilibrium initialisation.
+#'   When supplied non-zero (and \code{init_F_par} is not given) it is converted to
+#'   \code{ln_init_F = log(init_F_prop)} with \code{init_F_form = "prop"}, which
+#'   reproduces the previous behaviour exactly. Prefer \code{init_F_par}.
+#'   Default: zero for all seasons and fleets.
+#' @param init_F_form Character. What the \code{init_F_par} parameter MEANS:
+#'   \itemize{
+#'     \item \code{"prop"} (default): \code{init_F = exp(ln_init_F) * exp(ln_F_mean)},
+#'       a proportion of the estimated mean F, so the initial age structure moves
+#'       with it.
+#'     \item \code{"abs"}: \code{init_F = exp(ln_init_F)}, an absolute fishing
+#'       mortality independent of \code{ln_F_mean}.
+#'   }
+#'
+#'   Use \code{"abs"} when bridging an assessment that carries a separate
+#'   historical F (for example the AFSC ADMB rockfish \code{historic_F}, which is
+#'   distinct from \code{log_avg_fmort} and has its own estimation phase). Under
+#'   \code{"prop"} those two quantities collapse into a single parameter, and
+#'   because catch constrains only the PRODUCT of numbers and fishing mortality,
+#'   the optimizer can raise \code{ln_F_mean} to deplete the initial age structure
+#'   and raise F together, fitting catch just as well with a smaller,
+#'   harder-fished stock. That is a genuine second solution branch, not a rounding
+#'   difference.
+#' @param init_F_spec Character, \code{"fix"} (default) or \code{"est"}. Whether
+#'   \code{init_F_par} is estimated. This sets only the mapping, so it combines
+#'   freely with \code{init_F_form} -- including estimating the proportion itself
+#'   (\code{init_F_form = "prop"}, \code{init_F_spec = "est"}). Note \code{init_F}
+#'   is generally weakly identified, which is why assessments commonly fix it.
+#'
+#'   The value is carried by the parameter \code{init_F_par}
+#'   \code{[n_regions x n_seas x n_fish_fleets]}, supplied through \code{...} like
+#'   any other starting value, e.g.
+#'   \code{Setup_Mod_Rec(..., init_F_form = "abs", init_F_spec = "fix", init_F_par = array(log(0.01), dim = c(1, 1, 1)))}.
+#'   Its SCALE depends on \code{init_F_form} -- logit under \code{"prop"} (so the
+#'   proportion is bounded to (0, 1)) and log under \code{"abs"} -- which is why it
+#'   is not named \code{ln_} or \code{logit_}. Defaults to effectively no initial
+#'   fishing mortality.
 #'
 #' @param rec_region_prop_spec Character or \code{NULL}. Regional recruitment
 #'   dispersal structure. Default \code{NULL} (estimate all proportions
@@ -1500,6 +1536,8 @@ Setup_Mod_Rec <- function(input_list,
                           init_age_strc = 2,
                           equil_init_age_strc = 1,
                           init_F_prop = array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets)),
+                          init_F_form = "prop",
+                          init_F_spec = "fix",
                           sigmaR_spec = "est_all",
                           InitDevs_spec = NULL,
                           RecDevs_spec = NULL,
@@ -1533,6 +1571,33 @@ Setup_Mod_Rec <- function(input_list,
   # Convert character inputs to numeric codes for init_age_strc and equil_init_age_strc
   init_age_strc <- convert_to_numeric(init_age_strc, list(iterative = 0, scalar_no_move = 1, matrix = 2, scalar_plus_only = 3))
   equil_init_age_strc <- convert_to_numeric(equil_init_age_strc, list(equil = 0, stoch_no_plus = 1, stoch_all = 2, stoch_shared_ages = 3))
+
+  # Setting up the initial fishing mortality ----------------------------------------
+  if(!(length(init_F_form) == 1 && init_F_form %in% c("prop", "abs"))) stop("init_F_form must be 'prop' (a proportion of the mean F) or 'abs' (an absolute F), but was: ", paste(init_F_form, collapse = ", "))
+  if(!(length(init_F_spec) == 1 && init_F_spec %in% c("fix", "est"))) stop("init_F_spec must be 'fix' or 'est', but was: ", paste(init_F_spec, collapse = ", "))
+
+  init_F_form_num <- convert_to_numeric(init_F_form, list(prop = 0, abs = 1))
+  init_F_est      <- convert_to_numeric(init_F_spec, list(fix = 0, est = 1))
+  init_F_dim <- c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets)
+  init_F_off <- if(init_F_form_num == 0) stats::qlogis(1e-10) else log(1e-100)
+
+  if("init_F_par" %in% names(starting_values)) {
+    input_list$par$init_F_par <- array(starting_values$init_F_par, dim = init_F_dim)
+  } else if(!all(init_F_prop == 0)) {
+    # For backwards compatibility, because init_F_prop was a data array of proportions of mean F.
+    if(!all(dim(init_F_prop) == init_F_dim)) stop("init_F_prop must have dimensions [n_regions, n_seas, n_fish_fleets] = [", paste(init_F_dim, collapse = ", "), "]")
+    if(any(init_F_prop < 0)) stop("init_F_prop cannot be negative")
+    if(init_F_form_num != 0) stop("init_F_prop is a proportion of the mean F, so it requires init_F_form = 'prop'. Supply init_F_par instead to specify an absolute initialisation F.")
+    if(any(init_F_prop >= 1)) stop("init_F_prop must be < 1: it is now transformed with plogis, which bounds the proportion to (0, 1). Use init_F_form = 'abs' if the initialisation F should exceed the mean F.")
+    input_list$par$init_F_par <- array(stats::qlogis(pmax(init_F_prop, 1e-10)), dim = init_F_dim)
+  } else {
+    input_list$par$init_F_par <- array(init_F_off, dim = init_F_dim)
+    if(init_F_est == 1) stop("init_F_spec = 'est' but no starting value was given; supply init_F_par (estimating from an effectively-zero start is degenerate)")
+  }
+  input_list$map$init_F_par <- factor(if(init_F_est == 1) seq_len(prod(init_F_dim)) else rep(NA_integer_, prod(init_F_dim)))
+
+  collect_message("Initialisation F is ", ifelse(init_F_est == 1, "estimated", "fixed"), " as ",
+                  ifelse(init_F_form_num == 0, "a proportion of the mean F (moves with ln_F_mean)", "an absolute F (independent of ln_F_mean)"), ".")
 
   # Recruitment Model Type and Options --------------------------------------
 
@@ -1757,6 +1822,7 @@ Setup_Mod_Rec <- function(input_list,
   input_list$data$sigmaR_switch <- sigmaR_switch
   input_list$data$init_age_strc <- init_age_strc
   input_list$data$init_F_prop <- init_F_prop
+  input_list$data$init_F_form <- init_F_form_num
   input_list$data$t_spawn <- t_spawn
   input_list$data$equil_init_age_strc <- equil_init_age_strc
   input_list$data$max_bias_ramp_fct <- max_bias_ramp_fct

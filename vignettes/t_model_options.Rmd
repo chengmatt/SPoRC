@@ -127,7 +127,7 @@ When `use_rinit = 1`, the regional recruitment scalar feeding the equilibrium ca
 | 2 | `"stoch_all"` | All ages including the plus group |
 | 3 | `"stoch_shared_ages"` | User-defined age sharing via `init_age_devs_shared` |
 
-`init_F_prop` (array `[n_regions × n_seas × n_fish_fleets]`) optionally introduces fishing mortality into the equilibrium calculation, producing a fished initial condition.
+`init_F_par` (array `[n_regions × n_seas × n_fish_fleets]`) optionally introduces fishing mortality into the equilibrium calculation, producing a fished initial condition. `init_F_form` sets what it means: `"prop"` treats it as a proportion of the mean fishing mortality (inverse-logit scale, bounded to (0,1)), so the initial age structure moves with mean F; `"abs"` treats it as an absolute rate (log scale) that is independent of mean F. `init_F_spec` (`"fix"` or `"est"`) sets whether it is estimated, independently of the form. Prefer `"abs"` when the historical fishing mortality that shaped the initial condition is distinct from the mean F of the modelled period; under `"prop"` one parameter both depletes the initial age structure and scales the F series, and because catch constrains only their product the optimizer can fit catch equally well with a smaller, harder-fished stock. The older `init_F_prop` argument is still accepted and is converted to the `"prop"` form.
 
 ---
 

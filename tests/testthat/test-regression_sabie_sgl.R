@@ -31,8 +31,10 @@ test_that("Single-region Sablefish RTMB model produces expected results", {
                               InitDevs_spec = NULL, # estimate all initial deviations
                               RecDevs_spec = NULL, # stiamte all recruitment deivations
                               init_age_strc = 1,
-                              init_F_prop = 0.1
-  )
+                              init_F_form = "prop", # init F is a proportion of mean F
+                              init_F_spec = "fix", # and is held fixed
+                              init_F_par = array(stats::qlogis(0.1), dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets)) # 10% of mean F, on the logit scale
+                              )
 
   # Specificying natural mortality fixed array
   fixed_natmort <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), length(input_list$data$ages), input_list$data$n_sexes))

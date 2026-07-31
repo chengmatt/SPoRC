@@ -58,6 +58,42 @@
 # and seasonality dynamics)
 # Incorporated functionality to allow movement to be a continuous process, in addition to movement after mortality
 
+#' Fill in defaults for input lists built by older versions of SPoRC
+#'
+#' Assigns any data or parameter objects that a current \code{SPoRC_rtmb} call
+#' expects but that older input lists predate, so previously built objects keep
+#' evaluating unchanged. Values are written into \code{env} only when absent and
+#' are never overwritten.
+#'
+#' @param env Environment holding the unpacked data and parameters, i.e. the
+#'   \code{SPoRC_rtmb} frame after \code{RTMB::getAll}. Defaults to the caller.
+#'
+#' @return \code{NULL}, invisibly. Called for its side effects on \code{env}.
+#'
+#' @keywords internal
+maintain_backwards_compatibility <- function(env = parent.frame()) {
+
+  has <- function(x) exists(x, envir = env, inherits = FALSE)
+  set <- function(x, value) assign(x, value, envir = env)
+
+  # Movement timing options.
+  if(!has("move_timing")) set("move_timing", 0)
+  if(!has("ctmc_scale_by_seasdur")) set("ctmc_scale_by_seasdur", 0)
+
+  # Initialization of F. Older input lists carried init_F_prop, a fixed proportion of
+  # the mean F held as data; it is now the init_F_par parameter plus init_F_form,
+  # so a stored proportion maps onto the logit scale of the "prop" form.
+  if(!has("init_F_form")) set("init_F_form", 0)
+  if(!has("init_F_par")) {
+    init_F_dim <- c(get("n_regions", envir = env), get("n_seas", envir = env), get("n_fish_fleets", envir = env))
+    init_F_prop <- if(has("init_F_prop")) get("init_F_prop", envir = env) else array(0, dim = init_F_dim)
+    set("init_F_par", array(stats::qlogis(pmin(pmax(init_F_prop, 1e-10), 1 - 1e-10)), dim = init_F_dim))
+  }
+
+  invisible(NULL)
+}
+
+
 #' Generalized RTMB spatial age-structured model
 #'
 #' @param pars Parameter List
@@ -71,9 +107,7 @@ SPoRC_rtmb = function(pars, data) {
 
   RTMB::getAll(pars, data, warn = FALSE) # load in starting values and data
 
-  # Backwards-compatibility for input lists built before movement timing options existed.
-  if(!exists("move_timing", inherits = FALSE)) move_timing <- 0
-  if(!exists("ctmc_scale_by_seasdur", inherits = FALSE)) ctmc_scale_by_seasdur <- 0
+  maintain_backwards_compatibility() # defaults for input lists built by older SPoRC versions
 
   # Model Set Up (Containers) -----------------------------------------------
   n_ages = length(ages) # number of ages
@@ -626,7 +660,13 @@ SPoRC_rtmb = function(pars, data) {
   catch_flag_base = array(UseCatch[,1,,], dim = c(n_regions, n_seas, n_fish_fleets))
   catch_flag_pop = apply(UseCatch_pop[,,1,,,drop = FALSE], c(2,4,5), max)
   catch_flag = pmax(catch_flag_base, catch_flag_pop)
-  init_F = init_F_prop * exp(ln_F_mean) * catch_flag
+
+  # Set up how initial F is determined; == 0 use proportion of ln_F_mean, otherwise, use absolute value
+  init_F = array(0, dim = c(n_regions, n_seas, n_fish_fleets))
+  for(r in 1:n_regions) for(seas in 1:n_seas) for(f in 1:n_fish_fleets) {
+    init_F[r,seas,f] = if(init_F_form == 0) RTMB::plogis(init_F_par[r,seas,f]) * exp(ln_F_mean[r,seas,f]) else exp(init_F_par[r,seas,f])
+  }
+  init_F = init_F * catch_flag
 
   # Get initial fished NAA
   Init_Fished_NAA = Get_Init_NAA(

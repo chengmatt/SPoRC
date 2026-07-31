@@ -16,6 +16,10 @@
 - Incorporated additional movement ordering options including: movement after mortality and continuous movement dynamics. 
 
 ## Minor changes
+- Initialization fishing mortality is now its own parameter, `init_F_par` (`[n_regions x n_seas x n_fish_fleets]`), with two switches in `Setup_Mod_Rec`: `init_F_form` (`"prop"` = a proportion of the mean F via inverse-logit, bounded (0,1), so the initial age structure moves with mean F; `"abs"` = an absolute rate on the log scale, independent of mean F) and `init_F_spec` (`"fix"`/`"est"`, which sets only the mapping, so all four combinations are available). Previously `init_F_prop` held a fixed proportion as *data*, which meant the initialization F and the mean F were a single parameter; because catch constrains only the product of numbers-at-age and fishing mortality, that let the optimizer deplete the initial age structure and scale the F series together, fitting catch equally well with a smaller, harder-fished stock. `init_F_prop` is still accepted and is converted to the `"prop"` form, so existing calls are unaffected.
+- Added `backwards_compatibility_guard()`, which fills in data and parameters that current `SPoRC_rtmb` calls expect but older input lists predate, so previously built objects keep evaluating unchanged. 
+
+
 - Changed parameter names of ln_srv_fixed_sel_pars and ln_fish_fixed_sel_pars to srv_fixed_sel_pars and fish_fixed_sel_pars for clarity.
 - Included new options to estimate non-parametric selectivity, bicubic selectivity, logistic selectivity with an asymptote parameter, as well as provide fixed selectivity (fishery, retention, and survey) inputs. 
 - Changed dimensions of init_F_prop to be region, season, and fleet-specific (as opposed to just being based on the first fishery fleet).

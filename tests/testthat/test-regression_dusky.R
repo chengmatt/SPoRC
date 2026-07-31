@@ -292,8 +292,8 @@ test_that("Dusky RTMB model produces expected results", {
   )
 
   # Testing to see if we obtian same values back
-  expect_equal(dusky_rtmb_model$rep$SSB[1,1,], ssb_expected_vec, tolerance = 1e-2)
-  expect_equal(dusky_rtmb_model$rep$Rec[1,1,], rec_expected_vec, tolerance = 1e-2)
+  expect_equal(dusky_rtmb_model$rep$SSB[1,1,], ssb_expected_vec, tolerance = 1e-5)
+  expect_equal(dusky_rtmb_model$rep$Rec[1,1,], rec_expected_vec, tolerance = 1e-5)
   expect_true(dusky_rtmb_model$sdrep$pdHess)
 
 })

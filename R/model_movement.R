@@ -190,7 +190,14 @@ Get_Movement <- function(move_type,
 
   move_pen = 0 # initialize movement penalty if used
   Mrate = NULL # initialize for non-CTMC cases
-  dims = list(pop = 1:n_pop, from = 1:n_regions, to = 1:n_regions, years = 1:(n_yrs + n_proj_yrs_devs), seas = 1:n_seas, ages = 1:n_ages, sexes = 1:n_sexes)
+
+  dims = list(pop = 1:n_pop,
+              from = 1:n_regions,
+              to = 1:n_regions,
+              years = 1:(n_yrs + n_proj_yrs_devs),
+              seas = 1:n_seas,
+              ages = 1:n_ages,
+              sexes = 1:n_sexes)
 
   # use fixed movement matrix
   if(use_fixed_movement == 1) {
@@ -199,32 +206,31 @@ Get_Movement <- function(move_type,
 
     Movement = array(0, dim = sapply(dims, length), dimnames = dims)
     ref_region = 1 # Set up reference region (always set at 0)
+    n_move_yrs = n_yrs + n_proj_yrs_devs
 
     for(p in 1:n_pop) {
       for(r in 1:n_regions) {
-        for(y in 1:(n_yrs + n_proj_yrs_devs)) {
+        for(y in 1:n_move_yrs) {
+
+          ypar = min(y, n_yrs) # projection years reuse the terminal year's parameters
+
+          # movement out of this origin region in this year (container)
+          move_pry = array(0, dim = c(n_regions, n_seas, n_ages, n_sexes))
+
           for(seas in 1:n_seas) {
             for(a in 1:n_ages) {
               for(s in 1:n_sexes) {
 
-                move_tmp = rep(0, n_regions) # temporary movement vector to store values
-                counter = 1  # counter
-
-                for(rr in 1:n_regions) {
-                  if(rr != ref_region) {
-                    # extract movement parameters
-                    if(y <= n_yrs) tmp_move_pars = move_pars[p,r,counter,y,seas,a,s]
-                    else tmp_move_pars = move_pars[p,r,counter,n_yrs,seas,a,s]
-                    move_tmp[rr] = tmp_move_pars + move_devs[p,r,counter,y,seas,a,s]
-                    counter = counter + 1
-                  } # end if not reference region
-                } # end rr loop
-
-                Movement[p,r,,y,seas,a,s] = exp(move_tmp) / sum(exp(move_tmp)) # multinomial logit transform estimated movement
+                # the reference region (1) sits at 0 and the remaining regions follow it
+                move_tmp = c(0, move_pars[p,r,,ypar,seas,a,s] + move_devs[p,r,,y,seas,a,s])
+                move_pry[,seas,a,s] = exp(move_tmp) / sum(exp(move_tmp)) # multinomial logit transform estimated movement
 
               } # end s loop
             } # end a loop
           } # end seas loop
+
+          Movement[p,r,,y,,,] = move_pry
+
         } # end y loop
       } # end r loop
     } # end p loop
@@ -232,9 +238,16 @@ Get_Movement <- function(move_type,
   } else if(move_type == 1) { # continuous markov chain movement with projection support
 
     # set up dimensions of movement matrix
-    Mrate = Movement = Taxis = Diffusion = array(0, dim = sapply(dims, length),  dimnames = dims)
+    Mrate = Movement = array(0, dim = sapply(dims, length),  dimnames = dims)
     loop = expand.grid(dims[-(2:3)]) # get pop, year, age, and sexes to loop through
     if(do_recruits_move == 0) loop = loop[-which(loop$ages == 1),] # remove age 1, if recruits don't move
+
+    # ctmc_move_dat holds one row per pop, region, year, season, age and sex, so its
+    # rows can be found by position. The year axis is sized to whatever the covariates
+    # carry, since ctmc_move_dat is allowed to hold projection year rows
+    ctmc_key = sapply(c('pop','regions','years','seas','ages','sexes'), function(v) as.integer(ctmc_move_dat[,v])) # convert ctmc dataframe to matrix
+    ctmc_row = array(NA_integer_, dim = pmax(c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes), apply(ctmc_key, 2, max))) # pmax to get projection year if there are any
+    ctmc_row[ctmc_key] = seq_len(nrow(ctmc_move_dat))
 
     # setup design matrix
     design_mat = get_movement_dp_design_matrix(ctmc_move_dat, preference_formula, diffusion_formula)
@@ -256,40 +269,28 @@ Get_Movement <- function(move_type,
     # Make instantaneous diffusion rate matrix
     for( index in seq_len(nrow(loop)) ){
 
-      # get pop, year, age, and sex specific indices for a given stratum combination
-      which_rows = expand.grid(loop[index,"pop"], 1:n_regions, loop[index,"years"], loop[index,'seas'], loop[index,"ages"], loop[index,"sexes"] )
-      which_rows$index = NA
-      colnames(which_rows) = c("pop", "regions", "years", "seas", "ages", "sexes", "index" )
-
-      # Cap year spline look up parameters at n_yrs
-      y_lookup = min(loop[index,"years"], n_yrs)
-
-      # Match the current stratum (region, year, seas, age, sex) to rows in ctmc_move_dat
-      for( i2 in seq_len(nrow(which_rows)) ){
-        which_rows$index[i2] = which((which_rows[i2,'pop'] == ctmc_move_dat[,'pop']) &
-                                      (which_rows[i2,'regions'] == ctmc_move_dat[,'regions']) &
-                                       y_lookup == ctmc_move_dat[,"years"] &
-                                       (which_rows[i2,'seas'] == ctmc_move_dat[,'seas']) &
-                                       (which_rows[i2,'ages'] == ctmc_move_dat[,'ages']) &
-                                       (which_rows[i2,'sexes'] == ctmc_move_dat[,'sexes']) )
-      }
-
-      # preference for each strata, year, age, sex combination
-      pref_s = gamma_z[which_rows$index] # get corresponding gammas
-      Z_ss = adjacency_mat * outer( pref_s, pref_s, FUN = "-" )
-
-      # base diffusion parameters for this stratum
-      theta_base = theta_z[which_rows$index]
-
-      # create base diffusion matrix (w/ corresponding thetas)
-      D_ss = adjacency_mat %*% diag(theta_base, n_regions)
-
-      # Add origin-destination deviations (always uses actual year, not y_lookup)
+      # stratum indices. Deviations always use the actual year
       pop_idx = loop$pop[index]
       y_idx = loop$years[index]
       seas_idx = loop$seas[index]
       a_idx = loop$ages[index]
       s_idx = loop$sexes[index]
+
+      # Cap year spline look up parameters at n_yrs
+      y_lookup = min(y_idx, n_yrs)
+
+      # rows of ctmc_move_dat holding this stratum, one per region in region order
+      which_index = ctmc_row[cbind(pop_idx, 1:n_regions, y_lookup, seas_idx, a_idx, s_idx)]
+
+      # preference for each strata, year, age, sex combination
+      pref_s = gamma_z[which_index] # get corresponding gammas
+      Z_ss = adjacency_mat * outer( pref_s, pref_s, FUN = "-" )
+
+      # base diffusion parameters for this stratum
+      theta_base = theta_z[which_index]
+
+      # create base diffusion matrix (w/ corresponding thetas)
+      D_ss = adjacency_mat %*% diag(theta_base, n_regions)
 
       # Note: move_devs is indexed as [origin_region, counter, year, seas, age, sex]
       # where counter goes through non-diagonal destinations for that origin
@@ -329,8 +330,6 @@ Get_Movement <- function(move_type,
 
       # populate matrices
       Movement[pop_idx,,,y_idx,seas_idx,a_idx,s_idx] = t(as.matrix(M_ss))
-      Taxis[pop_idx,,,y_idx,seas_idx,a_idx,s_idx] = t(as.matrix(Z_ss))
-      Diffusion[pop_idx,,,y_idx,seas_idx,a_idx,s_idx] = t(as.matrix(D_ss))
       Mrate[pop_idx,,,y_idx,seas_idx,a_idx,s_idx] = t(as.matrix(Q_ss))
 
       # return penalty (Lagrange multiplier)

@@ -5,6 +5,74 @@
 # release_conv_tag_attr spreads releases that were recorded at coarser
 # resolution than the population arrays out to full dimensions.
 
+#' Fishing and natural mortality by tagged fish in one year and season
+#'
+#' Builds the mortality-at-age components a tag cohort experiences over a single
+#' season. These depend only on the year and season, not on which cohort is at
+#' liberty, so both \code{\link{get_tagging_observation_model}} and the
+#' simulation's \code{generate_fishery_conv_tags_recap} work them out once per
+#' year and season and read them back for every cohort.
+#'
+#' Only fleets flagged in \code{use_conv_fish_tagging} contribute; the others are
+#' left at zero, since tags are only ever returned by fleets that report them.
+#'
+#' \code{Z_before_shed} excludes tag shedding, which is a property of the release
+#' cohort rather than of the year and season. Callers add
+#' \code{exp(ln_conv_tag_shed[tc]) * seasdur[rseas]} to it.
+#'
+#' Every array argument is expected without a trailing simulation dimension, so
+#' the operating model slices by \code{sim} before calling.
+#'
+#' @param y Integer year index.
+#' @param rseas Integer season index.
+#' @param n_pop,n_regions,n_ages,n_sexes,n_fish_fleets Dimension sizes.
+#' @param use_conv_fish_tagging Integer vector \code{[fish_fleet]} (0/1)
+#'   flagging fleets with tagging data.
+#' @param Fmort Array \code{[region, year, season, fish_fleet]} of fishing
+#'   mortality.
+#' @param fish_sel,ret_sel Arrays \code{[pop, region, year, season, age, sex,
+#'   fish_fleet]} of total/retained fishery selectivity.
+#' @param dmr Array \code{[region, year, season, fish_fleet]} of discard
+#'   mortality rate.
+#' @param natmort Array \code{[pop, region, year, age, sex]} of natural
+#'   mortality at age.
+#' @param seasdur Numeric vector \code{[season]} of season duration (fraction
+#'   of year).
+#'
+#' @return List with elements \code{FAA}, \code{ret_FAA}, \code{disc_DAA}, each
+#'   \code{[pop, region, 1, age, sex, fish_fleet]}, and \code{Z_before_shed},
+#'   \code{[pop, region, 1, age, sex]}.
+#'
+#' @keywords internal
+#' @import RTMB
+get_tag_mort <- function(y, rseas, n_pop, n_regions, n_ages, n_sexes, n_fish_fleets,
+                         use_conv_fish_tagging, Fmort, fish_sel, ret_sel, dmr, natmort, seasdur) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  # get fishing mortality
+  tmp_FAA <- array(0, dim = c(n_pop, n_regions, 1, n_ages, n_sexes, n_fish_fleets))
+  tmp_ret_FAA <- array(0, dim = c(n_pop, n_regions, 1, n_ages, n_sexes, n_fish_fleets))
+  tmp_disc_DAA <- array(0, dim = c(n_pop, n_regions, 1, n_ages, n_sexes, n_fish_fleets))
+  for(p in 1:n_pop) for(f in 1:n_fish_fleets) {
+    if(use_conv_fish_tagging[f] == 1) {
+      tmp_ret_FAA[p,,1,,,f] <- Fmort[, y, rseas, f] * fish_sel[p,,y,rseas,,,f] * ret_sel[p,,y,rseas,,,f]  # Retained fishing mortality
+      tmp_disc_DAA[p,,1,,,f] <- Fmort[, y, rseas, f] * fish_sel[p,,y,rseas,,,f] * (1 - ret_sel[p,,y,rseas,,,f]) * dmr[,y,rseas,f] # Dead discard fishing mortality
+      tmp_FAA[p,,1,,,f] <- tmp_ret_FAA[p,,1,,,f] + tmp_disc_DAA[p,,1,,,f] # Total fishing mortality
+    } # end if
+  } # end p loop
+
+  # get natural mortality
+  tmp_natmort <- array(natmort[,,y,,], dim = c(n_pop, n_regions, 1, n_ages, n_sexes))
+
+  return(list(FAA = tmp_FAA,
+              ret_FAA = tmp_ret_FAA,
+              disc_DAA = tmp_disc_DAA,
+              Z_before_shed = (tmp_natmort * seasdur[rseas]) + apply(tmp_FAA, 1:5, sum)))
+}
+
+
 #' Tagging observation model
 #'
 #' Forward-simulates conventional tag cohort availability (release, movement,
@@ -96,31 +164,48 @@ get_tagging_observation_model <- function(n_fish_fleets, n_regions, n_conv_tag_c
     } # end r loop
   } # end f loop
 
+  # Mortality at a given year and season is the same for every cohort at liberty
+  # then, so it is worked out once per year and season and read back below.
+  tag_mort <- vector("list", n_yrs * n_seas)
+  for(tc in 1:n_conv_tag_cohorts) {
+    ty <- conv_tag_release_indicator[tc,2]
+    for(ry in 1:min(conv_tag_max_liberty, n_yrs - ty + 1)) {
+      y <- ty + ry - 1
+      for(rseas in 1:n_seas) {
+        idx <- (y - 1) * n_seas + rseas
+        if(is.null(tag_mort[[idx]]))
+          tag_mort[[idx]] <- get_tag_mort(y = y, rseas = rseas,
+                                          n_pop = n_pop, n_regions = n_regions, n_ages = n_ages,
+                                          n_sexes = n_sexes, n_fish_fleets = n_fish_fleets,
+                                          use_conv_fish_tagging = use_conv_fish_tagging,
+                                          Fmort = Fmort, fish_sel = fish_sel, ret_sel = ret_sel,
+                                          dmr = dmr, natmort = natmort, seasdur = seasdur)
+      } # end rseas loop
+    } # end ry loop
+  } # end tc loop
+
   for(tc in 1:n_conv_tag_cohorts) {
 
     tr <- conv_tag_release_indicator[tc,1] # extract tag release region
     ty <- conv_tag_release_indicator[tc,2] # extract tag release year
     tseas <- conv_tag_release_indicator[tc,3] # extract tag release season
 
+    # Cohort specific containers 
+    avail_tc <- array(0, dim = c(conv_tag_max_liberty + 1, n_seas, n_pop, n_regions, n_ages, n_sexes))
+    recap_tc <- array(0, dim = c(conv_tag_max_liberty, n_seas, n_pop, n_regions, n_ages, n_sexes, n_fish_fleets))
+
     for(ry in 1:min(conv_tag_max_liberty, n_yrs - ty + 1)) {   # years
       y <- ty + ry - 1 # get real year
       for(rseas in 1:n_seas) { # seasons
 
-        # get fishing mortality
-        tmp_FAA <- array(0, dim = c(n_pop, n_regions, 1, n_ages, n_sexes, n_fish_fleets))
-        tmp_ret_FAA <- array(0, dim = c(n_pop, n_regions, 1, n_ages, n_sexes, n_fish_fleets))
-        tmp_disc_DAA <- array(0, dim = c(n_pop, n_regions, 1, n_ages, n_sexes, n_fish_fleets))
-        for(p in 1:n_pop) for(f in 1:n_fish_fleets) {
-          if(use_conv_fish_tagging[f] == 1) {
-            tmp_ret_FAA[p,,1,,,f] <- Fmort[, y, rseas, f] * fish_sel[p,,y,rseas,,,f] * ret_sel[p,,y,rseas,,,f]  # Retained fishing mortality
-            tmp_disc_DAA[p,,1,,,f] <- Fmort[, y, rseas, f] * fish_sel[p,,y,rseas,,,f] * (1 - ret_sel[p,,y,rseas,,,f]) * dmr[,y,rseas,f] # Dead discard fishing mortality
-            tmp_FAA[p,,1,,,f] <- tmp_ret_FAA[p,,1,,,f] + tmp_disc_DAA[p,,1,,,f] # Total fishing mortality
-          } # end if
-        } # end p loop
+        # get fishing and natural mortality
+        mort <- tag_mort[[(y - 1) * n_seas + rseas]]
+        tmp_FAA <- mort$FAA
+        tmp_ret_FAA <- mort$ret_FAA
+        tmp_disc_DAA <- mort$disc_DAA
 
-        # get total mortality
-        tmp_natmort <- array(natmort[,,y,,], dim = c(n_pop, n_regions, 1, n_ages, n_sexes))
-        tmp_ZAA <- (tmp_natmort * seasdur[rseas]) + apply(tmp_FAA, 1:5, sum) + (exp(ln_conv_tag_shed[tc]) * seasdur[rseas])
+        # get total mortality, adding this cohort's shedding rate
+        tmp_ZAA <- mort$Z_before_shed + (exp(ln_conv_tag_shed[tc]) * seasdur[rseas])
 
         # Fraction of this season the tag cohort is actually at liberty for. Mid-season releases
         # only experience the remainder of the season.
@@ -152,7 +237,7 @@ get_tagging_observation_model <- function(n_fish_fleets, n_regions, n_conv_tag_c
                                                   n_ages, n_sexes)
 
           # Input tagged fish into available tags for recapture and adjust initial number of tagged fish for tag induced mortality (exponential mortality process)
-          conv_tag_fish_avail[1, rseas, tc, , tr, , ] <- array(tmp_tagged_fish * exp(-exp(ln_init_conv_tag_mort[tc])), dim = c(n_pop, n_ages, n_sexes))
+          avail_tc[1, rseas, , tr, , ] <- array(tmp_tagged_fish * exp(-exp(ln_init_conv_tag_mort[tc])), dim = c(n_pop, n_ages, n_sexes))
         }
 
         # get temporary survival value
@@ -177,14 +262,14 @@ get_tagging_observation_model <- function(n_fish_fleets, n_regions, n_conv_tag_c
             # Movement of tag cohorts
             if(do_recruits_move == 0) {
               for(a in 2:n_ages) for(s in 1:n_sexes) {
-                conv_tag_fish_avail[ry, rseas, tc, p, , a, s] <-
-                  t(conv_tag_fish_avail[ry, rseas, tc, p, , a, s]) %*%
+                avail_tc[ry, rseas, p, , a, s] <-
+                  t(avail_tc[ry, rseas, p, , a, s]) %*%
                   Movement[p, , , y, rseas, a, s]
               }
             } else { # if recruits move
               for(a in 1:n_ages) for(s in 1:n_sexes) {
-                conv_tag_fish_avail[ry, rseas, tc, p, , a, s] <-
-                  t(conv_tag_fish_avail[ry, rseas, tc, p, , a, s]) %*%
+                avail_tc[ry, rseas, p, , a, s] <-
+                  t(avail_tc[ry, rseas, p, , a, s]) %*%
                   Movement[p, , , y, rseas, a, s]
               } # end s loop
             } # end else
@@ -195,7 +280,7 @@ get_tagging_observation_model <- function(n_fish_fleets, n_regions, n_conv_tag_c
         # was applied above so this is plain survival; under timings 1 and 2 the transition
         # operator carries movement and mortality together over tag_dur.
         if(move_timing == 0 || n_regions == 1) {
-          tag_step <- array(conv_tag_fish_avail[ry, rseas, tc, , , , ] * tmp_SAA[,,1,,],
+          tag_step <- array(avail_tc[ry, rseas, , , , ] * tmp_SAA[,,1,,],
                             dim = c(n_pop, n_regions, n_ages, n_sexes))
         } else {
           tag_step <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
@@ -205,7 +290,7 @@ get_tagging_observation_model <- function(n_fish_fleets, n_regions, n_conv_tag_c
               for(s in 1:n_sexes) {
                 Mv <- if(moves) Movement[p,,,y,rseas,a,s] else diag(n_regions)
                 Qv <- if(moves) Mrate[p,,,y,rseas,a,s] else matrix(0, n_regions, n_regions)
-                tag_step[p,,a,s] <- advance_seas(conv_tag_fish_avail[ry,rseas,tc,p,,a,s], Mv,
+                tag_step[p,,a,s] <- advance_seas(avail_tc[ry,rseas,p,,a,s], Mv,
                                                  tmp_ZAA[p,,1,a,s], Qv, tag_dur, move_timing)
               } # end s loop
             } # end a loop
@@ -216,16 +301,16 @@ get_tagging_observation_model <- function(n_fish_fleets, n_regions, n_conv_tag_c
         if(rseas < n_seas) {
 
           # Season mortality within a given year, advance to next season same year/age
-          conv_tag_fish_avail[ry, rseas + 1, tc, , , , ] <- tag_step
+          avail_tc[ry, rseas + 1, , , , ] <- tag_step
 
         } else {
 
           # End of year mortality and age advancement (end of season)
-          conv_tag_fish_avail[ry + 1, 1, tc, , , 2:n_ages, ] <- tag_step[,,1:(n_ages - 1),]
+          avail_tc[ry + 1, 1, , , 2:n_ages, ] <- tag_step[,,1:(n_ages - 1),]
 
           # Accumulate plus group
-          conv_tag_fish_avail[ry + 1, 1, tc, , , n_ages, ] <-
-            conv_tag_fish_avail[ry + 1, 1, tc, , , n_ages, ] + tag_step[,,n_ages,]
+          avail_tc[ry + 1, 1, , , n_ages, ] <-
+            avail_tc[ry + 1, 1, , , n_ages, ] + tag_step[,,n_ages,]
         }
 
         # # Apply Baranov's to get predicted recaptures
@@ -242,28 +327,31 @@ get_tagging_observation_model <- function(n_fish_fleets, n_regions, n_conv_tag_c
                 moves <- tag_moves_seas && (do_recruits_move == 1 || a > 1)
                 for(s in 1:n_sexes) {
                   Qv <- if(moves) Mrate[p,,,y,rseas,a,s] else matrix(0, n_regions, n_regions)
-                  tag_int[,a,s] <- integrate_seas_abundance(conv_tag_fish_avail[ry,rseas,tc,p,,a,s],
+                  tag_int[,a,s] <- integrate_seas_abundance(avail_tc[ry,rseas,p,,a,s],
                                                             tmp_ZAA[p,,1,a,s], Qv, tag_dur)
                 } # end s loop
               } # end a loop
-              # array() guards against R dropping a length-1 sex (or age) dimension from the
-              # F slice, which would leave it non-conformable with the 3-d tag_int
               tmp_ret_FAA_slice <- array(tmp_ret_FAA[p,,1,,,f], dim = c(n_regions, n_ages, n_sexes))
-              pred_conv_tag_fish_recap[ry,rseas,tc,p,,,,f] <- conv_tag_fish_reporting[,y,f] *
+              recap_tc[ry,rseas,p,,,,f] <- conv_tag_fish_reporting[,y,f] *
                 tmp_ret_FAA_slice * tag_int
             } else {
-              pred_conv_tag_fish_recap[ry,rseas,tc,p,,,,f] <- conv_tag_fish_reporting[,y,f] *
+              recap_tc[ry,rseas,p,,,,f] <- conv_tag_fish_reporting[,y,f] *
                 (tmp_ret_FAA[p,,1,,,f] / tmp_ZAA[p,,1,,]) *
-                conv_tag_fish_avail[ry,rseas,tc,p,,,] *
+                avail_tc[ry,rseas,p,,,] *
                 (1 - tmp_SAA[p,,1,,])
             }
           } # end p loop
         } # end f loop
 
 
-      }
-    }
-  }
+      } # end rseas loop
+    } # end ry loop
+
+    # Store this cohort's tags and predicted recaptures
+    conv_tag_fish_avail[,,tc,,,,] <- avail_tc
+    pred_conv_tag_fish_recap[,,tc,,,,,] <- recap_tc
+
+  } # end tc loop
 
   return(list(conv_tag_fish_reporting = conv_tag_fish_reporting,
               conv_tag_fish_avail = conv_tag_fish_avail,

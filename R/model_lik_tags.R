@@ -70,6 +70,14 @@ get_conv_tag_likelihoods <- function(n_conv_tag_cohorts,
   if(zero_init) conv_fish_tag_nLL = RTMB::AD(as.vector(conv_fish_tag_nLL) * 0) else conv_fish_tag_nLL = RTMB::AD(as.vector(conv_fish_tag_nLL))
   dim(conv_fish_tag_nLL) = d
 
+  # recapture arrays are [liberty, season, cohort, pop, region, age, sex, fleet],
+  # so a single recovery event is the trailing five dimensions
+  d_recap = dim(pred_conv_tag_fish_recap)[4:8]
+
+  # number of pooled cells one event contributes, in (f, p, a, s, r) order to dimension vectors so they aren't 'growing'
+  n_active_f = sum(use_conv_fish_tagging[1:n_fish_fleets] == 1)
+  n_cells = n_active_f * n_conv_tag_pop_pool * n_conv_tag_age_pool * n_conv_tag_sex_pool * n_regions
+
   for(tc in 1:n_conv_tag_cohorts) {
 
     # set up tagging cohort indexing
@@ -88,47 +96,66 @@ get_conv_tag_likelihoods <- function(n_conv_tag_cohorts,
         # Skip if within mixing period (in seasonal units)
         if(total_seas_at_liberty < conv_tag_mixing_period) next
 
-        for(f in 1:n_fish_fleets) {
-          if(use_conv_fish_tagging[f] == 1) {
-            for(p in 1:n_conv_tag_pop_pool) {
+        # This event's recaptures. Every option below pools these same
+        # [pop, region, age, sex, fleet] numbers, so they are pulled out of the
+        # cohort-spanning arrays once here to reduce overhead
+        pred_ev = array(pred_conv_tag_fish_recap[ry,rseas,tc,,,,,], dim = d_recap)
+        obs_ev  = array(obs_conv_tag_fish_recap[ry,rseas,tc,,,,,], dim = d_recap)
+
+        # Poisson or Negative Binomial, one term per pooled cell
+        if(conv_fish_tag_like %in% c(0, 1)) {
+          for(f in 1:n_fish_fleets) {
+            if(use_conv_fish_tagging[f] == 1) {
               for(r in 1:n_regions) {
-                for(a in 1:n_conv_tag_age_pool) {
-                  for(s in 1:n_conv_tag_sex_pool) {
 
-                    pop_pool_idx = conv_tag_pop_pool[[p]] # extract movement pop pool indices
-                    age_pool_idx = conv_tag_age_pool[[a]] # extract movement age pool indices
-                    sex_pool_idx = conv_tag_sex_pool[[s]] # extract movement sex pool indices
+                # every pool contributes a term to this region and fleet
+                tmp_nLL = conv_fish_tag_nLL[ry,rseas,tc,r,f]
 
-                    # Poisson likelihood
-                    if(conv_fish_tag_like == 0) {
-                      conv_fish_tag_nLL[ry,rseas,tc,r,f] = conv_fish_tag_nLL[ry,rseas,tc,r,f]  +
-                        -dpois_noint(sum(obs_conv_tag_fish_recap[ry,rseas,tc,pop_pool_idx,r,age_pool_idx,sex_pool_idx,f] + addtotag),
-                                     sum(pred_conv_tag_fish_recap[ry,rseas,tc,pop_pool_idx,r,age_pool_idx,sex_pool_idx,f] + addtotag),
-                                     give_log = TRUE)
-                    } # end if poisson likelihood
+                for(p in 1:n_conv_tag_pop_pool) {
+                  for(a in 1:n_conv_tag_age_pool) {
+                    for(s in 1:n_conv_tag_sex_pool) {
 
-                    # Negative binomial likelihood
-                    if(conv_fish_tag_like == 1) {
-                      log_mu = log(sum(pred_conv_tag_fish_recap[ry,rseas,tc,pop_pool_idx,r,age_pool_idx,sex_pool_idx,f] + addtotag)) # log mu
-                      log_var_minus_mu = 2 * log_mu - ln_conv_fish_tag_theta # log var minus mu
-                      conv_fish_tag_nLL[ry,rseas,tc,r,f] = conv_fish_tag_nLL[ry,rseas,tc,r,f] +
-                        -dnbinom_robust_noint(x = sum(obs_conv_tag_fish_recap[ry,rseas,tc,pop_pool_idx,r,age_pool_idx,sex_pool_idx,f] + addtotag),
-                                              log_mu = log_mu, log_var_minus_mu = log_var_minus_mu, give_log = TRUE)
-                    } # end if for negative binomial likelihood
+                      pop_pool_idx = conv_tag_pop_pool[[p]] # extract movement pop pool indices
+                      age_pool_idx = conv_tag_age_pool[[a]] # extract movement age pool indices
+                      sex_pool_idx = conv_tag_sex_pool[[s]] # extract movement sex pool indices
 
-                  } # end s loop
-                } # end a loop
+                      # Poisson likelihood
+                      if(conv_fish_tag_like == 0) {
+                        tmp_nLL = tmp_nLL +
+                          -dpois_noint(sum(obs_ev[pop_pool_idx,r,age_pool_idx,sex_pool_idx,f] + addtotag),
+                                       sum(pred_ev[pop_pool_idx,r,age_pool_idx,sex_pool_idx,f] + addtotag),
+                                       give_log = TRUE)
+                      } # end if poisson likelihood
+
+                      # Negative binomial likelihood
+                      if(conv_fish_tag_like == 1) {
+                        log_mu = log(sum(pred_ev[pop_pool_idx,r,age_pool_idx,sex_pool_idx,f] + addtotag)) # log mu
+                        log_var_minus_mu = 2 * log_mu - ln_conv_fish_tag_theta # log var minus mu
+                        tmp_nLL = tmp_nLL +
+                          -dnbinom_robust_noint(x = sum(obs_ev[pop_pool_idx,r,age_pool_idx,sex_pool_idx,f] + addtotag),
+                                                log_mu = log_mu, log_var_minus_mu = log_var_minus_mu, give_log = TRUE)
+                      } # end if for negative binomial likelihood
+
+                    } # end s loop
+                  } # end a loop
+                } # end p loop
+
+                conv_fish_tag_nLL[ry,rseas,tc,r,f] = tmp_nLL
+
               } # end r loop
-            } # end p loop
-          } # end if
-        } # end f loop
+            } # end if
+          } # end f loop
+        } # end if count likelihood
 
         # # Release Conditioned for Multinomial or Dirichlet-Multinomial
         if(conv_fish_tag_like %in% c(2, 4)) {
 
-          # Temporary vectors for recaptured individuals
-          tmp_pred_c_all = vector()
-          tmp_obs_c_all = vector()
+          # Recaptured individuals, one cell per fleet, pool and region (containers).
+          # Predicted cells are gathered in a list and joined in one go, which is
+          # cheaper than writing them into a vector one at a time.
+          tmp_pred_cells = vector("list", n_cells)
+          tmp_obs_c_all = numeric(n_cells)
+          ci = 0 # counter
 
           # number of tags released for a given tag cohort
           tmp_n_tags_released = sum(conv_tagged_fish[tc,,,] + addtotag)
@@ -146,10 +173,9 @@ get_conv_tag_likelihoods <- function(n_conv_tag_cohorts,
 
                     # Pool observed and expected if any pooling
                     for (r in 1:n_regions) {
-                      pred_val = sum(pred_conv_tag_fish_recap[ry, rseas, tc, pop_pool_idx, r, age_pool_idx, sex_pool_idx, f] + addtotag)
-                      obs_val  = sum(obs_conv_tag_fish_recap[ry, rseas, tc, pop_pool_idx, r, age_pool_idx, sex_pool_idx, f] + addtotag)
-                      tmp_pred_c_all = c(tmp_pred_c_all, pred_val)
-                      tmp_obs_c_all  = c(tmp_obs_c_all,  obs_val)
+                      ci = ci + 1
+                      tmp_pred_cells[[ci]] = sum(pred_ev[pop_pool_idx, r, age_pool_idx, sex_pool_idx, f] + addtotag)
+                      tmp_obs_c_all[ci]    = sum(obs_ev[pop_pool_idx, r, age_pool_idx, sex_pool_idx, f] + addtotag)
                     }
 
                   } # end s loop
@@ -158,7 +184,7 @@ get_conv_tag_likelihoods <- function(n_conv_tag_cohorts,
             }
           }
 
-          tmp_pred_c_all = tmp_pred_c_all / tmp_n_tags_released
+          tmp_pred_c_all = do.call(c, tmp_pred_cells) / tmp_n_tags_released
           tmp_obs_c_all = tmp_obs_c_all / tmp_n_tags_released
 
           tmp_pred = c(tmp_pred_c_all, 1 - sum(tmp_pred_c_all))
@@ -178,10 +204,12 @@ get_conv_tag_likelihoods <- function(n_conv_tag_cohorts,
         # Recapture Conditioned (Multinomial or Dirichlet-Multinomial)
         if(conv_fish_tag_like %in% c(3,5)) {
 
-          tmp_pred_all = vector()
-          tmp_obs_all = vector()
+          # setup containers
+          tmp_pred_cells = vector("list", n_cells)
+          tmp_obs_all = numeric(n_cells)
+          ci = 0 # counter
 
-          tmp_n_tags_recap = sum(obs_conv_tag_fish_recap[ry,rseas,tc,,,,,] + addtotag)
+          tmp_n_tags_recap = sum(obs_ev + addtotag)
 
           for(f in 1:n_fish_fleets) {
             if(use_conv_fish_tagging[f] == 1) {
@@ -194,10 +222,9 @@ get_conv_tag_likelihoods <- function(n_conv_tag_cohorts,
                     sex_pool_idx = conv_tag_sex_pool[[s]]
 
                     for (r in 1:n_regions) {
-                      pred_val = sum(pred_conv_tag_fish_recap[ry, rseas, tc, pop_pool_idx, r, age_pool_idx, sex_pool_idx, f] + addtotag)
-                      obs_val  = sum(obs_conv_tag_fish_recap[ry, rseas, tc, pop_pool_idx, r, age_pool_idx, sex_pool_idx, f] + addtotag)
-                      tmp_pred_all = c(tmp_pred_all, pred_val)
-                      tmp_obs_all  = c(tmp_obs_all,  obs_val)
+                      ci = ci + 1
+                      tmp_pred_cells[[ci]] = sum(pred_ev[pop_pool_idx, r, age_pool_idx, sex_pool_idx, f] + addtotag)
+                      tmp_obs_all[ci]      = sum(obs_ev[pop_pool_idx, r, age_pool_idx, sex_pool_idx, f] + addtotag)
                     }
 
                   }
@@ -206,6 +233,7 @@ get_conv_tag_likelihoods <- function(n_conv_tag_cohorts,
             }
           }
 
+          tmp_pred_all = do.call(c, tmp_pred_cells)
           tmp_pred_all = tmp_pred_all / sum(tmp_pred_all)
           tmp_obs_all = tmp_obs_all / tmp_n_tags_recap
 
@@ -384,7 +412,7 @@ pack_tag_osa = function(family, like_type,
 
     if(family == "count") {
       # one cell per [f,p,r,a,s] -- must mirror get_conv_tag_likelihoods()'s
-      # exact accumulation structure: a SEPARATE Poisson/NB term is evaluated
+      # exact accumulation structure: a separate Poisson/NB term is evaluated
       # per (pool, age_pool, sex_pool, region, fleet) cell and their
       # -log-likelihoods summed. Packing one combined count per [r,f] (summed
       # across pools first, as this used to do) is a DIFFERENT likelihood --
@@ -415,11 +443,13 @@ pack_tag_osa = function(family, like_type,
       lengths = c(lengths, 0L)  # count has no per-group determined bin
 
     } else {
-      # composition (multinomial or dm): build recap-cell vector in fit-loop order (f,p,a,s,r). Preallocate to avoid growing from a NULL.
+
+      # composition (multinomial or dm): build recap-cell vector in fit-loop order (f,p,a,s,r). Preallocate to avoid 'growing'
       n_active_f = sum(use_fish_tagging[1:n_fish_fleets] == 1)
       n_cells = n_active_f * n_pop_pool * n_age_pool * n_sex_pool * n_regions
       obs_cells = numeric(n_cells)
-      ci = 0
+      ci = 0 # counter
+
       if(return_labels) cell_labels = vector("list", n_cells)
       for(f in 1:n_fish_fleets) {
         if(use_fish_tagging[f] != 1) next
@@ -443,7 +473,7 @@ pack_tag_osa = function(family, like_type,
         n_rel = sum(tagged_fish[tc,,,] + addtotag)
         prop  = obs_cells / n_rel
         tail  = 1 - sum(prop)
-        if(tail < 0) tail = 0                     # guard: rounding can push tail <0
+        if(tail < 0) tail = 0                     # guard to avoid rounding that pushes tail <0
         prop  = c(prop, tail)                     # non-recap tail (determined)
         prop  = prop / sum(prop)                  # renormalize after guard
         g_counts = round(prop * n_rel)
@@ -540,9 +570,16 @@ eval_tag_osa = function(nLL_arr, tracked, family, like_type,
   grid = tag_grid(n_conv_tag_cohorts, conv_tag_release_indicator,
                   conv_tag_max_liberty, n_yrs, n_seas, conv_tag_mixing_period)
 
+  # recapture arrays are [liberty, season, cohort, pop, region, age, sex, fleet],
+  # so a single recovery event is the trailing five dimensions
+  d_recap = dim(pred_recap)[4:8]
+
   k = 1
   for(g in 1:nrow(grid)) {
     tc = grid$tc[g]; ry = grid$ry[g]; rseas = grid$rseas[g]
+
+    # this event's predicted recaptures, pooled by both branches below
+    pred_ev = array(pred_recap[ry,rseas,tc,,,,,], dim = d_recap)
 
     if(family == "count") {
       # mirrors pack_tag_osa()'s [f,p,r,a,s] cell order -- one Poisson/NB
@@ -555,7 +592,7 @@ eval_tag_osa = function(nLL_arr, tracked, family, like_type,
           for(r in 1:n_regions) {
             for(a in 1:n_age_pool) {
               for(s in 1:n_sex_pool) {
-                mu = sum(pred_recap[ry, rseas, tc, pop_pool[[p]], r, age_pool[[a]], sex_pool[[s]], f] + addtotag)
+                mu = sum(pred_ev[pop_pool[[p]], r, age_pool[[a]], sex_pool[[s]], f] + addtotag)
                 if(like_type == 0) {          # Poisson
                   term = -RTMB::dpois(tracked[k], mu, log = TRUE)
                 } else {                      # NB (robust): var = mu + mu^2/theta -> size = exp(ln_theta)
@@ -572,22 +609,21 @@ eval_tag_osa = function(nLL_arr, tracked, family, like_type,
 
     } else {
       # composition: rebuild predicted proportions in the same order, then
-      # dmultinom_osa / ddirmult_osa.
-      # Preallocate an AD vector (don't grow from empty c() -- the ADoverloaded c()
-      # cannot advector() a NULL seed).
+      # dmultinom_osa / ddirmult_osa. build as a list rather than grow as a vec, to reduce overhead
       n_active_f = sum(use_fish_tagging[1:n_fish_fleets] == 1)
       n_cells = n_active_f * n_pop_pool * n_age_pool * n_sex_pool * n_regions
-      pred_cells = RTMB::AD(numeric(n_cells))
+      cells = vector("list", n_cells)
       ci = 0
       for(f in 1:n_fish_fleets) {
         if(use_fish_tagging[f] != 1) next
         for(p in 1:n_pop_pool) for(a in 1:n_age_pool) for(s in 1:n_sex_pool) {
           for(r in 1:n_regions) {
             ci = ci + 1
-            pred_cells[ci] = sum(pred_recap[ry, rseas, tc, pop_pool[[p]], r, age_pool[[a]], sex_pool[[s]], f] + addtotag)
+            cells[[ci]] = sum(pred_ev[pop_pool[[p]], r, age_pool[[a]], sex_pool[[s]], f] + addtotag)
           }
         }
       }
+      pred_cells = do.call(c, cells)
 
       # DM total N matches fitting: released (2,4) vs total recaptures (3,5).
       # Both taken from RAW data -- never sum(tracked[idx]) (S4 not summable).

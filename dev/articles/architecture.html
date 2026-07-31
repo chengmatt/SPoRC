@@ -399,12 +399,12 @@ through a season goes through that one file.</p>
 <code>do_comp_corr_pars_mapping</code>,
 <code>do_comp_theta_mapping</code>,
 <code>do_fixed_sel_pars_mapping</code>, <code>do_q_mapping</code>,
-<code>do_sel_devs_mapping</code>,
-<code>do_sel_pe_pars_mapping</code>
+<code>do_sel_devs_mapping</code>, <code>do_sel_pe_pars_mapping</code>,
+<code>sync_dev_map_data</code>
 </td>
 <td><code>utils_setup.R</code></td>
 <td>
-<code>setup_fishery_catch.R</code>,
+<code>model_fit.R</code>, <code>setup_fishery_catch.R</code>,
 <code>setup_fishery_comps.R</code>,
 <code>setup_fishery_selectivity.R</code>, <code>setup_movement.R</code>,
 <code>setup_recruitment.R</code>, <code>setup_survey.R</code>
@@ -535,7 +535,7 @@ through a season goes through that one file.</p>
 <td>
 <code>cmb</code>, <code>fit_model</code>
 </td>
-<td>nothing</td>
+<td><code>setup_mapping.R</code></td>
 <td>
 <code>diag_francis.R</code>, <code>diag_jitter.R</code>,
 <code>diag_likelihood_profile.R</code>,
@@ -732,7 +732,12 @@ through a season goes through that one file.</p>
 <tbody>
 <tr class="odd">
 <td><code>projection.R</code></td>
-<td><code>Do_Population_Projection</code></td>
+<td>
+<code>build_proj_F</code>, <code>Do_Population_Projection</code>,
+<code>proj_catch_at_F</code>, <code>proj_log_catch_resid</code>,
+<code>proj_target_catch</code>, <code>run_proj_year</code>,
+<code>solve_proj_F_catch</code>, <code>solve_proj_year_F</code>
+</td>
 <td>
 <code>model_biomass.R</code>, <code>model_recruitment.R</code>,
 <code>model_transition.R</code>, <code>sim_random_variates.R</code>
@@ -1134,13 +1139,13 @@ fixture happens to use.</p>
 <tbody>
 <tr class="odd">
 <td><code>test-setup_*</code></td>
-<td>7</td>
+<td>9</td>
 <td>Input building: the <code>map</code> factor builders and the
 <code>Setup_Mod_*</code> validation</td>
 </tr>
 <tr class="even">
 <td><code>test-model_*</code></td>
-<td>15</td>
+<td>20</td>
 <td>One objective function module each: selectivity, movement,
 transition, observation models, likelihoods, distributions</td>
 </tr>
@@ -1156,12 +1161,12 @@ transition, observation models, likelihoods, distributions</td>
 </tr>
 <tr class="odd">
 <td><code>test-refpts_*</code></td>
-<td>7</td>
+<td>8</td>
 <td>SPR and MSY solvers, one file per spatial structure</td>
 </tr>
 <tr class="even">
 <td><code>test-projection_*</code></td>
-<td>2</td>
+<td>3</td>
 <td>Forward projection off a fitted model</td>
 </tr>
 <tr class="odd">
@@ -1183,7 +1188,7 @@ for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 54 test files in total.</p>
+<p>That is 63 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

@@ -7,15 +7,7 @@ process error structure.
 ## Usage
 
 ``` r
-Get_Fdev_PE_loglik(
-  PE_model,
-  ln_sigmaF,
-  Fdev_rho,
-  ln_F_devs,
-  UseCatch,
-  UseCatch_pop,
-  missing_catch
-)
+Get_Fdev_PE_loglik(PE_model, ln_sigmaF, Fdev_rho, ln_F_devs, map_ln_F_devs)
 ```
 
 ## Arguments
@@ -44,21 +36,20 @@ Get_Fdev_PE_loglik(
   Array `[n_regions x n_years x n_seas x n_fish_fleets]` of log-scale
   fishing mortality deviations.
 
-- UseCatch, UseCatch_pop:
+- map_ln_F_devs:
 
-  Same binary catch-usage indicators as elsewhere; a cell is penalized
-  if aggregated catch or any population-specific catch is used.
-
-- missing_catch:
-
-  Logical array `[n_regions x n_years x n_seas x n_fish_fleets]`, `TRUE`
-  where the aggregate catch observation (`ObsCatch`) is missing (`NA`)
-  rather than a true recorded zero. A cell with `UseCatch == 0` (and no
-  population-specific catch used) is still penalized as an ordinary
-  active year when `missing_catch` is `TRUE` there (fishing presumably
-  continued, we simply lack a value to fit), as opposed to a true
-  recorded zero, which is treated as a real closure and excluded from
-  the gap count.
+  Array `[n_regions x n_years x n_seas x n_fish_fleets]` mirroring
+  `$map$ln_F_devs`: an estimation index where a deviation is estimated,
+  `NA` where it is fixed. Only estimated deviations are penalized, and
+  they alone form the active sequence, so a fixed cell is skipped and
+  widens the gap \\d\\ between the deviations either side of it.
+  [`do_Fmort_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_Fmort_mapping.md)
+  builds this from the catch-usage indicators, estimating a deviation
+  wherever aggregated or any population-specific catch is used, or where
+  the aggregate catch observation (`ObsCatch`) is missing (`NA`) rather
+  than a true recorded zero (fishing presumably continued, we simply
+  lack a value to fit), while a true recorded zero is a real closure and
+  is excluded.
 
 ## Value
 

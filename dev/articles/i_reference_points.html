@@ -509,26 +509,77 @@ parameters multiplied by the seasonal and sex-ratio factors:</p>
 and age
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">a = 1</annotation></semantics></math>,
 additional recruits are added proportional to
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>χ</mi><mrow><mi>p</mi><mo>,</mo><mi>τ</mi></mrow></msub><annotation encoding="application/x-tex">\chi_{p,\tau}</annotation></semantics></math>.
-Following the initialization of these quantities, seasonal movement
-dynamics are applied within each season before mortality:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi></mrow><mtext mathvariant="normal">fished</mtext></msubsup><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi></mrow><mtext mathvariant="normal">fished</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow></msub><mspace width="1.0em"></mspace><mrow><mtext mathvariant="normal">for </mtext><mspace width="0.333em"></mspace></mrow><mi>a</mi><mo>=</mo><msub><mi>a</mi><mi mathvariant="normal">min</mi></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>,</mo><mspace width="1.0em"></mspace><msub><mi>a</mi><mi mathvariant="normal">min</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><mn>1</mn></mtd><mtd columnalign="center" style="text-align: center"><mtext mathvariant="normal">if recruits move</mtext></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mn>2</mn></mtd><mtd columnalign="center" style="text-align: center"><mtext mathvariant="normal">otherwise</mtext></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable></mrow><mspace width="0.222em"></mspace></mrow><annotation encoding="application/x-tex">\mathbf{N}_{p,a}^{\text{fished}} = \left( \mathbf{N}_{p,a}^{\text{fished}} \right)^{\top}\mathbf{M}_{p,\tau,a,s = 1}\quad\text{for }a = a_{\min},\ldots,a_+,\quad a_{\min} = \left\{ \begin{matrix}
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>χ</mi><mrow><mi>p</mi><mo>,</mo><mi>τ</mi></mrow></msub><annotation encoding="application/x-tex">\chi_{p,\tau}</annotation></semantics></math>.</p>
+<p><strong>Seasonal transition operator.</strong> Movement and mortality
+are applied together over each season by a single operator, whose form
+depends on the movement timing
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>κ</mi><annotation encoding="application/x-tex">\kappa</annotation></semantics></math>
+(<code>move_timing</code>). Writing
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐙</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>τ</mi></mrow></msub><annotation encoding="application/x-tex">\mathbf{Z}_{p,a,\tau}</annotation></semantics></math>
+for the vector of total mortality over the season (retained and dead
+discard components as defined above),
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow></msub><annotation encoding="application/x-tex">\mathbf{M}_{p,\tau,a,s=1}</annotation></semantics></math>
+for the movement fractions and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐐</mi><mrow><mi>p</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow></msub><annotation encoding="application/x-tex">\mathbf{Q}_{p,\tau,a,s=1}</annotation></semantics></math>
+for the instantaneous rate matrix (generator), both stored as
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><mtext mathvariant="normal">from</mtext><mo>,</mo><mtext mathvariant="normal">to</mtext><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[\text{from},\text{to}]</annotation></semantics></math>:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐓</mi><mrow><mi>p</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi></mrow></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow></msub><mspace width="0.167em"></mspace><mtext mathvariant="normal">diag</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>e</mi><mrow><mi>−</mi><msub><mi>𝐙</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>τ</mi></mrow></msub></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow></mtd><mtd columnalign="center" style="text-align: center"><mi>κ</mi><mo>=</mo><mn>0</mn><mspace width="1.0em"></mspace><mtext mathvariant="normal">(movement, then mortality)</mtext></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mtext mathvariant="normal">diag</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>e</mi><mrow><mi>−</mi><msub><mi>𝐙</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>τ</mi></mrow></msub></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow></msub></mtd><mtd columnalign="center" style="text-align: center"><mi>κ</mi><mo>=</mo><mn>1</mn><mspace width="1.0em"></mspace><mtext mathvariant="normal">(mortality, then movement)</mtext></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><msup><mrow><mo stretchy="true" form="prefix">[</mo><mi mathvariant="normal">exp</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐀</mi><mrow><mi>p</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow><mi>⊤</mi></msup><mo>,</mo><mspace width="1.0em"></mspace><msub><mi>𝐀</mi><mrow><mi>p</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi></mrow></msub><mo>=</mo><msubsup><mi>𝐐</mi><mrow><mi>p</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow><mi>⊤</mi></msubsup><mi mathvariant="normal">Δ</mi><msub><mi>τ</mi><mi>τ</mi></msub><mo>−</mo><mtext mathvariant="normal">diag</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐙</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>τ</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mtd><mtd columnalign="center" style="text-align: center"><mi>κ</mi><mo>=</mo><mn>2</mn><mspace width="1.0em"></mspace><mtext mathvariant="normal">(continuous)</mtext></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable></mrow><mspace width="0.222em"></mspace></mrow><annotation encoding="application/x-tex">\mathbf{T}_{p,\tau,a} = \left\{ \begin{matrix}
+\mathbf{M}_{p,\tau,a,s=1} \, \text{diag}\left(e^{-\mathbf{Z}_{p,a,\tau}}\right) &amp; \kappa = 0 \quad \text{(movement, then mortality)} \\
+\text{diag}\left(e^{-\mathbf{Z}_{p,a,\tau}}\right) \mathbf{M}_{p,\tau,a,s=1} &amp; \kappa = 1 \quad \text{(mortality, then movement)} \\
+\left[\exp\left(\mathbf{A}_{p,\tau,a}\right)\right]^{\top}, \quad \mathbf{A}_{p,\tau,a} = \mathbf{Q}_{p,\tau,a,s=1}^{\top}\Delta\tau_\tau - \text{diag}\left(\mathbf{Z}_{p,a,\tau}\right) &amp; \kappa = 2 \quad \text{(continuous)} \\
+\end{matrix} \right.\ </annotation></semantics></math></p>
+<p>Under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>κ</mi><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">\kappa = 2</annotation></semantics></math>
+movement and mortality act simultaneously, so the two cannot be
+separated into an ordered pair of steps;
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>𝐐</mi><mi>⊤</mi></msup><annotation encoding="application/x-tex">\mathbf{Q}^{\top}</annotation></semantics></math>
+converts the stored convention to the column convention used by the
+matrix exponential. Abundance is advanced by</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi></mrow></msub><mo>←</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup><msub><mi>𝐓</mi><mrow><mi>p</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi></mrow></msub><mspace width="1.0em"></mspace><mrow><mtext mathvariant="normal">for </mtext><mspace width="0.333em"></mspace></mrow><mi>a</mi><mo>=</mo><msub><mi>a</mi><mi mathvariant="normal">min</mi></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>,</mo><mspace width="1.0em"></mspace><msub><mi>a</mi><mi mathvariant="normal">min</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><mn>1</mn></mtd><mtd columnalign="center" style="text-align: center"><mtext mathvariant="normal">if recruits move</mtext></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mn>2</mn></mtd><mtd columnalign="center" style="text-align: center"><mtext mathvariant="normal">otherwise</mtext></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable></mrow><mspace width="0.222em"></mspace></mrow><annotation encoding="application/x-tex">\mathbf{N}_{p,a} \leftarrow \left(\mathbf{N}_{p,a}\right)^{\top}\mathbf{T}_{p,\tau,a}\quad\text{for }a = a_{\min},\ldots,a_+,\quad a_{\min} = \left\{ \begin{matrix}
 1 &amp; \text{if  recruits move} \\
 2 &amp; \text{otherwise} \\
 \end{matrix} \right.\ </annotation></semantics></math></p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi></mrow><mtext mathvariant="normal">unfished</mtext></msubsup><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi></mrow><mtext mathvariant="normal">unfished</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow></msub><mspace width="1.0em"></mspace><mrow><mtext mathvariant="normal">for </mtext><mspace width="0.333em"></mspace></mrow><mi>a</mi><mo>=</mo><msub><mi>a</mi><mi mathvariant="normal">min</mi></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub></mrow><annotation encoding="application/x-tex">\mathbf{N}_{p,a}^{\text{unfished}} = \left( \mathbf{N}_{p,a}^{\text{unfished}} \right)^{\top}\mathbf{M}_{p,\tau,a,s = 1}\quad\text{for }a = a_{\min},\ldots,a_+</annotation></semantics></math></p>
+<p>for both the fished and unfished vectors, with ageing at the end of
+the final season. Ages that do not move take
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝐌</mi><mo>=</mo><mi>𝐈</mi></mrow><annotation encoding="application/x-tex">\mathbf{M} = \mathbf{I}</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝐐</mi><mo>=</mo><mn>𝟎</mn></mrow><annotation encoding="application/x-tex">\mathbf{Q} = \mathbf{0}</annotation></semantics></math>,
+which leaves survival unchanged under every
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>κ</mi><annotation encoding="application/x-tex">\kappa</annotation></semantics></math>.
+The three timings coincide exactly when
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐙</mi><annotation encoding="application/x-tex">\mathbf{Z}</annotation></semantics></math>
+is constant across regions, because a scalar multiple of the identity
+commutes with the generator.</p>
+<p><strong>Spawning state.</strong> Spawners are propagated a fraction
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>t</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><annotation encoding="application/x-tex">t^{spawn}</annotation></semantics></math>
+into the spawning season, which fixes both where they spawn and how much
+mortality they have experienced:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi></mrow><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msubsup><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><mrow><mo stretchy="true" form="prefix">[</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>⊙</mo><msup><mi>e</mi><mrow><mi>−</mi><msup><mi>t</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><msub><mi>𝐙</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup></mrow></msub></mrow></msup></mtd><mtd columnalign="center" style="text-align: center"><mi>κ</mi><mo>=</mo><mn>0</mn></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi></mrow></msub><mo>⊙</mo><msup><mi>e</mi><mrow><mi>−</mi><msup><mi>t</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><msub><mi>𝐙</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup></mrow></msub></mrow></msup></mtd><mtd columnalign="center" style="text-align: center"><mi>κ</mi><mo>=</mo><mn>1</mn></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>t</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><msub><mi>𝐀</mi><mrow><mi>p</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi></mrow></msub></mtd><mtd columnalign="center" style="text-align: center"><mi>κ</mi><mo>=</mo><mn>2</mn></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable></mrow><mspace width="0.222em"></mspace></mrow><annotation encoding="application/x-tex">\mathbf{N}_{p,a}^{spawn} = \left\{ \begin{matrix}
+\left[\left(\mathbf{N}_{p,a}\right)^{\top}\mathbf{M}_{p,\tau^{spawn},a,s=1}\right] \odot e^{-t^{spawn}\mathbf{Z}_{p,a,\tau^{spawn}}} &amp; \kappa = 0 \\
+\mathbf{N}_{p,a} \odot e^{-t^{spawn}\mathbf{Z}_{p,a,\tau^{spawn}}} &amp; \kappa = 1 \\
+\exp\left(t^{spawn}\mathbf{A}_{p,\tau^{spawn},a}\right)\mathbf{N}_{p,a} &amp; \kappa = 2 \\
+\end{matrix} \right.\ </annotation></semantics></math></p>
+<p>Under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>κ</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\kappa = 0</annotation></semantics></math>
+fish move at the start of the season and spawn at their post-movement
+location; under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>κ</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\kappa = 1</annotation></semantics></math>
+movement follows spawning, so they spawn where they started; under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>κ</mi><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">\kappa = 2</annotation></semantics></math>
+they are partially redistributed by the time they spawn. The
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>t</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><annotation encoding="application/x-tex">t^{spawn}</annotation></semantics></math>
+mortality discount is carried inside
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>𝐍</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><annotation encoding="application/x-tex">\mathbf{N}^{spawn}</annotation></semantics></math>
+in all three cases rather than applied separately to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mi>S</mi><mi>B</mi><mi>P</mi><mi>R</mi></mrow><annotation encoding="application/x-tex">SSBPR</annotation></semantics></math>.</p>
 <p>When
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mi>τ</mi></msub><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">n_\tau = 1</annotation></semantics></math>
 and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mi>p</mi></msub><mo>&gt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">n_p &gt; 1</annotation></semantics></math>
 (single-season natal homing), a separate spawning movement matrix
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msubsup><annotation encoding="application/x-tex">\mathbf{M}^{spawn}_{p,a,s=1}</annotation></semantics></math>
-is applied to redistribute fish to natal grounds before computing
-spawning biomass:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi></mrow><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msubsup><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><msubsup><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msubsup></mrow><annotation encoding="application/x-tex">\mathbf{N}^{spawn}_{p,a} = \left(\mathbf{N}_{p,a}\right)^T \mathbf{M}^{spawn}_{p,a,s=1}</annotation></semantics></math></p>
-<p>Following the application of movement, a seasonal exponential
-mortality model is applied within each season, and ageing occurs at the
-end of the final season.</p>
+then redistributes fish to natal grounds:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi></mrow><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msubsup><mo>←</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi></mrow><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup><msubsup><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msubsup></mrow><annotation encoding="application/x-tex">\mathbf{N}^{spawn}_{p,a} \leftarrow \left(\mathbf{N}^{spawn}_{p,a}\right)^{\top} \mathbf{M}^{spawn}_{p,a,s=1}</annotation></semantics></math></p>
 <p><strong>Analytical plus-group solution.</strong> For the spatial
 case, the scalar geometric series does not correctly accumulate the plus
 group under movement. Instead, the plus-group abundance vector
@@ -536,13 +587,20 @@ group under movement. Instead, the plus-group abundance vector
 is solved analytically using four annual transition matrices that
 accumulate the effects of seasonal survival and movement for both the
 penultimate age and the plus-group age under fished and unfished
-conditions. These matrices are built by iterating over seasons:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>𝐓</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi></mrow><mtext mathvariant="normal">fished</mtext></msubsup><mo>=</mo><munderover><mo>∏</mo><mrow><mi>τ</mi><mo>=</mo><mn>1</mn></mrow><msub><mi>n</mi><mi>τ</mi></msub></munderover><mtext mathvariant="normal">diag</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">exp</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msub><mi>𝐙</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>τ</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mo>⋅</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup></mrow><annotation encoding="application/x-tex">\mathbf{T}_{p,a}^{\text{fished}} = \prod_{\tau=1}^{n_\tau} \text{diag}\left(\exp\left(-\mathbf{Z}_{p,a,\tau}\right)\right) \cdot \left(\mathbf{M}_{p,\tau,a,s=1}\right)^T</annotation></semantics></math></p>
-<p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>τ</mi></mrow></msub><annotation encoding="application/x-tex">Z_{p,r,a,\tau}</annotation></semantics></math>
-includes both retained and dead discard components as defined above, and
-the product is ordered sequentially across seasons. The plus-group
-equilibrium vector satisfies
+conditions. Each annual matrix
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐓</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi></mrow></msub><annotation encoding="application/x-tex">\mathbf{T}_{p,a}</annotation></semantics></math>
+is the year-long composition of the seasonal operators
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐓</mi><mrow><mi>p</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi></mrow></msub><annotation encoding="application/x-tex">\mathbf{T}_{p,\tau,a}</annotation></semantics></math>
+defined above, transposed into the column convention so it acts on
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐍</mi><annotation encoding="application/x-tex">\mathbf{N}</annotation></semantics></math>
+directly:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>𝐓</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi></mrow><mtext mathvariant="normal">fished</mtext></msubsup><mo>=</mo><munderover><mo>∏</mo><mrow><mi>τ</mi><mo>=</mo><mn>1</mn></mrow><msub><mi>n</mi><mi>τ</mi></msub></munderover><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐓</mi><mrow><mi>p</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup></mrow><annotation encoding="application/x-tex">\mathbf{T}_{p,a}^{\text{fished}} = \prod_{\tau=1}^{n_\tau} \left(\mathbf{T}_{p,\tau,a}\right)^{\top}</annotation></semantics></math></p>
+<p>where the product is ordered sequentially across seasons, season 1
+applied first. Under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>κ</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\kappa = 0</annotation></semantics></math>
+this reduces to the familiar
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mo>∏</mo><mi>τ</mi></msub><mtext mathvariant="normal">diag</mtext><mo stretchy="false" form="prefix">(</mo><msup><mi>e</mi><mrow><mi>−</mi><msub><mi>𝐙</mi><mrow><mi>p</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>τ</mi></mrow></msub></mrow></msup><mo stretchy="false" form="postfix">)</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup></mrow><annotation encoding="application/x-tex">\prod_\tau \text{diag}(e^{-\mathbf{Z}_{p,a,\tau}}) \left(\mathbf{M}_{p,\tau,a,s=1}\right)^{\top}</annotation></semantics></math>.
+The plus-group equilibrium vector satisfies
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub></mrow></msub><mo>=</mo><msub><mi>𝐓</mi><mrow><mi>p</mi><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub></mrow></msub><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub></mrow></msub><mo>+</mo><msub><mi>𝐓</mi><mrow><mi>p</mi><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>−</mo><mn>1</mn></mrow></msub><msub><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>−</mo><mn>1</mn></mrow></msub></mrow><annotation encoding="application/x-tex">\mathbf{N}_{p,a_+} = \mathbf{T}_{p,a_+} \mathbf{N}_{p,a_+} + \mathbf{T}_{p,a_+-1} \mathbf{N}_{p,a_+-1}</annotation></semantics></math>,
 which rearranges to the linear system:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>𝐈</mi><mo>−</mo><msubsup><mi>𝐓</mi><mrow><mi>p</mi><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub></mrow><mtext mathvariant="normal">fished</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><msubsup><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub></mrow><mtext mathvariant="normal">fished</mtext></msubsup><mo>=</mo><msubsup><mi>𝐓</mi><mrow><mi>p</mi><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>−</mo><mn>1</mn></mrow><mtext mathvariant="normal">fished</mtext></msubsup><msubsup><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>−</mo><mn>1</mn></mrow><mtext mathvariant="normal">fished</mtext></msubsup></mrow><annotation encoding="application/x-tex">\left(\mathbf{I} - \mathbf{T}_{p,a_+}^{\text{fished}}\right) \mathbf{N}_{p,a_+}^{\text{fished}} = \mathbf{T}_{p,a_+-1}^{\text{fished}} \mathbf{N}_{p,a_+-1}^{\text{fished}}</annotation></semantics></math></p>
@@ -553,7 +611,13 @@ converted to <em>SSBPR</em> quantities. For regional fished
 <em>SSBPR</em>
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mi>S</mi><msubsup><mrow><mi>B</mi><mi>P</mi><mi>R</mi></mrow><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow><mtext mathvariant="normal">fished</mtext></msubsup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">SS{BPR}_{p,r}^{\text{fished}})</annotation></semantics></math>,
 this is written as:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mi>S</mi><msubsup><mrow><mi>B</mi><mi>P</mi><mi>R</mi></mrow><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow><mtext mathvariant="normal">fished</mtext></msubsup><mo>=</mo><munderover><mo>∑</mo><mi>a</mi><mrow></mrow></munderover><msubsup><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>a</mi></mrow><mtext mathvariant="normal">fished</mtext></msubsup><mo>⋅</mo><msubsup><mi>W</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msubsup><mo>⋅</mo><msub><mtext mathvariant="normal">Mat</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow></msub><mo>⋅</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msup><mi>t</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>⋅</mo><msubsup><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup></mrow><mrow><mi>f</mi><mi>i</mi><mi>s</mi><mi>h</mi><mi>e</mi><mi>d</mi></mrow></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">SS{BPR}_{p,r}^{\text{fished}} = \sum_{a}^{}N_{p,r,a}^{\text{fished}} \cdot W_{p,r,\tau^{spawn},a,s = 1}^{spawn} \cdot \text{Mat}_{p,r,\tau^{spawn},a,s = 1} \cdot \exp\left( - t^{spawn} \cdot Z_{p,r,a,\tau^{spawn}}^{fished} \right)</annotation></semantics></math></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mi>S</mi><msubsup><mrow><mi>B</mi><mi>P</mi><mi>R</mi></mrow><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow><mtext mathvariant="normal">fished</mtext></msubsup><mo>=</mo><munderover><mo>∑</mo><mi>a</mi><mrow></mrow></munderover><msubsup><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>a</mi></mrow><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi><mo>,</mo><mtext mathvariant="normal">fished</mtext></mrow></msubsup><mo>⋅</mo><msubsup><mi>W</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msubsup><mo>⋅</mo><msub><mtext mathvariant="normal">Mat</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow></msub></mrow><annotation encoding="application/x-tex">SS{BPR}_{p,r}^{\text{fished}} = \sum_{a}^{}N_{p,r,a}^{spawn,\text{fished}} \cdot W_{p,r,\tau^{spawn},a,s = 1}^{spawn} \cdot \text{Mat}_{p,r,\tau^{spawn},a,s = 1}</annotation></semantics></math></p>
+<p>where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>N</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><annotation encoding="application/x-tex">N^{spawn}</annotation></semantics></math>
+is the spawning state defined above; the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>t</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><annotation encoding="application/x-tex">t^{spawn}</annotation></semantics></math>
+mortality discount is already inside it and is not applied again
+here.</p>
 <p>Regional unfished
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mi>S</mi><mi>B</mi><mi>P</mi><mi>R</mi></mrow><annotation encoding="application/x-tex">SSBPR</annotation></semantics></math>
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mi>S</mi><msubsup><mrow><mi>B</mi><mi>P</mi><mi>R</mi></mrow><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow><mtext mathvariant="normal">unfished</mtext></msubsup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">SS{BPR}_{p,r}^{\text{unfished}})</annotation></semantics></math>
@@ -663,8 +727,45 @@ above, with
 replaced by
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>F</mi><mrow><mi>m</mi><mi>s</mi><mi>y</mi></mrow></msub><annotation encoding="application/x-tex">F_{msy}</annotation></semantics></math>.
 Additionally, catch-at-age per recruit is accumulated each season using
-Baranov’s catch equation with only the landed fishing mortality:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>C</mi><mrow><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>τ</mi></mrow></msub><mo>=</mo><msubsup><mi>N</mi><mrow><mi>r</mi><mo>,</mo><mi>a</mi></mrow><mtext mathvariant="normal">fished</mtext></msubsup><mo>⋅</mo><mfrac><mrow><munderover><mo>∑</mo><mrow><mi>f</mi><mo>∈</mo><msup><mi>ℱ</mi><mtext mathvariant="normal">land</mtext></msup></mrow><mrow></mrow></munderover><msub><mtext mathvariant="normal">Frat</mtext><mrow><mi>r</mi><mo>,</mo><mi>f</mi><mo>,</mo><mi>τ</mi></mrow></msub><mo>⋅</mo><msub><mi>F</mi><mtext mathvariant="normal">msy</mtext></msub><mo>⋅</mo><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><mo>⋅</mo><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Ret</mtext></msubsup></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mtext mathvariant="normal">Natmort</mtext><mrow><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow></msub><mi mathvariant="normal">Δ</mi><msub><mi>τ</mi><mi>τ</mi></msub><mo>+</mo><munderover><mo>∑</mo><mi>f</mi><mrow></mrow></munderover><msub><mtext mathvariant="normal">Frat</mtext><mrow><mi>r</mi><mo>,</mo><mi>f</mi><mo>,</mo><mi>τ</mi></mrow></msub><mo>⋅</mo><msub><mi>F</mi><mtext mathvariant="normal">msy</mtext></msub><mo>⋅</mo><mrow><mo stretchy="true" form="prefix">[</mo><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Ret</mtext></msubsup><mo>+</mo><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Ret</mtext></msubsup><mo stretchy="false" form="postfix">)</mo><msub><mi>δ</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mfrac><mo>⋅</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi mathvariant="normal">exp</mi><mrow><mo stretchy="true" form="prefix">[</mo><mi>−</mi><msubsup><mi>Z</mi><mrow><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>τ</mi></mrow><mrow><mi>f</mi><mi>i</mi><mi>s</mi><mi>h</mi><mi>e</mi><mi>d</mi></mrow></msubsup><mo stretchy="true" form="postfix">]</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">C_{r,a,\tau} = N_{r,a}^{\text{fished}} \cdot \frac{\sum_{f \in \mathcal{F}^{\text{land}}}^{}\text{Frat}_{r,f,\tau} \cdot F_{\text{msy}} \cdot \text{Sel}_{r,a,s = 1,f}^{\text{Fsh}} \cdot \text{Sel}_{r,a,s=1,f}^{\text{Ret}}}{\left( \text{Natmort}_{r,a,s = 1}\Delta\tau_\tau + \sum_{f}^{}\text{Frat}_{r,f,\tau} \cdot F_{\text{msy}} \cdot \left[\text{Sel}_{r,a,f}^{\text{Fsh}}\text{Sel}_{r,a,f}^{\text{Ret}} + \text{Sel}_{r,a,f}^{\text{Fsh}}(1-\text{Sel}_{r,a,f}^{\text{Ret}})\delta_{r,\tau,f}\right] \right)} \cdot \left( 1 - \exp\left\lbrack - Z_{r,a,\tau}^{fished} \right\rbrack \right)</annotation></semantics></math></p>
+only the landed fishing mortality,</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>𝐅</mi><mrow><mi>a</mi><mo>,</mo><mi>τ</mi></mrow><mtext mathvariant="normal">land</mtext></msubsup><mo>=</mo><munder><mo>∑</mo><mrow><mi>f</mi><mo>∈</mo><msup><mi>ℱ</mi><mtext mathvariant="normal">land</mtext></msup></mrow></munder><msub><mtext mathvariant="normal">Frat</mtext><mrow><mi>r</mi><mo>,</mo><mi>f</mi><mo>,</mo><mi>τ</mi></mrow></msub><mo>⋅</mo><msub><mi>F</mi><mtext mathvariant="normal">msy</mtext></msub><mo>⋅</mo><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><mo>⋅</mo><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Ret</mtext></msubsup></mrow><annotation encoding="application/x-tex">\mathbf{F}^{\text{land}}_{a,\tau} = \sum_{f \in \mathcal{F}^{\text{land}}}\text{Frat}_{r,f,\tau} \cdot F_{\text{msy}} \cdot \text{Sel}_{r,a,s = 1,f}^{\text{Fsh}} \cdot \text{Sel}_{r,a,s=1,f}^{\text{Ret}}</annotation></semantics></math></p>
+<p>taken from the fish where they actually are during the season:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>C</mi><mrow><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>τ</mi></mrow></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><msubsup><mover><mi>N</mi><mo accent="true">̃</mo></mover><mrow><mi>r</mi><mo>,</mo><mi>a</mi></mrow><mtext mathvariant="normal">fished</mtext></msubsup><mo>⋅</mo><mstyle displaystyle="true"><mfrac><msubsup><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>τ</mi></mrow><mtext mathvariant="normal">land</mtext></msubsup><msub><mi>Z</mi><mrow><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>τ</mi></mrow></msub></mfrac></mstyle><mo>⋅</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mi>−</mi><msub><mi>Z</mi><mrow><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>τ</mi></mrow></msub></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="1.0em"></mspace><msubsup><mover><mi>𝐍</mi><mo accent="true">̃</mo></mover><mi>a</mi><mtext mathvariant="normal">fished</mtext></msubsup><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>𝐍</mi><mi>a</mi><mtext mathvariant="normal">fished</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup><msub><mi>𝐌</mi><mrow><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow></msub></mtd><mtd columnalign="center" style="text-align: center"><mi>κ</mi><mo>=</mo><mn>0</mn></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><msubsup><mi>N</mi><mrow><mi>r</mi><mo>,</mo><mi>a</mi></mrow><mtext mathvariant="normal">fished</mtext></msubsup><mo>⋅</mo><mstyle displaystyle="true"><mfrac><msubsup><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>τ</mi></mrow><mtext mathvariant="normal">land</mtext></msubsup><msub><mi>Z</mi><mrow><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>τ</mi></mrow></msub></mfrac></mstyle><mo>⋅</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mi>−</mi><msub><mi>Z</mi><mrow><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>τ</mi></mrow></msub></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow></mtd><mtd columnalign="center" style="text-align: center"><mi>κ</mi><mo>=</mo><mn>1</mn></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><msubsup><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>τ</mi></mrow><mtext mathvariant="normal">land</mtext></msubsup><mo>⋅</mo><msub><mrow><mo stretchy="true" form="prefix">[</mo><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mo>∫</mo><mn>0</mn><mn>1</mn></msubsup><msup><mi>e</mi><mrow><msub><mi>𝐀</mi><mrow><mi>τ</mi><mo>,</mo><mi>a</mi></mrow></msub><mi>u</mi></mrow></msup><mspace width="0.167em"></mspace><mi>d</mi><mi>u</mi><mo stretchy="true" form="postfix">)</mo></mrow><msubsup><mi>𝐍</mi><mi>a</mi><mtext mathvariant="normal">fished</mtext></msubsup><mo stretchy="true" form="postfix">]</mo></mrow><mi>r</mi></msub></mtd><mtd columnalign="center" style="text-align: center"><mi>κ</mi><mo>=</mo><mn>2</mn></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable></mrow><mspace width="0.222em"></mspace></mrow><annotation encoding="application/x-tex">C_{r,a,\tau} = \left\{ \begin{matrix}
+\widetilde{N}_{r,a}^{\text{fished}} \cdot \dfrac{F^{\text{land}}_{r,a,\tau}}{Z_{r,a,\tau}} \cdot \left(1 - e^{-Z_{r,a,\tau}}\right), \quad \widetilde{\mathbf{N}}_{a}^{\text{fished}} = \left(\mathbf{N}_{a}^{\text{fished}}\right)^{\top}\mathbf{M}_{\tau,a,s=1} &amp; \kappa = 0 \\
+N_{r,a}^{\text{fished}} \cdot \dfrac{F^{\text{land}}_{r,a,\tau}}{Z_{r,a,\tau}} \cdot \left(1 - e^{-Z_{r,a,\tau}}\right) &amp; \kappa = 1 \\
+F^{\text{land}}_{r,a,\tau} \cdot \left[\left(\int_{0}^{1} e^{\mathbf{A}_{\tau,a}u}\,du\right)\mathbf{N}_{a}^{\text{fished}}\right]_{r} &amp; \kappa = 2 \\
+\end{matrix} \right.\ </annotation></semantics></math></p>
+<p>Catch is taken at the post-movement location under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>κ</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\kappa = 0</annotation></semantics></math>,
+where movement happens at the start of the season, and at the
+pre-movement location under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>κ</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\kappa = 1</annotation></semantics></math>,
+where it happens at the end.</p>
+<p>Under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>κ</mi><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">\kappa = 2</annotation></semantics></math>
+fish redistribute among regions while they are being caught, so the
+region-local
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mstyle displaystyle="false"><mfrac><mi>F</mi><mi>Z</mi></mfrac></mstyle><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mi>−</mi><mi>Z</mi></mrow></msup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\tfrac{F}{Z}(1 - e^{-Z})</annotation></semantics></math>
+form is not valid and the season-integrated (spatial Baranov) abundance
+is required instead. The integral runs over elapsed fraction of the
+season, since
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐀</mi><mrow><mi>τ</mi><mo>,</mo><mi>a</mi></mrow></msub><annotation encoding="application/x-tex">\mathbf{A}_{\tau,a}</annotation></semantics></math>
+already carries
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Δ</mi><msub><mi>τ</mi><mi>τ</mi></msub></mrow><annotation encoding="application/x-tex">\Delta\tau_\tau</annotation></semantics></math>
+in both of its terms, and is evaluated together with
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>𝐀</mi><mrow><mi>τ</mi><mo>,</mo><mi>a</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(\mathbf{A}_{\tau,a})</annotation></semantics></math>
+from the single block exponential</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><mi>𝐀</mi></mtd><mtd columnalign="center" style="text-align: center"><mi>𝐈</mi></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mn>𝟎</mn></mtd><mtd columnalign="center" style="text-align: center"><mn>𝟎</mn></mtd></mtr></mtable><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><msup><mi>e</mi><mi>𝐀</mi></msup></mtd><mtd columnalign="center" style="text-align: center"><msubsup><mo>∫</mo><mn>0</mn><mn>1</mn></msubsup><msup><mi>e</mi><mrow><mi>𝐀</mi><mi>u</mi></mrow></msup><mspace width="0.167em"></mspace><mi>d</mi><mi>u</mi></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mn>𝟎</mn></mtd><mtd columnalign="center" style="text-align: center"><mi>𝐈</mi></mtd></mtr></mtable><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\exp\begin{pmatrix} \mathbf{A} &amp; \mathbf{I} \\ \mathbf{0} &amp; \mathbf{0} \end{pmatrix} = \begin{pmatrix} e^{\mathbf{A}} &amp; \int_{0}^{1} e^{\mathbf{A}u}\,du \\ \mathbf{0} &amp; \mathbf{I} \end{pmatrix}</annotation></semantics></math></p>
+<p>In every case
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>𝐍</mi><mi>a</mi><mtext mathvariant="normal">fished</mtext></msubsup><annotation encoding="application/x-tex">\mathbf{N}_{a}^{\text{fished}}</annotation></semantics></math>
+is abundance at the <em>start</em> of season
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>,
+carried forward across seasons by
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐓</mi><mrow><mi>τ</mi><mo>,</mo><mi>a</mi></mrow></msub><annotation encoding="application/x-tex">\mathbf{T}_{\tau,a}</annotation></semantics></math>.
+This applies to the penultimate age and the plus group as well as to the
+ages advanced through the main loop: their catch is accumulated over the
+same seasonal sweep, so each season’s catch is taken from the survivors
+of the preceding ones.</p>
 <p>After computing
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mi>S</mi><msubsup><mrow><mi>B</mi><mi>P</mi><mi>R</mi></mrow><mi>r</mi><mrow><mi>f</mi><mi>i</mi><mi>s</mi><mi>h</mi><mi>e</mi><mi>d</mi></mrow></msubsup></mrow><annotation encoding="application/x-tex">SS{BPR}_{r}^{fished}</annotation></semantics></math>
 and
@@ -752,9 +853,9 @@ one female recruit:</p>
 \end{matrix} \right.\ </annotation></semantics></math></p>
 <p>For multi-population models, population
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>p</mi><annotation encoding="application/x-tex">p</annotation></semantics></math>
-recruits only into its own natal region. The same seasonal movement
-dynamics, mortality (with retained + dead discard decomposition), and
-analytical plus-group solution described under global
+recruits only into its own natal region. The same seasonal transition
+operator, spawning state, and analytical plus-group solution described
+under global
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mi>P</mi><mi>R</mi></mrow><annotation encoding="application/x-tex">SPR</annotation></semantics></math>
 and global
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>M</mi><mi>S</mi><mi>Y</mi></mrow><annotation encoding="application/x-tex">MSY</annotation></semantics></math>
@@ -762,11 +863,19 @@ are applied, with cohorts tracked by both origin
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>o</mi><annotation encoding="application/x-tex">o</annotation></semantics></math>
 and destination
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>r</mi><annotation encoding="application/x-tex">r</annotation></semantics></math>.
-Catch-at-age per-recruit uses only the landed fishing mortality from
-non-discard fleets, with
+Catch-at-age per-recruit takes the same three forms in
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>κ</mi><annotation encoding="application/x-tex">\kappa</annotation></semantics></math>
+given for global
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>M</mi><mi>S</mi><mi>Y</mi></mrow><annotation encoding="application/x-tex">MSY</annotation></semantics></math>,
+applied to each origin cohort
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>𝐍</mi><mrow><mi>p</mi><mo>,</mo><mi>o</mi><mo>,</mo><mi>⋅</mi><mo>,</mo><mi>a</mi></mrow><mtext mathvariant="normal">fished</mtext></msubsup><annotation encoding="application/x-tex">\mathbf{N}_{p,o,\cdot,a}^{\text{fished}}</annotation></semantics></math>
+separately and with
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>m</mi><mi>s</mi><mi>y</mi></mrow></msub><annotation encoding="application/x-tex">F_{r,msy}</annotation></semantics></math>
 now region-specific:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>C</mi><mrow><mi>p</mi><mo>,</mo><mi>o</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>τ</mi></mrow></msub><mo>=</mo><msubsup><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>o</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>a</mi></mrow><mtext mathvariant="normal">fished</mtext></msubsup><mo>⋅</mo><mfrac><mrow><munderover><mo>∑</mo><mrow><mi>f</mi><mo>∈</mo><msup><mi>ℱ</mi><mtext mathvariant="normal">land</mtext></msup></mrow><mrow></mrow></munderover><msub><mtext mathvariant="normal">Frat</mtext><mrow><mi>r</mi><mo>,</mo><mi>f</mi><mo>,</mo><mi>τ</mi></mrow></msub><mo>⋅</mo><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>m</mi><mi>s</mi><mi>y</mi></mrow></msub><mo>⋅</mo><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><mo>⋅</mo><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Ret</mtext></msubsup></mrow><msubsup><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>τ</mi></mrow><mrow><mi>f</mi><mi>i</mi><mi>s</mi><mi>h</mi><mi>e</mi><mi>d</mi></mrow></msubsup></mfrac><mo>⋅</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi mathvariant="normal">exp</mi><mrow><mo stretchy="true" form="prefix">[</mo><mi>−</mi><msubsup><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>τ</mi></mrow><mrow><mi>f</mi><mi>i</mi><mi>s</mi><mi>h</mi><mi>e</mi><mi>d</mi></mrow></msubsup><mo stretchy="true" form="postfix">]</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">C_{p,o,r,a,\tau} = N_{p,o,r,a}^{\text{fished}} \cdot \frac{\sum_{f \in \mathcal{F}^{\text{land}}}^{}\text{Frat}_{r,f,\tau} \cdot F_{r,msy} \cdot \text{Sel}_{r,a,s = 1,f}^{\text{Fsh}} \cdot \text{Sel}_{r,a,s=1,f}^{\text{Ret}}}{Z_{p,r,a,\tau}^{fished}} \cdot \left( 1 - \exp\left\lbrack - Z_{p,r,a,\tau}^{fished} \right\rbrack \right)</annotation></semantics></math></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>𝐅</mi><mrow><mi>a</mi><mo>,</mo><mi>τ</mi></mrow><mtext mathvariant="normal">land</mtext></msubsup><mo>=</mo><munder><mo>∑</mo><mrow><mi>f</mi><mo>∈</mo><msup><mi>ℱ</mi><mtext mathvariant="normal">land</mtext></msup></mrow></munder><msub><mtext mathvariant="normal">Frat</mtext><mrow><mi>r</mi><mo>,</mo><mi>f</mi><mo>,</mo><mi>τ</mi></mrow></msub><mo>⋅</mo><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>m</mi><mi>s</mi><mi>y</mi></mrow></msub><mo>⋅</mo><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><mo>⋅</mo><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Ret</mtext></msubsup></mrow><annotation encoding="application/x-tex">\mathbf{F}^{\text{land}}_{a,\tau} = \sum_{f \in \mathcal{F}^{\text{land}}}\text{Frat}_{r,f,\tau} \cdot F_{r,msy} \cdot \text{Sel}_{r,a,s = 1,f}^{\text{Fsh}} \cdot \text{Sel}_{r,a,s=1,f}^{\text{Ret}}</annotation></semantics></math></p>
+<p>Each origin cohort is carried forward across seasons by its own
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐓</mi><mrow><mi>p</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi></mrow></msub><annotation encoding="application/x-tex">\mathbf{T}_{p,\tau,a}</annotation></semantics></math>
+before its next season’s catch is taken.</p>
 <p>Regional equilibrium recruitment is computed by solving a non-linear
 Beverton-Holt stock-recruitment relationship that ensures internal
 consistency. The specific formulation differs between single-population
@@ -877,8 +986,29 @@ projF_{r,\tau,y} = \sum_f Fmort_{r,y = term,\tau,f}
 </annotation></semantics></math></p>
 <p>Total mortality can then be computed as:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>=</mo><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>y</mi></mrow></msub><mo>⋅</mo><mi>F</mi><mi>r</mi><mi>a</mi><msub><mi>t</mi><mrow><mi>r</mi><mo>,</mo><mi>f</mi><mo>,</mo><mi>τ</mi></mrow></msub><mo>⋅</mo><mi>S</mi><mi>e</mi><msubsup><mi>l</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mrow><mi>F</mi><mi>s</mi><mi>h</mi></mrow></msubsup></mrow><annotation encoding="application/x-tex">
-F_{r,\tau,y,a,s,f} = projF_{r,\tau,y} \cdot Frat_{r,f,\tau} \cdot Sel^{Fsh}_{r,y,a,s,f} 
+F_{r,\tau,y,a,s,f} = projF_{r,\tau,y} \cdot Frat_{r,f,\tau} \cdot Sel^{Fsh}_{r,y,a,s,f}
 </annotation></semantics></math></p>
+<p>where the terminal year ratio
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mi>r</mi><mi>a</mi><mi>t</mi></mrow><annotation encoding="application/x-tex">Frat</annotation></semantics></math>
+splits into a seasonal split and a within-season fleet split,</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mi>r</mi><mi>a</mi><msub><mi>t</mi><mrow><mi>r</mi><mo>,</mo><mi>f</mi><mo>,</mo><mi>τ</mi></mrow></msub><mo>=</mo><munder><munder><mfrac><mrow><munder><mo>∑</mo><mi>f</mi></munder><mi>F</mi><mi>m</mi><mi>o</mi><mi>r</mi><msub><mi>t</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>=</mo><mi>t</mi><mi>e</mi><mi>r</mi><mi>m</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub></mrow><mrow><munder><mo>∑</mo><mi>τ</mi></munder><munder><mo>∑</mo><mi>f</mi></munder><mi>F</mi><mi>m</mi><mi>o</mi><mi>r</mi><msub><mi>t</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>=</mo><mi>t</mi><mi>e</mi><mi>r</mi><mi>m</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub></mrow></mfrac><mo accent="true">⏟</mo></munder><mrow><mrow><mtext mathvariant="normal">seasonal split </mtext><mspace width="0.333em"></mspace></mrow><msub><mi>ϕ</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi></mrow></msub></mrow></munder><mo>⋅</mo><munder><munder><mfrac><mrow><mi>F</mi><mi>m</mi><mi>o</mi><mi>r</mi><msub><mi>t</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>=</mo><mi>t</mi><mi>e</mi><mi>r</mi><mi>m</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub></mrow><mrow><munder><mo>∑</mo><mi>f</mi></munder><mi>F</mi><mi>m</mi><mi>o</mi><mi>r</mi><msub><mi>t</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>=</mo><mi>t</mi><mi>e</mi><mi>r</mi><mi>m</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub></mrow></mfrac><mo accent="true">⏟</mo></munder><mrow><mrow><mtext mathvariant="normal">fleet split </mtext><mspace width="0.333em"></mspace></mrow><msub><mi>φ</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub></mrow></munder></mrow><annotation encoding="application/x-tex">
+Frat_{r,f,\tau} = \underbrace{\frac{\sum_f Fmort_{r,y=term,\tau,f}}{\sum_\tau \sum_f Fmort_{r,y=term,\tau,f}}}_{\text{seasonal split } \phi_{r,\tau}} \cdot \underbrace{\frac{Fmort_{r,y=term,\tau,f}}{\sum_f Fmort_{r,y=term,\tau,f}}}_{\text{fleet split } \varphi_{r,\tau,f}}
+</annotation></semantics></math></p>
+<p>so that an annual fishing mortality
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">projF_{r,y}</annotation></semantics></math>
+is distributed as
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>y</mi></mrow></msub><mo>=</mo><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub><mo>⋅</mo><msub><mi>ϕ</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi></mrow></msub></mrow><annotation encoding="application/x-tex">projF_{r,\tau,y} = projF_{r,y} \cdot \phi_{r,\tau}</annotation></semantics></math>.
+Writing it this way changes nothing for the options below, since
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ϕ</mi><mo>⋅</mo><mi>φ</mi></mrow><annotation encoding="application/x-tex">\phi \cdot \varphi</annotation></semantics></math>
+recovers
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mi>r</mi><mi>a</mi><mi>t</mi></mrow><annotation encoding="application/x-tex">Frat</annotation></semantics></math>
+exactly, but it separates the two allocations so that catch-constrained
+projections can solve for a seasonal fishing mortality while holding the
+fleet split fixed (see <em>Projecting on a Catch Target</em>). Seasons
+the terminal year did not fish have
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ϕ</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi></mrow></msub><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\phi_{r,\tau} = 0</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>φ</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\varphi_{r,\tau,f} = 0</annotation></semantics></math>.</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><munder><mo>∑</mo><mi>f</mi></munder><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>+</mo><mi>N</mi><mi>a</mi><mi>t</mi><mi>M</mi><mi>o</mi><mi>r</mi><msub><mi>t</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>⋅</mo><mi mathvariant="normal">Δ</mi><msub><mi>τ</mi><mi>τ</mi></msub></mrow><annotation encoding="application/x-tex">
 Z_{p,r,\tau,y,a,s} = \sum_f F_{r,\tau,y,a,s,f} + NatMort_{p,r,y,a,s} \cdot \Delta\tau_\tau
 </annotation></semantics></math></p>
@@ -901,6 +1031,17 @@ projN_{p,r,1,y+1,a+1,s} &amp;= projN_{p,r,n_\tau,y,a,s}\exp(-Z_{p,r,n_\tau,y,a,s
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><mi>S</mi><mi>S</mi><msub><mi>B</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub><mo>=</mo><munder><mo>∑</mo><mi>a</mi></munder><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow></msub><msub><mi>W</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow></msub><mi>M</mi><mi>a</mi><msub><mi>t</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn></mrow></msub></mrow><annotation encoding="application/x-tex">
 projSSB_{p,r,y} = \sum_a projN_{p,r,\tau^{spawn},y,a,s=1}W_{p,r,\tau^{spawn},y,a,s=1}Mat_{p,r,\tau^{spawn},y,a,s=1}
 </annotation></semantics></math></p>
+<p>Projected total biomass is accumulated at the same point in the
+season, but over all ages and both sexes rather than mature females
+only, and without the maturity weighting:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><mi>T</mi><mi>o</mi><mi>t</mi><mi>B</mi><mi>i</mi><mi>o</mi><msub><mi>m</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub><mo>=</mo><munderover><mo>∑</mo><mi>s</mi><msub><mi>n</mi><mi>s</mi></msub></munderover><munderover><mo>∑</mo><mi>a</mi><msub><mi>a</mi><mo>+</mo></msub></munderover><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><msub><mi>W</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub></mrow><annotation encoding="application/x-tex">
+projTotBiom_{p,r,y} = \sum_s^{n_s} \sum_a^{a_+} projN_{p,r,\tau^{spawn},y,a,s}W_{p,r,\tau^{spawn},y,a,s}
+</annotation></semantics></math></p>
+<p>This is the same definition the estimation model uses for
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>T</mi><mi>o</mi><mi>t</mi><mi>B</mi><mi>i</mi><mi>o</mi><mi>m</mi></mrow><annotation encoding="application/x-tex">TotBiom</annotation></semantics></math>,
+so the projected series continues the estimated one without a
+discontinuity at the terminal year. It is returned as
+<code>proj_Total_Biom</code>.</p>
 <p>Additionally, quantities of projected catch can be derived using
 Baranov’s catch equation:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><msubsup><mi>C</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mi>a</mi></msubsup><mo>=</mo><mfrac><mrow><mi>F</mi><mi>m</mi><mi>o</mi><mi>r</mi><msub><mi>t</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow></msub><mi>S</mi><mi>e</mi><msubsup><mi>l</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mrow><mi>F</mi><mi>s</mi><mi>h</mi></mrow></msubsup></mrow><msub><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub></mfrac><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">[</mo><mn>1</mn><mo>−</mo><mi mathvariant="normal">exp</mi><mo stretchy="false" form="prefix">(</mo><mi>−</mi><msub><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">
@@ -932,6 +1073,85 @@ can be a user defined matrix of fishing mortality rates to use during
 the projection period across regions. Projected fishing mortality is
 then summed with natural mortality to compute the projected total
 mortality in a given projection year.</p>
+<p>Both of these options set fishing mortality for year
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mo>+</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">y+1</annotation></semantics></math>
+from quantities known at the end of year
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>y</mi><annotation encoding="application/x-tex">y</annotation></semantics></math>.
+A third option instead constrains the catch itself, and is described
+next.</p>
+<div class="section level3">
+<h3 id="projecting-on-a-catch-target">Projecting on a Catch Target<a class="anchor" aria-label="anchor" href="#projecting-on-a-catch-target"></a>
+</h3>
+<p>Rather than specifying fishing mortality, users may specify the catch
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>C</mi><mo accent="true">̃</mo></mover><mrow><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub><annotation encoding="application/x-tex">\tilde{C}_{r,y}</annotation></semantics></math>
+to be removed and solve for the fishing mortality that removes it. All
+estimated quantities and demographic assumptions are unchanged; only
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><mi>F</mi></mrow><annotation encoding="application/x-tex">projF</annotation></semantics></math>
+moves. Formally, we require</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><munder><mo>∑</mo><mi>p</mi></munder><munder><mo>∑</mo><mi>τ</mi></munder><munder><mo>∑</mo><mi>f</mi></munder><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><mi>C</mi><mi>a</mi><mi>t</mi><mi>c</mi><msub><mi>h</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow></msub><mo minsize="120%" maxsize="120%" stretchy="true" form="prefix">(</mo><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub><mo minsize="120%" maxsize="120%" stretchy="true" form="postfix">)</mo><mo>=</mo><msub><mover><mi>C</mi><mo accent="true">̃</mo></mover><mrow><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">
+\sum_p \sum_\tau \sum_f projCatch_{p,r,\tau,y,f}\big(projF_{r,y}\big) = \tilde{C}_{r,y}
+</annotation></semantics></math></p>
+<p>This cannot be inverted in closed form. Projected catch in region
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>r</mi><annotation encoding="application/x-tex">r</annotation></semantics></math>
+is a function of fishing mortality in <em>every</em> region, because
+movement redistributes fish between the seasons over which catch
+accumulates; under continuous movement (<code>move_timing = 2</code>)
+catch is built on a season-integrated abundance that couples regions
+within a season as well. Where age-0 Beverton-Holt recruitment is used,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">projF_{r,y}</annotation></semantics></math>
+additionally alters
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><mi>S</mi><mi>S</mi><msub><mi>B</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">projSSB_{p,r,y}</annotation></semantics></math>
+and hence the recruitment entering that same year. The left hand side is
+therefore the entire seasonal projection cycle, and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><mi>F</mi></mrow><annotation encoding="application/x-tex">projF</annotation></semantics></math>
+is obtained numerically by evaluating that cycle at trial values until
+the equality holds.</p>
+<p>Because
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><mi>C</mi><mi>a</mi><mi>t</mi><mi>c</mi><mi>h</mi></mrow><annotation encoding="application/x-tex">projCatch</annotation></semantics></math>
+increases monotonically in
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><mi>F</mi></mrow><annotation encoding="application/x-tex">projF</annotation></semantics></math>,
+a single unconstrained region is bracketed on
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><mn>0</mn><mo>,</mo><msup><mi>F</mi><mrow><mi>m</mi><mi>a</mi><mi>x</mi></mrow></msup><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[0, F^{max}]</annotation></semantics></math>
+and bisected, where failure to reach
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>C</mi><mo accent="true">̃</mo></mover><mrow><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub><annotation encoding="application/x-tex">\tilde{C}_{r,y}</annotation></semantics></math>
+at
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>F</mi><mrow><mi>m</mi><mi>a</mi><mi>x</mi></mrow></msup><annotation encoding="application/x-tex">F^{max}</annotation></semantics></math>
+identifies the target as unattainable. Where several regions are solved
+together, the system is solved jointly on the log scale, so that
+residuals are relative catch errors,</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ε</mi><mi>r</mi></msub><mo>=</mo><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><munder><mo>∑</mo><mi>p</mi></munder><munder><mo>∑</mo><mi>τ</mi></munder><munder><mo>∑</mo><mi>f</mi></munder><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><mi>C</mi><mi>a</mi><mi>t</mi><mi>c</mi><msub><mi>h</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>−</mo><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><msub><mover><mi>C</mi><mo accent="true">̃</mo></mover><mrow><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">
+\varepsilon_r = \log\left(\sum_p \sum_\tau \sum_f projCatch_{p,r,\tau,y,f}\right) - \log \tilde{C}_{r,y}
+</annotation></semantics></math></p>
+<p>Targets may be specified annually or seasonally. Given annual
+targets, a single
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">projF_{r,y}</annotation></semantics></math>
+is solved per region and allocated over seasons using the terminal year
+seasonal split
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ϕ</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi></mrow></msub><annotation encoding="application/x-tex">\phi_{r,\tau}</annotation></semantics></math>
+defined above. Given seasonal targets
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>C</mi><mo accent="true">̃</mo></mover><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>y</mi></mrow></msub><annotation encoding="application/x-tex">\tilde{C}_{r,\tau,y}</annotation></semantics></math>,
+that allocation is released and a separate
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">projF_{r,\tau,y}</annotation></semantics></math>
+is solved for each season, subject to the fleet split
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>φ</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><annotation encoding="application/x-tex">\varphi_{r,\tau,f}</annotation></semantics></math>
+remaining fixed. In the seasonal case the year is solved sequentially
+over
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>,
+which is exact because catch in season
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>
+depends only on fishing mortality in seasons
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>τ</mi><mo>′</mo></msup><mo>≤</mo><mi>τ</mi></mrow><annotation encoding="application/x-tex">\tau' \leq \tau</annotation></semantics></math>:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mrow><mi>∂</mi><mspace width="0.167em"></mspace><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><mi>C</mi><mi>a</mi><mi>t</mi><mi>c</mi><msub><mi>h</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow></msub></mrow><mrow><mi>∂</mi><mspace width="0.167em"></mspace><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><msup><mi>τ</mi><mo>′</mo></msup><mo>,</mo><mi>y</mi></mrow></msub></mrow></mfrac><mo>=</mo><mn>0</mn><mo>,</mo><mspace width="1.0em"></mspace><msup><mi>τ</mi><mo>′</mo></msup><mo>&gt;</mo><mi>τ</mi></mrow><annotation encoding="application/x-tex">
+\frac{\partial\, projCatch_{p,r,\tau,y,f}}{\partial\, projF_{r,\tau',y}} = 0, \quad \tau' &gt; \tau
+</annotation></semantics></math></p>
+<p>Years in which no target is supplied revert to the harvest control
+rule or user-specified fishing mortality described above, so that a
+projection may combine a period of prescribed catch with a subsequent
+period under a management procedure. Projection year 1 reproduces the
+terminal assessment year at
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mo>∑</mo><mi>f</mi></msub><mi>F</mi><mi>m</mi><mi>o</mi><mi>r</mi><msub><mi>t</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>=</mo><mi>t</mi><mi>e</mi><mi>r</mi><mi>m</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\sum_f Fmort_{r,y=term,\tau,f}</annotation></semantics></math>
+unless it too is constrained, which is appropriate where the terminal
+year is incomplete and its catch is itself projected.</p>
 <p>Recruitment dynamics are then projected in each year following the
 initial projection year. In particular, several recruitment projection
 options are available. These include both deterministic predictions as
@@ -1015,6 +1235,173 @@ mortality in subsequent years is updated accordingly. Catch advice for
 the year following the terminal assessment year corresponds to the
 projected catch in projection year 2 (i.e.,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><mi>C</mi><mi>a</mi><mi>t</mi><mi>c</mi><msub><mi>h</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>=</mo><mn>2</mn><mo>,</mo><mi>f</mi></mrow></msub></mrow><annotation encoding="application/x-tex">projCatch_{r, y = 2, f}</annotation></semantics></math>).</p>
+</div>
+<div class="section level3">
+<h3 id="how-the-projection-module-is-organized">How the Projection Module is Organized<a class="anchor" aria-label="anchor" href="#how-the-projection-module-is-organized"></a>
+</h3>
+<p><code><a href="../reference/Do_Population_Projection.html">Do_Population_Projection()</a></code> is a loop over projection
+years. Within each year it does four things in order, which determines
+what each <code>fmort_opt</code> setting is able to condition on.</p>
+<ol style="list-style-type: decimal">
+<li>
+<strong>Generate this year’s recruitment.</strong> For all
+recruitment options other than age-0 Beverton-Holt
+(<code>bh_rec_opt$rec_lag = 0</code>), the year’s recruitment is known
+before the year runs, because it depends on a previous year’s spawning
+biomass. It is apportioned across regions, sexes, and seasons and
+inserted into the first age class.</li>
+<li>
+<strong>Figure out this year’s fishing mortality</strong>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">projF_{r,\tau,y}</annotation></semantics></math>,
+by region and season. Which rule does this is what
+<code>fmort_opt</code> selects; see the table below.</li>
+<li>
+<strong>Run the season loop.</strong> For each season in turn:
+insert any seasonal recruits, build
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow></msub><annotation encoding="application/x-tex">F_{r,\tau,y,a,s,f}</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">Z_{p,r,\tau,y,a,s}</annotation></semantics></math>,
+apply movement, apply mortality and (in the last season) ageing, derive
+spawning biomass in the spawning season, and derive catch with the
+Baranov equation.</li>
+<li>
+<strong>Set next year’s fishing mortality</strong>, where the rule
+is one that works off this year’s outcome (the harvest control rule
+options).</li>
+</ol>
+<div class="section level4">
+<h4 id="setting-projected-fishing-mortality">Setting Projected Fishing Mortality<a class="anchor" aria-label="anchor" href="#setting-projected-fishing-mortality"></a>
+</h4>
+<p>Four options are available, and they differ in <em>when</em>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><mi>F</mi></mrow><annotation encoding="application/x-tex">projF</annotation></semantics></math>
+can be known and therefore in where in the annual cycle they are
+applied.</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th><code>fmort_opt</code></th>
+<th>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">projF_{r,y}</annotation></semantics></math>
+is set from</th>
+<th>Applied at</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>"Input"</code></td>
+<td>
+<code>f_ref_pt[r, y-1]</code>, a fixed user-supplied
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>F</mi><annotation encoding="application/x-tex">F</annotation></semantics></math>
+</td>
+<td>end of year
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mo>−</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">y-1</annotation></semantics></math>
+</td>
+</tr>
+<tr class="even">
+<td><code>"HCR"</code></td>
+<td>
+<code>HCR_function()</code> of region
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>r</mi><annotation encoding="application/x-tex">r</annotation></semantics></math>’s
+own SSB in year
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mo>−</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">y-1</annotation></semantics></math>
+</td>
+<td>end of year
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mo>−</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">y-1</annotation></semantics></math>
+</td>
+</tr>
+<tr class="odd">
+<td><code>"HCR_global"</code></td>
+<td>
+<code>HCR_function()</code> of SSB summed over all regions in year
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mo>−</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">y-1</annotation></semantics></math>
+</td>
+<td>end of year
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mo>−</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">y-1</annotation></semantics></math>
+</td>
+</tr>
+<tr class="even">
+<td><code>"Catch"</code></td>
+<td>solved so that realised catch equals
+<code>catch_input[r, y]</code>
+</td>
+<td>start of year
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>y</mi><annotation encoding="application/x-tex">y</annotation></semantics></math>
+</td>
+</tr>
+</tbody>
+</table>
+<p>The first three depend only on the <em>previous</em> year’s
+quantities, so they are computed at the end of the previous year. This
+is why <code>f_ref_pt[r, y]</code> sets the fishing mortality applied in
+year
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mo>+</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">y+1</annotation></semantics></math>
+rather than year
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>y</mi><annotation encoding="application/x-tex">y</annotation></semantics></math>.</p>
+<p><strong><code>catch_input</code> does not carry that lag.</strong>
+<code>catch_input[r, y]</code> is the catch taken <em>during</em>
+projection year
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>y</mi><annotation encoding="application/x-tex">y</annotation></semantics></math>,
+aligned with <code>proj_Catch[, r, y, , ]</code> in the returned list.
+The two conventions differ, so take care when mixing them.</p>
+<p>Under every option, projection year 1 replays the terminal assessment
+year at
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mo>∑</mo><mi>f</mi></msub><mi>F</mi><mi>m</mi><mi>o</mi><mi>r</mi><msub><mi>t</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>=</mo><mi>t</mi><mi>e</mi><mi>r</mi><mi>m</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\sum_f Fmort_{r,y=term,\tau,f}</annotation></semantics></math>,
+and the first actual projected year is year 2. The one exception is
+<code>catch_terminal_yr = TRUE</code>, described below.</p>
+</div>
+<div class="section level4">
+<h4 id="arguments-for-catch-targets">Arguments for Catch Targets<a class="anchor" aria-label="anchor" href="#arguments-for-catch-targets"></a>
+</h4>
+<p>The equations of the catch solve is given under <em>Projecting on a
+Catch Target</em> above. The arguments controlling it are:</p>
+<ul>
+<li>
+<strong><code>catch_input</code></strong> carries the targets, and
+its shape selects annual or seasonal targeting. Given
+<code>[n_regions, n_proj_yrs]</code>, one annual fishing mortality per
+region is solved and distributed at the terminal year seasonal splits.
+Given <code>[n_regions, n_proj_yrs, n_seas]</code>, a separate fishing
+mortality is solved per region and season. Either way the fleet split
+within a season is held at terminal year ratios, so fleet-specific
+targets are not supported. <code>catch_input[r, y]</code> is the catch
+taken <em>in</em> year <code>y</code>, which is not the same convention
+as <code>f_ref_pt[r, y]</code>, which sets fishing mortality in year
+<code>y + 1</code>.</li>
+<li>
+<strong><code>catch_fallback_opt</code></strong>
+(<code>"HCR"</code>, <code>"HCR_global"</code>, or <code>"Input"</code>)
+governs years left <code>NA</code>. Note that <code>NA</code> (no
+target, use the fallback) and <code>0</code> (a target of no fishing)
+mean different things, and that a year must be either fully specified or
+fully <code>NA</code> across regions and seasons.</li>
+<li>
+<strong><code>catch_terminal_yr</code></strong> additionally solves
+projection year 1. This overrides the fishing mortality the assessment
+estimated for that year, and so changes the numbers-at-age entering year
+2. With
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mi>τ</mi></msub><mo>&gt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">n_\tau &gt; 1</annotation></semantics></math>
+the terminal year takes all of its seasons from the terminal
+numbers-at-age rather than propagating them, so only the last season’s
+fishing mortality carries into year 2; earlier seasons still take their
+catch but do not otherwise feed forward.</li>
+<li>
+<strong><code>catch_f_max</code></strong> bounds the search, and
+<strong><code>catch_tol</code></strong> and
+<strong><code>catch_max_iter</code></strong> control convergence.</li>
+</ul>
+<p>Two returned quantities support the option. <code>proj_F_seas</code>
+<code>[n_regions, n_proj_yrs + 1, n_seas]</code> breaks
+<code>proj_F</code> out by season, and is the only place the answer
+lives when seasonal targets are used. <code>proj_catch_resid</code>,
+shaped like <code>catch_input</code>, holds the relative miss
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ε</mi><mi>r</mi></msub><annotation encoding="application/x-tex">\varepsilon_r</annotation></semantics></math>
+on each target and is <code>NA</code> for years without one. It should
+be checked directly rather than relying on warnings alone.</p>
+</div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="code-demonstration">Code Demonstration<a class="anchor" aria-label="anchor" href="#code-demonstration"></a>
@@ -1307,6 +1694,144 @@ than the first projection year, since the first projection year serves
 only as an initialization step for the projection.</p>
 </div>
 <div class="section level4">
+<h4 id="projecting-on-a-specified-catch">Projecting on a Specified Catch<a class="anchor" aria-label="anchor" href="#projecting-on-a-specified-catch"></a>
+</h4>
+<p>Rather than allowing a harvest control rule to determine fishing
+mortality, catch can be specified directly, with the projection solving
+for the fishing mortality required to remove the specified catch. This
+approach is particularly useful for harvest projections in years when
+catch information has been updated but a new assessment has not been
+conducted. In such cases, the most recent assessment provides the
+initial conditions for the projection, and observed catches are applied
+directly to the projected population in the corresponding years. No
+other components of the model are changed. The projection retains the
+same terminal-year numbers-at-age, demographic rates, and recruitment
+assumptions from the most recent assessment; only
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><mi>F</mi></mrow><annotation encoding="application/x-tex">projF</annotation></semantics></math>
+is adjusted to achieve the specified catch. For demonstration, we apply
+the observed catch from the most recent five years to the first five
+years of the projection, after which the harvest control rule
+resumes.</p>
+<p>Every input below is the one defined for the single-region example
+above:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">n_yrs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">sgl_rg_sable_data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span> <span class="co"># terminal year index</span></span>
+<span></span>
+<span><span class="co"># the five most recent years of observed catch, summed over fleets</span></span>
+<span><span class="va">recent_catch</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">sgl_rg_sable_data</span><span class="op">$</span><span class="va">ObsCatch</span><span class="op">[</span><span class="fl">1</span>, <span class="op">(</span><span class="va">n_yrs</span> <span class="op">-</span> <span class="fl">4</span><span class="op">)</span><span class="op">:</span><span class="va">n_yrs</span>, <span class="fl">1</span>, , drop <span class="op">=</span> <span class="cn">FALSE</span><span class="op">]</span>, <span class="fl">2</span>, <span class="va">sum</span><span class="op">)</span></span>
+<span><span class="va">recent_catch</span> <span class="co"># 19.71 21.99 27.55 25.62 23.15</span></span>
+<span></span>
+<span><span class="co"># NA leaves a year to catch_fallback_opt, so only projection years 2 to 6 are</span></span>
+<span><span class="co"># constrained. Note catch_input is indexed by the year the catch is taken, so</span></span>
+<span><span class="co"># column 2 is terminal year + 1 (column 1 is the terminal year itself, which is</span></span>
+<span><span class="co"># left alone here because catch_terminal_yr defaults to FALSE).</span></span>
+<span><span class="va">catch_input</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="cn">NA</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_regions</span>, <span class="va">n_proj_yrs</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">catch_input</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">:</span><span class="fl">6</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">recent_catch</span></span>
+<span></span>
+<span><span class="va">out_catch</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Do_Population_Projection.html">Do_Population_Projection</a></span><span class="op">(</span>n_proj_yrs <span class="op">=</span> <span class="va">n_proj_yrs</span>,</span>
+<span>                                      n_regions <span class="op">=</span> <span class="va">n_regions</span>,</span>
+<span>                                      n_ages <span class="op">=</span> <span class="va">n_ages</span>,</span>
+<span>                                      n_sexes <span class="op">=</span> <span class="va">n_sexes</span>,</span>
+<span>                                      sexratio <span class="op">=</span> <span class="va">sexratio</span>,</span>
+<span>                                      n_fish_fleets <span class="op">=</span> <span class="va">n_fish_fleets</span>,</span>
+<span>                                      do_recruits_move <span class="op">=</span> <span class="va">do_recruits_move</span>,</span>
+<span>                                      recruitment <span class="op">=</span> <span class="va">recruitment</span>,</span>
+<span>                                      terminal_NAA <span class="op">=</span> <span class="va">terminal_NAA</span>,</span>
+<span>                                      terminal_NAA0 <span class="op">=</span> <span class="va">terminal_NAA0</span>,</span>
+<span>                                      n_pop <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>                                      terminal_F <span class="op">=</span> <span class="va">terminal_F</span>,</span>
+<span>                                      natmort <span class="op">=</span> <span class="va">natmort</span>,</span>
+<span>                                      WAA <span class="op">=</span> <span class="va">WAA</span>,</span>
+<span>                                      WAA_fish <span class="op">=</span> <span class="va">WAA_fish</span>,</span>
+<span>                                      MatAA <span class="op">=</span> <span class="va">MatAA</span>,</span>
+<span>                                      fish_sel <span class="op">=</span> <span class="va">fish_sel</span>,</span>
+<span>                                      Movement <span class="op">=</span> <span class="va">Movement</span>,</span>
+<span>                                      recruitment_opt <span class="op">=</span> <span class="st">"mean_rec"</span>,</span>
+<span>                                      fmort_opt <span class="op">=</span> <span class="st">"Catch"</span>,</span>
+<span>                                      catch_input <span class="op">=</span> <span class="va">catch_input</span>,</span>
+<span>                                      <span class="co"># years left NA revert to the HCR, which needs its usual inputs</span></span>
+<span>                                      catch_fallback_opt <span class="op">=</span> <span class="st">"HCR"</span>,</span>
+<span>                                      f_ref_pt <span class="op">=</span> <span class="va">f_ref_pt</span>,</span>
+<span>                                      b_ref_pt <span class="op">=</span> <span class="va">b_ref_pt</span>,</span>
+<span>                                      HCR_function <span class="op">=</span> <span class="va">HCR_function</span>,</span>
+<span>                                      t_spawn <span class="op">=</span> <span class="va">t_spawn</span><span class="op">)</span></span></code></pre></div>
+<p>Always confirm the solver landed on the targets before interpreting
+anything else. <code>proj_catch_resid</code> holds how much the
+specified catch is missed by and is <code>NA</code> in years without a
+target:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">out_catch</span><span class="op">$</span><span class="va">proj_catch_resid</span><span class="op">[</span><span class="fl">1</span>, <span class="op">]</span> <span class="co"># ~1e-7 in years 2 to 6, NA thereafter</span></span>
+<span><span class="va">out_catch</span><span class="op">$</span><span class="va">proj_F</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">:</span><span class="fl">6</span><span class="op">]</span>        <span class="co"># 0.0331 0.0372 0.0475 0.0455 0.0424</span></span>
+<span><span class="va">sgl_ref_pt</span><span class="op">$</span><span class="va">f_ref_pt</span>             <span class="co"># 0.0863</span></span></code></pre></div>
+<p>The fishing mortality implied by recent catch is roughly half of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>F</mi><mn>40</mn></msub><annotation encoding="application/x-tex">F_{40}</annotation></semantics></math>,
+so this is a considerably less aggressive trajectory than the harvest
+control rule would have prescribed. We can see the implications of this
+by plotting spawning biomass and total biomass against the harvest
+control rule projection from the previous section.</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">n_hist</span> <span class="op">&lt;-</span> <span class="va">n_yrs</span> <span class="op">-</span> <span class="fl">1</span> <span class="co"># projection year 1 reproduces the terminal year, so drop it here</span></span>
+<span><span class="va">years</span> <span class="op">&lt;-</span> <span class="fl">1960</span><span class="op">:</span><span class="op">(</span><span class="fl">2023</span> <span class="op">+</span> <span class="va">n_proj_yrs</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">biom_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">bind_rows</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span>Year <span class="op">=</span> <span class="va">years</span>, Biomass <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sgl_rg_sable_rep</span><span class="op">$</span><span class="va">SSB</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span>,<span class="op">-</span><span class="va">n_yrs</span><span class="op">]</span>, <span class="va">out</span><span class="op">$</span><span class="va">proj_SSB</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span>,<span class="op">]</span><span class="op">)</span>,</span>
+<span>         Quantity <span class="op">=</span> <span class="st">"Spawning biomass"</span>, Projection <span class="op">=</span> <span class="st">"HCR"</span><span class="op">)</span>,</span>
+<span>  <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span>Year <span class="op">=</span> <span class="va">years</span>, Biomass <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sgl_rg_sable_rep</span><span class="op">$</span><span class="va">SSB</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span>,<span class="op">-</span><span class="va">n_yrs</span><span class="op">]</span>, <span class="va">out_catch</span><span class="op">$</span><span class="va">proj_SSB</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span>,<span class="op">]</span><span class="op">)</span>,</span>
+<span>         Quantity <span class="op">=</span> <span class="st">"Spawning biomass"</span>, Projection <span class="op">=</span> <span class="st">"Recent catch"</span><span class="op">)</span>,</span>
+<span>  <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span>Year <span class="op">=</span> <span class="va">years</span>, Biomass <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sgl_rg_sable_rep</span><span class="op">$</span><span class="va">Total_Biom</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span>,<span class="op">-</span><span class="va">n_yrs</span><span class="op">]</span>, <span class="va">out</span><span class="op">$</span><span class="va">proj_Total_Biom</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span>,<span class="op">]</span><span class="op">)</span>,</span>
+<span>         Quantity <span class="op">=</span> <span class="st">"Total biomass"</span>, Projection <span class="op">=</span> <span class="st">"HCR"</span><span class="op">)</span>,</span>
+<span>  <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span>Year <span class="op">=</span> <span class="va">years</span>, Biomass <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sgl_rg_sable_rep</span><span class="op">$</span><span class="va">Total_Biom</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span>,<span class="op">-</span><span class="va">n_yrs</span><span class="op">]</span>, <span class="va">out_catch</span><span class="op">$</span><span class="va">proj_Total_Biom</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span>,<span class="op">]</span><span class="op">)</span>,</span>
+<span>         Quantity <span class="op">=</span> <span class="st">"Total biomass"</span>, Projection <span class="op">=</span> <span class="st">"Recent catch"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">biom_df</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">Year</span>, y <span class="op">=</span> <span class="va">Biomass</span>, color <span class="op">=</span> <span class="va">Projection</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>linewidth <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_abline.html" class="external-link">geom_vline</a></span><span class="op">(</span>xintercept <span class="op">=</span> <span class="fl">2024</span>, linetype <span class="op">=</span> <span class="st">"dashed"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="op">~</span><span class="va">Quantity</span>, scales <span class="op">=</span> <span class="st">"free_y"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"Year"</span>, y <span class="op">=</span> <span class="st">"Biomass (kt)"</span>, color <span class="op">=</span> <span class="st">"Projection"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">13</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"bottom"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="figures/i_sgl_catch_proj_biomass.png"></p>
+<p>Because catch is pinned for the first five projected years, the two
+runs differ only in fishing mortality over that period, and spawning
+biomass under the recent-catch trajectory sits above the harvest control
+rule run. Once the targets run out the harvest control rule takes over,
+and it responds to the higher biomass the constrained years produced
+rather than to the trajectory it would have followed on its own:</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">catch_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">bind_rows</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span>Year <span class="op">=</span> <span class="va">years</span><span class="op">[</span><span class="op">-</span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">n_hist</span><span class="op">)</span><span class="op">]</span>, Catch <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">out</span><span class="op">$</span><span class="va">proj_Catch</span><span class="op">[</span>,<span class="fl">1</span>,,,, drop <span class="op">=</span> <span class="cn">FALSE</span><span class="op">]</span>, <span class="fl">3</span>, <span class="va">sum</span><span class="op">)</span>,</span>
+<span>         Projection <span class="op">=</span> <span class="st">"HCR"</span><span class="op">)</span>,</span>
+<span>  <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span>Year <span class="op">=</span> <span class="va">years</span><span class="op">[</span><span class="op">-</span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">n_hist</span><span class="op">)</span><span class="op">]</span>, Catch <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">out_catch</span><span class="op">$</span><span class="va">proj_Catch</span><span class="op">[</span>,<span class="fl">1</span>,,,, drop <span class="op">=</span> <span class="cn">FALSE</span><span class="op">]</span>, <span class="fl">3</span>, <span class="va">sum</span><span class="op">)</span>,</span>
+<span>         Projection <span class="op">=</span> <span class="st">"Recent catch"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">catch_df</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">Year</span>, y <span class="op">=</span> <span class="va">Catch</span>, color <span class="op">=</span> <span class="va">Projection</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>linewidth <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>size <span class="op">=</span> <span class="fl">2</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_abline.html" class="external-link">geom_vline</a></span><span class="op">(</span>xintercept <span class="op">=</span> <span class="fl">2029.5</span>, linetype <span class="op">=</span> <span class="st">"dotted"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/annotate.html" class="external-link">annotate</a></span><span class="op">(</span><span class="st">"text"</span>, x <span class="op">=</span> <span class="fl">2027</span>, y <span class="op">=</span> <span class="cn">Inf</span>, label <span class="op">=</span> <span class="st">"catch specified"</span>, vjust <span class="op">=</span> <span class="fl">1.5</span>, size <span class="op">=</span> <span class="fl">3.5</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/annotate.html" class="external-link">annotate</a></span><span class="op">(</span><span class="st">"text"</span>, x <span class="op">=</span> <span class="fl">2033</span>, y <span class="op">=</span> <span class="cn">Inf</span>, label <span class="op">=</span> <span class="st">"HCR resumes"</span>, vjust <span class="op">=</span> <span class="fl">1.5</span>, size <span class="op">=</span> <span class="fl">3.5</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"Year"</span>, y <span class="op">=</span> <span class="st">"Catch (kt)"</span>, color <span class="op">=</span> <span class="st">"Projection"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">13</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"bottom"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="figures/i_sgl_catch_proj_catch.png"></p>
+<p>A target larger than can be taken at <code>catch_f_max</code>
+(default 5) is unreachable. In that case fishing mortality is capped
+there, a warning names the affected regions, and
+<code>proj_catch_resid</code> records how far short the catch fell, so
+an infeasible request is never silently reported as met.</p>
+<p>Setting <code>catch_terminal_yr = TRUE</code> also solves projection
+year 1, which can be used when the assessment’s terminal year is
+incomplete and its catch is itself a projection. Supplying
+<code>catch_input</code> with a third dimension,
+<code>[n_regions, n_proj_yrs, n_seas]</code>, solves a separate fishing
+mortality for each season rather than distributing one annual value at
+the terminal year seasonal splits; that is only meaningful for seasonal
+models, and the solved seasonal rates are returned in
+<code>proj_F_seas</code>.</p>
+</div>
+<div class="section level4">
 <h4 id="multi-region-2">Multi Region<a class="anchor" aria-label="anchor" href="#multi-region-2"></a>
 </h4>
 <p>In the following, we will then demonstrate how catch projections can
@@ -1319,7 +1844,7 @@ In general, the steps are similar to the single-region case. Again, we
 will utilize the harvest control rule function defined above. Given that
 each region has their own unique estimates, this will result in
 different harvest control rules being applied to each region:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">HCR_function</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span>, <span class="va">frp</span>, <span class="va">brp</span>, <span class="va">alpha</span> <span class="op">=</span> <span class="fl">0.05</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">stock_status</span> <span class="op">&lt;-</span> <span class="va">x</span> <span class="op">/</span> <span class="va">brp</span></span>
 <span>  <span class="kw">if</span><span class="op">(</span><span class="va">stock_status</span> <span class="op">&gt;=</span> <span class="fl">1</span><span class="op">)</span> <span class="va">f</span> <span class="op">&lt;-</span> <span class="va">frp</span></span>
@@ -1347,7 +1872,7 @@ different harvest control rules being applied to each region:</p>
 <p><img src="figures/i_mlt_threshold_hcr.png"></p>
 <p>Let’s then define all the inputs needed to run the population
 projection:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"mlt_rg_sable_rep"</span><span class="op">)</span> <span class="co"># read in multi region report</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"mlt_rg_sable_data"</span><span class="op">)</span> <span class="co"># read in multi region data </span></span>
@@ -1383,13 +1908,13 @@ fishing mortality
 is applied across all regions because only a single global
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>F</mi><annotation encoding="application/x-tex">F</annotation></semantics></math>
 is estimated. This is illustrated below:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">f_ref_pt_global</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="va">mlt_ref_pt_global</span><span class="op">$</span><span class="va">f_ref_pt</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_regions</span>, <span class="va">n_proj_yrs</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">b_ref_pt_global</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="va">mlt_ref_pt_global</span><span class="op">$</span><span class="va">b_ref_pt</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_pop</span>, <span class="va">n_regions</span>, <span class="va">n_proj_yrs</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>By contrast, the independent SPR approach assigns a region-specific
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>F</mi><annotation encoding="application/x-tex">F</annotation></semantics></math>
 value. For example, in the first projection year:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">f_ref_pt_indp</span><span class="op">[</span>,<span class="fl">2</span><span class="op">]</span> <span class="co"># independent SPR</span></span>
 <span><span class="co">#&gt; [1] 0.08444344 0.08452630 0.08497820 0.08486098 0.08506540</span></span>
 <span><span class="va">f_ref_pt_global</span><span class="op">[</span>,<span class="fl">2</span><span class="op">]</span> <span class="co"># global SPR</span></span>
@@ -1400,7 +1925,7 @@ value. For example, in the first projection year:</p>
 <span><span class="co">#&gt; [1]  8.322787 13.286298  9.042983 46.782189 35.428033</span></span></code></pre></div>
 <p>For the projections that follow, we use independent SPR rates to
 allow for region-specific reference points:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Do_Population_Projection.html">Do_Population_Projection</a></span><span class="op">(</span>n_proj_yrs <span class="op">=</span> <span class="va">n_proj_yrs</span>,</span>
 <span>                              n_regions <span class="op">=</span> <span class="va">n_regions</span>,</span>
 <span>                              n_ages <span class="op">=</span> <span class="va">n_ages</span>,</span>
@@ -1427,7 +1952,7 @@ allow for region-specific reference points:</p>
 <span>                              t_spawn <span class="op">=</span> <span class="va">t_spawn</span><span class="op">)</span></span></code></pre></div>
 <p>Again, we can visualize what these projections look like in terms of
 SSB and catch advice:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">combined_ssb</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">mlt_rg_sable_rep</span><span class="op">$</span><span class="va">SSB</span><span class="op">[</span><span class="fl">1</span>,,<span class="op">-</span><span class="fl">62</span><span class="op">]</span>, <span class="va">out</span><span class="op">$</span><span class="va">proj_SSB</span><span class="op">[</span><span class="fl">1</span>,,<span class="op">]</span><span class="op">)</span></span>
 <span><span class="va">combined_ssb_df</span> <span class="op">&lt;-</span> <span class="fu">reshape2</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/reshape2/man/melt.html" class="external-link">melt</a></span><span class="op">(</span><span class="va">combined_ssb</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html" class="external-link">rename</a></span><span class="op">(</span>Region <span class="op">=</span> <span class="va">Var1</span>, Year <span class="op">=</span> <span class="va">Var2</span>, SSB <span class="op">=</span> <span class="va">value</span><span class="op">)</span></span>
@@ -1441,7 +1966,7 @@ SSB and catch advice:</p>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">13</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">'none'</span><span class="op">)</span></span></code></pre></div>
 <p><img src="figures/i_mlt_proj_ssb.png"></p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">combined_catch</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">mlt_rg_sable_rep</span><span class="op">$</span><span class="va">PredCatch</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">3</span><span class="op">)</span>, <span class="va">sum</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">out</span><span class="op">$</span><span class="va">proj_Catch</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">3</span><span class="op">)</span>, <span class="va">sum</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">combined_catch_df</span> <span class="op">&lt;-</span> <span class="fu">reshape2</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/reshape2/man/melt.html" class="external-link">melt</a></span><span class="op">(</span><span class="va">combined_catch</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html" class="external-link">rename</a></span><span class="op">(</span>Region <span class="op">=</span> <span class="va">Var1</span>, Year <span class="op">=</span> <span class="va">Var2</span>, Catch <span class="op">=</span> <span class="va">value</span><span class="op">)</span></span>
@@ -1480,7 +2005,7 @@ in each projection year,</li>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">F = 0</annotation></semantics></math>
 for projections.</li>
 </ol>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"sgl_rg_sable_rep"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"sgl_rg_sable_data"</span><span class="op">)</span></span>
 <span></span>
@@ -1511,7 +2036,7 @@ for projections.</li>
 <span><span class="va">sexratio</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0.5</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_pop</span>, <span class="va">n_regions</span>, <span class="va">n_proj_yrs</span>, <span class="va">n_sexes</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>We can then define our two projection scenarios and arrays to store
 results in:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">proj_inputs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>f_ref_pt <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="va">sgl_ref_pt</span><span class="op">$</span><span class="va">f_ref_pt</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_regions</span>, <span class="va">n_proj_yrs</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>       b_ref_pt <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="va">sgl_ref_pt</span><span class="op">$</span><span class="va">b_ref_pt</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_pop</span>, <span class="va">n_regions</span>, <span class="va">n_proj_yrs</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -1524,7 +2049,7 @@ results in:</p>
 <span><span class="va">all_scenarios_f</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_regions</span>, <span class="va">n_proj_yrs</span>, <span class="va">n_sims</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">proj_inputs</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">all_scenarios_ssb</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_regions</span>, <span class="va">n_proj_yrs</span>, <span class="va">n_sims</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">proj_inputs</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">all_scenarios_catch</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_regions</span>, <span class="va">n_proj_yrs</span>, <span class="va">n_fish_fleets</span>, <span class="va">n_sims</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">proj_inputs</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
 <span><span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">proj_inputs</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="kw">for</span> <span class="op">(</span><span class="va">sim</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="va">n_sims</span><span class="op">)</span> <span class="op">{</span></span>
@@ -1560,7 +2085,7 @@ results in:</p>
 <span><span class="op">}</span></span></code></pre></div>
 <p>Finally, we can plot these stochastic simulations to inspect
 results:</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">historical</span> <span class="op">&lt;-</span> <span class="fu">reshape2</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/reshape2/man/melt.html" class="external-link">melt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="va">sgl_rg_sable_rep</span><span class="op">$</span><span class="va">SSB</span>, <span class="va">n_sims</span><span class="op">)</span>,</span>
 <span>                                   dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_regions</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">sgl_rg_sable_data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>, <span class="va">n_sims</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>Year <span class="op">=</span> <span class="va">Var2</span> <span class="op">+</span> <span class="fl">1959</span>, Scenario <span class="op">=</span> <span class="st">"FABC (F40)"</span>, Type <span class="op">=</span> <span class="st">"Historical"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
@@ -1587,7 +2112,7 @@ results:</p>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">15</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">'none'</span><span class="op">)</span></span></code></pre></div>
 <p><img src="figures/i_sgl_stoch_proj_ssb.png"></p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">historical</span> <span class="op">&lt;-</span> <span class="fu">reshape2</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/reshape2/man/melt.html" class="external-link">melt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="va">sgl_rg_sable_data</span><span class="op">$</span><span class="va">ObsCatch</span>, <span class="va">n_sims</span><span class="op">)</span>,</span>
 <span>                                   dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_regions</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">sgl_rg_sable_data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>, <span class="va">sgl_rg_sable_data</span><span class="op">$</span><span class="va">n_fish_fleets</span>, <span class="va">n_sims</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>Year <span class="op">=</span> <span class="va">Var2</span> <span class="op">+</span> <span class="fl">1959</span>, Scenario <span class="op">=</span> <span class="st">"FABC (F40)"</span>, Type <span class="op">=</span> <span class="st">"Historical"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>

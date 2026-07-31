@@ -71,31 +71,23 @@
   with a smaller, harder-fished stock. `init_F_prop` is still accepted
   and is converted to the `"prop"` form, so existing calls are
   unaffected.
-
 - Added `backwards_compatibility_guard()`, which fills in data and
   parameters that current `SPoRC_rtmb` calls expect but older input
   lists predate, so previously built objects keep evaluating unchanged.
-
 - Changed parameter names of ln_srv_fixed_sel_pars and
   ln_fish_fixed_sel_pars to srv_fixed_sel_pars and fish_fixed_sel_pars
   for clarity.
-
 - Included new options to estimate non-parametric selectivity, bicubic
   selectivity, logistic selectivity with an asymptote parameter, as well
   as provide fixed selectivity (fishery, retention, and survey) inputs.
-
 - Changed dimensions of init_F_prop to be region, season, and
   fleet-specific (as opposed to just being based on the first fishery
   fleet).
-
 - Coded in an argument in `do_retrospective` to return retrospective
   RTMB model objects (`return_models`).
-
 - Added 95% confidence intervals for SDNR based on a Chi squared test
   for OSA residuals.
-
 - Force non-parametric selectivity to be mean-standardized.
-
 - Added OSA residuals and `oneStepPredict` functionality to time-series
   observations (indices and catch) as well as composition and tagging
   data. `get_osa` and `plot_resids` modified to accomodate plotting of
@@ -111,7 +103,6 @@
   `get_idx_fits`’s documentation that its `resid` column is a raw
   log-scale (Pearson-style) residual, distinct from the one-step-ahead
   residuals produced by `get_osa`/`plot_resids`.
-
 - Consolidated selectivity smoothness/regularization penalties into a
   single set of six weights (`smooth_bin_curve`, `smooth_bin_diff`,
   `smooth_yr_diff`, `smooth_yr_curve`, `smooth_dome`,
@@ -147,11 +138,6 @@
 
 - Fixed bug on smoothing penalty of time-varying selectivity where it
   was not being applied in the first year.
-- Fixed inconsistent logic between the fishing mortality and discard
-  mortality rate zeroing conditions for population-specific catch:
-  `Fmort` was forced to zero if *any* population’s catch was unused,
-  while the parallel discard mortality rate condition correctly required
-  *all* populations to be unused. Both now consistently use the latter.
 
 ## version 1.1.0
 

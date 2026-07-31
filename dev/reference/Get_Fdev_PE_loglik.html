@@ -45,15 +45,7 @@ error structure.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">Get_Fdev_PE_loglik</span><span class="op">(</span></span>
-<span>  <span class="va">PE_model</span>,</span>
-<span>  <span class="va">ln_sigmaF</span>,</span>
-<span>  <span class="va">Fdev_rho</span>,</span>
-<span>  <span class="va">ln_F_devs</span>,</span>
-<span>  <span class="va">UseCatch</span>,</span>
-<span>  <span class="va">UseCatch_pop</span>,</span>
-<span>  <span class="va">missing_catch</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">Get_Fdev_PE_loglik</span><span class="op">(</span><span class="va">PE_model</span>, <span class="va">ln_sigmaF</span>, <span class="va">Fdev_rho</span>, <span class="va">ln_F_devs</span>, <span class="va">map_ln_F_devs</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -84,22 +76,19 @@ unconstrained AR1 partial correlation (only used when <code>PE_model ==
 n_fish_fleets]</code> of log-scale fishing mortality deviations.</p></dd>
 
 
-<dt id="arg-usecatch-usecatch-pop">UseCatch, UseCatch_pop<a class="anchor" aria-label="anchor" href="#arg-usecatch-usecatch-pop"></a></dt>
-<dd><p>Same binary catch-usage indicators as
-elsewhere; a cell is penalized if aggregated catch or any
-population-specific catch is used.</p></dd>
-
-
-<dt id="arg-missing-catch">missing_catch<a class="anchor" aria-label="anchor" href="#arg-missing-catch"></a></dt>
-<dd><p>Logical array <code>[n_regions x n_years x n_seas x
-n_fish_fleets]</code>, <code>TRUE</code> where the aggregate catch observation
-(<code>ObsCatch</code>) is missing (<code>NA</code>) rather than a true recorded
-zero. A cell with <code>UseCatch == 0</code> (and no population-specific
-catch used) is still penalized as an ordinary active year when
-<code>missing_catch</code> is <code>TRUE</code> there (fishing presumably
-continued, we simply lack a value to fit), as opposed to a true
-recorded zero, which is treated as a real closure and excluded from
-the gap count.</p></dd>
+<dt id="arg-map-ln-f-devs">map_ln_F_devs<a class="anchor" aria-label="anchor" href="#arg-map-ln-f-devs"></a></dt>
+<dd><p>Array <code>[n_regions x n_years x n_seas x
+n_fish_fleets]</code> mirroring <code>$map$ln_F_devs</code>: an estimation index
+where a deviation is estimated, <code>NA</code> where it is fixed. Only
+estimated deviations are penalized, and they alone form the active
+sequence, so a fixed cell is skipped and widens the gap \(d\) between
+the deviations either side of it. <code><a href="do_Fmort_mapping.html">do_Fmort_mapping</a></code> builds
+this from the catch-usage indicators, estimating a deviation wherever
+aggregated or any population-specific catch is used, or where the
+aggregate catch observation (<code>ObsCatch</code>) is missing (<code>NA</code>)
+rather than a true recorded zero (fishing presumably continued, we
+simply lack a value to fit), while a true recorded zero is a real
+closure and is excluded.</p></dd>
 
 </dl></div>
     <div class="section level2">

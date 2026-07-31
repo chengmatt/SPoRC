@@ -763,7 +763,8 @@ data. 0: Don’t fit catch, 1: Fit catch</td>
 <td>Use_F_pen</td>
 <td>Value specifying whether to use a fishing mortality penalty to
 regularize fishing mortality deviations. 0: Don’t use regularity
-penalty, 1: Use regularity penalty</td>
+penalty, 1: Use regularity penalty. Which cells are penalized is read
+off map_ln_F_devs</td>
 </tr>
 <tr class="odd">
 <td>ObsDiscard</td>
@@ -790,7 +791,24 @@ data. 0: Don’t fit discard, 1: Fit discard</td>
 <tr class="odd">
 <td>Use_dmr_pen</td>
 <td>Value specifying whether to use a discard mortality rate penalty. 0:
-Don’t use penalty, 1: Use penalty</td>
+Don’t use penalty, 1: Use penalty. Which cells are penalized is read off
+map_logit_dmr_devs</td>
+</tr>
+<tr class="even">
+<td>map_ln_F_devs</td>
+<td>Array dimensioned by n_regions, n_years, n_seas, n_fish_fleets
+mirroring the ln_F_devs factor map: an estimation index where a
+deviation is estimated, NA where it is fixed (mapped off). Built by
+Setup_Mod_Catch_and_F and refreshed by fit_model from the map handed to
+RTMB::MakeADFun. The fishing mortality deviation penalty is evaluated
+only where this is not NA</td>
+</tr>
+<tr class="odd">
+<td>map_logit_dmr_devs</td>
+<td>Array dimensioned by n_regions, n_years, n_seas, n_fish_fleets
+mirroring the logit_dmr_devs factor map, in the same form as
+map_ln_F_devs. The discard mortality rate deviation penalty is evaluated
+only where this is not NA</td>
 </tr>
 </tbody>
 </table>

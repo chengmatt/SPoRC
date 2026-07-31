@@ -1697,7 +1697,9 @@ length <code>n_regions</code>)</td>
 <tr class="even">
 <td><code>Use_F_pen</code></td>
 <td>0/1 toggle for the fishing mortality deviation penalty
-(<code>Fmort_nLL</code>)</td>
+(<code>Fmort_nLL</code>); see <a href="#which-deviations-are-penalized">Which deviations are
+penalized</a>
+</td>
 </tr>
 <tr class="odd">
 <td>
@@ -1754,7 +1756,9 @@ closed years is taken directly over the elapsed gap (the same marginal
 transition obtained by estimating deviations for the closed years and
 integrating them out, without actually estimating them). See [Fishing
 Mortality Deviations] in <code><a href="../articles/c_model_equations.html">vignette("c_model_equations")</a></code> for
-the exact equations.</p>
+the exact equations, and <a href="#which-deviations-are-penalized">Which
+deviations are penalized</a> for how the active sequence is
+determined.</p>
 </div>
 <div class="section level4">
 <h4 id="discard-and-retention-framework">Discard and retention framework<a class="anchor" aria-label="anchor" href="#discard-and-retention-framework"></a>
@@ -1791,20 +1795,28 @@ dead-discard components:</p>
 </tr>
 <tr class="odd">
 <td><code>dmr_dev_spec</code></td>
-<td>Estimation structure for DMR deviations</td>
+<td>Estimation structure for DMR deviations: <code>"fix"</code>
+(default) or <code>"est_all"</code>
+</td>
 </tr>
 <tr class="even">
+<td><code>Use_dmr_pen</code></td>
+<td>0/1 toggle for the DMR deviation penalty (<code>dmr_nLL</code>);
+must be <code>1</code> when <code>dmr_dev_spec = "est_all"</code>
+</td>
+</tr>
+<tr class="odd">
 <td><code>discard_units</code></td>
 <td>Per-fleet: 0 = abundance, 1 = biomass, 2 = abundance fraction, 3 =
 biomass fraction</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>
 <code>ObsDiscard</code> / <code>ObsDiscard_pop</code>
 </td>
 <td>Observed aggregate and population-specific discards</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>
 <code>sigmaD_spec</code> / <code>sigmaD_pop_spec</code>
 </td>
@@ -1812,6 +1824,66 @@ biomass fraction</td>
 </tr>
 </tbody>
 </table>
+</div>
+<div class="section level4">
+<h4 id="estimating-discard-mortality-rates">Estimating discard mortality rates<a class="anchor" aria-label="anchor" href="#estimating-discard-mortality-rates"></a>
+</h4>
+<p><code>dmr_dev_spec = "est_all"</code> estimates an annual deviation
+in every <strong>fished</strong> region × year × season × fleet cell,
+not only in cells carrying a discard observation. This is deliberate.
+From the decomposition above, <code>dmr</code> scales the dead-discard
+component of total mortality, so it enters
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Z</mi><annotation encoding="application/x-tex">Z</annotation></semantics></math>
+and therefore propagates into predicted retained catch, indices, and
+compositions:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>C</mi><mi>a</mi></msub><mo>=</mo><mfrac><msubsup><mi>F</mi><mi>a</mi><mtext mathvariant="normal">ret</mtext></msubsup><msub><mi>Z</mi><mi>a</mi></msub></mfrac><msub><mi>N</mi><mi>a</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mi>−</mi><msub><mi>Z</mi><mi>a</mi></msub></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">C_{a} = \frac{F^{\text{ret}}_{a}}{Z_{a}} N_{a} \left(1 - e^{-Z_{a}}\right)</annotation></semantics></math></p>
+<p>A cell is therefore informative about <code>dmr</code> whenever it is
+fished and retention is less than one, with or without discard data.
+Discard observations are not the dividing line — <code>dmr</code> in
+fact cancels out of the predicted discard itself, which divides the dead
+discards back through by it, leaving only the same
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Z</mi><annotation encoding="application/x-tex">Z</annotation></semantics></math>
+dependence.</p>
+<p>The cells excluded are true closures, matching the condition under
+which the objective pins <code>dmr</code> to zero: no aggregate or
+population-specific catch is fit, and the aggregate catch observation is
+a recorded zero rather than missing (<code>NA</code>). A missing
+observation is treated as a fished year, on the assumption that fishing
+continued and we simply lack a value to fit.</p>
+<p>Note that a fleet with full retention (<code>ret_sel = 1</code>, the
+package default) contributes no dead discards at all, so
+<code>dmr</code> drops out of the objective entirely and its deviations
+have a flat gradient. <code>dmr_dev_spec</code> and
+<code>dmr_mean_spec</code> are only meaningful once retention is
+actually modelled — see
+<code><a href="../articles/s_discard_retention.html">vignette("s_discard_retention")</a></code>.</p>
+</div>
+<div class="section level4">
+<h4 id="which-deviations-are-penalized">Which deviations are penalized<a class="anchor" aria-label="anchor" href="#which-deviations-are-penalized"></a>
+</h4>
+<p>The <code>ln_F_devs</code> and <code>logit_dmr_devs</code> penalties
+are evaluated on exactly the deviations that are estimated, read off the
+map mirrors <code>map_ln_F_devs</code> and
+<code>map_logit_dmr_devs</code> in the data list rather than recomputed
+from the catch indicators. <code><a href="../reference/fit_model.html">fit_model()</a></code> refreshes those
+mirrors from the map immediately before building the model, so a
+deviation mapped off by hand after setup is neither estimated nor
+penalized:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># drop dmr deviations for a stretch of years, penalty included</span></span>
+<span><span class="va">mp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">map</span><span class="op">$</span><span class="va">logit_dmr_devs</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">logit_dmr_devs</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">mp</span><span class="op">[</span>, <span class="fl">10</span><span class="op">:</span><span class="fl">20</span>, , <span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span>
+<span><span class="va">input_list</span><span class="op">$</span><span class="va">map</span><span class="op">$</span><span class="va">logit_dmr_devs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">mp</span><span class="op">)</span></span></code></pre></div>
+<p>Two consequences worth knowing. Mapping a deviation off pins it at
+whatever sits in <code>$par</code>, which is <code>0</code> by default —
+so <code>dmr</code> falls back on <code>plogis(logit_dmr_mean)</code> —
+but a starting value supplied through <code>...</code> is kept, not
+reset to zero. And under <code>Fdev_model = "rw"</code> or
+<code>"ar1"</code>, a pinned deviation is dropped from the active
+sequence, widening the gap
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>d</mi><annotation encoding="application/x-tex">d</annotation></semantics></math>
+between the deviations either side of it rather than being treated as an
+actual year.</p>
 <hr>
 </div>
 </div>

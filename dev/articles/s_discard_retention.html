@@ -337,8 +337,10 @@ encapsulates the full EM setup for a single simulation replicate.</p>
 <span>    <span class="co"># Discard data (discard units are biomass fractions as default)</span></span>
 <span>    ObsDiscard     <span class="op">=</span> <span class="va">sim_data</span><span class="op">$</span><span class="va">ObsDiscard</span>, <span class="co"># observed discards</span></span>
 <span>    UseDiscard     <span class="op">=</span> <span class="va">sim_data</span><span class="op">$</span><span class="va">UseDiscard</span>, <span class="co"># using discards</span></span>
-<span>    sigma_dmr_spec <span class="op">=</span> <span class="st">"fix"</span>, <span class="co"># fixing the deviations of discard mortality rate</span></span>
-<span>    dmr_mean_spec  <span class="op">=</span> <span class="st">"est_all"</span>, <span class="co"># estimating discard mortality rate deviations</span></span>
+<span>    sigma_dmr_spec <span class="op">=</span> <span class="st">"fix"</span>, <span class="co"># fixing the SD of the discard mortality rate deviations</span></span>
+<span>    dmr_mean_spec  <span class="op">=</span> <span class="st">"est_all"</span>, <span class="co"># estimating the mean discard mortality rate</span></span>
+<span>    <span class="co"># dmr_dev_spec is left at its "fix" default here, so no annual deviations</span></span>
+<span>    <span class="co"># are estimated and dmr is the estimated mean in every year</span></span>
 <span>    ln_sigmaD      <span class="op">=</span> <span class="va">sim_data</span><span class="op">$</span><span class="va">ln_sigmaD</span> <span class="co"># discard time series uncertainty</span></span>
 <span>  <span class="op">)</span></span>
 <span></span>

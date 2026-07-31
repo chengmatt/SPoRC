@@ -19,7 +19,7 @@ be females and the second dimension will always be males.
 | `ln_sigmaD_pop` | `n_pop × n_regions × n_years × n_seas × n_fish_fleets` | Log-scale standard deviation for population-specific discard likelihood | 0.01 |
 | `ln_sigma_dmr` | `n_regions × n_seas × n_fish_fleets` | Log-scale standard deviation for discard mortality rate process error | 0 |
 | `logit_dmr_mean` | `n_regions × n_seas × n_fish_fleets` | Logit-scale mean discard mortality rate | 0 |
-| `logit_dmr_devs` | `n_regions × n_years × n_seas × n_fish_fleets` | Logit-scale annual discard mortality rate deviations (can be specified as random effects) | 0 |
+| `logit_dmr_devs` | `n_regions × n_years × n_seas × n_fish_fleets` | Logit-scale annual discard mortality rate deviations (can be specified as random effects). Fixed at zero by default; `dmr_dev_spec = "est_all"` estimates a deviation in every fished cell, whether or not discard data are present there (see [`vignette("t_model_options")`](https://chengmatt.github.io/SPoRC/dev/articles/t_model_options.md)) | 0 |
 
 ## Fishery Selectivity
 

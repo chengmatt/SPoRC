@@ -164,7 +164,10 @@ error</td>
 <td><code>logit_dmr_devs</code></td>
 <td><code>n_regions × n_years × n_seas × n_fish_fleets</code></td>
 <td>Logit-scale annual discard mortality rate deviations (can be
-specified as random effects)</td>
+specified as random effects). Fixed at zero by default;
+<code>dmr_dev_spec = "est_all"</code> estimates a deviation in every
+fished cell, whether or not discard data are present there (see
+<code><a href="../articles/t_model_options.html">vignette("t_model_options")</a></code>)</td>
 <td>0</td>
 </tr>
 </tbody>

@@ -292,8 +292,10 @@ setup_em <- function(sim_obj, sim) {
     # Discard data (discard units are biomass fractions as default)
     ObsDiscard     = sim_data$ObsDiscard, # observed discards
     UseDiscard     = sim_data$UseDiscard, # using discards
-    sigma_dmr_spec = "fix", # fixing the deviations of discard mortality rate
-    dmr_mean_spec  = "est_all", # estimating discard mortality rate deviations
+    sigma_dmr_spec = "fix", # fixing the SD of the discard mortality rate deviations
+    dmr_mean_spec  = "est_all", # estimating the mean discard mortality rate
+    # dmr_dev_spec is left at its "fix" default here, so no annual deviations
+    # are estimated and dmr is the estimated mean in every year
     ln_sigmaD      = sim_data$ln_sigmaD # discard time series uncertainty
   )
 

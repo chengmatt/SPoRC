@@ -118,8 +118,8 @@ contain active observations.
 | `SrvLenComps_nLL` | Negative log-likelihood for region-aggregated survey length compositions | `n_regions × n_years × n_seas × n_sexes × n_srv_fleets` |
 | `SrvLenComps_pop_nLL` | Negative log-likelihood for population-specific survey length compositions | `n_pop × n_regions × n_years × n_seas × n_sexes × n_srv_fleets` |
 | `M_nLL` | Negative log-likelihood (prior) for natural mortality | scalar |
-| `Fmort_nLL` | Negative log-likelihood (penalty) for fishing mortality deviations | `n_regions × n_years × n_seas × n_fish_fleets` |
-| `dmr_nLL` | Negative log-likelihood (penalty) for discard mortality rate deviations | `n_regions × n_years × n_seas × n_fish_fleets` |
+| `Fmort_nLL` | Negative log-likelihood (penalty) for fishing mortality deviations. Zero wherever the deviation is not estimated | `n_regions × n_years × n_seas × n_fish_fleets` |
+| `dmr_nLL` | Negative log-likelihood (penalty) for discard mortality rate deviations. Zero wherever the deviation is not estimated | `n_regions × n_years × n_seas × n_fish_fleets` |
 | `Rec_nLL` | Negative log-likelihood (penalty) for recruitment deviations | `n_pop × n_regions × n_est_rec_devs` |
 | `Init_Rec_nLL` | Negative log-likelihood (penalty) for initial age deviations | `n_pop × n_regions × (n_ages - 2)` |
 | `conv_fish_tag_nLL` | Negative log-likelihood for conventional tag recaptures | `conv_tag_max_liberty × n_seas × n_conv_tag_cohorts × n_regions × n_fish_fleets` |

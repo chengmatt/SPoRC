@@ -143,12 +143,14 @@ the order they are defined.
 | catch_units | Array dimensioned by n_fish_fleets describing catch units. 0 == Abundance, 1 == Biomass (default) |
 | UseCatch | Array dimensioned by n_regions, n_years, n_seas, n_fish_fleets describing whether to fit to catch data in a given year, season, and fleet. 0: Don’t fit catch, 1: Fit catch |
 | UseCatch_pop | Array dimensioned by n_pop, n_regions, n_years, n_seas, n_fish_fleets describing whether to fit to population-specific catch data. 0: Don’t fit catch, 1: Fit catch |
-| Use_F_pen | Value specifying whether to use a fishing mortality penalty to regularize fishing mortality deviations. 0: Don’t use regularity penalty, 1: Use regularity penalty |
+| Use_F_pen | Value specifying whether to use a fishing mortality penalty to regularize fishing mortality deviations. 0: Don’t use regularity penalty, 1: Use regularity penalty. Which cells are penalized is read off map_ln_F_devs |
 | ObsDiscard | Observed discard data dimensioned by n_regions, n_years, n_seas, n_fish_fleets. Used in region-aggregated discard likelihoods |
 | discard_units | Array dimensioned by n_fish_fleets describing discard units. 0 == Abundance, 1 == Biomass |
 | UseDiscard | Array dimensioned by n_regions, n_years, n_seas, n_fish_fleets describing whether to fit to discard data in a given year, season, and fleet. 0: Don’t fit discard, 1: Fit discard |
 | UseDiscard_pop | Array dimensioned by n_pop, n_regions, n_years, n_seas, n_fish_fleets describing whether to fit to population-specific discard data. 0: Don’t fit discard, 1: Fit discard |
-| Use_dmr_pen | Value specifying whether to use a discard mortality rate penalty. 0: Don’t use penalty, 1: Use penalty |
+| Use_dmr_pen | Value specifying whether to use a discard mortality rate penalty. 0: Don’t use penalty, 1: Use penalty. Which cells are penalized is read off map_logit_dmr_devs |
+| map_ln_F_devs | Array dimensioned by n_regions, n_years, n_seas, n_fish_fleets mirroring the ln_F_devs factor map: an estimation index where a deviation is estimated, NA where it is fixed (mapped off). Built by Setup_Mod_Catch_and_F and refreshed by fit_model from the map handed to RTMB::MakeADFun. The fishing mortality deviation penalty is evaluated only where this is not NA |
+| map_logit_dmr_devs | Array dimensioned by n_regions, n_years, n_seas, n_fish_fleets mirroring the logit_dmr_devs factor map, in the same form as map_ln_F_devs. The discard mortality rate deviation penalty is evaluated only where this is not NA |
 
 ## Data Inputs for Defining Fishery Indices and Compositions
 

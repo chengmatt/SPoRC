@@ -175,7 +175,7 @@ through that one file.
 | `setup_fishery_catch.R` | `do_dmr_dev_mapping`, `do_dmr_mean_mapping`, `do_Fdev_rho_mapping`, `do_Fmort_mapping`, `do_sigma_dmr_mapping`, `do_sigmaC_mapping`, `do_sigmaC_pop_mapping`, `do_sigmaD_mapping`, `do_sigmaD_pop_mapping`, `do_sigmaF_mapping`, `Setup_Mod_Catch_and_F`, `Setup_Sim_Fishing` | `setup_checks.R`, `setup_mapping.R`, `utils_setup.R` | `sim_closed_loop.R`, `sim_self_test.R` |
 | `setup_fishery_comps.R` | `Setup_Mod_Discard_Comps`, `Setup_Mod_FishIdx_and_Comps` | `setup_checks.R`, `setup_mapping.R`, `utils_setup.R` |  |
 | `setup_fishery_selectivity.R` | `Setup_Mod_Fishsel_and_Q`, `Setup_Mod_Retsel` | `setup_checks.R`, `setup_mapping.R`, `utils_math.R`, `utils_setup.R` |  |
-| `setup_mapping.R` | `build_pe_map`, `build_shared_spec_map`, `do_comp_corr_pars_mapping`, `do_comp_theta_mapping`, `do_fixed_sel_pars_mapping`, `do_q_mapping`, `do_sel_devs_mapping`, `do_sel_pe_pars_mapping` | `utils_setup.R` | `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_fishery_selectivity.R`, `setup_movement.R`, `setup_recruitment.R`, `setup_survey.R` |
+| `setup_mapping.R` | `build_pe_map`, `build_shared_spec_map`, `do_comp_corr_pars_mapping`, `do_comp_theta_mapping`, `do_fixed_sel_pars_mapping`, `do_q_mapping`, `do_sel_devs_mapping`, `do_sel_pe_pars_mapping`, `sync_dev_map_data` | `utils_setup.R` | `model_fit.R`, `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_fishery_selectivity.R`, `setup_movement.R`, `setup_recruitment.R`, `setup_survey.R` |
 | `setup_movement.R` | `do_cont_vary_move_mapping`, `do_move_pars_mapping`, `Setup_Mod_Movement` | `model_movement.R`, `setup_checks.R`, `setup_mapping.R`, `utils_setup.R` |  |
 | `setup_recruitment.R` | `do_h_mapping`, `do_InitDevs_mapping`, `do_rec_region_prop_mapping`, `do_rec_seas_prop_mapping`, `do_RecDevs_mapping`, `do_sexratio_pars_mapping`, `do_sigmaR_mapping`, `do_stray_rate_mapping`, `Setup_Mod_Rec`, `Setup_Sim_Rec` | `setup_checks.R`, `setup_mapping.R`, `utils_setup.R` | `sim_closed_loop.R`, `sim_self_test.R` |
 | `setup_sim_containers.R` | `Setup_Sim_Containers` | nothing | `sim_closed_loop.R`, `sim_self_test.R` |
@@ -189,7 +189,7 @@ through that one file.
 |----|----|----|----|
 | `model_biomass.R` | `compute_biom_y`, `derive_proj_biom` | `model_transition.R` | `model_population_dynamics.R`, `projection.R` |
 | `model_distributions.R` | `dbeta_symmetric`, `ddirichlet`, `ddirmult`, `dlogistnormal`, `dnbinom_robust_noint`, `dpois_noint`, `get_beta_scaled_pars` | nothing | `model_lik_comps.R`, `model_lik_tags.R`, `model_priors_penalties.R` |
-| `model_fit.R` | `cmb`, `fit_model` | nothing | `diag_francis.R`, `diag_jitter.R`, `diag_likelihood_profile.R`, `diag_retrospective.R`, `refpts_main.R`, `sim_self_test.R` |
+| `model_fit.R` | `cmb`, `fit_model` | `setup_mapping.R` | `diag_francis.R`, `diag_jitter.R`, `diag_likelihood_profile.R`, `diag_retrospective.R`, `refpts_main.R`, `sim_self_test.R` |
 | `model_init_naa.R` | `Get_Init_NAA` | `model_transition.R` | `model_objective.R`, `sim_population.R` |
 | `model_lik_comps.R` | `eval_comp_osa`, `Get_Comp_Likelihoods`, `Get_Comp_Likelihoods_OSA`, `pack_comp_osa` | `model_distributions.R`, `model_osa.R`, `utils_math.R` | `diag_osa_residuals.R`, `model_objective.R` |
 | `model_lik_tags.R` | `eval_tag_osa`, `get_conv_tag_likelihoods`, `pack_tag_osa`, `tag_fam_of`, `tag_grid` | `model_distributions.R`, `model_osa.R` | `diag_osa_residuals.R`, `model_objective.R` |
@@ -209,7 +209,7 @@ through that one file.
 
 | Script | Defines | Calls into | Called from |
 |----|----|----|----|
-| `projection.R` | `Do_Population_Projection` | `model_biomass.R`, `model_recruitment.R`, `model_transition.R`, `sim_random_variates.R` | `plot_figures_tables.R` |
+| `projection.R` | `build_proj_F`, `Do_Population_Projection`, `proj_catch_at_F`, `proj_log_catch_resid`, `proj_target_catch`, `run_proj_year`, `solve_proj_F_catch`, `solve_proj_year_F` | `model_biomass.R`, `model_recruitment.R`, `model_transition.R`, `sim_random_variates.R` | `plot_figures_tables.R` |
 | `refpts_main.R` | `build_plus_group_T`, `Get_Reference_Points`, `optim_ref_pts`, `solve_plus_group` | `model_fit.R`, `model_transition.R` | `plot_figures_tables.R`, `refpts_msy.R`, `refpts_spr.R`, `sim_closed_loop.R` |
 | `refpts_msy.R` | `global_BH_Fmsy`, `local_BH_Fmsy_multipop`, `local_BH_Fmsy_sglpop`, `single_region_BH_Fmsy` | `model_transition.R`, `refpts_main.R` |  |
 | `refpts_spr.R` | `global_SPR`, `single_region_SPR` | `model_transition.R`, `refpts_main.R` |  |
@@ -282,17 +282,17 @@ what is under test rather than which stock the fixture happens to use.
 
 | Prefix | Files | What it covers |
 |----|----|----|
-| `test-setup_*` | 7 | Input building: the `map` factor builders and the `Setup_Mod_*` validation |
-| `test-model_*` | 15 | One objective function module each: selectivity, movement, transition, observation models, likelihoods, distributions |
+| `test-setup_*` | 9 | Input building: the `map` factor builders and the `Setup_Mod_*` validation |
+| `test-model_*` | 20 | One objective function module each: selectivity, movement, transition, observation models, likelihoods, distributions |
 | `test-utils_*` | 2 | Shared numerical helpers |
 | `test-sim_*` | 4 | Operating model, including simulate then refit self tests |
-| `test-refpts_*` | 7 | SPR and MSY solvers, one file per spatial structure |
-| `test-projection_*` | 2 | Forward projection off a fitted model |
+| `test-refpts_*` | 8 | SPR and MSY solvers, one file per spatial structure |
+| `test-projection_*` | 3 | Forward projection off a fitted model |
 | `test-diag_*` | 8 | Post fit diagnostics: retrospectives and OSA residuals |
 | `test-integration_*` | 4 | Cross cutting agreement between the objective, the reference points and the operating model |
 | `test-regression_*` | 5 | End to end fits pinning `obj$rep` and `nll` for known configurations |
 
-That is 54 test files in total.
+That is 63 test files in total.
 
 Two groups are worth calling out. The `test-regression_*` files pin
 `obj$rep` and `nll` values for known configurations against bundled

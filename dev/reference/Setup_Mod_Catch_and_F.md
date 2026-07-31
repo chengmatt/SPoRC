@@ -246,8 +246,8 @@ Setup_Mod_Catch_and_F(
   Character string specifying the sharing/estimation structure for
   `logit_dmr_devs` (logit-scale annual discard mortality rate
   deviations). Default `"fix"` holds deviations at zero (unless
-  overridden via `...`). Use `"est"` to estimate deviations; requires
-  `Use_dmr_pen = 1`. See
+  overridden via `...`). Use `"est_all"` to estimate a deviation in
+  every fished cell; requires `Use_dmr_pen = 1`. See
   [`do_dmr_dev_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_dmr_dev_mapping.md)
   for sharing options.
 

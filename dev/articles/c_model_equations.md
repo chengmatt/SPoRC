@@ -56,8 +56,37 @@ N_{p,r,a,s}^{'} = \mu_p^{\text{RecInit}}\exp\left( - (a - 1) \cdot Z_{p,r,a,s}^{
 ```
 
 ``` math
-Z_{p,r,a,s}^{'} = \text{Natmort}_{p,r,y = 1,a,s} + \sum_{f=1}^{n_f} \text{Fmort}_{r,\tau,f}^{\text{InitProp}} \cdot \exp\left(\mu_{r,\tau,f}^{\text{Fsh}}\right) \cdot \mathbb{1}_{r,\tau,f}^{\text{Catch}} \cdot \left[\text{Sel}_{p,r,y=1,\tau,a,s,f}^{\text{Fsh}} \cdot \text{Sel}_{p,r,y=1,\tau,a,s,f}^{\text{Ret}} + \text{Sel}_{p,r,y=1,\tau,a,s,f}^{\text{Fsh}} \cdot \left(1 - \text{Sel}_{p,r,y=1,\tau,a,s,f}^{\text{Ret}}\right) \cdot \delta_{r,\tau,f}\right]
+Z_{p,r,a,s}^{'} = \text{Natmort}_{p,r,y = 1,a,s} + \sum_{f=1}^{n_f} F_{r,\tau,f}^{\text{Init}} \cdot \mathbb{1}_{r,\tau,f}^{\text{Catch}} \cdot \left[\text{Sel}_{p,r,y=1,\tau,a,s,f}^{\text{Fsh}} \cdot \text{Sel}_{p,r,y=1,\tau,a,s,f}^{\text{Ret}} + \text{Sel}_{p,r,y=1,\tau,a,s,f}^{\text{Fsh}} \cdot \left(1 - \text{Sel}_{p,r,y=1,\tau,a,s,f}^{\text{Ret}}\right) \cdot \delta_{r,\tau,f}\right]
 ```
+
+The initialization fishing mortality $`F_{r,\tau,f}^{\text{Init}}`$ is
+derived from a single parameter $`\theta_{r,\tau,f}^{\text{Init}}`$
+(`init_F_par`), in one of two forms set by `init_F_form`:
+
+``` math
+F_{r,\tau,f}^{\text{Init}} = \begin{cases}
+\text{logit}^{-1}\left(\theta_{r,\tau,f}^{\text{Init}}\right) \cdot \exp\left(\mu_{r,\tau,f}^{\text{Fsh}}\right), & \texttt{init\_F\_form = "prop"}\\[4pt]
+\exp\left(\theta_{r,\tau,f}^{\text{Init}}\right), & \texttt{init\_F\_form = "abs"}
+\end{cases}
+```
+
+Under `"prop"` the initialization F is a proportion of the mean fishing
+mortality, bounded to $`(0,1)`$ by the inverse-logit, so the initial age
+structure moves with $`\mu_{r,\tau,f}^{\text{Fsh}}`$. Under `"abs"` it
+is an absolute rate and is independent of
+$`\mu_{r,\tau,f}^{\text{Fsh}}`$. Whether $`\theta^{\text{Init}}`$ is
+estimated is set separately by `init_F_spec` (`"fix"` or `"est"`), so
+all four combinations are available.
+
+The distinction matters whenever the initial condition is fished. Catch
+constrains only the *product* of numbers-at-age and fishing mortality,
+so under `"prop"` a single parameter both depletes the initial age
+structure and scales the F series: the optimizer can fit the observed
+catch equally well with a smaller, harder-fished stock. Use `"abs"` when
+the historical fishing mortality that shaped the initial condition is
+conceptually distinct from the mean F of the modelled period – for
+example when bridging an assessment that carries its own separate
+historical F parameter.
 
 where:
 
@@ -78,9 +107,9 @@ where:
   mortality rate,
 - $`\mu_{r,\tau,f}^{\text{Fsh}}`$ is the log-mean fishing mortality rate
   for fleet $`f`$ in region $`r`$ and season $`\tau`$,
-- $`\text{Fmort}_{r,\tau,f}^{\text{InitProp}}`$ is a parameter (or
-  user-defined) describing the proportion of the mean fishing mortality
-  for a given fleet applied across during the initialization stage,
+- $`F_{r,\tau,f}^{\text{Init}}`$ is the initialization fishing mortality
+  for fleet $`f`$, either a proportion of the mean fishing mortality or
+  an absolute rate (see below),
 - $`\mathbb{1}_{r,\tau,f}^{\text{Catch}}`$ is an indicator variable
   equal to 1 if fleet $`f`$ is active in region $`r`$ and season
   $`\tau`$ in year 1, and 0 otherwise,

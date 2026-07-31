@@ -102,7 +102,9 @@ input_list <- Setup_Mod_Rec(input_list = input_list, # input data list from abov
                             sigmaR_spec = "fix_early_est_late", 
                             # fix early sigmaR, estiamte late sigmaR
                             init_age_strc = 1, # how to derive inital age strc
-                            init_F_prop = array(0.1, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets)) # fraction of mean F to apply to initial age strc
+                            init_F_form = "prop", # init F is a proportion of mean F
+                            init_F_spec = "fix", # and is held fixed
+                            init_F_par = array(stats::qlogis(0.1), dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets)) # 10% of mean F, on the logit scale
                             )
 ```
 

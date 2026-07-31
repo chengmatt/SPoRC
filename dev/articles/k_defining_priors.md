@@ -85,6 +85,7 @@ input_list <- Setup_Mod_Rec(
   h_prior = steepness_prior,
   h_spec = "est_shared_pop_r"
 )
+#> Initialisation F is fixed as a proportion of the mean F (moves with ln_F_mean).
 #> Recruitment is specified as: bh_rec
 #> Recruitment Density Dependence is specified as: global
 #> Recruitment and SSB lag is specified as: 1
@@ -519,6 +520,7 @@ input_list <- Setup_Mod_Rec(
     alpha = I(list(rep(5, mlt_rg_sable_data$n_regions)))
   )
 )
+#> Initialisation F is fixed as a proportion of the mean F (moves with ln_F_mean).
 #> Recruitment is specified as: mean_rec
 #> Recruitment Density Dependence is specified as: global
 #> Recruitment regional proportion priors are: Used
@@ -574,6 +576,7 @@ input_list <- Setup_Mod_Rec(
     sd  = 1
   )
 )
+#> Initialisation F is fixed as a proportion of the mean F (moves with ln_F_mean).
 #> Recruitment is specified as: mean_rec
 #> Recruitment Density Dependence is specified as: global
 #> Recruitment regional proportion priors are: Not Used

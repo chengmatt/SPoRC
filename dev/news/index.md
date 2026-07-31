@@ -56,20 +56,46 @@
 
 ### Minor changes
 
+- Initialization fishing mortality is now its own parameter,
+  `init_F_par` (`[n_regions x n_seas x n_fish_fleets]`), with two
+  switches in `Setup_Mod_Rec`: `init_F_form` (`"prop"` = a proportion of
+  the mean F via inverse-logit, bounded (0,1), so the initial age
+  structure moves with mean F; `"abs"` = an absolute rate on the log
+  scale, independent of mean F) and `init_F_spec` (`"fix"`/`"est"`,
+  which sets only the mapping, so all four combinations are available).
+  Previously `init_F_prop` held a fixed proportion as *data*, which
+  meant the initialization F and the mean F were a single parameter;
+  because catch constrains only the product of numbers-at-age and
+  fishing mortality, that let the optimizer deplete the initial age
+  structure and scale the F series together, fitting catch equally well
+  with a smaller, harder-fished stock. `init_F_prop` is still accepted
+  and is converted to the `"prop"` form, so existing calls are
+  unaffected.
+
+- Added `backwards_compatibility_guard()`, which fills in data and
+  parameters that current `SPoRC_rtmb` calls expect but older input
+  lists predate, so previously built objects keep evaluating unchanged.
+
 - Changed parameter names of ln_srv_fixed_sel_pars and
   ln_fish_fixed_sel_pars to srv_fixed_sel_pars and fish_fixed_sel_pars
   for clarity.
+
 - Included new options to estimate non-parametric selectivity, bicubic
   selectivity, logistic selectivity with an asymptote parameter, as well
   as provide fixed selectivity (fishery, retention, and survey) inputs.
+
 - Changed dimensions of init_F_prop to be region, season, and
   fleet-specific (as opposed to just being based on the first fishery
   fleet).
+
 - Coded in an argument in `do_retrospective` to return retrospective
   RTMB model objects (`return_models`).
+
 - Added 95% confidence intervals for SDNR based on a Chi squared test
   for OSA residuals.
+
 - Force non-parametric selectivity to be mean-standardized.
+
 - Added OSA residuals and `oneStepPredict` functionality to time-series
   observations (indices and catch) as well as composition and tagging
   data. `get_osa` and `plot_resids` modified to accomodate plotting of
@@ -85,6 +111,7 @@
   `get_idx_fits`’s documentation that its `resid` column is a raw
   log-scale (Pearson-style) residual, distinct from the one-step-ahead
   residuals produced by `get_osa`/`plot_resids`.
+
 - Consolidated selectivity smoothness/regularization penalties into a
   single set of six weights (`smooth_bin_curve`, `smooth_bin_diff`,
   `smooth_yr_diff`, `smooth_yr_curve`, `smooth_dome`,

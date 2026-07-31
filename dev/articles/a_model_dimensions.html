@@ -233,10 +233,13 @@ stochastic with user-defined age sharing via
 </td>
 </tr>
 <tr class="even">
-<td>init_F_prop</td>
-<td>Array specifying the proportion of fishing mortality to apply to the
-initial age deviations relative to the mean fishing mortality parameter
-for regions, seasons, and fishery fleets</td>
+<td>init_F_par</td>
+<td>Array specifying the initialization fishing mortality for regions,
+seasons, and fishery fleets. Interpreted as a proportion of the mean
+fishing mortality (inverse-logit scale) or as an absolute rate (log
+scale), per <code>init_F_form</code>; <code>init_F_spec</code> sets
+whether it is estimated. Supersedes the legacy <code>init_F_prop</code>,
+which is still accepted</td>
 </tr>
 <tr class="odd">
 <td>rec_model</td>

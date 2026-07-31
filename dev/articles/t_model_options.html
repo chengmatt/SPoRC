@@ -447,10 +447,23 @@ switches to the scalar geometric-series for the plus group itself</td>
 </tr>
 </tbody>
 </table>
-<p><code>init_F_prop</code> (array
+<p><code>init_F_par</code> (array
 <code>[n_regions × n_seas × n_fish_fleets]</code>) optionally introduces
 fishing mortality into the equilibrium calculation, producing a fished
-initial condition.</p>
+initial condition. <code>init_F_form</code> sets what it means:
+<code>"prop"</code> treats it as a proportion of the mean fishing
+mortality (inverse-logit scale, bounded to (0,1)), so the initial age
+structure moves with mean F; <code>"abs"</code> treats it as an absolute
+rate (log scale) that is independent of mean F. <code>init_F_spec</code>
+(<code>"fix"</code> or <code>"est"</code>) sets whether it is estimated,
+independently of the form. Prefer <code>"abs"</code> when the historical
+fishing mortality that shaped the initial condition is distinct from the
+mean F of the modelled period; under <code>"prop"</code> one parameter
+both depletes the initial age structure and scales the F series, and
+because catch constrains only their product the optimizer can fit catch
+equally well with a smaller, harder-fished stock. The older
+<code>init_F_prop</code> argument is still accepted and is converted to
+the <code>"prop"</code> form.</p>
 <hr>
 </div>
 </div>

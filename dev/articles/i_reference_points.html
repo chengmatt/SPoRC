@@ -1144,6 +1144,23 @@ depends only on fishing mortality in seasons
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mrow><mi>∂</mi><mspace width="0.167em"></mspace><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><mi>C</mi><mi>a</mi><mi>t</mi><mi>c</mi><msub><mi>h</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow></msub></mrow><mrow><mi>∂</mi><mspace width="0.167em"></mspace><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><msup><mi>τ</mi><mo>′</mo></msup><mo>,</mo><mi>y</mi></mrow></msub></mrow></mfrac><mo>=</mo><mn>0</mn><mo>,</mo><mspace width="1.0em"></mspace><msup><mi>τ</mi><mo>′</mo></msup><mo>&gt;</mo><mi>τ</mi></mrow><annotation encoding="application/x-tex">
 \frac{\partial\, projCatch_{p,r,\tau,y,f}}{\partial\, projF_{r,\tau',y}} = 0, \quad \tau' &gt; \tau
 </annotation></semantics></math></p>
+<p>Targets are set on regions, not on populations. Fishing mortality
+carries no population index, so where several populations occupy a
+region there is a single rate
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">projF_{r,y}</annotation></semantics></math>
+to solve against several targets, and the division of catch between them
+follows their relative abundance and selectivity:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mrow><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><mi>C</mi><mi>a</mi><mi>t</mi><mi>c</mi><msub><mi>h</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow></msub></mrow><mrow><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><mi>C</mi><mi>a</mi><mi>t</mi><mi>c</mi><msub><mi>h</mi><mrow><msup><mi>p</mi><mo>′</mo></msup><mo>,</mo><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow></msub></mrow></mfrac><mspace width="0.278em"></mspace><mspace width="0.278em"></mspace><mrow><mtext mathvariant="normal">is set by </mtext><mspace width="0.333em"></mspace></mrow><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><mi>N</mi><mrow><mspace width="0.333em"></mspace><mtext mathvariant="normal"> and </mtext><mspace width="0.333em"></mspace></mrow><mi>S</mi><mi>e</mi><msup><mi>l</mi><mrow><mi>F</mi><mi>s</mi><mi>h</mi></mrow></msup><mo>,</mo><mrow><mspace width="0.333em"></mspace><mtext mathvariant="normal"> not by </mtext><mspace width="0.333em"></mspace></mrow><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">
+\frac{projCatch_{p,r,\tau,y,f}}{projCatch_{p',r,\tau,y,f}} \;\; \text{is set by } projN \text{ and } Sel^{Fsh}, \text{ not by } projF_{r,y}
+</annotation></semantics></math></p>
+<p>which is the expected behaviour of a fishery that cannot select on
+population identity. Population-specific catch should therefore be
+summed to a regional total before being supplied. The realised split is
+still available in <code>proj_Catch</code>, which retains its population
+dimension, and comparing it against an expected split is a useful
+diagnostic of movement and relative abundance. Where populations are
+region-exclusive the two quantities coincide and no aggregation is
+needed.</p>
 <p>Years in which no target is supplied revert to the harvest control
 rule or user-specified fishing mortality described above, so that a
 projection may combine a period of prescribed catch with a subsequent
@@ -1712,9 +1729,118 @@ is adjusted to achieve the specified catch. For demonstration, we apply
 the observed catch from the most recent five years to the first five
 years of the projection, after which the harvest control rule
 resumes.</p>
+<div class="section level5">
+<h5 id="lining-catch-up-with-projection-years-for-harvest-projection-updates">Lining Catch Up With Projection Years for Harvest Projection
+Updates<a class="anchor" aria-label="anchor" href="#lining-catch-up-with-projection-years-for-harvest-projection-updates"></a>
+</h5>
+<p>Note that <strong>projection year 1 is the terminal assessment year
+replayed, not a projected year.</strong> It reproduces the terminal year
+at the fishing mortality the assessment estimated, and exists to carry
+the terminal numbers-at-age into year 2. The first genuinely projected
+year is index 2. This is the same reason catch advice is read from
+<code>proj_Catch[, , 2, , ]</code> rather than index 1 in the harvest
+control rule example above.</p>
+<p>Note also that <strong><code>catch_input</code> is indexed by the
+year the catch is taken.</strong> <code>catch_input[r, y]</code> is the
+catch removed during projection year <code>y</code>, so it lines up
+directly with <code>proj_Catch[, r, y, , ]</code> and
+<code>proj_SSB[, r, y]</code>. This is deliberately <em>not</em> the
+convention <code>f_ref_pt</code> uses: <code>f_ref_pt[r, y]</code> sets
+fishing mortality in year <code>y + 1</code>, because a harvest control
+rule reads year <code>y</code>’s spawning biomass to set the following
+year’s rate. A catch target carries no such lag, since the fishing
+mortality that takes a given catch is solved against that same year’s
+numbers-at-age.</p>
+<p>For the sablefish model the terminal assessment year is 2024 and
+<code>n_proj_yrs</code> is 15, so
+<code>catch_input[1, 2:6] &lt;- recent_catch</code> maps as:</p>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+</colgroup>
+<thead><tr class="header">
+<th>
+<code>catch_input</code> column</th>
+<th>Projection year</th>
+<th>Calendar year</th>
+<th>What sets fishing mortality</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>1 (ignored here)</td>
+<td>1</td>
+<td>2024</td>
+<td>terminal year replayed at its estimated
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>F</mi><annotation encoding="application/x-tex">F</annotation></semantics></math>
+</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>2</td>
+<td>2025</td>
+<td>
+<code>recent_catch[1]</code> = 19.71</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>3</td>
+<td>2026</td>
+<td>
+<code>recent_catch[2]</code> = 21.99</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>4</td>
+<td>2027</td>
+<td>
+<code>recent_catch[3]</code> = 27.55</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td>5</td>
+<td>2028</td>
+<td>
+<code>recent_catch[4]</code> = 25.62</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td>6</td>
+<td>2029</td>
+<td>
+<code>recent_catch[5]</code> = 23.15</td>
+</tr>
+<tr class="odd">
+<td>7 to 15 (<code>NA</code>)</td>
+<td>7 to 15</td>
+<td>2030 to 2038</td>
+<td>
+<code>catch_fallback_opt</code>, here the harvest control rule</td>
+</tr>
+</tbody>
+</table>
+<p>Column 1 is left <code>NA</code> because
+<code>catch_terminal_yr</code> defaults to <code>FALSE</code>, which
+leaves the terminal year fished at its estimated rate. Setting it to
+<code>TRUE</code> instead solves column 1 against its own target, which
+is the appropriate choice when the terminal year is not yet complete and
+its catch is itself a projection, as is often the case when an
+assessment is conducted partway through a year. Be aware that doing so
+overrides the fishing mortality the assessment estimated for that year
+and therefore changes the numbers-at-age entering year 2, so the two
+runs are not directly comparable.</p>
+<p>Sanity checks worth running on any catch projection are that
+residuals are <code>NA</code> exactly where no target was set, and that
+the solved fishing mortality is finite and sensible:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">out_catch</span><span class="op">$</span><span class="va">proj_catch_resid</span><span class="op">[</span><span class="fl">1</span>, <span class="op">]</span> <span class="co"># ~1e-7 in years 2 to 6, NA in year 1 and years 7 to 15</span></span>
+<span><span class="va">out_catch</span><span class="op">$</span><span class="va">proj_F</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">1</span><span class="op">]</span>          <span class="co"># 0.0394, the terminal year's estimated F, untouched</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">rowSums</a></span><span class="op">(</span><span class="va">terminal_F</span><span class="op">)</span>             <span class="co"># 0.0394, the same value, confirming year 1 was not solved</span></span></code></pre></div>
 <p>Every input below is the one defined for the single-region example
 above:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">n_yrs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">sgl_rg_sable_data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span> <span class="co"># terminal year index</span></span>
 <span></span>
 <span><span class="co"># the five most recent years of observed catch, summed over fleets</span></span>
@@ -1759,7 +1885,7 @@ above:</p>
 anything else. <code>proj_catch_resid</code> holds how much the
 specified catch is missed by and is <code>NA</code> in years without a
 target:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">out_catch</span><span class="op">$</span><span class="va">proj_catch_resid</span><span class="op">[</span><span class="fl">1</span>, <span class="op">]</span> <span class="co"># ~1e-7 in years 2 to 6, NA thereafter</span></span>
 <span><span class="va">out_catch</span><span class="op">$</span><span class="va">proj_F</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">:</span><span class="fl">6</span><span class="op">]</span>        <span class="co"># 0.0331 0.0372 0.0475 0.0455 0.0424</span></span>
 <span><span class="va">sgl_ref_pt</span><span class="op">$</span><span class="va">f_ref_pt</span>             <span class="co"># 0.0863</span></span></code></pre></div>
@@ -1769,7 +1895,7 @@ so this is a considerably less aggressive trajectory than the harvest
 control rule would have prescribed. We can see the implications of this
 by plotting spawning biomass and total biomass against the harvest
 control rule projection from the previous section.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">n_hist</span> <span class="op">&lt;-</span> <span class="va">n_yrs</span> <span class="op">-</span> <span class="fl">1</span> <span class="co"># projection year 1 reproduces the terminal year, so drop it here</span></span>
 <span><span class="va">years</span> <span class="op">&lt;-</span> <span class="fl">1960</span><span class="op">:</span><span class="op">(</span><span class="fl">2023</span> <span class="op">+</span> <span class="va">n_proj_yrs</span><span class="op">)</span></span>
 <span></span>
@@ -1798,7 +1924,7 @@ biomass under the recent-catch trajectory sits above the harvest control
 rule run. Once the targets run out the harvest control rule takes over,
 and it responds to the higher biomass the constrained years produced
 rather than to the trajectory it would have followed on its own:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">catch_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">bind_rows</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span>Year <span class="op">=</span> <span class="va">years</span><span class="op">[</span><span class="op">-</span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">n_hist</span><span class="op">)</span><span class="op">]</span>, Catch <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">out</span><span class="op">$</span><span class="va">proj_Catch</span><span class="op">[</span>,<span class="fl">1</span>,,,, drop <span class="op">=</span> <span class="cn">FALSE</span><span class="op">]</span>, <span class="fl">3</span>, <span class="va">sum</span><span class="op">)</span>,</span>
 <span>         Projection <span class="op">=</span> <span class="st">"HCR"</span><span class="op">)</span>,</span>
@@ -1821,15 +1947,7 @@ rather than to the trajectory it would have followed on its own:</p>
 there, a warning names the affected regions, and
 <code>proj_catch_resid</code> records how far short the catch fell, so
 an infeasible request is never silently reported as met.</p>
-<p>Setting <code>catch_terminal_yr = TRUE</code> also solves projection
-year 1, which can be used when the assessment’s terminal year is
-incomplete and its catch is itself a projection. Supplying
-<code>catch_input</code> with a third dimension,
-<code>[n_regions, n_proj_yrs, n_seas]</code>, solves a separate fishing
-mortality for each season rather than distributing one annual value at
-the terminal year seasonal splits; that is only meaningful for seasonal
-models, and the solved seasonal rates are returned in
-<code>proj_F_seas</code>.</p>
+</div>
 </div>
 <div class="section level4">
 <h4 id="multi-region-2">Multi Region<a class="anchor" aria-label="anchor" href="#multi-region-2"></a>
@@ -1844,7 +1962,7 @@ In general, the steps are similar to the single-region case. Again, we
 will utilize the harvest control rule function defined above. Given that
 each region has their own unique estimates, this will result in
 different harvest control rules being applied to each region:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">HCR_function</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span>, <span class="va">frp</span>, <span class="va">brp</span>, <span class="va">alpha</span> <span class="op">=</span> <span class="fl">0.05</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">stock_status</span> <span class="op">&lt;-</span> <span class="va">x</span> <span class="op">/</span> <span class="va">brp</span></span>
 <span>  <span class="kw">if</span><span class="op">(</span><span class="va">stock_status</span> <span class="op">&gt;=</span> <span class="fl">1</span><span class="op">)</span> <span class="va">f</span> <span class="op">&lt;-</span> <span class="va">frp</span></span>
@@ -1872,7 +1990,7 @@ different harvest control rules being applied to each region:</p>
 <p><img src="figures/i_mlt_threshold_hcr.png"></p>
 <p>Let’s then define all the inputs needed to run the population
 projection:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"mlt_rg_sable_rep"</span><span class="op">)</span> <span class="co"># read in multi region report</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"mlt_rg_sable_data"</span><span class="op">)</span> <span class="co"># read in multi region data </span></span>
@@ -1908,13 +2026,13 @@ fishing mortality
 is applied across all regions because only a single global
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>F</mi><annotation encoding="application/x-tex">F</annotation></semantics></math>
 is estimated. This is illustrated below:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">f_ref_pt_global</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="va">mlt_ref_pt_global</span><span class="op">$</span><span class="va">f_ref_pt</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_regions</span>, <span class="va">n_proj_yrs</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">b_ref_pt_global</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="va">mlt_ref_pt_global</span><span class="op">$</span><span class="va">b_ref_pt</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_pop</span>, <span class="va">n_regions</span>, <span class="va">n_proj_yrs</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>By contrast, the independent SPR approach assigns a region-specific
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>F</mi><annotation encoding="application/x-tex">F</annotation></semantics></math>
 value. For example, in the first projection year:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">f_ref_pt_indp</span><span class="op">[</span>,<span class="fl">2</span><span class="op">]</span> <span class="co"># independent SPR</span></span>
 <span><span class="co">#&gt; [1] 0.08444344 0.08452630 0.08497820 0.08486098 0.08506540</span></span>
 <span><span class="va">f_ref_pt_global</span><span class="op">[</span>,<span class="fl">2</span><span class="op">]</span> <span class="co"># global SPR</span></span>
@@ -1925,7 +2043,7 @@ value. For example, in the first projection year:</p>
 <span><span class="co">#&gt; [1]  8.322787 13.286298  9.042983 46.782189 35.428033</span></span></code></pre></div>
 <p>For the projections that follow, we use independent SPR rates to
 allow for region-specific reference points:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Do_Population_Projection.html">Do_Population_Projection</a></span><span class="op">(</span>n_proj_yrs <span class="op">=</span> <span class="va">n_proj_yrs</span>,</span>
 <span>                              n_regions <span class="op">=</span> <span class="va">n_regions</span>,</span>
 <span>                              n_ages <span class="op">=</span> <span class="va">n_ages</span>,</span>
@@ -1952,7 +2070,7 @@ allow for region-specific reference points:</p>
 <span>                              t_spawn <span class="op">=</span> <span class="va">t_spawn</span><span class="op">)</span></span></code></pre></div>
 <p>Again, we can visualize what these projections look like in terms of
 SSB and catch advice:</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">combined_ssb</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">mlt_rg_sable_rep</span><span class="op">$</span><span class="va">SSB</span><span class="op">[</span><span class="fl">1</span>,,<span class="op">-</span><span class="fl">62</span><span class="op">]</span>, <span class="va">out</span><span class="op">$</span><span class="va">proj_SSB</span><span class="op">[</span><span class="fl">1</span>,,<span class="op">]</span><span class="op">)</span></span>
 <span><span class="va">combined_ssb_df</span> <span class="op">&lt;-</span> <span class="fu">reshape2</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/reshape2/man/melt.html" class="external-link">melt</a></span><span class="op">(</span><span class="va">combined_ssb</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html" class="external-link">rename</a></span><span class="op">(</span>Region <span class="op">=</span> <span class="va">Var1</span>, Year <span class="op">=</span> <span class="va">Var2</span>, SSB <span class="op">=</span> <span class="va">value</span><span class="op">)</span></span>
@@ -1966,7 +2084,7 @@ SSB and catch advice:</p>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">13</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">'none'</span><span class="op">)</span></span></code></pre></div>
 <p><img src="figures/i_mlt_proj_ssb.png"></p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">combined_catch</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">mlt_rg_sable_rep</span><span class="op">$</span><span class="va">PredCatch</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">3</span><span class="op">)</span>, <span class="va">sum</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">out</span><span class="op">$</span><span class="va">proj_Catch</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">3</span><span class="op">)</span>, <span class="va">sum</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">combined_catch_df</span> <span class="op">&lt;-</span> <span class="fu">reshape2</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/reshape2/man/melt.html" class="external-link">melt</a></span><span class="op">(</span><span class="va">combined_catch</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html" class="external-link">rename</a></span><span class="op">(</span>Region <span class="op">=</span> <span class="va">Var1</span>, Year <span class="op">=</span> <span class="va">Var2</span>, Catch <span class="op">=</span> <span class="va">value</span><span class="op">)</span></span>
@@ -2005,7 +2123,7 @@ in each projection year,</li>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">F = 0</annotation></semantics></math>
 for projections.</li>
 </ol>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"sgl_rg_sable_rep"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"sgl_rg_sable_data"</span><span class="op">)</span></span>
 <span></span>
@@ -2036,7 +2154,7 @@ for projections.</li>
 <span><span class="va">sexratio</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0.5</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_pop</span>, <span class="va">n_regions</span>, <span class="va">n_proj_yrs</span>, <span class="va">n_sexes</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>We can then define our two projection scenarios and arrays to store
 results in:</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">proj_inputs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>f_ref_pt <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="va">sgl_ref_pt</span><span class="op">$</span><span class="va">f_ref_pt</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_regions</span>, <span class="va">n_proj_yrs</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>       b_ref_pt <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="va">sgl_ref_pt</span><span class="op">$</span><span class="va">b_ref_pt</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_pop</span>, <span class="va">n_regions</span>, <span class="va">n_proj_yrs</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -2049,7 +2167,7 @@ results in:</p>
 <span><span class="va">all_scenarios_f</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_regions</span>, <span class="va">n_proj_yrs</span>, <span class="va">n_sims</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">proj_inputs</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">all_scenarios_ssb</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_regions</span>, <span class="va">n_proj_yrs</span>, <span class="va">n_sims</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">proj_inputs</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">all_scenarios_catch</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_regions</span>, <span class="va">n_proj_yrs</span>, <span class="va">n_fish_fleets</span>, <span class="va">n_sims</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">proj_inputs</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
 <span><span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">proj_inputs</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="kw">for</span> <span class="op">(</span><span class="va">sim</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="va">n_sims</span><span class="op">)</span> <span class="op">{</span></span>
@@ -2085,7 +2203,7 @@ results in:</p>
 <span><span class="op">}</span></span></code></pre></div>
 <p>Finally, we can plot these stochastic simulations to inspect
 results:</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">historical</span> <span class="op">&lt;-</span> <span class="fu">reshape2</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/reshape2/man/melt.html" class="external-link">melt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="va">sgl_rg_sable_rep</span><span class="op">$</span><span class="va">SSB</span>, <span class="va">n_sims</span><span class="op">)</span>,</span>
 <span>                                   dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_regions</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">sgl_rg_sable_data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>, <span class="va">n_sims</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>Year <span class="op">=</span> <span class="va">Var2</span> <span class="op">+</span> <span class="fl">1959</span>, Scenario <span class="op">=</span> <span class="st">"FABC (F40)"</span>, Type <span class="op">=</span> <span class="st">"Historical"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
@@ -2112,7 +2230,7 @@ results:</p>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">15</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">'none'</span><span class="op">)</span></span></code></pre></div>
 <p><img src="figures/i_sgl_stoch_proj_ssb.png"></p>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">historical</span> <span class="op">&lt;-</span> <span class="fu">reshape2</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/reshape2/man/melt.html" class="external-link">melt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="va">sgl_rg_sable_data</span><span class="op">$</span><span class="va">ObsCatch</span>, <span class="va">n_sims</span><span class="op">)</span>,</span>
 <span>                                   dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_regions</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">sgl_rg_sable_data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>, <span class="va">sgl_rg_sable_data</span><span class="op">$</span><span class="va">n_fish_fleets</span>, <span class="va">n_sims</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>Year <span class="op">=</span> <span class="va">Var2</span> <span class="op">+</span> <span class="fl">1959</span>, Scenario <span class="op">=</span> <span class="st">"FABC (F40)"</span>, Type <span class="op">=</span> <span class="st">"Historical"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>

@@ -990,6 +990,24 @@ mortality in seasons $`\tau' \leq \tau`$:
 \frac{\partial\, projCatch_{p,r,\tau,y,f}}{\partial\, projF_{r,\tau',y}} = 0, \quad \tau' > \tau
 ```
 
+Targets are set on regions, not on populations. Fishing mortality
+carries no population index, so where several populations occupy a
+region there is a single rate $`projF_{r,y}`$ to solve against several
+targets, and the division of catch between them follows their relative
+abundance and selectivity:
+
+``` math
+\frac{projCatch_{p,r,\tau,y,f}}{projCatch_{p',r,\tau,y,f}} \;\; \text{is set by } projN \text{ and } Sel^{Fsh}, \text{ not by } projF_{r,y}
+```
+
+which is the expected behaviour of a fishery that cannot select on
+population identity. Population-specific catch should therefore be
+summed to a regional total before being supplied. The realised split is
+still available in `proj_Catch`, which retains its population dimension,
+and comparing it against an expected split is a useful diagnostic of
+movement and relative abundance. Where populations are region-exclusive
+the two quantities coincide and no aggregation is needed.
+
 Years in which no target is supplied revert to the harvest control rule
 or user-specified fishing mortality described above, so that a
 projection may combine a period of prescribed catch with a subsequent
@@ -1506,6 +1524,60 @@ to achieve the specified catch. For demonstration, we apply the observed
 catch from the most recent five years to the first five years of the
 projection, after which the harvest control rule resumes.
 
+##### Lining Catch Up With Projection Years for Harvest Projection Updates
+
+Note that **projection year 1 is the terminal assessment year replayed,
+not a projected year.** It reproduces the terminal year at the fishing
+mortality the assessment estimated, and exists to carry the terminal
+numbers-at-age into year 2. The first genuinely projected year is index
+2. This is the same reason catch advice is read from
+`proj_Catch[, , 2, , ]` rather than index 1 in the harvest control rule
+example above.
+
+Note also that **`catch_input` is indexed by the year the catch is
+taken.** `catch_input[r, y]` is the catch removed during projection year
+`y`, so it lines up directly with `proj_Catch[, r, y, , ]` and
+`proj_SSB[, r, y]`. This is deliberately *not* the convention `f_ref_pt`
+uses: `f_ref_pt[r, y]` sets fishing mortality in year `y + 1`, because a
+harvest control rule reads year `y`’s spawning biomass to set the
+following year’s rate. A catch target carries no such lag, since the
+fishing mortality that takes a given catch is solved against that same
+year’s numbers-at-age.
+
+For the sablefish model the terminal assessment year is 2024 and
+`n_proj_yrs` is 15, so `catch_input[1, 2:6] <- recent_catch` maps as:
+
+| `catch_input` column | Projection year | Calendar year | What sets fishing mortality |
+|----|----|----|----|
+| 1 (ignored here) | 1 | 2024 | terminal year replayed at its estimated $`F`$ |
+| 2 | 2 | 2025 | `recent_catch[1]` = 19.71 |
+| 3 | 3 | 2026 | `recent_catch[2]` = 21.99 |
+| 4 | 4 | 2027 | `recent_catch[3]` = 27.55 |
+| 5 | 5 | 2028 | `recent_catch[4]` = 25.62 |
+| 6 | 6 | 2029 | `recent_catch[5]` = 23.15 |
+| 7 to 15 (`NA`) | 7 to 15 | 2030 to 2038 | `catch_fallback_opt`, here the harvest control rule |
+
+Column 1 is left `NA` because `catch_terminal_yr` defaults to `FALSE`,
+which leaves the terminal year fished at its estimated rate. Setting it
+to `TRUE` instead solves column 1 against its own target, which is the
+appropriate choice when the terminal year is not yet complete and its
+catch is itself a projection, as is often the case when an assessment is
+conducted partway through a year. Be aware that doing so overrides the
+fishing mortality the assessment estimated for that year and therefore
+changes the numbers-at-age entering year 2, so the two runs are not
+directly comparable.
+
+Sanity checks worth running on any catch projection are that residuals
+are `NA` exactly where no target was set, and that the solved fishing
+mortality is finite and sensible:
+
+``` r
+
+out_catch$proj_catch_resid[1, ] # ~1e-7 in years 2 to 6, NA in year 1 and years 7 to 15
+out_catch$proj_F[1, 1]          # 0.0394, the terminal year's estimated F, untouched
+rowSums(terminal_F)             # 0.0394, the same value, confirming year 1 was not solved
+```
+
 Every input below is the one defined for the single-region example
 above:
 
@@ -1631,14 +1703,6 @@ unreachable. In that case fishing mortality is capped there, a warning
 names the affected regions, and `proj_catch_resid` records how far short
 the catch fell, so an infeasible request is never silently reported as
 met.
-
-Setting `catch_terminal_yr = TRUE` also solves projection year 1, which
-can be used when the assessment’s terminal year is incomplete and its
-catch is itself a projection. Supplying `catch_input` with a third
-dimension, `[n_regions, n_proj_yrs, n_seas]`, solves a separate fishing
-mortality for each season rather than distributing one annual value at
-the terminal year seasonal splits; that is only meaningful for seasonal
-models, and the solved seasonal rates are returned in `proj_F_seas`.
 
 #### Multi Region
 

@@ -53,6 +53,8 @@ rec_seas_prop[, 1] <- 1
   equil_init_age_strc = 1,
   init_F_prop = array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas,
     input_list$data$n_fish_fleets)),
+  init_F_form = "prop",
+  init_F_spec = "fix",
   sigmaR_spec = "est_all",
   InitDevs_spec = NULL,
   RecDevs_spec = NULL,
@@ -278,9 +280,51 @@ rec_seas_prop[, 1] <- 1
 
 - init_F_prop:
 
-  Numeric array `[n_regions x n_seas x n_fish_fleets]`. Seasonal
-  distribution of fishing mortality applied during equilibrium
-  initialisation by fleet. Default: zero for all seasons and fleets.
+  Numeric array `[n_regions x n_seas x n_fish_fleets]`. **Legacy
+  interface, retained for backwards compatibility.** A fixed proportion
+  of the estimated mean F applied during equilibrium initialisation.
+  When supplied non-zero (and `init_F_par` is not given) it is converted
+  to `ln_init_F = log(init_F_prop)` with `init_F_form = "prop"`, which
+  reproduces the previous behaviour exactly. Prefer `init_F_par`.
+  Default: zero for all seasons and fleets.
+
+- init_F_form:
+
+  Character. What the `init_F_par` parameter MEANS:
+
+  - `"prop"` (default): `init_F = exp(ln_init_F) * exp(ln_F_mean)`, a
+    proportion of the estimated mean F, so the initial age structure
+    moves with it.
+
+  - `"abs"`: `init_F = exp(ln_init_F)`, an absolute fishing mortality
+    independent of `ln_F_mean`.
+
+  Use `"abs"` when bridging an assessment that carries a separate
+  historical F (for example the AFSC ADMB rockfish `historic_F`, which
+  is distinct from `log_avg_fmort` and has its own estimation phase).
+  Under `"prop"` those two quantities collapse into a single parameter,
+  and because catch constrains only the PRODUCT of numbers and fishing
+  mortality, the optimizer can raise `ln_F_mean` to deplete the initial
+  age structure and raise F together, fitting catch just as well with a
+  smaller, harder-fished stock. That is a genuine second solution
+  branch, not a rounding difference.
+
+- init_F_spec:
+
+  Character, `"fix"` (default) or `"est"`. Whether `init_F_par` is
+  estimated. This sets only the mapping, so it combines freely with
+  `init_F_form` – including estimating the proportion itself
+  (`init_F_form = "prop"`, `init_F_spec = "est"`). Note `init_F` is
+  generally weakly identified, which is why assessments commonly fix it.
+
+  The value is carried by the parameter `init_F_par`
+  `[n_regions x n_seas x n_fish_fleets]`, supplied through `...` like
+  any other starting value, e.g.
+  `Setup_Mod_Rec(..., init_F_form = "abs", init_F_spec = "fix", init_F_par = array(log(0.01), dim = c(1, 1, 1)))`.
+  Its SCALE depends on `init_F_form` – logit under `"prop"` (so the
+  proportion is bounded to (0, 1)) and log under `"abs"` – which is why
+  it is not named `ln_` or `logit_`. Defaults to effectively no initial
+  fishing mortality.
 
 - sigmaR_spec:
 

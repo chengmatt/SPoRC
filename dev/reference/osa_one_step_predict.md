@@ -9,11 +9,7 @@ of [`oneStepPredict`](https://rdrr.io/pkg/RTMB/man/OSA-residuals.html):
   "Multiple TMB models loaded" whenever a session has more than one TMB
   DLL loaded (e.g. RTMB alongside compResidual, which
   [`run_external_comp_osa`](https://chengmatt.github.io/SPoRC/dev/reference/run_external_comp_osa.md)
-  loads). `oneStepPredict()` itself accepts no `DLL` argument, so the
-  model's own DLL (`model$env$DLL`) is instead bound as the default of
-  [`TMB::openmp()`](https://rdrr.io/pkg/TMB/man/openmp.html) for the
-  duration of the call and restored on exit. Serial calls never reach
-  that code and are forwarded untouched.
+  loads).
 
 - `discreteSupport` is detected with
   [`missing()`](https://rdrr.io/r/base/missing.html), so supplying it as

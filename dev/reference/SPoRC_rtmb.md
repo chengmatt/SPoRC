@@ -1,6 +1,6 @@
-# Generalized RTMB model
+# Generalized RTMB spatial age-structured model
 
-Generalized RTMB model
+Generalized RTMB spatial age-structured model
 
 ## Usage
 

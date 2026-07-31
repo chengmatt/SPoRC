@@ -107,6 +107,8 @@ before model compilation.</p>
 <span>  equil_init_age_strc <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  init_F_prop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>,</span>
 <span>    <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  init_F_form <span class="op">=</span> <span class="st">"prop"</span>,</span>
+<span>  init_F_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
 <span>  sigmaR_spec <span class="op">=</span> <span class="st">"est_all"</span>,</span>
 <span>  InitDevs_spec <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  RecDevs_spec <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -342,9 +344,46 @@ initialisation. Default <code>1</code>.</p><dl><dt><code>0</code>/<code>"equil"<
 
 
 <dt id="arg-init-f-prop">init_F_prop<a class="anchor" aria-label="anchor" href="#arg-init-f-prop"></a></dt>
-<dd><p>Numeric array <code>[n_regions x n_seas x n_fish_fleets]</code>. Seasonal distribution of
-fishing mortality applied during equilibrium initialisation by fleet. Default:
-zero for all seasons and fleets.</p></dd>
+<dd><p>Numeric array <code>[n_regions x n_seas x n_fish_fleets]</code>.
+<strong>Legacy interface, retained for backwards compatibility.</strong> A fixed
+proportion of the estimated mean F applied during equilibrium initialisation.
+When supplied non-zero (and <code>init_F_par</code> is not given) it is converted to
+<code>ln_init_F = log(init_F_prop)</code> with <code>init_F_form = "prop"</code>, which
+reproduces the previous behaviour exactly. Prefer <code>init_F_par</code>.
+Default: zero for all seasons and fleets.</p></dd>
+
+
+<dt id="arg-init-f-form">init_F_form<a class="anchor" aria-label="anchor" href="#arg-init-f-form"></a></dt>
+<dd><p>Character. What the <code>init_F_par</code> parameter MEANS:</p><ul><li><p><code>"prop"</code> (default): <code>init_F = exp(ln_init_F) * exp(ln_F_mean)</code>,
+      a proportion of the estimated mean F, so the initial age structure moves
+      with it.</p></li>
+<li><p><code>"abs"</code>: <code>init_F = exp(ln_init_F)</code>, an absolute fishing
+      mortality independent of <code>ln_F_mean</code>.</p></li>
+</ul><p>Use <code>"abs"</code> when bridging an assessment that carries a separate
+  historical F (for example the AFSC ADMB rockfish <code>historic_F</code>, which is
+  distinct from <code>log_avg_fmort</code> and has its own estimation phase). Under
+  <code>"prop"</code> those two quantities collapse into a single parameter, and
+  because catch constrains only the PRODUCT of numbers and fishing mortality,
+  the optimizer can raise <code>ln_F_mean</code> to deplete the initial age structure
+  and raise F together, fitting catch just as well with a smaller,
+  harder-fished stock. That is a genuine second solution branch, not a rounding
+  difference.</p></dd>
+
+
+<dt id="arg-init-f-spec">init_F_spec<a class="anchor" aria-label="anchor" href="#arg-init-f-spec"></a></dt>
+<dd><p>Character, <code>"fix"</code> (default) or <code>"est"</code>. Whether
+  <code>init_F_par</code> is estimated. This sets only the mapping, so it combines
+  freely with <code>init_F_form</code> – including estimating the proportion itself
+  (<code>init_F_form = "prop"</code>, <code>init_F_spec = "est"</code>). Note <code>init_F</code>
+  is generally weakly identified, which is why assessments commonly fix it.</p>
+<p>The value is carried by the parameter <code>init_F_par</code>
+  <code>[n_regions x n_seas x n_fish_fleets]</code>, supplied through <code>...</code> like
+  any other starting value, e.g.
+  <code>Setup_Mod_Rec(..., init_F_form = "abs", init_F_spec = "fix", init_F_par = array(log(0.01), dim = c(1, 1, 1)))</code>.
+  Its SCALE depends on <code>init_F_form</code> – logit under <code>"prop"</code> (so the
+  proportion is bounded to (0, 1)) and log under <code>"abs"</code> – which is why it
+  is not named <code>ln_</code> or <code>logit_</code>. Defaults to effectively no initial
+  fishing mortality.</p></dd>
 
 
 <dt id="arg-sigmar-spec">sigmaR_spec<a class="anchor" aria-label="anchor" href="#arg-sigmar-spec"></a></dt>

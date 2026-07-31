@@ -33,6 +33,8 @@ Setup_Mod_Rec(
   equil_init_age_strc = 1,
   init_F_prop = array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas,
     input_list$data$n_fish_fleets)),
+  init_F_form = "prop",
+  init_F_spec = "fix",
   sigmaR_spec = "est_all",
   InitDevs_spec = NULL,
   RecDevs_spec = NULL,
@@ -201,9 +203,47 @@ initialisation. Default \code{1}.
     \code{init_age_devs_shared} to be non-\code{NULL}.}
 }}
 
-\item{init_F_prop}{Numeric array \code{[n_regions x n_seas x n_fish_fleets]}. Seasonal distribution of
-fishing mortality applied during equilibrium initialisation by fleet. Default:
-zero for all seasons and fleets.}
+\item{init_F_prop}{Numeric array \code{[n_regions x n_seas x n_fish_fleets]}.
+\strong{Legacy interface, retained for backwards compatibility.} A fixed
+proportion of the estimated mean F applied during equilibrium initialisation.
+When supplied non-zero (and \code{init_F_par} is not given) it is converted to
+\code{ln_init_F = log(init_F_prop)} with \code{init_F_form = "prop"}, which
+reproduces the previous behaviour exactly. Prefer \code{init_F_par}.
+Default: zero for all seasons and fleets.}
+
+\item{init_F_form}{Character. What the \code{init_F_par} parameter MEANS:
+  \itemize{
+    \item \code{"prop"} (default): \code{init_F = exp(ln_init_F) * exp(ln_F_mean)},
+      a proportion of the estimated mean F, so the initial age structure moves
+      with it.
+    \item \code{"abs"}: \code{init_F = exp(ln_init_F)}, an absolute fishing
+      mortality independent of \code{ln_F_mean}.
+  }
+
+  Use \code{"abs"} when bridging an assessment that carries a separate
+  historical F (for example the AFSC ADMB rockfish \code{historic_F}, which is
+  distinct from \code{log_avg_fmort} and has its own estimation phase). Under
+  \code{"prop"} those two quantities collapse into a single parameter, and
+  because catch constrains only the PRODUCT of numbers and fishing mortality,
+  the optimizer can raise \code{ln_F_mean} to deplete the initial age structure
+  and raise F together, fitting catch just as well with a smaller,
+  harder-fished stock. That is a genuine second solution branch, not a rounding
+  difference.}
+
+\item{init_F_spec}{Character, \code{"fix"} (default) or \code{"est"}. Whether
+  \code{init_F_par} is estimated. This sets only the mapping, so it combines
+  freely with \code{init_F_form} -- including estimating the proportion itself
+  (\code{init_F_form = "prop"}, \code{init_F_spec = "est"}). Note \code{init_F}
+  is generally weakly identified, which is why assessments commonly fix it.
+
+  The value is carried by the parameter \code{init_F_par}
+  \code{[n_regions x n_seas x n_fish_fleets]}, supplied through \code{...} like
+  any other starting value, e.g.
+  \code{Setup_Mod_Rec(..., init_F_form = "abs", init_F_spec = "fix", init_F_par = array(log(0.01), dim = c(1, 1, 1)))}.
+  Its SCALE depends on \code{init_F_form} -- logit under \code{"prop"} (so the
+  proportion is bounded to (0, 1)) and log under \code{"abs"} -- which is why it
+  is not named \code{ln_} or \code{logit_}. Defaults to effectively no initial
+  fishing mortality.}
 
 \item{sigmaR_spec}{Character. Estimation structure for \eqn{\sigma_R},
 stored in \code{ln_sigmaR} \code{[2 x n_pop x n_regions]}, where index

@@ -24,20 +24,16 @@ The \code{\link[RTMB]{oneStepPredict}} result.
 Wrapper used by the internal OSA runners, which works around two quirks of
 \code{\link[RTMB]{oneStepPredict}}:
 \itemize{
-\item Its \code{parallel} branch calls \code{TMB::openmp()} without a
-\code{DLL} argument, so TMB falls back to guessing the DLL and errors
-with "Multiple TMB models loaded" whenever a session has more than one
-TMB DLL loaded (e.g. RTMB alongside compResidual, which
-\code{\link{run_external_comp_osa}} loads). \code{oneStepPredict()}
-itself accepts no \code{DLL} argument, so the model's own DLL
-(\code{model$env$DLL}) is instead bound as the default of
-\code{TMB::openmp()} for the duration of the call and restored on exit.
-Serial calls never reach that code and are forwarded untouched.
-\item \code{discreteSupport} is detected with \code{missing()}, so
-supplying it as \code{NULL} is not the same as omitting it: a \code{NULL}
-sends continuous families down the mixed discrete/continuous branch,
-which rejects the Gaussian methods. It is forwarded here only when it is
-non-\code{NULL}.
+  \item Its \code{parallel} branch calls \code{TMB::openmp()} without a
+    \code{DLL} argument, so TMB falls back to guessing the DLL and errors
+    with "Multiple TMB models loaded" whenever a session has more than one
+    TMB DLL loaded (e.g. RTMB alongside compResidual, which
+    \code{\link{run_external_comp_osa}} loads). 
+  \item \code{discreteSupport} is detected with \code{missing()}, so
+    supplying it as \code{NULL} is not the same as omitting it: a \code{NULL}
+    sends continuous families down the mixed discrete/continuous branch,
+    which rejects the Gaussian methods. It is forwarded here only when it is
+    non-\code{NULL}.
 }
 }
 \keyword{internal}

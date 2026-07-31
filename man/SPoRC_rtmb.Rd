@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_objective.R
 \name{SPoRC_rtmb}
 \alias{SPoRC_rtmb}
-\title{Generalized RTMB model}
+\title{Generalized RTMB spatial age-structured model}
 \usage{
 SPoRC_rtmb(pars, data)
 }
@@ -12,6 +12,6 @@ SPoRC_rtmb(pars, data)
 \item{data}{Data List}
 }
 \description{
-Generalized RTMB model
+Generalized RTMB spatial age-structured model
 }
 \keyword{internal}

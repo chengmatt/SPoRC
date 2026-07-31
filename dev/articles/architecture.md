@@ -196,7 +196,7 @@ through that one file.
 | `model_movement.R` | `Get_Movement`, `get_movement_dp_design_matrix` | nothing | `model_objective.R`, `setup_movement.R` |
 | `model_objective.R` | `maintain_backwards_compatibility`, `SPoRC_rtmb` | `model_init_naa.R`, `model_lik_comps.R`, `model_lik_tags.R`, `model_movement.R`, `model_obs_fishery_survey.R`, `model_obs_tagging.R`, `model_population_dynamics.R`, `model_priors_penalties.R`, `model_selectivity.R`, `utils_setup.R` |  |
 | `model_obs_fishery_survey.R` | `get_fishery_observation_model`, `get_survey_observation_model` | `model_transition.R` | `model_objective.R` |
-| `model_obs_tagging.R` | `get_tagging_observation_model`, `release_conv_tag_attr` | `model_transition.R` | `model_objective.R` |
+| `model_obs_tagging.R` | `get_tag_mort`, `get_tagging_observation_model`, `release_conv_tag_attr` | `model_transition.R` | `model_objective.R`, `sim_observations.R` |
 | `model_osa.R` | `ddirmult_osa`, `ddirmult2`, `dmultinom_osa`, `osa_extract_cdf`, `osa_extract_keep`, `osa_extract_values`, `osa_extract_x`, `osa_pbetabinom`, `osa_pbinom`, `osa_squeeze` | nothing | `model_lik_comps.R`, `model_lik_tags.R` |
 | `model_population_dynamics.R` | `get_population_projection` | `model_biomass.R`, `model_recruitment.R`, `model_transition.R` | `model_objective.R` |
 | `model_precision.R` | `Get_3d_precision` | nothing | `model_priors_penalties.R` |
@@ -219,7 +219,7 @@ through that one file.
 | Script | Defines | Calls into | Called from |
 |----|----|----|----|
 | `sim_closed_loop.R` | `catch_to_F_multifleet`, `catch_to_F_singlefleet`, `condition_closed_loop_simulations`, `get_closed_loop_reference_points` | `refpts_main.R`, `setup_biologicals.R`, `setup_dimensions.R`, `setup_fishery_catch.R`, `setup_recruitment.R`, `setup_sim_containers.R`, `setup_survey.R`, `setup_tagging.R`, `utils_postfit.R`, `utils_setup.R` |  |
-| `sim_observations.R` | `generate_fishery_catch_comp_idx`, `generate_fishery_conv_tags_recap`, `generate_survey_comp_idx`, `marginalize_conv_fish_tags`, `predict_sim_fish_iss_fmort`, `release_conv_tags`, `simulate_comps`, `simulate_conv_tag_fish_recaptures` | `model_transition.R`, `sim_random_variates.R`, `utils_math.R` | `sim_population.R` |
+| `sim_observations.R` | `generate_fishery_catch_comp_idx`, `generate_fishery_conv_tags_recap`, `generate_survey_comp_idx`, `marginalize_conv_fish_tags`, `predict_sim_fish_iss_fmort`, `release_conv_tags`, `simulate_comps`, `simulate_conv_tag_fish_recaptures` | `model_obs_tagging.R`, `model_transition.R`, `sim_random_variates.R`, `utils_math.R` | `sim_population.R` |
 | `sim_population.R` | `apply_pop_dy`, `compute_biom_y_sim`, `generate_initial_age_structure`, `generate_recruitment`, `run_annual_cycle`, `Simulate_Pop_Static` | `model_init_naa.R`, `model_recruitment.R`, `model_transition.R`, `sim_observations.R`, `sim_setup.R` | `sim_self_test.R` |
 | `sim_random_variates.R` | `rdirM`, `rinvgauss_rec`, `rlogistnormal` | `utils_math.R` | `projection.R`, `sim_observations.R` |
 | `sim_self_test.R` | `simulation_data_to_SPoRC`, `simulation_self_test` | `model_fit.R`, `setup_biologicals.R`, `setup_dimensions.R`, `setup_fishery_catch.R`, `setup_recruitment.R`, `setup_sim_containers.R`, `setup_survey.R`, `setup_tagging.R`, `sim_population.R`, `utils_postfit.R` |  |

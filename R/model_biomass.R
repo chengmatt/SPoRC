@@ -116,7 +116,7 @@ compute_biom_y = function(y, seas, NAA, NAA0, WAA, MatAA, ZAA, natmort, t_spawn,
 
 #' Compute Biomass for Population Projections
 #'
-# Computes SSB / Dynamic_SSB0 / eff_SSB for projection year y at season seas
+# Computes SSB / Total_Biom / Dynamic_SSB0 / eff_SSB for projection year y at season seas
 # (always called with seas == spawn_seas) from the current proj_NAA/proj_NAA0
 # state in Do_Population_Projection(). Factored out (plain R, no RTMB/AD
 # concerns since Do_Population_Projection is never used inside an AD tape) so
@@ -166,6 +166,12 @@ derive_proj_biom = function(y, seas, proj_NAA, proj_NAA0, WAA, MatAA, proj_ZAA, 
 
   # Mortality discount up to spawning; already folded into spawn_state when move_timing != 0
   spawn_disc_Z_f = if(move_timing == 0 || n_regions == 1) exp(-proj_ZAA[,, y, seas, , 1,drop = FALSE] * t_spawn) else 1
+  spawn_disc_Z = if(move_timing == 0 || n_regions == 1) exp(-proj_ZAA[,, y, seas, , ,drop = FALSE] * t_spawn) else 1
+
+  # get total biomass
+  Total_Biom_y = apply(tmp_NAA_spawn *
+                         WAA[,, y, seas, , ,drop = FALSE] *
+                         spawn_disc_Z, c(1,2), sum)
 
   # get SSB
   SSB_y = apply(tmp_NAA_spawn[,, 1, 1, , 1,drop = FALSE] *
@@ -204,5 +210,5 @@ derive_proj_biom = function(y, seas, proj_NAA, proj_NAA0, WAA, MatAA, proj_ZAA, 
     } # end p2 loop
   } else eff_SSB_y[1] = sum(SSB_y[1,])
 
-  list(SSB_y = SSB_y, Dynamic_SSB0_y = Dynamic_SSB0_y, eff_SSB_y = eff_SSB_y)
+  list(SSB_y = SSB_y, Total_Biom_y = Total_Biom_y, Dynamic_SSB0_y = Dynamic_SSB0_y, eff_SSB_y = eff_SSB_y)
 }

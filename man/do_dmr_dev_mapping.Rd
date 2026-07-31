@@ -8,7 +8,8 @@ do_dmr_dev_mapping(input_list, dmr_dev_spec)
 }
 \arguments{
 \item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
-sublists. Requires \code{$data$UseDiscard} and \code{$data$UseDiscard_pop} to be populated by
+sublists. Requires \code{$data$UseCatch}, \code{$data$UseCatch_pop}, and
+\code{$data$ObsCatch} to be populated by
 \code{\link{Setup_Mod_Catch_and_F}}.}
 
 \item{dmr_dev_spec}{Character string specifying whether to estimate or fix
@@ -16,14 +17,22 @@ deviations. Currently supports \code{"est_all"} and \code{"fix"}.}
 }
 \value{
 The input \code{input_list} with \code{$map$logit_dmr_devs} set to a
-  factor vector. Cells with discard are assigned sequential integer indices;
-  cells without discard are \code{NA}.
+  factor vector. Fished cells are assigned unique integer indices; true
+  closures are \code{NA}.
 }
 \description{
 Constructs the \code{logit_dmr_devs} factor map, assigning unique estimation
-indices to region–year–season–fleet cells where discard data are used
-(\code{UseDiscard == 1}) and mapping cells without discard data to \code{NA}.
-This ensures that \code{logit_dmr_devs} parameters are only estimated for
-dimensions with observed discard.
+indices to region–year–season–fleet cells that are fished and mapping true
+closures to \code{NA}. A cell is fished when aggregated or any
+population-specific catch is used, or when the aggregate catch observation is
+missing (\code{NA}) rather than a recorded zero, which is the same condition
+under which the objective computes a non-zero \code{dmr}.
+}
+\details{
+Discard observations are not required for a deviation to be estimable.
+\code{dmr} enters the likelihood through total mortality (\code{ZAA}), so it
+is informed by retained catch, indices, and compositions in any fished cell
+where retention is less than one. \code{\link{get_dmr_penalty}} keys on the
+same condition, so the estimated and penalized sets coincide.
 }
 \keyword{internal}

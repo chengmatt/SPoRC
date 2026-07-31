@@ -718,6 +718,12 @@ do_Fmort_mapping <- function(input_list) {
   F_mean_map[!F_mean_active] <- NA
 
   input_list$map$ln_F_mean <- factor(as.vector(F_mean_map))
+
+  # mirror the deviation map into the data list so the process error penalty can
+  # key on the cells that are actually estimated. A deviation mapped off by hand
+  # after setup is then neither estimated nor penalized
+  input_list$data$map_ln_F_devs <- array(as.numeric(input_list$map$ln_F_devs), dim = dims)
+
   return(input_list)
 }
 
@@ -924,20 +930,28 @@ do_sigmaD_mapping <- function(input_list, sigmaD_spec) {
 #' Map discard mortality deviation parameters
 #'
 #' Constructs the \code{logit_dmr_devs} factor map, assigning unique estimation
-#' indices to region–year–season–fleet cells where discard data are used
-#' (\code{UseDiscard == 1}) and mapping cells without discard data to \code{NA}.
-#' This ensures that \code{logit_dmr_devs} parameters are only estimated for
-#' dimensions with observed discard.
+#' indices to region–year–season–fleet cells that are fished and mapping true
+#' closures to \code{NA}. A cell is fished when aggregated or any
+#' population-specific catch is used, or when the aggregate catch observation is
+#' missing (\code{NA}) rather than a recorded zero, which is the same condition
+#' under which the objective computes a non-zero \code{dmr}.
+#'
+#' Discard observations are not required for a deviation to be estimable.
+#' \code{dmr} enters the likelihood through total mortality (\code{ZAA}), so it
+#' is informed by retained catch, indices, and compositions in any fished cell
+#' where retention is less than one. \code{\link{get_dmr_penalty}} keys on the
+#' same condition, so the estimated and penalized sets coincide.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
-#'   sublists. Requires \code{$data$UseDiscard} and \code{$data$UseDiscard_pop} to be populated by
+#'   sublists. Requires \code{$data$UseCatch}, \code{$data$UseCatch_pop}, and
+#'   \code{$data$ObsCatch} to be populated by
 #'   \code{\link{Setup_Mod_Catch_and_F}}.
 #' @param dmr_dev_spec Character string specifying whether to estimate or fix
 #'   deviations. Currently supports \code{"est_all"} and \code{"fix"}.
 #'
 #' @return The input \code{input_list} with \code{$map$logit_dmr_devs} set to a
-#'   factor vector. Cells with discard are assigned sequential integer indices;
-#'   cells without discard are \code{NA}.
+#'   factor vector. Fished cells are assigned unique integer indices; true
+#'   closures are \code{NA}.
 #'
 #' @keywords internal
 do_dmr_dev_mapping <- function(input_list, dmr_dev_spec) {
@@ -947,37 +961,40 @@ do_dmr_dev_mapping <- function(input_list, dmr_dev_spec) {
     stop("dmr_dev_spec '", dmr_dev_spec, "' not recognized. Valid options: ",
          paste(valid_specs, collapse = ", "))
 
+  dims <- c(region = input_list$data$n_regions,
+            year   = length(input_list$data$years),
+            season = input_list$data$n_seas,
+            fleet  = input_list$data$n_fish_fleets)
+
   if(dmr_dev_spec == "fix") {
     input_list$map$logit_dmr_devs <- factor(rep(NA, length(input_list$par$logit_dmr_devs)))
+    input_list$data$map_logit_dmr_devs <- array(NA_real_, dim = dims)
     collect_message("dmr_devs is specified as: fix")
     return(input_list)
   }
 
-  # est: estimate devs where discard data exist
-  dmr_dev_map <- input_list$par$logit_dmr_devs
-  dmr_dev_map[] <- NA
-  dmr_dev_counter <- 1
+  # Estimate a deviation wherever dmr enters the dynamics, which is every cell
+  # the objective does not treat as a true closure: aggregated OR any
+  # population-specific catch is used, or the aggregate catch observation is
+  # missing (NA) rather than a recorded zero. dmr is identified through total
+  # mortality (ZAA), so a cell is informative whenever it is fished and
+  # retention is less than one, with or without discard observations.
+  # get_dmr_penalty() keys on the resulting map, so every estimated deviation is
+  # penalized and no deviation fixed at zero contributes to the penalty
+  has_catch <- input_list$data$UseCatch == 1 |
+    apply(input_list$data$UseCatch_pop == 1, c(2,3,4,5), any) |
+    is.na(input_list$data$ObsCatch)
 
-  for(r in 1:input_list$data$n_regions) {
-    for(y in 1:length(input_list$data$years)) {
-      for(seas in 1:input_list$data$n_seas) {
-        for(f in 1:input_list$data$n_fish_fleets) {
+  dmr_dev_map <- build_pe_map(dims, share_over = character(0))
+  dmr_dev_map[!has_catch] <- NA
 
-          has_agg_discard <- input_list$data$UseCatch[r,y,seas,f] == 1
-          has_pop_discard <- any(input_list$data$UseCatch_pop[,r,y,seas,f] == 1)
+  input_list$map$logit_dmr_devs <- factor(as.vector(dmr_dev_map))
 
-          if(has_agg_discard || has_pop_discard) {
-            dmr_dev_map[r,y,seas,f] <- dmr_dev_counter
-            dmr_dev_counter <- dmr_dev_counter + 1
-          }
+  # mirror the map into the data list so a deviation mapped off by hand after
+  # setup is neither estimated nor penalized
+  input_list$data$map_logit_dmr_devs <- array(as.numeric(input_list$map$logit_dmr_devs), dim = dims)
 
-        } # end f
-      } # end seas
-    } # end y
-  } # end r
-
-  input_list$map$logit_dmr_devs <- factor(dmr_dev_map)
-  collect_message("dmr_devs is specified as: est")
+  collect_message("dmr_devs is specified as: est_all")
   return(input_list)
 }
 
@@ -1266,8 +1283,8 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
 #' @param dmr_dev_spec Character string specifying the sharing/estimation
 #'   structure for \code{logit_dmr_devs} (logit-scale annual discard mortality
 #'   rate deviations). Default \code{"fix"} holds deviations at zero
-#'   (unless overridden via \code{...}). Use \code{"est"} to estimate
-#'   deviations; requires \code{Use_dmr_pen = 1}. See
+#'   (unless overridden via \code{...}). Use \code{"est_all"} to estimate a
+#'   deviation in every fished cell; requires \code{Use_dmr_pen = 1}. See
 #'   \code{\link{do_dmr_dev_mapping}} for sharing options.
 #' @param ... Optional starting value overrides for catch and discard related parameters.
 #'
@@ -1382,8 +1399,8 @@ Setup_Mod_Catch_and_F <- function(input_list,
   if(sigma_dmr_spec == "fix" && !("ln_sigma_dmr" %in% names(starting_values))) warning("sigma_dmr_spec is specified as fix, but no starting values / fixed values are provided. Either do this post-hoc, or use the ... argument if you do not want to use default values")
 
   # Validation checks for dmr_dev_spec and Use_dmr_pen consistency
-  if(dmr_dev_spec == "est" && Use_dmr_pen == 0)
-    warning("dmr_dev_spec is 'est' but Use_dmr_pen is 0. Estimating dmr deviations without a penalty will likely cause convergence issues.")
+  if(dmr_dev_spec == "est_all" && Use_dmr_pen == 0)
+    warning("dmr_dev_spec is 'est_all' but Use_dmr_pen is 0. Estimating dmr deviations without a penalty will likely cause convergence issues.")
 
   if(dmr_dev_spec == "fix" && Use_dmr_pen == 1)
     stop("dmr_dev_spec is 'fix' but Use_dmr_pen is 1. Cannot apply a penalty on deviations that are not estimated.")

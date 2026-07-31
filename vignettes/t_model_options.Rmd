@@ -485,7 +485,7 @@ Configured via `Setup_Mod_Catch_and_F()`.
 | `ObsCatch` | Observed aggregate catch `[r × y × τ × f]` |
 | `ObsCatch_pop` | Population-specific catch `[p × r × y × τ × f]` |
 | `catch_units` | Per-fleet: 0 = abundance, 1 = biomass |
-| `Use_F_pen` | 0/1 toggle for the fishing mortality deviation penalty (`Fmort_nLL`) |
+| `Use_F_pen` | 0/1 toggle for the fishing mortality deviation penalty (`Fmort_nLL`); see [Which deviations are penalized] |
 | `sigmaC_spec` / `sigmaC_pop_spec` | Catch observation-error estimation |
 
 ### Fishing mortality process error
@@ -514,7 +514,8 @@ separated by a gap of $d$ closed years is taken directly over the
 elapsed gap (the same marginal transition obtained by estimating
 deviations for the closed years and integrating them out, without
 actually estimating them). See [Fishing Mortality Deviations] in
-`vignette("c_model_equations")` for the exact equations.
+`vignette("c_model_equations")` for the exact equations, and
+[Which deviations are penalized] for how the active sequence is determined.
 
 ### Discard and retention framework
 
@@ -528,10 +529,62 @@ $$F_{p,r,\tau,a,s} = \sum_f F_{r,\tau,f} \left[\underbrace{\text{sel}_{a,f} \cdo
 | `ret_sel_blocks` | Retention selectivity time blocks |
 | `cont_tv_ret_sel` | Continuous time-varying retention selectivity |
 | `dmr_mean_spec` | Estimation structure for dead discard mortality rate means |
-| `dmr_dev_spec` | Estimation structure for DMR deviations |
+| `dmr_dev_spec` | Estimation structure for DMR deviations: `"fix"` (default) or `"est_all"` |
+| `Use_dmr_pen` | 0/1 toggle for the DMR deviation penalty (`dmr_nLL`); must be `1` when `dmr_dev_spec = "est_all"` |
 | `discard_units` | Per-fleet: 0 = abundance, 1 = biomass, 2 = abundance fraction, 3 = biomass fraction |
 | `ObsDiscard` / `ObsDiscard_pop` | Observed aggregate and population-specific discards |
 | `sigmaD_spec` / `sigmaD_pop_spec` | Discard observation-error estimation |
+
+### Estimating discard mortality rates
+
+`dmr_dev_spec = "est_all"` estimates an annual deviation in every **fished**
+region × year × season × fleet cell, not only in cells carrying a discard
+observation. This is deliberate. From the decomposition above, `dmr` scales
+the dead-discard component of total mortality, so it enters $Z$ and therefore
+propagates into predicted retained catch, indices, and compositions:
+
+$$C_{a} = \frac{F^{\text{ret}}_{a}}{Z_{a}} N_{a} \left(1 - e^{-Z_{a}}\right)$$
+
+A cell is therefore informative about `dmr` whenever it is fished and
+retention is less than one, with or without discard data. Discard
+observations are not the dividing line — `dmr` in fact cancels out of the
+predicted discard itself, which divides the dead discards back through by it,
+leaving only the same $Z$ dependence.
+
+The cells excluded are true closures, matching the condition under which the
+objective pins `dmr` to zero: no aggregate or population-specific catch is
+fit, and the aggregate catch observation is a recorded zero rather than
+missing (`NA`). A missing observation is treated as a fished year, on the
+assumption that fishing continued and we simply lack a value to fit.
+
+Note that a fleet with full retention (`ret_sel = 1`, the package default)
+contributes no dead discards at all, so `dmr` drops out of the objective
+entirely and its deviations have a flat gradient. `dmr_dev_spec` and
+`dmr_mean_spec` are only meaningful once retention is actually modelled — see
+`vignette("s_discard_retention")`.
+
+### Which deviations are penalized
+
+The `ln_F_devs` and `logit_dmr_devs` penalties are evaluated on exactly the
+deviations that are estimated, read off the map mirrors `map_ln_F_devs` and
+`map_logit_dmr_devs` in the data list rather than recomputed from the catch
+indicators. `fit_model()` refreshes those mirrors from the map immediately
+before building the model, so a deviation mapped off by hand after setup is
+neither estimated nor penalized:
+
+```{r, eval = FALSE}
+# drop dmr deviations for a stretch of years, penalty included
+mp <- array(input_list$map$logit_dmr_devs, dim = dim(input_list$par$logit_dmr_devs))
+mp[, 10:20, , ] <- NA
+input_list$map$logit_dmr_devs <- factor(mp)
+```
+
+Two consequences worth knowing. Mapping a deviation off pins it at whatever
+sits in `$par`, which is `0` by default — so `dmr` falls back on
+`plogis(logit_dmr_mean)` — but a starting value supplied through `...` is
+kept, not reset to zero. And under `Fdev_model = "rw"` or `"ar1"`, a pinned
+deviation is dropped from the active sequence, widening the gap $d$ between
+the deviations either side of it rather than being treated as an actual year.
 
 ---
 

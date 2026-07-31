@@ -298,6 +298,7 @@ test_that("Single-region Sablefish RTMB model produces expected results", {
   expect_equal(sabie_rtmb_model$rep$SSB[1,1,], ssb_expected_vec, tolerance = 1e-2)
   expect_equal(sabie_rtmb_model$rep$Rec[1,1,], rec_expected_vec, tolerance = 1e-2)
   expect_true(sabie_rtmb_model$sd_rep$pdHess)
+  expect_jnLL_decomposes(sabie_rtmb_model)
 
 })
 

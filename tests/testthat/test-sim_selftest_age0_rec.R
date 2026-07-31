@@ -271,6 +271,9 @@ test_that("Age-0 (rec_lag = 0) recruitment with spawning after season 1 is conco
                        random = NULL,
                        silent = TRUE)
 
+    # the EM configuration is identical across simulations, so one check covers it
+    if(i == 1) expect_jnLL_decomposes(model)
+
     ssb_results[, i] <- as.vector(model$rep$SSB)
     r0_results[i] <- model$rep$R0
 

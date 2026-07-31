@@ -281,26 +281,44 @@ apportionment parameters multiplied by the seasonal and sex-ratio factors:
 
 $$N_{p,r,a = 1}^{\text{fished}} = \zeta_{p,r} \cdot \psi_{p,r,s = 1} \cdot \chi_{p,\tau=1}, \quad N_{p,r,a = 1}^{\text{unfished}} = \zeta_{p,r} \cdot \psi_{p,r,s = 1} \cdot \chi_{p,\tau=1}$$
 
-For seasons $\tau > 1$ and age $a = 1$, additional recruits are added proportional to $\chi_{p,\tau}$. Following the initialization of these quantities, seasonal movement dynamics are applied within each season before mortality:
+For seasons $\tau > 1$ and age $a = 1$, additional recruits are added proportional to $\chi_{p,\tau}$.
 
-$$\mathbf{N}_{p,a}^{\text{fished}} = \left( \mathbf{N}_{p,a}^{\text{fished}} \right)^{\top}\mathbf{M}_{p,\tau,a,s = 1}\quad\text{for }a = a_{\min},\ldots,a_+,\quad a_{\min} = \left\{ \begin{matrix}
+**Seasonal transition operator.** Movement and mortality are applied together over each season by a single operator, whose form depends on the movement timing $\kappa$ (`move_timing`). Writing $\mathbf{Z}_{p,a,\tau}$ for the vector of total mortality over the season (retained and dead discard components as defined above), $\mathbf{M}_{p,\tau,a,s=1}$ for the movement fractions and $\mathbf{Q}_{p,\tau,a,s=1}$ for the instantaneous rate matrix (generator), both stored as $[\text{from},\text{to}]$:
+
+$$\mathbf{T}_{p,\tau,a} = \left\{ \begin{matrix}
+\mathbf{M}_{p,\tau,a,s=1} \, \text{diag}\left(e^{-\mathbf{Z}_{p,a,\tau}}\right) & \kappa = 0 \quad \text{(movement, then mortality)} \\
+\text{diag}\left(e^{-\mathbf{Z}_{p,a,\tau}}\right) \mathbf{M}_{p,\tau,a,s=1} & \kappa = 1 \quad \text{(mortality, then movement)} \\
+\left[\exp\left(\mathbf{A}_{p,\tau,a}\right)\right]^{\top}, \quad \mathbf{A}_{p,\tau,a} = \mathbf{Q}_{p,\tau,a,s=1}^{\top}\Delta\tau_\tau - \text{diag}\left(\mathbf{Z}_{p,a,\tau}\right) & \kappa = 2 \quad \text{(continuous)} \\
+\end{matrix} \right.\ $$
+
+Under $\kappa = 2$ movement and mortality act simultaneously, so the two cannot be separated into an ordered pair of steps; $\mathbf{Q}^{\top}$ converts the stored convention to the column convention used by the matrix exponential. Abundance is advanced by
+
+$$\mathbf{N}_{p,a} \leftarrow \left(\mathbf{N}_{p,a}\right)^{\top}\mathbf{T}_{p,\tau,a}\quad\text{for }a = a_{\min},\ldots,a_+,\quad a_{\min} = \left\{ \begin{matrix}
 1 & \text{if  recruits move} \\
 2 & \text{otherwise} \\
 \end{matrix} \right.\ $$
 
-$$\mathbf{N}_{p,a}^{\text{unfished}} = \left( \mathbf{N}_{p,a}^{\text{unfished}} \right)^{\top}\mathbf{M}_{p,\tau,a,s = 1}\quad\text{for }a = a_{\min},\ldots,a_+$$
+for both the fished and unfished vectors, with ageing at the end of the final season. Ages that do not move take $\mathbf{M} = \mathbf{I}$ and $\mathbf{Q} = \mathbf{0}$, which leaves survival unchanged under every $\kappa$. The three timings coincide exactly when $\mathbf{Z}$ is constant across regions, because a scalar multiple of the identity commutes with the generator.
 
-When $n_\tau = 1$ and $n_p > 1$ (single-season natal homing), a separate spawning movement matrix $\mathbf{M}^{spawn}_{p,a,s=1}$ is applied to redistribute fish to natal grounds before computing spawning biomass:
+**Spawning state.** Spawners are propagated a fraction $t^{spawn}$ into the spawning season, which fixes both where they spawn and how much mortality they have experienced:
 
-$$\mathbf{N}^{spawn}_{p,a} = \left(\mathbf{N}_{p,a}\right)^T \mathbf{M}^{spawn}_{p,a,s=1}$$
+$$\mathbf{N}_{p,a}^{spawn} = \left\{ \begin{matrix}
+\left[\left(\mathbf{N}_{p,a}\right)^{\top}\mathbf{M}_{p,\tau^{spawn},a,s=1}\right] \odot e^{-t^{spawn}\mathbf{Z}_{p,a,\tau^{spawn}}} & \kappa = 0 \\
+\mathbf{N}_{p,a} \odot e^{-t^{spawn}\mathbf{Z}_{p,a,\tau^{spawn}}} & \kappa = 1 \\
+\exp\left(t^{spawn}\mathbf{A}_{p,\tau^{spawn},a}\right)\mathbf{N}_{p,a} & \kappa = 2 \\
+\end{matrix} \right.\ $$
 
-Following the application of movement, a seasonal exponential mortality model is applied within each season, and ageing occurs at the end of the final season.
+Under $\kappa = 0$ fish move at the start of the season and spawn at their post-movement location; under $\kappa = 1$ movement follows spawning, so they spawn where they started; under $\kappa = 2$ they are partially redistributed by the time they spawn. The $t^{spawn}$ mortality discount is carried inside $\mathbf{N}^{spawn}$ in all three cases rather than applied separately to $SSBPR$.
 
-**Analytical plus-group solution.** For the spatial case, the scalar geometric series does not correctly accumulate the plus group under movement. Instead, the plus-group abundance vector $\mathbf{N}_{p,a_+}$ is solved analytically using four annual transition matrices that accumulate the effects of seasonal survival and movement for both the penultimate age and the plus-group age under fished and unfished conditions. These matrices are built by iterating over seasons:
+When $n_\tau = 1$ and $n_p > 1$ (single-season natal homing), a separate spawning movement matrix $\mathbf{M}^{spawn}_{p,a,s=1}$ then redistributes fish to natal grounds:
 
-$$\mathbf{T}_{p,a}^{\text{fished}} = \prod_{\tau=1}^{n_\tau} \text{diag}\left(\exp\left(-\mathbf{Z}_{p,a,\tau}\right)\right) \cdot \left(\mathbf{M}_{p,\tau,a,s=1}\right)^T$$
+$$\mathbf{N}^{spawn}_{p,a} \leftarrow \left(\mathbf{N}^{spawn}_{p,a}\right)^{\top} \mathbf{M}^{spawn}_{p,a,s=1}$$
 
-where $Z_{p,r,a,\tau}$ includes both retained and dead discard components as defined above, and the product is ordered sequentially across seasons. The plus-group equilibrium vector satisfies $\mathbf{N}_{p,a_+} = \mathbf{T}_{p,a_+} \mathbf{N}_{p,a_+} + \mathbf{T}_{p,a_+-1} \mathbf{N}_{p,a_+-1}$, which rearranges to the linear system:
+**Analytical plus-group solution.** For the spatial case, the scalar geometric series does not correctly accumulate the plus group under movement. Instead, the plus-group abundance vector $\mathbf{N}_{p,a_+}$ is solved analytically using four annual transition matrices that accumulate the effects of seasonal survival and movement for both the penultimate age and the plus-group age under fished and unfished conditions. Each annual matrix $\mathbf{T}_{p,a}$ is the year-long composition of the seasonal operators $\mathbf{T}_{p,\tau,a}$ defined above, transposed into the column convention so it acts on $\mathbf{N}$ directly:
+
+$$\mathbf{T}_{p,a}^{\text{fished}} = \prod_{\tau=1}^{n_\tau} \left(\mathbf{T}_{p,\tau,a}\right)^{\top}$$
+
+where the product is ordered sequentially across seasons, season 1 applied first. Under $\kappa = 0$ this reduces to the familiar $\prod_\tau \text{diag}(e^{-\mathbf{Z}_{p,a,\tau}}) \left(\mathbf{M}_{p,\tau,a,s=1}\right)^{\top}$. The plus-group equilibrium vector satisfies $\mathbf{N}_{p,a_+} = \mathbf{T}_{p,a_+} \mathbf{N}_{p,a_+} + \mathbf{T}_{p,a_+-1} \mathbf{N}_{p,a_+-1}$, which rearranges to the linear system:
 
 $$\left(\mathbf{I} - \mathbf{T}_{p,a_+}^{\text{fished}}\right) \mathbf{N}_{p,a_+}^{\text{fished}} = \mathbf{T}_{p,a_+-1}^{\text{fished}} \mathbf{N}_{p,a_+-1}^{\text{fished}}$$
 
@@ -310,7 +328,9 @@ Regional fished and unfished numbers-at-age per-recruit can then be
 converted to *SSBPR* quantities. For regional fished *SSBPR*
 ($SS{BPR}_{p,r}^{\text{fished}})$, this is written as:
 
-$$SS{BPR}_{p,r}^{\text{fished}} = \sum_{a}^{}N_{p,r,a}^{\text{fished}} \cdot W_{p,r,\tau^{spawn},a,s = 1}^{spawn} \cdot \text{Mat}_{p,r,\tau^{spawn},a,s = 1} \cdot \exp\left( - t^{spawn} \cdot Z_{p,r,a,\tau^{spawn}}^{fished} \right)$$
+$$SS{BPR}_{p,r}^{\text{fished}} = \sum_{a}^{}N_{p,r,a}^{spawn,\text{fished}} \cdot W_{p,r,\tau^{spawn},a,s = 1}^{spawn} \cdot \text{Mat}_{p,r,\tau^{spawn},a,s = 1}$$
+
+where $N^{spawn}$ is the spawning state defined above; the $t^{spawn}$ mortality discount is already inside it and is not applied again here.
 
 Regional unfished $SSBPR$ ($SS{BPR}_{p,r}^{\text{unfished}})$ is computed
 in a similar manner. When multiple populations are modeled, effective spawning biomass per recruit at each population's natal region accounts for stray contributions, divided by $npop_r$ to preserve mass balance:
@@ -376,9 +396,25 @@ parameters are defined regionally. This option is only valid for
 single-population models ($n_p = 1$); multi-population models should use
 the local $MSY$ approach given localized density-dependence when multiple populations occur within the model. 
 
-The inputs, per-recruit accounting, seasonal mortality, movement, and analytical plus-group solution for global $MSY$ follow the same structure as described under global $SPR$ above, with $F_x$ replaced by $F_{msy}$. Additionally, catch-at-age per recruit is accumulated each season using Baranov's catch equation with only the landed fishing mortality:
+The inputs, per-recruit accounting, seasonal mortality, movement, and analytical plus-group solution for global $MSY$ follow the same structure as described under global $SPR$ above, with $F_x$ replaced by $F_{msy}$. Additionally, catch-at-age per recruit is accumulated each season using only the landed fishing mortality,
 
-$$C_{r,a,\tau} = N_{r,a}^{\text{fished}} \cdot \frac{\sum_{f \in \mathcal{F}^{\text{land}}}^{}\text{Frat}_{r,f,\tau} \cdot F_{\text{msy}} \cdot \text{Sel}_{r,a,s = 1,f}^{\text{Fsh}} \cdot \text{Sel}_{r,a,s=1,f}^{\text{Ret}}}{\left( \text{Natmort}_{r,a,s = 1}\Delta\tau_\tau + \sum_{f}^{}\text{Frat}_{r,f,\tau} \cdot F_{\text{msy}} \cdot \left[\text{Sel}_{r,a,f}^{\text{Fsh}}\text{Sel}_{r,a,f}^{\text{Ret}} + \text{Sel}_{r,a,f}^{\text{Fsh}}(1-\text{Sel}_{r,a,f}^{\text{Ret}})\delta_{r,\tau,f}\right] \right)} \cdot \left( 1 - \exp\left\lbrack - Z_{r,a,\tau}^{fished} \right\rbrack \right)$$
+$$\mathbf{F}^{\text{land}}_{a,\tau} = \sum_{f \in \mathcal{F}^{\text{land}}}\text{Frat}_{r,f,\tau} \cdot F_{\text{msy}} \cdot \text{Sel}_{r,a,s = 1,f}^{\text{Fsh}} \cdot \text{Sel}_{r,a,s=1,f}^{\text{Ret}}$$
+
+taken from the fish where they actually are during the season:
+
+$$C_{r,a,\tau} = \left\{ \begin{matrix}
+\widetilde{N}_{r,a}^{\text{fished}} \cdot \dfrac{F^{\text{land}}_{r,a,\tau}}{Z_{r,a,\tau}} \cdot \left(1 - e^{-Z_{r,a,\tau}}\right), \quad \widetilde{\mathbf{N}}_{a}^{\text{fished}} = \left(\mathbf{N}_{a}^{\text{fished}}\right)^{\top}\mathbf{M}_{\tau,a,s=1} & \kappa = 0 \\
+N_{r,a}^{\text{fished}} \cdot \dfrac{F^{\text{land}}_{r,a,\tau}}{Z_{r,a,\tau}} \cdot \left(1 - e^{-Z_{r,a,\tau}}\right) & \kappa = 1 \\
+F^{\text{land}}_{r,a,\tau} \cdot \left[\left(\int_{0}^{1} e^{\mathbf{A}_{\tau,a}u}\,du\right)\mathbf{N}_{a}^{\text{fished}}\right]_{r} & \kappa = 2 \\
+\end{matrix} \right.\ $$
+
+Catch is taken at the post-movement location under $\kappa = 0$, where movement happens at the start of the season, and at the pre-movement location under $\kappa = 1$, where it happens at the end.
+
+Under $\kappa = 2$ fish redistribute among regions while they are being caught, so the region-local $\tfrac{F}{Z}(1 - e^{-Z})$ form is not valid and the season-integrated (spatial Baranov) abundance is required instead. The integral runs over elapsed fraction of the season, since $\mathbf{A}_{\tau,a}$ already carries $\Delta\tau_\tau$ in both of its terms, and is evaluated together with $\exp(\mathbf{A}_{\tau,a})$ from the single block exponential
+
+$$\exp\begin{pmatrix} \mathbf{A} & \mathbf{I} \\ \mathbf{0} & \mathbf{0} \end{pmatrix} = \begin{pmatrix} e^{\mathbf{A}} & \int_{0}^{1} e^{\mathbf{A}u}\,du \\ \mathbf{0} & \mathbf{I} \end{pmatrix}$$
+
+In every case $\mathbf{N}_{a}^{\text{fished}}$ is abundance at the *start* of season $\tau$, carried forward across seasons by $\mathbf{T}_{\tau,a}$. This applies to the penultimate age and the plus group as well as to the ages advanced through the main loop: their catch is accumulated over the same seasonal sweep, so each season's catch is taken from the survivors of the preceding ones.
 
 After computing $SS{BPR}_{r}^{fished}$ and $SS{BPR}_{r}^{unfished}$, equilibrium recruitment is derived as:
 
@@ -443,9 +479,11 @@ $$N_{p,o,r,a = 1}^{\text{fished}} = \left\{ \begin{matrix}
 0,\ \ \ \text{if }o\  \neq r \\
 \end{matrix} \right.\ $$
 
-For multi-population models, population $p$ recruits only into its own natal region. The same seasonal movement dynamics, mortality (with retained + dead discard decomposition), and analytical plus-group solution described under global $SPR$ and global $MSY$ are applied, with cohorts tracked by both origin $o$ and destination $r$. Catch-at-age per-recruit uses only the landed fishing mortality from non-discard fleets, with $F_{r,msy}$ now region-specific:
+For multi-population models, population $p$ recruits only into its own natal region. The same seasonal transition operator, spawning state, and analytical plus-group solution described under global $SPR$ and global $MSY$ are applied, with cohorts tracked by both origin $o$ and destination $r$. Catch-at-age per-recruit takes the same three forms in $\kappa$ given for global $MSY$, applied to each origin cohort $\mathbf{N}_{p,o,\cdot,a}^{\text{fished}}$ separately and with $F_{r,msy}$ now region-specific:
 
-$$C_{p,o,r,a,\tau} = N_{p,o,r,a}^{\text{fished}} \cdot \frac{\sum_{f \in \mathcal{F}^{\text{land}}}^{}\text{Frat}_{r,f,\tau} \cdot F_{r,msy} \cdot \text{Sel}_{r,a,s = 1,f}^{\text{Fsh}} \cdot \text{Sel}_{r,a,s=1,f}^{\text{Ret}}}{Z_{p,r,a,\tau}^{fished}} \cdot \left( 1 - \exp\left\lbrack - Z_{p,r,a,\tau}^{fished} \right\rbrack \right)$$
+$$\mathbf{F}^{\text{land}}_{a,\tau} = \sum_{f \in \mathcal{F}^{\text{land}}}\text{Frat}_{r,f,\tau} \cdot F_{r,msy} \cdot \text{Sel}_{r,a,s = 1,f}^{\text{Fsh}} \cdot \text{Sel}_{r,a,s=1,f}^{\text{Ret}}$$
+
+Each origin cohort is carried forward across seasons by its own $\mathbf{T}_{p,\tau,a}$ before its next season's catch is taken.
 
 Regional equilibrium recruitment is computed by solving a non-linear Beverton-Holt
 stock-recruitment relationship that ensures internal consistency. The specific
@@ -535,8 +573,16 @@ projF_{r,\tau,y} = \sum_f Fmort_{r,y = term,\tau,f}
 Total mortality can then be computed as:
 
 \[
-F_{r,\tau,y,a,s,f} = projF_{r,\tau,y} \cdot Frat_{r,f,\tau} \cdot Sel^{Fsh}_{r,y,a,s,f} 
+F_{r,\tau,y,a,s,f} = projF_{r,\tau,y} \cdot Frat_{r,f,\tau} \cdot Sel^{Fsh}_{r,y,a,s,f}
 \]
+
+where the terminal year ratio $Frat$ splits into a seasonal split and a within-season fleet split,
+
+\[
+Frat_{r,f,\tau} = \underbrace{\frac{\sum_f Fmort_{r,y=term,\tau,f}}{\sum_\tau \sum_f Fmort_{r,y=term,\tau,f}}}_{\text{seasonal split } \phi_{r,\tau}} \cdot \underbrace{\frac{Fmort_{r,y=term,\tau,f}}{\sum_f Fmort_{r,y=term,\tau,f}}}_{\text{fleet split } \varphi_{r,\tau,f}}
+\]
+
+so that an annual fishing mortality $projF_{r,y}$ is distributed as $projF_{r,\tau,y} = projF_{r,y} \cdot \phi_{r,\tau}$. Writing it this way changes nothing for the options below, since $\phi \cdot \varphi$ recovers $Frat$ exactly, but it separates the two allocations so that catch-constrained projections can solve for a seasonal fishing mortality while holding the fleet split fixed (see *Projecting on a Catch Target*). Seasons the terminal year did not fish have $\phi_{r,\tau} = 0$ and $\varphi_{r,\tau,f} = 0$.
 
 \[
 Z_{p,r,\tau,y,a,s} = \sum_f F_{r,\tau,y,a,s,f} + NatMort_{p,r,y,a,s} \cdot \Delta\tau_\tau
@@ -561,6 +607,14 @@ Quantities of spawning stock biomass can then be computed as:
 projSSB_{p,r,y} = \sum_a projN_{p,r,\tau^{spawn},y,a,s=1}W_{p,r,\tau^{spawn},y,a,s=1}Mat_{p,r,\tau^{spawn},y,a,s=1}
 \]
 
+Projected total biomass is accumulated at the same point in the season, but over all ages and both sexes rather than mature females only, and without the maturity weighting:
+
+\[
+projTotBiom_{p,r,y} = \sum_s^{n_s} \sum_a^{a_+} projN_{p,r,\tau^{spawn},y,a,s}W_{p,r,\tau^{spawn},y,a,s}
+\]
+
+This is the same definition the estimation model uses for $TotBiom$, so the projected series continues the estimated one without a discontinuity at the terminal year. It is returned as `proj_Total_Biom`.
+
 Additionally, quantities of projected catch can be derived using Baranov's catch equation:
 
 \[
@@ -582,6 +636,32 @@ f(Finput_{r,y}) & \text{if using a user defined fishing mortality rate}
 \]
 
 where $f()$ is a harvest control function that takes the inputs $SSB$, $BRP$ (biological reference points), and $FRP$ (a fishery reference point). Alternatively, $f()$ can be a user defined matrix of fishing mortality rates to use during the projection period across regions. Projected fishing mortality is then summed with natural mortality to compute the projected total mortality in a given projection year.
+
+Both of these options set fishing mortality for year $y+1$ from quantities known at the end of year $y$. A third option instead constrains the catch itself, and is described next.
+
+## Projecting on a Catch Target
+
+Rather than specifying fishing mortality, users may specify the catch $\tilde{C}_{r,y}$ to be removed and solve for the fishing mortality that removes it. All estimated quantities and demographic assumptions are unchanged; only $projF$ moves. Formally, we require
+
+\[
+\sum_p \sum_\tau \sum_f projCatch_{p,r,\tau,y,f}\big(projF_{r,y}\big) = \tilde{C}_{r,y}
+\]
+
+This cannot be inverted in closed form. Projected catch in region $r$ is a function of fishing mortality in *every* region, because movement redistributes fish between the seasons over which catch accumulates; under continuous movement (`move_timing = 2`) catch is built on a season-integrated abundance that couples regions within a season as well. Where age-0 Beverton-Holt recruitment is used, $projF_{r,y}$ additionally alters $projSSB_{p,r,y}$ and hence the recruitment entering that same year. The left hand side is therefore the entire seasonal projection cycle, and $projF$ is obtained numerically by evaluating that cycle at trial values until the equality holds.
+
+Because $projCatch$ increases monotonically in $projF$, a single unconstrained region is bracketed on $[0, F^{max}]$ and bisected, where failure to reach $\tilde{C}_{r,y}$ at $F^{max}$ identifies the target as unattainable. Where several regions are solved together, the system is solved jointly on the log scale, so that residuals are relative catch errors,
+
+\[
+\varepsilon_r = \log\left(\sum_p \sum_\tau \sum_f projCatch_{p,r,\tau,y,f}\right) - \log \tilde{C}_{r,y}
+\]
+
+Targets may be specified annually or seasonally. Given annual targets, a single $projF_{r,y}$ is solved per region and allocated over seasons using the terminal year seasonal split $\phi_{r,\tau}$ defined above. Given seasonal targets $\tilde{C}_{r,\tau,y}$, that allocation is released and a separate $projF_{r,\tau,y}$ is solved for each season, subject to the fleet split $\varphi_{r,\tau,f}$ remaining fixed. In the seasonal case the year is solved sequentially over $\tau$, which is exact because catch in season $\tau$ depends only on fishing mortality in seasons $\tau' \leq \tau$:
+
+\[
+\frac{\partial\, projCatch_{p,r,\tau,y,f}}{\partial\, projF_{r,\tau',y}} = 0, \quad \tau' > \tau
+\]
+
+Years in which no target is supplied revert to the harvest control rule or user-specified fishing mortality described above, so that a projection may combine a period of prescribed catch with a subsequent period under a management procedure. Projection year 1 reproduces the terminal assessment year at $\sum_f Fmort_{r,y=term,\tau,f}$ unless it too is constrained, which is appropriate where the terminal year is incomplete and its catch is itself projected.
 
 Recruitment dynamics are then projected in each year following the initial projection year. In particular, several recruitment projection options are available. These include both deterministic predictions as well as the ability to incorporate stochasticity into recruitment projections.
 
@@ -656,6 +736,43 @@ Then, a draw is conducted $\sim U(0,1)$, and simulated recruitment is defined as
 Thus, this inverse Gaussian mixture ensures the simulated values have approximately the correct mean and variability based on historical recruitment values.
 
 After recruitment processes occur, movement is applied (only in projected years $y > 1$, as it has already been accounted for in the terminal year estimates of numbers at age), followed by the seasonal exponential mortality model. Projected spawning stock biomass and catch are then derived, and fishing mortality in subsequent years is updated accordingly. Catch advice for the year following the terminal assessment year corresponds to the projected catch in projection year 2 (i.e., $projCatch_{r, y = 2, f}$).
+
+## How the Projection Module is Organized
+
+`Do_Population_Projection()` is a loop over projection years. Within each year it does four things in order, which determines what each `fmort_opt` setting is able to condition on.
+
+1. **Generate this year's recruitment.** For all recruitment options other than age-0 Beverton-Holt (`bh_rec_opt$rec_lag = 0`), the year's recruitment is known before the year runs, because it depends on a previous year's spawning biomass. It is apportioned across regions, sexes, and seasons and inserted into the first age class.
+2. **Figure out this year's fishing mortality**, $projF_{r,\tau,y}$, by region and season. Which rule does this is what `fmort_opt` selects; see the table below.
+3. **Run the season loop.** For each season in turn: insert any seasonal recruits, build $F_{r,\tau,y,a,s,f}$ and $Z_{p,r,\tau,y,a,s}$, apply movement, apply mortality and (in the last season) ageing, derive spawning biomass in the spawning season, and derive catch with the Baranov equation.
+4. **Set next year's fishing mortality**, where the rule is one that works off this year's outcome (the harvest control rule options).
+
+### Setting Projected Fishing Mortality
+
+Four options are available, and they differ in *when* $projF$ can be known and therefore in where in the annual cycle they are applied.
+
+| `fmort_opt` | $projF_{r,y}$ is set from | Applied at |
+|---|---|---|
+| `"Input"` | `f_ref_pt[r, y-1]`, a fixed user-supplied $F$ | end of year $y-1$ |
+| `"HCR"` | `HCR_function()` of region $r$'s own SSB in year $y-1$ | end of year $y-1$ |
+| `"HCR_global"` | `HCR_function()` of SSB summed over all regions in year $y-1$ | end of year $y-1$ |
+| `"Catch"` | solved so that realised catch equals `catch_input[r, y]` | start of year $y$ |
+
+The first three depend only on the *previous* year's quantities, so they are computed at the end of the previous year. This is why `f_ref_pt[r, y]` sets the fishing mortality applied in year $y+1$ rather than year $y$.
+
+**`catch_input` does not carry that lag.** `catch_input[r, y]` is the catch taken *during* projection year $y$, aligned with `proj_Catch[, r, y, , ]` in the returned list. The two conventions differ, so take care when mixing them.
+
+Under every option, projection year 1 replays the terminal assessment year at $\sum_f Fmort_{r,y=term,\tau,f}$, and the first actual projected year is year 2. The one exception is `catch_terminal_yr = TRUE`, described below.
+
+### Arguments for Catch Targets
+
+The equations of the catch solve is given under *Projecting on a Catch Target* above. The arguments controlling it are:
+
+- **`catch_input`** carries the targets, and its shape selects annual or seasonal targeting. Given `[n_regions, n_proj_yrs]`, one annual fishing mortality per region is solved and distributed at the terminal year seasonal splits. Given `[n_regions, n_proj_yrs, n_seas]`, a separate fishing mortality is solved per region and season. Either way the fleet split within a season is held at terminal year ratios, so fleet-specific targets are not supported. `catch_input[r, y]` is the catch taken *in* year `y`, which is not the same convention as `f_ref_pt[r, y]`, which sets fishing mortality in year `y + 1`.
+- **`catch_fallback_opt`** (`"HCR"`, `"HCR_global"`, or `"Input"`) governs years left `NA`. Note that `NA` (no target, use the fallback) and `0` (a target of no fishing) mean different things, and that a year must be either fully specified or fully `NA` across regions and seasons.
+- **`catch_terminal_yr`** additionally solves projection year 1. This overrides the fishing mortality the assessment estimated for that year, and so changes the numbers-at-age entering year 2. With $n_\tau > 1$ the terminal year takes all of its seasons from the terminal numbers-at-age rather than propagating them, so only the last season's fishing mortality carries into year 2; earlier seasons still take their catch but do not otherwise feed forward.
+- **`catch_f_max`** bounds the search, and **`catch_tol`** and **`catch_max_iter`** control convergence.
+
+Two returned quantities support the option. `proj_F_seas` `[n_regions, n_proj_yrs + 1, n_seas]` breaks `proj_F` out by season, and is the only place the answer lives when seasonal targets are used. `proj_catch_resid`, shaped like `catch_input`, holds the relative miss $\varepsilon_r$ on each target and is `NA` for years without one. It should be checked directly rather than relying on warnings alone.
 
 # Code Demonstration
 
@@ -873,6 +990,118 @@ sum(out$proj_Catch[1,1,2,1,]) # Catch advice in terminal year + 1
 ![](figures/i_sgl_proj_catch.png)
 
 Importantly, catch advice should be based on terminal year+1 rather than the first projection year, since the first projection year serves only as an initialization step for the projection.
+
+### Projecting on a Specified Catch
+
+Rather than allowing a harvest control rule to determine fishing mortality, catch can be specified directly, with the projection solving for the fishing mortality required to remove the specified catch. This approach is particularly useful for harvest projections in years when catch information has been updated but a new assessment has not been conducted. In such cases, the most recent assessment provides the initial conditions for the projection, and observed catches are applied directly to the projected population in the corresponding years. No other components of the model are changed. The projection retains the same terminal-year numbers-at-age, demographic rates, and recruitment assumptions from the most recent assessment; only $projF$ is adjusted to achieve the specified catch. For demonstration, we apply the observed catch from the most recent five years to the first five years of the projection, after which the harvest control rule resumes.
+
+Every input below is the one defined for the single-region example above:
+
+```{r, eval = F}
+n_yrs <- length(sgl_rg_sable_data$years) # terminal year index
+
+# the five most recent years of observed catch, summed over fleets
+recent_catch <- apply(sgl_rg_sable_data$ObsCatch[1, (n_yrs - 4):n_yrs, 1, , drop = FALSE], 2, sum)
+recent_catch # 19.71 21.99 27.55 25.62 23.15
+
+# NA leaves a year to catch_fallback_opt, so only projection years 2 to 6 are
+# constrained. Note catch_input is indexed by the year the catch is taken, so
+# column 2 is terminal year + 1 (column 1 is the terminal year itself, which is
+# left alone here because catch_terminal_yr defaults to FALSE).
+catch_input <- array(NA, dim = c(n_regions, n_proj_yrs))
+catch_input[1, 2:6] <- recent_catch
+
+out_catch <- Do_Population_Projection(n_proj_yrs = n_proj_yrs,
+                                      n_regions = n_regions,
+                                      n_ages = n_ages,
+                                      n_sexes = n_sexes,
+                                      sexratio = sexratio,
+                                      n_fish_fleets = n_fish_fleets,
+                                      do_recruits_move = do_recruits_move,
+                                      recruitment = recruitment,
+                                      terminal_NAA = terminal_NAA,
+                                      terminal_NAA0 = terminal_NAA0,
+                                      n_pop = 1,
+                                      terminal_F = terminal_F,
+                                      natmort = natmort,
+                                      WAA = WAA,
+                                      WAA_fish = WAA_fish,
+                                      MatAA = MatAA,
+                                      fish_sel = fish_sel,
+                                      Movement = Movement,
+                                      recruitment_opt = "mean_rec",
+                                      fmort_opt = "Catch",
+                                      catch_input = catch_input,
+                                      # years left NA revert to the HCR, which needs its usual inputs
+                                      catch_fallback_opt = "HCR",
+                                      f_ref_pt = f_ref_pt,
+                                      b_ref_pt = b_ref_pt,
+                                      HCR_function = HCR_function,
+                                      t_spawn = t_spawn)
+```
+
+Always confirm the solver landed on the targets before interpreting anything else. `proj_catch_resid` holds how much the specified catch is missed by and is `NA` in years without a target:
+
+```{r, eval = F}
+out_catch$proj_catch_resid[1, ] # ~1e-7 in years 2 to 6, NA thereafter
+out_catch$proj_F[1, 2:6]        # 0.0331 0.0372 0.0475 0.0455 0.0424
+sgl_ref_pt$f_ref_pt             # 0.0863
+```
+
+The fishing mortality implied by recent catch is roughly half of $F_{40}$, so this is a considerably less aggressive trajectory than the harvest control rule would have prescribed. We can see the implications of this by plotting spawning biomass and total biomass against the harvest control rule projection from the previous section. 
+
+```{r, eval = F}
+n_hist <- n_yrs - 1 # projection year 1 reproduces the terminal year, so drop it here
+years <- 1960:(2023 + n_proj_yrs)
+
+biom_df <- bind_rows(
+  tibble(Year = years, Biomass = c(sgl_rg_sable_rep$SSB[1,1,-n_yrs], out$proj_SSB[1,1,]),
+         Quantity = "Spawning biomass", Projection = "HCR"),
+  tibble(Year = years, Biomass = c(sgl_rg_sable_rep$SSB[1,1,-n_yrs], out_catch$proj_SSB[1,1,]),
+         Quantity = "Spawning biomass", Projection = "Recent catch"),
+  tibble(Year = years, Biomass = c(sgl_rg_sable_rep$Total_Biom[1,1,-n_yrs], out$proj_Total_Biom[1,1,]),
+         Quantity = "Total biomass", Projection = "HCR"),
+  tibble(Year = years, Biomass = c(sgl_rg_sable_rep$Total_Biom[1,1,-n_yrs], out_catch$proj_Total_Biom[1,1,]),
+         Quantity = "Total biomass", Projection = "Recent catch")
+)
+
+ggplot(biom_df, aes(x = Year, y = Biomass, color = Projection)) +
+  geom_line(linewidth = 1) +
+  geom_vline(xintercept = 2024, linetype = "dashed") +
+  facet_wrap(~Quantity, scales = "free_y") +
+  labs(x = "Year", y = "Biomass (kt)", color = "Projection") +
+  theme_bw(base_size = 13) +
+  theme(legend.position = "bottom")
+```
+
+![](figures/i_sgl_catch_proj_biomass.png)
+
+Because catch is pinned for the first five projected years, the two runs differ only in fishing mortality over that period, and spawning biomass under the recent-catch trajectory sits above the harvest control rule run. Once the targets run out the harvest control rule takes over, and it responds to the higher biomass the constrained years produced rather than to the trajectory it would have followed on its own:
+
+```{r, eval = F}
+catch_df <- bind_rows(
+  tibble(Year = years[-(1:n_hist)], Catch = apply(out$proj_Catch[,1,,,, drop = FALSE], 3, sum),
+         Projection = "HCR"),
+  tibble(Year = years[-(1:n_hist)], Catch = apply(out_catch$proj_Catch[,1,,,, drop = FALSE], 3, sum),
+         Projection = "Recent catch")
+)
+
+ggplot(catch_df, aes(x = Year, y = Catch, color = Projection)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  geom_vline(xintercept = 2029.5, linetype = "dotted") +
+  annotate("text", x = 2027, y = Inf, label = "catch specified", vjust = 1.5, size = 3.5) +
+  annotate("text", x = 2033, y = Inf, label = "HCR resumes", vjust = 1.5, size = 3.5) +
+  labs(x = "Year", y = "Catch (kt)", color = "Projection") +
+  theme_bw(base_size = 13) +
+  theme(legend.position = "bottom")
+```
+
+![](figures/i_sgl_catch_proj_catch.png)
+
+A target larger than can be taken at `catch_f_max` (default 5) is unreachable. In that case fishing mortality is capped there, a warning names the affected regions, and `proj_catch_resid` records how far short the catch fell, so an infeasible request is never silently reported as met.
+
+Setting `catch_terminal_yr = TRUE` also solves projection year 1, which can be used when the assessment's terminal year is incomplete and its catch is itself a projection. Supplying `catch_input` with a third dimension, `[n_regions, n_proj_yrs, n_seas]`, solves a separate fishing mortality for each season rather than distributing one annual value at the terminal year seasonal splits; that is only meaningful for seasonal models, and the solved seasonal rates are returned in `proj_F_seas`.
 
 ### Multi Region
 

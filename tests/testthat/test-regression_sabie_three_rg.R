@@ -485,6 +485,7 @@ test_that("Three-region Sablefish RTMB model produces expected results", {
   expect_equal(as.vector(sabie_rtmb_model$rep$SSB), ssb_expected_vec, tolerance = 1e-3)
   expect_equal(as.vector(sabie_rtmb_model$rep$Rec), rec_expected_vec, tolerance = 1e-3)
   expect_true(sd_rep$pdHess)
+  expect_jnLL_decomposes(sabie_rtmb_model)
 
 })
 

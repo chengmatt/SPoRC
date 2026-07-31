@@ -4,15 +4,7 @@
 \alias{Get_Fdev_PE_loglik}
 \title{Compute Fishing Mortality Deviation Process Error Log-Likelihood (Negative Scale)}
 \usage{
-Get_Fdev_PE_loglik(
-  PE_model,
-  ln_sigmaF,
-  Fdev_rho,
-  ln_F_devs,
-  UseCatch,
-  UseCatch_pop,
-  missing_catch
-)
+Get_Fdev_PE_loglik(PE_model, ln_sigmaF, Fdev_rho, ln_F_devs, map_ln_F_devs)
 }
 \arguments{
 \item{PE_model}{Integer specifying the process error structure: \code{1} =
@@ -31,19 +23,18 @@ unconstrained AR1 partial correlation (only used when \code{PE_model ==
 \item{ln_F_devs}{Array \code{[n_regions x n_years x n_seas x
 n_fish_fleets]} of log-scale fishing mortality deviations.}
 
-\item{UseCatch, UseCatch_pop}{Same binary catch-usage indicators as
-elsewhere; a cell is penalized if aggregated catch or any
-population-specific catch is used.}
-
-\item{missing_catch}{Logical array \code{[n_regions x n_years x n_seas x
-n_fish_fleets]}, \code{TRUE} where the aggregate catch observation
-(\code{ObsCatch}) is missing (\code{NA}) rather than a true recorded
-zero. A cell with \code{UseCatch == 0} (and no population-specific
-catch used) is still penalized as an ordinary active year when
-\code{missing_catch} is \code{TRUE} there (fishing presumably
-continued, we simply lack a value to fit), as opposed to a true
-recorded zero, which is treated as a real closure and excluded from
-the gap count.}
+\item{map_ln_F_devs}{Array \code{[n_regions x n_years x n_seas x
+n_fish_fleets]} mirroring \code{$map$ln_F_devs}: an estimation index
+where a deviation is estimated, \code{NA} where it is fixed. Only
+estimated deviations are penalized, and they alone form the active
+sequence, so a fixed cell is skipped and widens the gap \eqn{d} between
+the deviations either side of it. \code{\link{do_Fmort_mapping}} builds
+this from the catch-usage indicators, estimating a deviation wherever
+aggregated or any population-specific catch is used, or where the
+aggregate catch observation (\code{ObsCatch}) is missing (\code{NA})
+rather than a true recorded zero (fishing presumably continued, we
+simply lack a value to fit), while a true recorded zero is a real
+closure and is excluded.}
 }
 \value{
 Array with the same dimensions as \code{ln_F_devs}: the negative

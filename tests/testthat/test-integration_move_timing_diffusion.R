@@ -320,6 +320,7 @@ test_that("CTMC diffusion parameter is recovered at every movement timing", {
     expect_equal(as.numeric(best[1]), TRUE_LOG_THETA, tolerance = 0.02,
                  info = paste("move_timing =", fx$move_timing))
     expect_lt(max(abs(fit$gr(best))), 1e-3)
+    expect_jnLL_decomposes(fit, label = paste("move_timing =", fx$move_timing))
   }
 })
 

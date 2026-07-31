@@ -180,6 +180,7 @@ test_that("Do_Population_Projection: age-0 (rec_lag = 0) and classic (rec_lag = 
   )
 
   model <- fit_model(input_list$data, input_list$par, input_list$map, random = NULL, silent = TRUE)
+  expect_jnLL_decomposes(model)
 
   data <- input_list$data
   rep <- model$rep

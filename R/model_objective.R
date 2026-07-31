@@ -90,6 +90,18 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
     set("init_F_par", array(stats::qlogis(pmin(pmax(init_F_prop, 1e-10), 1 - 1e-10)), dim = init_F_dim))
   }
 
+  # Deviation maps mirrored into the data lists
+  if(!has("map_ln_F_devs") || !has("map_logit_dmr_devs")) {
+    UseCatch <- get("UseCatch", envir = env)
+    has_catch <- UseCatch == 1 |
+      apply(get("UseCatch_pop", envir = env) == 1, c(2,3,4,5), any) |
+      is.na(get("ObsCatch", envir = env))
+    legacy_map <- array(NA_real_, dim = dim(UseCatch))
+    legacy_map[has_catch] <- seq_len(sum(has_catch))
+    if(!has("map_ln_F_devs")) set("map_ln_F_devs", legacy_map)
+    if(!has("map_logit_dmr_devs")) set("map_logit_dmr_devs", legacy_map)
+  }
+
   invisible(NULL)
 }
 
@@ -1923,14 +1935,13 @@ SPoRC_rtmb = function(pars, data) {
   ### Fishing Mortality (Penalty) ---------------------------------------------
   if(Use_F_pen == 1) {
     Fmort_nLL = Get_Fdev_PE_loglik(PE_model = Fdev_model, ln_sigmaF = ln_sigmaF, Fdev_rho = Fdev_rho,
-                                   ln_F_devs = ln_F_devs, UseCatch = UseCatch, UseCatch_pop = UseCatch_pop,
-                                   missing_catch = missing_catch)
+                                   ln_F_devs = ln_F_devs, map_ln_F_devs = map_ln_F_devs)
   } #  if using fishing mortality penalty
 
   ### Discard Mortality Rate (Penalty) ---------------------------------------------
   if(Use_dmr_pen == 1) {
     dmr_nLL = get_dmr_penalty(logit_dmr_devs = logit_dmr_devs, ln_sigma_dmr = ln_sigma_dmr,
-                              UseDiscard = UseDiscard, UseDiscard_pop = UseDiscard_pop,
+                              map_logit_dmr_devs = map_logit_dmr_devs,
                               n_fish_fleets = n_fish_fleets, n_yrs = n_yrs, n_regions = n_regions, n_seas = n_seas)
   } #  if using discard mortality rate penalty
 

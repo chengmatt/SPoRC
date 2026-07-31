@@ -537,6 +537,7 @@ test_that("OSA residuals are well-calibrated under correct EM and mis-calibrated
   expect_true(chk_correct$sd_ok)
   expect_true(chk_correct$normal_ok)
   expect_true(sdreport(obj_correct)$pdHess)
+  expect_jnLL_decomposes(obj_correct)
   expect_true((sdreport(obj_francis_correct$obj))$pdHess)
 
   # misspecified EM

@@ -125,10 +125,12 @@ truncate_yr <- function(j,
   # Fishery mortality devs
   retro_parameters$ln_F_devs <- parameters$ln_F_devs[,1:(length(data$years) - j),,,drop = FALSE] # modify F dev parameters
   retro_mapping$ln_F_devs <- factor(array(mapping$ln_F_devs, dim = dim(parameters$ln_F_devs))[,1:(length(data$years) - j),,,drop = FALSE]) # modify map
+  if(!is.null(data$map_ln_F_devs)) retro_data$map_ln_F_devs <- data$map_ln_F_devs[,1:(length(data$years) - j),,,drop = FALSE] # keep the penalty's map mirror in step
 
   # DMR devs
   retro_parameters$logit_dmr_devs <- parameters$logit_dmr_devs[,1:(length(data$years) - j),,,drop = FALSE] # modify F dev parameters
   retro_mapping$logit_dmr_devs <- factor(array(mapping$logit_dmr_devs, dim = dim(parameters$logit_dmr_devs))[,1:(length(data$years) - j),,,drop = FALSE]) # modify map
+  if(!is.null(data$map_logit_dmr_devs)) retro_data$map_logit_dmr_devs <- data$map_logit_dmr_devs[,1:(length(data$years) - j),,,drop = FALSE] # keep the penalty's map mirror in step
 
   # Fishery selectivity deviations
   retro_parameters$ln_fishsel_devs <- parameters$ln_fishsel_devs[,1:(length(data$years) - j),,,,drop = FALSE] # modify parameter length

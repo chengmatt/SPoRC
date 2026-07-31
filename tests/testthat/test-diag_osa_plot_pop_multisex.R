@@ -359,6 +359,7 @@ test_that("get_osa(model = ..., pop = TRUE) + plot_resids() work for a multi-sex
     random = NULL, silent = TRUE, do_optim = TRUE, newton_loops = 5
   )
   expect_true(RTMB::sdreport(model)$pdHess)
+  expect_jnLL_decomposes(model)
 
   osa_pop_fish <- get_osa(model = model, data = input_list$data, comp_source = "FishAge", pop = TRUE,
                           family = "discrete", bins = input_list$data$ages, bin_label = "Age")

@@ -335,6 +335,8 @@ test_that("Internal composition OSAs are producing consistent results with an in
     newton_loops = 3
     )
 
+  expect_jnLL_decomposes(model_correct)
+
   # index
   osa_idx_correct <- oneStepPredict(
     model_correct,

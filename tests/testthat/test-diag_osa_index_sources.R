@@ -292,6 +292,8 @@ test_that("get_osa()/plot_resids() support index-type sources (Catch, Discard, F
     newton_loops = 3
   )
 
+  expect_jnLL_decomposes(model)
+
   # test internals
   expect_error(index_osa_field_map("naw"), "must be one of")
   fm <- index_osa_field_map("SrvIdx", pop = TRUE)

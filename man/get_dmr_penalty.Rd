@@ -7,8 +7,7 @@
 get_dmr_penalty(
   logit_dmr_devs,
   ln_sigma_dmr,
-  UseDiscard,
-  UseDiscard_pop,
+  map_logit_dmr_devs,
   n_fish_fleets,
   n_yrs,
   n_regions,
@@ -22,21 +21,28 @@ discard mortality rate deviations on the logit scale.}
 \item{ln_sigma_dmr}{Array \code{[region, season, fish_fleet]} of log-sigma
 for the deviation penalty.}
 
-\item{UseDiscard}{Array \code{[region, year, season, fish_fleet]} flagging
-aggregated discard observations in use.}
-
-\item{UseDiscard_pop}{Array \code{[pop, region, year, season, fish_fleet]}
-flagging population-specific discard observations in use.}
+\item{map_logit_dmr_devs}{Array \code{[region, year, season, fish_fleet]}
+mirroring \code{$map$logit_dmr_devs}: an estimation index where a deviation
+is estimated, \code{NA} where it is fixed.}
 
 \item{n_fish_fleets, n_yrs, n_regions, n_seas}{Dimension sizes.}
 }
 \value{
 Array \code{[region, year, season, fish_fleet]} of negative
-  log-likelihood penalties (0 where discard data are not in use).
+  log-likelihood penalties (0 where the deviation is not estimated).
 }
 \description{
-IID penalty on discard mortality rate deviations for region-year-season-fleet
-cells with active discard data, called once from the "Discard Mortality Rate
-(Penalty)" section of \code{SPoRC_rtmb.R}.
+IID penalty on every estimated discard mortality rate deviation, called once
+from the "Discard Mortality Rate (Penalty)" section of \code{SPoRC_rtmb.R}.
+}
+\details{
+The penalized set is read off \code{map_logit_dmr_devs} rather than
+recomputed, so it always matches what is estimated, including deviations
+mapped off by hand after setup. By default
+\code{\link{do_dmr_dev_mapping}} estimates a deviation in every cell the
+objective does not treat as a true closure. Discard observations are not the
+boundary: \code{dmr} is identified through total mortality (\code{ZAA})
+wherever a cell is fished and retention is less than one, and it cancels out
+of \code{PredDiscard} itself.
 }
 \keyword{internal}

@@ -1083,3 +1083,37 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
 
   return(input_list)
 }
+
+#' Refresh the map mirrors held in the data list
+#'
+#' Several deviation penalties key on a copy of their parameter's factor map
+#' carried in the data list under \code{map_<par>}, since the map itself is
+#' applied by \code{RTMB::MakeADFun} and is invisible inside the objective.
+#' Those copies are written at setup, so a map edited by hand afterwards would
+#' otherwise leave the penalty evaluating deviations that are no longer
+#' estimated. Rebuilding the mirrors from the map immediately before the model
+#' is constructed keeps the two in step, with the map treated as authoritative.
+#'
+#' A mirror whose parameter has no entry in \code{mapping}, or whose length no
+#' longer matches (as when a caller has truncated one but not the other), is
+#' left untouched.
+#'
+#' @param data Named list of model data, as passed to \code{RTMB::MakeADFun}.
+#' @param mapping Named list of factor maps, as passed to
+#'   \code{RTMB::MakeADFun}.
+#'
+#' @return \code{data} with every \code{map_<par>} element refreshed from
+#'   \code{mapping[[par]]}.
+#'
+#' @keywords internal
+sync_dev_map_data <- function(data, mapping) {
+
+  for(nm in grep("^map_", names(data), value = TRUE)) {
+    par_nm <- sub("^map_", "", nm)
+    if(is.null(mapping[[par_nm]])) next
+    if(length(mapping[[par_nm]]) != length(data[[nm]])) next
+    data[[nm]] <- array(as.numeric(mapping[[par_nm]]), dim = dim(data[[nm]]))
+  }
+
+  return(data)
+}

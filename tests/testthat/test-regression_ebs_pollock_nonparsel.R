@@ -276,5 +276,6 @@ test_that("Single-region EBS Pollock (nonpar selex + BTS covariance) RTMB model 
   expect_equal(ebswp_rtmb_model$rep$Rec[1, 1, ], rec_expected_vec, tolerance = 1e-5)
   expect_true(ebswp_rtmb_model$sdrep$pdHess)
   expect_equal(ebswp_rtmb_model$rep$jnLL, 2595.243, tolerance = 1e-5)
+  expect_jnLL_decomposes(ebswp_rtmb_model)
 
 })

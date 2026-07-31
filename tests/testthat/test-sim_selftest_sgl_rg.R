@@ -260,6 +260,9 @@ test_that("Simulation self-test produces approximately unbiased SSB results", {
                        silent = T
     )
 
+    # the EM configuration is identical across simulations, so one check covers it
+    if(i == 1) expect_jnLL_decomposes(model)
+
     ssb_results[,i] <- as.vector(model$rep$SSB) # save results
     rinit_results[i] <- model$rep$rinit
     r0_results[i] <- model$rep$R0

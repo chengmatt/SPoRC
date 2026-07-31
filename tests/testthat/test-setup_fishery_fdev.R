@@ -1,6 +1,16 @@
 library(SPoRC)
 library(testthat)
 
+# Get_Fdev_PE_loglik keys on the deviation map mirrored into the data list rather
+# than recomputing the fished set, so that a deviation mapped off by hand is
+# neither estimated nor penalized. This builds the map do_Fmort_mapping would.
+fdev_map <- function(UseCatch, UseCatch_pop, ObsCatch) {
+  has_catch <- UseCatch == 1 | apply(UseCatch_pop == 1, c(2,3,4,5), any) | is.na(ObsCatch)
+  map <- array(NA_real_, dim = dim(UseCatch))
+  map[has_catch] <- seq_len(sum(has_catch))
+  map
+}
+
 # ── do_Fdev_rho_mapping ──────────────────────────────────────────────────────
 
 test_that("do_Fdev_rho_mapping only activates Fdev_rho under Fdev_model = 'ar1'", {
@@ -94,8 +104,7 @@ test_that("Get_Fdev_PE_loglik matches hand-computed values for iid/rw/ar1", {
 
   for (PE_model in 1:3) {
     got <- SPoRC:::Get_Fdev_PE_loglik(PE_model = PE_model, ln_sigmaF = ln_sigmaF, Fdev_rho = Fdev_rho,
-                                      ln_F_devs = ln_F_devs, UseCatch = UseCatch, UseCatch_pop = UseCatch_pop,
-                                      missing_catch = is.na(ObsCatch))
+                                      ln_F_devs = ln_F_devs, map_ln_F_devs = fdev_map(UseCatch, UseCatch_pop, ObsCatch))
     expect_equal(got, hand_ll_array(PE_model), tolerance = 1e-10, info = paste("PE_model:", PE_model))
 
     # entirely-inactive fleet 2 contributes nothing
@@ -129,15 +138,13 @@ test_that("Get_Fdev_PE_loglik handles multi-year gaps via the closed-form margin
 
   # random walk: variance inflates linearly with the elapsed gap
   got_rw <- SPoRC:::Get_Fdev_PE_loglik(PE_model = 2, ln_sigmaF = ln_sigmaF, Fdev_rho = Fdev_rho,
-                                       ln_F_devs = ln_F_devs, UseCatch = UseCatch, UseCatch_pop = UseCatch_pop,
-                                       missing_catch = is.na(ObsCatch))
+                                       ln_F_devs = ln_F_devs, map_ln_F_devs = fdev_map(UseCatch, UseCatch_pop, ObsCatch))
   expected_rw_y7 <- -dnorm(ln_F_devs[1,7,1,1], ln_F_devs[1,3,1,1], sigma * sqrt(d), log = TRUE)
   expect_equal(got_rw[1,7,1,1], expected_rw_y7, tolerance = 1e-10)
 
   # ar1: mean decays by rho^d, variance is sigma^2 * sum_{i=0}^{d-1} rho^(2i)
   got_ar1 <- SPoRC:::Get_Fdev_PE_loglik(PE_model = 3, ln_sigmaF = ln_sigmaF, Fdev_rho = Fdev_rho,
-                                       ln_F_devs = ln_F_devs, UseCatch = UseCatch, UseCatch_pop = UseCatch_pop,
-                                       missing_catch = is.na(ObsCatch))
+                                       ln_F_devs = ln_F_devs, map_ln_F_devs = fdev_map(UseCatch, UseCatch_pop, ObsCatch))
   geom_sum <- sum(rho^(2 * (0:(d-1))))
   expected_ar1_y7 <- -dnorm(ln_F_devs[1,7,1,1], rho^d * ln_F_devs[1,3,1,1], sigma * sqrt(geom_sum), log = TRUE)
   expect_equal(got_ar1[1,7,1,1], expected_ar1_y7, tolerance = 1e-10)
@@ -163,8 +170,7 @@ test_that("Get_Fdev_PE_loglik iid model matches the pre-refactor inline dnorm fo
   Fdev_rho <- array(0, dim = c(n_regions, n_seas, n_fish_fleets))
 
   got <- SPoRC:::Get_Fdev_PE_loglik(PE_model = 1, ln_sigmaF = ln_sigmaF, Fdev_rho = Fdev_rho,
-                                    ln_F_devs = ln_F_devs, UseCatch = UseCatch, UseCatch_pop = UseCatch_pop,
-                                    missing_catch = is.na(ObsCatch))
+                                    ln_F_devs = ln_F_devs, map_ln_F_devs = fdev_map(UseCatch, UseCatch_pop, ObsCatch))
 
   expected <- array(0, dim = dim(ln_F_devs))
   for (f in 1:n_fish_fleets) for (y in 1:n_yrs) for (r in 1:n_regions) for (seas in 1:n_seas) {
@@ -226,8 +232,7 @@ test_that("Get_Fdev_PE_loglik treats a missing (NA) year as an ordinary active y
 
   # random walk
   got_rw <- SPoRC:::Get_Fdev_PE_loglik(PE_model = 2, ln_sigmaF = ln_sigmaF, Fdev_rho = Fdev_rho,
-                                       ln_F_devs = ln_F_devs, UseCatch = UseCatch, UseCatch_pop = UseCatch_pop,
-                                       missing_catch = is.na(ObsCatch))
+                                       ln_F_devs = ln_F_devs, map_ln_F_devs = fdev_map(UseCatch, UseCatch_pop, ObsCatch))
 
   # year 3 (true closure) contributes nothing and is skipped from the active sequence
   expect_equal(got_rw[1,3,1,1], 0)

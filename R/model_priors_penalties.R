@@ -481,25 +481,25 @@ Get_move_PE_loglik <- function(PE_model,
 #'   3}); transformed to \eqn{(-1, 1)} via \eqn{2 / (1 + e^{-2x}) - 1}.
 #' @param ln_F_devs Array \code{[n_regions x n_years x n_seas x
 #'   n_fish_fleets]} of log-scale fishing mortality deviations.
-#' @param UseCatch,UseCatch_pop Same binary catch-usage indicators as
-#'   elsewhere; a cell is penalized if aggregated catch or any
-#'   population-specific catch is used.
-#' @param missing_catch Logical array \code{[n_regions x n_years x n_seas x
-#'   n_fish_fleets]}, \code{TRUE} where the aggregate catch observation
-#'   (\code{ObsCatch}) is missing (\code{NA}) rather than a true recorded
-#'   zero. A cell with \code{UseCatch == 0} (and no population-specific
-#'   catch used) is still penalized as an ordinary active year when
-#'   \code{missing_catch} is \code{TRUE} there (fishing presumably
-#'   continued, we simply lack a value to fit), as opposed to a true
-#'   recorded zero, which is treated as a real closure and excluded from
-#'   the gap count.
+#' @param map_ln_F_devs Array \code{[n_regions x n_years x n_seas x
+#'   n_fish_fleets]} mirroring \code{$map$ln_F_devs}: an estimation index
+#'   where a deviation is estimated, \code{NA} where it is fixed. Only
+#'   estimated deviations are penalized, and they alone form the active
+#'   sequence, so a fixed cell is skipped and widens the gap \eqn{d} between
+#'   the deviations either side of it. \code{\link{do_Fmort_mapping}} builds
+#'   this from the catch-usage indicators, estimating a deviation wherever
+#'   aggregated or any population-specific catch is used, or where the
+#'   aggregate catch observation (\code{ObsCatch}) is missing (\code{NA})
+#'   rather than a true recorded zero (fishing presumably continued, we
+#'   simply lack a value to fit), while a true recorded zero is a real
+#'   closure and is excluded.
 #'
 #' @return Array with the same dimensions as \code{ln_F_devs}: the negative
 #'   log-likelihood contribution per cell.
 #'
 #' @keywords internal
 #' @import RTMB
-Get_Fdev_PE_loglik <- function(PE_model, ln_sigmaF, Fdev_rho, ln_F_devs, UseCatch, UseCatch_pop, missing_catch) {
+Get_Fdev_PE_loglik <- function(PE_model, ln_sigmaF, Fdev_rho, ln_F_devs, map_ln_F_devs) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -511,9 +511,9 @@ Get_Fdev_PE_loglik <- function(PE_model, ln_sigmaF, Fdev_rho, ln_F_devs, UseCatc
   n_seas <- dim(ln_F_devs)[3]
   n_fish_fleets <- dim(ln_F_devs)[4]
 
-  # a cell is penalized if aggregated OR any population-specific catch is
-  # used, or if the aggregate observation is missing (see missing_catch above)
-  has_catch <- UseCatch == 1 | apply(UseCatch_pop == 1, c(2,3,4,5), any) | missing_catch
+  # only estimated deviations are penalized, so mapping one off by hand removes
+  # its penalty as well and drops it from the active sequence
+  is_estimated <- !is.na(map_ln_F_devs)
 
   Fmort_nLL <- array(0, dim = dim(ln_F_devs))
 
@@ -524,10 +524,10 @@ Get_Fdev_PE_loglik <- function(PE_model, ln_sigmaF, Fdev_rho, ln_F_devs, UseCatc
         sigma <- exp(ln_sigmaF[r,seas,f])
         if(PE_model == 3) rho <- rho_trans(Fdev_rho[r,seas,f])
 
-        last_active_y <- NA # calendar year of the previous catch-active year (NA until the first one)
+        last_active_y <- NA # calendar year of the previous active year (NA until the first one)
         for(y in 1:n_yrs) {
 
-          if(!has_catch[r,y,seas,f]) next # skip cells without catch
+          if(!is_estimated[r,y,seas,f]) next # skip cells whose deviation is fixed
 
           if(PE_model == 1) { # iid
             Fmort_nLL[r,y,seas,f] <- -RTMB::dnorm(ln_F_devs[r,y,seas,f], 0, sigma, TRUE)
@@ -562,26 +562,33 @@ Get_Fdev_PE_loglik <- function(PE_model, ln_sigmaF, Fdev_rho, ln_F_devs, UseCatc
 
 #' Discard mortality rate deviation penalty
 #'
-#' IID penalty on discard mortality rate deviations for region-year-season-fleet
-#' cells with active discard data, called once from the "Discard Mortality Rate
-#' (Penalty)" section of \code{SPoRC_rtmb.R}.
+#' IID penalty on every estimated discard mortality rate deviation, called once
+#' from the "Discard Mortality Rate (Penalty)" section of \code{SPoRC_rtmb.R}.
+#'
+#' The penalized set is read off \code{map_logit_dmr_devs} rather than
+#' recomputed, so it always matches what is estimated, including deviations
+#' mapped off by hand after setup. By default
+#' \code{\link{do_dmr_dev_mapping}} estimates a deviation in every cell the
+#' objective does not treat as a true closure. Discard observations are not the
+#' boundary: \code{dmr} is identified through total mortality (\code{ZAA})
+#' wherever a cell is fished and retention is less than one, and it cancels out
+#' of \code{PredDiscard} itself.
 #'
 #' @param logit_dmr_devs Array \code{[region, year, season, fish_fleet]} of
 #'   discard mortality rate deviations on the logit scale.
 #' @param ln_sigma_dmr Array \code{[region, season, fish_fleet]} of log-sigma
 #'   for the deviation penalty.
-#' @param UseDiscard Array \code{[region, year, season, fish_fleet]} flagging
-#'   aggregated discard observations in use.
-#' @param UseDiscard_pop Array \code{[pop, region, year, season, fish_fleet]}
-#'   flagging population-specific discard observations in use.
+#' @param map_logit_dmr_devs Array \code{[region, year, season, fish_fleet]}
+#'   mirroring \code{$map$logit_dmr_devs}: an estimation index where a deviation
+#'   is estimated, \code{NA} where it is fixed.
 #' @param n_fish_fleets,n_yrs,n_regions,n_seas Dimension sizes.
 #'
 #' @return Array \code{[region, year, season, fish_fleet]} of negative
-#'   log-likelihood penalties (0 where discard data are not in use).
+#'   log-likelihood penalties (0 where the deviation is not estimated).
 #'
 #' @keywords internal
 #' @import RTMB
-get_dmr_penalty <- function(logit_dmr_devs, ln_sigma_dmr, UseDiscard, UseDiscard_pop,
+get_dmr_penalty <- function(logit_dmr_devs, ln_sigma_dmr, map_logit_dmr_devs,
                              n_fish_fleets, n_yrs, n_regions, n_seas) {
 
   "c" <- RTMB::ADoverload("c")
@@ -589,14 +596,18 @@ get_dmr_penalty <- function(logit_dmr_devs, ln_sigma_dmr, UseDiscard, UseDiscard
 
   dmr_nLL <- array(0, dim = dim(logit_dmr_devs))
 
+  # only estimated deviations are penalized, so mapping one off by hand removes
+  # its penalty as well and dmr falls back on logit_dmr_mean
+  is_estimated <- !is.na(map_logit_dmr_devs)
+
   for(f in 1:n_fish_fleets) {
     for(y in 1:n_yrs) {
       for(r in 1:n_regions) {
         for(seas in 1:n_seas) {
 
-          if(UseDiscard[r,y,seas,f] == 1 || any(UseDiscard_pop[,r,y,seas,f] == 1)) {
+          if(is_estimated[r,y,seas,f]) {
             dmr_nLL[r,y,seas,f] <- -RTMB::dnorm(logit_dmr_devs[r,y,seas,f], 0, exp(ln_sigma_dmr[r,seas,f]), TRUE)
-          } # end if have catch
+          } # end if fished
 
         } # end seas loop
       } # end r loop

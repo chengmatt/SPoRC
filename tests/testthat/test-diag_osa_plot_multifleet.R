@@ -223,6 +223,8 @@ test_that("get_osa(model = ...) + plot_resids() work for a multi-fleet, multi-se
     random = NULL, silent = TRUE, do_optim = TRUE, newton_loops = 5
   )
 
+  expect_jnLL_decomposes(model)
+
   # Retained fishery age comps: split by region & sex, 2 fleets -> SpltR_SpltS
   osa_ret <- get_osa(model = model, data = input_list$data, comp_source = "FishAge",
                      family = "discrete", bins = input_list$data$ages, bin_label = "Age")

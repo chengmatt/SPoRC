@@ -201,6 +201,101 @@ dev.off()
 sum(out$proj_Catch[1,1,2,1,]) # Catch advice in terminal year + 1
 
 
+## Single Region Catch Projection ------------------------------------------
+
+n_yrs <- length(sgl_rg_sable_data$years) # terminal year index
+
+# the five most recent years of observed catch, summed over fleets
+recent_catch <- apply(sgl_rg_sable_data$ObsCatch[1, (n_yrs - 4):n_yrs, 1, , drop = FALSE], 2, sum)
+recent_catch
+
+# NA leaves a year to catch_fallback_opt, so only projection years 2 to 6 are
+# constrained. catch_input is indexed by the year the catch is taken, so column 2
+# is terminal year + 1.
+catch_input <- array(NA_real_, dim = c(n_regions, n_proj_yrs))
+catch_input[1, 2:6] <- recent_catch
+
+out_catch <- Do_Population_Projection(n_proj_yrs = n_proj_yrs,
+                                      n_regions = n_regions,
+                                      n_ages = n_ages,
+                                      n_sexes = n_sexes,
+                                      sexratio = sexratio,
+                                      n_fish_fleets = n_fish_fleets,
+                                      do_recruits_move = do_recruits_move,
+                                      recruitment = recruitment,
+                                      terminal_NAA = terminal_NAA,
+                                      terminal_NAA0 = terminal_NAA0,
+                                      n_pop = 1,
+                                      terminal_F = terminal_F,
+                                      natmort = natmort,
+                                      WAA = WAA,
+                                      WAA_fish = WAA_fish,
+                                      MatAA = MatAA,
+                                      fish_sel = fish_sel,
+                                      Movement = Movement,
+                                      recruitment_opt = "mean_rec",
+                                      fmort_opt = "Catch",
+                                      catch_input = catch_input,
+                                      catch_fallback_opt = "HCR", # years left NA use the HCR
+                                      f_ref_pt = f_ref_pt,
+                                      b_ref_pt = b_ref_pt,
+                                      HCR_function = HCR_function,
+                                      t_spawn = t_spawn)
+
+out_catch$proj_catch_resid[1, ] # confirm the targets were hit; NA where none was set
+out_catch$proj_F[1, 2:6]        # the F recent catch implies
+sgl_ref_pt$f_ref_pt             # against F40
+
+# spawning and total biomass, catch-constrained vs HCR
+n_hist <- n_yrs - 1 # projection year 1 reproduces the terminal year, so drop it here
+years <- 1960:(2023 + n_proj_yrs)
+
+biom_df <- bind_rows(
+  tibble(Year = years, Biomass = c(sgl_rg_sable_rep$SSB[1,1,-n_yrs], out$proj_SSB[1,1,]),
+         Quantity = "Spawning biomass", Projection = "HCR"),
+  tibble(Year = years, Biomass = c(sgl_rg_sable_rep$SSB[1,1,-n_yrs], out_catch$proj_SSB[1,1,]),
+         Quantity = "Spawning biomass", Projection = "Recent catch"),
+  tibble(Year = years, Biomass = c(sgl_rg_sable_rep$Total_Biom[1,1,-n_yrs], out$proj_Total_Biom[1,1,]),
+         Quantity = "Total biomass", Projection = "HCR"),
+  tibble(Year = years, Biomass = c(sgl_rg_sable_rep$Total_Biom[1,1,-n_yrs], out_catch$proj_Total_Biom[1,1,]),
+         Quantity = "Total biomass", Projection = "Recent catch")
+)
+
+png(here("vignettes", "figures", "i_sgl_catch_proj_biomass.png"), width = 1000, height = 500)
+print(
+  ggplot(biom_df, aes(x = Year, y = Biomass, color = Projection)) +
+    geom_line(linewidth = 1) +
+    geom_vline(xintercept = 2024, linetype = "dashed") + # projection start
+    facet_wrap(~Quantity, scales = "free_y") +
+    labs(x = "Year", y = "Biomass (kt)", color = "Projection") +
+    theme_bw(base_size = 13) +
+    theme(legend.position = "bottom")
+)
+dev.off()
+
+# catch, showing where the specified period ends and the HCR resumes
+catch_df <- bind_rows(
+  tibble(Year = years[-(1:n_hist)], Catch = apply(out$proj_Catch[,1,,,, drop = FALSE], 3, sum),
+         Projection = "HCR"),
+  tibble(Year = years[-(1:n_hist)], Catch = apply(out_catch$proj_Catch[,1,,,, drop = FALSE], 3, sum),
+         Projection = "Recent catch")
+)
+
+png(here("vignettes", "figures", "i_sgl_catch_proj_catch.png"), width = 1000, height = 600)
+print(
+  ggplot(catch_df, aes(x = Year, y = Catch, color = Projection)) +
+    geom_line(linewidth = 1) +
+    geom_point(size = 2) +
+    geom_vline(xintercept = 2029.5, linetype = "dotted") +
+    annotate("text", x = 2027, y = Inf, label = "catch specified", vjust = 1.5, size = 3.5) +
+    annotate("text", x = 2033, y = Inf, label = "HCR resumes", vjust = 1.5, size = 3.5) +
+    labs(x = "Year", y = "Catch (kt)", color = "Projection") +
+    theme_bw(base_size = 13) +
+    theme(legend.position = "bottom")
+)
+dev.off()
+
+
 ## Multi Region ------------------------------------------------------------
 
 # Define HCR to use

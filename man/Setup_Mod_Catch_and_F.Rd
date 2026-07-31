@@ -197,8 +197,8 @@ See \code{\link{do_dmr_mean_mapping}} for sharing options.}
 \item{dmr_dev_spec}{Character string specifying the sharing/estimation
 structure for \code{logit_dmr_devs} (logit-scale annual discard mortality
 rate deviations). Default \code{"fix"} holds deviations at zero
-(unless overridden via \code{...}). Use \code{"est"} to estimate
-deviations; requires \code{Use_dmr_pen = 1}. See
+(unless overridden via \code{...}). Use \code{"est_all"} to estimate a
+deviation in every fished cell; requires \code{Use_dmr_pen = 1}. See
 \code{\link{do_dmr_dev_mapping}} for sharing options.}
 
 \item{...}{Optional starting value overrides for catch and discard related parameters.}

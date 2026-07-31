@@ -76,6 +76,10 @@ fit_model <- function(data,
                       ...
                       ) {
 
+  # the deviation penalties key on the map mirrors in the data list, so refresh
+  # them from the map actually being handed to MakeADFun
+  data <- sync_dev_map_data(data, mapping)
+
   # make AD model function
   obj <- RTMB::MakeADFun(cmb(model, data), parameters = parameters,
                          map = mapping, random = random, silent = silent, ...)

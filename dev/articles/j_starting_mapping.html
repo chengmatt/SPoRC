@@ -194,12 +194,12 @@ rules are simple:</p>
 <ul>
 <li>
 <strong><code>factor(NA)</code></strong> at a position means that
-parameter is <strong>fixed</strong> — it is held at its value in
+parameter is <strong>fixed</strong>, it is held at its value in
 <code>input_list$par</code> and not estimated.</li>
 <li>
 <strong>Shared integers</strong> at two or more positions means
 those parameters are <strong>constrained to be equal</strong> during
-estimation — only one value is estimated for the group.</li>
+estimation, only one value is estimated for the group.</li>
 <li>
 <strong>Unique integers</strong> at each position means each
 parameter is <strong>independently estimated</strong>.</li>
@@ -289,8 +289,8 @@ value first.</p>
 <p>The <code>Setup_xxx</code> functions also support sharing parameters
 across model partitions via built-in convenience arguments. These cover
 common sharing structures (e.g., sharing selectivity across sexes or
-regions), but for finer control — such as sharing a subset of parameters
-while estimating others independently — users can construct the map
+regions), but for finer control, such as sharing a subset of parameters
+while estimating others independently, users can construct the map
 manually.</p>
 <p>Below, we demonstrate both approaches using fishery selectivity as an
 example. We define two fishery fleets: Fleet 1 uses a logistic
@@ -351,8 +351,8 @@ shared across sexes</li>
 <p>We start from <code>est_all</code> to get the correctly dimensioned
 parameter array, then overwrite the map. The parameter array
 <code>fish_fixed_sel_pars</code> has dimensions
-<code>[n_regions, n_max_sel_pars, n_max_sel_blocks, n_sexes, n_fish_fleets]</code>
-— in this example <code>1 × 2 × 1 × 2 × 2</code>. The table below
+<code>[n_regions, n_max_sel_pars, n_max_sel_blocks, n_sexes, n_fish_fleets]</code>,
+in this example <code>1 × 2 × 1 × 2 × 2</code>. The table below
 summarises the intended sharing structure before we implement it:</p>
 <table class="table">
 <thead><tr class="header">

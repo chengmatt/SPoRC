@@ -27,29 +27,28 @@ Get_move_PE_loglik(
 
   Integer specifying the movement process error structure. All models
   are IID; they differ in which dimensions share a common standard
-  deviation. Models 1–5 are single-population (fix `pop = 1`); models
-  6–10 estimate separate parameters per population:
+  deviation. Models 1-5 are single-population (fix `pop = 1`); models
+  6-10 estimate separate parameters per population:
 
-  - **1** – IID across years (single \\\sigma\\ per origin region)
+  - **1**: IID across years (single \\\sigma\\ per origin region)
 
-  - **2** – IID across ages (single \\\sigma\\ per origin region and
-    age)
+  - **2**: IID across ages (single \\\sigma\\ per origin region and age)
 
-  - **3** – IID across years and ages
+  - **3**: IID across years and ages
 
-  - **4** – IID across years, ages, and sexes
+  - **4**: IID across years, ages, and sexes
 
-  - **5** – IID across years, seasons, ages, and sexes
+  - **5**: IID across years, seasons, ages, and sexes
 
-  - **6** – IID across populations and years
+  - **6**: IID across populations and years
 
-  - **7** – IID across populations and ages
+  - **7**: IID across populations and ages
 
-  - **8** – IID across populations, years, and ages
+  - **8**: IID across populations, years, and ages
 
-  - **9** – IID across populations, years, ages, and sexes
+  - **9**: IID across populations, years, ages, and sexes
 
-  - **10** – IID across populations, years, seasons, ages, and sexes
+  - **10**: IID across populations, years, seasons, ages, and sexes
 
 - PE_pars:
 

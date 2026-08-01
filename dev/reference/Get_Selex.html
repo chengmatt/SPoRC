@@ -173,9 +173,9 @@ Parameters are exponentiated or transformed depending on model specification:</p
 <dt id="arg-ln-seldevs">ln_seldevs<a class="anchor" aria-label="anchor" href="#arg-ln-seldevs"></a></dt>
 <dd><p>Array of log-scale selectivity deviations with dimension
   <code>[n_regions, n_years, n_parameters_or_bins, n_sexes, 1]</code>.</p>
-<p>For <code>TimeVary_Model = 1–2</code>: deviations apply to selectivity parameters
+<p>For <code>TimeVary_Model = 1-2</code>: deviations apply to selectivity parameters
   on the natural scale after exponentiation.</p>
-<p>For <code>TimeVary_Model = 3–5</code>: deviations apply multiplicatively at the
+<p>For <code>TimeVary_Model = 3-5</code>: deviations apply multiplicatively at the
   bin level to the constructed selectivity curve.</p>
 <p>For <code>Selex_Model = 5</code>: deviations act directly on bin-level logit
   selectivity parameters prior to logistic transformation.</p></dd>
@@ -227,7 +227,7 @@ own true number of bin nodes / year nodes. Only used when
 <code>Wbin_bicubic</code>/<code>Wyr_bicubic</code> may have been zero-padded wider
 than this specific block's own grid (e.g. because some <em>other</em>
 fleet/block shares the same padded storage array but uses a larger
-bicubic grid) – <code>ncol(Wbin_bicubic)</code>/<code>ncol(Wyr_bicubic)</code> give
+bicubic grid), <code>ncol(Wbin_bicubic)</code>/<code>ncol(Wyr_bicubic)</code> give
 the padded (shared) width, not this block's true node counts, and using
 the padded width to reshape <code>pars</code> would misassign which flattened
 parameter values land in which (bin-node, year-node) cell. Default
@@ -245,9 +245,9 @@ in downstream components.</p>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>For <code>TimeVary_Model = 0</code>, only the base parametric form is evaluated.</p>
-<p>For <code>TimeVary_Model = 1–2</code>, deviations modify model parameters
+<p>For <code>TimeVary_Model = 1-2</code>, deviations modify model parameters
 multiplicatively on the natural scale after transformation.</p>
-<p>For <code>TimeVary_Model = 3–5</code>, deviations act directly on the constructed
+<p>For <code>TimeVary_Model = 3-5</code>, deviations act directly on the constructed
 selectivity curve as multiplicative log-normal perturbations:
 $$\text{selex} = \text{selex} \cdot \exp(\delta_{r,y,b,s})$$.</p>
 <p>For <code>Selex_Model = 5</code>, selectivity is fully non-parametric:

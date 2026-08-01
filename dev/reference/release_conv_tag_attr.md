@@ -1,9 +1,9 @@
 # Distribute Tagged Fish Releases to Full Population Dimensions
 
-When tag release data are not recorded at full population resolution —
+When tag release data are not recorded at full population resolution,
 i.e. when one or more of the population, age, or sex dimensions are
-unattended in `tag_attr` — this function distributes the known tag
-totals to full `[n_pop, n_ages, n_sexes]` resolution using apportionment
+unattended in `tag_attr`, this function distributes the known tag totals
+to full `[n_pop, n_ages, n_sexes]` resolution using apportionment
 weights derived from the release platform (population abundance, fishery
 catch-at-age, or survey index-at-age). If all three dimensions are
 attended (`tag_attr = "p_a_s"`), `tagged_fish` is returned unchanged

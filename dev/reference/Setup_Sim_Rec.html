@@ -144,7 +144,7 @@ the SD for annual recruitment deviations (<code>ln_RecDevs</code>). Default:
 <code>[n_pop x n_seas x n_sims]</code>. Each population's values should sum to
 1 across seasons. Default: all recruitment assigned to season 1. When
 <code>rec_lag = 0</code> and <code>spawn_seas &gt; 1</code>, must be zero for every
-season before <code>spawn_seas</code> – an error is raised otherwise.</p></dd>
+season before <code>spawn_seas</code>. An error is raised otherwise.</p></dd>
 
 
 <dt id="arg-recruitment-opt">recruitment_opt<a class="anchor" aria-label="anchor" href="#arg-recruitment-opt"></a></dt>
@@ -239,7 +239,7 @@ population using SSB from <code>rec_lag</code> seasons prior, in any season.
 <code>0</code> is age-0 recruitment: recruits enter using the SAME year's SSB.
 Because that SSB isn't known until <code>spawn_seas</code> is reached, age-0
 recruits may only enter in <code>spawn_seas</code> itself or a later season in
-the same year – <code>rec_seas_prop_input</code> must be zero for every season
+the same year; <code>rec_seas_prop_input</code> must be zero for every season
 before <code>spawn_seas</code> when <code>rec_lag = 0</code>.</p></dd>
 
 

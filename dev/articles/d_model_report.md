@@ -67,7 +67,7 @@ Note: Length-based selectivity arrays (`fish_sel_l`, `ret_sel_l`,
 dimension structure as their age-based counterparts but replacing
 `n_ages` with `n_lens` and without the population and season dimensions
 (since length-based selectivity does not vary across those dimensions
-directly — population and season specificity enters only upon conversion
+directly, population and season specificity enters only upon conversion
 to age via the size-age transition matrix).
 
 ## Tagging Processes

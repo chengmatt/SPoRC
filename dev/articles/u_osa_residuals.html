@@ -147,20 +147,19 @@ compositions/tags, or a residual-vs-year plot for index-type data).</p>
 <div class="section level2">
 <h2 id="two-computation-modes">Two computation modes<a class="anchor" aria-label="anchor" href="#two-computation-modes"></a>
 </h2>
-<p>External (post-hoc) —
+<p>External (post-hoc),
 <code>get_osa(obs_mat = , exp_mat = , N = , ...)</code>. Works with any
 fitted model, no special setup required. Observed/expected arrays
 (typically pulled from <code><a href="../reference/get_comp_prop.html">get_comp_prop()</a></code>) are handed to the
 <code>compResidual</code> package, which builds a small TMB model and
 computes OSA residuals independently of how the main model was fit.</p>
-<p>Internal (model-based) —
-<code>get_osa(model = , data = , ...)</code>. Internal OSA is only
-required for composition data and conventional tagging data. Catch and
-abundance index observations (Catch/Discard/FishIdx/SrvIdx) are handled
-automatically through the model likelihood and do not require any
-additional setup. To obtain internal OSA residuals for composition
-and/or tagging data, the model must be re-fit with
-<code>do_internal_comp_osa = TRUE</code> and/or
+<p>Internal (model-based), <code>get_osa(model = , data = , ...)</code>.
+Internal OSA is only required for composition data and conventional
+tagging data. Catch and abundance index observations
+(Catch/Discard/FishIdx/SrvIdx) are handled automatically through the
+model likelihood and do not require any additional setup. To obtain
+internal OSA residuals for composition and/or tagging data, the model
+must be re-fit with <code>do_internal_comp_osa = TRUE</code> and/or
 <code>do_internal_conv_tag_osa = TRUE</code> in
 <code><a href="../reference/Setup_Mod_Dim.html">Setup_Mod_Dim()</a></code>. These options wrap the relevant
 observations in <code><a href="https://rdrr.io/pkg/RTMB/man/TMB-interface.html" class="external-link">RTMB::OBS()</a></code> at the point they enter the
@@ -334,7 +333,7 @@ residuals from those arrays via <code>compResidual</code>.</p>
 <span></span>
 <span><span class="co"># Modeled ages span sgl_rg_dusky_data$mod_ages (4:33, 30 ages), but observed</span></span>
 <span><span class="co"># fishery/survey age compositions only report ages 4:30 (27 bins, an</span></span>
-<span><span class="co"># ageing-error offset) -- comp bin labels use the *observed* bin range.</span></span>
+<span><span class="co"># ageing-error offset), comp bin labels use the *observed* bin range.</span></span>
 <span><span class="va">obs_age_bins</span> <span class="op">&lt;-</span> <span class="fl">4</span><span class="op">:</span><span class="fl">30</span></span>
 <span></span>
 <span><span class="va">comp_prop</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_comp_prop.html">get_comp_prop</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, <span class="va">model</span><span class="op">$</span><span class="va">rep</span>,</span>
@@ -511,7 +510,7 @@ residuals from those arrays via <code>compResidual</code>.</p>
 <span><span class="va">resid_int</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_resids.html">plot_resids</a></span><span class="op">(</span><span class="va">fishages_int</span><span class="op">)</span></span></code></pre></div>
 <p><img src="figures/u_internal_comp.png"></p>
 <p>Index-type sources use <code>index_source</code> instead of
-<code>comp_source</code>/<code>family</code> — there is no
+<code>comp_source</code>/<code>family</code>, there is no
 likelihood-family choice to make, since these are always continuous
 log-normal observations (currently), and no
 <code>bins</code>/<code>bin_label</code> since there’s no bin dimension.
@@ -566,7 +565,7 @@ joint-sex in this example):</p>
 <span>                    pop <span class="op">=</span> <span class="cn">TRUE</span>, family <span class="op">=</span> <span class="st">"discrete"</span>, bins <span class="op">=</span> <span class="va">input_pop</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">ages</span>, bin_label <span class="op">=</span> <span class="st">"Ages"</span><span class="op">)</span></span>
 <span><span class="va">resid_comp_pop</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_resids.html">plot_resids</a></span><span class="op">(</span><span class="va">comp_pop</span><span class="op">)</span></span></code></pre></div>
 <p><img src="figures/u_internal_comp_pop.png"></p>
-<p>Conventional tag recovery OSA (<code>tag = TRUE</code>) — faceted by
+<p>Conventional tag recovery OSA (<code>tag = TRUE</code>), faceted by
 region, recovery season, fleet, and movement/tag pooling group whenever
 the residual data span more than one level of each. This is a bit
 unwieldy to inspect given the number of dimensions (release cohort,
@@ -597,10 +596,11 @@ arguments:</p>
 <code>osa_method</code>: overrides
 <code><a href="https://rdrr.io/pkg/RTMB/man/OSA-residuals.html" class="external-link">RTMB::oneStepPredict()</a></code>’s <code>method</code> argument. Must
 be one of <code>"oneStepGeneric"</code>,
-<code>"oneStepGaussianOffMode"</code>, or <code>"oneStepGaussian"</code>
-— the <code>"cdf"</code> method is deliberately disallowed because it is
-numerically fragile for the discrete (multinomial/count) likelihoods
-used here and can silently return mis-calibrated residuals. Defaults to
+<code>"oneStepGaussianOffMode"</code>, or
+<code>"oneStepGaussian"</code>, the <code>"cdf"</code> method is
+deliberately disallowed because it is numerically fragile for the
+discrete (multinomial/count) likelihoods used here and can silently
+return mis-calibrated residuals. Defaults to
 <code>"oneStepGeneric"</code> for discrete composition/tag families and
 <code>"oneStepGaussianOffMode"</code> for continuous (logistic-normal
 composition or index-type) families.</li>

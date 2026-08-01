@@ -147,7 +147,7 @@ Setup_Mod_SrvIdx_and_Comps(
   age compositions. One of `"none"`, `"Multinomial"`,
   `"Dirichlet-Multinomial"`, `"iid-Logistic-Normal"`,
   `"1d-Logistic-Normal"`, `"2d-Logistic-Normal"`. Converted to integer
-  codes (`999`, `0`–`4`) before storage.
+  codes (`999`, `0`-`4`) before storage.
 
 - SrvLenComps_LikeType:
 
@@ -206,7 +206,7 @@ Setup_Mod_SrvIdx_and_Comps(
   compositions
   `[n_pop × n_regions × n_years × n_seas × n_sexes × n_srv_fleets]`. If
   `NULL` (default), computed automatically by summing
-  `ObsSrvAgeComps_pop` within each population–year–fleet–season–region
+  `ObsSrvAgeComps_pop` within each population-year-fleet-season-region
   cell according to `SrvAgeComps_pop_Type`.
 
 - ObsSrvLenComps_pop:

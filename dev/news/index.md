@@ -133,6 +133,17 @@
   hand-written `iid_*` branches in each (no change in behavior for
   existing models; new dedicated tests added since this module
   previously had no coverage) (for developers).
+- Newton refinement in `fit_model` now takes its Hessian from the AD
+  tape (`obj$he`) instead of finite differencing the gradient with
+  `optimHess`, which needed one gradient evaluation per parameter.
+  Random-effects models continue to use `optimHess`, since RTMB does not
+  implement a tape Hessian when random effects are present. Newton
+  refinement now also stops early if the Hessian comes back non-finite,
+  which can happen on models that have not converged, where second
+  derivatives are undefined at parameter values the objective and
+  gradient still evaluate at; previously a non-finite Hessian passed NaN
+  through [`solve()`](https://rdrr.io/r/base/solve.html) without
+  erroring and left `optim$par` and `optim$objective` as NaN.
 
 ### Bug Fixes
 

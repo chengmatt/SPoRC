@@ -19,9 +19,9 @@ distinct natal areas to spawn.
 In the following, we simulate data under an operating model, then fit
 two estimation models that differ only in the data available:
 
-- `no_pop_data` — region-aggregated catch, compositions, and survey
-  index only (although tagging is population-specific).
-- `pop_data` — population-disaggregated catch, compositions, and survey
+- `no_pop_data`, region-aggregated catch, compositions, and survey index
+  only (although tagging is population-specific).
+- `pop_data`, population-disaggregated catch, compositions, and survey
   indices, as would be available from genetic stock identification or
   otolith microchemistry.
 
@@ -244,9 +244,9 @@ sim_list <- Setup_Sim_Tagging(
 Movement is parameterized with two seasons and three populations. The
 seasonal structure captures two distinct behavioral phases:
 
-- Season 1 (dispersal): diffusive mixing — each population has a
-  moderate probability of remaining in its current region, with the
-  remainder spread uniformly to other regions.
+- Season 1 (dispersal): diffusive mixing, each population has a moderate
+  probability of remaining in its current region, with the remainder
+  spread uniformly to other regions.
 - Season 2 (natal return): strong homing back to the natal region with a
   small rate of homing natally.
 
@@ -275,7 +275,7 @@ for (p in seq_len(sim_list$n_pop)) {
   nr <- sim_list$natal_region[p]
   for (r_from in seq_len(sim_list$n_regions)) {
 
-    # Season 1: diffusive dispersal — mostly stay, some movement out
+    # Season 1: diffusive dispersal, mostly stay, some movement out
     for (r_to in seq_len(sim_list$n_regions)) {
       prob <- if (r_to == r_from) stay_prob[p] else disperse_prob[p]
       sim_list$Movement[p, r_from, r_to, , 1, , , ] <- prob

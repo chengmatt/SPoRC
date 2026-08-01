@@ -42,14 +42,14 @@ residual-vs-year plot for index-type data).
 
 ## Two computation modes
 
-External (post-hoc) — `get_osa(obs_mat = , exp_mat = , N = , ...)`.
-Works with any fitted model, no special setup required.
-Observed/expected arrays (typically pulled from
+External (post-hoc), `get_osa(obs_mat = , exp_mat = , N = , ...)`. Works
+with any fitted model, no special setup required. Observed/expected
+arrays (typically pulled from
 [`get_comp_prop()`](https://chengmatt.github.io/SPoRC/dev/reference/get_comp_prop.md))
 are handed to the `compResidual` package, which builds a small TMB model
 and computes OSA residuals independently of how the main model was fit.
 
-Internal (model-based) — `get_osa(model = , data = , ...)`. Internal OSA
+Internal (model-based), `get_osa(model = , data = , ...)`. Internal OSA
 is only required for composition data and conventional tagging data.
 Catch and abundance index observations (Catch/Discard/FishIdx/SrvIdx)
 are handled automatically through the model likelihood and do not
@@ -242,7 +242,7 @@ model <- fit_model(input_list$data, input_list$par, input_list$map,
 
 # Modeled ages span sgl_rg_dusky_data$mod_ages (4:33, 30 ages), but observed
 # fishery/survey age compositions only report ages 4:30 (27 bins, an
-# ageing-error offset) -- comp bin labels use the *observed* bin range.
+# ageing-error offset), comp bin labels use the *observed* bin range.
 obs_age_bins <- 4:30
 
 comp_prop <- get_comp_prop(input_list$data, model$rep,
@@ -423,8 +423,8 @@ resid_int <- plot_resids(fishages_int)
 
 ![](figures/u_internal_comp.png)
 
-Index-type sources use `index_source` instead of `comp_source`/`family`
-— there is no likelihood-family choice to make, since these are always
+Index-type sources use `index_source` instead of `comp_source`/`family`,
+there is no likelihood-family choice to make, since these are always
 continuous log-normal observations (currently), and no
 `bins`/`bin_label` since there’s no bin dimension.
 [`plot_resids()`](https://chengmatt.github.io/SPoRC/dev/reference/plot_resids.md)
@@ -488,7 +488,7 @@ resid_comp_pop <- plot_resids(comp_pop)
 
 ![](figures/u_internal_comp_pop.png)
 
-Conventional tag recovery OSA (`tag = TRUE`) — faceted by region,
+Conventional tag recovery OSA (`tag = TRUE`), faceted by region,
 recovery season, fleet, and movement/tag pooling group whenever the
 residual data span more than one level of each. This is a bit unwieldy
 to inspect given the number of dimensions (release cohort, recapture
@@ -524,13 +524,12 @@ internal mode exposes two further arguments:
 - `osa_method`: overrides
   [`RTMB::oneStepPredict()`](https://rdrr.io/pkg/RTMB/man/OSA-residuals.html)’s
   `method` argument. Must be one of `"oneStepGeneric"`,
-  `"oneStepGaussianOffMode"`, or `"oneStepGaussian"` — the `"cdf"`
-  method is deliberately disallowed because it is numerically fragile
-  for the discrete (multinomial/count) likelihoods used here and can
-  silently return mis-calibrated residuals. Defaults to
-  `"oneStepGeneric"` for discrete composition/tag families and
-  `"oneStepGaussianOffMode"` for continuous (logistic-normal composition
-  or index-type) families.
+  `"oneStepGaussianOffMode"`, or `"oneStepGaussian"`, the `"cdf"` method
+  is deliberately disallowed because it is numerically fragile for the
+  discrete (multinomial/count) likelihoods used here and can silently
+  return mis-calibrated residuals. Defaults to `"oneStepGeneric"` for
+  discrete composition/tag families and `"oneStepGaussianOffMode"` for
+  continuous (logistic-normal composition or index-type) families.
 - `parallel`: passed straight through to
   `RTMB::oneStepPredict(parallel = )`. Useful for large composition/tag
   datasets where OSA computation dominates runtime; verified to give

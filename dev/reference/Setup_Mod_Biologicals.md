@@ -71,7 +71,7 @@ Setup_Mod_Biologicals(
   `rec_lag = 0` (age-0 recruitment, set via
   [`Setup_Mod_Rec`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Rec.md)),
   maturity at the recruit age (the first age class) must be exactly `0`
-  for all populations, regions, years, seasons, and sexes – an error is
+  for all populations, regions, years, seasons, and sexes, an error is
   raised otherwise. Requires
   [`Setup_Mod_Rec`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Rec.md)
   to have been called first so `rec_lag` is already set.
@@ -97,7 +97,7 @@ Setup_Mod_Biologicals(
 
 - AgeingError:
 
-  Ageing error (age–age transition) array mapping true modelled ages to
+  Ageing error (age-age transition) array mapping true modelled ages to
   observed age bins. Accepted forms:
 
   2D matrix `[n_model_ages × n_obs_ages]`
@@ -113,7 +113,7 @@ Setup_Mod_Biologicals(
 
   :   An identity matrix is constructed, assuming modelled and observed
       age bins are identical. If observed bins are a subset of modelled
-      ages (e.g., observed ages 2–10 vs. modelled ages 1–10), supply a
+      ages (e.g., observed ages 2-10 vs. modelled ages 1-10), supply a
       shifted identity matrix such as
       `diag(1, n_model_ages)[, obs_age_index]` to avoid a dimensional
       mismatch.

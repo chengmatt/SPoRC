@@ -37,12 +37,12 @@ truncate_yr(j, data, parameters, mapping)
 
 A list containing truncated versions of the RTMB inputs:
 
-- `retro_data` – Modified data list with terminal years removed.
+- `retro_data`: Modified data list with terminal years removed.
 
-- `retro_parameters` – Parameter list truncated to match the shortened
+- `retro_parameters`: Parameter list truncated to match the shortened
   time series.
 
-- `retro_mapping` – Mapping list updated to match truncated parameter
+- `retro_mapping`: Mapping list updated to match truncated parameter
   dimensions.
 
 ## Details

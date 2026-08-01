@@ -96,7 +96,7 @@ highlight the sections that differ.
 #' - 0.45 for age-2,
 #' - 0.3 for age-3+.
 #'
-#' Recruitment is modeled using a Beverton–Holt stock–recruitment function
+#' Recruitment is modeled using a Beverton-Holt stock-recruitment function
 #' with fixed steepness. 
 #'
 #' Selectivity and catchability are parameterized separately for fishery and

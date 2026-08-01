@@ -15,7 +15,7 @@ get_q_prior(q_prior, ln_q)
 - q_prior:
 
   Data frame with columns `region`, `block`, `fleet`, `mu` (prior mean,
-  natural scale), `sd` (prior SD, log scale) — one row per penalized
+  natural scale), `sd` (prior SD, log scale), one row per penalized
   parameter.
 
 - ln_q:

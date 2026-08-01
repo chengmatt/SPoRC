@@ -1423,7 +1423,7 @@ b_ref_pt = array(sgl_ref_pt$b_ref_pt, dim = c(n_pop, n_regions, n_proj_yrs))
 
 Note that in these projections, all demographic rates (e.g.,
 weight-at-age, movement, maturity) use estimates from the terminal year
-of the assessment. However, this is not required — users may instead
+of the assessment. However, this is not required, users may instead
 define demographic rates for the projection period using other
 approaches (e.g., averages over the last 5 years). A population
 projection can then be conducted with the `Do_Population_Projection`

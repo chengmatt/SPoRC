@@ -212,23 +212,23 @@ do_retrospective(
 A long-format `data.frame` containing retrospective estimates of
 spawning stock biomass and recruitment. Columns include:
 
-- `Pop` – Population index.
+- `Pop`: Population index.
 
-- `Region` – Region index.
+- `Region`: Region index.
 
-- `Year` – Model year.
+- `Year`: Model year.
 
-- `Type` – Quantity reported (`"SSB"` or `"Recruitment"`).
+- `Type`: Quantity reported (`"SSB"` or `"Recruitment"`).
 
-- `peel` – Retrospective peel number (0 = full data, 1 = one-year peel,
+- `peel`: Retrospective peel number (0 = full data, 1 = one-year peel,
   etc.).
 
-- `value` – Estimated value of the quantity.
+- `value`: Estimated value of the quantity.
 
-- `pdHess` – Logical indicator of positive-definite Hessian (only
-  present when `do_sdrep = TRUE`).
+- `pdHess`: Logical indicator of positive-definite Hessian (only present
+  when `do_sdrep = TRUE`).
 
-- `max_grad` – Maximum absolute gradient of fixed effects (only present
+- `max_grad`: Maximum absolute gradient of fixed effects (only present
   when `do_sdrep = TRUE`).
 
 ## Details

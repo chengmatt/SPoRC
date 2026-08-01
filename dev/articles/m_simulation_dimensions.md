@@ -48,7 +48,7 @@ and utilized for comparison.
 | `WAA_fish` | `n_pop × n_regions × n_years × n_seas × n_ages × n_sexes × n_fish_fleets × n_sims` | Fishery weight-at-age |
 | `WAA_srv` | `n_pop × n_regions × n_years × n_seas × n_ages × n_sexes × n_srv_fleets × n_sims` | Survey weight-at-age |
 | `MatAA` | `n_pop × n_regions × n_years × n_seas × n_ages × n_sexes × n_sims` | Proportion mature-at-age |
-| `SizeAgeTrans` | `n_pop × n_regions × n_years × n_seas × n_lens × n_ages × n_sexes × n_sims` | Size–age transition array |
+| `SizeAgeTrans` | `n_pop × n_regions × n_years × n_seas × n_lens × n_ages × n_sexes × n_sims` | Size-age transition array |
 | `AgeingError` | `n_years × n_model_ages × n_obs_ages × n_sims` | Ageing error transition matrix |
 | `Movement` | `n_pop × n_regions × n_regions × n_years × n_seas × n_ages × n_sexes × n_sims` | Movement (transition) matrix |
 | `sgl_seas_spawning_movement` | `n_pop × n_regions × n_regions × n_years × n_ages × n_sexes × n_sims` | Spawning movement applied when `n_seas == 1` and `n_pop > 1` |

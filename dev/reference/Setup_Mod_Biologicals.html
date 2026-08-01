@@ -110,7 +110,7 @@ If <code>NULL</code> (default), <code>WAA</code> is broadcast across all survey 
 dimensions <code>[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes]</code>.
 When <code>rec_lag = 0</code> (age-0 recruitment, set via <code><a href="Setup_Mod_Rec.html">Setup_Mod_Rec</a></code>),
 maturity at the recruit age (the first age class) must be exactly <code>0</code>
-for all populations, regions, years, seasons, and sexes – an error is
+for all populations, regions, years, seasons, and sexes, an error is
 raised otherwise. Requires <code><a href="Setup_Mod_Rec.html">Setup_Mod_Rec</a></code> to have been called
 first so <code>rec_lag</code> is already set.</p></dd>
 
@@ -134,7 +134,7 @@ logistic-normal likelihood is specified, as that family handles zeros internally
 
 
 <dt id="arg-ageingerror">AgeingError<a class="anchor" aria-label="anchor" href="#arg-ageingerror"></a></dt>
-<dd><p>Ageing error (age–age transition) array mapping true modelled ages
+<dd><p>Ageing error (age-age transition) array mapping true modelled ages
 to observed age bins. Accepted forms:</p><dl><dt>2D matrix <code>[n_model_ages × n_obs_ages]</code></dt>
 <dd><p>Time-invariant ageing error;
     replicated internally across all years.</p></dd>
@@ -145,7 +145,7 @@ to observed age bins. Accepted forms:</p><dl><dt>2D matrix <code>[n_model_ages �
   <dt><code>NULL</code> (default)</dt>
 <dd><p>An identity matrix is constructed, assuming modelled
     and observed age bins are identical. If observed bins are a subset of modelled
-    ages (e.g., observed ages 2–10 vs. modelled ages 1–10), supply a shifted
+    ages (e.g., observed ages 2-10 vs. modelled ages 1-10), supply a shifted
     identity matrix such as <code>diag(1, n_model_ages)[, obs_age_index]</code> to
     avoid a dimensional mismatch.</p></dd>
 

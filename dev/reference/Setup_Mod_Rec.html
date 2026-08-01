@@ -183,7 +183,7 @@ seasons). <code>1</code> (default) is the classic lagged case: recruitment uses
 SSB from <code>rec_lag</code> seasons prior and may enter in any season.
 <code>0</code> is age-0 recruitment: recruitment uses the SAME year's SSB, and
 because that SSB isn't known until <code>spawn_seas</code> is reached, recruits
-may only enter in <code>spawn_seas</code> itself or a later season – when
+may only enter in <code>spawn_seas</code> itself or a later season, when
 <code>use_fixed_rec_seas_prop = 1</code>, <code>fixed_rec_seas_prop</code> must be
 zero before <code>spawn_seas</code>; when estimated, this is enforced
 structurally via a restricted softmax (see
@@ -258,7 +258,7 @@ estimation. Default <code>1</code>.</p></dd>
 recruitment proportions used when <code>use_fixed_rec_seas_prop = 1</code>.
 Default: all recruitment assigned to season 1. When <code>rec_lag = 0</code>
 and <code>spawn_seas &gt; 1</code>, must be zero for every season before
-<code>spawn_seas</code> – an error is raised otherwise.</p></dd>
+<code>spawn_seas</code>. An error is raised otherwise.</p></dd>
 
 
 <dt id="arg-do-rec-bias-ramp">do_rec_bias_ramp<a class="anchor" aria-label="anchor" href="#arg-do-rec-bias-ramp"></a></dt>
@@ -373,15 +373,15 @@ Default: zero for all seasons and fleets.</p></dd>
 <dt id="arg-init-f-spec">init_F_spec<a class="anchor" aria-label="anchor" href="#arg-init-f-spec"></a></dt>
 <dd><p>Character, <code>"fix"</code> (default) or <code>"est"</code>. Whether
   <code>init_F_par</code> is estimated. This sets only the mapping, so it combines
-  freely with <code>init_F_form</code> – including estimating the proportion itself
+  freely with <code>init_F_form</code>, including estimating the proportion itself
   (<code>init_F_form = "prop"</code>, <code>init_F_spec = "est"</code>). Note <code>init_F</code>
   is generally weakly identified, which is why assessments commonly fix it.</p>
 <p>The value is carried by the parameter <code>init_F_par</code>
   <code>[n_regions x n_seas x n_fish_fleets]</code>, supplied through <code>...</code> like
   any other starting value, e.g.
   <code>Setup_Mod_Rec(..., init_F_form = "abs", init_F_spec = "fix", init_F_par = array(log(0.01), dim = c(1, 1, 1)))</code>.
-  Its SCALE depends on <code>init_F_form</code> – logit under <code>"prop"</code> (so the
-  proportion is bounded to (0, 1)) and log under <code>"abs"</code> – which is why it
+  Its SCALE depends on <code>init_F_form</code>, logit under <code>"prop"</code> (so the
+  proportion is bounded to (0, 1)) and log under <code>"abs"</code>, which is why it
   is not named <code>ln_</code> or <code>logit_</code>. Defaults to effectively no initial
   fishing mortality.</p></dd>
 
@@ -449,7 +449,7 @@ on the logit scale. Ignored when <code>use_fixed_stray_rate = 1</code> or
   <dt><code>"est_shared_pop"</code></dt>
 <dd><p>Single parameter per block, shared across
     all populations. Requires identical block structures across all
-    populations – an error is raised if block indices differ.</p></dd>
+    populations. An error is raised if block indices differ.</p></dd>
 
 
 </dl></dd>

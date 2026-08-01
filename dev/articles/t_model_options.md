@@ -74,7 +74,7 @@ every subsequent setup call validates against.
 **Multi-population structure**
 
 SPoRC decouples biological populations from spatial regions. Populations
-have their own stock–recruit dynamics and natal assignment; regions
+have their own stock-recruit dynamics and natal assignment; regions
 define the arena through which all populations move.
 
 | Argument | Type | Description |
@@ -82,7 +82,7 @@ define the arena through which all populations move.
 | `n_pop` | integer | Number of biological populations (default `1`) |
 | `natal_region` | integer vector (length `n_pop`) | Maps each population to its home region. Inferred automatically when `n_pop == n_regions` (one-to-one) or `n_regions == 1` (all share region 1). Must be supplied explicitly otherwise |
 
-When `n_pop > n_regions`, multiple populations share a natal region — a
+When `n_pop > n_regions`, multiple populations share a natal region, a
 contingent-population or mixed-stock structure. When
 `n_pop < n_regions`, the model represents a single population spread
 across more regions than there are spawning origins.
@@ -154,7 +154,7 @@ simulated equilibria remain on a consistent scale.
 
 | Value | String | Which ages receive initial deviations |
 |----|----|----|
-| 0 | `"equil"` | None — strict equilibrium |
+| 0 | `"equil"` | None, strict equilibrium |
 | 1 | `"stoch_no_plus"` | All ages except the plus group. **Default** |
 | 2 | `"stoch_all"` | All ages including the plus group |
 | 3 | `"stoch_shared_ages"` | User-defined age sharing via `init_age_devs_shared` |
@@ -184,12 +184,12 @@ Controlled via
 [`Setup_Sim_Rec()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Rec.md)
 (OM).
 
-#### Stock–recruit function (`rec_model`)
+#### Stock-recruit function (`rec_model`)
 
 | String | Description |
 |----|----|
 | `"mean_rec"` | Estimate mean $`\ln R_0`$ with annual deviations; no SSB feedback |
-| `"bh_rec"` | Beverton–Holt: $`R = 4hR_0 \cdot \text{SSB} / \left[(1-h)S_0 + (5h-1)\text{SSB}\right]`$. Unfished spawning biomass per recruit ($`S_0`$) is computed internally by projecting a single recruit through all ages and seasons with movement |
+| `"bh_rec"` | Beverton-Holt: $`R = 4hR_0 \cdot \text{SSB} / \left[(1-h)S_0 + (5h-1)\text{SSB}\right]`$. Unfished spawning biomass per recruit ($`S_0`$) is computed internally by projecting a single recruit through all ages and seasons with movement |
 
 #### Density dependence scope (`rec_dd`)
 
@@ -204,7 +204,7 @@ Controlled via
 |----|----|
 | `spawn_seas` | Season index in which spawning occurs |
 | `t_spawn` | Fraction of the spawning season elapsed before spawning occurs (0 = start, 0.5 = midpoint) |
-| `rec_lag` | Delay (in seasons) between spawning and recruitment entry. `1` (default): recruitment driven by SSB from `rec_lag` seasons prior, may enter in any season. `0`: age-0 recruitment – recruitment driven by that *same* year’s own SSB. Since that SSB isn’t known until `spawn_seas` is reached, recruits may only enter in `spawn_seas` itself or a later season in the same year (`rec_seas_prop` must be zero for every season before `spawn_seas`), and the recruit age class must have zero maturity everywhere |
+| `rec_lag` | Delay (in seasons) between spawning and recruitment entry. `1` (default): recruitment driven by SSB from `rec_lag` seasons prior, may enter in any season. `0`: age-0 recruitment, recruitment driven by that *same* year’s own SSB. Since that SSB isn’t known until `spawn_seas` is reached, recruits may only enter in `spawn_seas` itself or a later season in the same year (`rec_seas_prop` must be zero for every season before `spawn_seas`), and the recruit age class must have zero maturity everywhere |
 
 #### Recruitment allocation
 
@@ -371,8 +371,8 @@ multiplicatively on the selectivity curve at the bin level.
 | `"none"` | Time-invariant (default) |
 | `"iid"` | Independent annual deviations on selectivity parameters |
 | `"rw"` | Random walk on selectivity parameters |
-| `"3dmarg"` | 3D Gaussian Markov random field — marginal variance parameterisation |
-| `"3dcond"` | 3D GMRF — conditional variance parameterisation |
+| `"3dmarg"` | 3D Gaussian Markov random field, marginal variance parameterisation |
+| `"3dcond"` | 3D GMRF, conditional variance parameterisation |
 | `"2dar1"` | Separable 2D AR(1) over bin × year |
 
 Ancillary controls for continuous time-variation include
@@ -399,7 +399,7 @@ controls how base selectivity parameters are estimated:
 Selectivity can be normalised relative to a specific bin, to the
 maximum, or to the mean across a bin range. When `fit_lengths = 1`,
 selectivity operates on length bins and is mapped to age-space via a
-user-supplied size–age transition matrix (`SizeAgeTrans`).
+user-supplied size-age transition matrix (`SizeAgeTrans`).
 
 #### Selectivity priors
 
@@ -481,7 +481,7 @@ levels pooled) or a list of integer vectors defining blocks:
 
 | Argument | Axis | Example |
 |----|----|----|
-| `M_popblk_spec` | Population | `list(c(1,2), 3)` → pops 1–2 share $`M`$, pop 3 is separate |
+| `M_popblk_spec` | Population | `list(c(1,2), 3)` → pops 1-2 share $`M`$, pop 3 is separate |
 | `M_regionblk_spec` | Region | `list(1:3, 4:5)` |
 | `M_yearblk_spec` | Year | `list(1:20, 21:40)` |
 | `M_ageblk_spec` | Age | `list(1:5, 6:30)` → young vs. old |
@@ -548,7 +548,7 @@ Each dimension can be pooled (`'constant'`) or blocked:
 
 Controls how movement and mortality are ordered within a season. The
 three options coincide exactly when total mortality is constant across
-regions, when mortality is zero, and when movement is absent — so
+regions, when mortality is zero, and when movement is absent, so
 single-region models are unaffected by the setting.
 
 | Value | Sequencing |
@@ -583,7 +583,7 @@ in the *Description of Model Equations* vignette.
 
 #### Continuous movement deviations (`cont_vary_movement`)
 
-Origin–destination deviations applied multiplicatively to off-diagonal
+Origin-destination deviations applied multiplicatively to off-diagonal
 rates (CTMC) or additively on the logit scale (unstructured).
 
 | String               | Deviation structure                    |
@@ -647,7 +647,7 @@ or `"rw"`, `Fdev_rho` is unused and mapped to `NA` regardless of what is
 supplied.
 
 Catch-active years (`UseCatch == 1` or any `UseCatch_pop == 1`) do
-**not** need to be contiguous under `"rw"` or `"ar1"` — a fishery may
+**not** need to be contiguous under `"rw"` or `"ar1"`, a fishery may
 close for several years and reopen later. The transition between two
 active years separated by a gap of $`d`$ closed years is taken directly
 over the elapsed gap (the same marginal transition obtained by
@@ -695,9 +695,9 @@ C_{a} = \frac{F^{\text{ret}}_{a}}{Z_{a}} N_{a} \left(1 - e^{-Z_{a}}\right)
 
 A cell is therefore informative about `dmr` whenever it is fished and
 retention is less than one, with or without discard data. Discard
-observations are not the dividing line — `dmr` in fact cancels out of
-the predicted discard itself, which divides the dead discards back
-through by it, leaving only the same $`Z`$ dependence.
+observations are not the dividing line, `dmr` in fact cancels out of the
+predicted discard itself, which divides the dead discards back through
+by it, leaving only the same $`Z`$ dependence.
 
 The cells excluded are true closures, matching the condition under which
 the objective pins `dmr` to zero: no aggregate or population-specific
@@ -710,7 +710,7 @@ Note that a fleet with full retention (`ret_sel = 1`, the package
 default) contributes no dead discards at all, so `dmr` drops out of the
 objective entirely and its deviations have a flat gradient.
 `dmr_dev_spec` and `dmr_mean_spec` are only meaningful once retention is
-actually modelled — see
+actually modelled, see
 [`vignette("s_discard_retention")`](https://chengmatt.github.io/SPoRC/dev/articles/s_discard_retention.md).
 
 #### Which deviations are penalized
@@ -733,12 +733,12 @@ input_list$map$logit_dmr_devs <- factor(mp)
 ```
 
 Two consequences worth knowing. Mapping a deviation off pins it at
-whatever sits in `$par`, which is `0` by default — so `dmr` falls back
-on `plogis(logit_dmr_mean)` — but a starting value supplied through
-`...` is kept, not reset to zero. And under `Fdev_model = "rw"` or
-`"ar1"`, a pinned deviation is dropped from the active sequence,
-widening the gap $`d`$ between the deviations either side of it rather
-than being treated as an actual year.
+whatever sits in `$par`, which is `0` by default, so `dmr` falls back on
+`plogis(logit_dmr_mean)`, but a starting value supplied through `...` is
+kept, not reset to zero. And under `Fdev_model = "rw"` or `"ar1"`, a
+pinned deviation is dropped from the active sequence, widening the gap
+$`d`$ between the deviations either side of it rather than being treated
+as an actual year.
 
 ------------------------------------------------------------------------
 
@@ -757,7 +757,7 @@ Supplied via
 | `WAA_srv` | `[p × r × y × τ × a × s × f]` | Survey-specific weight-at-age. Defaults to `WAA` if `NULL` |
 | `MatAA` | `[p × r × y × τ × a × s]` | Maturity-at-age (proportions in \[0, 1\]) |
 | `AgeingError` | `[a_\text{model} × a_\text{obs}]` or `[y × a_\text{model} × a_\text{obs}]` | Row-stochastic matrix mapping true ages to observed bins. Defaults to identity. Supply explicitly when observed ages are a subset of modelled ages |
-| `SizeAgeTrans` | `[p × r × y × τ × l × a × s]` | Size–age transition matrix. Required when `fit_lengths = 1` |
+| `SizeAgeTrans` | `[p × r × y × τ × l × a × s]` | Size-age transition matrix. Required when `fit_lengths = 1` |
 | `fit_lengths` | 0/1 | Toggle for fitting length compositions |
 
 ------------------------------------------------------------------------
@@ -786,7 +786,7 @@ Age and length compositions each accept one of five likelihood families:
 | Value | Likelihood |
 |----|----|
 | 0 | Multinomial |
-| 1 | Dirichlet–multinomial (overdispersion parameter $`\theta`$ estimated per fleet) |
+| 1 | Dirichlet-multinomial (overdispersion parameter $`\theta`$ estimated per fleet) |
 | 2 | Logistic-normal, independent bins |
 | 3 | Logistic-normal with AR(1) correlation across bins |
 | 4 | Logistic-normal with AR(1) bin correlation and constant cross-sex correlation |
@@ -834,9 +834,9 @@ Configured via
 [`Setup_Sim_Tagging()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Tagging.md)
 (OM).
 
-SPoRC implements a conventional mark–recapture framework (Brownie-type
+SPoRC implements a conventional mark-recapture framework (Brownie-type
 likelihood) where tagged individuals follow the full seasonal population
-dynamics — movement, mortality, and fishing — after release.
+dynamics, movement, mortality, and fishing, after release.
 
 | Feature | Description |
 |----|----|
@@ -863,13 +863,13 @@ compute SBPR and YPR.
 
 | `type` | `what` | Description | Multi-pop? |
 |----|----|----|----|
-| `"single_region"` | `"SPR"` | $`F_{\text{SPR}_x}`$ — no movement | — |
-| `"single_region"` | `"BH_MSY"` | Beverton–Holt $`F_\text{MSY}`$ — no movement | — |
+| `"single_region"` | `"SPR"` | $`F_{\text{SPR}_x}`$, no movement | , |
+| `"single_region"` | `"BH_MSY"` | Beverton-Holt $`F_\text{MSY}`$, no movement | , |
 | `"multi_region"` | `"independent_SPR"` | Per-region $`F_{\text{SPR}_x}`$ ignoring movement | ✓ |
 | `"multi_region"` | `"independent_BH_MSY"` | Per-region $`F_\text{MSY}`$ ignoring movement | ✓ |
 | `"multi_region"` | `"global_SPR"` | Single $`F_{\text{SPR}_x}`$ applied uniformly across regions, with movement | ✓ |
-| `"multi_region"` | `"global_BH_MSY"` | Single $`F_\text{MSY}`$ with movement (single-pop only) | — |
-| `"multi_region"` | `"local_BH_MSY"` | Region-specific $`F_\text{MSY}`$ values jointly maximising total yield under movement. Uses Newton–Raphson to solve equilibrium recruitment by origin | ✓ |
+| `"multi_region"` | `"global_BH_MSY"` | Single $`F_\text{MSY}`$ with movement (single-pop only) | , |
+| `"multi_region"` | `"local_BH_MSY"` | Region-specific $`F_\text{MSY}`$ values jointly maximising total yield under movement. Uses Newton-Raphson to solve equilibrium recruitment by origin | ✓ |
 
 #### Controls
 
@@ -895,7 +895,7 @@ rather than `input_list`. Key simulation-specific functions:
 | [`Simulate_Pop_Static()`](https://chengmatt.github.io/SPoRC/dev/reference/Simulate_Pop_Static.md) | Forward-project the OM without feedback (open-loop) |
 | [`condition_closed_loop_simulations()`](https://chengmatt.github.io/SPoRC/dev/reference/condition_closed_loop_simulations.md) | Closed-loop MSE: periodically re-fits the EM, applies an HCR, and updates $`F`$ |
 | [`simulation_data_to_SPoRC()`](https://chengmatt.github.io/SPoRC/dev/reference/simulation_data_to_SPoRC.md) | Converts OM output (with observation error) to `input_list` format for the EM |
-| [`simulation_self_test()`](https://chengmatt.github.io/SPoRC/dev/reference/simulation_self_test.md) | Simulation–estimation test: fits the EM back to OM-generated data |
+| [`simulation_self_test()`](https://chengmatt.github.io/SPoRC/dev/reference/simulation_self_test.md) | Simulation-estimation test: fits the EM back to OM-generated data |
 | [`get_closed_loop_reference_points()`](https://chengmatt.github.io/SPoRC/dev/reference/get_closed_loop_reference_points.md) | Computes reference points inside the MSE feedback loop |
 
 Key closed-loop arguments in
@@ -917,9 +917,9 @@ constructs the RTMB automatic-differentiation function, optimises via
 
 | Argument | Default | Description |
 |----|----|----|
-| `data` | — | `input_list$data` |
-| `parameters` | — | `input_list$par` |
-| `mapping` | — | `input_list$map` |
+| `data` | , | `input_list$data` |
+| `parameters` | , | `input_list$par` |
+| `mapping` | , | `input_list$map` |
 | `random` | `NULL` | Parameter names to marginalise as random effects (Laplace approximation) |
 | `newton_loops` | `3` | Post-convergence Newton steps ($`\Delta\theta = -H^{-1}g`$) to reduce residual gradients |
 | `do_optim` | `TRUE` | `FALSE` returns the un-optimised `MakeADFun` object for debugging |
@@ -936,7 +936,7 @@ constructs the RTMB automatic-differentiation function, optimises via
 | [`do_likelihood_profile()`](https://chengmatt.github.io/SPoRC/dev/reference/do_likelihood_profile.md) | Profiles the likelihood surface over user-specified parameters |
 | [`do_francis_reweighting()`](https://chengmatt.github.io/SPoRC/dev/reference/do_francis_reweighting.md) | Computes Francis TA1.8 weights for composition data |
 | [`run_francis()`](https://chengmatt.github.io/SPoRC/dev/reference/run_francis.md) | Iterative Francis reweighting loop (re-fits after each adjustment) |
-| [`get_osa()`](https://chengmatt.github.io/SPoRC/dev/reference/get_osa.md) | One-step-ahead residuals – compositions, conventional tagging, and Catch/Discard/FishIdx/SrvIdx indices (external post-hoc, or internal model-based via `do_internal_comp_osa`/`do_internal_conv_tag_osa`). See [`vignette("u_osa_residuals")`](https://chengmatt.github.io/SPoRC/dev/articles/u_osa_residuals.md) |
+| [`get_osa()`](https://chengmatt.github.io/SPoRC/dev/reference/get_osa.md) | One-step-ahead residuals, compositions, conventional tagging, and Catch/Discard/FishIdx/SrvIdx indices (external post-hoc, or internal model-based via `do_internal_comp_osa`/`do_internal_conv_tag_osa`). See [`vignette("u_osa_residuals")`](https://chengmatt.github.io/SPoRC/dev/articles/u_osa_residuals.md) |
 | [`do_runs_test()`](https://chengmatt.github.io/SPoRC/dev/reference/do_runs_test.md) | Runs test for serial correlation in residuals |
 | [`get_model_rep_from_mcmc()`](https://chengmatt.github.io/SPoRC/dev/reference/get_model_rep_from_mcmc.md) | Extracts model report quantities across MCMC posterior draws (compatible with `adnuts` / `tmbstan`) |
 | [`marg_AIC()`](https://chengmatt.github.io/SPoRC/dev/reference/marg_AIC.md) | Marginal AIC for models with random effects |

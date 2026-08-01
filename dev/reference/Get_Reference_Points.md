@@ -134,7 +134,7 @@ Get_Reference_Points(
   should be excluded from landed yield when computing MSY-based
   reference points (0 = landing fleet, 1 = discard-only fleet). These
   fleets still contribute to total fishing mortality `Z` and affect
-  population dynamics and spawning biomass. Only used by Beverton–Holt
+  population dynamics and spawning biomass. Only used by Beverton-Holt
   MSY methods (`"BH_MSY"`, `"independent_BH_MSY"`, `"global_BH_MSY"`,
   `"local_BH_MSY"`); ignored for SPR-based methods. Default is all zeros
   (all fleets are landing fleets).

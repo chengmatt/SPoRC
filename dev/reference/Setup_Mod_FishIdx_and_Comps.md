@@ -151,7 +151,7 @@ Setup_Mod_FishIdx_and_Comps(
   Input sample size array
   `[n_regions × n_years × n_seas × n_sexes × n_fish_fleets]`. If `NULL`
   (default), computed automatically by summing `ObsFishAgeComps` within
-  each year–fleet–season–region cell according to `FishAgeComps_Type`.
+  each year-fleet-season-region cell according to `FishAgeComps_Type`.
 
 - ObsFishLenComps:
 
@@ -232,7 +232,7 @@ Setup_Mod_FishIdx_and_Comps(
   Input sample size array for population-specific age compositions
   `[n_pop × n_regions × n_years × n_seas × n_sexes × n_fish_fleets]`. If
   `NULL` (default), computed automatically by summing
-  `ObsFishAgeComps_pop` within each population–year–fleet–season–region
+  `ObsFishAgeComps_pop` within each population-year-fleet-season-region
   cell according to `FishAgeComps_pop_Type`.
 
 - ObsFishLenComps_pop:
@@ -451,7 +451,7 @@ parameters, and their factor maps.
 When `ISS_FishAgeComps`, `ISS_FishLenComps`, `ISS_FishAgeComps_pop`, or
 `ISS_FishLenComps_pop` are `NULL`, input sample sizes are derived
 automatically by summing the observed composition arrays within each
-year–fleet–season–region cell, consistent with the specified composition
+year-fleet-season-region cell, consistent with the specified composition
 type.
 
 ## See also

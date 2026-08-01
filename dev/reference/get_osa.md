@@ -131,7 +131,7 @@ get_osa(
 
   - 1 = Dirichlet-multinomial
 
-  - 2–4 = logistic-normal variants
+  - 2-4 = logistic-normal variants
 
 - addtocomp:
 

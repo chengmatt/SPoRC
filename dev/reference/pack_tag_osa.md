@@ -40,7 +40,7 @@ pack_tag_osa(
 
 - like_type:
 
-  Integer likelihood type code (0–5).
+  Integer likelihood type code (0-5).
 
 - obs_recap:
 
@@ -151,8 +151,8 @@ observation per `[fleet, pop_pool, region, age_pool, sex_pool]` cell
 with `use_fish_tagging[f] == 1`, in `(f, p, r, a, s)` loop order within
 each event, and events in `tag_grid` order. This mirrors
 [`get_conv_tag_likelihoods()`](https://chengmatt.github.io/SPoRC/dev/reference/get_conv_tag_likelihoods.md)'s
-exact accumulation structure – a separate Poisson/NB term is fit per
-pool/age/sex cell and their -log-likelihoods summed – so packing one
+exact accumulation structure: a separate Poisson/NB term is fit per
+pool/age/sex cell and their -log-likelihoods summed, so packing one
 count per `[region, fleet]` pre-summed across pools would evaluate a
 different (non-equivalent) likelihood whenever more than one pool is
 used.

@@ -294,7 +294,7 @@ rec_seas_prop[] <- 1/n_seas
 
 - bh_rec_opt:
 
-  Named list of inputs for deterministic Beverton–Holt recruitment when
+  Named list of inputs for deterministic Beverton-Holt recruitment when
   \`recruitment_opt = "bh_rec"\`. This list is passed directly to
   [`Get_Det_Recruitment`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Det_Recruitment.md)
   and must contain all required arguments for that function.
@@ -391,7 +391,7 @@ rec_seas_prop[] <- 1/n_seas
   `spawn_seas` (`rec_seas_prop` must be zero for every season before
   `spawn_seas` in that case). Reference points and the seasonal SBPR
   calculation used to get `bh_rec_opt$WAA`/`MatAA`/etc. are unaffected
-  by this choice – `rec_lag` only changes which year's SSB feeds the
+  by this choice, `rec_lag` only changes which year's SSB feeds the
   Beverton-Holt curve, not the per-recruit math itself.
 
 - n_seas:

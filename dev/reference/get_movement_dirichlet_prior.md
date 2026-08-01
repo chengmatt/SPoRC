@@ -13,7 +13,7 @@ get_movement_dirichlet_prior(Movement_prior, Movement, Mrate = NULL)
 - Movement_prior:
 
   Data frame with columns `pop`, `region_from`, `year`, `seas`, `age`,
-  `sex`, and `alpha` (list column of Dirichlet concentration vectors) —
+  `sex`, and `alpha` (list column of Dirichlet concentration vectors),
   one row per penalized movement-from vector. For CTMC movement, `seas`
   selects which season's generator supplies the annual fractions.
 

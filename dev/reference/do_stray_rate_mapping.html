@@ -77,7 +77,7 @@ One of:</p><dl><dt><code>"fix"</code></dt>
   <dt><code>"est_shared_pop"</code></dt>
 <dd><p>Single parameter per block, shared across
     all populations. Requires identical block structures across all
-    populations – an error is raised if block indices differ.</p></dd>
+    populations. An error is raised if block indices differ.</p></dd>
 
 
 </dl></dd>
@@ -95,7 +95,7 @@ One of:</p><dl><dt><code>"fix"</code></dt>
     <p>When <code>n_pop = 1</code>, straying is not applicable and all parameters are
 automatically fixed to <code>NA</code>. When <code>use_fixed_stray_rate = 1</code>,
 the objective function reads from <code>fixed_stray_rate</code> directly and
-<code>stray_rate_pars</code> are not used – all elements are fixed regardless
+<code>stray_rate_pars</code> are not used; all elements are fixed regardless
 of <code>stray_rate_spec</code>.</p>
     </div>
 

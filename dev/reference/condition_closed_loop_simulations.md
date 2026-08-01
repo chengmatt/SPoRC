@@ -270,10 +270,10 @@ correctly named object via `...`.
 
 Simulation years consist of two periods:
 
-- **Conditioning years** — historical years corresponding to the fitted
+- **Conditioning years**: historical years corresponding to the fitted
   assessment model.
 
-- **Projection years** — future years simulated under closed-loop
+- **Projection years**: future years simulated under closed-loop
   management.
 
 During conditioning years, model processes are reconstructed from the

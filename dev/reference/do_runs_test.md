@@ -2,7 +2,7 @@
 
 Performs a nonparametric runs test to evaluate whether a sequence of
 residuals is randomly distributed around a reference mean. The function
-also computes three–sigma control limits used to identify potential
+also computes three-sigma control limits used to identify potential
 residual outliers.
 
 ## Usage
@@ -28,19 +28,19 @@ do_runs_test(x, type = NULL, mixing = "two.sided")
   Character string specifying the alternative hypothesis for the runs
   test:
 
-  - `"two.sided"` – tests for both positive and negative autocorrelation
+  - `"two.sided"`: tests for both positive and negative autocorrelation
     (default).
 
-  - `"less"` – left-tailed test detecting positive autocorrelation.
+  - `"less"`: left-tailed test detecting positive autocorrelation.
 
 ## Value
 
 A list containing:
 
-- `sig3lim` – Numeric vector of length two giving the lower and upper
-  three–sigma control limits for the residuals.
+- `sig3lim`: Numeric vector of length two giving the lower and upper
+  three-sigma control limits for the residuals.
 
-- `p.runs` – P-value from the runs test for randomness.
+- `p.runs`: P-value from the runs test for randomness.
 
 A small p-value (e.g., `< 0.05`) indicates evidence that the residual
 sequence is not random and may exhibit autocorrelation or other

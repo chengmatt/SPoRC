@@ -71,7 +71,7 @@ seasons of duration
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Δ</mi><mi>τ</mi></mrow><annotation encoding="application/x-tex">\Delta\tau</annotation></semantics></math>
 (where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mo>∑</mo><mi>τ</mi></msub><mi mathvariant="normal">Δ</mi><mi>τ</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\sum_\tau \Delta\tau = 1</annotation></semantics></math>).
-Within each annual–seasonal cycle, processes occur in the following
+Within each annual-seasonal cycle, processes occur in the following
 order:</p>
 <ol style="list-style-type: decimal">
 <li>Recruitment generally occurs in the first season, with additional
@@ -89,13 +89,13 @@ user choice, set by <code>move_timing</code>: movement then mortality
 behaviour), mortality then movement (<code>1</code>), or the two acting
 simultaneously and continuously (<code>2</code>). This choice is not
 confined to the projection equations. It propagates to every quantity
-whose value depends on where fish are partway through a season –
-spawning biomass, catch-at-age, fishery and survey indices, tag
-recaptures, equilibrium initialisation, and per-recruit reference points
-– and each of those is given below. The three options coincide exactly
-when total mortality is constant across regions, when mortality is zero,
-and when movement is absent, so single-region models are unaffected by
-the setting.</p>
+whose value depends on where fish are partway through a season, spawning
+biomass, catch-at-age, fishery and survey indices, tag recaptures,
+equilibrium initialisation, and per-recruit reference points, and each
+of those is given below. The three options coincide exactly when total
+mortality is constant across regions, when mortality is zero, and when
+movement is absent, so single-region models are unaffected by the
+setting.</p>
 <p>Tag releases occur simultaneous to recruitment in the release year
 and season (i.e., recruits can be tagged), and tag recaptures are
 computed each season.</p>
@@ -164,7 +164,7 @@ the initial age structure and scales the F series: the optimizer can fit
 the observed catch equally well with a smaller, harder-fished stock. Use
 <code>"abs"</code> when the historical fishing mortality that shaped the
 initial condition is conceptually distinct from the mean F of the
-modelled period – for example when bridging an assessment that carries
+modelled period, for example when bridging an assessment that carries
 its own separate historical F parameter.</p>
 <p>where:</p>
 <ul>
@@ -627,8 +627,8 @@ In a single-region case, no movement is applied (i.e.,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">\mathbf{M}_{p,y,\tau,a,s}</annotation></semantics></math>
 is an implied identity matrix). For each population, year, season, age,
 and sex combination, the movement matrix specifies bulk-transfer
-coefficients. <em>Where</em> within the season that transfer happens –
-before mortality, after it, or continuously alongside it – is set by
+coefficients. <em>Where</em> within the season that transfer happens,
+before mortality, after it, or continuously alongside it, is set by
 <code>move_timing</code>, and is what the rest of this section makes
 explicit.</p>
 <p>Movement and mortality are therefore combined into a single seasonal
@@ -648,7 +648,7 @@ for the CTMC generator:</p>
 \end{cases}</annotation></semantics></math></p>
 <p>where</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝚲</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><msubsup><mover><mi>𝐐</mi><mo accent="true">̇</mo></mover><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mi>T</mi></msubsup><mspace width="0.167em"></mspace><mi mathvariant="normal">Δ</mi><mi>τ</mi><mo>−</mo><mtext mathvariant="normal">diag</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐙</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\mathbf{\Lambda}_{p,y,\tau,a,s} = \dot{\mathbf{Q}}_{p,y,\tau,a,s}^{T}\,\Delta\tau - \text{diag}\left( \mathbf{Z}_{p,y,\tau,a,s} \right)</annotation></semantics></math></p>
-<p>is the combined movement–mortality generator for the season,
+<p>is the combined movement-mortality generator for the season,
 expressed in the column convention
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>𝐐</mi><mo accent="true">̇</mo></mover><annotation encoding="application/x-tex">\dot{\mathbf{Q}}</annotation></semantics></math>
 is stored row-wise, hence the transpose). Note that
@@ -863,8 +863,8 @@ is elapsed fraction of the season, not elapsed time.</p>
 the regions decouple and this reduces to
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi mathvariant="normal">exp</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msub><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mi>/</mi><msub><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub></mrow><annotation encoding="application/x-tex">N_{p,r,y,\tau,a,s}\left( 1 - \exp\left( - Z_{p,r,y,\tau,a,s} \right) \right)/Z_{p,r,y,\tau,a,s}</annotation></semantics></math>,
 recovering the standard Baranov form used under
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>∈</mo><mo stretchy="false" form="prefix">{</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">\text{move\_timing} \in \{0,1\}</annotation></semantics></math>
-– which makes explicit that
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>∈</mo><mo stretchy="false" form="prefix">{</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">\text{move\_timing} \in \{0,1\}</annotation></semantics></math>,
+which makes explicit that
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>𝐍</mi><mo>∫</mo></msup><annotation encoding="application/x-tex">\mathbf{N}^{\int}</annotation></semantics></math>
 is simply what the familiar
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mi>−</mi><mi>Z</mi></mrow></msup><mo stretchy="false" form="postfix">)</mo><mi>/</mi><mi>Z</mi></mrow><annotation encoding="application/x-tex">(1 - e^{-Z})/Z</annotation></semantics></math>
@@ -1037,9 +1037,9 @@ unless
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐙</mi><annotation encoding="application/x-tex">\mathbf{Z}</annotation></semantics></math>
 is constant across regions.
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐌</mi><annotation encoding="application/x-tex">\mathbf{M}</annotation></semantics></math>
-is still computed and reported, but as a diagnostic – the movement
+is still computed and reported, but as a diagnostic, the movement
 fractions that <em>would</em> apply in the absence of spatially varying
-mortality – rather than as a term in the dynamics.
+mortality, rather than as a term in the dynamics.
 <code>ctmc_scale_by_seasdur</code> is forced to <code>1</code> in this
 case, since combining an unscaled generator with seasdur-scaled
 mortality inside a single exponential is dimensionally inconsistent.</p>
@@ -1234,7 +1234,7 @@ time, which is what the subscript
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>r</mi><annotation encoding="application/x-tex">r</annotation></semantics></math>
 outside the bracket denotes. When
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>t</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow><mrow><mi>s</mi><mi>r</mi><mi>v</mi></mrow></msubsup><annotation encoding="application/x-tex">t^{srv}_{r,\tau,sf}</annotation></semantics></math>
-is constant across regions – the usual case – this collapses to a single
+is constant across regions, the usual case, this collapses to a single
 propagation and one matrix exponential.</p>
 <p>Expected survey catch-at-length
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>I</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>l</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow><mi>l</mi></msubsup><annotation encoding="application/x-tex">I_{p,r,y,\tau,l,s,sf}^{l}</annotation></semantics></math>)
@@ -1339,9 +1339,9 @@ mortality model,
 timings. Under the sequential timings, a cohort released partway through
 its release season
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>t</mi><mtext mathvariant="normal">tag</mtext></msup><mo>&lt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">t^{\text{tag}} &lt; 1</annotation></semantics></math>)
-skips the discrete movement step entirely for that season –
+skips the discrete movement step entirely for that season,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐌</mi><annotation encoding="application/x-tex">\mathbf{M}</annotation></semantics></math>
-is replaced by the identity – because a full-season transition matrix
+is replaced by the identity, because a full-season transition matrix
 cannot represent a partial interval. Such a cohort stays in its release
 region for the remainder of the release season, experiencing only the
 partial-interval mortality, and movement resumes normally from the
@@ -1708,7 +1708,7 @@ is used:</p>
 <p>where deviations are placed about the parametric form and selectivity
 values are mean standardized to aid with interpretability. Mean
 standardization is applied only when semi-parametric deviations are
-specified (process error models 3–5), or when non-parametric selectivity
+specified (process error models 3-5), or when non-parametric selectivity
 is specified. For age-based selectivity, the mean is computed from a
 single population and season reference
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>τ</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">p = 1, \tau = 1</annotation></semantics></math>)
@@ -1721,7 +1721,7 @@ populations and seasons:</p>
 is the mean of log-selectivity across all years and bins for a given
 region, sex, and fleet. For length-based selectivity, mean
 standardization is applied directly to the selectivity-at-length values
-before conversion to the age domain via the size–age transition matrix.
+before conversion to the age domain via the size-age transition matrix.
 Further details on how selectivity deviations arise can be found in the
 “Selectivity Process Error” section of this document.</p>
 </div>
@@ -2407,7 +2407,7 @@ prior costs 1.04 nLL units at
 but 9.91 at
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mi>τ</mi></msub><mo>=</mo><mn>12</mn></mrow><annotation encoding="application/x-tex">n_{\tau} = 12</annotation></semantics></math>;
 evaluated annually it is 1.04 in both cases. Fixing the exponent at one
-year also matches how such priors are elicited — as a belief about the
+year also matches how such priors are elicited, as a belief about the
 fraction of fish moving per <em>year</em>, independent of how the year
 is partitioned. Under the legacy <code>ctmc_scale_by_seasdur = 0</code>
 the two coincide.</p>
@@ -2450,7 +2450,7 @@ with
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mo>&gt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">c &gt; 1</annotation></semantics></math>
 is symmetric with its mode at
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><msub><mi>n</mi><mi>r</mi></msub></mrow><annotation encoding="application/x-tex">1/n_{r}</annotation></semantics></math>
-in every region — a prior centred on <em>equal movement among all
+in every region, a prior centred on <em>equal movement among all
 regions</em>, which is informative and, for a residency-dominated stock,
 a strong assumption rather than a vague one.</li>
 </ul>
@@ -2820,7 +2820,7 @@ N\left(0, \sigma^2_{p,r,\tau,a,s,\text{Move}}\right)
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mtext mathvariant="normal">Move</mtext></mrow></msub><annotation encoding="application/x-tex">\sigma_{p,r,\tau,a,s,\text{Move}}</annotation></semantics></math>
 may be shared across dimensions depending on the selected process error
 model.</p>
-<p>Only valid origin–destination pairs (i.e., adjacent regions) are
+<p>Only valid origin-destination pairs (i.e., adjacent regions) are
 assigned deviations.</p>
 </div>
 <div class="section level6">
@@ -2891,7 +2891,7 @@ written explicitly as:</p>
 }
 \right]
 </annotation></semantics></math></p>
-<p>where the summation is taken over all valid origin–destination pairs
+<p>where the summation is taken over all valid origin-destination pairs
 (i.e.,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi><mo>≠</mo><msup><mi>r</mi><mo>′</mo></msup></mrow><annotation encoding="application/x-tex">r \neq r'</annotation></semantics></math>
 and
@@ -2962,17 +2962,17 @@ Model for Fish Population Dynamics. MAFFish, N.Z. Ministry of
 Agriculture and Fisheries.</p>
 <p>McGarvey, R., Feenstra, J.E., 2002. Estimating rates of fish movement
 from tag recoveries: conditioning by recapture. Can. J. Fish. Aquat.
-Sci. 59, 1054–1064. <a href="https://doi.org/10.1139/f02-080" class="external-link uri">https://doi.org/10.1139/f02-080</a></p>
+Sci. 59, 1054-1064. <a href="https://doi.org/10.1139/f02-080" class="external-link uri">https://doi.org/10.1139/f02-080</a></p>
 <p>Methot, R.D., Taylor, I.G., 2011. Adjusting for bias due to
 variability of estimated recruitments in fishery assessment models. Can.
-J. Fish. Aquat. Sci. 68, 1744–1760. <a href="https://doi.org/10.1139/f2011-092" class="external-link uri">https://doi.org/10.1139/f2011-092</a></p>
+J. Fish. Aquat. Sci. 68, 1744-1760. <a href="https://doi.org/10.1139/f2011-092" class="external-link uri">https://doi.org/10.1139/f2011-092</a></p>
 <p>Monnahan, C.C., 2024. Toward good practices for Bayesian data-rich
 fisheries stock assessments using a modern statistical workflow.
 Fisheries Research 275, 107024. <a href="https://doi.org/10.1016/j.fishres.2024.107024" class="external-link uri">https://doi.org/10.1016/j.fishres.2024.107024</a></p>
 <p>Thorson, J.T., Johnson, K.F., Methot, R.D., Taylor, I.G., 2017.
 Model-based estimates of effective sample size in stock assessment
 models using the Dirichlet-multinomial distribution. Fisheries Research
-192, 84–93. <a href="https://doi.org/10.1016/j.fishres.2016.06.005" class="external-link uri">https://doi.org/10.1016/j.fishres.2016.06.005</a></p>
+192, 84-93. <a href="https://doi.org/10.1016/j.fishres.2016.06.005" class="external-link uri">https://doi.org/10.1016/j.fishres.2016.06.005</a></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

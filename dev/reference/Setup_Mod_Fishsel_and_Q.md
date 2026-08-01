@@ -103,10 +103,10 @@ Setup_Mod_Fishsel_and_Q(
   fleet (and optionally each time block). Each element must follow one
   of:
 
-  - `"<model>_Fleet_<f>"` — single form for all years of fleet `f`.
+  - `"<model>_Fleet_<f>"`: single form for all years of fleet `f`.
 
-  - `"<model>_Fleet_<f>_Block_<b>"` — form specific to block `b` of
-    fleet `f`, as defined in `fish_sel_blocks`.
+  - `"<model>_Fleet_<f>_Block_<b>"`: form specific to block `b` of fleet
+    `f`, as defined in `fish_sel_blocks`.
 
   Available models:
 
@@ -332,10 +332,10 @@ Setup_Mod_Fishsel_and_Q(
   fleet (and optionally each time block). Each element must follow one
   of:
 
-  - `"<model>_Fleet_<f>"` — single form for all years of fleet `f`.
+  - `"<model>_Fleet_<f>"`: single form for all years of fleet `f`.
 
-  - `"<model>_Fleet_<f>_Block_<b>"` — form specific to block `b` of
-    fleet `f`, as defined in `ret_sel_blocks`.
+  - `"<model>_Fleet_<f>_Block_<b>"`: form specific to block `b` of fleet
+    `f`, as defined in `ret_sel_blocks`.
 
   Available models:
 
@@ -487,7 +487,7 @@ maps.
 ## Details
 
 Selectivity time-variation and blocked selectivity are mutually
-exclusive within a fleet — specifying both for the same fleet will raise
+exclusive within a fleet. Specifying both for the same fleet will raise
 an error.
 
 ## See also

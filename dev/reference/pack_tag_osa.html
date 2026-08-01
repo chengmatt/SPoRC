@@ -77,7 +77,7 @@ one-step-ahead (OSA) analysis for a single likelihood family.</p>
 
 
 <dt id="arg-like-type">like_type<a class="anchor" aria-label="anchor" href="#arg-like-type"></a></dt>
-<dd><p>Integer likelihood type code (0–5).</p></dd>
+<dd><p>Integer likelihood type code (0-5).</p></dd>
 
 
 <dt id="arg-obs-recap">obs_recap<a class="anchor" aria-label="anchor" href="#arg-obs-recap"></a></dt>
@@ -181,9 +181,9 @@ avoid the extra bookkeeping cost.</p></dd>
 observation per <code>[fleet, pop_pool, region, age_pool, sex_pool]</code> cell
 with <code>use_fish_tagging[f] == 1</code>, in <code>(f, p, r, a, s)</code> loop order
 within each event, and events in <code>tag_grid</code> order. This mirrors
-<code><a href="get_conv_tag_likelihoods.html">get_conv_tag_likelihoods()</a></code>'s exact accumulation structure – a
+<code><a href="get_conv_tag_likelihoods.html">get_conv_tag_likelihoods()</a></code>'s exact accumulation structure: a
 separate Poisson/NB term is fit per pool/age/sex cell and their
--log-likelihoods summed – so packing one count per <code>[region, fleet]</code>
+-log-likelihoods summed, so packing one count per <code>[region, fleet]</code>
 pre-summed across pools would evaluate a different (non-equivalent)
 likelihood whenever more than one pool is used.</p>
 <p>For <code>family == "comp"</code>, each valid event contributes one composition

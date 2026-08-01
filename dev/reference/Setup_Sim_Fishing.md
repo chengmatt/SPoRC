@@ -198,7 +198,7 @@ Setup_Sim_Fishing(
 - comp_fishage_like:
 
   Numeric vector. Likelihood for age composition (0 = Multinomial, 1 =
-  Dirichlet-Multinomial, 2–4 = Logistic-Normal variants), length
+  Dirichlet-Multinomial, 2-4 = Logistic-Normal variants), length
   \`n_fish_fleets\`. Default: 0.
 
 - ISS_FishAgeComps:
@@ -236,7 +236,7 @@ Setup_Sim_Fishing(
 - comp_fishlen_like:
 
   Numeric vector. Likelihood for length composition (0 = Multinomial, 1
-  = Dirichlet-Multinomial, 2–4 = Logistic-Normal variants), length
+  = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants), length
   \`n_fish_fleets\`. Default: 0.
 
 - ISS_FishLenComps:
@@ -275,7 +275,7 @@ Setup_Sim_Fishing(
 - comp_fishage_pop_like:
 
   Numeric vector. Likelihood for population-specific fishery age
-  composition (0 = Multinomial, 1 = Dirichlet-Multinomial, 2–4 =
+  composition (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 =
   Logistic-Normal variants), length \`n_fish_fleets\`. Default: 0.
 
 - ISS_FishAgeComps_pop:
@@ -318,7 +318,7 @@ Setup_Sim_Fishing(
 - comp_fishlen_pop_like:
 
   Numeric vector. Likelihood for population-specific fishery length
-  composition (0 = Multinomial, 1 = Dirichlet-Multinomial, 2–4 =
+  composition (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 =
   Logistic-Normal variants), length \`n_fish_fleets\`. Default: 0.
 
 - ISS_FishLenComps_pop:
@@ -389,7 +389,7 @@ Setup_Sim_Fishing(
 - comp_fishage_discard_like:
 
   Numeric vector. Likelihood for discard age composition (0 =
-  Multinomial, 1 = Dirichlet-Multinomial, 2–4 = Logistic-Normal
+  Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal
   variants, 999 = none), length \`n_fish_fleets\`. Default: 0.
 
 - ISS_FishAgeComps_discard:
@@ -427,7 +427,7 @@ Setup_Sim_Fishing(
 - comp_fishlen_discard_like:
 
   Numeric vector. Likelihood for discard length composition (0 =
-  Multinomial, 1 = Dirichlet-Multinomial, 2–4 = Logistic-Normal
+  Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal
   variants, 999 = none), length \`n_fish_fleets\`. Default: 0.
 
 - ISS_FishLenComps_discard:
@@ -466,7 +466,7 @@ Setup_Sim_Fishing(
 - comp_fishage_discard_pop_like:
 
   Numeric vector. Likelihood for population-specific discard age
-  composition (0 = Multinomial, 1 = Dirichlet-Multinomial, 2–4 =
+  composition (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 =
   Logistic-Normal variants, 999 = none), length \`n_fish_fleets\`.
   Default: 0.
 
@@ -510,7 +510,7 @@ Setup_Sim_Fishing(
 - comp_fishlen_discard_pop_like:
 
   Numeric vector. Likelihood for population-specific discard length
-  composition (0 = Multinomial, 1 = Dirichlet-Multinomial, 2–4 =
+  composition (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 =
   Logistic-Normal variants, 999 = none), length \`n_fish_fleets\`.
   Default: 0.
 

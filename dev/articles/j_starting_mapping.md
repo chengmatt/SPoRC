@@ -152,10 +152,10 @@ through a named list (`input_list$map`) where each entry corresponds to
 a parameter array flattened into a vector of factors. The rules are
 simple:
 
-- **`factor(NA)`** at a position means that parameter is **fixed** — it
+- **`factor(NA)`** at a position means that parameter is **fixed**, it
   is held at its value in `input_list$par` and not estimated.
 - **Shared integers** at two or more positions means those parameters
-  are **constrained to be equal** during estimation — only one value is
+  are **constrained to be equal** during estimation, only one value is
   estimated for the group.
 - **Unique integers** at each position means each parameter is
   **independently estimated**.
@@ -253,8 +253,8 @@ input_list$par$ln_global_R0 <- log(30)
 The `Setup_xxx` functions also support sharing parameters across model
 partitions via built-in convenience arguments. These cover common
 sharing structures (e.g., sharing selectivity across sexes or regions),
-but for finer control — such as sharing a subset of parameters while
-estimating others independently — users can construct the map manually.
+but for finer control, such as sharing a subset of parameters while
+estimating others independently, users can construct the map manually.
 
 Below, we demonstrate both approaches using fishery selectivity as an
 example. We define two fishery fleets: Fleet 1 uses a logistic
@@ -324,8 +324,8 @@ map can be constructed manually. In this example, we want:
 We start from `est_all` to get the correctly dimensioned parameter
 array, then overwrite the map. The parameter array `fish_fixed_sel_pars`
 has dimensions
-`[n_regions, n_max_sel_pars, n_max_sel_blocks, n_sexes, n_fish_fleets]`
-— in this example `1 × 2 × 1 × 2 × 2`. The table below summarises the
+`[n_regions, n_max_sel_pars, n_max_sel_blocks, n_sexes, n_fish_fleets]`,
+in this example `1 × 2 × 1 × 2 × 2`. The table below summarises the
 intended sharing structure before we implement it:
 
 | Fleet | Parameter | Female index | Male index | Shared? |

@@ -155,10 +155,10 @@ number of blocks to estimate, and the elements within the list should
 specify the range of the block. For instance, the spatial model for
 sablefish estimates 3 age blocks,
 (`Movement_ageblk_spec = list(c(1:6), c(7:15), c(16:30))`), where the
-first element specifies the first age block, which ranges from ages 1–6,
+first element specifies the first age block, which ranges from ages 1-6,
 the second element specifies the second age block, which ranges from
-ages 7–15, and the third element specifies the third age block, which
-ranges from ages 16–30. No year and sex blocks are specified for this
+ages 7-15, and the third element specifies the third age block, which
+ranges from ages 16-30. No year and sex blocks are specified for this
 application. Thus, both `Movement_yearblk_spec` and
 `Movement_sexblk_spec` are set at `"constant"`. Additionally, recruits
 are not allowed to move, given the potential for severe confounding
@@ -538,8 +538,8 @@ fish_selex_structure <- merge(fleet_blocks, sex_par)
 
 # Merge to get all valid combinations
 fish_selex_structure <- merge(fleet_blocks, sex_par) %>%
-  dplyr::filter(!(fleet == 1 & block == 1 & sex == 2 & par == 2)) %>%              # remove priors for any unestimated pars -- par1=a50, par2=delta; NEEDS TO MATCH PARAMETER MAPPING
-  dplyr::filter(!(fleet == 2 & block == 1 & sex == 2 & par == 1))                  # remove priors for any unestimated pars -- par1=a50, par2=delta; NEEDS TO MATCH PARAMETER MAPPING
+  dplyr::filter(!(fleet == 1 & block == 1 & sex == 2 & par == 2)) %>%              # remove priors for any unestimated pars, par1=a50, par2=delta; NEEDS TO MATCH PARAMETER MAPPING
+  dplyr::filter(!(fleet == 2 & block == 1 & sex == 2 & par == 1))                  # remove priors for any unestimated pars, par1=a50, par2=delta; NEEDS TO MATCH PARAMETER MAPPING
 
 # Add the lognormal prior values - creates a dataframe, each row is a unique parameter combination to apply the prior to
 fish_selex_prior <- cbind(

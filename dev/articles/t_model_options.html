@@ -209,7 +209,7 @@ features</td>
 </table>
 <p><strong>Multi-population structure</strong></p>
 <p>SPoRC decouples biological populations from spatial regions.
-Populations have their own stock–recruit dynamics and natal assignment;
+Populations have their own stock-recruit dynamics and natal assignment;
 regions define the arena through which all populations move.</p>
 <table class="table">
 <colgroup>
@@ -239,7 +239,7 @@ explicitly otherwise</td>
 </tbody>
 </table>
 <p>When <code>n_pop &gt; n_regions</code>, multiple populations share a
-natal region — a contingent-population or mixed-stock structure. When
+natal region, a contingent-population or mixed-stock structure. When
 <code>n_pop &lt; n_regions</code>, the model represents a single
 population spread across more regions than there are spawning
 origins.</p>
@@ -426,7 +426,7 @@ switches to the scalar geometric-series for the plus group itself</td>
 <tr class="odd">
 <td>0</td>
 <td><code>"equil"</code></td>
-<td>None — strict equilibrium</td>
+<td>None, strict equilibrium</td>
 </tr>
 <tr class="even">
 <td>1</td>
@@ -473,7 +473,7 @@ the <code>"prop"</code> form.</p>
 <p>Controlled via <code><a href="../reference/Setup_Mod_Rec.html">Setup_Mod_Rec()</a></code> (EM) or
 <code><a href="../reference/Setup_Sim_Rec.html">Setup_Sim_Rec()</a></code> (OM).</p>
 <div class="section level4">
-<h4 id="stockrecruit-function-rec_model">Stock–recruit function (<code>rec_model</code>)<a class="anchor" aria-label="anchor" href="#stockrecruit-function-rec_model"></a>
+<h4 id="stock-recruit-function-rec_model">Stock-recruit function (<code>rec_model</code>)<a class="anchor" aria-label="anchor" href="#stock-recruit-function-rec_model"></a>
 </h4>
 <table class="table">
 <colgroup>
@@ -493,7 +493,7 @@ with annual deviations; no SSB feedback</td>
 </tr>
 <tr class="even">
 <td><code>"bh_rec"</code></td>
-<td>Beverton–Holt:
+<td>Beverton-Holt:
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mo>=</mo><mn>4</mn><mi>h</mi><msub><mi>R</mi><mn>0</mn></msub><mo>⋅</mo><mtext mathvariant="normal">SSB</mtext><mi>/</mi><mrow><mo stretchy="true" form="prefix">[</mo><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>h</mi><mo stretchy="false" form="postfix">)</mo><msub><mi>S</mi><mn>0</mn></msub><mo>+</mo><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mi>h</mi><mo>−</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo><mtext mathvariant="normal">SSB</mtext><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">R = 4hR_0 \cdot \text{SSB} / \left[(1-h)S_0 + (5h-1)\text{SSB}\right]</annotation></semantics></math>.
 Unfished spawning biomass per recruit
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>S</mi><mn>0</mn></msub><annotation encoding="application/x-tex">S_0</annotation></semantics></math>)
@@ -558,7 +558,7 @@ start, 0.5 = midpoint)</td>
 <td>Delay (in seasons) between spawning and recruitment entry.
 <code>1</code> (default): recruitment driven by SSB from
 <code>rec_lag</code> seasons prior, may enter in any season.
-<code>0</code>: age-0 recruitment – recruitment driven by that
+<code>0</code>: age-0 recruitment, recruitment driven by that
 <em>same</em> year’s own SSB. Since that SSB isn’t known until
 <code>spawn_seas</code> is reached, recruits may only enter in
 <code>spawn_seas</code> itself or a later season in the same year
@@ -1002,12 +1002,12 @@ multiplicatively on the selectivity curve at the bin level.</p>
 </tr>
 <tr class="even">
 <td><code>"3dmarg"</code></td>
-<td>3D Gaussian Markov random field — marginal variance
+<td>3D Gaussian Markov random field, marginal variance
 parameterisation</td>
 </tr>
 <tr class="odd">
 <td><code>"3dcond"</code></td>
-<td>3D GMRF — conditional variance parameterisation</td>
+<td>3D GMRF, conditional variance parameterisation</td>
 </tr>
 <tr class="even">
 <td><code>"2dar1"</code></td>
@@ -1063,7 +1063,7 @@ selectivity parameters are estimated:</p>
 <p>Selectivity can be normalised relative to a specific bin, to the
 maximum, or to the mean across a bin range. When
 <code>fit_lengths = 1</code>, selectivity operates on length bins and is
-mapped to age-space via a user-supplied size–age transition matrix
+mapped to age-space via a user-supplied size-age transition matrix
 (<code>SizeAgeTrans</code>).</p>
 </div>
 <div class="section level4">
@@ -1265,7 +1265,7 @@ defining blocks:</p>
 <td><code>M_popblk_spec</code></td>
 <td>Population</td>
 <td>
-<code>list(c(1,2), 3)</code> → pops 1–2 share
+<code>list(c(1,2), 3)</code> → pops 1-2 share
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>M</mi><annotation encoding="application/x-tex">M</annotation></semantics></math>,
 pop 3 is separate</td>
 </tr>
@@ -1467,7 +1467,7 @@ season.</td>
 </h4>
 <p>Controls how movement and mortality are ordered within a season. The
 three options coincide exactly when total mortality is constant across
-regions, when mortality is zero, and when movement is absent — so
+regions, when mortality is zero, and when movement is absent, so
 single-region models are unaffected by the setting.</p>
 <table class="table">
 <colgroup>
@@ -1566,7 +1566,7 @@ are in the <em>Description of Model Equations</em> vignette.</p>
 <h4 id="continuous-movement-deviations-cont_vary_movement">Continuous movement deviations
 (<code>cont_vary_movement</code>)<a class="anchor" aria-label="anchor" href="#continuous-movement-deviations-cont_vary_movement"></a>
 </h4>
-<p>Origin–destination deviations applied multiplicatively to
+<p>Origin-destination deviations applied multiplicatively to
 off-diagonal rates (CTMC) or additively on the logit scale
 (unstructured).</p>
 <table class="table">
@@ -1748,7 +1748,7 @@ correlation parameter (<code>Fdev_rho</code>) and is only active when
 <code>NA</code> regardless of what is supplied.</p>
 <p>Catch-active years (<code>UseCatch == 1</code> or any
 <code>UseCatch_pop == 1</code>) do <strong>not</strong> need to be
-contiguous under <code>"rw"</code> or <code>"ar1"</code> — a fishery may
+contiguous under <code>"rw"</code> or <code>"ar1"</code>, a fishery may
 close for several years and reopen later. The transition between two
 active years separated by a gap of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>d</mi><annotation encoding="application/x-tex">d</annotation></semantics></math>
@@ -1839,8 +1839,8 @@ compositions:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>C</mi><mi>a</mi></msub><mo>=</mo><mfrac><msubsup><mi>F</mi><mi>a</mi><mtext mathvariant="normal">ret</mtext></msubsup><msub><mi>Z</mi><mi>a</mi></msub></mfrac><msub><mi>N</mi><mi>a</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mi>−</mi><msub><mi>Z</mi><mi>a</mi></msub></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">C_{a} = \frac{F^{\text{ret}}_{a}}{Z_{a}} N_{a} \left(1 - e^{-Z_{a}}\right)</annotation></semantics></math></p>
 <p>A cell is therefore informative about <code>dmr</code> whenever it is
 fished and retention is less than one, with or without discard data.
-Discard observations are not the dividing line — <code>dmr</code> in
-fact cancels out of the predicted discard itself, which divides the dead
+Discard observations are not the dividing line, <code>dmr</code> in fact
+cancels out of the predicted discard itself, which divides the dead
 discards back through by it, leaving only the same
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Z</mi><annotation encoding="application/x-tex">Z</annotation></semantics></math>
 dependence.</p>
@@ -1855,8 +1855,7 @@ package default) contributes no dead discards at all, so
 <code>dmr</code> drops out of the objective entirely and its deviations
 have a flat gradient. <code>dmr_dev_spec</code> and
 <code>dmr_mean_spec</code> are only meaningful once retention is
-actually modelled — see
-<code><a href="../articles/s_discard_retention.html">vignette("s_discard_retention")</a></code>.</p>
+actually modelled, see <code><a href="../articles/s_discard_retention.html">vignette("s_discard_retention")</a></code>.</p>
 </div>
 <div class="section level4">
 <h4 id="which-deviations-are-penalized">Which deviations are penalized<a class="anchor" aria-label="anchor" href="#which-deviations-are-penalized"></a>
@@ -1875,8 +1874,8 @@ penalized:</p>
 <span><span class="va">mp</span><span class="op">[</span>, <span class="fl">10</span><span class="op">:</span><span class="fl">20</span>, , <span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span>
 <span><span class="va">input_list</span><span class="op">$</span><span class="va">map</span><span class="op">$</span><span class="va">logit_dmr_devs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">mp</span><span class="op">)</span></span></code></pre></div>
 <p>Two consequences worth knowing. Mapping a deviation off pins it at
-whatever sits in <code>$par</code>, which is <code>0</code> by default —
-so <code>dmr</code> falls back on <code>plogis(logit_dmr_mean)</code> —
+whatever sits in <code>$par</code>, which is <code>0</code> by default,
+so <code>dmr</code> falls back on <code>plogis(logit_dmr_mean)</code>,
 but a starting value supplied through <code>...</code> is kept, not
 reset to zero. And under <code>Fdev_model = "rw"</code> or
 <code>"ar1"</code>, a pinned deviation is dropped from the active
@@ -1941,7 +1940,7 @@ modelled ages</td>
 <tr class="even">
 <td><code>SizeAgeTrans</code></td>
 <td><code>[p × r × y × τ × l × a × s]</code></td>
-<td>Size–age transition matrix. Required when
+<td>Size-age transition matrix. Required when
 <code>fit_lengths = 1</code>
 </td>
 </tr>
@@ -2027,7 +2026,7 @@ families:</p>
 </tr>
 <tr class="even">
 <td>1</td>
-<td>Dirichlet–multinomial (overdispersion parameter
+<td>Dirichlet-multinomial (overdispersion parameter
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>θ</mi><annotation encoding="application/x-tex">\theta</annotation></semantics></math>
 estimated per fleet)</td>
 </tr>
@@ -2146,9 +2145,9 @@ parameters (log-scale overdispersion), and correlation parameters.</p>
 </h2>
 <p>Configured via <code><a href="../reference/Setup_Mod_Tagging.html">Setup_Mod_Tagging()</a></code> (EM) or
 <code><a href="../reference/Setup_Sim_Tagging.html">Setup_Sim_Tagging()</a></code> (OM).</p>
-<p>SPoRC implements a conventional mark–recapture framework
+<p>SPoRC implements a conventional mark-recapture framework
 (Brownie-type likelihood) where tagged individuals follow the full
-seasonal population dynamics — movement, mortality, and fishing — after
+seasonal population dynamics, movement, mortality, and fishing, after
 release.</p>
 <table class="table">
 <colgroup>
@@ -2218,17 +2217,17 @@ season, and spatial structure to compute SBPR and YPR.</p>
 <td><code>"single_region"</code></td>
 <td><code>"SPR"</code></td>
 <td>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>F</mi><msub><mtext mathvariant="normal">SPR</mtext><mi>x</mi></msub></msub><annotation encoding="application/x-tex">F_{\text{SPR}_x}</annotation></semantics></math>
-— no movement</td>
-<td>—</td>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>F</mi><msub><mtext mathvariant="normal">SPR</mtext><mi>x</mi></msub></msub><annotation encoding="application/x-tex">F_{\text{SPR}_x}</annotation></semantics></math>,
+no movement</td>
+<td>,</td>
 </tr>
 <tr class="even">
 <td><code>"single_region"</code></td>
 <td><code>"BH_MSY"</code></td>
-<td>Beverton–Holt
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>F</mi><mtext mathvariant="normal">MSY</mtext></msub><annotation encoding="application/x-tex">F_\text{MSY}</annotation></semantics></math>
-— no movement</td>
-<td>—</td>
+<td>Beverton-Holt
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>F</mi><mtext mathvariant="normal">MSY</mtext></msub><annotation encoding="application/x-tex">F_\text{MSY}</annotation></semantics></math>,
+no movement</td>
+<td>,</td>
 </tr>
 <tr class="odd">
 <td><code>"multi_region"</code></td>
@@ -2260,7 +2259,7 @@ applied uniformly across regions, with movement</td>
 <td>Single
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>F</mi><mtext mathvariant="normal">MSY</mtext></msub><annotation encoding="application/x-tex">F_\text{MSY}</annotation></semantics></math>
 with movement (single-pop only)</td>
-<td>—</td>
+<td>,</td>
 </tr>
 <tr class="odd">
 <td><code>"multi_region"</code></td>
@@ -2268,7 +2267,7 @@ with movement (single-pop only)</td>
 <td>Region-specific
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>F</mi><mtext mathvariant="normal">MSY</mtext></msub><annotation encoding="application/x-tex">F_\text{MSY}</annotation></semantics></math>
 values jointly maximising total yield under movement. Uses
-Newton–Raphson to solve equilibrium recruitment by origin</td>
+Newton-Raphson to solve equilibrium recruitment by origin</td>
 <td>✓</td>
 </tr>
 </tbody>
@@ -2357,7 +2356,7 @@ updates
 </tr>
 <tr class="even">
 <td><code><a href="../reference/simulation_self_test.html">simulation_self_test()</a></code></td>
-<td>Simulation–estimation test: fits the EM back to OM-generated
+<td>Simulation-estimation test: fits the EM back to OM-generated
 data</td>
 </tr>
 <tr class="odd">
@@ -2415,17 +2414,17 @@ and refines with Newton steps.</p>
 <tbody>
 <tr class="odd">
 <td><code>data</code></td>
-<td>—</td>
+<td>,</td>
 <td><code>input_list$data</code></td>
 </tr>
 <tr class="even">
 <td><code>parameters</code></td>
-<td>—</td>
+<td>,</td>
 <td><code>input_list$par</code></td>
 </tr>
 <tr class="odd">
 <td><code>mapping</code></td>
-<td>—</td>
+<td>,</td>
 <td><code>input_list$map</code></td>
 </tr>
 <tr class="even">
@@ -2497,7 +2496,7 @@ adjustment)</td>
 </tr>
 <tr class="even">
 <td><code><a href="../reference/get_osa.html">get_osa()</a></code></td>
-<td>One-step-ahead residuals – compositions, conventional tagging, and
+<td>One-step-ahead residuals, compositions, conventional tagging, and
 Catch/Discard/FishIdx/SrvIdx indices (external post-hoc, or internal
 model-based via
 <code>do_internal_comp_osa</code>/<code>do_internal_conv_tag_osa</code>).

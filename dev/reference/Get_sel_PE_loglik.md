@@ -39,10 +39,10 @@ Get_sel_PE_loglik(
   `[1, par_index, sex, 1]`. The `par_index` slot meaning depends on
   `PE_model`:
 
-  - Models 1–2: `[1,1,s,1]` = log standard deviation (\\\log \sigma\\)
+  - Models 1-2: `[1,1,s,1]` = log standard deviation (\\\log \sigma\\)
     for sex `s`, indexed by bin/age.
 
-  - Models 3–4: `[1,1,s,1]` = unconstrained partial correlation by
+  - Models 3-4: `[1,1,s,1]` = unconstrained partial correlation by
     age/bin; `[1,2,s,1]` = unconstrained partial correlation by year;
     `[1,3,s,1]` = unconstrained partial correlation by cohort;
     `[1,4,s,1]` = log variance.

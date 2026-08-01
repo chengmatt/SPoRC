@@ -162,10 +162,10 @@ Get_Selex(
   Array of log-scale selectivity deviations with dimension
   `[n_regions, n_years, n_parameters_or_bins, n_sexes, 1]`.
 
-  For `TimeVary_Model = 1–2`: deviations apply to selectivity parameters
+  For `TimeVary_Model = 1-2`: deviations apply to selectivity parameters
   on the natural scale after exponentiation.
 
-  For `TimeVary_Model = 3–5`: deviations apply multiplicatively at the
+  For `TimeVary_Model = 3-5`: deviations apply multiplicatively at the
   bin level to the constructed selectivity curve.
 
   For `Selex_Model = 5`: deviations act directly on bin-level logit
@@ -216,7 +216,7 @@ Get_Selex(
   Only used when `Selex_Model == 8`. **Must** be supplied whenever
   `Wbin_bicubic`/`Wyr_bicubic` may have been zero-padded wider than this
   specific block's own grid (e.g. because some *other* fleet/block
-  shares the same padded storage array but uses a larger bicubic grid) –
+  shares the same padded storage array but uses a larger bicubic grid),
   `ncol(Wbin_bicubic)`/`ncol(Wyr_bicubic)` give the padded (shared)
   width, not this block's true node counts, and using the padded width
   to reshape `pars` would misassign which flattened parameter values
@@ -235,10 +235,10 @@ downstream components.
 
 For `TimeVary_Model = 0`, only the base parametric form is evaluated.
 
-For `TimeVary_Model = 1–2`, deviations modify model parameters
+For `TimeVary_Model = 1-2`, deviations modify model parameters
 multiplicatively on the natural scale after transformation.
 
-For `TimeVary_Model = 3–5`, deviations act directly on the constructed
+For `TimeVary_Model = 3-5`, deviations act directly on the constructed
 selectivity curve as multiplicative log-normal perturbations:
 \$\$\text{selex} = \text{selex} \cdot \exp(\delta\_{r,y,b,s})\$\$.
 

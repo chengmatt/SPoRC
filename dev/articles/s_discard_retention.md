@@ -177,7 +177,7 @@ sim_list$Movement <- array(
 
 ### Recruitment
 
-Recruitment follows a mean-recruitment model (no stock–recruit
+Recruitment follows a mean-recruitment model (no stock-recruit
 relationship) with `R0` = 5 and recruitment variability (`sigmaR`) of
 0.5.
 

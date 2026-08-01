@@ -96,8 +96,8 @@ Setup_Mod_Movement(
 - Movement_ageblk_spec:
 
   `"constant"` (default) or a list of integer vectors defining age
-  blocks. Example: `list(1:4, 5:10)` creates a juvenile block (ages 1–4)
-  and an adult block (ages 5–10). Ignored when `move_type = 1`.
+  blocks. Example: `list(1:4, 5:10)` creates a juvenile block (ages 1-4)
+  and an adult block (ages 5-10). Ignored when `move_type = 1`.
 
 - Movement_yearblk_spec:
 
@@ -179,7 +179,7 @@ Setup_Mod_Movement(
 - ctmc_move_dat:
 
   Data frame required when `move_type = 1`. Each row corresponds to a
-  unique pop–region–year–season–age–sex combination. Required columns:
+  unique pop-region-year-season-age-sex combination. Required columns:
   `pop`, `regions`, `years`, `seas`, `ages`, `sexes`, plus any covariate
   columns referenced in `diffusion_formula` or `preference_formula`.
   Projection years exceeding `n_years` are automatically capped to the

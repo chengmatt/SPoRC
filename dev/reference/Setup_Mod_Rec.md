@@ -128,7 +128,7 @@ rec_seas_prop[, 1] <- 1
   `rec_lag` seasons prior and may enter in any season. `0` is age-0
   recruitment: recruitment uses the SAME year's SSB, and because that
   SSB isn't known until `spawn_seas` is reached, recruits may only enter
-  in `spawn_seas` itself or a later season – when
+  in `spawn_seas` itself or a later season, when
   `use_fixed_rec_seas_prop = 1`, `fixed_rec_seas_prop` must be zero
   before `spawn_seas`; when estimated, this is enforced structurally via
   a restricted softmax (see
@@ -197,7 +197,7 @@ rec_seas_prop[, 1] <- 1
   Array `[n_pop x n_seas]`. Fixed seasonal recruitment proportions used
   when `use_fixed_rec_seas_prop = 1`. Default: all recruitment assigned
   to season 1. When `rec_lag = 0` and `spawn_seas > 1`, must be zero for
-  every season before `spawn_seas` – an error is raised otherwise.
+  every season before `spawn_seas`. An error is raised otherwise.
 
 - do_rec_bias_ramp:
 
@@ -313,7 +313,7 @@ rec_seas_prop[, 1] <- 1
 
   Character, `"fix"` (default) or `"est"`. Whether `init_F_par` is
   estimated. This sets only the mapping, so it combines freely with
-  `init_F_form` – including estimating the proportion itself
+  `init_F_form`, including estimating the proportion itself
   (`init_F_form = "prop"`, `init_F_spec = "est"`). Note `init_F` is
   generally weakly identified, which is why assessments commonly fix it.
 
@@ -321,8 +321,8 @@ rec_seas_prop[, 1] <- 1
   `[n_regions x n_seas x n_fish_fleets]`, supplied through `...` like
   any other starting value, e.g.
   `Setup_Mod_Rec(..., init_F_form = "abs", init_F_spec = "fix", init_F_par = array(log(0.01), dim = c(1, 1, 1)))`.
-  Its SCALE depends on `init_F_form` – logit under `"prop"` (so the
-  proportion is bounded to (0, 1)) and log under `"abs"` – which is why
+  Its SCALE depends on `init_F_form`, logit under `"prop"` (so the
+  proportion is bounded to (0, 1)) and log under `"abs"`, which is why
   it is not named `ln_` or `logit_`. Defaults to effectively no initial
   fishing mortality.
 
@@ -397,7 +397,7 @@ rec_seas_prop[, 1] <- 1
   `"est_shared_pop"`
 
   :   Single parameter per block, shared across all populations.
-      Requires identical block structures across all populations – an
+      Requires identical block structures across all populations. An
       error is raised if block indices differ.
 
 - stray_rate_blocks:

@@ -1,6 +1,6 @@
 # Contributing
 
-This document is for people making changes to the `SPoRC` codebase —
+This document is for people making changes to the `SPoRC` codebase,
 where things live and *why* is covered in
 [Architecture](https://chengmatt.github.io/SPoRC/dev/articles/architecture.md);
 this page covers the mechanics of actually getting a change in:
@@ -18,7 +18,7 @@ started is just:
 
 Work happens on `dev-*` branches off `main` (e.g. `dev-movement`,
 `dev-popn-seasons`), merged in when ready. `dev-*` is not just
-convention — the GitHub Actions workflows (`R-CMD-check`,
+convention, the GitHub Actions workflows (`R-CMD-check`,
 `test-coverage`, `pkgdown`) are configured to trigger on pushes to
 branches matching that pattern, so a differently-named branch won’t get
 CI feedback until you open a PR against `main`.
@@ -36,7 +36,7 @@ tests → vignette). Two conventions worth internalizing before you start:
   data/parameters/mapping, `Get_*` / `get_*` derives a quantity from
   already-built state, `do_*` re-runs or perturbs a fitted model,
   `do_*_mapping` builds an RTMB parameter map. Match an existing prefix
-  rather than inventing a new one — see the naming conventions table in
+  rather than inventing a new one, see the naming conventions table in
   Architecture.
 - Extract non-trivial logic out of `model_objective.R` into a helper.
   The objective function is already large; sections that do complex
@@ -84,13 +84,13 @@ several minutes to tens of minutes depending on your machine. If you
 touch anything in `model_objective.R` or a helper it calls, run at least
 one of these before opening a PR, even if your change looks purely
 mechanical (e.g. a refactor that moves code into a helper function
-without intending to change any values) — a subtle argument-order or
+without intending to change any values), a subtle argument-order or
 indexing mistake in that kind of change won’t show up any other way.
 
 For a new feature, add a targeted test near it, and check whether the
 reference values in the `test-regression_*.R` tests need updating (they
 should only change if your feature is expected to change model output
-for the bundled example data — if a “pure refactor” changes them, that’s
+for the bundled example data, if a “pure refactor” changes them, that’s
 a bug in the refactor, not a test that needs updating).
 
 ## Documentation

@@ -1,7 +1,7 @@
 # Deterministic Recruitment
 
 Computes deterministic recruitment by population and region using either
-a mean recruitment model or a Beverton–Holt stock–recruitment
+a mean recruitment model or a Beverton-Holt stock-recruitment
 relationship.
 
 ## Usage
@@ -51,7 +51,7 @@ Get_Det_Recruitment(
 
   - `0` Mean recruitment
 
-  - `1` Beverton–Holt recruitment with steepness
+  - `1` Beverton-Holt recruitment with steepness
 
 - rec_dd:
 
@@ -73,7 +73,7 @@ Get_Det_Recruitment(
   seasons prior. `0` is age-0 recruitment: recruitment uses the SAME
   year's SSB (`SSB_vals[,,y]`). The caller is responsible for supplying
   that value already computed from survivors only (i.e. before this
-  year's recruits exist) when `rec_lag = 0` – see `SPoRC_rtmb.R`,
+  year's recruits exist) when `rec_lag = 0`, see `SPoRC_rtmb.R`,
   `Simulate_Population.R`, and `Do_Population_Projection.R` for how each
   population-dynamics loop does this.
 
@@ -90,12 +90,12 @@ Get_Det_Recruitment(
 
   Matrix (`n_pop × n_seas`) giving seasonal recruitment proportions.
   When `rec_lag = 0`, must be zero for every season before `spawn_seas`
-  (age-0 recruits can't predate the spawning event that produced them) –
+  (age-0 recruits can't predate the spawning event that produced them),
   validated at setup by `Setup_Mod_Rec`/`Setup_Sim_Rec`.
 
 - h:
 
-  Matrix (`n_pop × n_regions`) of Beverton–Holt steepness values.
+  Matrix (`n_pop × n_regions`) of Beverton-Holt steepness values.
 
 - n_pop:
 
@@ -195,7 +195,7 @@ Get_Det_Recruitment(
 ## Details
 
 Recruitment is distributed spatially using regional recruitment
-proportions and seasonal recruitment timing. When Beverton–Holt
+proportions and seasonal recruitment timing. When Beverton-Holt
 recruitment is used, unfished spawning biomass per recruit (\\S_0\\) is
 calculated internally by projecting a single recruit through the full
 seasonal population dynamics, including movement and mortality.
@@ -211,9 +211,9 @@ When `recruitment_model = 0`, recruitment is constant:
 where recruitment is distributed spatially according to
 `rec_region_prop`.
 
-\*\*Beverton–Holt recruitment\*\*
+\*\*Beverton-Holt recruitment\*\*
 
-When `recruitment_model = 1`, recruitment follows the Beverton–Holt
+When `recruitment_model = 1`, recruitment follows the Beverton-Holt
 relationship:
 
 \$\$ R = \frac{4hR_0SSB}{(1-h)S_0 + (5h-1)SSB} \$\$
@@ -221,7 +221,7 @@ relationship:
 where:
 
 - \\SSB\\ is spawning biomass lagged by `rec_lag` seasons (or, when
-  `rec_lag = 0`, the current year's own spawning biomass – see the
+  `rec_lag = 0`, the current year's own spawning biomass, see the
   `rec_lag` parameter above)
 
 - \\S_0\\ is unfished spawning biomass per recruit
@@ -229,7 +229,7 @@ where:
 - \\h\\ is steepness
 
 \\S_0\\ (and the age-composition of spawning biomass per recruit more
-generally) does not depend on `rec_lag` – it is a pure per-recruit,
+generally) does not depend on `rec_lag`; it is a pure per-recruit,
 equilibrium quantity. The recruit age class (the first age) is always
 included in the sum; when `rec_lag = 0`, maturity at that age is
 required to be exactly zero (validated at setup by

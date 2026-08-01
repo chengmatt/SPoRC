@@ -4,7 +4,7 @@ Computes the negative log-likelihood contribution for composition data
 (age or length) for a single year and fleet. The function supports
 multiple composition parameterizations and likelihood families commonly
 used in stock assessment models, including multinomial,
-Dirichlet–multinomial, and logistic–normal likelihoods.
+Dirichlet-multinomial, and logistic-normal likelihoods.
 
 ## Usage
 
@@ -61,46 +61,46 @@ Get_Comp_Likelihoods(
 
 - ln_theta:
 
-  Log overdispersion parameters used for Dirichlet– multinomial or
-  logistic–normal likelihoods, indexed by \\\[region \times sex\]\\.
+  Log overdispersion parameters used for Dirichlet-multinomial or
+  logistic-normal likelihoods, indexed by \\\[region \times sex\]\\.
 
 - LN_corr_pars:
 
-  Logistic–normal correlation parameters used for correlated
-  logistic–normal likelihoods, dimensioned by \\\[region \times sex
+  Logistic-normal correlation parameters used for correlated
+  logistic-normal likelihoods, dimensioned by \\\[region \times sex
   \times parameters\]\\.
 
 - LN_corr_pars_agg:
 
-  Logistic–normal correlation parameters used when compositions are
+  Logistic-normal correlation parameters used when compositions are
   aggregated.
 
 - Comp_Type:
 
   Integer specifying the composition parameterization:
 
-  - `0` – Aggregated compositions across sexes and regions.
+  - `0`: Aggregated compositions across sexes and regions.
 
-  - `1` – Compositions split by sex and region (no implicit sex or
-    region ratio information).
+  - `1`: Compositions split by sex and region (no implicit sex or region
+    ratio information).
 
-  - `2` – Joint compositions across sexes but split by region (implicit
+  - `2`: Joint compositions across sexes but split by region (implicit
     sex ratio information).
 
 - Likelihood_Type:
 
   Integer specifying the likelihood family:
 
-  - `0` – Multinomial.
+  - `0`: Multinomial.
 
-  - `1` – Dirichlet–multinomial.
+  - `1`: Dirichlet-multinomial.
 
-  - `2` – Logistic–normal with independent bins.
+  - `2`: Logistic-normal with independent bins.
 
-  - `3` – Logistic–normal with AR(1) correlation across bins.
+  - `3`: Logistic-normal with AR(1) correlation across bins.
 
-  - `4` – Logistic–normal with AR(1) correlation across bins and
-    constant correlation across sexes.
+  - `4`: Logistic-normal with AR(1) correlation across bins and constant
+    correlation across sexes.
 
 - n_regions:
 
@@ -122,9 +122,9 @@ Get_Comp_Likelihoods(
 
   Indicator for composition type:
 
-  - `0` – Age compositions.
+  - `0`: Age compositions.
 
-  - `1` – Length compositions.
+  - `1`: Length compositions.
 
 - AgeingError:
 

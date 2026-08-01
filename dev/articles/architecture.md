@@ -202,7 +202,7 @@ through that one file.
 | `model_precision.R` | `Get_3d_precision` | nothing | `model_priors_penalties.R` |
 | `model_priors_penalties.R` | `get_dmr_penalty`, `Get_Fdev_PE_loglik`, `Get_move_PE_loglik`, `get_movement_dirichlet_prior`, `get_natmort_prior`, `get_q_prior`, `get_r0_prior`, `get_recruitment_penalty`, `get_recruitment_proportion_priors`, `Get_sel_PE_loglik`, `get_selex_fixed_prior`, `Get_Selex_Smoothness_Penalty`, `get_steepness_prior`, `get_tagrep_prior` | `model_distributions.R`, `model_precision.R`, `utils_math.R` | `model_objective.R` |
 | `model_recruitment.R` | `Get_Det_Recruitment` | `model_transition.R` | `model_population_dynamics.R`, `projection.R`, `sim_population.R` |
-| `model_selectivity.R` | `Get_Selex` | nothing | `model_objective.R` |
+| `model_selectivity.R` | `Get_Selex`, `Get_Selex_Array` | nothing | `model_objective.R` |
 | `model_transition.R` | `advance_seas`, `build_seas_operator`, `catch_at_age`, `integrate_seas_abundance`, `seas_operator_and_integral`, `spawn_state`, `survey_state` | nothing | `model_biomass.R`, `model_init_naa.R`, `model_obs_fishery_survey.R`, `model_obs_tagging.R`, `model_population_dynamics.R`, `model_recruitment.R`, `projection.R`, `refpts_main.R`, `refpts_msy.R`, `refpts_spr.R`, `sim_observations.R`, `sim_population.R` |
 
 #### Reference points and projection

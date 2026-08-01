@@ -17,7 +17,7 @@ get_selex_fixed_prior(selex_prior, fixed_sel_pars)
 - selex_prior:
 
   Data frame with columns `region`, `par`, `block`, `sex`, `fleet`, `mu`
-  (prior mean, natural scale), `sd` (prior SD, log scale) — one row per
+  (prior mean, natural scale), `sd` (prior SD, log scale), one row per
   penalized parameter.
 
 - fixed_sel_pars:

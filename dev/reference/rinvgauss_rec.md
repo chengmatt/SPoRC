@@ -6,7 +6,7 @@ recruitment vector using the method of moments. The arithmetic mean
 \\\bar{R}\_a\\ and harmonic mean \\\bar{R}\_h\\ of `recruitment` are
 used to derive the shape parameter \\\delta = 1 / (\bar{R}\_a /
 \bar{R}\_h - 1)\\ and scale parameter \\\beta = \bar{R}\_a\\. Random
-draws are generated via the Michael–Schucany–Haas (1976)
+draws are generated via the Michael-Schucany-Haas (1976)
 acceptance-mixture algorithm: a squared standard normal variate \\\psi\\
 yields two candidate roots \\\omega\\ and \\\zeta\\, and a uniform draw
 selects between them with probability \\\beta / (\beta + \omega)\\.

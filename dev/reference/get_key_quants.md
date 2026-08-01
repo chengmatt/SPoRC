@@ -145,9 +145,9 @@ should be used within a full MSE loop rather than here.
 
 The quantities returned by this function are **approximate and should
 not be treated as official catch advice**. This wrapper provides only a
-simplified projection interface; full projection capability — including
+simplified projection interface; full projection capability, including
 stochastic recruitment, closed-loop feedback, and fleet-specific harvest
-control rules — requires calling
+control rules, requires calling
 [`Do_Population_Projection`](https://chengmatt.github.io/SPoRC/dev/reference/Do_Population_Projection.md)
 directly. Results here are intended for rapid model comparison and
 diagnostic screening only.

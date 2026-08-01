@@ -15,7 +15,7 @@ get_tagrep_prior(conv_tag_fishrep_prior, conv_tag_fish_reporting_pars)
 - conv_tag_fishrep_prior:
 
   Data frame with columns `region`, `block`, `fleet`, `type` (0 =
-  symmetric beta, 1 = mean/sd beta), `mu`, `sd` — one row per penalized
+  symmetric beta, 1 = mean/sd beta), `mu`, `sd`, one row per penalized
   parameter.
 
 - conv_tag_fish_reporting_pars:

@@ -61,7 +61,7 @@
     
     
 <p>This document is for people making changes to the <code>SPoRC</code>
-codebase — where things live and <em>why</em> is covered in <a href="architecture.html">Architecture</a>; this page covers the
+codebase, where things live and <em>why</em> is covered in <a href="architecture.html">Architecture</a>; this page covers the
 mechanics of actually getting a change in: environment setup, branching,
 testing, and what CI checks before a change lands.</p>
 <div class="section level2">
@@ -76,7 +76,7 @@ getting started is just:</p>
 </h2>
 <p>Work happens on <code>dev-*</code> branches off <code>main</code>
 (e.g. <code>dev-movement</code>, <code>dev-popn-seasons</code>), merged
-in when ready. <code>dev-*</code> is not just convention — the GitHub
+in when ready. <code>dev-*</code> is not just convention, the GitHub
 Actions workflows (<code>R-CMD-check</code>, <code>test-coverage</code>,
 <code>pkgdown</code>) are configured to trigger on pushes to branches
 matching that pattern, so a differently-named branch won’t get CI
@@ -95,8 +95,8 @@ conventions worth internalizing before you start:</p>
 data/parameters/mapping, <code>Get_*</code> / <code>get_*</code> derives
 a quantity from already-built state, <code>do_*</code> re-runs or
 perturbs a fitted model, <code>do_*_mapping</code> builds an RTMB
-parameter map. Match an existing prefix rather than inventing a new one
-— see the naming conventions table in Architecture.</li>
+parameter map. Match an existing prefix rather than inventing a new one,
+see the naming conventions table in Architecture.</li>
 <li>Extract non-trivial logic out of <code>model_objective.R</code> into
 a helper. The objective function is already large; sections that do
 complex computations (population projection, observation models,
@@ -136,12 +136,12 @@ tens of minutes depending on your machine. If you touch anything in
 <code>model_objective.R</code> or a helper it calls, run at least one of
 these before opening a PR, even if your change looks purely mechanical
 (e.g. a refactor that moves code into a helper function without
-intending to change any values) — a subtle argument-order or indexing
+intending to change any values), a subtle argument-order or indexing
 mistake in that kind of change won’t show up any other way.</p>
 <p>For a new feature, add a targeted test near it, and check whether the
 reference values in the <code>test-regression_*.R</code> tests need
 updating (they should only change if your feature is expected to change
-model output for the bundled example data — if a “pure refactor” changes
+model output for the bundled example data, if a “pure refactor” changes
 them, that’s a bug in the refactor, not a test that needs updating).</p>
 </div>
 <div class="section level2">

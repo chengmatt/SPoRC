@@ -86,7 +86,7 @@ Setup_Mod_Tagging(
   `"Poisson"`, `"NegBin"`, `"Multinomial_Release"`,
   `"Multinomial_Recapture"`, `"Dirichlet-Multinomial_Release"`,
   `"Dirichlet-Multinomial_Recapture"`. Converted to integer codes
-  (`0`–`5`) before storage. Default `NA`.
+  (`0`-`5`) before storage. Default `NA`.
 
 - conv_tag_mixing_period:
 
@@ -173,11 +173,11 @@ Setup_Mod_Tagging(
 
   `"Block_b_Year_y1-y2_Region_r_Fleet_f"`
 
-  :   Block `b` applies to years `y1`–`y2`. Use `"terminal"` for the end
+  :   Block `b` applies to years `y1`-`y2`. Use `"terminal"` for the end
       year to extend to the final model year.
 
   Parsed into an array `[n_regions × n_years × n_fish_fleets]`. If
-  `NULL`, a single constant block is used for all region–fleet
+  `NULL`, a single constant block is used for all region-fleet
   combinations. Default `NULL`.
 
 - conv_fish_tag_attr:

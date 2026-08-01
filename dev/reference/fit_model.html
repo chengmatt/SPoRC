@@ -95,7 +95,16 @@ random effects. <code>NULL</code> (default) fits a fixed-effects-only model.</p>
 after <code>nlminb</code> convergence to reduce gradient magnitudes. Each
 step solves \(\Delta\theta = -H^{-1} g\) and updates the objective.
 Default <code>3</code>. Errors and warnings are caught silently via
-<code>tryCatch</code>.</p></dd>
+<code>tryCatch</code>, so a step that fails leaves the <code>nlminb</code> solution
+in place without a message.
+\(H\) comes from the AD tape (<code>obj$he</code>) for fixed-effects models,
+which is exact and costs a single call. Random-effects models fall back
+to <code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">optimHess</a></code> differencing the gradient, since RTMB
+does not implement a tape Hessian when random effects are present.
+Refinement stops early if \(H\) comes back non-finite, which happens on
+models that have not converged, where second derivatives can be undefined
+at parameter values the objective and gradient still evaluate at. The
+<code>nlminb</code> solution is kept in that case.</p></dd>
 
 
 <dt id="arg-silent">silent<a class="anchor" aria-label="anchor" href="#arg-silent"></a></dt>

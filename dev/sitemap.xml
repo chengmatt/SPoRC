@@ -38,6 +38,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Get_Natural_Cubic_Spline_Weights.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Get_Reference_Points.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex_Array.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex_Smoothness_Penalty.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Get_move_PE_loglik.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Get_sel_PE_loglik.html</loc></url>
@@ -174,6 +175,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_selex_plot.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_steepness_prior.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_survey_observation_model.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_tag_mort.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_tagging_observation_model.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_tagrep_prior.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_ts_plot.html</loc></url>

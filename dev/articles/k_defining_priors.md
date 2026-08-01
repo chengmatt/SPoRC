@@ -110,7 +110,7 @@ input_list <- Setup_Mod_Rec(
 
 In a spatial model where region-specific steepness priors are required,
 the prior dataframe can include multiple entries. Each row corresponds
-to a population–region combination along with its associated mean and
+to a population-region combination along with its associated mean and
 standard deviation:
 
 ``` r

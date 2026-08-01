@@ -94,7 +94,7 @@ survey and fishery indices with the following columns:
 ## Details
 
 The `resid` column here is the simple log-scale residual
-\\\log(\text{obs}) - \log(\text{predicted})\\ – *not* a one-step-ahead
+\\\log(\text{obs}) - \log(\text{predicted})\\, *not* a one-step-ahead
 (OSA) residual. For properly decorrelated OSA index residuals (with
 QQ-plots and SDNR diagnostics via
 [`plot_resids`](https://chengmatt.github.io/SPoRC/dev/reference/plot_resids.md)),

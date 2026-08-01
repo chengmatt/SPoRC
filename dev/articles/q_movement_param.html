@@ -100,7 +100,7 @@ models in an analogous fashion.</p>
 <span>                            verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span>                            <span class="op">)</span></span></code></pre></div>
 <p>Like previous vignettes, the <code><a href="../reference/Setup_Mod_Dim.html">Setup_Mod_Dim()</a></code> function
-initializes the model structure with 62 years of data (1960–2021), 30
+initializes the model structure with 62 years of data (1960-2021), 30
 age classes, 3 regions, 2 sexes, 2 fishery fleets (fixed gear and
 trawl), and multiple survey fleets.</p>
 <div class="section level2">
@@ -253,7 +253,7 @@ when <code>n_proj_yrs_devs &gt; 0</code>.</p>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># make ctmc data — must include pop, regions, years, seas, ages, sexes columns</span></span>
+<span><span class="co"># make ctmc data, must include pop, regions, years, seas, ages, sexes columns</span></span>
 <span><span class="va">ctmc_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/expand.grid.html" class="external-link">expand.grid</a></span><span class="op">(</span></span>
 <span>  pop     <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  regions <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">three_rg_sable_data</span><span class="op">$</span><span class="va">n_regions</span>,</span>

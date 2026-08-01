@@ -232,7 +232,7 @@ Setup_Mod_Srvsel_and_Q(
 - srv_q_formula:
 
   Named list of R formulas specifying environmental covariate
-  relationships for catchability per region–fleet combination. Names
+  relationships for catchability per region-fleet combination. Names
   follow the convention `"Region_r_Fleet_f"`. Covariates must be present
   in `srv_q_cov_dat`. If `NULL`, no covariate effects are included.
   Default `NULL`.

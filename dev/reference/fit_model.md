@@ -51,7 +51,17 @@ fit_model(
   Integer. Number of Newton refinement steps applied after `nlminb`
   convergence to reduce gradient magnitudes. Each step solves
   \\\Delta\theta = -H^{-1} g\\ and updates the objective. Default `3`.
-  Errors and warnings are caught silently via `tryCatch`.
+  Errors and warnings are caught silently via `tryCatch`, so a step that
+  fails leaves the `nlminb` solution in place without a message. \\H\\
+  comes from the AD tape (`obj$he`) for fixed-effects models, which is
+  exact and costs a single call. Random-effects models fall back to
+  [`optimHess`](https://rdrr.io/r/stats/optim.html) differencing the
+  gradient, since RTMB does not implement a tape Hessian when random
+  effects are present. Refinement stops early if \\H\\ comes back
+  non-finite, which happens on models that have not converged, where
+  second derivatives can be undefined at parameter values the objective
+  and gradient still evaluate at. The `nlminb` solution is kept in that
+  case.
 
 - silent:
 

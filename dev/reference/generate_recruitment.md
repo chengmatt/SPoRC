@@ -42,7 +42,7 @@ generate_recruitment(y, sim, sim_env, seas = 1)
   known before season 1 starts. `rec_lag = 0` (age-0 recruitment)
   instead calls this with `seas = spawn_seas`, since that is the
   earliest season this year's own SSB (and hence recruitment) is
-  knowable – see
+  knowable, see
   [`apply_pop_dy`](https://chengmatt.github.io/SPoRC/dev/reference/apply_pop_dy.md).
 
 ## Value

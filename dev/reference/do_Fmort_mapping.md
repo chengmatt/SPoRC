@@ -4,8 +4,8 @@ Constructs the `ln_F_devs` and `ln_F_mean` factor maps, assigning unique
 estimation indices to cells where catch data are used (`UseCatch == 1`)
 and mapping cells without catch data to `NA`. This ensures that fishing
 mortality parameters are only estimated for dimensions with observed
-catch. `ln_F_devs` is resolved per region–year–season–fleet cell, while
-`ln_F_mean` is resolved per region–season–fleet cell and is estimated
+catch. `ln_F_devs` is resolved per region-year-season-fleet cell, while
+`ln_F_mean` is resolved per region-season-fleet cell and is estimated
 whenever that cell is fished in at least one year.
 
 ## Usage

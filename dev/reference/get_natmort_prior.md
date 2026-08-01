@@ -15,7 +15,7 @@ get_natmort_prior(M_prior, ln_M, M_blocks)
 
   Data frame with columns `popblk`, `regionblk`, `yearblk`, `ageblk`,
   `sexblk` (block indices into `M_blocks`), `mu` (prior mean, natural
-  scale), `sd` (prior SD, log scale) — one row per penalized parameter.
+  scale), `sd` (prior SD, log scale), one row per penalized parameter.
 
 - ln_M:
 

@@ -6,7 +6,7 @@ for Template Model Builder; Kristensen et al., 2016) that supports age,
 sex, population, seasonal, and spatially-structured dynamics. Population
 dynamics operate across an annual time step that is further subdivided
 into $`n_\tau`$ seasons of duration $`\Delta\tau`$ (where
-$`\sum_\tau \Delta\tau = 1`$). Within each annual–seasonal cycle,
+$`\sum_\tau \Delta\tau = 1`$). Within each annual-seasonal cycle,
 processes occur in the following order:
 
 1.  Recruitment generally occurs in the first season, with additional
@@ -23,13 +23,13 @@ choice, set by `move_timing`: movement then mortality (`0`, the default
 and the historical `SPoRC` behaviour), mortality then movement (`1`), or
 the two acting simultaneously and continuously (`2`). This choice is not
 confined to the projection equations. It propagates to every quantity
-whose value depends on where fish are partway through a season –
-spawning biomass, catch-at-age, fishery and survey indices, tag
-recaptures, equilibrium initialisation, and per-recruit reference points
-– and each of those is given below. The three options coincide exactly
-when total mortality is constant across regions, when mortality is zero,
-and when movement is absent, so single-region models are unaffected by
-the setting.
+whose value depends on where fish are partway through a season, spawning
+biomass, catch-at-age, fishery and survey indices, tag recaptures,
+equilibrium initialisation, and per-recruit reference points, and each
+of those is given below. The three options coincide exactly when total
+mortality is constant across regions, when mortality is zero, and when
+movement is absent, so single-region models are unaffected by the
+setting.
 
 Tag releases occur simultaneous to recruitment in the release year and
 season (i.e., recruits can be tagged), and tag recaptures are computed
@@ -84,7 +84,7 @@ so under `"prop"` a single parameter both depletes the initial age
 structure and scales the F series: the optimizer can fit the observed
 catch equally well with a smaller, harder-fished stock. Use `"abs"` when
 the historical fishing mortality that shaped the initial condition is
-conceptually distinct from the mean F of the modelled period – for
+conceptually distinct from the mean F of the modelled period, for
 example when bridging an assessment that carries its own separate
 historical F parameter.
 
@@ -437,8 +437,8 @@ In a single-region case, no movement is applied (i.e.,
 $`\mathbf{M}_{p,y,\tau,a,s}`$ is an implied identity matrix). For each
 population, year, season, age, and sex combination, the movement matrix
 specifies bulk-transfer coefficients. *Where* within the season that
-transfer happens – before mortality, after it, or continuously alongside
-it – is set by `move_timing`, and is what the rest of this section makes
+transfer happens, before mortality, after it, or continuously alongside
+it, is set by `move_timing`, and is what the rest of this section makes
 explicit.
 
 Movement and mortality are therefore combined into a single seasonal
@@ -463,7 +463,7 @@ where
 \mathbf{\Lambda}_{p,y,\tau,a,s} = \dot{\mathbf{Q}}_{p,y,\tau,a,s}^{T}\,\Delta\tau - \text{diag}\left( \mathbf{Z}_{p,y,\tau,a,s} \right)
 ```
 
-is the combined movement–mortality generator for the season, expressed
+is the combined movement-mortality generator for the season, expressed
 in the column convention ($`\dot{\mathbf{Q}}`$ is stored row-wise, hence
 the transpose). Note that $`\mathbf{\Lambda}`$ already carries the
 season duration in both of its terms ($`\Delta\tau`$ explicitly on the
@@ -607,7 +607,7 @@ When $`\dot{\mathbf{Q}} = \mathbf{0}`$ the regions decouple and this
 reduces to
 $`N_{p,r,y,\tau,a,s}\left( 1 - \exp\left( - Z_{p,r,y,\tau,a,s} \right) \right)/Z_{p,r,y,\tau,a,s}`$,
 recovering the standard Baranov form used under
-$`\text{move\_timing} \in \{0,1\}`$ – which makes explicit that
+$`\text{move\_timing} \in \{0,1\}`$, which makes explicit that
 $`\mathbf{N}^{\int}`$ is simply what the familiar $`(1 - e^{-Z})/Z`$
 factor was always computing, namely the abundance accumulated over the
 season. The same season-integrated abundance is used for the fishery
@@ -770,12 +770,11 @@ as
 $`\exp\left( \dot{\mathbf{Q}}^{T}\Delta\tau - \text{diag}(\mathbf{Z}) \right)`$,
 which does not factor into a movement matrix times a survival matrix
 unless $`\mathbf{Z}`$ is constant across regions. $`\mathbf{M}`$ is
-still computed and reported, but as a diagnostic – the movement
-fractions that *would* apply in the absence of spatially varying
-mortality – rather than as a term in the dynamics.
-`ctmc_scale_by_seasdur` is forced to `1` in this case, since combining
-an unscaled generator with seasdur-scaled mortality inside a single
-exponential is dimensionally inconsistent.
+still computed and reported, but as a diagnostic, the movement fractions
+that *would* apply in the absence of spatially varying mortality, rather
+than as a term in the dynamics. `ctmc_scale_by_seasdur` is forced to `1`
+in this case, since combining an unscaled generator with seasdur-scaled
+mortality inside a single exponential is dimensionally inconsistent.
 
 Continuous movement also requires an *estimated* generator: it is
 available only for $`\text{move\_type} = 1`$ with
@@ -970,8 +969,8 @@ cannot represent: fish observed in region $`r`$ arrived from regions
 whose elapsed times differ. The convention adopted is that the survey in
 region $`r`$ observes the population propagated to *that region’s*
 survey time, which is what the subscript $`r`$ outside the bracket
-denotes. When $`t^{srv}_{r,\tau,sf}`$ is constant across regions – the
-usual case – this collapses to a single propagation and one matrix
+denotes. When $`t^{srv}_{r,\tau,sf}`$ is constant across regions, the
+usual case, this collapses to a single propagation and one matrix
 exponential.
 
 Expected survey catch-at-length ($`I_{p,r,y,\tau,l,s,sf}^{l}`$) is given
@@ -1085,8 +1084,8 @@ $`T_{p,r,y,\tau + 1,a,s}^{k} = T_{p,r,y,\tau,a,s}^{k}\exp\left( - Z_{p,r,y,\tau,
 Mid-season releases are handled differently by the two families of
 timings. Under the sequential timings, a cohort released partway through
 its release season ($`t^{\text{tag}} < 1`$) skips the discrete movement
-step entirely for that season – $`\mathbf{M}`$ is replaced by the
-identity – because a full-season transition matrix cannot represent a
+step entirely for that season, $`\mathbf{M}`$ is replaced by the
+identity, because a full-season transition matrix cannot represent a
 partial interval. Such a cohort stays in its release region for the
 remainder of the release season, experiencing only the partial-interval
 mortality, and movement resumes normally from the following season.
@@ -1453,7 +1452,7 @@ used:
 where deviations are placed about the parametric form and selectivity
 values are mean standardized to aid with interpretability. Mean
 standardization is applied only when semi-parametric deviations are
-specified (process error models 3–5), or when non-parametric selectivity
+specified (process error models 3-5), or when non-parametric selectivity
 is specified. For age-based selectivity, the mean is computed from a
 single population and season reference ($`p = 1, \tau = 1`$) since the
 underlying selectivity is invariant across these dimensions, and the
@@ -1468,7 +1467,7 @@ where $`\overline{\log\left(\mathbf{Sel}_{r,s,j}\right)}`$ is the mean
 of log-selectivity across all years and bins for a given region, sex,
 and fleet. For length-based selectivity, mean standardization is applied
 directly to the selectivity-at-length values before conversion to the
-age domain via the size–age transition matrix. Further details on how
+age domain via the size-age transition matrix. Further details on how
 selectivity deviations arise can be found in the “Selectivity Process
 Error” section of this document.
 
@@ -2182,7 +2181,7 @@ fixed $`\mathbf{c}`$ would silently become a far stronger constraint as
 $`n_{\tau}`$ grows. On a three-region example the same $`c = 3`$ prior
 costs 1.04 nLL units at $`n_{\tau} = 1`$ but 9.91 at $`n_{\tau} = 12`$;
 evaluated annually it is 1.04 in both cases. Fixing the exponent at one
-year also matches how such priors are elicited — as a belief about the
+year also matches how such priors are elicited, as a belief about the
 fraction of fish moving per *year*, independent of how the year is
 partitioned. Under the legacy `ctmc_scale_by_seasdur = 0` the two
 coincide.
@@ -2214,7 +2213,7 @@ separating:
   to the objective is constant, and the gradient is exactly zero. This
   is the uninformative choice.
 - $`\mathbf{c} = c\mathbf{1}`$ with $`c > 1`$ is symmetric with its mode
-  at $`1/n_{r}`$ in every region — a prior centred on *equal movement
+  at $`1/n_{r}`$ in every region, a prior centred on *equal movement
   among all regions*, which is informative and, for a
   residency-dominated stock, a strong assumption rather than a vague
   one.
@@ -2595,7 +2594,7 @@ N\left(0, \sigma^2_{p,r,\tau,a,s,\text{Move}}\right)
 where $`\sigma_{p,r,\tau,a,s,\text{Move}}`$ may be shared across
 dimensions depending on the selected process error model.
 
-Only valid origin–destination pairs (i.e., adjacent regions) are
+Only valid origin-destination pairs (i.e., adjacent regions) are
 assigned deviations.
 
 ###### Unstructured Markov Movement
@@ -2667,7 +2666,7 @@ written explicitly as:
 \right]
 ```
 
-where the summation is taken over all valid origin–destination pairs
+where the summation is taken over all valid origin-destination pairs
 (i.e., $`r \neq r'`$ and adjacency$`(r,r') = 1`$), and over all indices
 of population ($`p`$), year ($`y`$), season ($`\tau`$), age ($`a`$), and
 sex ($`s`$).
@@ -2717,11 +2716,11 @@ Agriculture and Fisheries.
 
 McGarvey, R., Feenstra, J.E., 2002. Estimating rates of fish movement
 from tag recoveries: conditioning by recapture. Can. J. Fish. Aquat.
-Sci. 59, 1054–1064. <https://doi.org/10.1139/f02-080>
+Sci. 59, 1054-1064. <https://doi.org/10.1139/f02-080>
 
 Methot, R.D., Taylor, I.G., 2011. Adjusting for bias due to variability
 of estimated recruitments in fishery assessment models. Can. J. Fish.
-Aquat. Sci. 68, 1744–1760. <https://doi.org/10.1139/f2011-092>
+Aquat. Sci. 68, 1744-1760. <https://doi.org/10.1139/f2011-092>
 
 Monnahan, C.C., 2024. Toward good practices for Bayesian data-rich
 fisheries stock assessments using a modern statistical workflow.
@@ -2731,4 +2730,4 @@ Fisheries Research 275, 107024.
 Thorson, J.T., Johnson, K.F., Methot, R.D., Taylor, I.G., 2017.
 Model-based estimates of effective sample size in stock assessment
 models using the Dirichlet-multinomial distribution. Fisheries Research
-192, 84–93. <https://doi.org/10.1016/j.fishres.2016.06.005>
+192, 84-93. <https://doi.org/10.1016/j.fishres.2016.06.005>

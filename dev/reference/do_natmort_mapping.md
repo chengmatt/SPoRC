@@ -81,5 +81,5 @@ The input `input_list` with two fields updated:
 
   Integer array of dimensions
   `[n_pop × n_regions × n_years × n_ages × n_sexes]` mapping each
-  population–region–year–age–sex cell to its corresponding `ln_M`
+  population-region-year-age-sex cell to its corresponding `ln_M`
   parameter index.

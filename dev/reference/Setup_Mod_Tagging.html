@@ -140,7 +140,7 @@ likelihood. One of <code>"Poisson"</code>, <code>"NegBin"</code>,
 <code>"Multinomial_Release"</code>, <code>"Multinomial_Recapture"</code>,
 <code>"Dirichlet-Multinomial_Release"</code>,
 <code>"Dirichlet-Multinomial_Recapture"</code>. Converted to integer codes
-(<code>0</code>–<code>5</code>) before storage. Default <code>NA</code>.</p></dd>
+(<code>0</code>-<code>5</code>) before storage. Default <code>NA</code>.</p></dd>
 
 
 <dt id="arg-conv-tag-mixing-period">conv_tag_mixing_period<a class="anchor" aria-label="anchor" href="#arg-conv-tag-mixing-period"></a></dt>
@@ -227,12 +227,12 @@ for fishery tag reporting rates. Each element follows one of:</p><dl><dt><code>"
 
   <dt><code>"Block_b_Year_y1-y2_Region_r_Fleet_f"</code></dt>
 <dd><p>Block <code>b</code>
-    applies to years <code>y1</code>–<code>y2</code>. Use <code>"terminal"</code> for the
+    applies to years <code>y1</code>-<code>y2</code>. Use <code>"terminal"</code> for the
     end year to extend to the final model year.</p></dd>
 
 
 </dl><p>Parsed into an array <code>[n_regions × n_years × n_fish_fleets]</code>.
-If <code>NULL</code>, a single constant block is used for all region–fleet
+If <code>NULL</code>, a single constant block is used for all region-fleet
 combinations. Default <code>NULL</code>.</p></dd>
 
 

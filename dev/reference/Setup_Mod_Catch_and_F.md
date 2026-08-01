@@ -58,9 +58,9 @@ Setup_Mod_Catch_and_F(
   `[n_regions x n_years x n_seas x n_fish_fleets]`. Values should be in
   the units specified by `catch_units`. For a cell with `UseCatch == 0`
   (and no population-specific catch used), an `NA` entry here is treated
-  as a genuinely missing observation – fishing is assumed to have
+  as a genuinely missing observation; fishing is assumed to have
   continued and `Fmort`/ `ln_F_devs` are estimated normally for that
-  year – whereas a true recorded value (typically `0`) is treated as a
+  year, whereas a true recorded value (typically `0`) is treated as a
   real closure: `Fmort` is forced to zero and no deviation is estimated.
   See
   [`Get_Fdev_PE_loglik`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Fdev_PE_loglik.md).
@@ -147,13 +147,13 @@ Setup_Mod_Catch_and_F(
   years spanning a gap of \\d\\ closed years is taken over the elapsed
   gap directly (the same marginal transition as estimating deviations
   for the closed years and integrating them out, without actually
-  estimating them) – see
+  estimating them), see
   [`Get_Fdev_PE_loglik`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Fdev_PE_loglik.md).
   A warning is issued if `"rw"` or `"ar1"` is selected but
   `Use_F_pen = 0` (the penalty is never evaluated, so the process
   structure has no effect), `sigmaF_spec = "fix"` (the process error SD
   is not estimated), or (for `"ar1"`) `Fdev_rho_spec = "fix"` (the
-  correlation is not estimated) – any of these may be intentional, but
+  correlation is not estimated), any of these may be intentional, but
   are common oversights when switching away from `"iid"`.
 
 - Fdev_rho_spec:

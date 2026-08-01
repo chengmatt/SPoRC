@@ -1,7 +1,7 @@
 # Simulate age or length compositions
 
 Draws observed composition samples (by age or length) for a single
-region–year–fleet–season–simulation cell, supporting multinomial,
+region-year-fleet-season-simulation cell, supporting multinomial,
 Dirichlet-multinomial, and logistic-normal likelihoods. Ageing error is
 optionally applied post-draw. Three composition aggregation structures
 are handled: sex-split (`comp_type = 1`), joint across sexes
@@ -86,7 +86,7 @@ simulate_comps(
 - comp_like:
 
   Integer vector `[n_fleets]`. Likelihood type per fleet: `0` =
-  multinomial, `1` = Dirichlet-multinomial, `2`–`4` = logistic-normal
+  multinomial, `1` = Dirichlet-multinomial, `2`-`4` = logistic-normal
   variants.
 
 - ln_theta:
@@ -200,7 +200,7 @@ performed within population, and results are written to `Obs[p, ...]`.
 
 For joint compositions (`comp_type = 2`), the Kronecker product
 `diag(n_sexes) ⊗ AgeingError` is used to apply ageing error across the
-combined age–sex vector. For aggregated compositions (`comp_type = 0`),
+combined age-sex vector. For aggregated compositions (`comp_type = 0`),
 the draw is only executed when `r == n_regions` (i.e., on the final
 region pass), and uses region- and sex-marginalised expected
 proportions.

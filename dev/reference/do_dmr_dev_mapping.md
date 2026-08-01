@@ -1,7 +1,7 @@
 # Map discard mortality deviation parameters
 
 Constructs the `logit_dmr_devs` factor map, assigning unique estimation
-indices to region–year–season–fleet cells that are fished and mapping
+indices to region-year-season-fleet cells that are fished and mapping
 true closures to `NA`. A cell is fished when aggregated or any
 population-specific catch is used, or when the aggregate catch
 observation is missing (`NA`) rather than a recorded zero, which is the

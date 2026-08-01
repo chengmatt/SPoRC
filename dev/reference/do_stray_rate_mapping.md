@@ -38,7 +38,7 @@ do_stray_rate_mapping(input_list, stray_rate_spec)
   `"est_shared_pop"`
 
   :   Single parameter per block, shared across all populations.
-      Requires identical block structures across all populations – an
+      Requires identical block structures across all populations. An
       error is raised if block indices differ.
 
 ## Value
@@ -52,5 +52,5 @@ receive sequential integer indices; fixed parameters are `NA`.
 When `n_pop = 1`, straying is not applicable and all parameters are
 automatically fixed to `NA`. When `use_fixed_stray_rate = 1`, the
 objective function reads from `fixed_stray_rate` directly and
-`stray_rate_pars` are not used – all elements are fixed regardless of
+`stray_rate_pars` are not used; all elements are fixed regardless of
 `stray_rate_spec`.

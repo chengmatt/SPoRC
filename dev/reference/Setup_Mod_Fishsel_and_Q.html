@@ -139,8 +139,8 @@ Mutually exclusive with <code>cont_tv_fish_sel != "none"</code> for the same fle
 <dt id="arg-fish-sel-model">fish_sel_model<a class="anchor" aria-label="anchor" href="#arg-fish-sel-model"></a></dt>
 <dd><p>Character vector specifying the selectivity functional
 form for each fleet (and optionally each time block). Each element must
-follow one of:</p><ul><li><p><code>"&lt;model&gt;_Fleet_&lt;f&gt;"</code> — single form for all years of fleet <code>f</code>.</p></li>
-<li><p><code>"&lt;model&gt;_Fleet_&lt;f&gt;_Block_&lt;b&gt;"</code> — form specific to block <code>b</code>
+follow one of:</p><ul><li><p><code>"&lt;model&gt;_Fleet_&lt;f&gt;"</code>: single form for all years of fleet <code>f</code>.</p></li>
+<li><p><code>"&lt;model&gt;_Fleet_&lt;f&gt;_Block_&lt;b&gt;"</code>: form specific to block <code>b</code>
     of fleet <code>f</code>, as defined in <code>fish_sel_blocks</code>.</p></li>
 </ul><p>Available models:</p><dl><dt><code>"logist1"</code></dt>
 <dd><p>Logistic with \(a_{50}\) and slope \(k\) (2 parameters).</p></dd>
@@ -337,8 +337,8 @@ Mutually exclusive with <code>cont_tv_ret_sel != "none"</code> for the same flee
 <dt id="arg-ret-sel-model">ret_sel_model<a class="anchor" aria-label="anchor" href="#arg-ret-sel-model"></a></dt>
 <dd><p>Character vector specifying the selectivity functional
 form for each fleet (and optionally each time block). Each element must
-follow one of:</p><ul><li><p><code>"&lt;model&gt;_Fleet_&lt;f&gt;"</code> — single form for all years of fleet <code>f</code>.</p></li>
-<li><p><code>"&lt;model&gt;_Fleet_&lt;f&gt;_Block_&lt;b&gt;"</code> — form specific to block <code>b</code>
+follow one of:</p><ul><li><p><code>"&lt;model&gt;_Fleet_&lt;f&gt;"</code>: single form for all years of fleet <code>f</code>.</p></li>
+<li><p><code>"&lt;model&gt;_Fleet_&lt;f&gt;_Block_&lt;b&gt;"</code>: form specific to block <code>b</code>
     of fleet <code>f</code>, as defined in <code>ret_sel_blocks</code>.</p></li>
 </ul><p>Available models:</p><dl><dt><code>"logist1"</code></dt>
 <dd><p>Logistic with \(a_{50}\) and slope \(k\) (2 parameters).</p></dd>
@@ -468,7 +468,7 @@ element is a list of bin index vectors defining grouped parameters.</p></dd>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Selectivity time-variation and blocked selectivity are mutually exclusive
-within a fleet — specifying both for the same fleet will raise an error.</p>
+within a fleet. Specifying both for the same fleet will raise an error.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

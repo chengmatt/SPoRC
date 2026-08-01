@@ -1,6 +1,6 @@
 # Simulate conventional tag recaptures for fishery fleets
 
-Draws observed tag recapture counts for a single liberty–season–cohort
+Draws observed tag recapture counts for a single liberty-season-cohort
 cell from predicted recapture arrays, supporting six likelihood
 structures: Poisson, negative binomial, and release- or
 recovery-conditioned multinomial and Dirichlet-multinomial. Dimensions

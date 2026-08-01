@@ -120,7 +120,7 @@ Setup_Sim_Survey(
 - ln_SrvAge_theta:
 
   Log-scale overdispersion array `[n_regions × n_sexes × n_srv_fleets]`.
-  Used for likelihoods 1–4. Default: log(1).
+  Used for likelihoods 1-4. Default: log(1).
 
 - ln_SrvAge_theta_agg:
 
@@ -136,7 +136,7 @@ Setup_Sim_Survey(
 
   Correlation parameters array
   `[n_regions × n_sexes × n_srv_fleets × 2]` (age AR1, sex). Only for
-  likelihoods 3–4. Default: 0.01.
+  likelihoods 3-4. Default: 0.01.
 
 - SrvAgeComps_Type:
 

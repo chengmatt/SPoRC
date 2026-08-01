@@ -16,28 +16,28 @@ constraints.
 
 In this vignette, six MPs will be evaluated:
 
-1.  **f0** – No fishing, serving as a baseline for comparison.  
-2.  **f40_thresh** – A threshold control rule using $`F_{40\%}`$ and
+1.  **f0**, No fishing, serving as a baseline for comparison.  
+2.  **f40_thresh**, A threshold control rule using $`F_{40\%}`$ and
     $`B_{40\%}`$ as reference points.  
     Fishing mortality is set at $`F_{40\%}`$ when $`SSB \ge B_{40\%}`$
     and declines linearly as $`SSB`$ falls below $`B_{40\%}`$.  
     No fishing occurs if $`SSB \le B_{5\%}`$.  
     This rule represents the default strategy used for Gulf of Alaska
     Dusky Rockfish management (Omori et al., 2024).  
-3.  **f40_const** – A constant fishing mortality rate fixed at
+3.  **f40_const**, A constant fishing mortality rate fixed at
     $`F_{40\%}`$, regardless of $`SSB`$.  
-4.  **f40_hybrid** – A hybrid rule combining elements of **f40_thresh**,
+4.  **f40_hybrid**, A hybrid rule combining elements of **f40_thresh**,
     $`B_{60\%}`$ , and a harvest cap.
 
 Two demographic (recruitment) scenarios will be evaluated:
 
-1.  **rand** – Recruitment is randomly resampled from the historical
-    time series to mimic past recruitment variability.  
-2.  **crash** – Recruitment follows Beverton–Holt dynamics and declines
+1.  **rand**, Recruitment is randomly resampled from the historical time
+    series to mimic past recruitment variability.  
+2.  **crash**, Recruitment follows Beverton-Holt dynamics and declines
     sharply to mimic environmentally driven recruitment collapses.  
-    During the first 23 years of the simulation period (2025–2046),
+    During the first 23 years of the simulation period (2025-2046),
     recruitment is simulated at reduced values  
-    ($`R_0 = 2.5, h = 0.5`$), followed by a recovery phase (2047–2074)
+    ($`R_0 = 2.5, h = 0.5`$), followed by a recovery phase (2047-2074)
     with higher productivity  
     ($`R_0 = 12, h = 0.75`$).
 
@@ -535,13 +535,13 @@ configuration represents a different management strategy, varying in how
 strongly it responds to changes in biomass and whether catch caps are
 imposed. Each MP has the following components in this example:
 
-1.  **Reference point options (`reference_points_opt`)** — specify how
+1.  **Reference point options (`reference_points_opt`)**, specify how
     biological reference points are calculated (e.g., target spawning
     potential ratio, biomass thresholds).  
-2.  **Projection options (`proj_opt`)** — define the harvest control
-    rule (HCR) and how recruitment and fishing mortality are handled
-    during projections.  
-3.  **Catch options (`catch_opt`)** — optionally constrain catches
+2.  **Projection options (`proj_opt`)**, define the harvest control rule
+    (HCR) and how recruitment and fishing mortality are handled during
+    projections.  
+3.  **Catch options (`catch_opt`)**, optionally constrain catches
     according to management limits (e.g., catch caps).
 
 Users have flexibility to modify and extend this structure to fit their

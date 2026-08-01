@@ -2,7 +2,7 @@
 
 Computes the negative log-likelihood contribution from conventional fish
 tagging data under Poisson, negative binomial, multinomial, or
-Dirichlet–multinomial likelihoods.
+Dirichlet-multinomial likelihoods.
 
 ## Usage
 
@@ -98,7 +98,7 @@ get_conv_tag_likelihoods(
 
 - conv_fish_tag_like:
 
-  Likelihood type indicator (0–5).
+  Likelihood type indicator (0-5).
 
 - conv_fish_tag_nLL:
 

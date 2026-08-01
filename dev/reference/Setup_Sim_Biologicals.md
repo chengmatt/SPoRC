@@ -64,7 +64,7 @@ Setup_Sim_Biologicals(
   (age-0 recruitment, set via
   [`Setup_Sim_Rec`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Rec.md)),
   maturity at the recruit age (the first age class) must be exactly `0`
-  for all populations, regions, years, seasons, and sexes – an error is
+  for all populations, regions, years, seasons, and sexes. An error is
   raised otherwise.
 
 - AgeingError_input:
@@ -76,7 +76,7 @@ Setup_Sim_Biologicals(
   identity matrix is constructed for each year and simulation, which
   assumes that modelled and observed age bins are identical in number
   and alignment. **If observed age bins are a subset of modelled ages**
-  (e.g., observed ages 2–10 vs. modelled ages 1–10), the default
+  (e.g., observed ages 2-10 vs. modelled ages 1-10), the default
   identity matrix will cause a dimensional mismatch. In that case,
   supply a shifted identity matrix such as
   `diag(1, n_model_ages)[, obs_age_index]` to correctly drop or collapse

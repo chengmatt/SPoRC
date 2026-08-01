@@ -46,6 +46,6 @@ Restrc_Comps(Exp, Obs, Comp_Type, age_or_len, AgeingError)
 
 A list with elements:
 
-- `Exp` – array of expected composition values in observed bins
+- `Exp`: array of expected composition values in observed bins
 
-- `Obs` – array of observed composition values in observed bins
+- `Obs`: array of observed composition values in observed bins

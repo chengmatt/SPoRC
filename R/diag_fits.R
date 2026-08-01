@@ -13,7 +13,7 @@
 #' corresponding \code{Use*_pop} flags contain any ones.
 #'
 #' The \code{resid} column here is the simple log-scale residual
-#' \eqn{\log(\text{obs}) - \log(\text{predicted})} -- \emph{not} a
+#' \eqn{\log(\text{obs}) - \log(\text{predicted})}, \emph{not} a
 #' one-step-ahead (OSA) residual. For properly decorrelated OSA index
 #' residuals (with QQ-plots and SDNR diagnostics via \code{\link{plot_resids}}),
 #' use \code{\link{get_osa}} with \code{index_source = }. The observed-vs-
@@ -84,7 +84,7 @@ get_idx_fits <- function(data,
   colnames(data$fish_q_blocks) <- year_labs
   dimnames(rep$PredFishIdx)[3] <- list(year_labs)
 
-  # Pop-specific dimnames — year is dim 3
+  # Pop-specific dimnames, year is dim 3
   if(any(data$UseFishIdx_pop == 1)) {
     dimnames(data$ObsFishIdx_pop)[3]    <- list(year_labs)
     dimnames(data$ObsFishIdx_pop_SE)[3] <- list(year_labs)
@@ -251,8 +251,8 @@ get_idx_fits <- function(data,
 #'
 #' @return A list with elements:
 #' \itemize{
-#'   \item \code{Exp} – array of expected composition values in observed bins
-#'   \item \code{Obs} – array of observed composition values in observed bins
+#'   \item \code{Exp}: array of expected composition values in observed bins
+#'   \item \code{Obs}: array of observed composition values in observed bins
 #' }
 #'
 #' @keywords internal

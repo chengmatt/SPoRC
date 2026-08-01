@@ -8,7 +8,7 @@ get_r0_prior(r0_prior, ln_global_R0)
 }
 \arguments{
 \item{r0_prior}{Data frame with columns \code{pop}, \code{mu} (prior mean R0,
-natural scale), \code{sd} (prior SD, log scale) — one row per penalized
+natural scale), \code{sd} (prior SD, log scale), one row per penalized
 population.}
 
 \item{ln_global_R0}{Vector \code{[pop]} of log mean recruitment (R0).}
@@ -21,7 +21,7 @@ Numeric scalar negative log-likelihood contribution, summed across
 Called once from the "Recruitment R0 (Prior)" section of \code{SPoRC_rtmb.R}.
 Returns a scalar contribution added directly (unweighted by \code{Wt_Rec})
 into the joint negative log-likelihood, alongside the other scalar priors
-(\code{M_nLL}, \code{h_nLL}, etc.) — it is not part of the \code{Rec_nLL}
+(\code{M_nLL}, \code{h_nLL}, etc.); it is not part of the \code{Rec_nLL}
 recruitment-deviation array, since it penalizes a single global parameter
 rather than a per-year deviation.
 }

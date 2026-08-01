@@ -62,9 +62,9 @@ by selectivity for fishery and survey platforms.}
 \item{n_sexes}{Integer. Number of sexes (1 or 2).}
 }
 \description{
-When tag release data are not recorded at full population resolution —
+When tag release data are not recorded at full population resolution,
 i.e. when one or more of the population, age, or sex dimensions are
-unattended in \code{tag_attr} — this function distributes the known tag
+unattended in \code{tag_attr}, this function distributes the known tag
 totals to full \code{[n_pop, n_ages, n_sexes]} resolution using
 apportionment weights derived from the release platform (population
 abundance, fishery catch-at-age, or survey index-at-age). If all three

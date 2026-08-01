@@ -9,7 +9,7 @@ get_q_prior(q_prior, ln_q)
 \arguments{
 \item{q_prior}{Data frame with columns \code{region}, \code{block},
 \code{fleet}, \code{mu} (prior mean, natural scale), \code{sd} (prior SD,
-log scale) — one row per penalized parameter.}
+log scale), one row per penalized parameter.}
 
 \item{ln_q}{Array \code{[region, block, fleet]} of log catchability.}
 }

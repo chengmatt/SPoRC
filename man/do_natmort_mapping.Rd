@@ -50,7 +50,7 @@ The input \code{input_list} with two fields updated:
       or \code{NA} when \code{M_spec = "fix"}.}
     \item{\code{$data$M_blocks}}{Integer array of dimensions
       \code{[n_pop × n_regions × n_years × n_ages × n_sexes]} mapping each
-      population–region–year–age–sex cell to its corresponding \code{ln_M}
+      population-region-year-age-sex cell to its corresponding \code{ln_M}
       parameter index.}
   }
 }

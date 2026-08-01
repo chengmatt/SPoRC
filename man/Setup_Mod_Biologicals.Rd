@@ -50,7 +50,7 @@ If \code{NULL} (default), \code{WAA} is broadcast across all survey fleets.}
 dimensions \code{[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes]}.
 When \code{rec_lag = 0} (age-0 recruitment, set via \code{\link{Setup_Mod_Rec}}),
 maturity at the recruit age (the first age class) must be exactly \code{0}
-for all populations, regions, years, seasons, and sexes -- an error is
+for all populations, regions, years, seasons, and sexes, an error is
 raised otherwise. Requires \code{\link{Setup_Mod_Rec}} to have been called
 first so \code{rec_lag} is already set.}
 
@@ -64,7 +64,7 @@ logistic-normal likelihood is specified, as that family handles zeros internally
 
 \item{addtotag}{Small constant added to tag recovery observations. Default \code{1e-10}.}
 
-\item{AgeingError}{Ageing error (age–age transition) array mapping true modelled ages
+\item{AgeingError}{Ageing error (age-age transition) array mapping true modelled ages
 to observed age bins. Accepted forms:
 \describe{
   \item{2D matrix \code{[n_model_ages × n_obs_ages]}}{Time-invariant ageing error;
@@ -72,7 +72,7 @@ to observed age bins. Accepted forms:
   \item{3D array \code{[n_years × n_model_ages × n_obs_ages]}}{Time-varying ageing error.}
   \item{\code{NULL} (default)}{An identity matrix is constructed, assuming modelled
     and observed age bins are identical. If observed bins are a subset of modelled
-    ages (e.g., observed ages 2–10 vs. modelled ages 1–10), supply a shifted
+    ages (e.g., observed ages 2-10 vs. modelled ages 1-10), supply a shifted
     identity matrix such as \code{diag(1, n_model_ages)[, obs_age_index]} to
     avoid a dimensional mismatch.}
 }}

@@ -23,7 +23,7 @@ vector using the method of moments. The arithmetic mean \eqn{\bar{R}_a}
 and harmonic mean \eqn{\bar{R}_h} of \code{recruitment} are used to derive
 the shape parameter \eqn{\delta = 1 / (\bar{R}_a / \bar{R}_h - 1)} and
 scale parameter \eqn{\beta = \bar{R}_a}. Random draws are generated via
-the Michael–Schucany–Haas (1976) acceptance-mixture algorithm: a squared
+the Michael-Schucany-Haas (1976) acceptance-mixture algorithm: a squared
 standard normal variate \eqn{\psi} yields two candidate roots \eqn{\omega}
 and \eqn{\zeta}, and a uniform draw selects between them with probability
 \eqn{\beta / (\beta + \omega)}.

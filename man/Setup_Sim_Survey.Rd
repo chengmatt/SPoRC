@@ -91,7 +91,7 @@ specifying likelihood for survey age compositions. Default: all 0
 of sample sizes or overdispersion for survey age compositions. Default: 100.}
 
 \item{ln_SrvAge_theta}{Log-scale overdispersion array
-\code{[n_regions × n_sexes × n_srv_fleets]}. Used for likelihoods 1–4.
+\code{[n_regions × n_sexes × n_srv_fleets]}. Used for likelihoods 1-4.
 Default: log(1).}
 
 \item{ln_SrvAge_theta_agg}{Log-scale overdispersion for aggregated survey
@@ -102,7 +102,7 @@ survey age correlations. Only for likelihood 3. Default: 0.01.}
 
 \item{SrvAge_corr_pars}{Correlation parameters array
 \code{[n_regions × n_sexes × n_srv_fleets × 2]} (age AR1, sex). Only for
-likelihoods 3–4. Default: 0.01.}
+likelihoods 3-4. Default: 0.01.}
 
 \item{SrvAgeComps_Type}{Array \code{[n_yrs × n_srv_fleets]} specifying
 composition structure. Default: 2 (split by region, joint sexes).

@@ -66,10 +66,10 @@
 #' @param ln_seldevs Array of log-scale selectivity deviations with dimension
 #'   \code{[n_regions, n_years, n_parameters_or_bins, n_sexes, 1]}.
 #'
-#'   For \code{TimeVary_Model = 1–2}: deviations apply to selectivity parameters
+#'   For \code{TimeVary_Model = 1-2}: deviations apply to selectivity parameters
 #'   on the natural scale after exponentiation.
 #'
-#'   For \code{TimeVary_Model = 3–5}: deviations apply multiplicatively at the
+#'   For \code{TimeVary_Model = 3-5}: deviations apply multiplicatively at the
 #'   bin level to the constructed selectivity curve.
 #'
 #'   For \code{Selex_Model = 5}: deviations act directly on bin-level logit
@@ -102,7 +102,7 @@
 #'   \code{Wbin_bicubic}/\code{Wyr_bicubic} may have been zero-padded wider
 #'   than this specific block's own grid (e.g. because some \emph{other}
 #'   fleet/block shares the same padded storage array but uses a larger
-#'   bicubic grid) -- \code{ncol(Wbin_bicubic)}/\code{ncol(Wyr_bicubic)} give
+#'   bicubic grid), \code{ncol(Wbin_bicubic)}/\code{ncol(Wyr_bicubic)} give
 #'   the padded (shared) width, not this block's true node counts, and using
 #'   the padded width to reshape \code{pars} would misassign which flattened
 #'   parameter values land in which (bin-node, year-node) cell. Default
@@ -118,10 +118,10 @@
 #'
 #' For \code{TimeVary_Model = 0}, only the base parametric form is evaluated.
 #'
-#' For \code{TimeVary_Model = 1–2}, deviations modify model parameters
+#' For \code{TimeVary_Model = 1-2}, deviations modify model parameters
 #' multiplicatively on the natural scale after transformation.
 #'
-#' For \code{TimeVary_Model = 3–5}, deviations act directly on the constructed
+#' For \code{TimeVary_Model = 3-5}, deviations act directly on the constructed
 #' selectivity curve as multiplicative log-normal perturbations:
 #' \deqn{\text{selex} = \text{selex} \cdot \exp(\delta_{r,y,b,s})}.
 #'
@@ -302,5 +302,164 @@ Get_Selex = function(Selex_Model,
   if(TimeVary_Model %in% c(3:5)) selex = selex * exp(ln_seldevs[Region,Year,,Sex, 1]) # varies semi-parametriclly
 
   return(selex)
+} # end function
+
+#' Build the full selectivity array for one selectivity type (retention, fishery, survey)
+#'
+#' Evaluates \code{\link{Get_Selex}} across regions, years, fleets, and sexes
+#' for a single selectivity type, and mean standardizes the result where the
+#' time-varying or non-parametric form calls for it. Total fishery, retention,
+#' and survey selectivity all share this code path and differ only in which
+#' data arrays are handed in.
+#'
+#' @param selex_type Integer switch (0 = age-based, 1 = length-based).
+#' @param bins Numeric vector of bins; \code{ages} when \code{selex_type == 0}
+#'   and \code{lens} when \code{selex_type == 1}.
+#' @param sel_blocks Integer array \code{n_regions x n_yrs x n_fleets} of
+#'   selectivity block indices.
+#' @param sel_model Integer array \code{n_regions x n_yrs x n_fleets} of
+#'   selectivity functional forms (see \code{\link{Get_Selex}}).
+#' @param fixed_sel_pars Array \code{n_regions x n_pars x n_blocks x n_sexes x
+#'   n_fleets} of fixed-effect selectivity parameters.
+#' @param cont_tv_sel Integer matrix \code{n_regions x n_fleets} of continuous
+#'   time-varying forms.
+#' @param ln_seldevs Array \code{n_regions x n_yrs_total x n_bins x n_sexes x
+#'   n_fleets} of selectivity deviations; sliced per fleet internally.
+#' @param use_fixed_sel Integer vector of length \code{n_fleets} (0 = estimate,
+#'   1 = use \code{sel_input}).
+#' @param sel_input Array \code{n_pop x n_regions x n_yrs x n_seas x n_bins x
+#'   n_sexes x n_fleets} of fixed selectivity values.
+#' @param bicubic_Wbin,bicubic_Wyr Bicubic spline bin-node and year-node weight
+#'   arrays (\code{Selex_Model == 8} only).
+#' @param bicubic_binnodes,bicubic_yrnodes Integer arrays \code{n_regions x
+#'   n_yrs x n_fleets} giving each block's true node counts
+#'   (\code{Selex_Model == 8} only).
+#' @param n_pop,n_regions,n_yrs,n_proj_yrs_devs,n_seas,n_ages,n_lens,n_sexes,n_fleets
+#'   Model dimensions.
+#'
+#' @return List with \code{sel}, the age-based array (\code{n_pop x n_regions x
+#'   n_yrs_total x n_seas x n_ages x n_sexes x n_fleets}), and \code{sel_l}, the
+#'   length-based array (\code{n_regions x n_yrs_total x n_lens x n_sexes x
+#'   n_fleets}). Only the array matching \code{selex_type} is populated; when
+#'   \code{selex_type == 1}, \code{sel} is filled downstream by multiplying
+#'   \code{sel_l} through the size-age transition matrix.
+#'
+#' @keywords internal
+Get_Selex_Array = function(selex_type,
+                           bins,
+                           sel_blocks,
+                           sel_model,
+                           fixed_sel_pars,
+                           cont_tv_sel,
+                           ln_seldevs,
+                           use_fixed_sel,
+                           sel_input,
+                           bicubic_Wbin,
+                           bicubic_Wyr,
+                           bicubic_binnodes,
+                           bicubic_yrnodes,
+                           n_pop,
+                           n_regions,
+                           n_yrs,
+                           n_proj_yrs_devs,
+                           n_seas,
+                           n_ages,
+                           n_lens,
+                           n_sexes,
+                           n_fleets) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  sel = array(data = 0, dim = c(n_pop, n_regions, n_yrs + n_proj_yrs_devs, n_seas, n_ages, n_sexes, n_fleets)) # age-based selectivity
+  sel_l = array(data = 0, dim = c(n_regions, n_yrs + n_proj_yrs_devs, n_lens, n_sexes, n_fleets)) # length-based selectivity
+
+  for(r in 1:n_regions) {
+    for(y in 1:(n_yrs + n_proj_yrs_devs)) {
+      for(f in 1:n_fleets) {
+
+        y_idx = min(y, n_yrs) # projection years reuse the terminal year's block structure
+
+        # estimating selectivity
+        if(use_fixed_sel[f] == 0) {
+          for(s in 1:n_sexes) {
+
+            # Extract variables
+            sel_blk_idx = sel_blocks[r,y_idx,f] # selectivity block index
+            tmp_sel_model = sel_model[r,y_idx,f] # selectivity model
+            tmp_n_bin_nodes = bicubic_binnodes[r,y_idx,f] # true bin-node count for this block (Selex_Model == 8 only)
+            tmp_n_yr_nodes = bicubic_yrnodes[r,y_idx,f] # true year-node count for this block (Selex_Model == 8 only)
+
+            # Extract out fixed-effect selectivity parameters for a given block
+            tmp_sel_vec = fixed_sel_pars[r,,sel_blk_idx,s,f]
+
+            # Extract bicubic spline interpolation weight matrices for this block
+            tmp_Wbin = array(bicubic_Wbin[r,,,sel_blk_idx,f], dim = dim(bicubic_Wbin)[c(2,3)])
+            tmp_Wyr = array(bicubic_Wyr[r,,,sel_blk_idx,f], dim = dim(bicubic_Wyr)[c(2,3)])
+
+            # Compute selectivity functional form
+            tmp_sel = Get_Selex(Selex_Model = tmp_sel_model, # selectivity model
+                                TimeVary_Model = cont_tv_sel[r,f], # time varying model
+                                pars = tmp_sel_vec, # fixed effect selectivity parameters
+                                ln_seldevs = ln_seldevs[,,,,f, drop = FALSE], # Selectivity deviations
+                                Region = r, # region index
+                                Year = y, # year index
+                                Bin = bins, # bin vector
+                                Sex = s, # sex index
+                                Wbin_bicubic = tmp_Wbin, # bicubic spline bin-node weight matrix (Selex_Model == 8 only)
+                                Wyr_bicubic = tmp_Wyr, # bicubic spline year-node weight matrix (Selex_Model == 8 only)
+                                n_bin_nodes_bicubic = tmp_n_bin_nodes, # true bin-node count for this block (Selex_Model == 8 only)
+                                n_yr_nodes_bicubic = tmp_n_yr_nodes # true year-node count for this block (Selex_Model == 8 only)
+            )
+
+            # Compute selectivity
+            if(selex_type == 0) {
+              for(p in 1:n_pop) {
+                for(seas in 1:n_seas) {
+                  sel[p,r,y,seas,,s,f] = tmp_sel # age-based selectivity
+                } # end seas loop
+              } # end p loop
+            }
+            if(selex_type == 1) sel_l[r,y,,s,f] = tmp_sel # input into length-based selectivity
+
+          } # end s loop
+        } else {
+
+          # Input fixed selectivity; sel_input only spans n_yrs, so projection years reuse the terminal year
+          if(selex_type == 0) {
+            for(p in 1:n_pop) {
+              for(seas in 1:n_seas) {
+                sel[p,r,y,seas,,,f] = sel_input[p,r,y_idx,seas,,,f] # age-based selectivity
+              } # end seas loop
+            } # end p loop
+          }
+          # length-based selectivity carries no population or season dimension, so read the first of each
+          if(selex_type == 1) sel_l[r,y,,,f] = sel_input[1,r,y_idx,1,,,f]
+
+        } # end if else for whether or not using fixed selex inputs
+
+      } # end f loop
+    } # end y loop
+  } # end r loop
+
+  # Mean standardizing to help with interpretability
+  for(r in 1:n_regions) {
+    for(f in 1:n_fleets) {
+      if(cont_tv_sel[r,f] %in% 3:5 || any(sel_model[r,,f] == 5)) {
+        for(s in 1:n_sexes) {
+
+          if(selex_type == 0) {
+            tmp_mean = log(mean(sel[1,r,,1,,s,f])) # indexing 1 for pop and season because those dims not estimated (depends on growth transition)
+            for(p in 1:n_pop) for(seas in 1:n_seas)
+              sel[p,r,,seas,,s,f] = exp(log(sel[p,r,,seas,,s,f]) - tmp_mean)
+          }
+          if(selex_type == 1) sel_l[r,,,s,f] = exp(log(sel_l[r,,,s,f]) - log(mean(sel_l[r,,,s,f]))) # length-based selectivity
+
+        } # end s loop
+      } # end if mean standardizing
+    } # end f loop
+  } # end r loop
+
+  return(list(sel = sel, sel_l = sel_l))
 } # end function
 

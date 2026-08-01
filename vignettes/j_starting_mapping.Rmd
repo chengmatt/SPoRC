@@ -124,8 +124,8 @@ input_list$par$ln_sigmaR[,,] <- log(1.5) # user specified starting value
 ## Mapping
 Mapping is a core feature of TMB and RTMB models that controls which parameters are estimated and how they relate to each other. It works through a named list (`input_list$map`) where each entry corresponds to a parameter array flattened into a vector of factors. The rules are simple:
 
-- **`factor(NA)`** at a position means that parameter is **fixed** — it is held at its value in `input_list$par` and not estimated.
-- **Shared integers** at two or more positions means those parameters are **constrained to be equal** during estimation — only one value is estimated for the group.
+- **`factor(NA)`** at a position means that parameter is **fixed**, it is held at its value in `input_list$par` and not estimated.
+- **Shared integers** at two or more positions means those parameters are **constrained to be equal** during estimation, only one value is estimated for the group.
 - **Unique integers** at each position means each parameter is **independently estimated**.
 
 Because fixing a parameter holds it at its current value in `input_list$par`, starting values and fixing must always be set together. If you fix a parameter without also setting a starting value, it will be held at the default value, which may not be what you intend.
@@ -188,7 +188,7 @@ input_list$par$ln_global_R0 <- log(30)
 
 ### Sharing Parameters
 
-The `Setup_xxx` functions also support sharing parameters across model partitions via built-in convenience arguments. These cover common sharing structures (e.g., sharing selectivity across sexes or regions), but for finer control — such as sharing a subset of parameters while estimating others independently — users can construct the map manually.
+The `Setup_xxx` functions also support sharing parameters across model partitions via built-in convenience arguments. These cover common sharing structures (e.g., sharing selectivity across sexes or regions), but for finer control, such as sharing a subset of parameters while estimating others independently, users can construct the map manually.
 
 Below, we demonstrate both approaches using fishery selectivity as an example. We define two fishery fleets: Fleet 1 uses a logistic selectivity model (2 parameters: *a50* and slope), and Fleet 2 uses a gamma dome-shaped model (2 parameters: *amax* and slope).
 
@@ -239,7 +239,7 @@ For sharing structures not supported by the convenience arguments, the map can b
 - Fleet 1 (logistic): *a50* is sex-specific, but the slope is shared across sexes
 - Fleet 2 (gamma): all parameters are sex-specific
 
-We start from `est_all` to get the correctly dimensioned parameter array, then overwrite the map. The parameter array `fish_fixed_sel_pars` has dimensions `[n_regions, n_max_sel_pars, n_max_sel_blocks, n_sexes, n_fish_fleets]` — in this example `1 × 2 × 1 × 2 × 2`. The table below summarises the intended sharing structure before we implement it:
+We start from `est_all` to get the correctly dimensioned parameter array, then overwrite the map. The parameter array `fish_fixed_sel_pars` has dimensions `[n_regions, n_max_sel_pars, n_max_sel_blocks, n_sexes, n_fish_fleets]`, in this example `1 × 2 × 1 × 2 × 2`. The table below summarises the intended sharing structure before we implement it:
 
 | Fleet | Parameter | Female index | Male index | Shared? |
 |-------|-----------|-------------|------------|---------|

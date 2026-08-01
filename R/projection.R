@@ -146,7 +146,7 @@
 #'   Default 100.
 #' @param t_spawn Numeric scalar. Fraction of the spawning season elapsed
 #'   before spawning; used for mid-season SSB calculations.
-#' @param bh_rec_opt Named list of inputs for deterministic Beverton–Holt
+#' @param bh_rec_opt Named list of inputs for deterministic Beverton-Holt
 #'   recruitment when `recruitment_opt = "bh_rec"`. This list is passed
 #'   directly to \code{\link{Get_Det_Recruitment}} and must contain all
 #'   required arguments for that function.
@@ -208,7 +208,7 @@
 #'   (\code{rec_seas_prop} must be zero for every season before
 #'   \code{spawn_seas} in that case). Reference points and the seasonal SBPR
 #'   calculation used to get \code{bh_rec_opt$WAA}/\code{MatAA}/etc. are
-#'   unaffected by this choice -- \code{rec_lag} only changes which year's
+#'   unaffected by this choice, \code{rec_lag} only changes which year's
 #'   SSB feeds the Beverton-Holt curve, not the per-recruit math itself.
 #'
 #' @param n_seas Integer. Number of seasons. Default = 1.
@@ -1007,7 +1007,7 @@ run_proj_year <- function(y,
           proj_NAA0[,,y+1,1,n_ages,] = proj_NAA0[,,y+1,1,n_ages,] + pstep_NAA0[,,n_ages,] # Acuumulate plus group
         }
 
-        # Derive Biomass (age0_bh: already computed above, before mortality/ageing) --
+        # Derive Biomass (age0_bh: already computed above, before mortality/ageing),
         if(seas == spawn_seas && !age0_bh) {
           biom <- derive_proj_biom(y, seas, proj_NAA, proj_NAA0, WAA, MatAA, proj_ZAA, natmort, t_spawn, seasdur,
                                   n_seas, n_pop, n_regions, n_ages, n_sexes,

@@ -77,10 +77,10 @@ Parameters are exponentiated or transformed depending on model specification:
 \item{ln_seldevs}{Array of log-scale selectivity deviations with dimension
   \code{[n_regions, n_years, n_parameters_or_bins, n_sexes, 1]}.
 
-  For \code{TimeVary_Model = 1–2}: deviations apply to selectivity parameters
+  For \code{TimeVary_Model = 1-2}: deviations apply to selectivity parameters
   on the natural scale after exponentiation.
 
-  For \code{TimeVary_Model = 3–5}: deviations apply multiplicatively at the
+  For \code{TimeVary_Model = 3-5}: deviations apply multiplicatively at the
   bin level to the constructed selectivity curve.
 
   For \code{Selex_Model = 5}: deviations act directly on bin-level logit
@@ -119,7 +119,7 @@ own true number of bin nodes / year nodes. Only used when
 \code{Wbin_bicubic}/\code{Wyr_bicubic} may have been zero-padded wider
 than this specific block's own grid (e.g. because some \emph{other}
 fleet/block shares the same padded storage array but uses a larger
-bicubic grid) -- \code{ncol(Wbin_bicubic)}/\code{ncol(Wyr_bicubic)} give
+bicubic grid), \code{ncol(Wbin_bicubic)}/\code{ncol(Wyr_bicubic)} give
 the padded (shared) width, not this block's true node counts, and using
 the padded width to reshape \code{pars} would misassign which flattened
 parameter values land in which (bin-node, year-node) cell. Default
@@ -140,10 +140,10 @@ fully flexible selectivity structures.
 \details{
 For \code{TimeVary_Model = 0}, only the base parametric form is evaluated.
 
-For \code{TimeVary_Model = 1–2}, deviations modify model parameters
+For \code{TimeVary_Model = 1-2}, deviations modify model parameters
 multiplicatively on the natural scale after transformation.
 
-For \code{TimeVary_Model = 3–5}, deviations act directly on the constructed
+For \code{TimeVary_Model = 3-5}, deviations act directly on the constructed
 selectivity curve as multiplicative log-normal perturbations:
 \deqn{\text{selex} = \text{selex} \cdot \exp(\delta_{r,y,b,s})}.
 

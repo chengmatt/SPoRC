@@ -38,10 +38,10 @@
 #'
 #' @returns A list containing truncated versions of the RTMB inputs:
 #' \itemize{
-#'   \item \code{retro_data} – Modified data list with terminal years removed.
-#'   \item \code{retro_parameters} – Parameter list truncated to match the
+#'   \item \code{retro_data}: Modified data list with terminal years removed.
+#'   \item \code{retro_parameters}: Parameter list truncated to match the
 #'   shortened time series.
-#'   \item \code{retro_mapping} – Mapping list updated to match truncated
+#'   \item \code{retro_mapping}: Mapping list updated to match truncated
 #'   parameter dimensions.
 #' }
 #'
@@ -147,7 +147,7 @@ truncate_yr <- function(j,
   retro_data$fish_sel_blocks <- data$fish_sel_blocks[,1:(length(data$years) - j),, drop = FALSE]
   retro_data$ret_sel_blocks <- data$ret_sel_blocks[,1:(length(data$years) - j),, drop = FALSE]
 
-  # Fishery selectivity form and bicubic spline metadata (year-indexed; must be truncated
+  # Fishery selectivity form and bicubic spline stuff (year-indexed; must be truncated
   # alongside data$years so a bicubic-year search in SPoRC_rtmb.R can't return indices beyond
   # the retro-truncated fish_sel/fish_sel_l arrays)
   retro_data$fish_sel_model <- data$fish_sel_model[,1:(length(data$years) - j),, drop = FALSE]
@@ -155,6 +155,13 @@ truncate_yr <- function(j,
   retro_data$fish_sel_bicubic_yrnodes <- data$fish_sel_bicubic_yrnodes[,1:(length(data$years) - j),, drop = FALSE]
   retro_data$fish_sel_bicubic_selstyr <- data$fish_sel_bicubic_selstyr[,1:(length(data$years) - j),, drop = FALSE]
   retro_data$fish_sel_bicubic_nselbins <- data$fish_sel_bicubic_nselbins[,1:(length(data$years) - j),, drop = FALSE]
+
+  # Retention selectivity form and bicubic spline stuff (mirrors the total fishery truncation above)
+  retro_data$ret_sel_model <- data$ret_sel_model[,1:(length(data$years) - j),, drop = FALSE]
+  retro_data$ret_sel_bicubic_binnodes <- data$ret_sel_bicubic_binnodes[,1:(length(data$years) - j),, drop = FALSE]
+  retro_data$ret_sel_bicubic_yrnodes <- data$ret_sel_bicubic_yrnodes[,1:(length(data$years) - j),, drop = FALSE]
+  retro_data$ret_sel_bicubic_selstyr <- data$ret_sel_bicubic_selstyr[,1:(length(data$years) - j),, drop = FALSE]
+  retro_data$ret_sel_bicubic_nselbins <- data$ret_sel_bicubic_nselbins[,1:(length(data$years) - j),, drop = FALSE]
 
   # Adjust fishery parameter blocks
   retro_parameters$ln_fish_q <- parameters$ln_fish_q[,1:max(retro_data$fish_q_blocks),,drop = FALSE]
@@ -205,7 +212,7 @@ truncate_yr <- function(j,
   retro_data$srv_q_blocks <- data$srv_q_blocks[,1:(length(data$years) - j),, drop = FALSE]
   retro_data$srv_sel_blocks <- data$srv_sel_blocks[,1:(length(data$years) - j),, drop = FALSE]
 
-  # Survey selectivity form and bicubic spline metadata (mirrors the fishery truncation above)
+  # Survey selectivity form and bicubic spline stuff (mirrors the fishery truncation above)
   retro_data$srv_sel_model <- data$srv_sel_model[,1:(length(data$years) - j),, drop = FALSE]
   retro_data$srv_sel_bicubic_binnodes <- data$srv_sel_bicubic_binnodes[,1:(length(data$years) - j),, drop = FALSE]
   retro_data$srv_sel_bicubic_yrnodes <- data$srv_sel_bicubic_yrnodes[,1:(length(data$years) - j),, drop = FALSE]
@@ -443,15 +450,15 @@ if(any(data$UseSrvIdx_pop == 1) || any(data$UseSrvAgeComps_pop == 1) || any(data
 #' @return A long-format \code{data.frame} containing retrospective estimates
 #'   of spawning stock biomass and recruitment. Columns include:
 #'   \itemize{
-#'     \item \code{Pop} – Population index.
-#'     \item \code{Region} – Region index.
-#'     \item \code{Year} – Model year.
-#'     \item \code{Type} – Quantity reported (\code{"SSB"} or \code{"Recruitment"}).
-#'     \item \code{peel} – Retrospective peel number (0 = full data, 1 = one-year peel, etc.).
-#'     \item \code{value} – Estimated value of the quantity.
-#'     \item \code{pdHess} – Logical indicator of positive-definite Hessian
+#'     \item \code{Pop}: Population index.
+#'     \item \code{Region}: Region index.
+#'     \item \code{Year}: Model year.
+#'     \item \code{Type}: Quantity reported (\code{"SSB"} or \code{"Recruitment"}).
+#'     \item \code{peel}: Retrospective peel number (0 = full data, 1 = one-year peel, etc.).
+#'     \item \code{value}: Estimated value of the quantity.
+#'     \item \code{pdHess}: Logical indicator of positive-definite Hessian
 #'       (only present when \code{do_sdrep = TRUE}).
-#'     \item \code{max_grad} – Maximum absolute gradient of fixed effects
+#'     \item \code{max_grad}: Maximum absolute gradient of fixed effects
 #'       (only present when \code{do_sdrep = TRUE}).
 #'   }
 #'

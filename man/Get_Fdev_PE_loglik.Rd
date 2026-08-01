@@ -55,7 +55,7 @@ used), matching the existing \code{Fmort_nLL} reporting convention.
 
 Random walk and AR1 do not require catch-active years to be contiguous.
 Instead, the transition between two active years is taken over the
-elapsed gap \eqn{d} between them -- exactly the marginal transition you
+elapsed gap \eqn{d} between them, exactly the marginal transition you
 would get from estimating deviations for the closed years in between and
 integrating them out, without actually estimating them:
 \describe{

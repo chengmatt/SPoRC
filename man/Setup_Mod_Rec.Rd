@@ -92,7 +92,7 @@ seasons). \code{1} (default) is the classic lagged case: recruitment uses
 SSB from \code{rec_lag} seasons prior and may enter in any season.
 \code{0} is age-0 recruitment: recruitment uses the SAME year's SSB, and
 because that SSB isn't known until \code{spawn_seas} is reached, recruits
-may only enter in \code{spawn_seas} itself or a later season -- when
+may only enter in \code{spawn_seas} itself or a later season, when
 \code{use_fixed_rec_seas_prop = 1}, \code{fixed_rec_seas_prop} must be
 zero before \code{spawn_seas}; when estimated, this is enforced
 structurally via a restricted softmax (see
@@ -147,7 +147,7 @@ estimation. Default \code{1}.}
 recruitment proportions used when \code{use_fixed_rec_seas_prop = 1}.
 Default: all recruitment assigned to season 1. When \code{rec_lag = 0}
 and \code{spawn_seas > 1}, must be zero for every season before
-\code{spawn_seas} -- an error is raised otherwise.}
+\code{spawn_seas}. An error is raised otherwise.}
 
 \item{do_rec_bias_ramp}{Integer (0/1). Whether a recruitment bias ramp is
 applied to \code{ln_RecDevs} to account for reduced information in early
@@ -232,7 +232,7 @@ Default: zero for all seasons and fleets.}
 
 \item{init_F_spec}{Character, \code{"fix"} (default) or \code{"est"}. Whether
   \code{init_F_par} is estimated. This sets only the mapping, so it combines
-  freely with \code{init_F_form} -- including estimating the proportion itself
+  freely with \code{init_F_form}, including estimating the proportion itself
   (\code{init_F_form = "prop"}, \code{init_F_spec = "est"}). Note \code{init_F}
   is generally weakly identified, which is why assessments commonly fix it.
 
@@ -240,8 +240,8 @@ Default: zero for all seasons and fleets.}
   \code{[n_regions x n_seas x n_fish_fleets]}, supplied through \code{...} like
   any other starting value, e.g.
   \code{Setup_Mod_Rec(..., init_F_form = "abs", init_F_spec = "fix", init_F_par = array(log(0.01), dim = c(1, 1, 1)))}.
-  Its SCALE depends on \code{init_F_form} -- logit under \code{"prop"} (so the
-  proportion is bounded to (0, 1)) and log under \code{"abs"} -- which is why it
+  Its SCALE depends on \code{init_F_form}, logit under \code{"prop"} (so the
+  proportion is bounded to (0, 1)) and log under \code{"abs"}, which is why it
   is not named \code{ln_} or \code{logit_}. Defaults to effectively no initial
   fishing mortality.}
 
@@ -292,7 +292,7 @@ on the logit scale. Ignored when \code{use_fixed_stray_rate = 1} or
     Produces one parameter per population per unique block.}
   \item{\code{"est_shared_pop"}}{Single parameter per block, shared across
     all populations. Requires identical block structures across all
-    populations -- an error is raised if block indices differ.}
+    populations. An error is raised if block indices differ.}
 }}
 
 \item{stray_rate_blocks}{Character vector of length \code{n_pop} defining

@@ -22,7 +22,7 @@ The input \code{input_list} with \code{$map$logit_dmr_devs} set to a
 }
 \description{
 Constructs the \code{logit_dmr_devs} factor map, assigning unique estimation
-indices to region–year–season–fleet cells that are fished and mapping true
+indices to region-year-season-fleet cells that are fished and mapping true
 closures to \code{NA}. A cell is fished when aggregated or any
 population-specific catch is used, or when the aggregate catch observation is
 missing (\code{NA}) rather than a recorded zero, which is the same condition

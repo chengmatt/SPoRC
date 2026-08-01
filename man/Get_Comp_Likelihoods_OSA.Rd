@@ -41,20 +41,20 @@ Get_Comp_Likelihoods_OSA(
 
 \item{Comp_Type}{Integer specifying the composition parameterization:
 \itemize{
-  \item \code{0} – Aggregated compositions across sexes and regions.
-  \item \code{1} – Compositions split by sex and region (no implicit
+  \item \code{0}: Aggregated compositions across sexes and regions.
+  \item \code{1}: Compositions split by sex and region (no implicit
   sex or region ratio information).
-  \item \code{2} – Joint compositions across sexes but split by region
+  \item \code{2}: Joint compositions across sexes but split by region
   (implicit sex ratio information).
 }}
 
 \item{Likelihood_Type}{Integer specifying the likelihood family:
 \itemize{
-  \item \code{0} – Multinomial.
-  \item \code{1} – Dirichlet–multinomial.
-  \item \code{2} – Logistic–normal with independent bins.
-  \item \code{3} – Logistic–normal with AR(1) correlation across bins.
-  \item \code{4} – Logistic–normal with AR(1) correlation across bins
+  \item \code{0}: Multinomial.
+  \item \code{1}: Dirichlet-multinomial.
+  \item \code{2}: Logistic-normal with independent bins.
+  \item \code{3}: Logistic-normal with AR(1) correlation across bins.
+  \item \code{4}: Logistic-normal with AR(1) correlation across bins
   and constant correlation across sexes.
 }}
 
@@ -68,8 +68,8 @@ Get_Comp_Likelihoods_OSA(
 
 \item{age_or_len}{Indicator for composition type:
 \itemize{
-  \item \code{0} – Age compositions.
-  \item \code{1} – Length compositions.
+  \item \code{0}: Age compositions.
+  \item \code{1}: Length compositions.
 }}
 
 \item{AgeingError}{Ageing error matrix used to map model age bins to
@@ -82,7 +82,7 @@ observed age bins.}
 issues when zeros are present.}
 }
 \description{
-Computes multinomial (0), Dirichlet–multinomial (1), and logistic–normal
+Computes multinomial (0), Dirichlet-multinomial (1), and logistic-normal
 (2 iid, 3 AR1, 4 2D‑AR1) composition likelihoods for one‑step‑ahead (OSA)
 residuals using \code{RTMB::oneStepPredict}. The function evaluates the
 likelihood for a single flat tracked OBS vector, respecting the reduced

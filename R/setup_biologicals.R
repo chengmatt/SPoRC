@@ -32,7 +32,7 @@
 #'   Values should be proportions in \eqn{[0, 1]}. When \code{rec_lag = 0}
 #'   (age-0 recruitment, set via \code{\link{Setup_Sim_Rec}}), maturity at
 #'   the recruit age (the first age class) must be exactly \code{0} for all
-#'   populations, regions, years, seasons, and sexes -- an error is raised
+#'   populations, regions, years, seasons, and sexes. An error is raised
 #'   otherwise.
 #' @param AgeingError_input Ageing error (age-length transition) array with
 #'   dimensions \code{[n_yrs × n_model_ages × n_obs_ages × n_sims]}, where each
@@ -41,7 +41,7 @@
 #'   identity matrix is constructed for each year and simulation, which assumes
 #'   that modelled and observed age bins are identical in number and alignment.
 #'   \strong{If observed age bins are a subset of modelled ages} (e.g., observed
-#'   ages 2–10 vs. modelled ages 1–10), the default identity matrix will cause a
+#'   ages 2-10 vs. modelled ages 1-10), the default identity matrix will cause a
 #'   dimensional mismatch. In that case, supply a shifted identity matrix such as
 #'   \code{diag(1, n_model_ages)[, obs_age_index]} to correctly drop or collapse
 #'   model ages into observed bins.
@@ -90,10 +90,10 @@ Setup_Sim_Biologicals <- function(
                        n_ages = sim_list$n_ages, n_sexes = sim_list$n_sexes, n_sims = sim_list$n_sims, what = 'MatAA_input')
 
   # Age-0 (rec_lag = 0) recruitment requires the recruit age class (the first
-  # age) to be immature everywhere -- age-0 fish can't spawn the year they're
+  # age) to be immature everywhere, since age-0 fish can't spawn the year they're
   # born. Requires Setup_Sim_Rec() to have run first so $rec_lag is already set.
   if(!is.null(sim_list$rec_lag) && sim_list$rec_lag == 0 && any(MatAA_input[,,,,1,,] != 0)) {
-    stop("rec_lag = 0 (age-0 recruitment) requires MatAA_input to be zero at the recruit age (the first age class) for all populations, regions, years, seasons, and sexes -- age-0 fish cannot be mature.")
+    stop("rec_lag = 0 (age-0 recruitment) requires MatAA_input to be zero at the recruit age (the first age class) for all populations, regions, years, seasons, and sexes, since age-0 fish cannot be mature.")
   }
   if(!is.null(SizeAgeTrans_input)) check_sim_dimensions(SizeAgeTrans_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_lens = sim_list$n_lens, n_seas = sim_list$n_seas, n_pop = sim_list$n_pop,
                                                         n_ages = sim_list$n_ages, n_sexes = sim_list$n_sexes, n_sims = sim_list$n_sims, what = 'SizeAgeTrans_input')
@@ -154,7 +154,7 @@ Setup_Sim_Biologicals <- function(
 #'       or \code{NA} when \code{M_spec = "fix"}.}
 #'     \item{\code{$data$M_blocks}}{Integer array of dimensions
 #'       \code{[n_pop × n_regions × n_years × n_ages × n_sexes]} mapping each
-#'       population–region–year–age–sex cell to its corresponding \code{ln_M}
+#'       population-region-year-age-sex cell to its corresponding \code{ln_M}
 #'       parameter index.}
 #'   }
 #'
@@ -240,7 +240,7 @@ do_natmort_mapping <- function(input_list,
 #'   dimensions \code{[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes]}.
 #'   When \code{rec_lag = 0} (age-0 recruitment, set via \code{\link{Setup_Mod_Rec}}),
 #'   maturity at the recruit age (the first age class) must be exactly \code{0}
-#'   for all populations, regions, years, seasons, and sexes -- an error is
+#'   for all populations, regions, years, seasons, and sexes, an error is
 #'   raised otherwise. Requires \code{\link{Setup_Mod_Rec}} to have been called
 #'   first so \code{rec_lag} is already set.
 #' @param addtocomp Small constant added to composition proportions before likelihood
@@ -249,7 +249,7 @@ do_natmort_mapping <- function(input_list,
 #' @param addtofishidx Small constant added to fishery indices. Default \code{1e-4}.
 #' @param addtosrvidx Small constant added to survey indices. Default \code{1e-4}.
 #' @param addtotag Small constant added to tag recovery observations. Default \code{1e-10}.
-#' @param AgeingError Ageing error (age–age transition) array mapping true modelled ages
+#' @param AgeingError Ageing error (age-age transition) array mapping true modelled ages
 #'   to observed age bins. Accepted forms:
 #'   \describe{
 #'     \item{2D matrix \code{[n_model_ages × n_obs_ages]}}{Time-invariant ageing error;
@@ -257,7 +257,7 @@ do_natmort_mapping <- function(input_list,
 #'     \item{3D array \code{[n_years × n_model_ages × n_obs_ages]}}{Time-varying ageing error.}
 #'     \item{\code{NULL} (default)}{An identity matrix is constructed, assuming modelled
 #'       and observed age bins are identical. If observed bins are a subset of modelled
-#'       ages (e.g., observed ages 2–10 vs. modelled ages 1–10), supply a shifted
+#'       ages (e.g., observed ages 2-10 vs. modelled ages 1-10), supply a shifted
 #'       identity matrix such as \code{diag(1, n_model_ages)[, obs_age_index]} to
 #'       avoid a dimensional mismatch.}
 #'   }
@@ -359,12 +359,12 @@ Setup_Mod_Biologicals <- function(input_list,
   check_data_dimensions(MatAA, n_pop = input_list$data$n_pop,  n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas,  n_ages = length(input_list$data$ages), n_sexes = input_list$data$n_sexes, what = 'MatAA')
 
   # Age-0 (rec_lag = 0) recruitment requires the recruit age class (the first
-  # age) to be immature everywhere -- age-0 fish can't spawn the year they're
+  # age) to be immature everywhere, since age-0 fish can't spawn the year they're
   # born. This is relied on (rather than special-cased) when excluding age-0
   # from spawning biomass per recruit. Requires Setup_Mod_Rec() to have run
   # first so $data$rec_lag is already set.
   if(!is.null(input_list$data$rec_lag) && input_list$data$rec_lag == 0 && any(MatAA[,,,,1,] != 0)) {
-    stop("rec_lag = 0 (age-0 recruitment) requires MatAA to be zero at the recruit age (the first age class) for all populations, regions, years, seasons, and sexes -- age-0 fish cannot be mature.")
+    stop("rec_lag = 0 (age-0 recruitment) requires MatAA to be zero at the recruit age (the first age class) for all populations, regions, years, seasons, and sexes, since age-0 fish cannot be mature.")
   }
 
   # Length checking

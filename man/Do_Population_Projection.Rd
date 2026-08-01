@@ -212,7 +212,7 @@ Default 100.}
 \item{t_spawn}{Numeric scalar. Fraction of the spawning season elapsed
 before spawning; used for mid-season SSB calculations.}
 
-\item{bh_rec_opt}{Named list of inputs for deterministic Beverton–Holt
+\item{bh_rec_opt}{Named list of inputs for deterministic Beverton-Holt
   recruitment when `recruitment_opt = "bh_rec"`. This list is passed
   directly to \code{\link{Get_Det_Recruitment}} and must contain all
   required arguments for that function.
@@ -274,7 +274,7 @@ before spawning; used for mid-season SSB calculations.}
   (\code{rec_seas_prop} must be zero for every season before
   \code{spawn_seas} in that case). Reference points and the seasonal SBPR
   calculation used to get \code{bh_rec_opt$WAA}/\code{MatAA}/etc. are
-  unaffected by this choice -- \code{rec_lag} only changes which year's
+  unaffected by this choice, \code{rec_lag} only changes which year's
   SSB feeds the Beverton-Holt curve, not the per-recruit math itself.}
 
 \item{n_seas}{Integer. Number of seasons. Default = 1.}

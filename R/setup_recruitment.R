@@ -57,7 +57,7 @@
 #'   \code{[n_pop x n_seas x n_sims]}. Each population's values should sum to
 #'   1 across seasons. Default: all recruitment assigned to season 1. When
 #'   \code{rec_lag = 0} and \code{spawn_seas > 1}, must be zero for every
-#'   season before \code{spawn_seas} -- an error is raised otherwise.
+#'   season before \code{spawn_seas}. An error is raised otherwise.
 #' @param spawn_seas Integer index of the season in which spawning occurs.
 #'   Default \code{1}.
 #' @param use_rinit Integer (0/1). Whether a separate initial recruitment
@@ -81,7 +81,7 @@
 #'   \code{0} is age-0 recruitment: recruits enter using the SAME year's SSB.
 #'   Because that SSB isn't known until \code{spawn_seas} is reached, age-0
 #'   recruits may only enter in \code{spawn_seas} itself or a later season in
-#'   the same year -- \code{rec_seas_prop_input} must be zero for every season
+#'   the same year; \code{rec_seas_prop_input} must be zero for every season
 #'   before \code{spawn_seas} when \code{rec_lag = 0}.
 #' @param init_age_strc Integer specifying the equilibrium age-structure
 #'   initialisation method. Default \code{2}. Options:
@@ -983,7 +983,7 @@ do_rec_region_prop_mapping <- function(input_list, rec_region_prop_spec) {
 #' When \code{n_pop = 1}, straying is not applicable and all parameters are
 #' automatically fixed to \code{NA}. When \code{use_fixed_stray_rate = 1},
 #' the objective function reads from \code{fixed_stray_rate} directly and
-#' \code{stray_rate_pars} are not used -- all elements are fixed regardless
+#' \code{stray_rate_pars} are not used; all elements are fixed regardless
 #' of \code{stray_rate_spec}.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
@@ -998,7 +998,7 @@ do_rec_region_prop_mapping <- function(input_list, rec_region_prop_spec) {
 #'       Produces \code{n_pop x n_unique_blocks} estimated parameters.}
 #'     \item{\code{"est_shared_pop"}}{Single parameter per block, shared across
 #'       all populations. Requires identical block structures across all
-#'       populations -- an error is raised if block indices differ.}
+#'       populations. An error is raised if block indices differ.}
 #'   }
 #'
 #' @return The input \code{input_list} with \code{$map$stray_rate_pars} set to
@@ -1024,7 +1024,7 @@ do_stray_rate_mapping <- function(input_list, stray_rate_spec) {
     return(input_list)
   }
 
-  # Externally fixed -- pars not used by objective function
+  # Externally fixed, pars not used by objective function
   if (input_list$data$use_fixed_stray_rate == 1) {
     input_list$map$stray_rate_pars <- factor(map_stray)
     collect_message("Stray rates are externally fixed (use_fixed_stray_rate == 1).")
@@ -1222,7 +1222,7 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   SSB from \code{rec_lag} seasons prior and may enter in any season.
 #'   \code{0} is age-0 recruitment: recruitment uses the SAME year's SSB, and
 #'   because that SSB isn't known until \code{spawn_seas} is reached, recruits
-#'   may only enter in \code{spawn_seas} itself or a later season -- when
+#'   may only enter in \code{spawn_seas} itself or a later season, when
 #'   \code{use_fixed_rec_seas_prop = 1}, \code{fixed_rec_seas_prop} must be
 #'   zero before \code{spawn_seas}; when estimated, this is enforced
 #'   structurally via a restricted softmax (see
@@ -1309,7 +1309,7 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   difference.
 #' @param init_F_spec Character, \code{"fix"} (default) or \code{"est"}. Whether
 #'   \code{init_F_par} is estimated. This sets only the mapping, so it combines
-#'   freely with \code{init_F_form} -- including estimating the proportion itself
+#'   freely with \code{init_F_form}, including estimating the proportion itself
 #'   (\code{init_F_form = "prop"}, \code{init_F_spec = "est"}). Note \code{init_F}
 #'   is generally weakly identified, which is why assessments commonly fix it.
 #'
@@ -1317,8 +1317,8 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   \code{[n_regions x n_seas x n_fish_fleets]}, supplied through \code{...} like
 #'   any other starting value, e.g.
 #'   \code{Setup_Mod_Rec(..., init_F_form = "abs", init_F_spec = "fix", init_F_par = array(log(0.01), dim = c(1, 1, 1)))}.
-#'   Its SCALE depends on \code{init_F_form} -- logit under \code{"prop"} (so the
-#'   proportion is bounded to (0, 1)) and log under \code{"abs"} -- which is why it
+#'   Its SCALE depends on \code{init_F_form}, logit under \code{"prop"} (so the
+#'   proportion is bounded to (0, 1)) and log under \code{"abs"}, which is why it
 #'   is not named \code{ln_} or \code{logit_}. Defaults to effectively no initial
 #'   fishing mortality.
 #'
@@ -1349,7 +1349,7 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   recruitment proportions used when \code{use_fixed_rec_seas_prop = 1}.
 #'   Default: all recruitment assigned to season 1. When \code{rec_lag = 0}
 #'   and \code{spawn_seas > 1}, must be zero for every season before
-#'   \code{spawn_seas} -- an error is raised otherwise.
+#'   \code{spawn_seas}. An error is raised otherwise.
 #' @param use_rec_seas_prop_prior Integer (0/1). Whether Dirichlet priors are
 #'   applied to seasonal recruitment proportions. Not valid when
 #'   \code{n_seas = 1}. When \code{rec_lag = 0} and \code{spawn_seas > 1}, the
@@ -1406,7 +1406,7 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'       Produces one parameter per population per unique block.}
 #'     \item{\code{"est_shared_pop"}}{Single parameter per block, shared across
 #'       all populations. Requires identical block structures across all
-#'       populations -- an error is raised if block indices differ.}
+#'       populations. An error is raised if block indices differ.}
 #'   }
 #' @param stray_rate_blocks Character vector of length \code{n_pop} defining
 #'   the temporal block structure for stray rate parameters. Valid formats:

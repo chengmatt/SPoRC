@@ -164,7 +164,7 @@ do_comp_theta_mapping <- function(input_list, comp_prefix, discard = FALSE, has_
       for(r in 1:input_list$data$n_regions) {
 
         # a (pop,) region with no active comps for this fleet never contributes to the
-        # likelihood, so its theta cell must stay NA (fixed) -- otherwise it's a free,
+        # likelihood, so its theta cell must stay NA (fixed), otherwise it's a free,
         # unidentifiable parameter
         region_has_data <- if(has_pop) {
           sum(input_list$data[[Use_nm]][p,r,,,f]) > 0

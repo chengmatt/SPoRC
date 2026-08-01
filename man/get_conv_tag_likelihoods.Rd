@@ -61,7 +61,7 @@ get_conv_tag_likelihoods(
 
 \item{conv_tag_sex_pool}{List of sex index pools.}
 
-\item{conv_fish_tag_like}{Likelihood type indicator (0–5).}
+\item{conv_fish_tag_like}{Likelihood type indicator (0-5).}
 
 \item{conv_fish_tag_nLL}{Array of negative log-likelihood values to update.}
 
@@ -83,7 +83,7 @@ Updated `conv_fish_tag_nLL` array.
 \description{
 Computes the negative log-likelihood contribution from conventional
 fish tagging data under Poisson, negative binomial, multinomial,
-or Dirichlet–multinomial likelihoods.
+or Dirichlet-multinomial likelihoods.
 }
 \details{
 This function loops over tag cohorts, recapture years, seasons,

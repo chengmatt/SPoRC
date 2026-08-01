@@ -148,15 +148,15 @@ indexed as \code{peel_0}, \code{peel_1}, ..., \code{peel_n}). When
 A long-format \code{data.frame} containing retrospective estimates
   of spawning stock biomass and recruitment. Columns include:
   \itemize{
-    \item \code{Pop} – Population index.
-    \item \code{Region} – Region index.
-    \item \code{Year} – Model year.
-    \item \code{Type} – Quantity reported (\code{"SSB"} or \code{"Recruitment"}).
-    \item \code{peel} – Retrospective peel number (0 = full data, 1 = one-year peel, etc.).
-    \item \code{value} – Estimated value of the quantity.
-    \item \code{pdHess} – Logical indicator of positive-definite Hessian
+    \item \code{Pop}: Population index.
+    \item \code{Region}: Region index.
+    \item \code{Year}: Model year.
+    \item \code{Type}: Quantity reported (\code{"SSB"} or \code{"Recruitment"}).
+    \item \code{peel}: Retrospective peel number (0 = full data, 1 = one-year peel, etc.).
+    \item \code{value}: Estimated value of the quantity.
+    \item \code{pdHess}: Logical indicator of positive-definite Hessian
       (only present when \code{do_sdrep = TRUE}).
-    \item \code{max_grad} – Maximum absolute gradient of fixed effects
+    \item \code{max_grad}: Maximum absolute gradient of fixed effects
       (only present when \code{do_sdrep = TRUE}).
   }
 }

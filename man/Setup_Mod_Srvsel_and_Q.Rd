@@ -139,7 +139,7 @@ Default \code{NULL}.}
 values. Default \code{NULL}.}
 
 \item{srv_q_formula}{Named list of R formulas specifying environmental
-covariate relationships for catchability per region–fleet combination.
+covariate relationships for catchability per region-fleet combination.
 Names follow the convention \code{"Region_r_Fleet_f"}. Covariates must
 be present in \code{srv_q_cov_dat}. If \code{NULL}, no covariate effects
 are included. Default \code{NULL}.}

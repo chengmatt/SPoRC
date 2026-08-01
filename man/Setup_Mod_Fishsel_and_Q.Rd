@@ -73,8 +73,8 @@ Mutually exclusive with \code{cont_tv_fish_sel != "none"} for the same fleet.}
 form for each fleet (and optionally each time block). Each element must
 follow one of:
 \itemize{
-  \item \code{"<model>_Fleet_<f>"} — single form for all years of fleet \code{f}.
-  \item \code{"<model>_Fleet_<f>_Block_<b>"} — form specific to block \code{b}
+  \item \code{"<model>_Fleet_<f>"}: single form for all years of fleet \code{f}.
+  \item \code{"<model>_Fleet_<f>_Block_<b>"}: form specific to block \code{b}
     of fleet \code{f}, as defined in \code{fish_sel_blocks}.
 }
 Available models:
@@ -210,8 +210,8 @@ Mutually exclusive with \code{cont_tv_ret_sel != "none"} for the same fleet.}
 form for each fleet (and optionally each time block). Each element must
 follow one of:
 \itemize{
-  \item \code{"<model>_Fleet_<f>"} — single form for all years of fleet \code{f}.
-  \item \code{"<model>_Fleet_<f>_Block_<b>"} — form specific to block \code{b}
+  \item \code{"<model>_Fleet_<f>"}: single form for all years of fleet \code{f}.
+  \item \code{"<model>_Fleet_<f>_Block_<b>"}: form specific to block \code{b}
     of fleet \code{f}, as defined in \code{ret_sel_blocks}.
 }
 Available models:
@@ -304,7 +304,7 @@ catchability blocks and estimation structure. Must be called after
 }
 \details{
 Selectivity time-variation and blocked selectivity are mutually exclusive
-within a fleet — specifying both for the same fleet will raise an error.
+within a fleet. Specifying both for the same fleet will raise an error.
 }
 \seealso{
 Other Model Setup: 

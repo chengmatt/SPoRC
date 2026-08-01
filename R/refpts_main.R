@@ -241,7 +241,7 @@ solve_plus_group <- function(Ts, N_penult_u, N_penult_f, n_regions) {
 #'   computing MSY-based reference points (0 = landing fleet, 1 = discard-only
 #'   fleet). These fleets still contribute to total fishing mortality \code{Z}
 #'   and affect population dynamics and spawning biomass. Only used by
-#'   Beverton–Holt MSY methods (\code{"BH_MSY"}, \code{"independent_BH_MSY"},
+#'   Beverton-Holt MSY methods (\code{"BH_MSY"}, \code{"independent_BH_MSY"},
 #'   \code{"global_BH_MSY"}, \code{"local_BH_MSY"}); ignored for SPR-based
 #'   methods. Default is all zeros (all fleets are landing fleets).
 #'

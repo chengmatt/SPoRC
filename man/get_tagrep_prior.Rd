@@ -9,7 +9,7 @@ get_tagrep_prior(conv_tag_fishrep_prior, conv_tag_fish_reporting_pars)
 \arguments{
 \item{conv_tag_fishrep_prior}{Data frame with columns \code{region},
 \code{block}, \code{fleet}, \code{type} (0 = symmetric beta, 1 = mean/sd
-beta), \code{mu}, \code{sd} — one row per penalized parameter.}
+beta), \code{mu}, \code{sd}, one row per penalized parameter.}
 
 \item{conv_tag_fish_reporting_pars}{Array \code{[region, block, fish_fleet]}
 of tag reporting rate parameters on the logit scale.}

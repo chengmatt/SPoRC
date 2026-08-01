@@ -10,7 +10,7 @@ get_natmort_prior(M_prior, ln_M, M_blocks)
 \item{M_prior}{Data frame with columns \code{popblk}, \code{regionblk},
 \code{yearblk}, \code{ageblk}, \code{sexblk} (block indices into
 \code{M_blocks}), \code{mu} (prior mean, natural scale), \code{sd} (prior
-SD, log scale) — one row per penalized parameter.}
+SD, log scale), one row per penalized parameter.}
 
 \item{ln_M}{Vector of estimated log natural mortality values, indexed by
 \code{M_blocks}.}

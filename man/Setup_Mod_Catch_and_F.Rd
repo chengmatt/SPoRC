@@ -45,8 +45,8 @@ and \code{$verbose} sublists, as returned by upstream setup functions.}
 Values should be in the units specified by \code{catch_units}. For a
 cell with \code{UseCatch == 0} (and no population-specific catch
 used), an \code{NA} entry here is treated as a genuinely missing
-observation -- fishing is assumed to have continued and \code{Fmort}/
-\code{ln_F_devs} are estimated normally for that year -- whereas a
+observation; fishing is assumed to have continued and \code{Fmort}/
+\code{ln_F_devs} are estimated normally for that year, whereas a
 true recorded value (typically \code{0}) is treated as a real
 closure: \code{Fmort} is forced to zero and no deviation is estimated.
 See \code{\link{Get_Fdev_PE_loglik}}.}
@@ -118,12 +118,12 @@ to be contiguous for \code{"rw"} or \code{"ar1"}: the transition between
 two active years spanning a gap of \eqn{d} closed years is taken over
 the elapsed gap directly (the same marginal transition as estimating
 deviations for the closed years and integrating them out, without
-actually estimating them) -- see \code{\link{Get_Fdev_PE_loglik}}.
+actually estimating them), see \code{\link{Get_Fdev_PE_loglik}}.
 A warning is issued if \code{"rw"} or \code{"ar1"} is selected but
 \code{Use_F_pen = 0} (the penalty is never evaluated, so the process
 structure has no effect), \code{sigmaF_spec = "fix"} (the process error
 SD is not estimated), or (for \code{"ar1"}) \code{Fdev_rho_spec =
-"fix"} (the correlation is not estimated) -- any of these may be
+"fix"} (the correlation is not estimated), any of these may be
 intentional, but are common oversights when switching away from
 \code{"iid"}.}
 

@@ -173,18 +173,12 @@ SPoRC_rtmb = function(pars, data) {
   PredCatch = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_fish_fleets)) # Predicted retained catch (can be abundance or biomass)
   PredDiscard = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_fish_fleets)) # Predicted discarded catch (can be abundance, biomass, or abdunance or biomass fraction of retained catch)
   PredFishIdx = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_fish_fleets)) # Predicted fishery index
-  fish_sel = array(data = 0, dim = c(n_pop, n_regions, n_yrs + n_proj_yrs_devs, n_seas, n_ages, n_sexes, n_fish_fleets)) # Total Fishery selectivity
-  fish_sel_l = array(data = 0, dim = c(n_regions, n_yrs + n_proj_yrs_devs, n_lens, n_sexes, n_fish_fleets)) # Retained Fishery selectivity (lengths)
-  ret_sel = array(data = 0, dim = c(n_pop, n_regions, n_yrs + n_proj_yrs_devs, n_seas, n_ages, n_sexes, n_fish_fleets)) # Fishery selectivity
-  ret_sel_l = array(data = 0, dim = c(n_regions, n_yrs + n_proj_yrs_devs, n_lens, n_sexes, n_fish_fleets)) # Fishery selectivity (lengths)
   fish_q = array(0, dim = c(n_regions, n_yrs, n_fish_fleets)) # Fishery catchability
 
   # Survey Processes
   SrvIAA = array(data = 0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_srv_fleets)) # Survey index at age
   SrvIAL = array(data = 0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_lens, n_sexes, n_srv_fleets)) # Survey index at length
   PredSrvIdx = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_srv_fleets)) # Predicted survey index
-  srv_sel = array(data = 0, dim = c(n_pop, n_regions, n_yrs + n_proj_yrs_devs, n_seas, n_ages, n_sexes, n_srv_fleets)) # Survey selectivity ages
-  srv_sel_l = array(data = 0, dim = c(n_regions, n_yrs + n_proj_yrs_devs, n_lens, n_sexes, n_srv_fleets)) # Survey selectivity lengths
   srv_q = array(0, dim = c(n_regions, n_yrs, n_srv_fleets)) # Survey catchability
 
   # Likelihoods (Not population-specific)
@@ -285,245 +279,55 @@ SPoRC_rtmb = function(pars, data) {
 
   if(use_fixed_natmort == 1) natmort = Fixed_natmort # Using fixed natural mortality
 
-  ## Total Fishery Selectivity -----------------------------------------------------
-  if(srv_selex_type == 0) srv_selex_bins = ages # if age-based selectivity
-  if(srv_selex_type == 1) srv_selex_bins = lens # if length-based selectivity
+  ## Selectivity ------------------------------------------------------------
   if(fish_selex_type == 0) fish_selex_bins = ages # if age-based selectivity
   if(fish_selex_type == 1) fish_selex_bins = lens # if length-based selectivity
   if(ret_selex_type == 0) ret_selex_bins = ages # if age-based selectivity
   if(ret_selex_type == 1) ret_selex_bins = lens # if length-based selectivity
+  if(srv_selex_type == 0) srv_selex_bins = ages # if age-based selectivity
+  if(srv_selex_type == 1) srv_selex_bins = lens # if length-based selectivity
 
-  for(r in 1:n_regions) {
-    for(y in 1:(n_yrs + n_proj_yrs_devs)) {
-      for(f in 1:n_fish_fleets) {
+  # Total fishery selectivity
+  tmp_fish_sel = Get_Selex_Array(selex_type = fish_selex_type, bins = fish_selex_bins,
+                                 sel_blocks = fish_sel_blocks, sel_model = fish_sel_model,
+                                 fixed_sel_pars = fish_fixed_sel_pars, cont_tv_sel = cont_tv_fish_sel,
+                                 ln_seldevs = ln_fishsel_devs, use_fixed_sel = use_fixed_fish_sel,
+                                 sel_input = fish_sel_input,
+                                 bicubic_Wbin = fish_sel_bicubic_Wbin, bicubic_Wyr = fish_sel_bicubic_Wyr,
+                                 bicubic_binnodes = fish_sel_bicubic_binnodes, bicubic_yrnodes = fish_sel_bicubic_yrnodes,
+                                 n_pop = n_pop, n_regions = n_regions, n_yrs = n_yrs, n_proj_yrs_devs = n_proj_yrs_devs,
+                                 n_seas = n_seas, n_ages = n_ages, n_lens = n_lens, n_sexes = n_sexes,
+                                 n_fleets = n_fish_fleets)
+  fish_sel = tmp_fish_sel$sel
+  fish_sel_l = tmp_fish_sel$sel_l
 
-        # estimating fishery selex
-        if(use_fixed_fish_sel[f] == 0) {
-          for(s in 1:n_sexes) {
+  # Fishery retention selectivity
+  tmp_ret_sel = Get_Selex_Array(selex_type = ret_selex_type, bins = ret_selex_bins,
+                                sel_blocks = ret_sel_blocks, sel_model = ret_sel_model,
+                                fixed_sel_pars = ret_fixed_sel_pars, cont_tv_sel = cont_tv_ret_sel,
+                                ln_seldevs = ln_retsel_devs, use_fixed_sel = use_fixed_ret_sel,
+                                sel_input = ret_sel_input,
+                                bicubic_Wbin = ret_sel_bicubic_Wbin, bicubic_Wyr = ret_sel_bicubic_Wyr,
+                                bicubic_binnodes = ret_sel_bicubic_binnodes, bicubic_yrnodes = ret_sel_bicubic_yrnodes,
+                                n_pop = n_pop, n_regions = n_regions, n_yrs = n_yrs, n_proj_yrs_devs = n_proj_yrs_devs,
+                                n_seas = n_seas, n_ages = n_ages, n_lens = n_lens, n_sexes = n_sexes,
+                                n_fleets = n_fish_fleets)
+  ret_sel = tmp_ret_sel$sel
+  ret_sel_l = tmp_ret_sel$sel_l
 
-            # Extract variables
-            if(y <= n_yrs) { # non-projection years
-              fish_sel_blk_idx = fish_sel_blocks[r,y,f] # selectivity block indices
-              tmp_fish_sel_model = fish_sel_model[r,y,f] # fishery selectivity model
-              tmp_n_bin_nodes_bicubic = fish_sel_bicubic_binnodes[r,y,f] # true bin-node count for this block (Selex_Model == 8 only)
-              tmp_n_yr_nodes_bicubic = fish_sel_bicubic_yrnodes[r,y,f] # true year-node count for this block (Selex_Model == 8 only)
-            } else {
-              fish_sel_blk_idx = fish_sel_blocks[r,n_yrs,f] # selectivity block indices
-              tmp_fish_sel_model = fish_sel_model[r,n_yrs,f] # fishery selectivity model
-              tmp_n_bin_nodes_bicubic = fish_sel_bicubic_binnodes[r,n_yrs,f] # true bin-node count for this block (Selex_Model == 8 only)
-              tmp_n_yr_nodes_bicubic = fish_sel_bicubic_yrnodes[r,n_yrs,f] # true year-node count for this block (Selex_Model == 8 only)
-            }
-
-            # Extract out fixed-effect selectivity parameters for a given block
-            tmp_fish_sel_vec = fish_fixed_sel_pars[r,,fish_sel_blk_idx,s,f]
-
-            # Extract bicubic spline interpolation weight matrices for this block.
-            tmp_Wbin_bicubic = array(fish_sel_bicubic_Wbin[r,,,fish_sel_blk_idx,f], dim = dim(fish_sel_bicubic_Wbin)[c(2,3)])
-            tmp_Wyr_bicubic = array(fish_sel_bicubic_Wyr[r,,,fish_sel_blk_idx,f], dim = dim(fish_sel_bicubic_Wyr)[c(2,3)])
-
-            # Compute selectivity functional form
-            tmp_sel = Get_Selex(Selex_Model = tmp_fish_sel_model, # selectivity model
-                                TimeVary_Model = cont_tv_fish_sel[r,f], # time varying model
-                                pars = tmp_fish_sel_vec, # fixed effect selectivity parameters
-                                ln_seldevs = ln_fishsel_devs[,,,,f, drop = FALSE], # Selectivity deviations
-                                Region = r, # region index
-                                Year = y, # year index
-                                Bin = fish_selex_bins, # bin vector
-                                Sex = s, # sex index
-                                Wbin_bicubic = tmp_Wbin_bicubic, # bicubic spline bin-node weight matrix (Selex_Model == 8 only)
-                                Wyr_bicubic = tmp_Wyr_bicubic, # bicubic spline year-node weight matrix (Selex_Model == 8 only)
-                                n_bin_nodes_bicubic = tmp_n_bin_nodes_bicubic, # true bin-node count for this block (Selex_Model == 8 only)
-                                n_yr_nodes_bicubic = tmp_n_yr_nodes_bicubic # true year-node count for this block (Selex_Model == 8 only)
-            )
-
-            # Compute selectivity
-            for(p in 1:n_pop) {
-              for(seas in 1:n_seas) {
-                if(fish_selex_type == 0) fish_sel[p,r,y,seas,,s,f] = tmp_sel # age-based selectivity
-              } # end seas loop
-            } # end p loop
-            if(fish_selex_type == 1) fish_sel_l[r,y,,s,f] = tmp_sel # input into length-based fishery selectivity
-
-          } # end s loop
-        } else {
-
-          # Input fixed selectivity
-          for(p in 1:n_pop) {
-            for(seas in 1:n_seas) {
-              if(fish_selex_type == 0) fish_sel[p,r,y,seas,,,f] = fish_sel_input[p,r,y,seas,,,f] # age-based selectivity
-            } # end seas loop
-          } # end p loop
-          if(fish_selex_type == 1) fish_sel_l[r,y,,,f] = fish_sel_input[r,y,seas,,,f] # input into length-based fishery selectivity
-        } # end if else for whether or not using fixed selex inputs
-
-      } # end f loop
-    } # end y loop
-  } # end r loop
-
-  for(r in 1:n_regions) {
-    for(y in 1:(n_yrs + n_proj_yrs_devs)) {
-      for(f in 1:n_fish_fleets) {
-
-        if(use_fixed_ret_sel[f] == 0) {
-          for(s in 1:n_sexes) {
-
-            # Extract variables
-            if(y <= n_yrs) { # non-projection years
-              ret_sel_blk_idx = ret_sel_blocks[r,y,f] # selectivity block indices
-              tmp_ret_sel_model = ret_sel_model[r,y,f] # fishery selectivity model
-            } else {
-              ret_sel_blk_idx = ret_sel_blocks[r,n_yrs,f] # selectivity block indices
-              tmp_ret_sel_model = ret_sel_model[r,n_yrs,f] # fishery selectivity model
-            }
-
-            # Extract out fixed-effect selectivity parameters for a given block
-            tmp_ret_sel_vec = ret_fixed_sel_pars[r,,ret_sel_blk_idx,s,f]
-
-            # Extract bicubic spline interpolation weight matrices for this block
-            tmp_Wbin_bicubic = array(ret_sel_bicubic_Wbin[r,,,ret_sel_blk_idx,f], dim = dim(ret_sel_bicubic_Wbin)[c(2,3)])
-            tmp_Wyr_bicubic = array(ret_sel_bicubic_Wyr[r,,,ret_sel_blk_idx,f], dim = dim(ret_sel_bicubic_Wyr)[c(2,3)])
-
-            # Compute selectivity functional form
-            tmp_sel = Get_Selex(Selex_Model = tmp_ret_sel_model, # selectivity model
-                                TimeVary_Model = cont_tv_ret_sel[r,f], # time varying model
-                                pars = tmp_ret_sel_vec, # fixed effect selectivity parameters
-                                ln_seldevs = ln_retsel_devs[,,,,f, drop = FALSE], # Selectivity deviations
-                                Region = r, # region index
-                                Year = y, # year index
-                                Bin = ret_selex_bins, # bin vector
-                                Sex = s, # sex index
-                                Wbin_bicubic = tmp_Wbin_bicubic, # bicubic spline bin-node weight matrix (Selex_Model == 8 only)
-                                Wyr_bicubic = tmp_Wyr_bicubic # bicubic spline year-node weight matrix (Selex_Model == 8 only)
-            )
-
-            # Compute selectivity
-            for(p in 1:n_pop) {
-              for(seas in 1:n_seas) {
-                if(ret_selex_type == 0) ret_sel[p,r,y,seas,,s,f] = tmp_sel # age-based selectivity
-              } # end seas loop
-            } # end p loop
-            if(ret_selex_type == 1) ret_sel_l[r,y,,s,f] = tmp_sel # input into length-based fishery selectivity
-
-          } # end s loop
-        } else {
-
-          # Input fixed retention selectivity
-          for(p in 1:n_pop) {
-            for(seas in 1:n_seas) {
-              if(ret_selex_type == 0) ret_sel[p,r,y,seas,,,f] = ret_sel_input[p,r,y,seas,,,f] # age-based selectivity
-            } # end seas loop
-          } # end p loop
-          if(ret_selex_type == 1) ret_sel_l[r,y,,,f] = ret_sel_input[r,y,seas,,,f] # input into length-based fishery selectivity
-        } # end if else for fixed retention selectivity
-
-      } # end f loop
-    } # end y loop
-  } # end r loop
-
-  # Mean standardization for selectivity
-  for(r in 1:n_regions) {
-    for(f in 1:n_fish_fleets) {
-
-      # Mean Standardizing to help with interpretability (fishery total)
-      if(fish_selex_type == 0) if(cont_tv_fish_sel[r,f] %in% 3:5 || any(fish_sel_model[r,,f] == 5)) for(s in 1:n_sexes) {
-        tmp_mean = log(mean(fish_sel[1,r,,1,,s,f])) # indexing 1 for pop and season because those dims not estimated (depends on growth transition)
-        for(p in 1:n_pop) for(seas in 1:n_seas)
-          fish_sel[p,r,,seas,,s,f] = exp(log(fish_sel[p,r,,seas,,s,f]) - tmp_mean)
-      }
-      if(fish_selex_type == 1) if(cont_tv_fish_sel[r,f] %in% 3:5 || any(fish_sel_model[r,,f] == 5)) for(s in 1:n_sexes) fish_sel_l[r,,,s,f] = exp(log(fish_sel_l[r,,,s,f]) - log(mean(fish_sel_l[r,,,s,f]))) # length-based selectivity
-
-
-      # Mean Standardizing to help with interpretability (fishery retention)
-      if(ret_selex_type == 0) if(cont_tv_ret_sel[r,f] %in% 3:5 || any(ret_sel_model[r,,f] == 5)) for(s in 1:n_sexes) {
-        tmp_mean = log(mean(ret_sel[1,r,,1,,s,f])) # indexing 1 for pop and season because those dims not estimated (depends on growth transition)
-        for(p in 1:n_pop) for(seas in 1:n_seas)
-          ret_sel[p,r,,seas,,s,f] = exp(log(ret_sel[p,r,,seas,,s,f]) - tmp_mean)
-      }
-      if(ret_selex_type == 1) if(cont_tv_ret_sel[r,f] %in% 3:5 || any(ret_sel_model[r,,f] == 5)) for(s in 1:n_sexes) ret_sel_l[r,,,s,f] = exp(log(ret_sel_l[r,,,s,f]) - log(mean(ret_sel_l[r,,,s,f]))) # length-based selectivity
-
-    } # end f loop
-  } # end r loop
-
-  ## Survey Selectivity ------------------------------------------------------
-  for(r in 1:n_regions) {
-    for(y in 1:(n_yrs + n_proj_yrs_devs)) {
-      for(sf in 1:n_srv_fleets) {
-
-        if(use_fixed_srv_sel[sf] == 0) {
-          for(s in 1:n_sexes) {
-
-            # Extract variables
-            if(y <= n_yrs) { # non-projection years
-              srv_sel_blk_idx = srv_sel_blocks[r,y,sf] # selectivity block indices
-              tmp_srv_sel_model = srv_sel_model[r,y,sf] # survey selectivity model
-              tmp_n_bin_nodes_bicubic = srv_sel_bicubic_binnodes[r,y,sf] # true bin-node count for this block (Selex_Model == 8 only)
-              tmp_n_yr_nodes_bicubic = srv_sel_bicubic_yrnodes[r,y,sf] # true year-node count for this block (Selex_Model == 8 only)
-            } else {
-              srv_sel_blk_idx = srv_sel_blocks[r,n_yrs,sf] # selectivity block indices
-              tmp_srv_sel_model = srv_sel_model[r,n_yrs,sf] # survey selectivity model
-              tmp_n_bin_nodes_bicubic = srv_sel_bicubic_binnodes[r,n_yrs,sf] # true bin-node count for this block (Selex_Model == 8 only)
-              tmp_n_yr_nodes_bicubic = srv_sel_bicubic_yrnodes[r,n_yrs,sf] # true year-node count for this block (Selex_Model == 8 only)
-            }
-
-            # Extract out fixed-effect selectivity parameters for a given block
-            tmp_srv_sel_vec = srv_fixed_sel_pars[r,,srv_sel_blk_idx,s,sf]
-
-            # Extract bicubic spline interpolation weight matrices for this block.
-            tmp_Wbin_bicubic = array(srv_sel_bicubic_Wbin[r,,,srv_sel_blk_idx,sf], dim = dim(srv_sel_bicubic_Wbin)[c(2,3)])
-            tmp_Wyr_bicubic = array(srv_sel_bicubic_Wyr[r,,,srv_sel_blk_idx,sf], dim = dim(srv_sel_bicubic_Wyr)[c(2,3)])
-
-            # Compute selectivity functional form
-            tmp_sel = Get_Selex(Selex_Model = tmp_srv_sel_model, # selectivity model
-                                TimeVary_Model = cont_tv_srv_sel[r,sf], # time varying model
-                                pars = tmp_srv_sel_vec, # fixed effect selectivity parameters
-                                ln_seldevs = ln_srvsel_devs[,,,,sf, drop = FALSE], # Selectivity deviations
-                                Region = r, # region index
-                                Year = y, # year index
-                                Bin = srv_selex_bins, # bin vector
-                                Sex = s, # sex index
-                                Wbin_bicubic = tmp_Wbin_bicubic, # bicubic spline bin-node weight matrix (Selex_Model == 8 only)
-                                Wyr_bicubic = tmp_Wyr_bicubic, # bicubic spline year-node weight matrix (Selex_Model == 8 only)
-                                n_bin_nodes_bicubic = tmp_n_bin_nodes_bicubic, # true bin-node count for this block (Selex_Model == 8 only)
-                                n_yr_nodes_bicubic = tmp_n_yr_nodes_bicubic # true year-node count for this block (Selex_Model == 8 only)
-            )
-
-            # Calculate selectivity
-            for(p in 1:n_pop) {
-              for(seas in 1:n_seas) {
-                if(srv_selex_type == 0) srv_sel[p,r,y,seas,,s,sf] = tmp_sel # age-based selectivity
-              } # end seas loop
-            } # end p loop
-            if(srv_selex_type == 1) srv_sel_l[r,y,,s,sf] = tmp_sel # input into length-based fishery selectivity
-
-          } # end s loop
-        } else {
-          # Input fixed survey selectivity
-          for(p in 1:n_pop) {
-            for(seas in 1:n_seas) {
-              if(srv_selex_type == 0) srv_sel[p,r,y,seas,,,sf] = srv_sel_input[p,r,y,seas,,,sf] # age-based selectivity
-            } # end seas loop
-          } # end p loop
-          if(srv_selex_type == 1) srv_sel_l[r,y,,,sf] = srv_sel_input[r,y,seas,,,sf] # input into length-based fishery selectivity
-        } # end if for whether to estiamte or fix survey selex
-
-      } # end sf loop
-    } # end y loop
-  } # end r loop
-
-  # Mean standardization for survey selectivity
-  for(r in 1:n_regions) {
-    for(sf in 1:n_srv_fleets) {
-
-      # Mean Standardizing to help with interpretability (survey)
-      if(srv_selex_type == 0) if(cont_tv_srv_sel[r,sf] %in% 3:5 || any(srv_sel_model[r,,sf] == 5)) for(s in 1:n_sexes) {
-        tmp_mean = log(mean(srv_sel[1,r,,1,,s,sf])) # indexing 1 for pop and season because those dims not estimated (depends on growth transition)
-        for(p in 1:n_pop) for(seas in 1:n_seas)
-          srv_sel[p,r,,seas,,s,sf] = exp(log(srv_sel[p,r,,seas,,s,sf]) - tmp_mean)
-      }
-      if(srv_selex_type == 1) if(cont_tv_srv_sel[r,sf] %in% 3:5 || any(srv_sel_model[r,,sf] == 5)) for(s in 1:n_sexes) srv_sel_l[r,,,s,sf] = exp(log(srv_sel_l[r,,,s,sf]) - log(mean(srv_sel_l[r,,,s,sf])))
-
-    } # end sf
-  } # end r
+  # Survey selectivity
+  tmp_srv_sel = Get_Selex_Array(selex_type = srv_selex_type, bins = srv_selex_bins,
+                                sel_blocks = srv_sel_blocks, sel_model = srv_sel_model,
+                                fixed_sel_pars = srv_fixed_sel_pars, cont_tv_sel = cont_tv_srv_sel,
+                                ln_seldevs = ln_srvsel_devs, use_fixed_sel = use_fixed_srv_sel,
+                                sel_input = srv_sel_input,
+                                bicubic_Wbin = srv_sel_bicubic_Wbin, bicubic_Wyr = srv_sel_bicubic_Wyr,
+                                bicubic_binnodes = srv_sel_bicubic_binnodes, bicubic_yrnodes = srv_sel_bicubic_yrnodes,
+                                n_pop = n_pop, n_regions = n_regions, n_yrs = n_yrs, n_proj_yrs_devs = n_proj_yrs_devs,
+                                n_seas = n_seas, n_ages = n_ages, n_lens = n_lens, n_sexes = n_sexes,
+                                n_fleets = n_srv_fleets)
+  srv_sel = tmp_srv_sel$sel
+  srv_sel_l = tmp_srv_sel$sel_l
 
   ## Mortality ---------------------------------------------------------------
   missing_catch = is.na(ObsCatch) # TRUE = aggregate catch observation is missing (not a true recorded zero)

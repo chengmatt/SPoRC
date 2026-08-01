@@ -436,7 +436,7 @@ Setup_Mod_Retsel <- function(input_list,
 #' \code{\link{Setup_Mod_FishIdx_and_Comps}}.
 #'
 #' Selectivity time-variation and blocked selectivity are mutually exclusive
-#' within a fleet — specifying both for the same fleet will raise an error.
+#' within a fleet. Specifying both for the same fleet will raise an error.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par}, \code{$map},
 #'   and \code{$verbose} sublists.
@@ -444,8 +444,8 @@ Setup_Mod_Retsel <- function(input_list,
 #'   form for each fleet (and optionally each time block). Each element must
 #'   follow one of:
 #'   \itemize{
-#'     \item \code{"<model>_Fleet_<f>"} — single form for all years of fleet \code{f}.
-#'     \item \code{"<model>_Fleet_<f>_Block_<b>"} — form specific to block \code{b}
+#'     \item \code{"<model>_Fleet_<f>"}: single form for all years of fleet \code{f}.
+#'     \item \code{"<model>_Fleet_<f>_Block_<b>"}: form specific to block \code{b}
 #'       of fleet \code{f}, as defined in \code{fish_sel_blocks}.
 #'   }
 #'   Available models:
@@ -566,8 +566,8 @@ Setup_Mod_Retsel <- function(input_list,
 #'   form for each fleet (and optionally each time block). Each element must
 #'   follow one of:
 #'   \itemize{
-#'     \item \code{"<model>_Fleet_<f>"} — single form for all years of fleet \code{f}.
-#'     \item \code{"<model>_Fleet_<f>_Block_<b>"} — form specific to block \code{b}
+#'     \item \code{"<model>_Fleet_<f>"}: single form for all years of fleet \code{f}.
+#'     \item \code{"<model>_Fleet_<f>_Block_<b>"}: form specific to block \code{b}
 #'       of fleet \code{f}, as defined in \code{ret_sel_blocks}.
 #'   }
 #'   Available models:

@@ -120,7 +120,7 @@ Values may be raw counts or proportions; if proportions, supply
 \item{ISS_FishAgeComps}{Input sample size array
 \code{[n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
 If \code{NULL} (default), computed automatically by summing
-\code{ObsFishAgeComps} within each year–fleet–season–region cell
+\code{ObsFishAgeComps} within each year-fleet-season-region cell
 according to \code{FishAgeComps_Type}.}
 
 \item{ObsFishLenComps}{Observed fishery length composition array
@@ -174,7 +174,7 @@ Default: all zeros.}
 age compositions
 \code{[n_pop × n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
 If \code{NULL} (default), computed automatically by summing
-\code{ObsFishAgeComps_pop} within each population–year–fleet–season–region
+\code{ObsFishAgeComps_pop} within each population-year-fleet-season-region
 cell according to \code{FishAgeComps_pop_Type}.}
 
 \item{ObsFishLenComps_pop}{Observed population-specific fishery length
@@ -331,7 +331,7 @@ and mappings. Must be called after \code{\link{Setup_Mod_Catch_and_F}}.
 When \code{ISS_FishAgeComps}, \code{ISS_FishLenComps},
 \code{ISS_FishAgeComps_pop}, or \code{ISS_FishLenComps_pop} are \code{NULL},
 input sample sizes are derived automatically by summing the observed
-composition arrays within each year–fleet–season–region cell, consistent
+composition arrays within each year-fleet-season-region cell, consistent
 with the specified composition type.
 }
 \seealso{

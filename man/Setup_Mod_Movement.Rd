@@ -73,7 +73,7 @@ Ignored when \code{move_type = 1}.}
 
 \item{Movement_ageblk_spec}{\code{"constant"} (default) or a list of
 integer vectors defining age blocks. Example: \code{list(1:4, 5:10)}
-creates a juvenile block (ages 1--4) and an adult block (ages 5--10).
+creates a juvenile block (ages 1-4) and an adult block (ages 5-10).
 Ignored when \code{move_type = 1}.}
 
 \item{Movement_yearblk_spec}{\code{"constant"} (default) or a list of
@@ -117,7 +117,7 @@ process-error variance for \code{cont_vary_movement} deviations. One of:
 }}
 
 \item{ctmc_move_dat}{Data frame required when \code{move_type = 1}. Each
-row corresponds to a unique pop–region–year–season–age–sex combination.
+row corresponds to a unique pop-region-year-season-age-sex combination.
 Required columns: \code{pop}, \code{regions}, \code{years}, \code{seas},
 \code{ages}, \code{sexes}, plus any covariate columns referenced in
 \code{diffusion_formula} or \code{preference_formula}. Projection years

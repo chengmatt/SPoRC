@@ -20,7 +20,7 @@ One of:
     Produces \code{n_pop x n_unique_blocks} estimated parameters.}
   \item{\code{"est_shared_pop"}}{Single parameter per block, shared across
     all populations. Requires identical block structures across all
-    populations -- an error is raised if block indices differ.}
+    populations. An error is raised if block indices differ.}
 }}
 }
 \value{
@@ -40,7 +40,7 @@ all populations as defined by \code{$data$stray_rate_blocks}.
 When \code{n_pop = 1}, straying is not applicable and all parameters are
 automatically fixed to \code{NA}. When \code{use_fixed_stray_rate = 1},
 the objective function reads from \code{fixed_stray_rate} directly and
-\code{stray_rate_pars} are not used -- all elements are fixed regardless
+\code{stray_rate_pars} are not used; all elements are fixed regardless
 of \code{stray_rate_spec}.
 }
 \keyword{internal}

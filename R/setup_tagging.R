@@ -541,7 +541,7 @@ do_conv_tag_fish_reporting_pars_mapping <- function(input_list, conv_tagrep_spec
 #'   \code{"Multinomial_Release"}, \code{"Multinomial_Recapture"},
 #'   \code{"Dirichlet-Multinomial_Release"},
 #'   \code{"Dirichlet-Multinomial_Recapture"}. Converted to integer codes
-#'   (\code{0}–\code{5}) before storage. Default \code{NA}.
+#'   (\code{0}-\code{5}) before storage. Default \code{NA}.
 #' @param conv_tag_mixing_period Integer. Minimum number of years (or seasons
 #'   in seasonal models) post-release before recaptures contribute to the
 #'   likelihood. Allows time for tags to mix within the population before
@@ -603,11 +603,11 @@ do_conv_tag_fish_reporting_pars_mapping <- function(input_list, conv_tagrep_spec
 #'     \item{\code{"none_Region_r_Fleet_f"}}{Constant reporting rate for
 #'       region \code{r} and fleet \code{f}.}
 #'     \item{\code{"Block_b_Year_y1-y2_Region_r_Fleet_f"}}{Block \code{b}
-#'       applies to years \code{y1}–\code{y2}. Use \code{"terminal"} for the
+#'       applies to years \code{y1}-\code{y2}. Use \code{"terminal"} for the
 #'       end year to extend to the final model year.}
 #'   }
 #'   Parsed into an array \code{[n_regions × n_years × n_fish_fleets]}.
-#'   If \code{NULL}, a single constant block is used for all region–fleet
+#'   If \code{NULL}, a single constant block is used for all region-fleet
 #'   combinations. Default \code{NULL}.
 #' @param conv_tagrep_spec Character string. Sharing structure for reporting
 #'   rate parameters \code{conv_tag_fish_reporting_pars}

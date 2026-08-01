@@ -27,7 +27,7 @@ Array \code{[n_regions × y × 1 × n_sexes × n_fish_fleets]} with
 \description{
 Scales fishery input sample sizes for the projection year \code{y} based
 on the relationship between fishing mortality and historical ISS values.
-For each region–sex–fleet cell, the minimum and maximum ISS from the
+For each region-sex-fleet cell, the minimum and maximum ISS from the
 conditioning period (\code{1:(y-1)}) are identified from years with
 positive, non-NA values, and the projected ISS is obtained by linear
 interpolation between those bounds using the ratio of projected

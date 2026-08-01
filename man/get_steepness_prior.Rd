@@ -9,7 +9,7 @@ get_steepness_prior(h_prior, h_trans)
 \arguments{
 \item{h_prior}{Data frame with columns \code{pop}, \code{region}, \code{mu}
 (prior mean steepness, natural scale), \code{sd} (prior SD, natural scale)
-— one row per penalized parameter.}
+with one row per penalized parameter.}
 
 \item{h_trans}{Array \code{[pop, region]} of steepness on its transformed
 (0.2, 1) scale.}

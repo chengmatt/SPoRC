@@ -17,19 +17,19 @@ Get_move_PE_loglik(
 \arguments{
 \item{PE_model}{Integer specifying the movement process error structure.
   All models are IID; they differ in which dimensions share a common
-  standard deviation. Models 1--5 are single-population (fix \code{pop = 1});
-  models 6--10 estimate separate parameters per population:
+  standard deviation. Models 1-5 are single-population (fix \code{pop = 1});
+  models 6-10 estimate separate parameters per population:
 \itemize{
-  \item \strong{1} – IID across years (single \eqn{\sigma} per origin region)
-  \item \strong{2} – IID across ages (single \eqn{\sigma} per origin region and age)
-  \item \strong{3} – IID across years and ages
-  \item \strong{4} – IID across years, ages, and sexes
-  \item \strong{5} – IID across years, seasons, ages, and sexes
-  \item \strong{6} – IID across populations and years
-  \item \strong{7} – IID across populations and ages
-  \item \strong{8} – IID across populations, years, and ages
-  \item \strong{9} – IID across populations, years, ages, and sexes
-  \item \strong{10} – IID across populations, years, seasons, ages, and sexes
+  \item \strong{1}: IID across years (single \eqn{\sigma} per origin region)
+  \item \strong{2}: IID across ages (single \eqn{\sigma} per origin region and age)
+  \item \strong{3}: IID across years and ages
+  \item \strong{4}: IID across years, ages, and sexes
+  \item \strong{5}: IID across years, seasons, ages, and sexes
+  \item \strong{6}: IID across populations and years
+  \item \strong{7}: IID across populations and ages
+  \item \strong{8}: IID across populations, years, and ages
+  \item \strong{9}: IID across populations, years, ages, and sexes
+  \item \strong{10}: IID across populations, years, seasons, ages, and sexes
 }}
 
 \item{PE_pars}{Array of movement process error parameters (log standard

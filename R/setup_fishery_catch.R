@@ -40,7 +40,7 @@
 #'   dimensions `n_regions x n_fish_fleets`. Default: 1.
 #'
 #' @param comp_fishage_like Numeric vector. Likelihood for age composition
-#'   (0 = Multinomial, 1 = Dirichlet-Multinomial, 2–4 = Logistic-Normal variants),
+#'   (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants),
 #'   length `n_fish_fleets`. Default: 0.
 #' @param ISS_FishAgeComps Numeric array. Effective sample sizes for age compositions,
 #'   dimensions `n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x n_sims`. Default: 100.
@@ -57,7 +57,7 @@
 #'   dimensions `n_yrs x n_fish_fleets`. Default: 2.
 #'
 #' @param comp_fishlen_like Numeric vector. Likelihood for length composition
-#'   (0 = Multinomial, 1 = Dirichlet-Multinomial, 2–4 = Logistic-Normal variants),
+#'   (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants),
 #'   length `n_fish_fleets`. Default: 0.
 #' @param ISS_FishLenComps Numeric array. Effective sample sizes for length compositions,
 #'   dimensions `n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x n_sims`. Default: 100.
@@ -74,7 +74,7 @@
 #'   dimensions `n_yrs x n_fish_fleets`. Default: 2.
 #'
 #' @param comp_fishage_pop_like Numeric vector. Likelihood for population-specific fishery age composition
-#'   (0 = Multinomial, 1 = Dirichlet-Multinomial, 2–4 = Logistic-Normal variants),
+#'   (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants),
 #'   length `n_fish_fleets`. Default: 0.
 #' @param ISS_FishAgeComps_pop Numeric array. Effective sample sizes for population-specific fishery age compositions,
 #'   dimensions `n_pop x n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x n_sims`. Default: 100.
@@ -91,7 +91,7 @@
 #'   dimensions `n_yrs x n_fish_fleets`. Default: 2.
 #'
 #' @param comp_fishlen_pop_like Numeric vector. Likelihood for population-specific fishery length composition
-#'   (0 = Multinomial, 1 = Dirichlet-Multinomial, 2–4 = Logistic-Normal variants),
+#'   (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants),
 #'   length `n_fish_fleets`. Default: 0.
 #' @param ISS_FishLenComps_pop Numeric array. Effective sample sizes for population-specific fishery length compositions,
 #'   dimensions `n_pop x n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x n_sims`. Default: 100.
@@ -121,7 +121,7 @@
 #'   dimensions `n_pop x n_regions x n_yrs x n_seas x n_fish_fleets`. Default: log(0.02).
 #'
 #' @param comp_fishage_discard_like Numeric vector. Likelihood for discard age composition
-#'   (0 = Multinomial, 1 = Dirichlet-Multinomial, 2–4 = Logistic-Normal variants, 999 = none),
+#'   (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants, 999 = none),
 #'   length `n_fish_fleets`. Default: 0.
 #' @param ISS_FishAgeComps_discard Numeric array. Effective sample sizes for discard age compositions,
 #'   dimensions `n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x n_sims`. Default: 100.
@@ -138,7 +138,7 @@
 #'   dimensions `n_yrs x n_fish_fleets`. Default: 2.
 #'
 #' @param comp_fishlen_discard_like Numeric vector. Likelihood for discard length composition
-#'   (0 = Multinomial, 1 = Dirichlet-Multinomial, 2–4 = Logistic-Normal variants, 999 = none),
+#'   (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants, 999 = none),
 #'   length `n_fish_fleets`. Default: 0.
 #' @param ISS_FishLenComps_discard Numeric array. Effective sample sizes for discard length compositions,
 #'   dimensions `n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x n_sims`. Default: 100.
@@ -155,7 +155,7 @@
 #'   dimensions `n_yrs x n_fish_fleets`. Default: 2.
 #'
 #' @param comp_fishage_discard_pop_like Numeric vector. Likelihood for population-specific discard age composition
-#'   (0 = Multinomial, 1 = Dirichlet-Multinomial, 2–4 = Logistic-Normal variants, 999 = none),
+#'   (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants, 999 = none),
 #'   length `n_fish_fleets`. Default: 0.
 #' @param ISS_FishAgeComps_discard_pop Numeric array. Effective sample sizes for population-specific discard age compositions,
 #'   dimensions `n_pop x n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x n_sims`. Default: 100.
@@ -172,7 +172,7 @@
 #'   dimensions `n_yrs x n_fish_fleets`. Default: 2.
 #'
 #' @param comp_fishlen_discard_pop_like Numeric vector. Likelihood for population-specific discard length composition
-#'   (0 = Multinomial, 1 = Dirichlet-Multinomial, 2–4 = Logistic-Normal variants, 999 = none),
+#'   (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants, 999 = none),
 #'   length `n_fish_fleets`. Default: 0.
 #' @param ISS_FishLenComps_discard_pop Numeric array. Effective sample sizes for population-specific discard length compositions,
 #'   dimensions `n_pop x n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x n_sims`. Default: 100.
@@ -672,8 +672,8 @@ do_sigmaC_mapping <- function(input_list, sigmaC_spec) {
 #' (\code{UseCatch == 1}) and mapping cells without catch data to \code{NA}.
 #' This ensures that fishing mortality parameters are only estimated for
 #' dimensions with observed catch. \code{ln_F_devs} is resolved per
-#' region–year–season–fleet cell, while \code{ln_F_mean} is resolved per
-#' region–season–fleet cell and is estimated whenever that cell is fished in
+#' region-year-season-fleet cell, while \code{ln_F_mean} is resolved per
+#' region-season-fleet cell and is estimated whenever that cell is fished in
 #' at least one year.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
@@ -694,7 +694,7 @@ do_Fmort_mapping <- function(input_list) {
 
   # Estimate F devs if aggregated catch OR any pop-specific catch is used, or
   # if the aggregate catch observation is missing (NA) rather than a true
-  # recorded zero -- fishing is assumed to have continued through a missing
+  # recorded zero; fishing is assumed to have continued through a missing
   # observation, whereas a recorded zero (or no catch data used at all) with
   # no missing observation indicates a true closure
   has_catch <- input_list$data$UseCatch == 1 |
@@ -707,7 +707,7 @@ do_Fmort_mapping <- function(input_list) {
   input_list$map$ln_F_devs <- factor(as.vector(F_dev_map))
 
   # ln_F_mean only enters the objective through cells that are fished in at
-  # least one year -- the same condition that keeps Fmort free rather than
+  # least one year, the same condition that keeps Fmort free rather than
   # pinned to zero. A region-season-fleet cell that is closed in every year
   # (e.g. a fleet that only operates in its own region/season) contributes
   # nothing to the likelihood, so estimating it leaves a flat gradient
@@ -930,7 +930,7 @@ do_sigmaD_mapping <- function(input_list, sigmaD_spec) {
 #' Map discard mortality deviation parameters
 #'
 #' Constructs the \code{logit_dmr_devs} factor map, assigning unique estimation
-#' indices to region–year–season–fleet cells that are fished and mapping true
+#' indices to region-year-season-fleet cells that are fished and mapping true
 #' closures to \code{NA}. A cell is fished when aggregated or any
 #' population-specific catch is used, or when the aggregate catch observation is
 #' missing (\code{NA}) rather than a recorded zero, which is the same condition
@@ -1152,8 +1152,8 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
 #'   Values should be in the units specified by \code{catch_units}. For a
 #'   cell with \code{UseCatch == 0} (and no population-specific catch
 #'   used), an \code{NA} entry here is treated as a genuinely missing
-#'   observation -- fishing is assumed to have continued and \code{Fmort}/
-#'   \code{ln_F_devs} are estimated normally for that year -- whereas a
+#'   observation; fishing is assumed to have continued and \code{Fmort}/
+#'   \code{ln_F_devs} are estimated normally for that year, whereas a
 #'   true recorded value (typically \code{0}) is treated as a real
 #'   closure: \code{Fmort} is forced to zero and no deviation is estimated.
 #'   See \code{\link{Get_Fdev_PE_loglik}}.
@@ -1216,12 +1216,12 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
 #'   two active years spanning a gap of \eqn{d} closed years is taken over
 #'   the elapsed gap directly (the same marginal transition as estimating
 #'   deviations for the closed years and integrating them out, without
-#'   actually estimating them) -- see \code{\link{Get_Fdev_PE_loglik}}.
+#'   actually estimating them), see \code{\link{Get_Fdev_PE_loglik}}.
 #'   A warning is issued if \code{"rw"} or \code{"ar1"} is selected but
 #'   \code{Use_F_pen = 0} (the penalty is never evaluated, so the process
 #'   structure has no effect), \code{sigmaF_spec = "fix"} (the process error
 #'   SD is not estimated), or (for \code{"ar1"}) \code{Fdev_rho_spec =
-#'   "fix"} (the correlation is not estimated) -- any of these may be
+#'   "fix"} (the correlation is not estimated), any of these may be
 #'   intentional, but are common oversights when switching away from
 #'   \code{"iid"}.
 #' @param Fdev_rho_spec Character string specifying the sharing structure for
@@ -1383,13 +1383,13 @@ Setup_Mod_Catch_and_F <- function(input_list,
   else collect_message("Fdev_model is specified as: ", Fdev_model)
 
   if(Fdev_model %in% c("rw", "ar1") && Use_F_pen == 0)
-    warning("Fdev_model = '", Fdev_model, "' but Use_F_pen = 0 -- the fishing mortality deviation penalty is never evaluated, so the ", Fdev_model, " process error structure has no effect on the model. Set Use_F_pen = 1 to actually apply it.")
+    warning("Fdev_model = '", Fdev_model, "' but Use_F_pen = 0; the fishing mortality deviation penalty is never evaluated, so the ", Fdev_model, " process error structure has no effect on the model. Set Use_F_pen = 1 to actually apply it.")
 
   if(Fdev_model %in% c("rw", "ar1") && sigmaF_spec == "fix")
-    warning("Fdev_model = '", Fdev_model, "' but sigmaF_spec = 'fix' -- the process error standard deviation (ln_sigmaF) driving the ", Fdev_model, " process is not being estimated. This may be intentional (e.g. fixing sigma at a known value), but if not, consider estimating ln_sigmaF via sigmaF_spec.")
+    warning("Fdev_model = '", Fdev_model, "' but sigmaF_spec = 'fix'; the process error standard deviation (ln_sigmaF) driving the ", Fdev_model, " process is not being estimated. This may be intentional (e.g. fixing sigma at a known value), but if not, consider estimating ln_sigmaF via sigmaF_spec.")
 
   if(Fdev_model == "ar1" && Fdev_rho_spec == "fix")
-    warning("Fdev_model = 'ar1' but Fdev_rho_spec = 'fix' -- the AR1 correlation parameter (Fdev_rho) is not being estimated. This may be intentional (e.g. fixing rho at a known value), but if not, consider estimating Fdev_rho via Fdev_rho_spec.")
+    warning("Fdev_model = 'ar1' but Fdev_rho_spec = 'fix'; the AR1 correlation parameter (Fdev_rho) is not being estimated. This may be intentional (e.g. fixing rho at a known value), but if not, consider estimating Fdev_rho via Fdev_rho_spec.")
 
   # Discard Mortality checking
   if(!Use_dmr_pen %in% c(0,1)) stop("Use_dmr_pen incorrectly specified. Either set at 0 (don't use D penalty) or 1 (use D penalty)")

@@ -16,18 +16,18 @@ Otherwise, the empirical mean of \code{x} is used.}
 \item{mixing}{Character string specifying the alternative hypothesis for
 the runs test:
 \itemize{
-  \item \code{"two.sided"} – tests for both positive and negative
+  \item \code{"two.sided"}: tests for both positive and negative
   autocorrelation (default).
-  \item \code{"less"} – left-tailed test detecting positive
+  \item \code{"less"}: left-tailed test detecting positive
   autocorrelation.
 }}
 }
 \value{
 A list containing:
 \itemize{
-  \item \code{sig3lim} – Numeric vector of length two giving the lower and
-  upper three–sigma control limits for the residuals.
-  \item \code{p.runs} – P-value from the runs test for randomness.
+  \item \code{sig3lim}: Numeric vector of length two giving the lower and
+  upper three-sigma control limits for the residuals.
+  \item \code{p.runs}: P-value from the runs test for randomness.
 }
 
 A small p-value (e.g., \code{< 0.05}) indicates evidence that the residual
@@ -37,7 +37,7 @@ patterns.
 \description{
 Performs a nonparametric runs test to evaluate whether a sequence of
 residuals is randomly distributed around a reference mean. The function
-also computes three–sigma control limits used to identify potential
+also computes three-sigma control limits used to identify potential
 residual outliers.
 }
 \details{

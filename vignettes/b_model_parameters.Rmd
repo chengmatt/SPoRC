@@ -142,7 +142,7 @@ Region-aggregated and population-specific composition likelihoods have separate 
 | `ln_rinit` | `n_pop` | Log-scale initial recruitment scalar per population. Used to initialize equilibrium age structure when `use_rinit = 1`; ignored otherwise. | 15 |
 | `rec_region_prop_pars` | `n_pop × (n_regions - 1)` | Logit-scale regional recruitment proportion parameters (simplex parameterization; omitted when `rec_region_prop_spec == 1`) | 0 |
 | `rec_seas_prop_pars` | `n_pop × (n_seas - 1)` | Logit-scale seasonal recruitment proportion parameters (simplex parameterization; omitted when `use_fixed_rec_seas_prop == 1`) | 0 |
-| `steepness_h` | `n_pop × n_regions` | Steepness of stock-recruitment relationship (logit scale, bounded 0.2–1) | 0 |
+| `steepness_h` | `n_pop × n_regions` | Steepness of stock-recruitment relationship (logit scale, bounded 0.2-1) | 0 |
 | `ln_sigmaR` | `2 × n_pop × n_regions` | Log-scale standard deviations for early (index 1) and late (index 2) recruitment periods | 0 |
 | `ln_InitDevs` | `n_pop × n_regions × (n_ages - 1)` | Log-scale initial age structure deviations (can be specified as random effects) | 0 |
 | `ln_RecDevs` | `n_pop × n_regions × (n_recdev_years + n_proj_yrs_devs)` | Log-scale annual recruitment deviations w/ projection years (can be specified as random effects) | 0 |

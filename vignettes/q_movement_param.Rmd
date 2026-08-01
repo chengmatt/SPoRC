@@ -40,7 +40,7 @@ input_list <- Setup_Mod_Dim(years = 1:length(three_rg_sable_data$years),
                             )
 ```
 
-Like previous vignettes, the `Setup_Mod_Dim()` function initializes the model structure with 62 years of data (1960–2021), 30 age classes, 3 regions, 2 sexes, 2 fishery fleets (fixed gear and trawl), and multiple survey fleets.
+Like previous vignettes, the `Setup_Mod_Dim()` function initializes the model structure with 62 years of data (1960-2021), 30 age classes, 3 regions, 2 sexes, 2 fishery fleets (fixed gear and trawl), and multiple survey fleets.
 
 # Unstructured Markov
 
@@ -156,7 +156,7 @@ adjacency <- igraph::as_adjacency_matrix(
   )
 )
 
-# make ctmc data — must include pop, regions, years, seas, ages, sexes columns
+# make ctmc data, must include pop, regions, years, seas, ages, sexes columns
 ctmc_data <- expand.grid(
   pop     = 1,
   regions = 1:three_rg_sable_data$n_regions,

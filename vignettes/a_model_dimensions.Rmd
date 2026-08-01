@@ -41,7 +41,7 @@ The following tables describe all elements contained within `input_list$data`, w
 
 | Name | Description |
 |-------------------------|------------------------------------------------------|
-| rec_lag | Value specifying the delay between spawning and when recruits enter the population. For example, if recruits enter the population as age 2, rec_lag would be specified as 2, such that the spawning biomass from year – 2 produces these recruits. A special case, rec_lag = 0 (age-0 recruitment), uses the *same* year's own spawning biomass instead of a prior year's; because that year's SSB isn't known until the spawning season is reached, recruits may only enter in the spawning season itself or later that same year |
+| rec_lag | Value specifying the delay between spawning and when recruits enter the population. For example, if recruits enter the population as age 2, rec_lag would be specified as 2, such that the spawning biomass from year, 2 produces these recruits. A special case, rec_lag = 0 (age-0 recruitment), uses the *same* year's own spawning biomass instead of a prior year's; because that year's SSB isn't known until the spawning season is reached, recruits may only enter in the spawning season itself or later that same year |
 | Use_h_prior | Value specifying whether steepness priors are used. 0: Don't use priors, 1: Use Priors. Steepness priors are bounded between 0.2 and 1 with a scaled beta penalty |
 | h_prior | Data frame specifying prior distributions for steepness parameters. Must include columns: pop (population index), region (region index), mu (mean of the prior in normal space), and sd (standard deviation of the prior in normal space). For each row, a beta distribution is scaled to the interval [0.2, 1], and the corresponding h_trans value is transformed and penalized using the log-density from the scaled beta distribution |
 | do_rec_bias_ramp | Value specifying whether or not the Methot and Taylor recruitment bias ramp is conducted. 0: Don't do bias ramp, 1: Do bias ramp |
@@ -275,7 +275,7 @@ Region-aggregated observations (summed across populations) and population-specif
 | map_ln_fishsel_devs | Array dimensioned by n_regions, n_years, n_ages, n_sexes, n_fish_fleets indicating which continuous time-varying selectivity deviation values are fixed (mapped off) |
 | Use_fish_selex_prior | Integer (0 or 1). Flag to enable log-normal priors on fishery selectivity parameters as specified in fish_selex_prior |
 | fish_selex_prior | Data frame containing prior specifications for fishery selectivity parameters. Must include columns: region, fleet, block, sex, par (parameter index), mu (prior mean on natural scale), and sd (prior standard deviation on log scale). Each row specifies a log-normal prior for one selectivity parameter |
-| fishsel_devs_min_shared_bins | Integer vector specifying the reference (minimum) bin index within each shared deviation group, used to subset the bin dimension when evaluating GMRF or 2D AR(1) likelihoods (PE models 3--5). Defaults to 1:n_ages when no bin sharing is specified |
+| fishsel_devs_min_shared_bins | Integer vector specifying the reference (minimum) bin index within each shared deviation group, used to subset the bin dimension when evaluating GMRF or 2D AR(1) likelihoods (PE models 3-5). Defaults to 1:n_ages when no bin sharing is specified |
 | fish_sel_pen_wts | Named list/vector of smoothness penalty weights (smooth_bin_curve, smooth_bin_diff, smooth_yr_diff, smooth_yr_curve, smooth_dome, smooth_mean_center) evaluated on the realized fishery selectivity surface; unset names default to 0. See Get_Selex_Smoothness_Penalty.R |
 
 ## Data Inputs for Defining Retention Selectivity
@@ -310,7 +310,7 @@ Region-aggregated observations (summed across populations) and population-specif
 | map_ln_srvsel_devs | Array dimensioned by n_regions, n_years, n_ages, n_sexes, n_srv_fleets indicating which continuous time-varying selectivity deviation values are fixed (mapped off) |
 | Use_srv_selex_prior | Integer (0 or 1). Flag to enable log-normal priors on survey selectivity parameters as specified in srv_selex_prior |
 | srv_selex_prior | Data frame containing prior specifications for survey selectivity parameters. Must include columns: region, fleet, block, sex, par (parameter index), mu (prior mean on natural scale), and sd (prior standard deviation on log scale). Each row specifies a log-normal prior for one selectivity parameter |
-| srvsel_devs_min_shared_bins | Integer vector specifying the reference (minimum) bin index within each shared deviation group, used to subset the bin dimension when evaluating GMRF or 2D AR(1) likelihoods (PE models 3--5). Defaults to 1:n_ages when no bin sharing is specified |
+| srvsel_devs_min_shared_bins | Integer vector specifying the reference (minimum) bin index within each shared deviation group, used to subset the bin dimension when evaluating GMRF or 2D AR(1) likelihoods (PE models 3-5). Defaults to 1:n_ages when no bin sharing is specified |
 | srv_sel_pen_wts | Same format as fish_sel_pen_wts, evaluated on the realized survey selectivity surface |
 
 ## Data Inputs for Defining Model Weighting

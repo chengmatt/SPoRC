@@ -37,8 +37,8 @@ operator in its top-left corner,
 \deqn{\exp\left(\begin{bmatrix} A & I \\ 0 & 0\end{bmatrix}\right) =
       \begin{bmatrix} e^{A} & \int_0^1 e^{A\tau}d\tau \\ 0 & I\end{bmatrix},}
 so callers that need the population step \emph{and} the catch integral for the same
-stratum -- which is every fished stratum, since the dynamics advance the numbers and
-the Baranov equation integrates them over the identical \eqn{A} -- should take both
+stratum, which is every fished stratum, since the dynamics advance the numbers and
+the Baranov equation integrates them over the identical \eqn{A}, should take both
 from here rather than exponentiating \eqn{A} once and the block again. Under
 reverse-mode AD the adjoint of a matrix exponential is far more expensive than its
 forward evaluation, so halving the number of exponentials on the tape is worth more

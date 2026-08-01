@@ -101,7 +101,7 @@ specifying the likelihood for survey age compositions. One of
 \code{"none"}, \code{"Multinomial"}, \code{"Dirichlet-Multinomial"},
 \code{"iid-Logistic-Normal"}, \code{"1d-Logistic-Normal"},
 \code{"2d-Logistic-Normal"}. Converted to integer codes
-(\code{999}, \code{0}–\code{4}) before storage.}
+(\code{999}, \code{0}-\code{4}) before storage.}
 
 \item{SrvLenComps_LikeType}{Character vector \code{[n_srv_fleets]}
 specifying the likelihood for survey length compositions. Same options
@@ -139,7 +139,7 @@ Default: all zeros.}
 survey age compositions
 \code{[n_pop × n_regions × n_years × n_seas × n_sexes × n_srv_fleets]}.
 If \code{NULL} (default), computed automatically by summing
-\code{ObsSrvAgeComps_pop} within each population–year–fleet–season–region
+\code{ObsSrvAgeComps_pop} within each population-year-fleet-season-region
 cell according to \code{SrvAgeComps_pop_Type}.}
 
 \item{ObsSrvLenComps_pop}{Observed population-specific survey length

@@ -89,7 +89,7 @@ lengths.}
 \itemize{
   \item 0 = multinomial
   \item 1 = Dirichlet-multinomial
-  \item 2–4 = logistic-normal variants
+  \item 2-4 = logistic-normal variants
 }}
 
 \item{addtocomp}{Constant that is added to compositions}

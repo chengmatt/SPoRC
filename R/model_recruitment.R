@@ -8,10 +8,10 @@
 #' Deterministic Recruitment
 #'
 #' Computes deterministic recruitment by population and region using either
-#' a mean recruitment model or a Beverton–Holt stock–recruitment relationship.
+#' a mean recruitment model or a Beverton-Holt stock-recruitment relationship.
 #'
 #' Recruitment is distributed spatially using regional recruitment proportions
-#' and seasonal recruitment timing. When Beverton–Holt recruitment is used,
+#' and seasonal recruitment timing. When Beverton-Holt recruitment is used,
 #' unfished spawning biomass per recruit (\eqn{S_0}) is calculated internally
 #' by projecting a single recruit through the full seasonal population dynamics,
 #' including movement and mortality.
@@ -19,7 +19,7 @@
 #' @param recruitment_model Integer flag specifying the recruitment model:
 #'   \itemize{
 #'   \item \code{0} Mean recruitment
-#'   \item \code{1} Beverton–Holt recruitment with steepness
+#'   \item \code{1} Beverton-Holt recruitment with steepness
 #'   }
 #'
 #' @param rec_dd Integer flag specifying the density dependence structure:
@@ -36,7 +36,7 @@
 #'   recruitment: recruitment uses the SAME year's SSB
 #'   (\code{SSB_vals[,,y]}). The caller is responsible for supplying that
 #'   value already computed from survivors only (i.e. before this year's
-#'   recruits exist) when \code{rec_lag = 0} -- see \code{SPoRC_rtmb.R},
+#'   recruits exist) when \code{rec_lag = 0}, see \code{SPoRC_rtmb.R},
 #'   \code{Simulate_Population.R}, and \code{Do_Population_Projection.R} for
 #'   how each population-dynamics loop does this.
 #' @param R0 Numeric vector (\code{n_pop}) of unfished recruitment by population.
@@ -45,9 +45,9 @@
 #' @param rec_seas_prop Matrix (\code{n_pop × n_seas}) giving seasonal recruitment
 #'   proportions. When \code{rec_lag = 0}, must be zero for every season
 #'   before \code{spawn_seas} (age-0 recruits can't predate the spawning
-#'   event that produced them) -- validated at setup by
+#'   event that produced them), validated at setup by
 #'   \code{Setup_Mod_Rec}/\code{Setup_Sim_Rec}.
-#' @param h Matrix (\code{n_pop × n_regions}) of Beverton–Holt steepness values.
+#' @param h Matrix (\code{n_pop × n_regions}) of Beverton-Holt steepness values.
 #' @param n_pop Number of populations.
 #' @param n_regions Number of spatial regions.
 #' @param n_ages Number of age classes (including the plus group).
@@ -91,10 +91,10 @@
 #' where recruitment is distributed spatially according to
 #' \code{rec_region_prop}.
 #'
-#' **Beverton–Holt recruitment**
+#' **Beverton-Holt recruitment**
 #'
 #' When \code{recruitment_model = 1}, recruitment follows the
-#' Beverton–Holt relationship:
+#' Beverton-Holt relationship:
 #'
 #' \deqn{
 #' R = \frac{4hR_0SSB}{(1-h)S_0 + (5h-1)SSB}
@@ -103,14 +103,14 @@
 #' where:
 #' \itemize{
 #' \item \eqn{SSB} is spawning biomass lagged by \code{rec_lag} seasons
-#'   (or, when \code{rec_lag = 0}, the current year's own spawning biomass --
+#'   (or, when \code{rec_lag = 0}, the current year's own spawning biomass,
 #'   see the \code{rec_lag} parameter above)
 #' \item \eqn{S_0} is unfished spawning biomass per recruit
 #' \item \eqn{h} is steepness
 #' }
 #'
 #' \eqn{S_0} (and the age-composition of spawning biomass per recruit more
-#' generally) does not depend on \code{rec_lag} -- it is a pure per-recruit,
+#' generally) does not depend on \code{rec_lag}; it is a pure per-recruit,
 #' equilibrium quantity. The recruit age class (the first age) is always
 #' included in the sum; when \code{rec_lag = 0}, maturity at that age is
 #' required to be exactly zero (validated at setup by
@@ -606,7 +606,7 @@ Get_Det_Recruitment <- function(recruitment_model,
 
     # get SSB to use to predict recruitment. When rec_lag == 0 (age-0
     # recruitment), y <= rec_lag is never true for y >= 1, so this always
-    # takes the SSB_vals[,,y-rec_lag] = SSB_vals[,,y] branch -- the CURRENT
+    # takes the SSB_vals[,,y-rec_lag] = SSB_vals[,,y] branch, the CURRENT
     # year's SSB. The caller (SPoRC_rtmb.R) is responsible for computing
     # SSB_vals[,,y] from survivors only (before this year's recruits exist)
     # and passing it in before calling this function in that case.

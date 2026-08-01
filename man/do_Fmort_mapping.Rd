@@ -22,8 +22,8 @@ unique estimation indices to cells where catch data are used
 (\code{UseCatch == 1}) and mapping cells without catch data to \code{NA}.
 This ensures that fishing mortality parameters are only estimated for
 dimensions with observed catch. \code{ln_F_devs} is resolved per
-region–year–season–fleet cell, while \code{ln_F_mean} is resolved per
-region–season–fleet cell and is estimated whenever that cell is fished in
+region-year-season-fleet cell, while \code{ln_F_mean} is resolved per
+region-season-fleet cell and is estimated whenever that cell is fished in
 at least one year.
 }
 \keyword{internal}

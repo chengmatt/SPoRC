@@ -56,7 +56,7 @@ corresponding \code{Use*_pop} flags contain any ones.
 }
 \details{
 The \code{resid} column here is the simple log-scale residual
-\eqn{\log(\text{obs}) - \log(\text{predicted})} -- \emph{not} a
+\eqn{\log(\text{obs}) - \log(\text{predicted})}, \emph{not} a
 one-step-ahead (OSA) residual. For properly decorrelated OSA index
 residuals (with QQ-plots and SDNR diagnostics via \code{\link{plot_resids}}),
 use \code{\link{get_osa}} with \code{index_source = }. The observed-vs-

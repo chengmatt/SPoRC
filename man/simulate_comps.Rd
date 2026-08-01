@@ -59,7 +59,7 @@ Used when \code{pop_specific = FALSE}.}
 
 \item{comp_like}{Integer vector \code{[n_fleets]}. Likelihood type per
 fleet: \code{0} = multinomial, \code{1} = Dirichlet-multinomial,
-\code{2}–\code{4} = logistic-normal variants.}
+\code{2}-\code{4} = logistic-normal variants.}
 
 \item{ln_theta}{Array. Log overdispersion or log-variance parameters
 \code{[n_regions × n_sexes × n_fleets]}. Used when
@@ -129,7 +129,7 @@ The \code{Obs} array with simulated composition draws filled in at
 }
 \description{
 Draws observed composition samples (by age or length) for a single
-region–year–fleet–season–simulation cell, supporting multinomial,
+region-year-fleet-season-simulation cell, supporting multinomial,
 Dirichlet-multinomial, and logistic-normal likelihoods. Ageing error is
 optionally applied post-draw. Three composition aggregation structures are
 handled: sex-split (\code{comp_type = 1}), joint across sexes
@@ -146,7 +146,7 @@ within population, and results are written to \code{Obs[p, ...]}.
 
 For joint compositions (\code{comp_type = 2}), the Kronecker product
 \code{diag(n_sexes) ⊗ AgeingError} is used to apply ageing error across
-the combined age–sex vector. For aggregated compositions
+the combined age-sex vector. For aggregated compositions
 (\code{comp_type = 0}), the draw is only executed when \code{r == n_regions}
 (i.e., on the final region pass), and uses region- and sex-marginalised
 expected proportions.

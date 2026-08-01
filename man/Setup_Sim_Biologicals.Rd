@@ -41,7 +41,7 @@ Used to compute survey biomass indices.}
 Values should be proportions in \eqn{[0, 1]}. When \code{rec_lag = 0}
 (age-0 recruitment, set via \code{\link{Setup_Sim_Rec}}), maturity at
 the recruit age (the first age class) must be exactly \code{0} for all
-populations, regions, years, seasons, and sexes -- an error is raised
+populations, regions, years, seasons, and sexes. An error is raised
 otherwise.}
 
 \item{AgeingError_input}{Ageing error (age-length transition) array with
@@ -51,7 +51,7 @@ true modelled ages to observed age bins. If \code{NULL} (default), an
 identity matrix is constructed for each year and simulation, which assumes
 that modelled and observed age bins are identical in number and alignment.
 \strong{If observed age bins are a subset of modelled ages} (e.g., observed
-ages 2–10 vs. modelled ages 1–10), the default identity matrix will cause a
+ages 2-10 vs. modelled ages 1-10), the default identity matrix will cause a
 dimensional mismatch. In that case, supply a shifted identity matrix such as
 \code{diag(1, n_model_ages)[, obs_age_index]} to correctly drop or collapse
 model ages into observed bins.}

@@ -20,10 +20,10 @@ model.}
 \value{
 A list containing truncated versions of the RTMB inputs:
 \itemize{
-  \item \code{retro_data} – Modified data list with terminal years removed.
-  \item \code{retro_parameters} – Parameter list truncated to match the
+  \item \code{retro_data}: Modified data list with terminal years removed.
+  \item \code{retro_parameters}: Parameter list truncated to match the
   shortened time series.
-  \item \code{retro_mapping} – Mapping list updated to match truncated
+  \item \code{retro_mapping}: Mapping list updated to match truncated
   parameter dimensions.
 }
 }

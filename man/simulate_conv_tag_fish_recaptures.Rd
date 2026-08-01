@@ -77,7 +77,7 @@ The \code{obs_conv_tag_fish_recap} array with simulated recaptures
   flt_idx, sim]}. Marginalised dimensions are fixed at index 1.
 }
 \description{
-Draws observed tag recapture counts for a single liberty–season–cohort cell
+Draws observed tag recapture counts for a single liberty-season-cohort cell
 from predicted recapture arrays, supporting six likelihood structures:
 Poisson, negative binomial, and release- or recovery-conditioned
 multinomial and Dirichlet-multinomial. Dimensions absent from

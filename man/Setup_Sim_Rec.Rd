@@ -73,7 +73,7 @@ the SD for annual recruitment deviations (\code{ln_RecDevs}). Default:
 \code{[n_pop x n_seas x n_sims]}. Each population's values should sum to
 1 across seasons. Default: all recruitment assigned to season 1. When
 \code{rec_lag = 0} and \code{spawn_seas > 1}, must be zero for every
-season before \code{spawn_seas} -- an error is raised otherwise.}
+season before \code{spawn_seas}. An error is raised otherwise.}
 
 \item{recruitment_opt}{Recruitment model. Default \code{"bh_rec"}. Options:
 \describe{
@@ -137,7 +137,7 @@ population using SSB from \code{rec_lag} seasons prior, in any season.
 \code{0} is age-0 recruitment: recruits enter using the SAME year's SSB.
 Because that SSB isn't known until \code{spawn_seas} is reached, age-0
 recruits may only enter in \code{spawn_seas} itself or a later season in
-the same year -- \code{rec_seas_prop_input} must be zero for every season
+the same year; \code{rec_seas_prop_input} must be zero for every season
 before \code{spawn_seas} when \code{rec_lag = 0}.}
 
 \item{Rec_input}{External recruitment array

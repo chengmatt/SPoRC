@@ -29,7 +29,7 @@ Setup_Mod_Dim(
 throughout the model.}
 
 \item{ages}{Numeric vector of modelled age classes (e.g., \code{2:31} for a
-model spanning ages 2–31). The final element is treated as a plus-group.}
+model spanning ages 2-31). The final element is treated as a plus-group.}
 
 \item{lens}{Numeric vector of length bin midpoints. Set to \code{NULL} when
 length data are not modelled; a scalar placeholder of \code{1} is stored

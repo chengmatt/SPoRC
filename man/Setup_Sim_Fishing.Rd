@@ -165,7 +165,7 @@ dimensions `n_pop x n_regions x n_yrs x n_seas x n_fish_fleets`. Default: 0.2.}
 dimensions `n_regions x n_fish_fleets`. Default: 1.}
 
 \item{comp_fishage_like}{Numeric vector. Likelihood for age composition
-(0 = Multinomial, 1 = Dirichlet-Multinomial, 2–4 = Logistic-Normal variants),
+(0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants),
 length `n_fish_fleets`. Default: 0.}
 
 \item{ISS_FishAgeComps}{Numeric array. Effective sample sizes for age compositions,
@@ -188,7 +188,7 @@ dimensions `n_regions x n_sexes x n_fish_fleets x 2`. Default: 0.01.}
 dimensions `n_yrs x n_fish_fleets`. Default: 2.}
 
 \item{comp_fishlen_like}{Numeric vector. Likelihood for length composition
-(0 = Multinomial, 1 = Dirichlet-Multinomial, 2–4 = Logistic-Normal variants),
+(0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants),
 length `n_fish_fleets`. Default: 0.}
 
 \item{ISS_FishLenComps}{Numeric array. Effective sample sizes for length compositions,
@@ -211,7 +211,7 @@ dimensions `n_regions x n_sexes x n_fish_fleets x 2`. Default: 0.01.}
 dimensions `n_yrs x n_fish_fleets`. Default: 2.}
 
 \item{comp_fishage_pop_like}{Numeric vector. Likelihood for population-specific fishery age composition
-(0 = Multinomial, 1 = Dirichlet-Multinomial, 2–4 = Logistic-Normal variants),
+(0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants),
 length `n_fish_fleets`. Default: 0.}
 
 \item{ISS_FishAgeComps_pop}{Numeric array. Effective sample sizes for population-specific fishery age compositions,
@@ -234,7 +234,7 @@ dimensions `n_pop x n_fish_fleets`. Default: 0.01.}
 dimensions `n_yrs x n_fish_fleets`. Default: 2.}
 
 \item{comp_fishlen_pop_like}{Numeric vector. Likelihood for population-specific fishery length composition
-(0 = Multinomial, 1 = Dirichlet-Multinomial, 2–4 = Logistic-Normal variants),
+(0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants),
 length `n_fish_fleets`. Default: 0.}
 
 \item{ISS_FishLenComps_pop}{Numeric array. Effective sample sizes for population-specific fishery length compositions,
@@ -274,7 +274,7 @@ dimensions `n_regions x n_yrs x n_seas x n_fish_fleets`. Default: log(0.02).}
 dimensions `n_pop x n_regions x n_yrs x n_seas x n_fish_fleets`. Default: log(0.02).}
 
 \item{comp_fishage_discard_like}{Numeric vector. Likelihood for discard age composition
-(0 = Multinomial, 1 = Dirichlet-Multinomial, 2–4 = Logistic-Normal variants, 999 = none),
+(0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants, 999 = none),
 length `n_fish_fleets`. Default: 0.}
 
 \item{ISS_FishAgeComps_discard}{Numeric array. Effective sample sizes for discard age compositions,
@@ -297,7 +297,7 @@ length `n_fish_fleets`. Default: 0.01.}
 dimensions `n_yrs x n_fish_fleets`. Default: 2.}
 
 \item{comp_fishlen_discard_like}{Numeric vector. Likelihood for discard length composition
-(0 = Multinomial, 1 = Dirichlet-Multinomial, 2–4 = Logistic-Normal variants, 999 = none),
+(0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants, 999 = none),
 length `n_fish_fleets`. Default: 0.}
 
 \item{ISS_FishLenComps_discard}{Numeric array. Effective sample sizes for discard length compositions,
@@ -320,7 +320,7 @@ length `n_fish_fleets`. Default: 0.01.}
 dimensions `n_yrs x n_fish_fleets`. Default: 2.}
 
 \item{comp_fishage_discard_pop_like}{Numeric vector. Likelihood for population-specific discard age composition
-(0 = Multinomial, 1 = Dirichlet-Multinomial, 2–4 = Logistic-Normal variants, 999 = none),
+(0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants, 999 = none),
 length `n_fish_fleets`. Default: 0.}
 
 \item{ISS_FishAgeComps_discard_pop}{Numeric array. Effective sample sizes for population-specific discard age compositions,
@@ -343,7 +343,7 @@ dimensions `n_pop x n_fish_fleets`. Default: 0.01.}
 dimensions `n_yrs x n_fish_fleets`. Default: 2.}
 
 \item{comp_fishlen_discard_pop_like}{Numeric vector. Likelihood for population-specific discard length composition
-(0 = Multinomial, 1 = Dirichlet-Multinomial, 2–4 = Logistic-Normal variants, 999 = none),
+(0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants, 999 = none),
 length `n_fish_fleets`. Default: 0.}
 
 \item{ISS_FishLenComps_discard_pop}{Numeric array. Effective sample sizes for population-specific discard length compositions,

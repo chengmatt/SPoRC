@@ -143,9 +143,9 @@
 #' Simulation years consist of two periods:
 #'
 #' \itemize{
-#'   \item \strong{Conditioning years} — historical years corresponding to
+#'   \item \strong{Conditioning years}: historical years corresponding to
 #'     the fitted assessment model.
-#'   \item \strong{Projection years} — future years simulated under
+#'   \item \strong{Projection years}: future years simulated under
 #'     closed-loop management.
 #' }
 #'

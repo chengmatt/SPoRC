@@ -559,7 +559,7 @@ Setup_Mod_Discard_Comps     <- function(input_list,
 #' When \code{ISS_FishAgeComps}, \code{ISS_FishLenComps},
 #' \code{ISS_FishAgeComps_pop}, or \code{ISS_FishLenComps_pop} are \code{NULL},
 #' input sample sizes are derived automatically by summing the observed
-#' composition arrays within each year–fleet–season–region cell, consistent
+#' composition arrays within each year-fleet-season-region cell, consistent
 #' with the specified composition type.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par}, \code{$map},
@@ -591,7 +591,7 @@ Setup_Mod_Discard_Comps     <- function(input_list,
 #' @param ISS_FishAgeComps Input sample size array
 #'   \code{[n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
 #'   If \code{NULL} (default), computed automatically by summing
-#'   \code{ObsFishAgeComps} within each year–fleet–season–region cell
+#'   \code{ObsFishAgeComps} within each year-fleet-season-region cell
 #'   according to \code{FishAgeComps_Type}.
 #' @param ObsFishLenComps Observed fishery length composition array
 #'   \code{[n_regions × n_years × n_seas × n_lens × n_sexes × n_fish_fleets]}.
@@ -635,7 +635,7 @@ Setup_Mod_Discard_Comps     <- function(input_list,
 #'   age compositions
 #'   \code{[n_pop × n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
 #'   If \code{NULL} (default), computed automatically by summing
-#'   \code{ObsFishAgeComps_pop} within each population–year–fleet–season–region
+#'   \code{ObsFishAgeComps_pop} within each population-year-fleet-season-region
 #'   cell according to \code{FishAgeComps_pop_Type}.
 #' @param ObsFishLenComps_pop Observed population-specific fishery length
 #'   composition array

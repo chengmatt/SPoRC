@@ -32,7 +32,7 @@ pack_tag_osa(
 \arguments{
 \item{family}{Character, either \code{"count"} or \code{"comp"}.}
 
-\item{like_type}{Integer likelihood type code (0–5).}
+\item{like_type}{Integer likelihood type code (0-5).}
 
 \item{obs_recap}{Observed recapture array.}
 
@@ -100,9 +100,9 @@ For \code{family == "count"}, each valid event contributes one integer
 observation per \code{[fleet, pop_pool, region, age_pool, sex_pool]} cell
 with \code{use_fish_tagging[f] == 1}, in \code{(f, p, r, a, s)} loop order
 within each event, and events in \code{tag_grid} order. This mirrors
-\code{get_conv_tag_likelihoods()}'s exact accumulation structure -- a
+\code{get_conv_tag_likelihoods()}'s exact accumulation structure: a
 separate Poisson/NB term is fit per pool/age/sex cell and their
--log-likelihoods summed -- so packing one count per \code{[region, fleet]}
+-log-likelihoods summed, so packing one count per \code{[region, fleet]}
 pre-summed across pools would evaluate a different (non-equivalent)
 likelihood whenever more than one pool is used.
 

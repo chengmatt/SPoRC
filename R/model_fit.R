@@ -24,7 +24,16 @@
 #'   after \code{nlminb} convergence to reduce gradient magnitudes. Each
 #'   step solves \eqn{\Delta\theta = -H^{-1} g} and updates the objective.
 #'   Default \code{3}. Errors and warnings are caught silently via
-#'   \code{tryCatch}.
+#'   \code{tryCatch}, so a step that fails leaves the \code{nlminb} solution
+#'   in place without a message.
+#'   \eqn{H} comes from the AD tape (\code{obj$he}) for fixed-effects models,
+#'   which is exact and costs a single call. Random-effects models fall back
+#'   to \code{\link[stats]{optimHess}} differencing the gradient, since RTMB
+#'   does not implement a tape Hessian when random effects are present.
+#'   Refinement stops early if \eqn{H} comes back non-finite, which happens on
+#'   models that have not converged, where second derivatives can be undefined
+#'   at parameter values the objective and gradient still evaluate at. The
+#'   \code{nlminb} solution is kept in that case.
 #' @param silent Logical. If \code{TRUE}, suppresses RTMB and optimiser
 #'   console output. Default \code{FALSE}.
 #' @param do_optim Logical. If \code{TRUE} (default), runs \code{nlminb}
@@ -94,11 +103,28 @@ fit_model <- function(data,
     optim <- stats::nlminb(obj$par, obj$fn, obj$gr,
                            control = nlminb_control,
                            lower = lower, upper = upper)
+
     # newton steps
     try_improve <- tryCatch(expr =
                               for(i in 1:newton_loops) {
                                 g = as.numeric(obj$gr(optim$par))
-                                h = optimHess(optim$par, fn = obj$fn, gr = obj$gr)
+
+                                # note that the tape gives the Hessian exactly in a single call, whereas
+                                # optimHess differences the gradient once per parameter. RTMB has
+                                # no tape Hessian under random effects, so those difference the
+                                # Laplace approximated objective instead.
+
+                                if(is.null(random)) {
+                                  h = as.matrix(obj$he(optim$par)) # analytical hessian from obj
+                                } else {
+                                  h = stats::optimHess(optim$par, fn = obj$fn, gr = obj$gr)
+                                } # end if else for hessian source
+
+                                # some second derivatives are not always defined where the objective and
+                                # gradient still are, which shows up as a non-finite Hessian
+                                # on models that have not converged.... break here
+                                if(!all(is.finite(h))) break
+
                                 new_par = optim$par - solve(h,g)
                                 optim$par = pmax(lower, pmin(upper, new_par)) # keep Newton step within bounds
                                 optim$objective = obj$fn(optim$par)

@@ -10,8 +10,8 @@
 #' Computes the negative log-likelihood contribution for composition data
 #' (age or length) for a single year and fleet. The function supports multiple
 #' composition parameterizations and likelihood families commonly used in
-#' stock assessment models, including multinomial, Dirichlet–multinomial,
-#' and logistic–normal likelihoods.
+#' stock assessment models, including multinomial, Dirichlet-multinomial,
+#' and logistic-normal likelihoods.
 #'
 #' Expected and observed compositions are provided as arrays indexed by
 #' region, composition bin (age or length), and sex. The function optionally
@@ -30,29 +30,29 @@
 #'   size, indexed by \eqn{[region \times sex]}.
 #' @param ln_theta_agg Log overdispersion parameter used when compositions
 #'   are aggregated (\code{Comp_Type = 0}).
-#' @param ln_theta Log overdispersion parameters used for Dirichlet–
-#'   multinomial or logistic–normal likelihoods, indexed by
+#' @param ln_theta Log overdispersion parameters used for
+#'   Dirichlet-multinomial or logistic-normal likelihoods, indexed by
 #'   \eqn{[region \times sex]}.
-#' @param LN_corr_pars Logistic–normal correlation parameters used for
-#'   correlated logistic–normal likelihoods, dimensioned by
+#' @param LN_corr_pars Logistic-normal correlation parameters used for
+#'   correlated logistic-normal likelihoods, dimensioned by
 #'   \eqn{[region \times sex \times parameters]}.
-#' @param LN_corr_pars_agg Logistic–normal correlation parameters used
+#' @param LN_corr_pars_agg Logistic-normal correlation parameters used
 #'   when compositions are aggregated.
 #' @param Comp_Type Integer specifying the composition parameterization:
 #'   \itemize{
-#'     \item \code{0} – Aggregated compositions across sexes and regions.
-#'     \item \code{1} – Compositions split by sex and region (no implicit
+#'     \item \code{0}: Aggregated compositions across sexes and regions.
+#'     \item \code{1}: Compositions split by sex and region (no implicit
 #'     sex or region ratio information).
-#'     \item \code{2} – Joint compositions across sexes but split by region
+#'     \item \code{2}: Joint compositions across sexes but split by region
 #'     (implicit sex ratio information).
 #'   }
 #' @param Likelihood_Type Integer specifying the likelihood family:
 #'   \itemize{
-#'     \item \code{0} – Multinomial.
-#'     \item \code{1} – Dirichlet–multinomial.
-#'     \item \code{2} – Logistic–normal with independent bins.
-#'     \item \code{3} – Logistic–normal with AR(1) correlation across bins.
-#'     \item \code{4} – Logistic–normal with AR(1) correlation across bins
+#'     \item \code{0}: Multinomial.
+#'     \item \code{1}: Dirichlet-multinomial.
+#'     \item \code{2}: Logistic-normal with independent bins.
+#'     \item \code{3}: Logistic-normal with AR(1) correlation across bins.
+#'     \item \code{4}: Logistic-normal with AR(1) correlation across bins
 #'     and constant correlation across sexes.
 #'   }
 #' @param n_regions Number of regions modeled.
@@ -61,8 +61,8 @@
 #' @param n_sexes Number of sexes modeled.
 #' @param age_or_len Indicator for composition type:
 #'   \itemize{
-#'     \item \code{0} – Age compositions.
-#'     \item \code{1} – Length compositions.
+#'     \item \code{0}: Age compositions.
+#'     \item \code{1}: Length compositions.
 #'   }
 #' @param AgeingError Ageing error matrix used to map model age bins to
 #'   observed age bins.
@@ -393,7 +393,7 @@ Get_Comp_Likelihoods = function(Exp,
 
 #' Composition Data Likelihood (OSA variant)
 #'
-#' Computes multinomial (0), Dirichlet–multinomial (1), and logistic–normal
+#' Computes multinomial (0), Dirichlet-multinomial (1), and logistic-normal
 #' (2 iid, 3 AR1, 4 2D‑AR1) composition likelihoods for one‑step‑ahead (OSA)
 #' residuals using \code{RTMB::oneStepPredict}. The function evaluates the
 #' likelihood for a single flat tracked OBS vector, respecting the reduced
@@ -681,7 +681,7 @@ pack_comp_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
         } else {
           # ct == 2, joint by sex: the whole [bin x sex] stack per region is
           # one multinomial (matches the joint scaling in the packing step
-          # above), so only the single last cell is redundant/determined --
+          # above), so only the single last cell is redundant/determined,
           # not one per sex. 
           last_in_group = (bin == n_obs_bins) & (sex == n_sexes)
         }

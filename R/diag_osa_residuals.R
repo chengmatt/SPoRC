@@ -577,7 +577,7 @@ run_internal_index_osa <- function(model, data, index_source, pop = FALSE,
 #'   \itemize{
 #'     \item 0 = multinomial
 #'     \item 1 = Dirichlet-multinomial
-#'     \item 2–4 = logistic-normal variants
+#'     \item 2-4 = logistic-normal variants
 #'   }
 #' @param DM_theta Dirichlet-multinomial overdispersion parameter(s). Dimensions
 #'   must match \code{N}:

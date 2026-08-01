@@ -139,7 +139,7 @@ Setup_Sim_Dim <- function(n_sims,
 #'   \code{1990:2024}). The length of this vector determines \code{n_years}
 #'   throughout the model.
 #' @param ages Numeric vector of modelled age classes (e.g., \code{2:31} for a
-#'   model spanning ages 2–31). The final element is treated as a plus-group.
+#'   model spanning ages 2-31). The final element is treated as a plus-group.
 #' @param lens Numeric vector of length bin midpoints. Set to \code{NULL} when
 #'   length data are not modelled; a scalar placeholder of \code{1} is stored
 #'   internally in that case.

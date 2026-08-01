@@ -100,9 +100,9 @@ should be used within a full MSE loop rather than here.
 \note{
 The quantities returned by this function are \strong{approximate and
   should not be treated as official catch advice}. This wrapper provides
-  only a simplified projection interface; full projection capability —
+  only a simplified projection interface; full projection capability,
   including stochastic recruitment, closed-loop feedback, and
-  fleet-specific harvest control rules — requires calling
+  fleet-specific harvest control rules, requires calling
   \code{\link{Do_Population_Projection}} directly. Results here are
   intended for rapid model comparison and diagnostic screening only.
 }

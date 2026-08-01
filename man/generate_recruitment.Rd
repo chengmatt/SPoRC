@@ -23,7 +23,7 @@ the classic \code{rec_lag >= 1} case where recruitment for the whole year
 is already known before season 1 starts. \code{rec_lag = 0} (age-0
 recruitment) instead calls this with \code{seas = spawn_seas}, since that
 is the earliest season this year's own SSB (and hence recruitment) is
-knowable -- see \code{\link{apply_pop_dy}}.}
+knowable, see \code{\link{apply_pop_dy}}.}
 }
 \value{
 \code{invisible(NULL)}. All modifications are made by reference

@@ -170,9 +170,9 @@ Get_Selex_Smoothness_Penalty <- function(sel_vals, wt_bin_curve = 0, wt_bin_diff
 #'   \code{[1, par_index, sex, 1]}. The \code{par_index} slot meaning
 #'   depends on \code{PE_model}:
 #' \itemize{
-#'   \item Models 1--2: \code{[1,1,s,1]} = log standard deviation (\eqn{\log \sigma})
+#'   \item Models 1-2: \code{[1,1,s,1]} = log standard deviation (\eqn{\log \sigma})
 #'     for sex \code{s}, indexed by bin/age.
-#'   \item Models 3--4: \code{[1,1,s,1]} = unconstrained partial correlation by age/bin;
+#'   \item Models 3-4: \code{[1,1,s,1]} = unconstrained partial correlation by age/bin;
 #'     \code{[1,2,s,1]} = unconstrained partial correlation by year;
 #'     \code{[1,3,s,1]} = unconstrained partial correlation by cohort;
 #'     \code{[1,4,s,1]} = log variance.
@@ -319,19 +319,19 @@ Get_sel_PE_loglik <- function(PE_model,
 #'
 #' @param PE_model Integer specifying the movement process error structure.
 #'   All models are IID; they differ in which dimensions share a common
-#'   standard deviation. Models 1--5 are single-population (fix \code{pop = 1});
-#'   models 6--10 estimate separate parameters per population:
+#'   standard deviation. Models 1-5 are single-population (fix \code{pop = 1});
+#'   models 6-10 estimate separate parameters per population:
 #' \itemize{
-#'   \item \strong{1} – IID across years (single \eqn{\sigma} per origin region)
-#'   \item \strong{2} – IID across ages (single \eqn{\sigma} per origin region and age)
-#'   \item \strong{3} – IID across years and ages
-#'   \item \strong{4} – IID across years, ages, and sexes
-#'   \item \strong{5} – IID across years, seasons, ages, and sexes
-#'   \item \strong{6} – IID across populations and years
-#'   \item \strong{7} – IID across populations and ages
-#'   \item \strong{8} – IID across populations, years, and ages
-#'   \item \strong{9} – IID across populations, years, ages, and sexes
-#'   \item \strong{10} – IID across populations, years, seasons, ages, and sexes
+#'   \item \strong{1}: IID across years (single \eqn{\sigma} per origin region)
+#'   \item \strong{2}: IID across ages (single \eqn{\sigma} per origin region and age)
+#'   \item \strong{3}: IID across years and ages
+#'   \item \strong{4}: IID across years, ages, and sexes
+#'   \item \strong{5}: IID across years, seasons, ages, and sexes
+#'   \item \strong{6}: IID across populations and years
+#'   \item \strong{7}: IID across populations and ages
+#'   \item \strong{8}: IID across populations, years, and ages
+#'   \item \strong{9}: IID across populations, years, ages, and sexes
+#'   \item \strong{10}: IID across populations, years, seasons, ages, and sexes
 #' }
 #'
 #' @param PE_pars Array of movement process error parameters (log standard
@@ -458,7 +458,7 @@ Get_move_PE_loglik <- function(PE_model,
 #'
 #' Random walk and AR1 do not require catch-active years to be contiguous.
 #' Instead, the transition between two active years is taken over the
-#' elapsed gap \eqn{d} between them -- exactly the marginal transition you
+#' elapsed gap \eqn{d} between them, exactly the marginal transition you
 #' would get from estimating deviations for the closed years in between and
 #' integrating them out, without actually estimating them:
 #' \describe{
@@ -627,7 +627,7 @@ get_dmr_penalty <- function(logit_dmr_devs, ln_sigma_dmr, map_logit_dmr_devs,
 #'
 #' @param selex_prior Data frame with columns \code{region}, \code{par},
 #'   \code{block}, \code{sex}, \code{fleet}, \code{mu} (prior mean, natural
-#'   scale), \code{sd} (prior SD, log scale) — one row per penalized parameter.
+#'   scale), \code{sd} (prior SD, log scale), one row per penalized parameter.
 #' @param fixed_sel_pars Array \code{[region, par, block, sex, fleet]} of fixed
 #'   selectivity parameters on the log scale.
 #'
@@ -742,7 +742,7 @@ get_recruitment_penalty <- function(n_pop, n_regions, n_ages, n_est_rec_devs, re
 #'
 #' @param q_prior Data frame with columns \code{region}, \code{block},
 #'   \code{fleet}, \code{mu} (prior mean, natural scale), \code{sd} (prior SD,
-#'   log scale) — one row per penalized parameter.
+#'   log scale), one row per penalized parameter.
 #' @param ln_q Array \code{[region, block, fleet]} of log catchability.
 #'
 #' @return Numeric scalar negative log-likelihood contribution, summed across
@@ -774,7 +774,7 @@ get_q_prior <- function(q_prior, ln_q) {
 #' @param M_prior Data frame with columns \code{popblk}, \code{regionblk},
 #'   \code{yearblk}, \code{ageblk}, \code{sexblk} (block indices into
 #'   \code{M_blocks}), \code{mu} (prior mean, natural scale), \code{sd} (prior
-#'   SD, log scale) — one row per penalized parameter.
+#'   SD, log scale), one row per penalized parameter.
 #' @param ln_M Vector of estimated log natural mortality values, indexed by
 #'   \code{M_blocks}.
 #' @param M_blocks Array \code{[pop, region, year, age, sex]} mapping each
@@ -810,7 +810,7 @@ get_natmort_prior <- function(M_prior, ln_M, M_blocks) {
 #'
 #' @param h_prior Data frame with columns \code{pop}, \code{region}, \code{mu}
 #'   (prior mean steepness, natural scale), \code{sd} (prior SD, natural scale)
-#'   — one row per penalized parameter.
+#'   with one row per penalized parameter.
 #' @param h_trans Array \code{[pop, region]} of steepness on its transformed
 #'   (0.2, 1) scale.
 #'
@@ -859,7 +859,7 @@ get_steepness_prior <- function(h_prior, h_trans) {
 #'
 #' @param Movement_prior Data frame with columns \code{pop}, \code{region_from},
 #'   \code{year}, \code{seas}, \code{age}, \code{sex}, and \code{alpha} (list
-#'   column of Dirichlet concentration vectors) — one row per penalized
+#'   column of Dirichlet concentration vectors), one row per penalized
 #'   movement-from vector. For CTMC movement, \code{seas} selects which season's
 #'   generator supplies the annual fractions.
 #' @param Movement Array \code{[pop, region_from, region_to, year, season, age,
@@ -909,12 +909,12 @@ get_movement_dirichlet_prior <- function(Movement_prior, Movement, Mrate = NULL)
 #' Called once from the "Recruitment R0 (Prior)" section of \code{SPoRC_rtmb.R}.
 #' Returns a scalar contribution added directly (unweighted by \code{Wt_Rec})
 #' into the joint negative log-likelihood, alongside the other scalar priors
-#' (\code{M_nLL}, \code{h_nLL}, etc.) — it is not part of the \code{Rec_nLL}
+#' (\code{M_nLL}, \code{h_nLL}, etc.); it is not part of the \code{Rec_nLL}
 #' recruitment-deviation array, since it penalizes a single global parameter
 #' rather than a per-year deviation.
 #'
 #' @param r0_prior Data frame with columns \code{pop}, \code{mu} (prior mean R0,
-#'   natural scale), \code{sd} (prior SD, log scale) — one row per penalized
+#'   natural scale), \code{sd} (prior SD, log scale), one row per penalized
 #'   population.
 #' @param ln_global_R0 Vector \code{[pop]} of log mean recruitment (R0).
 #'
@@ -1032,7 +1032,7 @@ get_recruitment_proportion_priors <- function(use_rec_region_prop_prior, rec_reg
 #'
 #' @param conv_tag_fishrep_prior Data frame with columns \code{region},
 #'   \code{block}, \code{fleet}, \code{type} (0 = symmetric beta, 1 = mean/sd
-#'   beta), \code{mu}, \code{sd} — one row per penalized parameter.
+#'   beta), \code{mu}, \code{sd}, one row per penalized parameter.
 #' @param conv_tag_fish_reporting_pars Array \code{[region, block, fish_fleet]}
 #'   of tag reporting rate parameters on the logit scale.
 #'

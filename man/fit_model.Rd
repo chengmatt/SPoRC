@@ -35,7 +35,16 @@ random effects. \code{NULL} (default) fits a fixed-effects-only model.}
 after \code{nlminb} convergence to reduce gradient magnitudes. Each
 step solves \eqn{\Delta\theta = -H^{-1} g} and updates the objective.
 Default \code{3}. Errors and warnings are caught silently via
-\code{tryCatch}.}
+\code{tryCatch}, so a step that fails leaves the \code{nlminb} solution
+in place without a message.
+\eqn{H} comes from the AD tape (\code{obj$he}) for fixed-effects models,
+which is exact and costs a single call. Random-effects models fall back
+to \code{\link[stats]{optimHess}} differencing the gradient, since RTMB
+does not implement a tape Hessian when random effects are present.
+Refinement stops early if \eqn{H} comes back non-finite, which happens on
+models that have not converged, where second derivatives can be undefined
+at parameter values the objective and gradient still evaluate at. The
+\code{nlminb} solution is kept in that case.}
 
 \item{silent}{Logical. If \code{TRUE}, suppresses RTMB and optimiser
 console output. Default \code{FALSE}.}

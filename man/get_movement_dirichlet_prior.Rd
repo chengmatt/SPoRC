@@ -9,7 +9,7 @@ get_movement_dirichlet_prior(Movement_prior, Movement, Mrate = NULL)
 \arguments{
 \item{Movement_prior}{Data frame with columns \code{pop}, \code{region_from},
 \code{year}, \code{seas}, \code{age}, \code{sex}, and \code{alpha} (list
-column of Dirichlet concentration vectors) — one row per penalized
+column of Dirichlet concentration vectors), one row per penalized
 movement-from vector. For CTMC movement, \code{seas} selects which season's
 generator supplies the annual fractions.}
 

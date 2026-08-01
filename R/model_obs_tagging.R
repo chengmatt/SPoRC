@@ -215,7 +215,7 @@ get_tagging_observation_model <- function(n_fish_fleets, n_regions, n_conv_tag_c
         # Discount with tagging time (conv_tag_t_tagging) if it doesn't happen at the start of the
         # season / year. every mortality component is scaled, not just the total: Baranov's F/Z is
         # the fraction of deaths owing to fishing, so scaling Z while leaving F at full-season
-        # scale turns it into F/(Z * t_tag), which exceeds 1 whenever t_tag < F/Z -- i.e. predicts
+        # scale turns it into F/(Z * t_tag), which exceeds 1 whenever t_tag < F/Z, i.e. predicts
         # more recaptures than there are dead tags. Scaling F and Z together leaves the ratio at
         # F/Z and lets the (1 - exp(-Z * t_tag)) term carry the shorter exposure, which is the
         # standard partial-interval Baranov.
@@ -249,7 +249,7 @@ get_tagging_observation_model <- function(n_fish_fleets, n_regions, n_conv_tag_c
 
         # Continuous movement needs no such exemption, and applying one would be inconsistent:
         # the generator is scaled by tag_dur below, so a mid-season release diffuses for exactly
-        # the fraction of the season it was at liberty for -- the same fraction its mortality is
+        # the fraction of the season it was at liberty for, the same fraction its mortality is
         # already scaled by. Freezing movement while still discounting mortality partially would
         # have tags dying on a partial season but holding station for a whole one.
         tag_moves_seas <- if(move_timing == 2) TRUE else tag_moves
@@ -359,9 +359,9 @@ get_tagging_observation_model <- function(n_fish_fleets, n_regions, n_conv_tag_c
 }
 #' Distribute Tagged Fish Releases to Full Population Dimensions
 #'
-#' When tag release data are not recorded at full population resolution —
+#' When tag release data are not recorded at full population resolution,
 #' i.e. when one or more of the population, age, or sex dimensions are
-#' unattended in \code{tag_attr} — this function distributes the known tag
+#' unattended in \code{tag_attr}, this function distributes the known tag
 #' totals to full \code{[n_pop, n_ages, n_sexes]} resolution using
 #' apportionment weights derived from the release platform (population
 #' abundance, fishery catch-at-age, or survey index-at-age). If all three
@@ -440,7 +440,7 @@ release_conv_tag_attr <- function(tagged_fish,
   attended_a = "a" %in% attr_parts
   attended_s = "s" %in% attr_parts
 
-  # return tagged_fish (reshaped to full dims) if p_a_s — all dims attended,
+  # return tagged_fish (reshaped to full dims) if p_a_s, all dims attended,
   # no apportionment needed
   if(attended_p && attended_a && attended_s) {
     return(array(tagged_fish, dim = c(n_pop, n_ages, n_sexes)))

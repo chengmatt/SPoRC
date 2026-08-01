@@ -7,7 +7,7 @@
 #' Simulate age or length compositions
 #'
 #' Draws observed composition samples (by age or length) for a single
-#' region–year–fleet–season–simulation cell, supporting multinomial,
+#' region-year-fleet-season-simulation cell, supporting multinomial,
 #' Dirichlet-multinomial, and logistic-normal likelihoods. Ageing error is
 #' optionally applied post-draw. Three composition aggregation structures are
 #' handled: sex-split (\code{comp_type = 1}), joint across sexes
@@ -23,7 +23,7 @@
 #'
 #' For joint compositions (\code{comp_type = 2}), the Kronecker product
 #' \code{diag(n_sexes) ⊗ AgeingError} is used to apply ageing error across
-#' the combined age–sex vector. For aggregated compositions
+#' the combined age-sex vector. For aggregated compositions
 #' (\code{comp_type = 0}), the draw is only executed when \code{r == n_regions}
 #' (i.e., on the final region pass), and uses region- and sex-marginalised
 #' expected proportions.
@@ -43,7 +43,7 @@
 #'   \code{age_or_len = 1}.
 #' @param comp_like Integer vector \code{[n_fleets]}. Likelihood type per
 #'   fleet: \code{0} = multinomial, \code{1} = Dirichlet-multinomial,
-#'   \code{2}–\code{4} = logistic-normal variants.
+#'   \code{2}-\code{4} = logistic-normal variants.
 #' @param ln_theta Array. Log overdispersion or log-variance parameters
 #'   \code{[n_regions × n_sexes × n_fleets]}. Used when
 #'   \code{pop_specific = FALSE}.
@@ -417,7 +417,7 @@ simulate_comps <- function(r,
 
 #' Simulate conventional tag recaptures for fishery fleets
 #'
-#' Draws observed tag recapture counts for a single liberty–season–cohort cell
+#' Draws observed tag recapture counts for a single liberty-season-cohort cell
 #' from predicted recapture arrays, supporting six likelihood structures:
 #' Poisson, negative binomial, and release- or recovery-conditioned
 #' multinomial and Dirichlet-multinomial. Dimensions absent from
@@ -1590,7 +1590,7 @@ generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {
 #'
 #' Scales fishery input sample sizes for the projection year \code{y} based
 #' on the relationship between fishing mortality and historical ISS values.
-#' For each region–sex–fleet cell, the minimum and maximum ISS from the
+#' For each region-sex-fleet cell, the minimum and maximum ISS from the
 #' conditioning period (\code{1:(y-1)}) are identified from years with
 #' positive, non-NA values, and the projected ISS is obtained by linear
 #' interpolation between those bounds using the ratio of projected

@@ -34,9 +34,9 @@ Every `get_osa()` call returns a list with a single element, `res`, a data frame
 
 # Two computation modes
 
-External (post-hoc) — `get_osa(obs_mat = , exp_mat = , N = , ...)`. Works with any fitted model, no special setup required. Observed/expected arrays (typically pulled from `get_comp_prop()`) are handed to the `compResidual` package, which builds a small  TMB model and computes OSA residuals independently of how the main model was fit.
+External (post-hoc), `get_osa(obs_mat = , exp_mat = , N = , ...)`. Works with any fitted model, no special setup required. Observed/expected arrays (typically pulled from `get_comp_prop()`) are handed to the `compResidual` package, which builds a small  TMB model and computes OSA residuals independently of how the main model was fit.
 
-Internal (model-based) — `get_osa(model = , data = , ...)`. Internal OSA is only required for composition data and conventional tagging data. Catch and abundance index observations (Catch/Discard/FishIdx/SrvIdx) are handled automatically through the model likelihood and do not require any additional setup. To obtain internal OSA residuals for composition and/or tagging data, the model must be re-fit with `do_internal_comp_osa = TRUE` and/or `do_internal_conv_tag_osa = TRUE` in `Setup_Mod_Dim()`. These options wrap the relevant observations in `RTMB::OBS()` at the point they enter the model likelihood, allowing `RTMB::oneStepPredict()` to operate directly on the fitted model object. 
+Internal (model-based), `get_osa(model = , data = , ...)`. Internal OSA is only required for composition data and conventional tagging data. Catch and abundance index observations (Catch/Discard/FishIdx/SrvIdx) are handled automatically through the model likelihood and do not require any additional setup. To obtain internal OSA residuals for composition and/or tagging data, the model must be re-fit with `do_internal_comp_osa = TRUE` and/or `do_internal_conv_tag_osa = TRUE` in `Setup_Mod_Dim()`. These options wrap the relevant observations in `RTMB::OBS()` at the point they enter the model likelihood, allowing `RTMB::oneStepPredict()` to operate directly on the fitted model object. 
 
 When `do_internal_comp_osa = TRUE`, the observed composition proportions (`Obs`) are internally converted to integer counts (e.g., `ISS × Wt × Obs`) before entering the multinomial or Dirichlet-multinomial likelihood, since these likelihoods are defined on count data. The resulting counts are rounded to the nearest integer. This generally has negligible impact when the effective sample size (e.g., `ISS × Wt`) is large, but users should be aware that it can alter the likelihood relative to using continuous proportions. This is particularly relevant when applying Francis or other composition reweighting methods, since the weighted effective sample size determines the counts supplied to the likelihood.
 
@@ -186,7 +186,7 @@ model <- fit_model(input_list$data, input_list$par, input_list$map,
 
 # Modeled ages span sgl_rg_dusky_data$mod_ages (4:33, 30 ages), but observed
 # fishery/survey age compositions only report ages 4:30 (27 bins, an
-# ageing-error offset) -- comp bin labels use the *observed* bin range.
+# ageing-error offset), comp bin labels use the *observed* bin range.
 obs_age_bins <- 4:30
 
 comp_prop <- get_comp_prop(input_list$data, model$rep,
@@ -359,7 +359,7 @@ resid_int <- plot_resids(fishages_int)
 
 ![](figures/u_internal_comp.png)
 
-Index-type sources use `index_source` instead of `comp_source`/`family` — there is no likelihood-family choice to make, since these are always continuous log-normal observations (currently), and no `bins`/`bin_label` since there's no bin dimension. `plot_resids()` returns a QQ-plot paired with a residual-vs-year plot instead of a bubble plot. The residuals for catch appear visually 'odd' likely due to a change in the variance of the distribution between early and late periods, reflecting a change in catch observations for Dusky rockfish during these periods (i.e., catches were recorded a a mix of different rockfish species earlier in the time series, and the variance is adjusted to reflect increased uncertainty in the catch observation).
+Index-type sources use `index_source` instead of `comp_source`/`family`, there is no likelihood-family choice to make, since these are always continuous log-normal observations (currently), and no `bins`/`bin_label` since there's no bin dimension. `plot_resids()` returns a QQ-plot paired with a residual-vs-year plot instead of a bubble plot. The residuals for catch appear visually 'odd' likely due to a change in the variance of the distribution between early and late periods, reflecting a change in catch observations for Dusky rockfish during these periods (i.e., catches were recorded a a mix of different rockfish species earlier in the time series, and the variance is adjusted to reflect increased uncertainty in the catch observation).
 
 ```{r, eval = FALSE}
 catch_int  <- get_osa(model = model, data = input_list$data, index_source = "Catch")
@@ -403,7 +403,7 @@ resid_comp_pop <- plot_resids(comp_pop)
 
 ![](figures/u_internal_comp_pop.png)
 
-Conventional tag recovery OSA (`tag = TRUE`) — faceted by region, recovery season, fleet, and movement/tag pooling group whenever the residual data span more than one level of each. This is a bit unwieldy to inspect given the number of dimensions (release cohort, recapture region, age, year at liberty etc) and so only qqplot's are shown for tagging data. 
+Conventional tag recovery OSA (`tag = TRUE`), faceted by region, recovery season, fleet, and movement/tag pooling group whenever the residual data span more than one level of each. This is a bit unwieldy to inspect given the number of dimensions (release cohort, recapture region, age, year at liberty etc) and so only qqplot's are shown for tagging data. 
 
 ```{r, eval = FALSE}
 tag_osa <- get_osa(model = model_pop, data = input_pop$data, tag = TRUE)
@@ -428,7 +428,7 @@ resid_srvidx_pop <- plot_resids(srvidx_pop_osa)
 
 `get_osa()`'s internal mode exposes two further arguments:
 
-- `osa_method`: overrides `RTMB::oneStepPredict()`'s `method` argument. Must be one of `"oneStepGeneric"`, `"oneStepGaussianOffMode"`, or `"oneStepGaussian"` — the `"cdf"` method is deliberately disallowed because it is numerically fragile for the discrete (multinomial/count) likelihoods used here and can silently return mis-calibrated residuals. Defaults to `"oneStepGeneric"` for discrete composition/tag families and `"oneStepGaussianOffMode"` for continuous (logistic-normal composition or index-type) families.
+- `osa_method`: overrides `RTMB::oneStepPredict()`'s `method` argument. Must be one of `"oneStepGeneric"`, `"oneStepGaussianOffMode"`, or `"oneStepGaussian"`, the `"cdf"` method is deliberately disallowed because it is numerically fragile for the discrete (multinomial/count) likelihoods used here and can silently return mis-calibrated residuals. Defaults to `"oneStepGeneric"` for discrete composition/tag families and `"oneStepGaussianOffMode"` for continuous (logistic-normal composition or index-type) families.
 - `parallel`: passed straight through to `RTMB::oneStepPredict(parallel = )`. Useful for large composition/tag datasets where OSA computation dominates runtime; verified to give numerically identical residuals to `parallel = FALSE`.
 
 ```{r, eval = FALSE}

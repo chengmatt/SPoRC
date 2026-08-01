@@ -242,7 +242,7 @@ do_cont_vary_move_mapping <- function(input_list, cont_vary_movement, Movement_c
     map_move_devs <- build_pe_map(dims, share_over = share_over)
 
     # Whether or not recruits (age 1) move: only relevant when age is itself
-    # a key dim of the spec -- when age is a broadcast dim, age 1 shares the
+    # a key dim of the spec, when age is a broadcast dim, age 1 shares the
     # same tied deviation as every other age instead of being masked out.
     if("age" %in% key_extra && input_list$data$do_recruits_move == 0 && dims["age"] >= 2) {
       map_move_devs[,,,,,1,] <- NA
@@ -347,7 +347,7 @@ do_cont_vary_move_mapping <- function(input_list, cont_vary_movement, Movement_c
 #'   Ignored when \code{move_type = 1}.
 #' @param Movement_ageblk_spec \code{"constant"} (default) or a list of
 #'   integer vectors defining age blocks. Example: \code{list(1:4, 5:10)}
-#'   creates a juvenile block (ages 1--4) and an adult block (ages 5--10).
+#'   creates a juvenile block (ages 1-4) and an adult block (ages 5-10).
 #'   Ignored when \code{move_type = 1}.
 #' @param Movement_yearblk_spec \code{"constant"} (default) or a list of
 #'   integer vectors defining year blocks for discrete structural breaks in
@@ -385,7 +385,7 @@ do_cont_vary_move_mapping <- function(input_list, cont_vary_movement, Movement_c
 #'       dimensioned \code{[n_pop × n_regions × n_seas × n_ages × n_sexes]}.}
 #'   }
 #' @param ctmc_move_dat Data frame required when \code{move_type = 1}. Each
-#'   row corresponds to a unique pop–region–year–season–age–sex combination.
+#'   row corresponds to a unique pop-region-year-season-age-sex combination.
 #'   Required columns: \code{pop}, \code{regions}, \code{years}, \code{seas},
 #'   \code{ages}, \code{sexes}, plus any covariate columns referenced in
 #'   \code{diffusion_formula} or \code{preference_formula}. Projection years

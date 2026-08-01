@@ -33,13 +33,13 @@
 #' @param ISS_SrvAgeComps Array \code{[n_regions × n_yrs × n_seas × n_sexes × n_srv_fleets × n_sims]}
 #'   of sample sizes or overdispersion for survey age compositions. Default: 100.
 #' @param ln_SrvAge_theta Log-scale overdispersion array
-#'   \code{[n_regions × n_sexes × n_srv_fleets]}. Used for likelihoods 1–4.
+#'   \code{[n_regions × n_sexes × n_srv_fleets]}. Used for likelihoods 1-4.
 #'   Default: log(1).
 #' @param ln_SrvAge_theta_agg Log-scale overdispersion for aggregated survey
 #'   age compositions, vector \code{[n_srv_fleets]}. Default: log(1).
 #' @param SrvAge_corr_pars Correlation parameters array
 #'   \code{[n_regions × n_sexes × n_srv_fleets × 2]} (age AR1, sex). Only for
-#'   likelihoods 3–4. Default: 0.01.
+#'   likelihoods 3-4. Default: 0.01.
 #' @param SrvAge_corr_pars_agg Vector \code{[n_srv_fleets]} for aggregated
 #'   survey age correlations. Only for likelihood 3. Default: 0.01.
 #' @param SrvAgeComps_Type Array \code{[n_yrs × n_srv_fleets]} specifying
@@ -315,7 +315,7 @@ Setup_Sim_Survey <- function(sim_list,
 #'   \code{"none"}, \code{"Multinomial"}, \code{"Dirichlet-Multinomial"},
 #'   \code{"iid-Logistic-Normal"}, \code{"1d-Logistic-Normal"},
 #'   \code{"2d-Logistic-Normal"}. Converted to integer codes
-#'   (\code{999}, \code{0}–\code{4}) before storage.
+#'   (\code{999}, \code{0}-\code{4}) before storage.
 #' @param SrvLenComps_LikeType Character vector \code{[n_srv_fleets]}
 #'   specifying the likelihood for survey length compositions. Same options
 #'   as \code{SrvAgeComps_LikeType}.
@@ -347,7 +347,7 @@ Setup_Sim_Survey <- function(sim_list,
 #'   survey age compositions
 #'   \code{[n_pop × n_regions × n_years × n_seas × n_sexes × n_srv_fleets]}.
 #'   If \code{NULL} (default), computed automatically by summing
-#'   \code{ObsSrvAgeComps_pop} within each population–year–fleet–season–region
+#'   \code{ObsSrvAgeComps_pop} within each population-year-fleet-season-region
 #'   cell according to \code{SrvAgeComps_pop_Type}.
 #' @param ObsSrvLenComps_pop Observed population-specific survey length
 #'   composition array
@@ -1010,7 +1010,7 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
 #'   a \eqn{\log\text{N}(\log(\mu), \text{sd})} prior. Ignored when
 #'   \code{Use_srv_q_prior = 0}. Default \code{NA}.
 #' @param srv_q_formula Named list of R formulas specifying environmental
-#'   covariate relationships for catchability per region–fleet combination.
+#'   covariate relationships for catchability per region-fleet combination.
 #'   Names follow the convention \code{"Region_r_Fleet_f"}. Covariates must
 #'   be present in \code{srv_q_cov_dat}. If \code{NULL}, no covariate effects
 #'   are included. Default \code{NULL}.

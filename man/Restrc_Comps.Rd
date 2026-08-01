@@ -26,8 +26,8 @@ Restrc_Comps(Exp, Obs, Comp_Type, age_or_len, AgeingError)
 \value{
 A list with elements:
 \itemize{
-  \item \code{Exp} – array of expected composition values in observed bins
-  \item \code{Obs} – array of observed composition values in observed bins
+  \item \code{Exp}: array of expected composition values in observed bins
+  \item \code{Obs}: array of observed composition values in observed bins
 }
 }
 \description{

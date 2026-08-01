@@ -7,7 +7,7 @@
 #'
 #' Computes the negative log-likelihood contribution from conventional
 #' fish tagging data under Poisson, negative binomial, multinomial,
-#' or Dirichlet–multinomial likelihoods.
+#' or Dirichlet-multinomial likelihoods.
 #'
 #' This function loops over tag cohorts, recapture years, seasons,
 #' fleets, population pools, regions, age pools, and sex pools,
@@ -28,7 +28,7 @@
 #' @param conv_tag_pop_pool List of population index pools.
 #' @param conv_tag_age_pool List of age index pools.
 #' @param conv_tag_sex_pool List of sex index pools.
-#' @param conv_fish_tag_like Likelihood type indicator (0–5).
+#' @param conv_fish_tag_like Likelihood type indicator (0-5).
 #' @param conv_fish_tag_nLL Array of negative log-likelihood values to update.
 #' @param obs_conv_tag_fish_recap Observed recapture array.
 #' @param pred_conv_tag_fish_recap Predicted recapture array.
@@ -324,9 +324,9 @@ tag_grid = function(n_conv_tag_cohorts, conv_tag_release_indicator,
 #' observation per \code{[fleet, pop_pool, region, age_pool, sex_pool]} cell
 #' with \code{use_fish_tagging[f] == 1}, in \code{(f, p, r, a, s)} loop order
 #' within each event, and events in \code{tag_grid} order. This mirrors
-#' \code{get_conv_tag_likelihoods()}'s exact accumulation structure -- a
+#' \code{get_conv_tag_likelihoods()}'s exact accumulation structure: a
 #' separate Poisson/NB term is fit per pool/age/sex cell and their
-#' -log-likelihoods summed -- so packing one count per \code{[region, fleet]}
+#' -log-likelihoods summed, so packing one count per \code{[region, fleet]}
 #' pre-summed across pools would evaluate a different (non-equivalent)
 #' likelihood whenever more than one pool is used.
 #'
@@ -341,7 +341,7 @@ tag_grid = function(n_conv_tag_cohorts, conv_tag_release_indicator,
 #' }
 #'
 #' @param family Character, either \code{"count"} or \code{"comp"}.
-#' @param like_type Integer likelihood type code (0–5).
+#' @param like_type Integer likelihood type code (0-5).
 #' @param obs_recap Observed recapture array.
 #' @param pred_recap Predicted recapture array (used for scaling).
 #' @param tagged_fish Array of numbers of tagged fish released.
@@ -411,12 +411,12 @@ pack_tag_osa = function(family, like_type,
     tr = grid$tr[g]; ty = grid$ty[g]; tseas = grid$tseas[g]
 
     if(family == "count") {
-      # one cell per [f,p,r,a,s] -- must mirror get_conv_tag_likelihoods()'s
+      # one cell per [f,p,r,a,s], must mirror get_conv_tag_likelihoods()'s
       # exact accumulation structure: a separate Poisson/NB term is evaluated
       # per (pool, age_pool, sex_pool, region, fleet) cell and their
       # -log-likelihoods summed. Packing one combined count per [r,f] (summed
-      # across pools first, as this used to do) is a DIFFERENT likelihood --
-      # not equivalent even for Poisson -- whenever n_pop_pool/n_age_pool/
+      # across pools first, as this used to do) is a DIFFERENT likelihood,
+      # not equivalent even for Poisson, whenever n_pop_pool/n_age_pool/
       # n_sex_pool > 1, and also destroys population identity before it ever
       # reaches the residual/label, so downstream plots can't facet by pop.
       for(f in 1:n_fish_fleets) {
@@ -582,7 +582,7 @@ eval_tag_osa = function(nLL_arr, tracked, family, like_type,
     pred_ev = array(pred_recap[ry,rseas,tc,,,,,], dim = d_recap)
 
     if(family == "count") {
-      # mirrors pack_tag_osa()'s [f,p,r,a,s] cell order -- one Poisson/NB
+      # mirrors pack_tag_osa()'s [f,p,r,a,s] cell order, one Poisson/NB
       # term per (pool, age_pool, sex_pool, region, fleet) cell, accumulated
       # into the same [ry,rseas,tc,r,f] nLL_arr cell (matching
       # get_conv_tag_likelihoods()'s `+=` accumulation across pools).
@@ -626,7 +626,7 @@ eval_tag_osa = function(nLL_arr, tracked, family, like_type,
       pred_cells = do.call(c, cells)
 
       # DM total N matches fitting: released (2,4) vs total recaptures (3,5).
-      # Both taken from RAW data -- never sum(tracked[idx]) (S4 not summable).
+      # Both taken from RAW data, never sum(tracked[idx]) (S4 not summable).
       if(like_type %in% c(2,4)) {
         Ntot_dm = sum(tagged_fish[tc, , , ] + addtotag)          # tags released
         pprop   = pred_cells / Ntot_dm

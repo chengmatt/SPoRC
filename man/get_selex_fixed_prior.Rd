@@ -9,7 +9,7 @@ get_selex_fixed_prior(selex_prior, fixed_sel_pars)
 \arguments{
 \item{selex_prior}{Data frame with columns \code{region}, \code{par},
 \code{block}, \code{sex}, \code{fleet}, \code{mu} (prior mean, natural
-scale), \code{sd} (prior SD, log scale) — one row per penalized parameter.}
+scale), \code{sd} (prior SD, log scale), one row per penalized parameter.}
 
 \item{fixed_sel_pars}{Array \code{[region, par, block, sex, fleet]} of fixed
 selectivity parameters on the log scale.}

@@ -100,7 +100,7 @@ The prefix on a file name says which phase it belongs to.
 
 | Prefix | Phase |
 |---|---|
-| `setup_` | Builds `data`, `parameters` and `mapping`, one process or data source per file |
+| `setup_` | Builds `data`, `parameters` and `mapping`, one process or data source per file. A source large enough to warrant it is split by topic, as `setup_fishery_*.R` and `setup_survey_*.R` are |
 | `model_` | The objective function and the modules it delegates to |
 | `refpts_`, `projection` | Reference points and forward projection off a fitted model |
 | `sim_` | The operating model: self testing and closed loop simulation |
@@ -114,7 +114,7 @@ The prefix on a file name says which phase it belongs to.
 | Prefix | Role |
 |---|---|
 | `Setup_Mod_*` | Builds inputs for a fitted object |
-| `Setup_Sim_*` | Same, for the operating model. Lives beside its `Setup_Mod_*` counterpart |
+| `Setup_Sim_*` | Same, for the operating model. Lives beside its `Setup_Mod_*` counterpart, except for the fishery and survey, whose operating model inputs span several topic files and so share `setup_sim_fleets.R` |
 | `do_*_mapping` | Internal helper that builds the RTMB `map` for one parameter block. This is how parameters get fixed, shared across blocks, or turned into random effect deviations |
 | `Get_*` | Pulls a derived quantity out of set up data, parameters or a fitted object |
 | `do_*` (top level) | A post fit procedure that refits or perturbs a fitted model |

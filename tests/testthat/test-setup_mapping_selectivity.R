@@ -10,7 +10,7 @@ assign("messages_list", character(0), envir = .GlobalEnv)
 # Minimal single-region, single-fleet, single-sex, single-block input_list
 # with a logistic (model 0, 2 parameters) selectivity form, used across all
 # three do_*_mapping smoke tests below. `prefix` selects fish/ret/srv field
-# naming; `use_field` mirrors what setup_fishery_selectivity.R/setup_survey.R pass in
+# naming; `use_field` mirrors what setup_fishery_selectivity.R/setup_survey_selectivity.R pass in
 # (fish/ret -> "Catch", srv -> "SrvIdx").
 make_sel_input_list <- function(prefix, use_field, n_bins = 2, n_years = 1) {
 

@@ -173,7 +173,7 @@ test_that("do_sigmaC_pop_mapping / do_sigmaD_pop_mapping correctly share across 
 
 test_that("do_comp_theta_mapping / do_comp_corr_pars_mapping also serve survey comps via fleet_field", {
 
-  # Same helpers now back setup_survey.R's SrvAge/SrvLen mapping too, selected
+  # Same helpers now back setup_survey_comps.R's SrvAge/SrvLen mapping too, selected
   # via comp_prefix + fleet_field = "n_srv_fleets" instead of the fishery
   # default "n_fish_fleets". Region 1 has data, region 2 does not -- this also
   # regression-tests that the region_has_data guard (previously present only

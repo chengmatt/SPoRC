@@ -327,7 +327,7 @@ test_that("Get_Selex works", {
   })
 
   test_that("Wbin/Wyr padded to a *different* fleet/block's larger grid does not scramble this block's own node values", {
-    # Regression test: in setup_fishery_selectivity.R/setup_survey.R, Wbin_bicubic/Wyr_bicubic are stored in
+    # Regression test: in setup_fishery_selectivity.R/setup_survey_selectivity.R, Wbin_bicubic/Wyr_bicubic are stored in
     # arrays shared across all fleets/blocks using Selex_Model == 8, padded to the *global* max
     # bin-node/year-node width across all of them independently. A block whose own true grid is
     # smaller than that global max (in either dimension) receives Wbin_bicubic/Wyr_bicubic wider

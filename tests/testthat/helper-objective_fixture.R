@@ -106,14 +106,15 @@ objective_fixture_sim <- local({
 #' Builds the input list with every prior and penalty switched off, then applies any
 #' overrides so a single term can be turned on and its effect on jnLL isolated.
 #'
-#' @param rec,catch_f,fishsel Named lists of arguments overriding the defaults passed to
-#'   \code{Setup_Mod_Rec}, \code{Setup_Mod_Catch_and_F}, and \code{Setup_Mod_Fishsel_and_Q}.
+#' @param rec,catch_f,fishsel,srvsel Named lists of arguments overriding the defaults passed
+#'   to \code{Setup_Mod_Rec}, \code{Setup_Mod_Catch_and_F}, \code{Setup_Mod_Fishsel_and_Q},
+#'   and \code{Setup_Mod_Srvsel_and_Q}.
 #' @param n_lens Number of length bins. When given, the fixture carries length
 #'   compositions and fits them, which selectivity estimated over lengths requires.
 #'
 #' @keywords internal
 objective_fixture_input <- function(rec = list(), catch_f = list(), fishsel = list(),
-                                    n_lens = NULL) {
+                                    srvsel = list(), n_lens = NULL) {
 
   fit_lengths <- as.integer(!is.null(n_lens))
   sim_obj <- objective_fixture_sim(n_lens)
@@ -201,10 +202,10 @@ objective_fixture_input <- function(rec = list(), catch_f = list(), fishsel = li
     use_fixed_ret_sel = 0
   ), fishsel))
 
-  input_list <- Setup_Mod_Srvsel_and_Q(
+  input_list <- do.call(Setup_Mod_Srvsel_and_Q, modifyList(list(
     input_list = input_list, srv_sel_model = "logist1_Fleet_1",
     srv_fixed_sel_pars_spec = "est_all", srv_q_spec = "est_all"
-  )
+  ), srvsel))
 
   fish_wt <- array(1, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_fish_fleets))
   srv_wt <- array(1, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_srv_fleets))

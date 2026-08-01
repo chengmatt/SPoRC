@@ -282,17 +282,17 @@ what is under test rather than which stock the fixture happens to use.
 
 | Prefix | Files | What it covers |
 |----|----|----|
-| `test-setup_*` | 9 | Input building: the `map` factor builders and the `Setup_Mod_*` validation |
-| `test-model_*` | 21 | One objective function module each: selectivity, movement, transition, observation models, likelihoods, distributions |
-| `test-utils_*` | 2 | Shared numerical helpers |
+| `test-setup_*` | 12 | Input building: the `map` factor builders and the `Setup_Mod_*` validation |
+| `test-model_*` | 22 | One objective function module each: selectivity, movement, transition, observation models, likelihoods, distributions |
+| `test-utils_*` | 6 | Shared numerical helpers |
 | `test-sim_*` | 4 | Operating model, including simulate then refit self tests |
 | `test-refpts_*` | 8 | SPR and MSY solvers, one file per spatial structure |
 | `test-projection_*` | 3 | Forward projection off a fitted model |
-| `test-diag_*` | 8 | Post fit diagnostics: retrospectives and OSA residuals |
+| `test-diag_*` | 9 | Post fit diagnostics: retrospectives and OSA residuals |
 | `test-integration_*` | 4 | Cross cutting agreement between the objective, the reference points and the operating model |
 | `test-regression_*` | 5 | End to end fits pinning `obj$rep` and `nll` for known configurations |
 
-That is 64 test files in total.
+That is 73 test files in total.
 
 Two groups are worth calling out. The `test-regression_*` files pin
 `obj$rep` and `nll` values for known configurations against bundled

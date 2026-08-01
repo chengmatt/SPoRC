@@ -185,7 +185,10 @@ operating model.</p>
 <tr class="odd">
 <td><code>setup_</code></td>
 <td>Builds <code>data</code>, <code>parameters</code> and
-<code>mapping</code>, one process or data source per file</td>
+<code>mapping</code>, one process or data source per file. A source
+large enough to warrant it is split by topic, as
+<code>setup_fishery_*.R</code> and <code>setup_survey_*.R</code>
+are</td>
 </tr>
 <tr class="even">
 <td><code>model_</code></td>
@@ -240,7 +243,10 @@ operating model.</p>
 <tr class="even">
 <td><code>Setup_Sim_*</code></td>
 <td>Same, for the operating model. Lives beside its
-<code>Setup_Mod_*</code> counterpart</td>
+<code>Setup_Mod_*</code> counterpart, except for the fishery and survey,
+whose operating model inputs span several topic files and so share
+<code>setup_sim_fleets.R</code>
+</td>
 </tr>
 <tr class="odd">
 <td><code>do_*_mapping</code></td>
@@ -336,7 +342,9 @@ through a season goes through that one file.</p>
 <code>setup_biologicals.R</code>,
 <code>setup_fishery_catch.R</code>, <code>setup_fishery_comps.R</code>,
 <code>setup_fishery_selectivity.R</code>, <code>setup_movement.R</code>,
-<code>setup_recruitment.R</code>, <code>setup_survey.R</code>,
+<code>setup_recruitment.R</code>, <code>setup_sim_fleets.R</code>,
+<code>setup_survey_comps.R</code>,
+<code>setup_survey_selectivity.R</code>,
 <code>setup_tagging.R</code>
 </td>
 </tr>
@@ -358,15 +366,13 @@ through a season goes through that one file.</p>
 <code>do_sigma_dmr_mapping</code>, <code>do_sigmaC_mapping</code>,
 <code>do_sigmaC_pop_mapping</code>, <code>do_sigmaD_mapping</code>,
 <code>do_sigmaD_pop_mapping</code>, <code>do_sigmaF_mapping</code>,
-<code>Setup_Mod_Catch_and_F</code>, <code>Setup_Sim_Fishing</code>
+<code>Setup_Mod_Catch_and_F</code>
 </td>
 <td>
 <code>setup_checks.R</code>, <code>setup_mapping.R</code>,
 <code>utils_setup.R</code>
 </td>
-<td>
-<code>sim_closed_loop.R</code>, <code>sim_self_test.R</code>
-</td>
+<td></td>
 </tr>
 <tr class="odd">
 <td><code>setup_fishery_comps.R</code></td>
@@ -407,7 +413,8 @@ through a season goes through that one file.</p>
 <code>model_fit.R</code>, <code>setup_fishery_catch.R</code>,
 <code>setup_fishery_comps.R</code>,
 <code>setup_fishery_selectivity.R</code>, <code>setup_movement.R</code>,
-<code>setup_recruitment.R</code>, <code>setup_survey.R</code>
+<code>setup_recruitment.R</code>, <code>setup_survey_comps.R</code>,
+<code>setup_survey_selectivity.R</code>
 </td>
 </tr>
 <tr class="even">
@@ -449,18 +456,34 @@ through a season goes through that one file.</p>
 </td>
 </tr>
 <tr class="odd">
-<td><code>setup_survey.R</code></td>
+<td><code>setup_sim_fleets.R</code></td>
 <td>
-<code>Setup_Mod_SrvIdx_and_Comps</code>,
-<code>Setup_Mod_Srvsel_and_Q</code>, <code>Setup_Sim_Survey</code>
+<code>Setup_Sim_Fishing</code>, <code>Setup_Sim_Survey</code>
 </td>
 <td>
-<code>setup_checks.R</code>, <code>setup_mapping.R</code>,
-<code>utils_math.R</code>, <code>utils_setup.R</code>
+<code>setup_checks.R</code>, <code>utils_setup.R</code>
 </td>
 <td>
 <code>sim_closed_loop.R</code>, <code>sim_self_test.R</code>
 </td>
+</tr>
+<tr class="even">
+<td><code>setup_survey_comps.R</code></td>
+<td><code>Setup_Mod_SrvIdx_and_Comps</code></td>
+<td>
+<code>setup_checks.R</code>, <code>setup_mapping.R</code>,
+<code>utils_setup.R</code>
+</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><code>setup_survey_selectivity.R</code></td>
+<td><code>Setup_Mod_Srvsel_and_Q</code></td>
+<td>
+<code>setup_checks.R</code>, <code>setup_mapping.R</code>,
+<code>utils_math.R</code>, <code>utils_setup.R</code>
+</td>
+<td></td>
 </tr>
 <tr class="even">
 <td><code>setup_tagging.R</code></td>
@@ -815,10 +838,10 @@ through a season goes through that one file.</p>
 </td>
 <td>
 <code>refpts_main.R</code>, <code>setup_biologicals.R</code>,
-<code>setup_dimensions.R</code>, <code>setup_fishery_catch.R</code>,
-<code>setup_recruitment.R</code>, <code>setup_sim_containers.R</code>,
-<code>setup_survey.R</code>, <code>setup_tagging.R</code>,
-<code>utils_postfit.R</code>, <code>utils_setup.R</code>
+<code>setup_dimensions.R</code>, <code>setup_recruitment.R</code>,
+<code>setup_sim_containers.R</code>, <code>setup_sim_fleets.R</code>,
+<code>setup_tagging.R</code>, <code>utils_postfit.R</code>,
+<code>utils_setup.R</code>
 </td>
 <td></td>
 </tr>
@@ -873,10 +896,10 @@ through a season goes through that one file.</p>
 </td>
 <td>
 <code>model_fit.R</code>, <code>setup_biologicals.R</code>,
-<code>setup_dimensions.R</code>, <code>setup_fishery_catch.R</code>,
-<code>setup_recruitment.R</code>, <code>setup_sim_containers.R</code>,
-<code>setup_survey.R</code>, <code>setup_tagging.R</code>,
-<code>sim_population.R</code>, <code>utils_postfit.R</code>
+<code>setup_dimensions.R</code>, <code>setup_recruitment.R</code>,
+<code>setup_sim_containers.R</code>, <code>setup_sim_fleets.R</code>,
+<code>setup_tagging.R</code>, <code>sim_population.R</code>,
+<code>utils_postfit.R</code>
 </td>
 <td></td>
 </tr>
@@ -1041,7 +1064,8 @@ through a season goes through that one file.</p>
 <td>
 <code>model_lik_comps.R</code>,
 <code>model_priors_penalties.R</code>,
-<code>setup_fishery_selectivity.R</code>, <code>setup_survey.R</code>,
+<code>setup_fishery_selectivity.R</code>,
+<code>setup_survey_selectivity.R</code>,
 <code>sim_observations.R</code>, <code>sim_random_variates.R</code>
 </td>
 </tr>
@@ -1071,7 +1095,8 @@ through a season goes through that one file.</p>
 <code>setup_fishery_catch.R</code>, <code>setup_fishery_comps.R</code>,
 <code>setup_fishery_selectivity.R</code>, <code>setup_mapping.R</code>,
 <code>setup_movement.R</code>, <code>setup_recruitment.R</code>,
-<code>setup_survey.R</code>, <code>setup_tagging.R</code>,
+<code>setup_sim_fleets.R</code>, <code>setup_survey_comps.R</code>,
+<code>setup_survey_selectivity.R</code>, <code>setup_tagging.R</code>,
 <code>setup_weighting.R</code>, <code>sim_closed_loop.R</code>
 </td>
 </tr>

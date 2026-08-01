@@ -110,7 +110,7 @@ The prefix on a file name says which phase it belongs to.
 
 | Prefix | Phase |
 |----|----|
-| `setup_` | Builds `data`, `parameters` and `mapping`, one process or data source per file |
+| `setup_` | Builds `data`, `parameters` and `mapping`, one process or data source per file. A source large enough to warrant it is split by topic, as `setup_fishery_*.R` and `setup_survey_*.R` are |
 | `model_` | The objective function and the modules it delegates to |
 | `refpts_`, `projection` | Reference points and forward projection off a fitted model |
 | `sim_` | The operating model: self testing and closed loop simulation |
@@ -124,7 +124,7 @@ The prefix on a file name says which phase it belongs to.
 | Prefix | Role |
 |----|----|
 | `Setup_Mod_*` | Builds inputs for a fitted object |
-| `Setup_Sim_*` | Same, for the operating model. Lives beside its `Setup_Mod_*` counterpart |
+| `Setup_Sim_*` | Same, for the operating model. Lives beside its `Setup_Mod_*` counterpart, except for the fishery and survey, whose operating model inputs span several topic files and so share `setup_sim_fleets.R` |
 | `do_*_mapping` | Internal helper that builds the RTMB `map` for one parameter block. This is how parameters get fixed, shared across blocks, or turned into random effect deviations |
 | `Get_*` | Pulls a derived quantity out of set up data, parameters or a fitted object |
 | `do_*` (top level) | A post fit procedure that refits or perturbs a fitted model |
@@ -170,16 +170,18 @@ through that one file.
 | Script | Defines | Calls into | Called from |
 |----|----|----|----|
 | `setup_biologicals.R` | `do_natmort_mapping`, `Setup_Mod_Biologicals`, `Setup_Sim_Biologicals` | `setup_checks.R`, `utils_setup.R` | `sim_closed_loop.R`, `sim_self_test.R` |
-| `setup_checks.R` | `check_data_dimensions`, `check_sim_dimensions` | nothing | `setup_biologicals.R`, `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_fishery_selectivity.R`, `setup_movement.R`, `setup_recruitment.R`, `setup_survey.R`, `setup_tagging.R` |
+| `setup_checks.R` | `check_data_dimensions`, `check_sim_dimensions` | nothing | `setup_biologicals.R`, `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_fishery_selectivity.R`, `setup_movement.R`, `setup_recruitment.R`, `setup_sim_fleets.R`, `setup_survey_comps.R`, `setup_survey_selectivity.R`, `setup_tagging.R` |
 | `setup_dimensions.R` | `Setup_Mod_Dim`, `Setup_Sim_Dim` | `utils_setup.R` | `sim_closed_loop.R`, `sim_self_test.R` |
-| `setup_fishery_catch.R` | `do_dmr_dev_mapping`, `do_dmr_mean_mapping`, `do_Fdev_rho_mapping`, `do_Fmort_mapping`, `do_sigma_dmr_mapping`, `do_sigmaC_mapping`, `do_sigmaC_pop_mapping`, `do_sigmaD_mapping`, `do_sigmaD_pop_mapping`, `do_sigmaF_mapping`, `Setup_Mod_Catch_and_F`, `Setup_Sim_Fishing` | `setup_checks.R`, `setup_mapping.R`, `utils_setup.R` | `sim_closed_loop.R`, `sim_self_test.R` |
+| `setup_fishery_catch.R` | `do_dmr_dev_mapping`, `do_dmr_mean_mapping`, `do_Fdev_rho_mapping`, `do_Fmort_mapping`, `do_sigma_dmr_mapping`, `do_sigmaC_mapping`, `do_sigmaC_pop_mapping`, `do_sigmaD_mapping`, `do_sigmaD_pop_mapping`, `do_sigmaF_mapping`, `Setup_Mod_Catch_and_F` | `setup_checks.R`, `setup_mapping.R`, `utils_setup.R` |  |
 | `setup_fishery_comps.R` | `Setup_Mod_Discard_Comps`, `Setup_Mod_FishIdx_and_Comps` | `setup_checks.R`, `setup_mapping.R`, `utils_setup.R` |  |
 | `setup_fishery_selectivity.R` | `Setup_Mod_Fishsel_and_Q`, `Setup_Mod_Retsel` | `setup_checks.R`, `setup_mapping.R`, `utils_math.R`, `utils_setup.R` |  |
-| `setup_mapping.R` | `build_pe_map`, `build_shared_spec_map`, `do_comp_corr_pars_mapping`, `do_comp_theta_mapping`, `do_fixed_sel_pars_mapping`, `do_q_mapping`, `do_sel_devs_mapping`, `do_sel_pe_pars_mapping`, `sync_dev_map_data` | `utils_setup.R` | `model_fit.R`, `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_fishery_selectivity.R`, `setup_movement.R`, `setup_recruitment.R`, `setup_survey.R` |
+| `setup_mapping.R` | `build_pe_map`, `build_shared_spec_map`, `do_comp_corr_pars_mapping`, `do_comp_theta_mapping`, `do_fixed_sel_pars_mapping`, `do_q_mapping`, `do_sel_devs_mapping`, `do_sel_pe_pars_mapping`, `sync_dev_map_data` | `utils_setup.R` | `model_fit.R`, `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_fishery_selectivity.R`, `setup_movement.R`, `setup_recruitment.R`, `setup_survey_comps.R`, `setup_survey_selectivity.R` |
 | `setup_movement.R` | `do_cont_vary_move_mapping`, `do_move_pars_mapping`, `Setup_Mod_Movement` | `model_movement.R`, `setup_checks.R`, `setup_mapping.R`, `utils_setup.R` |  |
 | `setup_recruitment.R` | `do_h_mapping`, `do_InitDevs_mapping`, `do_rec_region_prop_mapping`, `do_rec_seas_prop_mapping`, `do_RecDevs_mapping`, `do_sexratio_pars_mapping`, `do_sigmaR_mapping`, `do_stray_rate_mapping`, `Setup_Mod_Rec`, `Setup_Sim_Rec` | `setup_checks.R`, `setup_mapping.R`, `utils_setup.R` | `sim_closed_loop.R`, `sim_self_test.R` |
 | `setup_sim_containers.R` | `Setup_Sim_Containers` | nothing | `sim_closed_loop.R`, `sim_self_test.R` |
-| `setup_survey.R` | `Setup_Mod_SrvIdx_and_Comps`, `Setup_Mod_Srvsel_and_Q`, `Setup_Sim_Survey` | `setup_checks.R`, `setup_mapping.R`, `utils_math.R`, `utils_setup.R` | `sim_closed_loop.R`, `sim_self_test.R` |
+| `setup_sim_fleets.R` | `Setup_Sim_Fishing`, `Setup_Sim_Survey` | `setup_checks.R`, `utils_setup.R` | `sim_closed_loop.R`, `sim_self_test.R` |
+| `setup_survey_comps.R` | `Setup_Mod_SrvIdx_and_Comps` | `setup_checks.R`, `setup_mapping.R`, `utils_setup.R` |  |
+| `setup_survey_selectivity.R` | `Setup_Mod_Srvsel_and_Q` | `setup_checks.R`, `setup_mapping.R`, `utils_math.R`, `utils_setup.R` |  |
 | `setup_tagging.R` | `do_conv_init_tag_mort_mapping`, `do_conv_tag_fish_reporting_pars_mapping`, `do_conv_tag_shed_mapping`, `do_conv_tag_theta_mapping`, `recycle_tag_event_par`, `Setup_Mod_Tagging`, `Setup_Sim_Tagging` | `setup_checks.R`, `utils_setup.R` | `sim_closed_loop.R`, `sim_self_test.R` |
 | `setup_weighting.R` | `Setup_Mod_Weighting` | `utils_setup.R` |  |
 
@@ -218,11 +220,11 @@ through that one file.
 
 | Script | Defines | Calls into | Called from |
 |----|----|----|----|
-| `sim_closed_loop.R` | `catch_to_F_multifleet`, `catch_to_F_singlefleet`, `condition_closed_loop_simulations`, `get_closed_loop_reference_points` | `refpts_main.R`, `setup_biologicals.R`, `setup_dimensions.R`, `setup_fishery_catch.R`, `setup_recruitment.R`, `setup_sim_containers.R`, `setup_survey.R`, `setup_tagging.R`, `utils_postfit.R`, `utils_setup.R` |  |
+| `sim_closed_loop.R` | `catch_to_F_multifleet`, `catch_to_F_singlefleet`, `condition_closed_loop_simulations`, `get_closed_loop_reference_points` | `refpts_main.R`, `setup_biologicals.R`, `setup_dimensions.R`, `setup_recruitment.R`, `setup_sim_containers.R`, `setup_sim_fleets.R`, `setup_tagging.R`, `utils_postfit.R`, `utils_setup.R` |  |
 | `sim_observations.R` | `generate_fishery_catch_comp_idx`, `generate_fishery_conv_tags_recap`, `generate_survey_comp_idx`, `marginalize_conv_fish_tags`, `predict_sim_fish_iss_fmort`, `release_conv_tags`, `simulate_comps`, `simulate_conv_tag_fish_recaptures` | `model_obs_tagging.R`, `model_transition.R`, `sim_random_variates.R`, `utils_math.R` | `sim_population.R` |
 | `sim_population.R` | `apply_pop_dy`, `compute_biom_y_sim`, `generate_initial_age_structure`, `generate_recruitment`, `run_annual_cycle`, `Simulate_Pop_Static` | `model_init_naa.R`, `model_recruitment.R`, `model_transition.R`, `sim_observations.R`, `sim_setup.R` | `sim_self_test.R` |
 | `sim_random_variates.R` | `rdirM`, `rinvgauss_rec`, `rlogistnormal` | `utils_math.R` | `projection.R`, `sim_observations.R` |
-| `sim_self_test.R` | `simulation_data_to_SPoRC`, `simulation_self_test` | `model_fit.R`, `setup_biologicals.R`, `setup_dimensions.R`, `setup_fishery_catch.R`, `setup_recruitment.R`, `setup_sim_containers.R`, `setup_survey.R`, `setup_tagging.R`, `sim_population.R`, `utils_postfit.R` |  |
+| `sim_self_test.R` | `simulation_data_to_SPoRC`, `simulation_self_test` | `model_fit.R`, `setup_biologicals.R`, `setup_dimensions.R`, `setup_recruitment.R`, `setup_sim_containers.R`, `setup_sim_fleets.R`, `setup_tagging.R`, `sim_population.R`, `utils_postfit.R` |  |
 | `sim_setup.R` | `Setup_sim_env` | nothing | `sim_population.R` |
 
 #### Diagnostics
@@ -247,9 +249,9 @@ through that one file.
 
 | Script | Defines | Calls into | Called from |
 |----|----|----|----|
-| `utils_math.R` | `get_AR1_CorrMat`, `get_Constant_CorrMat`, `get_logistN_Sigma`, `Get_Natural_Cubic_Spline_Weights`, `rho_trans` | nothing | `model_lik_comps.R`, `model_priors_penalties.R`, `setup_fishery_selectivity.R`, `setup_survey.R`, `sim_observations.R`, `sim_random_variates.R` |
+| `utils_math.R` | `get_AR1_CorrMat`, `get_Constant_CorrMat`, `get_logistN_Sigma`, `Get_Natural_Cubic_Spline_Weights`, `rho_trans` | nothing | `model_lik_comps.R`, `model_priors_penalties.R`, `setup_fishery_selectivity.R`, `setup_survey_selectivity.R`, `sim_observations.R`, `sim_random_variates.R` |
 | `utils_postfit.R` | `get_model_rep_from_mcmc`, `get_optim_param_list`, `get_par_est_info`, `marg_AIC`, `post_optim_sanity_checks` | nothing | `sim_closed_loop.R`, `sim_self_test.R` |
-| `utils_setup.R` | `collect_message`, `convert_to_numeric`, `extend_years`, `resolve_sel_pen_wts`, `safe_extract`, `set_data_indicator_unused` | nothing | `model_objective.R`, `plot_figures_tables.R`, `setup_biologicals.R`, `setup_dimensions.R`, `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_fishery_selectivity.R`, `setup_mapping.R`, `setup_movement.R`, `setup_recruitment.R`, `setup_survey.R`, `setup_tagging.R`, `setup_weighting.R`, `sim_closed_loop.R` |
+| `utils_setup.R` | `collect_message`, `convert_to_numeric`, `extend_years`, `resolve_sel_pen_wts`, `safe_extract`, `set_data_indicator_unused` | nothing | `model_objective.R`, `plot_figures_tables.R`, `setup_biologicals.R`, `setup_dimensions.R`, `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_fishery_selectivity.R`, `setup_mapping.R`, `setup_movement.R`, `setup_recruitment.R`, `setup_sim_fleets.R`, `setup_survey_comps.R`, `setup_survey_selectivity.R`, `setup_tagging.R`, `setup_weighting.R`, `sim_closed_loop.R` |
 
 #### Package data
 

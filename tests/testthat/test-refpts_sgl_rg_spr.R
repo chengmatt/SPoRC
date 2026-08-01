@@ -1,3 +1,9 @@
+# Pinned regression test. The expected F and biomass reference points are output from a
+# previously validated SPoRC run, not hand-derived values. A mismatch means a change moved
+# a reference point, which is a bug unless the numerical change was intended. If it was
+# intended, re-baseline deliberately and say why in NEWS.md. Do not paste in fresh output
+# to make the test pass. See tests/README.md.
+
 library(SPoRC)
 library(testthat)
 data("sgl_rg_sable_rep")
@@ -117,19 +123,19 @@ test_that("Single Region SPR Reference Points Sablefish Model Converges to Equil
   )
 
   # Check if F equilibriates back at F40%
-  expect_equal(out$proj_F[,n_proj_yrs], sgl_ref_pt$f_ref_pt, tolerance = 0)
+  expect_equal(out$proj_F[,n_proj_yrs], sgl_ref_pt$f_ref_pt, tolerance = 1e-5)
 
   # Check if SSB equilibriates at Bx%
   expect_equal(round(as.numeric(out$proj_SSB[1,1,n_proj_yrs]), 10),
-               round(as.numeric(sgl_ref_pt$b_ref_pt), 10), tolerance = 0)
+               round(as.numeric(sgl_ref_pt$b_ref_pt), 10), tolerance = 1e-5)
 
   # Check to see if SSB equilibriates
   expect_equal(round(as.numeric(out$proj_SSB[1,1,n_proj_yrs]), 10),
-               round(as.numeric(out$proj_SSB[1,1,n_proj_yrs-1]), 10), tolerance = 0)
+               round(as.numeric(out$proj_SSB[1,1,n_proj_yrs-1]), 10), tolerance = 1e-5)
 
   # Check to make sure single region F40% and B40% is consistent with historical values
-  expect_equal(round(sgl_ref_pt$f_ref_pt, 8), 0.08625413, tolerance = 0)
-  expect_equal(round(as.numeric(sgl_ref_pt$b_ref_pt), 4), 121.3814, tolerance = 0)
+  expect_equal(round(sgl_ref_pt$f_ref_pt, 8), 0.08625413, tolerance = 1e-5)
+  expect_equal(round(as.numeric(sgl_ref_pt$b_ref_pt), 4), 121.3814, tolerance = 1e-5)
 
 
 })

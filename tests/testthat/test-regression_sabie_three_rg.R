@@ -1,3 +1,12 @@
+# Pinned regression test. The expected SSB and recruitment vectors are output from a
+# previously validated SPoRC fit of this assessment, not hand-derived values. A mismatch
+# means a change moved a fitted result, which is a bug unless the numerical change was
+# intended. If it was intended, re-baseline deliberately and say why in NEWS.md. Do not
+# paste in fresh output to make the test pass. See tests/README.md.
+#
+# Expectations here are flattened with as.vector over a multi-region array, so a change to
+# region or season array ordering shows up as a whole-vector mismatch rather than a shift.
+
 library(SPoRC)
 library(testthat)
 data("three_rg_sable_data")

@@ -271,42 +271,40 @@ set_data_indicator_unused <- function(data,
 
 #' Convert character or numeric input to numeric codes
 #'
-#' Maps a character vector to integer codes via a named lookup list, or
-#' passes numeric input through unchanged. Arrays and matrices are flattened,
-#' converted element-wise, and restored to their original dimensions.
-#' Unrecognised character values raise an informative error listing both the
-#' invalid inputs and the valid options.
+#' Maps a character vector to integer codes via a named lookup, or passes
+#' numeric input through unchanged. Character arrays and matrices are converted
+#' element-wise and keep their original dimensions. Unrecognised character
+#' values raise an informative error listing both the invalid inputs and the
+#' valid options.
 #'
 #' @param x Character vector, numeric vector, or array to convert.
-#' @param lookup Named list mapping valid character strings to numeric codes
-#'   (e.g., \code{list("none" = 999, "multinomial" = 0)}).
+#' @param lookup Named list (or named atomic vector) mapping valid character
+#'   strings to numeric codes (e.g., \code{list("none" = 999, "multinomial" = 0)}).
 #'
-#' @return Numeric vector or array of the same shape as \code{x}.
+#' @return Numeric vector or array of the same shape as \code{x}, without names.
 #'
 #' @keywords internal
 convert_to_numeric <- function(x, lookup) {
 
-  # Return numberic if already numeric
-  if (is.numeric(x)) {
+  # Return numeric if already numeric
+  if(is.numeric(x)) {
     return(x)
   }
 
-  # if character, return numeric and convert
-  if (is.character(x)) {
-    result <- lookup[x]
-    if (any(is.na(result))) {
-      invalid <- x[is.na(lookup[x])]
+  # if character, validate against the lookup names and convert. Matching on
+  # names is required because subsetting a list by a missing name yields a
+  # one-element list holding NULL, which is.na() reports as FALSE.
+  if(is.character(x)) {
+    idx <- match(x, names(lookup))
+    if(any(is.na(idx))) {
+      invalid <- unique(x[is.na(idx)])
       stop("Invalid character input: ", paste(invalid, collapse = ", "),
            "\nValid options: ", paste(names(lookup), collapse = ", "))
     }
-    return(unlist(result))
-  }
-
-  # Handle arrays/matrices
-  if (is.array(x)) {
-    dims <- dim(x)
-    result <- convert_to_numeric(as.vector(x), lookup)
-    return(array(result, dim = dims))
+    result <- unlist(lookup[idx], use.names = FALSE)
+    # arrays/matrices keep their shape
+    if(is.array(x)) result <- array(result, dim = dim(x), dimnames = dimnames(x))
+    return(result)
   }
 
   stop("Input must be numeric or character")

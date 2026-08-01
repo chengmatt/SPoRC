@@ -1,3 +1,9 @@
+# Pinned regression test. The expected SSB, recruitment, and jnLL values are output from a
+# previously validated SPoRC fit of this assessment, not hand-derived values. A mismatch
+# means a change moved a fitted result, which is a bug unless the numerical change was
+# intended. If it was intended, re-baseline deliberately and say why in NEWS.md. Do not
+# paste in fresh output to make the test pass. See tests/README.md.
+
 library(SPoRC)
 library(testthat)
 data("sgl_rg_ebswp_data")

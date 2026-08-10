@@ -12,6 +12,12 @@ name: test-coverage.yaml
 
 permissions: read-all
 
+# One run per branch. A new push supersedes any run still queued or running on
+# that branch, so a batched push of many commits leaves only the newest.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test-coverage:
     runs-on: ubuntu-latest

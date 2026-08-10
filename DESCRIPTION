@@ -4,7 +4,7 @@ Title: A Generalized Stochastic (S) Population (Po) Model Over Regional
     (R) Components (C)
 Version: 1.2.0.9000
 Authors@R: c(
-    person("Matthew", "Cheng", , "your@email.com", role = c("aut", "cre"),
+    person("Matthew", "Cheng", , "matt.cheng@noaa.gov", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-2351-3402")),
     person("Daniel", "Goethel", role = "ctb",
            comment = c(ORCID = "0000-0003-0066-431X")),

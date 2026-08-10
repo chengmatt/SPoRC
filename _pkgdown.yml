@@ -7,8 +7,28 @@ template:
 
 navbar:
   structure:
-    left:  [reference, articles, news]
+    left:  [reference, articles, case_studies, news]
     right: [search, github]
+  components:
+    case_studies:
+      text: Case Studies
+      menu:
+        - text: "Alaska Sablefish (Single Region)"
+          href: articles/e_single_region_sablefish_case_study.html
+        - text: "Eastern Bering Sea Walleye Pollock"
+          href: articles/f_single_region_ebs_pollock_case_study.html
+        - text: "Alaska Sablefish (Spatial)"
+          href: articles/g_spatial_sablefish_case_study.html
+        - text: "GOA Northern Rockfish"
+          href: articles/w_goa_northern_rockfish_case_study.html
+        - text: "GOA Dusky Rockfish"
+          href: articles/x_goa_dusky_rockfish_case_study.html
+        - text: "BSAI Northern Rockfish"
+          href: articles/y_bsai_northern_rockfish_case_study.html
+        - text: "BSAI Blackspotted and Rougheye Rockfish"
+          href: articles/z_bsai_rougheye_rockfish_case_study.html
+        - text: "BSAI Pacific Ocean Perch"
+          href: articles/aa_bsai_pacific_ocean_perch_case_study.html
 
 articles:
   - title: "Getting Started"
@@ -24,11 +44,19 @@ articles:
       - c_model_equations
       - d_model_report
 
-  - title: "Model Setup Examples"
+  - title: "Case Studies"
+    desc: >
+      Existing assessments set up in `SPoRC`, with the model equations behind
+      each and a comparison against the operational model where one exists.
     contents:
       - e_single_region_sablefish_case_study
       - f_single_region_ebs_pollock_case_study
       - g_spatial_sablefish_case_study
+      - w_goa_northern_rockfish_case_study
+      - x_goa_dusky_rockfish_case_study
+      - y_bsai_northern_rockfish_case_study
+      - z_bsai_rougheye_rockfish_case_study
+      - aa_bsai_pacific_ocean_perch_case_study
 
   - title: "Simulation and Projections"
     contents:
@@ -146,15 +174,22 @@ reference:
       - theme_sablefish
 
   - title: "Data"
-    desc: "Data objects provided by SPoRC"
+    desc: "Assessment data inputs provided by SPoRC"
     contents:
       - sgl_rg_sable_data
       - mlt_rg_sable_data
-      - sgl_rg_ebswp_data
       - three_rg_sable_data
-      - three_rg_sable_rep
+      - sgl_rg_ebswp_data
+      - sgl_rg_dusky_data
+      - sgl_rg_goa_nork_data
+      - sgl_rg_bsai_nork_data
+      - sgl_rg_bsai_pop_data
+      - sgl_rg_rebs_data
+
+  - title: "Fitted Model Objects"
+    desc: "Fitted model output provided by SPoRC"
+    contents:
       - sgl_rg_sable_rep
       - mlt_rg_sable_rep
       - three_rg_sable_rep
-      - sgl_rg_dusky_data
       - dusky_rtmb_model

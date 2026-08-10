@@ -200,13 +200,13 @@ input_list <- Setup_Mod_Catch_and_F(input_list = input_list,
                                       array(log(0.05), dim = c(input_list$data$n_regions,
                                                                length(input_list$data$years),
                                                                input_list$data$n_seas,
-                                                               input_list$data$n_fish_fleets)),
+                                                               input_list$data$n_fish_fleets))
                                     # fixing catch sd at small value
-                                    ln_F_mean = array(-2, dim = c(input_list$data$n_regions,
-                                                                  input_list$data$n_seas,
-                                                                  input_list$data$n_fish_fleets))
-                                    # some starting values for fishing mortality
 )
+
+# ln_F_mean cannot be passed through ... because R partially matches the name to
+# the ln_F_mean_spec formal, so the starting value is assigned post-hoc.
+input_list$par$ln_F_mean[] <- -2
 
 # Fishery Indices and Compositions
 input_list <- Setup_Mod_FishIdx_and_Comps(input_list = input_list,

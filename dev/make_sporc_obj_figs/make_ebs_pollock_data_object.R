@@ -1,158 +1,268 @@
+# Purpose: Build sgl_rg_ebswp_data, the container for the EBS walleye pollock
+#          case study. Everything the case study needs lives in the object:
+#          model inputs, the ADMB maximum likelihood estimate used as a starting
+#          point, and the ADMB output the bridge is compared against.
+# Creator: Matthew LH. Cheng
+# Date Created: 8/7/26
+#
+# Sources, all under dev/dev_data:
+#   pm_24.dat     2024 assessment input file, read with ebswp::read_dat
+#   pm.par        ADMB parameter file
+#   pm_base.rds   RTMB reproduction of pm.rep and pm.par, the comparison target
+#   cov_2024.dat  bottom trawl survey index covariance matrix
+
 library(here)
 
-# Single Region EBS Walleye Pollock ----------------------------------------
-# Read in data
-in_dat <- ebswp::read_dat(here::here("dev", "dev_data", "pm_24_db.dat"))
-rep <- ebswp::read_rep(here::here("dev", "dev_data", "pm.rep"))
+in_dat <- ebswp::read_dat(here("dev", "dev_data", "pm_24.dat"))
+pm <- readRDS(here("dev", "dev_data", "pm_base.rds"))$report
+par_txt <- readLines(here("dev", "dev_data", "pm.par"))
+bts_cov <- as.matrix(utils::read.table(here("dev", "dev_data", "cov_2024.dat")))
 
-# Reformat data list to fit SPoRC
-ebswp_SPoRC_data <- list()
-
-# Dimensions ---------------------------------------------------------------
-ebswp_SPoRC_data$years <- seq(in_dat$styr, in_dat$endyr)
-ebswp_SPoRC_data$ages <- 1:in_dat$nages
-ebswp_SPoRC_data$n_seas <- 1
-ebswp_SPoRC_data$n_regions <- 1
-ebswp_SPoRC_data$n_sexes <- 1
-ebswp_SPoRC_data$n_fish_fleets <- 1
-ebswp_SPoRC_data$n_srv_fleets <- 3
-ebswp_SPoRC_data$n_pop <- 1
-ebswp_SPoRC_data$natal_region <- 1
-
+# Dimensions -----------------------------------------------------------------
+# Survey fleet 1 is the bottom trawl survey, 2 the acoustic trawl survey, 3 the
+# acoustic vessel of opportunity index, and 4 the acoustic survey's age 1
+# abundance, which the assessment fits as an index in its own right.
+years <- seq(in_dat$styr, in_dat$endyr)
+ages <- 1:in_dat$nages
+n_yrs <- length(years)
+n_ages <- length(ages)
 n_pop <- 1
-n_regions <- ebswp_SPoRC_data$n_regions
-n_yrs <- length(ebswp_SPoRC_data$years)
-n_ages <- length(ebswp_SPoRC_data$ages)
-n_seas <- ebswp_SPoRC_data$n_seas
-n_sexes <- ebswp_SPoRC_data$n_sexes
-n_fish_fleets <- ebswp_SPoRC_data$n_fish_fleets
-n_srv_fleets <- ebswp_SPoRC_data$n_srv_fleets
-yrs <- in_dat$styr:in_dat$endyr
+n_regions <- 1
+n_seas <- 1
+n_sexes <- 1
+n_fish_fleets <- 1
+n_srv_fleets <- 4
 
-# Biologicals --------------------------------------------------------------
-# WAA: region, year, seas, age, sex
-ebswp_SPoRC_data$WAA <- array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
-ebswp_SPoRC_data$WAA_fish <- array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets))
-ebswp_SPoRC_data$WAA_srv <- array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_srv_fleets))
-# MatAA: region, year, seas, age, sex
-ebswp_SPoRC_data$MatAA <- array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
-for(y in 1:n_yrs) {
-  for(seas in 1:n_seas) {
-    ebswp_SPoRC_data$WAA[,1, y, seas, , 1] <- in_dat$wt_ssb[y, 1:n_ages]
-    ebswp_SPoRC_data$MatAA[,1, y, seas, , 1] <- in_dat$p_mature[1:n_ages]
+i_fsh <- which(years %in% in_dat$yrs_fsh_data)
+i_bts <- which(years %in% in_dat$yrs_bts_data)
+i_ats <- which(years %in% in_dat$yrs_ats_data)
+i_avo <- which(years %in% in_dat$yrs_avo)
+
+# Pull a named block out of the ADMB parameter file.
+grab <- function(nm) {
+  i <- grep(paste0("^# ", nm, ":"), par_txt)
+  stopifnot(length(i) == 1)
+  j <- i + 1
+  v <- numeric(0)
+  while(j <= length(par_txt) && !grepl("^#", par_txt[j])) {
+    v <- c(v, scan(text = par_txt[j], quiet = TRUE))
+    j <- j + 1
   }
+  v
 }
 
-# fleet specific waa
-ebswp_SPoRC_data$WAA_fish[,1, , seas, , 1, 1] <- in_dat$wt_fsh[, 1:n_ages]
-ebswp_SPoRC_data$WAA_srv[,1, which(yrs %in% in_dat$yrs_bts_data), seas, , 1, 1] <- in_dat$wt_bts[, 1:n_ages]
-ebswp_SPoRC_data$WAA_srv[,1, which(yrs %in% in_dat$yrs_ats_data), seas, , 1, 2] <- in_dat$wt_ats[, 1:n_ages]
-ebswp_SPoRC_data$WAA_srv[,1, which(yrs %in% in_dat$yrs_avo), seas, , 1, 3] <- in_dat$wt_avo[, 1:n_ages]
+# Biologicals ----------------------------------------------------------------
+# The assessment carries a different weight at age matrix for spawning biomass,
+# for catch, and for each survey index.
+WAA <- array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
+MatAA <- array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
+WAA[, 1, , 1, , 1] <- in_dat$wt_ssb[, 1:n_ages]
+MatAA[, 1, , 1, , 1] <- rep(in_dat$p_mature[1:n_ages], each = n_yrs)
 
-# Ageing error
-ebswp_SPoRC_data$AgeingError <- as.matrix(in_dat$age_err)
+WAA_fish <- array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets))
+WAA_fish[, 1, , 1, , 1, 1] <- in_dat$wt_fsh[, 1:n_ages]
 
-# Catch --------------------------------------------------------------------
-# ObsCatch: region, year, seas, fleet
-ebswp_SPoRC_data$ObsCatch <- array(0, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
-ebswp_SPoRC_data$ObsCatch[1, , 1, 1] <- in_dat$obs_catch
+WAA_srv <- array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_srv_fleets))
+WAA_srv[, 1, i_bts, 1, , 1, 1] <- in_dat$wt_bts[, 1:n_ages]
+WAA_srv[, 1, i_ats, 1, , 1, 2] <- in_dat$wt_ats[, 1:n_ages]
+WAA_srv[, 1, i_avo, 1, , 1, 3] <- in_dat$wt_avo[, 1:n_ages]
+WAA_srv[, 1, i_ats, 1, , 1, 4] <- in_dat$wt_ats[, 1:n_ages]
 
-# UseCatch: region, year, seas, fleet
-ebswp_SPoRC_data$UseCatch <- array(1, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
+AgeingError <- as.matrix(in_dat$age_err)
 
-# Fishery Indices ----------------------------------------------------------
-# ObsFishIdx: region, year, seas, fleet
-ebswp_SPoRC_data$ObsFishIdx <- array(NA, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
-ebswp_SPoRC_data$ObsFishIdx[1, 2:13, 1, 1] <- in_dat$obs_cpue
+# Catch ----------------------------------------------------------------------
+ObsCatch <- array(0, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
+ObsCatch[1, , 1, 1] <- in_dat$obs_catch
+UseCatch <- array(1, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
 
-# ObsFishIdx_SE: region, year, seas, fleet
-ebswp_SPoRC_data$ObsFishIdx_SE <- array(NA, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
-ebswp_SPoRC_data$ObsFishIdx_SE[1, 2:13, 1, 1] <- in_dat$obs_cpue_std / in_dat$obs_cpue
+# Fishery index and compositions ---------------------------------------------
+# The CPUE series covers the second through thirteenth model years and is fit on
+# the arithmetic scale, so its standard error is carried untransformed.
+ObsFishIdx <- array(NA_real_, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
+ObsFishIdx_SE <- array(NA_real_, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
+UseFishIdx <- array(0, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
+i_cpue <- which(years %in% in_dat$yrs_cpue)
+ObsFishIdx[1, i_cpue, 1, 1] <- in_dat$obs_cpue
+ObsFishIdx_SE[1, i_cpue, 1, 1] <- in_dat$obs_cpue_std
+UseFishIdx[1, i_cpue, 1, 1] <- 1
 
-# UseFishIdx: region, year, seas, fleet
-ebswp_SPoRC_data$UseFishIdx <- array(0, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
-ebswp_SPoRC_data$UseFishIdx[1, 2:13, 1, 1] <- 1
+ObsFishAgeComps <- array(NA_real_, dim = c(n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets))
+UseFishAgeComps <- array(0, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
+ISS_FishAgeComps <- array(0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_fish_fleets))
+ObsFishAgeComps[1, i_fsh, 1, , 1, 1] <- in_dat$oac_fsh_data[, 1:n_ages]
+UseFishAgeComps[1, i_fsh, 1, 1] <- 1
+ISS_FishAgeComps[1, i_fsh, 1, 1, 1] <- in_dat$sam_fsh
 
-# Fishery Age Compositions -------------------------------------------------
-# ObsFishAgeComps: region, year, seas, age, sex, fleet
-ebswp_SPoRC_data$ObsFishAgeComps <- array(NA_real_, dim = c(n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets))
+# Survey indices -------------------------------------------------------------
+# The trawl index is fit with a full covariance matrix on the arithmetic scale,
+# the acoustic index lognormally, the vessel of opportunity index normally, and
+# the age 1 index lognormally with a variance folded into its weight.
+ObsSrvIdx <- array(NA_real_, dim = c(n_regions, n_yrs, n_seas, n_srv_fleets))
+ObsSrvIdx_SE <- array(NA_real_, dim = c(n_regions, n_yrs, n_seas, n_srv_fleets))
+UseSrvIdx <- array(0, dim = c(n_regions, n_yrs, n_seas, n_srv_fleets))
 
-# UseFishAgeComps: region, year, seas, fleet
-ebswp_SPoRC_data$UseFishAgeComps <- array(0, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
+ObsSrvIdx[1, i_bts, 1, 1] <- in_dat$ob_bts
+ObsSrvIdx_SE[1, i_bts, 1, 1] <- in_dat$ob_bts_std
+UseSrvIdx[1, i_bts, 1, 1] <- 1
 
-# ISS_FishAgeComps: region, year, seas, sex, fleet
-ebswp_SPoRC_data$ISS_FishAgeComps <- array(0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_fish_fleets))
+ObsSrvIdx[1, i_ats, 1, 2] <- in_dat$ob_ats
+ObsSrvIdx_SE[1, i_ats, 1, 2] <- sqrt(log((in_dat$ob_ats_std / in_dat$ob_ats)^2 + 1))
+UseSrvIdx[1, i_ats, 1, 2] <- 1
 
-idx <- which(yrs %in% in_dat$yrs_fsh_data)
-for(i in 1:length(idx)) {
-  ebswp_SPoRC_data$ObsFishAgeComps[1, idx[i], 1, , 1, 1] <- in_dat$oac_fsh_data[i, 1:n_ages]
-  ebswp_SPoRC_data$UseFishAgeComps[1, idx[i], 1, 1] <- 1
-  ebswp_SPoRC_data$ISS_FishAgeComps[1, idx[i], 1, 1, 1] <- in_dat$sam_fsh[i]
+ObsSrvIdx[1, i_avo, 1, 3] <- in_dat$ob_avo
+ObsSrvIdx_SE[1, i_avo, 1, 3] <- in_dat$ob_avo_std
+UseSrvIdx[1, i_avo, 1, 3] <- 1
+
+ObsSrvIdx[1, i_ats, 1, 4] <- in_dat$oac_ats[, 1]
+ObsSrvIdx_SE[1, i_ats, 1, 4] <- 1
+UseSrvIdx[1, i_ats, 1, 4] <- 1
+
+# Survey compositions --------------------------------------------------------
+ObsSrvAgeComps <- array(NA_real_, dim = c(n_regions, n_yrs, n_seas, n_ages, n_sexes, n_srv_fleets))
+UseSrvAgeComps <- array(0, dim = c(n_regions, n_yrs, n_seas, n_srv_fleets))
+ISS_SrvAgeComps <- array(0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_srv_fleets))
+
+ObsSrvAgeComps[1, i_bts, 1, , 1, 1] <- in_dat$oac_bts[, 1:n_ages]
+UseSrvAgeComps[1, i_bts, 1, 1] <- 1
+ObsSrvAgeComps[1, i_ats, 1, , 1, 2] <- in_dat$oac_ats[, 1:n_ages]
+UseSrvAgeComps[1, i_ats, 1, 2] <- 1
+
+# pm.tpl divides the observed trawl composition by its ages 2-15 subtotal while
+# keeping all 15 entries, so its observed vector sums to more than one while the
+# expected sums to one. Because sam * sum(p * c * log(e)) equals (sam * c) *
+# sum(p * log(e)), that is a per-year inflation of the sample size, applied here
+# to a properly normalised composition. sam_bts and sam_ats are integer vectors
+# in pm.tpl, so both are truncated.
+bts_c <- rowSums(in_dat$oac_bts[, 1:n_ages]) / rowSums(in_dat$oac_bts[, 2:n_ages])
+ISS_SrvAgeComps[1, i_bts, 1, 1, 1] <- floor(in_dat$sam_bts) * bts_c
+ISS_SrvAgeComps[1, i_ats, 1, 1, 2] <- floor(in_dat$sam_ats)
+
+# ADMB maximum likelihood estimate -------------------------------------------
+# F is reported at age, so it is divided back out by selectivity at the age
+# where selectivity peaks to recover the annual scalar.
+a_ref <- apply(pm$sel_fsh, 1, which.max)
+Fmort <- sapply(1:n_yrs, function(y) pm$F[y, a_ref[y]] / pm$sel_fsh[y, a_ref[y]])
+
+# Fishery selectivity: log scale coefficients over ages 1-12 with a flat tail,
+# and deviations as the running sum of pm.tpl's increments at its change years.
+yrs_ch_fsh <- 1965:2023
+coffs_f <- grab("sel_coffs_fsh")
+nsel_f <- length(coffs_f)
+inc_f <- matrix(grab("sel_devs_fsh"), nrow = length(yrs_ch_fsh), ncol = nsel_f, byrow = TRUE)
+cum_f <- matrix(0, n_yrs, nsel_f)
+for(i in 1:(n_yrs - 1)) {
+  k <- match(years[i], yrs_ch_fsh)
+  cum_f[i + 1, ] <- cum_f[i, ] + if(!is.na(k)) inc_f[k, ] else 0
 }
+pars_fsh <- c(coffs_f, rep(coffs_f[nsel_f], n_ages - nsel_f))
+devs_fsh <- cbind(cum_f, matrix(cum_f[, nsel_f], n_yrs, n_ages - nsel_f))
 
-# Fishery Length Compositions (empty) --------------------------------------
-# ObsFishLenComps: region, year, seas, len, sex, fleet
-# UseFishLenComps: region, year, seas, fleet
-# ISS_FishLenComps: region, year, seas, sex, fleet
-# (not used for this model - leave unset or add empty arrays if needed)
+# Acoustic survey: age 1 pinned at log selectivity zero, coefficients over ages
+# 2-8, ages 9-15 flat from age 8. The deviations cannot be accumulated the way
+# the fishery's can, because pm.tpl adds them to ages 2-8 only and leaves age 1
+# at zero in every changed year, so ages 2-15 carry each year's centering
+# constant forward while age 1 does not. Only within year differences are
+# identified, so they are read off the reported surface instead.
+yrs_ch_ats <- 1995:2024
+coffs_a <- grab("sel_coffs_ats")
+nsel_a <- 8
+pars_ats <- c(0, coffs_a, rep(coffs_a[length(coffs_a)], n_ages - nsel_a))
+i_ats_all <- which(years >= in_dat$styr_ats)
+devs_ats <- matrix(0, n_yrs, n_ages)
+for(k in seq_along(i_ats_all)) devs_ats[i_ats_all[k], ] <- log(pm$sel_ats[k, ]) - pars_ats
+for(i in seq_len(min(i_ats_all) - 1)) devs_ats[i, ] <- devs_ats[min(i_ats_all), ]
 
-# Survey Indices -----------------------------------------------------------
-# ObsSrvIdx: region, year, seas, fleet
-ebswp_SPoRC_data$ObsSrvIdx <- array(NA_real_, dim = c(n_regions, n_yrs, n_seas, n_srv_fleets))
+# Bottom trawl survey: logistic with a year specific midpoint and slope, plus a
+# free age 1 value. The slope and midpoint ARE the deviations in pm.tpl, which
+# carries no base pair. SPoRC evaluates at the raw ages while pm.tpl evaluates
+# at 0.5 + age, so the midpoint shifts by 0.5.
+slp <- grab("sel_slp_bts_dev")
+a50 <- grab("sel_a50_bts_dev")
+age1 <- grab("sel_age_one_bts_dev")
+i_bts_all <- which(years >= in_dat$styr_bts)
+bts_b50_dev <- rep(log(exp(a50[1]) - 0.5), n_yrs)
+bts_b50_dev[i_bts_all] <- log(exp(a50) - 0.5)
+bts_k_dev <- rep(slp[1], n_yrs)
+bts_k_dev[i_bts_all] <- slp
+bts_age1_dev <- rep(age1[1], n_yrs)
+bts_age1_dev[i_bts_all] <- age1
 
-# ObsSrvIdx_SE: region, year, seas, fleet
-ebswp_SPoRC_data$ObsSrvIdx_SE <- array(NA_real_, dim = c(n_regions, n_yrs, n_seas, n_srv_fleets))
+mle <- list(
+  Fmort = Fmort,
+  Rec = pm$N[, 1],
+  log_initdevs = grab("log_initdevs"),
+  steepness = pm$steepness,
+  ln_global_R0 = 10.0952990352,
+  pars_fsh = pars_fsh,
+  devs_fsh = devs_fsh,
+  pars_ats = pars_ats,
+  devs_ats = devs_ats,
+  bts_b50_dev = bts_b50_dev,
+  bts_k_dev = bts_k_dev,
+  bts_age1_dev = bts_age1_dev
+)
 
-# UseSrvIdx: region, year, seas, fleet
-ebswp_SPoRC_data$UseSrvIdx <- array(0, dim = c(n_regions, n_yrs, n_seas, n_srv_fleets))
+# ADMB output, the target the bridge is compared against ----------------------
+admb <- list(
+  SSB = pm$SSB,
+  Rec = pm$N[, 1],
+  NAA = pm$N,
+  Fmort = Fmort,
+  sel_fsh = pm$sel_fsh,
+  sel_bts = pm$sel_bts,
+  sel_ats = pm$sel_ats,
+  eb_ats = pm$eb_ats,
+  pred_avo = pm$pred_avo,
+  pred_cpue = pm$pred_cpue,
+  tot_like = pm$tot_like
+)
 
-# Survey Age Compositions --------------------------------------------------
-# ObsSrvAgeComps: region, year, seas, age, sex, fleet
-ebswp_SPoRC_data$ObsSrvAgeComps <- array(NA_real_, dim = c(n_regions, n_yrs, n_seas, n_ages, n_sexes, n_srv_fleets))
+# Write out data -------------------------------------------------------------
+sgl_rg_ebswp_data <- list(
+  years = years,
+  ages = ages,
+  n_seas = n_seas,
+  n_regions = n_regions,
+  n_sexes = n_sexes,
+  n_fish_fleets = n_fish_fleets,
+  n_srv_fleets = n_srv_fleets,
+  n_pop = n_pop,
+  natal_region = 1,
 
-# UseSrvAgeComps: region, year, seas, fleet
-ebswp_SPoRC_data$UseSrvAgeComps <- array(0, dim = c(n_regions, n_yrs, n_seas, n_srv_fleets))
+  WAA = WAA,
+  WAA_fish = WAA_fish,
+  WAA_srv = WAA_srv,
+  MatAA = MatAA,
+  AgeingError = AgeingError,
 
-# ISS_SrvAgeComps: region, year, seas, sex, fleet
-ebswp_SPoRC_data$ISS_SrvAgeComps <- array(0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_srv_fleets))
+  ObsCatch = ObsCatch,
+  UseCatch = UseCatch,
 
-# Bottom trawl survey (fleet 1)
-idx <- which(yrs %in% in_dat$yrs_bts)
-for(i in 1:length(idx)) {
-  ebswp_SPoRC_data$ObsSrvIdx[1, idx[i], 1, 1] <- in_dat$ob_bts[i]
-  ebswp_SPoRC_data$ObsSrvIdx_SE[1, idx[i], 1, 1] <- in_dat$ob_bts_std[i]
-  ebswp_SPoRC_data$UseSrvIdx[1, idx[i], 1, 1] <- 1
-  ebswp_SPoRC_data$ObsSrvAgeComps[1, idx[i], 1, , 1, 1] <- in_dat$oac_bts[i, 1:n_ages]
-  ebswp_SPoRC_data$UseSrvAgeComps[1, idx[i], 1, 1] <- 1
-  ebswp_SPoRC_data$ISS_SrvAgeComps[1, idx[i], 1, 1, 1] <- in_dat$sam_bts[i]
-}
+  ObsFishIdx = ObsFishIdx,
+  ObsFishIdx_SE = ObsFishIdx_SE,
+  UseFishIdx = UseFishIdx,
+  ObsFishAgeComps = ObsFishAgeComps,
+  UseFishAgeComps = UseFishAgeComps,
+  ISS_FishAgeComps = ISS_FishAgeComps,
 
-# ATS survey (fleet 2)
-idx <- which(yrs %in% in_dat$yrs_ats)
-for(i in 1:length(idx)) {
-  ebswp_SPoRC_data$ObsSrvIdx[1, idx[i], 1, 2] <- in_dat$ob_ats[i]
-  ebswp_SPoRC_data$ObsSrvIdx_SE[1, idx[i], 1, 2] <- in_dat$ob_ats_std[i]
-  ebswp_SPoRC_data$UseSrvIdx[1, idx[i], 1, 2] <- 1
-  ebswp_SPoRC_data$ObsSrvAgeComps[1, idx[i], 1, , 1, 2] <- in_dat$oac_ats[i, 1:n_ages]
-  ebswp_SPoRC_data$UseSrvAgeComps[1, idx[i], 1, 2] <- 1
-  ebswp_SPoRC_data$ISS_SrvAgeComps[1, idx[i], 1, 1, 2] <- in_dat$sam_ats[i]
-}
+  ObsSrvIdx = ObsSrvIdx,
+  ObsSrvIdx_SE = ObsSrvIdx_SE,
+  UseSrvIdx = UseSrvIdx,
+  ObsSrvAgeComps = ObsSrvAgeComps,
+  UseSrvAgeComps = UseSrvAgeComps,
+  ISS_SrvAgeComps = ISS_SrvAgeComps,
+  SrvIdx_Cov = bts_cov,
 
-# AVO survey (fleet 3) - index only, no age comps
-idx <- which(yrs %in% in_dat$yrs_avo)
-for(i in 1:length(idx)) {
-  ebswp_SPoRC_data$ObsSrvIdx[1, idx[i], 1, 3] <- in_dat$ob_avo[i]
-  ebswp_SPoRC_data$ObsSrvIdx_SE[1, idx[i], 1, 3] <- in_dat$ob_avo_std[i]
-  ebswp_SPoRC_data$UseSrvIdx[1, idx[i], 1, 3] <- 1
-}
+  yrs_bts = in_dat$yrs_bts_data,
+  yrs_ats = in_dat$yrs_ats_data,
+  yrs_avo = in_dat$yrs_avo,
+  # The stock recruit residuals run over these years only; 1979 is excluded.
+  yrs_srr = setdiff(1978:(max(years) - 2), 1979),
+  yrs_sel_ch_fsh = yrs_ch_fsh,
+  yrs_sel_ch_ats = yrs_ch_ats,
 
-# Convert SE to CV
-ebswp_SPoRC_data$ObsSrvIdx_SE <- ebswp_SPoRC_data$ObsSrvIdx_SE / ebswp_SPoRC_data$ObsSrvIdx
+  mle = mle,
+  admb = admb
+)
 
-# Save report values from actual assessment
-ebswp_SPoRC_data$SSB <- rep$SSB
-ebswp_SPoRC_data$R <- rep$R
-
-# Write out data -----------------------------------------------------------
-sgl_rg_ebswp_data <- ebswp_SPoRC_data
 usethis::use_data(sgl_rg_ebswp_data, internal = FALSE, overwrite = TRUE)

@@ -44,10 +44,7 @@ articles:
       - c_model_equations
       - d_model_report
 
-  - title: "Case Studies"
-    desc: >
-      Existing assessments set up in `SPoRC`, with the model equations behind
-      each and a comparison against the operational model where one exists.
+  - title: internal
     contents:
       - e_single_region_sablefish_case_study
       - f_single_region_ebs_pollock_case_study

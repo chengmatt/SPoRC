@@ -220,6 +220,22 @@ users can determine whether initial age deviations are estimated up to
 the penultimate age class, or across all classes including the plus
 group.
 
+Finally, the initial age structure can be specified as fully *free*
+(`init_age_strc = "free"`), in which case no equilibrium is projected at
+all. The deviations are then the initial numbers themselves rather than
+multipliers on an equilibrium:
+
+$$N_{p,r,y = 1,a \neq 1,s} = \psi_{p,r,y=1,s}\exp\left( \epsilon_{p,r,i}^{\text{Init}} \right)$$
+
+with the first age still taken from the recruitment process. Because the
+deviations are on the scale of log-numbers rather than log-ratios about
+an equilibrium, the initial condition carries no information about
+$\mu_p^{\text{RecInit}}$ or the assumed initial fishing mortality; any
+penalty applied to $\epsilon^{\text{Init}}$ under this option acts as a
+prior on log initial abundance directly. This matches the convention of
+assessments in which initial numbers-at-age are freely estimated
+parameters rather than deviations from an equilibrium.
+
 ### Recruitment Processes
 
 In the current iteration of `SPoRC`, two stock recruitment
@@ -270,6 +286,38 @@ ${SSB}_{p,r,y - RecLag}$ is the spawning stock biomass for population
 $p$ in region $r$, and $\text{effSSB}_{p,y}$ is the effective spawning
 stock biomass (see Spawning Biomass section below).
 
+A Ricker stock-recruit relationship can alternatively be specified
+(`rec_model = "ricker_rec"`), written in a depletion form. For localized
+density dependence:
+
+$$N_{p,r,y,\tau = 1,a = 1,s} = \mu_p^{\text{Rec}}\zeta_{p,r}\frac{\text{effSSB}_{p,y - RecLag}}{\text{SSB0}_{p,r}}\exp\left( \alpha_{p,r}\left\lbrack 1 - \frac{\text{effSSB}_{p,y - RecLag}}{\text{SSB0}_{p,r}} \right\rbrack \right)\exp\left( \epsilon_{p,r,y}^{\text{Rec}} - \frac{\sigma_{\text{Rec}}^{2}}{2}b_{y} \right)\chi_{p,\tau=1}\psi_{p,r,y,s}$$
+
+with the global form defined analogously by replacing the regional
+spawning biomass and $\text{SSB0}$ with their sums across regions. The
+log-slope is derived from steepness as:
+
+$$\alpha_{p,r} = \log\left( \frac{4h_{p,r}}{1 - h_{p,r}} \right)$$
+
+so the curve passes through $(\text{SSB0}, R_0)$ by construction and
+carries the same compensation ratio as a Beverton-Holt at the same $h$.
+This is *not* the textbook steepness definition
+$R(0.2\,\text{SSB0}) = h R_0$: the Ricker here yields
+$R(0.2\,\text{SSB0})/R_0 = 0.2\left(4h/(1-h)\right)^{0.8}$, which exceeds
+$h$ and is not bounded above by 1. Steepness values are therefore not
+interchangeable between the Beverton-Holt and Ricker forms, and a
+steepness prior calibrated for one should not be reused for the other
+without translation.
+
+For both stock-recruit forms, the biological inputs to unfished spawning
+biomass per recruit (weight-at-age, maturity, natural mortality, and
+movement), and hence to $\text{SSB0}$ and the scale of the curve, are
+taken from a single reference year set by `SR_ref_yr`. The default is
+the first model year, which is the model's long-standing behaviour;
+setting `SR_ref_yr` to the terminal year conditions the curve on
+terminal-year biologicals instead, a convention several assessments use.
+With time-varying weight-at-age the two choices imply different
+$\text{SSB0}$ and therefore different depletion scales.
+
 The spawning stock biomass is the product of numbers-at-age, spawning
 weight-at-age, and maturity-at-age for females in the spawning season
 $\tau^{spawn}$:
@@ -302,17 +350,10 @@ deterministic recruitment.
 
 When $RecLag = 0$, recruitment for year $y$ is driven by that same
 year's own spawning biomass rather than a prior year's. The
-Beverton-Holt equations above still apply, but with $\text{effSSB}_{p,y}$
+Beverton-Holt and Ricker equations above still apply, but with $\text{effSSB}_{p,y}$
 (or $\sum_r SSB_{p,r,y}$ for global density dependence) in place of
 $\text{effSSB}_{p,y - RecLag}$, and recruits enter starting at the
-spawning season $\tau^{spawn}$ rather than season 1:
-
-$$\begin{matrix}
-N_{p,r,y,\tau = \tau^{spawn},a = 1,s} = \dfrac{4\mu_p^{\text{Rec}}\zeta_{p,r}h_{p,r}{\text{effSSB}}_{p,y}}{\left( 1 - h_{p,r} \right)\text{SSB0}_{p,r} + 5\left( h_{p,r} - 1 \right){\text{effSSB}}_{p,y}}\exp\left( \epsilon_{p,r,y}^{\text{Rec}} - \frac{\sigma_{\text{Rec}}^{2}}{2}b_{y} \right)\chi_{p,\tau^{spawn}}\psi_{p,r,y,s} \\
-\end{matrix}$$
-
-with any remaining seasonal share ($\tau > \tau^{spawn}$) added to the
-existing numbers at age 1 exactly as in the $\tau > 1$ equation above.
+spawning season $\tau^{spawn}$ rather than season 1, with any remaining seasonal share ($\tau > \tau^{spawn}$) added to the existing numbers at age 1 exactly as in the $\tau > 1$ equation above.
 
 Because $\text{effSSB}_{p,y}$/$SSB_{p,r,y}$ is not knowable until season
 $\tau^{spawn}$ is actually reached within year $y$, this timing
@@ -563,6 +604,22 @@ mortality parameter for a given region, season, and fishery fleet
 ($\mu_{r,\tau,f}^{\text{Fsh}}$). When no catch data are available for a
 given region, season, and fleet, fishing mortality is set to zero.
 
+Under the default `ln_F_mean_spec = "est"` the mean is estimated and the
+deviations are departures from it. `ln_F_mean_spec = "fix"` instead fixes
+the mean at its starting value (zero on the log scale unless supplied), so
+that
+
+$$\text{Fmort}_{r,y,\tau,f} = \exp\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} \right)$$
+
+and the deviations are annual log fishing mortality outright, estimated as
+free parameters. Because the deviation penalty is then the only statement
+about the level of $F$, this parameterization must be paired with a penalty
+that leaves the level free: `Fdev_pen_center = "own_mean"` (deviations
+penalized about their own mean), `Fdev_model = "rw"` (only increments
+penalized), or `Use_F_pen = 0`. An `"iid"` or `"ar1"` penalty centred on
+the fixed zero mean would shrink the deviations toward $F = 1$, so that
+combination is rejected at setup.
+
 The discard mortality rate is parameterized analogously via logistic deviations
 about a mean logit-scale discard mortality rate:
 
@@ -740,10 +797,24 @@ $$\begin{matrix}
 \end{matrix}$$
 
 where $q_{r,y,f}^{\text{Fsh}}$ is the catchability coefficient for a
-given fishery fleet. Note that unlike the survey index, the fishery index
-is computed directly from numbers-at-age without applying additional survival
-discounting: fishing is spread across the whole season rather than occurring
-at a point within it, so there is no analogue of $t^{srv}$ to discount by.
+given fishery fleet. By default the fishery index is computed directly
+from start-of-season numbers-at-age without survival discounting, on the
+rationale that fishing is spread across the whole season rather than
+occurring at a point within it. However, an optional within-season
+timing $t_{r,\tau,f}^{fish}$ (`t_fish`, a fraction of the season) can be
+specified per region, season, and fleet, mirroring the survey convention:
+when supplied, the numbers entering the index are first decayed by
+
+$$N_{p,r,y,\tau,a,s}\exp\left( - Z_{p,r,y,\tau,a,s} \cdot t_{r,\tau,f}^{fish} \right)$$
+
+with $t^{fish} = 0$ reproducing the start-of-season default. This is
+appropriate for fishery CPUE series that reflect a survey-like snapshot
+(e.g., an index standardized to a particular part of the season).
+
+The set of ages entering the index sum can also be restricted per fleet
+via `fish_idx_ages`, replacing $\sum_a$ with a sum over the named ages
+only. The restriction applies to the index total alone; the fleet's
+selectivity, catch, and compositions are unaffected.
 
 For the same reason, the fishery index follows catch rather than the survey when
 movement is continuous. Under $\text{move\_timing} = 2$ the fleet encounters fish
@@ -830,7 +901,37 @@ The observed region-aggregated survey index is compared to the sum of predicted 
 across populations: $\sum_p \text{SrvIdx}_{p,r,y,\tau,sf}$. Population-specific
 survey indices are compared directly to $\text{SrvIdx}_{p,r,y,\tau,sf}$ without summation.
 
-For survey catchability, environmental linkage can be specified:
+As with the fishery index, the ages entering the survey index sum can be
+restricted per fleet via `srv_idx_ages`. Restricting a fleet to a single
+age turns it into an index of that age alone (e.g., an age-1 acoustic
+index of recruitment strength), while the fleet's compositions continue
+to use the full age range because the restriction applies to the index
+sum rather than to selectivity.
+
+Survey catchability is by default an estimated parameter,
+$q_{r,y,sf}^{\text{Srv}} = \exp\left(\ln q_{r,\hat{b}(y),sf}\right)$ with
+time-block structure $\hat{b}(y)$. Alternatively, catchability can be
+concentrated out of the likelihood analytically (`srv_q_type`), treating
+it as a pure scaling nuisance parameter. Two analytic solutions are
+available, computed per region and fleet over only the years with
+observations. The arithmetic solution (`"arith"`) is the ratio of mean
+observed to mean predicted unscaled index:
+
+$$\hat{q}_{r,sf} = \frac{\overline{\text{ObsSrvIdx}_{r,\cdot,sf}}}{\overline{\text{SrvIdx}_{r,\cdot,sf}^{(q=1)}}}$$
+
+and the geometric solution (`"geo"`) is the exponentiated mean log-ratio:
+
+$$\hat{q}_{r,sf} = \exp\left( \overline{\log\left(\text{ObsSrvIdx}_{r,\cdot,sf}\right) - \log\left(\text{SrvIdx}_{r,\cdot,sf}^{(q=1)}\right)} \right)$$
+
+where $\text{SrvIdx}^{(q=1)}$ denotes the predicted index evaluated at
+$q = 1$. The geometric form is the exact maximum likelihood solution for
+a lognormal index likelihood with a shared standard error, and is the
+usual companion to a lognormal index; the arithmetic form matches the
+convention some existing assessments use. Analytic fleets fix their
+$\ln q^{\text{Srv}}$ parameters automatically, ignore any block
+structure, and cannot carry catchability covariates or priors.
+
+For estimated survey catchability, environmental linkage can be specified:
 
 $$q_{r,y,sf}^{\text{Srv}} = q_{r,sf}^{\text{Srv}}\exp\left( \mathbf{x}^{T}\mathbf{\beta +}\sum_{m}^{}{\iota_{m}p_{m}\left( z_{r,y,sf} \right)} \right)$$
 
@@ -1072,6 +1173,24 @@ $$\begin{matrix}
 
 where $\eta_{b}$ is a freely estimated logit-scale selectivity parameter for each bin.
 
+A second non-parametric form (`"nonparlog"`) holds the free parameters on
+the log scale instead and standardizes within each year so selectivity
+averages to one across bins:
+
+$$\begin{matrix}
+{Sel}_{y,b} = \frac{\exp\left( \eta_{y,b} \right)}{\frac{1}{n_b}\sum_{b'}\exp\left( \eta_{y,b'} \right)}
+\end{matrix}$$
+
+The two non-parametric forms differ in both respects: the logit form
+bounds every raw value below one via the logistic transform and mean
+standardizes over years and bins jointly, whereas the log form leaves
+the scale free and centers within the year, the convention several
+existing assessments use. Under the log form only the differences among
+$\eta$ within a year are identified; the level of $\eta$ is free and is
+absorbed by catchability or fishing mortality, which is why it is
+typically paired with the selectivity parameter centering penalty
+described in the Priors and Penalties section.
+
 Two additional logistic forms with a freely estimated asymptote parameter
 $\alpha \in (0, 1)$ are also available. The first uses the bin-at-50% and slope
 parameterization:
@@ -1199,9 +1318,29 @@ where $\overline{\log\left(\mathbf{Sel}_{r,s,j}\right)}$ is the mean of
 log-selectivity across all years and bins for a given region, sex, and
 fleet. For length-based selectivity, mean standardization is applied
 directly to the selectivity-at-length values before conversion to the
-age domain via the size-age transition matrix. Further details on how
-selectivity deviations arise can be found in the "Selectivity Process
-Error" section of this document.
+age domain via the size-age transition matrix. Because the log-scale
+non-parametric form already standardizes within each year, it is
+excluded from this joint standardization rather than being centered a
+second time. Further details on how selectivity deviations arise can be
+found in the "Selectivity Process Error" section of this document.
+
+Finally, individual bins can be overridden with their own freely
+estimated annual deviations (`*_sel_bin_dev_bins`), independent of the
+fleet's functional form. For each named bin $b^{*}$:
+
+$$\text{Sel}_{r,y,b^{*},s,j} = \exp\left( \epsilon_{r,y,b^{*},s,j}^{\text{BinDev}} \right)$$
+
+replacing whatever the functional form (and any standardization or
+semi-parametric deviation) produced for that bin, while all remaining
+bins keep their parametric shape. The override is applied last, after
+every other transformation. The canonical use is a gear whose curve is
+well described by a parametric form over most of its range but whose
+youngest bin is governed by availability rather than by the gear (e.g.,
+age-1 availability to a bottom trawl varying with year-class strength):
+that bin becomes freely time-varying without abandoning the parametric
+form elsewhere. The override deviations can carry their own iid or
+random walk process error (`cont_tv_*sel_bin_devs`), described in the
+Selectivity Process Error section.
 
 # Likelihoods
 
@@ -1335,6 +1474,34 @@ $$\lambda_{\text{ObsSrvIdx}_{p,r,y,\tau,sf}} \cdot \frac{1}{\sqrt{2\pi\sigma_{\t
 
 where $\text{SrvIdx}_{p,r,y,\tau,sf}$ is the predicted survey index for population $p$ only.
 
+The lognormal above is the default, but each region-aggregated fishery
+and survey index fleet can instead be assigned one of two alternative
+error structures via `FishIdx_LikeType` / `SrvIdx_LikeType`. A normal
+likelihood on the arithmetic scale treats the supplied standard errors
+as arithmetic rather than log-scale:
+
+$$\ell\left( \text{ObsIdx}_{r,y,\tau,j} \right) = \frac{1}{\sqrt{2\pi\sigma_{r,y,\tau,j}^{2}}\,}\exp\left( - \frac{\left\lbrack \text{ObsIdx}_{r,y,\tau,j} - \text{Idx}_{r,y,\tau,j} \right\rbrack^{2}}{2\sigma_{r,y,\tau,j}^{2}} \right)$$
+
+A multivariate normal likelihood places a fleet's whole observed series
+in a single density with a fixed, user-supplied covariance
+$\mathbf{\Sigma}_{j}$ across observations:
+
+$$\ell\left( \mathbf{ObsIdx}_{j} \right) = \frac{1}{(2\pi)^{n/2}\left| \mathbf{\Sigma}_{j} \right|^{1/2}}\exp\left( - \frac{1}{2}\left( \mathbf{ObsIdx}_{j} - \mathbf{Idx}_{j} \right)^{T}\mathbf{\Sigma}_{j}^{- 1}\left( \mathbf{ObsIdx}_{j} - \mathbf{Idx}_{j} \right) \right)$$
+
+where $n$ is the number of fitted observations for the fleet, ordered as
+they appear when scanning the fleet's use flags in array order. This is
+the appropriate form when the survey itself provides a covariance across
+years (e.g., a model-based index with estimated inter-annual
+correlation), since a diagonal likelihood would treat correlated
+residuals as independent information. The covariance is validated at
+setup for symmetry and positive definiteness and is factorized once when
+the AD tape is built. Note that the full multivariate density includes
+the $-\tfrac{n}{2}\log(2\pi)$ constant, unlike TMB's `MVNORM`
+convention, so absolute likelihood values differ from implementations
+that omit it even when the fits are identical. One-step-ahead (OSA)
+residuals are available only for lognormal index fleets; normal and MVN
+fleets are excluded from the OSA machinery.
+
 ### Fishery and Survey Compositions
 
 Several options for fitting composition data are available in `SPoRC`.
@@ -1353,6 +1520,19 @@ $\lambda_{\text{ObsCompositionData}_{r,y,\tau,j}}$ are likelihood weights
 applied to composition data, $ISS_{r,y,\tau,j}$ is the input sample size,
 $E_{r,y,\tau,b,j}$ denotes the expected composition proportions, and
 $O_{r,y,\tau,b,j}$ are the observed composition proportions.
+
+In its negative log form the multinomial is implemented with a small
+constant $c$ (`addtocomp`) guarding $\log(0)$ and an offset so a perfect
+fit contributes zero:
+
+$$-\ell = \text{ESS}\sum_{b}\left( O_{b} + c \cdot \mathbb{1}^{\text{const}} \right)\left\lbrack \log\left( O_{b} + c \right) - \log\left( E_{b} + c \right) \right\rbrack$$
+
+The switch `comp_const_obs` ($\mathbb{1}^{\text{const}}$) controls
+whether $c$ is also added to the observed proportions used as weights.
+The default (`1`) is the long-standing `SPoRC` behaviour; `0` adds the
+constant only inside the logarithms, a convention several existing
+assessments use, and matters when bridging to them, since the added
+constant slightly reweights every bin.
 
 If a Dirichlet-multinomial likelihood is assumed, the following
 parameterization (linear) is used:
@@ -1494,6 +1674,21 @@ sexes, thus preserving implicit sex-ratio information. Ageing error is
 then applied by taking the Kronecker product of a $n_{s}\ \times\ n_{s}$
 identity matrix with the ageing error matrix, followed by matrix
 multiplication. These three structuring options apply identically to retained fishery, discarded fishery, and survey composition likelihoods, as well as to both region-aggregated and population-specific variants.
+
+Additionally, each fleet's age compositions can be restricted to a
+subset of observed bins (`FishAgeComps_bins` / `SrvAgeComps_bins`). Both
+the observed and expected compositions are subset to the named bins and
+renormalized within them:
+
+$$E_{b}^{\text{fit}} = \frac{E_{b}}{\sum_{b' \in \mathcal{B}}E_{b'}},\qquad O_{b}^{\text{fit}} = \frac{O_{b}}{\sum_{b' \in \mathcal{B}}O_{b'}},\qquad b \in \mathcal{B}$$
+
+where $\mathcal{B}$ is the fitted bin set, indexed on observed bins
+(i.e., after ageing error has mapped model ages onto observed ages).
+Bins outside $\mathcal{B}$ are left out of the likelihood entirely
+rather than being forced to be explained, which is appropriate for a
+gear that only resolves part of the age range (e.g., a fishery that
+never encounters the youngest ages, whose zeros would otherwise carry
+information).
 
 ### Tagging
 
@@ -1641,11 +1836,30 @@ functional form specified, ${\sigma^{2}}_{r,p,y,s,j}^{\text{(Sel)}}$ is
 the prior variance, and $\mu_{r,p,y,s,j}^{\text{(Sel)}}$ is the prior
 mean for the specific selectivity parameter.
 
+In addition to lognormal priors on individual parameters, a *centering
+penalty* can be applied jointly to a named set of selectivity
+fixed-effect parameters (`Use_*_selex_penalty` with a
+`*_selex_penalty` table). For a set $\mathcal{P}$ of parameters held on
+the log scale, the penalty is:
+
+$$P_{\text{SelCenter}} = w\left\lbrack \log\left( \frac{1}{|\mathcal{P}|}\sum_{i \in \mathcal{P}}\exp\left( \theta_{i} \right) \right) \right\rbrack^{2}$$
+
+i.e., the squared log of the set's mean selectivity on the natural
+scale, pushing the average selectivity of the set toward one. This
+resolves the scale non-identifiability of non-parametric log-scale
+selectivity: such a curve is only identified up to a scalar once
+catchability or fishing mortality is free to absorb its level, and the
+centering penalty pins that scalar softly rather than fixing a bin
+outright. Because the expression averages on the natural scale, it is
+meaningful only for parameter sets held on the log scale (the
+`"nonparlog"` form); logit-scale sets would not average to anything
+interpretable as selectivity.
+
 #### Steepness
 
-If a Beverton-Holt stock recruitment relationship is assumed, priors for
-steepness can be specified. Currently, a scaled beta prior (bounded
-between 0.2 and 1) can be invoked:
+If a stock-recruit relationship is assumed (Beverton-Holt or Ricker),
+priors for steepness can be specified. Currently, a scaled beta prior
+(bounded between 0.2 and 1 by default) can be invoked:
 
 $${\begin{matrix}
 a_{p,r}^{(h)} = \left( \frac{\mu_{p,r}^{\text{(}\text{h}\text{)}} - 0.2}{1 - 0.2} \right)\left( \frac{\sigma_{p,r}^{(h)}}{1 - 0.2} \right)^{2} \\
@@ -1657,6 +1871,16 @@ Here, $a_{p,r}^{(h)}$ and $b_{p,r}^{(h)}$ are parameters of the beta
 distribution, $\mu_{p,r}^{\text{(}\text{h}\text{)}}$ is the prior mean
 steepness for a given population and region (bounded between 0.2 and 1) while
 $\sigma_{p,r}^{(h)}$ is the standard deviation for these priors.
+
+The support of the beta can be changed from the default $(0.2, 1)$ via
+optional `lb` and `ub` columns of the prior table, in which case every
+$0.2$ and $1$ above is replaced by the supplied bounds. This exists
+because a beta placed on a different interval is a genuinely different
+function of $h$ rather than the same one shifted: a beta on $(0, 1)$
+carries a $\log(h)$ term where the rescaled default carries
+$\log(h - 0.2)$, and no choice of shape parameters reconciles the two.
+Matching a bridged assessment's steepness prior therefore requires
+matching its support, not just its mean and standard deviation.
 
 #### Recruitment Proportions
 
@@ -1839,20 +2063,67 @@ movement.
 To estimate non-equilibrium initial age deviations, multiplicative
 deviations can be specified:
 
-$$\ell\left( \epsilon_{p,r,i}^{\text{Init}} \right) = \frac{1}{\sqrt{2\pi\sigma_{\text{Init}}^{2}}\,}\exp\left( - \frac{\left( \epsilon_{p,r,i}^{\text{Init}} \right)^{2}}{2\sigma_{\text{Init}}^{2}} \right)$$
+$$\ell\left( \epsilon_{p,r,i}^{\text{Init}} \right) = \frac{1}{\sqrt{2\pi\sigma_{\text{Init}}^{2}}\,}\exp\left( - \frac{\left( \epsilon_{p,r,i}^{\text{Init}} - \mu^{\text{Init}} \right)^{2}}{2\sigma_{\text{Init}}^{2}} \right)$$
 
-where deviations arise from a normal distribution with a mean of 0 and
-variance of $\sigma_{\text{Init}}^{2}$.
+where deviations arise from a normal distribution with variance
+$\sigma_{\text{Init}}^{2}$. The penalty mean $\mu^{\text{Init}}$ is set
+by `InitDevs_pen_center`: under `"fixed"` (the default) it is the
+asserted prior mean (zero, or the bias-corrected
+$-\sigma_{\text{Rec}}^{2}/2$ under the bias ramp), constraining both the
+level and the spread of the deviations. Under `"own_mean"` it is the
+mean of the estimated deviations themselves, so only their spread is
+penalized and their level is left free; that is what a sum of squares
+about the series' own mean amounts to, and it matches the convention of
+assessments whose deviation vectors are constrained to sum to zero. The penalty
+carries its own weight $\lambda^{\text{InitRec}}$ (`Wt_Init_Rec`),
+separate from the recruitment deviation weight, since the two penalties
+are dimensioned differently.
 
 #### Recruitment Deviations
 
 Annual recruitment deviations can also be specified, where
 multiplicative deviations are assumed:
 
-$$\ell\left( \epsilon_{p,r,y}^{\text{Rec}} \right) = \frac{1}{\sqrt{2\pi}\sigma_{\text{Rec}}^{2}\,}\exp\left( - \frac{\left( \epsilon_{p,r,y}^{\text{Rec}} \right)^{2}}{2\sigma_{\text{Rec}}^{2}} \right)$$
+$$\ell\left( \epsilon_{p,r,y}^{\text{Rec}} \right) = \frac{1}{\sqrt{2\pi}\sigma_{\text{Rec}}^{2}\,}\exp\left( - \frac{\left( \epsilon_{p,r,y}^{\text{Rec}} - \mu^{\text{Rec}} \right)^{2}}{2\sigma_{\text{Rec}}^{2}} \right)$$
 
-and deviations are assumed to be normally distributed, with a mean of 0 and
-variance of $\sigma_{\text{Rec}}^{2}$.
+with variance $\sigma_{\text{Rec}}^{2}$. As for the initial age
+deviations, `RecDevs_pen_center` selects the penalty mean
+$\mu^{\text{Rec}}$: `"fixed"` (default) centers on the asserted prior
+mean (zero, or the bias-corrected $-\sigma_{\text{Rec}}^{2}/2 \cdot b_y$
+when the bias ramp is active), whereas `"own_mean"` centers on the mean
+of the estimated deviations, penalizing only their spread. Under
+`"own_mean"` the level of the deviations is unpenalized and must be
+pinned elsewhere (an $R_0$ prior, or a fixed deviation), or the
+likelihood is flat along it; it also cannot be combined with the bias
+ramp, whose $-\sigma^2/2$ offset is meaningless once the mean is
+estimated rather than asserted.
+
+Three further refinements act on which deviations are penalized and how
+strongly. First, only *estimated* deviations are penalized: cells mapped
+off by hand (via `map$ln_RecDevs`) are excluded from the penalty as well
+as from estimation. Second, the recruitment weight
+$\lambda^{\text{Rec}}$ (`Wt_Rec`) may be a per-deviation array rather
+than a scalar, so individual deviations can be down-weighted or removed
+from the penalty (weight zero) while remaining estimated. This is how a
+stock-recruit relationship is fit over a chosen window of years while
+recruitment stays effectively free elsewhere, and is distinct from
+`dont_est_recdev_last`, which removes the deviations themselves so
+recruitment reverts to the deterministic prediction.
+
+Third, an optional penalty on the *level* of the recruitment series
+itself (`Use_rec_level_pen`) can be applied, separately from the
+deviation penalty:
+
+$$\ell\left( \log R_{p,r,y} \right) = \frac{1}{\sqrt{2\pi\sigma_{\text{RecLevel}}^{2}}\,}\exp\left( - \frac{\left( \log R_{p,r,y} - \mu^{\text{RecLevel}} \right)^{2}}{2\sigma_{\text{RecLevel}}^{2}} \right)$$
+
+evaluated over a chosen set of years (`rec_level_pen_yrs`), with
+$\mu^{\text{RecLevel}}$ either the mean of the log series
+(`"own_mean"`, penalizing only its variability) or zero (`"fixed"`).
+Under a stock-recruit relationship the deviations are residuals about
+the predicted curve, so a model that also wants to keep the realized
+recruitment series from wandering has nowhere else to say so; this
+penalty is that second, independent statement, and reproduces the
+recruitment regularity penalties several existing assessments carry.
 
 #### Fishing Mortality Deviations
 
@@ -1866,11 +2137,20 @@ $\text{UseCatch\_pop}_{p,r,y,\tau,f} = 1$).
 
 ##### IID
 
-$$\ell\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} \right) = \frac{1}{\sqrt{2\pi\sigma_{r,\tau,f,\text{Fsh}}^{2}}\,}\exp\left( - \frac{\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} \right)^{2}}{2\sigma_{r,\tau,f,\text{Fsh}}^{2}} \right)$$
+$$\ell\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} \right) = \frac{1}{\sqrt{2\pi\sigma_{r,\tau,f,\text{Fsh}}^{2}}\,}\exp\left( - \frac{\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} - \mu^{\text{Fsh}} \right)^{2}}{2\sigma_{r,\tau,f,\text{Fsh}}^{2}} \right)$$
 
 Fishing mortality deviations are assumed to arise from a normal
-distribution, with mean 0 and a variance of
-$\sigma_{r,\tau,f,\text{Fsh}}^{2}$.
+distribution with variance $\sigma_{r,\tau,f,\text{Fsh}}^{2}$. The
+penalty mean $\mu^{\text{Fsh}}$ is set by `Fdev_pen_center` (iid model
+only): `"fixed"` (default) centers on zero, constraining both the level
+and the spread of the deviations, while `"own_mean"` centers on the mean
+of the estimated deviations, penalizing only their spread. Under the
+mean-plus-deviations parameterization the level of fishing mortality is
+already carried by $\mu_{r,\tau,f}^{\text{Fsh}}$, so `"own_mean"` avoids
+penalizing it twice; note it also leaves $\mu^{\text{Fsh}}$ and the
+deviations' level mutually unidentified unless one of them is fixed, which
+`ln_F_mean_spec = "fix"` does (free annual log-F, see the fishing mortality
+parameterization above).
 
 ##### Random Walk
 
@@ -1949,14 +2229,37 @@ Extending the iid case, random walk selectivity deviations can also be
 specified about a given parameter, assuming a normal distribution:
 
 $$\ell\left( \epsilon_{r,y,i,s,j}^{\text{Sel}} \right) = \left\{ \begin{matrix}
-\frac{1}{\sqrt{2\pi \cdot 5^{2}}\,}\exp\left( - \frac{\left( \epsilon_{r,y = 1,i,s,j}^{\text{Sel}} \right)^{2}}{2{\cdot 5}^{2}} \right),\ if\ y = 1 \\
+\frac{1}{\sqrt{2\pi \cdot \sigma_{0,j}^{2}}\,}\exp\left( - \frac{\left( \epsilon_{r,y = 1,i,s,j}^{\text{Sel}} \right)^{2}}{2\sigma_{0,j}^{2}} \right),\ if\ y = 1 \\
 \frac{1}{\sqrt{2\pi\sigma_{r,i,s,j,Sel}^{2}}\,}\exp\left( - \frac{\left( \epsilon_{r,y,i,s,j}^{\text{Sel}} - \epsilon_{r,y - 1,i,s,j}^{\text{Sel}} \right)^{2}}{2\sigma_{r,i,s,j,Sel}^{2}} \right),\ if\ y > 1 \\
 \end{matrix} \right.\ $$
 
-where process error deviations for the first year are initialized with a large variance. Following the first year, process error deviations follow a random
-walk process with a mean conditional on the previous year's value
+where process error deviations for the first year are initialized with
+their own standard deviation $\sigma_{0,j}$ (`*sel_rw_init_sigma`),
+which defaults to a large value ($5$) that leaves the first year
+effectively unconstrained. Setting it to `NA` instead starts the walk at
+zero under the walk's own $\sigma_{Sel}$, which is what a first
+difference taken against a selectivity of one amounts to and makes the
+first year's deviation as smooth as every later step. Following the
+first year, process error deviations follow a random walk process with a
+mean conditional on the previous year's value
 ($\epsilon_{r,y - 1,i,s,j}^{\text{Sel}}$) and a variance of
 $\sigma_{r,i,s,j,Sel}^{2}$.
+
+Each fleet's process error contribution is additionally scaled by a
+per-fleet weight $\lambda_{j}^{\text{SelPE}}$ (`fishsel_pe_wt`,
+`retsel_pe_wt`, `srvsel_pe_wt`; default $1$) before entering the joint
+likelihood. A weight of zero removes the process error penalty for that
+fleet entirely while its deviations remain estimated, which is how a
+model reproduces assessments that let selectivity deviations float
+subject only to explicit smoothness penalties rather than a
+distributional assumption.
+
+The bin-override deviations described in the selectivity section carry
+their own process error (`cont_tv_*sel_bin_devs`), either iid or a
+random walk of exactly the forms above, with their own estimated
+$\sigma$ per overridden bin and their own first-year standard deviation
+(`*sel_bin_devs_rw_init_sigma`). An overridden bin that is free of the
+functional form is thereby still smoothed in time when asked to be.
 
 In addition to being constrained by a normal distribution, both iid and
 random walk cases have an optional additional smoothness penalty applied:
@@ -2073,6 +2376,36 @@ each to be turned on or off and tuned separately. In code, these six
 weights use a `smooth_` prefix (e.g. `smooth_bin_curve`, `smooth_yr_diff`)
 rather than referencing the bicubic spline specifically, since, as
 described above, they apply to any selectivity form.
+
+Several generalizations of these penalties are available, specified per
+fleet (a single specification is shared by every fleet, or an unnamed
+list gives each fleet its own):
+
+- **Per-year weights.** Every weight $w$ may be a vector with one value
+  per model year, $w_{y}$, so a penalty can act only in the years where
+  selectivity is allowed to change, or act with a different strength in
+  each year. Years with $w_{y} = 0$ are skipped entirely. With
+  `normalize = FALSE` (below), a per-year first-difference weight of
+  $w_{y} = 1/(2\sigma_{y}^{2})$ makes $P_{SelSmoothYrDiff}$ exactly the
+  negative log-kernel of a random walk with year-specific standard
+  deviation $\sigma_{y}$, expressed as a penalty on the realized curve
+  rather than on deviation parameters.
+- **Bin range.** `bin_range` restricts the bins the penalties act over
+  to $\lbrack b_{lo}, b_{hi} \rbrack$, either one range shared by every
+  term or a named list giving each term its own. This is how a shape
+  penalty (e.g., the dome or curvature penalty) is confined to the older
+  ages where the curve is expected to flatten, without constraining the
+  ascending limb.
+- **Normalization.** `normalize` controls whether the bin-wise weights
+  are divided by the number of penalized bins and the year-wise weights
+  by the number of years (the default, `TRUE`); it can likewise be set
+  per term. Turn it off when weights are calibrated as explicit
+  variances, as in the random walk correspondence above.
+- **First-year reference.** The year first-difference walk has no
+  predecessor in its first penalized year, so that year is normally left
+  unpenalized. `yr_diff_ref` supplies one: the first penalized year is
+  held toward a reference log-selectivity vector, anchoring an otherwise
+  free series to a known selectivity before the data begin.
 
 #### Movement
 
@@ -2200,7 +2533,11 @@ $$\begin{matrix}
 \end{matrix}$$
 
 Note that some of these components may be zero (i.e., if no priors are
-used) depending on the configuration of the model.
+used) depending on the configuration of the model. The recruitment and
+initial age deviation penalties enter with their own separate weights
+($\lambda^{\text{Rec}}$, possibly per deviation, and
+$\lambda^{\text{InitRec}}$), and the recruitment level penalty, when
+enabled, enters as its own additional component.
 
 # References
 

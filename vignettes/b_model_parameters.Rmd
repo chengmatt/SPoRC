@@ -40,9 +40,15 @@ The following table describes all elements contained within `input_list$pars`, w
 | `fish_fixed_sel_pars` | `n_regions × max_fish_pars × max_fishsel_blks × n_sexes × n_fish_fleets` | Log-scale selectivity curve parameters | 0 |
 | `fishsel_pe_pars` | `n_regions × max(4, n_sel_pars) × n_sexes × n_fish_fleets` | Process error parameters for time-varying selectivity: sigma (iid/rw), or partial correlations + log-variance (semi-parametric forms), see [Fishery and Survey Selectivity] in `vignette("c_model_equations")`. Second dimension is 4 unless the selectivity form itself needs more parameters (e.g. double-normal, non-parametric) | 0 |
 | `ln_fishsel_devs` | `n_regions × (n_years + n_proj_yrs_devs) × n_bins × n_sexes × n_fish_fleets` | Log-scale selectivity deviations w/ projection years (n_bins = n_ages or n_lens depending on selectivity type) (can be specified as random effects) | 0 |
+| `ln_fishsel_bin_devs` | `n_regions × (n_years + n_proj_yrs_devs) × n_bins × n_sexes × n_fish_fleets` | Log-scale bin-override selectivity deviations. Bins named in `fish_sel_bin_dev_bins` take `exp(deviation)` as their selectivity outright, replacing the functional form for that bin; all other cells are fixed at zero and unused (can be specified as random effects) | 0 |
+| `fishsel_bin_devs_pe_pars` | `n_regions × n_bins × n_sexes × n_fish_fleets` | Log-scale process error standard deviations for the bin-override deviations. Only estimated for overridden bins whose fleet requests iid or random walk structure via `cont_tv_fishsel_bin_devs` | 0 |
 | `ret_fixed_sel_pars` | `n_regions × max_ret_pars × max_retsel_blks × n_sexes × n_fish_fleets` | Retention selectivity curve parameters | 0 |
 | `retsel_pe_pars` | `n_regions × max(4, n_sel_pars) × n_sexes × n_fish_fleets` | Process error parameters for time-varying retention selectivity (see `fishsel_pe_pars` above) | 0 |
 | `ln_retsel_devs` | `n_regions × (n_years + n_proj_yrs_devs) × n_bins × n_sexes × n_fish_fleets` | Log-scale retention selectivity deviations w/ projection years (can be specified as random effects) | 0 |
+| `ln_retsel_bin_devs` | `n_regions × (n_years + n_proj_yrs_devs) × n_bins × n_sexes × n_fish_fleets` | Log-scale bin-override retention selectivity deviations (see `ln_fishsel_bin_devs` above) | 0 |
+| `retsel_bin_devs_pe_pars` | `n_regions × n_bins × n_sexes × n_fish_fleets` | Log-scale process error standard deviations for the retention bin-override deviations | 0 |
+
+Note that `fish_fixed_sel_pars` holds parameters on the scale of the chosen functional form: log scale for most forms, logit scale for the `"nonpar"` form and for asymptote parameters, and log scale per bin for the `"nonparlog"` form (where each year's curve is standardized to average one across bins).
 
 ## Fishery Catchability
 
@@ -97,12 +103,14 @@ Region-aggregated and population-specific composition likelihoods have separate 
 | `srv_fixed_sel_pars` | `n_regions × max_srv_pars × max_srv_blks × n_sexes × n_srv_fleets` | Log-scale selectivity curve parameters | 0 |
 | `srvsel_pe_pars` | `n_regions × max(4, n_sel_pars) × n_sexes × n_srv_fleets` | Process error parameters for time-varying survey selectivity (see `fishsel_pe_pars` in [Fishery Selectivity]) | 0 |
 | `ln_srvsel_devs` | `n_regions × (n_years + n_proj_yrs_devs) × n_bins × n_sexes × n_srv_fleets` | Log-scale selectivity deviations w/ projection years (n_bins = n_ages or n_lens depending on selectivity type) (can be specified as random effects) | 0 |
+| `ln_srvsel_bin_devs` | `n_regions × (n_years + n_proj_yrs_devs) × n_bins × n_sexes × n_srv_fleets` | Log-scale bin-override selectivity deviations (see `ln_fishsel_bin_devs` in [Fishery Selectivity]) | 0 |
+| `srvsel_bin_devs_pe_pars` | `n_regions × n_bins × n_sexes × n_srv_fleets` | Log-scale process error standard deviations for the survey bin-override deviations | 0 |
 
 ## Survey Catchability
 
 | Parameter | Dimension | Description | Default |
 |-----------|-----------|-------------|---------|
-| `ln_srv_q` | `n_regions × max_srvq_blks × n_srv_fleets` | Log-scale survey catchability coefficient | 0 |
+| `ln_srv_q` | `n_regions × max_srvq_blks × n_srv_fleets` | Log-scale survey catchability coefficient. Automatically fixed (not estimated) for fleets whose catchability is solved analytically via `srv_q_type` | 0 |
 | `srv_q_coeff` | `n_regions × n_srv_fleets × n_covariates` | Regression coefficients for covariate-based survey catchability | 0 |
 
 ## Survey Composition Likelihoods
@@ -142,7 +150,7 @@ Region-aggregated and population-specific composition likelihoods have separate 
 | `ln_rinit` | `n_pop` | Log-scale initial recruitment scalar per population. Used to initialize equilibrium age structure when `use_rinit = 1`; ignored otherwise. | 15 |
 | `rec_region_prop_pars` | `n_pop × (n_regions - 1)` | Logit-scale regional recruitment proportion parameters (simplex parameterization; omitted when `rec_region_prop_spec == 1`) | 0 |
 | `rec_seas_prop_pars` | `n_pop × (n_seas - 1)` | Logit-scale seasonal recruitment proportion parameters (simplex parameterization; omitted when `use_fixed_rec_seas_prop == 1`) | 0 |
-| `steepness_h` | `n_pop × n_regions` | Steepness of stock-recruitment relationship (logit scale, bounded 0.2-1) | 0 |
+| `steepness_h` | `n_pop × n_regions` | Steepness of the stock-recruitment relationship (logit scale, bounded 0.2 to 1). Used by both `"bh_rec"` and `"ricker_rec"`, though steepness values are not interchangeable between the two curves (see `vignette("c_model_equations")`) | 0 |
 | `ln_sigmaR` | `2 × n_pop × n_regions` | Log-scale standard deviations for early (index 1) and late (index 2) recruitment periods | 0 |
 | `ln_InitDevs` | `n_pop × n_regions × (n_ages - 1)` | Log-scale initial age structure deviations (can be specified as random effects) | 0 |
 | `ln_RecDevs` | `n_pop × n_regions × (n_recdev_years + n_proj_yrs_devs)` | Log-scale annual recruitment deviations w/ projection years (can be specified as random effects) | 0 |

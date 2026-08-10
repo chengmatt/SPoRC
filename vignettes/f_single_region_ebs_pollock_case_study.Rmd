@@ -1,5 +1,5 @@
 ---
-title: "Setting up a Single Region Model (Eastern Bering Sea Pollock)"
+title: "Case Study: Eastern Bering Sea Walleye Pollock"
 output:
   rmarkdown::html_vignette:
     toc: true
@@ -13,434 +13,699 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  eval = FALSE
 )
 ```
 
-To further demonstrate additional funcionality of `SPoRC`, we will use the 2024 eastern Bering Sea walleye pollock assessment as an example. In particular, this vignette attempts to mimic the 2024 assessment. However, given the complexity and intricacies of the pollock assessment, a direct match in estimates is not currently possible due to a variety of factors, including:
+## Overview
 
-1. The pollock assessment fits to the bottom trawl survey with a covariance matrix, which is currently not possible in `SPoRC`,
-2. The bottom trawl survey follows a random walk process on logistic selectivity parameters, but also allows for age-1 deviations on the logistic functional form. This functionality is not incorporated in `SPoRC`,
-3. Different weight-at-age matrices are utilized to fit to biomass indices, compute spawning biomass, and compute expected catches, which is not currently allowed. 
+This case study reproduces the 2024 eastern Bering Sea walleye pollock
+assessment in `SPoRC`. Every structural choice below follows the
+assessment rather than `SPoRC`'s defaults, and the result is an exact bridge:
+spawning biomass and recruitment agree with the ADMB model to within
+$4\times10^{-6}$ percent, and the joint negative log likelihood is unchanged
+between the two.
 
-Despite these differences, `SPoRC` can generally approximate the dynamics of the 2024 assessment relatively closely. First, let us load in any necessary packages.
+The model is single region, single sex, single season, with one fishery fleet
+and four survey indices:
 
-```{r setup, warning = FALSE, message = FALSE, eval = TRUE, warning = FALSE}
-# Load in packages
-library(SPoRC) 
-library(here)
-library(RTMB)
-library(ggplot2)
+| Index | Source | Likelihood | Selectivity |
+|---|---|---|---|
+| Fishery CPUE | Early fishery catch rates, 1965--1976 | Normal | Fishery |
+| Bottom trawl (BTS) | Shelf bottom trawl survey, 1982-- | Multivariate normal | Logistic, time varying, with a free age 1 |
+| Acoustic trawl (ATS) | Acoustic trawl survey, 1994-- | Lognormal | Non-parametric, random walk |
+| Vessel of opportunity (AVO) | Acoustic backscatter, 2006-- | Normal | Shared with the acoustic survey |
+| Acoustic age 1 | Age 1 numbers from the acoustic survey | Lognormal | Shared with the acoustic survey |
+
+The last of these is not a fifth survey. The pollock assessment fits the
+acoustic survey's age 1 abundance as its own likelihood component
+(`ats_age1_like`) with its own catchability, separate from the acoustic biomass
+index and from its age composition. `SPoRC` attaches one index to one survey
+fleet, so reproducing that component requires a fourth survey fleet restricted
+to age 1.
+
+Everything the case study needs, including the ADMB output it is compared
+against, ships with the package in `sgl_rg_ebswp_data`. The companion script
+that produced the figures below is
+`dev/make_sporc_obj_figs/make_ebs_pollock_bridge_figs.R`, and the container
+itself is built by `dev/make_sporc_obj_figs/make_ebs_pollock_data_object.R`.
+
+```{r setup, eval = TRUE, warning = FALSE, message = FALSE}
+library(SPoRC)
 library(dplyr)
-data("sgl_rg_ebswp_data") # load in data
+library(ggplot2)
+data("sgl_rg_ebswp_data")
+
+dat <- sgl_rg_ebswp_data
+yrs <- dat$years
+n_yrs <- length(yrs)
+n_ages <- length(dat$ages)
+n_srv <- dat$n_srv_fleets
 ```
 
-## Setup Model Dimensions
+The object carries three kinds of content: the model inputs
+(`ObsCatch`, `WAA`, `ObsSrvIdx`, and so on), the ADMB maximum likelihood
+estimate in `dat$mle`, used both as a starting point and to verify the
+objective before any optimization, and the ADMB output in `dat$admb`, which is
+the comparison target.
 
-To initially set the model up, an input list containing a data list, parameter list, and a mapping list needs to be constructed. This is aided with the function `Setup_Mod_Dim`, where users specify a vector of years, ages, and lengths. Additionally, users need to specify the number of regions modelled (n_regions), number of sexes modeled (n_sexes), number of fishery fleets (n_fish_fleets), and number of survey fleets (n_srv_fleets)
-
-```{r, eval = FALSE}
-  input_list <- Setup_Mod_Dim(
-    years = sgl_rg_ebswp_data$years,
-    # vector of years
-    ages = sgl_rg_ebswp_data$ages,
-    # vector of ages
-    lens = NA,
-    # number of lengths
-    n_regions = 1,
-    # number of regions
-    n_sexes = 1,
-    # number of sexes
-    n_fish_fleets = 1,
-    # number of fishery fleets
-    n_pop = 1,
-    # number of populations
-    n_srv_fleets = 3 # number of survey fleets
-  )
+```{r, eval = TRUE}
+names(dat$mle)
+names(dat$admb)
 ```
 
-## Setup Recruitment Dynamics
+## Model dimensions
 
-Following the initialization of `input_list`, we can pass the created object into the next function (`Setup_Mod_Rec`) to parameterize recruitment dynamics. In the case of Eastern Bering Sea Pollock, recruitment is parameterized as such:
+Because the model is single region and single sex, the population, region,
+season and sex subscripts used in the model equations all collapse to one, and
+are dropped from the notation below.
 
-1) Beverton-Holt Recruitment, where steepness is fixed at the 2024 assessment estimated value,
-2) Recruitment deviations are estimated in a penalized likelihood framework,
-3) Recruitment deviations are estimated for all years,
-4) Initial age deviations are estimated for all ages, including the plus group,
-5) Initial age structure is derived by assuming a geometric series (`init_age_strc = 2`; the alternative is iterating age structure to some equilibrium `init_age_strc = 0`), and 
-6) Individuals are assumed to spawn during March (`t_spawn = 0.25`)
-
-```{r, eval = FALSE}
-
-  inv_steepness <- function(s) qlogis((s - 0.2) / 0.8)
-
-  input_list <- Setup_Mod_Rec(
-    input_list = input_list,
-
-    # Model options
-    do_rec_bias_ramp = 0,
-    # do bias ramp (0 == don't do bias ramp, 1 == do bias ramp)
-    sigmaR_switch = 1,
-    # when to switch from early to late sigmaR (switch in first year)
-    ln_sigmaR = array(log(c(1, 1)), dim = c(2, input_list$data$n_pop, input_list$data$n_regions)),
-    # Starting values for early and late sigmaR
-    rec_model = "bh_rec",
-    # recruitment model
-    steepness_h = array(inv_steepness(0.623013), dim = c(input_list$data$n_pop, input_list$data$n_regions)),
-    h_spec = "fix",
-    # fixing steepness
-    sigmaR_spec = "fix",
-    # fix early sigmaR and late sigmaR
-    init_age_strc = 1,
-    ln_global_R0 = 10,
-    t_spawn = 0.25,
-    equil_init_age_strc = 2
-    # starting value for r0
-  )
+```{r}
+input_list <- Setup_Mod_Dim(
+  years = yrs,
+  ages = dat$ages,
+  lens = NA,
+  n_regions = dat$n_regions,
+  n_sexes = dat$n_sexes,
+  n_fish_fleets = dat$n_fish_fleets,
+  n_srv_fleets = n_srv,
+  n_seas = dat$n_seas,
+  n_pop = dat$n_pop,
+  natal_region = dat$natal_region,
+  verbose = FALSE
+)
 ```
 
+## Recruitment
 
-# Setup Biological Dynamics
+Pollock recruitment follows a Ricker stock recruit relationship with a one year
+lag, so recruitment in year $y$ depends on spawning biomass in year $y-1$:
 
-Passing on the `input_list` that was updated in the previous helper function, we can then parameterize the biological dynamics of the model. The `Setup_Mod_Biologicals` requires data inputs for weight-at-age (`WAA`) and maturity-at-age (`MatAA`), both of which are dimensioned by `n_pop`, `n_regions`, `n_years`, `n_seas`, `n_ages`, `n_sexes`. In the case of Bering Sea pollock, natural mortality is age-specific and fixed. Thus, a natural mortality array is constructed and passed into the function, which is also dimensioned by `n_pop`, `n_regions`, `n_years`, `n_ages`, `n_sexes`.
+$$\text{Rec}_{y} = \alpha \text{SSB}_{y-1} \exp\left(-\beta \text{SSB}_{y-1}\right)\exp\left(\epsilon_{y}^{\text{Rec}} - \dfrac{\sigma_{R}^{2}}{2}\right)$$
 
-```{r, eval = FALSE}
+with $\alpha$ and $\beta$ reparameterised through steepness $h$ and unfished
+recruitment $R_0$. Steepness is estimated under a beta prior. In the 2024
+assessment that
+prior sits on the unrescaled $(0,1)$ support and is symmetric, so its centre is
+$0.5$ rather than the $0.6$ its `steepnessprior` constant declares:
 
-  # Setup a fixed natural mortality array for use
-  fix_natmort <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), length(input_list$data$ages), 1))
-  fix_natmort[,,,1,] <- 0.9 # age 1 M
-  fix_natmort[,,,2,] <- 0.45 # age 2 M
-  fix_natmort[,,,-c(1,2),] <- 0.3 # age 3+ M
-  
-  input_list <- Setup_Mod_Biologicals(
-    input_list = input_list,
+$$h \sim \text{Beta}\left(\mu = 0.5,\ \sigma = 0.09\right)$$
 
-    # Data inputs
-    WAA = sgl_rg_ebswp_data$WAA,
-    MatAA = sgl_rg_ebswp_data$MatAA,
+Three separate penalties act on recruitment, each with its own variance. The
+stock recruit residuals are penalised over the years 1978 to 2022, excluding
+1979:
 
-    # Model options
-    fit_lengths = 0,
-    # don't fit length compositions
-    M_spec = "fix",
-    # fixing natural mortality
-    Fixed_natmort = fix_natmort
-  )
-  
+$$\ell^{\text{Rec}} = \sum_{y \in \mathcal{Y}^{\text{SR}}} \dfrac{\left(\epsilon_{y}^{\text{Rec}}\right)^{2}}{2\sigma_{R}^{2}},\qquad \sigma_{R} = 1$$
+
+The initial numbers at age carry weight $0.1$ and the recruitment level weight
+$1$, which map onto $\sigma = 1/\sqrt{2w}$. The second recruitment statement is
+a sum of squares on all log recruitments about their own mean:
+
+$$\ell^{\text{RecLevel}} = \sum_{y} \dfrac{\left(\log \text{Rec}_{y} - \overline{\log \text{Rec}}\right)^{2}}{2\sigma^{2}},\qquad \sigma = 1/\sqrt{2}$$
+
+Initial numbers at age are free parameters (`init_age_strc = 4`) rather than
+derived from an equilibrium, and their penalty is centred on their own mean.
+
+```{r}
+inv_steepness <- function(s) qlogis((s - 0.2) / 0.8)
+
+input_list <- Setup_Mod_Rec(
+  input_list = input_list,
+  # SR_ref_yr points spawning biomass per recruit at terminal year biologicals,
+  # which is what the assessment's unfished spawning biomass uses.
+  rec_model = "ricker_rec",
+  rec_lag = 1,
+  SR_ref_yr = n_yrs,
+  # do_rec_bias_ramp = 0 sets the ramp to 1 throughout, so the recruitment
+  # penalty is centred on -sigmaR^2/2, which is the assessment's +sigmaRsq/2 on the
+  # residual.
+  do_rec_bias_ramp = 0,
+  sigmaR_switch = 1,
+  sigmaR_spec = "fix",
+  # The stock recruit residuals use sigr, fixed at 1. The initial ages carry
+  # weight 0.1, which is sigma = 1/sqrt(2w).
+  ln_sigmaR = array(c(log(1 / sqrt(0.2)), log(1)), dim = c(2, 1, 1)),
+  init_age_strc = 4,
+  equil_init_age_strc = 2,
+  RecDevs_pen_center = "fixed",
+  InitDevs_pen_center = "own_mean",
+  ln_global_R0 = dat$mle$ln_global_R0,
+  t_spawn = (4 - 1) / 12,
+  use_rinit = 0,
+  dont_est_recdev_last = 0,
+  steepness_h = array(inv_steepness(dat$mle$steepness), dim = c(1, 1)),
+  h_spec = "est_shared_pop_r",
+  Use_h_prior = 1,
+  h_prior = data.frame(pop = 1, region = 1, mu = 0.5, sd = 0.09, lb = 0, ub = 1),
+  Use_rec_level_pen = 1,
+  rec_level_pen_sigma = 1 / sqrt(2),
+  rec_level_pen_center = "own_mean"
+)
 ```
 
-# Setup Movement and Tagging
-Given that this vignette demonstrates a single-region model, no movement dynamics are specified. However, users will still need to define how movement dynamics are parameterized. In this case, the following code chunk specifies that movement is not estimated (`use_fixed_movement = 1`), movement is an identity matrix (`Fixed_Movement = NA`), and recruits do not move (`do_recruits_move = 0`). Specification of tagging dynamics will follow a similar fashion since this is a single-region model. All that is necessary is updating the `input_list` and setting the `use_conv_fish_tagging` argument to a vector of 0s (one per fishery fleet) to indicate that no tagging data are used.
+## Biological dynamics
 
-```{r, eval = FALSE}
+Natural mortality is fixed and age specific:
 
-# setup movement
-  input_list <- Setup_Mod_Movement(
-    input_list = input_list,
-    use_fixed_movement = 1,
-    Fixed_Movement = NA,
-    do_recruits_move = 0
-  )
+$$M_{a} = \begin{cases} 0.9, & a = 1\\ 0.45, & a = 2\\ 0.3, & a \geq 3 \end{cases}$$
 
-# setup tagging
-  input_list <- Setup_Mod_Tagging(
-    input_list = input_list,
-    use_conv_fish_tagging = rep(0, input_list$data$n_fish_fleets)
-  )
+The assessment carries a different weight at age matrix for spawning biomass,
+for catch, and for each survey index, which `SPoRC` supports through `WAA`,
+`WAA_fish` and `WAA_srv`. Spawning biomass is therefore
+
+$$\text{SSB}_{y} = \sum_{a} N_{y,a}\exp\left(-t^{\text{spawn}} Z_{y,a}\right) \text{WAA}_{y,a}\,\text{MatAA}_{a}$$
+
+with spawning in March, $t^{\text{spawn}} = 3/12$.
+
+Two composition conventions matter here. The 2024 assessment weights the
+multinomial by the
+*raw* observed composition and places its constant inside the logarithm only,
+which is `comp_const_obs = 0`. `SPoRC`'s default instead weights by
+$\text{obs} + \text{const}$, which is the unbiased choice since its stationary
+point is $p = \text{obs}$, but it is a different model: on this bridge it moves
+estimated spawning biomass by a median of 8.8 percent.
+
+```{r}
+fix_natmort <- array(0, dim = c(1, 1, n_yrs, n_ages, 1))
+fix_natmort[, , , 1, ] <- 0.9
+fix_natmort[, , , 2, ] <- 0.45
+fix_natmort[, , , -c(1, 2), ] <- 0.3
+
+input_list <- Setup_Mod_Biologicals(
+  input_list = input_list,
+  WAA = dat$WAA,
+  WAA_fish = dat$WAA_fish,
+  WAA_srv = dat$WAA_srv,
+  MatAA = dat$MatAA,
+  fit_lengths = 0,
+  M_spec = "fix",
+  Fixed_natmort = fix_natmort,
+  # addtocomp must stay strictly positive, since at zero the offset term
+  # evaluates 0*log(0).
+  addtocomp = 1e-3,
+  comp_const_obs = 0,
+  addtosrvidx = 0.01,
+  addtofishidx = 0
+)
 ```
 
-# Setup Catch and Fishing Mortality
-Following the parameterization of biological dynamics, fishery dynamics can then be specified and set up using the `Setup_Mod_Catch_and_F` function. Again, the input_list that gets updated from previous helper functions. Users will need to supply the function with an array of observed catches `ObsCatch`, which are dimensioned as `n_regions`, `n_years`, `n_seas`, and `n_fish_fleets`. Additional model options specified for this case study include whether fishing mortality penalties are utilized to help estimate deviations `Use_F_pen = 1`, and the `ln_sigmaC` values to fix at.
+## Movement and tagging
 
-```{r, eval = FALSE}
-  input_list <- Setup_Mod_Catch_and_F(
-    input_list = input_list,
+The model is single region, so movement is an identity matrix and no tagging
+data are used. Both still have to be declared.
 
-    # Data inputs
-    ObsCatch = sgl_rg_ebswp_data$ObsCatch,
-    UseCatch = sgl_rg_ebswp_data$UseCatch,
+```{r}
+input_list <- Setup_Mod_Movement(
+  input_list = input_list,
+  use_fixed_movement = 1,
+  Fixed_Movement = NA,
+  do_recruits_move = 0
+)
 
-    # Model options
-    Use_F_pen = 1,
-    # whether to use f penalty, == 0 don't use, == 1 use
-    sigmaC_spec = "fix",
-    # fixing catch standard deviation
-    ln_sigmaC = array(log(0.05), dim = c(1, length(input_list$data$years), input_list$data$n_seas, 1))
-    # starting / fixed value for catch standard deviation
-  )
+input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
 ```
 
-# Setup Fishery Indices and Compositions
+## Catch and fishing mortality
 
-To set up fishery indices and composition data, we will supply arrays of fishery indices and their associated standard errors (`ObsFishIdx` and `ObsFishIdx_SE`), which are dimensioned by `n_regions`, `n_years`, `n_seas`, `n_fish_fleets`. Additionally, we will supply both fishery age composition data and length composition data. Both `ObsFishAgeComps` and `ObsFishLenComps` are dimensioned by `n_regions`, `n_years`, `n_seas`, `n_bins (n_ages | n_lens)`, `n_sexes`, `n_fish_fleets`. Because the Bering Sea pollock model does not fit to length composition data, `ObsFishLenComps` is specified as `NA` and `UseFishLenComps` is specified with 0s. Additionally, we specify that the fishery index is biomass-based, multinomial likelihoods are utilized for age composition data, and fishery age compositions are aggregated across regions and sexes (because this is a single-region single-sex model).
+The 2024 assessment has no mean fishing mortality parameter: $\log F_y$ is a free annual
+value penalised about its own mean. In `SPoRC` that is `ln_F_mean_spec = "fix"`,
+which pins the mean at zero and maps it off so the deviations carry all of
+$\log F$, together with `Fdev_pen_center = "own_mean"`:
 
-```{r, eval = FALSE}
+$$\log F_{y} = \mu^{\text{Fsh}} + \epsilon_{y}^{F},\qquad \mu^{\text{Fsh}} \equiv 0$$
+
+$$\ell^{F} = \sum_{y}\dfrac{\left(\epsilon_{y}^{F} - \overline{\epsilon^{F}}\right)^{2}}{2\sigma_{F}^{2}},\qquad \sigma_{F} = 1/\sqrt{2}$$
+
+Catch is fit lognormally with a fixed standard deviation of $0.05$.
+
+```{r}
+input_list <- Setup_Mod_Catch_and_F(
+  input_list = input_list,
+  ObsCatch = dat$ObsCatch,
+  UseCatch = dat$UseCatch,
+  Use_F_pen = 1,
+  Fdev_model = "iid",
+  Fdev_pen_center = "own_mean",
+  ln_F_mean_spec = "fix",
+  sigmaF_spec = "fix",
+  ln_sigmaF = array(log(1 / sqrt(2)), dim = c(1, 1, 1)),
+  sigmaC_spec = "fix",
+  ln_sigmaC = array(log(0.05), dim = c(1, n_yrs, 1, 1))
+)
+```
+
+## Fishery index and compositions
+
+The early fishery CPUE series covers twelve years and is fit on the arithmetic
+scale with a normal likelihood. Fishery age compositions are multinomial.
+
+```{r}
 input_list <- Setup_Mod_FishIdx_and_Comps(
-    input_list = input_list,
-    # data inputs
-    ObsFishIdx = sgl_rg_ebswp_data$ObsFishIdx,
-    ObsFishIdx_SE = sgl_rg_ebswp_data$ObsFishIdx_SE,
-    UseFishIdx = sgl_rg_ebswp_data$UseFishIdx,
-    ObsFishAgeComps = sgl_rg_ebswp_data$ObsFishAgeComps,
-    UseFishAgeComps = sgl_rg_ebswp_data$UseFishAgeComps,
-    ISS_FishAgeComps = sgl_rg_ebswp_data$ISS_FishAgeComps,
-    ISS_FishLenComps = NULL,
-    ObsFishLenComps = array(NA_real_, dim = c(1, length(input_list$data$years), input_list$data$n_seas, length(input_list$data$lens), 1, 1)),
-    UseFishLenComps = array(0, dim = c(1, length(input_list$data$years), input_list$data$n_seas, 1)),
-
-    # Model options
-    fish_idx_type = c("biom"),
-    # indices for fishery
-    FishAgeComps_LikeType = c("Multinomial"),
-    # age comp likelihoods for fishery fleet
-    FishLenComps_LikeType = c("none"),
-    # length comp likelihoods for fishery
-    FishAgeComps_Type = c("agg_Year_1-terminal_Fleet_1"),
-    # age comp structure for fishery
-    FishLenComps_Type = c("none_Year_1-terminal_Fleet_1")
-    # length comp structure for fishery
-  )
+  input_list = input_list,
+  ObsFishIdx = dat$ObsFishIdx,
+  ObsFishIdx_SE = dat$ObsFishIdx_SE,
+  UseFishIdx = dat$UseFishIdx,
+  ObsFishAgeComps = dat$ObsFishAgeComps,
+  UseFishAgeComps = dat$UseFishAgeComps,
+  ISS_FishAgeComps = dat$ISS_FishAgeComps,
+  ObsFishLenComps = array(NA_real_, dim = c(1, n_yrs, 1, length(input_list$data$lens), 1, 1)),
+  UseFishLenComps = array(0, dim = c(1, n_yrs, 1, 1)),
+  ISS_FishLenComps = array(0, dim = c(1, n_yrs, 1, 1, 1)),
+  fish_idx_type = "biom",
+  FishIdx_LikeType = "normal",
+  FishAgeComps_LikeType = "Multinomial",
+  FishLenComps_LikeType = "none",
+  FishAgeComps_Type = "agg_Year_1-terminal_Fleet_1",
+  FishLenComps_Type = "none_Year_1-terminal_Fleet_1"
+)
 ```
 
-# Setup Survey Indices and Compositions
+## Survey indices and compositions
 
-Setting up survey indices and compositions follows a similar fashion. Here, we will supply arrays of survey indices and their associated standard errors (`ObsSrvIdx` and `ObsSrvIdx_SE`), which are dimensioned by `n_regions`, `n_years`, `n_seas`, `n_srv_fleets`. In this case, we are modelling three survey fleets, where fleet 1 is the bottom trawl survey, fleet 2 is the acoustic trawl survey, and fleet 3 is the acoustic vessel of opportunity survey. We will also input both survey age composition data and length composition data. Both `ObsSrvAgeComps` and `ObsSrvLenComps` are dimensioned by `n_regions`, `n_years`, `n_seas`, `n_bins (n_ages | n_lens)`, `n_sexes`, `n_srv_fleets`. All three survey indices are biomass-based and multinomial likelihoods are used to fit to age-compositions for fleets 1 and 2. However, because the acoustic vessel of opportunity survey does not have composition data, these are not fit to (and hence specified as none).
+Each survey index has its own error structure. The bottom trawl index is fit
+with a full covariance matrix, which enters as
 
-```{r, eval = FALSE}
-  # Setup survey indices and compositions
-  input_list <- Setup_Mod_SrvIdx_and_Comps(
-    input_list = input_list,
+$$\ell^{\text{BTS}} = \tfrac{1}{2}\left(\mathbf{I}^{\text{obs}} - \mathbf{I}^{\text{pred}}\right)^{\!\top}\mathbf{\Sigma}^{-1}\left(\mathbf{I}^{\text{obs}} - \mathbf{I}^{\text{pred}}\right)$$
 
-    # data inputs
-    ObsSrvIdx = sgl_rg_ebswp_data$ObsSrvIdx,
-    ObsSrvIdx_SE = sgl_rg_ebswp_data$ObsSrvIdx_SE,
-    UseSrvIdx = sgl_rg_ebswp_data$UseSrvIdx,
-    ObsSrvAgeComps = sgl_rg_ebswp_data$ObsSrvAgeComps,
-    ISS_SrvAgeComps = sgl_rg_ebswp_data$ISS_SrvAgeComps,
-    UseSrvAgeComps = sgl_rg_ebswp_data$UseSrvAgeComps,
-    ObsSrvLenComps = array(NA_real_, dim = c(1, length(input_list$data$years), input_list$data$n_seas, length(input_list$data$lens), 1, 3)),
-    UseSrvLenComps = array(0, dim = c(1, length(input_list$data$years), input_list$data$n_seas, 3)),
-    ISS_SrvLenComps = NULL,
+with $\mathbf{\Sigma}$ supplied through `SrvIdx_Cov`. The acoustic index and the
+age 1 index are lognormal, and the vessel of opportunity index is normal.
 
-    # Model options
-    srv_idx_type = c("biom", "biom", "biom"),
-    # abundance and biomass for survey fleet 1, 2, and 3
-    SrvAgeComps_LikeType = c("Multinomial", "Multinomial", "none"),
-    # survey age composition likelihood for survey fleet 1, 2, and 3
-    SrvLenComps_LikeType = c("none", "none", "none"),
-    #  survey length composition likelihood for survey fleet 1, 2, and 3
-    SrvAgeComps_Type = c(
-      "agg_Year_1-terminal_Fleet_1",
-      "agg_Year_1-terminal_Fleet_2",
-      "none_Year_1-terminal_Fleet_3"
-    ),
-    # survey age comp type
+Two indexing conventions are needed here. `srv_idx_ages` restricts fleet 4 to
+age 1, which is what makes it the age 1 index rather than a biomass index. And
+the 2024 assessment normalises the acoustic compositions over ages 2--15 only, which is
+`SrvAgeComps_bins`.
 
-    SrvLenComps_Type = c(
-      "none_Year_1-terminal_Fleet_1",
-      "none_Year_1-terminal_Fleet_2",
-      "none_Year_1-terminal_Fleet_3"
-    )
-    # survey length comp type
-  )
+```{r}
+input_list <- Setup_Mod_SrvIdx_and_Comps(
+  input_list = input_list,
+  ObsSrvIdx = dat$ObsSrvIdx,
+  ObsSrvIdx_SE = dat$ObsSrvIdx_SE,
+  UseSrvIdx = dat$UseSrvIdx,
+  ObsSrvAgeComps = dat$ObsSrvAgeComps,
+  ISS_SrvAgeComps = dat$ISS_SrvAgeComps,
+  UseSrvAgeComps = dat$UseSrvAgeComps,
+  ObsSrvLenComps = array(NA_real_, dim = c(1, n_yrs, 1, length(input_list$data$lens), 1, n_srv)),
+  UseSrvLenComps = array(0, dim = c(1, n_yrs, 1, n_srv)),
+  ISS_SrvLenComps = array(0, dim = c(1, n_yrs, 1, 1, n_srv)),
+  srv_idx_type = c("biom", "biom", "biom", "abd"),
+  # Fleet 4 is the acoustic survey's age 1 abundance.
+  srv_idx_ages = list(NULL, NULL, NULL, 1),
+  SrvAgeComps_bins = list(NULL, 2:15, NULL, NULL),
+  SrvIdx_LikeType = c("mvn", "lognormal", "normal", "lognormal"),
+  SrvIdx_Cov = list(dat$SrvIdx_Cov, NULL, NULL, NULL),
+  SrvAgeComps_LikeType = c("Multinomial", "Multinomial", "none", "none"),
+  SrvLenComps_LikeType = rep("none", n_srv),
+  SrvAgeComps_Type = c("agg_Year_1-terminal_Fleet_1", "agg_Year_1-terminal_Fleet_2",
+                       "none_Year_1-terminal_Fleet_3", "none_Year_1-terminal_Fleet_4"),
+  SrvLenComps_Type = paste0("none_Year_1-terminal_Fleet_", 1:n_srv),
+  t_srv = array(c(0.5, 0.5, 0, 0.5), dim = c(1, 1, n_srv))
+)
 ```
 
-# Setting up Fishery Selectivity and Catchability
-Fishery selectivity is specified to vary semi-parametrically for the pollock model, with the `2dar1` option specified. Here, we will estimate selectivity deviations in a penalized framework and fix variance values a priori `fishsel_pe_pars_spec = "fix"`. Moreover, we will estimate fishery selectivity deviations for all dimensions, and specify correlations to be set at 0 (`corr_opt_semipar = "corr_zero_y_a_c"`). Thus, semi-parametric deviations collapse to a simple iid formulation. Additionally, we specify that the underlying selectivity form for the fishery is a logistic function. Lastly, a single catchability term is estimated to fit to the early fishery index utilized in the model (`fish_q_spec = c("est_all")`). In the `Fit Model` section, we will demonstrate how variance parameters can be fixed to allow for estimation in a penalized likelihood framework. 
+## Fishery selectivity and catchability
 
-```{r, eval = F}
-  # Setup fishery selectivity and catchability
-  input_list <- Setup_Mod_Fishsel_and_Q(
+Fishery selectivity is non-parametric on the log scale, with one coefficient per
+age up to age 11 and a flat tail shared across ages 12--15, evolving as a random
+walk:
 
-    input_list = input_list,
+$$\log \text{Sel}_{y,a}^{\text{Fsh}} = \theta_{a} + \delta_{y,a},\qquad \delta_{y,a} = \delta_{y-1,a} + \eta_{y,a},\quad \eta_{y,a}\sim N\left(0,\sigma_{\text{sel}}^{2}\right)$$
 
-    # Model options
-    # fishery selectivity, whether continuous time-varying
-    cont_tv_fish_sel = c("2dar1_Fleet_1"),
-    fishsel_pe_pars_spec = "fix", # doing penalized likelihood for selex devs
-    fish_sel_devs_spec = "est_all", # estimating all sel devs
-    corr_opt_semipar = "corr_zero_y_b", # making sure 2d correlations are 0, collapses to a simple iid case
-    # fishery selectivity blocks
-    fish_sel_blocks = c("none_Fleet_1"),
-    # fishery selectivity form
-    fish_sel_model = c("logist1_Fleet_1"),
-    # fishery catchability blocks
-    fish_q_blocks = c("none_Fleet_1"),
-    # whether to estimate all fixed effects for fishery selectivity
-    fish_fixed_sel_pars_spec = c("est_all"),
-    # whether to estimate all fixed effects for fishery catchability
-    fish_q_spec = c("est_all")
-  )
+`fishsel_rw_init_sigma = NA` makes the walk start at zero under its own sigma
+rather than free, because `norm2(sel_devs_fsh)` in the 2024 assessment weights every
+increment equally, including the first.
+
+```{r}
+input_list <- Setup_Mod_Fishsel_and_Q(
+  input_list = input_list,
+  fish_sel_model = "nonparlog_Fleet_1",
+  cont_tv_fish_sel = "rw_Fleet_1",
+  fish_sel_blocks = "none_Fleet_1",
+  fish_q_blocks = "none_Fleet_1",
+  fish_fixed_sel_pars_spec = "est_all",
+  fish_q_spec = "est_all",
+  fishsel_pe_pars_spec = "fix",
+  fish_sel_devs_spec = "est_all",
+  fishsel_rw_init_sigma = NA,
+  # Nested [[fleet]][[block]] and then the bin groups. Ages 12-15 share one
+  # coefficient, and the deviations share the same grouping so they are not
+  # estimated on bins with no free coefficient.
+  fish_sel_nonpar_est_bins = list(list(list(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12:15))),
+  fishsel_devs_shared_bins = list(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12:15)
+)
 ```
 
-# Setting up Survey Selectivity and Catchability
-Survey selectivity is setup in a similar way. Here, we specify that the first survey fleet has `iid` parametric deviations on a selectivity form, while the second survey fleet has `2dar1` semi-parametric deviations. Selectivity for survey fleet 3 is not estimated as no age composition data are available. Therefore, selectivity from survey fleet 2 and 3 are shared (i.e., `est_shared_f_2`). Again, we specify that selectivity deviations are estimated in a penalized likelihood framework with the argument `srvsel_pe_pars_spec = c("fix", "fix", "fix")` and specify to set `2dar1` correlations at 0, such that semi-parametric deviations collapse to an iid formulation (`corr_opt_semipar = c(NA, "corr_zero_y_a_c", "corr_zero_y_a_c")`).
+## Survey selectivity and catchability
 
-```{r, eval = F}
- # Setup survey selectivity and catchability
-  input_list <- Setup_Mod_Srvsel_and_Q(
-    input_list = input_list,
+The three survey selectivity forms differ. The bottom trawl survey is logistic
+with a year specific midpoint and slope plus a free annual age 1 value:
 
-    # Model options
-    # survey selectivity, whether continuous time-varying
-    cont_tv_srv_sel = c("2dar1_Fleet_1", "2dar1_Fleet_2", "2dar1_Fleet_3"),
-    srvsel_pe_pars_spec = c("fix", "fix", "fix"), # penalize survey selex devs
-    srv_sel_devs_spec = c("est_all", "est_all", "est_shared_f_2"), # estimating all srv selex devs but sharing fleet 3 and 2 together
-    corr_opt_semipar = c("corr_zero_y_b", "corr_zero_y_b", "corr_zero_y_b"), # setting correlations at 0, so 2dar1 collapses to simple iid semi-parametric devs
+$$\text{Sel}_{y,a}^{\text{BTS}} = \dfrac{1}{1 + \exp\left(-k_{y}\left(a - a_{50,y}\right)\right)},\qquad a \geq 2$$
 
-    # survey selectivity blocks
-    srv_sel_blocks = c("none_Fleet_1", "none_Fleet_2", "none_Fleet_3"),
-    # survey selectivity form
-    srv_sel_model = c(
-      "logist1_Fleet_1",
-      "logist1_Fleet_2",
-      "logist1_Fleet_3"
-    ),
-    # survey catchability blocks
-    srv_q_blocks = c("none_Fleet_1", "none_Fleet_2", "none_Fleet_3"),
-    # whether to estimate all fixed effects for survey selectivity
-    srv_fixed_sel_pars_spec = c("est_all", "est_all", "est_shared_f_2"), # sharing fleet 3 and 2 parameters together
-    # whether to estimate all fixed effects for survey catchability
-    srv_q_spec = c("est_all", "est_all", "est_all")
-  )
+In the 2024 assessment the slope and midpoint *are* the deviations; there is no base pair,
+so keeping a base alongside free deviation levels would be exactly redundant.
+That is handled in the mapping section below.
 
+The acoustic survey is non-parametric with coefficients over ages 2--8 and a
+flat tail, evolving as a random walk, and the vessel of opportunity index shares
+both its coefficients and its deviations. Catchability is arithmetic for the
+trawl survey, geometric for the age 1 index, and estimated for the other two.
+
+Because $q$ enters only as a multiplicative scalar on the predicted index, a
+fleet that needs no prior on it can have it solved for rather than searched
+over. Writing $I^{\text{pred}}_{y} = q\,U_{y}$ for the unscaled index $U_{y}$,
+the lognormal maximum likelihood value of $q$ at any given value of the
+remaining parameters is the geometric mean of the observed to predicted ratio:
+
+$$\hat{q} = \exp\left(\dfrac{1}{n}\sum_{y}\left[\log I^{\text{obs}}_{y} - \log U_{y}\right]\right)$$
+
+which is `srv_q_type = "geo"`. The expression above is the exact maximum likelihood value only
+when the index standard errors are constant over the fitted years, which holds
+for the age 1 index.
+
+`"arith"` is the corresponding ratio of means, $\sum_{y} I^{\text{obs}}_{y} /
+\sum_{y} U_{y}$. It is what the 2024 assessment applies to the trawl survey and
+is used here for that reason.
+
+`srvsel_pe_wt = c(0, 0, 0, 0)` is what keeps the survey deviations from being
+constrained twice. `SPoRC` normally gives selectivity deviations a distribution
+of their own, an iid or random walk density evaluated with the process error
+sigmas, and adds that to the joint negative log-likelihood. The 2024 assessment
+does no such thing for its surveys. It constrains them with the explicit shape
+penalties set in the weighting section below, which act on log selectivity over
+restricted age ranges and with a fixed predecessor rather than on the deviations
+themselves. A weight of zero makes the objective skip the process error
+likelihood for `ln_srvsel_devs` entirely, so the deviations remain estimated
+parameters but enter the objective only through the data and those penalties.
+This is also why `srvsel_pe_pars_spec` is `"fix"`: with the weight at zero the
+sigmas never reach the objective and would have no gradient.
+
+The fishery runs the other way round. Its `norm2(sel_devs_fsh)` term *is* a
+random walk density up to a constant, so `fishsel_pe_wt` is left at its default
+of one and `fishsel_pe_pars` is instead fixed at $\log(1/\sqrt{2})$ so that
+$1/(2\sigma^{2}) = 1$ reproduces the unweighted sum of squares.
+
+The weight applies only to the main deviations. The bin override deviations
+carry their own process error, which no weight multiplies, so the trawl survey's
+free annual age 1 value keeps its random walk density with the sigma fixed to
+give the assessment's weight of 8.
+
+```{r}
+input_list <- Setup_Mod_Srvsel_and_Q(
+  input_list = input_list,
+  srv_sel_model = c("logist1_Fleet_1", "nonparlog_Fleet_2", "nonparlog_Fleet_3", "logist1_Fleet_4"),
+  cont_tv_srv_sel = c("iid_Fleet_1", "rw_Fleet_2", "rw_Fleet_3", "none_Fleet_4"),
+  srv_sel_blocks = paste0("none_Fleet_", 1:n_srv),
+  srv_q_blocks = paste0("none_Fleet_", 1:n_srv),
+  srv_fixed_sel_pars_spec = c("est_all", "est_all", "est_shared_f_2", "fix"),
+  srv_sel_devs_spec = c("est_all", "est_all", "est_shared_f_2", "fix"),
+  srvsel_pe_pars_spec = rep("fix", n_srv),
+  srv_q_spec = rep("est_all", n_srv),
+  srv_q_type = c("arith", "est", "est", "geo"),
+  srvsel_pe_wt = c(0, 0, 0, 0),
+  srv_sel_nonpar_est_bins = list(NULL,
+                                 list(list(1, 2, 3, 4, 5, 6, 7, 8:15)),
+                                 list(list(1:2, 3, 4, 5, 6, 7, 8:15)),
+                                 NULL),
+  srvsel_devs_shared_bins = list(1, 2, 3, 4, 5, 6, 7, 8:15),
+  # the trawl survey's age 1 is a free annual value, not the logistic's
+  srv_sel_bin_dev_bins = list(1, NULL, NULL, NULL),
+  cont_tv_srvsel_bin_devs = c("rw", "none", "none", "none"),
+  t_srv = array(c(0.5, 0.5, 0, 0.5), dim = c(1, 1, n_srv))
+)
 ```
 
-# Setup Model Weighting
+## Weighting and selectivity penalties
 
-We will then set up how data should be weighted with $\lambda$ in this model. Here, all $\lambda$ values are set at 1. Thus, all data sources are weighted either using specified input sample sizes (for composition data) or specified variances (catch and abundance indices). 
-```{r, eval = FALSE}
+Beyond the data weights, the 2024 assessment carries a set of shape penalties on
+selectivity. The fishery has a dome penalty over ages 6--12, curvature at the
+first year and every change year, and a random walk penalty whose standard
+deviation is $0.5$ except in two years where it opens to $1.9$. The trawl survey
+has a year to year difference penalty over ages 3--14, and the acoustic survey a
+dome penalty over ages 5--8:
+
+$$\ell^{\text{Sel}} = w^{\text{dome}}\sum_{y}\sum_{a \in \mathcal{A}}\left[\max\left(0, \log\text{Sel}_{y,a} - \log\text{Sel}_{y,a+1}\right)\right]^{2} + \sum_{y} w_{y}^{\text{curve}}\left\|\Delta^{2}_{a}\log\text{Sel}_{y,\cdot}\right\|^{2} + \sum_{y} w_{y}^{\text{rw}}\left\|\log\text{Sel}_{y,\cdot} - \log\text{Sel}_{y-1,\cdot}\right\|^{2}$$
+
+The stock recruit residual weights select the years the Ricker penalty applies
+to, and the terminal acoustic age 1 observation is dropped.
+
+```{r}
+Wt_Rec <- array(0, dim = dim(input_list$par$ln_RecDevs))
+Wt_Rec[1, 1, which(yrs %in% dat$yrs_srr)] <- 1
+Wt_SrvIdx <- array(1, dim = c(1, n_yrs, 1, n_srv))
+Wt_SrvIdx[1, max(which(yrs %in% dat$yrs_ats)), 1, 4] <- 0
+
+yrs_ch_f <- dat$yrs_sel_ch_fsh
+sig_ch <- rep(0.5, length(yrs_ch_f))
+sig_ch[55:56] <- 1.9
+curve_wt <- rep(0, n_yrs)
+curve_wt[1] <- 1 / length(yrs_ch_f)
+curve_wt[match(yrs_ch_f, yrs)] <- 1 / length(yrs_ch_f)
+rw_wt <- rep(0, n_yrs)
+rw_wt[match(yrs_ch_f, yrs)] <- 1 / (2 * sig_ch^2)
+
+fish_pen_wts <- list(smooth_bin_diff = 3, smooth_bin_curve = curve_wt,
+                     smooth_yr_diff = rw_wt, normalize = FALSE,
+                     bin_range = list(smooth_bin_diff = c(6, 12)))
+
+# The trawl difference runs from 1982, whose predecessor the assessment fixes at one.
+bts_rw <- rep(0, n_yrs)
+bts_rw[match(1982:2024, yrs)] <- 2
+yrs_ch_a <- dat$yrs_sel_ch_ats
+ats_curve <- rep(0, n_yrs)
+ats_curve[match(yrs_ch_a, yrs)] <- 1
+ats_rw <- rep(0, n_yrs)
+ats_rw[match(yrs_ch_a, yrs)] <- 1 / (2 * 0.138^2)
+# The acoustic shape penalty applies only from the survey's first year.
+ats_shape <- rep(0, n_yrs)
+ats_shape[match(1994:2024, yrs)] <- 1
+
+srv_pen_wts <- list(
+  list(smooth_yr_diff = bts_rw, normalize = FALSE, yr_diff_ref = 0,
+       bin_range = list(smooth_yr_diff = c(3, 14))),
+  list(smooth_bin_diff = ats_shape, smooth_bin_curve = ats_curve,
+       smooth_yr_diff = ats_rw, normalize = FALSE,
+       bin_range = list(smooth_bin_diff = c(5, 8))),
+  # the vessel of opportunity index shares the acoustic curve, so it is not
+  # penalised twice
+  list(),
+  list()
+)
+
 input_list <- Setup_Mod_Weighting(
   input_list = input_list,
+  fish_sel_pen_wts = fish_pen_wts,
+  srv_sel_pen_wts = srv_pen_wts,
   Wt_Catch = 1,
   Wt_FishIdx = 1,
-  Wt_SrvIdx = 1,
-  Wt_Rec = 1,
+  Wt_SrvIdx = Wt_SrvIdx,
+  Wt_Rec = Wt_Rec,
+  Wt_Init_Rec = 1,
   Wt_F = 1,
   Wt_Tagging = 0,
-  Wt_FishAgeComps = array(1, dim = c(input_list$data$n_regions,
-                                     length(input_list$data$years),
-                                     input_list$data$n_seas,
-                                     input_list$data$n_sexes,
-                                     input_list$data$n_fish_fleets)),
-  Wt_FishLenComps =  array(1, dim = c(input_list$data$n_regions,
-                                     length(input_list$data$years),
-                                     input_list$data$n_seas,
-                                     input_list$data$n_sexes,
-                                     input_list$data$n_fish_fleets)),
-  Wt_SrvAgeComps =  array(1, dim = c(input_list$data$n_regions,
-                                     length(input_list$data$years),
-                                     input_list$data$n_seas,
-                                     input_list$data$n_sexes,
-                                     input_list$data$n_srv_fleets)),
-  Wt_SrvLenComps =  array(1, dim = c(input_list$data$n_regions,
-                                     length(input_list$data$years),
-                                     input_list$data$n_seas,
-                                     input_list$data$n_sexes,
-                                     input_list$data$n_srv_fleets))
+  Wt_FishAgeComps = array(1, dim = c(1, n_yrs, 1, 1, 1)),
+  Wt_FishLenComps = array(1, dim = c(1, n_yrs, 1, 1, 1)),
+  Wt_SrvAgeComps = array(1, dim = c(1, n_yrs, 1, 1, n_srv)),
+  Wt_SrvLenComps = array(1, dim = c(1, n_yrs, 1, 1, n_srv))
 )
-```
 
-# Fit Model and Plot
-
-Next, we can extract out elements created from the `input_list` object. We will then specify the values to fix selectivity variances at. In the first case, the fishery selectivity variance is fixed at a value of 0.075. In the second case, the bottom trawl survey `a50` and `k` selectivity variances for a logistic function are fixed at 0.075. Lastly, the acoustic trawl and vessel of opportunity surveys will have a specified variance of 0.15. For further details on the dimensionality of `fishsel_pe_pars` and `srvsel_pe_pars`, please refer to the `Description of Model Parameters` page. 
-
-```{r Fit Model, message = FALSE,  eval = FALSE}
-# extract out lists updated with helper functions
 data <- input_list$data
 parameters <- input_list$par
 mapping <- input_list$map
-
-# selex sigma to fix at, given penalized likelihood
-parameters$fishsel_pe_pars[,4,,] <- log(0.3) # fishery selex variance
-parameters$srvsel_pe_pars[,1:2,,1] <- log(0.3) # survey BTS - a50 and delta variance
-parameters$srvsel_pe_pars[,4,,2] <- log(0.3) # survey ATS and ato variance
-
-# Fit model
-ebswp_rtmb_model <- fit_model(data,
-                              parameters,
-                              mapping,
-                              random = NULL,
-                              newton_loops = 3,
-                              silent = TRUE
-                              )
-
-# Get standard error report
-ebswp_rtmb_model$sd_rep <- RTMB::sdreport(ebswp_rtmb_model)
 ```
 
-Next, we can extract out parameter estimates of recruitment and spawning biomass and compare to the 2024 pollock model. Since `Rec` and `SSB` are both dimensioned `n_pop × n_regions × n_years`, we rename the melted dimensions accordingly.
+## Mapping
 
-```{r Compare Models, eval = F}
-# Get recruitment
-rec_series <- reshape2::melt((ebswp_rtmb_model$rep$Rec)) %>%
-  mutate(se = ebswp_rtmb_model$sd_rep$sd[names(ebswp_rtmb_model$sd_rep$value) == 'log_Rec'] * as.vector(ebswp_rtmb_model$rep$Rec))
-rec_series$Par <- "Recruitment"
+The setup functions already leave a parametric fleet's unused deviation slots
+and a fleet with no time variation unmapped. What remains is the data window,
+since deviations before a survey exists have nothing to inform them, and the
+deviation groupings.
 
-# Get SSB time-series
-ssb_series <- reshape2::melt((ebswp_rtmb_model$rep$SSB)) %>%
-  mutate(se = ebswp_rtmb_model$sd_rep$sd[names(ebswp_rtmb_model$sd_rep$value) == 'log_SSB'] * as.vector(ebswp_rtmb_model$rep$SSB))
-ssb_series$Par <- "Spawning Biomass"
+`SPoRC` parameterises selectivity deviations as levels while the 2024
+assessment uses
+increments. The two are equivalent, but the first year's level is redundant with
+the coefficients and has to be held at zero, and bins within a group must move
+together. `est_shared_b` would share a group across years as well, making
+selectivity time invariant, so the maps are built explicitly.
 
-# bind together
-ts_df <- rbind(ssb_series,rec_series) %>%
-  dplyr::rename(Pop = Var1, Region = Var2, Year = Var3) %>%
-  dplyr::mutate(Year = Year + 1963, type = 'SPoRC')
+```{r}
+i_bts_all <- which(yrs >= 1982)
+map_srvdev <- array(as.numeric(mapping$ln_srvsel_devs), dim = dim(parameters$ln_srvsel_devs))
+map_srvdev[1, -i_bts_all, , 1, 1] <- NA
+mapping$ln_srvsel_devs <- factor(map_srvdev)
+data$map_ln_srvsel_devs <- map_srvdev
 
-# Get actual assessment results
-ssb_ass <- data.frame(
-  Region = 1,
-  Year = 1964:2024,
-  value = sgl_rg_ebswp_data$SSB[,2],
-  se = sgl_rg_ebswp_data$SSB[,3],
-  Par = 'Spawning Biomass',
-  type = '2024 Pollock Assessment'
-)
+build_dev_map <- function(dim_arr, fleet, dev_years, groups) {
+  m <- array(NA_real_, dim = dim_arr)
+  k <- 1
+  for(y in dev_years) {
+    for(g in groups) {
+      m[1, y, g, 1, fleet] <- k
+      k <- k + 1
+    }
+  } # end y loop
+  m
+}
 
-# recruitment
-rec_ass <- data.frame(
-  Region = 1,
-  Year = 1964:2024,
-  value = sgl_rg_ebswp_data$R[,2],
-  se = sgl_rg_ebswp_data$R[,3],
-  Par = 'Recruitment',
-  type = '2024 Pollock Assessment'
-)
+# The assessment applies sel_devs_fsh(ii) going from yrs_ch_fsh(ii) to the NEXT year, so
+# the 59 changes land on 1966:2024 and log selectivity is identical in 1964 and
+# 1965.
+grp_f <- list(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12:15)
+map_fishdev <- build_dev_map(dim(parameters$ln_fishsel_devs), 1, match(1966:2024, yrs), grp_f)
+mapping$ln_fishsel_devs <- factor(map_fishdev)
+data$map_ln_fishsel_devs <- map_fishdev
 
-# bind
-ts_df <- ts_df %>% bind_rows(ssb_ass, rec_ass)
+# The acoustic survey's deviations sit on ages 2-8 with 9-15 following age 8;
+# age 1 never receives one.
+grp_a <- list(2, 3, 4, 5, 6, 7, 8:15)
+map_ats <- array(as.numeric(mapping$ln_srvsel_devs), dim = dim(parameters$ln_srvsel_devs))
+map_ats[1, , , 1, 2:3] <- NA
+k <- max(map_ats, na.rm = TRUE) + 1
+for(y in match(yrs_ch_a, yrs)) {
+  for(g in grp_a) {
+    map_ats[1, y, g, 1, 2] <- k
+    k <- k + 1
+  }
+} # end y loop
+# The vessel of opportunity index is predicted from the acoustic selectivity
+# itself, so it shares the deviations, not just the coefficients.
+map_ats[1, , , 1, 3] <- map_ats[1, , , 1, 2]
+mapping$ln_srvsel_devs <- factor(map_ats)
+data$map_ln_srvsel_devs <- map_ats
+
+# Acoustic age 1 log selectivity is held at zero rather than estimated, and the
+# trawl survey has no base logistic pair, so its base is held at zero and the
+# deviations carry the whole curve.
+map_srvpar <- array(as.numeric(mapping$srv_fixed_sel_pars), dim = dim(parameters$srv_fixed_sel_pars))
+map_srvpar[1, 1, 1, 1, 2:3] <- NA
+map_srvpar[1, 1:2, 1, 1, 1] <- NA
+mapping$srv_fixed_sel_pars <- factor(map_srvpar)
+
+# The age 1 series' penalty weight is fixed at 8 rather than estimated.
+mapping$srvsel_bin_devs_pe_pars <- factor(rep(NA, length(parameters$srvsel_bin_devs_pe_pars)))
+
+map_bindev <- array(as.numeric(mapping$ln_srvsel_bin_devs), dim = dim(parameters$ln_srvsel_bin_devs))
+map_bindev[1, -i_bts_all, , 1, 1] <- NA
+mapping$ln_srvsel_bin_devs <- factor(map_bindev)
+data$map_ln_srvsel_bin_devs <- map_bindev
 ```
 
-In general, we see that the trends in recruitment and spawning stock biomass align relatively well. However, there are some slight discrepancies between these estimates, likely due to the factors discussed at the start of this vignette. 
-```{r Plot Absolute, eval = F}
-ggplot(ts_df, aes(x = Year, y = value, ymin = value - (1.96 * se),
-                  ymax = value + (1.96 * se), color = type, fill = type)) +
-  geom_point(size = 3) +
-  geom_line() +
-  facet_wrap(~Par, scales = 'free') +
-  geom_ribbon(alpha = 0.3, color = NA) +
-  ggthemes::scale_color_colorblind() +
-  ggthemes::scale_fill_colorblind() +
-  labs(y = "Value")  +
-  theme_bw(base_size = 13) +
-  ylim(0, NA) +
-  labs(x = 'Year', y = 'Value', color = 'Type', fill = 'Type')
+One penalty has no counterpart in the setup functions. Because
+$\exp(\theta + \delta)$ rescaled by its own mean is invariant to shifting
+$\theta$ and $\delta$ together, the level has to be pinned or the likelihood is
+flat along it. That is what the 2024 assessment's `avgsel` penalty does:
+
+$$\ell^{\text{avgsel}} = w\left(\overline{\theta}\right)^{2}$$
+
+```{r}
+data$Use_fish_selex_penalty <- 1
+fish_pen <- data.frame(region = 1, fleet = 1, block = 1, sex = 1, wt = 10)
+fish_pen$par <- list(1:12)
+data$fish_selex_penalty <- fish_pen
+
+data$Use_srv_selex_penalty <- 1
+srv_pen <- data.frame(region = 1, fleet = 2, block = 1, sex = 1, wt = 10)
+srv_pen$par <- list(2:8)
+data$srv_selex_penalty <- srv_pen
 ```
+
+## Starting at the ADMB estimate
+
+Before optimizing anything, it is worth checking that the objective is
+reproduced *at a known point*. Setting every parameter to the pollock maximum
+likelihood estimate and evaluating there separates a specification error from an
+optimization difference: if the population and the likelihood agree at the ADMB
+solution, the two models are the same model.
+
+Most parameters can simply be assigned. Recruitment cannot, because the
+deviations are stock recruit residuals and each year's residual depends on the
+previous year's spawning biomass, so they are solved by forward substitution.
+The catchabilities are recovered from the ratio of the ADMB predicted index to
+`SPoRC`'s, which is exact because $q$ enters multiplicatively.
+
+```{r}
+parameters$ln_F_devs[1, , 1, 1] <- log(dat$mle$Fmort)
+parameters$ln_InitDevs[1, 1, ] <- dat$mle$log_initdevs
+
+parameters$fish_fixed_sel_pars[1, 1:n_ages, 1, 1, 1] <- dat$mle$pars_fsh
+parameters$ln_fishsel_devs[1, 1:n_yrs, , 1, 1] <- dat$mle$devs_fsh
+for(f in 2:3) {
+  parameters$srv_fixed_sel_pars[1, 1:n_ages, 1, 1, f] <- dat$mle$pars_ats
+  parameters$ln_srvsel_devs[1, 1:n_yrs, , 1, f] <- dat$mle$devs_ats
+} # end f loop
+parameters$srv_fixed_sel_pars[1, 1:2, 1, 1, 1] <- 0
+parameters$ln_srvsel_devs[1, 1:n_yrs, 1, 1, 1] <- dat$mle$bts_b50_dev
+parameters$ln_srvsel_devs[1, 1:n_yrs, 2, 1, 1] <- dat$mle$bts_k_dev
+parameters$ln_srvsel_bin_devs[1, 1:n_yrs, 1, 1, 1] <- dat$mle$bts_age1_dev
+
+parameters$fishsel_pe_pars[1, , 1, 1] <- log(1 / sqrt(2))
+parameters$srvsel_bin_devs_pe_pars[1, , 1, 1] <- log(1 / sqrt(16))
+
+obj <- fit_model(data, parameters, mapping, do_optim = FALSE, silent = TRUE)
+
+# Recruitment deviations solved by forward substitution.
+free <- obj$par
+idx_rec <- which(names(free) == "ln_RecDevs")
+for(it in 1:40) {
+  r <- obj$report(free)
+  gap <- log(dat$mle$Rec) - log(as.vector(r$Rec[1, 1, 1:n_yrs]))
+  if(max(abs(gap)) < 1e-12) break
+  free[idx_rec] <- free[idx_rec] + gap
+} # end it loop
+
+# Catchabilities recovered from the ratio of predicted indices.
+r <- obj$report(free)
+i_ats <- which(yrs %in% dat$yrs_ats)
+i_avo <- which(yrs %in% dat$yrs_avo)
+idx_q <- which(names(free) == "ln_srv_q")
+free[idx_q] <- free[idx_q] + log(c(
+  mean(dat$admb$eb_ats / as.vector(r$PredSrvIdx[1, 1, i_ats, 1, 2])),
+  mean(dat$admb$pred_avo / as.vector(r$PredSrvIdx[1, 1, i_avo, 1, 3]))))
+idx_fq <- which(names(free) == "ln_fish_q")
+free[idx_fq] <- free[idx_fq] + log(mean(dat$admb$pred_cpue / as.vector(r$PredFishIdx[1, 1, 2:13, 1, 1])))
+```
+
+At that point every reported quantity agrees with the ADMB model to numerical
+precision, and the gradient is already near zero:
+
+```
+fishery selectivity max pct diff: 4.8e-13
+trawl selectivity   max pct diff: 1.4e-13
+numbers at age      max pct diff: 1.2e-11
+spawning biomass    max pct diff: 2.3e-12
+jnLL at the pollock MLE:  1547.851
+max |gradient| there   :  2.7e-05
+```
+
+## Fitting and comparison
+
+Optimizing from that point moves nothing, which is the expected result when a
+model is already at its own optimum.
+
+```{r}
+parameters2 <- obj$env$parList(free)
+est <- fit_model(data, parameters2, mapping, do_optim = TRUE, newton_loops = 2, silent = TRUE)
+est$sdrep <- RTMB::sdreport(est)
+```
+
+```
+free parameters: 1207
+final jnLL: 1547.851   max |gradient|: 1.4e-11
+```
+
+Spawning biomass and recruitment are compared below. Because the two series
+overplot exactly, the percent difference needs its own panel to be readable at
+all; its axis is in units of $10^{-6}$ percent.
+
+| Quantity | Median difference | Maximum difference |
+|---|---|---|
+| Spawning biomass | $4.6\times10^{-7}$ % | $3.4\times10^{-6}$ % |
+| Recruitment | $1.8\times10^{-7}$ % | $5.8\times10^{-6}$ % |
 
 ![](figures/f_ebs_pol_ts_comparison.png)
 
-Lastly, we can also inspect estimates of fishery selectivity from `SPoRC`. Here, we show relative selectivity estimates for ages 3 - 11 (panels). Note that selectivity in this model can exceed 1, and we normalize these values in the figure to improve interpretability. 
-```{r, eval = F}
-reshape2::melt(ebswp_rtmb_model$rep$fish_sel) %>%
-  mutate(value = value/max(value)) %>%
-  rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Age = Var5, Sex = Var6, Fleet = Var7) %>%
-  filter(Age %in% 3:11) %>%
-  ggplot(aes(x = Year + 1963, y = value)) +
-  geom_point() +
-  geom_line() +
-  facet_wrap(~Age) +
-  theme_bw(base_size = 15) +
-  labs(x = 'Year', y = 'Relative Selectivity')
-```
+Time varying fishery selectivity is reproduced as well. Selectivity in this
+model can exceed one, so the values are normalised to their maximum to make the
+shape readable.
 
 ![](figures/f_ebs_pol_fishsel_comparison.png)

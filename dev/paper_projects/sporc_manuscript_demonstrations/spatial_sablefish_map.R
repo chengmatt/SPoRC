@@ -16,7 +16,7 @@ west <- ne_states(c("United States of America", "Russia", "Canada"), returnclass
 west <- st_shift_longitude(west) # shift ongitude for plotting
 
 # Read in stat areas
-nmfs_areas <- read_sf(dsn = here("dev", "sporc_manuscript_demonstrations", "NMFS_Stat_Areas", "Sablefish_Longline_Area"), layer = "Sablefish_Longline_Area")
+nmfs_areas <- read_sf(dsn = here("dev", "paper_projects", "sporc_manuscript_demonstrations", "NMFS_Stat_Areas", "Sablefish_Longline_Area"), layer = "Sablefish_Longline_Area")
 nmfs_areas <- nmfs_areas %>% mutate(GEN_NAME = ifelse(NAME %in% c("East Yakutat / Southeast Alaska", "West Yakutat"), "Eastern Gulf of Alaska", "A")) %>%
   mutate(         NAME = case_when(
     NAME == "Aleutian Islands" ~ "AI",
@@ -60,7 +60,7 @@ map_plot <- ggplot() +
   )
 
 ggsave(
-  here("dev", "sporc_manuscript_demonstrations", "figs", "map.png"),
+  here("dev", "paper_projects", "sporc_manuscript_demonstrations", "figs", "map.png"),
   map_plot, width = 13, height = 10,
 )
 

@@ -75,7 +75,7 @@ msy_vs_projection <- function(n_seas, move_timing) {
     h = 0.7, R0 = 20
   )
 
-  fit <- SPoRC:::optim_ref_pts(SPoRC:::global_BH_Fmsy, data_list, list(log_Fmsy = log(0.1)))
+  fit <- SPoRC:::optim_ref_pts(SPoRC:::global_Fmsy, data_list, list(log_Fmsy = log(0.1)))
   Fmsy <- fit$rep$Fmsy; Req <- fit$rep$Req
 
   # Lay a season/age slice out over projection years, which sit in dimension 3

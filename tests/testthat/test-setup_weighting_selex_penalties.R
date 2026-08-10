@@ -3,32 +3,140 @@ library(testthat)
 
 test_that("resolve_sel_pen_wts works", {
 
-  zeros_all_terms <- c(smooth_bin_curve = 0, smooth_bin_diff = 0, smooth_yr_diff = 0, smooth_yr_curve = 0, smooth_dome = 0, smooth_mean_center = 0)
+  # The resolved object is one specification per fleet, each a named list of the
+  # six terms plus bin_range and normalize.
+  term_names <- c("smooth_bin_curve", "smooth_bin_diff", "smooth_yr_diff", "smooth_yr_curve", "smooth_dome", "smooth_mean_center")
 
-  test_that("NULL pen_wts defaults every term to 0", {
-    expect_equal(resolve_sel_pen_wts(NULL), zeros_all_terms)
+  test_that("yr_diff_ref defaults to NULL and is carried through when given", {
+    expect_null(resolve_sel_pen_wts(list(smooth_yr_diff = 1), n_fleets = 1)[[1]]$yr_diff_ref)
+    expect_equal(resolve_sel_pen_wts(list(smooth_yr_diff = 1, yr_diff_ref = 0), n_fleets = 1)[[1]]$yr_diff_ref, 0)
+  })
+
+  test_that("NULL pen_wts defaults every term to 0, once per fleet", {
+    out <- resolve_sel_pen_wts(NULL, n_fleets = 2)
+    expect_length(out, 2)
+    for(f in 1:2) {
+      expect_equal(unlist(out[[f]][term_names]), stats::setNames(rep(0, 6), term_names))
+      expect_null(out[[f]]$bin_range)
+      expect_true(out[[f]]$normalize)
+    }
   })
 
   test_that("explicit pen_wts overrides named terms and zeroes unnamed ones", {
-    out <- resolve_sel_pen_wts(list(smooth_bin_curve = 5))
-    expect_equal(out, c(smooth_bin_curve = 5, smooth_bin_diff = 0, smooth_yr_diff = 0, smooth_yr_curve = 0, smooth_dome = 0, smooth_mean_center = 0))
+    out <- resolve_sel_pen_wts(list(smooth_bin_curve = 5), n_fleets = 1)[[1]]
+    expect_equal(unlist(out[term_names]),
+                 c(smooth_bin_curve = 5, smooth_bin_diff = 0, smooth_yr_diff = 0, smooth_yr_curve = 0, smooth_dome = 0, smooth_mean_center = 0))
   })
 
   test_that("explicit pen_wts can set multiple terms independently", {
-    out <- resolve_sel_pen_wts(list(smooth_yr_diff = 1, smooth_dome = 30, smooth_mean_center = 10000))
-    expect_equal(out, c(smooth_bin_curve = 0, smooth_bin_diff = 0,
-                        smooth_yr_diff = 1, smooth_yr_curve = 0, smooth_dome = 30, smooth_mean_center = 10000))
+    out <- resolve_sel_pen_wts(list(smooth_yr_diff = 1, smooth_dome = 30, smooth_mean_center = 10000), n_fleets = 1)[[1]]
+    expect_equal(unlist(out[term_names]),
+                 c(smooth_bin_curve = 0, smooth_bin_diff = 0,
+                   smooth_yr_diff = 1, smooth_yr_curve = 0, smooth_dome = 30, smooth_mean_center = 10000))
   })
 
   test_that("explicit pen_wts can set the smooth_bin_diff term independently of the other smooth_* terms", {
-    out <- resolve_sel_pen_wts(list(smooth_bin_diff = 7))
-    expect_equal(out, c(smooth_bin_curve = 0, smooth_bin_diff = 7,
-                        smooth_yr_diff = 0, smooth_yr_curve = 0, smooth_dome = 0, smooth_mean_center = 0))
+    out <- resolve_sel_pen_wts(list(smooth_bin_diff = 7), n_fleets = 1)[[1]]
+    expect_equal(unlist(out[term_names]),
+                 c(smooth_bin_curve = 0, smooth_bin_diff = 7,
+                   smooth_yr_diff = 0, smooth_yr_curve = 0, smooth_dome = 0, smooth_mean_center = 0))
   })
 
-  test_that("errors on unrecognized term names", {
+  test_that("a single named specification is shared across fleets", {
+    out <- resolve_sel_pen_wts(list(smooth_bin_curve = 5), n_fleets = 3)
+    expect_length(out, 3)
+    expect_equal(out[[1]], out[[3]])
+  })
+
+  test_that("an unnamed list gives each fleet its own specification", {
+    out <- resolve_sel_pen_wts(list(list(smooth_bin_curve = 5), list(smooth_yr_diff = 2)), n_fleets = 2)
+    expect_equal(out[[1]]$smooth_bin_curve, 5)
+    expect_equal(out[[1]]$smooth_yr_diff, 0)
+    expect_equal(out[[2]]$smooth_yr_diff, 2)
+    expect_equal(out[[2]]$smooth_bin_curve, 0)
+  })
+
+  test_that("per-year weights, bin_range, and normalize are carried through", {
+    out <- resolve_sel_pen_wts(list(smooth_yr_diff = c(0, 1, 4), bin_range = c(3, 8), normalize = FALSE), n_fleets = 1)[[1]]
+    expect_equal(out$smooth_yr_diff, c(0, 1, 4))
+    expect_equal(out$bin_range, c(3, 8))
+    expect_false(out$normalize)
+  })
+
+  test_that("errors on unrecognized term names and malformed bin_range", {
     expect_error(resolve_sel_pen_wts(list(bogus = 1)))
     expect_error(resolve_sel_pen_wts(list(bin_curve = 1))) # removed legacy name
+    expect_error(resolve_sel_pen_wts(list(bin_range = c(1, 2, 3))))
+    expect_error(resolve_sel_pen_wts(list(bin_range = c(8, 3))))
+    expect_error(resolve_sel_pen_wts(list(list(smooth_dome = 1)), n_fleets = 2))
+  })
+
+})
+
+test_that("Get_Selex_Smoothness_Penalty honours per-year weights and bin ranges", {
+
+  n_yrs <- 4; n_bins <- 6
+  set.seed(21)
+  sel_vals <- array(exp(matrix(rnorm(n_yrs * n_bins), nrow = n_yrs)), dim = c(1, n_yrs, n_bins, 1, 1))
+
+  test_that("a scalar weight equals the same weight repeated for every year", {
+    expect_equal(Get_Selex_Smoothness_Penalty(sel_vals, wt_bin_curve = 3),
+                 Get_Selex_Smoothness_Penalty(sel_vals, wt_bin_curve = rep(3, n_yrs)), tolerance = 1e-12)
+  })
+
+  test_that("zeroing a year's weight drops exactly that year's contribution", {
+    wt <- rep(1, n_yrs); wt[2] <- 0
+    only_yr2 <- rep(0, n_yrs); only_yr2[2] <- 1
+    expect_equal(Get_Selex_Smoothness_Penalty(sel_vals, wt_bin_curve = rep(1, n_yrs)),
+                 Get_Selex_Smoothness_Penalty(sel_vals, wt_bin_curve = wt) +
+                   Get_Selex_Smoothness_Penalty(sel_vals, wt_bin_curve = only_yr2), tolerance = 1e-12)
+  })
+
+  test_that("bin_range restricts the bins a term acts over", {
+    pen <- Get_Selex_Smoothness_Penalty(sel_vals, wt_bin_diff = 1, normalize = FALSE, bin_range = c(2, 4))
+    raw <- sum(sapply(1:n_yrs, function(y) sum(diff(log(sel_vals[1,y,2:4,1,1]))^2)))
+    expect_equal(pen, -raw, tolerance = 1e-12)
+  })
+
+  test_that("bin_range and normalize can differ between terms", {
+    pen_both <- Get_Selex_Smoothness_Penalty(sel_vals, wt_bin_diff = 1, wt_yr_diff = 1,
+                                             normalize = list(smooth_bin_diff = FALSE, smooth_yr_diff = TRUE),
+                                             bin_range = list(smooth_bin_diff = c(2, 4)))
+    pen_bin <- Get_Selex_Smoothness_Penalty(sel_vals, wt_bin_diff = 1, normalize = FALSE, bin_range = c(2, 4))
+    pen_yr <- Get_Selex_Smoothness_Penalty(sel_vals, wt_yr_diff = 1, normalize = TRUE)
+    expect_equal(pen_both, pen_bin + pen_yr, tolerance = 1e-12)
+  })
+
+  test_that("an absent bin_range reproduces the all-bins default", {
+    expect_equal(Get_Selex_Smoothness_Penalty(sel_vals, wt_bin_curve = 1),
+                 Get_Selex_Smoothness_Penalty(sel_vals, wt_bin_curve = 1, bin_range = c(1, n_bins)), tolerance = 1e-12)
+  })
+
+  test_that("yr_diff_ref adds the first penalized year's difference from the reference", {
+    pen <- Get_Selex_Smoothness_Penalty(sel_vals, wt_yr_diff = 1, normalize = FALSE, yr_diff_ref = 0)
+    base <- Get_Selex_Smoothness_Penalty(sel_vals, wt_yr_diff = 1, normalize = FALSE)
+    expect_equal(pen - base, -sum(log(sel_vals[1,1,,1,1])^2), tolerance = 1e-12)
+  })
+
+  test_that("yr_diff_ref accepts one reference per bin", {
+    ref <- log(sel_vals[1,1,,1,1])
+    pen <- Get_Selex_Smoothness_Penalty(sel_vals, wt_yr_diff = 1, normalize = FALSE, yr_diff_ref = ref)
+    base <- Get_Selex_Smoothness_Penalty(sel_vals, wt_yr_diff = 1, normalize = FALSE)
+    expect_equal(pen, base, tolerance = 1e-12)
+  })
+
+  test_that("yr_diff_ref attaches to the first year the weight is non-zero, not year one", {
+    wt <- c(0, 0, 1, 1)
+    pen <- Get_Selex_Smoothness_Penalty(sel_vals, wt_yr_diff = wt, normalize = FALSE, yr_diff_ref = 0)
+    base <- Get_Selex_Smoothness_Penalty(sel_vals, wt_yr_diff = wt, normalize = FALSE)
+    expect_equal(pen - base, -sum(log(sel_vals[1,3,,1,1])^2) + sum((log(sel_vals[1,3,,1,1]) - log(sel_vals[1,2,,1,1]))^2),
+                 tolerance = 1e-12)
+  })
+
+  test_that("omitting yr_diff_ref leaves the walk's first year unpenalized", {
+    expect_equal(Get_Selex_Smoothness_Penalty(sel_vals, wt_yr_diff = 1, normalize = FALSE),
+                 -sum(sapply(2:n_yrs, function(y) sum((log(sel_vals[1,y,,1,1]) - log(sel_vals[1,y-1,,1,1]))^2))),
+                 tolerance = 1e-12)
   })
 
 })

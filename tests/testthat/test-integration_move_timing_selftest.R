@@ -331,13 +331,13 @@ test_that("MSY and SPR reference points agree on per-recruit biology at every ti
   spr_sb0 <- numeric(3)
   for (tm in 0:2) {
     r_spr <- ev(SPoRC:::global_SPR,     spr_data(tm), "log_F_x",  Fv)
-    r_msy <- ev(SPoRC:::global_BH_Fmsy, msy_data(tm), "log_Fmsy", Fv)
+    r_msy <- ev(SPoRC:::global_Fmsy, msy_data(tm), "log_Fmsy", Fv)
     spr_sb0[tm + 1] <- sum(r_spr$SB0)
 
     expect_equal(r_msy$SBPR_0, sum(r_spr$SB0), tolerance = 1e-10,
-                 label = sprintf("unfished SBPR, global_BH_Fmsy vs global_SPR, move_timing = %d", tm))
+                 label = sprintf("unfished SBPR, global_Fmsy vs global_SPR, move_timing = %d", tm))
     expect_equal(r_msy$SBPR_F, sum(r_spr$SB), tolerance = 1e-10,
-                 label = sprintf("fished SBPR, global_BH_Fmsy vs global_SPR, move_timing = %d", tm))
+                 label = sprintf("fished SBPR, global_Fmsy vs global_SPR, move_timing = %d", tm))
     expect_equal(r_msy$SPR, r_spr$SPR, tolerance = 1e-10,
                  label = sprintf("SPR agrees, move_timing = %d", tm))
   }
@@ -360,7 +360,7 @@ test_that("projecting at Fmsy under Beverton-Holt feedback equilibrates at Bmsy 
   #   2. Do_Population_Projection's rec_lag != 0 Beverton-Holt call did not forward
   #      Mrate/move_timing, so the SSB0 behind the curve was built at timing 0.
   #
-  # NOTE: global_BH_Fmsy assumes GLOBAL density dependence, so bh_rec_opt$rec_dd must be 1.
+  # NOTE: global_Fmsy assumes GLOBAL density dependence, so bh_rec_opt$rec_dd must be 1.
   # Pairing it with rec_dd = 0 (local) compares two different equilibria and looks like a
   # bug when it is not.
   n_pop <- 1; n_regions <- 3; n_seas <- 1; n_sexes <- 1; n_ages <- 20; n_flt <- 1
@@ -443,7 +443,7 @@ test_that("projecting at Fmsy under Beverton-Holt feedback equilibrates at Bmsy 
                ret_sel = array(1, dim = c(n_pop, n_regions, n_seas, n_ages, n_flt)),
                dmr = array(0, dim = c(n_regions, n_seas, n_flt)),
                sex_ratio_f = array(0.5, dim = c(n_pop, n_regions)),
-               rec_dd = 1, rec_lag = 1)   # rec_dd = 1: global DD, matching global_BH_Fmsy
+               rec_dd = 1, rec_lag = 1)   # rec_dd = 1: global DD, matching global_Fmsy
 
     Do_Population_Projection(
       n_proj_yrs = NY, n_pop = n_pop, n_regions = n_regions, n_ages = n_ages, n_sexes = n_sexes,
@@ -467,7 +467,7 @@ test_that("projecting at Fmsy under Beverton-Holt feedback equilibrates at Bmsy 
 
   Bmsy_all <- numeric(3)
   for (tm in 0:2) {
-    rp <- SPoRC:::optim_ref_pts(SPoRC:::global_BH_Fmsy, msy_data(tm), list(log_Fmsy = log(0.1)))
+    rp <- SPoRC:::optim_ref_pts(SPoRC:::global_Fmsy, msy_data(tm), list(log_Fmsy = log(0.1)))
     Fmsy <- rp$rep$Fmsy; Req <- rp$rep$Req
     Bmsy <- sum(apply(rp$rep$SB_age[2, , , drop = FALSE], 2, sum)) * Req
     Bmsy_all[tm + 1] <- Bmsy
@@ -483,7 +483,7 @@ test_that("projecting at Fmsy under Beverton-Holt feedback equilibrates at Bmsy 
                  label = sprintf("Beverton-Holt SSB == Bmsy, move_timing = %d", tm))
     expect_equal(sum(pjB$proj_NAA[, , NY, 1, 1, ]), Req, tolerance = 1e-10,
                  label = sprintf("Beverton-Holt recruitment == Req, move_timing = %d", tm))
-    # (c) projected yield equals MSY up to the single-sex convention: global_BH_Fmsy
+    # (c) projected yield equals MSY up to the single-sex convention: global_Fmsy
     #     starts its cohort at rec_region_prop * sex_ratio_f (0.5), so its Yield is per
     #     female recruit while the projection puts the whole Req into the population.
     expect_equal(sum(pjA$proj_Catch[, , NY, , ]), 2 * rp$rep$Yield, tolerance = 1e-10,
@@ -504,7 +504,7 @@ test_that("local_BH_MSY is a fixed point of a two-season projection under every 
   # season" branches actually execute).
   #
   # Two harness details that matter and are easy to get wrong:
-  #   - bh_rec_opt$rec_dd must be 0 (local) to match local_BH_Fmsy_sglpop.
+  #   - bh_rec_opt$rec_dd must be 0 (local) to match local_Fmsy_sglpop.
   #   - terminal_NAA must be seeded across ALL seasons. Projection year 1 IS the terminal
   #     data year (proj_NAA[,,1,,,] <- terminal_NAA, and the real caller passes
   #     rep$NAA[,,n_yrs,,,]), so its later seasons are inputs, not something the
@@ -588,7 +588,7 @@ test_that("local_BH_MSY is a fixed point of a two-season projection under every 
                ret_sel = array(1, dim = c(n_pop, n_regions, NS, n_ages, n_flt)),
                dmr = array(0, dim = c(n_regions, NS, n_flt)),
                sex_ratio_f = array(0.5, dim = c(n_pop, n_regions)),
-               rec_dd = 0, rec_lag = 1)   # rec_dd = 0: local DD, matching local_BH_Fmsy_sglpop
+               rec_dd = 0, rec_lag = 1)   # rec_dd = 0: local DD, matching local_Fmsy_sglpop
 
     Do_Population_Projection(
       n_proj_yrs = NY, n_pop = n_pop, n_regions = n_regions, n_ages = n_ages, n_sexes = n_sexes,
@@ -610,7 +610,7 @@ test_that("local_BH_MSY is a fixed point of a two-season projection under every 
 
   Btot <- numeric(3)
   for (tm in 0:2) {
-    rp <- SPoRC:::optim_ref_pts(SPoRC:::local_BH_Fmsy_sglpop, msy_l(tm),
+    rp <- SPoRC:::optim_ref_pts(SPoRC:::local_Fmsy_sglpop, msy_l(tm),
                                 list(log_Fmsy = rep(log(0.1), n_regions)))
     Btgt <- sapply(seq_len(n_regions), function(r) sum(rp$rep$SB_fished_mat[, r] * rp$rep$Req_o))
     Btot[tm + 1] <- sum(Btgt)
@@ -632,7 +632,7 @@ test_that("local_BH_MSY is a fixed point of a two-season projection under every 
 })
 
 test_that("seasonal recruitment is apportioned across regions consistently in MSY and SPR", {
-  # global_BH_Fmsy seeds age 1 with rec_region_prop * sex_ratio_f * rec_seas_prop[1] but
+  # global_Fmsy seeds age 1 with rec_region_prop * sex_ratio_f * rec_seas_prop[1] but
   # previously topped up seasons 2..n with rec_seas_prop[seas] * sex_ratio_f only, dropping
   # the regional apportionment. With n_seas > 1 and non-uniform rec_region_prop that put
   # equilibrium SSB ~50% out. global_SPR builds the same quantity correctly, so comparing
@@ -705,7 +705,7 @@ test_that("seasonal recruitment is apportioned across regions consistently in MS
 
   for (tm in 0:2) {
     r_spr <- ev(SPoRC:::global_SPR,     spr_data(tm), "log_F_x",  Fv)
-    r_msy <- ev(SPoRC:::global_BH_Fmsy, msy_data(tm), "log_Fmsy", Fv)
+    r_msy <- ev(SPoRC:::global_Fmsy, msy_data(tm), "log_Fmsy", Fv)
     expect_equal(r_msy$SBPR_0, sum(r_spr$SB0), tolerance = 1e-10,
                  label = sprintf("two-season unfished SBPR, MSY vs SPR, move_timing = %d", tm))
     expect_equal(r_msy$SBPR_F, sum(r_spr$SB), tolerance = 1e-10,

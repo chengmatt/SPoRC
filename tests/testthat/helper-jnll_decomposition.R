@@ -41,7 +41,8 @@ jnLL_terms <- list(
   Fmort_nLL                    = list(weight = "Wt_F",       mode = "scalar"),
   dmr_nLL                      = list(weight = "Wt_D",       mode = "scalar"),
   Rec_nLL                      = list(weight = "Wt_Rec",     mode = "scalar"),
-  Init_Rec_nLL                 = list(weight = "Wt_Rec",     mode = "scalar"),
+  Init_Rec_nLL                 = list(weight = "Wt_Init_Rec", fallback = "Wt_Rec", mode = "scalar"),
+  Rec_level_nLL                = list(weight = NA,          mode = "scalar"),
 
   sel_nLL                      = list(weight = NA, mode = "scalar"),
   M_nLL                        = list(weight = NA, mode = "scalar"),
@@ -92,8 +93,14 @@ jnLL_contributions <- function(model) {
     component <- rep[[nm]]
     if(is.null(component)) return(NULL)
 
-    wt <- if(is.na(spec$weight[1])) 1 else data[[spec$weight]]
-    if(is.null(wt)) stop("weight '", spec$weight, "' listed in jnLL_terms for '", nm, "' is absent from the data list")
+    # A weight the objective backfills for older input lists is absent from a
+    # stored data list, and there the fallback weight is what actually controls
+    # this component, so the effective NAME changes too and not just its value.
+    wt_name <- spec$weight
+    if(!is.na(wt_name[1]) && is.null(data[[wt_name]]) && !is.null(spec$fallback)) wt_name <- spec$fallback
+    wt <- if(is.na(wt_name[1])) 1 else data[[wt_name]]
+    if(is.null(wt)) stop("weight '", wt_name, "' listed in jnLL_terms for '", nm, "' is absent from the data list")
+    spec$weight <- wt_name
 
     contribution <- if(spec$mode == "elementwise") sum(wt * component) else wt * sum(component)
 

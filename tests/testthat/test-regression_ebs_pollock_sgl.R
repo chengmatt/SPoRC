@@ -10,6 +10,8 @@ data("sgl_rg_ebswp_data")
 
 test_that("Single-region EBS Pollock RTMB model produces expected results", {
 
+  n_srv <- sgl_rg_ebswp_data$n_srv_fleets
+
   ## Initialize model dimensions and data list----
   input_list <- Setup_Mod_Dim(
     years = sgl_rg_ebswp_data$years,
@@ -24,7 +26,7 @@ test_that("Single-region EBS Pollock RTMB model produces expected results", {
     # number of sexes
     n_fish_fleets = 1,
     # number of fishery fleets
-    n_srv_fleets = 3, # number of survey fleets
+    n_srv_fleets = n_srv, # number of survey fleets
     # number of seasons
     n_seas = sgl_rg_ebswp_data$n_seas,
     # Populaiton stuff
@@ -72,6 +74,10 @@ test_that("Single-region EBS Pollock RTMB model produces expected results", {
 
       # Data inputs
       WAA = sgl_rg_ebswp_data$WAA,
+      # the assessment carries a separate weight at age matrix for the fishery
+      # and for each survey index
+      WAA_fish = sgl_rg_ebswp_data$WAA_fish,
+      WAA_srv = sgl_rg_ebswp_data$WAA_srv,
       MatAA = sgl_rg_ebswp_data$MatAA,
 
       # Model options
@@ -147,30 +153,37 @@ test_that("Single-region EBS Pollock RTMB model produces expected results", {
     ObsSrvAgeComps = sgl_rg_ebswp_data$ObsSrvAgeComps,
     ISS_SrvAgeComps = sgl_rg_ebswp_data$ISS_SrvAgeComps,
     UseSrvAgeComps = sgl_rg_ebswp_data$UseSrvAgeComps,
-    ObsSrvLenComps = array(NA_real_, dim = c(1, length(input_list$data$years), input_list$data$n_seas, length(input_list$data$lens), 1, 3)),
-    UseSrvLenComps = array(0, dim = c(1, length(input_list$data$years), input_list$data$n_seas, 3)),
-    ISS_SrvLenComps = array(0, dim = c(1, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_sexes, 3)),
+    ObsSrvLenComps = array(NA_real_, dim = c(1, length(input_list$data$years), input_list$data$n_seas, length(input_list$data$lens), 1, n_srv)),
+    UseSrvLenComps = array(0, dim = c(1, length(input_list$data$years), input_list$data$n_seas, n_srv)),
+    ISS_SrvLenComps = array(0, dim = c(1, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_sexes, n_srv)),
 
     # Model options
-    srv_idx_type = c("biom", "biom", "biom"),
-    # abundance and biomass for survey fleet 1, 2, and 3
-    SrvAgeComps_LikeType = c("Multinomial", "Multinomial", "Multinomial"),
-    # survey age composition likelihood for survey fleet 1, 2, and 3
-    SrvLenComps_LikeType = c("none", "none", "none"),
-    #  survey length composition likelihood for survey fleet 1, 2, and 3
+    srv_idx_type = c("biom", "biom", "biom", "abd"),
+    # biomass for survey fleets 1 to 3, abundance for survey fleet 4
+    srv_idx_ages = list(NULL, NULL, NULL, 1),
+    # fleet 4 is the acoustic survey's age 1 abundance, so it sees age 1 only
+    SrvIdx_LikeType = c("mvn", "lognormal", "normal", "lognormal"),
+    # index likelihood for survey fleet 1, 2, 3, and 4
+    SrvIdx_Cov = list(sgl_rg_ebswp_data$SrvIdx_Cov, NULL, NULL, NULL),
+    # the bottom trawl index is fit with a full covariance matrix
+    SrvAgeComps_LikeType = c("Multinomial", "Multinomial", "none", "none"),
+    # survey age composition likelihood for survey fleet 1, 2, 3, and 4
+    SrvAgeComps_bins = list(NULL, 2:15, NULL, NULL),
+    # the acoustic compositions are normalised over ages 2-15 only
+    SrvLenComps_LikeType = rep("none", n_srv),
+    #  survey length composition likelihood for survey fleet 1, 2, 3, and 4
     SrvAgeComps_Type = c(
       "agg_Year_1-terminal_Fleet_1",
       "agg_Year_1-terminal_Fleet_2",
-      "none_Year_1-terminal_Fleet_3"
+      "none_Year_1-terminal_Fleet_3",
+      "none_Year_1-terminal_Fleet_4"
     ),
     # survey age comp type
 
-    SrvLenComps_Type = c(
-      "none_Year_1-terminal_Fleet_1",
-      "none_Year_1-terminal_Fleet_2",
-      "none_Year_1-terminal_Fleet_3"
-    )
+    SrvLenComps_Type = paste0("none_Year_1-terminal_Fleet_", 1:n_srv),
     # survey length comp type
+    t_srv = array(c(0.5, 0.5, 0, 0.5), dim = c(1, 1, n_srv))
+    # fraction of the year elapsed when each survey occurs
   )
 
 
@@ -203,25 +216,24 @@ test_that("Single-region EBS Pollock RTMB model produces expected results", {
 
     # Model options
     # survey selectivity, whether continuous time-varying
-    cont_tv_srv_sel = c("iid_Fleet_1", "2dar1_Fleet_2", "2dar1_Fleet_3"),
-    srvsel_pe_pars_spec = c("fix", "fix", "fix"), # penalize survey selex devs
-    srv_sel_devs_spec = c("est_all", "est_all", "est_shared_f_2"), # estimating all srv selex devs
-    corr_opt_semipar = c(NA, "corr_zero_y_b", "corr_zero_y_b"), # setting corelations at 0, so 2dar1 collapses to simple iid semi-parametric devs
+    cont_tv_srv_sel = c("iid_Fleet_1", "2dar1_Fleet_2", "2dar1_Fleet_3", "none_Fleet_4"),
+    srvsel_pe_pars_spec = rep("fix", n_srv), # penalize survey selex devs
+    srv_sel_devs_spec = c("est_all", "est_all", "est_shared_f_2", "fix"), # estimating all srv selex devs
+    corr_opt_semipar = c(NA, "corr_zero_y_b", "corr_zero_y_b", NA), # setting corelations at 0, so 2dar1 collapses to simple iid semi-parametric devs
 
     # survey selectivity blocks
-    srv_sel_blocks = c("none_Fleet_1", "none_Fleet_2", "none_Fleet_3"),
+    srv_sel_blocks = paste0("none_Fleet_", 1:n_srv),
     # survey selectivity form
-    srv_sel_model = c(
-      "logist1_Fleet_1",
-      "logist1_Fleet_2",
-      "logist1_Fleet_3"
-    ),
+    srv_sel_model = paste0("logist1_Fleet_", 1:n_srv),
     # survey catchability blocks
-    srv_q_blocks = c("none_Fleet_1", "none_Fleet_2", "none_Fleet_3"),
-    # whether to estiamte all fixed effects for survey selectivity
-    srv_fixed_sel_pars_spec = c("est_all", "est_all", "est_shared_f_2"),
+    srv_q_blocks = paste0("none_Fleet_", 1:n_srv),
+    # whether to estiamte all fixed effects for survey selectivity. The vessel
+    # of opportunity index shares the acoustic survey's, and fleet 4 sees age 1
+    # only, where selectivity is absorbed into catchability and so is fixed.
+    srv_fixed_sel_pars_spec = c("est_all", "est_all", "est_shared_f_2", "fix"),
     # whether to estiamte all fixed effects for survey catchability
-    srv_q_spec = c("est_all", "est_all", "est_all")
+    srv_q_spec = rep("est_all", n_srv),
+    t_srv = array(c(0.5, 0.5, 0, 0.5), dim = c(1, 1, n_srv))
   )
 
   # Setup tagging stuff
@@ -239,12 +251,12 @@ test_that("Single-region EBS Pollock RTMB model produces expected results", {
                                        length(input_list$data$years),
                                        input_list$data$n_seas,
                                        input_list$data$n_sexes,
-                                       input_list$data$n_srv_fleets)),
+                                       input_list$data$n_fish_fleets)),
     Wt_FishLenComps = array(1, dim = c(input_list$data$n_regions,
                                        length(input_list$data$years),
                                        input_list$data$n_seas,
                                        input_list$data$n_sexes,
-                                       input_list$data$n_srv_fleets)),
+                                       input_list$data$n_fish_fleets)),
     Wt_SrvAgeComps = array(1, dim = c(input_list$data$n_regions,
                                       length(input_list$data$years),
                                       input_list$data$n_seas,
@@ -281,35 +293,35 @@ test_that("Single-region EBS Pollock RTMB model produces expected results", {
   ebswp_rtmb_model$sdrep <- RTMB::sdreport(ebswp_rtmb_model)
 
   ssb_expected_vec <- c(
-    546.8763, 563.6677, 596.4870, 698.4096, 814.6193,
-    945.6189, 1021.3080, 1104.4724, 1065.1015, 934.5426,
-    672.2563, 633.7624, 621.9081, 738.1229, 658.7508,
-    654.6973, 914.5749, 1599.5037, 2325.1097, 3168.1041,
-    3287.5884, 3746.0440, 3652.8197, 3738.5984, 3612.7531,
-    3165.5950, 2691.2954, 2190.4857, 2173.8935, 2955.4944,
-    3447.8849, 3625.9527, 3481.2744, 3298.0992, 2791.5253,
-    2988.2985, 2984.3011, 3107.1646, 2906.2856, 2927.8128,
-    3223.0586, 2826.2614, 2580.1454, 2160.9126, 1722.0427,
-    1918.9537, 1973.8421, 2308.5835, 2641.6133, 2893.9975,
-    2810.5200, 2689.9135, 2991.8500, 3384.5624, 3096.3920,
-    2860.0931, 2071.8820, 2230.9280, 3200.1950, 3280.0490,
-    3511.9483
+    693.7473, 698.3624, 703.1611, 744.5972, 803.1545,
+    962.2596, 1131.2974, 1282.7375, 1190.9029, 934.8947,
+    533.3900, 506.9646, 615.8604, 799.5490, 698.8008,
+    701.7264, 958.2061, 1594.6566, 2291.7585, 3143.4623,
+    3259.5084, 3699.0749, 3582.4999, 3658.4648, 3534.5866,
+    3121.5113, 2682.9797, 2175.4955, 2096.3222, 2806.2837,
+    3270.0131, 3410.4535, 3245.2829, 3057.6556, 2577.2427,
+    2739.5266, 2709.0265, 2815.2769, 2657.9535, 2717.3598,
+    3042.0299, 2714.6560, 2530.5623, 2130.6470, 1692.8448,
+    1856.8135, 1904.8025, 2251.8010, 2594.1093, 2854.9388,
+    2776.5474, 2634.7249, 2927.1092, 3347.9292, 3108.3895,
+    2911.7213, 2135.7475, 2380.2246, 3512.3995, 3666.3108,
+    4013.0812
   )
 
   rec_expected_vec <- c(
-    4393.361, 17629.666, 10142.019, 20424.095, 20239.706,
-    25194.698, 23091.778, 14193.691, 11198.282, 21576.740,
-    12204.067, 11414.471, 11573.407, 12962.792, 23343.861,
-    56024.473, 26428.497, 31139.148, 16041.965, 48298.889,
-    14249.060, 36080.735, 15386.576, 7537.237, 5917.464,
-    12426.123, 56256.227, 29295.569, 22950.915, 44146.761,
-    15140.136, 11251.036, 25884.837, 37049.346, 17268.055,
-    18131.098, 26929.671, 37452.565, 24253.350, 15674.722,
-    7228.933, 5130.471, 14011.662, 29685.148, 12929.316,
-    47953.469, 22115.843, 14402.541, 12918.045, 49683.265,
-    49458.944, 18199.466, 5990.331, 6042.957, 12584.324,
-    83830.717, 23866.949, 16963.504, 14664.953, 28934.190,
-    54847.592
+    3810.0075, 15060.4375, 10702.2680, 24406.3843, 22481.2688,
+    24806.5859, 19302.7630, 10566.4248, 9838.6740, 28856.3510,
+    16667.3580, 13837.3250, 13383.6078, 14304.6445, 24266.0415,
+    56359.5102, 27786.8799, 31844.0840, 16018.7546, 46849.4216,
+    13790.4431, 34393.5673, 14531.1972, 7383.5562, 5553.3243,
+    11520.5169, 51973.8990, 27233.1370, 20957.6786, 39688.1018,
+    13419.1138, 9883.5999, 23454.9199, 32155.0536, 15429.3280,
+    16564.0327, 25175.0613, 35349.2778, 24097.8168, 15635.1917,
+    7291.8935, 5071.6658, 13302.6039, 28517.6586, 12621.5272,
+    46911.7073, 21530.7343, 14035.3407, 12481.7835, 47439.1707,
+    48247.2308, 17898.5662, 6065.5367, 6069.8918, 13295.1050,
+    90051.0768, 26521.7312, 18472.5935, 16912.7275, 28586.1609,
+    38013.6005
   )
 
 expect_equal(ebswp_rtmb_model$rep$SSB[1,1,], ssb_expected_vec, tolerance = 1e-2)

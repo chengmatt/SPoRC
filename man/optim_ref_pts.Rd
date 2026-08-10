@@ -8,7 +8,7 @@ optim_ref_pts(model_name, data_list, pars_list)
 }
 \arguments{
 \item{model_name}{Function. An RTMB-compatible model function (e.g.,
-\code{global_SPR}, \code{global_BH_Fmsy}, \code{local_BH_Fmsy}) that
+\code{global_SPR}, \code{global_Fmsy}, \code{local_Fmsy_sglpop}) that
 defines the objective function for the reference point calculation.}
 
 \item{data_list}{List. A named list of data inputs passed to \code{model_name}

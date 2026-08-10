@@ -48,26 +48,26 @@ recent years from the mean recruitment calculation. Default = 1.}
 \item{type}{Character. Spatial structure of the model:
 \describe{
   \item{\code{"single_region"}}{No spatial movement; supports
-    \code{"SPR"} and \code{"BH_MSY"}.}
+    \code{"SPR"} and \code{"MSY"}.}
   \item{\code{"multi_region"}}{Spatially explicit; supports
-    \code{"independent_SPR"}, \code{"independent_BH_MSY"},
-    \code{"global_SPR"}, \code{"global_BH_MSY"}, and
-    \code{"local_BH_MSY"}.}
+    \code{"independent_SPR"}, \code{"independent_MSY"},
+    \code{"global_SPR"}, \code{"global_MSY"}, and
+    \code{"local_MSY"}.}
 }}
 
 \item{what}{Character. Reference point method:
 \describe{
   \item{\code{"SPR"}}{Single-region \eqn{F_{SPR_x}}.}
-  \item{\code{"BH_MSY"}}{Single-region Beverton-Holt \eqn{F_{MSY}}.}
+  \item{\code{"MSY"}}{Single-region Beverton-Holt \eqn{F_{MSY}}.}
   \item{\code{"independent_SPR"}}{Per-region \eqn{F_{SPR_x}} computed
     independently for each region without movement.}
-  \item{\code{"independent_BH_MSY"}}{Per-region \eqn{F_{MSY}} computed
+  \item{\code{"independent_MSY"}}{Per-region \eqn{F_{MSY}} computed
     independently for each region without movement.}
   \item{\code{"global_SPR"}}{Single shared \eqn{F_{SPR_x}} with
     movement, integrated across all regions.}
-  \item{\code{"global_BH_MSY"}}{Single shared \eqn{F_{MSY}} with
+  \item{\code{"global_MSY"}}{Single shared \eqn{F_{MSY}} with
     movement. Valid for single-population models only.}
-  \item{\code{"local_BH_MSY"}}{Region-specific \eqn{F_{MSY}} values
+  \item{\code{"local_MSY"}}{Region-specific \eqn{F_{MSY}} values
     that jointly maximise total yield with movement. Valid for both
     single- and multi-population models.}
 }}
@@ -78,7 +78,7 @@ averaged before computing reference points. Default = 1.}
 
 \item{local_bh_msy_newton_steps}{Integer. Number of Newton-Raphson
 iterations used to solve for equilibrium recruitment by origin region
-when \code{what = "local_BH_MSY"}. Increase if convergence is suspect.
+when \code{what = "local_MSY"}. Increase if convergence is suspect.
 Default = 6.}
 
 \item{is_discard_fleet}{Integer vector \code{[n_fish_fleets]}. Indicator
@@ -86,8 +86,8 @@ for fleets whose catch should be excluded from landed yield when
 computing MSY-based reference points (0 = landing fleet, 1 = discard-only
 fleet). These fleets still contribute to total fishing mortality \code{Z}
 and affect population dynamics and spawning biomass. Only used by
-Beverton-Holt MSY methods (\code{"BH_MSY"}, \code{"independent_BH_MSY"},
-\code{"global_BH_MSY"}, \code{"local_BH_MSY"}); ignored for SPR-based
+Beverton-Holt MSY methods (\code{"MSY"}, \code{"independent_MSY"},
+\code{"global_MSY"}, \code{"local_MSY"}); ignored for SPR-based
 methods. Default is all zeros (all fleets are landing fleets).}
 }
 \value{

@@ -22,7 +22,9 @@ Get_Comp_Likelihoods(
   age_or_len,
   AgeingError,
   use,
-  addtocomp
+  addtocomp,
+  comp_bins = NULL,
+  comp_const_obs = 1
 )
 }
 \arguments{
@@ -94,6 +96,23 @@ observed age bins.}
 
 \item{addtocomp}{Small constant added to compositions to avoid numerical
 issues when zeros are present.}
+
+\item{comp_bins}{Integer vector of bins the composition is fitted over, or
+\code{NULL} (default) for all of them. Both the observed and expected
+compositions are restricted to these bins and renormalized within them, so
+bins outside the range are left out of the likelihood rather than being
+forced to be explained. Indices refer to observed bins, that is after any
+ageing error has mapped model bins onto observed ones.}
+
+\item{comp_const_obs}{Integer (0 or 1). Whether \code{addtocomp} is added to
+the observed proportions that weight the multinomial, as well as inside the
+logarithms. \code{1} (default) is the unbiased choice: the stationary point
+of the kernel is exactly \code{p = obs}. \code{0} weights by the raw
+observed proportions, which is what the ADMB templates do, and sharpens the
+expected composition away from the data by \code{n * addtocomp}. The
+difference is not cosmetic once effective sample sizes are large: on the EBS
+pollock bridge, switching from 0 to 1 moves estimated SSB by a median of
+8.8 percent. Use \code{0} only to reproduce an ADMB model.}
 }
 \description{
 Computes the negative log-likelihood contribution for composition data

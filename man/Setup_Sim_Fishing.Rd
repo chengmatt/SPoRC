@@ -23,6 +23,10 @@ Setup_Sim_Fishing(
   ObsFishIdx_pop_SE = array(0.2, dim = c(sim_list$n_pop, sim_list$n_regions,
     sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
   fish_idx_type = array(1, dim = c(sim_list$n_regions, sim_list$n_fish_fleets)),
+  FishIdx_LikeType = rep(0, sim_list$n_fish_fleets),
+  FishIdx_Cov = NULL,
+  UseFishIdx = NULL,
+  t_fish = array(0, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_fish_fleets)),
   comp_fishage_like = rep(0, sim_list$n_fish_fleets),
   ISS_FishAgeComps = array(100, dim = c(sim_list$n_regions, sim_list$n_yrs,
     sim_list$n_seas, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims)),
@@ -163,6 +167,31 @@ dimensions `n_pop x n_regions x n_yrs x n_seas x n_fish_fleets`. Default: 0.2.}
 
 \item{fish_idx_type}{Numeric array. Index type (0 = abundance, 1 = biomass),
 dimensions `n_regions x n_fish_fleets`. Default: 1.}
+
+\item{FishIdx_LikeType}{Character or numeric vector, length `n_fish_fleets`.
+Error structure each fleet's index is drawn under: \code{"lognormal"} (0),
+\code{"normal"} (1), or \code{"mvn"} (2), matching the estimation model's
+\code{FishIdx_LikeType}. An mvn fleet draws from \code{FishIdx_Cov} through
+a common-factor decomposition (see \code{\link{cov_to_factor}}) instead of
+\code{ObsFishIdx_SE}, and its population-specific stream stays lognormal.
+Default: lognormal for every fleet.}
+
+\item{FishIdx_Cov}{List with one element per fishery fleet holding the fixed
+covariance over that fleet's fitted index observations, ordered by scanning
+\code{UseFishIdx} in array order (region fastest, then year, then season).
+Required for mvn fleets. Default: \code{NULL}.}
+
+\item{UseFishIdx}{Numeric array \code{[n_regions x n_yrs x n_seas x n_fish_fleets]}
+of fit flags from the estimation model, used to position each simulated cell
+in the covariance. Its year dimension may be shorter than the simulation,
+in which case later years draw with the mean factor scale and loading.
+Required for mvn fleets. Default: \code{NULL}.}
+
+\item{t_fish}{Numeric array \code{[n_regions x n_seas x n_fish_fleets]} giving
+the fishery index timing, the fraction of the season elapsed when the index
+is observed. Numbers at age are decayed by \code{exp(-t_fish * ZAA)} before
+the index is formed, matching \code{t_srv} for surveys and the estimation
+model's own \code{t_fish}. Defaults to \code{0} (start of season).}
 
 \item{comp_fishage_like}{Numeric vector. Likelihood for age composition
 (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants),

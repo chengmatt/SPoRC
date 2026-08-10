@@ -13,6 +13,7 @@ Setup_Mod_Weighting(
   Wt_FishIdx_pop = 1,
   Wt_SrvIdx_pop = 1,
   Wt_Rec = 1,
+  Wt_Init_Rec = NULL,
   Wt_F = 1,
   Wt_Tagging = 1,
   Wt_FishAgeComps = array(1, dim = c(input_list$data$n_regions,
@@ -89,8 +90,25 @@ Default \code{1}.}
 likelihood. Same scalar or array format as \code{Wt_Catch_pop}, dimensioned
 \code{[n_pop × n_regions × n_years × n_seas × n_srv_fleets]}. Default \code{1}.}
 
-\item{Wt_Rec}{Scalar weight applied to the recruitment deviation penalty
-(\code{ln_RecDevs}). Default \code{1}.}
+\item{Wt_Rec}{Weight applied to the recruitment deviation penalty
+(\code{ln_RecDevs}). Either a scalar applied uniformly or a numeric array
+\code{[n_pop × n_regions × n_est_rec_devs]} for deviation-specific
+weighting, where \code{n_est_rec_devs} is the third dimension of
+\code{ln_RecDevs} rather than the number of years, since
+\code{dont_est_recdev_last} and \code{n_proj_yrs_devs} both move it.
+Default \code{1}. A weight of zero on a deviation leaves it estimated but
+removes it from the penalty entirely, which is how a stock-recruit
+relationship is fit over a window of years while recruitment stays free in
+every year. That is distinct from \code{dont_est_recdev_last}, which
+removes the deviations themselves so recruitment reverts to the
+deterministic prediction in those years.}
+
+\item{Wt_Init_Rec}{Weight applied to the initial age deviation penalty
+(\code{ln_InitDevs}). Either a scalar or a numeric array
+\code{[n_pop × n_regions × (n_ages - 1)]}. Defaults to \code{NULL}, which
+takes whatever \code{Wt_Rec} is when \code{Wt_Rec} is a scalar; supply it
+explicitly when \code{Wt_Rec} is an array, since the two penalties are
+dimensioned differently.}
 
 \item{Wt_F}{Scalar weight applied to the fishing mortality deviation penalty
 (\code{ln_F_devs}). Default \code{1}.}
@@ -189,7 +207,13 @@ any selectivity functional form:
   \item{\code{"smooth_mean_center"}}{Per-year mean-centering regularization.}
 }
 Any name not supplied defaults to \code{0} (off). Must be called after
-\code{Setup_Mod_Fishsel_and_Q}.}
+\code{Setup_Mod_Fishsel_and_Q}.
+Each weight may instead be a vector with one value per model year, so a
+penalty can act only in some years or with a different strength in each.
+The specification may also carry \code{"bin_range"}, a length-two vector
+giving the first and last bin the penalties act over. To give each fleet
+its own penalties, pass an unnamed list with one named specification per
+fleet instead of a single specification.}
 
 \item{ret_sel_pen_wts}{Same format as \code{fish_sel_pen_wts}, for the
 retained fishery selectivity penalty.}

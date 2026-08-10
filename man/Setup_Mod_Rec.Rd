@@ -9,6 +9,7 @@ Setup_Mod_Rec(
   rec_model,
   rec_dd = "global",
   rec_lag = 1,
+  SR_ref_yr = 1,
   Use_h_prior = 0,
   h_prior = NULL,
   rec_region_prop_spec = NULL,
@@ -38,6 +39,12 @@ Setup_Mod_Rec(
   sigmaR_spec = "est_all",
   InitDevs_spec = NULL,
   RecDevs_spec = NULL,
+  RecDevs_pen_center = "fixed",
+  Use_rec_level_pen = 0,
+  rec_level_pen_sigma = 1,
+  rec_level_pen_center = "own_mean",
+  rec_level_pen_yrs = NULL,
+  InitDevs_pen_center = "fixed",
   h_spec = NULL,
   sgl_seas_spawning_movement = NA,
   t_spawn = 0,
@@ -75,6 +82,10 @@ defined in \code{$data}.}
   \item{\code{"mean_rec"}}{Fixed mean recruitment; no stock-recruit
     relationship. Steepness is automatically fixed and not estimated.}
   \item{\code{"bh_rec"}}{Beverton-Holt stock-recruit relationship.}
+  \item{\code{"ricker_rec"}}{Ricker stock-recruit relationship, in the
+    depletion form \eqn{R = R_0 (S/S_0) \exp(\alpha (1 - S/S_0))} with
+    \eqn{\alpha = \log(4h/(1-h))}. Steepness is not interchangeable with
+    \code{"bh_rec"}; see \code{\link{Get_Det_Recruitment}}.}
 }}
 
 \item{rec_dd}{Density-dependence structure. Default \code{"global"}.
@@ -98,8 +109,18 @@ zero before \code{spawn_seas}; when estimated, this is enforced
 structurally via a restricted softmax (see
 \code{\link{do_rec_seas_prop_mapping}}).}
 
+\item{SR_ref_yr}{Integer year index (not a calendar year) supplying the
+biological inputs, weight-at-age, maturity, natural mortality and movement,
+to unfished spawning biomass per recruit, and so to \code{S0} and the scale
+of the stock-recruit curve. Default \code{1}, the first model year, which is
+what the model has always used. Set it to \code{length(years)} to condition
+the curve on terminal weight-at-age, which is what several ADMB assessments
+do; with time-varying weight-at-age the two differ and the curve shifts with
+them. Ignored when \code{rec_model = "mean_rec"}.}
+
 \item{Use_h_prior}{Integer (0/1). Whether normal priors on steepness are
-applied. Only relevant for \code{rec_model = "bh_rec"}. Default \code{0}.}
+applied. Only relevant when a stock-recruit curve is used
+(\code{rec_model = "bh_rec"} or \code{"ricker_rec"}). Default \code{0}.}
 
 \item{h_prior}{Data frame of steepness prior parameters. Required columns:
 \code{pop}, \code{region}, \code{mu}, \code{sd}. Ignored when
@@ -171,7 +192,20 @@ overridden to \code{0} if \code{n_proj_yrs_devs > 0}, since projected
 deviation years are penalised toward the mean and are effectively
 estimated regardless. Default \code{0}.}
 
-\item{init_age_strc}{Equilibrium initialisation method. Default \code{2}.
+\item{init_age_strc}{Initialisation method. Default \code{2}. Options
+\code{0}/\code{"iterative"}, \code{1}/\code{"scalar_no_move"},
+\code{2}/\code{"matrix"}, and \code{3}/\code{"scalar_plus_only"} all
+project an equilibrium age structure forward from \code{R0} and treat
+\code{ln_InitDevs} as multiplicative deviations from it.
+\code{4}/\code{"free"} projects no equilibrium at all: the numbers at age
+2 and older are \code{exp(ln_InitDevs)} outright, apportioned by sex ratio,
+with age 1 still taken from recruitment. Use it when the initial age
+structure carries no information about \code{R0} and should not be pulled
+toward an equilibrium.
+Note that under \code{4} the deviations are on the scale of numbers rather
+than of log ratios, so the penalty applied through
+\code{equil_init_age_strc} is a prior on log abundance; pair it with
+\code{equil_init_age_strc = 0} if no such prior is wanted.
 \describe{
   \item{\code{0}/\code{"iterative"}}{Iterates the population to
     approximate equilibrium. Slowest but most general.}
@@ -221,8 +255,8 @@ Default: zero for all seasons and fleets.}
   }
 
   Use \code{"abs"} when bridging an assessment that carries a separate
-  historical F (for example the AFSC ADMB rockfish \code{historic_F}, which is
-  distinct from \code{log_avg_fmort} and has its own estimation phase). Under
+  historical F (one estimated as its own parameter, distinct from the mean
+  log fishing mortality). Under
   \code{"prop"} those two quantities collapse into a single parameter, and
   because catch constrains only the PRODUCT of numbers and fishing mortality,
   the optimizer can raise \code{ln_F_mean} to deplete the initial age structure
@@ -262,8 +296,38 @@ recruitment deviations \code{ln_RecDevs} \code{[n_pop x n_regions x
 n_years]}. Default \code{NULL} (estimate all independently). See
 \code{\link{do_RecDevs_mapping}} for full option descriptions.}
 
+\item{RecDevs_pen_center, InitDevs_pen_center}{Where the recruitment and
+initial age deviation penalties are centred. \code{"fixed"} (default)
+centres on the asserted prior mean, zero or the bias-corrected
+\eqn{-\sigma_R^2/2}, which constrains both the level and the spread of the
+deviations. \code{"own_mean"} centres on the mean of the estimated
+deviations themselves, so only their spread is penalized and their level is
+left free; that is what a sum of squares about the series' own mean
+amounts to. The level
+being unpenalized means it must be pinned elsewhere, by a prior on
+\code{R0} or by fixing a deviation, or the likelihood is flat along it.
+Cannot be combined with \code{do_rec_bias_ramp = 1}, whose offset is
+meaningless once the mean is estimated rather than asserted.}
+
+\item{Use_rec_level_pen}{Integer (0/1). Whether a penalty is applied to the
+log recruitment series itself, separately from the deviation penalty.
+Under a stock-recruit relationship the deviations are residuals about the
+predicted curve, so this is the only way to also say that the recruitment
+series should not wander. Default \code{0}.}
+
+\item{rec_level_pen_sigma}{Numeric standard deviation of that penalty. A sum
+of squares with weight \eqn{w} corresponds to \eqn{1/\sqrt{2w}}. Default
+\code{1}.}
+
+\item{rec_level_pen_center}{Either \code{"own_mean"} (default), centring on
+the mean of the log recruitment series so only its variability is
+penalized, or \code{"fixed"}, centring on zero.}
+
+\item{rec_level_pen_yrs}{Vector of years the penalty applies over, or
+\code{NULL} (default) for every year.}
+
 \item{h_spec}{Character or \code{NULL}. Sharing structure for
-Beverton-Holt steepness \code{steepness_h} \code{[n_pop x n_regions]},
+stock-recruit steepness \code{steepness_h} \code{[n_pop x n_regions]},
 parameterised in bounded logit space \eqn{(0.2, 1)}. Default \code{NULL}
 (estimate by population when \code{n_pop > 1}, by region when
 \code{n_pop = 1}). Ignored when \code{rec_model = "mean_rec"}. See

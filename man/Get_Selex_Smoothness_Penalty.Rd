@@ -12,7 +12,9 @@ Get_Selex_Smoothness_Penalty(
   wt_yr_curve = 0,
   wt_dome = 0,
   wt_mean_center = 0,
-  normalize = TRUE
+  normalize = TRUE,
+  bin_range = NULL,
+  yr_diff_ref = NULL
 )
 }
 \arguments{
@@ -53,9 +55,14 @@ log-selectivity across bins. \code{0} (default) disables this term;
 set to \code{10000}.}
 
 \item{normalize}{Logical. If \code{TRUE} (default), \code{wt_bin_curve} is
-divided by the number of bins and \code{wt_yr_diff}/\code{wt_yr_curve} are
-divided by the number of years. \code{SPoRC_rtmb.R} always calls this with
-\code{normalize = TRUE}.}
+divided by the number of bins the penalties act over and
+\code{wt_yr_diff}/\code{wt_yr_curve} are divided by the number of years.
+\code{SPoRC_rtmb.R} always calls this with \code{normalize = TRUE}.}
+
+\item{bin_range}{Length-two vector giving the first and last bin the
+penalties act over, or \code{NULL} (default) for every bin. Restricting the
+range is how a shape penalty is confined to the older ages where a curve is
+expected to flatten, without constraining the ascending limb.}
 }
 \value{
 Numeric scalar: the positive log-likelihood contribution from the
@@ -67,5 +74,14 @@ surface, rather than on any particular parameterization's deviations. Because it
 only ever looks at the resulting selectivity values, it applies uniformly to any
 selectivity functional form and any fleet, called once per fleet from the
 "Selectivity Smoothness Penalty" section of \code{SPoRC_rtmb.R}.
+}
+\details{
+Every \code{wt_} argument accepts either a single number applied to
+  all years, or a vector with one value per year. A per-year vector lets a
+  penalty act only in the years where selectivity is allowed to change, or
+  act with a different strength in each year, which is how a random walk with
+  a year-specific standard deviation is expressed: set the year's weight to
+  \code{1 / (2 * sigma^2)} and pass \code{normalize = FALSE}. Years whose
+  weight is zero are skipped entirely.
 }
 \keyword{internal}

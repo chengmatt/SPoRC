@@ -9,7 +9,8 @@ Get_sel_PE_loglik(
   PE_pars,
   ln_devs,
   map_sel_devs,
-  min_sel_devs_shared_bins
+  min_sel_devs_shared_bins,
+  rw_init_sigma = 5
 )
 }
 \arguments{
@@ -50,6 +51,10 @@ and excluded from likelihood evaluation.}
 within each shared deviation group, used to subset the bin dimension when
 evaluating GMRF or 2D AR(1) likelihoods (PE models 3-5). When no bin sharing
 is specified, defaults to \code{1:n_bins} (i.e., all bins are included).}
+
+\item{rw_init_sigma}{Standard deviation given to the first year of a random
+walk. A number (5 by default) leaves that year effectively unconstrained;
+\code{NA} starts the walk at zero under its own sigma instead.}
 }
 \value{
 Numeric scalar: the positive log-likelihood contribution from selectivity

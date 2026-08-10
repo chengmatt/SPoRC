@@ -18,7 +18,9 @@ Setup_Mod_Catch_and_F(
   sigmaC_pop_spec = "fix",
   sigmaF_spec = "fix",
   Fdev_model = "iid",
+  Fdev_pen_center = "fixed",
   Fdev_rho_spec = "fix",
+  ln_F_mean_spec = "est",
   ObsDiscard = NULL,
   UseDiscard = array(0, dim = c(input_list$data$n_regions, length(input_list$data$years),
     input_list$data$n_seas, input_list$data$n_fish_fleets)),
@@ -127,10 +129,34 @@ SD is not estimated), or (for \code{"ar1"}) \code{Fdev_rho_spec =
 intentional, but are common oversights when switching away from
 \code{"iid"}.}
 
+\item{Fdev_pen_center}{Where the fishing mortality deviation penalty is
+centred. \code{"fixed"} (default) centres on zero, constraining both the
+level and the spread of the deviations. \code{"own_mean"} centres on the
+mean of the estimated deviations, penalizing only their spread and leaving
+the level free, which is what a sum of squares about the series' own mean
+amounts to. Under a mean-plus-deviations parameterization the level is
+already carried by \code{ln_F_mean}, so \code{"own_mean"} avoids
+penalizing it twice; note that it also leaves \code{ln_F_mean} and the
+deviations' level mutually unidentified unless one of them is fixed,
+which \code{ln_F_mean_spec = "fix"} does.}
+
 \item{Fdev_rho_spec}{Character string specifying the sharing structure for
 the AR1 correlation parameter \code{Fdev_rho}, following the same
 convention as \code{sigmaF_spec}. Only used when \code{Fdev_model =
 "ar1"}; ignored (and mapped entirely to \code{NA}) otherwise.}
+
+\item{ln_F_mean_spec}{Character string, \code{"est"} (default, the previous
+and only behaviour) or \code{"fix"}. \code{"fix"} maps \code{ln_F_mean}
+off at its starting value, which defaults to \code{0} under this spec
+unless supplied through \code{...}, so the deviations carry all of log
+fishing mortality: \code{F = exp(ln_F_devs)}, where it follows a free annual log-F
+parameterization. It must be paired with \code{Fdev_pen_center = "own_mean"}
+(penalize only the spread about the deviations' own mean),
+\code{Fdev_model = "rw"}, or \code{Use_F_pen = 0}: an \code{"iid"} or
+\code{"ar1"} penalty centred on a fixed zero mean would shrink the
+deviations toward \code{F = 1}, so that combination is rejected at setup.
+\code{"est"} keeps the mean-plus-deviations form, where the \code{"iid"}
+penalty shrinks each year toward the estimated average F.}
 
 \item{ObsDiscard}{Observed aggregated discard array
 \code{[n_regions x n_years x n_seas x n_fish_fleets]}.

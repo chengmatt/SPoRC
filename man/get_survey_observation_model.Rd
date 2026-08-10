@@ -32,7 +32,11 @@ get_survey_observation_model(
   PredSrvIdx,
   Mrate = NULL,
   move_timing = 0,
-  seasdur = rep(1, n_seas)
+  seasdur = rep(1, n_seas),
+  srv_idx_ages = NULL,
+  srv_q_type = NULL,
+  ObsSrvIdx = NULL,
+  UseSrvIdx = NULL
 )
 }
 \arguments{
@@ -93,6 +97,22 @@ srv_fleet]} of survey weight at age.}
 
 \item{PredSrvIdx}{Array \code{[pop, region, year, season, srv_fleet]},
 output container.}
+
+\item{srv_idx_ages}{Array \code{[age, srv_fleet]} of 0/1 weights selecting
+which ages contribute to each fleet's index total, or \code{NULL} for all
+ages. Restricting to a single age turns that fleet into an index of that
+age alone, and the compositions keep using the full age range because the
+restriction is applied to the index sum rather than to selectivity.}
+
+\item{srv_q_type}{Integer vector \code{[srv_fleet]} selecting how
+catchability is obtained: \code{0} estimated as \code{exp(ln_srv_q)},
+\code{1} solved analytically as the ratio of mean observed to mean
+predicted, \code{2} solved analytically on the log scale as
+\code{exp(mean(log(obs) - log(pred)))}. \code{NULL} means all estimated.}
+
+\item{ObsSrvIdx, UseSrvIdx}{Arrays \code{[region, year, season, srv_fleet]}
+of observed index values and their use flags. Required only when a fleet
+solves catchability analytically.}
 }
 \value{
 List with elements \code{srv_q}, \code{srv_sel}, \code{SrvIAA},

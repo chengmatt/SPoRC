@@ -36,7 +36,7 @@ fishing mortality, and numbers-at-age arrays.}
     \code{"multi_region"} or \code{"single_region"}.}
   \item{\code{what}}{Output selector passed to
     \code{Get_Reference_Points}; e.g., \code{"global_SPR"} or
-    \code{"local_BH_MSY"}.}
+    \code{"local_MSY"}.}
 }}
 
 \item{proj_model_opt}{A named list of projection settings passed to
@@ -91,7 +91,7 @@ extracts terminal SSB, dynamic unfished SSB, catch advice (year 2 of the
 projection), and status ratios.
 
 When \code{recruitment_opt = "bh_rec"}, Beverton-Holt stock-recruit
-parameters are passed to the projection via an internal \code{bh_rec_opt}
+parameters are passed to the projection via an internal \code{srr_opt}
 list constructed from year-1 demographics to approximate unfished SSB. When
 \code{recruitment_opt = "inv_gauss"}, a warning is issued because only a
 single deterministic simulation is run; stochastic recruitment options

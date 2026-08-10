@@ -19,6 +19,10 @@ Setup_Mod_Retsel(
   ret_selex_type,
   use_fixed_ret_sel,
   ret_sel_input,
+  ret_sel_bin_dev_bins = NULL,
+  cont_tv_retsel_bin_devs = rep("none", input_list$data$n_fish_fleets),
+  retsel_pe_wt = rep(1, input_list$data$n_fish_fleets),
+  retsel_rw_init_sigma = rep(5, input_list$data$n_fish_fleets),
   ret_sel_nonpar_est_bins,
   ...
 )
@@ -81,7 +85,9 @@ selectivity priors are used.}
 
 \item{ret_selex_prior}{Data frame of priors for selectivity parameters.
 Must include columns: \code{region}, \code{fleet}, \code{block}, \code{sex},
-\code{par}, \code{mu}, \code{sd}.}
+\code{par}, \code{mu}, \code{sd}, plus an optional \code{type}
+(\code{"par"}/\code{"value"}; see \code{fish_selex_prior} in
+\code{Setup_Mod_Fishsel_and_Q}).}
 
 \item{retsel_devs_shared_bins}{Vector defining shared bins for selectivity
 deviation estimation (e.g., age or length grouping structure).}
@@ -95,6 +101,34 @@ deviation estimation (e.g., age or length grouping structure).}
 
 \item{ret_sel_input}{Fixed selectivity input array:
 \code{[n_pop × n_regions × n_years × n_seas × (ages or lengths) × n_sexes × n_fish_fleets]}.}
+
+\item{ret_sel_bin_dev_bins}{List with one element per fishery fleet naming the
+bins that fleet overrides, or \code{NULL} for fleets with no overrides. An
+overridden bin takes a freely estimated annual value in place of whatever
+the functional form produced, applied after every other transformation
+including standardization. Default \code{NULL}.}
+
+\item{cont_tv_retsel_bin_devs}{Character vector of length
+\code{n_fish_fleets} giving the process error on the bin-override
+deviations for each fleet: \code{"none"} (default), \code{"iid"}, or
+\code{"rw"}.}
+
+\item{retsel_pe_wt}{Numeric vector of length \code{n_fish_fleets}. Per-fleet
+multiplier on the retention selectivity process error likelihood. Default
+\code{1} for every fleet. \code{0} skips that fleet's process error
+likelihood altogether, so the deviations stay estimated but enter the
+objective only through the data and any explicit smoothness or centering
+penalties. Values other than 0 or 1 make an estimated process error sigma
+reinterpretable, so prefer 0 or 1 unless deliberately down-weighting.
+Applies only to \code{ln_retsel_devs}; the bin-override deviations carry
+their own process error and are not affected.}
+
+\item{retsel_rw_init_sigma}{Numeric vector of length \code{n_fish_fleets}.
+Standard deviation given to the first year of an \code{"rw"} deviation
+series. Default \code{5}, which leaves that year effectively free.
+\code{NA} instead starts the walk at zero under the walk's own estimated
+sigma, making the first year as smooth as every later step. Appropriate
+when the base parametric curve already describes the first year well.}
 
 \item{ret_sel_nonpar_est_bins}{Vector defining estimated bins for
 non-parametric selectivity.}

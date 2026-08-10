@@ -37,7 +37,15 @@ get_fishery_observation_model(
   Mrate = NULL,
   move_timing = 0,
   seasdur = rep(1, n_seas),
-  NAA_int = NULL
+  NAA_int = NULL,
+  t_fish = NULL,
+  fish_idx_ages = NULL,
+  fish_q_type = NULL,
+  do_fish_q_cov = 0,
+  fish_q_cov = NULL,
+  fish_q_coeff = NULL,
+  ObsFishIdx = NULL,
+  UseFishIdx = NULL
 )
 }
 \arguments{
@@ -88,6 +96,12 @@ abundance/biomass fishery index type.}
 
 \item{fish_sel, ret_sel}{Arrays \code{[pop, region, year, season, age, sex,
 fish_fleet]} of total/retained fishery selectivity.}
+
+\item{t_fish}{Array \code{[region, season, fish_fleet]} of fishery index
+timing, the fraction of the season elapsed when the index is observed.
+Numbers at age are decayed by \code{exp(-t_fish * ZAA)} before the index is
+formed, mirroring \code{t_srv} for surveys. \code{NULL} (the default) skips
+the decay entirely and reproduces a start-of-season index.}
 }
 \value{
 List with elements \code{fish_q}, \code{CAA}, \code{DAA},

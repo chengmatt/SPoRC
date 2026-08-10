@@ -20,7 +20,8 @@ A new environment (parent = calling frame) containing every element
   \code{release_conv_tags}, \code{generate_fishery_conv_tags_recap},
   \code{Get_Det_Recruitment}, \code{Get_Init_NAA},
   \code{predict_sim_fish_iss_fmort}, \code{rho_trans},
-  \code{simulate_comps}, \code{simulate_conv_tag_fish_recaptures}.
+  \code{simulate_comps}, \code{simulate_conv_tag_fish_recaptures},
+  \code{draw_index_obs}, \code{resolve_idx_factor}.
 }
 \description{
 Creates a new R environment populated with all objects from \code{sim_list}

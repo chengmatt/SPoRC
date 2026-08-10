@@ -14,6 +14,8 @@ Setup_Mod_FishIdx_and_Comps(
     length(input_list$data$years), input_list$data$n_seas,
     input_list$data$n_fish_fleets)),
   fish_idx_type,
+  t_fish = array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas,
+    input_list$data$n_fish_fleets)),
   UseFishIdx,
   ObsFishAgeComps,
   UseFishAgeComps,
@@ -41,6 +43,10 @@ Setup_Mod_FishIdx_and_Comps(
     1:input_list$data$n_fish_fleets, sep = ""),
   FishLenComps_pop_Type = paste("none_Year_1-terminal_Fleet_",
     1:input_list$data$n_fish_fleets, sep = ""),
+  fish_idx_ages = NULL,
+  FishAgeComps_bins = NULL,
+  FishIdx_LikeType = rep("lognormal", input_list$data$n_fish_fleets),
+  FishIdx_Cov = NULL,
   ObsFishAgeComps_discard = array(0, dim = c(input_list$data$n_regions,
     length(input_list$data$years), input_list$data$n_seas, length(input_list$data$ages),
     input_list$data$n_sexes, input_list$data$n_fish_fleets)),
@@ -104,6 +110,13 @@ Default: all zeros.}
 \item{fish_idx_type}{Character vector of length \code{n_fish_fleets} specifying
 the index type for each fleet. \code{"biom"} = biomass; \code{"abd"} =
 abundance; \code{"none"} = no index for this fleet.}
+
+\item{t_fish}{Array \code{[n_regions x n_seas x n_fish_fleets]} giving the
+fishery index timing: the fraction of the season elapsed when each index
+is observed. Numbers at age are decayed by \code{exp(-t_fish * ZAA)}
+before the index is formed, the same convention \code{t_srv} uses for
+surveys. Defaults to \code{0} (start of season), which is what the model
+did before this argument existed; set \code{0.5} for a mid-season index.}
 
 \item{UseFishIdx}{Binary indicator array \code{[n_regions × n_years × n_seas × n_fish_fleets]}.
 \code{1} = include index in the likelihood; \code{0} = exclude.}
@@ -213,6 +226,41 @@ all years.}
 structure for population-specific length compositions. Same format and
 options as \code{FishLenComps_Type}. Default: \code{"none"} for all fleets
 across all years.}
+
+\item{fish_idx_ages}{Per-fleet selection of which ages contribute to the
+index total. Either a list with one element per fishery fleet, where each
+element is a vector of ages or \code{NULL} for all ages, or an array
+\code{[n_ages x n_fish_fleets]} of 0/1 weights. Default \code{NULL} uses
+every age for every fleet. The fleet's compositions are unaffected.}
+
+\item{FishAgeComps_bins}{Which age bins each fishery fleet's age composition
+is fitted over. Supply a list with one element per fleet, each a vector of
+age indices or \code{NULL} for all ages, or an
+\code{[n_ages x n_fish_fleets]} array of 0/1 weights. Both observed and
+expected compositions are restricted to the named bins and renormalized
+within them, so excluded bins are left out of the likelihood rather than
+being forced to be explained; this is how a fleet that only ages part of
+its age range is fitted. Indices refer to observed bins, that is after any
+ageing error has mapped model ages onto observed ones. Every fleet must
+retain at least one bin. Default \code{NULL}, which fits all ages for all
+fleets.}
+
+\item{FishIdx_LikeType}{Character vector \code{[n_fish_fleets]} giving the
+error structure of each fishery index. Options are \code{"lognormal"}
+(default, the observation standard errors are on the log scale),
+\code{"normal"} (arithmetic scale), and \code{"mvn"} (multivariate normal
+on the arithmetic scale using a fixed covariance supplied through
+\code{FishIdx_Cov}). One-step-ahead residuals are available only for
+lognormal fleets. A fleet's population-specific index stream follows the
+same choice for \code{"lognormal"} and \code{"normal"}, but stays
+lognormal under \code{"mvn"}, whose covariance describes the regional
+series only.}
+
+\item{FishIdx_Cov}{List with one element per fishery fleet holding the fixed
+covariance matrix for fleets using \code{"mvn"}, and \code{NULL}
+otherwise. Each matrix must be square with one row per observation the
+fleet fits, ordered as the observations appear when scanning that fleet's
+\code{UseFishIdx} slice in array order.}
 
 \item{ObsFishAgeComps_discard}{Observed fishery age composition from discards
 \code{[n_regions × n_years × n_seas × n_ages × n_sexes × n_fish_fleets]}.

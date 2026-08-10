@@ -17,7 +17,8 @@ simulation_self_test(
   do_par = FALSE,
   n_cores = NULL,
   output_path = NULL,
-  what = c("SSB", "Rec")
+  what = c("SSB", "Rec"),
+  sim_recruitment = c("input", "model")
 )
 }
 \arguments{
@@ -60,6 +61,17 @@ RDS file. Passed to \code{\link{Simulate_Pop_Static}}. Default
 \item{what}{Character vector. Names of report elements (keys of
 \code{rep}) to extract and store from each replicate. An error is raised
 if any name is not found in \code{rep}. Default \code{c("SSB", "Rec")}.}
+
+\item{sim_recruitment}{Character. How the operating model generates
+recruitment. \code{"input"} (default, and the historical behaviour) feeds
+the estimated recruitment series in as \code{Rec_input}, so every simulated
+replicate carries the same recruitment and \code{rec_model} has no effect on
+the data. That conditions away recruitment and tests everything downstream
+of it, but it cannot test the stock-recruit relationship itself, because
+steepness is then informed only by its penalty. \code{"model"} withholds the
+input so recruitment is generated from the fitted curve under
+\code{rec_model}, which is what to use when the point of the test is whether
+steepness and \code{R0} are recoverable.}
 }
 \value{
 Named list with one element per entry in \code{what}, each an

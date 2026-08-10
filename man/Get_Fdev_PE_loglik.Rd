@@ -4,7 +4,14 @@
 \alias{Get_Fdev_PE_loglik}
 \title{Compute Fishing Mortality Deviation Process Error Log-Likelihood (Negative Scale)}
 \usage{
-Get_Fdev_PE_loglik(PE_model, ln_sigmaF, Fdev_rho, ln_F_devs, map_ln_F_devs)
+Get_Fdev_PE_loglik(
+  PE_model,
+  ln_sigmaF,
+  Fdev_rho,
+  ln_F_devs,
+  map_ln_F_devs,
+  Fdev_pen_center = 0
+)
 }
 \arguments{
 \item{PE_model}{Integer specifying the process error structure: \code{1} =

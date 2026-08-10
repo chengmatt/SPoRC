@@ -16,7 +16,9 @@ Get_Selex(
   Wbin_bicubic = NULL,
   Wyr_bicubic = NULL,
   n_bin_nodes_bicubic = NULL,
-  n_yr_nodes_bicubic = NULL
+  n_yr_nodes_bicubic = NULL,
+  bin_devs = NULL,
+  bin_dev_bins = NULL
 )
 }
 \arguments{
@@ -35,6 +37,12 @@ Get_Selex(
   \item{7}{Logistic selectivity with asymptote (b50, b95 parameterization):
            \eqn{\alpha / (1 + 19^{(b_{50} - \text{bin})/b_{95}})}.
            Equivalent to Model 3 scaled by asymptote \eqn{\alpha}.}
+  \item{9}{Non-parametric selectivity on the log scale, standardized so
+           each year's selectivity averages to one across bins. Differs
+           from model 5 in both respects: 5 bounds every raw value below
+           one through \code{plogis} and standardizes over years and bins
+           jointly, whereas 9 leaves the scale free and centers within the
+           year.}
   \item{8}{Bicubic spline over a bin-node x year-node grid (see
            \code{Wbin_bicubic}, \code{Wyr_bicubic}). One generalized form
            covers three cases depending on how the caller constructs the
@@ -68,6 +76,7 @@ Parameters are exponentiated or transformed depending on model specification:
     \item{Model 5}{\code{c(logit_sel_1, ..., logit_sel_nbins)}}
     \item{Model 6}{\code{c(logit_alpha, ln_b50, ln_k)}}
     \item{Model 7}{\code{c(logit_alpha, ln_b50, ln_b95)}}
+    \item{Model 9}{\code{c(ln_sel_1, ..., ln_sel_nbins)}}
     \item{Model 8}{Flattened bin-node x year-node log-selectivity grid,
       length \code{ncol(Wyr_bicubic) * ncol(Wbin_bicubic)}, filled
       column-major into a \code{ncol(Wyr_bicubic)} (rows, year nodes) by
@@ -126,6 +135,17 @@ parameter values land in which (bin-node, year-node) cell. Default
 \code{NULL} falls back to \code{ncol(Wbin_bicubic)}/\code{ncol(Wyr_bicubic)}
 which is correct whenever no padding mismatch is possible (a single bicubic
 block or fleet, or direct unit testing).}
+
+\item{bin_devs}{Array of log-scale bin-override deviations with dimension
+\code{[n_regions, n_years, n_bins, n_sexes, 1]}, or \code{NULL}. Supplies
+the value for every bin named in \code{bin_dev_bins}.}
+
+\item{bin_dev_bins}{Integer vector of bins whose selectivity is replaced by
+\code{exp(bin_devs[...])} rather than taken from the functional form, or
+\code{NULL} for none. The override is applied after everything else,
+including any standardization the form performs internally, so the named
+bins are governed entirely by their own deviations while the rest of the
+curve keeps its parametric shape.}
 }
 \value{
 Numeric vector of selectivity values corresponding to \code{Bin}.
@@ -151,6 +171,13 @@ For \code{Selex_Model = 5}, selectivity is fully non-parametric:
 bin-specific logit parameters are optionally adjusted by time-varying
 deviations and transformed via:
 \deqn{\text{selex}_b = \text{logit}^{-1}(\eta_b)}.
+
+For \code{Selex_Model = 9}, selectivity is likewise fully non-parametric but
+held on the log scale and standardized within each year:
+\deqn{\text{selex}_b = \exp(\eta_b) / \overline{\exp(\eta)}}.
+Only the differences among \eqn{\eta} within a year are identified, so the
+level of \eqn{\eta} is free and is absorbed by catchability or fishing
+mortality.
 
 Models 6 and 7 extend logistic selectivity by introducing an asymptote
 parameter \eqn{\alpha \in (0,1)} that allows selectivity to saturate below

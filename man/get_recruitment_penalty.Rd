@@ -22,7 +22,10 @@ get_recruitment_penalty(
   ln_RecDevs,
   sigmaR2_early,
   sigmaR2_late,
-  do_rec_bias_ramp
+  do_rec_bias_ramp,
+  map_ln_RecDevs = NULL,
+  RecDevs_pen_center = 0,
+  InitDevs_pen_center = 0
 )
 }
 \arguments{
@@ -63,6 +66,10 @@ sigma used for the bias-ramp mean offset.}
 
 \item{do_rec_bias_ramp}{Integer switch enabling the bias-ramp log-sigma
 adjustment.}
+
+\item{map_ln_RecDevs}{Array \code{[pop, region, year]} mirroring
+\code{map$ln_RecDevs}; cells that are \code{NA} are fixed rather than
+estimated and are left unpenalized. \code{NULL} penalizes every cell.}
 }
 \value{
 List with elements \code{Init_Rec_nLL} (array \code{[pop, region,

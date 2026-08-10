@@ -38,6 +38,10 @@ Setup_Mod_SrvIdx_and_Comps(
     1:input_list$data$n_srv_fleets, sep = ""),
   SrvLenComps_pop_Type = paste("none_Year_1-terminal_Fleet_",
     1:input_list$data$n_srv_fleets, sep = ""),
+  srv_idx_ages = NULL,
+  SrvAgeComps_bins = NULL,
+  SrvIdx_LikeType = rep("lognormal", input_list$data$n_srv_fleets),
+  SrvIdx_Cov = NULL,
   ...
 )
 }
@@ -178,6 +182,43 @@ across all years.}
 structure for population-specific survey length compositions. Same format
 and options as \code{SrvLenComps_Type}. Default: \code{"none"} for all
 fleets across all years.}
+
+\item{srv_idx_ages}{Per-fleet selection of which ages contribute to the
+index total. Either a list with one element per survey fleet, where each
+element is a vector of ages or \code{NULL} for all ages, or an array
+\code{[n_ages x n_srv_fleets]} of 0/1 weights. Default \code{NULL} uses
+every age for every fleet. Restricting a fleet to a single age turns it
+into an index of that age alone, which is how an age-1 acoustic index is
+specified; the fleet's compositions are unaffected because the
+restriction applies to the index sum rather than to selectivity.}
+
+\item{SrvAgeComps_bins}{Which age bins each survey fleet's age composition is
+fitted over. Supply a list with one element per fleet, each a vector of age
+indices or \code{NULL} for all ages, or an \code{[n_ages x n_srv_fleets]}
+array of 0/1 weights. Both observed and expected compositions are
+restricted to the named bins and renormalized within them, so excluded bins
+are left out of the likelihood rather than being forced to be explained;
+this is how a fleet that only ages part of its age range is fitted. Indices
+refer to observed bins, that is after any ageing error has mapped model
+ages onto observed ones. Every fleet must retain at least one bin. Default
+\code{NULL}, which fits all ages for all fleets.}
+
+\item{SrvIdx_LikeType}{Character vector \code{[n_srv_fleets]} giving the
+error structure of each survey index. Options are \code{"lognormal"}
+(default, the observation standard errors are on the log scale),
+\code{"normal"} (arithmetic scale), and \code{"mvn"} (multivariate
+normal on the arithmetic scale using a fixed covariance supplied through
+\code{SrvIdx_Cov}). One-step-ahead residuals are available only for
+lognormal fleets. A fleet's population-specific index stream follows the
+same choice for \code{"lognormal"} and \code{"normal"}, but stays
+lognormal under \code{"mvn"}, whose covariance describes the regional
+series only.}
+
+\item{SrvIdx_Cov}{List with one element per survey fleet holding the fixed
+covariance matrix for fleets using \code{"mvn"}, and \code{NULL}
+otherwise. Each matrix must be square with one row per observation the
+fleet fits, ordered as the observations appear when scanning that fleet's
+\code{UseSrvIdx} slice in array order.}
 
 \item{...}{Optional named starting values for overdispersion and correlation
 parameters.}

@@ -90,7 +90,7 @@ which rearranges to \eqn{(I - T_+) N_+ = T_{n-1} N_{n-1}}, solved in
 
 All arguments are sliced by the caller to remove the population dimension,
 so this helper works identically for the single-population spatial case
-(\code{global_BH_Fmsy}, \code{local_BH_Fmsy_sglpop}) and the
-multi-population case (\code{global_SPR}, \code{local_BH_Fmsy_multipop}).
+(\code{global_Fmsy}, \code{local_Fmsy_sglpop}) and the
+multi-population case (\code{global_SPR}, \code{local_Fmsy_multipop}).
 }
 \keyword{internal}

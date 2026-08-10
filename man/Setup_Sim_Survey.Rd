@@ -15,6 +15,9 @@ Setup_Sim_Survey(
     sim_list$n_srv_fleets, sim_list$n_sims)),
   t_srv = array(1, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_srv_fleets)),
   srv_idx_type = array(1, dim = c(sim_list$n_srv_fleets)),
+  SrvIdx_LikeType = rep(0, sim_list$n_srv_fleets),
+  SrvIdx_Cov = NULL,
+  UseSrvIdx = NULL,
   comp_srvage_like = rep(0, sim_list$n_srv_fleets),
   ISS_SrvAgeComps = array(100, dim = c(sim_list$n_regions, sim_list$n_yrs,
     sim_list$n_seas, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims)),
@@ -81,6 +84,25 @@ array \code{[n_pop × n_regions × n_yrs × n_seas × n_srv_fleets]}.}
 \item{srv_idx_type}{Integer vector \code{[n_srv_fleets]} specifying survey
 index type. Default: all 1 (biomass). Options: 0/“abd” (abundance),
 1/“biom” (biomass).}
+
+\item{SrvIdx_LikeType}{Character or numeric vector, length `n_srv_fleets`.
+Error structure each fleet's index is drawn under: \code{"lognormal"} (0),
+\code{"normal"} (1), or \code{"mvn"} (2), matching the estimation model's
+\code{SrvIdx_LikeType}. An mvn fleet draws from \code{SrvIdx_Cov} through
+a common-factor decomposition (see \code{\link{cov_to_factor}}) instead of
+\code{ObsSrvIdx_SE}, and its population-specific stream stays lognormal.
+Default: lognormal for every fleet.}
+
+\item{SrvIdx_Cov}{List with one element per survey fleet holding the fixed
+covariance over that fleet's fitted index observations, ordered by scanning
+\code{UseSrvIdx} in array order (region fastest, then year, then season).
+Required for mvn fleets. Default: \code{NULL}.}
+
+\item{UseSrvIdx}{Numeric array \code{[n_regions x n_yrs x n_seas x n_srv_fleets]}
+of fit flags from the estimation model, used to position each simulated cell
+in the covariance. Its year dimension may be shorter than the simulation,
+in which case later years draw with the mean factor scale and loading.
+Required for mvn fleets. Default: \code{NULL}.}
 
 \item{comp_srvage_like}{Integer or character vector \code{[n_srv_fleets]}
 specifying likelihood for survey age compositions. Default: all 0

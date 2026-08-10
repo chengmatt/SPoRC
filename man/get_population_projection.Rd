@@ -48,11 +48,12 @@ get_population_projection(
   Dynamic_SSB0,
   eff_SSB,
   Mrate = NULL,
-  move_timing = 0
+  move_timing = 0,
+  SR_ref_yr = 1
 )
 }
 \arguments{
-\item{n_pop, n_regions, n_seas, n_ages, n_sexes, n_yrs, n_fish_fleets, n_est_rec_devs}{Dimension sizes.}
+\item{n_pop, n_regions, n_seas, n_ages, n_sexes, n_yrs, n_fish_fleets}{Dimension sizes.}
 
 \item{n_est_rec_devs}{Number of estimated recruitment deviations.}
 
@@ -111,6 +112,16 @@ output containers.}
 
 \item{eff_SSB}{Array \code{[pop, year]}, output container for effective
 (natal-homing-adjusted) SSB.}
+
+\item{SR_ref_yr}{Integer year index supplying the biological inputs, weight
+at age, maturity, natural mortality and movement, to unfished spawning
+biomass per recruit, and so to \code{S0} and the scale of the stock-recruit
+curve. Default \code{1}, the first model year, which is what the function
+used to hardcode. Set to \code{n_yrs} to condition the curve on terminal
+weight at age, which is what several ADMB assessments do; with time-varying
+weight at age the two differ and the whole curve shifts with them. It is a
+year INDEX, not a calendar year, so callers that truncate the year
+dimension (retrospectives) must clamp it.}
 }
 \value{
 List with elements \code{NAA}, \code{NAA0}, \code{NAA_bef},

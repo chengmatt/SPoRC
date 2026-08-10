@@ -7,7 +7,9 @@
 get_steepness_prior(h_prior, h_trans)
 }
 \arguments{
-\item{h_prior}{Data frame with columns \code{pop}, \code{region}, \code{mu}
+\item{h_prior}{Data frame with optional columns \code{lb} and \code{ub}
+giving the beta's support (defaulting to \code{0.2} and \code{1}), and
+columns \code{pop}, \code{region}, \code{mu}
 (prior mean steepness, natural scale), \code{sd} (prior SD, natural scale)
 with one row per penalized parameter.}
 

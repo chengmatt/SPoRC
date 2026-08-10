@@ -4,18 +4,28 @@
 \alias{resolve_sel_pen_wts}
 \title{Resolve a modular selectivity penalty weight vector}
 \usage{
-resolve_sel_pen_wts(pen_wts)
+resolve_sel_pen_wts(pen_wts, n_fleets = 1)
 }
 \arguments{
 \item{pen_wts}{\code{NULL}, or a named numeric vector/list giving independent
 weights for any subset of \code{"smooth_bin_curve"}, \code{"smooth_bin_diff"},
 \code{"smooth_yr_diff"}, \code{"smooth_yr_curve"}, \code{"smooth_dome"},
-\code{"smooth_mean_center"}. Any name not supplied defaults to \code{0}.}
+\code{"smooth_mean_center"}. Any name not supplied defaults to \code{0}.
+Each weight is either a scalar applied to every year, or a vector with one
+value per model year, which lets a penalty act only in some years or act
+with a different strength in each. The list may also carry
+\code{"bin_range"}, a length-two vector giving the first and last age or
+length bin the penalties apply over; the default of every bin is what a
+missing \code{bin_range} reproduces.}
+
+\item{n_fleets}{Integer. Number of fleets the specification covers. A single
+named specification is applied to every fleet; an unnamed list of length
+\code{n_fleets} gives each fleet its own.}
 }
 \value{
-Named numeric vector of length 6: \code{c(smooth_bin_curve,
-  smooth_bin_diff, smooth_yr_diff, smooth_yr_curve, smooth_dome,
-  smooth_mean_center)}.
+List of length \code{n_fleets}. Each element is a named list of
+  length 7: the six penalty terms, each a scalar or a per-year vector, plus
+  \code{bin_range} (\code{NULL} for all bins).
 }
 \description{
 Converts a user-supplied selectivity penalty weight specification into the

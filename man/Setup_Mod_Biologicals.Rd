@@ -11,6 +11,7 @@ Setup_Mod_Biologicals(
   WAA_srv = NULL,
   MatAA,
   addtocomp = 0.001,
+  comp_const_obs = 1,
   addtofishidx = 1e-04,
   addtosrvidx = 1e-04,
   addtotag = 1e-10,
@@ -57,6 +58,17 @@ first so \code{rec_lag} is already set.}
 \item{addtocomp}{Small constant added to composition proportions before likelihood
 evaluation to avoid \code{log(0)}. Default \code{1e-3}. Ignored when a
 logistic-normal likelihood is specified, as that family handles zeros internally.}
+
+\item{comp_const_obs}{Integer switch (\code{0} or \code{1}) controlling where
+\code{addtocomp} is applied in the multinomial kernel, not a constant to be
+tuned. \code{1} (default) adds it to the observed proportions that weight
+the multinomial as well as inside the logarithms, so the kernel is
+stationary exactly at \code{pred = obs}. \code{0} weights by the raw
+observed proportions, which is what the ADMB templates do, and displaces
+the expected composition from the data by roughly \code{n * addtocomp}. The
+difference matters once effective sample sizes are large: on the EBS
+pollock bridge, switching from \code{0} to \code{1} moves estimated SSB by
+a median of 8.8 percent. Use \code{0} only when reproducing an ADMB model.}
 
 \item{addtofishidx}{Small constant added to fishery indices. Default \code{1e-4}.}
 

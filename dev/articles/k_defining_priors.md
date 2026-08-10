@@ -89,6 +89,7 @@ input_list <- Setup_Mod_Rec(
 #> Recruitment is specified as: bh_rec
 #> Recruitment Density Dependence is specified as: global
 #> Recruitment and SSB lag is specified as: 1
+#> Unfished spawning biomass per recruit uses biologicals from year 1.
 #> Recruitment regional proportion priors are: Not Used
 #> Recruitment seasonal proportion priors are: Not Used
 #> Recruitment seasonal proportions is: fix
@@ -100,6 +101,7 @@ input_list <- Setup_Mod_Rec(
 #> Initial Age Structure is: Movement and Matrix Geometric Series
 #> Recruitment deviations for every year are estimated
 #> Spawning season occurs in season 1
+#> Recruitment deviation penalty is centred on: fixed
 #> Recruitment Variability is specified as: est_all
 #> Initial Age Deviations is stochastic for all ages, but the plus group follows equilibrium calculations.
 #> Recruitment Deviations is estimated for all dimensions
@@ -228,6 +230,9 @@ input_list <- Setup_Mod_Srvsel_and_Q(
 #> Survey Catchability Time Blocks for survey 1 is specified at: 1
 #> Survey Catchability Time Blocks for survey 2 is specified at: 1
 #> Survey Catchability Time Blocks for survey 3 is specified at: 1
+#> Survey Catchability for survey fleet 1 is: estimated
+#> Survey Catchability for survey fleet 2 is: estimated
+#> Survey Catchability for survey fleet 3 is: estimated
 #> srv_fixed_sel_pars_spec is specified as: est_all for survey fleet 1
 #> srv_fixed_sel_pars_spec is specified as: est_all for survey fleet 2
 #> srv_fixed_sel_pars_spec is specified as: est_all for survey fleet 3
@@ -315,6 +320,9 @@ input_list <- Setup_Mod_Srvsel_and_Q(
 #> Survey Catchability Time Blocks for survey 1 is specified at: 1
 #> Survey Catchability Time Blocks for survey 2 is specified at: 1
 #> Survey Catchability Time Blocks for survey 3 is specified at: 1
+#> Survey Catchability for survey fleet 1 is: estimated
+#> Survey Catchability for survey fleet 2 is: estimated
+#> Survey Catchability for survey fleet 3 is: estimated
 #> srv_fixed_sel_pars_spec is specified as: est_all for survey fleet 1
 #> srv_fixed_sel_pars_spec is specified as: est_all for survey fleet 2
 #> srv_fixed_sel_pars_spec is specified as: est_all for survey fleet 3
@@ -537,6 +545,7 @@ input_list <- Setup_Mod_Rec(
 #> Initial Age Structure is: Movement and Matrix Geometric Series
 #> Recruitment deviations for every year are estimated
 #> Spawning season occurs in season 1
+#> Recruitment deviation penalty is centred on: fixed
 #> Recruitment Variability is specified as: est_all
 #> Initial Age Deviations is stochastic for all ages, but the plus group follows equilibrium calculations.
 #> Recruitment Deviations is estimated for all dimensions
@@ -593,6 +602,7 @@ input_list <- Setup_Mod_Rec(
 #> Initial Age Structure is: Movement and Matrix Geometric Series
 #> Recruitment deviations for every year are estimated
 #> Spawning season occurs in season 1
+#> Recruitment deviation penalty is centred on: fixed
 #> Recruitment Variability is specified as: est_all
 #> Initial Age Deviations is stochastic for all ages, but the plus group follows equilibrium calculations.
 #> Recruitment Deviations is estimated for all dimensions

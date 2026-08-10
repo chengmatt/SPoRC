@@ -18,7 +18,9 @@ Get_Selex_Smoothness_Penalty(
   wt_yr_curve = 0,
   wt_dome = 0,
   wt_mean_center = 0,
-  normalize = TRUE
+  normalize = TRUE,
+  bin_range = NULL,
+  yr_diff_ref = NULL
 )
 ```
 
@@ -79,11 +81,29 @@ Get_Selex_Smoothness_Penalty(
 - normalize:
 
   Logical. If `TRUE` (default), `wt_bin_curve` is divided by the number
-  of bins and `wt_yr_diff`/`wt_yr_curve` are divided by the number of
-  years. `SPoRC_rtmb.R` always calls this with `normalize = TRUE`.
+  of bins the penalties act over and `wt_yr_diff`/`wt_yr_curve` are
+  divided by the number of years. `SPoRC_rtmb.R` always calls this with
+  `normalize = TRUE`.
+
+- bin_range:
+
+  Length-two vector giving the first and last bin the penalties act
+  over, or `NULL` (default) for every bin. Restricting the range is how
+  a shape penalty is confined to the older ages where a curve is
+  expected to flatten, without constraining the ascending limb.
 
 ## Value
 
 Numeric scalar: the positive log-likelihood contribution from the
 requested penalty terms. Negated externally to form the negative
 log-likelihood.
+
+## Details
+
+Every `wt_` argument accepts either a single number applied to all
+years, or a vector with one value per year. A per-year vector lets a
+penalty act only in the years where selectivity is allowed to change, or
+act with a different strength in each year, which is how a random walk
+with a year-specific standard deviation is expressed: set the year's
+weight to `1 / (2 * sigma^2)` and pass `normalize = FALSE`. Years whose
+weight is zero are skipped entirely.

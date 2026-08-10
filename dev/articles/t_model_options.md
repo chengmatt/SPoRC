@@ -123,12 +123,13 @@ Controlled via
 (argument `init_age_strc`) and
 [`Setup_Sim_Rec()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Rec.md).
 
-SPoRC offers four methods for deriving equilibrium numbers-at-age. All
-methods project a constant recruitment ($`R_0`$, or a separate
-`ln_rinit` scalar when `use_rinit = 1`) through seasonal mortality,
-fishing, and (optionally) movement until the age structure stabilises.
-After the equilibrium is computed, multiplicative log-scale initial
-deviations (`ln_InitDevs`) are applied to ages $`2, \ldots, A`$.
+SPoRC offers four methods for deriving equilibrium numbers-at-age, plus
+a fifth, non-equilibrium option. The equilibrium methods project a
+constant recruitment ($`R_0`$, or a separate `ln_rinit` scalar when
+`use_rinit = 1`) through seasonal mortality, fishing, and (optionally)
+movement until the age structure stabilises. After the equilibrium is
+computed, multiplicative log-scale initial deviations (`ln_InitDevs`)
+are applied to ages $`2, \ldots, A`$.
 
 When `use_rinit = 1`, the regional recruitment scalar feeding the
 equilibrium calculation is bias-corrected:
@@ -149,6 +150,22 @@ simulated equilibria remain on a consistent scale.
 | 1 | `"scalar_no_move"` | Closed-form geometric series assuming no movement at any age. Plus group: $`N_{A^+} = N_{A-1} e^{-Z_{A-1}} / (1 - e^{-Z_{A^+}})`$ |
 | 2 | `"matrix"` | Builds seasonal transition matrices $`\mathbf{T}_a = \prod_\tau \mathbf{M}_{a,\tau} \mathbf{S}_{a,\tau}`$ that combine movement and survival, then solves $`\mathbf{N}_{A^+} = (\mathbf{I} - \mathbf{T}_{A^+})^{-1} \mathbf{T}_{A-1} \mathbf{N}_{A-1}`$. **Default** |
 | 3 | `"scalar_plus_only"` | Hybrid: uses the matrix approach for ages below the plus group but switches to the scalar geometric-series for the plus group itself |
+| 4 | `"free"` | No equilibrium at all: `ln_InitDevs` *are* the initial log numbers-at-age (ages 2+, apportioned by sex ratio), with age 1 still taken from recruitment |
+
+**Recommendations.** Use the default `"matrix"` (2) for spatial models;
+`"scalar_no_move"` (1) is fine, and marginally cheaper, for
+single-region models. Use `"free"` (4) when the initial age structure
+carries no information about $`R_0`$ and should not be pulled toward an
+equilibrium, matching assessments in which initial numbers-at-age are
+freely estimated parameters. Note two consequences of `"free"`: the
+initial condition becomes independent of `init_F_par` and of `ln_rinit`,
+and the deviations are on the scale of log-*numbers* rather than
+log-ratios about an equilibrium, so any penalty applied via
+`equil_init_age_strc` acts as a prior on log initial abundance. Pair
+`"free"` with `equil_init_age_strc = "equil"` (0) if no such prior is
+wanted, or with `InitDevs_pen_center = "own_mean"` (see Recruitment
+below) to penalize only the roughness of the initial age structure
+rather than its level.
 
 #### Initial deviation structure (`equil_init_age_strc`)
 
@@ -190,6 +207,18 @@ Controlled via
 |----|----|
 | `"mean_rec"` | Estimate mean $`\ln R_0`$ with annual deviations; no SSB feedback |
 | `"bh_rec"` | Beverton-Holt: $`R = 4hR_0 \cdot \text{SSB} / \left[(1-h)S_0 + (5h-1)\text{SSB}\right]`$. Unfished spawning biomass per recruit ($`S_0`$) is computed internally by projecting a single recruit through all ages and seasons with movement |
+| `"ricker_rec"` | Ricker in depletion form: $`R = R_0 (S/S_0)\exp(\alpha(1 - S/S_0))`$ with $`\alpha = \log(4h/(1-h))`$ (the “Dorn form” used by the EBS pollock assessment). The curve passes through $`(S_0, R_0)`$ and shares the Beverton-Holt’s compensation ratio at a given $`h`$, not the textbook $`R(0.2S_0) = hR_0`$ definition, so steepness values are not interchangeable between `"bh_rec"` and `"ricker_rec"`, and a steepness prior calibrated for one should not be reused for the other |
+
+**`SR_ref_yr`** sets the year index whose biological inputs (WAA,
+maturity, $`M`$, movement) feed the unfished
+spawning-biomass-per-recruit calculation, and hence $`S_0`$ and the
+scale of the stock-recruit curve. Default `1` (first model year, the
+long-standing behaviour); set `length(years)` to condition the curve on
+terminal biologicals, a convention several assessments use. With
+time-varying weight-at-age the two choices give different $`S_0`$; pick
+whichever the assessment you are bridging or the reference-point
+convention you follow uses, and keep it consistent with how reference
+points are computed.
 
 #### Density dependence scope (`rec_dd`)
 
@@ -229,16 +258,90 @@ Controlled via
 | `init_age_devs_shared` | Integer vector of length `n_ages - 1` specifying age-sharing for `ln_InitDevs`. Positions with the same value share a single estimated parameter (e.g. `c(1:42, rep(42, 9))`). Required when `equil_init_age_strc = 3`; `NULL` (default) uses standard behaviour |
 | `use_rinit` | 0 = population initialised using `ln_global_R0` (default); 1 = separate `ln_rinit` used for initialisation, with `ln_global_R0` governing only the recruitment relationship. |
 
+#### Deviation penalty centering (`RecDevs_pen_center`, `InitDevs_pen_center`, `Fdev_pen_center`)
+
+The recruitment, initial age, and (iid) fishing mortality deviation
+penalties can each be centred in one of two ways:
+
+| String | Penalty mean | What it constrains |
+|----|----|----|
+| `"fixed"` | The asserted prior mean: zero, or the bias-corrected $`-\sigma_R^2/2`$ for recruitment under the bias ramp. **Default** | Both the level and the spread of the deviations |
+| `"own_mean"` | The mean of the estimated deviations themselves | Only their spread; the level is left free (a sum of squares about the mean, matching assessments whose deviation vectors sum to zero) |
+
+**Recommendations.** `"fixed"` is the statistically coherent choice when
+$`\sigma_R`$ is estimated or the deviations are treated as random
+effects: the penalty is then a genuine distributional assumption, and
+the bias ramp machinery depends on the mean being asserted. `"own_mean"`
+is primarily a *bridging* device: it reproduces assessments where the
+mean parameter (`ln_global_R0`, `ln_F_mean`) carries the level and the
+deviations carry only shape, so the level is not penalized twice. Two
+cautions: under `"own_mean"` the deviations’ level must be pinned
+elsewhere (an $`R_0`$ prior, a fixed deviation, or informative data) or
+the likelihood is flat along it, and `RecDevs_pen_center = "own_mean"`
+cannot be combined with `do_rec_bias_ramp = 1` (the $`-\sigma^2/2`$
+offset is meaningless once the mean is estimated rather than asserted;
+setup errors out).
+
+#### Recruitment level penalty
+
+Separate from the deviation penalty, an optional penalty on the log
+recruitment *series itself*:
+
+| Argument | Description |
+|----|----|
+| `Use_rec_level_pen` | 0 (default) / 1 toggle |
+| `rec_level_pen_sigma` | Standard deviation of the penalty. A sum of squares with weight $`w`$ corresponds to $`\sigma = 1/\sqrt{2w}`$. Default 1 |
+| `rec_level_pen_center` | `"own_mean"` (default; penalizes only the series’ variability) or `"fixed"` (centres on zero) |
+| `rec_level_pen_yrs` | Calendar years the penalty applies over; `NULL` (default) = all years |
+
+**Rationale.** Under a stock-recruit relationship the deviations are
+residuals about the predicted curve, so a model that also wants the
+*realized* recruitment series to stay regular has nowhere else to say
+so. This penalty is that second, independent statement, and reproduces
+the recruitment regularity penalties several existing assessments carry
+(e.g., a penalty on log recruitment variability). Leave it off unless
+recruitment in data-poor years is wandering unreasonably; it is a tuning
+penalty, not a probability model, and it will shrink genuine recruitment
+variability if over-weighted (hence the `rec_level_pen_sigma` is left as
+data rather than an estimated parameter).
+
+#### Recruitment penalty weighting (`Setup_Mod_Weighting()`)
+
+| Argument | Description |
+|----|----|
+| `Wt_Rec` | Weight on the recruitment deviation penalty. Scalar (default 1), or an array `[n_pop × n_regions × n_est_rec_devs]` for per-deviation weighting; note the third dimension follows `ln_RecDevs` (moved by `dont_est_recdev_last` and `n_proj_yrs_devs`), not the number of years |
+| `Wt_Init_Rec` | Weight on the initial age deviation penalty, `[n_pop × n_regions × (n_ages - 1)]` or scalar. `NULL` (default) inherits a scalar `Wt_Rec`; must be supplied explicitly when `Wt_Rec` is an array, since the two penalties are dimensioned differently |
+
+A per-deviation weight of zero removes that deviation from the penalty
+while it remains estimated, which is how a stock-recruit relationship is
+fit over a chosen window of years while recruitment stays effectively
+free elsewhere. That is distinct from `dont_est_recdev_last`, which
+removes the deviations themselves (recruitment reverts to the
+deterministic prediction), and from mapping a deviation off (fixed *and*
+unpenalized; see [Which deviations are
+penalized](#which-deviations-are-penalized)). Beware the $`\sigma_R`$
+interaction: deviations excluded from the penalty no longer inform an
+estimated `ln_sigmaR`, so weight-based windows are safest with
+$`\sigma_R`$ fixed.
+
 #### Steepness priors
 
-When `rec_model = "bh_rec"`, steepness ($`h`$) can be penalised with a
-Beta distribution scaled to \[0.2, 1\]:
+When a stock-recruit curve is used (`rec_model = "bh_rec"` or
+`"ricker_rec"`), steepness ($`h`$) can be penalised with a Beta
+distribution scaled to \[0.2, 1\] by default:
 
-| Argument      | Description                                         |
-|---------------|-----------------------------------------------------|
-| `Use_h_prior` | 0 = no prior, 1 = apply prior                       |
-| `h_prior`     | Data frame with columns `pop`, `region`, `mu`, `sd` |
-| `h_spec`      | Estimation structure for steepness parameters       |
+| Argument | Description |
+|----|----|
+| `Use_h_prior` | 0 = no prior, 1 = apply prior |
+| `h_prior` | Data frame with columns `pop`, `region`, `mu`, `sd`, and optional `lb`, `ub` giving the beta’s support (default 0.2 and 1) |
+| `h_spec` | Estimation structure for steepness parameters |
+
+The support matters, not just the mean and SD: a beta on $`(0,1)`$ is a
+genuinely different function of $`h`$ than one on $`(0.2,1)`$ (it
+carries $`\log(h)`$ where the rescaled form carries $`\log(h - 0.2)`$),
+and no choice of shape parameters reconciles the two. When bridging an
+assessment, match its prior’s support via `lb`/`ub` rather than
+approximating with the default.
 
 #### R0 priors
 
@@ -296,9 +399,21 @@ are:
 | `"exponential"` | Descending power: $`1/\text{bin}^\beta`$ | 1 ($`\ln \beta`$) |
 | `"dbnrml"` | Double-normal with ascending and descending widths, plateau, and endpoint control | 6 |
 | `"nonpar"` | Non-parametric: one logit-scale parameter per bin, transformed via $`\text{logit}^{-1}`$ | $`n_\text{bins}`$ |
+| `"nonparlog"` | Non-parametric on the log scale, standardized so each year’s selectivity averages to 1 across bins | $`n_\text{bins}`$ |
 | `"asymplogist1"` | Logistic with asymptote $`\alpha \in (0,1)`$: $`\alpha / (1 + \exp(-k(\text{bin} - a_{50})))`$ | 3 ($`\text{logit}(\alpha)`$, $`\ln a_{50}`$, $`\ln k`$) |
 | `"asymplogist2"` | Logistic with asymptote, $`a_{50}/a_{95}`$ parameterisation | 3 ($`\text{logit}(\alpha)`$, $`\ln a_{50}`$, $`\ln a_{95}`$) |
 | `"bicubic"` | Bicubic natural-cubic-spline surface over a bin-node $`\times`$ year-node grid | $`n_\text{bin\_nodes} \times n_\text{yr\_nodes}`$ (see below) |
+
+**Choosing between the two non-parametric forms.** `"nonpar"` bounds
+every raw value below one (logistic transform) and mean-standardizes
+jointly over years and bins; `"nonparlog"` leaves the scale free and
+centers within each year. Under `"nonparlog"` only the within-year
+*differences* among parameters are identified, since the level is
+absorbed by catchability or fishing mortality, so pair it with the
+selectivity parameter centering penalty (below) or fix a bin group via
+`*_sel_nonpar_est_bins` to pin the scale. Prefer `"nonpar"` when you
+want selectivity interpretable as a proportion without further
+constraints.
 
 #### Bicubic spline selectivity (`"bicubic"`)
 
@@ -380,6 +495,61 @@ Ancillary controls for continuous time-variation include
 (deviation estimation structure), `fishsel_devs_shared_bins` (bin
 grouping for shared deviations), and `corr_opt_semipar` (which
 correlation components to suppress in semi-parametric forms).
+Bin-sharing specs (`"est_shared_b"` variants) require the deviations to
+be indexed by bin: any GMRF/AR1 form, or `"iid"`/`"rw"` on a
+non-parametric fleet (`"nonpar"`/`"nonparlog"`, where each deviation
+already belongs to one bin); `"iid"`/`"rw"` on a parametric form indexes
+deviations by *parameter* and is rejected.
+
+Three further controls tune the process-error penalty itself:
+
+| Argument | Description |
+|----|----|
+| `fishsel_pe_wt` / `retsel_pe_wt` / `srvsel_pe_wt` | Per-fleet multiplier on the selectivity process-error likelihood (default 1). `0` removes the distributional penalty entirely while the deviations remain estimated; use it when deviations should float subject only to explicit smoothness penalties, as several existing assessments do. Anything other than 0 or 1 makes an estimated PE sigma reinterpretable, so prefer 0/1 unless deliberately down-weighting |
+| `fishsel_rw_init_sigma` / `retsel_rw_init_sigma` / `srvsel_rw_init_sigma` | Standard deviation on the first year of an `"rw"` deviation series. Default 5 (first year effectively free). `NA` starts the walk at zero under the walk’s own estimated sigma, making the first year as smooth as every later step; appropriate when the base parametric curve already describes the first year well |
+| `*_sel_bin_dev_bins`, `cont_tv_*sel_bin_devs` | Bin-override deviations; see below |
+
+#### Bin-override selectivity deviations
+
+Individual bins can be cut loose from the functional form entirely: bins
+named in `fish_sel_bin_dev_bins` / `ret_sel_bin_dev_bins` /
+`srv_sel_bin_dev_bins` (a list with one element per fleet, `NULL` for
+fleets with no overrides) take a freely estimated annual value
+$`\exp(\epsilon_{y,b})`$ in place of whatever the form produced, applied
+*after* every other transformation including standardization. The rest
+of the curve keeps its parametric shape.
+
+| Argument | Description |
+|----|----|
+| `fish_sel_bin_dev_bins` etc. | Which bins each fleet overrides (e.g., `list(1, NULL)` frees bin 1 of fleet 1 only) |
+| `cont_tv_fishsel_bin_devs` etc. | Process error on the override deviations, per fleet: `"none"`, `"iid"`, or `"rw"` (with its own estimated sigma per bin and `*sel_bin_devs_rw_init_sigma` for the first year) |
+
+**When to use.** The canonical case is a gear whose curve is well
+described by a parametric form except for one bin governed by
+*availability* rather than the gear (e.g., age-1 availability to a trawl
+survey varying with year-class strength). Overriding that bin gives it
+free annual variation without abandoning the parametric form (or paying
+for a full semi-parametric surface) elsewhere. Give the override `"rw"`
+process error unless the bin genuinely jumps independently between
+years; with `"none"`, each year’s value is informed only by that year’s
+compositions and can be poorly determined in sparse years.
+
+#### Selectivity parameter centering penalty
+
+| Argument | Description |
+|----|----|
+| `Use_fish_selex_penalty` / `Use_ret_selex_penalty` / `Use_srv_selex_penalty` | 0 (default) / 1 toggle |
+| `fish_selex_penalty` etc. | Data frame with columns `region`, `fleet`, `block`, `sex`, `par` (a single index or list-column of integer vectors naming a set), `wt`. Each row penalizes $`w\,[\log(\overline{\exp(\theta)})]^2`$ over the named set |
+
+This pushes the *average selectivity* of a parameter set toward one,
+pinning the scalar of a `"nonparlog"` curve that catchability or fishing
+mortality would otherwise absorb. It is a softer alternative to fixing a
+bin outright, and the standard companion to `"nonparlog"` selectivity
+(weights of 10 to 100 are typical starting points; the penalty only
+needs to break a ridge, not dominate the fit). Because the expression
+averages on the natural scale it is only meaningful for log-scale
+parameter sets, so do not apply it to `"nonpar"` (logit-scale) or to
+logit-scale asymptote parameters.
 
 #### Parameter sharing and fixing
 
@@ -429,6 +599,40 @@ functional form and any fleet, regardless of block/deviation structure.
 | `smooth_yr_curve` | Second-difference penalty across years, normalised by the number of fitted years |
 | `smooth_mean_center` | Penalises the per-year mean of log-selectivity away from zero; resolves the scale indeterminacy of the bicubic surface (a uniform per-year shift in log-selectivity otherwise trades off exactly against that year’s fishing mortality) |
 
+**Per-fleet specifications.** A single named specification is shared by
+every fleet; alternatively, pass an *unnamed list* with one named
+specification per fleet (use
+[`list()`](https://rdrr.io/r/base/list.html) or `NULL` for fleets with
+no penalties) so, e.g., two surveys can carry different smoothing.
+
+**Per-year weights, bin ranges, and normalization.** Each weight may
+also be a vector with one value per model year (`0` skips that year), so
+a penalty can act only in years where selectivity changes, or with
+year-specific strength. A specification may additionally carry:
+
+| Name | Description |
+|----|----|
+| `bin_range` | Length-two vector `c(first, last)` restricting the bins the penalties act over; or a named list giving each term its own range. Confine a shape penalty (dome, curvature) to the older ages where the curve should flatten without constraining the ascending limb |
+| `normalize` | `TRUE` (default) divides bin-wise weights by the number of penalized bins and year-wise weights by the number of years; settable per term. Turn off when weights are calibrated as explicit variances |
+| `yr_diff_ref` | Reference log-selectivity vector for `smooth_yr_diff`’s first penalized year, which otherwise has no predecessor and goes unpenalized. Anchors an otherwise free series to a known selectivity before the data begin |
+
+A useful identity: with `normalize = FALSE`, a per-year `smooth_yr_diff`
+weight of $`1/(2\sigma_y^2)`$ is exactly the negative log-kernel of a
+random walk on the realized log-selectivity with year-specific standard
+deviation $`\sigma_y`$. This is how selectivity random walks with
+tabulated per-year sigmas are reproduced as penalties on the curve
+rather than as deviation parameters.
+
+**Recommendations.** Prefer the distributional process-error forms
+(`cont_tv_*`) when you want an estimated, interpretable sigma; prefer
+these penalties when bridging assessments whose selectivity smoothing is
+a tuned penalty, or when regularizing a `"bicubic"`/`"nonparlog"`
+surface. `smooth_mean_center` (or the centering penalty above) should
+accompany any form with a free scale. Weights are on the scale of
+squared log-selectivity differences; start small (1 to 10), inspect the
+realized surfaces, and remember that normalized and unnormalized weights
+differ by a factor of $`n_\text{bins}`$ or $`n_\text{yrs}`$.
+
 ------------------------------------------------------------------------
 
 ## Catchability
@@ -451,6 +655,37 @@ Configured alongside selectivity in
 Same syntax as selectivity blocks: `"none_Fleet_<f>"` for a single
 block, or `"Block_<b>_Year_<s>-<e>_Fleet_<f>"` for structured change
 points.
+
+#### Analytic catchability (`srv_q_type` / `fish_q_type`)
+
+Per fleet, catchability can be concentrated out of the likelihood rather
+than estimated. `srv_q_type` is set in
+[`Setup_Mod_Srvsel_and_Q()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Srvsel_and_Q.md)
+and `fish_q_type` in
+[`Setup_Mod_Fishsel_and_Q()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Fishsel_and_Q.md);
+the two take the same strings and behave identically, applied to
+whichever index that fleet fits:
+
+| String | Description |
+|----|----|
+| `"est"` | Estimate `ln_srv_q` / `ln_fish_q` (default) |
+| `"arith"` | Solve analytically as the ratio of mean observed to mean predicted index |
+| `"geo"` | Solve analytically on the log scale, $`\hat{q} = \exp(\overline{\log \text{obs} - \log \text{pred}})`$ |
+
+Both analytic forms solve one $`q`$ per region and fleet from only the
+years with observations, ignore block structure, and automatically fix
+that fleet’s catchability parameter regardless of `srv_q_spec` /
+`fish_q_spec`; they are incompatible with catchability covariates and
+priors on that fleet.
+
+**Recommendations.** Use `"geo"` with a lognormal index likelihood: it
+is the exact maximum-likelihood solution under a shared SE, removes one
+ridge-prone parameter per fleet, and typically speeds and stabilizes
+optimization. `"arith"` exists to match assessments that use the
+arithmetic ratio. Stay with `"est"` whenever you need a $`q`$ prior,
+covariates, time blocks, or when the index’s absolute scale is genuinely
+informative (e.g., a swept-area survey with a strong prior near 1, where
+concentrating $`q`$ out would discard that information).
 
 #### Priors
 
@@ -637,6 +872,31 @@ one of three process-error structures, set via `Fdev_model`:
 | `"rw"`  | Random walk                             |
 | `"ar1"` | First-order autoregressive              |
 
+**`Fdev_pen_center`** (`"fixed"`, the default, or `"own_mean"`) sets
+where the iid deviation penalty is centred; see the deviation penalty
+centering discussion in the Recruitment section for the shared
+rationale. Under the mean-plus-deviations parameterization the level of
+$`F`$ is already carried by `ln_F_mean`, so `"own_mean"` penalizes only
+the deviations’ spread and avoids constraining the level twice, matching
+assessments whose deviation vectors sum to zero. It leaves `ln_F_mean`
+and the deviations’ level mutually unidentified unless one is fixed,
+which `ln_F_mean_spec = "fix"` does; setup warns when it is combined
+with an estimated mean in configurations where nothing else reads the
+mean. Note also that the default iid penalty with `"fixed"` centering
+acts as a hidden “biomass tracks catch” prior when catch trends
+strongly; `Fdev_model = "rw"` is usually the better remedy for that than
+re-centering.
+
+**`ln_F_mean_spec`** (`"est"`, the default, or `"fix"`) chooses the
+fishing mortality parameterization. `"est"` is the mean-plus-deviations
+form. `"fix"` maps `ln_F_mean` off at its starting value (zero unless
+supplied), so the deviations are free annual log-F outright:
+$`F = \exp(\epsilon)`$. It must be paired with
+`Fdev_pen_center = "own_mean"`, `Fdev_model = "rw"`, or `Use_F_pen = 0`
+— an `"iid"` or `"ar1"` penalty centred on the fixed zero mean would
+shrink the deviations toward $`F = 1`$, and setup rejects that
+combination.
+
 `sigmaF_spec` controls sharing/fixing of the process-error standard
 deviation (`ln_sigmaF`) across region × season × fleet, using the same
 `"est_all"` / `"est_shared_<dims>"` / `"fix"` convention described in
@@ -715,10 +975,11 @@ actually modelled, see
 
 #### Which deviations are penalized
 
-The `ln_F_devs` and `logit_dmr_devs` penalties are evaluated on exactly
-the deviations that are estimated, read off the map mirrors
-`map_ln_F_devs` and `map_logit_dmr_devs` in the data list rather than
-recomputed from the catch indicators.
+The `ln_F_devs`, `logit_dmr_devs` and `ln_RecDevs` penalties are
+evaluated on exactly the deviations that are estimated, read off the map
+mirrors `map_ln_F_devs`, `map_logit_dmr_devs` and `map_ln_RecDevs` in
+the data list rather than recomputed from the catch indicators or the
+deviation index ranges.
 [`fit_model()`](https://chengmatt.github.io/SPoRC/dev/reference/fit_model.md)
 refreshes those mirrors from the map immediately before building the
 model, so a deviation mapped off by hand after setup is neither
@@ -740,6 +1001,25 @@ pinned deviation is dropped from the active sequence, widening the gap
 $`d`$ between the deviations either side of it rather than being treated
 as an actual year.
 
+For `ln_RecDevs` this matters most when `ln_sigmaR` is estimated. A
+deviation fixed at zero still sits at the penalty’s mean, so were it
+penalized it would add to the sum of squares’ denominator without adding
+any spread, and $`\sigma_R`$ would be pulled low by roughly
+$`\sqrt{n_{est} / n_{total}}`$. Holding the first 80 of 255 quarterly
+deviations, for instance, biases $`\sigma_R`$ down by about 17%.
+
+With `ln_sigmaR` fixed the excluded terms are constants: the objective
+shifts by a fixed amount and its gradient is unchanged everywhere, so
+the likelihood surface and the location of any optimum are untouched,
+and `Rec_nLL` becomes comparable across runs that hold different numbers
+of deviations. Note that this is not the same as the *fitted values*
+being unchanged. `nlminb` tests convergence on relative changes in the
+objective’s value, so on a model that stops short of convergence (a flat
+ridge, or a `"singular convergence"` or `"false convergence"` message),
+shifting the objective by a constant can move where the optimizer halts.
+If excluding these terms visibly changes your estimates, the
+identifiability of the model is the thing to look at, not the penalty.
+
 ------------------------------------------------------------------------
 
 ## Biological Inputs
@@ -759,6 +1039,8 @@ Supplied via
 | `AgeingError` | `[a_\text{model} × a_\text{obs}]` or `[y × a_\text{model} × a_\text{obs}]` | Row-stochastic matrix mapping true ages to observed bins. Defaults to identity. Supply explicitly when observed ages are a subset of modelled ages |
 | `SizeAgeTrans` | `[p × r × y × τ × l × a × s]` | Size-age transition matrix. Required when `fit_lengths = 1` |
 | `fit_lengths` | 0/1 | Toggle for fitting length compositions |
+| `addtocomp` | scalar | Small constant guarding $`\log(0)`$ in composition likelihoods (default `1e-3`) |
+| `comp_const_obs` | 0/1 | Whether `addtocomp` is also added to the observed proportions used as multinomial weights. `1` (default) is the long-standing SPoRC behaviour; `0` adds it only inside the logarithms, a convention several existing assessments use. The difference slightly reweights every bin, so set `0` when bridging such assessments and otherwise leave the default |
 
 ------------------------------------------------------------------------
 
@@ -778,6 +1060,52 @@ and survey fleets
 | `fish_idx_type` / `srv_idx_type` | 0 = abundance, 1 = biomass |
 | `ObsFishIdx_pop` / `ObsSrvIdx_pop` | Population-specific indices (separate likelihood contribution) |
 | `ObsFishIdx_pop_SE` / `ObsSrvIdx_pop_SE` | Population-specific index SEs |
+
+#### Index error structure (`FishIdx_LikeType` / `SrvIdx_LikeType`)
+
+Per fleet. A fleet’s population-specific index stream follows the same
+choice for `"lognormal"` and `"normal"`, but stays lognormal under
+`"mvn"`, whose covariance describes the region-aggregated series only.
+The simulator (`Setup_Sim_Fishing` / `Setup_Sim_Survey`, and
+`simulation_self_test` automatically) draws index observations under the
+same structures, with an `"mvn"` fleet drawn through a one-factor
+decomposition of its covariance:
+
+| String | Description |
+|----|----|
+| `"lognormal"` | Default. SEs are log-scale standard deviations |
+| `"normal"` | Normal on the arithmetic scale; SEs are arithmetic standard deviations |
+| `"mvn"` | Multivariate normal on the arithmetic scale with a fixed covariance supplied via `FishIdx_Cov` / `SrvIdx_Cov` (one matrix per `"mvn"` fleet, square with one row per fitted observation, ordered as observations appear scanning the fleet’s use flags in array order). Validated at setup for symmetry and positive definiteness |
+
+**Recommendations.** `"lognormal"` is right for almost all abundance
+indices (positive, multiplicative errors). Use `"mvn"` when the index
+provider supplies a covariance across years (e.g., a model-based index
+from VAST or sdmTMB whose inter-annual correlations are real information
+a diagonal likelihood would double-count). Use `"normal"` only for
+series that can legitimately go near zero or negative, or when bridging
+an assessment that fits on the arithmetic scale. Two caveats: OSA
+residuals are only available for `"lognormal"` fleets, and the MVN
+density includes the $`-\tfrac{n}{2}\log(2\pi)`$ constant that some
+other implementations omit, so absolute likelihood values are not
+directly comparable across implementations even when fits match.
+
+#### Index timing and age restriction
+
+| Argument | Description |
+|----|----|
+| `t_fish` | `[r × τ × f]`, fraction of the season elapsed when the fishery index is observed; numbers decay by $`e^{-t Z}`$ before the index is formed, mirroring `t_srv`. Default `0` (start of season, the historical behaviour). Set `0.5` for a mid-season CPUE snapshot |
+| `fish_idx_ages` / `srv_idx_ages` | Which ages contribute to each fleet’s index total: a list (one vector of ages per fleet, `NULL` = all) or an `[n_ages × n_fleets]` 0/1 array. The restriction applies to the index *sum* only; selectivity, catch, and the fleet’s compositions are untouched. Restricting a survey to one age turns it into an index of that age alone (e.g., an age-1 acoustic recruitment index), without needing a knife-edge selectivity that would corrupt the compositions |
+
+#### Composition bin restriction (`FishAgeComps_bins` / `SrvAgeComps_bins`)
+
+Same list-or-array format as `*_idx_ages`, but restricting which
+*observed* bins (i.e., after ageing error) a fleet’s age compositions
+are fit over. Observed and expected compositions are both subset and
+renormalized within the named bins; bins outside are simply left out of
+the likelihood rather than forced to be explained. Use for gears that
+never resolve part of the age range (e.g., a fishery that never catches
+the youngest ages, whose structural zeros would otherwise carry
+information); leave alone when the zeros are informative sampling zeros.
 
 #### Composition likelihood families
 

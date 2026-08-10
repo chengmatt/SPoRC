@@ -87,8 +87,8 @@ get_closed_loop_reference_points(
   what
 
   :   Method for reference point calculation. Options include "SPR",
-      "BH_MSY", "independent_SPR", "independent_BH_MSY", "global_SPR",
-      "global_BH_MSY". Default is "SPR".
+      "MSY", "independent_SPR", "independent_MSY", "global_SPR",
+      "global_MSY". Default is "SPR".
 
   is_discard_fleet
 

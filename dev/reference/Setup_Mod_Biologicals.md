@@ -17,6 +17,7 @@ Setup_Mod_Biologicals(
   WAA_srv = NULL,
   MatAA,
   addtocomp = 0.001,
+  comp_const_obs = 1,
   addtofishidx = 1e-04,
   addtosrvidx = 1e-04,
   addtotag = 1e-10,
@@ -82,6 +83,19 @@ Setup_Mod_Biologicals(
   evaluation to avoid `log(0)`. Default `1e-3`. Ignored when a
   logistic-normal likelihood is specified, as that family handles zeros
   internally.
+
+- comp_const_obs:
+
+  Integer switch (`0` or `1`) controlling where `addtocomp` is applied
+  in the multinomial kernel, not a constant to be tuned. `1` (default)
+  adds it to the observed proportions that weight the multinomial as
+  well as inside the logarithms, so the kernel is stationary exactly at
+  `pred = obs`. `0` weights by the raw observed proportions, which is
+  what the ADMB templates do, and displaces the expected composition
+  from the data by roughly `n * addtocomp`. The difference matters once
+  effective sample sizes are large: on the EBS pollock bridge, switching
+  from `0` to `1` moves estimated SSB by a median of 8.8 percent. Use
+  `0` only when reproducing an ADMB model.
 
 - addtofishidx:
 

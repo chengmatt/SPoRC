@@ -20,6 +20,9 @@ Setup_Sim_Survey(
     sim_list$n_srv_fleets, sim_list$n_sims)),
   t_srv = array(1, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_srv_fleets)),
   srv_idx_type = array(1, dim = c(sim_list$n_srv_fleets)),
+  SrvIdx_LikeType = rep(0, sim_list$n_srv_fleets),
+  SrvIdx_Cov = NULL,
+  UseSrvIdx = NULL,
   comp_srvage_like = rep(0, sim_list$n_srv_fleets),
   ISS_SrvAgeComps = array(100, dim = c(sim_list$n_regions, sim_list$n_yrs,
     sim_list$n_seas, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims)),
@@ -103,6 +106,32 @@ Setup_Sim_Survey(
 
   Integer vector `[n_srv_fleets]` specifying survey index type. Default:
   all 1 (biomass). Options: 0/“abd” (abundance), 1/“biom” (biomass).
+
+- SrvIdx_LikeType:
+
+  Character or numeric vector, length \`n_srv_fleets\`. Error structure
+  each fleet's index is drawn under: `"lognormal"` (0), `"normal"` (1),
+  or `"mvn"` (2), matching the estimation model's `SrvIdx_LikeType`. An
+  mvn fleet draws from `SrvIdx_Cov` through a common-factor
+  decomposition (see
+  [`cov_to_factor`](https://chengmatt.github.io/SPoRC/dev/reference/cov_to_factor.md))
+  instead of `ObsSrvIdx_SE`, and its population-specific stream stays
+  lognormal. Default: lognormal for every fleet.
+
+- SrvIdx_Cov:
+
+  List with one element per survey fleet holding the fixed covariance
+  over that fleet's fitted index observations, ordered by scanning
+  `UseSrvIdx` in array order (region fastest, then year, then season).
+  Required for mvn fleets. Default: `NULL`.
+
+- UseSrvIdx:
+
+  Numeric array `[n_regions x n_yrs x n_seas x n_srv_fleets]` of fit
+  flags from the estimation model, used to position each simulated cell
+  in the covariance. Its year dimension may be shorter than the
+  simulation, in which case later years draw with the mean factor scale
+  and loading. Required for mvn fleets. Default: `NULL`.
 
 - comp_srvage_like:
 

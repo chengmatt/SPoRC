@@ -19,6 +19,7 @@ Setup_Mod_Weighting(
   Wt_FishIdx_pop = 1,
   Wt_SrvIdx_pop = 1,
   Wt_Rec = 1,
+  Wt_Init_Rec = NULL,
   Wt_F = 1,
   Wt_Tagging = 1,
   Wt_FishAgeComps = array(1, dim = c(input_list$data$n_regions,
@@ -112,8 +113,27 @@ Setup_Mod_Weighting(
 
 - Wt_Rec:
 
-  Scalar weight applied to the recruitment deviation penalty
-  (`ln_RecDevs`). Default `1`.
+  Weight applied to the recruitment deviation penalty (`ln_RecDevs`).
+  Either a scalar applied uniformly or a numeric array
+  `[n_pop × n_regions × n_est_rec_devs]` for deviation-specific
+  weighting, where `n_est_rec_devs` is the third dimension of
+  `ln_RecDevs` rather than the number of years, since
+  `dont_est_recdev_last` and `n_proj_yrs_devs` both move it. Default
+  `1`. A weight of zero on a deviation leaves it estimated but removes
+  it from the penalty entirely, which is how a stock-recruit
+  relationship is fit over a window of years while recruitment stays
+  free in every year. That is distinct from `dont_est_recdev_last`,
+  which removes the deviations themselves so recruitment reverts to the
+  deterministic prediction in those years.
+
+- Wt_Init_Rec:
+
+  Weight applied to the initial age deviation penalty (`ln_InitDevs`).
+  Either a scalar or a numeric array
+  `[n_pop × n_regions × (n_ages - 1)]`. Defaults to `NULL`, which takes
+  whatever `Wt_Rec` is when `Wt_Rec` is a scalar; supply it explicitly
+  when `Wt_Rec` is an array, since the two penalties are dimensioned
+  differently.
 
 - Wt_F:
 
@@ -261,7 +281,13 @@ Setup_Mod_Weighting(
   :   Per-year mean-centering regularization.
 
   Any name not supplied defaults to `0` (off). Must be called after
-  `Setup_Mod_Fishsel_and_Q`.
+  `Setup_Mod_Fishsel_and_Q`. Each weight may instead be a vector with
+  one value per model year, so a penalty can act only in some years or
+  with a different strength in each. The specification may also carry
+  `"bin_range"`, a length-two vector giving the first and last bin the
+  penalties act over. To give each fleet its own penalties, pass an
+  unnamed list with one named specification per fleet instead of a
+  single specification.
 
 - ret_sel_pen_wts:
 

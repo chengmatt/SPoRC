@@ -43,7 +43,15 @@ get_fishery_observation_model(
   Mrate = NULL,
   move_timing = 0,
   seasdur = rep(1, n_seas),
-  NAA_int = NULL
+  NAA_int = NULL,
+  t_fish = NULL,
+  fish_idx_ages = NULL,
+  fish_q_type = NULL,
+  do_fish_q_cov = 0,
+  fish_q_cov = NULL,
+  fish_q_coeff = NULL,
+  ObsFishIdx = NULL,
+  UseFishIdx = NULL
 )
 ```
 
@@ -125,6 +133,14 @@ get_fishery_observation_model(
 
   Arrays `[pop, region, year, season, age, sex, fish_fleet]` of
   total/retained fishery selectivity.
+
+- t_fish:
+
+  Array `[region, season, fish_fleet]` of fishery index timing, the
+  fraction of the season elapsed when the index is observed. Numbers at
+  age are decayed by `exp(-t_fish * ZAA)` before the index is formed,
+  mirroring `t_srv` for surveys. `NULL` (the default) skips the decay
+  entirely and reproduces a start-of-season index.
 
 ## Value
 

@@ -33,7 +33,9 @@ Get_Selex_Array(
   n_ages,
   n_lens,
   n_sexes,
-  n_fleets
+  n_fleets,
+  bin_devs = NULL,
+  bin_dev_bins = NULL
 )
 ```
 

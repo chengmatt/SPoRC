@@ -29,6 +29,7 @@ Setup_Mod_Rec(
   rec_model,
   rec_dd = "global",
   rec_lag = 1,
+  SR_ref_yr = 1,
   Use_h_prior = 0,
   h_prior = NULL,
   rec_region_prop_spec = NULL,
@@ -58,6 +59,12 @@ rec_seas_prop[, 1] <- 1
   sigmaR_spec = "est_all",
   InitDevs_spec = NULL,
   RecDevs_spec = NULL,
+  RecDevs_pen_center = "fixed",
+  Use_rec_level_pen = 0,
+  rec_level_pen_sigma = 1,
+  rec_level_pen_center = "own_mean",
+  rec_level_pen_yrs = NULL,
+  InitDevs_pen_center = "fixed",
   h_spec = NULL,
   sgl_seas_spawning_movement = NA,
   t_spawn = 0,
@@ -106,6 +113,14 @@ rec_seas_prop[, 1] <- 1
 
   :   Beverton-Holt stock-recruit relationship.
 
+  `"ricker_rec"`
+
+  :   Ricker stock-recruit relationship, in the depletion form \\R = R_0
+      (S/S_0) \exp(\alpha (1 - S/S_0))\\ with \\\alpha =
+      \log(4h/(1-h))\\. Steepness is not interchangeable with
+      `"bh_rec"`; see
+      [`Get_Det_Recruitment`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Det_Recruitment.md).
+
 - rec_dd:
 
   Density-dependence structure. Default `"global"`.
@@ -134,10 +149,22 @@ rec_seas_prop[, 1] <- 1
   a restricted softmax (see
   [`do_rec_seas_prop_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_rec_seas_prop_mapping.md)).
 
+- SR_ref_yr:
+
+  Integer year index (not a calendar year) supplying the biological
+  inputs, weight-at-age, maturity, natural mortality and movement, to
+  unfished spawning biomass per recruit, and so to `S0` and the scale of
+  the stock-recruit curve. Default `1`, the first model year, which is
+  what the model has always used. Set it to `length(years)` to condition
+  the curve on terminal weight-at-age, which is what several ADMB
+  assessments do; with time-varying weight-at-age the two differ and the
+  curve shifts with them. Ignored when `rec_model = "mean_rec"`.
+
 - Use_h_prior:
 
   Integer (0/1). Whether normal priors on steepness are applied. Only
-  relevant for `rec_model = "bh_rec"`. Default `0`.
+  relevant when a stock-recruit curve is used (`rec_model = "bh_rec"` or
+  `"ricker_rec"`). Default `0`.
 
 - h_prior:
 
@@ -230,7 +257,18 @@ rec_seas_prop[, 1] <- 1
 
 - init_age_strc:
 
-  Equilibrium initialisation method. Default `2`.
+  Initialisation method. Default `2`. Options `0`/`"iterative"`,
+  `1`/`"scalar_no_move"`, `2`/`"matrix"`, and `3`/`"scalar_plus_only"`
+  all project an equilibrium age structure forward from `R0` and treat
+  `ln_InitDevs` as multiplicative deviations from it. `4`/`"free"`
+  projects no equilibrium at all: the numbers at age 2 and older are
+  `exp(ln_InitDevs)` outright, apportioned by sex ratio, with age 1
+  still taken from recruitment. Use it when the initial age structure
+  carries no information about `R0` and should not be pulled toward an
+  equilibrium. Note that under `4` the deviations are on the scale of
+  numbers rather than of log ratios, so the penalty applied through
+  `equil_init_age_strc` is a prior on log abundance; pair it with
+  `equil_init_age_strc = 0` if no such prior is wanted.
 
   `0`/`"iterative"`
 
@@ -300,14 +338,13 @@ rec_seas_prop[, 1] <- 1
     independent of `ln_F_mean`.
 
   Use `"abs"` when bridging an assessment that carries a separate
-  historical F (for example the AFSC ADMB rockfish `historic_F`, which
-  is distinct from `log_avg_fmort` and has its own estimation phase).
-  Under `"prop"` those two quantities collapse into a single parameter,
-  and because catch constrains only the PRODUCT of numbers and fishing
-  mortality, the optimizer can raise `ln_F_mean` to deplete the initial
-  age structure and raise F together, fitting catch just as well with a
-  smaller, harder-fished stock. That is a genuine second solution
-  branch, not a rounding difference.
+  historical F (one estimated as its own parameter, distinct from the
+  mean log fishing mortality). Under `"prop"` those two quantities
+  collapse into a single parameter, and because catch constrains only
+  the PRODUCT of numbers and fishing mortality, the optimizer can raise
+  `ln_F_mean` to deplete the initial age structure and raise F together,
+  fitting catch just as well with a smaller, harder-fished stock. That
+  is a genuine second solution branch, not a rounding difference.
 
 - init_F_spec:
 
@@ -351,9 +388,47 @@ rec_seas_prop[, 1] <- 1
   [`do_RecDevs_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_RecDevs_mapping.md)
   for full option descriptions.
 
+- RecDevs_pen_center, InitDevs_pen_center:
+
+  Where the recruitment and initial age deviation penalties are centred.
+  `"fixed"` (default) centres on the asserted prior mean, zero or the
+  bias-corrected \\-\sigma_R^2/2\\, which constrains both the level and
+  the spread of the deviations. `"own_mean"` centres on the mean of the
+  estimated deviations themselves, so only their spread is penalized and
+  their level is left free; that is what a sum of squares about the
+  series' own mean amounts to. The level being unpenalized means it must
+  be pinned elsewhere, by a prior on `R0` or by fixing a deviation, or
+  the likelihood is flat along it. Cannot be combined with
+  `do_rec_bias_ramp = 1`, whose offset is meaningless once the mean is
+  estimated rather than asserted.
+
+- Use_rec_level_pen:
+
+  Integer (0/1). Whether a penalty is applied to the log recruitment
+  series itself, separately from the deviation penalty. Under a
+  stock-recruit relationship the deviations are residuals about the
+  predicted curve, so this is the only way to also say that the
+  recruitment series should not wander. Default `0`.
+
+- rec_level_pen_sigma:
+
+  Numeric standard deviation of that penalty. A sum of squares with
+  weight \\w\\ corresponds to \\1/\sqrt{2w}\\. Default `1`.
+
+- rec_level_pen_center:
+
+  Either `"own_mean"` (default), centring on the mean of the log
+  recruitment series so only its variability is penalized, or `"fixed"`,
+  centring on zero.
+
+- rec_level_pen_yrs:
+
+  Vector of years the penalty applies over, or `NULL` (default) for
+  every year.
+
 - h_spec:
 
-  Character or `NULL`. Sharing structure for Beverton-Holt steepness
+  Character or `NULL`. Sharing structure for stock-recruit steepness
   `steepness_h` `[n_pop x n_regions]`, parameterised in bounded logit
   space \\(0.2, 1)\\. Default `NULL` (estimate by population when
   `n_pop > 1`, by region when `n_pop = 1`). Ignored when

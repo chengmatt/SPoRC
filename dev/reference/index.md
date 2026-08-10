@@ -170,23 +170,37 @@ Functions for plotting
 
 ## Data
 
-Data objects provided by SPoRC
+Assessment data inputs provided by SPoRC
 
 - [`sgl_rg_sable_data`](https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_sable_data.md)
   : Sablefish data for single region case study
 - [`mlt_rg_sable_data`](https://chengmatt.github.io/SPoRC/dev/reference/mlt_rg_sable_data.md)
   : Sablefish data for multi region (5 area) case study
-- [`sgl_rg_ebswp_data`](https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_ebswp_data.md)
-  : EBS Walleye Pollock data for single region case study
 - [`three_rg_sable_data`](https://chengmatt.github.io/SPoRC/dev/reference/three_rg_sable_data.md)
   : Sablefish data for multi region (3 area) case study
-- [`three_rg_sable_rep`](https://chengmatt.github.io/SPoRC/dev/reference/three_rg_sable_rep.md)
-  : Sablefish report for 3 region case study
+- [`sgl_rg_ebswp_data`](https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_ebswp_data.md)
+  : EBS Walleye Pollock data for single region case study
+- [`sgl_rg_dusky_data`](https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_dusky_data.md)
+  : Dusky data for single region assessment case study
+- [`sgl_rg_goa_nork_data`](https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_goa_nork_data.md)
+  : GOA Northern Rockfish data for single region case study
+- [`sgl_rg_bsai_nork_data`](https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_bsai_nork_data.md)
+  : BSAI Northern Rockfish data for single region case study
+- [`sgl_rg_bsai_pop_data`](https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_bsai_pop_data.md)
+  : BSAI Pacific Ocean Perch data for single region case study
+- [`sgl_rg_rebs_data`](https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_rebs_data.md)
+  : BSAI Blackspotted and Rougheye Rockfish data for single region case
+  study
+
+## Fitted Model Objects
+
+Fitted model output provided by SPoRC
+
 - [`sgl_rg_sable_rep`](https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_sable_rep.md)
   : Sablefish report for single region case study
 - [`mlt_rg_sable_rep`](https://chengmatt.github.io/SPoRC/dev/reference/mlt_rg_sable_rep.md)
   : Sablefish report for 5 region case study
-- [`sgl_rg_dusky_data`](https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_dusky_data.md)
-  : Dusky data for single region assessment case study
+- [`three_rg_sable_rep`](https://chengmatt.github.io/SPoRC/dev/reference/three_rg_sable_rep.md)
+  : Sablefish report for 3 region case study
 - [`dusky_rtmb_model`](https://chengmatt.github.io/SPoRC/dev/reference/dusky_rtmb_model.md)
   : Dusky model outputs from single regino model

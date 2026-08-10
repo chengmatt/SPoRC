@@ -46,6 +46,7 @@ Do_Population_Projection(
   catch_tol = 1e-06,
   catch_max_iter = 100,
   t_spawn,
+  srr_opt = NULL,
   bh_rec_opt = NULL,
   n_seas = 1,
   seasdur = rep(1/n_seas, n_seas),
@@ -292,10 +293,17 @@ rec_seas_prop[] <- 1/n_seas
   Numeric scalar. Fraction of the spawning season elapsed before
   spawning; used for mid-season SSB calculations.
 
+- srr_opt:
+
+  Named list of inputs for deterministic stock-recruit recruitment when
+  \`recruitment_opt\` is \`"bh_rec"\` or \`"ricker_rec"\`. The curve
+  itself is taken from \`recruitment_opt\`, so the same list serves
+  both. Formerly \`bh_rec_opt\`.
+
 - bh_rec_opt:
 
-  Named list of inputs for deterministic Beverton-Holt recruitment when
-  \`recruitment_opt = "bh_rec"\`. This list is passed directly to
+  Deprecated. Former name of \`srr_opt\`; supplying it warns and
+  forwards. Supplying both is an error. This list is passed directly to
   [`Get_Det_Recruitment`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Det_Recruitment.md)
   and must contain all required arguments for that function.
 
@@ -379,19 +387,19 @@ rec_seas_prop[] <- 1/n_seas
   and `do_recruits_move`.
 
   Spawning biomass used in recruitment is constructed internally by
-  combining `bh_rec_opt$SSB` with projected SSB values during the
+  combining `srr_opt$SSB` with projected SSB values during the
   simulation.
 
-  `bh_rec_opt$rec_lag = 1` is the classic lagged case: each projection
+  `srr_opt$rec_lag = 1` is the classic lagged case: each projection
   year's recruitment is computed up front from the prior year's SSB,
   exactly as `recruitment_opt = "inv_gauss"`/ `"mean_rec"` are.
-  `bh_rec_opt$rec_lag = 0` is age-0 recruitment: recruitment for year
-  `y` is computed from year `y`'s own SSB once `spawn_seas` is reached
+  `srr_opt$rec_lag = 0` is age-0 recruitment: recruitment for year `y`
+  is computed from year `y`'s own SSB once `spawn_seas` is reached
   within that year's season loop, and is inserted no earlier than
   `spawn_seas` (`rec_seas_prop` must be zero for every season before
   `spawn_seas` in that case). Reference points and the seasonal SBPR
-  calculation used to get `bh_rec_opt$WAA`/`MatAA`/etc. are unaffected
-  by this choice, `rec_lag` only changes which year's SSB feeds the
+  calculation used to get `srr_opt$WAA`/`MatAA`/etc. are unaffected by
+  this choice, `rec_lag` only changes which year's SSB feeds the
   Beverton-Holt curve, not the per-recruit math itself.
 
 - n_seas:
@@ -548,7 +556,7 @@ generated annually and then distributed across seasons using
 first age class.
 
 Each projection year proceeds as follows when
-`recruitment_opt != "bh_rec"` or `bh_rec_opt$rec_lag != 0` (the classic
+`recruitment_opt != "bh_rec"` or `srr_opt$rec_lag != 0` (the classic
 case):
 
 1.  Annual recruitment is generated and allocated across regions and
@@ -576,8 +584,8 @@ case):
 7.  Fishing mortality for the next year is updated via the specified
     harvest control rule or fixed input.
 
-When `bh_rec_opt$rec_lag == 0` (age-0 recruitment), steps 1 and 5 above
-are reordered within `spawn_seas`: movement is applied first, spawning
+When `srr_opt$rec_lag == 0` (age-0 recruitment), steps 1 and 5 above are
+reordered within `spawn_seas`: movement is applied first, spawning
 biomass is computed from the survivor population alone (no new recruits
 exist yet), that SSB is used to generate this year's recruitment, and
 only then are the recruits inserted (no earlier than `spawn_seas`) -

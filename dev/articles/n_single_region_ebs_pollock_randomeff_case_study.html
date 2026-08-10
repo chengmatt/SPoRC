@@ -32,6 +32,19 @@
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-case-studies" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Case Studies</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-case-studies">
+<li><a class="dropdown-item" href="../articles/e_single_region_sablefish_case_study.html">Alaska Sablefish (Single Region)</a></li>
+    <li><a class="dropdown-item" href="../articles/f_single_region_ebs_pollock_case_study.html">Eastern Bering Sea Walleye Pollock</a></li>
+    <li><a class="dropdown-item" href="../articles/g_spatial_sablefish_case_study.html">Alaska Sablefish (Spatial)</a></li>
+    <li><a class="dropdown-item" href="../articles/w_goa_northern_rockfish_case_study.html">GOA Northern Rockfish</a></li>
+    <li><a class="dropdown-item" href="../articles/x_goa_dusky_rockfish_case_study.html">GOA Dusky Rockfish</a></li>
+    <li><a class="dropdown-item" href="../articles/y_bsai_northern_rockfish_case_study.html">BSAI Northern Rockfish</a></li>
+    <li><a class="dropdown-item" href="../articles/z_bsai_rougheye_rockfish_case_study.html">BSAI Blackspotted and Rougheye Rockfish</a></li>
+    <li><a class="dropdown-item" href="../articles/aa_bsai_pacific_ocean_perch_case_study.html">BSAI Pacific Ocean Perch</a></li>
+  </ul>
+</li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -63,8 +76,10 @@
 <p>Several options are available to set up random effects in
 <code>SPoRC</code>. In this vignette, we will demonstrate how fishery
 selectivity random effects might be set up, using Eastern Bering Sea
-(EBS) as a case study. We will first load in the relevant packages and
-datasets.</p>
+(EBS) as a case study. Note that results in the vignette are slightly
+different from the original Fish and Fisheries paper (Cheng et al. 2026)
+given slight updates to the model. We will first load in the relevant
+packages and datasets.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://chengmatt.github.io/SPoRC">SPoRC</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://here.r-lib.org/" class="external-link">here</a></span><span class="op">)</span></span>
@@ -112,12 +127,20 @@ arguments that control the structure of selectivity random effects. By
 iterating over combinations of these options, we can investigate how
 different assumptions about selectivity-related random effects influence
 model fit and inference.</p>
-<p>We keep survey selectivity fixed for simplicity (to focus the
-comparison on the fishery), and use the Laplace approximation to
+<p>We keep survey selectivity time invariant for simplicity (to focus
+the comparison on the fishery), and use the Laplace approximation to
 integrate out the random effects. The setup for recruitment, mortality,
 biological processes, and survey indices follows the earlier vignette
-“Setting up a Single Region Model (Eastern Bering Sea Pollock)”, so here
-we only highlight the sections that differ.</p>
+“Case Study: Eastern Bering Sea Walleye Pollock”, so here we only
+highlight the sections that differ.</p>
+<p>The model carries four survey fleets: the bottom trawl survey, the
+acoustic trawl survey, the acoustic vessel of opportunity index, and the
+acoustic survey’s age 1 abundance. The last is not a fifth survey. The
+pollock assessment fits the acoustic survey’s age 1 abundance as its own
+likelihood component with its own catchability, separate from the
+acoustic biomass index and from its age composition, and
+<code>SPoRC</code> attaches one index to one survey fleet.
+<code>srv_idx_ages</code> is what restricts that fleet to age 1.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">#' Setup Single-Region Population Model for EBS Pollock</span></span>
 <span><span class="co">#'</span></span>
@@ -145,7 +168,11 @@ we only highlight the sections that differ.</p>
 <span><span class="co">#' - one region</span></span>
 <span><span class="co">#' - one sex</span></span>
 <span><span class="co">#' - one fishery fleet</span></span>
-<span><span class="co">#' - three survey fleets</span></span>
+<span><span class="co">#' - four survey fleets</span></span>
+<span><span class="co">#'</span></span>
+<span><span class="co">#' Survey fleet 1 is the bottom trawl survey, 2 the acoustic trawl survey, 3 the</span></span>
+<span><span class="co">#' acoustic vessel of opportunity index, and 4 the acoustic survey's age 1</span></span>
+<span><span class="co">#' abundance, which the assessment fits as an index of its own.</span></span>
 <span><span class="co">#'</span></span>
 <span><span class="co">#' Natural mortality (\eqn{M}) is fixed at:</span></span>
 <span><span class="co">#' - 0.9 for age-1,</span></span>
@@ -176,6 +203,8 @@ we only highlight the sections that differ.</p>
 <span>                      <span class="va">fish_sel_devs_spec</span></span>
 <span>                      <span class="op">)</span> <span class="op">{</span></span>
 <span></span>
+<span>  <span class="va">n_srv</span> <span class="op">&lt;-</span> <span class="va">sgl_rg_ebswp_data</span><span class="op">$</span><span class="va">n_srv_fleets</span></span>
+<span></span>
 <span>  <span class="co">## Initialize model dimensions and data list----</span></span>
 <span>  <span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Dim.html">Setup_Mod_Dim</a></span><span class="op">(</span></span>
 <span>    years <span class="op">=</span> <span class="va">sgl_rg_ebswp_data</span><span class="op">$</span><span class="va">years</span>,</span>
@@ -190,7 +219,7 @@ we only highlight the sections that differ.</p>
 <span>    <span class="co"># number of sexes</span></span>
 <span>    n_fish_fleets <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>    <span class="co"># number of fishery fleets</span></span>
-<span>    n_srv_fleets <span class="op">=</span> <span class="fl">3</span>, <span class="co"># number of survey fleets</span></span>
+<span>    n_srv_fleets <span class="op">=</span> <span class="va">n_srv</span>, <span class="co"># number of survey fleets</span></span>
 <span>    n_pop <span class="op">=</span> <span class="fl">1</span>, <span class="co"># number of populations</span></span>
 <span>    verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span>  <span class="op">)</span></span>
@@ -232,6 +261,10 @@ we only highlight the sections that differ.</p>
 <span></span>
 <span>    <span class="co"># Data inputs</span></span>
 <span>    WAA <span class="op">=</span> <span class="va">sgl_rg_ebswp_data</span><span class="op">$</span><span class="va">WAA</span>,</span>
+<span>    <span class="co"># the assessment carries a separate weight at age matrix for the fishery</span></span>
+<span>    <span class="co"># and for each survey index</span></span>
+<span>    WAA_fish <span class="op">=</span> <span class="va">sgl_rg_ebswp_data</span><span class="op">$</span><span class="va">WAA_fish</span>,</span>
+<span>    WAA_srv <span class="op">=</span> <span class="va">sgl_rg_ebswp_data</span><span class="op">$</span><span class="va">WAA_srv</span>,</span>
 <span>    MatAA <span class="op">=</span> <span class="va">sgl_rg_ebswp_data</span><span class="op">$</span><span class="va">MatAA</span>,</span>
 <span></span>
 <span>    <span class="co"># Model options</span></span>
@@ -259,7 +292,6 @@ we only highlight the sections that differ.</p>
 <span></span>
 <span>    <span class="co"># Data inputs</span></span>
 <span>    ObsCatch <span class="op">=</span> <span class="va">sgl_rg_ebswp_data</span><span class="op">$</span><span class="va">ObsCatch</span>,</span>
-<span>    Catch_Type <span class="op">=</span> <span class="va">sgl_rg_ebswp_data</span><span class="op">$</span><span class="va">Catch_Type</span>,</span>
 <span>    UseCatch <span class="op">=</span> <span class="va">sgl_rg_ebswp_data</span><span class="op">$</span><span class="va">UseCatch</span>,</span>
 <span></span>
 <span>    <span class="co"># Model options</span></span>
@@ -308,30 +340,37 @@ we only highlight the sections that differ.</p>
 <span>    ObsSrvAgeComps <span class="op">=</span> <span class="va">sgl_rg_ebswp_data</span><span class="op">$</span><span class="va">ObsSrvAgeComps</span>,</span>
 <span>    ISS_SrvAgeComps <span class="op">=</span> <span class="va">sgl_rg_ebswp_data</span><span class="op">$</span><span class="va">ISS_SrvAgeComps</span>,</span>
 <span>    UseSrvAgeComps <span class="op">=</span> <span class="va">sgl_rg_ebswp_data</span><span class="op">$</span><span class="va">UseSrvAgeComps</span>,</span>
-<span>    ObsSrvLenComps <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="cn">NA_real_</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">lens</span><span class="op">)</span>, <span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>    UseSrvLenComps <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    ObsSrvLenComps <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="cn">NA_real_</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">lens</span><span class="op">)</span>, <span class="fl">1</span>, <span class="va">n_srv</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    UseSrvLenComps <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>, <span class="va">n_srv</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>    ISS_SrvLenComps <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span></span>
 <span>    <span class="co"># Model options</span></span>
-<span>    srv_idx_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"biom"</span>, <span class="st">"biom"</span>, <span class="st">"biom"</span><span class="op">)</span>,</span>
-<span>    <span class="co"># abundance and biomass for survey fleet 1, 2, and 3</span></span>
-<span>    SrvAgeComps_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Multinomial"</span>, <span class="st">"Multinomial"</span>, <span class="st">"Multinomial"</span><span class="op">)</span>,</span>
-<span>    <span class="co"># survey age composition likelihood for survey fleet 1, 2, and 3</span></span>
-<span>    SrvLenComps_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"none"</span>, <span class="st">"none"</span><span class="op">)</span>,</span>
-<span>    <span class="co">#  survey length composition likelihood for survey fleet 1, 2, and 3</span></span>
+<span>    srv_idx_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"biom"</span>, <span class="st">"biom"</span>, <span class="st">"biom"</span>, <span class="st">"abd"</span><span class="op">)</span>,</span>
+<span>    <span class="co"># biomass for survey fleets 1 to 3, abundance for survey fleet 4</span></span>
+<span>    srv_idx_ages <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="cn">NULL</span>, <span class="cn">NULL</span>, <span class="cn">NULL</span>, <span class="fl">1</span><span class="op">)</span>,</span>
+<span>    <span class="co"># fleet 4 is the acoustic survey's age 1 abundance, so it sees age 1 only</span></span>
+<span>    SrvIdx_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mvn"</span>, <span class="st">"lognormal"</span>, <span class="st">"normal"</span>, <span class="st">"lognormal"</span><span class="op">)</span>,</span>
+<span>    <span class="co"># index likelihood for survey fleet 1, 2, 3, and 4</span></span>
+<span>    SrvIdx_Cov <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">sgl_rg_ebswp_data</span><span class="op">$</span><span class="va">SrvIdx_Cov</span>, <span class="cn">NULL</span>, <span class="cn">NULL</span>, <span class="cn">NULL</span><span class="op">)</span>,</span>
+<span>    <span class="co"># the bottom trawl index is fit with a full covariance matrix</span></span>
+<span>    SrvAgeComps_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Multinomial"</span>, <span class="st">"Multinomial"</span>, <span class="st">"none"</span>, <span class="st">"none"</span><span class="op">)</span>,</span>
+<span>    <span class="co"># survey age composition likelihood for survey fleet 1, 2, 3, and 4</span></span>
+<span>    SrvAgeComps_bins <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="cn">NULL</span>, <span class="fl">2</span><span class="op">:</span><span class="fl">15</span>, <span class="cn">NULL</span>, <span class="cn">NULL</span><span class="op">)</span>,</span>
+<span>    <span class="co"># the acoustic compositions are normalised over ages 2-15 only</span></span>
+<span>    SrvLenComps_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="va">n_srv</span><span class="op">)</span>,</span>
+<span>    <span class="co">#  survey length composition likelihood for survey fleet 1, 2, 3, and 4</span></span>
 <span>    SrvAgeComps_Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>      <span class="st">"agg_Year_1-terminal_Fleet_1"</span>,</span>
 <span>      <span class="st">"agg_Year_1-terminal_Fleet_2"</span>,</span>
-<span>      <span class="st">"none_Year_1-terminal_Fleet_3"</span></span>
+<span>      <span class="st">"none_Year_1-terminal_Fleet_3"</span>,</span>
+<span>      <span class="st">"none_Year_1-terminal_Fleet_4"</span></span>
 <span>    <span class="op">)</span>,</span>
 <span>    <span class="co"># survey age comp type</span></span>
 <span></span>
-<span>    SrvLenComps_Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>      <span class="st">"none_Year_1-terminal_Fleet_1"</span>,</span>
-<span>      <span class="st">"none_Year_1-terminal_Fleet_2"</span>,</span>
-<span>      <span class="st">"none_Year_1-terminal_Fleet_3"</span></span>
-<span>    <span class="op">)</span></span>
+<span>    SrvLenComps_Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"none_Year_1-terminal_Fleet_"</span>, <span class="fl">1</span><span class="op">:</span><span class="va">n_srv</span><span class="op">)</span>,</span>
 <span>    <span class="co"># survey length comp type</span></span>
+<span>    t_srv <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">0.5</span>, <span class="fl">0</span>, <span class="fl">0.5</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="va">n_srv</span><span class="op">)</span><span class="op">)</span></span>
+<span>    <span class="co"># fraction of the year elapsed when each survey occurs</span></span>
 <span>  <span class="op">)</span></span>
 <span></span>
 <span></span>
@@ -364,19 +403,18 @@ we only highlight the sections that differ.</p>
 <span></span>
 <span>    <span class="co"># Model options</span></span>
 <span>    <span class="co"># survey selectivity blocks</span></span>
-<span>    srv_sel_blocks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none_Fleet_1"</span>, <span class="st">"none_Fleet_2"</span>, <span class="st">"none_Fleet_3"</span><span class="op">)</span>,</span>
+<span>    srv_sel_blocks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"none_Fleet_"</span>, <span class="fl">1</span><span class="op">:</span><span class="va">n_srv</span><span class="op">)</span>,</span>
 <span>    <span class="co"># survey selectivity form</span></span>
-<span>    srv_sel_model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>      <span class="st">"logist1_Fleet_1"</span>,</span>
-<span>      <span class="st">"logist1_Fleet_2"</span>,</span>
-<span>      <span class="st">"logist1_Fleet_3"</span></span>
-<span>    <span class="op">)</span>,</span>
+<span>    srv_sel_model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"logist1_Fleet_"</span>, <span class="fl">1</span><span class="op">:</span><span class="va">n_srv</span><span class="op">)</span>,</span>
 <span>    <span class="co"># survey catchability blocks</span></span>
-<span>    srv_q_blocks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none_Fleet_1"</span>, <span class="st">"none_Fleet_2"</span>, <span class="st">"none_Fleet_3"</span><span class="op">)</span>,</span>
-<span>    <span class="co"># whether to estiamte all fixed effects for survey selectivity</span></span>
-<span>    srv_fixed_sel_pars_spec <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"est_all"</span>, <span class="st">"est_all"</span>, <span class="st">"est_shared_f_2"</span><span class="op">)</span>,</span>
+<span>    srv_q_blocks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"none_Fleet_"</span>, <span class="fl">1</span><span class="op">:</span><span class="va">n_srv</span><span class="op">)</span>,</span>
+<span>    <span class="co"># whether to estiamte all fixed effects for survey selectivity. The vessel</span></span>
+<span>    <span class="co"># of opportunity index shares the acoustic survey's, and fleet 4 sees age 1</span></span>
+<span>    <span class="co"># only, where selectivity is absorbed into catchability and so is fixed.</span></span>
+<span>    srv_fixed_sel_pars_spec <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"est_all"</span>, <span class="st">"est_all"</span>, <span class="st">"est_shared_f_2"</span>, <span class="st">"fix"</span><span class="op">)</span>,</span>
 <span>    <span class="co"># whether to estiamte all fixed effects for survey catchability</span></span>
-<span>    srv_q_spec <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"est_all"</span>, <span class="st">"est_all"</span>, <span class="st">"est_all"</span><span class="op">)</span></span>
+<span>    srv_q_spec <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"est_all"</span>, <span class="va">n_srv</span><span class="op">)</span>,</span>
+<span>    t_srv <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">0.5</span>, <span class="fl">0</span>, <span class="fl">0.5</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="va">n_srv</span><span class="op">)</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
 <span></span>
 <span>  <span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Weighting.html">Setup_Mod_Weighting</a></span><span class="op">(</span></span>
@@ -390,11 +428,11 @@ we only highlight the sections that differ.</p>
 <span>    Wt_FishAgeComps <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">1</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>,</span>
 <span>                                       <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>,</span>
 <span>                                       <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_sexes</span>,</span>
-<span>                                       <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>                                       <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>    Wt_FishLenComps <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">1</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>,</span>
 <span>                                       <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>,</span>
 <span>                                       <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_sexes</span>,</span>
-<span>                                       <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>                                       <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>    Wt_SrvAgeComps <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">1</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>,</span>
 <span>                                      <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>,</span>
 <span>                                      <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_sexes</span>,</span>

@@ -12,9 +12,10 @@ get_steepness_prior(h_prior, h_trans)
 
 - h_prior:
 
-  Data frame with columns `pop`, `region`, `mu` (prior mean steepness,
-  natural scale), `sd` (prior SD, natural scale) with one row per
-  penalized parameter.
+  Data frame with optional columns `lb` and `ub` giving the beta's
+  support (defaulting to `0.2` and `1`), and columns `pop`, `region`,
+  `mu` (prior mean steepness, natural scale), `sd` (prior SD, natural
+  scale) with one row per penalized parameter.
 
 - h_trans:
 

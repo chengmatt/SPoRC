@@ -32,6 +32,19 @@
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-case-studies" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Case Studies</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-case-studies">
+<li><a class="dropdown-item" href="../articles/e_single_region_sablefish_case_study.html">Alaska Sablefish (Single Region)</a></li>
+    <li><a class="dropdown-item" href="../articles/f_single_region_ebs_pollock_case_study.html">Eastern Bering Sea Walleye Pollock</a></li>
+    <li><a class="dropdown-item" href="../articles/g_spatial_sablefish_case_study.html">Alaska Sablefish (Spatial)</a></li>
+    <li><a class="dropdown-item" href="../articles/w_goa_northern_rockfish_case_study.html">GOA Northern Rockfish</a></li>
+    <li><a class="dropdown-item" href="../articles/x_goa_dusky_rockfish_case_study.html">GOA Dusky Rockfish</a></li>
+    <li><a class="dropdown-item" href="../articles/y_bsai_northern_rockfish_case_study.html">BSAI Northern Rockfish</a></li>
+    <li><a class="dropdown-item" href="../articles/z_bsai_rougheye_rockfish_case_study.html">BSAI Blackspotted and Rougheye Rockfish</a></li>
+    <li><a class="dropdown-item" href="../articles/aa_bsai_pacific_ocean_perch_case_study.html">BSAI Pacific Ocean Perch</a></li>
+  </ul>
+</li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -216,6 +229,25 @@ random effects)</td>
 <td>0</td>
 </tr>
 <tr class="even">
+<td><code>ln_fishsel_bin_devs</code></td>
+<td><code>n_regions × (n_years + n_proj_yrs_devs) × n_bins × n_sexes × n_fish_fleets</code></td>
+<td>Log-scale bin-override selectivity deviations. Bins named in
+<code>fish_sel_bin_dev_bins</code> take <code>exp(deviation)</code> as
+their selectivity outright, replacing the functional form for that bin;
+all other cells are fixed at zero and unused (can be specified as random
+effects)</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td><code>fishsel_bin_devs_pe_pars</code></td>
+<td><code>n_regions × n_bins × n_sexes × n_fish_fleets</code></td>
+<td>Log-scale process error standard deviations for the bin-override
+deviations. Only estimated for overridden bins whose fleet requests iid
+or random walk structure via <code>cont_tv_fishsel_bin_devs</code>
+</td>
+<td>0</td>
+</tr>
+<tr class="even">
 <td><code>ret_fixed_sel_pars</code></td>
 <td><code>n_regions × max_ret_pars × max_retsel_blks × n_sexes × n_fish_fleets</code></td>
 <td>Retention selectivity curve parameters</td>
@@ -235,8 +267,27 @@ random effects)</td>
 be specified as random effects)</td>
 <td>0</td>
 </tr>
+<tr class="odd">
+<td><code>ln_retsel_bin_devs</code></td>
+<td><code>n_regions × (n_years + n_proj_yrs_devs) × n_bins × n_sexes × n_fish_fleets</code></td>
+<td>Log-scale bin-override retention selectivity deviations (see
+<code>ln_fishsel_bin_devs</code> above)</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td><code>retsel_bin_devs_pe_pars</code></td>
+<td><code>n_regions × n_bins × n_sexes × n_fish_fleets</code></td>
+<td>Log-scale process error standard deviations for the retention
+bin-override deviations</td>
+<td>0</td>
+</tr>
 </tbody>
 </table>
+<p>Note that <code>fish_fixed_sel_pars</code> holds parameters on the
+scale of the chosen functional form: log scale for most forms, logit
+scale for the <code>"nonpar"</code> form and for asymptote parameters,
+and log scale per bin for the <code>"nonparlog"</code> form (where each
+year’s curve is standardized to average one across bins).</p>
 </div>
 <div class="section level2">
 <h2 id="fishery-catchability">Fishery Catchability<a class="anchor" aria-label="anchor" href="#fishery-catchability"></a>
@@ -562,6 +613,20 @@ n_ages or n_lens depending on selectivity type) (can be specified as
 random effects)</td>
 <td>0</td>
 </tr>
+<tr class="even">
+<td><code>ln_srvsel_bin_devs</code></td>
+<td><code>n_regions × (n_years + n_proj_yrs_devs) × n_bins × n_sexes × n_srv_fleets</code></td>
+<td>Log-scale bin-override selectivity deviations (see
+<code>ln_fishsel_bin_devs</code> in <a href="#fishery-selectivity">Fishery Selectivity</a>)</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td><code>srvsel_bin_devs_pe_pars</code></td>
+<td><code>n_regions × n_bins × n_sexes × n_srv_fleets</code></td>
+<td>Log-scale process error standard deviations for the survey
+bin-override deviations</td>
+<td>0</td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -585,7 +650,10 @@ random effects)</td>
 <tr class="odd">
 <td><code>ln_srv_q</code></td>
 <td><code>n_regions × max_srvq_blks × n_srv_fleets</code></td>
-<td>Log-scale survey catchability coefficient</td>
+<td>Log-scale survey catchability coefficient. Automatically fixed (not
+estimated) for fleets whose catchability is solved analytically via
+<code>srv_q_type</code>
+</td>
 <td>0</td>
 </tr>
 <tr class="even">
@@ -815,8 +883,11 @@ parameterization; omitted when
 <tr class="odd">
 <td><code>steepness_h</code></td>
 <td><code>n_pop × n_regions</code></td>
-<td>Steepness of stock-recruitment relationship (logit scale, bounded
-0.2-1)</td>
+<td>Steepness of the stock-recruitment relationship (logit scale,
+bounded 0.2 to 1). Used by both <code>"bh_rec"</code> and
+<code>"ricker_rec"</code>, though steepness values are not
+interchangeable between the two curves (see
+<code><a href="../articles/c_model_equations.html">vignette("c_model_equations")</a></code>)</td>
 <td>0</td>
 </tr>
 <tr class="even">

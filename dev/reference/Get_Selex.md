@@ -19,7 +19,9 @@ Get_Selex(
   Wbin_bicubic = NULL,
   Wyr_bicubic = NULL,
   n_bin_nodes_bicubic = NULL,
-  n_yr_nodes_bicubic = NULL
+  n_yr_nodes_bicubic = NULL,
+  bin_devs = NULL,
+  bin_dev_bins = NULL
 )
 ```
 
@@ -68,6 +70,14 @@ Get_Selex(
   :   Logistic selectivity with asymptote (b50, b95 parameterization):
       \\\alpha / (1 + 19^{(b\_{50} - \text{bin})/b\_{95}})\\. Equivalent
       to Model 3 scaled by asymptote \\\alpha\\.
+
+  9
+
+  :   Non-parametric selectivity on the log scale, standardized so each
+      year's selectivity averages to one across bins. Differs from model
+      5 in both respects: 5 bounds every raw value below one through
+      `plogis` and standardizes over years and bins jointly, whereas 9
+      leaves the scale free and centers within the year.
 
   8
 
@@ -150,6 +160,10 @@ Get_Selex(
 
   :   `c(logit_alpha, ln_b50, ln_b95)`
 
+  Model 9
+
+  :   `c(ln_sel_1, ..., ln_sel_nbins)`
+
   Model 8
 
   :   Flattened bin-node x year-node log-selectivity grid, length
@@ -225,6 +239,21 @@ Get_Selex(
   padding mismatch is possible (a single bicubic block or fleet, or
   direct unit testing).
 
+- bin_devs:
+
+  Array of log-scale bin-override deviations with dimension
+  `[n_regions, n_years, n_bins, n_sexes, 1]`, or `NULL`. Supplies the
+  value for every bin named in `bin_dev_bins`.
+
+- bin_dev_bins:
+
+  Integer vector of bins whose selectivity is replaced by
+  `exp(bin_devs[...])` rather than taken from the functional form, or
+  `NULL` for none. The override is applied after everything else,
+  including any standardization the form performs internally, so the
+  named bins are governed entirely by their own deviations while the
+  rest of the curve keeps its parametric shape.
+
 ## Value
 
 Numeric vector of selectivity values corresponding to `Bin`. Values are
@@ -245,6 +274,12 @@ selectivity curve as multiplicative log-normal perturbations:
 For `Selex_Model = 5`, selectivity is fully non-parametric: bin-specific
 logit parameters are optionally adjusted by time-varying deviations and
 transformed via: \$\$\text{selex}\_b = \text{logit}^{-1}(\eta_b)\$\$.
+
+For `Selex_Model = 9`, selectivity is likewise fully non-parametric but
+held on the log scale and standardized within each year:
+\$\$\text{selex}\_b = \exp(\eta_b) / \overline{\exp(\eta)}\$\$. Only the
+differences among \\\eta\\ within a year are identified, so the level of
+\\\eta\\ is free and is absorbed by catchability or fishing mortality.
 
 Models 6 and 7 extend logistic selectivity by introducing an asymptote
 parameter \\\alpha \in (0,1)\\ that allows selectivity to saturate below

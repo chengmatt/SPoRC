@@ -3,7 +3,10 @@
 Several options are available to set up random effects in `SPoRC`. In
 this vignette, we will demonstrate how fishery selectivity random
 effects might be set up, using Eastern Bering Sea (EBS) as a case study.
-We will first load in the relevant packages and datasets.
+Note that results in the vignette are slightly different from the
+original Fish and Fisheries paper (Cheng et al. 2026) given slight
+updates to the model. We will first load in the relevant packages and
+datasets.
 
 ``` r
 
@@ -54,12 +57,21 @@ iterating over combinations of these options, we can investigate how
 different assumptions about selectivity-related random effects influence
 model fit and inference.
 
-We keep survey selectivity fixed for simplicity (to focus the comparison
-on the fishery), and use the Laplace approximation to integrate out the
-random effects. The setup for recruitment, mortality, biological
-processes, and survey indices follows the earlier vignette “Setting up a
-Single Region Model (Eastern Bering Sea Pollock)”, so here we only
+We keep survey selectivity time invariant for simplicity (to focus the
+comparison on the fishery), and use the Laplace approximation to
+integrate out the random effects. The setup for recruitment, mortality,
+biological processes, and survey indices follows the earlier vignette
+“Case Study: Eastern Bering Sea Walleye Pollock”, so here we only
 highlight the sections that differ.
+
+The model carries four survey fleets: the bottom trawl survey, the
+acoustic trawl survey, the acoustic vessel of opportunity index, and the
+acoustic survey’s age 1 abundance. The last is not a fifth survey. The
+pollock assessment fits the acoustic survey’s age 1 abundance as its own
+likelihood component with its own catchability, separate from the
+acoustic biomass index and from its age composition, and `SPoRC`
+attaches one index to one survey fleet. `srv_idx_ages` is what restricts
+that fleet to age 1.
 
 ``` r
 
@@ -89,7 +101,11 @@ highlight the sections that differ.
 #' - one region
 #' - one sex
 #' - one fishery fleet
-#' - three survey fleets
+#' - four survey fleets
+#'
+#' Survey fleet 1 is the bottom trawl survey, 2 the acoustic trawl survey, 3 the
+#' acoustic vessel of opportunity index, and 4 the acoustic survey's age 1
+#' abundance, which the assessment fits as an index of its own.
 #'
 #' Natural mortality (\eqn{M}) is fixed at:
 #' - 0.9 for age-1,
@@ -120,6 +136,8 @@ pol_model <- function(cont_tv_fish_sel,
                       fish_sel_devs_spec
                       ) {
 
+  n_srv <- sgl_rg_ebswp_data$n_srv_fleets
+
   ## Initialize model dimensions and data list----
   input_list <- Setup_Mod_Dim(
     years = sgl_rg_ebswp_data$years,
@@ -134,7 +152,7 @@ pol_model <- function(cont_tv_fish_sel,
     # number of sexes
     n_fish_fleets = 1,
     # number of fishery fleets
-    n_srv_fleets = 3, # number of survey fleets
+    n_srv_fleets = n_srv, # number of survey fleets
     n_pop = 1, # number of populations
     verbose = FALSE
   )
@@ -176,6 +194,10 @@ pol_model <- function(cont_tv_fish_sel,
 
     # Data inputs
     WAA = sgl_rg_ebswp_data$WAA,
+    # the assessment carries a separate weight at age matrix for the fishery
+    # and for each survey index
+    WAA_fish = sgl_rg_ebswp_data$WAA_fish,
+    WAA_srv = sgl_rg_ebswp_data$WAA_srv,
     MatAA = sgl_rg_ebswp_data$MatAA,
 
     # Model options
@@ -203,7 +225,6 @@ pol_model <- function(cont_tv_fish_sel,
 
     # Data inputs
     ObsCatch = sgl_rg_ebswp_data$ObsCatch,
-    Catch_Type = sgl_rg_ebswp_data$Catch_Type,
     UseCatch = sgl_rg_ebswp_data$UseCatch,
 
     # Model options
@@ -252,30 +273,37 @@ pol_model <- function(cont_tv_fish_sel,
     ObsSrvAgeComps = sgl_rg_ebswp_data$ObsSrvAgeComps,
     ISS_SrvAgeComps = sgl_rg_ebswp_data$ISS_SrvAgeComps,
     UseSrvAgeComps = sgl_rg_ebswp_data$UseSrvAgeComps,
-    ObsSrvLenComps = array(NA_real_, dim = c(1, length(input_list$data$years), input_list$data$n_seas, length(input_list$data$lens), 1, 3)),
-    UseSrvLenComps = array(0, dim = c(1, length(input_list$data$years), input_list$data$n_seas, 3)),
+    ObsSrvLenComps = array(NA_real_, dim = c(1, length(input_list$data$years), input_list$data$n_seas, length(input_list$data$lens), 1, n_srv)),
+    UseSrvLenComps = array(0, dim = c(1, length(input_list$data$years), input_list$data$n_seas, n_srv)),
     ISS_SrvLenComps = NULL,
 
     # Model options
-    srv_idx_type = c("biom", "biom", "biom"),
-    # abundance and biomass for survey fleet 1, 2, and 3
-    SrvAgeComps_LikeType = c("Multinomial", "Multinomial", "Multinomial"),
-    # survey age composition likelihood for survey fleet 1, 2, and 3
-    SrvLenComps_LikeType = c("none", "none", "none"),
-    #  survey length composition likelihood for survey fleet 1, 2, and 3
+    srv_idx_type = c("biom", "biom", "biom", "abd"),
+    # biomass for survey fleets 1 to 3, abundance for survey fleet 4
+    srv_idx_ages = list(NULL, NULL, NULL, 1),
+    # fleet 4 is the acoustic survey's age 1 abundance, so it sees age 1 only
+    SrvIdx_LikeType = c("mvn", "lognormal", "normal", "lognormal"),
+    # index likelihood for survey fleet 1, 2, 3, and 4
+    SrvIdx_Cov = list(sgl_rg_ebswp_data$SrvIdx_Cov, NULL, NULL, NULL),
+    # the bottom trawl index is fit with a full covariance matrix
+    SrvAgeComps_LikeType = c("Multinomial", "Multinomial", "none", "none"),
+    # survey age composition likelihood for survey fleet 1, 2, 3, and 4
+    SrvAgeComps_bins = list(NULL, 2:15, NULL, NULL),
+    # the acoustic compositions are normalised over ages 2-15 only
+    SrvLenComps_LikeType = rep("none", n_srv),
+    #  survey length composition likelihood for survey fleet 1, 2, 3, and 4
     SrvAgeComps_Type = c(
       "agg_Year_1-terminal_Fleet_1",
       "agg_Year_1-terminal_Fleet_2",
-      "none_Year_1-terminal_Fleet_3"
+      "none_Year_1-terminal_Fleet_3",
+      "none_Year_1-terminal_Fleet_4"
     ),
     # survey age comp type
 
-    SrvLenComps_Type = c(
-      "none_Year_1-terminal_Fleet_1",
-      "none_Year_1-terminal_Fleet_2",
-      "none_Year_1-terminal_Fleet_3"
-    )
+    SrvLenComps_Type = paste0("none_Year_1-terminal_Fleet_", 1:n_srv),
     # survey length comp type
+    t_srv = array(c(0.5, 0.5, 0, 0.5), dim = c(1, 1, n_srv))
+    # fraction of the year elapsed when each survey occurs
   )
 
 
@@ -308,19 +336,18 @@ pol_model <- function(cont_tv_fish_sel,
 
     # Model options
     # survey selectivity blocks
-    srv_sel_blocks = c("none_Fleet_1", "none_Fleet_2", "none_Fleet_3"),
+    srv_sel_blocks = paste0("none_Fleet_", 1:n_srv),
     # survey selectivity form
-    srv_sel_model = c(
-      "logist1_Fleet_1",
-      "logist1_Fleet_2",
-      "logist1_Fleet_3"
-    ),
+    srv_sel_model = paste0("logist1_Fleet_", 1:n_srv),
     # survey catchability blocks
-    srv_q_blocks = c("none_Fleet_1", "none_Fleet_2", "none_Fleet_3"),
-    # whether to estiamte all fixed effects for survey selectivity
-    srv_fixed_sel_pars_spec = c("est_all", "est_all", "est_shared_f_2"),
+    srv_q_blocks = paste0("none_Fleet_", 1:n_srv),
+    # whether to estiamte all fixed effects for survey selectivity. The vessel
+    # of opportunity index shares the acoustic survey's, and fleet 4 sees age 1
+    # only, where selectivity is absorbed into catchability and so is fixed.
+    srv_fixed_sel_pars_spec = c("est_all", "est_all", "est_shared_f_2", "fix"),
     # whether to estiamte all fixed effects for survey catchability
-    srv_q_spec = c("est_all", "est_all", "est_all")
+    srv_q_spec = rep("est_all", n_srv),
+    t_srv = array(c(0.5, 0.5, 0, 0.5), dim = c(1, 1, n_srv))
   )
 
   input_list <- Setup_Mod_Weighting(
@@ -334,11 +361,11 @@ pol_model <- function(cont_tv_fish_sel,
     Wt_FishAgeComps = array(1, dim = c(input_list$data$n_regions,
                                        length(input_list$data$years), input_list$data$n_seas,
                                        input_list$data$n_sexes,
-                                       input_list$data$n_srv_fleets)),
+                                       input_list$data$n_fish_fleets)),
     Wt_FishLenComps = array(1, dim = c(input_list$data$n_regions,
                                        length(input_list$data$years), input_list$data$n_seas,
                                        input_list$data$n_sexes,
-                                       input_list$data$n_srv_fleets)),
+                                       input_list$data$n_fish_fleets)),
     Wt_SrvAgeComps = array(1, dim = c(input_list$data$n_regions,
                                       length(input_list$data$years), input_list$data$n_seas,
                                       input_list$data$n_sexes,

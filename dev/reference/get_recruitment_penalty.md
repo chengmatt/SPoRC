@@ -26,7 +26,10 @@ get_recruitment_penalty(
   ln_RecDevs,
   sigmaR2_early,
   sigmaR2_late,
-  do_rec_bias_ramp
+  do_rec_bias_ramp,
+  map_ln_RecDevs = NULL,
+  RecDevs_pen_center = 0,
+  InitDevs_pen_center = 0
 )
 ```
 
@@ -94,6 +97,12 @@ get_recruitment_penalty(
 - do_rec_bias_ramp:
 
   Integer switch enabling the bias-ramp log-sigma adjustment.
+
+- map_ln_RecDevs:
+
+  Array `[pop, region, year]` mirroring `map$ln_RecDevs`; cells that are
+  `NA` are fixed rather than estimated and are left unpenalized. `NULL`
+  penalizes every cell.
 
 ## Value
 

@@ -32,6 +32,19 @@
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-case-studies" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Case Studies</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-case-studies">
+<li><a class="dropdown-item" href="../articles/e_single_region_sablefish_case_study.html">Alaska Sablefish (Single Region)</a></li>
+    <li><a class="dropdown-item" href="../articles/f_single_region_ebs_pollock_case_study.html">Eastern Bering Sea Walleye Pollock</a></li>
+    <li><a class="dropdown-item" href="../articles/g_spatial_sablefish_case_study.html">Alaska Sablefish (Spatial)</a></li>
+    <li><a class="dropdown-item" href="../articles/w_goa_northern_rockfish_case_study.html">GOA Northern Rockfish</a></li>
+    <li><a class="dropdown-item" href="../articles/x_goa_dusky_rockfish_case_study.html">GOA Dusky Rockfish</a></li>
+    <li><a class="dropdown-item" href="../articles/y_bsai_northern_rockfish_case_study.html">BSAI Northern Rockfish</a></li>
+    <li><a class="dropdown-item" href="../articles/z_bsai_rougheye_rockfish_case_study.html">BSAI Blackspotted and Rougheye Rockfish</a></li>
+    <li><a class="dropdown-item" href="../articles/aa_bsai_pacific_ocean_perch_case_study.html">BSAI Pacific Ocean Perch</a></li>
+  </ul>
+</li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -345,6 +358,21 @@ to the initial equilibrium age structure. Note that the index
 is introduced because users can determine whether initial age deviations
 are estimated up to the penultimate age class, or across all classes
 including the plus group.</p>
+<p>Finally, the initial age structure can be specified as fully
+<em>free</em> (<code>init_age_strc = "free"</code>), in which case no
+equilibrium is projected at all. The deviations are then the initial
+numbers themselves rather than multipliers on an equilibrium:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>a</mi><mo>≠</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><msub><mi>ψ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow></msub><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>i</mi></mrow><mtext mathvariant="normal">Init</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">N_{p,r,y = 1,a \neq 1,s} = \psi_{p,r,y=1,s}\exp\left( \epsilon_{p,r,i}^{\text{Init}} \right)</annotation></semantics></math></p>
+<p>with the first age still taken from the recruitment process. Because
+the deviations are on the scale of log-numbers rather than log-ratios
+about an equilibrium, the initial condition carries no information about
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>μ</mi><mi>p</mi><mtext mathvariant="normal">RecInit</mtext></msubsup><annotation encoding="application/x-tex">\mu_p^{\text{RecInit}}</annotation></semantics></math>
+or the assumed initial fishing mortality; any penalty applied to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>ϵ</mi><mtext mathvariant="normal">Init</mtext></msup><annotation encoding="application/x-tex">\epsilon^{\text{Init}}</annotation></semantics></math>
+under this option acts as a prior on log initial abundance directly.
+This matches the convention of assessments in which initial
+numbers-at-age are freely estimated parameters rather than deviations
+from an equilibrium.</p>
 </div>
 <div class="section level4">
 <h4 id="recruitment-processes">Recruitment Processes<a class="anchor" aria-label="anchor" href="#recruitment-processes"></a>
@@ -423,6 +451,43 @@ and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mtext mathvariant="normal">effSSB</mtext><mrow><mi>p</mi><mo>,</mo><mi>y</mi></mrow></msub><annotation encoding="application/x-tex">\text{effSSB}_{p,y}</annotation></semantics></math>
 is the effective spawning stock biomass (see Spawning Biomass section
 below).</p>
+<p>A Ricker stock-recruit relationship can alternatively be specified
+(<code>rec_model = "ricker_rec"</code>), written in a depletion form.
+For localized density dependence:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>a</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><msubsup><mi>μ</mi><mi>p</mi><mtext mathvariant="normal">Rec</mtext></msubsup><msub><mi>ζ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow></msub><mfrac><msub><mtext mathvariant="normal">effSSB</mtext><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>−</mo><mi>R</mi><mi>e</mi><mi>c</mi><mi>L</mi><mi>a</mi><mi>g</mi></mrow></msub><msub><mtext mathvariant="normal">SSB0</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow></msub></mfrac><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>α</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">[</mo><mn>1</mn><mo>−</mo><mfrac><msub><mtext mathvariant="normal">effSSB</mtext><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>−</mo><mi>R</mi><mi>e</mi><mi>c</mi><mi>L</mi><mi>a</mi><mi>g</mi></mrow></msub><msub><mtext mathvariant="normal">SSB0</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow></msub></mfrac><mo stretchy="true" form="postfix">]</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow><mtext mathvariant="normal">Rec</mtext></msubsup><mo>−</mo><mfrac><msubsup><mi>σ</mi><mtext mathvariant="normal">Rec</mtext><mn>2</mn></msubsup><mn>2</mn></mfrac><msub><mi>b</mi><mi>y</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>χ</mi><mrow><mi>p</mi><mo>,</mo><mi>τ</mi><mo>=</mo><mn>1</mn></mrow></msub><msub><mi>ψ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>s</mi></mrow></msub></mrow><annotation encoding="application/x-tex">N_{p,r,y,\tau = 1,a = 1,s} = \mu_p^{\text{Rec}}\zeta_{p,r}\frac{\text{effSSB}_{p,y - RecLag}}{\text{SSB0}_{p,r}}\exp\left( \alpha_{p,r}\left\lbrack 1 - \frac{\text{effSSB}_{p,y - RecLag}}{\text{SSB0}_{p,r}} \right\rbrack \right)\exp\left( \epsilon_{p,r,y}^{\text{Rec}} - \frac{\sigma_{\text{Rec}}^{2}}{2}b_{y} \right)\chi_{p,\tau=1}\psi_{p,r,y,s}</annotation></semantics></math></p>
+<p>with the global form defined analogously by replacing the regional
+spawning biomass and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtext mathvariant="normal">SSB0</mtext><annotation encoding="application/x-tex">\text{SSB0}</annotation></semantics></math>
+with their sums across regions. The log-slope is derived from steepness
+as:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>α</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow></msub><mo>=</mo><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><mn>4</mn><msub><mi>h</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow></msub></mrow><mrow><mn>1</mn><mo>−</mo><msub><mi>h</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow></msub></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\alpha_{p,r} = \log\left( \frac{4h_{p,r}}{1 - h_{p,r}} \right)</annotation></semantics></math></p>
+<p>so the curve passes through
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mtext mathvariant="normal">SSB0</mtext><mo>,</mo><msub><mi>R</mi><mn>0</mn></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(\text{SSB0}, R_0)</annotation></semantics></math>
+by construction and carries the same compensation ratio as a
+Beverton-Holt at the same
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>h</mi><annotation encoding="application/x-tex">h</annotation></semantics></math>.
+This is <em>not</em> the textbook steepness definition
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mo stretchy="false" form="prefix">(</mo><mn>0.2</mn><mspace width="0.167em"></mspace><mtext mathvariant="normal">SSB0</mtext><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi>h</mi><msub><mi>R</mi><mn>0</mn></msub></mrow><annotation encoding="application/x-tex">R(0.2\,\text{SSB0}) = h R_0</annotation></semantics></math>:
+the Ricker here yields
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mo stretchy="false" form="prefix">(</mo><mn>0.2</mn><mspace width="0.167em"></mspace><mtext mathvariant="normal">SSB0</mtext><mo stretchy="false" form="postfix">)</mo><mi>/</mi><msub><mi>R</mi><mn>0</mn></msub><mo>=</mo><mn>0.2</mn><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>4</mn><mi>h</mi><mi>/</mi><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>h</mi><mo stretchy="false" form="postfix">)</mo><mo stretchy="true" form="postfix">)</mo></mrow><mn>0.8</mn></msup></mrow><annotation encoding="application/x-tex">R(0.2\,\text{SSB0})/R_0 = 0.2\left(4h/(1-h)\right)^{0.8}</annotation></semantics></math>,
+which exceeds
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>h</mi><annotation encoding="application/x-tex">h</annotation></semantics></math>
+and is not bounded above by 1. Steepness values are therefore not
+interchangeable between the Beverton-Holt and Ricker forms, and a
+steepness prior calibrated for one should not be reused for the other
+without translation.</p>
+<p>For both stock-recruit forms, the biological inputs to unfished
+spawning biomass per recruit (weight-at-age, maturity, natural
+mortality, and movement), and hence to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtext mathvariant="normal">SSB0</mtext><annotation encoding="application/x-tex">\text{SSB0}</annotation></semantics></math>
+and the scale of the curve, are taken from a single reference year set
+by <code>SR_ref_yr</code>. The default is the first model year, which is
+the model’s long-standing behaviour; setting <code>SR_ref_yr</code> to
+the terminal year conditions the curve on terminal-year biologicals
+instead, a convention several assessments use. With time-varying
+weight-at-age the two choices imply different
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtext mathvariant="normal">SSB0</mtext><annotation encoding="application/x-tex">\text{SSB0}</annotation></semantics></math>
+and therefore different depletion scales.</p>
 <p>The spawning stock biomass is the product of numbers-at-age, spawning
 weight-at-age, and maturity-at-age for females in the spawning season
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><annotation encoding="application/x-tex">\tau^{spawn}</annotation></semantics></math>:</p>
@@ -471,7 +536,8 @@ to compute deterministic recruitment.</p>
 recruitment for year
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>y</mi><annotation encoding="application/x-tex">y</annotation></semantics></math>
 is driven by that same year’s own spawning biomass rather than a prior
-year’s. The Beverton-Holt equations above still apply, but with
+year’s. The Beverton-Holt and Ricker equations above still apply, but
+with
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mtext mathvariant="normal">effSSB</mtext><mrow><mi>p</mi><mo>,</mo><mi>y</mi></mrow></msub><annotation encoding="application/x-tex">\text{effSSB}_{p,y}</annotation></semantics></math>
 (or
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mo>∑</mo><mi>r</mi></msub><mi>S</mi><mi>S</mi><msub><mi>B</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\sum_r SSB_{p,r,y}</annotation></semantics></math>
@@ -479,11 +545,7 @@ for global density dependence) in place of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mtext mathvariant="normal">effSSB</mtext><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>−</mo><mi>R</mi><mi>e</mi><mi>c</mi><mi>L</mi><mi>a</mi><mi>g</mi></mrow></msub><annotation encoding="application/x-tex">\text{effSSB}_{p,y - RecLag}</annotation></semantics></math>,
 and recruits enter starting at the spawning season
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><annotation encoding="application/x-tex">\tau^{spawn}</annotation></semantics></math>
-rather than season 1:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="center" style="text-align: center"><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>=</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><mo>,</mo><mi>a</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><mstyle displaystyle="true"><mfrac><mrow><mn>4</mn><msubsup><mi>μ</mi><mi>p</mi><mtext mathvariant="normal">Rec</mtext></msubsup><msub><mi>ζ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow></msub><msub><mi>h</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow></msub><msub><mtext mathvariant="normal">effSSB</mtext><mrow><mi>p</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>h</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><msub><mtext mathvariant="normal">SSB0</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow></msub><mo>+</mo><mn>5</mn><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>h</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow></msub><mo>−</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow><msub><mtext mathvariant="normal">effSSB</mtext><mrow><mi>p</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow></mfrac></mstyle><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow><mtext mathvariant="normal">Rec</mtext></msubsup><mo>−</mo><mfrac><msubsup><mi>σ</mi><mtext mathvariant="normal">Rec</mtext><mn>2</mn></msubsup><mn>2</mn></mfrac><msub><mi>b</mi><mi>y</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>χ</mi><mrow><mi>p</mi><mo>,</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup></mrow></msub><msub><mi>ψ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>s</mi></mrow></msub></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{matrix}
-N_{p,r,y,\tau = \tau^{spawn},a = 1,s} = \dfrac{4\mu_p^{\text{Rec}}\zeta_{p,r}h_{p,r}{\text{effSSB}}_{p,y}}{\left( 1 - h_{p,r} \right)\text{SSB0}_{p,r} + 5\left( h_{p,r} - 1 \right){\text{effSSB}}_{p,y}}\exp\left( \epsilon_{p,r,y}^{\text{Rec}} - \frac{\sigma_{\text{Rec}}^{2}}{2}b_{y} \right)\chi_{p,\tau^{spawn}}\psi_{p,r,y,s} \\
-\end{matrix}</annotation></semantics></math></p>
-<p>with any remaining seasonal share
+rather than season 1, with any remaining seasonal share
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi><mo>&gt;</mo><msup><mi>τ</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup></mrow><annotation encoding="application/x-tex">\tau &gt; \tau^{spawn}</annotation></semantics></math>)
 added to the existing numbers at age 1 exactly as in the
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi><mo>&gt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\tau &gt; 1</annotation></semantics></math>
@@ -912,6 +974,23 @@ fishery fleet
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>μ</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><annotation encoding="application/x-tex">\mu_{r,\tau,f}^{\text{Fsh}}</annotation></semantics></math>).
 When no catch data are available for a given region, season, and fleet,
 fishing mortality is set to zero.</p>
+<p>Under the default <code>ln_F_mean_spec = "est"</code> the mean is
+estimated and the deviations are departures from it.
+<code>ln_F_mean_spec = "fix"</code> instead fixes the mean at its
+starting value (zero on the log scale unless supplied), so that</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mtext mathvariant="normal">Fmort</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\text{Fmort}_{r,y,\tau,f} = \exp\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} \right)</annotation></semantics></math></p>
+<p>and the deviations are annual log fishing mortality outright,
+estimated as free parameters. Because the deviation penalty is then the
+only statement about the level of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>F</mi><annotation encoding="application/x-tex">F</annotation></semantics></math>,
+this parameterization must be paired with a penalty that leaves the
+level free: <code>Fdev_pen_center = "own_mean"</code> (deviations
+penalized about their own mean), <code>Fdev_model = "rw"</code> (only
+increments penalized), or <code>Use_F_pen = 0</code>. An
+<code>"iid"</code> or <code>"ar1"</code> penalty centred on the fixed
+zero mean would shrink the deviations toward
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">F = 1</annotation></semantics></math>,
+so that combination is rejected at setup.</p>
 <p>The discard mortality rate is parameterized analogously via logistic
 deviations about a mean logit-scale discard mortality rate:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>δ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>=</mo><mtext mathvariant="normal">logistic</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>μ</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow><mi>δ</mi></msubsup><mo>+</mo><msubsup><mi>ϵ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow><mi>δ</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\delta_{r,y,\tau,f} = \text{logistic}\left(\mu_{r,\tau,f}^{\delta} + \epsilon_{r,y,\tau,f}^{\delta}\right)</annotation></semantics></math></p>
@@ -1147,13 +1226,27 @@ product of total fishery selectivity and retention selectivity:</p>
 \end{matrix}</annotation></semantics></math></p>
 <p>where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>q</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><annotation encoding="application/x-tex">q_{r,y,f}^{\text{Fsh}}</annotation></semantics></math>
-is the catchability coefficient for a given fishery fleet. Note that
-unlike the survey index, the fishery index is computed directly from
-numbers-at-age without applying additional survival discounting: fishing
-is spread across the whole season rather than occurring at a point
-within it, so there is no analogue of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>t</mi><mrow><mi>s</mi><mi>r</mi><mi>v</mi></mrow></msup><annotation encoding="application/x-tex">t^{srv}</annotation></semantics></math>
-to discount by.</p>
+is the catchability coefficient for a given fishery fleet. By default
+the fishery index is computed directly from start-of-season
+numbers-at-age without survival discounting, on the rationale that
+fishing is spread across the whole season rather than occurring at a
+point within it. However, an optional within-season timing
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>t</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow><mrow><mi>f</mi><mi>i</mi><mi>s</mi><mi>h</mi></mrow></msubsup><annotation encoding="application/x-tex">t_{r,\tau,f}^{fish}</annotation></semantics></math>
+(<code>t_fish</code>, a fraction of the season) can be specified per
+region, season, and fleet, mirroring the survey convention: when
+supplied, the numbers entering the index are first decayed by</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msub><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>⋅</mo><msubsup><mi>t</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow><mrow><mi>f</mi><mi>i</mi><mi>s</mi><mi>h</mi></mrow></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">N_{p,r,y,\tau,a,s}\exp\left( - Z_{p,r,y,\tau,a,s} \cdot t_{r,\tau,f}^{fish} \right)</annotation></semantics></math></p>
+<p>with
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>t</mi><mrow><mi>f</mi><mi>i</mi><mi>s</mi><mi>h</mi></mrow></msup><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">t^{fish} = 0</annotation></semantics></math>
+reproducing the start-of-season default. This is appropriate for fishery
+CPUE series that reflect a survey-like snapshot (e.g., an index
+standardized to a particular part of the season).</p>
+<p>The set of ages entering the index sum can also be restricted per
+fleet via <code>fish_idx_ages</code>, replacing
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mo>∑</mo><mi>a</mi></msub><annotation encoding="application/x-tex">\sum_a</annotation></semantics></math>
+with a sum over the named ages only. The restriction applies to the
+index total alone; the fleet’s selectivity, catch, and compositions are
+unaffected.</p>
 <p>For the same reason, the fishery index follows catch rather than the
 survey when movement is continuous. Under
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 2</annotation></semantics></math>
@@ -1264,7 +1357,39 @@ indices across populations:
 Population-specific survey indices are compared directly to
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mtext mathvariant="normal">SrvIdx</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow></msub><annotation encoding="application/x-tex">\text{SrvIdx}_{p,r,y,\tau,sf}</annotation></semantics></math>
 without summation.</p>
-<p>For survey catchability, environmental linkage can be specified:</p>
+<p>As with the fishery index, the ages entering the survey index sum can
+be restricted per fleet via <code>srv_idx_ages</code>. Restricting a
+fleet to a single age turns it into an index of that age alone (e.g., an
+age-1 acoustic index of recruitment strength), while the fleet’s
+compositions continue to use the full age range because the restriction
+applies to the index sum rather than to selectivity.</p>
+<p>Survey catchability is by default an estimated parameter,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>q</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow><mtext mathvariant="normal">Srv</mtext></msubsup><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">ln</mi><msub><mi>q</mi><mrow><mi>r</mi><mo>,</mo><mover><mi>b</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>y</mi><mo stretchy="false" form="postfix">)</mo><mo>,</mo><mi>s</mi><mi>f</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">q_{r,y,sf}^{\text{Srv}} = \exp\left(\ln q_{r,\hat{b}(y),sf}\right)</annotation></semantics></math>
+with time-block structure
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>b</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>y</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\hat{b}(y)</annotation></semantics></math>.
+Alternatively, catchability can be concentrated out of the likelihood
+analytically (<code>srv_q_type</code>), treating it as a pure scaling
+nuisance parameter. Two analytic solutions are available, computed per
+region and fleet over only the years with observations. The arithmetic
+solution (<code>"arith"</code>) is the ratio of mean observed to mean
+predicted unscaled index:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>q</mi><mo accent="true">̂</mo></mover><mrow><mi>r</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow></msub><mo>=</mo><mfrac><mover><msub><mtext mathvariant="normal">ObsSrvIdx</mtext><mrow><mi>r</mi><mo>,</mo><mi>⋅</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow></msub><mo accent="true">¯</mo></mover><mover><msubsup><mtext mathvariant="normal">SrvIdx</mtext><mrow><mi>r</mi><mo>,</mo><mi>⋅</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow><mrow><mo stretchy="false" form="prefix">(</mo><mi>q</mi><mo>=</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mo accent="true">¯</mo></mover></mfrac></mrow><annotation encoding="application/x-tex">\hat{q}_{r,sf} = \frac{\overline{\text{ObsSrvIdx}_{r,\cdot,sf}}}{\overline{\text{SrvIdx}_{r,\cdot,sf}^{(q=1)}}}</annotation></semantics></math></p>
+<p>and the geometric solution (<code>"geo"</code>) is the exponentiated
+mean log-ratio:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>q</mi><mo accent="true">̂</mo></mover><mrow><mi>r</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow></msub><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mover><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mtext mathvariant="normal">ObsSrvIdx</mtext><mrow><mi>r</mi><mo>,</mo><mi>⋅</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>−</mo><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mtext mathvariant="normal">SrvIdx</mtext><mrow><mi>r</mi><mo>,</mo><mi>⋅</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow><mrow><mo stretchy="false" form="prefix">(</mo><mi>q</mi><mo>=</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mo accent="true">¯</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\hat{q}_{r,sf} = \exp\left( \overline{\log\left(\text{ObsSrvIdx}_{r,\cdot,sf}\right) - \log\left(\text{SrvIdx}_{r,\cdot,sf}^{(q=1)}\right)} \right)</annotation></semantics></math></p>
+<p>where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mtext mathvariant="normal">SrvIdx</mtext><mrow><mo stretchy="false" form="prefix">(</mo><mi>q</mi><mo>=</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow></msup><annotation encoding="application/x-tex">\text{SrvIdx}^{(q=1)}</annotation></semantics></math>
+denotes the predicted index evaluated at
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>q</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">q = 1</annotation></semantics></math>.
+The geometric form is the exact maximum likelihood solution for a
+lognormal index likelihood with a shared standard error, and is the
+usual companion to a lognormal index; the arithmetic form matches the
+convention some existing assessments use. Analytic fleets fix their
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><msup><mi>q</mi><mtext mathvariant="normal">Srv</mtext></msup></mrow><annotation encoding="application/x-tex">\ln q^{\text{Srv}}</annotation></semantics></math>
+parameters automatically, ignore any block structure, and cannot carry
+catchability covariates or priors.</p>
+<p>For estimated survey catchability, environmental linkage can be
+specified:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>q</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow><mtext mathvariant="normal">Srv</mtext></msubsup><mo>=</mo><msubsup><mi>q</mi><mrow><mi>r</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow><mtext mathvariant="normal">Srv</mtext></msubsup><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>𝐱</mi><mi>T</mi></msup><mrow><mi>𝛃</mi><mo mathvariant="bold">+</mo></mrow><munderover><mo>∑</mo><mi>m</mi><mrow></mrow></munderover><mrow><msub><mi>ι</mi><mi>m</mi></msub><msub><mi>p</mi><mi>m</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>z</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">q_{r,y,sf}^{\text{Srv}} = q_{r,sf}^{\text{Srv}}\exp\left( \mathbf{x}^{T}\mathbf{\beta +}\sum_{m}^{}{\iota_{m}p_{m}\left( z_{r,y,sf} \right)} \right)</annotation></semantics></math></p>
 <p>where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>q</mi><mrow><mi>r</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow><mtext mathvariant="normal">Srv</mtext></msubsup><annotation encoding="application/x-tex">q_{r,sf}^{\text{Srv}}</annotation></semantics></math>
@@ -1575,6 +1700,23 @@ logit-scale parameters are transformed via the logistic function:</p>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>η</mi><mi>b</mi></msub><annotation encoding="application/x-tex">\eta_{b}</annotation></semantics></math>
 is a freely estimated logit-scale selectivity parameter for each
 bin.</p>
+<p>A second non-parametric form (<code>"nonparlog"</code>) holds the
+free parameters on the log scale instead and standardizes within each
+year so selectivity averages to one across bins:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="center" style="text-align: center"><msub><mrow><mi>S</mi><mi>e</mi><mi>l</mi></mrow><mrow><mi>y</mi><mo>,</mo><mi>b</mi></mrow></msub><mo>=</mo><mfrac><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>η</mi><mrow><mi>y</mi><mo>,</mo><mi>b</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mrow><mfrac><mn>1</mn><msub><mi>n</mi><mi>b</mi></msub></mfrac><munder><mo>∑</mo><msup><mi>b</mi><mo>′</mo></msup></munder><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>η</mi><mrow><mi>y</mi><mo>,</mo><msup><mi>b</mi><mo>′</mo></msup></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{matrix}
+{Sel}_{y,b} = \frac{\exp\left( \eta_{y,b} \right)}{\frac{1}{n_b}\sum_{b'}\exp\left( \eta_{y,b'} \right)}
+\end{matrix}</annotation></semantics></math></p>
+<p>The two non-parametric forms differ in both respects: the logit form
+bounds every raw value below one via the logistic transform and mean
+standardizes over years and bins jointly, whereas the log form leaves
+the scale free and centers within the year, the convention several
+existing assessments use. Under the log form only the differences among
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>η</mi><annotation encoding="application/x-tex">\eta</annotation></semantics></math>
+within a year are identified; the level of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>η</mi><annotation encoding="application/x-tex">\eta</annotation></semantics></math>
+is free and is absorbed by catchability or fishing mortality, which is
+why it is typically paired with the selectivity parameter centering
+penalty described in the Priors and Penalties section.</p>
 <p>Two additional logistic forms with a freely estimated asymptote
 parameter
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>∈</mo><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\alpha \in (0, 1)</annotation></semantics></math>
@@ -1722,8 +1864,27 @@ is the mean of log-selectivity across all years and bins for a given
 region, sex, and fleet. For length-based selectivity, mean
 standardization is applied directly to the selectivity-at-length values
 before conversion to the age domain via the size-age transition matrix.
-Further details on how selectivity deviations arise can be found in the
-“Selectivity Process Error” section of this document.</p>
+Because the log-scale non-parametric form already standardizes within
+each year, it is excluded from this joint standardization rather than
+being centered a second time. Further details on how selectivity
+deviations arise can be found in the “Selectivity Process Error” section
+of this document.</p>
+<p>Finally, individual bins can be overridden with their own freely
+estimated annual deviations (<code>*_sel_bin_dev_bins</code>),
+independent of the fleet’s functional form. For each named bin
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>b</mi><mo>*</mo></msup><annotation encoding="application/x-tex">b^{*}</annotation></semantics></math>:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mtext mathvariant="normal">Sel</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><msup><mi>b</mi><mo>*</mo></msup><mo>,</mo><mi>s</mi><mo>,</mo><mi>j</mi></mrow></msub><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><msup><mi>b</mi><mo>*</mo></msup><mo>,</mo><mi>s</mi><mo>,</mo><mi>j</mi></mrow><mtext mathvariant="normal">BinDev</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\text{Sel}_{r,y,b^{*},s,j} = \exp\left( \epsilon_{r,y,b^{*},s,j}^{\text{BinDev}} \right)</annotation></semantics></math></p>
+<p>replacing whatever the functional form (and any standardization or
+semi-parametric deviation) produced for that bin, while all remaining
+bins keep their parametric shape. The override is applied last, after
+every other transformation. The canonical use is a gear whose curve is
+well described by a parametric form over most of its range but whose
+youngest bin is governed by availability rather than by the gear (e.g.,
+age-1 availability to a bottom trawl varying with year-class strength):
+that bin becomes freely time-varying without abandoning the parametric
+form elsewhere. The override deviations can carry their own iid or
+random walk process error (<code>cont_tv_*sel_bin_devs</code>),
+described in the Selectivity Process Error section.</p>
 </div>
 </div>
 <div class="section level2">
@@ -1888,6 +2049,35 @@ population directly:</p>
 is the predicted survey index for population
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>p</mi><annotation encoding="application/x-tex">p</annotation></semantics></math>
 only.</p>
+<p>The lognormal above is the default, but each region-aggregated
+fishery and survey index fleet can instead be assigned one of two
+alternative error structures via <code>FishIdx_LikeType</code> /
+<code>SrvIdx_LikeType</code>. A normal likelihood on the arithmetic
+scale treats the supplied standard errors as arithmetic rather than
+log-scale:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ℓ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mtext mathvariant="normal">ObsIdx</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mn>1</mn><mrow><msqrt><mrow><mn>2</mn><mi>π</mi><msubsup><mi>σ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>j</mi></mrow><mn>2</mn></msubsup></mrow></msqrt><mspace width="0.167em"></mspace></mrow></mfrac><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mfrac><msup><mrow><mo stretchy="true" form="prefix">[</mo><msub><mtext mathvariant="normal">ObsIdx</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>j</mi></mrow></msub><mo>−</mo><msub><mtext mathvariant="normal">Idx</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">]</mo></mrow><mn>2</mn></msup><mrow><mn>2</mn><msubsup><mi>σ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>j</mi></mrow><mn>2</mn></msubsup></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\ell\left( \text{ObsIdx}_{r,y,\tau,j} \right) = \frac{1}{\sqrt{2\pi\sigma_{r,y,\tau,j}^{2}}\,}\exp\left( - \frac{\left\lbrack \text{ObsIdx}_{r,y,\tau,j} - \text{Idx}_{r,y,\tau,j} \right\rbrack^{2}}{2\sigma_{r,y,\tau,j}^{2}} \right)</annotation></semantics></math></p>
+<p>A multivariate normal likelihood places a fleet’s whole observed
+series in a single density with a fixed, user-supplied covariance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝚺</mi><mi>j</mi></msub><annotation encoding="application/x-tex">\mathbf{\Sigma}_{j}</annotation></semantics></math>
+across observations:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ℓ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mrow><mi>𝐎</mi><mi>𝐛</mi><mi>𝐬</mi><mi>𝐈</mi><mi>𝐝</mi><mi>𝐱</mi></mrow><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mn>1</mn><mrow><mo stretchy="false" form="prefix">(</mo><mn>2</mn><mi>π</mi><msup><mo stretchy="false" form="postfix">)</mo><mrow><mi>n</mi><mi>/</mi><mn>2</mn></mrow></msup><msup><mrow><mo stretchy="true" form="prefix">|</mo><msub><mi>𝚺</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">|</mo></mrow><mrow><mn>1</mn><mi>/</mi><mn>2</mn></mrow></msup></mrow></mfrac><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mfrac><mn>1</mn><mn>2</mn></mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mrow><mi>𝐎</mi><mi>𝐛</mi><mi>𝐬</mi><mi>𝐈</mi><mi>𝐝</mi><mi>𝐱</mi></mrow><mi>j</mi></msub><mo>−</mo><msub><mrow><mi>𝐈</mi><mi>𝐝</mi><mi>𝐱</mi></mrow><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>T</mi></msup><msubsup><mi>𝚺</mi><mi>j</mi><mrow><mi>−</mi><mn>1</mn></mrow></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mrow><mi>𝐎</mi><mi>𝐛</mi><mi>𝐬</mi><mi>𝐈</mi><mi>𝐝</mi><mi>𝐱</mi></mrow><mi>j</mi></msub><mo>−</mo><msub><mrow><mi>𝐈</mi><mi>𝐝</mi><mi>𝐱</mi></mrow><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\ell\left( \mathbf{ObsIdx}_{j} \right) = \frac{1}{(2\pi)^{n/2}\left| \mathbf{\Sigma}_{j} \right|^{1/2}}\exp\left( - \frac{1}{2}\left( \mathbf{ObsIdx}_{j} - \mathbf{Idx}_{j} \right)^{T}\mathbf{\Sigma}_{j}^{- 1}\left( \mathbf{ObsIdx}_{j} - \mathbf{Idx}_{j} \right) \right)</annotation></semantics></math></p>
+<p>where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>n</mi><annotation encoding="application/x-tex">n</annotation></semantics></math>
+is the number of fitted observations for the fleet, ordered as they
+appear when scanning the fleet’s use flags in array order. This is the
+appropriate form when the survey itself provides a covariance across
+years (e.g., a model-based index with estimated inter-annual
+correlation), since a diagonal likelihood would treat correlated
+residuals as independent information. The covariance is validated at
+setup for symmetry and positive definiteness and is factorized once when
+the AD tape is built. Note that the full multivariate density includes
+the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mstyle displaystyle="false"><mfrac><mi>n</mi><mn>2</mn></mfrac></mstyle><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mn>2</mn><mi>π</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">-\tfrac{n}{2}\log(2\pi)</annotation></semantics></math>
+constant, unlike TMB’s <code>MVNORM</code> convention, so absolute
+likelihood values differ from implementations that omit it even when the
+fits are identical. One-step-ahead (OSA) residuals are available only
+for lognormal index fleets; normal and MVN fleets are excluded from the
+OSA machinery.</p>
 </div>
 <div class="section level4">
 <h4 id="fishery-and-survey-compositions">Fishery and Survey Compositions<a class="anchor" aria-label="anchor" href="#fishery-and-survey-compositions"></a>
@@ -1913,6 +2103,22 @@ is the input sample size,
 denotes the expected composition proportions, and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>O</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>b</mi><mo>,</mo><mi>j</mi></mrow></msub><annotation encoding="application/x-tex">O_{r,y,\tau,b,j}</annotation></semantics></math>
 are the observed composition proportions.</p>
+<p>In its negative log form the multinomial is implemented with a small
+constant
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>c</mi><annotation encoding="application/x-tex">c</annotation></semantics></math>
+(<code>addtocomp</code>) guarding
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\log(0)</annotation></semantics></math>
+and an offset so a perfect fit contributes zero:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mi>ℓ</mi><mo>=</mo><mtext mathvariant="normal">ESS</mtext><munder><mo>∑</mo><mi>b</mi></munder><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>O</mi><mi>b</mi></msub><mo>+</mo><mi>c</mi><mo>⋅</mo><msup><mn>𝟙</mn><mtext mathvariant="normal">const</mtext></msup><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo stretchy="true" form="prefix">[</mo><mi mathvariant="normal">log</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>O</mi><mi>b</mi></msub><mo>+</mo><mi>c</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>−</mo><mi mathvariant="normal">log</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>E</mi><mi>b</mi></msub><mo>+</mo><mi>c</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">-\ell = \text{ESS}\sum_{b}\left( O_{b} + c \cdot \mathbb{1}^{\text{const}} \right)\left\lbrack \log\left( O_{b} + c \right) - \log\left( E_{b} + c \right) \right\rbrack</annotation></semantics></math></p>
+<p>The switch <code>comp_const_obs</code>
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mn>𝟙</mn><mtext mathvariant="normal">const</mtext></msup><annotation encoding="application/x-tex">\mathbb{1}^{\text{const}}</annotation></semantics></math>)
+controls whether
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>c</mi><annotation encoding="application/x-tex">c</annotation></semantics></math>
+is also added to the observed proportions used as weights. The default
+(<code>1</code>) is the long-standing <code>SPoRC</code> behaviour;
+<code>0</code> adds the constant only inside the logarithms, a
+convention several existing assessments use, and matters when bridging
+to them, since the added constant slightly reweights every bin.</p>
 <p>If a Dirichlet-multinomial likelihood is assumed, the following
 parameterization (linear) is used:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="center" style="text-align: center"><mi>ℓ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mtext mathvariant="normal">ObsCompositionData</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><msub><mi>λ</mi><msub><mtext mathvariant="normal">ObsCompositionData</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>j</mi></mrow></msub></msub><mo>⋅</mo><mfrac><mrow><mi mathvariant="normal">Γ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mtext mathvariant="normal">ISS</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>j</mi></mrow></msub><mo>+</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mrow><msub><mtext mathvariant="normal">ISS</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>j</mi></mrow></msub><mo>⋅</mo><msub><mi>O</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>b</mi><mo>,</mo><mi>j</mi></mrow></msub><mo>+</mo><mn>1</mn></mrow></mfrac><mo>⋅</mo><mfrac><mrow><mi mathvariant="normal">Γ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mtext mathvariant="normal">ISS</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>j</mi></mrow></msub><msub><mi>θ</mi><mrow><mi>r</mi><mo>,</mo><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mrow><mtext mathvariant="normal">Γ(</mtext><msub><mtext mathvariant="normal">ISS</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>j</mi></mrow></msub><mtext mathvariant="normal">+</mtext><msub><mtext mathvariant="normal">ISS</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>j</mi></mrow></msub><msub><mi>θ</mi><mrow><mi>r</mi><mo>,</mo><mi>j</mi></mrow></msub><mtext mathvariant="normal">)</mtext></mrow></mfrac><mo>⋅</mo></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><munderover><mo>∏</mo><mrow><mi>b</mi><mo>=</mo><mn>1</mn></mrow><msub><mi>n</mi><mi>b</mi></msub></munderover><mfrac><mrow><mi mathvariant="normal">Γ</mi><mo stretchy="false" form="prefix">(</mo><msub><mtext mathvariant="normal">ISS</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>j</mi></mrow></msub><msub><mi>O</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>b</mi><mo>,</mo><mi>j</mi></mrow></msub><mo>+</mo><msub><mtext mathvariant="normal">ISS</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>j</mi></mrow></msub><msub><mi>θ</mi><mrow><mi>r</mi><mo>,</mo><mi>j</mi></mrow></msub><msub><mi>E</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>b</mi><mo>,</mo><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo></mrow><mrow><msub><mtext mathvariant="normal">ISS</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>j</mi></mrow></msub><msub><mi>θ</mi><mrow><mi>r</mi><mo>,</mo><mi>j</mi></mrow></msub><msub><mi>E</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>b</mi><mo>,</mo><mi>j</mi></mrow></msub></mrow></mfrac></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{matrix}
@@ -2087,6 +2293,21 @@ multiplication. These three structuring options apply identically to
 retained fishery, discarded fishery, and survey composition likelihoods,
 as well as to both region-aggregated and population-specific
 variants.</p>
+<p>Additionally, each fleet’s age compositions can be restricted to a
+subset of observed bins (<code>FishAgeComps_bins</code> /
+<code>SrvAgeComps_bins</code>). Both the observed and expected
+compositions are subset to the named bins and renormalized within
+them:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>E</mi><mi>b</mi><mtext mathvariant="normal">fit</mtext></msubsup><mo>=</mo><mfrac><msub><mi>E</mi><mi>b</mi></msub><mrow><munder><mo>∑</mo><mrow><msup><mi>b</mi><mo>′</mo></msup><mo>∈</mo><mi>ℬ</mi></mrow></munder><msub><mi>E</mi><msup><mi>b</mi><mo>′</mo></msup></msub></mrow></mfrac><mo>,</mo><mspace width="2.0em"></mspace><msubsup><mi>O</mi><mi>b</mi><mtext mathvariant="normal">fit</mtext></msubsup><mo>=</mo><mfrac><msub><mi>O</mi><mi>b</mi></msub><mrow><munder><mo>∑</mo><mrow><msup><mi>b</mi><mo>′</mo></msup><mo>∈</mo><mi>ℬ</mi></mrow></munder><msub><mi>O</mi><msup><mi>b</mi><mo>′</mo></msup></msub></mrow></mfrac><mo>,</mo><mspace width="2.0em"></mspace><mi>b</mi><mo>∈</mo><mi>ℬ</mi></mrow><annotation encoding="application/x-tex">E_{b}^{\text{fit}} = \frac{E_{b}}{\sum_{b' \in \mathcal{B}}E_{b'}},\qquad O_{b}^{\text{fit}} = \frac{O_{b}}{\sum_{b' \in \mathcal{B}}O_{b'}},\qquad b \in \mathcal{B}</annotation></semantics></math></p>
+<p>where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℬ</mi><annotation encoding="application/x-tex">\mathcal{B}</annotation></semantics></math>
+is the fitted bin set, indexed on observed bins (i.e., after ageing
+error has mapped model ages onto observed ages). Bins outside
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℬ</mi><annotation encoding="application/x-tex">\mathcal{B}</annotation></semantics></math>
+are left out of the likelihood entirely rather than being forced to be
+explained, which is appropriate for a gear that only resolves part of
+the age range (e.g., a fishery that never encounters the youngest ages,
+whose zeros would otherwise carry information).</p>
 </div>
 </div>
 <div class="section level4">
@@ -2237,13 +2458,30 @@ is a selectivity parameter for a given functional form specified,
 is the prior variance, and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>μ</mi><mrow><mi>r</mi><mo>,</mo><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>j</mi></mrow><mtext mathvariant="normal">(Sel)</mtext></msubsup><annotation encoding="application/x-tex">\mu_{r,p,y,s,j}^{\text{(Sel)}}</annotation></semantics></math>
 is the prior mean for the specific selectivity parameter.</p>
+<p>In addition to lognormal priors on individual parameters, a
+<em>centering penalty</em> can be applied jointly to a named set of
+selectivity fixed-effect parameters (<code>Use_*_selex_penalty</code>
+with a <code>*_selex_penalty</code> table). For a set
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝒫</mi><annotation encoding="application/x-tex">\mathcal{P}</annotation></semantics></math>
+of parameters held on the log scale, the penalty is:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>P</mi><mtext mathvariant="normal">SelCenter</mtext></msub><mo>=</mo><mi>w</mi><msup><mrow><mo stretchy="true" form="prefix">[</mo><mi mathvariant="normal">log</mi><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mn>1</mn><mrow><mo stretchy="false" form="prefix">|</mo><mi>𝒫</mi><mo stretchy="false" form="prefix">|</mo></mrow></mfrac><munder><mo>∑</mo><mrow><mi>i</mi><mo>∈</mo><mi>𝒫</mi></mrow></munder><mi mathvariant="normal">exp</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>θ</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">P_{\text{SelCenter}} = w\left\lbrack \log\left( \frac{1}{|\mathcal{P}|}\sum_{i \in \mathcal{P}}\exp\left( \theta_{i} \right) \right) \right\rbrack^{2}</annotation></semantics></math></p>
+<p>i.e., the squared log of the set’s mean selectivity on the natural
+scale, pushing the average selectivity of the set toward one. This
+resolves the scale non-identifiability of non-parametric log-scale
+selectivity: such a curve is only identified up to a scalar once
+catchability or fishing mortality is free to absorb its level, and the
+centering penalty pins that scalar softly rather than fixing a bin
+outright. Because the expression averages on the natural scale, it is
+meaningful only for parameter sets held on the log scale (the
+<code>"nonparlog"</code> form); logit-scale sets would not average to
+anything interpretable as selectivity.</p>
 </div>
 <div class="section level5">
 <h5 id="steepness">Steepness<a class="anchor" aria-label="anchor" href="#steepness"></a>
 </h5>
-<p>If a Beverton-Holt stock recruitment relationship is assumed, priors
-for steepness can be specified. Currently, a scaled beta prior (bounded
-between 0.2 and 1) can be invoked:</p>
+<p>If a stock-recruit relationship is assumed (Beverton-Holt or Ricker),
+priors for steepness can be specified. Currently, a scaled beta prior
+(bounded between 0.2 and 1 by default) can be invoked:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtable><mtr><mtd columnalign="center" style="text-align: center"><msubsup><mi>a</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow><mrow><mo stretchy="false" form="prefix">(</mo><mi>h</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><msubsup><mi>μ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow><mrow><mtext mathvariant="normal">(</mtext><mtext mathvariant="normal">h</mtext><mtext mathvariant="normal">)</mtext></mrow></msubsup><mo>−</mo><mn>0.2</mn></mrow><mrow><mn>1</mn><mo>−</mo><mn>0.2</mn></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><msup><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><msubsup><mi>σ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow><mrow><mo stretchy="false" form="prefix">(</mo><mi>h</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mrow><mn>1</mn><mo>−</mo><mn>0.2</mn></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable><mrow><msubsup><mi>b</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow><mrow><mo stretchy="false" form="prefix">(</mo><mi>h</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><mn>1</mn><mo>−</mo><mspace width="0.222em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><msubsup><mi>μ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow><mrow><mtext mathvariant="normal">(</mtext><mtext mathvariant="normal">h</mtext><mtext mathvariant="normal">)</mtext></mrow></msubsup><mo>−</mo><mn>0.2</mn></mrow><mrow><mn>1</mn><mo>−</mo><mn>0.2</mn></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow><mrow><mo stretchy="true" form="prefix">[</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><msubsup><mi>σ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow><mrow><mo stretchy="false" form="prefix">(</mo><mi>h</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mrow><mn>1</mn><mo>−</mo><mn>0.2</mn></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mo stretchy="true" form="postfix">]</mo></mrow></mrow><mrow><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>h</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mrow><mi mathvariant="normal">Γ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>a</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow><mrow><mo stretchy="false" form="prefix">(</mo><mi>h</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mi mathvariant="normal">Γ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>b</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow><mrow><mo stretchy="false" form="prefix">(</mo><mi>h</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mrow><mi mathvariant="normal">Γ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>a</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow><mrow><mo stretchy="false" form="prefix">(</mo><mi>h</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mo>+</mo><msubsup><mi>b</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow><mrow><mo stretchy="false" form="prefix">(</mo><mi>h</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac><msubsup><mi>h</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow><mrow><mi>a</mi><mo>−</mo><mn>1</mn></mrow></msubsup><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>h</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mi>b</mi><mo>−</mo><mn>1</mn></mrow></msup></mrow></mrow><annotation encoding="application/x-tex">{\begin{matrix}
 a_{p,r}^{(h)} = \left( \frac{\mu_{p,r}^{\text{(}\text{h}\text{)}} - 0.2}{1 - 0.2} \right)\left( \frac{\sigma_{p,r}^{(h)}}{1 - 0.2} \right)^{2} \\
 \end{matrix}
@@ -2259,6 +2497,25 @@ is the prior mean steepness for a given population and region (bounded
 between 0.2 and 1) while
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>σ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow><mrow><mo stretchy="false" form="prefix">(</mo><mi>h</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><annotation encoding="application/x-tex">\sigma_{p,r}^{(h)}</annotation></semantics></math>
 is the standard deviation for these priors.</p>
+<p>The support of the beta can be changed from the default
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mn>0.2</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(0.2, 1)</annotation></semantics></math>
+via optional <code>lb</code> and <code>ub</code> columns of the prior
+table, in which case every
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.2</mn><annotation encoding="application/x-tex">0.2</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>1</mn><annotation encoding="application/x-tex">1</annotation></semantics></math>
+above is replaced by the supplied bounds. This exists because a beta
+placed on a different interval is a genuinely different function of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>h</mi><annotation encoding="application/x-tex">h</annotation></semantics></math>
+rather than the same one shifted: a beta on
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(0, 1)</annotation></semantics></math>
+carries a
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>h</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\log(h)</annotation></semantics></math>
+term where the rescaled default carries
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>h</mi><mo>−</mo><mn>0.2</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\log(h - 0.2)</annotation></semantics></math>,
+and no choice of shape parameters reconciles the two. Matching a bridged
+assessment’s steepness prior therefore requires matching its support,
+not just its mean and standard deviation.</p>
 </div>
 <div class="section level5">
 <h5 id="recruitment-proportions">Recruitment Proportions<a class="anchor" aria-label="anchor" href="#recruitment-proportions"></a>
@@ -2526,20 +2783,76 @@ survey selectivity, and movement.</p>
 </h5>
 <p>To estimate non-equilibrium initial age deviations, multiplicative
 deviations can be specified:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ℓ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>i</mi></mrow><mtext mathvariant="normal">Init</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mn>1</mn><mrow><msqrt><mrow><mn>2</mn><mi>π</mi><msubsup><mi>σ</mi><mtext mathvariant="normal">Init</mtext><mn>2</mn></msubsup></mrow></msqrt><mspace width="0.167em"></mspace></mrow></mfrac><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>i</mi></mrow><mtext mathvariant="normal">Init</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mrow><mn>2</mn><msubsup><mi>σ</mi><mtext mathvariant="normal">Init</mtext><mn>2</mn></msubsup></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\ell\left( \epsilon_{p,r,i}^{\text{Init}} \right) = \frac{1}{\sqrt{2\pi\sigma_{\text{Init}}^{2}}\,}\exp\left( - \frac{\left( \epsilon_{p,r,i}^{\text{Init}} \right)^{2}}{2\sigma_{\text{Init}}^{2}} \right)</annotation></semantics></math></p>
-<p>where deviations arise from a normal distribution with a mean of 0
-and variance of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>σ</mi><mtext mathvariant="normal">Init</mtext><mn>2</mn></msubsup><annotation encoding="application/x-tex">\sigma_{\text{Init}}^{2}</annotation></semantics></math>.</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ℓ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>i</mi></mrow><mtext mathvariant="normal">Init</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mn>1</mn><mrow><msqrt><mrow><mn>2</mn><mi>π</mi><msubsup><mi>σ</mi><mtext mathvariant="normal">Init</mtext><mn>2</mn></msubsup></mrow></msqrt><mspace width="0.167em"></mspace></mrow></mfrac><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>i</mi></mrow><mtext mathvariant="normal">Init</mtext></msubsup><mo>−</mo><msup><mi>μ</mi><mtext mathvariant="normal">Init</mtext></msup><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mrow><mn>2</mn><msubsup><mi>σ</mi><mtext mathvariant="normal">Init</mtext><mn>2</mn></msubsup></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\ell\left( \epsilon_{p,r,i}^{\text{Init}} \right) = \frac{1}{\sqrt{2\pi\sigma_{\text{Init}}^{2}}\,}\exp\left( - \frac{\left( \epsilon_{p,r,i}^{\text{Init}} - \mu^{\text{Init}} \right)^{2}}{2\sigma_{\text{Init}}^{2}} \right)</annotation></semantics></math></p>
+<p>where deviations arise from a normal distribution with variance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>σ</mi><mtext mathvariant="normal">Init</mtext><mn>2</mn></msubsup><annotation encoding="application/x-tex">\sigma_{\text{Init}}^{2}</annotation></semantics></math>.
+The penalty mean
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>μ</mi><mtext mathvariant="normal">Init</mtext></msup><annotation encoding="application/x-tex">\mu^{\text{Init}}</annotation></semantics></math>
+is set by <code>InitDevs_pen_center</code>: under <code>"fixed"</code>
+(the default) it is the asserted prior mean (zero, or the bias-corrected
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><msubsup><mi>σ</mi><mtext mathvariant="normal">Rec</mtext><mn>2</mn></msubsup><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">-\sigma_{\text{Rec}}^{2}/2</annotation></semantics></math>
+under the bias ramp), constraining both the level and the spread of the
+deviations. Under <code>"own_mean"</code> it is the mean of the
+estimated deviations themselves, so only their spread is penalized and
+their level is left free; that is what a sum of squares about the
+series’ own mean amounts to, and it matches the convention of
+assessments whose deviation vectors are constrained to sum to zero. The
+penalty carries its own weight
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>λ</mi><mtext mathvariant="normal">InitRec</mtext></msup><annotation encoding="application/x-tex">\lambda^{\text{InitRec}}</annotation></semantics></math>
+(<code>Wt_Init_Rec</code>), separate from the recruitment deviation
+weight, since the two penalties are dimensioned differently.</p>
 </div>
 <div class="section level5">
 <h5 id="recruitment-deviations">Recruitment Deviations<a class="anchor" aria-label="anchor" href="#recruitment-deviations"></a>
 </h5>
 <p>Annual recruitment deviations can also be specified, where
 multiplicative deviations are assumed:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ℓ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow><mtext mathvariant="normal">Rec</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mn>1</mn><mrow><msqrt><mrow><mn>2</mn><mi>π</mi></mrow></msqrt><msubsup><mi>σ</mi><mtext mathvariant="normal">Rec</mtext><mn>2</mn></msubsup><mspace width="0.167em"></mspace></mrow></mfrac><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow><mtext mathvariant="normal">Rec</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mrow><mn>2</mn><msubsup><mi>σ</mi><mtext mathvariant="normal">Rec</mtext><mn>2</mn></msubsup></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\ell\left( \epsilon_{p,r,y}^{\text{Rec}} \right) = \frac{1}{\sqrt{2\pi}\sigma_{\text{Rec}}^{2}\,}\exp\left( - \frac{\left( \epsilon_{p,r,y}^{\text{Rec}} \right)^{2}}{2\sigma_{\text{Rec}}^{2}} \right)</annotation></semantics></math></p>
-<p>and deviations are assumed to be normally distributed, with a mean of
-0 and variance of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>σ</mi><mtext mathvariant="normal">Rec</mtext><mn>2</mn></msubsup><annotation encoding="application/x-tex">\sigma_{\text{Rec}}^{2}</annotation></semantics></math>.</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ℓ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow><mtext mathvariant="normal">Rec</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mn>1</mn><mrow><msqrt><mrow><mn>2</mn><mi>π</mi></mrow></msqrt><msubsup><mi>σ</mi><mtext mathvariant="normal">Rec</mtext><mn>2</mn></msubsup><mspace width="0.167em"></mspace></mrow></mfrac><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow><mtext mathvariant="normal">Rec</mtext></msubsup><mo>−</mo><msup><mi>μ</mi><mtext mathvariant="normal">Rec</mtext></msup><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mrow><mn>2</mn><msubsup><mi>σ</mi><mtext mathvariant="normal">Rec</mtext><mn>2</mn></msubsup></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\ell\left( \epsilon_{p,r,y}^{\text{Rec}} \right) = \frac{1}{\sqrt{2\pi}\sigma_{\text{Rec}}^{2}\,}\exp\left( - \frac{\left( \epsilon_{p,r,y}^{\text{Rec}} - \mu^{\text{Rec}} \right)^{2}}{2\sigma_{\text{Rec}}^{2}} \right)</annotation></semantics></math></p>
+<p>with variance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>σ</mi><mtext mathvariant="normal">Rec</mtext><mn>2</mn></msubsup><annotation encoding="application/x-tex">\sigma_{\text{Rec}}^{2}</annotation></semantics></math>.
+As for the initial age deviations, <code>RecDevs_pen_center</code>
+selects the penalty mean
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>μ</mi><mtext mathvariant="normal">Rec</mtext></msup><annotation encoding="application/x-tex">\mu^{\text{Rec}}</annotation></semantics></math>:
+<code>"fixed"</code> (default) centers on the asserted prior mean (zero,
+or the bias-corrected
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><msubsup><mi>σ</mi><mtext mathvariant="normal">Rec</mtext><mn>2</mn></msubsup><mi>/</mi><mn>2</mn><mo>⋅</mo><msub><mi>b</mi><mi>y</mi></msub></mrow><annotation encoding="application/x-tex">-\sigma_{\text{Rec}}^{2}/2 \cdot b_y</annotation></semantics></math>
+when the bias ramp is active), whereas <code>"own_mean"</code> centers
+on the mean of the estimated deviations, penalizing only their spread.
+Under <code>"own_mean"</code> the level of the deviations is unpenalized
+and must be pinned elsewhere (an
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>0</mn></msub><annotation encoding="application/x-tex">R_0</annotation></semantics></math>
+prior, or a fixed deviation), or the likelihood is flat along it; it
+also cannot be combined with the bias ramp, whose
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><msup><mi>σ</mi><mn>2</mn></msup><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">-\sigma^2/2</annotation></semantics></math>
+offset is meaningless once the mean is estimated rather than
+asserted.</p>
+<p>Three further refinements act on which deviations are penalized and
+how strongly. First, only <em>estimated</em> deviations are penalized:
+cells mapped off by hand (via <code>map$ln_RecDevs</code>) are excluded
+from the penalty as well as from estimation. Second, the recruitment
+weight
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>λ</mi><mtext mathvariant="normal">Rec</mtext></msup><annotation encoding="application/x-tex">\lambda^{\text{Rec}}</annotation></semantics></math>
+(<code>Wt_Rec</code>) may be a per-deviation array rather than a scalar,
+so individual deviations can be down-weighted or removed from the
+penalty (weight zero) while remaining estimated. This is how a
+stock-recruit relationship is fit over a chosen window of years while
+recruitment stays effectively free elsewhere, and is distinct from
+<code>dont_est_recdev_last</code>, which removes the deviations
+themselves so recruitment reverts to the deterministic prediction.</p>
+<p>Third, an optional penalty on the <em>level</em> of the recruitment
+series itself (<code>Use_rec_level_pen</code>) can be applied,
+separately from the deviation penalty:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ℓ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">log</mi><msub><mi>R</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mn>1</mn><mrow><msqrt><mrow><mn>2</mn><mi>π</mi><msubsup><mi>σ</mi><mtext mathvariant="normal">RecLevel</mtext><mn>2</mn></msubsup></mrow></msqrt><mspace width="0.167em"></mspace></mrow></mfrac><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">log</mi><msub><mi>R</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub><mo>−</mo><msup><mi>μ</mi><mtext mathvariant="normal">RecLevel</mtext></msup><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mrow><mn>2</mn><msubsup><mi>σ</mi><mtext mathvariant="normal">RecLevel</mtext><mn>2</mn></msubsup></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\ell\left( \log R_{p,r,y} \right) = \frac{1}{\sqrt{2\pi\sigma_{\text{RecLevel}}^{2}}\,}\exp\left( - \frac{\left( \log R_{p,r,y} - \mu^{\text{RecLevel}} \right)^{2}}{2\sigma_{\text{RecLevel}}^{2}} \right)</annotation></semantics></math></p>
+<p>evaluated over a chosen set of years
+(<code>rec_level_pen_yrs</code>), with
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>μ</mi><mtext mathvariant="normal">RecLevel</mtext></msup><annotation encoding="application/x-tex">\mu^{\text{RecLevel}}</annotation></semantics></math>
+either the mean of the log series (<code>"own_mean"</code>, penalizing
+only its variability) or zero (<code>"fixed"</code>). Under a
+stock-recruit relationship the deviations are residuals about the
+predicted curve, so a model that also wants to keep the realized
+recruitment series from wandering has nowhere else to say so; this
+penalty is that second, independent statement, and reproduces the
+recruitment regularity penalties several existing assessments carry.</p>
 </div>
 <div class="section level5">
 <h5 id="fishing-mortality-deviations">Fishing Mortality Deviations<a class="anchor" aria-label="anchor" href="#fishing-mortality-deviations"></a>
@@ -2561,10 +2874,25 @@ or any
 <div class="section level6">
 <h6 id="iid">IID<a class="anchor" aria-label="anchor" href="#iid"></a>
 </h6>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ℓ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mn>1</mn><mrow><msqrt><mrow><mn>2</mn><mi>π</mi><msubsup><mi>σ</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi><mo>,</mo><mtext mathvariant="normal">Fsh</mtext></mrow><mn>2</mn></msubsup></mrow></msqrt><mspace width="0.167em"></mspace></mrow></mfrac><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mrow><mn>2</mn><msubsup><mi>σ</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi><mo>,</mo><mtext mathvariant="normal">Fsh</mtext></mrow><mn>2</mn></msubsup></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\ell\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} \right) = \frac{1}{\sqrt{2\pi\sigma_{r,\tau,f,\text{Fsh}}^{2}}\,}\exp\left( - \frac{\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} \right)^{2}}{2\sigma_{r,\tau,f,\text{Fsh}}^{2}} \right)</annotation></semantics></math></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ℓ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mn>1</mn><mrow><msqrt><mrow><mn>2</mn><mi>π</mi><msubsup><mi>σ</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi><mo>,</mo><mtext mathvariant="normal">Fsh</mtext></mrow><mn>2</mn></msubsup></mrow></msqrt><mspace width="0.167em"></mspace></mrow></mfrac><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><mo>−</mo><msup><mi>μ</mi><mtext mathvariant="normal">Fsh</mtext></msup><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mrow><mn>2</mn><msubsup><mi>σ</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi><mo>,</mo><mtext mathvariant="normal">Fsh</mtext></mrow><mn>2</mn></msubsup></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\ell\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} \right) = \frac{1}{\sqrt{2\pi\sigma_{r,\tau,f,\text{Fsh}}^{2}}\,}\exp\left( - \frac{\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} - \mu^{\text{Fsh}} \right)^{2}}{2\sigma_{r,\tau,f,\text{Fsh}}^{2}} \right)</annotation></semantics></math></p>
 <p>Fishing mortality deviations are assumed to arise from a normal
-distribution, with mean 0 and a variance of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>σ</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi><mo>,</mo><mtext mathvariant="normal">Fsh</mtext></mrow><mn>2</mn></msubsup><annotation encoding="application/x-tex">\sigma_{r,\tau,f,\text{Fsh}}^{2}</annotation></semantics></math>.</p>
+distribution with variance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>σ</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi><mo>,</mo><mtext mathvariant="normal">Fsh</mtext></mrow><mn>2</mn></msubsup><annotation encoding="application/x-tex">\sigma_{r,\tau,f,\text{Fsh}}^{2}</annotation></semantics></math>.
+The penalty mean
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>μ</mi><mtext mathvariant="normal">Fsh</mtext></msup><annotation encoding="application/x-tex">\mu^{\text{Fsh}}</annotation></semantics></math>
+is set by <code>Fdev_pen_center</code> (iid model only):
+<code>"fixed"</code> (default) centers on zero, constraining both the
+level and the spread of the deviations, while <code>"own_mean"</code>
+centers on the mean of the estimated deviations, penalizing only their
+spread. Under the mean-plus-deviations parameterization the level of
+fishing mortality is already carried by
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>μ</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><annotation encoding="application/x-tex">\mu_{r,\tau,f}^{\text{Fsh}}</annotation></semantics></math>,
+so <code>"own_mean"</code> avoids penalizing it twice; note it also
+leaves
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>μ</mi><mtext mathvariant="normal">Fsh</mtext></msup><annotation encoding="application/x-tex">\mu^{\text{Fsh}}</annotation></semantics></math>
+and the deviations’ level mutually unidentified unless one of them is
+fixed, which <code>ln_F_mean_spec = "fix"</code> does (free annual
+log-F, see the fishing mortality parameterization above).</p>
 </div>
 <div class="section level6">
 <h6 id="random-walk">Random Walk<a class="anchor" aria-label="anchor" href="#random-walk"></a>
@@ -2665,17 +2993,45 @@ constrained by a normal distribution.</p>
 <p>Extending the iid case, random walk selectivity deviations can also
 be specified about a given parameter, assuming a normal
 distribution:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ℓ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>i</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>j</mi></mrow><mtext mathvariant="normal">Sel</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><mfrac><mn>1</mn><mrow><msqrt><mrow><mn>2</mn><mi>π</mi><mo>⋅</mo><msup><mn>5</mn><mn>2</mn></msup></mrow></msqrt><mspace width="0.167em"></mspace></mrow></mfrac><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>i</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>j</mi></mrow><mtext mathvariant="normal">Sel</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mrow><mn>2</mn><msup><mrow><mi>⋅</mi><mn>5</mn></mrow><mn>2</mn></msup></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="0.222em"></mspace><mi>i</mi><mi>f</mi><mspace width="0.222em"></mspace><mi>y</mi><mo>=</mo><mn>1</mn></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mfrac><mn>1</mn><mrow><msqrt><mrow><mn>2</mn><mi>π</mi><msubsup><mi>σ</mi><mrow><mi>r</mi><mo>,</mo><mi>i</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>j</mi><mo>,</mo><mi>S</mi><mi>e</mi><mi>l</mi></mrow><mn>2</mn></msubsup></mrow></msqrt><mspace width="0.167em"></mspace></mrow></mfrac><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>i</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>j</mi></mrow><mtext mathvariant="normal">Sel</mtext></msubsup><mo>−</mo><msubsup><mi>ϵ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>−</mo><mn>1</mn><mo>,</mo><mi>i</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>j</mi></mrow><mtext mathvariant="normal">Sel</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mrow><mn>2</mn><msubsup><mi>σ</mi><mrow><mi>r</mi><mo>,</mo><mi>i</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>j</mi><mo>,</mo><mi>S</mi><mi>e</mi><mi>l</mi></mrow><mn>2</mn></msubsup></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="0.222em"></mspace><mi>i</mi><mi>f</mi><mspace width="0.222em"></mspace><mi>y</mi><mo>&gt;</mo><mn>1</mn></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable></mrow><mspace width="0.222em"></mspace></mrow><annotation encoding="application/x-tex">\ell\left( \epsilon_{r,y,i,s,j}^{\text{Sel}} \right) = \left\{ \begin{matrix}
-\frac{1}{\sqrt{2\pi \cdot 5^{2}}\,}\exp\left( - \frac{\left( \epsilon_{r,y = 1,i,s,j}^{\text{Sel}} \right)^{2}}{2{\cdot 5}^{2}} \right),\ if\ y = 1 \\
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ℓ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>i</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>j</mi></mrow><mtext mathvariant="normal">Sel</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><mfrac><mn>1</mn><mrow><msqrt><mrow><mn>2</mn><mi>π</mi><mo>⋅</mo><msubsup><mi>σ</mi><mrow><mn>0</mn><mo>,</mo><mi>j</mi></mrow><mn>2</mn></msubsup></mrow></msqrt><mspace width="0.167em"></mspace></mrow></mfrac><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>i</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>j</mi></mrow><mtext mathvariant="normal">Sel</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mrow><mn>2</mn><msubsup><mi>σ</mi><mrow><mn>0</mn><mo>,</mo><mi>j</mi></mrow><mn>2</mn></msubsup></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="0.222em"></mspace><mi>i</mi><mi>f</mi><mspace width="0.222em"></mspace><mi>y</mi><mo>=</mo><mn>1</mn></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mfrac><mn>1</mn><mrow><msqrt><mrow><mn>2</mn><mi>π</mi><msubsup><mi>σ</mi><mrow><mi>r</mi><mo>,</mo><mi>i</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>j</mi><mo>,</mo><mi>S</mi><mi>e</mi><mi>l</mi></mrow><mn>2</mn></msubsup></mrow></msqrt><mspace width="0.167em"></mspace></mrow></mfrac><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>i</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>j</mi></mrow><mtext mathvariant="normal">Sel</mtext></msubsup><mo>−</mo><msubsup><mi>ϵ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>−</mo><mn>1</mn><mo>,</mo><mi>i</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>j</mi></mrow><mtext mathvariant="normal">Sel</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mrow><mn>2</mn><msubsup><mi>σ</mi><mrow><mi>r</mi><mo>,</mo><mi>i</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>j</mi><mo>,</mo><mi>S</mi><mi>e</mi><mi>l</mi></mrow><mn>2</mn></msubsup></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="0.222em"></mspace><mi>i</mi><mi>f</mi><mspace width="0.222em"></mspace><mi>y</mi><mo>&gt;</mo><mn>1</mn></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable></mrow><mspace width="0.222em"></mspace></mrow><annotation encoding="application/x-tex">\ell\left( \epsilon_{r,y,i,s,j}^{\text{Sel}} \right) = \left\{ \begin{matrix}
+\frac{1}{\sqrt{2\pi \cdot \sigma_{0,j}^{2}}\,}\exp\left( - \frac{\left( \epsilon_{r,y = 1,i,s,j}^{\text{Sel}} \right)^{2}}{2\sigma_{0,j}^{2}} \right),\ if\ y = 1 \\
 \frac{1}{\sqrt{2\pi\sigma_{r,i,s,j,Sel}^{2}}\,}\exp\left( - \frac{\left( \epsilon_{r,y,i,s,j}^{\text{Sel}} - \epsilon_{r,y - 1,i,s,j}^{\text{Sel}} \right)^{2}}{2\sigma_{r,i,s,j,Sel}^{2}} \right),\ if\ y &gt; 1 \\
 \end{matrix} \right.\ </annotation></semantics></math></p>
 <p>where process error deviations for the first year are initialized
-with a large variance. Following the first year, process error
-deviations follow a random walk process with a mean conditional on the
-previous year’s value
+with their own standard deviation
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mrow><mn>0</mn><mo>,</mo><mi>j</mi></mrow></msub><annotation encoding="application/x-tex">\sigma_{0,j}</annotation></semantics></math>
+(<code>*sel_rw_init_sigma</code>), which defaults to a large value
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>5</mn><annotation encoding="application/x-tex">5</annotation></semantics></math>)
+that leaves the first year effectively unconstrained. Setting it to
+<code>NA</code> instead starts the walk at zero under the walk’s own
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mrow><mi>S</mi><mi>e</mi><mi>l</mi></mrow></msub><annotation encoding="application/x-tex">\sigma_{Sel}</annotation></semantics></math>,
+which is what a first difference taken against a selectivity of one
+amounts to and makes the first year’s deviation as smooth as every later
+step. Following the first year, process error deviations follow a random
+walk process with a mean conditional on the previous year’s value
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>ϵ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>−</mo><mn>1</mn><mo>,</mo><mi>i</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>j</mi></mrow><mtext mathvariant="normal">Sel</mtext></msubsup><annotation encoding="application/x-tex">\epsilon_{r,y - 1,i,s,j}^{\text{Sel}}</annotation></semantics></math>)
 and a variance of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>σ</mi><mrow><mi>r</mi><mo>,</mo><mi>i</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>j</mi><mo>,</mo><mi>S</mi><mi>e</mi><mi>l</mi></mrow><mn>2</mn></msubsup><annotation encoding="application/x-tex">\sigma_{r,i,s,j,Sel}^{2}</annotation></semantics></math>.</p>
+<p>Each fleet’s process error contribution is additionally scaled by a
+per-fleet weight
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>λ</mi><mi>j</mi><mtext mathvariant="normal">SelPE</mtext></msubsup><annotation encoding="application/x-tex">\lambda_{j}^{\text{SelPE}}</annotation></semantics></math>
+(<code>fishsel_pe_wt</code>, <code>retsel_pe_wt</code>,
+<code>srvsel_pe_wt</code>; default
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>1</mn><annotation encoding="application/x-tex">1</annotation></semantics></math>)
+before entering the joint likelihood. A weight of zero removes the
+process error penalty for that fleet entirely while its deviations
+remain estimated, which is how a model reproduces assessments that let
+selectivity deviations float subject only to explicit smoothness
+penalties rather than a distributional assumption.</p>
+<p>The bin-override deviations described in the selectivity section
+carry their own process error (<code>cont_tv_*sel_bin_devs</code>),
+either iid or a random walk of exactly the forms above, with their own
+estimated
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>σ</mi><annotation encoding="application/x-tex">\sigma</annotation></semantics></math>
+per overridden bin and their own first-year standard deviation
+(<code>*sel_bin_devs_rw_init_sigma</code>). An overridden bin that is
+free of the functional form is thereby still smoothed in time when asked
+to be.</p>
 <p>In addition to being constrained by a normal distribution, both iid
 and random walk cases have an optional additional smoothness penalty
 applied:</p>
@@ -2797,6 +3153,51 @@ off and tuned separately. In code, these six weights use a
 <code>smooth_yr_diff</code>) rather than referencing the bicubic spline
 specifically, since, as described above, they apply to any selectivity
 form.</p>
+<p>Several generalizations of these penalties are available, specified
+per fleet (a single specification is shared by every fleet, or an
+unnamed list gives each fleet its own):</p>
+<ul>
+<li>
+<strong>Per-year weights.</strong> Every weight
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>w</mi><annotation encoding="application/x-tex">w</annotation></semantics></math>
+may be a vector with one value per model year,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>w</mi><mi>y</mi></msub><annotation encoding="application/x-tex">w_{y}</annotation></semantics></math>,
+so a penalty can act only in the years where selectivity is allowed to
+change, or act with a different strength in each year. Years with
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>w</mi><mi>y</mi></msub><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">w_{y} = 0</annotation></semantics></math>
+are skipped entirely. With <code>normalize = FALSE</code> (below), a
+per-year first-difference weight of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>w</mi><mi>y</mi></msub><mo>=</mo><mn>1</mn><mi>/</mi><mo stretchy="false" form="prefix">(</mo><mn>2</mn><msubsup><mi>σ</mi><mi>y</mi><mn>2</mn></msubsup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">w_{y} = 1/(2\sigma_{y}^{2})</annotation></semantics></math>
+makes
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>P</mi><mrow><mi>S</mi><mi>e</mi><mi>l</mi><mi>S</mi><mi>m</mi><mi>o</mi><mi>o</mi><mi>t</mi><mi>h</mi><mi>Y</mi><mi>r</mi><mi>D</mi><mi>i</mi><mi>f</mi><mi>f</mi></mrow></msub><annotation encoding="application/x-tex">P_{SelSmoothYrDiff}</annotation></semantics></math>
+exactly the negative log-kernel of a random walk with year-specific
+standard deviation
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>y</mi></msub><annotation encoding="application/x-tex">\sigma_{y}</annotation></semantics></math>,
+expressed as a penalty on the realized curve rather than on deviation
+parameters.</li>
+<li>
+<strong>Bin range.</strong> <code>bin_range</code> restricts the
+bins the penalties act over to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><msub><mi>b</mi><mrow><mi>l</mi><mi>o</mi></mrow></msub><mo>,</mo><msub><mi>b</mi><mrow><mi>h</mi><mi>i</mi></mrow></msub><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">\lbrack b_{lo}, b_{hi} \rbrack</annotation></semantics></math>,
+either one range shared by every term or a named list giving each term
+its own. This is how a shape penalty (e.g., the dome or curvature
+penalty) is confined to the older ages where the curve is expected to
+flatten, without constraining the ascending limb.</li>
+<li>
+<strong>Normalization.</strong> <code>normalize</code> controls
+whether the bin-wise weights are divided by the number of penalized bins
+and the year-wise weights by the number of years (the default,
+<code>TRUE</code>); it can likewise be set per term. Turn it off when
+weights are calibrated as explicit variances, as in the random walk
+correspondence above.</li>
+<li>
+<strong>First-year reference.</strong> The year first-difference
+walk has no predecessor in its first penalized year, so that year is
+normally left unpenalized. <code>yr_diff_ref</code> supplies one: the
+first penalized year is held toward a reference log-selectivity vector,
+anchoring an otherwise free series to a known selectivity before the
+data begin.</li>
+</ul>
 </div>
 <div class="section level5">
 <h5 id="movement-1">Movement<a class="anchor" aria-label="anchor" href="#movement-1"></a>
@@ -2947,7 +3348,14 @@ above:</p>
 \text{Joint Likelihood} = \sum\text{Observation Likelihoods} + \sum\text{Priors} + \sum\text{Penalties} \\
 \end{matrix}</annotation></semantics></math></p>
 <p>Note that some of these components may be zero (i.e., if no priors
-are used) depending on the configuration of the model.</p>
+are used) depending on the configuration of the model. The recruitment
+and initial age deviation penalties enter with their own separate
+weights
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>λ</mi><mtext mathvariant="normal">Rec</mtext></msup><annotation encoding="application/x-tex">\lambda^{\text{Rec}}</annotation></semantics></math>,
+possibly per deviation, and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>λ</mi><mtext mathvariant="normal">InitRec</mtext></msup><annotation encoding="application/x-tex">\lambda^{\text{InitRec}}</annotation></semantics></math>),
+and the recruitment level penalty, when enabled, enters as its own
+additional component.</p>
 </div>
 </div>
 </div>

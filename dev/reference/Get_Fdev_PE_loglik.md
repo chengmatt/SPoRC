@@ -7,7 +7,14 @@ process error structure.
 ## Usage
 
 ``` r
-Get_Fdev_PE_loglik(PE_model, ln_sigmaF, Fdev_rho, ln_F_devs, map_ln_F_devs)
+Get_Fdev_PE_loglik(
+  PE_model,
+  ln_sigmaF,
+  Fdev_rho,
+  ln_F_devs,
+  map_ln_F_devs,
+  Fdev_pen_center = 0
+)
 ```
 
 ## Arguments

@@ -55,14 +55,14 @@ get_population_projection(
   Dynamic_SSB0,
   eff_SSB,
   Mrate = NULL,
-  move_timing = 0
+  move_timing = 0,
+  SR_ref_yr = 1
 )
 ```
 
 ## Arguments
 
-- n_pop, n_regions, n_seas, n_ages, n_sexes, n_yrs, n_fish_fleets,
-  n_est_rec_devs:
+- n_pop, n_regions, n_seas, n_ages, n_sexes, n_yrs, n_fish_fleets:
 
   Dimension sizes.
 
@@ -157,6 +157,18 @@ get_population_projection(
 
   Array `[pop, year]`, output container for effective
   (natal-homing-adjusted) SSB.
+
+- SR_ref_yr:
+
+  Integer year index supplying the biological inputs, weight at age,
+  maturity, natural mortality and movement, to unfished spawning biomass
+  per recruit, and so to `S0` and the scale of the stock-recruit curve.
+  Default `1`, the first model year, which is what the function used to
+  hardcode. Set to `n_yrs` to condition the curve on terminal weight at
+  age, which is what several ADMB assessments do; with time-varying
+  weight at age the two differ and the whole curve shifts with them. It
+  is a year INDEX, not a calendar year, so callers that truncate the
+  year dimension (retrospectives) must clamp it.
 
 ## Value
 

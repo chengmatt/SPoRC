@@ -120,5 +120,5 @@ T\_{n-1} N\_{n-1}\\, solved in
 
 All arguments are sliced by the caller to remove the population
 dimension, so this helper works identically for the single-population
-spatial case (`global_BH_Fmsy`, `local_BH_Fmsy_sglpop`) and the
-multi-population case (`global_SPR`, `local_BH_Fmsy_multipop`).
+spatial case (`global_Fmsy`, `local_Fmsy_sglpop`) and the
+multi-population case (`global_SPR`, `local_Fmsy_multipop`).

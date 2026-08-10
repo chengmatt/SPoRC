@@ -12,7 +12,8 @@ Get_sel_PE_loglik(
   PE_pars,
   ln_devs,
   map_sel_devs,
-  min_sel_devs_shared_bins
+  min_sel_devs_shared_bins,
+  rw_init_sigma = 5
 )
 ```
 
@@ -70,6 +71,12 @@ Get_sel_PE_loglik(
   evaluating GMRF or 2D AR(1) likelihoods (PE models 3-5). When no bin
   sharing is specified, defaults to `1:n_bins` (i.e., all bins are
   included).
+
+- rw_init_sigma:
+
+  Standard deviation given to the first year of a random walk. A number
+  (5 by default) leaves that year effectively unconstrained; `NA` starts
+  the walk at zero under its own sigma instead.
 
 ## Value
 

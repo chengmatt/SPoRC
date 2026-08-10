@@ -53,6 +53,8 @@ Get_Det_Recruitment(
 
   - `1` Beverton-Holt recruitment with steepness
 
+  - `2` Ricker recruitment with steepness
+
 - rec_dd:
 
   Integer flag specifying the density dependence structure:
@@ -227,6 +229,23 @@ where:
 - \\S_0\\ is unfished spawning biomass per recruit
 
 - \\h\\ is steepness
+
+\*\*Ricker recruitment\*\*
+
+When `recruitment_model = 2`, recruitment follows the Ricker
+relationship, written in the depletion form used by the EBS pollock
+assessment (2024, `SrType = 1`):
+
+\$\$ R = R_0 \frac{SSB}{S_0} \exp\left(\alpha \left(1 -
+\frac{SSB}{S_0}\right)\right), \quad \alpha =
+\log\left(\frac{4h}{1-h}\right) \$\$
+
+The curve passes through \\(S_0, R_0)\\ by construction. Note that
+\\\alpha\\ is set so the Ricker carries the same compensation ratio as a
+Beverton-Holt at the same \\h\\, rather than by the textbook definition
+\\R(0.2 S_0) = h R_0\\. Steepness is therefore not interchangeable
+between the two curves: the Ricker here gives \\R(0.2S_0)/R_0 =
+0.2(4h/(1-h))^{0.8}\\, which exceeds \\h\\ and is not bounded by 1.
 
 \\S_0\\ (and the age-composition of spawning biomass per recruit more
 generally) does not depend on `rec_lag`; it is a pure per-recruit,

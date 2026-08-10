@@ -27,7 +27,8 @@ simulation_self_test(
   do_par = FALSE,
   n_cores = NULL,
   output_path = NULL,
-  what = c("SSB", "Rec")
+  what = c("SSB", "Rec"),
+  sim_recruitment = c("input", "model")
 )
 ```
 
@@ -96,6 +97,19 @@ simulation_self_test(
   Character vector. Names of report elements (keys of `rep`) to extract
   and store from each replicate. An error is raised if any name is not
   found in `rep`. Default `c("SSB", "Rec")`.
+
+- sim_recruitment:
+
+  Character. How the operating model generates recruitment. `"input"`
+  (default, and the historical behaviour) feeds the estimated
+  recruitment series in as `Rec_input`, so every simulated replicate
+  carries the same recruitment and `rec_model` has no effect on the
+  data. That conditions away recruitment and tests everything downstream
+  of it, but it cannot test the stock-recruit relationship itself,
+  because steepness is then informed only by its penalty. `"model"`
+  withholds the input so recruitment is generated from the fitted curve
+  under `rec_model`, which is what to use when the point of the test is
+  whether steepness and `R0` are recoverable.
 
 ## Value
 

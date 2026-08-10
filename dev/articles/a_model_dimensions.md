@@ -37,15 +37,22 @@ the order they are defined.
 |----|----|
 | rec_lag | Value specifying the delay between spawning and when recruits enter the population. For example, if recruits enter the population as age 2, rec_lag would be specified as 2, such that the spawning biomass from year, 2 produces these recruits. A special case, rec_lag = 0 (age-0 recruitment), uses the *same* year’s own spawning biomass instead of a prior year’s; because that year’s SSB isn’t known until the spawning season is reached, recruits may only enter in the spawning season itself or later that same year |
 | Use_h_prior | Value specifying whether steepness priors are used. 0: Don’t use priors, 1: Use Priors. Steepness priors are bounded between 0.2 and 1 with a scaled beta penalty |
-| h_prior | Data frame specifying prior distributions for steepness parameters. Must include columns: pop (population index), region (region index), mu (mean of the prior in normal space), and sd (standard deviation of the prior in normal space). For each row, a beta distribution is scaled to the interval \[0.2, 1\], and the corresponding h_trans value is transformed and penalized using the log-density from the scaled beta distribution |
+| h_prior | Data frame specifying prior distributions for steepness parameters. Must include columns: pop (population index), region (region index), mu (mean of the prior in normal space), and sd (standard deviation of the prior in normal space). Optional lb and ub columns set the support of the scaled beta (default 0.2 and 1). For each row, a beta distribution is scaled to that interval, and the corresponding h_trans value is transformed and penalized using the log-density from the scaled beta distribution |
 | do_rec_bias_ramp | Value specifying whether or not the Methot and Taylor recruitment bias ramp is conducted. 0: Don’t do bias ramp, 1: Do bias ramp |
 | max_bias_ramp_fct | Value specifying the maximum bias correction factor applied to the recruitment bias ramp |
 | bias_year | Vector of years specifying when to change the bias ramp. Can be specified with an NA if do_rec_bias_ramp = 0 |
 | sigmaR_switch | Value specifying when to transition between using an early period sigma and late period sigma R for penalizing initial age deviations and recruitment deviations. Specify as 0 if sigmaR early is equal to sigmaR late |
-| init_age_strc | Value specifying how the population age structure should be initialized. 0: Initialize via iteration to equilibrium, 1: Initialize with geometric series solution |
+| init_age_strc | Value specifying how the population age structure should be initialized. 0: Iterate to equilibrium, 1: Scalar geometric series (no movement), 2: Matrix geometric series with movement (default), 3: Matrix approach with a scalar plus group, 4: Free (no equilibrium; ln_InitDevs are the initial log numbers at age for ages 2 and older, apportioned by sex ratio) |
 | equil_init_age_strc | Value specifying how initial age deviations arise. 0 (`"equil"`) == deterministic equilibrium; 1 (`"stoch_no_plus"`) == stochastic for all ages except the plus group; 2 (`"stoch_all"`) == stochastic for all ages including the plus group; 3 (`"stoch_shared_ages"`) == stochastic with user-defined age sharing via `init_age_devs_shared` |
 | init_F_par | Array specifying the initialization fishing mortality for regions, seasons, and fishery fleets. Interpreted as a proportion of the mean fishing mortality (inverse-logit scale) or as an absolute rate (log scale), per `init_F_form`; `init_F_spec` sets whether it is estimated. Supersedes the legacy `init_F_prop`, which is still accepted |
-| rec_model | Value specifying the recruitment model. 0 == Mean Recruitment, 1 == Beverton-Holt with steepness parameterization |
+| rec_model | Value specifying the recruitment model. 0 == Mean Recruitment, 1 == Beverton-Holt with steepness parameterization, 2 == Ricker in depletion form with steepness mapped through the Beverton-Holt compensation ratio (see [`vignette("c_model_equations")`](https://chengmatt.github.io/SPoRC/dev/articles/c_model_equations.md)) |
+| SR_ref_yr | Year index (not a calendar year) supplying the biological inputs (WAA, maturity, natural mortality, movement) to unfished spawning biomass per recruit, and therefore to S0 and the scale of the stock-recruit curve. Default 1 (first model year); set to the terminal year index to condition the curve on terminal biologicals. Ignored under mean recruitment |
+| RecDevs_pen_center | Value specifying where the recruitment deviation penalty is centred. 0 (`"fixed"`): the asserted prior mean (zero or the bias-corrected offset), constraining both level and spread; 1 (`"own_mean"`): the mean of the estimated deviations, penalizing only their spread. Cannot be combined with do_rec_bias_ramp = 1 |
+| InitDevs_pen_center | Value specifying where the initial age deviation penalty is centred, with the same 0/1 coding as RecDevs_pen_center |
+| Use_rec_level_pen | Value specifying whether a penalty is applied to the log recruitment series itself, separately from the deviation penalty. 0: Don’t use (default), 1: Use |
+| ln_sigma_rec_level | Log-scale standard deviation of the recruitment level penalty. A sum of squares with weight w corresponds to sigma = 1/sqrt(2w) |
+| rec_level_pen_center | Value specifying where the recruitment level penalty is centred. 0 (`"fixed"`): zero; 1 (`"own_mean"`, default): the mean of the log recruitment series, so only its variability is penalized |
+| rec_level_pen_yrs | Vector of length n_years with 1 marking the years the recruitment level penalty applies over and 0 elsewhere. All ones by default |
 | rec_dd | Value specifying the recruitment density dependence (only used when there is a stock-recruitment relationship). 0 == local density dependence (region-specific SSB drives regional recruitment), 1 == global density dependence (summed SSB across regions drives recruitment), 999 == no density-dependent stock-recruitment form is used |
 | rec_region_prop_spec | Integer specifying how recruitment regional apportionment is handled when n_pop \> 1. 0 == recruitment dispersal (recruits can be distributed across regions via estimated proportions), 1 == strict natal homing (recruits are assigned entirely to each population’s natal region) |
 | t_spawn | Fraction of year in which spawning occurs |
@@ -65,6 +72,7 @@ the order they are defined.
 | init_age_devs_shared | Integer vector of length `n_ages - 1` specifying explicit age-sharing for `ln_InitDevs`. Positions with the same value share a single estimated parameter (e.g. `c(1:42, rep(42, 9))` shares the last 9 ages with age 42, giving 42 free parameters). Required when `equil_init_age_strc = 3`; `NULL` (default) uses standard behaviour. |
 | use_r0_prior | Integer specifying whether a lognormal prior is placed on R0. 0: Don’t use prior (default), 1: Use prior |
 | r0_prior | Data frame specifying lognormal prior parameters for R0. Must include columns: pop (population index), mu (prior mean on the natural scale), and sd (prior standard deviation on the log scale) |
+| map_ln_RecDevs | Array dimensioned by n_pop, n_regions, n_years mirroring the ln_RecDevs factor map: an estimation index where a deviation is estimated, NA where it is fixed (mapped off). Built by Setup_Mod_Rec and refreshed by fit_model from the map handed to RTMB::MakeADFun. The recruitment deviation penalty is evaluated only where this is not NA |
 
 ## Data Inputs for Defining Biological Processes
 
@@ -78,6 +86,7 @@ the order they are defined.
 | fit_lengths | Value describing whether or not to fit length composition data. 0: Don’t fit lengths, 1: Fit lengths |
 | SizeAgeTrans | Size-age transition matrix dimensioned by n_pop, n_regions, n_years, n_seas, n_lens, n_ages, n_sexes. Can be specified as NA if length compositions are not fit |
 | addtocomp | Constant to add to all composition data |
+| comp_const_obs | Value specifying whether addtocomp is also added to the observed proportions used as multinomial weights. 1 (default): added to both observed and expected, the long-standing behaviour; 0: added only inside the logarithms, a convention several existing assessments use |
 | addtofishidx | Constant to add to all fishery index data |
 | addtosrvidx | Constant to add to all survey index data |
 | addtotag | Constant to add to all tagging data |
@@ -144,6 +153,7 @@ the order they are defined.
 | UseCatch | Array dimensioned by n_regions, n_years, n_seas, n_fish_fleets describing whether to fit to catch data in a given year, season, and fleet. 0: Don’t fit catch, 1: Fit catch |
 | UseCatch_pop | Array dimensioned by n_pop, n_regions, n_years, n_seas, n_fish_fleets describing whether to fit to population-specific catch data. 0: Don’t fit catch, 1: Fit catch |
 | Use_F_pen | Value specifying whether to use a fishing mortality penalty to regularize fishing mortality deviations. 0: Don’t use regularity penalty, 1: Use regularity penalty. Which cells are penalized is read off map_ln_F_devs |
+| Fdev_pen_center | Value specifying where the iid fishing mortality deviation penalty is centred. 0 (`"fixed"`): zero, constraining both level and spread; 1 (`"own_mean"`): the mean of the estimated deviations, penalizing only their spread |
 | ObsDiscard | Observed discard data dimensioned by n_regions, n_years, n_seas, n_fish_fleets. Used in region-aggregated discard likelihoods |
 | discard_units | Array dimensioned by n_fish_fleets describing discard units. 0 == Abundance, 1 == Biomass |
 | UseDiscard | Array dimensioned by n_regions, n_years, n_seas, n_fish_fleets describing whether to fit to discard data in a given year, season, and fleet. 0: Don’t fit discard, 1: Fit discard |
@@ -166,6 +176,11 @@ n_regions.
 | ObsFishIdx_SE | Fishery index standard errors dimensioned by n_regions, n_years, n_seas, n_fish_fleets |
 | UseFishIdx | Array dimensioned by n_regions, n_years, n_seas, n_fish_fleets describing whether to fit to the fishery index in a given year, season, and fleet. 0: Don’t fit fishery index, 1: Fit fishery index |
 | fish_idx_type | Matrix dimensioned by n_fish_fleets specifying the index type for a given fishery fleet. 0: Abundance index, 1: Biomass index (uses WAA_fish for calculations), 999: None Available |
+| t_fish | Array dimensioned by n_regions, n_seas, n_fish_fleets specifying fishery index timing as a proportion of the season. Numbers at age are decayed by exp(-t_fish \* ZAA) before the index is formed, the same convention t_srv uses for surveys. Defaults to 0 (start of season); use 0.5 for a mid-season index. Set via t_fish in Setup_Mod_FishIdx_and_Comps, and via the matching argument to Setup_Sim_Fishing on the simulation side |
+| fish_idx_ages | Array dimensioned by n_ages, n_fish_fleets of 0/1 weights selecting which ages contribute to each fleet’s index total. All ones by default. Applies to the index sum only; selectivity, catch, and compositions are unaffected |
+| FishIdx_LikeType | Vector dimensioned by n_fish_fleets specifying the index error structure. 0: Lognormal (default; standard errors on the log scale), 1: Normal on the arithmetic scale, 2: Multivariate normal on the arithmetic scale with a fixed covariance from FishIdx_Cov. One-step-ahead residuals are only available for lognormal fleets |
+| FishIdx_Cov | List with one element per fishery fleet holding the fixed covariance matrix for fleets using the multivariate normal, NULL otherwise. Each matrix is square with one row per fitted observation, ordered as the observations appear when scanning that fleet’s UseFishIdx slice in array order. Validated at setup for symmetry and positive definiteness |
+| FishAgeComps_bins | Array dimensioned by n_ages, n_fish_fleets of 0/1 weights selecting which observed bins (after ageing error) each fleet’s age compositions are fit over. All ones by default. Observed and expected compositions are subset and renormalized within the selected bins; bins outside are left out of the likelihood |
 | ObsFishIdx_pop | Population-specific fishery index dimensioned by n_pop, n_regions, n_years, n_seas, n_fish_fleets |
 | ObsFishIdx_pop_SE | Population-specific fishery index standard errors dimensioned by n_pop, n_regions, n_years, n_seas, n_fish_fleets |
 | UseFishIdx_pop | Array dimensioned by n_pop, n_regions, n_years, n_seas, n_fish_fleets describing whether to fit to population-specific fishery indices. 0: Don’t fit, 1: Fit |
@@ -227,6 +242,10 @@ n_regions.
 | ObsSrvIdx_SE | Survey index standard errors dimensioned by n_regions, n_years, n_seas, n_srv_fleets |
 | UseSrvIdx | Array dimensioned by n_regions, n_years, n_seas, n_srv_fleets describing whether to fit to the survey index in a given year, season, and fleet. 0: Don’t fit, 1: Fit |
 | srv_idx_type | Matrix dimensioned by n_srv_fleets specifying the index type for a given survey fleet. 0: Abundance index, 1: Biomass index (uses WAA_srv for calculations), 999: None Available |
+| srv_idx_ages | Array dimensioned by n_ages, n_srv_fleets of 0/1 weights selecting which ages contribute to each fleet’s index total. All ones by default. Restricting a fleet to a single age turns it into an index of that age alone; the fleet’s compositions keep using the full age range |
+| SrvIdx_LikeType | Vector dimensioned by n_srv_fleets specifying the index error structure. 0: Lognormal (default), 1: Normal on the arithmetic scale, 2: Multivariate normal with a fixed covariance from SrvIdx_Cov. One-step-ahead residuals are only available for lognormal fleets |
+| SrvIdx_Cov | List with one element per survey fleet holding the fixed covariance matrix for fleets using the multivariate normal, NULL otherwise. Same conventions as FishIdx_Cov |
+| SrvAgeComps_bins | Array dimensioned by n_ages, n_srv_fleets of 0/1 weights selecting which observed bins each fleet’s age compositions are fit over. Same conventions as FishAgeComps_bins |
 | ObsSrvIdx_pop | Population-specific survey index dimensioned by n_pop, n_regions, n_years, n_seas, n_srv_fleets |
 | ObsSrvIdx_pop_SE | Population-specific survey index standard errors dimensioned by n_pop, n_regions, n_years, n_seas, n_srv_fleets |
 | UseSrvIdx_pop | Array dimensioned by n_pop, n_regions, n_years, n_seas, n_srv_fleets describing whether to fit to population-specific survey indices. 0: Don’t fit, 1: Fit |
@@ -264,20 +283,29 @@ n_regions.
 |----|----|
 | cont_tv_fish_sel | Matrix dimensioned by n_regions, n_fish_fleets specifying whether and how continuous time-varying selectivity is applied. 0: None, 1: iid deviations, 2: random walk, 3: 3D GMRF with marginal variance (semi-parametric), 4: 3D GMRF with conditional variance (semi-parametric). Further details in model_priors_penalties.R, model_precision.R, and model_selectivity.R |
 | fish_sel_blocks | Array dimensioned by n_regions, n_years, n_fish_fleets specifying selectivity time blocks. Unique integers denote distinct selectivity parameter blocks |
-| fish_sel_model | Array dimensioned by n_regions, n_years, n_fish_fleets specifying the selectivity functional form. 0: Logistic (a50 and slope), 1: Gamma dome-shaped, 2: Power function, 3: Logistic (a50 and a95), 4: Double Normal (6 parameters), 5: Non-parametric, 6/7: Logistic with asymptote, 8: Bicubic spline. Further details in model_selectivity.R |
+| fish_sel_model | Array dimensioned by n_regions, n_years, n_fish_fleets specifying the selectivity functional form. 0: Logistic (a50 and slope), 1: Gamma dome-shaped, 2: Power function, 3: Logistic (a50 and a95), 4: Double Normal (6 parameters), 5: Non-parametric (logit scale), 6/7: Logistic with asymptote, 8: Bicubic spline, 9: Non-parametric on the log scale, standardized within each year. Further details in model_selectivity.R |
 | fish_sel_bicubic_binnodes, fish_sel_bicubic_yrnodes | Arrays dimensioned by n_regions, n_years, n_fish_fleets giving the number of bin/year spline nodes where fish_sel_model == 8; 0 elsewhere |
 | fish_sel_bicubic_selstyr, fish_sel_bicubic_nselbins | Arrays dimensioned by n_regions, n_years, n_fish_fleets giving the optional fitted-region restrictions (start year, number of bins) for bicubic blocks; 0 means unrestricted |
 | fish_sel_bicubic_Wbin, fish_sel_bicubic_Wyr | Precomputed natural-cubic-spline interpolation weight matrices mapping bin-node/year-node values onto every bin/year, for bicubic blocks |
 | fish_selex_type | Integer specifying whether fishery selectivity is age-based (0) or length-based (1) |
 | use_fixed_fish_sel | Integer specifying whether fishery selectivity is fixed externally (1) or estimated (0) |
 | fish_q_blocks | Array dimensioned by n_regions, n_years, n_fish_fleets specifying catchability time blocks. Unique integers denote distinct catchability parameter blocks |
+| fish_q_type | Vector dimensioned by n_fish_fleets specifying how fishery catchability is obtained. Same codes and behavior as srv_q_type. 0: Estimated as exp(ln_fish_q) (default), 1: Solved analytically as the ratio of mean observed to mean predicted index, 2: Solved analytically on the log scale as exp(mean(log(obs) - log(pred))). Analytic fleets have their ln_fish_q fixed automatically, ignore block structure, and cannot carry catchability covariates or priors |
 | Use_fish_q_prior | Fishery catchability prior indicator. 0 == don’t use, 1 == use |
 | fish_q_prior | Data frame containing prior specifications for fishery catchability parameters. Must include columns: region, fleet, block, mu (prior mean on natural scale), and sd (prior standard deviation on log scale). Each row specifies a log-normal prior for one catchability parameter |
 | map_ln_fishsel_devs | Array dimensioned by n_regions, n_years, n_ages, n_sexes, n_fish_fleets indicating which continuous time-varying selectivity deviation values are fixed (mapped off) |
 | Use_fish_selex_prior | Integer (0 or 1). Flag to enable log-normal priors on fishery selectivity parameters as specified in fish_selex_prior |
 | fish_selex_prior | Data frame containing prior specifications for fishery selectivity parameters. Must include columns: region, fleet, block, sex, par (parameter index), mu (prior mean on natural scale), and sd (prior standard deviation on log scale). Each row specifies a log-normal prior for one selectivity parameter |
 | fishsel_devs_min_shared_bins | Integer vector specifying the reference (minimum) bin index within each shared deviation group, used to subset the bin dimension when evaluating GMRF or 2D AR(1) likelihoods (PE models 3-5). Defaults to 1:n_ages when no bin sharing is specified |
-| fish_sel_pen_wts | Named list/vector of smoothness penalty weights (smooth_bin_curve, smooth_bin_diff, smooth_yr_diff, smooth_yr_curve, smooth_dome, smooth_mean_center) evaluated on the realized fishery selectivity surface; unset names default to 0. See Get_Selex_Smoothness_Penalty.R |
+| fish_sel_pen_wts | List with one element per fishery fleet, each a named list of smoothness penalty weights (smooth_bin_curve, smooth_bin_diff, smooth_yr_diff, smooth_yr_curve, smooth_dome, smooth_mean_center; unset names default to 0) evaluated on the realized fishery selectivity surface, plus optional bin_range (bins the penalties act over), normalize (whether weights are divided by the number of penalized bins/years), and yr_diff_ref (reference log-selectivity anchoring the first penalized year of smooth_yr_diff). Each weight may be a scalar or a per-year vector. Built by Setup_Mod_Weighting from a single shared specification or an unnamed per-fleet list |
+| fishsel_pe_wt | Vector dimensioned by n_fish_fleets multiplying each fleet’s selectivity process error likelihood. Default 1; 0 removes the distributional penalty while the deviations remain estimated |
+| fishsel_rw_init_sigma | Vector dimensioned by n_fish_fleets giving the standard deviation on the first year of a random walk deviation series. Default 5 (first year effectively free); NA starts the walk at zero under the walk’s own estimated sigma |
+| fish_sel_bin_dev_bins | Array dimensioned by n_ages (or n_lens), n_fish_fleets of 0/1 flags marking the bins whose selectivity is overridden by exp(ln_fishsel_bin_devs) rather than taken from the functional form. All zeros by default |
+| cont_tv_fishsel_bin_devs | Vector dimensioned by n_fish_fleets specifying process error on the bin-override deviations. 0: None, 1: iid, 2: random walk |
+| fishsel_bin_devs_rw_init_sigma | Vector dimensioned by n_fish_fleets giving the first-year standard deviation for random walk bin-override deviations, with the same conventions as fishsel_rw_init_sigma |
+| map_ln_fishsel_bin_devs | Array mirroring the ln_fishsel_bin_devs factor map: an estimation index where a deviation is estimated, NA where fixed. Only overridden bins carry estimated deviations |
+| Use_fish_selex_penalty | Integer (0 or 1). Flag to enable the centering penalty on sets of fishery selectivity fixed-effect parameters specified in fish_selex_penalty |
+| fish_selex_penalty | Data frame with columns region, fleet, block, sex, par (a single index or a list column of integer vectors naming a set), and wt. Each row penalizes wt \* (log(mean(exp(pars))))^2, pushing the set’s average selectivity toward one. Intended for log-scale parameter sets such as the log-scale non-parametric form |
 
 ## Data Inputs for Defining Retention Selectivity
 
@@ -294,6 +322,9 @@ n_regions.
 | retsel_devs_min_shared_bins | Integer vector specifying the reference (minimum) bin index within each shared deviation group for retention selectivity, used when evaluating GMRF or 2D AR(1) likelihoods. Defaults to 1:n_ages when no bin sharing is specified |
 | map_ln_retsel_devs | Array indicating which continuous time-varying retention selectivity deviation values are fixed (mapped off) |
 | ret_sel_pen_wts | Same format as fish_sel_pen_wts, evaluated on the realized retention selectivity surface |
+| retsel_pe_wt, retsel_rw_init_sigma | Same meaning as their fishsel counterparts, for retention selectivity |
+| ret_sel_bin_dev_bins, cont_tv_retsel_bin_devs, retsel_bin_devs_rw_init_sigma, map_ln_retsel_bin_devs | Bin-override deviation controls with the same meaning as their fishsel counterparts, for retention selectivity |
+| Use_ret_selex_penalty, ret_selex_penalty | Centering penalty flag and specification table with the same meaning as their fish counterparts, for retention selectivity |
 
 ## Data Inputs for Defining Survey Selectivity and Catchability
 
@@ -313,6 +344,10 @@ n_regions.
 | srv_selex_prior | Data frame containing prior specifications for survey selectivity parameters. Must include columns: region, fleet, block, sex, par (parameter index), mu (prior mean on natural scale), and sd (prior standard deviation on log scale). Each row specifies a log-normal prior for one selectivity parameter |
 | srvsel_devs_min_shared_bins | Integer vector specifying the reference (minimum) bin index within each shared deviation group, used to subset the bin dimension when evaluating GMRF or 2D AR(1) likelihoods (PE models 3-5). Defaults to 1:n_ages when no bin sharing is specified |
 | srv_sel_pen_wts | Same format as fish_sel_pen_wts, evaluated on the realized survey selectivity surface |
+| srv_q_type | Vector dimensioned by n_srv_fleets specifying how survey catchability is obtained. 0: Estimated as exp(ln_srv_q) (default), 1: Solved analytically as the ratio of mean observed to mean predicted index, 2: Solved analytically on the log scale as exp(mean(log(obs) - log(pred))). Analytic fleets have their ln_srv_q fixed automatically, ignore block structure, and cannot carry catchability covariates or priors |
+| srvsel_pe_wt, srvsel_rw_init_sigma | Same meaning as their fishsel counterparts, for survey selectivity |
+| srv_sel_bin_dev_bins, cont_tv_srvsel_bin_devs, srvsel_bin_devs_rw_init_sigma, map_ln_srvsel_bin_devs | Bin-override deviation controls with the same meaning as their fishsel counterparts, for survey selectivity |
+| Use_srv_selex_penalty, srv_selex_penalty | Centering penalty flag and specification table with the same meaning as their fish counterparts, for survey selectivity |
 
 ## Data Inputs for Defining Model Weighting
 
@@ -324,7 +359,8 @@ n_regions.
 | Wt_FishIdx_pop | Weight applied to population-specific fishery index likelihoods. Either a numeric scalar or an array dimensioned by n_pop, n_regions, n_years, n_seas, n_fish_fleets |
 | Wt_SrvIdx | Weight applied to region-aggregated survey index likelihoods. Either a numeric scalar or an array dimensioned by n_regions, n_years, n_seas, n_srv_fleets |
 | Wt_SrvIdx_pop | Weight applied to population-specific survey index likelihoods. Either a numeric scalar or an array dimensioned by n_pop, n_regions, n_years, n_seas, n_srv_fleets |
-| Wt_Rec | Weight applied to initial age deviations and recruitment deviations |
+| Wt_Rec | Weight applied to the recruitment deviation penalty. Either a scalar or an array dimensioned by n_pop, n_regions, and the third dimension of ln_RecDevs (which dont_est_recdev_last and n_proj_yrs_devs both change) for per-deviation weighting. A weight of zero excludes a deviation from the penalty while it remains estimated |
+| Wt_Init_Rec | Weight applied to the initial age deviation penalty. Either a scalar or an array dimensioned by n_pop, n_regions, n_ages - 1. Defaults to a scalar Wt_Rec; must be supplied explicitly when Wt_Rec is an array, since the two penalties are dimensioned differently |
 | Wt_F | Weight applied to fishing mortality deviations |
 | Wt_D | Weight applied to discard mortality rate deviations |
 | Wt_Tagging | Weight applied to tagging data likelihoods |

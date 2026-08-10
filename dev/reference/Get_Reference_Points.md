@@ -70,13 +70,13 @@ Get_Reference_Points(
 
   `"single_region"`
 
-  :   No spatial movement; supports `"SPR"` and `"BH_MSY"`.
+  :   No spatial movement; supports `"SPR"` and `"MSY"`.
 
   `"multi_region"`
 
   :   Spatially explicit; supports `"independent_SPR"`,
-      `"independent_BH_MSY"`, `"global_SPR"`, `"global_BH_MSY"`, and
-      `"local_BH_MSY"`.
+      `"independent_MSY"`, `"global_SPR"`, `"global_MSY"`, and
+      `"local_MSY"`.
 
 - what:
 
@@ -86,7 +86,7 @@ Get_Reference_Points(
 
   :   Single-region \\F\_{SPR_x}\\.
 
-  `"BH_MSY"`
+  `"MSY"`
 
   :   Single-region Beverton-Holt \\F\_{MSY}\\.
 
@@ -95,7 +95,7 @@ Get_Reference_Points(
   :   Per-region \\F\_{SPR_x}\\ computed independently for each region
       without movement.
 
-  `"independent_BH_MSY"`
+  `"independent_MSY"`
 
   :   Per-region \\F\_{MSY}\\ computed independently for each region
       without movement.
@@ -105,12 +105,12 @@ Get_Reference_Points(
   :   Single shared \\F\_{SPR_x}\\ with movement, integrated across all
       regions.
 
-  `"global_BH_MSY"`
+  `"global_MSY"`
 
   :   Single shared \\F\_{MSY}\\ with movement. Valid for
       single-population models only.
 
-  `"local_BH_MSY"`
+  `"local_MSY"`
 
   :   Region-specific \\F\_{MSY}\\ values that jointly maximise total
       yield with movement. Valid for both single- and multi-population
@@ -125,7 +125,7 @@ Get_Reference_Points(
 - local_bh_msy_newton_steps:
 
   Integer. Number of Newton-Raphson iterations used to solve for
-  equilibrium recruitment by origin region when `what = "local_BH_MSY"`.
+  equilibrium recruitment by origin region when `what = "local_MSY"`.
   Increase if convergence is suspect. Default = 6.
 
 - is_discard_fleet:
@@ -135,8 +135,8 @@ Get_Reference_Points(
   reference points (0 = landing fleet, 1 = discard-only fleet). These
   fleets still contribute to total fishing mortality `Z` and affect
   population dynamics and spawning biomass. Only used by Beverton-Holt
-  MSY methods (`"BH_MSY"`, `"independent_BH_MSY"`, `"global_BH_MSY"`,
-  `"local_BH_MSY"`); ignored for SPR-based methods. Default is all zeros
+  MSY methods (`"MSY"`, `"independent_MSY"`, `"global_MSY"`,
+  `"local_MSY"`); ignored for SPR-based methods. Default is all zeros
   (all fleets are landing fleets).
 
 ## Value

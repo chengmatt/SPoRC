@@ -20,14 +20,27 @@
 - [Description of Model
   Report](https://chengmatt.github.io/SPoRC/dev/articles/d_model_report.md):
 
-### Model Setup Examples
+### Case Studies
 
-- [Setting up a Single Region Model (Alaska
-  Sablefish)](https://chengmatt.github.io/SPoRC/dev/articles/e_single_region_sablefish_case_study.md):
-- [Setting up a Single Region Model (Eastern Bering Sea
-  Pollock)](https://chengmatt.github.io/SPoRC/dev/articles/f_single_region_ebs_pollock_case_study.md):
-- [Setting up a Spatial Model (Alaska
-  Sablefish)](https://chengmatt.github.io/SPoRC/dev/articles/g_spatial_sablefish_case_study.md):
+Existing assessments set up in `SPoRC`, with the model equations behind
+each and a comparison against the operational model where one exists.
+
+- [Case Study: Alaska Sablefish (Single
+  Region)](https://chengmatt.github.io/SPoRC/dev/articles/e_single_region_sablefish_case_study.md):
+- [Case Study: Eastern Bering Sea Walleye
+  Pollock](https://chengmatt.github.io/SPoRC/dev/articles/f_single_region_ebs_pollock_case_study.md):
+- [Case Study: Alaska Sablefish
+  (Spatial)](https://chengmatt.github.io/SPoRC/dev/articles/g_spatial_sablefish_case_study.md):
+- [Case Study: Gulf of Alaska Northern
+  Rockfish](https://chengmatt.github.io/SPoRC/dev/articles/w_goa_northern_rockfish_case_study.md):
+- [Case Study: Gulf of Alaska Dusky
+  Rockfish](https://chengmatt.github.io/SPoRC/dev/articles/x_goa_dusky_rockfish_case_study.md):
+- [Case Study: Bering Sea and Aleutian Islands Northern
+  Rockfish](https://chengmatt.github.io/SPoRC/dev/articles/y_bsai_northern_rockfish_case_study.md):
+- [Case Study: Bering Sea and Aleutian Islands Blackspotted and Rougheye
+  Rockfish](https://chengmatt.github.io/SPoRC/dev/articles/z_bsai_rougheye_rockfish_case_study.md):
+- [Case Study: Bering Sea and Aleutian Islands Pacific Ocean
+  Perch](https://chengmatt.github.io/SPoRC/dev/articles/aa_bsai_pacific_ocean_perch_case_study.md):
 
 ### Simulation and Projections
 

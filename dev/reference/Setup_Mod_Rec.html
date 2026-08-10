@@ -43,6 +43,17 @@ before model compilation."><meta name="robots" content="noindex"></head><body>
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-case-studies" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Case Studies</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-case-studies"><li><a class="dropdown-item" href="../articles/e_single_region_sablefish_case_study.html">Alaska Sablefish (Single Region)</a></li>
+    <li><a class="dropdown-item" href="../articles/f_single_region_ebs_pollock_case_study.html">Eastern Bering Sea Walleye Pollock</a></li>
+    <li><a class="dropdown-item" href="../articles/g_spatial_sablefish_case_study.html">Alaska Sablefish (Spatial)</a></li>
+    <li><a class="dropdown-item" href="../articles/w_goa_northern_rockfish_case_study.html">GOA Northern Rockfish</a></li>
+    <li><a class="dropdown-item" href="../articles/x_goa_dusky_rockfish_case_study.html">GOA Dusky Rockfish</a></li>
+    <li><a class="dropdown-item" href="../articles/y_bsai_northern_rockfish_case_study.html">BSAI Northern Rockfish</a></li>
+    <li><a class="dropdown-item" href="../articles/z_bsai_rougheye_rockfish_case_study.html">BSAI Blackspotted and Rougheye Rockfish</a></li>
+    <li><a class="dropdown-item" href="../articles/aa_bsai_pacific_ocean_perch_case_study.html">BSAI Pacific Ocean Perch</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -83,6 +94,7 @@ before model compilation.</p>
 <span>  <span class="va">rec_model</span>,</span>
 <span>  rec_dd <span class="op">=</span> <span class="st">"global"</span>,</span>
 <span>  rec_lag <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  SR_ref_yr <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  Use_h_prior <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  h_prior <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  rec_region_prop_spec <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -112,6 +124,12 @@ before model compilation.</p>
 <span>  sigmaR_spec <span class="op">=</span> <span class="st">"est_all"</span>,</span>
 <span>  InitDevs_spec <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  RecDevs_spec <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  RecDevs_pen_center <span class="op">=</span> <span class="st">"fixed"</span>,</span>
+<span>  Use_rec_level_pen <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  rec_level_pen_sigma <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  rec_level_pen_center <span class="op">=</span> <span class="st">"own_mean"</span>,</span>
+<span>  rec_level_pen_yrs <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  InitDevs_pen_center <span class="op">=</span> <span class="st">"fixed"</span>,</span>
 <span>  h_spec <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sgl_seas_spawning_movement <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  t_spawn <span class="op">=</span> <span class="fl">0</span>,</span>
@@ -158,6 +176,12 @@ defined in <code>$data</code>.</p></dd>
   <dt><code>"bh_rec"</code></dt>
 <dd><p>Beverton-Holt stock-recruit relationship.</p></dd>
 
+  <dt><code>"ricker_rec"</code></dt>
+<dd><p>Ricker stock-recruit relationship, in the
+    depletion form \(R = R_0 (S/S_0) \exp(\alpha (1 - S/S_0))\) with
+    \(\alpha = \log(4h/(1-h))\). Steepness is not interchangeable with
+    <code>"bh_rec"</code>; see <code><a href="Get_Det_Recruitment.html">Get_Det_Recruitment</a></code>.</p></dd>
+
 
 </dl></dd>
 
@@ -190,9 +214,21 @@ structurally via a restricted softmax (see
 <code><a href="do_rec_seas_prop_mapping.html">do_rec_seas_prop_mapping</a></code>).</p></dd>
 
 
+<dt id="arg-sr-ref-yr">SR_ref_yr<a class="anchor" aria-label="anchor" href="#arg-sr-ref-yr"></a></dt>
+<dd><p>Integer year index (not a calendar year) supplying the
+biological inputs, weight-at-age, maturity, natural mortality and movement,
+to unfished spawning biomass per recruit, and so to <code>S0</code> and the scale
+of the stock-recruit curve. Default <code>1</code>, the first model year, which is
+what the model has always used. Set it to <code>length(years)</code> to condition
+the curve on terminal weight-at-age, which is what several ADMB assessments
+do; with time-varying weight-at-age the two differ and the curve shifts with
+them. Ignored when <code>rec_model = "mean_rec"</code>.</p></dd>
+
+
 <dt id="arg-use-h-prior">Use_h_prior<a class="anchor" aria-label="anchor" href="#arg-use-h-prior"></a></dt>
 <dd><p>Integer (0/1). Whether normal priors on steepness are
-applied. Only relevant for <code>rec_model = "bh_rec"</code>. Default <code>0</code>.</p></dd>
+applied. Only relevant when a stock-recruit curve is used
+(<code>rec_model = "bh_rec"</code> or <code>"ricker_rec"</code>). Default <code>0</code>.</p></dd>
 
 
 <dt id="arg-h-prior">h_prior<a class="anchor" aria-label="anchor" href="#arg-h-prior"></a></dt>
@@ -294,7 +330,20 @@ estimated regardless. Default <code>0</code>.</p></dd>
 
 
 <dt id="arg-init-age-strc">init_age_strc<a class="anchor" aria-label="anchor" href="#arg-init-age-strc"></a></dt>
-<dd><p>Equilibrium initialisation method. Default <code>2</code>.</p><dl><dt><code>0</code>/<code>"iterative"</code></dt>
+<dd><p>Initialisation method. Default <code>2</code>. Options
+<code>0</code>/<code>"iterative"</code>, <code>1</code>/<code>"scalar_no_move"</code>,
+<code>2</code>/<code>"matrix"</code>, and <code>3</code>/<code>"scalar_plus_only"</code> all
+project an equilibrium age structure forward from <code>R0</code> and treat
+<code>ln_InitDevs</code> as multiplicative deviations from it.
+<code>4</code>/<code>"free"</code> projects no equilibrium at all: the numbers at age
+2 and older are <code>exp(ln_InitDevs)</code> outright, apportioned by sex ratio,
+with age 1 still taken from recruitment. Use it when the initial age
+structure carries no information about <code>R0</code> and should not be pulled
+toward an equilibrium.
+Note that under <code>4</code> the deviations are on the scale of numbers rather
+than of log ratios, so the penalty applied through
+<code>equil_init_age_strc</code> is a prior on log abundance; pair it with
+<code>equil_init_age_strc = 0</code> if no such prior is wanted.</p><dl><dt><code>0</code>/<code>"iterative"</code></dt>
 <dd><p>Iterates the population to
     approximate equilibrium. Slowest but most general.</p></dd>
 
@@ -360,8 +409,8 @@ Default: zero for all seasons and fleets.</p></dd>
 <li><p><code>"abs"</code>: <code>init_F = exp(ln_init_F)</code>, an absolute fishing
       mortality independent of <code>ln_F_mean</code>.</p></li>
 </ul><p>Use <code>"abs"</code> when bridging an assessment that carries a separate
-  historical F (for example the AFSC ADMB rockfish <code>historic_F</code>, which is
-  distinct from <code>log_avg_fmort</code> and has its own estimation phase). Under
+  historical F (one estimated as its own parameter, distinct from the mean
+  log fishing mortality). Under
   <code>"prop"</code> those two quantities collapse into a single parameter, and
   because catch constrains only the PRODUCT of numbers and fishing mortality,
   the optimizer can raise <code>ln_F_mean</code> to deplete the initial age structure
@@ -409,9 +458,49 @@ n_years]</code>. Default <code>NULL</code> (estimate all independently). See
 <code><a href="do_RecDevs_mapping.html">do_RecDevs_mapping</a></code> for full option descriptions.</p></dd>
 
 
+<dt id="arg-recdevs-pen-center-initdevs-pen-center">RecDevs_pen_center, InitDevs_pen_center<a class="anchor" aria-label="anchor" href="#arg-recdevs-pen-center-initdevs-pen-center"></a></dt>
+<dd><p>Where the recruitment and
+initial age deviation penalties are centred. <code>"fixed"</code> (default)
+centres on the asserted prior mean, zero or the bias-corrected
+\(-\sigma_R^2/2\), which constrains both the level and the spread of the
+deviations. <code>"own_mean"</code> centres on the mean of the estimated
+deviations themselves, so only their spread is penalized and their level is
+left free; that is what a sum of squares about the series' own mean
+amounts to. The level
+being unpenalized means it must be pinned elsewhere, by a prior on
+<code>R0</code> or by fixing a deviation, or the likelihood is flat along it.
+Cannot be combined with <code>do_rec_bias_ramp = 1</code>, whose offset is
+meaningless once the mean is estimated rather than asserted.</p></dd>
+
+
+<dt id="arg-use-rec-level-pen">Use_rec_level_pen<a class="anchor" aria-label="anchor" href="#arg-use-rec-level-pen"></a></dt>
+<dd><p>Integer (0/1). Whether a penalty is applied to the
+log recruitment series itself, separately from the deviation penalty.
+Under a stock-recruit relationship the deviations are residuals about the
+predicted curve, so this is the only way to also say that the recruitment
+series should not wander. Default <code>0</code>.</p></dd>
+
+
+<dt id="arg-rec-level-pen-sigma">rec_level_pen_sigma<a class="anchor" aria-label="anchor" href="#arg-rec-level-pen-sigma"></a></dt>
+<dd><p>Numeric standard deviation of that penalty. A sum
+of squares with weight \(w\) corresponds to \(1/\sqrt{2w}\). Default
+<code>1</code>.</p></dd>
+
+
+<dt id="arg-rec-level-pen-center">rec_level_pen_center<a class="anchor" aria-label="anchor" href="#arg-rec-level-pen-center"></a></dt>
+<dd><p>Either <code>"own_mean"</code> (default), centring on
+the mean of the log recruitment series so only its variability is
+penalized, or <code>"fixed"</code>, centring on zero.</p></dd>
+
+
+<dt id="arg-rec-level-pen-yrs">rec_level_pen_yrs<a class="anchor" aria-label="anchor" href="#arg-rec-level-pen-yrs"></a></dt>
+<dd><p>Vector of years the penalty applies over, or
+<code>NULL</code> (default) for every year.</p></dd>
+
+
 <dt id="arg-h-spec">h_spec<a class="anchor" aria-label="anchor" href="#arg-h-spec"></a></dt>
 <dd><p>Character or <code>NULL</code>. Sharing structure for
-Beverton-Holt steepness <code>steepness_h</code> <code>[n_pop x n_regions]</code>,
+stock-recruit steepness <code>steepness_h</code> <code>[n_pop x n_regions]</code>,
 parameterised in bounded logit space \((0.2, 1)\). Default <code>NULL</code>
 (estimate by population when <code>n_pop &gt; 1</code>, by region when
 <code>n_pop = 1</code>). Ignored when <code>rec_model = "mean_rec"</code>. See

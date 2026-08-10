@@ -17,8 +17,8 @@ optim_ref_pts(model_name, data_list, pars_list)
 - model_name:
 
   Function. An RTMB-compatible model function (e.g., `global_SPR`,
-  `global_BH_Fmsy`, `local_BH_Fmsy`) that defines the objective function
-  for the reference point calculation.
+  `global_Fmsy`, `local_Fmsy_sglpop`) that defines the objective
+  function for the reference point calculation.
 
 - data_list:
 

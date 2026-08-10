@@ -53,6 +53,10 @@ Setup_Mod_SrvIdx_and_Comps(
     1:input_list$data$n_srv_fleets, sep = ""),
   SrvLenComps_pop_Type = paste("none_Year_1-terminal_Fleet_",
     1:input_list$data$n_srv_fleets, sep = ""),
+  srv_idx_ages = NULL,
+  SrvAgeComps_bins = NULL,
+  SrvIdx_LikeType = rep("lognormal", input_list$data$n_srv_fleets),
+  SrvIdx_Cov = NULL,
   ...
 )
 ```
@@ -255,6 +259,50 @@ Setup_Mod_SrvIdx_and_Comps(
   population-specific survey length compositions. Same format and
   options as `SrvLenComps_Type`. Default: `"none"` for all fleets across
   all years.
+
+- srv_idx_ages:
+
+  Per-fleet selection of which ages contribute to the index total.
+  Either a list with one element per survey fleet, where each element is
+  a vector of ages or `NULL` for all ages, or an array
+  `[n_ages x n_srv_fleets]` of 0/1 weights. Default `NULL` uses every
+  age for every fleet. Restricting a fleet to a single age turns it into
+  an index of that age alone, which is how an age-1 acoustic index is
+  specified; the fleet's compositions are unaffected because the
+  restriction applies to the index sum rather than to selectivity.
+
+- SrvAgeComps_bins:
+
+  Which age bins each survey fleet's age composition is fitted over.
+  Supply a list with one element per fleet, each a vector of age indices
+  or `NULL` for all ages, or an `[n_ages x n_srv_fleets]` array of 0/1
+  weights. Both observed and expected compositions are restricted to the
+  named bins and renormalized within them, so excluded bins are left out
+  of the likelihood rather than being forced to be explained; this is
+  how a fleet that only ages part of its age range is fitted. Indices
+  refer to observed bins, that is after any ageing error has mapped
+  model ages onto observed ones. Every fleet must retain at least one
+  bin. Default `NULL`, which fits all ages for all fleets.
+
+- SrvIdx_LikeType:
+
+  Character vector `[n_srv_fleets]` giving the error structure of each
+  survey index. Options are `"lognormal"` (default, the observation
+  standard errors are on the log scale), `"normal"` (arithmetic scale),
+  and `"mvn"` (multivariate normal on the arithmetic scale using a fixed
+  covariance supplied through `SrvIdx_Cov`). One-step-ahead residuals
+  are available only for lognormal fleets. A fleet's population-specific
+  index stream follows the same choice for `"lognormal"` and `"normal"`,
+  but stays lognormal under `"mvn"`, whose covariance describes the
+  regional series only.
+
+- SrvIdx_Cov:
+
+  List with one element per survey fleet holding the fixed covariance
+  matrix for fleets using `"mvn"`, and `NULL` otherwise. Each matrix
+  must be square with one row per observation the fleet fits, ordered as
+  the observations appear when scanning that fleet's `UseSrvIdx` slice
+  in array order.
 
 - ...:
 

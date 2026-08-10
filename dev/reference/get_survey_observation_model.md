@@ -37,7 +37,11 @@ get_survey_observation_model(
   PredSrvIdx,
   Mrate = NULL,
   move_timing = 0,
-  seasdur = rep(1, n_seas)
+  seasdur = rep(1, n_seas),
+  srv_idx_ages = NULL,
+  srv_q_type = NULL,
+  ObsSrvIdx = NULL,
+  UseSrvIdx = NULL
 )
 ```
 
@@ -132,6 +136,28 @@ get_survey_observation_model(
 - PredSrvIdx:
 
   Array `[pop, region, year, season, srv_fleet]`, output container.
+
+- srv_idx_ages:
+
+  Array `[age, srv_fleet]` of 0/1 weights selecting which ages
+  contribute to each fleet's index total, or `NULL` for all ages.
+  Restricting to a single age turns that fleet into an index of that age
+  alone, and the compositions keep using the full age range because the
+  restriction is applied to the index sum rather than to selectivity.
+
+- srv_q_type:
+
+  Integer vector `[srv_fleet]` selecting how catchability is obtained:
+  `0` estimated as `exp(ln_srv_q)`, `1` solved analytically as the ratio
+  of mean observed to mean predicted, `2` solved analytically on the log
+  scale as `exp(mean(log(obs) - log(pred)))`. `NULL` means all
+  estimated.
+
+- ObsSrvIdx, UseSrvIdx:
+
+  Arrays `[region, year, season, srv_fleet]` of observed index values
+  and their use flags. Required only when a fleet solves catchability
+  analytically.
 
 ## Value
 

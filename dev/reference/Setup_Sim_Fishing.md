@@ -27,6 +27,10 @@ Setup_Sim_Fishing(
   ObsFishIdx_pop_SE = array(0.2, dim = c(sim_list$n_pop, sim_list$n_regions,
     sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
   fish_idx_type = array(1, dim = c(sim_list$n_regions, sim_list$n_fish_fleets)),
+  FishIdx_LikeType = rep(0, sim_list$n_fish_fleets),
+  FishIdx_Cov = NULL,
+  UseFishIdx = NULL,
+  t_fish = array(0, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_fish_fleets)),
   comp_fishage_like = rep(0, sim_list$n_fish_fleets),
   ISS_FishAgeComps = array(100, dim = c(sim_list$n_regions, sim_list$n_yrs,
     sim_list$n_seas, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims)),
@@ -194,6 +198,40 @@ Setup_Sim_Fishing(
 
   Numeric array. Index type (0 = abundance, 1 = biomass), dimensions
   \`n_regions x n_fish_fleets\`. Default: 1.
+
+- FishIdx_LikeType:
+
+  Character or numeric vector, length \`n_fish_fleets\`. Error structure
+  each fleet's index is drawn under: `"lognormal"` (0), `"normal"` (1),
+  or `"mvn"` (2), matching the estimation model's `FishIdx_LikeType`. An
+  mvn fleet draws from `FishIdx_Cov` through a common-factor
+  decomposition (see
+  [`cov_to_factor`](https://chengmatt.github.io/SPoRC/dev/reference/cov_to_factor.md))
+  instead of `ObsFishIdx_SE`, and its population-specific stream stays
+  lognormal. Default: lognormal for every fleet.
+
+- FishIdx_Cov:
+
+  List with one element per fishery fleet holding the fixed covariance
+  over that fleet's fitted index observations, ordered by scanning
+  `UseFishIdx` in array order (region fastest, then year, then season).
+  Required for mvn fleets. Default: `NULL`.
+
+- UseFishIdx:
+
+  Numeric array `[n_regions x n_yrs x n_seas x n_fish_fleets]` of fit
+  flags from the estimation model, used to position each simulated cell
+  in the covariance. Its year dimension may be shorter than the
+  simulation, in which case later years draw with the mean factor scale
+  and loading. Required for mvn fleets. Default: `NULL`.
+
+- t_fish:
+
+  Numeric array `[n_regions x n_seas x n_fish_fleets]` giving the
+  fishery index timing, the fraction of the season elapsed when the
+  index is observed. Numbers at age are decayed by `exp(-t_fish * ZAA)`
+  before the index is formed, matching `t_srv` for surveys and the
+  estimation model's own `t_fish`. Defaults to `0` (start of season).
 
 - comp_fishage_like:
 

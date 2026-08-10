@@ -32,6 +32,19 @@
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-case-studies" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Case Studies</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-case-studies">
+<li><a class="dropdown-item" href="../articles/e_single_region_sablefish_case_study.html">Alaska Sablefish (Single Region)</a></li>
+    <li><a class="dropdown-item" href="../articles/f_single_region_ebs_pollock_case_study.html">Eastern Bering Sea Walleye Pollock</a></li>
+    <li><a class="dropdown-item" href="../articles/g_spatial_sablefish_case_study.html">Alaska Sablefish (Spatial)</a></li>
+    <li><a class="dropdown-item" href="../articles/w_goa_northern_rockfish_case_study.html">GOA Northern Rockfish</a></li>
+    <li><a class="dropdown-item" href="../articles/x_goa_dusky_rockfish_case_study.html">GOA Dusky Rockfish</a></li>
+    <li><a class="dropdown-item" href="../articles/y_bsai_northern_rockfish_case_study.html">BSAI Northern Rockfish</a></li>
+    <li><a class="dropdown-item" href="../articles/z_bsai_rougheye_rockfish_case_study.html">BSAI Blackspotted and Rougheye Rockfish</a></li>
+    <li><a class="dropdown-item" href="../articles/aa_bsai_pacific_ocean_perch_case_study.html">BSAI Pacific Ocean Perch</a></li>
+  </ul>
+</li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -1185,13 +1198,13 @@ fixture happens to use.</p>
 <tbody>
 <tr class="odd">
 <td><code>test-setup_*</code></td>
-<td>12</td>
+<td>15</td>
 <td>Input building: the <code>map</code> factor builders and the
 <code>Setup_Mod_*</code> validation</td>
 </tr>
 <tr class="even">
 <td><code>test-model_*</code></td>
-<td>22</td>
+<td>25</td>
 <td>One objective function module each: selectivity, movement,
 transition, observation models, likelihoods, distributions</td>
 </tr>
@@ -1202,7 +1215,7 @@ transition, observation models, likelihoods, distributions</td>
 </tr>
 <tr class="even">
 <td><code>test-sim_*</code></td>
-<td>4</td>
+<td>5</td>
 <td>Operating model, including simulate then refit self tests</td>
 </tr>
 <tr class="odd">
@@ -1228,13 +1241,13 @@ and the operating model</td>
 </tr>
 <tr class="odd">
 <td><code>test-regression_*</code></td>
-<td>5</td>
+<td>14</td>
 <td>End to end fits pinning <code>obj$rep</code> and <code>nll</code>
 for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 73 test files in total.</p>
+<p>That is 94 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

@@ -27,6 +27,17 @@ its weight to 1. Must be called after all data setup functions."><meta name="rob
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-case-studies" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Case Studies</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-case-studies"><li><a class="dropdown-item" href="../articles/e_single_region_sablefish_case_study.html">Alaska Sablefish (Single Region)</a></li>
+    <li><a class="dropdown-item" href="../articles/f_single_region_ebs_pollock_case_study.html">Eastern Bering Sea Walleye Pollock</a></li>
+    <li><a class="dropdown-item" href="../articles/g_spatial_sablefish_case_study.html">Alaska Sablefish (Spatial)</a></li>
+    <li><a class="dropdown-item" href="../articles/w_goa_northern_rockfish_case_study.html">GOA Northern Rockfish</a></li>
+    <li><a class="dropdown-item" href="../articles/x_goa_dusky_rockfish_case_study.html">GOA Dusky Rockfish</a></li>
+    <li><a class="dropdown-item" href="../articles/y_bsai_northern_rockfish_case_study.html">BSAI Northern Rockfish</a></li>
+    <li><a class="dropdown-item" href="../articles/z_bsai_rougheye_rockfish_case_study.html">BSAI Blackspotted and Rougheye Rockfish</a></li>
+    <li><a class="dropdown-item" href="../articles/aa_bsai_pacific_ocean_perch_case_study.html">BSAI Pacific Ocean Perch</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -63,6 +74,7 @@ its weight to <code>1</code>. Must be called after all data setup functions.</p>
 <span>  Wt_FishIdx_pop <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  Wt_SrvIdx_pop <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  Wt_Rec <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  Wt_Init_Rec <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  Wt_F <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  Wt_Tagging <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  Wt_FishAgeComps <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">1</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>,</span>
@@ -158,8 +170,27 @@ likelihood. Same scalar or array format as <code>Wt_Catch_pop</code>, dimensione
 
 
 <dt id="arg-wt-rec">Wt_Rec<a class="anchor" aria-label="anchor" href="#arg-wt-rec"></a></dt>
-<dd><p>Scalar weight applied to the recruitment deviation penalty
-(<code>ln_RecDevs</code>). Default <code>1</code>.</p></dd>
+<dd><p>Weight applied to the recruitment deviation penalty
+(<code>ln_RecDevs</code>). Either a scalar applied uniformly or a numeric array
+<code>[n_pop × n_regions × n_est_rec_devs]</code> for deviation-specific
+weighting, where <code>n_est_rec_devs</code> is the third dimension of
+<code>ln_RecDevs</code> rather than the number of years, since
+<code>dont_est_recdev_last</code> and <code>n_proj_yrs_devs</code> both move it.
+Default <code>1</code>. A weight of zero on a deviation leaves it estimated but
+removes it from the penalty entirely, which is how a stock-recruit
+relationship is fit over a window of years while recruitment stays free in
+every year. That is distinct from <code>dont_est_recdev_last</code>, which
+removes the deviations themselves so recruitment reverts to the
+deterministic prediction in those years.</p></dd>
+
+
+<dt id="arg-wt-init-rec">Wt_Init_Rec<a class="anchor" aria-label="anchor" href="#arg-wt-init-rec"></a></dt>
+<dd><p>Weight applied to the initial age deviation penalty
+(<code>ln_InitDevs</code>). Either a scalar or a numeric array
+<code>[n_pop × n_regions × (n_ages - 1)]</code>. Defaults to <code>NULL</code>, which
+takes whatever <code>Wt_Rec</code> is when <code>Wt_Rec</code> is a scalar; supply it
+explicitly when <code>Wt_Rec</code> is an array, since the two penalties are
+dimensioned differently.</p></dd>
 
 
 <dt id="arg-wt-f">Wt_F<a class="anchor" aria-label="anchor" href="#arg-wt-f"></a></dt>
@@ -304,7 +335,13 @@ any selectivity functional form:</p><dl><dt><code>"smooth_bin_curve"</code></dt>
 
 
 </dl><p>Any name not supplied defaults to <code>0</code> (off). Must be called after
-<code>Setup_Mod_Fishsel_and_Q</code>.</p></dd>
+<code>Setup_Mod_Fishsel_and_Q</code>.
+Each weight may instead be a vector with one value per model year, so a
+penalty can act only in some years or with a different strength in each.
+The specification may also carry <code>"bin_range"</code>, a length-two vector
+giving the first and last bin the penalties act over. To give each fleet
+its own penalties, pass an unnamed list with one named specification per
+fleet instead of a single specification.</p></dd>
 
 
 <dt id="arg-ret-sel-pen-wts">ret_sel_pen_wts<a class="anchor" aria-label="anchor" href="#arg-ret-sel-pen-wts"></a></dt>

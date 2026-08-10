@@ -66,7 +66,7 @@ get_key_quants(data, rep, reference_points_opt, proj_model_opt, model_names)
   `what`
 
   :   Output selector passed to `Get_Reference_Points`; e.g.,
-      `"global_SPR"` or `"local_BH_MSY"`.
+      `"global_SPR"` or `"local_MSY"`.
 
 - proj_model_opt:
 
@@ -135,9 +135,9 @@ and (4) extracts terminal SSB, dynamic unfished SSB, catch advice (year
 2 of the projection), and status ratios.
 
 When `recruitment_opt = "bh_rec"`, Beverton-Holt stock-recruit
-parameters are passed to the projection via an internal `bh_rec_opt`
-list constructed from year-1 demographics to approximate unfished SSB.
-When `recruitment_opt = "inv_gauss"`, a warning is issued because only a
+parameters are passed to the projection via an internal `srr_opt` list
+constructed from year-1 demographics to approximate unfished SSB. When
+`recruitment_opt = "inv_gauss"`, a warning is issued because only a
 single deterministic simulation is run; stochastic recruitment options
 should be used within a full MSE loop rather than here.
 

@@ -3,6 +3,7 @@ pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   a_model_dimensions: a_model_dimensions.html
+  aa_bsai_pacific_ocean_perch_case_study: aa_bsai_pacific_ocean_perch_case_study.html
   architecture: architecture.html
   b_model_parameters: b_model_parameters.html
   c_model_equations: c_model_equations.html
@@ -26,7 +27,11 @@ articles:
   t_model_options: t_model_options.html
   u_osa_residuals: u_osa_residuals.html
   v_structuring_your_data: v_structuring_your_data.html
-last_built: 2026-08-10T20:53Z
+  w_goa_northern_rockfish_case_study: w_goa_northern_rockfish_case_study.html
+  x_goa_dusky_rockfish_case_study: x_goa_dusky_rockfish_case_study.html
+  y_bsai_northern_rockfish_case_study: y_bsai_northern_rockfish_case_study.html
+  z_bsai_rougheye_rockfish_case_study: z_bsai_rougheye_rockfish_case_study.html
+last_built: 2026-08-10T21:15Z
 urls:
   reference: https://chengmatt.github.io/SPoRC/reference
   article: https://chengmatt.github.io/SPoRC/articles

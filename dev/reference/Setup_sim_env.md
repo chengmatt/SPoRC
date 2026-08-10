@@ -33,7 +33,8 @@ SPoRC simulation functions: `generate_initial_age_structure`,
 `generate_fishery_catch_comp_idx`, `generate_survey_comp_idx`,
 `release_conv_tags`, `generate_fishery_conv_tags_recap`,
 `Get_Det_Recruitment`, `Get_Init_NAA`, `predict_sim_fish_iss_fmort`,
-`rho_trans`, `simulate_comps`, `simulate_conv_tag_fish_recaptures`.
+`rho_trans`, `simulate_comps`, `simulate_conv_tag_fish_recaptures`,
+`draw_index_obs`, `resolve_idx_factor`.
 
 ## See also
 

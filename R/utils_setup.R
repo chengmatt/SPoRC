@@ -14,27 +14,65 @@
 #'   weights for any subset of \code{"smooth_bin_curve"}, \code{"smooth_bin_diff"},
 #'   \code{"smooth_yr_diff"}, \code{"smooth_yr_curve"}, \code{"smooth_dome"},
 #'   \code{"smooth_mean_center"}. Any name not supplied defaults to \code{0}.
+#'   Each weight is either a scalar applied to every year, or a vector with one
+#'   value per model year, which lets a penalty act only in some years or act
+#'   with a different strength in each. The list may also carry
+#'   \code{"bin_range"}, a length-two vector giving the first and last age or
+#'   length bin the penalties apply over; the default of every bin is what a
+#'   missing \code{bin_range} reproduces.
 #'
-#' @return Named numeric vector of length 6: \code{c(smooth_bin_curve,
-#'   smooth_bin_diff, smooth_yr_diff, smooth_yr_curve, smooth_dome,
-#'   smooth_mean_center)}.
+#' @param n_fleets Integer. Number of fleets the specification covers. A single
+#'   named specification is applied to every fleet; an unnamed list of length
+#'   \code{n_fleets} gives each fleet its own.
+#'
+#' @return List of length \code{n_fleets}. Each element is a named list of
+#'   length 7: the six penalty terms, each a scalar or a per-year vector, plus
+#'   \code{bin_range} (\code{NULL} for all bins).
 #'
 #' @keywords internal
-resolve_sel_pen_wts <- function(pen_wts) {
+resolve_sel_pen_wts <- function(pen_wts, n_fleets = 1) {
 
   term_names <- c("smooth_bin_curve", "smooth_bin_diff", "smooth_yr_diff", "smooth_yr_curve", "smooth_dome", "smooth_mean_center")
+  allowed <- c(term_names, "bin_range", "normalize", "yr_diff_ref")
 
-  if(is.null(pen_wts)) {
-    out <- stats::setNames(rep(0, length(term_names)), term_names)
+  resolve_one <- function(spec) {
+
+    out <- stats::setNames(vector("list", length(allowed)), allowed)
+    for(nm in term_names) out[[nm]] <- 0
+    out$bin_range <- NULL
+    out$normalize <- TRUE
+    out$yr_diff_ref <- NULL
+
+    # NULL or an empty list both mean "this fleet has no penalties", which is how
+    # a per-fleet specification names the fleets it does not constrain.
+    if(is.null(spec) || length(spec) == 0) return(out)
+
+    if(is.null(names(spec)) || !all(names(spec) %in% allowed))
+      stop("pen_wts must be a named numeric vector/list with names in: ", paste(allowed, collapse = ", "))
+
+    spec <- as.list(spec)
+    for(nm in names(spec)) {
+      if(is.null(spec[[nm]])) next
+      if(nm == "bin_range" && !is.list(spec[[nm]])) {
+        if(length(spec[[nm]]) != 2) stop("bin_range must be a length-two vector giving the first and last bin the selectivity penalties apply over.")
+        if(spec[[nm]][1] > spec[[nm]][2]) stop("bin_range must be increasing.")
+      }
+      out[[nm]] <- spec[[nm]]
+    } # end nm loop
+
     return(out)
   }
 
-  if(is.null(names(pen_wts)) || !all(names(pen_wts) %in% term_names))
-    stop("pen_wts must be a named numeric vector/list with names in: ", paste(term_names, collapse = ", "))
+  # A single named specification covers every fleet; an unnamed list gives each
+  # fleet its own, which is what surveys with different smoothing needs require.
+  per_fleet <- is.list(pen_wts) && is.null(names(pen_wts))
 
-  out <- stats::setNames(rep(0, length(term_names)), term_names)
-  out[names(pen_wts)] <- unlist(pen_wts)
-  return(out)
+  if(per_fleet) {
+    if(length(pen_wts) != n_fleets) stop("pen_wts is an unnamed list of length ", length(pen_wts), " but there are ", n_fleets, " fleets. Supply one specification per fleet, or a single named specification for all of them.")
+    return(lapply(pen_wts, resolve_one))
+  }
+
+  return(rep(list(resolve_one(pen_wts)), n_fleets))
 }
 
 #' Append a message to the global messages list
@@ -308,4 +346,261 @@ convert_to_numeric <- function(x, lookup) {
   }
 
   stop("Input must be numeric or character")
+}
+
+#' Build an index age-selection array
+#'
+#' Turns a per-fleet specification of which ages contribute to an index into
+#' the \code{[age, fleet]} array of 0/1 weights the objective function uses.
+#' Accepts a list with one element per fleet, where each element is a vector of
+#' ages or \code{NULL} for all ages, or an array already in \code{[age, fleet]}
+#' form.
+#'
+#' @param idx_ages List, array, or \code{NULL}. Per-fleet age selection.
+#' @param n_ages Integer. Number of model ages.
+#' @param n_fleets Integer. Number of fleets.
+#' @param what Character. Name used in error messages.
+#'
+#' @return Array \code{[n_ages x n_fleets]} of 0/1 weights.
+#'
+#' @keywords internal
+parse_idx_ages <- function(idx_ages, n_ages, n_fleets, what) {
+
+  if(is.null(idx_ages)) return(array(1, dim = c(n_ages, n_fleets)))
+
+  if(is.list(idx_ages)) {
+    if(length(idx_ages) != n_fleets) stop(what, " is a list of length ", length(idx_ages), " but there are ", n_fleets, " fleets.")
+    out <- array(1, dim = c(n_ages, n_fleets))
+    for(f in seq_len(n_fleets)) {
+      if(is.null(idx_ages[[f]])) next
+      ages_f <- idx_ages[[f]]
+      if(!all(ages_f %in% seq_len(n_ages))) stop(what, " for fleet ", f, " refers to ages outside 1:", n_ages, ".")
+      out[,f] <- 0
+      out[ages_f,f] <- 1
+    } # end f loop
+    if(any(colSums(out) == 0)) stop(what, " leaves at least one fleet with no ages contributing to its index.")
+    return(out)
+  }
+
+  if(length(idx_ages) != n_ages * n_fleets) stop(what, " must have ", n_ages, " x ", n_fleets, " elements when supplied as an array.")
+  out <- array(as.numeric(idx_ages), dim = c(n_ages, n_fleets))
+  if(any(!out %in% c(0, 1))) stop(what, " must contain only 0 and 1.")
+  if(any(colSums(out) == 0)) stop(what, " leaves at least one fleet with no ages contributing to its index.")
+  return(out)
+}
+
+#' Validate fixed index covariance matrices for a multivariate normal likelihood
+#'
+#' Checks each supplied covariance once at setup and returns it ready for
+#' \code{\link[RTMB]{dmvnorm}}. Each matrix must be square with one row per
+#' observation the fleet actually fits, ordered the way the observations appear
+#' when scanning the fleet's use flags in array order (region varies fastest,
+#' then year, then season).
+#'
+#' The checks are not decorative. \code{RTMB::dmvnorm} reads only the lower
+#' triangle without verifying symmetry, and returns \code{NaN} silently when the
+#' covariance is not positive definite, so either mistake would otherwise
+#' surface as an unexplained \code{NaN} objective rather than a setup error.
+#'
+#' @param cov_list List with one element per fleet, each either a covariance
+#'   matrix or \code{NULL}, or \code{NULL} for no matrices at all.
+#' @param like_type_vals Integer vector of index likelihood codes; only fleets
+#'   coded \code{2} require a matrix.
+#' @param use_arr Array \code{[region, year, season, fleet]} of use flags.
+#' @param n_fleets Integer. Number of fleets.
+#' @param what Character. Name used in error messages.
+#'
+#' @return List with one element per fleet, holding the validated covariance
+#'   matrix for fleets using the multivariate normal and \code{NULL} otherwise.
+#'
+#' @keywords internal
+parse_idx_cov <- function(cov_list, like_type_vals, use_arr, n_fleets, what) {
+
+  out <- vector("list", n_fleets)
+
+  for(f in seq_len(n_fleets)) {
+    if(like_type_vals[f] != 2) next
+
+    if(is.null(cov_list) || is.null(cov_list[[f]])) stop(what, " must supply a covariance matrix for fleet ", f, ", which uses a multivariate normal index likelihood.")
+
+    cov_f <- as.matrix(cov_list[[f]])
+    n_obs <- sum(array(use_arr[,,,f], dim = dim(use_arr)[1:3]) == 1)
+
+    if(nrow(cov_f) != ncol(cov_f)) stop(what, " for fleet ", f, " is not square.")
+    if(nrow(cov_f) != n_obs) stop(what, " for fleet ", f, " is ", nrow(cov_f), " x ", ncol(cov_f), " but that fleet fits ", n_obs, " observations.")
+    if(!isTRUE(all.equal(cov_f, t(cov_f), check.attributes = FALSE))) stop(what, " for fleet ", f, " is not symmetric. Only its lower triangle would be used.")
+
+    tryCatch(chol(cov_f), error = function(e) stop(what, " for fleet ", f, " is not positive definite."))
+    dimnames(cov_f) <- NULL
+    out[[f]] <- cov_f
+
+  } # end f loop
+
+  return(out)
+}
+
+#' Validate a selectivity fixed-effect centering penalty table
+#'
+#' Checks the table consumed by \code{\link{get_selex_fixed_penalty}} and
+#' normalises its \code{par} column to a list of integer vectors, so a row may
+#' name either one parameter or a whole set.
+#'
+#' @param selex_penalty Data frame with columns \code{region}, \code{fleet},
+#'   \code{block}, \code{sex}, \code{par}, and \code{wt}, or \code{NULL}.
+#' @param use_flag Integer (0/1). When \code{0} the table is returned unchanged
+#'   and never validated, matching how the prior tables are guarded.
+#' @param what Character. Name used in error messages.
+#'
+#' @return The validated table with \code{par} as a list column, or the input
+#'   unchanged when \code{use_flag} is \code{0}.
+#'
+#' @keywords internal
+validate_selex_penalty <- function(selex_penalty, use_flag, what) {
+
+  if(is.null(use_flag) || use_flag != 1) return(selex_penalty)
+  if(is.null(selex_penalty)) stop(what, " is NULL but its Use_ flag is 1. Please provide a penalty table.")
+
+  required_cols <- c("region", "fleet", "block", "sex", "par", "wt")
+  missing_cols <- setdiff(required_cols, names(selex_penalty))
+  if(length(missing_cols) > 0) stop(what, " is missing required columns: ", paste(missing_cols, collapse = ", "))
+
+  if(!is.list(selex_penalty$par)) selex_penalty$par <- as.list(selex_penalty$par)
+  if(any(!is.finite(selex_penalty$wt)) || any(selex_penalty$wt < 0)) stop(what, "$wt must be finite and non-negative.")
+  if(any(lengths(selex_penalty$par) == 0)) stop(what, "$par names an empty set of parameters in at least one row.")
+
+  return(selex_penalty)
+}
+
+#' Validate the type column of a selectivity prior table
+#'
+#' Checks the optional \code{type} column consumed by
+#' \code{\link{get_selex_prior}}. A table without the column is all
+#' \code{"par"} rows (the original behaviour) and passes untouched.
+#' \code{"value"} rows are range-checked here because their \code{par} column
+#' indexes the selectivity grid rather than the parameter vector, and their
+#' \code{block} must exist in the fleet's block map to resolve to a year.
+#'
+#' @param selex_prior Data frame with columns \code{region}, \code{fleet},
+#'   \code{block}, \code{sex}, \code{par}, \code{mu}, \code{sd}, and optionally
+#'   \code{type}, or \code{NULL}.
+#' @param use_flag Integer (0/1). When \code{0} the table is returned unchanged
+#'   and never validated, matching how the prior tables are guarded.
+#' @param what Character. Name used in error messages.
+#' @param sel_blocks Integer array \code{[region, year, fleet]} mapping model
+#'   years to selectivity blocks.
+#' @param n_bins Integer. Size of the grid the stream's selectivity is
+#'   parameterized on (ages or lengths per its selectivity type).
+#'
+#' @return The validated table, or the input unchanged when \code{use_flag} is
+#'   \code{0}.
+#'
+#' @keywords internal
+validate_selex_prior_types <- function(selex_prior, use_flag, what, sel_blocks, n_bins) {
+
+  if(is.null(use_flag) || use_flag != 1) return(selex_prior)
+  if(is.null(selex_prior$type)) return(selex_prior)
+
+  if(any(!selex_prior$type %in% c("par", "value"))) stop(what, "$type must be 'par' or 'value'.")
+
+  val <- selex_prior$type == "value"
+  if(any(!selex_prior$par[val] %in% 1:n_bins)) stop(what, "$par must index the selectivity grid (1:", n_bins, " for this stream's selectivity type) on rows with type = 'value'.")
+  if(any(!is.finite(selex_prior$sd[val])) || any(selex_prior$sd[val] <= 0)) stop(what, "$sd must be finite and positive on rows with type = 'value'.")
+  for(i in which(val)) {
+    if(!selex_prior$block[i] %in% sel_blocks[selex_prior$region[i], , selex_prior$fleet[i]])
+      stop(what, "$block does not exist in the block map for region ", selex_prior$region[i], ", fleet ", selex_prior$fleet[i], " on a row with type = 'value'.")
+  } # end i loop
+
+  return(selex_prior)
+}
+
+#' Set up bin-override selectivity deviations for one selectivity stream
+#'
+#' Creates the bin-override deviation parameter array, its factor map, and its
+#' process-error hyperparameters, and records which bins each fleet overrides.
+#' Bins named here take a free annual selectivity value instead of whatever the
+#' fleet's functional form produces, which lets an otherwise parametric curve
+#' carry a handful of freely estimated bins.
+#'
+#' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}.
+#' @param bin_dev_bins List with one element per fleet, each a vector of bins to
+#'   override or \code{NULL} for none, or \code{NULL} for no overrides anywhere.
+#' @param pe_model Character vector \code{[n_fleets]} giving the process-error
+#'   structure of the override deviations: \code{"none"}, \code{"iid"}, or
+#'   \code{"rw"}.
+#' @param prefix One of \code{"fish"}, \code{"ret"}, \code{"srv"}.
+#' @param n_fleets Integer. Number of fleets in this stream.
+#' @param bins Integer. Number of age or length bins.
+#' @param starting_values Named list of user-supplied starting values.
+#'
+#' @return \code{input_list} with the parameter, map, and data entries added.
+#'
+#' @keywords internal
+setup_sel_bin_devs <- function(input_list, bin_dev_bins, pe_model, prefix, n_fleets, bins, starting_values = list()) {
+
+  dev_nm <- paste0("ln_", prefix, "sel_bin_devs")
+  pe_nm <- paste0(prefix, "sel_bin_devs_pe_pars")
+  bins_nm <- paste0(prefix, "_sel_bin_dev_bins")
+  pe_data_nm <- paste0("cont_tv_", prefix, "sel_bin_devs")
+
+  n_yrs_dev <- length(input_list$data$years) + input_list$data$n_proj_yrs_devs
+
+  if(!all(pe_model %in% c("none", "iid", "rw"))) stop(pe_data_nm, " must be one of none, iid, or rw")
+  if(length(pe_model) != n_fleets) stop(pe_data_nm, " is not length ", n_fleets)
+  pe_vals <- convert_to_numeric(pe_model, list(none = 0, iid = 1, rw = 2))
+
+  # 0/1 array of which bins each fleet overrides; no overrides is all zeros
+  bins_arr <- array(0, dim = c(bins, n_fleets))
+  if(!is.null(bin_dev_bins)) {
+    if(!is.list(bin_dev_bins) || length(bin_dev_bins) != n_fleets) stop(bins_nm, " must be a list with one element per fleet (use NULL for a fleet with no overrides).")
+    for(f in seq_len(n_fleets)) {
+      if(is.null(bin_dev_bins[[f]])) next
+      if(!all(bin_dev_bins[[f]] %in% seq_len(bins))) stop(bins_nm, " for fleet ", f, " refers to bins outside 1:", bins)
+      bins_arr[bin_dev_bins[[f]], f] <- 1
+    } # end f loop
+  }
+
+  if(dev_nm %in% names(starting_values)) input_list$par[[dev_nm]] <- starting_values[[dev_nm]]
+  else input_list$par[[dev_nm]] <- array(0, dim = c(input_list$data$n_regions, n_yrs_dev, bins, input_list$data$n_sexes, n_fleets))
+
+  if(pe_nm %in% names(starting_values)) input_list$par[[pe_nm]] <- starting_values[[pe_nm]]
+  else input_list$par[[pe_nm]] <- array(0, dim = c(input_list$data$n_regions, bins, input_list$data$n_sexes, n_fleets))
+
+  # Only the named bins are estimated; everything else is fixed at zero and
+  # never reaches the selectivity curve, so it costs nothing.
+  map_dev <- array(NA_real_, dim = dim(input_list$par[[dev_nm]]))
+  counter <- 1
+  for(f in seq_len(n_fleets)) {
+    for(r in seq_len(input_list$data$n_regions)) {
+      for(s in seq_len(input_list$data$n_sexes)) {
+        for(b in which(bins_arr[,f] == 1)) {
+          map_dev[r, 1:n_yrs_dev, b, s, f] <- counter:(counter + n_yrs_dev - 1)
+          counter <- counter + n_yrs_dev
+        } # end b loop
+      } # end s loop
+    } # end r loop
+  } # end f loop
+  input_list$map[[dev_nm]] <- factor(map_dev)
+
+  # A process-error hyperparameter only exists where the deviations are both
+  # estimated and given a structure to be penalized against.
+  map_pe <- array(NA_real_, dim = dim(input_list$par[[pe_nm]]))
+  counter <- 1
+  for(f in seq_len(n_fleets)) {
+    if(pe_vals[f] == 0) next
+    for(r in seq_len(input_list$data$n_regions)) {
+      for(s in seq_len(input_list$data$n_sexes)) {
+        for(b in which(bins_arr[,f] == 1)) {
+          map_pe[r, b, s, f] <- counter
+          counter <- counter + 1
+        } # end b loop
+      } # end s loop
+    } # end r loop
+  } # end f loop
+  input_list$map[[pe_nm]] <- factor(map_pe)
+
+  input_list$data[[bins_nm]] <- bins_arr
+  input_list$data[[pe_data_nm]] <- pe_vals
+  input_list$data[[paste0("map_", dev_nm)]] <- map_dev
+
+  return(input_list)
 }

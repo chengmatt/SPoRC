@@ -146,8 +146,12 @@
 #'   Default 100.
 #' @param t_spawn Numeric scalar. Fraction of the spawning season elapsed
 #'   before spawning; used for mid-season SSB calculations.
-#' @param bh_rec_opt Named list of inputs for deterministic Beverton-Holt
-#'   recruitment when `recruitment_opt = "bh_rec"`. This list is passed
+#' @param srr_opt Named list of inputs for deterministic stock-recruit
+#'   recruitment when `recruitment_opt` is `"bh_rec"` or `"ricker_rec"`.
+#'   The curve itself is taken from `recruitment_opt`, so the same list serves
+#'   both. Formerly `bh_rec_opt`.
+#' @param bh_rec_opt Deprecated. Former name of `srr_opt`; supplying it warns
+#'   and forwards. Supplying both is an error. This list is passed
 #'   directly to \code{\link{Get_Det_Recruitment}} and must contain all
 #'   required arguments for that function.
 #'
@@ -195,19 +199,19 @@
 #'   \code{do_recruits_move}.
 #'
 #'   Spawning biomass used in recruitment is constructed internally by
-#'   combining \code{bh_rec_opt$SSB} with projected SSB values during the
+#'   combining \code{srr_opt$SSB} with projected SSB values during the
 #'   simulation.
 #'
-#'   \code{bh_rec_opt$rec_lag = 1} is the classic lagged case: each
+#'   \code{srr_opt$rec_lag = 1} is the classic lagged case: each
 #'   projection year's recruitment is computed up front from the prior
 #'   year's SSB, exactly as \code{recruitment_opt = "inv_gauss"}/
-#'   \code{"mean_rec"} are. \code{bh_rec_opt$rec_lag = 0} is age-0
+#'   \code{"mean_rec"} are. \code{srr_opt$rec_lag = 0} is age-0
 #'   recruitment: recruitment for year \code{y} is computed from year
 #'   \code{y}'s own SSB once \code{spawn_seas} is reached within that year's
 #'   season loop, and is inserted no earlier than \code{spawn_seas}
 #'   (\code{rec_seas_prop} must be zero for every season before
 #'   \code{spawn_seas} in that case). Reference points and the seasonal SBPR
-#'   calculation used to get \code{bh_rec_opt$WAA}/\code{MatAA}/etc. are
+#'   calculation used to get \code{srr_opt$WAA}/\code{MatAA}/etc. are
 #'   unaffected by this choice, \code{rec_lag} only changes which year's
 #'   SSB feeds the Beverton-Holt curve, not the per-recruit math itself.
 #'
@@ -301,7 +305,7 @@
 #'
 #' @details
 #' Each projection year proceeds as follows when
-#' \code{recruitment_opt != "bh_rec"} or \code{bh_rec_opt$rec_lag != 0}
+#' \code{recruitment_opt != "bh_rec"} or \code{srr_opt$rec_lag != 0}
 #' (the classic case):
 #' \enumerate{
 #'   \item Annual recruitment is generated and allocated across regions and
@@ -324,7 +328,7 @@
 #'   harvest control rule or fixed input.
 #' }
 #'
-#' When \code{bh_rec_opt$rec_lag == 0} (age-0 recruitment), steps 1 and 5
+#' When \code{srr_opt$rec_lag == 0} (age-0 recruitment), steps 1 and 5
 #' above are reordered within \code{spawn_seas}: movement is applied first,
 #' spawning biomass is computed from the survivor population alone (no new
 #' recruits exist yet), that SSB is used to generate this year's
@@ -399,6 +403,7 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
                                      catch_tol = 1e-6,
                                      catch_max_iter = 100,
                                      t_spawn,
+                                     srr_opt = NULL,
                                      bh_rec_opt = NULL,
                                      n_seas = 1,
                                      seasdur = rep(1 / n_seas, n_seas),
@@ -413,9 +418,17 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
 ) {
 
 
+  # srr_opt was bh_rec_opt when Beverton-Holt was the only stock-recruit curve.
+  # It now carries either curve, so the bh_ prefix is wrong rather than redundant.
+  if(!is.null(bh_rec_opt)) {
+    if(!is.null(srr_opt)) stop("Supply either srr_opt or the deprecated bh_rec_opt, not both.")
+    warning("'bh_rec_opt' is deprecated and will be removed; use 'srr_opt'. It now carries the Ricker as well, so the bh_ prefix no longer describes it.", call. = FALSE)
+    srr_opt <- bh_rec_opt
+  }
+
   # Error Checking ----------------------------------------------------------
 
-  if(!recruitment_opt %in% c("inv_gauss", "mean_rec", "zero", "bh_rec")) stop("Recruitment options are not specified correctly! Should be inv_gauss, mean_rec, zero, or bh_rec")
+  if(!recruitment_opt %in% c("inv_gauss", "mean_rec", "zero", "bh_rec", "ricker_rec")) stop("Recruitment options are not specified correctly! Should be inv_gauss, mean_rec, zero, bh_rec, or ricker_rec")
   if(!fmort_opt %in% c("HCR", "Input", "HCR_global", "Catch")) stop("Fishing Mortality options are not specified correctly! Should be HCR, Input, HCR_global, or Catch")
   if(!catch_fallback_opt %in% c("HCR", "Input", "HCR_global")) stop("Catch fallback options are not specified correctly! Should be HCR, Input, or HCR_global")
 
@@ -470,12 +483,12 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
   }
 
   # error checking for bh_opt
-  if(recruitment_opt == "bh_rec") {
+  if(recruitment_opt %in% c("bh_rec", "ricker_rec")) {
     required_fields <- c("rec_dd", "rec_lag", "R0", "h", "rec_region_prop",
                          "WAA", "MatAA", "natmort", "SSB", "Movement",
                          "sex_ratio_f", "stray_rate", "fish_sel", "ret_sel", "dmr", "init_F")
-    diff <- setdiff(required_fields, names(bh_rec_opt)) # find difference
-    if(length(diff) > 0) stop(paste("bh_rec_opt is missing the following required fields:", paste(diff)))
+    diff <- setdiff(required_fields, names(srr_opt)) # find difference
+    if(length(diff) > 0) stop(paste("srr_opt is missing the following required fields:", paste(diff)))
   }
 
   # Define Containers -------------------------------------------------------
@@ -517,8 +530,15 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
   proj_NAA[,,1,,,] <- terminal_NAA
   proj_NAA0[,,1,,,] <- terminal_NAA0
 
-  # Flag for age-0 bh recruitment
-  age0_bh <- recruitment_opt == "bh_rec" && !is.null(bh_rec_opt) && bh_rec_opt$rec_lag == 0
+  # The two stock-recruit options share every piece of machinery here, the
+  # spawning-biomass-per-recruit calculation, the lag, the apportionment, and
+  # differ only in the curve Get_Det_Recruitment evaluates. Carrying the integer
+  # code on srr_opt lets it reach run_proj_year without a signature change.
+  # Absent (older callers) means Beverton-Holt, which is what used to be hardcoded.
+  if(!is.null(srr_opt)) srr_opt$rec_model <- if(recruitment_opt == "ricker_rec") 2 else 1
+
+  # Flag for age-0 stock-recruit recruitment
+  age0_rec <- recruitment_opt %in% c("bh_rec", "ricker_rec") && !is.null(srr_opt) && srr_opt$rec_lag == 0
 
   # Arguments for run_proj_yr used below
   proj_args <- list(n_pop = n_pop, n_regions = n_regions, n_ages = n_ages, n_sexes = n_sexes,
@@ -529,7 +549,7 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
                     WAA = WAA, MatAA = MatAA, WAA_fish = WAA_fish, t_spawn = t_spawn,
                     spawn_seas = spawn_seas, sgl_seas_spawning_movement = sgl_seas_spawning_movement,
                     natal_region = natal_region, stray_rate = stray_rate, sexratio = sexratio,
-                    rec_seas_prop = rec_seas_prop, age0_bh = age0_bh, bh_rec_opt = bh_rec_opt)
+                    rec_seas_prop = rec_seas_prop, age0_rec = age0_rec, srr_opt = srr_opt)
 
   for(y in 1:n_proj_yrs) {
 
@@ -538,9 +558,9 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
 
     # Recruitment Processes (rec_lag != 0, or non-BH recruitment) -------------
 
-    # For age0_bh, recruitment for the year is instead generated inline once
+    # For age0_rec, recruitment for the year is instead generated inline once
     # spawn_seas is reached within the season loop below.
-    if(y > 1 && !age0_bh) {
+    if(y > 1 && !age0_rec) {
 
       # Get annual recruitment
       tmp_rec <- switch(recruitment_opt,
@@ -565,40 +585,41 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
                           array(0, dim = c(n_pop, n_regions))
                         },
 
-                        "bh_rec" = { # if beverton holt recruitment
-                          Get_Det_Recruitment(recruitment_model = 1,
-                                              rec_dd = bh_rec_opt$rec_dd,
+                        "bh_rec" = , # both stock-recruit options land here
+                        "ricker_rec" = { # Beverton-Holt or Ricker, per srr_opt$rec_model
+                          Get_Det_Recruitment(recruitment_model = srr_opt$rec_model,
+                                              rec_dd = srr_opt$rec_dd,
                                               n_pop = n_pop,
-                                              sgl_seas_spawning_movement = bh_rec_opt$sgl_seas_spawning_movement,
+                                              sgl_seas_spawning_movement = srr_opt$sgl_seas_spawning_movement,
                                               natal_region = natal_region,
-                                              y = y + dim(bh_rec_opt$SSB)[3],
-                                              rec_lag = bh_rec_opt$rec_lag,
-                                              R0 = bh_rec_opt$R0,
-                                              rec_region_prop = bh_rec_opt$rec_region_prop,
+                                              y = y + dim(srr_opt$SSB)[3],
+                                              rec_lag = srr_opt$rec_lag,
+                                              R0 = srr_opt$R0,
+                                              rec_region_prop = srr_opt$rec_region_prop,
                                               rec_seas_prop = rec_seas_prop,
-                                              h = bh_rec_opt$h,
+                                              h = srr_opt$h,
                                               n_regions = n_regions,
                                               n_ages = n_ages,
-                                              WAA = bh_rec_opt$WAA,
-                                              MatAA = bh_rec_opt$MatAA,
+                                              WAA = srr_opt$WAA,
+                                              MatAA = srr_opt$MatAA,
                                               n_seas = n_seas,
                                               seasdur = seasdur,
                                               spawn_seas = spawn_seas,
-                                              natmort = bh_rec_opt$natmort,
-                                              SSB_vals = abind::abind(bh_rec_opt$SSB, proj_SSB, along = 3),
-                                              Movement = bh_rec_opt$Movement,
+                                              natmort = srr_opt$natmort,
+                                              SSB_vals = abind::abind(srr_opt$SSB, proj_SSB, along = 3),
+                                              Movement = srr_opt$Movement,
                                               # SSB0 behind the stock recruit curve has to use the same movement
                                               # sequencing as the projection itself, so forward both of these.
-                                              Mrate = bh_rec_opt$Mrate,
-                                              stray_rate = bh_rec_opt$stray_rate,
+                                              Mrate = srr_opt$Mrate,
+                                              stray_rate = srr_opt$stray_rate,
                                               do_recruits_move = do_recruits_move,
                                               t_spawn = t_spawn,
-                                              sexratio_f = bh_rec_opt$sex_ratio_f,
-                                              init_F = bh_rec_opt$init_F,
+                                              sexratio_f = srr_opt$sex_ratio_f,
+                                              init_F = srr_opt$init_F,
                                               n_fish_fleets = n_fish_fleets,
-                                              fish_sel = bh_rec_opt$fish_sel,
-                                              ret_sel = bh_rec_opt$ret_sel,
-                                              dmr = bh_rec_opt$dmr,
+                                              fish_sel = srr_opt$fish_sel,
+                                              ret_sel = srr_opt$ret_sel,
+                                              dmr = srr_opt$dmr,
                                               move_timing = move_timing
                           )
                         }
@@ -795,15 +816,15 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
 #'   by region and season, before the fleet split in \code{fratio_fleet}.
 #' @param tmp_rec Numeric array \code{[n_pop, n_regions]} or \code{NULL}. This
 #'   year's recruitment when it is already known. Ignored (and regenerated
-#'   internally) when \code{age0_bh} is \code{TRUE}.
+#'   internally) when \code{age0_rec} is \code{TRUE}.
 #' @param fratio_fleet Array \code{[n_regions, n_seas, n_fish_fleets]}. Fleet
 #'   split of F within a season, summing to 1 across fleets, or all 0 for a
 #'   season the terminal year did not fish.
-#' @param age0_bh Logical. Whether recruitment is age-0 Beverton-Holt, in which
+#' @param age0_rec Logical. Whether recruitment is age-0 Beverton-Holt, in which
 #'   case it is generated inside the season loop from this year's own SSB.
 #' @param proj_NAA,proj_NAA0,proj_ZAA,proj_ret_FAA,proj_disc_FAA,proj_tot_FAA,proj_CAA,proj_Catch,proj_SSB,proj_Dynamic_SSB0,proj_eff_SSB
 #'   The mutable projection arrays, as built in \code{Do_Population_Projection}.
-#' @param n_pop,n_regions,n_ages,n_sexes,n_seas,n_fish_fleets,fish_sel,ret_sel,dmr,natmort,seasdur,Movement,Mrate,move_timing,do_recruits_move,WAA,MatAA,WAA_fish,t_spawn,spawn_seas,sgl_seas_spawning_movement,natal_region,stray_rate,sexratio,rec_seas_prop,bh_rec_opt
+#' @param n_pop,n_regions,n_ages,n_sexes,n_seas,n_fish_fleets,fish_sel,ret_sel,dmr,natmort,seasdur,Movement,Mrate,move_timing,do_recruits_move,WAA,MatAA,WAA_fish,t_spawn,spawn_seas,sgl_seas_spawning_movement,natal_region,stray_rate,sexratio,rec_seas_prop,srr_opt
 #'   Static projection inputs, documented in \code{\link{Do_Population_Projection}}.
 #'
 #' @return A named list holding the same eleven arrays, advanced through year
@@ -823,7 +844,7 @@ run_proj_year <- function(y,
                           Movement, Mrate, move_timing, do_recruits_move,
                           WAA, MatAA, WAA_fish, t_spawn, spawn_seas,
                           sgl_seas_spawning_movement, natal_region, stray_rate,
-                          sexratio, rec_seas_prop, age0_bh, bh_rec_opt) {
+                          sexratio, rec_seas_prop, age0_rec, srr_opt) {
 
       for(seas in 1:n_seas) {
 
@@ -831,10 +852,10 @@ run_proj_year <- function(y,
         # - rec_lag != 0 (or non-BH recruitment): the year's recruitment is
         #   already known (computed above), so any season past the first gets
         #   its share here, as before.
-        # - age0_bh (rec_lag == 0): recruitment isn't known until spawn_seas is
+        # - age0_rec (rec_lag == 0): recruitment isn't known until spawn_seas is
         #   reached (below), so only seasons strictly after spawn_seas are
         #   handled here; spawn_seas itself generates and inserts its own share.
-        if(y > 1 && (if(age0_bh) seas > spawn_seas else seas > 1)) {
+        if(y > 1 && (if(age0_rec) seas > spawn_seas else seas > 1)) {
           for(p in 1:n_pop) {
             for(r in 1:n_regions) {
               for(s in 1:n_sexes) {
@@ -886,7 +907,7 @@ run_proj_year <- function(y,
           } # end p loop
         } # only compute if spatial
 
-        # Derive Biomass + Recruitment (age0_bh only) ------------------------------
+        # Derive Biomass + Recruitment (age0_rec only) ------------------------------
         # This year's SSB is now fully determined by the survivor population
         # (age-0 recruits have not been produced yet, and couldn't affect SSB
         # even if they had - rec_lag == 0 requires MatAA == 0 at the recruit
@@ -894,7 +915,7 @@ run_proj_year <- function(y,
         # insert the spawn_seas share BEFORE mortality/ageing runs below, so the
         # new cohort is carried forward exactly like any other seasonal recruit
         # pulse.
-        if(age0_bh && seas == spawn_seas) {
+        if(age0_rec && seas == spawn_seas) {
 
           biom <- derive_proj_biom(y, seas, proj_NAA, proj_NAA0, WAA, MatAA, proj_ZAA, natmort, t_spawn, seasdur,
                                   n_seas, n_pop, n_regions, n_ages, n_sexes,
@@ -907,39 +928,39 @@ run_proj_year <- function(y,
 
           if(y > 1) {
 
-            tmp_rec <- Get_Det_Recruitment(recruitment_model = 1,
-                                           rec_dd = bh_rec_opt$rec_dd,
+            tmp_rec <- Get_Det_Recruitment(recruitment_model = srr_opt$rec_model,
+                                           rec_dd = srr_opt$rec_dd,
                                            n_pop = n_pop,
-                                           sgl_seas_spawning_movement = bh_rec_opt$sgl_seas_spawning_movement,
+                                           sgl_seas_spawning_movement = srr_opt$sgl_seas_spawning_movement,
                                            natal_region = natal_region,
-                                           y = y + dim(bh_rec_opt$SSB)[3],
-                                           rec_lag = bh_rec_opt$rec_lag,
-                                           R0 = bh_rec_opt$R0,
-                                           rec_region_prop = bh_rec_opt$rec_region_prop,
+                                           y = y + dim(srr_opt$SSB)[3],
+                                           rec_lag = srr_opt$rec_lag,
+                                           R0 = srr_opt$R0,
+                                           rec_region_prop = srr_opt$rec_region_prop,
                                            rec_seas_prop = rec_seas_prop,
-                                           h = bh_rec_opt$h,
+                                           h = srr_opt$h,
                                            n_regions = n_regions,
                                            n_ages = n_ages,
-                                           WAA = bh_rec_opt$WAA,
-                                           MatAA = bh_rec_opt$MatAA,
+                                           WAA = srr_opt$WAA,
+                                           MatAA = srr_opt$MatAA,
                                            n_seas = n_seas,
                                            seasdur = seasdur,
                                            spawn_seas = spawn_seas,
-                                           natmort = bh_rec_opt$natmort,
-                                           SSB_vals = abind::abind(bh_rec_opt$SSB, proj_SSB, along = 3),
-                                           Movement = bh_rec_opt$Movement,
+                                           natmort = srr_opt$natmort,
+                                           SSB_vals = abind::abind(srr_opt$SSB, proj_SSB, along = 3),
+                                           Movement = srr_opt$Movement,
                                            # SSB0 behind the stock recruit curve has to use the same movement
                                            # sequencing as the projection itself, so forward both of these.
-                                           Mrate = bh_rec_opt$Mrate,
-                                           stray_rate = bh_rec_opt$stray_rate,
+                                           Mrate = srr_opt$Mrate,
+                                           stray_rate = srr_opt$stray_rate,
                                            do_recruits_move = do_recruits_move,
                                            t_spawn = t_spawn,
-                                           sexratio_f = bh_rec_opt$sex_ratio_f,
-                                           init_F = bh_rec_opt$init_F,
+                                           sexratio_f = srr_opt$sex_ratio_f,
+                                           init_F = srr_opt$init_F,
                                            n_fish_fleets = n_fish_fleets,
-                                           fish_sel = bh_rec_opt$fish_sel,
-                                           ret_sel = bh_rec_opt$ret_sel,
-                                           dmr = bh_rec_opt$dmr,
+                                           fish_sel = srr_opt$fish_sel,
+                                           ret_sel = srr_opt$ret_sel,
+                                           dmr = srr_opt$dmr,
                                            move_timing = move_timing
             )
             tmp_rec <- array(tmp_rec, dim = c(n_pop, n_regions))
@@ -968,7 +989,7 @@ run_proj_year <- function(y,
 
           } # end if y > 1
 
-        } # end if age0_bh && seas == spawn_seas
+        } # end if age0_rec && seas == spawn_seas
 
         # Movement (timing 1 and 2), Mortality and Ageing --------------------------
         # Post-season state at every age, before the ageing shift. Under move_timing == 0
@@ -1007,8 +1028,8 @@ run_proj_year <- function(y,
           proj_NAA0[,,y+1,1,n_ages,] = proj_NAA0[,,y+1,1,n_ages,] + pstep_NAA0[,,n_ages,] # Acuumulate plus group
         }
 
-        # Derive Biomass (age0_bh: already computed above, before mortality/ageing),
-        if(seas == spawn_seas && !age0_bh) {
+        # Derive Biomass (age0_rec: already computed above, before mortality/ageing),
+        if(seas == spawn_seas && !age0_rec) {
           biom <- derive_proj_biom(y, seas, proj_NAA, proj_NAA0, WAA, MatAA, proj_ZAA, natmort, t_spawn, seasdur,
                                   n_seas, n_pop, n_regions, n_ages, n_sexes,
                                   sgl_seas_spawning_movement, natal_region, stray_rate,

@@ -246,6 +246,16 @@ do_natmort_mapping <- function(input_list,
 #' @param addtocomp Small constant added to composition proportions before likelihood
 #'   evaluation to avoid \code{log(0)}. Default \code{1e-3}. Ignored when a
 #'   logistic-normal likelihood is specified, as that family handles zeros internally.
+#' @param comp_const_obs Integer switch (\code{0} or \code{1}) controlling where
+#'   \code{addtocomp} is applied in the multinomial kernel, not a constant to be
+#'   tuned. \code{1} (default) adds it to the observed proportions that weight
+#'   the multinomial as well as inside the logarithms, so the kernel is
+#'   stationary exactly at \code{pred = obs}. \code{0} weights by the raw
+#'   observed proportions, which is what the ADMB templates do, and displaces
+#'   the expected composition from the data by roughly \code{n * addtocomp}. The
+#'   difference matters once effective sample sizes are large: on the EBS
+#'   pollock bridge, switching from \code{0} to \code{1} moves estimated SSB by
+#'   a median of 8.8 percent. Use \code{0} only when reproducing an ADMB model.
 #' @param addtofishidx Small constant added to fishery indices. Default \code{1e-4}.
 #' @param addtosrvidx Small constant added to survey indices. Default \code{1e-4}.
 #' @param addtotag Small constant added to tag recovery observations. Default \code{1e-10}.
@@ -326,6 +336,7 @@ Setup_Mod_Biologicals <- function(input_list,
                                   WAA_srv = NULL,
                                   MatAA,
                                   addtocomp = 1e-3,
+                                  comp_const_obs = 1,
                                   addtofishidx = 1e-4,
                                   addtosrvidx = 1e-4,
                                   addtotag = 1e-10,
@@ -459,6 +470,8 @@ Setup_Mod_Biologicals <- function(input_list,
   input_list$data$Use_M_prior <- Use_M_prior
   input_list$data$M_prior <- M_prior
   input_list$data$Fixed_natmort <- Fixed_natmort
+  if(!comp_const_obs %in% c(0, 1)) stop("comp_const_obs must be 0 or 1. It is a switch, not a constant: 1 weights the multinomial by obs + addtocomp (unbiased), 0 weights by the raw observed proportions (the ADMB convention).")
+  input_list$data$comp_const_obs <- comp_const_obs
   input_list$data$addtocomp <- addtocomp
   input_list$data$addtofishidx <- addtofishidx
   input_list$data$addtosrvidx <- addtosrvidx

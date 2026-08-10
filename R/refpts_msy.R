@@ -1,8 +1,67 @@
 # Stage 3 of 3: post fit
 #
-# Beverton Holt Fmsy solvers. They differ in what is held common across space:
+# Stock-recruit Fmsy solvers. They differ in what is held common across space:
 # single region, one global F, or a local F per region, with separate single and
-# multi population versions of the local case.
+# multi population versions of the local case. Each supports both stock-recruit
+# forms through the three helpers below; rec_model comes in on the data list and
+# defaults to Beverton-Holt when absent, which is what these solvers used to
+# assume unconditionally.
+
+#' Equilibrium recruitment from spawning biomass per recruit
+#'
+#' Solves R = f(R * phi) for R, where f is the stock-recruit curve. Both forms
+#' pass through (S0, R0) and diverge away from it, so a model fitted with one and
+#' given reference points from the other is silently wrong rather than noisy.
+#'
+#' @param phi Spawning biomass per recruit under fishing.
+#' @param phi0 Unfished spawning biomass per recruit.
+#' @param R0 Unfished recruitment.
+#' @param h Steepness.
+#' @param rec_model 1 for Beverton-Holt, 2 for Ricker.
+#' @keywords internal
+equil_rec_phi <- function(phi, phi0, R0, h, rec_model) {
+  if(rec_model == 2) {
+    a <- log(4 * h / (1 - h))
+    R0 * (phi0 / phi) * (1 - log(phi0 / phi) / a)
+  } else {
+    R0 * ((4 * h * phi) - (1 - h) * phi0) / ((5 * h - 1) * phi)
+  }
+}
+
+#' Equilibrium recruitment from spawning biomass
+#'
+#' The same two curves evaluated at a spawning biomass rather than a per-recruit
+#' quantity, for the spatial solvers that iterate on recruitment directly.
+#'
+#' @param S Equilibrium spawning biomass.
+#' @param S0 Unfished spawning biomass.
+#' @param R0 Unfished recruitment.
+#' @param h Steepness.
+#' @param rec_model 1 for Beverton-Holt, 2 for Ricker.
+#' @keywords internal
+equil_rec_ssb <- function(S, S0, R0, h, rec_model) {
+  if(rec_model == 2) {
+    a <- log(4 * h / (1 - h))
+    R0 * (S / S0) * exp(a * (1 - S / S0))
+  } else {
+    (4 * h * R0 * S) / ((1 - h) * S0 + (5 * h - 1) * S)
+  }
+}
+
+#' Derivative of equilibrium recruitment with respect to spawning biomass
+#'
+#' Supplies the Jacobian term for the Newton solves in the spatial cases.
+#'
+#' @inheritParams equil_rec_ssb
+#' @keywords internal
+equil_rec_ssb_deriv <- function(S, S0, R0, h, rec_model) {
+  if(rec_model == 2) {
+    a <- log(4 * h / (1 - h))
+    (R0 / S0) * exp(a * (1 - S / S0)) * (1 - a * S / S0)
+  } else {
+    (4 * h * R0 * (1 - h) * S0) / ((1 - h) * S0 + (5 * h - 1) * S)^2
+  }
+}
 
 #' Compute Beverton-Holt Fmsy for a single-region or non-spatial model
 #'
@@ -37,12 +96,17 @@
 #'
 #' @keywords internal
 #' @import RTMB
-single_region_BH_Fmsy <- function(pars, data) {
+single_region_Fmsy <- function(pars, data) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   RTMB::getAll(pars, data)
+
+  # getAll defines rec_model whenever the caller supplied it. Hand-built data
+  # lists that predate the Ricker will not have, so fall back rather than
+  # assigning before getAll, which would collide with its own definition.
+  if(!exists("rec_model", inherits = FALSE)) rec_model <- 1
 
   # Exponentiate Fmsy
   Fmsy = exp(log_Fmsy)
@@ -214,7 +278,7 @@ single_region_BH_Fmsy <- function(pars, data) {
   }
 
   # Equilibrium recruitment
-  Req = R0 * ((4 * h * effective_SB) - (1 - h) * effective_SB0) / ((5 * h - 1) * effective_SB)
+  Req = equil_rec_phi(effective_SB, effective_SB0, R0, h, rec_model)
 
   # Yield calculations
   Yield = array(0, dim = c(n_pop))
@@ -246,7 +310,7 @@ single_region_BH_Fmsy <- function(pars, data) {
 #' contribute to total mortality but not to the yield being maximised.
 #'
 #' Supports multi-region, single-population models with seasonal movement.
-#' Straying is not included here (use \code{single_region_BH_Fmsy} for
+#' Straying is not included here (use \code{single_region_Fmsy} for
 #' multi-population non-spatial models).
 #'
 #' @details
@@ -349,13 +413,18 @@ single_region_BH_Fmsy <- function(pars, data) {
 #'
 #' @keywords internal
 #' @import RTMB
-global_BH_Fmsy <- function(pars,
+global_Fmsy <- function(pars,
                            data) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   RTMB::getAll(pars, data) # get parameters and data
+
+  # getAll defines rec_model whenever the caller supplied it. Hand-built data
+  # lists that predate the Ricker will not have, so fall back rather than
+  # assigning before getAll, which would collide with its own definition.
+  if(!exists("rec_model", inherits = FALSE)) rec_model <- 1
 
   # exponentitate reference points to "estimate"
   Fmsy = exp(log_Fmsy)
@@ -590,7 +659,7 @@ global_BH_Fmsy <- function(pars,
   SPR = SBPR_F / SBPR_0
 
   # Get equilibrium recruitment
-  Req = R0 * ( (4*h*SBPR_F) - (1 - h) * SBPR_0) / ((5 * h -1) * SBPR_F)
+  Req = equil_rec_phi(SBPR_F, SBPR_0, R0, h, rec_model)
 
   # Get yield
   Yield = sum(CAA * WAA) * Req
@@ -617,7 +686,7 @@ global_BH_Fmsy <- function(pars,
 #'
 #' Computes the vector of regional \eqn{F_{MSY}} values that jointly maximise
 #' total equilibrium yield across all regions under a spatially explicit
-#' Beverton-Holt stock-recruit relationship. Unlike \code{\link{global_BH_Fmsy}},
+#' Beverton-Holt stock-recruit relationship. Unlike \code{\link{global_Fmsy}},
 #' which constrains all regions to share a single fishing mortality, this
 #' function allows each region to have its own optimal \eqn{F}.
 #'
@@ -700,12 +769,17 @@ global_BH_Fmsy <- function(pars,
 #'
 #' @keywords internal
 #' @import RTMB
-local_BH_Fmsy_sglpop <- function(pars, data) {
+local_Fmsy_sglpop <- function(pars, data) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   RTMB::getAll(pars, data) # get parameters and data
+
+  # getAll defines rec_model whenever the caller supplied it. Hand-built data
+  # lists that predate the Ricker will not have, so fall back rather than
+  # assigning before getAll, which would collide with its own definition.
+  if(!exists("rec_model", inherits = FALSE)) rec_model <- 1
 
   # exponentitate reference points
   Fmsy = exp(log_Fmsy)
@@ -966,10 +1040,11 @@ local_BH_Fmsy_sglpop <- function(pars, data) {
     } # end d loop
   } # end o loop
 
-  A = 4 * h * rec_region_prop * R0 # define first part of the numerator of BH recruitment
-  B = rep(0, n_regions) # define first part of the denominator of BH recruitment
-  for(d in 1:n_regions) B[d] = (1 - h[d]) * sum(SB_unfished_mat[, d] * R0 * rec_region_prop)
-  C = 5 * h - 1 # define second part of the denominator for BH recruitment
+  # Unfished spawning biomass and recruitment by destination region: the two
+  # quantities both stock-recruit curves are parameterised by.
+  S0_d = rep(0, n_regions)
+  for(d in 1:n_regions) S0_d[d] = sum(SB_unfished_mat[, d] * R0 * rec_region_prop)
+  R0_d = R0 * rec_region_prop
 
   # define initial guess to solve for equilibrium recruitment from origin region
   Req_o = R0 * rec_region_prop
@@ -977,9 +1052,7 @@ local_BH_Fmsy_sglpop <- function(pars, data) {
   for(nit in 1:newton_steps) {
     # compute equilibrium spawning biomass (SSBR * Req) in destination region
     x_vec = as.numeric(t(SB_fished_mat) %*% Req_o)  # function of equilibrium recruitment in origin region (what we are solving for)
-    numer_vec = A * x_vec # compute numerator of BH
-    denom_vec = B + (C * x_vec) # compute denominator of BH
-    g_vec = numer_vec / denom_vec # equilibrium recruitment in destination region
+    g_vec = equil_rec_ssb(x_vec, S0_d, R0_d, h, rec_model) # equilibrium recruitment in destination region
 
     # define root and define Jacobian
     iter_vec = Req_o - g_vec # find values of origin recruitment that are consistent w/ destination recruitment such that pop'n is in equilibrium
@@ -990,7 +1063,7 @@ local_BH_Fmsy_sglpop <- function(pars, data) {
     # dg / dReq = (dg / dxk) * (dxk / dReq)
     # to get (dg / dxk), use quotient rule of (BH recruitment)
     # note that dxk / dReq S_2mat * Req = S_2mat
-    dg_dxk = (A * B) / (denom_vec^2)
+    dg_dxk = equil_rec_ssb_deriv(x_vec, S0_d, R0_d, h, rec_model)
     dg_dReq = matrix(0, n_regions, n_regions)
     for(d in 1:n_regions) dg_dReq[d, ] = dg_dxk[d] * SB_fished_mat[, d] # now compute to see how destination equilibrium rec changes, as origin equil rec changes
 
@@ -1040,7 +1113,7 @@ local_BH_Fmsy_sglpop <- function(pars, data) {
 
 #' Compute local Beverton-Holt Fmsy for a spatially explicit multi-population model
 #'
-#' Multi-population extension of \code{\link{local_BH_Fmsy_sglpop}}. Estimates a
+#' Multi-population extension of \code{\link{local_Fmsy_sglpop}}. Estimates a
 #' vector of region-specific \eqn{F_{MSY}} values that jointly maximise total
 #' equilibrium yield when multiple populations, each with distinct natal regions,
 #' movement schedules, and Beverton-Holt parameters, co-occupy a shared spatial
@@ -1128,12 +1201,17 @@ local_BH_Fmsy_sglpop <- function(pars, data) {
 #'
 #' @keywords internal
 #' @import RTMB
-local_BH_Fmsy_multipop <- function(pars, data) {
+local_Fmsy_multipop <- function(pars, data) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   RTMB::getAll(pars, data) # get parameters and data
+
+  # getAll defines rec_model whenever the caller supplied it. Hand-built data
+  # lists that predate the Ricker will not have, so fall back rather than
+  # assigning before getAll, which would collide with its own definition.
+  if(!exists("rec_model", inherits = FALSE)) rec_model <- 1
 
   # exponentitate reference points
   Fmsy = exp(log_Fmsy)
@@ -1456,9 +1534,7 @@ local_BH_Fmsy_multipop <- function(pars, data) {
     }
   }
 
-  A_p <- 4 * h[cbind(1:n_pop, natal_region)] * R0                   # define first part of the numerator of BH recruitment
-  B_p <- (1 - h[cbind(1:n_pop, natal_region)]) * eff_SSB0_virgin    # define first part of the denominator of BH recruitment
-  C_p <- 5 * h[cbind(1:n_pop, natal_region)] - 1                    # define second part of the denominator for BH recruitment
+  h_p <- h[cbind(1:n_pop, natal_region)]   # steepness at each population's natal region
 
   # define initial guess to solve for equilibrium recruitment from origin region
   Req_o <- R0
@@ -1477,13 +1553,13 @@ local_BH_Fmsy_multipop <- function(pars, data) {
     }
 
     # BH equilibrium total recruitment per pop
-    g_vec <- A_p * eff_SSB_fished / (B_p + C_p * eff_SSB_fished)
+    g_vec <- equil_rec_ssb(eff_SSB_fished, eff_SSB0_virgin, R0, h_p, rec_model)
 
     # find values of origin recruitment consistent w/ destination recruitment such that pop'n is in equilibrium
     iter_vec = Req_o - g_vec
 
     # Jacobian: dg/deff = (A*B) / (B + C*x)^2, then chain rule through eff_SSB_fished
-    dg_deff <- (A_p * B_p) / (B_p + C_p * eff_SSB_fished)^2
+    dg_deff <- equil_rec_ssb_deriv(eff_SSB_fished, eff_SSB0_virgin, R0, h_p, rec_model)
     J <- diag(n_pop)
     for(p2 in 1:n_pop) {
       r <- natal_region[p2]

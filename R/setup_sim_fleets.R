@@ -39,7 +39,28 @@
 #'   dimensions `n_pop x n_regions x n_yrs x n_seas x n_fish_fleets`. Default: 0.2.
 #' @param fish_idx_type Numeric array. Index type (0 = abundance, 1 = biomass),
 #'   dimensions `n_regions x n_fish_fleets`. Default: 1.
+#' @param FishIdx_LikeType Character or numeric vector, length `n_fish_fleets`.
+#'   Error structure each fleet's index is drawn under: \code{"lognormal"} (0),
+#'   \code{"normal"} (1), or \code{"mvn"} (2), matching the estimation model's
+#'   \code{FishIdx_LikeType}. An mvn fleet draws from \code{FishIdx_Cov} through
+#'   a common-factor decomposition (see \code{\link{cov_to_factor}}) instead of
+#'   \code{ObsFishIdx_SE}, and its population-specific stream stays lognormal.
+#'   Default: lognormal for every fleet.
+#' @param FishIdx_Cov List with one element per fishery fleet holding the fixed
+#'   covariance over that fleet's fitted index observations, ordered by scanning
+#'   \code{UseFishIdx} in array order (region fastest, then year, then season).
+#'   Required for mvn fleets. Default: \code{NULL}.
+#' @param UseFishIdx Numeric array \code{[n_regions x n_yrs x n_seas x n_fish_fleets]}
+#'   of fit flags from the estimation model, used to position each simulated cell
+#'   in the covariance. Its year dimension may be shorter than the simulation,
+#'   in which case later years draw with the mean factor scale and loading.
+#'   Required for mvn fleets. Default: \code{NULL}.
 #'
+#' @param t_fish Numeric array \code{[n_regions x n_seas x n_fish_fleets]} giving
+#'   the fishery index timing, the fraction of the season elapsed when the index
+#'   is observed. Numbers at age are decayed by \code{exp(-t_fish * ZAA)} before
+#'   the index is formed, matching \code{t_srv} for surveys and the estimation
+#'   model's own \code{t_fish}. Defaults to \code{0} (start of season).
 #' @param comp_fishage_like Numeric vector. Likelihood for age composition
 #'   (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants),
 #'   length `n_fish_fleets`. Default: 0.
@@ -206,6 +227,10 @@ Setup_Sim_Fishing <- function(sim_list,
                               ObsFishIdx_SE = array(0.2, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
                               ObsFishIdx_pop_SE = array(0.2, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
                               fish_idx_type = array(1, dim = c(sim_list$n_regions, sim_list$n_fish_fleets)),
+                              FishIdx_LikeType = rep(0, sim_list$n_fish_fleets),
+                              FishIdx_Cov = NULL,
+                              UseFishIdx = NULL,
+                              t_fish = array(0, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_fish_fleets)),
 
                               # Retained age compositions
                               comp_fishage_like = rep(0, sim_list$n_fish_fleets),
@@ -291,6 +316,7 @@ Setup_Sim_Fishing <- function(sim_list,
   # Convert character inputs to numeric codes
   catch_units <- convert_to_numeric(catch_units,  list(abd = 0, biom = 1))
   fish_idx_type <- convert_to_numeric(fish_idx_type, list(abd = 0, biom = 1))
+  FishIdx_LikeType <- convert_to_numeric(FishIdx_LikeType, list(lognormal = 0, normal = 1, mvn = 2))
   comp_fishage_like <- convert_to_numeric(comp_fishage_like, list(Multinomial = 0,  `Dirichlet-Multinomial` = 1, `iid-Logistic-Normal` = 2, `1d-Logistic-Normal` = 3, `2d-Logistic-Normal` = 4))
   comp_fishlen_like <- convert_to_numeric(comp_fishlen_like, list(Multinomial = 0, `Dirichlet-Multinomial` = 1, `iid-Logistic-Normal` = 2, `1d-Logistic-Normal` = 3, `2d-Logistic-Normal` = 4))
   FishAgeComps_Type <- convert_to_numeric(FishAgeComps_Type,  list(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999))
@@ -323,6 +349,17 @@ Setup_Sim_Fishing <- function(sim_list,
                        n_fish_fleets = sim_list$n_fish_fleets, what = "ObsFishIdx_SE")
   check_sim_dimensions(ObsFishIdx_pop_SE, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
                        n_fish_fleets = sim_list$n_fish_fleets, what = "ObsFishIdx_pop_SE")
+  check_sim_dimensions(FishIdx_LikeType, n_fish_fleets = sim_list$n_fish_fleets, what = "FishIdx_LikeType")
+
+  # Multivariate normal index fleets draw from the supplied covariance rather than
+  # the SE array, so the covariance is validated and factor-decomposed once here.
+  fish_idx_mvn <- NULL
+  if(any(FishIdx_LikeType == 2)) {
+    if(is.null(UseFishIdx)) stop("UseFishIdx must be supplied when any FishIdx_LikeType is mvn, to position each observation in the covariance.")
+    if(length(dim(UseFishIdx)) != 4 || any(dim(UseFishIdx)[c(1,3,4)] != c(sim_list$n_regions, sim_list$n_seas, sim_list$n_fish_fleets)) || dim(UseFishIdx)[2] > sim_list$n_yrs)
+      stop("UseFishIdx must be an n_regions x (at most n_yrs) x n_seas x n_fish_fleets array.")
+    fish_idx_mvn <- build_idx_factor(FishIdx_Cov, FishIdx_LikeType, UseFishIdx, sim_list$n_fish_fleets, "FishIdx_Cov")
+  }
 
   # Validate fishery age composition parameters
   check_sim_dimensions(comp_fishage_like, n_fish_fleets = sim_list$n_fish_fleets, what = "comp_fishage_like")
@@ -440,6 +477,12 @@ Setup_Sim_Fishing <- function(sim_list,
   sim_list$ObsFishIdx_SE <- ObsFishIdx_SE # fishery index SE
   sim_list$ObsFishIdx_pop_SE <- ObsFishIdx_pop_SE # fishery index SE pop-specific
   sim_list$fish_idx_type <- fish_idx_type # fishery index type
+  sim_list$FishIdx_LikeType <- FishIdx_LikeType # fishery index error structure
+  if(!is.null(fish_idx_mvn)) {
+    sim_list$fish_idx_mvn <- fish_idx_mvn # factor parameters for mvn index fleets
+    sim_list$fish_idx_u <- matrix(NA_real_, sim_list$n_fish_fleets, sim_list$n_sims) # shared factor draw, filled per fleet and replicate
+  }
+  sim_list$t_fish <- t_fish # fishery index timing within the season
 
   # Fishery age compositions
   sim_list$comp_fishage_like <- comp_fishage_like
@@ -544,6 +587,22 @@ Setup_Sim_Fishing <- function(sim_list,
 #' @param srv_idx_type Integer vector \code{[n_srv_fleets]} specifying survey
 #'   index type. Default: all 1 (biomass). Options: 0/“abd” (abundance),
 #'   1/“biom” (biomass).
+#' @param SrvIdx_LikeType Character or numeric vector, length `n_srv_fleets`.
+#'   Error structure each fleet's index is drawn under: \code{"lognormal"} (0),
+#'   \code{"normal"} (1), or \code{"mvn"} (2), matching the estimation model's
+#'   \code{SrvIdx_LikeType}. An mvn fleet draws from \code{SrvIdx_Cov} through
+#'   a common-factor decomposition (see \code{\link{cov_to_factor}}) instead of
+#'   \code{ObsSrvIdx_SE}, and its population-specific stream stays lognormal.
+#'   Default: lognormal for every fleet.
+#' @param SrvIdx_Cov List with one element per survey fleet holding the fixed
+#'   covariance over that fleet's fitted index observations, ordered by scanning
+#'   \code{UseSrvIdx} in array order (region fastest, then year, then season).
+#'   Required for mvn fleets. Default: \code{NULL}.
+#' @param UseSrvIdx Numeric array \code{[n_regions x n_yrs x n_seas x n_srv_fleets]}
+#'   of fit flags from the estimation model, used to position each simulated cell
+#'   in the covariance. Its year dimension may be shorter than the simulation,
+#'   in which case later years draw with the mean factor scale and loading.
+#'   Required for mvn fleets. Default: \code{NULL}.
 #' @param comp_srvage_like Integer or character vector \code{[n_srv_fleets]}
 #'   specifying likelihood for survey age compositions. Default: all 0
 #'   (multinomial). Options: 0/“Multinomial”, 1/“Dirichlet-Multinomial”,
@@ -630,6 +689,9 @@ Setup_Sim_Survey <- function(sim_list,
                              srv_q_input = array(1, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_srv_fleets, sim_list$n_sims)),
                              t_srv = array(1, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_srv_fleets)),
                              srv_idx_type = array(1, dim = c(sim_list$n_srv_fleets)),
+                             SrvIdx_LikeType = rep(0, sim_list$n_srv_fleets),
+                             SrvIdx_Cov = NULL,
+                             UseSrvIdx = NULL,
                              comp_srvage_like = rep(0, sim_list$n_srv_fleets),
                              ISS_SrvAgeComps = array(100, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims)),
                              ln_SrvAge_theta = array(log(1), dim = c(sim_list$n_regions, sim_list$n_sexes, sim_list$n_srv_fleets)),
@@ -662,6 +724,7 @@ Setup_Sim_Survey <- function(sim_list,
 
   # Convert character inputs to numeric codes
   srv_idx_type <- convert_to_numeric(srv_idx_type, list(abd = 0, biom = 1))
+  SrvIdx_LikeType <- convert_to_numeric(SrvIdx_LikeType, list(lognormal = 0, normal = 1, mvn = 2))
   comp_srvage_like <- convert_to_numeric(comp_srvage_like, list(Multinomial = 0,  `Dirichlet-Multinomial` = 1, `iid-Logistic-Normal` = 2, `1d-Logistic-Normal` = 3, `2d-Logistic-Normal` = 4))
   comp_srvlen_like <- convert_to_numeric(comp_srvlen_like, list(Multinomial = 0, `Dirichlet-Multinomial` = 1, `iid-Logistic-Normal` = 2, `1d-Logistic-Normal` = 3, `2d-Logistic-Normal` = 4))
   SrvAgeComps_Type <- convert_to_numeric(SrvAgeComps_Type,  list(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999))
@@ -682,6 +745,17 @@ Setup_Sim_Survey <- function(sim_list,
   check_sim_dimensions(ObsSrvIdx_pop_SE, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
                        n_srv_fleets = sim_list$n_srv_fleets, what = "ObsSrvIdx_pop_SE")
   check_sim_dimensions(t_srv, n_regions = sim_list$n_regions, n_seas = sim_list$n_seas, n_srv_fleets = sim_list$n_srv_fleets, what = "t_srv")
+  check_sim_dimensions(SrvIdx_LikeType, n_srv_fleets = sim_list$n_srv_fleets, what = "SrvIdx_LikeType")
+
+  # Multivariate normal index fleets draw from the supplied covariance rather than
+  # the SE array, so the covariance is validated and factor-decomposed once here.
+  srv_idx_mvn <- NULL
+  if(any(SrvIdx_LikeType == 2)) {
+    if(is.null(UseSrvIdx)) stop("UseSrvIdx must be supplied when any SrvIdx_LikeType is mvn, to position each observation in the covariance.")
+    if(length(dim(UseSrvIdx)) != 4 || any(dim(UseSrvIdx)[c(1,3,4)] != c(sim_list$n_regions, sim_list$n_seas, sim_list$n_srv_fleets)) || dim(UseSrvIdx)[2] > sim_list$n_yrs)
+      stop("UseSrvIdx must be an n_regions x (at most n_yrs) x n_seas x n_srv_fleets array.")
+    srv_idx_mvn <- build_idx_factor(SrvIdx_Cov, SrvIdx_LikeType, UseSrvIdx, sim_list$n_srv_fleets, "SrvIdx_Cov")
+  }
 
   # Validate survey age composition parameters
   check_sim_dimensions(comp_srvage_like, n_srv_fleets = sim_list$n_srv_fleets, what = "comp_srvage_like")
@@ -733,6 +807,11 @@ Setup_Sim_Survey <- function(sim_list,
   sim_list$ObsSrvIdx_pop_SE <- ObsSrvIdx_pop_SE
   sim_list$t_srv <- t_srv
   sim_list$srv_idx_type <- srv_idx_type
+  sim_list$SrvIdx_LikeType <- SrvIdx_LikeType # survey index error structure
+  if(!is.null(srv_idx_mvn)) {
+    sim_list$srv_idx_mvn <- srv_idx_mvn # factor parameters for mvn index fleets
+    sim_list$srv_idx_u <- matrix(NA_real_, sim_list$n_srv_fleets, sim_list$n_sims) # shared factor draw, filled per fleet and replicate
+  }
 
   # Survey age compositions
   sim_list$comp_srvage_like <- comp_srvage_like

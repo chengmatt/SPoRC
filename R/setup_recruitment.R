@@ -156,10 +156,10 @@ Setup_Sim_Rec <- function(
   if(rec_lag < 0) stop("rec_lag cannot be negative!")
 
   # Convert character inputs to numeric codes
-  recruitment_opt <- convert_to_numeric(recruitment_opt, list(mean_rec = 0, bh_rec = 1, resample_from_input = 999))
+  recruitment_opt <- convert_to_numeric(recruitment_opt, list(mean_rec = 0, bh_rec = 1, ricker_rec = 2, resample_from_input = 999))
   rec_dd <- convert_to_numeric(rec_dd, list(local = 0, global = 1))
   init_dd <- convert_to_numeric(init_dd, list(local = 0, global = 1))
-  init_age_strc <- convert_to_numeric(init_age_strc, list(iterative = 0, scalar_no_move = 1, matrix = 2, scalar_plus_only = 3))
+  init_age_strc <- convert_to_numeric(init_age_strc, list(iterative = 0, scalar_no_move = 1, matrix = 2, scalar_plus_only = 3, free = 4))
 
   check_sim_dimensions(sexratio_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_sexes = sim_list$n_sexes, n_sims = sim_list$n_sims, n_pop = sim_list$n_pop, what = "sexratio_input")
   check_sim_dimensions(R0_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_sims = sim_list$n_sims, n_pop = sim_list$n_pop, what = "R0_input")
@@ -683,6 +683,12 @@ do_RecDevs_mapping <- function(input_list, RecDevs_spec, rec_dd) {
     collect_message("No dispersal: Recruitment deviations for non-natal regions fixed to 0 and not estimated.")
   }
 
+  # mirror the deviation map into the data list so the recruitment penalty can
+  # key on the cells that are actually estimated. A deviation mapped off by hand
+  # after setup is then neither estimated nor penalized
+  input_list$data$map_ln_RecDevs <- array(as.numeric(input_list$map$ln_RecDevs),
+                                          dim = dim(input_list$par$ln_RecDevs))
+
   return(input_list)
 }
 
@@ -769,8 +775,8 @@ do_h_mapping <- function(input_list, h_spec, rec_dd) {
     collect_message("Steepness is specified as: ", h_spec) # output message
 
   } else {
-    # if beverton holt and estimating all steepness parameters
-    if(input_list$data$rec_model == 1) {
+    # if a stock-recruit curve is used and estimating all steepness parameters
+    if(input_list$data$rec_model %in% c(1, 2)) {
       # estimate steepness for all populations
       if(input_list$data$n_pop > 1) input_list$map$steepness_h <- factor(rep(1:input_list$data$n_pop, times = input_list$data$n_regions)) # estimating all steepness parameters by  population
       if(input_list$data$n_pop == 1) input_list$map$steepness_h <- factor(1:input_list$data$n_regions) # estimating all steepness parameters by region
@@ -1207,6 +1213,10 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'     \item{\code{"mean_rec"}}{Fixed mean recruitment; no stock-recruit
 #'       relationship. Steepness is automatically fixed and not estimated.}
 #'     \item{\code{"bh_rec"}}{Beverton-Holt stock-recruit relationship.}
+#'     \item{\code{"ricker_rec"}}{Ricker stock-recruit relationship, in the
+#'       depletion form \eqn{R = R_0 (S/S_0) \exp(\alpha (1 - S/S_0))} with
+#'       \eqn{\alpha = \log(4h/(1-h))}. Steepness is not interchangeable with
+#'       \code{"bh_rec"}; see \code{\link{Get_Det_Recruitment}}.}
 #'   }
 #' @param rec_dd Density-dependence structure. Default \code{"global"}.
 #'   \describe{
@@ -1217,6 +1227,14 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'       \code{RecDevs_spec}, and \code{InitDevs_spec} to shared or fixed
 #'       options when \code{n_regions > 1}.}
 #'   }
+#' @param SR_ref_yr Integer year index (not a calendar year) supplying the
+#'   biological inputs, weight-at-age, maturity, natural mortality and movement,
+#'   to unfished spawning biomass per recruit, and so to \code{S0} and the scale
+#'   of the stock-recruit curve. Default \code{1}, the first model year, which is
+#'   what the model has always used. Set it to \code{length(years)} to condition
+#'   the curve on terminal weight-at-age, which is what several ADMB assessments
+#'   do; with time-varying weight-at-age the two differ and the curve shifts with
+#'   them. Ignored when \code{rec_model = "mean_rec"}.
 #' @param rec_lag Integer. Lag between spawning biomass and recruitment (in
 #'   seasons). \code{1} (default) is the classic lagged case: recruitment uses
 #'   SSB from \code{rec_lag} seasons prior and may enter in any season.
@@ -1237,6 +1255,31 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   from the early-period value (index 1) to the late-period value (index 2).
 #'   If \eqn{\leq 1}, a single \eqn{\sigma_R} is applied throughout. Default
 #'   \code{1}.
+#' @param Use_rec_level_pen Integer (0/1). Whether a penalty is applied to the
+#'   log recruitment series itself, separately from the deviation penalty.
+#'   Under a stock-recruit relationship the deviations are residuals about the
+#'   predicted curve, so this is the only way to also say that the recruitment
+#'   series should not wander. Default \code{0}.
+#' @param rec_level_pen_sigma Numeric standard deviation of that penalty. A sum
+#'   of squares with weight \eqn{w} corresponds to \eqn{1/\sqrt{2w}}. Default
+#'   \code{1}.
+#' @param rec_level_pen_center Either \code{"own_mean"} (default), centring on
+#'   the mean of the log recruitment series so only its variability is
+#'   penalized, or \code{"fixed"}, centring on zero.
+#' @param rec_level_pen_yrs Vector of years the penalty applies over, or
+#'   \code{NULL} (default) for every year.
+#' @param RecDevs_pen_center,InitDevs_pen_center Where the recruitment and
+#'   initial age deviation penalties are centred. \code{"fixed"} (default)
+#'   centres on the asserted prior mean, zero or the bias-corrected
+#'   \eqn{-\sigma_R^2/2}, which constrains both the level and the spread of the
+#'   deviations. \code{"own_mean"} centres on the mean of the estimated
+#'   deviations themselves, so only their spread is penalized and their level is
+#'   left free; that is what a sum of squares about the series' own mean
+#'   amounts to. The level
+#'   being unpenalized means it must be pinned elsewhere, by a prior on
+#'   \code{R0} or by fixing a deviation, or the likelihood is flat along it.
+#'   Cannot be combined with \code{do_rec_bias_ramp = 1}, whose offset is
+#'   meaningless once the mean is estimated rather than asserted.
 #' @param RecDevs_spec Character or \code{NULL}. Sharing structure for annual
 #'   recruitment deviations \code{ln_RecDevs} \code{[n_pop x n_regions x
 #'   n_years]}. Default \code{NULL} (estimate all independently). See
@@ -1247,7 +1290,20 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   deviation years are penalised toward the mean and are effectively
 #'   estimated regardless. Default \code{0}.
 #'
-#' @param init_age_strc Equilibrium initialisation method. Default \code{2}.
+#' @param init_age_strc Initialisation method. Default \code{2}. Options
+#'   \code{0}/\code{"iterative"}, \code{1}/\code{"scalar_no_move"},
+#'   \code{2}/\code{"matrix"}, and \code{3}/\code{"scalar_plus_only"} all
+#'   project an equilibrium age structure forward from \code{R0} and treat
+#'   \code{ln_InitDevs} as multiplicative deviations from it.
+#'   \code{4}/\code{"free"} projects no equilibrium at all: the numbers at age
+#'   2 and older are \code{exp(ln_InitDevs)} outright, apportioned by sex ratio,
+#'   with age 1 still taken from recruitment. Use it when the initial age
+#'   structure carries no information about \code{R0} and should not be pulled
+#'   toward an equilibrium.
+#'   Note that under \code{4} the deviations are on the scale of numbers rather
+#'   than of log ratios, so the penalty applied through
+#'   \code{equil_init_age_strc} is a prior on log abundance; pair it with
+#'   \code{equil_init_age_strc = 0} if no such prior is wanted.
 #'   \describe{
 #'     \item{\code{0}/\code{"iterative"}}{Iterates the population to
 #'       approximate equilibrium. Slowest but most general.}
@@ -1299,8 +1355,8 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   }
 #'
 #'   Use \code{"abs"} when bridging an assessment that carries a separate
-#'   historical F (for example the AFSC ADMB rockfish \code{historic_F}, which is
-#'   distinct from \code{log_avg_fmort} and has its own estimation phase). Under
+#'   historical F (one estimated as its own parameter, distinct from the mean
+#'   log fishing mortality). Under
 #'   \code{"prop"} those two quantities collapse into a single parameter, and
 #'   because catch constrains only the PRODUCT of numbers and fishing mortality,
 #'   the optimizer can raise \code{ln_F_mean} to deplete the initial age structure
@@ -1362,13 +1418,14 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   \code{NULL}.
 #'
 #' @param h_spec Character or \code{NULL}. Sharing structure for
-#'   Beverton-Holt steepness \code{steepness_h} \code{[n_pop x n_regions]},
+#'   stock-recruit steepness \code{steepness_h} \code{[n_pop x n_regions]},
 #'   parameterised in bounded logit space \eqn{(0.2, 1)}. Default \code{NULL}
 #'   (estimate by population when \code{n_pop > 1}, by region when
 #'   \code{n_pop = 1}). Ignored when \code{rec_model = "mean_rec"}. See
 #'   \code{\link{do_h_mapping}} for full option descriptions.
 #' @param Use_h_prior Integer (0/1). Whether normal priors on steepness are
-#'   applied. Only relevant for \code{rec_model = "bh_rec"}. Default \code{0}.
+#'   applied. Only relevant when a stock-recruit curve is used
+#'   (\code{rec_model = "bh_rec"} or \code{"ricker_rec"}). Default \code{0}.
 #' @param h_prior Data frame of steepness prior parameters. Required columns:
 #'   \code{pop}, \code{region}, \code{mu}, \code{sd}. Ignored when
 #'   \code{Use_h_prior = 0}. Default \code{NULL}.
@@ -1514,6 +1571,7 @@ Setup_Mod_Rec <- function(input_list,
                           rec_model,
                           rec_dd = "global",
                           rec_lag = 1,
+                          SR_ref_yr = 1,
                           Use_h_prior = 0,
                           h_prior = NULL,
                           rec_region_prop_spec = NULL,
@@ -1541,6 +1599,12 @@ Setup_Mod_Rec <- function(input_list,
                           sigmaR_spec = "est_all",
                           InitDevs_spec = NULL,
                           RecDevs_spec = NULL,
+                          RecDevs_pen_center = "fixed",
+                          Use_rec_level_pen = 0,
+                          rec_level_pen_sigma = 1,
+                          rec_level_pen_center = "own_mean",
+                          rec_level_pen_yrs = NULL,
+                          InitDevs_pen_center = "fixed",
                           h_spec = NULL,
                           sgl_seas_spawning_movement = NA,
                           t_spawn = 0,
@@ -1569,7 +1633,7 @@ Setup_Mod_Rec <- function(input_list,
   if(input_list$store_config) input_list$config$Setup_Mod_Rec <- mget(names(formals()))[-1]
 
   # Convert character inputs to numeric codes for init_age_strc and equil_init_age_strc
-  init_age_strc <- convert_to_numeric(init_age_strc, list(iterative = 0, scalar_no_move = 1, matrix = 2, scalar_plus_only = 3))
+  init_age_strc <- convert_to_numeric(init_age_strc, list(iterative = 0, scalar_no_move = 1, matrix = 2, scalar_plus_only = 3, free = 4))
   equil_init_age_strc <- convert_to_numeric(equil_init_age_strc, list(equil = 0, stoch_no_plus = 1, stoch_all = 2, stoch_shared_ages = 3))
 
   # Setting up the initial fishing mortality ----------------------------------------
@@ -1602,8 +1666,8 @@ Setup_Mod_Rec <- function(input_list,
   # Recruitment Model Type and Options --------------------------------------
 
   # Recruitment model
-  rec_model_map <- list(mean_rec = 0, bh_rec = 1)
-  if (!rec_model %in% names(rec_model_map)) stop("Invalid recruitment model. Use 'mean_rec' or 'bh_rec'")
+  rec_model_map <- list(mean_rec = 0, bh_rec = 1, ricker_rec = 2)
+  if (!rec_model %in% names(rec_model_map)) stop("Invalid recruitment model. Use 'mean_rec', 'bh_rec', or 'ricker_rec'")
   rec_model_val <- rec_model_map[[rec_model]]
   collect_message("Recruitment is specified as: ", rec_model)
 
@@ -1620,6 +1684,13 @@ Setup_Mod_Rec <- function(input_list,
   # Recruitment lag
   if(rec_model != "mean_rec") collect_message("Recruitment and SSB lag is specified as: ", rec_lag)
   if(rec_lag < 0) stop("rec_lag cannot be negative!")
+
+  # Reference year for unfished spawning biomass per recruit
+  if(length(SR_ref_yr) != 1 || SR_ref_yr < 1 || SR_ref_yr > length(input_list$data$years))
+    stop("SR_ref_yr must be a single year index between 1 and ", length(input_list$data$years), ".")
+  if(rec_model != "mean_rec")
+    collect_message("Unfished spawning biomass per recruit uses biologicals from year ",
+                    input_list$data$years[SR_ref_yr], ".")
 
   # Age-0 (rec_lag = 0) recruitment: recruits produced by this year's spawning
   # cannot appear in the population before spawn_seas within the same year
@@ -1663,12 +1734,12 @@ Setup_Mod_Rec <- function(input_list,
     arr <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, input_list$data$n_regions, length(input_list$data$years), length(input_list$data$ages), input_list$data$n_sexes))
     for(p in seq_len(input_list$data$n_pop)) arr[p, , natal_region[p], , , ] <- 1
     tmp_sgl_seas_spawning_movement <- arr
-    if(input_list$data$n_pop > 1 && input_list$data$n_seas == 1 && rec_model_val == 1) collect_message("Using 100% natal homing rate.")
+    if(input_list$data$n_pop > 1 && input_list$data$n_seas == 1 && rec_model_val %in% c(1, 2)) collect_message("Using 100% natal homing rate.")
   } else {
     check_data_dimensions(sgl_seas_spawning_movement, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years),
                           n_ages = length(input_list$data$ages), n_sexes = input_list$data$n_sexes, what = 'sgl_seas_spawning_movement')
     tmp_sgl_seas_spawning_movement <- sgl_seas_spawning_movement
-    if(input_list$data$n_pop > 1 && input_list$data$n_seas == 1 && rec_model_val == 1) collect_message("Using user input natal homing rate.")
+    if(input_list$data$n_pop > 1 && input_list$data$n_seas == 1 && rec_model_val %in% c(1, 2)) collect_message("Using user input natal homing rate.")
   }
 
 
@@ -1726,7 +1797,7 @@ Setup_Mod_Rec <- function(input_list,
   collect_message("Stray rate prior is: ", ifelse(use_stray_rate_prior == 1, "Used", "Not Used"))
 
   # Steepness Settings ------------------------------------------------------
-  if (rec_model == "bh_rec") {
+  if (rec_model %in% c("bh_rec", "ricker_rec")) {
     if (!Use_h_prior %in% c(0, 1)) stop("Use_h_prior must be 0 or 1")
     if (Use_h_prior == 1) {
       required_cols <- c("pop", "region", "mu", "sd")
@@ -1787,13 +1858,13 @@ Setup_Mod_Rec <- function(input_list,
 
   # Validation
   check_in(do_rec_bias_ramp, 0:1, "do_rec_bias_ramp")
-  check_in(init_age_strc, 0:3, "init_age_strc")
+  check_in(init_age_strc, 0:4, "init_age_strc")
   if(!is.numeric(sigmaR_switch)) stop("sigmaR_switch must be numeric")
   if(max_bias_ramp_fct > 1 || max_bias_ramp_fct < 0) stop("max_bias_ramp_fct must be between 0 and 1")
 
   # print messages
   collect_message("Recruitment Bias Ramp is: ", ifelse(do_rec_bias_ramp == 0, "Off", 'On'))
-  init_age_methods <- c("Iterated", "No Movement and Scalar Geometric Series", "Movement and Matrix Geometric Series", "Movement but Scalar Geometric Series for plus group")
+  init_age_methods <- c("Iterated", "No Movement and Scalar Geometric Series", "Movement and Matrix Geometric Series", "Movement but Scalar Geometric Series for plus group", "Free (deviations are the numbers at age, no equilibrium)")
   collect_message("Initial Age Structure is: ", init_age_methods[init_age_strc + 1])
   if(sigmaR_switch > 1) collect_message("Sigma R switches from an early period value to a late period value at year: ", sigmaR_switch)
   collect_message("Recruitment deviations for ", ifelse(dont_est_recdev_last == 0, "every year are estimated", paste("terminal year not estimated -", dont_est_recdev_last)))
@@ -1815,12 +1886,26 @@ Setup_Mod_Rec <- function(input_list,
   input_list$data$rec_model <- rec_model_val
   input_list$data$rec_dd <- rec_dd_val
   input_list$data$rec_lag <- rec_lag
+  input_list$data$SR_ref_yr <- SR_ref_yr
   input_list$data$Use_h_prior <- Use_h_prior
   input_list$data$h_prior <- h_prior
   input_list$data$do_rec_bias_ramp <- do_rec_bias_ramp
   input_list$data$bias_year <- bias_year
   input_list$data$sigmaR_switch <- sigmaR_switch
   input_list$data$init_age_strc <- init_age_strc
+  if(!RecDevs_pen_center %in% c("fixed", "own_mean")) stop("RecDevs_pen_center must be fixed or own_mean")
+  if(!InitDevs_pen_center %in% c("fixed", "own_mean")) stop("InitDevs_pen_center must be fixed or own_mean")
+  if(RecDevs_pen_center == "own_mean" && do_rec_bias_ramp == 1) stop("RecDevs_pen_center = own_mean estimates the deviations' mean from the deviations themselves, which leaves the bias ramp's -sigma^2/2 offset meaningless. Use one or the other.")
+  input_list$data$RecDevs_pen_center <- convert_to_numeric(RecDevs_pen_center, list(fixed = 0, own_mean = 1))
+  if(!Use_rec_level_pen %in% c(0,1)) stop("Use_rec_level_pen must be 0 or 1")
+  if(!rec_level_pen_center %in% c("fixed", "own_mean")) stop("rec_level_pen_center must be fixed or own_mean")
+  input_list$data$Use_rec_level_pen <- Use_rec_level_pen
+  input_list$data$ln_sigma_rec_level <- log(rec_level_pen_sigma)
+  input_list$data$rec_level_pen_center <- convert_to_numeric(rec_level_pen_center, list(fixed = 0, own_mean = 1))
+  input_list$data$rec_level_pen_yrs <- if(is.null(rec_level_pen_yrs)) rep(1, length(input_list$data$years)) else as.numeric(input_list$data$years %in% rec_level_pen_yrs)
+  if(Use_rec_level_pen == 1) collect_message("A recruitment level penalty is applied, centred on: ", rec_level_pen_center)
+  input_list$data$InitDevs_pen_center <- convert_to_numeric(InitDevs_pen_center, list(fixed = 0, own_mean = 1))
+  collect_message("Recruitment deviation penalty is centred on: ", RecDevs_pen_center)
   input_list$data$init_F_prop <- init_F_prop
   input_list$data$init_F_form <- init_F_form_num
   input_list$data$t_spawn <- t_spawn
@@ -1898,6 +1983,9 @@ Setup_Mod_Rec <- function(input_list,
   input_list <- do_rec_seas_prop_mapping(input_list, rec_seas_prop_spec) # Recruitment seasonal proportion mapping
   input_list <- do_sigmaR_mapping(input_list, sigmaR_spec) # sigmaR mapping
   input_list <- do_InitDevs_mapping(input_list, InitDevs_spec, rec_dd, init_age_devs_shared) # InitDevs mapping
+  # the shared-subset penalty (equil_init_age_strc == 3) reads this in the model,
+  # so it goes into data as well as the map
+  if(!is.null(init_age_devs_shared)) input_list$data$init_age_devs_shared <- init_age_devs_shared
   input_list <- do_RecDevs_mapping(input_list, RecDevs_spec, rec_dd) # RevDevs mapping
   input_list <- do_h_mapping(input_list, h_spec, rec_dd) # steepness mapping
   input_list <- do_sexratio_pars_mapping(input_list, sexratio_spec) # sex ratio parameters

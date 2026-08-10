@@ -60,11 +60,16 @@ truncate_yr <- function(j,
   retro_data$years <- data$years[1:(length(data$years) - j)] # remove j years from years vector
   if(!is.na(sum(retro_data$bias_year))) retro_data$bias_year[3:4] <- data$bias_year[3:4] - j # remove j years from bias correction vector (only applied to the full bias and descending limb)
 
+  # Reference year for stock recruitment curve for computing S0
+  if(!is.null(data$SR_ref_yr)) retro_data$SR_ref_yr <- min(data$SR_ref_yr, length(retro_data$years))
+
 # Recruitment -------------------------------------------------------------
 
   # Recruitment devs
   retro_parameters$ln_RecDevs <- parameters$ln_RecDevs[,,1:(dim(parameters$ln_RecDevs)[3] - j), drop = FALSE] # Recruitment deviations
   if(any(names(retro_mapping) == 'ln_RecDevs')) retro_mapping$ln_RecDevs <- factor(array(mapping$ln_RecDevs, dim = dim(parameters$ln_RecDevs))[,,1:(dim(parameters$ln_RecDevs)[3] - j), drop = FALSE]) # modify mapping if we have recruitment map
+  if(!is.null(data$map_ln_RecDevs)) retro_data$map_ln_RecDevs <- data$map_ln_RecDevs[,,1:(dim(parameters$ln_RecDevs)[3] - j), drop = FALSE] # keep the penalty's map mirror in step
+  if(length(data$Wt_Rec) > 1) retro_data$Wt_Rec <- data$Wt_Rec[,,1:(dim(parameters$ln_RecDevs)[3] - j), drop = FALSE] # keep per-deviation recruitment weights in step
 
 # Stray Rates -------------------------------------------------------------
 

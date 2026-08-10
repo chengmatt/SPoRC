@@ -712,6 +712,13 @@ Get_Init_NAA <- function(init_age_strc,
     NAA = Init_NAA
   }
 
+  # Free initial numbers at age: no equilibrium is projected at all, so the
+  # deviations are the numbers rather than multipliers on an equilibrium. Seeding
+  # with the sex ratio lets the shared deviation step below to be used 
+  if(init_age_strc == 4) {
+    for(p in 1:n_pop) for(r in 1:n_regions) for(s in 1:n_sexes) NAA[p,r,2:n_ages,s] = sexratio[p,r,s]
+  }
+
   # Overwrite first age and apply age deviations
   for(p in 1:n_pop) {
     # Overwrite first age

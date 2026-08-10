@@ -13,7 +13,7 @@
 #' and standard deviation report from the best parameter estimates.
 #'
 #' @param model_name Function. An RTMB-compatible model function (e.g.,
-#'   \code{global_SPR}, \code{global_BH_Fmsy}, \code{local_BH_Fmsy}) that
+#'   \code{global_SPR}, \code{global_Fmsy}, \code{local_Fmsy_sglpop}) that
 #'   defines the objective function for the reference point calculation.
 #' @param data_list List. A named list of data inputs passed to \code{model_name}
 #'   via \code{\link[RTMB]{MakeADFun}}. Should contain all quantities treated as
@@ -61,8 +61,8 @@ optim_ref_pts <- function(model_name, data_list, pars_list) {
 #'
 #' All arguments are sliced by the caller to remove the population dimension,
 #' so this helper works identically for the single-population spatial case
-#' (\code{global_BH_Fmsy}, \code{local_BH_Fmsy_sglpop}) and the
-#' multi-population case (\code{global_SPR}, \code{local_BH_Fmsy_multipop}).
+#' (\code{global_Fmsy}, \code{local_Fmsy_sglpop}) and the
+#' multi-population case (\code{global_SPR}, \code{local_Fmsy_multipop}).
 #'
 #' @param M_penult Numeric vector \code{[n_regions]}. Natural mortality for
 #'   the penultimate age class, used as an annual rate (scaled by
@@ -207,25 +207,25 @@ solve_plus_group <- function(Ts, N_penult_u, N_penult_f, n_regions) {
 #' @param type Character. Spatial structure of the model:
 #'   \describe{
 #'     \item{\code{"single_region"}}{No spatial movement; supports
-#'       \code{"SPR"} and \code{"BH_MSY"}.}
+#'       \code{"SPR"} and \code{"MSY"}.}
 #'     \item{\code{"multi_region"}}{Spatially explicit; supports
-#'       \code{"independent_SPR"}, \code{"independent_BH_MSY"},
-#'       \code{"global_SPR"}, \code{"global_BH_MSY"}, and
-#'       \code{"local_BH_MSY"}.}
+#'       \code{"independent_SPR"}, \code{"independent_MSY"},
+#'       \code{"global_SPR"}, \code{"global_MSY"}, and
+#'       \code{"local_MSY"}.}
 #'   }
 #' @param what Character. Reference point method:
 #'   \describe{
 #'     \item{\code{"SPR"}}{Single-region \eqn{F_{SPR_x}}.}
-#'     \item{\code{"BH_MSY"}}{Single-region Beverton-Holt \eqn{F_{MSY}}.}
+#'     \item{\code{"MSY"}}{Single-region Beverton-Holt \eqn{F_{MSY}}.}
 #'     \item{\code{"independent_SPR"}}{Per-region \eqn{F_{SPR_x}} computed
 #'       independently for each region without movement.}
-#'     \item{\code{"independent_BH_MSY"}}{Per-region \eqn{F_{MSY}} computed
+#'     \item{\code{"independent_MSY"}}{Per-region \eqn{F_{MSY}} computed
 #'       independently for each region without movement.}
 #'     \item{\code{"global_SPR"}}{Single shared \eqn{F_{SPR_x}} with
 #'       movement, integrated across all regions.}
-#'     \item{\code{"global_BH_MSY"}}{Single shared \eqn{F_{MSY}} with
+#'     \item{\code{"global_MSY"}}{Single shared \eqn{F_{MSY}} with
 #'       movement. Valid for single-population models only.}
-#'     \item{\code{"local_BH_MSY"}}{Region-specific \eqn{F_{MSY}} values
+#'     \item{\code{"local_MSY"}}{Region-specific \eqn{F_{MSY}} values
 #'       that jointly maximise total yield with movement. Valid for both
 #'       single- and multi-population models.}
 #'   }
@@ -234,15 +234,15 @@ solve_plus_group <- function(Ts, N_penult_u, N_penult_f, n_regions) {
 #'   averaged before computing reference points. Default = 1.
 #' @param local_bh_msy_newton_steps Integer. Number of Newton-Raphson
 #'   iterations used to solve for equilibrium recruitment by origin region
-#'   when \code{what = "local_BH_MSY"}. Increase if convergence is suspect.
+#'   when \code{what = "local_MSY"}. Increase if convergence is suspect.
 #'   Default = 6.
 #' @param is_discard_fleet Integer vector \code{[n_fish_fleets]}. Indicator
 #'   for fleets whose catch should be excluded from landed yield when
 #'   computing MSY-based reference points (0 = landing fleet, 1 = discard-only
 #'   fleet). These fleets still contribute to total fishing mortality \code{Z}
 #'   and affect population dynamics and spawning biomass. Only used by
-#'   Beverton-Holt MSY methods (\code{"BH_MSY"}, \code{"independent_BH_MSY"},
-#'   \code{"global_BH_MSY"}, \code{"local_BH_MSY"}); ignored for SPR-based
+#'   Beverton-Holt MSY methods (\code{"MSY"}, \code{"independent_MSY"},
+#'   \code{"global_MSY"}, \code{"local_MSY"}); ignored for SPR-based
 #'   methods. Default is all zeros (all fleets are landing fleets).
 #'
 #' @return A named list:
@@ -283,6 +283,17 @@ Get_Reference_Points <- function(data,
                                  local_bh_msy_newton_steps = 6,
                                  is_discard_fleet = array(0, dim = data$n_fish_fleets)
                                  ) {
+
+  # The MSY reference points were named BH_MSY when Beverton-Holt was the only
+  # stock-recruit curve. They now follow whatever rec_model the fit used, so the
+  # BH_ prefix is wrong rather than merely redundant. The old names still work.
+  deprecated_what <- c(BH_MSY = "MSY", independent_BH_MSY = "independent_MSY",
+                       global_BH_MSY = "global_MSY", local_BH_MSY = "local_MSY")
+  if(what %in% names(deprecated_what)) {
+    warning("'", what, "' is deprecated and will be removed; use '", deprecated_what[[what]],
+            "'. These reference points follow the fitted stock-recruit curve, so the BH_ prefix no longer describes them.", call. = FALSE)
+    what <- deprecated_what[[what]]
+  }
 
   if(all(is_discard_fleet == 1)) stop("is_discard_fleet is all 1's! At least one fleet needs to be a retention fleet (0).")
 
@@ -325,6 +336,10 @@ Get_Reference_Points <- function(data,
     if(n_regions > 1) stop("Single region reference points specified, but n_regions > 1!")
 
     data_list <- list() # set up data list
+    # Reference points are only correct under the stock-recruit curve the model was
+    # fitted with; the two curves agree at (S0, R0) and nowhere else. Absent on
+    # older data lists, which predate the Ricker, so default to Beverton-Holt.
+    data_list$rec_model <- if(is.null(data$rec_model)) 1 else data$rec_model
 
     # Seasonal stuff
     data_list$t_spawn <- t_spawn # specified mortality time up until spawning
@@ -336,7 +351,7 @@ Get_Reference_Points <- function(data,
     data_list$n_pop <- n_pop
     data_list$n_ages <- n_ages
 
-    if(!what %in% c("SPR", "BH_MSY")) stop("what is not correctly specified! Should be SPR, BH_MSY for type = single_region")
+    if(!what %in% c("SPR", "MSY")) stop("what is not correctly specified! Should be SPR, MSY for type = single_region")
 
     # setup shared data lists
     data_list$F_fract_flt <- array(rep$Fmort[1,n_years,,] / sum(rep$Fmort[1,n_years,,]), dim = c(data$n_seas, data$n_fish_fleets)) # fishing mortality fraction
@@ -393,7 +408,7 @@ Get_Reference_Points <- function(data,
 
     } # end SPR reference points
 
-    if(what == 'BH_MSY') {
+    if(what == 'MSY') {
 
       # extract out beverton-holt parameters
       data_list$h <- array(rep$h_trans[,1], dim = n_pop) # steepness
@@ -404,7 +419,7 @@ Get_Reference_Points <- function(data,
       par_list$log_Fmsy <- log(0.1) # Fmsy starting value
 
       # make adfun etc
-      tmp_obj <- optim_ref_pts(single_region_BH_Fmsy, data_list, par_list)
+      tmp_obj <- optim_ref_pts(single_region_Fmsy, data_list, par_list)
 
       # Output reference points
       f_ref_pt[1] <- tmp_obj$rep$Fmsy
@@ -431,10 +446,14 @@ Get_Reference_Points <- function(data,
 
   if(type == 'multi_region') {
 
-    if(!what %in% c("independent_SPR", "independent_BH_MSY", "global_SPR", "global_BH_MSY", "local_BH_MSY"))
-      stop("what is not correctly specified! Should be independent_SPR, independent_BH_MSY, global_SPR, global_BH_MSY, local_BH_MSY for type = multi_region")
+    if(!what %in% c("independent_SPR", "independent_MSY", "global_SPR", "global_MSY", "local_MSY"))
+      stop("what is not correctly specified! Should be independent_SPR, independent_MSY, global_SPR, global_MSY, local_MSY for type = multi_region")
 
     data_list <- list() # set up data list
+    # Reference points are only correct under the stock-recruit curve the model was
+    # fitted with; the two curves agree at (S0, R0) and nowhere else. Absent on
+    # older data lists, which predate the Ricker, so default to Beverton-Holt.
+    data_list$rec_model <- if(is.null(data$rec_model)) 1 else data$rec_model
 
     # Seasonal stuff
     data_list$t_spawn <- t_spawn # specified mortality time up until spawning
@@ -447,7 +466,7 @@ Get_Reference_Points <- function(data,
     data_list$n_ages <- n_ages
     data_list$n_regions <- n_regions
 
-    if(what %in% c("independent_SPR", 'independent_BH_MSY')) {
+    if(what %in% c("independent_SPR", 'independent_MSY')) {
 
       tmp_obj <- list() # save optimized object as a list
 
@@ -508,7 +527,7 @@ Get_Reference_Points <- function(data,
 
         } # independent SPR
 
-        if(what == 'independent_BH_MSY') {
+        if(what == 'independent_MSY') {
 
           # Beverton Holt parameters
           data_list$h <- array(rep$h_trans[,r], dim = n_pop) # steepness
@@ -519,7 +538,7 @@ Get_Reference_Points <- function(data,
           par_list$log_Fmsy <- log(0.1) # Fmsy starting value
 
           # optimize model
-          tmp_obj[[r]] <- optim_ref_pts(single_region_BH_Fmsy, data_list, par_list)
+          tmp_obj[[r]] <- optim_ref_pts(single_region_Fmsy, data_list, par_list)
           f_ref_pt[r] <- tmp_obj[[r]]$rep$Fmsy
 
           # get and accumulate biomass reference points
@@ -630,10 +649,10 @@ Get_Reference_Points <- function(data,
     } # end global SPR
 
     # Global BH MSY
-    if(what == 'global_BH_MSY') {
+    if(what == 'global_MSY') {
 
       # Error out if invalid recruitment density dependent option
-      if(n_pop > 1) stop("Invalid reference point option! When n_pop > 1 reference points must either be independent_SPR, independent_BH_MSY, global_SPR, or local_BH_MSY.")
+      if(n_pop > 1) stop("Invalid reference point option! When n_pop > 1 reference points must either be independent_SPR, independent_MSY, global_SPR, or local_MSY.")
 
       # create a data list
       fratio <- array(0, dim = c(n_regions, data$n_seas, data$n_fish_fleets))
@@ -670,7 +689,7 @@ Get_Reference_Points <- function(data,
       par_list$log_Fmsy <- log(0.1) # Fmsy starting value
 
       # make adfn object
-      tmp_obj <- optim_ref_pts(global_BH_Fmsy, data_list, par_list)
+      tmp_obj <- optim_ref_pts(global_Fmsy, data_list, par_list)
 
       # Output reference points
       f_ref_pt <- rep(tmp_obj$rep$Fmsy, n_regions)
@@ -681,7 +700,7 @@ Get_Reference_Points <- function(data,
 
     } # end global BH MSY
 
-    if(what == 'local_BH_MSY') {
+    if(what == 'local_MSY') {
 
       # create data list
       fratio <- array(0, dim = c(n_regions, data$n_seas, data$n_fish_fleets))
@@ -724,7 +743,7 @@ Get_Reference_Points <- function(data,
       par_list$log_Fmsy <- rep(log(0.1), n_regions) # Fmsy starting value
 
       # Make adfun object
-      tmp_obj <- optim_ref_pts(if(n_pop == 1) local_BH_Fmsy_sglpop else local_BH_Fmsy_multipop, data_list, par_list)
+      tmp_obj <- optim_ref_pts(if(n_pop == 1) local_Fmsy_sglpop else local_Fmsy_multipop, data_list, par_list)
 
       # Output reference points
       f_ref_pt <- tmp_obj$rep$Fmsy

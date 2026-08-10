@@ -24,6 +24,12 @@
 #'     \item{7}{Logistic selectivity with asymptote (b50, b95 parameterization):
 #'              \eqn{\alpha / (1 + 19^{(b_{50} - \text{bin})/b_{95}})}.
 #'              Equivalent to Model 3 scaled by asymptote \eqn{\alpha}.}
+#'     \item{9}{Non-parametric selectivity on the log scale, standardized so
+#'              each year's selectivity averages to one across bins. Differs
+#'              from model 5 in both respects: 5 bounds every raw value below
+#'              one through \code{plogis} and standardizes over years and bins
+#'              jointly, whereas 9 leaves the scale free and centers within the
+#'              year.}
 #'     \item{8}{Bicubic spline over a bin-node x year-node grid (see
 #'              \code{Wbin_bicubic}, \code{Wyr_bicubic}). One generalized form
 #'              covers three cases depending on how the caller constructs the
@@ -57,6 +63,7 @@
 #'     \item{Model 5}{\code{c(logit_sel_1, ..., logit_sel_nbins)}}
 #'     \item{Model 6}{\code{c(logit_alpha, ln_b50, ln_k)}}
 #'     \item{Model 7}{\code{c(logit_alpha, ln_b50, ln_b95)}}
+#'     \item{Model 9}{\code{c(ln_sel_1, ..., ln_sel_nbins)}}
 #'     \item{Model 8}{Flattened bin-node x year-node log-selectivity grid,
 #'       length \code{ncol(Wyr_bicubic) * ncol(Wbin_bicubic)}, filled
 #'       column-major into a \code{ncol(Wyr_bicubic)} (rows, year nodes) by
@@ -75,6 +82,15 @@
 #'   For \code{Selex_Model = 5}: deviations act directly on bin-level logit
 #'   selectivity parameters prior to logistic transformation.
 #'
+#' @param bin_devs Array of log-scale bin-override deviations with dimension
+#'   \code{[n_regions, n_years, n_bins, n_sexes, 1]}, or \code{NULL}. Supplies
+#'   the value for every bin named in \code{bin_dev_bins}.
+#' @param bin_dev_bins Integer vector of bins whose selectivity is replaced by
+#'   \code{exp(bin_devs[...])} rather than taken from the functional form, or
+#'   \code{NULL} for none. The override is applied after everything else,
+#'   including any standardization the form performs internally, so the named
+#'   bins are governed entirely by their own deviations while the rest of the
+#'   curve keeps its parametric shape.
 #' @param Region Integer region index.
 #' @param Year Integer year index (absolute, i.e. a row index into
 #'   \code{Wyr_bicubic}). Only used directly by \code{Selex_Model == 8};
@@ -130,6 +146,13 @@
 #' deviations and transformed via:
 #' \deqn{\text{selex}_b = \text{logit}^{-1}(\eta_b)}.
 #'
+#' For \code{Selex_Model = 9}, selectivity is likewise fully non-parametric but
+#' held on the log scale and standardized within each year:
+#' \deqn{\text{selex}_b = \exp(\eta_b) / \overline{\exp(\eta)}}.
+#' Only the differences among \eqn{\eta} within a year are identified, so the
+#' level of \eqn{\eta} is free and is absorbed by catchability or fishing
+#' mortality.
+#'
 #' Models 6 and 7 extend logistic selectivity by introducing an asymptote
 #' parameter \eqn{\alpha \in (0,1)} that allows selectivity to saturate below
 #' full vulnerability.
@@ -147,7 +170,9 @@ Get_Selex = function(Selex_Model,
                      Wbin_bicubic = NULL,
                      Wyr_bicubic = NULL,
                      n_bin_nodes_bicubic = NULL,
-                     n_yr_nodes_bicubic = NULL) {
+                     n_yr_nodes_bicubic = NULL,
+                     bin_devs = NULL,
+                     bin_dev_bins = NULL) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -242,11 +267,13 @@ Get_Selex = function(Selex_Model,
   }
 
   if(Selex_Model == 5) {
+
     if(TimeVary_Model %in% c(1:2)) {
       pars = pars + ln_seldevs[Region, Year, , Sex, 1] # non-parametric parameters varying
     } # end if iid or random walk
     selex = RTMB::plogis(pars) # non parametric parameters
-  } # end if non-parametric selectivity
+
+  } # end if non-parametric selectivity, logit space, standardized across all years
 
   if(Selex_Model == 6) {
 
@@ -298,8 +325,28 @@ Get_Selex = function(Selex_Model,
 
   } # end if bicubic spline selectivity
 
+  if(Selex_Model == 9) {
+
+    # Non-parametric on the log scale, standardized so each year's selectivity
+    # averages to one across bins. The logit-scale form (Selex_Model 5) bounds
+    # every raw value below one before standardizing and centers over years and
+    # bins jointly; this one leaves the scale free and centers within the year. 
+    if(TimeVary_Model %in% c(1:2)) pars = pars + ln_seldevs[Region, Year, , Sex, 1]
+    selex = exp(pars)
+    selex = selex / mean(selex)
+
+  } # end if non-parametric on the log scale, standardized within year
+
   # 3dgmrf model or 2dar1 (sel devs dimensioned as region, year, bin, sex)
   if(TimeVary_Model %in% c(3:5)) selex = selex * exp(ln_seldevs[Region,Year,,Sex, 1]) # varies semi-parametriclly
+
+  # Named bins take a free annual value instead of whatever the form produced.
+  # Applied last, so it overrides any within-form standardization too. A gear
+  # whose curve is logistic over most of its range but whose youngest bin is
+  # governed by availability rather than by the gear is the usual case.
+  if(!is.null(bin_dev_bins) && length(bin_dev_bins) > 0) {
+    selex[bin_dev_bins] = exp(bin_devs[Region, Year, bin_dev_bins, Sex, 1])
+  }
 
   return(selex)
 } # end function
@@ -366,7 +413,9 @@ Get_Selex_Array = function(selex_type,
                            n_ages,
                            n_lens,
                            n_sexes,
-                           n_fleets) {
+                           n_fleets,
+                           bin_devs = NULL,
+                           bin_dev_bins = NULL) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -409,7 +458,9 @@ Get_Selex_Array = function(selex_type,
                                 Wbin_bicubic = tmp_Wbin, # bicubic spline bin-node weight matrix (Selex_Model == 8 only)
                                 Wyr_bicubic = tmp_Wyr, # bicubic spline year-node weight matrix (Selex_Model == 8 only)
                                 n_bin_nodes_bicubic = tmp_n_bin_nodes, # true bin-node count for this block (Selex_Model == 8 only)
-                                n_yr_nodes_bicubic = tmp_n_yr_nodes # true year-node count for this block (Selex_Model == 8 only)
+                                n_yr_nodes_bicubic = tmp_n_yr_nodes, # true year-node count for this block (Selex_Model == 8 only)
+                                bin_devs = bin_devs, # bin-override deviations
+                                bin_dev_bins = if(is.null(bin_dev_bins)) NULL else which(bin_dev_bins[,f] == 1) # bins this fleet overrides
             )
 
             # Compute selectivity
@@ -445,7 +496,9 @@ Get_Selex_Array = function(selex_type,
   # Mean standardizing to help with interpretability
   for(r in 1:n_regions) {
     for(f in 1:n_fleets) {
-      if(cont_tv_sel[r,f] %in% 3:5 || any(sel_model[r,,f] == 5)) {
+      # Selex_Model 9 already standardizes within each year, so it is excluded
+      # here rather than being centered a second time across years and bins.
+      if((cont_tv_sel[r,f] %in% 3:5 || any(sel_model[r,,f] == 5)) && !any(sel_model[r,,f] == 9)) {
         for(s in 1:n_sexes) {
 
           if(selex_type == 0) {

@@ -141,6 +141,58 @@ dlogistnormal = function(obs, pred, Sigma, give_log = TRUE) {
   return(res)
 }
 
+#' Evaluate an index negative log-likelihood under a chosen error structure
+#'
+#' Calls an abundance or biomass index to use one of three error structures.
+#' \code{like_type = 0} is lognormal, where \code{sigma} is a log-scale
+#' standard deviation and \code{const} is added inside both logarithms.
+#' \code{like_type = 1} is normal on the arithmetic scale, where \code{sigma}
+#' is an arithmetic standard deviation. \code{like_type = 2} is multivariate
+#' normal on the arithmetic scale with a fixed covariance supplied through
+#' \code{Sigma}, which places the whole series in a single density and is what
+#' a survey-provided covariance across years calls for, since a diagonal
+#' likelihood would treat correlated residuals as independent information.
+#'
+#'
+#' @param obs Numeric vector of observed index values.
+#' @param pred Numeric vector of predicted index values.
+#' @param sigma Numeric vector of standard deviations. Ignored when
+#'   \code{like_type = 2}.
+#' @param like_type Integer. \code{0} lognormal, \code{1} normal, \code{2}
+#'   multivariate normal.
+#' @param Sigma Covariance matrix. Required when \code{like_type = 2}. Must be
+#'   symmetric and positive definite; \code{\link[RTMB]{dmvnorm}} reads only the
+#'   lower triangle and returns \code{NaN} without warning otherwise, so this is
+#'   checked during setup rather than here.
+#' @param const Numeric constant added inside the logarithms of the lognormal
+#'   form. Default \code{0}.
+#'
+#' @return Numeric vector of negative log-likelihood contributions the same
+#'   length as \code{obs}. The multivariate normal cannot be split across
+#'   observations, so its total is returned in the first element with zeros
+#'   elsewhere.
+#'
+#' @import RTMB
+#'
+#' @keywords internal
+get_index_nLL = function(obs, pred, sigma, like_type, Sigma = NULL, const = 0) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  nLL = rep(0, length(obs))
+
+  if(like_type == 0) nLL = -1 * RTMB::dnorm(log(obs + const), log(pred + const), sigma, TRUE) # lognormal
+  if(like_type == 1) nLL = -1 * RTMB::dnorm(obs, pred, sigma, TRUE) # normal
+
+  if(like_type == 2) {
+    if(is.null(Sigma)) stop("A multivariate normal index likelihood requires a covariance matrix.") # multivariate normal
+    nLL[1] = -1 * RTMB::dmvnorm(as.vector(obs), as.vector(pred), Sigma, log = TRUE)
+  }
+
+  return(nLL)
+}
+
 #' Evaluate a robust negative binomial log-likelihood
 #'
 #' Computes the negative binomial log-likelihood using a

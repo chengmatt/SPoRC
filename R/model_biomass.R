@@ -121,7 +121,7 @@ compute_biom_y = function(y, seas, NAA, NAA0, WAA, MatAA, ZAA, natmort, t_spawn,
 # state in Do_Population_Projection(). Factored out (plain R, no RTMB/AD
 # concerns since Do_Population_Projection is never used inside an AD tape) so
 # it can run either before or after that season's mortality/ageing step
-# depending on whether rec_lag == 0 (age0_bh), without duplicating the math.
+# depending on whether rec_lag == 0 (age0_rec), without duplicating the math.
 # Mirrors compute_biom_y() above, which serves the same role for the RTMB
 # estimation model.
 #'

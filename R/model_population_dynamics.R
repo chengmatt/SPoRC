@@ -21,7 +21,7 @@
 #' (typically all-zero, aside from any initial-year values already inserted
 #' upstream) and returned fully populated over \code{1:n_yrs}.
 #'
-#' @param n_pop,n_regions,n_seas,n_ages,n_sexes,n_yrs,n_fish_fleets,n_est_rec_devs
+#' @param n_pop,n_regions,n_seas,n_ages,n_sexes,n_yrs,n_fish_fleets
 #'   Dimension sizes.
 #' @param rec_lag Integer. Recruitment timing: \code{0} inserts recruitment
 #'   within the spawning-season biomass computation; non-zero inserts
@@ -63,6 +63,15 @@
 #'   output containers.
 #' @param eff_SSB Array \code{[pop, year]}, output container for effective
 #'   (natal-homing-adjusted) SSB.
+#' @param SR_ref_yr Integer year index supplying the biological inputs, weight
+#'   at age, maturity, natural mortality and movement, to unfished spawning
+#'   biomass per recruit, and so to \code{S0} and the scale of the stock-recruit
+#'   curve. Default \code{1}, the first model year, which is what the function
+#'   used to hardcode. Set to \code{n_yrs} to condition the curve on terminal
+#'   weight at age, which is what several ADMB assessments do; with time-varying
+#'   weight at age the two differ and the whole curve shifts with them. It is a
+#'   year INDEX, not a calendar year, so callers that truncate the year
+#'   dimension (retrospectives) must clamp it.
 #'
 #' @return List with elements \code{NAA}, \code{NAA0}, \code{NAA_bef},
 #'   \code{NAA_aft}, \code{Rec}, \code{SSB}, \code{Total_Biom},
@@ -82,7 +91,7 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
                                        sexratio, WAA, MatAA, natmort, Movement, stray_rate, sgl_seas_spawning_movement,
                                        do_recruits_move, fish_sel, ret_sel, dmr, ZAA,
                                        NAA, NAA0, NAA_bef, NAA_aft, Rec, SSB, Total_Biom, Dynamic_SSB0, eff_SSB,
-                                       Mrate = NULL, move_timing = 0) {
+                                       Mrate = NULL, move_timing = 0, SR_ref_yr = 1) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -105,14 +114,17 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
                                         n_pop = n_pop,
                                         n_ages = n_ages,
                                         n_regions = n_regions,
-                                        # Note: Using first year and female quantities to compute unfished SSB0
+                                        # Note: Using female quantities to compute unfished SSB0. The biological
+                                        # inputs are taken from SR_ref_yr, which is the first year by default but
+                                        # can point anywhere; assessments that condition the stock-recruit curve
+                                        # on terminal weight-at-age need the last year instead.
                                         sexratio_f = if(n_sexes == 1) array(0.5, dim = c(n_pop, n_regions)) else array(sexratio[,,1,1], dim = c(n_pop, n_regions)),
-                                        WAA = array(WAA[,,1,,,1], dim = c(n_pop, n_regions, n_seas, n_ages)),
-                                        MatAA = array(MatAA[,,1,,,1], dim = c(n_pop, n_regions, n_seas, n_ages)),
-                                        natmort = array(natmort[,,1,,1], dim = c(n_pop, n_regions, n_ages)),
-                                        Movement = array(Movement[,,,1,,,1], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
+                                        WAA = array(WAA[,,SR_ref_yr,,,1], dim = c(n_pop, n_regions, n_seas, n_ages)),
+                                        MatAA = array(MatAA[,,SR_ref_yr,,,1], dim = c(n_pop, n_regions, n_seas, n_ages)),
+                                        natmort = array(natmort[,,SR_ref_yr,,1], dim = c(n_pop, n_regions, n_ages)),
+                                        Movement = array(Movement[,,,SR_ref_yr,,,1], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
                                         stray_rate = array(stray_rate[,1], dim = c(n_pop)),
-                                        sgl_seas_spawning_movement = array(sgl_seas_spawning_movement[,,,1,,1], dim = c(n_pop, n_regions, n_regions, n_ages)),
+                                        sgl_seas_spawning_movement = array(sgl_seas_spawning_movement[,,,SR_ref_yr,,1], dim = c(n_pop, n_regions, n_regions, n_ages)),
                                         do_recruits_move = do_recruits_move,
                                         natal_region = natal_region,
                                         t_spawn = t_spawn,
@@ -213,12 +225,12 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
                                           n_ages = n_ages,
                                           n_regions = n_regions,
                                           sexratio_f = if(n_sexes == 1) array(0.5, dim = c(n_pop, n_regions)) else array(sexratio[,,1,1], dim = c(n_pop, n_regions)),
-                                          WAA = array(WAA[,,1,,,1], dim = c(n_pop, n_regions, n_seas, n_ages)),
-                                          MatAA = array(MatAA[,,1,,,1], dim = c(n_pop, n_regions, n_seas, n_ages)),
-                                          natmort = array(natmort[,,1,,1], dim = c(n_pop, n_regions, n_ages)),
-                                          Movement = array(Movement[,,,1,,,1], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
+                                          WAA = array(WAA[,,SR_ref_yr,,,1], dim = c(n_pop, n_regions, n_seas, n_ages)),
+                                          MatAA = array(MatAA[,,SR_ref_yr,,,1], dim = c(n_pop, n_regions, n_seas, n_ages)),
+                                          natmort = array(natmort[,,SR_ref_yr,,1], dim = c(n_pop, n_regions, n_ages)),
+                                          Movement = array(Movement[,,,SR_ref_yr,,,1], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
                                           stray_rate = array(stray_rate[,1], dim = c(n_pop)),
-                                          sgl_seas_spawning_movement = array(sgl_seas_spawning_movement[,,,1,,1], dim = c(n_pop, n_regions, n_regions, n_ages)),
+                                          sgl_seas_spawning_movement = array(sgl_seas_spawning_movement[,,,SR_ref_yr,,1], dim = c(n_pop, n_regions, n_regions, n_ages)),
                                           do_recruits_move = do_recruits_move,
                                           natal_region = natal_region,
                                           t_spawn = t_spawn,

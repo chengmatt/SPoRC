@@ -499,6 +499,11 @@ check_sim_dimensions <- function(x,
       stop(paste("Dimensions of", what, "are not correct. Should be n_regions, n_seas, n_srv_fleets"))
   }
 
+  if(what %in% c('t_fish')) {
+    if(sum(dim(x) == c(n_regions, n_seas, n_fish_fleets)) != 3)
+      stop(paste("Dimensions of", what, "are not correct. Should be n_regions, n_seas, n_fish_fleets"))
+  }
+
   if(what %in% c('SrvAge_pop_corr_pars', 'SrvLen_pop_corr_pars')) {
     if(sum(dim(x) == c(n_pop, n_regions, n_sexes, n_srv_fleets, 2)) != 5)
       stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_regions, n_sexes, n_srv_fleets, 2"))

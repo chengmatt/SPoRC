@@ -44,6 +44,16 @@
 #' @param what Character vector. Names of report elements (keys of
 #'   \code{rep}) to extract and store from each replicate. An error is raised
 #'   if any name is not found in \code{rep}. Default \code{c("SSB", "Rec")}.
+#' @param sim_recruitment Character. How the operating model generates
+#'   recruitment. \code{"input"} (default, and the historical behaviour) feeds
+#'   the estimated recruitment series in as \code{Rec_input}, so every simulated
+#'   replicate carries the same recruitment and \code{rec_model} has no effect on
+#'   the data. That conditions away recruitment and tests everything downstream
+#'   of it, but it cannot test the stock-recruit relationship itself, because
+#'   steepness is then informed only by its penalty. \code{"model"} withholds the
+#'   input so recruitment is generated from the fitted curve under
+#'   \code{rec_model}, which is what to use when the point of the test is whether
+#'   steepness and \code{R0} are recoverable.
 #'
 #' @return Named list with one element per entry in \code{what}, each an
 #'   array with the last dimension indexing simulation replicates (via
@@ -76,12 +86,27 @@ simulation_self_test <- function(data,
                                  do_par = FALSE,
                                  n_cores = NULL,
                                  output_path = NULL,
-                                 what = c('SSB', 'Rec')
+                                 what = c('SSB', 'Rec'),
+                                 sim_recruitment = c("input", "model")
                                  ) {
+
+  sim_recruitment <- match.arg(sim_recruitment)
 
   missing_names <- setdiff(what, names(rep))
   if(length(missing_names) > 0)  stop(paste("The following elements in 'what' are not found in rep:",  paste(missing_names, collapse = ", ")))
   optim_parameters_list <- get_optim_param_list(parameters, mapping, sd_rep, random) # get optimized parameters in original list format
+
+  # Likelihood weights are converted back into simulation standard deviations as
+  # sd / sqrt(wt). A weight of zero means the datum is excluded from the fit, not
+  # that it carries infinite error, so dividing by sqrt(0) gives Inf and
+  # rnorm(1, 0, Inf) gives NaN, which then propagates through every replicate and
+  # is only caught as a silent failure at the end. Excluded cells keep their
+  # nominal sd instead; they are never fit, so the value does not matter.
+  deweight <- function(sd, wt) {
+    w <- wt
+    w[!is.finite(w) | w <= 0] <- 1
+    sd / sqrt(w)
+  }
 
   # Modify any data weights that are NA to 0
   if(any(is.na(data$Wt_Catch))) data$Wt_Catch[is.na(data$Wt_Catch)] <- 0
@@ -140,32 +165,32 @@ simulation_self_test <- function(data,
   ln_sigmaC <- array(NA, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)) # setup sigmaC container
   # Loop through to populate ln_sigmaC with associated weights
   for(r in 1:sim_list$n_regions) for(f in 1:sim_list$n_fish_fleets) {
-    if(!is.vector(data$Wt_Catch)) ln_sigmaC[r,,,f] <- log(exp(optim_parameters_list$ln_sigmaC[r,,,f]) / sqrt(data$Wt_Catch[r,,,f]))
-    else ln_sigmaC[r,,,f] <- log(exp(optim_parameters_list$ln_sigmaC[r,,,f]) / sqrt(data$Wt_Catch))
+    if(!is.vector(data$Wt_Catch)) ln_sigmaC[r,,,f] <- log(deweight(exp(optim_parameters_list$ln_sigmaC[r,,,f]), data$Wt_Catch[r,,,f]))
+    else ln_sigmaC[r,,,f] <- log(deweight(exp(optim_parameters_list$ln_sigmaC[r,,,f]), data$Wt_Catch))
   }
 
   # Population-specific sigmaC
   ln_sigmaC_pop <- array(NA, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)) # setup sigmaC container
   # Loop through to populate ln_sigmaC with associated weights
   for(p in 1:sim_list$n_pop) for(r in 1:sim_list$n_regions) for(f in 1:sim_list$n_fish_fleets) {
-    if(!is.vector(data$Wt_Catch_pop)) ln_sigmaC_pop[p,r,,,f] <- log(exp(optim_parameters_list$ln_sigmaC_pop[p,r,,,f]) / sqrt(data$Wt_Catch_pop[p,r,,,f]))
-    else ln_sigmaC_pop[p,r,,,f] <- log(exp(optim_parameters_list$ln_sigmaC_pop[p,r,,,f]) / sqrt(data$Wt_Catch_pop))
+    if(!is.vector(data$Wt_Catch_pop)) ln_sigmaC_pop[p,r,,,f] <- log(deweight(exp(optim_parameters_list$ln_sigmaC_pop[p,r,,,f]), data$Wt_Catch_pop[p,r,,,f]))
+    else ln_sigmaC_pop[p,r,,,f] <- log(deweight(exp(optim_parameters_list$ln_sigmaC_pop[p,r,,,f]), data$Wt_Catch_pop))
   }
 
   # Region-specific sigmaD
   ln_sigmaD <- array(NA, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)) # setup sigmaD container
   # Loop through to populate ln_sigmaD with associated weights
   for(r in 1:sim_list$n_regions) for(f in 1:sim_list$n_fish_fleets) {
-    if(!is.vector(data$Wt_Discard)) ln_sigmaD[r,,,f] <- log(exp(optim_parameters_list$ln_sigmaD[r,,,f]) / sqrt(data$Wt_Discard[r,,,f]))
-    else ln_sigmaD[r,,,f] <- log(exp(optim_parameters_list$ln_sigmaD[r,,,f]) / sqrt(data$Wt_Discard))
+    if(!is.vector(data$Wt_Discard)) ln_sigmaD[r,,,f] <- log(deweight(exp(optim_parameters_list$ln_sigmaD[r,,,f]), data$Wt_Discard[r,,,f]))
+    else ln_sigmaD[r,,,f] <- log(deweight(exp(optim_parameters_list$ln_sigmaD[r,,,f]), data$Wt_Discard))
   }
 
   # Population-specific sigmaD
   ln_sigmaD_pop <- array(NA, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)) # setup sigmaD container
   # Loop through to populate ln_sigmaD with associated weights
   for(p in 1:sim_list$n_pop) for(r in 1:sim_list$n_regions) for(f in 1:sim_list$n_fish_fleets) {
-    if(!is.vector(data$Wt_Discard_pop)) ln_sigmaD_pop[p,r,,,f] <- log(exp(optim_parameters_list$ln_sigmaD_pop[p,r,,,f]) / sqrt(data$Wt_Discard_pop[p,r,,,f]))
-    else ln_sigmaD_pop[p,r,,,f] <- log(exp(optim_parameters_list$ln_sigmaD_pop[p,r,,,f]) / sqrt(data$Wt_Discard_pop))
+    if(!is.vector(data$Wt_Discard_pop)) ln_sigmaD_pop[p,r,,,f] <- log(deweight(exp(optim_parameters_list$ln_sigmaD_pop[p,r,,,f]), data$Wt_Discard_pop[p,r,,,f]))
+    else ln_sigmaD_pop[p,r,,,f] <- log(deweight(exp(optim_parameters_list$ln_sigmaD_pop[p,r,,,f]), data$Wt_Discard_pop))
   }
 
   # setup fishery simulation processes
@@ -181,13 +206,16 @@ simulation_self_test <- function(data,
                                 fish_sel_input = replicate(n = sim_list$n_sims, rep$fish_sel[,,1:length(data$years),,,,,drop = FALSE]),
                                 ret_sel_input = replicate(n = sim_list$n_sims, rep$ret_sel[,,1:length(data$years),,,,,drop = FALSE]),
                                 fish_q_input = replicate(n = sim_list$n_sims, rep$fish_q[,1:length(data$years),,drop = FALSE]),
-                                ObsFishIdx_SE = data$ObsFishIdx_SE / sqrt(data$Wt_FishIdx),
+                                ObsFishIdx_SE = deweight(data$ObsFishIdx_SE, data$Wt_FishIdx),
                                 ObsFishIdx_pop_SE = if(any(data$UseFishIdx_pop == 1)) {
-                                  data$ObsFishIdx_pop_SE / sqrt(data$Wt_FishIdx_pop)
+                                  deweight(data$ObsFishIdx_pop_SE, data$Wt_FishIdx_pop)
                                 } else {
                                   array(0.2, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets))
                                 },
                                 fish_idx_type = data$fish_idx_type,
+                                FishIdx_LikeType = if(is.null(data$FishIdx_LikeType)) rep(0, data$n_fish_fleets) else data$FishIdx_LikeType,
+                                FishIdx_Cov = data$FishIdx_Cov,
+                                UseFishIdx = data$UseFishIdx,
                                 init_F_val = rep$init_F,
 
                                 # fishery age composition specifications
@@ -284,13 +312,16 @@ simulation_self_test <- function(data,
     sim_list = sim_list,
     srv_sel_input = replicate(n = sim_list$n_sims, rep$srv_sel[,,1:length(data$years),,,,,drop = FALSE]),
     srv_q_input = replicate(n = sim_list$n_sims, rep$srv_q[,1:length(data$years),,drop = FALSE]),
-    ObsSrvIdx_SE = data$ObsSrvIdx_SE / sqrt(data$Wt_SrvIdx),
+    ObsSrvIdx_SE = deweight(data$ObsSrvIdx_SE, data$Wt_SrvIdx),
     ObsSrvIdx_pop_SE = if(any(data$UseSrvIdx_pop == 1)) {
-      data$ObsSrvIdx_pop_SE / sqrt(data$Wt_SrvIdx_pop)
+      deweight(data$ObsSrvIdx_pop_SE, data$Wt_SrvIdx_pop)
     } else {
       array(0.2, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_srv_fleets))
     },
     srv_idx_type = data$srv_idx_type,
+    SrvIdx_LikeType = if(is.null(data$SrvIdx_LikeType)) rep(0, data$n_srv_fleets) else data$SrvIdx_LikeType,
+    SrvIdx_Cov = data$SrvIdx_Cov,
+    UseSrvIdx = data$UseSrvIdx,
     t_srv = data$t_srv,
 
     # survey age composition specifications
@@ -380,8 +411,20 @@ simulation_self_test <- function(data,
     },
     use_rinit = data$use_rinit,
     sexratio_input = replicate(n = sim_list$n_sims, expr = rep$sexratio[,,1:length(data$years),,drop = FALSE]), # sex ratio
-    ln_sigmaR = optim_parameters_list$ln_sigmaR / sqrt(data$Wt_Rec), # ln_sigmaR
-    Rec_input = replicate(n = sim_list$n_sims, expr = rep$Rec[,,1:length(data$years),drop = FALSE]), # recruitment time series
+    # Rescaling by the recruitment weight is only an identity for a single scalar,
+    # and a deviation-specific weight has no equivalent sigma. Both recruitment
+    # and the initial age deviations are supplied directly below, so ln_sigmaR is
+    # never drawn from here and the unscaled value is passed through instead.
+    ln_sigmaR = if(length(data$Wt_Rec) == 1) optim_parameters_list$ln_sigmaR / sqrt(data$Wt_Rec) else optim_parameters_list$ln_sigmaR, # ln_sigmaR
+    # Supplying Rec_input for every year makes use_rec_input TRUE throughout
+    # sim_population(), so recruitment_opt is never consulted and rec_model has no
+    # effect on the simulated data. That is the right conditioning for testing
+    # everything downstream of recruitment, but it cannot test the stock-recruit
+    # relationship itself: steepness is then informed only by its penalty.
+    # sim_recruitment = "model" withholds the input so the curve generates
+    # recruitment and the self-test has to recover it. Setup_Sim_Rec only assigns
+    # sim_list$Rec_input when it is non-NULL, so NULL is what turns this off.
+    Rec_input = if(sim_recruitment == "model") NULL else replicate(n = sim_list$n_sims, expr = rep$Rec[,,1:length(data$years),drop = FALSE]), # recruitment time series
     ln_InitDevs_input = replicate(sim_list$n_sims, optim_parameters_list$ln_InitDevs),  # init devs
     stray_rate_input = replicate(sim_list$n_sims, data$stray_rate[,1:length(data$years), drop = FALSE]),
     rec_seas_prop_input = array(
@@ -486,18 +529,18 @@ simulation_self_test <- function(data,
         }
 
         # reset weights
-        tmp_data$Wt_Rec <- 1
+        tmp_data$Wt_Rec[] <- 1
         tmp_data$Wt_D <- 1
         tmp_data$Wt_Tagging <- 1
         tmp_data$Wt_Catch[] <- 1
         tmp_data$Wt_Discard[] <- 1
         tmp_data$Wt_FishAgeComps[] <- 1
         tmp_data$Wt_FishAgeComps_discard[] <- 1
-        tmp_data$Wt_FishIdx <- 1
+        tmp_data$Wt_FishIdx[] <- 1
         tmp_data$Wt_FishLenComps[] <- 1
         tmp_data$Wt_FishLenComps_discard[] <- 1
         tmp_data$Wt_SrvAgeComps[] <- 1
-        tmp_data$Wt_SrvIdx <- 1
+        tmp_data$Wt_SrvIdx[] <- 1
         tmp_data$Wt_SrvLenComps[] <- 1
         tmp_data$Wt_Catch_pop[] <- 1
         tmp_data$Wt_Discard_pop[] <- 1
@@ -634,18 +677,18 @@ simulation_self_test <- function(data,
           }
 
           # reset weights
-          tmp_data$Wt_Rec <- 1
+          tmp_data$Wt_Rec[] <- 1
           tmp_data$Wt_D <- 1
           tmp_data$Wt_Tagging <- 1
           tmp_data$Wt_Catch[] <- 1
           tmp_data$Wt_Discard[] <- 1
           tmp_data$Wt_FishAgeComps[] <- 1
           tmp_data$Wt_FishAgeComps_discard[] <- 1
-          tmp_data$Wt_FishIdx <- 1
+          tmp_data$Wt_FishIdx[] <- 1
           tmp_data$Wt_FishLenComps[] <- 1
           tmp_data$Wt_FishLenComps_discard[] <- 1
           tmp_data$Wt_SrvAgeComps[] <- 1
-          tmp_data$Wt_SrvIdx <- 1
+          tmp_data$Wt_SrvIdx[] <- 1
           tmp_data$Wt_SrvLenComps[] <- 1
           tmp_data$Wt_Catch_pop[] <- 1
           tmp_data$Wt_Discard_pop[] <- 1

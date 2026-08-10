@@ -689,6 +689,28 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
 #'   i.e., \eqn{\sigma_F = 1}, unless overridden via \code{...}). A warning is
 #'   issued if \code{"fix"} is selected without providing a starting value
 #'   in \code{...}.
+#' @param Fdev_pen_center Where the fishing mortality deviation penalty is
+#'   centred. \code{"fixed"} (default) centres on zero, constraining both the
+#'   level and the spread of the deviations. \code{"own_mean"} centres on the
+#'   mean of the estimated deviations, penalizing only their spread and leaving
+#'   the level free, which is what a sum of squares about the series' own mean
+#'   amounts to. Under a mean-plus-deviations parameterization the level is
+#'   already carried by \code{ln_F_mean}, so \code{"own_mean"} avoids
+#'   penalizing it twice; note that it also leaves \code{ln_F_mean} and the
+#'   deviations' level mutually unidentified unless one of them is fixed,
+#'   which \code{ln_F_mean_spec = "fix"} does.
+#' @param ln_F_mean_spec Character string, \code{"est"} (default, the previous
+#'   and only behaviour) or \code{"fix"}. \code{"fix"} maps \code{ln_F_mean}
+#'   off at its starting value, which defaults to \code{0} under this spec
+#'   unless supplied through \code{...}, so the deviations carry all of log
+#'   fishing mortality: \code{F = exp(ln_F_devs)}, where it follows a free annual log-F
+#'   parameterization. It must be paired with \code{Fdev_pen_center = "own_mean"}
+#'   (penalize only the spread about the deviations' own mean),
+#'   \code{Fdev_model = "rw"}, or \code{Use_F_pen = 0}: an \code{"iid"} or
+#'   \code{"ar1"} penalty centred on a fixed zero mean would shrink the
+#'   deviations toward \code{F = 1}, so that combination is rejected at setup.
+#'   \code{"est"} keeps the mean-plus-deviations form, where the \code{"iid"}
+#'   penalty shrinks each year toward the estimated average F.
 #' @param Fdev_model Character string specifying the process error structure
 #'   for \code{ln_F_devs}. One of \code{"iid"} (default; independent
 #'   deviations), \code{"rw"} (random walk; the first catch-active year per
@@ -811,7 +833,9 @@ Setup_Mod_Catch_and_F <- function(input_list,
                                   sigmaC_pop_spec = 'fix',
                                   sigmaF_spec = "fix",
                                   Fdev_model = "iid",
+                                  Fdev_pen_center = "fixed",
                                   Fdev_rho_spec = "fix",
+                                  ln_F_mean_spec = "est",
 
                                   # Discarded Catch Stuff
                                   ObsDiscard = NULL,
@@ -911,6 +935,25 @@ Setup_Mod_Catch_and_F <- function(input_list,
   input_list$data$Use_F_pen <- Use_F_pen
   input_list$data$catch_units <- catch_units
   input_list$data$Fdev_model <- match(Fdev_model, c("iid", "rw", "ar1")) # 1 = iid, 2 = rw, 3 = ar1
+  if(!Fdev_pen_center %in% c("fixed", "own_mean")) stop("Fdev_pen_center must be fixed or own_mean")
+  input_list$data$Fdev_pen_center <- convert_to_numeric(Fdev_pen_center, list(fixed = 0, own_mean = 1))
+  if(!ln_F_mean_spec %in% c("est", "fix")) stop("ln_F_mean_spec must be est or fix")
+  collect_message("ln_F_mean is specified as: ", ln_F_mean_spec)
+
+  # A fixed zero mean with a penalty centred on that mean shrinks the deviations
+  # toward F = 1, which is a prior nobody intends, so the combination is rejected
+  # rather than warned about.
+  if(ln_F_mean_spec == "fix" && Use_F_pen == 1 && Fdev_pen_center == "fixed" && Fdev_model %in% c("iid", "ar1"))
+    stop("ln_F_mean_spec = 'fix' with a zero-centered '", Fdev_model, "' penalty shrinks the deviations toward F = 1. Pair it with Fdev_pen_center = 'own_mean', Fdev_model = 'rw', or Use_F_pen = 0.")
+
+  # Under own-mean centering the penalty no longer pins the level of log F, so
+  # an estimated ln_F_mean and the deviations' mean trade off along an exactly
+  # flat ridge unless something else still reads the mean: "prop" initialization
+  # F does, but absolute-rate initialization ("abs") and a free initial age
+  # structure (init_age_strc = 4) do not.
+  if(Fdev_pen_center == "own_mean" && ln_F_mean_spec == "est" &&
+     (isTRUE(input_list$data$init_F_form == 1) || isTRUE(input_list$data$init_age_strc == 4)))
+    warning("Fdev_pen_center = 'own_mean' with an estimated ln_F_mean leaves the mean and the deviations' level mutually unidentified in this configuration, since nothing else reads ln_F_mean. Consider ln_F_mean_spec = 'fix'.")
 
   # Discarded Catch Stuff
   input_list$data$ObsDiscard <- ObsDiscard
@@ -937,9 +980,10 @@ Setup_Mod_Catch_and_F <- function(input_list,
   if("Fdev_rho" %in% names(starting_values)) input_list$par$Fdev_rho <- starting_values$Fdev_rho
   else input_list$par$Fdev_rho <- array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
 
-  # Log mean fishing mortality
+  # Log mean fishing mortality. A fixed mean defaults to zero so the deviations
+  # are log F outright.
   if("ln_F_mean" %in% names(starting_values)) input_list$par$ln_F_mean <- starting_values$ln_F_mean
-  else input_list$par$ln_F_mean <- array(log(0.1), dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
+  else input_list$par$ln_F_mean <- array(if(ln_F_mean_spec == "fix") 0 else log(0.1), dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
 
   # Log fishing deviations
   if("ln_F_devs" %in% names(starting_values)) input_list$par$ln_F_devs <- starting_values$ln_F_devs
@@ -972,6 +1016,9 @@ Setup_Mod_Catch_and_F <- function(input_list,
   input_list <- do_sigmaF_mapping(input_list, sigmaF_spec)
   input_list <- do_Fdev_rho_mapping(input_list, Fdev_rho_spec)
   input_list <- do_Fmort_mapping(input_list)
+  # Free log-F parameterization: the mean is fixed at its starting value and the
+  # deviations carry all of log F.
+  if(ln_F_mean_spec == "fix") input_list$map$ln_F_mean <- factor(rep(NA, length(input_list$par$ln_F_mean)))
 
   # Discard Catch Stuff
   input_list <- do_sigmaD_mapping(input_list, sigmaD_spec)

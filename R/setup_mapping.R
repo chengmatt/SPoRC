@@ -548,7 +548,7 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
             }
 
             # non-parametric selectivity
-            if(sel_model_this_block == 5) {
+            if(sel_model_this_block %in% c(5,9)) {
 
               if(is.null(sel_nonpar_est_bins)) stop("Non-parametric selectivtiy specified, but ", prefix, "_sel_nonpar_est_bins is NULL. Please specify bins!")
               bin_groups <- sel_nonpar_est_bins[[f]][[b]]
@@ -565,7 +565,7 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
             for(i in 1:max_sel_pars) {
 
               # get non-parametric selectivity bins
-              group_bins <- if(sel_model_this_block == 5) bin_groups[[i]] else i
+              group_bins <- if(sel_model_this_block %in% c(5,9)) bin_groups[[i]] else i
 
               # Estimate all selectivity fixed effects parameters within the constraints of the defined blocks
               if(sel_pars_spec[f] == "est_all") {
@@ -720,7 +720,7 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
         if(unique(input_list$data[[model_nm]][r,,f]) %in% 2) max_sel_pars <- 1 # exponential
         if(unique(input_list$data[[model_nm]][r,,f]) %in% c(0,1,3)) max_sel_pars <- 2 # logistic or gamma
         if(unique(input_list$data[[model_nm]][r,,f]) == 4) max_sel_pars <- 6 # double normal
-        if(unique(input_list$data[[model_nm]][r,,f]) == 5) max_sel_pars <- bins # non-parametric selectivity
+        if(unique(input_list$data[[model_nm]][r,,f]) %in% c(5,9)) max_sel_pars <- bins # non-parametric selectivity
         if(unique(input_list$data[[model_nm]][r,,f]) %in% c(6,7)) max_sel_pars <- 3 # logistic selectivity w/ asmyptote
 
         for(s in 1:input_list$data$n_sexes) {
@@ -924,6 +924,18 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
   map_sel_devs <- input_list$par[[par_nm]]
   map_sel_devs[] <- NA
 
+  # How many deviation slots a form reads under iid/rw time variation: its
+  # parameter count. Slots beyond it are never read by the model and stay
+  # unmapped, so a parametric fleet carries no dead deviation parameters.
+  sel_dev_slot_count <- function(code) {
+    if(code == 2) return(1)                 # exponential
+    if(code %in% c(0, 1, 3)) return(2)      # logistic or gamma
+    if(code == 4) return(6)                 # double normal
+    if(code %in% c(5, 9)) return(bins)      # non-parametric
+    if(code %in% c(6, 7)) return(3)         # logistic w/ asymptote
+    stop("Continuous time-varying (iid/rw) deviations are not supported for selectivity model code ", code, ".")
+  }
+
   for(r in 1:input_list$data$n_regions) {
     for(f in 1:n_fleets) {
 
@@ -932,8 +944,16 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
         if(!sel_devs_spec[f] %in% c("fix", "none", "est_all", "est_shared_r", "est_shared_s", "est_shared_r_s", "est_shared_b", "est_shared_r_b", "est_shared_r_b_s", "est_shared_b_s") &&
            !stringr::str_detect(sel_devs_spec[f], "est_shared_f_\\d+"))
           stop(prefix, "_sel_devs_spec not correctly specfied. Should be one of these: est_all, est_shared_r, est_shared_r_s, est_shared_s, est_shared_b, est_shared_r_b, est_shared_r_b_s, est_shared_r_s, fix, or est_shared_f_# (where # is fleet number)")
+        # Sharing across bins needs the deviations to be indexed by bin. That is
+        # true for the GMRF and AR1 time-varying forms whatever the functional
+        # form, and also for the non-parametric forms under iid or a random walk,
+        # where each deviation already belongs to one bin. It is not true for a
+        # parametric form under iid or a random walk, whose deviation slots are
+        # its parameters rather than its bins.
+        nonpar_fleet <- all(input_list$data[[model_nm]][r,,f] %in% c(5,9))
         if(sel_devs_spec[f] %in% c("est_shared_b", "est_shared_r_b", "est_shared_r_b_s", "est_shared_b_s") &&
-           !input_list$data[[cont_tv_nm]][r,f] %in% c(3,4,5)) stop("Sharing age deviations with iid or random walk parametric forms is not supported!")
+           !input_list$data[[cont_tv_nm]][r,f] %in% c(3,4,5) && !nonpar_fleet)
+          stop("Sharing bin deviations is only supported when the deviations are indexed by bin: either a GMRF or AR1 time-varying form, or a non-parametric selectivity form. A parametric form under iid or a random walk indexes its deviations by parameter instead.")
        }
 
       # Skip fleet sharing specs in first pass
@@ -955,12 +975,10 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
             map_sel_devs[r,y,,s,f] <- NA
           } else {
 
-            # Figure out max number of selectivity parameters for a given region and fleet
-            if(unique(input_list$data[[model_nm]][r,,f]) %in% 2) max_sel_pars <- 1 # exponential
-            if(unique(input_list$data[[model_nm]][r,,f]) %in% c(0,1,3)) max_sel_pars <- 2 # logistic or gamma
-            if(unique(input_list$data[[model_nm]][r,,f]) == 4) max_sel_pars <- 6 # double normal
-            if(unique(input_list$data[[model_nm]][r,,f]) == 5) max_sel_pars <- bins # non-parametric selectivity
-            if(unique(input_list$data[[model_nm]][r,,f]) %in% c(6,7)) max_sel_pars <- 3 # logistic selectivity w/ asmyptote
+            # Figure out max number of selectivity parameters for a given region and
+            # fleet. A fleet changing forms across blocks takes the most any of its
+            # forms reads, since the deviation slots are shared across years.
+            max_sel_pars <- max(sapply(unique(input_list$data[[model_nm]][r,,f]), sel_dev_slot_count))
 
             # If iid or random walk time-variation for this fleet
             if(input_list$data[[cont_tv_nm]][r,f] %in% c(1,2)) {

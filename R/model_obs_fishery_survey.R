@@ -41,6 +41,11 @@
 #'   fish_fleet]} of fishery weight at age.
 #' @param dmr Array \code{[region, year, season, fish_fleet]} of discard
 #'   mortality rate.
+#' @param t_fish Array \code{[region, season, fish_fleet]} of fishery index
+#'   timing, the fraction of the season elapsed when the index is observed.
+#'   Numbers at age are decayed by \code{exp(-t_fish * ZAA)} before the index is
+#'   formed, mirroring \code{t_srv} for surveys. \code{NULL} (the default) skips
+#'   the decay entirely and reproduces a start-of-season index.
 #' @param fish_idx_type Integer vector \code{[fish_fleet]} selecting
 #'   abundance/biomass fishery index type.
 #' @param fish_sel,ret_sel Arrays \code{[pop, region, year, season, age, sex,
@@ -60,10 +65,17 @@ get_fishery_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_fis
                                            catch_units, discard_units, WAA_fish, dmr,
                                            fish_idx_type, fish_sel, ret_sel,
                                            Mrate = NULL, move_timing = 0, seasdur = rep(1, n_seas),
-                                           NAA_int = NULL) {
+                                           NAA_int = NULL, t_fish = NULL, fish_idx_ages = NULL,
+                                           fish_q_type = NULL, do_fish_q_cov = 0, fish_q_cov = NULL,
+                                           fish_q_coeff = NULL, ObsFishIdx = NULL, UseFishIdx = NULL) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
+
+  if(is.null(fish_q_type)) fish_q_type <- rep(0, n_fish_fleets)
+
+  # Every age contributes to the index unless a fleet restricts it.
+  if(is.null(fish_idx_ages)) fish_idx_ages <- array(1, dim = c(dim(NAA)[5], n_fish_fleets))
 
   if(move_timing == 2 && is.null(NAA_int)) {
     n_ages <- dim(NAA)[5]
@@ -88,7 +100,11 @@ get_fishery_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_fis
         for(f in 1:n_fish_fleets) {
 
           fish_q_blk_idx <- fish_q_blocks[r,y,f] # get time-block catchability index
-          fish_q[r,y,f] <- exp(ln_fish_q[r,fish_q_blk_idx,f]) # Input into fishery catchability container
+          # Analytically solved fleets get their catchability filled in after the
+          # unscaled index exists, so hold them at 1 for now.
+          if(fish_q_type[f] == 0) fish_q[r,y,f] <- exp(ln_fish_q[r,fish_q_blk_idx,f]) # Input into fishery catchability container
+          else fish_q[r,y,f] <- 1
+          if(do_fish_q_cov == 1 && fish_q_type[f] == 0) fish_q[r,y,f] <- fish_q[r,y,f] * exp(sum(fish_q_cov[r,y,f,] * fish_q_coeff[r,f,])) # adding covariate effects
 
           for(seas in 1:n_seas) {
 
@@ -126,16 +142,56 @@ get_fishery_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_fis
               PredDiscard[p,r,y,seas,f] <- 1 - sum(CAA[p,r,y,seas,,,f] * WAA_fish[p,r,y,seas,,,f]) / sum(total_catch * WAA_fish[p,r,y,seas,,,f])
             } # biomass fraction
 
-            # Get fishery index
+            # Get fishery index. t_fish is the fraction of the season elapsed when
+            # the index is observed, so the numbers are decayed by that much total
+            # mortality first; t_fish = 0 reproduces a start-of-season index, which
+            # is what the model did before this was available.
             FishIdxN <- if(move_timing == 2) NAA_int[p,r,y,seas,,] else NAA[p,r,y,seas,,]
-            if(fish_idx_type[f] == 0) PredFishIdx[p,r,y,seas,f] <- fish_q[r,y,f] * sum(FishIdxN * fish_sel[p,r,y,seas,,,f] * ret_sel[p,r,y,seas,,,f]) # retained abundance
-            if(fish_idx_type[f] == 1) PredFishIdx[p,r,y,seas,f] <- fish_q[r,y,f] * sum(FishIdxN * fish_sel[p,r,y,seas,,,f] * ret_sel[p,r,y,seas,,,f] * WAA_fish[p,r,y,seas,,,f]) # retained biomass
+            if(!is.null(t_fish)) FishIdxN <- FishIdxN * exp(-t_fish[r,seas,f] * ZAA[p,r,y,seas,,])
+            # fish_idx_ages restricts which ages enter the index total without
+            # touching the selectivity the compositions share.
+            fidx_ages <- array(fish_idx_ages[,f], dim = c(dim(NAA)[5], n_sexes))
+            if(fish_idx_type[f] == 0) PredFishIdx[p,r,y,seas,f] <- fish_q[r,y,f] * sum(FishIdxN * fish_sel[p,r,y,seas,,,f] * ret_sel[p,r,y,seas,,,f] * fidx_ages) # retained abundance
+            if(fish_idx_type[f] == 1) PredFishIdx[p,r,y,seas,f] <- fish_q[r,y,f] * sum(FishIdxN * fish_sel[p,r,y,seas,,,f] * ret_sel[p,r,y,seas,,,f] * WAA_fish[p,r,y,seas,,,f] * fidx_ages) # retained biomass
           } # end seas loop
 
         } # end f loop
       } # end y loop
     } # end r loop
   } # end p loop
+
+  # A fleet whose catchability is a scaling nuisance can be concentrated out of
+  # the likelihood rather than estimated. The solve uses only the years with
+  # observations, and is done on the population-summed index because that is
+  # what the index likelihood compares against.
+  if(any(fish_q_type != 0) && !is.null(ObsFishIdx) && !is.null(UseFishIdx)) {
+    for(f in 1:n_fish_fleets) {
+      if(fish_q_type[f] == 0) next
+      for(r in 1:n_regions) {
+
+        use_rf <- array(UseFishIdx[r,,,f], dim = c(n_yrs, n_seas))
+        if(!any(use_rf == 1)) next
+        obs_idx <- which(use_rf == 1)
+        obs_map <- arrayInd(obs_idx, dim(use_rf))
+
+        obs_vec <- rep(0, length(obs_idx))
+        pred_vec <- rep(0, length(obs_idx))
+        for(i in seq_along(obs_idx)) {
+          y <- obs_map[i,1]
+          seas <- obs_map[i,2]
+          obs_vec[i] <- ObsFishIdx[r,y,seas,f]
+          pred_vec[i] <- sum(PredFishIdx[,r,y,seas,f])
+        } # end i loop
+
+        if(fish_q_type[f] == 1) q_hat <- mean(obs_vec) / mean(pred_vec) # arithmetic scaling
+        if(fish_q_type[f] == 2) q_hat <- exp(mean(log(obs_vec) - log(pred_vec))) # log-scale scaling
+
+        fish_q[r,,f] <- q_hat
+        PredFishIdx[,r,,,f] <- PredFishIdx[,r,,,f] * q_hat
+
+      } # end r loop
+    } # end f loop
+  }
 
   return(list(fish_q = fish_q, CAA = CAA, DAA = DAA, CAL = CAL, DAL = DAL,
               PredCatch = PredCatch, PredDiscard = PredDiscard, PredFishIdx = PredFishIdx))
@@ -188,6 +244,19 @@ get_fishery_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_fis
 #'   srv_fleet]} of survey weight at age.
 #' @param PredSrvIdx Array \code{[pop, region, year, season, srv_fleet]},
 #'   output container.
+#' @param srv_idx_ages Array \code{[age, srv_fleet]} of 0/1 weights selecting
+#'   which ages contribute to each fleet's index total, or \code{NULL} for all
+#'   ages. Restricting to a single age turns that fleet into an index of that
+#'   age alone, and the compositions keep using the full age range because the
+#'   restriction is applied to the index sum rather than to selectivity.
+#' @param srv_q_type Integer vector \code{[srv_fleet]} selecting how
+#'   catchability is obtained: \code{0} estimated as \code{exp(ln_srv_q)},
+#'   \code{1} solved analytically as the ratio of mean observed to mean
+#'   predicted, \code{2} solved analytically on the log scale as
+#'   \code{exp(mean(log(obs) - log(pred)))}. \code{NULL} means all estimated.
+#' @param ObsSrvIdx,UseSrvIdx Arrays \code{[region, year, season, srv_fleet]}
+#'   of observed index values and their use flags. Required only when a fleet
+#'   solves catchability analytically.
 #'
 #' @return List with elements \code{srv_q}, \code{srv_sel}, \code{SrvIAA},
 #'   \code{SrvIAL}, \code{PredSrvIdx}.
@@ -199,10 +268,19 @@ get_survey_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_srv_
                                           srv_selex_type, srv_sel, srv_sel_l, SizeAgeTrans,
                                           NAA, ZAA, t_srv, SrvIAA, fit_lengths, SrvIAL,
                                           srv_idx_type, WAA_srv, PredSrvIdx,
-                                          Mrate = NULL, move_timing = 0, seasdur = rep(1, n_seas)) {
+                                          Mrate = NULL, move_timing = 0, seasdur = rep(1, n_seas),
+                                          srv_idx_ages = NULL, srv_q_type = NULL,
+                                          ObsSrvIdx = NULL, UseSrvIdx = NULL) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
+
+  n_ages <- dim(NAA)[5]
+
+  # Every age contributes to the index unless a fleet restricts it, and every
+  # fleet estimates its own catchability unless it solves one analytically.
+  if(is.null(srv_idx_ages)) srv_idx_ages <- array(1, dim = c(n_ages, n_srv_fleets))
+  if(is.null(srv_q_type)) srv_q_type <- rep(0, n_srv_fleets)
 
   # Numbers at survey timing
   if(move_timing == 2) {
@@ -231,8 +309,11 @@ get_survey_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_srv_
         for(sf in 1:n_srv_fleets) {
 
           srv_q_blk_idx <- srv_q_blocks[r,y,sf] # get time-block catchability index
-          srv_q[r,y,sf] <- exp(ln_srv_q[r,srv_q_blk_idx,sf]) # Input into survey catchability container
-          if(do_srv_q_cov == 1) srv_q[r,y,sf] <- srv_q[r,y,sf] * exp(sum(srv_q_cov[r,y,sf,] * srv_q_coeff[r,sf,])) # adding covariate effects
+          # Analytically solved fleets get their catchability filled in after the
+          # unscaled index exists, so hold them at 1 for now.
+          if(srv_q_type[sf] == 0) srv_q[r,y,sf] <- exp(ln_srv_q[r,srv_q_blk_idx,sf]) # Input into survey catchability container
+          else srv_q[r,y,sf] <- 1
+          if(do_srv_q_cov == 1 && srv_q_type[sf] == 0) srv_q[r,y,sf] <- srv_q[r,y,sf] * exp(sum(srv_q_cov[r,y,sf,] * srv_q_coeff[r,sf,])) # adding covariate effects
 
           for(seas in 1:n_seas) {
 
@@ -252,8 +333,12 @@ get_survey_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_srv_
               } # end s loop
             } # fitting lengths
 
-            if(srv_idx_type[sf] == 0) PredSrvIdx[p,r,y,seas,sf] <- srv_q[r,y,sf] * sum(SrvIAA[p,r,y,seas,,,sf]) # abundance
-            if(srv_idx_type[sf] == 1) PredSrvIdx[p,r,y,seas,sf] <- srv_q[r,y,sf] * sum(SrvIAA[p,r,y,seas,,,sf] * WAA_srv[p,r,y,seas,,,sf]) # biomass
+            # srv_idx_ages restricts which ages enter the index total without
+            # touching the selectivity the compositions share. An index of a
+            # single age is the limiting case.
+            idx_ages <- array(srv_idx_ages[,sf], dim = c(n_ages, n_sexes))
+            if(srv_idx_type[sf] == 0) PredSrvIdx[p,r,y,seas,sf] <- srv_q[r,y,sf] * sum(SrvIAA[p,r,y,seas,,,sf] * idx_ages) # abundance
+            if(srv_idx_type[sf] == 1) PredSrvIdx[p,r,y,seas,sf] <- srv_q[r,y,sf] * sum(SrvIAA[p,r,y,seas,,,sf] * WAA_srv[p,r,y,seas,,,sf] * idx_ages) # biomass
 
           } # end seas loop
 
@@ -261,6 +346,40 @@ get_survey_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_srv_
       } # end y loop
     } # end r loop
   } # end p loop
+
+  ### Analytically solved catchability ---------------------------------------
+  # A fleet whose catchability is a scaling nuisance can be concentrated out of
+  # the likelihood rather than estimated. The solve uses only the years with
+  # observations, and is done on the population-summed index because that is
+  # what the index likelihood compares against.
+  if(any(srv_q_type != 0) && !is.null(ObsSrvIdx) && !is.null(UseSrvIdx)) {
+    for(sf in 1:n_srv_fleets) {
+      if(srv_q_type[sf] == 0) next
+      for(r in 1:n_regions) {
+
+        use_rf <- array(UseSrvIdx[r,,,sf], dim = c(n_yrs, n_seas))
+        if(!any(use_rf == 1)) next
+        obs_idx <- which(use_rf == 1)
+        obs_map <- arrayInd(obs_idx, dim(use_rf))
+
+        obs_vec <- rep(0, length(obs_idx))
+        pred_vec <- rep(0, length(obs_idx))
+        for(i in seq_along(obs_idx)) {
+          y <- obs_map[i,1]
+          seas <- obs_map[i,2]
+          obs_vec[i] <- ObsSrvIdx[r,y,seas,sf]
+          pred_vec[i] <- sum(PredSrvIdx[,r,y,seas,sf])
+        } # end i loop
+
+        if(srv_q_type[sf] == 1) q_hat <- mean(obs_vec) / mean(pred_vec) # arithmetic scaling
+        if(srv_q_type[sf] == 2) q_hat <- exp(mean(log(obs_vec) - log(pred_vec))) # log-scale scaling
+
+        srv_q[r,,sf] <- q_hat
+        PredSrvIdx[,r,,,sf] <- PredSrvIdx[,r,,,sf] * q_hat
+
+      } # end r loop
+    } # end sf loop
+  }
 
   return(list(srv_q = srv_q, srv_sel = srv_sel, SrvIAA = SrvIAA, SrvIAL = SrvIAL, PredSrvIdx = PredSrvIdx))
 }

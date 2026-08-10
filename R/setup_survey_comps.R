@@ -29,6 +29,29 @@
 #' @param UseSrvIdx Binary indicator array
 #'   \code{[n_regions × n_years × n_seas × n_srv_fleets]}. \code{1} = include
 #'   in likelihood; \code{0} = exclude.
+#' @param srv_idx_ages Per-fleet selection of which ages contribute to the
+#'   index total. Either a list with one element per survey fleet, where each
+#'   element is a vector of ages or \code{NULL} for all ages, or an array
+#'   \code{[n_ages x n_srv_fleets]} of 0/1 weights. Default \code{NULL} uses
+#'   every age for every fleet. Restricting a fleet to a single age turns it
+#'   into an index of that age alone, which is how an age-1 acoustic index is
+#'   specified; the fleet's compositions are unaffected because the
+#'   restriction applies to the index sum rather than to selectivity.
+#' @param SrvIdx_LikeType Character vector \code{[n_srv_fleets]} giving the
+#'   error structure of each survey index. Options are \code{"lognormal"}
+#'   (default, the observation standard errors are on the log scale),
+#'   \code{"normal"} (arithmetic scale), and \code{"mvn"} (multivariate
+#'   normal on the arithmetic scale using a fixed covariance supplied through
+#'   \code{SrvIdx_Cov}). One-step-ahead residuals are available only for
+#'   lognormal fleets. A fleet's population-specific index stream follows the
+#'   same choice for \code{"lognormal"} and \code{"normal"}, but stays
+#'   lognormal under \code{"mvn"}, whose covariance describes the regional
+#'   series only.
+#' @param SrvIdx_Cov List with one element per survey fleet holding the fixed
+#'   covariance matrix for fleets using \code{"mvn"}, and \code{NULL}
+#'   otherwise. Each matrix must be square with one row per observation the
+#'   fleet fits, ordered as the observations appear when scanning that fleet's
+#'   \code{UseSrvIdx} slice in array order.
 #' @param srv_idx_type Character vector \code{[n_srv_fleets]} specifying the
 #'   index type per fleet. One of \code{"biom"} (biomass), \code{"abd"}
 #'   (abundance), or \code{"none"} (no index for that fleet). Converted to
@@ -85,6 +108,16 @@
 #'   indicating an incomplete year range specification.
 #' @param SrvLenComps_Type Character vector defining the survey length
 #'   composition structure. Same format and options as \code{SrvAgeComps_Type}.
+#' @param SrvAgeComps_bins Which age bins each survey fleet's age composition is
+#'   fitted over. Supply a list with one element per fleet, each a vector of age
+#'   indices or \code{NULL} for all ages, or an \code{[n_ages x n_srv_fleets]}
+#'   array of 0/1 weights. Both observed and expected compositions are
+#'   restricted to the named bins and renormalized within them, so excluded bins
+#'   are left out of the likelihood rather than being forced to be explained;
+#'   this is how a fleet that only ages part of its age range is fitted. Indices
+#'   refer to observed bins, that is after any ageing error has mapped model
+#'   ages onto observed ones. Every fleet must retain at least one bin. Default
+#'   \code{NULL}, which fits all ages for all fleets.
 #' @param ObsSrvAgeComps_pop Observed population-specific survey age
 #'   composition array
 #'   \code{[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes × n_srv_fleets]}.
@@ -179,6 +212,10 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
                                        SrvLenComps_pop_LikeType = rep("none", input_list$data$n_srv_fleets),
                                        SrvAgeComps_pop_Type = paste("none_Year_1-terminal_Fleet_", 1:input_list$data$n_srv_fleets, sep = ''),
                                        SrvLenComps_pop_Type = paste("none_Year_1-terminal_Fleet_", 1:input_list$data$n_srv_fleets, sep = ''),
+                                       srv_idx_ages = NULL,
+                                       SrvAgeComps_bins = NULL,
+                                       SrvIdx_LikeType = rep("lognormal", input_list$data$n_srv_fleets),
+                                       SrvIdx_Cov = NULL,
                                        ...
                                        ) {
 
@@ -562,6 +599,26 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
   input_list$data$srv_idx_type <- srv_idx_type_vals
   input_list$data$SrvAgeComps_pop_Type <- SrvAgeComps_pop_Type_Mat
   input_list$data$SrvLenComps_pop_Type <- SrvLenComps_pop_Type_Mat
+
+  # Index age selection and error structure ---------------------------------
+  if(!all(SrvIdx_LikeType %in% c("lognormal", "normal", "mvn"))) stop("Invalid specification for SrvIdx_LikeType. Should be lognormal, normal, or mvn")
+  if(length(SrvIdx_LikeType) != input_list$data$n_srv_fleets) stop("SrvIdx_LikeType is not length n_srv_fleets")
+
+  srv_idx_like_vals <- convert_to_numeric(SrvIdx_LikeType, list(lognormal = 0, normal = 1, mvn = 2))
+  srv_idx_ages_arr <- parse_idx_ages(srv_idx_ages, length(input_list$data$ages), input_list$data$n_srv_fleets, "srv_idx_ages")
+  srv_idx_cov_parsed <- parse_idx_cov(SrvIdx_Cov, srv_idx_like_vals, UseSrvIdx, input_list$data$n_srv_fleets, "SrvIdx_Cov")
+
+  for(f in 1:input_list$data$n_srv_fleets) {
+    collect_message(paste("Survey Index likelihood for survey fleet", f, "specified as:", SrvIdx_LikeType[f]))
+    if(sum(srv_idx_ages_arr[,f]) != length(input_list$data$ages)) {
+      collect_message(paste("Survey Index for survey fleet", f, "is restricted to ages:", paste(which(srv_idx_ages_arr[,f] == 1), collapse = ", ")))
+    }
+  } # end f loop
+
+  input_list$data$SrvIdx_LikeType <- srv_idx_like_vals
+  input_list$data$srv_idx_ages <- srv_idx_ages_arr
+  input_list$data$SrvAgeComps_bins <- parse_idx_ages(SrvAgeComps_bins, length(input_list$data$ages), input_list$data$n_srv_fleets, "SrvAgeComps_bins")
+  input_list$data$SrvIdx_Cov <- srv_idx_cov_parsed
 
   # Populate Parameter List -------------------------------------------------
 

@@ -570,9 +570,35 @@ Setup_Mod_Discard_Comps     <- function(input_list,
 #'   same dimensions as \code{ObsFishIdx}.
 #' @param UseFishIdx Binary indicator array \code{[n_regions × n_years × n_seas × n_fish_fleets]}.
 #'   \code{1} = include index in the likelihood; \code{0} = exclude.
+#' @param fish_idx_ages Per-fleet selection of which ages contribute to the
+#'   index total. Either a list with one element per fishery fleet, where each
+#'   element is a vector of ages or \code{NULL} for all ages, or an array
+#'   \code{[n_ages x n_fish_fleets]} of 0/1 weights. Default \code{NULL} uses
+#'   every age for every fleet. The fleet's compositions are unaffected.
+#' @param FishIdx_LikeType Character vector \code{[n_fish_fleets]} giving the
+#'   error structure of each fishery index. Options are \code{"lognormal"}
+#'   (default, the observation standard errors are on the log scale),
+#'   \code{"normal"} (arithmetic scale), and \code{"mvn"} (multivariate normal
+#'   on the arithmetic scale using a fixed covariance supplied through
+#'   \code{FishIdx_Cov}). One-step-ahead residuals are available only for
+#'   lognormal fleets. A fleet's population-specific index stream follows the
+#'   same choice for \code{"lognormal"} and \code{"normal"}, but stays
+#'   lognormal under \code{"mvn"}, whose covariance describes the regional
+#'   series only.
+#' @param FishIdx_Cov List with one element per fishery fleet holding the fixed
+#'   covariance matrix for fleets using \code{"mvn"}, and \code{NULL}
+#'   otherwise. Each matrix must be square with one row per observation the
+#'   fleet fits, ordered as the observations appear when scanning that fleet's
+#'   \code{UseFishIdx} slice in array order.
 #' @param fish_idx_type Character vector of length \code{n_fish_fleets} specifying
 #'   the index type for each fleet. \code{"biom"} = biomass; \code{"abd"} =
 #'   abundance; \code{"none"} = no index for this fleet.
+#' @param t_fish Array \code{[n_regions x n_seas x n_fish_fleets]} giving the
+#'   fishery index timing: the fraction of the season elapsed when each index
+#'   is observed. Numbers at age are decayed by \code{exp(-t_fish * ZAA)}
+#'   before the index is formed, the same convention \code{t_srv} uses for
+#'   surveys. Defaults to \code{0} (start of season), which is what the model
+#'   did before this argument existed; set \code{0.5} for a mid-season index.
 #' @param ObsFishIdx_pop Observed population-specific fishery index array
 #'   \code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]}.
 #' @param ObsFishIdx_pop_SE Lognormal standard errors for \code{ObsFishIdx_pop},
@@ -623,6 +649,17 @@ Setup_Mod_Discard_Comps     <- function(input_list,
 #'   Example: \code{c("spltRjntS_Year_1-10_Fleet_1", "agg_Year_11-terminal_Fleet_1")}.
 #' @param FishLenComps_Type Same format and options as \code{FishAgeComps_Type}
 #'   but applied to length compositions.
+#' @param FishAgeComps_bins Which age bins each fishery fleet's age composition
+#'   is fitted over. Supply a list with one element per fleet, each a vector of
+#'   age indices or \code{NULL} for all ages, or an
+#'   \code{[n_ages x n_fish_fleets]} array of 0/1 weights. Both observed and
+#'   expected compositions are restricted to the named bins and renormalized
+#'   within them, so excluded bins are left out of the likelihood rather than
+#'   being forced to be explained; this is how a fleet that only ages part of
+#'   its age range is fitted. Indices refer to observed bins, that is after any
+#'   ageing error has mapped model ages onto observed ones. Every fleet must
+#'   retain at least one bin. Default \code{NULL}, which fits all ages for all
+#'   fleets.
 #' @param ObsFishAgeComps_pop Observed population-specific fishery age
 #'   composition array
 #'   \code{[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes × n_fish_fleets]}.
@@ -781,6 +818,7 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
                                         ObsFishIdx_pop_SE = NULL,
                                         UseFishIdx_pop = array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets)),
                                         fish_idx_type,
+                                        t_fish = array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets)),
                                         UseFishIdx,
 
                                         # Retained Compositions
@@ -804,6 +842,10 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
                                         FishLenComps_pop_LikeType = rep("none", input_list$data$n_fish_fleets),
                                         FishAgeComps_pop_Type = paste("none_Year_1-terminal_Fleet_", 1:input_list$data$n_fish_fleets, sep = ''),
                                         FishLenComps_pop_Type = paste("none_Year_1-terminal_Fleet_", 1:input_list$data$n_fish_fleets, sep = ''),
+                                        fish_idx_ages = NULL,
+                                        FishAgeComps_bins = NULL,
+                                        FishIdx_LikeType = rep("lognormal", input_list$data$n_fish_fleets),
+                                        FishIdx_Cov = NULL,
 
                                         # Discard Compositions (forwarded to Setup_Mod_Discard_Comps)
                                         ObsFishAgeComps_discard = array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, length(input_list$data$ages), input_list$data$n_sexes, input_list$data$n_fish_fleets)),
@@ -891,6 +933,11 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
 
 
   # Fishery Index Options ---------------------------------------------------
+
+  check_data_dimensions(t_fish, n_regions = input_list$data$n_regions,
+                        n_seas = input_list$data$n_seas,
+                        n_fish_fleets = input_list$data$n_fish_fleets, what = "t_fish")
+  if(any(t_fish < 0 | t_fish > 1)) stop("t_fish must be a fraction of the season in [0, 1]")
 
   fish_idx_type_vals <- array(NA, dim = c(input_list$data$n_fish_fleets))
   for(f in 1:input_list$data$n_fish_fleets) {
@@ -1200,6 +1247,27 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
   input_list$data$ObsFishIdx_pop_SE <- ObsFishIdx_pop_SE
   input_list$data$UseFishIdx_pop <- UseFishIdx_pop
   input_list$data$fish_idx_type <- fish_idx_type_vals
+
+  # Index age selection and error structure ---------------------------------
+  if(!all(FishIdx_LikeType %in% c("lognormal", "normal", "mvn"))) stop("Invalid specification for FishIdx_LikeType. Should be lognormal, normal, or mvn")
+  if(length(FishIdx_LikeType) != input_list$data$n_fish_fleets) stop("FishIdx_LikeType is not length n_fish_fleets")
+
+  fish_idx_like_vals <- convert_to_numeric(FishIdx_LikeType, list(lognormal = 0, normal = 1, mvn = 2))
+  fish_idx_ages_arr <- parse_idx_ages(fish_idx_ages, length(input_list$data$ages), input_list$data$n_fish_fleets, "fish_idx_ages")
+  fish_idx_cov_parsed <- parse_idx_cov(FishIdx_Cov, fish_idx_like_vals, UseFishIdx, input_list$data$n_fish_fleets, "FishIdx_Cov")
+
+  for(f in 1:input_list$data$n_fish_fleets) {
+    collect_message(paste("Fishery Index likelihood for fishery fleet", f, "specified as:", FishIdx_LikeType[f]))
+    if(sum(fish_idx_ages_arr[,f]) != length(input_list$data$ages)) {
+      collect_message(paste("Fishery Index for fishery fleet", f, "is restricted to ages:", paste(which(fish_idx_ages_arr[,f] == 1), collapse = ", ")))
+    }
+  } # end f loop
+
+  input_list$data$FishIdx_LikeType <- fish_idx_like_vals
+  input_list$data$fish_idx_ages <- fish_idx_ages_arr
+  input_list$data$FishAgeComps_bins <- parse_idx_ages(FishAgeComps_bins, length(input_list$data$ages), input_list$data$n_fish_fleets, "FishAgeComps_bins")
+  input_list$data$FishIdx_Cov <- fish_idx_cov_parsed
+  input_list$data$t_fish <- t_fish
   input_list$data$ObsFishAgeComps <- ObsFishAgeComps
   input_list$data$UseFishAgeComps <- UseFishAgeComps
   input_list$data$ObsFishLenComps <- ObsFishLenComps

@@ -158,7 +158,7 @@ do_likelihood_profile <- function(data,
 
         # Store values and save (note, some need to save wt*nLL, because of how nlL are combined in the jnLL for the model)
         jnLL[j,1] <- report$jnLL
-        rec_nLL[j,1] <- sum(data$Wt_Rec * report$Init_Rec_nLL, data$Wt_Rec * report$Rec_nLL)
+        rec_nLL[j,1] <- sum(safe_extract(data, "Wt_Init_Rec") * report$Init_Rec_nLL, data$Wt_Rec * report$Rec_nLL)
         M_nLL[j,1] <- report$M_nLL
         sel_nLL[j,1] <- report$sel_nLL
         rec_prop_nLL[j,1] <- report$rec_prop_nLL
@@ -296,7 +296,7 @@ do_likelihood_profile <- function(data,
 
           # Store values and save
           result$jnLL <- report$jnLL
-          result$rec_nLL <- sum(data$Wt_Rec * report$Init_Rec_nLL, data$Wt_Rec * report$Rec_nLL)
+          result$rec_nLL <- sum(safe_extract(data, "Wt_Init_Rec") * report$Init_Rec_nLL, data$Wt_Rec * report$Rec_nLL)
           result$M_nLL <- report$M_nLL
           result$sel_nLL <- report$sel_nLL
           result$rec_prop_nLL <- report$rec_prop_nLL

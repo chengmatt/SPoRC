@@ -26,7 +26,8 @@
 #'   \code{release_conv_tags}, \code{generate_fishery_conv_tags_recap},
 #'   \code{Get_Det_Recruitment}, \code{Get_Init_NAA},
 #'   \code{predict_sim_fish_iss_fmort}, \code{rho_trans},
-#'   \code{simulate_comps}, \code{simulate_conv_tag_fish_recaptures}.
+#'   \code{simulate_comps}, \code{simulate_conv_tag_fish_recaptures},
+#'   \code{draw_index_obs}, \code{resolve_idx_factor}.
 #'
 #'
 #' @export Setup_sim_env
@@ -59,6 +60,11 @@ Setup_sim_env <- function(sim_list) {
   sim_env$rho_trans <- rho_trans
   sim_env$simulate_comps <- simulate_comps
   sim_env$simulate_conv_tag_fish_recaptures <- simulate_conv_tag_fish_recaptures
+  # Bound explicitly like the helpers above: the annual-cycle with() blocks resolve
+  # functions through this environment's parent chain, which only reaches the package
+  # namespace when the environment was built inside a package function.
+  sim_env$draw_index_obs <- draw_index_obs
+  sim_env$resolve_idx_factor <- resolve_idx_factor
 
   # output into simulation environment
   list2env(sim_list, envir = sim_env)

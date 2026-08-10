@@ -1,3 +1,118 @@
+#' Convert an index covariance matrix to common-factor parameters
+#'
+#' A multivariate normal index likelihood is supplied as a full covariance over
+#' the observation vector, which cannot be drawn from one year at a time and does
+#' not extend past the years it covers, so it is unusable for closed loop as
+#' given. This decomposes it into a marginal scale and a single common factor,
+#' \code{obs_t = pred_t + d_t (lambda_t u + sqrt(1 - lambda_t^2) e_t)}, with
+#' \code{u} shared across years and \code{e_t} independent. Both are then drawn
+#' per year, and a projection year past the end of the covariance simply reuses
+#' the mean loading and scale with the same \code{u}.
+#'
+#'
+#' @param S Covariance matrix over a fleet's observation vector.
+#' @return List with \code{d} (marginal sd by observation) and \code{lambda}
+#'   (factor loading by observation, in (-1, 1)).
+#' @keywords internal
+cov_to_factor <- function(S) {
+  d <- sqrt(diag(S))
+  R <- S / outer(d, d)
+  e <- eigen(R, symmetric = TRUE)
+  lam <- e$vectors[, 1] * sqrt(max(e$values[1], 0))
+  if(mean(lam) < 0) lam <- -lam                 # sign of an eigenvector is arbitrary
+  lam <- pmin(pmax(lam, -0.99), 0.99)           # keep 1 - lambda^2 strictly positive
+  list(d = as.vector(d), lambda = as.vector(lam))
+}
+
+#' Precompute common-factor draw parameters for multivariate normal index fleets
+#'
+#' Validates each multivariate normal fleet's covariance against its use flags
+#' with \code{\link{parse_idx_cov}}, factor-decomposes it with
+#' \code{\link{cov_to_factor}}, and records where each simulated cell sits in
+#' the covariance. Row \code{i} of the covariance is the \code{i}-th cell with
+#' a use flag of 1 when scanning in array order (region varies fastest, then
+#' year, then season), which is the same order the estimation model collects
+#' the observation vector in, so the simulated and fitted series line up.
+#'
+#' @param cov_list List with one element per fleet, each a covariance matrix or
+#'   \code{NULL}.
+#' @param like_type_vals Integer vector of index likelihood codes; only fleets
+#'   coded \code{2} are decomposed.
+#' @param use_arr Array \code{[region, year, season, fleet]} of use flags. Its
+#'   year dimension may be shorter than the simulation when projection years
+#'   extend past the data.
+#' @param n_fleets Integer. Number of fleets.
+#' @param what Character. Name used in error messages.
+#'
+#' @return List with one element per fleet: \code{NULL} for non-mvn fleets, and
+#'   otherwise \code{d} and \code{lambda} from \code{\link{cov_to_factor}}, a
+#'   \code{row} lookup array \code{[region, year, season]} holding each used
+#'   cell's covariance row (\code{NA} elsewhere), and the means \code{d_mean}
+#'   and \code{lambda_mean} used for cells outside the covariance.
+#' @keywords internal
+build_idx_factor <- function(cov_list, like_type_vals, use_arr, n_fleets, what) {
+  cov_parsed <- parse_idx_cov(cov_list, like_type_vals, use_arr, n_fleets, what)
+  out <- vector("list", n_fleets)
+  for(f in seq_len(n_fleets)) {
+    if(like_type_vals[f] != 2) next
+    fac <- cov_to_factor(cov_parsed[[f]])
+    use_f <- array(use_arr[,,,f], dim = dim(use_arr)[1:3])
+    row_arr <- array(NA_real_, dim = dim(use_f))
+    row_arr[which(use_f == 1)] <- seq_len(sum(use_f == 1))
+    out[[f]] <- list(d = fac$d, lambda = fac$lambda, row = row_arr,
+                     d_mean = mean(fac$d), lambda_mean = mean(fac$lambda))
+  } # end f loop
+  return(out)
+}
+
+#' Resolve the factor scale and loading for one simulated index cell
+#'
+#' Looks a cell up in a fleet's factor decomposition from
+#' \code{\link{build_idx_factor}}. A cell inside the covariance gets its own
+#' marginal scale and loading; a cell outside it (a projection year, or a cell
+#' the fleet never fit) gets the mean scale and loading, so closed loop can
+#' keep drawing the series past the end of the data.
+#'
+#' @param mvn One fleet's element from \code{\link{build_idx_factor}}.
+#' @param r,y,seas Integer indices of the simulated cell.
+#' @return List with scalars \code{d} and \code{lambda}.
+#' @keywords internal
+resolve_idx_factor <- function(mvn, r, y, seas) {
+  if(y <= dim(mvn$row)[2]) {
+    i <- mvn$row[r, y, seas]
+    if(!is.na(i)) return(list(d = mvn$d[i], lambda = mvn$lambda[i]))
+  }
+  list(d = mvn$d_mean, lambda = mvn$lambda_mean)
+}
+
+#' Draw an observed index given its likelihood family
+#'
+#' The estimation model supports lognormal, arithmetic-scale normal, and
+#' multivariate normal index likelihoods. The simulator drew lognormal error
+#' unconditionally, so a self-test of a normal or MVN index generated data under
+#' the wrong error structure and then reported the mismatch as estimation bias.
+#'
+#' @param true True (error-free) index value(s).
+#' @param se Observation standard deviation, on the log scale for lognormal and
+#'   the arithmetic scale for normal. Unused for MVN, which takes its scale from
+#'   the covariance instead; note the two are not interchangeable, the pollock
+#'   trawl covariance has a diagonal about twice the reported SEs.
+#' @param like_type 0 lognormal, 1 normal, 2 multivariate normal.
+#' @param d,lambda Common-factor scale and loading for this observation, from
+#'   \code{\link{cov_to_factor}}. MVN only.
+#' @param u Shared factor draw for this fleet and replicate, held constant across
+#'   years. MVN only.
+#' @keywords internal
+draw_index_obs <- function(true, se, like_type = 0, d = NULL, lambda = NULL, u = NULL) {
+  n <- length(true)
+  if(like_type == 2) {
+    if(is.null(d) || is.null(lambda) || is.null(u)) stop("A multivariate normal index draw needs d, lambda and u from cov_to_factor().")
+    return(true + d * (lambda * u + sqrt(1 - lambda^2) * stats::rnorm(n, 0, 1)))
+  }
+  if(like_type == 1) return(true + stats::rnorm(n, 0, se))
+  if(like_type == 0) return(true * exp(stats::rnorm(n, 0, se)))
+}
+
 # Operating model
 #
 # Generates the data an assessment would actually see from the operating model's
@@ -780,16 +895,32 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
           sim_env$ObsDiscard_pop[,r,y,seas,f,sim] <- sim_env$TrueDiscard_pop[,r,y,seas,f,sim] * exp(stats::rnorm(n_pop, 0, exp(ln_sigmaD_pop[,r,y,seas,f])))
 
           # Fishery Index
-          tmp_expl_abd <- sweep(NAA[,r,y,seas,,,sim, drop = F], c(1,5,6), fish_sel[,r,y,seas,,,f,sim, drop = F] * ret_sel[,r,y,seas,,,f,sim, drop = F], "*")
+          tmp_NAA <- NAA[,r,y,seas,,,sim, drop = F]
+          if(any(t_fish[r,seas,f] != 0))
+            tmp_NAA <- tmp_NAA * exp(-t_fish[r,seas,f] * ZAA[,r,y,seas,,,sim, drop = F])
+          tmp_expl_abd <- sweep(tmp_NAA, c(1,5,6), fish_sel[,r,y,seas,,,f,sim, drop = F] * ret_sel[,r,y,seas,,,f,sim, drop = F], "*")
           tmp_expl_biom <- sweep(tmp_expl_abd, c(1,5,6), WAA_fish[,r,y,seas,,,f,sim, drop = F], "*") # get exploitable abundance
           if(fish_idx_type[f] == 0) sim_env$TrueFishIdx[r,y,seas,f,sim] <- fish_q[r,y,f,sim] * sum(tmp_expl_abd) # True Fishery Index (abundance)
           if(fish_idx_type[f] == 1) sim_env$TrueFishIdx[r,y,seas,f,sim] <- fish_q[r,y,f,sim] * sum(tmp_expl_biom) # True Fishery Index (biomass)
-          sim_env$ObsFishIdx[r,y,seas,f,sim] <- TrueFishIdx[r,y,seas,f,sim] * exp(stats::rnorm(1, 0, ObsFishIdx_SE[r,y,seas,f])) # Observed Fishery index w/ lognormal deviations
 
-          # Population-specific Fishery Index
+          # Observed fishery index. An mvn fleet takes its scale from the covariance's
+          # factor decomposition rather than the SE array, with one factor draw shared
+          # across the fleet's whole series within a replicate.
+          fidx_like <- if(exists("FishIdx_LikeType")) FishIdx_LikeType[f] else 0
+          if(fidx_like == 2) {
+            if(is.na(fish_idx_u[f,sim])) sim_env$fish_idx_u[f,sim] <- stats::rnorm(1)
+            fidx_fac <- resolve_idx_factor(fish_idx_mvn[[f]], r, y, seas)
+            sim_env$ObsFishIdx[r,y,seas,f,sim] <- draw_index_obs(TrueFishIdx[r,y,seas,f,sim], NA, 2, d = fidx_fac$d, lambda = fidx_fac$lambda, u = fish_idx_u[f,sim])
+          } else {
+            sim_env$ObsFishIdx[r,y,seas,f,sim] <- draw_index_obs(TrueFishIdx[r,y,seas,f,sim], ObsFishIdx_SE[r,y,seas,f], fidx_like)
+          }
+
+          # Population-specific Fishery Index. The covariance describes the regional
+          # series only, so an mvn fleet's population stream keeps lognormal error,
+          # mirroring the estimation model.
           if(fish_idx_type[f] == 0) sim_env$TrueFishIdx_pop[,r,y,seas,f,sim] <- fish_q[r,y,f,sim] * apply(tmp_expl_abd[,1,1,1,,,1, drop = FALSE], 1, sum)  # abundance
           if(fish_idx_type[f] == 1) sim_env$TrueFishIdx_pop[,r,y,seas,f,sim] <- fish_q[r,y,f,sim] * apply(tmp_expl_biom[,1,1,1,,,1, drop = FALSE], 1, sum)  # biomass
-          sim_env$ObsFishIdx_pop[,r,y,seas,f,sim] <- sim_env$TrueFishIdx_pop[,r,y,seas,f,sim] * exp(stats::rnorm(n_pop, 0, ObsFishIdx_pop_SE[,r,y,seas,f]))
+          sim_env$ObsFishIdx_pop[,r,y,seas,f,sim] <- draw_index_obs(sim_env$TrueFishIdx_pop[,r,y,seas,f,sim], ObsFishIdx_pop_SE[,r,y,seas,f], if(fidx_like == 1) 1 else 0)
 
           # Fishery Compositions
           if(Fmort[r,y,seas,f,sim] > 0) { # only simulate if Fishing Mortality > 0
@@ -1107,12 +1238,25 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
           # Survey Index - Regional
           if(srv_idx_type[sf] == 0) sim_env$TrueSrvIdx[r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * sum(SrvIAA[,r,y,seas,,,sf,sim]) # True Survey Index (abundance)
           if(srv_idx_type[sf] == 1) sim_env$TrueSrvIdx[r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * sum(SrvIAA[,r,y,seas,,,sf,sim] * WAA_srv[,r,y,seas,,,sf,sim]) # True Survey Index (biomass)
-          sim_env$ObsSrvIdx[r,y,seas,sf,sim] <- TrueSrvIdx[r,y,seas,sf,sim] * exp(stats::rnorm(1, 0, ObsSrvIdx_SE[r,y,seas,sf])) # Observed survey index w/ lognormal deviations
 
-          # Survey Index - Population-Specific
+          # Observed survey index. An mvn fleet takes its scale from the covariance's
+          # factor decomposition rather than the SE array, with one factor draw shared
+          # across the fleet's whole series within a replicate.
+          sidx_like <- if(exists("SrvIdx_LikeType")) SrvIdx_LikeType[sf] else 0
+          if(sidx_like == 2) {
+            if(is.na(srv_idx_u[sf,sim])) sim_env$srv_idx_u[sf,sim] <- stats::rnorm(1)
+            sidx_fac <- resolve_idx_factor(srv_idx_mvn[[sf]], r, y, seas)
+            sim_env$ObsSrvIdx[r,y,seas,sf,sim] <- draw_index_obs(TrueSrvIdx[r,y,seas,sf,sim], NA, 2, d = sidx_fac$d, lambda = sidx_fac$lambda, u = srv_idx_u[sf,sim])
+          } else {
+            sim_env$ObsSrvIdx[r,y,seas,sf,sim] <- draw_index_obs(TrueSrvIdx[r,y,seas,sf,sim], ObsSrvIdx_SE[r,y,seas,sf], sidx_like)
+          }
+
+          # Survey Index - Population-Specific. The covariance describes the regional
+          # series only, so an mvn fleet's population stream keeps lognormal error,
+          # mirroring the estimation model.
           if(srv_idx_type[sf] == 0) sim_env$TrueSrvIdx_pop[,r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * apply(SrvIAA[,r,y,seas,,,sf,sim, drop = FALSE], 1, sum) # True Survey Index (abundance)
           if(srv_idx_type[sf] == 1) sim_env$TrueSrvIdx_pop[,r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * apply(SrvIAA[,r,y,seas,,,sf,sim, drop = FALSE] * WAA_srv[,r,y,seas,,,sf,sim, drop = FALSE], 1, sum) # True Survey Index (biomass)
-          sim_env$ObsSrvIdx_pop[,r,y,seas,sf,sim] <- TrueSrvIdx_pop[,r,y,seas,sf,sim] * exp(stats::rnorm(n_pop, 0, ObsSrvIdx_pop_SE[,r,y,seas,sf])) # Observed survey index w/ lognormal deviations
+          sim_env$ObsSrvIdx_pop[,r,y,seas,sf,sim] <- draw_index_obs(TrueSrvIdx_pop[,r,y,seas,sf,sim], ObsSrvIdx_pop_SE[,r,y,seas,sf], if(sidx_like == 1) 1 else 0)
 
           # Survey Compositions
           # Sample survey ages

@@ -67,8 +67,24 @@
 #'   length composition likelihood. Same format as \code{Wt_SrvAgeComps_pop},
 #'   \code{[n_pop × n_regions × n_years × n_seas × n_sexes × n_srv_fleets]}.
 #'   Default: array of \code{1}s.
-#' @param Wt_Rec Scalar weight applied to the recruitment deviation penalty
-#'   (\code{ln_RecDevs}). Default \code{1}.
+#' @param Wt_Rec Weight applied to the recruitment deviation penalty
+#'   (\code{ln_RecDevs}). Either a scalar applied uniformly or a numeric array
+#'   \code{[n_pop × n_regions × n_est_rec_devs]} for deviation-specific
+#'   weighting, where \code{n_est_rec_devs} is the third dimension of
+#'   \code{ln_RecDevs} rather than the number of years, since
+#'   \code{dont_est_recdev_last} and \code{n_proj_yrs_devs} both move it.
+#'   Default \code{1}. A weight of zero on a deviation leaves it estimated but
+#'   removes it from the penalty entirely, which is how a stock-recruit
+#'   relationship is fit over a window of years while recruitment stays free in
+#'   every year. That is distinct from \code{dont_est_recdev_last}, which
+#'   removes the deviations themselves so recruitment reverts to the
+#'   deterministic prediction in those years.
+#' @param Wt_Init_Rec Weight applied to the initial age deviation penalty
+#'   (\code{ln_InitDevs}). Either a scalar or a numeric array
+#'   \code{[n_pop × n_regions × (n_ages - 1)]}. Defaults to \code{NULL}, which
+#'   takes whatever \code{Wt_Rec} is when \code{Wt_Rec} is a scalar; supply it
+#'   explicitly when \code{Wt_Rec} is an array, since the two penalties are
+#'   dimensioned differently.
 #' @param Wt_F Scalar weight applied to the fishing mortality deviation penalty
 #'   (\code{ln_F_devs}). Default \code{1}.
 #' @param Wt_Tagging Scalar weight applied to the tag-recovery likelihood.
@@ -118,6 +134,12 @@
 #'   }
 #'   Any name not supplied defaults to \code{0} (off). Must be called after
 #'   \code{Setup_Mod_Fishsel_and_Q}.
+#'   Each weight may instead be a vector with one value per model year, so a
+#'   penalty can act only in some years or with a different strength in each.
+#'   The specification may also carry \code{"bin_range"}, a length-two vector
+#'   giving the first and last bin the penalties act over. To give each fleet
+#'   its own penalties, pass an unnamed list with one named specification per
+#'   fleet instead of a single specification.
 #' @param ret_sel_pen_wts Same format as \code{fish_sel_pen_wts}, for the
 #'   retained fishery selectivity penalty.
 #' @param srv_sel_pen_wts Same format as \code{fish_sel_pen_wts}, for the
@@ -145,6 +167,7 @@ Setup_Mod_Weighting <- function(input_list,
                                 Wt_FishIdx_pop = 1,
                                 Wt_SrvIdx_pop = 1,
                                 Wt_Rec = 1,
+                                Wt_Init_Rec = NULL,
                                 Wt_F = 1,
                                 Wt_Tagging = 1,
 
@@ -192,10 +215,50 @@ Setup_Mod_Weighting <- function(input_list,
   input_list$data$Wt_Catch <- Wt_Catch
   input_list$data$Wt_FishIdx <- Wt_FishIdx
   input_list$data$Wt_SrvIdx <- Wt_SrvIdx
+
+  # A multivariate normal index cannot be split across observations, so its whole
+  # fleet nLL is returned in a single cell (model_distributions.R). The jnLL then
+  # applies the weights elementwise, which means a year-varying weight on an MVN
+  # fleet silently applies only the first observed cell's value to the entire
+  # fleet, and a zero there deletes the fleet outright. Constant weights are the
+  # only ones that behave, so anything else is an error rather than a surprise.
+  check_mvn_weight <- function(wt, like_type, use, n_flt, nm) {
+    if(is.null(like_type) || length(wt) == 1) return(invisible(NULL))
+    for(fl in seq_len(n_flt)) {
+      if(is.na(like_type[fl]) || like_type[fl] != 2) next
+      w <- wt[,,,fl][use[,,,fl] == 1]
+      if(length(w) > 1 && length(unique(w)) > 1)
+        stop(nm, " varies across observations for fleet ", fl, ", which uses a multivariate normal likelihood. ",
+             "An MVN fleet's likelihood is a single number over the whole observation vector, so only a constant weight is meaningful.")
+    }
+    invisible(NULL)
+  }
+  check_mvn_weight(Wt_SrvIdx, input_list$data$SrvIdx_LikeType, input_list$data$UseSrvIdx,
+                   input_list$data$n_srv_fleets, "Wt_SrvIdx")
+  check_mvn_weight(Wt_FishIdx, input_list$data$FishIdx_LikeType, input_list$data$UseFishIdx,
+                   input_list$data$n_fish_fleets, "Wt_FishIdx")
   input_list$data$Wt_Catch_pop <- Wt_Catch_pop
   input_list$data$Wt_FishIdx_pop <- Wt_FishIdx_pop
   input_list$data$Wt_SrvIdx_pop <- Wt_SrvIdx_pop
+  # The recruitment and initial-age penalties are dimensioned differently, so an
+  # array Wt_Rec cannot also serve the initial ages. A scalar still covers both.
+  rec_dev_dim <- dim(input_list$par$ln_RecDevs)
+  init_dev_dim <- dim(input_list$par$ln_InitDevs)
+  if(length(Wt_Rec) != 1 && !identical(as.integer(dim(Wt_Rec)), as.integer(rec_dev_dim))) {
+    stop("Wt_Rec must be a scalar or an array of dimension ", paste(rec_dev_dim, collapse = " x "),
+         " (n_pop x n_regions x the third dimension of ln_RecDevs, which dont_est_recdev_last and n_proj_yrs_devs both change).")
+  }
+  if(is.null(Wt_Init_Rec)) {
+    if(length(Wt_Rec) != 1) stop("Wt_Rec is an array, so Wt_Init_Rec must be supplied explicitly; the recruitment and initial age penalties are dimensioned differently.")
+    Wt_Init_Rec <- Wt_Rec
+  }
+  if(length(Wt_Init_Rec) != 1 && !identical(as.integer(dim(Wt_Init_Rec)), as.integer(init_dev_dim))) {
+    stop("Wt_Init_Rec must be a scalar or an array of dimension ", paste(init_dev_dim, collapse = " x "), ".")
+  }
+  if(length(Wt_Rec) > 1 && any(Wt_Rec == 0)) collect_message("Recruitment deviations excluded from the recruitment penalty but still estimated: ", sum(Wt_Rec[1,1,] == 0), " of ", rec_dev_dim[3])
+
   input_list$data$Wt_Rec <- Wt_Rec
+  input_list$data$Wt_Init_Rec <- Wt_Init_Rec
   input_list$data$Wt_F <- Wt_F
   input_list$data$Wt_FishAgeComps<- Wt_FishAgeComps
   input_list$data$Wt_SrvAgeComps<- Wt_SrvAgeComps
@@ -215,9 +278,9 @@ Setup_Mod_Weighting <- function(input_list,
   input_list$data$Wt_FishLenComps_discard <- Wt_FishLenComps_discard
   input_list$data$Wt_FishAgeComps_discard_pop <- Wt_FishAgeComps_discard_pop
   input_list$data$Wt_FishLenComps_discard_pop <- Wt_FishLenComps_discard_pop
-  input_list$data$fish_sel_pen_wts <- resolve_sel_pen_wts(fish_sel_pen_wts)
-  input_list$data$ret_sel_pen_wts <- resolve_sel_pen_wts(ret_sel_pen_wts)
-  input_list$data$srv_sel_pen_wts <- resolve_sel_pen_wts(srv_sel_pen_wts)
+  input_list$data$fish_sel_pen_wts <- resolve_sel_pen_wts(fish_sel_pen_wts, input_list$data$n_fish_fleets)
+  input_list$data$ret_sel_pen_wts <- resolve_sel_pen_wts(ret_sel_pen_wts, input_list$data$n_fish_fleets)
+  input_list$data$srv_sel_pen_wts <- resolve_sel_pen_wts(srv_sel_pen_wts, input_list$data$n_srv_fleets)
 
   # Print all messages if verbose is TRUE
   if(input_list$verbose) for(msg in messages_list) message(msg)

@@ -862,8 +862,8 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
 #'     \item{calc_rec_st_yr}{Year to start calculating mean recruitment. Default is 1.}
 #'     \item{rec_age}{Age at recruitment. Default is 1.}
 #'     \item{type}{Reference point type: "single_region" or "multi_region". Default is "single_region".}
-#'     \item{what}{Method for reference point calculation. Options include "SPR", "BH_MSY",
-#'       "independent_SPR", "independent_BH_MSY", "global_SPR", "global_BH_MSY". Default is "SPR".}
+#'     \item{what}{Method for reference point calculation. Options include "SPR", "MSY",
+#'       "independent_SPR", "independent_MSY", "global_SPR", "global_MSY". Default is "SPR".}
 #'     \item{is_discard_fleet}{Integer vector \code{[n_fish_fleets]}. Indicator for
 #'       fleets whose catch should be excluded from landed yield in reference point
 #'       calculations (0 = landing fleet, 1 = discard-only fleet). These fleets still

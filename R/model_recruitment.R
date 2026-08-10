@@ -20,6 +20,7 @@
 #'   \itemize{
 #'   \item \code{0} Mean recruitment
 #'   \item \code{1} Beverton-Holt recruitment with steepness
+#'   \item \code{2} Ricker recruitment with steepness
 #'   }
 #'
 #' @param rec_dd Integer flag specifying the density dependence structure:
@@ -109,6 +110,24 @@
 #' \item \eqn{h} is steepness
 #' }
 #'
+#' **Ricker recruitment**
+#'
+#' When \code{recruitment_model = 2}, recruitment follows the Ricker
+#' relationship, written in the depletion form used by the EBS pollock
+#' assessment (2024, \code{SrType = 1}):
+#'
+#' \deqn{
+#' R = R_0 \frac{SSB}{S_0} \exp\left(\alpha \left(1 - \frac{SSB}{S_0}\right)\right),
+#' \quad \alpha = \log\left(\frac{4h}{1-h}\right)
+#' }
+#'
+#' The curve passes through \eqn{(S_0, R_0)} by construction. Note that
+#' \eqn{\alpha} is set so the Ricker carries the same compensation ratio as a
+#' Beverton-Holt at the same \eqn{h}, rather than by the textbook definition
+#' \eqn{R(0.2 S_0) = h R_0}. Steepness is therefore not interchangeable between
+#' the two curves: the Ricker here gives \eqn{R(0.2S_0)/R_0 = 0.2(4h/(1-h))^{0.8}},
+#' which exceeds \eqn{h} and is not bounded by 1.
+#'
 #' \eqn{S_0} (and the age-composition of spawning biomass per recruit more
 #' generally) does not depend on \code{rec_lag}; it is a pure per-recruit,
 #' equilibrium quantity. The recruit age class (the first age) is always
@@ -180,11 +199,17 @@ Get_Det_Recruitment <- function(recruitment_model,
     for(p in 1:n_pop) rec[p,] = R0[p] * rec_region_prop[p,] # mean recruitment apportioned across n_pop and n_regions
   }
 
-  # Beverton-Holt
-  if(recruitment_model == 1) {
+  # Beverton-Holt (recruitment_model == 1) and Ricker (recruitment_model == 2).
+  # Both are density-dependent forms driven by unfished spawning biomass, so they
+  # share the whole spawning-biomass-per-recruit calculation and differ only in the
+  # curve evaluated at the end.
+  if(recruitment_model %in% c(1, 2)) {
 
     # Storage for recruitment, S0, and SF (equilibrium fished)
     rec = S0 = SF = array(0, dim = c(n_pop, n_regions))
+
+    # Ricker log-slope, derived from steepness as log(4h / (1 - h)) - Dorn parameterization
+    ricker_alpha = function(hh) log(4 * hh / (1 - hh))
 
     # local density dependence
     if(rec_dd == 0) {
@@ -620,12 +645,20 @@ Get_Det_Recruitment <- function(recruitment_model,
         # Local Density Dependence (using h[1,r] b/c steepness is region-specific)
         if(rec_dd == 0) {
           local_R0 = R0[1] * rec_region_prop[1,r] # get local R0 based on recruitment proportions
-          rec[1,r] = (4 * h[1,r] * local_R0 * SSB[1,r] ) / ( (1 - h[1,r] ) * S0[1,r] + (5 * h[1,r] - 1) * SSB[1,r])
+          if(recruitment_model == 1) rec[1,r] = (4 * h[1,r] * local_R0 * SSB[1,r] ) / ( (1 - h[1,r] ) * S0[1,r] + (5 * h[1,r] - 1) * SSB[1,r])
+          if(recruitment_model == 2) {
+            rel_SSB = SSB[1,r] / S0[1,r] # depletion drives the Ricker, so R0 and S0 stay local
+            rec[1,r] = local_R0 * rel_SSB * exp(ricker_alpha(h[1,r]) * (1 - rel_SSB))
+          }
         }
 
         # Global Density Dependence (using h[1,1] b/c steepness is global )
         if(rec_dd == 1) {
-          rec[1,r] = (4* h[1,1] * R0[1] * sum(SSB) ) / ((1 - h[1,1] ) * S0 + (5 * h[1,1] - 1) * sum(SSB) ) * rec_region_prop[1,r]
+          if(recruitment_model == 1) rec[1,r] = (4* h[1,1] * R0[1] * sum(SSB) ) / ((1 - h[1,1] ) * S0 + (5 * h[1,1] - 1) * sum(SSB) ) * rec_region_prop[1,r]
+          if(recruitment_model == 2) {
+            rel_SSB = sum(SSB) / S0 # S0 is a scalar here b/c density dependence is global
+            rec[1,r] = R0[1] * rel_SSB * exp(ricker_alpha(h[1,1]) * (1 - rel_SSB)) * rec_region_prop[1,r]
+          }
         }
 
       } # end r loop
@@ -658,11 +691,17 @@ Get_Det_Recruitment <- function(recruitment_model,
         }
       }
 
-      for(p in 1:n_pop) rec[p,] = (4 * h[p, natal_region[p]] * R0[p] * effective_SSB[p]) /
-        ((1 - h[p, natal_region[p]]) * effective_S0[p] + (5 * h[p, natal_region[p]] - 1) * effective_SSB[p]) * rec_region_prop[p,]
+      for(p in 1:n_pop) {
+        if(recruitment_model == 1) rec[p,] = (4 * h[p, natal_region[p]] * R0[p] * effective_SSB[p]) /
+          ((1 - h[p, natal_region[p]]) * effective_S0[p] + (5 * h[p, natal_region[p]] - 1) * effective_SSB[p]) * rec_region_prop[p,]
+        if(recruitment_model == 2) {
+          rel_SSB = effective_SSB[p] / effective_S0[p]
+          rec[p,] = R0[p] * rel_SSB * exp(ricker_alpha(h[p, natal_region[p]]) * (1 - rel_SSB)) * rec_region_prop[p,]
+        }
+      } # end p loop
     }
 
-  } # end Beverton-Holt
+  } # end Beverton-Holt and Ricker
 
   # resampling
   if(recruitment_model == 999) rec = NA

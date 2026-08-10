@@ -734,7 +734,7 @@ get_nLL_plot <- function(data,
                 sum(data[[i]]$Wt_SrvIdx * safe_extract(rep[[i]], "SrvIdx_nLL")),
                 safe_extract(rep[[i]], "TagRep_nLL"),
                 sum(data[[i]]$Wt_FishIdx * safe_extract(rep[[i]], "FishIdx_nLL")),
-                sum(data[[i]]$Wt_Rec * safe_extract(rep[[i]], "Init_Rec_nLL")),
+                sum(safe_extract(data[[i]], "Wt_Init_Rec") * safe_extract(rep[[i]], "Init_Rec_nLL")),
                 safe_extract(rep[[i]], "Movement_nLL"),
                 sum(safe_extract(rep[[i]], "SrvAgeComps_nLL")),
                 sum(safe_extract(rep[[i]], "FishAgeComps_nLL")),
@@ -1313,7 +1313,7 @@ plot_all_basic <- function(data,
 #'       \code{"multi_region"} or \code{"single_region"}.}
 #'     \item{\code{what}}{Output selector passed to
 #'       \code{Get_Reference_Points}; e.g., \code{"global_SPR"} or
-#'       \code{"local_BH_MSY"}.}
+#'       \code{"local_MSY"}.}
 #'   }
 #' @param proj_model_opt A named list of projection settings passed to
 #'   \code{\link{Do_Population_Projection}}. Required elements:
@@ -1359,7 +1359,7 @@ plot_all_basic <- function(data,
 #' projection), and status ratios.
 #'
 #' When \code{recruitment_opt = "bh_rec"}, Beverton-Holt stock-recruit
-#' parameters are passed to the projection via an internal \code{bh_rec_opt}
+#' parameters are passed to the projection via an internal \code{srr_opt}
 #' list constructed from year-1 demographics to approximate unfished SSB. When
 #' \code{recruitment_opt = "inv_gauss"}, a warning is issued because only a
 #' single deterministic simulation is run; stochastic recruitment options
@@ -1536,9 +1536,15 @@ get_key_quants <- function(data,
     f_ref_pt = array(tmp_ref_pts$f_ref_pt, dim = c(data[[i]]$n_regions, n_proj_yrs))
     b_ref_pt = array(tmp_ref_pts$b_ref_pt, dim = c(data[[i]]$n_pop, data[[i]]$n_regions, n_proj_yrs))
 
-    # Set up beverton-holt options if using beverton holt for projection
-    if(proj_model_opt$recruitment_opt == 'bh_rec') {
-      bh_rec_opt <- list(
+    # Set up stock-recruit options if projecting under a stock-recruit curve.
+    # Do_Population_Projection derives the curve from recruitment_opt itself, so
+    # the same option list serves both forms.
+    if(proj_model_opt$recruitment_opt %in% c('bh_rec', 'ricker_rec')) {
+      # Reference year for the biologicals behind unfished spawning biomass per
+      # recruit. Must match what the model was fitted with or S0, and therefore
+      # the whole curve, shifts. Older data lists predate the option.
+      sr_yr <- if(is.null(data[[i]]$SR_ref_yr)) 1 else data[[i]]$SR_ref_yr
+      srr_opt <- list(
         do_recruits_move = data[[i]]$do_recruits_move,
         rec_dd = data[[i]]$rec_dd,
         rec_lag = data[[i]]$rec_lag,
@@ -1547,20 +1553,20 @@ get_key_quants <- function(data,
         h = rep[[i]]$h_trans,
         SSB = rep[[i]]$SSB,
 
-        # Using first year for demographics of computing unfished SSB
-        WAA = array(data[[i]]$WAA[,,1,,,1,drop = FALSE], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages)) ),
-        MatAA = array(data[[i]]$MatAA[,,1,,,1,drop = FALSE], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages)) ) ,
-        natmort = array(rep[[i]]$natmort[,,1,,1,drop = FALSE], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, length(data[[i]]$ages) )),
-        sgl_seas_spawning_movement = array(rep[[i]]$sgl_seas_spawning_movement[,,,1,,1], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_regions, length(data[[i]]$ages) )),
-        Movement = array(rep[[i]]$Movement[,,,1,,,1], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages) )),
+        # Demographics for unfished SSB, taken at SR_ref_yr
+        WAA = array(data[[i]]$WAA[,,sr_yr,,,1,drop = FALSE], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages)) ),
+        MatAA = array(data[[i]]$MatAA[,,sr_yr,,,1,drop = FALSE], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages)) ) ,
+        natmort = array(rep[[i]]$natmort[,,sr_yr,,1,drop = FALSE], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, length(data[[i]]$ages) )),
+        sgl_seas_spawning_movement = array(rep[[i]]$sgl_seas_spawning_movement[,,,sr_yr,,1], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_regions, length(data[[i]]$ages) )),
+        Movement = array(rep[[i]]$Movement[,,,sr_yr,,,1], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages) )),
         # Instantaneous rates matched to Movement above, needed by the SPR machinery
         # behind Beverton-Holt when movement is continuous
-        Mrate = if(proj_move_timing == 2) array(rep[[i]]$Mrate[,,,1,,,1], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages) )) else NULL,
+        Mrate = if(proj_move_timing == 2) array(rep[[i]]$Mrate[,,,sr_yr,,,1], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages) )) else NULL,
         stray_rate = array(rep[[i]]$stray_rate[,1], dim = data[[i]]$n_pop),
         sex_ratio_f = array(if(data[[i]]$n_sexes == 1) 0.5 else rep[[i]]$sexratio[,,1,1], dim = c(data[[i]]$n_pop, data[[i]]$n_regions))
       )
     } else {
-      bh_rec_opt <- NULL
+      srr_opt <- NULL
     }
 
     # do population projection
@@ -1594,7 +1600,7 @@ get_key_quants <- function(data,
                                          HCR_function = proj_model_opt$HCR_function, # HCR function
                                          recruitment_opt = proj_model_opt$recruitment_opt, # recruitment assumption
                                          fmort_opt = 'Input', # Fishing mortality in projection years (whether input or HCR)
-                                         bh_rec_opt = bh_rec_opt, # beverton holt projection options
+                                         srr_opt = srr_opt, # beverton holt projection options
                                          move_timing = proj_move_timing, # movement / mortality sequencing
                                          Mrate = proj_Mrate # instantaneous rates (continuous movement only)
     )

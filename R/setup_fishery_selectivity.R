@@ -74,10 +74,40 @@
 #'
 #' @param ret_selex_prior Data frame of priors for selectivity parameters.
 #'   Must include columns: \code{region}, \code{fleet}, \code{block}, \code{sex},
-#'   \code{par}, \code{mu}, \code{sd}.
+#'   \code{par}, \code{mu}, \code{sd}, plus an optional \code{type}
+#'   (\code{"par"}/\code{"value"}; see \code{fish_selex_prior} in
+#'   \code{Setup_Mod_Fishsel_and_Q}).
 #'
 #' @param retsel_devs_shared_bins Vector defining shared bins for selectivity
 #'   deviation estimation (e.g., age or length grouping structure).
+#'
+#' @param ret_sel_bin_dev_bins List with one element per fishery fleet naming the
+#'   bins that fleet overrides, or \code{NULL} for fleets with no overrides. An
+#'   overridden bin takes a freely estimated annual value in place of whatever
+#'   the functional form produced, applied after every other transformation
+#'   including standardization. Default \code{NULL}.
+#'
+#' @param cont_tv_retsel_bin_devs Character vector of length
+#'   \code{n_fish_fleets} giving the process error on the bin-override
+#'   deviations for each fleet: \code{"none"} (default), \code{"iid"}, or
+#'   \code{"rw"}.
+#'
+#' @param retsel_pe_wt Numeric vector of length \code{n_fish_fleets}. Per-fleet
+#'   multiplier on the retention selectivity process error likelihood. Default
+#'   \code{1} for every fleet. \code{0} skips that fleet's process error
+#'   likelihood altogether, so the deviations stay estimated but enter the
+#'   objective only through the data and any explicit smoothness or centering
+#'   penalties. Values other than 0 or 1 make an estimated process error sigma
+#'   reinterpretable, so prefer 0 or 1 unless deliberately down-weighting.
+#'   Applies only to \code{ln_retsel_devs}; the bin-override deviations carry
+#'   their own process error and are not affected.
+#'
+#' @param retsel_rw_init_sigma Numeric vector of length \code{n_fish_fleets}.
+#'   Standard deviation given to the first year of an \code{"rw"} deviation
+#'   series. Default \code{5}, which leaves that year effectively free.
+#'   \code{NA} instead starts the walk at zero under the walk's own estimated
+#'   sigma, making the first year as smooth as every later step. Appropriate
+#'   when the base parametric curve already describes the first year well.
 #'
 #' @param ret_selex_type Character string indicating selectivity domain:
 #'   \code{"age"} or \code{"length"}.
@@ -118,6 +148,10 @@ Setup_Mod_Retsel <- function(input_list,
                              ret_selex_type,
                              use_fixed_ret_sel,
                              ret_sel_input,
+                             ret_sel_bin_dev_bins = NULL,
+                             cont_tv_retsel_bin_devs = rep("none", input_list$data$n_fish_fleets),
+                             retsel_pe_wt = rep(1, input_list$data$n_fish_fleets),
+                             retsel_rw_init_sigma = rep(5, input_list$data$n_fish_fleets),
                              ret_sel_nonpar_est_bins,
                              ...
 ) {
@@ -132,6 +166,11 @@ Setup_Mod_Retsel <- function(input_list,
   if(!is.null(retsel_pe_pars_spec)) if(length(retsel_pe_pars_spec) != input_list$data$n_fish_fleets) stop("retsel_pe_pars_spec is not length n_fish_fleets")
   if(!is.null(ret_sel_devs_spec)) if(length(ret_sel_devs_spec) != input_list$data$n_fish_fleets) stop("ret_sel_devs_spec is not length n_fish_fleets")
   if(!is.null(ret_sel_corr_opt_semipar)) if(length(ret_sel_corr_opt_semipar) != input_list$data$n_fish_fleets) stop("ret_sel_corr_opt_semipar is not length n_fish_fleets")
+
+  # A short vector here is read per fleet in the objective, so a length mismatch
+  # silently becomes NA rather than being recycled.
+  if(length(retsel_pe_wt) != input_list$data$n_fish_fleets) stop("retsel_pe_wt is not length n_fish_fleets")
+  if(length(retsel_rw_init_sigma) != input_list$data$n_fish_fleets) stop("retsel_rw_init_sigma is not length n_fish_fleets")
 
   # Selectivity Priors
   if(!Use_ret_selex_prior %in% c(0,1)) stop("Values for Use_ret_selex_prior are not valid. They are == 0 (don't use prior), or == 1 (use prior)")
@@ -228,7 +267,7 @@ Setup_Mod_Retsel <- function(input_list,
   for(f in 1:input_list$data$n_fish_fleets) collect_message(paste("Retained Fishery Selectivity Time Blocks for fishery", f, "is specified at:", length(unique(ret_sel_blocks_arr[,,f]))))
 
   # Retained Selectivity Functional Forms --------------------------------------------
-  sel_map <- data.frame(sel = c('logist1', "gamma", "exponential", "logist2", "dbnrml", 'nonpar', 'asymplogist1', "asymplogist2", "bicubic"), num = c(0,1,2,3,4,5,6,7,8)) # set up values we can map to
+  sel_map <- data.frame(sel = c('logist1', "gamma", "exponential", "logist2", "dbnrml", 'nonpar', 'asymplogist1', "asymplogist2", "bicubic", "nonparlog"), num = c(0,1,2,3,4,5,6,7,8,9)) # set up values we can map to
   ret_sel_model_arr <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets))
   ret_sel_bicubic_binnodes_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets)) # number of bin nodes, only set where ret_sel_model == 8 (bicubic)
   ret_sel_bicubic_yrnodes_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets)) # number of year nodes, only set where ret_sel_model == 8 (bicubic)
@@ -315,10 +354,16 @@ Setup_Mod_Retsel <- function(input_list,
   input_list$data$ret_sel_bicubic_selstyr <- ret_sel_bicubic_selstyr_arr
   input_list$data$ret_sel_bicubic_nselbins <- ret_sel_bicubic_nselbins_arr
   input_list$data$Use_ret_selex_prior <- Use_ret_selex_prior
-  input_list$data$ret_selex_prior <- ret_selex_prior
+  input_list$data$ret_selex_prior <- validate_selex_prior_types(ret_selex_prior, Use_ret_selex_prior, "ret_selex_prior",
+                                                                sel_blocks = ret_sel_blocks_arr, n_bins = bins)
   input_list$data$ret_selex_type <- ret_selex_type
   input_list$data$use_fixed_ret_sel <- use_fixed_ret_sel
   input_list$data$ret_sel_input <- ret_sel_input
+  input_list$data$retsel_pe_wt <- retsel_pe_wt
+  input_list$data$retsel_rw_init_sigma <- retsel_rw_init_sigma
+  input_list <- setup_sel_bin_devs(input_list, ret_sel_bin_dev_bins, cont_tv_retsel_bin_devs,
+                                   prefix = "ret", n_fleets = input_list$data$n_fish_fleets,
+                                   bins = bins, starting_values = starting_values)
   input_list$data$retsel_devs_min_shared_bins <- if(!is.null(retsel_devs_shared_bins)) unlist(lapply(retsel_devs_shared_bins, min)) else 1:length(input_list$data$ages)
 
   # Populate Parameter List -------------------------------------------------
@@ -331,7 +376,7 @@ Setup_Mod_Retsel <- function(input_list,
     if(unique_retsel_vals[i] %in% c(2)) sel_pars_vec[i] <- 1 # exponential
     if(unique_retsel_vals[i] %in% c(0,1,3)) sel_pars_vec[i] <- 2 # logistic or gamma
     if(unique_retsel_vals[i] %in% c(4)) sel_pars_vec[i] <- 6 # double normal
-    if(unique_retsel_vals[i] == 5) sel_pars_vec[i] <- bins # non-parametric
+    if(unique_retsel_vals[i] %in% c(5,9)) sel_pars_vec[i] <- bins # non-parametric
     if(unique_retsel_vals[i] %in% c(6,7)) sel_pars_vec[i] <- 3 # logistic w/ asymptote parameter
     if(unique_retsel_vals[i] == 8) sel_pars_vec[i] <- max(input_list$data$ret_sel_bicubic_binnodes * input_list$data$ret_sel_bicubic_yrnodes) # bicubic: flattened bin-node x year-node grid
   } # end i loop
@@ -516,6 +561,18 @@ Setup_Mod_Retsel <- function(input_list,
 #'   Required when any fleet has continuous time-variation. See
 #'   \code{\link{do_sel_devs_mapping}} for all options including age-sharing
 #'   options for semi-parametric forms.
+#' @param Use_fish_selex_penalty Integer (0/1). Whether a centering penalty is
+#'   applied to sets of fishery selectivity fixed-effect parameters. Default
+#'   \code{0}.
+#' @param fish_selex_penalty Data frame of centering penalty specifications,
+#'   required when \code{Use_fish_selex_penalty = 1}. Required columns:
+#'   \code{region}, \code{fleet}, \code{block}, \code{sex}, \code{par}, and
+#'   \code{wt}. Each row penalizes \code{wt * (log(mean(exp(pars))))^2} over the
+#'   set of parameters named in \code{par}, which may be a single index or a
+#'   list column of integer vectors naming a whole set. This pins the scalar of
+#'   a non-parametric curve that catchability or fishing mortality would
+#'   otherwise absorb, and is softer than fixing a bin outright. Intended for
+#'   parameter sets held on the log scale. Default \code{NULL}.
 #' @param fishsel_devs_shared_bins List of integer vectors grouping age or length
 #'   bins that share a single deviation series. Only used when
 #'   \code{fish_sel_devs_spec} contains one of the \code{"est_shared_b"} variants.
@@ -525,6 +582,50 @@ Setup_Mod_Retsel <- function(input_list,
 #'   (3D GMRF or 2D AR1) time-varying selectivity. Set to \code{NA} (default)
 #'   for no suppression. See \code{\link{do_sel_pe_pars_mapping}} for valid
 #'   suppression codes. Cohort-correlation options are invalid for \code{"2dar1"}.
+#' @param fish_q_type Character vector of length \code{n_fish_fleets} controlling
+#'   how catchability is obtained. \code{"est"} (default) estimates
+#'   \code{ln_fish_q}. \code{"arith"} concentrates it out of the likelihood as
+#'   the ratio of mean observed to mean predicted index, and \code{"geo"} does
+#'   the same on the log scale as \code{exp(mean(log(obs) - log(pred)))}. Both
+#'   analytic forms solve one catchability per region and fleet using only the
+#'   years with observations, ignore any block structure, and fix that fleet's
+#'   \code{ln_fish_q} regardless of \code{fish_q_spec}.
+#' @param fish_q_formula Named list of one-sided formulas, one element per fleet
+#'   requiring catchability covariates, referencing series in
+#'   \code{fish_q_cov_dat}. \code{NULL} (default) excludes covariate effects.
+#' @param fish_q_cov_dat Named list of numeric vectors (length =
+#'   \code{n_years}) containing the covariate time series referenced in
+#'   \code{fish_q_formula}. All vectors must be the same length and contain no
+#'   missing values; set values to \code{0} for years when the fishery index is
+#'   not active. Default \code{NULL}.
+#' @param fishsel_pe_wt Numeric vector of length \code{n_fish_fleets}. Per-fleet
+#'   multiplier on the fishery selectivity process error likelihood. Default
+#'   \code{1} for every fleet. \code{0} skips that fleet's process error
+#'   likelihood altogether, so the deviations stay estimated but enter the
+#'   objective only through the data and any explicit smoothness or centering
+#'   penalties, which is how several existing assessments constrain them. Values
+#'   other than 0 or 1 make an estimated process error sigma reinterpretable, so
+#'   prefer 0 or 1 unless deliberately down-weighting. Applies only to
+#'   \code{ln_fishsel_devs}; the bin-override deviations carry their own process
+#'   error and are not affected.
+#' @param fishsel_rw_init_sigma Numeric vector of length \code{n_fish_fleets}.
+#'   Standard deviation given to the first year of an \code{"rw"} deviation
+#'   series. Default \code{5}, which leaves that year effectively free.
+#'   \code{NA} instead starts the walk at zero under the walk's own estimated
+#'   sigma, making the first year as smooth as every later step. Appropriate when
+#'   the base parametric curve already describes the first year well.
+#' @param fish_sel_bin_dev_bins List with one element per fishery fleet naming
+#'   the bins that fleet overrides, or \code{NULL} for fleets with no overrides
+#'   (e.g. \code{list(1, NULL)} frees bin 1 of fleet 1 only). An overridden bin
+#'   takes a freely estimated annual value \eqn{\exp(\epsilon_{y,b})} in place of
+#'   whatever the functional form produced, applied after every other
+#'   transformation including standardization. The rest of the curve keeps its
+#'   parametric shape. Default \code{NULL}.
+#' @param cont_tv_fishsel_bin_devs Character vector of length
+#'   \code{n_fish_fleets} giving the process error on the bin-override
+#'   deviations for each fleet: \code{"none"} (default), \code{"iid"}, or
+#'   \code{"rw"}. A random walk carries its own estimated sigma per bin, with
+#'   \code{fishsel_bin_devs_rw_init_sigma} governing its first year.
 #' @param Use_fish_q_prior Integer flag. \code{1} = apply lognormal priors to
 #'   catchability; \code{0} = no priors (default). Requires \code{fish_q_prior}.
 #' @param fish_q_prior Data frame of catchability prior hyperparameters. Required
@@ -535,10 +636,21 @@ Setup_Mod_Retsel <- function(input_list,
 #' @param Use_fish_selex_prior Integer flag. \code{1} = apply lognormal priors to
 #'   selectivity parameters; \code{0} = no priors (default). Requires
 #'   \code{fish_selex_prior}.
-#' @param fish_selex_prior Data frame of selectivity prior hyperparameters.
-#'   Required columns: \code{region}, \code{fleet}, \code{block}, \code{sex},
-#'   \code{par} (parameter index within the functional form), \code{mu}, \code{sd}.
-#'   Only used when \code{Use_fish_selex_prior = 1}.
+#' @param fish_selex_prior Data frame of selectivity prior hyperparameters, one
+#'   row per prior. Required columns: \code{region}, \code{fleet},
+#'   \code{block}, \code{sex}, \code{par} (parameter index within the
+#'   functional form), \code{mu}, \code{sd}, plus an optional \code{type}
+#'   giving each row's target: \code{"par"} (the default when the column is
+#'   absent) is a lognormal prior on one fixed selectivity parameter, with
+#'   \code{mu} on the natural scale and \code{sd} on the log scale;
+#'   \code{"value"} is a normal prior on the realized selectivity value at one
+#'   bin, with both on the natural scale, where \code{par} instead names the
+#'   bin (on ages or lengths per \code{fish_selex_type}) and the value is read
+#'   at the first model year of \code{block}. A \code{"value"} row constrains
+#'   the derived selectivity value rather than the parameters, matching the
+#'   ADMB convention of pinning selectivity at a reference age near one, which
+#'   no set of independent parameter priors can express. Only used when
+#'   \code{Use_fish_selex_prior = 1}.
 #' @param ... Optional starting value overrides for selectivity parameters.
 #' @param cont_tv_ret_sel Character vector of length \code{n_fish_fleets}
 #'   specifying continuous time-varying selectivity per fleet. Each element
@@ -609,6 +721,19 @@ Setup_Mod_Retsel <- function(input_list,
 #'   \code{ret_sel_devs_spec} contains one of the \code{"est_shared_b"} variants.
 #'   Example: \code{list(1:5, 6:10, 11:30)}.
 #'
+#' @param retsel_pe_wt Numeric vector of length \code{n_fish_fleets}. Per-fleet
+#'   multiplier on the retention selectivity process error likelihood, the
+#'   retention counterpart of \code{fishsel_pe_wt}. Default \code{1} for every
+#'   fleet, and \code{0} skips that fleet's process error likelihood so its
+#'   deviations stay estimated but are constrained only by the data and any
+#'   explicit smoothness or centering penalties.
+#'
+#' @param retsel_rw_init_sigma Numeric vector of length \code{n_fish_fleets}.
+#'   Standard deviation given to the first year of an \code{"rw"} retention
+#'   deviation series, the retention counterpart of
+#'   \code{fishsel_rw_init_sigma}. Default \code{5}; \code{NA} instead starts
+#'   the walk at zero under the walk's own estimated sigma.
+#'
 #' @param ret_sel_corr_opt_semipar Character vector of length \code{n_fish_fleets}
 #'   controlling which correlation components to suppress in semi-parametric
 #'   (3D GMRF or 2D AR1) time-varying selectivity. Set to \code{NA} (default)
@@ -621,7 +746,8 @@ Setup_Mod_Retsel <- function(input_list,
 #'
 #' @param ret_selex_prior Data frame of selectivity prior hyperparameters.
 #'   Required columns: \code{region}, \code{fleet}, \code{block}, \code{sex},
-#'   \code{par}, \code{mu}, \code{sd}.
+#'   \code{par}, \code{mu}, \code{sd}, plus an optional \code{type}
+#'   (\code{"par"}/\code{"value"}; see \code{fish_selex_prior}).
 #'
 #' @param use_fixed_ret_sel Integer vector of length \code{n_fish_fleets}
 #'   indicating whether to fix selectivity (\code{1}) or estimate it (\code{0}).
@@ -684,6 +810,9 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
                                     Use_fish_q_prior = 0,
                                     fish_q_prior = NA,
                                     fish_q_blocks = paste("none_Fleet_", 1:input_list$data$n_fish_fleets, sep = ''),
+                                    fish_q_type = rep("est", input_list$data$n_fish_fleets),
+                                    fish_q_cov_dat = NULL,
+                                    fish_q_formula = NULL,
                                     fishsel_pe_pars_spec = NULL,
                                     fish_fixed_sel_pars_spec = NULL,
                                     fish_q_spec = NULL,
@@ -691,6 +820,12 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
                                     corr_opt_semipar = NULL,
                                     Use_fish_selex_prior = 0,
                                     fish_selex_prior = NULL,
+                                    Use_fish_selex_penalty = 0,
+                                    fish_sel_bin_dev_bins = NULL,
+                                    fishsel_pe_wt = rep(1, input_list$data$n_fish_fleets),
+                                    fishsel_rw_init_sigma = rep(5, input_list$data$n_fish_fleets),
+                                    cont_tv_fishsel_bin_devs = rep("none", input_list$data$n_fish_fleets),
+                                    fish_selex_penalty = NULL,
                                     fishsel_devs_shared_bins = NULL,
                                     fish_selex_type = 'age',
                                     use_fixed_fish_sel = rep(0, input_list$data$n_fish_fleets),
@@ -708,6 +843,8 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
                                     Use_ret_selex_prior = 0,
                                     ret_selex_prior = NULL,
                                     retsel_devs_shared_bins = NULL,
+                                    retsel_pe_wt = rep(1, input_list$data$n_fish_fleets),
+                                    retsel_rw_init_sigma = rep(5, input_list$data$n_fish_fleets),
                                     ret_selex_type = 'age',
                                     use_fixed_ret_sel = rep(1, input_list$data$n_fish_fleets),
                                     ret_sel_input = array(1, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, length(input_list$data$ages), input_list$data$n_sexes, input_list$data$n_fish_fleets )),
@@ -727,6 +864,11 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
   if(!is.null(fish_sel_devs_spec)) if(length(fish_sel_devs_spec) != input_list$data$n_fish_fleets) stop("fish_sel_devs_spec is not length n_fish_fleets")
   if(!is.null(corr_opt_semipar)) if(length(corr_opt_semipar) != input_list$data$n_fish_fleets) stop("corr_opt_semipar is not length n_fish_fleets")
 
+  # A short vector here is read per fleet in the objective, so a length mismatch
+  # silently becomes NA rather than being recycled.
+  if(length(fishsel_pe_wt) != input_list$data$n_fish_fleets) stop("fishsel_pe_wt is not length n_fish_fleets")
+  if(length(fishsel_rw_init_sigma) != input_list$data$n_fish_fleets) stop("fishsel_rw_init_sigma is not length n_fish_fleets")
+
   # Catchability Priors
   if(!Use_fish_q_prior %in% c(0,1)) stop("Values for Use_fish_q_prior are not valid. They are == 0 (don't use prior), or == 1 (use prior)")
   # Checking catchability priors
@@ -738,6 +880,15 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
     }
   }
   collect_message("Fishery Catchability priors are: ", ifelse(Use_fish_q_prior == 0, "Not Used", "Used"))
+
+  # Fishery catchability type, mirroring srv_q_type. "est" estimates ln_fish_q;
+  # "arith" and "geo" concentrate it out of the likelihood, solving it from the
+  # observed and predicted index over the years with observations. A concentrated
+  # fleet's ln_fish_q is never read, so it should also be mapped off.
+  if(!all(fish_q_type %in% c("est", "arith", "geo"))) stop("Invalid specification for fish_q_type. Should be one of est, arith, or geo.")
+  if(length(fish_q_type) != input_list$data$n_fish_fleets) stop("fish_q_type is not length n_fish_fleets")
+  fish_q_type_val <- match(fish_q_type, c("est", "arith", "geo")) - 1
+  for(f in 1:input_list$data$n_fish_fleets) collect_message(paste0("Fishery Catchability for fishery ", f, " is: ", fish_q_type[f]))
 
   # Selectivity Priors
   if(!Use_fish_selex_prior %in% c(0,1)) stop("Values for Use_fish_selex_prior are not valid. They are == 0 (don't use prior), or == 1 (use prior)")
@@ -834,7 +985,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
   for(f in 1:input_list$data$n_fish_fleets) collect_message(paste("Fishery Selectivity Time Blocks for fishery", f, "is specified at:", length(unique(fish_sel_blocks_arr[,,f]))))
 
   # Selectivity Functional Forms --------------------------------------------
-  sel_map <- data.frame(sel = c('logist1', "gamma", "exponential", "logist2", "dbnrml", 'nonpar', 'asymplogist1', "asymplogist2", "bicubic"), num = c(0,1,2,3,4,5,6,7,8)) # set up values we can map to
+  sel_map <- data.frame(sel = c('logist1', "gamma", "exponential", "logist2", "dbnrml", 'nonpar', 'asymplogist1', "asymplogist2", "bicubic", "nonparlog"), num = c(0,1,2,3,4,5,6,7,8,9)) # set up values we can map to
   fish_sel_model_arr <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets))
   fish_sel_bicubic_binnodes_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets)) # number of bin nodes, only set where fish_sel_model == 8 (bicubic)
   fish_sel_bicubic_yrnodes_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets)) # number of year nodes, only set where fish_sel_model == 8 (bicubic)
@@ -957,11 +1108,70 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
   input_list$data$fish_sel_bicubic_yrnodes <- fish_sel_bicubic_yrnodes_arr
   input_list$data$fish_sel_bicubic_selstyr <- fish_sel_bicubic_selstyr_arr
   input_list$data$fish_sel_bicubic_nselbins <- fish_sel_bicubic_nselbins_arr
+  # Catchability covariate containers, mirroring the survey
+  if(!is.null(fish_q_cov_dat) && !is.null(fish_q_formula)) {
+    n_fish_q_cov <- max(sapply(names(fish_q_formula), function(key) {
+      tmp_formula <- fish_q_formula[[key]]
+      var_names <- all.vars(tmp_formula)
+      tmp_dat <- data.frame(fish_q_cov_dat[var_names])
+      ncol(model.matrix(tmp_formula, data = tmp_dat))
+    }))
+  } else {
+    do_fish_q_cov <- 0
+    n_fish_q_cov <- 1 # dummy to initialize the array
+  }
+
+  fish_q_cov <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets, n_fish_q_cov)) # environmental time series
+  fish_q_coeff <- array(0, dim = c(input_list$data$n_regions, input_list$data$n_fish_fleets, n_fish_q_cov)) # coefficients to be estimated
+  map_fish_q_coeff <- array(NA, dim = c(input_list$data$n_regions, input_list$data$n_fish_fleets, n_fish_q_cov)) # coefficients to be mapped off
+
+  if(!is.null(fish_q_cov_dat) && !is.null(fish_q_formula)) {
+
+    cov_lengths <- lengths(fish_q_cov_dat)
+    if (length(unique(cov_lengths)) != 1) stop("All covariates in 'fish_q_cov_dat' must have the same length. If some years are missing data, either impute some value, or set at 0 (if it is not used in the calculation).")
+    if (unique(cov_lengths) != length(input_list$data$years)) stop(paste0("Covariate length mismatch: expected ",  length(input_list$data$years),  " years but got ", unique(cov_lengths),  "."))
+
+    do_fish_q_cov <- 1
+    coeff_counter <- 0
+
+    for(r in 1:input_list$data$n_regions) {
+      for(f in 1:input_list$data$n_fish_fleets) {
+
+        key <- paste(paste("Region", r, sep = "_"), "_Fleet_", f, sep = "")
+        tmp_formula <- fish_q_formula[[key]]
+        var_names <- all.vars(tmp_formula)
+        if(length(var_names) == 0) next
+        tmp_dat <- data.frame(fish_q_cov_dat[var_names])
+        tmp_design_mat <- model.matrix(tmp_formula, data = tmp_dat)
+        fish_q_cov[r,,f,1:ncol(tmp_design_mat)] <- tmp_design_mat
+
+        for(i in 1:ncol(tmp_design_mat)) {
+          coeff_counter <- coeff_counter + 1
+          map_fish_q_coeff[r,f,i] <- coeff_counter
+        } # end i loop
+
+      } # end f loop
+    } # end r loop
+  } # if using covariates
+
+  input_list$data$fish_q_type <- fish_q_type_val
+  input_list$data$do_fish_q_cov <- do_fish_q_cov
+  input_list$data$fish_q_cov <- fish_q_cov
+  input_list$par$fish_q_coeff <- fish_q_coeff
+  input_list$map$fish_q_coeff <- factor(map_fish_q_coeff)
   input_list$data$fish_q_blocks <- fish_q_blocks_arr
   input_list$data$fish_q_prior <- fish_q_prior
   input_list$data$Use_fish_q_prior <- Use_fish_q_prior
   input_list$data$Use_fish_selex_prior <- Use_fish_selex_prior
-  input_list$data$fish_selex_prior <- fish_selex_prior
+  input_list$data$fish_selex_prior <- validate_selex_prior_types(fish_selex_prior, Use_fish_selex_prior, "fish_selex_prior",
+                                                                 sel_blocks = fish_sel_blocks_arr, n_bins = bins)
+  input_list$data$Use_fish_selex_penalty <- Use_fish_selex_penalty
+  input_list$data$fishsel_pe_wt <- fishsel_pe_wt
+  input_list$data$fishsel_rw_init_sigma <- fishsel_rw_init_sigma
+  input_list <- setup_sel_bin_devs(input_list, fish_sel_bin_dev_bins, cont_tv_fishsel_bin_devs,
+                                   prefix = "fish", n_fleets = input_list$data$n_fish_fleets,
+                                   bins = bins, starting_values = starting_values)
+  input_list$data$fish_selex_penalty <- validate_selex_penalty(fish_selex_penalty, Use_fish_selex_penalty, "fish_selex_penalty")
   input_list$data$fish_selex_type <- fish_selex_type
   input_list$data$use_fixed_fish_sel <- use_fixed_fish_sel
   input_list$data$fish_sel_input <- fish_sel_input
@@ -977,7 +1187,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
     if(unique_fishsel_vals[i] %in% c(2)) sel_pars_vec[i] <- 1 # exponential
     if(unique_fishsel_vals[i] %in% c(0,1,3)) sel_pars_vec[i] <- 2 # logistic or gamma
     if(unique_fishsel_vals[i] %in% c(4)) sel_pars_vec[i] <- 6 # double normal
-    if(unique_fishsel_vals[i] == 5) sel_pars_vec[i] <- bins # non-parametric selex
+    if(unique_fishsel_vals[i] %in% c(5,9)) sel_pars_vec[i] <- bins # non-parametric selex
     if(unique_fishsel_vals[i] %in% c(6,7)) sel_pars_vec[i] <- 3 # logistic selex w/ asymptote
     if(unique_fishsel_vals[i] == 8) sel_pars_vec[i] <- max(input_list$data$fish_sel_bicubic_binnodes * input_list$data$fish_sel_bicubic_yrnodes) # bicubic: flattened bin-node x year-node grid
   } # end i loop
@@ -1100,6 +1310,8 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
                                  Use_ret_selex_prior = Use_ret_selex_prior,
                                  ret_selex_prior = ret_selex_prior,
                                  retsel_devs_shared_bins = retsel_devs_shared_bins,
+                                 retsel_pe_wt = retsel_pe_wt,
+                                 retsel_rw_init_sigma = retsel_rw_init_sigma,
                                  ret_selex_type = ret_selex_type,
                                  use_fixed_ret_sel = use_fixed_ret_sel,
                                  ret_sel_input = ret_sel_input,

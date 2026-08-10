@@ -40,8 +40,8 @@ jnLL_terms <- list(
   conv_fish_tag_nLL            = list(weight = "Wt_Tagging", mode = "scalar"),
   Fmort_nLL                    = list(weight = "Wt_F",       mode = "scalar"),
   dmr_nLL                      = list(weight = "Wt_D",       mode = "scalar"),
-  Rec_nLL                      = list(weight = "Wt_Rec",     mode = "scalar"),
-  Init_Rec_nLL                 = list(weight = "Wt_Init_Rec", fallback = "Wt_Rec", mode = "scalar"),
+  Rec_nLL                      = list(weight = "Wt_Rec",     mode = "elementwise"),
+  Init_Rec_nLL                 = list(weight = "Wt_Init_Rec", fallback = "Wt_Rec", mode = "elementwise"),
   Rec_level_nLL                = list(weight = NA,          mode = "scalar"),
 
   sel_nLL                      = list(weight = NA, mode = "scalar"),
@@ -103,6 +103,15 @@ jnLL_contributions <- function(model) {
     spec$weight <- wt_name
 
     contribution <- if(spec$mode == "elementwise") sum(wt * component) else wt * sum(component)
+
+    # Every term contributes one number to jnLL. More than one means the mode
+    # recorded above is wrong for this weight's shape: "scalar" against an array
+    # weight returns one value per weight element, which data.frame() would then
+    # recycle into one row per element and count the component many times over.
+    if(length(contribution) != 1)
+      stop("'", nm, "' resolved to ", length(contribution), " contributions rather than one. Its mode in jnLL_terms is '",
+           spec$mode, "' but '", wt_name, "' has length ", length(wt),
+           ", so check how ", nm, " enters the jnLL sum in R/model_objective.R.")
 
     data.frame(component = nm,
                weight = if(is.na(spec$weight[1])) NA_character_ else spec$weight,

@@ -151,23 +151,9 @@ test_that("convert_to_numeric rejects a bad label inside a character array", {
   expect_error(SPoRC:::convert_to_numeric(x, lookup), "typo")
 })
 
-test_that("resolve_sel_pen_wts defaults every term to zero", {
-  out <- SPoRC:::resolve_sel_pen_wts(NULL)
-  expect_length(out, 6)
-  expect_true(all(out == 0))
-  expect_setequal(names(out),
-                  c("smooth_bin_curve", "smooth_bin_diff", "smooth_yr_diff",
-                    "smooth_yr_curve", "smooth_dome", "smooth_mean_center"))
-})
-
-test_that("resolve_sel_pen_wts fills supplied terms and zeroes the rest", {
-  out <- SPoRC:::resolve_sel_pen_wts(c(smooth_dome = 2.5, smooth_yr_diff = 1))
-  expect_equal(unname(out[["smooth_dome"]]), 2.5)
-  expect_equal(unname(out[["smooth_yr_diff"]]), 1)
-  expect_equal(unname(out[["smooth_bin_curve"]]), 0)
-  expect_length(out, 6)
-})
-
+# resolve_sel_pen_wts returns one specification per fleet. The contents of each
+# specification are covered in test-setup_weighting_selex_penalties.R; what is
+# checked here is only the input validation shared with the other helpers.
 test_that("resolve_sel_pen_wts rejects unnamed or misspelled terms", {
   expect_error(SPoRC:::resolve_sel_pen_wts(c(1, 2)), "named numeric")
   expect_error(SPoRC:::resolve_sel_pen_wts(c(smooth_dom = 1)), "named numeric")

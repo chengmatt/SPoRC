@@ -30,7 +30,6 @@ These check a property rather than a stored number, so a failure tells you what 
 These assert against stored numeric vectors:
 
 - `test-regression_dusky.R`
-- `test-regression_ebs_pollock_nonparsel.R`
 - `test-regression_ebs_pollock_sgl.R`
 - `test-regression_sabie_sgl.R`
 - `test-regression_sabie_three_rg.R`

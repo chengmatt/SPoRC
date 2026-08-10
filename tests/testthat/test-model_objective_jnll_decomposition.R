@@ -44,6 +44,20 @@ test_that("expect_jnLL_decomposes fails on a decomposition that does not hold", 
 })
 
 
+test_that("a term that resolves to more than one contribution is an error, not extra rows", {
+  baseline <- evaluate_at_mle(dusky_rtmb_model$data)
+
+  # Wt_F is a scalar-mode term, so an array weight makes Wt_F * sum(Fmort_nLL)
+  # return one value per weight element. Without the length check those become one
+  # row each and the component is counted once per element, which reads as a
+  # decomposition that misses by a multiple of itself rather than as a wrong mode.
+  vector_weight <- baseline
+  vector_weight$data$Wt_F <- c(1, 1)
+  expect_error(jnLL_contributions(vector_weight), "Fmort_nLL")
+  expect_error(jnLL_contributions(vector_weight), "scalar")
+})
+
+
 test_that("each likelihood weight scales its own component and leaves the rest untouched", {
   baseline <- evaluate_at_mle(dusky_rtmb_model$data)
   contributions <- jnLL_contributions(baseline)

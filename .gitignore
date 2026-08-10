@@ -3,13 +3,21 @@
 .RData
 .Ruserdata
 .DS_Store
+
+# Build artifacts
 inst/doc
 /doc/
 /Meta/
-/dev/dev_output/CTMC
-/dev/spatial_plus_group
-/dev/spatial_movement_ctmc
-/dev/old
-/dev/scratch
-/dev/sporc_manuscript_demonstrations
 docs
+
+# Development scratch and generated output, none of which the package needs.
+# dev/dev_output is otherwise tracked, so only the regenerable bridge fits are
+# ignored there.
+/dev/scratch
+/dev/dev_output/*_bridge.rds
+/dev/overnight
+/dev/YFT_bridge
+
+# Fitted model objects under paper_projects are regenerable from the scripts
+# that produce them, and are large enough to bloat the pack on every re-run.
+/dev/paper_projects/**/pol_models_re.RDS

@@ -115,7 +115,11 @@ selftest_build_input <- function(sim_data, SrvIdx_LikeType = "lognormal", SrvIdx
     Use_F_pen = 1, sigmaC_spec = "fix", ln_sigmaC = sim_data$ln_sigmaC,
     ln_sigmaF = array(log(1), dim = c(1, 1, 1)),
     ObsDiscard = sim_data$ObsDiscard, UseDiscard = sim_data$UseDiscard,
-    sigma_dmr_spec = "fix", dmr_mean_spec = "est_all", ln_sigmaD = sim_data$ln_sigmaD))
+    # the operating model carries no discard data, so an estimated dmr mean is
+    # unidentified and puts an exactly zero row in the Hessian. That makes the
+    # Newton refinement's solve() fail, leaving the fit wherever nlminb stopped
+    # and the gradient check platform dependent, so dmr stays fixed here
+    sigma_dmr_spec = "fix", dmr_mean_spec = "fix", ln_sigmaD = sim_data$ln_sigmaD))
   input_list <- Setup_Mod_FishIdx_and_Comps(
     input_list = input_list,
     ObsFishIdx = sim_data$ObsFishIdx, ObsFishIdx_SE = sim_data$ObsFishIdx_SE,

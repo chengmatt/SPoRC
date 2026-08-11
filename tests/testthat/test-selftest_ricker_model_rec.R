@@ -23,9 +23,9 @@ test_that("Ricker recruitment recovers SSB, recruitment, R0, and steepness", {
                       what = c("SSB", "Rec", "R0", "h_trans"),
                       sim_recruitment = "model", seed = 105)
 
-  expect_lt(abs(out$summ$SSB[["median_RE"]]), 0.02)
-  expect_lt(abs(out$summ$Rec[["median_RE"]]), 0.02)
-  expect_lt(abs(out$summ$R0[["median_RE"]]), 0.02)
-  expect_lt(abs(out$summ$h_trans[["median_RE"]]), 0.02)
+  expect_lt(abs(out$summ$SSB[["median_RE"]]), 0.01)
+  expect_lt(abs(out$summ$Rec[["median_RE"]]), 0.01)
+  expect_lt(abs(out$summ$R0[["median_RE"]]), 0.01)
+  expect_lt(abs(out$summ$h_trans[["median_RE"]]), 0.01)
 
 })

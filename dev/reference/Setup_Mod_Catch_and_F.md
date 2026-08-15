@@ -28,7 +28,6 @@ Setup_Mod_Catch_and_F(
   Fdev_model = "iid",
   Fdev_pen_center = "fixed",
   Fdev_rho_spec = "fix",
-  ln_F_mean_spec = "est",
   ObsDiscard = NULL,
   UseDiscard = array(0, dim = c(input_list$data$n_regions, length(input_list$data$years),
     input_list$data$n_seas, input_list$data$n_fish_fleets)),
@@ -43,7 +42,8 @@ Setup_Mod_Catch_and_F(
   sigma_dmr_spec = "fix",
   dmr_mean_spec = "fix",
   dmr_dev_spec = "fix",
-  ...
+  ...,
+  ln_F_mean_spec = "est"
 )
 ```
 
@@ -178,21 +178,6 @@ Setup_Mod_Catch_and_F(
   `sigmaF_spec`. Only used when `Fdev_model = "ar1"`; ignored (and
   mapped entirely to `NA`) otherwise.
 
-- ln_F_mean_spec:
-
-  Character string, `"est"` (default, the previous and only behaviour)
-  or `"fix"`. `"fix"` maps `ln_F_mean` off at its starting value, which
-  defaults to `0` under this spec unless supplied through `...`, so the
-  deviations carry all of log fishing mortality: `F = exp(ln_F_devs)`,
-  where it follows a free annual log-F parameterization. It must be
-  paired with `Fdev_pen_center = "own_mean"` (penalize only the spread
-  about the deviations' own mean), `Fdev_model = "rw"`, or
-  `Use_F_pen = 0`: an `"iid"` or `"ar1"` penalty centred on a fixed zero
-  mean would shrink the deviations toward `F = 1`, so that combination
-  is rejected at setup. `"est"` keeps the mean-plus-deviations form,
-  where the `"iid"` penalty shrinks each year toward the estimated
-  average F.
-
 - ObsDiscard:
 
   Observed aggregated discard array
@@ -285,6 +270,21 @@ Setup_Mod_Catch_and_F(
 
   Optional starting value overrides for catch and discard related
   parameters.
+
+- ln_F_mean_spec:
+
+  Character string, matched by exact name only because it sits after
+  `...`. `"est"` (default, the previous and only behaviour) or `"fix"`.
+  `"fix"` maps `ln_F_mean` off at its starting value, which defaults to
+  `0` under this spec unless supplied through `...`, so the deviations
+  carry all of log fishing mortality: `F = exp(ln_F_devs)`, where it
+  follows a free annual log-F parameterization. It must be paired with
+  `Fdev_pen_center = "own_mean"` (penalize only the spread about the
+  deviations' own mean), `Fdev_model = "rw"`, or `Use_F_pen = 0`: an
+  `"iid"` or `"ar1"` penalty centred on a fixed zero mean would shrink
+  the deviations toward `F = 1`, so that combination is rejected at
+  setup. `"est"` keeps the mean-plus-deviations form, where the `"iid"`
+  penalty shrinks each year toward the estimated average F.
 
 ## Value
 

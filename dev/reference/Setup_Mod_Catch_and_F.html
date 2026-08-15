@@ -87,7 +87,6 @@ Must be called after <code><a href="Setup_Mod_Biologicals.html">Setup_Mod_Biolog
 <span>  Fdev_model <span class="op">=</span> <span class="st">"iid"</span>,</span>
 <span>  Fdev_pen_center <span class="op">=</span> <span class="st">"fixed"</span>,</span>
 <span>  Fdev_rho_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
-<span>  ln_F_mean_spec <span class="op">=</span> <span class="st">"est"</span>,</span>
 <span>  ObsDiscard <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  UseDiscard <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>,</span>
 <span>    <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -102,7 +101,8 @@ Must be called after <code><a href="Setup_Mod_Biologicals.html">Setup_Mod_Biolog
 <span>  sigma_dmr_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
 <span>  dmr_mean_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
 <span>  dmr_dev_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
-<span>  <span class="va">...</span></span>
+<span>  <span class="va">...</span>,</span>
+<span>  ln_F_mean_spec <span class="op">=</span> <span class="st">"est"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -242,21 +242,6 @@ convention as <code>sigmaF_spec</code>. Only used when <code>Fdev_model =
 "ar1"</code>; ignored (and mapped entirely to <code>NA</code>) otherwise.</p></dd>
 
 
-<dt id="arg-ln-f-mean-spec">ln_F_mean_spec<a class="anchor" aria-label="anchor" href="#arg-ln-f-mean-spec"></a></dt>
-<dd><p>Character string, <code>"est"</code> (default, the previous
-and only behaviour) or <code>"fix"</code>. <code>"fix"</code> maps <code>ln_F_mean</code>
-off at its starting value, which defaults to <code>0</code> under this spec
-unless supplied through <code>...</code>, so the deviations carry all of log
-fishing mortality: <code>F = exp(ln_F_devs)</code>, where it follows a free annual log-F
-parameterization. It must be paired with <code>Fdev_pen_center = "own_mean"</code>
-(penalize only the spread about the deviations' own mean),
-<code>Fdev_model = "rw"</code>, or <code>Use_F_pen = 0</code>: an <code>"iid"</code> or
-<code>"ar1"</code> penalty centred on a fixed zero mean would shrink the
-deviations toward <code>F = 1</code>, so that combination is rejected at setup.
-<code>"est"</code> keeps the mean-plus-deviations form, where the <code>"iid"</code>
-penalty shrinks each year toward the estimated average F.</p></dd>
-
-
 <dt id="arg-obsdiscard">ObsDiscard<a class="anchor" aria-label="anchor" href="#arg-obsdiscard"></a></dt>
 <dd><p>Observed aggregated discard array
 <code>[n_regions x n_years x n_seas x n_fish_fleets]</code>.
@@ -350,6 +335,22 @@ deviation in every fished cell; requires <code>Use_dmr_pen = 1</code>. See
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Optional starting value overrides for catch and discard related parameters.</p></dd>
+
+
+<dt id="arg-ln-f-mean-spec">ln_F_mean_spec<a class="anchor" aria-label="anchor" href="#arg-ln-f-mean-spec"></a></dt>
+<dd><p>Character string, matched by exact name only because it
+sits after <code>...</code>. <code>"est"</code> (default, the previous
+and only behaviour) or <code>"fix"</code>. <code>"fix"</code> maps <code>ln_F_mean</code>
+off at its starting value, which defaults to <code>0</code> under this spec
+unless supplied through <code>...</code>, so the deviations carry all of log
+fishing mortality: <code>F = exp(ln_F_devs)</code>, where it follows a free annual log-F
+parameterization. It must be paired with <code>Fdev_pen_center = "own_mean"</code>
+(penalize only the spread about the deviations' own mean),
+<code>Fdev_model = "rw"</code>, or <code>Use_F_pen = 0</code>: an <code>"iid"</code> or
+<code>"ar1"</code> penalty centred on a fixed zero mean would shrink the
+deviations toward <code>F = 1</code>, so that combination is rejected at setup.
+<code>"est"</code> keeps the mean-plus-deviations form, where the <code>"iid"</code>
+penalty shrinks each year toward the estimated average F.</p></dd>
 
 </dl></div>
     <div class="section level2">

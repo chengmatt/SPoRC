@@ -20,7 +20,6 @@ Setup_Mod_Catch_and_F(
   Fdev_model = "iid",
   Fdev_pen_center = "fixed",
   Fdev_rho_spec = "fix",
-  ln_F_mean_spec = "est",
   ObsDiscard = NULL,
   UseDiscard = array(0, dim = c(input_list$data$n_regions, length(input_list$data$years),
     input_list$data$n_seas, input_list$data$n_fish_fleets)),
@@ -35,7 +34,8 @@ Setup_Mod_Catch_and_F(
   sigma_dmr_spec = "fix",
   dmr_mean_spec = "fix",
   dmr_dev_spec = "fix",
-  ...
+  ...,
+  ln_F_mean_spec = "est"
 )
 }
 \arguments{
@@ -145,19 +145,6 @@ the AR1 correlation parameter \code{Fdev_rho}, following the same
 convention as \code{sigmaF_spec}. Only used when \code{Fdev_model =
 "ar1"}; ignored (and mapped entirely to \code{NA}) otherwise.}
 
-\item{ln_F_mean_spec}{Character string, \code{"est"} (default, the previous
-and only behaviour) or \code{"fix"}. \code{"fix"} maps \code{ln_F_mean}
-off at its starting value, which defaults to \code{0} under this spec
-unless supplied through \code{...}, so the deviations carry all of log
-fishing mortality: \code{F = exp(ln_F_devs)}, where it follows a free annual log-F
-parameterization. It must be paired with \code{Fdev_pen_center = "own_mean"}
-(penalize only the spread about the deviations' own mean),
-\code{Fdev_model = "rw"}, or \code{Use_F_pen = 0}: an \code{"iid"} or
-\code{"ar1"} penalty centred on a fixed zero mean would shrink the
-deviations toward \code{F = 1}, so that combination is rejected at setup.
-\code{"est"} keeps the mean-plus-deviations form, where the \code{"iid"}
-penalty shrinks each year toward the estimated average F.}
-
 \item{ObsDiscard}{Observed aggregated discard array
 \code{[n_regions x n_years x n_seas x n_fish_fleets]}.
 Values should be in the units specified by \code{discard_units}.
@@ -228,6 +215,20 @@ deviation in every fished cell; requires \code{Use_dmr_pen = 1}. See
 \code{\link{do_dmr_dev_mapping}} for sharing options.}
 
 \item{...}{Optional starting value overrides for catch and discard related parameters.}
+
+\item{ln_F_mean_spec}{Character string, matched by exact name only because it
+sits after \code{...}. \code{"est"} (default, the previous
+and only behaviour) or \code{"fix"}. \code{"fix"} maps \code{ln_F_mean}
+off at its starting value, which defaults to \code{0} under this spec
+unless supplied through \code{...}, so the deviations carry all of log
+fishing mortality: \code{F = exp(ln_F_devs)}, where it follows a free annual log-F
+parameterization. It must be paired with \code{Fdev_pen_center = "own_mean"}
+(penalize only the spread about the deviations' own mean),
+\code{Fdev_model = "rw"}, or \code{Use_F_pen = 0}: an \code{"iid"} or
+\code{"ar1"} penalty centred on a fixed zero mean would shrink the
+deviations toward \code{F = 1}, so that combination is rejected at setup.
+\code{"est"} keeps the mean-plus-deviations form, where the \code{"iid"}
+penalty shrinks each year toward the estimated average F.}
 }
 \value{
 The input \code{input_list} with \code{$data}, \code{$par}, and

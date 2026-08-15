@@ -41,7 +41,7 @@ osa_squeeze <- function(u) {
 #' @return A plain numeric vector of observed counts.
 #' @keywords internal
 osa_extract_values <- function(xobs) {
-  x <- if (is(xobs, "osa")) xobs@x else xobs
+  x <- if (methods::is(xobs, "osa")) xobs@x else xobs
   v <- try(RTMB:::getValues(x), silent = TRUE)
   if (inherits(v, "try-error")) v <- as.numeric(x)
   as.numeric(v)
@@ -53,7 +53,7 @@ osa_extract_values <- function(xobs) {
 #' @return Numeric/AD keep vector.
 #' @keywords internal
 osa_extract_keep <- function(xobs, n) {
-  if (is(xobs, "osa")) {
+  if (methods::is(xobs, "osa")) {
     K <- xobs@keep
     if (is.matrix(K)) K[, 1] else K
   } else rep(1, n)
@@ -73,7 +73,7 @@ osa_extract_keep <- function(xobs, n) {
 #' @return A list with numeric/AD vectors \code{lower} and \code{upper}.
 #' @keywords internal
 osa_extract_cdf <- function(xobs, n) {
-  if (is(xobs, "osa")) {
+  if (methods::is(xobs, "osa")) {
     K <- xobs@keep
     if (is.matrix(K) && ncol(K) >= 3) {
       return(list(lower = K[, 2], upper = K[, 3]))
@@ -87,7 +87,7 @@ osa_extract_cdf <- function(xobs, n) {
 #' @return AD (or numeric) values.
 #' @keywords internal
 osa_extract_x <- function(xobs) {
-  if (is(xobs, "osa")) xobs@x else xobs
+  if (methods::is(xobs, "osa")) xobs@x else xobs
 }
 
 #' Binomial CDF, P(X <= x), via the regularized incomplete beta

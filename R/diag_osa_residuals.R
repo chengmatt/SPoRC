@@ -831,7 +831,7 @@ get_osa <- function(obs_mat = NULL,
         # Doing some naming stuff
         tmp_osa$res$region <- r
         tmp_osa$res$seas <- seas
-        tmp_osa$res <- tmp_osa$res %>% dplyr::mutate(split_index = str_split(index, "_"),  # Split once and store as list
+        tmp_osa$res <- tmp_osa$res %>% dplyr::mutate(split_index = stringr::str_split(index, "_"),  # Split once and store as list
                                                      sex = sapply(split_index, `[`, 1),
                                                      index = sapply(split_index, `[`, 2)) %>% dplyr::select(-split_index)
         tmp_osa$res$comp_type <- "SpltR_JntS"

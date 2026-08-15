@@ -30,8 +30,8 @@ get_movement_dp_design_matrix <- function(data,
                                           preference_formula,
                                           diffusion_formula
 ) {
-  X_zk = model.matrix(diffusion_formula, data) # diffusion design matrix
-  W_zk = model.matrix(preference_formula, data) # preference design matrix
+  X_zk = stats::model.matrix(diffusion_formula, data) # diffusion design matrix
+  W_zk = stats::model.matrix(preference_formula, data) # preference design matrix
   return(list(
     n_theta = ncol(X_zk),
     n_gamma = ncol(W_zk),

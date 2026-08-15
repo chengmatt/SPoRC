@@ -1114,7 +1114,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
       tmp_formula <- fish_q_formula[[key]]
       var_names <- all.vars(tmp_formula)
       tmp_dat <- data.frame(fish_q_cov_dat[var_names])
-      ncol(model.matrix(tmp_formula, data = tmp_dat))
+      ncol(stats::model.matrix(tmp_formula, data = tmp_dat))
     }))
   } else {
     do_fish_q_cov <- 0
@@ -1142,7 +1142,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
         var_names <- all.vars(tmp_formula)
         if(length(var_names) == 0) next
         tmp_dat <- data.frame(fish_q_cov_dat[var_names])
-        tmp_design_mat <- model.matrix(tmp_formula, data = tmp_dat)
+        tmp_design_mat <- stats::model.matrix(tmp_formula, data = tmp_dat)
         fish_q_cov[r,,f,1:ncol(tmp_design_mat)] <- tmp_design_mat
 
         for(i in 1:ncol(tmp_design_mat)) {

@@ -27,6 +27,7 @@ Imports:
     future,
     future.apply,
     ggplot2,
+    grDevices,
     grid,
     gridExtra,
     here,

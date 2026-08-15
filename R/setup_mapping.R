@@ -76,7 +76,7 @@ build_pe_map <- function(dims, share_over = character(0)) {
 build_shared_spec_map <- function(dims, spec, dim_abbrev) {
 
   shared_specs <- unlist(lapply(seq_along(dim_abbrev), function(k) {
-    combs <- combn(names(dim_abbrev), k)
+    combs <- utils::combn(names(dim_abbrev), k)
     apply(combs, 2, function(x) paste0("est_shared_", paste(x, collapse = "_")))
   }))
   valid_specs <- c("fix", "est_all", shared_specs)

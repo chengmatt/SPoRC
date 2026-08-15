@@ -1261,13 +1261,13 @@ plot_all_basic <- function(data,
                            model_names,
                            out_path) {
 
-  pdf(here::here(out_path, "plot_results.pdf"), width = 25, height = 13)
+  grDevices::pdf(here::here(out_path, "plot_results.pdf"), width = 25, height = 13)
   print(get_biological_plot(data = data, rep = rep, model_names = model_names))
   print(get_data_fitted_plot(data = data, model_names = model_names))
   print(get_ts_plot(rep = rep, sd_rep = sd_rep, model_names = model_names))
   print(get_selex_plot(rep = rep, model_names = model_names))
   print(get_nLL_plot(data = data, rep = rep, model_names = model_names))
-  dev.off()
+  grDevices::dev.off()
 
 }
 

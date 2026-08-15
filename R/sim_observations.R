@@ -641,9 +641,9 @@ simulate_conv_tag_fish_recaptures <- function(conv_fish_tag_like,
     # input and simulate
     obs_conv_tag_fish_recap[ry, rseas, tc, pop_idx, reg_idx, age_idx, sex_idx, flt_idx, sim] <-
       if(conv_fish_tag_like == 0) {
-        rpois(n = length(lambda), lambda = lambda)
+        stats::rpois(n = length(lambda), lambda = lambda)
       } else {
-        rnbinom(n = length(lambda), mu = lambda, size = exp(ln_conv_fish_tag_theta))
+        stats::rnbinom(n = length(lambda), mu = lambda, size = exp(ln_conv_fish_tag_theta))
       }
   }
 

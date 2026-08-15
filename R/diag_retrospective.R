@@ -894,8 +894,8 @@ do_retrospective <- function(n_retro,
 
     # collate results
     retro_all    <- lapply(results, `[[`, "df") %>% dplyr::bind_rows()
-    retro_models <- if(return_models) setNames(lapply(results, `[[`, "model"),
-                                               paste0("peel_", 0:n_retro)) else NULL
+    retro_models <- if(return_models) stats::setNames(lapply(results, `[[`, "model"),
+                                                      paste0("peel_", 0:n_retro)) else NULL
 
 
   } # do parrallelization for retrospective loop

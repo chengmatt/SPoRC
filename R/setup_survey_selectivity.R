@@ -506,7 +506,7 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
       tmp_formula <- srv_q_formula[[key]] # get formula
       var_names <- all.vars(tmp_formula) # get var names
       tmp_dat <- data.frame(srv_q_cov_dat[var_names]) # make dataframe
-      ncol(model.matrix(tmp_formula, data = tmp_dat)) # figure out number of columns for formula (max number of coefficients to estimate)
+      ncol(stats::model.matrix(tmp_formula, data = tmp_dat)) # figure out number of columns for formula (max number of coefficients to estimate)
     }))
   } else {
     do_srv_q_cov <- 0 # Indicator for whether covariates are included into survey catchability
@@ -546,7 +546,7 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
         # get environmental covariates from environmental data list, based on model formula
         tmp_dat <- data.frame(srv_q_cov_dat[var_names])
         # Generate design matrix
-        tmp_design_mat <- model.matrix(tmp_formula, data = tmp_dat)
+        tmp_design_mat <- stats::model.matrix(tmp_formula, data = tmp_dat)
         # store covariate effects into container
         srv_q_cov[r,,f,1:ncol(tmp_design_mat)] <- tmp_design_mat
 

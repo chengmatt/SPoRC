@@ -89,7 +89,7 @@ test_that("Setup_Mod_Dim keeps an explicit natal_region", {
 
 test_that("Setup_Mod_Dim returns the empty par and map sublists downstream setup expects", {
   out <- mod_dim()
-  expect_named(out, c("data", "par", "map", "verbose", "store_config"))
+  expect_named(out, c("data", "par", "map", "verbose", "store_config", "version"))
   expect_equal(out$par, list())
   expect_equal(out$map, list())
 })

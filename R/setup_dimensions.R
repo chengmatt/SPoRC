@@ -120,6 +120,7 @@ Setup_Sim_Dim <- function(n_sims,
   sim_list$seasdur <- seasdur
   sim_list$feedback_start_yr <- feedback_start_yr
   sim_list$run_feedback <- run_feedback
+  sim_list$version <- 'v1.2.0.9000'
 
   return(sim_list)
 
@@ -255,6 +256,7 @@ Setup_Mod_Dim <- function(years,
   input_list$store_config <- store_config
   input_list$data$do_internal_comp_osa <- do_internal_comp_osa
   input_list$data$do_internal_conv_tag_osa <- do_internal_conv_tag_osa
+  input_list$version <- 'v1.2.0.9000'
 
   collect_message("Number of Years: ", length(years))
   collect_message("Number of Seasons: ", n_seas)

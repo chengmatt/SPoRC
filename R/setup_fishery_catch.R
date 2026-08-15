@@ -699,7 +699,8 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
 #'   penalizing it twice; note that it also leaves \code{ln_F_mean} and the
 #'   deviations' level mutually unidentified unless one of them is fixed,
 #'   which \code{ln_F_mean_spec = "fix"} does.
-#' @param ln_F_mean_spec Character string, \code{"est"} (default, the previous
+#' @param ln_F_mean_spec Character string, matched by exact name only because it
+#'   sits after \code{...}. \code{"est"} (default, the previous
 #'   and only behaviour) or \code{"fix"}. \code{"fix"} maps \code{ln_F_mean}
 #'   off at its starting value, which defaults to \code{0} under this spec
 #'   unless supplied through \code{...}, so the deviations carry all of log
@@ -835,7 +836,6 @@ Setup_Mod_Catch_and_F <- function(input_list,
                                   Fdev_model = "iid",
                                   Fdev_pen_center = "fixed",
                                   Fdev_rho_spec = "fix",
-                                  ln_F_mean_spec = "est",
 
                                   # Discarded Catch Stuff
                                   ObsDiscard = NULL,
@@ -851,8 +851,8 @@ Setup_Mod_Catch_and_F <- function(input_list,
                                   sigma_dmr_spec = "fix",
                                   dmr_mean_spec = 'fix',
                                   dmr_dev_spec = 'fix',
-                                  ...
-) {
+                                  ...,
+                                  ln_F_mean_spec = "est") {
 
   messages_list <<- character(0) # string to attach to for printing messages
   starting_values <- list(...)

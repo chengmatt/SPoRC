@@ -322,12 +322,12 @@ Setup_Mod_Retsel <- function(input_list,
         ret_sel_bicubic_nselbins_arr[,,tmp_fleet] <- tmp_nselbins
       }
     } else {
-      ret_sel_model_arr[,which(ret_sel_blocks_arr[,,tmp_fleet] == tmp_block),tmp_fleet] <- sel_map$num[which(sel_map$sel == sel_form)]
+      ret_sel_model_arr <- assign_sel_block(ret_sel_model_arr, ret_sel_blocks_arr, tmp_fleet, tmp_block, sel_map$num[which(sel_map$sel == sel_form)])
       if(sel_form == "bicubic") {
-        ret_sel_bicubic_binnodes_arr[,which(ret_sel_blocks_arr[,,tmp_fleet] == tmp_block),tmp_fleet] <- tmp_n_bin_nodes
-        ret_sel_bicubic_yrnodes_arr[,which(ret_sel_blocks_arr[,,tmp_fleet] == tmp_block),tmp_fleet] <- tmp_n_yr_nodes
-        ret_sel_bicubic_selstyr_arr[,which(ret_sel_blocks_arr[,,tmp_fleet] == tmp_block),tmp_fleet] <- tmp_selstyr
-        ret_sel_bicubic_nselbins_arr[,which(ret_sel_blocks_arr[,,tmp_fleet] == tmp_block),tmp_fleet] <- tmp_nselbins
+        ret_sel_bicubic_binnodes_arr <- assign_sel_block(ret_sel_bicubic_binnodes_arr, ret_sel_blocks_arr, tmp_fleet, tmp_block, tmp_n_bin_nodes)
+        ret_sel_bicubic_yrnodes_arr <- assign_sel_block(ret_sel_bicubic_yrnodes_arr, ret_sel_blocks_arr, tmp_fleet, tmp_block, tmp_n_yr_nodes)
+        ret_sel_bicubic_selstyr_arr <- assign_sel_block(ret_sel_bicubic_selstyr_arr, ret_sel_blocks_arr, tmp_fleet, tmp_block, tmp_selstyr)
+        ret_sel_bicubic_nselbins_arr <- assign_sel_block(ret_sel_bicubic_nselbins_arr, ret_sel_blocks_arr, tmp_fleet, tmp_block, tmp_nselbins)
       }
     }
     rm(tmp_block) # remove tmp block to start next loop
@@ -1040,12 +1040,12 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
         fish_sel_bicubic_nselbins_arr[,,tmp_fleet] <- tmp_nselbins
       }
     } else {
-      fish_sel_model_arr[,which(fish_sel_blocks_arr[,,tmp_fleet] == tmp_block),tmp_fleet] <- sel_map$num[which(sel_map$sel == sel_form)]
+      fish_sel_model_arr <- assign_sel_block(fish_sel_model_arr, fish_sel_blocks_arr, tmp_fleet, tmp_block, sel_map$num[which(sel_map$sel == sel_form)])
       if(sel_form == "bicubic") {
-        fish_sel_bicubic_binnodes_arr[,which(fish_sel_blocks_arr[,,tmp_fleet] == tmp_block),tmp_fleet] <- tmp_n_bin_nodes
-        fish_sel_bicubic_yrnodes_arr[,which(fish_sel_blocks_arr[,,tmp_fleet] == tmp_block),tmp_fleet] <- tmp_n_yr_nodes
-        fish_sel_bicubic_selstyr_arr[,which(fish_sel_blocks_arr[,,tmp_fleet] == tmp_block),tmp_fleet] <- tmp_selstyr
-        fish_sel_bicubic_nselbins_arr[,which(fish_sel_blocks_arr[,,tmp_fleet] == tmp_block),tmp_fleet] <- tmp_nselbins
+        fish_sel_bicubic_binnodes_arr <- assign_sel_block(fish_sel_bicubic_binnodes_arr, fish_sel_blocks_arr, tmp_fleet, tmp_block, tmp_n_bin_nodes)
+        fish_sel_bicubic_yrnodes_arr <- assign_sel_block(fish_sel_bicubic_yrnodes_arr, fish_sel_blocks_arr, tmp_fleet, tmp_block, tmp_n_yr_nodes)
+        fish_sel_bicubic_selstyr_arr <- assign_sel_block(fish_sel_bicubic_selstyr_arr, fish_sel_blocks_arr, tmp_fleet, tmp_block, tmp_selstyr)
+        fish_sel_bicubic_nselbins_arr <- assign_sel_block(fish_sel_bicubic_nselbins_arr, fish_sel_blocks_arr, tmp_fleet, tmp_block, tmp_nselbins)
       }
     }
     rm(tmp_block) # remove tmp block to start next loop

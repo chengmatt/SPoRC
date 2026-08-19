@@ -43,6 +43,7 @@
     <li><a class="dropdown-item" href="../articles/y_bsai_northern_rockfish_case_study.html">BSAI Northern Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/z_bsai_rougheye_rockfish_case_study.html">BSAI Blackspotted and Rougheye Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/aa_bsai_pacific_ocean_perch_case_study.html">BSAI Pacific Ocean Perch</a></li>
+    <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -287,7 +288,8 @@ bin-override deviations</td>
 scale of the chosen functional form: log scale for most forms, logit
 scale for the <code>"nonpar"</code> form and for asymptote parameters,
 and log scale per bin for the <code>"nonparlog"</code> form (where each
-year’s curve is standardized to average one across bins).</p>
+year’s curve is standardized to average one over the bins named in
+<code>fish_sel_norm_bins</code>, every bin by default).</p>
 </div>
 <div class="section level2">
 <h2 id="fishery-catchability">Fishery Catchability<a class="anchor" aria-label="anchor" href="#fishery-catchability"></a>
@@ -853,18 +855,32 @@ blocks)</td>
 <tr class="odd">
 <td><code>ln_global_R0</code></td>
 <td><code>n_pop</code></td>
-<td>Log-scale unfished/mean recruitment per population</td>
+<td>Log-scale unfished/mean recruitment per population. Also supplies
+the scale of the stock-recruit penalty curve when
+<code>sr_R0_spec = "shared"</code> (the default)</td>
 <td>15</td>
 </tr>
 <tr class="even">
 <td><code>ln_rinit</code></td>
 <td><code>n_pop</code></td>
-<td>Log-scale initial recruitment scalar per population. Used to
-initialize equilibrium age structure when <code>use_rinit = 1</code>;
-ignored otherwise.</td>
+<td>Log-scale initial recruitment scalar per population. Initializes the
+equilibrium age structure when <code>use_rinit = 1</code>, and
+additionally supplies the scale of the stock-recruit penalty curve when
+<code>sr_R0_spec = "rinit"</code>, so one parameter sets both; ignored
+when <code>use_rinit = 0</code>.</td>
 <td>15</td>
 </tr>
 <tr class="odd">
+<td><code>ln_sr_R0</code></td>
+<td><code>n_pop</code></td>
+<td>Log-scale scale of the stock-recruit curve fitted as a penalty under
+<code>rec_model = "mean_rec"</code>. Estimated only when
+<code>sr_R0_spec = "est"</code> and <code>sr_penalty</code> is not
+<code>"none"</code>; mapped off in every other configuration, so it
+never enters the parameter vector by accident</td>
+<td><code>ln_global_R0</code></td>
+</tr>
+<tr class="even">
 <td><code>rec_region_prop_pars</code></td>
 <td><code>n_pop × (n_regions - 1)</code></td>
 <td>Logit-scale regional recruitment proportion parameters (simplex
@@ -872,7 +888,7 @@ parameterization; omitted when
 <code>rec_region_prop_spec == 1</code>)</td>
 <td>0</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>rec_seas_prop_pars</code></td>
 <td><code>n_pop × (n_seas - 1)</code></td>
 <td>Logit-scale seasonal recruitment proportion parameters (simplex
@@ -880,45 +896,47 @@ parameterization; omitted when
 <code>use_fixed_rec_seas_prop == 1</code>)</td>
 <td>0</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>steepness_h</code></td>
 <td><code>n_pop × n_regions</code></td>
 <td>Steepness of the stock-recruitment relationship (logit scale,
 bounded 0.2 to 1). Used by both <code>"bh_rec"</code> and
-<code>"ricker_rec"</code>, though steepness values are not
-interchangeable between the two curves (see
+<code>"ricker_rec"</code>, and by the curve fitted as a penalty under
+<code>rec_model = "mean_rec"</code> with <code>sr_penalty</code>; mapped
+off under mean recruitment carrying no such curve. Steepness values are
+not interchangeable between the two curves (see
 <code><a href="../articles/c_model_equations.html">vignette("c_model_equations")</a></code>)</td>
 <td>0</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>ln_sigmaR</code></td>
 <td><code>2 × n_pop × n_regions</code></td>
 <td>Log-scale standard deviations for early (index 1) and late (index 2)
 recruitment periods</td>
 <td>0</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>ln_InitDevs</code></td>
 <td><code>n_pop × n_regions × (n_ages - 1)</code></td>
 <td>Log-scale initial age structure deviations (can be specified as
 random effects)</td>
 <td>0</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>ln_RecDevs</code></td>
 <td><code>n_pop × n_regions × (n_recdev_years + n_proj_yrs_devs)</code></td>
 <td>Log-scale annual recruitment deviations w/ projection years (can be
 specified as random effects)</td>
 <td>0</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>sexratio_pars</code></td>
 <td><code>n_pop × n_regions × n_blocks</code></td>
 <td>Logit-scale sex ratio parameters (defaults to 50:50 when n_sexes =
 1)</td>
 <td>0</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>stray_rate_pars</code></td>
 <td><code>n_pop × n_stray_blocks</code></td>
 <td>Logit-scale stray rate parameters controlling the proportion of

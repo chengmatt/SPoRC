@@ -40,7 +40,8 @@ Note that `fish_fixed_sel_pars` holds parameters on the scale of the
 chosen functional form: log scale for most forms, logit scale for the
 `"nonpar"` form and for asymptote parameters, and log scale per bin for
 the `"nonparlog"` form (where each year’s curve is standardized to
-average one across bins).
+average one over the bins named in `fish_sel_norm_bins`, every bin by
+default).
 
 ## Fishery Catchability
 
@@ -143,11 +144,12 @@ added leading `n_pop` dimension.
 
 | Parameter | Dimension | Description | Default |
 |----|----|----|----|
-| `ln_global_R0` | `n_pop` | Log-scale unfished/mean recruitment per population | 15 |
-| `ln_rinit` | `n_pop` | Log-scale initial recruitment scalar per population. Used to initialize equilibrium age structure when `use_rinit = 1`; ignored otherwise. | 15 |
+| `ln_global_R0` | `n_pop` | Log-scale unfished/mean recruitment per population. Also supplies the scale of the stock-recruit penalty curve when `sr_R0_spec = "shared"` (the default) | 15 |
+| `ln_rinit` | `n_pop` | Log-scale initial recruitment scalar per population. Initializes the equilibrium age structure when `use_rinit = 1`, and additionally supplies the scale of the stock-recruit penalty curve when `sr_R0_spec = "rinit"`, so one parameter sets both; ignored when `use_rinit = 0`. | 15 |
+| `ln_sr_R0` | `n_pop` | Log-scale scale of the stock-recruit curve fitted as a penalty under `rec_model = "mean_rec"`. Estimated only when `sr_R0_spec = "est"` and `sr_penalty` is not `"none"`; mapped off in every other configuration, so it never enters the parameter vector by accident | `ln_global_R0` |
 | `rec_region_prop_pars` | `n_pop × (n_regions - 1)` | Logit-scale regional recruitment proportion parameters (simplex parameterization; omitted when `rec_region_prop_spec == 1`) | 0 |
 | `rec_seas_prop_pars` | `n_pop × (n_seas - 1)` | Logit-scale seasonal recruitment proportion parameters (simplex parameterization; omitted when `use_fixed_rec_seas_prop == 1`) | 0 |
-| `steepness_h` | `n_pop × n_regions` | Steepness of the stock-recruitment relationship (logit scale, bounded 0.2 to 1). Used by both `"bh_rec"` and `"ricker_rec"`, though steepness values are not interchangeable between the two curves (see [`vignette("c_model_equations")`](https://chengmatt.github.io/SPoRC/dev/articles/c_model_equations.md)) | 0 |
+| `steepness_h` | `n_pop × n_regions` | Steepness of the stock-recruitment relationship (logit scale, bounded 0.2 to 1). Used by both `"bh_rec"` and `"ricker_rec"`, and by the curve fitted as a penalty under `rec_model = "mean_rec"` with `sr_penalty`; mapped off under mean recruitment carrying no such curve. Steepness values are not interchangeable between the two curves (see [`vignette("c_model_equations")`](https://chengmatt.github.io/SPoRC/dev/articles/c_model_equations.md)) | 0 |
 | `ln_sigmaR` | `2 × n_pop × n_regions` | Log-scale standard deviations for early (index 1) and late (index 2) recruitment periods | 0 |
 | `ln_InitDevs` | `n_pop × n_regions × (n_ages - 1)` | Log-scale initial age structure deviations (can be specified as random effects) | 0 |
 | `ln_RecDevs` | `n_pop × n_regions × (n_recdev_years + n_proj_yrs_devs)` | Log-scale annual recruitment deviations w/ projection years (can be specified as random effects) | 0 |

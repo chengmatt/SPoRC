@@ -43,6 +43,7 @@
     <li><a class="dropdown-item" href="../articles/y_bsai_northern_rockfish_case_study.html">BSAI Northern Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/z_bsai_rougheye_rockfish_case_study.html">BSAI Blackspotted and Rougheye Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/aa_bsai_pacific_ocean_perch_case_study.html">BSAI Pacific Ocean Perch</a></li>
+    <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -128,9 +129,27 @@ non-natal regions (only relevant when <code>n_pop &gt; 1</code>)</td>
 </tr>
 <tr class="odd">
 <td><code>h_trans</code></td>
-<td>Steepness parameter by population and region; ignored if mean
-recruitment is specified</td>
+<td>Steepness parameter by population and region; ignored under mean
+recruitment unless a stock-recruit penalty is applied</td>
 <td><code>n_pop × n_regions</code></td>
+</tr>
+<tr class="even">
+<td><code>SR_pred</code></td>
+<td>Stock-recruit curve prediction under
+<code>rec_model = "mean_rec"</code> with <code>sr_penalty</code>,
+evaluated alongside the dynamics but never advancing them; ones when no
+such penalty is applied</td>
+<td><code>n_pop × n_regions × n_years</code></td>
+</tr>
+<tr class="odd">
+<td><code>sr_R0</code></td>
+<td>Scale of the stock-recruit curve under <code>sr_penalty</code>,
+dimension <code>n_pop</code>. Equals <code>ln_global_R0</code>
+exponentiated under <code>sr_R0_spec = "shared"</code>,
+<code>ln_sr_R0</code> under <code>"est"</code>, and <code>rinit</code>
+under <code>"rinit"</code>, so the three settings are distinguishable
+here.</td>
+<td></td>
 </tr>
 <tr class="even">
 <td><code>NAA</code></td>
@@ -597,46 +616,55 @@ deviations. Zero wherever the deviation is not estimated</td>
 <td><code>n_pop × n_regions × (n_ages - 2)</code></td>
 </tr>
 <tr class="even">
+<td><code>SR_pen_nLL</code></td>
+<td>Negative log-likelihood (penalty) for the stock-recruit residual,
+the log difference between realized recruitment and
+<code>SR_pred</code>, under <code>rec_model = "mean_rec"</code> with
+<code>sr_penalty</code>. Zero in years outside <code>sr_pen_yrs</code>,
+and zero throughout when no such penalty is applied</td>
+<td><code>n_pop × n_regions × n_years</code></td>
+</tr>
+<tr class="odd">
 <td><code>conv_fish_tag_nLL</code></td>
 <td>Negative log-likelihood for conventional tag recaptures</td>
 <td><code>conv_tag_max_liberty × n_seas × n_conv_tag_cohorts × n_regions × n_fish_fleets</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>h_nLL</code></td>
 <td>Negative log-likelihood (prior) for steepness</td>
 <td>scalar</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>fish_q_nLL</code></td>
 <td>Negative log-likelihood (prior) for fishery catchability</td>
 <td>scalar</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>sel_nLL</code></td>
 <td>Negative log-likelihood (penalty/prior) for selectivity</td>
 <td>scalar</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>srv_q_nLL</code></td>
 <td>Negative log-likelihood (prior) for survey catchability</td>
 <td>scalar</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>Movement_nLL</code></td>
 <td>Negative log-likelihood (penalty/prior) for movement</td>
 <td>scalar</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>TagRep_nLL</code></td>
 <td>Negative log-likelihood (prior) for tag reporting rate</td>
 <td>scalar</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>rec_prop_nLL</code></td>
 <td>Negative log-likelihood (prior) for recruitment proportions</td>
 <td>scalar</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>jnLL</code></td>
 <td>Joint negative log-likelihood</td>
 <td>scalar</td>

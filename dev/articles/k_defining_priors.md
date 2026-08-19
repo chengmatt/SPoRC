@@ -21,6 +21,11 @@ In `SPoRC`, priors can be placed on several parameters. These include:
 7.  Recruitment Regional, Seasonal Proportions, and R0,
 8.  Stray rates
 
+Two penalties are specified differently from the priors above, without a
+`Use_*_prior` toggle or a hyperparameter dataframe, and are covered here
+as well: selectivity smoothness, and a stock-recruit curve fitted
+against the recruitment series.
+
 In the following, we will demonstrate how priors can be specified for
 each of these parameters. For further mathematical details on the
 formulation of these priors, refer to the vignette describing model
@@ -331,6 +336,76 @@ input_list <- Setup_Mod_Srvsel_and_Q(
 #> srv_q_spec is specified as: est_all for survey fleet 3
 ```
 
+### Selectivity smoothness penalties
+
+Separately from priors on selectivity parameters, `SPoRC` can penalize
+the shape of the realized selectivity curve. These act on
+$`\log(\text{Sel})`$ after every transformation, so they apply whatever
+functional form produced the curve, and they are specified in
+`Setup_Mod_Weighting` rather than in the selectivity setup. Passing them
+to `Setup_Mod_Fishsel_and_Q` or `Setup_Mod_Srvsel_and_Q` leaves them
+read as starting values and every penalty evaluates to zero.
+
+`fish_sel_pen_wts`, `ret_sel_pen_wts` and `srv_sel_pen_wts` each take
+one named list per fleet, or a single named list shared by every fleet.
+Six terms are available and anything left out is zero, so a fleet names
+only what it constrains:
+
+| Term | Penalizes |
+|----|----|
+| `smooth_bin_curve` | second difference across bins, curvature |
+| `smooth_bin_diff` | first difference across bins, both directions |
+| `smooth_yr_diff` | first difference between years, a random walk |
+| `smooth_yr_curve` | second difference between years |
+| `smooth_dome` | decreases across bins only, so a flat or rising curve is free |
+| `smooth_mean_center` | the per-year mean of log selectivity, toward zero |
+
+Each weight is either a scalar used in every year, or a vector with one
+value per model year, which lets a term act only in the years
+selectivity is allowed to change. Years given zero are skipped. Three
+further settings sit alongside the six. `bin_range` is a length two
+vector giving the first and last bin the terms run over, defaulting to
+every bin. `yr_diff_ref` is a value to hold the walk’s first penalized
+year against, which anchors an otherwise free series before the data
+begin.
+
+`normalize`, `TRUE` by default, divides a penalty by the number of terms
+in its sum, so it becomes a mean squared difference rather than a total:
+the two bin-wise terms divide by the number of bins in `bin_range` and
+the two year-wise terms divide by the number of model years. A weight
+then means the same thing whatever the bin or year count, where `FALSE`
+makes a longer series cost proportionally more at the same weight. It
+can be a single value for all terms, or a list naming them individually.
+`smooth_dome` and `smooth_mean_center` are never normalized, the first
+because it sums only the bins that decrease and the second because its
+statistic is already a mean.
+
+``` r
+
+# One fleet, curvature and dome on ages 4 to 10, and a random walk that acts
+# only in the years the curve is allowed to move.
+yr_wt <- rep(0, n_yrs)
+yr_wt[block_change_years] <- 1 / (2 * 0.2^2)   # a walk with sigma = 0.2
+
+input_list <- Setup_Mod_Weighting(
+  input_list = input_list,
+  fish_sel_pen_wts = list(list(
+    smooth_bin_curve = 0.5,
+    smooth_dome      = 3.1,
+    smooth_yr_diff   = yr_wt,
+    bin_range        = c(4, 10),
+    normalize        = FALSE
+  ))
+)
+```
+
+With `normalize = FALSE`, a first-difference weight of
+$`1/(2\sigma_{y}^{2})`$ makes the year term exactly the negative log
+kernel of a random walk with standard deviation $`\sigma_{y}`$, written
+on the realized curve rather than on deviation parameters. The equations
+for all six are in
+[`vignette("c_model_equations")`](https://chengmatt.github.io/SPoRC/dev/articles/c_model_equations.md).
+
 ## Movement
 
 Defining priors for movement, tag reporting rates, and recruitment
@@ -609,6 +684,41 @@ input_list <- Setup_Mod_Rec(
 #> Sex ratio is specified as: fix
 #> Stray rates fixed (n_pop == 1, straying not applicable).
 ```
+
+### Stock-Recruit Residual
+
+Under `rec_model = "mean_rec"`, a stock-recruit curve can be fitted as a
+penalty rather than used to generate recruitment. That penalty is a
+prior in the same sense as the ones above, a normal density placed on
+the log residual $`\log R_y - \log \hat{R}_y`$, but it is specified
+differently from everything else in this vignette: there is no
+`Use_*_prior` toggle and no hyperparameter dataframe. Instead,
+`sr_penalty` names the curve, `sr_pen_sigma` gives the residual’s
+standard deviation, `sr_pen_yrs` gives the years it is summed over, and
+`sr_R0_spec` sets where the curve’s scale comes from. The curve’s
+steepness remains an ordinary parameter, so `Use_h_prior` and `h_prior`
+described above apply to it exactly as they do to a curve that generates
+recruitment.
+
+``` r
+
+input_list <- Setup_Mod_Rec(
+  input_list   = input_list,
+  rec_model    = "mean_rec",       # the curve is fitted, not used to generate recruitment
+  sr_penalty   = "bh",             # "none" (default), "bh", or "ricker"
+  sr_pen_sigma = 0.5,              # standard deviation of the log residual
+  sr_pen_yrs   = 1980:2015,        # years summed over; defaults to all with a lagged SSB
+  sr_R0_spec   = "shared"          # "shared", "est", or "rinit"
+)
+```
+
+`sr_R0_spec` sets where the curve takes its scale: `"shared"` reuses
+`ln_global_R0`, which under mean recruitment is the recruitment level
+itself, `"est"` gives the curve its own estimated `ln_sr_R0`, and
+`"rinit"` takes it from `ln_rinit` so one parameter sets both the
+unfished age structure and the curve, which requires `use_rinit = 1`.
+The fitted scale is reported as `sr_R0` and the curve’s prediction as
+`SR_pred`.
 
 ### Stray Rates
 

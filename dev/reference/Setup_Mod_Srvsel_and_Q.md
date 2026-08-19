@@ -36,6 +36,7 @@ Setup_Mod_Srvsel_and_Q(
   Use_srv_selex_prior = 0,
   srv_selex_prior = NULL,
   Use_srv_selex_penalty = 0,
+  srv_sel_norm_bins = NULL,
   srv_sel_bin_dev_bins = NULL,
   srvsel_pe_wt = rep(1, input_list$data$n_srv_fleets),
   srvsel_rw_init_sigma = rep(5, input_list$data$n_srv_fleets),
@@ -288,6 +289,14 @@ Setup_Mod_Srvsel_and_Q(
 
   Integer (0/1). Whether a centering penalty is applied to sets of
   survey selectivity fixed-effect parameters. Default `0`.
+
+- srv_sel_norm_bins:
+
+  List with one element per survey fleet naming the bins the mean-one
+  standardization averages over, or `NULL` for fleets standardizing over
+  every bin (`Selex_Model = 9` only). A gear whose catchability is
+  defined against part of the bin range standardizes over that part, and
+  catchability absorbs the difference in scale. Default `NULL`.
 
 - srv_sel_bin_dev_bins:
 

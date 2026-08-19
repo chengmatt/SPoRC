@@ -1,6 +1,7 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/a_model_dimensions.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/aa_bsai_pacific_ocean_perch_case_study.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/articles/ab_bsai_atka_mackerel_case_study.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/architecture.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/b_model_parameters.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/c_model_equations.html</loc></url>
@@ -83,6 +84,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/catch_to_F_multifleet.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/catch_to_F_singlefleet.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/check_data_dimensions.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/check_msy_rec_model.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/check_sim_dimensions.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/cmb.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/collect_message.html</loc></url>
@@ -188,6 +190,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_selex_fixed_penalty.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_selex_plot.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_selex_prior.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_sr_penalty.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_steepness_prior.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_survey_observation_model.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_tag_mort.html</loc></url>
@@ -243,6 +246,8 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/seas_operator_and_integral.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/set_data_indicator_unused.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/setup_sel_bin_devs.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/setup_sel_norm_bins.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_bsai_atka_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_bsai_nork_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_bsai_pop_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_dusky_data.html</loc></url>

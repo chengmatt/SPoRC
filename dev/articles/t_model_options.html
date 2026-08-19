@@ -43,6 +43,7 @@
     <li><a class="dropdown-item" href="../articles/y_bsai_northern_rockfish_case_study.html">BSAI Northern Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/z_bsai_rougheye_rockfish_case_study.html">BSAI Blackspotted and Rougheye Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/aa_bsai_pacific_ocean_perch_case_study.html">BSAI Pacific Ocean Perch</a></li>
+    <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -852,6 +853,124 @@ and it will shrink genuine recruitment variability if over-weighted
 an estimated parameter).</p>
 </div>
 <div class="section level4">
+<h4 id="stock-recruit-curve-as-a-penalty">Stock-recruit curve as a penalty<a class="anchor" aria-label="anchor" href="#stock-recruit-curve-as-a-penalty"></a>
+</h4>
+<p>Under <code>rec_model = "mean_rec"</code> a stock-recruit curve can
+be evaluated alongside the dynamics without ever advancing them, its
+residual penalised instead. Recruitment stays a mean with deviations,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mi>y</mi></msub><mo>=</mo><msubsup><mi>R</mi><mn>0</mn><mtext mathvariant="normal">mean</mtext></msubsup><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>ε</mi><mi>y</mi></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">R_y = R_0^{\text{mean}}\exp(\varepsilon_y)</annotation></semantics></math>,
+and the curve enters the objective only through the log residual
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>ξ</mi><mi>y</mi><mtext mathvariant="normal">SR</mtext></msubsup><mo>=</mo><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><msub><mi>R</mi><mi>y</mi></msub><mo>−</mo><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><msub><mover><mi>R</mi><mo accent="true">̂</mo></mover><mi>y</mi></msub></mrow><annotation encoding="application/x-tex">\xi^{\text{SR}}_y = \ln R_y - \ln \hat{R}_y</annotation></semantics></math>:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><msup><mi>L</mi><mtext mathvariant="normal">SR</mtext></msup><mo>=</mo><munder><mo>∑</mo><mrow><mi>y</mi><mo>∈</mo><msub><mi>𝒴</mi><mtext mathvariant="normal">SR</mtext></msub></mrow></munder><mo>−</mo><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><mi>ϕ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ξ</mi><mi>y</mi><mtext mathvariant="normal">SR</mtext></msubsup><mo>;</mo><mspace width="0.222em"></mspace><mn>0</mn><mo>,</mo><mspace width="0.222em"></mspace><msub><mi>σ</mi><mtext mathvariant="normal">SR</mtext></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">-\ln L^{\text{SR}} = \sum_{y \in \mathcal{Y}_{\text{SR}}} -\ln \phi\left(\xi^{\text{SR}}_y;\ 0,\ \sigma_{\text{SR}}\right)</annotation></semantics></math></p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Argument</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>sr_penalty</code></td>
+<td>
+<code>"none"</code> (default), <code>"bh"</code>, or
+<code>"ricker"</code>, naming the curve
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>R</mi><mo accent="true">̂</mo></mover><mi>y</mi></msub><annotation encoding="application/x-tex">\hat{R}_y</annotation></semantics></math>
+follows. Valid only with <code>rec_model = "mean_rec"</code>; under
+<code>"bh_rec"</code> or <code>"ricker_rec"</code> the curve already
+generates recruitment, which makes the deviation the residual by
+construction, so penalising the residual as well would count it twice
+and setup rejects the combination</td>
+</tr>
+<tr class="even">
+<td><code>sr_pen_sigma</code></td>
+<td>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mtext mathvariant="normal">SR</mtext></msub><annotation encoding="application/x-tex">\sigma_{\text{SR}}</annotation></semantics></math>,
+the standard deviation of the residual. Held as data rather than
+estimated. Default 1</td>
+</tr>
+<tr class="odd">
+<td><code>sr_pen_yrs</code></td>
+<td>Calendar years
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝒴</mi><mtext mathvariant="normal">SR</mtext></msub><annotation encoding="application/x-tex">\mathcal{Y}_{\text{SR}}</annotation></semantics></math>
+the penalty is summed over; <code>NULL</code> (default) is every year
+that has a lagged spawning biomass, i.e. all but the first
+<code>rec_lag</code>. Years outside it keep their recruitment deviation
+estimated and contribute nothing, which is how a restricted
+stock-recruit window is expressed. Naming a year with no lagged spawning
+biomass is an error rather than a silent fallback: the curve’s
+prediction there is the equilibrium, so the residual would not be a
+stock-recruit residual</td>
+</tr>
+<tr class="even">
+<td><code>sr_R0_spec</code></td>
+<td>Where the curve’s scale
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>R</mi><mn>0</mn><mtext mathvariant="normal">SR</mtext></msubsup><annotation encoding="application/x-tex">R_0^{\text{SR}}</annotation></semantics></math>
+comes from (see below)</td>
+</tr>
+</tbody>
+</table>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>String</th>
+<th>The curve’s scale
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>R</mi><mn>0</mn><mtext mathvariant="normal">SR</mtext></msubsup><annotation encoding="application/x-tex">R_0^{\text{SR}}</annotation></semantics></math>
+</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>"shared"</code></td>
+<td>
+<code>ln_global_R0</code>,
+i.e. <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>R</mi><mn>0</mn><mtext mathvariant="normal">mean</mtext></msubsup><annotation encoding="application/x-tex">R_0^{\text{mean}}</annotation></semantics></math>
+itself, which under mean recruitment is the mean recruitment level. One
+parameter and well posed, but the curve is anchored on mean recruitment
+rather than on an unfished level. <strong>Default</strong>
+</td>
+</tr>
+<tr class="even">
+<td><code>"est"</code></td>
+<td>The curve’s own estimated <code>ln_sr_R0</code>, identified by the
+curve fit alone. Reproduces templates carrying separate mean-recruitment
+and unfished-recruitment parameters, though nothing ties the two
+together, so the pair can slide</td>
+</tr>
+<tr class="odd">
+<td><code>"rinit"</code></td>
+<td>
+<code>ln_rinit</code>, the initial-equilibrium recruitment, so one
+parameter sets both the unfished age structure and the curve. Requires
+<code>use_rinit = 1</code> and errors otherwise. This is the usual ADMB
+arrangement</td>
+</tr>
+</tbody>
+</table>
+<p>Steepness is reachable in this mode: <code>h_spec</code>,
+<code>Use_h_prior</code>, and <code>h_prior</code> act on the penalty
+curve exactly as they do on a curve that generates recruitment.</p>
+<p><strong>What this is, and what it is not.</strong> It is a penalty on
+a derived quantity, a statement about how far realized recruitment sits
+from a curve, and not a data-generating process. The recruitment
+deviations remain free and keep their own penalty, so a weakly
+determined relationship informs the recruitment series rather than
+dictating it. The simulation side does not see it at all:
+<code><a href="../reference/Setup_Sim_Rec.html">Setup_Sim_Rec()</a></code> and the operating model generate
+recruitment from the mean and its deviations under
+<code>"mean_rec"</code>, and <code>sr_penalty</code> enters the
+estimation model’s objective alone. The curve’s prediction is reported
+as <code>SR_pred</code> and its penalty as <code>SR_pen_nLL</code>; see
+<code><a href="../articles/d_model_report.html">vignette("d_model_report")</a></code>. MSY is the maximum of
+equilibrium yield over a curve that drives the dynamics, and this curve
+does not, so <code><a href="../reference/Get_Reference_Points.html">Get_Reference_Points()</a></code> refuses an MSY request
+on a fit carrying the penalty and directs it to the SPR variants.</p>
+</div>
+<div class="section level4">
 <h4 id="recruitment-penalty-weighting-setup_mod_weighting">Recruitment penalty weighting
 (<code>Setup_Mod_Weighting()</code>)<a class="anchor" aria-label="anchor" href="#recruitment-penalty-weighting-setup_mod_weighting"></a>
 </h4>
@@ -901,8 +1020,11 @@ fixed.</p>
 <div class="section level4">
 <h4 id="steepness-priors">Steepness priors<a class="anchor" aria-label="anchor" href="#steepness-priors"></a>
 </h4>
-<p>When a stock-recruit curve is used (<code>rec_model = "bh_rec"</code>
-or <code>"ricker_rec"</code>), steepness
+<p>When a stock-recruit curve is present, either because it generates
+recruitment (<code>rec_model = "bh_rec"</code> or
+<code>"ricker_rec"</code>) or because it enters as a penalty
+(<code>rec_model = "mean_rec"</code> with <code>sr_penalty</code>),
+steepness
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>h</mi><annotation encoding="application/x-tex">h</annotation></semantics></math>)
 can be penalised with a Beta distribution scaled to [0.2, 1] by
 default:</p>
@@ -1116,7 +1238,9 @@ endpoint control</td>
 <tr class="odd">
 <td><code>"nonparlog"</code></td>
 <td>Non-parametric on the log scale, standardized so each year’s
-selectivity averages to 1 across bins</td>
+selectivity averages to 1 over a window of bins (every bin by default;
+see <a href="#normalisation-and-length-based-selectivity">Normalisation
+and length-based selectivity</a>)</td>
 <td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>n</mi><mtext mathvariant="normal">bins</mtext></msub><annotation encoding="application/x-tex">n_\text{bins}</annotation></semantics></math></td>
 </tr>
 <tr class="even">
@@ -1470,6 +1594,57 @@ maximum, or to the mean across a bin range. When
 <code>fit_lengths = 1</code>, selectivity operates on length bins and is
 mapped to age-space via a user-supplied size-age transition matrix
 (<code>SizeAgeTrans</code>).</p>
+<p>The <code>"nonparlog"</code> form carries its own standardization:
+each year’s curve is divided by the mean of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>θ</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(\theta)</annotation></semantics></math>
+over a window of bins
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℬ</mi><annotation encoding="application/x-tex">\mathcal{B}</annotation></semantics></math>,</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mtext mathvariant="normal">sel</mtext><mi>b</mi></msub><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>θ</mi><mi>b</mi></msub><mo stretchy="false" form="postfix">)</mo><mi minsize="180%" maxsize="180%" stretchy="true">/</mi><mfrac><mn>1</mn><mrow><mo stretchy="false" form="prefix">|</mo><mi>ℬ</mi><mo stretchy="false" form="prefix">|</mo></mrow></mfrac><munder><mo>∑</mo><mrow><msup><mi>b</mi><mo>′</mo></msup><mo>∈</mo><mi>ℬ</mi></mrow></munder><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>θ</mi><msup><mi>b</mi><mo>′</mo></msup></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\text{sel}_b = \exp(\theta_b) \Big/ \frac{1}{|\mathcal{B}|}\sum_{b' \in \mathcal{B}} \exp(\theta_{b'})</annotation></semantics></math></p>
+<p>and that window is an input:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Argument</th>
+<th>Description</th>
+</tr></thead>
+<tbody><tr class="odd">
+<td>
+<code>fish_sel_norm_bins</code> /
+<code>srv_sel_norm_bins</code>
+</td>
+<td>The bins
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℬ</mi><annotation encoding="application/x-tex">\mathcal{B}</annotation></semantics></math>
+each fleet standardizes over, supplied to
+<code><a href="../reference/Setup_Mod_Fishsel_and_Q.html">Setup_Mod_Fishsel_and_Q()</a></code> and
+<code><a href="../reference/Setup_Mod_Srvsel_and_Q.html">Setup_Mod_Srvsel_and_Q()</a></code> respectively. A list with one
+element per fleet naming that fleet’s bins, or <code>NULL</code> (the
+default) for every bin; a fleet’s element may also be <code>NULL</code>
+on its own. Stored as a 0/1 array <code>[n_bins × n_fleets]</code> and
+read only by <code>"nonparlog"</code> fleets</td>
+</tr></tbody>
+</table>
+<p><strong>Why the window matters.</strong> A gear whose catchability is
+defined against only part of the bin range standardizes over that part.
+Two windows differ by a constant multiplier on the whole curve, which
+catchability would absorb completely <em>if</em>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>q</mi><annotation encoding="application/x-tex">q</annotation></semantics></math>
+were free. Under an informative prior on
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>q</mi><annotation encoding="application/x-tex">q</annotation></semantics></math>
+it is not free, and the mismatch is instead levered onto the selectivity
+parameters by the factor
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>∂</mi><mo stretchy="false" form="prefix">(</mo><mtext mathvariant="normal">index nLL</mtext><mo stretchy="false" form="postfix">)</mo><mi>/</mi><mi>∂</mi><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mi>q</mi></mrow><annotation encoding="application/x-tex">\partial(\text{index nLL}) / \partial \log q</annotation></semantics></math>,
+which in the BSAI Atka mackerel bridge is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mn>14.055</mn></mrow><annotation encoding="application/x-tex">-14.055</annotation></semantics></math>
+(see <code><a href="../articles/ab_bsai_atka_mackerel_case_study.html">vignette("ab_bsai_atka_mackerel_case_study")</a></code>). A
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>q</mi><annotation encoding="application/x-tex">q</annotation></semantics></math>
+prior is also stated against a particular standardization, so the window
+and the prior mean have to follow the same convention or the same prior
+statement lands on a different number. With
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>q</mi><annotation encoding="application/x-tex">q</annotation></semantics></math>
+free and unpenalised the choice makes no difference to the fit.</p>
 </div>
 <div class="section level4">
 <h4 id="selectivity-priors">Selectivity priors<a class="anchor" aria-label="anchor" href="#selectivity-priors"></a>

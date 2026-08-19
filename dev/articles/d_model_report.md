@@ -16,7 +16,9 @@ the order they are defined.
 | `rec_seas_prop` | Recruitment seasonal apportionment proportions | `n_pop × n_seas` |
 | `stray_rate` | Proportion of each population’s spawning biomass contributing to non-natal regions (only relevant when `n_pop > 1`) | `n_pop × n_years` |
 | `sexratio` | Recruitment sex ratio (female proportion) | `n_pop × n_regions × n_years × n_sexes` |
-| `h_trans` | Steepness parameter by population and region; ignored if mean recruitment is specified | `n_pop × n_regions` |
+| `h_trans` | Steepness parameter by population and region; ignored under mean recruitment unless a stock-recruit penalty is applied | `n_pop × n_regions` |
+| `SR_pred` | Stock-recruit curve prediction under `rec_model = "mean_rec"` with `sr_penalty`, evaluated alongside the dynamics but never advancing them; ones when no such penalty is applied | `n_pop × n_regions × n_years` |
+| `sr_R0` | Scale of the stock-recruit curve under `sr_penalty`, dimension `n_pop`. Equals `ln_global_R0` exponentiated under `sr_R0_spec = "shared"`, `ln_sr_R0` under `"est"`, and `rinit` under `"rinit"`, so the three settings are distinguishable here. |  |
 | `NAA` | Numbers-at-age (fished) | `n_pop × n_regions × (n_years + 1) × n_seas × n_ages × n_sexes` |
 | `NAA0` | Numbers-at-age (unfished) | `n_pop × n_regions × (n_years + 1) × n_seas × n_ages × n_sexes` |
 | `NAA_bef` | Numbers-at-age at the start of the season, before movement is applied | `n_pop × n_regions × (n_years + 1) × n_seas × n_ages × n_sexes` |
@@ -122,6 +124,7 @@ contain active observations.
 | `dmr_nLL` | Negative log-likelihood (penalty) for discard mortality rate deviations. Zero wherever the deviation is not estimated | `n_regions × n_years × n_seas × n_fish_fleets` |
 | `Rec_nLL` | Negative log-likelihood (penalty) for recruitment deviations | `n_pop × n_regions × n_est_rec_devs` |
 | `Init_Rec_nLL` | Negative log-likelihood (penalty) for initial age deviations | `n_pop × n_regions × (n_ages - 2)` |
+| `SR_pen_nLL` | Negative log-likelihood (penalty) for the stock-recruit residual, the log difference between realized recruitment and `SR_pred`, under `rec_model = "mean_rec"` with `sr_penalty`. Zero in years outside `sr_pen_yrs`, and zero throughout when no such penalty is applied | `n_pop × n_regions × n_years` |
 | `conv_fish_tag_nLL` | Negative log-likelihood for conventional tag recaptures | `conv_tag_max_liberty × n_seas × n_conv_tag_cohorts × n_regions × n_fish_fleets` |
 | `h_nLL` | Negative log-likelihood (prior) for steepness | scalar |
 | `fish_q_nLL` | Negative log-likelihood (prior) for fishery catchability | scalar |

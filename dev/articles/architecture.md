@@ -200,10 +200,10 @@ through that one file.
 | `model_obs_fishery_survey.R` | `get_fishery_observation_model`, `get_survey_observation_model` | `model_transition.R` | `model_objective.R` |
 | `model_obs_tagging.R` | `get_tag_mort`, `get_tagging_observation_model`, `release_conv_tag_attr` | `model_transition.R` | `model_objective.R`, `sim_observations.R` |
 | `model_osa.R` | `ddirmult_osa`, `ddirmult2`, `dmultinom_osa`, `osa_extract_cdf`, `osa_extract_keep`, `osa_extract_values`, `osa_extract_x`, `osa_pbetabinom`, `osa_pbinom`, `osa_squeeze` | nothing | `model_lik_comps.R`, `model_lik_tags.R` |
-| `model_population_dynamics.R` | `get_population_projection` | `model_biomass.R`, `model_recruitment.R`, `model_transition.R` | `model_objective.R` |
+| `model_population_dynamics.R` | `get_population_projection` | `model_biomass.R`, `model_transition.R` | `model_objective.R` |
 | `model_precision.R` | `Get_3d_precision` | nothing | `model_priors_penalties.R` |
-| `model_priors_penalties.R` | `get_dmr_penalty`, `Get_Fdev_PE_loglik`, `Get_move_PE_loglik`, `get_movement_dirichlet_prior`, `get_natmort_prior`, `get_q_prior`, `get_r0_prior`, `get_rec_level_penalty`, `get_recruitment_penalty`, `get_recruitment_proportion_priors`, `Get_sel_PE_loglik`, `get_selex_fixed_penalty`, `get_selex_prior`, `Get_Selex_Smoothness_Penalty`, `get_steepness_prior`, `get_tagrep_prior` | `model_distributions.R`, `model_precision.R`, `utils_math.R` | `model_objective.R` |
-| `model_recruitment.R` | `Get_Det_Recruitment` | `model_transition.R` | `model_population_dynamics.R`, `projection.R`, `sim_population.R` |
+| `model_priors_penalties.R` | `get_dmr_penalty`, `Get_Fdev_PE_loglik`, `Get_move_PE_loglik`, `get_movement_dirichlet_prior`, `get_natmort_prior`, `get_q_prior`, `get_r0_prior`, `get_rec_level_penalty`, `get_recruitment_penalty`, `get_recruitment_proportion_priors`, `Get_sel_PE_loglik`, `get_selex_fixed_penalty`, `get_selex_prior`, `Get_Selex_Smoothness_Penalty`, `get_sr_penalty`, `get_steepness_prior`, `get_tagrep_prior` | `model_distributions.R`, `model_precision.R`, `utils_math.R` | `model_objective.R` |
+| `model_recruitment.R` | `Get_Det_Recruitment` | `model_transition.R` | `projection.R`, `sim_population.R` |
 | `model_selectivity.R` | `Get_Selex`, `Get_Selex_Array` | nothing | `model_objective.R` |
 | `model_transition.R` | `advance_seas`, `build_seas_operator`, `catch_at_age`, `integrate_seas_abundance`, `seas_operator_and_integral`, `spawn_state`, `survey_state` | nothing | `model_biomass.R`, `model_init_naa.R`, `model_obs_fishery_survey.R`, `model_obs_tagging.R`, `model_population_dynamics.R`, `model_recruitment.R`, `projection.R`, `refpts_main.R`, `refpts_msy.R`, `refpts_spr.R`, `sim_observations.R`, `sim_population.R` |
 
@@ -212,7 +212,7 @@ through that one file.
 | Script | Defines | Calls into | Called from |
 |----|----|----|----|
 | `projection.R` | `build_proj_F`, `Do_Population_Projection`, `proj_catch_at_F`, `proj_log_catch_resid`, `proj_target_catch`, `run_proj_year`, `solve_proj_F_catch`, `solve_proj_year_F` | `model_biomass.R`, `model_recruitment.R`, `model_transition.R`, `sim_random_variates.R` | `plot_figures_tables.R` |
-| `refpts_main.R` | `build_plus_group_T`, `Get_Reference_Points`, `optim_ref_pts`, `solve_plus_group` | `model_fit.R`, `model_transition.R` | `plot_figures_tables.R`, `refpts_msy.R`, `refpts_spr.R`, `sim_closed_loop.R` |
+| `refpts_main.R` | `build_plus_group_T`, `check_msy_rec_model`, `Get_Reference_Points`, `optim_ref_pts`, `solve_plus_group` | `model_fit.R`, `model_transition.R` | `plot_figures_tables.R`, `refpts_msy.R`, `refpts_spr.R`, `sim_closed_loop.R` |
 | `refpts_msy.R` | `equil_rec_phi`, `equil_rec_ssb`, `equil_rec_ssb_deriv`, `global_Fmsy`, `local_Fmsy_multipop`, `local_Fmsy_sglpop`, `single_region_Fmsy` | `model_transition.R`, `refpts_main.R` |  |
 | `refpts_spr.R` | `global_SPR`, `single_region_SPR` | `model_transition.R`, `refpts_main.R` |  |
 
@@ -251,7 +251,7 @@ through that one file.
 |----|----|----|----|
 | `utils_math.R` | `get_AR1_CorrMat`, `get_Constant_CorrMat`, `get_logistN_Sigma`, `Get_Natural_Cubic_Spline_Weights`, `rho_trans` | nothing | `model_lik_comps.R`, `model_priors_penalties.R`, `setup_fishery_selectivity.R`, `setup_survey_selectivity.R`, `sim_observations.R`, `sim_random_variates.R` |
 | `utils_postfit.R` | `get_model_rep_from_mcmc`, `get_optim_param_list`, `get_par_est_info`, `marg_AIC`, `post_optim_sanity_checks` | nothing | `sim_closed_loop.R`, `sim_self_test.R` |
-| `utils_setup.R` | `assign_sel_block`, `collect_message`, `convert_to_numeric`, `extend_years`, `parse_idx_ages`, `parse_idx_cov`, `resolve_sel_pen_wts`, `safe_extract`, `set_data_indicator_unused`, `setup_sel_bin_devs`, `validate_selex_penalty`, `validate_selex_prior_types` | nothing | `diag_likelihood_profile.R`, `model_objective.R`, `plot_figures_tables.R`, `setup_biologicals.R`, `setup_dimensions.R`, `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_fishery_selectivity.R`, `setup_mapping.R`, `setup_movement.R`, `setup_recruitment.R`, `setup_sim_fleets.R`, `setup_survey_comps.R`, `setup_survey_selectivity.R`, `setup_tagging.R`, `setup_weighting.R`, `sim_closed_loop.R`, `sim_observations.R` |
+| `utils_setup.R` | `assign_sel_block`, `collect_message`, `convert_to_numeric`, `extend_years`, `parse_idx_ages`, `parse_idx_cov`, `resolve_sel_pen_wts`, `safe_extract`, `set_data_indicator_unused`, `setup_sel_bin_devs`, `setup_sel_norm_bins`, `validate_selex_penalty`, `validate_selex_prior_types` | nothing | `diag_likelihood_profile.R`, `model_objective.R`, `plot_figures_tables.R`, `setup_biologicals.R`, `setup_dimensions.R`, `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_fishery_selectivity.R`, `setup_mapping.R`, `setup_movement.R`, `setup_recruitment.R`, `setup_sim_fleets.R`, `setup_survey_comps.R`, `setup_survey_selectivity.R`, `setup_tagging.R`, `setup_weighting.R`, `sim_closed_loop.R`, `sim_observations.R` |
 
 #### Package data
 
@@ -288,13 +288,13 @@ what is under test rather than which stock the fixture happens to use.
 | `test-model_*` | 25 | One objective function module each: selectivity, movement, transition, observation models, likelihoods, distributions |
 | `test-utils_*` | 6 | Shared numerical helpers |
 | `test-sim_*` | 5 | Operating model, including simulate then refit self tests |
-| `test-refpts_*` | 8 | SPR and MSY solvers, one file per spatial structure |
+| `test-refpts_*` | 9 | SPR and MSY solvers, one file per spatial structure |
 | `test-projection_*` | 3 | Forward projection off a fitted model |
 | `test-diag_*` | 9 | Post fit diagnostics: retrospectives and OSA residuals |
 | `test-integration_*` | 4 | Cross cutting agreement between the objective, the reference points and the operating model |
 | `test-regression_*` | 13 | End to end fits pinning `obj$rep` and `nll` for known configurations |
 
-That is 93 test files in total.
+That is 95 test files in total.
 
 Two groups are worth calling out. The `test-regression_*` files pin
 `obj$rep` and `nll` values for known configurations against bundled

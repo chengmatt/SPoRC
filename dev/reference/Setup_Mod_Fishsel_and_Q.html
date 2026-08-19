@@ -35,6 +35,7 @@ Setup_Mod_FishIdx_and_Comps."><meta name="robots" content="noindex"></head><body
     <li><a class="dropdown-item" href="../articles/y_bsai_northern_rockfish_case_study.html">BSAI Northern Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/z_bsai_rougheye_rockfish_case_study.html">BSAI Blackspotted and Rougheye Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/aa_bsai_pacific_ocean_perch_case_study.html">BSAI Pacific Ocean Perch</a></li>
+    <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -81,6 +82,7 @@ catchability blocks and estimation structure. Must be called after
 <span>  Use_fish_selex_prior <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  fish_selex_prior <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  Use_fish_selex_penalty <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  fish_sel_norm_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fish_sel_bin_dev_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fishsel_pe_wt <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  fishsel_rw_init_sigma <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">5</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
@@ -319,6 +321,15 @@ no set of independent parameter priors can express. Only used when
 <dd><p>Integer (0/1). Whether a centering penalty is
 applied to sets of fishery selectivity fixed-effect parameters. Default
 <code>0</code>.</p></dd>
+
+
+<dt id="arg-fish-sel-norm-bins">fish_sel_norm_bins<a class="anchor" aria-label="anchor" href="#arg-fish-sel-norm-bins"></a></dt>
+<dd><p>List with one element per fishery fleet naming the
+bins the mean-one standardization averages over, or <code>NULL</code> for fleets
+standardizing over every bin (<code>Selex_Model = 9</code> only). A gear whose
+catchability is defined against part of the bin range standardizes over
+that part, and catchability absorbs the difference in scale. Default
+<code>NULL</code>.</p></dd>
 
 
 <dt id="arg-fish-sel-bin-dev-bins">fish_sel_bin_dev_bins<a class="anchor" aria-label="anchor" href="#arg-fish-sel-bin-dev-bins"></a></dt>

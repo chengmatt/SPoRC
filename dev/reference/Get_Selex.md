@@ -21,7 +21,8 @@ Get_Selex(
   n_bin_nodes_bicubic = NULL,
   n_yr_nodes_bicubic = NULL,
   bin_devs = NULL,
-  bin_dev_bins = NULL
+  bin_dev_bins = NULL,
+  sel_norm_bins = NULL
 )
 ```
 
@@ -253,6 +254,13 @@ Get_Selex(
   including any standardization the form performs internally, so the
   named bins are governed entirely by their own deviations while the
   rest of the curve keeps its parametric shape.
+
+- sel_norm_bins:
+
+  Integer vector of bins the mean-one standardization averages over
+  (`Selex_Model = 9`), or `NULL` to use every bin. A gear whose
+  catchability is defined against only part of the age range
+  standardizes over that part, which shifts the scale absorbed by q.
 
 ## Value
 

@@ -43,6 +43,7 @@ Setup_Mod_SrvIdx_and_Comps and before model compilation."><meta name="robots" co
     <li><a class="dropdown-item" href="../articles/y_bsai_northern_rockfish_case_study.html">BSAI Northern Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/z_bsai_rougheye_rockfish_case_study.html">BSAI Blackspotted and Rougheye Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/aa_bsai_pacific_ocean_perch_case_study.html">BSAI Pacific Ocean Perch</a></li>
+    <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -93,6 +94,7 @@ internal helpers (<code><a href="do_fixed_sel_pars_mapping.html">do_fixed_sel_pa
 <span>  Use_srv_selex_prior <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  srv_selex_prior <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  Use_srv_selex_penalty <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  srv_sel_norm_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  srv_sel_bin_dev_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  srvsel_pe_wt <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span>,</span>
 <span>  srvsel_rw_init_sigma <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">5</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span>,</span>
@@ -324,6 +326,15 @@ Ignored when <code>Use_srv_selex_prior = 0</code>. Default <code>NULL</code>.</p
 <dd><p>Integer (0/1). Whether a centering penalty is
 applied to sets of survey selectivity fixed-effect parameters. Default
 <code>0</code>.</p></dd>
+
+
+<dt id="arg-srv-sel-norm-bins">srv_sel_norm_bins<a class="anchor" aria-label="anchor" href="#arg-srv-sel-norm-bins"></a></dt>
+<dd><p>List with one element per survey fleet naming the
+bins the mean-one standardization averages over, or <code>NULL</code> for fleets
+standardizing over every bin (<code>Selex_Model = 9</code> only). A gear whose
+catchability is defined against part of the bin range standardizes over
+that part, and catchability absorbs the difference in scale. Default
+<code>NULL</code>.</p></dd>
 
 
 <dt id="arg-srv-sel-bin-dev-bins">srv_sel_bin_dev_bins<a class="anchor" aria-label="anchor" href="#arg-srv-sel-bin-dev-bins"></a></dt>

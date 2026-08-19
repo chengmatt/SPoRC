@@ -56,7 +56,9 @@ get_population_projection(
   eff_SSB,
   Mrate = NULL,
   move_timing = 0,
-  SR_ref_yr = 1
+  SR_ref_yr = 1,
+  sr_penalty = 0,
+  sr_R0 = NULL
 )
 ```
 

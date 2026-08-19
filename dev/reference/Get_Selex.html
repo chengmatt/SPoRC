@@ -31,6 +31,7 @@ fully flexible selectivity structures."><meta name="robots" content="noindex"></
     <li><a class="dropdown-item" href="../articles/y_bsai_northern_rockfish_case_study.html">BSAI Northern Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/z_bsai_rougheye_rockfish_case_study.html">BSAI Blackspotted and Rougheye Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/aa_bsai_pacific_ocean_perch_case_study.html">BSAI Pacific Ocean Perch</a></li>
+    <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -70,7 +71,8 @@ fully flexible selectivity structures.</p>
 <span>  n_bin_nodes_bicubic <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  n_yr_nodes_bicubic <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  bin_devs <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  bin_dev_bins <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  bin_dev_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sel_norm_bins <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -273,6 +275,13 @@ the value for every bin named in <code>bin_dev_bins</code>.</p></dd>
 including any standardization the form performs internally, so the named
 bins are governed entirely by their own deviations while the rest of the
 curve keeps its parametric shape.</p></dd>
+
+
+<dt id="arg-sel-norm-bins">sel_norm_bins<a class="anchor" aria-label="anchor" href="#arg-sel-norm-bins"></a></dt>
+<dd><p>Integer vector of bins the mean-one standardization
+averages over (<code>Selex_Model = 9</code>), or <code>NULL</code> to use every bin.
+A gear whose catchability is defined against only part of the age range
+standardizes over that part, which shifts the scale absorbed by q.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -53,6 +53,33 @@
   driven by that *same* year’s own SSB.
 - Incorporated additional movement ordering options including: movement
   after mortality and continuous movement dynamics.
+- Added the ability to fit a stock-recruit curve as a penalty rather
+  than as the recruitment process, via `sr_penalty` (`"none"`, `"bh"`,
+  `"ricker"`) in `Setup_Mod_Rec`, valid only with
+  `rec_model = "mean_rec"`. Recruitment stays a mean with deviations and
+  the curve is evaluated alongside the dynamics without advancing them,
+  with a normal density placed on the log residual over `sr_pen_yrs` at
+  `sr_pen_sigma`. This is the arrangement several ADMB templates use,
+  where a mean recruitment parameter generates recruitment and a
+  separate unfished recruitment parameter carries the curve. The curve’s
+  scale is set by `sr_R0_spec`: `"shared"` reuses `ln_global_R0`,
+  `"est"` estimates its own `ln_sr_R0`, and `"rinit"` takes it from
+  `ln_rinit` so one parameter sets both the unfished age structure and
+  the curve (requires `use_rinit = 1`). `SR_pred`, `SR_pen_nLL` and
+  `sr_R0` are reported. MSY reference points remain unavailable under
+  mean recruitment, since the curve does not govern the stock;
+  `Get_Reference_Points` names `sr_R0` and `h_trans` for callers who
+  want to supply that curve through `srr_opt` deliberately.
+- Added `fish_sel_norm_bins` and `srv_sel_norm_bins` to
+  `Setup_Mod_Fishsel_and_Q` and `Setup_Mod_Srvsel_and_Q`, naming the
+  bins the mean-one standardization averages over for non-parametric
+  log-scale selectivity (`"nonparlog"`). The default is every bin. A
+  gear whose catchability is defined against part of the bin range
+  standardizes over that part; the difference between windows is a
+  constant that catchability absorbs when it is free, but not when it
+  carries an informative prior.
+- Added a BSAI Atka mackerel case study bridging the 2024 assessment
+  (AMAK Model 16.0b), with `sgl_rg_bsai_atka_data`.
 
 ### Minor changes
 

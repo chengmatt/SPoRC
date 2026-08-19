@@ -43,6 +43,7 @@
     <li><a class="dropdown-item" href="../articles/y_bsai_northern_rockfish_case_study.html">BSAI Northern Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/z_bsai_rougheye_rockfish_case_study.html">BSAI Blackspotted and Rougheye Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/aa_bsai_pacific_ocean_perch_case_study.html">BSAI Pacific Ocean Perch</a></li>
+    <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -686,8 +687,7 @@ through a season goes through that one file.</p>
 <td><code>model_population_dynamics.R</code></td>
 <td><code>get_population_projection</code></td>
 <td>
-<code>model_biomass.R</code>, <code>model_recruitment.R</code>,
-<code>model_transition.R</code>
+<code>model_biomass.R</code>, <code>model_transition.R</code>
 </td>
 <td><code>model_objective.R</code></td>
 </tr>
@@ -709,7 +709,8 @@ through a season goes through that one file.</p>
 <code>get_recruitment_proportion_priors</code>,
 <code>Get_sel_PE_loglik</code>, <code>get_selex_fixed_penalty</code>,
 <code>get_selex_prior</code>, <code>Get_Selex_Smoothness_Penalty</code>,
-<code>get_steepness_prior</code>, <code>get_tagrep_prior</code>
+<code>get_sr_penalty</code>, <code>get_steepness_prior</code>,
+<code>get_tagrep_prior</code>
 </td>
 <td>
 <code>model_distributions.R</code>, <code>model_precision.R</code>,
@@ -722,8 +723,7 @@ through a season goes through that one file.</p>
 <td><code>Get_Det_Recruitment</code></td>
 <td><code>model_transition.R</code></td>
 <td>
-<code>model_population_dynamics.R</code>, <code>projection.R</code>,
-<code>sim_population.R</code>
+<code>projection.R</code>, <code>sim_population.R</code>
 </td>
 </tr>
 <tr class="even">
@@ -791,8 +791,9 @@ through a season goes through that one file.</p>
 <tr class="even">
 <td><code>refpts_main.R</code></td>
 <td>
-<code>build_plus_group_T</code>, <code>Get_Reference_Points</code>,
-<code>optim_ref_pts</code>, <code>solve_plus_group</code>
+<code>build_plus_group_T</code>, <code>check_msy_rec_model</code>,
+<code>Get_Reference_Points</code>, <code>optim_ref_pts</code>,
+<code>solve_plus_group</code>
 </td>
 <td>
 <code>model_fit.R</code>, <code>model_transition.R</code>
@@ -1113,7 +1114,7 @@ through a season goes through that one file.</p>
 <code>parse_idx_ages</code>, <code>parse_idx_cov</code>,
 <code>resolve_sel_pen_wts</code>, <code>safe_extract</code>,
 <code>set_data_indicator_unused</code>, <code>setup_sel_bin_devs</code>,
-<code>validate_selex_penalty</code>,
+<code>setup_sel_norm_bins</code>, <code>validate_selex_penalty</code>,
 <code>validate_selex_prior_types</code>
 </td>
 <td>nothing</td>
@@ -1221,7 +1222,7 @@ transition, observation models, likelihoods, distributions</td>
 </tr>
 <tr class="odd">
 <td><code>test-refpts_*</code></td>
-<td>8</td>
+<td>9</td>
 <td>SPR and MSY solvers, one file per spatial structure</td>
 </tr>
 <tr class="even">
@@ -1248,7 +1249,7 @@ for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 93 test files in total.</p>
+<p>That is 95 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

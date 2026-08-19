@@ -64,6 +64,10 @@ rec_seas_prop[, 1] <- 1
   rec_level_pen_sigma = 1,
   rec_level_pen_center = "own_mean",
   rec_level_pen_yrs = NULL,
+  sr_penalty = "none",
+  sr_pen_sigma = 1,
+  sr_pen_yrs = NULL,
+  sr_R0_spec = "shared",
   InitDevs_pen_center = "fixed",
   h_spec = NULL,
   sgl_seas_spawning_movement = NA,
@@ -425,6 +429,45 @@ rec_seas_prop[, 1] <- 1
 
   Vector of years the penalty applies over, or `NULL` (default) for
   every year.
+
+- sr_penalty:
+
+  Character. `"none"` (default), `"bh"` or `"ricker"`. Only valid with
+  `rec_model = "mean_rec"`. Fits a stock-recruit curve as a LIKELIHOOD
+  on the log residual \\\log R_y - \log\widehat{R}\_y\\ without letting
+  it generate recruitment, which is how several AFSC templates treat a
+  weakly determined relationship: it informs the recruitment series
+  rather than dictating it. Under `rec_model = "bh_rec"` or
+  `"ricker_rec"` the curve already generates recruitment and this must
+  stay `"none"`.
+
+- sr_pen_sigma:
+
+  Numeric standard deviation of that residual.
+
+- sr_pen_yrs:
+
+  Vector of years the stock-recruit penalty applies over, or `NULL`
+  (default) for every year that has a lagged spawning biomass, i.e. all
+  but the first `rec_lag`. Years outside it keep their recruitment
+  deviation estimated but contribute nothing to the penalty, which is
+  how a restricted stock-recruit window is expressed. Naming a year with
+  no lagged spawning biomass is an error rather than a silent fallback
+  to the equilibrium.
+
+- sr_R0_spec:
+
+  Character. `"shared"` (default) reuses `ln_global_R0`, which under
+  mean recruitment is the recruitment level, as the curve's scale,
+  giving one scale parameter. `"est"` gives the curve its own estimated
+  `ln_sr_R0`, identified by the curve fit itself. `"rinit"` takes the
+  scale from `ln_rinit`, the initial equilibrium recruitment, so one
+  parameter sets both the unfished age structure and the curve; it
+  requires `use_rinit = 1`. `"shared"` is the better posed of the first
+  two; `"est"` reproduces templates that carry separate mean-recruitment
+  and unfished-recruitment parameters, and `"rinit"` reproduces those
+  that use the unfished recruitment in both places, which is the usual
+  ADMB arrangement.
 
 - h_spec:
 

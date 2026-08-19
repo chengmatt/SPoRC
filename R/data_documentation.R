@@ -102,6 +102,17 @@
 #' @source 2024 Federal BSAI Pacific Ocean Perch Assessment
 "sgl_rg_bsai_pop_data"
 
+#' BSAI Atka Mackerel data for single region case study
+#'
+#' A dataset containing the necessary elements for the BSAI Atka mackerel case study,
+#' including model inputs (dimensions, biologicals, catch, survey index, and compositions), the ADMB MLE
+#' parameter estimates, and the AMAK derived quantities and likelihood components used for bridge verification.
+#'
+#' @format A list with model inputs at the top level, \code{mle} (AMAK maximum likelihood estimates),
+#' and \code{amak} (AMAK derived quantities and likelihood components for bridge comparison)
+#' @source 2024 Federal BSAI Atka Mackerel Assessment, Model 16.0b
+"sgl_rg_bsai_atka_data"
+
 #' Dusky data for single region assessment case study
 #'
 #' A data list containing inputs for the 2024 GOA Dusky Rockfish Assessment

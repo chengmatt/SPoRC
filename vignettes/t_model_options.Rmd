@@ -210,6 +210,29 @@ Separate from the deviation penalty, an optional penalty on the log recruitment 
 
 **Rationale.** Under a stock-recruit relationship the deviations are residuals about the predicted curve, so a model that also wants the *realized* recruitment series to stay regular has nowhere else to say so. This penalty is that second, independent statement, and reproduces the recruitment regularity penalties several existing assessments carry (e.g., a penalty on log recruitment variability). Leave it off unless recruitment in data-poor years is wandering unreasonably; it is a tuning penalty, not a probability model, and it will shrink genuine recruitment variability if over-weighted (hence the `rec_level_pen_sigma` is left as data rather than an estimated parameter).
 
+### Stock-recruit curve as a penalty
+
+Under `rec_model = "mean_rec"` a stock-recruit curve can be evaluated alongside the dynamics without ever advancing them, its residual penalised instead. Recruitment stays a mean with deviations, $R_y = R_0^{\text{mean}}\exp(\varepsilon_y)$, and the curve enters the objective only through the log residual $\xi^{\text{SR}}_y = \ln R_y - \ln \hat{R}_y$:
+
+$$-\ln L^{\text{SR}} = \sum_{y \in \mathcal{Y}_{\text{SR}}} -\ln \phi\left(\xi^{\text{SR}}_y;\ 0,\ \sigma_{\text{SR}}\right)$$
+
+| Argument | Description |
+|---|---|
+| `sr_penalty` | `"none"` (default), `"bh"`, or `"ricker"`, naming the curve $\hat{R}_y$ follows. Valid only with `rec_model = "mean_rec"`; under `"bh_rec"` or `"ricker_rec"` the curve already generates recruitment, which makes the deviation the residual by construction, so penalising the residual as well would count it twice and setup rejects the combination |
+| `sr_pen_sigma` | $\sigma_{\text{SR}}$, the standard deviation of the residual. Held as data rather than estimated. Default 1 |
+| `sr_pen_yrs` | Calendar years $\mathcal{Y}_{\text{SR}}$ the penalty is summed over; `NULL` (default) is every year that has a lagged spawning biomass, i.e. all but the first `rec_lag`. Years outside it keep their recruitment deviation estimated and contribute nothing, which is how a restricted stock-recruit window is expressed. Naming a year with no lagged spawning biomass is an error rather than a silent fallback: the curve's prediction there is the equilibrium, so the residual would not be a stock-recruit residual |
+| `sr_R0_spec` | Where the curve's scale $R_0^{\text{SR}}$ comes from (see below) |
+
+| String | The curve's scale $R_0^{\text{SR}}$ |
+|---|---|
+| `"shared"` | `ln_global_R0`, i.e. $R_0^{\text{mean}}$ itself, which under mean recruitment is the mean recruitment level. One parameter and well posed, but the curve is anchored on mean recruitment rather than on an unfished level. **Default** |
+| `"est"` | The curve's own estimated `ln_sr_R0`, identified by the curve fit alone. Reproduces templates carrying separate mean-recruitment and unfished-recruitment parameters, though nothing ties the two together, so the pair can slide |
+| `"rinit"` | `ln_rinit`, the initial-equilibrium recruitment, so one parameter sets both the unfished age structure and the curve. Requires `use_rinit = 1` and errors otherwise. This is the usual ADMB arrangement |
+
+Steepness is reachable in this mode: `h_spec`, `Use_h_prior`, and `h_prior` act on the penalty curve exactly as they do on a curve that generates recruitment.
+
+**What this is, and what it is not.** It is a penalty on a derived quantity, a statement about how far realized recruitment sits from a curve, and not a data-generating process. The recruitment deviations remain free and keep their own penalty, so a weakly determined relationship informs the recruitment series rather than dictating it. The simulation side does not see it at all: `Setup_Sim_Rec()` and the operating model generate recruitment from the mean and its deviations under `"mean_rec"`, and `sr_penalty` enters the estimation model's objective alone. The curve's prediction is reported as `SR_pred` and its penalty as `SR_pen_nLL`; see `vignette("d_model_report")`. MSY is the maximum of equilibrium yield over a curve that drives the dynamics, and this curve does not, so `Get_Reference_Points()` refuses an MSY request on a fit carrying the penalty and directs it to the SPR variants.
+
 ### Recruitment penalty weighting (`Setup_Mod_Weighting()`)
 
 | Argument | Description |
@@ -221,7 +244,7 @@ A per-deviation weight of zero removes that deviation from the penalty while it 
 
 ### Steepness priors
 
-When a stock-recruit curve is used (`rec_model = "bh_rec"` or `"ricker_rec"`), steepness ($h$) can be penalised with a Beta distribution scaled to [0.2, 1] by default:
+When a stock-recruit curve is present, either because it generates recruitment (`rec_model = "bh_rec"` or `"ricker_rec"`) or because it enters as a penalty (`rec_model = "mean_rec"` with `sr_penalty`), steepness ($h$) can be penalised with a Beta distribution scaled to [0.2, 1] by default:
 
 | Argument | Description |
 |---|---|
@@ -273,7 +296,7 @@ Specified as character strings following the pattern `"<form>_Fleet_<f>"` (const
 | `"exponential"` | Descending power: $1/\text{bin}^\beta$ | 1 ($\ln \beta$) |
 | `"dbnrml"` | Double-normal with ascending and descending widths, plateau, and endpoint control | 6 |
 | `"nonpar"` | Non-parametric: one logit-scale parameter per bin, transformed via $\text{logit}^{-1}$ | $n_\text{bins}$ |
-| `"nonparlog"` | Non-parametric on the log scale, standardized so each year's selectivity averages to 1 across bins | $n_\text{bins}$ |
+| `"nonparlog"` | Non-parametric on the log scale, standardized so each year's selectivity averages to 1 over a window of bins (every bin by default; see [Normalisation and length-based selectivity]) | $n_\text{bins}$ |
 | `"asymplogist1"` | Logistic with asymptote $\alpha \in (0,1)$: $\alpha / (1 + \exp(-k(\text{bin} - a_{50})))$ | 3 ($\text{logit}(\alpha)$, $\ln a_{50}$, $\ln k$) |
 | `"asymplogist2"` | Logistic with asymptote, $a_{50}/a_{95}$ parameterisation | 3 ($\text{logit}(\alpha)$, $\ln a_{50}$, $\ln a_{95}$) |
 | `"bicubic"` | Bicubic natural-cubic-spline surface over a bin-node $\times$ year-node grid | $n_\text{bin\_nodes} \times n_\text{yr\_nodes}$ (see below) |
@@ -364,6 +387,18 @@ The `fish_fixed_sel_pars_spec` / `srv_fixed_sel_pars_spec` argument controls how
 ### Normalisation and length-based selectivity
 
 Selectivity can be normalised relative to a specific bin, to the maximum, or to the mean across a bin range. When `fit_lengths = 1`, selectivity operates on length bins and is mapped to age-space via a user-supplied size-age transition matrix (`SizeAgeTrans`).
+
+The `"nonparlog"` form carries its own standardization: each year's curve is divided by the mean of $\exp(\theta)$ over a window of bins $\mathcal{B}$,
+
+$$\text{sel}_b = \exp(\theta_b) \Big/ \frac{1}{|\mathcal{B}|}\sum_{b' \in \mathcal{B}} \exp(\theta_{b'})$$
+
+and that window is an input:
+
+| Argument | Description |
+|---|---|
+| `fish_sel_norm_bins` / `srv_sel_norm_bins` | The bins $\mathcal{B}$ each fleet standardizes over, supplied to `Setup_Mod_Fishsel_and_Q()` and `Setup_Mod_Srvsel_and_Q()` respectively. A list with one element per fleet naming that fleet's bins, or `NULL` (the default) for every bin; a fleet's element may also be `NULL` on its own. Stored as a 0/1 array `[n_bins × n_fleets]` and read only by `"nonparlog"` fleets |
+
+**Why the window matters.** A gear whose catchability is defined against only part of the bin range standardizes over that part. Two windows differ by a constant multiplier on the whole curve, which catchability would absorb completely *if* $q$ were free. Under an informative prior on $q$ it is not free, and the mismatch is instead levered onto the selectivity parameters by the factor $\partial(\text{index nLL}) / \partial \log q$, which in the BSAI Atka mackerel bridge is $-14.055$ (see `vignette("ab_bsai_atka_mackerel_case_study")`). A $q$ prior is also stated against a particular standardization, so the window and the prior mean have to follow the same convention or the same prior statement lands on a different number. With $q$ free and unpenalised the choice makes no difference to the fit.
 
 ### Selectivity priors
 

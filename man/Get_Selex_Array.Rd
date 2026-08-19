@@ -28,7 +28,8 @@ Get_Selex_Array(
   n_sexes,
   n_fleets,
   bin_devs = NULL,
-  bin_dev_bins = NULL
+  bin_dev_bins = NULL,
+  sel_norm_bins = NULL
 )
 }
 \arguments{

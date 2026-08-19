@@ -513,6 +513,39 @@ validate_selex_prior_types <- function(selex_prior, use_flag, what, sel_blocks, 
   return(selex_prior)
 }
 
+#' Build the selectivity standardization window
+#'
+#' Records which bins the mean-one standardization averages over for each fleet.
+#' Every bin is the default; a fleet whose catchability is defined against only
+#' part of the bin range standardizes over that part instead.
+#'
+#' @param input_list Input list to append to
+#' @param sel_norm_bins List with one element per fleet, or NULL for every bin
+#' @param prefix One of "fish", "ret" or "srv"
+#' @param n_fleets Number of fleets
+#' @param bins Number of bins
+#' @keywords internal
+setup_sel_norm_bins <- function(input_list, sel_norm_bins, prefix, n_fleets, bins) {
+
+  nm <- paste0(prefix, "_sel_norm_bins")
+
+  # 0/1 array of which bins each fleet standardizes over; all ones is every bin
+  arr <- array(1, dim = c(bins, n_fleets))
+  if(!is.null(sel_norm_bins)) {
+    if(!is.list(sel_norm_bins) || length(sel_norm_bins) != n_fleets) stop(nm, " must be a list with one element per fleet (use NULL for a fleet standardizing over every bin).")
+    for(f in seq_len(n_fleets)) {
+      if(is.null(sel_norm_bins[[f]])) next
+      if(!all(sel_norm_bins[[f]] %in% seq_len(bins))) stop(nm, " for fleet ", f, " refers to bins outside 1:", bins)
+      if(length(sel_norm_bins[[f]]) == 0) stop(nm, " for fleet ", f, " is empty; a standardization needs at least one bin.")
+      arr[, f] <- 0
+      arr[sel_norm_bins[[f]], f] <- 1
+    } # end f loop
+  }
+
+  input_list$data[[nm]] <- arr
+  return(input_list)
+}
+
 #' Set up bin-override selectivity deviations for one selectivity stream
 #'
 #' Creates the bin-override deviation parameter array, its factor map, and its

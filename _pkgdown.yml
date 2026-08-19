@@ -29,6 +29,8 @@ navbar:
           href: articles/z_bsai_rougheye_rockfish_case_study.html
         - text: "BSAI Pacific Ocean Perch"
           href: articles/aa_bsai_pacific_ocean_perch_case_study.html
+        - text: "BSAI Atka Mackerel"
+          href: articles/ab_bsai_atka_mackerel_case_study.html
 
 articles:
   - title: "Getting Started"
@@ -54,6 +56,7 @@ articles:
       - y_bsai_northern_rockfish_case_study
       - z_bsai_rougheye_rockfish_case_study
       - aa_bsai_pacific_ocean_perch_case_study
+      - ab_bsai_atka_mackerel_case_study
 
   - title: "Simulation and Projections"
     contents:

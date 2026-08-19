@@ -755,8 +755,10 @@ do_h_mapping <- function(input_list, h_spec, rec_dd) {
     }
   }
 
-  # Mean recruitment
-  if(input_list$data$rec_model == 0) {
+  # Mean recruitment with no stock-recruit penalty has no curve, so steepness is
+  # meaningless and stays off. With a penalty there IS a curve and steepness has
+  # to be reachable, so fall through to h_spec.
+  if(input_list$data$rec_model == 0 && input_list$data$sr_penalty == 0) {
     input_list$map$steepness_h <- factor(rep(NA, length(input_list$par$steepness_h)))
   } else if(!is.null(h_spec)) {
 
@@ -1255,6 +1257,33 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   from the early-period value (index 1) to the late-period value (index 2).
 #'   If \eqn{\leq 1}, a single \eqn{\sigma_R} is applied throughout. Default
 #'   \code{1}.
+#' @param sr_penalty Character. \code{"none"} (default), \code{"bh"} or
+#'   \code{"ricker"}. Only valid with \code{rec_model = "mean_rec"}. Fits a
+#'   stock-recruit curve as a LIKELIHOOD on the log residual
+#'   \eqn{\log R_y - \log\widehat{R}_y} without letting it generate
+#'   recruitment, which is how several AFSC templates treat a weakly determined
+#'   relationship: it informs the recruitment series rather than dictating it.
+#'   Under \code{rec_model = "bh_rec"} or \code{"ricker_rec"} the curve already
+#'   generates recruitment and this must stay \code{"none"}.
+#' @param sr_pen_sigma Numeric standard deviation of that residual.
+#' @param sr_pen_yrs Vector of years the stock-recruit penalty applies over, or
+#'   \code{NULL} (default) for every year that has a lagged spawning biomass,
+#'   i.e. all but the first \code{rec_lag}. Years outside it keep their
+#'   recruitment deviation estimated but contribute nothing to the penalty,
+#'   which is how a restricted stock-recruit window is expressed. Naming a year
+#'   with no lagged spawning biomass is an error rather than a silent fallback
+#'   to the equilibrium.
+#' @param sr_R0_spec Character. \code{"shared"} (default) reuses
+#'   \code{ln_global_R0}, which under mean recruitment is the recruitment level,
+#'   as the curve's scale, giving one scale parameter. \code{"est"} gives the
+#'   curve its own estimated \code{ln_sr_R0}, identified by the curve fit
+#'   itself. \code{"rinit"} takes the scale from \code{ln_rinit}, the initial
+#'   equilibrium recruitment, so one parameter sets both the unfished age
+#'   structure and the curve; it requires \code{use_rinit = 1}. \code{"shared"}
+#'   is the better posed of the first two; \code{"est"} reproduces templates
+#'   that carry separate mean-recruitment and unfished-recruitment parameters,
+#'   and \code{"rinit"} reproduces those that use the unfished recruitment in
+#'   both places, which is the usual ADMB arrangement.
 #' @param Use_rec_level_pen Integer (0/1). Whether a penalty is applied to the
 #'   log recruitment series itself, separately from the deviation penalty.
 #'   Under a stock-recruit relationship the deviations are residuals about the
@@ -1604,6 +1633,10 @@ Setup_Mod_Rec <- function(input_list,
                           rec_level_pen_sigma = 1,
                           rec_level_pen_center = "own_mean",
                           rec_level_pen_yrs = NULL,
+                          sr_penalty = "none",
+                          sr_pen_sigma = 1,
+                          sr_pen_yrs = NULL,
+                          sr_R0_spec = "shared",
                           InitDevs_pen_center = "fixed",
                           h_spec = NULL,
                           sgl_seas_spawning_movement = NA,
@@ -1904,6 +1937,24 @@ Setup_Mod_Rec <- function(input_list,
   input_list$data$rec_level_pen_center <- convert_to_numeric(rec_level_pen_center, list(fixed = 0, own_mean = 1))
   input_list$data$rec_level_pen_yrs <- if(is.null(rec_level_pen_yrs)) rep(1, length(input_list$data$years)) else as.numeric(input_list$data$years %in% rec_level_pen_yrs)
   if(Use_rec_level_pen == 1) collect_message("A recruitment level penalty is applied, centred on: ", rec_level_pen_center)
+  if(!sr_penalty %in% c("none", "bh", "ricker")) stop("sr_penalty must be none, bh, or ricker")
+  if(!sr_R0_spec %in% c("shared", "est", "rinit")) stop("sr_R0_spec must be shared, est, or rinit")
+  if(sr_R0_spec == "rinit" && use_rinit != 1)
+    stop("sr_R0_spec = 'rinit' takes the curve's scale from ln_rinit, so it needs use_rinit = 1. With use_rinit = 0 the initial age structure is built from ln_global_R0 and 'shared' is the same thing.")
+  if(sr_penalty != "none" && input_list$data$rec_model != 0)
+    stop("sr_penalty is only valid with rec_model = 'mean_rec'. Under bh_rec or ricker_rec the stock-recruit curve already generates recruitment, and penalizing the residual as well would score it twice.")
+  input_list$data$sr_penalty <- convert_to_numeric(sr_penalty, list(none = 0, bh = 1, ricker = 2))
+  input_list$data$sr_R0_spec <- convert_to_numeric(sr_R0_spec, list(shared = 0, est = 1, rinit = 2))
+  input_list$data$ln_sigma_sr_pen <- log(sr_pen_sigma)
+  # A penalty year needs a spawning biomass behind it. The first rec_lag years
+  # have none, and Get_Det_Recruitment falls back to the fished equilibrium
+  # there, so scoring them would compare log recruitment against R0 rather than
+  # against the curve. They are dropped by default and rejected if asked for.
+  sr_yr_ok <- seq_along(input_list$data$years) > rec_lag
+  input_list$data$sr_pen_yrs <- if(is.null(sr_pen_yrs)) as.numeric(sr_yr_ok) else as.numeric(input_list$data$years %in% sr_pen_yrs)
+  if(sr_penalty != "none" && any(input_list$data$sr_pen_yrs == 1 & !sr_yr_ok))
+    stop("sr_pen_yrs includes the first ", rec_lag, " year(s) of the model, which have no lagged spawning biomass. The stock-recruit prediction there falls back to the fished equilibrium, so the residual would not be a stock-recruit residual. Drop those years.")
+  if(sr_penalty != "none") collect_message("Recruitment is a mean with deviations; a ", sr_penalty, " curve is fitted as a penalty on the residual, with its scale ", sr_R0_spec)
   input_list$data$InitDevs_pen_center <- convert_to_numeric(InitDevs_pen_center, list(fixed = 0, own_mean = 1))
   collect_message("Recruitment deviation penalty is centred on: ", RecDevs_pen_center)
   input_list$data$init_F_prop <- init_F_prop
@@ -1934,6 +1985,14 @@ Setup_Mod_Rec <- function(input_list,
   # Global R0
   if("ln_global_R0" %in% names(starting_values)) input_list$par$ln_global_R0 <- starting_values$ln_global_R0
   else input_list$par$ln_global_R0 <- array(log(15), dim = c(input_list$data$n_pop))
+
+  # The stock-recruit curve's own scale, used only when sr_R0_spec = "est".
+  # Mapped off otherwise so it never enters the parameter vector by accident.
+  if("ln_sr_R0" %in% names(starting_values)) input_list$par$ln_sr_R0 <- starting_values$ln_sr_R0
+  else input_list$par$ln_sr_R0 <- array(input_list$par$ln_global_R0, dim = c(input_list$data$n_pop))
+  input_list$map$ln_sr_R0 <- if(input_list$data$sr_R0_spec == 1 && input_list$data$sr_penalty > 0) {
+    factor(seq_len(length(input_list$par$ln_sr_R0)))
+  } else factor(rep(NA, length(input_list$par$ln_sr_R0)))
 
   # Global Initial R0
   if("ln_rinit" %in% names(starting_values)) input_list$par$ln_rinit <- starting_values$ln_rinit

@@ -130,6 +130,12 @@
 #'   instead starts the walk at zero under the walk's own estimated sigma,
 #'   making the first year as smooth as every later step. Appropriate when the
 #'   base parametric curve already describes the first year well.
+#' @param srv_sel_norm_bins List with one element per survey fleet naming the
+#'   bins the mean-one standardization averages over, or \code{NULL} for fleets
+#'   standardizing over every bin (\code{Selex_Model = 9} only). A gear whose
+#'   catchability is defined against part of the bin range standardizes over
+#'   that part, and catchability absorbs the difference in scale. Default
+#'   \code{NULL}.
 #' @param srv_sel_bin_dev_bins List with one element per survey fleet naming the
 #'   bins that fleet overrides, or \code{NULL} for fleets with no overrides
 #'   (e.g. \code{list(1, NULL)} frees bin 1 of fleet 1 only). An overridden bin
@@ -248,6 +254,7 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
                                    Use_srv_selex_prior = 0,
                                    srv_selex_prior = NULL,
                                    Use_srv_selex_penalty = 0,
+                                   srv_sel_norm_bins = NULL,
                                    srv_sel_bin_dev_bins = NULL,
                                    srvsel_pe_wt = rep(1, input_list$data$n_srv_fleets),
                                    srvsel_rw_init_sigma = rep(5, input_list$data$n_srv_fleets),
@@ -582,6 +589,7 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
   input_list <- setup_sel_bin_devs(input_list, srv_sel_bin_dev_bins, cont_tv_srvsel_bin_devs,
                                    prefix = "srv", n_fleets = input_list$data$n_srv_fleets,
                                    bins = bins, starting_values = starting_values)
+  input_list <- setup_sel_norm_bins(input_list, srv_sel_norm_bins, prefix = "srv", n_fleets = input_list$data$n_srv_fleets, bins = bins)
   input_list$data$srv_selex_penalty <- validate_selex_penalty(srv_selex_penalty, Use_srv_selex_penalty, "srv_selex_penalty")
   input_list$data$t_srv <- t_srv
   input_list$data$srv_selex_type <- srv_selex_type

@@ -198,8 +198,8 @@ group solution incorporating movement is:
 $$\mathbf{N}_{p,a_{+},s}^{'} = \left( \mathbf{I -}\mathbf{G}_{p,s}^{a_{+}} \right)^{- 1}\mathbf{X}_{p,s}$$
 
 Under $\text{move\_timing} = 0$ and a single season, $\mathbf{G}_{p,s}^{a}$ is
-$\text{diag}\left( \exp\left( - \mathbf{Z}_{p,a,s}^{'} \right) \right)\left( \mathbf{M}_{p,y = 1,a,s} \right)^{T}$,
-the form used in earlier versions of `SPoRC`. When only a single region is
+$\text{diag}\left( \exp\left( - \mathbf{Z}_{p,a,s}^{'} \right) \right)\left( \mathbf{M}_{p,y = 1,a,s} \right)^{T}$.
+When only a single region is
 modeled or no movement occurs (i.e., an identity matrix), the matrix
 formulation simplifies to the standard scalar geometric series solution
 under every `move_timing`.
@@ -238,9 +238,9 @@ parameters rather than deviations from an equilibrium.
 
 ### Recruitment Processes
 
-In the current iteration of `SPoRC`, two stock recruitment
-parameterizations can be specified. Recruitment can be specified to
-arise about a mean parameter ($\mu_p^{\text{Rec}}$):
+`SPoRC` holds recruitment either about a mean parameter or on a
+stock-recruit curve. Recruitment can be specified to arise about a mean
+parameter ($\mu_p^{\text{Rec}}$):
 
 $$\begin{matrix}
 N_{p,r,y,\tau = 1,a = 1,s} = \mu_p^{\text{Rec}}\exp\left( \epsilon_{p,r,y}^{\text{Rec}} - \frac{\sigma_{\text{Rec}}^{2}}{2}b_{y} \right)\chi_{p,\tau = 1}\psi_{p,r,y,s}\zeta_{p,r} \\
@@ -265,13 +265,13 @@ following the steepness parameterization (Mace and Doonan, 1988).
 Localized density-dependent recruitment is defined as:
 
 $$\begin{matrix}
-N_{p,r,y,\tau = 1,a = 1,s} = \dfrac{4\mu_p^{\text{Rec}}\zeta_{p,r}h_{p,r}{\text{effSSB}}_{p,y - RecLag}}{\left( 1 - h_{p,r} \right)\text{SSB0}_{p,r} + 5\left( h_{p,r} - 1 \right){\text{effSSB}}_{p,y - RecLag}}\exp\left( \epsilon_{p,r,y}^{\text{Rec}} - \frac{\sigma_{\text{Rec}}^{2}}{2}b_{y} \right)\chi_{p,\tau=1}\psi_{p,r,y,s} \\
+N_{p,r,y,\tau = 1,a = 1,s} = \dfrac{4\mu_p^{\text{Rec}}\zeta_{p,r}h_{p,r}{\text{effSSB}}_{p,y - RecLag}}{\left( 1 - h_{p,r} \right)\text{SSB0}_{p,r} + \left( 5h_{p,r} - 1 \right){\text{effSSB}}_{p,y - RecLag}}\exp\left( \epsilon_{p,r,y}^{\text{Rec}} - \frac{\sigma_{\text{Rec}}^{2}}{2}b_{y} \right)\chi_{p,\tau=1}\psi_{p,r,y,s} \\
 \end{matrix}$$
 
 while global density-dependent recruitment can be defined as:
 
 $$\begin{matrix}
-N_{p,r,y,\tau = 1,a = 1,s} = \dfrac{4\mu_p^{\text{Rec}}\zeta_{p,r}h_p\sum_{r}^{}{SSB}_{p,r,y - RecLag}}{(1 - h_p)\sum_{r}^{}{SSB0_{p,r}} + 5(h_p - 1)\sum_{r}^{}{SSB}_{p,r,y - RecLag}}\exp\left( \epsilon_{p,r,y}^{\text{Rec}} - \frac{\sigma_{\text{Rec}}^{2}}{2}b_{y} \right)\chi_{p,\tau=1}\psi_{p,r,y,s} \\
+N_{p,r,y,\tau = 1,a = 1,s} = \dfrac{4\mu_p^{\text{Rec}}\zeta_{p,r}h_p\sum_{r}^{}{SSB}_{p,r,y - RecLag}}{(1 - h_p)\sum_{r}^{}{SSB0_{p,r}} + (5h_p - 1)\sum_{r}^{}{SSB}_{p,r,y - RecLag}}\exp\left( \epsilon_{p,r,y}^{\text{Rec}} - \frac{\sigma_{\text{Rec}}^{2}}{2}b_{y} \right)\chi_{p,\tau=1}\psi_{p,r,y,s} \\
 \end{matrix}$$
 
 where $\mu_p^{\text{Rec}}$ under this parameterization is the virgin
@@ -341,10 +341,69 @@ spawning biomass.
 Note that $RecLag$ denotes the delay (in seasons) between spawning and
 when recruits enter the population, and is user-specified as $RecLag \geq 1$
 (the classic case above) or $RecLag = 0$ (age-0 recruitment, described
-below). For $RecLag \geq 1$: if $RecLag > y$ (i.e. there is not yet enough
-model history to look back $RecLag$ seasons), `SPoRC` utilizes
-$\text{SSB0}_{p,r}$ instead of ${SSB}_{p,r,y - RecLag}$ to compute
-deterministic recruitment.
+below). For $RecLag \geq 1$: if $y \leq RecLag$ (i.e. there is not yet enough
+model history to look back $RecLag$ seasons), `SPoRC` utilizes the initial
+equilibrium spawning biomass instead of ${SSB}_{p,r,y - RecLag}$ to compute
+deterministic recruitment. That equilibrium is evaluated at the initial
+fishing mortality, so it equals $\text{SSB0}_{p,r}$ whenever the model
+starts unfished.
+
+#### Stock-Recruit Curve as a Penalty
+
+Under both density-dependent forms above the curve generates
+recruitment, which makes $\epsilon_{p,r,y}^{\text{Rec}}$ the
+stock-recruit residual by construction. A third arrangement
+(`rec_model = "mean_rec"` with `sr_penalty = "bh"` or `"ricker"`) leaves
+recruitment arising about the mean parameter exactly as in the first
+equation of this section,
+
+$$R_{p,r,y} = \mu_p^{\text{Rec}}\zeta_{p,r}\exp\left( \epsilon_{p,r,y}^{\text{Rec}} - \frac{\sigma_{\text{Rec}}^{2}}{2}b_{y} \right)$$
+
+where $R_{p,r,y} \equiv \text{TotalRec}_{p,r,y}$ is the realized total
+annual recruitment, and evaluates a stock-recruit curve alongside the
+dynamics without ever advancing them. The curve supplies a prediction
+${\widehat{R}}_{p,r,y}$ (reported as `SR_pred`, with dimensions
+population by region by year) from the Beverton-Holt or Ricker
+expression given above, driven by the same
+$\text{effSSB}_{p,y - RecLag}$ (or $\sum_{r}^{}{SSB}_{p,r,y - RecLag}$
+under global density dependence) and carrying no recruitment deviation.
+Numbers-at-age are advanced by $R_{p,r,y}$ and never by
+${\widehat{R}}_{p,r,y}$, so the deviations remain free about the mean
+rather than becoming residuals about the curve. The curve enters the
+model only through the log residual
+
+$$\xi_{p,r,y}^{\text{SR}} = \log R_{p,r,y} - \log{\widehat{R}}_{p,r,y}$$
+
+which enters the objective as a penalty (see the Stock-Recruit Residual section
+under Process Error Penalties). Note that $\xi_{p,r,y}^{\text{SR}}$ is a
+derived quantity rather than an estimated parameter, which is what
+separates this arrangement from the two above: a weakly determined
+relationship informs the recruitment series at a cost set by the
+penalty instead of dictating it, the convention several existing
+assessments use. The two statements are mutually exclusive, and a
+stock-recruit penalty requested alongside `rec_model = "bh_rec"` or
+`"ricker_rec"` is rejected at setup, since the curve already generates
+recruitment there and the residual would be penalised twice.
+
+The scale of the curve, and with it $\text{SSB0}_{p,r}$ and the
+depletion at which the curve is evaluated, is set by `sr_R0_spec`:
+
+-   `"shared"` (the default) takes the scale from $\mu_p^{\text{Rec}}$,
+    which under mean recruitment is the level of the recruitment series
+    itself. A single parameter carries both the recruitment level and
+    the curve, which is better posed than `"est"`, and it anchors the
+    curve on mean recruitment rather than on an unfished level.
+-   `"est"` gives the curve its own estimated scale
+    $\mu_p^{\text{SR}}$, identified by the curve fit alone. This
+    reproduces templates that carry separate mean-recruitment and
+    unfished-recruitment parameters. Nothing ties $\mu_p^{\text{SR}}$ to
+    $\mu_p^{\text{Rec}}$, so the two are free to slide against one
+    another.
+-   `"rinit"` takes the scale from $\mu_p^{\text{RecInit}}$, the initial
+    equilibrium recruitment of the Population Initialization section, so
+    one parameter sets both the unfished age structure and the curve.
+    This requires a separately estimated initialization recruitment
+    (`use_rinit = 1`) and is the usual ADMB arrangement.
 
 #### Age-0 Recruitment ($RecLag = 0$)
 
@@ -1175,11 +1234,22 @@ where $\eta_{b}$ is a freely estimated logit-scale selectivity parameter for eac
 
 A second non-parametric form (`"nonparlog"`) holds the free parameters on
 the log scale instead and standardizes within each year so selectivity
-averages to one across bins:
+averages to one over a set of bins $\mathcal{B}$:
 
 $$\begin{matrix}
-{Sel}_{y,b} = \frac{\exp\left( \eta_{y,b} \right)}{\frac{1}{n_b}\sum_{b'}\exp\left( \eta_{y,b'} \right)}
+{Sel}_{y,b} = \frac{\exp\left( \eta_{y,b} \right)}{\frac{1}{\left| \mathcal{B} \right|}\sum_{b' \in \mathcal{B}}^{}{\exp\left( \eta_{y,b'} \right)}}
 \end{matrix}$$
+
+The standardization window $\mathcal{B}$ is given per fleet
+(`fish_sel_norm_bins` and `srv_sel_norm_bins`) and is every bin by
+default, i.e. $\mathcal{B} = \left\{ 1,\ldots,n_{b} \right\}$ and the
+divisor is the mean over the whole curve. It is expressed in whichever
+bin domain the fleet's selectivity is defined on, ages or lengths.
+Standardization is applied to every bin of the curve regardless of which
+bins $\mathcal{B}$ holds; the window sets what the average is taken
+over, not which bins are rescaled. Retention selectivity takes the whole
+bin range, since the window is supplied for the fishery and survey
+streams only.
 
 The two non-parametric forms differ in both respects: the logit form
 bounds every raw value below one via the logistic transform and mean
@@ -1190,6 +1260,21 @@ $\eta$ within a year are identified; the level of $\eta$ is free and is
 absorbed by catchability or fishing mortality, which is why it is
 typically paired with the selectivity parameter centering penalty
 described in the Priors and Penalties section.
+
+Which bins $\mathcal{B}$ holds is a statement about the gear rather than
+a numerical convenience, because the standardization fixes the level that
+catchability is defined against: a fleet whose $q$ refers to only part of
+the bin range standardizes over that part. Two choices of $\mathcal{B}$
+differ only by a constant multiplier on ${Sel}_{y,b}$, and a freely
+estimated $q$ absorbs that multiplier exactly, leaving every fitted
+quantity unchanged. Under an informative prior on $q$ that multiplier is
+not free. The prior resists the compensating shift in $\log q$, and
+the difference between windows is carried by the selectivity parameters
+instead, levered by the derivative of the index negative log-likelihood
+with respect to $\log q$ at the fitted values. A window that does not
+match the definition the catchability prior was built under therefore
+shows up as a standing gradient on $\eta$ rather than as an absorbed
+scalar, and the two windows give genuinely different fits.
 
 Two additional logistic forms with a freely estimated asymptote parameter
 $\alpha \in (0, 1)$ are also available. The first uses the bin-at-50% and slope
@@ -1319,9 +1404,9 @@ log-selectivity across all years and bins for a given region, sex, and
 fleet. For length-based selectivity, mean standardization is applied
 directly to the selectivity-at-length values before conversion to the
 age domain via the size-age transition matrix. Because the log-scale
-non-parametric form already standardizes within each year, it is
-excluded from this joint standardization rather than being centered a
-second time. Further details on how selectivity deviations arise can be
+non-parametric form already standardizes within each year over its own
+window $\mathcal{B}$, it is excluded from this joint standardization
+rather than being centered a second time. Further details on how selectivity deviations arise can be
 found in the "Selectivity Process Error" section of this document.
 
 Finally, individual bins can be overridden with their own freely
@@ -2125,6 +2210,49 @@ recruitment series from wandering has nowhere else to say so; this
 penalty is that second, independent statement, and reproduces the
 recruitment regularity penalties several existing assessments carry.
 
+#### Stock-Recruit Residual
+
+When recruitment arises about a mean and a stock-recruit curve is
+evaluated alongside the dynamics without generating them (`sr_penalty`;
+see the Stock-Recruit Curve as a Penalty section above), the curve enters
+the objective function through the log residual
+$\xi_{p,r,y}^{\text{SR}} = \log R_{p,r,y} - \log{\widehat{R}}_{p,r,y}$
+between the realized recruitment and the curve's prediction:
+
+$$\ell\left( \xi_{p,r,y}^{\text{SR}} \right) = \frac{1}{\sqrt{2\pi\sigma_{\text{SR}}^{2}}\,}\exp\left( - \frac{\left( \xi_{p,r,y}^{\text{SR}} \right)^{2}}{2\sigma_{\text{SR}}^{2}} \right)$$
+
+The residual is centered on zero, and $\sigma_{\text{SR}}$
+(`sr_pen_sigma`) is a fixed input rather than an estimated parameter, so
+the contribution is a sum of squares weighted by
+$1/\left( 2\sigma_{\text{SR}}^{2} \right)$ up to a constant; a template
+carrying a weight $w$ on the squared residuals corresponds to
+$\sigma_{\text{SR}} = 1/\sqrt{2w}$. The contribution is summed over the
+years named by `sr_pen_yrs`, which defaults to every year that has a
+lagged spawning biomass behind it, that is, all but the first $RecLag$.
+Those early years take the equilibrium substitution described in the
+Recruitment Processes section rather than ${SSB}_{p,r,y - RecLag}$, so
+their residual would not be a stock-recruit residual and naming one is an
+error rather than a silent fallback. Years outside the window keep their
+recruitment deviations estimated and contribute nothing to this penalty,
+which is how a restricted stock-recruit window is expressed.
+
+This penalty and the recruitment deviation penalty are separate
+statements about the same series. The deviation penalty acts on
+$\epsilon_{p,r,y}^{\text{Rec}}$, an estimated parameter, about its own
+centre, whereas this one acts on the difference between two derived
+quantities, so the deviations stay free to depart from the curve at a
+cost governed by $\sigma_{\text{SR}}$. It sits with the process error
+penalties rather than the priors above because it constrains a model
+quantity rather than asserting knowledge about a parameter.
+
+The penalty is a statement about the objective function alone and is not
+a data-generating process. Simulation, whether self-testing or
+closed-loop, generates recruitment from the mean parameter and its
+deviations exactly as the mean-recruitment equation specifies; no
+simulated recruitment is drawn from the curve, and
+${\widehat{R}}_{p,r,y}$ plays no part in the simulated population
+dynamics.
+
 #### Fishing Mortality Deviations
 
 Fishing mortality deviations assume multiplicative deviations about a
@@ -2536,8 +2664,11 @@ Note that some of these components may be zero (i.e., if no priors are
 used) depending on the configuration of the model. The recruitment and
 initial age deviation penalties enter with their own separate weights
 ($\lambda^{\text{Rec}}$, possibly per deviation, and
-$\lambda^{\text{InitRec}}$), and the recruitment level penalty, when
-enabled, enters as its own additional component.
+$\lambda^{\text{InitRec}}$), while the recruitment level penalty and the
+stock-recruit residual penalty
+$\sum_{p,r,y}^{}{-\log\ell\left( \xi_{p,r,y}^{\text{SR}} \right)}$, when
+enabled, each enter as their own additional component carrying no weight
+of their own.
 
 # References
 

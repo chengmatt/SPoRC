@@ -5,7 +5,8 @@
 # multi population versions of the local case. Each supports both stock-recruit
 # forms through the three helpers below; rec_model comes in on the data list and
 # defaults to Beverton-Holt when absent, which is what these solvers used to
-# assume unconditionally.
+# assume unconditionally. rec_model 0 (mean recruitment) has no curve at all and
+# is rejected rather than folded into the Beverton-Holt branch.
 
 #' Equilibrium recruitment from spawning biomass per recruit
 #'
@@ -107,6 +108,13 @@ single_region_Fmsy <- function(pars, data) {
   # lists that predate the Ricker will not have, so fall back rather than
   # assigning before getAll, which would collide with its own definition.
   if(!exists("rec_model", inherits = FALSE)) rec_model <- 1
+
+  # rec_model 0 is mean recruitment, which has no curve to maximise yield over.
+  # The helpers below branch on Ricker against everything else, so without this
+  # a mean recruitment fit would come back with Beverton-Holt numbers.
+  if(rec_model == 0) stop("rec_model = 0 (mean recruitment) has no stock-recruit curve, so Fmsy is undefined. ",
+                          "MSY reference points need rec_model 1 (Beverton-Holt) or 2 (Ricker); use SPR reference points instead.",
+                          call. = FALSE)
 
   # Exponentiate Fmsy
   Fmsy = exp(log_Fmsy)
@@ -425,6 +433,13 @@ global_Fmsy <- function(pars,
   # lists that predate the Ricker will not have, so fall back rather than
   # assigning before getAll, which would collide with its own definition.
   if(!exists("rec_model", inherits = FALSE)) rec_model <- 1
+
+  # rec_model 0 is mean recruitment, which has no curve to maximise yield over.
+  # The helpers below branch on Ricker against everything else, so without this
+  # a mean recruitment fit would come back with Beverton-Holt numbers.
+  if(rec_model == 0) stop("rec_model = 0 (mean recruitment) has no stock-recruit curve, so Fmsy is undefined. ",
+                          "MSY reference points need rec_model 1 (Beverton-Holt) or 2 (Ricker); use SPR reference points instead.",
+                          call. = FALSE)
 
   # exponentitate reference points to "estimate"
   Fmsy = exp(log_Fmsy)
@@ -780,6 +795,13 @@ local_Fmsy_sglpop <- function(pars, data) {
   # lists that predate the Ricker will not have, so fall back rather than
   # assigning before getAll, which would collide with its own definition.
   if(!exists("rec_model", inherits = FALSE)) rec_model <- 1
+
+  # rec_model 0 is mean recruitment, which has no curve to maximise yield over.
+  # The helpers below branch on Ricker against everything else, so without this
+  # a mean recruitment fit would come back with Beverton-Holt numbers.
+  if(rec_model == 0) stop("rec_model = 0 (mean recruitment) has no stock-recruit curve, so Fmsy is undefined. ",
+                          "MSY reference points need rec_model 1 (Beverton-Holt) or 2 (Ricker); use SPR reference points instead.",
+                          call. = FALSE)
 
   # exponentitate reference points
   Fmsy = exp(log_Fmsy)
@@ -1212,6 +1234,13 @@ local_Fmsy_multipop <- function(pars, data) {
   # lists that predate the Ricker will not have, so fall back rather than
   # assigning before getAll, which would collide with its own definition.
   if(!exists("rec_model", inherits = FALSE)) rec_model <- 1
+
+  # rec_model 0 is mean recruitment, which has no curve to maximise yield over.
+  # The helpers below branch on Ricker against everything else, so without this
+  # a mean recruitment fit would come back with Beverton-Holt numbers.
+  if(rec_model == 0) stop("rec_model = 0 (mean recruitment) has no stock-recruit curve, so Fmsy is undefined. ",
+                          "MSY reference points need rec_model 1 (Beverton-Holt) or 2 (Ricker); use SPR reference points instead.",
+                          call. = FALSE)
 
   # exponentitate reference points
   Fmsy = exp(log_Fmsy)

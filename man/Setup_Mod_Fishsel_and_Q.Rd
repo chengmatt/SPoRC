@@ -23,6 +23,7 @@ Setup_Mod_Fishsel_and_Q(
   Use_fish_selex_prior = 0,
   fish_selex_prior = NULL,
   Use_fish_selex_penalty = 0,
+  fish_sel_norm_bins = NULL,
   fish_sel_bin_dev_bins = NULL,
   fishsel_pe_wt = rep(1, input_list$data$n_fish_fleets),
   fishsel_rw_init_sigma = rep(5, input_list$data$n_fish_fleets),
@@ -199,6 +200,13 @@ no set of independent parameter priors can express. Only used when
 \item{Use_fish_selex_penalty}{Integer (0/1). Whether a centering penalty is
 applied to sets of fishery selectivity fixed-effect parameters. Default
 \code{0}.}
+
+\item{fish_sel_norm_bins}{List with one element per fishery fleet naming the
+bins the mean-one standardization averages over, or \code{NULL} for fleets
+standardizing over every bin (\code{Selex_Model = 9} only). A gear whose
+catchability is defined against part of the bin range standardizes over
+that part, and catchability absorbs the difference in scale. Default
+\code{NULL}.}
 
 \item{fish_sel_bin_dev_bins}{List with one element per fishery fleet naming
 the bins that fleet overrides, or \code{NULL} for fleets with no overrides

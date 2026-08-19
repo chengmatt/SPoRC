@@ -178,6 +178,70 @@ solve_plus_group <- function(Ts, N_penult_u, N_penult_f, n_regions) {
 }
 
 
+#' Reject MSY reference points for a mean recruitment fit
+#'
+#' MSY is the maximum of equilibrium yield over a stock-recruit curve, so it is
+#' only defined when the fit estimated one. A model fitted with
+#' \code{rec_model = "mean_rec"} carries \code{rec_model == 0}, and the
+#' equilibrium recruitment helpers in \code{refpts_msy.R} branch on Ricker
+#' against everything else, so an unguarded mean recruitment fit would be handed
+#' Beverton-Holt reference points. Steepness is also mapped off under mean
+#' recruitment, so those reference points would sit at the default
+#' \code{h_trans = 0.6} rather than anything the model estimated. Both failures
+#' are silent, which is why this is an error and not a warning.
+#'
+#' SPR reference points do not go through the curve at all. They scale spawning
+#' biomass per recruit by mean recruitment taken from \code{rep$Rec}, so they
+#' stay well defined under every \code{rec_model} and are the right request here.
+#'
+#' @param what Character. The requested reference point, after the deprecated
+#'   \code{BH_} names have been mapped to their current equivalents.
+#' @param rec_model Integer. \code{0} mean recruitment, \code{1} Beverton-Holt,
+#'   \code{2} Ricker.
+#' @param sr_penalty Integer. \code{0} none, \code{1} Beverton-Holt, \code{2}
+#'   Ricker. Only meaningful under \code{rec_model == 0}, where it adds a curve
+#'   scored against the recruitment deviations.
+#'
+#' @return \code{invisible(NULL)}. Called for the error.
+#'
+#' @keywords internal
+check_msy_rec_model <- function(what, rec_model, sr_penalty = 0) {
+
+  if(!what %in% c("MSY", "independent_MSY", "global_MSY", "local_MSY")) return(invisible(NULL))
+  if(rec_model != 0) return(invisible(NULL))
+
+  # local_MSY has no local SPR counterpart, so send those callers to the two
+  # multi-region SPR variants that do exist.
+  spr_alt <- switch(what,
+                    MSY = "'SPR'",
+                    independent_MSY = "'independent_SPR'",
+                    global_MSY = "'global_SPR'",
+                    local_MSY = "'independent_SPR' or 'global_SPR'")
+
+  msg <- paste0("what = '", what, "' requires a stock-recruit curve, but this model was fitted with ",
+                "rec_model = 'mean_rec' (rec_model = 0). MSY is the maximum of equilibrium yield over ",
+                "a curve that this fit never estimated, and steepness is mapped off under mean ",
+                "recruitment, so these reference points would silently be Beverton-Holt values at the ",
+                "default steepness of 0.6. Request SPR reference points instead, with what = ", spr_alt,
+                ": they scale spawning biomass per recruit by mean recruitment and are well defined here.")
+
+  # A stock-recruit penalty does fit a curve, but it is scored against the
+  # recruitment deviations rather than governing the stock, so maximising yield
+  # over it would assert something the fit never assumed. Its scale and
+  # steepness are reported, so a caller who does want that can build srr_opt.
+  if(sr_penalty > 0) {
+    msg <- paste0(msg, " This fit does carry a stock-recruit penalty (sr_penalty = ", sr_penalty,
+                  "), but that curve is scored against the recruitment deviations rather than driving ",
+                  "the dynamics, so maximising equilibrium yield over it would assert a stock-recruit ",
+                  "relationship this fit did not assume. Its scale and steepness are reported as sr_R0 ",
+                  "and h_trans, so a projection over that curve can be requested deliberately by ",
+                  "passing them through srr_opt.")
+  }
+
+  stop(msg, call. = FALSE)
+
+}
+
 #' Compute fishing and biological reference points from an assessment or simulation
 #'
 #' Wrapper that constructs the appropriate data list, calls the relevant
@@ -285,8 +349,9 @@ Get_Reference_Points <- function(data,
                                  ) {
 
   # The MSY reference points were named BH_MSY when Beverton-Holt was the only
-  # stock-recruit curve. They now follow whatever rec_model the fit used, so the
-  # BH_ prefix is wrong rather than merely redundant. The old names still work.
+  # stock-recruit curve. They now follow whichever curve the fit used, Beverton-Holt
+  # or Ricker, so the BH_ prefix is wrong rather than merely redundant. Mean
+  # recruitment has no curve and is rejected below. The old names still work.
   deprecated_what <- c(BH_MSY = "MSY", independent_BH_MSY = "independent_MSY",
                        global_BH_MSY = "global_MSY", local_BH_MSY = "local_MSY")
   if(what %in% names(deprecated_what)) {
@@ -352,6 +417,7 @@ Get_Reference_Points <- function(data,
     data_list$n_ages <- n_ages
 
     if(!what %in% c("SPR", "MSY")) stop("what is not correctly specified! Should be SPR, MSY for type = single_region")
+    check_msy_rec_model(what, data_list$rec_model, if(is.null(data$sr_penalty)) 0 else data$sr_penalty)
 
     # setup shared data lists
     data_list$F_fract_flt <- array(rep$Fmort[1,n_years,,] / sum(rep$Fmort[1,n_years,,]), dim = c(data$n_seas, data$n_fish_fleets)) # fishing mortality fraction
@@ -454,6 +520,7 @@ Get_Reference_Points <- function(data,
     # fitted with; the two curves agree at (S0, R0) and nowhere else. Absent on
     # older data lists, which predate the Ricker, so default to Beverton-Holt.
     data_list$rec_model <- if(is.null(data$rec_model)) 1 else data$rec_model
+    check_msy_rec_model(what, data_list$rec_model, if(is.null(data$sr_penalty)) 0 else data$sr_penalty)
 
     # Seasonal stuff
     data_list$t_spawn <- t_spawn # specified mortality time up until spawning

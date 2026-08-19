@@ -91,7 +91,8 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
                                        sexratio, WAA, MatAA, natmort, Movement, stray_rate, sgl_seas_spawning_movement,
                                        do_recruits_move, fish_sel, ret_sel, dmr, ZAA,
                                        NAA, NAA0, NAA_bef, NAA_aft, Rec, SSB, Total_Biom, Dynamic_SSB0, eff_SSB,
-                                       Mrate = NULL, move_timing = 0, SR_ref_yr = 1) {
+                                       Mrate = NULL, move_timing = 0, SR_ref_yr = 1,
+                                       sr_penalty = 0, sr_R0 = NULL) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -99,49 +100,53 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
   # Season-integrated abundance for the spatial Baranov, filled in below only under move_timing == 2.
   NAA_int <- array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
 
+  # Stock recruitment prediction - only used when mean recruitment, but penalize the mean recruits to an SR curve
+  SR_pred <- array(1, dim = c(n_pop, n_regions, n_yrs))
+
+  # Arguments for determinstic recruitment
+  det_rec_args <- list(
+    rec_dd = rec_dd,
+    rec_region_prop = rec_region_prop,
+    rec_seas_prop = rec_seas_prop,
+    h = h_trans,
+    n_pop = n_pop,
+    n_ages = n_ages,
+    n_regions = n_regions,
+    sexratio_f = if(n_sexes == 1) array(0.5, dim = c(n_pop, n_regions)) else array(sexratio[,,1,1], dim = c(n_pop, n_regions)),
+    WAA = array(WAA[,,SR_ref_yr,,,1], dim = c(n_pop, n_regions, n_seas, n_ages)),
+    MatAA = array(MatAA[,,SR_ref_yr,,,1], dim = c(n_pop, n_regions, n_seas, n_ages)),
+    natmort = array(natmort[,,SR_ref_yr,,1], dim = c(n_pop, n_regions, n_ages)),
+    Movement = array(Movement[,,,SR_ref_yr,,,1], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
+    stray_rate = array(stray_rate[,1], dim = c(n_pop)),
+    sgl_seas_spawning_movement = array(sgl_seas_spawning_movement[,,,SR_ref_yr,,1], dim = c(n_pop, n_regions, n_regions, n_ages)),
+    do_recruits_move = do_recruits_move,
+    natal_region = natal_region,
+    t_spawn = t_spawn,
+    n_seas = n_seas,
+    spawn_seas = spawn_seas,
+    seasdur = seasdur,
+    rec_lag = rec_lag,
+    n_fish_fleets = n_fish_fleets,
+    init_F = init_F, # initF
+    fish_sel = array(fish_sel[,,1,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)), # total fishery selectivity
+    ret_sel = array(ret_sel[,,1,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)), # retained fishery selectivity in first year
+    dmr = array(dmr[,1,,], dim = c(n_regions, n_seas, n_fish_fleets)),
+    Mrate = if(is.null(Mrate)) NULL else array(Mrate[,,,1,,,1], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
+    move_timing = move_timing
+  )
+
   for(y in 1:n_yrs) {
 
     ### Annual Recruitment (rec_lag != 0 only) -----------------------------------
     if(rec_lag != 0) {
 
       # Get Deterministic Recruitment
-      tmp_Det_Rec <- Get_Det_Recruitment(recruitment_model = rec_model,
-                                        rec_dd = rec_dd,
-                                        R0 = R0,
-                                        rec_region_prop = rec_region_prop,
-                                        rec_seas_prop = rec_seas_prop,
-                                        h = h_trans,
-                                        n_pop = n_pop,
-                                        n_ages = n_ages,
-                                        n_regions = n_regions,
-                                        # Note: Using female quantities to compute unfished SSB0. The biological
-                                        # inputs are taken from SR_ref_yr, which is the first year by default but
-                                        # can point anywhere; assessments that condition the stock-recruit curve
-                                        # on terminal weight-at-age need the last year instead.
-                                        sexratio_f = if(n_sexes == 1) array(0.5, dim = c(n_pop, n_regions)) else array(sexratio[,,1,1], dim = c(n_pop, n_regions)),
-                                        WAA = array(WAA[,,SR_ref_yr,,,1], dim = c(n_pop, n_regions, n_seas, n_ages)),
-                                        MatAA = array(MatAA[,,SR_ref_yr,,,1], dim = c(n_pop, n_regions, n_seas, n_ages)),
-                                        natmort = array(natmort[,,SR_ref_yr,,1], dim = c(n_pop, n_regions, n_ages)),
-                                        Movement = array(Movement[,,,SR_ref_yr,,,1], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
-                                        stray_rate = array(stray_rate[,1], dim = c(n_pop)),
-                                        sgl_seas_spawning_movement = array(sgl_seas_spawning_movement[,,,SR_ref_yr,,1], dim = c(n_pop, n_regions, n_regions, n_ages)),
-                                        do_recruits_move = do_recruits_move,
-                                        natal_region = natal_region,
-                                        t_spawn = t_spawn,
-                                        SSB_vals = SSB,
-                                        y = y,
-                                        n_seas = n_seas,
-                                        spawn_seas = spawn_seas,
-                                        seasdur = seasdur,
-                                        rec_lag = rec_lag,
-                                        n_fish_fleets = n_fish_fleets,
-                                        init_F = init_F, # initF
-                                        fish_sel = array(fish_sel[,,1,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)), # total fishery selectivity
-                                        ret_sel = array(ret_sel[,,1,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)), # retained fishery selectivity in first year
-                                        dmr = array(dmr[,1,,], dim = c(n_regions, n_seas, n_fish_fleets)),
-                                        Mrate = if(is.null(Mrate)) NULL else array(Mrate[,,,1,,,1], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
-                                        move_timing = move_timing
-      )
+      tmp_Det_Rec <- do.call(Get_Det_Recruitment, c(det_rec_args, list(recruitment_model = rec_model, R0 = R0, SSB_vals = SSB, y = y)))
+
+      # Predicts the SR curve for use as a penalty 
+      if(sr_penalty > 0) {
+        SR_pred[,, y] <- do.call(Get_Det_Recruitment, c(det_rec_args, list(recruitment_model = sr_penalty, R0 = sr_R0, SSB_vals = SSB, y = y)))
+      }
 
       for(p in 1:n_pop) {
         for(r in 1:n_regions) {
@@ -215,39 +220,13 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
                               Movement, Mrate, move_timing, do_recruits_move)
         SSB[,, y] <- biom$SSB_y
 
-        tmp_Det_Rec <- Get_Det_Recruitment(recruitment_model = rec_model,
-                                          rec_dd = rec_dd,
-                                          R0 = R0,
-                                          rec_region_prop = rec_region_prop,
-                                          rec_seas_prop = rec_seas_prop,
-                                          h = h_trans,
-                                          n_pop = n_pop,
-                                          n_ages = n_ages,
-                                          n_regions = n_regions,
-                                          sexratio_f = if(n_sexes == 1) array(0.5, dim = c(n_pop, n_regions)) else array(sexratio[,,1,1], dim = c(n_pop, n_regions)),
-                                          WAA = array(WAA[,,SR_ref_yr,,,1], dim = c(n_pop, n_regions, n_seas, n_ages)),
-                                          MatAA = array(MatAA[,,SR_ref_yr,,,1], dim = c(n_pop, n_regions, n_seas, n_ages)),
-                                          natmort = array(natmort[,,SR_ref_yr,,1], dim = c(n_pop, n_regions, n_ages)),
-                                          Movement = array(Movement[,,,SR_ref_yr,,,1], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
-                                          stray_rate = array(stray_rate[,1], dim = c(n_pop)),
-                                          sgl_seas_spawning_movement = array(sgl_seas_spawning_movement[,,,SR_ref_yr,,1], dim = c(n_pop, n_regions, n_regions, n_ages)),
-                                          do_recruits_move = do_recruits_move,
-                                          natal_region = natal_region,
-                                          t_spawn = t_spawn,
-                                          SSB_vals = SSB,
-                                          y = y,
-                                          n_seas = n_seas,
-                                          spawn_seas = spawn_seas,
-                                          seasdur = seasdur,
-                                          rec_lag = rec_lag,
-                                          n_fish_fleets = n_fish_fleets,
-                                          init_F = init_F, # initF
-                                          fish_sel = array(fish_sel[,,1,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)), # total fishery selectivity
-                                          ret_sel = array(ret_sel[,,1,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)), # retained fishery selectivity in first year
-                                          dmr = array(dmr[,1,,], dim = c(n_regions, n_seas, n_fish_fleets)),
-                                        Mrate = if(is.null(Mrate)) NULL else array(Mrate[,,,1,,,1], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
-                                        move_timing = move_timing
-        )
+        # Deterministic recruitment
+        tmp_Det_Rec <- do.call(Get_Det_Recruitment, c(det_rec_args, list(recruitment_model = rec_model, R0 = R0, SSB_vals = SSB, y = y)))
+
+        # stock recruitment penalty against a curve
+        if(sr_penalty > 0) {
+          SR_pred[,, y] <- do.call(Get_Det_Recruitment, c(det_rec_args, list(recruitment_model = sr_penalty, R0 = sr_R0, SSB_vals = SSB, y = y)))
+        }
 
         for(p in 1:n_pop) {
           for(r in 1:n_regions) {
@@ -368,5 +347,5 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
   return(list(NAA = NAA, NAA0 = NAA0, NAA_bef = NAA_bef, NAA_aft = NAA_aft, Rec = Rec,
               SSB = SSB, Total_Biom = Total_Biom, Dynamic_SSB0 = Dynamic_SSB0, eff_SSB = eff_SSB,
               Aggregated_SSB = Aggregated_SSB, Dynamic_Aggregated_SSB0 = Dynamic_Aggregated_SSB0,
-              NAA_int = NAA_int))
+              NAA_int = NAA_int, SR_pred = SR_pred))
 }

@@ -30,6 +30,7 @@ tier_data <- c(
   "make_bsai_pop_data_object.R",
   "make_bsai_rougheye_data_object.R",
   "make_ebs_pollock_data_object.R",
+  "make_bsai_atka_data_object.R",
   "make_three_rg_sablefish_data_spt_comparison.R",
   "make_five_rg_sablefish_data_spt_comparison.R"
 )
@@ -42,7 +43,8 @@ tier_bridge <- c(
   "make_bsai_northern_bridge_figs.R",
   "make_bsai_pop_bridge_figs.R",
   "make_bsai_rougheye_bridge_figs.R",
-  "make_ebs_pollock_bridge_figs.R"
+  "make_ebs_pollock_bridge_figs.R",
+  "make_bsai_atka_bridge_figs.R"
 )
 
 # objects: multi region and spatial fits, writes data/*.rda and dev/dev_output

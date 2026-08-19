@@ -85,6 +85,10 @@
 #' @param bin_devs Array of log-scale bin-override deviations with dimension
 #'   \code{[n_regions, n_years, n_bins, n_sexes, 1]}, or \code{NULL}. Supplies
 #'   the value for every bin named in \code{bin_dev_bins}.
+#' @param sel_norm_bins Integer vector of bins the mean-one standardization
+#'   averages over (\code{Selex_Model = 9}), or \code{NULL} to use every bin.
+#'   A gear whose catchability is defined against only part of the age range
+#'   standardizes over that part, which shifts the scale absorbed by q.
 #' @param bin_dev_bins Integer vector of bins whose selectivity is replaced by
 #'   \code{exp(bin_devs[...])} rather than taken from the functional form, or
 #'   \code{NULL} for none. The override is applied after everything else,
@@ -172,7 +176,8 @@ Get_Selex = function(Selex_Model,
                      n_bin_nodes_bicubic = NULL,
                      n_yr_nodes_bicubic = NULL,
                      bin_devs = NULL,
-                     bin_dev_bins = NULL) {
+                     bin_dev_bins = NULL,
+                     sel_norm_bins = NULL) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -333,7 +338,9 @@ Get_Selex = function(Selex_Model,
     # bins jointly; this one leaves the scale free and centers within the year. 
     if(TimeVary_Model %in% c(1:2)) pars = pars + ln_seldevs[Region, Year, , Sex, 1]
     selex = exp(pars)
-    selex = selex / mean(selex)
+    # Figure out which bins to normalize across
+    norm_bins = if(is.null(sel_norm_bins) || length(sel_norm_bins) == 0) seq_along(selex) else sel_norm_bins
+    selex = selex / mean(selex[norm_bins])
 
   } # end if non-parametric on the log scale, standardized within year
 
@@ -415,7 +422,8 @@ Get_Selex_Array = function(selex_type,
                            n_sexes,
                            n_fleets,
                            bin_devs = NULL,
-                           bin_dev_bins = NULL) {
+                           bin_dev_bins = NULL,
+                           sel_norm_bins = NULL) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -460,7 +468,8 @@ Get_Selex_Array = function(selex_type,
                                 n_bin_nodes_bicubic = tmp_n_bin_nodes, # true bin-node count for this block (Selex_Model == 8 only)
                                 n_yr_nodes_bicubic = tmp_n_yr_nodes, # true year-node count for this block (Selex_Model == 8 only)
                                 bin_devs = bin_devs, # bin-override deviations
-                                bin_dev_bins = if(is.null(bin_dev_bins)) NULL else which(bin_dev_bins[,f] == 1) # bins this fleet overrides
+                                bin_dev_bins = if(is.null(bin_dev_bins)) NULL else which(bin_dev_bins[,f] == 1), # bins this fleet overrides
+                                sel_norm_bins = if(is.null(sel_norm_bins)) NULL else which(sel_norm_bins[,f] == 1) # bins this fleet standardizes over
             )
 
             # Compute selectivity

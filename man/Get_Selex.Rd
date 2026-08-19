@@ -18,7 +18,8 @@ Get_Selex(
   n_bin_nodes_bicubic = NULL,
   n_yr_nodes_bicubic = NULL,
   bin_devs = NULL,
-  bin_dev_bins = NULL
+  bin_dev_bins = NULL,
+  sel_norm_bins = NULL
 )
 }
 \arguments{
@@ -146,6 +147,11 @@ the value for every bin named in \code{bin_dev_bins}.}
 including any standardization the form performs internally, so the named
 bins are governed entirely by their own deviations while the rest of the
 curve keeps its parametric shape.}
+
+\item{sel_norm_bins}{Integer vector of bins the mean-one standardization
+averages over (\code{Selex_Model = 9}), or \code{NULL} to use every bin.
+A gear whose catchability is defined against only part of the age range
+standardizes over that part, which shifts the scale absorbed by q.}
 }
 \value{
 Numeric vector of selectivity values corresponding to \code{Bin}.

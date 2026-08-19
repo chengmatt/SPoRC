@@ -963,6 +963,50 @@ get_rec_level_penalty <- function(Rec, sigma, center = 1, yrs = NULL) {
   return(nLL)
 }
 
+#' Stock-recruit residual penalty under mean recruitment
+#'
+#' Compares the recruitment series against a stock-recruit curve without letting
+#' the curve generate it. Under \code{rec_model = "mean_rec"} recruitment is
+#' \eqn{R_y = \exp(\mu + \varepsilon_y)} and the curve enters only here, as a
+#' Gaussian on the log residual \eqn{\log R_y - \log \widehat{R}_y}. That is a
+#' different statement from the deviation penalty applied when the curve
+#' generates recruitment: there the residual is the parameter, here it is a
+#' derived quantity and the deviations remain free.
+#'
+#' Several AFSC models are written this way to reflect that a weakly determined SR relationship
+# should inform the recruitment series rather than completly dictate it
+#'
+#'
+#' @param Rec Array \code{[pop, region, year]} of realized recruitment.
+#' @param SR_pred Array \code{[pop, region, year]} of the curve's prediction,
+#'   computed alongside the population projection.
+#' @param sigma Numeric standard deviation of the residual.
+#' @param yrs Integer vector of years the penalty applies over, or \code{NULL}
+#'   for every year. Years outside it contribute zero and stay free.
+#'
+#' @return Array \code{[pop, region, year]} of negative log-likelihood
+#'   contributions, zero outside \code{yrs}.
+#'
+#' @keywords internal
+#' @import RTMB
+get_sr_penalty <- function(Rec, SR_pred, sigma, yrs = NULL) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  nLL <- array(0, dim = dim(Rec))
+  use_y <- if(is.null(yrs)) 1:dim(Rec)[3] else yrs
+
+  for(p in 1:dim(Rec)[1]) {
+    for(r in 1:dim(Rec)[2]) {
+      resid <- log(Rec[p,r,use_y]) - log(SR_pred[p,r,use_y])
+      nLL[p,r,use_y] <- -RTMB::dnorm(resid, 0, sigma, TRUE)
+    } # end r loop
+  } # end p loop
+
+  return(nLL)
+}
+
 #' Normal prior on log catchability
 #'
 #' Shared across the fishery and survey catchability prior blocks in

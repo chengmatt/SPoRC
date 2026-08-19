@@ -165,6 +165,12 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   if(!has("rec_level_pen_center")) set("rec_level_pen_center", 1)
   if(!has("rec_level_pen_yrs")) set("rec_level_pen_yrs", rep(1, length(get("years", envir = env))))
 
+  # The stock-recruit penalty under mean recruitment is off unless asked for.
+  if(!has("sr_penalty")) set("sr_penalty", 0)
+  if(!has("sr_R0_spec")) set("sr_R0_spec", 0)
+  if(!has("ln_sigma_sr_pen")) set("ln_sigma_sr_pen", 0)
+  if(!has("sr_pen_yrs")) set("sr_pen_yrs", rep(1, length(get("years", envir = env))))
+
   # Selectivity process error weights. Older input lists always applied it.
   if(!has("fishsel_pe_wt")) set("fishsel_pe_wt", rep(1, n_fish_bc))
   if(!has("retsel_pe_wt")) set("retsel_pe_wt", rep(1, n_fish_bc))
@@ -180,11 +186,11 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   if(!has("FishAgeComps_bins")) set("FishAgeComps_bins", array(1, dim = c(n_ages_bc, n_fish_bc)))
   if(!has("SrvAgeComps_bins")) set("SrvAgeComps_bins", array(1, dim = c(n_ages_bc, n_srv_bc)))
 
-  # Bin-override selectivity deviations. Older input lists have none, and an
-  # all-zero override set with no bins named leaves every curve untouched.
+  # Bin-override selectivity deviations. Older input lists have none
   for(pre in c("fish", "ret", "srv")) {
     n_fl_bc <- if(pre == "srv") n_srv_bc else n_fish_bc
     if(!has(paste0(pre, "_sel_bin_dev_bins"))) set(paste0(pre, "_sel_bin_dev_bins"), array(0, dim = c(n_ages_bc, n_fl_bc)))
+    if(!has(paste0(pre, "_sel_norm_bins"))) set(paste0(pre, "_sel_norm_bins"), array(1, dim = c(n_ages_bc, n_fl_bc)))
     if(!has(paste0("cont_tv_", pre, "sel_bin_devs"))) set(paste0("cont_tv_", pre, "sel_bin_devs"), rep(0, n_fl_bc))
     if(!has(paste0("ln_", pre, "sel_bin_devs"))) set(paste0("ln_", pre, "sel_bin_devs"), array(0, dim = c(get("n_regions", envir = env), length(get("years", envir = env)) + get("n_proj_yrs_devs", envir = env), n_ages_bc, get("n_sexes", envir = env), n_fl_bc)))
     if(!has(paste0(pre, "sel_bin_devs_pe_pars"))) set(paste0(pre, "sel_bin_devs_pe_pars"), array(0, dim = c(get("n_regions", envir = env), n_ages_bc, get("n_sexes", envir = env), n_fl_bc)))
@@ -405,6 +411,7 @@ SPoRC_rtmb = function(pars, data) {
                                  fixed_sel_pars = fish_fixed_sel_pars, cont_tv_sel = cont_tv_fish_sel,
                                  ln_seldevs = ln_fishsel_devs, use_fixed_sel = use_fixed_fish_sel,
                                  bin_devs = ln_fishsel_bin_devs, bin_dev_bins = fish_sel_bin_dev_bins,
+                                 sel_norm_bins = fish_sel_norm_bins,
                                  sel_input = fish_sel_input,
                                  bicubic_Wbin = fish_sel_bicubic_Wbin, bicubic_Wyr = fish_sel_bicubic_Wyr,
                                  bicubic_binnodes = fish_sel_bicubic_binnodes, bicubic_yrnodes = fish_sel_bicubic_yrnodes,
@@ -420,6 +427,7 @@ SPoRC_rtmb = function(pars, data) {
                                 fixed_sel_pars = ret_fixed_sel_pars, cont_tv_sel = cont_tv_ret_sel,
                                 ln_seldevs = ln_retsel_devs, use_fixed_sel = use_fixed_ret_sel,
                                 bin_devs = ln_retsel_bin_devs, bin_dev_bins = ret_sel_bin_dev_bins,
+                                 sel_norm_bins = ret_sel_norm_bins,
                                 sel_input = ret_sel_input,
                                 bicubic_Wbin = ret_sel_bicubic_Wbin, bicubic_Wyr = ret_sel_bicubic_Wyr,
                                 bicubic_binnodes = ret_sel_bicubic_binnodes, bicubic_yrnodes = ret_sel_bicubic_yrnodes,
@@ -435,6 +443,7 @@ SPoRC_rtmb = function(pars, data) {
                                 fixed_sel_pars = srv_fixed_sel_pars, cont_tv_sel = cont_tv_srv_sel,
                                 ln_seldevs = ln_srvsel_devs, use_fixed_sel = use_fixed_srv_sel,
                                 bin_devs = ln_srvsel_bin_devs, bin_dev_bins = srv_sel_bin_dev_bins,
+                                 sel_norm_bins = srv_sel_norm_bins,
                                 sel_input = srv_sel_input,
                                 bicubic_Wbin = srv_sel_bicubic_Wbin, bicubic_Wyr = srv_sel_bicubic_Wyr,
                                 bicubic_binnodes = srv_sel_bicubic_binnodes, bicubic_yrnodes = srv_sel_bicubic_yrnodes,
@@ -656,6 +665,13 @@ SPoRC_rtmb = function(pars, data) {
   NAA0[,,1,1,,] = Init_Unfished_NAA
 
   ## Population Projection ---------------------------------------------------
+  # The stock-recruit curve's scale. "rinit" makes one parameter play both roles
+  # a virgin recruitment plays, the unfished age structure and the curve's
+  # scale, which is how ADMB templates carrying a separate mean recruitment are
+  # written. Reported so a fitted penalty curve can be reconstructed, since the
+  # three settings are otherwise indistinguishable in the report.
+  sr_R0 = if(sr_R0_spec == 1) exp(ln_sr_R0) else if(sr_R0_spec == 2) rinit else R0
+
   tmp_pop_proj = get_population_projection(
     n_pop = n_pop, n_regions = n_regions, n_seas = n_seas, n_ages = n_ages, n_sexes = n_sexes,
     n_yrs = n_yrs, n_fish_fleets = n_fish_fleets, n_est_rec_devs = n_est_rec_devs,
@@ -668,7 +684,12 @@ SPoRC_rtmb = function(pars, data) {
     do_recruits_move = do_recruits_move, fish_sel = fish_sel, ret_sel = ret_sel, dmr = dmr, ZAA = ZAA,
     NAA = NAA, NAA0 = NAA0, NAA_bef = NAA_bef, NAA_aft = NAA_aft, Rec = Rec,
     SSB = SSB, Total_Biom = Total_Biom, Dynamic_SSB0 = Dynamic_SSB0, eff_SSB = eff_SSB,
-    Mrate = Mrate, move_timing = move_timing, SR_ref_yr = SR_ref_yr
+    Mrate = Mrate, move_timing = move_timing, SR_ref_yr = SR_ref_yr,
+    # Under mean recruitment with a stock-recruit penalty the curve is evaluated
+    # alongside the dynamics but never feeds them. sr_R0 is the curve's own scale,
+    # which is either the mean recruitment level or a separately estimated one.
+    sr_penalty = sr_penalty,
+    sr_R0 = sr_R0
   )
 
   NAA = tmp_pop_proj$NAA; NAA0 = tmp_pop_proj$NAA0; NAA_bef = tmp_pop_proj$NAA_bef; NAA_aft = tmp_pop_proj$NAA_aft
@@ -676,6 +697,7 @@ SPoRC_rtmb = function(pars, data) {
   Rec = tmp_pop_proj$Rec; SSB = tmp_pop_proj$SSB; Total_Biom = tmp_pop_proj$Total_Biom
   Dynamic_SSB0 = tmp_pop_proj$Dynamic_SSB0; eff_SSB = tmp_pop_proj$eff_SSB
   Aggregated_SSB = tmp_pop_proj$Aggregated_SSB; Dynamic_Aggregated_SSB0 = tmp_pop_proj$Dynamic_Aggregated_SSB0
+  SR_pred = tmp_pop_proj$SR_pred
 
   ## Fishery Observation Model -----------------------------------------------
   tmp_fish_obs = get_fishery_observation_model(
@@ -2258,6 +2280,16 @@ SPoRC_rtmb = function(pars, data) {
                                           if(all(rec_level_pen_yrs == 1)) NULL else which(rec_level_pen_yrs == 1))
   }
 
+  ### Stock-Recruit Residual (Penalty) ----------------------------------------
+  # Only reachable under mean recruitment. The curve scores the recruitment
+  # series without generating it, so the deviations stay free and a weakly
+  # determined relationship informs the series rather than dictating it.
+  SR_pen_nLL = array(0, dim = dim(Rec))
+  if(sr_penalty > 0) {
+    SR_pen_nLL = get_sr_penalty(Rec, SR_pred, exp(ln_sigma_sr_pen),
+                                if(all(sr_pen_yrs == 1)) NULL else which(sr_pen_yrs == 1))
+  }
+
   ### Fishery Catchability (Prior) -----------------------------------------------
   if(Use_fish_q_prior == 1) fish_q_nLL = fish_q_nLL + get_q_prior(fish_q_prior, ln_fish_q)
 
@@ -2329,6 +2361,7 @@ SPoRC_rtmb = function(pars, data) {
     sum(Wt_Rec * Rec_nLL) +                   # Recruitment penalty
     sum(Wt_Init_Rec * Init_Rec_nLL) +         # Initial age penalty
     sum(Rec_level_nLL) +                      # Recruitment level penalty
+    sum(SR_pen_nLL) +                         # Stock-recruit residual penalty (mean recruitment only)
     sel_nLL +                                  # Selectivity penalty
     M_nLL +                                    # Natural mortality prior
     R0_nLL +                                   # Global R0 prior
@@ -2436,6 +2469,9 @@ SPoRC_rtmb = function(pars, data) {
   RTMB::REPORT(Rec_nLL)
   RTMB::REPORT(Init_Rec_nLL)
   RTMB::REPORT(Rec_level_nLL)
+  RTMB::REPORT(SR_pen_nLL)
+  RTMB::REPORT(SR_pred)
+  RTMB::REPORT(sr_R0)
   RTMB::REPORT(conv_fish_tag_nLL)
   RTMB::REPORT(h_nLL)
   RTMB::REPORT(R0_nLL)

@@ -15,6 +15,7 @@ permissions: read-all
 jobs:
   pkgdown:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     # Only restrict concurrency for non-PR jobs
     concurrency:
       group: pkgdown-${{ github.event_name != 'pull_request' || github.run_id }}
@@ -24,6 +25,11 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v6
+      - name: Pin apt to the canonical Ubuntu mirror
+        run: |
+          echo 'http://archive.ubuntu.com/ubuntu/' | sudo tee /etc/apt/apt-mirrors.txt
+          printf 'Acquire::Retries "2";\nAcquire::http::Timeout "15";\nAcquire::https::Timeout "15";\n' \
+            | sudo tee /etc/apt/apt.conf.d/99-timeouts
       - name: Install system dependencies
         run: sudo apt-get install -y libglpk-dev
       - uses: r-lib/actions/setup-pandoc@v2

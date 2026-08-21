@@ -4,14 +4,22 @@ Internal helper called by
 [`Setup_Mod_Rec`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Rec.md)
 to construct the TMB/RTMB factor map for `ln_InitDevs`, the log-scale
 deviations from the equilibrium initial age structure. The `ln_InitDevs`
-array has dimensions `[n_pop x n_regions x (n_ages - 1)]`, where the age
-dimension excludes the plus group by default (see `equil_init_age_strc`
-below).
+array has dimensions `[n_pop x n_regions x (n_ages - 1) x n_sexes]`,
+where the age dimension excludes the plus group by default (see
+`equil_init_age_strc` below). The population, region, and age structure
+is resolved on a single-sex slice and then expanded across sexes per
+`InitDevs_sex_spec`.
 
 ## Usage
 
 ``` r
-do_InitDevs_mapping(input_list, InitDevs_spec, rec_dd, init_age_devs_shared)
+do_InitDevs_mapping(
+  input_list,
+  InitDevs_spec,
+  rec_dd,
+  init_age_devs_shared,
+  InitDevs_sex_spec = "est_shared_s"
+)
 ```
 
 ## Arguments
@@ -81,6 +89,14 @@ do_InitDevs_mapping(input_list, InitDevs_spec, rec_dd, init_age_devs_shared)
   52-age model with 43 data ages, giving 42 free parameters. When `NULL`
   (default), age sharing follows the standard behaviour determined by
   `equil_init_age_strc` alone.
+
+- InitDevs_sex_spec:
+
+  Character. `"est_shared_s"` (default) maps every sex onto one shared
+  age curve (the pre-sex-dimension behaviour, penalized once);
+  `"est_all"` offsets the factor levels per sex so each sex carries its
+  own curve, each penalized. Also builds `data$init_devs_pen_use`, which
+  flags exactly one penalized copy of every estimated parameter.
 
 ## Value
 

@@ -2,6 +2,8 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/a_model_dimensions.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/aa_bsai_pacific_ocean_perch_case_study.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/ab_bsai_atka_mackerel_case_study.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/articles/ac_bsai_northern_rock_sole_case_study.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/articles/ac_wc_sablefish_case_study.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/architecture.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/b_model_parameters.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/c_model_equations.html</loc></url>
@@ -244,11 +246,14 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/run_internal_tag_osa.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/safe_extract.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/seas_operator_and_integral.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/seed_dbnrml_peak.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/set_data_indicator_unused.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/setup_sel_bin_devs.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/setup_sel_norm_bins.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/setup_sel_sex_offset.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_bsai_atka_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_bsai_nork_data.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_bsai_nrs_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_bsai_pop_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_dusky_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_ebswp_data.html</loc></url>
@@ -256,6 +261,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_rebs_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_sable_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_sable_rep.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_wc_sablefish_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/simulate_comps.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/simulate_conv_tag_fish_recaptures.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/simulation_data_to_SPoRC.html</loc></url>

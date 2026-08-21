@@ -36,6 +36,8 @@ Setup_Mod_FishIdx_and_Comps."><meta name="robots" content="noindex"></head><body
     <li><a class="dropdown-item" href="../articles/z_bsai_rougheye_rockfish_case_study.html">BSAI Blackspotted and Rougheye Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/aa_bsai_pacific_ocean_perch_case_study.html">BSAI Pacific Ocean Perch</a></li>
     <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
+    <li><a class="dropdown-item" href="../articles/ac_wc_sablefish_case_study.html">West Coast Sablefish</a></li>
+    <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -83,6 +85,7 @@ selectivity parameters. Must be called after
 <span>  retsel_pe_wt <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  retsel_rw_init_sigma <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">5</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  <span class="va">ret_sel_nonpar_est_bins</span>,</span>
+<span>  ret_sel_sex_offset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -259,6 +262,16 @@ when the base parametric curve already describes the first year well.</p></dd>
 <dt id="arg-ret-sel-nonpar-est-bins">ret_sel_nonpar_est_bins<a class="anchor" aria-label="anchor" href="#arg-ret-sel-nonpar-est-bins"></a></dt>
 <dd><p>Vector defining estimated bins for
 non-parametric selectivity.</p></dd>
+
+
+<dt id="arg-ret-sel-sex-offset">ret_sel_sex_offset<a class="anchor" aria-label="anchor" href="#arg-ret-sel-sex-offset"></a></dt>
+<dd><p>Character vector of length <code>n_fish_fleets</code>
+linking the sexes of a fleet's retention curve: <code>"none"</code> (default),
+<code>"par"</code>, <code>"scale"</code>, or <code>"par_scale"</code>, with the same
+meaning as <code>fish_sel_sex_offset</code> in
+<code><a href="Setup_Mod_Fishsel_and_Q.html">Setup_Mod_Fishsel_and_Q</a></code>. Retention is a fraction, so a
+scale offset is only sensible where the scaled curve stays at or below
+one (a negative offset, the less-retained sex); nothing enforces that.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

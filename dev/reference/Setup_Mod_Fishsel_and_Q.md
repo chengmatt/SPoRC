@@ -39,6 +39,7 @@ Setup_Mod_Fishsel_and_Q(
   use_fixed_fish_sel = rep(0, input_list$data$n_fish_fleets),
   fish_sel_input = NULL,
   fish_sel_nonpar_est_bins = NULL,
+  fish_sel_sex_offset = rep("none", input_list$data$n_fish_fleets),
   cont_tv_ret_sel = paste("none_Fleet_", 1:input_list$data$n_fish_fleets, sep = ""),
   ret_sel_blocks = paste("none_Fleet_", 1:input_list$data$n_fish_fleets, sep = ""),
   ret_sel_model = paste("logist1_Fleet_", 1:input_list$data$n_fish_fleets, sep = ""),
@@ -57,6 +58,7 @@ Setup_Mod_Fishsel_and_Q(
     length(input_list$data$years), input_list$data$n_seas, length(input_list$data$ages),
     input_list$data$n_sexes, input_list$data$n_fish_fleets)),
   ret_sel_nonpar_est_bins = NULL,
+  ret_sel_sex_offset = rep("none", input_list$data$n_fish_fleets),
   ...
 )
 ```
@@ -394,6 +396,52 @@ Setup_Mod_Fishsel_and_Q(
   share a single estimated selectivity parameter. Indices must
   correspond to the bin dimension defined by `fish_selex_type`.
 
+- fish_sel_sex_offset:
+
+  Character vector of length `n_fish_fleets` linking the sexes of a
+  fleet's selectivity, for models with `n_sexes > 1`. Options per fleet:
+
+  `"none"` (default)
+
+  :   Each sex's stored parameters are its own, exactly as before this
+      option existed.
+
+  `"par"`
+
+  :   The stored fixed-effect parameter slots of every sex beyond the
+      first hold additive offsets on the first sex's stored
+      (transformed-scale) parameters, so for log-scale parameters the
+      sex-\\s\\ natural value is the first sex's times \\e^{\delta}\\.
+      Offsets fixed at zero reproduce sex-shared parameters; estimating
+      them links the sexes through the offset the way several existing
+      assessments parameterize male selectivity.
+
+  `"scale"`
+
+  :   Each sex keeps its own parameters, and every sex beyond the first
+      additionally carries a constant log-scale offset on the whole
+      realized curve, `exp(ln_fishsel_sex_scale)`, estimated per region,
+      block, and sex. The scaled curve may exceed one. Refused for
+      non-parametric forms and semi-parametric time variation, whose
+      post-hoc standardization would cancel a constant multiplier.
+
+  `"apical"`
+
+  :   Each sex keeps its own parameters, and for every sex beyond the
+      first the double normal builds its limbs up to
+      `exp(ln_*sel_sex_scale)` rather than to one. Selectivity at the
+      first and last bins stays where that sex's own parameters put it,
+      so the offset moves the middle of the curve and leaves its ends
+      anchored. Requires the double normal.
+
+  `"par_apical"`
+
+  :   Both a par offset and an apical offset.
+
+  `"par_scale"`
+
+  :   Both a par offset and a scale offset.
+
 - cont_tv_ret_sel:
 
   Character vector of length `n_fish_fleets` specifying continuous
@@ -598,6 +646,14 @@ Setup_Mod_Fishsel_and_Q(
   Optional list specifying bin groupings for non-parametric retained
   selectivity. Structure is `[[fleet]][[block]]`, where each element is
   a list of bin index vectors defining grouped parameters.
+
+- ret_sel_sex_offset:
+
+  Character vector of length `n_fish_fleets` linking the sexes of a
+  fleet's retention curve, with the options and meaning of
+  `fish_sel_sex_offset`. Default `"none"`. Retention is a fraction, so a
+  scale offset is only sensible where the scaled curve stays at or below
+  one.
 
 - ...:
 

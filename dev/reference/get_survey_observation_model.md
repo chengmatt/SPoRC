@@ -41,7 +41,8 @@ get_survey_observation_model(
   srv_idx_ages = NULL,
   srv_q_type = NULL,
   ObsSrvIdx = NULL,
-  UseSrvIdx = NULL
+  UseSrvIdx = NULL,
+  RecDev_anom = NULL
 )
 ```
 
@@ -158,6 +159,12 @@ get_survey_observation_model(
   Arrays `[region, year, season, srv_fleet]` of observed index values
   and their use flags. Required only when a fleet solves catchability
   analytically.
+
+- RecDev_anom:
+
+  Array `[pop, region, deviation]` of recruitment deviations measured
+  from the centre their penalty asserts, or `NULL` when no fleet
+  observes them. Read only by fleets with `srv_idx_type == 2`.
 
 ## Value
 

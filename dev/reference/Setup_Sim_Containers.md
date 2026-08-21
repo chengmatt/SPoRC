@@ -81,7 +81,7 @@ The input `sim_list` with the following zero-initialised arrays added:
 - `$ln_InitDevs`:
 
   Log-scale initial age-structure deviations
-  `[n_pop × n_regions × (n_ages - 1) × n_sims]`.
+  `[n_pop × n_regions × (n_ages - 1) × n_sexes × n_sims]`.
 
 \*\*Fishery containers\*\*
 

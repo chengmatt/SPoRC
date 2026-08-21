@@ -141,8 +141,10 @@ Get_Init_NAA(
 
 - ln_InitDevs:
 
-  Array (`n_pop x n_regions x (n_ages - 1)`) containing log-scale
-  deviations applied to ages 2 through \\A\\.
+  Array (`n_pop x n_regions x (n_ages - 1) x n_sexes`) containing
+  log-scale deviations applied to ages 2 through \\A\\. A 3-D array
+  without the sex dimension is accepted and broadcast across sexes as
+  one shared curve.
 
 ## Details
 

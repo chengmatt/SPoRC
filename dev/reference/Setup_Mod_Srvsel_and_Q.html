@@ -44,6 +44,8 @@ Setup_Mod_SrvIdx_and_Comps and before model compilation."><meta name="robots" co
     <li><a class="dropdown-item" href="../articles/z_bsai_rougheye_rockfish_case_study.html">BSAI Blackspotted and Rougheye Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/aa_bsai_pacific_ocean_perch_case_study.html">BSAI Pacific Ocean Perch</a></li>
     <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
+    <li><a class="dropdown-item" href="../articles/ac_wc_sablefish_case_study.html">West Coast Sablefish</a></li>
+    <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -107,6 +109,7 @@ internal helpers (<code><a href="do_fixed_sel_pars_mapping.html">do_fixed_sel_pa
 <span>  use_fixed_srv_sel <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span>,</span>
 <span>  srv_sel_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  srv_sel_nonpar_est_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  srv_sel_sex_offset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -427,6 +430,21 @@ non-parametric survey selectivity. Structure is
 Each vector defines a group of bins that share a single estimated
 selectivity parameter. Indices must correspond to the bin dimension
 defined by the survey selectivity type (age or length).</p></dd>
+
+
+<dt id="arg-srv-sel-sex-offset">srv_sel_sex_offset<a class="anchor" aria-label="anchor" href="#arg-srv-sel-sex-offset"></a></dt>
+<dd><p>Character vector of length <code>n_srv_fleets</code>
+linking the sexes of a fleet's selectivity, for models with
+<code>n_sexes &gt; 1</code>. Options per fleet are <code>"none"</code> (default, each
+sex's stored parameters are its own), <code>"par"</code> (sexes beyond the first
+store additive offsets on the first sex's transformed-scale parameters),
+<code>"scale"</code> (sexes beyond the first carry an estimated constant
+log-scale offset on the whole realized curve), <code>"par_scale"</code> (both),
+<code>"apical"</code> (sexes beyond the first build their double normal's limbs
+up to an estimated height rather than to one, which moves the middle of
+the curve and leaves its two ends where their own parameters put them),
+and <code>"par_apical"</code> (both). See <code>fish_sel_sex_offset</code> in
+<code><a href="Setup_Mod_Fishsel_and_Q.html">Setup_Mod_Fishsel_and_Q</a></code> for the full description.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

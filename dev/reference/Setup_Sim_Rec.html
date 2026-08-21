@@ -38,6 +38,8 @@ called after Setup_Sim_Dim."><meta name="robots" content="noindex"></head><body>
     <li><a class="dropdown-item" href="../articles/z_bsai_rougheye_rockfish_case_study.html">BSAI Blackspotted and Rougheye Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/aa_bsai_pacific_ocean_perch_case_study.html">BSAI Pacific Ocean Perch</a></li>
     <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
+    <li><a class="dropdown-item" href="../articles/ac_wc_sablefish_case_study.html">West Coast Sablefish</a></li>
+    <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -94,7 +96,8 @@ called after <code><a href="Setup_Sim_Dim.html">Setup_Sim_Dim</a></code>.</p>
 <span>  t_spawn <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  rec_lag <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  Rec_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  ln_InitDevs_input <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  ln_InitDevs_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  InitDevs_sex_spec <span class="op">=</span> <span class="st">"est_shared_s"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -266,10 +269,26 @@ with replacement. Ignored for other recruitment options. Default
 
 <dt id="arg-ln-initdevs-input">ln_InitDevs_input<a class="anchor" aria-label="anchor" href="#arg-ln-initdevs-input"></a></dt>
 <dd><p>Optional log-scale initial age-structure deviations
-array <code>[n_pop x n_regions x (n_ages - 1) x n_sims]</code>. The
-<code>n_ages - 1</code> dimension excludes the reference age used during
-initialisation. If <code>NULL</code> (default), deviations are initialised to
-zero.</p></dd>
+array, either <code>[n_pop x n_regions x (n_ages - 1) x n_sims]</code> (one
+shared curve, broadcast across sexes) or
+<code>[n_pop x n_regions x (n_ages - 1) x n_sexes x n_sims]</code> (one curve
+per sex). The <code>n_ages - 1</code> dimension excludes the reference age used
+during initialisation. If <code>NULL</code> (default), deviations are drawn as
+one shared curve per population and region.</p></dd>
+
+
+<dt id="arg-initdevs-sex-spec">InitDevs_sex_spec<a class="anchor" aria-label="anchor" href="#arg-initdevs-sex-spec"></a></dt>
+<dd><p>Character. How initial age deviations are drawn
+across sexes when they are not supplied through
+<code>ln_InitDevs_input</code>. <code>"est_shared_s"</code> (default) draws one curve
+per population or region and gives it to every sex.
+<code>"est_all"</code> draws each sex its own. Departures from the initial
+equilibrium reflect the exploitation the stock had already seen as well as
+year-class strength, and with sex-specific selectivity or natural
+mortality the two sexes need not have departed by the same amount, which is
+the case <code>"est_all"</code> covers. The names match
+<code>InitDevs_sex_spec</code> in <code><a href="Setup_Mod_Rec.html">Setup_Mod_Rec</a></code>, so an operating
+model and the estimation model fitted to it can be set the same way.</p></dd>
 
 </dl></div>
     <div class="section level2">

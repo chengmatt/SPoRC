@@ -5,6 +5,8 @@ articles:
   a_model_dimensions: a_model_dimensions.html
   aa_bsai_pacific_ocean_perch_case_study: aa_bsai_pacific_ocean_perch_case_study.html
   ab_bsai_atka_mackerel_case_study: ab_bsai_atka_mackerel_case_study.html
+  ac_bsai_northern_rock_sole_case_study: ac_bsai_northern_rock_sole_case_study.html
+  ac_wc_sablefish_case_study: ac_wc_sablefish_case_study.html
   architecture: architecture.html
   b_model_parameters: b_model_parameters.html
   c_model_equations: c_model_equations.html
@@ -32,7 +34,7 @@ articles:
   x_goa_dusky_rockfish_case_study: x_goa_dusky_rockfish_case_study.html
   y_bsai_northern_rockfish_case_study: y_bsai_northern_rockfish_case_study.html
   z_bsai_rougheye_rockfish_case_study: z_bsai_rougheye_rockfish_case_study.html
-last_built: 2026-08-19T16:41Z
+last_built: 2026-08-21T18:03Z
 urls:
   reference: https://chengmatt.github.io/SPoRC/reference
   article: https://chengmatt.github.io/SPoRC/articles

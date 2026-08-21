@@ -50,6 +50,8 @@ before model compilation.'><meta name="robots" content="noindex"></head><body>
     <li><a class="dropdown-item" href="../articles/z_bsai_rougheye_rockfish_case_study.html">BSAI Blackspotted and Rougheye Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/aa_bsai_pacific_ocean_perch_case_study.html">BSAI Pacific Ocean Perch</a></li>
     <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
+    <li><a class="dropdown-item" href="../articles/ac_wc_sablefish_case_study.html">West Coast Sablefish</a></li>
+    <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -170,9 +172,20 @@ Default: all zeros.</p></dd>
 
 <dt id="arg-srv-idx-type">srv_idx_type<a class="anchor" aria-label="anchor" href="#arg-srv-idx-type"></a></dt>
 <dd><p>Character vector <code>[n_srv_fleets]</code> specifying the
-index type per fleet. One of <code>"biom"</code> (biomass), <code>"abd"</code>
-(abundance), or <code>"none"</code> (no index for that fleet). Converted to
-integer codes (<code>1</code>, <code>0</code>, <code>999</code>) before storage.</p></dd>
+  index type per fleet. One of <code>"biom"</code> (biomass), <code>"abd"</code>
+  (abundance), <code>"recdev"</code> (recruitment deviations), or <code>"none"</code>
+  (no index for that fleet). Converted to integer codes (<code>1</code>,
+  <code>0</code>, <code>2</code>, <code>999</code>) before storage.</p>
+
+<p>A <code>"recdev"</code> fleet observes year class strength directly rather than
+  any part of the population. Its predicted value is
+  <code>q * (ln_RecDevs - mu)</code>, with <code>mu</code> the centre the recruitment
+  penalty asserts for that year, so it measures the anomaly rather than the
+  deviation as stored; under a bias ramp the two differ. Such a fleet reads
+  no numbers at age, so its selectivity, survey timing and weight at age are
+  unused and its compositions should be left off. It requires
+  <code>SrvIdx_LikeType = "normal"</code>, since deviations are signed, and
+  <code>RecDevs_pen_center = "fixed"</code> in <code><a href="Setup_Mod_Rec.html">Setup_Mod_Rec</a></code>.</p></dd>
 
 
 <dt id="arg-obssrvagecomps">ObsSrvAgeComps<a class="anchor" aria-label="anchor" href="#arg-obssrvagecomps"></a></dt>

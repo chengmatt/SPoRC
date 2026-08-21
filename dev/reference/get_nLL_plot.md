@@ -27,15 +27,15 @@ get_nLL_plot(data, rep, model_names)
   List of length `n_models`, where each element is a SPoRC report list
   (i.e. the output of `obj$report()` after optimisation). The following
   nLL components are extracted: `jnLL`, `h_nLL`, `M_nLL`,
-  `rec_region_prop_nLL`, `Rec_nLL`, `Init_Rec_nLL`, `sel_nLL`,
-  `conv_fish_tag_nLL`, `Catch_nLL`, `Fmort_nLL`, `srv_q_nLL`,
-  `fish_q_nLL`, `SrvIdx_nLL`, `FishIdx_nLL`, `TagRep_nLL`,
-  `Movement_nLL`, `SrvAgeComps_nLL`, `FishAgeComps_nLL`,
-  `SrvLenComps_nLL`, `FishLenComps_nLL`, and the population-specific
-  counterparts `Catch_pop_nLL`, `FishIdx_pop_nLL`, `SrvIdx_pop_nLL`,
-  `FishAgeComps_pop_nLL`, `FishLenComps_pop_nLL`, `SrvAgeComps_pop_nLL`,
-  `SrvLenComps_pop_nLL`. Missing components are handled via
-  `safe_extract`.
+  `rec_region_prop_nLL`, `Rec_nLL`, `Init_Rec_nLL`, `Init_Sex_nLL`,
+  `Rec_level_nLL`, `SR_pen_nLL`, `sel_nLL`, `conv_fish_tag_nLL`,
+  `Catch_nLL`, `Fmort_nLL`, `srv_q_nLL`, `fish_q_nLL`, `SrvIdx_nLL`,
+  `FishIdx_nLL`, `TagRep_nLL`, `Movement_nLL`, `SrvAgeComps_nLL`,
+  `FishAgeComps_nLL`, `SrvLenComps_nLL`, `FishLenComps_nLL`, and the
+  population-specific counterparts `Catch_pop_nLL`, `FishIdx_pop_nLL`,
+  `SrvIdx_pop_nLL`, `FishAgeComps_pop_nLL`, `FishLenComps_pop_nLL`,
+  `SrvAgeComps_pop_nLL`, `SrvLenComps_pop_nLL`. Missing components are
+  handled via `safe_extract`.
 
 - model_names:
 

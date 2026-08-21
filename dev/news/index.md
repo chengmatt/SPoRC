@@ -8,11 +8,14 @@
 
 - Incorporated ability to simulate and estimate both population-specific
   (natal homing) and seasonal dynamics.
+
 - Most model and simulation dimensions now include population- and
   season-specific indices, following the general dimension order:
   population, region, year, season, age, sex, fleet.
+
 - Recoded tagging module to allow fleet-specific tag reporting rates, as
   well as missing attributes in tagged fish.
+
 - `conv_tag_t_tagging`, `ln_init_conv_tag_mort`, and `ln_conv_tag_shed`
   (in both `Setup_Sim_Tagging`/`Simulate_Population` and
   `Setup_Mod_Tagging`/the RTMB model) are now per-tag-release-event
@@ -24,19 +27,25 @@
   now accept `"fix"`, `"est_shared"` (one value estimated across all
   events, replacing the old `"est"`), or `"est_all"` (an independent
   value estimated per release event).
+
 - Reference points for local density-dependence in both meta-population
   and natal homing contexts.
+
 - Added ability to simulate and fit to population-specific catches,
   indices, compositions, and tagging data.
+
 - Added ability to simulate and fit to population-specific discards and
   discarded compositions.
+
 - Added in ability to internally construct OSA residuals for catch,
   indices, compositions, and tagging data.
+
 - Added `Fdev_model` option (`"iid"`, `"rw"`, `"ar1"`) to
   `Setup_Mod_Catch_and_F` for fishing mortality deviations
   (`ln_F_devs`), with a new AR1 correlation parameter `Fdev_rho`
   (shared/fixed via `Fdev_rho_spec`). Previously only IID deviations
   were supported.
+
 - Fishing mortality deviations now distinguish a genuinely missing
   aggregate catch observation from a true recorded zero. If `ObsCatch`
   is `NA` at a cell where `UseCatch == 0` (and no population-specific
@@ -46,13 +55,16 @@
   a genuine closure (`Fmort` forced to zero, no deviation estimated),
   matching prior behavior. See `@param ObsCatch` in
   `Setup_Mod_Catch_and_F` and `Get_Fdev_PE_loglik`.
+
 - Added age-0 (`rec_lag = 0`) Beverton-Holt recruitment, set via
   `rec_lag` in `Setup_Mod_Rec`/`Setup_Sim_Rec`. Previously `rec_lag` had
   to be `>= 1` (recruitment driven by SSB from `rec_lag` seasons prior,
   entering in any season). With `rec_lag = 0`, recruitment for a year is
   driven by that *same* year’s own SSB.
+
 - Incorporated additional movement ordering options including: movement
   after mortality and continuous movement dynamics.
+
 - Added the ability to fit a stock-recruit curve as a penalty rather
   than as the recruitment process, via `sr_penalty` (`"none"`, `"bh"`,
   `"ricker"`) in `Setup_Mod_Rec`, valid only with
@@ -70,6 +82,7 @@
   mean recruitment, since the curve does not govern the stock;
   `Get_Reference_Points` names `sr_R0` and `h_trans` for callers who
   want to supply that curve through `srr_opt` deliberately.
+
 - Added `fish_sel_norm_bins` and `srv_sel_norm_bins` to
   `Setup_Mod_Fishsel_and_Q` and `Setup_Mod_Srvsel_and_Q`, naming the
   bins the mean-one standardization averages over for non-parametric
@@ -78,11 +91,159 @@
   standardizes over that part; the difference between windows is a
   constant that catchability absorbs when it is free, but not when it
   carries an informative prior.
+
 - Added a BSAI Atka mackerel case study bridging the 2024 assessment
   (AMAK Model 16.0b), with `sgl_rg_bsai_atka_data`.
 
+- Added a West Coast sablefish case study bridging the 2025 assessment
+  (Stock Synthesis 3), with `sgl_rg_wc_sablefish_data`.
+
+- Selectivity sexes can now be linked through offsets, via
+  `fish_sel_sex_offset` and `ret_sel_sex_offset` in
+  `Setup_Mod_Fishsel_and_Q` and `srv_sel_sex_offset` in
+  `Setup_Mod_Srvsel_and_Q` (per fleet; requires `n_sexes > 1`). `"none"`
+  (default) keeps each sex’s stored parameters its own, exactly as
+  before. `"par"` makes the stored fixed-effect slots of every sex
+  beyond the first additive offsets on the first sex’s transformed-scale
+  parameters, so for log-scale parameters the second sex’s natural value
+  is the first sex’s times `exp(offset)`; offsets fixed at zero
+  reproduce sex-shared parameters, and estimating them is the
+  male-offset parameterization several existing assessments use for
+  survey selectivity. `"scale"` keeps per-sex parameters and multiplies
+  the realized curve of every sex beyond the first by an estimated
+  constant `exp(ln_fishsel_sex_scale)`/`exp(ln_srvsel_sex_scale)` (per
+  region, block, and sex), matching the convention of a log-scale male
+  selectivity offset on the whole curve, which may exceed one.
+  `"par_scale"` combines the two. A scale offset is refused for
+  non-parametric forms and semi-parametric time variation, whose mean
+  standardization would cancel a constant multiplier. Time-varying
+  deviations are untouched and still apply per sex to the effective
+  parameters.
+
+- `fish_sel_sex_offset`/`ret_sel_sex_offset`/`srv_sel_sex_offset` gained
+  `"apical"` and `"par_apical"`, for the double normal only. Where a
+  `"scale"` offset multiplies the finished curve, an apical offset is
+  the height the ascending and descending limbs are built up to and the
+  plateau sits at, leaving the selectivity at the first and last bins
+  where that sex’s own parameters put them. That is what an assessment
+  means when it gives a sex its own apical selectivity, and the
+  distinction is not cosmetic: the two can be made to agree on a curve,
+  but they disagree about how it moves, so a bridge built on the wrong
+  one reproduces the reference model’s selectivity exactly and still
+  walks away from its estimate when refitted. On the West Coast
+  sablefish bridge, the male offset’s gradient at the assessment’s
+  estimate is 4.2 under `"scale"` against 0.02 under `"apical"`, and the
+  refit moves spawning biomass 0.42 percent against 0.004 percent. The
+  apical value rides on the same `ln_*sel_sex_scale` parameter as a
+  scale offset, and is refused for any fleet not on the double normal.
+
+- The selectivity plateau the bicubic form already carried is now
+  available to every functional form: an optional `_NSelBins_<n>` suffix
+  on `fish_sel_model`/`ret_sel_model`/`srv_sel_model`
+  (e.g. `"logist1_Fleet_1_NSelBins_17"`, composable with `_Block_<b>` in
+  either order) holds bins beyond `n` at bin `n`’s computed value. This
+  is the plateau convention several existing assessments apply, where
+  the form is only evaluated over the first `n` bins and the rest ride
+  the last one; it is applied after the form and its parameter
+  deviations, before bin-level semi-parametric deviations and bin
+  overrides. It is not cosmetic when the curve has not saturated by bin
+  `n`: on the BSAI northern rock sole bridge, evaluating the logistic
+  smoothly instead of holding it moves total biomass by about two
+  percent.
+
+- Initial age deviations gained a sex dimension: `ln_InitDevs` is now
+  `[n_pop, n_regions, n_ages - 1, n_sexes]`, governed by
+  `InitDevs_sex_spec` in `Setup_Mod_Rec`. `"est_shared_s"` (default)
+  estimates one age curve read by every sex, which is bit-identical to
+  the previous behaviour (older 3-D input lists broadcast automatically
+  and are penalized once). `"est_all"` gives each sex its own curve,
+  each penalized under the initial-age penalty, with an `"own_mean"`
+  `InitDevs_pen_center` pooled across the penalized sexes so the sexes
+  share one estimated level, the way assessments with a common
+  mean-log-initial and sex-specific deviations are written.
+  `data$init_devs_pen_use` records which copies the penalty scores so
+  shared parameters are never penalized twice. The simulation’s
+  container and `ln_InitDevs_input` carry the sex dimension too (a 4-D
+  input is broadcast), so a conditioned simulation receives every sex’s
+  fitted curve. A fresh simulation draws according to
+  `InitDevs_sex_spec` in `Setup_Sim_Rec`, taking the same two values:
+  `"est_shared_s"` (default, one curve read by every sex, byte-identical
+  to the previous draw) or `"est_all"` (a curve per sex). Departures
+  from the initial equilibrium carry the exploitation the stock had
+  already seen as well as year-class strength, so with sex-specific
+  selectivity or natural mortality the sexes need not have departed by
+  the same amount.
+
+- Sex-specific initial age deviations can be penalized against one
+  another, via `Use_init_sex_pen` and `init_sex_pen_sigma` in
+  `Setup_Mod_Rec`: a Gaussian on each later sex’s deviation minus the
+  first sex’s at every age the initial-age penalty covers, entering the
+  objective unweighted and reported as `Init_Sex_nLL`. It is a statement
+  about how different the sexes’ initial age structures may be, separate
+  from the initial-age penalty’s statement about how variable each curve
+  is, and is how assessments that estimate male and female initial
+  numbers separately keep them from drifting apart where the data are
+  thin. Requires `InitDevs_sex_spec = "est_all"`; a sum of squares with
+  weight `w` is `init_sex_pen_sigma = 1/sqrt(2w)`.
+
+- The double normal selectivity form (`"dbnrml"`) now matches the form
+  the SS3 form. The first parameter is the bin at which the plateau
+  begins, carried on the bin scale rather than squeezed into the bin
+  range by a logistic transform, so it means a bin and an offset on it
+  is an offset in bins. The ascending limb is rescaled by its own value
+  at the first bin, which makes `p5` the selectivity there rather than a
+  lower asymptote the curve approaches with the first bin overwritten
+  afterwards. The descending limb is rescaled by its value at the last
+  bin, which makes `p6` the selectivity at the last bin rather than at
+  bin 40, a bin that need not exist in the model. The plateau’s far end
+  is bounded at `0.99 * max(bin)` rather than `0.99 + max(bin)`, which
+  kept it from ending past the last bin. And the offset from the peak is
+  the bin width rather than a literal one, which matters for length bins
+  wider than one. Existing models keep their parameter count and their
+  five other parameter meanings, but the first parameter’s scale and the
+  curve itself both move, so any model fitted with `"dbnrml"` should be
+  re-run. The equations in the model equations vignette are updated to
+  match, including the sign of the logistic transforms, which was
+  previously written as `1/(1 + exp(p))` where the code has
+  `1/(1 + exp(-p))`.
+
+- Survey fleets can observe recruitment deviations rather than the
+  population, via `srv_idx_type = "recdev"` in
+  `Setup_Mod_SrvIdx_and_Comps` and `Setup_Sim_Survey`. The predicted
+  index is `q * (ln_RecDevs - mu)`, with `mu` the centre the recruitment
+  penalty asserts for that year, so the fleet measures the anomaly: how
+  strong a year class was against what the model expected. Under a bias
+  ramp that is not the deviation as stored, which is the quantity a
+  pre-recruit survey or an environmental year class index observes. Such
+  a fleet reads no numbers at age, so its selectivity, survey timing and
+  weight at age are unused and its compositions should be left off; it
+  requires `SrvIdx_LikeType = "normal"`, since deviations are signed,
+  and `RecDevs_pen_center = "fixed"`. `RecDev_anom` is reported. The
+  operating model draws the fleet the same way, so a self-test exercises
+  both sides.
+
+- An operating model conditioned on a fit now records `ln_RecDevs`.
+  Previously, supplying recruitment through `Rec_input` left the
+  deviation container at zero, so a conditioned operating model reported
+  zeros for the deviations its own population was running on. It now
+  stores `log(Rec / Rec_deterministic) + sigmaR^2/2`, the same anomaly
+  the estimation model reports, which makes the container meaningful in
+  both modes and is what a recruitment deviation index reads.
+
+- The double normal’s default starting values place its peak in the
+  middle of the bin range rather than at zero. With the peak carried on
+  the bin scale, a parameter left at zero puts it at bin zero, where the
+  ascending limb has no extent and its rescaling divides by zero.
+  Supplied starting values are untouched, and under a par sex offset
+  only the first sex is seeded, since the later sexes’ slots hold
+  offsets rather than peaks.
+
 ### Minor changes
 
+- `likelihood_profile` (its `rec_nLL_df`) and `get_nLL_plot` now carry
+  the initial-age sex tie (`Init_Sex_nLL`), and also the recruitment
+  level (`Rec_level_nLL`) and stock-recruit (`SR_pen_nLL`) penalties,
+  which had been left out of both diagnostics when they were added.
 - Indices can now be restricted to a subset of ages, via `srv_idx_ages`
   in `Setup_Mod_SrvIdx_and_Comps` and `fish_idx_ages` in
   `Setup_Mod_FishIdx_and_Comps`. Either a list with one element per
@@ -370,13 +531,14 @@
   tape (`obj$he`) instead of finite differencing the gradient with
   `optimHess`, which needed one gradient evaluation per parameter.
   Random-effects models continue to use `optimHess`, since RTMB does not
-  implement a tape Hessian when random effects are present. Newton
-  refinement now also stops early if the Hessian comes back non-finite,
-  which can happen on models that have not converged, where second
-  derivatives are undefined at parameter values the objective and
-  gradient still evaluate at; previously a non-finite Hessian passed NaN
-  through [`solve()`](https://rdrr.io/r/base/solve.html) without
-  erroring and left `optim$par` and `optim$objective` as NaN.
+  implement a tape Hessian (at least I don’t think so) when random
+  effects are present. Newton refinement now also stops early if the
+  Hessian comes back non-finite, which can happen on models that have
+  not converged, where second derivatives are undefined at parameter
+  values the objective and gradient still evaluate at; previously a
+  non-finite Hessian passed NaN through
+  [`solve()`](https://rdrr.io/r/base/solve.html) without erroring and
+  left `optim$par` and `optim$objective` as NaN.
 
 ### Bug Fixes
 

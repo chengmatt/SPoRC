@@ -44,6 +44,8 @@
     <li><a class="dropdown-item" href="../articles/z_bsai_rougheye_rockfish_case_study.html">BSAI Blackspotted and Rougheye Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/aa_bsai_pacific_ocean_perch_case_study.html">BSAI Pacific Ocean Perch</a></li>
     <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
+    <li><a class="dropdown-item" href="../articles/ac_wc_sablefish_case_study.html">West Coast Sablefish</a></li>
+    <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -738,7 +740,7 @@ the ADMB predicted index to <code>SPoRC</code>’s, which is exact because
 enters multiplicatively.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">parameters</span><span class="op">$</span><span class="va">ln_F_devs</span><span class="op">[</span><span class="fl">1</span>, , <span class="fl">1</span>, <span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">mle</span><span class="op">$</span><span class="va">Fmort</span><span class="op">)</span></span>
-<span><span class="va">parameters</span><span class="op">$</span><span class="va">ln_InitDevs</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="op">]</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">mle</span><span class="op">$</span><span class="va">log_initdevs</span></span>
+<span><span class="va">parameters</span><span class="op">$</span><span class="va">ln_InitDevs</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">1</span>, , <span class="op">]</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">mle</span><span class="op">$</span><span class="va">log_initdevs</span></span>
 <span></span>
 <span><span class="va">parameters</span><span class="op">$</span><span class="va">fish_fixed_sel_pars</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">1</span><span class="op">:</span><span class="va">n_ages</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">mle</span><span class="op">$</span><span class="va">pars_fsh</span></span>
 <span><span class="va">parameters</span><span class="op">$</span><span class="va">ln_fishsel_devs</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">1</span><span class="op">:</span><span class="va">n_yrs</span>, , <span class="fl">1</span>, <span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">mle</span><span class="op">$</span><span class="va">devs_fsh</span></span>

@@ -29,7 +29,10 @@ get_recruitment_penalty(
   do_rec_bias_ramp,
   map_ln_RecDevs = NULL,
   RecDevs_pen_center = 0,
-  InitDevs_pen_center = 0
+  InitDevs_pen_center = 0,
+  init_devs_pen_use = NULL,
+  Use_init_sex_pen = 0,
+  ln_sigma_init_sex = 0
 )
 ```
 
@@ -64,7 +67,9 @@ get_recruitment_penalty(
 
 - ln_InitDevs:
 
-  Array `[pop, region, age]` of initial age deviations.
+  Array `[pop, region, age, sex]` of initial age deviations. A 3-D
+  `[pop, region, age]` array (the layout before the sex dimension
+  existed) is accepted and treated as one shared curve.
 
 - init_age_devs_shared:
 
@@ -104,8 +109,29 @@ get_recruitment_penalty(
   `NA` are fixed rather than estimated and are left unpenalized. `NULL`
   penalizes every cell.
 
+- init_devs_pen_use:
+
+  Array of 0/1 matching `ln_InitDevs`, naming which cells are penalized.
+  Sexes sharing one parameter keep only the first sex's copy flagged so
+  the shared parameter is not penalized twice; sex-specific deviations
+  flag every sex. `NULL` penalizes only the first sex's slice, which is
+  the pre-sex-dimension behaviour.
+
+- Use_init_sex_pen:
+
+  Integer (0/1). Whether each later sex's initial age deviations are
+  tied to the first sex's through a Gaussian on their difference at
+  every penalized age. Only meaningful when the sexes carry their own
+  curves.
+
+- ln_sigma_init_sex:
+
+  Log standard deviation of that tie.
+
 ## Value
 
-List with elements `Init_Rec_nLL` (array `[pop, region, age]`) and
-`Rec_nLL` (array `[pop, region, year]`), each holding negative
-log-likelihood penalties (0 where not penalized).
+List with elements `Init_Rec_nLL` (array `[pop, region, age, sex]`),
+`Init_Sex_nLL` (the same layout, the between-sex tie, zero for the first
+sex and whenever the tie is off) and `Rec_nLL` (array
+`[pop, region, year]`), each holding negative log-likelihood penalties
+(0 where not penalized).

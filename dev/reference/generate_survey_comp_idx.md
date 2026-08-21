@@ -4,8 +4,8 @@ Computes survey index-at-age (`SrvIAA`) for all populations using the
 mid-survey abundance formula \\N \cdot s \cdot e^{-t\_{\text{srv}} Z}\\,
 derives index-at-length (`SrvIAL`) when a size-age transition matrix is
 available, generates observed survey indices (with lognormal error) as
-abundance or biomass depending on `srv_idx_type`, and draws age and
-length composition samples via
+abundance, biomass, or the recruitment deviations depending on
+`srv_idx_type`, and draws age and length composition samples via
 [`simulate_comps`](https://chengmatt.github.io/SPoRC/dev/reference/simulate_comps.md).
 
 ## Usage

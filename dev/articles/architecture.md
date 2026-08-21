@@ -251,7 +251,7 @@ through that one file.
 |----|----|----|----|
 | `utils_math.R` | `get_AR1_CorrMat`, `get_Constant_CorrMat`, `get_logistN_Sigma`, `Get_Natural_Cubic_Spline_Weights`, `rho_trans` | nothing | `model_lik_comps.R`, `model_priors_penalties.R`, `setup_fishery_selectivity.R`, `setup_survey_selectivity.R`, `sim_observations.R`, `sim_random_variates.R` |
 | `utils_postfit.R` | `get_model_rep_from_mcmc`, `get_optim_param_list`, `get_par_est_info`, `marg_AIC`, `post_optim_sanity_checks` | nothing | `sim_closed_loop.R`, `sim_self_test.R` |
-| `utils_setup.R` | `assign_sel_block`, `collect_message`, `convert_to_numeric`, `extend_years`, `parse_idx_ages`, `parse_idx_cov`, `resolve_sel_pen_wts`, `safe_extract`, `set_data_indicator_unused`, `setup_sel_bin_devs`, `setup_sel_norm_bins`, `validate_selex_penalty`, `validate_selex_prior_types` | nothing | `diag_likelihood_profile.R`, `model_objective.R`, `plot_figures_tables.R`, `setup_biologicals.R`, `setup_dimensions.R`, `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_fishery_selectivity.R`, `setup_mapping.R`, `setup_movement.R`, `setup_recruitment.R`, `setup_sim_fleets.R`, `setup_survey_comps.R`, `setup_survey_selectivity.R`, `setup_tagging.R`, `setup_weighting.R`, `sim_closed_loop.R`, `sim_observations.R` |
+| `utils_setup.R` | `assign_sel_block`, `collect_message`, `convert_to_numeric`, `extend_years`, `parse_idx_ages`, `parse_idx_cov`, `resolve_sel_pen_wts`, `safe_extract`, `seed_dbnrml_peak`, `set_data_indicator_unused`, `setup_sel_bin_devs`, `setup_sel_norm_bins`, `setup_sel_sex_offset`, `validate_selex_penalty`, `validate_selex_prior_types` | nothing | `diag_likelihood_profile.R`, `model_objective.R`, `plot_figures_tables.R`, `setup_biologicals.R`, `setup_dimensions.R`, `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_fishery_selectivity.R`, `setup_mapping.R`, `setup_movement.R`, `setup_recruitment.R`, `setup_sim_fleets.R`, `setup_survey_comps.R`, `setup_survey_selectivity.R`, `setup_tagging.R`, `setup_weighting.R`, `sim_closed_loop.R`, `sim_observations.R` |
 
 #### Package data
 
@@ -292,9 +292,9 @@ what is under test rather than which stock the fixture happens to use.
 | `test-projection_*` | 3 | Forward projection off a fitted model |
 | `test-diag_*` | 9 | Post fit diagnostics: retrospectives and OSA residuals |
 | `test-integration_*` | 4 | Cross cutting agreement between the objective, the reference points and the operating model |
-| `test-regression_*` | 13 | End to end fits pinning `obj$rep` and `nll` for known configurations |
+| `test-regression_*` | 15 | End to end fits pinning `obj$rep` and `nll` for known configurations |
 
-That is 95 test files in total.
+That is 101 test files in total.
 
 Two groups are worth calling out. The `test-regression_*` files pin
 `obj$rep` and `nll` values for known configurations against bundled

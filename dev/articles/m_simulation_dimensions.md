@@ -41,7 +41,7 @@ and utilized for comparison.
 | `eff_SSB` | `n_pop × n_years × n_sims` | Effective SSB at each population’s natal region, including stray contributions |
 | `Total_Biom` | `n_pop × n_regions × n_years × n_sims` | Total biomass by population and region |
 | `ln_RecDevs` | `n_pop × n_regions × n_years × n_sims` | Log-scale recruitment deviations |
-| `ln_InitDevs` | `n_pop × n_regions × (n_ages - 1) × n_sims` | Log-scale initial age deviations |
+| `ln_InitDevs` | `n_pop × n_regions × (n_ages - 1) × n_sexes × n_sims` | Log-scale initial age deviations |
 | `natmort` | `n_pop × n_regions × n_years × n_ages × n_sexes × n_sims` | Natural mortality-at-age |
 | `ZAA` | `n_pop × n_regions × n_years × n_seas × n_ages × n_sexes × n_sims` | Total instantaneous mortality (natural + retained F + dead discard F) |
 | `WAA` | `n_pop × n_regions × n_years × n_seas × n_ages × n_sexes × n_sims` | Mean weight-at-age |

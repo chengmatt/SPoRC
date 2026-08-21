@@ -673,7 +673,7 @@ multiplicatively.
 ``` r
 
 parameters$ln_F_devs[1, , 1, 1] <- log(dat$mle$Fmort)
-parameters$ln_InitDevs[1, 1, ] <- dat$mle$log_initdevs
+parameters$ln_InitDevs[1, 1, , ] <- dat$mle$log_initdevs
 
 parameters$fish_fixed_sel_pars[1, 1:n_ages, 1, 1, 1] <- dat$mle$pars_fsh
 parameters$ln_fishsel_devs[1, 1:n_yrs, , 1, 1] <- dat$mle$devs_fsh

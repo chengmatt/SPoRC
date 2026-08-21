@@ -22,7 +22,9 @@ Get_Selex(
   n_yr_nodes_bicubic = NULL,
   bin_devs = NULL,
   bin_dev_bins = NULL,
-  sel_norm_bins = NULL
+  sel_norm_bins = NULL,
+  n_sel_bins = NULL,
+  apical = 1
 )
 ```
 
@@ -54,6 +56,9 @@ Get_Selex(
   4
 
   :   Double-normal dome with plateau and flexible tails (6 parameters).
+      \\p\_{1}\\ is the bin at which the plateau starts, carried on the
+      bin scale rather than transformed, \\p\_{5}\\ is the selectivity
+      at the first bin and \\p\_{6}\\ the selectivity at the last bin.
 
   5
 
@@ -261,6 +266,23 @@ Get_Selex(
   (`Selex_Model = 9`), or `NULL` to use every bin. A gear whose
   catchability is defined against only part of the age range
   standardizes over that part, which shifts the scale absorbed by q.
+
+- n_sel_bins:
+
+  Integer or `NULL`/`0` for none. Bins beyond this one are held at its
+  computed value rather than evaluated through the functional form, the
+  `NSelBins` plateau convention several existing assessments apply (e.g.
+  `nselages`). Applied after the form and its parameter deviations, but
+  before the bin-level semi-parametric deviations and the bin overrides.
+
+- apical:
+
+  Numeric. For the double normal (`Selex_Model == 4`), the height the
+  ascending and descending limbs are built up to and the plateau sits
+  at. `1` (the default) is the ordinary curve. A sex carrying an apical
+  offset takes `exp(ln_*sel_sex_scale)` here, which moves the middle of
+  its curve and leaves the selectivity at the first and last bins where
+  their own parameters put them. Ignored by every other form.
 
 ## Value
 

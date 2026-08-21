@@ -130,10 +130,10 @@ Setup_Mod_Weighting(
 
   Weight applied to the initial age deviation penalty (`ln_InitDevs`).
   Either a scalar or a numeric array
-  `[n_pop × n_regions × (n_ages - 1)]`. Defaults to `NULL`, which takes
-  whatever `Wt_Rec` is when `Wt_Rec` is a scalar; supply it explicitly
-  when `Wt_Rec` is an array, since the two penalties are dimensioned
-  differently.
+  `[n_pop × n_regions × (n_ages - 1) × n_sexes]`. Defaults to `NULL`,
+  which takes whatever `Wt_Rec` is when `Wt_Rec` is a scalar; supply it
+  explicitly when `Wt_Rec` is an array, since the two penalties are
+  dimensioned differently.
 
 - Wt_F:
 

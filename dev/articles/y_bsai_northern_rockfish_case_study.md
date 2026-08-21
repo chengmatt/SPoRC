@@ -369,7 +369,7 @@ for(j in (n_obs_ages + 1):n_ages) {
 } # end j loop
 NAA_styr[n_ages] <- exp(mle$log_rinit - mle$M * (n_ages - 1) +
                           mle$fydev[length(mle$fydev)]) / (1 - exp(-mle$M))
-input_list$par$ln_InitDevs[1, 1, ] <- (log(NAA_styr) - log(NAA_equil))[-1]
+input_list$par$ln_InitDevs[1, 1, , ] <- (log(NAA_styr) - log(NAA_equil))[-1]
 ```
 
 One thing `SPoRC` cannot express is the assessment’s `nselages` edge

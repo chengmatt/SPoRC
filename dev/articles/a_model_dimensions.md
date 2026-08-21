@@ -48,7 +48,10 @@ the order they are defined.
 | rec_model | Value specifying the recruitment model. 0 == Mean Recruitment, 1 == Beverton-Holt with steepness parameterization, 2 == Ricker in depletion form with steepness mapped through the Beverton-Holt compensation ratio (see [`vignette("c_model_equations")`](https://chengmatt.github.io/SPoRC/dev/articles/c_model_equations.md)) |
 | SR_ref_yr | Year index (not a calendar year) supplying the biological inputs (WAA, maturity, natural mortality, movement) to unfished spawning biomass per recruit, and therefore to S0 and the scale of the stock-recruit curve. Default 1 (first model year); set to the terminal year index to condition the curve on terminal biologicals. Ignored under mean recruitment |
 | RecDevs_pen_center | Value specifying where the recruitment deviation penalty is centred. 0 (`"fixed"`): the asserted prior mean (zero or the bias-corrected offset), constraining both level and spread; 1 (`"own_mean"`): the mean of the estimated deviations, penalizing only their spread. Cannot be combined with do_rec_bias_ramp = 1 |
-| InitDevs_pen_center | Value specifying where the initial age deviation penalty is centred, with the same 0/1 coding as RecDevs_pen_center |
+| InitDevs_pen_center | Value specifying where the initial age deviation penalty is centred, with the same 0/1 coding as RecDevs_pen_center. Under `"own_mean"` with sex-specific deviations the mean pools every penalized cell across sexes |
+| init_devs_pen_use | Array dimensioned by n_pop, n_regions, n_ages - 1, n_sexes of 0/1 flags naming which cells of `ln_InitDevs` the initial age penalty scores, so a curve shared across sexes (`InitDevs_sex_spec = "est_shared_s"`) is penalized once and sex-specific curves (`"est_all"`) each are |
+| Use_init_sex_pen | Value specifying whether each later sex’s initial age deviations are tied to the first sex’s by a Gaussian on their difference. 0: Don’t use (default), 1: Use; requires sex-specific deviations |
+| ln_sigma_init_sex | Log-scale standard deviation of that tie. A sum of squares with weight w corresponds to sigma = 1/sqrt(2w) |
 | Use_rec_level_pen | Value specifying whether a penalty is applied to the log recruitment series itself, separately from the deviation penalty. 0: Don’t use (default), 1: Use |
 | ln_sigma_rec_level | Log-scale standard deviation of the recruitment level penalty. A sum of squares with weight w corresponds to sigma = 1/sqrt(2w) |
 | rec_level_pen_center | Value specifying where the recruitment level penalty is centred. 0 (`"fixed"`): zero; 1 (`"own_mean"`, default): the mean of the log recruitment series, so only its variability is penalized |
@@ -285,7 +288,7 @@ n_regions.
 | fish_sel_blocks | Array dimensioned by n_regions, n_years, n_fish_fleets specifying selectivity time blocks. Unique integers denote distinct selectivity parameter blocks |
 | fish_sel_model | Array dimensioned by n_regions, n_years, n_fish_fleets specifying the selectivity functional form. 0: Logistic (a50 and slope), 1: Gamma dome-shaped, 2: Power function, 3: Logistic (a50 and a95), 4: Double Normal (6 parameters), 5: Non-parametric (logit scale), 6/7: Logistic with asymptote, 8: Bicubic spline, 9: Non-parametric on the log scale, standardized within each year. Further details in model_selectivity.R |
 | fish_sel_bicubic_binnodes, fish_sel_bicubic_yrnodes | Arrays dimensioned by n_regions, n_years, n_fish_fleets giving the number of bin/year spline nodes where fish_sel_model == 8; 0 elsewhere |
-| fish_sel_bicubic_selstyr, fish_sel_bicubic_nselbins | Arrays dimensioned by n_regions, n_years, n_fish_fleets giving the optional fitted-region restrictions (start year, number of bins) for bicubic blocks; 0 means unrestricted |
+| fish_sel_bicubic_selstyr, fish_sel_bicubic_nselbins | Arrays dimensioned by n_regions, n_years, n_fish_fleets giving the optional fitted-region restrictions (start year, number of bins); 0 means unrestricted. The start year applies to bicubic blocks only; the number of bins (the `_NSelBins_<n>` suffix) applies to every form, holding bins beyond n at bin n’s value |
 | fish_sel_bicubic_Wbin, fish_sel_bicubic_Wyr | Precomputed natural-cubic-spline interpolation weight matrices mapping bin-node/year-node values onto every bin/year, for bicubic blocks |
 | fish_selex_type | Integer specifying whether fishery selectivity is age-based (0) or length-based (1) |
 | use_fixed_fish_sel | Integer specifying whether fishery selectivity is fixed externally (1) or estimated (0) |
@@ -302,6 +305,8 @@ n_regions.
 | fishsel_rw_init_sigma | Vector dimensioned by n_fish_fleets giving the standard deviation on the first year of a random walk deviation series. Default 5 (first year effectively free); NA starts the walk at zero under the walk’s own estimated sigma |
 | fish_sel_bin_dev_bins | Array dimensioned by n_ages (or n_lens), n_fish_fleets of 0/1 flags marking the bins whose selectivity is overridden by exp(ln_fishsel_bin_devs) rather than taken from the functional form. All zeros by default |
 | cont_tv_fishsel_bin_devs | Vector dimensioned by n_fish_fleets specifying process error on the bin-override deviations. 0: None, 1: iid, 2: random walk |
+| fishsel_sex_par_offset | Vector dimensioned by n_fish_fleets of 0/1 flags. 1 reads the stored fixed-effect slots of every sex beyond the first as additive offsets on the first sex’s transformed parameters (`fish_sel_sex_offset = "par"` or `"par_scale"`) |
+| fishsel_sex_scale_offset | Vector dimensioned by n_fish_fleets of 0/1 flags. 1 multiplies the realized curve of every sex beyond the first by `exp(ln_fishsel_sex_scale)` (`fish_sel_sex_offset = "scale"` or `"par_scale"`) |
 | fishsel_bin_devs_rw_init_sigma | Vector dimensioned by n_fish_fleets giving the first-year standard deviation for random walk bin-override deviations, with the same conventions as fishsel_rw_init_sigma |
 | map_ln_fishsel_bin_devs | Array mirroring the ln_fishsel_bin_devs factor map: an estimation index where a deviation is estimated, NA where fixed. Only overridden bins carry estimated deviations |
 | Use_fish_selex_penalty | Integer (0 or 1). Flag to enable the centering penalty on sets of fishery selectivity fixed-effect parameters specified in fish_selex_penalty |
@@ -324,6 +329,7 @@ n_regions.
 | ret_sel_pen_wts | Same format as fish_sel_pen_wts, evaluated on the realized retention selectivity surface |
 | retsel_pe_wt, retsel_rw_init_sigma | Same meaning as their fishsel counterparts, for retention selectivity |
 | ret_sel_bin_dev_bins, cont_tv_retsel_bin_devs, retsel_bin_devs_rw_init_sigma, map_ln_retsel_bin_devs | Bin-override deviation controls with the same meaning as their fishsel counterparts, for retention selectivity |
+| retsel_sex_par_offset, retsel_sex_scale_offset | Sex offset flags with the same meaning as their fishsel counterparts, for retention selectivity (`ret_sel_sex_offset`) |
 | Use_ret_selex_penalty, ret_selex_penalty | Centering penalty flag and specification table with the same meaning as their fish counterparts, for retention selectivity |
 
 ## Data Inputs for Defining Survey Selectivity and Catchability
@@ -347,6 +353,7 @@ n_regions.
 | srv_q_type | Vector dimensioned by n_srv_fleets specifying how survey catchability is obtained. 0: Estimated as exp(ln_srv_q) (default), 1: Solved analytically as the ratio of mean observed to mean predicted index, 2: Solved analytically on the log scale as exp(mean(log(obs) - log(pred))). Analytic fleets have their ln_srv_q fixed automatically, ignore block structure, and cannot carry catchability covariates or priors |
 | srvsel_pe_wt, srvsel_rw_init_sigma | Same meaning as their fishsel counterparts, for survey selectivity |
 | srv_sel_bin_dev_bins, cont_tv_srvsel_bin_devs, srvsel_bin_devs_rw_init_sigma, map_ln_srvsel_bin_devs | Bin-override deviation controls with the same meaning as their fishsel counterparts, for survey selectivity |
+| srvsel_sex_par_offset, srvsel_sex_scale_offset | Sex offset flags with the same meaning as their fishsel counterparts, for survey selectivity (`srv_sel_sex_offset`) |
 | Use_srv_selex_penalty, srv_selex_penalty | Centering penalty flag and specification table with the same meaning as their fish counterparts, for survey selectivity |
 
 ## Data Inputs for Defining Model Weighting

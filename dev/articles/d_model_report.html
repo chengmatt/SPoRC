@@ -44,6 +44,8 @@
     <li><a class="dropdown-item" href="../articles/z_bsai_rougheye_rockfish_case_study.html">BSAI Blackspotted and Rougheye Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/aa_bsai_pacific_ocean_perch_case_study.html">BSAI Pacific Ocean Perch</a></li>
     <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
+    <li><a class="dropdown-item" href="../articles/ac_wc_sablefish_case_study.html">West Coast Sablefish</a></li>
+    <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -612,8 +614,25 @@ deviations. Zero wherever the deviation is not estimated</td>
 </tr>
 <tr class="odd">
 <td><code>Init_Rec_nLL</code></td>
-<td>Negative log-likelihood (penalty) for initial age deviations</td>
-<td><code>n_pop × n_regions × (n_ages - 2)</code></td>
+<td>Negative log-likelihood (penalty) for initial age deviations. Zero
+for any sex whose copy of a shared parameter is not the penalized
+one</td>
+<td><code>n_pop × n_regions × (n_ages - 1) × n_sexes</code></td>
+</tr>
+<tr class="even">
+<td><code>Init_Sex_nLL</code></td>
+<td>Negative log-likelihood (penalty) tying each later sex’s initial age
+deviations to the first sex’s (<code>Use_init_sex_pen</code>). Zero for
+the first sex and throughout when the tie is off</td>
+<td><code>n_pop × n_regions × (n_ages - 1) × n_sexes</code></td>
+</tr>
+<tr class="odd">
+<td><code>Rec_level_nLL</code></td>
+<td>Negative log-likelihood (penalty) on the log recruitment series
+itself (<code>Use_rec_level_pen</code>). Zero in years outside
+<code>rec_level_pen_yrs</code>, and throughout when the penalty is
+off</td>
+<td><code>n_pop × n_regions × n_years</code></td>
 </tr>
 <tr class="even">
 <td><code>SR_pen_nLL</code></td>

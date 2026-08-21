@@ -36,6 +36,8 @@ Setup_Mod_FishIdx_and_Comps."><meta name="robots" content="noindex"></head><body
     <li><a class="dropdown-item" href="../articles/z_bsai_rougheye_rockfish_case_study.html">BSAI Blackspotted and Rougheye Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/aa_bsai_pacific_ocean_perch_case_study.html">BSAI Pacific Ocean Perch</a></li>
     <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
+    <li><a class="dropdown-item" href="../articles/ac_wc_sablefish_case_study.html">West Coast Sablefish</a></li>
+    <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -93,6 +95,7 @@ catchability blocks and estimation structure. Must be called after
 <span>  use_fixed_fish_sel <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  fish_sel_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fish_sel_nonpar_est_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  fish_sel_sex_offset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  cont_tv_ret_sel <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"none_Fleet_"</span>, <span class="fl">1</span><span class="op">:</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span>, sep <span class="op">=</span> <span class="st">""</span><span class="op">)</span>,</span>
 <span>  ret_sel_blocks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"none_Fleet_"</span>, <span class="fl">1</span><span class="op">:</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span>, sep <span class="op">=</span> <span class="st">""</span><span class="op">)</span>,</span>
 <span>  ret_sel_model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"logist1_Fleet_"</span>, <span class="fl">1</span><span class="op">:</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span>, sep <span class="op">=</span> <span class="st">""</span><span class="op">)</span>,</span>
@@ -111,6 +114,7 @@ catchability blocks and estimation structure. Must be called after
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">ages</span><span class="op">)</span>,</span>
 <span>    <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_sexes</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  ret_sel_nonpar_est_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ret_sel_sex_offset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -425,6 +429,48 @@ share a single estimated selectivity parameter. Indices must correspond to the
 bin dimension defined by <code>fish_selex_type</code>.</p></dd>
 
 
+<dt id="arg-fish-sel-sex-offset">fish_sel_sex_offset<a class="anchor" aria-label="anchor" href="#arg-fish-sel-sex-offset"></a></dt>
+<dd><p>Character vector of length <code>n_fish_fleets</code>
+linking the sexes of a fleet's selectivity, for models with
+<code>n_sexes &gt; 1</code>. Options per fleet:</p><dl><dt><code>"none"</code> (default)</dt>
+<dd><p>Each sex's stored parameters are its own,
+    exactly as before this option existed.</p></dd>
+
+  <dt><code>"par"</code></dt>
+<dd><p>The stored fixed-effect parameter slots of every sex
+    beyond the first hold additive offsets on the first sex's stored
+    (transformed-scale) parameters, so for log-scale parameters the
+    sex-\(s\) natural value is the first sex's times
+    \(e^{\delta}\). Offsets fixed at zero reproduce sex-shared
+    parameters; estimating them links the sexes through the offset the way
+    several existing assessments parameterize male selectivity.</p></dd>
+
+  <dt><code>"scale"</code></dt>
+<dd><p>Each sex keeps its own parameters, and every sex
+    beyond the first additionally carries a constant log-scale offset on
+    the whole realized curve, <code>exp(ln_fishsel_sex_scale)</code>, estimated
+    per region, block, and sex. The scaled curve may exceed one. Refused
+    for non-parametric forms and semi-parametric time variation, whose
+    post-hoc standardization would cancel a constant multiplier.</p></dd>
+
+  <dt><code>"apical"</code></dt>
+<dd><p>Each sex keeps its own parameters, and for every
+    sex beyond the first the double normal builds its limbs up to
+    <code>exp(ln_*sel_sex_scale)</code> rather than to one. Selectivity at the
+    first and last bins stays where that sex's own parameters put it, so
+    the offset moves the middle of the curve and leaves its ends anchored.
+    Requires the double normal.</p></dd>
+
+  <dt><code>"par_apical"</code></dt>
+<dd><p>Both a par offset and an apical offset.</p></dd>
+
+  <dt><code>"par_scale"</code></dt>
+<dd><p>Both a par offset and a scale offset.</p></dd>
+
+
+</dl></dd>
+
+
 <dt id="arg-cont-tv-ret-sel">cont_tv_ret_sel<a class="anchor" aria-label="anchor" href="#arg-cont-tv-ret-sel"></a></dt>
 <dd><p>Character vector of length <code>n_fish_fleets</code>
 specifying continuous time-varying selectivity per fleet. Each element
@@ -596,6 +642,14 @@ indicating whether to fix selectivity (<code>1</code>) or estimate it (<code>0</
 <dd><p>Optional list specifying bin groupings for
 non-parametric retained selectivity. Structure is <code>[[fleet]][[block]]</code>, where each
 element is a list of bin index vectors defining grouped parameters.</p></dd>
+
+
+<dt id="arg-ret-sel-sex-offset">ret_sel_sex_offset<a class="anchor" aria-label="anchor" href="#arg-ret-sel-sex-offset"></a></dt>
+<dd><p>Character vector of length <code>n_fish_fleets</code>
+linking the sexes of a fleet's retention curve, with the options and
+meaning of <code>fish_sel_sex_offset</code>. Default <code>"none"</code>. Retention
+is a fraction, so a scale offset is only sensible where the scaled curve
+stays at or below one.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

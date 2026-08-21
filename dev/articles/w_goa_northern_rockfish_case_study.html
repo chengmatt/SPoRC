@@ -44,6 +44,8 @@
     <li><a class="dropdown-item" href="../articles/z_bsai_rougheye_rockfish_case_study.html">BSAI Blackspotted and Rougheye Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/aa_bsai_pacific_ocean_perch_case_study.html">BSAI Pacific Ocean Perch</a></li>
     <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
+    <li><a class="dropdown-item" href="../articles/ac_wc_sablefish_case_study.html">West Coast Sablefish</a></li>
+    <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -412,7 +414,7 @@ seeding them reproduces the ADMB starting conditions exactly.</p>
 <span></span>
 <span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">ln_global_R0</span><span class="op">[</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">mle</span><span class="op">$</span><span class="va">log_mean_R</span></span>
 <span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">ln_RecDevs</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="op">]</span> <span class="op">&lt;-</span> <span class="va">mle</span><span class="op">$</span><span class="va">log_Rt</span></span>
-<span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">ln_InitDevs</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="op">]</span> <span class="op">&lt;-</span> <span class="va">mle</span><span class="op">$</span><span class="va">init_devs</span></span>
+<span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">ln_InitDevs</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">1</span>, , <span class="op">]</span> <span class="op">&lt;-</span> <span class="va">mle</span><span class="op">$</span><span class="va">init_devs</span></span>
 <span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">ln_M</span><span class="op">[</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">mle</span><span class="op">$</span><span class="va">M</span><span class="op">)</span></span>
 <span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">ln_F_mean</span><span class="op">[</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">mle</span><span class="op">$</span><span class="va">log_mean_F</span></span>
 <span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">ln_F_devs</span><span class="op">[</span><span class="fl">1</span>, , <span class="fl">1</span>, <span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">mle</span><span class="op">$</span><span class="va">log_Ft</span></span>

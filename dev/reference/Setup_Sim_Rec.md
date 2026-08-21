@@ -39,7 +39,8 @@ rec_seas_prop[, 1, ] <- 1
   t_spawn = 0,
   rec_lag = 1,
   Rec_input = NULL,
-  ln_InitDevs_input = NULL
+  ln_InitDevs_input = NULL,
+  InitDevs_sex_spec = "est_shared_s"
 )
 ```
 
@@ -207,10 +208,28 @@ rec_seas_prop[, 1, ] <- 1
 
 - ln_InitDevs_input:
 
-  Optional log-scale initial age-structure deviations array
-  `[n_pop x n_regions x (n_ages - 1) x n_sims]`. The `n_ages - 1`
-  dimension excludes the reference age used during initialisation. If
-  `NULL` (default), deviations are initialised to zero.
+  Optional log-scale initial age-structure deviations array, either
+  `[n_pop x n_regions x (n_ages - 1) x n_sims]` (one shared curve,
+  broadcast across sexes) or
+  `[n_pop x n_regions x (n_ages - 1) x n_sexes x n_sims]` (one curve per
+  sex). The `n_ages - 1` dimension excludes the reference age used
+  during initialisation. If `NULL` (default), deviations are drawn as
+  one shared curve per population and region.
+
+- InitDevs_sex_spec:
+
+  Character. How initial age deviations are drawn across sexes when they
+  are not supplied through `ln_InitDevs_input`. `"est_shared_s"`
+  (default) draws one curve per population or region and gives it to
+  every sex. `"est_all"` draws each sex its own. Departures from the
+  initial equilibrium reflect the exploitation the stock had already
+  seen as well as year-class strength, and with sex-specific selectivity
+  or natural mortality the two sexes need not have departed by the same
+  amount, which is the case `"est_all"` covers. The names match
+  `InitDevs_sex_spec` in
+  [`Setup_Mod_Rec`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Rec.md),
+  so an operating model and the estimation model fitted to it can be set
+  the same way.
 
 ## Value
 

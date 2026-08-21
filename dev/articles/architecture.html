@@ -44,6 +44,8 @@
     <li><a class="dropdown-item" href="../articles/z_bsai_rougheye_rockfish_case_study.html">BSAI Blackspotted and Rougheye Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/aa_bsai_pacific_ocean_perch_case_study.html">BSAI Pacific Ocean Perch</a></li>
     <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
+    <li><a class="dropdown-item" href="../articles/ac_wc_sablefish_case_study.html">West Coast Sablefish</a></li>
+    <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -1113,8 +1115,9 @@ through a season goes through that one file.</p>
 <code>convert_to_numeric</code>, <code>extend_years</code>,
 <code>parse_idx_ages</code>, <code>parse_idx_cov</code>,
 <code>resolve_sel_pen_wts</code>, <code>safe_extract</code>,
-<code>set_data_indicator_unused</code>, <code>setup_sel_bin_devs</code>,
-<code>setup_sel_norm_bins</code>, <code>validate_selex_penalty</code>,
+<code>seed_dbnrml_peak</code>, <code>set_data_indicator_unused</code>,
+<code>setup_sel_bin_devs</code>, <code>setup_sel_norm_bins</code>,
+<code>setup_sel_sex_offset</code>, <code>validate_selex_penalty</code>,
 <code>validate_selex_prior_types</code>
 </td>
 <td>nothing</td>
@@ -1243,13 +1246,13 @@ and the operating model</td>
 </tr>
 <tr class="odd">
 <td><code>test-regression_*</code></td>
-<td>13</td>
+<td>15</td>
 <td>End to end fits pinning <code>obj$rep</code> and <code>nll</code>
 for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 95 test files in total.</p>
+<p>That is 101 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

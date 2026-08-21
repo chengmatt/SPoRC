@@ -58,12 +58,15 @@ rec_seas_prop[, 1] <- 1
   init_F_spec = "fix",
   sigmaR_spec = "est_all",
   InitDevs_spec = NULL,
+  InitDevs_sex_spec = "est_shared_s",
   RecDevs_spec = NULL,
   RecDevs_pen_center = "fixed",
   Use_rec_level_pen = 0,
   rec_level_pen_sigma = 1,
   rec_level_pen_center = "own_mean",
   rec_level_pen_yrs = NULL,
+  Use_init_sex_pen = 0,
+  init_sex_pen_sigma = 1,
   sr_penalty = "none",
   sr_pen_sigma = 1,
   sr_pen_yrs = NULL,
@@ -379,10 +382,21 @@ rec_seas_prop[, 1] <- 1
 - InitDevs_spec:
 
   Character or `NULL`. Sharing structure for initial age-structure
-  deviations `ln_InitDevs` `[n_pop x n_regions x (n_ages - 1)]`. Default
-  `NULL` (estimate all independently). See
+  deviations `ln_InitDevs`
+  `[n_pop x n_regions x (n_ages - 1) x n_sexes]`. Default `NULL`
+  (estimate all independently). See
   [`do_InitDevs_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_InitDevs_mapping.md)
   for full option descriptions.
+
+- InitDevs_sex_spec:
+
+  Character. `"est_shared_s"` (default) estimates one initial age
+  deviation curve read by every sex, which is how the model has always
+  behaved. `"est_all"` gives each sex its own curve, each penalized
+  under the initial-age penalty, with an `"own_mean"`
+  `InitDevs_pen_center` pooled across sexes so the sexes share one
+  estimated level the way assessments with a common mean-log-initial and
+  sex-specific deviations are written. Requires `n_sexes > 1`.
 
 - RecDevs_spec:
 
@@ -429,6 +443,22 @@ rec_seas_prop[, 1] <- 1
 
   Vector of years the penalty applies over, or `NULL` (default) for
   every year.
+
+- Use_init_sex_pen:
+
+  Integer (0/1). Whether each later sex's initial age deviations are
+  tied to the first sex's, through a Gaussian on their difference at
+  every age the initial-age penalty covers. A statement about how
+  different the sexes' initial age structures may be, separate from the
+  initial-age penalty's statement about how variable each curve is.
+  Requires `n_sexes > 1` and `InitDevs_sex_spec = "est_all"` (under
+  `"est_shared_s"` the difference is identically zero). Enters the
+  objective unweighted. Default `0`.
+
+- init_sex_pen_sigma:
+
+  Numeric standard deviation of that tie. A sum of squares with weight
+  \\w\\ corresponds to \\1/\sqrt{2w}\\. Default `1`.
 
 - sr_penalty:
 
@@ -647,9 +677,10 @@ rec_seas_prop[, 1] <- 1
   `[n_pop]`, `ln_rinit` `[n_pop]`, `rec_region_prop_pars`
   `[n_pop x (n_regions - 1)]`, `rec_seas_prop_pars`
   `[n_pop x (n_seas - 1)]`, `steepness_h` `[n_pop x n_regions]` (bounded
-  logit scale), `ln_InitDevs` `[n_pop x n_regions x (n_ages - 1)]`,
-  `ln_RecDevs` `[n_pop x n_regions x n_years]`, `ln_sigmaR`
-  `[2 x n_pop x n_regions]`, `sexratio_pars`
+  logit scale), `ln_InitDevs`
+  `[n_pop x n_regions x (n_ages - 1) x n_sexes]` (a 3-D array is
+  broadcast across sexes), `ln_RecDevs` `[n_pop x n_regions x n_years]`,
+  `ln_sigmaR` `[2 x n_pop x n_regions]`, `sexratio_pars`
   `[n_pop x n_regions x n_blocks]`. Unspecified parameters use internal
   defaults.
 

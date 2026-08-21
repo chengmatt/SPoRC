@@ -44,6 +44,8 @@
     <li><a class="dropdown-item" href="../articles/z_bsai_rougheye_rockfish_case_study.html">BSAI Blackspotted and Rougheye Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/aa_bsai_pacific_ocean_perch_case_study.html">BSAI Pacific Ocean Perch</a></li>
     <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
+    <li><a class="dropdown-item" href="../articles/ac_wc_sablefish_case_study.html">West Coast Sablefish</a></li>
+    <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -249,30 +251,47 @@ or random walk structure via <code>cont_tv_fishsel_bin_devs</code>
 <td>0</td>
 </tr>
 <tr class="even">
+<td><code>ln_fishsel_sex_scale</code></td>
+<td><code>n_regions × n_blocks × n_sexes × n_fish_fleets</code></td>
+<td>Log-scale constant multiplying the realized selectivity curve of
+every sex beyond the first (<code>fish_sel_sex_offset = "scale"</code>
+or <code>"par_scale"</code>). The first sex is the reference and its
+slots are never estimated; only the blocks a fleet has are</td>
+<td>0</td>
+</tr>
+<tr class="odd">
 <td><code>ret_fixed_sel_pars</code></td>
 <td><code>n_regions × max_ret_pars × max_retsel_blks × n_sexes × n_fish_fleets</code></td>
 <td>Retention selectivity curve parameters</td>
 <td>0</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>retsel_pe_pars</code></td>
 <td><code>n_regions × max(4, n_sel_pars) × n_sexes × n_fish_fleets</code></td>
 <td>Process error parameters for time-varying retention selectivity (see
 <code>fishsel_pe_pars</code> above)</td>
 <td>0</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>ln_retsel_devs</code></td>
 <td><code>n_regions × (n_years + n_proj_yrs_devs) × n_bins × n_sexes × n_fish_fleets</code></td>
 <td>Log-scale retention selectivity deviations w/ projection years (can
 be specified as random effects)</td>
 <td>0</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>ln_retsel_bin_devs</code></td>
 <td><code>n_regions × (n_years + n_proj_yrs_devs) × n_bins × n_sexes × n_fish_fleets</code></td>
 <td>Log-scale bin-override retention selectivity deviations (see
 <code>ln_fishsel_bin_devs</code> above)</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td><code>ln_retsel_sex_scale</code></td>
+<td><code>n_regions × n_blocks × n_sexes × n_fish_fleets</code></td>
+<td>Log-scale curve multiplier for sexes beyond the first on retention
+selectivity (see <code>ln_fishsel_sex_scale</code> above;
+<code>ret_sel_sex_offset</code>)</td>
 <td>0</td>
 </tr>
 <tr class="even">
@@ -623,6 +642,14 @@ random effects)</td>
 <td>0</td>
 </tr>
 <tr class="odd">
+<td><code>ln_srvsel_sex_scale</code></td>
+<td><code>n_regions × n_blocks × n_sexes × n_srv_fleets</code></td>
+<td>Log-scale curve multiplier for sexes beyond the first on survey
+selectivity (see <code>ln_fishsel_sex_scale</code> in <a href="#fishery-selectivity">Fishery Selectivity</a>;
+<code>srv_sel_sex_offset</code>)</td>
+<td>0</td>
+</tr>
+<tr class="even">
 <td><code>srvsel_bin_devs_pe_pars</code></td>
 <td><code>n_regions × n_bins × n_sexes × n_srv_fleets</code></td>
 <td>Log-scale process error standard deviations for the survey
@@ -917,9 +944,11 @@ recruitment periods</td>
 </tr>
 <tr class="even">
 <td><code>ln_InitDevs</code></td>
-<td><code>n_pop × n_regions × (n_ages - 1)</code></td>
+<td><code>n_pop × n_regions × (n_ages - 1) × n_sexes</code></td>
 <td>Log-scale initial age structure deviations (can be specified as
-random effects)</td>
+random effects). Under <code>InitDevs_sex_spec = "est_shared_s"</code>
+(default) every sex reads one shared curve; under <code>"est_all"</code>
+each sex has its own</td>
 <td>0</td>
 </tr>
 <tr class="odd">

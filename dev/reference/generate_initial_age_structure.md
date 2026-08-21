@@ -41,7 +41,10 @@ generate_initial_age_structure(y, sim, sim_env)
 Initial deviation sharing follows the same logic as the estimation
 model: deviations are drawn once per population when `n_pop > 1`, or
 once per region when `n_pop = 1` and `init_dd = 0` (local
-density-dependence). If `ln_InitDevs_input` exists in the simulation
-environment, those values are used directly rather than simulating new
-draws. Populations with `R0 = 0` receive zero deviations. The
-equilibrium solver uses `init_iter = n_ages × 5` iterations.
+density-dependence). Across sexes the draw follows `InitDevs_sex_spec`:
+`"est_shared_s"` (the default) draws one curve and gives it to every
+sex, `"est_all"` draws each sex its own. If `ln_InitDevs_input` exists
+in the simulation environment, those values are used directly rather
+than simulating new draws. Populations with `R0 = 0` receive zero
+deviations. The equilibrium solver uses `init_iter = n_ages × 5`
+iterations.

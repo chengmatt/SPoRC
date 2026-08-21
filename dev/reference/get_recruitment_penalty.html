@@ -34,6 +34,8 @@ Called once from the "Recruitment (Penalty)" section of SPoRC_rtmb.R.'><meta nam
     <li><a class="dropdown-item" href="../articles/z_bsai_rougheye_rockfish_case_study.html">BSAI Blackspotted and Rougheye Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/aa_bsai_pacific_ocean_perch_case_study.html">BSAI Pacific Ocean Perch</a></li>
     <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
+    <li><a class="dropdown-item" href="../articles/ac_wc_sablefish_case_study.html">West Coast Sablefish</a></li>
+    <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -81,7 +83,10 @@ Called once from the "Recruitment (Penalty)" section of <code>SPoRC_rtmb.R</code
 <span>  <span class="va">do_rec_bias_ramp</span>,</span>
 <span>  map_ln_RecDevs <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  RecDevs_pen_center <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>  InitDevs_pen_center <span class="op">=</span> <span class="fl">0</span></span>
+<span>  InitDevs_pen_center <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  init_devs_pen_use <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  Use_init_sex_pen <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  ln_sigma_init_sex <span class="op">=</span> <span class="fl">0</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -119,7 +124,9 @@ deviations are penalized (<code>1</code>: all but plus group, <code>2</code>: al
 
 
 <dt id="arg-ln-initdevs">ln_InitDevs<a class="anchor" aria-label="anchor" href="#arg-ln-initdevs"></a></dt>
-<dd><p>Array <code>[pop, region, age]</code> of initial age deviations.</p></dd>
+<dd><p>Array <code>[pop, region, age, sex]</code> of initial age
+deviations. A 3-D <code>[pop, region, age]</code> array (the layout before the
+sex dimension existed) is accepted and treated as one shared curve.</p></dd>
 
 
 <dt id="arg-init-age-devs-shared">init_age_devs_shared<a class="anchor" aria-label="anchor" href="#arg-init-age-devs-shared"></a></dt>
@@ -160,12 +167,33 @@ adjustment.</p></dd>
 <code>map$ln_RecDevs</code>; cells that are <code>NA</code> are fixed rather than
 estimated and are left unpenalized. <code>NULL</code> penalizes every cell.</p></dd>
 
+
+<dt id="arg-init-devs-pen-use">init_devs_pen_use<a class="anchor" aria-label="anchor" href="#arg-init-devs-pen-use"></a></dt>
+<dd><p>Array of 0/1 matching <code>ln_InitDevs</code>, naming
+which cells are penalized. Sexes sharing one parameter keep only the first
+sex's copy flagged so the shared parameter is not penalized twice;
+sex-specific deviations flag every sex. <code>NULL</code> penalizes only the
+first sex's slice, which is the pre-sex-dimension behaviour.</p></dd>
+
+
+<dt id="arg-use-init-sex-pen">Use_init_sex_pen<a class="anchor" aria-label="anchor" href="#arg-use-init-sex-pen"></a></dt>
+<dd><p>Integer (0/1). Whether each later sex's initial
+age deviations are tied to the first sex's through a Gaussian on their
+difference at every penalized age. Only meaningful when the sexes carry
+their own curves.</p></dd>
+
+
+<dt id="arg-ln-sigma-init-sex">ln_sigma_init_sex<a class="anchor" aria-label="anchor" href="#arg-ln-sigma-init-sex"></a></dt>
+<dd><p>Log standard deviation of that tie.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>List with elements <code>Init_Rec_nLL</code> (array <code>[pop, region,
-  age]</code>) and <code>Rec_nLL</code> (array <code>[pop, region, year]</code>), each holding
-  negative log-likelihood penalties (0 where not penalized).</p>
+  age, sex]</code>), <code>Init_Sex_nLL</code> (the same layout, the between-sex tie,
+  zero for the first sex and whenever the tie is off) and <code>Rec_nLL</code>
+  (array <code>[pop, region, year]</code>), each holding negative log-likelihood
+  penalties (0 where not penalized).</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

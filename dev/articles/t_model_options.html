@@ -44,6 +44,8 @@
     <li><a class="dropdown-item" href="../articles/z_bsai_rougheye_rockfish_case_study.html">BSAI Blackspotted and Rougheye Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/aa_bsai_pacific_ocean_perch_case_study.html">BSAI Pacific Ocean Perch</a></li>
     <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
+    <li><a class="dropdown-item" href="../articles/ac_wc_sablefish_case_study.html">West Coast Sablefish</a></li>
+    <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -702,33 +704,44 @@ maturity everywhere</td>
 <td>Estimation structure for initial age deviations</td>
 </tr>
 <tr class="odd">
+<td><code>InitDevs_sex_spec</code></td>
+<td>
+<code>"est_shared_s"</code> (default): one initial age curve read by
+every sex. <code>"est_all"</code>: one curve per sex, each penalized,
+with an <code>"own_mean"</code> <code>InitDevs_pen_center</code> pooled
+across sexes so the sexes share a single estimated level. This is how
+assessments with a common mean-log-initial and sex-specific initial
+deviations are written. Requires <code>n_sexes &gt; 1</code>
+</td>
+</tr>
+<tr class="even">
 <td><code>sigmaR_spec</code></td>
 <td>Recruitment variability: <code>"est_all"</code>,
 <code>"fix_early_est_late"</code>, <code>"est_shared_all"</code>,
 <code>"fix"</code>
 </td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>sigmaR_switch</code></td>
 <td>Year index separating the early and late
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>R</mi></msub><annotation encoding="application/x-tex">\sigma_R</annotation></semantics></math>
 periods</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>do_rec_bias_ramp</code></td>
 <td>Methot &amp; Taylor bias adjustment (0 = off, 1 = on)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>
 <code>bias_year</code>, <code>max_bias_ramp_fct</code>
 </td>
 <td>Bias ramp breakpoints and maximum correction factor</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>dont_est_recdev_last</code></td>
 <td>Number of terminal-year recruitment deviations to fix at zero</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>init_age_devs_shared</code></td>
 <td>Integer vector of length <code>n_ages - 1</code> specifying
 age-sharing for <code>ln_InitDevs</code>. Positions with the same value
@@ -737,7 +750,7 @@ share a single estimated parameter
 <code>equil_init_age_strc = 3</code>; <code>NULL</code> (default) uses
 standard behaviour</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>use_rinit</code></td>
 <td>0 = population initialised using <code>ln_global_R0</code>
 (default); 1 = separate <code>ln_rinit</code> used for initialisation,
@@ -851,6 +864,52 @@ wandering unreasonably; it is a tuning penalty, not a probability model,
 and it will shrink genuine recruitment variability if over-weighted
 (hence the <code>rec_level_pen_sigma</code> is left as data rather than
 an estimated parameter).</p>
+</div>
+<div class="section level4">
+<h4 id="initial-age-deviations-tie-between-sexes">Initial age deviations, tie between sexes<a class="anchor" aria-label="anchor" href="#initial-age-deviations-tie-between-sexes"></a>
+</h4>
+<p>When the sexes carry their own initial age curves
+(<code>InitDevs_sex_spec = "est_all"</code>), a second statement can be
+made about them: not how variable each curve is (that is the initial-age
+penalty) but how far apart the two curves may sit,</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><msup><mi>L</mi><mtext mathvariant="normal">InitSex</mtext></msup><mo>=</mo><munder><mo>∑</mo><mrow><mi>s</mi><mo>&gt;</mo><mn>1</mn></mrow></munder><munder><mo>∑</mo><mi>i</mi></munder><mo>−</mo><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><mi>ϕ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>i</mi><mo>,</mo><mi>s</mi></mrow><mtext mathvariant="normal">Init</mtext></msubsup><mo>−</mo><msubsup><mi>ϵ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>i</mi><mo>,</mo><mn>1</mn></mrow><mtext mathvariant="normal">Init</mtext></msubsup><mo>;</mo><mspace width="0.222em"></mspace><mn>0</mn><mo>,</mo><mspace width="0.222em"></mspace><msub><mi>σ</mi><mtext mathvariant="normal">InitSex</mtext></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">-\ln L^{\text{InitSex}} = \sum_{s &gt; 1}\sum_{i} -\ln \phi\left(\epsilon_{p,r,i,s}^{\text{Init}} - \epsilon_{p,r,i,1}^{\text{Init}};\ 0,\ \sigma_{\text{InitSex}}\right)</annotation></semantics></math></p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Argument</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>Use_init_sex_pen</code></td>
+<td>0 (default) / 1 toggle. Requires <code>n_sexes &gt; 1</code> and
+<code>InitDevs_sex_spec = "est_all"</code>; under
+<code>"est_shared_s"</code> the difference is identically zero and setup
+refuses it</td>
+</tr>
+<tr class="even">
+<td><code>init_sex_pen_sigma</code></td>
+<td>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mtext mathvariant="normal">InitSex</mtext></msub><annotation encoding="application/x-tex">\sigma_{\text{InitSex}}</annotation></semantics></math>.
+A sum of squares with weight
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>w</mi><annotation encoding="application/x-tex">w</annotation></semantics></math>
+corresponds to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>σ</mi><mo>=</mo><mn>1</mn><mi>/</mi><msqrt><mrow><mn>2</mn><mi>w</mi></mrow></msqrt></mrow><annotation encoding="application/x-tex">\sigma = 1/\sqrt{2w}</annotation></semantics></math>.
+Default 1</td>
+</tr>
+</tbody>
+</table>
+<p>It runs over the same ages the initial-age penalty covers and enters
+the objective unweighted (reported as <code>Init_Sex_nLL</code>). Its
+natural use is the one flatfish assessments put it to: male and female
+initial numbers are estimated separately, the first few years of
+compositions are all that informs them, and the tie keeps the two from
+drifting apart where those data are thin. Like the recruitment level
+penalty it is a tuning prior rather than a probability model, so its
+sigma is held as data.</p>
 </div>
 <div class="section level4">
 <h4 id="stock-recruit-curve-as-a-penalty">Stock-recruit curve as a penalty<a class="anchor" aria-label="anchor" href="#stock-recruit-curve-as-a-penalty"></a>
@@ -1585,6 +1644,117 @@ selectivity parameters are estimated:</p>
 </tr>
 </tbody>
 </table>
+</div>
+<div class="section level4">
+<h4 id="selectivity-plateau-_nselbins_n">Selectivity plateau (<code>_NSelBins_&lt;n&gt;</code>)<a class="anchor" aria-label="anchor" href="#selectivity-plateau-_nselbins_n"></a>
+</h4>
+<p>Any functional form’s model string accepts an optional
+<code>_NSelBins_&lt;n&gt;</code> suffix
+(e.g. <code>"logist1_Fleet_1_NSelBins_17"</code>, composable with
+<code>_Block_&lt;b&gt;</code> in either order): bins beyond
+<code>n</code> are held at bin <code>n</code>’s computed value rather
+than evaluated through the form. This is the plateau convention many
+existing assessments carry, where selectivity is the functional form up
+to a chosen bin and constant after it. The bicubic form already had this
+suffix and builds its plateau into its spline weights; for every other
+form the hold is applied after the form and its parameter deviations,
+before bin-level semi-parametric deviations and bin overrides. The
+plateau changes the model whenever the curve has not saturated by bin
+<code>n</code>, so treat it as part of the selectivity specification
+rather than a display convention.</p>
+</div>
+<div class="section level4">
+<h4 id="sex-offsets-fish_sel_sex_offset-ret_sel_sex_offset-srv_sel_sex_offset">Sex offsets (<code>fish_sel_sex_offset</code> /
+<code>ret_sel_sex_offset</code> / <code>srv_sel_sex_offset</code>)<a class="anchor" aria-label="anchor" href="#sex-offsets-fish_sel_sex_offset-ret_sel_sex_offset-srv_sel_sex_offset"></a>
+</h4>
+<p>Between fully independent sexes (<code>"est_all"</code>) and
+identical ones (<code>"est_shared_s"</code>) sits a family of models
+where the sexes are <em>linked</em>: one sex’s curve is the other’s,
+shifted or scaled by a small number of estimated offsets. These
+per-fleet options express that directly for total fishery, retention,
+and survey selectivity alike (requires <code>n_sexes &gt; 1</code>):</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>String</th>
+<th>Meaning</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>"none"</code></td>
+<td>Each sex’s stored parameters are its own.
+<strong>Default</strong>
+</td>
+</tr>
+<tr class="even">
+<td><code>"par"</code></td>
+<td>The stored parameter slots of every sex beyond the first hold
+additive offsets on the first sex’s transformed-scale parameters,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>θ</mi><mi>s</mi></msub><mo>=</mo><msub><mi>θ</mi><mn>1</mn></msub><mo>+</mo><msub><mi>δ</mi><mi>s</mi></msub></mrow><annotation encoding="application/x-tex">\theta_s = \theta_1 + \delta_s</annotation></semantics></math>.
+For log-scale parameters the second sex’s natural value is the first
+sex’s times
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>e</mi><mi>δ</mi></msup><annotation encoding="application/x-tex">e^{\delta}</annotation></semantics></math>,
+e.g. <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>k</mi><mi>M</mi></msub><mo>=</mo><msub><mi>k</mi><mi>F</mi></msub><msup><mi>e</mi><msub><mi>δ</mi><mi>k</mi></msub></msup></mrow><annotation encoding="application/x-tex">k_M = k_F e^{\delta_k}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>a</mi><mi>M</mi><mn>50</mn></msubsup><mo>=</mo><msubsup><mi>a</mi><mi>F</mi><mn>50</mn></msubsup><msup><mi>e</mi><msub><mi>δ</mi><mn>50</mn></msub></msup></mrow><annotation encoding="application/x-tex">a^{50}_M = a^{50}_F e^{\delta_{50}}</annotation></semantics></math>
+</td>
+</tr>
+<tr class="odd">
+<td><code>"scale"</code></td>
+<td>Each sex keeps its own parameters, and the realized curve of every
+sex beyond the first is multiplied by a constant
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>e</mi><msub><mi>γ</mi><mi>s</mi></msub></msup><annotation encoding="application/x-tex">e^{\gamma_s}</annotation></semantics></math>
+(<code>ln_fishsel_sex_scale</code> / <code>ln_retsel_sex_scale</code> /
+<code>ln_srvsel_sex_scale</code>, estimated per region, block, and sex).
+The scaled curve may exceed one</td>
+</tr>
+<tr class="even">
+<td><code>"par_scale"</code></td>
+<td>A par offset and a scale offset</td>
+</tr>
+<tr class="odd">
+<td><code>"apical"</code></td>
+<td>Double normal only. Each sex keeps its own parameters, and for every
+sex beyond the first the ascending and descending limbs are built up to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>A</mi><mi>s</mi></msub><mo>=</mo><msup><mi>e</mi><msub><mi>γ</mi><mi>s</mi></msub></msup></mrow><annotation encoding="application/x-tex">A_s = e^{\gamma_s}</annotation></semantics></math>
+rather than to one, with the plateau sitting there too. The selectivity
+at the first and last bins stays where that sex’s own parameters put
+it</td>
+</tr>
+<tr class="even">
+<td><code>"par_apical"</code></td>
+<td>A par offset and an apical offset</td>
+</tr>
+</tbody>
+</table>
+<p>Under <code>"par"</code>, an offset fixed at zero reproduces
+sex-shared parameters, so the option nests <code>"est_shared_s"</code>
+while letting the link be estimated; no new parameters are involved, the
+existing sex slots simply change meaning. Under <code>"scale"</code>,
+the offset is a log-scale constant on the whole curve, which is how
+several existing assessments carry a male selectivity offset; because a
+constant multiplier is cancelled by mean standardization, setup refuses
+<code>"scale"</code> for the non-parametric forms
+(<code>"nonpar"</code>, <code>"nonparlog"</code>) and the
+semi-parametric time-varying structures.</p>
+<p><strong>Choosing between <code>"scale"</code> and
+<code>"apical"</code>.</strong> A scale offset multiplies the finished
+curve, so selectivity at the first and last bins moves with it. An
+apical offset is the height the two limbs are built up to, so those bins
+stay where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>p</mi><mn>5</mn></msub><annotation encoding="application/x-tex">p_5</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>p</mi><mn>6</mn></msub><annotation encoding="application/x-tex">p_6</annotation></semantics></math>
+put them and only the middle of the curve moves. Either can draw any
+single curve, so a plot will not separate them, but their derivatives
+differ and a fit responds to that. Use <code>"apical"</code> where the
+offset is meant as the sex’s maximum selectivity. It requires the double
+normal; setup refuses it elsewhere and points to
+<code>"scale"</code>.</p>
+<p>Time-varying deviations are untouched by any of these options and
+still apply per sex to the effective parameters.</p>
 </div>
 <div class="section level4">
 <h4 id="normalisation-and-length-based-selectivity">Normalisation and length-based selectivity<a class="anchor" aria-label="anchor" href="#normalisation-and-length-based-selectivity"></a>
@@ -2762,7 +2932,10 @@ bridging such assessments and otherwise leave the default</td>
 <td>
 <code>fish_idx_type</code> / <code>srv_idx_type</code>
 </td>
-<td>0 = abundance, 1 = biomass</td>
+<td>
+<code>"abd"</code> abundance, <code>"biom"</code> biomass,
+<code>"none"</code>. Survey fleets also take <code>"recdev"</code>, an
+index of the recruitment deviations themselves</td>
 </tr>
 <tr class="even">
 <td>

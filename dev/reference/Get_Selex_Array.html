@@ -36,6 +36,8 @@ data arrays are handed in."><meta name="robots" content="noindex"></head><body>
     <li><a class="dropdown-item" href="../articles/z_bsai_rougheye_rockfish_case_study.html">BSAI Blackspotted and Rougheye Rockfish</a></li>
     <li><a class="dropdown-item" href="../articles/aa_bsai_pacific_ocean_perch_case_study.html">BSAI Pacific Ocean Perch</a></li>
     <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
+    <li><a class="dropdown-item" href="../articles/ac_wc_sablefish_case_study.html">West Coast Sablefish</a></li>
+    <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -88,7 +90,12 @@ data arrays are handed in.</p>
 <span>  <span class="va">n_fleets</span>,</span>
 <span>  bin_devs <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  bin_dev_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  sel_norm_bins <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  sel_norm_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sex_par_offset <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sex_scale_offset <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sex_apical_offset <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sex_scale <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  nselbins <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -153,6 +160,53 @@ n_yrs x n_fleets</code> giving each block's true node counts
 
 <dt id="arg-n-pop-n-regions-n-yrs-n-proj-yrs-devs-n-seas-n-ages-n-lens-n-sexes-n-fleets">n_pop, n_regions, n_yrs, n_proj_yrs_devs, n_seas, n_ages, n_lens, n_sexes, n_fleets<a class="anchor" aria-label="anchor" href="#arg-n-pop-n-regions-n-yrs-n-proj-yrs-devs-n-seas-n-ages-n-lens-n-sexes-n-fleets"></a></dt>
 <dd><p>Model dimensions.</p></dd>
+
+
+<dt id="arg-sex-par-offset">sex_par_offset<a class="anchor" aria-label="anchor" href="#arg-sex-par-offset"></a></dt>
+<dd><p>Integer vector of length <code>n_fleets</code> (0/1), or
+<code>NULL</code> for all zero. For a fleet flagged 1, the stored fixed-effect
+selectivity parameters of every sex beyond the first are additive offsets
+on the first sex's stored parameters, evaluated as
+<code>pars[sex 1] + pars[sex s]</code> on the transformed (usually log) scale.
+Because most forms exponentiate their parameters, an offset of \(\delta\)
+makes the sex-\(s\) natural-scale parameter the first sex's value times
+\(e^{\delta}\), which is the male-offset convention several existing
+assessments use. An offset held at zero reproduces sex-shared parameters.</p></dd>
+
+
+<dt id="arg-sex-scale-offset">sex_scale_offset<a class="anchor" aria-label="anchor" href="#arg-sex-scale-offset"></a></dt>
+<dd><p>Integer vector of length <code>n_fleets</code> (0/1), or
+<code>NULL</code> for all zero. For a fleet flagged 1, the realized selectivity
+curve of every sex beyond the first is multiplied by
+<code>exp(sex_scale[region, block, sex, fleet])</code>, a constant log-scale
+offset on the whole curve. The scaled curve may exceed one, matching the
+convention of a male selectivity offset applied in log space. Not
+meaningful for forms whose scale is standardized away downstream
+(non-parametric forms and the semi-parametric time-varying structures);
+setup refuses those combinations.</p></dd>
+
+
+<dt id="arg-sex-apical-offset">sex_apical_offset<a class="anchor" aria-label="anchor" href="#arg-sex-apical-offset"></a></dt>
+<dd><p>Integer vector of length <code>n_fleets</code> (0/1), or
+<code>NULL</code>. Where it is 1, every sex beyond the first builds its double
+normal up to <code>exp(sex_scale[region, block, sex, fleet])</code> rather than
+to one, leaving the first and last bins where their own parameters put
+them. Mutually exclusive with a scale offset on the same fleet.</p></dd>
+
+
+<dt id="arg-sex-scale">sex_scale<a class="anchor" aria-label="anchor" href="#arg-sex-scale"></a></dt>
+<dd><p>Array <code>n_regions x n_blocks x n_sexes x n_fleets</code> of
+log-scale curve offsets read when <code>sex_scale_offset</code> or
+<code>sex_apical_offset</code> flags a fleet, or <code>NULL</code> when no fleet is
+flagged.</p></dd>
+
+
+<dt id="arg-nselbins">nselbins<a class="anchor" aria-label="anchor" href="#arg-nselbins"></a></dt>
+<dd><p>Integer array <code>n_regions x n_yrs x n_fleets</code> naming
+each cell's plateau bin (<code>0</code> = none), or <code>NULL</code>. Bins beyond it
+are held at its value for the parametric forms (see <code>n_sel_bins</code> in
+<code><a href="Get_Selex.html">Get_Selex</a></code>); the bicubic form's own setup-built plateau is
+unaffected.</p></dd>
 
 </dl></div>
     <div class="section level2">

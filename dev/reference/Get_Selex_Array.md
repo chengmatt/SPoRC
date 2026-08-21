@@ -36,7 +36,12 @@ Get_Selex_Array(
   n_fleets,
   bin_devs = NULL,
   bin_dev_bins = NULL,
-  sel_norm_bins = NULL
+  sel_norm_bins = NULL,
+  sex_par_offset = NULL,
+  sex_scale_offset = NULL,
+  sex_apical_offset = NULL,
+  sex_scale = NULL,
+  nselbins = NULL
 )
 ```
 
@@ -102,6 +107,52 @@ Get_Selex_Array(
   n_sexes, n_fleets:
 
   Model dimensions.
+
+- sex_par_offset:
+
+  Integer vector of length `n_fleets` (0/1), or `NULL` for all zero. For
+  a fleet flagged 1, the stored fixed-effect selectivity parameters of
+  every sex beyond the first are additive offsets on the first sex's
+  stored parameters, evaluated as `pars[sex 1] + pars[sex s]` on the
+  transformed (usually log) scale. Because most forms exponentiate their
+  parameters, an offset of \\\delta\\ makes the sex-\\s\\ natural-scale
+  parameter the first sex's value times \\e^{\delta}\\, which is the
+  male-offset convention several existing assessments use. An offset
+  held at zero reproduces sex-shared parameters.
+
+- sex_scale_offset:
+
+  Integer vector of length `n_fleets` (0/1), or `NULL` for all zero. For
+  a fleet flagged 1, the realized selectivity curve of every sex beyond
+  the first is multiplied by
+  `exp(sex_scale[region, block, sex, fleet])`, a constant log-scale
+  offset on the whole curve. The scaled curve may exceed one, matching
+  the convention of a male selectivity offset applied in log space. Not
+  meaningful for forms whose scale is standardized away downstream
+  (non-parametric forms and the semi-parametric time-varying
+  structures); setup refuses those combinations.
+
+- sex_apical_offset:
+
+  Integer vector of length `n_fleets` (0/1), or `NULL`. Where it is 1,
+  every sex beyond the first builds its double normal up to
+  `exp(sex_scale[region, block, sex, fleet])` rather than to one,
+  leaving the first and last bins where their own parameters put them.
+  Mutually exclusive with a scale offset on the same fleet.
+
+- sex_scale:
+
+  Array `n_regions x n_blocks x n_sexes x n_fleets` of log-scale curve
+  offsets read when `sex_scale_offset` or `sex_apical_offset` flags a
+  fleet, or `NULL` when no fleet is flagged.
+
+- nselbins:
+
+  Integer array `n_regions x n_yrs x n_fleets` naming each cell's
+  plateau bin (`0` = none), or `NULL`. Bins beyond it are held at its
+  value for the parametric forms (see `n_sel_bins` in
+  [`Get_Selex`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex.md));
+  the bicubic form's own setup-built plateau is unaffected.
 
 ## Value
 

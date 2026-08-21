@@ -30,6 +30,7 @@ Setup_Mod_Retsel(
   retsel_pe_wt = rep(1, input_list$data$n_fish_fleets),
   retsel_rw_init_sigma = rep(5, input_list$data$n_fish_fleets),
   ret_sel_nonpar_est_bins,
+  ret_sel_sex_offset = rep("none", input_list$data$n_fish_fleets),
   ...
 )
 ```
@@ -218,6 +219,16 @@ Setup_Mod_Retsel(
 - ret_sel_nonpar_est_bins:
 
   Vector defining estimated bins for non-parametric selectivity.
+
+- ret_sel_sex_offset:
+
+  Character vector of length `n_fish_fleets` linking the sexes of a
+  fleet's retention curve: `"none"` (default), `"par"`, `"scale"`, or
+  `"par_scale"`, with the same meaning as `fish_sel_sex_offset` in
+  [`Setup_Mod_Fishsel_and_Q`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Fishsel_and_Q.md).
+  Retention is a fraction, so a scale offset is only sensible where the
+  scaled curve stays at or below one (a negative offset, the
+  less-retained sex); nothing enforces that.
 
 - ...:
 

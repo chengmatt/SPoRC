@@ -104,9 +104,20 @@ Setup_Mod_SrvIdx_and_Comps(
 - srv_idx_type:
 
   Character vector `[n_srv_fleets]` specifying the index type per fleet.
-  One of `"biom"` (biomass), `"abd"` (abundance), or `"none"` (no index
-  for that fleet). Converted to integer codes (`1`, `0`, `999`) before
-  storage.
+  One of `"biom"` (biomass), `"abd"` (abundance), `"recdev"`
+  (recruitment deviations), or `"none"` (no index for that fleet).
+  Converted to integer codes (`1`, `0`, `2`, `999`) before storage.
+
+  A `"recdev"` fleet observes year class strength directly rather than
+  any part of the population. Its predicted value is
+  `q * (ln_RecDevs - mu)`, with `mu` the centre the recruitment penalty
+  asserts for that year, so it measures the anomaly rather than the
+  deviation as stored; under a bias ramp the two differ. Such a fleet
+  reads no numbers at age, so its selectivity, survey timing and weight
+  at age are unused and its compositions should be left off. It requires
+  `SrvIdx_LikeType = "normal"`, since deviations are signed, and
+  `RecDevs_pen_center = "fixed"` in
+  [`Setup_Mod_Rec`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Rec.md).
 
 - ObsSrvAgeComps:
 

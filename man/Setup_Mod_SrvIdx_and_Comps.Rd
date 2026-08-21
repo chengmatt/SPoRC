@@ -71,9 +71,21 @@ include population-specific index in likelihood; \code{0} = exclude.
 Default: all zeros.}
 
 \item{srv_idx_type}{Character vector \code{[n_srv_fleets]} specifying the
-index type per fleet. One of \code{"biom"} (biomass), \code{"abd"}
-(abundance), or \code{"none"} (no index for that fleet). Converted to
-integer codes (\code{1}, \code{0}, \code{999}) before storage.}
+  index type per fleet. One of \code{"biom"} (biomass), \code{"abd"}
+  (abundance), \code{"recdev"} (recruitment deviations), or \code{"none"}
+  (no index for that fleet). Converted to integer codes (\code{1},
+  \code{0}, \code{2}, \code{999}) before storage.
+
+
+  A \code{"recdev"} fleet observes year class strength directly rather than
+  any part of the population. Its predicted value is
+  \code{q * (ln_RecDevs - mu)}, with \code{mu} the centre the recruitment
+  penalty asserts for that year, so it measures the anomaly rather than the
+  deviation as stored; under a bias ramp the two differ. Such a fleet reads
+  no numbers at age, so its selectivity, survey timing and weight at age are
+  unused and its compositions should be left off. It requires
+  \code{SrvIdx_LikeType = "normal"}, since deviations are signed, and
+  \code{RecDevs_pen_center = "fixed"} in \code{\link{Setup_Mod_Rec}}.}
 
 \item{ObsSrvAgeComps}{Observed survey age compositions, array
 \code{[n_regions × n_years × n_seas × n_ages × n_sexes × n_srv_fleets]}.

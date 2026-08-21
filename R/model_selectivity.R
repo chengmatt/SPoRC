@@ -15,7 +15,10 @@
 #'     \item{1}{Gamma-shaped dome (bin-at-peak \eqn{b_{\max}}, curvature \eqn{\delta}).}
 #'     \item{2}{Power function (monotonic decreasing): \eqn{1 / \text{bin}^{\text{power}}}.}
 #'     \item{3}{Logistic (b50, b95 parameterization).}
-#'     \item{4}{Double-normal dome with plateau and flexible tails (6 parameters).}
+#'     \item{4}{Double-normal dome with plateau and flexible tails (6 parameters).
+#'              \eqn{p_{1}} is the bin at which the plateau starts, carried on the bin
+#'              scale rather than transformed, \eqn{p_{5}} is the selectivity at the
+#'              first bin and \eqn{p_{6}} the selectivity at the last bin.}
 #'     \item{5}{Non-parametric selectivity: bin-level logit parameters mapped via \code{plogis},
 #'              optionally modified by time-varying deviations.}
 #'     \item{6}{Logistic selectivity with asymptote:
@@ -95,6 +98,18 @@
 #'   including any standardization the form performs internally, so the named
 #'   bins are governed entirely by their own deviations while the rest of the
 #'   curve keeps its parametric shape.
+#' @param apical Numeric. For the double normal (\code{Selex_Model == 4}), the
+#'   height the ascending and descending limbs are built up to and the plateau
+#'   sits at. \code{1} (the default) is the ordinary curve. A sex carrying an
+#'   apical offset takes \code{exp(ln_*sel_sex_scale)} here, which moves the
+#'   middle of its curve and leaves the selectivity at the first and last bins
+#'   where their own parameters put them. Ignored by every other form.
+#' @param n_sel_bins Integer or \code{NULL}/\code{0} for none. Bins beyond this
+#'   one are held at its computed value rather than evaluated through the
+#'   functional form, the \code{NSelBins} plateau convention several existing
+#'   assessments apply (e.g. \code{nselages}). Applied after the form and its
+#'   parameter deviations, but before the bin-level semi-parametric deviations and
+#'   the bin overrides. 
 #' @param Region Integer region index.
 #' @param Year Integer year index (absolute, i.e. a row index into
 #'   \code{Wyr_bicubic}). Only used directly by \code{Selex_Model == 8};
@@ -177,7 +192,9 @@ Get_Selex = function(Selex_Model,
                      n_yr_nodes_bicubic = NULL,
                      bin_devs = NULL,
                      bin_dev_bins = NULL,
-                     sel_norm_bins = NULL) {
+                     sel_norm_bins = NULL,
+                     n_sel_bins = NULL,
+                     apical = 1) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -239,16 +256,19 @@ Get_Selex = function(Selex_Model,
 
   if(Selex_Model == 4) {
 
-    # define bin ranges for double normal here
-    midbin <- Bin
+    # double normal with plateau. The ascending limb is rescaled by its own
+    # value at the first bin so that p5 is the selectivity there, and the
+    # descending limb by its value at the last bin so that p6 is the
+    # selectivity there, with logistic joiners carrying the curve between the
+    # limbs and the plateau.
+    binwidth <- if(length(Bin) > 1) Bin[2] - Bin[1] else 1
 
-    # Extract and transform parameters here
-    p1trans <- min(Bin) + (max(Bin) - min(Bin)) * RTMB::plogis(pars[1]) # peak bin at plateau
-    p2trans <- p1trans + 1 + (0.99 + max(Bin) - p1trans - 1)/(1 + exp(-1.0 * pars[2])) # width of plateau
+    p1trans <- pars[1] # bin at the start of the plateau, on the bin scale
+    p2trans <- p1trans + binwidth + (0.99 * max(Bin) - p1trans - binwidth)/(1 + exp(-1.0 * pars[2])) # bin at the end of the plateau
     p3trans <- exp(pars[3]) # ascending width
     p4trans <- exp(pars[4]) # descending width
-    p5trans <- 1/(1 + exp(-1.0 * pars[5])) # selectivity at first bin
-    p6trans <- 1/(1 + exp(-1.0 * pars[6])) # selectivity at last bin
+    p5trans <- 1/(1 + exp(-1.0 * pars[5])) # selectivity at the first bin
+    p6trans <- 1/(1 + exp(-1.0 * pars[6])) # selectivity at the last bin
 
     if(TimeVary_Model %in% c(1:2)) {
       p1trans = p1trans * exp(ln_seldevs[Region, Year, 1, Sex, 1]) # p1 parameter varying
@@ -259,16 +279,16 @@ Get_Selex = function(Selex_Model,
       p6trans = p6trans * exp(ln_seldevs[Region, Year, 6, Sex, 1]) # p6 parameter varying
     } # end if iid or random walk
 
-    # construct selectivity function
-    asc <- exp(-((midbin - p1trans)^2/p3trans))
-    asc.scaled <- (p5trans + (1 - p5trans) * (asc - 0)/(1 - 0))
-    desc <- exp(-((midbin - p2trans)^2/p4trans))
-    stj <- exp(-((40 - p2trans)^2/p4trans))
-    des.scaled <- (1 + (p6trans - 1) * (desc - 1) /(stj - 1))
-    join1 <- 1/(1 + exp(-(20 * (midbin - p1trans)/(1 + abs(midbin - p1trans))))) # joiner functions
-    join2 <- 1/(1 + exp(-(20 * (midbin - p2trans)/(1 + abs(midbin - p2trans))))) # joiner functions
-    selex <- asc.scaled * (1 - join1) + join1 * ((1 - join2) + des.scaled * join2) # return parameteric form
-    selex[1] <- p5trans # return parameteric form
+    # construct selectivity function. apical is the height the two limbs are
+    # built up to and the plateau sits at, one for the reference sex; the
+    # endpoints are anchors that do not move with it
+    asc_min <- exp(-((min(Bin) - p1trans)^2/p3trans)) # ascending limb evaluated at the first bin
+    dsc_min <- exp(-((max(Bin) - p2trans)^2/p4trans)) # descending limb evaluated at the last bin
+    asc <- p5trans + (apical - p5trans) * (exp(-((Bin - p1trans)^2/p3trans)) - asc_min)/(1 - asc_min)
+    dsc <- apical + (p6trans - apical) * (exp(-((Bin - p2trans)^2/p4trans)) - 1)/(dsc_min - 1)
+    join1 <- 1/(1 + exp(-(20 * (Bin - p1trans)/(1 + abs(Bin - p1trans))))) # joiner between the ascending limb and the plateau
+    join2 <- 1/(1 + exp(-(20 * (Bin - p2trans)/(1 + abs(Bin - p2trans))))) # joiner between the plateau and the descending limb
+    selex <- asc * (1 - join1) + join1 * (apical * (1 - join2) + dsc * join2) # return parametric form
   }
 
   if(Selex_Model == 5) {
@@ -344,13 +364,16 @@ Get_Selex = function(Selex_Model,
 
   } # end if non-parametric on the log scale, standardized within year
 
+  # Hold bins beyond n_sel_bins at the last computed bin's value.
+  if(!is.null(n_sel_bins) && n_sel_bins > 0 && n_sel_bins < length(Bin) && Selex_Model != 8) {
+    selex[(n_sel_bins + 1):length(Bin)] = selex[n_sel_bins]
+  }
+
   # 3dgmrf model or 2dar1 (sel devs dimensioned as region, year, bin, sex)
   if(TimeVary_Model %in% c(3:5)) selex = selex * exp(ln_seldevs[Region,Year,,Sex, 1]) # varies semi-parametriclly
 
   # Named bins take a free annual value instead of whatever the form produced.
-  # Applied last, so it overrides any within-form standardization too. A gear
-  # whose curve is logistic over most of its range but whose youngest bin is
-  # governed by availability rather than by the gear is the usual case.
+  # Applied last, so it overrides any within-form standardization 
   if(!is.null(bin_dev_bins) && length(bin_dev_bins) > 0) {
     selex[bin_dev_bins] = exp(bin_devs[Region, Year, bin_dev_bins, Sex, 1])
   }
@@ -390,6 +413,38 @@ Get_Selex = function(Selex_Model,
 #'   (\code{Selex_Model == 8} only).
 #' @param n_pop,n_regions,n_yrs,n_proj_yrs_devs,n_seas,n_ages,n_lens,n_sexes,n_fleets
 #'   Model dimensions.
+#' @param sex_par_offset Integer vector of length \code{n_fleets} (0/1), or
+#'   \code{NULL} for all zero. For a fleet flagged 1, the stored fixed-effect
+#'   selectivity parameters of every sex beyond the first are additive offsets
+#'   on the first sex's stored parameters, evaluated as
+#'   \code{pars[sex 1] + pars[sex s]} on the transformed (usually log) scale.
+#'   Because most forms exponentiate their parameters, an offset of \eqn{\delta}
+#'   makes the sex-\eqn{s} natural-scale parameter the first sex's value times
+#'   \eqn{e^{\delta}}, which is the male-offset convention several existing
+#'   assessments use. An offset held at zero reproduces sex-shared parameters.
+#' @param sex_scale_offset Integer vector of length \code{n_fleets} (0/1), or
+#'   \code{NULL} for all zero. For a fleet flagged 1, the realized selectivity
+#'   curve of every sex beyond the first is multiplied by
+#'   \code{exp(sex_scale[region, block, sex, fleet])}, a constant log-scale
+#'   offset on the whole curve. The scaled curve may exceed one, matching the
+#'   convention of a male selectivity offset applied in log space. Not
+#'   meaningful for forms whose scale is standardized away downstream
+#'   (non-parametric forms and the semi-parametric time-varying structures);
+#'   setup refuses those combinations.
+#' @param sex_apical_offset Integer vector of length \code{n_fleets} (0/1), or
+#'   \code{NULL}. Where it is 1, every sex beyond the first builds its double
+#'   normal up to \code{exp(sex_scale[region, block, sex, fleet])} rather than
+#'   to one, leaving the first and last bins where their own parameters put
+#'   them. Mutually exclusive with a scale offset on the same fleet.
+#' @param sex_scale Array \code{n_regions x n_blocks x n_sexes x n_fleets} of
+#'   log-scale curve offsets read when \code{sex_scale_offset} or
+#'   \code{sex_apical_offset} flags a fleet, or \code{NULL} when no fleet is
+#'   flagged.
+#' @param nselbins Integer array \code{n_regions x n_yrs x n_fleets} naming
+#'   each cell's plateau bin (\code{0} = none), or \code{NULL}. Bins beyond it
+#'   are held at its value for the parametric forms (see \code{n_sel_bins} in
+#'   \code{\link{Get_Selex}}); the bicubic form's own setup-built plateau is
+#'   unaffected.
 #'
 #' @return List with \code{sel}, the age-based array (\code{n_pop x n_regions x
 #'   n_yrs_total x n_seas x n_ages x n_sexes x n_fleets}), and \code{sel_l}, the
@@ -423,7 +478,12 @@ Get_Selex_Array = function(selex_type,
                            n_fleets,
                            bin_devs = NULL,
                            bin_dev_bins = NULL,
-                           sel_norm_bins = NULL) {
+                           sel_norm_bins = NULL,
+                           sex_par_offset = NULL,
+                           sex_scale_offset = NULL,
+                           sex_apical_offset = NULL,
+                           sex_scale = NULL,
+                           nselbins = NULL) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -447,8 +507,9 @@ Get_Selex_Array = function(selex_type,
             tmp_n_bin_nodes = bicubic_binnodes[r,y_idx,f] # true bin-node count for this block (Selex_Model == 8 only)
             tmp_n_yr_nodes = bicubic_yrnodes[r,y_idx,f] # true year-node count for this block (Selex_Model == 8 only)
 
-            # Extract out fixed-effect selectivity parameters for a given block
+            # Extract out fixed-effect selectivity parameters for a given block. For a sex parameter offset, sexes beyond the first store additive offsets on the first sex's transformed-scale parameters
             tmp_sel_vec = fixed_sel_pars[r,,sel_blk_idx,s,f]
+            if(!is.null(sex_par_offset) && s > 1 && sex_par_offset[f] == 1) tmp_sel_vec = fixed_sel_pars[r,,sel_blk_idx,1,f] + tmp_sel_vec
 
             # Extract bicubic spline interpolation weight matrices for this block
             tmp_Wbin = array(bicubic_Wbin[r,,,sel_blk_idx,f], dim = dim(bicubic_Wbin)[c(2,3)])
@@ -469,8 +530,16 @@ Get_Selex_Array = function(selex_type,
                                 n_yr_nodes_bicubic = tmp_n_yr_nodes, # true year-node count for this block (Selex_Model == 8 only)
                                 bin_devs = bin_devs, # bin-override deviations
                                 bin_dev_bins = if(is.null(bin_dev_bins)) NULL else which(bin_dev_bins[,f] == 1), # bins this fleet overrides
-                                sel_norm_bins = if(is.null(sel_norm_bins)) NULL else which(sel_norm_bins[,f] == 1) # bins this fleet standardizes over
+                                sel_norm_bins = if(is.null(sel_norm_bins)) NULL else which(sel_norm_bins[,f] == 1), # bins this fleet standardizes over
+                                n_sel_bins = if(is.null(nselbins)) NULL else nselbins[r,y_idx,f], # plateau bin for parametric forms (0 = none)
+                                # a sex carrying an apical offset builds its limbs up to its own
+                                # height rather than to one, which leaves the first and last bins
+                                # where their own parameters put them
+                                apical = if(!is.null(sex_apical_offset) && s > 1 && sex_apical_offset[f] == 1) exp(sex_scale[r,sel_blk_idx,s,f]) else 1
             )
+
+            # For a sex scale offset, sexes beyond the first carry a constant log-scale offset on the whole realized curve
+            if(!is.null(sex_scale_offset) && s > 1 && sex_scale_offset[f] == 1) tmp_sel = tmp_sel * exp(sex_scale[r,sel_blk_idx,s,f])
 
             # Compute selectivity
             if(selex_type == 0) {

@@ -31,7 +31,8 @@ Computes survey index-at-age (\code{SrvIAA}) for all populations using
 the mid-survey abundance formula \eqn{N \cdot s \cdot e^{-t_{\text{srv}} Z}},
 derives index-at-length (\code{SrvIAL}) when a size-age transition matrix
 is available, generates observed survey indices (with lognormal error) as
-abundance or biomass depending on \code{srv_idx_type}, and draws age and
+abundance, biomass, or the recruitment deviations depending on
+\code{srv_idx_type}, and draws age and
 length composition samples via \code{\link{simulate_comps}}.
 }
 \details{

@@ -43,6 +43,7 @@ jnLL_terms <- list(
   Rec_nLL                      = list(weight = "Wt_Rec",     mode = "elementwise"),
   Init_Rec_nLL                 = list(weight = "Wt_Init_Rec", fallback = "Wt_Rec", mode = "elementwise"),
   Rec_level_nLL                = list(weight = NA,          mode = "scalar"),
+  Init_Sex_nLL                 = list(weight = NA,          mode = "scalar"),
   SR_pen_nLL                   = list(weight = NA,          mode = "scalar"),
 
   sel_nLL                      = list(weight = NA, mode = "scalar"),

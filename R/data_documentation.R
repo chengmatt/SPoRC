@@ -113,6 +113,36 @@
 #' @source 2024 Federal BSAI Atka Mackerel Assessment, Model 16.0b
 "sgl_rg_bsai_atka_data"
 
+#' West Coast Sablefish data for single region case study
+#'
+#' A dataset containing the necessary elements for the 2025 West Coast sablefish case study,
+#' including model inputs (dimensions, biologicals, catch, four survey indices, a recruitment
+#' index, and sexed and unsexed compositions), the assessment's selectivity parameters and time
+#' blocks, its maximum likelihood estimates, and the Stock Synthesis derived quantities and
+#' likelihood components used for bridge verification.
+#'
+#' @format A list with model inputs at the top level, \code{sel_fish}/\code{sel_srv}/\code{sel_male}
+#' (the assessment's double normal selectivity parameters, which of them it estimates, and which
+#' blocks share one), \code{mle} (Stock Synthesis maximum likelihood estimates, read from the
+#' parameter file at twelve significant digits), and \code{ss3} (Stock Synthesis derived
+#' quantities and likelihood components for bridge comparison)
+#' @source 2025 Pacific Fishery Management Council West Coast Sablefish Assessment, Stock Synthesis 3.30.23
+"sgl_rg_wc_sablefish_data"
+
+#' BSAI northern rock sole data for single region assessment case study
+#'
+#' A data list containing inputs for the 2024 BSAI Northern Rock Sole Assessment
+#' (flatfish model, Model 24.2), together with the assessment's maximum
+#' likelihood estimate and its reported output. The model is two sex with sex
+#' specific natural mortality, free initial numbers at age estimated separately
+#' for each sex, time varying logistic fishery selectivity with a male curve
+#' offset, and a survey read as a July biomass index against January 1
+#' compositions.
+#'
+#' @format Data list for single region northern rock sole assessment
+#' @source McGilliard, C. R., Palsson, W., Haehn, R. 2024. Assessment of the northern rock sole stock in the Bering Sea and Aleutian Islands. North Pacific Fishery Management Council, Anchorage, AK.
+"sgl_rg_bsai_nrs_data"
+
 #' Dusky data for single region assessment case study
 #'
 #' A data list containing inputs for the 2024 GOA Dusky Rockfish Assessment

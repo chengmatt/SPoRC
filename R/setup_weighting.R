@@ -81,7 +81,7 @@
 #'   deterministic prediction in those years.
 #' @param Wt_Init_Rec Weight applied to the initial age deviation penalty
 #'   (\code{ln_InitDevs}). Either a scalar or a numeric array
-#'   \code{[n_pop × n_regions × (n_ages - 1)]}. Defaults to \code{NULL}, which
+#'   \code{[n_pop × n_regions × (n_ages - 1) × n_sexes]}. Defaults to \code{NULL}, which
 #'   takes whatever \code{Wt_Rec} is when \code{Wt_Rec} is a scalar; supply it
 #'   explicitly when \code{Wt_Rec} is an array, since the two penalties are
 #'   dimensioned differently.

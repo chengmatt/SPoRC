@@ -122,6 +122,14 @@
 #' @param ret_sel_nonpar_est_bins Vector defining estimated bins for
 #'   non-parametric selectivity.
 #'
+#' @param ret_sel_sex_offset Character vector of length \code{n_fish_fleets}
+#'   linking the sexes of a fleet's retention curve: \code{"none"} (default),
+#'   \code{"par"}, \code{"scale"}, or \code{"par_scale"}, with the same
+#'   meaning as \code{fish_sel_sex_offset} in
+#'   \code{\link{Setup_Mod_Fishsel_and_Q}}. Retention is a fraction, so a
+#'   scale offset is only sensible where the scaled curve stays at or below
+#'   one (a negative offset, the less-retained sex); nothing enforces that.
+#'
 #' @param ... Optional starting values for selectivity parameters and deviations.
 #'
 #' @return The updated \code{input_list} with:
@@ -153,6 +161,7 @@ Setup_Mod_Retsel <- function(input_list,
                              retsel_pe_wt = rep(1, input_list$data$n_fish_fleets),
                              retsel_rw_init_sigma = rep(5, input_list$data$n_fish_fleets),
                              ret_sel_nonpar_est_bins,
+                             ret_sel_sex_offset = rep("none", input_list$data$n_fish_fleets),
                              ...
 ) {
 
@@ -302,10 +311,16 @@ Setup_Mod_Retsel <- function(input_list,
       if(length(selstyr_pos) == 1 && (is.na(tmp_selstyr) || !tmp_selstyr %in% input_list$data$years)) stop("bicubic ret_sel_model SelStyr must be a calendar year within the modeled years")
       if(length(nselbins_pos) == 1 && (is.na(tmp_nselbins) || tmp_nselbins < 2 || tmp_nselbins > bins)) stop("bicubic ret_sel_model NSelBins must be an integer between 2 and the total number of bins (ages or lengths)")
     } else {
-      # get fleet index
-      tmp_fleet <- if(length(tmp_sel_form_vec) == 3) as.numeric(tmp_sel_form_vec[3]) else as.numeric(tmp_sel_form_vec[5]) # fleet index changes if block is included in character vector
-      # get block index
-      tmp_block <- if(length(tmp_sel_form_vec) == 5) as.numeric(tmp_sel_form_vec[3]) else NULL
+      # optional _NSelBins_<n> plateau suffix is joined with  _Block_<b> in either order for any parametric form
+      fleet_pos <- which(tmp_sel_form_vec == "Fleet")
+      block_pos <- which(tmp_sel_form_vec == "Block")
+      nselbins_pos <- which(tmp_sel_form_vec == "NSelBins")
+      if(length(fleet_pos) != 1) stop("ret_sel_model entries must name their fleet exactly once, as _Fleet_<f>")
+      tmp_fleet <- suppressWarnings(as.numeric(tmp_sel_form_vec[fleet_pos + 1]))
+      tmp_block <- if(length(block_pos) == 1) suppressWarnings(as.numeric(tmp_sel_form_vec[block_pos + 1])) else NULL
+      tmp_nselbins <- if(length(nselbins_pos) == 1) suppressWarnings(as.numeric(tmp_sel_form_vec[nselbins_pos + 1])) else 0
+      if(length(nselbins_pos) == 1 && (is.na(tmp_nselbins) || tmp_nselbins < 2 || tmp_nselbins > bins)) stop("ret_sel_model NSelBins must be an integer between 2 and the total number of bins (ages or lengths)")
+      if(length(nselbins_pos) == 1 && sel_form %in% c("nonpar", "nonparlog")) stop("ret_sel_model NSelBins is for the parametric forms; a non-parametric form would keep estimating the bins it then overwrites. Group those bins through ret_sel_nonpar_est_bins instead.")
     }
 
     # validate options
@@ -319,16 +334,16 @@ Setup_Mod_Retsel <- function(input_list,
         ret_sel_bicubic_binnodes_arr[,,tmp_fleet] <- tmp_n_bin_nodes
         ret_sel_bicubic_yrnodes_arr[,,tmp_fleet] <- tmp_n_yr_nodes
         ret_sel_bicubic_selstyr_arr[,,tmp_fleet] <- tmp_selstyr
-        ret_sel_bicubic_nselbins_arr[,,tmp_fleet] <- tmp_nselbins
       }
+      ret_sel_bicubic_nselbins_arr[,,tmp_fleet] <- tmp_nselbins # plateau bin; read by every form (0 = none)
     } else {
       ret_sel_model_arr <- assign_sel_block(ret_sel_model_arr, ret_sel_blocks_arr, tmp_fleet, tmp_block, sel_map$num[which(sel_map$sel == sel_form)])
       if(sel_form == "bicubic") {
         ret_sel_bicubic_binnodes_arr <- assign_sel_block(ret_sel_bicubic_binnodes_arr, ret_sel_blocks_arr, tmp_fleet, tmp_block, tmp_n_bin_nodes)
         ret_sel_bicubic_yrnodes_arr <- assign_sel_block(ret_sel_bicubic_yrnodes_arr, ret_sel_blocks_arr, tmp_fleet, tmp_block, tmp_n_yr_nodes)
         ret_sel_bicubic_selstyr_arr <- assign_sel_block(ret_sel_bicubic_selstyr_arr, ret_sel_blocks_arr, tmp_fleet, tmp_block, tmp_selstyr)
-        ret_sel_bicubic_nselbins_arr <- assign_sel_block(ret_sel_bicubic_nselbins_arr, ret_sel_blocks_arr, tmp_fleet, tmp_block, tmp_nselbins)
       }
+      ret_sel_bicubic_nselbins_arr <- assign_sel_block(ret_sel_bicubic_nselbins_arr, ret_sel_blocks_arr, tmp_fleet, tmp_block, tmp_nselbins)
     }
     rm(tmp_block) # remove tmp block to start next loop
     collect_message("Retained Fishery selectivity functional form specified as:", sel_form, " for fishery fleet ", tmp_fleet)
@@ -387,6 +402,14 @@ Setup_Mod_Retsel <- function(input_list,
   max_retsel_pars <- max(sel_pars_vec)
   if("ret_fixed_sel_pars" %in% names(starting_values)) input_list$par$ret_fixed_sel_pars <- starting_values$ret_fixed_sel_pars
   else input_list$par$ret_fixed_sel_pars <- array(0, dim = c(input_list$data$n_regions, max_retsel_pars, max_retsel_blks, input_list$data$n_sexes, input_list$data$n_fish_fleets))
+
+  # a double normal carries its peak on the bin scale, so a default of zero
+  # would put it at bin zero, where the ascending limb has no extent
+  if(!"ret_fixed_sel_pars" %in% names(starting_values)) {
+    input_list$par$ret_fixed_sel_pars <- seed_dbnrml_peak(input_list$par$ret_fixed_sel_pars, ret_sel_model_arr,
+                                          if(ret_selex_type == 'length') input_list$data$lens else input_list$data$ages,
+                                          ret_sel_sex_offset)
+  }
 
   # Bicubic spline interpolation weight matrices (bin node x year node grid) for retention selectivity,
   # mirroring fish_sel_bicubic_Wbin/Wyr above (see Get_Selex documentation).
@@ -460,6 +483,13 @@ Setup_Mod_Retsel <- function(input_list,
   if(input_list$data$ret_selex_type == 1) bins <- length(input_list$data$lens) # length based deviations
   if("ln_retsel_devs" %in% names(starting_values)) input_list$par$ln_retsel_devs <- starting_values$ln_retsel_devs
   else input_list$par$ln_retsel_devs <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years) + input_list$data$n_proj_yrs_devs, bins, input_list$data$n_sexes, input_list$data$n_fish_fleets))
+
+  # Sex offsets on retention selectivity (parameter offsets and/or a curve scale offset)
+  input_list <- setup_sel_sex_offset(input_list, ret_sel_sex_offset, prefix = "ret",
+                                     n_fleets = input_list$data$n_fish_fleets, fleet_label = "fishery fleet (retention)",
+                                     sel_model_arr = input_list$data$ret_sel_model, cont_tv_mat = cont_tv_ret_sel_mat,
+                                     max_blks = max_retsel_blks, sel_blocks = input_list$data$ret_sel_blocks,
+                                     fixed_spec = ret_fixed_sel_pars_spec, starting_values = starting_values)
 
   # Mapping Options ---------------------------------------------------------
   input_list <- do_fixed_sel_pars_mapping(input_list, ret_fixed_sel_pars_spec, bins, ret_sel_nonpar_est_bins,
@@ -764,6 +794,11 @@ Setup_Mod_Retsel <- function(input_list,
 #' @param ret_sel_nonpar_est_bins Optional list specifying bin groupings for
 #' non-parametric retained selectivity. Structure is \code{[[fleet]][[block]]}, where each
 #' element is a list of bin index vectors defining grouped parameters.
+#' @param ret_sel_sex_offset Character vector of length \code{n_fish_fleets}
+#'   linking the sexes of a fleet's retention curve, with the options and
+#'   meaning of \code{fish_sel_sex_offset}. Default \code{"none"}. Retention
+#'   is a fraction, so a scale offset is only sensible where the scaled curve
+#'   stays at or below one.
 #' @param fish_selex_type Character scalar specifying whether selectivity is
 #'   age- or length-based. Options:
 #'   \describe{
@@ -787,6 +822,35 @@ Setup_Mod_Retsel <- function(input_list,
 #' element is a list of integer vectors. Each vector defines a group of bins that
 #' share a single estimated selectivity parameter. Indices must correspond to the
 #' bin dimension defined by \code{fish_selex_type}.
+
+#' @param fish_sel_sex_offset Character vector of length \code{n_fish_fleets}
+#'   linking the sexes of a fleet's selectivity, for models with
+#'   \code{n_sexes > 1}. Options per fleet:
+#'   \describe{
+#'     \item{\code{"none"} (default)}{Each sex's stored parameters are its own,
+#'       exactly as before this option existed.}
+#'     \item{\code{"par"}}{The stored fixed-effect parameter slots of every sex
+#'       beyond the first hold additive offsets on the first sex's stored
+#'       (transformed-scale) parameters, so for log-scale parameters the
+#'       sex-\eqn{s} natural value is the first sex's times
+#'       \eqn{e^{\delta}}. Offsets fixed at zero reproduce sex-shared
+#'       parameters; estimating them links the sexes through the offset the way
+#'       several existing assessments parameterize male selectivity.}
+#'     \item{\code{"scale"}}{Each sex keeps its own parameters, and every sex
+#'       beyond the first additionally carries a constant log-scale offset on
+#'       the whole realized curve, \code{exp(ln_fishsel_sex_scale)}, estimated
+#'       per region, block, and sex. The scaled curve may exceed one. Refused
+#'       for non-parametric forms and semi-parametric time variation, whose
+#'       post-hoc standardization would cancel a constant multiplier.}
+#'     \item{\code{"apical"}}{Each sex keeps its own parameters, and for every
+#'       sex beyond the first the double normal builds its limbs up to
+#'       \code{exp(ln_*sel_sex_scale)} rather than to one. Selectivity at the
+#'       first and last bins stays where that sex's own parameters put it, so
+#'       the offset moves the middle of the curve and leaves its ends anchored.
+#'       Requires the double normal.}
+#'     \item{\code{"par_apical"}}{Both a par offset and an apical offset.}
+#'     \item{\code{"par_scale"}}{Both a par offset and a scale offset.}
+#'   }
 
 #' @param ret_selex_type Character scalar specifying whether retained selectivity
 #'   is age- or length-based. Options:
@@ -838,6 +902,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
                                     use_fixed_fish_sel = rep(0, input_list$data$n_fish_fleets),
                                     fish_sel_input = NULL,
                                     fish_sel_nonpar_est_bins = NULL,
+                                    fish_sel_sex_offset = rep("none", input_list$data$n_fish_fleets),
 
                                     # Retained Selectivity
                                     cont_tv_ret_sel = paste("none_Fleet_", 1:input_list$data$n_fish_fleets, sep = ''),
@@ -856,6 +921,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
                                     use_fixed_ret_sel = rep(1, input_list$data$n_fish_fleets),
                                     ret_sel_input = array(1, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, length(input_list$data$ages), input_list$data$n_sexes, input_list$data$n_fish_fleets )),
                                     ret_sel_nonpar_est_bins = NULL,
+                                    ret_sel_sex_offset = rep("none", input_list$data$n_fish_fleets),
                                     ...
                                     ) {
 
@@ -1027,10 +1093,16 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
       if(length(selstyr_pos) == 1 && (is.na(tmp_selstyr) || !tmp_selstyr %in% input_list$data$years)) stop("bicubic fish_sel_model SelStyr must be a calendar year within the modeled years")
       if(length(nselbins_pos) == 1 && (is.na(tmp_nselbins) || tmp_nselbins < 2 || tmp_nselbins > bins)) stop("bicubic fish_sel_model NSelBins must be an integer between 2 and the total number of bins (ages or lengths)")
     } else {
-      # get fleet index
-      tmp_fleet <- if(length(tmp_sel_form_vec) == 3) as.numeric(tmp_sel_form_vec[3]) else as.numeric(tmp_sel_form_vec[5]) # fleet index changes if block is included in character vector
-      # get block index
-      tmp_block <- if(length(tmp_sel_form_vec) == 5) as.numeric(tmp_sel_form_vec[3]) else NULL
+      # optional _NSelBins_<n> plateau suffix is joined with  _Block_<b> in either order for any parametric form
+      fleet_pos <- which(tmp_sel_form_vec == "Fleet")
+      block_pos <- which(tmp_sel_form_vec == "Block")
+      nselbins_pos <- which(tmp_sel_form_vec == "NSelBins")
+      if(length(fleet_pos) != 1) stop("fish_sel_model entries must name their fleet exactly once, as _Fleet_<f>")
+      tmp_fleet <- suppressWarnings(as.numeric(tmp_sel_form_vec[fleet_pos + 1]))
+      tmp_block <- if(length(block_pos) == 1) suppressWarnings(as.numeric(tmp_sel_form_vec[block_pos + 1])) else NULL
+      tmp_nselbins <- if(length(nselbins_pos) == 1) suppressWarnings(as.numeric(tmp_sel_form_vec[nselbins_pos + 1])) else 0
+      if(length(nselbins_pos) == 1 && (is.na(tmp_nselbins) || tmp_nselbins < 2 || tmp_nselbins > bins)) stop("fish_sel_model NSelBins must be an integer between 2 and the total number of bins (ages or lengths)")
+      if(length(nselbins_pos) == 1 && sel_form %in% c("nonpar", "nonparlog")) stop("fish_sel_model NSelBins is for the parametric forms; a non-parametric form would keep estimating the bins it then overwrites. Group those bins through fish_sel_nonpar_est_bins instead.")
     }
 
     # validate options
@@ -1044,16 +1116,16 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
         fish_sel_bicubic_binnodes_arr[,,tmp_fleet] <- tmp_n_bin_nodes
         fish_sel_bicubic_yrnodes_arr[,,tmp_fleet] <- tmp_n_yr_nodes
         fish_sel_bicubic_selstyr_arr[,,tmp_fleet] <- tmp_selstyr
-        fish_sel_bicubic_nselbins_arr[,,tmp_fleet] <- tmp_nselbins
       }
+      fish_sel_bicubic_nselbins_arr[,,tmp_fleet] <- tmp_nselbins # plateau bin; read by every form (0 = none)
     } else {
       fish_sel_model_arr <- assign_sel_block(fish_sel_model_arr, fish_sel_blocks_arr, tmp_fleet, tmp_block, sel_map$num[which(sel_map$sel == sel_form)])
       if(sel_form == "bicubic") {
         fish_sel_bicubic_binnodes_arr <- assign_sel_block(fish_sel_bicubic_binnodes_arr, fish_sel_blocks_arr, tmp_fleet, tmp_block, tmp_n_bin_nodes)
         fish_sel_bicubic_yrnodes_arr <- assign_sel_block(fish_sel_bicubic_yrnodes_arr, fish_sel_blocks_arr, tmp_fleet, tmp_block, tmp_n_yr_nodes)
         fish_sel_bicubic_selstyr_arr <- assign_sel_block(fish_sel_bicubic_selstyr_arr, fish_sel_blocks_arr, tmp_fleet, tmp_block, tmp_selstyr)
-        fish_sel_bicubic_nselbins_arr <- assign_sel_block(fish_sel_bicubic_nselbins_arr, fish_sel_blocks_arr, tmp_fleet, tmp_block, tmp_nselbins)
       }
+      fish_sel_bicubic_nselbins_arr <- assign_sel_block(fish_sel_bicubic_nselbins_arr, fish_sel_blocks_arr, tmp_fleet, tmp_block, tmp_nselbins)
     }
     rm(tmp_block) # remove tmp block to start next loop
     collect_message("Fishery selectivity functional form specified as:", sel_form, " for fishery fleet ", tmp_fleet)
@@ -1204,8 +1276,8 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
   max_fishsel_blks <- max(apply(input_list$data$fish_sel_blocks, c(1,3), FUN = function(x) length(unique(x))))
 
   # Bicubic spline interpolation weight matrices (bin node x year node grid), built here so they can be
-  # threaded through SPoRC_rtmb.R alongside the flattened node parameters (see Get_Selex, Selex_Model == 8).
-  # Padded with zeros to a common width across regions/blocks/fleets; padding is harmless because unused
+  # passed through the model  alongside the flattened node parameters (see Get_Selex, Selex_Model == 8).
+  # Padded with zeros to a common width across regions/blocks/fleets; padding doesn't really do anything because unused
   # (zero-weight) columns/rows never contribute to the resulting selectivity (see Get_Selex documentation).
   has_bicubic_fish_sel <- any(input_list$data$fish_sel_model == 8)
   max_bin_nodes_bicubic <- if(has_bicubic_fish_sel) max(input_list$data$fish_sel_bicubic_binnodes) else 1
@@ -1246,7 +1318,8 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
           fish_sel_bicubic_Wbin[r, , 1:n_bin_nodes_this, b, f] <- Wbin_this
 
           # Year dimension: nodes evenly spaced over the block's own contiguous fit range. By default
-          # (SelStyr unset, i.e. 0) the fit range is the whole block, as before. When SelStyr is set, only years from SelStyr through the block's end are
+          # (SelStyr unset, i.e. 0) the fit range is the whole block, as before. When SelStyr is set, 
+          # only years from SelStyr through the block's end are
           # actually spline-fit; years within the block before SelStyr are edge-held at the SelStyr
           # row's weights ("previous years are filled"). Years outside the block entirely (before it,
           # after it, and any projection years, since projections reuse the terminal modeled year's
@@ -1282,6 +1355,14 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
   if("fish_fixed_sel_pars" %in% names(starting_values)) input_list$par$fish_fixed_sel_pars <- starting_values$fish_fixed_sel_pars
   else input_list$par$fish_fixed_sel_pars <- array(0, dim = c(input_list$data$n_regions, max_fishsel_pars, max_fishsel_blks, input_list$data$n_sexes, input_list$data$n_fish_fleets))
 
+  # a double normal carries its peak on the bin scale, so a default of zero
+  # would put it at bin zero, where the ascending limb has no extent
+  if(!"fish_fixed_sel_pars" %in% names(starting_values)) {
+    input_list$par$fish_fixed_sel_pars <- seed_dbnrml_peak(input_list$par$fish_fixed_sel_pars, fish_sel_model_arr,
+                                          if(fish_selex_type == 'length') input_list$data$lens else input_list$data$ages,
+                                          fish_sel_sex_offset)
+  }
+
   # Fishery catchability
   max_fishq_blks <- max(apply(input_list$data$fish_q_blocks, c(1,3), FUN = function(x) length(unique(x)))) # figure out maximum number of fishery catchability blocks for a given reigon and fleet
   if("ln_fish_q" %in% names(starting_values)) input_list$par$ln_fish_q <- starting_values$ln_fish_q
@@ -1295,6 +1376,12 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
   if("ln_fishsel_devs" %in% names(starting_values)) input_list$par$ln_fishsel_devs <- starting_values$ln_fishsel_devs
   else input_list$par$ln_fishsel_devs <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years) + input_list$data$n_proj_yrs_devs, bins, input_list$data$n_sexes, input_list$data$n_fish_fleets))
 
+  # Sex offsets on selectivity (parameter offsets and/or a curve scale offset)
+  input_list <- setup_sel_sex_offset(input_list, fish_sel_sex_offset, prefix = "fish",
+                                     n_fleets = input_list$data$n_fish_fleets, fleet_label = "fishery fleet",
+                                     sel_model_arr = input_list$data$fish_sel_model, cont_tv_mat = cont_tv_fish_sel_mat,
+                                     max_blks = max_fishsel_blks, sel_blocks = input_list$data$fish_sel_blocks,
+                                     fixed_spec = fish_fixed_sel_pars_spec, starting_values = starting_values)
 
   # Mapping Options ---------------------------------------------------------
   input_list <- do_fixed_sel_pars_mapping(input_list, fish_fixed_sel_pars_spec, bins, fish_sel_nonpar_est_bins,
@@ -1324,6 +1411,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
                                  use_fixed_ret_sel = use_fixed_ret_sel,
                                  ret_sel_input = ret_sel_input,
                                  ret_sel_nonpar_est_bins = ret_sel_nonpar_est_bins,
+                                 ret_sel_sex_offset = ret_sel_sex_offset,
                                  ...)
 
   # Print Messages ----------------------------------------------------------

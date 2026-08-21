@@ -25,7 +25,10 @@ get_recruitment_penalty(
   do_rec_bias_ramp,
   map_ln_RecDevs = NULL,
   RecDevs_pen_center = 0,
-  InitDevs_pen_center = 0
+  InitDevs_pen_center = 0,
+  init_devs_pen_use = NULL,
+  Use_init_sex_pen = 0,
+  ln_sigma_init_sex = 0
 )
 }
 \arguments{
@@ -46,7 +49,9 @@ apportionment.}
 deviations are penalized (\code{1}: all but plus group, \code{2}: all,
 \code{3}: shared subset).}
 
-\item{ln_InitDevs}{Array \code{[pop, region, age]} of initial age deviations.}
+\item{ln_InitDevs}{Array \code{[pop, region, age, sex]} of initial age
+deviations. A 3-D \code{[pop, region, age]} array (the layout before the
+sex dimension existed) is accepted and treated as one shared curve.}
 
 \item{init_age_devs_shared}{Integer vector of shared initial age deviation
 indices (used when \code{equil_init_age_strc == 3}).}
@@ -70,11 +75,26 @@ adjustment.}
 \item{map_ln_RecDevs}{Array \code{[pop, region, year]} mirroring
 \code{map$ln_RecDevs}; cells that are \code{NA} are fixed rather than
 estimated and are left unpenalized. \code{NULL} penalizes every cell.}
+
+\item{init_devs_pen_use}{Array of 0/1 matching \code{ln_InitDevs}, naming
+which cells are penalized. Sexes sharing one parameter keep only the first
+sex's copy flagged so the shared parameter is not penalized twice;
+sex-specific deviations flag every sex. \code{NULL} penalizes only the
+first sex's slice, which is the pre-sex-dimension behaviour.}
+
+\item{Use_init_sex_pen}{Integer (0/1). Whether each later sex's initial
+age deviations are tied to the first sex's through a Gaussian on their
+difference at every penalized age. Only meaningful when the sexes carry
+their own curves.}
+
+\item{ln_sigma_init_sex}{Log standard deviation of that tie.}
 }
 \value{
 List with elements \code{Init_Rec_nLL} (array \code{[pop, region,
-  age]}) and \code{Rec_nLL} (array \code{[pop, region, year]}), each holding
-  negative log-likelihood penalties (0 where not penalized).
+  age, sex]}), \code{Init_Sex_nLL} (the same layout, the between-sex tie,
+  zero for the first sex and whenever the tie is off) and \code{Rec_nLL}
+  (array \code{[pop, region, year]}), each holding negative log-likelihood
+  penalties (0 where not penalized).
 }
 \description{
 Population/region-specific IID penalties on initial age deviations

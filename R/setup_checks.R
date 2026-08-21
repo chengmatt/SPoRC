@@ -546,8 +546,11 @@ check_sim_dimensions <- function(x,
   }
 
   if(what == 'ln_InitDevs_input') {
-    if(sum(dim(x) == c(n_pop, n_regions, n_ages - 1, n_sims)) != 4)
-      stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_regions, n_ages - 1, n_sims"))
+    # either one shared curve (no sex dimension, the pre-sex-dimension layout) or one curve per sex
+    ok_shared <- length(dim(x)) == 4 && sum(dim(x) == c(n_pop, n_regions, n_ages - 1, n_sims)) == 4
+    ok_sexed <- length(dim(x)) == 5 && sum(dim(x) == c(n_pop, n_regions, n_ages - 1, n_sexes, n_sims)) == 5
+    if(!ok_shared && !ok_sexed)
+      stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_regions, n_ages - 1, n_sims (one shared curve) or n_pop, n_regions, n_ages - 1, n_sexes, n_sims (one curve per sex)"))
   }
 
 

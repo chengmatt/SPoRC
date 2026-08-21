@@ -54,8 +54,20 @@
 #'   \code{UseSrvIdx} slice in array order.
 #' @param srv_idx_type Character vector \code{[n_srv_fleets]} specifying the
 #'   index type per fleet. One of \code{"biom"} (biomass), \code{"abd"}
-#'   (abundance), or \code{"none"} (no index for that fleet). Converted to
-#'   integer codes (\code{1}, \code{0}, \code{999}) before storage.
+#'   (abundance), \code{"recdev"} (recruitment deviations), or \code{"none"}
+#'   (no index for that fleet). Converted to integer codes (\code{1},
+#'   \code{0}, \code{2}, \code{999}) before storage.
+#'
+#'
+#'   A \code{"recdev"} fleet observes year class strength directly rather than
+#'   any part of the population. Its predicted value is
+#'   \code{q * (ln_RecDevs - mu)}, with \code{mu} the centre the recruitment
+#'   penalty asserts for that year, so it measures the anomaly rather than the
+#'   deviation as stored; under a bias ramp the two differ. Such a fleet reads
+#'   no numbers at age, so its selectivity, survey timing and weight at age are
+#'   unused and its compositions should be left off. It requires
+#'   \code{SrvIdx_LikeType = "normal"}, since deviations are signed, and
+#'   \code{RecDevs_pen_center = "fixed"} in \code{\link{Setup_Mod_Rec}}.
 #' @param ObsSrvIdx_pop Observed population-specific survey index array
 #'   \code{[n_pop × n_regions × n_years × n_seas × n_srv_fleets]}.
 #' @param ObsSrvIdx_pop_SE Lognormal standard errors for \code{ObsSrvIdx_pop},
@@ -234,7 +246,7 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
     check_data_dimensions(ObsSrvIdx_pop_SE, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_srv_fleets = input_list$data$n_srv_fleets, what = 'ObsSrvIdx_pop_SE')
     check_data_dimensions(UseSrvIdx_pop, n_pop = input_list$data$n_pop,  n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_srv_fleets = input_list$data$n_srv_fleets, what = 'UseSrvIdx_pop')
   }
-  if(!all(srv_idx_type %in% c("biom", "abd", "none"))) stop("Invalid specification for srv_idx_type. Should be either abd, biom, or none")
+  if(!all(srv_idx_type %in% c("biom", "abd", "none", "recdev"))) stop("Invalid specification for srv_idx_type. Should be abd, biom, recdev, or none")
 
   # Survey compositions
   check_data_dimensions(ObsSrvAgeComps, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_sexes = input_list$data$n_sexes, n_srv_fleets = input_list$data$n_srv_fleets, what = 'ObsSrvAgeComps')
@@ -283,6 +295,12 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
   for(f in 1:input_list$data$n_srv_fleets) {
     if(srv_idx_type[f] == 'biom') srv_idx_type_vals[f] <- 1 # biomass
     if(srv_idx_type[f] == 'abd') srv_idx_type_vals[f] <- 0 # abundance
+    if(srv_idx_type[f] == 'recdev') {
+      srv_idx_type_vals[f] <- 2 # recruitment deviations
+      # a deviation is signed, so a lognormal cannot be used on it, and the anomaly is measured against the penalty's fixed centre
+      if(SrvIdx_LikeType[f] != "normal") stop("srv_idx_type is 'recdev' for survey fleet ", f, ". Recruitment deviations are signed, so that fleet needs SrvIdx_LikeType = 'normal' rather than ", SrvIdx_LikeType[f], ".")
+      if(!is.null(input_list$data$RecDevs_pen_center) && input_list$data$RecDevs_pen_center != 0) stop("srv_idx_type is 'recdev' for survey fleet ", f, ". It measures the deviation against the centre its penalty asserts, which is only defined when RecDevs_pen_center is 'fixed' in Setup_Mod_Rec.")
+    }
     if(srv_idx_type[f] == 'none') srv_idx_type_vals[f] <- 999 # none
     collect_message(paste("Survey Index", "for survey fleet", f, "specified as:" , srv_idx_type[f]))
   } # end f loop

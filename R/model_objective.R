@@ -158,10 +158,17 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   # The initial age penalty used to share Wt_Rec, which only worked because both
   # were scalars applied outside the sum.
   if(!has("Wt_Init_Rec")) set("Wt_Init_Rec", get("Wt_Rec", envir = env))
+  # An array weight from before the sex dimension is one weight per age; it repeats across sexes so it conforms with the sex-dimensioned penalty array
+  wt_init_bc <- get("Wt_Init_Rec", envir = env)
+  if(length(wt_init_bc) > 1 && length(dim(wt_init_bc)) == 3) set("Wt_Init_Rec", array(rep(wt_init_bc, get("n_sexes", envir = env)), dim = c(dim(wt_init_bc), get("n_sexes", envir = env))))
 
   # The recruitment level penalty is off unless asked for.
   if(!has("Use_rec_level_pen")) set("Use_rec_level_pen", 0)
   if(!has("ln_sigma_rec_level")) set("ln_sigma_rec_level", 0)
+
+  # The between-sex likelihood on initial age deviations is off unless specified
+  if(!has("Use_init_sex_pen")) set("Use_init_sex_pen", 0)
+  if(!has("ln_sigma_init_sex")) set("ln_sigma_init_sex", 0)
   if(!has("rec_level_pen_center")) set("rec_level_pen_center", 1)
   if(!has("rec_level_pen_yrs")) set("rec_level_pen_yrs", rep(1, length(get("years", envir = env))))
 
@@ -202,6 +209,46 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   if(!has("Use_fish_selex_penalty")) set("Use_fish_selex_penalty", 0)
   if(!has("Use_ret_selex_penalty")) set("Use_ret_selex_penalty", 0)
   if(!has("Use_srv_selex_penalty")) set("Use_srv_selex_penalty", 0)
+
+  # Bicubic bookkeeping arrays, which the parametric plateau now also reads.
+  # Input lists predating bicubic selectivity have none of them; all-zero means
+  # no plateau and no bicubic block anywhere, which is what those lists were.
+  for(pre_arr in c("fish", "ret")) for(suf in c("binnodes", "yrnodes", "selstyr", "nselbins")) {
+    nm_arr <- paste0(pre_arr, "_sel_bicubic_", suf)
+    if(!has(nm_arr)) set(nm_arr, array(0, dim = c(get("n_regions", envir = env), length(get("years", envir = env)), n_fish_bc)))
+  }
+  for(suf in c("binnodes", "yrnodes", "selstyr", "nselbins")) {
+    nm_arr <- paste0("srv_sel_bicubic_", suf)
+    if(!has(nm_arr)) set(nm_arr, array(0, dim = c(get("n_regions", envir = env), length(get("years", envir = env)), n_srv_bc)))
+  }
+
+  # Sex offsets on selectivity. Older input lists have neither the flags nor the
+  # scale parameters, and both defaults reproduce sex-independent selectivity.
+  if(!has("fishsel_sex_par_offset")) set("fishsel_sex_par_offset", rep(0, n_fish_bc))
+  if(!has("srvsel_sex_par_offset")) set("srvsel_sex_par_offset", rep(0, n_srv_bc))
+  if(!has("fishsel_sex_scale_offset")) set("fishsel_sex_scale_offset", rep(0, n_fish_bc))
+  if(!has("srvsel_sex_scale_offset")) set("srvsel_sex_scale_offset", rep(0, n_srv_bc))
+  if(!has("fishsel_sex_apical_offset")) set("fishsel_sex_apical_offset", rep(0, n_fish_bc))
+  if(!has("srvsel_sex_apical_offset")) set("srvsel_sex_apical_offset", rep(0, n_srv_bc))
+  if(!has("ln_fishsel_sex_scale")) set("ln_fishsel_sex_scale", array(0, dim = c(get("n_regions", envir = env), dim(get("fish_fixed_sel_pars", envir = env))[3], get("n_sexes", envir = env), n_fish_bc)))
+  if(!has("ln_srvsel_sex_scale")) set("ln_srvsel_sex_scale", array(0, dim = c(get("n_regions", envir = env), dim(get("srv_fixed_sel_pars", envir = env))[3], get("n_sexes", envir = env), n_srv_bc)))
+  if(!has("retsel_sex_par_offset")) set("retsel_sex_par_offset", rep(0, n_fish_bc))
+  if(!has("retsel_sex_scale_offset")) set("retsel_sex_scale_offset", rep(0, n_fish_bc))
+  if(!has("retsel_sex_apical_offset")) set("retsel_sex_apical_offset", rep(0, n_fish_bc))
+  if(!has("ln_retsel_sex_scale")) set("ln_retsel_sex_scale", array(0, dim = c(get("n_regions", envir = env), dim(get("ret_fixed_sel_pars", envir = env))[3], get("n_sexes", envir = env), n_fish_bc)))
+
+  # Initial age deviations gained a sex dimension. An older 3-D array is one
+  # shared curve, so it broadcasts across sexes and only the first sex's copy is
+  # penalized, which is exactly what the model computed before.
+  if(length(dim(get("ln_InitDevs", envir = env))) == 3) {
+    init3 <- get("ln_InitDevs", envir = env)
+    set("ln_InitDevs", array(rep(init3, get("n_sexes", envir = env)), dim = c(dim(init3), get("n_sexes", envir = env))))
+  }
+  if(!has("init_devs_pen_use")) {
+    pen_use <- array(0, dim = dim(get("ln_InitDevs", envir = env)))
+    pen_use[,,,1] <- 1
+    set("init_devs_pen_use", pen_use)
+  }
 
   # Selectivity penalty weights are now one specification per fleet. Older input
   # lists hold a single named vector shared by every fleet, so replicate it.
@@ -329,6 +376,7 @@ SPoRC_rtmb = function(pars, data) {
   dmr_nLL = array(0, dim = dim(logit_dmr_devs)) # Discard Mortality Deviation penalty
   Rec_nLL = array(0, dim = dim(ln_RecDevs)) # Recruitment penalty
   Init_Rec_nLL = array(0, dim = dim(ln_InitDevs)) # Initial Recruitment penalty
+  Init_Sex_nLL = array(0, dim = dim(ln_InitDevs)) # Initial age deviations, tie between sexes
   sel_nLL = 0 # Penalty for selectivity deviations
   fish_q_nLL = 0 # Prior/penalty for fishery q
   srv_q_nLL = 0 # Prior/penalty for survey q
@@ -412,6 +460,9 @@ SPoRC_rtmb = function(pars, data) {
                                  ln_seldevs = ln_fishsel_devs, use_fixed_sel = use_fixed_fish_sel,
                                  bin_devs = ln_fishsel_bin_devs, bin_dev_bins = fish_sel_bin_dev_bins,
                                  sel_norm_bins = fish_sel_norm_bins,
+                                 sex_par_offset = fishsel_sex_par_offset, sex_scale_offset = fishsel_sex_scale_offset, sex_apical_offset = fishsel_sex_apical_offset,
+                                 sex_scale = ln_fishsel_sex_scale,
+                                 nselbins = fish_sel_bicubic_nselbins,
                                  sel_input = fish_sel_input,
                                  bicubic_Wbin = fish_sel_bicubic_Wbin, bicubic_Wyr = fish_sel_bicubic_Wyr,
                                  bicubic_binnodes = fish_sel_bicubic_binnodes, bicubic_yrnodes = fish_sel_bicubic_yrnodes,
@@ -428,6 +479,9 @@ SPoRC_rtmb = function(pars, data) {
                                 ln_seldevs = ln_retsel_devs, use_fixed_sel = use_fixed_ret_sel,
                                 bin_devs = ln_retsel_bin_devs, bin_dev_bins = ret_sel_bin_dev_bins,
                                  sel_norm_bins = ret_sel_norm_bins,
+                                sex_par_offset = retsel_sex_par_offset, sex_scale_offset = retsel_sex_scale_offset, sex_apical_offset = retsel_sex_apical_offset,
+                                sex_scale = ln_retsel_sex_scale,
+                                nselbins = ret_sel_bicubic_nselbins,
                                 sel_input = ret_sel_input,
                                 bicubic_Wbin = ret_sel_bicubic_Wbin, bicubic_Wyr = ret_sel_bicubic_Wyr,
                                 bicubic_binnodes = ret_sel_bicubic_binnodes, bicubic_yrnodes = ret_sel_bicubic_yrnodes,
@@ -444,6 +498,9 @@ SPoRC_rtmb = function(pars, data) {
                                 ln_seldevs = ln_srvsel_devs, use_fixed_sel = use_fixed_srv_sel,
                                 bin_devs = ln_srvsel_bin_devs, bin_dev_bins = srv_sel_bin_dev_bins,
                                  sel_norm_bins = srv_sel_norm_bins,
+                                sex_par_offset = srvsel_sex_par_offset, sex_scale_offset = srvsel_sex_scale_offset, sex_apical_offset = srvsel_sex_apical_offset,
+                                sex_scale = ln_srvsel_sex_scale,
+                                nselbins = srv_sel_bicubic_nselbins,
                                 sel_input = srv_sel_input,
                                 bicubic_Wbin = srv_sel_bicubic_Wbin, bicubic_Wyr = srv_sel_bicubic_Wyr,
                                 bicubic_binnodes = srv_sel_bicubic_binnodes, bicubic_yrnodes = srv_sel_bicubic_yrnodes,
@@ -721,6 +778,25 @@ SPoRC_rtmb = function(pars, data) {
   PredCatch = tmp_fish_obs$PredCatch; PredDiscard = tmp_fish_obs$PredDiscard; PredFishIdx = tmp_fish_obs$PredFishIdx
 
   ## Survey Observation Model ------------------------------------------------
+  # A recruitment deviation index observes how anomalous a year class was, which
+  # is the deviation measured from the centre its own penalty asserts rather
+  # than the deviation as stored. Under the assessments that fit such an index
+  # the two differ by the bias correction, so this is what they report as the
+  # recruitment deviation. Built only when a fleet asks for it.
+  RecDev_anom = array(0, dim = dim(ln_RecDevs))
+  if(any(srv_idx_type == 2)) {
+    for(p in 1:n_pop) {
+      for(r in 1:n_regions) {
+        sigma_idx = ifelse(n_pop == 1 && rec_dd == 0, r, natal_region[p])
+        for(d in 1:n_est_rec_devs) {
+          sigmaR_d = if(d < sigmaR_switch) exp(ln_sigmaR[1,p,sigma_idx]) else exp(ln_sigmaR[2,p,sigma_idx])
+          RecDev_anom[p,r,d] = ln_RecDevs[p,r,d] + 0.5 * sigmaR_d^2 * bias_ramp[d]
+        } # end d loop
+      } # end r loop
+    } # end p loop
+  } # end if any fleet observes the recruitment deviations
+  RTMB::REPORT(RecDev_anom)
+
   tmp_srv_obs = get_survey_observation_model(
     n_pop = n_pop, n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_srv_fleets = n_srv_fleets, n_sexes = n_sexes,
     srv_q_blocks = srv_q_blocks, ln_srv_q = ln_srv_q, srv_q = srv_q, do_srv_q_cov = do_srv_q_cov, srv_q_cov = srv_q_cov, srv_q_coeff = srv_q_coeff,
@@ -729,7 +805,8 @@ SPoRC_rtmb = function(pars, data) {
     srv_idx_type = srv_idx_type, WAA_srv = WAA_srv, PredSrvIdx = PredSrvIdx,
     Mrate = Mrate, move_timing = move_timing, seasdur = seasdur,
     srv_idx_ages = srv_idx_ages, srv_q_type = srv_q_type,
-    ObsSrvIdx = ObsSrvIdx, UseSrvIdx = UseSrvIdx
+    ObsSrvIdx = ObsSrvIdx, UseSrvIdx = UseSrvIdx,
+    RecDev_anom = RecDev_anom
   )
 
   srv_q = tmp_srv_obs$srv_q; srv_sel = tmp_srv_obs$srv_sel
@@ -2267,8 +2344,11 @@ SPoRC_rtmb = function(pars, data) {
                                         do_rec_bias_ramp = do_rec_bias_ramp,
                                         map_ln_RecDevs = map_ln_RecDevs,
                                         RecDevs_pen_center = RecDevs_pen_center,
-                                        InitDevs_pen_center = InitDevs_pen_center)
+                                        InitDevs_pen_center = InitDevs_pen_center,
+                                        init_devs_pen_use = init_devs_pen_use,
+                                        Use_init_sex_pen = Use_init_sex_pen, ln_sigma_init_sex = ln_sigma_init_sex)
   Init_Rec_nLL = tmp_rec_pen$Init_Rec_nLL
+  Init_Sex_nLL = tmp_rec_pen$Init_Sex_nLL
   Rec_nLL = tmp_rec_pen$Rec_nLL
 
   ### Recruitment Level (Penalty) ---------------------------------------------
@@ -2360,6 +2440,7 @@ SPoRC_rtmb = function(pars, data) {
     (Wt_D * sum(dmr_nLL)) +                   # Discard mortality rate penalty
     sum(Wt_Rec * Rec_nLL) +                   # Recruitment penalty
     sum(Wt_Init_Rec * Init_Rec_nLL) +         # Initial age penalty
+    sum(Init_Sex_nLL) +                       # Initial age deviations, tie between sexes
     sum(Rec_level_nLL) +                      # Recruitment level penalty
     sum(SR_pen_nLL) +                         # Stock-recruit residual penalty (mean recruitment only)
     sel_nLL +                                  # Selectivity penalty
@@ -2468,6 +2549,7 @@ SPoRC_rtmb = function(pars, data) {
   RTMB::REPORT(dmr_nLL)
   RTMB::REPORT(Rec_nLL)
   RTMB::REPORT(Init_Rec_nLL)
+  RTMB::REPORT(Init_Sex_nLL)
   RTMB::REPORT(Rec_level_nLL)
   RTMB::REPORT(SR_pen_nLL)
   RTMB::REPORT(SR_pred)

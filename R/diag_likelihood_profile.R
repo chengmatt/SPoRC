@@ -31,7 +31,9 @@
 #'   value, plus \code{agg_nLL} which aggregates all components across their
 #'   respective dimensions. Components include:
 #'   \describe{
-#'     \item{Scalar penalties and priors}{\code{jnLL_df}, \code{rec_nLL_df},
+#'     \item{Scalar penalties and priors}{\code{jnLL_df}, \code{rec_nLL_df}
+#'       (the recruitment, initial age, initial-age sex tie, recruitment
+#'       level, and stock-recruit penalties together, each with its weight),
 #'       \code{M_nLL_df}, \code{sel_nLL_df}, \code{rec_prop_nLL_df},
 #'       \code{Movement_nLL_df}, \code{h_nLL_df}, \code{R0_nLL_df}, \code{TagRep_nLL_df},
 #'       \code{Fmort_nLL_df}, \code{fish_q_nLL_df}, \code{srv_q_nLL_df}.}
@@ -158,7 +160,8 @@ do_likelihood_profile <- function(data,
 
         # Store values and save (note, some need to save wt*nLL, because of how nlL are combined in the jnLL for the model)
         jnLL[j,1] <- report$jnLL
-        rec_nLL[j,1] <- sum(safe_extract(data, "Wt_Init_Rec") * report$Init_Rec_nLL, data$Wt_Rec * report$Rec_nLL)
+        rec_nLL[j,1] <- sum(safe_extract(data, "Wt_Init_Rec") * report$Init_Rec_nLL, data$Wt_Rec * report$Rec_nLL,
+                            safe_extract(report, "Init_Sex_nLL"), safe_extract(report, "Rec_level_nLL"), safe_extract(report, "SR_pen_nLL"))
         M_nLL[j,1] <- report$M_nLL
         sel_nLL[j,1] <- report$sel_nLL
         rec_prop_nLL[j,1] <- report$rec_prop_nLL
@@ -296,7 +299,8 @@ do_likelihood_profile <- function(data,
 
           # Store values and save
           result$jnLL <- report$jnLL
-          result$rec_nLL <- sum(safe_extract(data, "Wt_Init_Rec") * report$Init_Rec_nLL, data$Wt_Rec * report$Rec_nLL)
+          result$rec_nLL <- sum(safe_extract(data, "Wt_Init_Rec") * report$Init_Rec_nLL, data$Wt_Rec * report$Rec_nLL,
+                                safe_extract(report, "Init_Sex_nLL"), safe_extract(report, "Rec_level_nLL"), safe_extract(report, "SR_pen_nLL"))
           result$M_nLL <- report$M_nLL
           result$sel_nLL <- report$sel_nLL
           result$rec_prop_nLL <- report$rec_prop_nLL

@@ -64,8 +64,10 @@
 #' \item \code{1} Recruits move according to the movement matrix
 #' }
 #'
-#' @param ln_InitDevs Array (\code{n_pop x n_regions x (n_ages - 1)}) containing
-#'   log-scale deviations applied to ages 2 through \eqn{A}.
+#' @param ln_InitDevs Array (\code{n_pop x n_regions x (n_ages - 1) x n_sexes})
+#'   containing log-scale deviations applied to ages 2 through \eqn{A}. A 3-D
+#'   array without the sex dimension is accepted and broadcast across sexes as
+#'   one shared curve.
 #'
 #' @param dmr Numeric array (\code{n_regions x n_seas x n_fish_fleets})
 #'   giving discard mortality rate applied in each region, season, and fleet during
@@ -244,8 +246,10 @@
 #' \item \code{1} Recruits move according to the movement matrix
 #' }
 #'
-#' @param ln_InitDevs Array (\code{n_pop x n_regions x (n_ages - 1)}) containing
-#'   log-scale deviations applied to ages 2 through \eqn{A}.
+#' @param ln_InitDevs Array (\code{n_pop x n_regions x (n_ages - 1) x n_sexes})
+#'   containing log-scale deviations applied to ages 2 through \eqn{A}. A 3-D
+#'   array without the sex dimension is accepted and broadcast across sexes as
+#'   one shared curve.
 #'
 #' @param dmr Numeric array (\code{n_regions x n_seas x n_fish_fleets})
 #'   giving discard mortality rate applied in each region, season, and fleet during
@@ -388,6 +392,10 @@ Get_Init_NAA <- function(init_age_strc,
 ) {
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
+
+  # A 3-D deviation array (the layout before the sex dimension existed, still
+  # used by the simulation, which draws one shared curve) broadcasts across sexes
+  if(length(dim(ln_InitDevs)) == 3) ln_InitDevs = array(rep(ln_InitDevs, n_sexes), dim = c(dim(ln_InitDevs), n_sexes))
 
   # create containers
   Init_NAA = array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
@@ -723,8 +731,8 @@ Get_Init_NAA <- function(init_age_strc,
   for(p in 1:n_pop) {
     # Overwrite first age
     for(s in 1:n_sexes) NAA[p,,1,s] <- R0_r[p,] * sexratio[p,,s] * rec_seas_prop[p,1]
-    # Apply age deviations
-    for(r in 1:n_regions) for(s1 in 1:n_sexes) NAA[p,r,2:n_ages,s1] <- NAA[p,r,2:n_ages,s1] * exp(ln_InitDevs[p,r,])
+    # Apply age deviations; sexes mapped to one shared parameter carry identical values here
+    for(r in 1:n_regions) for(s1 in 1:n_sexes) NAA[p,r,2:n_ages,s1] <- NAA[p,r,2:n_ages,s1] * exp(ln_InitDevs[p,r,,s1])
   } # end p loop
 
   return(NAA)

@@ -238,6 +238,10 @@ get_fishery_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_fis
 #' @param fit_lengths Integer (0/1) switch for computing length compositions.
 #' @param SrvIAL Array \code{[pop, region, year, season, len, sex, srv_fleet]},
 #'   output container for survey index at length.
+#' @param RecDev_anom Array \code{[pop, region, deviation]} of recruitment
+#'   deviations measured from the centre their penalty asserts, or \code{NULL}
+#'   when no fleet observes them. Read only by fleets with
+#'   \code{srv_idx_type == 2}.
 #' @param srv_idx_type Integer vector \code{[srv_fleet]} selecting
 #'   abundance/biomass survey index type.
 #' @param WAA_srv Array \code{[pop, region, year, season, age, sex,
@@ -270,7 +274,8 @@ get_survey_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_srv_
                                           srv_idx_type, WAA_srv, PredSrvIdx,
                                           Mrate = NULL, move_timing = 0, seasdur = rep(1, n_seas),
                                           srv_idx_ages = NULL, srv_q_type = NULL,
-                                          ObsSrvIdx = NULL, UseSrvIdx = NULL) {
+                                          ObsSrvIdx = NULL, UseSrvIdx = NULL,
+                                          RecDev_anom = NULL) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -339,6 +344,15 @@ get_survey_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_srv_
             idx_ages <- array(srv_idx_ages[,sf], dim = c(n_ages, n_sexes))
             if(srv_idx_type[sf] == 0) PredSrvIdx[p,r,y,seas,sf] <- srv_q[r,y,sf] * sum(SrvIAA[p,r,y,seas,,,sf] * idx_ages) # abundance
             if(srv_idx_type[sf] == 1) PredSrvIdx[p,r,y,seas,sf] <- srv_q[r,y,sf] * sum(SrvIAA[p,r,y,seas,,,sf] * WAA_srv[p,r,y,seas,,,sf] * idx_ages) # biomass
+
+            # A year class strength index observes the recruitment deviation
+            # itself rather than any part of the population, so it reads the
+            # deviation and never touches numbers at age or selectivity. Years
+            # with no deviation to observe stay at zero and are expected to
+            # carry UseSrvIdx = 0.
+            if(srv_idx_type[sf] == 2 && !is.null(RecDev_anom) && y <= dim(RecDev_anom)[3]) {
+              PredSrvIdx[p,r,y,seas,sf] <- srv_q[r,y,sf] * RecDev_anom[p,r,y]
+            }
 
           } # end seas loop
 

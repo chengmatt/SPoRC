@@ -11,6 +11,7 @@
 
 utils::globalVariables(c(
   ".", "addtocomp", "addtofishidx", "addtosrvidx", "addtotag", "adjacency_collapsed",
+  "fishsel_sex_apical_offset", "retsel_sex_apical_offset", "srvsel_sex_apical_offset",
   "adjacency_mat", "Age", "age_pool", "AgeingError", "ages", "area_r", "bias_year", "bin", "Bin",
   "catch_units", "cohort", "comp_const_obs", "cont_tv_fish_sel", "cont_tv_fishsel_bin_devs",
   "cont_tv_ret_sel", "cont_tv_retsel_bin_devs", "cont_tv_srv_sel", "cont_tv_srvsel_bin_devs",
@@ -57,6 +58,10 @@ utils::globalVariables(c(
   "ln_FishLen_discard_pop_theta", "ln_FishLen_discard_pop_theta_agg", "ln_FishLen_discard_theta",
   "ln_FishLen_discard_theta_agg", "ln_FishLen_pop_theta", "ln_FishLen_pop_theta_agg",
   "ln_FishLen_theta", "ln_FishLen_theta_agg", "ln_fishsel_bin_devs", "ln_fishsel_devs",
+  "ln_fishsel_sex_scale", "fishsel_sex_par_offset", "fishsel_sex_scale_offset",
+  "ln_srvsel_sex_scale", "srvsel_sex_par_offset", "srvsel_sex_scale_offset", "init_devs_pen_use",
+  "ln_retsel_sex_scale", "retsel_sex_par_offset", "retsel_sex_scale_offset",
+  "Use_init_sex_pen", "ln_sigma_init_sex",
   "ln_global_R0", "ln_init_conv_tag_mort", "ln_InitDevs", "ln_M", "ln_RecDevs",
   "ln_retsel_bin_devs", "ln_retsel_devs", "ln_rinit", "ln_sigma_dmr", "ln_sigma_rec_level",
   "ln_sigmaC", "ln_sigmaC_pop", "ln_sigmaD", "ln_sigmaD_pop", "ln_sigmaF", "ln_sigmaR", "ln_srv_q",

@@ -94,8 +94,10 @@ containing seasonal movement probabilities.}
 \item \code{1} Recruits move according to the movement matrix
 }}
 
-\item{ln_InitDevs}{Array (\code{n_pop x n_regions x (n_ages - 1)}) containing
-log-scale deviations applied to ages 2 through \eqn{A}.}
+\item{ln_InitDevs}{Array (\code{n_pop x n_regions x (n_ages - 1) x n_sexes})
+containing log-scale deviations applied to ages 2 through \eqn{A}. A 3-D
+array without the sex dimension is accepted and broadcast across sexes as
+one shared curve.}
 }
 \description{
 Computes equilibrium initial numbers-at-age (NAA) for a structured population

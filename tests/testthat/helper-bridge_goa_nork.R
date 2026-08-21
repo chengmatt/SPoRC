@@ -160,7 +160,7 @@ seed_goa_nork_mle <- function(input_list, dat) {
 
   input_list$par$ln_global_R0[] <- mle$log_mean_R
   input_list$par$ln_RecDevs[1, 1, ] <- mle$log_Rt
-  input_list$par$ln_InitDevs[1, 1, ] <- mle$init_devs
+  input_list$par$ln_InitDevs[1, 1, , ] <- mle$init_devs
   input_list$par$ln_M[] <- log(mle$M)
   input_list$par$ln_F_mean[] <- mle$log_mean_F
   input_list$par$ln_F_devs[1, , 1, 1] <- mle$log_Ft

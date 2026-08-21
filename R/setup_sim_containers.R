@@ -45,7 +45,7 @@
 #'     \item{\code{$ln_RecDevs}}{Log-scale recruitment deviations
 #'       \code{[n_pop × n_regions × n_yrs × n_sims]}.}
 #'     \item{\code{$ln_InitDevs}}{Log-scale initial age-structure deviations
-#'       \code{[n_pop × n_regions × (n_ages - 1) × n_sims]}.}
+#'       \code{[n_pop × n_regions × (n_ages - 1) × n_sexes × n_sims]}.}
 #'   }
 #'
 #'   **Fishery containers**
@@ -146,7 +146,7 @@ Setup_Sim_Containers <- function(sim_list) {
   sim_list$Dynamic_SSB0 <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims))
   sim_list$Total_Biom <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims))
   sim_list$ln_RecDevs <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims))
-  sim_list$ln_InitDevs <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_ages - 1, sim_list$n_sims))
+  sim_list$ln_InitDevs <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_ages - 1, sim_list$n_sexes, sim_list$n_sims))
 
   # Fishery Containers
   # Aggregated (pooled across populations)

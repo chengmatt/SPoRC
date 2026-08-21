@@ -41,7 +41,7 @@ The input \code{sim_list} with the following zero-initialised arrays added:
     \item{\code{$ln_RecDevs}}{Log-scale recruitment deviations
       \code{[n_pop × n_regions × n_yrs × n_sims]}.}
     \item{\code{$ln_InitDevs}}{Log-scale initial age-structure deviations
-      \code{[n_pop × n_regions × (n_ages - 1) × n_sims]}.}
+      \code{[n_pop × n_regions × (n_ages - 1) × n_sexes × n_sims]}.}
   }
 
   **Fishery containers**

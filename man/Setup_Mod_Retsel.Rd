@@ -24,6 +24,7 @@ Setup_Mod_Retsel(
   retsel_pe_wt = rep(1, input_list$data$n_fish_fleets),
   retsel_rw_init_sigma = rep(5, input_list$data$n_fish_fleets),
   ret_sel_nonpar_est_bins,
+  ret_sel_sex_offset = rep("none", input_list$data$n_fish_fleets),
   ...
 )
 }
@@ -132,6 +133,14 @@ when the base parametric curve already describes the first year well.}
 
 \item{ret_sel_nonpar_est_bins}{Vector defining estimated bins for
 non-parametric selectivity.}
+
+\item{ret_sel_sex_offset}{Character vector of length \code{n_fish_fleets}
+linking the sexes of a fleet's retention curve: \code{"none"} (default),
+\code{"par"}, \code{"scale"}, or \code{"par_scale"}, with the same
+meaning as \code{fish_sel_sex_offset} in
+\code{\link{Setup_Mod_Fishsel_and_Q}}. Retention is a fraction, so a
+scale offset is only sensible where the scaled curve stays at or below
+one (a negative offset, the less-retained sex); nothing enforces that.}
 
 \item{...}{Optional starting values for selectivity parameters and deviations.}
 }

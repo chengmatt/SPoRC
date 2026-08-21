@@ -38,12 +38,15 @@ Setup_Mod_Rec(
   init_F_spec = "fix",
   sigmaR_spec = "est_all",
   InitDevs_spec = NULL,
+  InitDevs_sex_spec = "est_shared_s",
   RecDevs_spec = NULL,
   RecDevs_pen_center = "fixed",
   Use_rec_level_pen = 0,
   rec_level_pen_sigma = 1,
   rec_level_pen_center = "own_mean",
   rec_level_pen_yrs = NULL,
+  Use_init_sex_pen = 0,
+  init_sex_pen_sigma = 1,
   sr_penalty = "none",
   sr_pen_sigma = 1,
   sr_pen_yrs = NULL,
@@ -291,9 +294,18 @@ option descriptions.}
 
 \item{InitDevs_spec}{Character or \code{NULL}. Sharing structure for
 initial age-structure deviations \code{ln_InitDevs} \code{[n_pop x
-n_regions x (n_ages - 1)]}. Default \code{NULL} (estimate all
+n_regions x (n_ages - 1) x n_sexes]}. Default \code{NULL} (estimate all
 independently). See \code{\link{do_InitDevs_mapping}} for full option
 descriptions.}
+
+\item{InitDevs_sex_spec}{Character. \code{"est_shared_s"} (default)
+estimates one initial age deviation curve read by every sex, which is how
+the model has always behaved. \code{"est_all"} gives each sex its own
+curve, each penalized under the initial-age penalty, with an
+\code{"own_mean"} \code{InitDevs_pen_center} pooled across sexes so the
+sexes share one estimated level the way assessments with a common
+mean-log-initial and sex-specific deviations are written. Requires
+\code{n_sexes > 1}.}
 
 \item{RecDevs_spec}{Character or \code{NULL}. Sharing structure for annual
 recruitment deviations \code{ln_RecDevs} \code{[n_pop x n_regions x
@@ -329,6 +341,19 @@ penalized, or \code{"fixed"}, centring on zero.}
 
 \item{rec_level_pen_yrs}{Vector of years the penalty applies over, or
 \code{NULL} (default) for every year.}
+
+\item{Use_init_sex_pen}{Integer (0/1). Whether each later sex's initial age
+deviations are tied to the first sex's, through a Gaussian on their
+difference at every age the initial-age penalty covers. A statement about
+how different the sexes' initial age structures may be, separate from the
+initial-age penalty's statement about how variable each curve is.
+Requires \code{n_sexes > 1} and \code{InitDevs_sex_spec = "est_all"}
+(under \code{"est_shared_s"} the difference is identically zero). Enters
+the objective unweighted. Default \code{0}.}
+
+\item{init_sex_pen_sigma}{Numeric standard deviation of that tie. A sum of
+squares with weight \eqn{w} corresponds to \eqn{1/\sqrt{2w}}. Default
+\code{1}.}
 
 \item{sr_penalty}{Character. \code{"none"} (default), \code{"bh"} or
 \code{"ricker"}. Only valid with \code{rec_model = "mean_rec"}. Fits a
@@ -491,7 +516,7 @@ standard behaviour determined by \code{equil_init_age_strc} alone.}
 \code{rec_region_prop_pars} \code{[n_pop x (n_regions - 1)]},
 \code{rec_seas_prop_pars} \code{[n_pop x (n_seas - 1)]},
 \code{steepness_h} \code{[n_pop x n_regions]} (bounded logit scale),
-\code{ln_InitDevs} \code{[n_pop x n_regions x (n_ages - 1)]},
+\code{ln_InitDevs} \code{[n_pop x n_regions x (n_ages - 1) x n_sexes]} (a 3-D array is broadcast across sexes),
 \code{ln_RecDevs} \code{[n_pop x n_regions x n_years]},
 \code{ln_sigmaR} \code{[2 x n_pop x n_regions]},
 \code{sexratio_pars} \code{[n_pop x n_regions x n_blocks]}.

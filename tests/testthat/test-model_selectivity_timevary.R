@@ -66,7 +66,7 @@ test_that("the power form responds to its single deviation", {
 })
 
 test_that("the double normal applies a deviation to all six parameters", {
-  pars <- c(0, 0, log(5), log(5), -1, -1)
+  pars <- c(10, 0, log(5), log(5), -1, -1)
   devs <- c(0.1, 0.2, 0.3, -0.1, 0.25, -0.15)
   d <- make_devs(devs)
 
@@ -77,11 +77,13 @@ test_that("the double normal applies a deviation to all six parameters", {
   expect_true(all(is.finite(tv_sel)))
   expect_false(isTRUE(all.equal(tv_sel, base)))
 
-  # Selectivity at the first bin is set directly from the fifth parameter, so
-  # it is an exact check on that parameter's deviation.
+  # The ascending limb is rescaled so that it passes through the fifth
+  # parameter at the first bin, which makes this a check on that parameter's
+  # deviation up to the joiner's contribution there. The joiner is around
+  # 1e-8 this far below the peak, so the comparison is to that.
   expect_equal(unname(tv_sel[1]), stats::plogis(pars[5]) * exp(devs[5]),
-               tolerance = 1e-12)
-  expect_equal(unname(base[1]), stats::plogis(pars[5]), tolerance = 1e-12)
+               tolerance = 1e-6)
+  expect_equal(unname(base[1]), stats::plogis(pars[5]), tolerance = 1e-6)
 })
 
 test_that("the asymptotic logistic (b50/k) matches a hand calculation", {

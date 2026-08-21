@@ -36,6 +36,7 @@ Setup_Mod_Srvsel_and_Q(
   use_fixed_srv_sel = rep(0, input_list$data$n_srv_fleets),
   srv_sel_input = NULL,
   srv_sel_nonpar_est_bins = NULL,
+  srv_sel_sex_offset = rep("none", input_list$data$n_srv_fleets),
   ...
 )
 }
@@ -265,6 +266,19 @@ non-parametric survey selectivity. Structure is
 Each vector defines a group of bins that share a single estimated
 selectivity parameter. Indices must correspond to the bin dimension
 defined by the survey selectivity type (age or length).}
+
+\item{srv_sel_sex_offset}{Character vector of length \code{n_srv_fleets}
+linking the sexes of a fleet's selectivity, for models with
+\code{n_sexes > 1}. Options per fleet are \code{"none"} (default, each
+sex's stored parameters are its own), \code{"par"} (sexes beyond the first
+store additive offsets on the first sex's transformed-scale parameters),
+\code{"scale"} (sexes beyond the first carry an estimated constant
+log-scale offset on the whole realized curve), \code{"par_scale"} (both),
+\code{"apical"} (sexes beyond the first build their double normal's limbs
+up to an estimated height rather than to one, which moves the middle of
+the curve and leaves its two ends where their own parameters put them),
+and \code{"par_apical"} (both). See \code{fish_sel_sex_offset} in
+\code{\link{Setup_Mod_Fishsel_and_Q}} for the full description.}
 
 \item{...}{Optional named starting values for selectivity and catchability
 parameters.}

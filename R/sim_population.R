@@ -17,10 +17,13 @@
 #' Initial deviation sharing follows the same logic as the estimation model:
 #' deviations are drawn once per population when \code{n_pop > 1}, or once
 #' per region when \code{n_pop = 1} and \code{init_dd = 0} (local
-#' density-dependence). If \code{ln_InitDevs_input} exists in the simulation
-#' environment, those values are used directly rather than simulating new
-#' draws. Populations with \code{R0 = 0} receive zero deviations. The
-#' equilibrium solver uses \code{init_iter = n_ages × 5} iterations.
+#' density-dependence). Across sexes the draw follows
+#' \code{InitDevs_sex_spec}: \code{"est_shared_s"} (the default) draws one
+#' curve and gives it to every sex, \code{"est_all"} draws each sex its own.
+#' If \code{ln_InitDevs_input} exists in the simulation environment, those
+#' values are used directly rather than simulating new draws. Populations with
+#' \code{R0 = 0} receive zero deviations. The equilibrium solver uses
+#' \code{init_iter = n_ages × 5} iterations.
 #'
 #' @param y Integer. Year index (must be \code{1}).
 #' @param sim Integer. Simulation replicate index.
@@ -54,19 +57,25 @@ generate_initial_age_structure <- function(y,
         if(n_pop == 1 && init_dd == 0) tmp_ln_init_devs <- NULL
 
         if(exists("ln_InitDevs_input")) { # if exists in environment, then use input
-          tmp_ln_init_devs <- ln_InitDevs_input[p,r,,sim]
+          tmp_ln_init_devs <- array(ln_InitDevs_input[p,r,,,sim], dim = c(n_ages - 1, n_sexes))
         } else { # simulate new initial age devs otherwise
 
           # get init devs devs
           sigma_idx <- ifelse(n_pop == 1 && rec_dd == 0, r, natal_region[p])
-          # simulate initial age deviations
-          if(is.null(tmp_ln_init_devs)) tmp_ln_init_devs <- stats::rnorm(n_ages-1, -exp(ln_sigmaR[1,p,sigma_idx])^2/2, exp(ln_sigmaR[1,p,sigma_idx]))
+          # Draw the deviations. Under est_shared_s one curve is drawn and every
+          # sex reads it; under est_all each sex draws its own
+          init_sex_spec <- if(exists("InitDevs_sex_spec")) InitDevs_sex_spec else "est_shared_s"
+          if(is.null(tmp_ln_init_devs)) {
+            n_dev_draws <- if(init_sex_spec == "est_all") n_sexes else 1
+            init_draws <- stats::rnorm(n_dev_draws * (n_ages - 1), -exp(ln_sigmaR[1,p,sigma_idx])^2/2, exp(ln_sigmaR[1,p,sigma_idx]))
+            tmp_ln_init_devs <- array(init_draws, dim = c(n_ages - 1, n_sexes)) # recycled across sexes when one curve was drawn
+          }
         }
 
         # input age deviations
         if(R0[p,r,1,sim] != 0) {
-          sim_env$ln_InitDevs[p,r,,sim] <- tmp_ln_init_devs
-        } else sim_env$ln_InitDevs[p,r,,sim] <- 0
+          sim_env$ln_InitDevs[p,r,,,sim] <- tmp_ln_init_devs
+        } else sim_env$ln_InitDevs[p,r,,,sim] <- 0
 
       } # end r loop
     } # end p loop
@@ -93,7 +102,7 @@ generate_initial_age_structure <- function(y,
       sexratio = array(sexratio[,,1,,sim], dim = c(n_pop, n_regions, n_sexes)), # sex ratio in first year
       Movement = array(Movement[,,,1,,,,sim], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages, n_sexes)), # movement in first year
       do_recruits_move = do_recruits_move, # whether recruits move
-      ln_InitDevs = array(ln_InitDevs[,,,sim], dim = c(n_pop, n_regions, n_ages - 1)), # initial deviations
+      ln_InitDevs = array(ln_InitDevs[,,,,sim], dim = c(n_pop, n_regions, n_ages - 1, n_sexes)), # initial deviations
       # Movement / mortality sequencing must match the estimation model, otherwise the
       # operating model's initial age structure is built under a different set of dynamics
       Mrate = if(is.null(Mrate)) NULL else array(Mrate[,,,1,,,,sim], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages, n_sexes)), # rates in first year
@@ -121,7 +130,7 @@ generate_initial_age_structure <- function(y,
       sexratio = array(sexratio[,,1,,sim], dim = c(n_pop, n_regions, n_sexes)), # sex ratio in first year
       Movement = array(Movement[,,,1,,,,sim], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages, n_sexes)), # movement in first year
       do_recruits_move = do_recruits_move, # whether recruits move
-      ln_InitDevs = array(ln_InitDevs[,,,sim], dim = c(n_pop, n_regions, n_ages - 1)), # initial deviations
+      ln_InitDevs = array(ln_InitDevs[,,,,sim], dim = c(n_pop, n_regions, n_ages - 1, n_sexes)), # initial deviations
       Mrate = if(is.null(Mrate)) NULL else array(Mrate[,,,1,,,,sim], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages, n_sexes)), # rates in first year
       move_timing = move_timing
     )
@@ -242,6 +251,16 @@ generate_recruitment <- function(y,
         if(use_rec_input) {
           # recruitment input
           tmp_total_rec <- Rec_input[p,r,y,sim]
+
+          # keep the deviation container consistent with the recruitment being
+          # used, so an operating model conditioned on a fit reports the
+          # deviations it is running on rather than zeros. Anything reading them,
+          # a recruitment deviation index among them, then sees the same series
+          # the population does.
+          sigma_idx <- ifelse(n_pop == 1 && rec_dd == 0, r, natal_region[p])
+          if(tmp_det_rec[p,r] > 0 && tmp_total_rec > 0) {
+            sim_env$ln_RecDevs[p,r,y,sim] <- log(tmp_total_rec / tmp_det_rec[p,r]) + exp(ln_sigmaR[2,p,sigma_idx])^2/2
+          } else sim_env$ln_RecDevs[p,r,y,sim] <- 0
         } else {
 
           # get rec devs

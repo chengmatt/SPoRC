@@ -133,13 +133,13 @@ test_that("Get_Selex works", {
   # ── Model 4: double-normal dome ──────────────────────────────────────────────
 
   test_that("Model 4: values in [0,1]", {
-    pars4 <- c(0, 0, log(5), log(5), 0, 0)
+    pars4 <- c(10, 0, log(5), log(5), 0, 0)
     res <- selex(4, pars4)
     expect_true(is_in_01(res))
   })
 
   test_that("Model 4: dome-shaped (max not at bin 1 or last bin)", {
-    pars4 <- c(0, 0, log(5), log(5), -5, -5)  # low first/last bin selex
+    pars4 <- c(10, 0, log(5), log(5), -5, -5)  # peak at bin 10, low first/last bin selex
     res <- selex(4, pars4)
     peak <- which.max(res)
     expect_gt(peak, 1)
@@ -148,8 +148,8 @@ test_that("Get_Selex works", {
 
   test_that("Model 4: p5/p6 control first/last bin selectivity", {
     # p5 = plogis(pars[5]) sets selex[1]; p6 controls last bin via des.scaled
-    low_first  <- selex(4, c(0, 0, log(5), log(5), -5,  0))
-    high_first <- selex(4, c(0, 0, log(5), log(5),  5,  0))
+    low_first  <- selex(4, c(10, 0, log(5), log(5), -5,  0))
+    high_first <- selex(4, c(10, 0, log(5), log(5),  5,  0))
     expect_lt(low_first[1], high_first[1])
   })
 

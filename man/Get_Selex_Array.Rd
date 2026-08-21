@@ -29,7 +29,12 @@ Get_Selex_Array(
   n_fleets,
   bin_devs = NULL,
   bin_dev_bins = NULL,
-  sel_norm_bins = NULL
+  sel_norm_bins = NULL,
+  sex_par_offset = NULL,
+  sex_scale_offset = NULL,
+  sex_apical_offset = NULL,
+  sex_scale = NULL,
+  nselbins = NULL
 )
 }
 \arguments{
@@ -67,6 +72,43 @@ n_yrs x n_fleets} giving each block's true node counts
 (\code{Selex_Model == 8} only).}
 
 \item{n_pop, n_regions, n_yrs, n_proj_yrs_devs, n_seas, n_ages, n_lens, n_sexes, n_fleets}{Model dimensions.}
+
+\item{sex_par_offset}{Integer vector of length \code{n_fleets} (0/1), or
+\code{NULL} for all zero. For a fleet flagged 1, the stored fixed-effect
+selectivity parameters of every sex beyond the first are additive offsets
+on the first sex's stored parameters, evaluated as
+\code{pars[sex 1] + pars[sex s]} on the transformed (usually log) scale.
+Because most forms exponentiate their parameters, an offset of \eqn{\delta}
+makes the sex-\eqn{s} natural-scale parameter the first sex's value times
+\eqn{e^{\delta}}, which is the male-offset convention several existing
+assessments use. An offset held at zero reproduces sex-shared parameters.}
+
+\item{sex_scale_offset}{Integer vector of length \code{n_fleets} (0/1), or
+\code{NULL} for all zero. For a fleet flagged 1, the realized selectivity
+curve of every sex beyond the first is multiplied by
+\code{exp(sex_scale[region, block, sex, fleet])}, a constant log-scale
+offset on the whole curve. The scaled curve may exceed one, matching the
+convention of a male selectivity offset applied in log space. Not
+meaningful for forms whose scale is standardized away downstream
+(non-parametric forms and the semi-parametric time-varying structures);
+setup refuses those combinations.}
+
+\item{sex_apical_offset}{Integer vector of length \code{n_fleets} (0/1), or
+\code{NULL}. Where it is 1, every sex beyond the first builds its double
+normal up to \code{exp(sex_scale[region, block, sex, fleet])} rather than
+to one, leaving the first and last bins where their own parameters put
+them. Mutually exclusive with a scale offset on the same fleet.}
+
+\item{sex_scale}{Array \code{n_regions x n_blocks x n_sexes x n_fleets} of
+log-scale curve offsets read when \code{sex_scale_offset} or
+\code{sex_apical_offset} flags a fleet, or \code{NULL} when no fleet is
+flagged.}
+
+\item{nselbins}{Integer array \code{n_regions x n_yrs x n_fleets} naming
+each cell's plateau bin (\code{0} = none), or \code{NULL}. Bins beyond it
+are held at its value for the parametric forms (see \code{n_sel_bins} in
+\code{\link{Get_Selex}}); the bicubic form's own setup-built plateau is
+unaffected.}
 }
 \value{
 List with \code{sel}, the age-based array (\code{n_pop x n_regions x

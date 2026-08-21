@@ -36,7 +36,8 @@ get_survey_observation_model(
   srv_idx_ages = NULL,
   srv_q_type = NULL,
   ObsSrvIdx = NULL,
-  UseSrvIdx = NULL
+  UseSrvIdx = NULL,
+  RecDev_anom = NULL
 )
 }
 \arguments{
@@ -113,6 +114,11 @@ predicted, \code{2} solved analytically on the log scale as
 \item{ObsSrvIdx, UseSrvIdx}{Arrays \code{[region, year, season, srv_fleet]}
 of observed index values and their use flags. Required only when a fleet
 solves catchability analytically.}
+
+\item{RecDev_anom}{Array \code{[pop, region, deviation]} of recruitment
+deviations measured from the centre their penalty asserts, or \code{NULL}
+when no fleet observes them. Read only by fleets with
+\code{srv_idx_type == 2}.}
 }
 \value{
 List with elements \code{srv_q}, \code{srv_sel}, \code{SrvIAA},

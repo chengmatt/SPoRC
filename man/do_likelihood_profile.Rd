@@ -52,7 +52,9 @@ A named list containing one dataframe per likelihood component,
   value, plus \code{agg_nLL} which aggregates all components across their
   respective dimensions. Components include:
   \describe{
-    \item{Scalar penalties and priors}{\code{jnLL_df}, \code{rec_nLL_df},
+    \item{Scalar penalties and priors}{\code{jnLL_df}, \code{rec_nLL_df}
+      (the recruitment, initial age, initial-age sex tie, recruitment
+      level, and stock-recruit penalties together, each with its weight),
       \code{M_nLL_df}, \code{sel_nLL_df}, \code{rec_prop_nLL_df},
       \code{Movement_nLL_df}, \code{h_nLL_df}, \code{R0_nLL_df}, \code{TagRep_nLL_df},
       \code{Fmort_nLL_df}, \code{fish_q_nLL_df}, \code{srv_q_nLL_df}.}

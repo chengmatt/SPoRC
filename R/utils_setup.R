@@ -638,6 +638,155 @@ setup_sel_bin_devs <- function(input_list, bin_dev_bins, pe_model, prefix, n_fle
   return(input_list)
 }
 
+#' Sensible starting values for the double normal's peak
+#'
+#' The double normal carries the bin at which its plateau begins on the bin
+#' scale, so a parameter left at zero puts the peak at bin zero. Where the first
+#' bin is itself zero the ascending limb has no extent, its rescaling divides by
+#' zero, and the curve comes back as \code{NaN}. A starting value in the middle
+#' of the bin range is a curve, which is what a default should be.
+#'
+#' Only a sex whose slot holds a peak is seeded. Under a par sex offset the
+#' slots of every sex beyond the first hold offsets on the first sex's
+#' parameters, where zero is the right starting value and the middle of the bin
+#' range would shift that sex's curve by half the bin range.
+#'
+#' @param pars Array \code{[region, par, block, sex, fleet]} of fixed-effect
+#'   selectivity parameters.
+#' @param sel_model_arr Integer array \code{[region, year, fleet]} of functional
+#'   forms.
+#' @param bin_vec Numeric vector of the bins selectivity is evaluated over.
+#' @param sex_offset Character vector \code{[n_fleets]} of sex-offset
+#'   specifications, used to tell a peak from an offset.
+#'
+#' @return \code{pars} with the peak slot of every double normal fleet set to
+#'   the middle of the bin range, for the sexes that carry a peak there.
+#'
+#' @keywords internal
+seed_dbnrml_peak <- function(pars, sel_model_arr, bin_vec, sex_offset = NULL) {
+  if(!any(sel_model_arr == 4, na.rm = TRUE)) return(pars)
+  mid <- min(bin_vec) + 0.5 * (max(bin_vec) - min(bin_vec))
+  n_fleets <- dim(pars)[5]
+  if(is.null(sex_offset)) sex_offset <- rep("none", n_fleets)
+  for(f in seq_len(n_fleets)) {
+    if(!any(sel_model_arr[,,f] == 4, na.rm = TRUE)) next
+    # under a par offset only the first sex's slot is a peak; the rest are
+    # offsets on it and belong at zero
+    sexes <- if(sex_offset[f] %in% c("par", "par_scale", "par_apical")) 1 else seq_len(dim(pars)[4])
+    pars[,1,,sexes,f] <- mid
+  } # end f loop
+  pars
+} # end seed_dbnrml_peak
+
+#' Set up sex offsets on selectivity for one selectivity stream
+#'
+#' Parses the per-fleet sex-offset specification, stores the model flags, and
+#' creates the curve scale-offset parameters with their factor map. Under a
+#' \code{"par"} offset the sexes beyond the first store additive offsets on the
+#' first sex's transformed-scale fixed-effect parameters, which needs no new
+#' parameters, only the flag. Under a \code{"scale"} offset each sex beyond the
+#' first carries a constant log-scale offset on its whole realized curve,
+#' estimated per region and block.
+#'
+#' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}.
+#' @param sex_offset Character vector \code{[n_fleets]}: \code{"none"},
+#'   \code{"par"}, \code{"scale"}, \code{"par_scale"}, \code{"apical"}, or
+#'   \code{"par_apical"}.
+#' @param prefix One of \code{"fish"}, \code{"ret"}, or \code{"srv"}.
+#' @param n_fleets Integer. Number of fleets in this stream.
+#' @param fleet_label Character used in messages.
+#' @param sel_model_arr Integer array \code{[region, year, fleet]} of functional
+#'   forms, used to refuse a scale offset on forms whose standardization would
+#'   cancel it (non-parametric forms 5 and 9).
+#' @param cont_tv_mat Integer matrix \code{[region, fleet]} of continuous
+#'   time-varying structures, used to refuse a scale offset under the
+#'   semi-parametric structures (3-5) for the same reason.
+#' @param max_blks Integer. Maximum number of selectivity blocks, sizing the
+#'   scale parameter array.
+#' @param sel_blocks Integer array \code{[region, year, fleet]} of selectivity
+#'   block indices, so a scale offset is only estimated for the blocks a fleet
+#'   actually has (the array is padded to \code{max_blks}).
+#' @param fixed_spec Character vector \code{[n_fleets]} of fixed-parameter
+#'   sharing specifications, or \code{NULL}. A \code{"par"} offset reads the
+#'   later sexes' slots as offsets on the first sex's, so a specification that
+#'   shares those slots across sexes (\code{"est_shared_s"},
+#'   \code{"est_shared_r_s"}) would silently double the first sex's
+#'   parameters and is refused.
+#' @param starting_values Named list of user-supplied starting values.
+#'
+#' @return \code{input_list} with the flags, scale parameters, and map added.
+#'
+#' @keywords internal
+setup_sel_sex_offset <- function(input_list, sex_offset, prefix, n_fleets, fleet_label,
+                                 sel_model_arr, cont_tv_mat, max_blks, sel_blocks = NULL,
+                                 fixed_spec = NULL, starting_values = list()) {
+
+  scale_nm <- paste0("ln_", prefix, "sel_sex_scale")
+  par_flag_nm <- paste0(prefix, "sel_sex_par_offset")
+  scale_flag_nm <- paste0(prefix, "sel_sex_scale_offset")
+  apical_flag_nm <- paste0(prefix, "sel_sex_apical_offset")
+
+  if(length(sex_offset) != n_fleets) stop(prefix, "_sel_sex_offset is not length ", n_fleets)
+  valid <- c("none", "par", "scale", "par_scale", "apical", "par_apical")
+  if(!all(sex_offset %in% valid)) stop(prefix, "_sel_sex_offset must be one of ", paste(valid, collapse = ", "))
+  if(input_list$data$n_sexes == 1 && any(sex_offset != "none")) stop(prefix, "_sel_sex_offset links sexes, so it requires n_sexes > 1")
+
+  par_flag <- as.numeric(sex_offset %in% c("par", "par_scale", "par_apical"))
+  scale_flag <- as.numeric(sex_offset %in% c("scale", "par_scale"))
+  apical_flag <- as.numeric(sex_offset %in% c("apical", "par_apical"))
+
+  # the apical offset is the height the double normal builds its limbs up to,
+  # so it has no meaning for any other functional form
+  for(f in seq_len(n_fleets)) {
+    if(apical_flag[f] == 0) next
+    if(any(sel_model_arr[,,f] != 4)) stop(prefix, "_sel_sex_offset for ", fleet_label, " ", f, " requests an apical offset, which is the height the double normal builds its limbs up to. That fleet is not on the double normal. Use the scale offset, which multiplies whatever curve the form returns.")
+  } # end f loop
+
+  # Under a par offset the later sexes' stored slots ARE the offsets, so a
+  # specification sharing those slots across sexes would make them the first
+  # sex's parameters and double them.
+  if(!is.null(fixed_spec)) for(f in seq_len(n_fleets)) {
+    if(par_flag[f] == 1 && fixed_spec[f] %in% c("est_shared_s", "est_shared_r_s"))
+      stop(prefix, "_sel_sex_offset for ", fleet_label, " ", f, " requests a par offset, but its fixed-parameter specification shares the sex slots, which would read the first sex's parameters as their own offsets. Use est_all or est_shared_r with a par offset.")
+  } # end f loop
+
+  # A constant multiplier on the curve is cancelled by the mean standardization
+  # the non-parametric forms and semi-parametric structures apply afterwards.
+  for(f in seq_len(n_fleets)) {
+    if(scale_flag[f] == 0) next
+    if(any(sel_model_arr[,,f] %in% c(5, 9))) stop(prefix, "_sel_sex_offset for ", fleet_label, " ", f, " requests a scale offset, but its non-parametric form is mean-standardized, which cancels a constant multiplier. Use the par offset instead.")
+    if(any(cont_tv_mat[,f] %in% 3:5)) stop(prefix, "_sel_sex_offset for ", fleet_label, " ", f, " requests a scale offset, but its semi-parametric time variation is mean-standardized, which cancels a constant multiplier. Use the par offset instead.")
+  } # end f loop
+
+  if(scale_nm %in% names(starting_values)) input_list$par[[scale_nm]] <- starting_values[[scale_nm]]
+  else input_list$par[[scale_nm]] <- array(0, dim = c(input_list$data$n_regions, max_blks, input_list$data$n_sexes, n_fleets))
+
+  # The first sex is the reference and never carries a scale or apical offset, and a
+  # fleet only carries one for the blocks it actually has
+  map_scale <- array(NA_real_, dim = dim(input_list$par[[scale_nm]]))
+  counter <- 1
+  for(f in seq_len(n_fleets)) {
+    if(scale_flag[f] == 0 && apical_flag[f] == 0) next
+    for(r in seq_len(input_list$data$n_regions)) {
+      n_blks_rf <- if(is.null(sel_blocks)) max_blks else length(unique(sel_blocks[r,,f]))
+      for(b in seq_len(n_blks_rf)) {
+        for(s in seq_len(input_list$data$n_sexes)[-1]) {
+          map_scale[r, b, s, f] <- counter
+          counter <- counter + 1
+        } # end s loop
+      } # end b loop
+    } # end r loop
+  } # end f loop
+  input_list$map[[scale_nm]] <- factor(map_scale)
+
+  input_list$data[[par_flag_nm]] <- par_flag
+  input_list$data[[scale_flag_nm]] <- scale_flag
+  input_list$data[[apical_flag_nm]] <- apical_flag
+  for(f in seq_len(n_fleets)) if(sex_offset[f] != "none") collect_message("Selectivity sex offset for ", fleet_label, " ", f, " is: ", sex_offset[f])
+
+  return(input_list)
+}
+
 #' Assign a value to every region x year cell of one fleet belonging to a selectivity block
 #'
 #' Selectivity block arrays are \code{[region, year, fleet]}, so a single fleet's slice is a

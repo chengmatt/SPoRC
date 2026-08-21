@@ -723,7 +723,7 @@ Setup_Sim_Survey <- function(sim_list,
                              ) {
 
   # Convert character inputs to numeric codes
-  srv_idx_type <- convert_to_numeric(srv_idx_type, list(abd = 0, biom = 1))
+  srv_idx_type <- convert_to_numeric(srv_idx_type, list(abd = 0, biom = 1, recdev = 2))
   SrvIdx_LikeType <- convert_to_numeric(SrvIdx_LikeType, list(lognormal = 0, normal = 1, mvn = 2))
   comp_srvage_like <- convert_to_numeric(comp_srvage_like, list(Multinomial = 0,  `Dirichlet-Multinomial` = 1, `iid-Logistic-Normal` = 2, `1d-Logistic-Normal` = 3, `2d-Logistic-Normal` = 4))
   comp_srvlen_like <- convert_to_numeric(comp_srvlen_like, list(Multinomial = 0, `Dirichlet-Multinomial` = 1, `iid-Logistic-Normal` = 2, `1d-Logistic-Normal` = 3, `2d-Logistic-Normal` = 4))

@@ -1,0 +1,11 @@
+*** Parse: fm.tpl
+tpl2cpp fm || tpl2rem fm
+
+*** Compile: fm.cpp
+c++ -c -std=c++14 -O3 -D_USE_MATH_DEFINES -DUSE_ADMB_CONTRIBS -I. -I"/Users/matthewcheng/admb/build/admb/include" -I"/Users/matthewcheng/admb/build/admb/include/contrib" -ofm.obj fm.cpp
+
+*** Linking: fm.obj 
+c++ -std=c++14 -O3 -ofm fm.obj "/Users/matthewcheng/admb/build/admb/lib/libadmb-contrib-arm64-macos-clang.a"
+
+Successfully built executable.
+

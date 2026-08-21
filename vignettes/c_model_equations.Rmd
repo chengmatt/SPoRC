@@ -236,6 +236,14 @@ prior on log initial abundance directly. This matches the convention of
 assessments in which initial numbers-at-age are freely estimated
 parameters rather than deviations from an equilibrium.
 
+The initial age deviations carry a sex dimension governed by
+`InitDevs_sex_spec`. Under `"est_shared_s"` (the default) one age curve
+$\epsilon_{p,r,i}^{\text{Init}}$ is read by every sex.
+Under `"est_all"` each sex carries its own curve
+$\epsilon_{p,r,i,s}^{\text{Init}}$, which under the free option gives
+
+$$N_{p,r,y = 1,a \neq 1,s} = \psi_{p,r,y=1,s}\exp\left( \epsilon_{p,r,i,s}^{\text{Init}} \right)$$
+
 ### Recruitment Processes
 
 `SPoRC` holds recruitment either about a mean parameter or on a
@@ -960,6 +968,22 @@ The observed region-aggregated survey index is compared to the sum of predicted 
 across populations: $\sum_p \text{SrvIdx}_{p,r,y,\tau,sf}$. Population-specific
 survey indices are compared directly to $\text{SrvIdx}_{p,r,y,\tau,sf}$ without summation.
 
+A survey fleet can instead observe year class strength directly, with
+`srv_idx_type = "recdev"`. Such a fleet reads no part of the population:
+
+$$\begin{matrix}
+\text{SrvIdx}_{p,r,y,\tau,sf} = q_{r,y,sf}^{\text{Srv}}\left( \varepsilon^{R}_{p,r,y} - \mu^{R}_{y} \right) \\
+\end{matrix}$$
+
+where $\varepsilon^{R}_{p,r,y}$ is the recruitment deviation and $\mu^{R}_{y}$
+the centre its penalty asserts (see Recruitment). The deviation relative to that
+centre is the anomaly, how strong the year class was against what the model
+expected, which is what a pre-recruit survey or an environmental index measures.
+Under a bias ramp $\mu^{R}_{y} = -b_{y}\sigma_{R}^{2}/2$, so the anomaly and the
+deviation are not the same quantity. Deviations are signed, so such a fleet
+requires a normal index likelihood, and its selectivity, survey timing and
+weight-at-age are never read.
+
 As with the fishery index, the ages entering the survey index sum can be
 restricted per fleet via `srv_idx_ages`. Restricting a fleet to a single
 age turns it into an index of that age alone (e.g., an age-1 acoustic
@@ -1187,28 +1211,27 @@ selectivity form that can be specified includes a 6 parameter (denoted
 as ${\widehat{p}}_{1}$ through ${\widehat{p}}_{6}$) double normal
 functional form with the following transformations applied:
 
-$$\begin{matrix}
-p_{1} = \ \min(b) + \left\lbrack \max(b) - min(b) \right\rbrack \cdot \frac{1}{1 + \exp\left( {\widehat{p}}_{1} \right)} \\
-\end{matrix}$$
+$$p_{1} = \ {\widehat{p}}_{1}$$
 
-$$p_{2} = \ p_{1} + 1 + \frac{0.99 + max(b) - p_{1} - 1}{1 + exp({\widehat{p}}_{2})}$$
+$$p_{2} = \ p_{1} + w + \frac{0.99 \cdot max(b) - p_{1} - w}{1 + exp( - {\widehat{p}}_{2})}$$
 
 $$p_{3} = \exp\left( {\widehat{p}}_{3} \right),\ \ p_{4} = \exp\left( {\widehat{p}}_{4} \right)$$
 
-$$p_{5} = \frac{1}{1 + \exp\left( {\widehat{p}}_{5} \right)},\ \ p_{6} = \frac{1}{1 + \exp\left( {\widehat{p}}_{6} \right)}$$
+$$p_{5} = \frac{1}{1 + \exp\left( - {\widehat{p}}_{5} \right)},\ \ p_{6} = \frac{1}{1 + \exp\left( - {\widehat{p}}_{6} \right)}$$
 
-$p_{1}$ represents the beginning of the plateau, $p_{2}$ describes the
-width of the plateau, $p_{3}$ and $p_{4}$ are parameters controlling the
-ascending and descending widths, and $p_{5}$ and $p_{6}$ control the
-selectivity at the first and last bins. The double normal function is
-then defined with a series of functions:
+$p_{1}$ is the bin at which the plateau begins, carried on the bin scale rather
+than transformed so that it means a bin, $p_{2}$ the bin at which the plateau
+ends, $w$ the bin width, $p_{3}$ and $p_{4}$ control the ascending and
+descending widths, and $p_{5}$ and $p_{6}$ are the selectivity at the first and
+last bins. Writing $A$ for the height the two limbs are built up to and the
+plateau sits at, which is one unless a sex carries an apical offset (see Sex
+Offsets below), the curve is assembled from
 
 $$\begin{matrix}
-{asc}_{b} = \exp\left( - \frac{\left( b - p_{1} \right)^{2}}{p_{3}} \right) \\
-{ascscaled}_{b} = p_{5} + \left( 1 - p_{5} \right) \cdot {asc}_{b} \\
-{desc}_{b} = \exp\left( - \frac{\left( b - p_{2} \right)^{2}}{p_{4}} \right) \\
-stj = exp\left( - \frac{\left( 40 - p_{2} \right)^{2}}{p_{4}} \right) \\
-{descscaled}_{b} = 1 + \left( p_{6} - 1 \right) \cdot \frac{{desc}_{b} - 1}{stj - 1} \\
+{asc}_{b} = \exp\left( - \frac{\left( b - p_{1} \right)^{2}}{p_{3}} \right),\ \ {asc}_{min} = \exp\left( - \frac{\left( min(b) - p_{1} \right)^{2}}{p_{3}} \right) \\
+{ascscaled}_{b} = p_{5} + \left( A - p_{5} \right) \cdot \frac{{asc}_{b} - {asc}_{min}}{1 - {asc}_{min}} \\
+{desc}_{b} = \exp\left( - \frac{\left( b - p_{2} \right)^{2}}{p_{4}} \right),\ \ {desc}_{min} = \exp\left( - \frac{\left( max(b) - p_{2} \right)^{2}}{p_{4}} \right) \\
+{descscaled}_{b} = A + \left( p_{6} - A \right) \cdot \frac{{desc}_{b} - 1}{{desc}_{min} - 1} \\
 join1_{b} = \frac{1}{1 + \exp\left( - 20 \cdot \frac{b - p_{1}}{1 + \left| b - p_{1} \right|} \right)} \\
 join2_{b} = \frac{1}{1 + \exp\left( - 20 \cdot \frac{b - p_{2}}{1 + \left| b - p_{2} \right|} \right)} \\
 \end{matrix}$$
@@ -1216,8 +1239,15 @@ join2_{b} = \frac{1}{1 + \exp\left( - 20 \cdot \frac{b - p_{2}}{1 + \left| b - p
 and are joined together as:
 
 $$\begin{matrix}
-{Sel}_{b} = {asc}_{b} \cdot \left( 1 - join1_{b} \right) + join1_{b} \cdot \left\lbrack \left( 1 - join2_{b} \right) + {descscaled}_{b} \cdot join2_{b} \right\rbrack \\
+{Sel}_{b} = {ascscaled}_{b} \cdot \left( 1 - join1_{b} \right) + join1_{b} \cdot \left\lbrack A \cdot \left( 1 - join2_{b} \right) + {descscaled}_{b} \cdot join2_{b} \right\rbrack \\
 \end{matrix}$$
+
+Each limb is rescaled by its own value at the bin its endpoint parameter refers
+to, which is what makes those parameters mean what they are named: dividing the
+ascending limb by ${asc}_{min}$ puts ${Sel}$ at exactly $p_{5}$ in the first
+bin, and dividing the descending limb by ${desc}_{min}$ puts it at exactly
+$p_{6}$ in the last. Both anchors are the model's own first and last bin, so
+they follow the bin range rather than sitting at a fixed value.
 
 The double normal functional form is incredibly flexible and is able to
 reduce to both flat-topped and dome-shaped selectivity forms, depending
@@ -1293,6 +1323,97 @@ $$\begin{matrix}
 where $\alpha$ is estimated on the logit scale, allowing the asymptotic selectivity
 to be less than 1. These forms are useful for fleets where full vulnerability
 is not achieved even at the largest observed sizes or ages.
+
+#### Selectivity Plateau
+
+Any functional form can additionally carry a plateau (the `_NSelBins_<n>`
+suffix on the model string): bins beyond a chosen bin $n^{\text{sel}}$ are
+held at that bin's computed value rather than evaluated through the form,
+
+$${Sel}_{b} = {Sel}_{n^{\text{sel}}} \quad \text{for } b > n^{\text{sel}}$$
+
+applied after the form and its parameter deviations. This is the
+plateau convention many existing assessments use, and it is part of the
+model rather than a display choice whenever the curve has not saturated
+by $n^{\text{sel}}$.
+
+#### Sex Offsets
+
+For models with more than one sex, a fleet's sexes can be linked through
+offsets rather than estimated independently or forced identical
+(`fish_sel_sex_offset` / `ret_sel_sex_offset` / `srv_sel_sex_offset`, for
+total fishery, retention, and survey selectivity respectively). Under a parameter offset
+(`"par"`), the stored parameter slots of every sex beyond the first hold
+additive offsets on the first sex's transformed-scale parameters,
+
+$$\theta_{s} = \theta_{1} + \delta_{s}$$
+
+so that for log-scale parameters the second sex's natural value is the
+first sex's times $e^{\delta_{s}}$ (e.g.,
+$k_{M} = k_{F}e^{\delta_{k}}$, $b_{M}^{50} = b_{F}^{50}e^{\delta_{50}}$).
+Offsets fixed at zero reproduce sex-shared parameters. Under a scale
+offset (`"scale"`), each sex keeps its own parameters and the realized
+curve of every sex beyond the first is multiplied by a constant,
+
+$${Sel}_{b,s} = {Sel}_{b,s}^{\text{form}}\,e^{\gamma_{s}}$$
+
+with $\gamma_{s}$ estimated per region, block, and sex; the scaled curve
+may exceed one, matching the convention of a log-scale male selectivity
+offset applied to the whole curve. Because a constant multiplier is
+cancelled by mean standardization, the scale offset is refused for the
+non-parametric forms and the semi-parametric time-varying structures.
+
+Under an apical offset (`"apical"`), available for the double normal alone, the
+same estimated constant
+
+$$A_{s} = e^{\gamma_{s}}$$
+
+is used in a different place. Rather than multiplying the finished curve, it
+replaces the one that the double normal's limbs are built up to. Writing the
+two side by side for a sex $s$ beyond the first, with ${asc}_{b}$,
+${desc}_{b}$, ${asc}_{min}$, ${desc}_{min}$, $join1_{b}$ and $join2_{b}$
+exactly as defined for the double normal above, a scale offset evaluates the
+form with its plateau at one and then multiplies,
+
+$$\begin{matrix}
+{ascscaled}_{b} = p_{5} + \left( 1 - p_{5} \right)\dfrac{{asc}_{b} - {asc}_{min}}{1 - {asc}_{min}},\ \ \ 
+{descscaled}_{b} = 1 + \left( p_{6} - 1 \right)\dfrac{{desc}_{b} - 1}{{desc}_{min} - 1} \\
+\\
+{Sel}_{b,s} = \underbrace{e^{\gamma_{s}}}_{\text{outside}} \cdot \left\lbrack {ascscaled}_{b}\left( 1 - join1_{b} \right) + join1_{b}\left( 1 \cdot \left( 1 - join2_{b} \right) + {descscaled}_{b}\,join2_{b} \right) \right\rbrack \\
+\end{matrix}$$
+
+while an apical offset puts $A_{s}$ everywhere that one appeared,
+
+$$\begin{matrix}
+{ascscaled}_{b,s} = p_{5} + \left( \underbrace{A_{s}}_{\text{inside}} - p_{5} \right)\dfrac{{asc}_{b} - {asc}_{min}}{1 - {asc}_{min}},\ \ \ 
+{descscaled}_{b,s} = \underbrace{A_{s}}_{\text{inside}} + \left( p_{6} - A_{s} \right)\dfrac{{desc}_{b} - 1}{{desc}_{min} - 1} \\
+\\
+{Sel}_{b,s} = {ascscaled}_{b,s}\left( 1 - join1_{b} \right) + join1_{b}\left( \underbrace{A_{s}}_{\text{inside}} \cdot \left( 1 - join2_{b} \right) + {descscaled}_{b,s}\,join2_{b} \right) \\
+\end{matrix}$$
+
+and the curve is never multiplied by anything afterwards. The consequence is at
+the two ends. Both arrangements put the plateau at $e^{\gamma_{s}}$, but a
+scale offset carries $p_{5}$ and $p_{6}$ down with it while an apical offset
+leaves them alone:
+
+| | first bin | plateau | last bin |
+|---|---|---|---|
+| no offset | $p_{5}$ | $1$ | $p_{6}$ |
+| scale offset | $e^{\gamma_{s}}p_{5}$ | $e^{\gamma_{s}}$ | $e^{\gamma_{s}}p_{6}$ |
+| apical offset | $p_{5}$ | $A_{s} = e^{\gamma_{s}}$ | $p_{6}$ |
+
+Either can be made to draw any single curve, by rescaling $p_{5}$ and $p_{6}$
+by $e^{\gamma_{s}}$; they differ in how the curve responds when $\gamma_{s}$
+moves, which is what a gradient sees.
+
+The apical offset is restricted to the double normal because only there is it a
+distinct operation. For a form that peaks at one with no separate parameters at
+its ends, scaling and lowering the peak are the same thing: the ascending
+logistic scaled by $A_{s}$ is the asymptotic logistic with asymptote $A_{s}$
+(forms 6 and 7 above), and the gamma dome is already zero at both ends.
+
+Time-varying deviations are unaffected by any of these options and still apply
+per sex to the effective parameters.
 
 #### Bicubic Spline Selectivity
 
@@ -2163,6 +2284,21 @@ assessments whose deviation vectors are constrained to sum to zero. The penalty
 carries its own weight $\lambda^{\text{InitRec}}$ (`Wt_Init_Rec`),
 separate from the recruitment deviation weight, since the two penalties
 are dimensioned differently.
+
+When the deviations are sex-specific (`InitDevs_sex_spec = "est_all"`),
+each sex's curve is penalized, while sexes sharing one curve are
+penalized once (the shared parameter is not invoked). The
+`"own_mean"` centre is then pooled over every penalized cell across ages
+and sexes, so the sexes share a single estimated level.
+
+Sex-specific curves can additionally be compared to one another
+(`Use_init_sex_pen`), a separate statement about how far apart the sexes'
+initial age structures may sit rather than about how variable each is:
+
+$$\ell\left( \epsilon_{p,r,i,s}^{\text{Init}} - \epsilon_{p,r,i,1}^{\text{Init}} \right) = \frac{1}{\sqrt{2\pi\sigma_{\text{InitSex}}^{2}}\,}\exp\left( - \frac{\left( \epsilon_{p,r,i,s}^{\text{Init}} - \epsilon_{p,r,i,1}^{\text{Init}} \right)^{2}}{2\sigma_{\text{InitSex}}^{2}} \right), \quad s > 1$$
+
+over the same ages $i$ the initial-age penalty covers, entering the
+objective unweighted with $\sigma_{\text{InitSex}}$ held as data rather than a parameter.
 
 #### Recruitment Deviations
 

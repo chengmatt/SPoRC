@@ -222,6 +222,18 @@
 #'   Each vector defines a group of bins that share a single estimated
 #'   selectivity parameter. Indices must correspond to the bin dimension
 #'   defined by the survey selectivity type (age or length).
+#' @param srv_sel_sex_offset Character vector of length \code{n_srv_fleets}
+#'   linking the sexes of a fleet's selectivity, for models with
+#'   \code{n_sexes > 1}. Options per fleet are \code{"none"} (default, each
+#'   sex's stored parameters are its own), \code{"par"} (sexes beyond the first
+#'   store additive offsets on the first sex's transformed-scale parameters),
+#'   \code{"scale"} (sexes beyond the first carry an estimated constant
+#'   log-scale offset on the whole realized curve), \code{"par_scale"} (both),
+#'   \code{"apical"} (sexes beyond the first build their double normal's limbs
+#'   up to an estimated height rather than to one, which moves the middle of
+#'   the curve and leaves its two ends where their own parameters put them),
+#'   and \code{"par_apical"} (both). See \code{fish_sel_sex_offset} in
+#'   \code{\link{Setup_Mod_Fishsel_and_Q}} for the full description.
 #'
 #' @return The input \code{input_list} with selectivity and catchability
 #'   configuration stored in \code{$data} (\code{cont_tv_srv_sel}, \code{srv_sel_blocks},
@@ -266,6 +278,7 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
                                    use_fixed_srv_sel = rep(0, input_list$data$n_srv_fleets),
                                    srv_sel_input = NULL,
                                    srv_sel_nonpar_est_bins = NULL,
+                                   srv_sel_sex_offset = rep("none", input_list$data$n_srv_fleets),
                                    ...
                                    ) {
 
@@ -426,10 +439,16 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
       if(length(selstyr_pos) == 1 && (is.na(tmp_selstyr) || !tmp_selstyr %in% input_list$data$years)) stop("bicubic srv_sel_model SelStyr must be a calendar year within the modeled years")
       if(length(nselbins_pos) == 1 && (is.na(tmp_nselbins) || tmp_nselbins < 2 || tmp_nselbins > bins)) stop("bicubic srv_sel_model NSelBins must be an integer between 2 and the total number of bins (ages or lengths)")
     } else {
-      # get fleet index
-      tmp_fleet <- if(length(tmp_sel_form_vec) == 3) as.numeric(tmp_sel_form_vec[3]) else as.numeric(tmp_sel_form_vec[5]) # fleet index changes if block is included in character vector
-      # get block index
-      tmp_block <- if(length(tmp_sel_form_vec) == 5) as.numeric(tmp_sel_form_vec[3]) else NULL
+      # optional _NSelBins_<n> plateau suffix is joined with  _Block_<b> in either order for any parametric form
+      fleet_pos <- which(tmp_sel_form_vec == "Fleet")
+      block_pos <- which(tmp_sel_form_vec == "Block")
+      nselbins_pos <- which(tmp_sel_form_vec == "NSelBins")
+      if(length(fleet_pos) != 1) stop("srv_sel_model entries must name their fleet exactly once, as _Fleet_<f>")
+      tmp_fleet <- suppressWarnings(as.numeric(tmp_sel_form_vec[fleet_pos + 1]))
+      tmp_block <- if(length(block_pos) == 1) suppressWarnings(as.numeric(tmp_sel_form_vec[block_pos + 1])) else NULL
+      tmp_nselbins <- if(length(nselbins_pos) == 1) suppressWarnings(as.numeric(tmp_sel_form_vec[nselbins_pos + 1])) else 0
+      if(length(nselbins_pos) == 1 && (is.na(tmp_nselbins) || tmp_nselbins < 2 || tmp_nselbins > bins)) stop("srv_sel_model NSelBins must be an integer between 2 and the total number of bins (ages or lengths)")
+      if(length(nselbins_pos) == 1 && sel_form %in% c("nonpar", "nonparlog")) stop("srv_sel_model NSelBins is for the parametric forms; a non-parametric form would keep estimating the bins it then overwrites. Group those bins through srv_sel_nonpar_est_bins instead.")
     }
 
     # validate options
@@ -443,16 +462,16 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
         srv_sel_bicubic_binnodes_arr[,,tmp_fleet] <- tmp_n_bin_nodes
         srv_sel_bicubic_yrnodes_arr[,,tmp_fleet] <- tmp_n_yr_nodes
         srv_sel_bicubic_selstyr_arr[,,tmp_fleet] <- tmp_selstyr
-        srv_sel_bicubic_nselbins_arr[,,tmp_fleet] <- tmp_nselbins
       }
+      srv_sel_bicubic_nselbins_arr[,,tmp_fleet] <- tmp_nselbins # plateau bin; read by every form (0 = none)
     } else {
       srv_sel_model_arr <- assign_sel_block(srv_sel_model_arr, srv_sel_blocks_arr, tmp_fleet, tmp_block, sel_map$num[which(sel_map$sel == sel_form)])
       if(sel_form == "bicubic") {
         srv_sel_bicubic_binnodes_arr <- assign_sel_block(srv_sel_bicubic_binnodes_arr, srv_sel_blocks_arr, tmp_fleet, tmp_block, tmp_n_bin_nodes)
         srv_sel_bicubic_yrnodes_arr <- assign_sel_block(srv_sel_bicubic_yrnodes_arr, srv_sel_blocks_arr, tmp_fleet, tmp_block, tmp_n_yr_nodes)
         srv_sel_bicubic_selstyr_arr <- assign_sel_block(srv_sel_bicubic_selstyr_arr, srv_sel_blocks_arr, tmp_fleet, tmp_block, tmp_selstyr)
-        srv_sel_bicubic_nselbins_arr <- assign_sel_block(srv_sel_bicubic_nselbins_arr, srv_sel_blocks_arr, tmp_fleet, tmp_block, tmp_nselbins)
       }
+      srv_sel_bicubic_nselbins_arr <- assign_sel_block(srv_sel_bicubic_nselbins_arr, srv_sel_blocks_arr, tmp_fleet, tmp_block, tmp_nselbins)
     }
     rm(tmp_block) # remove tmp block to start next loop
     collect_message("Survey selectivity functional form specified as:", sel_form, " for survey fleet ", tmp_fleet)
@@ -691,6 +710,14 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
   if("srv_fixed_sel_pars" %in% names(starting_values)) input_list$par$srv_fixed_sel_pars <- starting_values$srv_fixed_sel_pars
   else input_list$par$srv_fixed_sel_pars <- array(0, dim = c(input_list$data$n_regions, max_srvsel_pars, max_srvsel_blks, input_list$data$n_sexes, input_list$data$n_srv_fleets))
 
+  # a double normal carries its peak on the bin scale, so a default of zero
+  # would put it at bin zero, where the ascending limb has no extent
+  if(!"srv_fixed_sel_pars" %in% names(starting_values)) {
+    input_list$par$srv_fixed_sel_pars <- seed_dbnrml_peak(input_list$par$srv_fixed_sel_pars, srv_sel_model_arr,
+                                          if(srv_selex_type == 'length') input_list$data$lens else input_list$data$ages,
+                                          srv_sel_sex_offset)
+  }
+
   # Survey catchability
   max_srvq_blks <- max(apply(input_list$data$srv_q_blocks, c(1,3), FUN = function(x) length(unique(x)))) # figure out maximum number of survey catchability blocks for a given reigon and fleet
   if("ln_srv_q" %in% names(starting_values)) input_list$par$ln_srv_q <- starting_values$ln_srv_q
@@ -703,6 +730,13 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
   # Survey selectivity deviations
   if("ln_srvsel_devs" %in% names(starting_values)) input_list$par$ln_srvsel_devs <- starting_values$ln_srvsel_devs
   else input_list$par$ln_srvsel_devs <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years) + input_list$data$n_proj_yrs_devs, bins, input_list$data$n_sexes, input_list$data$n_srv_fleets))
+
+  # Sex offsets on selectivity (parameter offsets and/or a curve scale offset)
+  input_list <- setup_sel_sex_offset(input_list, srv_sel_sex_offset, prefix = "srv",
+                                     n_fleets = input_list$data$n_srv_fleets, fleet_label = "survey fleet",
+                                     sel_model_arr = input_list$data$srv_sel_model, cont_tv_mat = cont_tv_srv_sel_mat,
+                                     max_blks = max_srvsel_blks, sel_blocks = input_list$data$srv_sel_blocks,
+                                     fixed_spec = srv_fixed_sel_pars_spec, starting_values = starting_values)
 
   # Survey catchability covariate effects
   if("srv_q_coeff" %in% names(starting_values)) input_list$par$srv_q_coeff <- starting_values$srv_q_coeff

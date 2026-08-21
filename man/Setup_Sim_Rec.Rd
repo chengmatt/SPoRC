@@ -32,7 +32,8 @@ Setup_Sim_Rec(
   t_spawn = 0,
   rec_lag = 1,
   Rec_input = NULL,
-  ln_InitDevs_input = NULL
+  ln_InitDevs_input = NULL,
+  InitDevs_sex_spec = "est_shared_s"
 )
 }
 \arguments{
@@ -148,10 +149,24 @@ with replacement. Ignored for other recruitment options. Default
 \code{NULL}.}
 
 \item{ln_InitDevs_input}{Optional log-scale initial age-structure deviations
-array \code{[n_pop x n_regions x (n_ages - 1) x n_sims]}. The
-\code{n_ages - 1} dimension excludes the reference age used during
-initialisation. If \code{NULL} (default), deviations are initialised to
-zero.}
+array, either \code{[n_pop x n_regions x (n_ages - 1) x n_sims]} (one
+shared curve, broadcast across sexes) or
+\code{[n_pop x n_regions x (n_ages - 1) x n_sexes x n_sims]} (one curve
+per sex). The \code{n_ages - 1} dimension excludes the reference age used
+during initialisation. If \code{NULL} (default), deviations are drawn as
+one shared curve per population and region.}
+
+\item{InitDevs_sex_spec}{Character. How initial age deviations are drawn
+across sexes when they are not supplied through
+\code{ln_InitDevs_input}. \code{"est_shared_s"} (default) draws one curve
+per population or region and gives it to every sex.
+\code{"est_all"} draws each sex its own. Departures from the initial
+equilibrium reflect the exploitation the stock had already seen as well as
+year-class strength, and with sex-specific selectivity or natural
+mortality the two sexes need not have departed by the same amount, which is
+the case \code{"est_all"} covers. The names match
+\code{InitDevs_sex_spec} in \code{\link{Setup_Mod_Rec}}, so an operating
+model and the estimation model fitted to it can be set the same way.}
 }
 \value{
 The input \code{sim_list} with recruitment-related fields appended:

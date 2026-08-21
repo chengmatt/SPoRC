@@ -4,7 +4,13 @@
 \alias{do_InitDevs_mapping}
 \title{Map initial age-structure deviation parameters}
 \usage{
-do_InitDevs_mapping(input_list, InitDevs_spec, rec_dd, init_age_devs_shared)
+do_InitDevs_mapping(
+  input_list,
+  InitDevs_spec,
+  rec_dd,
+  init_age_devs_shared,
+  InitDevs_sex_spec = "est_shared_s"
+)
 }
 \arguments{
 \item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
@@ -56,6 +62,13 @@ share the last estimated deviation, e.g.
 \code{c(1:42, rep(42, 9))} for a 52-age model with 43 data ages, giving
 42 free parameters. When \code{NULL} (default), age sharing follows the
 standard behaviour determined by \code{equil_init_age_strc} alone.}
+
+\item{InitDevs_sex_spec}{Character. \code{"est_shared_s"} (default) maps
+every sex onto one shared age curve (the pre-sex-dimension behaviour,
+penalized once); \code{"est_all"} offsets the factor levels per sex so
+each sex carries its own curve, each penalized. Also builds
+\code{data$init_devs_pen_use}, which flags exactly one penalized copy of
+every estimated parameter.}
 }
 \value{
 The input \code{input_list} with \code{$map$ln_InitDevs} set to a
@@ -69,9 +82,11 @@ The input \code{input_list} with \code{$map$ln_InitDevs} set to a
 Internal helper called by \code{\link{Setup_Mod_Rec}} to construct
 the TMB/RTMB factor map for \code{ln_InitDevs}, the log-scale deviations
 from the equilibrium initial age structure. The \code{ln_InitDevs} array has
-dimensions \code{[n_pop x n_regions x (n_ages - 1)]}, where the age
+dimensions \code{[n_pop x n_regions x (n_ages - 1) x n_sexes]}, where the age
 dimension excludes the plus group by default (see \code{equil_init_age_strc}
-below).
+below). The population, region, and age structure is resolved on a
+single-sex slice and then expanded across sexes per
+\code{InitDevs_sex_spec}.
 }
 \details{
 Mapping behaviour is governed by three interacting considerations:

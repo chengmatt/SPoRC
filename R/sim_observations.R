@@ -1173,7 +1173,8 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
 #' the mid-survey abundance formula \eqn{N \cdot s \cdot e^{-t_{\text{srv}} Z}},
 #' derives index-at-length (\code{SrvIAL}) when a size-age transition matrix
 #' is available, generates observed survey indices (with lognormal error) as
-#' abundance or biomass depending on \code{srv_idx_type}, and draws age and
+#' abundance, biomass, or the recruitment deviations depending on
+#' \code{srv_idx_type}, and draws age and
 #' length composition samples via \code{\link{simulate_comps}}.
 #'
 #' @param y Integer. Year index.
@@ -1238,6 +1239,10 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
           # Survey Index - Regional
           if(srv_idx_type[sf] == 0) sim_env$TrueSrvIdx[r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * sum(SrvIAA[,r,y,seas,,,sf,sim]) # True Survey Index (abundance)
           if(srv_idx_type[sf] == 1) sim_env$TrueSrvIdx[r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * sum(SrvIAA[,r,y,seas,,,sf,sim] * WAA_srv[,r,y,seas,,,sf,sim]) # True Survey Index (biomass)
+          # A year class strength index reads the recruitment deviation rather
+          # than the population. The operating model draws that deviation about
+          # zero and carries the bias correction in the recruitment itself
+          if(srv_idx_type[sf] == 2) sim_env$TrueSrvIdx[r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * sum(ln_RecDevs[,r,y,sim]) # True Survey Index (recruitment deviations)
 
           # Observed survey index. An mvn fleet takes its scale from the covariance's
           # factor decomposition rather than the SE array, with one factor draw shared

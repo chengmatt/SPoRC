@@ -834,9 +834,21 @@ get_selex_fixed_penalty <- function(selex_penalty, fixed_sel_pars) {
 #' @param equil_init_age_strc Integer switch selecting which initial age
 #'   deviations are penalized (\code{1}: all but plus group, \code{2}: all,
 #'   \code{3}: shared subset).
-#' @param ln_InitDevs Array \code{[pop, region, age]} of initial age deviations.
+#' @param ln_InitDevs Array \code{[pop, region, age, sex]} of initial age
+#'   deviations. A 3-D \code{[pop, region, age]} array (the layout before the
+#'   sex dimension existed) is accepted and treated as one shared curve.
 #' @param init_age_devs_shared Integer vector of shared initial age deviation
 #'   indices (used when \code{equil_init_age_strc == 3}).
+#' @param init_devs_pen_use Array of 0/1 matching \code{ln_InitDevs}, naming
+#'   which cells are penalized. Sexes sharing one parameter keep only the first
+#'   sex's copy flagged so the shared parameter is not penalized twice;
+#'   sex-specific deviations flag every sex. \code{NULL} penalizes only the
+#'   first sex's slice, which is the pre-sex-dimension behaviour.
+#' @param Use_init_sex_pen Integer (0/1). Whether each later sex's initial
+#'   age deviations are tied to the first sex's through a Gaussian on their
+#'   difference at every penalized age. Only meaningful when the sexes carry
+#'   their own curves.
+#' @param ln_sigma_init_sex Log standard deviation of that tie.
 #' @param ln_sigmaR Array \code{[early/late, pop, region]} of log-sigma for
 #'   recruitment deviations.
 #' @param bias_ramp Numeric vector \code{[year]} of bias-ramp adjustment factors.
@@ -852,8 +864,10 @@ get_selex_fixed_penalty <- function(selex_penalty, fixed_sel_pars) {
 #'   estimated and are left unpenalized. \code{NULL} penalizes every cell.
 #'
 #' @return List with elements \code{Init_Rec_nLL} (array \code{[pop, region,
-#'   age]}) and \code{Rec_nLL} (array \code{[pop, region, year]}), each holding
-#'   negative log-likelihood penalties (0 where not penalized).
+#'   age, sex]}), \code{Init_Sex_nLL} (the same layout, the between-sex tie,
+#'   zero for the first sex and whenever the tie is off) and \code{Rec_nLL}
+#'   (array \code{[pop, region, year]}), each holding negative log-likelihood
+#'   penalties (0 where not penalized).
 #'
 #' @keywords internal
 #' @import RTMB
@@ -862,12 +876,24 @@ get_recruitment_penalty <- function(n_pop, n_regions, n_ages, n_est_rec_devs, re
                                      ln_InitDevs, init_age_devs_shared, ln_sigmaR, bias_ramp,
                                      sigmaR_switch, ln_RecDevs, sigmaR2_early, sigmaR2_late,
                                      do_rec_bias_ramp, map_ln_RecDevs = NULL,
-                                     RecDevs_pen_center = 0, InitDevs_pen_center = 0) {
+                                     RecDevs_pen_center = 0, InitDevs_pen_center = 0,
+                                     init_devs_pen_use = NULL,
+                                     Use_init_sex_pen = 0, ln_sigma_init_sex = 0) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
+  # A 3-D initial deviation array predates the sex dimension: one shared curve,
+  # penalized once
+  if(length(dim(ln_InitDevs)) == 3) ln_InitDevs <- array(ln_InitDevs, dim = c(dim(ln_InitDevs), 1))
+  n_init_sexes <- dim(ln_InitDevs)[4]
+  if(is.null(init_devs_pen_use)) {
+    init_devs_pen_use <- array(0, dim = dim(ln_InitDevs))
+    init_devs_pen_use[,,,1] <- 1
+  }
+
   Init_Rec_nLL <- array(0, dim = dim(ln_InitDevs))
+  Init_Sex_nLL <- array(0, dim = dim(ln_InitDevs))
   Rec_nLL <- array(0, dim = dim(ln_RecDevs))
 
   # only estimated deviations are penalized, so mapping one off by hand removes its penalty as well.
@@ -895,9 +921,24 @@ get_recruitment_penalty <- function(n_pop, n_regions, n_ages, n_est_rec_devs, re
       # init_idx is only computed inside the guard: the shared-subset case reads
       # init_age_devs_shared, which a model without that option never carries.
       if(equil_init_age_strc %in% c(1,2,3)) {
+
+        # figure out indexing
         init_idx <- if(equil_init_age_strc == 1) 1:(n_ages - 2) else if(equil_init_age_strc == 2) 1:dim(ln_InitDevs)[3] else unique(init_age_devs_shared[!is.na(init_age_devs_shared)])
-        init_mu <- if(InitDevs_pen_center == 1) own_mean(ln_InitDevs[p,r,init_idx], rep(1, length(init_idx))) else -exp(ln_sigmaR[1,p,sigma_idx])^2/2 * bias_ramp[1]
-        Init_Rec_nLL[p,r,init_idx] <- -RTMB::dnorm(ln_InitDevs[p,r,init_idx], init_mu, exp(ln_sigmaR[1,p,sigma_idx]), TRUE)
+        
+        # The own-mean centre pools every penalized cell across ages and sexes, so
+        # sex-specific deviations share one level the way a single estimated mean
+        # would; with only the first sex penalized this is the previous behaviour.
+        init_mu <- if(InitDevs_pen_center == 1) own_mean(ln_InitDevs[p,r,init_idx,], init_devs_pen_use[p,r,init_idx,]) else -exp(ln_sigmaR[1,p,sigma_idx])^2/2 * bias_ramp[1]
+        for(s_init in 1:n_init_sexes) {
+          Init_Rec_nLL[p,r,init_idx,s_init] <- -RTMB::dnorm(ln_InitDevs[p,r,init_idx,s_init], init_mu, exp(ln_sigmaR[1,p,sigma_idx]), TRUE) * init_devs_pen_use[p,r,init_idx,s_init]
+        } # end s_init loop
+
+        # The between-sex penalty: each later sex's curve is pulled toward the first sex's at the same ages
+        if(Use_init_sex_pen == 1 && n_init_sexes > 1) {
+          for(s_init in 2:n_init_sexes) {
+            Init_Sex_nLL[p,r,init_idx,s_init] <- -RTMB::dnorm(ln_InitDevs[p,r,init_idx,s_init] - ln_InitDevs[p,r,init_idx,1], 0, exp(ln_sigma_init_sex), TRUE) * init_devs_pen_use[p,r,init_idx,s_init]
+          } # end s_init loop
+        }
       }
 
       # Early recruitment deviations
@@ -920,7 +961,7 @@ get_recruitment_penalty <- function(n_pop, n_regions, n_ages, n_est_rec_devs, re
     } # end r loop
   } # end p loop
 
-  return(list(Init_Rec_nLL = Init_Rec_nLL, Rec_nLL = Rec_nLL))
+  return(list(Init_Rec_nLL = Init_Rec_nLL, Init_Sex_nLL = Init_Sex_nLL, Rec_nLL = Rec_nLL))
 }
 
 #' Penalty on the level of the recruitment series itself

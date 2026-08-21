@@ -108,11 +108,24 @@
 #'   the length of \code{Rec_input} are filled by resampling historical years
 #'   with replacement. Ignored for other recruitment options. Default
 #'   \code{NULL}.
+#' @param InitDevs_sex_spec Character. How initial age deviations are drawn
+#'   across sexes when they are not supplied through
+#'   \code{ln_InitDevs_input}. \code{"est_shared_s"} (default) draws one curve
+#'   per population or region and gives it to every sex.
+#'   \code{"est_all"} draws each sex its own. Departures from the initial
+#'   equilibrium reflect the exploitation the stock had already seen as well as
+#'   year-class strength, and with sex-specific selectivity or natural
+#'   mortality the two sexes need not have departed by the same amount, which is
+#'   the case \code{"est_all"} covers. The names match
+#'   \code{InitDevs_sex_spec} in \code{\link{Setup_Mod_Rec}}, so an operating
+#'   model and the estimation model fitted to it can be set the same way.
 #' @param ln_InitDevs_input Optional log-scale initial age-structure deviations
-#'   array \code{[n_pop x n_regions x (n_ages - 1) x n_sims]}. The
-#'   \code{n_ages - 1} dimension excludes the reference age used during
-#'   initialisation. If \code{NULL} (default), deviations are initialised to
-#'   zero.
+#'   array, either \code{[n_pop x n_regions x (n_ages - 1) x n_sims]} (one
+#'   shared curve, broadcast across sexes) or
+#'   \code{[n_pop x n_regions x (n_ages - 1) x n_sexes x n_sims]} (one curve
+#'   per sex). The \code{n_ages - 1} dimension excludes the reference age used
+#'   during initialisation. If \code{NULL} (default), deviations are drawn as
+#'   one shared curve per population and region.
 #'
 #' @return The input \code{sim_list} with recruitment-related fields appended:
 #'   \code{$recruitment_opt}, \code{$rec_dd}, \code{$init_dd}, \code{$R0},
@@ -149,7 +162,8 @@ Setup_Sim_Rec <- function(
     t_spawn = 0,
     rec_lag = 1,
     Rec_input = NULL,
-    ln_InitDevs_input = NULL
+    ln_InitDevs_input = NULL,
+    InitDevs_sex_spec = "est_shared_s"
     ) {
 
   if(rec_dd == 'global' && sim_list$n_pop > 1 && recruitment_opt == 'bh_rec') stop("Invalid recruitment density-dependence option! When n_pop > 1 and recruitment_opt == 'bh_rec', rec_dd must be local (0).")
@@ -167,7 +181,15 @@ Setup_Sim_Rec <- function(
   check_sim_dimensions(h_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_sims  = sim_list$n_sims, n_pop = sim_list$n_pop, what = "h_input")
   check_sim_dimensions(stray_rate_input, n_years = sim_list$n_yrs, n_sims  = sim_list$n_sims, n_pop = sim_list$n_pop, what = "stray_rate_input")
   check_sim_dimensions(rec_seas_prop_input, n_seas = sim_list$n_seas, n_sims  = sim_list$n_sims, n_pop = sim_list$n_pop, what = "rec_seas_prop_input")
-  if(!is.null(ln_InitDevs_input)) check_sim_dimensions(ln_InitDevs_input, n_regions = sim_list$n_regions, n_ages = sim_list$n_ages, n_sims = sim_list$n_sims, n_pop = sim_list$n_pop, what = "ln_InitDevs_input")
+  if(!is.null(ln_InitDevs_input)) {
+    check_sim_dimensions(ln_InitDevs_input, n_regions = sim_list$n_regions, n_ages = sim_list$n_ages, n_sexes = sim_list$n_sexes, n_sims = sim_list$n_sims, n_pop = sim_list$n_pop, what = "ln_InitDevs_input")
+    # one shared curve (no sex dimension) broadcasts across sexes
+    if(length(dim(ln_InitDevs_input)) == 4) {
+      tmp_init_input <- array(0, dim = c(dim(ln_InitDevs_input)[1:3], sim_list$n_sexes, sim_list$n_sims))
+      for(s in 1:sim_list$n_sexes) tmp_init_input[,,,s,] <- ln_InitDevs_input
+      ln_InitDevs_input <- tmp_init_input
+    }
+  }
 
   # Age-0 (rec_lag = 0) recruitment: recruits produced by this year's spawning
   # cannot appear in the population before spawn_seas within the same year
@@ -207,6 +229,9 @@ Setup_Sim_Rec <- function(
   sim_list$t_spawn <- t_spawn
   sim_list$rec_seas_prop <- rec_seas_prop_input
   sim_list$init_age_strc <- init_age_strc
+  if(!InitDevs_sex_spec %in% c("est_shared_s", "est_all")) stop("InitDevs_sex_spec must be est_shared_s or est_all")
+  if(InitDevs_sex_spec == "est_all" && sim_list$n_sexes == 1) stop("InitDevs_sex_spec = 'est_all' draws a curve per sex, so it needs n_sexes > 1 (with one sex, est_shared_s is the same thing)")
+  sim_list$InitDevs_sex_spec <- InitDevs_sex_spec
   sim_list$spawn_seas <- spawn_seas
   sim_list$stray_rate <- stray_rate_input
   if(!is.null(Rec_input)) sim_list$Rec_input <- Rec_input
@@ -292,9 +317,11 @@ do_sigmaR_mapping <- function(input_list, sigmaR_spec) {
 #' Internal helper called by \code{\link{Setup_Mod_Rec}} to construct
 #' the TMB/RTMB factor map for \code{ln_InitDevs}, the log-scale deviations
 #' from the equilibrium initial age structure. The \code{ln_InitDevs} array has
-#' dimensions \code{[n_pop x n_regions x (n_ages - 1)]}, where the age
+#' dimensions \code{[n_pop x n_regions x (n_ages - 1) x n_sexes]}, where the age
 #' dimension excludes the plus group by default (see \code{equil_init_age_strc}
-#' below).
+#' below). The population, region, and age structure is resolved on a
+#' single-sex slice and then expanded across sexes per
+#' \code{InitDevs_sex_spec}.
 #'
 #' Mapping behaviour is governed by three interacting considerations:
 #' \enumerate{
@@ -358,6 +385,12 @@ do_sigmaR_mapping <- function(input_list, sigmaR_spec) {
 #'   \code{c(1:42, rep(42, 9))} for a 52-age model with 43 data ages, giving
 #'   42 free parameters. When \code{NULL} (default), age sharing follows the
 #'   standard behaviour determined by \code{equil_init_age_strc} alone.
+#' @param InitDevs_sex_spec Character. \code{"est_shared_s"} (default) maps
+#'   every sex onto one shared age curve (the pre-sex-dimension behaviour,
+#'   penalized once); \code{"est_all"} offsets the factor levels per sex so
+#'   each sex carries its own curve, each penalized. Also builds
+#'   \code{data$init_devs_pen_use}, which flags exactly one penalized copy of
+#'   every estimated parameter.
 #'
 #' @return The input \code{input_list} with \code{$map$ln_InitDevs} set to a
 #'   factor vector of length \code{prod(dim(par$ln_InitDevs))}. Active
@@ -367,13 +400,21 @@ do_sigmaR_mapping <- function(input_list, sigmaR_spec) {
 #'   \code{$par$ln_InitDevs} are also reset to \code{0} for any fixed cells.
 #'
 #' @keywords internal
-do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd, init_age_devs_shared) {
+do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd, init_age_devs_shared, InitDevs_sex_spec = "est_shared_s") {
 
   # validate if stoch_shared_ages
   if(input_list$data$equil_init_age_strc == 3) {
     if(is.null(init_age_devs_shared)) stop("init_age_devs_shared is NULL, but equil_init_age_strc is stoch_shared_ages!")
     if(length(init_age_devs_shared) != (length(input_list$data$ages) - 1)) stop("init_age_devs_shared must have length n_ages - 1 = ", n_age_dim, " but has length ", length(init_age_devs_shared))
   }
+
+  # Sexes either share one age curve (est_shared_s) or carry their own
+  # (est_all). The pop, region, and age logic below is written on a single-sex
+  # slice, so the sex dimension is peeled off here and reattached at the end.
+  if(!InitDevs_sex_spec %in% c("est_shared_s", "est_all")) stop("InitDevs_sex_spec must be est_shared_s or est_all")
+  if(InitDevs_sex_spec == "est_all" && input_list$data$n_sexes == 1) stop("InitDevs_sex_spec = 'est_all' estimates a curve per sex, so it requires n_sexes > 1 (with one sex, est_shared_s is the same thing)")
+  par_full <- input_list$par$ln_InitDevs
+  input_list$par$ln_InitDevs <- array(par_full[,,,1], dim = dim(par_full)[1:3])
 
   # Initial age deviations (equilibrium)
   if(input_list$data$equil_init_age_strc == 0) {
@@ -544,6 +585,35 @@ do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd, init_age_devs
     input_list$map$ln_InitDevs <- factor(map_tmp)
     collect_message("No dispersal: initial age deviations for non-natal regions fixed to 0 and not estimated.")
   }
+
+  # Reattach the sex dimension. est_shared_s repeats the single-sex factor
+  # levels so every sex reads one parameter set; est_all offsets them so each
+  # sex has its own. Cells the single-sex logic fixed stay fixed for every sex,
+  # and init_devs_pen_use flags one penalized copy per parameter: the first sex
+  # under sharing, every sex under est_all.
+  map3 <- as.integer(input_list$map$ln_InitDevs)
+  dim(map3) <- dim(input_list$par$ln_InitDevs)
+  par3 <- input_list$par$ln_InitDevs
+  n_sexes_id <- input_list$data$n_sexes
+  dims4 <- c(dim(par3), n_sexes_id)
+
+  map4 <- array(NA_real_, dim = dims4)
+  par4 <- array(0, dim = dims4)
+  pen_use <- array(0, dim = dims4)
+  n_free <- if(all(is.na(map3))) 0 else max(map3, na.rm = TRUE)
+  for(s in 1:n_sexes_id) {
+    if(InitDevs_sex_spec == "est_shared_s" || s == 1) map4[,,,s] <- map3
+    else map4[,,,s] <- map3 + (s - 1) * n_free
+    # under sharing every sex reads sex 1's slice, so starting values mirror it too
+    par4[,,,s] <- if(InitDevs_sex_spec == "est_shared_s") par3 else array(par_full[,,,s], dim = dim(par3))
+    par4[,,,s][is.na(map3)] <- par3[is.na(map3)] # fixed cells hold the (reset) single-sex value
+    if(InitDevs_sex_spec == "est_all" || s == 1) pen_use[,,,s][!is.na(map3)] <- 1
+  } # end s loop
+
+  input_list$par$ln_InitDevs <- par4
+  input_list$map$ln_InitDevs <- factor(map4)
+  input_list$data$init_devs_pen_use <- pen_use
+  if(InitDevs_sex_spec == "est_all") collect_message("Initial age deviations are sex-specific (one age curve per sex).")
 
   return(input_list)
 }
@@ -1297,6 +1367,17 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   penalized, or \code{"fixed"}, centring on zero.
 #' @param rec_level_pen_yrs Vector of years the penalty applies over, or
 #'   \code{NULL} (default) for every year.
+#' @param Use_init_sex_pen Integer (0/1). Whether each later sex's initial age
+#'   deviations are tied to the first sex's, through a Gaussian on their
+#'   difference at every age the initial-age penalty covers. A statement about
+#'   how different the sexes' initial age structures may be, separate from the
+#'   initial-age penalty's statement about how variable each curve is.
+#'   Requires \code{n_sexes > 1} and \code{InitDevs_sex_spec = "est_all"}
+#'   (under \code{"est_shared_s"} the difference is identically zero). Enters
+#'   the objective unweighted. Default \code{0}.
+#' @param init_sex_pen_sigma Numeric standard deviation of that tie. A sum of
+#'   squares with weight \eqn{w} corresponds to \eqn{1/\sqrt{2w}}. Default
+#'   \code{1}.
 #' @param RecDevs_pen_center,InitDevs_pen_center Where the recruitment and
 #'   initial age deviation penalties are centred. \code{"fixed"} (default)
 #'   centres on the asserted prior mean, zero or the bias-corrected
@@ -1364,9 +1445,17 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   }
 #' @param InitDevs_spec Character or \code{NULL}. Sharing structure for
 #'   initial age-structure deviations \code{ln_InitDevs} \code{[n_pop x
-#'   n_regions x (n_ages - 1)]}. Default \code{NULL} (estimate all
+#'   n_regions x (n_ages - 1) x n_sexes]}. Default \code{NULL} (estimate all
 #'   independently). See \code{\link{do_InitDevs_mapping}} for full option
 #'   descriptions.
+#' @param InitDevs_sex_spec Character. \code{"est_shared_s"} (default)
+#'   estimates one initial age deviation curve read by every sex, which is how
+#'   the model has always behaved. \code{"est_all"} gives each sex its own
+#'   curve, each penalized under the initial-age penalty, with an
+#'   \code{"own_mean"} \code{InitDevs_pen_center} pooled across sexes so the
+#'   sexes share one estimated level the way assessments with a common
+#'   mean-log-initial and sex-specific deviations are written. Requires
+#'   \code{n_sexes > 1}.
 #' @param init_F_prop Numeric array \code{[n_regions x n_seas x n_fish_fleets]}.
 #'   \strong{Legacy interface, retained for backwards compatibility.} A fixed
 #'   proportion of the estimated mean F applied during equilibrium initialisation.
@@ -1551,7 +1640,7 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   \code{rec_region_prop_pars} \code{[n_pop x (n_regions - 1)]},
 #'   \code{rec_seas_prop_pars} \code{[n_pop x (n_seas - 1)]},
 #'   \code{steepness_h} \code{[n_pop x n_regions]} (bounded logit scale),
-#'   \code{ln_InitDevs} \code{[n_pop x n_regions x (n_ages - 1)]},
+#'   \code{ln_InitDevs} \code{[n_pop x n_regions x (n_ages - 1) x n_sexes]} (a 3-D array is broadcast across sexes),
 #'   \code{ln_RecDevs} \code{[n_pop x n_regions x n_years]},
 #'   \code{ln_sigmaR} \code{[2 x n_pop x n_regions]},
 #'   \code{sexratio_pars} \code{[n_pop x n_regions x n_blocks]}.
@@ -1627,12 +1716,15 @@ Setup_Mod_Rec <- function(input_list,
                           init_F_spec = "fix",
                           sigmaR_spec = "est_all",
                           InitDevs_spec = NULL,
+                          InitDevs_sex_spec = "est_shared_s",
                           RecDevs_spec = NULL,
                           RecDevs_pen_center = "fixed",
                           Use_rec_level_pen = 0,
                           rec_level_pen_sigma = 1,
                           rec_level_pen_center = "own_mean",
                           rec_level_pen_yrs = NULL,
+                          Use_init_sex_pen = 0,
+                          init_sex_pen_sigma = 1,
                           sr_penalty = "none",
                           sr_pen_sigma = 1,
                           sr_pen_yrs = NULL,
@@ -1937,6 +2029,12 @@ Setup_Mod_Rec <- function(input_list,
   input_list$data$rec_level_pen_center <- convert_to_numeric(rec_level_pen_center, list(fixed = 0, own_mean = 1))
   input_list$data$rec_level_pen_yrs <- if(is.null(rec_level_pen_yrs)) rep(1, length(input_list$data$years)) else as.numeric(input_list$data$years %in% rec_level_pen_yrs)
   if(Use_rec_level_pen == 1) collect_message("A recruitment level penalty is applied, centred on: ", rec_level_pen_center)
+  if(!Use_init_sex_pen %in% c(0,1)) stop("Use_init_sex_pen must be 0 or 1")
+  if(Use_init_sex_pen == 1 && (input_list$data$n_sexes == 1 || InitDevs_sex_spec != "est_all"))
+    stop("Use_init_sex_pen ties each sex's initial age deviations to the first sex's, so it needs n_sexes > 1 and InitDevs_sex_spec = 'est_all'. Under est_shared_s the sexes already read one curve and the tie is identically zero.")
+  input_list$data$Use_init_sex_pen <- Use_init_sex_pen
+  input_list$data$ln_sigma_init_sex <- log(init_sex_pen_sigma)
+  if(Use_init_sex_pen == 1) collect_message("Each sex's initial age deviations are tied to the first sex's at sigma ", init_sex_pen_sigma)
   if(!sr_penalty %in% c("none", "bh", "ricker")) stop("sr_penalty must be none, bh, or ricker")
   if(!sr_R0_spec %in% c("shared", "est", "rinit")) stop("sr_R0_spec must be shared, est, or rinit")
   if(sr_R0_spec == "rinit" && use_rinit != 1)
@@ -2011,9 +2109,13 @@ Setup_Mod_Rec <- function(input_list,
   if("steepness_h" %in% names(starting_values)) input_list$par$steepness_h <- starting_values$steepness_h
   else input_list$par$steepness_h <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions))
 
-  # Initial age deviations
-  if("ln_InitDevs" %in% names(starting_values)) input_list$par$ln_InitDevs <- starting_values$ln_InitDevs
-  else input_list$par$ln_InitDevs <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$ages) - 1))
+  # Initial age deviations, one age curve per sex; a 3-D starting value array
+  # without the sex dimension is broadcast across sexes
+  if("ln_InitDevs" %in% names(starting_values)) {
+    input_list$par$ln_InitDevs <- starting_values$ln_InitDevs
+    if(length(dim(input_list$par$ln_InitDevs)) == 3) input_list$par$ln_InitDevs <- array(rep(input_list$par$ln_InitDevs, input_list$data$n_sexes), dim = c(dim(input_list$par$ln_InitDevs), input_list$data$n_sexes))
+  }
+  else input_list$par$ln_InitDevs <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$ages) - 1, input_list$data$n_sexes))
 
   # Recruitment deviations
   if("ln_RecDevs" %in% names(starting_values)) input_list$par$ln_RecDevs <- starting_values$ln_RecDevs
@@ -2041,7 +2143,7 @@ Setup_Mod_Rec <- function(input_list,
   input_list <- do_rec_region_prop_mapping(input_list, rec_region_prop_spec) # Recruitment regional proportion mapping
   input_list <- do_rec_seas_prop_mapping(input_list, rec_seas_prop_spec) # Recruitment seasonal proportion mapping
   input_list <- do_sigmaR_mapping(input_list, sigmaR_spec) # sigmaR mapping
-  input_list <- do_InitDevs_mapping(input_list, InitDevs_spec, rec_dd, init_age_devs_shared) # InitDevs mapping
+  input_list <- do_InitDevs_mapping(input_list, InitDevs_spec, rec_dd, init_age_devs_shared, InitDevs_sex_spec) # InitDevs mapping
   # the shared-subset penalty (equil_init_age_strc == 3) reads this in the model,
   # so it goes into data as well as the map
   if(!is.null(init_age_devs_shared)) input_list$data$init_age_devs_shared <- init_age_devs_shared

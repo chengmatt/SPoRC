@@ -31,9 +31,12 @@ directly into the simulation environment arrays \code{NAA} and
 Initial deviation sharing follows the same logic as the estimation model:
 deviations are drawn once per population when \code{n_pop > 1}, or once
 per region when \code{n_pop = 1} and \code{init_dd = 0} (local
-density-dependence). If \code{ln_InitDevs_input} exists in the simulation
-environment, those values are used directly rather than simulating new
-draws. Populations with \code{R0 = 0} receive zero deviations. The
-equilibrium solver uses \code{init_iter = n_ages × 5} iterations.
+density-dependence). Across sexes the draw follows
+\code{InitDevs_sex_spec}: \code{"est_shared_s"} (the default) draws one
+curve and gives it to every sex, \code{"est_all"} draws each sex its own.
+If \code{ln_InitDevs_input} exists in the simulation environment, those
+values are used directly rather than simulating new draws. Populations with
+\code{R0 = 0} receive zero deviations. The equilibrium solver uses
+\code{init_iter = n_ages × 5} iterations.
 }
 \keyword{internal}

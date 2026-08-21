@@ -31,6 +31,10 @@ navbar:
           href: articles/aa_bsai_pacific_ocean_perch_case_study.html
         - text: "BSAI Atka Mackerel"
           href: articles/ab_bsai_atka_mackerel_case_study.html
+        - text: "West Coast Sablefish"
+          href: articles/ac_wc_sablefish_case_study.html
+        - text: "BSAI Northern Rock Sole"
+          href: articles/ac_bsai_northern_rock_sole_case_study.html
 
 articles:
   - title: "Getting Started"
@@ -57,6 +61,8 @@ articles:
       - z_bsai_rougheye_rockfish_case_study
       - aa_bsai_pacific_ocean_perch_case_study
       - ab_bsai_atka_mackerel_case_study
+      - ac_wc_sablefish_case_study
+      - ac_bsai_northern_rock_sole_case_study
 
   - title: "Simulation and Projections"
     contents:
@@ -185,6 +191,8 @@ reference:
       - sgl_rg_bsai_nork_data
       - sgl_rg_bsai_pop_data
       - sgl_rg_bsai_atka_data
+      - sgl_rg_wc_sablefish_data
+      - sgl_rg_bsai_nrs_data
       - sgl_rg_rebs_data
 
   - title: "Fitted Model Objects"

@@ -924,6 +924,292 @@ combination rather than attempting a matrix logarithm.
 
 ### Observation Equations
 
+#### Growth and the Size-Age Transition
+
+The size-age transition $`\mathbf{A}_{p,r,y,\tau,s}^{l}`$ converts
+numbers at age to numbers at length: column $`a`$ holds the probability
+that a fish of age $`a`$ falls in each length bin, and sums to one. It
+is either supplied as data or built inside the model from growth
+parameters (`growth_model = "vb_schnute"`), in which case every fleet
+gets its own, read at that fleet’s timing in the season. Four pieces go
+into it: the mean length at age, the spread of length about that mean,
+the treatment of the plus group, and the binning.
+
+##### Mean length at age
+
+Growth is von Bertalanffy in Schnute’s parameterization: instead of
+$`L_{\infty}`$ and $`t_{0}`$, the curve is anchored by the mean lengths
+$`L_{1}`$ and $`L_{2}`$ at two reference ages $`A_{1}`$ and $`A_{2}`$,
+with $`K`$ the rate of approach to the asymptote. The parameters are
+then on the scale of the data, which makes them easier to start and to
+bound. Below $`A_{1}`$ the curve is not extrapolated; mean length rises
+linearly from $`L_{0}`$, the lower edge of the first length bin, to
+$`L_{1}`$. Writing $`x`$ for the real age (the integer age plus the
+fraction of the year elapsed):
+
+``` math
+\bar{L}_{p,r,s}(x) = \begin{cases}
+L_{0} + \dfrac{x}{A_{1}}\left( L_{1,p,r,s} - L_{0} \right) & x < A_{1} \\[2ex]
+L_{\infty,p,r,s} + \left( L_{1,p,r,s} - L_{\infty,p,r,s} \right)\exp\left\lbrack - K_{p,r,s}\left( x - A_{1} \right) \right\rbrack & x \geq A_{1}
+\end{cases}
+```
+
+where the asymptote follows from the two anchors,
+
+``` math
+L_{\infty,p,r,s} = L_{1,p,r,s} + \dfrac{L_{2,p,r,s} - L_{1,p,r,s}}{1 - \exp\left\lbrack - K_{p,r,s}\left( A_{2} - A_{1} \right) \right\rbrack}
+```
+
+Setting `growth_A2 = "Linf"` reads $`L_{2}`$ as $`L_{\infty}`$ itself.
+The five parameters $`L_{1}, L_{2}, K, CV_{1}, CV_{2}`$ are estimated on
+the log scale, one set per population, region and sex, or shared across
+regions or sexes (`growth_spec`).
+
+Under `growth_model = "richards"` the same curve is applied to lengths
+raised to a power $`\rho`$, a sixth estimated parameter, which lets the
+inflection sit anywhere rather than at the origin:
+
+``` math
+\bar{L}_{p,r,s}(x)^{\rho} = L_{\infty,p,r,s}^{\rho} + \left( L_{1,p,r,s}^{\rho} - L_{\infty,p,r,s}^{\rho} \right)\exp\left\lbrack - K_{p,r,s}\left( x - A_{1} \right) \right\rbrack
+```
+
+with the asymptote read off the two anchors on the same powered scale,
+$`L_{\infty}^{\rho} = L_{1}^{\rho} + \left( L_{2}^{\rho} - L_{1}^{\rho} \right)/\left( 1 - e^{-K(A_{2} - A_{1})} \right)`$.
+Setting $`\rho = 1`$ recovers the von Bertalanffy curve exactly, so the
+Richards form nests it and the linear phase below $`A_{1}`$ is
+unchanged.
+
+##### Spread of length at age
+
+Fish of one age are spread around the mean length, and that spread grows
+with size. Rather than a variance per age, two parameters carry it:
+$`CV_{1}`$ and $`CV_{2}`$, the values at the two reference ages, with
+linear interpolation between them. Which quantity the interpolation runs
+on, and whether the two parameters are read as coefficients of variation
+or as standard deviations, are separate choices (`growth_cv_type` and
+`growth_sd_type`).
+
+**The interpolation.** The branches are on real age $`x`$: below
+$`A_{1}`$ the value is held at $`CV_{1}`$, from $`A_{2}`$ on it is held
+at $`CV_{2}`$, and between them it is interpolated. Under
+`growth_cv_type = "len"` (the default) the interpolant is mean length,
+so a fish whose mean length sits halfway from $`L_{1}`$ to $`L_{2}`$
+takes a value halfway from $`CV_{1}`$ to $`CV_{2}`$; under `"age"` it is
+age itself:
+
+``` math
+c(x) = \begin{cases}
+CV_{1} & x < A_{1} \\[1ex]
+CV_{1} + \left( CV_{2} - CV_{1} \right)\dfrac{\bar{L}(x) - L_{1}}{L_{2} - L_{1}} & A_{1} \leq x < A_{2}^{cv}, \quad \texttt{cv\_type = "len"} \\[2ex]
+CV_{1} + \left( CV_{2} - CV_{1} \right)\dfrac{x - A_{1}}{A_{2}^{cv} - A_{1}} & A_{1} \leq x < A_{2}^{cv}, \quad \texttt{cv\_type = "age"} \\[2ex]
+CV_{2} & x \geq A_{2}^{cv}
+\end{cases}
+```
+
+where $`A_{2}^{cv} = A_{2}`$, or the oldest age being evaluated when
+`growth_A2 = "Linf"` and $`L_{2}`$ is read as the asymptote. Note that
+the two choices are independent: under `"len"` the *branch* is still
+taken on age, and only the value inside the middle branch is a function
+of $`\bar{L}(x)`$. Because $`\bar{L}`$ is itself increasing in $`x`$,
+the two give similar shapes; they differ where growth is fast, since
+interpolating on length compresses the change into the young ages.
+
+**From $`c(x)`$ to the standard deviation.** Under
+`growth_sd_type = "cv"` (the default) $`c(x)`$ is a coefficient of
+variation and is multiplied by mean length, so the spread scales with
+size; under `"sd"` the two parameters are standard deviations already
+and $`c(x)`$*is* the standard deviation, interpolated by the same rule:
+
+``` math
+\sigma_{L}(x) = \begin{cases}
+c(x)\,\bar{L}(x) & \texttt{sd\_type = "cv"} \\[1ex]
+c(x) & \texttt{sd\_type = "sd"}
+\end{cases}
+```
+
+The two differ in what is held constant across ages. Under `"cv"` a
+constant $`CV`$ means the spread grows in proportion to length, so a 20
+cm fish and a 60 cm fish have standard deviations in the ratio 1:3;
+under `"sd"` a constant value means the same absolute spread at every
+age. A $`CV`$ that declines with size ($`CV_{2} < CV_{1}`$) is the usual
+estimate, since the lengths of young fish vary with birth date and early
+growth while old fish have converged on the asymptote.
+
+##### The plus group
+
+The accumulator age $`a_{+}`$ holds every fish of that age and older, so
+its mean length is not the curve at $`a_{+}`$: most of its fish are
+older than $`a_{+}`$ and larger. Under `growth_plus_group = "mixture"`
+the plus group is treated as a mixture of the ages it contains, with two
+assumptions. Its age composition is taken to decline geometrically, the
+share of fish $`k`$ years past the accumulator age being proportional to
+$`e^{-0.2k}`$, which is the survivorship under a total mortality of
+$`0.2`$ per year; the $`0.2`$ is a fixed assumption about how quickly
+numbers decline with age, not an estimated rate, and it sets how much
+weight the older, larger fish carry. And over those years mean length is
+taken to rise linearly from $`\bar{L}(a_{+})`$ to $`L_{\infty}`$ across
+a second lifetime of $`a_{+}`$ years, beyond which the curve is at its
+asymptote. The plus group’s mean length is the survivorship-weighted
+mean of those lengths:
+
+``` math
+\bar{L}_{+} = \dfrac{\sum_{k = 0}^{a_{+}}e^{- 0.2k}\left\lbrack \bar{L}(a_{+}) + \dfrac{k}{a_{+}}\left( L_{\infty} - \bar{L}(a_{+}) \right) \right\rbrack}{\sum_{k = 0}^{a_{+}}e^{- 0.2k}}
+```
+
+which lies between $`\bar{L}(a_{+})`$ and $`L_{\infty}`$, closer to
+$`\bar{L}(a_{+})`$ when $`a_{+}`$ is old enough that little growth
+remains. Under `growth_plus_group = "curve"` the plus group is simply
+the curve at $`a_{+}`$. Within a year the plus group grows from
+$`\bar{L}_{+}`$ by the von Bertalanffy increment over the elapsed time
+rather than being re-read from the curve, so its mean length moves
+through the season the way every other age’s does.
+
+##### Growth that changes over time
+
+Growth can move over the series in two ways, which answer different
+questions and can be used together.
+
+**Varying the parameters.** Any growth parameter can carry a deviation
+series (`growth_tv_model` names one structure per parameter, `"iid"` or
+`"rw"`), so the parameter in year $`y`$ is
+
+``` math
+P_{y} = \begin{cases}
+P\exp(\delta_{y}) & \texttt{growth\_tv\_link = "log"} \\[1ex]
+P^{lo} + \left( P^{hi} - P^{lo} \right)\,\mathrm{logit}^{-1}\left\lbrack \mathrm{logit}\!\left( \dfrac{P - P^{lo}}{P^{hi} - P^{lo}} \right) + \delta_{y} \right\rbrack & \texttt{"logit"}
+\end{cases}
+```
+
+The log link suits a positive parameter. The logit link keeps a
+parameter strictly inside bounds $`\left( P^{lo}, P^{hi} \right)`$
+however large the deviation, which every growth parameter is. The
+deviations are penalized by the same process error used for selectivity
+(see *Growth Deviations* under the penalties), and the realized
+parameters are reported year by year as `growth_pars_y`.
+
+**How the deviated parameters reach size at age** is a second choice
+(`growth_tv_type`). Under `"curve"` each year’s sizes are simply read
+off that year’s own curve: a fish of age $`a`$ in year $`y`$ has the
+length year $`y`$’s parameters give age $`a`$, with no memory of the
+years it actually lived through. Under `"cohort"` size at age is carried
+forward instead, so each cohort keeps the history of the conditions it
+experienced. Writing $`g_{y}`$ for the growth increment over one year
+under year $`y`$’s parameters,
+
+``` math
+g_{y}(L) = \left\lbrack L_{\infty,y}^{\rho_{y}} + \left( L^{\rho_{y}} - L_{\infty,y}^{\rho_{y}} \right)e^{- K_{y}} \right\rbrack^{1/\rho_{y}}
+```
+
+the start-of-year mean length advances as
+
+``` math
+\bar{L}_{y+1,a} = \begin{cases}
+L_{0} + \dfrac{a}{A_{1}}\left( L_{1,\,y+1-a} - L_{0} \right) & a < A_{1} \quad \text{(the cohort's own birth-year } L_{1}) \\[2ex]
+\bar{L}_{y+1}(a) & a = a^{\ast} \quad \text{(the first age past } A_{1}, \text{ read off the year's curve)} \\[2ex]
+g_{y}\left( \bar{L}_{y,a-1} \right) & a^{\ast} < a < a_{+} \\[2ex]
+\dfrac{\left( N_{y,a_{+}-1} + 0.01 \right)g_{y}\left( \bar{L}_{y,a_{+}-1} \right) + \left( N_{y,a_{+}} + 0.01 \right)g_{y}\left( \bar{L}_{y,a_{+}} \right)}{N_{y,a_{+}-1} + N_{y,a_{+}} + 0.02} & a = a_{+}
+\end{cases}
+```
+
+Three consequences follow. Ages still in the linear phase take the
+length at $`A_{1}`$ their *birth year’s* parameters gave them, so a
+cohort born in a poor year carries that start forward. The plus group is
+the only place growth depends on abundance: the cohort just entering it
+and the fish already there are blended by their numbers, which is why
+growth under this option is evaluated inside the population dynamics
+year loop rather than before it. And the coefficient of variation at age
+is held at the first year’s, $`c(x)`$ being evaluated once from the
+first year’s curve and parameters and then held while the mean moves, so
+the deviations change mean size without also changing the spread.
+
+**Semi-parametric growth.** The second way is a surface of deviations on
+mean length at age itself, indexed by year and age (`growth_semipar`),
+
+``` math
+\bar{L}_{y,a}^{\ast} = \bar{L}_{y,a}\exp\left( \varepsilon_{y,a} \right)
+```
+
+applied after the curve and after any cohort propagation. The parametric
+curve stays the parametric part and $`\varepsilon`$ holds departures
+from it: a curve with a handful of parameters cannot fit a year in which
+only the four-year-olds were small, and an unconstrained transition per
+year is not identified. The spread follows the deviated mean through
+$`\sigma_{L}`$, so under `growth_cv_type = "len"` a deviation that
+lengthens a fish also moves it along the $`CV`$ ramp, while under
+`"age"` the spread at age is untouched. Available structures are
+`"iid"`, `"rw"`, `"2dar1"` and `"3dmarg"`/`"3dcond"` – the same process
+errors the semi-parametric selectivity forms use, described under the
+penalties.
+
+##### The key
+
+The key is that distribution integrated over each length bin. Length at
+age is normal about $`\bar{L}(a)`$ with standard deviation
+$`\sigma_{L}(a)`$, so with $`\ell_{l}`$ the lower edge of bin $`l`$ each
+edge is first standardized,
+
+``` math
+z_{l,a} = \dfrac{\ell_{l} - \bar{L}(a)}{\sigma_{L}(a)}
+```
+
+which is where $`\sigma_{L}`$ enters: it sets how many bins the age’s
+mass is spread over, a large $`\sigma_{L}`$ flattening the column and a
+small one concentrating it near $`\bar{L}(a)`$. Each bin then takes the
+probability between its edges, $`\Phi`$ being the standard normal
+distribution function, and the two tails are accumulated into the end
+bins so no mass is lost:
+
+``` math
+A_{l,a} = \begin{cases}
+\Phi(z_{2,a}) & l = 1 \\[1ex]
+\Phi(z_{l+1,a}) - \Phi(z_{l,a}) & 1 < l < n_{l} \\[1ex]
+1 - \Phi(z_{n_{l},a}) & l = n_{l}
+\end{cases}
+```
+
+The first bin absorbs everything below $`\ell_{2}`$ and the last
+everything above $`\ell_{n_{l}}`$, so the column sums to one,
+$`\sum_{l}A_{l,a} = 1`$, for any $`\bar{L}(a)`$ and $`\sigma_{L}(a)`$,
+including means that fall outside the binned range entirely. That is
+what makes each column a proper conditional distribution $`P(l \mid a)`$
+and lets the composition likelihoods normalize.
+
+Under `growth_dist = "lognormal"` the same differences are taken on the
+log scale, about a median-corrected mean so that $`E[L] = \bar{L}(a)`$:
+
+``` math
+z_{l,a} = \dfrac{\log \ell_{l} - \left( \log \bar{L}(a) - \sigma_{L}^{2}(a)/2 \right)}{\sigma_{L}(a)}
+```
+
+Here $`\sigma_{L}(a)`$ is a standard deviation *on the log scale*, so
+`growth_sd_type = "sd"` is the pairing that keeps it dimensionally
+consistent; combining `"lognormal"` with `"cv"` feeds a length-scale
+spread into a log-scale transform.
+
+##### Weight at age
+
+When `waa_model = "wt_len"`, weight at age is the key applied to weight
+at the bin midpoints $`\tilde{\ell}_{l}`$ through the weight-length
+relationship $`W = \alpha L^{\beta}`$,
+
+``` math
+W_{p,r,y,\tau,a,s} = \sum_{l}A_{p,r,y,\tau,l,a,s}\,\alpha_{p,r,s}\,\tilde{\ell}_{l}^{\beta_{p,r,s}}
+```
+
+so the weight at age carries the spread of length at age rather than
+being the weight of the mean length.
+
+##### Timing within the year
+
+Every fleet has its own key and weight, read at the point in the season
+that fleet’s observations are taken: each fishery fleet’s at `t_fish`,
+each survey’s at `t_srv`, and the spawning weight at the spawning time.
+A season starts at the cumulative duration of the seasons before it, and
+a point inside it is that start plus the fraction elapsed times the
+season’s duration. With growth constant over years the curve read at the
+real age gives the same mean length whatever the seasons’ durations, so
+seasons add no approximation to growth.
+
 #### Fishery Observation Model
 
 The fishery observation model describes the expected retained
@@ -972,10 +1258,50 @@ D_{p,r,y,\tau,l,s,f}^{l} = \mathbf{A}_{p,r,y,\tau,s}^{l}{\mathbf{D}^{\mathbf{a}}
 \end{matrix}
 ```
 
-where $`\mathbf{A}_{p,r,y,\tau,s}^{l}`$ is a user-defined size-age
-transition matrix to convert ages to lengths. Expected retained catch
-($`\text{Catch}_{r,y,\tau,f}`$) is computed by summing over populations
-and then either as abundance:
+where $`\mathbf{A}_{p,r,y,\tau,s}^{l}`$ is the size-age transition
+matrix, supplied as data or built by the growth module. When conditional
+age-at-length data are fit (`do_caal = 1`), the joint retained and
+discarded catch at length and age are also formed, each age column of
+the transition scaled by the catch at that age:
+
+``` math
+\begin{matrix}
+C_{p,r,y,\tau,l,a,s,f}^{la} = A_{p,r,y,\tau,l,a,s}\,C_{p,r,y,\tau,a,s,f}^{a} \\
+D_{p,r,y,\tau,l,a,s,f}^{la} = A_{p,r,y,\tau,l,a,s}\,D_{p,r,y,\tau,a,s,f}^{a} \\
+\end{matrix}
+```
+
+so that summing over lengths returns the catch at age and summing over
+ages the catch at length.
+
+###### Selecting at length rather than at age
+
+The catch at length above is the catch at age spread over the key, which
+is what `FishLenComps_sel = "age"` (the default) and
+`SrvLenComps_sel = "age"` give. Selectivity has already been applied at
+age by then, as its average over the lengths the age covers,
+$`s_{a} = \sum_{l}A_{l,a}\,s_{l}`$. Every fish of an age is therefore
+equally catchable, and the length composition within an age is the key’s
+own column.
+
+Under `"length"` the order is reversed. The numbers at age are spread
+over the key first and selected length by length,
+
+``` math
+C_{p,r,y,\tau,l,s,f}^{l} = s_{r,y,l,s,f}\sum_{a}^{a_{+}}A_{p,r,y,\tau,l,a,s}\,N_{p,r,y,\tau,a,s}\left( 1 - e^{- Z_{p,r,y,\tau,a,s}} \right)\frac{F_{r,y,\tau,f}}{Z_{p,r,y,\tau,a,s}}
+```
+
+and the survey’s index compositions the same way. The two differ by the
+covariance of length and selection within an age. Selecting at age
+replaces $`s_{l}`$ by its mean over the age’s length range, which is
+exact only where $`s_{l}`$ is flat over that range. Where the curve is
+steep, the fish taken from an age are longer or shorter than that age’s
+average fish, and one number per age cannot represent that. The
+difference is real and not a rounding, so a model whose length
+compositions inform a length-based selectivity should select at length.
+
+Expected retained catch ($`\text{Catch}_{r,y,\tau,f}`$) is computed by
+summing over populations and then either as abundance:
 
 ``` math
 \begin{matrix}
@@ -990,6 +1316,26 @@ or as biomass:
 \text{Catch}_{r,y,\tau,f} = \sum_{p}^{n_p}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}C_{p,r,y,\tau,a,s,f}^{a}}W_{p,r,y,\tau,a,s,f}^{fish} \\
 \end{matrix}
 ```
+
+The fishery weight at age $`W^{fish}`$ is normally the population’s mean
+weight at age at the fleet’s timing, which is the weight of an average
+fish of that age. The catch is not made of average fish. A length-based
+gear takes the long ones from an age more often than the short ones, and
+the long ones weigh more. With `fish_waa_selected = 1` the fleet’s catch
+biomass instead uses the mean weight of the fish it takes at each age,
+the weight averaged over the key re-weighted by selectivity,
+
+``` math
+W_{p,r,y,\tau,a,s,f}^{fish} = \dfrac{\sum_{l}A_{p,r,y,\tau,l,a,s}\,s_{r,y,l,s,f}\,w_{l}}{\sum_{l}A_{p,r,y,\tau,l,a,s}\,s_{r,y,l,s,f}}
+```
+
+with $`w_{l}`$ the weight at the bin midpoint from `wt_len_pars`. Flat
+selectivity returns the population mean exactly, and a knife edge
+returns the weight of the one bin it keeps, so the option changes
+nothing unless the gear selects within an age. Where it does, the
+difference is largest at the youngest selected ages, whose lengths fall
+on the ascending limb. `srv_waa_selected` does the same for a survey
+index in weight.
 
 Population-specific predicted retained catch
 ($`\text{Catch}_{p,r,y,\tau,f}`$) retains the population index and is
@@ -1136,6 +1482,10 @@ by:
 I_{p,r,y,\tau,l,s,sf}^{l} = \mathbf{A}_{p,r,y,\tau,s}^{l}{\mathbf{I}^{\mathbf{a}}}_{p,r,y,\tau,s,sf} \\
 \end{matrix}
 ```
+
+and, when conditional age-at-length data are fit, the joint survey index
+at length and age
+$`I_{p,r,y,\tau,l,a,s,sf}^{la} = A_{p,r,y,\tau,l,a,s}\,I_{p,r,y,\tau,a,s,sf}^{a}`$.
 
 Survey indices ($`\text{SrvIdx}_{p,r,y,\tau,sf}`$) can be computed as
 either abundance-based or biomass-based. Abundance-based survey indices
@@ -2328,6 +2678,37 @@ gear that only resolves part of the age range (e.g., a fishery that
 never encounters the youngest ages, whose zeros would otherwise carry
 information).
 
+##### Conditional Age-at-Length
+
+A conditional age-at-length observation is the age composition of the
+fish aged from one length bin. Its expectation is the row of the joint
+array for that bin, normalized across ages, then passed through the
+ageing error matrix:
+
+``` math
+E_{p,r,y,\tau,a,s,f}^{\,\text{caal}(l)} = \dfrac{C_{p,r,y,\tau,l,a,s,f}^{la}}{\sum_{a'}C_{p,r,y,\tau,l,a',s,f}^{la}}
+```
+
+which is $`P(a \mid l)`$ under the model, since the joint array is
+$`P(l \mid a)`$ times the numbers at age. Each length bin is then fit as
+its own composition with the multinomial or Dirichlet-multinomial above,
+with the input sample size the number of fish aged from that bin
+(`ISS_Fish_caal`, `ISS_Srv_caal`) and the weight `Wt_Fish_caal`,
+`Wt_Srv_caal` multiplying it:
+
+``` math
+-\ell^{\text{caal}} = \sum_{l}\lambda_{l}\,\text{ISS}_{l}\sum_{a}\left( O_{a}^{(l)} + c\,\mathbb{1}^{\text{const}} \right)\left\lbrack \log\left( O_{a}^{(l)} + c \right) - \log\left( E_{a}^{(l)} + c \right) \right\rbrack
+```
+
+with $`\theta`$ shared across the length bins of a fleet under the
+Dirichlet-multinomial, since the bins come from one length-stratified
+sample. The logistic-normal families are not available: a bin’s age
+sample is small and mostly zeros, which the additive log-ratio transform
+cannot handle. Fit together with the marginal length compositions, the
+lengths carry the abundance signal and the conditional rows carry
+$`P(a \mid l)`$, which is the information on growth; fitting marginal
+ages as well would count the same fish twice.
+
 #### Tagging
 
 `SPoRC` currently allows for various tagging likelihoods, ranging from
@@ -2803,6 +3184,20 @@ penalized once (the shared parameter is not invoked). The `"own_mean"`
 centre is then pooled over every penalized cell across ages and sexes,
 so the sexes share a single estimated level.
 
+A deviation shared across cells of the parameter array through the map,
+across regions (`InitDevs_spec = "est_shared_r"`,
+`RecDevs_spec = "est_shared_pop_r"`), across sexes, or across the ages
+past the observed range (`init_age_devs_shared`), is one parameter and
+carries one penalty. Each cell the penalty visits takes $`1/n`$ of it,
+with $`n`$ the number of such cells holding that level, so a series
+shared by three regions is not penalized three times. Under the bias
+ramp the centre of the initial age deviation on age $`a`$ is the ramp
+read at that age’s own birth year,
+$`\mu_{a}^{\text{Init}} = -\sigma_{\text{Rec}}^{2}/2 \cdot b_{1 - a}`$,
+the deviation index $`1 - a`$ lying before the first model year, which
+is how a ramp defined on calendar years treats the years before the
+model starts.
+
 Sex-specific curves can additionally be compared to one another
 (`Use_init_sex_pen`), a separate statement about how far apart the
 sexes’ initial age structures may sit rather than about how variable
@@ -2865,6 +3260,27 @@ the predicted curve, so a model that also wants to keep the realized
 recruitment series from wandering has nowhere else to say so; this
 penalty is that second, independent statement, and reproduces the
 recruitment regularity penalties several existing assessments carry.
+
+##### Initial Recruitment Offset
+
+When the initial age structure is built from its own recruitment level
+(`use_rinit = 1`, so $`\mu_{p}^{\text{RecInit}}`$ is separate from
+$`\mu_{p}^{\text{Rec}}`$), that level can be penalized toward the
+recruitment level rather than left free (`Use_rinit_pen`):
+
+``` math
+L_{\text{RecInit}} = - \sum_{p = 1}^{n_{p}}\log\left\lbrack \phi\left( \log\mu_{p}^{\text{RecInit}} - \log\mu_{p}^{\text{Rec}};\ 0,\ \sigma_{\text{RecInit}} \right) \right\rbrack
+```
+
+The two levels are otherwise only linked through the data, and the
+initial age structure is often the thinnest part of it, so the penalty
+is a statement about how far the stock’s equilibrium recruitment may
+have sat from the level the modelled years show. An equilibrium
+recruitment stands for an average over several years rather than one, so
+$`\sigma_{\text{RecInit}}`$ is normally narrower than $`\sigma_{R}`$. A
+reasonable choice is $`\sigma_{R}/\left( 1/M - 0.5 \right)`$, the
+recruitment variability shrunk by the number of year classes the
+equilibrium averages over.
 
 ##### Stock-Recruit Residual
 
@@ -3241,6 +3657,48 @@ list gives each fleet its own):
   held toward a reference log-selectivity vector, anchoring an otherwise
   free series to a known selectivity before the data begin.
 
+##### Growth Deviations
+
+Growth carries two deviation surfaces, and both are scored by the same
+process error machinery the selectivity deviations use, so the
+vocabulary above carries over unchanged.
+
+A time-varying growth **parameter** has one deviation per year, a
+surface one column wide. Under `"iid"` each is drawn independently and
+under `"rw"` they form a random walk:
+
+``` math
+\begin{matrix}
+\delta_{p,r,y,k,s} \sim N\left( 0, \sigma_{k}^{2} \right) & \texttt{iid} \\[1ex]
+\delta_{p,r,y,k,s} \sim N\left( \delta_{p,r,y - 1,k,s}, \sigma_{k}^{2} \right) & \texttt{rw}
+\end{matrix}
+```
+
+with one $`\sigma_{k}`$ per varying parameter $`k`$, held in the first
+stream of `growth_pe_pars` and estimated under
+`growth_tv_sigma_spec = "est"`, and the first year of a walk given its
+own standard deviation (`growth_rw_init_sigma`). Only the years named in
+`growth_tv_years` carry a deviation; the rest are held at zero, so a
+parameter can be constant early in a series and varying once the data
+can support it.
+
+The **semi-parametric** surface $`\varepsilon_{p,r,y,a,s}`$ runs over
+years and ages, so all five structures are available to it: `"iid"` and
+`"rw"` as above, `"2dar1"` for a separable first-order autoregression
+over ages and years, and `"3dmarg"`/`"3dcond"` for the three-dimensional
+Gaussian Markov random field over age, year and cohort described for
+selectivity, on the marginal or conditional variance. The correlated
+forms are the ones that make a growth surface estimable in practice: the
+deviations are not identified year by year and age by age from length
+data alone, and it is the correlation that lets neighbouring ages and
+years share information. Its hyperparameters live in the second stream
+of `growth_pe_pars`, in the same slots the selectivity forms use, and
+the surface can be restricted to the ages and years the length data
+inform through `growth_semipar_ages` and `growth_semipar_years`.
+
+Both enter the objective unweighted, reported as $`L_{\text{GrowthTV}}`$
+and $`L_{\text{GrowthSemipar}}`$.
+
 ##### Movement
 
 Time-varying movement is introduced through process error deviations,
@@ -3310,9 +3768,9 @@ movement rates, - $`\exp(\epsilon^{\text{Move}})`$ acts as a
 proportional scaling factor, - time variation persists into projection
 years even when baseline covariates are held fixed.
 
-Importantly, deviations are applied only to off-diagonal elements (i.e.,
-actual transitions), and the diagonal of the generator matrix is
-recomputed to preserve mass balance.
+Deviations are applied only to off-diagonal elements (i.e., actual
+transitions), and the diagonal of the generator matrix is recomputed to
+preserve mass balance.
 
 ###### Likelihood for Deviations
 

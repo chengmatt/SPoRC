@@ -131,6 +131,10 @@ Get_Comp_Likelihoods(
 - AgeingError:
 
   Ageing error matrix used to map model age bins to observed age bins.
+  For length compositions, either `NA` (the model and observed bins
+  coincide) or a matrix `[n_model_bins x n_obs_bins]` mapping the
+  model's length bins onto the observed ones, the same way, when the
+  compositions are recorded on coarser bins than the model carries.
 
 - use:
 
@@ -154,14 +158,16 @@ Get_Comp_Likelihoods(
 - comp_const_obs:
 
   Integer (0 or 1). Whether `addtocomp` is added to the observed
-  proportions that weight the multinomial, as well as inside the
+  proportions that weight the multinomial and enter the
+  Dirichlet-multinomial. For the Dirichlet-multinomial a constant on the
+  observed side is not neutral: a bin with no observed and no expected
+  mass contributes \\\log(\theta/(1+\theta))\\ regardless of the
+  constant's size, so compositions with many structurally empty bins
+  (conditional age-at-length above all) potentially bias \\\theta\\
+  upward under `1`. Use `0` there. It is also added inside the
   logarithms. `1` (default) is the unbiased choice: the stationary point
-  of the kernel is exactly `p = obs`. `0` weights by the raw observed
-  proportions, which is what the ADMB templates do, and sharpens the
-  expected composition away from the data by `n * addtocomp`. The
-  difference is not cosmetic once effective sample sizes are large: on
-  the EBS pollock bridge, switching from 0 to 1 moves estimated SSB by a
-  median of 8.8 percent. Use `0` only to reproduce an ADMB model.
+  of the likelihood is exactly `p = obs`. `0` weights by the raw
+  observed proportions.
 
 ## Details
 

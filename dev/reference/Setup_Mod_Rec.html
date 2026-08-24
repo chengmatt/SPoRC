@@ -56,6 +56,8 @@ before model compilation."><meta name="robots" content="noindex"></head><body>
     <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
     <li><a class="dropdown-item" href="../articles/ac_wc_sablefish_case_study.html">West Coast Sablefish</a></li>
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
+    <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
+    <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -163,6 +165,8 @@ before model compilation.</p>
 <span>  init_age_devs_shared <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  use_r0_prior <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  r0_prior <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  Use_rinit_pen <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  rinit_pen_sd <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -738,6 +742,20 @@ standard behaviour determined by <code>equil_init_age_strc</code> alone.</p></dd
 
 <dt id="arg-r-prior">r0_prior<a class="anchor" aria-label="anchor" href="#arg-r-prior"></a></dt>
 <dd><p>Data frame with columns <code>pop</code> (population index), <code>mu</code> (prior mean on natural scale), and <code>sd</code> (prior SD on log scale). Required when <code>use_r0_prior = 1</code>.</p></dd>
+
+
+<dt id="arg-use-rinit-pen">Use_rinit_pen<a class="anchor" aria-label="anchor" href="#arg-use-rinit-pen"></a></dt>
+<dd><p>Integer (0/1). Whether to penalize the initial
+equilibrium recruitment's offset from the recruitment level,
+\(\log(R_{init} / R_0) \sim N(0, \mathrm{rinit\_pen\_sd}^2)\), under
+<code>use_rinit = 1</code>. An equilibrium recruitment stands for the average of
+several years of recruitment, so its spread is smaller than a single
+year's; \(\sigma_R / (1 / M - 0.5)\), with \(1/M - 0.5\) the average
+age of the stock, is a reasonable choice. Default 0.</p></dd>
+
+
+<dt id="arg-rinit-pen-sd">rinit_pen_sd<a class="anchor" aria-label="anchor" href="#arg-rinit-pen-sd"></a></dt>
+<dd><p>Standard deviation of that penalty, log scale. Default 1.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

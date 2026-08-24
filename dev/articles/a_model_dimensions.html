@@ -46,6 +46,8 @@
     <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
     <li><a class="dropdown-item" href="../articles/ac_wc_sablefish_case_study.html">West Coast Sablefish</a></li>
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
+    <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
+    <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -522,6 +524,62 @@ Don’t fit lengths, 1: Fit lengths</td>
 <td>Size-age transition matrix dimensioned by n_pop, n_regions, n_years,
 n_seas, n_lens, n_ages, n_sexes. Can be specified as NA if length
 compositions are not fit</td>
+</tr>
+<tr class="even">
+<td>LenBinMap</td>
+<td>Matrix dimensioned by n_lens, n_observed_lens mapping the model’s
+length bins onto the bins the compositions are recorded on, each row
+summing to 1. NULL when the two coincide; when supplied, the observed
+length composition arrays are dimensioned by n_observed_lens rather than
+n_lens, and expected compositions are mapped through it inside the
+likelihood the way AgeingError maps ages</td>
+</tr>
+<tr class="odd">
+<td>ln_growth_pars</td>
+<td>Parameter array dimensioned by n_pop, n_regions, n_sexes,
+n_growth_pars of log growth parameters in the order L1, L2, K, CV1, CV2,
+and rho under the Richards form</td>
+</tr>
+<tr class="even">
+<td>ln_growth_devs</td>
+<td>Parameter array dimensioned by n_pop, n_regions, n_years,
+n_growth_pars, n_sexes of deviations on the growth parameters, zero and
+mapped off for parameters that do not vary and for years outside
+growth_tv_years</td>
+</tr>
+<tr class="odd">
+<td>map_ln_growth_devs</td>
+<td>Array dimensioned like ln_growth_devs indicating which growth
+parameter deviations are fixed (mapped off), read by the process error
+penalty</td>
+</tr>
+<tr class="even">
+<td>ln_growth_semipar_devs</td>
+<td>Parameter array dimensioned by n_pop, n_regions, n_years, n_ages,
+n_sexes of semi-parametric deviations on mean length at age, multiplying
+the parametric curve</td>
+</tr>
+<tr class="odd">
+<td>growth_pe_pars</td>
+<td>Parameter array dimensioned by n_pop, n_regions, max(4, n_ages,
+n_growth_pars), n_sexes, 2 of process error hyperparameters for both
+growth deviation streams. The first stream holds one log process error
+standard deviation per growth parameter for the time-varying deviations.
+The second holds the semi-parametric surface’s correlations by age, year
+and cohort in slots one to three and the log scale in slot four for the
+correlated forms; the iid and random walk forms instead read one log
+sigma per age. Slots a form does not read are mapped off</td>
+</tr>
+<tr class="even">
+<td>map_ln_growth_semipar_devs</td>
+<td>Array dimensioned like ln_growth_semipar_devs indicating which
+semi-parametric growth deviations are fixed (mapped off)</td>
+</tr>
+<tr class="odd">
+<td>growth_semipar_bins</td>
+<td>Integer vector of the age indices the semi-parametric surface is
+evaluated over, used to subset the age dimension when evaluating GMRF or
+2D AR(1) likelihoods. Defaults to every age</td>
 </tr>
 <tr class="even">
 <td>addtocomp</td>
@@ -1107,44 +1165,76 @@ n_fish_fleets specifying whether to fit to population-specific fishery
 length compositions. 0: Don’t fit, 1: Fit</td>
 </tr>
 <tr class="odd">
+<td>ObsFish_caal</td>
+<td>Observed fishery conditional age-at-length dimensioned by n_regions,
+n_years, n_seas, n_lens, n_ages, n_sexes, n_fish_fleets: the ages of the
+fish aged from each length bin. Can be input as proportions or
+numbers</td>
+</tr>
+<tr class="even">
+<td>UseFish_caal</td>
+<td>Array dimensioned by n_regions, n_years, n_seas, n_lens,
+n_fish_fleets specifying whether to fit each length bin’s age
+composition. 0: Don’t fit, 1: Fit</td>
+</tr>
+<tr class="odd">
+<td>ISS_Fish_caal</td>
+<td>Array dimensioned by n_regions, n_years, n_seas, n_lens, n_sexes,
+n_fish_fleets specifying the input sample size of each length bin, the
+number of fish aged from it</td>
+</tr>
+<tr class="even">
+<td>Wt_Fish_caal</td>
+<td>Array dimensioned by n_regions, n_years, n_seas, n_lens, n_sexes,
+n_fish_fleets specifying a multinomial weight to apply to fishery
+conditional age-at-length, set in
+<code><a href="../reference/Setup_Mod_Weighting.html">Setup_Mod_Weighting()</a></code>
+</td>
+</tr>
+<tr class="odd">
+<td>ObsSrv_caal, UseSrv_caal, ISS_Srv_caal, Wt_Srv_caal</td>
+<td>The survey counterparts, with n_srv_fleets as the last
+dimension</td>
+</tr>
+<tr class="even">
 <td>ISS_FishLenComps_pop</td>
 <td>Array dimensioned by n_pop, n_regions, n_years, n_seas,
 n_fish_fleets specifying the input sample size for population-specific
 fishery length composition likelihoods</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Wt_FishLenComps_pop</td>
 <td>Array dimensioned by n_pop, n_regions, n_years, n_seas, n_sexes,
 n_fish_fleets specifying a multinomial weight to apply to
 population-specific fishery length compositions</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>FishAgeComps_LikeType</td>
 <td>Vector dimensioned by n_fish_fleets specifying the likelihood for
 region-aggregated fishery age compositions. 0: Multinomial, 1:
 Dirichlet-multinomial, 2: Logistic-normal with iid covariance, 999: None
 Available. Further options in Get_Comp_Likelihoods.R</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>FishAgeComps_pop_LikeType</td>
 <td>Vector dimensioned by n_fish_fleets specifying the likelihood for
 population-specific fishery age compositions. Same options as
 FishAgeComps_LikeType</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>FishLenComps_LikeType</td>
 <td>Vector dimensioned by n_fish_fleets specifying the likelihood for
 region-aggregated fishery length compositions. 0: Multinomial, 1:
 Dirichlet-multinomial, 2: Logistic-normal with iid covariance, 999: None
 Available. Further options in Get_Comp_Likelihoods.R</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>FishLenComps_pop_LikeType</td>
 <td>Vector dimensioned by n_fish_fleets specifying the likelihood for
 population-specific fishery length compositions. Same options as
 FishLenComps_LikeType</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>FishAgeComps_Type</td>
 <td>Matrix dimensioned by n_years, n_fish_fleets specifying how
 region-aggregated age composition data should be structured. 0:
@@ -1152,13 +1242,13 @@ Aggregated across sexes and regions, 1: Split by sexes and regions, 2:
 Joint by sex but split by region, 999: None Available. Further options
 in Get_Comp_Likelihoods.R</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>FishAgeComps_pop_Type</td>
 <td>Matrix dimensioned by n_years, n_fish_fleets specifying how
 population-specific age composition data should be structured. Same
 options as FishAgeComps_Type</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>FishLenComps_Type</td>
 <td>Matrix dimensioned by n_years, n_fish_fleets specifying how
 region-aggregated length composition data should be structured. 0:
@@ -1166,124 +1256,124 @@ Aggregated across sexes and regions, 1: Split by sexes and regions, 2:
 Joint by sex but split by region, 999: None Available. Further options
 in Get_Comp_Likelihoods.R</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>FishLenComps_pop_Type</td>
 <td>Matrix dimensioned by n_years, n_fish_fleets specifying how
 population-specific length composition data should be structured. Same
 options as FishLenComps_Type</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>ObsFishAgeComps_discard</td>
 <td>Observed discard age compositions dimensioned by n_regions, n_years,
 n_seas, n_ages, n_sexes, n_fish_fleets. Can be input as proportions or
 numbers, as these are normalized within the model</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>UseFishAgeComps_discard</td>
 <td>Array dimensioned by n_regions, n_years, n_seas, n_fish_fleets
 specifying whether or not to fit to discard age compositions. 0: Don’t
 fit, 1: Fit</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>ISS_FishAgeComps_discard</td>
 <td>Array dimensioned by n_regions, n_years, n_seas, n_sexes,
 n_fish_fleets specifying the input sample size for a multinomial or
 Dirichlet-multinomial discard age composition likelihood</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>ObsFishLenComps_discard</td>
 <td>Observed discard length compositions dimensioned by n_regions,
 n_years, n_seas, n_lens, n_sexes, n_fish_fleets. Can be input as
 proportions or numbers, as these are normalized within the model</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>UseFishLenComps_discard</td>
 <td>Array dimensioned by n_regions, n_years, n_seas, n_fish_fleets
 specifying whether or not to fit to discard length compositions. 0:
 Don’t fit, 1: Fit</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>ISS_FishLenComps_discard</td>
 <td>Array dimensioned by n_regions, n_years, n_seas, n_fish_fleets
 specifying the input sample size for a multinomial or
 Dirichlet-multinomial discard length composition likelihood</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>ObsFishAgeComps_discard_pop</td>
 <td>Population-specific observed discard age compositions dimensioned by
 n_pop, n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets. Can
 be input as proportions or numbers</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>UseFishAgeComps_discard_pop</td>
 <td>Array dimensioned by n_pop, n_regions, n_years, n_seas,
 n_fish_fleets specifying whether to fit to population-specific discard
 age compositions. 0: Don’t fit, 1: Fit</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>ISS_FishAgeComps_discard_pop</td>
 <td>Array dimensioned by n_pop, n_regions, n_years, n_seas, n_sexes,
 n_fish_fleets specifying the input sample size for population-specific
 discard age composition likelihoods</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>UseFishLenComps_discard_pop</td>
 <td>Array dimensioned by n_pop, n_regions, n_years, n_seas,
 n_fish_fleets specifying whether to fit to population-specific discard
 length compositions. 0: Don’t fit, 1: Fit</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>ISS_FishLenComps_discard_pop</td>
 <td>Array dimensioned by n_pop, n_regions, n_years, n_seas,
 n_fish_fleets specifying the input sample size for population-specific
 discard length composition likelihoods</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>FishAgeComps_discard_LikeType</td>
 <td>Vector dimensioned by n_fish_fleets specifying the likelihood for
 region-aggregated discard age compositions. 0: Multinomial, 1:
 Dirichlet-multinomial, 2: Logistic-normal with iid covariance, 999: None
 Available</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>FishLenComps_discard_LikeType</td>
 <td>Vector dimensioned by n_fish_fleets specifying the likelihood for
 region-aggregated discard length compositions. 0: Multinomial, 1:
 Dirichlet-multinomial, 2: Logistic-normal with iid covariance, 999: None
 Available</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>FishAgeComps_discard_pop_LikeType</td>
 <td>Vector dimensioned by n_fish_fleets specifying the likelihood for
 population-specific discard age compositions. Same options as
 FishAgeComps_discard_LikeType</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>FishLenComps_discard_pop_LikeType</td>
 <td>Vector dimensioned by n_fish_fleets specifying the likelihood for
 population-specific discard length compositions. Same options as
 FishLenComps_discard_LikeType</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>FishAgeComps_discard_Type</td>
 <td>Matrix dimensioned by n_years, n_fish_fleets specifying how
 region-aggregated discard age composition data should be structured. 0:
 Aggregated across sexes and regions, 1: Split by sexes and regions, 2:
 Joint by sex but split by region, 999: None Available</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>FishLenComps_discard_Type</td>
 <td>Matrix dimensioned by n_years, n_fish_fleets specifying how
 region-aggregated discard length composition data should be structured.
 Same options as FishAgeComps_discard_Type</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>FishAgeComps_discard_pop_Type</td>
 <td>Matrix dimensioned by n_years, n_fish_fleets specifying how
 population-specific discard age composition data should be structured.
 Same options as FishAgeComps_discard_Type</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>FishLenComps_discard_pop_Type</td>
 <td>Matrix dimensioned by n_years, n_fish_fleets specifying how
 population-specific discard length composition data should be

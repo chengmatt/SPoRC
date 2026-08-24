@@ -51,10 +51,14 @@ get_osa(
 
 - N:
 
-  Input (or effective if Multinomial) sample size. Dimensions depend on
-  `comp_type`:
+  Input (or effective if Multinomial) sample size, at the model's full
+  year dimension in every case: `years` (or `years_by_region`) selects
+  the years actually used, the same way it selects them from
+  `obs_mat`/`exp_mat`, so `N` is never pre-filtered by the caller.
+  Dimensions depend on `comp_type`:
 
-  - `comp_type = 0` (aggregated): vector of length `n_years`.
+  - `comp_type = 0` (aggregated): vector of length `n_years` (the
+    model's, not the length of `years`).
 
   - `comp_type = 1` (split by region and sex): array
     `[n_regions, n_years, n_sexes]`.
@@ -63,7 +67,9 @@ get_osa(
     `[n_regions, n_years]`.
 
   For years without data, users can simply input an NA or any abritary
-  number (it gets filtered out within the function).
+  number (it gets filtered out within the function). This is the same
+  array `ISS_*Comps` already is in the model's data list, so it can
+  usually be passed straight through.
 
 - DM_theta:
 
@@ -91,10 +97,10 @@ get_osa(
 
 - years:
 
-  Vector of years to filter to if composition type is aggregated (0).
-  Otherwise, this expects a list where each list element is a vector of
-  years for each region where compositions are available for use (split
-  by region and sex, or split by region, joint by sex).
+  Years with composition data. Either a plain vector, used for every
+  region, or a list with one vector of years per region when the regions
+  carry different years. Both forms work for every composition type. A
+  region with no years is skipped.
 
 - seas:
 
@@ -159,8 +165,11 @@ get_osa(
 
   One of `"FishAge"`, `"FishLen"`, `"SrvAge"`, `"SrvLen"`, identifying
   which composition data source to pull internal OSA residuals for.
-  Required when `model` is supplied and `index_source` is `NULL` and
-  `tag = FALSE`.
+  Conditional age-at-length uses `"Fish_caal"` or `"Srv_caal"`, which
+  return an extra `len` column giving the length bin each age
+  composition was conditioned on and ignore `family`, since CAAL carries
+  only the discrete likelihoods. Required when `model` is supplied and
+  `index_source` is `NULL` and `tag = FALSE`.
 
 - index_source:
 

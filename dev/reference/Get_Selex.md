@@ -24,7 +24,9 @@ Get_Selex(
   bin_dev_bins = NULL,
   sel_norm_bins = NULL,
   n_sel_bins = NULL,
-  apical = 1
+  apical = 1,
+  dbnrml_raw = c(0, 0),
+  dbnrml_startbin = 1
 )
 ```
 
@@ -283,6 +285,24 @@ Get_Selex(
   offset takes `exp(ln_*sel_sex_scale)` here, which moves the middle of
   its curve and leaves the selectivity at the first and last bins where
   their own parameters put them. Ignored by every other form.
+
+- dbnrml_raw:
+
+  Integer vector of length two (0/1) for the double normal
+  (`Selex_Model == 4`): whether the ascending and descending limbs are
+  left as raw Gaussians rather than anchored to `p5` and `p6` at the
+  first and last bins. A raw limb is \\\exp(-(x - peak)^2 / width)\\
+  built up to the apical value, with no rescaling to hit an endpoint.
+  Default `c(0, 0)`, both anchored.
+
+- dbnrml_startbin:
+
+  Integer, the bin the double normal's ascending limb is anchored at and
+  built up from (`Selex_Model == 4`). `1` (the default) anchors at the
+  first bin. Anchor at a later bin when the compositions start above the
+  population's first length bin: `p5` is then the selectivity at that
+  bin, and every bin below it takes \\(b / b\_{start})^2\\ times the
+  selectivity there.
 
 ## Value
 

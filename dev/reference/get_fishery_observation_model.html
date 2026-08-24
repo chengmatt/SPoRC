@@ -40,6 +40,8 @@ populated over 1:n_yrs.'><meta name="robots" content="noindex"></head><body>
     <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
     <li><a class="dropdown-item" href="../articles/ac_wc_sablefish_case_study.html">West Coast Sablefish</a></li>
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
+    <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
+    <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -109,7 +111,17 @@ populated over <code>1:n_yrs</code>.</p>
 <span>  fish_q_cov <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fish_q_coeff <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ObsFishIdx <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  UseFishIdx <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  UseFishIdx <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  do_caal <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  Fish_caal <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  Fish_caal_discard <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  SizeAgeTrans_fish <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  fish_len_comp_sel <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  fish_selex_type <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  ret_selex_type <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  fish_sel_l <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ret_sel_l <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  Fmort <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -206,12 +218,56 @@ Numbers at age are decayed by <code>exp(-t_fish * ZAA)</code> before the index i
 formed, mirroring <code>t_srv</code> for surveys. <code>NULL</code> (the default) skips
 the decay entirely and reproduces a start-of-season index.</p></dd>
 
+
+<dt id="arg-do-caal">do_caal<a class="anchor" aria-label="anchor" href="#arg-do-caal"></a></dt>
+<dd><p>Integer (0/1) switch for building the joint catch at length
+and age arrays. Off by default.</p></dd>
+
+
+<dt id="arg-fish-caal-fish-caal-discard">Fish_caal, Fish_caal_discard<a class="anchor" aria-label="anchor" href="#arg-fish-caal-fish-caal-discard"></a></dt>
+<dd><p>Arrays <code>[pop, region, year, season, len, age, sex,
+fish_fleet]</code>, output containers for retained/discarded catch at length and
+age. Only written when <code>do_caal == 1</code> and <code>fit_lengths == 1</code>.</p></dd>
+
+
+<dt id="arg-sizeagetrans-fish">SizeAgeTrans_fish<a class="anchor" aria-label="anchor" href="#arg-sizeagetrans-fish"></a></dt>
+<dd><p>Array <code>[pop, region, year, season, len, age,
+sex, fish_fleet]</code>, each fleet's own key from the growth module, or
+<code>NULL</code> to read the shared data key.</p></dd>
+
+
+<dt id="arg-fish-len-comp-sel">fish_len_comp_sel<a class="anchor" aria-label="anchor" href="#arg-fish-len-comp-sel"></a></dt>
+<dd><p>Integer vector <code>[fish_fleet]</code>. <code>0</code>
+(default) selects the catch at age and spreads it over lengths afterwards,
+so every fish of an age is equally catchable. <code>1</code> selects at length
+instead: the fish at each age are spread over the lengths of the
+composition key and then selected length by length,
+\(C_l = s(l) \sum_a P(l \mid a)\, N_a (1 - e^{-Z_a}) F / Z_a\), so the
+long fish of an age are taken more often. Requires
+<code>fish_selex_type == 1</code>.</p></dd>
+
+
+<dt id="arg-fish-selex-type-ret-selex-type">fish_selex_type, ret_selex_type<a class="anchor" aria-label="anchor" href="#arg-fish-selex-type-ret-selex-type"></a></dt>
+<dd><p>Integer (0 age, 1 length), the scale
+total and retention selectivity are defined on.</p></dd>
+
+
+<dt id="arg-fish-sel-l-ret-sel-l">fish_sel_l, ret_sel_l<a class="anchor" aria-label="anchor" href="#arg-fish-sel-l-ret-sel-l"></a></dt>
+<dd><p>Arrays <code>[region, year, len, sex,
+fish_fleet]</code> of selectivity at length, read under
+<code>fish_len_comp_sel == 1</code>.</p></dd>
+
+
+<dt id="arg-fmort">Fmort<a class="anchor" aria-label="anchor" href="#arg-fmort"></a></dt>
+<dd><p>Array <code>[region, year, season, fish_fleet]</code> of fishing
+mortality, read under <code>fish_len_comp_sel == 1</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>List with elements <code>fish_q</code>, <code>CAA</code>, <code>DAA</code>,
-  <code>CAL</code>, <code>DAL</code>, <code>PredCatch</code>, <code>PredDiscard</code>,
-  <code>PredFishIdx</code>.</p>
+  <code>CAL</code>, <code>DAL</code>, <code>Fish_caal</code>, <code>Fish_caal_discard</code>,
+  <code>PredCatch</code>, <code>PredDiscard</code>, <code>PredFishIdx</code>.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

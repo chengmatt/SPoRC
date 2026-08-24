@@ -38,6 +38,8 @@ and logistic-normal likelihoods."><meta name="robots" content="noindex"></head><
     <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
     <li><a class="dropdown-item" href="../articles/ac_wc_sablefish_case_study.html">West Coast Sablefish</a></li>
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
+    <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
+    <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -179,7 +181,10 @@ when compositions are aggregated.</p></dd>
 
 <dt id="arg-ageingerror">AgeingError<a class="anchor" aria-label="anchor" href="#arg-ageingerror"></a></dt>
 <dd><p>Ageing error matrix used to map model age bins to
-observed age bins.</p></dd>
+observed age bins. For length compositions, either <code>NA</code> (the model
+and observed bins coincide) or a matrix <code>[n_model_bins x n_obs_bins]</code>
+mapping the model's length bins onto the observed ones, the same way, when
+the compositions are recorded on coarser bins than the model carries.</p></dd>
 
 
 <dt id="arg-use">use<a class="anchor" aria-label="anchor" href="#arg-use"></a></dt>
@@ -203,14 +208,16 @@ ageing error has mapped model bins onto observed ones.</p></dd>
 
 <dt id="arg-comp-const-obs">comp_const_obs<a class="anchor" aria-label="anchor" href="#arg-comp-const-obs"></a></dt>
 <dd><p>Integer (0 or 1). Whether <code>addtocomp</code> is added to
-the observed proportions that weight the multinomial, as well as inside the
+the observed proportions that weight the multinomial and enter the
+Dirichlet-multinomial. For the Dirichlet-multinomial a constant on the
+observed side is not neutral: a bin with no observed and no expected mass
+contributes \(\log(\theta/(1+\theta))\) regardless of the constant's size,
+so compositions with many structurally empty bins (conditional
+age-at-length above all) potentially bias \(\theta\) upward under <code>1</code>. Use
+<code>0</code> there. It is also added inside the
 logarithms. <code>1</code> (default) is the unbiased choice: the stationary point
-of the kernel is exactly <code>p = obs</code>. <code>0</code> weights by the raw
-observed proportions, which is what the ADMB templates do, and sharpens the
-expected composition away from the data by <code>n * addtocomp</code>. The
-difference is not cosmetic once effective sample sizes are large: on the EBS
-pollock bridge, switching from 0 to 1 moves estimated SSB by a median of
-8.8 percent. Use <code>0</code> only to reproduce an ADMB model.</p></dd>
+of the likelihood is exactly <code>p = obs</code>. <code>0</code> weights by the raw
+observed proportions.</p></dd>
 
 </dl></div>
     <div class="section level2">

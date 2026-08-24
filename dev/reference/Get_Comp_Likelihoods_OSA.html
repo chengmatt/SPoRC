@@ -38,6 +38,8 @@ logistic‑normal block lengths used during packing."><meta name="robots" conten
     <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
     <li><a class="dropdown-item" href="../articles/ac_wc_sablefish_case_study.html">West Coast Sablefish</a></li>
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
+    <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
+    <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -161,7 +163,10 @@ logistic‑normal block lengths used during packing.</p>
 
 <dt id="arg-ageingerror">AgeingError<a class="anchor" aria-label="anchor" href="#arg-ageingerror"></a></dt>
 <dd><p>Ageing error matrix used to map model age bins to
-observed age bins.</p></dd>
+observed age bins. For length compositions, either <code>NA</code> (the model
+and observed bins coincide) or a matrix <code>[n_model_bins x n_obs_bins]</code>
+mapping the model's length bins onto the observed ones, the same way, when
+the compositions are recorded on coarser bins than the model carries.</p></dd>
 
 
 <dt id="arg-use">use<a class="anchor" aria-label="anchor" href="#arg-use"></a></dt>

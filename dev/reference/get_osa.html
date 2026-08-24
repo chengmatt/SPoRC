@@ -36,6 +36,8 @@ internally calling [run_external_comp_osa()] to perform the residual calculation
     <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
     <li><a class="dropdown-item" href="../articles/ac_wc_sablefish_case_study.html">West Coast Sablefish</a></li>
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
+    <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
+    <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -106,12 +108,17 @@ removed when filtering by <code>years</code>.</p></dd>
 
 
 <dt id="arg-n">N<a class="anchor" aria-label="anchor" href="#arg-n"></a></dt>
-<dd><p>Input (or effective if Multinomial) sample size. Dimensions depend on <code>comp_type</code>:</p><ul><li><p><code>comp_type = 0</code> (aggregated): vector of length <code>n_years</code>.</p></li>
+<dd><p>Input (or effective if Multinomial) sample size, at the model's full
+year dimension in every case: <code>years</code> (or <code>years_by_region</code>)
+selects the years actually used, the same way it selects them from
+<code>obs_mat</code>/<code>exp_mat</code>, so <code>N</code> is never pre-filtered by the
+caller. Dimensions depend on <code>comp_type</code>:</p><ul><li><p><code>comp_type = 0</code> (aggregated): vector of length <code>n_years</code>
+    (the model's, not the length of <code>years</code>).</p></li>
 <li><p><code>comp_type = 1</code> (split by region and sex): array
     <code>[n_regions, n_years, n_sexes]</code>.</p></li>
 <li><p><code>comp_type = 2</code> (split by region, joint by sex): matrix
     <code>[n_regions, n_years]</code>.</p></li>
-</ul><p>For years without data, users can simply input an NA or any abritary number (it gets filtered out within the function).</p></dd>
+</ul><p>For years without data, users can simply input an NA or any abritary number (it gets filtered out within the function). This is the same array <code>ISS_*Comps</code> already is in the model's data list, so it can usually be passed straight through.</p></dd>
 
 
 <dt id="arg-dm-theta">DM_theta<a class="anchor" aria-label="anchor" href="#arg-dm-theta"></a></dt>
@@ -131,7 +138,7 @@ must match <code>N</code>:</p><ul><li><p>aggregated: scalar</p></li>
 
 
 <dt id="arg-years">years<a class="anchor" aria-label="anchor" href="#arg-years"></a></dt>
-<dd><p>Vector of years to filter to if composition type is aggregated (0). Otherwise, this expects a list where each list element is a vector of years for each region where compositions are available for use (split by region and sex, or split by region, joint by sex).</p></dd>
+<dd><p>Years with composition data. Either a plain vector, used for every region, or a list with one vector of years per region when the regions carry different years. Both forms work for every composition type. A region with no years is skipped.</p></dd>
 
 
 <dt id="arg-seas">seas<a class="anchor" aria-label="anchor" href="#arg-seas"></a></dt>
@@ -189,7 +196,11 @@ build <code>model</code>. Required when <code>model</code> is supplied.</p></dd>
 <dt id="arg-comp-source">comp_source<a class="anchor" aria-label="anchor" href="#arg-comp-source"></a></dt>
 <dd><p>One of <code>"FishAge"</code>, <code>"FishLen"</code>, <code>"SrvAge"</code>,
 <code>"SrvLen"</code>, identifying which composition data source to pull
-internal OSA residuals for. Required when <code>model</code> is supplied and
+internal OSA residuals for. Conditional age-at-length uses
+<code>"Fish_caal"</code> or <code>"Srv_caal"</code>, which return an extra
+<code>len</code> column giving the length bin each age composition was
+conditioned on and ignore <code>family</code>, since CAAL carries only the
+discrete likelihoods. Required when <code>model</code> is supplied and
 <code>index_source</code> is <code>NULL</code> and <code>tag = FALSE</code>.</p></dd>
 
 

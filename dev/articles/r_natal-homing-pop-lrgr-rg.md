@@ -254,8 +254,8 @@ Because a proportion of individuals do not natally home, a stray rate an
 be specified to represent components of the population that temporarily
 transfer population memerbship. By default, this is set at 0, and thus,
 individuals do not stray. Rather, individuals that do not natally home
-essentially represent skipped spawning (i.e., do not contribute to
-spawning biomass).
+represent skipped spawning (i.e., do not contribute to spawning
+biomass).
 
 ``` r
 

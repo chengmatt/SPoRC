@@ -52,6 +52,8 @@ before model compilation.'><meta name="robots" content="noindex"></head><body>
     <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
     <li><a class="dropdown-item" href="../articles/ac_wc_sablefish_case_study.html">West Coast Sablefish</a></li>
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
+    <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
+    <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -123,7 +125,15 @@ before model compilation.</p>
 <span>  srv_idx_ages <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  SrvAgeComps_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  SrvIdx_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"lognormal"</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span>,</span>
+<span>  SrvLenComps_sel <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"age"</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span>,</span>
+<span>  srv_waa_selected <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span>,</span>
 <span>  SrvIdx_Cov <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ObsSrv_caal <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  UseSrv_caal <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ISS_Srv_caal <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  Srv_caal_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span>,</span>
+<span>  Srv_caal_Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"none_Year_1-terminal_Fleet_"</span>, <span class="fl">1</span><span class="op">:</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_srv_fleets</span>,</span>
+<span>    sep <span class="op">=</span> <span class="st">""</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -379,12 +389,65 @@ lognormal under <code>"mvn"</code>, whose covariance describes the regional
 series only.</p></dd>
 
 
+<dt id="arg-srvlencomps-sel">SrvLenComps_sel<a class="anchor" aria-label="anchor" href="#arg-srvlencomps-sel"></a></dt>
+<dd><p>Character vector <code>[n_srv_fleets]</code>, whether a
+length-based selectivity is applied before or after the fish are spread
+over lengths. <code>"age"</code> (default) selects the index at age and spreads
+it afterwards; <code>"length"</code> spreads the numbers at each age over the
+key first and selects them length by length, so the survey sees the long
+fish of an age more often. The key is the survey's own, at <code>t_srv</code>.
+Requires length-based survey selectivity. Use <code>"length"</code> when
+selectivity is length based and the length compositions are what inform it.</p></dd>
+
+
+<dt id="arg-srv-waa-selected">srv_waa_selected<a class="anchor" aria-label="anchor" href="#arg-srv-waa-selected"></a></dt>
+<dd><p>Integer vector <code>[n_srv_fleets]</code> (0/1). With
+weight at age derived from growth and length-based selectivity, <code>1</code>
+makes a biomass index use the mean weight of the fish the survey sees at
+each age, \(\sum_l P(l \mid a) s(l) w(l) / \sum_l P(l \mid a) s(l)\),
+instead of the population mean weight at that age. The survey twin of
+<code>fish_waa_selected</code>. Only applies to an index in weight
+(<code>srv_idx_type = "biom"</code>).</p></dd>
+
+
 <dt id="arg-srvidx-cov">SrvIdx_Cov<a class="anchor" aria-label="anchor" href="#arg-srvidx-cov"></a></dt>
 <dd><p>List with one element per survey fleet holding the fixed
 covariance matrix for fleets using <code>"mvn"</code>, and <code>NULL</code>
 otherwise. Each matrix must be square with one row per observation the
 fleet fits, ordered as the observations appear when scanning that fleet's
 <code>UseSrvIdx</code> slice in array order.</p></dd>
+
+
+<dt id="arg-obssrv-caal">ObsSrv_caal<a class="anchor" aria-label="anchor" href="#arg-obssrv-caal"></a></dt>
+<dd><p>Observed conditional age-at-length array
+<code>[n_regions x n_years x n_seas x n_lens x n_ages x n_sexes x
+n_srv_fleets]</code>. A CAAL observation is the age composition of the fish aged
+from one length bin, so the age margin of each length row is what gets fit.
+<code>NULL</code> (default) for a model with no CAAL data.</p></dd>
+
+
+<dt id="arg-usesrv-caal">UseSrv_caal<a class="anchor" aria-label="anchor" href="#arg-usesrv-caal"></a></dt>
+<dd><p>Use flags <code>[n_regions x n_years x n_seas x n_lens x
+n_srv_fleets]</code>. Length bins with no aged fish carry a zero and are skipped.</p></dd>
+
+
+<dt id="arg-iss-srv-caal">ISS_Srv_caal<a class="anchor" aria-label="anchor" href="#arg-iss-srv-caal"></a></dt>
+<dd><p>Input sample sizes <code>[n_regions x n_years x n_seas x
+n_lens x n_sexes x n_srv_fleets]</code>. Summed from <code>ObsSrv_caal</code> when
+<code>NULL</code>.</p></dd>
+
+
+<dt id="arg-srv-caal-liketype">Srv_caal_LikeType<a class="anchor" aria-label="anchor" href="#arg-srv-caal-liketype"></a></dt>
+<dd><p>Character vector of length <code>n_srv_fleets</code>.
+One of <code>"none"</code>, <code>"Multinomial"</code> or
+<code>"Dirichlet-Multinomial"</code>. The logistic-normal families are not
+available for CAAL, since a single length bin's age sample is small and
+mostly zeros, which the additive log-ratio transform cannot handle.</p></dd>
+
+
+<dt id="arg-srv-caal-type">Srv_caal_Type<a class="anchor" aria-label="anchor" href="#arg-srv-caal-type"></a></dt>
+<dd><p>Composition type specification, using the same
+<code>"CompType_Year_x-y_Fleet_z"</code> convention as the marginal compositions.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

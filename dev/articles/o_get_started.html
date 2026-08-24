@@ -46,6 +46,8 @@
     <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
     <li><a class="dropdown-item" href="../articles/ac_wc_sablefish_case_study.html">West Coast Sablefish</a></li>
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
+    <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
+    <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -940,16 +942,15 @@ spawning biomass and recruitment from these jitter results.</p>
 <h2 id="mcmc">MCMC<a class="anchor" aria-label="anchor" href="#mcmc"></a>
 </h2>
 <p>Lastly, SPoRC can also interact with other Bayesian software (i.e,
-<code>adnuts</code>) to conduct MCMC analysis, which not only estimates
-parameter uncertainty but also samples the full joint posterior,
-revealing parameter correlations, skewed distributions, or potential
-multimodality that MLE may miss. Comparing MCMC results with maximum
-likelihood estimates further helps assess consistency in point estimates
-and standard errors. In particular, we can utilize the native
-functionality built into <code>adnuts</code>, which seamlessly
-integrates with TMB and RTMB models, which will be demonstrated in the
-following sections. First, let us install and load in the relevant
-packages.</p>
+<code>adnuts</code>) to conduct MCMC analysis, which estimates parameter
+uncertainty and samples the full joint posterior, showing parameter
+correlations, skewed distributions, or potential multimodality that MLE
+may miss. Comparing MCMC results with maximum likelihood estimates
+further helps assess consistency in point estimates and standard errors.
+In particular, we can utilize the native functionality built into
+<code>adnuts</code>, which works directly with TMB and RTMB models,
+which will be demonstrated in the following sections. First, let us
+install and load in the relevant packages.</p>
 <div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># load in adnuts ans associated packages for MCMC</span></span>
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"andrjohns/StanEstimators"</span><span class="op">)</span></span>

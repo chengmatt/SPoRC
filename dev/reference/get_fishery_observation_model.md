@@ -51,7 +51,17 @@ get_fishery_observation_model(
   fish_q_cov = NULL,
   fish_q_coeff = NULL,
   ObsFishIdx = NULL,
-  UseFishIdx = NULL
+  UseFishIdx = NULL,
+  do_caal = 0,
+  Fish_caal = NULL,
+  Fish_caal_discard = NULL,
+  SizeAgeTrans_fish = NULL,
+  fish_len_comp_sel = NULL,
+  fish_selex_type = 0,
+  ret_selex_type = 0,
+  fish_sel_l = NULL,
+  ret_sel_l = NULL,
+  Fmort = NULL
 )
 ```
 
@@ -142,7 +152,49 @@ get_fishery_observation_model(
   mirroring `t_srv` for surveys. `NULL` (the default) skips the decay
   entirely and reproduces a start-of-season index.
 
+- do_caal:
+
+  Integer (0/1) switch for building the joint catch at length and age
+  arrays. Off by default.
+
+- Fish_caal, Fish_caal_discard:
+
+  Arrays `[pop, region, year, season, len, age, sex, fish_fleet]`,
+  output containers for retained/discarded catch at length and age. Only
+  written when `do_caal == 1` and `fit_lengths == 1`.
+
+- SizeAgeTrans_fish:
+
+  Array `[pop, region, year, season, len, age, sex, fish_fleet]`, each
+  fleet's own key from the growth module, or `NULL` to read the shared
+  data key.
+
+- fish_len_comp_sel:
+
+  Integer vector `[fish_fleet]`. `0` (default) selects the catch at age
+  and spreads it over lengths afterwards, so every fish of an age is
+  equally catchable. `1` selects at length instead: the fish at each age
+  are spread over the lengths of the composition key and then selected
+  length by length, \\C_l = s(l) \sum_a P(l \mid a)\\ N_a (1 - e^{-Z_a})
+  F / Z_a\\, so the long fish of an age are taken more often. Requires
+  `fish_selex_type == 1`.
+
+- fish_selex_type, ret_selex_type:
+
+  Integer (0 age, 1 length), the scale total and retention selectivity
+  are defined on.
+
+- fish_sel_l, ret_sel_l:
+
+  Arrays `[region, year, len, sex, fish_fleet]` of selectivity at
+  length, read under `fish_len_comp_sel == 1`.
+
+- Fmort:
+
+  Array `[region, year, season, fish_fleet]` of fishing mortality, read
+  under `fish_len_comp_sel == 1`.
+
 ## Value
 
-List with elements `fish_q`, `CAA`, `DAA`, `CAL`, `DAL`, `PredCatch`,
-`PredDiscard`, `PredFishIdx`.
+List with elements `fish_q`, `CAA`, `DAA`, `CAL`, `DAL`, `Fish_caal`,
+`Fish_caal_discard`, `PredCatch`, `PredDiscard`, `PredFishIdx`.

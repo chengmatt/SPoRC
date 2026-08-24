@@ -42,7 +42,11 @@ get_survey_observation_model(
   srv_q_type = NULL,
   ObsSrvIdx = NULL,
   UseSrvIdx = NULL,
-  RecDev_anom = NULL
+  RecDev_anom = NULL,
+  do_caal = 0,
+  Srv_caal = NULL,
+  SizeAgeTrans_srv = NULL,
+  srv_len_comp_sel = NULL
 )
 ```
 
@@ -166,6 +170,31 @@ get_survey_observation_model(
   from the centre their penalty asserts, or `NULL` when no fleet
   observes them. Read only by fleets with `srv_idx_type == 2`.
 
+- do_caal:
+
+  Integer (0/1) switch for building the joint survey index at length and
+  age array. Off by default.
+
+- Srv_caal:
+
+  Array `[pop, region, year, season, len, age, sex, srv_fleet]`, output
+  container for the survey index at length and age. Only written when
+  `do_caal == 1` and `fit_lengths == 1`.
+
+- SizeAgeTrans_srv:
+
+  Array `[pop, region, year, season, len, age, sex, srv_fleet]`, each
+  survey's own key from the growth module, or `NULL` to read the shared
+  data key.
+
+- srv_len_comp_sel:
+
+  Integer vector `[srv_fleet]`. `0` (default) expands the index at age
+  through the key; `1` applies the length selectivity at length to the
+  numbers spread over the composition own key, \\I_l = s(l) \sum_a P(l
+  \mid a)\\ N_a e^{-t Z_a}\\. Needs `srv_selex_type == 1`.
+
 ## Value
 
-List with elements `srv_q`, `srv_sel`, `SrvIAA`, `SrvIAL`, `PredSrvIdx`.
+List with elements `srv_q`, `srv_sel`, `SrvIAA`, `SrvIAL`, `Srv_caal`,
+`PredSrvIdx`.

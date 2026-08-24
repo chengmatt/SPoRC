@@ -39,6 +39,8 @@
   Priors](https://chengmatt.github.io/SPoRC/dev/articles/k_defining_priors.md):
 - [Alternative Approaches for Movement
   Parameterization](https://chengmatt.github.io/SPoRC/dev/articles/q_movement_param.md):
+- [Choosing Growth
+  Options](https://chengmatt.github.io/SPoRC/dev/articles/af_growth_options.md):
 - [Random Effects (Selectivity Example; Eastern Bering Sea
   Pollock)](https://chengmatt.github.io/SPoRC/dev/articles/n_single_region_ebs_pollock_randomeff_case_study.md)
   :

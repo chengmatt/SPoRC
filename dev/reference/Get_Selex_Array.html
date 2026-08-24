@@ -38,6 +38,8 @@ data arrays are handed in."><meta name="robots" content="noindex"></head><body>
     <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
     <li><a class="dropdown-item" href="../articles/ac_wc_sablefish_case_study.html">West Coast Sablefish</a></li>
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
+    <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
+    <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -95,7 +97,9 @@ data arrays are handed in.</p>
 <span>  sex_scale_offset <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sex_apical_offset <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sex_scale <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  nselbins <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  nselbins <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  dbnrml_raw <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  dbnrml_startbin <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -207,6 +211,12 @@ each cell's plateau bin (<code>0</code> = none), or <code>NULL</code>. Bins beyo
 are held at its value for the parametric forms (see <code>n_sel_bins</code> in
 <code><a href="Get_Selex.html">Get_Selex</a></code>); the bicubic form's own setup-built plateau is
 unaffected.</p></dd>
+
+
+<dt id="arg-dbnrml-startbin">dbnrml_startbin<a class="anchor" aria-label="anchor" href="#arg-dbnrml-startbin"></a></dt>
+<dd><p>Integer vector <code>[n_fleets]</code> or <code>NULL</code>, the
+bin each fleet's double normal anchors its ascending limb at; see
+<code><a href="Get_Selex.html">Get_Selex</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

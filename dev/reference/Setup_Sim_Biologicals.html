@@ -38,6 +38,8 @@ All arrays must conform to the dimension structure stored in sim_list."><meta na
     <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
     <li><a class="dropdown-item" href="../articles/ac_wc_sablefish_case_study.html">West Coast Sablefish</a></li>
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
+    <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
+    <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -73,7 +75,9 @@ All arrays must conform to the dimension structure stored in <code>sim_list</cod
 <span>  <span class="va">WAA_srv_input</span>,</span>
 <span>  <span class="va">MatAA_input</span>,</span>
 <span>  AgeingError_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  SizeAgeTrans_input <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  SizeAgeTrans_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  SizeAgeTrans_fish_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  SizeAgeTrans_srv_input <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -141,6 +145,15 @@ model ages into observed bins.</p></dd>
 Each slice maps age classes to length bins and should be column-stochastic
 (columns sum to 1). Only required when fitting length compositions;
 defaults to <code>NULL</code>.</p></dd>
+
+
+<dt id="arg-sizeagetrans-fish-input-sizeagetrans-srv-input">SizeAgeTrans_fish_input, SizeAgeTrans_srv_input<a class="anchor" aria-label="anchor" href="#arg-sizeagetrans-fish-input-sizeagetrans-srv-input"></a></dt>
+<dd><p>Optional size-age
+transition arrays per fleet, <code>[n_pop x n_regions x n_yrs x n_seas x
+n_lens x n_ages x n_sexes x n_fleets x n_sims]</code>, each read at that fleet's
+own timing. When supplied they are used for that fleet type in place of
+<code>SizeAgeTrans_input</code>; the self-test passes the fitted model's own keys
+here when growth was estimated.</p></dd>
 
 </dl></div>
     <div class="section level2">

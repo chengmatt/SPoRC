@@ -38,6 +38,8 @@ block structure and mapping. Called after Setup_Mod_Dim."><meta name="robots" co
     <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
     <li><a class="dropdown-item" href="../articles/ac_wc_sablefish_case_study.html">West Coast Sablefish</a></li>
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
+    <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
+    <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -81,6 +83,35 @@ block structure and mapping. Called after <code><a href="Setup_Mod_Dim.html">Set
 <span>  M_prior <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  fit_lengths <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  SizeAgeTrans <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  SizeAgeTrans_fish <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  SizeAgeTrans_srv <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  do_caal <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  growth_model <span class="op">=</span> <span class="st">"none"</span>,</span>
+<span>  growth_spec <span class="op">=</span> <span class="st">"est_all"</span>,</span>
+<span>  growth_fix <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  growth_tv_model <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  growth_tv_years <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  growth_tv_link <span class="op">=</span> <span class="st">"log"</span>,</span>
+<span>  growth_par_bounds <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  growth_tv_sigma_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
+<span>  growth_tv_spec <span class="op">=</span> <span class="st">"est_all"</span>,</span>
+<span>  growth_tv_type <span class="op">=</span> <span class="st">"curve"</span>,</span>
+<span>  growth_rw_init_sigma <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  growth_semipar <span class="op">=</span> <span class="st">"none"</span>,</span>
+<span>  growth_semipar_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
+<span>  growth_semipar_ages <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  growth_semipar_years <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  LenBinMap <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  growth_A1 <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  growth_A2 <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  growth_len_lower <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  growth_L0 <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  growth_cv_type <span class="op">=</span> <span class="st">"len"</span>,</span>
+<span>  growth_sd_type <span class="op">=</span> <span class="st">"cv"</span>,</span>
+<span>  growth_dist <span class="op">=</span> <span class="st">"normal"</span>,</span>
+<span>  growth_plus_group <span class="op">=</span> <span class="st">"mixture"</span>,</span>
+<span>  waa_model <span class="op">=</span> <span class="st">"data"</span>,</span>
+<span>  wt_len_pars <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  M_spec <span class="op">=</span> <span class="st">"est_ln_M"</span>,</span>
 <span>  M_popblk_spec <span class="op">=</span> <span class="st">"constant"</span>,</span>
 <span>  M_ageblk_spec <span class="op">=</span> <span class="st">"constant"</span>,</span>
@@ -138,15 +169,11 @@ logistic-normal likelihood is specified, as that family handles zeros internally
 
 <dt id="arg-comp-const-obs">comp_const_obs<a class="anchor" aria-label="anchor" href="#arg-comp-const-obs"></a></dt>
 <dd><p>Integer switch (<code>0</code> or <code>1</code>) controlling where
-<code>addtocomp</code> is applied in the multinomial kernel, not a constant to be
+<code>addtocomp</code> is applied in the multinomial likelihood, not a constant to be
 tuned. <code>1</code> (default) adds it to the observed proportions that weight
-the multinomial as well as inside the logarithms, so the kernel is
+the multinomial as well as inside the logarithms, so the likelihood is
 stationary exactly at <code>pred = obs</code>. <code>0</code> weights by the raw
-observed proportions, which is what the ADMB templates do, and displaces
-the expected composition from the data by roughly <code>n * addtocomp</code>. The
-difference matters once effective sample sizes are large: on the EBS
-pollock bridge, switching from <code>0</code> to <code>1</code> moves estimated SSB by
-a median of 8.8 percent. Use <code>0</code> only when reproducing an ADMB model.</p></dd>
+observed proportions.</p></dd>
 
 
 <dt id="arg-addtofishidx">addtofishidx<a class="anchor" aria-label="anchor" href="#arg-addtofishidx"></a></dt>
@@ -214,7 +241,233 @@ row per unique block combination. Required columns:</p><dl><dt><code>popblk</cod
 <dd><p>Numeric array of size-at-age transition probabilities
 (column-stochastic; each age column sums to 1) with dimensions
 <code>[n_pop × n_regions × n_years × n_seas × n_lens × n_ages × n_sexes]</code>.
-Required when <code>fit_lengths = 1</code>; ignored otherwise.</p></dd>
+Required when <code>fit_lengths = 1</code>; ignored otherwise. The shared key
+every fleet reads unless <code>SizeAgeTrans_fish</code>/<code>SizeAgeTrans_srv</code>
+override it for that fleet type.</p></dd>
+
+
+<dt id="arg-sizeagetrans-fish-sizeagetrans-srv">SizeAgeTrans_fish, SizeAgeTrans_srv<a class="anchor" aria-label="anchor" href="#arg-sizeagetrans-fish-sizeagetrans-srv"></a></dt>
+<dd><p>Optional per-fleet size-at-age
+transition arrays, dimensioned like <code>SizeAgeTrans</code> with an added
+trailing fleet dimension (<code>n_fish_fleets</code>/<code>n_srv_fleets</code>).
+<code>NULL</code> (default) reads every fleet's key from the shared
+<code>SizeAgeTrans</code>. Only meaningful with <code>growth_model = "none"</code>;
+a growth model already derives one key per fleet, at that fleet's own
+timing, and rejects these to avoid mixing two sources for the same key.
+This is the fixed-data counterpart of <code>Setup_Sim_Biologicals</code>'s
+<code>SizeAgeTrans_fish_input</code>/<code>SizeAgeTrans_srv_input</code>, and of
+<code>WAA_fish</code>/<code>WAA_srv</code> overriding the shared <code>WAA</code>.</p></dd>
+
+
+<dt id="arg-do-caal">do_caal<a class="anchor" aria-label="anchor" href="#arg-do-caal"></a></dt>
+<dd><p>Integer flag for building the joint arrays at length and age.
+<code>0</code> = no (default); <code>1</code> = yes. Requires <code>fit_lengths = 1</code>.
+Turning this on adds <code>Fish_caal</code>, <code>Fish_caal_discard</code> and <code>Srv_caal</code> to the
+report, holding predicted retained catch, discards and survey index jointly
+by length and age.</p></dd>
+
+
+<dt id="arg-growth-model">growth_model<a class="anchor" aria-label="anchor" href="#arg-growth-model"></a></dt>
+<dd><p>Character. <code>"none"</code> (default) keeps <code>SizeAgeTrans</code>
+and the weight-at-age arrays as data. <code>"vb_schnute"</code> builds the size-age
+transition from estimable von Bertalanffy parameters in Schnute's form:
+length <code>L1</code> at reference age <code>growth_A1</code>, length <code>L2</code> at
+<code>growth_A2</code>, rate <code>K</code>, and CVs of length at age <code>CV1</code> and
+<code>CV2</code> at the two reference ages. Growth below <code>growth_A1</code> is linear
+from <code>growth_L0</code> at age zero, the CV interpolates between the two
+references, and the plus group carries an adjustment for fish older than
+the accumulator age. <code>"richards"</code> is the same curve with a sixth
+parameter, the Richards coefficient <code>rho</code>, applied to the lengths
+raised to that power (<code>rho = 1</code> recovers the von Bertalanffy form).
+Requires <code>fit_lengths = 1</code>; <code>SizeAgeTrans</code> is then ignored and
+may be <code>NA</code>.</p></dd>
+
+
+<dt id="arg-growth-spec">growth_spec<a class="anchor" aria-label="anchor" href="#arg-growth-spec"></a></dt>
+<dd><p>Character. How the growth parameters are estimated:
+<code>"est_all"</code> (default, one set per population, region and sex),
+<code>"est_shared_r"</code> (shared across regions), <code>"est_shared_s"</code>
+(shared across sexes), <code>"est_shared_r_s"</code> (one set per population),
+or <code>"fix"</code>.</p></dd>
+
+
+<dt id="arg-growth-fix">growth_fix<a class="anchor" aria-label="anchor" href="#arg-growth-fix"></a></dt>
+<dd><p>Logical vector, one entry per growth parameter, naming
+which of L1, L2, K, CV1, CV2 (and rho) stay at their starting values
+whatever <code>growth_spec</code> says.</p></dd>
+
+
+<dt id="arg-growth-tv-model">growth_tv_model<a class="anchor" aria-label="anchor" href="#arg-growth-tv-model"></a></dt>
+<dd><p>Time variation of the growth parameters. <code>NULL</code>
+(default) holds every parameter constant. Otherwise a character vector
+naming a structure per parameter, either of length <code>n_gpars</code> in the
+parameter order or named by parameter (<code>L1</code>, <code>L2</code>, <code>K</code>,
+<code>CV1</code>, <code>CV2</code>, <code>rho</code>) with the rest constant, each one of
+<code>"none"</code>, <code>"iid"</code> (independent annual deviations) or
+<code>"rw"</code> (a random walk). A varying parameter gets a deviation series
+<code>ln_growth_devs</code> and a log sigma in the first stream of
+<code>growth_pe_pars</code>.</p></dd>
+
+
+<dt id="arg-growth-tv-years">growth_tv_years<a class="anchor" aria-label="anchor" href="#arg-growth-tv-years"></a></dt>
+<dd><p>Years the deviations are active in, calendar years.
+<code>NULL</code> (default) for every model year, a vector applied to every
+varying parameter, or a list named by parameter. Deviations outside the
+range are held at zero.</p></dd>
+
+
+<dt id="arg-growth-tv-link">growth_tv_link<a class="anchor" aria-label="anchor" href="#arg-growth-tv-link"></a></dt>
+<dd><p>Character, the scale a deviation enters on.
+<code>"log"</code> (default) multiplies the parameter by \(e^{\delta}\);
+<code>"logit"</code> keeps it inside <code>growth_par_bounds</code>,
+\(P_y = lo + (hi - lo)\,\mathrm{logit}^{-1}(\mathrm{logit}((P - lo)/(hi - lo)) + \delta_y)\),
+so the parameter approaches a bound however large the deviation instead of
+crossing it.</p></dd>
+
+
+<dt id="arg-growth-par-bounds">growth_par_bounds<a class="anchor" aria-label="anchor" href="#arg-growth-par-bounds"></a></dt>
+<dd><p>Matrix <code>[n_gpars x 2]</code> of lower and upper
+bounds, natural scale, required under the logit link.</p></dd>
+
+
+<dt id="arg-growth-tv-sigma-spec">growth_tv_sigma_spec<a class="anchor" aria-label="anchor" href="#arg-growth-tv-sigma-spec"></a></dt>
+<dd><p>Character, <code>"fix"</code> (default) holds the
+process error standard deviations of the deviations at their starting
+values, <code>"est"</code> estimates them. Both read the first stream of
+<code>growth_pe_pars</code>, one slot per growth parameter.</p></dd>
+
+
+<dt id="arg-growth-tv-spec">growth_tv_spec<a class="anchor" aria-label="anchor" href="#arg-growth-tv-spec"></a></dt>
+<dd><p>Character, how the deviations are shared across
+strata, with the same vocabulary as <code>growth_spec</code>: <code>"est_all"</code>
+(default), <code>"est_shared_r"</code>, <code>"est_shared_s"</code> or
+<code>"est_shared_r_s"</code>.</p></dd>
+
+
+<dt id="arg-growth-tv-type">growth_tv_type<a class="anchor" aria-label="anchor" href="#arg-growth-tv-type"></a></dt>
+<dd><p>Character. <code>"curve"</code> (default) reads every
+year's size at age off that year's curve. <code>"cohort"</code> carries size at
+age forward cohort by cohort: each year every cohort grows by the increment
+the current year's parameters imply from the size it reached, ages still in
+the linear phase keep the length at <code>growth_A1</code> their birth year's
+parameters gave them, the first age past <code>growth_A1</code> is placed on the
+current year's curve, and the plus group's size blends the cohort entering it
+with the fish already there by their numbers at age. The CV at age is
+then held at the first year's sizes. The propagation starts in the first
+year any deviation is active; every earlier year sits on the first year's
+curve.</p></dd>
+
+
+<dt id="arg-growth-rw-init-sigma">growth_rw_init_sigma<a class="anchor" aria-label="anchor" href="#arg-growth-rw-init-sigma"></a></dt>
+<dd><p>Standard deviation given to the first year of a
+random walk on a growth parameter, as <code>srvsel_rw_init_sigma</code> for
+selectivity. Default <code>5</code>.</p></dd>
+
+
+<dt id="arg-growth-semipar">growth_semipar<a class="anchor" aria-label="anchor" href="#arg-growth-semipar"></a></dt>
+<dd><p>Character. Semi-parametric growth: a year-by-age
+surface of deviations on mean length at age, multiplying the parametric
+curve, so the curve stays the parametric part and the deviations hold departures
+from it. <code>"none"</code> (default) keeps growth purely parametric; otherwise
+one of <code>"iid"</code>, <code>"rw"</code> (a random walk over years within an age),
+<code>"3dmarg"</code> or <code>"3dcond"</code> (a three-dimensional Gaussian Markov
+random field over age, year and cohort, on the marginal or conditional
+variance), or <code>"2dar1"</code> (a separable first-order autoregression over
+ages and years). The same process error forms the selectivity deviations
+use, so a growth surface and a selectivity surface are scored the same way.
+The spread at age follows the deviated mean, which leaves the coefficient of
+variation at age to the parametric part.</p></dd>
+
+
+<dt id="arg-growth-semipar-spec">growth_semipar_spec<a class="anchor" aria-label="anchor" href="#arg-growth-semipar-spec"></a></dt>
+<dd><p>Character, whether the second stream of
+<code>growth_pe_pars</code> is estimated. Whether the process error
+hyperparameters are estimated (<code>"est"</code>) or held at their starting
+values (<code>"fix"</code>, the default). The deviations themselves are always
+estimated.</p></dd>
+
+
+<dt id="arg-growth-semipar-ages">growth_semipar_ages<a class="anchor" aria-label="anchor" href="#arg-growth-semipar-ages"></a></dt>
+<dd><p>Ages the deviations are estimated over, as ages
+(not indices). <code>NULL</code> (default) uses every age. Ages outside the set
+are held at zero, which is how a surface is restricted to the ages the
+length data actually inform.</p></dd>
+
+
+<dt id="arg-growth-semipar-years">growth_semipar_years<a class="anchor" aria-label="anchor" href="#arg-growth-semipar-years"></a></dt>
+<dd><p>Years the deviations are estimated over, calendar
+years. <code>NULL</code> (default) uses every year.</p></dd>
+
+
+<dt id="arg-lenbinmap">LenBinMap<a class="anchor" aria-label="anchor" href="#arg-lenbinmap"></a></dt>
+<dd><p>Optional matrix <code>[n_lens x n_obs_lens]</code> mapping the
+model's length bins onto the bins the length compositions are recorded on,
+each row summing to one, for compositions on coarser bins than the model
+carries (a population of 1 cm bins fit to 5 cm compositions, say). Observed
+length compositions are then dimensioned by <code>n_obs_lens</code> and the
+expected compositions are mapped through it inside the likelihood, the
+way the ageing error matrix maps ages. <code>NULL</code> (default) fits the
+compositions on the model bins.</p></dd>
+
+
+<dt id="arg-growth-a-growth-a-">growth_A1, growth_A2<a class="anchor" aria-label="anchor" href="#arg-growth-a-growth-a-"></a></dt>
+<dd><p>Reference ages for <code>L1</code> and <code>L2</code>.
+<code>growth_A2 = "Linf"</code> instead makes <code>L2</code> the asymptotic length
+itself, with no second reference age to solve it from.</p></dd>
+
+
+<dt id="arg-growth-len-lower">growth_len_lower<a class="anchor" aria-label="anchor" href="#arg-growth-len-lower"></a></dt>
+<dd><p>Numeric vector of the lower edges of the length bins.
+<code>lens</code> in <code>Setup_Mod_Dim</code> are bin midpoints; the key is built on
+the edges.</p></dd>
+
+
+<dt id="arg-growth-l-">growth_L0<a class="anchor" aria-label="anchor" href="#arg-growth-l-"></a></dt>
+<dd><p>Length at age zero anchoring the linear phase. Defaults to
+<code>growth_len_lower[1]</code>.</p></dd>
+
+
+<dt id="arg-growth-cv-type">growth_cv_type<a class="anchor" aria-label="anchor" href="#arg-growth-cv-type"></a></dt>
+<dd><p>Character, <code>"len"</code> (default) interpolates the CV
+on mean length between <code>L1</code> and <code>L2</code>, <code>"age"</code> on age.</p></dd>
+
+
+<dt id="arg-growth-sd-type">growth_sd_type<a class="anchor" aria-label="anchor" href="#arg-growth-sd-type"></a></dt>
+<dd><p>Character, <code>"cv"</code> (default) scales the mean by the
+CV parameters, <code>"sd"</code> reads them as standard deviations.</p></dd>
+
+
+<dt id="arg-growth-dist">growth_dist<a class="anchor" aria-label="anchor" href="#arg-growth-dist"></a></dt>
+<dd><p>Character, <code>"normal"</code> (default) or <code>"lognormal"</code>
+distribution of length at age.</p></dd>
+
+
+<dt id="arg-growth-plus-group">growth_plus_group<a class="anchor" aria-label="anchor" href="#arg-growth-plus-group"></a></dt>
+<dd><p>Character. <code>"mixture"</code> (default) takes the plus
+group's mean length as the survivorship-weighted mixture of the ages it
+holds, their numbers declining at an assumed 0.2 per year and their length
+rising from the curve at the accumulator age to the asymptote; <code>"curve"</code>
+reads the curve at the accumulator age.</p></dd>
+
+
+<dt id="arg-waa-model">waa_model<a class="anchor" aria-label="anchor" href="#arg-waa-model"></a></dt>
+<dd><p>Character. Where weight at age comes from.
+<code>"data"</code> (default) reads <code>WAA</code>, <code>WAA_fish</code> and
+<code>WAA_srv</code> from the arguments of the same name. <code>"wt_len"</code> builds
+them from the size-age key and the weight-length relationship
+\(W = a L^b\) applied at the bin midpoints, so weight at age carries the
+spread of length at age rather than being the weight of the mean length;
+the spawning weight uses the key at spawning time and each fleet's weight
+the key at that fleet's timing, <code>t_fish</code> or <code>t_srv</code>. Under
+<code>"wt_len"</code>, <code>WAA</code> may be <code>NULL</code>, and reference point and
+projection code still read <code>data$WAA</code>, so copy the reported arrays
+into the data list before calling them.</p></dd>
+
+
+<dt id="arg-wt-len-pars">wt_len_pars<a class="anchor" aria-label="anchor" href="#arg-wt-len-pars"></a></dt>
+<dd><p>Weight-length parameters \(a, b\) in \(W = a L^b\),
+a vector of two or an array <code>[n_pop x n_regions x n_sexes x 2]</code>.
+Required when <code>waa_model = "wt_len"</code>.</p></dd>
 
 
 <dt id="arg-m-spec">M_spec<a class="anchor" aria-label="anchor" href="#arg-m-spec"></a></dt>
@@ -268,6 +521,26 @@ population-specific M.</p></dd>
 <dd><p>Array of log-scale starting values for natural mortality,
     dimensioned <code>[n_popblks × n_regionblks × n_yearblks × n_ageblks × n_sexblks]</code>.
     Defaults to <code>log(0.5)</code> for all blocks if not supplied.</p></dd>
+
+  <dt><code>ln_growth_pars</code></dt>
+<dd><p>Array of log-scale starting values for the
+    growth parameters, dimensioned <code>[n_pop × n_regions × n_sexes × n_gpars]</code>
+    in the order <code>L1, L2, K, CV1, CV2</code> and, under the Richards form,
+    <code>rho</code>. Defaults to the ends of the length bins with a rate of
+    <code>0.15</code> and CVs of <code>0.1</code>, so supply your own for any real
+    model.</p></dd>
+
+  <dt><code>growth_pe_pars</code></dt>
+<dd><p>Array of process error starting values for
+    both growth deviation streams, dimensioned
+    <code>[n_pop × n_regions × max(4, n_ages, n_gpars) × n_sexes × 2]</code>.
+    The first stream holds one log sigma per growth parameter for the
+    time-varying deviations; the second holds the semi-parametric surface's
+    correlations by age, year and cohort in slots one to three and a log
+    scale in slot four for the correlated forms, or one log sigma per age
+    for <code>"iid"</code> and <code>"rw"</code>. Defaults to <code>log(0.1)</code> for the
+    first stream and <code>log(0.05)</code> with correlations of <code>0.3</code> for
+    the second. Slots a form does not read are mapped off.</p></dd>
 
 
 </dl><p>All <code>...</code> arguments are silently ignored when <code>M_spec = "fix"</code>.</p></dd>

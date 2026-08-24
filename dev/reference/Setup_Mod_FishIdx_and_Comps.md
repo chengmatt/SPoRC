@@ -22,6 +22,8 @@ Setup_Mod_FishIdx_and_Comps(
   fish_idx_type,
   t_fish = array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas,
     input_list$data$n_fish_fleets)),
+  FishLenComps_sel = rep("age", input_list$data$n_fish_fleets),
+  fish_waa_selected = rep(0, input_list$data$n_fish_fleets),
   UseFishIdx,
   ObsFishAgeComps,
   UseFishAgeComps,
@@ -53,6 +55,12 @@ Setup_Mod_FishIdx_and_Comps(
   FishAgeComps_bins = NULL,
   FishIdx_LikeType = rep("lognormal", input_list$data$n_fish_fleets),
   FishIdx_Cov = NULL,
+  ObsFish_caal = NULL,
+  UseFish_caal = NULL,
+  ISS_Fish_caal = NULL,
+  Fish_caal_LikeType = rep("none", input_list$data$n_fish_fleets),
+  Fish_caal_Type = paste("none_Year_1-terminal_Fleet_", 1:input_list$data$n_fish_fleets,
+    sep = ""),
   ObsFishAgeComps_discard = array(0, dim = c(input_list$data$n_regions,
     length(input_list$data$years), input_list$data$n_seas, length(input_list$data$ages),
     input_list$data$n_sexes, input_list$data$n_fish_fleets)),
@@ -61,7 +69,7 @@ Setup_Mod_FishIdx_and_Comps(
     input_list$data$n_fish_fleets)),
   ISS_FishAgeComps_discard = NULL,
   ObsFishLenComps_discard = array(0, dim = c(input_list$data$n_regions,
-    length(input_list$data$years), input_list$data$n_seas, length(input_list$data$lens),
+    length(input_list$data$years), input_list$data$n_seas, obs_len_bins(input_list),
     input_list$data$n_sexes, input_list$data$n_fish_fleets)),
   UseFishLenComps_discard = array(0, dim = c(input_list$data$n_regions,
     length(input_list$data$years), input_list$data$n_seas,
@@ -141,6 +149,30 @@ Setup_Mod_FishIdx_and_Comps(
   the index is formed, the same convention `t_srv` uses for surveys.
   Defaults to `0` (start of season), which is what the model did before
   this argument existed; set `0.5` for a mid-season index.
+
+- FishLenComps_sel:
+
+  Character vector `[n_fish_fleets]`, whether a length-based selectivity
+  is applied before or after the fish are spread over lengths. `"age"`
+  (default) selects at age and spreads the catch afterwards, so every
+  fish of an age is equally catchable and the length composition within
+  an age is just the key's. `"length"` spreads the fish at each age over
+  the key first and selects them length by length, so the long fish of
+  an age are taken more often. The key is the fleet's own, at `t_fish`.
+  Requires length-based fishery selectivity. Use `"length"` when
+  selectivity is length based and the length compositions are what
+  inform it. The two give different expected compositions, not two
+  roundings of the same one.
+
+- fish_waa_selected:
+
+  Integer vector `[n_fish_fleets]` (0/1). With weight at age derived
+  from growth and length-based selectivity, `1` makes the fleet's catch
+  biomass use the mean weight of the fish it takes at each age, \\\sum_l
+  P(l \mid a) s(l) w(l) / \sum_l P(l \mid a) s(l)\\, instead of the
+  population mean weight at that age. Use it when the gear selects
+  strongly within an age. With flat or age-based selectivity the two are
+  the same.
 
 - UseFishIdx:
 
@@ -336,6 +368,39 @@ Setup_Mod_FishIdx_and_Comps(
   must be square with one row per observation the fleet fits, ordered as
   the observations appear when scanning that fleet's `UseFishIdx` slice
   in array order.
+
+- ObsFish_caal:
+
+  Observed conditional age-at-length array
+  `[n_regions x n_years x n_seas x n_lens x n_ages x n_sexes x n_fish_fleets]`.
+  A CAAL observation is the age composition of the fish aged from one
+  length bin, so the age margin of each length row is what gets fit.
+  `NULL` (default) for a model with no CAAL data.
+
+- UseFish_caal:
+
+  Use flags `[n_regions x n_years x n_seas x n_lens x n_fish_fleets]`.
+  Length bins with no aged fish carry a zero and are skipped.
+
+- ISS_Fish_caal:
+
+  Input sample sizes
+  `[n_regions x n_years x n_seas x n_lens x n_sexes x n_fish_fleets]`,
+  the number aged within each length bin rather than the number
+  measured. Summed from `ObsFish_caal` when `NULL`.
+
+- Fish_caal_LikeType:
+
+  Character vector of length `n_fish_fleets`. One of `"none"`,
+  `"Multinomial"` or `"Dirichlet-Multinomial"`. The logistic-normal
+  families are not available for CAAL, since a single length bin's age
+  sample is small and mostly zeros, which the additive log-ratio
+  transform cannot handle.
+
+- Fish_caal_Type:
+
+  Composition type specification, using the same
+  `"CompType_Year_x-y_Fleet_z"` convention as the marginal compositions.
 
 - ObsFishAgeComps_discard:
 

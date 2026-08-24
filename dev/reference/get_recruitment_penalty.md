@@ -32,7 +32,9 @@ get_recruitment_penalty(
   InitDevs_pen_center = 0,
   init_devs_pen_use = NULL,
   Use_init_sex_pen = 0,
-  ln_sigma_init_sex = 0
+  ln_sigma_init_sex = 0,
+  init_bias_ramp = NULL,
+  map_ln_InitDevs = NULL
 )
 ```
 
@@ -127,6 +129,18 @@ get_recruitment_penalty(
 - ln_sigma_init_sex:
 
   Log standard deviation of that tie.
+
+- init_bias_ramp:
+
+  Numeric vector of length `n_ages - 1`, the bias ramp read at the year
+  each initial age was born (deviation index `1 - age`). `NULL` uses the
+  first model year's ramp value for every age, the previous behaviour.
+
+- map_ln_InitDevs:
+
+  Numeric array matching `ln_InitDevs`, the map levels (`NA` where
+  fixed). Cells sharing a level hold one parameter and split one penalty
+  between them. `NULL` penalizes every cell.
 
 ## Value
 

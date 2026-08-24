@@ -362,7 +362,7 @@ input_list <- Setup_Mod_Fishsel_and_Q(
 )
 ```
 
-Three things are worth naming here.
+Three things are named here.
 
 `_NSelBins_17` is the plateau. Bins beyond 17 are held at bin 17’s value
 rather than evaluated through the logistic, which is the assessment’s

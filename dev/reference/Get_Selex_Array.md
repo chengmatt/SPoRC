@@ -41,7 +41,9 @@ Get_Selex_Array(
   sex_scale_offset = NULL,
   sex_apical_offset = NULL,
   sex_scale = NULL,
-  nselbins = NULL
+  nselbins = NULL,
+  dbnrml_raw = NULL,
+  dbnrml_startbin = NULL
 )
 ```
 
@@ -153,6 +155,12 @@ Get_Selex_Array(
   value for the parametric forms (see `n_sel_bins` in
   [`Get_Selex`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex.md));
   the bicubic form's own setup-built plateau is unaffected.
+
+- dbnrml_startbin:
+
+  Integer vector `[n_fleets]` or `NULL`, the bin each fleet's double
+  normal anchors its ascending limb at; see
+  [`Get_Selex`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex.md).
 
 ## Value
 

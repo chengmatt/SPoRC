@@ -50,6 +50,8 @@ Setup_Mod_Srvsel_and_Q(
   srv_sel_input = NULL,
   srv_sel_nonpar_est_bins = NULL,
   srv_sel_sex_offset = rep("none", input_list$data$n_srv_fleets),
+  srv_sel_dbnrml_raw = NULL,
+  srv_sel_dbnrml_startbin = NULL,
   ...
 )
 ```
@@ -404,6 +406,20 @@ Setup_Mod_Srvsel_and_Q(
   `fish_sel_sex_offset` in
   [`Setup_Mod_Fishsel_and_Q`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Fishsel_and_Q.md)
   for the full description.
+
+- srv_sel_dbnrml_raw:
+
+  `NULL` (default) or a 0/1 matrix `[n_srv_fleets x 2]` for fleets on
+  the double normal: column one leaves the ascending limb as a raw
+  Gaussian instead of anchoring it to `p5` at the first bin, column two
+  does the same for the descending limb and `p6`.
+
+- srv_sel_dbnrml_startbin:
+
+  `NULL` (default) or an integer vector `[n_srv_fleets]`, the bin each
+  survey's double normal anchors its ascending limb at; see
+  `fish_sel_dbnrml_startbin` in
+  [`Setup_Mod_Fishsel_and_Q`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Fishsel_and_Q.md).
 
 - ...:
 

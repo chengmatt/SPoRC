@@ -116,6 +116,10 @@ Get_Comp_Likelihoods_OSA(
 - AgeingError:
 
   Ageing error matrix used to map model age bins to observed age bins.
+  For length compositions, either `NA` (the model and observed bins
+  coincide) or a matrix `[n_model_bins x n_obs_bins]` mapping the
+  model's length bins onto the observed ones, the same way, when the
+  compositions are recorded on coarser bins than the model carries.
 
 - use:
 

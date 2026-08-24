@@ -12,8 +12,7 @@ retention modeling through several interconnected components:
   die
 
 In the following, we will demonstrate how discarding and retention
-dynamics can be leveraged in both simulation and estimation using
-`SPoRC`.
+dynamics can be used in both simulation and estimation using `SPoRC`.
 
 ## Operating Model Configuration
 

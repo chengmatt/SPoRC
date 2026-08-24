@@ -58,7 +58,9 @@ get_population_projection(
   move_timing = 0,
   SR_ref_yr = 1,
   sr_penalty = 0,
-  sr_R0 = NULL
+  sr_R0 = NULL,
+  year_hook = NULL,
+  hook_state = NULL
 )
 ```
 
@@ -171,6 +173,24 @@ get_population_projection(
   weight at age the two differ and the whole curve shifts with them. It
   is a year INDEX, not a calendar year, so callers that truncate the
   year dimension (retrospectives) must clamp it.
+
+- year_hook:
+
+  Optional function of `(y, NAA_y, hook_state)` called at the top of
+  every year with the numbers at age at the start of that year, array
+  `[pop, region, age, sex]`, and the state carried from the previous
+  year. It returns a list with `state`, carried forward to the next call
+  and returned to the caller, and `ZAA_y`, `WAA_y` and `MatAA_y`, the
+  year's slices of total mortality, weight and maturity at age, which
+  replace those handed in for that year. Passing the state in and out
+  keeps the per-year step a function of its arguments.
+
+- hook_state:
+
+  Initial state for `year_hook`, carried through the year loop and
+  returned as `hook_state`. Ignored when `year_hook` is `NULL`. This is
+  how cohort growth, whose plus group blends by numbers, is evaluated
+  inside the year loop. `NULL` (the default) uses the arrays as given.
 
 ## Value
 

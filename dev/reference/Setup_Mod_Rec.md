@@ -95,6 +95,8 @@ rec_seas_prop[, 1] <- 1
   init_age_devs_shared = NULL,
   use_r0_prior = 0,
   r0_prior = NULL,
+  Use_rinit_pen = 0,
+  rinit_pen_sd = 1,
   ...
 )
 ```
@@ -670,6 +672,20 @@ rec_seas_prop[, 1] <- 1
   Data frame with columns `pop` (population index), `mu` (prior mean on
   natural scale), and `sd` (prior SD on log scale). Required when
   `use_r0_prior = 1`.
+
+- Use_rinit_pen:
+
+  Integer (0/1). Whether to penalize the initial equilibrium
+  recruitment's offset from the recruitment level, \\\log(R\_{init} /
+  R_0) \sim N(0, \mathrm{rinit\\pen\\sd}^2)\\, under `use_rinit = 1`. An
+  equilibrium recruitment stands for the average of several years of
+  recruitment, so its spread is smaller than a single year's; \\\sigma_R
+  / (1 / M - 0.5)\\, with \\1/M - 0.5\\ the average age of the stock, is
+  a reasonable choice. Default 0.
+
+- rinit_pen_sd:
+
+  Standard deviation of that penalty, log scale. Default 1.
 
 - ...:
 

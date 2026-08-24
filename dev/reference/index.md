@@ -114,6 +114,8 @@ Functions for model diagnostics
   : Extract Index Fit Results
 - [`get_comp_prop()`](https://chengmatt.github.io/SPoRC/dev/reference/get_comp_prop.md)
   : Get Composition Proportions from RTMB Output
+- [`get_caal_fits()`](https://chengmatt.github.io/SPoRC/dev/reference/get_caal_fits.md)
+  : Conditional age-at-length fits as mean age within each length bin
 - [`get_osa()`](https://chengmatt.github.io/SPoRC/dev/reference/get_osa.md)
   : Compute OSA residuals for composition data
 - [`plot_resids()`](https://chengmatt.github.io/SPoRC/dev/reference/plot_resids.md)
@@ -197,6 +199,10 @@ Assessment data inputs provided by SPoRC
 - [`sgl_rg_rebs_data`](https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_rebs_data.md)
   : BSAI Blackspotted and Rougheye Rockfish data for single region case
   study
+- [`mlt_rg_goa_rex_data`](https://chengmatt.github.io/SPoRC/dev/reference/mlt_rg_goa_rex_data.md)
+  : GOA rex sole bridge data (Model 25.1)
+- [`sgl_rg_ebs_pcod_data`](https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_ebs_pcod_data.md)
+  : EBS Pacific cod bridge data (Model 24.1)
 
 ## Fitted Model Objects
 

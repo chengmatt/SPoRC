@@ -66,7 +66,7 @@ log-likelihood contribution per cell.
 ## Details
 
 **Note:** Unlike
-[`Get_sel_PE_loglik`](https://chengmatt.github.io/SPoRC/dev/reference/Get_sel_PE_loglik.md)
+[`Get_PE_loglik`](https://chengmatt.github.io/SPoRC/dev/reference/Get_PE_loglik.md)
 and
 [`Get_move_PE_loglik`](https://chengmatt.github.io/SPoRC/dev/reference/Get_move_PE_loglik.md),
 which return a single positive log-likelihood scalar to be negated by

@@ -48,9 +48,8 @@ systematic patterns.
 
 ## Details
 
-This implementation is adapted from diagnostics used in Stock Synthesis
-(SS3). The runs test evaluates whether residuals exhibit non-random
-structure (e.g., positive or negative autocorrelation).
+The runs test evaluates whether residuals exhibit non-random structure
+(e.g., positive or negative autocorrelation).
 
 ## See also
 

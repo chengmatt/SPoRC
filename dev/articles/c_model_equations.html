@@ -46,6 +46,8 @@
     <li><a class="dropdown-item" href="../articles/ab_bsai_atka_mackerel_case_study.html">BSAI Atka Mackerel</a></li>
     <li><a class="dropdown-item" href="../articles/ac_wc_sablefish_case_study.html">West Coast Sablefish</a></li>
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
+    <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
+    <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -1226,6 +1228,376 @@ attempting a matrix logarithm.</p>
 <h3 id="observation-equations">Observation Equations<a class="anchor" aria-label="anchor" href="#observation-equations"></a>
 </h3>
 <div class="section level4">
+<h4 id="growth-and-the-size-age-transition">Growth and the Size-Age Transition<a class="anchor" aria-label="anchor" href="#growth-and-the-size-age-transition"></a>
+</h4>
+<p>The size-age transition
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>𝐀</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>s</mi></mrow><mi>l</mi></msubsup><annotation encoding="application/x-tex">\mathbf{A}_{p,r,y,\tau,s}^{l}</annotation></semantics></math>
+converts numbers at age to numbers at length: column
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math>
+holds the probability that a fish of age
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math>
+falls in each length bin, and sums to one. It is either supplied as data
+or built inside the model from growth parameters
+(<code>growth_model = "vb_schnute"</code>), in which case every fleet
+gets its own, read at that fleet’s timing in the season. Four pieces go
+into it: the mean length at age, the spread of length about that mean,
+the treatment of the plus group, and the binning.</p>
+<div class="section level5">
+<h5 id="mean-length-at-age">Mean length at age<a class="anchor" aria-label="anchor" href="#mean-length-at-age"></a>
+</h5>
+<p>Growth is von Bertalanffy in Schnute’s parameterization: instead of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>L</mi><mi>∞</mi></msub><annotation encoding="application/x-tex">L_{\infty}</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>t</mi><mn>0</mn></msub><annotation encoding="application/x-tex">t_{0}</annotation></semantics></math>,
+the curve is anchored by the mean lengths
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>L</mi><mn>1</mn></msub><annotation encoding="application/x-tex">L_{1}</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>L</mi><mn>2</mn></msub><annotation encoding="application/x-tex">L_{2}</annotation></semantics></math>
+at two reference ages
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>A</mi><mn>1</mn></msub><annotation encoding="application/x-tex">A_{1}</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>A</mi><mn>2</mn></msub><annotation encoding="application/x-tex">A_{2}</annotation></semantics></math>,
+with
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>K</mi><annotation encoding="application/x-tex">K</annotation></semantics></math>
+the rate of approach to the asymptote. The parameters are then on the
+scale of the data, which makes them easier to start and to bound. Below
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>A</mi><mn>1</mn></msub><annotation encoding="application/x-tex">A_{1}</annotation></semantics></math>
+the curve is not extrapolated; mean length rises linearly from
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>L</mi><mn>0</mn></msub><annotation encoding="application/x-tex">L_{0}</annotation></semantics></math>,
+the lower edge of the first length bin, to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>L</mi><mn>1</mn></msub><annotation encoding="application/x-tex">L_{1}</annotation></semantics></math>.
+Writing
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math>
+for the real age (the integer age plus the fraction of the year
+elapsed):</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>L</mi><mo accent="true">‾</mo></mover><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><msub><mi>L</mi><mn>0</mn></msub><mo>+</mo><mstyle displaystyle="true"><mfrac><mi>x</mi><msub><mi>A</mi><mn>1</mn></msub></mfrac></mstyle><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>L</mi><mrow><mn>1</mn><mo>,</mo><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>−</mo><msub><mi>L</mi><mn>0</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow></mtd><mtd columnalign="left" style="text-align: left"><mi>x</mi><mo>&lt;</mo><msub><mi>A</mi><mn>1</mn></msub></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><msub><mi>L</mi><mrow><mi>∞</mi><mo>,</mo><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>L</mi><mrow><mn>1</mn><mo>,</mo><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>−</mo><msub><mi>L</mi><mrow><mi>∞</mi><mo>,</mo><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">[</mo><mi>−</mi><msub><mi>K</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>s</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo>−</mo><msub><mi>A</mi><mn>1</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow></mtd><mtd columnalign="left" style="text-align: left"><mi>x</mi><mo>≥</mo><msub><mi>A</mi><mn>1</mn></msub></mtd></mtr></mtable></mrow></mrow><annotation encoding="application/x-tex">\bar{L}_{p,r,s}(x) = \begin{cases}
+L_{0} + \dfrac{x}{A_{1}}\left( L_{1,p,r,s} - L_{0} \right) &amp; x &lt; A_{1} \\[2ex]
+L_{\infty,p,r,s} + \left( L_{1,p,r,s} - L_{\infty,p,r,s} \right)\exp\left\lbrack - K_{p,r,s}\left( x - A_{1} \right) \right\rbrack &amp; x \geq A_{1}
+\end{cases}</annotation></semantics></math></p>
+<p>where the asymptote follows from the two anchors,</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>L</mi><mrow><mi>∞</mi><mo>,</mo><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><msub><mi>L</mi><mrow><mn>1</mn><mo>,</mo><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>+</mo><mstyle displaystyle="true"><mfrac><mrow><msub><mi>L</mi><mrow><mn>2</mn><mo>,</mo><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>−</mo><msub><mi>L</mi><mrow><mn>1</mn><mo>,</mo><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>s</mi></mrow></msub></mrow><mrow><mn>1</mn><mo>−</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">[</mo><mi>−</mi><msub><mi>K</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>s</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>A</mi><mn>2</mn></msub><mo>−</mo><msub><mi>A</mi><mn>1</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow></mrow></mfrac></mstyle></mrow><annotation encoding="application/x-tex">L_{\infty,p,r,s} = L_{1,p,r,s} + \dfrac{L_{2,p,r,s} - L_{1,p,r,s}}{1 - \exp\left\lbrack - K_{p,r,s}\left( A_{2} - A_{1} \right) \right\rbrack}</annotation></semantics></math></p>
+<p>Setting <code>growth_A2 = "Linf"</code> reads
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>L</mi><mn>2</mn></msub><annotation encoding="application/x-tex">L_{2}</annotation></semantics></math>
+as
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>L</mi><mi>∞</mi></msub><annotation encoding="application/x-tex">L_{\infty}</annotation></semantics></math>
+itself. The five parameters
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>L</mi><mn>1</mn></msub><mo>,</mo><msub><mi>L</mi><mn>2</mn></msub><mo>,</mo><mi>K</mi><mo>,</mo><mi>C</mi><msub><mi>V</mi><mn>1</mn></msub><mo>,</mo><mi>C</mi><msub><mi>V</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">L_{1}, L_{2}, K, CV_{1}, CV_{2}</annotation></semantics></math>
+are estimated on the log scale, one set per population, region and sex,
+or shared across regions or sexes (<code>growth_spec</code>).</p>
+<p>Under <code>growth_model = "richards"</code> the same curve is
+applied to lengths raised to a power
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ρ</mi><annotation encoding="application/x-tex">\rho</annotation></semantics></math>,
+a sixth estimated parameter, which lets the inflection sit anywhere
+rather than at the origin:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>L</mi><mo accent="true">‾</mo></mover><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>x</mi><msup><mo stretchy="false" form="postfix">)</mo><mi>ρ</mi></msup><mo>=</mo><msubsup><mi>L</mi><mrow><mi>∞</mi><mo>,</mo><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>s</mi></mrow><mi>ρ</mi></msubsup><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>L</mi><mrow><mn>1</mn><mo>,</mo><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>s</mi></mrow><mi>ρ</mi></msubsup><mo>−</mo><msubsup><mi>L</mi><mrow><mi>∞</mi><mo>,</mo><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>s</mi></mrow><mi>ρ</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">[</mo><mi>−</mi><msub><mi>K</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>s</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo>−</mo><msub><mi>A</mi><mn>1</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">\bar{L}_{p,r,s}(x)^{\rho} = L_{\infty,p,r,s}^{\rho} + \left( L_{1,p,r,s}^{\rho} - L_{\infty,p,r,s}^{\rho} \right)\exp\left\lbrack - K_{p,r,s}\left( x - A_{1} \right) \right\rbrack</annotation></semantics></math></p>
+<p>with the asymptote read off the two anchors on the same powered
+scale,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>L</mi><mi>∞</mi><mi>ρ</mi></msubsup><mo>=</mo><msubsup><mi>L</mi><mn>1</mn><mi>ρ</mi></msubsup><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>L</mi><mn>2</mn><mi>ρ</mi></msubsup><mo>−</mo><msubsup><mi>L</mi><mn>1</mn><mi>ρ</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mi>/</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mi>−</mi><mi>K</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>A</mi><mn>2</mn></msub><mo>−</mo><msub><mi>A</mi><mn>1</mn></msub><mo stretchy="false" form="postfix">)</mo></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">L_{\infty}^{\rho} = L_{1}^{\rho} + \left( L_{2}^{\rho} - L_{1}^{\rho} \right)/\left( 1 - e^{-K(A_{2} - A_{1})} \right)</annotation></semantics></math>.
+Setting
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ρ</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\rho = 1</annotation></semantics></math>
+recovers the von Bertalanffy curve exactly, so the Richards form nests
+it and the linear phase below
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>A</mi><mn>1</mn></msub><annotation encoding="application/x-tex">A_{1}</annotation></semantics></math>
+is unchanged.</p>
+</div>
+<div class="section level5">
+<h5 id="spread-of-length-at-age">Spread of length at age<a class="anchor" aria-label="anchor" href="#spread-of-length-at-age"></a>
+</h5>
+<p>Fish of one age are spread around the mean length, and that spread
+grows with size. Rather than a variance per age, two parameters carry
+it:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>C</mi><msub><mi>V</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">CV_{1}</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>C</mi><msub><mi>V</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">CV_{2}</annotation></semantics></math>,
+the values at the two reference ages, with linear interpolation between
+them. Which quantity the interpolation runs on, and whether the two
+parameters are read as coefficients of variation or as standard
+deviations, are separate choices (<code>growth_cv_type</code> and
+<code>growth_sd_type</code>).</p>
+<p><strong>The interpolation.</strong> The branches are on real age
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math>:
+below
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>A</mi><mn>1</mn></msub><annotation encoding="application/x-tex">A_{1}</annotation></semantics></math>
+the value is held at
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>C</mi><msub><mi>V</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">CV_{1}</annotation></semantics></math>,
+from
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>A</mi><mn>2</mn></msub><annotation encoding="application/x-tex">A_{2}</annotation></semantics></math>
+on it is held at
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>C</mi><msub><mi>V</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">CV_{2}</annotation></semantics></math>,
+and between them it is interpolated. Under
+<code>growth_cv_type = "len"</code> (the default) the interpolant is
+mean length, so a fish whose mean length sits halfway from
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>L</mi><mn>1</mn></msub><annotation encoding="application/x-tex">L_{1}</annotation></semantics></math>
+to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>L</mi><mn>2</mn></msub><annotation encoding="application/x-tex">L_{2}</annotation></semantics></math>
+takes a value halfway from
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>C</mi><msub><mi>V</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">CV_{1}</annotation></semantics></math>
+to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>C</mi><msub><mi>V</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">CV_{2}</annotation></semantics></math>;
+under <code>"age"</code> it is age itself:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><mi>C</mi><msub><mi>V</mi><mn>1</mn></msub></mtd><mtd columnalign="left" style="text-align: left"><mi>x</mi><mo>&lt;</mo><msub><mi>A</mi><mn>1</mn></msub></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mi>C</mi><msub><mi>V</mi><mn>1</mn></msub><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>C</mi><msub><mi>V</mi><mn>2</mn></msub><mo>−</mo><mi>C</mi><msub><mi>V</mi><mn>1</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><mstyle displaystyle="true"><mfrac><mrow><mover><mi>L</mi><mo accent="true">‾</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo><mo>−</mo><msub><mi>L</mi><mn>1</mn></msub></mrow><mrow><msub><mi>L</mi><mn>2</mn></msub><mo>−</mo><msub><mi>L</mi><mn>1</mn></msub></mrow></mfrac></mstyle></mtd><mtd columnalign="left" style="text-align: left"><msub><mi>A</mi><mn>1</mn></msub><mo>≤</mo><mi>x</mi><mo>&lt;</mo><msubsup><mi>A</mi><mn>2</mn><mrow><mi>c</mi><mi>v</mi></mrow></msubsup><mo>,</mo><mspace width="1.0em"></mspace><mtext mathvariant="monospace">𝚌𝚟_𝚝𝚢𝚙𝚎 = "𝚕𝚎𝚗"</mtext></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mi>C</mi><msub><mi>V</mi><mn>1</mn></msub><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>C</mi><msub><mi>V</mi><mn>2</mn></msub><mo>−</mo><mi>C</mi><msub><mi>V</mi><mn>1</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><mstyle displaystyle="true"><mfrac><mrow><mi>x</mi><mo>−</mo><msub><mi>A</mi><mn>1</mn></msub></mrow><mrow><msubsup><mi>A</mi><mn>2</mn><mrow><mi>c</mi><mi>v</mi></mrow></msubsup><mo>−</mo><msub><mi>A</mi><mn>1</mn></msub></mrow></mfrac></mstyle></mtd><mtd columnalign="left" style="text-align: left"><msub><mi>A</mi><mn>1</mn></msub><mo>≤</mo><mi>x</mi><mo>&lt;</mo><msubsup><mi>A</mi><mn>2</mn><mrow><mi>c</mi><mi>v</mi></mrow></msubsup><mo>,</mo><mspace width="1.0em"></mspace><mtext mathvariant="monospace">𝚌𝚟_𝚝𝚢𝚙𝚎 = "𝚊𝚐𝚎"</mtext></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mi>C</mi><msub><mi>V</mi><mn>2</mn></msub></mtd><mtd columnalign="left" style="text-align: left"><mi>x</mi><mo>≥</mo><msubsup><mi>A</mi><mn>2</mn><mrow><mi>c</mi><mi>v</mi></mrow></msubsup></mtd></mtr></mtable></mrow></mrow><annotation encoding="application/x-tex">c(x) = \begin{cases}
+CV_{1} &amp; x &lt; A_{1} \\[1ex]
+CV_{1} + \left( CV_{2} - CV_{1} \right)\dfrac{\bar{L}(x) - L_{1}}{L_{2} - L_{1}} &amp; A_{1} \leq x &lt; A_{2}^{cv}, \quad \texttt{cv\_type = "len"} \\[2ex]
+CV_{1} + \left( CV_{2} - CV_{1} \right)\dfrac{x - A_{1}}{A_{2}^{cv} - A_{1}} &amp; A_{1} \leq x &lt; A_{2}^{cv}, \quad \texttt{cv\_type = "age"} \\[2ex]
+CV_{2} &amp; x \geq A_{2}^{cv}
+\end{cases}</annotation></semantics></math></p>
+<p>where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>A</mi><mn>2</mn><mrow><mi>c</mi><mi>v</mi></mrow></msubsup><mo>=</mo><msub><mi>A</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">A_{2}^{cv} = A_{2}</annotation></semantics></math>,
+or the oldest age being evaluated when <code>growth_A2 = "Linf"</code>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>L</mi><mn>2</mn></msub><annotation encoding="application/x-tex">L_{2}</annotation></semantics></math>
+is read as the asymptote. Note that the two choices are independent:
+under <code>"len"</code> the <em>branch</em> is still taken on age, and
+only the value inside the middle branch is a function of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>L</mi><mo accent="true">‾</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\bar{L}(x)</annotation></semantics></math>.
+Because
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>L</mi><mo accent="true">‾</mo></mover><annotation encoding="application/x-tex">\bar{L}</annotation></semantics></math>
+is itself increasing in
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math>,
+the two give similar shapes; they differ where growth is fast, since
+interpolating on length compresses the change into the young ages.</p>
+<p><strong>From
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">c(x)</annotation></semantics></math>
+to the standard deviation.</strong> Under
+<code>growth_sd_type = "cv"</code> (the default)
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">c(x)</annotation></semantics></math>
+is a coefficient of variation and is multiplied by mean length, so the
+spread scales with size; under <code>"sd"</code> the two parameters are
+standard deviations already and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">c(x)</annotation></semantics></math><em>is</em> the standard deviation, interpolated by the same rule:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mi>L</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><mi>c</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo><mspace width="0.167em"></mspace><mover><mi>L</mi><mo accent="true">‾</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="monospace">𝚜𝚍_𝚝𝚢𝚙𝚎 = "𝚌𝚟"</mtext></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mi>c</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="monospace">𝚜𝚍_𝚝𝚢𝚙𝚎 = "𝚜𝚍"</mtext></mtd></mtr></mtable></mrow></mrow><annotation encoding="application/x-tex">\sigma_{L}(x) = \begin{cases}
+c(x)\,\bar{L}(x) &amp; \texttt{sd\_type = "cv"} \\[1ex]
+c(x) &amp; \texttt{sd\_type = "sd"}
+\end{cases}</annotation></semantics></math></p>
+<p>The two differ in what is held constant across ages. Under
+<code>"cv"</code> a constant
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>C</mi><mi>V</mi></mrow><annotation encoding="application/x-tex">CV</annotation></semantics></math>
+means the spread grows in proportion to length, so a 20 cm fish and a 60
+cm fish have standard deviations in the ratio 1:3; under
+<code>"sd"</code> a constant value means the same absolute spread at
+every age. A
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>C</mi><mi>V</mi></mrow><annotation encoding="application/x-tex">CV</annotation></semantics></math>
+that declines with size
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>C</mi><msub><mi>V</mi><mn>2</mn></msub><mo>&lt;</mo><mi>C</mi><msub><mi>V</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">CV_{2} &lt; CV_{1}</annotation></semantics></math>)
+is the usual estimate, since the lengths of young fish vary with birth
+date and early growth while old fish have converged on the
+asymptote.</p>
+</div>
+<div class="section level5">
+<h5 id="the-plus-group">The plus group<a class="anchor" aria-label="anchor" href="#the-plus-group"></a>
+</h5>
+<p>The accumulator age
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>a</mi><mo>+</mo></msub><annotation encoding="application/x-tex">a_{+}</annotation></semantics></math>
+holds every fish of that age and older, so its mean length is not the
+curve at
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>a</mi><mo>+</mo></msub><annotation encoding="application/x-tex">a_{+}</annotation></semantics></math>:
+most of its fish are older than
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>a</mi><mo>+</mo></msub><annotation encoding="application/x-tex">a_{+}</annotation></semantics></math>
+and larger. Under <code>growth_plus_group = "mixture"</code> the plus
+group is treated as a mixture of the ages it contains, with two
+assumptions. Its age composition is taken to decline geometrically, the
+share of fish
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
+years past the accumulator age being proportional to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>e</mi><mrow><mi>−</mi><mn>0.2</mn><mi>k</mi></mrow></msup><annotation encoding="application/x-tex">e^{-0.2k}</annotation></semantics></math>,
+which is the survivorship under a total mortality of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.2</mn><annotation encoding="application/x-tex">0.2</annotation></semantics></math>
+per year; the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.2</mn><annotation encoding="application/x-tex">0.2</annotation></semantics></math>
+is a fixed assumption about how quickly numbers decline with age, not an
+estimated rate, and it sets how much weight the older, larger fish
+carry. And over those years mean length is taken to rise linearly from
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>L</mi><mo accent="true">‾</mo></mover><mo stretchy="false" form="prefix">(</mo><msub><mi>a</mi><mo>+</mo></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\bar{L}(a_{+})</annotation></semantics></math>
+to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>L</mi><mi>∞</mi></msub><annotation encoding="application/x-tex">L_{\infty}</annotation></semantics></math>
+across a second lifetime of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>a</mi><mo>+</mo></msub><annotation encoding="application/x-tex">a_{+}</annotation></semantics></math>
+years, beyond which the curve is at its asymptote. The plus group’s mean
+length is the survivorship-weighted mean of those lengths:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>L</mi><mo accent="true">‾</mo></mover><mo>+</mo></msub><mo>=</mo><mstyle displaystyle="true"><mfrac><mrow><munderover><mo>∑</mo><mrow><mi>k</mi><mo>=</mo><mn>0</mn></mrow><msub><mi>a</mi><mo>+</mo></msub></munderover><msup><mi>e</mi><mrow><mi>−</mi><mn>0.2</mn><mi>k</mi></mrow></msup><mrow><mo stretchy="true" form="prefix">[</mo><mover><mi>L</mi><mo accent="true">‾</mo></mover><mo stretchy="false" form="prefix">(</mo><msub><mi>a</mi><mo>+</mo></msub><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mstyle displaystyle="true"><mfrac><mi>k</mi><msub><mi>a</mi><mo>+</mo></msub></mfrac></mstyle><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>L</mi><mi>∞</mi></msub><mo>−</mo><mover><mi>L</mi><mo accent="true">‾</mo></mover><mo stretchy="false" form="prefix">(</mo><msub><mi>a</mi><mo>+</mo></msub><mo stretchy="false" form="postfix">)</mo><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow></mrow><mrow><munderover><mo>∑</mo><mrow><mi>k</mi><mo>=</mo><mn>0</mn></mrow><msub><mi>a</mi><mo>+</mo></msub></munderover><msup><mi>e</mi><mrow><mi>−</mi><mn>0.2</mn><mi>k</mi></mrow></msup></mrow></mfrac></mstyle></mrow><annotation encoding="application/x-tex">\bar{L}_{+} = \dfrac{\sum_{k = 0}^{a_{+}}e^{- 0.2k}\left\lbrack \bar{L}(a_{+}) + \dfrac{k}{a_{+}}\left( L_{\infty} - \bar{L}(a_{+}) \right) \right\rbrack}{\sum_{k = 0}^{a_{+}}e^{- 0.2k}}</annotation></semantics></math></p>
+<p>which lies between
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>L</mi><mo accent="true">‾</mo></mover><mo stretchy="false" form="prefix">(</mo><msub><mi>a</mi><mo>+</mo></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\bar{L}(a_{+})</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>L</mi><mi>∞</mi></msub><annotation encoding="application/x-tex">L_{\infty}</annotation></semantics></math>,
+closer to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>L</mi><mo accent="true">‾</mo></mover><mo stretchy="false" form="prefix">(</mo><msub><mi>a</mi><mo>+</mo></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\bar{L}(a_{+})</annotation></semantics></math>
+when
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>a</mi><mo>+</mo></msub><annotation encoding="application/x-tex">a_{+}</annotation></semantics></math>
+is old enough that little growth remains. Under
+<code>growth_plus_group = "curve"</code> the plus group is simply the
+curve at
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>a</mi><mo>+</mo></msub><annotation encoding="application/x-tex">a_{+}</annotation></semantics></math>.
+Within a year the plus group grows from
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>L</mi><mo accent="true">‾</mo></mover><mo>+</mo></msub><annotation encoding="application/x-tex">\bar{L}_{+}</annotation></semantics></math>
+by the von Bertalanffy increment over the elapsed time rather than being
+re-read from the curve, so its mean length moves through the season the
+way every other age’s does.</p>
+</div>
+<div class="section level5">
+<h5 id="growth-that-changes-over-time">Growth that changes over time<a class="anchor" aria-label="anchor" href="#growth-that-changes-over-time"></a>
+</h5>
+<p>Growth can move over the series in two ways, which answer different
+questions and can be used together.</p>
+<p><strong>Varying the parameters.</strong> Any growth parameter can
+carry a deviation series (<code>growth_tv_model</code> names one
+structure per parameter, <code>"iid"</code> or <code>"rw"</code>), so
+the parameter in year
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>y</mi><annotation encoding="application/x-tex">y</annotation></semantics></math>
+is</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>P</mi><mi>y</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><mi>P</mi><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>δ</mi><mi>y</mi></msub><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="monospace">𝚐𝚛𝚘𝚠𝚝𝚑_𝚝𝚟_𝚕𝚒𝚗𝚔 = "𝚕𝚘𝚐"</mtext></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><msup><mi>P</mi><mrow><mi>l</mi><mi>o</mi></mrow></msup><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>P</mi><mrow><mi>h</mi><mi>i</mi></mrow></msup><mo>−</mo><msup><mi>P</mi><mrow><mi>l</mi><mi>o</mi></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><msup><mrow><mi mathvariant="normal">l</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">g</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">t</mi></mrow><mrow><mi>−</mi><mn>1</mn></mrow></msup><mrow><mo stretchy="true" form="prefix">[</mo><mrow><mi mathvariant="normal">l</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">g</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">t</mi></mrow><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><mstyle displaystyle="true"><mfrac><mrow><mi>P</mi><mo>−</mo><msup><mi>P</mi><mrow><mi>l</mi><mi>o</mi></mrow></msup></mrow><mrow><msup><mi>P</mi><mrow><mi>h</mi><mi>i</mi></mrow></msup><mo>−</mo><msup><mi>P</mi><mrow><mi>l</mi><mi>o</mi></mrow></msup></mrow></mfrac></mstyle><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><msub><mi>δ</mi><mi>y</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="monospace">"𝚕𝚘𝚐𝚒𝚝"</mtext></mtd></mtr></mtable></mrow></mrow><annotation encoding="application/x-tex">P_{y} = \begin{cases}
+P\exp(\delta_{y}) &amp; \texttt{growth\_tv\_link = "log"} \\[1ex]
+P^{lo} + \left( P^{hi} - P^{lo} \right)\,\mathrm{logit}^{-1}\left\lbrack \mathrm{logit}\!\left( \dfrac{P - P^{lo}}{P^{hi} - P^{lo}} \right) + \delta_{y} \right\rbrack &amp; \texttt{"logit"}
+\end{cases}</annotation></semantics></math></p>
+<p>The log link suits a positive parameter. The logit link keeps a
+parameter strictly inside bounds
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>P</mi><mrow><mi>l</mi><mi>o</mi></mrow></msup><mo>,</mo><msup><mi>P</mi><mrow><mi>h</mi><mi>i</mi></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\left( P^{lo}, P^{hi} \right)</annotation></semantics></math>
+however large the deviation, which every growth parameter is. The
+deviations are penalized by the same process error used for selectivity
+(see <em>Growth Deviations</em> under the penalties), and the realized
+parameters are reported year by year as <code>growth_pars_y</code>.</p>
+<p><strong>How the deviated parameters reach size at age</strong> is a
+second choice (<code>growth_tv_type</code>). Under <code>"curve"</code>
+each year’s sizes are simply read off that year’s own curve: a fish of
+age
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math>
+in year
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>y</mi><annotation encoding="application/x-tex">y</annotation></semantics></math>
+has the length year
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>y</mi><annotation encoding="application/x-tex">y</annotation></semantics></math>’s
+parameters give age
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math>,
+with no memory of the years it actually lived through. Under
+<code>"cohort"</code> size at age is carried forward instead, so each
+cohort keeps the history of the conditions it experienced. Writing
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>g</mi><mi>y</mi></msub><annotation encoding="application/x-tex">g_{y}</annotation></semantics></math>
+for the growth increment over one year under year
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>y</mi><annotation encoding="application/x-tex">y</annotation></semantics></math>’s
+parameters,</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>g</mi><mi>y</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>L</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">[</mo><msubsup><mi>L</mi><mrow><mi>∞</mi><mo>,</mo><mi>y</mi></mrow><msub><mi>ρ</mi><mi>y</mi></msub></msubsup><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>L</mi><msub><mi>ρ</mi><mi>y</mi></msub></msup><mo>−</mo><msubsup><mi>L</mi><mrow><mi>∞</mi><mo>,</mo><mi>y</mi></mrow><msub><mi>ρ</mi><mi>y</mi></msub></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><msup><mi>e</mi><mrow><mi>−</mi><msub><mi>K</mi><mi>y</mi></msub></mrow></msup><mo stretchy="true" form="postfix">]</mo></mrow><mrow><mn>1</mn><mi>/</mi><msub><mi>ρ</mi><mi>y</mi></msub></mrow></msup></mrow><annotation encoding="application/x-tex">g_{y}(L) = \left\lbrack L_{\infty,y}^{\rho_{y}} + \left( L^{\rho_{y}} - L_{\infty,y}^{\rho_{y}} \right)e^{- K_{y}} \right\rbrack^{1/\rho_{y}}</annotation></semantics></math></p>
+<p>the start-of-year mean length advances as</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>L</mi><mo accent="true">‾</mo></mover><mrow><mi>y</mi><mo>+</mo><mn>1</mn><mo>,</mo><mi>a</mi></mrow></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><msub><mi>L</mi><mn>0</mn></msub><mo>+</mo><mstyle displaystyle="true"><mfrac><mi>a</mi><msub><mi>A</mi><mn>1</mn></msub></mfrac></mstyle><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>L</mi><mrow><mn>1</mn><mo>,</mo><mspace width="0.167em"></mspace><mi>y</mi><mo>+</mo><mn>1</mn><mo>−</mo><mi>a</mi></mrow></msub><mo>−</mo><msub><mi>L</mi><mn>0</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow></mtd><mtd columnalign="left" style="text-align: left"><mi>a</mi><mo>&lt;</mo><msub><mi>A</mi><mn>1</mn></msub><mspace width="1.0em"></mspace><mrow><mtext mathvariant="normal">(the cohort’s own birth-year </mtext><mspace width="0.333em"></mspace></mrow><msub><mi>L</mi><mn>1</mn></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><msub><mover><mi>L</mi><mo accent="true">‾</mo></mover><mrow><mi>y</mi><mo>+</mo><mn>1</mn></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>a</mi><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left"><mi>a</mi><mo>=</mo><msup><mi>a</mi><mo>*</mo></msup><mspace width="1.0em"></mspace><mrow><mtext mathvariant="normal">(the first age past </mtext><mspace width="0.333em"></mspace></mrow><msub><mi>A</mi><mn>1</mn></msub><mo>,</mo><mrow><mspace width="0.333em"></mspace><mtext mathvariant="normal"> read off the year’s curve)</mtext></mrow></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><msub><mi>g</mi><mi>y</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>L</mi><mo accent="true">‾</mo></mover><mrow><mi>y</mi><mo>,</mo><mi>a</mi><mo>−</mo><mn>1</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mtd><mtd columnalign="left" style="text-align: left"><msup><mi>a</mi><mo>*</mo></msup><mo>&lt;</mo><mi>a</mi><mo>&lt;</mo><msub><mi>a</mi><mo>+</mo></msub></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mstyle displaystyle="true"><mfrac><mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>N</mi><mrow><mi>y</mi><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>−</mo><mn>1</mn></mrow></msub><mo>+</mo><mn>0.01</mn><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>g</mi><mi>y</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>L</mi><mo accent="true">‾</mo></mover><mrow><mi>y</mi><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>−</mo><mn>1</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>N</mi><mrow><mi>y</mi><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub></mrow></msub><mo>+</mo><mn>0.01</mn><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>g</mi><mi>y</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>L</mi><mo accent="true">‾</mo></mover><mrow><mi>y</mi><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mrow><msub><mi>N</mi><mrow><mi>y</mi><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub><mo>−</mo><mn>1</mn></mrow></msub><mo>+</mo><msub><mi>N</mi><mrow><mi>y</mi><mo>,</mo><msub><mi>a</mi><mo>+</mo></msub></mrow></msub><mo>+</mo><mn>0.02</mn></mrow></mfrac></mstyle></mtd><mtd columnalign="left" style="text-align: left"><mi>a</mi><mo>=</mo><msub><mi>a</mi><mo>+</mo></msub></mtd></mtr></mtable></mrow></mrow><annotation encoding="application/x-tex">\bar{L}_{y+1,a} = \begin{cases}
+L_{0} + \dfrac{a}{A_{1}}\left( L_{1,\,y+1-a} - L_{0} \right) &amp; a &lt; A_{1} \quad \text{(the cohort's own birth-year } L_{1}) \\[2ex]
+\bar{L}_{y+1}(a) &amp; a = a^{\ast} \quad \text{(the first age past } A_{1}, \text{ read off the year's curve)} \\[2ex]
+g_{y}\left( \bar{L}_{y,a-1} \right) &amp; a^{\ast} &lt; a &lt; a_{+} \\[2ex]
+\dfrac{\left( N_{y,a_{+}-1} + 0.01 \right)g_{y}\left( \bar{L}_{y,a_{+}-1} \right) + \left( N_{y,a_{+}} + 0.01 \right)g_{y}\left( \bar{L}_{y,a_{+}} \right)}{N_{y,a_{+}-1} + N_{y,a_{+}} + 0.02} &amp; a = a_{+}
+\end{cases}</annotation></semantics></math></p>
+<p>Three consequences follow. Ages still in the linear phase take the
+length at
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>A</mi><mn>1</mn></msub><annotation encoding="application/x-tex">A_{1}</annotation></semantics></math>
+their <em>birth year’s</em> parameters gave them, so a cohort born in a
+poor year carries that start forward. The plus group is the only place
+growth depends on abundance: the cohort just entering it and the fish
+already there are blended by their numbers, which is why growth under
+this option is evaluated inside the population dynamics year loop rather
+than before it. And the coefficient of variation at age is held at the
+first year’s,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">c(x)</annotation></semantics></math>
+being evaluated once from the first year’s curve and parameters and then
+held while the mean moves, so the deviations change mean size without
+also changing the spread.</p>
+<p><strong>Semi-parametric growth.</strong> The second way is a surface
+of deviations on mean length at age itself, indexed by year and age
+(<code>growth_semipar</code>),</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mover><mi>L</mi><mo accent="true">‾</mo></mover><mrow><mi>y</mi><mo>,</mo><mi>a</mi></mrow><mo>*</mo></msubsup><mo>=</mo><msub><mover><mi>L</mi><mo accent="true">‾</mo></mover><mrow><mi>y</mi><mo>,</mo><mi>a</mi></mrow></msub><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ε</mi><mrow><mi>y</mi><mo>,</mo><mi>a</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\bar{L}_{y,a}^{\ast} = \bar{L}_{y,a}\exp\left( \varepsilon_{y,a} \right)</annotation></semantics></math></p>
+<p>applied after the curve and after any cohort propagation. The
+parametric curve stays the parametric part and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ε</mi><annotation encoding="application/x-tex">\varepsilon</annotation></semantics></math>
+holds departures from it: a curve with a handful of parameters cannot
+fit a year in which only the four-year-olds were small, and an
+unconstrained transition per year is not identified. The spread follows
+the deviated mean through
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>L</mi></msub><annotation encoding="application/x-tex">\sigma_{L}</annotation></semantics></math>,
+so under <code>growth_cv_type = "len"</code> a deviation that lengthens
+a fish also moves it along the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>C</mi><mi>V</mi></mrow><annotation encoding="application/x-tex">CV</annotation></semantics></math>
+ramp, while under <code>"age"</code> the spread at age is untouched.
+Available structures are <code>"iid"</code>, <code>"rw"</code>,
+<code>"2dar1"</code> and <code>"3dmarg"</code>/<code>"3dcond"</code> –
+the same process errors the semi-parametric selectivity forms use,
+described under the penalties.</p>
+</div>
+<div class="section level5">
+<h5 id="the-key">The key<a class="anchor" aria-label="anchor" href="#the-key"></a>
+</h5>
+<p>The key is that distribution integrated over each length bin. Length
+at age is normal about
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>L</mi><mo accent="true">‾</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>a</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\bar{L}(a)</annotation></semantics></math>
+with standard deviation
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mi>L</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>a</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\sigma_{L}(a)</annotation></semantics></math>,
+so with
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ℓ</mi><mi>l</mi></msub><annotation encoding="application/x-tex">\ell_{l}</annotation></semantics></math>
+the lower edge of bin
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>l</mi><annotation encoding="application/x-tex">l</annotation></semantics></math>
+each edge is first standardized,</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>z</mi><mrow><mi>l</mi><mo>,</mo><mi>a</mi></mrow></msub><mo>=</mo><mstyle displaystyle="true"><mfrac><mrow><msub><mi>ℓ</mi><mi>l</mi></msub><mo>−</mo><mover><mi>L</mi><mo accent="true">‾</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>a</mi><mo stretchy="false" form="postfix">)</mo></mrow><mrow><msub><mi>σ</mi><mi>L</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>a</mi><mo stretchy="false" form="postfix">)</mo></mrow></mfrac></mstyle></mrow><annotation encoding="application/x-tex">z_{l,a} = \dfrac{\ell_{l} - \bar{L}(a)}{\sigma_{L}(a)}</annotation></semantics></math></p>
+<p>which is where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>L</mi></msub><annotation encoding="application/x-tex">\sigma_{L}</annotation></semantics></math>
+enters: it sets how many bins the age’s mass is spread over, a large
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>L</mi></msub><annotation encoding="application/x-tex">\sigma_{L}</annotation></semantics></math>
+flattening the column and a small one concentrating it near
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>L</mi><mo accent="true">‾</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>a</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\bar{L}(a)</annotation></semantics></math>.
+Each bin then takes the probability between its edges,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="normal">Φ</mi><annotation encoding="application/x-tex">\Phi</annotation></semantics></math>
+being the standard normal distribution function, and the two tails are
+accumulated into the end bins so no mass is lost:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>A</mi><mrow><mi>l</mi><mo>,</mo><mi>a</mi></mrow></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><mi mathvariant="normal">Φ</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>z</mi><mrow><mn>2</mn><mo>,</mo><mi>a</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left"><mi>l</mi><mo>=</mo><mn>1</mn></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mi mathvariant="normal">Φ</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>z</mi><mrow><mi>l</mi><mo>+</mo><mn>1</mn><mo>,</mo><mi>a</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mi mathvariant="normal">Φ</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>z</mi><mrow><mi>l</mi><mo>,</mo><mi>a</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left"><mn>1</mn><mo>&lt;</mo><mi>l</mi><mo>&lt;</mo><msub><mi>n</mi><mi>l</mi></msub></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mn>1</mn><mo>−</mo><mi mathvariant="normal">Φ</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>z</mi><mrow><msub><mi>n</mi><mi>l</mi></msub><mo>,</mo><mi>a</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left"><mi>l</mi><mo>=</mo><msub><mi>n</mi><mi>l</mi></msub></mtd></mtr></mtable></mrow></mrow><annotation encoding="application/x-tex">A_{l,a} = \begin{cases}
+\Phi(z_{2,a}) &amp; l = 1 \\[1ex]
+\Phi(z_{l+1,a}) - \Phi(z_{l,a}) &amp; 1 &lt; l &lt; n_{l} \\[1ex]
+1 - \Phi(z_{n_{l},a}) &amp; l = n_{l}
+\end{cases}</annotation></semantics></math></p>
+<p>The first bin absorbs everything below
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ℓ</mi><mn>2</mn></msub><annotation encoding="application/x-tex">\ell_{2}</annotation></semantics></math>
+and the last everything above
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ℓ</mi><msub><mi>n</mi><mi>l</mi></msub></msub><annotation encoding="application/x-tex">\ell_{n_{l}}</annotation></semantics></math>,
+so the column sums to one,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mo>∑</mo><mi>l</mi></msub><msub><mi>A</mi><mrow><mi>l</mi><mo>,</mo><mi>a</mi></mrow></msub><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\sum_{l}A_{l,a} = 1</annotation></semantics></math>,
+for any
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>L</mi><mo accent="true">‾</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>a</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\bar{L}(a)</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mi>L</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>a</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\sigma_{L}(a)</annotation></semantics></math>,
+including means that fall outside the binned range entirely. That is
+what makes each column a proper conditional distribution
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mi>l</mi><mo>∣</mo><mi>a</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">P(l \mid a)</annotation></semantics></math>
+and lets the composition likelihoods normalize.</p>
+<p>Under <code>growth_dist = "lognormal"</code> the same differences are
+taken on the log scale, about a median-corrected mean so that
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo stretchy="false" form="prefix">[</mo><mi>L</mi><mo stretchy="false" form="postfix">]</mo><mo>=</mo><mover><mi>L</mi><mo accent="true">‾</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>a</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">E[L] = \bar{L}(a)</annotation></semantics></math>:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>z</mi><mrow><mi>l</mi><mo>,</mo><mi>a</mi></mrow></msub><mo>=</mo><mstyle displaystyle="true"><mfrac><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><msub><mi>ℓ</mi><mi>l</mi></msub><mo>−</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">log</mi><mover><mi>L</mi><mo accent="true">‾</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>a</mi><mo stretchy="false" form="postfix">)</mo><mo>−</mo><msubsup><mi>σ</mi><mi>L</mi><mn>2</mn></msubsup><mo stretchy="false" form="prefix">(</mo><mi>a</mi><mo stretchy="false" form="postfix">)</mo><mi>/</mi><mn>2</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mrow><msub><mi>σ</mi><mi>L</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>a</mi><mo stretchy="false" form="postfix">)</mo></mrow></mfrac></mstyle></mrow><annotation encoding="application/x-tex">z_{l,a} = \dfrac{\log \ell_{l} - \left( \log \bar{L}(a) - \sigma_{L}^{2}(a)/2 \right)}{\sigma_{L}(a)}</annotation></semantics></math></p>
+<p>Here
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mi>L</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>a</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\sigma_{L}(a)</annotation></semantics></math>
+is a standard deviation <em>on the log scale</em>, so
+<code>growth_sd_type = "sd"</code> is the pairing that keeps it
+dimensionally consistent; combining <code>"lognormal"</code> with
+<code>"cv"</code> feeds a length-scale spread into a log-scale
+transform.</p>
+</div>
+<div class="section level5">
+<h5 id="weight-at-age">Weight at age<a class="anchor" aria-label="anchor" href="#weight-at-age"></a>
+</h5>
+<p>When <code>waa_model = "wt_len"</code>, weight at age is the key
+applied to weight at the bin midpoints
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>ℓ</mi><mo accent="true">̃</mo></mover><mi>l</mi></msub><annotation encoding="application/x-tex">\tilde{\ell}_{l}</annotation></semantics></math>
+through the weight-length relationship
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>W</mi><mo>=</mo><mi>α</mi><msup><mi>L</mi><mi>β</mi></msup></mrow><annotation encoding="application/x-tex">W = \alpha L^{\beta}</annotation></semantics></math>,</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>W</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><munder><mo>∑</mo><mi>l</mi></munder><msub><mi>A</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>l</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mspace width="0.167em"></mspace><msub><mi>α</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>s</mi></mrow></msub><mspace width="0.167em"></mspace><msubsup><mover><mi>ℓ</mi><mo accent="true">̃</mo></mover><mi>l</mi><msub><mi>β</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>s</mi></mrow></msub></msubsup></mrow><annotation encoding="application/x-tex">W_{p,r,y,\tau,a,s} = \sum_{l}A_{p,r,y,\tau,l,a,s}\,\alpha_{p,r,s}\,\tilde{\ell}_{l}^{\beta_{p,r,s}}</annotation></semantics></math></p>
+<p>so the weight at age carries the spread of length at age rather than
+being the weight of the mean length.</p>
+</div>
+<div class="section level5">
+<h5 id="timing-within-the-year">Timing within the year<a class="anchor" aria-label="anchor" href="#timing-within-the-year"></a>
+</h5>
+<p>Every fleet has its own key and weight, read at the point in the
+season that fleet’s observations are taken: each fishery fleet’s at
+<code>t_fish</code>, each survey’s at <code>t_srv</code>, and the
+spawning weight at the spawning time. A season starts at the cumulative
+duration of the seasons before it, and a point inside it is that start
+plus the fraction elapsed times the season’s duration. With growth
+constant over years the curve read at the real age gives the same mean
+length whatever the seasons’ durations, so seasons add no approximation
+to growth.</p>
+</div>
+</div>
+<div class="section level4">
 <h4 id="fishery-observation-model">Fishery Observation Model<a class="anchor" aria-label="anchor" href="#fishery-observation-model"></a>
 </h4>
 <p>The fishery observation model describes the expected retained
@@ -1272,8 +1644,42 @@ D_{p,r,y,\tau,l,s,f}^{l} = \mathbf{A}_{p,r,y,\tau,s}^{l}{\mathbf{D}^{\mathbf{a}}
 \end{matrix}</annotation></semantics></math></p>
 <p>where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>𝐀</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>s</mi></mrow><mi>l</mi></msubsup><annotation encoding="application/x-tex">\mathbf{A}_{p,r,y,\tau,s}^{l}</annotation></semantics></math>
-is a user-defined size-age transition matrix to convert ages to lengths.
-Expected retained catch
+is the size-age transition matrix, supplied as data or built by the
+growth module. When conditional age-at-length data are fit
+(<code>do_caal = 1</code>), the joint retained and discarded catch at
+length and age are also formed, each age column of the transition scaled
+by the catch at that age:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="center" style="text-align: center"><msubsup><mi>C</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>l</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mrow><mi>l</mi><mi>a</mi></mrow></msubsup><mo>=</mo><msub><mi>A</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>l</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mspace width="0.167em"></mspace><msubsup><mi>C</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mi>a</mi></msubsup></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><msubsup><mi>D</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>l</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mrow><mi>l</mi><mi>a</mi></mrow></msubsup><mo>=</mo><msub><mi>A</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>l</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mspace width="0.167em"></mspace><msubsup><mi>D</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mi>a</mi></msubsup></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{matrix}
+C_{p,r,y,\tau,l,a,s,f}^{la} = A_{p,r,y,\tau,l,a,s}\,C_{p,r,y,\tau,a,s,f}^{a} \\
+D_{p,r,y,\tau,l,a,s,f}^{la} = A_{p,r,y,\tau,l,a,s}\,D_{p,r,y,\tau,a,s,f}^{a} \\
+\end{matrix}</annotation></semantics></math></p>
+<p>so that summing over lengths returns the catch at age and summing
+over ages the catch at length.</p>
+<div class="section level6">
+<h6 id="selecting-at-length-rather-than-at-age">Selecting at length rather than at age<a class="anchor" aria-label="anchor" href="#selecting-at-length-rather-than-at-age"></a>
+</h6>
+<p>The catch at length above is the catch at age spread over the key,
+which is what <code>FishLenComps_sel = "age"</code> (the default) and
+<code>SrvLenComps_sel = "age"</code> give. Selectivity has already been
+applied at age by then, as its average over the lengths the age covers,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>s</mi><mi>a</mi></msub><mo>=</mo><msub><mo>∑</mo><mi>l</mi></msub><msub><mi>A</mi><mrow><mi>l</mi><mo>,</mo><mi>a</mi></mrow></msub><mspace width="0.167em"></mspace><msub><mi>s</mi><mi>l</mi></msub></mrow><annotation encoding="application/x-tex">s_{a} = \sum_{l}A_{l,a}\,s_{l}</annotation></semantics></math>.
+Every fish of an age is therefore equally catchable, and the length
+composition within an age is the key’s own column.</p>
+<p>Under <code>"length"</code> the order is reversed. The numbers at age
+are spread over the key first and selected length by length,</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>C</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>l</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mi>l</mi></msubsup><mo>=</mo><msub><mi>s</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>l</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow></msub><munderover><mo>∑</mo><mi>a</mi><msub><mi>a</mi><mo>+</mo></msub></munderover><msub><mi>A</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>l</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mspace width="0.167em"></mspace><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mi>−</mi><msub><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow><mfrac><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><msub><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub></mfrac></mrow><annotation encoding="application/x-tex">C_{p,r,y,\tau,l,s,f}^{l} = s_{r,y,l,s,f}\sum_{a}^{a_{+}}A_{p,r,y,\tau,l,a,s}\,N_{p,r,y,\tau,a,s}\left( 1 - e^{- Z_{p,r,y,\tau,a,s}} \right)\frac{F_{r,y,\tau,f}}{Z_{p,r,y,\tau,a,s}}</annotation></semantics></math></p>
+<p>and the survey’s index compositions the same way. The two differ by
+the covariance of length and selection within an age. Selecting at age
+replaces
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>s</mi><mi>l</mi></msub><annotation encoding="application/x-tex">s_{l}</annotation></semantics></math>
+by its mean over the age’s length range, which is exact only where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>s</mi><mi>l</mi></msub><annotation encoding="application/x-tex">s_{l}</annotation></semantics></math>
+is flat over that range. Where the curve is steep, the fish taken from
+an age are longer or shorter than that age’s average fish, and one
+number per age cannot represent that. The difference is real and not a
+rounding, so a model whose length compositions inform a length-based
+selectivity should select at length.</p>
+<p>Expected retained catch
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mtext mathvariant="normal">Catch</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><annotation encoding="application/x-tex">\text{Catch}_{r,y,\tau,f}</annotation></semantics></math>)
 is computed by summing over populations and then either as
 abundance:</p>
@@ -1284,6 +1690,25 @@ abundance:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="center" style="text-align: center"><msub><mtext mathvariant="normal">Catch</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>=</mo><munderover><mo>∑</mo><mi>p</mi><msub><mi>n</mi><mi>p</mi></msub></munderover><munderover><mo>∑</mo><mi>a</mi><msub><mi>a</mi><mo>+</mo></msub></munderover><mrow><munderover><mo>∑</mo><mi>s</mi><msub><mi>n</mi><mi>s</mi></msub></munderover><msubsup><mi>C</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mi>a</mi></msubsup></mrow><msubsup><mi>W</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mrow><mi>f</mi><mi>i</mi><mi>s</mi><mi>h</mi></mrow></msubsup></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{matrix}
 \text{Catch}_{r,y,\tau,f} = \sum_{p}^{n_p}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}C_{p,r,y,\tau,a,s,f}^{a}}W_{p,r,y,\tau,a,s,f}^{fish} \\
 \end{matrix}</annotation></semantics></math></p>
+<p>The fishery weight at age
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>W</mi><mrow><mi>f</mi><mi>i</mi><mi>s</mi><mi>h</mi></mrow></msup><annotation encoding="application/x-tex">W^{fish}</annotation></semantics></math>
+is normally the population’s mean weight at age at the fleet’s timing,
+which is the weight of an average fish of that age. The catch is not
+made of average fish. A length-based gear takes the long ones from an
+age more often than the short ones, and the long ones weigh more. With
+<code>fish_waa_selected = 1</code> the fleet’s catch biomass instead
+uses the mean weight of the fish it takes at each age, the weight
+averaged over the key re-weighted by selectivity,</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>W</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mrow><mi>f</mi><mi>i</mi><mi>s</mi><mi>h</mi></mrow></msubsup><mo>=</mo><mstyle displaystyle="true"><mfrac><mrow><munder><mo>∑</mo><mi>l</mi></munder><msub><mi>A</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>l</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mspace width="0.167em"></mspace><msub><mi>s</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>l</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow></msub><mspace width="0.167em"></mspace><msub><mi>w</mi><mi>l</mi></msub></mrow><mrow><munder><mo>∑</mo><mi>l</mi></munder><msub><mi>A</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>l</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mspace width="0.167em"></mspace><msub><mi>s</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>l</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow></msub></mrow></mfrac></mstyle></mrow><annotation encoding="application/x-tex">W_{p,r,y,\tau,a,s,f}^{fish} = \dfrac{\sum_{l}A_{p,r,y,\tau,l,a,s}\,s_{r,y,l,s,f}\,w_{l}}{\sum_{l}A_{p,r,y,\tau,l,a,s}\,s_{r,y,l,s,f}}</annotation></semantics></math></p>
+<p>with
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>w</mi><mi>l</mi></msub><annotation encoding="application/x-tex">w_{l}</annotation></semantics></math>
+the weight at the bin midpoint from <code>wt_len_pars</code>. Flat
+selectivity returns the population mean exactly, and a knife edge
+returns the weight of the one bin it keeps, so the option changes
+nothing unless the gear selects within an age. Where it does, the
+difference is largest at the youngest selected ages, whose lengths fall
+on the ascending limb. <code>srv_waa_selected</code> does the same for a
+survey index in weight.</p>
 <p>Population-specific predicted retained catch
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mtext mathvariant="normal">Catch</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><annotation encoding="application/x-tex">\text{Catch}_{p,r,y,\tau,f}</annotation></semantics></math>)
 retains the population index and is not summed across
@@ -1363,6 +1788,7 @@ Population-specific fishery indices are compared directly to
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mtext mathvariant="normal">FshIdx</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><annotation encoding="application/x-tex">\text{FshIdx}_{p,r,y,\tau,f}</annotation></semantics></math>
 without summation.</p>
 </div>
+</div>
 <div class="section level4">
 <h4 id="survey-observation-model">Survey Observation Model<a class="anchor" aria-label="anchor" href="#survey-observation-model"></a>
 </h4>
@@ -1424,6 +1850,9 @@ is given by:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="center" style="text-align: center"><msubsup><mi>I</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>l</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow><mi>l</mi></msubsup><mo>=</mo><msubsup><mi>𝐀</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>s</mi></mrow><mi>l</mi></msubsup><msub><msup><mi>𝐈</mi><mi>𝐚</mi></msup><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow></msub></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{matrix}
 I_{p,r,y,\tau,l,s,sf}^{l} = \mathbf{A}_{p,r,y,\tau,s}^{l}{\mathbf{I}^{\mathbf{a}}}_{p,r,y,\tau,s,sf} \\
 \end{matrix}</annotation></semantics></math></p>
+<p>and, when conditional age-at-length data are fit, the joint survey
+index at length and age
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>I</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>l</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow><mrow><mi>l</mi><mi>a</mi></mrow></msubsup><mo>=</mo><msub><mi>A</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>l</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mspace width="0.167em"></mspace><msubsup><mi>I</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow><mi>a</mi></msubsup></mrow><annotation encoding="application/x-tex">I_{p,r,y,\tau,l,a,s,sf}^{la} = A_{p,r,y,\tau,l,a,s}\,I_{p,r,y,\tau,a,s,sf}^{a}</annotation></semantics></math>.</p>
 <p>Survey indices
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mtext mathvariant="normal">SrvIdx</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow></msub><annotation encoding="application/x-tex">\text{SrvIdx}_{p,r,y,\tau,sf}</annotation></semantics></math>)
 can be computed as either abundance-based or biomass-based.
@@ -2618,6 +3047,36 @@ explained, which is appropriate for a gear that only resolves part of
 the age range (e.g., a fishery that never encounters the youngest ages,
 whose zeros would otherwise carry information).</p>
 </div>
+<div class="section level5">
+<h5 id="conditional-age-at-length">Conditional Age-at-Length<a class="anchor" aria-label="anchor" href="#conditional-age-at-length"></a>
+</h5>
+<p>A conditional age-at-length observation is the age composition of the
+fish aged from one length bin. Its expectation is the row of the joint
+array for that bin, normalized across ages, then passed through the
+ageing error matrix:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>E</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mrow><mspace width="0.167em"></mspace><mtext mathvariant="normal">caal</mtext><mo stretchy="false" form="prefix">(</mo><mi>l</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mo>=</mo><mstyle displaystyle="true"><mfrac><msubsup><mi>C</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>l</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mrow><mi>l</mi><mi>a</mi></mrow></msubsup><mrow><munder><mo>∑</mo><msup><mi>a</mi><mo>′</mo></msup></munder><msubsup><mi>C</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>l</mi><mo>,</mo><msup><mi>a</mi><mo>′</mo></msup><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mrow><mi>l</mi><mi>a</mi></mrow></msubsup></mrow></mfrac></mstyle></mrow><annotation encoding="application/x-tex">E_{p,r,y,\tau,a,s,f}^{\,\text{caal}(l)} = \dfrac{C_{p,r,y,\tau,l,a,s,f}^{la}}{\sum_{a'}C_{p,r,y,\tau,l,a',s,f}^{la}}</annotation></semantics></math></p>
+<p>which is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mi>a</mi><mo>∣</mo><mi>l</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">P(a \mid l)</annotation></semantics></math>
+under the model, since the joint array is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mi>l</mi><mo>∣</mo><mi>a</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">P(l \mid a)</annotation></semantics></math>
+times the numbers at age. Each length bin is then fit as its own
+composition with the multinomial or Dirichlet-multinomial above, with
+the input sample size the number of fish aged from that bin
+(<code>ISS_Fish_caal</code>, <code>ISS_Srv_caal</code>) and the weight
+<code>Wt_Fish_caal</code>, <code>Wt_Srv_caal</code> multiplying it:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><msup><mi>ℓ</mi><mtext mathvariant="normal">caal</mtext></msup><mo>=</mo><munder><mo>∑</mo><mi>l</mi></munder><msub><mi>λ</mi><mi>l</mi></msub><mspace width="0.167em"></mspace><msub><mtext mathvariant="normal">ISS</mtext><mi>l</mi></msub><munder><mo>∑</mo><mi>a</mi></munder><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>O</mi><mi>a</mi><mrow><mo stretchy="false" form="prefix">(</mo><mi>l</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mo>+</mo><mi>c</mi><mspace width="0.167em"></mspace><msup><mn>𝟙</mn><mtext mathvariant="normal">const</mtext></msup><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo stretchy="true" form="prefix">[</mo><mi mathvariant="normal">log</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>O</mi><mi>a</mi><mrow><mo stretchy="false" form="prefix">(</mo><mi>l</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mo>+</mo><mi>c</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>−</mo><mi mathvariant="normal">log</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>E</mi><mi>a</mi><mrow><mo stretchy="false" form="prefix">(</mo><mi>l</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mo>+</mo><mi>c</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">-\ell^{\text{caal}} = \sum_{l}\lambda_{l}\,\text{ISS}_{l}\sum_{a}\left( O_{a}^{(l)} + c\,\mathbb{1}^{\text{const}} \right)\left\lbrack \log\left( O_{a}^{(l)} + c \right) - \log\left( E_{a}^{(l)} + c \right) \right\rbrack</annotation></semantics></math></p>
+<p>with
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>θ</mi><annotation encoding="application/x-tex">\theta</annotation></semantics></math>
+shared across the length bins of a fleet under the
+Dirichlet-multinomial, since the bins come from one length-stratified
+sample. The logistic-normal families are not available: a bin’s age
+sample is small and mostly zeros, which the additive log-ratio transform
+cannot handle. Fit together with the marginal length compositions, the
+lengths carry the abundance signal and the conditional rows carry
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mi>a</mi><mo>∣</mo><mi>l</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">P(a \mid l)</annotation></semantics></math>,
+which is the information on growth; fitting marginal ages as well would
+count the same fish twice.</p>
+</div>
 </div>
 <div class="section level4">
 <h4 id="tagging">Tagging<a class="anchor" aria-label="anchor" href="#tagging"></a>
@@ -3116,6 +3575,25 @@ penalized, while sexes sharing one curve are penalized once (the shared
 parameter is not invoked). The <code>"own_mean"</code> centre is then
 pooled over every penalized cell across ages and sexes, so the sexes
 share a single estimated level.</p>
+<p>A deviation shared across cells of the parameter array through the
+map, across regions (<code>InitDevs_spec = "est_shared_r"</code>,
+<code>RecDevs_spec = "est_shared_pop_r"</code>), across sexes, or across
+the ages past the observed range (<code>init_age_devs_shared</code>), is
+one parameter and carries one penalty. Each cell the penalty visits
+takes
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><mi>n</mi></mrow><annotation encoding="application/x-tex">1/n</annotation></semantics></math>
+of it, with
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>n</mi><annotation encoding="application/x-tex">n</annotation></semantics></math>
+the number of such cells holding that level, so a series shared by three
+regions is not penalized three times. Under the bias ramp the centre of
+the initial age deviation on age
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math>
+is the ramp read at that age’s own birth year,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>μ</mi><mi>a</mi><mtext mathvariant="normal">Init</mtext></msubsup><mo>=</mo><mi>−</mi><msubsup><mi>σ</mi><mtext mathvariant="normal">Rec</mtext><mn>2</mn></msubsup><mi>/</mi><mn>2</mn><mo>⋅</mo><msub><mi>b</mi><mrow><mn>1</mn><mo>−</mo><mi>a</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\mu_{a}^{\text{Init}} = -\sigma_{\text{Rec}}^{2}/2 \cdot b_{1 - a}</annotation></semantics></math>,
+the deviation index
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>−</mo><mi>a</mi></mrow><annotation encoding="application/x-tex">1 - a</annotation></semantics></math>
+lying before the first model year, which is how a ramp defined on
+calendar years treats the years before the model starts.</p>
 <p>Sex-specific curves can additionally be compared to one another
 (<code>Use_init_sex_pen</code>), a separate statement about how far
 apart the sexes’ initial age structures may sit rather than about how
@@ -3178,6 +3656,30 @@ predicted curve, so a model that also wants to keep the realized
 recruitment series from wandering has nowhere else to say so; this
 penalty is that second, independent statement, and reproduces the
 recruitment regularity penalties several existing assessments carry.</p>
+</div>
+<div class="section level5">
+<h5 id="initial-recruitment-offset">Initial Recruitment Offset<a class="anchor" aria-label="anchor" href="#initial-recruitment-offset"></a>
+</h5>
+<p>When the initial age structure is built from its own recruitment
+level (<code>use_rinit = 1</code>, so
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>μ</mi><mi>p</mi><mtext mathvariant="normal">RecInit</mtext></msubsup><annotation encoding="application/x-tex">\mu_{p}^{\text{RecInit}}</annotation></semantics></math>
+is separate from
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>μ</mi><mi>p</mi><mtext mathvariant="normal">Rec</mtext></msubsup><annotation encoding="application/x-tex">\mu_{p}^{\text{Rec}}</annotation></semantics></math>),
+that level can be penalized toward the recruitment level rather than
+left free (<code>Use_rinit_pen</code>):</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>L</mi><mtext mathvariant="normal">RecInit</mtext></msub><mo>=</mo><mi>−</mi><munderover><mo>∑</mo><mrow><mi>p</mi><mo>=</mo><mn>1</mn></mrow><msub><mi>n</mi><mi>p</mi></msub></munderover><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">[</mo><mi>ϕ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">log</mi><msubsup><mi>μ</mi><mi>p</mi><mtext mathvariant="normal">RecInit</mtext></msubsup><mo>−</mo><mi mathvariant="normal">log</mi><msubsup><mi>μ</mi><mi>p</mi><mtext mathvariant="normal">Rec</mtext></msubsup><mo>;</mo><mspace width="0.222em"></mspace><mn>0</mn><mo>,</mo><mspace width="0.222em"></mspace><msub><mi>σ</mi><mtext mathvariant="normal">RecInit</mtext></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">L_{\text{RecInit}} = - \sum_{p = 1}^{n_{p}}\log\left\lbrack \phi\left( \log\mu_{p}^{\text{RecInit}} - \log\mu_{p}^{\text{Rec}};\ 0,\ \sigma_{\text{RecInit}} \right) \right\rbrack</annotation></semantics></math></p>
+<p>The two levels are otherwise only linked through the data, and the
+initial age structure is often the thinnest part of it, so the penalty
+is a statement about how far the stock’s equilibrium recruitment may
+have sat from the level the modelled years show. An equilibrium
+recruitment stands for an average over several years rather than one, so
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mtext mathvariant="normal">RecInit</mtext></msub><annotation encoding="application/x-tex">\sigma_{\text{RecInit}}</annotation></semantics></math>
+is normally narrower than
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>R</mi></msub><annotation encoding="application/x-tex">\sigma_{R}</annotation></semantics></math>.
+A reasonable choice is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mi>R</mi></msub><mi>/</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mi>/</mi><mi>M</mi><mo>−</mo><mn>0.5</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\sigma_{R}/\left( 1/M - 0.5 \right)</annotation></semantics></math>,
+the recruitment variability shrunk by the number of year classes the
+equilibrium averages over.</p>
 </div>
 <div class="section level5">
 <h5 id="stock-recruit-residual">Stock-Recruit Residual<a class="anchor" aria-label="anchor" href="#stock-recruit-residual"></a>
@@ -3575,6 +4077,52 @@ data begin.</li>
 </ul>
 </div>
 <div class="section level5">
+<h5 id="growth-deviations">Growth Deviations<a class="anchor" aria-label="anchor" href="#growth-deviations"></a>
+</h5>
+<p>Growth carries two deviation surfaces, and both are scored by the
+same process error machinery the selectivity deviations use, so the
+vocabulary above carries over unchanged.</p>
+<p>A time-varying growth <strong>parameter</strong> has one deviation
+per year, a surface one column wide. Under <code>"iid"</code> each is
+drawn independently and under <code>"rw"</code> they form a random
+walk:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="center" style="text-align: center"><msub><mi>δ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>k</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><msubsup><mi>σ</mi><mi>k</mi><mn>2</mn></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mtd><mtd columnalign="center" style="text-align: center"><mtext mathvariant="monospace">𝚒𝚒𝚍</mtext></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><msub><mi>δ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>k</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>δ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>−</mo><mn>1</mn><mo>,</mo><mi>k</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>,</mo><msubsup><mi>σ</mi><mi>k</mi><mn>2</mn></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mtd><mtd columnalign="center" style="text-align: center"><mtext mathvariant="monospace">𝚛𝚠</mtext></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{matrix}
+\delta_{p,r,y,k,s} \sim N\left( 0, \sigma_{k}^{2} \right) &amp; \texttt{iid} \\[1ex]
+\delta_{p,r,y,k,s} \sim N\left( \delta_{p,r,y - 1,k,s}, \sigma_{k}^{2} \right) &amp; \texttt{rw}
+\end{matrix}</annotation></semantics></math></p>
+<p>with one
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>k</mi></msub><annotation encoding="application/x-tex">\sigma_{k}</annotation></semantics></math>
+per varying parameter
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>,
+held in the first stream of <code>growth_pe_pars</code> and estimated
+under <code>growth_tv_sigma_spec = "est"</code>, and the first year of a
+walk given its own standard deviation
+(<code>growth_rw_init_sigma</code>). Only the years named in
+<code>growth_tv_years</code> carry a deviation; the rest are held at
+zero, so a parameter can be constant early in a series and varying once
+the data can support it.</p>
+<p>The <strong>semi-parametric</strong> surface
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ε</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">\varepsilon_{p,r,y,a,s}</annotation></semantics></math>
+runs over years and ages, so all five structures are available to it:
+<code>"iid"</code> and <code>"rw"</code> as above, <code>"2dar1"</code>
+for a separable first-order autoregression over ages and years, and
+<code>"3dmarg"</code>/<code>"3dcond"</code> for the three-dimensional
+Gaussian Markov random field over age, year and cohort described for
+selectivity, on the marginal or conditional variance. The correlated
+forms are the ones that make a growth surface estimable in practice: the
+deviations are not identified year by year and age by age from length
+data alone, and it is the correlation that lets neighbouring ages and
+years share information. Its hyperparameters live in the second stream
+of <code>growth_pe_pars</code>, in the same slots the selectivity forms
+use, and the surface can be restricted to the ages and years the length
+data inform through <code>growth_semipar_ages</code> and
+<code>growth_semipar_years</code>.</p>
+<p>Both enter the objective unweighted, reported as
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>L</mi><mtext mathvariant="normal">GrowthTV</mtext></msub><annotation encoding="application/x-tex">L_{\text{GrowthTV}}</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>L</mi><mtext mathvariant="normal">GrowthSemipar</mtext></msub><annotation encoding="application/x-tex">L_{\text{GrowthSemipar}}</annotation></semantics></math>.</p>
+</div>
+<div class="section level5">
 <h5 id="movement-1">Movement<a class="anchor" aria-label="anchor" href="#movement-1"></a>
 </h5>
 <p>Time-varying movement is introduced through process error deviations,
@@ -3644,9 +4192,9 @@ movement rates, -
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msup><mi>ϵ</mi><mtext mathvariant="normal">Move</mtext></msup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(\epsilon^{\text{Move}})</annotation></semantics></math>
 acts as a proportional scaling factor, - time variation persists into
 projection years even when baseline covariates are held fixed.</p>
-<p>Importantly, deviations are applied only to off-diagonal elements
-(i.e., actual transitions), and the diagonal of the generator matrix is
-recomputed to preserve mass balance.</p>
+<p>Deviations are applied only to off-diagonal elements (i.e., actual
+transitions), and the diagonal of the generator matrix is recomputed to
+preserve mass balance.</p>
 </div>
 <div class="section level6">
 <h6 id="likelihood-for-deviations">Likelihood for Deviations<a class="anchor" aria-label="anchor" href="#likelihood-for-deviations"></a>

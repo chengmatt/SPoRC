@@ -59,6 +59,7 @@ Setup_sim_env <- function(sim_list) {
   sim_env$predict_sim_fish_iss_fmort <- predict_sim_fish_iss_fmort
   sim_env$rho_trans <- rho_trans
   sim_env$simulate_comps <- simulate_comps
+  sim_env$simulate_caal <- simulate_caal
   sim_env$simulate_conv_tag_fish_recaptures <- simulate_conv_tag_fish_recaptures
   # Bound explicitly like the helpers above: the annual-cycle with() blocks resolve
   # functions through this environment's parent chain, which only reaches the package

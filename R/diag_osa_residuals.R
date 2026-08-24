@@ -179,6 +179,49 @@ comp_osa_field_map <- function(comp_source, pop = FALSE, discard = FALSE) {
   )
 }
 
+#' Default bin labels for an internal OSA call
+#'
+#' \code{bins} and \code{bin_label} label the residual's bin axis, and
+#' \code{\link{plot_resids}} draws its second panel against them. Left empty
+#' the label columns never reach the residual frame and that panel errors when it
+#' is printed, so they are filled from the data here: the observed age bins for
+#' an age or conditional age-at-length source and the length bins for a length
+#' source. The observed bins are read off the observation array, since ageing
+#' error can leave fewer of them than the model carries.
+#'
+#' @param data Data list from the fitted model.
+#' @param comp_source Composition source name, as \code{\link{get_osa}} takes it.
+#' @param pop,discard Whether the source is population-specific or the discard
+#'   stream, as \code{\link{get_osa}} takes them.
+#'
+#' @returns List with \code{bins} and \code{bin_label}.
+#'
+#' @keywords internal
+osa_default_bins <- function(data, comp_source, pop = FALSE, discard = FALSE) {
+
+  is_caal <- comp_source %in% c("Fish_caal", "Srv_caal")
+  is_len <- grepl("Len$", comp_source)
+
+  if(is_caal) {
+    obs_nm <- paste0("Obs", comp_source)
+    n_bins <- dim(data[[obs_nm]])[5] # region, year, season, len, AGE, sex, fleet
+  } else {
+    obs_nm <- comp_osa_field_map(comp_source, pop = pop, discard = discard)$Obs
+    n_bins <- dim(data[[obs_nm]])[if(pop) 5 else 4]
+  }
+
+  if(is_len) {
+    bins <- if(length(data$lens) == n_bins) data$lens else seq_len(n_bins)
+    return(list(bins = bins, bin_label = "Length"))
+  }
+
+  # ages: the model's own when the observation carries all of them, and the bin
+  # index otherwise, since which model ages an observed bin holds is the ageing
+  # error's business rather than something to guess at here
+  bins <- if(length(data$ages) == n_bins) data$ages else seq_len(n_bins)
+  return(list(bins = bins, bin_label = "Age"))
+}
+
 #' Keep-subset for internal OSA residuals
 #'
 #' Elements flagged \code{last_in_group == TRUE} are the statistically
@@ -360,6 +403,85 @@ run_internal_comp_osa <- function(model, data, comp_source, family,
       sex = sex,
       seas = season,
       pop = pop,
+      comp_type = dplyr::case_when(
+        comp_type == 0 ~ "Aggregated",
+        comp_type == 1 ~ "SpltR_SpltS",
+        TRUE           ~ "SpltR_JntS"
+      )
+    )
+
+  list(res = res)
+}
+
+#' Run internal (model-based) OSA residuals for conditional age-at-length data
+#'
+#' Internal counterpart to \code{\link{run_internal_comp_osa}} for CAAL data
+#' packed via \code{\link{pack_caal_osa}} (requires
+#' \code{do_internal_comp_osa = TRUE} in \code{\link{Setup_Mod_Dim}}). Called by
+#' \code{\link{get_osa}} when \code{comp_source} is \code{"Fish_caal"} or
+#' \code{"Srv_caal"}. CAAL carries only the discrete families, so there is no
+#' family argument; the residuals come back with an extra \code{len} column
+#' giving the length bin each age composition was conditioned on.
+#'
+#' @param model Fitted model object.
+#' @param data The data list the model was built from.
+#' @param comp_source Either \code{"Fish_caal"} or \code{"Srv_caal"}.
+#' @param bins Age bins, used to label the residuals.
+#' @param bin_label Label for the bin axis, typically \code{"Age"}.
+#' @param osa_method Optional override for the \code{oneStepPredict} method.
+#' @param parallel Logical, passed to \code{oneStepPredict}.
+#'
+#' @return A list with one element \code{res}, matching
+#'   \code{\link{run_internal_comp_osa}}'s schema plus a \code{len} column.
+#'
+#' @keywords internal
+run_internal_caal_osa <- function(model, data, comp_source, bins, bin_label,
+                                  osa_method = NULL, parallel = FALSE) {
+
+  if(!comp_source %in% c("Fish_caal", "Srv_caal")) stop("`comp_source` for CAAL must be one of: Fish_caal, Srv_caal")
+
+  obs_nm <- paste0("Obs", comp_source)
+  n_fleets_field <- if(comp_source == "Srv_caal") "n_srv_fleets" else "n_fish_fleets"
+
+  packed <- pack_caal_osa(
+    ObsArr = data[[obs_nm]], ISSArr = data[[paste0("ISS_", comp_source)]],
+    WtArr = data[[paste0("Wt_", comp_source)]], UseArr = data[[paste0("Use", comp_source)]],
+    TypeMat = data[[paste0(comp_source, "_Type")]], LikeTypeVec = data[[paste0(comp_source, "_LikeType")]],
+    n_yrs = length(data$years), n_seas = data$n_seas, n_lens = length(data$lens),
+    n_fleets = data[[n_fleets_field]], n_sexes = data$n_sexes, addtocomp = data$addtocomp,
+    return_labels = TRUE
+  )
+
+  if(is.null(packed)) {
+    warning("No conditional age-at-length data found for comp_source '", comp_source, "'; returning NULL.")
+    return(NULL)
+  }
+
+  tracked_name <- paste0(obs_nm, "_osa")
+  method <- if(!is.null(osa_method)) osa_method else "oneStepGeneric"
+  validate_osa_method(method)
+  subset_idx <- osa_keep_subset(packed$labels$last_in_group)
+
+  osa <- osa_one_step_predict(model, observation.name = tracked_name, method = method,
+                              discrete = TRUE, parallel = parallel,
+                              subset = subset_idx, trace = FALSE,
+                              discreteSupport = 0:max(model$env$obs[[tracked_name]]))
+
+  lab <- packed$labels[subset_idx, ]
+  lab$resid <- osa$residual
+
+  res <- lab %>%
+    dplyr::transmute(
+      fleet = as.character(fleet),
+      index_label = bin_label,
+      year = year,
+      index = bins[bin],
+      len = data$lens[len],
+      resid = resid,
+      region = region,
+      sex = sex,
+      seas = season,
+      pop = 1,
       comp_type = dplyr::case_when(
         comp_type == 0 ~ "Aggregated",
         comp_type == 1 ~ "SpltR_SpltS",
@@ -552,16 +674,21 @@ run_internal_index_osa <- function(model, data, index_source, pop = FALSE,
 #' @param exp_mat Array of expected compositions, dimensioned the same as
 #'   \code{obs_mat}. May contain \code{NA}s, which are removed when filtering by
 #'   \code{years}.
-#' @param N Input (or effective if Multinomial) sample size. Dimensions depend on \code{comp_type}:
+#' @param N Input (or effective if Multinomial) sample size, at the model's full
+#'   year dimension in every case: \code{years} (or \code{years_by_region})
+#'   selects the years actually used, the same way it selects them from
+#'   \code{obs_mat}/\code{exp_mat}, so \code{N} is never pre-filtered by the
+#'   caller. Dimensions depend on \code{comp_type}:
 #'   \itemize{
-#'     \item \code{comp_type = 0} (aggregated): vector of length \code{n_years}.
+#'     \item \code{comp_type = 0} (aggregated): vector of length \code{n_years}
+#'       (the model's, not the length of \code{years}).
 #'     \item \code{comp_type = 1} (split by region and sex): array
 #'       \code{[n_regions, n_years, n_sexes]}.
 #'     \item \code{comp_type = 2} (split by region, joint by sex): matrix
 #'       \code{[n_regions, n_years]}.
 #'   }
-#'   For years without data, users can simply input an NA or any abritary number (it gets filtered out within the function).
-#' @param years Vector of years to filter to if composition type is aggregated (0). Otherwise, this expects a list where each list element is a vector of years for each region where compositions are available for use (split by region and sex, or split by region, joint by sex).
+#'   For years without data, users can simply input an NA or any abritary number (it gets filtered out within the function). This is the same array \code{ISS_*Comps} already is in the model's data list, so it can usually be passed straight through.
+#' @param years Years with composition data. Either a plain vector, used for every region, or a list with one vector of years per region when the regions carry different years. Both forms work for every composition type. A region with no years is skipped.
 #' @param fleet Fleet identifier (character or numeric) to filter to.
 #' @param bins Vector of age or length bin labels corresponding to the
 #'   composition categories.
@@ -608,7 +735,11 @@ run_internal_index_osa <- function(model, data, index_source, pop = FALSE,
 #'   build \code{model}. Required when \code{model} is supplied.
 #' @param comp_source One of \code{"FishAge"}, \code{"FishLen"}, \code{"SrvAge"},
 #'   \code{"SrvLen"}, identifying which composition data source to pull
-#'   internal OSA residuals for. Required when \code{model} is supplied and
+#'   internal OSA residuals for. Conditional age-at-length uses
+#'   \code{"Fish_caal"} or \code{"Srv_caal"}, which return an extra
+#'   \code{len} column giving the length bin each age composition was
+#'   conditioned on and ignore \code{family}, since CAAL carries only the
+#'   discrete likelihoods. Required when \code{model} is supplied and
 #'   \code{index_source} is \code{NULL} and \code{tag = FALSE}.
 #' @param index_source One of \code{"Catch"}, \code{"Discard"}, \code{"FishIdx"},
 #'   \code{"SrvIdx"}, identifying which continuous (log-normal) index-type
@@ -712,11 +843,24 @@ get_osa <- function(obs_mat = NULL,
 
   # Internal (model-based) OSA path, via RTMB::oneStepPredict
   if(!is.null(model)) {
+
+    # plot_resids draws its second panel against the bin labels, so fill them
+    # from the data when the caller leaves them out
+    if(!is.null(comp_source) && (is.null(bins) || is.null(bin_label))) {
+      defaults <- osa_default_bins(data, comp_source, pop = pop, discard = discard)
+      if(is.null(bins)) bins <- defaults$bins
+      if(is.null(bin_label)) bin_label <- defaults$bin_label
+    }
+
     if(!is.null(index_source)) {
       return(run_internal_index_osa(model = model, data = data, index_source = index_source,
                                     pop = pop, osa_method = osa_method, parallel = parallel))
     } else if(tag) {
       return(run_internal_tag_osa(model = model, data = data, osa_method = osa_method, parallel = parallel))
+    } else if(!is.null(comp_source) && comp_source %in% c("Fish_caal", "Srv_caal")) {
+      return(run_internal_caal_osa(model = model, data = data, comp_source = comp_source,
+                                   bins = bins, bin_label = bin_label,
+                                   osa_method = osa_method, parallel = parallel))
     } else {
       return(run_internal_comp_osa(model = model, data = data, comp_source = comp_source, family = family,
                                    pop = pop, discard = discard, bins = bins, bin_label = bin_label,
@@ -732,6 +876,11 @@ get_osa <- function(obs_mat = NULL,
     n_regions <- dim(obs_mat)[1]
     n_sexes <- dim(obs_mat)[5]
 
+    # The split composition types read one year vector per region, the aggregated
+    # type a single vector for the one composition it has. Accept either form for
+    # any type, so a caller does not have to know which branch it will land in.
+    years_by_region <- if(is.list(years)) years else replicate(n_regions, years, simplify = FALSE)
+
     # if comps are aggregated
     if(comp_type == 0) {
 
@@ -745,7 +894,7 @@ get_osa <- function(obs_mat = NULL,
       tmp_exp <- (tmp_exp + addtocomp) / rowSums(tmp_exp + addtocomp)
 
       # compute OSA
-      tmp_osa <- run_external_comp_osa(obs = tmp_obs, exp = tmp_exp, N = N, DM_theta = DM_theta,
+      tmp_osa <- run_external_comp_osa(obs = tmp_obs, exp = tmp_exp, N = N[years], DM_theta = DM_theta,
                          years = years, comp_like = comp_like, LN_Sigma = LN_Sigma,
                          index = bins, fleet = as.character(fleet), index_label = bin_label)
 
@@ -765,21 +914,30 @@ get_osa <- function(obs_mat = NULL,
       agg_all <- data.frame()
 
       for(r in 1:n_regions) {
+
+        # a region a fleet never sampled has nothing to compute a residual from
+        if(length(years_by_region[[r]]) == 0) next
+
         for(s in 1:n_sexes) {
 
-          obs <- obs_mat[,years[[r]],seas,,,fleet, drop = FALSE] # get filtered observed matrix
-          exp <- exp_mat[,years[[r]],seas,,,fleet, drop = FALSE] # get filtered expected matrix
+          obs <- obs_mat[,years_by_region[[r]],seas,,,fleet, drop = FALSE] # get filtered observed matrix
+          exp <- exp_mat[,years_by_region[[r]],seas,,,fleet, drop = FALSE] # get filtered expected matrix
 
           tmp_obs <- obs[r,,1,,s,1] # get observations
           tmp_exp <- exp[r,,1,,s,1] # get expected
+
+          # A plain year vector says "these years" without saying which regions
+          # sampled them, so a cell with nothing in it is skipped here rather
+          # than normalized into a residual with no data behind it
+          if(!any(is.finite(tmp_obs)) || sum(tmp_obs, na.rm = TRUE) == 0) next
 
           # normalize
           tmp_obs <- (tmp_obs + addtocomp) / rowSums(tmp_obs + addtocomp)
           tmp_exp <- (tmp_exp + addtocomp) / rowSums(tmp_exp + addtocomp)
 
           # compute OSA
-          tmp_osa <- run_external_comp_osa(obs = tmp_obs, exp = tmp_exp, N = N[r,years[[r]],s], DM_theta = DM_theta[r,s],
-                             years = years[[r]], comp_like = comp_like, LN_Sigma = LN_Sigma[r,,,s],
+          tmp_osa <- run_external_comp_osa(obs = tmp_obs, exp = tmp_exp, N = N[r,years_by_region[[r]],s], DM_theta = DM_theta[r,s],
+                             years = years_by_region[[r]], comp_like = comp_like, LN_Sigma = LN_Sigma[r,,,s],
                              index = bins, fleet = as.character(fleet), index_label = bin_label)
 
           # Doing some naming stuff
@@ -806,8 +964,11 @@ get_osa <- function(obs_mat = NULL,
 
       for(r in 1:n_regions) {
 
-        obs <- obs_mat[,years[[r]],seas,,,fleet, drop = FALSE] # get filtered observed matrix
-        exp <- exp_mat[,years[[r]],seas,,,fleet, drop = FALSE] # get filtered expected matrix
+        # a region a fleet never sampled has nothing to compute a residual from
+        if(length(years_by_region[[r]]) == 0) next
+
+        obs <- obs_mat[,years_by_region[[r]],seas,,,fleet, drop = FALSE] # get filtered observed matrix
+        exp <- exp_mat[,years_by_region[[r]],seas,,,fleet, drop = FALSE] # get filtered expected matrix
 
         # initialize to cbind
         tmp_obs <- NULL
@@ -818,13 +979,18 @@ get_osa <- function(obs_mat = NULL,
           tmp_exp <- cbind(tmp_exp, exp[r,,1,,s,1]) # get expected
         } # end s loop
 
+        # A plain year vector says "these years" without saying which regions
+        # sampled them, so a region with nothing in it is skipped here rather
+        # than normalized into a residual with no data behind it
+        if(!any(is.finite(tmp_obs)) || sum(tmp_obs, na.rm = TRUE) == 0) next
+
         # normalize
         tmp_obs <- (tmp_obs + addtocomp) / rowSums(tmp_obs + addtocomp)
         tmp_exp <- (tmp_exp + addtocomp) / rowSums(tmp_exp + addtocomp)
 
         # compute OSA
-        tmp_osa <- run_external_comp_osa(obs = tmp_obs, exp = tmp_exp, N = N[r,years[[r]]],
-                           DM_theta = DM_theta[r], years = years[[r]], comp_like = comp_like, LN_Sigma = LN_Sigma[r,,],
+        tmp_osa <- run_external_comp_osa(obs = tmp_obs, exp = tmp_exp, N = N[r,years_by_region[[r]]],
+                           DM_theta = DM_theta[r], years = years_by_region[[r]], comp_like = comp_like, LN_Sigma = LN_Sigma[r,,],
                            index = paste(rep(1:n_sexes, each = length(bins)), "_", rep(bins, times = n_sexes), sep = ""),
                            fleet = as.character(fleet), index_label = bin_label)
 
@@ -904,6 +1070,7 @@ plot_resids <- function(osa_results) {
     recovery_season = function(x) paste0("Seas ", x),
     season          = function(x) paste0("Seas ", x),
     seas            = function(x) paste0("Seas ", x),
+    len             = function(x) paste0("Len ", x),
     pop_pool        = function(x) ifelse(x == "tail", "Tail (non-recap)", paste0("Pool ", x))
   )
 
@@ -1009,6 +1176,13 @@ plot_resids <- function(osa_results) {
   }
 
   # bubble plot (shared across composition comp types) ------------------------
+  # Conditional age-at-length residuals carry the length bin they were aged from,
+  # a dimension the marginal compositions do not have. Without it in the facets
+  # every length bin lands on the same year and age, so a model with any number
+  # of bins draws as one solid stack. A model with many bins gives many panels;
+  # subset osa_results$res on len first when that is too much to read.
+  has_len <- has_multi("len")
+
   bubble_plot <- ggplot(data = res, aes(x = year, y = as.numeric(index),
                                         color = sign, size = abs(resid), alpha = abs(resid))) +
     geom_point() +
@@ -1016,7 +1190,7 @@ plot_resids <- function(osa_results) {
     labs(x = "Year", y = unique(res$index_label), color = "Sign", size = "abs(Resid)", alpha = "abs(Resid)") +
     theme_bw(base_size = 20) +
     theme(legend.position = 'top') +
-    build_facet("region", c("sex", comp_extra_cols))
+    build_facet(c("region", if(has_len) "len"), c("sex", comp_extra_cols))
 
   return(list(sdnr_plot, bubble_plot))
 

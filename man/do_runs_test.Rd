@@ -41,9 +41,8 @@ also computes three-sigma control limits used to identify potential
 residual outliers.
 }
 \details{
-This implementation is adapted from diagnostics used in
-Stock Synthesis (SS3). The runs test evaluates whether residuals exhibit
-non-random structure (e.g., positive or negative autocorrelation).
+The runs test evaluates whether residuals exhibit non-random structure
+(e.g., positive or negative autocorrelation).
 }
 \seealso{
 Other Model Diagnostics: 

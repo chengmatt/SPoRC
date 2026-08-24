@@ -80,6 +80,48 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   if(!has("move_timing")) set("move_timing", 0)
   if(!has("comp_const_obs")) set("comp_const_obs", 1)
 
+  # The joint arrays at length and age are opt in, so an input list without the
+  # flag is a model that never built them. Conditional age-at-length data are opt in
+  # the same way, and a NULL use flag turns the whole block off.
+  if(!has("do_caal")) set("do_caal", 0)
+
+  # Growth is data unless the module was switched on. Its time-varying and
+  # cohort options, the composition key timings, the selection-weighted
+  # fishery weight, length-based maturity and the population-to-data length bin
+  # map all came later, and default to the behaviour before them.
+  if(!has("growth_model")) set("growth_model", 0)
+  if(!has("growth_tv_model")) set("growth_tv_model", NULL)
+  if(!has("growth_tv_link")) set("growth_tv_link", 0)
+  if(!has("growth_par_bounds")) set("growth_par_bounds", NULL)
+  if(!has("growth_tv_type")) set("growth_tv_type", 0)
+  if(!has("growth_cohort_styr")) set("growth_cohort_styr", 1)
+  if(!has("growth_rw_init_sigma")) set("growth_rw_init_sigma", 5)
+  if(!has("growth_semipar")) set("growth_semipar", 0)
+  if(!has("growth_L2_asymptote")) set("growth_L2_asymptote", 0)
+  if(!has("ln_growth_semipar_devs")) set("ln_growth_semipar_devs", NULL)
+  if(!has("growth_pe_pars")) set("growth_pe_pars", NULL)
+  if(!has("map_ln_growth_semipar_devs")) set("map_ln_growth_semipar_devs", NULL)
+  if(!has("growth_semipar_bins")) set("growth_semipar_bins", NULL)
+  if(!has("ln_growth_devs")) set("ln_growth_devs", NULL)
+  if(!has("map_ln_growth_devs")) set("map_ln_growth_devs", NULL)
+  if(!has("fish_len_comp_sel")) set("fish_len_comp_sel", rep(0, get("n_fish_fleets", envir = env)))
+  if(!has("srv_len_comp_sel")) set("srv_len_comp_sel", rep(0, get("n_srv_fleets", envir = env)))
+  if(!has("fish_waa_selected")) set("fish_waa_selected", rep(0, get("n_fish_fleets", envir = env)))
+  if(!has("srv_waa_selected")) set("srv_waa_selected", rep(0, get("n_srv_fleets", envir = env)))
+  if(!has("SizeAgeTrans_fish")) set("SizeAgeTrans_fish", NULL)
+  if(!has("SizeAgeTrans_srv")) set("SizeAgeTrans_srv", NULL)
+  if(!has("LenBinMap")) set("LenBinMap", NULL)
+  if(!has("Use_rinit_pen")) set("Use_rinit_pen", 0)
+  if(!has("rinit_pen_sd")) set("rinit_pen_sd", 1)
+  if(!has("UseFish_caal")) set("UseFish_caal", NULL)
+  if(!has("UseSrv_caal")) set("UseSrv_caal", NULL)
+  # The conditional age-at-length weights live in Setup_Mod_Weighting; a list
+  # without them weights every row at one.
+  caal_wt_dim <- function(n_fleets) c(get("n_regions", envir = env), length(get("years", envir = env)), get("n_seas", envir = env),
+                                      length(get("lens", envir = env)), get("n_sexes", envir = env), n_fleets)
+  if(!has("Wt_Fish_caal")) set("Wt_Fish_caal", array(1, dim = caal_wt_dim(get("n_fish_fleets", envir = env))))
+  if(!has("Wt_Srv_caal")) set("Wt_Srv_caal", array(1, dim = caal_wt_dim(get("n_srv_fleets", envir = env))))
+
   # Reference year for the biological inputs to unfished spawning biomass per
   # recruit. The first year is what the model always used, so that stays the default.
   if(!has("SR_ref_yr")) set("SR_ref_yr", 1)
@@ -95,7 +137,9 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
     set("init_F_par", array(stats::qlogis(pmin(pmax(init_F_prop, 1e-10), 1 - 1e-10)), dim = init_F_dim))
   }
 
-  # Deviation maps mirrored into the data lists
+  # Deviation maps mirrored into the data lists. Without the initial age map the
+  # penalty falls on every cell, which is what lists built before it carried did.
+  if(!has("map_ln_InitDevs")) set("map_ln_InitDevs", NULL)
   if(!has("map_ln_F_devs") || !has("map_logit_dmr_devs")) {
     UseCatch <- get("UseCatch", envir = env)
     has_catch <- UseCatch == 1 |
@@ -224,6 +268,14 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
 
   # Sex offsets on selectivity. Older input lists have neither the flags nor the
   # scale parameters, and both defaults reproduce sex-independent selectivity.
+  # Double normal limbs are anchored at the end bins unless a model asked for the
+  # raw form, which no older input list did.
+  if(!has("fish_dbnrml_raw")) set("fish_dbnrml_raw", array(0, dim = c(n_fish_bc, 2)))
+  if(!has("ret_dbnrml_raw")) set("ret_dbnrml_raw", array(0, dim = c(n_fish_bc, 2)))
+  if(!has("srv_dbnrml_raw")) set("srv_dbnrml_raw", array(0, dim = c(n_srv_bc, 2)))
+  if(!has("fish_dbnrml_startbin")) set("fish_dbnrml_startbin", rep(1, n_fish_bc))
+  if(!has("ret_dbnrml_startbin")) set("ret_dbnrml_startbin", rep(1, n_fish_bc))
+  if(!has("srv_dbnrml_startbin")) set("srv_dbnrml_startbin", rep(1, n_srv_bc))
   if(!has("fishsel_sex_par_offset")) set("fishsel_sex_par_offset", rep(0, n_fish_bc))
   if(!has("srvsel_sex_par_offset")) set("srvsel_sex_par_offset", rep(0, n_srv_bc))
   if(!has("fishsel_sex_scale_offset")) set("fishsel_sex_scale_offset", rep(0, n_fish_bc))
@@ -290,6 +342,11 @@ SPoRC_rtmb = function(pars, data) {
   n_ages = length(ages) # number of ages
   n_yrs = length(years) # number of years
   n_lens = length(lens) # number of lengths
+  # length compositions recorded on coarser bins than the model carries are
+  # mapped through LenBinMap inside the likelihood, the same way an ageing error
+  # matrix maps model ages onto observed bins; NA leaves the bins as they are
+  LenBinMap_lik = if(is.null(LenBinMap)) NA else LenBinMap
+  LenBinMap_fn = if(is.null(LenBinMap)) NULL else function(y) LenBinMap
 
   # Recruitment stuff
   n_est_rec_devs = dim(ln_RecDevs)[3] # number of recruitment deviates estimated
@@ -335,6 +392,8 @@ SPoRC_rtmb = function(pars, data) {
   DAA = array(data = 0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # Discarded Catch at age
   CAL = array(data = 0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_lens, n_sexes, n_fish_fleets)) # Retained Catch at length
   DAL = array(data = 0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_lens, n_sexes, n_fish_fleets)) # Discarded Catch at length
+  Fish_caal = if(do_caal == 1) array(data = 0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_lens, n_ages, n_sexes, n_fish_fleets)) else NULL # Retained catch at length and age
+  Fish_caal_discard = if(do_caal == 1) array(data = 0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_lens, n_ages, n_sexes, n_fish_fleets)) else NULL # Discarded catch at length and age
   PredCatch = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_fish_fleets)) # Predicted retained catch (can be abundance or biomass)
   PredDiscard = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_fish_fleets)) # Predicted discarded catch (can be abundance, biomass, or abdunance or biomass fraction of retained catch)
   PredFishIdx = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_fish_fleets)) # Predicted fishery index
@@ -343,6 +402,7 @@ SPoRC_rtmb = function(pars, data) {
   # Survey Processes
   SrvIAA = array(data = 0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_srv_fleets)) # Survey index at age
   SrvIAL = array(data = 0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_lens, n_sexes, n_srv_fleets)) # Survey index at length
+  Srv_caal = if(do_caal == 1) array(data = 0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_lens, n_ages, n_sexes, n_srv_fleets)) else NULL # Survey index at length and age
   PredSrvIdx = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_srv_fleets)) # Predicted survey index
   srv_q = array(0, dim = c(n_regions, n_yrs, n_srv_fleets)) # Survey catchability
 
@@ -370,6 +430,13 @@ SPoRC_rtmb = function(pars, data) {
   SrvIdx_pop_nLL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_srv_fleets)) # Pop-specific Survey Index Likelihoods
   SrvAgeComps_pop_nLL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_sexes, n_srv_fleets)) # Pop-specific Survey Age Comps Likelihoods
   SrvLenComps_pop_nLL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_sexes, n_srv_fleets)) # Pop-specific Survey Length Comps Likelihoods
+  Fish_caal_nLL = array(0, dim = c(n_regions, n_yrs, n_seas, n_lens, n_sexes, n_fish_fleets)) # Fishery Conditional Age-at-Length Likelihoods
+  Srv_caal_nLL = array(0, dim = c(n_regions, n_yrs, n_seas, n_lens, n_sexes, n_srv_fleets)) # Survey Conditional Age-at-Length Likelihoods
+  # Conditional age-at-length is on only where use flags say so
+  do_fish_caal = !is.null(UseFish_caal) && any(UseFish_caal == 1)
+  do_srv_caal = !is.null(UseSrv_caal) && any(UseSrv_caal == 1)
+  if((do_fish_caal || do_srv_caal) && do_caal != 1)
+    stop("Conditional age-at-length data are being fit, but do_caal is 0, so the joint arrays at length and age were never built. Set do_caal = 1 in Setup_Mod_Biologicals.")
 
   # Penalties and Priors
   Fmort_nLL = array(0, dim = dim(ln_F_devs)) # Fishing Mortality Deviation penalty
@@ -386,6 +453,9 @@ SPoRC_rtmb = function(pars, data) {
   TagRep_nLL = 0 # penalty for tag reporting rate
   rec_prop_nLL = 0 # penalty / prior for recruitment proportions
   R0_nLL = 0 # prior for global R0
+  growth_tv_nLL = 0 # penalty for time-varying growth deviations
+  growth_semipar_nLL = 0 # process error for the semi-parametric deviations on mean length at age
+  rinit_nLL = 0 # penalty on the initial recruitment offset from R0
   jnLL = 0 # Joint negative log likelihood
 
   # Model Process Equations -------------------------------------------------
@@ -445,6 +515,32 @@ SPoRC_rtmb = function(pars, data) {
 
   if(use_fixed_natmort == 1) natmort = Fixed_natmort # Using fixed natural mortality
 
+  ## Growth -------------------------------------------------------------------
+  # With growth read off each year's curve the whole series is built here. Under
+  # cohort growth the plus group blends the cohort entering it with the fish
+  # already there BY NUMBERS AT AGE, so a year's sizes are not known until the
+  # population loop reaches that year: only the years before the propagation
+  # starts are built here, and the rest arrive through growth_year_hook below.
+  growth_cohort = growth_model != 0 && growth_tv_type == 1
+  growth_pre_yrs = if(growth_cohort) seq_len(max(1, growth_cohort_styr - 1)) else 1:n_yrs
+  if(growth_model != 0) {
+    growth_args = growth_args_from_model()
+    tmp_growth = do.call(Get_Growth, c(growth_args, list(
+      n_yrs = n_yrs, n_fish_fleets = n_fish_fleets, n_srv_fleets = n_srv_fleets,
+      growth_tv_type = growth_tv_type, growth_cohort_styr = growth_cohort_styr,
+      years_eval = if(growth_cohort) seq_len(growth_cohort_styr) else NULL
+    )))
+    # one key per fleet read at that fleet's timing, plus the spawning key
+    SizeAgeTrans_fish = tmp_growth$SizeAgeTrans_fish; SizeAgeTrans_srv = tmp_growth$SizeAgeTrans_srv
+    SizeAgeTrans_spawn = tmp_growth$SizeAgeTrans_spawn
+    mean_LAA_fish = tmp_growth$mean_LAA_fish; sd_LAA_fish = tmp_growth$sd_LAA_fish
+    mean_LAA_srv = tmp_growth$mean_LAA_srv; sd_LAA_srv = tmp_growth$sd_LAA_srv
+    mean_LAA_spawn = tmp_growth$mean_LAA_spawn; sd_LAA_spawn = tmp_growth$sd_LAA_spawn
+    Linf = tmp_growth$Linf; L_beg = tmp_growth$L_beg; growth_pars_y = tmp_growth$growth_pars_y
+    if(derive_waa == 1) { WAA = tmp_growth$WAA; WAA_fish = tmp_growth$WAA_fish; WAA_srv = tmp_growth$WAA_srv }
+    growth_len_mid_vals = growth_len_mid(growth_len_lower) # bin midpoints the weight-length relationship is read at
+  } # growth module
+
   ## Selectivity ------------------------------------------------------------
   if(fish_selex_type == 0) fish_selex_bins = ages # if age-based selectivity
   if(fish_selex_type == 1) fish_selex_bins = lens # if length-based selectivity
@@ -463,6 +559,8 @@ SPoRC_rtmb = function(pars, data) {
                                  sex_par_offset = fishsel_sex_par_offset, sex_scale_offset = fishsel_sex_scale_offset, sex_apical_offset = fishsel_sex_apical_offset,
                                  sex_scale = ln_fishsel_sex_scale,
                                  nselbins = fish_sel_bicubic_nselbins,
+                                 dbnrml_raw = fish_dbnrml_raw,
+                                 dbnrml_startbin = fish_dbnrml_startbin,
                                  sel_input = fish_sel_input,
                                  bicubic_Wbin = fish_sel_bicubic_Wbin, bicubic_Wyr = fish_sel_bicubic_Wyr,
                                  bicubic_binnodes = fish_sel_bicubic_binnodes, bicubic_yrnodes = fish_sel_bicubic_yrnodes,
@@ -482,6 +580,8 @@ SPoRC_rtmb = function(pars, data) {
                                 sex_par_offset = retsel_sex_par_offset, sex_scale_offset = retsel_sex_scale_offset, sex_apical_offset = retsel_sex_apical_offset,
                                 sex_scale = ln_retsel_sex_scale,
                                 nselbins = ret_sel_bicubic_nselbins,
+                                dbnrml_raw = ret_dbnrml_raw,
+                                dbnrml_startbin = ret_dbnrml_startbin,
                                 sel_input = ret_sel_input,
                                 bicubic_Wbin = ret_sel_bicubic_Wbin, bicubic_Wyr = ret_sel_bicubic_Wyr,
                                 bicubic_binnodes = ret_sel_bicubic_binnodes, bicubic_yrnodes = ret_sel_bicubic_yrnodes,
@@ -501,6 +601,8 @@ SPoRC_rtmb = function(pars, data) {
                                 sex_par_offset = srvsel_sex_par_offset, sex_scale_offset = srvsel_sex_scale_offset, sex_apical_offset = srvsel_sex_apical_offset,
                                 sex_scale = ln_srvsel_sex_scale,
                                 nselbins = srv_sel_bicubic_nselbins,
+                                dbnrml_raw = srv_dbnrml_raw,
+                                dbnrml_startbin = srv_dbnrml_startbin,
                                 sel_input = srv_sel_input,
                                 bicubic_Wbin = srv_sel_bicubic_Wbin, bicubic_Wyr = srv_sel_bicubic_Wyr,
                                 bicubic_binnodes = srv_sel_bicubic_binnodes, bicubic_yrnodes = srv_sel_bicubic_yrnodes,
@@ -513,8 +615,36 @@ SPoRC_rtmb = function(pars, data) {
   ## Mortality ---------------------------------------------------------------
   missing_catch = is.na(ObsCatch) # TRUE = aggregate catch observation is missing (not a true recorded zero)
 
-  for(r in 1:n_regions) {
-    for(y in 1:n_yrs) {
+  # Fishing and total mortality for one year, and the selection-weighted
+  # weight at age where a fleet asks for it. Both are done a year at a time
+  # because under cohort growth the key a length-based selectivity acts through
+  # is only known once the population loop reaches that year; every other model
+  # runs them for all years before the loop starts.
+  # Under cohort growth this runs
+  # inside the population loop, so the year's state is taken as an argument and
+  # handed back rather than assigned into this frame. The arrays are unpacked to
+  # locals here and repacked at the end, which keeps the loops below writing
+  # straight into an array rather than through the list on every element.
+  mortality_year = function(y, st) {
+
+    Fmort = st$Fmort; dmr = st$dmr; fish_sel = st$fish_sel; ret_sel = st$ret_sel
+    ret_FAA = st$ret_FAA; disc_FAA = st$disc_FAA; tot_FAA = st$tot_FAA; ZAA = st$ZAA
+    WAA_fish = st$WAA_fish; SizeAgeTrans_fish = st$SizeAgeTrans_fish
+    WAA_srv = st$WAA_srv; SizeAgeTrans_srv = st$SizeAgeTrans_srv
+
+    if(growth_model != 0 && derive_waa == 1 && fish_selex_type == 1 && any(fish_waa_selected == 1)) {
+      WAA_fish = growth_selected_waa_year(WAA_fish, SizeAgeTrans_fish, fish_sel_l, wt_len_pars,
+                                          growth_len_mid_vals, fish_waa_selected, y,
+                                          n_pop, n_regions, n_seas, n_sexes)
+    }
+
+    if(growth_model != 0 && derive_waa == 1 && srv_selex_type == 1 && any(srv_waa_selected == 1)) {
+      WAA_srv = growth_selected_waa_year(WAA_srv, SizeAgeTrans_srv, srv_sel_l, wt_len_pars,
+                                         growth_len_mid_vals, srv_waa_selected, y,
+                                         n_pop, n_regions, n_seas, n_sexes)
+    }
+
+    for(r in 1:n_regions) {
       for(seas in 1:n_seas) {
         for(f in 1:n_fish_fleets) {
 
@@ -531,23 +661,93 @@ SPoRC_rtmb = function(pars, data) {
 
           # get fishing mortality at age
           for(p in 1:n_pop) {
-            if(fish_selex_type == 1) for(s in 1:n_sexes) fish_sel[p,r,y,seas,,s,f] = fish_sel_l[r,y,,s,f] %*% SizeAgeTrans[p,r,y,seas,,,s]
-            if(ret_selex_type == 1) for(s in 1:n_sexes) ret_sel[p,r,y,seas,,s,f] = ret_sel_l[r,y,,s,f] %*% SizeAgeTrans[p,r,y,seas,,,s]
+            # the key is the fleet's own when the growth module built it, the shared data key otherwise
+            if(fish_selex_type == 1 || ret_selex_type == 1) {
+              for(s in 1:n_sexes) {
+                key_f = if(is.null(SizeAgeTrans_fish)) SizeAgeTrans[p,r,y,seas,,,s] else SizeAgeTrans_fish[p,r,y,seas,,,s,f]
+                if(fish_selex_type == 1) fish_sel[p,r,y,seas,,s,f] = fish_sel_l[r,y,,s,f] %*% key_f
+                if(ret_selex_type == 1) ret_sel[p,r,y,seas,,s,f] = ret_sel_l[r,y,,s,f] %*% key_f
+              } # end s loop
+
+            } # length based selectivity
             ret_FAA[p,r,y,seas,,,f] = Fmort[r,y,seas,f] * fish_sel[p,r,y,seas,,,f] * ret_sel[p,r,y,seas,,,f] # Retained fishing mortality at age
             disc_FAA[p,r,y,seas,,,f] = Fmort[r,y,seas,f] * fish_sel[p,r,y,seas,,,f] * (1 - ret_sel[p,r,y,seas,,,f]) * dmr[r,y,seas,f] # Discarded fishing mortality at age
             tot_FAA[p,r,y,seas,,,f] = ret_FAA[p,r,y,seas,,,f] +  disc_FAA[p,r,y,seas,,,f]# Total fishing mortality at age
 
-          }
+          } # end p loop
 
-        } # f loop
+        } # end f loop
 
         # get total mortality
         for(p1 in 1:n_pop) for(a in 1:n_ages) for(s in 1:n_sexes)
           ZAA[p1,r,y,seas,a,s] = sum(ret_FAA[p1,r,y,seas,a,s,]) + sum(disc_FAA[p1,r,y,seas,a,s,]) + (natmort[p1,r,y,a,s] * seasdur[seas])
       } # end seas loop
-    } # end y loop
-  } # end r loop
+    } # end r loop
 
+    st$Fmort = Fmort; st$dmr = dmr; st$fish_sel = fish_sel; st$ret_sel = ret_sel
+    st$ret_FAA = ret_FAA; st$disc_FAA = disc_FAA; st$tot_FAA = tot_FAA; st$ZAA = ZAA
+    st$WAA_fish = WAA_fish; st$WAA_srv = WAA_srv
+
+    return(st)
+
+  } # end mortality_year
+
+  # The state the per-year steps carry. Everything growth and mortality write by
+  # year lives here, so it can be threaded through the population loop.
+  mort_state = list(Fmort = Fmort, dmr = dmr, fish_sel = fish_sel, ret_sel = ret_sel,
+                    ret_FAA = ret_FAA, disc_FAA = disc_FAA, tot_FAA = tot_FAA,
+                    ZAA = ZAA, WAA = WAA)
+  if(growth_model == 0) {
+    # fixed per-fleet keys, when supplied; NULL falls back to the shared
+    # SizeAgeTrans inside mortality_year() and the observation models exactly
+    # as a growth-derived key would
+    mort_state$SizeAgeTrans_fish = SizeAgeTrans_fish
+    mort_state$SizeAgeTrans_srv = SizeAgeTrans_srv
+  }
+  if(growth_model != 0) {
+    mort_state$tmp_growth = tmp_growth
+    mort_state$SizeAgeTrans_fish = SizeAgeTrans_fish; mort_state$SizeAgeTrans_srv = SizeAgeTrans_srv
+    mort_state$SizeAgeTrans_spawn = SizeAgeTrans_spawn
+    mort_state$mean_LAA_fish = mean_LAA_fish; mort_state$sd_LAA_fish = sd_LAA_fish
+    mort_state$mean_LAA_srv = mean_LAA_srv; mort_state$sd_LAA_srv = sd_LAA_srv
+    mort_state$mean_LAA_spawn = mean_LAA_spawn; mort_state$sd_LAA_spawn = sd_LAA_spawn
+    mort_state$Linf = Linf; mort_state$L_beg = L_beg; mort_state$growth_pars_y = growth_pars_y
+    if(derive_waa == 1) { mort_state$WAA_fish = WAA_fish; mort_state$WAA_srv = WAA_srv }
+  } # growth module
+
+  for(y in growth_pre_yrs) mort_state = mortality_year(y, mort_state)
+  Fmort = mort_state$Fmort; dmr = mort_state$dmr; fish_sel = mort_state$fish_sel
+  ret_sel = mort_state$ret_sel; ret_FAA = mort_state$ret_FAA; disc_FAA = mort_state$disc_FAA
+  tot_FAA = mort_state$tot_FAA; ZAA = mort_state$ZAA
+  if(growth_model != 0) {
+    tmp_growth = mort_state$tmp_growth
+    SizeAgeTrans_fish = mort_state$SizeAgeTrans_fish; SizeAgeTrans_srv = mort_state$SizeAgeTrans_srv
+    SizeAgeTrans_spawn = mort_state$SizeAgeTrans_spawn
+    mean_LAA_fish = mort_state$mean_LAA_fish; sd_LAA_fish = mort_state$sd_LAA_fish
+    mean_LAA_srv = mort_state$mean_LAA_srv; sd_LAA_srv = mort_state$sd_LAA_srv
+    mean_LAA_spawn = mort_state$mean_LAA_spawn; sd_LAA_spawn = mort_state$sd_LAA_spawn
+    Linf = mort_state$Linf; L_beg = mort_state$L_beg; growth_pars_y = mort_state$growth_pars_y
+    if(derive_waa == 1) { WAA = mort_state$WAA; WAA_fish = mort_state$WAA_fish; WAA_srv = mort_state$WAA_srv }
+  } # growth module
+
+  # Under cohort growth the population loop hands each year's start-of-year
+  # numbers back here: the year's growth is built from them, the selectivity is
+  # folded through the new key, mortality follows, and the year's total
+  # mortality, weight and maturity at age go back to the dynamics.
+  growth_year_hook = NULL
+  if(growth_cohort) {
+    growth_year_hook = function(y, NAA_y, st) {
+      if(y >= growth_cohort_styr) {
+        st$tmp_growth = do.call(Get_Growth_Year, c(growth_args, list(growth = st$tmp_growth, y = y, NAA_y = NAA_y)))
+        st = growth_take_year(st, st$tmp_growth, y, derive_waa) # this year's slice of every growth quantity
+        st = mortality_year(y, st) # selectivity through the new key, then mortality
+      }
+      list(state = st,
+           ZAA_y = st$ZAA[,,y,,,, drop = FALSE],
+           WAA_y = st$WAA[,,y,,,, drop = FALSE],
+           MatAA_y = MatAA[,,y,,,, drop = FALSE])
+    }
+  }
 
   ## Recruitment Transformations and Bias Ramp (Methot and Taylor) -------------------------------
   ### Parameter Transformations -----------------------------------------------
@@ -652,6 +852,21 @@ SPoRC_rtmb = function(pars, data) {
 
   } # end if doing bias ramp
 
+  # The initial age deviations are techincally based on years before the first model year; option to construct bias ramp on initial deviations as well, based on
+  # the recruitment bias ramp values
+  init_bias_ramp = rep(1, n_ages - 1)
+  if(do_rec_bias_ramp == 1) {
+    d_init = 1 - (1:(n_ages - 1)) # deviation index of the year each initial age was born
+    init_bias_ramp = rep(0, n_ages - 1)
+    r1 = which(d_init >= bias_year[1] & d_init < bias_year[2])
+    r2 = which(d_init >= bias_year[2] & d_init < bias_year[3])
+    r3 = which(d_init >= bias_year[3] & d_init < bias_year[4])
+    if(length(r1) > 0) init_bias_ramp[r1] = (d_init[r1] - bias_year[1]) / (bias_year[2] - bias_year[1])
+    if(length(r2) > 0) init_bias_ramp[r2] = 1
+    if(length(r3) > 0) init_bias_ramp[r3] = 1 - ((d_init[r3] - bias_year[3]) / (bias_year[4] - bias_year[3]))
+    init_bias_ramp = init_bias_ramp * max_bias_ramp_fct
+  }
+
   ## Initial Age Structure ---------------------------------------------------
   # Get initial F for age structure
   catch_flag_base = array(UseCatch[,1,,], dim = c(n_regions, n_seas, n_fish_fleets))
@@ -746,8 +961,28 @@ SPoRC_rtmb = function(pars, data) {
     # alongside the dynamics but never feeds them. sr_R0 is the curve's own scale,
     # which is either the mean recruitment level or a separately estimated one.
     sr_penalty = sr_penalty,
-    sr_R0 = sr_R0
+    sr_R0 = sr_R0,
+    year_hook = growth_year_hook,
+    hook_state = mort_state
   )
+
+  # the years the hook built come back through the state it carried
+  if(growth_cohort) {
+    mort_state = tmp_pop_proj$hook_state
+    Fmort = mort_state$Fmort; dmr = mort_state$dmr; fish_sel = mort_state$fish_sel
+    ret_sel = mort_state$ret_sel; ret_FAA = mort_state$ret_FAA; disc_FAA = mort_state$disc_FAA
+    tot_FAA = mort_state$tot_FAA; ZAA = mort_state$ZAA
+    if(growth_model != 0) {
+      tmp_growth = mort_state$tmp_growth
+      SizeAgeTrans_fish = mort_state$SizeAgeTrans_fish; SizeAgeTrans_srv = mort_state$SizeAgeTrans_srv
+      SizeAgeTrans_spawn = mort_state$SizeAgeTrans_spawn
+      mean_LAA_fish = mort_state$mean_LAA_fish; sd_LAA_fish = mort_state$sd_LAA_fish
+      mean_LAA_srv = mort_state$mean_LAA_srv; sd_LAA_srv = mort_state$sd_LAA_srv
+      mean_LAA_spawn = mort_state$mean_LAA_spawn; sd_LAA_spawn = mort_state$sd_LAA_spawn
+      Linf = mort_state$Linf; L_beg = mort_state$L_beg; growth_pars_y = mort_state$growth_pars_y
+      if(derive_waa == 1) { WAA = mort_state$WAA; WAA_fish = mort_state$WAA_fish; WAA_srv = mort_state$WAA_srv }
+    } # growth module
+  } # cohort growth
 
   NAA = tmp_pop_proj$NAA; NAA0 = tmp_pop_proj$NAA0; NAA_bef = tmp_pop_proj$NAA_bef; NAA_aft = tmp_pop_proj$NAA_aft
   NAA_int = tmp_pop_proj$NAA_int # season-integrated abundance (move_timing == 2 only)
@@ -763,6 +998,9 @@ SPoRC_rtmb = function(pars, data) {
     ret_FAA = ret_FAA, disc_FAA = disc_FAA, ZAA = ZAA, NAA = NAA,
     CAA = CAA, DAA = DAA, CAL = CAL, DAL = DAL, PredCatch = PredCatch, PredDiscard = PredDiscard, PredFishIdx = PredFishIdx,
     fit_lengths = fit_lengths, SizeAgeTrans = SizeAgeTrans,
+    SizeAgeTrans_fish = SizeAgeTrans_fish,
+    fish_len_comp_sel = fish_len_comp_sel, fish_selex_type = fish_selex_type, ret_selex_type = ret_selex_type,
+    fish_sel_l = fish_sel_l, ret_sel_l = ret_sel_l, Fmort = Fmort,
     catch_units = catch_units, discard_units = discard_units, WAA_fish = WAA_fish, dmr = dmr,
     fish_idx_type = fish_idx_type, fish_sel = fish_sel, ret_sel = ret_sel,
     Mrate = Mrate, move_timing = move_timing, seasdur = seasdur,
@@ -770,19 +1008,18 @@ SPoRC_rtmb = function(pars, data) {
     t_fish = t_fish, fish_idx_ages = fish_idx_ages,
     fish_q_type = fish_q_type, do_fish_q_cov = do_fish_q_cov,
     fish_q_cov = fish_q_cov, fish_q_coeff = fish_q_coeff,
-    ObsFishIdx = ObsFishIdx, UseFishIdx = UseFishIdx
+    ObsFishIdx = ObsFishIdx, UseFishIdx = UseFishIdx,
+    do_caal = do_caal, Fish_caal = Fish_caal, Fish_caal_discard = Fish_caal_discard
   )
 
   fish_q = tmp_fish_obs$fish_q; CAA = tmp_fish_obs$CAA; DAA = tmp_fish_obs$DAA
   CAL = tmp_fish_obs$CAL; DAL = tmp_fish_obs$DAL
+  Fish_caal = tmp_fish_obs$Fish_caal; Fish_caal_discard = tmp_fish_obs$Fish_caal_discard
   PredCatch = tmp_fish_obs$PredCatch; PredDiscard = tmp_fish_obs$PredDiscard; PredFishIdx = tmp_fish_obs$PredFishIdx
 
   ## Survey Observation Model ------------------------------------------------
-  # A recruitment deviation index observes how anomalous a year class was, which
-  # is the deviation measured from the centre its own penalty asserts rather
-  # than the deviation as stored. Under the assessments that fit such an index
-  # the two differ by the bias correction, so this is what they report as the
-  # recruitment deviation. Built only when a fleet asks for it.
+
+  # Get recruitment index - computed as an anomaly w/ a bias adjustment as an addition, rather than sutraction
   RecDev_anom = array(0, dim = dim(ln_RecDevs))
   if(any(srv_idx_type == 2)) {
     for(p in 1:n_pop) {
@@ -795,22 +1032,25 @@ SPoRC_rtmb = function(pars, data) {
       } # end r loop
     } # end p loop
   } # end if any fleet observes the recruitment deviations
-  RTMB::REPORT(RecDev_anom)
 
   tmp_srv_obs = get_survey_observation_model(
     n_pop = n_pop, n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_srv_fleets = n_srv_fleets, n_sexes = n_sexes,
     srv_q_blocks = srv_q_blocks, ln_srv_q = ln_srv_q, srv_q = srv_q, do_srv_q_cov = do_srv_q_cov, srv_q_cov = srv_q_cov, srv_q_coeff = srv_q_coeff,
     srv_selex_type = srv_selex_type, srv_sel = srv_sel, srv_sel_l = srv_sel_l, SizeAgeTrans = SizeAgeTrans,
+    SizeAgeTrans_srv = SizeAgeTrans_srv,
+    srv_len_comp_sel = srv_len_comp_sel,
     NAA = NAA, ZAA = ZAA, t_srv = t_srv, SrvIAA = SrvIAA, fit_lengths = fit_lengths, SrvIAL = SrvIAL,
     srv_idx_type = srv_idx_type, WAA_srv = WAA_srv, PredSrvIdx = PredSrvIdx,
     Mrate = Mrate, move_timing = move_timing, seasdur = seasdur,
     srv_idx_ages = srv_idx_ages, srv_q_type = srv_q_type,
     ObsSrvIdx = ObsSrvIdx, UseSrvIdx = UseSrvIdx,
-    RecDev_anom = RecDev_anom
+    RecDev_anom = RecDev_anom,
+    do_caal = do_caal, Srv_caal = Srv_caal
   )
 
   srv_q = tmp_srv_obs$srv_q; srv_sel = tmp_srv_obs$srv_sel
   SrvIAA = tmp_srv_obs$SrvIAA; SrvIAL = tmp_srv_obs$SrvIAL; PredSrvIdx = tmp_srv_obs$PredSrvIdx
+  Srv_caal = tmp_srv_obs$Srv_caal
 
 
   ## Conventional Tagging Observation Model -----------------------------------------------
@@ -1062,7 +1302,7 @@ SPoRC_rtmb = function(pars, data) {
               ISS = ISS_FishLenComps[,y,seas,,f], Wt_Mltnml = Wt_FishLenComps[,y,seas,,f], Comp_Type = FishLenComps_Type[y,f],
               Likelihood_Type = FishLenComps_LikeType[f], ln_theta = ln_FishLen_theta[,,f], ln_theta_agg = ln_FishLen_theta_agg[f],
               LN_corr_pars = FishLen_corr_pars[,,f,], LN_corr_pars_agg = FishLen_corr_pars_agg[f],
-              n_regions = n_regions, n_sexes = n_sexes, age_or_len = 1, AgeingError = NA,
+              n_regions = n_regions, n_sexes = n_sexes, age_or_len = 1, AgeingError = LenBinMap_lik,
               use = UseFishLenComps[,y,seas,f], n_model_bins = n_lens, n_obs_bins = dim(ObsFishLenComps)[4], addtocomp = addtocomp
             )
           } # if we have fishery length comps
@@ -1147,7 +1387,7 @@ SPoRC_rtmb = function(pars, data) {
           LNcorrArr = FishLen_corr_pars, LNcorrAggVec = FishLen_corr_pars_agg,
           n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
           n_model_bins = n_lens, n_obs_bins = dim(ObsFishLenComps)[4], age_or_len = 1,
-          AgeingErrorFn = NULL, addtocomp = addtocomp,
+          AgeingErrorFn = LenBinMap_fn, addtocomp = addtocomp,
           family = "discrete", zero_init = TRUE
         )
       }
@@ -1170,7 +1410,7 @@ SPoRC_rtmb = function(pars, data) {
           LNcorrArr = FishLen_corr_pars, LNcorrAggVec = FishLen_corr_pars_agg,
           n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
           n_model_bins = n_lens, n_obs_bins = dim(ObsFishLenComps)[4], age_or_len = 1,
-          AgeingErrorFn = NULL, addtocomp = addtocomp,
+          AgeingErrorFn = LenBinMap_fn, addtocomp = addtocomp,
           family = "continuous", zero_init = is.null(ObsFishLenComps_osa_discrete)
         )
       }
@@ -1209,7 +1449,7 @@ SPoRC_rtmb = function(pars, data) {
                 Likelihood_Type = FishLenComps_pop_LikeType[f], ln_theta = ln_FishLen_pop_theta[p,,,f],
                 ln_theta_agg = ln_FishLen_pop_theta_agg[p,f], LN_corr_pars = FishLen_pop_corr_pars[p,,,f,],
                 LN_corr_pars_agg = FishLen_pop_corr_pars_agg[p,f], n_regions = n_regions,
-                n_sexes = n_sexes, age_or_len = 1, AgeingError = NA, use = UseFishLenComps_pop[p,,y,seas,f],
+                n_sexes = n_sexes, age_or_len = 1, AgeingError = LenBinMap_lik, use = UseFishLenComps_pop[p,,y,seas,f],
                 n_model_bins = n_lens, n_obs_bins = dim(ObsFishLenComps_pop)[5], addtocomp = addtocomp
               )
             }
@@ -1290,7 +1530,7 @@ SPoRC_rtmb = function(pars, data) {
           LNcorrArr = FishLen_pop_corr_pars, LNcorrAggVec = FishLen_pop_corr_pars_agg,
           n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
           n_model_bins = n_lens, n_obs_bins = dim(ObsFishLenComps_pop)[5], age_or_len = 1,
-          AgeingErrorFn = NULL, addtocomp = addtocomp,
+          AgeingErrorFn = LenBinMap_fn, addtocomp = addtocomp,
           family = "discrete", zero_init = TRUE, pop = TRUE, n_pop = n_pop
         )
       }
@@ -1312,7 +1552,7 @@ SPoRC_rtmb = function(pars, data) {
           LNcorrArr = FishLen_pop_corr_pars, LNcorrAggVec = FishLen_pop_corr_pars_agg,
           n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
           n_model_bins = n_lens, n_obs_bins = dim(ObsFishLenComps_pop)[5], age_or_len = 1,
-          AgeingErrorFn = NULL, addtocomp = addtocomp,
+          AgeingErrorFn = LenBinMap_fn, addtocomp = addtocomp,
           family = "continuous", zero_init = is.null(ObsFishLenComps_pop_osa_discrete), pop = TRUE, n_pop = n_pop
         )
       }
@@ -1350,7 +1590,7 @@ SPoRC_rtmb = function(pars, data) {
               Comp_Type = FishLenComps_discard_Type[y,f], Likelihood_Type = FishLenComps_discard_LikeType[f],
               ln_theta = ln_FishLen_discard_theta[,,f], ln_theta_agg = ln_FishLen_discard_theta_agg[f],
               LN_corr_pars = FishLen_discard_corr_pars[,,f,], LN_corr_pars_agg = FishLen_discard_corr_pars_agg[f],
-              n_regions = n_regions, n_sexes = n_sexes, age_or_len = 1, AgeingError = NA,
+              n_regions = n_regions, n_sexes = n_sexes, age_or_len = 1, AgeingError = LenBinMap_lik,
               use = UseFishLenComps_discard[,y,seas,f], n_model_bins = n_lens, n_obs_bins = dim(ObsFishLenComps_discard)[4],
               addtocomp = addtocomp
             )
@@ -1431,7 +1671,7 @@ SPoRC_rtmb = function(pars, data) {
           LNcorrArr = FishLen_discard_corr_pars, LNcorrAggVec = FishLen_discard_corr_pars_agg,
           n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
           n_model_bins = n_lens, n_obs_bins = dim(ObsFishLenComps_discard)[4], age_or_len = 1,
-          AgeingErrorFn = NULL, addtocomp = addtocomp,
+          AgeingErrorFn = LenBinMap_fn, addtocomp = addtocomp,
           family = "discrete", zero_init = TRUE
         )
       }
@@ -1453,7 +1693,7 @@ SPoRC_rtmb = function(pars, data) {
           LNcorrArr = FishLen_discard_corr_pars, LNcorrAggVec = FishLen_discard_corr_pars_agg,
           n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
           n_model_bins = n_lens, n_obs_bins = dim(ObsFishLenComps_discard)[4], age_or_len = 1,
-          AgeingErrorFn = NULL, addtocomp = addtocomp,
+          AgeingErrorFn = LenBinMap_fn, addtocomp = addtocomp,
           family = "continuous", zero_init = is.null(ObsFishLenComps_discard_osa_discrete)
         )
       }
@@ -1491,7 +1731,7 @@ SPoRC_rtmb = function(pars, data) {
                 Likelihood_Type = FishLenComps_discard_pop_LikeType[f], ln_theta = ln_FishLen_discard_pop_theta[p,,,f],
                 ln_theta_agg = ln_FishLen_discard_pop_theta_agg[p,f], LN_corr_pars = FishLen_discard_pop_corr_pars[p,,,f,],
                 LN_corr_pars_agg = FishLen_discard_pop_corr_pars_agg[p,f], n_regions = n_regions, n_sexes = n_sexes,
-                age_or_len = 1, AgeingError = NA, use = UseFishLenComps_discard_pop[p,,y,seas,f], n_model_bins = n_lens,
+                age_or_len = 1, AgeingError = LenBinMap_lik, use = UseFishLenComps_discard_pop[p,,y,seas,f], n_model_bins = n_lens,
                 n_obs_bins = dim(ObsFishLenComps_discard_pop)[5], addtocomp = addtocomp
               )
             }
@@ -1572,7 +1812,7 @@ SPoRC_rtmb = function(pars, data) {
           LNcorrArr = FishLen_discard_pop_corr_pars, LNcorrAggVec = FishLen_discard_pop_corr_pars_agg,
           n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
           n_model_bins = n_lens, n_obs_bins = dim(ObsFishLenComps_discard_pop)[5], age_or_len = 1,
-          AgeingErrorFn = NULL, addtocomp = addtocomp,
+          AgeingErrorFn = LenBinMap_fn, addtocomp = addtocomp,
           family = "discrete", zero_init = TRUE, pop = TRUE, n_pop = n_pop
         )
       }
@@ -1594,7 +1834,7 @@ SPoRC_rtmb = function(pars, data) {
           LNcorrArr = FishLen_discard_pop_corr_pars, LNcorrAggVec = FishLen_discard_pop_corr_pars_agg,
           n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_fish_fleets, n_sexes = n_sexes,
           n_model_bins = n_lens, n_obs_bins = dim(ObsFishLenComps_discard_pop)[5], age_or_len = 1,
-          AgeingErrorFn = NULL, addtocomp = addtocomp,
+          AgeingErrorFn = LenBinMap_fn, addtocomp = addtocomp,
           family = "continuous", zero_init = is.null(ObsFishLenComps_discard_pop_osa_discrete), pop = TRUE, n_pop = n_pop
         )
       }
@@ -1736,7 +1976,7 @@ SPoRC_rtmb = function(pars, data) {
               ISS = ISS_SrvLenComps[,y,seas,,sf], Wt_Mltnml = Wt_SrvLenComps[,y,seas,,sf], Comp_Type = SrvLenComps_Type[y,sf],
               Likelihood_Type = SrvLenComps_LikeType[sf], ln_theta = ln_SrvLen_theta[,,sf], ln_theta_agg = ln_SrvLen_theta_agg[sf],
               LN_corr_pars = SrvLen_corr_pars[,,sf,], LN_corr_pars_agg = SrvLen_corr_pars_agg[sf], n_regions = n_regions,
-              n_sexes = n_sexes, age_or_len = 1, AgeingError = NA, use = UseSrvLenComps[,y,seas,sf],
+              n_sexes = n_sexes, age_or_len = 1, AgeingError = LenBinMap_lik, use = UseSrvLenComps[,y,seas,sf],
               n_model_bins = n_lens, n_obs_bins = dim(ObsSrvLenComps)[4], addtocomp = addtocomp
             )
           }
@@ -1816,7 +2056,7 @@ SPoRC_rtmb = function(pars, data) {
           LNcorrArr = SrvLen_corr_pars, LNcorrAggVec = SrvLen_corr_pars_agg,
           n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_srv_fleets, n_sexes = n_sexes,
           n_model_bins = n_lens, n_obs_bins = dim(ObsSrvLenComps)[4], age_or_len = 1,
-          AgeingErrorFn = NULL, addtocomp = addtocomp,
+          AgeingErrorFn = LenBinMap_fn, addtocomp = addtocomp,
           family = "discrete", zero_init = TRUE
         )
       }
@@ -1838,7 +2078,7 @@ SPoRC_rtmb = function(pars, data) {
           LNcorrArr = SrvLen_corr_pars, LNcorrAggVec = SrvLen_corr_pars_agg,
           n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_srv_fleets, n_sexes = n_sexes,
           n_model_bins = n_lens, n_obs_bins = dim(ObsSrvLenComps)[4], age_or_len = 1,
-          AgeingErrorFn = NULL, addtocomp = addtocomp,
+          AgeingErrorFn = LenBinMap_fn, addtocomp = addtocomp,
           family = "continuous", zero_init = is.null(ObsSrvLenComps_osa_discrete)
         )
       }
@@ -1876,7 +2116,7 @@ SPoRC_rtmb = function(pars, data) {
                 Comp_Type = SrvLenComps_pop_Type[y,sf], Likelihood_Type = SrvLenComps_pop_LikeType[sf],
                 ln_theta = ln_SrvLen_pop_theta[p,,,sf], ln_theta_agg = ln_SrvLen_pop_theta_agg[p,sf],
                 LN_corr_pars = SrvLen_pop_corr_pars[p,,,sf,], LN_corr_pars_agg = SrvLen_pop_corr_pars_agg[p,sf],
-                n_regions = n_regions, n_sexes = n_sexes, age_or_len = 1, AgeingError = NA,
+                n_regions = n_regions, n_sexes = n_sexes, age_or_len = 1, AgeingError = LenBinMap_lik,
                 use = UseSrvLenComps_pop[p,,y,seas,sf], n_model_bins = n_lens,
                 n_obs_bins = dim(ObsSrvLenComps_pop)[5], addtocomp = addtocomp
               )
@@ -1958,7 +2198,7 @@ SPoRC_rtmb = function(pars, data) {
           LNcorrArr = SrvLen_pop_corr_pars, LNcorrAggVec = SrvLen_pop_corr_pars_agg,
           n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_srv_fleets, n_sexes = n_sexes,
           n_model_bins = n_lens, n_obs_bins = dim(ObsSrvLenComps_pop)[5], age_or_len = 1,
-          AgeingErrorFn = NULL, addtocomp = addtocomp,
+          AgeingErrorFn = LenBinMap_fn, addtocomp = addtocomp,
           family = "discrete", zero_init = TRUE, pop = TRUE, n_pop = n_pop
         )
       }
@@ -1980,12 +2220,127 @@ SPoRC_rtmb = function(pars, data) {
           LNcorrArr = SrvLen_pop_corr_pars, LNcorrAggVec = SrvLen_pop_corr_pars_agg,
           n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fleets = n_srv_fleets, n_sexes = n_sexes,
           n_model_bins = n_lens, n_obs_bins = dim(ObsSrvLenComps_pop)[5], age_or_len = 1,
-          AgeingErrorFn = NULL, addtocomp = addtocomp,
+          AgeingErrorFn = LenBinMap_fn, addtocomp = addtocomp,
           family = "continuous", zero_init = is.null(ObsSrvLenComps_pop_osa_discrete), pop = TRUE, n_pop = n_pop
         )
       }
     }
   }
+
+  ## Conditional Age-at-Length Likelihoods ------------------------------------
+  # helpers to sum across population arrays
+  caal_exp = function(arr, y, seas, f) {
+    e = arr[,,y,seas,,,,f, drop = FALSE]
+    if(n_pop == 1) dim(e) = c(n_regions, n_lens, n_ages, n_sexes) else e = apply(e, c(2,5,6,7), sum)
+    return(e)
+  }
+  caal_exp_len = function(arr, y, seas, l, f) {
+    e = arr[,,y,seas,l,,,f, drop = FALSE]
+    if(n_pop == 1) dim(e) = c(n_regions, n_ages, n_sexes) else e = apply(e, c(2,6,7), sum)
+    return(e)
+  }
+
+  ### Fishery Conditional Age-at-Length ---------------------------------------
+  if(do_fish_caal) {
+    if(do_internal_comp_osa == FALSE) {
+
+      for(y in 1:n_yrs) {
+        for(f in 1:n_fish_fleets) {
+          for(seas in 1:n_seas) {
+            if(sum(UseFish_caal[,y,seas,,f]) >= 1) {
+              Fish_caal_nLL[,y,seas,,,f] = Get_CAAL_Likelihoods(
+                comp_const_obs = comp_const_obs,
+                Exp = caal_exp(Fish_caal, y, seas, f), Obs = ObsFish_caal[,y,seas,,,,f],
+                ISS = ISS_Fish_caal[,y,seas,,,f], Wt_Mltnml = Wt_Fish_caal[,y,seas,,,f],
+                ln_theta = ln_Fish_caal_theta[,,f], ln_theta_agg = ln_Fish_caal_theta_agg[f],
+                Comp_Type = Fish_caal_Type[y,f], Likelihood_Type = Fish_caal_LikeType[f],
+                n_regions = n_regions, n_lens = n_lens, n_model_bins = n_ages,
+                n_obs_bins = dim(ObsFish_caal)[5], n_sexes = n_sexes,
+                AgeingError = AgeingError[y,,], use = UseFish_caal[,y,seas,,f],
+                addtocomp = addtocomp
+              )
+            } # if we have fishery caal
+          } # end seas loop
+        } # end f loop
+      } # end y loop
+
+    } else {
+
+      # Using OSA compositions
+      ObsFish_caal_osa = pack_caal_osa(
+        ObsArr = ObsFish_caal, ISSArr = ISS_Fish_caal, WtArr = Wt_Fish_caal,
+        UseArr = UseFish_caal, TypeMat = Fish_caal_Type, LikeTypeVec = Fish_caal_LikeType,
+        n_yrs = n_yrs, n_seas = n_seas, n_lens = n_lens, n_fleets = n_fish_fleets,
+        n_sexes = n_sexes, addtocomp = addtocomp
+      )
+
+      if(!is.null(ObsFish_caal_osa)) {
+        ObsFish_caal_osa = RTMB::OBS(ObsFish_caal_osa)
+        Fish_caal_nLL = eval_caal_osa(
+          nLL_arr = Fish_caal_nLL, tracked = ObsFish_caal_osa,
+          ExpArrFn = function(y, seas, l, f) caal_exp_len(Fish_caal, y, seas, l, f),
+          UseArr = UseFish_caal, TypeMat = Fish_caal_Type, LikeTypeVec = Fish_caal_LikeType,
+          ISSArr = ISS_Fish_caal, lnThetaArr = ln_Fish_caal_theta, lnThetaAggVec = ln_Fish_caal_theta_agg,
+          n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_lens = n_lens,
+          n_fleets = n_fish_fleets, n_sexes = n_sexes,
+          n_model_bins = n_ages, n_obs_bins = dim(ObsFish_caal)[5],
+          AgeingErrorFn = function(y) AgeingError[y,,], addtocomp = addtocomp
+        )
+      }
+
+    } # end osa switch
+  } # end fishery caal
+
+  ### Survey Conditional Age-at-Length ----------------------------------------
+  if(do_srv_caal) {
+    if(do_internal_comp_osa == FALSE) {
+
+      for(y in 1:n_yrs) {
+        for(sf in 1:n_srv_fleets) {
+          for(seas in 1:n_seas) {
+            if(sum(UseSrv_caal[,y,seas,,sf]) >= 1) {
+              Srv_caal_nLL[,y,seas,,,sf] = Get_CAAL_Likelihoods(
+                comp_const_obs = comp_const_obs,
+                Exp = caal_exp(Srv_caal, y, seas, sf), Obs = ObsSrv_caal[,y,seas,,,,sf],
+                ISS = ISS_Srv_caal[,y,seas,,,sf], Wt_Mltnml = Wt_Srv_caal[,y,seas,,,sf],
+                ln_theta = ln_Srv_caal_theta[,,sf], ln_theta_agg = ln_Srv_caal_theta_agg[sf],
+                Comp_Type = Srv_caal_Type[y,sf], Likelihood_Type = Srv_caal_LikeType[sf],
+                n_regions = n_regions, n_lens = n_lens, n_model_bins = n_ages,
+                n_obs_bins = dim(ObsSrv_caal)[5], n_sexes = n_sexes,
+                AgeingError = AgeingError[y,,], use = UseSrv_caal[,y,seas,,sf],
+                addtocomp = addtocomp
+              )
+            } # if we have survey caal
+          } # end seas loop
+        } # end sf loop
+      } # end y loop
+
+    } else {
+
+      # Using OSA compositions
+      ObsSrv_caal_osa = pack_caal_osa(
+        ObsArr = ObsSrv_caal, ISSArr = ISS_Srv_caal, WtArr = Wt_Srv_caal,
+        UseArr = UseSrv_caal, TypeMat = Srv_caal_Type, LikeTypeVec = Srv_caal_LikeType,
+        n_yrs = n_yrs, n_seas = n_seas, n_lens = n_lens, n_fleets = n_srv_fleets,
+        n_sexes = n_sexes, addtocomp = addtocomp
+      )
+
+      if(!is.null(ObsSrv_caal_osa)) {
+        ObsSrv_caal_osa = RTMB::OBS(ObsSrv_caal_osa)
+        Srv_caal_nLL = eval_caal_osa(
+          nLL_arr = Srv_caal_nLL, tracked = ObsSrv_caal_osa,
+          ExpArrFn = function(y, seas, l, sf) caal_exp_len(Srv_caal, y, seas, l, sf),
+          UseArr = UseSrv_caal, TypeMat = Srv_caal_Type, LikeTypeVec = Srv_caal_LikeType,
+          ISSArr = ISS_Srv_caal, lnThetaArr = ln_Srv_caal_theta, lnThetaAggVec = ln_Srv_caal_theta_agg,
+          n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_lens = n_lens,
+          n_fleets = n_srv_fleets, n_sexes = n_sexes,
+          n_model_bins = n_ages, n_obs_bins = dim(ObsSrv_caal)[5],
+          AgeingErrorFn = function(y) AgeingError[y,,], addtocomp = addtocomp
+        )
+      }
+
+    } # end osa switch
+  } # end survey caal
 
   ## Tag Likelihoods ---------------------------------------------------------
   if(do_internal_conv_tag_osa == FALSE) {
@@ -2114,7 +2469,7 @@ SPoRC_rtmb = function(pars, data) {
       # Total Fishery Selectivity Deviations
       if(cont_tv_fish_sel[r,f] > 0 && fishsel_pe_wt[f] != 0) {
 
-        sel_nLL = sel_nLL + - fishsel_pe_wt[f] * Get_sel_PE_loglik(PE_model = cont_tv_fish_sel[r,f], # process error model
+        sel_nLL = sel_nLL + - fishsel_pe_wt[f] * Get_PE_loglik(PE_model = cont_tv_fish_sel[r,f], # process error model
                                                 PE_pars = fishsel_pe_pars[r,,,f, drop = FALSE], # process error parameters for a given fleet (correlaiton and sigmas)
                                                 ln_devs = ln_fishsel_devs[r,,,,f, drop = FALSE], # extract out process error deviations for a given fleet
                                                 map_sel_devs = map_ln_fishsel_devs[r,,,,f, drop = FALSE],
@@ -2127,7 +2482,7 @@ SPoRC_rtmb = function(pars, data) {
       # Retained Fishery Selectivity Deviations
       if(cont_tv_ret_sel[r,f] > 0 && retsel_pe_wt[f] != 0) {
 
-        sel_nLL = sel_nLL + - retsel_pe_wt[f] * Get_sel_PE_loglik(PE_model = cont_tv_ret_sel[r,f], # process error model
+        sel_nLL = sel_nLL + - retsel_pe_wt[f] * Get_PE_loglik(PE_model = cont_tv_ret_sel[r,f], # process error model
                                                 PE_pars = retsel_pe_pars[r,,,f, drop = FALSE], # process error parameters for a given fleet (correlaiton and sigmas)
                                                 ln_devs = ln_retsel_devs[r,,,,f, drop = FALSE], # extract out process error deviations for a given fleet
                                                 map_sel_devs = map_ln_retsel_devs[r,,,,f, drop = FALSE],
@@ -2143,7 +2498,7 @@ SPoRC_rtmb = function(pars, data) {
 
       if(cont_tv_srv_sel[r,sf] > 0 && srvsel_pe_wt[sf] != 0) {
 
-        sel_nLL = sel_nLL + - srvsel_pe_wt[sf] * Get_sel_PE_loglik(PE_model = cont_tv_srv_sel[r,sf], # process error model
+        sel_nLL = sel_nLL + - srvsel_pe_wt[sf] * Get_PE_loglik(PE_model = cont_tv_srv_sel[r,sf], # process error model
                                                 PE_pars = srvsel_pe_pars[r,,,sf, drop = FALSE], # process error parameters for a given fleet (correlaiton and sigmas)
                                                 ln_devs = ln_srvsel_devs[r,,,,sf, drop = FALSE], # extract out process error deviations for a given fleet
                                                 map_sel_devs = map_ln_srvsel_devs[r,,,,sf, drop = FALSE],
@@ -2168,7 +2523,7 @@ SPoRC_rtmb = function(pars, data) {
   for(r in 1:n_regions) {
     for(f in 1:n_fish_fleets) {
       if(cont_tv_fishsel_bin_devs[f] > 0) {
-        sel_nLL = sel_nLL + - Get_sel_PE_loglik(PE_model = cont_tv_fishsel_bin_devs[f],
+        sel_nLL = sel_nLL + - Get_PE_loglik(PE_model = cont_tv_fishsel_bin_devs[f],
                                                 PE_pars = fishsel_bin_devs_pe_pars[r,,,f, drop = FALSE],
                                                 ln_devs = ln_fishsel_bin_devs[r,,,,f, drop = FALSE],
                                                 map_sel_devs = map_ln_fishsel_bin_devs[r,,,,f, drop = FALSE],
@@ -2176,7 +2531,7 @@ SPoRC_rtmb = function(pars, data) {
                                                 rw_init_sigma = fishsel_bin_devs_rw_init_sigma[f])
       } # end if
       if(cont_tv_retsel_bin_devs[f] > 0) {
-        sel_nLL = sel_nLL + - Get_sel_PE_loglik(PE_model = cont_tv_retsel_bin_devs[f],
+        sel_nLL = sel_nLL + - Get_PE_loglik(PE_model = cont_tv_retsel_bin_devs[f],
                                                 PE_pars = retsel_bin_devs_pe_pars[r,,,f, drop = FALSE],
                                                 ln_devs = ln_retsel_bin_devs[r,,,,f, drop = FALSE],
                                                 map_sel_devs = map_ln_retsel_bin_devs[r,,,,f, drop = FALSE],
@@ -2186,7 +2541,7 @@ SPoRC_rtmb = function(pars, data) {
     } # end f loop
     for(sf in 1:n_srv_fleets) {
       if(cont_tv_srvsel_bin_devs[sf] > 0) {
-        sel_nLL = sel_nLL + - Get_sel_PE_loglik(PE_model = cont_tv_srvsel_bin_devs[sf],
+        sel_nLL = sel_nLL + - Get_PE_loglik(PE_model = cont_tv_srvsel_bin_devs[sf],
                                                 PE_pars = srvsel_bin_devs_pe_pars[r,,,sf, drop = FALSE],
                                                 ln_devs = ln_srvsel_bin_devs[r,,,,sf, drop = FALSE],
                                                 map_sel_devs = map_ln_srvsel_bin_devs[r,,,,sf, drop = FALSE],
@@ -2346,6 +2701,8 @@ SPoRC_rtmb = function(pars, data) {
                                         RecDevs_pen_center = RecDevs_pen_center,
                                         InitDevs_pen_center = InitDevs_pen_center,
                                         init_devs_pen_use = init_devs_pen_use,
+                                        init_bias_ramp = init_bias_ramp,
+                                        map_ln_InitDevs = map_ln_InitDevs,
                                         Use_init_sex_pen = Use_init_sex_pen, ln_sigma_init_sex = ln_sigma_init_sex)
   Init_Rec_nLL = tmp_rec_pen$Init_Rec_nLL
   Init_Sex_nLL = tmp_rec_pen$Init_Sex_nLL
@@ -2368,6 +2725,50 @@ SPoRC_rtmb = function(pars, data) {
   if(sr_penalty > 0) {
     SR_pen_nLL = get_sr_penalty(Rec, SR_pred, exp(ln_sigma_sr_pen),
                                 if(all(sr_pen_yrs == 1)) NULL else which(sr_pen_yrs == 1))
+  }
+
+  ### Growth (Process Error) --------------------------------------------------
+  # Growth carries two deviation surfaces, both scored through the same process
+  # error machinery the selectivity deviations use. A time-varying growth
+  # PARAMETER has one series per parameter, a surface one column wide, iid or a
+  # random walk. Semi-parametric growth has one surface over years and ages,
+  # which may also be a 3D GMRF or a separable 2D AR(1).
+  if(growth_model != 0) {
+    for(p in 1:n_pop) {
+      for(r in 1:n_regions) {
+
+        if(!is.null(growth_tv_model)) for(k in which(growth_tv_model > 0)) {
+          growth_tv_nLL = growth_tv_nLL - Get_PE_loglik(
+            PE_model = growth_tv_model[k],
+            PE_pars = array(growth_pe_pars[p,r,k,,1], dim = c(1, 1, n_sexes, 1)),
+            ln_devs = array(ln_growth_devs[p,r,,k,], dim = c(1, n_yrs, 1, n_sexes, 1)),
+            map_sel_devs = array(map_ln_growth_devs[p,r,,k,], dim = c(1, n_yrs, 1, n_sexes)),
+            min_sel_devs_shared_bins = 1,
+            rw_init_sigma = growth_rw_init_sigma
+          )
+        } # end k loop
+
+        if(growth_semipar > 0) {
+          growth_semipar_nLL = growth_semipar_nLL - Get_PE_loglik(
+            PE_model = growth_semipar,
+            PE_pars = array(growth_pe_pars[p,r,,,2], dim = c(1, dim(growth_pe_pars)[3], n_sexes, 1)),
+            ln_devs = array(ln_growth_semipar_devs[p,r,,,], dim = c(1, n_yrs, n_ages, n_sexes, 1)),
+            map_sel_devs = array(map_ln_growth_semipar_devs[p,r,,,], dim = c(1, n_yrs, n_ages, n_sexes)),
+            min_sel_devs_shared_bins = if(is.null(growth_semipar_bins)) 1:n_ages else growth_semipar_bins,
+            rw_init_sigma = growth_rw_init_sigma
+          )
+        }
+
+      } # end r loop
+    } # end p loop
+  } # end growth process error
+
+  ### Initial Recruitment Offset (Penalty) ---------------------------------------
+  # The initial equilibrium recruitment against the recruitment level, as a
+  # normal on the log ratio; an equilibrium recruitment averages over several
+  # years of deviations, so its sd is typically sigmaR shrunk by that span
+  if(Use_rinit_pen == 1 && use_rinit == 1) {
+    for(p in 1:n_pop) rinit_nLL = rinit_nLL - RTMB::dnorm(ln_rinit[p] - ln_global_R0[p], 0, rinit_pen_sd, TRUE)
   }
 
   ### Fishery Catchability (Prior) -----------------------------------------------
@@ -2435,6 +2836,8 @@ SPoRC_rtmb = function(pars, data) {
     sum(SrvAgeComps_pop_nLL) +                # Pop-specific survey age likelihoods
     sum(SrvLenComps_nLL) +                    # Aggregated survey length likelihoods
     sum(SrvLenComps_pop_nLL) +                # Pop-specific survey length likelihoods
+    sum(Fish_caal_nLL) +                      # Fishery conditional age-at-length likelihoods
+    sum(Srv_caal_nLL) +                       # Survey conditional age-at-length likelihoods
     (Wt_Tagging * sum(conv_fish_tag_nLL)) +   # Tagging likelihood
     (Wt_F * sum(Fmort_nLL)) +                 # Fishing mortality penalty
     (Wt_D * sum(dmr_nLL)) +                   # Discard mortality rate penalty
@@ -2451,7 +2854,10 @@ SPoRC_rtmb = function(pars, data) {
     TagRep_nLL +                               # Tag reporting rate prior
     fish_q_nLL +                               # Fishery q prior
     srv_q_nLL +                                # Survey q prior
-    rec_prop_nLL                               # Recruitment proportion prior
+    rec_prop_nLL +                             # Recruitment proportion prior
+    growth_tv_nLL +                            # Time-varying growth process error
+    growth_semipar_nLL +                       # Semi-parametric growth process error
+    rinit_nLL                                  # Initial recruitment offset penalty
 
   # Report Section ----------------------------------------------------------
   # Biological Processes
@@ -2470,6 +2876,7 @@ SPoRC_rtmb = function(pars, data) {
   RTMB::REPORT(ZAA)
   RTMB::REPORT(natmort)
   RTMB::REPORT(bias_ramp)
+  RTMB::REPORT(init_bias_ramp)
   RTMB::REPORT(Movement)
   RTMB::REPORT(sgl_seas_spawning_movement)
   RTMB::REPORT(Mrate)
@@ -2487,6 +2894,10 @@ SPoRC_rtmb = function(pars, data) {
   RTMB::REPORT(DAA)
   RTMB::REPORT(CAL)
   RTMB::REPORT(DAL)
+  if(do_caal == 1) {
+    RTMB::REPORT(Fish_caal)
+    RTMB::REPORT(Fish_caal_discard)
+  }
   RTMB::REPORT(PredCatch)
   RTMB::REPORT(PredDiscard)
   RTMB::REPORT(PredFishIdx)
@@ -2500,6 +2911,34 @@ SPoRC_rtmb = function(pars, data) {
   RTMB::REPORT(srv_q)
   RTMB::REPORT(SrvIAA)
   RTMB::REPORT(SrvIAL)
+  if(do_caal == 1) RTMB::REPORT(Srv_caal)
+  RTMB::REPORT(RecDev_anom)
+
+
+  # Per-fleet keys: growth-derived or fixed data, reported whenever either
+  # source supplied one, so a fixed SizeAgeTrans_fish/SizeAgeTrans_srv shows up
+  # in the report the same way a supplied WAA_fish/WAA_srv already does
+  if(!is.null(SizeAgeTrans_fish)) RTMB::REPORT(SizeAgeTrans_fish)
+  if(!is.null(SizeAgeTrans_srv)) RTMB::REPORT(SizeAgeTrans_srv)
+
+  # Growth module
+  if(growth_model != 0) {
+    RTMB::REPORT(mean_LAA_fish)
+    RTMB::REPORT(sd_LAA_fish)
+    RTMB::REPORT(mean_LAA_srv)
+    RTMB::REPORT(sd_LAA_srv)
+    RTMB::REPORT(mean_LAA_spawn)
+    RTMB::REPORT(sd_LAA_spawn)
+    RTMB::REPORT(Linf)
+    RTMB::REPORT(SizeAgeTrans_spawn)
+    RTMB::REPORT(L_beg)
+    RTMB::REPORT(growth_pars_y)
+    if(derive_waa == 1) {
+      RTMB::REPORT(WAA)
+      RTMB::REPORT(WAA_fish)
+      RTMB::REPORT(WAA_srv)
+    }
+  }
 
   # Report length-based selectivity
   if(fish_selex_type == 1) RTMB::REPORT(fish_sel_l)
@@ -2542,6 +2981,8 @@ SPoRC_rtmb = function(pars, data) {
   RTMB::REPORT(FishLenComps_pop_nLL)
   RTMB::REPORT(FishLenComps_discard_pop_nLL)
   RTMB::REPORT(SrvLenComps_pop_nLL)
+  if(do_fish_caal) RTMB::REPORT(Fish_caal_nLL)
+  if(do_srv_caal) RTMB::REPORT(Srv_caal_nLL)
 
   # Penalties and priors
   RTMB::REPORT(M_nLL)
@@ -2559,6 +3000,9 @@ SPoRC_rtmb = function(pars, data) {
   RTMB::REPORT(R0_nLL)
   RTMB::REPORT(fish_q_nLL)
   RTMB::REPORT(sel_nLL)
+  RTMB::REPORT(growth_tv_nLL)
+  RTMB::REPORT(growth_semipar_nLL)
+  RTMB::REPORT(rinit_nLL)
   RTMB::REPORT(srv_q_nLL)
   RTMB::REPORT(Movement_nLL)
   RTMB::REPORT(TagRep_nLL)

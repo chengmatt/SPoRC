@@ -823,6 +823,17 @@ Setup_Mod_Retsel <- function(input_list,
 #' share a single estimated selectivity parameter. Indices must correspond to the
 #' bin dimension defined by \code{fish_selex_type}.
 
+#' @param fish_sel_dbnrml_startbin \code{NULL} (default) or an integer vector
+#'   \code{[n_fish_fleets]}, the bin each fleet's double normal anchors its
+#'   ascending limb at (\code{1} is the first bin). Bins below it take the
+#'   squared ratio of their bin to it times the selectivity there, Stock
+#'   Synthesis's convention when the compositions start above the population's
+#'   first length bin.
+#' @param fish_sel_dbnrml_raw \code{NULL} (default) or a 0/1 matrix
+#'   \code{[n_fish_fleets x 2]} for fleets on the double normal: column one
+#'   leaves the ascending limb as a raw Gaussian instead of anchoring it to
+#'   \code{p5} at the first bin, column two does the same for the descending
+#'   limb and \code{p6}.
 #' @param fish_sel_sex_offset Character vector of length \code{n_fish_fleets}
 #'   linking the sexes of a fleet's selectivity, for models with
 #'   \code{n_sexes > 1}. Options per fleet:
@@ -903,6 +914,8 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
                                     fish_sel_input = NULL,
                                     fish_sel_nonpar_est_bins = NULL,
                                     fish_sel_sex_offset = rep("none", input_list$data$n_fish_fleets),
+                                    fish_sel_dbnrml_raw = NULL,
+                                    fish_sel_dbnrml_startbin = NULL,
 
                                     # Retained Selectivity
                                     cont_tv_ret_sel = paste("none_Fleet_", 1:input_list$data$n_fish_fleets, sep = ''),
@@ -1253,6 +1266,8 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
   input_list <- setup_sel_norm_bins(input_list, fish_sel_norm_bins, prefix = "fish", n_fleets = input_list$data$n_fish_fleets, bins = bins)
   input_list$data$fish_selex_penalty <- validate_selex_penalty(fish_selex_penalty, Use_fish_selex_penalty, "fish_selex_penalty")
   input_list$data$fish_selex_type <- fish_selex_type
+  if(!is.null(input_list$data$fish_len_comp_sel) && any(input_list$data$fish_len_comp_sel == 1) && fish_selex_type != 1) stop("FishLenComps_sel = 'length' in Setup_Mod_FishIdx_and_Comps applies the length selectivity at length, so fish_selex_type must be length")
+  if(!is.null(input_list$data$fish_waa_selected) && any(input_list$data$fish_waa_selected == 1) && fish_selex_type != 1) stop("fish_waa_selected = 1 in Setup_Mod_FishIdx_and_Comps weights the fishery weight at age by length selectivity, so fish_selex_type must be length")
   input_list$data$use_fixed_fish_sel <- use_fixed_fish_sel
   input_list$data$fish_sel_input <- fish_sel_input
   input_list$data$fishsel_devs_min_shared_bins <- if(!is.null(fishsel_devs_shared_bins)) unlist(lapply(fishsel_devs_shared_bins, min)) else 1:length(input_list$data$ages)
@@ -1382,6 +1397,12 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
                                      sel_model_arr = input_list$data$fish_sel_model, cont_tv_mat = cont_tv_fish_sel_mat,
                                      max_blks = max_fishsel_blks, sel_blocks = input_list$data$fish_sel_blocks,
                                      fixed_spec = fish_fixed_sel_pars_spec, starting_values = starting_values)
+
+  # Raw (unanchored) double normal limbs; retention keeps anchored limbs
+  input_list$data$fish_dbnrml_raw <- setup_dbnrml_raw(fish_sel_dbnrml_raw, input_list$data$n_fish_fleets, "fish_sel_dbnrml_raw")
+  input_list$data$ret_dbnrml_raw <- array(0, dim = c(input_list$data$n_fish_fleets, 2))
+  input_list$data$fish_dbnrml_startbin <- setup_dbnrml_startbin(fish_sel_dbnrml_startbin, input_list$data$n_fish_fleets, bins, "fish_sel_dbnrml_startbin")
+  input_list$data$ret_dbnrml_startbin <- rep(1, input_list$data$n_fish_fleets)
 
   # Mapping Options ---------------------------------------------------------
   input_list <- do_fixed_sel_pars_mapping(input_list, fish_fixed_sel_pars_spec, bins, fish_sel_nonpar_est_bins,

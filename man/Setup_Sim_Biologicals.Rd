@@ -12,7 +12,9 @@ Setup_Sim_Biologicals(
   WAA_srv_input,
   MatAA_input,
   AgeingError_input = NULL,
-  SizeAgeTrans_input = NULL
+  SizeAgeTrans_input = NULL,
+  SizeAgeTrans_fish_input = NULL,
+  SizeAgeTrans_srv_input = NULL
 )
 }
 \arguments{
@@ -61,6 +63,13 @@ model ages into observed bins.}
 Each slice maps age classes to length bins and should be column-stochastic
 (columns sum to 1). Only required when fitting length compositions;
 defaults to \code{NULL}.}
+
+\item{SizeAgeTrans_fish_input, SizeAgeTrans_srv_input}{Optional size-age
+transition arrays per fleet, \code{[n_pop x n_regions x n_yrs x n_seas x
+n_lens x n_ages x n_sexes x n_fleets x n_sims]}, each read at that fleet's
+own timing. When supplied they are used for that fleet type in place of
+\code{SizeAgeTrans_input}; the self-test passes the fitted model's own keys
+here when growth was estimated.}
 }
 \value{
 The input \code{sim_list} with the following fields added or updated:

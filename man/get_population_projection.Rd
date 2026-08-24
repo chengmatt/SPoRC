@@ -51,7 +51,9 @@ get_population_projection(
   move_timing = 0,
   SR_ref_yr = 1,
   sr_penalty = 0,
-  sr_R0 = NULL
+  sr_R0 = NULL,
+  year_hook = NULL,
+  hook_state = NULL
 )
 }
 \arguments{
@@ -124,6 +126,21 @@ weight at age, which is what several ADMB assessments do; with time-varying
 weight at age the two differ and the whole curve shifts with them. It is a
 year INDEX, not a calendar year, so callers that truncate the year
 dimension (retrospectives) must clamp it.}
+
+\item{year_hook}{Optional function of \code{(y, NAA_y, hook_state)} called at
+the top of every year with the numbers at age at the start of that year,
+array \code{[pop, region, age, sex]}, and the state carried from the
+previous year. It returns a list with \code{state}, carried forward to the
+next call and returned to the caller, and \code{ZAA_y}, \code{WAA_y} and
+\code{MatAA_y}, the year's slices of total mortality, weight and maturity
+at age, which replace those handed in for that year. Passing the state in
+and out keeps the per-year step a function of its arguments.}
+
+\item{hook_state}{Initial state for \code{year_hook}, carried through the
+year loop and returned as \code{hook_state}. Ignored when
+\code{year_hook} is \code{NULL}.
+This is how cohort growth, whose plus group blends by numbers, is evaluated
+inside the year loop. \code{NULL} (the default) uses the arrays as given.}
 }
 \value{
 List with elements \code{NAA}, \code{NAA0}, \code{NAA_bef},

@@ -232,6 +232,14 @@ Setup_Sim_Fishing <- function(sim_list,
                               UseFishIdx = NULL,
                               t_fish = array(0, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_fish_fleets)),
 
+                              # Conditional age-at-length. Off unless an ISS array is supplied; the
+                              # thetas default to log(1) and are only read by the Dirichlet-multinomial
+                              comp_fish_caal_like = rep(999, sim_list$n_fish_fleets),
+                              ISS_Fish_caal = NULL,
+                              ln_Fish_caal_theta = NULL,
+                              ln_Fish_caal_theta_agg = NULL,
+                              Fish_caal_Type = array(999, dim = c(sim_list$n_yrs, sim_list$n_fish_fleets)),
+
                               # Retained age compositions
                               comp_fishage_like = rep(0, sim_list$n_fish_fleets),
                               ISS_FishAgeComps = array(100, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims)),
@@ -493,6 +501,23 @@ Setup_Sim_Fishing <- function(sim_list,
   sim_list$FishAge_corr_pars <- FishAge_corr_pars
   sim_list$FishAgeComps_Type <- FishAgeComps_Type
 
+  # Fishery conditional age-at-length
+  comp_fish_caal_like <- convert_to_numeric(comp_fish_caal_like, list(Multinomial = 0, `Dirichlet-Multinomial` = 1, none = 999))
+  Fish_caal_Type <- convert_to_numeric(Fish_caal_Type, list(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999))
+  if(is.null(ln_Fish_caal_theta)) ln_Fish_caal_theta <- array(log(1), dim = c(sim_list$n_regions, sim_list$n_sexes, sim_list$n_fish_fleets))
+  if(is.null(ln_Fish_caal_theta_agg)) ln_Fish_caal_theta_agg <- rep(log(1), sim_list$n_fish_fleets)
+  sim_list$do_fish_caal <- !is.null(ISS_Fish_caal) && any(comp_fish_caal_like != 999)
+  if(sim_list$do_fish_caal) {
+    if(is.null(sim_list$n_lens)) stop("ISS_Fish_caal was supplied, but the simulation has no length bins (n_lens is NULL)")
+    if(length(dim(ISS_Fish_caal)) != 7 || !all(dim(ISS_Fish_caal) == c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_lens, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims)))
+      stop("Dimensions of ISS_Fish_caal are not correct. Should be n_regions, n_years, n_seas, n_lens, n_sexes, n_fish_fleets, and n_sims")
+  }
+  sim_list$comp_fish_caal_like <- comp_fish_caal_like
+  sim_list$ISS_Fish_caal <- ISS_Fish_caal
+  sim_list$ln_Fish_caal_theta <- ln_Fish_caal_theta
+  sim_list$ln_Fish_caal_theta_agg <- ln_Fish_caal_theta_agg
+  sim_list$Fish_caal_Type <- Fish_caal_Type
+
   # Fishery length compositions
   sim_list$comp_fishlen_like <- comp_fishlen_like
   sim_list$ISS_FishLenComps <- ISS_FishLenComps
@@ -692,6 +717,11 @@ Setup_Sim_Survey <- function(sim_list,
                              SrvIdx_LikeType = rep(0, sim_list$n_srv_fleets),
                              SrvIdx_Cov = NULL,
                              UseSrvIdx = NULL,
+                             comp_srv_caal_like = rep(999, sim_list$n_srv_fleets),
+                             ISS_Srv_caal = NULL,
+                             ln_Srv_caal_theta = NULL,
+                             ln_Srv_caal_theta_agg = NULL,
+                             Srv_caal_Type = array(999, dim = c(sim_list$n_yrs, sim_list$n_srv_fleets)),
                              comp_srvage_like = rep(0, sim_list$n_srv_fleets),
                              ISS_SrvAgeComps = array(100, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims)),
                              ln_SrvAge_theta = array(log(1), dim = c(sim_list$n_regions, sim_list$n_sexes, sim_list$n_srv_fleets)),
@@ -821,6 +851,23 @@ Setup_Sim_Survey <- function(sim_list,
   sim_list$SrvAge_corr_pars_agg <- SrvAge_corr_pars_agg
   sim_list$SrvAge_corr_pars <- SrvAge_corr_pars
   sim_list$SrvAgeComps_Type <- SrvAgeComps_Type
+
+  # Survey conditional age-at-length
+  comp_srv_caal_like <- convert_to_numeric(comp_srv_caal_like, list(Multinomial = 0, `Dirichlet-Multinomial` = 1, none = 999))
+  Srv_caal_Type <- convert_to_numeric(Srv_caal_Type, list(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999))
+  if(is.null(ln_Srv_caal_theta)) ln_Srv_caal_theta <- array(log(1), dim = c(sim_list$n_regions, sim_list$n_sexes, sim_list$n_srv_fleets))
+  if(is.null(ln_Srv_caal_theta_agg)) ln_Srv_caal_theta_agg <- rep(log(1), sim_list$n_srv_fleets)
+  sim_list$do_srv_caal <- !is.null(ISS_Srv_caal) && any(comp_srv_caal_like != 999)
+  if(sim_list$do_srv_caal) {
+    if(is.null(sim_list$n_lens)) stop("ISS_Srv_caal was supplied, but the simulation has no length bins (n_lens is NULL)")
+    if(length(dim(ISS_Srv_caal)) != 7 || !all(dim(ISS_Srv_caal) == c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_lens, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims)))
+      stop("Dimensions of ISS_Srv_caal are not correct. Should be n_regions, n_years, n_seas, n_lens, n_sexes, n_srv_fleets, and n_sims")
+  }
+  sim_list$comp_srv_caal_like <- comp_srv_caal_like
+  sim_list$ISS_Srv_caal <- ISS_Srv_caal
+  sim_list$ln_Srv_caal_theta <- ln_Srv_caal_theta
+  sim_list$ln_Srv_caal_theta_agg <- ln_Srv_caal_theta_agg
+  sim_list$Srv_caal_Type <- Srv_caal_Type
 
   # Survey length compositions
   sim_list$comp_srvlen_like <- comp_srvlen_like

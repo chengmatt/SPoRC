@@ -13,6 +13,9 @@
 #   mode    "elementwise" for sum(Wt * nLL), "scalar" for Wt * sum(nLL). These
 #           agree when the weight is a single number and differ when it is an
 #           array, so each term records which form the model uses.
+#   optional TRUE for a likelihood the model reports only when that data stream
+#           is fit, so its absence is not a term dropped from the sum. Every
+#           other term must be reported by every model.
 
 jnLL_terms <- list(
   Catch_nLL                    = list(weight = "Wt_Catch",        mode = "elementwise"),
@@ -37,6 +40,11 @@ jnLL_terms <- list(
   SrvLenComps_nLL              = list(weight = NA, mode = "scalar"),
   SrvLenComps_pop_nLL          = list(weight = NA, mode = "scalar"),
 
+  # the conditional age-at-length terms are reported only when that stream is
+  # fit, so their absence is not a dropped likelihood
+  Fish_caal_nLL                = list(weight = NA, mode = "scalar", optional = TRUE),
+  Srv_caal_nLL                 = list(weight = NA, mode = "scalar", optional = TRUE),
+
   conv_fish_tag_nLL            = list(weight = "Wt_Tagging", mode = "scalar"),
   Fmort_nLL                    = list(weight = "Wt_F",       mode = "scalar"),
   dmr_nLL                      = list(weight = "Wt_D",       mode = "scalar"),
@@ -47,6 +55,9 @@ jnLL_terms <- list(
   SR_pen_nLL                   = list(weight = NA,          mode = "scalar"),
 
   sel_nLL                      = list(weight = NA, mode = "scalar"),
+  growth_tv_nLL                = list(weight = NA, mode = "scalar"),
+  growth_semipar_nLL           = list(weight = NA, mode = "scalar"),
+  rinit_nLL                    = list(weight = NA, mode = "scalar"),
   M_nLL                        = list(weight = NA, mode = "scalar"),
   R0_nLL                       = list(weight = NA, mode = "scalar"),
   h_nLL                        = list(weight = NA, mode = "scalar"),
@@ -152,7 +163,8 @@ expect_jnLL_decomposes <- function(model, tolerance = 1e-8, label = deparse(subs
       paste(unaccounted, collapse = ", ")))
   }
 
-  stale <- setdiff(names(jnLL_terms), reported)
+  optional <- names(jnLL_terms)[vapply(jnLL_terms, function(x) isTRUE(x$optional), logical(1))]
+  stale <- setdiff(setdiff(names(jnLL_terms), reported), optional)
   if(length(stale) > 0) {
     problems <- c(problems, sprintf(
       "jnLL_terms lists likelihood(s) that SPoRC_rtmb no longer reports: %s. Either the REPORT was dropped or jnLL_terms is out of date.",

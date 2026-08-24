@@ -35,6 +35,10 @@ navbar:
           href: articles/ac_wc_sablefish_case_study.html
         - text: "BSAI Northern Rock Sole"
           href: articles/ac_bsai_northern_rock_sole_case_study.html
+        - text: "GOA Rex Sole"
+          href: articles/ad_goa_rex_sole_case_study.html
+        - text: "EBS Pacific Cod"
+          href: articles/ae_ebs_pacific_cod_case_study.html
 
 articles:
   - title: "Getting Started"
@@ -63,6 +67,8 @@ articles:
       - ab_bsai_atka_mackerel_case_study
       - ac_wc_sablefish_case_study
       - ac_bsai_northern_rock_sole_case_study
+      - ad_goa_rex_sole_case_study
+      - ae_ebs_pacific_cod_case_study
 
   - title: "Simulation and Projections"
     contents:
@@ -76,6 +82,7 @@ articles:
     - j_starting_mapping
     - k_defining_priors
     - q_movement_param
+    - af_growth_options
     - n_single_region_ebs_pollock_randomeff_case_study
     - p_single_region_dusky_alt_mp_testing
     - r_natal-homing-pop-lrgr-rg
@@ -194,6 +201,8 @@ reference:
       - sgl_rg_wc_sablefish_data
       - sgl_rg_bsai_nrs_data
       - sgl_rg_rebs_data
+      - mlt_rg_goa_rex_data
+      - sgl_rg_ebs_pcod_data
 
   - title: "Fitted Model Objects"
     desc: "Fitted model output provided by SPoRC"

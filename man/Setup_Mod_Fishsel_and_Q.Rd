@@ -35,6 +35,8 @@ Setup_Mod_Fishsel_and_Q(
   fish_sel_input = NULL,
   fish_sel_nonpar_est_bins = NULL,
   fish_sel_sex_offset = rep("none", input_list$data$n_fish_fleets),
+  fish_sel_dbnrml_raw = NULL,
+  fish_sel_dbnrml_startbin = NULL,
   cont_tv_ret_sel = paste("none_Fleet_", 1:input_list$data$n_fish_fleets, sep = ""),
   ret_sel_blocks = paste("none_Fleet_", 1:input_list$data$n_fish_fleets, sep = ""),
   ret_sel_model = paste("logist1_Fleet_", 1:input_list$data$n_fish_fleets, sep = ""),
@@ -309,6 +311,19 @@ linking the sexes of a fleet's selectivity, for models with
   \item{\code{"par_apical"}}{Both a par offset and an apical offset.}
   \item{\code{"par_scale"}}{Both a par offset and a scale offset.}
 }}
+
+\item{fish_sel_dbnrml_raw}{\code{NULL} (default) or a 0/1 matrix
+\code{[n_fish_fleets x 2]} for fleets on the double normal: column one
+leaves the ascending limb as a raw Gaussian instead of anchoring it to
+\code{p5} at the first bin, column two does the same for the descending
+limb and \code{p6}.}
+
+\item{fish_sel_dbnrml_startbin}{\code{NULL} (default) or an integer vector
+\code{[n_fish_fleets]}, the bin each fleet's double normal anchors its
+ascending limb at (\code{1} is the first bin). Bins below it take the
+squared ratio of their bin to it times the selectivity there, Stock
+Synthesis's convention when the compositions start above the population's
+first length bin.}
 
 \item{cont_tv_ret_sel}{Character vector of length \code{n_fish_fleets}
 specifying continuous time-varying selectivity per fleet. Each element

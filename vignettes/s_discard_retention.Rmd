@@ -22,7 +22,7 @@ In some cases, some fisheries discard a portion of their catch at sea (i.e., non
   retained (landed), conditional on capture.
 - Discard mortality rate (`dmr`): the fraction of discarded fish that die 
 
-In the following, we will demonstrate how discarding and retention dynamics can be leveraged in both simulation and estimation using `SPoRC`.
+In the following, we will demonstrate how discarding and retention dynamics can be used in both simulation and estimation using `SPoRC`.
 
 ## Operating Model Configuration
 

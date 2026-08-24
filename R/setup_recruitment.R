@@ -758,6 +758,11 @@ do_RecDevs_mapping <- function(input_list, RecDevs_spec, rec_dd) {
   # after setup is then neither estimated nor penalized
   input_list$data$map_ln_RecDevs <- array(as.numeric(input_list$map$ln_RecDevs),
                                           dim = dim(input_list$par$ln_RecDevs))
+  # do the initial age deviations too, so that deviations shared across regions
+  # or sexes through the map split one penalty rather than being counted per cell
+  if(!is.null(input_list$map$ln_InitDevs))
+    input_list$data$map_ln_InitDevs <- array(as.numeric(input_list$map$ln_InitDevs),
+                                             dim = dim(input_list$par$ln_InitDevs))
 
   return(input_list)
 }
@@ -1671,6 +1676,14 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   \code{c(1:42, rep(42, 9))} for a 52-age model with 43 data ages, giving
 #'   42 free parameters. When \code{NULL} (default), age sharing follows the
 #'   standard behaviour determined by \code{equil_init_age_strc} alone.
+#' @param Use_rinit_pen Integer (0/1). Whether to penalize the initial
+#'   equilibrium recruitment's offset from the recruitment level,
+#'   \eqn{\log(R_{init} / R_0) \sim N(0, \mathrm{rinit\_pen\_sd}^2)}, under
+#'   \code{use_rinit = 1}. An equilibrium recruitment stands for the average of
+#'   several years of recruitment, so its spread is smaller than a single
+#'   year's; \eqn{\sigma_R / (1 / M - 0.5)}, with \eqn{1/M - 0.5} the average
+#'   age of the stock, is a reasonable choice. Default 0.
+#' @param rinit_pen_sd Standard deviation of that penalty, log scale. Default 1.
 #' @param use_r0_prior Integer (0/1). Whether to apply a lognormal prior on R0 for any populations. Default 0.
 #' @param r0_prior Data frame with columns \code{pop} (population index), \code{mu} (prior mean on natural scale), and \code{sd} (prior SD on log scale). Required when \code{use_r0_prior = 1}.
 #'
@@ -1750,6 +1763,8 @@ Setup_Mod_Rec <- function(input_list,
                           init_age_devs_shared = NULL,
                           use_r0_prior = 0,
                           r0_prior = NULL,
+                          Use_rinit_pen = 0,
+                          rinit_pen_sd = 1,
                           ...
                           ) {
 
@@ -2074,6 +2089,12 @@ Setup_Mod_Rec <- function(input_list,
   input_list$data$use_stray_rate_prior <- use_stray_rate_prior
   input_list$data$stray_rate_prior     <- stray_rate_prior
   input_list$data$use_rinit <- use_rinit
+  if(!Use_rinit_pen %in% c(0, 1)) stop("Use_rinit_pen must be 0 or 1")
+  if(Use_rinit_pen == 1 && use_rinit != 1) stop("Use_rinit_pen = 1 penalizes ln_rinit against ln_global_R0, so it needs use_rinit = 1")
+  if(Use_rinit_pen == 1 && (length(rinit_pen_sd) != 1 || rinit_pen_sd <= 0)) stop("rinit_pen_sd must be a single positive number")
+  input_list$data$Use_rinit_pen <- Use_rinit_pen
+  input_list$data$rinit_pen_sd <- rinit_pen_sd
+  if(Use_rinit_pen == 1) collect_message("Initial recruitment offset from R0 is penalized with sd ", rinit_pen_sd)
   input_list$data$init_age_devs_shared <- init_age_devs_shared
   input_list$data$use_r0_prior <- use_r0_prior
   input_list$data$r0_prior     <- r0_prior

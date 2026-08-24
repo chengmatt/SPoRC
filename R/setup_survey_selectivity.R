@@ -222,6 +222,15 @@
 #'   Each vector defines a group of bins that share a single estimated
 #'   selectivity parameter. Indices must correspond to the bin dimension
 #'   defined by the survey selectivity type (age or length).
+#' @param srv_sel_dbnrml_startbin \code{NULL} (default) or an integer vector
+#'   \code{[n_srv_fleets]}, the bin each survey's double normal anchors its
+#'   ascending limb at; see \code{fish_sel_dbnrml_startbin} in
+#'   \code{\link{Setup_Mod_Fishsel_and_Q}}.
+#' @param srv_sel_dbnrml_raw \code{NULL} (default) or a 0/1 matrix
+#'   \code{[n_srv_fleets x 2]} for fleets on the double normal: column one
+#'   leaves the ascending limb as a raw Gaussian instead of anchoring it to
+#'   \code{p5} at the first bin, column two does the same for the descending
+#'   limb and \code{p6}.
 #' @param srv_sel_sex_offset Character vector of length \code{n_srv_fleets}
 #'   linking the sexes of a fleet's selectivity, for models with
 #'   \code{n_sexes > 1}. Options per fleet are \code{"none"} (default, each
@@ -279,6 +288,8 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
                                    srv_sel_input = NULL,
                                    srv_sel_nonpar_est_bins = NULL,
                                    srv_sel_sex_offset = rep("none", input_list$data$n_srv_fleets),
+                                   srv_sel_dbnrml_raw = NULL,
+                                   srv_sel_dbnrml_startbin = NULL,
                                    ...
                                    ) {
 
@@ -611,6 +622,7 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
   input_list <- setup_sel_norm_bins(input_list, srv_sel_norm_bins, prefix = "srv", n_fleets = input_list$data$n_srv_fleets, bins = bins)
   input_list$data$srv_selex_penalty <- validate_selex_penalty(srv_selex_penalty, Use_srv_selex_penalty, "srv_selex_penalty")
   input_list$data$t_srv <- t_srv
+  if(!is.null(input_list$data$srv_len_comp_sel) && any(input_list$data$srv_len_comp_sel == 1) && srv_selex_type != 1) stop("SrvLenComps_sel = 'length' in Setup_Mod_SrvIdx_and_Comps applies the length selectivity at length, so srv_selex_type must be length")
   input_list$data$srv_selex_type <- srv_selex_type
   input_list$data$use_fixed_srv_sel <- use_fixed_srv_sel
   input_list$data$srv_sel_input <- srv_sel_input
@@ -737,6 +749,12 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
                                      sel_model_arr = input_list$data$srv_sel_model, cont_tv_mat = cont_tv_srv_sel_mat,
                                      max_blks = max_srvsel_blks, sel_blocks = input_list$data$srv_sel_blocks,
                                      fixed_spec = srv_fixed_sel_pars_spec, starting_values = starting_values)
+
+  if(!is.null(input_list$data$srv_waa_selected) && any(input_list$data$srv_waa_selected == 1) && srv_selex_type != 1) stop("srv_waa_selected = 1 in Setup_Mod_SrvIdx_and_Comps weights the survey weight at age by length selectivity, so srv_selex_type must be length")
+
+  # Raw (unanchored) double normal limbs
+  input_list$data$srv_dbnrml_raw <- setup_dbnrml_raw(srv_sel_dbnrml_raw, input_list$data$n_srv_fleets, "srv_sel_dbnrml_raw")
+  input_list$data$srv_dbnrml_startbin <- setup_dbnrml_startbin(srv_sel_dbnrml_startbin, input_list$data$n_srv_fleets, bins, "srv_sel_dbnrml_startbin")
 
   # Survey catchability covariate effects
   if("srv_q_coeff" %in% names(starting_values)) input_list$par$srv_q_coeff <- starting_values$srv_q_coeff

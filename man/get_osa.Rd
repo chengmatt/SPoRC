@@ -39,15 +39,20 @@ removed when filtering by \code{years}.}
 \code{obs_mat}. May contain \code{NA}s, which are removed when filtering by
 \code{years}.}
 
-\item{N}{Input (or effective if Multinomial) sample size. Dimensions depend on \code{comp_type}:
+\item{N}{Input (or effective if Multinomial) sample size, at the model's full
+year dimension in every case: \code{years} (or \code{years_by_region})
+selects the years actually used, the same way it selects them from
+\code{obs_mat}/\code{exp_mat}, so \code{N} is never pre-filtered by the
+caller. Dimensions depend on \code{comp_type}:
 \itemize{
-  \item \code{comp_type = 0} (aggregated): vector of length \code{n_years}.
+  \item \code{comp_type = 0} (aggregated): vector of length \code{n_years}
+    (the model's, not the length of \code{years}).
   \item \code{comp_type = 1} (split by region and sex): array
     \code{[n_regions, n_years, n_sexes]}.
   \item \code{comp_type = 2} (split by region, joint by sex): matrix
     \code{[n_regions, n_years]}.
 }
-For years without data, users can simply input an NA or any abritary number (it gets filtered out within the function).}
+For years without data, users can simply input an NA or any abritary number (it gets filtered out within the function). This is the same array \code{ISS_*Comps} already is in the model's data list, so it can usually be passed straight through.}
 
 \item{DM_theta}{Dirichlet-multinomial overdispersion parameter(s). Dimensions
 must match \code{N}:
@@ -66,7 +71,7 @@ must match \code{N}:
 }
 Use [get_logistN_Sigma()] to help construct this input.}
 
-\item{years}{Vector of years to filter to if composition type is aggregated (0). Otherwise, this expects a list where each list element is a vector of years for each region where compositions are available for use (split by region and sex, or split by region, joint by sex).}
+\item{years}{Years with composition data. Either a plain vector, used for every region, or a list with one vector of years per region when the regions carry different years. Both forms work for every composition type. A region with no years is skipped.}
 
 \item{seas}{Season index}
 
@@ -108,7 +113,11 @@ build \code{model}. Required when \code{model} is supplied.}
 
 \item{comp_source}{One of \code{"FishAge"}, \code{"FishLen"}, \code{"SrvAge"},
 \code{"SrvLen"}, identifying which composition data source to pull
-internal OSA residuals for. Required when \code{model} is supplied and
+internal OSA residuals for. Conditional age-at-length uses
+\code{"Fish_caal"} or \code{"Srv_caal"}, which return an extra
+\code{len} column giving the length bin each age composition was
+conditioned on and ignore \code{family}, since CAAL carries only the
+discrete likelihoods. Required when \code{model} is supplied and
 \code{index_source} is \code{NULL} and \code{tag = FALSE}.}
 
 \item{index_source}{One of \code{"Catch"}, \code{"Discard"}, \code{"FishIdx"},

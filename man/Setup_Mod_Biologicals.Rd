@@ -20,6 +20,35 @@ Setup_Mod_Biologicals(
   M_prior = NA,
   fit_lengths = 0,
   SizeAgeTrans = NA,
+  SizeAgeTrans_fish = NULL,
+  SizeAgeTrans_srv = NULL,
+  do_caal = 0,
+  growth_model = "none",
+  growth_spec = "est_all",
+  growth_fix = NULL,
+  growth_tv_model = NULL,
+  growth_tv_years = NULL,
+  growth_tv_link = "log",
+  growth_par_bounds = NULL,
+  growth_tv_sigma_spec = "fix",
+  growth_tv_spec = "est_all",
+  growth_tv_type = "curve",
+  growth_rw_init_sigma = 5,
+  growth_semipar = "none",
+  growth_semipar_spec = "fix",
+  growth_semipar_ages = NULL,
+  growth_semipar_years = NULL,
+  LenBinMap = NULL,
+  growth_A1 = NULL,
+  growth_A2 = NULL,
+  growth_len_lower = NULL,
+  growth_L0 = NULL,
+  growth_cv_type = "len",
+  growth_sd_type = "cv",
+  growth_dist = "normal",
+  growth_plus_group = "mixture",
+  waa_model = "data",
+  wt_len_pars = NULL,
   M_spec = "est_ln_M",
   M_popblk_spec = "constant",
   M_ageblk_spec = "constant",
@@ -60,15 +89,11 @@ evaluation to avoid \code{log(0)}. Default \code{1e-3}. Ignored when a
 logistic-normal likelihood is specified, as that family handles zeros internally.}
 
 \item{comp_const_obs}{Integer switch (\code{0} or \code{1}) controlling where
-\code{addtocomp} is applied in the multinomial kernel, not a constant to be
+\code{addtocomp} is applied in the multinomial likelihood, not a constant to be
 tuned. \code{1} (default) adds it to the observed proportions that weight
-the multinomial as well as inside the logarithms, so the kernel is
+the multinomial as well as inside the logarithms, so the likelihood is
 stationary exactly at \code{pred = obs}. \code{0} weights by the raw
-observed proportions, which is what the ADMB templates do, and displaces
-the expected composition from the data by roughly \code{n * addtocomp}. The
-difference matters once effective sample sizes are large: on the EBS
-pollock bridge, switching from \code{0} to \code{1} moves estimated SSB by
-a median of 8.8 percent. Use \code{0} only when reproducing an ADMB model.}
+observed proportions.}
 
 \item{addtofishidx}{Small constant added to fishery indices. Default \code{1e-4}.}
 
@@ -113,7 +138,179 @@ Only used when \code{Use_M_prior = 1}.}
 \item{SizeAgeTrans}{Numeric array of size-at-age transition probabilities
 (column-stochastic; each age column sums to 1) with dimensions
 \code{[n_pop × n_regions × n_years × n_seas × n_lens × n_ages × n_sexes]}.
-Required when \code{fit_lengths = 1}; ignored otherwise.}
+Required when \code{fit_lengths = 1}; ignored otherwise. The shared key
+every fleet reads unless \code{SizeAgeTrans_fish}/\code{SizeAgeTrans_srv}
+override it for that fleet type.}
+
+\item{SizeAgeTrans_fish, SizeAgeTrans_srv}{Optional per-fleet size-at-age
+transition arrays, dimensioned like \code{SizeAgeTrans} with an added
+trailing fleet dimension (\code{n_fish_fleets}/\code{n_srv_fleets}).
+\code{NULL} (default) reads every fleet's key from the shared
+\code{SizeAgeTrans}. Only meaningful with \code{growth_model = "none"};
+a growth model already derives one key per fleet, at that fleet's own
+timing, and rejects these to avoid mixing two sources for the same key.
+This is the fixed-data counterpart of \code{Setup_Sim_Biologicals}'s
+\code{SizeAgeTrans_fish_input}/\code{SizeAgeTrans_srv_input}, and of
+\code{WAA_fish}/\code{WAA_srv} overriding the shared \code{WAA}.}
+
+\item{do_caal}{Integer flag for building the joint arrays at length and age.
+\code{0} = no (default); \code{1} = yes. Requires \code{fit_lengths = 1}.
+Turning this on adds \code{Fish_caal}, \code{Fish_caal_discard} and \code{Srv_caal} to the
+report, holding predicted retained catch, discards and survey index jointly
+by length and age.}
+
+\item{growth_model}{Character. \code{"none"} (default) keeps \code{SizeAgeTrans}
+and the weight-at-age arrays as data. \code{"vb_schnute"} builds the size-age
+transition from estimable von Bertalanffy parameters in Schnute's form:
+length \code{L1} at reference age \code{growth_A1}, length \code{L2} at
+\code{growth_A2}, rate \code{K}, and CVs of length at age \code{CV1} and
+\code{CV2} at the two reference ages. Growth below \code{growth_A1} is linear
+from \code{growth_L0} at age zero, the CV interpolates between the two
+references, and the plus group carries an adjustment for fish older than
+the accumulator age. \code{"richards"} is the same curve with a sixth
+parameter, the Richards coefficient \code{rho}, applied to the lengths
+raised to that power (\code{rho = 1} recovers the von Bertalanffy form).
+Requires \code{fit_lengths = 1}; \code{SizeAgeTrans} is then ignored and
+may be \code{NA}.}
+
+\item{growth_spec}{Character. How the growth parameters are estimated:
+\code{"est_all"} (default, one set per population, region and sex),
+\code{"est_shared_r"} (shared across regions), \code{"est_shared_s"}
+(shared across sexes), \code{"est_shared_r_s"} (one set per population),
+or \code{"fix"}.}
+
+\item{growth_fix}{Logical vector, one entry per growth parameter, naming
+which of L1, L2, K, CV1, CV2 (and rho) stay at their starting values
+whatever \code{growth_spec} says.}
+
+\item{growth_tv_model}{Time variation of the growth parameters. \code{NULL}
+(default) holds every parameter constant. Otherwise a character vector
+naming a structure per parameter, either of length \code{n_gpars} in the
+parameter order or named by parameter (\code{L1}, \code{L2}, \code{K},
+\code{CV1}, \code{CV2}, \code{rho}) with the rest constant, each one of
+\code{"none"}, \code{"iid"} (independent annual deviations) or
+\code{"rw"} (a random walk). A varying parameter gets a deviation series
+\code{ln_growth_devs} and a log sigma in the first stream of
+\code{growth_pe_pars}.}
+
+\item{growth_tv_years}{Years the deviations are active in, calendar years.
+\code{NULL} (default) for every model year, a vector applied to every
+varying parameter, or a list named by parameter. Deviations outside the
+range are held at zero.}
+
+\item{growth_tv_link}{Character, the scale a deviation enters on.
+\code{"log"} (default) multiplies the parameter by \eqn{e^{\delta}};
+\code{"logit"} keeps it inside \code{growth_par_bounds},
+\eqn{P_y = lo + (hi - lo)\,\mathrm{logit}^{-1}(\mathrm{logit}((P - lo)/(hi - lo)) + \delta_y)},
+so the parameter approaches a bound however large the deviation instead of
+crossing it.}
+
+\item{growth_par_bounds}{Matrix \code{[n_gpars x 2]} of lower and upper
+bounds, natural scale, required under the logit link.}
+
+\item{growth_tv_sigma_spec}{Character, \code{"fix"} (default) holds the
+process error standard deviations of the deviations at their starting
+values, \code{"est"} estimates them. Both read the first stream of
+\code{growth_pe_pars}, one slot per growth parameter.}
+
+\item{growth_tv_spec}{Character, how the deviations are shared across
+strata, with the same vocabulary as \code{growth_spec}: \code{"est_all"}
+(default), \code{"est_shared_r"}, \code{"est_shared_s"} or
+\code{"est_shared_r_s"}.}
+
+\item{growth_tv_type}{Character. \code{"curve"} (default) reads every
+year's size at age off that year's curve. \code{"cohort"} carries size at
+age forward cohort by cohort: each year every cohort grows by the increment
+the current year's parameters imply from the size it reached, ages still in
+the linear phase keep the length at \code{growth_A1} their birth year's
+parameters gave them, the first age past \code{growth_A1} is placed on the
+current year's curve, and the plus group's size blends the cohort entering it
+with the fish already there by their numbers at age. The CV at age is
+then held at the first year's sizes. The propagation starts in the first
+year any deviation is active; every earlier year sits on the first year's
+curve.}
+
+\item{growth_rw_init_sigma}{Standard deviation given to the first year of a
+random walk on a growth parameter, as \code{srvsel_rw_init_sigma} for
+selectivity. Default \code{5}.}
+
+\item{growth_semipar}{Character. Semi-parametric growth: a year-by-age
+surface of deviations on mean length at age, multiplying the parametric
+curve, so the curve stays the parametric part and the deviations hold departures
+from it. \code{"none"} (default) keeps growth purely parametric; otherwise
+one of \code{"iid"}, \code{"rw"} (a random walk over years within an age),
+\code{"3dmarg"} or \code{"3dcond"} (a three-dimensional Gaussian Markov
+random field over age, year and cohort, on the marginal or conditional
+variance), or \code{"2dar1"} (a separable first-order autoregression over
+ages and years). The same process error forms the selectivity deviations
+use, so a growth surface and a selectivity surface are scored the same way.
+The spread at age follows the deviated mean, which leaves the coefficient of
+variation at age to the parametric part.}
+
+\item{growth_semipar_spec}{Character, whether the second stream of
+\code{growth_pe_pars} is estimated. Whether the process error
+hyperparameters are estimated (\code{"est"}) or held at their starting
+values (\code{"fix"}, the default). The deviations themselves are always
+estimated.}
+
+\item{growth_semipar_ages}{Ages the deviations are estimated over, as ages
+(not indices). \code{NULL} (default) uses every age. Ages outside the set
+are held at zero, which is how a surface is restricted to the ages the
+length data actually inform.}
+
+\item{growth_semipar_years}{Years the deviations are estimated over, calendar
+years. \code{NULL} (default) uses every year.}
+
+\item{LenBinMap}{Optional matrix \code{[n_lens x n_obs_lens]} mapping the
+model's length bins onto the bins the length compositions are recorded on,
+each row summing to one, for compositions on coarser bins than the model
+carries (a population of 1 cm bins fit to 5 cm compositions, say). Observed
+length compositions are then dimensioned by \code{n_obs_lens} and the
+expected compositions are mapped through it inside the likelihood, the
+way the ageing error matrix maps ages. \code{NULL} (default) fits the
+compositions on the model bins.}
+
+\item{growth_A1, growth_A2}{Reference ages for \code{L1} and \code{L2}.
+\code{growth_A2 = "Linf"} instead makes \code{L2} the asymptotic length
+itself, with no second reference age to solve it from.}
+
+\item{growth_len_lower}{Numeric vector of the lower edges of the length bins.
+\code{lens} in \code{Setup_Mod_Dim} are bin midpoints; the key is built on
+the edges.}
+
+\item{growth_L0}{Length at age zero anchoring the linear phase. Defaults to
+\code{growth_len_lower[1]}.}
+
+\item{growth_cv_type}{Character, \code{"len"} (default) interpolates the CV
+on mean length between \code{L1} and \code{L2}, \code{"age"} on age.}
+
+\item{growth_sd_type}{Character, \code{"cv"} (default) scales the mean by the
+CV parameters, \code{"sd"} reads them as standard deviations.}
+
+\item{growth_dist}{Character, \code{"normal"} (default) or \code{"lognormal"}
+distribution of length at age.}
+
+\item{growth_plus_group}{Character. \code{"mixture"} (default) takes the plus
+group's mean length as the survivorship-weighted mixture of the ages it
+holds, their numbers declining at an assumed 0.2 per year and their length
+rising from the curve at the accumulator age to the asymptote; \code{"curve"}
+reads the curve at the accumulator age.}
+
+\item{waa_model}{Character. Where weight at age comes from.
+\code{"data"} (default) reads \code{WAA}, \code{WAA_fish} and
+\code{WAA_srv} from the arguments of the same name. \code{"wt_len"} builds
+them from the size-age key and the weight-length relationship
+\eqn{W = a L^b} applied at the bin midpoints, so weight at age carries the
+spread of length at age rather than being the weight of the mean length;
+the spawning weight uses the key at spawning time and each fleet's weight
+the key at that fleet's timing, \code{t_fish} or \code{t_srv}. Under
+\code{"wt_len"}, \code{WAA} may be \code{NULL}, and reference point and
+projection code still read \code{data$WAA}, so copy the reported arrays
+into the data list before calling them.}
+
+\item{wt_len_pars}{Weight-length parameters \eqn{a, b} in \eqn{W = a L^b},
+a vector of two or an array \code{[n_pop x n_regions x n_sexes x 2]}.
+Required when \code{waa_model = "wt_len"}.}
 
 \item{M_spec}{Character string controlling natural mortality estimation. One of:
 \describe{
@@ -149,6 +346,22 @@ population-specific M.}
   \item{\code{ln_M}}{Array of log-scale starting values for natural mortality,
     dimensioned \code{[n_popblks × n_regionblks × n_yearblks × n_ageblks × n_sexblks]}.
     Defaults to \code{log(0.5)} for all blocks if not supplied.}
+  \item{\code{ln_growth_pars}}{Array of log-scale starting values for the
+    growth parameters, dimensioned \code{[n_pop × n_regions × n_sexes × n_gpars]}
+    in the order \code{L1, L2, K, CV1, CV2} and, under the Richards form,
+    \code{rho}. Defaults to the ends of the length bins with a rate of
+    \code{0.15} and CVs of \code{0.1}, so supply your own for any real
+    model.}
+  \item{\code{growth_pe_pars}}{Array of process error starting values for
+    both growth deviation streams, dimensioned
+    \code{[n_pop × n_regions × max(4, n_ages, n_gpars) × n_sexes × 2]}.
+    The first stream holds one log sigma per growth parameter for the
+    time-varying deviations; the second holds the semi-parametric surface's
+    correlations by age, year and cohort in slots one to three and a log
+    scale in slot four for the correlated forms, or one log sigma per age
+    for \code{"iid"} and \code{"rw"}. Defaults to \code{log(0.1)} for the
+    first stream and \code{log(0.05)} with correlations of \code{0.3} for
+    the second. Slots a form does not read are mapped off.}
 }
 All \code{...} arguments are silently ignored when \code{M_spec = "fix"}.}
 }

@@ -55,6 +55,12 @@ Setup_Mod_Weighting(
   Wt_FishLenComps_discard_pop = array(1, dim = c(input_list$data$n_pop,
     input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
     input_list$data$n_sexes, input_list$data$n_fish_fleets)),
+  Wt_Fish_caal = array(1, dim = c(input_list$data$n_regions,
+    length(input_list$data$years), input_list$data$n_seas, length(input_list$data$lens),
+    input_list$data$n_sexes, input_list$data$n_fish_fleets)),
+  Wt_Srv_caal = array(1, dim = c(input_list$data$n_regions,
+    length(input_list$data$years), input_list$data$n_seas, length(input_list$data$lens),
+    input_list$data$n_sexes, input_list$data$n_srv_fleets)),
   fish_sel_pen_wts = NULL,
   ret_sel_pen_wts = NULL,
   srv_sel_pen_wts = NULL
@@ -191,6 +197,16 @@ population-specific discard fishery length composition likelihood.
 Same format as \code{Wt_FishAgeComps_discard_pop},
 \code{[n_pop × n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
 Default: array of \code{1}s.}
+
+\item{Wt_Fish_caal}{Weight applied to the fishery conditional age-at-length
+likelihood, multiplying the input sample size of each length bin's age
+composition. Array \code{[n_regions x n_years x n_seas x n_lens x n_sexes x
+n_fish_fleets]}, the shape of \code{ISS_Fish_caal}. Defaults to one
+everywhere.}
+
+\item{Wt_Srv_caal}{Weight applied to the survey conditional age-at-length
+likelihood. Same format as \code{Wt_Fish_caal}, with \code{n_srv_fleets}
+as the last dimension. Defaults to one everywhere.}
 
 \item{fish_sel_pen_wts}{\code{NULL} (default), or a named numeric vector/list
 with independent weights for any subset of six selectivity smoothness

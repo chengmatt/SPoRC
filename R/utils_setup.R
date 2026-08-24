@@ -64,7 +64,7 @@ resolve_sel_pen_wts <- function(pen_wts, n_fleets = 1) {
   }
 
   # A single named specification covers every fleet; an unnamed list gives each
-  # fleet its own, which is what surveys with different smoothing needs require.
+  # fleet its own, as surveys with different smoothing needs require.
   per_fleet <- is.list(pen_wts) && is.null(names(pen_wts))
 
   if(per_fleet) {
@@ -678,6 +678,22 @@ seed_dbnrml_peak <- function(pars, sel_model_arr, bin_vec, sex_offset = NULL) {
   pars
 } # end seed_dbnrml_peak
 
+#' Validate the raw double normal limb flags
+#'
+#' @param x \code{NULL} or a 0/1 matrix \code{[n_fleets x 2]}.
+#' @param n_fleets Number of fleets.
+#' @param what Argument name for messages.
+#'
+#' @return An integer matrix \code{[n_fleets x 2]}, all zero for \code{NULL}.
+#'
+#' @keywords internal
+setup_dbnrml_raw <- function(x, n_fleets, what) {
+  if(is.null(x)) return(array(0, dim = c(n_fleets, 2)))
+  x <- array(as.numeric(x), dim = c(n_fleets, 2))
+  if(!all(x %in% c(0, 1))) stop(what, " must hold 0/1 values")
+  x
+}
+
 #' Set up sex offsets on selectivity for one selectivity stream
 #'
 #' Parses the per-fleet sex-offset specification, stores the model flags, and
@@ -814,4 +830,32 @@ assign_sel_block <- function(arr, blocks_arr, fleet, block, value) {
   slice[blocks_arr[, , fleet] == block] <- value
   arr[, , fleet] <- slice
   arr
+}
+
+
+#' Number of length bins the observed compositions are recorded on
+#'
+#' The model's own bins unless a length bin map was given, in which case the
+#' observed compositions sit on the map's columns.
+#'
+#' @param input_list Input list after \code{\link{Setup_Mod_Biologicals}}.
+#' @keywords internal
+obs_len_bins <- function(input_list) {
+  if(is.null(input_list$data$LenBinMap)) length(input_list$data$lens) else ncol(input_list$data$LenBinMap)
+}
+
+
+#' Validate the double normal start bin per fleet
+#'
+#' @param x \code{NULL} or an integer vector of start bins, one per fleet.
+#' @param n_fleets Number of fleets.
+#' @param n_bins Number of selectivity bins.
+#' @param what Argument name for messages.
+#' @return Integer vector \code{[n_fleets]}, ones when \code{x} is \code{NULL}.
+#' @keywords internal
+setup_dbnrml_startbin <- function(x, n_fleets, n_bins, what) {
+  if(is.null(x)) return(rep(1, n_fleets))
+  if(length(x) != n_fleets) stop(what, " must have one entry per fleet (", n_fleets, ")")
+  if(any(x < 1 | x > n_bins | x != round(x))) stop(what, " entries must be bin indices between 1 and ", n_bins)
+  as.integer(x)
 }

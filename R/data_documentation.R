@@ -118,16 +118,63 @@
 #' A dataset containing the necessary elements for the 2025 West Coast sablefish case study,
 #' including model inputs (dimensions, biologicals, catch, four survey indices, a recruitment
 #' index, and sexed and unsexed compositions), the assessment's selectivity parameters and time
-#' blocks, its maximum likelihood estimates, and the Stock Synthesis derived quantities and
+#' blocks, its maximum likelihood estimates, and its derived quantities and
 #' likelihood components used for bridge verification.
 #'
 #' @format A list with model inputs at the top level, \code{sel_fish}/\code{sel_srv}/\code{sel_male}
 #' (the assessment's double normal selectivity parameters, which of them it estimates, and which
-#' blocks share one), \code{mle} (Stock Synthesis maximum likelihood estimates, read from the
-#' parameter file at twelve significant digits), and \code{ss3} (Stock Synthesis derived
+#' blocks share one), \code{mle} (the assessment's maximum likelihood estimates, read from its
+#' parameter file at twelve significant digits), and \code{ss3} (its derived
 #' quantities and likelihood components for bridge comparison)
-#' @source 2025 Pacific Fishery Management Council West Coast Sablefish Assessment, Stock Synthesis 3.30.23
+#' @source 2025 Pacific Fishery Management Council West Coast Sablefish Assessment
 "sgl_rg_wc_sablefish_data"
+
+#' GOA rex sole bridge data (Model 25.1)
+#'
+#' The 2025 Gulf of Alaska rex sole assessment (Model 25.1: two
+#' areas with growth estimated separately in each, survey conditional
+#' age-at-length, an ageing error matrix) parsed from its input files, with the
+#' assessment's report quantities attached under \code{$ss3} and its maximum
+#' likelihood estimates under \code{$mle}. Built by
+#' \code{dev/rex_bridge/R/build_rex_data.R} from Carey McGilliard's goa_rex
+#' repository. Used by \code{tests/testthat/helper-bridge_goa_rex.R} and the
+#' rex sole regression test, which evaluates SPoRC at the assessment's own
+#' estimate.
+#'
+#' @format A named list of observation arrays, biological inputs, the
+#'   assessment's configuration, \code{$mle} (parameter values) and \code{$ss3} (report
+#'   quantities: numbers at age, spawning biomass, recruitment, total biomass,
+#'   catch, indices, growth tables, age-length keys, selectivity, one block of
+#'   conditional age-at-length expected values, likelihood components).
+#' @source \url{https://github.com/careymcgilliard/goa_rex}
+"mlt_rg_goa_rex_data"
+
+#' EBS Pacific cod bridge data (Model 24.1)
+#'
+#' The 2024 eastern Bering Sea Pacific cod assessment (Model 24.1: one area and
+#' one sex, Richards growth with annual deviations on the
+#' length at the young reference age and on K carried cohort by cohort,
+#' length-based double normal selectivity with two fishery blocks and annual
+#' deviations on the survey width, compositions recorded on coarser length bins
+#' than the population carries, two ageing error definitions) parsed from its
+#' input files, with the assessment's report quantities attached under
+#' \code{$ss3}, its year-by-year weight and fecundity at age under
+#' \code{$wtatage}, and its maximum likelihood estimates under \code{$mle}.
+#' Built by \code{dev/pcod_bridge/R/build_pcod_data.R} from the AFSC EBS_PCOD
+#' repository. Used by \code{tests/testthat/helper-bridge_ebs_pcod.R} and the
+#' Pacific cod regression test, which evaluates SPoRC at the assessment's own
+#' estimate.
+#'
+#' @format A named list of observation arrays, biological inputs, the
+#'   assessment's configuration, \code{$LenBinMap} (the population-to-data length bin map),
+#'   \code{$MatAA} (maturity at age as the share of the weight at age that
+#'   spawns), \code{$wtatage} (weight and fecundity at age by year),
+#'   \code{$mle} (parameter values) and \code{$ss3} (report quantities:
+#'   numbers at age, spawning biomass, recruitment, total biomass, catch, the
+#'   index, growth parameters by year, selectivity at length and age, expected
+#'   compositions, likelihood components and deviation penalties).
+#' @source \url{https://github.com/afsc-assessments/EBS_PCOD}
+"sgl_rg_ebs_pcod_data"
 
 #' BSAI northern rock sole data for single region assessment case study
 #'

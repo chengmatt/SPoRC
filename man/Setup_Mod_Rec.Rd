@@ -75,6 +75,8 @@ Setup_Mod_Rec(
   init_age_devs_shared = NULL,
   use_r0_prior = 0,
   r0_prior = NULL,
+  Use_rinit_pen = 0,
+  rinit_pen_sd = 1,
   ...
 )
 }
@@ -509,6 +511,16 @@ standard behaviour determined by \code{equil_init_age_strc} alone.}
 \item{use_r0_prior}{Integer (0/1). Whether to apply a lognormal prior on R0 for any populations. Default 0.}
 
 \item{r0_prior}{Data frame with columns \code{pop} (population index), \code{mu} (prior mean on natural scale), and \code{sd} (prior SD on log scale). Required when \code{use_r0_prior = 1}.}
+
+\item{Use_rinit_pen}{Integer (0/1). Whether to penalize the initial
+equilibrium recruitment's offset from the recruitment level,
+\eqn{\log(R_{init} / R_0) \sim N(0, \mathrm{rinit\_pen\_sd}^2)}, under
+\code{use_rinit = 1}. An equilibrium recruitment stands for the average of
+several years of recruitment, so its spread is smaller than a single
+year's; \eqn{\sigma_R / (1 / M - 0.5)}, with \eqn{1/M - 0.5} the average
+age of the stock, is a reasonable choice. Default 0.}
+
+\item{rinit_pen_sd}{Standard deviation of that penalty, log scale. Default 1.}
 
 \item{...}{Optional named starting values for parameters. Any of:
 \code{ln_global_R0} \code{[n_pop]},

@@ -98,6 +98,18 @@
 #'   including any standardization the form performs internally, so the named
 #'   bins are governed entirely by their own deviations while the rest of the
 #'   curve keeps its parametric shape.
+#' @param dbnrml_raw Integer vector of length two (0/1) for the double normal
+#'   (\code{Selex_Model == 4}): whether the ascending and descending limbs are
+#'   left as raw Gaussians rather than anchored to \code{p5} and \code{p6} at
+#'   the first and last bins. A raw limb is \eqn{\exp(-(x - peak)^2 / width)}
+#'   built up to the apical value, with no rescaling to hit an endpoint.
+#'   Default \code{c(0, 0)}, both anchored.
+#' @param dbnrml_startbin Integer, the bin the double normal's ascending limb
+#'   is anchored at and built up from (\code{Selex_Model == 4}). \code{1}
+#'   (the default) anchors at the first bin. Anchor at a later bin when the
+#'   compositions start above the population's first length bin: \code{p5} is
+#'   then the selectivity at that bin, and every bin below it takes
+#'   \eqn{(b / b_{start})^2} times the selectivity there.
 #' @param apical Numeric. For the double normal (\code{Selex_Model == 4}), the
 #'   height the ascending and descending limbs are built up to and the plateau
 #'   sits at. \code{1} (the default) is the ordinary curve. A sex carrying an
@@ -194,7 +206,9 @@ Get_Selex = function(Selex_Model,
                      bin_dev_bins = NULL,
                      sel_norm_bins = NULL,
                      n_sel_bins = NULL,
-                     apical = 1) {
+                     apical = 1,
+                     dbnrml_raw = c(0, 0),
+                     dbnrml_startbin = 1) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -282,13 +296,20 @@ Get_Selex = function(Selex_Model,
     # construct selectivity function. apical is the height the two limbs are
     # built up to and the plateau sits at, one for the reference sex; the
     # endpoints are anchors that do not move with it
-    asc_min <- exp(-((min(Bin) - p1trans)^2/p3trans)) # ascending limb evaluated at the first bin
+    startbin <- if(is.null(dbnrml_startbin) || dbnrml_startbin < 1) 1 else dbnrml_startbin
+    asc_min <- exp(-((Bin[startbin] - p1trans)^2/p3trans)) # ascending limb evaluated at the start bin (the first bin by default)
     dsc_min <- exp(-((max(Bin) - p2trans)^2/p4trans)) # descending limb evaluated at the last bin
-    asc <- p5trans + (apical - p5trans) * (exp(-((Bin - p1trans)^2/p3trans)) - asc_min)/(1 - asc_min)
-    dsc <- apical + (p6trans - apical) * (exp(-((Bin - p2trans)^2/p4trans)) - 1)/(dsc_min - 1)
+    # a raw limb is the Gaussian itself, built up to apical, with no anchoring at
+    # the end bin, so p5 or p6 has no role
+    asc <- if(dbnrml_raw[1] == 1) apical * exp(-((Bin - p1trans)^2/p3trans)) else
+      p5trans + (apical - p5trans) * (exp(-((Bin - p1trans)^2/p3trans)) - asc_min)/(1 - asc_min)
+    dsc <- if(dbnrml_raw[2] == 1) apical * exp(-((Bin - p2trans)^2/p4trans)) else
+      apical + (p6trans - apical) * (exp(-((Bin - p2trans)^2/p4trans)) - 1)/(dsc_min - 1)
     join1 <- 1/(1 + exp(-(20 * (Bin - p1trans)/(1 + abs(Bin - p1trans))))) # joiner between the ascending limb and the plateau
     join2 <- 1/(1 + exp(-(20 * (Bin - p2trans)/(1 + abs(Bin - p2trans))))) # joiner between the plateau and the descending limb
     selex <- asc * (1 - join1) + join1 * (apical * (1 - join2) + dsc * join2) # return parametric form
+    # bins below the start bin fall off as the square of their bin relative to it
+    if(startbin > 1) selex[1:(startbin - 1)] <- (Bin[1:(startbin - 1)] / Bin[startbin])^2 * selex[startbin]
   }
 
   if(Selex_Model == 5) {
@@ -394,6 +415,9 @@ Get_Selex = function(Selex_Model,
 #'   and \code{lens} when \code{selex_type == 1}.
 #' @param sel_blocks Integer array \code{n_regions x n_yrs x n_fleets} of
 #'   selectivity block indices.
+#' @param dbnrml_startbin Integer vector \code{[n_fleets]} or \code{NULL}, the
+#'   bin each fleet's double normal anchors its ascending limb at; see
+#'   \code{\link{Get_Selex}}.
 #' @param sel_model Integer array \code{n_regions x n_yrs x n_fleets} of
 #'   selectivity functional forms (see \code{\link{Get_Selex}}).
 #' @param fixed_sel_pars Array \code{n_regions x n_pars x n_blocks x n_sexes x
@@ -483,7 +507,9 @@ Get_Selex_Array = function(selex_type,
                            sex_scale_offset = NULL,
                            sex_apical_offset = NULL,
                            sex_scale = NULL,
-                           nselbins = NULL) {
+                           nselbins = NULL,
+                           dbnrml_raw = NULL,
+                           dbnrml_startbin = NULL) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -532,6 +558,8 @@ Get_Selex_Array = function(selex_type,
                                 bin_dev_bins = if(is.null(bin_dev_bins)) NULL else which(bin_dev_bins[,f] == 1), # bins this fleet overrides
                                 sel_norm_bins = if(is.null(sel_norm_bins)) NULL else which(sel_norm_bins[,f] == 1), # bins this fleet standardizes over
                                 n_sel_bins = if(is.null(nselbins)) NULL else nselbins[r,y_idx,f], # plateau bin for parametric forms (0 = none)
+                                dbnrml_raw = if(is.null(dbnrml_raw)) c(0, 0) else dbnrml_raw[f,], # raw (unanchored) double normal limbs for this fleet
+                                dbnrml_startbin = if(is.null(dbnrml_startbin)) 1 else dbnrml_startbin[f], # bin the ascending limb is anchored at
                                 # a sex carrying an apical offset builds its limbs up to its own
                                 # height rather than to one, which leaves the first and last bins
                                 # where their own parameters put them

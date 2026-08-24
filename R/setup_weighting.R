@@ -113,6 +113,14 @@
 #'   a scalar or a numeric array
 #'   \code{[n_pop × n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
 #'   Default: array of \code{1}s.
+#' @param Wt_Fish_caal Weight applied to the fishery conditional age-at-length
+#'   likelihood, multiplying the input sample size of each length bin's age
+#'   composition. Array \code{[n_regions x n_years x n_seas x n_lens x n_sexes x
+#'   n_fish_fleets]}, the shape of \code{ISS_Fish_caal}. Defaults to one
+#'   everywhere.
+#' @param Wt_Srv_caal Weight applied to the survey conditional age-at-length
+#'   likelihood. Same format as \code{Wt_Fish_caal}, with \code{n_srv_fleets}
+#'   as the last dimension. Defaults to one everywhere.
 #' @param Wt_FishLenComps_discard_pop Weight applied to the
 #'   population-specific discard fishery length composition likelihood.
 #'   Same format as \code{Wt_FishAgeComps_discard_pop},
@@ -202,6 +210,12 @@ Setup_Mod_Weighting <- function(input_list,
                                 Wt_FishLenComps_discard_pop = array(1, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years),
                                                                                input_list$data$n_seas, input_list$data$n_sexes, input_list$data$n_fish_fleets)),
 
+                                # Conditional age-at-length
+                                Wt_Fish_caal = array(1, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
+                                                                length(input_list$data$lens), input_list$data$n_sexes, input_list$data$n_fish_fleets)),
+                                Wt_Srv_caal = array(1, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
+                                                               length(input_list$data$lens), input_list$data$n_sexes, input_list$data$n_srv_fleets)),
+
                                 # Selectivity penalty weights
                                 fish_sel_pen_wts = NULL,
                                 ret_sel_pen_wts = NULL,
@@ -278,6 +292,19 @@ Setup_Mod_Weighting <- function(input_list,
   input_list$data$Wt_FishLenComps_discard <- Wt_FishLenComps_discard
   input_list$data$Wt_FishAgeComps_discard_pop <- Wt_FishAgeComps_discard_pop
   input_list$data$Wt_FishLenComps_discard_pop <- Wt_FishLenComps_discard_pop
+
+  # Conditional age-at-length: one weight per region, year, season, length bin,
+  # sex and fleet, multiplying the input sample size the way the marginal
+  # composition weights do
+  caal_dim <- function(n_fleets) c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
+                                   length(input_list$data$lens), input_list$data$n_sexes, n_fleets)
+  if(!identical(as.integer(dim(Wt_Fish_caal)), as.integer(caal_dim(input_list$data$n_fish_fleets))))
+    stop("Wt_Fish_caal must be an array of dimension n_regions x n_years x n_seas x n_lens x n_sexes x n_fish_fleets (", paste(caal_dim(input_list$data$n_fish_fleets), collapse = " x "), ").")
+  if(!identical(as.integer(dim(Wt_Srv_caal)), as.integer(caal_dim(input_list$data$n_srv_fleets))))
+    stop("Wt_Srv_caal must be an array of dimension n_regions x n_years x n_seas x n_lens x n_sexes x n_srv_fleets (", paste(caal_dim(input_list$data$n_srv_fleets), collapse = " x "), ").")
+  input_list$data$Wt_Fish_caal <- Wt_Fish_caal
+  input_list$data$Wt_Srv_caal <- Wt_Srv_caal
+
   input_list$data$fish_sel_pen_wts <- resolve_sel_pen_wts(fish_sel_pen_wts, input_list$data$n_fish_fleets)
   input_list$data$ret_sel_pen_wts <- resolve_sel_pen_wts(ret_sel_pen_wts, input_list$data$n_fish_fleets)
   input_list$data$srv_sel_pen_wts <- resolve_sel_pen_wts(srv_sel_pen_wts, input_list$data$n_srv_fleets)

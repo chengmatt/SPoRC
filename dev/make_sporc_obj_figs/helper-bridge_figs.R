@@ -43,7 +43,7 @@ bridge_cmp <- function(lab, a, b, signed = FALSE) {
 # the legend on a single row.
 bridge_ts_figure <- function(yrs, ssb, rec, admb_ssb, admb_rec, label,
                              ssb_se = NA, rec_se = NA, mark_year = NULL,
-                             base_size = 20, legend_nrow = 2) {
+                             base_size = 20, legend_nrow = 2, ref_name = "ADMB") {
 
   ts_df <- dplyr::bind_rows(
     data.frame(Year = yrs, value = ssb, se = ssb_se, Par = "Spawning Biomass", type = "SPoRC"),
@@ -81,7 +81,7 @@ bridge_ts_figure <- function(yrs, ssb, rec, admb_ssb, admb_rec, label,
     ggplot2::geom_point(size = 2, color = "#E69F00") +
     ggplot2::facet_wrap(~Par, scales = "free_y", ncol = 1) +
     ggplot2::theme_bw(base_size = base_size) +
-    ggplot2::labs(x = "Year", y = "SPoRC vs ADMB (%)")
+    ggplot2::labs(x = "Year", y = paste0("SPoRC vs ", ref_name, " (%)"))
 
   if(!is.null(mark_year)) {
     p_pd <- p_pd + ggplot2::geom_vline(xintercept = mark_year, linetype = 2, linewidth = 0.4)

@@ -72,6 +72,19 @@
 #'   weight at age the two differ and the whole curve shifts with them. It is a
 #'   year INDEX, not a calendar year, so callers that truncate the year
 #'   dimension (retrospectives) must clamp it.
+#' @param year_hook Optional function of \code{(y, NAA_y, hook_state)} called at
+#'   the top of every year with the numbers at age at the start of that year,
+#'   array \code{[pop, region, age, sex]}, and the state carried from the
+#'   previous year. It returns a list with \code{state}, carried forward to the
+#'   next call and returned to the caller, and \code{ZAA_y}, \code{WAA_y} and
+#'   \code{MatAA_y}, the year's slices of total mortality, weight and maturity
+#'   at age, which replace those handed in for that year. Passing the state in
+#'   and out keeps the per-year step a function of its arguments.
+#' @param hook_state Initial state for \code{year_hook}, carried through the
+#'   year loop and returned as \code{hook_state}. Ignored when
+#'   \code{year_hook} is \code{NULL}.
+#'   This is how cohort growth, whose plus group blends by numbers, is evaluated
+#'   inside the year loop. \code{NULL} (the default) uses the arrays as given.
 #'
 #' @return List with elements \code{NAA}, \code{NAA0}, \code{NAA_bef},
 #'   \code{NAA_aft}, \code{Rec}, \code{SSB}, \code{Total_Biom},
@@ -92,7 +105,7 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
                                        do_recruits_move, fish_sel, ret_sel, dmr, ZAA,
                                        NAA, NAA0, NAA_bef, NAA_aft, Rec, SSB, Total_Biom, Dynamic_SSB0, eff_SSB,
                                        Mrate = NULL, move_timing = 0, SR_ref_yr = 1,
-                                       sr_penalty = 0, sr_R0 = NULL) {
+                                       sr_penalty = 0, sr_R0 = NULL, year_hook = NULL, hook_state = NULL) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -136,6 +149,16 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
   )
 
   for(y in 1:n_yrs) {
+
+    # Growth carried cohort by cohort needs this year's start-of-year numbers
+    # before anything else in the year is formed
+    if(!is.null(year_hook)) {
+      hk <- year_hook(y, array(NAA[,,y,1,,], dim = c(n_pop, n_regions, n_ages, n_sexes)), hook_state)
+      hook_state <- hk$state
+      ZAA[,,y,,,] <- hk$ZAA_y
+      WAA[,,y,,,] <- hk$WAA_y
+      MatAA[,,y,,,] <- hk$MatAA_y
+    }
 
     ### Annual Recruitment (rec_lag != 0 only) -----------------------------------
     if(rec_lag != 0) {
@@ -347,5 +370,5 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
   return(list(NAA = NAA, NAA0 = NAA0, NAA_bef = NAA_bef, NAA_aft = NAA_aft, Rec = Rec,
               SSB = SSB, Total_Biom = Total_Biom, Dynamic_SSB0 = Dynamic_SSB0, eff_SSB = eff_SSB,
               Aggregated_SSB = Aggregated_SSB, Dynamic_Aggregated_SSB0 = Dynamic_Aggregated_SSB0,
-              NAA_int = NAA_int, SR_pred = SR_pred))
+              NAA_int = NAA_int, SR_pred = SR_pred, hook_state = hook_state))
 }

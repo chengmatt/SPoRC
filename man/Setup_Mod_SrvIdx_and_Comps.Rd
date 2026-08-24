@@ -41,7 +41,15 @@ Setup_Mod_SrvIdx_and_Comps(
   srv_idx_ages = NULL,
   SrvAgeComps_bins = NULL,
   SrvIdx_LikeType = rep("lognormal", input_list$data$n_srv_fleets),
+  SrvLenComps_sel = rep("age", input_list$data$n_srv_fleets),
+  srv_waa_selected = rep(0, input_list$data$n_srv_fleets),
   SrvIdx_Cov = NULL,
+  ObsSrv_caal = NULL,
+  UseSrv_caal = NULL,
+  ISS_Srv_caal = NULL,
+  Srv_caal_LikeType = rep("none", input_list$data$n_srv_fleets),
+  Srv_caal_Type = paste("none_Year_1-terminal_Fleet_", 1:input_list$data$n_srv_fleets,
+    sep = ""),
   ...
 )
 }
@@ -226,11 +234,50 @@ same choice for \code{"lognormal"} and \code{"normal"}, but stays
 lognormal under \code{"mvn"}, whose covariance describes the regional
 series only.}
 
+\item{SrvLenComps_sel}{Character vector \code{[n_srv_fleets]}, whether a
+length-based selectivity is applied before or after the fish are spread
+over lengths. \code{"age"} (default) selects the index at age and spreads
+it afterwards; \code{"length"} spreads the numbers at each age over the
+key first and selects them length by length, so the survey sees the long
+fish of an age more often. The key is the survey's own, at \code{t_srv}.
+Requires length-based survey selectivity. Use \code{"length"} when
+selectivity is length based and the length compositions are what inform it.}
+
+\item{srv_waa_selected}{Integer vector \code{[n_srv_fleets]} (0/1). With
+weight at age derived from growth and length-based selectivity, \code{1}
+makes a biomass index use the mean weight of the fish the survey sees at
+each age, \eqn{\sum_l P(l \mid a) s(l) w(l) / \sum_l P(l \mid a) s(l)},
+instead of the population mean weight at that age. The survey twin of
+\code{fish_waa_selected}. Only applies to an index in weight
+(\code{srv_idx_type = "biom"}).}
+
 \item{SrvIdx_Cov}{List with one element per survey fleet holding the fixed
 covariance matrix for fleets using \code{"mvn"}, and \code{NULL}
 otherwise. Each matrix must be square with one row per observation the
 fleet fits, ordered as the observations appear when scanning that fleet's
 \code{UseSrvIdx} slice in array order.}
+
+\item{ObsSrv_caal}{Observed conditional age-at-length array
+\code{[n_regions x n_years x n_seas x n_lens x n_ages x n_sexes x
+n_srv_fleets]}. A CAAL observation is the age composition of the fish aged
+from one length bin, so the age margin of each length row is what gets fit.
+\code{NULL} (default) for a model with no CAAL data.}
+
+\item{UseSrv_caal}{Use flags \code{[n_regions x n_years x n_seas x n_lens x
+n_srv_fleets]}. Length bins with no aged fish carry a zero and are skipped.}
+
+\item{ISS_Srv_caal}{Input sample sizes \code{[n_regions x n_years x n_seas x
+n_lens x n_sexes x n_srv_fleets]}. Summed from \code{ObsSrv_caal} when
+\code{NULL}.}
+
+\item{Srv_caal_LikeType}{Character vector of length \code{n_srv_fleets}.
+One of \code{"none"}, \code{"Multinomial"} or
+\code{"Dirichlet-Multinomial"}. The logistic-normal families are not
+available for CAAL, since a single length bin's age sample is small and
+mostly zeros, which the additive log-ratio transform cannot handle.}
+
+\item{Srv_caal_Type}{Composition type specification, using the same
+\code{"CompType_Year_x-y_Fleet_z"} convention as the marginal compositions.}
 
 \item{...}{Optional named starting values for overdispersion and correlation
 parameters.}

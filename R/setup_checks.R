@@ -111,6 +111,18 @@ check_data_dimensions <- function(x,
        stop("Dimensions of SizeAgeTrans are not correct. Should be n_pop, n_regions, n_years, n_seas, n_lens, n_ages, and n_sexes")
   }
 
+  # fixed per-fleet size-age key, the growth_model = "none" counterpart of the
+  # growth module's derived per-fleet keys
+  if(what == 'SizeAgeTrans_fish') {
+    if(length(dim(x)) != 8 || sum(dim(x) == c(n_pop, n_regions, n_years, n_seas, n_lens, n_ages, n_sexes, n_fish_fleets)) != 8)
+       stop("Dimensions of SizeAgeTrans_fish are not correct. Should be n_pop, n_regions, n_years, n_seas, n_lens, n_ages, n_sexes, and n_fish_fleets")
+  }
+
+  if(what == 'SizeAgeTrans_srv') {
+    if(length(dim(x)) != 8 || sum(dim(x) == c(n_pop, n_regions, n_years, n_seas, n_lens, n_ages, n_sexes, n_srv_fleets)) != 8)
+       stop("Dimensions of SizeAgeTrans_srv are not correct. Should be n_pop, n_regions, n_years, n_seas, n_lens, n_ages, n_sexes, and n_srv_fleets")
+  }
+
   if(what == 'Fixed_Movement') {
     if(sum(dim(x) == c(n_pop, n_regions, n_regions, n_years, n_seas, n_ages, n_sexes)) != 7)
       stop("Fixed Movement Matrix does not have the correct dimensions. This should be n_pop, n_regions, n_regions, n_years, n_seas, n_ages, n_sexes")

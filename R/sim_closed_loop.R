@@ -698,14 +698,15 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   natmort_input <- if(!"natmort_input" %in% names(args)) {
     extend_years(replicate(n = sim_list$n_sims, rep$natmort[,,1:length(data$years),,,drop = FALSE]), closed_loop_yrs, 3, 'last')
   } else args$natmort_input
+  # biologicals the growth module derives come from the report, the rest from the data
   WAA_input <- if(!"WAA_input" %in% names(args)) {
-    extend_years(replicate(n = sim_list$n_sims, data$WAA[,,1:length(data$years),,,,drop = FALSE]), closed_loop_yrs, 3, 'last')
+    extend_years(replicate(n = sim_list$n_sims, (if(is.null(rep$WAA)) data$WAA else rep$WAA)[,,1:length(data$years),,,,drop = FALSE]), closed_loop_yrs, 3, 'last')
   } else args$WAA_input
   WAA_fish_input <- if(!"WAA_fish_input" %in% names(args)) {
-    extend_years(replicate(n = sim_list$n_sims, data$WAA_fish[,,1:length(data$years),,,,,drop = FALSE]), closed_loop_yrs, 3, 'last')
+    extend_years(replicate(n = sim_list$n_sims, (if(is.null(rep$WAA_fish)) data$WAA_fish else rep$WAA_fish)[,,1:length(data$years),,,,,drop = FALSE]), closed_loop_yrs, 3, 'last')
   } else args$WAA_fish_input
   WAA_srv_input <- if(!"WAA_srv_input" %in% names(args)) {
-    extend_years(replicate(n = sim_list$n_sims, data$WAA_srv[,,1:length(data$years),,,,,drop = FALSE]), closed_loop_yrs, 3, 'last')
+    extend_years(replicate(n = sim_list$n_sims, (if(is.null(rep$WAA_srv)) data$WAA_srv else rep$WAA_srv)[,,1:length(data$years),,,,,drop = FALSE]), closed_loop_yrs, 3, 'last')
   } else args$WAA_srv_input
   MatAA_input <- if(!"MatAA_input" %in% names(args)) {
     extend_years(replicate(n = sim_list$n_sims, data$MatAA[,,1:length(data$years),,,,drop = FALSE]), closed_loop_yrs, 3, 'last')
@@ -715,7 +716,7 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   } else args$AgeingError_input
   SizeAgeTrans_input <- if(!"SizeAgeTrans_input" %in% names(args)) {
     if(data$fit_lengths == 0) array(NA, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_lens, sim_list$n_ages, sim_list$n_sexes))
-    if(data$fit_lengths == 1) extend_years(replicate(n = sim_list$n_sims, data$SizeAgeTrans[,,1:length(data$years),,,,,drop = FALSE]), closed_loop_yrs, 3, 'last')
+    if(data$fit_lengths == 1 && !is.null(data$SizeAgeTrans) && !all(is.na(data$SizeAgeTrans))) extend_years(replicate(n = sim_list$n_sims, data$SizeAgeTrans[,,1:length(data$years),,,,,drop = FALSE]), closed_loop_yrs, 3, 'last')
   } else args$SizeAgeTrans_input
 
   # setup biologicals
@@ -727,7 +728,10 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     WAA_srv_input = WAA_srv_input,
     MatAA_input = MatAA_input,
     AgeingError_input = AgeingError_input,
-    SizeAgeTrans_input = SizeAgeTrans_input
+    SizeAgeTrans_input = SizeAgeTrans_input,
+    # keys per fleet from the growth module, each at its fleet's own timing
+    SizeAgeTrans_fish_input = if(is.null(rep$SizeAgeTrans_fish)) NULL else extend_years(replicate(n = sim_list$n_sims, rep$SizeAgeTrans_fish[,,1:length(data$years),,,,,,drop = FALSE]), closed_loop_yrs, 3, 'last'),
+    SizeAgeTrans_srv_input = if(is.null(rep$SizeAgeTrans_srv)) NULL else extend_years(replicate(n = sim_list$n_sims, rep$SizeAgeTrans_srv[,,1:length(data$years),,,,,,drop = FALSE]), closed_loop_yrs, 3, 'last')
   )
 
   # Setup Recruitment Processes ---------------------------------------------

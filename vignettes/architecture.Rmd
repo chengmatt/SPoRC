@@ -329,6 +329,160 @@ if (!have_src) {
 }
 ```
 
+## Module walkthroughs
+
+The file map above shows what calls what. It does not show *why* a module is split into
+the particular functions it has, which matters more once you are adding to one. Two
+modules below are worked through in full as examples of the pattern; most others in
+`model_*.R`/`setup_*.R` follow the same shape.
+
+### Growth
+
+Growth is the mean length (and its spread) at age, built from up to six parameters
+(`L1`, `L2`, `K`, `CV1`, `CV2`, and `rho` under the Richards form) and turned into the
+size-age transition matrix every length composition, conditional age-at-length
+observation, and length-based selectivity reads.
+
+```
+Setup_Mod_Biologicals()                                    [setup_biologicals.R]
+  validates growth_model/growth_tv_model/growth_semipar, populates $data and $par
+  -> do_growth_mapping()                                    [setup_biologicals.R]
+       builds $map for ln_growth_pars, ln_growth_devs, ln_growth_semipar_devs
+        |
+        v
+SPoRC_rtmb()                                                [model_objective.R]
+  -> growth_args_from_model()                                [model_growth.R]
+       pulls growth's ~20 arguments out of the RTMB frame by name
+  -> growth_tv_type == "curve": Get_Growth() builds every year up front
+                                                                [model_growth.R]
+     growth_tv_type == "cohort": one year at a time, from inside the
+                                  population's year-by-year loop, because the
+                                  plus group's size depends on how many old vs.
+                                  really-old fish are alive THAT year, which
+                                  growth cannot know in advance
+       -> Get_Growth_Year()                                    [model_growth.R]
+            builds this year's growth, given the population's numbers at age
+       -> growth_take_year()                                   [model_growth.R]
+            copies that year's growth into the objective's own arrays
+       -> mortality_year()                                     [model_objective.R]
+            rebuilds that year's fishing/total mortality; only actually
+            changes anything for a length-based gear, whose age-specific
+            selectivity is read off growth's key, but runs every year
+            regardless rather than special-casing age-based gears out
+  -> (both) growth_selected_waa_year()                        [model_growth.R]
+       called from the objective's mortality_year step, once per year, only for
+       fleets flagged fish_waa_selected / srv_waa_selected
+  -> ### Growth (Process Error): Get_PE_loglik()          [model_priors_penalties.R]
+       penalizes ln_growth_devs and ln_growth_semipar_devs for departing from the
+       process they are supposed to follow, the same function selectivity uses
+```
+
+| Function | Why it is its own function |
+|---|---|
+| `get_laa_curve()` | The pure closed-form curve: mean length and spread at a vector of real ages, from the six parameters alone. No notion of years, fleets, or cohorts, so it is unit-testable against the textbook von Bertalanffy/Richards formula directly (`test-model_growth.R` does exactly that) without any model scaffolding around it. |
+| `growth_start_state()` | The state a year starts from: `get_laa_curve()` at every integer age, with the plus group adjusted. Both `growth_tv_type`s need a "year 1 initial state" and need it built identically, so it is factored out rather than duplicated in `Get_Growth()` and `Get_Growth_Year()`. |
+| `growth_laa_at()` | The within-year evaluator at one elapsed time `e`. Under `"curve"` growth every age is just `get_laa_curve()` at its real age; under `"cohort"` growth, ages already propagated carry a length history the closed form does not know about, so they instead grow from `L_beg` via `grow_increment()`. One function, branching on `cohort`, rather than two, because everything else in it (the plus group, the CV, the semi-parametric deviation) is identical either way. |
+| `grow_increment()` | The one piece of math with no dependency on ages, `A1`, or `A2` at all: grow a length `e` further given `K`, `Linf`, `rho`. Reused in two genuinely different contexts, evaluating a fleet's within-year timing (`growth_laa_at`) and advancing a cohort a full year (`Get_Growth_Year`), which is why it is not inlined into either. |
+| `growth_fill_year()` | "Every fleet, timing, and spawning point in one year," given a start-of-year state: walks each distinct `t_fish`/`t_srv`/`t_spawn` value once (deduplicated), builds the key via `get_alk()`, and writes it into every fleet that reads at that timing. Both `Get_Growth()` (looping over years on the "curve" path) and `Get_Growth_Year()` (one year at a time on the "cohort" path) call it with a different start-of-year state, so the fleet-timing bookkeeping is written once. |
+| `plus_group_size()` | The survivorship-weighted mixture for a plus group's mean length. Kept out of `get_laa_curve()` because it needs `Linf` and the curve's own last-age value together, plus the `growth_plus_group` flag; `get_laa_curve()`'s job is only ever the raw curve. |
+| `get_growth_pars_year()` | Applies a year's time-varying deviations (log or logit link) to the base parameters once, before anything else runs, so `growth_start_state()`, `growth_laa_at()`, and `growth_fill_year()` never have to know deviations exist; they only ever see "this year's realized parameters." |
+| `do_growth_mapping()` | Setup side: builds every growth map (parameters, time-varying deviations, semi-parametric surface) in one place, called from `Setup_Mod_Biologicals()`'s `# Mapping Options` section next to `do_natmort_mapping()`, so that function's own body stays validate-then-hand-off like every other `Setup_Mod_*`. |
+
+Two separate things are going on here, worth telling apart.
+
+Growth has to run *inside* the population loop at all, one year at a time, only because of
+the plus group. Under `growth_tv_type = "cohort"`, the plus group's mean size is a mix of
+the fish that were already old and the fish that just grew into being old, weighted by how
+many of each there are, and that count is only known once the population loop has actually
+reached that year. This is true whatever selectivity looks like: even a model with plain
+age-based selectivity still needs growth for weight at age, spawning biomass, and length
+compositions, and still has this same plus-group problem. `growth_tv_type = "curve"` has no
+such problem (nothing carries a length history from year to year) and so builds every
+year's growth up front, before the population loop even starts.
+
+Rebuilding that year's mortality right alongside growth, though, *is* specifically about
+length-based selectivity. `get_population_projection()` (in `model_population_dynamics.R`)
+takes an argument that lets it call back out to the objective once a year; `model_objective.R`
+uses it to run growth for that year, copy the results in, and then also rerun that year's
+fishing and total mortality before handing control back to the population loop. That last
+step only changes anything when a fleet's selectivity is defined on length rather than age,
+since that is the one case where a fleet's age-specific selectivity is read off growth's
+key and so moves whenever growth does. Under purely age-based selectivity the rerun leaves
+mortality exactly as it already was; the code does not bother telling the two cases apart,
+since redoing an unchanged calculation is cheap and the alternative is a second, more
+complicated code path only for a case that costs nothing to just repeat.
+
+### Selectivity (fishery, retention, survey)
+
+A model has up to three kinds of selectivity: the fishery's, retention's (what fraction of
+what the fishery catches is kept vs. thrown back), and the survey's. All three are set up
+and evaluated by the exact same code, run three separate times with a short label
+(`"fish"`, `"ret"`, `"srv"`) telling it which fleet count and which set of fields to read
+and write. This is not three similar-looking implementations; it is one implementation
+called three times, which is why retention setup (`Setup_Mod_Retsel()`) simply calls the
+same functions fishery setup (`Setup_Mod_Fishsel_and_Q()`) does.
+
+```
+Setup_Mod_Fishsel_and_Q()/Setup_Mod_Retsel()/Setup_Mod_Srvsel_and_Q()
+                                              [setup_fishery_selectivity.R / setup_survey_selectivity.R]
+  validate blocks, functional form per block, time-varying spec
+  -> do_fixed_sel_pars_mapping(..., "fish"/"ret"/"srv")            [setup_mapping.R]
+       maps the block-level functional-form parameters (b50, slope, double normal's 6, ...)
+  -> do_sel_pe_pars_mapping(..., "fish"/"ret"/"srv")                [setup_mapping.R]
+       maps the process-error settings for whichever time-varying form is chosen
+  -> do_sel_devs_mapping(..., "fish"/"ret"/"srv")                   [setup_mapping.R]
+       maps the year-by-year deviations themselves
+        |
+        v
+SPoRC_rtmb()                                                      [model_objective.R]
+  ## Selectivity: Get_Selex_Array(), once for each of the three     [model_selectivity.R]
+       works out which block and which deviation applies to a given
+       region/year/fleet, then hands the actual math off to:
+    -> Get_Selex()                                                 [model_selectivity.R]
+         given one set of parameters and a vector of bins, the selectivity at
+         each bin; knows nothing about years, blocks, or fleets
+  ### Selectivity (Penalty): Get_PE_loglik(), once for each of the three
+                                                                [model_priors_penalties.R]
+       penalizes the year-by-year deviations for departing from whatever
+       process they are supposed to follow (iid, random walk, ...); the same
+       penalty function growth uses
+  ### Selectivity Smoothness (Penalty)                             [model_objective.R]
+       a separate penalty just for the bicubic spline form, since a smooth
+       surface is not "deviations from a base curve" the way the others are
+  ### Selectivity (Prior) / Parameter Centering (Penalty)
+    -> get_selex_prior() / get_selex_fixed_penalty()            [model_priors_penalties.R]
+```
+
+| Function | Why it is its own function |
+|---|---|
+| `do_fixed_sel_pars_mapping()`, `do_sel_pe_pars_mapping()`, `do_sel_devs_mapping()` | Three separate functions because a fleet can turn each piece on independently: the curve's own parameters, whether it varies over time and under what process, and the actual deviation values. A fleet might hold the curve fixed with no deviations, vary it under one process with the process's own settings fixed, or estimate both together. Keeping the three apart means each one's sharing options do not have to be reconciled against the other two inside a single function. |
+| `Get_Selex_Array()` | The only place that knows about SPoRC's blocks, year-by-year deviations, and fleet counts. Works out which block and which deviation apply to a given region/year/fleet, then hands off to `Get_Selex()`. |
+| `Get_Selex()` | Given one functional form and its parameters, the selectivity at a vector of bins, nothing else. Because it does not know about years, blocks, or fleets, `test-model_selectivity.R` can check every functional form directly against its formula without building a whole model around it, and `Get_Selex_Array()`'s only job is the block/year/fleet bookkeeping around it. |
+| `Get_PE_loglik()` | Lives in `model_priors_penalties.R`, not `model_selectivity.R` or `model_growth.R`, because it does not need to know which one is calling it: give it a deviation array, its map, and a code for which process (iid, random walk, ...) it is supposed to follow, and it penalizes departures from that process. That is what lets growth and selectivity call the same function with the same five arguments. |
+
+### The same shape shows up elsewhere too
+
+The setup side of this pattern is used everywhere in the package: every `Setup_Mod_*`
+function ends by handing its parameter blocks to one or more `do_*_mapping` helpers
+(`do_RecDevs_mapping()` for recruitment, `do_conv_tag_fish_reporting_pars_mapping()` for
+tagging, and so on). Each one stays in the topic's own `setup_*.R` file unless more than
+one file needs it, in which case it moves to the shared `setup_mapping.R`.
+
+The scoring side is not as uniform, which is worth knowing. Growth and selectivity's
+year-by-year deviations both go through the same `Get_PE_loglik()`. Movement's own
+deviations (`move_devs`) instead have their own penalty function, `Get_move_PE_loglik()`, sitting
+right next to `Get_PE_loglik()` in `model_priors_penalties.R` rather than sharing it,
+because a movement deviation has to know about which regions are adjacent to which and
+what kind of movement model is in use, which `Get_PE_loglik()` has no way to be told about.
+Tagging's reporting rate is different again: it is a single estimated number rather than
+something that varies by year or bin, so it gets a plain prior (`get_tagrep_prior()`)
+instead of a deviation series
+at all, since it is a single estimated rate rather than something that varies by year or
+bin. When adding a new time-varying process, the question to ask is which of these three
+shapes it actually is, and whether it truly fits `Get_PE_loglik()`'s five arguments or
+needs a sibling function the way movement's does, rather than assuming growth and
+selectivity's choice generalizes.
+
 ## How the code is layered
 
 The code is structured as follows and interacts in a hopefully intuitive fashion. Reading it as layers, lowest first:
@@ -389,7 +543,7 @@ Adding a new process, fleet type or data source interacts with a predictable set
 
 1. **Setup.** Add or extend a `Setup_Mod_*` function to accept the new spec, validate it,
    and append the results to `input_list$data`, `$par` and `$map`. If parameters need
-   fixing or sharing, add a `do_*_mapping` helper in the same file, or reach for the shared
+   fixing or sharing, add a `do_*_mapping` helper in the same file, or use the shared
    builders in `setup_mapping.R` if the pattern already exists.
 2. **Objective.** Add a `## Section` in `model_objective.R` that consumes the new entries
    and contributes to `jnll` or `nll`. Put it in the section it belongs to (transform,

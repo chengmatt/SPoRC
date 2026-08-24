@@ -997,7 +997,7 @@ sum(out$proj_Catch[1,1,2,1,]) # Catch advice in terminal year + 1
 
 ![](figures/i_sgl_proj_catch.png)
 
-Importantly, catch advice should be based on terminal year+1 rather than the first projection year, since the first projection year serves only as an initialization step for the projection.
+Catch advice should be based on terminal year+1 rather than the first projection year, since the first projection year serves only as an initialization step for the projection.
 
 ### Projecting on a Specified Catch
 

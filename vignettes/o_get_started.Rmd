@@ -695,7 +695,7 @@ ggplot(jitter_res, aes(x = jitter, y = jnLL, color = Max_Gradient, shape = Hessi
 ![](figures/o_jitter_res.png)
 
 # MCMC
-Lastly, SPoRC can also interact with other Bayesian software (i.e, `adnuts`) to conduct MCMC analysis, which not only estimates parameter uncertainty but also samples the full joint posterior, revealing parameter correlations, skewed distributions, or potential multimodality that MLE may miss. Comparing MCMC results with maximum likelihood estimates further helps assess consistency in point estimates and standard errors. In particular, we can utilize the native functionality built into `adnuts`, which seamlessly integrates with TMB and RTMB models, which will be demonstrated in the following sections. First, let us install and load in the relevant packages.
+Lastly, SPoRC can also interact with other Bayesian software (i.e, `adnuts`) to conduct MCMC analysis, which estimates parameter uncertainty and samples the full joint posterior, showing parameter correlations, skewed distributions, or potential multimodality that MLE may miss. Comparing MCMC results with maximum likelihood estimates further helps assess consistency in point estimates and standard errors. In particular, we can utilize the native functionality built into `adnuts`, which works directly with TMB and RTMB models, which will be demonstrated in the following sections. First, let us install and load in the relevant packages.
 
 ```{r, eval = FALSE}
 # load in adnuts ans associated packages for MCMC

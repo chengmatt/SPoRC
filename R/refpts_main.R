@@ -381,6 +381,12 @@ Get_Reference_Points <- function(data,
   n_pop_in_region <- rep(0, n_regions)
   for(p in 1:n_pop) n_pop_in_region[data$natal_region[p]] <- n_pop_in_region[data$natal_region[p]] + 1
 
+  # Weight at age comes from the growth module when the model derived it, and
+  # from the data otherwise, the same way natural mortality is taken from the
+  # report. A model with waa_model = "wt_len" carries a zero placeholder in
+  # data$WAA, so reading the data there would give a spawning biomass of zero.
+  WAA_use <- if(is.null(rep$WAA)) data$WAA else rep$WAA
+
   # movement / mortality sequencing; absent for input lists built before this option existed
   move_timing <- if(is.null(data$move_timing)) 0 else data$move_timing
   if(move_timing == 2 && is.null(rep$Mrate))
@@ -428,7 +434,7 @@ Get_Reference_Points <- function(data,
     data_list$ret_sel <- array(ret_sel_avg, dim = c(n_pop, n_seas, n_ages, data$n_fish_fleets)) # get female retention selectivity for all fleets
     natmort_avg <- apply(rep$natmort[,1,avg_yrs,,1,drop = FALSE], c(1,4), mean)
     data_list$natmort <- natmort_avg # get female natural mortality
-    WAA_avg <- apply(data$WAA[,1,avg_yrs,,,1,drop = FALSE], c(1,4,5), mean)
+    WAA_avg <- apply(WAA_use[,1,avg_yrs,,,1,drop = FALSE], c(1,4,5), mean)
     data_list$WAA <- array(WAA_avg, dim = c(n_pop, data$n_seas, n_ages)) # weight at age for females
     MatAA_avg <- apply(data$MatAA[,1,avg_yrs,,,1,drop = FALSE], c(1,4,5), mean)
     data_list$MatAA <- array(MatAA_avg, dim = c(n_pop, data$n_seas, n_ages)) # maturity at age for females
@@ -548,7 +554,7 @@ Get_Reference_Points <- function(data,
         data_list$ret_sel <- array(ret_sel_avg, dim = c(n_pop, n_seas, n_ages, data$n_fish_fleets)) # get female retained selectivity for all fleets
         natmort_avg <- apply(rep$natmort[,r,avg_yrs,,1,drop = FALSE], c(1,4), mean)
         data_list$natmort <- array(natmort_avg, dim = c(n_pop, n_ages)) # get female natural mortality
-        WAA_avg <- apply(data$WAA[,r,avg_yrs,,,1,drop = FALSE], c(1,4,5), mean)
+        WAA_avg <- apply(WAA_use[,r,avg_yrs,,,1,drop = FALSE], c(1,4,5), mean)
         data_list$WAA <- array(WAA_avg, dim = c(n_pop, data$n_seas, n_ages)) # weight at age for females
         MatAA_avg <- apply(data$MatAA[,r,avg_yrs,,,1,drop = FALSE], c(1,4,5), mean)
         data_list$MatAA <- array(MatAA_avg, dim = c(n_pop, data$n_seas, n_ages)) # maturity at age for females
@@ -654,7 +660,7 @@ Get_Reference_Points <- function(data,
       data_list$ret_sel <- array(ret_sel_avg, dim = c(n_pop, n_regions, n_seas, n_ages, data$n_fish_fleets)) # get female retained selectivity for all fleets
       natmort_avg <- apply(rep$natmort[,,avg_yrs,,1,drop = FALSE], c(1,2,4), mean)
       data_list$natmort <- array(natmort_avg, dim = c(n_pop, n_regions, n_ages)) # get female natural mortality
-      WAA_avg <- apply(data$WAA[,,avg_yrs,,,1,drop = FALSE], c(1, 2, 4, 5), mean)
+      WAA_avg <- apply(WAA_use[,,avg_yrs,,,1,drop = FALSE], c(1, 2, 4, 5), mean)
       data_list$WAA <- array(WAA_avg, dim = c(n_pop, n_regions, data$n_seas, n_ages)) # weight at age for females
       MatAA_avg <- apply(data$MatAA[,,avg_yrs,,,1,drop = FALSE], c(1, 2, 4, 5), mean)
       data_list$MatAA <- array(MatAA_avg, dim = c(n_pop, n_regions, data$n_seas, n_ages)) # maturity at age for females
@@ -733,7 +739,7 @@ Get_Reference_Points <- function(data,
       data_list$ret_sel <- array(ret_sel_avg, dim = c(n_pop, n_regions, n_seas, n_ages, data$n_fish_fleets)) # get female retained selectivity for all fleets
       natmort_avg <- apply(rep$natmort[1,,avg_yrs,,1,drop = FALSE], c(2,4), mean)
       data_list$natmort <- array(natmort_avg, dim = c(n_regions, n_ages)) # get female natural mortality
-      WAA_avg <- apply(data$WAA[,,avg_yrs,,,1,drop = FALSE], c(2, 4, 5), mean)
+      WAA_avg <- apply(WAA_use[,,avg_yrs,,,1,drop = FALSE], c(2, 4, 5), mean)
       data_list$WAA <- array(WAA_avg, dim = c(n_regions, data$n_seas, n_ages)) # weight at age for females
       MatAA_avg <- apply(data$MatAA[,,avg_yrs,,,1,drop = FALSE], c(2, 4, 5), mean)
       data_list$MatAA <- array(MatAA_avg, dim = c(n_regions, data$n_seas, n_ages)) # maturity at age for females
@@ -781,7 +787,7 @@ Get_Reference_Points <- function(data,
       data_list$ret_sel <- array(ret_sel_avg, dim = c(n_pop, n_regions, n_seas, n_ages, data$n_fish_fleets)) # get female retained selectivity for all fleets
       natmort_avg <- apply(rep$natmort[,,avg_yrs,,1,drop = FALSE], c(1,2,4), mean)
       data_list$natmort <- array(natmort_avg, dim = c(if(n_pop > 1) n_pop else NULL, n_regions, n_ages)) # get female natural mortality
-      WAA_avg <- apply(data$WAA[,,avg_yrs,,,1,drop = FALSE], c(1, 2, 4, 5), mean)
+      WAA_avg <- apply(WAA_use[,,avg_yrs,,,1,drop = FALSE], c(1, 2, 4, 5), mean)
       data_list$WAA <- array(WAA_avg, dim = c(if(n_pop > 1) n_pop else NULL, n_regions, data$n_seas, n_ages)) # weight at age for females
       MatAA_avg <- apply(data$MatAA[,,avg_yrs,,,1,drop = FALSE], c(1, 2, 4, 5), mean)
       data_list$MatAA <- array(MatAA_avg, dim = c(if(n_pop > 1) n_pop else NULL, n_regions, data$n_seas, n_ages)) # maturity at age for females

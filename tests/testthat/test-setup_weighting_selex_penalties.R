@@ -279,10 +279,10 @@ test_that("Get_Selex_Smoothness_Penalty works", {
 
 })
 
-test_that("Get_sel_PE_loglik has no penalty-weight arguments (caller's responsibility now)", {
+test_that("Get_PE_loglik has no penalty-weight arguments (caller's responsibility now)", {
 
-  test_that("Get_sel_PE_loglik signature no longer accepts pen_wts", {
-    expect_false("pen_wts" %in% names(formals(SPoRC:::Get_sel_PE_loglik)))
+  test_that("Get_PE_loglik signature no longer accepts pen_wts", {
+    expect_false("pen_wts" %in% names(formals(SPoRC:::Get_PE_loglik)))
   })
 
   test_that("bin_curve and yr_curve smoothness penalties are applied by the caller via Get_Selex_Smoothness_Penalty, normalized", {

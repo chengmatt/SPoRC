@@ -73,7 +73,10 @@ Get_Comp_Likelihoods_OSA(
 }}
 
 \item{AgeingError}{Ageing error matrix used to map model age bins to
-observed age bins.}
+observed age bins. For length compositions, either \code{NA} (the model
+and observed bins coincide) or a matrix \code{[n_model_bins x n_obs_bins]}
+mapping the model's length bins onto the observed ones, the same way, when
+the compositions are recorded on coarser bins than the model carries.}
 
 \item{use}{Integer vector indicating which regions have observations
 (\code{1} = use data, \code{0} = ignore).}

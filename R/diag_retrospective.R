@@ -116,6 +116,29 @@ truncate_yr <- function(j,
     retro_mapping$ln_M <- factor(array(mapping$ln_M, dim = dim(parameters$ln_M))[1:max(retro_data$M_blocks), drop = FALSE])
   }
 
+# Growth ------------------------------------------------------------------
+
+  # Growth deviations are year-indexed and their penalties re-dimension the
+  # deviation and map arrays to the model's year count, so an untruncated array
+  # would be read in the wrong order rather than simply ignored past the peel
+  if(!is.null(data$growth_model) && data$growth_model != 0) {
+
+    # deviations on the growth parameters
+    retro_parameters$ln_growth_devs <- parameters$ln_growth_devs[,,1:(length(data$years) - j),,,drop = FALSE]
+    retro_mapping$ln_growth_devs <- factor(array(mapping$ln_growth_devs, dim = dim(parameters$ln_growth_devs))[,,1:(length(data$years) - j),,,drop = FALSE])
+    if(!is.null(data$map_ln_growth_devs)) retro_data$map_ln_growth_devs <- data$map_ln_growth_devs[,,1:(length(data$years) - j),,,drop = FALSE] # keep the penalty's map mirror in step
+
+    # the semi-parametric surface on mean length at age
+    retro_parameters$ln_growth_semipar_devs <- parameters$ln_growth_semipar_devs[,,1:(length(data$years) - j),,,drop = FALSE]
+    retro_mapping$ln_growth_semipar_devs <- factor(array(mapping$ln_growth_semipar_devs, dim = dim(parameters$ln_growth_semipar_devs))[,,1:(length(data$years) - j),,,drop = FALSE])
+    if(!is.null(data$map_ln_growth_semipar_devs)) retro_data$map_ln_growth_semipar_devs <- data$map_ln_growth_semipar_devs[,,1:(length(data$years) - j),,,drop = FALSE] # keep the penalty's map mirror in step
+
+    # cohort propagation starts in the first year a deviation is active, which a
+    # deep peel can push past the end of the series
+    if(!is.null(data$growth_cohort_styr)) retro_data$growth_cohort_styr <- min(data$growth_cohort_styr, length(data$years) - j)
+
+  }
+
 # Fishery -----------------------------------------------------------------
 
   # Catch, Fishery Index, and Compositions
@@ -239,6 +262,26 @@ if(any(data$UseSrvIdx_pop == 1) || any(data$UseSrvAgeComps_pop == 1) || any(data
   retro_data$ObsSrvAgeComps_pop <- data$ObsSrvAgeComps_pop[,,1:(length(data$years) - j),,,,,drop = FALSE]
   retro_data$ObsSrvLenComps_pop <- data$ObsSrvLenComps_pop[,,1:(length(data$years) - j),,,,,drop = FALSE]
 }
+
+# Conditional Age-at-Length ------------------------------------------------
+
+  # Indexed by year rather than re-dimensioned, so an untruncated array is read
+  # correctly; truncated here to keep the peeled data list to the years it covers
+  if(!is.null(data$ObsFish_caal)) {
+    retro_data$ObsFish_caal <- data$ObsFish_caal[,1:(length(data$years) - j),,,,,,drop = FALSE]
+    retro_data$UseFish_caal <- data$UseFish_caal[,1:(length(data$years) - j),,,,drop = FALSE]
+    retro_data$ISS_Fish_caal <- data$ISS_Fish_caal[,1:(length(data$years) - j),,,,,drop = FALSE]
+    retro_data$Fish_caal_Type <- data$Fish_caal_Type[1:(length(data$years) - j),,drop = FALSE]
+    if(!is.null(data$Wt_Fish_caal)) retro_data$Wt_Fish_caal <- data$Wt_Fish_caal[,1:(length(data$years) - j),,,,,drop = FALSE]
+  }
+
+  if(!is.null(data$ObsSrv_caal)) {
+    retro_data$ObsSrv_caal <- data$ObsSrv_caal[,1:(length(data$years) - j),,,,,,drop = FALSE]
+    retro_data$UseSrv_caal <- data$UseSrv_caal[,1:(length(data$years) - j),,,,drop = FALSE]
+    retro_data$ISS_Srv_caal <- data$ISS_Srv_caal[,1:(length(data$years) - j),,,,,drop = FALSE]
+    retro_data$Srv_caal_Type <- data$Srv_caal_Type[1:(length(data$years) - j),,drop = FALSE]
+    if(!is.null(data$Wt_Srv_caal)) retro_data$Wt_Srv_caal <- data$Wt_Srv_caal[,1:(length(data$years) - j),,,,,drop = FALSE]
+  }
 
 # Movement ----------------------------------------------------------------
 

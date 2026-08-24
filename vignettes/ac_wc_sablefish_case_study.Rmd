@@ -526,11 +526,3 @@ the extra survey standard deviation is held at the assessment's estimate,
 because `SPoRC` has no parameter for it. Neither moves the fit, but the second
 does mean the standard errors here do not carry that source of uncertainty.
 
-Worth recording is what it took to get here, because it was not obvious from
-the fit. Under a `"scale"` male offset every quantity above still matched at
-the assessment's estimate to $5\times10^{-7}$, and the model still looked
-bridged. What gave it away was the gradient: the male offset sat at 4.2 while
-every other selectivity parameter was at 0.02, and the refit then walked to
-0.42 percent in spawning biomass. A selectivity offset that reproduces a curve
-is not the same as one that means what the assessment means by it, and only the
-gradient distinguishes them.

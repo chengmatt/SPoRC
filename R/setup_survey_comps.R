@@ -29,6 +29,21 @@
 #' @param UseSrvIdx Binary indicator array
 #'   \code{[n_regions × n_years × n_seas × n_srv_fleets]}. \code{1} = include
 #'   in likelihood; \code{0} = exclude.
+#' @param SrvLenComps_sel Character vector \code{[n_srv_fleets]}, whether a
+#'   length-based selectivity is applied before or after the fish are spread
+#'   over lengths. \code{"age"} (default) selects the index at age and spreads
+#'   it afterwards; \code{"length"} spreads the numbers at each age over the
+#'   key first and selects them length by length, so the survey sees the long
+#'   fish of an age more often. The key is the survey's own, at \code{t_srv}.
+#'   Requires length-based survey selectivity. Use \code{"length"} when
+#'   selectivity is length based and the length compositions are what inform it.
+#' @param srv_waa_selected Integer vector \code{[n_srv_fleets]} (0/1). With
+#'   weight at age derived from growth and length-based selectivity, \code{1}
+#'   makes a biomass index use the mean weight of the fish the survey sees at
+#'   each age, \eqn{\sum_l P(l \mid a) s(l) w(l) / \sum_l P(l \mid a) s(l)},
+#'   instead of the population mean weight at that age. The survey twin of
+#'   \code{fish_waa_selected}. Only applies to an index in weight
+#'   (\code{srv_idx_type = "biom"}).
 #' @param srv_idx_ages Per-fleet selection of which ages contribute to the
 #'   index total. Either a list with one element per survey fleet, where each
 #'   element is a vector of ages or \code{NULL} for all ages, or an array
@@ -120,6 +135,23 @@
 #'   indicating an incomplete year range specification.
 #' @param SrvLenComps_Type Character vector defining the survey length
 #'   composition structure. Same format and options as \code{SrvAgeComps_Type}.
+#' @param ObsSrv_caal Observed conditional age-at-length array
+#'   \code{[n_regions x n_years x n_seas x n_lens x n_ages x n_sexes x
+#'   n_srv_fleets]}. A CAAL observation is the age composition of the fish aged
+#'   from one length bin, so the age margin of each length row is what gets fit.
+#'   \code{NULL} (default) for a model with no CAAL data.
+#' @param UseSrv_caal Use flags \code{[n_regions x n_years x n_seas x n_lens x
+#'   n_srv_fleets]}. Length bins with no aged fish carry a zero and are skipped.
+#' @param ISS_Srv_caal Input sample sizes \code{[n_regions x n_years x n_seas x
+#'   n_lens x n_sexes x n_srv_fleets]}. Summed from \code{ObsSrv_caal} when
+#'   \code{NULL}.
+#' @param Srv_caal_LikeType Character vector of length \code{n_srv_fleets}.
+#'   One of \code{"none"}, \code{"Multinomial"} or
+#'   \code{"Dirichlet-Multinomial"}. The logistic-normal families are not
+#'   available for CAAL, since a single length bin's age sample is small and
+#'   mostly zeros, which the additive log-ratio transform cannot handle.
+#' @param Srv_caal_Type Composition type specification, using the same
+#'   \code{"CompType_Year_x-y_Fleet_z"} convention as the marginal compositions.
 #' @param SrvAgeComps_bins Which age bins each survey fleet's age composition is
 #'   fitted over. Supply a list with one element per fleet, each a vector of age
 #'   indices or \code{NULL} for all ages, or an \code{[n_ages x n_srv_fleets]}
@@ -227,7 +259,16 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
                                        srv_idx_ages = NULL,
                                        SrvAgeComps_bins = NULL,
                                        SrvIdx_LikeType = rep("lognormal", input_list$data$n_srv_fleets),
+                                       SrvLenComps_sel = rep("age", input_list$data$n_srv_fleets),
+                                       srv_waa_selected = rep(0, input_list$data$n_srv_fleets),
                                        SrvIdx_Cov = NULL,
+
+                                       # Conditional Age-at-Length
+                                       ObsSrv_caal = NULL,
+                                       UseSrv_caal = NULL,
+                                       ISS_Srv_caal = NULL,
+                                       Srv_caal_LikeType = rep("none", input_list$data$n_srv_fleets),
+                                       Srv_caal_Type = paste("none_Year_1-terminal_Fleet_", 1:input_list$data$n_srv_fleets, sep = ''),
                                        ...
                                        ) {
 
@@ -252,7 +293,7 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
   check_data_dimensions(ObsSrvAgeComps, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_sexes = input_list$data$n_sexes, n_srv_fleets = input_list$data$n_srv_fleets, what = 'ObsSrvAgeComps')
   check_data_dimensions(UseSrvAgeComps, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_srv_fleets = input_list$data$n_srv_fleets, what = 'UseSrvAgeComps')
   check_data_dimensions(UseSrvLenComps, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_srv_fleets = input_list$data$n_srv_fleets, what = 'UseSrvLenComps')
-  if(input_list$data$fit_lengths == 1) check_data_dimensions(ObsSrvLenComps, n_seas = input_list$data$n_seas, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_lens = length(input_list$data$lens), n_sexes = input_list$data$n_sexes, n_srv_fleets = input_list$data$n_srv_fleets, what = 'ObsSrvLenComps')
+  if(input_list$data$fit_lengths == 1) check_data_dimensions(ObsSrvLenComps, n_seas = input_list$data$n_seas, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_lens = obs_len_bins(input_list), n_sexes = input_list$data$n_sexes, n_srv_fleets = input_list$data$n_srv_fleets, what = 'ObsSrvLenComps')
   if(!is.null(ISS_SrvAgeComps)) check_data_dimensions(ISS_SrvAgeComps, n_seas = input_list$data$n_seas, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_sexes = input_list$data$n_sexes, n_srv_fleets = input_list$data$n_srv_fleets, what = 'ISS_SrvAgeComps')
   if(!is.null(ISS_SrvLenComps)) check_data_dimensions(ISS_SrvLenComps, n_seas = input_list$data$n_seas, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_sexes = input_list$data$n_sexes, n_srv_fleets = input_list$data$n_srv_fleets, what = 'ISS_SrvLenComps')
   check_data_dimensions(SrvAgeComps_LikeType, n_srv_fleets = input_list$data$n_srv_fleets, what = 'SrvAgeComps_LikeType')
@@ -266,7 +307,7 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
   if(any(UseSrvAgeComps_pop == 1)) check_data_dimensions(ObsSrvAgeComps_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_sexes = input_list$data$n_sexes, n_srv_fleets = input_list$data$n_srv_fleets, what = 'ObsSrvAgeComps_pop')
   check_data_dimensions(UseSrvAgeComps_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_srv_fleets = input_list$data$n_srv_fleets, what = 'UseSrvAgeComps_pop')
   check_data_dimensions(UseSrvLenComps_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_srv_fleets = input_list$data$n_srv_fleets, what = 'UseSrvLenComps_pop')
-  if(input_list$data$fit_lengths == 1 && any(UseSrvLenComps_pop == 1)) check_data_dimensions(ObsSrvLenComps_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_lens = length(input_list$data$lens), n_sexes = input_list$data$n_sexes, n_srv_fleets = input_list$data$n_srv_fleets, what = 'ObsSrvLenComps_pop')
+  if(input_list$data$fit_lengths == 1 && any(UseSrvLenComps_pop == 1)) check_data_dimensions(ObsSrvLenComps_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_lens = obs_len_bins(input_list), n_sexes = input_list$data$n_sexes, n_srv_fleets = input_list$data$n_srv_fleets, what = 'ObsSrvLenComps_pop')
   if(!is.null(ISS_SrvAgeComps_pop)) check_data_dimensions(ISS_SrvAgeComps_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_sexes = input_list$data$n_sexes, n_srv_fleets = input_list$data$n_srv_fleets, what = 'ISS_SrvAgeComps_pop')
   if(!is.null(ISS_SrvLenComps_pop)) check_data_dimensions(ISS_SrvLenComps_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_sexes = input_list$data$n_sexes, n_srv_fleets = input_list$data$n_srv_fleets, what = 'ISS_SrvLenComps_pop')
   check_data_dimensions(SrvAgeComps_pop_LikeType, n_srv_fleets = input_list$data$n_srv_fleets, what = 'SrvAgeComps_pop_LikeType')
@@ -509,6 +550,19 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
 
   if(any(is.na(SrvLenComps_pop_Type_Mat))) stop("SrvLenComps_pop_Type is returning an NA. Did you update the year range of SrvLenComps_pop_Type?")
 
+  # whether length selectivity is applied at length or through the size-age key.
+  # Whether the selectivity is length based is only known once Setup_Mod_Srvsel_and_Q
+  # runs, which checks this against it
+  if(length(SrvLenComps_sel) != input_list$data$n_srv_fleets || !all(SrvLenComps_sel %in% c("age", "length"))) stop("SrvLenComps_sel must be one of age or length for each survey fleet")
+  srv_len_comp_sel_vals <- as.numeric(SrvLenComps_sel == "length")
+  for(sf in 1:input_list$data$n_srv_fleets) if(SrvLenComps_sel[sf] == "length") collect_message("Survey length compositions for fleet ", sf, " apply selectivity at length")
+
+  # Survey Weight at Age Options ----------------------------------------------
+
+  if(length(srv_waa_selected) != input_list$data$n_srv_fleets || !all(srv_waa_selected %in% c(0, 1))) stop("srv_waa_selected must be 0 or 1 for each survey fleet")
+  if(any(srv_waa_selected == 1) && (is.null(input_list$data$derive_waa) || input_list$data$derive_waa != 1)) stop("srv_waa_selected = 1 needs waa_model = 'wt_len' in Setup_Mod_Biologicals")
+  for(sf in which(srv_waa_selected == 1)) collect_message("Survey fleet ", sf, " takes its biomass index on the selection-weighted weight at age")
+
   # ISS Munging -------------------------------------------------------------
 
   # Survey Ages
@@ -615,6 +669,8 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
   input_list$data$SrvAgeComps_Type <- SrvAgeComps_Type_Mat
   input_list$data$SrvLenComps_Type <- SrvLenComps_Type_Mat
   input_list$data$srv_idx_type <- srv_idx_type_vals
+  input_list$data$srv_len_comp_sel <- srv_len_comp_sel_vals
+  input_list$data$srv_waa_selected <- srv_waa_selected
   input_list$data$SrvAgeComps_pop_Type <- SrvAgeComps_pop_Type_Mat
   input_list$data$SrvLenComps_pop_Type <- SrvLenComps_pop_Type_Mat
 
@@ -714,6 +770,15 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
   input_list <- do_comp_theta_mapping(input_list, comp_prefix = "SrvLen", has_pop = TRUE, fleet_field = "n_srv_fleets")
   input_list <- do_comp_corr_pars_mapping(input_list, comp_prefix = "SrvAge", has_pop = TRUE, fleet_field = "n_srv_fleets")
   input_list <- do_comp_corr_pars_mapping(input_list, comp_prefix = "SrvLen", has_pop = TRUE, fleet_field = "n_srv_fleets")
+
+  # Conditional Age-at-Length --------------------------------------------------
+  input_list <- setup_caal_stream(
+    input_list,
+    ObsCAAL = ObsSrv_caal, UseCAAL = UseSrv_caal,
+    ISS_CAAL = ISS_Srv_caal,
+    CAAL_LikeType = Srv_caal_LikeType, CAAL_Type = Srv_caal_Type,
+    fleet_type = "Srv"
+  )
 
   # Print Messages ----------------------------------------------------------
   if(input_list$verbose) for(msg in messages_list) message(msg)

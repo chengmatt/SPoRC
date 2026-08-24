@@ -772,6 +772,12 @@ Simulate_Pop_Static <- function(sim_list,
                   ObsFishIdx_SE = sim_env$ObsFishIdx_SE,
                   ObsFishAgeComps = sim_env$ObsFishAgeComps,
                   ObsFishLenComps = sim_env$ObsFishLenComps,
+                  ObsFish_caal = sim_env$ObsFish_caal,
+                  ObsSrv_caal = sim_env$ObsSrv_caal,
+                  ISS_Fish_caal = sim_env$ISS_Fish_caal,
+                  ISS_Srv_caal = sim_env$ISS_Srv_caal,
+                  do_fish_caal = sim_env$do_fish_caal,
+                  do_srv_caal = sim_env$do_srv_caal,
 
                   # Aggregated fishery discards
                   TrueDiscard = sim_env$TrueDiscard,
@@ -834,6 +840,8 @@ Simulate_Pop_Static <- function(sim_list,
 
                   # Composition infrastructure
                   SizeAgeTrans = if(!is.null(sim_env$SizeAgeTrans)) sim_env$SizeAgeTrans else NULL,
+                  SizeAgeTrans_fish = if(!is.null(sim_env$SizeAgeTrans_fish)) sim_env$SizeAgeTrans_fish else NULL,
+                  SizeAgeTrans_srv = if(!is.null(sim_env$SizeAgeTrans_srv)) sim_env$SizeAgeTrans_srv else NULL,
                   AgeingError = sim_env$AgeingError,
                   ISS_FishAgeComps = sim_env$ISS_FishAgeComps,
                   ISS_FishLenComps = sim_env$ISS_FishLenComps,

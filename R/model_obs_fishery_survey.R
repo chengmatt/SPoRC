@@ -50,10 +50,33 @@
 #'   abundance/biomass fishery index type.
 #' @param fish_sel,ret_sel Arrays \code{[pop, region, year, season, age, sex,
 #'   fish_fleet]} of total/retained fishery selectivity.
+#' @param do_caal Integer (0/1) switch for building the joint catch at length
+#'   and age arrays. Off by default. 
+#' @param Fish_caal,Fish_caal_discard Arrays \code{[pop, region, year, season, len, age, sex,
+#'   fish_fleet]}, output containers for retained/discarded catch at length and
+#'   age. Only written when \code{do_caal == 1} and \code{fit_lengths == 1}.
+#' @param SizeAgeTrans_fish Array \code{[pop, region, year, season, len, age,
+#'   sex, fish_fleet]}, each fleet's own key from the growth module, or
+#'   \code{NULL} to read the shared data key.
+#' @param fish_len_comp_sel Integer vector \code{[fish_fleet]}. \code{0}
+#'   (default) selects the catch at age and spreads it over lengths afterwards,
+#'   so every fish of an age is equally catchable. \code{1} selects at length
+#'   instead: the fish at each age are spread over the lengths of the
+#'   composition key and then selected length by length,
+#'   \eqn{C_l = s(l) \sum_a P(l \mid a)\, N_a (1 - e^{-Z_a}) F / Z_a}, so the
+#'   long fish of an age are taken more often. Requires
+#'   \code{fish_selex_type == 1}.
+#' @param fish_selex_type,ret_selex_type Integer (0 age, 1 length), the scale
+#'   total and retention selectivity are defined on.
+#' @param fish_sel_l,ret_sel_l Arrays \code{[region, year, len, sex,
+#'   fish_fleet]} of selectivity at length, read under
+#'   \code{fish_len_comp_sel == 1}.
+#' @param Fmort Array \code{[region, year, season, fish_fleet]} of fishing
+#'   mortality, read under \code{fish_len_comp_sel == 1}.
 #'
 #' @return List with elements \code{fish_q}, \code{CAA}, \code{DAA},
-#'   \code{CAL}, \code{DAL}, \code{PredCatch}, \code{PredDiscard},
-#'   \code{PredFishIdx}.
+#'   \code{CAL}, \code{DAL}, \code{Fish_caal}, \code{Fish_caal_discard},
+#'   \code{PredCatch}, \code{PredDiscard}, \code{PredFishIdx}.
 #'
 #' @keywords internal
 #' @import RTMB
@@ -67,12 +90,19 @@ get_fishery_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_fis
                                            Mrate = NULL, move_timing = 0, seasdur = rep(1, n_seas),
                                            NAA_int = NULL, t_fish = NULL, fish_idx_ages = NULL,
                                            fish_q_type = NULL, do_fish_q_cov = 0, fish_q_cov = NULL,
-                                           fish_q_coeff = NULL, ObsFishIdx = NULL, UseFishIdx = NULL) {
+                                           fish_q_coeff = NULL, ObsFishIdx = NULL, UseFishIdx = NULL,
+                                           do_caal = 0, Fish_caal = NULL, Fish_caal_discard = NULL,
+                                           SizeAgeTrans_fish = NULL,
+                                           fish_len_comp_sel = NULL, fish_selex_type = 0, ret_selex_type = 0,
+                                           fish_sel_l = NULL, ret_sel_l = NULL, Fmort = NULL) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   if(is.null(fish_q_type)) fish_q_type <- rep(0, n_fish_fleets)
+  if(is.null(fish_len_comp_sel)) fish_len_comp_sel <- rep(0, n_fish_fleets)
+
+  n_lens <- dim(CAL)[5] # length bins, read off a container that is always allocated
 
   # Every age contributes to the index unless a fleet restricts it.
   if(is.null(fish_idx_ages)) fish_idx_ages <- array(1, dim = c(dim(NAA)[5], n_fish_fleets))
@@ -121,8 +151,42 @@ get_fishery_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_fis
 
             if(fit_lengths == 1) {
               for(s in 1:n_sexes) {
-                CAL[p,r,y,seas,,s,f] <- SizeAgeTrans[p,r,y,seas,,,s] %*% CAA[p,r,y,seas,,s,f] # Retained Catch at length
-                DAL[p,r,y,seas,,s,f] <- SizeAgeTrans[p,r,y,seas,,,s] %*% DAA[p,r,y,seas,,s,f] # Discarded Catch at length
+                # the fleet's own key when the growth module built one, the shared data key otherwise
+                key_f <- if(is.null(SizeAgeTrans_fish)) SizeAgeTrans[p,r,y,seas,,,s] else SizeAgeTrans_fish[p,r,y,seas,,,s,f]
+                if(fish_len_comp_sel[f] == 0) {
+                  CAL[p,r,y,seas,,s,f] <- key_f %*% CAA[p,r,y,seas,,s,f] # Retained Catch at length
+                  DAL[p,r,y,seas,,s,f] <- key_f %*% DAA[p,r,y,seas,,s,f] # Discarded Catch at length
+                  # Joint catch at length and age. SizeAgeTrans holds P(len | age), so
+                  # scaling each age column by the catch at that age gives an array whose
+                  # length margin is CAL and whose age margin is CAA. Conditioning on a
+                  # length bin is left to the reader, since a composition likelihood
+                  # normalizes within whatever bins it is handed.
+                  if(do_caal == 1) {
+                    Fish_caal[p,r,y,seas,,,s,f] <- key_f * rep(CAA[p,r,y,seas,,s,f], each = n_lens) # Retained catch at length and age
+                    Fish_caal_discard[p,r,y,seas,,,s,f] <- key_f * rep(DAA[p,r,y,seas,,s,f], each = n_lens) # Discarded catch at length and age
+                  } # building caal
+                } else {
+                  # Selectivity applied at length: the fish available over the season at
+                  # each age are spread over length by the composition key, then taken
+                  # length by length by the length selectivity (and retention, at length
+                  # when it is defined there, at age otherwise)
+                  avail <- if(move_timing == 2) NAA_int[p,r,y,seas,,s] else NAA[p,r,y,seas,,s] * (1 - exp(-ZAA[p,r,y,seas,,s])) / ZAA[p,r,y,seas,,s]
+                  avail <- avail * Fmort[r,y,seas,f]
+                  if(ret_selex_type == 1) {
+                    ret_l <- ret_sel_l[r,y,,s,f]; ret_a <- rep(1, length(avail))
+                  } else {
+                    ret_l <- rep(1, n_lens); ret_a <- ret_sel[p,r,y,seas,,s,f]
+                  }
+                  sel_at_l <- fish_sel_l[r,y,,s,f]
+                  joint_ret <- (key_f * rep(avail * ret_a, each = n_lens)) * (sel_at_l * ret_l) # [len, age]
+                  joint_disc <- (key_f * rep(avail * (1 - ret_a), each = n_lens)) * (sel_at_l * (1 - ret_l)) * dmr[r,y,seas,f]
+                  CAL[p,r,y,seas,,s,f] <- rowSums(joint_ret)
+                  DAL[p,r,y,seas,,s,f] <- rowSums(joint_disc)
+                  if(do_caal == 1) {
+                    Fish_caal[p,r,y,seas,,,s,f] <- joint_ret
+                    Fish_caal_discard[p,r,y,seas,,,s,f] <- joint_disc
+                  } # building caal
+                }
               } # end s loop
             } # fitting lengths
 
@@ -194,6 +258,7 @@ get_fishery_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_fis
   }
 
   return(list(fish_q = fish_q, CAA = CAA, DAA = DAA, CAL = CAL, DAL = DAL,
+              Fish_caal = Fish_caal, Fish_caal_discard = Fish_caal_discard,
               PredCatch = PredCatch, PredDiscard = PredDiscard, PredFishIdx = PredFishIdx))
 }
 
@@ -223,6 +288,14 @@ get_fishery_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_fis
 #'   srv_fleet]} of survey selectivity at age; when \code{srv_selex_type == 1}
 #'   this is derived here from \code{srv_sel_l} via \code{SizeAgeTrans} for
 #'   \code{1:n_yrs}.
+#' @param SizeAgeTrans_srv Array \code{[pop, region, year, season, len, age,
+#'   sex, srv_fleet]}, each survey's own key from the growth module, or
+#'   \code{NULL} to read the shared data key.
+#' @param srv_len_comp_sel Integer vector \code{[srv_fleet]}. \code{0}
+#'   (default) expands the index at age through the key; \code{1} applies the
+#'   length selectivity at length to the numbers spread over the composition
+#'   own key, \eqn{I_l = s(l) \sum_a P(l \mid a)\, N_a e^{-t Z_a}}. Needs
+#'   \code{srv_selex_type == 1}.
 #' @param srv_sel_l Array \code{[region, year, len, sex, srv_fleet]} of survey
 #'   selectivity at length.
 #' @param SizeAgeTrans Array \code{[pop, region, year, season, len, age, sex]}
@@ -262,8 +335,14 @@ get_fishery_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_fis
 #'   of observed index values and their use flags. Required only when a fleet
 #'   solves catchability analytically.
 #'
+#' @param do_caal Integer (0/1) switch for building the joint survey index at
+#'   length and age array. Off by default. 
+#' @param Srv_caal Array \code{[pop, region, year, season, len, age, sex,
+#'   srv_fleet]}, output container for the survey index at length and age. Only
+#'   written when \code{do_caal == 1} and \code{fit_lengths == 1}.
+#'
 #' @return List with elements \code{srv_q}, \code{srv_sel}, \code{SrvIAA},
-#'   \code{SrvIAL}, \code{PredSrvIdx}.
+#'   \code{SrvIAL}, \code{Srv_caal}, \code{PredSrvIdx}.
 #'
 #' @keywords internal
 #' @import RTMB
@@ -275,12 +354,16 @@ get_survey_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_srv_
                                           Mrate = NULL, move_timing = 0, seasdur = rep(1, n_seas),
                                           srv_idx_ages = NULL, srv_q_type = NULL,
                                           ObsSrvIdx = NULL, UseSrvIdx = NULL,
-                                          RecDev_anom = NULL) {
+                                          RecDev_anom = NULL,
+                                          do_caal = 0, Srv_caal = NULL,
+                                          SizeAgeTrans_srv = NULL,
+                                          srv_len_comp_sel = NULL) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   n_ages <- dim(NAA)[5]
+  n_lens <- dim(SrvIAL)[5] # length bins, read off a container that is always allocated
 
   # Every age contributes to the index unless a fleet restricts it, and every
   # fleet estimates its own catchability unless it solves one analytically.
@@ -323,7 +406,9 @@ get_survey_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_srv_
           for(seas in 1:n_seas) {
 
             # Convert length-selex to age-selex
-            if(srv_selex_type == 1) for(s in 1:n_sexes) srv_sel[p,r,y,seas,,s,sf] <- srv_sel_l[r,y,,s,sf] %*% SizeAgeTrans[p,r,y,seas,,,s]
+            # the survey's own key when the growth module built one, the shared data key otherwise
+            key_sf <- function(s) if(is.null(SizeAgeTrans_srv)) SizeAgeTrans[p,r,y,seas,,,s] else SizeAgeTrans_srv[p,r,y,seas,,,s,sf]
+            if(srv_selex_type == 1) for(s in 1:n_sexes) srv_sel[p,r,y,seas,,s,sf] <- srv_sel_l[r,y,,s,sf] %*% key_sf(s)
 
             if(move_timing == 2) {
               # Selectivity applies at the destination region, after propagation
@@ -334,7 +419,21 @@ get_survey_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_srv_
 
             if(fit_lengths == 1) {
               for(s in 1:n_sexes) {
-                SrvIAL[p,r,y,seas,,s,sf] <- SizeAgeTrans[p,r,y,seas,,,s] %*% SrvIAA[p,r,y,seas,,s,sf] # Survey index at length
+                if(is.null(srv_len_comp_sel) || srv_len_comp_sel[sf] == 0) {
+                  SrvIAL[p,r,y,seas,,s,sf] <- key_sf(s) %*% SrvIAA[p,r,y,seas,,s,sf] # Survey index at length
+                  # Joint survey index at length and age, built the same way as the
+                  # fishery arrays: each age column of P(len | age) scaled by the index
+                  # at that age, so the length margin is SrvIAL and the age margin SrvIAA.
+                  if(do_caal == 1) Srv_caal[p,r,y,seas,,,s,sf] <- key_sf(s) * rep(SrvIAA[p,r,y,seas,,s,sf], each = n_lens) # Survey index at length and age
+                } else {
+                  # Selectivity applied at length: the numbers present at the survey's
+                  # timing spread over length by the composition key, then selected
+                  # length by length
+                  present <- if(move_timing == 2) SrvN[p,r,y,seas,,s,sf] else NAA[p,r,y,seas,,s] * exp(-t_srv[r,seas,sf] * ZAA[p,r,y,seas,,s])
+                  joint <- (key_sf(s) * rep(present, each = n_lens)) * srv_sel_l[r,y,,s,sf] # [len, age]
+                  SrvIAL[p,r,y,seas,,s,sf] <- rowSums(joint)
+                  if(do_caal == 1) Srv_caal[p,r,y,seas,,,s,sf] <- joint
+                }
               } # end s loop
             } # fitting lengths
 
@@ -345,11 +444,7 @@ get_survey_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_srv_
             if(srv_idx_type[sf] == 0) PredSrvIdx[p,r,y,seas,sf] <- srv_q[r,y,sf] * sum(SrvIAA[p,r,y,seas,,,sf] * idx_ages) # abundance
             if(srv_idx_type[sf] == 1) PredSrvIdx[p,r,y,seas,sf] <- srv_q[r,y,sf] * sum(SrvIAA[p,r,y,seas,,,sf] * WAA_srv[p,r,y,seas,,,sf] * idx_ages) # biomass
 
-            # A year class strength index observes the recruitment deviation
-            # itself rather than any part of the population, so it reads the
-            # deviation and never touches numbers at age or selectivity. Years
-            # with no deviation to observe stay at zero and are expected to
-            # carry UseSrvIdx = 0.
+            # Recruitment index as a survey fleet 
             if(srv_idx_type[sf] == 2 && !is.null(RecDev_anom) && y <= dim(RecDev_anom)[3]) {
               PredSrvIdx[p,r,y,seas,sf] <- srv_q[r,y,sf] * RecDev_anom[p,r,y]
             }
@@ -362,10 +457,7 @@ get_survey_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_srv_
   } # end p loop
 
   ### Analytically solved catchability ---------------------------------------
-  # A fleet whose catchability is a scaling nuisance can be concentrated out of
-  # the likelihood rather than estimated. The solve uses only the years with
-  # observations, and is done on the population-summed index because that is
-  # what the index likelihood compares against.
+  # A fleet's catchability can be a scaling nuisance and can be concentrated out of the likelihood
   if(any(srv_q_type != 0) && !is.null(ObsSrvIdx) && !is.null(UseSrvIdx)) {
     for(sf in 1:n_srv_fleets) {
       if(srv_q_type[sf] == 0) next
@@ -395,5 +487,6 @@ get_survey_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_srv_
     } # end sf loop
   }
 
-  return(list(srv_q = srv_q, srv_sel = srv_sel, SrvIAA = SrvIAA, SrvIAL = SrvIAL, PredSrvIdx = PredSrvIdx))
+  return(list(srv_q = srv_q, srv_sel = srv_sel, SrvIAA = SrvIAA, SrvIAL = SrvIAL,
+              Srv_caal = Srv_caal, PredSrvIdx = PredSrvIdx))
 }

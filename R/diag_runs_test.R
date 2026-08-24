@@ -9,9 +9,8 @@
 #' also computes three-sigma control limits used to identify potential
 #' residual outliers.
 #'
-#' This implementation is adapted from diagnostics used in
-#' Stock Synthesis (SS3). The runs test evaluates whether residuals exhibit
-#' non-random structure (e.g., positive or negative autocorrelation).
+#' The runs test evaluates whether residuals exhibit non-random structure
+#' (e.g., positive or negative autocorrelation).
 #'
 #' @param x Numeric vector of residuals.
 #' @param type Character string specifying the assumed mean of the residuals.

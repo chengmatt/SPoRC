@@ -37,6 +37,8 @@ Setup_Mod_Srvsel_and_Q(
   srv_sel_input = NULL,
   srv_sel_nonpar_est_bins = NULL,
   srv_sel_sex_offset = rep("none", input_list$data$n_srv_fleets),
+  srv_sel_dbnrml_raw = NULL,
+  srv_sel_dbnrml_startbin = NULL,
   ...
 )
 }
@@ -279,6 +281,17 @@ up to an estimated height rather than to one, which moves the middle of
 the curve and leaves its two ends where their own parameters put them),
 and \code{"par_apical"} (both). See \code{fish_sel_sex_offset} in
 \code{\link{Setup_Mod_Fishsel_and_Q}} for the full description.}
+
+\item{srv_sel_dbnrml_raw}{\code{NULL} (default) or a 0/1 matrix
+\code{[n_srv_fleets x 2]} for fleets on the double normal: column one
+leaves the ascending limb as a raw Gaussian instead of anchoring it to
+\code{p5} at the first bin, column two does the same for the descending
+limb and \code{p6}.}
+
+\item{srv_sel_dbnrml_startbin}{\code{NULL} (default) or an integer vector
+\code{[n_srv_fleets]}, the bin each survey's double normal anchors its
+ascending limb at; see \code{fish_sel_dbnrml_startbin} in
+\code{\link{Setup_Mod_Fishsel_and_Q}}.}
 
 \item{...}{Optional named starting values for selectivity and catchability
 parameters.}

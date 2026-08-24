@@ -530,6 +530,100 @@ simulate_comps <- function(r,
   return(Obs)
 }
 
+#' Simulate conditional age-at-length observations
+#'
+#' Draws one age composition per length bin from the joint distribution of
+#' length and age implied by the size-age transition matrix and the true numbers
+#' at age (catch at age for the fishery, index at age for the survey). The joint
+#' for a region, length bin and sex is \eqn{P(l \mid a) N_a} summed over
+#' populations, and the draw for bin \eqn{l} is a multinomial (or
+#' Dirichlet-multinomial) of \code{ISS[l]} fish across ages with that row as
+#' the probability, which is the conditional \eqn{P(a \mid l)} by construction.
+#' Ageing error is applied to the drawn counts the same way
+#' \code{\link{simulate_comps}} applies it to marginal age compositions.
+#'
+#' Composition types follow \code{simulate_comps}: split by region and sex (1)
+#' draws each sex separately, joint by sex (2) draws one sample across the age
+#' by sex stack, and aggregated (0) pools regions and sexes and is drawn once
+#' when the last region is reached. Only the multinomial and Dirichlet
+#' multinomial families exist for CAAL.
+#'
+#' @param r,y,f,seas,sim Region, year, fleet, season and replicate indices.
+#' @param SizeAgeTrans Array \code{[pop, region, year, season, len, age, sex,
+#'   sim]} of \eqn{P(l \mid a)}.
+#' @param AtAge Array \code{[pop, region, year, season, age, sex, fleet, sim]}
+#'   of true numbers at age for this fleet type.
+#' @param ISS Array \code{[region, year, season, len, sex, fleet, sim]} of fish
+#'   aged per length bin. A zero skips the bin.
+#' @param AgeingError Array \code{[year, model_age, obs_age, sim]}.
+#' @param comp_like Likelihood code per fleet (0 multinomial, 1 DM, 999 none).
+#' @param ln_theta Array \code{[region, sex, fleet]} of DM log overdispersion.
+#' @param ln_theta_agg Vector of aggregated DM log overdispersion per fleet.
+#' @param comp_type Matrix \code{[year, fleet]} of composition type codes.
+#' @param n_sexes,n_regions,n_lens Dimension sizes.
+#' @param Obs Array \code{[region, year, season, len, obs_age, sex, fleet, sim]}
+#'   the draws are written into.
+#'
+#' @return The updated \code{Obs} array.
+#'
+#' @keywords internal
+simulate_caal <- function(r, y, f, seas, sim, SizeAgeTrans, AtAge, ISS, AgeingError,
+                          comp_like, ln_theta, ln_theta_agg, comp_type,
+                          n_sexes, n_regions, n_lens, Obs) {
+
+  if(comp_type[y,f] == 999 || comp_like[f] == 999) return(Obs)
+
+  n_pop <- dim(AtAge)[1]
+  ae <- AgeingError[y,,,sim] # model age by observed age
+  if(is.null(dim(ae))) ae <- matrix(ae, nrow = 1) # a single model age arrives as a vector
+
+  # P(l, a) for one region, length bin and sex, summed over populations
+  joint_row <- function(rr, l, s) {
+    out <- 0
+    for(p in 1:n_pop) out <- out + SizeAgeTrans[p,rr,y,seas,l,,s,sim] * AtAge[p,rr,y,seas,,s,f,sim]
+    return(out)
+  }
+
+  # one draw of N fish across the cells of prob, under the fleet's family
+  draw <- function(N, prob, theta) {
+    N <- round(N)
+    if(N <= 0 || sum(prob) <= 0) return(rep(0, length(prob)))
+    prob <- prob / sum(prob)
+    if(comp_like[f] == 0) return(as.vector(stats::rmultinom(1, N, prob)))
+    return(as.vector(rdirM(n = 1, N = N, alpha = (exp(theta) * N) * prob)))
+  }
+
+  for(l in 1:n_lens) {
+
+    # Split by region and sex: each sex in this bin is its own sample
+    if(comp_type[y,f] == 1) {
+      for(s in 1:n_sexes) {
+        counts <- draw(ISS[r,y,seas,l,s,f,sim], joint_row(r, l, s), ln_theta[r,s,f])
+        Obs[r,y,seas,l,,s,f,sim] <- as.vector(counts %*% ae)
+      } # end s loop
+    }
+
+    # Joint by sex: one sample across the age by sex stack, bin fastest then sex
+    if(comp_type[y,f] == 2) {
+      prob <- as.vector(sapply(1:n_sexes, function(s) joint_row(r, l, s)))
+      counts <- draw(ISS[r,y,seas,l,1,f,sim], prob, ln_theta[r,1,f])
+      counts <- as.vector(counts %*% kronecker(diag(n_sexes), ae))
+      Obs[r,y,seas,l,,,f,sim] <- array(counts, dim = c(ncol(ae), n_sexes))
+    }
+
+    # Aggregated across regions and sexes, drawn once when the last region arrives
+    if(r == n_regions && comp_type[y,f] == 0) {
+      prob <- 0
+      for(rr in 1:n_regions) for(s in 1:n_sexes) prob <- prob + joint_row(rr, l, s)
+      counts <- draw(ISS[1,y,seas,l,1,f,sim], prob, ln_theta_agg[f])
+      Obs[1,y,seas,l,,1,f,sim] <- as.vector(counts %*% ae)
+    }
+
+  } # end l loop
+
+  return(Obs)
+}
+
 #' Simulate conventional tag recaptures for fishery fleets
 #'
 #' Draws observed tag recapture counts for a single liberty-season-cohort cell
@@ -844,8 +938,8 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
             }
 
             # Catch-at-length
-            if(exists("SizeAgeTrans") && !is.null(SizeAgeTrans)) for(s in 1:n_sexes) sim_env$CAL[p,r,y,seas,,s,f,sim] <- SizeAgeTrans[p,r,y,seas,,,s,sim] %*% CAA[p,r,y,seas,,s,f,sim] # Retained Catch at length
-            if(exists("SizeAgeTrans") && !is.null(SizeAgeTrans)) for(s in 1:n_sexes) sim_env$DAL[p,r,y,seas,,s,f,sim] <- SizeAgeTrans[p,r,y,seas,,,s,sim] %*% DAA[p,r,y,seas,,s,f,sim] # Discarded Catch at length
+            if((exists("SizeAgeTrans") && !is.null(SizeAgeTrans)) || (exists("SizeAgeTrans_fish") && !is.null(SizeAgeTrans_fish))) for(s in 1:n_sexes) sim_env$CAL[p,r,y,seas,,s,f,sim] <- (if(exists("SizeAgeTrans_fish") && !is.null(SizeAgeTrans_fish)) SizeAgeTrans_fish[p,r,y,seas,,,s,f,sim] else SizeAgeTrans[p,r,y,seas,,,s,sim]) %*% CAA[p,r,y,seas,,s,f,sim] # Retained Catch at length
+            if((exists("SizeAgeTrans") && !is.null(SizeAgeTrans)) || (exists("SizeAgeTrans_fish") && !is.null(SizeAgeTrans_fish))) for(s in 1:n_sexes) sim_env$DAL[p,r,y,seas,,s,f,sim] <- (if(exists("SizeAgeTrans_fish") && !is.null(SizeAgeTrans_fish)) SizeAgeTrans_fish[p,r,y,seas,,,s,f,sim] else SizeAgeTrans[p,r,y,seas,,,s,sim]) %*% DAA[p,r,y,seas,,s,f,sim] # Discarded Catch at length
 
           } # end p loop
 
@@ -992,7 +1086,7 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
                                                           age_or_len = 0)
 
             # Sample fishery lengths (retained compositions)
-            if(exists("SizeAgeTrans") && !is.null(SizeAgeTrans)) {
+            if((exists("SizeAgeTrans") && !is.null(SizeAgeTrans)) || (exists("SizeAgeTrans_fish") && !is.null(SizeAgeTrans_fish))) {
               sim_env$ObsFishLenComps <- simulate_comps(r = r,
                                                         y = y,
                                                         seas = seas,
@@ -1036,6 +1130,21 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
                                                             Obs = ObsFishLenComps_pop,
                                                             pop_specific = TRUE,
                                                             age_or_len = 1)
+
+              # Sample fishery conditional age-at-length. The joint of length and
+              # age is formed inside the sampler from SizeAgeTrans and CAA, so no
+              # joint array is carried per replicate.
+              if(exists("do_fish_caal") && isTRUE(do_fish_caal)) {
+                sim_env$ObsFish_caal <- simulate_caal(r = r, y = y, f = f, seas = seas, sim = sim,
+                                                      SizeAgeTrans = if(exists("SizeAgeTrans_fish") && !is.null(SizeAgeTrans_fish)) array(SizeAgeTrans_fish[,,,,,,,f,], dim = dim(SizeAgeTrans_fish)[-8]) else SizeAgeTrans, AtAge = CAA,
+                                                      ISS = ISS_Fish_caal, AgeingError = AgeingError,
+                                                      comp_like = comp_fish_caal_like,
+                                                      ln_theta = ln_Fish_caal_theta,
+                                                      ln_theta_agg = ln_Fish_caal_theta_agg,
+                                                      comp_type = Fish_caal_Type,
+                                                      n_sexes = n_sexes, n_regions = n_regions, n_lens = n_lens,
+                                                      Obs = ObsFish_caal)
+              } # end fishery caal
 
             } # end if size age transition if availiable
 
@@ -1108,7 +1217,7 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
                                                                     age_or_len = 0)
 
               # Sample fishery lengths (retained compositions)
-              if(exists("SizeAgeTrans") && !is.null(SizeAgeTrans)) {
+              if((exists("SizeAgeTrans") && !is.null(SizeAgeTrans)) || (exists("SizeAgeTrans_fish") && !is.null(SizeAgeTrans_fish))) {
                 # Sample fishery ages (non-population specific, discard compositions)
                 sim_env$ObsFishLenComps_discard <- simulate_comps(r = r,
                                                                   y = y,
@@ -1233,7 +1342,7 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
             } else {
               sim_env$SrvIAA[p,r,y,seas,,,sf,sim] <- NAA[p,r,y,seas,,,sim] * srv_sel[p,r,y,seas,,,sf,sim] * exp(-t_srv[r,seas,sf] * ZAA[p,r,y,seas,,,sim])
             }
-            if(exists("SizeAgeTrans") && !is.null(SizeAgeTrans)) for(s in 1:n_sexes) sim_env$SrvIAL[p,r,y,seas,,s,sf,sim] <- SizeAgeTrans[p,r,y,seas,,,s,sim] %*% SrvIAA[p,r,y,seas,,s,sf,sim] # Survey index at length
+            if((exists("SizeAgeTrans") && !is.null(SizeAgeTrans)) || (exists("SizeAgeTrans_srv") && !is.null(SizeAgeTrans_srv))) for(s in 1:n_sexes) sim_env$SrvIAL[p,r,y,seas,,s,sf,sim] <- (if(exists("SizeAgeTrans_srv") && !is.null(SizeAgeTrans_srv)) SizeAgeTrans_srv[p,r,y,seas,,,s,sf,sim] else SizeAgeTrans[p,r,y,seas,,,s,sim]) %*% SrvIAA[p,r,y,seas,,s,sf,sim] # Survey index at length
           } # end p loop
 
           # Survey Index - Regional
@@ -1309,7 +1418,7 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
                                                        age_or_len = 0)
 
           # Sample survey lengths
-          if(exists("SizeAgeTrans") && !is.null(SizeAgeTrans)) {
+          if((exists("SizeAgeTrans") && !is.null(SizeAgeTrans)) || (exists("SizeAgeTrans_srv") && !is.null(SizeAgeTrans_srv))) {
             sim_env$ObsSrvLenComps <- simulate_comps(r = r,
                                                      y = y,
                                                      f = sf,
@@ -1352,6 +1461,19 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
                                                          Obs = ObsSrvLenComps_pop,
                                                          pop_specific = TRUE,
                                                          age_or_len = 1)
+
+            # Sample survey conditional age-at-length
+            if(exists("do_srv_caal") && isTRUE(do_srv_caal)) {
+              sim_env$ObsSrv_caal <- simulate_caal(r = r, y = y, f = sf, seas = seas, sim = sim,
+                                                   SizeAgeTrans = if(exists("SizeAgeTrans_srv") && !is.null(SizeAgeTrans_srv)) array(SizeAgeTrans_srv[,,,,,,,sf,], dim = dim(SizeAgeTrans_srv)[-8]) else SizeAgeTrans, AtAge = SrvIAA,
+                                                   ISS = ISS_Srv_caal, AgeingError = AgeingError,
+                                                   comp_like = comp_srv_caal_like,
+                                                   ln_theta = ln_Srv_caal_theta,
+                                                   ln_theta_agg = ln_Srv_caal_theta_agg,
+                                                   comp_type = Srv_caal_Type,
+                                                   n_sexes = n_sexes, n_regions = n_regions, n_lens = n_lens,
+                                                   Obs = ObsSrv_caal)
+            } # end survey caal
 
           } # end if size age transition if availiable
 

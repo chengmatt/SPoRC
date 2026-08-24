@@ -34,7 +34,9 @@ Get_Selex_Array(
   sex_scale_offset = NULL,
   sex_apical_offset = NULL,
   sex_scale = NULL,
-  nselbins = NULL
+  nselbins = NULL,
+  dbnrml_raw = NULL,
+  dbnrml_startbin = NULL
 )
 }
 \arguments{
@@ -109,6 +111,10 @@ each cell's plateau bin (\code{0} = none), or \code{NULL}. Bins beyond it
 are held at its value for the parametric forms (see \code{n_sel_bins} in
 \code{\link{Get_Selex}}); the bicubic form's own setup-built plateau is
 unaffected.}
+
+\item{dbnrml_startbin}{Integer vector \code{[n_fleets]} or \code{NULL}, the
+bin each fleet's double normal anchors its ascending limb at; see
+\code{\link{Get_Selex}}.}
 }
 \value{
 List with \code{sel}, the age-based array (\code{n_pop x n_regions x

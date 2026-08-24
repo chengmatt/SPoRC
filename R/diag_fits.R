@@ -926,3 +926,170 @@ get_comp_prop <- function(data,
               ))
 
 } # end function
+
+
+#' Observed and predicted conditional age-at-length proportions
+#'
+#' A conditional age-at-length observation is an age composition within one
+#' length bin, so each (year, season, length bin) row is normalized on its own
+#' through the same \code{\link{Restrc_Comps}} the marginal compositions use.
+#' The predicted rows come from the report's joint arrays summed over
+#' populations, with the year's ageing error applied, so the proportions here
+#' are the ones the likelihood fits.
+#'
+#' @param data Data list from the fitted model.
+#' @param rep Report list from the fitted model.
+#'
+#' @returns A list with \code{Obs_Fish_caal}, \code{Pred_Fish_caal},
+#'   \code{Obs_Srv_caal} and \code{Pred_Srv_caal}, each dimensioned by
+#'   \code{n_regions, n_years, n_seas, n_lens, n_obs_ages, n_sexes, n_fleets},
+#'   or \code{NULL} for a fleet type carrying no conditional age-at-length data.
+#'
+#' @keywords internal
+get_caal_prop <- function(data, rep) {
+
+  n_regions <- data$n_regions
+  n_yrs <- length(data$years)
+  n_seas <- data$n_seas
+  n_lens <- length(data$lens)
+  n_sexes <- data$n_sexes
+
+  # ageing error by year, as get_comp_prop reads it
+  if(length(dim(data$AgeingError)) == 2) {
+    AgeingError_t <- array(0, dim = c(n_yrs, dim(data$AgeingError)))
+    for(i in 1:n_yrs) AgeingError_t[i,,] <- data$AgeingError
+  } else AgeingError_t <- data$AgeingError
+
+  # one fleet type at a time, since a model can carry either or both
+  one_stream <- function(Obs_arr, Exp_arr, Use_arr, type_mat, n_fleets) {
+
+    if(is.null(Obs_arr) || is.null(Exp_arr) || sum(Use_arr) == 0) return(NULL)
+
+    n_obs_ages <- dim(Obs_arr)[5]
+    Exp_arr <- apply(Exp_arr, 2:8, sum) # sum over populations
+    Obs_out <- array(NA, dim = c(n_regions, n_yrs, n_seas, n_lens, n_obs_ages, n_sexes, n_fleets))
+    Pred_out <- Obs_out
+
+    for(y in 1:n_yrs) {
+      for(f in 1:n_fleets) {
+        for(seas in 1:n_seas) {
+          for(l in 1:n_lens) {
+
+            if(sum(Use_arr[, y, seas, l, f]) < 1) next
+
+            Exp <- Exp_arr[, y, seas, l, , , f, drop = FALSE]
+            Obs <- Obs_arr[, y, seas, l, , , f, drop = FALSE]
+            dim(Exp) <- c(n_regions, 1, 1, dim(Exp_arr)[5], n_sexes, 1)
+            dim(Obs) <- c(n_regions, 1, 1, n_obs_ages, n_sexes, 1)
+
+            tmp <- Restrc_Comps(Exp = Exp, Obs = Obs, Comp_Type = type_mat[y, f],
+                                age_or_len = 0, AgeingError = AgeingError_t[y,,])
+
+            Obs_out[, y, seas, l, , , f] <- tmp$Obs
+            Pred_out[, y, seas, l, , , f] <- tmp$Exp
+
+          } # end l loop
+        } # end seas loop
+      } # end f loop
+    } # end y loop
+
+    list(Obs = Obs_out, Pred = Pred_out)
+  } # end one_stream
+
+  fish <- one_stream(data$ObsFish_caal, rep$Fish_caal, data$UseFish_caal,
+                     data$Fish_caal_Type, data$n_fish_fleets)
+  srv <- one_stream(data$ObsSrv_caal, rep$Srv_caal, data$UseSrv_caal,
+                    data$Srv_caal_Type, data$n_srv_fleets)
+
+  return(list(Obs_Fish_caal = fish$Obs, Pred_Fish_caal = fish$Pred,
+              Obs_Srv_caal = srv$Obs, Pred_Srv_caal = srv$Pred))
+}
+
+
+#' Conditional age-at-length fits as mean age within each length bin
+#'
+#' A conditional age-at-length observation is an age composition within one
+#' length bin, and a model can carry thousands of them, so the composition
+#' itself is not something to plot row by row. The mean age within each length
+#' bin is the summary that reads: it is what the data say about growth, and it
+#' is the statistic Francis reweighting penalizes the fit against. Returned observed
+#' and predicted, so the same frame draws mean age over years and mean age
+#' against length pooled over years. Residuals come from
+#' \code{\link{get_osa}} with \code{comp_source = "Fish_caal"} or
+#' \code{"Srv_caal"}, plotted with \code{\link{plot_resids}}.
+#'
+#' @param data Data list from the fitted model.
+#' @param rep Report list from the fitted model.
+#'
+#' @returns A data frame with one row per region, year, season, length bin, sex
+#'   and fleet that aged fish, holding \code{obs} and \code{pred} mean age, the
+#'   predicted standard deviation of age within the bin (\code{sd_pred}) and the
+#'   number aged (\code{ISS}). Empty when the model carries no conditional
+#'   age-at-length data.
+#'
+#' @export get_caal_fits
+#' @family Diagnostics
+get_caal_fits <- function(data, rep) {
+
+  props <- get_caal_prop(data, rep)
+  out <- data.frame()
+
+  one_stream <- function(Obs_p, Pred_p, Use, ISS, n_fleets, label) {
+
+    if(is.null(Pred_p)) return(data.frame())
+
+    n_bins <- dim(Pred_p)[5]
+    bins <- seq_len(n_bins)
+    rows <- data.frame()
+
+    for(f in 1:n_fleets) {
+      for(y in 1:length(data$years)) {
+        for(seas in 1:data$n_seas) {
+          for(l in 1:dim(Use)[4]) {
+
+            if(sum(Use[, y, seas, l, f]) < 1) next
+
+            for(r in which(Use[, y, seas, l, f] == 1)) {
+              for(s in 1:data$n_sexes) {
+
+                p_row <- Pred_p[r, y, seas, l, , s, f]
+                o_row <- Obs_p[r, y, seas, l, , s, f]
+                if(all(is.na(p_row)) || sum(o_row, na.rm = TRUE) == 0) next
+
+                n_row <- ISS[r, y, seas, l, s, f]
+                pred_bar <- sum(bins * p_row)
+                obs_bar <- sum(bins * o_row)
+                v <- sum(bins^2 * p_row) - pred_bar^2
+
+                rows <- rbind(rows, data.frame(
+                  Region = r,
+                  Year = data$years[y],
+                  Season = seas,
+                  Len_Bin = l,
+                  Length = data$lens[l],
+                  Sex = s,
+                  Fleet = f,
+                  Type = label,
+                  obs = obs_bar,
+                  pred = pred_bar,
+                  sd_pred = if(is.finite(v) && v > 0) sqrt(v) else NA_real_,
+                  ISS = n_row
+                ))
+
+              } # end s loop
+            } # end r loop
+          } # end l loop
+        } # end seas loop
+      } # end y loop
+    } # end f loop
+
+    rows
+  } # end one_stream
+
+  out <- rbind(out, one_stream(props$Obs_Fish_caal, props$Pred_Fish_caal, data$UseFish_caal,
+                               data$ISS_Fish_caal, data$n_fish_fleets, "Fishery"))
+  out <- rbind(out, one_stream(props$Obs_Srv_caal, props$Pred_Srv_caal, data$UseSrv_caal,
+                               data$ISS_Srv_caal, data$n_srv_fleets, "Survey"))
+
+  return(out)
+}

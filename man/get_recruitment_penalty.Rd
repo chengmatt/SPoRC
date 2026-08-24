@@ -28,7 +28,9 @@ get_recruitment_penalty(
   InitDevs_pen_center = 0,
   init_devs_pen_use = NULL,
   Use_init_sex_pen = 0,
-  ln_sigma_init_sex = 0
+  ln_sigma_init_sex = 0,
+  init_bias_ramp = NULL,
+  map_ln_InitDevs = NULL
 )
 }
 \arguments{
@@ -88,6 +90,15 @@ difference at every penalized age. Only meaningful when the sexes carry
 their own curves.}
 
 \item{ln_sigma_init_sex}{Log standard deviation of that tie.}
+
+\item{init_bias_ramp}{Numeric vector of length \code{n_ages - 1}, the bias
+ramp read at the year each initial age was born (deviation index
+\code{1 - age}). \code{NULL} uses the first model year's ramp value for
+every age, the previous behaviour.}
+
+\item{map_ln_InitDevs}{Numeric array matching \code{ln_InitDevs}, the map
+levels (\code{NA} where fixed). Cells sharing a level hold one parameter and
+split one penalty between them. \code{NULL} penalizes every cell.}
 }
 \value{
 List with elements \code{Init_Rec_nLL} (array \code{[pop, region,

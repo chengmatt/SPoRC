@@ -37,7 +37,11 @@ get_survey_observation_model(
   srv_q_type = NULL,
   ObsSrvIdx = NULL,
   UseSrvIdx = NULL,
-  RecDev_anom = NULL
+  RecDev_anom = NULL,
+  do_caal = 0,
+  Srv_caal = NULL,
+  SizeAgeTrans_srv = NULL,
+  srv_len_comp_sel = NULL
 )
 }
 \arguments{
@@ -119,10 +123,27 @@ solves catchability analytically.}
 deviations measured from the centre their penalty asserts, or \code{NULL}
 when no fleet observes them. Read only by fleets with
 \code{srv_idx_type == 2}.}
+
+\item{do_caal}{Integer (0/1) switch for building the joint survey index at
+length and age array. Off by default.}
+
+\item{Srv_caal}{Array \code{[pop, region, year, season, len, age, sex,
+srv_fleet]}, output container for the survey index at length and age. Only
+written when \code{do_caal == 1} and \code{fit_lengths == 1}.}
+
+\item{SizeAgeTrans_srv}{Array \code{[pop, region, year, season, len, age,
+sex, srv_fleet]}, each survey's own key from the growth module, or
+\code{NULL} to read the shared data key.}
+
+\item{srv_len_comp_sel}{Integer vector \code{[srv_fleet]}. \code{0}
+(default) expands the index at age through the key; \code{1} applies the
+length selectivity at length to the numbers spread over the composition
+own key, \eqn{I_l = s(l) \sum_a P(l \mid a)\, N_a e^{-t Z_a}}. Needs
+\code{srv_selex_type == 1}.}
 }
 \value{
 List with elements \code{srv_q}, \code{srv_sel}, \code{SrvIAA},
-  \code{SrvIAL}, \code{PredSrvIdx}.
+  \code{SrvIAL}, \code{Srv_caal}, \code{PredSrvIdx}.
 }
 \description{
 Converts population state into predicted survey index-at-age/length and

@@ -53,7 +53,7 @@ deviations (\code{ln_F_devs}) under an iid, random walk, or AR1 process
 error structure.
 }
 \details{
-\strong{Note:} Unlike \code{\link{Get_sel_PE_loglik}} and
+\strong{Note:} Unlike \code{\link{Get_PE_loglik}} and
 \code{\link{Get_move_PE_loglik}}, which return a single positive
 log-likelihood scalar to be negated by the caller, this function returns
 an already-negated array with the same dimensions as \code{ln_F_devs}

@@ -120,7 +120,7 @@ Setup_Mod_Discard_Comps     <- function(input_list,
   check_data_dimensions(ObsFishAgeComps_discard, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsFishAgeComps_discard')
   check_data_dimensions(UseFishAgeComps_discard, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'UseFishAgeComps_discard')
   check_data_dimensions(UseFishLenComps_discard, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'UseFishLenComps_discard')
-  if(input_list$data$fit_lengths == 1) check_data_dimensions(ObsFishLenComps_discard, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_lens = length(input_list$data$lens), n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsFishLenComps_discard')
+  if(input_list$data$fit_lengths == 1) check_data_dimensions(ObsFishLenComps_discard, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_lens = obs_len_bins(input_list), n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsFishLenComps_discard')
   if(!is.null(ISS_FishAgeComps_discard)) check_data_dimensions(ISS_FishAgeComps_discard, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ISS_FishAgeComps_discard')
   if(!is.null(ISS_FishLenComps_discard)) check_data_dimensions(ISS_FishLenComps_discard, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ISS_FishLenComps_discard')
   check_data_dimensions(FishAgeComps_discard_LikeType, n_fish_fleets = input_list$data$n_fish_fleets, what = 'FishAgeComps_discard_LikeType')
@@ -134,7 +134,7 @@ Setup_Mod_Discard_Comps     <- function(input_list,
   if(any(UseFishAgeComps_discard_pop == 1)) check_data_dimensions(ObsFishAgeComps_discard_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsFishAgeComps_discard_pop')
   check_data_dimensions(UseFishAgeComps_discard_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'UseFishAgeComps_discard_pop')
   check_data_dimensions(UseFishLenComps_discard_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'UseFishLenComps_discard_pop')
-  if(input_list$data$fit_lengths == 1 && any(UseFishLenComps_discard_pop == 1)) check_data_dimensions(ObsFishLenComps_discard_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_lens = length(input_list$data$lens), n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsFishLenComps_discard_pop')
+  if(input_list$data$fit_lengths == 1 && any(UseFishLenComps_discard_pop == 1)) check_data_dimensions(ObsFishLenComps_discard_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_lens = obs_len_bins(input_list), n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsFishLenComps_discard_pop')
   if(!is.null(ISS_FishAgeComps_discard_pop)) check_data_dimensions(ISS_FishAgeComps_discard_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ISS_FishAgeComps_discard_pop')
   if(!is.null(ISS_FishLenComps_discard_pop)) check_data_dimensions(ISS_FishLenComps_discard_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ISS_FishLenComps_discard_pop')
   check_data_dimensions(FishAgeComps_discard_pop_LikeType, n_fish_fleets = input_list$data$n_fish_fleets, what = 'FishAgeComps_discard_pop_LikeType')
@@ -599,6 +599,24 @@ Setup_Mod_Discard_Comps     <- function(input_list,
 #'   before the index is formed, the same convention \code{t_srv} uses for
 #'   surveys. Defaults to \code{0} (start of season), which is what the model
 #'   did before this argument existed; set \code{0.5} for a mid-season index.
+#' @param FishLenComps_sel Character vector \code{[n_fish_fleets]}, whether a
+#'   length-based selectivity is applied before or after the fish are spread
+#'   over lengths. \code{"age"} (default) selects at age and spreads the catch
+#'   afterwards, so every fish of an age is equally catchable and the length
+#'   composition within an age is just the key's. \code{"length"} spreads the
+#'   fish at each age over the key first and selects them length by length, so
+#'   the long fish of an age are taken more often. The key is the fleet's own,
+#'   at \code{t_fish}. Requires length-based fishery selectivity. Use
+#'   \code{"length"} when selectivity is length based and the length
+#'   compositions are what inform it. The two give different expected
+#'   compositions, not two roundings of the same one.
+#' @param fish_waa_selected Integer vector \code{[n_fish_fleets]} (0/1). With
+#'   weight at age derived from growth and length-based selectivity, \code{1}
+#'   makes the fleet's catch biomass use the mean weight of the fish it takes at
+#'   each age, \eqn{\sum_l P(l \mid a) s(l) w(l) / \sum_l P(l \mid a) s(l)},
+#'   instead of the population mean weight at that age. Use it when the gear
+#'   selects strongly within an age. With flat or age-based selectivity the two
+#'   are the same.
 #' @param ObsFishIdx_pop Observed population-specific fishery index array
 #'   \code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]}.
 #' @param ObsFishIdx_pop_SE Lognormal standard errors for \code{ObsFishIdx_pop},
@@ -649,6 +667,24 @@ Setup_Mod_Discard_Comps     <- function(input_list,
 #'   Example: \code{c("spltRjntS_Year_1-10_Fleet_1", "agg_Year_11-terminal_Fleet_1")}.
 #' @param FishLenComps_Type Same format and options as \code{FishAgeComps_Type}
 #'   but applied to length compositions.
+#' @param ObsFish_caal Observed conditional age-at-length array
+#'   \code{[n_regions x n_years x n_seas x n_lens x n_ages x n_sexes x
+#'   n_fish_fleets]}. A CAAL observation is the age composition of the fish aged
+#'   from one length bin, so the age margin of each length row is what gets fit.
+#'   \code{NULL} (default) for a model with no CAAL data.
+#' @param UseFish_caal Use flags \code{[n_regions x n_years x n_seas x n_lens x
+#'   n_fish_fleets]}. Length bins with no aged fish carry a zero and are skipped.
+#' @param ISS_Fish_caal Input sample sizes \code{[n_regions x n_years x n_seas x
+#'   n_lens x n_sexes x n_fish_fleets]}, the number aged within each length bin
+#'   rather than the number measured. Summed from \code{ObsFish_caal} when
+#'   \code{NULL}.
+#' @param Fish_caal_LikeType Character vector of length \code{n_fish_fleets}.
+#'   One of \code{"none"}, \code{"Multinomial"} or
+#'   \code{"Dirichlet-Multinomial"}. The logistic-normal families are not
+#'   available for CAAL, since a single length bin's age sample is small and
+#'   mostly zeros, which the additive log-ratio transform cannot handle.
+#' @param Fish_caal_Type Composition type specification, using the same
+#'   \code{"CompType_Year_x-y_Fleet_z"} convention as the marginal compositions.
 #' @param FishAgeComps_bins Which age bins each fishery fleet's age composition
 #'   is fitted over. Supply a list with one element per fleet, each a vector of
 #'   age indices or \code{NULL} for all ages, or an
@@ -819,6 +855,8 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
                                         UseFishIdx_pop = array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets)),
                                         fish_idx_type,
                                         t_fish = array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets)),
+                                        FishLenComps_sel = rep("age", input_list$data$n_fish_fleets),
+                                        fish_waa_selected = rep(0, input_list$data$n_fish_fleets),
                                         UseFishIdx,
 
                                         # Retained Compositions
@@ -847,11 +885,18 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
                                         FishIdx_LikeType = rep("lognormal", input_list$data$n_fish_fleets),
                                         FishIdx_Cov = NULL,
 
+                                        # Conditional Age-at-Length
+                                        ObsFish_caal = NULL,
+                                        UseFish_caal = NULL,
+                                        ISS_Fish_caal = NULL,
+                                        Fish_caal_LikeType = rep("none", input_list$data$n_fish_fleets),
+                                        Fish_caal_Type = paste("none_Year_1-terminal_Fleet_", 1:input_list$data$n_fish_fleets, sep = ''),
+
                                         # Discard Compositions (forwarded to Setup_Mod_Discard_Comps)
                                         ObsFishAgeComps_discard = array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, length(input_list$data$ages), input_list$data$n_sexes, input_list$data$n_fish_fleets)),
                                         UseFishAgeComps_discard = array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets)),
                                         ISS_FishAgeComps_discard = NULL,
-                                        ObsFishLenComps_discard = array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, length(input_list$data$lens), input_list$data$n_sexes, input_list$data$n_fish_fleets)),
+                                        ObsFishLenComps_discard = array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, obs_len_bins(input_list), input_list$data$n_sexes, input_list$data$n_fish_fleets)),
                                         UseFishLenComps_discard = array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets)),
                                         ISS_FishLenComps_discard = NULL,
                                         FishAgeComps_discard_LikeType = rep("none", input_list$data$n_fish_fleets),
@@ -894,7 +939,7 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
   check_data_dimensions(ObsFishAgeComps, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsFishAgeComps')
   check_data_dimensions(UseFishAgeComps, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'UseFishAgeComps')
   check_data_dimensions(UseFishLenComps, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'UseFishLenComps')
-  if(input_list$data$fit_lengths == 1) check_data_dimensions(ObsFishLenComps, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_lens = length(input_list$data$lens), n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsFishLenComps')
+  if(input_list$data$fit_lengths == 1) check_data_dimensions(ObsFishLenComps, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_lens = obs_len_bins(input_list), n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsFishLenComps')
   if(!is.null(ISS_FishAgeComps)) check_data_dimensions(ISS_FishAgeComps, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ISS_FishAgeComps')
   if(!is.null(ISS_FishLenComps)) check_data_dimensions(ISS_FishLenComps, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ISS_FishLenComps')
   check_data_dimensions(FishAgeComps_LikeType, n_fish_fleets = input_list$data$n_fish_fleets, what = 'FishAgeComps_LikeType')
@@ -908,7 +953,7 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
   if(any(UseFishAgeComps_pop == 1)) check_data_dimensions(ObsFishAgeComps_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsFishAgeComps_pop')
   check_data_dimensions(UseFishAgeComps_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'UseFishAgeComps_pop')
   check_data_dimensions(UseFishLenComps_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'UseFishLenComps_pop')
-  if(input_list$data$fit_lengths == 1 && any(UseFishLenComps_pop == 1)) check_data_dimensions(ObsFishLenComps_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_lens = length(input_list$data$lens), n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsFishLenComps_pop')
+  if(input_list$data$fit_lengths == 1 && any(UseFishLenComps_pop == 1)) check_data_dimensions(ObsFishLenComps_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_lens = obs_len_bins(input_list), n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsFishLenComps_pop')
   if(!is.null(ISS_FishAgeComps_pop)) check_data_dimensions(ISS_FishAgeComps_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ISS_FishAgeComps_pop')
   if(!is.null(ISS_FishLenComps_pop)) check_data_dimensions(ISS_FishLenComps_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_seas = input_list$data$n_seas, n_years = length(input_list$data$years), n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ISS_FishLenComps_pop')
   check_data_dimensions(FishAgeComps_pop_LikeType, n_fish_fleets = input_list$data$n_fish_fleets, what = 'FishAgeComps_pop_LikeType')
@@ -1156,6 +1201,19 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
 
   if(any(is.na(FishLenComps_pop_Type_Mat))) stop("FishLenComps_pop_Type is returning an NA. Did you update the year range of FishLenComps_pop_Type?")
 
+  # whether length selectivity is applied at length or through the size-age key.
+  # Whether the selectivity is length based is only known once Setup_Mod_Fishsel_and_Q
+  # runs, which checks this against it
+  if(length(FishLenComps_sel) != input_list$data$n_fish_fleets || !all(FishLenComps_sel %in% c("age", "length"))) stop("FishLenComps_sel must be one of age or length for each fishery fleet")
+  fish_len_comp_sel_vals <- as.numeric(FishLenComps_sel == "length")
+  for(f in 1:input_list$data$n_fish_fleets) if(FishLenComps_sel[f] == "length") collect_message("Fishery length compositions for fleet ", f, " apply selectivity at length")
+
+  # Fishery Weight at Age Options ---------------------------------------------
+
+  if(length(fish_waa_selected) != input_list$data$n_fish_fleets || !all(fish_waa_selected %in% c(0, 1))) stop("fish_waa_selected must be 0 or 1 for each fishery fleet")
+  if(any(fish_waa_selected == 1) && (is.null(input_list$data$derive_waa) || input_list$data$derive_waa != 1)) stop("fish_waa_selected = 1 needs waa_model = 'wt_len' in Setup_Mod_Biologicals")
+  for(f in which(fish_waa_selected == 1)) collect_message("Fishery fleet ", f, " takes its catch biomass on the selection-weighted weight at age")
+
   # ISS Munging -------------------------------------------------------------
 
   # Fishery Ages
@@ -1268,6 +1326,8 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
   input_list$data$FishAgeComps_bins <- parse_idx_ages(FishAgeComps_bins, length(input_list$data$ages), input_list$data$n_fish_fleets, "FishAgeComps_bins")
   input_list$data$FishIdx_Cov <- fish_idx_cov_parsed
   input_list$data$t_fish <- t_fish
+  input_list$data$fish_len_comp_sel <- fish_len_comp_sel_vals
+  input_list$data$fish_waa_selected <- fish_waa_selected
   input_list$data$ObsFishAgeComps <- ObsFishAgeComps
   input_list$data$UseFishAgeComps <- UseFishAgeComps
   input_list$data$ObsFishLenComps <- ObsFishLenComps
@@ -1385,6 +1445,17 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
     FishAgeComps_discard_pop_Type     = FishAgeComps_discard_pop_Type,
     FishLenComps_discard_pop_Type     = FishLenComps_discard_pop_Type,
     ...
+  )
+
+  # Conditional Age-at-Length --------------------------------------------------
+  # A CAAL observation is an age composition within a length bin, so it belongs
+  # with the other compositions for this fleet rather than in a block of its own.
+  input_list <- setup_caal_stream(
+    input_list,
+    ObsCAAL = ObsFish_caal, UseCAAL = UseFish_caal,
+    ISS_CAAL = ISS_Fish_caal,
+    CAAL_LikeType = Fish_caal_LikeType, CAAL_Type = Fish_caal_Type,
+    fleet_type = "Fish"
   )
 
   # Print Messages ----------------------------------------------------------

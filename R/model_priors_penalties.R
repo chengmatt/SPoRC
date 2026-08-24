@@ -194,11 +194,14 @@ Get_Selex_Smoothness_Penalty <- function(sel_vals, wt_bin_curve = 0, wt_bin_diff
   return(ll)
 } # return log likelihood
 
-#' Compute Selectivity Process Error Log-Likelihood (Positive Scale)
+#' Compute Process Error Log-Likelihood for a Deviation Surface (Positive Scale)
 #'
-#' Calculates the positive log-likelihood contribution for selectivity
-#' process error deviations under a variety of temporal/spatiotemporal
-#' structures.
+#' Calculates the positive log-likelihood contribution for a surface of
+#' deviations indexed by year and by some second dimension, under a variety of
+#' temporal and spatiotemporal structures. Selectivity deviations use it over
+#' years and bins, growth's semi-parametric deviations over years and ages, and
+#' a time-varying growth parameter over years alone (a surface one column wide).
+#' The argument names still read \code{bin} for that second dimension.
 #'
 #' The function supports:
 #' \itemize{
@@ -259,7 +262,7 @@ Get_Selex_Smoothness_Penalty <- function(sel_vals, wt_bin_curve = 0, wt_bin_diff
 #'
 #' @keywords internal
 #' @import RTMB
-Get_sel_PE_loglik <- function(PE_model,
+Get_PE_loglik <- function(PE_model,
                               PE_pars,
                               ln_devs,
                               map_sel_devs,
@@ -300,7 +303,7 @@ Get_sel_PE_loglik <- function(PE_model,
 
       if(PE_model == 2) {
         # The walk needs a distribution for its first year. A wide sigma leaves
-        # that year essentially free; NA instead starts the walk at zero under
+        # that year unconstrained; NA instead starts the walk at zero under
         # its own sigma, which is what a first difference taken against a
         # selectivity of one amounts to.
         if(y == 1) {
@@ -333,7 +336,9 @@ Get_sel_PE_loglik <- function(PE_model,
 
       # Construct precision matrix for 3d gmrf
       if(PE_model %in% c(3,4)) {
-        Q = Get_3d_precision(n_ages = n_bins[min_sel_devs_shared_bins], # number of ages
+        # the precision matrix spans the bins the deviations are actually evaluated
+        # over, which is one per shared group, not the full bin dimension
+        Q = Get_3d_precision(n_ages = length(min_sel_devs_shared_bins), # number of ages
                              n_yrs = n_yrs,  # number of years
                              pcorr_age = PE_pars[1,1,s,1], # unconstrained partial correlation by age
                              pcorr_year = PE_pars[1,2,s,1], # unconstrained partial correlation by year
@@ -517,7 +522,7 @@ Get_move_PE_loglik <- function(PE_model,
 #' deviations (\code{ln_F_devs}) under an iid, random walk, or AR1 process
 #' error structure.
 #'
-#' \strong{Note:} Unlike \code{\link{Get_sel_PE_loglik}} and
+#' \strong{Note:} Unlike \code{\link{Get_PE_loglik}} and
 #' \code{\link{Get_move_PE_loglik}}, which return a single positive
 #' log-likelihood scalar to be negated by the caller, this function returns
 #' an already-negated array with the same dimensions as \code{ln_F_devs}
@@ -839,6 +844,13 @@ get_selex_fixed_penalty <- function(selex_penalty, fixed_sel_pars) {
 #'   sex dimension existed) is accepted and treated as one shared curve.
 #' @param init_age_devs_shared Integer vector of shared initial age deviation
 #'   indices (used when \code{equil_init_age_strc == 3}).
+#' @param map_ln_InitDevs Numeric array matching \code{ln_InitDevs}, the map
+#'   levels (\code{NA} where fixed). Cells sharing a level hold one parameter and
+#'   split one penalty between them. \code{NULL} penalizes every cell.
+#' @param init_bias_ramp Numeric vector of length \code{n_ages - 1}, the bias
+#'   ramp read at the year each initial age was born (deviation index
+#'   \code{1 - age}). \code{NULL} uses the first model year's ramp value for
+#'   every age, the previous behaviour.
 #' @param init_devs_pen_use Array of 0/1 matching \code{ln_InitDevs}, naming
 #'   which cells are penalized. Sexes sharing one parameter keep only the first
 #'   sex's copy flagged so the shared parameter is not penalized twice;
@@ -878,13 +890,13 @@ get_recruitment_penalty <- function(n_pop, n_regions, n_ages, n_est_rec_devs, re
                                      do_rec_bias_ramp, map_ln_RecDevs = NULL,
                                      RecDevs_pen_center = 0, InitDevs_pen_center = 0,
                                      init_devs_pen_use = NULL,
-                                     Use_init_sex_pen = 0, ln_sigma_init_sex = 0) {
+                                     Use_init_sex_pen = 0, ln_sigma_init_sex = 0,
+                                     init_bias_ramp = NULL, map_ln_InitDevs = NULL) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
-  # A 3-D initial deviation array predates the sex dimension: one shared curve,
-  # penalized once
+  # adding in sex dimesnion for init devs
   if(length(dim(ln_InitDevs)) == 3) ln_InitDevs <- array(ln_InitDevs, dim = c(dim(ln_InitDevs), 1))
   n_init_sexes <- dim(ln_InitDevs)[4]
   if(is.null(init_devs_pen_use)) {
@@ -898,6 +910,26 @@ get_recruitment_penalty <- function(n_pop, n_regions, n_ages, n_est_rec_devs, re
 
   # only estimated deviations are penalized, so mapping one off by hand removes its penalty as well.
   is_est <- if(is.null(map_ln_RecDevs)) array(1, dim = dim(ln_RecDevs)) else array(as.numeric(!is.na(map_ln_RecDevs)), dim = dim(ln_RecDevs))
+
+  # Make sure deviations are only penalized once if sharing
+  share_wt <- function(map, dims) {
+    if(is.null(map)) return(array(1, dim = dims))
+    lev <- as.vector(map)
+    mult <- table(lev[!is.na(lev)])
+    w <- ifelse(is.na(lev), 0, 1 / as.numeric(mult[as.character(lev)]))
+    array(w, dim = dims)
+  }
+  rec_wt <- share_wt(map_ln_RecDevs, dim(ln_RecDevs))
+  init_map_active <- map_ln_InitDevs
+  if(!is.null(init_map_active)) {
+    if(!is.null(init_devs_pen_use)) init_map_active[init_devs_pen_use == 0] <- NA
+    if(equil_init_age_strc %in% c(1,2,3)) {
+      visited <- if(equil_init_age_strc == 1) 1:(n_ages - 2) else if(equil_init_age_strc == 2) 1:dim(ln_InitDevs)[3] else unique(init_age_devs_shared[!is.na(init_age_devs_shared)])
+      not_visited <- setdiff(seq_len(dim(ln_InitDevs)[3]), visited)
+      if(length(not_visited) > 0) init_map_active[,,not_visited,] <- NA
+    }
+  }
+  init_wt <- share_wt(init_map_active, dim(ln_InitDevs))
 
   # The prior mean of a deviation is either asserted (zero, or the bias-corrected
   # -sigma^2/2) or estimated from the deviations themselves. The second form
@@ -924,13 +956,17 @@ get_recruitment_penalty <- function(n_pop, n_regions, n_ages, n_est_rec_devs, re
 
         # figure out indexing
         init_idx <- if(equil_init_age_strc == 1) 1:(n_ages - 2) else if(equil_init_age_strc == 2) 1:dim(ln_InitDevs)[3] else unique(init_age_devs_shared[!is.na(init_age_devs_shared)])
-        
+
         # The own-mean centre pools every penalized cell across ages and sexes, so
         # sex-specific deviations share one level the way a single estimated mean
         # would; with only the first sex penalized this is the previous behaviour.
-        init_mu <- if(InitDevs_pen_center == 1) own_mean(ln_InitDevs[p,r,init_idx,], init_devs_pen_use[p,r,init_idx,]) else -exp(ln_sigmaR[1,p,sigma_idx])^2/2 * bias_ramp[1]
+        # The fixed centre carries each initial age's own bias correction: the ramp
+        # read at the year that age was born, which precedes the first model year.
+        # A caller without that vector gets the first model year's value for every age.
+        ramp_init <- if(is.null(init_bias_ramp)) rep(bias_ramp[1], length(init_idx)) else init_bias_ramp[init_idx]
+        init_mu <- if(InitDevs_pen_center == 1) own_mean(ln_InitDevs[p,r,init_idx,], init_devs_pen_use[p,r,init_idx,]) else -exp(ln_sigmaR[1,p,sigma_idx])^2/2 * ramp_init
         for(s_init in 1:n_init_sexes) {
-          Init_Rec_nLL[p,r,init_idx,s_init] <- -RTMB::dnorm(ln_InitDevs[p,r,init_idx,s_init], init_mu, exp(ln_sigmaR[1,p,sigma_idx]), TRUE) * init_devs_pen_use[p,r,init_idx,s_init]
+          Init_Rec_nLL[p,r,init_idx,s_init] <- -RTMB::dnorm(ln_InitDevs[p,r,init_idx,s_init], init_mu, exp(ln_sigmaR[1,p,sigma_idx]), TRUE) * init_devs_pen_use[p,r,init_idx,s_init] * init_wt[p,r,init_idx,s_init]
         } # end s_init loop
 
         # The between-sex penalty: each later sex's curve is pulled toward the first sex's at the same ages
@@ -955,8 +991,9 @@ get_recruitment_penalty <- function(n_pop, n_regions, n_ages, n_est_rec_devs, re
       Rec_nLL[p,r,l_idx] <- -RTMB::dnorm(ln_RecDevs[p,r,l_idx], l_mu, exp(ln_sigmaR[2,p,sigma_idx]), TRUE)
       if(do_rec_bias_ramp == 1 && any(bias_ramp != 0)) Rec_nLL[p,r,sigmaR_switch:n_est_rec_devs] <- Rec_nLL[p,r,sigmaR_switch:n_est_rec_devs] - (1 - 0.5 * bias_ramp[sigmaR_switch:n_est_rec_devs]) * ln_sigmaR[2,p,sigma_idx] # adjust w/ bias correction
 
-      # drop the penalty on deviations that are fixed rather than estimated
-      Rec_nLL[p,r,] <- Rec_nLL[p,r,] * is_est[p,r,]
+      # drop the penalty on deviations that are fixed rather than estimated, and
+      # give a deviation shared across cells its share of one penalty
+      Rec_nLL[p,r,] <- Rec_nLL[p,r,] * is_est[p,r,] * rec_wt[p,r,]
 
     } # end r loop
   } # end p loop

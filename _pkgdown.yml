@@ -156,6 +156,7 @@ reference:
       - do_runs_test
       - get_idx_fits
       - get_comp_prop
+      - get_caal_fits
       - get_osa
       - plot_resids
       - get_nLL_plot

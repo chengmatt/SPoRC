@@ -40,6 +40,11 @@ remotes::install_github("fishfollower/compResidual/compResidual") # Optional OSA
 pak::pak("chengmatt/SPoRC")
 ```
 
+For the dev branch, users can run the following:
+```
+pak::pak("chengmatt/SPoRC@dev-popn-seasons")
+```
+
 ### Publications
 1. Cheng, M.LH., Goethel, D.R., Cunningham, C.J., Hulson, P.F., Ianelli, J.N., Omori, K.L., 2026. The SPoRC Stock Assessment Package: A Generalized Next‐Generation Platform to Assess Spatial, Age and Sex‐Structured Populations. Fish and Fisheries faf.70082. https://doi.org/10.1111/faf.70082
 2. Cheng, M.L.H., Thorson, J.T., Goethel, D.R., Cunningham, C.J., 2026. Parsimonious estimation of environment- and demography-dependent movement in spatially stratified stock assessment models. ICES Journal of Marine Science 83, fsag147. https://doi.org/10.1093/icesjms/fsag147

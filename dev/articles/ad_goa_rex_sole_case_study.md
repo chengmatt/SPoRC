@@ -45,66 +45,6 @@ n_fish <- dat$n_fish_fleets
 n_srv <- dat$n_srv_fleets
 ```
 
-### What Stock Synthesis says differently
-
-Two areas with no movement between them. The assessment’s areas are
-separate growth patterns sharing one recruitment series, and nothing
-moves. `SPoRC` carries that as two regions with the identity movement
-matrix and a single global recruitment apportioned by region, so the
-regional subscripts are real and the movement ones are not.
-
-Conditional age-at-length is an age composition within a length bin.
-Each length bin of a survey year holds the ages of the otoliths read
-from that bin, and the assessment fits every such row as its own
-multinomial with the number aged as its sample size. `SPoRC` forms the
-expected row from the joint catch at length and age, the size-age
-transition scaled by the survey numbers at age, and hands it to the same
-composition likelihood the marginal ages use, which normalizes the row
-across ages. No conditioning is written out anywhere.
-
-Growth is the Schnute-Francis form with a linear start. Mean length at
-age is $`L_{1}`$ at $`A_{1} = 2`$ and $`L_{2}`$ at $`A_{2} = 20`$, von
-Bertalanffy between them, and linear from the first length bin’s lower
-edge at age 0 to $`L_{1}`$. The coefficient of variation is linear in
-mean length between the two reference ages and flat outside them. The
-plus group is not the curve at age 20 but an exponentially weighted
-mixture of the ages it holds, the rule the assessment inherits from
-SS3.24, which `SPoRC` applies in every year since growth is constant.
-Weight at age is the age-length key times weight at the bin midpoints.
-
-The early deviations each carry their own bias correction. The seventeen
-deviations setting ages 1 to 17 of the first year belong to 1965 through
-1981, and the assessment’s bias ramp is defined on calendar years, so
-each takes the ramp value of its own year. `SPoRC` reads the ramp at
-deviation index $`1 - a`$ for the deviation on age $`a`$.
-
-Shared deviations are penalized once. The recruitment and initial age
-deviations are one series shared by both areas, and by both sexes for
-the initial ages, so each carries one penalty however many cells of the
-parameter array hold it.
-
-Catchability is mirrored. The Eastern survey’s catchability is the
-Western-Central survey’s parameter, which the map expresses by giving
-the two cells of `ln_srv_q` one level.
-
-Fishing mortality is solved, not estimated. Under the hybrid method
-Stock Synthesis conditions $`F`$ on the catch, while `SPoRC` estimates
-it against a lognormal catch likelihood at CV 0.01.
-
-The main recruitment deviations sum to zero. The assessment declares
-them a `devvector` (`do_recdev = 1`), which ADMB constrains to sum to
-zero, so the 41 deviations of 1982 to 2022 carry 40 degrees of freedom
-and $`R_{0}`$ is the geometric mean recruitment of those years by
-construction. `SPoRC` leaves its deviations free under the penalty, so
-the two agree at the assessment’s estimate, where the deviations already
-sum to zero, and part company on refitting.
-
-The composition constant is renormalized. Stock Synthesis adds
-$`10^{-5}`$ to each observed and expected proportion and divides by the
-new total, so every composition likelihood is the `SPoRC` value scaled
-by $`1 + n_{\text{bins}}
-\times 10^{-5}`$. The comparison below undoes that.
-
 ## Model dimensions
 
 ``` r

@@ -33,6 +33,10 @@ Ensure the following packages are installed:
 
     pak::pak("chengmatt/SPoRC")
 
+For the dev branch, users can run the following:
+
+    pak::pak("chengmatt/SPoRC@dev-popn-seasons")
+
 ### Publications
 
 1.  Cheng, M.LH., Goethel, D.R., Cunningham, C.J., Hulson, P.F.,

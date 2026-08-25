@@ -448,18 +448,38 @@ do_growth_mapping <- function(input_list,
 #'   for all populations, regions, years, seasons, and sexes, an error is
 #'   raised otherwise. Requires \code{\link{Setup_Mod_Rec}} to have been called
 #'   first so \code{rec_lag} is already set.
-#' @param addtocomp Small constant added to composition proportions before likelihood
-#'   evaluation to avoid \code{log(0)}. Default \code{1e-3}. Ignored when a
-#'   logistic-normal likelihood is specified, as that family handles zeros internally.
-#' @param comp_const_obs Integer switch (\code{0} or \code{1}) controlling where
-#'   \code{addtocomp} is applied in the multinomial likelihood, not a constant to be
-#'   tuned. \code{1} (default) adds it to the observed proportions that weight
+#' @param addtocomp \strong{Deprecated here}, pass it to \code{\link{Setup_Mod_Weighting}}
+#'   instead, which now owns this constant along with every other likelihood weight.
+#'   Still accepted for backward compatibility: if supplied, it is forwarded to
+#'   \code{Setup_Mod_Weighting} with a message rather than applied here directly.
+#'   (Small constant added to composition proportions before likelihood evaluation
+#'   to avoid \code{log(0)}; default \code{1e-3} in \code{Setup_Mod_Weighting}.
+#'   Ignored when a logistic-normal likelihood is specified, as that family handles
+#'   zeros internally.)
+#' @param comp_const_obs \strong{Deprecated here}, pass it to
+#'   \code{\link{Setup_Mod_Weighting}} instead. Still accepted for backward
+#'   compatibility (forwarded with a message). Integer switch (\code{0} or
+#'   \code{1}) controlling where \code{addtocomp} is applied in the multinomial
+#'   likelihood, not a constant to be tuned. \code{1} (default in
+#'   \code{Setup_Mod_Weighting}) adds it to the observed proportions that weight
 #'   the multinomial as well as inside the logarithms, so the likelihood is
 #'   stationary exactly at \code{pred = obs}. \code{0} weights by the raw
-#'   observed proportions.
-#' @param addtofishidx Small constant added to fishery indices. Default \code{1e-4}.
-#' @param addtosrvidx Small constant added to survey indices. Default \code{1e-4}.
-#' @param addtotag Small constant added to tag recovery observations. Default \code{1e-10}.
+#'   observed proportions. The Dirichlet-multinomial sanity check that used to
+#'   read it here (inside \code{Setup_Mod_FishIdx_and_Comps}/
+#'   \code{Setup_Mod_SrvIdx_and_Comps}) now runs inside \code{Setup_Mod_Weighting}
+#'   once the final value is known.
+#' @param addtofishidx \strong{Deprecated here}, pass it to
+#'   \code{\link{Setup_Mod_Weighting}} instead. Still accepted for backward
+#'   compatibility (forwarded with a message). Small constant added to fishery
+#'   indices; default \code{1e-4} in \code{Setup_Mod_Weighting}.
+#' @param addtosrvidx \strong{Deprecated here}, pass it to
+#'   \code{\link{Setup_Mod_Weighting}} instead. Still accepted for backward
+#'   compatibility (forwarded with a message). Small constant added to survey
+#'   indices; default \code{1e-4} in \code{Setup_Mod_Weighting}.
+#' @param addtotag \strong{Deprecated here}, pass it to
+#'   \code{\link{Setup_Mod_Weighting}} instead. Still accepted for backward
+#'   compatibility (forwarded with a message). Small constant added to tag
+#'   recovery observations; default \code{1e-10} in \code{Setup_Mod_Weighting}.
 #' @param AgeingError Ageing error (age-age transition) array mapping true modelled ages
 #'   to observed age bins. Accepted forms:
 #'   \describe{
@@ -697,11 +717,11 @@ Setup_Mod_Biologicals <- function(input_list,
                                   WAA_fish = NULL,
                                   WAA_srv = NULL,
                                   MatAA,
-                                  addtocomp = 1e-3,
-                                  comp_const_obs = 1,
-                                  addtofishidx = 1e-4,
-                                  addtosrvidx = 1e-4,
-                                  addtotag = 1e-10,
+                                  addtocomp = NULL,
+                                  comp_const_obs = NULL,
+                                  addtofishidx = NULL,
+                                  addtosrvidx = NULL,
+                                  addtotag = NULL,
                                   AgeingError = NULL,
                                   Use_M_prior = 0,
                                   M_prior = NA,
@@ -1037,12 +1057,13 @@ Setup_Mod_Biologicals <- function(input_list,
   input_list$data$Use_M_prior <- Use_M_prior
   input_list$data$M_prior <- M_prior
   input_list$data$Fixed_natmort <- Fixed_natmort
-  if(!comp_const_obs %in% c(0, 1)) stop("comp_const_obs must be 0 or 1. It is a switch, not a constant: 1 weights the multinomial by obs + addtocomp (unbiased), 0 weights by the raw observed proportions (the ADMB convention).")
-  input_list$data$comp_const_obs <- comp_const_obs
-  input_list$data$addtocomp <- addtocomp
-  input_list$data$addtofishidx <- addtofishidx
-  input_list$data$addtosrvidx <- addtosrvidx
-  input_list$data$addtotag <- addtotag
+  # addtocomp/comp_const_obs/addtofishidx/addtosrvidx/addtotag now belong to
+  # Setup_Mod_Weighting; a value still passed here is stashed and picked up
+  # there, so old scripts keep working
+  legacy_weighting <- list(addtocomp = addtocomp, comp_const_obs = comp_const_obs, addtofishidx = addtofishidx, addtosrvidx = addtosrvidx, addtotag = addtotag)
+  if(any(!vapply(legacy_weighting, is.null, logical(1))))
+    collect_message("addtocomp/comp_const_obs/addtofishidx/addtosrvidx/addtotag passed to Setup_Mod_Biologicals are deprecated; pass them to Setup_Mod_Weighting instead.")
+  input_list$.legacy_weighting <- legacy_weighting
 
   # Populate Parameter List -------------------------------------------------
 

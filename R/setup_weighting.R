@@ -15,6 +15,21 @@
 #'
 #' @param input_list Named list with \code{$data}, \code{$par}, \code{$map},
 #'   and \code{$verbose} sublists, as returned by upstream setup functions.
+#' @param addtocomp Small constant added to composition proportions before likelihood
+#'   evaluation to avoid \code{log(0)}. Default \code{1e-3}. Ignored when a
+#'   logistic-normal likelihood is specified, as that family handles zeros internally.
+#' @param comp_const_obs Integer switch (\code{0} or \code{1}) controlling where
+#'   \code{addtocomp} is applied in the multinomial likelihood, not a constant to be
+#'   tuned. \code{1} (default) adds it to the observed proportions that weight
+#'   the multinomial as well as inside the logarithms, so the likelihood is
+#'   stationary exactly at \code{pred = obs}. \code{0} weights by the raw
+#'   observed proportions. If any fishery or survey conditional age-at-length
+#'   fleet uses the Dirichlet-Multinomial, \code{1} triggers a warning, since the
+#'   added constant biases theta upward when most age bins in a length bin are
+#'   structurally empty.
+#' @param addtofishidx Small constant added to fishery indices. Default \code{1e-4}.
+#' @param addtosrvidx Small constant added to survey indices. Default \code{1e-4}.
+#' @param addtotag Small constant added to tag recovery observations. Default \code{1e-10}.
 #' @param Wt_Catch Weight applied to the catch likelihood. Either a scalar
 #'   applied uniformly across all fleets, regions, years, and seasons, or a
 #'   numeric array \code{[n_regions × n_years × n_seas × n_fish_fleets]} for
@@ -168,6 +183,11 @@
 #' @export Setup_Mod_Weighting
 #' @family Model Setup
 Setup_Mod_Weighting <- function(input_list,
+                                addtocomp = 1e-3,
+                                comp_const_obs = 1,
+                                addtofishidx = 1e-4,
+                                addtosrvidx = 1e-4,
+                                addtotag = 1e-10,
                                 Wt_Catch = 1,
                                 Wt_FishIdx = 1,
                                 Wt_SrvIdx = 1,
@@ -225,6 +245,38 @@ Setup_Mod_Weighting <- function(input_list,
 
   messages_list <<- character(0) # string to attach to for printing messages
   if(input_list$store_config) input_list$config$Setup_Mod_Weighting <- mget(names(formals()))[-1]
+
+  # A value still passed to the deprecated Setup_Mod_Biologicals arguments wins
+  # over this function's own default, but not over a value supplied here
+  legacy <- input_list$.legacy_weighting
+  resolve_legacy <- function(val, is_missing, legacy_val, nm) {
+    if(is_missing && !is.null(legacy_val)) {
+      collect_message(nm, " taken from the deprecated Setup_Mod_Biologicals argument of the same name.")
+      return(legacy_val)
+    }
+    val
+  }
+  addtocomp      <- resolve_legacy(addtocomp,      missing(addtocomp),      legacy$addtocomp,      "addtocomp")
+  comp_const_obs <- resolve_legacy(comp_const_obs, missing(comp_const_obs), legacy$comp_const_obs, "comp_const_obs")
+  addtofishidx   <- resolve_legacy(addtofishidx,   missing(addtofishidx),   legacy$addtofishidx,   "addtofishidx")
+  addtosrvidx    <- resolve_legacy(addtosrvidx,    missing(addtosrvidx),    legacy$addtosrvidx,    "addtosrvidx")
+  addtotag       <- resolve_legacy(addtotag,       missing(addtotag),       legacy$addtotag,       "addtotag")
+  input_list$.legacy_weighting <- NULL
+  if(!comp_const_obs %in% c(0, 1)) stop("comp_const_obs must be 0 or 1. It is a switch, not a constant: 1 weights the multinomial by obs + addtocomp (unbiased), 0 weights by the raw observed proportions (the ADMB convention).")
+  input_list$data$addtocomp <- addtocomp
+  input_list$data$comp_const_obs <- comp_const_obs
+  input_list$data$addtofishidx <- addtofishidx
+  input_list$data$addtosrvidx <- addtosrvidx
+  input_list$data$addtotag <- addtotag
+
+  # comp_const_obs = 1 inflates Dirichlet-multinomial theta on CAAL's structurally empty
+  # bins. Fish_caal_LikeType/Srv_caal_LikeType code 1 for that likelihood.
+  dm_caal_fleet_types <- c(if(isTRUE(any(input_list$data$Fish_caal_LikeType == 1))) "fishery",
+                            if(isTRUE(any(input_list$data$Srv_caal_LikeType == 1))) "survey")
+  if(length(dm_caal_fleet_types) > 0 && comp_const_obs == 1)
+    warning(paste0("Conditional age-at-length uses the Dirichlet-Multinomial for at least one ", paste(dm_caal_fleet_types, collapse = " and "),
+                   " fleet with comp_const_obs = 1. The constant added to the observed proportions biases theta upward ",
+                   "when most age bins in a length bin are structurally empty; set comp_const_obs = 0 for conditional age-at-length."), call. = FALSE)
 
   input_list$data$Wt_Catch <- Wt_Catch
   input_list$data$Wt_FishIdx <- Wt_FishIdx

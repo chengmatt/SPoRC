@@ -161,14 +161,8 @@ setup_caal_stream <- function(input_list, ObsCAAL, UseCAAL, ISS_CAAL,
 
   type_mat <- parse_caal_type(CAAL_Type, n_yrs = n_yrs, n_fleets = n_fleets, what = type_nm)
 
-  # A CAAL row is mostly structurally empty ages, and under the default constant
-  # handling each of those rewards a larger Dirichlet-multinomial theta, which
-  # came out 1.5 times its generating value in simulation. Say so rather than
-  # letting the estimate drift silently.
-  if(any(like_vals == 1) && isTRUE(input_list$data$comp_const_obs == 1))
-    warning(paste0(like_nm, " uses the Dirichlet-Multinomial with comp_const_obs = 1. The constant added to the observed ",
-                   "proportions biases theta upward when most age bins in a length bin are structurally empty; ",
-                   "set comp_const_obs = 0 in Setup_Mod_Biologicals for conditional age-at-length."), call. = FALSE)
+  # comp_const_obs isn't final until Setup_Mod_Weighting runs, so its Dirichlet-multinomial
+  # sanity check lives there instead.
 
   # A fleet with no likelihood contributes nothing, so make sure its use flags are off
   for(f in 1:n_fleets) if(like_vals[f] == 999) UseCAAL[,,,,f] <- 0

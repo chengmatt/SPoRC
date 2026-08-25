@@ -10,11 +10,11 @@ Setup_Mod_Biologicals(
   WAA_fish = NULL,
   WAA_srv = NULL,
   MatAA,
-  addtocomp = 0.001,
-  comp_const_obs = 1,
-  addtofishidx = 1e-04,
-  addtosrvidx = 1e-04,
-  addtotag = 1e-10,
+  addtocomp = NULL,
+  comp_const_obs = NULL,
+  addtofishidx = NULL,
+  addtosrvidx = NULL,
+  addtotag = NULL,
   AgeingError = NULL,
   Use_M_prior = 0,
   M_prior = NA,
@@ -84,22 +84,42 @@ for all populations, regions, years, seasons, and sexes, an error is
 raised otherwise. Requires \code{\link{Setup_Mod_Rec}} to have been called
 first so \code{rec_lag} is already set.}
 
-\item{addtocomp}{Small constant added to composition proportions before likelihood
-evaluation to avoid \code{log(0)}. Default \code{1e-3}. Ignored when a
-logistic-normal likelihood is specified, as that family handles zeros internally.}
+\item{addtocomp}{\strong{Deprecated here}, pass it to \code{\link{Setup_Mod_Weighting}}
+instead, which now owns this constant along with every other likelihood weight.
+Still accepted for backward compatibility: if supplied, it is forwarded to
+\code{Setup_Mod_Weighting} with a message rather than applied here directly.
+(Small constant added to composition proportions before likelihood evaluation
+to avoid \code{log(0)}; default \code{1e-3} in \code{Setup_Mod_Weighting}.
+Ignored when a logistic-normal likelihood is specified, as that family handles
+zeros internally.)}
 
-\item{comp_const_obs}{Integer switch (\code{0} or \code{1}) controlling where
-\code{addtocomp} is applied in the multinomial likelihood, not a constant to be
-tuned. \code{1} (default) adds it to the observed proportions that weight
+\item{comp_const_obs}{\strong{Deprecated here}, pass it to
+\code{\link{Setup_Mod_Weighting}} instead. Still accepted for backward
+compatibility (forwarded with a message). Integer switch (\code{0} or
+\code{1}) controlling where \code{addtocomp} is applied in the multinomial
+likelihood, not a constant to be tuned. \code{1} (default in
+\code{Setup_Mod_Weighting}) adds it to the observed proportions that weight
 the multinomial as well as inside the logarithms, so the likelihood is
 stationary exactly at \code{pred = obs}. \code{0} weights by the raw
-observed proportions.}
+observed proportions. The Dirichlet-multinomial sanity check that used to
+read it here (inside \code{Setup_Mod_FishIdx_and_Comps}/
+\code{Setup_Mod_SrvIdx_and_Comps}) now runs inside \code{Setup_Mod_Weighting}
+once the final value is known.}
 
-\item{addtofishidx}{Small constant added to fishery indices. Default \code{1e-4}.}
+\item{addtofishidx}{\strong{Deprecated here}, pass it to
+\code{\link{Setup_Mod_Weighting}} instead. Still accepted for backward
+compatibility (forwarded with a message). Small constant added to fishery
+indices; default \code{1e-4} in \code{Setup_Mod_Weighting}.}
 
-\item{addtosrvidx}{Small constant added to survey indices. Default \code{1e-4}.}
+\item{addtosrvidx}{\strong{Deprecated here}, pass it to
+\code{\link{Setup_Mod_Weighting}} instead. Still accepted for backward
+compatibility (forwarded with a message). Small constant added to survey
+indices; default \code{1e-4} in \code{Setup_Mod_Weighting}.}
 
-\item{addtotag}{Small constant added to tag recovery observations. Default \code{1e-10}.}
+\item{addtotag}{\strong{Deprecated here}, pass it to
+\code{\link{Setup_Mod_Weighting}} instead. Still accepted for backward
+compatibility (forwarded with a message). Small constant added to tag
+recovery observations; default \code{1e-10} in \code{Setup_Mod_Weighting}.}
 
 \item{AgeingError}{Ageing error (age-age transition) array mapping true modelled ages
 to observed age bins. Accepted forms:

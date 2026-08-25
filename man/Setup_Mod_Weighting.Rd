@@ -6,6 +6,11 @@
 \usage{
 Setup_Mod_Weighting(
   input_list,
+  addtocomp = 0.001,
+  comp_const_obs = 1,
+  addtofishidx = 1e-04,
+  addtosrvidx = 1e-04,
+  addtotag = 1e-10,
   Wt_Catch = 1,
   Wt_FishIdx = 1,
   Wt_SrvIdx = 1,
@@ -69,6 +74,26 @@ Setup_Mod_Weighting(
 \arguments{
 \item{input_list}{Named list with \code{$data}, \code{$par}, \code{$map},
 and \code{$verbose} sublists, as returned by upstream setup functions.}
+
+\item{addtocomp}{Small constant added to composition proportions before likelihood
+evaluation to avoid \code{log(0)}. Default \code{1e-3}. Ignored when a
+logistic-normal likelihood is specified, as that family handles zeros internally.}
+
+\item{comp_const_obs}{Integer switch (\code{0} or \code{1}) controlling where
+\code{addtocomp} is applied in the multinomial likelihood, not a constant to be
+tuned. \code{1} (default) adds it to the observed proportions that weight
+the multinomial as well as inside the logarithms, so the likelihood is
+stationary exactly at \code{pred = obs}. \code{0} weights by the raw
+observed proportions. If any fishery or survey conditional age-at-length
+fleet uses the Dirichlet-Multinomial, \code{1} triggers a warning, since the
+added constant biases theta upward when most age bins in a length bin are
+structurally empty.}
+
+\item{addtofishidx}{Small constant added to fishery indices. Default \code{1e-4}.}
+
+\item{addtosrvidx}{Small constant added to survey indices. Default \code{1e-4}.}
+
+\item{addtotag}{Small constant added to tag recovery observations. Default \code{1e-10}.}
 
 \item{Wt_Catch}{Weight applied to the catch likelihood. Either a scalar
 applied uniformly across all fleets, regions, years, and seasons, or a

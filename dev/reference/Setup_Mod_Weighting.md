@@ -12,6 +12,11 @@ to `1`. Must be called after all data setup functions.
 ``` r
 Setup_Mod_Weighting(
   input_list,
+  addtocomp = 0.001,
+  comp_const_obs = 1,
+  addtofishidx = 1e-04,
+  addtosrvidx = 1e-04,
+  addtotag = 1e-10,
   Wt_Catch = 1,
   Wt_FishIdx = 1,
   Wt_SrvIdx = 1,
@@ -79,6 +84,37 @@ Setup_Mod_Weighting(
 
   Named list with `$data`, `$par`, `$map`, and `$verbose` sublists, as
   returned by upstream setup functions.
+
+- addtocomp:
+
+  Small constant added to composition proportions before likelihood
+  evaluation to avoid `log(0)`. Default `1e-3`. Ignored when a
+  logistic-normal likelihood is specified, as that family handles zeros
+  internally.
+
+- comp_const_obs:
+
+  Integer switch (`0` or `1`) controlling where `addtocomp` is applied
+  in the multinomial likelihood, not a constant to be tuned. `1`
+  (default) adds it to the observed proportions that weight the
+  multinomial as well as inside the logarithms, so the likelihood is
+  stationary exactly at `pred = obs`. `0` weights by the raw observed
+  proportions. If any fishery or survey conditional age-at-length fleet
+  uses the Dirichlet-Multinomial, `1` triggers a warning, since the
+  added constant biases theta upward when most age bins in a length bin
+  are structurally empty.
+
+- addtofishidx:
+
+  Small constant added to fishery indices. Default `1e-4`.
+
+- addtosrvidx:
+
+  Small constant added to survey indices. Default `1e-4`.
+
+- addtotag:
+
+  Small constant added to tag recovery observations. Default `1e-10`.
 
 - Wt_Catch:
 

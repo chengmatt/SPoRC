@@ -407,6 +407,21 @@ interaction: deviations excluded from the penalty no longer inform an
 estimated `ln_sigmaR`, so weight-based windows are safest with
 $`\sigma_R`$ fixed.
 
+#### Composition and index zero-guards (`Setup_Mod_Weighting()`)
+
+| Argument | Description |
+|----|----|
+| `addtocomp` | Small constant guarding $`\log(0)`$ in composition likelihoods (default `1e-3`) |
+| `comp_const_obs` | 0/1. Whether `addtocomp` is also added to the observed proportions used as multinomial weights. `1` (default) is the long-standing SPoRC behaviour; `0` adds it only inside the logarithms, a convention several existing assessments use. The difference slightly reweights every bin, so set `0` when bridging such assessments and otherwise leave the default. The Dirichlet-multinomial also honours it, and there the constant is not neutral: every bin with no observed and no expected mass contributes $`\log(\theta/(1+\theta))`$, so compositions with many structurally empty bins (conditional age-at-length above all) bias $`\theta`$ upward under `1`; use `0` for those. `Setup_Mod_Weighting` warns if any conditional age-at-length fleet uses the Dirichlet-Multinomial while this is `1` |
+| `addtofishidx`, `addtosrvidx` | Small constants guarding $`\log(0)`$ in the fishery/survey index likelihoods (default `1e-4` each) |
+| `addtotag` | Small constant guarding zero tag releases/recoveries (default `1e-10`) |
+
+`addtocomp`/`comp_const_obs`/`addtofishidx`/`addtosrvidx`/`addtotag`
+used to be arguments of
+[`Setup_Mod_Biologicals()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Biologicals.md).
+They still work there, forwarded with a message, but new code should
+pass them here instead.
+
 #### Steepness priors
 
 When a stock-recruit curve is present, either because it generates
@@ -1231,8 +1246,6 @@ Supplied via
 | `SizeAgeTrans_fish`, `SizeAgeTrans_srv` | `NULL` or `[p × r × y × τ × l × a × s × f]` | Optional per-fleet size-age keys, `SizeAgeTrans` with a trailing fleet dimension appended. `NULL` (default) reads every fleet from the shared `SizeAgeTrans`. Only valid under `growth_model = "none"`; a growth model already derives one key per fleet at that fleet’s own timing and rejects these to avoid two sources for the same quantity. The fixed-data counterpart of `WAA_fish`/`WAA_srv` overriding the shared `WAA`, and of `Setup_Sim_Biologicals`’s `SizeAgeTrans_fish_input`/`SizeAgeTrans_srv_input` on the operating-model side |
 | `fit_lengths` | 0/1 | Toggle for fitting length compositions |
 | `do_caal` | 0/1 | Toggle for reporting the joint arrays at length and age (`Fish_caal`, `Fish_caal_discard`, `Srv_caal`), dimensioned `[p × r × y × τ × l × a × s × f]` like `CAA` and `CAL`. Requires `fit_lengths = 1`, and is switched on by itself when conditional age-at-length data are supplied, since their expected rows are read from these arrays. Each array carries a length and an age dimension at once, so they are the largest objects the model builds and every cell lands on the AD tape; leave off unless they are wanted |
-| `addtocomp` | scalar | Small constant guarding $`\log(0)`$ in composition likelihoods (default `1e-3`) |
-| `comp_const_obs` | 0/1 | Whether `addtocomp` is also added to the observed proportions used as multinomial weights. `1` (default) is the long-standing SPoRC behaviour; `0` adds it only inside the logarithms, a convention several existing assessments use. The difference slightly reweights every bin, so set `0` when bridging such assessments and otherwise leave the default. The Dirichlet-multinomial also honours it, and there the constant is not neutral: every bin with no observed and no expected mass contributes $`\log(\theta/(1+\theta))`$, so compositions with many structurally empty bins (conditional age-at-length above all) bias $`\theta`$ upward under `1`; use `0` for those |
 | `growth_model` | `"none"` / `"vb_schnute"` / `"richards"` | `"vb_schnute"` builds each fleet’s size-age transition inside the model from von Bertalanffy parameters in Schnute’s form (`L1` at `growth_A1`, `L2` at `growth_A2`, `K`, `CV1`, `CV2`): linear growth from `growth_L0` at age zero up to `L1`, CV interpolated on length between the references, the plus-group mean size adjusted for fish older than the accumulator age, and a binned normal key with the tails in the end bins, read at each fleet’s own timing (`t_fish`, `t_srv`). `"richards"` is the same curve applied to lengths raised to a sixth estimated parameter `rho`, which nests the von Bertalanffy form at `rho = 1`. Requires `fit_lengths = 1` |
 | `ln_growth_pars` (via `...`) | `[p × r × s × n]` | Starting values for `L1, L2, K, CV1, CV2` (then `rho` under `"richards"`), log scale, passed through `starting_values` as every other parameter’s are. Defaults to the ends of the length bins with `K = 0.15` and CVs of `0.1`, so supply your own for any real model |
 | `growth_spec` | `"est_all"` / `"est_shared_r"` / `"est_shared_s"` / `"est_shared_r_s"` / `"fix"` | How the growth parameters are shared across regions and sexes. `growth_fix` holds individual parameters at their starting values |

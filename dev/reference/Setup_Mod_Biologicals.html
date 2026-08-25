@@ -73,11 +73,11 @@ block structure and mapping. Called after <code><a href="Setup_Mod_Dim.html">Set
 <span>  WAA_fish <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  WAA_srv <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">MatAA</span>,</span>
-<span>  addtocomp <span class="op">=</span> <span class="fl">0.001</span>,</span>
-<span>  comp_const_obs <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  addtofishidx <span class="op">=</span> <span class="fl">1e-04</span>,</span>
-<span>  addtosrvidx <span class="op">=</span> <span class="fl">1e-04</span>,</span>
-<span>  addtotag <span class="op">=</span> <span class="fl">1e-10</span>,</span>
+<span>  addtocomp <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  comp_const_obs <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  addtofishidx <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  addtosrvidx <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  addtotag <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  AgeingError <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  Use_M_prior <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  M_prior <span class="op">=</span> <span class="cn">NA</span>,</span>
@@ -162,30 +162,50 @@ first so <code>rec_lag</code> is already set.</p></dd>
 
 
 <dt id="arg-addtocomp">addtocomp<a class="anchor" aria-label="anchor" href="#arg-addtocomp"></a></dt>
-<dd><p>Small constant added to composition proportions before likelihood
-evaluation to avoid <code>log(0)</code>. Default <code>1e-3</code>. Ignored when a
-logistic-normal likelihood is specified, as that family handles zeros internally.</p></dd>
+<dd><p><strong>Deprecated here</strong>, pass it to <code><a href="Setup_Mod_Weighting.html">Setup_Mod_Weighting</a></code>
+instead, which now owns this constant along with every other likelihood weight.
+Still accepted for backward compatibility: if supplied, it is forwarded to
+<code>Setup_Mod_Weighting</code> with a message rather than applied here directly.
+(Small constant added to composition proportions before likelihood evaluation
+to avoid <code>log(0)</code>; default <code>1e-3</code> in <code>Setup_Mod_Weighting</code>.
+Ignored when a logistic-normal likelihood is specified, as that family handles
+zeros internally.)</p></dd>
 
 
 <dt id="arg-comp-const-obs">comp_const_obs<a class="anchor" aria-label="anchor" href="#arg-comp-const-obs"></a></dt>
-<dd><p>Integer switch (<code>0</code> or <code>1</code>) controlling where
-<code>addtocomp</code> is applied in the multinomial likelihood, not a constant to be
-tuned. <code>1</code> (default) adds it to the observed proportions that weight
+<dd><p><strong>Deprecated here</strong>, pass it to
+<code><a href="Setup_Mod_Weighting.html">Setup_Mod_Weighting</a></code> instead. Still accepted for backward
+compatibility (forwarded with a message). Integer switch (<code>0</code> or
+<code>1</code>) controlling where <code>addtocomp</code> is applied in the multinomial
+likelihood, not a constant to be tuned. <code>1</code> (default in
+<code>Setup_Mod_Weighting</code>) adds it to the observed proportions that weight
 the multinomial as well as inside the logarithms, so the likelihood is
 stationary exactly at <code>pred = obs</code>. <code>0</code> weights by the raw
-observed proportions.</p></dd>
+observed proportions. The Dirichlet-multinomial sanity check that used to
+read it here (inside <code>Setup_Mod_FishIdx_and_Comps</code>/
+<code>Setup_Mod_SrvIdx_and_Comps</code>) now runs inside <code>Setup_Mod_Weighting</code>
+once the final value is known.</p></dd>
 
 
 <dt id="arg-addtofishidx">addtofishidx<a class="anchor" aria-label="anchor" href="#arg-addtofishidx"></a></dt>
-<dd><p>Small constant added to fishery indices. Default <code>1e-4</code>.</p></dd>
+<dd><p><strong>Deprecated here</strong>, pass it to
+<code><a href="Setup_Mod_Weighting.html">Setup_Mod_Weighting</a></code> instead. Still accepted for backward
+compatibility (forwarded with a message). Small constant added to fishery
+indices; default <code>1e-4</code> in <code>Setup_Mod_Weighting</code>.</p></dd>
 
 
 <dt id="arg-addtosrvidx">addtosrvidx<a class="anchor" aria-label="anchor" href="#arg-addtosrvidx"></a></dt>
-<dd><p>Small constant added to survey indices. Default <code>1e-4</code>.</p></dd>
+<dd><p><strong>Deprecated here</strong>, pass it to
+<code><a href="Setup_Mod_Weighting.html">Setup_Mod_Weighting</a></code> instead. Still accepted for backward
+compatibility (forwarded with a message). Small constant added to survey
+indices; default <code>1e-4</code> in <code>Setup_Mod_Weighting</code>.</p></dd>
 
 
 <dt id="arg-addtotag">addtotag<a class="anchor" aria-label="anchor" href="#arg-addtotag"></a></dt>
-<dd><p>Small constant added to tag recovery observations. Default <code>1e-10</code>.</p></dd>
+<dd><p><strong>Deprecated here</strong>, pass it to
+<code><a href="Setup_Mod_Weighting.html">Setup_Mod_Weighting</a></code> instead. Still accepted for backward
+compatibility (forwarded with a message). Small constant added to tag
+recovery observations; default <code>1e-10</code> in <code>Setup_Mod_Weighting</code>.</p></dd>
 
 
 <dt id="arg-ageingerror">AgeingError<a class="anchor" aria-label="anchor" href="#arg-ageingerror"></a></dt>

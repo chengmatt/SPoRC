@@ -16,11 +16,11 @@ Setup_Mod_Biologicals(
   WAA_fish = NULL,
   WAA_srv = NULL,
   MatAA,
-  addtocomp = 0.001,
-  comp_const_obs = 1,
-  addtofishidx = 1e-04,
-  addtosrvidx = 1e-04,
-  addtotag = 1e-10,
+  addtocomp = NULL,
+  comp_const_obs = NULL,
+  addtofishidx = NULL,
+  addtosrvidx = NULL,
+  addtotag = NULL,
   AgeingError = NULL,
   Use_M_prior = 0,
   M_prior = NA,
@@ -108,31 +108,55 @@ Setup_Mod_Biologicals(
 
 - addtocomp:
 
-  Small constant added to composition proportions before likelihood
-  evaluation to avoid `log(0)`. Default `1e-3`. Ignored when a
+  **Deprecated here**, pass it to
+  [`Setup_Mod_Weighting`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Weighting.md)
+  instead, which now owns this constant along with every other
+  likelihood weight. Still accepted for backward compatibility: if
+  supplied, it is forwarded to `Setup_Mod_Weighting` with a message
+  rather than applied here directly. (Small constant added to
+  composition proportions before likelihood evaluation to avoid
+  `log(0)`; default `1e-3` in `Setup_Mod_Weighting`. Ignored when a
   logistic-normal likelihood is specified, as that family handles zeros
-  internally.
+  internally.)
 
 - comp_const_obs:
 
-  Integer switch (`0` or `1`) controlling where `addtocomp` is applied
-  in the multinomial likelihood, not a constant to be tuned. `1`
-  (default) adds it to the observed proportions that weight the
-  multinomial as well as inside the logarithms, so the likelihood is
-  stationary exactly at `pred = obs`. `0` weights by the raw observed
-  proportions.
+  **Deprecated here**, pass it to
+  [`Setup_Mod_Weighting`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Weighting.md)
+  instead. Still accepted for backward compatibility (forwarded with a
+  message). Integer switch (`0` or `1`) controlling where `addtocomp` is
+  applied in the multinomial likelihood, not a constant to be tuned. `1`
+  (default in `Setup_Mod_Weighting`) adds it to the observed proportions
+  that weight the multinomial as well as inside the logarithms, so the
+  likelihood is stationary exactly at `pred = obs`. `0` weights by the
+  raw observed proportions. The Dirichlet-multinomial sanity check that
+  used to read it here (inside `Setup_Mod_FishIdx_and_Comps`/
+  `Setup_Mod_SrvIdx_and_Comps`) now runs inside `Setup_Mod_Weighting`
+  once the final value is known.
 
 - addtofishidx:
 
-  Small constant added to fishery indices. Default `1e-4`.
+  **Deprecated here**, pass it to
+  [`Setup_Mod_Weighting`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Weighting.md)
+  instead. Still accepted for backward compatibility (forwarded with a
+  message). Small constant added to fishery indices; default `1e-4` in
+  `Setup_Mod_Weighting`.
 
 - addtosrvidx:
 
-  Small constant added to survey indices. Default `1e-4`.
+  **Deprecated here**, pass it to
+  [`Setup_Mod_Weighting`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Weighting.md)
+  instead. Still accepted for backward compatibility (forwarded with a
+  message). Small constant added to survey indices; default `1e-4` in
+  `Setup_Mod_Weighting`.
 
 - addtotag:
 
-  Small constant added to tag recovery observations. Default `1e-10`.
+  **Deprecated here**, pass it to
+  [`Setup_Mod_Weighting`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Weighting.md)
+  instead. Still accepted for backward compatibility (forwarded with a
+  message). Small constant added to tag recovery observations; default
+  `1e-10` in `Setup_Mod_Weighting`.
 
 - AgeingError:
 

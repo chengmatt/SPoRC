@@ -1110,6 +1110,66 @@ with
 fixed.</p>
 </div>
 <div class="section level4">
+<h4 id="composition-and-index-zero-guards-setup_mod_weighting">Composition and index zero-guards
+(<code>Setup_Mod_Weighting()</code>)<a class="anchor" aria-label="anchor" href="#composition-and-index-zero-guards-setup_mod_weighting"></a>
+</h4>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Argument</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>addtocomp</code></td>
+<td>Small constant guarding
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\log(0)</annotation></semantics></math>
+in composition likelihoods (default <code>1e-3</code>)</td>
+</tr>
+<tr class="even">
+<td><code>comp_const_obs</code></td>
+<td>0/1. Whether <code>addtocomp</code> is also added to the observed
+proportions used as multinomial weights. <code>1</code> (default) is the
+long-standing SPoRC behaviour; <code>0</code> adds it only inside the
+logarithms, a convention several existing assessments use. The
+difference slightly reweights every bin, so set <code>0</code> when
+bridging such assessments and otherwise leave the default. The
+Dirichlet-multinomial also honours it, and there the constant is not
+neutral: every bin with no observed and no expected mass contributes
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>θ</mi><mi>/</mi><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>+</mo><mi>θ</mi><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\log(\theta/(1+\theta))</annotation></semantics></math>,
+so compositions with many structurally empty bins (conditional
+age-at-length above all) bias
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>θ</mi><annotation encoding="application/x-tex">\theta</annotation></semantics></math>
+upward under <code>1</code>; use <code>0</code> for those.
+<code>Setup_Mod_Weighting</code> warns if any conditional age-at-length
+fleet uses the Dirichlet-Multinomial while this is <code>1</code>
+</td>
+</tr>
+<tr class="odd">
+<td>
+<code>addtofishidx</code>, <code>addtosrvidx</code>
+</td>
+<td>Small constants guarding
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\log(0)</annotation></semantics></math>
+in the fishery/survey index likelihoods (default <code>1e-4</code>
+each)</td>
+</tr>
+<tr class="even">
+<td><code>addtotag</code></td>
+<td>Small constant guarding zero tag releases/recoveries (default
+<code>1e-10</code>)</td>
+</tr>
+</tbody>
+</table>
+<p><code>addtocomp</code>/<code>comp_const_obs</code>/<code>addtofishidx</code>/<code>addtosrvidx</code>/<code>addtotag</code>
+used to be arguments of <code><a href="../reference/Setup_Mod_Biologicals.html">Setup_Mod_Biologicals()</a></code>. They still
+work there, forwarded with a message, but new code should pass them here
+instead.</p>
+</div>
+<div class="section level4">
 <h4 id="steepness-priors">Steepness priors<a class="anchor" aria-label="anchor" href="#steepness-priors"></a>
 </h4>
 <p>When a stock-recruit curve is present, either because it generates
@@ -2956,30 +3016,6 @@ their expected rows are read from these arrays. Each array carries a
 length and an age dimension at once, so they are the largest objects the
 model builds and every cell lands on the AD tape; leave off unless they
 are wanted</td>
-</tr>
-<tr class="even">
-<td><code>addtocomp</code></td>
-<td>scalar</td>
-<td>Small constant guarding
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\log(0)</annotation></semantics></math>
-in composition likelihoods (default <code>1e-3</code>)</td>
-</tr>
-<tr class="odd">
-<td><code>comp_const_obs</code></td>
-<td>0/1</td>
-<td>Whether <code>addtocomp</code> is also added to the observed
-proportions used as multinomial weights. <code>1</code> (default) is the
-long-standing SPoRC behaviour; <code>0</code> adds it only inside the
-logarithms, a convention several existing assessments use. The
-difference slightly reweights every bin, so set <code>0</code> when
-bridging such assessments and otherwise leave the default. The
-Dirichlet-multinomial also honours it, and there the constant is not
-neutral: every bin with no observed and no expected mass contributes
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>θ</mi><mi>/</mi><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>+</mo><mi>θ</mi><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\log(\theta/(1+\theta))</annotation></semantics></math>,
-so compositions with many structurally empty bins (conditional
-age-at-length above all) bias
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>θ</mi><annotation encoding="application/x-tex">\theta</annotation></semantics></math>
-upward under <code>1</code>; use <code>0</code> for those</td>
 </tr>
 <tr class="even">
 <td><code>growth_model</code></td>

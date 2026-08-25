@@ -193,7 +193,7 @@ through that one file.
 | `model_biomass.R` | `compute_biom_y`, `derive_proj_biom` | `model_transition.R` | `model_population_dynamics.R`, `projection.R` |
 | `model_distributions.R` | `dbeta_symmetric`, `ddirichlet`, `ddirmult`, `dlogistnormal`, `dnbinom_robust_noint`, `dpois_noint`, `get_beta_scaled_pars`, `get_index_nLL` | nothing | `model_lik_comps.R`, `model_lik_tags.R`, `model_objective.R`, `model_priors_penalties.R` |
 | `model_fit.R` | `cmb`, `fit_model` | `setup_mapping.R` | `diag_francis.R`, `diag_jitter.R`, `diag_likelihood_profile.R`, `diag_retrospective.R`, `refpts_main.R`, `sim_self_test.R` |
-| `model_growth.R` | `get_alk`, `Get_Growth`, `get_growth_pars_year`, `Get_Growth_Year`, `get_laa_curve`, `get_selected_waa`, `grow_increment`, `growth_args_from_model`, `growth_containers`, `growth_fill_year`, `growth_laa_at`, `growth_len_mid`, `growth_selected_waa_year`, `growth_start_state`, `growth_take_year`, `plus_group_size` | nothing | `model_objective.R` |
+| `model_growth.R` | `get_alk`, `Get_Growth`, `get_growth_pars_year`, `Get_Growth_Year`, `get_laa_curve`, `get_selected_waa`, `grow_increment`, `growth_args_from_model`, `growth_containers`, `growth_fill_year`, `growth_laa_at`, `growth_len_mid`, `growth_selected_waa_year`, `growth_start_state`, `growth_take_year`, `plus_group_size` | nothing | `model_objective.R`, `model_population_dynamics.R` |
 | `model_init_naa.R` | `Get_Init_NAA` | `model_transition.R` | `model_objective.R`, `sim_population.R` |
 | `model_lik_caal.R` | `eval_caal_osa`, `Get_CAAL_Likelihoods`, `pack_caal_osa` | `model_lik_comps.R` | `diag_osa_residuals.R`, `model_objective.R` |
 | `model_lik_comps.R` | `eval_comp_osa`, `Get_Comp_Likelihoods`, `Get_Comp_Likelihoods_OSA`, `pack_comp_osa` | `model_distributions.R`, `model_osa.R`, `utils_math.R` | `diag_osa_residuals.R`, `model_lik_caal.R`, `model_objective.R` |
@@ -203,7 +203,7 @@ through that one file.
 | `model_obs_fishery_survey.R` | `get_fishery_observation_model`, `get_survey_observation_model` | `model_transition.R` | `model_objective.R` |
 | `model_obs_tagging.R` | `get_tag_mort`, `get_tagging_observation_model`, `release_conv_tag_attr` | `model_transition.R` | `model_objective.R`, `sim_observations.R` |
 | `model_osa.R` | `ddirmult_osa`, `ddirmult2`, `dmultinom_osa`, `osa_extract_cdf`, `osa_extract_keep`, `osa_extract_values`, `osa_extract_x`, `osa_pbetabinom`, `osa_pbinom`, `osa_squeeze` | nothing | `model_lik_comps.R`, `model_lik_tags.R` |
-| `model_population_dynamics.R` | `get_population_projection` | `model_biomass.R`, `model_transition.R` | `model_objective.R` |
+| `model_population_dynamics.R` | `compute_mortality_year`, `get_population_projection`, `mortality_args_from_model` | `model_biomass.R`, `model_growth.R`, `model_transition.R` | `model_objective.R` |
 | `model_precision.R` | `Get_3d_precision` | nothing | `model_priors_penalties.R` |
 | `model_priors_penalties.R` | `get_dmr_penalty`, `Get_Fdev_PE_loglik`, `Get_move_PE_loglik`, `get_movement_dirichlet_prior`, `get_natmort_prior`, `Get_PE_loglik`, `get_q_prior`, `get_r0_prior`, `get_rec_level_penalty`, `get_recruitment_penalty`, `get_recruitment_proportion_priors`, `get_selex_fixed_penalty`, `get_selex_prior`, `Get_Selex_Smoothness_Penalty`, `get_sr_penalty`, `get_steepness_prior`, `get_tagrep_prior` | `model_distributions.R`, `model_precision.R`, `utils_math.R` | `model_objective.R` |
 | `model_recruitment.R` | `Get_Det_Recruitment` | `model_transition.R` | `projection.R`, `sim_population.R` |

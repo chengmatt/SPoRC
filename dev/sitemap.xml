@@ -99,6 +99,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/comp_osa_field_map.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/compute_biom_y.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/compute_biom_y_sim.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/compute_mortality_year.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/condition_closed_loop_simulations.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/convert_to_numeric.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/cov_to_factor.html</loc></url>
@@ -236,6 +237,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/mlt_rg_goa_rex_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/mlt_rg_sable_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/mlt_rg_sable_rep.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/mortality_args_from_model.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/obs_len_bins.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/optim_ref_pts.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/osa_default_bins.html</loc></url>

@@ -611,7 +611,10 @@ through a season goes through that one file.</p>
 <code>growth_take_year</code>, <code>plus_group_size</code>
 </td>
 <td>nothing</td>
-<td><code>model_objective.R</code></td>
+<td>
+<code>model_objective.R</code>,
+<code>model_population_dynamics.R</code>
+</td>
 </tr>
 <tr class="odd">
 <td><code>model_init_naa.R</code></td>
@@ -729,9 +732,14 @@ through a season goes through that one file.</p>
 </tr>
 <tr class="even">
 <td><code>model_population_dynamics.R</code></td>
-<td><code>get_population_projection</code></td>
 <td>
-<code>model_biomass.R</code>, <code>model_transition.R</code>
+<code>compute_mortality_year</code>,
+<code>get_population_projection</code>,
+<code>mortality_args_from_model</code>
+</td>
+<td>
+<code>model_biomass.R</code>, <code>model_growth.R</code>,
+<code>model_transition.R</code>
 </td>
 <td><code>model_objective.R</code></td>
 </tr>

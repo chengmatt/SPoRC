@@ -80,16 +80,14 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   if(!has("move_timing")) set("move_timing", 0)
   if(!has("comp_const_obs")) set("comp_const_obs", 1)
 
-  # The joint arrays at length and age are opt in, so an input list without the
-  # flag is a model that never built them. Conditional age-at-length data are opt in
-  # the same way, and a NULL use flag turns the whole block off.
+  # CAAL
   if(!has("do_caal")) set("do_caal", 0)
 
-  # Growth is data unless the module was switched on. Its time-varying and
-  # cohort options, the composition key timings, the selection-weighted
-  # fishery weight, length-based maturity and the population-to-data length bin
-  # map all came later, and default to the behaviour before them.
+  # Growth stuff
   if(!has("growth_model")) set("growth_model", 0)
+  if(!has("derive_waa")) set("derive_waa", 0)
+  if(!has("wt_len_pars")) set("wt_len_pars", NULL)
+  if(!has("growth_len_mid_vals")) set("growth_len_mid_vals", NULL)
   if(!has("growth_tv_model")) set("growth_tv_model", NULL)
   if(!has("growth_tv_link")) set("growth_tv_link", 0)
   if(!has("growth_par_bounds")) set("growth_par_bounds", NULL)
@@ -115,6 +113,7 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   if(!has("rinit_pen_sd")) set("rinit_pen_sd", 1)
   if(!has("UseFish_caal")) set("UseFish_caal", NULL)
   if(!has("UseSrv_caal")) set("UseSrv_caal", NULL)
+
   # The conditional age-at-length weights live in Setup_Mod_Weighting; a list
   # without them weights every row at one.
   caal_wt_dim <- function(n_fleets) c(get("n_regions", envir = env), length(get("years", envir = env)), get("n_seas", envir = env),
@@ -516,29 +515,50 @@ SPoRC_rtmb = function(pars, data) {
   if(use_fixed_natmort == 1) natmort = Fixed_natmort # Using fixed natural mortality
 
   ## Growth -------------------------------------------------------------------
-  # With growth read off each year's curve the whole series is built here. Under
-  # cohort growth the plus group blends the cohort entering it with the fish
-  # already there BY NUMBERS AT AGE, so a year's sizes are not known until the
-  # population loop reaches that year: only the years before the propagation
-  # starts are built here, and the rest arrive through growth_year_hook below.
-  growth_cohort = growth_model != 0 && growth_tv_type == 1
-  growth_pre_yrs = if(growth_cohort) seq_len(max(1, growth_cohort_styr - 1)) else 1:n_yrs
+
+  use_cohort_growth = growth_model != 0 && growth_tv_type == 1 # whether using growth cohort mode or not
+  precomputed_mortality_yrs = if(use_cohort_growth) seq_len(max(1, growth_cohort_styr - 1)) else 1:n_yrs
+
   if(growth_model != 0) {
+
+    # grab growth arguments into environment
     growth_args = growth_args_from_model()
+
+    # get growth function
     tmp_growth = do.call(Get_Growth, c(growth_args, list(
       n_yrs = n_yrs, n_fish_fleets = n_fish_fleets, n_srv_fleets = n_srv_fleets,
       growth_tv_type = growth_tv_type, growth_cohort_styr = growth_cohort_styr,
-      years_eval = if(growth_cohort) seq_len(growth_cohort_styr) else NULL
+      years_eval = if(use_cohort_growth) seq_len(growth_cohort_styr) else NULL
     )))
-    # one key per fleet read at that fleet's timing, plus the spawning key
-    SizeAgeTrans_fish = tmp_growth$SizeAgeTrans_fish; SizeAgeTrans_srv = tmp_growth$SizeAgeTrans_srv
+
+    # get sizeage transition based on fleet timing
+    SizeAgeTrans_fish = tmp_growth$SizeAgeTrans_fish
+    SizeAgeTrans_srv = tmp_growth$SizeAgeTrans_srv
     SizeAgeTrans_spawn = tmp_growth$SizeAgeTrans_spawn
-    mean_LAA_fish = tmp_growth$mean_LAA_fish; sd_LAA_fish = tmp_growth$sd_LAA_fish
-    mean_LAA_srv = tmp_growth$mean_LAA_srv; sd_LAA_srv = tmp_growth$sd_LAA_srv
-    mean_LAA_spawn = tmp_growth$mean_LAA_spawn; sd_LAA_spawn = tmp_growth$sd_LAA_spawn
-    Linf = tmp_growth$Linf; L_beg = tmp_growth$L_beg; growth_pars_y = tmp_growth$growth_pars_y
-    if(derive_waa == 1) { WAA = tmp_growth$WAA; WAA_fish = tmp_growth$WAA_fish; WAA_srv = tmp_growth$WAA_srv }
-    growth_len_mid_vals = growth_len_mid(growth_len_lower) # bin midpoints the weight-length relationship is read at
+
+    # get growth values
+    mean_LAA_fish = tmp_growth$mean_LAA_fish
+    sd_LAA_fish = tmp_growth$sd_LAA_fish
+    mean_LAA_srv = tmp_growth$mean_LAA_srv
+    sd_LAA_srv = tmp_growth$sd_LAA_srv
+    mean_LAA_spawn = tmp_growth$mean_LAA_spawn
+    sd_LAA_spawn = tmp_growth$sd_LAA_spawn
+
+    # get growth parameters
+    Linf = tmp_growth$Linf
+    L_beg = tmp_growth$L_beg
+    growth_pars_y = tmp_growth$growth_pars_y
+
+    # get waa from fleet timing
+    if(derive_waa == 1) {
+      WAA = tmp_growth$WAA
+      WAA_fish = tmp_growth$WAA_fish
+      WAA_srv = tmp_growth$WAA_srv
+    }
+
+    # bin midpoints the weight-length relationship is read at
+    growth_len_mid_vals = growth_len_mid(growth_len_lower)
+
   } # growth module
 
   ## Selectivity ------------------------------------------------------------
@@ -613,135 +633,40 @@ SPoRC_rtmb = function(pars, data) {
   srv_sel_l = tmp_srv_sel$sel_l
 
   ## Mortality ---------------------------------------------------------------
-  missing_catch = is.na(ObsCatch) # TRUE = aggregate catch observation is missing (not a true recorded zero)
+  missing_catch = is.na(ObsCatch) # TRUE = aggregate catch is missing, not a true recorded zero
 
-  # Fishing and total mortality for one year, and the selection-weighted
-  # weight at age where a fleet asks for it. Both are done a year at a time
-  # because under cohort growth the key a length-based selectivity acts through
-  # is only known once the population loop reaches that year; every other model
-  # runs them for all years before the loop starts.
-  # Under cohort growth this runs
-  # inside the population loop, so the year's state is taken as an argument and
-  # handed back rather than assigned into this frame. The arrays are unpacked to
-  # locals here and repacked at the end, which keeps the loops below writing
-  # straight into an array rather than through the list on every element.
-  mortality_year = function(y, st) {
+  # get mortality arguments for the model
+  mortality_args = mortality_args_from_model()
 
-    Fmort = st$Fmort; dmr = st$dmr; fish_sel = st$fish_sel; ret_sel = st$ret_sel
-    ret_FAA = st$ret_FAA; disc_FAA = st$disc_FAA; tot_FAA = st$tot_FAA; ZAA = st$ZAA
-    WAA_fish = st$WAA_fish; SizeAgeTrans_fish = st$SizeAgeTrans_fish
-    WAA_srv = st$WAA_srv; SizeAgeTrans_srv = st$SizeAgeTrans_srv
-
-    if(growth_model != 0 && derive_waa == 1 && fish_selex_type == 1 && any(fish_waa_selected == 1)) {
-      WAA_fish = growth_selected_waa_year(WAA_fish, SizeAgeTrans_fish, fish_sel_l, wt_len_pars,
-                                          growth_len_mid_vals, fish_waa_selected, y,
-                                          n_pop, n_regions, n_seas, n_sexes)
-    }
-
-    if(growth_model != 0 && derive_waa == 1 && srv_selex_type == 1 && any(srv_waa_selected == 1)) {
-      WAA_srv = growth_selected_waa_year(WAA_srv, SizeAgeTrans_srv, srv_sel_l, wt_len_pars,
-                                         growth_len_mid_vals, srv_waa_selected, y,
-                                         n_pop, n_regions, n_seas, n_sexes)
-    }
-
-    for(r in 1:n_regions) {
-      for(seas in 1:n_seas) {
-        for(f in 1:n_fish_fleets) {
-
-          # A cell is a true closure only when no catch is fit
-          is_closed = (UseCatch[r,y,seas,f] == 0) && all(UseCatch_pop[,r,y,seas,f] == 0) && !missing_catch[r,y,seas,f]
-
-          if(is_closed) {
-            Fmort[r,y,seas,f] = 0
-            dmr[r,y,seas,f] = 0
-          } else {
-            Fmort[r,y,seas,f] = exp(ln_F_mean[r,seas,f] + ln_F_devs[r,y,seas,f])
-            dmr[r,y,seas,f] = RTMB::plogis(logit_dmr_mean[r,seas,f] + logit_dmr_devs[r,y,seas,f])
-          }
-
-          # get fishing mortality at age
-          for(p in 1:n_pop) {
-            # the key is the fleet's own when the growth module built it, the shared data key otherwise
-            if(fish_selex_type == 1 || ret_selex_type == 1) {
-              for(s in 1:n_sexes) {
-                key_f = if(is.null(SizeAgeTrans_fish)) SizeAgeTrans[p,r,y,seas,,,s] else SizeAgeTrans_fish[p,r,y,seas,,,s,f]
-                if(fish_selex_type == 1) fish_sel[p,r,y,seas,,s,f] = fish_sel_l[r,y,,s,f] %*% key_f
-                if(ret_selex_type == 1) ret_sel[p,r,y,seas,,s,f] = ret_sel_l[r,y,,s,f] %*% key_f
-              } # end s loop
-
-            } # length based selectivity
-            ret_FAA[p,r,y,seas,,,f] = Fmort[r,y,seas,f] * fish_sel[p,r,y,seas,,,f] * ret_sel[p,r,y,seas,,,f] # Retained fishing mortality at age
-            disc_FAA[p,r,y,seas,,,f] = Fmort[r,y,seas,f] * fish_sel[p,r,y,seas,,,f] * (1 - ret_sel[p,r,y,seas,,,f]) * dmr[r,y,seas,f] # Discarded fishing mortality at age
-            tot_FAA[p,r,y,seas,,,f] = ret_FAA[p,r,y,seas,,,f] +  disc_FAA[p,r,y,seas,,,f]# Total fishing mortality at age
-
-          } # end p loop
-
-        } # end f loop
-
-        # get total mortality
-        for(p1 in 1:n_pop) for(a in 1:n_ages) for(s in 1:n_sexes)
-          ZAA[p1,r,y,seas,a,s] = sum(ret_FAA[p1,r,y,seas,a,s,]) + sum(disc_FAA[p1,r,y,seas,a,s,]) + (natmort[p1,r,y,a,s] * seasdur[seas])
-      } # end seas loop
-    } # end r loop
-
-    st$Fmort = Fmort; st$dmr = dmr; st$fish_sel = fish_sel; st$ret_sel = ret_sel
-    st$ret_FAA = ret_FAA; st$disc_FAA = disc_FAA; st$tot_FAA = tot_FAA; st$ZAA = ZAA
-    st$WAA_fish = WAA_fish; st$WAA_srv = WAA_srv
-
-    return(st)
-
-  } # end mortality_year
-
-  # The state the per-year steps carry. Everything growth and mortality write by
-  # year lives here, so it can be threaded through the population loop.
-  mort_state = list(Fmort = Fmort, dmr = dmr, fish_sel = fish_sel, ret_sel = ret_sel,
-                    ret_FAA = ret_FAA, disc_FAA = disc_FAA, tot_FAA = tot_FAA,
-                    ZAA = ZAA, WAA = WAA)
-  if(growth_model == 0) {
-    # fixed per-fleet keys, when supplied; NULL falls back to the shared
-    # SizeAgeTrans inside mortality_year() and the observation models exactly
-    # as a growth-derived key would
-    mort_state$SizeAgeTrans_fish = SizeAgeTrans_fish
-    mort_state$SizeAgeTrans_srv = SizeAgeTrans_srv
-  }
-  if(growth_model != 0) {
-    mort_state$tmp_growth = tmp_growth
-    mort_state$SizeAgeTrans_fish = SizeAgeTrans_fish; mort_state$SizeAgeTrans_srv = SizeAgeTrans_srv
-    mort_state$SizeAgeTrans_spawn = SizeAgeTrans_spawn
-    mort_state$mean_LAA_fish = mean_LAA_fish; mort_state$sd_LAA_fish = sd_LAA_fish
-    mort_state$mean_LAA_srv = mean_LAA_srv; mort_state$sd_LAA_srv = sd_LAA_srv
-    mort_state$mean_LAA_spawn = mean_LAA_spawn; mort_state$sd_LAA_spawn = sd_LAA_spawn
-    mort_state$Linf = Linf; mort_state$L_beg = L_beg; mort_state$growth_pars_y = growth_pars_y
-    if(derive_waa == 1) { mort_state$WAA_fish = WAA_fish; mort_state$WAA_srv = WAA_srv }
+  # Values needed for mortality function, and later update_cohort_growth_and_mortality
+  mortality_state_fields = c("Fmort", "dmr", "fish_sel", "ret_sel", "ret_FAA", "disc_FAA", "tot_FAA", "ZAA", "WAA") # mortality states
+  if(growth_model == 0) mortality_state_fields = c(mortality_state_fields, "SizeAgeTrans_fish", "SizeAgeTrans_srv") # add in sizeage if not using a growth model
+  if(growth_model != 0) { # add in additional states if using growth model
+    mortality_state_fields = c(mortality_state_fields, "tmp_growth", "SizeAgeTrans_fish", "SizeAgeTrans_srv", "SizeAgeTrans_spawn",
+                          "mean_LAA_fish", "sd_LAA_fish", "mean_LAA_srv", "sd_LAA_srv", "mean_LAA_spawn", "sd_LAA_spawn",
+                          "Linf", "L_beg", "growth_pars_y")
+    if(derive_waa == 1) mortality_state_fields = c(mortality_state_fields, "WAA_fish", "WAA_srv")
   } # growth module
+  mortality_state = mget(mortality_state_fields, envir = environment()) # output values to be easily referenced
 
-  for(y in growth_pre_yrs) mort_state = mortality_year(y, mort_state)
-  Fmort = mort_state$Fmort; dmr = mort_state$dmr; fish_sel = mort_state$fish_sel
-  ret_sel = mort_state$ret_sel; ret_FAA = mort_state$ret_FAA; disc_FAA = mort_state$disc_FAA
-  tot_FAA = mort_state$tot_FAA; ZAA = mort_state$ZAA
-  if(growth_model != 0) {
-    tmp_growth = mort_state$tmp_growth
-    SizeAgeTrans_fish = mort_state$SizeAgeTrans_fish; SizeAgeTrans_srv = mort_state$SizeAgeTrans_srv
-    SizeAgeTrans_spawn = mort_state$SizeAgeTrans_spawn
-    mean_LAA_fish = mort_state$mean_LAA_fish; sd_LAA_fish = mort_state$sd_LAA_fish
-    mean_LAA_srv = mort_state$mean_LAA_srv; sd_LAA_srv = mort_state$sd_LAA_srv
-    mean_LAA_spawn = mort_state$mean_LAA_spawn; sd_LAA_spawn = mort_state$sd_LAA_spawn
-    Linf = mort_state$Linf; L_beg = mort_state$L_beg; growth_pars_y = mort_state$growth_pars_y
-    if(derive_waa == 1) { WAA = mort_state$WAA; WAA_fish = mort_state$WAA_fish; WAA_srv = mort_state$WAA_srv }
-  } # growth module
+  for(y in precomputed_mortality_yrs) mortality_state = do.call(compute_mortality_year, c(mortality_args, list(y = y, st = mortality_state))) # get mortality values
+  list2env(mortality_state, envir = environment()) # update mortality values in environment
 
-  # Under cohort growth the population loop hands each year's start-of-year
-  # numbers back here: the year's growth is built from them, the selectivity is
-  # folded through the new key, mortality follows, and the year's total
-  # mortality, weight and maturity at age go back to the dynamics.
-  growth_year_hook = NULL
-  if(growth_cohort) {
-    growth_year_hook = function(y, NAA_y, st) {
+  ## Growth x Mortality (cohort growth) --------------------------------------
+  # build out cohort influenced mortality, since mortality dynamics can change if large cohorts enter
+  update_cohort_growth_and_mortality = NULL
+  if(use_cohort_growth) {
+
+    update_cohort_growth_and_mortality = function(y, NAA_y, st) {
       if(y >= growth_cohort_styr) {
         st$tmp_growth = do.call(Get_Growth_Year, c(growth_args, list(growth = st$tmp_growth, y = y, NAA_y = NAA_y)))
-        st = growth_take_year(st, st$tmp_growth, y, derive_waa) # this year's slice of every growth quantity
-        st = mortality_year(y, st) # selectivity through the new key, then mortality
+        st = growth_take_year(st, st$tmp_growth, y, derive_waa) # this year's growth quantity
+        # Only WAA_fish/WAA_srv genuinely need this year's growth; ZAA is
+        # recomputed as a side effect and only actually changes if selectivity
+        # is length-based (age-based selectivity reproduces the same ZAA).
+        st = do.call(compute_mortality_year, c(mortality_args, list(y = y, st = st))) # get new selex after cohort growth, then compute mortality
       }
+
       list(state = st,
            ZAA_y = st$ZAA[,,y,,,, drop = FALSE],
            WAA_y = st$WAA[,,y,,,, drop = FALSE],
@@ -937,11 +862,7 @@ SPoRC_rtmb = function(pars, data) {
   NAA0[,,1,1,,] = Init_Unfished_NAA
 
   ## Population Projection ---------------------------------------------------
-  # The stock-recruit curve's scale. "rinit" makes one parameter play both roles
-  # a virgin recruitment plays, the unfished age structure and the curve's
-  # scale, which is how ADMB templates carrying a separate mean recruitment are
-  # written. Reported so a fitted penalty curve can be reconstructed, since the
-  # three settings are otherwise indistinguishable in the report.
+
   sr_R0 = if(sr_R0_spec == 1) exp(ln_sr_R0) else if(sr_R0_spec == 2) rinit else R0
 
   tmp_pop_proj = get_population_projection(
@@ -957,30 +878,27 @@ SPoRC_rtmb = function(pars, data) {
     NAA = NAA, NAA0 = NAA0, NAA_bef = NAA_bef, NAA_aft = NAA_aft, Rec = Rec,
     SSB = SSB, Total_Biom = Total_Biom, Dynamic_SSB0 = Dynamic_SSB0, eff_SSB = eff_SSB,
     Mrate = Mrate, move_timing = move_timing, SR_ref_yr = SR_ref_yr,
-    # Under mean recruitment with a stock-recruit penalty the curve is evaluated
-    # alongside the dynamics but never feeds them. sr_R0 is the curve's own scale,
-    # which is either the mean recruitment level or a separately estimated one.
     sr_penalty = sr_penalty,
     sr_R0 = sr_R0,
-    year_hook = growth_year_hook,
-    hook_state = mort_state
+    growth_mortality_year_fn = update_cohort_growth_and_mortality,
+    growth_mortality_state = mortality_state
   )
 
-  # the years the hook built come back through the state it carried
-  if(growth_cohort) {
-    mort_state = tmp_pop_proj$hook_state
-    Fmort = mort_state$Fmort; dmr = mort_state$dmr; fish_sel = mort_state$fish_sel
-    ret_sel = mort_state$ret_sel; ret_FAA = mort_state$ret_FAA; disc_FAA = mort_state$disc_FAA
-    tot_FAA = mort_state$tot_FAA; ZAA = mort_state$ZAA
+  # the years update_cohort_growth_and_mortality built come back through the state it carried
+  if(use_cohort_growth) {
+    mortality_state = tmp_pop_proj$growth_mortality_state
+    Fmort = mortality_state$Fmort; dmr = mortality_state$dmr; fish_sel = mortality_state$fish_sel
+    ret_sel = mortality_state$ret_sel; ret_FAA = mortality_state$ret_FAA; disc_FAA = mortality_state$disc_FAA
+    tot_FAA = mortality_state$tot_FAA; ZAA = mortality_state$ZAA
     if(growth_model != 0) {
-      tmp_growth = mort_state$tmp_growth
-      SizeAgeTrans_fish = mort_state$SizeAgeTrans_fish; SizeAgeTrans_srv = mort_state$SizeAgeTrans_srv
-      SizeAgeTrans_spawn = mort_state$SizeAgeTrans_spawn
-      mean_LAA_fish = mort_state$mean_LAA_fish; sd_LAA_fish = mort_state$sd_LAA_fish
-      mean_LAA_srv = mort_state$mean_LAA_srv; sd_LAA_srv = mort_state$sd_LAA_srv
-      mean_LAA_spawn = mort_state$mean_LAA_spawn; sd_LAA_spawn = mort_state$sd_LAA_spawn
-      Linf = mort_state$Linf; L_beg = mort_state$L_beg; growth_pars_y = mort_state$growth_pars_y
-      if(derive_waa == 1) { WAA = mort_state$WAA; WAA_fish = mort_state$WAA_fish; WAA_srv = mort_state$WAA_srv }
+      tmp_growth = mortality_state$tmp_growth
+      SizeAgeTrans_fish = mortality_state$SizeAgeTrans_fish; SizeAgeTrans_srv = mortality_state$SizeAgeTrans_srv
+      SizeAgeTrans_spawn = mortality_state$SizeAgeTrans_spawn
+      mean_LAA_fish = mortality_state$mean_LAA_fish; sd_LAA_fish = mortality_state$sd_LAA_fish
+      mean_LAA_srv = mortality_state$mean_LAA_srv; sd_LAA_srv = mortality_state$sd_LAA_srv
+      mean_LAA_spawn = mortality_state$mean_LAA_spawn; sd_LAA_spawn = mortality_state$sd_LAA_spawn
+      Linf = mortality_state$Linf; L_beg = mortality_state$L_beg; growth_pars_y = mortality_state$growth_pars_y
+      if(derive_waa == 1) { WAA = mortality_state$WAA; WAA_fish = mortality_state$WAA_fish; WAA_srv = mortality_state$WAA_srv }
     } # growth module
   } # cohort growth
 

@@ -5,6 +5,145 @@
 # movement in the order set by move_timing, and records the state each
 # observation model needs.
 
+#' Gather the arguments \code{\link{compute_mortality_year}} needs from the model frame
+#'
+#' @param env Environment holding the unpacked data and parameters, i.e. the
+#'   \code{SPoRC_rtmb} frame after \code{RTMB::getAll}. Defaults to the caller.
+#'
+#' @return A named list of arguments for \code{\link{compute_mortality_year}}.
+#'
+#' @keywords internal
+mortality_args_from_model = function(env = parent.frame()) {
+  nm = c("growth_model", "derive_waa", "fish_selex_type", "ret_selex_type", "srv_selex_type",
+         "fish_waa_selected", "srv_waa_selected", "fish_sel_l", "ret_sel_l", "srv_sel_l",
+         "wt_len_pars", "growth_len_mid_vals",
+         "UseCatch", "UseCatch_pop", "missing_catch",
+         "ln_F_mean", "ln_F_devs", "logit_dmr_mean", "logit_dmr_devs",
+         "SizeAgeTrans", "natmort", "seasdur",
+         "n_pop", "n_regions", "n_seas", "n_ages", "n_sexes", "n_fish_fleets")
+  stats::setNames(lapply(nm, function(x) get(x, envir = env)), nm)
+}
+
+#' Fishing and total mortality for one year
+#'
+#' Also derives the selection-weighted weight at age where a fleet asks for
+#' it. Both are done a year at a time because under cohort growth the key a
+#' length-based selectivity acts through is only known once the population
+#' loop reaches that year; every other model runs them for all years before
+#' the loop starts. Under cohort growth this runs inside the population loop,
+#' so the year's state is taken as an argument and handed back rather than
+#' assigned into this frame.
+#'
+#' @param y Year index.
+#' @param st Named list carrying \code{Fmort}, \code{dmr}, \code{fish_sel},
+#'   \code{ret_sel}, \code{ret_FAA}, \code{disc_FAA}, \code{tot_FAA},
+#'   \code{ZAA}, \code{WAA_fish}, \code{WAA_srv}, \code{SizeAgeTrans_fish} and
+#'   \code{SizeAgeTrans_srv}, returned with year \code{y} updated. The last
+#'   two may be \code{NULL}, in which case the shared \code{SizeAgeTrans} key
+#'   is used instead.
+#' @param growth_model,derive_waa Growth module switches.
+#' @param fish_selex_type,ret_selex_type,srv_selex_type Integer (0/1);
+#'   \code{1} for length-based selectivity.
+#' @param fish_waa_selected,srv_waa_selected Integer vectors \code{[fleet]}
+#'   (0/1) for which fleets get a selection-weighted weight at age.
+#' @param fish_sel_l,ret_sel_l,srv_sel_l Arrays \code{[region, year, len,
+#'   sex, fleet]} of selectivity at length.
+#' @param wt_len_pars Array \code{[pop, region, sex, 2]} of weight-length
+#'   parameters.
+#' @param growth_len_mid_vals Length bin midpoints the weight-length
+#'   relationship is read at.
+#' @param UseCatch,UseCatch_pop Arrays flagging which cells fit an
+#'   aggregate/pop-specific catch observation.
+#' @param missing_catch Logical array, \code{TRUE} where the aggregate catch
+#'   observation is missing (not a true recorded zero).
+#' @param ln_F_mean,ln_F_devs Log fishing mortality mean and deviations.
+#' @param logit_dmr_mean,logit_dmr_devs Logit discard mortality rate mean and
+#'   deviations.
+#' @param SizeAgeTrans Shared size-age key, used when no growth-derived
+#'   per-fleet key is supplied in \code{st}.
+#' @param natmort,seasdur Natural mortality at age and season duration.
+#' @param n_pop,n_regions,n_seas,n_ages,n_sexes,n_fish_fleets Dimensions.
+#'
+#' @return \code{st} with year \code{y} updated.
+#'
+#' @keywords internal
+#' @import RTMB
+compute_mortality_year = function(y, st, growth_model, derive_waa, fish_selex_type, ret_selex_type, srv_selex_type,
+                          fish_waa_selected, srv_waa_selected, fish_sel_l, ret_sel_l, srv_sel_l,
+                          wt_len_pars, growth_len_mid_vals,
+                          UseCatch, UseCatch_pop, missing_catch,
+                          ln_F_mean, ln_F_devs, logit_dmr_mean, logit_dmr_devs,
+                          SizeAgeTrans, natmort, seasdur,
+                          n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  Fmort = st$Fmort; dmr = st$dmr; fish_sel = st$fish_sel; ret_sel = st$ret_sel
+  ret_FAA = st$ret_FAA; disc_FAA = st$disc_FAA; tot_FAA = st$tot_FAA; ZAA = st$ZAA
+  WAA_fish = st$WAA_fish; SizeAgeTrans_fish = st$SizeAgeTrans_fish
+  WAA_srv = st$WAA_srv; SizeAgeTrans_srv = st$SizeAgeTrans_srv
+
+  if(growth_model != 0 && derive_waa == 1 && fish_selex_type == 1 && any(fish_waa_selected == 1)) {
+    WAA_fish = growth_selected_waa_year(WAA_fish, SizeAgeTrans_fish, fish_sel_l, wt_len_pars,
+                                        growth_len_mid_vals, fish_waa_selected, y,
+                                        n_pop, n_regions, n_seas, n_sexes)
+  }
+
+  if(growth_model != 0 && derive_waa == 1 && srv_selex_type == 1 && any(srv_waa_selected == 1)) {
+    WAA_srv = growth_selected_waa_year(WAA_srv, SizeAgeTrans_srv, srv_sel_l, wt_len_pars,
+                                       growth_len_mid_vals, srv_waa_selected, y,
+                                       n_pop, n_regions, n_seas, n_sexes)
+  }
+
+  for(r in 1:n_regions) {
+    for(seas in 1:n_seas) {
+      for(f in 1:n_fish_fleets) {
+
+        # A cell is a true closure only when no catch is fit
+        is_closed = (UseCatch[r,y,seas,f] == 0) && all(UseCatch_pop[,r,y,seas,f] == 0) && !missing_catch[r,y,seas,f]
+
+        if(is_closed) {
+          Fmort[r,y,seas,f] = 0
+          dmr[r,y,seas,f] = 0
+        } else {
+          Fmort[r,y,seas,f] = exp(ln_F_mean[r,seas,f] + ln_F_devs[r,y,seas,f])
+          dmr[r,y,seas,f] = RTMB::plogis(logit_dmr_mean[r,seas,f] + logit_dmr_devs[r,y,seas,f])
+        }
+
+        # get fishing mortality at age
+        for(p in 1:n_pop) {
+          # the key is the fleet's own when the growth module built it, the shared data key otherwise
+          if(fish_selex_type == 1 || ret_selex_type == 1) {
+            for(s in 1:n_sexes) {
+              key_f = if(is.null(SizeAgeTrans_fish)) SizeAgeTrans[p,r,y,seas,,,s] else SizeAgeTrans_fish[p,r,y,seas,,,s,f]
+              if(fish_selex_type == 1) fish_sel[p,r,y,seas,,s,f] = fish_sel_l[r,y,,s,f] %*% key_f
+              if(ret_selex_type == 1) ret_sel[p,r,y,seas,,s,f] = ret_sel_l[r,y,,s,f] %*% key_f
+            } # end s loop
+
+          } # length based selectivity
+          ret_FAA[p,r,y,seas,,,f] = Fmort[r,y,seas,f] * fish_sel[p,r,y,seas,,,f] * ret_sel[p,r,y,seas,,,f] # Retained fishing mortality at age
+          disc_FAA[p,r,y,seas,,,f] = Fmort[r,y,seas,f] * fish_sel[p,r,y,seas,,,f] * (1 - ret_sel[p,r,y,seas,,,f]) * dmr[r,y,seas,f] # Discarded fishing mortality at age
+          tot_FAA[p,r,y,seas,,,f] = ret_FAA[p,r,y,seas,,,f] +  disc_FAA[p,r,y,seas,,,f]# Total fishing mortality at age
+
+        } # end p loop
+
+      } # end f loop
+
+      # get total mortality
+      for(p1 in 1:n_pop) for(a in 1:n_ages) for(s in 1:n_sexes)
+        ZAA[p1,r,y,seas,a,s] = sum(ret_FAA[p1,r,y,seas,a,s,]) + sum(disc_FAA[p1,r,y,seas,a,s,]) + (natmort[p1,r,y,a,s] * seasdur[seas])
+    } # end seas loop
+  } # end r loop
+
+  st$Fmort = Fmort; st$dmr = dmr; st$fish_sel = fish_sel; st$ret_sel = ret_sel
+  st$ret_FAA = ret_FAA; st$disc_FAA = disc_FAA; st$tot_FAA = tot_FAA; st$ZAA = ZAA
+  st$WAA_fish = WAA_fish; st$WAA_srv = WAA_srv
+
+  return(st)
+
+} # end compute_mortality_year
+
 #' Population projection (numbers-at-age dynamics)
 #'
 #' Advances numbers-at-age forward through all modeled years and seasons:
@@ -72,7 +211,7 @@
 #'   weight at age the two differ and the whole curve shifts with them. It is a
 #'   year INDEX, not a calendar year, so callers that truncate the year
 #'   dimension (retrospectives) must clamp it.
-#' @param year_hook Optional function of \code{(y, NAA_y, hook_state)} called at
+#' @param growth_mortality_year_fn Optional function of \code{(y, NAA_y, growth_mortality_state)} called at
 #'   the top of every year with the numbers at age at the start of that year,
 #'   array \code{[pop, region, age, sex]}, and the state carried from the
 #'   previous year. It returns a list with \code{state}, carried forward to the
@@ -80,9 +219,9 @@
 #'   \code{MatAA_y}, the year's slices of total mortality, weight and maturity
 #'   at age, which replace those handed in for that year. Passing the state in
 #'   and out keeps the per-year step a function of its arguments.
-#' @param hook_state Initial state for \code{year_hook}, carried through the
-#'   year loop and returned as \code{hook_state}. Ignored when
-#'   \code{year_hook} is \code{NULL}.
+#' @param growth_mortality_state Initial state for \code{growth_mortality_year_fn}, carried through the
+#'   year loop and returned as \code{growth_mortality_state}. Ignored when
+#'   \code{growth_mortality_year_fn} is \code{NULL}.
 #'   This is how cohort growth, whose plus group blends by numbers, is evaluated
 #'   inside the year loop. \code{NULL} (the default) uses the arrays as given.
 #'
@@ -105,7 +244,7 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
                                        do_recruits_move, fish_sel, ret_sel, dmr, ZAA,
                                        NAA, NAA0, NAA_bef, NAA_aft, Rec, SSB, Total_Biom, Dynamic_SSB0, eff_SSB,
                                        Mrate = NULL, move_timing = 0, SR_ref_yr = 1,
-                                       sr_penalty = 0, sr_R0 = NULL, year_hook = NULL, hook_state = NULL) {
+                                       sr_penalty = 0, sr_R0 = NULL, growth_mortality_year_fn = NULL, growth_mortality_state = NULL) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -152,9 +291,9 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
 
     # Growth carried cohort by cohort needs this year's start-of-year numbers
     # before anything else in the year is formed
-    if(!is.null(year_hook)) {
-      hk <- year_hook(y, array(NAA[,,y,1,,], dim = c(n_pop, n_regions, n_ages, n_sexes)), hook_state)
-      hook_state <- hk$state
+    if(!is.null(growth_mortality_year_fn)) {
+      hk <- growth_mortality_year_fn(y, array(NAA[,,y,1,,], dim = c(n_pop, n_regions, n_ages, n_sexes)), growth_mortality_state)
+      growth_mortality_state <- hk$state
       ZAA[,,y,,,] <- hk$ZAA_y
       WAA[,,y,,,] <- hk$WAA_y
       MatAA[,,y,,,] <- hk$MatAA_y
@@ -370,5 +509,5 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
   return(list(NAA = NAA, NAA0 = NAA0, NAA_bef = NAA_bef, NAA_aft = NAA_aft, Rec = Rec,
               SSB = SSB, Total_Biom = Total_Biom, Dynamic_SSB0 = Dynamic_SSB0, eff_SSB = eff_SSB,
               Aggregated_SSB = Aggregated_SSB, Dynamic_Aggregated_SSB0 = Dynamic_Aggregated_SSB0,
-              NAA_int = NAA_int, SR_pred = SR_pred, hook_state = hook_state))
+              NAA_int = NAA_int, SR_pred = SR_pred, growth_mortality_state = growth_mortality_state))
 }

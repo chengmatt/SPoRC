@@ -479,7 +479,7 @@ Get_Growth = function(ln_growth_pars, growth_A1, growth_A2, growth_L0, growth_le
 growth_len_mid = function(len_lower) {
   n = length(len_lower)
   widths = diff(len_lower)
-  len_lower + c(widths, widths[n - 1]) / 2
+  return(len_lower + c(widths, widths[n - 1]) / 2)
 }
 
 #' Empty containers for the growth module's output

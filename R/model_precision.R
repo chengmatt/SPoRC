@@ -55,12 +55,12 @@ Get_3d_precision <- function(n_ages, n_yrs, pcorr_age, pcorr_year, pcorr_cohort,
       if(age > 1 ){
         i = c(i, n)
         j = c(j, which(index[,1] == (age-1) & index[,2] == year))
-        x = c(x, pcorr_year) # year correaltion indexing
+        x = c(x, pcorr_age) # link to the age-adjacent neighbour in the same year
       }
       if(year > 1){
         i = c(i, n)
         j = c(j, which(index[,1]==age & index[,2]==(year-1)) )
-        x = c(x, pcorr_age) # age correlation indexing
+        x = c(x, pcorr_year) # link to the year-adjacent neighbour at the same age
       }
       if( age>1 & year>1 ){
         i = c(i, n)

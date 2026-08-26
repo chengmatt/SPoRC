@@ -84,6 +84,25 @@ test_that("Get_3d_precision works", {
     expect_gt(Matrix::nnzero(Qac), Matrix::nnzero(Qa))
   })
 
+  # Axis wiring: each partial correlation reaches its own neighbour
+  test_that("pcorr_age links age-adjacent nodes and pcorr_year year-adjacent nodes", {
+    n_ages <- 3; n_yrs <- 4
+    index  <- expand.grid(seq_len(n_ages), seq_len(n_yrs)) # node n is (age, year)
+
+    # with a single partial correlation switched on every node has one
+    # neighbour, so the only off-diagonal entries of Q are the pairs that
+    # correlation links. Report the step each pair takes along the two axes.
+    edge_steps <- function(pcorr_age, pcorr_year) {
+      Q  <- as.matrix(SPoRC:::Get_3d_precision(n_ages, n_yrs, pcorr_age, pcorr_year, 0, 0, 1))
+      nz <- which(abs(Q) > 1e-12 & upper.tri(Q), arr.ind = TRUE)
+      unname(unique(cbind(abs(index[nz[,1],1] - index[nz[,2],1]),
+                          abs(index[nz[,1],2] - index[nz[,2],2]))))
+    }
+
+    expect_equal(edge_steps(0.4, 0), matrix(c(1L, 0L), nrow = 1)) # one age apart, same year
+    expect_equal(edge_steps(0, 0.4), matrix(c(0L, 1L), nrow = 1)) # same age, one year apart
+  })
+
   # Asymmetry when n_ages != n_yrs and pcorr_age != pcorr_year
   test_that("swapping pcorr_age and pcorr_year changes Q when grid is non-square", {
     Q1 <- SPoRC:::Get_3d_precision(3, 7, 0.5, 0.2, 0.1, 0, 1)

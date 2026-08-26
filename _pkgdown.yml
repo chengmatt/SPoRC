@@ -162,6 +162,7 @@ reference:
       - get_nLL_plot
       - get_idx_fits_plot
       - get_catch_fits_plot
+      - get_at_age_fits_plot
       - get_retrospective_plot
       - do_likelihood_profile
       - get_model_rep_from_mcmc

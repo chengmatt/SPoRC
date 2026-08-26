@@ -94,6 +94,9 @@ input_list <- Setup_Mod_Rec(
   ln_global_R0 = log(2e8)
 )
 
+# estiamte these freely so free N per age
+input_list$map$ln_InitDevs <- factor(seq_along(input_list$map$ln_InitDevs))
+
 ```
 
 ## Biological dynamics
@@ -460,9 +463,7 @@ input_list <- Setup_Mod_Srvsel_and_Q(
 
 ## Weighting
 
-Every likelihood component enters at weight one. The composition streams are
-weighted zero because there are none, and the fishery index likewise.
-
+No data-weighting is done in this section, so everything is set at 1. 
 ```{r, eval = FALSE}
 input_list <- Setup_Mod_Weighting(
   input_list = input_list,
@@ -471,7 +472,6 @@ input_list <- Setup_Mod_Weighting(
   Wt_FishLenComps = array(0, dim = c(1, n_yrs, n_seas, 1, 2)),
   Wt_SrvAgeComps = array(0, dim = c(1, n_yrs, n_seas, 1, 2)),
   Wt_SrvLenComps = array(0, dim = c(1, n_yrs, n_seas, 1, 2)))
-
 ```
 
 ## Fitting

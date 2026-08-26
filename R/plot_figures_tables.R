@@ -856,6 +856,71 @@ get_idx_fits_plot <- function(data,
   return(idx_fit_plot)
 }
 
+#' Plot observed and predicted age-disaggregated observations
+#'
+#' Companion to \code{\link{get_catch_fits_plot}} for the at-age streams:
+#' retained catch, discards, and the fishery and survey indices at age. Each is
+#' a lognormal observation with its own standard deviation, so intervals are
+#' built the same way, and the panel is faceted by age.
+#'
+#' @param data List of length \code{n_models} of SPoRC data lists, read for the
+#'   at-age observation and use arrays.
+#' @param rep List of length \code{n_models} of SPoRC model reports, read for the
+#'   predicted at-age values and their standard deviations.
+#' @param model_names Character vector naming each model run.
+#' @param stream Which stream to plot: \code{"CatchAA"} (default),
+#'   \code{"DiscardAA"}, \code{"FishIdxAA"} or \code{"SrvIdxAA"}.
+#'
+#' @return A \code{ggplot}, or \code{NULL} when no model fits that stream.
+#'
+#' @export
+#' @family Plotting Functions
+get_at_age_fits_plot <- function(data, rep, model_names, stream = "CatchAA") {
+
+  valid <- c("CatchAA", "DiscardAA", "FishIdxAA", "SrvIdxAA")
+  if(!stream %in% valid) stop("stream must be one of: ", paste(valid, collapse = ", "))
+
+  obs_nm <- paste0("Obs", stream)
+  use_nm <- paste0("Use", stream)
+
+  pred_nm <- paste0("Pred", stream)
+  sigma_nm <- switch(stream, CatchAA = "ln_sigmaCAA", DiscardAA = "ln_sigmaDAA",
+                     FishIdxAA = "ln_sigmaFishIdxAA", SrvIdxAA = "ln_sigmaSrvIdxAA")
+
+  rows <- list()
+  for(i in seq_along(rep)) {
+    use_arr <- data[[i]][[use_nm]]
+    if(is.null(use_arr) || !any(use_arr == 1)) next
+
+    fit_cells <- which(use_arr == 1)
+    idx <- arrayInd(fit_cells, dim(use_arr))
+    sigma <- exp(rep[[i]][[sigma_nm]])[cbind(idx[, 4], idx[, 5])]
+
+    rows[[length(rows) + 1]] <- data.frame(
+      Year = data[[i]]$years[idx[, 2]], Region = idx[, 1], Season = idx[, 3],
+      Age = data[[i]]$ages[idx[, 4]], Fleet = idx[, 5],
+      Obs = data[[i]][[obs_nm]][fit_cells],
+      Pred = rep[[i]][[pred_nm]][fit_cells],
+      sigma = sigma, Model = model_names[i]
+    )
+  } # end i loop
+
+  if(length(rows) == 0) return(NULL)
+  df <- do.call(rbind, rows)
+  df$lwr <- df$Obs * exp(-1.96 * df$sigma)
+  df$upr <- df$Obs * exp(1.96 * df$sigma)
+
+  ggplot(df, aes(x = Year)) +
+    geom_pointrange(aes(y = Obs, ymin = lwr, ymax = upr), size = 0.2, colour = "grey40") +
+    geom_line(aes(y = Pred, colour = Model), linewidth = 0.7) +
+    facet_grid(Age ~ Fleet + Region, scales = "free_y",
+               labeller = labeller(Age = function(x) paste("Age", x),
+                                   Fleet = function(x) paste("Fleet", x),
+                                   Region = function(x) paste("Region", x))) +
+    labs(x = "Year", y = stream, colour = NULL) +
+    theme_bw(base_size = 11) + theme(panel.grid.minor = element_blank())
+}
+
 #' Get Catch and Discard Fits Plot
 #'
 #' Plots observed catch and discard time series alongside model-predicted
@@ -923,71 +988,6 @@ get_idx_fits_plot <- function(data,
 #'
 #' @export get_catch_fits_plot
 #' @family Model Diagnostics
-#' Plot observed and predicted age-disaggregated observations
-#'
-#' Companion to \code{\link{get_catch_fits_plot}} for the at-age streams:
-#' retained catch, discards, and the fishery and survey indices at age. Each is
-#' a lognormal observation with its own standard deviation, so intervals are
-#' built the same way, and the panel is faceted by age.
-#'
-#' @param data List of length \code{n_models} of SPoRC data lists, read for the
-#'   at-age observation and use arrays.
-#' @param rep List of length \code{n_models} of SPoRC model reports, read for the
-#'   predicted at-age values and their standard deviations.
-#' @param model_names Character vector naming each model run.
-#' @param stream Which stream to plot: \code{"CatchAA"} (default),
-#'   \code{"DiscardAA"}, \code{"FishIdxAA"} or \code{"SrvIdxAA"}.
-#'
-#' @return A \code{ggplot}, or \code{NULL} when no model fits that stream.
-#'
-#' @export
-#' @family Plotting Functions
-get_at_age_fits_plot <- function(data, rep, model_names, stream = "CatchAA") {
-
-  valid <- c("CatchAA", "DiscardAA", "FishIdxAA", "SrvIdxAA")
-  if(!stream %in% valid) stop("stream must be one of: ", paste(valid, collapse = ", "))
-
-  obs_nm <- paste0("Obs", stream)
-  use_nm <- paste0("Use", stream)
-
-  pred_nm <- paste0("Pred", stream)
-  sigma_nm <- switch(stream, CatchAA = "ln_sigmaCAA", DiscardAA = "ln_sigmaDAA",
-                     FishIdxAA = "ln_sigmaFishIdxAA", SrvIdxAA = "ln_sigmaSrvIdxAA")
-
-  rows <- list()
-  for(i in seq_along(rep)) {
-    use_arr <- data[[i]][[use_nm]]
-    if(is.null(use_arr) || !any(use_arr == 1)) next
-
-    fit_cells <- which(use_arr == 1)
-    idx <- arrayInd(fit_cells, dim(use_arr))
-    sigma <- exp(rep[[i]][[sigma_nm]])[cbind(idx[, 4], idx[, 5])]
-
-    rows[[length(rows) + 1]] <- data.frame(
-      Year = data[[i]]$years[idx[, 2]], Region = idx[, 1], Season = idx[, 3],
-      Age = data[[i]]$ages[idx[, 4]], Fleet = idx[, 5],
-      Obs = data[[i]][[obs_nm]][fit_cells],
-      Pred = rep[[i]][[pred_nm]][fit_cells],
-      sigma = sigma, Model = model_names[i]
-    )
-  } # end i loop
-
-  if(length(rows) == 0) return(NULL)
-  df <- do.call(rbind, rows)
-  df$lwr <- df$Obs * exp(-1.96 * df$sigma)
-  df$upr <- df$Obs * exp(1.96 * df$sigma)
-
-  ggplot(df, aes(x = Year)) +
-    geom_pointrange(aes(y = Obs, ymin = lwr, ymax = upr), size = 0.2, colour = "grey40") +
-    geom_line(aes(y = Pred, colour = Model), linewidth = 0.7) +
-    facet_grid(Age ~ Fleet + Region, scales = "free_y",
-               labeller = labeller(Age = function(x) paste("Age", x),
-                                   Fleet = function(x) paste("Fleet", x),
-                                   Region = function(x) paste("Region", x))) +
-    labs(x = "Year", y = stream, colour = NULL) +
-    theme_bw(base_size = 11) + theme(panel.grid.minor = element_blank())
-}
-
 get_catch_fits_plot <- function(data,
                                 rep,
                                 model_names

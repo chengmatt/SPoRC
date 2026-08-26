@@ -2,7 +2,7 @@
 % Please edit documentation in R/plot_figures_tables.R
 \name{get_at_age_fits_plot}
 \alias{get_at_age_fits_plot}
-\title{Get Catch and Discard Fits Plot}
+\title{Plot observed and predicted age-disaggregated observations}
 \usage{
 get_at_age_fits_plot(data, rep, model_names, stream = "CatchAA")
 }
@@ -19,54 +19,12 @@ predicted at-age values and their standard deviations.}
 \code{"DiscardAA"}, \code{"FishIdxAA"} or \code{"SrvIdxAA"}.}
 }
 \value{
-A list of \code{ggplot} objects:
-\describe{
-  \item{[[1]] catch_fit_rg_plot}{Pooled catch fits (region-level). Produced
-  when \code{UseCatch == 1}. Observations shown as \code{geom_pointrange}
-  with 95\% lognormal confidence intervals; predictions shown as lines
-  colored by model. Faceted by (Season × Fleet) × Region with free y-scales.}
-
-  \item{[[2]] catch_fit_pop_plot}{Population-specific catch fits. Produced
-  when \code{UseCatch_pop == 1}. Faceted by (Population × Season × Fleet) ×
-  Region. Returns \code{NULL} if not used.}
-
-  \item{[[3]] discard_fit_rg_plot}{Pooled discard fits (region-level).
-  Produced when \code{UseDiscard == 1}. Same structure as catch plots.}
-
-  \item{[[4]] discard_fit_pop_plot}{Population-specific discard fits.
-  Produced when \code{UseDiscard_pop == 1}. Returns \code{NULL} if not used.}
-}
-
 A \code{ggplot}, or \code{NULL} when no model fits that stream.
 }
 \description{
-Plots observed catch and discard time series alongside model-predicted
-values for one or more SPoRC model runs, for both pooled (region-level)
-and population-specific data streams.
-}
-\details{
-Pooled predictions are summed across populations before comparison with
-observed data. Years where observed values are zero are excluded from both
-observed and predicted layers to avoid issues in lognormal confidence
-interval construction.
-
-
-This function produces diagnostic plots for both catch and discard data.
-Observed and predicted time series are shown for each, with lognormal
-confidence intervals derived from \code{ln_sigmaC} (or population-level
-equivalents) and sampling weights.
-
-Observations equal to zero are excluded prior to plotting to avoid issues
-in log-space confidence interval construction.
-
-Predicted catch and discard are aggregated across populations for pooled
-diagnostics, while population-specific plots use unaggregated outputs.
-}
-\concept{Model Diagnostics
-Plot observed and predicted age-disaggregated observations
-
 Companion to \code{\link{get_catch_fits_plot}} for the at-age streams:
 retained catch, discards, and the fishery and survey indices at age. Each is
 a lognormal observation with its own standard deviation, so intervals are
-built the same way, and the panel is faceted by age.}
+built the same way, and the panel is faceted by age.
+}
 \concept{Plotting Functions}

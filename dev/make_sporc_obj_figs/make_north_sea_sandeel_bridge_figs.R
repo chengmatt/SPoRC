@@ -277,8 +277,16 @@ for(y in 1:dev_dim[2]) {
 } # end y loop
 input_list$par$ln_F_devs <- ln_F_devs
 input_list$map$ln_F_devs <- factor(array(NA_integer_, dim = dev_dim))
-input_list$par$ln_F_mean[] <- -11
-input_list$map$ln_InitDevs <- factor(seq_along(input_list$par$ln_InitDevs))  # one per age, all estimated
+input_list$par$ln_F_mean[] <- -5
+# One initial numbers-at-age parameter per age, all estimated, and this has to be
+# said by hand. equil_init_age_strc "equil" neither penalises nor estimates the
+# deviations, and "stoch_all" does both; under init_age_strc "free" what is
+# wanted is the combination neither offers, estimated and unpenalised, because
+# the deviations are the numbers themselves rather than departures from an
+# equilibrium. Setting the map here is one way; init_devs_pen_use[] <- 0 with
+# "stoch_all" is the other, and gives the same fit. Either has to come after the
+# setup calls, which would otherwise overwrite it.
+input_list$map$ln_InitDevs <- factor(seq_along(input_list$par$ln_InitDevs))
 
 # Reference series -----------------------------------------------------------
 # smsR carries fishing mortality and numbers by season, so they are summed or

@@ -119,7 +119,23 @@ When `use_rinit = 1`, the regional recruitment scalar feeding the equilibrium ca
 | 3 | `"scalar_plus_only"` | Hybrid: uses the matrix approach for ages below the plus group but switches to the scalar geometric-series for the plus group itself |
 | 4 | `"free"` | No equilibrium at all: `ln_InitDevs` *are* the initial log numbers-at-age (ages 2+, apportioned by sex ratio), with age 1 still taken from recruitment |
 
-Recommendations. Use the default `"matrix"` (2) for spatial models; `"scalar_no_move"` (1) is fine, and marginally cheaper, for single-region models. Use `"free"` (4) when the initial age structure carries no information about $R_0$ and should not be pulled toward an equilibrium, matching assessments in which initial numbers-at-age are freely estimated parameters. Note two consequences of `"free"`: the initial condition becomes independent of `init_F_par` and of `ln_rinit`, and the deviations are on the scale of log-*numbers* rather than log-ratios about an equilibrium, so any penalty applied via `equil_init_age_strc` acts as a prior on log initial abundance. Pair `"free"` with `equil_init_age_strc = "equil"` (0) if no such prior is wanted, or with `InitDevs_pen_center = "own_mean"` (see Recruitment below) to penalize only the roughness of the initial age structure rather than its level.
+Recommendations. Use the default `"matrix"` (2) for spatial models; `"scalar_no_move"` (1) is fine, and marginally cheaper, for single-region models. Use `"free"` (4) when the initial age structure carries no information about $R_0$ and should not be pulled toward an equilibrium, matching assessments in which initial numbers-at-age are freely estimated parameters. Note two consequences of `"free"`: the initial condition becomes independent of `init_F_par` and of `ln_rinit`, and the deviations are on the scale of log-*numbers* rather than log-ratios about an equilibrium, so any penalty applied via `equil_init_age_strc` acts as a prior on log initial abundance. Pair `"free"` with `InitDevs_pen_center = "own_mean"` (see Recruitment below) to penalize only the roughness of the initial age structure rather than its level.
+
+For no prior at all, note that `equil_init_age_strc` bundles two decisions that do not move together: `"equil"` (0) neither penalizes nor estimates the deviations, and `"stoch_all"` (2) both estimates and penalizes them. Under `"free"` you usually want the combination it does not offer, estimated and unpenalized, because the deviations are the numbers themselves. Either route reaches it with one extra line, and they give an identical fit:
+
+```{r, eval = FALSE}
+# route A: no penalty from the setting, then re-free the deviations it fixed
+input_list <- Setup_Mod_Rec(input_list, ..., init_age_strc = "free",
+                            equil_init_age_strc = "equil")
+input_list$map$ln_InitDevs <- factor(seq_along(input_list$par$ln_InitDevs))
+
+# route B: estimated by the setting, then switch its penalty off
+input_list <- Setup_Mod_Rec(input_list, ..., init_age_strc = "free",
+                            equil_init_age_strc = "stoch_all")
+input_list$data$init_devs_pen_use[] <- 0
+```
+
+Either line must come after the setup calls that touch `ln_InitDevs`, since a later call would overwrite an earlier assignment. Leaving it out under `"equil"` is quiet rather than loud: the deviations stay fixed at zero, which under `"free"` is one fish at every initial age, and the model still fits.
 
 ### Initial deviation structure (`equil_init_age_strc`)
 
@@ -873,7 +889,7 @@ Supplied via `Setup_Mod_Biologicals()` (EM) or `Setup_Sim_Biologicals()` (OM).
 | `LenBinMap` | `NULL` or `[l × l_\text{obs}]` | Maps the model's length bins onto the bins the compositions are recorded on, each row summing to one, for compositions on coarser bins than the population carries. Expected compositions are mapped through it inside the likelihood exactly as the ageing error matrix maps ages, and the observed arrays are then dimensioned by the observed bins |
 | `waa_model`, `wt_len_pars` | `"data"` / `"wt_len"`; 2 values or `[p × r × s × 2]` | `"data"` (default) reads weight at age from the `WAA*` arguments. `"wt_len"` derives `WAA` (at spawning time) and each fleet's `WAA_fish` and `WAA_srv` (at that fleet's `t_fish` or `t_srv`) from its key and $W = aL^b$ at the bin midpoints instead of reading them as data. `Get_Reference_Points` reads the derived `rep$WAA` when it is present, falling back to `data$WAA` otherwise; that fallback is a zero placeholder under `"wt_len"`, so pass `rep` from a fitted model rather than calling it on `data` alone |
 
-**Growth is not seasonal.** The curve depends only on real elapsed time since `A1`, so splitting a year into more seasons changes nothing about size at age: a von Bertalanffy or Richards curve with a single `K` gives the same length whether the time between two points is one whole year or several sub-annual steps that sum to it. There is no option to give `K` (or any other growth parameter) a within-year seasonal pattern, e.g. a multiplier per season the way Stock Synthesis's `MGparm_seas_effects` does. Every fleet's timing (`t_fish`, `t_srv`, `t_spawn`) still reads its own point on that single annual curve, so within-year growth differences across fleets are entirely a function of *when* in the year they sample, not of the growth rate itself varying by season.
+Growth is not seasonal. The curve depends only on real elapsed time since `A1`, so splitting a year into more seasons changes nothing about size at age: a von Bertalanffy or Richards curve with a single `K` gives the same length whether the time between two points is one whole year or several sub-annual steps that sum to it. There is no option to give `K` (or any other growth parameter) a within-year seasonal pattern, e.g. a multiplier per season the way Stock Synthesis's `MGparm_seas_effects` does. Every fleet's timing (`t_fish`, `t_srv`, `t_spawn`) still reads its own point on that single annual curve, so within-year growth differences across fleets are entirely a function of *when* in the year they sample, not of the growth rate itself varying by season.
 
 ---
 

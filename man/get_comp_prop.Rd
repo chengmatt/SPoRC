@@ -77,6 +77,7 @@ Other Model Diagnostics:
 \code{\link[=do_likelihood_profile]{do_likelihood_profile()}},
 \code{\link[=do_retrospective]{do_retrospective()}},
 \code{\link[=do_runs_test]{do_runs_test()}},
+\code{\link[=get_catch_fits_plot]{get_catch_fits_plot()}},
 \code{\link[=get_idx_fits]{get_idx_fits()}},
 \code{\link[=get_idx_fits_plot]{get_idx_fits_plot()}},
 \code{\link[=get_model_rep_from_mcmc]{get_model_rep_from_mcmc()}},

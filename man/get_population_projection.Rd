@@ -52,8 +52,8 @@ get_population_projection(
   SR_ref_yr = 1,
   sr_penalty = 0,
   sr_R0 = NULL,
-  year_hook = NULL,
-  hook_state = NULL
+  growth_mortality_year_fn = NULL,
+  growth_mortality_state = NULL
 )
 }
 \arguments{
@@ -127,7 +127,7 @@ weight at age the two differ and the whole curve shifts with them. It is a
 year INDEX, not a calendar year, so callers that truncate the year
 dimension (retrospectives) must clamp it.}
 
-\item{year_hook}{Optional function of \code{(y, NAA_y, hook_state)} called at
+\item{growth_mortality_year_fn}{Optional function of \code{(y, NAA_y, growth_mortality_state)} called at
 the top of every year with the numbers at age at the start of that year,
 array \code{[pop, region, age, sex]}, and the state carried from the
 previous year. It returns a list with \code{state}, carried forward to the
@@ -136,9 +136,9 @@ next call and returned to the caller, and \code{ZAA_y}, \code{WAA_y} and
 at age, which replace those handed in for that year. Passing the state in
 and out keeps the per-year step a function of its arguments.}
 
-\item{hook_state}{Initial state for \code{year_hook}, carried through the
-year loop and returned as \code{hook_state}. Ignored when
-\code{year_hook} is \code{NULL}.
+\item{growth_mortality_state}{Initial state for \code{growth_mortality_year_fn}, carried through the
+year loop and returned as \code{growth_mortality_state}. Ignored when
+\code{growth_mortality_year_fn} is \code{NULL}.
 This is how cohort growth, whose plus group blends by numbers, is evaluated
 inside the year loop. \code{NULL} (the default) uses the arrays as given.}
 }

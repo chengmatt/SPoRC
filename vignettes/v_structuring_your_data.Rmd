@@ -133,6 +133,43 @@ UseFishAgeComps <- array(0, dim = c(n_regions, length(years), n_seas, n_fish_fle
 UseFishAgeComps[1, , 1, 1] <- 1
 ```
 
+## Age-disaggregated observations
+
+A fleet can fit catch, discards or an index **at age** instead of an aggregate
+with a composition beside it. The arrays carry an age dimension in front of the
+fleet, so `ObsCatch` at `[n_regions, n_years, n_seas, n_fish_fleets]` becomes
+`ObsCatchAA` at `[n_regions, n_years, n_seas, n_ages, n_fish_fleets]`, and the
+`_pop` variants add a leading population dimension.
+
+| Array | Dimensions |
+|---|---|
+| `ObsCatchAA`, `UseCatchAA` | `n_regions × n_years × n_seas × n_ages × n_fish_fleets` |
+| `ObsDiscardAA`, `UseDiscardAA` | same |
+| `ObsFishIdxAA`, `UseFishIdxAA` | same |
+| `ObsSrvIdxAA`, `UseSrvIdxAA` | `n_regions × n_years × n_seas × n_ages × n_srv_fleets` |
+| any of the above with `_pop` | as above, with `n_pop` in front |
+
+Filling them follows the same `match()` convention as the aggregated arrays,
+with an extra index for age:
+
+```{r, eval = F}
+ObsCatchAA <- array(0, dim = c(n_regions, n_years, n_seas, n_ages, n_fish_fleets))
+UseCatchAA <- array(0, dim = dim(ObsCatchAA))
+
+for(i in seq_len(nrow(raw_caa))) {
+  y <- match(raw_caa$year[i], years)
+  a <- match(raw_caa$age[i], ages)
+  ObsCatchAA[1, y, 1, a, raw_caa$fleet[i]] <- raw_caa$catch[i]
+  UseCatchAA[1, y, 1, a, raw_caa$fleet[i]] <- 1
+} # end i loop
+```
+
+Two things to know before choosing this form. A fleet fits the aggregated stream
+or the at-age stream, never both, and supplying both is an error rather than a
+warning: they are the same information stated twice. And an age a fleet never
+observes should be left at `UseCatchAA == 0` rather than given a zero
+observation, since a structurally absent age is not a zero catch.
+
 ## Structuring tagging data
 
 Conventional tagging data is the most structurally involved input SPoRC accepts.

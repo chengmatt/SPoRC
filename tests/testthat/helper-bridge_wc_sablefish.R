@@ -39,6 +39,18 @@ expand_wc_sablefish_sel <- function(blocks, n_yrs, n_ages, n_sexes) {
 } # end expand_wc_sablefish_sel
 
 # Build the input_list for the 2025 assessment configuration.
+#' Recover the survey standard errors before the assessment's extra component
+#'
+#' The packaged standard errors are the assessment's reported ones, which already
+#' include its estimated extra standard deviation, added. The data object is built
+#' that way in dev/make_sporc_obj_figs/make_wc_sablefish_data_object.R, which
+#' asserts the relationship. Subtracting it recovers what went in.
+wc_sablefish_input_se <- function(dat) {
+  se <- dat$ObsSrvIdx_SE
+  for(f in seq_along(dat$mle$extra_sd)) se[,,,f] <- se[,,,f] - dat$mle$extra_sd[f]
+  se
+}
+
 build_wc_sablefish_input <- function(dat) {
 
   yrs <- dat$years
@@ -165,7 +177,18 @@ build_wc_sablefish_input <- function(dat) {
   input_list <- Setup_Mod_SrvIdx_and_Comps(
     input_list = input_list,
     ObsSrvIdx = dat$ObsSrvIdx,
-    ObsSrvIdx_SE = dat$ObsSrvIdx_SE,
+    # The assessment estimates an extra standard deviation on the four biomass
+    # indices and reports the standard errors with it already added, which is what
+    # the data object carries. Subtracting it recovers the input standard errors,
+    # so the extra component can be carried as a parameter started at the
+    # assessment's own estimate: seeded evaluation is unchanged, and the free fit
+    # estimates it. Fleets 1 and 4 sit at the assessment's lower bound, 0.001 and
+    # 1e-04, which is it asking for none rather than estimating one, so they are
+    # held there and only fleets 2 and 3 are estimated.
+    ObsSrvIdx_SE = wc_sablefish_input_se(dat),
+    sigmaSrvIdx_spec = "est_additive",
+    sigmaSrvIdx_map = c(NA, 1, 2, NA, NA, NA),
+    ln_sigmaSrvIdx = log(pmax(c(dat$mle$extra_sd, 1e-8, 1e-8), 1e-8)),
     UseSrvIdx = dat$UseSrvIdx,
     # fleets 1-4 are the trawl surveys, 5 carries the unsexed compositions of
     # the last of them and no index, and 6 is the recruitment index, which

@@ -584,13 +584,17 @@ run_internal_tag_osa <- function(model, data, osa_method = NULL, parallel = FALS
 #' used in the model \code{data} list, following the naming convention used
 #' throughout \code{SPoRC_rtmb.R} (e.g. \code{ObsFishIdx}, \code{UseFishIdx}).
 #'
-#' @param index_source One of \code{"Catch"}, \code{"Discard"}, \code{"FishIdx"}, \code{"SrvIdx"}.
+#' @param index_source One of \code{"Catch"}, \code{"Discard"}, \code{"FishIdx"},
+#'   \code{"SrvIdx"}, or their at-age forms \code{"CatchAA"}, \code{"DiscardAA"},
+#'   \code{"FishIdxAA"}, \code{"SrvIdxAA"}. At-age sources return an extra
+#'   \code{age} column.
 #' @param pop Logical; population-specific index source.
 #'
 #' @return A named list of field names: \code{Obs}, \code{Use}.
 #' @keywords internal
 index_osa_field_map <- function(index_source, pop = FALSE) {
-  valid_sources <- c("Catch", "Discard", "FishIdx", "SrvIdx")
+  valid_sources <- c("Catch", "Discard", "FishIdx", "SrvIdx",
+                     "CatchAA", "DiscardAA", "FishIdxAA", "SrvIdxAA")
   if(!index_source %in% valid_sources) {
     stop("`index_source` must be one of: ", paste(valid_sources, collapse = ", "))
   }
@@ -611,7 +615,10 @@ index_osa_field_map <- function(index_source, pop = FALSE) {
 #' @param model A fitted RTMB model object from \code{\link{fit_model}}.
 #' @param data The model \code{data} list (e.g. \code{input_list$data}) used
 #'   to build \code{model}.
-#' @param index_source One of \code{"Catch"}, \code{"Discard"}, \code{"FishIdx"}, \code{"SrvIdx"}.
+#' @param index_source One of \code{"Catch"}, \code{"Discard"}, \code{"FishIdx"},
+#'   \code{"SrvIdx"}, or their at-age forms \code{"CatchAA"}, \code{"DiscardAA"},
+#'   \code{"FishIdxAA"}, \code{"SrvIdxAA"}. At-age sources return an extra
+#'   \code{age} column.
 #' @param pop Logical; population-specific index source. Default \code{FALSE}.
 #' @param osa_method Optional override for \code{RTMB::oneStepPredict}'s
 #'   \code{method}. Must be one of \code{"oneStepGeneric"},
@@ -637,7 +644,9 @@ run_internal_index_osa <- function(model, data, index_source, pop = FALSE,
   }
 
   valid_idx <- which(use_arr == 1)
-  dim_names <- if(pop) c("pop", "region", "year", "season", "fleet") else c("region", "year", "season", "fleet")
+  # at-age sources carry an age dimension before the fleet
+  at_age <- grepl("AA$", index_source)
+  dim_names <- c(if(pop) "pop", "region", "year", "season", if(at_age) "age", "fleet")
   map <- as.data.frame(arrayInd(valid_idx, dim(use_arr)))
   colnames(map) <- dim_names
 
@@ -654,6 +663,7 @@ run_internal_index_osa <- function(model, data, index_source, pop = FALSE,
     year = data$years[map$year],
     season = map$season,
     pop = if(pop) map$pop else 1L,
+    age = if(at_age) data$ages[map$age] else NA_integer_,
     resid = osa$residual,
     idx_type = index_source
   )
@@ -1050,9 +1060,7 @@ plot_resids <- function(osa_results) {
   # extract results
   res <- osa_results$res %>% dplyr::mutate(sign = ifelse(resid < 0, "Neg", "Pos"))
 
-  # Single dispatch discriminator. Composition/tag residuals carry a
-  # `comp_type` column; index-type residuals (Catch/Discard/FishIdx/SrvIdx)
-  # carry an `idx_type` column instead (they are not compositions).
+  # comp_type = composition/tag residuals, idx_type = index-type residuals
   res_type <- if("idx_type" %in% names(res)) as.character(unique(res$idx_type)) else as.character(unique(res$comp_type))
 
   # Which optional structural dimensions does this result actually span?
@@ -1070,6 +1078,7 @@ plot_resids <- function(osa_results) {
     recovery_season = function(x) paste0("Seas ", x),
     season          = function(x) paste0("Seas ", x),
     seas            = function(x) paste0("Seas ", x),
+    age             = function(x) paste0("Age ", x),
     len             = function(x) paste0("Len ", x),
     pop_pool        = function(x) ifelse(x == "tail", "Tail (non-recap)", paste0("Pool ", x))
   )
@@ -1132,12 +1141,14 @@ plot_resids <- function(osa_results) {
   }
 
   # Index-type OSA Residuals (Catch/Discard/FishIdx/SrvIdx) -------------------
-  if(res_type %in% c("Catch", "Discard", "FishIdx", "SrvIdx")) {
+  if(res_type %in% c("Catch", "Discard", "FishIdx", "SrvIdx",
+                     "CatchAA", "DiscardAA", "FishIdxAA", "SrvIdxAA")) {
 
     multi_region <- has_multi("region")
     multi_seas   <- has_multi("season")
+    multi_age    <- has_multi("age")   # at-age sources only
 
-    idx_row_vars <- if(multi_region) "region"
+    idx_row_vars <- c(if(multi_region) "region", if(multi_age) "age")
     idx_col_vars <- c(if(multi_seas) "season", if(multi_fleet) "fleet", if(multi_pop) "pop")
 
     sdnr <- sdnr_table(res, c(idx_row_vars, idx_col_vars))

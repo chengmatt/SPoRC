@@ -70,9 +70,9 @@ mortality. Intended for closed-loop MSE harvest control rules where a TAC
 must be translated into an \eqn{F} for the operating model.
 }
 \seealso{
-Other Closed Loop Simulations: 
-\code{\link{catch_to_F_multifleet}()},
-\code{\link{condition_closed_loop_simulations}()},
-\code{\link{get_closed_loop_reference_points}()}
+Other Closed Loop Simulations:
+\code{\link[=catch_to_F_multifleet]{catch_to_F_multifleet()}},
+\code{\link[=condition_closed_loop_simulations]{condition_closed_loop_simulations()}},
+\code{\link[=get_closed_loop_reference_points]{get_closed_loop_reference_points()}}
 }
 \concept{Closed Loop Simulations}

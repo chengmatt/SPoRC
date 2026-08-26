@@ -219,6 +219,15 @@ Setup_Sim_Fishing <- function(sim_list,
                               # Retained / total fishery dynamics
                               ln_sigmaC = array(log(0.02), dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
                               ln_sigmaC_pop = array(log(0.02), dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
+                              ln_sigmaCAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_fish_fleets)),
+                              ln_sigmaDAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_fish_fleets)),
+                              ln_sigmaFishIdxAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_fish_fleets)),
+                              UseCatchAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_fish_fleets)),
+                              UseDiscardAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_fish_fleets)),
+                              UseFishIdxAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_fish_fleets)),
+                              use_catch_aa = rep(0, sim_list$n_fish_fleets),
+                              use_discard_aa = rep(0, sim_list$n_fish_fleets),
+                              use_fish_idx_aa = rep(0, sim_list$n_fish_fleets),
                               catch_units = array(1, dim = c(sim_list$n_fish_fleets)),
                               init_F_val = array(0, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_fish_fleets)),
                               Fmort_input = array(0.1, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets, sim_list$n_sims)),
@@ -478,7 +487,16 @@ Setup_Sim_Fishing <- function(sim_list,
   sim_list$Fmort <- Fmort_input # input fishing mortality pattern
   sim_list$catch_units <- catch_units # catch units
   sim_list$ln_sigmaC <- ln_sigmaC # Observation sd for catch
-  sim_list$ln_sigmaC_pop <- ln_sigmaC_pop # observation sd for pop-specific catch
+  sim_list$ln_sigmaC_pop <- ln_sigmaC_pop
+  sim_list$ln_sigmaCAA <- ln_sigmaCAA
+  sim_list$ln_sigmaDAA <- ln_sigmaDAA
+  sim_list$ln_sigmaFishIdxAA <- ln_sigmaFishIdxAA
+  sim_list$UseCatchAA <- UseCatchAA
+  sim_list$UseDiscardAA <- UseDiscardAA
+  sim_list$UseFishIdxAA <- UseFishIdxAA
+  sim_list$use_catch_aa <- use_catch_aa
+  sim_list$use_discard_aa <- use_discard_aa
+  sim_list$use_fish_idx_aa <- use_fish_idx_aa # observation sd for pop-specific catch
   sim_list$init_F <- init_F_val # initial F value
   sim_list$fish_sel <- fish_sel_input # fishery selectivity
   sim_list$fish_q <- fish_q_input # fishery catchability
@@ -710,6 +728,9 @@ Setup_Sim_Fishing <- function(sim_list,
 Setup_Sim_Survey <- function(sim_list,
                              srv_sel_input,
                              ObsSrvIdx_SE = array(0.2, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,  sim_list$n_srv_fleets)),
+                             ln_sigmaSrvIdxAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_srv_fleets)),
+                             UseSrvIdxAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_srv_fleets)),
+                             use_srv_idx_aa = rep(0, sim_list$n_srv_fleets),
                              ObsSrvIdx_pop_SE = array(0.2, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,  sim_list$n_srv_fleets)),
                              srv_q_input = array(1, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_srv_fleets, sim_list$n_sims)),
                              t_srv = array(1, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_srv_fleets)),
@@ -834,6 +855,9 @@ Setup_Sim_Survey <- function(sim_list,
   sim_list$srv_sel <- srv_sel_input
   sim_list$srv_q <- srv_q_input
   sim_list$ObsSrvIdx_SE <- ObsSrvIdx_SE
+  sim_list$ln_sigmaSrvIdxAA <- ln_sigmaSrvIdxAA
+  sim_list$UseSrvIdxAA <- UseSrvIdxAA
+  sim_list$use_srv_idx_aa <- use_srv_idx_aa
   sim_list$ObsSrvIdx_pop_SE <- ObsSrvIdx_pop_SE
   sim_list$t_srv <- t_srv
   sim_list$srv_idx_type <- srv_idx_type

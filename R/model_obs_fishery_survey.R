@@ -30,6 +30,10 @@
 #'   fish_fleet]}, output containers for retained/discarded catch at age.
 #' @param CAL,DAL Arrays \code{[pop, region, year, season, len, sex,
 #'   fish_fleet]}, output containers for retained/discarded catch at length.
+#' @param FishIAA Container for the fishery index numbers at age, defaulting to
+#'   a zero array shaped like \code{CAA}. Filled with the
+#'   fleet's timing and movement treatment applied so the at-age index likelihood
+#'   reads the same quantity the aggregated one does.
 #' @param PredCatch,PredDiscard,PredFishIdx Arrays \code{[pop, region, year,
 #'   season, fish_fleet]}, output containers.
 #' @param fit_lengths Integer (0/1) switch for computing length compositions.
@@ -83,7 +87,7 @@
 get_fishery_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_fish_fleets, n_sexes,
                                            fish_q_blocks, ln_fish_q, fish_q,
                                            ret_FAA, disc_FAA, ZAA, NAA,
-                                           CAA, DAA, CAL, DAL, PredCatch, PredDiscard, PredFishIdx,
+                                           CAA, DAA, CAL, DAL, PredCatch, PredDiscard, PredFishIdx, FishIAA = NULL,
                                            fit_lengths, SizeAgeTrans,
                                            catch_units, discard_units, WAA_fish, dmr,
                                            fish_idx_type, fish_sel, ret_sel,
@@ -101,6 +105,7 @@ get_fishery_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_fis
 
   if(is.null(fish_q_type)) fish_q_type <- rep(0, n_fish_fleets)
   if(is.null(fish_len_comp_sel)) fish_len_comp_sel <- rep(0, n_fish_fleets)
+  if(is.null(FishIAA)) FishIAA <- array(0, dim = dim(CAA)) # only the at-age index likelihood reads this
 
   n_lens <- dim(CAL)[5] # length bins, read off a container that is always allocated
 
@@ -215,6 +220,10 @@ get_fishery_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_fis
             # fish_idx_ages restricts which ages enter the index total without
             # touching the selectivity the compositions share.
             fidx_ages <- array(fish_idx_ages[,f], dim = c(dim(NAA)[5], n_sexes))
+            # index numbers at age, before catchability. The at-age likelihood
+            # reads this so it inherits the same timing and movement treatment
+            # the aggregated index gets, exactly as SrvIAA does for surveys.
+            FishIAA[p,r,y,seas,,,f] <- FishIdxN * fish_sel[p,r,y,seas,,,f] * ret_sel[p,r,y,seas,,,f]
             if(fish_idx_type[f] == 0) PredFishIdx[p,r,y,seas,f] <- fish_q[r,y,f] * sum(FishIdxN * fish_sel[p,r,y,seas,,,f] * ret_sel[p,r,y,seas,,,f] * fidx_ages) # retained abundance
             if(fish_idx_type[f] == 1) PredFishIdx[p,r,y,seas,f] <- fish_q[r,y,f] * sum(FishIdxN * fish_sel[p,r,y,seas,,,f] * ret_sel[p,r,y,seas,,,f] * WAA_fish[p,r,y,seas,,,f] * fidx_ages) # retained biomass
           } # end seas loop
@@ -259,7 +268,8 @@ get_fishery_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_fis
 
   return(list(fish_q = fish_q, CAA = CAA, DAA = DAA, CAL = CAL, DAL = DAL,
               Fish_caal = Fish_caal, Fish_caal_discard = Fish_caal_discard,
-              PredCatch = PredCatch, PredDiscard = PredDiscard, PredFishIdx = PredFishIdx))
+              PredCatch = PredCatch, PredDiscard = PredDiscard, PredFishIdx = PredFishIdx,
+              FishIAA = FishIAA))
 }
 
 #' Survey observation model

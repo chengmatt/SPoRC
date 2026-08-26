@@ -13,6 +13,8 @@
 #   mode    "elementwise" for sum(Wt * nLL), "scalar" for Wt * sum(nLL). These
 #           agree when the weight is a single number and differ when it is an
 #           array, so each term records which form the model uses.
+#           "at_age" collapses an age dimension the weight does not carry before
+#           applying it, which is what an age-disaggregated stream needs.
 #   optional TRUE for a likelihood the model reports only when that data stream
 #           is fit, so its absence is not a term dropped from the sum. Every
 #           other term must be reported by every model.
@@ -26,6 +28,18 @@ jnLL_terms <- list(
   FishIdx_pop_nLL              = list(weight = "Wt_FishIdx_pop",  mode = "elementwise"),
   SrvIdx_nLL                   = list(weight = "Wt_SrvIdx",       mode = "elementwise"),
   SrvIdx_pop_nLL               = list(weight = "Wt_SrvIdx_pop",   mode = "elementwise"),
+
+  # Age-disaggregated observation streams. Each is reported always but summed
+  # under the same weight as its aggregated counterpart, and every entry is zero
+  # unless that stream is fit, so they are elementwise like the aggregates.
+  CatchAA_nLL                  = list(weight = "Wt_Catch",        mode = "at_age"),
+  CatchAA_pop_nLL              = list(weight = "Wt_Catch_pop",    mode = "at_age"),
+  DiscardAA_nLL                = list(weight = "Wt_Discard",      mode = "at_age"),
+  DiscardAA_pop_nLL            = list(weight = "Wt_Discard_pop",  mode = "at_age"),
+  FishIdxAA_nLL                = list(weight = "Wt_FishIdx",      mode = "at_age"),
+  FishIdxAA_pop_nLL            = list(weight = "Wt_FishIdx_pop",  mode = "at_age"),
+  SrvIdxAA_nLL                 = list(weight = "Wt_SrvIdx",       mode = "at_age"),
+  SrvIdxAA_pop_nLL             = list(weight = "Wt_SrvIdx_pop",   mode = "at_age"),
 
   FishAgeComps_nLL             = list(weight = NA, mode = "scalar"),
   FishAgeComps_pop_nLL         = list(weight = NA, mode = "scalar"),
@@ -115,7 +129,13 @@ jnLL_contributions <- function(model) {
     if(is.null(wt)) stop("weight '", wt_name, "' listed in jnLL_terms for '", nm, "' is absent from the data list")
     spec$weight <- wt_name
 
-    contribution <- if(spec$mode == "elementwise") sum(wt * component) else wt * sum(component)
+    contribution <- if(spec$mode == "at_age") {
+      # An at-age component carries an age dimension the weight does not, so the
+      # ages are summed within a cell before the cell's weight is applied, which
+      # is what the objective does.
+      nd <- length(dim(component))
+      sum(wt * apply(component, seq_len(nd)[-(nd - 1)], sum))
+    } else if(spec$mode == "elementwise") sum(wt * component) else wt * sum(component)
 
     # Every term contributes one number to jnLL. More than one means the mode
     # recorded above is wrong for this weight's shape: "scalar" against an array

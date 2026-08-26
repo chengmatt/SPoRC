@@ -45,11 +45,11 @@ pairwise correlations. A diagnostic message is printed for each failed
 check identifying the offending parameter or parameter pair.
 }
 \seealso{
-Other Utility: 
-\code{\link{fit_model}()},
-\code{\link{get_logistN_Sigma}()},
-\code{\link{get_par_est_info}()},
-\code{\link{rho_trans}()},
-\code{\link{set_data_indicator_unused}()}
+Other Utility:
+\code{\link[=fit_model]{fit_model()}},
+\code{\link[=get_logistN_Sigma]{get_logistN_Sigma()}},
+\code{\link[=get_par_est_info]{get_par_est_info()}},
+\code{\link[=rho_trans]{rho_trans()}},
+\code{\link[=set_data_indicator_unused]{set_data_indicator_unused()}}
 }
 \concept{Utility}

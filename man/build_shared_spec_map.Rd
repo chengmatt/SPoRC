@@ -4,7 +4,15 @@
 \alias{build_shared_spec_map}
 \title{Build a factor map from an "est_all"/"fix"/"est_shared_..." spec string}
 \usage{
-build_shared_spec_map(dims, spec, dim_abbrev)
+build_shared_spec_map(
+  dims,
+  spec,
+  dim_abbrev,
+  use = NULL,
+  what = "parameter",
+  min_obs = 2,
+  warn_obs = 5
+)
 }
 \arguments{
 \item{dims}{Named integer vector of array dimensions (see
@@ -17,6 +25,21 @@ build_shared_spec_map(dims, spec, dim_abbrev)
 dimension name, given in canonical order, e.g.
 \code{c(r = "region", y = "year", seas = "season", f = "fleet")}.
 Values must match \code{names(dims)} exactly.}
+
+\item{use}{Optional array of the same dimensions as \code{dims}, non-zero
+where an observation informs that cell (e.g. \code{UseCatch},
+\code{UseSrvIdx}). When supplied, the resulting map is checked for
+observation-error parameters that no data can identify. See
+\code{\link{check_spec_map_identifiable}}. Defaults to \code{NULL}, which
+skips the check and leaves behaviour unchanged.}
+
+\item{what}{Character label for the parameter, used in the check's messages.}
+
+\item{min_obs}{Integer. A group informed by fewer than this many
+observations raises an error. Default \code{2}.}
+
+\item{warn_obs}{Integer. A group informed by fewer than this many
+observations raises a warning. Default \code{5}.}
 }
 \value{
 Factor vector of length \code{prod(dims)}, suitable for direct

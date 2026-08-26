@@ -212,7 +212,8 @@ simulation_self_test <- function(data,
                                 fish_sel_input = replicate(n = sim_list$n_sims, rep$fish_sel[,,1:length(data$years),,,,,drop = FALSE]),
                                 ret_sel_input = replicate(n = sim_list$n_sims, rep$ret_sel[,,1:length(data$years),,,,,drop = FALSE]),
                                 fish_q_input = replicate(n = sim_list$n_sims, rep$fish_q[,1:length(data$years),,drop = FALSE]),
-                                ObsFishIdx_SE = deweight(data$ObsFishIdx_SE, data$Wt_FishIdx),
+                                ObsFishIdx_SE = deweight(if(is.null(rep$FishIdx_SD)) data$ObsFishIdx_SE else rep$FishIdx_SD,
+                             data$Wt_FishIdx),
                                 ObsFishIdx_pop_SE = if(any(data$UseFishIdx_pop == 1)) {
                                   deweight(data$ObsFishIdx_pop_SE, data$Wt_FishIdx_pop)
                                 } else {
@@ -328,7 +329,7 @@ simulation_self_test <- function(data,
     sim_list = sim_list,
     srv_sel_input = replicate(n = sim_list$n_sims, rep$srv_sel[,,1:length(data$years),,,,,drop = FALSE]),
     srv_q_input = replicate(n = sim_list$n_sims, rep$srv_q[,1:length(data$years),,drop = FALSE]),
-    ObsSrvIdx_SE = deweight(data$ObsSrvIdx_SE, data$Wt_SrvIdx),
+    ObsSrvIdx_SE = deweight(if(is.null(rep$SrvIdx_SD)) data$ObsSrvIdx_SE else rep$SrvIdx_SD, data$Wt_SrvIdx),
     ObsSrvIdx_pop_SE = if(any(data$UseSrvIdx_pop == 1)) {
       deweight(data$ObsSrvIdx_pop_SE, data$Wt_SrvIdx_pop)
     } else {
@@ -589,6 +590,14 @@ simulation_self_test <- function(data,
         tmp_pars$ln_sigmaD_pop[] <- sim_list$ln_sigmaD_pop
         tmp_data$ObsFishIdx_SE[] <- sim_list$ObsFishIdx_SE
         tmp_data$ObsSrvIdx_SE[] <- sim_list$ObsSrvIdx_SE
+        if(!is.null(tmp_data$ObsCatchAA) && !is.null(sim_list$ObsCatchAA))
+          tmp_data$ObsCatchAA[] <- sim_list$ObsCatchAA[,,,,,i]
+        if(!is.null(tmp_data$ObsSrvIdxAA) && !is.null(sim_list$ObsSrvIdxAA))
+          tmp_data$ObsSrvIdxAA[] <- sim_list$ObsSrvIdxAA[,,,,,i]
+        if(!is.null(tmp_pars$ln_sigmaCAA)) tmp_pars$ln_sigmaCAA[] <- parameters$ln_sigmaCAA
+        if(!is.null(tmp_pars$ln_sigmaSrvIdxAA)) tmp_pars$ln_sigmaSrvIdxAA[] <- parameters$ln_sigmaSrvIdxAA
+        if(!is.null(tmp_pars$ln_sigmaFishIdx)) tmp_pars$ln_sigmaFishIdx[] <- parameters$ln_sigmaFishIdx
+        if(!is.null(tmp_pars$ln_sigmaSrvIdx)) tmp_pars$ln_sigmaSrvIdx[] <- parameters$ln_sigmaSrvIdx
         tmp_data$ISS_FishAgeComps[] <- sim_list$ISS_FishAgeComps[,,,,,i]
         tmp_data$ISS_FishLenComps[] <- sim_list$ISS_FishLenComps[,,,,,i]
         if(any(tmp_data$UseFishAgeComps_discard == 1)) tmp_data$ISS_FishAgeComps_discard[] <- sim_list$ISS_FishAgeComps_discard[,,,,,i]
@@ -750,6 +759,14 @@ simulation_self_test <- function(data,
           tmp_pars$ln_sigmaD_pop[] <- sim_list$ln_sigmaD_pop
           tmp_data$ObsFishIdx_SE[] <- sim_list$ObsFishIdx_SE
           tmp_data$ObsSrvIdx_SE[] <- sim_list$ObsSrvIdx_SE
+          if(!is.null(tmp_data$ObsCatchAA) && !is.null(sim_list$ObsCatchAA))
+            tmp_data$ObsCatchAA[] <- sim_list$ObsCatchAA[,,,,,i]
+          if(!is.null(tmp_data$ObsSrvIdxAA) && !is.null(sim_list$ObsSrvIdxAA))
+            tmp_data$ObsSrvIdxAA[] <- sim_list$ObsSrvIdxAA[,,,,,i]
+          if(!is.null(tmp_pars$ln_sigmaCAA)) tmp_pars$ln_sigmaCAA[] <- parameters$ln_sigmaCAA
+          if(!is.null(tmp_pars$ln_sigmaSrvIdxAA)) tmp_pars$ln_sigmaSrvIdxAA[] <- parameters$ln_sigmaSrvIdxAA
+          if(!is.null(tmp_pars$ln_sigmaFishIdx)) tmp_pars$ln_sigmaFishIdx[] <- parameters$ln_sigmaFishIdx
+          if(!is.null(tmp_pars$ln_sigmaSrvIdx)) tmp_pars$ln_sigmaSrvIdx[] <- parameters$ln_sigmaSrvIdx
           tmp_data$ISS_FishAgeComps[] <- sim_list$ISS_FishAgeComps[,,,,,i]
           tmp_data$ISS_FishLenComps[] <- sim_list$ISS_FishLenComps[,,,,,i]
           if(any(tmp_data$UseFishAgeComps_discard == 1)) tmp_data$ISS_FishAgeComps_discard[] <- sim_list$ISS_FishAgeComps_discard[,,,,,i]

@@ -844,12 +844,96 @@ Setup_Mod_Discard_Comps     <- function(input_list,
 #'   arrays, integer-coded likelihood and composition type matrices,
 #'   overdispersion parameters, and their factor maps.
 #'
+#' @param sigmaFishIdx_spec Character string controlling the estimated component of the
+#'   aggregated fishery index observation error, one value per fleet. One of:
+#'   \describe{
+#'     \item{\code{"fix"}}{The reported standard errors are used as they are and
+#'       \code{ln_sigmaFishIdx} is not estimated. The default.}
+#'     \item{\code{"est_additive"}}{Total standard deviation is the reported
+#'       standard error plus an estimated component, the additive extra
+#'       standard deviation convention.}
+#'     \item{\code{"est_quadrature"}}{Total standard deviation is the reported
+#'       standard error and the estimated component added in quadrature, treating
+#'       them as independent variances.}
+#'     \item{\code{"est_replace"}}{An estimated standard deviation replaces the
+#'       reported standard errors entirely, as several ICES assessments do.}
+#'   }
+#'   An estimated component is confounded with a likelihood weight, since a
+#'   weight on a normal likelihood is the same statement as dividing the
+#'   variance by that weight. \code{Setup_Mod_Weighting} warns when both are
+#'   used. Fleets with a multivariate normal index likelihood take their scale
+#'   from the supplied covariance and cannot carry one, which is an error rather
+#'   than a silently unidentified parameter.
+#'
+#' @param sigmaFishIdx_map Optional integer vector of length \code{n_fish_fleets}
+#'   giving the estimation groups for \code{ln_sigmaFishIdx}. Fleets sharing a value share a
+#'   parameter and \code{NA} holds a fleet at its starting value. Defaults to one
+#'   free parameter per fleet. Use it when a reference assessment estimated some
+#'   fleets and pinned others at a bound.
+#'
+#' @param sigmaFishIdx_pop_spec Character string controlling the estimated component of the
+#'   population-specific fishery index observation error, one value per fleet. One of:
+#'   \describe{
+#'     \item{\code{"fix"}}{The reported standard errors are used as they are and
+#'       \code{ln_sigmaFishIdx_pop} is not estimated. The default.}
+#'     \item{\code{"est_additive"}}{Total standard deviation is the reported
+#'       standard error plus an estimated component, the additive extra
+#'       standard deviation convention.}
+#'     \item{\code{"est_quadrature"}}{Total standard deviation is the reported
+#'       standard error and the estimated component added in quadrature, treating
+#'       them as independent variances.}
+#'     \item{\code{"est_replace"}}{An estimated standard deviation replaces the
+#'       reported standard errors entirely, as several ICES assessments do.}
+#'   }
+#'   An estimated component is confounded with a likelihood weight, since a
+#'   weight on a normal likelihood is the same statement as dividing the
+#'   variance by that weight. \code{Setup_Mod_Weighting} warns when both are
+#'   used. Fleets with a multivariate normal index likelihood take their scale
+#'   from the supplied covariance and cannot carry one, which is an error rather
+#'   than a silently unidentified parameter.
+#'
+#' @param sigmaFishIdx_pop_map Optional integer vector of length \code{n_fish_fleets}
+#'   giving the estimation groups for \code{ln_sigmaFishIdx_pop}. Fleets sharing a value share a
+#'   parameter and \code{NA} holds a fleet at its starting value. Defaults to one
+#'   free parameter per fleet. Use it when a reference assessment estimated some
+#'   fleets and pinned others at a bound.
+#'
+#' @param ObsFishIdxAA Observed fishery index at age, an array with dimensions
+#'   \code{[n_regions, n_years, n_seas, n_ages, n_fish_fleets]}. The fishery
+#'   counterpart of \code{ObsSrvIdxAA}: every age its own lognormal observation
+#'   with its own catchability. A fleet uses this or the aggregated index.
+#' @param UseFishIdxAA Integer array shaped like \code{ObsFishIdxAA}.
+#' @param ObsFishIdxAA_pop,UseFishIdxAA_pop Population-specific counterparts.
+#' @param sigmaFishIdxAA_key,sigmaFishIdxAA_pop_key Integer matrices coupling the
+#'   index at age observation error, an integer key matrix, the convention ICES
+#'   assessments use. Equal entries share a parameter and \code{NA} excludes one.
+#'   The age shape of catchability is not set here: an index fit age by age puts
+#'   it in selectivity through the \code{"nonparfree"} form. See
+#'   \code{\link{Setup_Mod_Fishsel_and_Q}}.
+#' @param sigmaFishIdxAA_spec,sigmaFishIdxAA_pop_spec \code{"est"} or \code{"fix"}.
+#' @param AgeObsCorr_fish_idx Correlation across ages for the fishery index at
+#'   age, \code{"iid"} (default) or \code{"1dar1"}. See
+#'   \code{\link{Setup_Mod_Catch_and_F}}.
+#'
 #' @export Setup_Mod_FishIdx_and_Comps
 #' @importFrom stringr str_detect
 #' @family Model Setup
 Setup_Mod_FishIdx_and_Comps <- function(input_list,
                                         ObsFishIdx,
                                         ObsFishIdx_SE,
+                                        ObsFishIdxAA = NULL,
+                                        UseFishIdxAA = NULL,
+                                        ObsFishIdxAA_pop = NULL,
+                                        UseFishIdxAA_pop = NULL,
+                                        sigmaFishIdxAA_key = NULL,
+                                        sigmaFishIdxAA_spec = "est",
+                                        sigmaFishIdxAA_pop_key = NULL,
+                                        sigmaFishIdxAA_pop_spec = "est",
+                                        AgeObsCorr_fish_idx = "iid",
+                                        sigmaFishIdx_spec = "fix",
+                                        sigmaFishIdx_map = NULL,
+                                        sigmaFishIdx_pop_spec = "fix",
+                                        sigmaFishIdx_pop_map = NULL,
                                         ObsFishIdx_pop = NULL,
                                         ObsFishIdx_pop_SE = NULL,
                                         UseFishIdx_pop = array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets)),
@@ -1409,7 +1493,82 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
   if("FishLen_pop_corr_pars_agg" %in% names(starting_values)) input_list$par$FishLen_pop_corr_pars_agg <- starting_values$FishLen_pop_corr_pars_agg
   else input_list$par$FishLen_pop_corr_pars_agg <- array(0.01, dim = c(input_list$data$n_pop, input_list$data$n_fish_fleets))
 
+  # Fishery index observation errors
+  if("ln_sigmaFishIdx" %in% names(starting_values)) input_list$par$ln_sigmaFishIdx <- starting_values$ln_sigmaFishIdx
+  else input_list$par$ln_sigmaFishIdx <- rep(log(0.01), input_list$data$n_fish_fleets)
+
+  if("ln_sigmaFishIdx_pop" %in% names(starting_values)) input_list$par$ln_sigmaFishIdx_pop <- starting_values$ln_sigmaFishIdx_pop
+  else input_list$par$ln_sigmaFishIdx_pop <- rep(log(0.01), input_list$data$n_fish_fleets)
+
+  sigmaIdx_specs <- c("fix", "est_additive", "est_quadrature", "est_replace")
+  for(nm in c("sigmaFishIdx_spec", "sigmaFishIdx_pop_spec")) {
+    v <- get(nm)
+    if(!v %in% sigmaIdx_specs) stop(nm, " is '", v, "', which is not recognized. Valid options: ",
+                                    paste(sigmaIdx_specs, collapse = ", "))
+  } # end nm loop
+
+  sigmaIdx_forms <- list(fix = 0, est_additive = 1, est_quadrature = 2, est_replace = 3)
+  input_list$data$sigmaFishIdx_form <- convert_to_numeric(sigmaFishIdx_spec, sigmaIdx_forms)
+  input_list$data$sigmaFishIdx_pop_form <- convert_to_numeric(sigmaFishIdx_pop_spec, sigmaIdx_forms)
+
+  # Check to see sigmaF not used if using MVN index
+  if(sigmaFishIdx_spec != "fix" && any(fish_idx_like_vals == 2)) {
+    stop("sigmaFishIdx_spec is '", sigmaFishIdx_spec, "' but fishery fleet(s) ",
+         paste(which(fish_idx_like_vals == 2), collapse = ", "),
+         " use a multivariate normal index likelihood, which takes its scale from ",
+         "FishIdx_Cov and ignores the standard deviation. Fix the estimated sigma for ",
+         "those fleets through sigmaFishIdx_map, or use a lognormal or normal likelihood.")
+  }
+
+
+  # Fishery index at age, mirroring the survey stream.
+  faa_dim <- as.integer(c(input_list$data$n_regions, length(input_list$data$years),
+                          input_list$data$n_seas, length(input_list$data$ages),
+                          input_list$data$n_fish_fleets))
+  faa_pop_dim <- as.integer(c(input_list$data$n_pop, faa_dim))
+  use_fish_idx_aa <- rep(0, input_list$data$n_fish_fleets)
+
+  if(!is.null(ObsFishIdxAA)) {
+    if(is.null(UseFishIdxAA)) stop("ObsFishIdxAA was supplied without UseFishIdxAA.")
+    check_data_dimensions(ObsFishIdxAA, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_ages = length(input_list$data$ages), n_pop = input_list$data$n_pop, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsFishIdxAA')
+    check_data_dimensions(UseFishIdxAA, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_ages = length(input_list$data$ages), n_pop = input_list$data$n_pop, n_fish_fleets = input_list$data$n_fish_fleets, what = 'UseFishIdxAA')
+    for(f in 1:input_list$data$n_fish_fleets) {
+      if(any(UseFishIdxAA[,,,,f] == 1)) {
+        use_fish_idx_aa[f] <- 1
+        if(any(UseFishIdx[,,,f] == 1)) {
+          stop("Fishery fleet ", f, " has both an aggregated index and an index at age in use. ",
+               "A fleet fits one or the other.")
+        }
+      }
+    } # end f loop
+  } else {
+    ObsFishIdxAA <- array(0, dim = faa_dim); UseFishIdxAA <- array(0, dim = faa_dim)
+  }
+  if(is.null(ObsFishIdxAA_pop)) { ObsFishIdxAA_pop <- array(0, dim = faa_pop_dim); UseFishIdxAA_pop <- array(0, dim = faa_pop_dim) }
+
+  input_list$data$ObsFishIdxAA <- ObsFishIdxAA
+  input_list$data$UseFishIdxAA <- UseFishIdxAA
+  input_list$data$ObsFishIdxAA_pop <- ObsFishIdxAA_pop
+  input_list$data$UseFishIdxAA_pop <- UseFishIdxAA_pop
+  input_list$data$use_fish_idx_aa <- use_fish_idx_aa
+
+  input_list <- do_key_mapping(input_list, sigmaFishIdxAA_key,
+                               if(any(use_fish_idx_aa == 1)) sigmaFishIdxAA_spec else "fix",
+                               "ln_sigmaFishIdxAA", "n_fish_fleets", "UseFishIdxAA", starting_values)
+  input_list <- do_age_corr_setup(input_list, AgeObsCorr_fish_idx, "fish_idx", "n_fish_fleets", starting_values)
+  input_list <- do_key_mapping(input_list, sigmaFishIdxAA_pop_key,
+                               if(any(UseFishIdxAA_pop == 1)) sigmaFishIdxAA_pop_spec else "fix",
+                               "ln_sigmaFishIdxAA_pop", "n_fish_fleets", "UseFishIdxAA_pop",
+                               starting_values, pop = TRUE)
+
+
   # Mapping Options ---------------------------------------------------------
+
+  input_list <- do_sigmaIdx_mapping(input_list, sigmaFishIdx_spec, "n_fish_fleets",
+                                    "ln_sigmaFishIdx", sigmaFishIdx_map)
+  input_list <- do_sigmaIdx_mapping(input_list, sigmaFishIdx_pop_spec, "n_fish_fleets",
+                                    "ln_sigmaFishIdx_pop", sigmaFishIdx_pop_map)
+
 
   input_list <- do_comp_theta_mapping(input_list, comp_prefix = "FishAge")
   input_list <- do_comp_theta_mapping(input_list, comp_prefix = "FishLen")

@@ -373,10 +373,7 @@ Get_Selex = function(Selex_Model,
 
   if(Selex_Model == 9) {
 
-    # Non-parametric on the log scale, standardized so each year's selectivity
-    # averages to one across bins. The logit-scale form (Selex_Model 5) bounds
-    # every raw value below one before standardizing and centers over years and
-    # bins jointly; this one leaves the scale free and centers within the year. 
+    # Non-parametric on the log scale, standardized so each year's selectivity averages to one across bins. 
     if(TimeVary_Model %in% c(1:2)) pars = pars + ln_seldevs[Region, Year, , Sex, 1]
     selex = exp(pars)
     # Figure out which bins to normalize across
@@ -384,6 +381,14 @@ Get_Selex = function(Selex_Model,
     selex = selex / mean(selex[norm_bins])
 
   } # end if non-parametric on the log scale, standardized within year
+
+  if(Selex_Model == 10) {
+
+    # Non-parametric on the log scale with no standardization at all
+    if(TimeVary_Model %in% c(1:2)) pars = pars + ln_seldevs[Region, Year, , Sex, 1]
+    selex = exp(pars)
+
+  } # end if non-parametric on the log scale, free scale
 
   # Hold bins beyond n_sel_bins at the last computed bin's value.
   if(!is.null(n_sel_bins) && n_sel_bins > 0 && n_sel_bins < length(Bin) && Selex_Model != 8) {
@@ -602,9 +607,10 @@ Get_Selex_Array = function(selex_type,
   # Mean standardizing to help with interpretability
   for(r in 1:n_regions) {
     for(f in 1:n_fleets) {
-      # Selex_Model 9 already standardizes within each year, so it is excluded
-      # here rather than being centered a second time across years and bins.
-      if((cont_tv_sel[r,f] %in% 3:5 || any(sel_model[r,,f] == 5)) && !any(sel_model[r,,f] == 9)) {
+      # Selex_Model 9 already standardizes within each year, and Selex_Model 10
+      # deliberately carries its own scale, so both are excluded here rather than
+      # being centered across years and bins.
+      if((cont_tv_sel[r,f] %in% 3:5 || any(sel_model[r,,f] == 5)) && !any(sel_model[r,,f] %in% c(9, 10))) {
         for(s in 1:n_sexes) {
 
           if(selex_type == 0) {

@@ -120,8 +120,8 @@ single-region and spatially explicit multi-region models, with options for
 SPR-based or Beverton-Holt MSY-based reference points.
 }
 \seealso{
-Other Reference Points and Projections: 
-\code{\link{Do_Population_Projection}()},
-\code{\link{get_key_quants}()}
+Other Reference Points and Projections:
+\code{\link[=Do_Population_Projection]{Do_Population_Projection()}},
+\code{\link[=get_key_quants]{get_key_quants()}}
 }
 \concept{Reference Points and Projections}

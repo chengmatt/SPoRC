@@ -282,7 +282,14 @@ t_srv <- array(dat$t_srv, dim = c(1, 1, n_srv))
 input_list <- Setup_Mod_SrvIdx_and_Comps(
   input_list = input_list,
   ObsSrvIdx = dat$ObsSrvIdx,
-  ObsSrvIdx_SE = dat$ObsSrvIdx_SE,
+  # The assessment reports its survey standard errors with an estimated extra
+  # standard deviation already added, so subtracting it recovers the input errors
+  # and the extra component is carried as a parameter instead. Fleets 1 and 4 sit
+  # at the assessment's lower bound, which is it asking for none, so they are held.
+  ObsSrvIdx_SE = sweep_extra_sd(dat),
+  sigmaSrvIdx_spec = "est_additive",
+  sigmaSrvIdx_map = c(NA, 1, 2, NA, NA, NA),
+  ln_sigmaSrvIdx = log(pmax(c(dat$mle$extra_sd, 1e-8, 1e-8), 1e-8)),
   UseSrvIdx = dat$UseSrvIdx,
   srv_idx_type = c(rep("biom", n_srv - 1), "none"),
   SrvIdx_LikeType = rep("lognormal", n_srv),

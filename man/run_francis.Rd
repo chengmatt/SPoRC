@@ -71,7 +71,7 @@ specified number of iterations is reached.
 }
 }
 \seealso{
-Other Francis Reweighting: 
-\code{\link{do_francis_reweighting}()}
+Other Francis Reweighting:
+\code{\link[=do_francis_reweighting]{do_francis_reweighting()}}
 }
 \concept{Francis Reweighting}

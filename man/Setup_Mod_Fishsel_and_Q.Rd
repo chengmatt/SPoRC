@@ -100,7 +100,21 @@ Available models:
   \item{\code{"gamma"}}{Dome-shaped gamma with \eqn{a_{max}} and \eqn{\delta} (2 parameters).}
   \item{\code{"exponential"}}{Exponential with a single power parameter (1 parameter).}
   \item{\code{"dbnrml"}}{Double-normal with 6 parameters.}
-  \item{\code{"nonpar"}}{Non-parametric selectivity defined over discrete age or length bins, where selectivity is estimated as independent parameters (or grouped bins if specified via nonparametric bin mapping). No fixed functional form is imposed.}
+  \item{\code{"nonpar"}}{Non-parametric over discrete age or length bins, on
+    the logit scale, then mean-standardized jointly over years and bins so the
+    grand mean of the surface is one. Bins may be grouped through the
+    non-parametric bin mapping. No fixed functional form is imposed.}
+  \item{\code{"nonparlog"}}{Non-parametric on the log scale, standardized so
+    each year's selectivity averages to one over \code{*_sel_norm_bins}. Only
+    within-year contrasts are identified; the level is absorbed by
+    catchability or fishing mortality.}
+  \item{\code{"nonparfree"}}{Non-parametric on the log scale with no
+    standardization, \eqn{\exp(\theta)}, so the values carry the height of the
+    curve as well as its shape. This is the form for a stream fit age by age:
+    a free catchability per age and a selectivity estimated at age are one
+    quantity written two ways, so the whole age multiplier lives here and no
+    catchability is set. Pin one bin, by leaving it out of the estimated bins,
+    whenever the mean it multiplies is also free.}
   \item{\code{"asymplogist1"}}{Logistic selectivity with \eqn{a_{50}} and slope \eqn{k} and asymptotic control (3 parameters).}
   \item{\code{"asymplogist2"}}{Logistic selectivity with with \eqn{a_{50}} and \eqn{a_{95}} and asymptotic control (3 parameters).}
   \item{\code{"bicubic"}}{Bicubic spline over a bin-node x year-node grid
@@ -362,7 +376,21 @@ Available models:
   \item{\code{"gamma"}}{Dome-shaped gamma with \eqn{a_{max}} and \eqn{\delta} (2 parameters).}
   \item{\code{"exponential"}}{Exponential with a single power parameter (1 parameter).}
   \item{\code{"dbnrml"}}{Double-normal with 6 parameters.}
-  \item{\code{"nonpar"}}{Non-parametric selectivity defined over discrete age or length bins, where selectivity is estimated as independent parameters (or grouped bins if specified via nonparametric bin mapping). No fixed functional form is imposed.}
+  \item{\code{"nonpar"}}{Non-parametric over discrete age or length bins, on
+    the logit scale, then mean-standardized jointly over years and bins so the
+    grand mean of the surface is one. Bins may be grouped through the
+    non-parametric bin mapping. No fixed functional form is imposed.}
+  \item{\code{"nonparlog"}}{Non-parametric on the log scale, standardized so
+    each year's selectivity averages to one over \code{*_sel_norm_bins}. Only
+    within-year contrasts are identified; the level is absorbed by
+    catchability or fishing mortality.}
+  \item{\code{"nonparfree"}}{Non-parametric on the log scale with no
+    standardization, \eqn{\exp(\theta)}, so the values carry the height of the
+    curve as well as its shape. This is the form for a stream fit age by age:
+    a free catchability per age and a selectivity estimated at age are one
+    quantity written two ways, so the whole age multiplier lives here and no
+    catchability is set. Pin one bin, by leaving it out of the estimated bins,
+    whenever the mean it multiplies is also free.}
   \item{\code{"asymplogist1"}}{Logistic selectivity with \eqn{a_{50}} and slope \eqn{k} and asymptotic control (3 parameters).}
   \item{\code{"asymplogist2"}}{Logistic selectivity with with \eqn{a_{50}} and \eqn{a_{95}} and asymptotic control (3 parameters).}
   \item{\code{"bicubic"}}{Bicubic spline over a bin-node x year-node grid, specified as
@@ -468,18 +496,18 @@ Selectivity time-variation and blocked selectivity are mutually exclusive
 within a fleet. Specifying both for the same fleet will raise an error.
 }
 \seealso{
-Other Model Setup: 
-\code{\link{Setup_Mod_Biologicals}()},
-\code{\link{Setup_Mod_Catch_and_F}()},
-\code{\link{Setup_Mod_Dim}()},
-\code{\link{Setup_Mod_Discard_Comps}()},
-\code{\link{Setup_Mod_FishIdx_and_Comps}()},
-\code{\link{Setup_Mod_Movement}()},
-\code{\link{Setup_Mod_Rec}()},
-\code{\link{Setup_Mod_Retsel}()},
-\code{\link{Setup_Mod_SrvIdx_and_Comps}()},
-\code{\link{Setup_Mod_Srvsel_and_Q}()},
-\code{\link{Setup_Mod_Tagging}()},
-\code{\link{Setup_Mod_Weighting}()}
+Other Model Setup:
+\code{\link[=Setup_Mod_Biologicals]{Setup_Mod_Biologicals()}},
+\code{\link[=Setup_Mod_Catch_and_F]{Setup_Mod_Catch_and_F()}},
+\code{\link[=Setup_Mod_Dim]{Setup_Mod_Dim()}},
+\code{\link[=Setup_Mod_Discard_Comps]{Setup_Mod_Discard_Comps()}},
+\code{\link[=Setup_Mod_FishIdx_and_Comps]{Setup_Mod_FishIdx_and_Comps()}},
+\code{\link[=Setup_Mod_Movement]{Setup_Mod_Movement()}},
+\code{\link[=Setup_Mod_Rec]{Setup_Mod_Rec()}},
+\code{\link[=Setup_Mod_Retsel]{Setup_Mod_Retsel()}},
+\code{\link[=Setup_Mod_SrvIdx_and_Comps]{Setup_Mod_SrvIdx_and_Comps()}},
+\code{\link[=Setup_Mod_Srvsel_and_Q]{Setup_Mod_Srvsel_and_Q()}},
+\code{\link[=Setup_Mod_Tagging]{Setup_Mod_Tagging()}},
+\code{\link[=Setup_Mod_Weighting]{Setup_Mod_Weighting()}}
 }
 \concept{Model Setup}

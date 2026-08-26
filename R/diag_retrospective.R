@@ -118,9 +118,7 @@ truncate_yr <- function(j,
 
 # Growth ------------------------------------------------------------------
 
-  # Growth deviations are year-indexed and their penalties re-dimension the
-  # deviation and map arrays to the model's year count, so an untruncated array
-  # would be read in the wrong order rather than simply ignored past the peel
+  # Truncate the growth stuff
   if(!is.null(data$growth_model) && data$growth_model != 0) {
 
     # deviations on the growth parameters
@@ -132,10 +130,7 @@ truncate_yr <- function(j,
     retro_parameters$ln_growth_semipar_devs <- parameters$ln_growth_semipar_devs[,,1:(length(data$years) - j),,,drop = FALSE]
     retro_mapping$ln_growth_semipar_devs <- factor(array(mapping$ln_growth_semipar_devs, dim = dim(parameters$ln_growth_semipar_devs))[,,1:(length(data$years) - j),,,drop = FALSE])
     if(!is.null(data$map_ln_growth_semipar_devs)) retro_data$map_ln_growth_semipar_devs <- data$map_ln_growth_semipar_devs[,,1:(length(data$years) - j),,,drop = FALSE] # keep the penalty's map mirror in step
-
-    # cohort propagation starts in the first year a deviation is active, which a
-    # deep peel can push past the end of the series
-    if(!is.null(data$growth_cohort_styr)) retro_data$growth_cohort_styr <- min(data$growth_cohort_styr, length(data$years) - j)
+    if(!is.null(data$growth_cohort_styr)) retro_data$growth_cohort_styr <- min(data$growth_cohort_styr, length(data$years) - j) # cohort year
 
   }
 
@@ -339,6 +334,16 @@ if(any(data$UseSrvIdx_pop == 1) || any(data$UseSrvAgeComps_pop == 1) || any(data
   retro_data$UseFishAgeComps <- data$UseFishAgeComps[,1:(length(data$years) - j),,,drop = FALSE]
   retro_data$UseFishAgeComps_discard <- data$UseFishAgeComps_discard[,1:(length(data$years) - j),,,drop = FALSE]
   retro_data$UseFishIdx <- data$UseFishIdx[,1:(length(data$years) - j),,,drop = FALSE]
+  n_keep <- length(data$years) - j
+  at_age_arrays <- c("ObsCatchAA", "UseCatchAA", "ObsDiscardAA", "UseDiscardAA", "ObsSrvIdxAA", "UseSrvIdxAA", "ObsFishIdxAA", "UseFishIdxAA")
+  for(array_name in at_age_arrays) {
+    if(!is.null(data[[array_name]])) retro_data[[array_name]] <- data[[array_name]][,1:n_keep,,,,drop = FALSE]
+  } # end array_name loop
+  at_age_pop_arrays <- paste0(at_age_arrays, "_pop")
+  for(array_name in at_age_pop_arrays) {
+    if(!is.null(data[[array_name]])) retro_data[[array_name]] <- data[[array_name]][,,1:n_keep,,,,drop = FALSE]
+  } # end array_name loop
+
   retro_data$UseCatch <- data$UseCatch[,1:(length(data$years) - j),,,drop = FALSE]
   retro_data$UseDiscard <- data$UseDiscard[,1:(length(data$years) - j),,,drop = FALSE]
   retro_data$UseFishLenComps <- data$UseFishLenComps[,1:(length(data$years) - j),,,drop = FALSE]

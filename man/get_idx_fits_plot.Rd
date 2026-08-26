@@ -42,19 +42,18 @@ lines coloured by model. Years where the observed index is zero (i.e.
 }
 }
 \seealso{
-Other Model Diagnostics: 
-\code{\link{do_jitter}()},
-\code{\link{do_likelihood_profile}()},
-\code{\link{do_retrospective}()},
-\code{\link{do_runs_test}()},
-\code{\link{get_catch_fits_plot}()},
-\code{\link{get_comp_prop}()},
-\code{\link{get_idx_fits}()},
-\code{\link{get_model_rep_from_mcmc}()},
-\code{\link{get_nLL_plot}()},
-\code{\link{get_osa}()},
-\code{\link{get_retrospective_plot}()},
-\code{\link{get_retrospective_relative_difference}()},
-\code{\link{plot_resids}()}
+Other Model Diagnostics:
+\code{\link[=do_jitter]{do_jitter()}},
+\code{\link[=do_likelihood_profile]{do_likelihood_profile()}},
+\code{\link[=do_retrospective]{do_retrospective()}},
+\code{\link[=do_runs_test]{do_runs_test()}},
+\code{\link[=get_comp_prop]{get_comp_prop()}},
+\code{\link[=get_idx_fits]{get_idx_fits()}},
+\code{\link[=get_model_rep_from_mcmc]{get_model_rep_from_mcmc()}},
+\code{\link[=get_nLL_plot]{get_nLL_plot()}},
+\code{\link[=get_osa]{get_osa()}},
+\code{\link[=get_retrospective_plot]{get_retrospective_plot()}},
+\code{\link[=get_retrospective_relative_difference]{get_retrospective_relative_difference()}},
+\code{\link[=plot_resids]{plot_resids()}}
 }
 \concept{Model Diagnostics}

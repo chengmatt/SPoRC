@@ -61,11 +61,11 @@ are returned as a separate plot per population.
 }
 }
 \seealso{
-Other Plotting: 
-\code{\link{get_data_fitted_plot}()},
-\code{\link{get_selex_plot}()},
-\code{\link{get_ts_plot}()},
-\code{\link{plot_all_basic}()},
-\code{\link{theme_sablefish}()}
+Other Plotting:
+\code{\link[=get_data_fitted_plot]{get_data_fitted_plot()}},
+\code{\link[=get_selex_plot]{get_selex_plot()}},
+\code{\link[=get_ts_plot]{get_ts_plot()}},
+\code{\link[=plot_all_basic]{plot_all_basic()}},
+\code{\link[=theme_sablefish]{theme_sablefish()}}
 }
 \concept{Plotting}

@@ -17,7 +17,7 @@ mortality_args_from_model = function(env = parent.frame()) {
   nm = c("growth_model", "derive_waa", "fish_selex_type", "ret_selex_type", "srv_selex_type",
          "fish_waa_selected", "srv_waa_selected", "fish_sel_l", "ret_sel_l", "srv_sel_l",
          "wt_len_pars", "growth_len_mid_vals",
-         "UseCatch", "UseCatch_pop", "missing_catch",
+         "UseCatch", "UseCatch_pop", "missing_catch", "UseCatchAA", "use_catch_aa",
          "ln_F_mean", "ln_F_devs", "logit_dmr_mean", "logit_dmr_devs",
          "SizeAgeTrans", "natmort", "seasdur",
          "n_pop", "n_regions", "n_seas", "n_ages", "n_sexes", "n_fish_fleets")
@@ -56,6 +56,11 @@ mortality_args_from_model = function(env = parent.frame()) {
 #'   aggregate/pop-specific catch observation.
 #' @param missing_catch Logical array, \code{TRUE} where the aggregate catch
 #'   observation is missing (not a true recorded zero).
+#' @param UseCatchAA Integer array \code{[n_regions, n_years, n_seas, n_ages,
+#'   n_fish_fleets]}, non-zero where a catch at age observation is fit. A fleet
+#'   fitting catch at age is fished in any cell where at least one age is fit.
+#' @param use_catch_aa Integer vector \code{[n_fish_fleets]}, non-zero for fleets
+#'   fitting catch at age rather than aggregated catch.
 #' @param ln_F_mean,ln_F_devs Log fishing mortality mean and deviations.
 #' @param logit_dmr_mean,logit_dmr_devs Logit discard mortality rate mean and
 #'   deviations.
@@ -71,7 +76,7 @@ mortality_args_from_model = function(env = parent.frame()) {
 compute_mortality_year = function(y, st, growth_model, derive_waa, fish_selex_type, ret_selex_type, srv_selex_type,
                           fish_waa_selected, srv_waa_selected, fish_sel_l, ret_sel_l, srv_sel_l,
                           wt_len_pars, growth_len_mid_vals,
-                          UseCatch, UseCatch_pop, missing_catch,
+                          UseCatch, UseCatch_pop, missing_catch, UseCatchAA, use_catch_aa,
                           ln_F_mean, ln_F_devs, logit_dmr_mean, logit_dmr_devs,
                           SizeAgeTrans, natmort, seasdur,
                           n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets) {
@@ -101,7 +106,10 @@ compute_mortality_year = function(y, st, growth_model, derive_waa, fish_selex_ty
       for(f in 1:n_fish_fleets) {
 
         # A cell is a true closure only when no catch is fit
-        is_closed = (UseCatch[r,y,seas,f] == 0) && all(UseCatch_pop[,r,y,seas,f] == 0) && !missing_catch[r,y,seas,f]
+        # A fleet fitting catch at age is fished wherever any age is fit there
+        caa_open = if(use_catch_aa[f] == 1) any(UseCatchAA[r,y,seas,,f] == 1) else FALSE
+        is_closed = (UseCatch[r,y,seas,f] == 0) && all(UseCatch_pop[,r,y,seas,f] == 0) &&
+          !missing_catch[r,y,seas,f] && !caa_open
 
         if(is_closed) {
           Fmort[r,y,seas,f] = 0

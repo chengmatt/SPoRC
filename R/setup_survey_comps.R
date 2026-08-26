@@ -22,6 +22,82 @@
 #'
 #' @param input_list Named list with \code{$data}, \code{$par}, \code{$map},
 #'   and \code{$verbose} sublists, as returned by upstream setup functions.
+#' @param sigmaSrvIdx_spec Character string controlling the estimated component of the
+#'   aggregated survey index observation error, one value per fleet. One of:
+#'   \describe{
+#'     \item{\code{"fix"}}{The reported standard errors are used as they are and
+#'       \code{ln_sigmaSrvIdx} is not estimated. The default.}
+#'     \item{\code{"est_additive"}}{Total standard deviation is the reported
+#'       standard error plus an estimated component, the additive extra
+#'       standard deviation convention.}
+#'     \item{\code{"est_quadrature"}}{Total standard deviation is the reported
+#'       standard error and the estimated component added in quadrature, treating
+#'       them as independent variances.}
+#'     \item{\code{"est_replace"}}{An estimated standard deviation replaces the
+#'       reported standard errors entirely, as several ICES assessments do.}
+#'   }
+#'   An estimated component is confounded with a likelihood weight, since a
+#'   weight on a normal likelihood is the same statement as dividing the
+#'   variance by that weight. \code{Setup_Mod_Weighting} warns when both are
+#'   used. Fleets with a multivariate normal index likelihood take their scale
+#'   from the supplied covariance and cannot carry one, which is an error rather
+#'   than a silently unidentified parameter.
+#'
+#' @param sigmaSrvIdx_map Optional integer vector of length \code{n_srv_fleets}
+#'   giving the estimation groups for \code{ln_sigmaSrvIdx}. Fleets sharing a value share a
+#'   parameter and \code{NA} holds a fleet at its starting value. Defaults to one
+#'   free parameter per fleet. Use it when a reference assessment estimated some
+#'   fleets and pinned others at a bound.
+#'
+#' @param sigmaSrvIdx_pop_spec Character string controlling the estimated component of the
+#'   population-specific survey index observation error, one value per fleet. One of:
+#'   \describe{
+#'     \item{\code{"fix"}}{The reported standard errors are used as they are and
+#'       \code{ln_sigmaSrvIdx_pop} is not estimated. The default.}
+#'     \item{\code{"est_additive"}}{Total standard deviation is the reported
+#'       standard error plus an estimated component, the additive extra
+#'       standard deviation convention.}
+#'     \item{\code{"est_quadrature"}}{Total standard deviation is the reported
+#'       standard error and the estimated component added in quadrature, treating
+#'       them as independent variances.}
+#'     \item{\code{"est_replace"}}{An estimated standard deviation replaces the
+#'       reported standard errors entirely, as several ICES assessments do.}
+#'   }
+#'   An estimated component is confounded with a likelihood weight, since a
+#'   weight on a normal likelihood is the same statement as dividing the
+#'   variance by that weight. \code{Setup_Mod_Weighting} warns when both are
+#'   used. Fleets with a multivariate normal index likelihood take their scale
+#'   from the supplied covariance and cannot carry one, which is an error rather
+#'   than a silently unidentified parameter.
+#'
+#' @param sigmaSrvIdx_pop_map Optional integer vector of length \code{n_srv_fleets}
+#'   giving the estimation groups for \code{ln_sigmaSrvIdx_pop}. Fleets sharing a value share a
+#'   parameter and \code{NA} holds a fleet at its starting value. Defaults to one
+#'   free parameter per fleet. Use it when a reference assessment estimated some
+#'   fleets and pinned others at a bound.
+#'
+#' @param ObsSrvIdxAA Observed survey index at age, an array with dimensions
+#'   \code{[n_regions, n_years, n_seas, n_ages, n_srv_fleets]}. Supplying this
+#'   fits the index at age directly, every age its own lognormal observation with
+#'   its own catchability, which is the native form for ICES age-structured assessments.
+#'   A fleet uses this or the aggregated index, never both.
+#' @param UseSrvIdxAA Integer array shaped like \code{ObsSrvIdxAA}, \code{1}
+#'   where an observation is fit.
+#' @param ObsSrvIdxAA_pop,UseSrvIdxAA_pop Population-specific counterparts, with
+#'   a leading population dimension.
+#' @param sigmaSrvIdxAA_key,sigmaSrvIdxAA_pop_key Integer matrices coupling the
+#'   index at age observation error, an integer key matrix, the convention ICES
+#'   assessments use. Equal entries share a parameter and \code{NA} excludes one.
+#'   The age shape of catchability is not set here: an index fit age by age puts
+#'   it in selectivity through the \code{"nonparfree"} form, which carries the
+#'   height of the curve as well as its shape. See
+#'   \code{\link{Setup_Mod_Srvsel_and_Q}}.
+#' @param sigmaSrvIdxAA_spec,sigmaSrvIdxAA_pop_spec \code{"est"} (default) or
+#'   \code{"fix"}.
+#' @param AgeObsCorr_srv_idx Correlation across ages for the survey index at
+#'   age, \code{"iid"} (default) or \code{"1dar1"}. See
+#'   \code{\link{Setup_Mod_Catch_and_F}}.
+#'
 #' @param ObsSrvIdx Observed survey index array
 #'   \code{[n_regions × n_years × n_seas × n_srv_fleets]}.
 #' @param ObsSrvIdx_SE Lognormal standard errors for \code{ObsSrvIdx}, same
@@ -232,6 +308,19 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
                                        ObsSrvIdx,
                                        ObsSrvIdx_SE,
                                        UseSrvIdx,
+                                       ObsSrvIdxAA = NULL,
+                                       UseSrvIdxAA = NULL,
+                                       ObsSrvIdxAA_pop = NULL,
+                                       UseSrvIdxAA_pop = NULL,
+                                       sigmaSrvIdxAA_key = NULL,
+                                       sigmaSrvIdxAA_spec = "est",
+                                       sigmaSrvIdxAA_pop_key = NULL,
+                                       sigmaSrvIdxAA_pop_spec = "est",
+                                       AgeObsCorr_srv_idx = "iid",
+                                       sigmaSrvIdx_spec = "fix",
+                                       sigmaSrvIdx_map = NULL,
+                                       sigmaSrvIdx_pop_spec = "fix",
+                                       sigmaSrvIdx_pop_map = NULL,
                                        ObsSrvIdx_pop = NULL,
                                        ObsSrvIdx_pop_SE = NULL,
                                        UseSrvIdx_pop = array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_srv_fleets)),
@@ -648,6 +737,49 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
   input_list$data$ISS_SrvLenComps <- ISS_SrvLenComps
   input_list$data$ISS_SrvAgeComps_pop <- ISS_SrvAgeComps_pop
   input_list$data$ISS_SrvLenComps_pop <- ISS_SrvLenComps_pop
+  # Survey index at age. A fleet fits this or the aggregated index, never both.
+  aa_dim <- as.integer(c(input_list$data$n_regions, length(input_list$data$years),
+                         input_list$data$n_seas, length(input_list$data$ages),
+                         input_list$data$n_srv_fleets))
+  aa_pop_dim <- as.integer(c(input_list$data$n_pop, aa_dim))
+  use_srv_idx_aa <- rep(0, input_list$data$n_srv_fleets)
+
+  if(!is.null(ObsSrvIdxAA)) {
+    if(is.null(UseSrvIdxAA)) stop("ObsSrvIdxAA was supplied without UseSrvIdxAA.")
+    check_data_dimensions(ObsSrvIdxAA, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_ages = length(input_list$data$ages), n_pop = input_list$data$n_pop, n_srv_fleets = input_list$data$n_srv_fleets, what = 'ObsSrvIdxAA')
+    check_data_dimensions(UseSrvIdxAA, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_ages = length(input_list$data$ages), n_pop = input_list$data$n_pop, n_srv_fleets = input_list$data$n_srv_fleets, what = 'UseSrvIdxAA')
+    for(sf in 1:input_list$data$n_srv_fleets) {
+      if(any(UseSrvIdxAA[,,,,sf] == 1)) {
+        use_srv_idx_aa[sf] <- 1
+        if(any(UseSrvIdx[,,,sf] == 1)) {
+          stop("Survey fleet ", sf, " has both an aggregated index and an index at age in use. ",
+               "A fleet fits one or the other.")
+        }
+      }
+    } # end sf loop
+  } else {
+    ObsSrvIdxAA <- array(0, dim = aa_dim)
+    UseSrvIdxAA <- array(0, dim = aa_dim)
+  }
+  if(is.null(ObsSrvIdxAA_pop)) { ObsSrvIdxAA_pop <- array(0, dim = aa_pop_dim); UseSrvIdxAA_pop <- array(0, dim = aa_pop_dim) }
+
+  input_list$data$ObsSrvIdxAA <- ObsSrvIdxAA
+  input_list$data$UseSrvIdxAA <- UseSrvIdxAA
+  input_list$data$ObsSrvIdxAA_pop <- ObsSrvIdxAA_pop
+  input_list$data$UseSrvIdxAA_pop <- UseSrvIdxAA_pop
+  input_list$data$use_srv_idx_aa <- use_srv_idx_aa
+
+  # at-age observation error for both streams. Catchability at age is not set
+  # here; it lives in selectivity, through the "nonparfree" form.
+  input_list <- do_key_mapping(input_list, sigmaSrvIdxAA_key,
+                               if(any(use_srv_idx_aa == 1)) sigmaSrvIdxAA_spec else "fix",
+                               "ln_sigmaSrvIdxAA", "n_srv_fleets", "UseSrvIdxAA", starting_values)
+  input_list <- do_age_corr_setup(input_list, AgeObsCorr_srv_idx, "srv_idx", "n_srv_fleets", starting_values)
+  input_list <- do_key_mapping(input_list, sigmaSrvIdxAA_pop_key,
+                               if(any(UseSrvIdxAA_pop == 1)) sigmaSrvIdxAA_pop_spec else "fix",
+                               "ln_sigmaSrvIdxAA_pop", "n_srv_fleets", "UseSrvIdxAA_pop",
+                               starting_values, pop = TRUE)
+
   input_list$data$ObsSrvIdx <- ObsSrvIdx
   input_list$data$ObsSrvIdx_SE <- ObsSrvIdx_SE
   input_list$data$UseSrvIdx <- UseSrvIdx
@@ -759,7 +891,38 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
   else input_list$par$SrvLen_pop_corr_pars_agg <- array(0.01, dim = c(input_list$data$n_pop, input_list$data$n_srv_fleets))
 
 
+  # Survey index observation error stuff
+  if("ln_sigmaSrvIdx" %in% names(starting_values)) input_list$par$ln_sigmaSrvIdx <- starting_values$ln_sigmaSrvIdx
+  else input_list$par$ln_sigmaSrvIdx <- rep(log(0.01), input_list$data$n_srv_fleets)
+
+  if("ln_sigmaSrvIdx_pop" %in% names(starting_values)) input_list$par$ln_sigmaSrvIdx_pop <- starting_values$ln_sigmaSrvIdx_pop
+  else input_list$par$ln_sigmaSrvIdx_pop <- rep(log(0.01), input_list$data$n_srv_fleets)
+  sigmaIdx_specs <- c("fix", "est_additive", "est_quadrature", "est_replace")
+  for(nm in c("sigmaSrvIdx_spec", "sigmaSrvIdx_pop_spec")) {
+    v <- get(nm)
+    if(!v %in% sigmaIdx_specs) stop(nm, " is '", v, "', which is not recognized. Valid options: ",
+                                    paste(sigmaIdx_specs, collapse = ", "))
+  } # end nm loop
+
+  sigmaIdx_forms <- list(fix = 0, est_additive = 1, est_quadrature = 2, est_replace = 3)
+  input_list$data$sigmaSrvIdx_form <- convert_to_numeric(sigmaSrvIdx_spec, sigmaIdx_forms)
+  input_list$data$sigmaSrvIdx_pop_form <- convert_to_numeric(sigmaSrvIdx_pop_spec, sigmaIdx_forms)
+
+  # Check sigma is not estimated if using MVN index
+  if(sigmaSrvIdx_spec != "fix" && any(srv_idx_like_vals == 2)) {
+    stop("sigmaSrvIdx_spec is '", sigmaSrvIdx_spec, "' but survey fleet(s) ",
+         paste(which(srv_idx_like_vals == 2), collapse = ", "),
+         " use a multivariate normal index likelihood, which takes its scale from ",
+         "SrvIdx_Cov and ignores the standard deviation. Fix the estimated sigma for ",
+         "those fleets through sigmaSrvIdx_map, or use a lognormal or normal likelihood.")
+  }
+
   # Mapping Options ---------------------------------------------------------
+
+  input_list <- do_sigmaIdx_mapping(input_list, sigmaSrvIdx_spec, "n_srv_fleets",
+                                    "ln_sigmaSrvIdx", sigmaSrvIdx_map)
+  input_list <- do_sigmaIdx_mapping(input_list, sigmaSrvIdx_pop_spec, "n_srv_fleets",
+                                    "ln_sigmaSrvIdx_pop", sigmaSrvIdx_pop_map)
 
   input_list <- do_comp_theta_mapping(input_list, comp_prefix = "SrvAge", fleet_field = "n_srv_fleets")
   input_list <- do_comp_theta_mapping(input_list, comp_prefix = "SrvLen", fleet_field = "n_srv_fleets")

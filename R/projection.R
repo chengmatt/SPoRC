@@ -646,6 +646,7 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
                  proj_disc_FAA = proj_disc_FAA,
                  proj_tot_FAA = proj_tot_FAA,
                  proj_CAA = proj_CAA,
+                 proj_DAA = proj_DAA,
                  proj_Catch = proj_Catch,
                  proj_SSB = proj_SSB,
                  proj_Dynamic_SSB0 = proj_Dynamic_SSB0,
@@ -822,8 +823,8 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
 #'   season the terminal year did not fish.
 #' @param age0_rec Logical. Whether recruitment is age-0 Beverton-Holt, in which
 #'   case it is generated inside the season loop from this year's own SSB.
-#' @param proj_NAA,proj_NAA0,proj_ZAA,proj_ret_FAA,proj_disc_FAA,proj_tot_FAA,proj_CAA,proj_Catch,proj_SSB,proj_Dynamic_SSB0,proj_eff_SSB
-#'   The mutable projection arrays, as built in \code{Do_Population_Projection}.
+#' @param proj_NAA,proj_NAA0,proj_ZAA,proj_ret_FAA,proj_disc_FAA,proj_tot_FAA,proj_CAA,proj_DAA,proj_Catch,proj_SSB,proj_Dynamic_SSB0,proj_eff_SSB
+#'   The projection arrays, as built in \code{Do_Population_Projection}.
 #' @param n_pop,n_regions,n_ages,n_sexes,n_seas,n_fish_fleets,fish_sel,ret_sel,dmr,natmort,seasdur,Movement,Mrate,move_timing,do_recruits_move,WAA,MatAA,WAA_fish,t_spawn,spawn_seas,sgl_seas_spawning_movement,natal_region,stray_rate,sexratio,rec_seas_prop,srr_opt
 #'   Static projection inputs, documented in \code{\link{Do_Population_Projection}}.
 #'
@@ -837,7 +838,7 @@ run_proj_year <- function(y,
                           tmp_rec,
                           proj_NAA, proj_NAA0, proj_ZAA,
                           proj_ret_FAA, proj_disc_FAA, proj_tot_FAA,
-                          proj_CAA, proj_Catch,
+                          proj_CAA, proj_DAA, proj_Catch,
                           proj_SSB, proj_Dynamic_SSB0, proj_eff_SSB, proj_Total_Biom,
                           n_pop, n_regions, n_ages, n_sexes, n_seas, n_fish_fleets,
                           fratio_fleet, fish_sel, ret_sel, dmr, natmort, seasdur,
@@ -1065,9 +1066,12 @@ run_proj_year <- function(y,
                     # Spatial Baranov: fish redistribute among regions while dying, so catch
                     # uses the season-integrated abundance rather than N (1 - exp(-Z)) / Z
                     proj_CAA[p,r,y,seas,a,s,f] <- proj_ret_FAA[p,r,y,seas,a,s,f] * proj_NAA_int[p,r,a,s]
+                    proj_DAA[p,r,y,seas,a,s,f] <- proj_disc_FAA[p,r,y,seas,a,s,f] * proj_NAA_int[p,r,a,s]
                   } else {
-                    # Get catch at age with Baranov's
+                    # Get catch and discards at age with Baranov's
                     proj_CAA[p,r,y,seas,a,s,f] <- (proj_ret_FAA[p,r,y,seas,a,s,f] / proj_ZAA[p,r,y,seas,a,s]) *
+                      proj_NAA[p,r,y,seas,a,s] * (1 - exp(-proj_ZAA[p,r,y,seas,a,s]))
+                    proj_DAA[p,r,y,seas,a,s,f] <- (proj_disc_FAA[p,r,y,seas,a,s,f] / proj_ZAA[p,r,y,seas,a,s]) *
                       proj_NAA[p,r,y,seas,a,s] * (1 - exp(-proj_ZAA[p,r,y,seas,a,s]))
                   }
                 } # end s loop
@@ -1089,6 +1093,7 @@ run_proj_year <- function(y,
               proj_disc_FAA = proj_disc_FAA,
               proj_tot_FAA = proj_tot_FAA,
               proj_CAA = proj_CAA,
+              proj_DAA = proj_DAA,
               proj_Catch = proj_Catch,
               proj_SSB = proj_SSB,
               proj_Dynamic_SSB0 = proj_Dynamic_SSB0,

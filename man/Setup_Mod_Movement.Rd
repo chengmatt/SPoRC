@@ -232,18 +232,18 @@ If \code{do_recruits_move = 0}, age-1 deviations are fixed at zero.
 }
 
 \seealso{
-Other Model Setup: 
-\code{\link{Setup_Mod_Biologicals}()},
-\code{\link{Setup_Mod_Catch_and_F}()},
-\code{\link{Setup_Mod_Dim}()},
-\code{\link{Setup_Mod_Discard_Comps}()},
-\code{\link{Setup_Mod_FishIdx_and_Comps}()},
-\code{\link{Setup_Mod_Fishsel_and_Q}()},
-\code{\link{Setup_Mod_Rec}()},
-\code{\link{Setup_Mod_Retsel}()},
-\code{\link{Setup_Mod_SrvIdx_and_Comps}()},
-\code{\link{Setup_Mod_Srvsel_and_Q}()},
-\code{\link{Setup_Mod_Tagging}()},
-\code{\link{Setup_Mod_Weighting}()}
+Other Model Setup:
+\code{\link[=Setup_Mod_Biologicals]{Setup_Mod_Biologicals()}},
+\code{\link[=Setup_Mod_Catch_and_F]{Setup_Mod_Catch_and_F()}},
+\code{\link[=Setup_Mod_Dim]{Setup_Mod_Dim()}},
+\code{\link[=Setup_Mod_Discard_Comps]{Setup_Mod_Discard_Comps()}},
+\code{\link[=Setup_Mod_FishIdx_and_Comps]{Setup_Mod_FishIdx_and_Comps()}},
+\code{\link[=Setup_Mod_Fishsel_and_Q]{Setup_Mod_Fishsel_and_Q()}},
+\code{\link[=Setup_Mod_Rec]{Setup_Mod_Rec()}},
+\code{\link[=Setup_Mod_Retsel]{Setup_Mod_Retsel()}},
+\code{\link[=Setup_Mod_SrvIdx_and_Comps]{Setup_Mod_SrvIdx_and_Comps()}},
+\code{\link[=Setup_Mod_Srvsel_and_Q]{Setup_Mod_Srvsel_and_Q()}},
+\code{\link[=Setup_Mod_Tagging]{Setup_Mod_Tagging()}},
+\code{\link[=Setup_Mod_Weighting]{Setup_Mod_Weighting()}}
 }
 \concept{Model Setup}

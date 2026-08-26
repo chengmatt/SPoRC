@@ -100,7 +100,6 @@ ddirmult = function(obs, pred, Ntotal, ln_theta, give_log = TRUE) {
   for(c in 1:n_c) logres = logres - lgamma(Ntotal*p_obs[c]+1) # integration constant
   logres = logres + lgamma(dirichlet_Parm) - lgamma(Ntotal+dirichlet_Parm) # 2nd term in formula
 
-  # Summation in 3rd term in formula
   for(c in 1:n_c) {
     logres = logres + lgamma(Ntotal*p_obs[c] + dirichlet_Parm*p_exp[c])
     logres = logres - lgamma(dirichlet_Parm * p_exp[c])
@@ -139,6 +138,109 @@ dlogistnormal = function(obs, pred, Sigma, give_log = TRUE) {
   mu = mu - log(pred[length(pred)]) # calculate log ratio
   res = RTMB::dmvnorm(x = as.vector(tmp_Obs), mu = as.vector(mu), Sigma = Sigma, log = give_log)
   return(res)
+}
+
+#' Evaluate an age-disaggregated observation likelihood
+#'
+#' Every at-age observation stream in the model routes through here: retained
+#' catch at age, discard catch at age, and the fishery and survey indices at age,
+#' each in an aggregated and a population-specific form. They differ only in
+#' which array supplies the prediction and which parameter supplies the standard
+#' deviation, so the likelihood itself is written once.
+#'
+#' Observations are lognormal on the natural scale. Ages within one cell may be
+#' independent, or correlated as an AR(1) across ages, as ICES age-structured assessments allow. A correlated cell
+#' contributes its whole density to the first age present, leaving the remaining
+#' ages at zero, so the returned array still sums to the cell's contribution.
+#'
+#' @param obs_log Numeric vector of log observations for the ages present in one
+#'   cell, already offset by any constant.
+#' @param pred_log Vector of log predictions, matching \code{obs_log}.
+#' @param sigma Vector of standard deviations, matching \code{obs_log}.
+#' @param corr_type Integer. \code{0} is \code{"iid"}, \code{1} is \code{"1dar1"}.
+#' @param rho Correlation for \code{corr_type = 1}, on the natural scale.
+#'
+#' @return Numeric vector the length of \code{obs_log}, the negative log
+#'   likelihood contribution of each age.
+#'
+#' @keywords internal
+get_at_age_nLL = function(obs_log, pred_log, sigma, corr_type = 0, rho = 0) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  n = length(obs_log)
+  nLL = rep(0, n)
+
+  # just simple iid
+  if(corr_type == 0 || n == 1) {
+    nLL = -1 * RTMB::dnorm(obs_log, pred_log, sigma, TRUE)
+    return(nLL)
+  }
+
+  if(corr_type == 1) { # AR(1) across ages
+    nLL[1] = -1 * RTMB::dautoreg(obs_log - pred_log, mu = 0, phi = rho, log = TRUE, scale = sigma)
+  }
+
+  return(nLL)
+}
+
+#' Combine reported index standard errors with an estimated component
+#'
+#' An index observation carries a standard error from its own survey design, and
+#' an assessment may additionally estimate a component covering everything that
+#' design does not. This returns the total standard deviation the index likelihood should use.
+#'
+#' Additive represents a parameter added to an existing estiamte of the standard error. Quadrature treats the two as independent
+#' variances. Replacement discards the reported errors and estimates a rate.
+#'
+#' @param se Reported standard errors, any shape.
+#' @param extra Estimated component on the natural scale, conformable with
+#'   \code{se}.
+#' @param form Integer. \code{0} returns \code{se} unchanged, \code{1} additive,
+#'   \code{2} in quadrature, \code{3} replacement.
+#'
+#' @return The total standard deviation, shaped like \code{se}.
+#'
+#' @keywords internal
+combine_idx_sd = function(se, extra, form) {
+  if(form == 1) return(se + extra)
+  if(form == 2) return(sqrt(se^2 + extra^2))
+  if(form == 3) return(0 * se + extra) # keeps the shape of se while dropping its values
+  se
+}
+
+#' Build the total index standard deviation from a per-fleet estimated component
+#'
+#' Applies \code{\link{combine_idx_sd}} fleet by fleet, where the fleet is the
+#' last dimension of \code{se}. Handles both the aggregated arrays, indexed
+#' region by year by season by fleet, and the population-specific arrays, which
+#' carry a leading population dimension.
+#'
+#' @param se Reported standard errors, with fleet as the last dimension.
+#' @param ln_sigma Log-scale estimated component, one value per fleet.
+#' @param form Integer form code, see \code{\link{combine_idx_sd}}.
+#'
+#' @return An array shaped like \code{se}.
+#'
+#' @keywords internal
+build_idx_sd = function(se, ln_sigma, form) {
+
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  if(form == 0 || is.null(se)) return(se)
+
+  d = dim(se)
+  n_fleets = d[length(d)]
+  out = se
+
+  for(f in 1:n_fleets) {
+    extra = exp(ln_sigma[f])
+    if(length(d) == 4) out[,,,f] = combine_idx_sd(se[,,,f], extra, form)
+    if(length(d) == 5) out[,,,,f] = combine_idx_sd(se[,,,,f], extra, form)
+  } # end f loop
+
+  return(out)
 }
 
 #' Evaluate an index negative log-likelihood under a chosen error structure

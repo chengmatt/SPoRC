@@ -51,7 +51,21 @@
 #'     \item{\code{"gamma"}}{Dome-shaped gamma with \eqn{a_{max}} and \eqn{\delta} (2 parameters).}
 #'     \item{\code{"exponential"}}{Exponential with a single power parameter (1 parameter).}
 #'     \item{\code{"dbnrml"}}{Double-normal with 6 parameters.}
-#'     \item{\code{"nonpar"}}{Non-parametric selectivity defined over discrete age or length bins, where selectivity is estimated as independent parameters (or grouped bins if specified via nonparametric bin mapping). No fixed functional form is imposed.}
+#'     \item{\code{"nonpar"}}{Non-parametric over discrete age or length bins, on
+#'       the logit scale, then mean-standardized jointly over years and bins so the
+#'       grand mean of the surface is one. Bins may be grouped through the
+#'       non-parametric bin mapping. No fixed functional form is imposed.}
+#'     \item{\code{"nonparlog"}}{Non-parametric on the log scale, standardized so
+#'       each year's selectivity averages to one over \code{*_sel_norm_bins}. Only
+#'       within-year contrasts are identified; the level is absorbed by
+#'       catchability or fishing mortality.}
+#'     \item{\code{"nonparfree"}}{Non-parametric on the log scale with no
+#'       standardization, \eqn{\exp(\theta)}, so the values carry the height of the
+#'       curve as well as its shape. This is the form for a stream fit age by age:
+#'       a free catchability per age and a selectivity estimated at age are one
+#'       quantity written two ways, so the whole age multiplier lives here and no
+#'       catchability is set. Pin one bin, by leaving it out of the estimated bins,
+#'       whenever the mean it multiplies is also free.}
 #'     \item{\code{"asymplogist1"}}{Logistic selectivity with \eqn{a_{50}} and slope \eqn{k} and asymptotic control (3 parameters).}
 #'     \item{\code{"asymplogist2"}}{Logistic selectivity with with \eqn{a_{50}} and \eqn{a_{95}} and asymptotic control (3 parameters).}
 #'     \item{\code{"bicubic"}}{Bicubic spline over a bin-node x year-node grid; see \code{ret_sel_model} in \code{\link{Setup_Mod_Fishsel_and_Q}} for full syntax.}
@@ -276,7 +290,7 @@ Setup_Mod_Retsel <- function(input_list,
   for(f in 1:input_list$data$n_fish_fleets) collect_message(paste("Retained Fishery Selectivity Time Blocks for fishery", f, "is specified at:", length(unique(ret_sel_blocks_arr[,,f]))))
 
   # Retained Selectivity Functional Forms --------------------------------------------
-  sel_map <- data.frame(sel = c('logist1', "gamma", "exponential", "logist2", "dbnrml", 'nonpar', 'asymplogist1', "asymplogist2", "bicubic", "nonparlog"), num = c(0,1,2,3,4,5,6,7,8,9)) # set up values we can map to
+  sel_map <- data.frame(sel = c('logist1', "gamma", "exponential", "logist2", "dbnrml", 'nonpar', 'asymplogist1', "asymplogist2", "bicubic", "nonparlog", "nonparfree"), num = c(0,1,2,3,4,5,6,7,8,9,10)) # set up values we can map to
   ret_sel_model_arr <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets))
   ret_sel_bicubic_binnodes_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets)) # number of bin nodes, only set where ret_sel_model == 8 (bicubic)
   ret_sel_bicubic_yrnodes_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets)) # number of year nodes, only set where ret_sel_model == 8 (bicubic)
@@ -320,11 +334,11 @@ Setup_Mod_Retsel <- function(input_list,
       tmp_block <- if(length(block_pos) == 1) suppressWarnings(as.numeric(tmp_sel_form_vec[block_pos + 1])) else NULL
       tmp_nselbins <- if(length(nselbins_pos) == 1) suppressWarnings(as.numeric(tmp_sel_form_vec[nselbins_pos + 1])) else 0
       if(length(nselbins_pos) == 1 && (is.na(tmp_nselbins) || tmp_nselbins < 2 || tmp_nselbins > bins)) stop("ret_sel_model NSelBins must be an integer between 2 and the total number of bins (ages or lengths)")
-      if(length(nselbins_pos) == 1 && sel_form %in% c("nonpar", "nonparlog")) stop("ret_sel_model NSelBins is for the parametric forms; a non-parametric form would keep estimating the bins it then overwrites. Group those bins through ret_sel_nonpar_est_bins instead.")
+      if(length(nselbins_pos) == 1 && sel_form %in% c("nonpar", "nonparlog", "nonparfree")) stop("ret_sel_model NSelBins is for the parametric forms; a non-parametric form would keep estimating the bins it then overwrites. Group those bins through ret_sel_nonpar_est_bins instead.")
     }
 
     # validate options
-    if(!sel_form %in% c(sel_map$sel)) stop("ret_sel_model is not correctly specified. This needs to be one of these: logist1, gamma, exponential, logist2, dbnrml, nonpar, asymplogist1, asymplogist2, bicubic (the seltypes) and specified as seltype_Fleet_x")
+    if(!sel_form %in% c(sel_map$sel)) stop("ret_sel_model is not correctly specified. This needs to be one of these: logist1, gamma, exponential, logist2, dbnrml, nonpar, nonparlog, nonparfree, asymplogist1, asymplogist2, bicubic (the seltypes) and specified as seltype_Fleet_x")
     if(!tmp_fleet %in% c(1:input_list$data$n_fish_fleets)) stop("Invalid fleet specified for ret_sel_model This needs to be specified as seltype_Fleet_x or seltype_Fleet_x_Block_x (if blocks are specified to change for a fleet)")
 
     # Input options
@@ -391,7 +405,7 @@ Setup_Mod_Retsel <- function(input_list,
     if(unique_retsel_vals[i] %in% c(2)) sel_pars_vec[i] <- 1 # exponential
     if(unique_retsel_vals[i] %in% c(0,1,3)) sel_pars_vec[i] <- 2 # logistic or gamma
     if(unique_retsel_vals[i] %in% c(4)) sel_pars_vec[i] <- 6 # double normal
-    if(unique_retsel_vals[i] %in% c(5,9)) sel_pars_vec[i] <- bins # non-parametric
+    if(unique_retsel_vals[i] %in% c(5,9,10)) sel_pars_vec[i] <- bins # non-parametric
     if(unique_retsel_vals[i] %in% c(6,7)) sel_pars_vec[i] <- 3 # logistic w/ asymptote parameter
     if(unique_retsel_vals[i] == 8) sel_pars_vec[i] <- max(input_list$data$ret_sel_bicubic_binnodes * input_list$data$ret_sel_bicubic_yrnodes) # bicubic: flattened bin-node x year-node grid
   } # end i loop
@@ -530,7 +544,21 @@ Setup_Mod_Retsel <- function(input_list,
 #'     \item{\code{"gamma"}}{Dome-shaped gamma with \eqn{a_{max}} and \eqn{\delta} (2 parameters).}
 #'     \item{\code{"exponential"}}{Exponential with a single power parameter (1 parameter).}
 #'     \item{\code{"dbnrml"}}{Double-normal with 6 parameters.}
-#'     \item{\code{"nonpar"}}{Non-parametric selectivity defined over discrete age or length bins, where selectivity is estimated as independent parameters (or grouped bins if specified via nonparametric bin mapping). No fixed functional form is imposed.}
+#'     \item{\code{"nonpar"}}{Non-parametric over discrete age or length bins, on
+#'       the logit scale, then mean-standardized jointly over years and bins so the
+#'       grand mean of the surface is one. Bins may be grouped through the
+#'       non-parametric bin mapping. No fixed functional form is imposed.}
+#'     \item{\code{"nonparlog"}}{Non-parametric on the log scale, standardized so
+#'       each year's selectivity averages to one over \code{*_sel_norm_bins}. Only
+#'       within-year contrasts are identified; the level is absorbed by
+#'       catchability or fishing mortality.}
+#'     \item{\code{"nonparfree"}}{Non-parametric on the log scale with no
+#'       standardization, \eqn{\exp(\theta)}, so the values carry the height of the
+#'       curve as well as its shape. This is the form for a stream fit age by age:
+#'       a free catchability per age and a selectivity estimated at age are one
+#'       quantity written two ways, so the whole age multiplier lives here and no
+#'       catchability is set. Pin one bin, by leaving it out of the estimated bins,
+#'       whenever the mean it multiplies is also free.}
 #'     \item{\code{"asymplogist1"}}{Logistic selectivity with \eqn{a_{50}} and slope \eqn{k} and asymptotic control (3 parameters).}
 #'     \item{\code{"asymplogist2"}}{Logistic selectivity with with \eqn{a_{50}} and \eqn{a_{95}} and asymptotic control (3 parameters).}
 #'     \item{\code{"bicubic"}}{Bicubic spline over a bin-node x year-node grid
@@ -725,7 +753,21 @@ Setup_Mod_Retsel <- function(input_list,
 #'     \item{\code{"gamma"}}{Dome-shaped gamma with \eqn{a_{max}} and \eqn{\delta} (2 parameters).}
 #'     \item{\code{"exponential"}}{Exponential with a single power parameter (1 parameter).}
 #'     \item{\code{"dbnrml"}}{Double-normal with 6 parameters.}
-#'     \item{\code{"nonpar"}}{Non-parametric selectivity defined over discrete age or length bins, where selectivity is estimated as independent parameters (or grouped bins if specified via nonparametric bin mapping). No fixed functional form is imposed.}
+#'     \item{\code{"nonpar"}}{Non-parametric over discrete age or length bins, on
+#'       the logit scale, then mean-standardized jointly over years and bins so the
+#'       grand mean of the surface is one. Bins may be grouped through the
+#'       non-parametric bin mapping. No fixed functional form is imposed.}
+#'     \item{\code{"nonparlog"}}{Non-parametric on the log scale, standardized so
+#'       each year's selectivity averages to one over \code{*_sel_norm_bins}. Only
+#'       within-year contrasts are identified; the level is absorbed by
+#'       catchability or fishing mortality.}
+#'     \item{\code{"nonparfree"}}{Non-parametric on the log scale with no
+#'       standardization, \eqn{\exp(\theta)}, so the values carry the height of the
+#'       curve as well as its shape. This is the form for a stream fit age by age:
+#'       a free catchability per age and a selectivity estimated at age are one
+#'       quantity written two ways, so the whole age multiplier lives here and no
+#'       catchability is set. Pin one bin, by leaving it out of the estimated bins,
+#'       whenever the mean it multiplies is also free.}
 #'     \item{\code{"asymplogist1"}}{Logistic selectivity with \eqn{a_{50}} and slope \eqn{k} and asymptotic control (3 parameters).}
 #'     \item{\code{"asymplogist2"}}{Logistic selectivity with with \eqn{a_{50}} and \eqn{a_{95}} and asymptotic control (3 parameters).}
 #'     \item{\code{"bicubic"}}{Bicubic spline over a bin-node x year-node grid, specified as
@@ -1071,7 +1113,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
   for(f in 1:input_list$data$n_fish_fleets) collect_message(paste("Fishery Selectivity Time Blocks for fishery", f, "is specified at:", length(unique(fish_sel_blocks_arr[,,f]))))
 
   # Selectivity Functional Forms --------------------------------------------
-  sel_map <- data.frame(sel = c('logist1', "gamma", "exponential", "logist2", "dbnrml", 'nonpar', 'asymplogist1', "asymplogist2", "bicubic", "nonparlog"), num = c(0,1,2,3,4,5,6,7,8,9)) # set up values we can map to
+  sel_map <- data.frame(sel = c('logist1', "gamma", "exponential", "logist2", "dbnrml", 'nonpar', 'asymplogist1', "asymplogist2", "bicubic", "nonparlog", "nonparfree"), num = c(0,1,2,3,4,5,6,7,8,9,10)) # set up values we can map to
   fish_sel_model_arr <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets))
   fish_sel_bicubic_binnodes_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets)) # number of bin nodes, only set where fish_sel_model == 8 (bicubic)
   fish_sel_bicubic_yrnodes_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets)) # number of year nodes, only set where fish_sel_model == 8 (bicubic)
@@ -1115,11 +1157,11 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
       tmp_block <- if(length(block_pos) == 1) suppressWarnings(as.numeric(tmp_sel_form_vec[block_pos + 1])) else NULL
       tmp_nselbins <- if(length(nselbins_pos) == 1) suppressWarnings(as.numeric(tmp_sel_form_vec[nselbins_pos + 1])) else 0
       if(length(nselbins_pos) == 1 && (is.na(tmp_nselbins) || tmp_nselbins < 2 || tmp_nselbins > bins)) stop("fish_sel_model NSelBins must be an integer between 2 and the total number of bins (ages or lengths)")
-      if(length(nselbins_pos) == 1 && sel_form %in% c("nonpar", "nonparlog")) stop("fish_sel_model NSelBins is for the parametric forms; a non-parametric form would keep estimating the bins it then overwrites. Group those bins through fish_sel_nonpar_est_bins instead.")
+      if(length(nselbins_pos) == 1 && sel_form %in% c("nonpar", "nonparlog", "nonparfree")) stop("fish_sel_model NSelBins is for the parametric forms; a non-parametric form would keep estimating the bins it then overwrites. Group those bins through fish_sel_nonpar_est_bins instead.")
     }
 
     # validate options
-    if(!sel_form %in% c(sel_map$sel)) stop("fish_sel_model is not correctly specified. This needs to be one of these: logist1, gamma, exponential, logist2, dbnrml, nonpar, asymplogist1, asymplogist2, bicubic (the seltypes) and specified as seltype_Fleet_x")
+    if(!sel_form %in% c(sel_map$sel)) stop("fish_sel_model is not correctly specified. This needs to be one of these: logist1, gamma, exponential, logist2, dbnrml, nonpar, nonparlog, nonparfree, asymplogist1, asymplogist2, bicubic (the seltypes) and specified as seltype_Fleet_x")
     if(!tmp_fleet %in% c(1:input_list$data$n_fish_fleets)) stop("Invalid fleet specified for fish_sel_model This needs to be specified as seltype_Fleet_x or seltype_Fleet_x_Block_x (if blocks are specified to change for a fleet)")
 
     # Input options
@@ -1282,7 +1324,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
     if(unique_fishsel_vals[i] %in% c(2)) sel_pars_vec[i] <- 1 # exponential
     if(unique_fishsel_vals[i] %in% c(0,1,3)) sel_pars_vec[i] <- 2 # logistic or gamma
     if(unique_fishsel_vals[i] %in% c(4)) sel_pars_vec[i] <- 6 # double normal
-    if(unique_fishsel_vals[i] %in% c(5,9)) sel_pars_vec[i] <- bins # non-parametric selex
+    if(unique_fishsel_vals[i] %in% c(5,9,10)) sel_pars_vec[i] <- bins # non-parametric selex
     if(unique_fishsel_vals[i] %in% c(6,7)) sel_pars_vec[i] <- 3 # logistic selex w/ asymptote
     if(unique_fishsel_vals[i] == 8) sel_pars_vec[i] <- max(input_list$data$fish_sel_bicubic_binnodes * input_list$data$fish_sel_bicubic_yrnodes) # bicubic: flattened bin-node x year-node grid
   } # end i loop

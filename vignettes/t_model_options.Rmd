@@ -325,11 +325,39 @@ Specified as character strings following the pattern `"<form>_Fleet_<f>"` (const
 | `"dbnrml"` | Double-normal with ascending and descending widths, plateau, and endpoint control | 6 |
 | `"nonpar"` | Non-parametric: one logit-scale parameter per bin, transformed via $\text{logit}^{-1}$ | $n_\text{bins}$ |
 | `"nonparlog"` | Non-parametric on the log scale, standardized so each year's selectivity averages to 1 over a window of bins (every bin by default; see [Normalisation and length-based selectivity]) | $n_\text{bins}$ |
+| `"nonparfree"` | Non-parametric on the log scale with no standardization at all: $\exp(\theta_\text{bin})$, so the values carry the height of the curve as well as its shape | $n_\text{bins}$ |
 | `"asymplogist1"` | Logistic with asymptote $\alpha \in (0,1)$: $\alpha / (1 + \exp(-k(\text{bin} - a_{50})))$ | 3 ($\text{logit}(\alpha)$, $\ln a_{50}$, $\ln k$) |
 | `"asymplogist2"` | Logistic with asymptote, $a_{50}/a_{95}$ parameterisation | 3 ($\text{logit}(\alpha)$, $\ln a_{50}$, $\ln a_{95}$) |
 | `"bicubic"` | Bicubic natural-cubic-spline surface over a bin-node $\times$ year-node grid | $n_\text{bin\_nodes} \times n_\text{yr\_nodes}$ (see below) |
 
-Choosing between the two non-parametric forms. `"nonpar"` bounds every raw value below one (logistic transform) and mean-standardizes jointly over years and bins; `"nonparlog"` leaves the scale free and centers within each year. Under `"nonparlog"` only the within-year *differences* among parameters are identified, since the level is absorbed by catchability or fishing mortality, so pair it with the selectivity parameter centering penalty (below) or fix a bin group via `*_sel_nonpar_est_bins` to pin the scale. Prefer `"nonpar"` when you want selectivity interpretable as a proportion without further constraints. 
+The three non-parametric forms differ only in what happens after the transform, and that difference is what decides whether selectivity can carry a scale. Write $\theta_{a,b}$ for the estimated parameter at bin $a$ in block $b$, $b(y)$ for the block year $y$ falls in, and $s_{y,a}$ for the selectivity the model actually uses. Then
+
+$$
+\texttt{"nonpar"}: \quad
+s_{y,a} = \frac{\operatorname{logit}^{-1}\!\left(\theta_{a,b(y)}\right)}
+               {\dfrac{1}{n_\text{yrs} n_\text{bins}}\sum_{y'}\sum_{a'} \operatorname{logit}^{-1}\!\left(\theta_{a',b(y')}\right)}
+$$
+
+$$
+\texttt{"nonparlog"}: \quad
+s_{y,a} = \frac{\exp\!\left(\theta_{a,b(y)}\right)}
+               {\dfrac{1}{|B|}\sum_{a' \in B} \exp\!\left(\theta_{a',b(y)}\right)}
+$$
+
+$$
+\texttt{"nonparfree"}: \quad
+s_{y,a} = \exp\!\left(\theta_{a,b(y)}\right)
+$$
+
+where $B$ is the set of bins named by `*_sel_norm_bins` (every bin by default). The inverse logit bounds each raw value below one before anything else happens; the exponential does not.
+
+Read the denominators. `"nonpar"` divides by a single number computed over years *and* bins together, so it fixes the grand mean of the whole surface at one: one degree of freedom is removed from the surface as a whole. `"nonparlog"` divides by a number computed within each year, so it fixes every year's mean at one: one degree of freedom is removed *per year*, and only within-year contrasts survive. `"nonparfree"` divides by nothing, so every $\theta_{a,b}$ is a selectivity in its own right and the level is estimated along with the shape.
+
+That last point is the practical one. A standardized form cannot hold a level, so the level has to live somewhere else, in catchability or in the fishing mortality mean. A free form can hold it, which is what makes it the right choice for an index fit age by age, where the age multiplier is the whole quantity being estimated. It is also what makes it possible to estimate a level twice by accident: if selectivity carries a level *and* the mean it multiplies is free, the two trade a common factor, the Hessian stops being positive definite, and the selectivity standard errors inflate while the fitted trajectory looks fine. Pin one bin, or one block's reference group, by leaving it out of `*_sel_nonpar_est_bins`.
+
+Choosing among the three non-parametric forms. `"nonpar"` bounds every raw value below one (logistic transform) and mean-standardizes jointly over years and bins; `"nonparlog"` leaves the scale free and centers within each year. Under `"nonparlog"` only the within-year *differences* among parameters are identified, since the level is absorbed by catchability or fishing mortality, so pair it with the selectivity parameter centering penalty (below) or fix a bin group via `*_sel_nonpar_est_bins` to pin the scale. Prefer `"nonpar"` when you want selectivity interpretable as a proportion without further constraints.
+
+`"nonparfree"` does not standardize at all, so its values hold the level as well as the shape. That is what an index fit age by age needs: a free catchability per age and a selectivity estimated at age are one quantity written two ways, so an at-age index puts the whole age multiplier in selectivity and leaves catchability alone. Group ages the way a catchability key would through `*_sel_nonpar_est_bins`, and leave an age out of the list entirely when the fleet never observes it, which maps it off rather than leaving it free and uninformed. Because nothing is cancelled by standardization, `"nonparfree"` also accepts a `"scale"` sex offset, which `"nonpar"` and `"nonparlog"` refuse. Do not pair it with the centering penalty! 
 
 ### Bicubic spline selectivity (`"bicubic"`)
 
@@ -862,6 +890,165 @@ Indices and compositions are configured together for fishery fleets (`Setup_Mod_
 | `fish_idx_type` / `srv_idx_type` | `"abd"` abundance, `"biom"` biomass, `"none"`. Survey fleets also take `"recdev"`, an index of the recruitment deviations themselves |
 | `ObsFishIdx_pop` / `ObsSrvIdx_pop` | Population-specific indices (separate likelihood contribution) |
 | `ObsFishIdx_pop_SE` / `ObsSrvIdx_pop_SE` | Population-specific index SEs |
+
+### Age-disaggregated observations
+
+`SPoRC` fits catch as an aggregate with a composition, and an index the same way.
+ICES age-structured assessments generally do neither: they fit catch at age and index at age
+directly, every age its own observation with its own catchability and its own
+variance.
+
+The two are not interchangeable. Splitting an at-age observation into a total and
+a composition is exact for Poisson and multinomial, where the total is a genuine
+count sum. However, both families are lognormal, and the sum of lognormals is not
+lognormal, so no composition likelihood recovers the at-age statement! 
+A fleet uses one form or the other. Supplying both for the same fleet is an
+error, since it is the same information stated twice.
+
+| Argument | Stream |
+|---|---|
+| `ObsCatchAA` / `UseCatchAA` | Retained catch at age |
+| `ObsDiscardAA` / `UseDiscardAA` | Discards at age |
+| `ObsFishIdxAA` / `UseFishIdxAA` | Fishery index at age |
+| `ObsSrvIdxAA` / `UseSrvIdxAA` | Survey index at age |
+
+Each has a `_pop` counterpart with a leading population dimension. All eight
+evaluate the same lognormal at-age likelihood through one function, differing
+only in which array supplies the prediction.
+
+#### Fitting a stream age by age
+
+The recipe is the same whether the stream is catch at age, discards at age, or an
+index at age, and it is short:
+
+| | |
+|---|---|
+| Selectivity form | `"nonparfree"` |
+| Estimated bins | `*_sel_nonpar_est_bins`, grouped the way a catchability key would be, with ages the fleet never observes left out |
+| Catchability | nothing to set |
+| Observation error | `sigma*AA_key` |
+
+There is no catchability argument in that list because there is nothing for it to
+do. A free catchability per age and a selectivity estimated at age are one
+quantity written two ways, and `"nonparfree"` is the form whose values carry a
+level rather than a shape alone, so the whole age multiplier lives in selectivity
+and the catchability is absorbed into it. For an index that means the prediction
+is $S^{\text{free}}_{a,f} N_{a}$ rather than $q_{a,f} S_{a,f} N_{a}$, with one
+parameter per age instead of two.
+
+Two consequences worth knowing. Ages left out of `*_sel_nonpar_est_bins` get no
+parameter at all, which is what an age a survey never sees wants, and is the
+at-age analogue of an `NA` in a key. And if a fleet's mean is *also* free, as
+fishing mortality's is, the level is then estimated twice: pin one bin, or one
+block's reference group, by leaving it out of the estimated bins. The fit will
+otherwise land in the right place while the Hessian stops being positive definite
+and the selectivity standard errors inflate by three orders of magnitude.
+
+#### Key matrices
+
+Parameters are coupled through integer key matrices `[n_ages, n_fleets]`, in
+which equal entries share a parameter and `NA` excludes one. This is the key
+matrix convention ICES assessments use for coupling variances and catchability,
+with `NA` marking an excluded parameter, and the fleet last
+because that is where `SPoRC` puts it. One structure covers every sharing pattern
+that would otherwise need its own argument:
+
+| Intent | Key column for a fleet |
+|---|---|
+| One parameter per age | `1 2 3 4 5` |
+| By age group | `1 1 2 2 2` |
+| One for the fleet | `1 1 1 1 1` |
+| Age not observed | `NA` |
+
+`sigmaCAA_key`, `sigmaDAA_key`, `sigmaFishIdxAA_key` and `sigmaSrvIdxAA_key`
+carry the observation error. Catchability at age is not keyed here: an index fit
+age by age carries its age shape in selectivity, through the `"nonparfree"` form
+(see Selectivity above), since a free catchability per age and a selectivity
+estimated at age are the same statement twice. A parameter informed by fewer than two observations is refused, and
+fewer than five warns: an observation error standard deviation with a single
+observation drives the likelihood to negative infinity rather than failing
+outright, and the optimiser reports convergence either way.
+
+A season needing its own observation error is a separate fleet, the same way
+anything else needing its own selectivity or catchability is.
+
+#### Correlation across ages
+
+Each stream is set where its data are set, following how the package separates
+fishery from survey elsewhere:
+
+| Argument | Set in |
+|---|---|
+| `AgeObsCorr_catch`, `AgeObsCorr_discard` | `Setup_Mod_Catch_and_F()` |
+| `AgeObsCorr_fish_idx` | `Setup_Mod_FishIdx_and_Comps()` |
+| `AgeObsCorr_srv_idx` | `Setup_Mod_SrvIdx_and_Comps()` |
+
+| String | Meaning |
+|---|---|
+| `"iid"` | Ages independent within a cell. Default |
+| `"1dar1"` | AR(1) across ages, one correlation estimated per fleet |
+
+Under `"1dar1"` the correlation is a vector of length `n_fleets`, not a single
+value: fleets sampling different gears or seasons have no reason to share one.
+
+A cell with a single observed age carries no correlation to describe and falls
+back to independent. Be careful estimating an AR(1) on a fleet observing only two
+or three ages: the correlation is barely identified and will sit on its bound.
+
+#### Identifiability
+
+Two things are worth knowing before fitting these.
+
+An estimated observation error needs the thing predicting the mean to be more
+constrained than the data. Fishing mortality with free annual deviations can
+reproduce every catch at age exactly, at which point the residuals vanish and the
+estimated standard deviation collapses towards zero, which the likelihood rewards
+without limit. Effort-driven fishing mortality, or a blocked or penalised
+structure, is what makes an estimated catch standard deviation meaningful.
+
+Fishing mortality must be constrained in the same way for the at-age catch
+likelihood itself to be identifiable. Four ages by forty years by two seasons of
+free fishing mortality is roughly the number of observations, and even under a
+separable structure a ridge opens in which each age's fishing mortality absorbs
+its own abundance.
+
+### Estimated index observation error (`sigmaFishIdx_spec` / `sigmaSrvIdx_spec`)
+
+An index carries a standard error from its own survey design, and an assessment
+may additionally estimate a component covering everything that design does not.
+this is often called an extra standard deviation. By default `SPoRC` uses
+the reported standard errors as they stand, which is `"fix"`.
+
+One parameter is estimated per fleet, `ln_sigmaFishIdx` or `ln_sigmaSrvIdx`.
+The aggregated and population-specific streams are separate observations with
+separate error structures, so they carry separate parameters, in the same way
+`ln_sigmaC` and `ln_sigmaC_pop` do. The population streams are configured
+through `sigmaFishIdx_pop_spec` and `sigmaSrvIdx_pop_spec`.
+
+| String | Total standard deviation |
+|---|---|
+| `"fix"` | The reported standard error, unchanged. Default |
+| `"est_additive"` | Reported standard error plus the estimated component. The additive convention, and what the bridges here reproduce |
+| `"est_quadrature"` | Reported standard error and estimated component added in quadrature, treating them as independent variances |
+| `"est_replace"` | The estimated standard deviation alone, discarding the reported errors. What several ICES assessments do |
+
+`sigmaFishIdx_map` and `sigmaSrvIdx_map`, with `_pop` variants, give the
+estimation groups as an integer vector of length `n_fish_fleets` or
+`n_srv_fleets`. Fleets sharing a value share a parameter and `NA` holds a fleet
+at its starting value, which is how a fleet a reference assessment pinned at a
+bound is carried without pretending it was estimated.
+
+Two things are worth knowing before turning this on. An estimated component is
+confounded with a likelihood weight, because a weight on a normal likelihood is
+the same statement as dividing the variance by that weight, so the estimate will
+absorb the weight; `Setup_Mod_Weighting()` warns when both are used. A fleet
+with a multivariate normal index likelihood takes its scale from the supplied
+covariance and ignores a standard deviation entirely, so requesting one there is
+an error rather than a silently unidentified parameter.
+
+The simulator draws index observations from whatever total the fitted model
+used, so `simulation_self_test()` exercises the estimated component without
+further configuration.
 
 ### Index error structure (`FishIdx_LikeType` / `SrvIdx_LikeType`)
 

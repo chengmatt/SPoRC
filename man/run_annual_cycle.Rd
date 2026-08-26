@@ -38,16 +38,16 @@ depends on year \code{y}'s own SSB, which isn't known until
 instead, once that SSB is available.
 }
 \seealso{
-Other Simulation Setup: 
-\code{\link{Setup_Sim_Biologicals}()},
-\code{\link{Setup_Sim_Containers}()},
-\code{\link{Setup_Sim_Dim}()},
-\code{\link{Setup_Sim_Fishing}()},
-\code{\link{Setup_Sim_Rec}()},
-\code{\link{Setup_Sim_Survey}()},
-\code{\link{Setup_Sim_Tagging}()},
-\code{\link{Setup_sim_env}()},
-\code{\link{Simulate_Pop_Static}()},
-\code{\link{simulation_self_test}()}
+Other Simulation Setup:
+\code{\link[=Setup_Sim_Biologicals]{Setup_Sim_Biologicals()}},
+\code{\link[=Setup_Sim_Containers]{Setup_Sim_Containers()}},
+\code{\link[=Setup_Sim_Dim]{Setup_Sim_Dim()}},
+\code{\link[=Setup_Sim_Fishing]{Setup_Sim_Fishing()}},
+\code{\link[=Setup_Sim_Rec]{Setup_Sim_Rec()}},
+\code{\link[=Setup_Sim_Survey]{Setup_Sim_Survey()}},
+\code{\link[=Setup_Sim_Tagging]{Setup_Sim_Tagging()}},
+\code{\link[=Setup_sim_env]{Setup_sim_env()}},
+\code{\link[=Simulate_Pop_Static]{Simulate_Pop_Static()}},
+\code{\link[=simulation_self_test]{simulation_self_test()}}
 }
 \concept{Simulation Setup}

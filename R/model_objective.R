@@ -188,6 +188,79 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   if(!has("SrvIdx_Cov")) set("SrvIdx_Cov", vector("list", n_srv_bc))
   if(!has("FishIdx_Cov")) set("FishIdx_Cov", vector("list", n_fish_bc))
 
+  # Estimated index observation error. Zero keeps the reported standard errors
+  # as the whole story, which is what input lists built before this existed mean.
+  # The population-specific streams carry their own form and parameter.
+  if(!has("sigmaSrvIdx_form")) set("sigmaSrvIdx_form", 0)
+  if(!has("sigmaFishIdx_form")) set("sigmaFishIdx_form", 0)
+  if(!has("sigmaSrvIdx_pop_form")) set("sigmaSrvIdx_pop_form", 0)
+  if(!has("sigmaFishIdx_pop_form")) set("sigmaFishIdx_pop_form", 0)
+  if(!has("ln_sigmaSrvIdx")) set("ln_sigmaSrvIdx", rep(log(0.01), n_srv_bc))
+  if(!has("ln_sigmaFishIdx")) set("ln_sigmaFishIdx", rep(log(0.01), n_fish_bc))
+  if(!has("ln_sigmaSrvIdx_pop")) set("ln_sigmaSrvIdx_pop", rep(log(0.01), n_srv_bc))
+  if(!has("ln_sigmaFishIdx_pop")) set("ln_sigmaFishIdx_pop", rep(log(0.01), n_fish_bc))
+
+  # A population stream that was never supplied drops out of the data list
+  # entirely rather than arriving empty, so it is given a shape here and the
+  # index code can index it unconditionally.
+  pop_se_dim <- function(n_fleets) c(get("n_pop", envir = env), get("n_regions", envir = env),
+                                     length(get("years", envir = env)), get("n_seas", envir = env), n_fleets)
+  if(!has("ObsFishIdx_pop_SE")) set("ObsFishIdx_pop_SE", array(0, dim = pop_se_dim(n_fish_bc)))
+
+  # Age-disaggregated observation streams. Absent from any input list built
+  # before they existed; an all-zero use array leaves a fleet on the aggregated
+  # stream. Ordered fishery then survey, as elsewhere.
+  n_ages_bc <- length(get("ages", envir = env))
+  n_pop_bc <- get("n_pop", envir = env)
+  at_age_dim <- function(n_fleets) c(get("n_regions", envir = env),
+                                     length(get("years", envir = env)),
+                                     get("n_seas", envir = env), n_ages_bc, n_fleets)
+  fish_aa_dim <- at_age_dim(n_fish_bc)
+  srv_aa_dim <- at_age_dim(n_srv_bc)
+
+  # fishery: retained catch, discards, index
+  if(!has("ObsCatchAA")) set("ObsCatchAA", array(0, dim = fish_aa_dim))
+  if(!has("UseCatchAA")) set("UseCatchAA", array(0, dim = fish_aa_dim))
+  if(!has("ObsCatchAA_pop")) set("ObsCatchAA_pop", array(0, dim = c(n_pop_bc, fish_aa_dim)))
+  if(!has("UseCatchAA_pop")) set("UseCatchAA_pop", array(0, dim = c(n_pop_bc, fish_aa_dim)))
+  if(!has("use_catch_aa")) set("use_catch_aa", rep(0, n_fish_bc))
+  if(!has("ln_sigmaCAA")) set("ln_sigmaCAA", array(log(0.5), dim = c(n_ages_bc, n_fish_bc)))
+  if(!has("ln_sigmaCAA_pop")) set("ln_sigmaCAA_pop", array(log(0.5), dim = c(n_pop_bc, n_ages_bc, n_fish_bc)))
+  if(!has("AgeObsCorr_catch")) set("AgeObsCorr_catch", 0)
+  if(!has("trans_rho_catch")) set("trans_rho_catch", rep(0, n_fish_bc))
+
+  if(!has("ObsDiscardAA")) set("ObsDiscardAA", array(0, dim = fish_aa_dim))
+  if(!has("UseDiscardAA")) set("UseDiscardAA", array(0, dim = fish_aa_dim))
+  if(!has("ObsDiscardAA_pop")) set("ObsDiscardAA_pop", array(0, dim = c(n_pop_bc, fish_aa_dim)))
+  if(!has("UseDiscardAA_pop")) set("UseDiscardAA_pop", array(0, dim = c(n_pop_bc, fish_aa_dim)))
+  if(!has("use_discard_aa")) set("use_discard_aa", rep(0, n_fish_bc))
+  if(!has("ln_sigmaDAA")) set("ln_sigmaDAA", array(log(0.5), dim = c(n_ages_bc, n_fish_bc)))
+  if(!has("ln_sigmaDAA_pop")) set("ln_sigmaDAA_pop", array(log(0.5), dim = c(n_pop_bc, n_ages_bc, n_fish_bc)))
+  if(!has("AgeObsCorr_discard")) set("AgeObsCorr_discard", 0)
+  if(!has("trans_rho_discard")) set("trans_rho_discard", rep(0, n_fish_bc))
+
+  if(!has("ObsFishIdxAA")) set("ObsFishIdxAA", array(0, dim = fish_aa_dim))
+  if(!has("UseFishIdxAA")) set("UseFishIdxAA", array(0, dim = fish_aa_dim))
+  if(!has("ObsFishIdxAA_pop")) set("ObsFishIdxAA_pop", array(0, dim = c(n_pop_bc, fish_aa_dim)))
+  if(!has("UseFishIdxAA_pop")) set("UseFishIdxAA_pop", array(0, dim = c(n_pop_bc, fish_aa_dim)))
+  if(!has("use_fish_idx_aa")) set("use_fish_idx_aa", rep(0, n_fish_bc))
+  if(!has("ln_sigmaFishIdxAA")) set("ln_sigmaFishIdxAA", array(log(0.5), dim = c(n_ages_bc, n_fish_bc)))
+  if(!has("ln_sigmaFishIdxAA_pop")) set("ln_sigmaFishIdxAA_pop", array(log(0.5), dim = c(n_pop_bc, n_ages_bc, n_fish_bc)))
+  if(!has("AgeObsCorr_fish_idx")) set("AgeObsCorr_fish_idx", 0)
+  if(!has("trans_rho_fish_idx")) set("trans_rho_fish_idx", rep(0, n_fish_bc))
+
+  # survey: index
+  if(!has("ObsSrvIdxAA")) set("ObsSrvIdxAA", array(0, dim = srv_aa_dim))
+  if(!has("UseSrvIdxAA")) set("UseSrvIdxAA", array(0, dim = srv_aa_dim))
+  if(!has("ObsSrvIdxAA_pop")) set("ObsSrvIdxAA_pop", array(0, dim = c(n_pop_bc, srv_aa_dim)))
+  if(!has("UseSrvIdxAA_pop")) set("UseSrvIdxAA_pop", array(0, dim = c(n_pop_bc, srv_aa_dim)))
+  if(!has("use_srv_idx_aa")) set("use_srv_idx_aa", rep(0, n_srv_bc))
+  if(!has("ln_sigmaSrvIdxAA")) set("ln_sigmaSrvIdxAA", array(log(0.5), dim = c(n_ages_bc, n_srv_bc)))
+  if(!has("ln_sigmaSrvIdxAA_pop")) set("ln_sigmaSrvIdxAA_pop", array(log(0.5), dim = c(n_pop_bc, n_ages_bc, n_srv_bc)))
+  if(!has("AgeObsCorr_srv_idx")) set("AgeObsCorr_srv_idx", 0)
+  if(!has("trans_rho_srv_idx")) set("trans_rho_srv_idx", rep(0, n_srv_bc))
+  if(!has("ObsSrvIdx_pop_SE")) set("ObsSrvIdx_pop_SE", array(0, dim = pop_se_dim(n_srv_bc)))
+
   # Deviation penalties centred on a fixed prior mean unless asked otherwise.
   if(!has("Fdev_pen_center")) set("Fdev_pen_center", 0)
   if(!has("RecDevs_pen_center")) set("RecDevs_pen_center", 0)
@@ -396,6 +469,7 @@ SPoRC_rtmb = function(pars, data) {
   PredCatch = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_fish_fleets)) # Predicted retained catch (can be abundance or biomass)
   PredDiscard = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_fish_fleets)) # Predicted discarded catch (can be abundance, biomass, or abdunance or biomass fraction of retained catch)
   PredFishIdx = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_fish_fleets)) # Predicted fishery index
+  FishIAA = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # Fishery index numbers at age
   fish_q = array(0, dim = c(n_regions, n_yrs, n_fish_fleets)) # Fishery catchability
 
   # Survey Processes
@@ -413,6 +487,14 @@ SPoRC_rtmb = function(pars, data) {
   FishLenComps_nLL = array(data = 0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_fish_fleets)) # Retained Fishery Length Comps Likelihoods
   FishAgeComps_discard_nLL = array(data = 0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_fish_fleets)) # Discarded Fishery Age Comps Likelihoods
   FishLenComps_discard_nLL = array(data = 0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_fish_fleets)) # Discarded Fishery Length Comps Likelihoods
+  CatchAA_nLL = array(0, dim = c(n_regions, n_yrs, n_seas, n_ages, n_fish_fleets)) # Catch at age likelihoods
+  CatchAA_pop_nLL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_fish_fleets)) # Population-specific catch at age
+  DiscardAA_nLL = array(0, dim = c(n_regions, n_yrs, n_seas, n_ages, n_fish_fleets)) # Discard at age likelihoods
+  DiscardAA_pop_nLL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_fish_fleets)) # Population-specific discard at age
+  FishIdxAA_nLL = array(0, dim = c(n_regions, n_yrs, n_seas, n_ages, n_fish_fleets)) # Fishery index at age likelihoods
+  FishIdxAA_pop_nLL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_fish_fleets)) # Population-specific fishery index at age
+  SrvIdxAA_nLL = array(0, dim = c(n_regions, n_yrs, n_seas, n_ages, n_srv_fleets)) # Survey index at age likelihoods
+  SrvIdxAA_pop_nLL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_srv_fleets)) # Population-specific survey index at age
   SrvIdx_nLL = array(0, dim = c(n_regions, n_yrs, n_seas, n_srv_fleets)) # Survey Index Likelihoods
   SrvAgeComps_nLL = array(data = 0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_srv_fleets)) # Survey Age Comps Likelihoods
   SrvLenComps_nLL = array(data = 0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_srv_fleets)) # Survey Length Comps Likelihoods
@@ -914,7 +996,7 @@ SPoRC_rtmb = function(pars, data) {
     n_pop = n_pop, n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fish_fleets = n_fish_fleets, n_sexes = n_sexes,
     fish_q_blocks = fish_q_blocks, ln_fish_q = ln_fish_q, fish_q = fish_q,
     ret_FAA = ret_FAA, disc_FAA = disc_FAA, ZAA = ZAA, NAA = NAA,
-    CAA = CAA, DAA = DAA, CAL = CAL, DAL = DAL, PredCatch = PredCatch, PredDiscard = PredDiscard, PredFishIdx = PredFishIdx,
+    CAA = CAA, DAA = DAA, CAL = CAL, DAL = DAL, PredCatch = PredCatch, PredDiscard = PredDiscard, PredFishIdx = PredFishIdx, FishIAA = FishIAA,
     fit_lengths = fit_lengths, SizeAgeTrans = SizeAgeTrans,
     SizeAgeTrans_fish = SizeAgeTrans_fish,
     fish_len_comp_sel = fish_len_comp_sel, fish_selex_type = fish_selex_type, ret_selex_type = ret_selex_type,
@@ -930,7 +1012,7 @@ SPoRC_rtmb = function(pars, data) {
     do_caal = do_caal, Fish_caal = Fish_caal, Fish_caal_discard = Fish_caal_discard
   )
 
-  fish_q = tmp_fish_obs$fish_q; CAA = tmp_fish_obs$CAA; DAA = tmp_fish_obs$DAA
+  fish_q = tmp_fish_obs$fish_q; CAA = tmp_fish_obs$CAA; DAA = tmp_fish_obs$DAA; FishIAA = tmp_fish_obs$FishIAA
   CAL = tmp_fish_obs$CAL; DAL = tmp_fish_obs$DAL
   Fish_caal = tmp_fish_obs$Fish_caal; Fish_caal_discard = tmp_fish_obs$Fish_caal_discard
   PredCatch = tmp_fish_obs$PredCatch; PredDiscard = tmp_fish_obs$PredDiscard; PredFishIdx = tmp_fish_obs$PredFishIdx
@@ -999,6 +1081,13 @@ SPoRC_rtmb = function(pars, data) {
 
   # Likelihood Equations -------------------------------------------------------------
   ## Fishery Likelihoods -----------------------------------------------------
+  ## Index observation error --------------------------------------------------
+  # Build out the standard deviations for indices
+  FishIdx_SD = build_idx_sd(ObsFishIdx_SE, ln_sigmaFishIdx, sigmaFishIdx_form)
+  FishIdx_pop_SD = build_idx_sd(ObsFishIdx_pop_SE, ln_sigmaFishIdx_pop, sigmaFishIdx_pop_form)
+  SrvIdx_SD = build_idx_sd(ObsSrvIdx_SE, ln_sigmaSrvIdx, sigmaSrvIdx_form)
+  SrvIdx_pop_SD = build_idx_sd(ObsSrvIdx_pop_SE, ln_sigmaSrvIdx_pop, sigmaSrvIdx_pop_form)
+
   ### Retained Fishery Catches (Regional) ---------------------------------------------------------
   if(any(UseCatch == 1)) { # setup OSA
 
@@ -1019,6 +1108,85 @@ SPoRC_rtmb = function(pars, data) {
                                                exp(ln_sigmaC[r,y,seas,f]), TRUE)
     }
   }
+
+  ### Age-disaggregated observations ------------------------------------------------------------------
+  # Retained catch, discards, and the fishery and survey indices, each aggregated
+  # and population-specific, all evaluate the same lognormal at-age density. The
+  # likelihood itself lives in model_lik_at_age.R; this block registers the
+  # observations and hands each stream over.
+  at_age_fit = list(
+    CatchAA = which(UseCatchAA == 1), CatchAA_pop = which(UseCatchAA_pop == 1),
+    DiscardAA = which(UseDiscardAA == 1), DiscardAA_pop = which(UseDiscardAA_pop == 1),
+    FishIdxAA = which(UseFishIdxAA == 1), FishIdxAA_pop = which(UseFishIdxAA_pop == 1),
+    SrvIdxAA = which(UseSrvIdxAA == 1), SrvIdxAA_pop = which(UseSrvIdxAA_pop == 1)
+  )
+  # OBS names the observation by deparsing its argument, so it must receive a
+  # bare symbol: transform first, register second. Passing the expression inline
+  # registers it under "log(ObsCatchAA[...])" and oneStepPredict cannot find it.
+  if(length(at_age_fit$CatchAA)) {
+    ObsCatchAA = log(ObsCatchAA[at_age_fit$CatchAA])
+    ObsCatchAA = RTMB::OBS(ObsCatchAA)
+  }
+  if(length(at_age_fit$CatchAA_pop)) {
+    ObsCatchAA_pop = log(ObsCatchAA_pop[at_age_fit$CatchAA_pop])
+    ObsCatchAA_pop = RTMB::OBS(ObsCatchAA_pop)
+  }
+  if(length(at_age_fit$DiscardAA)) {
+    ObsDiscardAA = log(ObsDiscardAA[at_age_fit$DiscardAA])
+    ObsDiscardAA = RTMB::OBS(ObsDiscardAA)
+  }
+  if(length(at_age_fit$DiscardAA_pop)) {
+    ObsDiscardAA_pop = log(ObsDiscardAA_pop[at_age_fit$DiscardAA_pop])
+    ObsDiscardAA_pop = RTMB::OBS(ObsDiscardAA_pop)
+  }
+  if(length(at_age_fit$FishIdxAA)) {
+    ObsFishIdxAA = log(ObsFishIdxAA[at_age_fit$FishIdxAA] + addtofishidx)
+    ObsFishIdxAA = RTMB::OBS(ObsFishIdxAA)
+  }
+  if(length(at_age_fit$FishIdxAA_pop)) {
+    ObsFishIdxAA_pop = log(ObsFishIdxAA_pop[at_age_fit$FishIdxAA_pop] + addtofishidx)
+    ObsFishIdxAA_pop = RTMB::OBS(ObsFishIdxAA_pop)
+  }
+  if(length(at_age_fit$SrvIdxAA)) {
+    ObsSrvIdxAA = log(ObsSrvIdxAA[at_age_fit$SrvIdxAA] + addtosrvidx)
+    ObsSrvIdxAA = RTMB::OBS(ObsSrvIdxAA)
+  }
+  if(length(at_age_fit$SrvIdxAA_pop)) {
+    ObsSrvIdxAA_pop = log(ObsSrvIdxAA_pop[at_age_fit$SrvIdxAA_pop] + addtosrvidx)
+    ObsSrvIdxAA_pop = RTMB::OBS(ObsSrvIdxAA_pop)
+  }
+
+  at_age_arrays = list(CAA = CAA, DAA = DAA, SrvIAA = SrvIAA, FishIAA = FishIAA,
+                       WAA_fish = WAA_fish, catch_units = catch_units)
+
+  # rho_trans lives in utils_math.R; one correlation per fleet
+  at_age_nLL = function(obs, use, ln_sigma, source, pop, const, corr, trans_rho) {
+    get_at_age_stream_nLL(obs, use, ln_sigma, source, pop, at_age_arrays, const,
+                          corr, rho_trans(trans_rho))
+  }
+
+  # fishery
+  caa      = at_age_nLL(ObsCatchAA, UseCatchAA, ln_sigmaCAA, "catch", FALSE, 0, AgeObsCorr_catch, trans_rho_catch)
+  caa_pop  = at_age_nLL(ObsCatchAA_pop, UseCatchAA_pop, ln_sigmaCAA_pop, "catch", TRUE, 0, AgeObsCorr_catch, trans_rho_catch)
+  daa      = at_age_nLL(ObsDiscardAA, UseDiscardAA, ln_sigmaDAA, "discard", FALSE, 0, AgeObsCorr_discard, trans_rho_discard)
+  daa_pop  = at_age_nLL(ObsDiscardAA_pop, UseDiscardAA_pop, ln_sigmaDAA_pop, "discard", TRUE, 0, AgeObsCorr_discard, trans_rho_discard)
+  fiaa     = at_age_nLL(ObsFishIdxAA, UseFishIdxAA, ln_sigmaFishIdxAA, "fish_index", FALSE, addtofishidx, AgeObsCorr_fish_idx, trans_rho_fish_idx)
+  fiaa_pop = at_age_nLL(ObsFishIdxAA_pop, UseFishIdxAA_pop, ln_sigmaFishIdxAA_pop, "fish_index", TRUE, addtofishidx, AgeObsCorr_fish_idx, trans_rho_fish_idx)
+
+  # survey
+  siaa     = at_age_nLL(ObsSrvIdxAA, UseSrvIdxAA, ln_sigmaSrvIdxAA, "srv_index", FALSE, addtosrvidx, AgeObsCorr_srv_idx, trans_rho_srv_idx)
+  siaa_pop = at_age_nLL(ObsSrvIdxAA_pop, UseSrvIdxAA_pop, ln_sigmaSrvIdxAA_pop, "srv_index", TRUE, addtosrvidx, AgeObsCorr_srv_idx, trans_rho_srv_idx)
+
+  CatchAA_nLL = caa$nLL;         CatchAA_pop_nLL = caa_pop$nLL
+  DiscardAA_nLL = daa$nLL;       DiscardAA_pop_nLL = daa_pop$nLL
+  FishIdxAA_nLL = fiaa$nLL;      FishIdxAA_pop_nLL = fiaa_pop$nLL
+  SrvIdxAA_nLL = siaa$nLL;       SrvIdxAA_pop_nLL = siaa_pop$nLL
+
+  PredCatchAA = caa$pred;        PredCatchAA_pop = caa_pop$pred
+  PredDiscardAA = daa$pred;      PredDiscardAA_pop = daa_pop$pred
+  PredFishIdxAA = fiaa$pred;     PredFishIdxAA_pop = fiaa_pop$pred
+  PredSrvIdxAA = siaa$pred;      PredSrvIdxAA_pop = siaa_pop$pred
+
 
   ### Retained Fishery Catches (Population-Specific) -----------------------------------------------
   if(any(UseCatch_pop == 1)) { # setup OSA
@@ -1105,7 +1273,7 @@ SPoRC_rtmb = function(pars, data) {
       y    = obs_map_f[i, 2]
       seas = obs_map_f[i, 3]
       obs_vec_f[i] = ObsFishIdx[r,y,seas,f]
-      se_vec_f[i] = ObsFishIdx_SE[r,y,seas,f]
+      se_vec_f[i] = FishIdx_SD[r,y,seas,f]
       pred_vec_f[i] = sum(PredFishIdx[,r,y,seas,f])
     } # end i loop
 
@@ -1136,7 +1304,7 @@ SPoRC_rtmb = function(pars, data) {
 
       FishIdx_nLL[r,y,seas,f] = -1 * RTMB::dnorm(ObsFishIdx[i],
                                                  log(sum(PredFishIdx[,r,y,seas,f] + addtofishidx)),
-                                                 ObsFishIdx_SE[r,y,seas,f], TRUE)
+                                                 FishIdx_SD[r,y,seas,f], TRUE)
     }
   }
 
@@ -1163,7 +1331,7 @@ SPoRC_rtmb = function(pars, data) {
 
       FishIdx_pop_nLL[p,r,y,seas,f] = -1 * RTMB::dnorm(ObsFishIdx_pop[p,r,y,seas,f],
                                                        PredFishIdx[p,r,y,seas,f],
-                                                       ObsFishIdx_pop_SE[p,r,y,seas,f], TRUE)
+                                                       FishIdx_pop_SD[p,r,y,seas,f], TRUE)
     }
   } # end f loop
 
@@ -1187,7 +1355,7 @@ SPoRC_rtmb = function(pars, data) {
 
       FishIdx_pop_nLL[p,r,y,seas,f] = -1 * RTMB::dnorm(ObsFishIdx_pop[i],
                                                        log(PredFishIdx[p,r,y,seas,f] + addtofishidx),
-                                                       ObsFishIdx_pop_SE[p,r,y,seas,f], TRUE)
+                                                       FishIdx_pop_SD[p,r,y,seas,f], TRUE)
     }
   }
 
@@ -1780,7 +1948,7 @@ SPoRC_rtmb = function(pars, data) {
       y    = obs_map[i, 2]
       seas = obs_map[i, 3]
       obs_vec[i] = ObsSrvIdx[r,y,seas,sf]
-      se_vec[i] = ObsSrvIdx_SE[r,y,seas,sf]
+      se_vec[i] = SrvIdx_SD[r,y,seas,sf]
       pred_vec[i] = sum(PredSrvIdx[,r,y,seas,sf])
     } # end i loop
 
@@ -1811,7 +1979,7 @@ SPoRC_rtmb = function(pars, data) {
 
       SrvIdx_nLL[r,y,seas,sf] = -1 * RTMB::dnorm(ObsSrvIdx[i],
                                                  log(sum(PredSrvIdx[,r,y,seas,sf] + addtosrvidx)),
-                                                 ObsSrvIdx_SE[r,y,seas,sf], TRUE)
+                                                 SrvIdx_SD[r,y,seas,sf], TRUE)
     }
   }
 
@@ -1837,7 +2005,7 @@ SPoRC_rtmb = function(pars, data) {
 
       SrvIdx_pop_nLL[p,r,y,seas,sf] = -1 * RTMB::dnorm(ObsSrvIdx_pop[p,r,y,seas,sf],
                                                        PredSrvIdx[p,r,y,seas,sf],
-                                                       ObsSrvIdx_pop_SE[p,r,y,seas,sf], TRUE)
+                                                       SrvIdx_pop_SD[p,r,y,seas,sf], TRUE)
     }
   } # end sf loop
 
@@ -1860,7 +2028,7 @@ SPoRC_rtmb = function(pars, data) {
 
       SrvIdx_pop_nLL[p,r,y,seas,sf] = -1 * RTMB::dnorm(ObsSrvIdx_pop[i],
                                                        log(PredSrvIdx[p,r,y,seas,sf] + addtosrvidx),
-                                                       ObsSrvIdx_pop_SE[p,r,y,seas,sf], TRUE)
+                                                       SrvIdx_pop_SD[p,r,y,seas,sf], TRUE)
     }
   }
 
@@ -2146,17 +2314,11 @@ SPoRC_rtmb = function(pars, data) {
   }
 
   ## Conditional Age-at-Length Likelihoods ------------------------------------
-  # helpers to sum across population arrays
-  caal_exp = function(arr, y, seas, f) {
-    e = arr[,,y,seas,,,,f, drop = FALSE]
-    if(n_pop == 1) dim(e) = c(n_regions, n_lens, n_ages, n_sexes) else e = apply(e, c(2,5,6,7), sum)
-    return(e)
-  }
-  caal_exp_len = function(arr, y, seas, l, f) {
-    e = arr[,,y,seas,l,,,f, drop = FALSE]
-    if(n_pop == 1) dim(e) = c(n_regions, n_ages, n_sexes) else e = apply(e, c(2,6,7), sum)
-    return(e)
-  }
+  # population summing helpers for the conditional age-at-length streams live in
+  # model_lik_caal.R, alongside the likelihood that uses them
+  caal_exp = function(arr, y, seas, f) caal_sum_pop(arr, y, seas, f, n_pop, n_regions, n_lens, n_ages, n_sexes)
+  caal_exp_len = function(arr, y, seas, l, f) caal_sum_pop_len(arr, y, seas, l, f, n_pop, n_regions, n_ages, n_sexes)
+
 
   ### Fishery Conditional Age-at-Length ---------------------------------------
   if(do_fish_caal) {
@@ -2431,40 +2593,35 @@ SPoRC_rtmb = function(pars, data) {
 
 
   ### Bin-Override Selectivity Deviations (Process Error) ---------------------
-  # The bin dimension of these arrays is n_ages for age-based selectivity and
-  # n_lens for length-based, so the reference bins are taken from the array
-  # itself rather than assumed to be ages. Inert while setup_sel_bin_devs
-  # restricts these to none/iid/rw, since min_sel_devs_shared_bins is only read
-  # by the 3D separable process errors, but wrong the moment that is relaxed.
-  # The override deviations carry their own process error, so a bin that is free
-  # of the functional form is still smoothed in time when asked to be.
+
+  # Same process as above but overide bins and allow PE there
   for(r in 1:n_regions) {
     for(f in 1:n_fish_fleets) {
       if(cont_tv_fishsel_bin_devs[f] > 0) {
         sel_nLL = sel_nLL + - Get_PE_loglik(PE_model = cont_tv_fishsel_bin_devs[f],
-                                                PE_pars = fishsel_bin_devs_pe_pars[r,,,f, drop = FALSE],
-                                                ln_devs = ln_fishsel_bin_devs[r,,,,f, drop = FALSE],
-                                                map_sel_devs = map_ln_fishsel_bin_devs[r,,,,f, drop = FALSE],
-                                                min_sel_devs_shared_bins = 1:dim(ln_fishsel_bin_devs)[3],
-                                                rw_init_sigma = fishsel_bin_devs_rw_init_sigma[f])
+                                            PE_pars = fishsel_bin_devs_pe_pars[r,,,f, drop = FALSE],
+                                            ln_devs = ln_fishsel_bin_devs[r,,,,f, drop = FALSE],
+                                            map_sel_devs = map_ln_fishsel_bin_devs[r,,,,f, drop = FALSE],
+                                            min_sel_devs_shared_bins = 1:dim(ln_fishsel_bin_devs)[3],
+                                            rw_init_sigma = fishsel_bin_devs_rw_init_sigma[f])
       } # end if
       if(cont_tv_retsel_bin_devs[f] > 0) {
         sel_nLL = sel_nLL + - Get_PE_loglik(PE_model = cont_tv_retsel_bin_devs[f],
-                                                PE_pars = retsel_bin_devs_pe_pars[r,,,f, drop = FALSE],
-                                                ln_devs = ln_retsel_bin_devs[r,,,,f, drop = FALSE],
-                                                map_sel_devs = map_ln_retsel_bin_devs[r,,,,f, drop = FALSE],
-                                                min_sel_devs_shared_bins = 1:dim(ln_retsel_bin_devs)[3],
-                                                rw_init_sigma = retsel_bin_devs_rw_init_sigma[f])
+                                             PE_pars = retsel_bin_devs_pe_pars[r,,,f, drop = FALSE],
+                                             ln_devs = ln_retsel_bin_devs[r,,,,f, drop = FALSE],
+                                             map_sel_devs = map_ln_retsel_bin_devs[r,,,,f, drop = FALSE],
+                                             min_sel_devs_shared_bins = 1:dim(ln_retsel_bin_devs)[3],
+                                             rw_init_sigma = retsel_bin_devs_rw_init_sigma[f])
       } # end if
     } # end f loop
     for(sf in 1:n_srv_fleets) {
       if(cont_tv_srvsel_bin_devs[sf] > 0) {
         sel_nLL = sel_nLL + - Get_PE_loglik(PE_model = cont_tv_srvsel_bin_devs[sf],
-                                                PE_pars = srvsel_bin_devs_pe_pars[r,,,sf, drop = FALSE],
-                                                ln_devs = ln_srvsel_bin_devs[r,,,,sf, drop = FALSE],
-                                                map_sel_devs = map_ln_srvsel_bin_devs[r,,,,sf, drop = FALSE],
-                                                min_sel_devs_shared_bins = 1:dim(ln_srvsel_bin_devs)[3],
-                                                rw_init_sigma = srvsel_bin_devs_rw_init_sigma[sf])
+                                             PE_pars = srvsel_bin_devs_pe_pars[r,,,sf, drop = FALSE],
+                                             ln_devs = ln_srvsel_bin_devs[r,,,,sf, drop = FALSE],
+                                             map_sel_devs = map_ln_srvsel_bin_devs[r,,,,sf, drop = FALSE],
+                                             min_sel_devs_shared_bins = 1:dim(ln_srvsel_bin_devs)[3],
+                                             rw_init_sigma = srvsel_bin_devs_rw_init_sigma[sf])
       } # end if
     } # end sf loop
   } # end r loop
@@ -2589,9 +2746,6 @@ SPoRC_rtmb = function(pars, data) {
 
 
   ### Selectivity (Prior) -----------------------------------------------------
-  # Each row of a prior table constrains either one fixed selectivity parameter
-  # (type "par", the default) or the realized selectivity value at one bin
-  # (type "value"), per get_selex_prior.
   # Total Fishery selectivity
   if(Use_fish_selex_prior == 1) sel_nLL = sel_nLL + get_selex_prior(fish_selex_prior, fish_fixed_sel_pars, fish_sel, fish_sel_l, fish_selex_type, fish_sel_blocks)
 
@@ -2631,8 +2785,7 @@ SPoRC_rtmb = function(pars, data) {
   # constrains the residuals about the curve, this one constrains the series.
   Rec_level_nLL = array(0, dim = dim(Rec))
   if(Use_rec_level_pen == 1) {
-    Rec_level_nLL = get_rec_level_penalty(Rec, exp(ln_sigma_rec_level), rec_level_pen_center,
-                                          if(all(rec_level_pen_yrs == 1)) NULL else which(rec_level_pen_yrs == 1))
+    Rec_level_nLL = get_rec_level_penalty(Rec, exp(ln_sigma_rec_level), rec_level_pen_center, if(all(rec_level_pen_yrs == 1)) NULL else which(rec_level_pen_yrs == 1))
   }
 
   ### Stock-Recruit Residual (Penalty) ----------------------------------------
@@ -2646,15 +2799,12 @@ SPoRC_rtmb = function(pars, data) {
   }
 
   ### Growth (Process Error) --------------------------------------------------
-  # Growth carries two deviation surfaces, both scored through the same process
-  # error machinery the selectivity deviations use. A time-varying growth
-  # PARAMETER has one series per parameter, a surface one column wide, iid or a
-  # random walk. Semi-parametric growth has one surface over years and ages,
-  # which may also be a 3D GMRF or a separable 2D AR(1).
+  # Growth deviations either on parameters or semi-parametric
   if(growth_model != 0) {
     for(p in 1:n_pop) {
       for(r in 1:n_regions) {
 
+        # growth deviations on parameters
         if(!is.null(growth_tv_model)) for(k in which(growth_tv_model > 0)) {
           growth_tv_nLL = growth_tv_nLL - Get_PE_loglik(
             PE_model = growth_tv_model[k],
@@ -2666,6 +2816,7 @@ SPoRC_rtmb = function(pars, data) {
           )
         } # end k loop
 
+        # growth deviations on parametric form
         if(growth_semipar > 0) {
           growth_semipar_nLL = growth_semipar_nLL - Get_PE_loglik(
             PE_model = growth_semipar,
@@ -2682,9 +2833,7 @@ SPoRC_rtmb = function(pars, data) {
   } # end growth process error
 
   ### Initial Recruitment Offset (Penalty) ---------------------------------------
-  # The initial equilibrium recruitment against the recruitment level, as a
-  # normal on the log ratio; an equilibrium recruitment averages over several
-  # years of deviations, so its sd is typically sigmaR shrunk by that span
+  # The initial equilibrium recruitment against the recruitment level
   if(Use_rinit_pen == 1 && use_rinit == 1) {
     for(p in 1:n_pop) rinit_nLL = rinit_nLL - RTMB::dnorm(ln_rinit[p] - ln_global_R0[p], 0, rinit_pen_sd, TRUE)
   }
@@ -2700,7 +2849,6 @@ SPoRC_rtmb = function(pars, data) {
 
   ### Steepness (Prior) -----------------------------------------------
   if(Use_h_prior == 1) h_nLL = h_nLL + get_steepness_prior(h_prior, h_trans)
-
 
   ### Movement Rates (Penalty) ------------------------------------------------
   if(cont_vary_movement > 0) {
@@ -2735,6 +2883,14 @@ SPoRC_rtmb = function(pars, data) {
 
   # Sum up nLL
   jnLL = sum(Wt_Catch * Catch_nLL) +             # Aggregated catch likelihoods
+    sum(Wt_Catch * apply(CatchAA_nLL, c(1,2,3,5), sum)) + # Catch at age likelihoods
+    sum(Wt_Catch_pop * apply(CatchAA_pop_nLL, c(1,2,3,4,6), sum)) + # Population-specific catch at age
+    sum(Wt_Discard * apply(DiscardAA_nLL, c(1,2,3,5), sum)) +   # Discard at age likelihoods
+    sum(Wt_Discard_pop * apply(DiscardAA_pop_nLL, c(1,2,3,4,6), sum)) + # Population-specific discard at age
+    sum(Wt_FishIdx * apply(FishIdxAA_nLL, c(1,2,3,5), sum)) +   # Fishery index at age likelihoods
+    sum(Wt_FishIdx_pop * apply(FishIdxAA_pop_nLL, c(1,2,3,4,6), sum)) + # Population-specific fishery index at age
+    sum(Wt_SrvIdx * apply(SrvIdxAA_nLL, c(1,2,3,5), sum)) +     # Survey index at age likelihoods
+    sum(Wt_SrvIdx_pop * apply(SrvIdxAA_pop_nLL, c(1,2,3,4,6), sum)) + # Population-specific survey index at age
     sum(Wt_Catch_pop * Catch_pop_nLL) +      # Pop-specific catch likelihoods
     sum(Wt_Discard * Discard_nLL) +           # Aggregated discard likelihoods
     sum(Wt_Discard_pop * Discard_pop_nLL) +   # Pop-specific discard likelihoods
@@ -2802,6 +2958,38 @@ SPoRC_rtmb = function(pars, data) {
   # Fishery Processes
   RTMB::REPORT(init_F)
   RTMB::REPORT(ln_sigmaC)
+  RTMB::REPORT(ln_sigmaCAA)
+  RTMB::REPORT(FishIAA)
+  RTMB::REPORT(trans_rho_catch)
+  RTMB::REPORT(trans_rho_discard)
+  RTMB::REPORT(trans_rho_fish_idx)
+  RTMB::REPORT(trans_rho_srv_idx)
+  RTMB::REPORT(CatchAA_nLL)
+  RTMB::REPORT(PredCatchAA)
+  RTMB::REPORT(PredDiscardAA)
+  RTMB::REPORT(PredFishIdxAA)
+  RTMB::REPORT(PredSrvIdxAA)
+  RTMB::REPORT(PredCatchAA_pop)
+  RTMB::REPORT(PredDiscardAA_pop)
+  RTMB::REPORT(PredFishIdxAA_pop)
+  RTMB::REPORT(PredSrvIdxAA_pop)
+  RTMB::REPORT(DiscardAA_nLL)
+  RTMB::REPORT(DiscardAA_pop_nLL)
+  RTMB::REPORT(CatchAA_pop_nLL)
+  RTMB::REPORT(SrvIdxAA_nLL)
+  RTMB::REPORT(FishIdxAA_nLL)
+  RTMB::REPORT(FishIdxAA_pop_nLL)
+  RTMB::REPORT(ln_sigmaFishIdxAA)
+  RTMB::REPORT(SrvIdxAA_pop_nLL)
+  RTMB::REPORT(ln_sigmaSrvIdxAA)
+  RTMB::REPORT(ln_sigmaFishIdx)
+  RTMB::REPORT(ln_sigmaSrvIdx)
+  RTMB::REPORT(ln_sigmaFishIdx_pop)
+  RTMB::REPORT(ln_sigmaSrvIdx_pop)
+  RTMB::REPORT(FishIdx_SD)
+  RTMB::REPORT(SrvIdx_SD)
+  RTMB::REPORT(FishIdx_pop_SD)
+  RTMB::REPORT(SrvIdx_pop_SD)
   RTMB::REPORT(ln_sigmaC_pop)
   RTMB::REPORT(Fmort)
   RTMB::REPORT(dmr)

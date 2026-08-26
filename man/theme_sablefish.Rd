@@ -14,11 +14,11 @@ A clean \code{theme_bw}-based ggplot2 theme with enlarged text elements
 suitable for publication-quality SPoRC diagnostic and results figures.
 }
 \seealso{
-Other Plotting: 
-\code{\link{get_biological_plot}()},
-\code{\link{get_data_fitted_plot}()},
-\code{\link{get_selex_plot}()},
-\code{\link{get_ts_plot}()},
-\code{\link{plot_all_basic}()}
+Other Plotting:
+\code{\link[=get_biological_plot]{get_biological_plot()}},
+\code{\link[=get_data_fitted_plot]{get_data_fitted_plot()}},
+\code{\link[=get_selex_plot]{get_selex_plot()}},
+\code{\link[=get_ts_plot]{get_ts_plot()}},
+\code{\link[=plot_all_basic]{plot_all_basic()}}
 }
 \concept{Plotting}

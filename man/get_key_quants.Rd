@@ -147,8 +147,8 @@ The quantities returned by this function are \strong{approximate and
 \code{\link{Get_Reference_Points}},
   \code{\link{Do_Population_Projection}}
 
-Other Reference Points and Projections: 
-\code{\link{Do_Population_Projection}()},
-\code{\link{Get_Reference_Points}()}
+Other Reference Points and Projections:
+\code{\link[=Do_Population_Projection]{Do_Population_Projection()}},
+\code{\link[=Get_Reference_Points]{Get_Reference_Points()}}
 }
 \concept{Reference Points and Projections}

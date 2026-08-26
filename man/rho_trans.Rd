@@ -21,11 +21,11 @@ constructing AR(1) and constant covariance matrices for logistic-normal
 composition likelihoods.
 }
 \seealso{
-Other Utility: 
-\code{\link{fit_model}()},
-\code{\link{get_logistN_Sigma}()},
-\code{\link{get_par_est_info}()},
-\code{\link{post_optim_sanity_checks}()},
-\code{\link{set_data_indicator_unused}()}
+Other Utility:
+\code{\link[=fit_model]{fit_model()}},
+\code{\link[=get_logistN_Sigma]{get_logistN_Sigma()}},
+\code{\link[=get_par_est_info]{get_par_est_info()}},
+\code{\link[=post_optim_sanity_checks]{post_optim_sanity_checks()}},
+\code{\link[=set_data_indicator_unused]{set_data_indicator_unused()}}
 }
 \concept{Utility}

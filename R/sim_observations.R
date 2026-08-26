@@ -949,6 +949,21 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
           if(catch_units[f] == 1) sim_env$TrueCatch[r,y,seas,f,sim] <- sum(CAA[,r,y,seas,,,f,sim] * WAA_fish[,r,y,seas,,,f,sim]) # biomass
           sim_env$ObsCatch[r,y,seas,f,sim] <- TrueCatch[r,y,seas,f,sim] * exp(stats::rnorm(1, 0, exp(ln_sigmaC[r,y,seas,f]))) # Observed Catch w/ lognormal deviations
 
+          # Catch at age, drawn per age from its own standard deviation. A fleet
+          # simulating catch at age is the same fleet that fits it, so the draw
+          # follows use_catch_aa rather than being drawn unconditionally.
+          if(exists("use_catch_aa") && use_catch_aa[f] == 1) {
+            for(a in 1:n_ages) {
+              if(UseCatchAA[r,y,seas,a,f] == 1) {
+                true_caa <- if(catch_units[f] == 0) sum(CAA[,r,y,seas,a,,f,sim]) else
+                  sum(CAA[,r,y,seas,a,,f,sim] * WAA_fish[,r,y,seas,a,,f,sim])
+                sim_env$TrueCatchAA[r,y,seas,a,f,sim] <- true_caa
+                sim_env$ObsCatchAA[r,y,seas,a,f,sim] <- true_caa *
+                  exp(stats::rnorm(1, 0, exp(ln_sigmaCAA[a,f])))
+              }
+            } # end a loop
+          }
+
           # Population Specific Catch
           if(catch_units[f] == 0) sim_env$TrueCatch_pop[,r,y,seas,f,sim] <- apply(CAA[,r,y,seas,,,f,sim, drop = FALSE], 1, sum)  # abundance
           if(catch_units[f] == 1) sim_env$TrueCatch_pop[,r,y,seas,f,sim] <- apply(CAA[,r,y,seas,,,f,sim, drop = FALSE] * WAA_fish[,r,y,seas,,,f,sim, drop = FALSE], 1, sum)  # biomass
@@ -1363,6 +1378,19 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
             sim_env$ObsSrvIdx[r,y,seas,sf,sim] <- draw_index_obs(TrueSrvIdx[r,y,seas,sf,sim], NA, 2, d = sidx_fac$d, lambda = sidx_fac$lambda, u = srv_idx_u[sf,sim])
           } else {
             sim_env$ObsSrvIdx[r,y,seas,sf,sim] <- draw_index_obs(TrueSrvIdx[r,y,seas,sf,sim], ObsSrvIdx_SE[r,y,seas,sf], sidx_like)
+          }
+
+          # Survey index at age, each age drawn from its own catchability and
+          # standard deviation, mirroring how the at-age likelihood reads them.
+          if(exists("use_srv_idx_aa") && use_srv_idx_aa[sf] == 1) {
+            for(a in 1:n_ages) {
+              if(UseSrvIdxAA[r,y,seas,a,sf] == 1) {
+                true_saa <- sum(SrvIAA[,r,y,seas,a,,sf,sim])
+                sim_env$TrueSrvIdxAA[r,y,seas,a,sf,sim] <- true_saa
+                sim_env$ObsSrvIdxAA[r,y,seas,a,sf,sim] <- true_saa *
+                  exp(stats::rnorm(1, 0, exp(ln_sigmaSrvIdxAA[a,sf])))
+              }
+            } # end a loop
           }
 
           # Survey Index - Population-Specific. The covariance describes the regional

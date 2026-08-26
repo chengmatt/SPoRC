@@ -235,9 +235,9 @@ management actions (e.g., fishing mortality adjustments) to update
 dynamically during the simulation.
 }
 \seealso{
-Other Closed Loop Simulations: 
-\code{\link{catch_to_F_multifleet}()},
-\code{\link{catch_to_F_singlefleet}()},
-\code{\link{get_closed_loop_reference_points}()}
+Other Closed Loop Simulations:
+\code{\link[=catch_to_F_multifleet]{catch_to_F_multifleet()}},
+\code{\link[=catch_to_F_singlefleet]{catch_to_F_singlefleet()}},
+\code{\link[=get_closed_loop_reference_points]{get_closed_loop_reference_points()}}
 }
 \concept{Closed Loop Simulations}

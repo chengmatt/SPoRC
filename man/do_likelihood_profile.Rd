@@ -60,7 +60,11 @@ A named list containing one dataframe per likelihood component,
       \code{Fmort_nLL_df}, \code{fish_q_nLL_df}, \code{srv_q_nLL_df}.}
     \item{Pooled data likelihoods}{\code{Catch_nLL_df}
       \code{[Region × Year × Seas × Fleet]},
-      \code{FishIdx_nLL_df} and \code{SrvIdx_nLL_df}
+      \code{FishIdx_nLL_df} and \code{SrvIdx_nLL_df}, and their
+      age-disaggregated counterparts \code{CatchAA_nLL_df},
+      \code{DiscardAA_nLL_df}, \code{FishIdxAA_nLL_df} and
+      \code{SrvIdxAA_nLL_df} with \code{_pop} variants, each summed over
+      ages within a cell before its weight is applied
       \code{[Region × Year × Seas × Fleet]},
       \code{FishAge_nLL_df}, \code{FishLen_nLL_df},
       \code{SrvAge_nLL_df}, \code{SrvLen_nLL_df}
@@ -81,19 +85,18 @@ components across a range of fixed values for a single parameter. Supports
 both sequential and parallel execution.
 }
 \seealso{
-Other Model Diagnostics: 
-\code{\link{do_jitter}()},
-\code{\link{do_retrospective}()},
-\code{\link{do_runs_test}()},
-\code{\link{get_catch_fits_plot}()},
-\code{\link{get_comp_prop}()},
-\code{\link{get_idx_fits}()},
-\code{\link{get_idx_fits_plot}()},
-\code{\link{get_model_rep_from_mcmc}()},
-\code{\link{get_nLL_plot}()},
-\code{\link{get_osa}()},
-\code{\link{get_retrospective_plot}()},
-\code{\link{get_retrospective_relative_difference}()},
-\code{\link{plot_resids}()}
+Other Model Diagnostics:
+\code{\link[=do_jitter]{do_jitter()}},
+\code{\link[=do_retrospective]{do_retrospective()}},
+\code{\link[=do_runs_test]{do_runs_test()}},
+\code{\link[=get_comp_prop]{get_comp_prop()}},
+\code{\link[=get_idx_fits]{get_idx_fits()}},
+\code{\link[=get_idx_fits_plot]{get_idx_fits_plot()}},
+\code{\link[=get_model_rep_from_mcmc]{get_model_rep_from_mcmc()}},
+\code{\link[=get_nLL_plot]{get_nLL_plot()}},
+\code{\link[=get_osa]{get_osa()}},
+\code{\link[=get_retrospective_plot]{get_retrospective_plot()}},
+\code{\link[=get_retrospective_relative_difference]{get_retrospective_relative_difference()}},
+\code{\link[=plot_resids]{plot_resids()}}
 }
 \concept{Model Diagnostics}

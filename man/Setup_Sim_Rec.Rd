@@ -122,6 +122,17 @@ initialisation method. Default \code{2}. Options:
     default for spatially explicit models.}
   \item{\code{3}/\code{"scalar_plus_only"}}{Scalar geometric series
     solution assuming no movement except in the plus group.}
+  \item{\code{4}/\code{"free"}}{No equilibrium is projected at all:
+    \code{ln_InitDevs} are the initial log numbers-at-age themselves for
+    ages 2 and above, apportioned by the sex ratio, with age 1 still taken
+    from recruitment. Use this where the assessment estimates its initial
+    numbers-at-age freely rather than as departures from an equilibrium.
+    The initial condition then does not depend on \code{init_F_par} or
+    \code{ln_rinit}, and because the deviations are log-numbers rather
+    than log-ratios, any penalty acts as a prior on initial abundance:
+    pair with \code{equil_init_age_strc = "equil"} for no such prior, or
+    with \code{InitDevs_pen_center = "own_mean"} to penalise only the
+    roughness of the age structure and not its level.}
 }}
 
 \item{spawn_seas}{Integer index of the season in which spawning occurs.
@@ -187,16 +198,16 @@ allocation, spawn timing, and equilibrium initialisation method. Must be
 called after \code{\link{Setup_Sim_Dim}}.
 }
 \seealso{
-Other Simulation Setup: 
-\code{\link{Setup_Sim_Biologicals}()},
-\code{\link{Setup_Sim_Containers}()},
-\code{\link{Setup_Sim_Dim}()},
-\code{\link{Setup_Sim_Fishing}()},
-\code{\link{Setup_Sim_Survey}()},
-\code{\link{Setup_Sim_Tagging}()},
-\code{\link{Setup_sim_env}()},
-\code{\link{Simulate_Pop_Static}()},
-\code{\link{run_annual_cycle}()},
-\code{\link{simulation_self_test}()}
+Other Simulation Setup:
+\code{\link[=Setup_Sim_Biologicals]{Setup_Sim_Biologicals()}},
+\code{\link[=Setup_Sim_Containers]{Setup_Sim_Containers()}},
+\code{\link[=Setup_Sim_Dim]{Setup_Sim_Dim()}},
+\code{\link[=Setup_Sim_Fishing]{Setup_Sim_Fishing()}},
+\code{\link[=Setup_Sim_Survey]{Setup_Sim_Survey()}},
+\code{\link[=Setup_Sim_Tagging]{Setup_Sim_Tagging()}},
+\code{\link[=Setup_sim_env]{Setup_sim_env()}},
+\code{\link[=Simulate_Pop_Static]{Simulate_Pop_Static()}},
+\code{\link[=run_annual_cycle]{run_annual_cycle()}},
+\code{\link[=simulation_self_test]{simulation_self_test()}}
 }
 \concept{Simulation Setup}

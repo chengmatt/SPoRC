@@ -9,6 +9,10 @@ Setup_Sim_Survey(
   srv_sel_input,
   ObsSrvIdx_SE = array(0.2, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
     sim_list$n_srv_fleets)),
+  ln_sigmaSrvIdxAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_srv_fleets)),
+  UseSrvIdxAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
+    sim_list$n_ages, sim_list$n_srv_fleets)),
+  use_srv_idx_aa = rep(0, sim_list$n_srv_fleets),
   ObsSrvIdx_pop_SE = array(0.2, dim = c(sim_list$n_pop, sim_list$n_regions,
     sim_list$n_yrs, sim_list$n_seas, sim_list$n_srv_fleets)),
   srv_q_input = array(1, dim = c(sim_list$n_regions, sim_list$n_yrs,
@@ -220,16 +224,16 @@ and age/length composition likelihood settings including overdispersion
 and correlation parameters. Must be called after \code{\link{Setup_Sim_Dim}}.
 }
 \seealso{
-Other Simulation Setup: 
-\code{\link{Setup_Sim_Biologicals}()},
-\code{\link{Setup_Sim_Containers}()},
-\code{\link{Setup_Sim_Dim}()},
-\code{\link{Setup_Sim_Fishing}()},
-\code{\link{Setup_Sim_Rec}()},
-\code{\link{Setup_Sim_Tagging}()},
-\code{\link{Setup_sim_env}()},
-\code{\link{Simulate_Pop_Static}()},
-\code{\link{run_annual_cycle}()},
-\code{\link{simulation_self_test}()}
+Other Simulation Setup:
+\code{\link[=Setup_Sim_Biologicals]{Setup_Sim_Biologicals()}},
+\code{\link[=Setup_Sim_Containers]{Setup_Sim_Containers()}},
+\code{\link[=Setup_Sim_Dim]{Setup_Sim_Dim()}},
+\code{\link[=Setup_Sim_Fishing]{Setup_Sim_Fishing()}},
+\code{\link[=Setup_Sim_Rec]{Setup_Sim_Rec()}},
+\code{\link[=Setup_Sim_Tagging]{Setup_Sim_Tagging()}},
+\code{\link[=Setup_sim_env]{Setup_sim_env()}},
+\code{\link[=Simulate_Pop_Static]{Simulate_Pop_Static()}},
+\code{\link[=run_annual_cycle]{run_annual_cycle()}},
+\code{\link[=simulation_self_test]{simulation_self_test()}}
 }
 \concept{Simulation Setup}

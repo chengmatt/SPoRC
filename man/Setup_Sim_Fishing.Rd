@@ -10,6 +10,18 @@ Setup_Sim_Fishing(
     sim_list$n_seas, sim_list$n_fish_fleets)),
   ln_sigmaC_pop = array(log(0.02), dim = c(sim_list$n_pop, sim_list$n_regions,
     sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
+  ln_sigmaCAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_fish_fleets)),
+  ln_sigmaDAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_fish_fleets)),
+  ln_sigmaFishIdxAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_fish_fleets)),
+  UseCatchAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
+    sim_list$n_ages, sim_list$n_fish_fleets)),
+  UseDiscardAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
+    sim_list$n_ages, sim_list$n_fish_fleets)),
+  UseFishIdxAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
+    sim_list$n_ages, sim_list$n_fish_fleets)),
+  use_catch_aa = rep(0, sim_list$n_fish_fleets),
+  use_discard_aa = rep(0, sim_list$n_fish_fleets),
+  use_fish_idx_aa = rep(0, sim_list$n_fish_fleets),
   catch_units = array(1, dim = c(sim_list$n_fish_fleets)),
   init_F_val = array(0, dim = c(sim_list$n_regions, sim_list$n_seas,
     sim_list$n_fish_fleets)),
@@ -408,16 +420,16 @@ This includes fishing mortality, selectivity, catchability, observation error,
 and age- and length-composition parameters for both aggregate and population-specific data.
 }
 \seealso{
-Other Simulation Setup: 
-\code{\link{Setup_Sim_Biologicals}()},
-\code{\link{Setup_Sim_Containers}()},
-\code{\link{Setup_Sim_Dim}()},
-\code{\link{Setup_Sim_Rec}()},
-\code{\link{Setup_Sim_Survey}()},
-\code{\link{Setup_Sim_Tagging}()},
-\code{\link{Setup_sim_env}()},
-\code{\link{Simulate_Pop_Static}()},
-\code{\link{run_annual_cycle}()},
-\code{\link{simulation_self_test}()}
+Other Simulation Setup:
+\code{\link[=Setup_Sim_Biologicals]{Setup_Sim_Biologicals()}},
+\code{\link[=Setup_Sim_Containers]{Setup_Sim_Containers()}},
+\code{\link[=Setup_Sim_Dim]{Setup_Sim_Dim()}},
+\code{\link[=Setup_Sim_Rec]{Setup_Sim_Rec()}},
+\code{\link[=Setup_Sim_Survey]{Setup_Sim_Survey()}},
+\code{\link[=Setup_Sim_Tagging]{Setup_Sim_Tagging()}},
+\code{\link[=Setup_sim_env]{Setup_sim_env()}},
+\code{\link[=Simulate_Pop_Static]{Simulate_Pop_Static()}},
+\code{\link[=run_annual_cycle]{run_annual_cycle()}},
+\code{\link[=simulation_self_test]{simulation_self_test()}}
 }
 \concept{Simulation Setup}

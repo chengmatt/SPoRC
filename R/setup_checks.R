@@ -202,6 +202,31 @@ check_data_dimensions <- function(x,
   }
 
 
+# Age-disaggregated observations ------------------------------------------
+
+  if(what %in% c('ObsCatchAA', 'UseCatchAA', 'ObsDiscardAA', 'UseDiscardAA',
+                 'ObsFishIdxAA', 'UseFishIdxAA')) {
+    if(sum(dim(x) == c(n_regions, n_years, n_seas, n_ages, n_fish_fleets)) != 5)
+      stop(paste(what, " is not the correct dimension. Should be n_regions, n_years, n_seas, n_ages, n_fish_fleets"))
+  }
+
+  if(what %in% c('ObsCatchAA_pop', 'UseCatchAA_pop', 'ObsDiscardAA_pop', 'UseDiscardAA_pop',
+                 'ObsFishIdxAA_pop', 'UseFishIdxAA_pop')) {
+    if(sum(dim(x) == c(n_pop, n_regions, n_years, n_seas, n_ages, n_fish_fleets)) != 6)
+      stop(paste(what, " is not the correct dimension. Should be n_pop, n_regions, n_years, n_seas, n_ages, n_fish_fleets"))
+  }
+
+  if(what %in% c('ObsSrvIdxAA', 'UseSrvIdxAA')) {
+    if(sum(dim(x) == c(n_regions, n_years, n_seas, n_ages, n_srv_fleets)) != 5)
+      stop(paste(what, " is not the correct dimension. Should be n_regions, n_years, n_seas, n_ages, n_srv_fleets"))
+  }
+
+  if(what %in% c('ObsSrvIdxAA_pop', 'UseSrvIdxAA_pop')) {
+    if(sum(dim(x) == c(n_pop, n_regions, n_years, n_seas, n_ages, n_srv_fleets)) != 6)
+      stop(paste(what, " is not the correct dimension. Should be n_pop, n_regions, n_years, n_seas, n_ages, n_srv_fleets"))
+  }
+
+
 # Survey Stuff ------------------------------------------------------------
 
   if(what %in% c('ObsSrvIdx', 'ObsSrvIdx_SE', 'UseSrvIdx', 'UseSrvAgeComps', 'UseSrvLenComps')) {

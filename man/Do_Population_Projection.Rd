@@ -460,8 +460,8 @@ When \code{n_sexes = 1}, spawning biomass is multiplied by 0.5. When
 \code{n_regions = 1}, movement is skipped.
 }
 \seealso{
-Other Reference Points and Projections: 
-\code{\link{Get_Reference_Points}()},
-\code{\link{get_key_quants}()}
+Other Reference Points and Projections:
+\code{\link[=Get_Reference_Points]{Get_Reference_Points()}},
+\code{\link[=get_key_quants]{get_key_quants()}}
 }
 \concept{Reference Points and Projections}

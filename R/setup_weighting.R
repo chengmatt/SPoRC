@@ -256,11 +256,12 @@ Setup_Mod_Weighting <- function(input_list,
     }
     val
   }
-  addtocomp      <- resolve_legacy(addtocomp,      missing(addtocomp),      legacy$addtocomp,      "addtocomp")
+
+  addtocomp      <- resolve_legacy(addtocomp, missing(addtocomp), legacy$addtocomp, "addtocomp")
   comp_const_obs <- resolve_legacy(comp_const_obs, missing(comp_const_obs), legacy$comp_const_obs, "comp_const_obs")
-  addtofishidx   <- resolve_legacy(addtofishidx,   missing(addtofishidx),   legacy$addtofishidx,   "addtofishidx")
-  addtosrvidx    <- resolve_legacy(addtosrvidx,    missing(addtosrvidx),    legacy$addtosrvidx,    "addtosrvidx")
-  addtotag       <- resolve_legacy(addtotag,       missing(addtotag),       legacy$addtotag,       "addtotag")
+  addtofishidx   <- resolve_legacy(addtofishidx, missing(addtofishidx), legacy$addtofishidx, "addtofishidx")
+  addtosrvidx    <- resolve_legacy(addtosrvidx, missing(addtosrvidx),  legacy$addtosrvidx,  "addtosrvidx")
+  addtotag       <- resolve_legacy(addtotag, missing(addtotag), legacy$addtotag, "addtotag")
   input_list$.legacy_weighting <- NULL
   if(!comp_const_obs %in% c(0, 1)) stop("comp_const_obs must be 0 or 1. It is a switch, not a constant: 1 weights the multinomial by obs + addtocomp (unbiased), 0 weights by the raw observed proportions (the ADMB convention).")
   input_list$data$addtocomp <- addtocomp
@@ -282,12 +283,19 @@ Setup_Mod_Weighting <- function(input_list,
   input_list$data$Wt_FishIdx <- Wt_FishIdx
   input_list$data$Wt_SrvIdx <- Wt_SrvIdx
 
-  # A multivariate normal index cannot be split across observations, so its whole
-  # fleet nLL is returned in a single cell (model_distributions.R). The jnLL then
-  # applies the weights elementwise, which means a year-varying weight on an MVN
-  # fleet silently applies only the first observed cell's value to the entire
-  # fleet, and a zero there deletes the fleet outright. Constant weights are the
-  # only ones that behave, so anything else is an error rather than a surprise.
+  # Checking to see if sigma is identifiable ...
+  check_sigma_weight_confound <- function(wt, form, nm, spec_nm) {
+    if(!is.null(form) && form > 0 && any(wt != 1)) {
+      warning(nm, " is not 1 everywhere while ", spec_nm, " estimates the index ",
+              "observation error. A likelihood weight and an estimated standard ",
+              "deviation are confounded, so the estimate will absorb the weight. ",
+              "Set ", nm, " to 1 when estimating, or fix the sigma when weighting.")
+    }
+  }
+  check_sigma_weight_confound(Wt_SrvIdx, input_list$data$sigmaSrvIdx_form, "Wt_SrvIdx", "sigmaSrvIdx_spec")
+  check_sigma_weight_confound(Wt_FishIdx, input_list$data$sigmaFishIdx_form, "Wt_FishIdx", "sigmaFishIdx_spec")
+
+  # Checking validity of MVN weights
   check_mvn_weight <- function(wt, like_type, use, n_flt, nm) {
     if(is.null(like_type) || length(wt) == 1) return(invisible(NULL))
     for(fl in seq_len(n_flt)) {
@@ -299,15 +307,15 @@ Setup_Mod_Weighting <- function(input_list,
     }
     invisible(NULL)
   }
-  check_mvn_weight(Wt_SrvIdx, input_list$data$SrvIdx_LikeType, input_list$data$UseSrvIdx,
-                   input_list$data$n_srv_fleets, "Wt_SrvIdx")
-  check_mvn_weight(Wt_FishIdx, input_list$data$FishIdx_LikeType, input_list$data$UseFishIdx,
-                   input_list$data$n_fish_fleets, "Wt_FishIdx")
+
+  check_mvn_weight(Wt_SrvIdx, input_list$data$SrvIdx_LikeType, input_list$data$UseSrvIdx, input_list$data$n_srv_fleets, "Wt_SrvIdx")
+  check_mvn_weight(Wt_FishIdx, input_list$data$FishIdx_LikeType, input_list$data$UseFishIdx, input_list$data$n_fish_fleets, "Wt_FishIdx")
+
   input_list$data$Wt_Catch_pop <- Wt_Catch_pop
   input_list$data$Wt_FishIdx_pop <- Wt_FishIdx_pop
   input_list$data$Wt_SrvIdx_pop <- Wt_SrvIdx_pop
-  # The recruitment and initial-age penalties are dimensioned differently, so an
-  # array Wt_Rec cannot also serve the initial ages. A scalar still covers both.
+
+  # The recruitment and initial-age penalties are dimensioned differently, so an array Wt_Rec cannot also serve the initial ages. A scalar still covers both.
   rec_dev_dim <- dim(input_list$par$ln_RecDevs)
   init_dev_dim <- dim(input_list$par$ln_InitDevs)
   if(length(Wt_Rec) != 1 && !identical(as.integer(dim(Wt_Rec)), as.integer(rec_dev_dim))) {
@@ -323,6 +331,7 @@ Setup_Mod_Weighting <- function(input_list,
   }
   if(length(Wt_Rec) > 1 && any(Wt_Rec == 0)) collect_message("Recruitment deviations excluded from the recruitment penalty but still estimated: ", sum(Wt_Rec[1,1,] == 0), " of ", rec_dev_dim[3])
 
+  # input into list
   input_list$data$Wt_Rec <- Wt_Rec
   input_list$data$Wt_Init_Rec <- Wt_Init_Rec
   input_list$data$Wt_F <- Wt_F
@@ -345,9 +354,7 @@ Setup_Mod_Weighting <- function(input_list,
   input_list$data$Wt_FishAgeComps_discard_pop <- Wt_FishAgeComps_discard_pop
   input_list$data$Wt_FishLenComps_discard_pop <- Wt_FishLenComps_discard_pop
 
-  # Conditional age-at-length: one weight per region, year, season, length bin,
-  # sex and fleet, multiplying the input sample size the way the marginal
-  # composition weights do
+  # Checking for conditional age-at-length stuff
   caal_dim <- function(n_fleets) c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
                                    length(input_list$data$lens), input_list$data$n_sexes, n_fleets)
   if(!identical(as.integer(dim(Wt_Fish_caal)), as.integer(caal_dim(input_list$data$n_fish_fleets))))

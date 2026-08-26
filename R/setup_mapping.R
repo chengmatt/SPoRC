@@ -68,12 +68,24 @@ build_pe_map <- function(dims, share_over = character(0)) {
 #'   dimension name, given in canonical order, e.g.
 #'   \code{c(r = "region", y = "year", seas = "season", f = "fleet")}.
 #'   Values must match \code{names(dims)} exactly.
+#' @param use Optional array of the same dimensions as \code{dims}, non-zero
+#'   where an observation informs that cell (e.g. \code{UseCatch},
+#'   \code{UseSrvIdx}). When supplied, the resulting map is checked for
+#'   observation-error parameters that no data can identify. See
+#'   \code{\link{check_spec_map_identifiable}}. Defaults to \code{NULL}, which
+#'   skips the check and leaves behaviour unchanged.
+#' @param what Character label for the parameter, used in the check's messages.
+#' @param min_obs Integer. A group informed by fewer than this many
+#'   observations raises an error. Default \code{2}.
+#' @param warn_obs Integer. A group informed by fewer than this many
+#'   observations raises a warning. Default \code{5}.
 #'
 #' @return Factor vector of length \code{prod(dims)}, suitable for direct
 #'   assignment to \code{input_list$map$<par>}.
 #'
 #' @keywords internal
-build_shared_spec_map <- function(dims, spec, dim_abbrev) {
+build_shared_spec_map <- function(dims, spec, dim_abbrev, use = NULL,
+                                  what = "parameter", min_obs = 2, warn_obs = 5) {
 
   shared_specs <- unlist(lapply(seq_along(dim_abbrev), function(k) {
     combs <- utils::combn(names(dim_abbrev), k)
@@ -90,7 +102,398 @@ build_shared_spec_map <- function(dims, spec, dim_abbrev) {
     unname(dim_abbrev[parts])
   }
 
-  factor(as.vector(build_pe_map(dims, share_over = share_over)))
+  map <- factor(as.vector(build_pe_map(dims, share_over = share_over)))
+
+  if(!is.null(use)) check_spec_map_identifiable(map, use, spec, dims, dim_abbrev, what, min_obs, warn_obs)
+
+  map
+}
+
+#' Check that an observation-error spec leaves every parameter identified
+#'
+#' An observation-error standard deviation needs more than one observation to
+#' be estimable. Given one, the likelihood is unbounded: the standard deviation
+#' collapses towards zero on whatever residual the model can fit exactly and the
+#' \code{log(sigma)} term runs to negative infinity. The optimiser reports
+#' convergence, so nothing about the fit announces the problem.
+#'
+#' This is not confined to \code{"est_all"}. Any spec that leaves a dimension
+#' free when the corresponding observation array is one cell deep in the other
+#' dimensions has the same failure, so which specs are safe depends on the
+#' model's dimensions rather than on the spec string alone. The check therefore
+#' counts the observations actually informing each estimation group instead of
+#' rejecting particular spec names.
+#'
+#' @param map Factor map returned by \code{\link{build_shared_spec_map}}.
+#' @param use Array of the same dimensions as the parameter, non-zero where an
+#'   observation informs that cell.
+#' @param spec The spec string, used in messages.
+#' @param dims Named integer vector of array dimensions.
+#' @param dim_abbrev Named character vector of dimension abbreviations.
+#' @param what Character label for the parameter, used in messages.
+#' @param min_obs Integer below which a group raises an error.
+#' @param warn_obs Integer below which a group raises a warning.
+#'
+#' @return \code{invisible(NULL)}. Called for its error and warning side effects.
+#'
+#' @keywords internal
+check_spec_map_identifiable <- function(map, use, spec, dims, dim_abbrev,
+                                        what = "parameter", min_obs = 2, warn_obs = 5) {
+
+  if(length(use) != length(map)) {
+    warning("Could not check identifiability of ", what, ": the 'use' array has ",
+            length(use), " cells but the parameter has ", length(map),
+            ". Skipping the check.")
+    return(invisible(NULL))
+  }
+
+  n_obs <- tapply(as.numeric(use) != 0, map, sum)
+  n_obs <- n_obs[!is.na(n_obs)]
+  if(length(n_obs) == 0) return(invisible(NULL))
+
+  # A spec that shares over every dimension always collapses to one parameter,
+  # so it is the safe fallback to point people at.
+  all_shared <- paste0("est_shared_", paste(names(dim_abbrev), collapse = "_"))
+
+  if(any(n_obs < min_obs)) {
+    stop(what, " is specified as '", spec, "', which creates ", length(n_obs),
+         " parameters for ", sum(as.numeric(use) != 0), " observations. ",
+         sum(n_obs < min_obs), " of them are informed by fewer than ", min_obs,
+         " observations, so they cannot be estimated: an observation error ",
+         "standard deviation with a single observation drives the likelihood to ",
+         "negative infinity rather than failing outright. Share this parameter ",
+         "over more dimensions (for example '", all_shared, "'), or fix it with 'fix'.")
+  }
+
+  if(any(n_obs < warn_obs)) {
+    warning(what, " is specified as '", spec, "', which leaves ",
+            sum(n_obs < warn_obs), " of ", length(n_obs), " parameters informed by ",
+            "fewer than ", warn_obs, " observations. These are estimable but poorly ",
+            "determined, and the smallest is informed by ", min(n_obs), ". Consider ",
+            "sharing over more dimensions or fixing it.")
+  }
+
+  invisible(NULL)
+}
+
+#' Set the across-age correlation for one at-age stream
+#'
+#' the ICES convention, per stream. Each stream is configured where its
+#' data are configured, so the catch and discard streams are set in
+#' \code{\link{Setup_Mod_Catch_and_F}} and the index streams in their own
+#' setup functions.
+#'
+#' @param input_list Named list with \code{$data}, \code{$par} and \code{$map}.
+#' @param corr \code{"iid"} or \code{"1dar1"}.
+#' @param fleet_field \code{"n_fish_fleets"} or \code{"n_srv_fleets"}.
+#' @param stream Stream tag: \code{"catch"}, \code{"discard"},
+#'   \code{"fish_idx"} or \code{"srv_idx"}.
+#' @param starting_values Named list from the caller's \code{...}.
+#'
+#' @return \code{input_list} with the stream's correlation flag and its per-fleet
+#'   correlation parameter set.
+#'
+#' @keywords internal
+do_age_corr_setup <- function(input_list, corr, stream, fleet_field, starting_values = list()) {
+
+  if(!corr %in% c("iid", "1dar1")) stop("AgeObsCorr_", stream, " is '", corr, "'. Valid options: iid, 1dar1")
+
+  n_fleets <- input_list$data[[fleet_field]]
+  data_name <- paste0("AgeObsCorr_", stream)
+  par_name <- paste0("trans_rho_", stream)
+
+  input_list$data[[data_name]] <- convert_to_numeric(corr, list(iid = 0, `1dar1` = 1))
+
+  if(par_name %in% names(starting_values)) input_list$par[[par_name]] <- starting_values[[par_name]]
+  else input_list$par[[par_name]] <- rep(0, n_fleets)
+
+  # one correlation per fleet, estimated only under 1dar1
+  input_list$map[[par_name]] <- factor(if(corr == "1dar1") seq_len(n_fleets) else rep(NA_integer_, n_fleets))
+
+  return(input_list)
+}
+
+#' Is a fleet's selectivity informed by data in some year?
+#'
+#' Reads both the aggregated use array and its at-age counterpart. A fleet
+#' fitting catch at age or an index at age carries no aggregated observations,
+#' so keying only off the aggregated array maps its selectivity off and silently
+#' holds it at the starting value.
+#'
+#' @param data Model data list.
+#' @param use_field Stub, \code{"Catch"}, \code{"Discard"}, \code{"FishIdx"} or
+#'   \code{"SrvIdx"}.
+#' @param r,f Region and fleet.
+#'
+#' @return \code{TRUE} when any stream for that region and fleet is fit.
+#'
+#' @keywords internal
+sel_has_data <- function(data, use_field, r, f) {
+
+  agg <- paste0("Use", use_field)              # aggregated stream
+  agg_pop <- paste0(agg, "_pop")
+  at_age <- paste0("Use", use_field, "AA")     # at-age stream
+  at_age_pop <- paste0(at_age, "_pop")
+
+  any_of <- function(nm, pop) {
+    arr <- data[[nm]]
+    if(is.null(arr)) return(FALSE)
+    if(pop) sum(arr[, r, , , , f]) > 0 else sum(arr[r, , , , f]) > 0
+  }
+
+  if(!is.null(data[[agg]]) && sum(data[[agg]][r,,,f]) > 0) return(TRUE)
+  if(!is.null(data[[agg_pop]]) && sum(data[[agg_pop]][,r,,,f]) > 0) return(TRUE)
+  if(any_of(at_age, FALSE)) return(TRUE)
+  if(any_of(at_age_pop, TRUE)) return(TRUE)
+
+  return(FALSE)
+}
+
+#' Map an at-age observation error or catchability from a key matrix
+#'
+#' The key is an integer matrix \code{[n_ages, n_fleets]} in which equal entries
+#' share a parameter and \code{NA} excludes one. This is the key matrix
+#' convention ICES age-structured assessments use for coupling. One structure
+#' covers every sharing pattern that would otherwise need its own spec string:
+#' one parameter per age, one per age group, or one for the whole fleet.
+#'
+#' Shared by every at-age stream: the catch, discard and index observation
+#' errors, the age-specific catchabilities, and their population-specific
+#' counterparts.
+#'
+#' Coupled parameters are checked against the observations informing them. A
+#' standard deviation with a single observation is not merely poorly determined:
+#' the likelihood is unbounded, since it collapses onto whatever residual the
+#' model can fit exactly and the \code{log(sigma)} term runs to negative
+#' infinity. The optimiser reports convergence either way.
+#'
+#' @param input_list Named list with \code{$data}, \code{$par} and \code{$map}.
+#' @param key Integer matrix \code{[n_ages, n_fleets]}, or \code{NULL} for the
+#'   default given by \code{default_shared}. Gains a leading population
+#'   dimension when \code{pop} is \code{TRUE}.
+#' @param spec \code{"est"} or \code{"fix"}.
+#' @param par_name Name of the parameter to map, e.g. \code{"ln_sigmaCAA"}.
+#' @param fleet_field \code{"n_fish_fleets"} or \code{"n_srv_fleets"}.
+#' @param use_field Name of the use array informing this parameter, e.g.
+#'   \code{"UseCatchAA"}. An age a fleet never observes is excluded whatever the
+#'   key says.
+#' @param starting_values Named list from the caller's \code{...}, read for
+#'   \code{par_name}.
+#' @param pop Logical. \code{TRUE} for the population-specific stream.
+#' @param default_shared Logical. When \code{key} is \code{NULL}, \code{TRUE}
+#'   gives one parameter per fleet shared across ages and \code{FALSE} gives one
+#'   per age and fleet. Catchability defaults to the latter.
+#'
+#' @return \code{input_list} with \code{$par$<par_name>} and
+#'   \code{$map$<par_name>} set.
+#'
+#' @keywords internal
+
+do_key_mapping <- function(input_list, key, spec, par_name, fleet_field, use_field,
+                           starting_values = list(), pop = FALSE, default_shared = TRUE) {
+
+  n_fleets <- input_list$data[[fleet_field]]
+  n_ages <- length(input_list$data$ages)
+  n_pop <- input_list$data$n_pop
+  dims <- if(pop) as.integer(c(n_pop, n_ages, n_fleets)) else as.integer(c(n_ages, n_fleets))
+
+  if(!spec %in% c("est", "fix")) stop(par_name, " spec is '", spec, "', which is not recognized. Valid options: est, fix")
+
+  if(par_name %in% names(starting_values)) input_list$par[[par_name]] <- starting_values[[par_name]]
+  else input_list$par[[par_name]] <- array(log(0.5), dim = dims)
+
+  if(!identical(dim(input_list$par[[par_name]]), dims)) {
+    stop(par_name, " is not the correct dimension. Should be ",
+         if(pop) "n_pop, " else "", "n_ages, ", fleet_field)
+  }
+
+  if(spec == "fix") {
+    input_list$map[[par_name]] <- factor(array(NA_integer_, dim = dims))
+    collect_message(par_name, " is specified as: fix")
+    return(input_list)
+  }
+
+  if(is.null(key)) {
+    key <- if(default_shared) array(rep(seq_len(dims[length(dims)]), each = prod(dims[-length(dims)])), dim = dims)
+           else array(seq_len(prod(dims)), dim = dims)
+  }
+  if(!identical(dim(as.array(key)), dims)) {
+    stop(par_name, " key is not the correct dimension. Should be ",
+         if(pop) "n_pop, " else "", "n_ages, ", fleet_field)
+  }
+  key <- array(as.integer(key), dim = dims)
+
+  # an age a fleet never observes carries no parameter, whatever the key says
+  use_arr <- input_list$data[[use_field]]
+  nd <- length(dim(use_arr))
+  margins <- if(pop) c(1, nd - 1, nd) else c(nd - 1, nd)
+  obs_by <- apply(use_arr, margins, function(x) sum(x != 0))
+  key[obs_by == 0] <- NA_integer_
+
+  keep <- !is.na(key)
+  if(any(keep)) {
+    n_obs <- tapply(obs_by[keep], key[keep], sum)
+    if(any(n_obs < 2)) {
+      stop(par_name, " couples ", length(n_obs), " parameters, and ", sum(n_obs < 2),
+           " of them are informed by fewer than 2 observations, so they cannot be ",
+           "estimated. Couple more ages or fleets to the same entry, or set that entry ",
+           "to NA to hold it fixed.")
+    }
+    if(any(n_obs < 5)) {
+      warning(par_name, " leaves ", sum(n_obs < 5), " of ", length(n_obs),
+              " parameters informed by fewer than 5 observations. The smallest has ",
+              min(n_obs), ".")
+    }
+    key[keep] <- as.integer(factor(key[keep]))
+  }
+
+  input_list$map[[par_name]] <- factor(key)
+  collect_message(par_name, " is specified as: est, with ",
+                  length(unique(stats::na.omit(as.vector(key)))), " parameters")
+  return(input_list)
+}
+
+#' Map catch-at-age observation error from a key matrix
+#'
+#' The key is an integer matrix \code{[n_ages, n_fish_fleets]} in which equal
+#' entries share a parameter and \code{NA} excludes one. This is the key matrix
+#' convention ICES age-structured assessments use for coupling. One structure
+#' covers every sharing pattern that would otherwise need its own spec string:
+#' one standard deviation per age, standard deviations by age group, or one for
+#' the whole fleet.
+#'
+#' Coupled parameters are checked against the observations that inform them. A
+#' standard deviation with a single observation is not merely poorly determined:
+#' the likelihood is unbounded, since the standard deviation collapses onto
+#' whatever residual the model can fit exactly and the \code{log(sigma)} term
+#' runs to negative infinity. The optimiser reports convergence either way.
+#'
+#' @param input_list Named list with \code{$data}, \code{$par} and \code{$map}.
+#' @param key Integer matrix \code{[n_ages, n_fish_fleets]}, or \code{NULL} for
+#'   one parameter per fleet shared across ages. A season needing its own
+#'   observation error is a separate fleet, the same way anything else needing
+#'   its own selectivity or catchability is.
+#' @param spec \code{"est"} or \code{"fix"}.
+#' @param starting_values Named list from the caller's \code{...}, read for
+#'   \code{ln_sigmaCAA}.
+#'
+#' @return \code{input_list} with \code{$par$ln_sigmaCAA} and
+#'   \code{$map$ln_sigmaCAA} set.
+#'
+#' @keywords internal
+do_sigmaCAA_mapping <- function(input_list, key, spec, starting_values = list()) {
+
+  n_fleets <- input_list$data$n_fish_fleets
+  n_ages <- length(input_list$data$ages)
+  dims <- as.integer(c(n_ages, n_fleets))
+
+  if(!spec %in% c("est", "fix")) stop("sigmaCAA_spec is '", spec, "', which is not recognized. Valid options: est, fix")
+
+  if("ln_sigmaCAA" %in% names(starting_values)) input_list$par$ln_sigmaCAA <- starting_values$ln_sigmaCAA
+  else input_list$par$ln_sigmaCAA <- array(log(0.5), dim = dims)
+
+  if(!identical(dim(input_list$par$ln_sigmaCAA), dims)) {
+    stop("ln_sigmaCAA is not the correct dimension. Should be n_ages, n_fish_fleets")
+  }
+
+  if(spec == "fix") {
+    input_list$map$ln_sigmaCAA <- factor(array(NA_integer_, dim = dims))
+    collect_message("sigmaCAA is specified as: fix")
+    return(input_list)
+  }
+
+  # one parameter per fleet, shared over ages, unless a key says otherwise
+  if(is.null(key)) key <- array(rep(seq_len(n_fleets), each = n_ages), dim = dims)
+  if(!identical(dim(as.array(key)), dims)) {
+    stop("sigmaCAA_key is not the correct dimension. Should be n_ages, n_fish_fleets")
+  }
+
+  key <- array(as.integer(key), dim = dims)
+
+  # an age a fleet never observes carries no parameter, whatever the key says
+  obs_by <- apply(input_list$data$UseCatchAA, c(4, 5), function(x) sum(x != 0))
+  key[obs_by == 0] <- NA_integer_
+
+  keep <- !is.na(key)
+  if(any(keep)) {
+    n_obs <- tapply(obs_by[keep], key[keep], sum)
+    if(any(n_obs < 2)) {
+      stop("sigmaCAA_key couples ", length(n_obs), " catch at age standard deviations, and ",
+           sum(n_obs < 2), " of them are informed by fewer than 2 observations, so they ",
+           "cannot be estimated. Couple more ages or fleets to the same entry, or set that ",
+           "entry to NA to hold it fixed.")
+    }
+    if(any(n_obs < 5)) {
+      warning("sigmaCAA_key leaves ", sum(n_obs < 5), " of ", length(n_obs),
+              " catch at age standard deviations informed by fewer than 5 observations. ",
+              "The smallest has ", min(n_obs), ".")
+    }
+    key[keep] <- as.integer(factor(key[keep]))
+  }
+
+  input_list$map$ln_sigmaCAA <- factor(key)
+  collect_message("sigmaCAA is specified as: est, with ",
+                  length(unique(stats::na.omit(as.vector(key)))), " parameters")
+
+  return(input_list)
+}
+
+#' Map an estimated index observation error standard deviation
+#'
+#' Shared by \code{\link{Setup_Mod_FishIdx_and_Comps}} and
+#' \code{\link{Setup_Mod_SrvIdx_and_Comps}}, which carry the same parameter under
+#' different names and over a different fleet dimension.
+#'
+#' The parameter is one value per fleet. Index standard errors are reported per
+#' observation, so a year-resolved estimated standard deviation would place one
+#' parameter on one observation and drive the likelihood to negative infinity;
+#' see \code{\link{check_spec_map_identifiable}} for the same problem in the
+#' catch and fishing mortality sigmas, which are dimensioned that way for other
+#' reasons.
+#'
+#' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
+#'   sublists.
+#' @param spec Character scalar. One of \code{"fix"}, \code{"est_additive"},
+#'   \code{"est_quadrature"} or \code{"est_replace"}.
+#' @param fleet_field Character. Name of the \code{$data} field giving the
+#'   number of fleets, \code{"n_fish_fleets"} or \code{"n_srv_fleets"}.
+#' @param par_name Character. Name of the parameter to map, e.g.
+#'   \code{"ln_sigmaSrvIdx"}.
+#' @param fleet_map Optional integer vector of length \code{n_fleets}. Fleets
+#'   sharing a value share a parameter, and \code{NA} fixes that fleet at its
+#'   starting value. Defaults to one free parameter per fleet. Useful when a
+#'   reference assessment estimated some fleets and pinned others at a bound.
+#'
+#' @return The input \code{input_list} with \code{$map$<par_name>} set.
+#'
+#' @keywords internal
+do_sigmaIdx_mapping <- function(input_list, spec, fleet_field, par_name, fleet_map = NULL) {
+
+  valid_specs <- c("fix", "est_additive", "est_quadrature", "est_replace")
+  if(!spec %in% valid_specs) {
+    stop(par_name, " spec '", spec, "' not recognized. Valid options: ",
+         paste(valid_specs, collapse = ", "))
+  }
+
+  n_fleets <- input_list$data[[fleet_field]]
+
+  if(spec == "fix") {
+    input_list$map[[par_name]] <- factor(rep(NA, n_fleets))
+    collect_message(par_name, " is specified as: ", spec)
+    return(input_list)
+  }
+
+  if(is.null(fleet_map)) fleet_map <- seq_len(n_fleets)
+  if(length(fleet_map) != n_fleets) {
+    stop("The fleet map supplied for ", par_name, " has length ", length(fleet_map),
+         " but there are ", n_fleets, " fleets.")
+  }
+
+  input_list$map[[par_name]] <- factor(fleet_map)
+  collect_message(par_name, " is specified as: ", spec, ", estimating ",
+                  length(unique(stats::na.omit(fleet_map))), " of ", n_fleets, " fleets")
+
+  return(input_list)
 }
 
 #' Map fishery composition overdispersion (theta) parameters
@@ -524,7 +927,7 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
     for(r in 1:input_list$data$n_regions) {
 
       # Only add a counter if catches/index data are avaliable in some years for a given region and fleet combination
-      if(sum(input_list$data[[Use_nm]][r,,,f]) > 0 || sum(input_list$data[[Use_pop_nm]][,r,,,f]) > 0) {
+      if(sel_has_data(input_list$data, use_field, r, f)) {
 
         # Extract number of selectivity blocks
         sel_blocks_tmp <- unique(as.vector(input_list$data[[blocks_nm]][r,,f]))
@@ -548,7 +951,7 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
             }
 
             # non-parametric selectivity
-            if(sel_model_this_block %in% c(5,9)) {
+            if(sel_model_this_block %in% c(5,9,10)) {
 
               if(is.null(sel_nonpar_est_bins)) stop("Non-parametric selectivtiy specified, but ", prefix, "_sel_nonpar_est_bins is NULL. Please specify bins!")
               bin_groups <- sel_nonpar_est_bins[[f]][[b]]
@@ -565,7 +968,7 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
             for(i in 1:max_sel_pars) {
 
               # get non-parametric selectivity bins
-              group_bins <- if(sel_model_this_block %in% c(5,9)) bin_groups[[i]] else i
+              group_bins <- if(sel_model_this_block %in% c(5,9,10)) bin_groups[[i]] else i
 
               # Estimate all selectivity fixed effects parameters within the constraints of the defined blocks
               if(sel_pars_spec[f] == "est_all") {
@@ -720,7 +1123,7 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
         if(unique(input_list$data[[model_nm]][r,,f]) %in% 2) max_sel_pars <- 1 # exponential
         if(unique(input_list$data[[model_nm]][r,,f]) %in% c(0,1,3)) max_sel_pars <- 2 # logistic or gamma
         if(unique(input_list$data[[model_nm]][r,,f]) == 4) max_sel_pars <- 6 # double normal
-        if(unique(input_list$data[[model_nm]][r,,f]) %in% c(5,9)) max_sel_pars <- bins # non-parametric selectivity
+        if(unique(input_list$data[[model_nm]][r,,f]) %in% c(5,9,10)) max_sel_pars <- bins # non-parametric selectivity
         if(unique(input_list$data[[model_nm]][r,,f]) %in% c(6,7)) max_sel_pars <- 3 # logistic selectivity w/ asmyptote
 
         for(s in 1:input_list$data$n_sexes) {
@@ -931,7 +1334,7 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
     if(code == 2) return(1)                 # exponential
     if(code %in% c(0, 1, 3)) return(2)      # logistic or gamma
     if(code == 4) return(6)                 # double normal
-    if(code %in% c(5, 9)) return(bins)      # non-parametric
+    if(code %in% c(5, 9, 10)) return(bins)      # non-parametric
     if(code %in% c(6, 7)) return(3)         # logistic w/ asymptote
     stop("Continuous time-varying (iid/rw) deviations are not supported for selectivity model code ", code, ".")
   }
@@ -950,7 +1353,7 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
         # where each deviation already belongs to one bin. It is not true for a
         # parametric form under iid or a random walk, whose deviation slots are
         # its parameters rather than its bins.
-        nonpar_fleet <- all(input_list$data[[model_nm]][r,,f] %in% c(5,9))
+        nonpar_fleet <- all(input_list$data[[model_nm]][r,,f] %in% c(5,9,10))
         if(sel_devs_spec[f] %in% c("est_shared_b", "est_shared_r_b", "est_shared_r_b_s", "est_shared_b_s") &&
            !input_list$data[[cont_tv_nm]][r,f] %in% c(3,4,5) && !nonpar_fleet)
           stop("Sharing bin deviations is only supported when the deviations are indexed by bin: either a GMRF or AR1 time-varying form, or a non-parametric selectivity form. A parametric form under iid or a random walk indexes its deviations by parameter instead.")

@@ -95,6 +95,17 @@
 #'       default for spatially explicit models.}
 #'     \item{\code{3}/\code{"scalar_plus_only"}}{Scalar geometric series
 #'       solution assuming no movement except in the plus group.}
+#'     \item{\code{4}/\code{"free"}}{No equilibrium is projected at all:
+#'       \code{ln_InitDevs} are the initial log numbers-at-age themselves for
+#'       ages 2 and above, apportioned by the sex ratio, with age 1 still taken
+#'       from recruitment. Use this where the assessment estimates its initial
+#'       numbers-at-age freely rather than as departures from an equilibrium.
+#'       The initial condition then does not depend on \code{init_F_par} or
+#'       \code{ln_rinit}, and because the deviations are log-numbers rather
+#'       than log-ratios, any penalty acts as a prior on initial abundance:
+#'       pair with \code{equil_init_age_strc = "equil"} for no such prior, or
+#'       with \code{InitDevs_pen_center = "own_mean"} to penalise only the
+#'       roughness of the age structure and not its level.}
 #'   }
 #' @param do_recruits_move Integer flag. \code{0} = age-1 fish do not move
 #'   (default); movement begins at age 2. \code{1} = recruits participate in
@@ -688,7 +699,7 @@ do_RecDevs_mapping <- function(input_list, RecDevs_spec, rec_dd) {
 
     # Validate options
     if(!is.null(rec_dd) && rec_dd == 'global' && !RecDevs_spec %in% c("est_shared_r", "est_shared_pop_r") && input_list$data$n_regions > 1) stop("Please specify a valid recruitment deviations option for global recruitment density dependence (should be est_shared_r or est_shared_pop_r)!")
-    if(!RecDevs_spec %in% c("est_shared_pop_r", "est_shared_r", "fix"))  stop("Please specify a valid recruitment deviations option. These include: fix, est_shared_r. Conversely, leave at NULL to estimate all recruitment deviations.")
+    if(!RecDevs_spec %in% c("est_shared_pop_r", "est_shared_r", "fix"))  stop("Please specify a valid recruitment deviations option. These include: fix, est_shared_r, est_shared_pop_r. Conversely, leave at NULL to estimate all recruitment deviations.")
 
     # Share across regions and estimate by population
     if(RecDevs_spec == "est_shared_r") {

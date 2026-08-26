@@ -9,6 +9,19 @@ Setup_Mod_SrvIdx_and_Comps(
   ObsSrvIdx,
   ObsSrvIdx_SE,
   UseSrvIdx,
+  ObsSrvIdxAA = NULL,
+  UseSrvIdxAA = NULL,
+  ObsSrvIdxAA_pop = NULL,
+  UseSrvIdxAA_pop = NULL,
+  sigmaSrvIdxAA_key = NULL,
+  sigmaSrvIdxAA_spec = "est",
+  sigmaSrvIdxAA_pop_key = NULL,
+  sigmaSrvIdxAA_pop_spec = "est",
+  AgeObsCorr_srv_idx = "iid",
+  sigmaSrvIdx_spec = "fix",
+  sigmaSrvIdx_map = NULL,
+  sigmaSrvIdx_pop_spec = "fix",
+  sigmaSrvIdx_pop_map = NULL,
   ObsSrvIdx_pop = NULL,
   ObsSrvIdx_pop_SE = NULL,
   UseSrvIdx_pop = array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions,
@@ -66,6 +79,87 @@ dimensions \code{[n_regions × n_years × n_seas × n_srv_fleets]}.}
 \item{UseSrvIdx}{Binary indicator array
 \code{[n_regions × n_years × n_seas × n_srv_fleets]}. \code{1} = include
 in likelihood; \code{0} = exclude.}
+
+\item{ObsSrvIdxAA}{Observed survey index at age, an array with dimensions
+\code{[n_regions, n_years, n_seas, n_ages, n_srv_fleets]}. Supplying this
+fits the index at age directly, every age its own lognormal observation with
+its own catchability, which is the native form for ICES age-structured assessments.
+A fleet uses this or the aggregated index, never both.}
+
+\item{UseSrvIdxAA}{Integer array shaped like \code{ObsSrvIdxAA}, \code{1}
+where an observation is fit.}
+
+\item{ObsSrvIdxAA_pop, UseSrvIdxAA_pop}{Population-specific counterparts, with
+a leading population dimension.}
+
+\item{sigmaSrvIdxAA_key, sigmaSrvIdxAA_pop_key}{Integer matrices coupling the
+index at age observation error, an integer key matrix, the convention ICES
+assessments use. Equal entries share a parameter and \code{NA} excludes one.
+The age shape of catchability is not set here: an index fit age by age puts
+it in selectivity through the \code{"nonparfree"} form, which carries the
+height of the curve as well as its shape. See
+\code{\link{Setup_Mod_Srvsel_and_Q}}.}
+
+\item{sigmaSrvIdxAA_spec, sigmaSrvIdxAA_pop_spec}{\code{"est"} (default) or
+\code{"fix"}.}
+
+\item{AgeObsCorr_srv_idx}{Correlation across ages for the survey index at
+age, \code{"iid"} (default) or \code{"1dar1"}. See
+\code{\link{Setup_Mod_Catch_and_F}}.}
+
+\item{sigmaSrvIdx_spec}{Character string controlling the estimated component of the
+aggregated survey index observation error, one value per fleet. One of:
+\describe{
+  \item{\code{"fix"}}{The reported standard errors are used as they are and
+    \code{ln_sigmaSrvIdx} is not estimated. The default.}
+  \item{\code{"est_additive"}}{Total standard deviation is the reported
+    standard error plus an estimated component, the additive extra
+    standard deviation convention.}
+  \item{\code{"est_quadrature"}}{Total standard deviation is the reported
+    standard error and the estimated component added in quadrature, treating
+    them as independent variances.}
+  \item{\code{"est_replace"}}{An estimated standard deviation replaces the
+    reported standard errors entirely, as several ICES assessments do.}
+}
+An estimated component is confounded with a likelihood weight, since a
+weight on a normal likelihood is the same statement as dividing the
+variance by that weight. \code{Setup_Mod_Weighting} warns when both are
+used. Fleets with a multivariate normal index likelihood take their scale
+from the supplied covariance and cannot carry one, which is an error rather
+than a silently unidentified parameter.}
+
+\item{sigmaSrvIdx_map}{Optional integer vector of length \code{n_srv_fleets}
+giving the estimation groups for \code{ln_sigmaSrvIdx}. Fleets sharing a value share a
+parameter and \code{NA} holds a fleet at its starting value. Defaults to one
+free parameter per fleet. Use it when a reference assessment estimated some
+fleets and pinned others at a bound.}
+
+\item{sigmaSrvIdx_pop_spec}{Character string controlling the estimated component of the
+population-specific survey index observation error, one value per fleet. One of:
+\describe{
+  \item{\code{"fix"}}{The reported standard errors are used as they are and
+    \code{ln_sigmaSrvIdx_pop} is not estimated. The default.}
+  \item{\code{"est_additive"}}{Total standard deviation is the reported
+    standard error plus an estimated component, the additive extra
+    standard deviation convention.}
+  \item{\code{"est_quadrature"}}{Total standard deviation is the reported
+    standard error and the estimated component added in quadrature, treating
+    them as independent variances.}
+  \item{\code{"est_replace"}}{An estimated standard deviation replaces the
+    reported standard errors entirely, as several ICES assessments do.}
+}
+An estimated component is confounded with a likelihood weight, since a
+weight on a normal likelihood is the same statement as dividing the
+variance by that weight. \code{Setup_Mod_Weighting} warns when both are
+used. Fleets with a multivariate normal index likelihood take their scale
+from the supplied covariance and cannot carry one, which is an error rather
+than a silently unidentified parameter.}
+
+\item{sigmaSrvIdx_pop_map}{Optional integer vector of length \code{n_srv_fleets}
+giving the estimation groups for \code{ln_sigmaSrvIdx_pop}. Fleets sharing a value share a
+parameter and \code{NA} holds a fleet at its starting value. Defaults to one
+free parameter per fleet. Use it when a reference assessment estimated some
+fleets and pinned others at a bound.}
 
 \item{ObsSrvIdx_pop}{Observed population-specific survey index array
 \code{[n_pop × n_regions × n_years × n_seas × n_srv_fleets]}.}
@@ -314,18 +408,18 @@ dimensions each year. Must be called after \code{\link{Setup_Mod_Dim}} and
 before model compilation.
 }
 \seealso{
-Other Model Setup: 
-\code{\link{Setup_Mod_Biologicals}()},
-\code{\link{Setup_Mod_Catch_and_F}()},
-\code{\link{Setup_Mod_Dim}()},
-\code{\link{Setup_Mod_Discard_Comps}()},
-\code{\link{Setup_Mod_FishIdx_and_Comps}()},
-\code{\link{Setup_Mod_Fishsel_and_Q}()},
-\code{\link{Setup_Mod_Movement}()},
-\code{\link{Setup_Mod_Rec}()},
-\code{\link{Setup_Mod_Retsel}()},
-\code{\link{Setup_Mod_Srvsel_and_Q}()},
-\code{\link{Setup_Mod_Tagging}()},
-\code{\link{Setup_Mod_Weighting}()}
+Other Model Setup:
+\code{\link[=Setup_Mod_Biologicals]{Setup_Mod_Biologicals()}},
+\code{\link[=Setup_Mod_Catch_and_F]{Setup_Mod_Catch_and_F()}},
+\code{\link[=Setup_Mod_Dim]{Setup_Mod_Dim()}},
+\code{\link[=Setup_Mod_Discard_Comps]{Setup_Mod_Discard_Comps()}},
+\code{\link[=Setup_Mod_FishIdx_and_Comps]{Setup_Mod_FishIdx_and_Comps()}},
+\code{\link[=Setup_Mod_Fishsel_and_Q]{Setup_Mod_Fishsel_and_Q()}},
+\code{\link[=Setup_Mod_Movement]{Setup_Mod_Movement()}},
+\code{\link[=Setup_Mod_Rec]{Setup_Mod_Rec()}},
+\code{\link[=Setup_Mod_Retsel]{Setup_Mod_Retsel()}},
+\code{\link[=Setup_Mod_Srvsel_and_Q]{Setup_Mod_Srvsel_and_Q()}},
+\code{\link[=Setup_Mod_Tagging]{Setup_Mod_Tagging()}},
+\code{\link[=Setup_Mod_Weighting]{Setup_Mod_Weighting()}}
 }
 \concept{Model Setup}

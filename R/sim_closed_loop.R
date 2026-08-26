@@ -474,6 +474,15 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   sim_list <- Setup_Sim_Fishing(
     sim_list = sim_list, # update simulate list
     ln_sigmaC = ln_sigmaC,
+    # Age-disaggregated observation error, carried through unweighted: these are
+    # keyed by age and fleet and are not scaled by a likelihood weight the way
+    # the aggregated sigmas are.
+    ln_sigmaCAA = optim_parameters_list$ln_sigmaCAA,
+    ln_sigmaDAA = optim_parameters_list$ln_sigmaDAA,
+    ln_sigmaFishIdxAA = optim_parameters_list$ln_sigmaFishIdxAA,
+    UseCatchAA = data$UseCatchAA, UseDiscardAA = data$UseDiscardAA,
+    UseFishIdxAA = data$UseFishIdxAA, use_catch_aa = data$use_catch_aa,
+    use_discard_aa = data$use_discard_aa, use_fish_idx_aa = data$use_fish_idx_aa,
     ln_sigmaC_pop = ln_sigmaC_pop,
     Fmort_input = extend_years(replicate(n = sim_list$n_sims, rep$Fmort[,1:length(data$years),,,drop = FALSE]), n_years = closed_loop_yrs, 2, fill = 'zeros'),
     ln_sigmaD = ln_sigmaD,
@@ -653,6 +662,8 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     srv_sel_input = srv_sel_input,
     srv_q_input = srv_q_input,
     ObsSrvIdx_SE = ObsSrvIdx_SE,
+    ln_sigmaSrvIdxAA = optim_parameters_list$ln_sigmaSrvIdxAA,
+    UseSrvIdxAA = data$UseSrvIdxAA, use_srv_idx_aa = data$use_srv_idx_aa,
     ObsSrvIdx_pop_SE = ObsSrvIdx_pop_SE,
     srv_idx_type = data$srv_idx_type,
     t_srv = data$t_srv,

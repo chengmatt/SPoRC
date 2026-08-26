@@ -46,7 +46,8 @@ tier_bridge <- c(
   "make_bsai_rougheye_bridge_figs.R",
   "make_ebs_pollock_bridge_figs.R",
   "make_bsai_atka_bridge_figs.R",
-  "make_bsai_nrs_bridge_figs.R"
+  "make_bsai_nrs_bridge_figs.R",
+  "make_north_sea_sandeel_bridge_figs.R"
 )
 
 # objects: multi region and spatial fits, writes data/*.rda and dev/dev_output

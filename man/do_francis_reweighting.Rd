@@ -74,7 +74,7 @@ for(j in 1:5) {
 }
 }
 \seealso{
-Other Francis Reweighting: 
-\code{\link{run_francis}()}
+Other Francis Reweighting:
+\code{\link[=run_francis]{run_francis()}}
 }
 \concept{Francis Reweighting}

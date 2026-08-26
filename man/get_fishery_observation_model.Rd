@@ -25,6 +25,7 @@ get_fishery_observation_model(
   PredCatch,
   PredDiscard,
   PredFishIdx,
+  FishIAA = NULL,
   fit_lengths,
   SizeAgeTrans,
   catch_units,
@@ -86,6 +87,11 @@ fish_fleet]}, output containers for retained/discarded catch at length.}
 
 \item{PredCatch, PredDiscard, PredFishIdx}{Arrays \code{[pop, region, year,
 season, fish_fleet]}, output containers.}
+
+\item{FishIAA}{Container for the fishery index numbers at age, defaulting to
+a zero array shaped like \code{CAA}. Filled with the
+fleet's timing and movement treatment applied so the at-age index likelihood
+reads the same quantity the aggregated one does.}
 
 \item{fit_lengths}{Integer (0/1) switch for computing length compositions.}
 

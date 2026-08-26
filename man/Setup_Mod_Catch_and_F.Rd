@@ -7,6 +7,24 @@
 Setup_Mod_Catch_and_F(
   input_list,
   ObsCatch,
+  ObsCatchAA = NULL,
+  UseCatchAA = NULL,
+  sigmaCAA_key = NULL,
+  sigmaCAA_spec = "est",
+  ObsDiscardAA = NULL,
+  UseDiscardAA = NULL,
+  ObsDiscardAA_pop = NULL,
+  UseDiscardAA_pop = NULL,
+  ObsCatchAA_pop = NULL,
+  UseCatchAA_pop = NULL,
+  sigmaCAA_pop_key = NULL,
+  sigmaCAA_pop_spec = "est",
+  sigmaDAA_key = NULL,
+  sigmaDAA_spec = "est",
+  sigmaDAA_pop_key = NULL,
+  sigmaDAA_pop_spec = "est",
+  AgeObsCorr_catch = "iid",
+  AgeObsCorr_discard = "iid",
   UseCatch,
   catch_units = array("biom", dim = c(input_list$data$n_fish_fleets)),
   UseCatch_pop = array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions,
@@ -52,6 +70,57 @@ observation; fishing is assumed to have continued and \code{Fmort}/
 true recorded value (typically \code{0}) is treated as a real
 closure: \code{Fmort} is forced to zero and no deviation is estimated.
 See \code{\link{Get_Fdev_PE_loglik}}.}
+
+\item{ObsCatchAA}{Observed catch at age, an array with dimensions
+\code{[n_regions, n_years, n_seas, n_ages, n_fish_fleets]}. Supplying this
+fits the catch at age directly, every age its own lognormal observation, in
+place of an aggregated catch with compositions. This is the native form for
+ICES age-structured assessments. The two statements are not interchangeable: the
+exact factorisation of an at-age observation into a total and a composition
+holds for Poisson and multinomial, not for lognormal, so a fleet must use
+one or the other and supplying both for the same fleet is an error.
+\code{NULL} (default) leaves the fleet on aggregated catch.}
+
+\item{UseCatchAA}{Integer array shaped like \code{ObsCatchAA}, \code{1} where
+an observation is fit and \code{0} otherwise. A cell that is not fit is also
+not fished, so this governs closures the way \code{UseCatch} does for the
+aggregated stream.}
+
+\item{sigmaCAA_key}{Integer matrix \code{[n_ages, n_fish_fleets]} coupling the
+catch at age observation error, an integer key matrix, the convention ICES assessments use. Equal
+entries share a parameter and \code{NA} excludes one. This single structure
+covers every sharing pattern: \code{1 2 3 4 5} gives one standard deviation
+per age, \code{1 1 2 2 2} gives standard deviations by age group as several ICES assessments do, and \code{1 1 1 1 1} gives one for the fleet. Defaults to
+one parameter per fleet, shared across ages. A parameter informed by fewer
+than two observations is refused, since an observation error standard
+deviation with a single observation drives the likelihood to negative
+infinity rather than failing outright.}
+
+\item{sigmaCAA_spec}{Character string, \code{"est"} (default) to estimate the
+coupled standard deviations, or \code{"fix"} to hold them at their starting
+values. Starting values are supplied through \code{...} as
+\code{ln_sigmaCAA}.}
+
+\item{ObsDiscardAA, UseDiscardAA}{Observed discard at age and its use flags,
+shaped like \code{ObsCatchAA}. The discard counterpart of catch at age.}
+
+\item{ObsDiscardAA_pop, UseDiscardAA_pop, ObsCatchAA_pop, UseCatchAA_pop}{Population-specific counterparts, with a leading population dimension.}
+
+\item{sigmaCAA_pop_key, sigmaDAA_key, sigmaDAA_pop_key}{Integer matrices
+\code{[n_ages, n_fish_fleets]} coupling the observation error for the
+population-specific catch, the discards, and the population-specific
+discards, following the same convention as \code{sigmaCAA_key}.}
+
+\item{sigmaCAA_pop_spec, sigmaDAA_spec, sigmaDAA_pop_spec}{\code{"est"} or
+\code{"fix"}.}
+
+\item{AgeObsCorr_catch, AgeObsCorr_discard}{Correlation across ages within a
+cell for the retained catch at age and the discards at age. \code{"iid"} (default) treats ages as independent,
+\code{"1dar1"} correlates them as an AR(1) across ages and estimates one
+correlation per fleet. A cell with a single observed age falls back to independent.
+The fishery and survey index streams carry their own settings, in
+\code{\link{Setup_Mod_FishIdx_and_Comps}} and
+\code{\link{Setup_Mod_SrvIdx_and_Comps}}.}
 
 \item{UseCatch}{Binary indicator array
 \code{[n_regions x n_years x n_seas x n_fish_fleets]} controlling which
@@ -265,18 +334,18 @@ discard observation/process error structures (\code{ln_sigmaD},
 Must be called after \code{\link{Setup_Mod_Biologicals}}.
 }
 \seealso{
-Other Model Setup: 
-\code{\link{Setup_Mod_Biologicals}()},
-\code{\link{Setup_Mod_Dim}()},
-\code{\link{Setup_Mod_Discard_Comps}()},
-\code{\link{Setup_Mod_FishIdx_and_Comps}()},
-\code{\link{Setup_Mod_Fishsel_and_Q}()},
-\code{\link{Setup_Mod_Movement}()},
-\code{\link{Setup_Mod_Rec}()},
-\code{\link{Setup_Mod_Retsel}()},
-\code{\link{Setup_Mod_SrvIdx_and_Comps}()},
-\code{\link{Setup_Mod_Srvsel_and_Q}()},
-\code{\link{Setup_Mod_Tagging}()},
-\code{\link{Setup_Mod_Weighting}()}
+Other Model Setup:
+\code{\link[=Setup_Mod_Biologicals]{Setup_Mod_Biologicals()}},
+\code{\link[=Setup_Mod_Dim]{Setup_Mod_Dim()}},
+\code{\link[=Setup_Mod_Discard_Comps]{Setup_Mod_Discard_Comps()}},
+\code{\link[=Setup_Mod_FishIdx_and_Comps]{Setup_Mod_FishIdx_and_Comps()}},
+\code{\link[=Setup_Mod_Fishsel_and_Q]{Setup_Mod_Fishsel_and_Q()}},
+\code{\link[=Setup_Mod_Movement]{Setup_Mod_Movement()}},
+\code{\link[=Setup_Mod_Rec]{Setup_Mod_Rec()}},
+\code{\link[=Setup_Mod_Retsel]{Setup_Mod_Retsel()}},
+\code{\link[=Setup_Mod_SrvIdx_and_Comps]{Setup_Mod_SrvIdx_and_Comps()}},
+\code{\link[=Setup_Mod_Srvsel_and_Q]{Setup_Mod_Srvsel_and_Q()}},
+\code{\link[=Setup_Mod_Tagging]{Setup_Mod_Tagging()}},
+\code{\link[=Setup_Mod_Weighting]{Setup_Mod_Weighting()}}
 }
 \concept{Model Setup}

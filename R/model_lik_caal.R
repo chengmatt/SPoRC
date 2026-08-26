@@ -342,3 +342,43 @@ eval_caal_osa = function(nLL_arr, tracked, ExpArrFn,
 
   return(nLL_arr)
 }
+
+
+#' Sum a conditional age-at-length array across populations
+#'
+#' The conditional age-at-length arrays carry a population dimension the
+#' likelihood does not use, so it is summed away before the comparison. A single
+#' population needs only a reshape, which avoids an apply over a degenerate
+#' margin.
+#'
+#' @param arr Array indexed population, region, year, season, length, age, sex, fleet.
+#' @param y,seas,f Year, season and fleet to extract.
+#' @param n_pop,n_regions,n_lens,n_ages,n_sexes Model dimensions.
+#'
+#' @return An array indexed region, length, age, sex.
+#'
+#' @keywords internal
+caal_sum_pop = function(arr, y, seas, f, n_pop, n_regions, n_lens, n_ages, n_sexes) {
+  extracted = arr[,,y,seas,,,,f, drop = FALSE]
+  if(n_pop == 1) dim(extracted) = c(n_regions, n_lens, n_ages, n_sexes)
+  else extracted = apply(extracted, c(2,5,6,7), sum)
+  return(extracted)
+}
+
+#' Sum a conditional age-at-length array across populations, for one length bin
+#'
+#' As \code{\link{caal_sum_pop}}, for a single length bin.
+#'
+#' @param arr Array indexed population, region, year, season, length, age, sex, fleet.
+#' @param y,seas,l,f Year, season, length bin and fleet to extract.
+#' @param n_pop,n_regions,n_ages,n_sexes Model dimensions.
+#'
+#' @return An array indexed region, age, sex.
+#'
+#' @keywords internal
+caal_sum_pop_len = function(arr, y, seas, l, f, n_pop, n_regions, n_ages, n_sexes) {
+  extracted = arr[,,y,seas,l,,,f, drop = FALSE]
+  if(n_pop == 1) dim(extracted) = c(n_regions, n_ages, n_sexes)
+  else extracted = apply(extracted, c(2,6,7), sum)
+  return(extracted)
+}

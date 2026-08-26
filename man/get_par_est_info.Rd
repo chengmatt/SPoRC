@@ -42,11 +42,11 @@ and map entries of \code{NA} (i.e., parameters fixed via \code{mapping})
 are labelled \code{"NE"} (not estimated).
 }
 \seealso{
-Other Utility: 
-\code{\link{fit_model}()},
-\code{\link{get_logistN_Sigma}()},
-\code{\link{post_optim_sanity_checks}()},
-\code{\link{rho_trans}()},
-\code{\link{set_data_indicator_unused}()}
+Other Utility:
+\code{\link[=fit_model]{fit_model()}},
+\code{\link[=get_logistN_Sigma]{get_logistN_Sigma()}},
+\code{\link[=post_optim_sanity_checks]{post_optim_sanity_checks()}},
+\code{\link[=rho_trans]{rho_trans()}},
+\code{\link[=set_data_indicator_unused]{set_data_indicator_unused()}}
 }
 \concept{Utility}

@@ -1110,19 +1110,20 @@ SPoRC_rtmb = function(pars, data) {
   }
 
   ### Age-disaggregated observations ------------------------------------------------------------------
-  # Retained catch, discards, and the fishery and survey indices, each aggregated
-  # and population-specific, all evaluate the same lognormal at-age density. The
-  # likelihood itself lives in model_lik_at_age.R; this block registers the
-  # observations and hands each stream over.
+
+  # Combine into list so easier to extract
   at_age_fit = list(
-    CatchAA = which(UseCatchAA == 1), CatchAA_pop = which(UseCatchAA_pop == 1),
-    DiscardAA = which(UseDiscardAA == 1), DiscardAA_pop = which(UseDiscardAA_pop == 1),
-    FishIdxAA = which(UseFishIdxAA == 1), FishIdxAA_pop = which(UseFishIdxAA_pop == 1),
-    SrvIdxAA = which(UseSrvIdxAA == 1), SrvIdxAA_pop = which(UseSrvIdxAA_pop == 1)
+    CatchAA = which(UseCatchAA == 1),
+    CatchAA_pop = which(UseCatchAA_pop == 1),
+    DiscardAA = which(UseDiscardAA == 1),
+    DiscardAA_pop = which(UseDiscardAA_pop == 1),
+    FishIdxAA = which(UseFishIdxAA == 1),
+    FishIdxAA_pop = which(UseFishIdxAA_pop == 1),
+    SrvIdxAA = which(UseSrvIdxAA == 1),
+    SrvIdxAA_pop = which(UseSrvIdxAA_pop == 1)
   )
-  # OBS names the observation by deparsing its argument, so it must receive a
-  # bare symbol: transform first, register second. Passing the expression inline
-  # registers it under "log(ObsCatchAA[...])" and oneStepPredict cannot find it.
+
+  # Make sure to do OSA munging
   if(length(at_age_fit$CatchAA)) {
     ObsCatchAA = log(ObsCatchAA[at_age_fit$CatchAA])
     ObsCatchAA = RTMB::OBS(ObsCatchAA)
@@ -1156,36 +1157,38 @@ SPoRC_rtmb = function(pars, data) {
     ObsSrvIdxAA_pop = RTMB::OBS(ObsSrvIdxAA_pop)
   }
 
-  at_age_arrays = list(CAA = CAA, DAA = DAA, SrvIAA = SrvIAA, FishIAA = FishIAA,
-                       WAA_fish = WAA_fish, catch_units = catch_units)
+  # get arrays to feed into nLL below
+  at_age_arrays = list(CAA = CAA, DAA = DAA, SrvIAA = SrvIAA, FishIAA = FishIAA, WAA_fish = WAA_fish, catch_units = catch_units)
 
-  # rho_trans lives in utils_math.R; one correlation per fleet
-  at_age_nLL = function(obs, use, ln_sigma, source, pop, const, corr, trans_rho) {
-    get_at_age_stream_nLL(obs, use, ln_sigma, source, pop, at_age_arrays, const,
-                          corr, rho_trans(trans_rho))
-  }
+  # get nLL for fishery and survey
+  caa = get_at_age_stream_nLL(ObsCatchAA, UseCatchAA, ln_sigmaCAA, "catch", FALSE, arrays = at_age_arrays, const = 0, corr_type = AgeObsCorr_catch, rho = rho_trans(trans_rho_catch))
+  caa_pop = get_at_age_stream_nLL(ObsCatchAA_pop, UseCatchAA_pop, ln_sigmaCAA_pop, "catch", TRUE, arrays = at_age_arrays, const = 0, corr_type = AgeObsCorr_catch, rho = rho_trans(trans_rho_catch))
+  daa = get_at_age_stream_nLL(ObsDiscardAA, UseDiscardAA, ln_sigmaDAA, "discard", FALSE, arrays = at_age_arrays, const = 0, corr_type = AgeObsCorr_discard, rho = rho_trans(trans_rho_discard))
+  daa_pop = get_at_age_stream_nLL(ObsDiscardAA_pop, UseDiscardAA_pop, ln_sigmaDAA_pop, "discard", TRUE, arrays = at_age_arrays, const = 0, corr_type = AgeObsCorr_discard, rho = rho_trans(trans_rho_discard))
+  fiaa = get_at_age_stream_nLL(ObsFishIdxAA, UseFishIdxAA, ln_sigmaFishIdxAA, "fish_index", FALSE, arrays = at_age_arrays, const = addtofishidx, corr_type = AgeObsCorr_fish_idx, rho = rho_trans(trans_rho_fish_idx))
+  fiaa_pop = get_at_age_stream_nLL(ObsFishIdxAA_pop, UseFishIdxAA_pop, ln_sigmaFishIdxAA_pop, "fish_index", TRUE, arrays = at_age_arrays, const = addtofishidx, corr_type = AgeObsCorr_fish_idx, rho = rho_trans(trans_rho_fish_idx))
+  siaa = get_at_age_stream_nLL(ObsSrvIdxAA, UseSrvIdxAA, ln_sigmaSrvIdxAA, "srv_index", FALSE, arrays = at_age_arrays, const = addtosrvidx, corr_type = AgeObsCorr_srv_idx, rho = rho_trans(trans_rho_srv_idx))
+  siaa_pop = get_at_age_stream_nLL(ObsSrvIdxAA_pop, UseSrvIdxAA_pop, ln_sigmaSrvIdxAA_pop, "srv_index", TRUE, arrays = at_age_arrays, const = addtosrvidx, corr_type = AgeObsCorr_srv_idx, rho = rho_trans(trans_rho_srv_idx))
 
-  # fishery
-  caa      = at_age_nLL(ObsCatchAA, UseCatchAA, ln_sigmaCAA, "catch", FALSE, 0, AgeObsCorr_catch, trans_rho_catch)
-  caa_pop  = at_age_nLL(ObsCatchAA_pop, UseCatchAA_pop, ln_sigmaCAA_pop, "catch", TRUE, 0, AgeObsCorr_catch, trans_rho_catch)
-  daa      = at_age_nLL(ObsDiscardAA, UseDiscardAA, ln_sigmaDAA, "discard", FALSE, 0, AgeObsCorr_discard, trans_rho_discard)
-  daa_pop  = at_age_nLL(ObsDiscardAA_pop, UseDiscardAA_pop, ln_sigmaDAA_pop, "discard", TRUE, 0, AgeObsCorr_discard, trans_rho_discard)
-  fiaa     = at_age_nLL(ObsFishIdxAA, UseFishIdxAA, ln_sigmaFishIdxAA, "fish_index", FALSE, addtofishidx, AgeObsCorr_fish_idx, trans_rho_fish_idx)
-  fiaa_pop = at_age_nLL(ObsFishIdxAA_pop, UseFishIdxAA_pop, ln_sigmaFishIdxAA_pop, "fish_index", TRUE, addtofishidx, AgeObsCorr_fish_idx, trans_rho_fish_idx)
+  # output out nLL
+  CatchAA_nLL = caa$nLL
+  CatchAA_pop_nLL = caa_pop$nLL
+  DiscardAA_nLL = daa$nLL
+  DiscardAA_pop_nLL = daa_pop$nLL
+  FishIdxAA_nLL = fiaa$nLL
+  FishIdxAA_pop_nLL = fiaa_pop$nLL
+  SrvIdxAA_nLL = siaa$nLL
+  SrvIdxAA_pop_nLL = siaa_pop$nLL
 
-  # survey
-  siaa     = at_age_nLL(ObsSrvIdxAA, UseSrvIdxAA, ln_sigmaSrvIdxAA, "srv_index", FALSE, addtosrvidx, AgeObsCorr_srv_idx, trans_rho_srv_idx)
-  siaa_pop = at_age_nLL(ObsSrvIdxAA_pop, UseSrvIdxAA_pop, ln_sigmaSrvIdxAA_pop, "srv_index", TRUE, addtosrvidx, AgeObsCorr_srv_idx, trans_rho_srv_idx)
-
-  CatchAA_nLL = caa$nLL;         CatchAA_pop_nLL = caa_pop$nLL
-  DiscardAA_nLL = daa$nLL;       DiscardAA_pop_nLL = daa_pop$nLL
-  FishIdxAA_nLL = fiaa$nLL;      FishIdxAA_pop_nLL = fiaa_pop$nLL
-  SrvIdxAA_nLL = siaa$nLL;       SrvIdxAA_pop_nLL = siaa_pop$nLL
-
-  PredCatchAA = caa$pred;        PredCatchAA_pop = caa_pop$pred
-  PredDiscardAA = daa$pred;      PredDiscardAA_pop = daa_pop$pred
-  PredFishIdxAA = fiaa$pred;     PredFishIdxAA_pop = fiaa_pop$pred
-  PredSrvIdxAA = siaa$pred;      PredSrvIdxAA_pop = siaa_pop$pred
+  # do some reporting
+  PredCatchAA = caa$pred
+  PredCatchAA_pop = caa_pop$pred
+  PredDiscardAA = daa$pred
+  PredDiscardAA_pop = daa_pop$pred
+  PredFishIdxAA = fiaa$pred
+  PredFishIdxAA_pop = fiaa_pop$pred
+  PredSrvIdxAA = siaa$pred
+  PredSrvIdxAA_pop = siaa_pop$pred
 
 
   ### Retained Fishery Catches (Population-Specific) -----------------------------------------------

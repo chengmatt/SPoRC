@@ -213,7 +213,7 @@ input_list <- Setup_Mod_Fishsel_and_Q(
                       "Block_1_Year_1-16_Fleet_2", "Block_2_Year_17-terminal_Fleet_2"),
   fish_sel_model = c("nonparfree_Fleet_1", "nonparfree_Fleet_2"),
   fish_q_blocks = c("none_Fleet_1", "none_Fleet_2"),
-  fish_sel_nonpar_est_bins = rep(list(list(list(1L,2L,3L,c(4L,5L)), list(1L,2L,3L,c(4L,5L)))), n_fish),
+  fish_sel_nonpar_est_bins = rep(list(list(list(1, 2, 3, c(4, 5)), list(1, 2, 3, c(4, 5)))), 2),
   fish_fixed_sel_pars_spec = c("est_all", "est_all"),
   fish_q_spec = c("fix", "fix"))
 
@@ -226,7 +226,7 @@ input_list <- Setup_Mod_Srvsel_and_Q(
   srv_q_blocks = c("none_Fleet_1", "none_Fleet_2"),
   # one value per age each survey observes: the Dredge ages 0-1, the RTM ages
   # 1-3. Ages left out get no parameter, which is what an unobserved age wants.
-  srv_sel_nonpar_est_bins = list(list(list(1L, 2L)), list(list(2L, 3L, 4L))),
+  srv_sel_nonpar_est_bins = list(list(list(1, 2)), list(list(2, 3, 4))),
   srv_fixed_sel_pars_spec = c("est_all", "est_all"),
   srv_q_spec = c("est_all", "est_all"), t_srv = t_srv)
 input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)

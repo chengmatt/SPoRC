@@ -39,6 +39,8 @@ navbar:
           href: articles/ad_goa_rex_sole_case_study.html
         - text: "EBS Pacific Cod"
           href: articles/ae_ebs_pacific_cod_case_study.html
+        - text: "North Sea Sand Eel"
+          href: articles/ah_north_sea_sandeel_case_study.html      
 
 articles:
   - title: "Getting Started"

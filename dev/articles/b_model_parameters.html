@@ -48,6 +48,7 @@
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -186,6 +187,119 @@ specified as random effects). Fixed at zero by default;
 <code>dmr_dev_spec = "est_all"</code> estimates a deviation in every
 fished cell, whether or not discard data are present there (see
 <code><a href="../articles/t_model_options.html">vignette("t_model_options")</a></code>)</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level2">
+<h2 id="age-disaggregated-observations">Age-Disaggregated Observations<a class="anchor" aria-label="anchor" href="#age-disaggregated-observations"></a>
+</h2>
+<p>Estimated only when a fleet fits catch, discards or an index at age.
+Each is keyed by age and fleet through an integer matrix in which equal
+entries share a parameter and <code>NA</code> excludes one, so one
+structure gives a standard deviation per age, per age group, or per
+fleet. See <code><a href="../articles/t_model_options.html">vignette("t_model_options")</a></code>.</p>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="25%">
+<col width="29%">
+<col width="20%">
+</colgroup>
+<thead><tr class="header">
+<th>Parameter</th>
+<th>Dimension</th>
+<th>Description</th>
+<th>Default</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>ln_sigmaCAA</code></td>
+<td><code>n_ages × n_fish_fleets</code></td>
+<td>Log-scale standard deviation for the catch-at-age likelihood. Keyed
+by <code>sigmaCAA_key</code>
+</td>
+<td>log(0.5)</td>
+</tr>
+<tr class="even">
+<td><code>ln_sigmaCAA_pop</code></td>
+<td><code>n_pop × n_ages × n_fish_fleets</code></td>
+<td>Population-specific counterpart, keyed by
+<code>sigmaCAA_pop_key</code>
+</td>
+<td>log(0.5)</td>
+</tr>
+<tr class="odd">
+<td><code>ln_sigmaDAA</code></td>
+<td><code>n_ages × n_fish_fleets</code></td>
+<td>Log-scale standard deviation for the discard-at-age likelihood,
+keyed by <code>sigmaDAA_key</code>
+</td>
+<td>log(0.5)</td>
+</tr>
+<tr class="even">
+<td><code>ln_sigmaDAA_pop</code></td>
+<td><code>n_pop × n_ages × n_fish_fleets</code></td>
+<td>Population-specific counterpart, keyed by
+<code>sigmaDAA_pop_key</code>
+</td>
+<td>log(0.5)</td>
+</tr>
+<tr class="odd">
+<td><code>ln_sigmaFishIdxAA</code></td>
+<td><code>n_ages × n_fish_fleets</code></td>
+<td>Log-scale standard deviation for the fishery index at age, keyed by
+<code>sigmaFishIdxAA_key</code>
+</td>
+<td>log(0.5)</td>
+</tr>
+<tr class="even">
+<td><code>ln_sigmaFishIdxAA_pop</code></td>
+<td><code>n_pop × n_ages × n_fish_fleets</code></td>
+<td>Population-specific counterpart</td>
+<td>log(0.5)</td>
+</tr>
+<tr class="odd">
+<td><code>ln_sigmaSrvIdxAA</code></td>
+<td><code>n_ages × n_srv_fleets</code></td>
+<td>Log-scale standard deviation for the survey index at age, keyed by
+<code>sigmaSrvIdxAA_key</code>
+</td>
+<td>log(0.5)</td>
+</tr>
+<tr class="even">
+<td><code>ln_sigmaSrvIdxAA_pop</code></td>
+<td><code>n_pop × n_ages × n_srv_fleets</code></td>
+<td>Population-specific counterpart</td>
+<td>log(0.5)</td>
+</tr>
+<tr class="odd">
+<td><code>trans_rho_catch</code></td>
+<td><code>n_fish_fleets</code></td>
+<td>Unconstrained AR(1) correlation across ages for catch at age, one
+per fleet. Transformed to <code>(-1, 1)</code> by
+<code><a href="../reference/rho_trans.html">rho_trans()</a></code>. Mapped to <code>NA</code> unless
+<code>AgeObsCorr_catch = "1dar1"</code>
+</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td><code>trans_rho_discard</code></td>
+<td><code>n_fish_fleets</code></td>
+<td>As above, for discards at age</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td><code>trans_rho_fish_idx</code></td>
+<td><code>n_fish_fleets</code></td>
+<td>As above, for the fishery index at age</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td><code>trans_rho_srv_idx</code></td>
+<td><code>n_srv_fleets</code></td>
+<td>As above, for the survey index at age</td>
 <td>0</td>
 </tr>
 </tbody>

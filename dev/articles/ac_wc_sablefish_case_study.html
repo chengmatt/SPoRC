@@ -48,6 +48,7 @@
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -407,7 +408,14 @@ the assessment’s variance adjustment for that fleet, which run from
 <span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_SrvIdx_and_Comps.html">Setup_Mod_SrvIdx_and_Comps</a></span><span class="op">(</span></span>
 <span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
 <span>  ObsSrvIdx <span class="op">=</span> <span class="va">dat</span><span class="op">$</span><span class="va">ObsSrvIdx</span>,</span>
-<span>  ObsSrvIdx_SE <span class="op">=</span> <span class="va">dat</span><span class="op">$</span><span class="va">ObsSrvIdx_SE</span>,</span>
+<span>  <span class="co"># The assessment reports its survey standard errors with an estimated extra</span></span>
+<span>  <span class="co"># standard deviation already added, so subtracting it recovers the input errors</span></span>
+<span>  <span class="co"># and the extra component is carried as a parameter instead. Fleets 1 and 4 sit</span></span>
+<span>  <span class="co"># at the assessment's lower bound, which is it asking for none, so they are held.</span></span>
+<span>  ObsSrvIdx_SE <span class="op">=</span> <span class="fu">sweep_extra_sd</span><span class="op">(</span><span class="va">dat</span><span class="op">)</span>,</span>
+<span>  sigmaSrvIdx_spec <span class="op">=</span> <span class="st">"est_additive"</span>,</span>
+<span>  sigmaSrvIdx_map <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="fl">1</span>, <span class="fl">2</span>, <span class="cn">NA</span>, <span class="cn">NA</span>, <span class="cn">NA</span><span class="op">)</span>,</span>
+<span>  ln_sigmaSrvIdx <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmax</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">mle</span><span class="op">$</span><span class="va">extra_sd</span>, <span class="fl">1e-8</span>, <span class="fl">1e-8</span><span class="op">)</span>, <span class="fl">1e-8</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  UseSrvIdx <span class="op">=</span> <span class="va">dat</span><span class="op">$</span><span class="va">UseSrvIdx</span>,</span>
 <span>  srv_idx_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"biom"</span>, <span class="va">n_srv</span> <span class="op">-</span> <span class="fl">1</span><span class="op">)</span>, <span class="st">"none"</span><span class="op">)</span>,</span>
 <span>  SrvIdx_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"lognormal"</span>, <span class="va">n_srv</span><span class="op">)</span>,</span>

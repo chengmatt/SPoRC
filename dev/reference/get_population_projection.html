@@ -44,6 +44,7 @@ here rather than derived from NAA.'><meta name="robots" content="noindex"></head
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -121,8 +122,8 @@ here rather than derived from <code>NAA</code>.</p>
 <span>  SR_ref_yr <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  sr_penalty <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  sr_R0 <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  year_hook <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  hook_state <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  growth_mortality_year_fn <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  growth_mortality_state <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -242,8 +243,8 @@ year INDEX, not a calendar year, so callers that truncate the year
 dimension (retrospectives) must clamp it.</p></dd>
 
 
-<dt id="arg-year-hook">year_hook<a class="anchor" aria-label="anchor" href="#arg-year-hook"></a></dt>
-<dd><p>Optional function of <code>(y, NAA_y, hook_state)</code> called at
+<dt id="arg-growth-mortality-year-fn">growth_mortality_year_fn<a class="anchor" aria-label="anchor" href="#arg-growth-mortality-year-fn"></a></dt>
+<dd><p>Optional function of <code>(y, NAA_y, growth_mortality_state)</code> called at
 the top of every year with the numbers at age at the start of that year,
 array <code>[pop, region, age, sex]</code>, and the state carried from the
 previous year. It returns a list with <code>state</code>, carried forward to the
@@ -253,10 +254,10 @@ at age, which replace those handed in for that year. Passing the state in
 and out keeps the per-year step a function of its arguments.</p></dd>
 
 
-<dt id="arg-hook-state">hook_state<a class="anchor" aria-label="anchor" href="#arg-hook-state"></a></dt>
-<dd><p>Initial state for <code>year_hook</code>, carried through the
-year loop and returned as <code>hook_state</code>. Ignored when
-<code>year_hook</code> is <code>NULL</code>.
+<dt id="arg-growth-mortality-state">growth_mortality_state<a class="anchor" aria-label="anchor" href="#arg-growth-mortality-state"></a></dt>
+<dd><p>Initial state for <code>growth_mortality_year_fn</code>, carried through the
+year loop and returned as <code>growth_mortality_state</code>. Ignored when
+<code>growth_mortality_year_fn</code> is <code>NULL</code>.
 This is how cohort growth, whose plus group blends by numbers, is evaluated
 inside the year loop. <code>NULL</code> (the default) uses the arrays as given.</p></dd>
 

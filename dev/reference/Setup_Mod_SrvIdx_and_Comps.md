@@ -24,6 +24,19 @@ Setup_Mod_SrvIdx_and_Comps(
   ObsSrvIdx,
   ObsSrvIdx_SE,
   UseSrvIdx,
+  ObsSrvIdxAA = NULL,
+  UseSrvIdxAA = NULL,
+  ObsSrvIdxAA_pop = NULL,
+  UseSrvIdxAA_pop = NULL,
+  sigmaSrvIdxAA_key = NULL,
+  sigmaSrvIdxAA_spec = "est",
+  sigmaSrvIdxAA_pop_key = NULL,
+  sigmaSrvIdxAA_pop_spec = "est",
+  AgeObsCorr_srv_idx = "iid",
+  sigmaSrvIdx_spec = "fix",
+  sigmaSrvIdx_map = NULL,
+  sigmaSrvIdx_pop_spec = "fix",
+  sigmaSrvIdx_pop_map = NULL,
   ObsSrvIdx_pop = NULL,
   ObsSrvIdx_pop_SE = NULL,
   UseSrvIdx_pop = array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions,
@@ -91,6 +104,129 @@ Setup_Mod_SrvIdx_and_Comps(
   Binary indicator array
   `[n_regions × n_years × n_seas × n_srv_fleets]`. `1` = include in
   likelihood; `0` = exclude.
+
+- ObsSrvIdxAA:
+
+  Observed survey index at age, an array with dimensions
+  `[n_regions, n_years, n_seas, n_ages, n_srv_fleets]`. Supplying this
+  fits the index at age directly, every age its own lognormal
+  observation with its own catchability, which is the native form for
+  ICES age-structured assessments. A fleet uses this or the aggregated
+  index, never both.
+
+- UseSrvIdxAA:
+
+  Integer array shaped like `ObsSrvIdxAA`, `1` where an observation is
+  fit.
+
+- ObsSrvIdxAA_pop, UseSrvIdxAA_pop:
+
+  Population-specific counterparts, with a leading population dimension.
+
+- sigmaSrvIdxAA_key, sigmaSrvIdxAA_pop_key:
+
+  Integer matrices coupling the index at age observation error, an
+  integer key matrix, the convention ICES assessments use. Equal entries
+  share a parameter and `NA` excludes one. The age shape of catchability
+  is not set here: an index fit age by age puts it in selectivity
+  through the `"nonparfree"` form, which carries the height of the curve
+  as well as its shape. See
+  [`Setup_Mod_Srvsel_and_Q`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Srvsel_and_Q.md).
+
+- sigmaSrvIdxAA_spec, sigmaSrvIdxAA_pop_spec:
+
+  `"est"` (default) or `"fix"`.
+
+- AgeObsCorr_srv_idx:
+
+  Correlation across ages for the survey index at age, `"iid"` (default)
+  or `"1dar1"`. See
+  [`Setup_Mod_Catch_and_F`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Catch_and_F.md).
+
+- sigmaSrvIdx_spec:
+
+  Character string controlling the estimated component of the aggregated
+  survey index observation error, one value per fleet. One of:
+
+  `"fix"`
+
+  :   The reported standard errors are used as they are and
+      `ln_sigmaSrvIdx` is not estimated. The default.
+
+  `"est_additive"`
+
+  :   Total standard deviation is the reported standard error plus an
+      estimated component, the additive extra standard deviation
+      convention.
+
+  `"est_quadrature"`
+
+  :   Total standard deviation is the reported standard error and the
+      estimated component added in quadrature, treating them as
+      independent variances.
+
+  `"est_replace"`
+
+  :   An estimated standard deviation replaces the reported standard
+      errors entirely, as several ICES assessments do.
+
+  An estimated component is confounded with a likelihood weight, since a
+  weight on a normal likelihood is the same statement as dividing the
+  variance by that weight. `Setup_Mod_Weighting` warns when both are
+  used. Fleets with a multivariate normal index likelihood take their
+  scale from the supplied covariance and cannot carry one, which is an
+  error rather than a silently unidentified parameter.
+
+- sigmaSrvIdx_map:
+
+  Optional integer vector of length `n_srv_fleets` giving the estimation
+  groups for `ln_sigmaSrvIdx`. Fleets sharing a value share a parameter
+  and `NA` holds a fleet at its starting value. Defaults to one free
+  parameter per fleet. Use it when a reference assessment estimated some
+  fleets and pinned others at a bound.
+
+- sigmaSrvIdx_pop_spec:
+
+  Character string controlling the estimated component of the
+  population-specific survey index observation error, one value per
+  fleet. One of:
+
+  `"fix"`
+
+  :   The reported standard errors are used as they are and
+      `ln_sigmaSrvIdx_pop` is not estimated. The default.
+
+  `"est_additive"`
+
+  :   Total standard deviation is the reported standard error plus an
+      estimated component, the additive extra standard deviation
+      convention.
+
+  `"est_quadrature"`
+
+  :   Total standard deviation is the reported standard error and the
+      estimated component added in quadrature, treating them as
+      independent variances.
+
+  `"est_replace"`
+
+  :   An estimated standard deviation replaces the reported standard
+      errors entirely, as several ICES assessments do.
+
+  An estimated component is confounded with a likelihood weight, since a
+  weight on a normal likelihood is the same statement as dividing the
+  variance by that weight. `Setup_Mod_Weighting` warns when both are
+  used. Fleets with a multivariate normal index likelihood take their
+  scale from the supplied covariance and cannot carry one, which is an
+  error rather than a silently unidentified parameter.
+
+- sigmaSrvIdx_pop_map:
+
+  Optional integer vector of length `n_srv_fleets` giving the estimation
+  groups for `ln_sigmaSrvIdx_pop`. Fleets sharing a value share a
+  parameter and `NA` holds a fleet at its starting value. Defaults to
+  one free parameter per fleet. Use it when a reference assessment
+  estimated some fleets and pinned others at a bound.
 
 - ObsSrvIdx_pop:
 

@@ -48,6 +48,7 @@
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -78,6 +79,20 @@
 
     
     
+<div class="section level3">
+<h3 id="age-disaggregated-observations">Age-disaggregated observations<a class="anchor" aria-label="anchor" href="#age-disaggregated-observations"></a>
+</h3>
+<p>Catch at age, discards at age, and the fishery and survey indices at
+age all support one-step-ahead residuals. Pass the at-age name as
+<code>index_source</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">osa</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_osa.html">get_osa</a></span><span class="op">(</span>model <span class="op">=</span> <span class="va">fitted</span>, data <span class="op">=</span> <span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, index_source <span class="op">=</span> <span class="st">"CatchAA"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/plot_resids.html">plot_resids</a></span><span class="op">(</span><span class="va">osa</span><span class="op">)</span></span></code></pre></div>
+<p>Valid at-age sources are <code>"CatchAA"</code>,
+<code>"DiscardAA"</code>, <code>"FishIdxAA"</code> and
+<code>"SrvIdxAA"</code>, each with a <code>pop = TRUE</code> variant.
+The returned data frame carries an extra <code>age</code> column, which
+the residual plots facet on.</p>
 <p>Raw (Pearson) residuals from compositional, count, and index data can
 be difficult to interpret given that multinomial/Dirichlet-multinomial
 proportions are correlated within a year (they must sum to one), tag
@@ -162,6 +177,7 @@ element, <code>res</code>, a data frame of residuals that can be passed
 directly to <code><a href="../reference/plot_resids.html">plot_resids()</a></code>, which produces a QQ-plot (with
 an SDNR annotation) and a second diagnostic plot (a bubble plot for
 compositions/tags, or a residual-vs-year plot for index-type data).</p>
+</div>
 <div class="section level2">
 <h2 id="two-computation-modes">Two computation modes<a class="anchor" aria-label="anchor" href="#two-computation-modes"></a>
 </h2>
@@ -207,7 +223,7 @@ fitted objective function.</p>
 (single-region GOA Dusky Rockfish) so the two can be compared directly,
 plus a simulated multi-population, tagging-enabled model for the
 internal-only data types.</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://chengmatt.github.io/SPoRC">SPoRC</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyverse.tidyverse.org" class="external-link">tidyverse</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"sgl_rg_dusky_data"</span><span class="op">)</span></span></code></pre></div>
@@ -219,7 +235,7 @@ internal-only data types.</p>
 observed/expected proportions from the model report, and
 <code><a href="../reference/get_osa.html">get_osa()</a></code> (no <code>model=</code> argument) computes OSA
 residuals from those arrays via <code>compResidual</code>.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Dim.html">Setup_Mod_Dim</a></span><span class="op">(</span></span>
 <span>  years <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">years</span>,</span>
 <span>  ages <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">mod_ages</span>,</span>
@@ -391,7 +407,7 @@ residuals from those arrays via <code>compResidual</code>.</p>
 <code><a href="../reference/get_osa.html">get_osa()</a></code> is then called with
 <code>model =</code>/<code>data =</code> instead of
 <code>obs_mat =</code>/<code>exp_mat =</code>.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Dim.html">Setup_Mod_Dim</a></span><span class="op">(</span></span>
 <span>  years <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">years</span>,</span>
 <span>  ages <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">mod_ages</span>,</span>
@@ -540,7 +556,7 @@ catch observations for Dusky rockfish during these periods (i.e.,
 catches were recorded a a mix of different rockfish species earlier in
 the time series, and the variance is adjusted to reflect increased
 uncertainty in the catch observation).</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">catch_int</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_osa.html">get_osa</a></span><span class="op">(</span>model <span class="op">=</span> <span class="va">model</span>, data <span class="op">=</span> <span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, index_source <span class="op">=</span> <span class="st">"Catch"</span><span class="op">)</span></span>
 <span><span class="va">srvidx_int</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_osa.html">get_osa</a></span><span class="op">(</span>model <span class="op">=</span> <span class="va">model</span>, data <span class="op">=</span> <span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, index_source <span class="op">=</span> <span class="st">"SrvIdx"</span><span class="op">)</span></span>
 <span><span class="co"># index_source = "Discard"/"FishIdx" follow the identical interface (omitted</span></span>
@@ -563,7 +579,7 @@ movement and conventional tagging, fit with both
 <code>do_internal_comp_osa = TRUE</code> and
 <code>do_internal_conv_tag_osa = TRUE</code>. The following code chunk
 is purely for demonstration purposes.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">input_pop</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Dim.html">Setup_Mod_Dim</a></span><span class="op">(</span></span>
 <span>  years <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">sim_obj</span><span class="op">$</span><span class="va">n_years</span>, ages <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">sim_obj</span><span class="op">$</span><span class="va">n_ages</span>, lens <span class="op">=</span> <span class="va">sim_obj</span><span class="op">$</span><span class="va">n_lens</span>,</span>
 <span>  n_regions <span class="op">=</span> <span class="va">sim_obj</span><span class="op">$</span><span class="va">n_regions</span>, n_sexes <span class="op">=</span> <span class="va">sim_obj</span><span class="op">$</span><span class="va">n_sexes</span>,</span>
@@ -578,7 +594,7 @@ is purely for demonstration purposes.</p>
 <span>                       random <span class="op">=</span> <span class="cn">NULL</span>, newton_loops <span class="op">=</span> <span class="fl">3</span>, silent <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p>Population-specific composition OSA (<code>pop = TRUE</code>,
 joint-sex in this example):</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">comp_pop</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_osa.html">get_osa</a></span><span class="op">(</span>model <span class="op">=</span> <span class="va">model_pop</span>, data <span class="op">=</span> <span class="va">input_pop</span><span class="op">$</span><span class="va">data</span>, comp_source <span class="op">=</span> <span class="st">"FishAge"</span>,</span>
 <span>                    pop <span class="op">=</span> <span class="cn">TRUE</span>, family <span class="op">=</span> <span class="st">"discrete"</span>, bins <span class="op">=</span> <span class="va">input_pop</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">ages</span>, bin_label <span class="op">=</span> <span class="st">"Ages"</span><span class="op">)</span></span>
 <span><span class="va">resid_comp_pop</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_resids.html">plot_resids</a></span><span class="op">(</span><span class="va">comp_pop</span><span class="op">)</span></span></code></pre></div>
@@ -589,13 +605,13 @@ the residual data span more than one level of each. This is a bit
 unwieldy to inspect given the number of dimensions (release cohort,
 recapture region, age, year at liberty etc) and so only qqplot’s are
 shown for tagging data.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tag_osa</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_osa.html">get_osa</a></span><span class="op">(</span>model <span class="op">=</span> <span class="va">model_pop</span>, data <span class="op">=</span> <span class="va">input_pop</span><span class="op">$</span><span class="va">data</span>, tag <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">resid_tag</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_resids.html">plot_resids</a></span><span class="op">(</span><span class="va">tag_osa</span><span class="op">)</span></span></code></pre></div>
 <p><img src="figures/u_internal_tag.png"></p>
 <p>Population-specific index OSA (<code>index_source =</code> +
 <code>pop = TRUE</code>):</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">catch_pop_osa</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_osa.html">get_osa</a></span><span class="op">(</span>model <span class="op">=</span> <span class="va">model_pop</span>, data <span class="op">=</span> <span class="va">input_pop</span><span class="op">$</span><span class="va">data</span>, index_source <span class="op">=</span> <span class="st">"Catch"</span>, pop <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">srvidx_pop_osa</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_osa.html">get_osa</a></span><span class="op">(</span>model <span class="op">=</span> <span class="va">model_pop</span>, data <span class="op">=</span> <span class="va">input_pop</span><span class="op">$</span><span class="va">data</span>, index_source <span class="op">=</span> <span class="st">"SrvIdx"</span>, pop <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
@@ -629,7 +645,7 @@ composition/tag datasets where OSA computation dominates runtime;
 verified to give numerically identical residuals to
 <code>parallel = FALSE</code>.</li>
 </ul>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_osa.html">get_osa</a></span><span class="op">(</span>model <span class="op">=</span> <span class="va">model</span>, data <span class="op">=</span> <span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, index_source <span class="op">=</span> <span class="st">"SrvIdx"</span>,</span>
 <span>       osa_method <span class="op">=</span> <span class="st">"oneStepGaussian"</span>, parallel <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>

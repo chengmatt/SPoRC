@@ -148,10 +148,27 @@ Setup_Mod_Srvsel_and_Q(
 
   `"nonpar"`
 
-  :   Non-parametric selectivity defined over discrete age or length
-      bins, where selectivity is estimated as independent parameters (or
-      grouped bins if specified via nonparametric bin mapping). No fixed
-      functional form is imposed.
+  :   Non-parametric over discrete age or length bins, on the logit
+      scale, then mean-standardized jointly over years and bins so the
+      grand mean of the surface is one. Bins may be grouped through the
+      non-parametric bin mapping. No fixed functional form is imposed.
+
+  `"nonparlog"`
+
+  :   Non-parametric on the log scale, standardized so each year's
+      selectivity averages to one over `*_sel_norm_bins`. Only
+      within-year contrasts are identified; the level is absorbed by
+      catchability or fishing mortality.
+
+  `"nonparfree"`
+
+  :   Non-parametric on the log scale with no standardization,
+      \\\exp(\theta)\\, so the values carry the height of the curve as
+      well as its shape. This is the form for a stream fit age by age: a
+      free catchability per age and a selectivity estimated at age are
+      one quantity written two ways, so the whole age multiplier lives
+      here and no catchability is set. Pin one bin, by leaving it out of
+      the estimated bins, whenever the mean it multiplies is also free.
 
   `"asymplogist1"`
 

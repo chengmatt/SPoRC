@@ -48,6 +48,7 @@
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -462,6 +463,54 @@ and fleet</td>
 <div class="section level2">
 <h2 id="likelihoods">Likelihoods<a class="anchor" aria-label="anchor" href="#likelihoods"></a>
 </h2>
+<div class="section level3">
+<h3 id="age-disaggregated-observation-likelihoods">Age-disaggregated observation likelihoods<a class="anchor" aria-label="anchor" href="#age-disaggregated-observation-likelihoods"></a>
+</h3>
+<p>Reported whenever the model is built, and zero everywhere unless that
+stream is fit. Each carries an age dimension the aggregated counterparts
+do not, and is summed over ages within a cell before its weight is
+applied.</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Object</th>
+<th>Dimensions</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>CatchAA_nLL</code></td>
+<td>region, year, season, age, fishery fleet</td>
+</tr>
+<tr class="even">
+<td><code>DiscardAA_nLL</code></td>
+<td>region, year, season, age, fishery fleet</td>
+</tr>
+<tr class="odd">
+<td><code>FishIdxAA_nLL</code></td>
+<td>region, year, season, age, fishery fleet</td>
+</tr>
+<tr class="even">
+<td><code>SrvIdxAA_nLL</code></td>
+<td>region, year, season, age, survey fleet</td>
+</tr>
+<tr class="odd">
+<td>
+<code>CatchAA_pop_nLL</code>, <code>DiscardAA_pop_nLL</code>,
+<code>FishIdxAA_pop_nLL</code>, <code>SrvIdxAA_pop_nLL</code>
+</td>
+<td>as above, with a leading population dimension</td>
+</tr>
+</tbody>
+</table>
+<p>The parameters behind them are also reported:
+<code>ln_sigmaCAA</code>, <code>ln_sigmaDAA</code>,
+<code>ln_sigmaFishIdxAA</code> and <code>ln_sigmaSrvIdxAA</code>, each
+over age and fleet. The age shape of catchability is not among them: an
+index fit age by age carries it in selectivity, through the
+<code>"nonparfree"</code> form.</p>
 <p>Region-aggregated likelihoods combine contributions across all
 populations; population-specific likelihoods (<code>_pop_</code>) are
 only computed when the corresponding <code>UseCatch_pop</code>,
@@ -692,6 +741,7 @@ and zero throughout when no such penalty is applied</td>
 </tr>
 </tbody>
 </table>
+</div>
 </div>
 <div class="section level2">
 <h2 id="derived-quantities-also-reported-via-adreport">Derived Quantities (also reported via ADREPORT)<a class="anchor" aria-label="anchor" href="#derived-quantities-also-reported-via-adreport"></a>

@@ -48,6 +48,7 @@
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -432,10 +433,13 @@ through a season goes through that one file.</p>
 <td><code>setup_mapping.R</code></td>
 <td>
 <code>build_pe_map</code>, <code>build_shared_spec_map</code>,
-<code>do_comp_corr_pars_mapping</code>,
+<code>check_spec_map_identifiable</code>,
+<code>do_age_corr_setup</code>, <code>do_comp_corr_pars_mapping</code>,
 <code>do_comp_theta_mapping</code>,
-<code>do_fixed_sel_pars_mapping</code>, <code>do_q_mapping</code>,
-<code>do_sel_devs_mapping</code>, <code>do_sel_pe_pars_mapping</code>,
+<code>do_fixed_sel_pars_mapping</code>, <code>do_key_mapping</code>,
+<code>do_q_mapping</code>, <code>do_sel_devs_mapping</code>,
+<code>do_sel_pe_pars_mapping</code>, <code>do_sigmaCAA_mapping</code>,
+<code>do_sigmaIdx_mapping</code>, <code>sel_has_data</code>,
 <code>sync_dev_map_data</code>
 </td>
 <td><code>utils_setup.R</code></td>
@@ -573,15 +577,17 @@ through a season goes through that one file.</p>
 <tr class="even">
 <td><code>model_distributions.R</code></td>
 <td>
+<code>build_idx_sd</code>, <code>combine_idx_sd</code>,
 <code>dbeta_symmetric</code>, <code>ddirichlet</code>,
 <code>ddirmult</code>, <code>dlogistnormal</code>,
 <code>dnbinom_robust_noint</code>, <code>dpois_noint</code>,
-<code>get_beta_scaled_pars</code>, <code>get_index_nLL</code>
+<code>get_at_age_nLL</code>, <code>get_beta_scaled_pars</code>,
+<code>get_index_nLL</code>
 </td>
 <td>nothing</td>
 <td>
-<code>model_lik_comps.R</code>, <code>model_lik_tags.R</code>,
-<code>model_objective.R</code>,
+<code>model_lik_at_age.R</code>, <code>model_lik_comps.R</code>,
+<code>model_lik_tags.R</code>, <code>model_objective.R</code>,
 <code>model_priors_penalties.R</code>
 </td>
 </tr>
@@ -625,8 +631,18 @@ through a season goes through that one file.</p>
 </td>
 </tr>
 <tr class="even">
+<td><code>model_lik_at_age.R</code></td>
+<td>
+<code>get_at_age_prediction</code>,
+<code>get_at_age_stream_nLL</code>
+</td>
+<td><code>model_distributions.R</code></td>
+<td><code>model_objective.R</code></td>
+</tr>
+<tr class="odd">
 <td><code>model_lik_caal.R</code></td>
 <td>
+<code>caal_sum_pop</code>, <code>caal_sum_pop_len</code>,
 <code>eval_caal_osa</code>, <code>Get_CAAL_Likelihoods</code>,
 <code>pack_caal_osa</code>
 </td>
@@ -636,7 +652,7 @@ through a season goes through that one file.</p>
 <code>model_objective.R</code>
 </td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>model_lik_comps.R</code></td>
 <td>
 <code>eval_comp_osa</code>, <code>Get_Comp_Likelihoods</code>,
@@ -651,7 +667,7 @@ through a season goes through that one file.</p>
 <code>model_objective.R</code>
 </td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>model_lik_tags.R</code></td>
 <td>
 <code>eval_tag_osa</code>, <code>get_conv_tag_likelihoods</code>,
@@ -666,7 +682,7 @@ through a season goes through that one file.</p>
 <code>model_objective.R</code>
 </td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>model_movement.R</code></td>
 <td>
 <code>Get_Movement</code>,
@@ -677,7 +693,7 @@ through a season goes through that one file.</p>
 <code>model_objective.R</code>, <code>setup_movement.R</code>
 </td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>model_objective.R</code></td>
 <td>
 <code>maintain_backwards_compatibility</code>,
@@ -685,17 +701,18 @@ through a season goes through that one file.</p>
 </td>
 <td>
 <code>model_distributions.R</code>, <code>model_growth.R</code>,
-<code>model_init_naa.R</code>, <code>model_lik_caal.R</code>,
-<code>model_lik_comps.R</code>, <code>model_lik_tags.R</code>,
-<code>model_movement.R</code>, <code>model_obs_fishery_survey.R</code>,
+<code>model_init_naa.R</code>, <code>model_lik_at_age.R</code>,
+<code>model_lik_caal.R</code>, <code>model_lik_comps.R</code>,
+<code>model_lik_tags.R</code>, <code>model_movement.R</code>,
+<code>model_obs_fishery_survey.R</code>,
 <code>model_obs_tagging.R</code>,
 <code>model_population_dynamics.R</code>,
 <code>model_priors_penalties.R</code>, <code>model_selectivity.R</code>,
-<code>utils_setup.R</code>
+<code>utils_math.R</code>, <code>utils_setup.R</code>
 </td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>model_obs_fishery_survey.R</code></td>
 <td>
 <code>get_fishery_observation_model</code>,
@@ -704,7 +721,7 @@ through a season goes through that one file.</p>
 <td><code>model_transition.R</code></td>
 <td><code>model_objective.R</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>model_obs_tagging.R</code></td>
 <td>
 <code>get_tag_mort</code>,
@@ -716,7 +733,7 @@ through a season goes through that one file.</p>
 <code>model_objective.R</code>, <code>sim_observations.R</code>
 </td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>model_osa.R</code></td>
 <td>
 <code>ddirmult_osa</code>, <code>ddirmult2</code>,
@@ -730,7 +747,7 @@ through a season goes through that one file.</p>
 <code>model_lik_comps.R</code>, <code>model_lik_tags.R</code>
 </td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>model_population_dynamics.R</code></td>
 <td>
 <code>compute_mortality_year</code>,
@@ -743,13 +760,13 @@ through a season goes through that one file.</p>
 </td>
 <td><code>model_objective.R</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>model_precision.R</code></td>
 <td><code>Get_3d_precision</code></td>
 <td>nothing</td>
 <td><code>model_priors_penalties.R</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>model_priors_penalties.R</code></td>
 <td>
 <code>get_dmr_penalty</code>, <code>Get_Fdev_PE_loglik</code>,
@@ -770,7 +787,7 @@ through a season goes through that one file.</p>
 </td>
 <td><code>model_objective.R</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>model_recruitment.R</code></td>
 <td><code>Get_Det_Recruitment</code></td>
 <td><code>model_transition.R</code></td>
@@ -778,7 +795,7 @@ through a season goes through that one file.</p>
 <code>projection.R</code>, <code>sim_population.R</code>
 </td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>model_selectivity.R</code></td>
 <td>
 <code>Get_Selex</code>, <code>Get_Selex_Array</code>
@@ -786,7 +803,7 @@ through a season goes through that one file.</p>
 <td>nothing</td>
 <td><code>model_objective.R</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>model_transition.R</code></td>
 <td>
 <code>advance_seas</code>, <code>build_seas_operator</code>,
@@ -1100,12 +1117,12 @@ through a season goes through that one file.</p>
 <tbody><tr class="odd">
 <td><code>plot_figures_tables.R</code></td>
 <td>
-<code>get_biological_plot</code>, <code>get_catch_fits_plot</code>,
-<code>get_data_fitted_plot</code>, <code>get_idx_fits_plot</code>,
-<code>get_key_quants</code>, <code>get_nLL_plot</code>,
-<code>get_retrospective_plot</code>, <code>get_selex_plot</code>,
-<code>get_ts_plot</code>, <code>plot_all_basic</code>,
-<code>theme_sablefish</code>
+<code>get_at_age_fits_plot</code>, <code>get_biological_plot</code>,
+<code>get_catch_fits_plot</code>, <code>get_data_fitted_plot</code>,
+<code>get_idx_fits_plot</code>, <code>get_key_quants</code>,
+<code>get_nLL_plot</code>, <code>get_retrospective_plot</code>,
+<code>get_selex_plot</code>, <code>get_ts_plot</code>,
+<code>plot_all_basic</code>, <code>theme_sablefish</code>
 </td>
 <td>
 <code>diag_fits.R</code>, <code>diag_retrospective.R</code>,
@@ -1143,7 +1160,7 @@ through a season goes through that one file.</p>
 </td>
 <td>nothing</td>
 <td>
-<code>model_lik_comps.R</code>,
+<code>model_lik_comps.R</code>, <code>model_objective.R</code>,
 <code>model_priors_penalties.R</code>,
 <code>setup_fishery_selectivity.R</code>,
 <code>setup_survey_selectivity.R</code>,
@@ -1599,7 +1616,7 @@ for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 112 test files in total.</p>
+<p>That is 115 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

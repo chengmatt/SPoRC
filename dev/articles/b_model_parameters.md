@@ -21,6 +21,29 @@ be females and the second dimension will always be males.
 | `logit_dmr_mean` | `n_regions × n_seas × n_fish_fleets` | Logit-scale mean discard mortality rate | 0 |
 | `logit_dmr_devs` | `n_regions × n_years × n_seas × n_fish_fleets` | Logit-scale annual discard mortality rate deviations (can be specified as random effects). Fixed at zero by default; `dmr_dev_spec = "est_all"` estimates a deviation in every fished cell, whether or not discard data are present there (see [`vignette("t_model_options")`](https://chengmatt.github.io/SPoRC/dev/articles/t_model_options.md)) | 0 |
 
+## Age-Disaggregated Observations
+
+Estimated only when a fleet fits catch, discards or an index at age.
+Each is keyed by age and fleet through an integer matrix in which equal
+entries share a parameter and `NA` excludes one, so one structure gives
+a standard deviation per age, per age group, or per fleet. See
+[`vignette("t_model_options")`](https://chengmatt.github.io/SPoRC/dev/articles/t_model_options.md).
+
+| Parameter | Dimension | Description | Default |
+|----|----|----|----|
+| `ln_sigmaCAA` | `n_ages × n_fish_fleets` | Log-scale standard deviation for the catch-at-age likelihood. Keyed by `sigmaCAA_key` | log(0.5) |
+| `ln_sigmaCAA_pop` | `n_pop × n_ages × n_fish_fleets` | Population-specific counterpart, keyed by `sigmaCAA_pop_key` | log(0.5) |
+| `ln_sigmaDAA` | `n_ages × n_fish_fleets` | Log-scale standard deviation for the discard-at-age likelihood, keyed by `sigmaDAA_key` | log(0.5) |
+| `ln_sigmaDAA_pop` | `n_pop × n_ages × n_fish_fleets` | Population-specific counterpart, keyed by `sigmaDAA_pop_key` | log(0.5) |
+| `ln_sigmaFishIdxAA` | `n_ages × n_fish_fleets` | Log-scale standard deviation for the fishery index at age, keyed by `sigmaFishIdxAA_key` | log(0.5) |
+| `ln_sigmaFishIdxAA_pop` | `n_pop × n_ages × n_fish_fleets` | Population-specific counterpart | log(0.5) |
+| `ln_sigmaSrvIdxAA` | `n_ages × n_srv_fleets` | Log-scale standard deviation for the survey index at age, keyed by `sigmaSrvIdxAA_key` | log(0.5) |
+| `ln_sigmaSrvIdxAA_pop` | `n_pop × n_ages × n_srv_fleets` | Population-specific counterpart | log(0.5) |
+| `trans_rho_catch` | `n_fish_fleets` | Unconstrained AR(1) correlation across ages for catch at age, one per fleet. Transformed to `(-1, 1)` by [`rho_trans()`](https://chengmatt.github.io/SPoRC/dev/reference/rho_trans.md). Mapped to `NA` unless `AgeObsCorr_catch = "1dar1"` | 0 |
+| `trans_rho_discard` | `n_fish_fleets` | As above, for discards at age | 0 |
+| `trans_rho_fish_idx` | `n_fish_fleets` | As above, for the fishery index at age | 0 |
+| `trans_rho_srv_idx` | `n_srv_fleets` | As above, for the survey index at age | 0 |
+
 ## Fishery Selectivity
 
 | Parameter | Dimension | Description | Default |

@@ -48,6 +48,7 @@
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -445,10 +446,33 @@ the deviations are on the scale of log-<em>numbers</em> rather than
 log-ratios about an equilibrium, so any penalty applied via
 <code>equil_init_age_strc</code> acts as a prior on log initial
 abundance. Pair <code>"free"</code> with
-<code>equil_init_age_strc = "equil"</code> (0) if no such prior is
-wanted, or with <code>InitDevs_pen_center = "own_mean"</code> (see
-Recruitment below) to penalize only the roughness of the initial age
-structure rather than its level.</p>
+<code>InitDevs_pen_center = "own_mean"</code> (see Recruitment below) to
+penalize only the roughness of the initial age structure rather than its
+level.</p>
+<p>For no prior at all, note that <code>equil_init_age_strc</code>
+bundles two decisions that do not move together: <code>"equil"</code>
+(0) neither penalizes nor estimates the deviations, and
+<code>"stoch_all"</code> (2) both estimates and penalizes them. Under
+<code>"free"</code> you usually want the combination it does not offer,
+estimated and unpenalized, because the deviations are the numbers
+themselves. Either route reaches it with one extra line, and they give
+an identical fit:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># route A: no penalty from the setting, then re-free the deviations it fixed</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Rec.html">Setup_Mod_Rec</a></span><span class="op">(</span><span class="va">input_list</span>, <span class="va">...</span>, init_age_strc <span class="op">=</span> <span class="st">"free"</span>,</span>
+<span>                            equil_init_age_strc <span class="op">=</span> <span class="st">"equil"</span><span class="op">)</span></span>
+<span><span class="va">input_list</span><span class="op">$</span><span class="va">map</span><span class="op">$</span><span class="va">ln_InitDevs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">ln_InitDevs</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># route B: estimated by the setting, then switch its penalty off</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Rec.html">Setup_Mod_Rec</a></span><span class="op">(</span><span class="va">input_list</span>, <span class="va">...</span>, init_age_strc <span class="op">=</span> <span class="st">"free"</span>,</span>
+<span>                            equil_init_age_strc <span class="op">=</span> <span class="st">"stoch_all"</span><span class="op">)</span></span>
+<span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">init_devs_pen_use</span><span class="op">[</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">0</span></span></code></pre></div>
+<p>Either line must come after the setup calls that touch
+<code>ln_InitDevs</code>, since a later call would overwrite an earlier
+assignment. Leaving it out under <code>"equil"</code> is quiet rather
+than loud: the deviations stay fixed at zero, which under
+<code>"free"</code> is one fish at every initial age, and the model
+still fits.</p>
 </div>
 <div class="section level4">
 <h4 id="initial-deviation-structure-equil_init_age_strc">Initial deviation structure (<code>equil_init_age_strc</code>)<a class="anchor" aria-label="anchor" href="#initial-deviation-structure-equil_init_age_strc"></a>
@@ -1395,6 +1419,13 @@ see [Normalisation and length-based selectivity])</td>
 <td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>n</mi><mtext mathvariant="normal">bins</mtext></msub><annotation encoding="application/x-tex">n_\text{bins}</annotation></semantics></math></td>
 </tr>
 <tr class="even">
+<td><code>"nonparfree"</code></td>
+<td>Non-parametric on the log scale with no standardization at all:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>θ</mi><mtext mathvariant="normal">bin</mtext></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(\theta_\text{bin})</annotation></semantics></math>,
+so the values carry the height of the curve as well as its shape</td>
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>n</mi><mtext mathvariant="normal">bins</mtext></msub><annotation encoding="application/x-tex">n_\text{bins}</annotation></semantics></math></td>
+</tr>
+<tr class="odd">
 <td><code>"asymplogist1"</code></td>
 <td>Logistic with asymptote
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>∈</mo><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\alpha \in (0,1)</annotation></semantics></math>:
@@ -1405,7 +1436,7 @@ see [Normalisation and length-based selectivity])</td>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><msub><mi>a</mi><mn>50</mn></msub></mrow><annotation encoding="application/x-tex">\ln a_{50}</annotation></semantics></math>,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><mi>k</mi></mrow><annotation encoding="application/x-tex">\ln k</annotation></semantics></math>)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>"asymplogist2"</code></td>
 <td>Logistic with asymptote,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>a</mi><mn>50</mn></msub><mi>/</mi><msub><mi>a</mi><mn>95</mn></msub></mrow><annotation encoding="application/x-tex">a_{50}/a_{95}</annotation></semantics></math>
@@ -1415,7 +1446,7 @@ parameterisation</td>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><msub><mi>a</mi><mn>50</mn></msub></mrow><annotation encoding="application/x-tex">\ln a_{50}</annotation></semantics></math>,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><msub><mi>a</mi><mn>95</mn></msub></mrow><annotation encoding="application/x-tex">\ln a_{95}</annotation></semantics></math>)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>"bicubic"</code></td>
 <td>Bicubic natural-cubic-spline surface over a bin-node
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>×</mi><annotation encoding="application/x-tex">\times</annotation></semantics></math>
@@ -1426,7 +1457,62 @@ year-node grid</td>
 </tr>
 </tbody>
 </table>
-<p>Choosing between the two non-parametric forms. <code>"nonpar"</code>
+<p>The three non-parametric forms differ only in what happens after the
+transform, and that difference is what decides whether selectivity can
+carry a scale. Write
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>θ</mi><mrow><mi>a</mi><mo>,</mo><mi>b</mi></mrow></msub><annotation encoding="application/x-tex">\theta_{a,b}</annotation></semantics></math>
+for the estimated parameter at bin
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math>
+in block
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>b</mi><mo stretchy="false" form="prefix">(</mo><mi>y</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">b(y)</annotation></semantics></math>
+for the block year
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>y</mi><annotation encoding="application/x-tex">y</annotation></semantics></math>
+falls in, and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>s</mi><mrow><mi>y</mi><mo>,</mo><mi>a</mi></mrow></msub><annotation encoding="application/x-tex">s_{y,a}</annotation></semantics></math>
+for the selectivity the model actually uses. Then</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="monospace">"𝚗𝚘𝚗𝚙𝚊𝚛"</mtext><mo>:</mo><mspace width="1.0em"></mspace><msub><mi>s</mi><mrow><mi>y</mi><mo>,</mo><mi>a</mi></mrow></msub><mo>=</mo><mfrac><mrow><msup><mrow><mi mathvariant="normal">logit</mi><mo>⁡</mo></mrow><mrow><mi>−</mi><mn>1</mn></mrow></msup><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>θ</mi><mrow><mi>a</mi><mo>,</mo><mi>b</mi><mo stretchy="false" form="prefix">(</mo><mi>y</mi><mo stretchy="false" form="postfix">)</mo></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mrow><mstyle displaystyle="true"><mfrac><mn>1</mn><mrow><msub><mi>n</mi><mtext mathvariant="normal">yrs</mtext></msub><msub><mi>n</mi><mtext mathvariant="normal">bins</mtext></msub></mrow></mfrac></mstyle><munder><mo>∑</mo><msup><mi>y</mi><mo>′</mo></msup></munder><munder><mo>∑</mo><msup><mi>a</mi><mo>′</mo></msup></munder><msup><mrow><mi mathvariant="normal">logit</mi><mo>⁡</mo></mrow><mrow><mi>−</mi><mn>1</mn></mrow></msup><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>θ</mi><mrow><msup><mi>a</mi><mo>′</mo></msup><mo>,</mo><mi>b</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>y</mi><mo>′</mo></msup><mo stretchy="false" form="postfix">)</mo></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac></mrow><annotation encoding="application/x-tex">
+\texttt{"nonpar"}: \quad
+s_{y,a} = \frac{\operatorname{logit}^{-1}\!\left(\theta_{a,b(y)}\right)}
+               {\dfrac{1}{n_\text{yrs} n_\text{bins}}\sum_{y'}\sum_{a'} \operatorname{logit}^{-1}\!\left(\theta_{a',b(y')}\right)}
+</annotation></semantics></math></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="monospace">"𝚗𝚘𝚗𝚙𝚊𝚛𝚕𝚘𝚐"</mtext><mo>:</mo><mspace width="1.0em"></mspace><msub><mi>s</mi><mrow><mi>y</mi><mo>,</mo><mi>a</mi></mrow></msub><mo>=</mo><mfrac><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>θ</mi><mrow><mi>a</mi><mo>,</mo><mi>b</mi><mo stretchy="false" form="prefix">(</mo><mi>y</mi><mo stretchy="false" form="postfix">)</mo></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mrow><mstyle displaystyle="true"><mfrac><mn>1</mn><mrow><mo stretchy="false" form="prefix">|</mo><mi>B</mi><mo stretchy="false" form="prefix">|</mo></mrow></mfrac></mstyle><munder><mo>∑</mo><mrow><msup><mi>a</mi><mo>′</mo></msup><mo>∈</mo><mi>B</mi></mrow></munder><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>θ</mi><mrow><msup><mi>a</mi><mo>′</mo></msup><mo>,</mo><mi>b</mi><mo stretchy="false" form="prefix">(</mo><mi>y</mi><mo stretchy="false" form="postfix">)</mo></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac></mrow><annotation encoding="application/x-tex">
+\texttt{"nonparlog"}: \quad
+s_{y,a} = \frac{\exp\!\left(\theta_{a,b(y)}\right)}
+               {\dfrac{1}{|B|}\sum_{a' \in B} \exp\!\left(\theta_{a',b(y)}\right)}
+</annotation></semantics></math></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="monospace">"𝚗𝚘𝚗𝚙𝚊𝚛𝚏𝚛𝚎𝚎"</mtext><mo>:</mo><mspace width="1.0em"></mspace><msub><mi>s</mi><mrow><mi>y</mi><mo>,</mo><mi>a</mi></mrow></msub><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>θ</mi><mrow><mi>a</mi><mo>,</mo><mi>b</mi><mo stretchy="false" form="prefix">(</mo><mi>y</mi><mo stretchy="false" form="postfix">)</mo></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
+\texttt{"nonparfree"}: \quad
+s_{y,a} = \exp\!\left(\theta_{a,b(y)}\right)
+</annotation></semantics></math></p>
+<p>where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>B</mi><annotation encoding="application/x-tex">B</annotation></semantics></math>
+is the set of bins named by <code>*_sel_norm_bins</code> (every bin by
+default). The inverse logit bounds each raw value below one before
+anything else happens; the exponential does not.</p>
+<p>Read the denominators. <code>"nonpar"</code> divides by a single
+number computed over years <em>and</em> bins together, so it fixes the
+grand mean of the whole surface at one: one degree of freedom is removed
+from the surface as a whole. <code>"nonparlog"</code> divides by a
+number computed within each year, so it fixes every year’s mean at one:
+one degree of freedom is removed <em>per year</em>, and only within-year
+contrasts survive. <code>"nonparfree"</code> divides by nothing, so
+every
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>θ</mi><mrow><mi>a</mi><mo>,</mo><mi>b</mi></mrow></msub><annotation encoding="application/x-tex">\theta_{a,b}</annotation></semantics></math>
+is a selectivity in its own right and the level is estimated along with
+the shape.</p>
+<p>That last point is the practical one. A standardized form cannot hold
+a level, so the level has to live somewhere else, in catchability or in
+the fishing mortality mean. A free form can hold it, which is what makes
+it the right choice for an index fit age by age, where the age
+multiplier is the whole quantity being estimated. It is also what makes
+it possible to estimate a level twice by accident: if selectivity
+carries a level <em>and</em> the mean it multiplies is free, the two
+trade a common factor, the Hessian stops being positive definite, and
+the selectivity standard errors inflate while the fitted trajectory
+looks fine. Pin one bin, or one block’s reference group, by leaving it
+out of <code>*_sel_nonpar_est_bins</code>.</p>
+<p>Choosing among the three non-parametric forms. <code>"nonpar"</code>
 bounds every raw value below one (logistic transform) and
 mean-standardizes jointly over years and bins; <code>"nonparlog"</code>
 leaves the scale free and centers within each year. Under
@@ -1437,6 +1523,19 @@ centering penalty (below) or fix a bin group via
 <code>*_sel_nonpar_est_bins</code> to pin the scale. Prefer
 <code>"nonpar"</code> when you want selectivity interpretable as a
 proportion without further constraints.</p>
+<p><code>"nonparfree"</code> does not standardize at all, so its values
+hold the level as well as the shape. That is what an index fit age by
+age needs: a free catchability per age and a selectivity estimated at
+age are one quantity written two ways, so an at-age index puts the whole
+age multiplier in selectivity and leaves catchability alone. Group ages
+the way a catchability key would through
+<code>*_sel_nonpar_est_bins</code>, and leave an age out of the list
+entirely when the fleet never observes it, which maps it off rather than
+leaving it free and uninformed. Because nothing is cancelled by
+standardization, <code>"nonparfree"</code> also accepts a
+<code>"scale"</code> sex offset, which <code>"nonpar"</code> and
+<code>"nonparlog"</code> refuse. Do not pair it with the centering
+penalty!</p>
 </div>
 <div class="section level4">
 <h4 id="bicubic-spline-selectivity-bicubic">Bicubic spline selectivity (<code>"bicubic"</code>)<a class="anchor" aria-label="anchor" href="#bicubic-spline-selectivity-bicubic"></a>
@@ -2879,7 +2978,7 @@ the catch indicators or the deviation index ranges.
 <code><a href="../reference/fit_model.html">fit_model()</a></code> refreshes those mirrors from the map
 immediately before building the model, so a deviation mapped off by hand
 after setup is neither estimated nor penalized:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># drop dmr deviations for a stretch of years, penalty included</span></span>
 <span><span class="va">mp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">map</span><span class="op">$</span><span class="va">logit_dmr_devs</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">logit_dmr_devs</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">mp</span><span class="op">[</span>, <span class="fl">10</span><span class="op">:</span><span class="fl">20</span>, , <span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span>
@@ -3255,15 +3354,15 @@ that fallback is a zero placeholder under <code>"wt_len"</code>, so pass
 </tr>
 </tbody>
 </table>
-<p><strong>Growth is not seasonal.</strong> The curve depends only on
-real elapsed time since <code>A1</code>, so splitting a year into more
-seasons changes nothing about size at age: a von Bertalanffy or Richards
-curve with a single <code>K</code> gives the same length whether the
-time between two points is one whole year or several sub-annual steps
-that sum to it. There is no option to give <code>K</code> (or any other
-growth parameter) a within-year seasonal pattern, e.g. a multiplier per
-season the way Stock Synthesis’s <code>MGparm_seas_effects</code> does.
-Every fleet’s timing (<code>t_fish</code>, <code>t_srv</code>,
+<p>Growth is not seasonal. The curve depends only on real elapsed time
+since <code>A1</code>, so splitting a year into more seasons changes
+nothing about size at age: a von Bertalanffy or Richards curve with a
+single <code>K</code> gives the same length whether the time between two
+points is one whole year or several sub-annual steps that sum to it.
+There is no option to give <code>K</code> (or any other growth
+parameter) a within-year seasonal pattern, e.g. a multiplier per season
+the way Stock Synthesis’s <code>MGparm_seas_effects</code> does. Every
+fleet’s timing (<code>t_fish</code>, <code>t_srv</code>,
 <code>t_spawn</code>) still reads its own point on that single annual
 curve, so within-year growth differences across fleets are entirely a
 function of <em>when</em> in the year they sample, not of the growth
@@ -3324,6 +3423,293 @@ index of the recruitment deviations themselves</td>
 </tr>
 </tbody>
 </table>
+</div>
+<div class="section level4">
+<h4 id="age-disaggregated-observations">Age-disaggregated observations<a class="anchor" aria-label="anchor" href="#age-disaggregated-observations"></a>
+</h4>
+<p><code>SPoRC</code> fits catch as an aggregate with a composition, and
+an index the same way. ICES age-structured assessments generally do
+neither: they fit catch at age and index at age directly, every age its
+own observation with its own catchability and its own variance.</p>
+<p>The two are not interchangeable. Splitting an at-age observation into
+a total and a composition is exact for Poisson and multinomial, where
+the total is a genuine count sum. However, both families are lognormal,
+and the sum of lognormals is not lognormal, so no composition likelihood
+recovers the at-age statement! A fleet uses one form or the other.
+Supplying both for the same fleet is an error, since it is the same
+information stated twice.</p>
+<table class="table">
+<thead><tr class="header">
+<th>Argument</th>
+<th>Stream</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>
+<code>ObsCatchAA</code> / <code>UseCatchAA</code>
+</td>
+<td>Retained catch at age</td>
+</tr>
+<tr class="even">
+<td>
+<code>ObsDiscardAA</code> / <code>UseDiscardAA</code>
+</td>
+<td>Discards at age</td>
+</tr>
+<tr class="odd">
+<td>
+<code>ObsFishIdxAA</code> / <code>UseFishIdxAA</code>
+</td>
+<td>Fishery index at age</td>
+</tr>
+<tr class="even">
+<td>
+<code>ObsSrvIdxAA</code> / <code>UseSrvIdxAA</code>
+</td>
+<td>Survey index at age</td>
+</tr>
+</tbody>
+</table>
+<p>Each has a <code>_pop</code> counterpart with a leading population
+dimension. All eight evaluate the same lognormal at-age likelihood
+through one function, differing only in which array supplies the
+prediction.</p>
+<div class="section level5">
+<h5 id="fitting-a-stream-age-by-age">Fitting a stream age by age<a class="anchor" aria-label="anchor" href="#fitting-a-stream-age-by-age"></a>
+</h5>
+<p>The recipe is the same whether the stream is catch at age, discards
+at age, or an index at age, and it is short:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td>Selectivity form</td>
+<td><code>"nonparfree"</code></td>
+</tr>
+<tr class="even">
+<td>Estimated bins</td>
+<td>
+<code>*_sel_nonpar_est_bins</code>, grouped the way a catchability
+key would be, with ages the fleet never observes left out</td>
+</tr>
+<tr class="odd">
+<td>Catchability</td>
+<td>nothing to set</td>
+</tr>
+<tr class="even">
+<td>Observation error</td>
+<td><code>sigma*AA_key</code></td>
+</tr>
+</tbody>
+</table>
+<p>There is no catchability argument in that list because there is
+nothing for it to do. A free catchability per age and a selectivity
+estimated at age are one quantity written two ways, and
+<code>"nonparfree"</code> is the form whose values carry a level rather
+than a shape alone, so the whole age multiplier lives in selectivity and
+the catchability is absorbed into it. For an index that means the
+prediction is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>S</mi><mrow><mi>a</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">free</mtext></msubsup><msub><mi>N</mi><mi>a</mi></msub></mrow><annotation encoding="application/x-tex">S^{\text{free}}_{a,f} N_{a}</annotation></semantics></math>
+rather than
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>q</mi><mrow><mi>a</mi><mo>,</mo><mi>f</mi></mrow></msub><msub><mi>S</mi><mrow><mi>a</mi><mo>,</mo><mi>f</mi></mrow></msub><msub><mi>N</mi><mi>a</mi></msub></mrow><annotation encoding="application/x-tex">q_{a,f} S_{a,f} N_{a}</annotation></semantics></math>,
+with one parameter per age instead of two.</p>
+<p>Two consequences worth knowing. Ages left out of
+<code>*_sel_nonpar_est_bins</code> get no parameter at all, which is
+what an age a survey never sees wants, and is the at-age analogue of an
+<code>NA</code> in a key. And if a fleet’s mean is <em>also</em> free,
+as fishing mortality’s is, the level is then estimated twice: pin one
+bin, or one block’s reference group, by leaving it out of the estimated
+bins. The fit will otherwise land in the right place while the Hessian
+stops being positive definite and the selectivity standard errors
+inflate by three orders of magnitude.</p>
+</div>
+<div class="section level5">
+<h5 id="key-matrices">Key matrices<a class="anchor" aria-label="anchor" href="#key-matrices"></a>
+</h5>
+<p>Parameters are coupled through integer key matrices
+<code>[n_ages, n_fleets]</code>, in which equal entries share a
+parameter and <code>NA</code> excludes one. This is the key matrix
+convention ICES assessments use for coupling variances and catchability,
+with <code>NA</code> marking an excluded parameter, and the fleet last
+because that is where <code>SPoRC</code> puts it. One structure covers
+every sharing pattern that would otherwise need its own argument:</p>
+<table class="table">
+<thead><tr class="header">
+<th>Intent</th>
+<th>Key column for a fleet</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>One parameter per age</td>
+<td><code>1 2 3 4 5</code></td>
+</tr>
+<tr class="even">
+<td>By age group</td>
+<td><code>1 1 2 2 2</code></td>
+</tr>
+<tr class="odd">
+<td>One for the fleet</td>
+<td><code>1 1 1 1 1</code></td>
+</tr>
+<tr class="even">
+<td>Age not observed</td>
+<td><code>NA</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>sigmaCAA_key</code>, <code>sigmaDAA_key</code>,
+<code>sigmaFishIdxAA_key</code> and <code>sigmaSrvIdxAA_key</code> carry
+the observation error. Catchability at age is not keyed here: an index
+fit age by age carries its age shape in selectivity, through the
+<code>"nonparfree"</code> form (see Selectivity above), since a free
+catchability per age and a selectivity estimated at age are the same
+statement twice. A parameter informed by fewer than two observations is
+refused, and fewer than five warns: an observation error standard
+deviation with a single observation drives the likelihood to negative
+infinity rather than failing outright, and the optimiser reports
+convergence either way.</p>
+<p>A season needing its own observation error is a separate fleet, the
+same way anything else needing its own selectivity or catchability
+is.</p>
+</div>
+<div class="section level5">
+<h5 id="correlation-across-ages">Correlation across ages<a class="anchor" aria-label="anchor" href="#correlation-across-ages"></a>
+</h5>
+<p>Each stream is set where its data are set, following how the package
+separates fishery from survey elsewhere:</p>
+<table class="table">
+<thead><tr class="header">
+<th>Argument</th>
+<th>Set in</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>
+<code>AgeObsCorr_catch</code>, <code>AgeObsCorr_discard</code>
+</td>
+<td><code><a href="../reference/Setup_Mod_Catch_and_F.html">Setup_Mod_Catch_and_F()</a></code></td>
+</tr>
+<tr class="even">
+<td><code>AgeObsCorr_fish_idx</code></td>
+<td><code><a href="../reference/Setup_Mod_FishIdx_and_Comps.html">Setup_Mod_FishIdx_and_Comps()</a></code></td>
+</tr>
+<tr class="odd">
+<td><code>AgeObsCorr_srv_idx</code></td>
+<td><code><a href="../reference/Setup_Mod_SrvIdx_and_Comps.html">Setup_Mod_SrvIdx_and_Comps()</a></code></td>
+</tr>
+</tbody>
+</table>
+<table class="table">
+<thead><tr class="header">
+<th>String</th>
+<th>Meaning</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>"iid"</code></td>
+<td>Ages independent within a cell. Default</td>
+</tr>
+<tr class="even">
+<td><code>"1dar1"</code></td>
+<td>AR(1) across ages, one correlation estimated per fleet</td>
+</tr>
+</tbody>
+</table>
+<p>Under <code>"1dar1"</code> the correlation is a vector of length
+<code>n_fleets</code>, not a single value: fleets sampling different
+gears or seasons have no reason to share one.</p>
+<p>A cell with a single observed age carries no correlation to describe
+and falls back to independent. Be careful estimating an AR(1) on a fleet
+observing only two or three ages: the correlation is barely identified
+and will sit on its bound.</p>
+</div>
+<div class="section level5">
+<h5 id="identifiability">Identifiability<a class="anchor" aria-label="anchor" href="#identifiability"></a>
+</h5>
+<p>Two things are worth knowing before fitting these.</p>
+<p>An estimated observation error needs the thing predicting the mean to
+be more constrained than the data. Fishing mortality with free annual
+deviations can reproduce every catch at age exactly, at which point the
+residuals vanish and the estimated standard deviation collapses towards
+zero, which the likelihood rewards without limit. Effort-driven fishing
+mortality, or a blocked or penalised structure, is what makes an
+estimated catch standard deviation meaningful.</p>
+<p>Fishing mortality must be constrained in the same way for the at-age
+catch likelihood itself to be identifiable. Four ages by forty years by
+two seasons of free fishing mortality is roughly the number of
+observations, and even under a separable structure a ridge opens in
+which each age’s fishing mortality absorbs its own abundance.</p>
+</div>
+</div>
+<div class="section level4">
+<h4 id="estimated-index-observation-error-sigmafishidx_spec-sigmasrvidx_spec">Estimated index observation error (<code>sigmaFishIdx_spec</code> /
+<code>sigmaSrvIdx_spec</code>)<a class="anchor" aria-label="anchor" href="#estimated-index-observation-error-sigmafishidx_spec-sigmasrvidx_spec"></a>
+</h4>
+<p>An index carries a standard error from its own survey design, and an
+assessment may additionally estimate a component covering everything
+that design does not. this is often called an extra standard deviation.
+By default <code>SPoRC</code> uses the reported standard errors as they
+stand, which is <code>"fix"</code>.</p>
+<p>One parameter is estimated per fleet, <code>ln_sigmaFishIdx</code> or
+<code>ln_sigmaSrvIdx</code>. The aggregated and population-specific
+streams are separate observations with separate error structures, so
+they carry separate parameters, in the same way <code>ln_sigmaC</code>
+and <code>ln_sigmaC_pop</code> do. The population streams are configured
+through <code>sigmaFishIdx_pop_spec</code> and
+<code>sigmaSrvIdx_pop_spec</code>.</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>String</th>
+<th>Total standard deviation</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>"fix"</code></td>
+<td>The reported standard error, unchanged. Default</td>
+</tr>
+<tr class="even">
+<td><code>"est_additive"</code></td>
+<td>Reported standard error plus the estimated component. The additive
+convention, and what the bridges here reproduce</td>
+</tr>
+<tr class="odd">
+<td><code>"est_quadrature"</code></td>
+<td>Reported standard error and estimated component added in quadrature,
+treating them as independent variances</td>
+</tr>
+<tr class="even">
+<td><code>"est_replace"</code></td>
+<td>The estimated standard deviation alone, discarding the reported
+errors. What several ICES assessments do</td>
+</tr>
+</tbody>
+</table>
+<p><code>sigmaFishIdx_map</code> and <code>sigmaSrvIdx_map</code>, with
+<code>_pop</code> variants, give the estimation groups as an integer
+vector of length <code>n_fish_fleets</code> or
+<code>n_srv_fleets</code>. Fleets sharing a value share a parameter and
+<code>NA</code> holds a fleet at its starting value, which is how a
+fleet a reference assessment pinned at a bound is carried without
+pretending it was estimated.</p>
+<p>Two things are worth knowing before turning this on. An estimated
+component is confounded with a likelihood weight, because a weight on a
+normal likelihood is the same statement as dividing the variance by that
+weight, so the estimate will absorb the weight;
+<code><a href="../reference/Setup_Mod_Weighting.html">Setup_Mod_Weighting()</a></code> warns when both are used. A fleet
+with a multivariate normal index likelihood takes its scale from the
+supplied covariance and ignores a standard deviation entirely, so
+requesting one there is an error rather than a silently unidentified
+parameter.</p>
+<p>The simulator draws index observations from whatever total the fitted
+model used, so <code><a href="../reference/simulation_self_test.html">simulation_self_test()</a></code> exercises the
+estimated component without further configuration.</p>
 </div>
 <div class="section level4">
 <h4 id="index-error-structure-fishidx_liketype-srvidx_liketype">Index error structure (<code>FishIdx_LikeType</code> /

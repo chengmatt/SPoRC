@@ -176,6 +176,20 @@ rec_seas_prop[, 1, ] <- 1
   :   Scalar geometric series solution assuming no movement except in
       the plus group.
 
+  `4`/`"free"`
+
+  :   No equilibrium is projected at all: `ln_InitDevs` are the initial
+      log numbers-at-age themselves for ages 2 and above, apportioned by
+      the sex ratio, with age 1 still taken from recruitment. Use this
+      where the assessment estimates its initial numbers-at-age freely
+      rather than as departures from an equilibrium. The initial
+      condition then does not depend on `init_F_par` or `ln_rinit`, and
+      because the deviations are log-numbers rather than log-ratios, any
+      penalty acts as a prior on initial abundance: pair with
+      `equil_init_age_strc = "equil"` for no such prior, or with
+      `InitDevs_pen_center = "own_mean"` to penalise only the roughness
+      of the age structure and not its level.
+
 - spawn_seas:
 
   Integer index of the season in which spawning occurs. Default `1`.

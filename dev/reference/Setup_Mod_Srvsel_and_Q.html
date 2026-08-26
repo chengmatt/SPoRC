@@ -48,6 +48,7 @@ Setup_Mod_SrvIdx_and_Comps and before model compilation."><meta name="robots" co
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -195,7 +196,25 @@ of:</p><dl><dt><code>"&lt;model&gt;_Fleet_x"</code></dt>
 <dd><p>Double-normal with 6 parameters.</p></dd>
 
   <dt><code>"nonpar"</code></dt>
-<dd><p>Non-parametric selectivity defined over discrete age or length bins, where selectivity is estimated as independent parameters (or grouped bins if specified via nonparametric bin mapping). No fixed functional form is imposed.</p></dd>
+<dd><p>Non-parametric over discrete age or length bins, on
+    the logit scale, then mean-standardized jointly over years and bins so the
+    grand mean of the surface is one. Bins may be grouped through the
+    non-parametric bin mapping. No fixed functional form is imposed.</p></dd>
+
+  <dt><code>"nonparlog"</code></dt>
+<dd><p>Non-parametric on the log scale, standardized so
+    each year's selectivity averages to one over <code>*_sel_norm_bins</code>. Only
+    within-year contrasts are identified; the level is absorbed by
+    catchability or fishing mortality.</p></dd>
+
+  <dt><code>"nonparfree"</code></dt>
+<dd><p>Non-parametric on the log scale with no
+    standardization, \(\exp(\theta)\), so the values carry the height of the
+    curve as well as its shape. This is the form for a stream fit age by age:
+    a free catchability per age and a selectivity estimated at age are one
+    quantity written two ways, so the whole age multiplier lives here and no
+    catchability is set. Pin one bin, by leaving it out of the estimated bins,
+    whenever the mean it multiplies is also free.</p></dd>
 
   <dt><code>"asymplogist1"</code></dt>
 <dd><p>Logistic selectivity with \(a_{50}\) and slope \(k\) and asymptotic control (3 parameters).</p></dd>

@@ -91,6 +91,26 @@ to age via the size-age transition matrix).
 
 ## Likelihoods
 
+### Age-disaggregated observation likelihoods
+
+Reported whenever the model is built, and zero everywhere unless that
+stream is fit. Each carries an age dimension the aggregated counterparts
+do not, and is summed over ages within a cell before its weight is
+applied.
+
+| Object | Dimensions |
+|----|----|
+| `CatchAA_nLL` | region, year, season, age, fishery fleet |
+| `DiscardAA_nLL` | region, year, season, age, fishery fleet |
+| `FishIdxAA_nLL` | region, year, season, age, fishery fleet |
+| `SrvIdxAA_nLL` | region, year, season, age, survey fleet |
+| `CatchAA_pop_nLL`, `DiscardAA_pop_nLL`, `FishIdxAA_pop_nLL`, `SrvIdxAA_pop_nLL` | as above, with a leading population dimension |
+
+The parameters behind them are also reported: `ln_sigmaCAA`,
+`ln_sigmaDAA`, `ln_sigmaFishIdxAA` and `ln_sigmaSrvIdxAA`, each over age
+and fleet. The age shape of catchability is not among them: an index fit
+age by age carries it in selectivity, through the `"nonparfree"` form.
+
 Region-aggregated likelihoods combine contributions across all
 populations; population-specific likelihoods (`_pop_`) are only computed
 when the corresponding `UseCatch_pop`, `UseDiscard_pop`,

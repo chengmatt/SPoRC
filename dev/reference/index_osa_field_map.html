@@ -36,6 +36,7 @@ throughout SPoRC_rtmb.R (e.g. ObsFishIdx, UseFishIdx)."><meta name="robots" cont
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -69,7 +70,10 @@ throughout <code>SPoRC_rtmb.R</code> (e.g. <code>ObsFishIdx</code>, <code>UseFis
 
 
 <dl><dt id="arg-index-source">index_source<a class="anchor" aria-label="anchor" href="#arg-index-source"></a></dt>
-<dd><p>One of <code>"Catch"</code>, <code>"Discard"</code>, <code>"FishIdx"</code>, <code>"SrvIdx"</code>.</p></dd>
+<dd><p>One of <code>"Catch"</code>, <code>"Discard"</code>, <code>"FishIdx"</code>,
+<code>"SrvIdx"</code>, or their at-age forms <code>"CatchAA"</code>, <code>"DiscardAA"</code>,
+<code>"FishIdxAA"</code>, <code>"SrvIdxAA"</code>. At-age sources return an extra
+<code>age</code> column.</p></dd>
 
 
 <dt id="arg-pop">pop<a class="anchor" aria-label="anchor" href="#arg-pop"></a></dt>

@@ -88,8 +88,11 @@ dimensions. Components include:
 - Pooled data likelihoods:
 
   `Catch_nLL_df` `[Region × Year × Seas × Fleet]`, `FishIdx_nLL_df` and
-  `SrvIdx_nLL_df` `[Region × Year × Seas × Fleet]`, `FishAge_nLL_df`,
-  `FishLen_nLL_df`, `SrvAge_nLL_df`, `SrvLen_nLL_df`
+  `SrvIdx_nLL_df`, and their age-disaggregated counterparts
+  `CatchAA_nLL_df`, `DiscardAA_nLL_df`, `FishIdxAA_nLL_df` and
+  `SrvIdxAA_nLL_df` with `_pop` variants, each summed over ages within a
+  cell before its weight is applied `[Region × Year × Seas × Fleet]`,
+  `FishAge_nLL_df`, `FishLen_nLL_df`, `SrvAge_nLL_df`, `SrvLen_nLL_df`
   `[Region × Year × Seas × Sex × Fleet]`, `conv_fish_tag_nLL_df`
   `[Recap_Year × Recap_Seas × Tag_Cohort × Region × Fleet]`.
 

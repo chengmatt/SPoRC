@@ -29,6 +29,8 @@ compute_mortality_year(
   UseCatch,
   UseCatch_pop,
   missing_catch,
+  UseCatchAA,
+  use_catch_aa,
   ln_F_mean,
   ln_F_devs,
   logit_dmr_mean,
@@ -93,6 +95,17 @@ compute_mortality_year(
 
   Logical array, `TRUE` where the aggregate catch observation is missing
   (not a true recorded zero).
+
+- UseCatchAA:
+
+  Integer array `[n_regions, n_years, n_seas, n_ages, n_fish_fleets]`,
+  non-zero where a catch at age observation is fit. A fleet fitting
+  catch at age is fished in any cell where at least one age is fit.
+
+- use_catch_aa:
+
+  Integer vector `[n_fish_fleets]`, non-zero for fleets fitting catch at
+  age rather than aggregated catch.
 
 - ln_F_mean, ln_F_devs:
 

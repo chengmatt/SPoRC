@@ -31,6 +31,7 @@ get_fishery_observation_model(
   PredCatch,
   PredDiscard,
   PredFishIdx,
+  FishIAA = NULL,
   fit_lengths,
   SizeAgeTrans,
   catch_units,
@@ -110,6 +111,13 @@ get_fishery_observation_model(
 - PredCatch, PredDiscard, PredFishIdx:
 
   Arrays `[pop, region, year, season, fish_fleet]`, output containers.
+
+- FishIAA:
+
+  Container for the fishery index numbers at age, defaulting to a zero
+  array shaped like `CAA`. Filled with the fleet's timing and movement
+  treatment applied so the at-age index likelihood reads the same
+  quantity the aggregated one does.
 
 - fit_lengths:
 

@@ -2262,6 +2262,74 @@ optimization algorithm to estimate model parameters.
 
 ### Observation Likelihoods
 
+#### Age-Disaggregated Observations
+
+Catch, discards and the fishery and survey indices can each be fit at
+age rather than aggregated with a composition alongside. Every age is
+its own lognormal observation with its own standard deviation, and for
+the indices its own catchability. The log-likelihood for observed catch
+at age is
+
+``` math
+\ell\left( \log\left( \text{ObsCatchAA}_{r,y,\tau,a,f} \right) \right) =
+\lambda_{r,y,\tau,f} \cdot \frac{1}{\sqrt{2\pi\sigma_{a,f}^{2}}}
+\exp\left( - \frac{\left\lbrack \log\left( \text{ObsCatchAA}_{r,y,\tau,a,f} \right) -
+\log\left( \text{CatchAA}_{r,y,\tau,a,f} \right) \right\rbrack^{2}}{2\sigma_{a,f}^{2}} \right)
+```
+
+The four streams differ only in the predicted quantity:
+
+``` math
+\text{CatchAA}_{r,y,\tau,a,f} = \sum_{p,s} C_{p,r,y,\tau,a,s,f}
+\quad\text{or}\quad \sum_{p,s} C_{p,r,y,\tau,a,s,f} \, w_{p,r,y,\tau,a,s,f}
+```
+
+``` math
+\text{DiscardAA}_{r,y,\tau,a,f} = \sum_{p,s} D_{p,r,y,\tau,a,s,f}
+```
+
+``` math
+\text{FishIdxAA}_{r,y,\tau,a,f} = q^{F}_{a,f} \sum_{p,s}
+N_{p,r,y,\tau,a,s} \, S^{F}_{p,r,y,\tau,a,s,f} \, S^{R}_{p,r,y,\tau,a,s,f}
+```
+
+``` math
+\text{SrvIdxAA}_{r,y,\tau,a,f} = q^{S}_{a,f} \sum_{p,s} I_{p,r,y,\tau,a,s,f}
+```
+
+where $`C`$ and $`D`$ are retained catch and discards at age, $`w`$ is
+weight at age, $`N`$ is numbers at age, $`S^{F}`$ and $`S^{R}`$ are
+fishery selectivity and retention, and $`I`$ is the survey-available
+numbers at age. Catch and discards follow the fleet’s units, abundance
+or biomass. The population-specific forms drop the sum over $`p`$ and
+compare a single population’s prediction. The weight
+$`\lambda_{r,y,\tau,f}`$ is the one the aggregated stream carries,
+applied after summing over ages within a cell.
+
+The standard deviations $`\sigma_{a,f}`$ and the catchabilities
+$`q_{a,f}`$ are coupled through integer key matrices over age and fleet,
+in which equal entries share a parameter. A single structure therefore
+gives one standard deviation per age, one per age group, or one per
+fleet.
+
+This is not the same statement as an aggregated observation with a
+composition beside it. That factorisation is exact for a multinomial
+over Poisson counts, where the total is a genuine count sum, but the sum
+of lognormals is not lognormal, so the two forms differ for the
+lognormal used here. A fleet fits one or the other.
+
+Ages within a cell may be independent (`"iid"`), or an AR(1) across ages
+(`"1dar1"`) with a correlation $`\rho_{f}`$ estimated per fleet, in
+which case the residual vector for that cell is multivariate normal with
+
+``` math
+\Sigma_{ij} = \sigma_{i,f} \, \sigma_{j,f} \, \rho_{f}^{|i-j|}
+```
+
+evaluated as a Gaussian Markov random field rather than by forming
+$`\Sigma`$. A cell with one observed age has no correlation to describe
+and falls back to independent.
+
 #### Fishery Catches
 
 Fishery catches can be fit using a lognormal likelihood. The

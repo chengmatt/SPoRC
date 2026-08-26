@@ -46,6 +46,7 @@ Must be called after Setup_Mod_Biologicals."><meta name="robots" content="noinde
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -79,6 +80,24 @@ Must be called after <code><a href="Setup_Mod_Biologicals.html">Setup_Mod_Biolog
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">Setup_Mod_Catch_and_F</span><span class="op">(</span></span>
 <span>  <span class="va">input_list</span>,</span>
 <span>  <span class="va">ObsCatch</span>,</span>
+<span>  ObsCatchAA <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  UseCatchAA <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sigmaCAA_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sigmaCAA_spec <span class="op">=</span> <span class="st">"est"</span>,</span>
+<span>  ObsDiscardAA <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  UseDiscardAA <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ObsDiscardAA_pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  UseDiscardAA_pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ObsCatchAA_pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  UseCatchAA_pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sigmaCAA_pop_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sigmaCAA_pop_spec <span class="op">=</span> <span class="st">"est"</span>,</span>
+<span>  sigmaDAA_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sigmaDAA_spec <span class="op">=</span> <span class="st">"est"</span>,</span>
+<span>  sigmaDAA_pop_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sigmaDAA_pop_spec <span class="op">=</span> <span class="st">"est"</span>,</span>
+<span>  AgeObsCorr_catch <span class="op">=</span> <span class="st">"iid"</span>,</span>
+<span>  AgeObsCorr_discard <span class="op">=</span> <span class="st">"iid"</span>,</span>
 <span>  <span class="va">UseCatch</span>,</span>
 <span>  catch_units <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="st">"biom"</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  UseCatch_pop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_pop</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>,</span>
@@ -131,6 +150,75 @@ observation; fishing is assumed to have continued and <code>Fmort</code>/
 true recorded value (typically <code>0</code>) is treated as a real
 closure: <code>Fmort</code> is forced to zero and no deviation is estimated.
 See <code><a href="Get_Fdev_PE_loglik.html">Get_Fdev_PE_loglik</a></code>.</p></dd>
+
+
+<dt id="arg-obscatchaa">ObsCatchAA<a class="anchor" aria-label="anchor" href="#arg-obscatchaa"></a></dt>
+<dd><p>Observed catch at age, an array with dimensions
+<code>[n_regions, n_years, n_seas, n_ages, n_fish_fleets]</code>. Supplying this
+fits the catch at age directly, every age its own lognormal observation, in
+place of an aggregated catch with compositions. This is the native form for
+ICES age-structured assessments. The two statements are not interchangeable: the
+exact factorisation of an at-age observation into a total and a composition
+holds for Poisson and multinomial, not for lognormal, so a fleet must use
+one or the other and supplying both for the same fleet is an error.
+<code>NULL</code> (default) leaves the fleet on aggregated catch.</p></dd>
+
+
+<dt id="arg-usecatchaa">UseCatchAA<a class="anchor" aria-label="anchor" href="#arg-usecatchaa"></a></dt>
+<dd><p>Integer array shaped like <code>ObsCatchAA</code>, <code>1</code> where
+an observation is fit and <code>0</code> otherwise. A cell that is not fit is also
+not fished, so this governs closures the way <code>UseCatch</code> does for the
+aggregated stream.</p></dd>
+
+
+<dt id="arg-sigmacaa-key">sigmaCAA_key<a class="anchor" aria-label="anchor" href="#arg-sigmacaa-key"></a></dt>
+<dd><p>Integer matrix <code>[n_ages, n_fish_fleets]</code> coupling the
+catch at age observation error, an integer key matrix, the convention ICES assessments use. Equal
+entries share a parameter and <code>NA</code> excludes one. This single structure
+covers every sharing pattern: <code>1 2 3 4 5</code> gives one standard deviation
+per age, <code>1 1 2 2 2</code> gives standard deviations by age group as several ICES assessments do, and <code>1 1 1 1 1</code> gives one for the fleet. Defaults to
+one parameter per fleet, shared across ages. A parameter informed by fewer
+than two observations is refused, since an observation error standard
+deviation with a single observation drives the likelihood to negative
+infinity rather than failing outright.</p></dd>
+
+
+<dt id="arg-sigmacaa-spec">sigmaCAA_spec<a class="anchor" aria-label="anchor" href="#arg-sigmacaa-spec"></a></dt>
+<dd><p>Character string, <code>"est"</code> (default) to estimate the
+coupled standard deviations, or <code>"fix"</code> to hold them at their starting
+values. Starting values are supplied through <code>...</code> as
+<code>ln_sigmaCAA</code>.</p></dd>
+
+
+<dt id="arg-obsdiscardaa-usediscardaa">ObsDiscardAA, UseDiscardAA<a class="anchor" aria-label="anchor" href="#arg-obsdiscardaa-usediscardaa"></a></dt>
+<dd><p>Observed discard at age and its use flags,
+shaped like <code>ObsCatchAA</code>. The discard counterpart of catch at age.</p></dd>
+
+
+<dt id="arg-obsdiscardaa-pop-usediscardaa-pop-obscatchaa-pop-usecatchaa-pop">ObsDiscardAA_pop, UseDiscardAA_pop, ObsCatchAA_pop, UseCatchAA_pop<a class="anchor" aria-label="anchor" href="#arg-obsdiscardaa-pop-usediscardaa-pop-obscatchaa-pop-usecatchaa-pop"></a></dt>
+<dd><p>Population-specific counterparts, with a leading population dimension.</p></dd>
+
+
+<dt id="arg-sigmacaa-pop-key-sigmadaa-key-sigmadaa-pop-key">sigmaCAA_pop_key, sigmaDAA_key, sigmaDAA_pop_key<a class="anchor" aria-label="anchor" href="#arg-sigmacaa-pop-key-sigmadaa-key-sigmadaa-pop-key"></a></dt>
+<dd><p>Integer matrices
+<code>[n_ages, n_fish_fleets]</code> coupling the observation error for the
+population-specific catch, the discards, and the population-specific
+discards, following the same convention as <code>sigmaCAA_key</code>.</p></dd>
+
+
+<dt id="arg-sigmacaa-pop-spec-sigmadaa-spec-sigmadaa-pop-spec">sigmaCAA_pop_spec, sigmaDAA_spec, sigmaDAA_pop_spec<a class="anchor" aria-label="anchor" href="#arg-sigmacaa-pop-spec-sigmadaa-spec-sigmadaa-pop-spec"></a></dt>
+<dd><p><code>"est"</code> or
+<code>"fix"</code>.</p></dd>
+
+
+<dt id="arg-ageobscorr-catch-ageobscorr-discard">AgeObsCorr_catch, AgeObsCorr_discard<a class="anchor" aria-label="anchor" href="#arg-ageobscorr-catch-ageobscorr-discard"></a></dt>
+<dd><p>Correlation across ages within a
+cell for the retained catch at age and the discards at age. <code>"iid"</code> (default) treats ages as independent,
+<code>"1dar1"</code> correlates them as an AR(1) across ages and estimates one
+correlation per fleet. A cell with a single observed age falls back to independent.
+The fishery and survey index streams carry their own settings, in
+<code><a href="Setup_Mod_FishIdx_and_Comps.html">Setup_Mod_FishIdx_and_Comps</a></code> and
+<code><a href="Setup_Mod_SrvIdx_and_Comps.html">Setup_Mod_SrvIdx_and_Comps</a></code>.</p></dd>
 
 
 <dt id="arg-usecatch">UseCatch<a class="anchor" aria-label="anchor" href="#arg-usecatch"></a></dt>

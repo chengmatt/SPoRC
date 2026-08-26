@@ -44,6 +44,7 @@ assigned into this frame."><meta name="robots" content="noindex"></head><body>
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -91,6 +92,8 @@ assigned into this frame.</p>
 <span>  <span class="va">UseCatch</span>,</span>
 <span>  <span class="va">UseCatch_pop</span>,</span>
 <span>  <span class="va">missing_catch</span>,</span>
+<span>  <span class="va">UseCatchAA</span>,</span>
+<span>  <span class="va">use_catch_aa</span>,</span>
 <span>  <span class="va">ln_F_mean</span>,</span>
 <span>  <span class="va">ln_F_devs</span>,</span>
 <span>  <span class="va">logit_dmr_mean</span>,</span>
@@ -161,6 +164,17 @@ aggregate/pop-specific catch observation.</p></dd>
 <dt id="arg-missing-catch">missing_catch<a class="anchor" aria-label="anchor" href="#arg-missing-catch"></a></dt>
 <dd><p>Logical array, <code>TRUE</code> where the aggregate catch
 observation is missing (not a true recorded zero).</p></dd>
+
+
+<dt id="arg-usecatchaa">UseCatchAA<a class="anchor" aria-label="anchor" href="#arg-usecatchaa"></a></dt>
+<dd><p>Integer array <code>[n_regions, n_years, n_seas, n_ages,
+n_fish_fleets]</code>, non-zero where a catch at age observation is fit. A fleet
+fitting catch at age is fished in any cell where at least one age is fit.</p></dd>
+
+
+<dt id="arg-use-catch-aa">use_catch_aa<a class="anchor" aria-label="anchor" href="#arg-use-catch-aa"></a></dt>
+<dd><p>Integer vector <code>[n_fish_fleets]</code>, non-zero for fleets
+fitting catch at age rather than aggregated catch.</p></dd>
 
 
 <dt id="arg-ln-f-mean-ln-f-devs">ln_F_mean, ln_F_devs<a class="anchor" aria-label="anchor" href="#arg-ln-f-mean-ln-f-devs"></a></dt>

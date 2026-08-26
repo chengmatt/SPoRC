@@ -15,6 +15,24 @@ observation/process error structures (`ln_sigmaD`, `ln_sigmaD_pop`,
 Setup_Mod_Catch_and_F(
   input_list,
   ObsCatch,
+  ObsCatchAA = NULL,
+  UseCatchAA = NULL,
+  sigmaCAA_key = NULL,
+  sigmaCAA_spec = "est",
+  ObsDiscardAA = NULL,
+  UseDiscardAA = NULL,
+  ObsDiscardAA_pop = NULL,
+  UseDiscardAA_pop = NULL,
+  ObsCatchAA_pop = NULL,
+  UseCatchAA_pop = NULL,
+  sigmaCAA_pop_key = NULL,
+  sigmaCAA_pop_spec = "est",
+  sigmaDAA_key = NULL,
+  sigmaDAA_spec = "est",
+  sigmaDAA_pop_key = NULL,
+  sigmaDAA_pop_spec = "est",
+  AgeObsCorr_catch = "iid",
+  AgeObsCorr_discard = "iid",
   UseCatch,
   catch_units = array("biom", dim = c(input_list$data$n_fish_fleets)),
   UseCatch_pop = array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions,
@@ -66,6 +84,78 @@ Setup_Mod_Catch_and_F(
   real closure: `Fmort` is forced to zero and no deviation is estimated.
   See
   [`Get_Fdev_PE_loglik`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Fdev_PE_loglik.md).
+
+- ObsCatchAA:
+
+  Observed catch at age, an array with dimensions
+  `[n_regions, n_years, n_seas, n_ages, n_fish_fleets]`. Supplying this
+  fits the catch at age directly, every age its own lognormal
+  observation, in place of an aggregated catch with compositions. This
+  is the native form for ICES age-structured assessments. The two
+  statements are not interchangeable: the exact factorisation of an
+  at-age observation into a total and a composition holds for Poisson
+  and multinomial, not for lognormal, so a fleet must use one or the
+  other and supplying both for the same fleet is an error. `NULL`
+  (default) leaves the fleet on aggregated catch.
+
+- UseCatchAA:
+
+  Integer array shaped like `ObsCatchAA`, `1` where an observation is
+  fit and `0` otherwise. A cell that is not fit is also not fished, so
+  this governs closures the way `UseCatch` does for the aggregated
+  stream.
+
+- sigmaCAA_key:
+
+  Integer matrix `[n_ages, n_fish_fleets]` coupling the catch at age
+  observation error, an integer key matrix, the convention ICES
+  assessments use. Equal entries share a parameter and `NA` excludes
+  one. This single structure covers every sharing pattern: `1 2 3 4 5`
+  gives one standard deviation per age, `1 1 2 2 2` gives standard
+  deviations by age group as several ICES assessments do, and
+  `1 1 1 1 1` gives one for the fleet. Defaults to one parameter per
+  fleet, shared across ages. A parameter informed by fewer than two
+  observations is refused, since an observation error standard deviation
+  with a single observation drives the likelihood to negative infinity
+  rather than failing outright.
+
+- sigmaCAA_spec:
+
+  Character string, `"est"` (default) to estimate the coupled standard
+  deviations, or `"fix"` to hold them at their starting values. Starting
+  values are supplied through `...` as `ln_sigmaCAA`.
+
+- ObsDiscardAA, UseDiscardAA:
+
+  Observed discard at age and its use flags, shaped like `ObsCatchAA`.
+  The discard counterpart of catch at age.
+
+- ObsDiscardAA_pop, UseDiscardAA_pop, ObsCatchAA_pop, UseCatchAA_pop:
+
+  Population-specific counterparts, with a leading population dimension.
+
+- sigmaCAA_pop_key, sigmaDAA_key, sigmaDAA_pop_key:
+
+  Integer matrices `[n_ages, n_fish_fleets]` coupling the observation
+  error for the population-specific catch, the discards, and the
+  population-specific discards, following the same convention as
+  `sigmaCAA_key`.
+
+- sigmaCAA_pop_spec, sigmaDAA_spec, sigmaDAA_pop_spec:
+
+  `"est"` or `"fix"`.
+
+- AgeObsCorr_catch, AgeObsCorr_discard:
+
+  Correlation across ages within a cell for the retained catch at age
+  and the discards at age. `"iid"` (default) treats ages as independent,
+  `"1dar1"` correlates them as an AR(1) across ages and estimates one
+  correlation per fleet. A cell with a single observed age falls back to
+  independent. The fishery and survey index streams carry their own
+  settings, in
+  [`Setup_Mod_FishIdx_and_Comps`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_FishIdx_and_Comps.md)
+  and
+  [`Setup_Mod_SrvIdx_and_Comps`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_SrvIdx_and_Comps.md).
 
 - UseCatch:
 

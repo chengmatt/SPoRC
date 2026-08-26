@@ -14,6 +14,19 @@ Setup_Mod_FishIdx_and_Comps(
   input_list,
   ObsFishIdx,
   ObsFishIdx_SE,
+  ObsFishIdxAA = NULL,
+  UseFishIdxAA = NULL,
+  ObsFishIdxAA_pop = NULL,
+  UseFishIdxAA_pop = NULL,
+  sigmaFishIdxAA_key = NULL,
+  sigmaFishIdxAA_spec = "est",
+  sigmaFishIdxAA_pop_key = NULL,
+  sigmaFishIdxAA_pop_spec = "est",
+  AgeObsCorr_fish_idx = "iid",
+  sigmaFishIdx_spec = "fix",
+  sigmaFishIdx_map = NULL,
+  sigmaFishIdx_pop_spec = "fix",
+  sigmaFishIdx_pop_map = NULL,
   ObsFishIdx_pop = NULL,
   ObsFishIdx_pop_SE = NULL,
   UseFishIdx_pop = array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions,
@@ -117,6 +130,125 @@ Setup_Mod_FishIdx_and_Comps(
 
   Standard errors of `ObsFishIdx` on the log scale, same dimensions as
   `ObsFishIdx`.
+
+- ObsFishIdxAA:
+
+  Observed fishery index at age, an array with dimensions
+  `[n_regions, n_years, n_seas, n_ages, n_fish_fleets]`. The fishery
+  counterpart of `ObsSrvIdxAA`: every age its own lognormal observation
+  with its own catchability. A fleet uses this or the aggregated index.
+
+- UseFishIdxAA:
+
+  Integer array shaped like `ObsFishIdxAA`.
+
+- ObsFishIdxAA_pop, UseFishIdxAA_pop:
+
+  Population-specific counterparts.
+
+- sigmaFishIdxAA_key, sigmaFishIdxAA_pop_key:
+
+  Integer matrices coupling the index at age observation error, an
+  integer key matrix, the convention ICES assessments use. Equal entries
+  share a parameter and `NA` excludes one. The age shape of catchability
+  is not set here: an index fit age by age puts it in selectivity
+  through the `"nonparfree"` form. See
+  [`Setup_Mod_Fishsel_and_Q`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Fishsel_and_Q.md).
+
+- sigmaFishIdxAA_spec, sigmaFishIdxAA_pop_spec:
+
+  `"est"` or `"fix"`.
+
+- AgeObsCorr_fish_idx:
+
+  Correlation across ages for the fishery index at age, `"iid"`
+  (default) or `"1dar1"`. See
+  [`Setup_Mod_Catch_and_F`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Catch_and_F.md).
+
+- sigmaFishIdx_spec:
+
+  Character string controlling the estimated component of the aggregated
+  fishery index observation error, one value per fleet. One of:
+
+  `"fix"`
+
+  :   The reported standard errors are used as they are and
+      `ln_sigmaFishIdx` is not estimated. The default.
+
+  `"est_additive"`
+
+  :   Total standard deviation is the reported standard error plus an
+      estimated component, the additive extra standard deviation
+      convention.
+
+  `"est_quadrature"`
+
+  :   Total standard deviation is the reported standard error and the
+      estimated component added in quadrature, treating them as
+      independent variances.
+
+  `"est_replace"`
+
+  :   An estimated standard deviation replaces the reported standard
+      errors entirely, as several ICES assessments do.
+
+  An estimated component is confounded with a likelihood weight, since a
+  weight on a normal likelihood is the same statement as dividing the
+  variance by that weight. `Setup_Mod_Weighting` warns when both are
+  used. Fleets with a multivariate normal index likelihood take their
+  scale from the supplied covariance and cannot carry one, which is an
+  error rather than a silently unidentified parameter.
+
+- sigmaFishIdx_map:
+
+  Optional integer vector of length `n_fish_fleets` giving the
+  estimation groups for `ln_sigmaFishIdx`. Fleets sharing a value share
+  a parameter and `NA` holds a fleet at its starting value. Defaults to
+  one free parameter per fleet. Use it when a reference assessment
+  estimated some fleets and pinned others at a bound.
+
+- sigmaFishIdx_pop_spec:
+
+  Character string controlling the estimated component of the
+  population-specific fishery index observation error, one value per
+  fleet. One of:
+
+  `"fix"`
+
+  :   The reported standard errors are used as they are and
+      `ln_sigmaFishIdx_pop` is not estimated. The default.
+
+  `"est_additive"`
+
+  :   Total standard deviation is the reported standard error plus an
+      estimated component, the additive extra standard deviation
+      convention.
+
+  `"est_quadrature"`
+
+  :   Total standard deviation is the reported standard error and the
+      estimated component added in quadrature, treating them as
+      independent variances.
+
+  `"est_replace"`
+
+  :   An estimated standard deviation replaces the reported standard
+      errors entirely, as several ICES assessments do.
+
+  An estimated component is confounded with a likelihood weight, since a
+  weight on a normal likelihood is the same statement as dividing the
+  variance by that weight. `Setup_Mod_Weighting` warns when both are
+  used. Fleets with a multivariate normal index likelihood take their
+  scale from the supplied covariance and cannot carry one, which is an
+  error rather than a silently unidentified parameter.
+
+- sigmaFishIdx_pop_map:
+
+  Optional integer vector of length `n_fish_fleets` giving the
+  estimation groups for `ln_sigmaFishIdx_pop`. Fleets sharing a value
+  share a parameter and `NA` holds a fleet at its starting value.
+  Defaults to one free parameter per fleet. Use it when a reference
+  assessment estimated some fleets and pinned others at a bound.
 
 - ObsFishIdx_pop:
 

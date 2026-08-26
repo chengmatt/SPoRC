@@ -10,6 +10,7 @@ articles:
   ad_goa_rex_sole_case_study: ad_goa_rex_sole_case_study.html
   ae_ebs_pacific_cod_case_study: ae_ebs_pacific_cod_case_study.html
   af_growth_options: af_growth_options.html
+  ah_north_sea_sandeel_case_study: ah_north_sea_sandeel_case_study.html
   architecture: architecture.html
   b_model_parameters: b_model_parameters.html
   c_model_equations: c_model_equations.html
@@ -37,7 +38,7 @@ articles:
   x_goa_dusky_rockfish_case_study: x_goa_dusky_rockfish_case_study.html
   y_bsai_northern_rockfish_case_study: y_bsai_northern_rockfish_case_study.html
   z_bsai_rougheye_rockfish_case_study: z_bsai_rougheye_rockfish_case_study.html
-last_built: 2026-08-26T04:55Z
+last_built: 2026-08-26T09:45Z
 urls:
   reference: https://chengmatt.github.io/SPoRC/reference
   article: https://chengmatt.github.io/SPoRC/articles

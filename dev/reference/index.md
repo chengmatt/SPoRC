@@ -126,6 +126,8 @@ Functions for model diagnostics
   : Get Index Fits Plot
 - [`get_catch_fits_plot()`](https://chengmatt.github.io/SPoRC/dev/reference/get_catch_fits_plot.md)
   : Get Catch and Discard Fits Plot
+- [`get_at_age_fits_plot()`](https://chengmatt.github.io/SPoRC/dev/reference/get_at_age_fits_plot.md)
+  : Plot observed and predicted age-disaggregated observations
 - [`get_retrospective_plot()`](https://chengmatt.github.io/SPoRC/dev/reference/get_retrospective_plot.md)
   : Get Retrospective Plot
 - [`do_likelihood_profile()`](https://chengmatt.github.io/SPoRC/dev/reference/do_likelihood_profile.md)

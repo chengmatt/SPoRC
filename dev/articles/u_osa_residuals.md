@@ -1,5 +1,21 @@
 # One-Step-Ahead (OSA) Residuals
 
+### Age-disaggregated observations
+
+Catch at age, discards at age, and the fishery and survey indices at age
+all support one-step-ahead residuals. Pass the at-age name as
+`index_source`:
+
+``` r
+
+osa <- get_osa(model = fitted, data = input_list$data, index_source = "CatchAA")
+plot_resids(osa)
+```
+
+Valid at-age sources are `"CatchAA"`, `"DiscardAA"`, `"FishIdxAA"` and
+`"SrvIdxAA"`, each with a `pop = TRUE` variant. The returned data frame
+carries an extra `age` column, which the residual plots facet on.
+
 Raw (Pearson) residuals from compositional, count, and index data can be
 difficult to interpret given that multinomial/Dirichlet-multinomial
 proportions are correlated within a year (they must sum to one), tag

@@ -13,7 +13,7 @@ population length bins reported to 24 five centimetre data bins.
 | Source | Years | Observations | Likelihood |
 |----|----|----|----|
 | Catch | 1977–2024 | 48 | Lognormal |
-| Survey abundance, in numbers | 1982–2024 | 42 | Lognormal, extra SD |
+| Survey abundance, in numbers | 1982–2024 | 42 | Lognormal, estimated extra SD |
 | Fishery length compositions | 1977–2024 | 48 | Multinomial |
 | Survey length compositions | 1982–1999, 2024 | 19 | Multinomial |
 | Survey age compositions | 2000–2023 | 23 | Multinomial |
@@ -243,8 +243,10 @@ t_srv <- array(dat$t_srv, dim = c(n_reg, 1, n_srv))
 
 input_list <- Setup_Mod_SrvIdx_and_Comps(
   input_list = input_list,
-  ObsSrvIdx = dat$ObsSrvIdx, ObsSrvIdx_SE = dat$ObsSrvIdx_SE + dat$mle$extra_sd,
+  ObsSrvIdx = dat$ObsSrvIdx, ObsSrvIdx_SE = dat$ObsSrvIdx_SE,
   UseSrvIdx = dat$UseSrvIdx,
+  sigmaSrvIdx_spec = "est_additive",
+  ln_sigmaSrvIdx = log(dat$mle$extra_sd),
   srv_idx_type = rep("abd", n_srv), SrvIdx_LikeType = rep("lognormal", n_srv),
   ObsSrvAgeComps = dat$ObsSrvAgeComps, UseSrvAgeComps = dat$UseSrvAgeComps,
   ISS_SrvAgeComps = dat$ISS_SrvAgeComps,

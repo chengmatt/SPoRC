@@ -54,6 +54,7 @@ before model compilation.'><meta name="robots" content="noindex"></head><body>
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -93,6 +94,19 @@ before model compilation.</p>
 <span>  <span class="va">ObsSrvIdx</span>,</span>
 <span>  <span class="va">ObsSrvIdx_SE</span>,</span>
 <span>  <span class="va">UseSrvIdx</span>,</span>
+<span>  ObsSrvIdxAA <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  UseSrvIdxAA <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ObsSrvIdxAA_pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  UseSrvIdxAA_pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sigmaSrvIdxAA_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sigmaSrvIdxAA_spec <span class="op">=</span> <span class="st">"est"</span>,</span>
+<span>  sigmaSrvIdxAA_pop_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sigmaSrvIdxAA_pop_spec <span class="op">=</span> <span class="st">"est"</span>,</span>
+<span>  AgeObsCorr_srv_idx <span class="op">=</span> <span class="st">"iid"</span>,</span>
+<span>  sigmaSrvIdx_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
+<span>  sigmaSrvIdx_map <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sigmaSrvIdx_pop_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
+<span>  sigmaSrvIdx_pop_map <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ObsSrvIdx_pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ObsSrvIdx_pop_SE <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  UseSrvIdx_pop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_pop</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>,</span>
@@ -161,6 +175,119 @@ dimensions <code>[n_regions × n_years × n_seas × n_srv_fleets]</code>.</p></d
 <dd><p>Binary indicator array
 <code>[n_regions × n_years × n_seas × n_srv_fleets]</code>. <code>1</code> = include
 in likelihood; <code>0</code> = exclude.</p></dd>
+
+
+<dt id="arg-obssrvidxaa">ObsSrvIdxAA<a class="anchor" aria-label="anchor" href="#arg-obssrvidxaa"></a></dt>
+<dd><p>Observed survey index at age, an array with dimensions
+<code>[n_regions, n_years, n_seas, n_ages, n_srv_fleets]</code>. Supplying this
+fits the index at age directly, every age its own lognormal observation with
+its own catchability, which is the native form for ICES age-structured assessments.
+A fleet uses this or the aggregated index, never both.</p></dd>
+
+
+<dt id="arg-usesrvidxaa">UseSrvIdxAA<a class="anchor" aria-label="anchor" href="#arg-usesrvidxaa"></a></dt>
+<dd><p>Integer array shaped like <code>ObsSrvIdxAA</code>, <code>1</code>
+where an observation is fit.</p></dd>
+
+
+<dt id="arg-obssrvidxaa-pop-usesrvidxaa-pop">ObsSrvIdxAA_pop, UseSrvIdxAA_pop<a class="anchor" aria-label="anchor" href="#arg-obssrvidxaa-pop-usesrvidxaa-pop"></a></dt>
+<dd><p>Population-specific counterparts, with
+a leading population dimension.</p></dd>
+
+
+<dt id="arg-sigmasrvidxaa-key-sigmasrvidxaa-pop-key">sigmaSrvIdxAA_key, sigmaSrvIdxAA_pop_key<a class="anchor" aria-label="anchor" href="#arg-sigmasrvidxaa-key-sigmasrvidxaa-pop-key"></a></dt>
+<dd><p>Integer matrices coupling the
+index at age observation error, an integer key matrix, the convention ICES
+assessments use. Equal entries share a parameter and <code>NA</code> excludes one.
+The age shape of catchability is not set here: an index fit age by age puts
+it in selectivity through the <code>"nonparfree"</code> form, which carries the
+height of the curve as well as its shape. See
+<code><a href="Setup_Mod_Srvsel_and_Q.html">Setup_Mod_Srvsel_and_Q</a></code>.</p></dd>
+
+
+<dt id="arg-sigmasrvidxaa-spec-sigmasrvidxaa-pop-spec">sigmaSrvIdxAA_spec, sigmaSrvIdxAA_pop_spec<a class="anchor" aria-label="anchor" href="#arg-sigmasrvidxaa-spec-sigmasrvidxaa-pop-spec"></a></dt>
+<dd><p><code>"est"</code> (default) or
+<code>"fix"</code>.</p></dd>
+
+
+<dt id="arg-ageobscorr-srv-idx">AgeObsCorr_srv_idx<a class="anchor" aria-label="anchor" href="#arg-ageobscorr-srv-idx"></a></dt>
+<dd><p>Correlation across ages for the survey index at
+age, <code>"iid"</code> (default) or <code>"1dar1"</code>. See
+<code><a href="Setup_Mod_Catch_and_F.html">Setup_Mod_Catch_and_F</a></code>.</p></dd>
+
+
+<dt id="arg-sigmasrvidx-spec">sigmaSrvIdx_spec<a class="anchor" aria-label="anchor" href="#arg-sigmasrvidx-spec"></a></dt>
+<dd><p>Character string controlling the estimated component of the
+aggregated survey index observation error, one value per fleet. One of:</p><dl><dt><code>"fix"</code></dt>
+<dd><p>The reported standard errors are used as they are and
+    <code>ln_sigmaSrvIdx</code> is not estimated. The default.</p></dd>
+
+  <dt><code>"est_additive"</code></dt>
+<dd><p>Total standard deviation is the reported
+    standard error plus an estimated component, the additive extra
+    standard deviation convention.</p></dd>
+
+  <dt><code>"est_quadrature"</code></dt>
+<dd><p>Total standard deviation is the reported
+    standard error and the estimated component added in quadrature, treating
+    them as independent variances.</p></dd>
+
+  <dt><code>"est_replace"</code></dt>
+<dd><p>An estimated standard deviation replaces the
+    reported standard errors entirely, as several ICES assessments do.</p></dd>
+
+
+</dl><p>An estimated component is confounded with a likelihood weight, since a
+weight on a normal likelihood is the same statement as dividing the
+variance by that weight. <code>Setup_Mod_Weighting</code> warns when both are
+used. Fleets with a multivariate normal index likelihood take their scale
+from the supplied covariance and cannot carry one, which is an error rather
+than a silently unidentified parameter.</p></dd>
+
+
+<dt id="arg-sigmasrvidx-map">sigmaSrvIdx_map<a class="anchor" aria-label="anchor" href="#arg-sigmasrvidx-map"></a></dt>
+<dd><p>Optional integer vector of length <code>n_srv_fleets</code>
+giving the estimation groups for <code>ln_sigmaSrvIdx</code>. Fleets sharing a value share a
+parameter and <code>NA</code> holds a fleet at its starting value. Defaults to one
+free parameter per fleet. Use it when a reference assessment estimated some
+fleets and pinned others at a bound.</p></dd>
+
+
+<dt id="arg-sigmasrvidx-pop-spec">sigmaSrvIdx_pop_spec<a class="anchor" aria-label="anchor" href="#arg-sigmasrvidx-pop-spec"></a></dt>
+<dd><p>Character string controlling the estimated component of the
+population-specific survey index observation error, one value per fleet. One of:</p><dl><dt><code>"fix"</code></dt>
+<dd><p>The reported standard errors are used as they are and
+    <code>ln_sigmaSrvIdx_pop</code> is not estimated. The default.</p></dd>
+
+  <dt><code>"est_additive"</code></dt>
+<dd><p>Total standard deviation is the reported
+    standard error plus an estimated component, the additive extra
+    standard deviation convention.</p></dd>
+
+  <dt><code>"est_quadrature"</code></dt>
+<dd><p>Total standard deviation is the reported
+    standard error and the estimated component added in quadrature, treating
+    them as independent variances.</p></dd>
+
+  <dt><code>"est_replace"</code></dt>
+<dd><p>An estimated standard deviation replaces the
+    reported standard errors entirely, as several ICES assessments do.</p></dd>
+
+
+</dl><p>An estimated component is confounded with a likelihood weight, since a
+weight on a normal likelihood is the same statement as dividing the
+variance by that weight. <code>Setup_Mod_Weighting</code> warns when both are
+used. Fleets with a multivariate normal index likelihood take their scale
+from the supplied covariance and cannot carry one, which is an error rather
+than a silently unidentified parameter.</p></dd>
+
+
+<dt id="arg-sigmasrvidx-pop-map">sigmaSrvIdx_pop_map<a class="anchor" aria-label="anchor" href="#arg-sigmasrvidx-pop-map"></a></dt>
+<dd><p>Optional integer vector of length <code>n_srv_fleets</code>
+giving the estimation groups for <code>ln_sigmaSrvIdx_pop</code>. Fleets sharing a value share a
+parameter and <code>NA</code> holds a fleet at its starting value. Defaults to one
+free parameter per fleet. Use it when a reference assessment estimated some
+fleets and pinned others at a bound.</p></dd>
 
 
 <dt id="arg-obssrvidx-pop">ObsSrvIdx_pop<a class="anchor" aria-label="anchor" href="#arg-obssrvidx-pop"></a></dt>

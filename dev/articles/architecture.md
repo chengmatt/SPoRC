@@ -176,7 +176,7 @@ through that one file.
 | `setup_fishery_catch.R` | `do_dmr_dev_mapping`, `do_dmr_mean_mapping`, `do_Fdev_rho_mapping`, `do_Fmort_mapping`, `do_sigma_dmr_mapping`, `do_sigmaC_mapping`, `do_sigmaC_pop_mapping`, `do_sigmaD_mapping`, `do_sigmaD_pop_mapping`, `do_sigmaF_mapping`, `Setup_Mod_Catch_and_F` | `setup_checks.R`, `setup_mapping.R`, `utils_setup.R` |  |
 | `setup_fishery_comps.R` | `Setup_Mod_Discard_Comps`, `Setup_Mod_FishIdx_and_Comps` | `setup_caal.R`, `setup_checks.R`, `setup_mapping.R`, `utils_setup.R` |  |
 | `setup_fishery_selectivity.R` | `Setup_Mod_Fishsel_and_Q`, `Setup_Mod_Retsel` | `setup_checks.R`, `setup_mapping.R`, `utils_math.R`, `utils_setup.R` |  |
-| `setup_mapping.R` | `build_pe_map`, `build_shared_spec_map`, `do_comp_corr_pars_mapping`, `do_comp_theta_mapping`, `do_fixed_sel_pars_mapping`, `do_q_mapping`, `do_sel_devs_mapping`, `do_sel_pe_pars_mapping`, `sync_dev_map_data` | `utils_setup.R` | `model_fit.R`, `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_fishery_selectivity.R`, `setup_movement.R`, `setup_recruitment.R`, `setup_survey_comps.R`, `setup_survey_selectivity.R` |
+| `setup_mapping.R` | `build_pe_map`, `build_shared_spec_map`, `check_spec_map_identifiable`, `do_age_corr_setup`, `do_comp_corr_pars_mapping`, `do_comp_theta_mapping`, `do_fixed_sel_pars_mapping`, `do_key_mapping`, `do_q_mapping`, `do_sel_devs_mapping`, `do_sel_pe_pars_mapping`, `do_sigmaCAA_mapping`, `do_sigmaIdx_mapping`, `sel_has_data`, `sync_dev_map_data` | `utils_setup.R` | `model_fit.R`, `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_fishery_selectivity.R`, `setup_movement.R`, `setup_recruitment.R`, `setup_survey_comps.R`, `setup_survey_selectivity.R` |
 | `setup_movement.R` | `do_cont_vary_move_mapping`, `do_move_pars_mapping`, `Setup_Mod_Movement` | `model_movement.R`, `setup_checks.R`, `setup_mapping.R`, `utils_setup.R` |  |
 | `setup_recruitment.R` | `do_h_mapping`, `do_InitDevs_mapping`, `do_rec_region_prop_mapping`, `do_rec_seas_prop_mapping`, `do_RecDevs_mapping`, `do_sexratio_pars_mapping`, `do_sigmaR_mapping`, `do_stray_rate_mapping`, `Setup_Mod_Rec`, `Setup_Sim_Rec` | `setup_checks.R`, `setup_mapping.R`, `utils_setup.R` | `sim_closed_loop.R`, `sim_self_test.R` |
 | `setup_sim_containers.R` | `Setup_Sim_Containers` | nothing | `sim_closed_loop.R`, `sim_self_test.R` |
@@ -191,15 +191,16 @@ through that one file.
 | Script | Defines | Calls into | Called from |
 |----|----|----|----|
 | `model_biomass.R` | `compute_biom_y`, `derive_proj_biom` | `model_transition.R` | `model_population_dynamics.R`, `projection.R` |
-| `model_distributions.R` | `dbeta_symmetric`, `ddirichlet`, `ddirmult`, `dlogistnormal`, `dnbinom_robust_noint`, `dpois_noint`, `get_beta_scaled_pars`, `get_index_nLL` | nothing | `model_lik_comps.R`, `model_lik_tags.R`, `model_objective.R`, `model_priors_penalties.R` |
+| `model_distributions.R` | `build_idx_sd`, `combine_idx_sd`, `dbeta_symmetric`, `ddirichlet`, `ddirmult`, `dlogistnormal`, `dnbinom_robust_noint`, `dpois_noint`, `get_at_age_nLL`, `get_beta_scaled_pars`, `get_index_nLL` | nothing | `model_lik_at_age.R`, `model_lik_comps.R`, `model_lik_tags.R`, `model_objective.R`, `model_priors_penalties.R` |
 | `model_fit.R` | `cmb`, `fit_model` | `setup_mapping.R` | `diag_francis.R`, `diag_jitter.R`, `diag_likelihood_profile.R`, `diag_retrospective.R`, `refpts_main.R`, `sim_self_test.R` |
 | `model_growth.R` | `get_alk`, `Get_Growth`, `get_growth_pars_year`, `Get_Growth_Year`, `get_laa_curve`, `get_selected_waa`, `grow_increment`, `growth_args_from_model`, `growth_containers`, `growth_fill_year`, `growth_laa_at`, `growth_len_mid`, `growth_selected_waa_year`, `growth_start_state`, `growth_take_year`, `plus_group_size` | nothing | `model_objective.R`, `model_population_dynamics.R` |
 | `model_init_naa.R` | `Get_Init_NAA` | `model_transition.R` | `model_objective.R`, `sim_population.R` |
-| `model_lik_caal.R` | `eval_caal_osa`, `Get_CAAL_Likelihoods`, `pack_caal_osa` | `model_lik_comps.R` | `diag_osa_residuals.R`, `model_objective.R` |
+| `model_lik_at_age.R` | `get_at_age_prediction`, `get_at_age_stream_nLL` | `model_distributions.R` | `model_objective.R` |
+| `model_lik_caal.R` | `caal_sum_pop`, `caal_sum_pop_len`, `eval_caal_osa`, `Get_CAAL_Likelihoods`, `pack_caal_osa` | `model_lik_comps.R` | `diag_osa_residuals.R`, `model_objective.R` |
 | `model_lik_comps.R` | `eval_comp_osa`, `Get_Comp_Likelihoods`, `Get_Comp_Likelihoods_OSA`, `pack_comp_osa` | `model_distributions.R`, `model_osa.R`, `utils_math.R` | `diag_osa_residuals.R`, `model_lik_caal.R`, `model_objective.R` |
 | `model_lik_tags.R` | `eval_tag_osa`, `get_conv_tag_likelihoods`, `pack_tag_osa`, `tag_fam_of`, `tag_grid` | `model_distributions.R`, `model_osa.R` | `diag_osa_residuals.R`, `model_objective.R` |
 | `model_movement.R` | `Get_Movement`, `get_movement_dp_design_matrix` | nothing | `model_objective.R`, `setup_movement.R` |
-| `model_objective.R` | `maintain_backwards_compatibility`, `SPoRC_rtmb` | `model_distributions.R`, `model_growth.R`, `model_init_naa.R`, `model_lik_caal.R`, `model_lik_comps.R`, `model_lik_tags.R`, `model_movement.R`, `model_obs_fishery_survey.R`, `model_obs_tagging.R`, `model_population_dynamics.R`, `model_priors_penalties.R`, `model_selectivity.R`, `utils_setup.R` |  |
+| `model_objective.R` | `maintain_backwards_compatibility`, `SPoRC_rtmb` | `model_distributions.R`, `model_growth.R`, `model_init_naa.R`, `model_lik_at_age.R`, `model_lik_caal.R`, `model_lik_comps.R`, `model_lik_tags.R`, `model_movement.R`, `model_obs_fishery_survey.R`, `model_obs_tagging.R`, `model_population_dynamics.R`, `model_priors_penalties.R`, `model_selectivity.R`, `utils_math.R`, `utils_setup.R` |  |
 | `model_obs_fishery_survey.R` | `get_fishery_observation_model`, `get_survey_observation_model` | `model_transition.R` | `model_objective.R` |
 | `model_obs_tagging.R` | `get_tag_mort`, `get_tagging_observation_model`, `release_conv_tag_attr` | `model_transition.R` | `model_objective.R`, `sim_observations.R` |
 | `model_osa.R` | `ddirmult_osa`, `ddirmult2`, `dmultinom_osa`, `osa_extract_cdf`, `osa_extract_keep`, `osa_extract_values`, `osa_extract_x`, `osa_pbetabinom`, `osa_pbinom`, `osa_squeeze` | nothing | `model_lik_comps.R`, `model_lik_tags.R` |
@@ -246,13 +247,13 @@ through that one file.
 
 | Script | Defines | Calls into | Called from |
 |----|----|----|----|
-| `plot_figures_tables.R` | `get_biological_plot`, `get_catch_fits_plot`, `get_data_fitted_plot`, `get_idx_fits_plot`, `get_key_quants`, `get_nLL_plot`, `get_retrospective_plot`, `get_selex_plot`, `get_ts_plot`, `plot_all_basic`, `theme_sablefish` | `diag_fits.R`, `diag_retrospective.R`, `projection.R`, `refpts_main.R`, `utils_setup.R` |  |
+| `plot_figures_tables.R` | `get_at_age_fits_plot`, `get_biological_plot`, `get_catch_fits_plot`, `get_data_fitted_plot`, `get_idx_fits_plot`, `get_key_quants`, `get_nLL_plot`, `get_retrospective_plot`, `get_selex_plot`, `get_ts_plot`, `plot_all_basic`, `theme_sablefish` | `diag_fits.R`, `diag_retrospective.R`, `projection.R`, `refpts_main.R`, `utils_setup.R` |  |
 
 #### Shared helpers
 
 | Script | Defines | Calls into | Called from |
 |----|----|----|----|
-| `utils_math.R` | `get_AR1_CorrMat`, `get_Constant_CorrMat`, `get_logistN_Sigma`, `Get_Natural_Cubic_Spline_Weights`, `rho_trans` | nothing | `model_lik_comps.R`, `model_priors_penalties.R`, `setup_fishery_selectivity.R`, `setup_survey_selectivity.R`, `sim_observations.R`, `sim_random_variates.R` |
+| `utils_math.R` | `get_AR1_CorrMat`, `get_Constant_CorrMat`, `get_logistN_Sigma`, `Get_Natural_Cubic_Spline_Weights`, `rho_trans` | nothing | `model_lik_comps.R`, `model_objective.R`, `model_priors_penalties.R`, `setup_fishery_selectivity.R`, `setup_survey_selectivity.R`, `sim_observations.R`, `sim_random_variates.R` |
 | `utils_postfit.R` | `get_model_rep_from_mcmc`, `get_optim_param_list`, `get_par_est_info`, `marg_AIC`, `post_optim_sanity_checks` | nothing | `sim_closed_loop.R`, `sim_self_test.R` |
 | `utils_setup.R` | `assign_sel_block`, `collect_message`, `convert_to_numeric`, `extend_years`, `obs_len_bins`, `parse_idx_ages`, `parse_idx_cov`, `resolve_sel_pen_wts`, `safe_extract`, `seed_dbnrml_peak`, `set_data_indicator_unused`, `setup_dbnrml_raw`, `setup_dbnrml_startbin`, `setup_sel_bin_devs`, `setup_sel_norm_bins`, `setup_sel_sex_offset`, `validate_selex_penalty`, `validate_selex_prior_types` | nothing | `diag_likelihood_profile.R`, `model_objective.R`, `plot_figures_tables.R`, `setup_biologicals.R`, `setup_caal.R`, `setup_dimensions.R`, `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_fishery_selectivity.R`, `setup_mapping.R`, `setup_movement.R`, `setup_recruitment.R`, `setup_sim_fleets.R`, `setup_survey_comps.R`, `setup_survey_selectivity.R`, `setup_tagging.R`, `setup_weighting.R`, `sim_closed_loop.R`, `sim_observations.R` |
 
@@ -473,7 +474,7 @@ what is under test rather than which stock the fixture happens to use.
 | `test-integration_*` | 4 | Cross cutting agreement between the objective, the reference points and the operating model |
 | `test-regression_*` | 17 | End to end fits pinning `obj$rep` and `nll` for known configurations |
 
-That is 112 test files in total.
+That is 115 test files in total.
 
 Two groups are worth calling out. The `test-regression_*` files pin
 `obj$rep` and `nll` values for known configurations against bundled

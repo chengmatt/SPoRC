@@ -48,6 +48,7 @@
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -201,6 +202,76 @@ whole region/year/season/fleet cells, not individual ages:</p>
 </div>
 </div>
 <div class="section level2">
+<h2 id="age-disaggregated-observations">Age-disaggregated observations<a class="anchor" aria-label="anchor" href="#age-disaggregated-observations"></a>
+</h2>
+<p>A fleet can fit catch, discards or an index <strong>at age</strong>
+instead of an aggregate with a composition beside it. The arrays carry
+an age dimension in front of the fleet, so <code>ObsCatch</code> at
+<code>[n_regions, n_years, n_seas, n_fish_fleets]</code> becomes
+<code>ObsCatchAA</code> at
+<code>[n_regions, n_years, n_seas, n_ages, n_fish_fleets]</code>, and
+the <code>_pop</code> variants add a leading population dimension.</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Array</th>
+<th>Dimensions</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>
+<code>ObsCatchAA</code>, <code>UseCatchAA</code>
+</td>
+<td><code>n_regions × n_years × n_seas × n_ages × n_fish_fleets</code></td>
+</tr>
+<tr class="even">
+<td>
+<code>ObsDiscardAA</code>, <code>UseDiscardAA</code>
+</td>
+<td>same</td>
+</tr>
+<tr class="odd">
+<td>
+<code>ObsFishIdxAA</code>, <code>UseFishIdxAA</code>
+</td>
+<td>same</td>
+</tr>
+<tr class="even">
+<td>
+<code>ObsSrvIdxAA</code>, <code>UseSrvIdxAA</code>
+</td>
+<td><code>n_regions × n_years × n_seas × n_ages × n_srv_fleets</code></td>
+</tr>
+<tr class="odd">
+<td>any of the above with <code>_pop</code>
+</td>
+<td>as above, with <code>n_pop</code> in front</td>
+</tr>
+</tbody>
+</table>
+<p>Filling them follows the same <code><a href="https://rdrr.io/r/base/match.html" class="external-link">match()</a></code> convention as the
+aggregated arrays, with an extra index for age:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">ObsCatchAA</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_regions</span>, <span class="va">n_years</span>, <span class="va">n_seas</span>, <span class="va">n_ages</span>, <span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">UseCatchAA</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">ObsCatchAA</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">raw_caa</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/match.html" class="external-link">match</a></span><span class="op">(</span><span class="va">raw_caa</span><span class="op">$</span><span class="va">year</span><span class="op">[</span><span class="va">i</span><span class="op">]</span>, <span class="va">years</span><span class="op">)</span></span>
+<span>  <span class="va">a</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/match.html" class="external-link">match</a></span><span class="op">(</span><span class="va">raw_caa</span><span class="op">$</span><span class="va">age</span><span class="op">[</span><span class="va">i</span><span class="op">]</span>, <span class="va">ages</span><span class="op">)</span></span>
+<span>  <span class="va">ObsCatchAA</span><span class="op">[</span><span class="fl">1</span>, <span class="va">y</span>, <span class="fl">1</span>, <span class="va">a</span>, <span class="va">raw_caa</span><span class="op">$</span><span class="va">fleet</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">raw_caa</span><span class="op">$</span><span class="va">catch</span><span class="op">[</span><span class="va">i</span><span class="op">]</span></span>
+<span>  <span class="va">UseCatchAA</span><span class="op">[</span><span class="fl">1</span>, <span class="va">y</span>, <span class="fl">1</span>, <span class="va">a</span>, <span class="va">raw_caa</span><span class="op">$</span><span class="va">fleet</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
+<span><span class="op">}</span> <span class="co"># end i loop</span></span></code></pre></div>
+<p>Two things to know before choosing this form. A fleet fits the
+aggregated stream or the at-age stream, never both, and supplying both
+is an error rather than a warning: they are the same information stated
+twice. And an age a fleet never observes should be left at
+<code>UseCatchAA == 0</code> rather than given a zero observation, since
+a structurally absent age is not a zero catch.</p>
+</div>
+<div class="section level2">
 <h2 id="structuring-tagging-data">Structuring tagging data<a class="anchor" aria-label="anchor" href="#structuring-tagging-data"></a>
 </h2>
 <p>Conventional tagging data is the most structurally involved input
@@ -217,7 +288,7 @@ applies; it’s just spread across more axes.</p>
 region, year, and season. As with the arrays above, region and year are
 positions, not literal values: year <code>1</code> means
 <code>years[1]</code>, not the calendar year 2016.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">conv_tag_release_indicator</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span>,   <span class="co"># region 1, year index 1, season 1</span></span>
 <span>    <span class="fl">2</span>, <span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span>,  <span class="co"># region 2, year index 2, season 1</span></span>
@@ -234,7 +305,7 @@ the point of tagging. A tagging program that doesn’t record age or sex
 at release (<code>conv_fish_tag_attr = "none"</code>) pools every
 released fish for a cohort into index 1 of the population, age, and sex
 axes, leaving the rest of those axes at zero:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">conv_tagged_fish</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_conv_tag_cohorts</span>, <span class="va">n_pop</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">ages</span><span class="op">)</span>, <span class="va">n_sexes</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">conv_tagged_fish</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">50</span> <span class="co"># 50 fish released in cohort 1</span></span>
 <span><span class="va">conv_tagged_fish</span><span class="op">[</span><span class="fl">2</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">30</span> <span class="co"># 30 fish released in cohort 2</span></span></code></pre></div>
@@ -258,7 +329,7 @@ Recaptures beyond that horizon simply have nowhere to go and are ignored
 / not included in the array.</p>
 <p>Given raw recapture records (which cohort, how many periods at
 liberty, which region it was recaptured in, and how many fish):</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">conv_tag_max_liberty</span> <span class="op">&lt;-</span> <span class="fl">3</span></span>
 <span></span>
 <span><span class="va">raw_recaps</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
@@ -272,7 +343,7 @@ cohort and liberty (both already positions) and by recapture region,
 with age, sex, and fleet pooled into index 1 since this example’s
 <code>conv_fish_tag_attr = "none"</code> and it only has one fishery
 fleet:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obs_conv_tag_fish_recap</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span></span>
 <span>  <span class="fl">0</span>,</span>
 <span>  dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">conv_tag_max_liberty</span>, <span class="va">n_seas</span>, <span class="va">n_conv_tag_cohorts</span>, <span class="va">n_pop</span>, <span class="va">n_regions</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">ages</span><span class="op">)</span>, <span class="va">n_sexes</span>, <span class="va">n_fish_fleets</span><span class="op">)</span></span>

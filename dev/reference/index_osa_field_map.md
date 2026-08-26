@@ -14,7 +14,9 @@ index_osa_field_map(index_source, pop = FALSE)
 
 - index_source:
 
-  One of `"Catch"`, `"Discard"`, `"FishIdx"`, `"SrvIdx"`.
+  One of `"Catch"`, `"Discard"`, `"FishIdx"`, `"SrvIdx"`, or their
+  at-age forms `"CatchAA"`, `"DiscardAA"`, `"FishIdxAA"`, `"SrvIdxAA"`.
+  At-age sources return an extra `age` column.
 
 - pop:
 

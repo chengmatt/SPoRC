@@ -42,6 +42,7 @@ called after Setup_Sim_Dim."><meta name="robots" content="noindex"></head><body>
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -232,6 +233,19 @@ initialisation method. Default <code>2</code>. Options:</p><dl><dt><code>0</code
   <dt><code>3</code>/<code>"scalar_plus_only"</code></dt>
 <dd><p>Scalar geometric series
     solution assuming no movement except in the plus group.</p></dd>
+
+  <dt><code>4</code>/<code>"free"</code></dt>
+<dd><p>No equilibrium is projected at all:
+    <code>ln_InitDevs</code> are the initial log numbers-at-age themselves for
+    ages 2 and above, apportioned by the sex ratio, with age 1 still taken
+    from recruitment. Use this where the assessment estimates its initial
+    numbers-at-age freely rather than as departures from an equilibrium.
+    The initial condition then does not depend on <code>init_F_par</code> or
+    <code>ln_rinit</code>, and because the deviations are log-numbers rather
+    than log-ratios, any penalty acts as a prior on initial abundance:
+    pair with <code>equil_init_age_strc = "equil"</code> for no such prior, or
+    with <code>InitDevs_pen_center = "own_mean"</code> to penalise only the
+    roughness of the age structure and not its level.</p></dd>
 
 
 </dl></dd>

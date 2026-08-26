@@ -48,6 +48,7 @@
     <li><a class="dropdown-item" href="../articles/ac_bsai_northern_rock_sole_case_study.html">BSAI Northern Rock Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -2672,6 +2673,70 @@ non-linear optimization algorithm to estimate model parameters.</p>
 <div class="section level3">
 <h3 id="observation-likelihoods">Observation Likelihoods<a class="anchor" aria-label="anchor" href="#observation-likelihoods"></a>
 </h3>
+<div class="section level4">
+<h4 id="age-disaggregated-observations">Age-Disaggregated Observations<a class="anchor" aria-label="anchor" href="#age-disaggregated-observations"></a>
+</h4>
+<p>Catch, discards and the fishery and survey indices can each be fit at
+age rather than aggregated with a composition alongside. Every age is
+its own lognormal observation with its own standard deviation, and for
+the indices its own catchability. The log-likelihood for observed catch
+at age is</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ℓ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">log</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mtext mathvariant="normal">ObsCatchAA</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>f</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>λ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>⋅</mo><mfrac><mn>1</mn><msqrt><mrow><mn>2</mn><mi>π</mi><msubsup><mi>σ</mi><mrow><mi>a</mi><mo>,</mo><mi>f</mi></mrow><mn>2</mn></msubsup></mrow></msqrt></mfrac><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mfrac><msup><mrow><mo stretchy="true" form="prefix">[</mo><mi mathvariant="normal">log</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mtext mathvariant="normal">ObsCatchAA</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>f</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>−</mo><mi mathvariant="normal">log</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mtext mathvariant="normal">CatchAA</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>f</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow><mn>2</mn></msup><mrow><mn>2</mn><msubsup><mi>σ</mi><mrow><mi>a</mi><mo>,</mo><mi>f</mi></mrow><mn>2</mn></msubsup></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\ell\left( \log\left( \text{ObsCatchAA}_{r,y,\tau,a,f} \right) \right) =
+\lambda_{r,y,\tau,f} \cdot \frac{1}{\sqrt{2\pi\sigma_{a,f}^{2}}}
+\exp\left( - \frac{\left\lbrack \log\left( \text{ObsCatchAA}_{r,y,\tau,a,f} \right) -
+\log\left( \text{CatchAA}_{r,y,\tau,a,f} \right) \right\rbrack^{2}}{2\sigma_{a,f}^{2}} \right)</annotation></semantics></math></p>
+<p>The four streams differ only in the predicted quantity:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mtext mathvariant="normal">CatchAA</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>=</mo><munder><mo>∑</mo><mrow><mi>p</mi><mo>,</mo><mi>s</mi></mrow></munder><msub><mi>C</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow></msub><mspace width="1.0em"></mspace><mtext mathvariant="normal">or</mtext><mspace width="1.0em"></mspace><munder><mo>∑</mo><mrow><mi>p</mi><mo>,</mo><mi>s</mi></mrow></munder><msub><mi>C</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow></msub><mspace width="0.167em"></mspace><msub><mi>w</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\text{CatchAA}_{r,y,\tau,a,f} = \sum_{p,s} C_{p,r,y,\tau,a,s,f}
+\quad\text{or}\quad \sum_{p,s} C_{p,r,y,\tau,a,s,f} \, w_{p,r,y,\tau,a,s,f}</annotation></semantics></math></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mtext mathvariant="normal">DiscardAA</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>=</mo><munder><mo>∑</mo><mrow><mi>p</mi><mo>,</mo><mi>s</mi></mrow></munder><msub><mi>D</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\text{DiscardAA}_{r,y,\tau,a,f} = \sum_{p,s} D_{p,r,y,\tau,a,s,f}</annotation></semantics></math></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mtext mathvariant="normal">FishIdxAA</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>=</mo><msubsup><mi>q</mi><mrow><mi>a</mi><mo>,</mo><mi>f</mi></mrow><mi>F</mi></msubsup><munder><mo>∑</mo><mrow><mi>p</mi><mo>,</mo><mi>s</mi></mrow></munder><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mspace width="0.167em"></mspace><msubsup><mi>S</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mi>F</mi></msubsup><mspace width="0.167em"></mspace><msubsup><mi>S</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mi>R</mi></msubsup></mrow><annotation encoding="application/x-tex">\text{FishIdxAA}_{r,y,\tau,a,f} = q^{F}_{a,f} \sum_{p,s}
+N_{p,r,y,\tau,a,s} \, S^{F}_{p,r,y,\tau,a,s,f} \, S^{R}_{p,r,y,\tau,a,s,f}</annotation></semantics></math></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mtext mathvariant="normal">SrvIdxAA</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>=</mo><msubsup><mi>q</mi><mrow><mi>a</mi><mo>,</mo><mi>f</mi></mrow><mi>S</mi></msubsup><munder><mo>∑</mo><mrow><mi>p</mi><mo>,</mo><mi>s</mi></mrow></munder><msub><mi>I</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\text{SrvIdxAA}_{r,y,\tau,a,f} = q^{S}_{a,f} \sum_{p,s} I_{p,r,y,\tau,a,s,f}</annotation></semantics></math></p>
+<p>where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>C</mi><annotation encoding="application/x-tex">C</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>D</mi><annotation encoding="application/x-tex">D</annotation></semantics></math>
+are retained catch and discards at age,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>w</mi><annotation encoding="application/x-tex">w</annotation></semantics></math>
+is weight at age,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>N</mi><annotation encoding="application/x-tex">N</annotation></semantics></math>
+is numbers at age,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>S</mi><mi>F</mi></msup><annotation encoding="application/x-tex">S^{F}</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>S</mi><mi>R</mi></msup><annotation encoding="application/x-tex">S^{R}</annotation></semantics></math>
+are fishery selectivity and retention, and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>I</mi><annotation encoding="application/x-tex">I</annotation></semantics></math>
+is the survey-available numbers at age. Catch and discards follow the
+fleet’s units, abundance or biomass. The population-specific forms drop
+the sum over
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>p</mi><annotation encoding="application/x-tex">p</annotation></semantics></math>
+and compare a single population’s prediction. The weight
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>λ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><annotation encoding="application/x-tex">\lambda_{r,y,\tau,f}</annotation></semantics></math>
+is the one the aggregated stream carries, applied after summing over
+ages within a cell.</p>
+<p>The standard deviations
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mrow><mi>a</mi><mo>,</mo><mi>f</mi></mrow></msub><annotation encoding="application/x-tex">\sigma_{a,f}</annotation></semantics></math>
+and the catchabilities
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>q</mi><mrow><mi>a</mi><mo>,</mo><mi>f</mi></mrow></msub><annotation encoding="application/x-tex">q_{a,f}</annotation></semantics></math>
+are coupled through integer key matrices over age and fleet, in which
+equal entries share a parameter. A single structure therefore gives one
+standard deviation per age, one per age group, or one per fleet.</p>
+<p>This is not the same statement as an aggregated observation with a
+composition beside it. That factorisation is exact for a multinomial
+over Poisson counts, where the total is a genuine count sum, but the sum
+of lognormals is not lognormal, so the two forms differ for the
+lognormal used here. A fleet fits one or the other.</p>
+<p>Ages within a cell may be independent (<code>"iid"</code>), or an
+AR(1) across ages (<code>"1dar1"</code>) with a correlation
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ρ</mi><mi>f</mi></msub><annotation encoding="application/x-tex">\rho_{f}</annotation></semantics></math>
+estimated per fleet, in which case the residual vector for that cell is
+multivariate normal with</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi mathvariant="normal">Σ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><msub><mi>σ</mi><mrow><mi>i</mi><mo>,</mo><mi>f</mi></mrow></msub><mspace width="0.167em"></mspace><msub><mi>σ</mi><mrow><mi>j</mi><mo>,</mo><mi>f</mi></mrow></msub><mspace width="0.167em"></mspace><msubsup><mi>ρ</mi><mi>f</mi><mrow><mo stretchy="false" form="prefix">|</mo><mi>i</mi><mo>−</mo><mi>j</mi><mo stretchy="false" form="prefix">|</mo></mrow></msubsup></mrow><annotation encoding="application/x-tex">\Sigma_{ij} = \sigma_{i,f} \, \sigma_{j,f} \, \rho_{f}^{|i-j|}</annotation></semantics></math></p>
+<p>evaluated as a Gaussian Markov random field rather than by forming
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="normal">Σ</mi><annotation encoding="application/x-tex">\Sigma</annotation></semantics></math>.
+A cell with one observed age has no correlation to describe and falls
+back to independent.</p>
+</div>
 <div class="section level4">
 <h4 id="fishery-catches">Fishery Catches<a class="anchor" aria-label="anchor" href="#fishery-catches"></a>
 </h4>

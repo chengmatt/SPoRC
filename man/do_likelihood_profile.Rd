@@ -23,7 +23,10 @@ do_likelihood_profile(
 
 \item{parameters}{Parameter list from the fitted model.}
 
-\item{mapping}{Mapping list from the fitted model.}
+\item{mapping}{Mapping list from the fitted model. The profile keeps this map for
+every position other than the ones it fixes, so positions the fitted model held
+fixed stay fixed and positions it estimated as one shared parameter stay shared,
+leaving the profile with the same free parameters as the model being profiled.}
 
 \item{random}{Character vector of random effects to estimate. Default
 \code{NULL}.}

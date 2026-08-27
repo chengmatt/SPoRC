@@ -49,6 +49,74 @@ check_analytic_q <- function(data, parameters, what, idx) {
   invisible(NULL)
 }
 
+#' Build the map for a profiled parameter, but keep the fitted map structure
+#'
+#' A profile fixes the targeted positions and leaves every other position with the role it
+#' held in the fitted model: positions the fitted map fixed stay fixed, and positions that
+#' shared a level keep sharing it. Renumbering every position uniquely instead would give
+#' the profile more free parameters than the model being profiled, which lowers the
+#' likelihood at every grid value and leaves the difference from the MLE uncomparable.
+#'
+#' @param par The parameter array being profiled.
+#' @param map The fitted model's map entry for \code{par}, or \code{NULL} when the
+#'   parameter was estimated without one.
+#' @param idx Vector of linear indices into \code{par} to fix at the profile value.
+#'
+#' @return A factor the length of \code{par}, with the \code{idx} positions set to
+#'   \code{NA}.
+#'
+#' @keywords internal
+#' @noRd
+build_profile_map <- function(par, map, idx) {
+
+  # ensure profile map doesn't change structure
+  if(!is.null(map) && length(map) == length(par)) map_parameter <- as.character(map)
+  else map_parameter <- as.character(seq_along(par))
+
+  # `idx` indexes linearly, in the same form the profile uses to set the fixed values
+  for(k in seq_along(idx)) {
+    map_parameter <- do.call(`[<-`, c(list(map_parameter), idx[k], list(NA_character_)))
+  }
+
+  factor(map_parameter)
+}
+
+#' Flag profile targets that the fitted map ties to positions outside the profile
+#'
+#' A targeted position sharing a map level with an untargeted one stays estimated through
+#' the shared level, so the grid value never holds and the profile comes back flat.
+#'
+#' @param par The parameter array being profiled.
+#' @param map The fitted model's map entry for \code{par}, or \code{NULL}.
+#' @param what Character string. Name of the parameter being profiled.
+#' @param idx Vector of linear indices into \code{par} to fix at the profile value.
+#'
+#' @return \code{NULL}, invisibly. Called for the warning it raises.
+#'
+#' @keywords internal
+#' @noRd
+check_profile_mirrors <- function(par, map, what, idx) {
+
+  if(is.null(map) || length(map) != length(par) || length(idx) == 0) return(invisible(NULL))
+
+  target <- rep(FALSE, length(par))
+  for(k in seq_along(idx)) {
+    target <- do.call(`[<-`, c(list(target), idx[k], list(TRUE)))
+  }
+
+  labels <- as.character(map)
+  shared <- unique(labels[target & !is.na(labels)])
+  shared <- shared[shared %in% labels[!target]]
+
+  if(length(shared) > 0) {
+    warning(paste0("`", what, "` positions being profiled share a map level with positions outside `idx`, ",
+                   "so the shared parameter stays estimated and the profile value will not hold. ",
+                   "Extend `idx` to cover every position tied to the ones you are profiling."))
+  }
+
+  invisible(NULL)
+}
+
 #' Run Likelihood Profile
 #'
 #' Profiles the joint negative log-likelihood and all individual likelihood
@@ -57,7 +125,10 @@ check_analytic_q <- function(data, parameters, what, idx) {
 #'
 #' @param data Data list from the fitted model.
 #' @param parameters Parameter list from the fitted model.
-#' @param mapping Mapping list from the fitted model.
+#' @param mapping Mapping list from the fitted model. The profile keeps this map for
+#'   every position other than the ones it fixes, so positions the fitted model held
+#'   fixed stay fixed and positions it estimated as one shared parameter stay shared,
+#'   leaving the profile with the same free parameters as the model being profiled.
 #' @param random Character vector of random effects to estimate. Default
 #'   \code{NULL}.
 #' @param what Character string. Name of the parameter to profile. Profiling
@@ -136,6 +207,11 @@ do_likelihood_profile <- function(data,
 
   check_analytic_q(data, parameters, what, idx)
 
+  # The map the model was fitted with. Every grid value rebuilds `mapping[[what]]` from
+  # this copy, so the rebuild never reads back the map a previous grid value left behind.
+  fitted_map <- mapping[[what]]
+  if(!is.null(dim(parameters[[what]]))) check_profile_mirrors(parameters[[what]], fitted_map, what, idx)
+
   # create values to profile across
   vals <- seq(min_val, max_val, inc)
 
@@ -193,19 +269,8 @@ do_likelihood_profile <- function(data,
         for(k in 1:length(idx)) {
           parameters[[what]] <- do.call(`[<-`, c(list(parameters[[what]]), idx[k], list(vals[j])))
         }
-        # Build map with all target indices set to NA at once
-        map_parameter <- parameters[[what]]
-        for(k in 1:length(idx)) {
-          map_parameter <- do.call(`[<-`, c(list(map_parameter), idx[k], list(NA)))
-        }
-        # Renumber non-NA positions
-        counter <- 1
-        non_na <- which(!is.na(map_parameter))
-        for(i in 1:length(non_na)) {
-          map_parameter[non_na[i]] <- counter
-          counter <- counter + 1
-        }
-        mapping[[what]] <- factor(map_parameter)
+        # Fix the target indices, leaving the rest of the fitted map structure intact
+        mapping[[what]] <- build_profile_map(parameters[[what]], fitted_map, idx)
       } else { # else, there is only one value in this parameter
         parameters[[what]] <- vals[j]
         mapping[[what]] <- factor(NA)
@@ -339,24 +404,13 @@ do_likelihood_profile <- function(data,
           SrvLen_pop_nLL  = data.frame()
         )
 
-        if(!is.null(dim(parameters[[what]]))) {
+        if(!is.null(dim(local_parameters[[what]]))) {
           # Input fixed values for all indices
           for(k in 1:length(idx)) {
-            parameters[[what]] <- do.call(`[<-`, c(list(parameters[[what]]), idx[k], list(vals[j])))
+            local_parameters[[what]] <- do.call(`[<-`, c(list(local_parameters[[what]]), idx[k], list(vals[j])))
           }
-          # Build map with all target indices set to NA at once
-          map_parameter <- parameters[[what]]
-          for(k in 1:length(idx)) {
-            map_parameter <- do.call(`[<-`, c(list(map_parameter), idx[k], list(NA)))
-          }
-          # Renumber non-NA positions
-          counter <- 1
-          non_na <- which(!is.na(map_parameter))
-          for(i in 1:length(non_na)) {
-            map_parameter[non_na[i]] <- counter
-            counter <- counter + 1
-          }
-          mapping[[what]] <- factor(map_parameter)
+          # Fix the target indices, leaving the rest of the fitted map structure intact
+          local_mapping[[what]] <- build_profile_map(local_parameters[[what]], fitted_map, idx)
         } else { # else, there is only one value in this parameter
           local_parameters[[what]] <- vals[j]
           local_mapping[[what]] <- factor(NA)

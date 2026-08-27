@@ -26,6 +26,7 @@ eval_comp_osa(
   age_or_len,
   AgeingErrorFn,
   addtocomp,
+  BinsArr = NULL,
   family = "discrete",
   zero_init = TRUE,
   pop = FALSE,
@@ -71,9 +72,16 @@ eval_comp_osa(
 
 \item{age_or_len}{Flag indicating age-based or length-based composition.}
 
-\item{AgeingErrorFn}{Function returning the ageing error matrix for a given year.}
+\item{AgeingErrorFn}{Function \code{(y, f)} returning the ageing error matrix
+for a given year and fleet, or the length bin map, which ignores both. Fleet
+specific because a fishery and a survey need not read ages the same way.}
 
 \item{addtocomp}{Small constant added to proportions before normalization.}
+
+\item{BinsArr}{Optional \code{[n_obs_bins x n_fleets]} 0/1 array naming the
+observed bins each fleet is fitted over, or \code{NULL} (default) for all
+bins. Must be the same array handed to \code{\link{pack_comp_osa}}, since
+the strides walked here are sized on it.}
 
 \item{family}{Character string specifying the likelihood type, either "discrete" or "continuous".}
 
@@ -97,16 +105,19 @@ Slice lengths must match the packer exactly:
 
 Discrete (LikeType 0,1):
 \itemize{
-  \item Comp_Type 0: \code{n_obs_bins}
-  \item Comp_Type 1/2: \code{n_ru x n_obs_bins x n_sexes}
+  \item Comp_Type 0: \code{n_fit_bins}
+  \item Comp_Type 1/2: \code{n_ru x n_fit_bins x n_sexes}
 }
 
 Logistic-normal (LikeType 2,3,4):
 \itemize{
-  \item Comp_Type 0: \code{n_obs_bins - 1}
-  \item Comp_Type 1: \code{n_ru x (n_obs_bins - 1) x n_sexes}
-  \item Comp_Type 2: \code{n_ru x (n_obs_bins x n_sexes - 1)}
+  \item Comp_Type 0: \code{n_fit_bins - 1}
+  \item Comp_Type 1: \code{n_ru x (n_fit_bins - 1) x n_sexes}
+  \item Comp_Type 2: \code{n_ru x (n_fit_bins x n_sexes - 1)}
 }
+
+\code{n_fit_bins} is the number of bins the fleet is fitted over, taken from
+\code{BinsArr} and equal to \code{n_obs_bins} when the fleet fits every bin.
 
 These reduced lengths reflect that the tracked \code{Obs} vector is already
 ALR-transformed (the last reference bin is dropped).

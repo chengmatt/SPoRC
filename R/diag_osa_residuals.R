@@ -175,6 +175,7 @@ comp_osa_field_map <- function(comp_source, pop = FALSE, discard = FALSE) {
     Use      = paste0("Use", comp_source, "Comps", suffix),
     Type     = paste0(comp_source, "Comps", suffix, "_Type"),
     LikeType = paste0(comp_source, "Comps", suffix, "_LikeType"),
+    Bins     = paste0(comp_source, "Comps", suffix, "_bins"),
     n_fleets_field = if(grepl("^Srv", comp_source)) "n_srv_fleets" else "n_fish_fleets"
   )
 }
@@ -339,7 +340,9 @@ osa_one_step_predict <- function(model, ..., discreteSupport = NULL, parallel = 
 #' @param family Character, \code{"discrete"} or \code{"continuous"}.
 #' @param pop Logical; population-specific composition source. Default \code{FALSE}.
 #' @param discard Logical; discard composition source. Default \code{FALSE}.
-#' @param bins Vector of age or length bin labels for display.
+#' @param bins Vector of age or length bin labels for display. Must span every observed bin of the stream, not just
+#'   the ones a \code{*_bins} restriction fits: residuals are labelled by true
+#'   observed bin number, so a subset here shifts every label.
 #' @param bin_label Character label describing whether bins represent ages or lengths.
 #' @param parallel Whether or not to parallelize OSA computation. Defaults to \code{FALSE}.
 #' @param osa_method Optional override for \code{RTMB::oneStepPredict}'s \code{method}.
@@ -370,7 +373,9 @@ run_internal_comp_osa <- function(model, data, comp_source, family,
     UseArr = data[[fm$Use]], TypeMat = data[[fm$Type]], LikeTypeVec = data[[fm$LikeType]],
     n_yrs = length(data$years), n_seas = data$n_seas, n_fleets = data[[fm$n_fleets_field]],
     n_sexes = data$n_sexes, addtocomp = data$addtocomp, family = family,
-    pop = pop, n_pop = n_pop, return_labels = TRUE
+    pop = pop, n_pop = n_pop, return_labels = TRUE,
+    # must match what the objective packed, or the tracked vector is a different length
+    BinsArr = bins_or_null(data[[fm$Bins]])
   )
 
   if(is.null(packed)) {
@@ -426,7 +431,9 @@ run_internal_comp_osa <- function(model, data, comp_source, family,
 #' @param model Fitted model object.
 #' @param data The data list the model was built from.
 #' @param comp_source Either \code{"Fish_caal"} or \code{"Srv_caal"}.
-#' @param bins Age bins, used to label the residuals.
+#' @param bins Age bins, used to label the residuals. Must span every observed bin of the stream, not just
+#'   the ones a \code{*_bins} restriction fits: residuals are labelled by true
+#'   observed bin number, so a subset here shifts every label.
 #' @param bin_label Label for the bin axis, typically \code{"Age"}.
 #' @param osa_method Optional override for the \code{oneStepPredict} method.
 #' @param parallel Logical, passed to \code{oneStepPredict}.
@@ -449,7 +456,9 @@ run_internal_caal_osa <- function(model, data, comp_source, bins, bin_label,
     TypeMat = data[[paste0(comp_source, "_Type")]], LikeTypeVec = data[[paste0(comp_source, "_LikeType")]],
     n_yrs = length(data$years), n_seas = data$n_seas, n_lens = length(data$lens),
     n_fleets = data[[n_fleets_field]], n_sexes = data$n_sexes, addtocomp = data$addtocomp,
-    return_labels = TRUE
+    return_labels = TRUE,
+    # must match what the objective packed, or the tracked vector is a different length
+    BinsArr = bins_or_null(data[[paste0(comp_source, "_bins")]])
   )
 
   if(is.null(packed)) {

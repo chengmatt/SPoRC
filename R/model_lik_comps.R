@@ -76,7 +76,13 @@
 #'   compositions are restricted to these bins and renormalized within them, so
 #'   bins outside the range are left out of the likelihood rather than being
 #'   forced to be explained. Indices refer to observed bins, that is after any
-#'   ageing error has mapped model bins onto observed ones.
+#'   ageing error or length bin map has mapped model bins onto observed ones.
+#'   The restriction applies to every composition type: for the sex-joint comps
+#'   (\code{Comp_Type = 2}) the named bins are dropped from each sex's block of
+#'   the joint stack, so the sex ratio the joint comps carry is the ratio within
+#'   the fitted bins. Logistic-normal covariances are built over all observed
+#'   bins and then cut down to the fitted ones, so a gap in \code{comp_bins}
+#'   still counts towards the AR1 lag between the bins on either side of it.
 #' @param addtocomp Small constant added to compositions to avoid numerical
 #'   issues when zeros are present.
 #' @param comp_const_obs Integer (0 or 1). Whether \code{addtocomp} is added to
@@ -142,8 +148,22 @@ Get_Comp_Likelihoods = function(Exp,
   ln_theta = ln_theta[used,,drop = FALSE]
   LN_corr_pars = LN_corr_pars[used,,,drop = FALSE]
 
+  # Bin restriction here
+  fit_bins = if(is.null(comp_bins)) seq_len(n_obs_bins) else comp_bins
+  n_fit_bins = length(fit_bins)
+  fit_bins_joint = as.vector(outer(fit_bins, (seq_len(n_sexes) - 1) * n_obs_bins, "+"))
+  # Comparing against the full run of bins rather than just counting them, so a
+  # reordered comp_bins is honoured rather than passing as unrestricted
+  restrict = !identical(as.integer(fit_bins), seq_len(n_obs_bins))
+  if(restrict) Obs = Obs[,fit_bins,,drop = FALSE]
+
   # Aggregated comps by sex and region
   if(Comp_Type == 0) {
+
+    # Nothing in the fitted bins means nothing to fit, and normalizing would give
+    # NaN. Same guard the split and joint comps carry.
+    if(!any(is.finite(Obs[1,,1])) || sum(Obs[1,,1], na.rm = TRUE) == 0) return(comp_nLL)
+
     tmp_Exp = matrix(rowSums(matrix(Exp, nrow = n_model_bins)) / (n_sexes * n_regions), nrow = 1) # aggregate
     tmp_Exp = tmp_Exp / sum(tmp_Exp) # normalize
 
@@ -154,11 +174,8 @@ Get_Comp_Likelihoods = function(Exp,
       tmp_Exp = as.vector((tmp_Exp) / sum(tmp_Exp)) # renormalize
     } else tmp_Exp = as.vector((tmp_Exp) / sum(tmp_Exp)) # renormalize (lengths)
 
-    # Subset predicted and observed to composition bin ranges
-    if(!is.null(comp_bins)) {
-      tmp_Exp = tmp_Exp[comp_bins] / sum(tmp_Exp[comp_bins])
-      Obs = Obs[, comp_bins, , drop = FALSE]
-    }
+    # Restrict the expectation to the bins being fit and renormalize within them
+    if(restrict) tmp_Exp = tmp_Exp[fit_bins] / sum(tmp_Exp[fit_bins])
 
     # Multinomial likelihood
     if(Likelihood_Type == 0) { # Note that this indexes 1 because it's only a single sex and single region
@@ -206,6 +223,7 @@ Get_Comp_Likelihoods = function(Exp,
       LN_corr_b = rho_trans(LN_corr_pars_agg) # correlation by age / length
       Sigma =  get_AR1_CorrMat(n_obs_bins, LN_corr_b)
       Sigma = Sigma * (exp(ln_theta_agg)^2 / (1 - LN_corr_b^2))
+      if(restrict) Sigma = Sigma[fit_bins, fit_bins] # cut to the bins being fit, lags measured over the full range
 
       if(length(zeros) > 0) {
         # Remove zeros and renormalize
@@ -234,6 +252,9 @@ Get_Comp_Likelihoods = function(Exp,
           tmp_Exp = ((Exp[r,,s]) / sum(Exp[r,,s])) %*% AgeingError # Normalize temporary variable (ages), or map the length bins
           tmp_Exp = tmp_Exp / sum(tmp_Exp) # renormalize
         } else tmp_Exp = (Exp[r,,s]) / sum(Exp[r,,s]) # Normalize lengths
+
+        # Restrict the expectation to the bins being fit and renormalize within them
+        if(restrict) tmp_Exp = tmp_Exp[fit_bins] / sum(tmp_Exp[fit_bins])
 
         # Multinomial likelihood
         if(Likelihood_Type == 0) {
@@ -282,6 +303,7 @@ Get_Comp_Likelihoods = function(Exp,
           LN_corr_b = rho_trans(LN_corr_pars[r,s,1]) # correlation by age / length
           Sigma =  get_AR1_CorrMat(n_obs_bins, LN_corr_b)
           Sigma = Sigma * (exp(ln_theta[r,s])^2 / (1 - LN_corr_b^2))
+          if(restrict) Sigma = Sigma[fit_bins, fit_bins] # cut to the bins being fit, lags measured over the full range
 
           if(length(zeros) > 0) {
             # Remove zeros and renormalize
@@ -305,11 +327,20 @@ Get_Comp_Likelihoods = function(Exp,
   if(Comp_Type == 2) {
     for(r in 1:n_regions_obs_use) {
 
+      # A region whose fitted block holds no fish contributes nothing, and
+      # normalizing it would give Inf. Matches the guard the split comps carry,
+      # and matters more once a bin restriction can empty a block that the full
+      # composition filled.
+      if(!any(is.finite(Obs[r,,])) || sum(Obs[r,,], na.rm = TRUE) == 0) next
+
       # Expected values
       if(age_or_len == 0 || is.matrix(AgeingError)) { # if ages, or lengths with a bin map
         tmp_Exp = t(as.vector((Exp[r,,])/ sum(Exp[r,,]))) %*% kronecker(diag(n_sexes), AgeingError) # apply ageing error, or the length bin map
         tmp_Exp = as.vector((tmp_Exp) / sum(tmp_Exp)) # renormalize to make sure sum to 1
       } else tmp_Exp = as.vector((Exp[r,,]) / sum((Exp[r,,]))) # Normalize temporary variable (lengths)
+
+      # Restrict the expectation to the bins being fit and renormalize within them
+      if(restrict) tmp_Exp = tmp_Exp[fit_bins_joint] / sum(tmp_Exp[fit_bins_joint])
 
       # Multinomial likelihood
       if(Likelihood_Type == 0) { # Indexing by r for a given region since it's 'Split' by region and 1 for sex since it's 'Joint' for sex
@@ -360,6 +391,7 @@ Get_Comp_Likelihoods = function(Exp,
         LN_corr_b = rho_trans(LN_corr_pars[r,1,1]) # correlation by age / length
         Sigma =  get_AR1_CorrMat(n_obs_bins * n_sexes, LN_corr_b)
         Sigma = Sigma * (exp(ln_theta[r,1])^2 / (1 - LN_corr_b^2))
+        if(restrict) Sigma = Sigma[fit_bins_joint, fit_bins_joint] # cut to the bins being fit, lags measured over the full range
 
         if(length(zeros) > 0) {
           # Remove zeros and renormalize
@@ -388,6 +420,7 @@ Get_Comp_Likelihoods = function(Exp,
         mat1 = get_Constant_CorrMat(n_sexes, LN_corr_s)
         mat2 = get_AR1_CorrMat(n_obs_bins, LN_corr_b)
         Sigma =  Matrix::kronecker(mat1, mat2)  * (exp(ln_theta[r,1])^2 / (1 - LN_corr_s^2) / (1 - LN_corr_b^2))
+        if(restrict) Sigma = Sigma[fit_bins_joint, fit_bins_joint] # cut to the bins being fit, lags measured over the full range
 
         if(length(zeros) > 0) {
           # Remove zeros and renormalize
@@ -441,9 +474,14 @@ Get_Comp_Likelihoods = function(Exp,
 #' the multivariate normal density.
 #'
 #' Reduced LN block lengths:
-#'   * Comp_Type 0: \code{n_obs_bins - 1}
-#'   * Comp_Type 1: \code{n_obs_bins - 1} per region/sex
-#'   * Comp_Type 2: \code{n_obs_bins * n_sexes - 1} per region (one joint reference)
+#'   * Comp_Type 0: \code{n_fit_bins - 1}
+#'   * Comp_Type 1: \code{n_fit_bins - 1} per region/sex
+#'   * Comp_Type 2: \code{n_fit_bins * n_sexes - 1} per region (one joint reference)
+#'
+#' where \code{n_fit_bins} is the number of bins named by \code{comp_bins},
+#' equal to \code{n_obs_bins} when the fleet fits every bin. The packer applies
+#' the same restriction before transforming, so the ALR reference is the last
+#' fitted bin rather than the last observed one.
 #'
 #' @param Exp Expected proportions [n_regions × n_model_bins × n_sexes].
 #' @param Obs Flat tracked observation vector (already ALR‑transformed for LN).
@@ -470,13 +508,20 @@ Get_Comp_Likelihoods_OSA = function(Exp,
                                     age_or_len,
                                     AgeingError,
                                     use,
-                                    addtocomp) {
+                                    addtocomp,
+                                    comp_bins = NULL) {
 
   "c"   <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   rho_trans = function(x) 2 / (1 + exp(-2 * x)) - 1
   alr_mu    = function(p) log(p[-length(p)]) - log(p[length(p)])
+
+  # Bin restriction, mirroring Get_Comp_Likelihoods
+  fit_bins = if(is.null(comp_bins)) seq_len(n_obs_bins) else comp_bins
+  n_fit_bins = length(fit_bins)
+  fit_bins_joint = as.vector(outer(fit_bins, (seq_len(n_sexes) - 1) * n_obs_bins, "+"))
+  restrict = !identical(as.integer(fit_bins), seq_len(n_obs_bins))
 
   const = addtocomp
   used  = which(use == 1)          # observed region rows
@@ -502,6 +547,7 @@ Get_Comp_Likelihoods_OSA = function(Exp,
       tmp_Exp = as.vector(matrix(tmp_Exp, nrow = 1) %*% AgeingError)
       tmp_Exp = tmp_Exp / sum(tmp_Exp)
     }
+    if(restrict) tmp_Exp = tmp_Exp[fit_bins] / sum(tmp_Exp[fit_bins])
     tmp_Exp = tmp_Exp + const
     tmp_Exp = tmp_Exp / sum(tmp_Exp)
 
@@ -513,10 +559,11 @@ Get_Comp_Likelihoods_OSA = function(Exp,
     }
     if(Likelihood_Type %in% c(2,3)) { # Logistic-normal (Obs already ALR)
       if(Likelihood_Type == 2) {
-        Sigma = diag(rep(exp(ln_theta_agg)^2, n_obs_bins))
+        Sigma = diag(rep(exp(ln_theta_agg)^2, n_fit_bins))
       } else {
         LN_corr_b = rho_trans(LN_corr_pars_agg)
         Sigma = get_AR1_CorrMat(n_obs_bins, LN_corr_b) * (exp(ln_theta_agg)^2 / (1 - LN_corr_b^2))
+        if(restrict) Sigma = Sigma[fit_bins, fit_bins]
       }
       Sigma = Sigma[-nrow(Sigma), -ncol(Sigma)]
       mu = alr_mu(tmp_Exp)
@@ -536,14 +583,15 @@ Get_Comp_Likelihoods_OSA = function(Exp,
         } else {
           tmp_Exp = Exp[r,,s] / sum(Exp[r,,s])
         }
+        if(restrict) tmp_Exp = tmp_Exp[fit_bins] / sum(tmp_Exp[fit_bins])
         tmp_Exp = tmp_Exp + const
         tmp_Exp = tmp_Exp / sum(tmp_Exp)
 
         if(Likelihood_Type %in% c(0,1)) {
-          idx = seq(from = r + (s - 1) * n_ru * n_obs_bins, by = n_ru, length.out = n_obs_bins)
+          idx = seq(from = r + (s - 1) * n_ru * n_fit_bins, by = n_ru, length.out = n_fit_bins)
         }
         if(Likelihood_Type %in% c(2,3)) {
-          idx = seq(from = r + (s - 1) * n_ru * (n_obs_bins - 1), by = n_ru, length.out = n_obs_bins - 1)
+          idx = seq(from = r + (s - 1) * n_ru * (n_fit_bins - 1), by = n_ru, length.out = n_fit_bins - 1)
         }
         if(Likelihood_Type == 0) { # Multinomial
           comp_nLL[used[r],s] = -dmultinom_osa(Obs[idx], tmp_Exp, log = TRUE)
@@ -553,10 +601,11 @@ Get_Comp_Likelihoods_OSA = function(Exp,
         }
         if(Likelihood_Type %in% c(2,3)) { # Logistic-normal (Obs already ALR)
           if(Likelihood_Type == 2) {
-            Sigma = diag(rep(exp(ln_theta[r,s])^2, n_obs_bins))
+            Sigma = diag(rep(exp(ln_theta[r,s])^2, n_fit_bins))
           } else {
             LN_corr_b = rho_trans(LN_corr_pars[r,s,1])
             Sigma = get_AR1_CorrMat(n_obs_bins, LN_corr_b) * (exp(ln_theta[r,s])^2 / (1 - LN_corr_b^2))
+            if(restrict) Sigma = Sigma[fit_bins, fit_bins]
           }
           Sigma = Sigma[-nrow(Sigma), -ncol(Sigma)]
           mu = alr_mu(tmp_Exp)
@@ -577,24 +626,26 @@ Get_Comp_Likelihoods_OSA = function(Exp,
       } else {
         tmp_Exp = as.vector(Exp[r,,] / sum(Exp[r,,]))
       }
+      if(restrict) tmp_Exp = tmp_Exp[fit_bins_joint] / sum(tmp_Exp[fit_bins_joint])
       tmp_Exp = tmp_Exp + const
       tmp_Exp = tmp_Exp / sum(tmp_Exp)
 
       if(Likelihood_Type %in% c(0,1)) {
-        idx = seq(from = r, by = n_ru, length.out = n_obs_bins * n_sexes)
+        idx = seq(from = r, by = n_ru, length.out = n_fit_bins * n_sexes)
       }
       if(Likelihood_Type %in% c(2,3,4)) {
         # joint drops ONE reference for the whole [bin x sex] stack
-        Lred = n_obs_bins * n_sexes - 1
+        Lred = n_fit_bins * n_sexes - 1
         idx  = seq(from = r, by = n_ru, length.out = Lred)
 
         if(Likelihood_Type == 2) { # iid
-          Sigma = diag(rep(exp(ln_theta[r,1])^2, n_obs_bins * n_sexes))
+          Sigma = diag(rep(exp(ln_theta[r,1])^2, n_fit_bins * n_sexes))
         }
         if(Likelihood_Type == 3) { # 1D AR1
           LN_corr_b = rho_trans(LN_corr_pars[r,1,1])
           Sigma = get_AR1_CorrMat(n_obs_bins * n_sexes, LN_corr_b)
           Sigma = Sigma * (exp(ln_theta[r,1])^2 / (1 - LN_corr_b^2))
+          if(restrict) Sigma = Sigma[fit_bins_joint, fit_bins_joint]
         }
         if(Likelihood_Type == 4) { # 2D AR1 (age/len x sex)
           LN_corr_b = rho_trans(LN_corr_pars[r,1,1])
@@ -602,6 +653,7 @@ Get_Comp_Likelihoods_OSA = function(Exp,
           mat1 = get_Constant_CorrMat(n_sexes, LN_corr_s)
           mat2 = get_AR1_CorrMat(n_obs_bins, LN_corr_b)
           Sigma = Matrix::kronecker(mat1, mat2) * (exp(ln_theta[r,1])^2 / (1 - LN_corr_s^2) / (1 - LN_corr_b^2))
+          if(restrict) Sigma = Sigma[fit_bins_joint, fit_bins_joint]
         }
         Sigma = Sigma[-nrow(Sigma), -ncol(Sigma)]  # drop last row/col -> Lred x Lred
         mu = alr_mu(tmp_Exp)                        # ALR of expectation -> length Lred
@@ -665,6 +717,10 @@ Get_Comp_Likelihoods_OSA = function(Exp,
 #' @param family Character string specifying the likelihood type, either "discrete" or "continuous".
 #' @param pop Logical; if TRUE, the population dimension is treated as the outermost layer.
 #' @param n_pop Number of population structures or pools.
+#' @param BinsArr Optional \code{[n_obs_bins x n_fleets]} 0/1 array naming the
+#'   observed bins each fleet is fitted over, or \code{NULL} (default) for all
+#'   bins. Restricted fleets pack a shorter block, and \code{eval_comp_osa} must
+#'   be handed the same array so its strides stay in step with the packer.
 #' @param return_labels Logical; if TRUE, also builds a per-element label
 #'   data.frame identifying the origin (pop, region, year, season, fleet, sex,
 #'   bin, comp_type, likelihood_type, family, last_in_group) of every entry in
@@ -681,12 +737,27 @@ Get_Comp_Likelihoods_OSA = function(Exp,
 pack_comp_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
                          n_yrs, n_seas, n_fleets, n_sexes, addtocomp,
                          family = "discrete", pop = FALSE, n_pop = 1,
-                         return_labels = FALSE) {
+                         return_labels = FALSE, BinsArr = NULL) {
 
   "c"   <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   n_obs_bins = if(pop) dim(ObsArr)[5] else dim(ObsArr)[4]
+
+  # Observed bins a fleet is actually fitted over. Everything downstream is sized
+  # on these, so a restricted fleet packs a shorter block and its ALR reference
+  # becomes the last fitted bin rather than the last observed one.
+  # A fleet column is only meaningful against the bins the observations carry.
+  # A mismatched row count would desynchronize the packer from the evaluator
+  # silently, which is the one failure this machinery cannot survive.
+  bins_of = function(f) {
+    if(is.null(BinsArr)) return(seq_len(n_obs_bins))
+    if(nrow(BinsArr) != n_obs_bins) {
+      stop("bin selection array has ", nrow(BinsArr), " rows but the observations carry ", n_obs_bins,
+           " bins. The *_bins argument must be indexed on the observed bins of the stream it restricts.")
+    }
+    which(BinsArr[,f] == 1)
+  }
 
   fam_of = function(lt) if(lt %in% c(0,1)) "discrete" else "continuous"
 
@@ -696,39 +767,41 @@ pack_comp_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
   # build the per-element label rows for one accepted (p,y,f,seas) group,
   # mirroring the exact element order used to build 'g' below
   make_labels = function(used, n_ru, ct, lt, p, y, seas, f, len) {
-    if(lt %in% c(0,1)) { # discrete: full n_obs_bins retained
+    fit_bins = bins_of(f)   # true observed bin numbers, so labels stay comparable across fleets
+    n_bins   = length(fit_bins)
+    if(lt %in% c(0,1)) { # discrete: every fitted bin retained
       if(ct == 0) {
-        region = rep(used[1], n_obs_bins); sex = rep(1L, n_obs_bins); bin = 1:n_obs_bins
-        last_in_group = (bin == n_obs_bins)
+        region = rep(used[1], n_bins); sex = rep(1L, n_bins); bin = fit_bins
+        last_in_group = (bin == fit_bins[n_bins])
       } else {
-        region = rep(used, times = n_obs_bins * n_sexes)
-        bin    = rep(rep(1:n_obs_bins, each = n_ru), times = n_sexes)
-        sex    = rep(1:n_sexes, each = n_ru * n_obs_bins)
+        region = rep(used, times = n_bins * n_sexes)
+        bin    = rep(rep(fit_bins, each = n_ru), times = n_sexes)
+        sex    = rep(1:n_sexes, each = n_ru * n_bins)
         if(ct == 1) {
           # split by sex: each (region,sex) is its own independent multinomial,
           # so each has its own redundant/determined bin.
-          last_in_group = (bin == n_obs_bins)
+          last_in_group = (bin == fit_bins[n_bins])
         } else {
           # ct == 2, joint by sex: the whole [bin x sex] stack per region is
           # one multinomial (matches the joint scaling in the packing step
           # above), so only the single last cell is redundant/determined,
           # not one per sex. 
-          last_in_group = (bin == n_obs_bins) & (sex == n_sexes)
+          last_in_group = (bin == fit_bins[n_bins]) & (sex == n_sexes)
         }
       }
     } else { # continuous (LN): reference bin already ALR-dropped during packing
       if(ct == 0) {
-        region = rep(used[1], n_obs_bins - 1); sex = rep(1L, n_obs_bins - 1); bin = 1:(n_obs_bins - 1)
+        region = rep(used[1], n_bins - 1); sex = rep(1L, n_bins - 1); bin = fit_bins[-n_bins]
       } else if(ct == 1) {
-        region = rep(used, times = (n_obs_bins - 1) * n_sexes)
-        bin    = rep(rep(1:(n_obs_bins - 1), each = n_ru), times = n_sexes)
-        sex    = rep(1:n_sexes, each = n_ru * (n_obs_bins - 1))
+        region = rep(used, times = (n_bins - 1) * n_sexes)
+        bin    = rep(rep(fit_bins[-n_bins], each = n_ru), times = n_sexes)
+        sex    = rep(1:n_sexes, each = n_ru * (n_bins - 1))
       } else {
-        Lred = n_obs_bins * n_sexes - 1
+        Lred = n_bins * n_sexes - 1
         region = rep(used, times = Lred)
         pos_in_stack = rep(1:Lred, each = n_ru)
-        bin = ((pos_in_stack - 1) %% n_obs_bins) + 1
-        sex = ((pos_in_stack - 1) %/% n_obs_bins) + 1
+        bin = fit_bins[((pos_in_stack - 1) %% n_bins) + 1]
+        sex = ((pos_in_stack - 1) %/% n_bins) + 1
       }
       last_in_group = rep(FALSE, len)
     }
@@ -757,6 +830,10 @@ pack_comp_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
             }
             dim(obs_slice) = c(n_ru, n_obs_bins, n_sexes)
 
+            fit_bins = bins_of(f)
+            n_bins   = length(fit_bins)
+            if(n_bins < n_obs_bins) obs_slice = obs_slice[, fit_bins, , drop = FALSE]
+
             if(lt %in% c(0,1)) {
               # Discrete: scale to counts
               if(ct == 2) {
@@ -769,7 +846,7 @@ pack_comp_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
                   pr  = (v + addtocomp) / sum(v + addtocomp)
                   if(lt == 0) v = round(pr * iss * wt)  # multinomial
                   if(lt == 1) v = round(pr * iss)       # DM (no Wt)
-                  for(s in 1:n_sexes) obs_slice[rr, , s] = v[((s - 1) * n_obs_bins + 1):(s * n_obs_bins)]
+                  for(s in 1:n_sexes) obs_slice[rr, , s] = v[((s - 1) * n_bins + 1):(s * n_bins)]
                 }
               } else {
                 # Aggregated (ct 0) / split by region and sex (ct 1): each
@@ -789,17 +866,17 @@ pack_comp_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
 
             } else {
               # Continuous (LN): ALR-transform per block, drop reference bin
-              # Layout mirrors the discrete path so the likelihood(just n_obs_bins-1 instead of n_obs_bins):
-              #   ct 0: single vector, length n_obs_bins-1
-              #   ct 1: [n_ru, n_obs_bins-1, n_sexes] as.vector (region-fastest)
-              #   ct 2: per region, ALR of the full [bin x sex] stack (length n_obs_bins*n_sexes-1), region-fastest via seq
+              # Layout mirrors the discrete path so the likelihood(just n_bins-1 instead of n_bins):
+              #   ct 0: single vector, length n_bins-1
+              #   ct 1: [n_ru, n_bins-1, n_sexes] as.vector (region-fastest)
+              #   ct 2: per region, ALR of the full [bin x sex] stack (length n_bins*n_sexes-1), region-fastest via seq
               if(ct == 0) {
                 pr = (obs_slice[1, , 1] + addtocomp) / sum(obs_slice[1, , 1] + addtocomp)
                 g  = alr(as.vector(pr))
               } else if(ct == 1) {
-                # ALR each (region,sex) -> [n_ru, n_obs_bins-1, n_sexes], as.vector col-major
-                arr = array(0, dim = c(n_ru, n_obs_bins - 1, n_sexes))
-                arr = RTMB::AD(arr); dim(arr) = c(n_ru, n_obs_bins - 1, n_sexes)
+                # ALR each (region,sex) -> [n_ru, n_bins-1, n_sexes], as.vector col-major
+                arr = array(0, dim = c(n_ru, n_bins - 1, n_sexes))
+                arr = RTMB::AD(arr); dim(arr) = c(n_ru, n_bins - 1, n_sexes)
                 for(rr in 1:n_ru) {
                   for(s in 1:n_sexes) {
                     pr = (obs_slice[rr, , s] + addtocomp) / sum(obs_slice[rr, , s] + addtocomp)
@@ -809,9 +886,9 @@ pack_comp_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
                 g = as.vector(arr)          # region-fastest, matches strided idx
               } else {
                 # joint: per region ALR of [bin x sex] stack. Store as
-                # [n_ru, (n_obs_bins*n_sexes - 1)] and as.vector region-fastest,
-                # matching idx = seq(from=r, by=n_ru, length.out=(n_obs_bins-1)*n_sexes)
-                Lred = n_obs_bins * n_sexes - 1
+                # [n_ru, (n_bins*n_sexes - 1)] and as.vector region-fastest,
+                # matching idx = seq(from=r, by=n_ru, length.out=(n_bins-1)*n_sexes)
+                Lred = n_bins * n_sexes - 1
                 arr = array(0, dim = c(n_ru, Lred))
                 arr = RTMB::AD(arr); dim(arr) = c(n_ru, Lred)
                 for(rr in 1:n_ru) {
@@ -849,16 +926,19 @@ pack_comp_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
 #'
 #' Discrete (LikeType 0,1):
 #' \itemize{
-#'   \item Comp_Type 0: \code{n_obs_bins}
-#'   \item Comp_Type 1/2: \code{n_ru x n_obs_bins x n_sexes}
+#'   \item Comp_Type 0: \code{n_fit_bins}
+#'   \item Comp_Type 1/2: \code{n_ru x n_fit_bins x n_sexes}
 #' }
 #'
 #' Logistic-normal (LikeType 2,3,4):
 #' \itemize{
-#'   \item Comp_Type 0: \code{n_obs_bins - 1}
-#'   \item Comp_Type 1: \code{n_ru x (n_obs_bins - 1) x n_sexes}
-#'   \item Comp_Type 2: \code{n_ru x (n_obs_bins x n_sexes - 1)}
+#'   \item Comp_Type 0: \code{n_fit_bins - 1}
+#'   \item Comp_Type 1: \code{n_ru x (n_fit_bins - 1) x n_sexes}
+#'   \item Comp_Type 2: \code{n_ru x (n_fit_bins x n_sexes - 1)}
 #' }
+#'
+#' \code{n_fit_bins} is the number of bins the fleet is fitted over, taken from
+#' \code{BinsArr} and equal to \code{n_obs_bins} when the fleet fits every bin.
 #'
 #' These reduced lengths reflect that the tracked \code{Obs} vector is already
 #' ALR-transformed (the last reference bin is dropped).
@@ -882,8 +962,14 @@ pack_comp_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
 #' @param n_model_bins Number of internal model bins.
 #' @param n_obs_bins Number of observational bins.
 #' @param age_or_len Flag indicating age-based or length-based composition.
-#' @param AgeingErrorFn Function returning the ageing error matrix for a given year.
+#' @param AgeingErrorFn Function \code{(y, f)} returning the ageing error matrix
+#'   for a given year and fleet, or the length bin map, which ignores both. Fleet
+#'   specific because a fishery and a survey need not read ages the same way.
 #' @param addtocomp Small constant added to proportions before normalization.
+#' @param BinsArr Optional \code{[n_obs_bins x n_fleets]} 0/1 array naming the
+#'   observed bins each fleet is fitted over, or \code{NULL} (default) for all
+#'   bins. Must be the same array handed to \code{\link{pack_comp_osa}}, since
+#'   the strides walked here are sized on it.
 #' @param family Character string specifying the likelihood type, either "discrete" or "continuous".
 #' @param zero_init Logical; whether to zero out the nLL array on entry.
 #' @param pop Logical; if TRUE, evaluations account for the population structure layer.
@@ -897,7 +983,7 @@ eval_comp_osa = function(nLL_arr, tracked, ExpArrFn,
                          LNcorrArr, LNcorrAggVec,
                          n_regions, n_yrs, n_seas, n_fleets, n_sexes,
                          n_model_bins, n_obs_bins, age_or_len,
-                         AgeingErrorFn, addtocomp,
+                         AgeingErrorFn, addtocomp, BinsArr = NULL,
                          family = "discrete", zero_init = TRUE,
                          pop = FALSE, n_pop = 1) {
 
@@ -907,6 +993,16 @@ eval_comp_osa = function(nLL_arr, tracked, ExpArrFn,
   if(is.null(tracked)) return(nLL_arr)
 
   fam_of = function(lt) if(lt %in% c(0,1)) "discrete" else "continuous"
+
+  # Must match pack_comp_osa exactly, or the pointer k walks out of step
+  bins_of = function(f) {
+    if(is.null(BinsArr)) return(seq_len(n_obs_bins))
+    if(nrow(BinsArr) != n_obs_bins) {
+      stop("bin selection array has ", nrow(BinsArr), " rows but the observations carry ", n_obs_bins,
+           " bins. The *_bins argument must be indexed on the observed bins of the stream it restricts.")
+    }
+    which(BinsArr[,f] == 1)
+  }
 
   d = dim(nLL_arr)
   if(zero_init) nLL_arr = RTMB::AD(as.vector(nLL_arr) * 0)
@@ -927,18 +1023,21 @@ eval_comp_osa = function(nLL_arr, tracked, ExpArrFn,
             lt   = LikeTypeVec[f]
             n_ru = sum(use_vec == 1)
 
+            fit_bins = bins_of(f)
+            n_bins   = length(fit_bins)
+
             # slice length depends on family + comp type (LN drops ALR reference)
             if(lt %in% c(0,1)) {
-              slice_length = if(ct == 0) n_obs_bins else n_ru * n_obs_bins * n_sexes
+              slice_length = if(ct == 0) n_bins else n_ru * n_bins * n_sexes
             } else { # LN
-              if(ct == 0)      slice_length = (n_obs_bins - 1)
-              else if(ct == 1) slice_length = n_ru * (n_obs_bins - 1) * n_sexes
-              else             slice_length = n_ru * (n_obs_bins * n_sexes - 1)
+              if(ct == 0)      slice_length = (n_bins - 1)
+              else if(ct == 1) slice_length = n_ru * (n_bins - 1) * n_sexes
+              else             slice_length = n_ru * (n_bins * n_sexes - 1)
             }
 
-            active_obs_slice = tracked[k:(k + slice_length - 1)]
+            active_obs_slice = tracked[seq.int(from = k, length.out = slice_length)]
 
-            AE = if(is.null(AgeingErrorFn)) NA else AgeingErrorFn(y)
+            AE = if(is.null(AgeingErrorFn)) NA else AgeingErrorFn(y, f)
 
             ISS_g          = if(pop) ISSArr[p, , y, seas, , f] else ISSArr[, y, seas, , f]
             ln_theta_g     = if(pop) lnThetaArr[p, , , f]      else lnThetaArr[, , f]
@@ -953,7 +1052,8 @@ eval_comp_osa = function(nLL_arr, tracked, ExpArrFn,
               Comp_Type = ct, Likelihood_Type = lt,
               n_regions = n_regions, n_model_bins = n_model_bins, n_obs_bins = n_obs_bins,
               n_sexes = n_sexes, age_or_len = age_or_len, AgeingError = AE,
-              use = use_vec, addtocomp = addtocomp
+              use = use_vec, addtocomp = addtocomp,
+              comp_bins = if(n_bins < n_obs_bins) fit_bins else NULL
             )
 
             if(pop) nLL_arr[p, , y, seas, , f] = comp_out

@@ -735,6 +735,10 @@ run_francis <- function(data,
       data$Wt_FishLenComps_discard_pop[] <- 1
       data$Wt_SrvAgeComps_pop[]  <- 1
       data$Wt_SrvLenComps_pop[]  <- 1
+      # conditional age-at-length carries its own weight, and for a model whose age
+      # information is all CAAL it is the one that matters most
+      if(!is.null(data$Wt_Fish_caal)) data$Wt_Fish_caal[] <- 1
+      if(!is.null(data$Wt_Srv_caal)) data$Wt_Srv_caal[] <- 1
     } else {
       data$Wt_FishAgeComps[] <- wts$new_fish_age_wts
       data$Wt_FishLenComps[] <- wts$new_fish_len_wts
@@ -748,6 +752,8 @@ run_francis <- function(data,
       if(any(data$UseFishLenComps_discard == 1)) data$Wt_FishLenComps_discard[] <- wts$new_fish_len_discard_wts
       if(any(data$UseSrvAgeComps_pop  == 1)) data$Wt_SrvAgeComps_pop[]  <- wts$new_srv_age_pop_wts
       if(any(data$UseSrvLenComps_pop  == 1)) data$Wt_SrvLenComps_pop[]  <- wts$new_srv_len_pop_wts
+      if(!is.null(data$UseFish_caal) && any(data$UseFish_caal == 1)) data$Wt_Fish_caal[] <- wts$new_fish_caal_wts
+      if(!is.null(data$UseSrv_caal) && any(data$UseSrv_caal == 1)) data$Wt_Srv_caal[] <- wts$new_srv_caal_wts
     }
 
     # run model
@@ -817,7 +823,10 @@ run_francis <- function(data,
   obj$rep <- rep
 
   return(list(obj = obj, start_mean_francis = wts_1$mean_francis,
-              end_mean_francis = wts$mean_francis, recorded_weights = wts_df))
+              end_mean_francis = wts$mean_francis,
+              start_mean_francis_caal = wts_1$mean_francis_caal,
+              end_mean_francis_caal = wts$mean_francis_caal,
+              recorded_weights = wts_df))
 
 }
 
@@ -884,6 +893,17 @@ get_francis_weights_caal <- function(n_regions,
       ct_idx <- which(unique_comp_type == ct)
 
       for(seas in 1:n_seas) {
+
+        # Francis (2011) TA1.8 for conditional data forms one statistic per fleet,
+        # year and season: the mean age over the length bins aged, weighted by the
+        # number aged in each. Within a year the bins share the model's error, so
+        # they are not independent draws. Averaging them first keeps that shared
+        # error in the numerator while the sampling noise averages out of the
+        # standard error. Standardizing each length bin on its own instead treats
+        # one systematic miss as many small independent ones, which understates the
+        # misfit and biases the weight upward.
+        acc <- array(list(), dim = c(n_regions, n_sexes))
+
         for(l in 1:n_lens) {
 
           use_regions <- which(Use[, y, seas, l, f] == 1)
@@ -922,12 +942,32 @@ get_francis_weights_caal <- function(n_regions,
             v_row <- sum(bins^2 * exp_v) - exp_bar^2
             if(!is.finite(v_row) || v_row <= 0) next
 
-            resid[[r, s, ct_idx]] <- c(resid[[r, s, ct_idx]], (obs_bar - exp_bar) / sqrt(v_row / n_row))
+            acc[[r, s]] <- rbind(acc[[r, s]], c(obs_bar, exp_bar, v_row, n_row))
             rows <- rbind(rows, data.frame(Region = r, Comp_Year = y, Comp_Seas = seas,
                                            Len_Bin = l, Sex = s, obs = obs_bar, pred = exp_bar))
 
           } # end cell loop
         } # end l loop
+
+        # collapse each cell's length bins into that year's mean age, and take one
+        # standardized residual from it
+        for(r in 1:n_regions) {
+          for(s in 1:n_sexes) {
+
+            a <- acc[[r, s]]
+            if(is.null(a)) next
+
+            wt_l <- a[,4] / sum(a[,4]) # weighted by the number aged in each bin
+            obs_yr <- sum(wt_l * a[,1])
+            exp_yr <- sum(wt_l * a[,2])
+            se_yr <- sqrt(sum(wt_l^2 * a[,3] / a[,4]))
+            if(!is.finite(se_yr) || se_yr <= 0) next
+
+            resid[[r, s, ct_idx]] <- c(resid[[r, s, ct_idx]], (obs_yr - exp_yr) / se_yr)
+
+          } # end s loop
+        } # end r loop
+
       } # end seas loop
     } # end y loop
 

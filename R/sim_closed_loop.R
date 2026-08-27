@@ -725,6 +725,12 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   AgeingError_input <- if(!"AgeingError_input" %in% names(args)) {
     extend_years(replicate(n = sim_list$n_sims, data$AgeingError[1:length(data$years),,,drop = FALSE]), closed_loop_yrs, 1, 'last')
   } else args$AgeingError_input
+  AgeingError_fish_input <- if(!"AgeingError_fish_input" %in% names(args)) {
+    if(is.null(data$AgeingError_fish)) NULL else extend_years(replicate(n = sim_list$n_sims, data$AgeingError_fish[1:length(data$years),,,,drop = FALSE]), closed_loop_yrs, 1, 'last')
+  } else args$AgeingError_fish_input
+  AgeingError_srv_input <- if(!"AgeingError_srv_input" %in% names(args)) {
+    if(is.null(data$AgeingError_srv)) NULL else extend_years(replicate(n = sim_list$n_sims, data$AgeingError_srv[1:length(data$years),,,,drop = FALSE]), closed_loop_yrs, 1, 'last')
+  } else args$AgeingError_srv_input
   SizeAgeTrans_input <- if(!"SizeAgeTrans_input" %in% names(args)) {
     if(data$fit_lengths == 0) array(NA, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_lens, sim_list$n_ages, sim_list$n_sexes))
     if(data$fit_lengths == 1 && !is.null(data$SizeAgeTrans) && !all(is.na(data$SizeAgeTrans))) extend_years(replicate(n = sim_list$n_sims, data$SizeAgeTrans[,,1:length(data$years),,,,,drop = FALSE]), closed_loop_yrs, 3, 'last')
@@ -739,6 +745,8 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     WAA_srv_input = WAA_srv_input,
     MatAA_input = MatAA_input,
     AgeingError_input = AgeingError_input,
+    AgeingError_fish_input = AgeingError_fish_input,
+    AgeingError_srv_input = AgeingError_srv_input,
     SizeAgeTrans_input = SizeAgeTrans_input,
     # keys per fleet from the growth module, each at its fleet's own timing
     SizeAgeTrans_fish_input = if(is.null(rep$SizeAgeTrans_fish)) NULL else extend_years(replicate(n = sim_list$n_sims, rep$SizeAgeTrans_fish[,,1:length(data$years),,,,,,drop = FALSE]), closed_loop_yrs, 3, 'last'),

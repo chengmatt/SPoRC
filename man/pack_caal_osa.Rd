@@ -17,7 +17,8 @@ pack_caal_osa(
   n_fleets,
   n_sexes,
   addtocomp,
-  return_labels = FALSE
+  return_labels = FALSE,
+  BinsArr = NULL
 )
 }
 \arguments{
@@ -51,6 +52,10 @@ len \times sex \times fleet]}.}
 \item{return_labels}{Logical; if \code{TRUE}, also builds a per-element label
 data.frame identifying the origin of every entry, in the same order, for
 post-hoc relabeling of \code{TMB::oneStepPredict()} residuals.}
+
+\item{BinsArr}{Optional \code{[n_obs_bins x n_fleets]} 0/1 array naming the
+observed age bins each fleet is fitted over, or \code{NULL} (default) for
+all bins. Restricted fleets pack a shorter block at every length bin.}
 }
 \value{
 If \code{return_labels = FALSE} (default), the flat OBS vector, or

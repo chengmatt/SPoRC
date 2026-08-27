@@ -53,6 +53,10 @@ Setup_Mod_SrvIdx_and_Comps(
     1:input_list$data$n_srv_fleets, sep = ""),
   srv_idx_ages = NULL,
   SrvAgeComps_bins = NULL,
+  SrvLenComps_bins = NULL,
+  Srv_caal_bins = NULL,
+  SrvAgeComps_pop_bins = NULL,
+  SrvLenComps_pop_bins = NULL,
   SrvIdx_LikeType = rep("lognormal", input_list$data$n_srv_fleets),
   SrvLenComps_sel = rep("age", input_list$data$n_srv_fleets),
   srv_waa_selected = rep(0, input_list$data$n_srv_fleets),
@@ -307,15 +311,36 @@ specified; the fleet's compositions are unaffected because the
 restriction applies to the index sum rather than to selectivity.}
 
 \item{SrvAgeComps_bins}{Which age bins each survey fleet's age composition is
-fitted over. Supply a list with one element per fleet, each a vector of age
-indices or \code{NULL} for all ages, or an \code{[n_ages x n_srv_fleets]}
-array of 0/1 weights. Both observed and expected compositions are
-restricted to the named bins and renormalized within them, so excluded bins
-are left out of the likelihood rather than being forced to be explained;
-this is how a fleet that only ages part of its age range is fitted. Indices
-refer to observed bins, that is after any ageing error has mapped model
-ages onto observed ones. Every fleet must retain at least one bin. Default
-\code{NULL}, which fits all ages for all fleets.}
+fitted over. Supply a list with one element per fleet, each a vector of bin
+indices or \code{NULL} for all bins, or an
+\code{[n_obs_ages x n_srv_fleets]} array of 0/1 weights. Both observed and
+expected compositions are restricted to the named bins and renormalized
+within them, so excluded bins are left out of the likelihood rather than
+being forced to be explained; this is how a fleet that only ages part of
+its age range is fitted. Indices refer to observed bins, that is after any
+ageing error has mapped model ages onto observed ones. The restriction
+applies whatever the composition type: for sex-joint comps the named bins
+are dropped from each sex's block, so the sex ratio the joint comps carry
+becomes the ratio within the fitted bins. Every fleet must retain at least
+two bins, since the proportion in a lone bin is one whatever the model
+predicts. Default \code{NULL}, which fits all bins for all fleets.}
+
+\item{SrvLenComps_bins}{Which length bins each survey fleet's length
+composition is fitted over, in the same format as \code{SrvAgeComps_bins}.
+Indices refer to observed length bins, that is after any \code{LenBinMap}
+has mapped model bins onto observed ones.}
+
+\item{Srv_caal_bins}{Which age bins each survey fleet's conditional
+age-at-length data are fitted over, in the same format as
+\code{SrvAgeComps_bins}. Applied to every length bin's row of ages alike.}
+
+\item{SrvAgeComps_pop_bins}{Which age bins each survey fleet's
+population-specific age composition is fitted over, in the same format as
+\code{SrvAgeComps_bins}.}
+
+\item{SrvLenComps_pop_bins}{Which length bins each survey fleet's
+population-specific length composition is fitted over, in the same format
+as \code{SrvAgeComps_bins}.}
 
 \item{SrvIdx_LikeType}{Character vector \code{[n_srv_fleets]} giving the
 error structure of each survey index. Options are \code{"lognormal"}

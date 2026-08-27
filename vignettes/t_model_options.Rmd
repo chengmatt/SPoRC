@@ -864,7 +864,6 @@ Supplied via `Setup_Mod_Biologicals()` (EM) or `Setup_Sim_Biologicals()` (OM).
 | `WAA_fish` | `[p × r × y × τ × a × s × f]` | Fishery-specific weight-at-age. Defaults to `WAA` if `NULL` |
 | `WAA_srv` | `[p × r × y × τ × a × s × f]` | Survey-specific weight-at-age. Defaults to `WAA` if `NULL` |
 | `MatAA` | `[p × r × y × τ × a × s]` | Maturity-at-age (proportions in [0, 1]) |
-| `AgeingError` | `[a_\text{model} × a_\text{obs}]` or `[y × a_\text{model} × a_\text{obs}]` | Row-stochastic matrix mapping true ages to observed bins. Defaults to identity. Supply explicitly when observed ages are a subset of modelled ages |
 | `SizeAgeTrans` | `[p × r × y × τ × l × a × s]` | Size-age transition matrix, shared by every fleet unless `SizeAgeTrans_fish`/`SizeAgeTrans_srv` overrides it. Required when `fit_lengths = 1` |
 | `SizeAgeTrans_fish`, `SizeAgeTrans_srv` | `NULL` or `[p × r × y × τ × l × a × s × f]` | Optional per-fleet size-age keys, `SizeAgeTrans` with a trailing fleet dimension appended. `NULL` (default) reads every fleet from the shared `SizeAgeTrans`. Only valid under `growth_model = "none"`; a growth model already derives one key per fleet at that fleet's own timing and rejects these to avoid two sources for the same quantity. The fixed-data counterpart of `WAA_fish`/`WAA_srv` overriding the shared `WAA`, and of `Setup_Sim_Biologicals`'s `SizeAgeTrans_fish_input`/`SizeAgeTrans_srv_input` on the operating-model side |
 | `fit_lengths` | 0/1 | Toggle for fitting length compositions |
@@ -887,6 +886,8 @@ Supplied via `Setup_Mod_Biologicals()` (EM) or `Setup_Sim_Biologicals()` (OM).
 | `growth_semipar_spec` | `"fix"` / `"est"` | Whether the surface's process error parameters are estimated. Their starting values are the second stream of `growth_pe_pars`, in the same slots the selectivity forms use, supplied through `starting_values` and defaulting to a scale of `0.05` with correlations of `0.3` |
 | `growth_semipar_ages`, `growth_semipar_years` | `NULL` or vectors | Ages and calendar years the surface is estimated over; outside them the deviations are held at zero, which is how a surface is restricted to the ages the length data actually inform |
 | `LenBinMap` | `NULL` or `[l × l_\text{obs}]` | Maps the model's length bins onto the bins the compositions are recorded on, each row summing to one, for compositions on coarser bins than the population carries. Expected compositions are mapped through it inside the likelihood exactly as the ageing error matrix maps ages, and the observed arrays are then dimensioned by the observed bins |
+| `AgeingError` | `NULL`, `[a × a_\text{obs}]` or `[y × a × a_\text{obs}]` | Maps the model's ages onto the ages the compositions are recorded on: genuine misclassification (a true age 7 read as 6, 7 or 8), a collapse onto coarser observed bins, or both. Each row sums to one, or to zero to drop a model age from the observations. The age-axis twin of `LenBinMap`, applied in the same position inside the likelihood and validated by the same `check_bin_map()` |
+| `AgeingError_fish`, `AgeingError_srv` | `NULL`, `[a × a_\text{obs} × n_f]` or `[y × a × a_\text{obs} × n_f]` | Per-fleet ageing error, for when a fishery reading otoliths and a survey reading scales do not misclassify the same way. `NULL` (default) gives every fleet the shared `AgeingError`, which is what a model written before these existed does. Every fleet must land on the same observed age bins, since the observed composition arrays carry one age dimension shared across fleets. Wired through the operating model too, as `AgeingError_fish_input` / `AgeingError_srv_input` in `Setup_Sim_Biologicals` |
 | `waa_model`, `wt_len_pars` | `"data"` / `"wt_len"`; 2 values or `[p × r × s × 2]` | `"data"` (default) reads weight at age from the `WAA*` arguments. `"wt_len"` derives `WAA` (at spawning time) and each fleet's `WAA_fish` and `WAA_srv` (at that fleet's `t_fish` or `t_srv`) from its key and $W = aL^b$ at the bin midpoints instead of reading them as data. `Get_Reference_Points` reads the derived `rep$WAA` when it is present, falling back to `data$WAA` otherwise; that fallback is a zero placeholder under `"wt_len"`, so pass `rep` from a fitted model rather than calling it on `data` alone |
 
 Growth is not seasonal. The curve depends only on real elapsed time since `A1`, so splitting a year into more seasons changes nothing about size at age: a von Bertalanffy or Richards curve with a single `K` gives the same length whether the time between two points is one whole year or several sub-annual steps that sum to it. There is no option to give `K` (or any other growth parameter) a within-year seasonal pattern, e.g. a multiplier per season the way Stock Synthesis's `MGparm_seas_effects` does. Every fleet's timing (`t_fish`, `t_srv`, `t_spawn`) still reads its own point on that single annual curve, so within-year growth differences across fleets are entirely a function of *when* in the year they sample, not of the growth rate itself varying by season.
@@ -1112,9 +1113,58 @@ is over one age's length range.
 | `FishLenComps_sel` / `SrvLenComps_sel` | `"age"` (default) or `"length"`, per fleet. `"age"` selects the catch or index at age and spreads it over lengths afterwards, so the length composition within an age is the size-age key's own. `"length"` spreads the fish at each age over the key first and selects them length by length, $C_{l} = s(l)\sum_{a}P(l \mid a)\,N_{a}\!\left( 1 - e^{-Z_{a}} \right)F/Z_{a}$, so the long fish of an age are taken more often. The key is the fleet's own, at `t_fish` or `t_srv`. Use `"length"` when selectivity is length based and the length compositions are what inform it. The two are different expected compositions, not two roundings of the same one: in an EBS Pacific cod model the fishery length likelihood is 119.36 under one and 198.55 under the other |
 | `fish_waa_selected` / `srv_waa_selected` | 0/1 per fishery or survey fleet. `1` makes the fleet's catch biomass, or a survey's index in weight, use the mean weight of the fish it takes at each age, $\sum_{l}P(l \mid a)s(l)w(l)/\sum_{l}P(l \mid a)s(l)$, instead of the population mean weight at that age. Use `1` when the gear selects strongly within an age, so that a caught fish is larger or smaller than an average fish of its age. In an EBS Pacific cod model the caught two-year-olds weigh 40 percent more than the average two-year-old, which moves the catch by 0.44 percent. With flat or age-based selectivity the two are the same |
 
-### Composition bin restriction (`FishAgeComps_bins` / `SrvAgeComps_bins`)
+### Composition bin restriction (`*_bins`)
 
-Same list-or-array format as `*_idx_ages`, but restricting which *observed* bins (i.e., after ageing error) a fleet's age compositions are fit over. Observed and expected compositions are both subset and renormalized within the named bins; bins outside are simply left out of the likelihood rather than forced to be explained. Use for gears that never resolve part of the age range (e.g., a fishery that never catches the youngest ages, whose structural zeros would otherwise carry information); leave alone when the zeros are informative sampling zeros.
+Which *observed* bins a fleet's compositions are fitted over. Observed and expected compositions are both subset to the named bins and renormalized within them, so bins outside are left out of the likelihood rather than forced to be explained. Use for gears that never resolve part of the range (a fishery that never catches the youngest ages, whose structural zeros would otherwise carry information); leave alone when the zeros are informative sampling zeros.
+
+Every composition stream takes one, and they all share the same format: a list with one element per fleet, each a vector of bin indices or `NULL` for all bins, or an `[n_obs_bins x n_fleets]` array of 0/1 weights. Indices are into *observed* bins, that is after any `AgeingError` or `LenBinMap`. Default `NULL` fits every bin.
+
+| Stream | Fishery | Survey |
+|---|---|---|
+| Marginal age comps | `FishAgeComps_bins` | `SrvAgeComps_bins` |
+| Marginal length comps | `FishLenComps_bins` | `SrvLenComps_bins` |
+| Conditional age-at-length | `Fish_caal_bins` | `Srv_caal_bins` |
+| Population-specific age comps | `FishAgeComps_pop_bins` | `SrvAgeComps_pop_bins` |
+| Population-specific length comps | `FishLenComps_pop_bins` | `SrvLenComps_pop_bins` |
+| Discard age comps | `FishAgeComps_discard_bins` | -- |
+| Discard length comps | `FishLenComps_discard_bins` | -- |
+| Population-specific discard age comps | `FishAgeComps_discard_pop_bins` | -- |
+| Population-specific discard length comps | `FishLenComps_discard_pop_bins` | -- |
+
+```r
+# the acoustic survey resolves ages 2-15 only; every other fleet fits all ages
+SrvAgeComps_bins = list(NULL, 2:15, NULL, NULL)
+```
+
+Every fleet must keep at least two bins. A composition fitted over one bin says nothing, since the proportion in a lone bin is one whatever the model predicts, and the one-step-ahead machinery degenerates around it: the logistic-normal families spend a bin as the additive log-ratio reference and have none left, and the discrete families mark their only bin as the multinomial's determined cell, leaving `get_osa()` nothing to keep. Setup refuses it and names the fleet.
+
+The restriction applies whatever the composition type. For sex-joint comps (`spltRjntS`) the named bins are dropped from each sex's block of the `[bin x sex]` stack, so the sex ratio the joint comps carry becomes the ratio *within* the fitted bins, which is usually what you want when the excluded bins are unsampled rather than genuinely absent. Logistic-normal covariances are built across all observed bins and then cut down to the fitted ones, so a gap in the named bins still counts towards the AR1 lag between the bins either side of it. One-step-ahead residuals are packed and evaluated over the same restricted bins, so `get_osa()` and the likelihood always agree on what was fitted.
+
+### Restricting bins versus remapping them
+
+`*_bins` and the bin maps (`AgeingError`, `LenBinMap`) are easy to confuse and do different things.
+
+| | What it does | When you need it |
+|---|---|---|
+| `AgeingError` / `LenBinMap` | **Remaps**. An `[n_model_bins x n_obs_bins]` matrix the expected composition is multiplied through, so it lands on the bins the data were recorded on. Mass is redistributed and, wherever a row sums to one, preserved | The data are on different bins from the model: 1 cm model bins fit to 5 cm length compositions, or true ages smeared across observed ages by reading error |
+| `*_bins` | **Drops**. Names a subset of the observed bins; the rest are excluded from the likelihood and the remainder renormalized. Bin definitions do not change, mass in the dropped bins is discarded | The data are on the model's bins but part of the range is not informative: a gear that never ages its youngest fish, or length bins nothing is ever sampled from |
+
+They compose, in that order: remap model bins onto observed bins, then restrict to the observed bins being fitted. Neither substitutes for the other. No subset of fifty 1 cm bins is ever ten 5 cm bins, so a restriction cannot do a map's job; and a map that zeroed a bin out would leave an observed bin with a structural-zero expectation the composition likelihood cannot fit, so a map cannot do a restriction's job. `check_bin_map()` enforces both halves of that: map rows must sum to one (or to zero, to drop a model bin from the observations entirely), and no observed bin may be left with nothing mapped into it.
+
+Worked on six model bins carrying expected proportions `0.05, 0.10, 0.25, 0.30, 0.20, 0.10`:
+
+| | Result | Bins | What happened to the first two bins' mass |
+|---|---|---|---|
+| `LenBinMap` collapsing pairs | `0.15, 0.55, 0.30` | 6 → 3 | Summed into the first observed bin. Still there |
+| `*_bins = 3:6` | `0.29, 0.35, 0.24, 0.12` | 6 → 4 | Discarded. The remaining four renormalize to one |
+
+Both shrink the vector, which is why they get confused, but only the map carries the first two bins' fish somewhere rather than throwing them away. If bins 1 and 2 are 10 cm fish your survey does catch but records in a coarser bin, you want the first row. If they are 10 cm fish your survey never sees, so their observed proportion is a sampling artefact rather than a measurement, you want the second. Choosing the map when you meant the restriction quietly asks the model to explain a bin that carries no information; choosing the restriction when you meant the map throws away fish that were really there.
+
+A restriction leaves a visible trace at setup, so you can confirm it took:
+
+```
+SrvAgeComps_bins for fleet 2 is fitted over observed bins: 2, 3, 4, ..., 15
+```
 
 ### Composition likelihood families
 

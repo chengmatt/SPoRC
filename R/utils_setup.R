@@ -88,6 +88,10 @@ resolve_sel_pen_wts <- function(pen_wts, n_fleets = 1) {
 #'
 #' @keywords internal
 collect_message <- function(...) {
+  # The setup entry points open a fresh messages_list, but the helpers they call
+  # are also reachable on their own, so start one here rather than failing on a
+  # binding that has not been created yet.
+  if(!exists("messages_list", inherits = TRUE)) messages_list <<- character(0)
   messages_list <<- c(messages_list, paste(..., sep = ""))
 }
 
@@ -348,44 +352,55 @@ convert_to_numeric <- function(x, lookup) {
   stop("Input must be numeric or character")
 }
 
-#' Build an index age-selection array
+#' Build a per-fleet bin-selection array
 #'
-#' Turns a per-fleet specification of which ages contribute to an index into
-#' the \code{[age, fleet]} array of 0/1 weights the objective function uses.
-#' Accepts a list with one element per fleet, where each element is a vector of
-#' ages or \code{NULL} for all ages, or an array already in \code{[age, fleet]}
-#' form.
+#' Turns a per-fleet specification of which bins are used into the
+#' \code{[bin, fleet]} array of 0/1 weights the objective function reads. Shared
+#' by the ages that contribute to an index (\code{fish_idx_ages},
+#' \code{srv_idx_ages}) and by the observed bins a composition is fitted over
+#' (the \code{*_bins} arguments), so both spellings behave identically. Accepts a
+#' list with one element per fleet, where each element is a vector of bin indices
+#' or \code{NULL} for all bins, or an array already in \code{[bin, fleet]} form.
 #'
-#' @param idx_ages List, array, or \code{NULL}. Per-fleet age selection.
-#' @param n_ages Integer. Number of model ages.
+#' @param idx_bins List, array, or \code{NULL}. Per-fleet bin selection.
+#' @param n_bins Integer. Number of bins the selection indexes into: model ages
+#'   for the index arguments, observed composition bins for the \code{*_bins}
+#'   arguments.
 #' @param n_fleets Integer. Number of fleets.
 #' @param what Character. Name used in error messages.
 #'
-#' @return Array \code{[n_ages x n_fleets]} of 0/1 weights.
+#' @return Array \code{[n_bins x n_fleets]} of 0/1 weights.
 #'
 #' @keywords internal
-parse_idx_ages <- function(idx_ages, n_ages, n_fleets, what) {
+parse_bin_subset <- function(idx_bins, n_bins, n_fleets, what) {
 
-  if(is.null(idx_ages)) return(array(1, dim = c(n_ages, n_fleets)))
+  if(length(n_bins) != 1 || is.na(n_bins) || n_bins < 1) {
+    stop(what, ": could not work out how many bins to index into. This is an internal error, not something the argument caused.")
+  }
+  if(is.null(idx_bins)) return(array(1, dim = c(n_bins, n_fleets)))
 
-  if(is.list(idx_ages)) {
-    if(length(idx_ages) != n_fleets) stop(what, " is a list of length ", length(idx_ages), " but there are ", n_fleets, " fleets.")
-    out <- array(1, dim = c(n_ages, n_fleets))
+  if(is.list(idx_bins)) {
+    if(length(idx_bins) != n_fleets) stop(what, " is a list of length ", length(idx_bins), " but there are ", n_fleets, " fleets.")
+    out <- array(1, dim = c(n_bins, n_fleets))
     for(f in seq_len(n_fleets)) {
-      if(is.null(idx_ages[[f]])) next
-      ages_f <- idx_ages[[f]]
-      if(!all(ages_f %in% seq_len(n_ages))) stop(what, " for fleet ", f, " refers to ages outside 1:", n_ages, ".")
+      if(is.null(idx_bins[[f]])) next
+      bins_f <- idx_bins[[f]]
+      if(!all(bins_f %in% seq_len(n_bins))) stop(what, " for fleet ", f, " refers to bins outside 1:", n_bins, ".")
       out[,f] <- 0
-      out[ages_f,f] <- 1
+      out[bins_f,f] <- 1
     } # end f loop
-    if(any(colSums(out) == 0)) stop(what, " leaves at least one fleet with no ages contributing to its index.")
+    if(any(colSums(out) == 0)) stop(what, " leaves at least one fleet with no bins at all.")
     return(out)
   }
 
-  if(length(idx_ages) != n_ages * n_fleets) stop(what, " must have ", n_ages, " x ", n_fleets, " elements when supplied as an array.")
-  out <- array(as.numeric(idx_ages), dim = c(n_ages, n_fleets))
+  if(!is.null(dim(idx_bins)) && length(dim(idx_bins)) == 2 && !all(dim(idx_bins) == c(n_bins, n_fleets))) {
+    stop(what, " is ", paste(dim(idx_bins), collapse = " x "), " but must be ", n_bins, " x ", n_fleets,
+         " (bins down the rows, fleets across the columns).")
+  }
+  if(length(idx_bins) != n_bins * n_fleets) stop(what, " must have ", n_bins, " x ", n_fleets, " elements when supplied as an array.")
+  out <- array(as.numeric(idx_bins), dim = c(n_bins, n_fleets))
   if(any(!out %in% c(0, 1))) stop(what, " must contain only 0 and 1.")
-  if(any(colSums(out) == 0)) stop(what, " leaves at least one fleet with no ages contributing to its index.")
+  if(any(colSums(out) == 0)) stop(what, " leaves at least one fleet with no bins at all.")
   return(out)
 }
 
@@ -832,6 +847,363 @@ assign_sel_block <- function(arr, blocks_arr, fleet, block, value) {
   arr
 }
 
+
+#' Expand a fleet-specific ageing error specification to its full array
+#'
+#' Ageing error is a property of the sampling programme, so a fishery that ages
+#' its catch from otoliths and a survey that reads scales do not misclassify the
+#' same way. \code{AgeingError_fish} and \code{AgeingError_srv} let each fleet
+#' carry its own matrix, defaulting to the shared \code{AgeingError} so a model
+#' written before they existed behaves exactly as it did.
+#'
+#' Every fleet must land on the same observed age bins, because the observed
+#' composition arrays carry a single age dimension shared across fleets.
+#'
+#' @param x \code{NULL}, a 3D array \code{[n_ages x n_obs_ages x n_fleets]} for a
+#'   time-invariant fleet-specific matrix, or a 4D array
+#'   \code{[n_years x n_ages x n_obs_ages x n_fleets]} for a time-varying one.
+#' @param shared The shared \code{[n_years x n_ages x n_obs_ages]} array to fall
+#'   back on, already expanded over years.
+#' @param n_fleets Integer. Number of fleets.
+#' @param what Character. Argument name, used in messages and errors.
+#'
+#' @return Array \code{[n_years x n_ages x n_obs_ages x n_fleets]}.
+#' @keywords internal
+expand_fleet_ageing_error <- function(x, shared, n_fleets, what) {
+  n_years <- dim(shared)[1]
+  n_ages <- dim(shared)[2]
+  n_obs_ages <- dim(shared)[3]
+  out <- array(0, dim = c(n_years, n_ages, n_obs_ages, n_fleets))
+
+  if(is.null(x)) {   # no fleet-specific matrices, so every fleet reads the shared one
+    for(f in seq_len(n_fleets)) out[,,,f] <- shared
+    return(out)
+  }
+
+  d <- dim(x)
+  if(length(d) == 3) {          # time-invariant, fleet-specific
+    if(d[3] != n_fleets) stop(what, " has ", d[3], " fleets but the model has ", n_fleets, ".")
+    if(d[1] != n_ages || d[2] != n_obs_ages) {
+      stop(what, " slices must be ", n_ages, " model ages by ", n_obs_ages, " observed ages, matching AgeingError, but are ", d[1], " by ", d[2], ".")
+    }
+    for(f in seq_len(n_fleets)) {
+      check_bin_map(x[,,f], n_ages, paste0(what, " fleet ", f), strict = FALSE, tol = 0.05)
+      for(i in seq_len(n_years)) out[i,,,f] <- x[,,f]
+    } # end f loop
+    collect_message(what, " is fleet specific and time invariant")
+    return(out)
+  }
+
+  if(length(d) == 4) {          # time-varying, fleet-specific
+    if(d[4] != n_fleets) stop(what, " has ", d[4], " fleets but the model has ", n_fleets, ".")
+    if(d[1] != n_years) stop(what, " has ", d[1], " years but the model has ", n_years, ".")
+    if(d[2] != n_ages || d[3] != n_obs_ages) {
+      stop(what, " slices must be ", n_ages, " model ages by ", n_obs_ages, " observed ages, matching AgeingError, but are ", d[2], " by ", d[3], ".")
+    }
+    for(f in seq_len(n_fleets)) for(i in seq_len(n_years)) check_bin_map(x[i,,,f], n_ages, paste0(what, " fleet ", f, " year ", i), strict = FALSE, tol = 0.05)
+    collect_message(what, " is fleet specific and time varying")
+    return(array(as.numeric(x), dim = c(n_years, n_ages, n_obs_ages, n_fleets)))
+  }
+
+  stop(what, " must be NULL, a 3D array [n_ages x n_obs_ages x n_fleets], or a 4D array [n_years x n_ages x n_obs_ages x n_fleets].")
+}
+
+#' Read a fitted model's fleet-specific ageing error, falling back on the shared one
+#'
+#' The post-fit diagnostics have to reproduce the expected compositions the
+#' likelihood built, which means reading the same ageing error the objective
+#' read. Models fitted before \code{AgeingError_fish} and \code{AgeingError_srv}
+#' existed carry only the shared matrix, so it is replicated across the fleets
+#' and the diagnostics come out exactly as they did.
+#'
+#' @param data Data list from the fitted model.
+#' @param shared The shared \code{[n_years x n_ages x n_obs_ages]} array.
+#' @param which Either \code{"fish"} or \code{"srv"}.
+#'
+#' @return Array \code{[n_years x n_ages x n_obs_ages x n_fleets]}.
+#' @keywords internal
+fleet_ageing_error <- function(data, shared, which) {
+  nm <- paste0("AgeingError_", which)
+  n_fleets <- if(which == "srv") data$n_srv_fleets else data$n_fish_fleets
+  if(!is.null(data[[nm]])) return(data[[nm]])
+  out <- array(0, dim = c(dim(shared), n_fleets))
+  for(f in seq_len(n_fleets)) out[,,,f] <- shared
+  return(out)
+}
+
+#' A bin selection array, or NULL when it restricts nothing
+#'
+#' The composition machinery treats \code{NULL} as "fit every bin", which lets
+#' the likelihood and the OSA packers skip the restriction entirely and lets a
+#' backwards-compatible all-ones array of the wrong length never be indexed
+#' into. Both the objective and \code{\link{get_osa}} decide that here, so they
+#' cannot disagree about which bins were fitted.
+#'
+#' @param x A \code{[n_obs_bins x n_fleets]} 0/1 array, or \code{NULL}.
+#'
+#' @return \code{x}, or \code{NULL} if it is absent or selects every bin.
+#' @keywords internal
+bins_or_null <- function(x) {
+  if(is.null(x) || all(x == 1)) return(NULL)
+  return(x)
+}
+
+#' Validate a model-bin to observed-bin map
+#'
+#' \code{AgeingError} and \code{LenBinMap} are the same operation on different
+#' axes: an \code{[n_model_bins x n_obs_bins]} matrix that the expected
+#' composition is multiplied through so it lands on the bins the observations
+#' were recorded on. The likelihood does not distinguish them, and neither does
+#' this check, so a mistake in either one is reported the same way.
+#'
+#' A row is one model bin's share across the observed bins, so it sums to one. A
+#' row of zeros is allowed and drops that model bin from the observations
+#' entirely, which is how observed bins that start above the first model bin are
+#' expressed (a shifted identity such as \code{diag(1, 10)[, 2:10]}).
+#'
+#' The row-sum tolerance is a caller's choice. Published ageing error matrices
+#' are rounded at source, and real ones come in with rows summing to 0.997 or
+#' 1.002; the likelihood renormalizes the expectation after the multiply, so a
+#' row off by that much reweights nothing, and \code{AgeingError} passes
+#' \code{tol = 0.05}. A length bin map is written by hand rather than read from a
+#' rounded table, so \code{LenBinMap} keeps the \code{1e-8} it has always been
+#' held to. Only a row off by more than \code{tol} is reported, since that means
+#' the matrix is not the map its author thought it was.
+#'
+#' \code{strict} decides whether that is fatal. \code{LenBinMap} has always
+#' rejected such a matrix outright and keeps doing so. \code{AgeingError} has
+#' not been checked before, so a bad row is reported through the setup messages
+#' rather than stopping a model that ran yesterday.
+#'
+#' A column of zeros is an observed bin nothing maps into, whose expected
+#' proportion is a structural zero the composition likelihood cannot fit. It
+#' follows \code{strict} for the same reason the row sums do. A negative entry is
+#' fatal either way, since nothing downstream can interpret one.
+#'
+#' @param x The matrix to check.
+#' @param n_model_bins Integer. Number of model bins, the required row count.
+#' @param what Character. Argument name, used in messages.
+#' @param strict Logical. \code{TRUE} (default) makes a bad row sum an error,
+#'   \code{FALSE} reports it through \code{\link{collect_message}}.
+#' @param tol Numeric. How far a row sum may sit from one before it is reported.
+#'
+#' @return \code{x} invisibly, as a matrix.
+#' @keywords internal
+check_bin_map <- function(x, n_model_bins, what, strict = TRUE, tol = 1e-8) {
+  x <- as.matrix(x)
+  if(nrow(x) != n_model_bins) stop(what, " must have one row per model bin (", n_model_bins, "), but has ", nrow(x), ".")
+  if(any(x < 0)) stop(what, " must not contain negative values.")
+
+  rs <- rowSums(x)
+  bad <- which(abs(rs - 1) > tol & abs(rs) > 1e-8)
+  if(length(bad) > 0) {
+    msg <- paste0(what, " rows must each sum to one, spreading a model bin over the observed bins, or to zero to drop that model bin from the observations. Rows ",
+                  paste(utils::head(bad, 10), collapse = ", "), " sum to neither (worst is ",
+                  signif(rs[bad][which.max(abs(rs[bad] - 1))], 6), ").")
+    if(strict) stop(msg)
+    collect_message(msg, " Left as supplied, since the likelihood renormalizes the expectation after the multiply.")
+  }
+
+  empty <- which(colSums(x) <= 1e-8)
+  if(length(empty) > 0) {
+    msg <- paste0(what, " leaves observed bins ", paste(utils::head(empty, 10), collapse = ", "),
+                  " with nothing mapped into them. Their expected proportion is a structural zero the composition likelihood cannot fit. Drop those bins from the observations instead, using the matching *_bins argument.")
+    if(strict) stop(msg)
+    collect_message(msg)
+  }
+  invisible(x)
+}
+
+#' Reject a bin restriction that leaves a stream nothing to fit
+#'
+#' A composition fitted over a single bin carries no information: the normalized
+#' proportion in that bin is identically one whatever the model says. Every
+#' family degenerates, and the machinery around them degenerates further. The
+#' logistic-normal families spend one bin as the additive log-ratio reference and
+#' so have no free element left, which gives a zero-length packed block, a
+#' zero-row label frame, and a zero-length slice request in
+#' \code{\link{eval_comp_osa}}. The discrete families mark their one bin as the
+#' determined cell of the multinomial, which leaves \code{get_osa} with nothing
+#' to keep and it fails inside \code{RTMB::oneStepPredict}.
+#'
+#' Two bins is therefore the minimum, and it is checked at setup where the
+#' message can name the argument and the fleet. Fleets whose likelihood is
+#' \code{"none"} are skipped, since their bins are never read.
+#'
+#' @param bins_arr \code{[n_obs_bins x n_fleets]} 0/1 array from
+#'   \code{\link{parse_comp_bins}}.
+#' @param like_vals Integer vector of likelihood codes, one per fleet.
+#'   \code{999} marks a fleet that is not fitted. \code{NULL} checks every fleet.
+#' @param what Character. Name of the bins argument, used in the error.
+#'
+#' @return \code{bins_arr} invisibly.
+#' @keywords internal
+check_comp_bins_min <- function(bins_arr, like_vals, what) {
+  n_fleets <- ncol(bins_arr)
+  for(f in seq_len(n_fleets)) {
+    if(!is.null(like_vals) && f <= length(like_vals) && like_vals[f] == 999) next
+    n_fit <- sum(bins_arr[,f])
+    if(n_fit >= 2) next
+    stop(what, " leaves fleet ", f, " with ", n_fit, " fitted bin",
+         if(n_fit == 1) "" else "s",
+         ". A composition needs at least two bins to say anything, since the proportion in a lone bin is one whatever the model predicts. Name two or more bins for that fleet.")
+  } # end f loop
+  invisible(bins_arr)
+}
+
+#' Drop blocks a bin restriction has emptied
+#'
+#' A restriction can leave a region, year and season with no observations at all
+#' in the bins being fitted, even though the full composition had plenty. The
+#' fitting likelihood already skips such a block, since normalizing it would
+#' divide by zero, but the one-step-ahead packer has no way to know: it sees the
+#' use flag say "there is data here", normalizes \code{(0 + addtocomp)} into a
+#' flat composition and fits that. The packer and the evaluator cannot agree on
+#' an emptiness test between themselves, because the evaluator never sees the
+#' observations, so the two are reconciled here instead by clearing the use flag.
+#'
+#' Clearing it changes nothing about the fit: the likelihood was already
+#' contributing zero for those blocks. It only stops the residual machinery
+#' inventing an observation that was never there. Anything cleared is reported,
+#' so a restriction that guts a stream is visible rather than silent.
+#'
+#' A block counts as empty when it holds no finite values at all, exactly as when
+#' it sums to zero, since that is the test the likelihood's own guard applies.
+#'
+#' @param obs Observation array for the stream.
+#' @param use Use-flag array for the stream, whose margins are \code{obs} without
+#'   its bin and sex dimensions.
+#' @param bins_arr \code{[n_obs_bins x n_fleets]} 0/1 array.
+#' @param bin_dim Integer. Which dimension of \code{obs} holds the bins. The sex
+#'   dimension is taken to be the next one, and fleets the last.
+#' @param what Character. Stream name, used in the message.
+#'
+#' @return \code{use}, with emptied blocks cleared.
+#' @keywords internal
+drop_empty_fitted_blocks <- function(obs, use, bins_arr, bin_dim, what) {
+  if(is.null(obs) || is.null(use) || is.null(bins_arr)) return(use)
+  if(all(bins_arr == 1)) return(use)                 # nothing restricted, nothing to check
+  d <- dim(obs)
+  if(is.null(d) || length(d) < bin_dim + 1) return(use)
+  if(d[bin_dim] != nrow(bins_arr)) return(use)       # sized for a different stream, left to the packers to reject
+
+  n_dims <- length(d)
+  margins <- setdiff(seq_len(n_dims), c(bin_dim, bin_dim + 1))   # everything but bins and sexes
+  fleet_pos <- length(margins)                                    # fleets are last in obs, so last in margins
+  cleared <- 0
+
+  for(f in seq_len(ncol(bins_arr))) {
+    fit <- which(bins_arr[,f] == 1)
+    if(length(fit) == dim(obs)[bin_dim]) next                     # this fleet fits everything
+    idx <- lapply(seq_len(n_dims), function(i) seq_len(d[i]))
+    idx[[bin_dim]] <- fit
+    idx[[n_dims]] <- f
+    sub <- do.call(`[`, c(list(obs), idx, list(drop = FALSE)))
+    # Same predicate the likelihood's own guard uses: a block with no finite values
+    # counts as empty just as an all-zero one does, so the two cannot disagree
+    tot <- apply(sub, margins, function(v) if(!any(is.finite(v))) 0 else sum(v, na.rm = TRUE))
+    dim(tot) <- dim(tot)                                          # keep it an array for the assignment below
+    uidx <- lapply(seq_along(dim(use)), function(i) seq_len(dim(use)[i]))
+    uidx[[length(dim(use))]] <- f
+    cur <- do.call(`[`, c(list(use), uidx, list(drop = FALSE)))
+    hit <- which(as.vector(cur) == 1 & as.vector(tot) == 0)
+    if(length(hit) == 0) next
+    cur[hit] <- 0
+    cleared <- cleared + length(hit)
+    use <- do.call(`[<-`, c(list(use), uidx, list(value = cur)))
+  } # end f loop
+
+  if(cleared > 0) {
+    collect_message(what, ": ", cleared, " region/year/season block",
+                    if(cleared == 1) "" else "s",
+                    " hold no observations inside the fitted bins, so their use flag was cleared. The likelihood already skipped them; this keeps the one-step-ahead residuals from inventing a flat composition in their place.")
+  }
+  return(use)
+}
+
+#' Re-reconcile use flags against freshly simulated observations
+#'
+#' \code{\link{drop_empty_fitted_blocks}} runs once at setup, against the
+#' observations the model was built with. A self test or closed loop replaces
+#' those observations replicate by replicate while carrying the setup's use flags
+#' forward, so under a bin restriction a simulated replicate can hold nothing in
+#' the fitted bins of a block the flags still call used. This walks the marginal
+#' composition streams of a data list and reconciles them again.
+#'
+#' A no-op when no stream is restricted, which is the usual case.
+#'
+#' @param data A data list whose \code{Obs*} arrays have just been replaced.
+#'
+#' @return \code{data}, with its use flags reconciled.
+#' @keywords internal
+resync_fitted_blocks <- function(data) {
+  streams <- list(
+    list(obs = "ObsFishAgeComps", use = "UseFishAgeComps", bins = "FishAgeComps_bins", d = 4),
+    list(obs = "ObsFishLenComps", use = "UseFishLenComps", bins = "FishLenComps_bins", d = 4),
+    list(obs = "ObsSrvAgeComps", use = "UseSrvAgeComps", bins = "SrvAgeComps_bins", d = 4),
+    list(obs = "ObsSrvLenComps", use = "UseSrvLenComps", bins = "SrvLenComps_bins", d = 4),
+    list(obs = "ObsFishAgeComps_pop", use = "UseFishAgeComps_pop", bins = "FishAgeComps_pop_bins", d = 5),
+    list(obs = "ObsFishLenComps_pop", use = "UseFishLenComps_pop", bins = "FishLenComps_pop_bins", d = 5),
+    list(obs = "ObsSrvAgeComps_pop", use = "UseSrvAgeComps_pop", bins = "SrvAgeComps_pop_bins", d = 5),
+    list(obs = "ObsSrvLenComps_pop", use = "UseSrvLenComps_pop", bins = "SrvLenComps_pop_bins", d = 5),
+    list(obs = "ObsFish_caal", use = "UseFish_caal", bins = "Fish_caal_bins", d = 5),
+    list(obs = "ObsSrv_caal", use = "UseSrv_caal", bins = "Srv_caal_bins", d = 5)
+  )
+  for(st in streams) {
+    if(is.null(data[[st$bins]]) || all(data[[st$bins]] == 1)) next
+    data[[st$use]] <- drop_empty_fitted_blocks(data[[st$obs]], data[[st$use]], data[[st$bins]], st$d, st$obs)
+  } # end st loop
+  return(data)
+}
+
+#' Number of observed bins a composition stream is recorded on
+#'
+#' The \code{*_bins} arguments index into observed bins, so they need the bin
+#' count of the array they will be applied to. That is normally read straight
+#' off the supplied observation array, but a model carrying no data for a stream
+#' can hand in an array with no dimensions at all, so the model's own observed
+#' bin count stands in: the ageing error's observed-age dimension for ages, and
+#' \code{\link{obs_len_bins}} for lengths.
+#'
+#' @param input_list Input list, used for the fallback.
+#' @param obs The observation array for the stream, possibly dimensionless.
+#' @param dim_i Integer. Which dimension of \code{obs} holds the bins.
+#' @param axis Either \code{"age"} or \code{"len"}.
+#'
+#' @return A single positive integer.
+#' @keywords internal
+obs_bin_count <- function(input_list, obs, dim_i, axis) {
+  d <- dim(obs)
+  if(!is.null(d) && length(d) >= dim_i && !is.na(d[dim_i]) && d[dim_i] >= 1) return(d[dim_i])
+  if(axis == "len") return(obs_len_bins(input_list))
+  ae <- input_list$data$AgeingError
+  if(is.null(ae) || is.null(dim(ae))) return(length(input_list$data$ages))
+  return(dim(ae)[length(dim(ae))])   # last dimension is the observed ages, 2D or 3D alike
+}
+
+#' Parse and report the observed bins a composition stream is fitted over
+#'
+#' Wraps \code{\link{parse_bin_subset}} and records which fleets ended up
+#' restricted, so the setup messages name the bins a stream is fitted over rather
+#' than leaving it implicit. Used for every \code{*_bins} argument, age and
+#' length, retained and discarded, marginal and conditional, so a restriction
+#' reads the same way whichever stream it was set on.
+#'
+#' @param bins List, array, or \code{NULL}. Per-fleet bin selection.
+#' @param n_bins Integer. Number of observed bins the stream is recorded on,
+#'   that is after any ageing error or length bin map.
+#' @param n_fleets Integer. Number of fleets.
+#' @param what Character. Argument name, used in messages and errors.
+#'
+#' @return Array \code{[n_bins x n_fleets]} of 0/1 weights.
+#' @keywords internal
+parse_comp_bins <- function(bins, n_bins, n_fleets, what) {
+  out <- parse_bin_subset(bins, n_bins, n_fleets, what)
+  for(f in seq_len(n_fleets)) {
+    if(sum(out[,f]) != n_bins) collect_message(what, " for fleet ", f, " is fitted over observed bins: ", paste(which(out[,f] == 1), collapse = ", "))
+  } # end f loop
+  return(out)
+}
 
 #' Number of length bins the observed compositions are recorded on
 #'

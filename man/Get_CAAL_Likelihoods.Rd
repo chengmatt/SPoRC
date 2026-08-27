@@ -73,7 +73,10 @@ aged fish in any region is skipped entirely.}
 issues when zeros are present.}
 
 \item{comp_bins}{Integer vector of age bins the composition is fitted over, or
-\code{NULL} (default) for all of them.}
+\code{NULL} (default) for all of them. Applied to every length bin's row of
+ages alike, so a fleet that only ages part of its age range is fitted over
+that range at each length. Indices refer to observed age bins, that is after
+ageing error has mapped model ages onto observed ones.}
 
 \item{comp_const_obs}{Integer (0 or 1). Whether \code{addtocomp} is added to
 the observed proportions that weight the multinomial.}

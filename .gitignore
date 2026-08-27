@@ -23,3 +23,6 @@ docs
 # Fitted model objects under paper_projects are regenerable from the scripts
 # that produce them, and are large enough to bloat the pack on every re-run.
 /dev/paper_projects/**/pol_models_re.RDS
+/dev/goa_rex_ss3_to_sporc
+/dev/rex_2021
+/dev/rex_projections

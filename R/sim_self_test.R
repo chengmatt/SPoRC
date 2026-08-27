@@ -405,6 +405,10 @@ simulation_self_test <- function(data,
     WAA_srv_input = replicate(n = sim_list$n_sims, (if(is.null(rep$WAA_srv)) data$WAA_srv else rep$WAA_srv)[,,1:length(data$years),,,,,drop = FALSE]), # survey weight at age
     MatAA_input = replicate(n = sim_list$n_sims, data$MatAA[,,1:length(data$years),,,,drop = FALSE]), # maturity at age
     AgeingError_input = replicate(n = sim_list$n_sims, data$AgeingError[1:length(data$years),,,drop = FALSE]), # ageing error
+    # fleet-specific ageing error, absent from data lists written before it existed,
+    # in which case the operating model falls back on the shared matrix
+    AgeingError_fish_input = if(is.null(data$AgeingError_fish)) NULL else replicate(n = sim_list$n_sims, data$AgeingError_fish[1:length(data$years),,,,drop = FALSE]),
+    AgeingError_srv_input = if(is.null(data$AgeingError_srv)) NULL else replicate(n = sim_list$n_sims, data$AgeingError_srv[1:length(data$years),,,,drop = FALSE]),
     SizeAgeTrans_input = if(data$fit_lengths == 0 || is.null(data$SizeAgeTrans) || all(is.na(data$SizeAgeTrans))) NULL else replicate(n = sim_list$n_sims, data$SizeAgeTrans[,,1:length(data$years),,,,,drop = FALSE]),
     # keys per fleet from the growth module, each at its fleet's own timing
     SizeAgeTrans_fish_input = if(is.null(rep$SizeAgeTrans_fish)) NULL else replicate(n = sim_list$n_sims, rep$SizeAgeTrans_fish[,,1:length(data$years),,,,,,drop = FALSE]),
@@ -625,6 +629,10 @@ simulation_self_test <- function(data,
           tmp_data$Wt_Srv_caal[] <- 1
         }
 
+        # This replicate's observations are not the ones setup reconciled against,
+        # so a bin restriction may have emptied a block that was full before
+        tmp_data <- resync_fitted_blocks(tmp_data)
+
         # Fit model
         obj <- fit_model(
           data = tmp_data,
@@ -795,6 +803,9 @@ simulation_self_test <- function(data,
           }
 
 
+          # see the note at the single-model path above
+          tmp_data <- resync_fitted_blocks(tmp_data)
+
           # Fit model
           obj <- fit_model(
             data = tmp_data,
@@ -946,6 +957,13 @@ simulation_data_to_SPoRC <- function(sim_env,
   } else NULL
   AgeingError <- array(sim_env$AgeingError[1:y,,,sim, drop = FALSE],
                        dim = c(length(1:y), dim(sim_env$AgeingError)[2], dim(sim_env$AgeingError)[3]))
+  # the fleet-specific matrices the estimation model reads, peeled to the same years
+  AgeingError_fish <- if(is.null(sim_env$AgeingError_fish)) NULL else {
+    array(sim_env$AgeingError_fish[1:y,,,,sim, drop = FALSE], dim = c(length(1:y), dim(sim_env$AgeingError_fish)[2:4]))
+  }
+  AgeingError_srv <- if(is.null(sim_env$AgeingError_srv)) NULL else {
+    array(sim_env$AgeingError_srv[1:y,,,,sim, drop = FALSE], dim = c(length(1:y), dim(sim_env$AgeingError_srv)[2:4]))
+  }
 
   # Tagging
   if(sim_env$use_conv_fish_tagging == 1) {
@@ -1134,6 +1152,8 @@ simulation_data_to_SPoRC <- function(sim_env,
     MatAA = MatAA,
     SizeAgeTrans = SizeAgeTrans,
     AgeingError = AgeingError,
+    AgeingError_fish = AgeingError_fish,
+    AgeingError_srv = AgeingError_srv,
 
     # Tagging
     use_conv_fish_tagging = sim_env$use_conv_fish_tagging,

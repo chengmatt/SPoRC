@@ -49,14 +49,14 @@ test_that("get_index_nLL dispatches the three index error structures", {
 
 })
 
-test_that("parse_idx_ages builds the age selection array", {
+test_that("parse_bin_subset builds the per-fleet bin selection array", {
 
   test_that("NULL selects every age for every fleet", {
-    expect_equal(SPoRC:::parse_idx_ages(NULL, 5, 2, "x"), array(1, dim = c(5, 2)))
+    expect_equal(SPoRC:::parse_bin_subset(NULL, 5, 2, "x"), array(1, dim = c(5, 2)))
   })
 
   test_that("a list of age vectors selects per fleet, NULL meaning all ages", {
-    out <- SPoRC:::parse_idx_ages(list(NULL, 1, c(2, 4)), 5, 3, "x")
+    out <- SPoRC:::parse_bin_subset(list(NULL, 1, c(2, 4)), 5, 3, "x")
     expect_equal(out[,1], rep(1, 5))
     expect_equal(out[,2], c(1, 0, 0, 0, 0))
     expect_equal(out[,3], c(0, 1, 0, 1, 0))
@@ -64,14 +64,14 @@ test_that("parse_idx_ages builds the age selection array", {
 
   test_that("an array is accepted directly", {
     arr <- cbind(c(1,1,0), c(0,1,1))
-    expect_equal(SPoRC:::parse_idx_ages(arr, 3, 2, "x"), array(as.numeric(arr), dim = c(3, 2)))
+    expect_equal(SPoRC:::parse_bin_subset(arr, 3, 2, "x"), array(as.numeric(arr), dim = c(3, 2)))
   })
 
   test_that("errors on out-of-range ages, wrong length, non-binary values, and empty fleets", {
-    expect_error(SPoRC:::parse_idx_ages(list(9), 5, 1, "x"))
-    expect_error(SPoRC:::parse_idx_ages(list(1, 2), 5, 3, "x"))
-    expect_error(SPoRC:::parse_idx_ages(array(0.5, dim = c(3, 1)), 3, 1, "x"))
-    expect_error(SPoRC:::parse_idx_ages(array(0, dim = c(3, 1)), 3, 1, "x"))
+    expect_error(SPoRC:::parse_bin_subset(list(9), 5, 1, "x"))
+    expect_error(SPoRC:::parse_bin_subset(list(1, 2), 5, 3, "x"))
+    expect_error(SPoRC:::parse_bin_subset(array(0.5, dim = c(3, 1)), 3, 1, "x"))
+    expect_error(SPoRC:::parse_bin_subset(array(0, dim = c(3, 1)), 3, 1, "x"))
   })
 
 })

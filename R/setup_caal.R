@@ -186,6 +186,11 @@ setup_caal_stream <- function(input_list, ObsCAAL, UseCAAL, ISS_CAAL,
     } # end y loop
   } else dim_msg(ISS_CAAL, iss_dim, iss_nm, c("n_regions", "n_years", "n_seas", "n_lens", "n_sexes", "n_fleets"))
 
+  # Reconcile the use flags with any bin restriction, so the fitting likelihood
+  # and the residual machinery agree on which length bins carry aged fish. The
+  # bins array is set by the caller before this runs.
+  UseCAAL <- drop_empty_fitted_blocks(ObsCAAL, UseCAAL, input_list$data[[paste0(stub, "_bins")]], 5, stub)
+
   # Populate Data List ------------------------------------------------------
   input_list$data[[obs_nm]] <- ObsCAAL
   input_list$data[[use_nm]] <- UseCAAL

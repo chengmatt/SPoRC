@@ -229,15 +229,32 @@
 #' @param Srv_caal_Type Composition type specification, using the same
 #'   \code{"CompType_Year_x-y_Fleet_z"} convention as the marginal compositions.
 #' @param SrvAgeComps_bins Which age bins each survey fleet's age composition is
-#'   fitted over. Supply a list with one element per fleet, each a vector of age
-#'   indices or \code{NULL} for all ages, or an \code{[n_ages x n_srv_fleets]}
-#'   array of 0/1 weights. Both observed and expected compositions are
-#'   restricted to the named bins and renormalized within them, so excluded bins
-#'   are left out of the likelihood rather than being forced to be explained;
-#'   this is how a fleet that only ages part of its age range is fitted. Indices
-#'   refer to observed bins, that is after any ageing error has mapped model
-#'   ages onto observed ones. Every fleet must retain at least one bin. Default
-#'   \code{NULL}, which fits all ages for all fleets.
+#'   fitted over. Supply a list with one element per fleet, each a vector of bin
+#'   indices or \code{NULL} for all bins, or an
+#'   \code{[n_obs_ages x n_srv_fleets]} array of 0/1 weights. Both observed and
+#'   expected compositions are restricted to the named bins and renormalized
+#'   within them, so excluded bins are left out of the likelihood rather than
+#'   being forced to be explained; this is how a fleet that only ages part of
+#'   its age range is fitted. Indices refer to observed bins, that is after any
+#'   ageing error has mapped model ages onto observed ones. The restriction
+#'   applies whatever the composition type: for sex-joint comps the named bins
+#'   are dropped from each sex's block, so the sex ratio the joint comps carry
+#'   becomes the ratio within the fitted bins. Every fleet must retain at least
+#'   two bins, since the proportion in a lone bin is one whatever the model
+#'   predicts. Default \code{NULL}, which fits all bins for all fleets.
+#' @param SrvLenComps_bins Which length bins each survey fleet's length
+#'   composition is fitted over, in the same format as \code{SrvAgeComps_bins}.
+#'   Indices refer to observed length bins, that is after any \code{LenBinMap}
+#'   has mapped model bins onto observed ones.
+#' @param Srv_caal_bins Which age bins each survey fleet's conditional
+#'   age-at-length data are fitted over, in the same format as
+#'   \code{SrvAgeComps_bins}. Applied to every length bin's row of ages alike.
+#' @param SrvAgeComps_pop_bins Which age bins each survey fleet's
+#'   population-specific age composition is fitted over, in the same format as
+#'   \code{SrvAgeComps_bins}.
+#' @param SrvLenComps_pop_bins Which length bins each survey fleet's
+#'   population-specific length composition is fitted over, in the same format
+#'   as \code{SrvAgeComps_bins}.
 #' @param ObsSrvAgeComps_pop Observed population-specific survey age
 #'   composition array
 #'   \code{[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes × n_srv_fleets]}.
@@ -347,6 +364,10 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
                                        SrvLenComps_pop_Type = paste("none_Year_1-terminal_Fleet_", 1:input_list$data$n_srv_fleets, sep = ''),
                                        srv_idx_ages = NULL,
                                        SrvAgeComps_bins = NULL,
+                                       SrvLenComps_bins = NULL,
+                                       Srv_caal_bins = NULL,
+                                       SrvAgeComps_pop_bins = NULL,
+                                       SrvLenComps_pop_bins = NULL,
                                        SrvIdx_LikeType = rep("lognormal", input_list$data$n_srv_fleets),
                                        SrvLenComps_sel = rep("age", input_list$data$n_srv_fleets),
                                        srv_waa_selected = rep(0, input_list$data$n_srv_fleets),
@@ -811,7 +832,7 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
   if(length(SrvIdx_LikeType) != input_list$data$n_srv_fleets) stop("SrvIdx_LikeType is not length n_srv_fleets")
 
   srv_idx_like_vals <- convert_to_numeric(SrvIdx_LikeType, list(lognormal = 0, normal = 1, mvn = 2))
-  srv_idx_ages_arr <- parse_idx_ages(srv_idx_ages, length(input_list$data$ages), input_list$data$n_srv_fleets, "srv_idx_ages")
+  srv_idx_ages_arr <- parse_bin_subset(srv_idx_ages, length(input_list$data$ages), input_list$data$n_srv_fleets, "srv_idx_ages")
   srv_idx_cov_parsed <- parse_idx_cov(SrvIdx_Cov, srv_idx_like_vals, UseSrvIdx, input_list$data$n_srv_fleets, "SrvIdx_Cov")
 
   for(f in 1:input_list$data$n_srv_fleets) {
@@ -823,7 +844,37 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
 
   input_list$data$SrvIdx_LikeType <- srv_idx_like_vals
   input_list$data$srv_idx_ages <- srv_idx_ages_arr
-  input_list$data$SrvAgeComps_bins <- parse_idx_ages(SrvAgeComps_bins, length(input_list$data$ages), input_list$data$n_srv_fleets, "SrvAgeComps_bins")
+  # Composition bin restrictions. Every stream is indexed on its own observed
+  # bins, so the age streams are bounded by the observed age bins the comps were
+  # supplied on and the length streams by the observed length bins.
+  n_obs_age_bins <- obs_bin_count(input_list, ObsSrvAgeComps, 4, "age")
+  n_obs_len_bins <- obs_bin_count(input_list, ObsSrvLenComps, 4, "len")
+  # conditional age-at-length carries its own observed age dimension, which need
+  # not match the marginal age compositions, so it is measured off its own array
+  n_obs_caal_bins <- obs_bin_count(input_list, ObsSrv_caal, 5, "age")
+  # population-specific streams likewise carry their own arrays, with the
+  # population dimension pushing the bins one place along
+  n_obs_age_pop_bins <- obs_bin_count(input_list, ObsSrvAgeComps_pop, 5, "age")
+  n_obs_len_pop_bins <- obs_bin_count(input_list, ObsSrvLenComps_pop, 5, "len")
+  n_srv <- input_list$data$n_srv_fleets
+  input_list$data$SrvAgeComps_bins <- check_comp_bins_min(parse_comp_bins(SrvAgeComps_bins, n_obs_age_bins, n_srv, "SrvAgeComps_bins"), comp_srvage_like_vals, "SrvAgeComps_bins")
+  input_list$data$SrvLenComps_bins <- check_comp_bins_min(parse_comp_bins(SrvLenComps_bins, n_obs_len_bins, n_srv, "SrvLenComps_bins"), comp_srvlen_like_vals, "SrvLenComps_bins")
+  input_list$data$Srv_caal_bins <- check_comp_bins_min(parse_comp_bins(Srv_caal_bins, n_obs_caal_bins, n_srv, "Srv_caal_bins"), ifelse(Srv_caal_LikeType == "none", 999, 0), "Srv_caal_bins")
+  input_list$data$SrvAgeComps_pop_bins <- check_comp_bins_min(parse_comp_bins(SrvAgeComps_pop_bins, n_obs_age_pop_bins, n_srv, "SrvAgeComps_pop_bins"), comp_srvage_pop_like_vals, "SrvAgeComps_pop_bins")
+  input_list$data$SrvLenComps_pop_bins <- check_comp_bins_min(parse_comp_bins(SrvLenComps_pop_bins, n_obs_len_pop_bins, n_srv, "SrvLenComps_pop_bins"), comp_srvlen_pop_like_vals, "SrvLenComps_pop_bins")
+
+  # Reconcile the use flags with the restriction, so the fitting likelihood and
+  # the residual machinery agree on which blocks carry data
+  UseSrvAgeComps <- drop_empty_fitted_blocks(ObsSrvAgeComps, UseSrvAgeComps, input_list$data$SrvAgeComps_bins, 4, "SrvAgeComps")
+  UseSrvLenComps <- drop_empty_fitted_blocks(ObsSrvLenComps, UseSrvLenComps, input_list$data$SrvLenComps_bins, 4, "SrvLenComps")
+  UseSrvAgeComps_pop <- drop_empty_fitted_blocks(ObsSrvAgeComps_pop, UseSrvAgeComps_pop, input_list$data$SrvAgeComps_pop_bins, 5, "SrvAgeComps_pop")
+  UseSrvLenComps_pop <- drop_empty_fitted_blocks(ObsSrvLenComps_pop, UseSrvLenComps_pop, input_list$data$SrvLenComps_pop_bins, 5, "SrvLenComps_pop")
+  # written back over the copies stored before the restriction was known
+  input_list$data$UseSrvAgeComps <- UseSrvAgeComps
+  input_list$data$UseSrvLenComps <- UseSrvLenComps
+  input_list$data$UseSrvAgeComps_pop <- UseSrvAgeComps_pop
+  input_list$data$UseSrvLenComps_pop <- UseSrvLenComps_pop
+
   input_list$data$SrvIdx_Cov <- srv_idx_cov_parsed
 
   # Populate Parameter List -------------------------------------------------

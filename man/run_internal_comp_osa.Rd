@@ -34,7 +34,9 @@ to build \code{model}.}
 
 \item{parallel}{Whether or not to parallelize OSA computation. Defaults to \code{FALSE}.}
 
-\item{bins}{Vector of age or length bin labels for display.}
+\item{bins}{Vector of age or length bin labels for display. Must span every observed bin of the stream, not just
+the ones a \code{*_bins} restriction fits: residuals are labelled by true
+observed bin number, so a subset here shifts every label.}
 
 \item{bin_label}{Character label describing whether bins represent ages or lengths.}
 

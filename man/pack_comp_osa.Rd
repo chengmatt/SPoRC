@@ -19,7 +19,8 @@ pack_comp_osa(
   family = "discrete",
   pop = FALSE,
   n_pop = 1,
-  return_labels = FALSE
+  return_labels = FALSE,
+  BinsArr = NULL
 )
 }
 \arguments{
@@ -57,6 +58,11 @@ bin, comp_type, likelihood_type, family, last_in_group) of every entry in
 the tracked vector, in the same order. Intended for post-hoc relabeling of
 \code{TMB::oneStepPredict()} residuals (see [get_osa()]); left \code{FALSE}
 (default) inside the model itself to avoid the extra bookkeeping cost.}
+
+\item{BinsArr}{Optional \code{[n_obs_bins x n_fleets]} 0/1 array naming the
+observed bins each fleet is fitted over, or \code{NULL} (default) for all
+bins. Restricted fleets pack a shorter block, and \code{eval_comp_osa} must
+be handed the same array so its strides stay in step with the packer.}
 }
 \value{
 If \code{return_labels = FALSE} (default): flat OBS vector, or

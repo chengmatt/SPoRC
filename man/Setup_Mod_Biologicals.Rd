@@ -16,6 +16,8 @@ Setup_Mod_Biologicals(
   addtosrvidx = NULL,
   addtotag = NULL,
   AgeingError = NULL,
+  AgeingError_fish = NULL,
+  AgeingError_srv = NULL,
   Use_M_prior = 0,
   M_prior = NA,
   fit_lengths = 0,
@@ -122,7 +124,13 @@ compatibility (forwarded with a message). Small constant added to tag
 recovery observations; default \code{1e-10} in \code{Setup_Mod_Weighting}.}
 
 \item{AgeingError}{Ageing error (age-age transition) array mapping true modelled ages
-to observed age bins. Accepted forms:
+to observed age bins. Each row is one model age's share across the observed
+bins and sums to one, or to zero to drop that model age from the
+observations. This is the age-axis twin of \code{LenBinMap}: the likelihood
+applies the two identically and validates them identically, so read either
+one for the other. It changes which bins the compositions are recorded on;
+to leave observed bins out of the likelihood without changing the bins
+themselves, use the \code{*_bins} arguments instead. Accepted forms:
 \describe{
   \item{2D matrix \code{[n_model_ages × n_obs_ages]}}{Time-invariant ageing error;
     replicated internally across all years.}
@@ -133,6 +141,22 @@ to observed age bins. Accepted forms:
     identity matrix such as \code{diag(1, n_model_ages)[, obs_age_index]} to
     avoid a dimensional mismatch.}
 }}
+
+\item{AgeingError_fish}{Optional fleet-specific ageing error for the fishery
+fleets, for when the fleets do not read ages the same way. Accepted forms:
+a 3D array \code{[n_model_ages × n_obs_ages × n_fish_fleets]} for a
+time-invariant matrix per fleet, a 4D array
+\code{[n_years × n_model_ages × n_obs_ages × n_fish_fleets]} for a
+time-varying one, or \code{NULL} (default), which gives every fishery fleet
+the shared \code{AgeingError}. Each fleet's slice is validated the same way
+\code{AgeingError} is, and every fleet must land on the same observed age
+bins, since the observed composition arrays carry one age dimension shared
+across fleets.}
+
+\item{AgeingError_srv}{Optional fleet-specific ageing error for the survey
+fleets, in the same forms as \code{AgeingError_fish}, with
+\code{n_srv_fleets} in place of \code{n_fish_fleets}. \code{NULL}
+(default) gives every survey fleet the shared \code{AgeingError}.}
 
 \item{Use_M_prior}{Integer flag to apply a lognormal prior on natural mortality.
 \code{0} = no prior (default); \code{1} = apply prior.}
@@ -283,12 +307,18 @@ years. \code{NULL} (default) uses every year.}
 
 \item{LenBinMap}{Optional matrix \code{[n_lens x n_obs_lens]} mapping the
 model's length bins onto the bins the length compositions are recorded on,
-each row summing to one, for compositions on coarser bins than the model
-carries (a population of 1 cm bins fit to 5 cm compositions, say). Observed
-length compositions are then dimensioned by \code{n_obs_lens} and the
-expected compositions are mapped through it inside the likelihood, the
-way the ageing error matrix maps ages. \code{NULL} (default) fits the
-compositions on the model bins.}
+for compositions on coarser bins than the model carries (a population of
+1 cm bins fit to 5 cm compositions, say). Observed length compositions are
+then dimensioned by \code{n_obs_lens} and the expected compositions are
+mapped through it inside the likelihood. This is the length-axis twin of
+\code{AgeingError}: the likelihood applies the two identically and
+validates them identically, so read either one for the other. Each row is
+one model bin's share across the observed bins and sums to one, or to zero
+to drop that model bin from the observations. It changes which bins the
+compositions are recorded on; to leave observed bins out of the likelihood
+without changing the bins themselves, use the \code{*LenComps_bins}
+arguments instead. \code{NULL} (default) fits the compositions on the model
+bins.}
 
 \item{growth_A1, growth_A2}{Reference ages for \code{L1} and \code{L2}.
 \code{growth_A2 = "Linf"} instead makes \code{L2} the asymptotic length

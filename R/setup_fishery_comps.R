@@ -62,6 +62,23 @@
 #'
 #' @param FishLenComps_discard_pop_Type Encoded structure definitions for population length comps by year/fleet.
 #'
+#' @param FishAgeComps_discard_bins Which age bins each fishery fleet's discard
+#'   age composition is fitted over. Supply a list with one element per fleet,
+#'   each a vector of bin indices or \code{NULL} for all bins, or an
+#'   \code{[n_obs_ages x n_fish_fleets]} array of 0/1 weights. Indices refer to
+#'   observed bins, that is after any ageing error. Excluded bins are left out of
+#'   the likelihood rather than being forced to be explained. Default
+#'   \code{NULL}, which fits all bins for all fleets.
+#'
+#' @param FishLenComps_discard_bins Which length bins each fishery fleet's
+#'   discard length composition is fitted over, in the same format.
+#'
+#' @param FishAgeComps_discard_pop_bins Which age bins each fishery fleet's
+#'   population-specific discard age composition is fitted over, in the same format.
+#'
+#' @param FishLenComps_discard_pop_bins Which length bins each fishery fleet's
+#'   population-specific discard length composition is fitted over, in the same format.
+#'
 #' @param ... Optional starting values for parameters (e.g., dispersion, correlation)
 #'
 #' @return The input \code{input_list} updated with:
@@ -109,6 +126,10 @@ Setup_Mod_Discard_Comps     <- function(input_list,
                                         FishLenComps_discard_pop_LikeType,
                                         FishAgeComps_discard_pop_Type,
                                         FishLenComps_discard_pop_Type,
+                                        FishAgeComps_discard_bins = NULL,
+                                        FishLenComps_discard_bins = NULL,
+                                        FishAgeComps_discard_pop_bins = NULL,
+                                        FishLenComps_discard_pop_bins = NULL,
                                         ...
 ) {
 
@@ -449,7 +470,26 @@ Setup_Mod_Discard_Comps     <- function(input_list,
   input_list$data$ISS_FishLenComps_discard <- ISS_FishLenComps_discard
   input_list$data$ISS_FishAgeComps_discard_pop <- ISS_FishAgeComps_discard_pop
   input_list$data$ISS_FishLenComps_discard_pop <- ISS_FishLenComps_discard_pop
+  # Composition Bin Restrictions --------------------------------------------
+  # Same format and meaning as the retained streams, indexed on observed bins
+  n_obs_age_bins <- obs_bin_count(input_list, ObsFishAgeComps_discard, 4, "age")
+  n_obs_len_bins <- obs_bin_count(input_list, ObsFishLenComps_discard, 4, "len")
+  n_obs_age_pop_bins <- obs_bin_count(input_list, ObsFishAgeComps_discard_pop, 5, "age")
+  n_obs_len_pop_bins <- obs_bin_count(input_list, ObsFishLenComps_discard_pop, 5, "len")
+  n_fish <- input_list$data$n_fish_fleets
+  input_list$data$FishAgeComps_discard_bins <- check_comp_bins_min(parse_comp_bins(FishAgeComps_discard_bins, n_obs_age_bins, n_fish, "FishAgeComps_discard_bins"), comp_fishage_discard_like_vals, "FishAgeComps_discard_bins")
+  input_list$data$FishLenComps_discard_bins <- check_comp_bins_min(parse_comp_bins(FishLenComps_discard_bins, n_obs_len_bins, n_fish, "FishLenComps_discard_bins"), comp_fishlen_discard_like_vals, "FishLenComps_discard_bins")
+  input_list$data$FishAgeComps_discard_pop_bins <- check_comp_bins_min(parse_comp_bins(FishAgeComps_discard_pop_bins, n_obs_age_pop_bins, n_fish, "FishAgeComps_discard_pop_bins"), comp_fishage_discard_pop_like_vals, "FishAgeComps_discard_pop_bins")
+  input_list$data$FishLenComps_discard_pop_bins <- check_comp_bins_min(parse_comp_bins(FishLenComps_discard_pop_bins, n_obs_len_pop_bins, n_fish, "FishLenComps_discard_pop_bins"), comp_fishlen_discard_pop_like_vals, "FishLenComps_discard_pop_bins")
+
+  # Reconcile the use flags with the restriction, so the fitting likelihood and
+  # the residual machinery agree on which blocks carry data. Must sit after the
+  # bins above, since it reads them.
   input_list$data$ObsFishAgeComps_discard <- ObsFishAgeComps_discard
+  UseFishAgeComps_discard <- drop_empty_fitted_blocks(ObsFishAgeComps_discard, UseFishAgeComps_discard, input_list$data$FishAgeComps_discard_bins, 4, "FishAgeComps_discard")
+  UseFishLenComps_discard <- drop_empty_fitted_blocks(ObsFishLenComps_discard, UseFishLenComps_discard, input_list$data$FishLenComps_discard_bins, 4, "FishLenComps_discard")
+  UseFishAgeComps_discard_pop <- drop_empty_fitted_blocks(ObsFishAgeComps_discard_pop, UseFishAgeComps_discard_pop, input_list$data$FishAgeComps_discard_pop_bins, 5, "FishAgeComps_discard_pop")
+  UseFishLenComps_discard_pop <- drop_empty_fitted_blocks(ObsFishLenComps_discard_pop, UseFishLenComps_discard_pop, input_list$data$FishLenComps_discard_pop_bins, 5, "FishLenComps_discard_pop")
   input_list$data$UseFishAgeComps_discard <- UseFishAgeComps_discard
   input_list$data$ObsFishLenComps_discard <- ObsFishLenComps_discard
   input_list$data$UseFishLenComps_discard <- UseFishLenComps_discard
@@ -687,15 +727,31 @@ Setup_Mod_Discard_Comps     <- function(input_list,
 #'   \code{"CompType_Year_x-y_Fleet_z"} convention as the marginal compositions.
 #' @param FishAgeComps_bins Which age bins each fishery fleet's age composition
 #'   is fitted over. Supply a list with one element per fleet, each a vector of
-#'   age indices or \code{NULL} for all ages, or an
-#'   \code{[n_ages x n_fish_fleets]} array of 0/1 weights. Both observed and
+#'   bin indices or \code{NULL} for all bins, or an
+#'   \code{[n_obs_ages x n_fish_fleets]} array of 0/1 weights. Both observed and
 #'   expected compositions are restricted to the named bins and renormalized
 #'   within them, so excluded bins are left out of the likelihood rather than
 #'   being forced to be explained; this is how a fleet that only ages part of
 #'   its age range is fitted. Indices refer to observed bins, that is after any
-#'   ageing error has mapped model ages onto observed ones. Every fleet must
-#'   retain at least one bin. Default \code{NULL}, which fits all ages for all
-#'   fleets.
+#'   ageing error has mapped model ages onto observed ones. The restriction
+#'   applies whatever the composition type: for sex-joint comps the named bins
+#'   are dropped from each sex's block, so the sex ratio the joint comps carry
+#'   becomes the ratio within the fitted bins. Every fleet must retain at least
+#'   two bins, since the proportion in a lone bin is one whatever the model
+#'   predicts. Default \code{NULL}, which fits all bins for all fleets.
+#' @param FishLenComps_bins Which length bins each fishery fleet's length
+#'   composition is fitted over, in the same format as
+#'   \code{FishAgeComps_bins}. Indices refer to observed length bins, that is
+#'   after any \code{LenBinMap} has mapped model bins onto observed ones.
+#' @param Fish_caal_bins Which age bins each fishery fleet's conditional
+#'   age-at-length data are fitted over, in the same format as
+#'   \code{FishAgeComps_bins}. Applied to every length bin's row of ages alike.
+#' @param FishAgeComps_pop_bins Which age bins each fishery fleet's
+#'   population-specific age composition is fitted over, in the same format as
+#'   \code{FishAgeComps_bins}.
+#' @param FishLenComps_pop_bins Which length bins each fishery fleet's
+#'   population-specific length composition is fitted over, in the same format
+#'   as \code{FishAgeComps_bins}.
 #' @param ObsFishAgeComps_pop Observed population-specific fishery age
 #'   composition array
 #'   \code{[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes × n_fish_fleets]}.
@@ -966,6 +1022,10 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
                                         FishLenComps_pop_Type = paste("none_Year_1-terminal_Fleet_", 1:input_list$data$n_fish_fleets, sep = ''),
                                         fish_idx_ages = NULL,
                                         FishAgeComps_bins = NULL,
+                                        FishLenComps_bins = NULL,
+                                        Fish_caal_bins = NULL,
+                                        FishAgeComps_pop_bins = NULL,
+                                        FishLenComps_pop_bins = NULL,
                                         FishIdx_LikeType = rep("lognormal", input_list$data$n_fish_fleets),
                                         FishIdx_Cov = NULL,
 
@@ -1395,7 +1455,7 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
   if(length(FishIdx_LikeType) != input_list$data$n_fish_fleets) stop("FishIdx_LikeType is not length n_fish_fleets")
 
   fish_idx_like_vals <- convert_to_numeric(FishIdx_LikeType, list(lognormal = 0, normal = 1, mvn = 2))
-  fish_idx_ages_arr <- parse_idx_ages(fish_idx_ages, length(input_list$data$ages), input_list$data$n_fish_fleets, "fish_idx_ages")
+  fish_idx_ages_arr <- parse_bin_subset(fish_idx_ages, length(input_list$data$ages), input_list$data$n_fish_fleets, "fish_idx_ages")
   fish_idx_cov_parsed <- parse_idx_cov(FishIdx_Cov, fish_idx_like_vals, UseFishIdx, input_list$data$n_fish_fleets, "FishIdx_Cov")
 
   for(f in 1:input_list$data$n_fish_fleets) {
@@ -1407,7 +1467,32 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
 
   input_list$data$FishIdx_LikeType <- fish_idx_like_vals
   input_list$data$fish_idx_ages <- fish_idx_ages_arr
-  input_list$data$FishAgeComps_bins <- parse_idx_ages(FishAgeComps_bins, length(input_list$data$ages), input_list$data$n_fish_fleets, "FishAgeComps_bins")
+  # Composition bin restrictions. Every stream is indexed on its own observed
+  # bins, so the age streams are bounded by the observed age bins the comps were
+  # supplied on and the length streams by the observed length bins.
+  n_obs_age_bins <- obs_bin_count(input_list, ObsFishAgeComps, 4, "age")
+  n_obs_len_bins <- obs_bin_count(input_list, ObsFishLenComps, 4, "len")
+  # conditional age-at-length carries its own observed age dimension, which need
+  # not match the marginal age compositions, so it is measured off its own array
+  n_obs_caal_bins <- obs_bin_count(input_list, ObsFish_caal, 5, "age")
+  # population-specific streams likewise carry their own arrays, with the
+  # population dimension pushing the bins one place along
+  n_obs_age_pop_bins <- obs_bin_count(input_list, ObsFishAgeComps_pop, 5, "age")
+  n_obs_len_pop_bins <- obs_bin_count(input_list, ObsFishLenComps_pop, 5, "len")
+  n_fish <- input_list$data$n_fish_fleets
+  input_list$data$FishAgeComps_bins <- check_comp_bins_min(parse_comp_bins(FishAgeComps_bins, n_obs_age_bins, n_fish, "FishAgeComps_bins"), comp_fishage_like_vals, "FishAgeComps_bins")
+  input_list$data$FishLenComps_bins <- check_comp_bins_min(parse_comp_bins(FishLenComps_bins, n_obs_len_bins, n_fish, "FishLenComps_bins"), comp_fishlen_like_vals, "FishLenComps_bins")
+  input_list$data$Fish_caal_bins <- check_comp_bins_min(parse_comp_bins(Fish_caal_bins, n_obs_caal_bins, n_fish, "Fish_caal_bins"), ifelse(Fish_caal_LikeType == "none", 999, 0), "Fish_caal_bins")
+  input_list$data$FishAgeComps_pop_bins <- check_comp_bins_min(parse_comp_bins(FishAgeComps_pop_bins, n_obs_age_pop_bins, n_fish, "FishAgeComps_pop_bins"), comp_fishage_pop_like_vals, "FishAgeComps_pop_bins")
+  input_list$data$FishLenComps_pop_bins <- check_comp_bins_min(parse_comp_bins(FishLenComps_pop_bins, n_obs_len_pop_bins, n_fish, "FishLenComps_pop_bins"), comp_fishlen_pop_like_vals, "FishLenComps_pop_bins")
+
+  # Reconcile the use flags with the restriction, so the fitting likelihood and
+  # the residual machinery agree on which blocks carry data
+  UseFishAgeComps <- drop_empty_fitted_blocks(ObsFishAgeComps, UseFishAgeComps, input_list$data$FishAgeComps_bins, 4, "FishAgeComps")
+  UseFishLenComps <- drop_empty_fitted_blocks(ObsFishLenComps, UseFishLenComps, input_list$data$FishLenComps_bins, 4, "FishLenComps")
+  UseFishAgeComps_pop <- drop_empty_fitted_blocks(ObsFishAgeComps_pop, UseFishAgeComps_pop, input_list$data$FishAgeComps_pop_bins, 5, "FishAgeComps_pop")
+  UseFishLenComps_pop <- drop_empty_fitted_blocks(ObsFishLenComps_pop, UseFishLenComps_pop, input_list$data$FishLenComps_pop_bins, 5, "FishLenComps_pop")
+
   input_list$data$FishIdx_Cov <- fish_idx_cov_parsed
   input_list$data$t_fish <- t_fish
   input_list$data$fish_len_comp_sel <- fish_len_comp_sel_vals

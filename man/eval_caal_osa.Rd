@@ -23,7 +23,8 @@ eval_caal_osa(
   n_model_bins,
   n_obs_bins,
   AgeingErrorFn,
-  addtocomp
+  addtocomp,
+  BinsArr = NULL
 )
 }
 \arguments{
@@ -56,9 +57,15 @@ len \times sex \times fleet]}.}
 
 \item{n_obs_bins}{Number of observed age bins.}
 
-\item{AgeingErrorFn}{Function returning the ageing error matrix for a year.}
+\item{AgeingErrorFn}{Function \code{(y, f)} returning the ageing error matrix
+for a given year and fleet.}
 
 \item{addtocomp}{Small constant added to proportions before normalization.}
+
+\item{BinsArr}{Optional \code{[n_obs_bins x n_fleets]} 0/1 array naming the
+observed age bins each fleet is fitted over, or \code{NULL} (default) for
+all bins. Must be the same array handed to \code{\link{pack_caal_osa}},
+since the strides walked here are sized on it.}
 }
 \value{
 Updated \code{nLL_arr}.

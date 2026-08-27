@@ -23,7 +23,7 @@ test_that("deviation slots beyond a fleet's selectivity form stay unmapped", {
     input_list = input_list, WAA = waa, MatAA = waa,
     WAA_fish = array(1, dim = c(1, 1, n_yrs, 1, n_ages, 1, 1)),
     WAA_srv = array(1, dim = c(1, 1, n_yrs, 1, n_ages, 1, 2)),
-    fit_lengths = 0, AgeingError = array(diag(n_ages), dim = c(n_yrs, n_ages, n_ages)),
+    fit_lengths = 0, AgeingError = array(rep(diag(n_ages), each = n_yrs), dim = c(n_yrs, n_ages, n_ages)),
     M_spec = "fix", Fixed_natmort = array(0.3, dim = c(1, 1, n_yrs, n_ages, 1))))
   input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
   input_list <- Setup_Mod_Movement(input_list = input_list, use_fixed_movement = 1,

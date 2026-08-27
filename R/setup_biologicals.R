@@ -34,6 +34,14 @@
 #'   the recruit age (the first age class) must be exactly \code{0} for all
 #'   populations, regions, years, seasons, and sexes. An error is raised
 #'   otherwise.
+#' @param AgeingError_fish_input Optional fleet-specific ageing error for the
+#'   simulated fishery fleets, dimensioned
+#'   \code{[n_yrs × n_ages × n_obs_ages × n_fish_fleets × n_sims]}, or
+#'   \code{NULL} (default) to give every fishery fleet \code{AgeingError_input}.
+#' @param AgeingError_srv_input Optional fleet-specific ageing error for the
+#'   simulated survey fleets, dimensioned
+#'   \code{[n_yrs × n_ages × n_obs_ages × n_srv_fleets × n_sims]}, or
+#'   \code{NULL} (default) to give every survey fleet \code{AgeingError_input}.
 #' @param AgeingError_input Ageing error (age-length transition) array with
 #'   dimensions \code{[n_yrs × n_model_ages × n_obs_ages × n_sims]}, where each
 #'   \code{[n_model_ages × n_obs_ages]} slice is a row-stochastic matrix mapping
@@ -79,6 +87,8 @@ Setup_Sim_Biologicals <- function(
                                   WAA_srv_input,
                                   MatAA_input,
                                   AgeingError_input = NULL,
+                                  AgeingError_fish_input = NULL,
+                                  AgeingError_srv_input = NULL,
                                   SizeAgeTrans_input = NULL,
                                   SizeAgeTrans_fish_input = NULL,
                                   SizeAgeTrans_srv_input = NULL
@@ -130,6 +140,23 @@ Setup_Sim_Biologicals <- function(
     sim_list$AgeingError <- identity_AgeingError
     warning("No ageing error matrix was provided. A default identity matrix was used, which assumes that the number and structure of modelled age bins exactly match the observed age bins. If the observed age composition data includes fewer age bins than the model (e.g., observed ages 2-10 while modelled ages are 1-10), this default assumption will cause a dimensional mismatch and potentially misalign the modelled and observed compositions. To avoid this, please provide an ageing error matrix of dimension n_model_ages x n_obs_ages that correctly maps modelled ages to observed age bins. For example, if observed ages are 2-10, supply a matrix that drops the first model age by using a shifted identity matrix: diag(1, 10)[, 2:10]. This will ensure the age bins are correctly aligned for likelihood calculations.")
   }
+
+  # expand fleet-specific ageing error for the OM for backwards compatbility
+  expand_sim_ae <- function(x, n_fleets, what) {
+    shared <- sim_list$AgeingError
+    d <- dim(shared)   # [n_yrs, n_ages, n_obs_ages, n_sims]
+    if(is.null(x)) {
+      out <- array(0, dim = c(d[1], d[2], d[3], n_fleets, d[4]))
+      for(f in seq_len(n_fleets)) out[,,,f,] <- shared
+      return(out)
+    }
+    if(length(dim(x)) != 5) stop(what, " must be dimensioned n_yrs x n_ages x n_obs_ages x n_fleets x n_sims")
+    if(dim(x)[4] != n_fleets) stop(what, " has ", dim(x)[4], " fleets but the operating model has ", n_fleets, ".")
+    if(!all(dim(x)[c(1,2,3,5)] == d)) stop(what, " must match AgeingError on years, ages, observed ages and sims.")
+    return(x)
+  }
+  sim_list$AgeingError_fish <- expand_sim_ae(AgeingError_fish_input, sim_list$n_fish_fleets, "AgeingError_fish_input")
+  sim_list$AgeingError_srv <- expand_sim_ae(AgeingError_srv_input, sim_list$n_srv_fleets, "AgeingError_srv_input")
 
   return(sim_list)
 
@@ -481,7 +508,13 @@ do_growth_mapping <- function(input_list,
 #'   compatibility (forwarded with a message). Small constant added to tag
 #'   recovery observations; default \code{1e-10} in \code{Setup_Mod_Weighting}.
 #' @param AgeingError Ageing error (age-age transition) array mapping true modelled ages
-#'   to observed age bins. Accepted forms:
+#'   to observed age bins. Each row is one model age's share across the observed
+#'   bins and sums to one, or to zero to drop that model age from the
+#'   observations. This is the age-axis twin of \code{LenBinMap}: the likelihood
+#'   applies the two identically and validates them identically, so read either
+#'   one for the other. It changes which bins the compositions are recorded on;
+#'   to leave observed bins out of the likelihood without changing the bins
+#'   themselves, use the \code{*_bins} arguments instead. Accepted forms:
 #'   \describe{
 #'     \item{2D matrix \code{[n_model_ages × n_obs_ages]}}{Time-invariant ageing error;
 #'       replicated internally across all years.}
@@ -492,6 +525,20 @@ do_growth_mapping <- function(input_list,
 #'       identity matrix such as \code{diag(1, n_model_ages)[, obs_age_index]} to
 #'       avoid a dimensional mismatch.}
 #'   }
+#' @param AgeingError_fish Optional fleet-specific ageing error for the fishery
+#'   fleets, for when the fleets do not read ages the same way. Accepted forms:
+#'   a 3D array \code{[n_model_ages × n_obs_ages × n_fish_fleets]} for a
+#'   time-invariant matrix per fleet, a 4D array
+#'   \code{[n_years × n_model_ages × n_obs_ages × n_fish_fleets]} for a
+#'   time-varying one, or \code{NULL} (default), which gives every fishery fleet
+#'   the shared \code{AgeingError}. Each fleet's slice is validated the same way
+#'   \code{AgeingError} is, and every fleet must land on the same observed age
+#'   bins, since the observed composition arrays carry one age dimension shared
+#'   across fleets.
+#' @param AgeingError_srv Optional fleet-specific ageing error for the survey
+#'   fleets, in the same forms as \code{AgeingError_fish}, with
+#'   \code{n_srv_fleets} in place of \code{n_fish_fleets}. \code{NULL}
+#'   (default) gives every survey fleet the shared \code{AgeingError}.
 #' @param Use_M_prior Integer flag to apply a lognormal prior on natural mortality.
 #'   \code{0} = no prior (default); \code{1} = apply prior.
 #' @param M_prior Data frame of prior hyperparameters for natural mortality, with one
@@ -620,12 +667,18 @@ do_growth_mapping <- function(input_list,
 #'   years. \code{NULL} (default) uses every year.
 #' @param LenBinMap Optional matrix \code{[n_lens x n_obs_lens]} mapping the
 #'   model's length bins onto the bins the length compositions are recorded on,
-#'   each row summing to one, for compositions on coarser bins than the model
-#'   carries (a population of 1 cm bins fit to 5 cm compositions, say). Observed
-#'   length compositions are then dimensioned by \code{n_obs_lens} and the
-#'   expected compositions are mapped through it inside the likelihood, the
-#'   way the ageing error matrix maps ages. \code{NULL} (default) fits the
-#'   compositions on the model bins.
+#'   for compositions on coarser bins than the model carries (a population of
+#'   1 cm bins fit to 5 cm compositions, say). Observed length compositions are
+#'   then dimensioned by \code{n_obs_lens} and the expected compositions are
+#'   mapped through it inside the likelihood. This is the length-axis twin of
+#'   \code{AgeingError}: the likelihood applies the two identically and
+#'   validates them identically, so read either one for the other. Each row is
+#'   one model bin's share across the observed bins and sums to one, or to zero
+#'   to drop that model bin from the observations. It changes which bins the
+#'   compositions are recorded on; to leave observed bins out of the likelihood
+#'   without changing the bins themselves, use the \code{*LenComps_bins}
+#'   arguments instead. \code{NULL} (default) fits the compositions on the model
+#'   bins.
 #' @param growth_A1,growth_A2 Reference ages for \code{L1} and \code{L2}.
 #'   \code{growth_A2 = "Linf"} instead makes \code{L2} the asymptotic length
 #'   itself, with no second reference age to solve it from.
@@ -723,6 +776,8 @@ Setup_Mod_Biologicals <- function(input_list,
                                   addtosrvidx = NULL,
                                   addtotag = NULL,
                                   AgeingError = NULL,
+                                  AgeingError_fish = NULL,
+                                  AgeingError_srv = NULL,
                                   Use_M_prior = 0,
                                   M_prior = NA,
                                   fit_lengths = 0,
@@ -895,8 +950,7 @@ Setup_Mod_Biologicals <- function(input_list,
   # Length Bin Map Options --------------------------------------------------
   if(!is.null(LenBinMap)) {
     LenBinMap <- as.matrix(LenBinMap)
-    if(nrow(LenBinMap) != length(input_list$data$lens)) stop("LenBinMap must have one row per model length bin (", length(input_list$data$lens), ")")
-    if(any(abs(rowSums(LenBinMap) - 1) > 1e-8)) stop("every row of LenBinMap must sum to one: each model bin is distributed over the observed bins")
+    check_bin_map(LenBinMap, length(input_list$data$lens), "LenBinMap")
     collect_message("Length compositions are recorded on ", ncol(LenBinMap), " bins, mapped from the model's ", nrow(LenBinMap), " bins inside the likelihood")
   }
 
@@ -970,10 +1024,18 @@ Setup_Mod_Biologicals <- function(input_list,
     }
   }
 
-  # Checking ageing error dimensions
+  # Checking ageing error dimensions. AgeingError and LenBinMap are the same
+  # model-bin to observed-bin map on different axes, so both go through
+  # check_bin_map and a mistake in either reads the same way.
   if(!is.null(AgeingError)) {
-    if(length(dim(AgeingError)) == 2) check_data_dimensions(AgeingError, n_ages = length(input_list$data$ages), what = 'AgeingError') # user supplied ageing error is not time-varying
-    if(length(dim(AgeingError)) == 3) check_data_dimensions(AgeingError, n_ages = length(input_list$data$ages), n_years = length(input_list$data$years), what = 'AgeingError_t') # user supplied ageing error is time-varying
+    if(length(dim(AgeingError)) == 2) { # user supplied ageing error is not time-varying
+      check_data_dimensions(AgeingError, n_ages = length(input_list$data$ages), what = 'AgeingError')
+      check_bin_map(AgeingError, length(input_list$data$ages), "AgeingError", strict = FALSE, tol = 0.05)
+    }
+    if(length(dim(AgeingError)) == 3) { # user supplied ageing error is time-varying
+      check_data_dimensions(AgeingError, n_ages = length(input_list$data$ages), n_years = length(input_list$data$years), what = 'AgeingError_t')
+      for(i in 1:dim(AgeingError)[1]) check_bin_map(AgeingError[i,,], length(input_list$data$ages), paste0("AgeingError year ", i), strict = FALSE, tol = 0.05)
+    } # end i loop
   }
 
   # Weight at Age Options ---------------------------------------------------
@@ -1009,6 +1071,9 @@ Setup_Mod_Biologicals <- function(input_list,
     collect_message("Ageing Error is specified to be time-varying")
   }
 
+  # expand fleet-specific ageing error
+  AgeingError_fish_t <- expand_fleet_ageing_error(AgeingError_fish, AgeingError_t, input_list$data$n_fish_fleets, "AgeingError_fish")
+  AgeingError_srv_t <- expand_fleet_ageing_error(AgeingError_srv, AgeingError_t, input_list$data$n_srv_fleets, "AgeingError_srv")
 
   # Natural Mortality Options -----------------------------------------------
   # Input indicator for estimating or not estimating M
@@ -1022,6 +1087,8 @@ Setup_Mod_Biologicals <- function(input_list,
   input_list$data$WAA_srv <- WAA_srv
   input_list$data$MatAA <- MatAA
   input_list$data$AgeingError <- AgeingError_t
+  input_list$data$AgeingError_fish <- AgeingError_fish_t
+  input_list$data$AgeingError_srv <- AgeingError_srv_t
   input_list$data$fit_lengths <- fit_lengths
   input_list$data$SizeAgeTrans <- SizeAgeTrans
   input_list$data$SizeAgeTrans_fish <- SizeAgeTrans_fish

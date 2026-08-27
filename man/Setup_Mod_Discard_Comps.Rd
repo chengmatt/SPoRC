@@ -26,6 +26,10 @@ Setup_Mod_Discard_Comps(
   FishLenComps_discard_pop_LikeType,
   FishAgeComps_discard_pop_Type,
   FishLenComps_discard_pop_Type,
+  FishAgeComps_discard_bins = NULL,
+  FishLenComps_discard_bins = NULL,
+  FishAgeComps_discard_pop_bins = NULL,
+  FishLenComps_discard_pop_bins = NULL,
   ...
 )
 }
@@ -84,6 +88,23 @@ one of \code{c("none","Multinomial","Dirichlet-Multinomial","iid-Logistic-Normal
 \item{FishAgeComps_discard_pop_Type}{Encoded structure definitions for population age comps by year/fleet.}
 
 \item{FishLenComps_discard_pop_Type}{Encoded structure definitions for population length comps by year/fleet.}
+
+\item{FishAgeComps_discard_bins}{Which age bins each fishery fleet's discard
+age composition is fitted over. Supply a list with one element per fleet,
+each a vector of bin indices or \code{NULL} for all bins, or an
+\code{[n_obs_ages x n_fish_fleets]} array of 0/1 weights. Indices refer to
+observed bins, that is after any ageing error. Excluded bins are left out of
+the likelihood rather than being forced to be explained. Default
+\code{NULL}, which fits all bins for all fleets.}
+
+\item{FishLenComps_discard_bins}{Which length bins each fishery fleet's
+discard length composition is fitted over, in the same format.}
+
+\item{FishAgeComps_discard_pop_bins}{Which age bins each fishery fleet's
+population-specific discard age composition is fitted over, in the same format.}
+
+\item{FishLenComps_discard_pop_bins}{Which length bins each fishery fleet's
+population-specific discard length composition is fitted over, in the same format.}
 
 \item{...}{Optional starting values for parameters (e.g., dispersion, correlation)}
 }

@@ -149,6 +149,7 @@
 #' @source \url{https://github.com/careymcgilliard/goa_rex}
 "mlt_rg_goa_rex_data"
 
+
 #' EBS Pacific cod bridge data (Model 24.1)
 #'
 #' The 2024 eastern Bering Sea Pacific cod assessment (Model 24.1: one area and

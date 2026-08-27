@@ -12,6 +12,8 @@ Setup_Sim_Biologicals(
   WAA_srv_input,
   MatAA_input,
   AgeingError_input = NULL,
+  AgeingError_fish_input = NULL,
+  AgeingError_srv_input = NULL,
   SizeAgeTrans_input = NULL,
   SizeAgeTrans_fish_input = NULL,
   SizeAgeTrans_srv_input = NULL
@@ -57,6 +59,16 @@ ages 2-10 vs. modelled ages 1-10), the default identity matrix will cause a
 dimensional mismatch. In that case, supply a shifted identity matrix such as
 \code{diag(1, n_model_ages)[, obs_age_index]} to correctly drop or collapse
 model ages into observed bins.}
+
+\item{AgeingError_fish_input}{Optional fleet-specific ageing error for the
+simulated fishery fleets, dimensioned
+\code{[n_yrs × n_ages × n_obs_ages × n_fish_fleets × n_sims]}, or
+\code{NULL} (default) to give every fishery fleet \code{AgeingError_input}.}
+
+\item{AgeingError_srv_input}{Optional fleet-specific ageing error for the
+simulated survey fleets, dimensioned
+\code{[n_yrs × n_ages × n_obs_ages × n_srv_fleets × n_sims]}, or
+\code{NULL} (default) to give every survey fleet \code{AgeingError_input}.}
 
 \item{SizeAgeTrans_input}{Size-age transition matrix array with dimensions
 \code{[n_pop × n_regions × n_yrs × n_seas × n_lens × n_ages × n_sexes × n_sims]}.

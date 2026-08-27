@@ -464,6 +464,11 @@ get_comp_prop <- function(data,
 
   AgeingError <- AgeingError_t # ageing errors
 
+  # Fleet-specific ageing error, falling back on the shared matrix for a model
+  # fitted before the fleet-specific arrays existed
+  AgeingError_fish_t <- fleet_ageing_error(data, AgeingError_t, "fish")
+  AgeingError_srv_t <- fleet_ageing_error(data, AgeingError_t, "srv")
+
   # sum across pops
   CAA <- apply(rep$CAA, 2:7, sum) # retained catch at age
   CAL <- apply(rep$CAL, 2:7, sum) # retained catch at len
@@ -540,7 +545,7 @@ get_comp_prop <- function(data,
 
           # reformat expected compositions
           tmp_comps <- Restrc_Comps(Exp = Exp, Obs = Obs, Comp_Type = Comp_Type,
-                                    age_or_len = 0, AgeingError = AgeingError_t[y,,])
+                                    age_or_len = 0, AgeingError = AgeingError_fish_t[y,,,f])
           # Input into storage
           Obs_FishAge[,y,seas,,,f] <- tmp_comps$Obs
           Pred_FishAge[,y,seas,,,f] <- tmp_comps$Exp
@@ -590,7 +595,7 @@ get_comp_prop <- function(data,
 
           # reformat expected compositions
           tmp_comps <- Restrc_Comps(Exp = Exp, Obs = Obs, Comp_Type = Comp_Type,
-                                    age_or_len = 0, AgeingError = AgeingError_t[y,,])
+                                    age_or_len = 0, AgeingError = AgeingError_fish_t[y,,,f])
           # Input into storage
           Obs_FishAge_discard[,y,seas,,,f] <- tmp_comps$Obs
           Pred_FishAge_discard[,y,seas,,,f] <- tmp_comps$Exp
@@ -639,7 +644,7 @@ get_comp_prop <- function(data,
 
           # reformat expected compositions
           tmp_comps <- Restrc_Comps(Exp = Exp, Obs = Obs, Comp_Type = Comp_Type,
-                                    age_or_len = 0, AgeingError = AgeingError_t[y,,])
+                                    age_or_len = 0, AgeingError = AgeingError_srv_t[y,,,f])
           # Input into storage
           Obs_SrvAge[,y,seas,,,f] <- tmp_comps$Obs
           Pred_SrvAge[,y,seas,,,f] <- tmp_comps$Exp
@@ -684,7 +689,7 @@ get_comp_prop <- function(data,
             Exp <- array(CAA_pop[p,,y,seas,,,f], dim = c(n_regions, 1, 1, n_fish_ages, n_sexes, 1))
             Obs <- array(ObsFishAgeComps_pop[p,,y,seas,,,f], dim = c(n_regions, 1, 1, n_fish_ages, n_sexes, 1))
             tmp_comps <- Restrc_Comps(Exp = Exp, Obs = Obs, Comp_Type = FishAge_pop_CompType[y,f],
-                                      age_or_len = 0, AgeingError = AgeingError_t[y,,])
+                                      age_or_len = 0, AgeingError = AgeingError_fish_t[y,,,f])
             Obs_FishAge_pop[p,,y,seas,,,f]  <- tmp_comps$Obs
             Pred_FishAge_pop[p,,y,seas,,,f] <- tmp_comps$Exp
           }
@@ -722,7 +727,7 @@ get_comp_prop <- function(data,
             Exp <- array(DAA_pop[p,,y,seas,,,f], dim = c(n_regions, 1, 1, n_fish_ages, n_sexes, 1))
             Obs <- array(ObsFishAgeComps_discard_pop[p,,y,seas,,,f], dim = c(n_regions, 1, 1, n_fish_ages, n_sexes, 1))
             tmp_comps <- Restrc_Comps(Exp = Exp, Obs = Obs, Comp_Type = FishAgeComps_discard_pop_Type[y,f],
-                                      age_or_len = 0, AgeingError = AgeingError_t[y,,])
+                                      age_or_len = 0, AgeingError = AgeingError_fish_t[y,,,f])
             Obs_FishAge_discard_pop[p,,y,seas,,,f]  <- tmp_comps$Obs
             Pred_FishAge_discard_pop[p,,y,seas,,,f] <- tmp_comps$Exp
           }
@@ -760,7 +765,7 @@ get_comp_prop <- function(data,
             Exp <- array(SrvIAA_pop[p,,y,seas,,,f], dim = c(n_regions, 1, 1, n_srv_ages, n_sexes, 1))
             Obs <- array(ObsSrvAgeComps_pop[p,,y,seas,,,f], dim = c(n_regions, 1, 1, n_srv_ages, n_sexes, 1))
             tmp_comps <- Restrc_Comps(Exp = Exp, Obs = Obs, Comp_Type = SrvAge_pop_CompType[y,f],
-                                      age_or_len = 0, AgeingError = AgeingError_t[y,,])
+                                      age_or_len = 0, AgeingError = AgeingError_srv_t[y,,,f])
             Obs_SrvAge_pop[p,,y,seas,,,f]  <- tmp_comps$Obs
             Pred_SrvAge_pop[p,,y,seas,,,f] <- tmp_comps$Exp
           }
@@ -960,8 +965,9 @@ get_caal_prop <- function(data, rep) {
     for(i in 1:n_yrs) AgeingError_t[i,,] <- data$AgeingError
   } else AgeingError_t <- data$AgeingError
 
-  # one fleet type at a time, since a model can carry either or both
-  one_stream <- function(Obs_arr, Exp_arr, Use_arr, type_mat, n_fleets) {
+  # one fleet type at a time, since a model can carry either or both, and each
+  # carries its own ageing error
+  one_stream <- function(Obs_arr, Exp_arr, Use_arr, type_mat, n_fleets, AgeingError_f) {
 
     if(is.null(Obs_arr) || is.null(Exp_arr) || sum(Use_arr) == 0) return(NULL)
 
@@ -983,7 +989,7 @@ get_caal_prop <- function(data, rep) {
             dim(Obs) <- c(n_regions, 1, 1, n_obs_ages, n_sexes, 1)
 
             tmp <- Restrc_Comps(Exp = Exp, Obs = Obs, Comp_Type = type_mat[y, f],
-                                age_or_len = 0, AgeingError = AgeingError_t[y,,])
+                                age_or_len = 0, AgeingError = AgeingError_f[y,,,f])
 
             Obs_out[, y, seas, l, , , f] <- tmp$Obs
             Pred_out[, y, seas, l, , , f] <- tmp$Exp
@@ -997,9 +1003,11 @@ get_caal_prop <- function(data, rep) {
   } # end one_stream
 
   fish <- one_stream(data$ObsFish_caal, rep$Fish_caal, data$UseFish_caal,
-                     data$Fish_caal_Type, data$n_fish_fleets)
+                     data$Fish_caal_Type, data$n_fish_fleets,
+                     fleet_ageing_error(data, AgeingError_t, "fish"))
   srv <- one_stream(data$ObsSrv_caal, rep$Srv_caal, data$UseSrv_caal,
-                    data$Srv_caal_Type, data$n_srv_fleets)
+                    data$Srv_caal_Type, data$n_srv_fleets,
+                    fleet_ageing_error(data, AgeingError_t, "srv"))
 
   return(list(Obs_Fish_caal = fish$Obs, Pred_Fish_caal = fish$Pred,
               Obs_Srv_caal = srv$Obs, Pred_Srv_caal = srv$Pred))

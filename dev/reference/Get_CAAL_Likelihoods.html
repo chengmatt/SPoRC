@@ -174,7 +174,10 @@ issues when zeros are present.</p></dd>
 
 <dt id="arg-comp-bins">comp_bins<a class="anchor" aria-label="anchor" href="#arg-comp-bins"></a></dt>
 <dd><p>Integer vector of age bins the composition is fitted over, or
-<code>NULL</code> (default) for all of them.</p></dd>
+<code>NULL</code> (default) for all of them. Applied to every length bin's row of
+ages alike, so a fleet that only ages part of its age range is fitted over
+that range at each length. Indices refer to observed age bins, that is after
+ageing error has mapped model ages onto observed ones.</p></dd>
 
 
 <dt id="arg-comp-const-obs">comp_const_obs<a class="anchor" aria-label="anchor" href="#arg-comp-const-obs"></a></dt>

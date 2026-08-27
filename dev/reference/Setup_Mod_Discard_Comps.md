@@ -27,6 +27,10 @@ Setup_Mod_Discard_Comps(
   FishLenComps_discard_pop_LikeType,
   FishAgeComps_discard_pop_Type,
   FishLenComps_discard_pop_Type,
+  FishAgeComps_discard_bins = NULL,
+  FishLenComps_discard_bins = NULL,
+  FishAgeComps_discard_pop_bins = NULL,
+  FishLenComps_discard_pop_bins = NULL,
   ...
 )
 ```
@@ -136,6 +140,31 @@ Setup_Mod_Discard_Comps(
 
   Encoded structure definitions for population length comps by
   year/fleet.
+
+- FishAgeComps_discard_bins:
+
+  Which age bins each fishery fleet's discard age composition is fitted
+  over. Supply a list with one element per fleet, each a vector of bin
+  indices or `NULL` for all bins, or an `[n_obs_ages x n_fish_fleets]`
+  array of 0/1 weights. Indices refer to observed bins, that is after
+  any ageing error. Excluded bins are left out of the likelihood rather
+  than being forced to be explained. Default `NULL`, which fits all bins
+  for all fleets.
+
+- FishLenComps_discard_bins:
+
+  Which length bins each fishery fleet's discard length composition is
+  fitted over, in the same format.
+
+- FishAgeComps_discard_pop_bins:
+
+  Which age bins each fishery fleet's population-specific discard age
+  composition is fitted over, in the same format.
+
+- FishLenComps_discard_pop_bins:
+
+  Which length bins each fishery fleet's population-specific discard
+  length composition is fitted over, in the same format.
 
 - ...:
 

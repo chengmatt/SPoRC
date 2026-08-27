@@ -31,6 +31,7 @@ eval_comp_osa(
   age_or_len,
   AgeingErrorFn,
   addtocomp,
+  BinsArr = NULL,
   family = "discrete",
   zero_init = TRUE,
   pop = FALSE,
@@ -118,11 +119,21 @@ eval_comp_osa(
 
 - AgeingErrorFn:
 
-  Function returning the ageing error matrix for a given year.
+  Function `(y, f)` returning the ageing error matrix for a given year
+  and fleet, or the length bin map, which ignores both. Fleet specific
+  because a fishery and a survey need not read ages the same way.
 
 - addtocomp:
 
   Small constant added to proportions before normalization.
+
+- BinsArr:
+
+  Optional `[n_obs_bins x n_fleets]` 0/1 array naming the observed bins
+  each fleet is fitted over, or `NULL` (default) for all bins. Must be
+  the same array handed to
+  [`pack_comp_osa`](https://chengmatt.github.io/SPoRC/dev/reference/pack_comp_osa.md),
+  since the strides walked here are sized on it.
 
 - family:
 
@@ -153,17 +164,20 @@ Slice lengths must match the packer exactly:
 
 Discrete (LikeType 0,1):
 
-- Comp_Type 0: `n_obs_bins`
+- Comp_Type 0: `n_fit_bins`
 
-- Comp_Type 1/2: `n_ru x n_obs_bins x n_sexes`
+- Comp_Type 1/2: `n_ru x n_fit_bins x n_sexes`
 
 Logistic-normal (LikeType 2,3,4):
 
-- Comp_Type 0: `n_obs_bins - 1`
+- Comp_Type 0: `n_fit_bins - 1`
 
-- Comp_Type 1: `n_ru x (n_obs_bins - 1) x n_sexes`
+- Comp_Type 1: `n_ru x (n_fit_bins - 1) x n_sexes`
 
-- Comp_Type 2: `n_ru x (n_obs_bins x n_sexes - 1)`
+- Comp_Type 2: `n_ru x (n_fit_bins x n_sexes - 1)`
+
+`n_fit_bins` is the number of bins the fleet is fitted over, taken from
+`BinsArr` and equal to `n_obs_bins` when the fleet fits every bin.
 
 These reduced lengths reflect that the tracked `Obs` vector is already
 ALR-transformed (the last reference bin is dropped).

@@ -78,6 +78,10 @@
 <span>  <span class="va">FishLenComps_discard_pop_LikeType</span>,</span>
 <span>  <span class="va">FishAgeComps_discard_pop_Type</span>,</span>
 <span>  <span class="va">FishLenComps_discard_pop_Type</span>,</span>
+<span>  FishAgeComps_discard_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  FishLenComps_discard_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  FishAgeComps_discard_pop_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  FishLenComps_discard_pop_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -181,6 +185,31 @@ one of <code>c("none","Multinomial","Dirichlet-Multinomial","iid-Logistic-Normal
 
 <dt id="arg-fishlencomps-discard-pop-type">FishLenComps_discard_pop_Type<a class="anchor" aria-label="anchor" href="#arg-fishlencomps-discard-pop-type"></a></dt>
 <dd><p>Encoded structure definitions for population length comps by year/fleet.</p></dd>
+
+
+<dt id="arg-fishagecomps-discard-bins">FishAgeComps_discard_bins<a class="anchor" aria-label="anchor" href="#arg-fishagecomps-discard-bins"></a></dt>
+<dd><p>Which age bins each fishery fleet's discard
+age composition is fitted over. Supply a list with one element per fleet,
+each a vector of bin indices or <code>NULL</code> for all bins, or an
+<code>[n_obs_ages x n_fish_fleets]</code> array of 0/1 weights. Indices refer to
+observed bins, that is after any ageing error. Excluded bins are left out of
+the likelihood rather than being forced to be explained. Default
+<code>NULL</code>, which fits all bins for all fleets.</p></dd>
+
+
+<dt id="arg-fishlencomps-discard-bins">FishLenComps_discard_bins<a class="anchor" aria-label="anchor" href="#arg-fishlencomps-discard-bins"></a></dt>
+<dd><p>Which length bins each fishery fleet's
+discard length composition is fitted over, in the same format.</p></dd>
+
+
+<dt id="arg-fishagecomps-discard-pop-bins">FishAgeComps_discard_pop_bins<a class="anchor" aria-label="anchor" href="#arg-fishagecomps-discard-pop-bins"></a></dt>
+<dd><p>Which age bins each fishery fleet's
+population-specific discard age composition is fitted over, in the same format.</p></dd>
+
+
+<dt id="arg-fishlencomps-discard-pop-bins">FishLenComps_discard_pop_bins<a class="anchor" aria-label="anchor" href="#arg-fishlencomps-discard-pop-bins"></a></dt>
+<dd><p>Which length bins each fishery fleet's
+population-specific discard length composition is fitted over, in the same format.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

@@ -31,7 +31,8 @@ eval_caal_osa(
   n_model_bins,
   n_obs_bins,
   AgeingErrorFn,
-  addtocomp
+  addtocomp,
+  BinsArr = NULL
 )
 ```
 
@@ -93,11 +94,20 @@ eval_caal_osa(
 
 - AgeingErrorFn:
 
-  Function returning the ageing error matrix for a year.
+  Function `(y, f)` returning the ageing error matrix for a given year
+  and fleet.
 
 - addtocomp:
 
   Small constant added to proportions before normalization.
+
+- BinsArr:
+
+  Optional `[n_obs_bins x n_fleets]` 0/1 array naming the observed age
+  bins each fleet is fitted over, or `NULL` (default) for all bins. Must
+  be the same array handed to
+  [`pack_caal_osa`](https://chengmatt.github.io/SPoRC/dev/reference/pack_caal_osa.md),
+  since the strides walked here are sized on it.
 
 ## Value
 

@@ -28,7 +28,8 @@ Get_Comp_Likelihoods_OSA(
   age_or_len,
   AgeingError,
   use,
-  addtocomp
+  addtocomp,
+  comp_bins = NULL
 )
 ```
 
@@ -131,6 +132,22 @@ Get_Comp_Likelihoods_OSA(
   Small constant added to compositions to avoid numerical issues when
   zeros are present.
 
+- comp_bins:
+
+  Integer vector of bins the composition is fitted over, or `NULL`
+  (default) for all of them. Both the observed and expected compositions
+  are restricted to these bins and renormalized within them, so bins
+  outside the range are left out of the likelihood rather than being
+  forced to be explained. Indices refer to observed bins, that is after
+  any ageing error or length bin map has mapped model bins onto observed
+  ones. The restriction applies to every composition type: for the
+  sex-joint comps (`Comp_Type = 2`) the named bins are dropped from each
+  sex's block of the joint stack, so the sex ratio the joint comps carry
+  is the ratio within the fitted bins. Logistic-normal covariances are
+  built over all observed bins and then cut down to the fitted ones, so
+  a gap in `comp_bins` still counts towards the AR1 lag between the bins
+  on either side of it.
+
 ## Details
 
 The tracked `Obs` vector is \*\*never reshaped\*\*. All expectation‑side
@@ -146,6 +163,11 @@ ALR‑transform the expectation, construct the covariance matrix `Sigma`
 (dropping its last row/column), and evaluate the multivariate normal
 density.
 
-Reduced LN block lengths: \* Comp_Type 0: `n_obs_bins - 1` \* Comp_Type
-1: `n_obs_bins - 1` per region/sex \* Comp_Type 2:
-`n_obs_bins * n_sexes - 1` per region (one joint reference)
+Reduced LN block lengths: \* Comp_Type 0: `n_fit_bins - 1` \* Comp_Type
+1: `n_fit_bins - 1` per region/sex \* Comp_Type 2:
+`n_fit_bins * n_sexes - 1` per region (one joint reference)
+
+where `n_fit_bins` is the number of bins named by `comp_bins`, equal to
+`n_obs_bins` when the fleet fits every bin. The packer applies the same
+restriction before transforming, so the ALR reference is the last fitted
+bin rather than the last observed one.

@@ -19,6 +19,8 @@ Setup_Sim_Biologicals(
   WAA_srv_input,
   MatAA_input,
   AgeingError_input = NULL,
+  AgeingError_fish_input = NULL,
+  AgeingError_srv_input = NULL,
   SizeAgeTrans_input = NULL,
   SizeAgeTrans_fish_input = NULL,
   SizeAgeTrans_srv_input = NULL
@@ -83,6 +85,18 @@ Setup_Sim_Biologicals(
   supply a shifted identity matrix such as
   `diag(1, n_model_ages)[, obs_age_index]` to correctly drop or collapse
   model ages into observed bins.
+
+- AgeingError_fish_input:
+
+  Optional fleet-specific ageing error for the simulated fishery fleets,
+  dimensioned `[n_yrs × n_ages × n_obs_ages × n_fish_fleets × n_sims]`,
+  or `NULL` (default) to give every fishery fleet `AgeingError_input`.
+
+- AgeingError_srv_input:
+
+  Optional fleet-specific ageing error for the simulated survey fleets,
+  dimensioned `[n_yrs × n_ages × n_obs_ages × n_srv_fleets × n_sims]`,
+  or `NULL` (default) to give every survey fleet `AgeingError_input`.
 
 - SizeAgeTrans_input:
 

@@ -228,18 +228,18 @@ through that one file.
 | `sim_observations.R` | `build_idx_factor`, `cov_to_factor`, `draw_index_obs`, `generate_fishery_catch_comp_idx`, `generate_fishery_conv_tags_recap`, `generate_survey_comp_idx`, `marginalize_conv_fish_tags`, `predict_sim_fish_iss_fmort`, `release_conv_tags`, `resolve_idx_factor`, `simulate_caal`, `simulate_comps`, `simulate_conv_tag_fish_recaptures` | `model_obs_tagging.R`, `model_transition.R`, `sim_random_variates.R`, `utils_math.R`, `utils_setup.R` | `setup_sim_fleets.R`, `sim_population.R` |
 | `sim_population.R` | `apply_pop_dy`, `compute_biom_y_sim`, `generate_initial_age_structure`, `generate_recruitment`, `run_annual_cycle`, `Simulate_Pop_Static` | `model_init_naa.R`, `model_recruitment.R`, `model_transition.R`, `sim_observations.R`, `sim_setup.R` | `sim_self_test.R` |
 | `sim_random_variates.R` | `rdirM`, `rinvgauss_rec`, `rlogistnormal` | `utils_math.R` | `projection.R`, `sim_observations.R` |
-| `sim_self_test.R` | `simulation_data_to_SPoRC`, `simulation_self_test` | `model_fit.R`, `setup_biologicals.R`, `setup_dimensions.R`, `setup_recruitment.R`, `setup_sim_containers.R`, `setup_sim_fleets.R`, `setup_tagging.R`, `sim_population.R`, `utils_postfit.R` |  |
+| `sim_self_test.R` | `simulation_data_to_SPoRC`, `simulation_self_test` | `model_fit.R`, `setup_biologicals.R`, `setup_dimensions.R`, `setup_recruitment.R`, `setup_sim_containers.R`, `setup_sim_fleets.R`, `setup_tagging.R`, `sim_population.R`, `utils_postfit.R`, `utils_setup.R` |  |
 | `sim_setup.R` | `Setup_sim_env` | nothing | `sim_population.R` |
 
 #### Diagnostics
 
 | Script | Defines | Calls into | Called from |
 |----|----|----|----|
-| `diag_fits.R` | `get_caal_fits`, `get_caal_prop`, `get_comp_prop`, `get_idx_fits`, `Restrc_Comps` | nothing | `diag_francis.R`, `plot_figures_tables.R` |
+| `diag_fits.R` | `get_caal_fits`, `get_caal_prop`, `get_comp_prop`, `get_idx_fits`, `Restrc_Comps` | `utils_setup.R` | `diag_francis.R`, `plot_figures_tables.R` |
 | `diag_francis.R` | `do_francis_reweighting`, `get_francis_weights`, `get_francis_weights_caal`, `run_francis`, `safe_inv_var` | `diag_fits.R`, `model_fit.R` | `diag_retrospective.R` |
 | `diag_jitter.R` | `do_jitter` | `model_fit.R` |  |
 | `diag_likelihood_profile.R` | `do_likelihood_profile` | `model_fit.R`, `utils_setup.R` |  |
-| `diag_osa_residuals.R` | `comp_osa_field_map`, `get_osa`, `index_osa_field_map`, `osa_default_bins`, `osa_keep_subset`, `osa_one_step_predict`, `plot_resids`, `run_external_comp_osa`, `run_internal_caal_osa`, `run_internal_comp_osa`, `run_internal_index_osa`, `run_internal_tag_osa`, `validate_osa_method` | `model_lik_caal.R`, `model_lik_comps.R`, `model_lik_tags.R` |  |
+| `diag_osa_residuals.R` | `comp_osa_field_map`, `get_osa`, `index_osa_field_map`, `osa_default_bins`, `osa_keep_subset`, `osa_one_step_predict`, `plot_resids`, `run_external_comp_osa`, `run_internal_caal_osa`, `run_internal_comp_osa`, `run_internal_index_osa`, `run_internal_tag_osa`, `validate_osa_method` | `model_lik_caal.R`, `model_lik_comps.R`, `model_lik_tags.R`, `utils_setup.R` |  |
 | `diag_retrospective.R` | `do_retrospective`, `get_retrospective_relative_difference`, `truncate_yr` | `diag_francis.R`, `model_fit.R` | `plot_figures_tables.R` |
 | `diag_runs_test.R` | `do_runs_test` | nothing |  |
 
@@ -255,7 +255,7 @@ through that one file.
 |----|----|----|----|
 | `utils_math.R` | `get_AR1_CorrMat`, `get_Constant_CorrMat`, `get_logistN_Sigma`, `Get_Natural_Cubic_Spline_Weights`, `rho_trans` | nothing | `model_lik_comps.R`, `model_objective.R`, `model_priors_penalties.R`, `setup_fishery_selectivity.R`, `setup_survey_selectivity.R`, `sim_observations.R`, `sim_random_variates.R` |
 | `utils_postfit.R` | `get_model_rep_from_mcmc`, `get_optim_param_list`, `get_par_est_info`, `marg_AIC`, `post_optim_sanity_checks` | nothing | `sim_closed_loop.R`, `sim_self_test.R` |
-| `utils_setup.R` | `assign_sel_block`, `collect_message`, `convert_to_numeric`, `extend_years`, `obs_len_bins`, `parse_idx_ages`, `parse_idx_cov`, `resolve_sel_pen_wts`, `safe_extract`, `seed_dbnrml_peak`, `set_data_indicator_unused`, `setup_dbnrml_raw`, `setup_dbnrml_startbin`, `setup_sel_bin_devs`, `setup_sel_norm_bins`, `setup_sel_sex_offset`, `validate_selex_penalty`, `validate_selex_prior_types` | nothing | `diag_likelihood_profile.R`, `model_objective.R`, `plot_figures_tables.R`, `setup_biologicals.R`, `setup_caal.R`, `setup_dimensions.R`, `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_fishery_selectivity.R`, `setup_mapping.R`, `setup_movement.R`, `setup_recruitment.R`, `setup_sim_fleets.R`, `setup_survey_comps.R`, `setup_survey_selectivity.R`, `setup_tagging.R`, `setup_weighting.R`, `sim_closed_loop.R`, `sim_observations.R` |
+| `utils_setup.R` | `assign_sel_block`, `bins_or_null`, `check_bin_map`, `check_comp_bins_min`, `collect_message`, `convert_to_numeric`, `drop_empty_fitted_blocks`, `expand_fleet_ageing_error`, `extend_years`, `fleet_ageing_error`, `obs_bin_count`, `obs_len_bins`, `parse_bin_subset`, `parse_comp_bins`, `parse_idx_cov`, `resolve_sel_pen_wts`, `resync_fitted_blocks`, `safe_extract`, `seed_dbnrml_peak`, `set_data_indicator_unused`, `setup_dbnrml_raw`, `setup_dbnrml_startbin`, `setup_sel_bin_devs`, `setup_sel_norm_bins`, `setup_sel_sex_offset`, `validate_selex_penalty`, `validate_selex_prior_types` | nothing | `diag_fits.R`, `diag_likelihood_profile.R`, `diag_osa_residuals.R`, `model_objective.R`, `plot_figures_tables.R`, `setup_biologicals.R`, `setup_caal.R`, `setup_dimensions.R`, `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_fishery_selectivity.R`, `setup_mapping.R`, `setup_movement.R`, `setup_recruitment.R`, `setup_sim_fleets.R`, `setup_survey_comps.R`, `setup_survey_selectivity.R`, `setup_tagging.R`, `setup_weighting.R`, `sim_closed_loop.R`, `sim_observations.R`, `sim_self_test.R` |
 
 #### Package data
 
@@ -474,7 +474,7 @@ what is under test rather than which stock the fixture happens to use.
 | `test-integration_*` | 4 | Cross cutting agreement between the objective, the reference points and the operating model |
 | `test-regression_*` | 17 | End to end fits pinning `obj$rep` and `nll` for known configurations |
 
-That is 115 test files in total.
+That is 118 test files in total.
 
 Two groups are worth calling out. The `test-regression_*` files pin
 `obj$rep` and `nll` values for known configurations against bundled

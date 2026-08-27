@@ -87,6 +87,7 @@ region/sex/fleet/season block.</p>
 <span>  <span class="va">age_or_len</span>,</span>
 <span>  <span class="va">AgeingErrorFn</span>,</span>
 <span>  <span class="va">addtocomp</span>,</span>
+<span>  BinsArr <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  family <span class="op">=</span> <span class="st">"discrete"</span>,</span>
 <span>  zero_init <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  pop <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -175,11 +176,20 @@ region/sex/fleet/season block.</p>
 
 
 <dt id="arg-ageingerrorfn">AgeingErrorFn<a class="anchor" aria-label="anchor" href="#arg-ageingerrorfn"></a></dt>
-<dd><p>Function returning the ageing error matrix for a given year.</p></dd>
+<dd><p>Function <code>(y, f)</code> returning the ageing error matrix
+for a given year and fleet, or the length bin map, which ignores both. Fleet
+specific because a fishery and a survey need not read ages the same way.</p></dd>
 
 
 <dt id="arg-addtocomp">addtocomp<a class="anchor" aria-label="anchor" href="#arg-addtocomp"></a></dt>
 <dd><p>Small constant added to proportions before normalization.</p></dd>
+
+
+<dt id="arg-binsarr">BinsArr<a class="anchor" aria-label="anchor" href="#arg-binsarr"></a></dt>
+<dd><p>Optional <code>[n_obs_bins x n_fleets]</code> 0/1 array naming the
+observed bins each fleet is fitted over, or <code>NULL</code> (default) for all
+bins. Must be the same array handed to <code><a href="pack_comp_osa.html">pack_comp_osa</a></code>, since
+the strides walked here are sized on it.</p></dd>
 
 
 <dt id="arg-family">family<a class="anchor" aria-label="anchor" href="#arg-family"></a></dt>
@@ -205,12 +215,14 @@ region/sex/fleet/season block.</p>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Slice lengths must match the packer exactly:</p>
-<p>Discrete (LikeType 0,1):</p><ul><li><p>Comp_Type 0: <code>n_obs_bins</code></p></li>
-<li><p>Comp_Type 1/2: <code>n_ru x n_obs_bins x n_sexes</code></p></li>
-</ul><p>Logistic-normal (LikeType 2,3,4):</p><ul><li><p>Comp_Type 0: <code>n_obs_bins - 1</code></p></li>
-<li><p>Comp_Type 1: <code>n_ru x (n_obs_bins - 1) x n_sexes</code></p></li>
-<li><p>Comp_Type 2: <code>n_ru x (n_obs_bins x n_sexes - 1)</code></p></li>
-</ul><p>These reduced lengths reflect that the tracked <code>Obs</code> vector is already
+<p>Discrete (LikeType 0,1):</p><ul><li><p>Comp_Type 0: <code>n_fit_bins</code></p></li>
+<li><p>Comp_Type 1/2: <code>n_ru x n_fit_bins x n_sexes</code></p></li>
+</ul><p>Logistic-normal (LikeType 2,3,4):</p><ul><li><p>Comp_Type 0: <code>n_fit_bins - 1</code></p></li>
+<li><p>Comp_Type 1: <code>n_ru x (n_fit_bins - 1) x n_sexes</code></p></li>
+<li><p>Comp_Type 2: <code>n_ru x (n_fit_bins x n_sexes - 1)</code></p></li>
+</ul><p><code>n_fit_bins</code> is the number of bins the fleet is fitted over, taken from
+<code>BinsArr</code> and equal to <code>n_obs_bins</code> when the fleet fits every bin.</p>
+<p>These reduced lengths reflect that the tracked <code>Obs</code> vector is already
 ALR-transformed (the last reference bin is dropped).</p>
     </div>
 

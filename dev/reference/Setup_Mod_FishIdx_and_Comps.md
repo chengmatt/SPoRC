@@ -66,6 +66,10 @@ Setup_Mod_FishIdx_and_Comps(
     1:input_list$data$n_fish_fleets, sep = ""),
   fish_idx_ages = NULL,
   FishAgeComps_bins = NULL,
+  FishLenComps_bins = NULL,
+  Fish_caal_bins = NULL,
+  FishAgeComps_pop_bins = NULL,
+  FishLenComps_pop_bins = NULL,
   FishIdx_LikeType = rep("lognormal", input_list$data$n_fish_fleets),
   FishIdx_Cov = NULL,
   ObsFish_caal = NULL,
@@ -471,15 +475,42 @@ Setup_Mod_FishIdx_and_Comps(
 - FishAgeComps_bins:
 
   Which age bins each fishery fleet's age composition is fitted over.
-  Supply a list with one element per fleet, each a vector of age indices
-  or `NULL` for all ages, or an `[n_ages x n_fish_fleets]` array of 0/1
-  weights. Both observed and expected compositions are restricted to the
-  named bins and renormalized within them, so excluded bins are left out
-  of the likelihood rather than being forced to be explained; this is
-  how a fleet that only ages part of its age range is fitted. Indices
+  Supply a list with one element per fleet, each a vector of bin indices
+  or `NULL` for all bins, or an `[n_obs_ages x n_fish_fleets]` array of
+  0/1 weights. Both observed and expected compositions are restricted to
+  the named bins and renormalized within them, so excluded bins are left
+  out of the likelihood rather than being forced to be explained; this
+  is how a fleet that only ages part of its age range is fitted. Indices
   refer to observed bins, that is after any ageing error has mapped
-  model ages onto observed ones. Every fleet must retain at least one
-  bin. Default `NULL`, which fits all ages for all fleets.
+  model ages onto observed ones. The restriction applies whatever the
+  composition type: for sex-joint comps the named bins are dropped from
+  each sex's block, so the sex ratio the joint comps carry becomes the
+  ratio within the fitted bins. Every fleet must retain at least two
+  bins, since the proportion in a lone bin is one whatever the model
+  predicts. Default `NULL`, which fits all bins for all fleets.
+
+- FishLenComps_bins:
+
+  Which length bins each fishery fleet's length composition is fitted
+  over, in the same format as `FishAgeComps_bins`. Indices refer to
+  observed length bins, that is after any `LenBinMap` has mapped model
+  bins onto observed ones.
+
+- Fish_caal_bins:
+
+  Which age bins each fishery fleet's conditional age-at-length data are
+  fitted over, in the same format as `FishAgeComps_bins`. Applied to
+  every length bin's row of ages alike.
+
+- FishAgeComps_pop_bins:
+
+  Which age bins each fishery fleet's population-specific age
+  composition is fitted over, in the same format as `FishAgeComps_bins`.
+
+- FishLenComps_pop_bins:
+
+  Which length bins each fishery fleet's population-specific length
+  composition is fitted over, in the same format as `FishAgeComps_bins`.
 
 - FishIdx_LikeType:
 

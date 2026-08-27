@@ -76,6 +76,8 @@ All arrays must conform to the dimension structure stored in <code>sim_list</cod
 <span>  <span class="va">WAA_srv_input</span>,</span>
 <span>  <span class="va">MatAA_input</span>,</span>
 <span>  AgeingError_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  AgeingError_fish_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  AgeingError_srv_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  SizeAgeTrans_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  SizeAgeTrans_fish_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  SizeAgeTrans_srv_input <span class="op">=</span> <span class="cn">NULL</span></span>
@@ -138,6 +140,20 @@ ages 2-10 vs. modelled ages 1-10), the default identity matrix will cause a
 dimensional mismatch. In that case, supply a shifted identity matrix such as
 <code>diag(1, n_model_ages)[, obs_age_index]</code> to correctly drop or collapse
 model ages into observed bins.</p></dd>
+
+
+<dt id="arg-ageingerror-fish-input">AgeingError_fish_input<a class="anchor" aria-label="anchor" href="#arg-ageingerror-fish-input"></a></dt>
+<dd><p>Optional fleet-specific ageing error for the
+simulated fishery fleets, dimensioned
+<code>[n_yrs × n_ages × n_obs_ages × n_fish_fleets × n_sims]</code>, or
+<code>NULL</code> (default) to give every fishery fleet <code>AgeingError_input</code>.</p></dd>
+
+
+<dt id="arg-ageingerror-srv-input">AgeingError_srv_input<a class="anchor" aria-label="anchor" href="#arg-ageingerror-srv-input"></a></dt>
+<dd><p>Optional fleet-specific ageing error for the
+simulated survey fleets, dimensioned
+<code>[n_yrs × n_ages × n_obs_ages × n_srv_fleets × n_sims]</code>, or
+<code>NULL</code> (default) to give every survey fleet <code>AgeingError_input</code>.</p></dd>
 
 
 <dt id="arg-sizeagetrans-input">SizeAgeTrans_input<a class="anchor" aria-label="anchor" href="#arg-sizeagetrans-input"></a></dt>

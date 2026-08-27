@@ -84,7 +84,8 @@ the tracked quantity <code><a href="https://rdrr.io/pkg/RTMB/man/OSA-residuals.h
 <span>  <span class="va">n_model_bins</span>,</span>
 <span>  <span class="va">n_obs_bins</span>,</span>
 <span>  <span class="va">AgeingErrorFn</span>,</span>
-<span>  <span class="va">addtocomp</span></span>
+<span>  <span class="va">addtocomp</span>,</span>
+<span>  BinsArr <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -146,11 +147,19 @@ len \times sex \times fleet]\).</p></dd>
 
 
 <dt id="arg-ageingerrorfn">AgeingErrorFn<a class="anchor" aria-label="anchor" href="#arg-ageingerrorfn"></a></dt>
-<dd><p>Function returning the ageing error matrix for a year.</p></dd>
+<dd><p>Function <code>(y, f)</code> returning the ageing error matrix
+for a given year and fleet.</p></dd>
 
 
 <dt id="arg-addtocomp">addtocomp<a class="anchor" aria-label="anchor" href="#arg-addtocomp"></a></dt>
 <dd><p>Small constant added to proportions before normalization.</p></dd>
+
+
+<dt id="arg-binsarr">BinsArr<a class="anchor" aria-label="anchor" href="#arg-binsarr"></a></dt>
+<dd><p>Optional <code>[n_obs_bins x n_fleets]</code> 0/1 array naming the
+observed age bins each fleet is fitted over, or <code>NULL</code> (default) for
+all bins. Must be the same array handed to <code><a href="pack_caal_osa.html">pack_caal_osa</a></code>,
+since the strides walked here are sized on it.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -102,8 +102,8 @@ instead enter no earlier than the spawning season,</li>
 spatial model) and total mortality both act within the season; at the
 end of the final season, individuals advance in age.</li>
 </ol>
-<p>How movement and mortality are sequenced <em>within</em> step 2 is a
-user choice, set by <code>move_timing</code>: movement then mortality
+<p>How movement and mortality are sequenced within step 2 is a user
+choice, set by <code>move_timing</code>: movement then mortality
 (<code>0</code>, the default and the historical <code>SPoRC</code>
 behaviour), mortality then movement (<code>1</code>), or the two acting
 simultaneously and continuously (<code>2</code>). This choice is not
@@ -177,7 +177,7 @@ is estimated is set separately by <code>init_F_spec</code>
 (<code>"fix"</code> or <code>"est"</code>), so all four combinations are
 available.</p>
 <p>The distinction matters whenever the initial condition is fished.
-Catch constrains only the <em>product</em> of numbers-at-age and fishing
+Catch constrains only the product of numbers-at-age and fishing
 mortality, so under <code>"prop"</code> a single parameter both depletes
 the initial age structure and scales the F series: the optimizer can fit
 the observed catch equally well with a smaller, harder-fished stock. Use
@@ -364,10 +364,10 @@ to the initial equilibrium age structure. Note that the index
 is introduced because users can determine whether initial age deviations
 are estimated up to the penultimate age class, or across all classes
 including the plus group.</p>
-<p>Finally, the initial age structure can be specified as fully
-<em>free</em> (<code>init_age_strc = "free"</code>), in which case no
-equilibrium is projected at all. The deviations are then the initial
-numbers themselves rather than multipliers on an equilibrium:</p>
+<p>Finally, the initial age structure can be specified as fully free
+(<code>init_age_strc = "free"</code>), in which case no equilibrium is
+projected at all. The deviations are then the initial numbers themselves
+rather than multipliers on an equilibrium:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>a</mi><mo>≠</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><msub><mi>ψ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow></msub><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>i</mi></mrow><mtext mathvariant="normal">Init</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">N_{p,r,y = 1,a \neq 1,s} = \psi_{p,r,y=1,s}\exp\left( \epsilon_{p,r,i}^{\text{Init}} \right)</annotation></semantics></math></p>
 <p>with the first age still taken from the recruitment process. Because
 the deviations are on the scale of log-numbers rather than log-ratios
@@ -481,7 +481,7 @@ as:</p>
 by construction and carries the same compensation ratio as a
 Beverton-Holt at the same
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>h</mi><annotation encoding="application/x-tex">h</annotation></semantics></math>.
-This is <em>not</em> the textbook steepness definition
+This is not the textbook steepness definition
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mo stretchy="false" form="prefix">(</mo><mn>0.2</mn><mspace width="0.167em"></mspace><mtext mathvariant="normal">SSB0</mtext><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi>h</mi><msub><mi>R</mi><mn>0</mn></msub></mrow><annotation encoding="application/x-tex">R(0.2\,\text{SSB0}) = h R_0</annotation></semantics></math>:
 the Ricker here yields
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mo stretchy="false" form="prefix">(</mo><mn>0.2</mn><mspace width="0.167em"></mspace><mtext mathvariant="normal">SSB0</mtext><mo stretchy="false" form="postfix">)</mo><mi>/</mi><msub><mi>R</mi><mn>0</mn></msub><mo>=</mo><mn>0.2</mn><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>4</mn><mi>h</mi><mi>/</mi><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>h</mi><mo stretchy="false" form="postfix">)</mo><mo stretchy="true" form="postfix">)</mo></mrow><mn>0.8</mn></msup></mrow><annotation encoding="application/x-tex">R(0.2\,\text{SSB0})/R_0 = 0.2\left(4h/(1-h)\right)^{0.8}</annotation></semantics></math>,
@@ -781,8 +781,8 @@ In a single-region case, no movement is applied (i.e.,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐌</mi><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">\mathbf{M}_{p,y,\tau,a,s}</annotation></semantics></math>
 is an implied identity matrix). For each population, year, season, age,
 and sex combination, the movement matrix specifies bulk-transfer
-coefficients. <em>Where</em> within the season that transfer happens,
-before mortality, after it, or continuously alongside it, is set by
+coefficients. Where within the season that transfer happens, before
+mortality, after it, or continuously alongside it, is set by
 <code>move_timing</code>, and is what the rest of this section makes
 explicit.</p>
 <p>Movement and mortality are therefore combined into a single seasonal
@@ -879,8 +879,8 @@ under all three cases.</p>
 <p>Because
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝚽</mi><annotation encoding="application/x-tex">\mathbf{\Phi}</annotation></semantics></math>
 resolves movement at a different point in the season under each option,
-every quantity that is observed <em>partway</em> through a season has to
-be evaluated consistently. The table below summarises where each one is
+every quantity that is observed partway through a season has to be
+evaluated consistently. The table below summarises where each one is
 taken; the equations follow in the sections indicated.</p>
 <table class="table">
 <colgroup>
@@ -953,15 +953,13 @@ mortality</td>
 </tbody>
 </table>
 <p>Under continuous movement, note that the survey index is treated
-differently from catch and the fishery index. A survey is a
-<em>snapshot</em> at an instant within the season, so it uses the
-partial propagation
+differently from catch and the fishery index. A survey is a snapshot at
+an instant within the season, so it uses the partial propagation
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>𝚲</mi><mspace width="0.167em"></mspace><msup><mi>t</mi><mrow><mi>s</mi><mi>r</mi><mi>v</mi></mrow></msup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(\mathbf{\Lambda}\,t^{srv})</annotation></semantics></math>,
-whereas catch and the fishery index <em>accumulate</em> over the whole
-season, so they use the integral of that propagation. Under the
-sequential timings the distinction does not arise, because movement has
-already been resolved and the fish are stationary for the rest of the
-season.</p>
+whereas catch and the fishery index accumulate over the whole season, so
+they use the integral of that propagation. Under the sequential timings
+the distinction does not arise, because movement has already been
+resolved and the fish are stationary for the rest of the season.</p>
 </div>
 <div class="section level5">
 <h5 id="spawning-biomass-timing">Spawning Biomass Timing<a class="anchor" aria-label="anchor" href="#spawning-biomass-timing"></a>
@@ -1209,13 +1207,13 @@ unless
 is constant across regions.
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐌</mi><annotation encoding="application/x-tex">\mathbf{M}</annotation></semantics></math>
 is still computed and reported, but as a diagnostic, the movement
-fractions that <em>would</em> apply in the absence of spatially varying
+fractions that would apply in the absence of spatially varying
 mortality, rather than as a term in the dynamics.
 <code>ctmc_scale_by_seasdur</code> is forced to <code>1</code> in this
 case, since combining an unscaled generator with seasdur-scaled
 mortality inside a single exponential is dimensionally inconsistent.</p>
-<p>Continuous movement also requires an <em>estimated</em> generator: it
-is available only for
+<p>Continuous movement also requires an estimated generator: it is
+available only for
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_type</mtext><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\text{move\_type} = 1</annotation></semantics></math>
 with
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">use_fixed_movement</mtext><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\text{use\_fixed\_movement} = 0</annotation></semantics></math>.
@@ -1315,7 +1313,7 @@ them. Which quantity the interpolation runs on, and whether the two
 parameters are read as coefficients of variation or as standard
 deviations, are separate choices (<code>growth_cv_type</code> and
 <code>growth_sd_type</code>).</p>
-<p><strong>The interpolation.</strong> The branches are on real age
+<p>The interpolation. The branches are on real age
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math>:
 below
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>A</mi><mn>1</mn></msub><annotation encoding="application/x-tex">A_{1}</annotation></semantics></math>
@@ -1348,8 +1346,8 @@ or the oldest age being evaluated when <code>growth_A2 = "Linf"</code>
 and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>L</mi><mn>2</mn></msub><annotation encoding="application/x-tex">L_{2}</annotation></semantics></math>
 is read as the asymptote. Note that the two choices are independent:
-under <code>"len"</code> the <em>branch</em> is still taken on age, and
-only the value inside the middle branch is a function of
+under <code>"len"</code> the branch is still taken on age, and only the
+value inside the middle branch is a function of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>L</mi><mo accent="true">‾</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\bar{L}(x)</annotation></semantics></math>.
 Because
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>L</mi><mo accent="true">‾</mo></mover><annotation encoding="application/x-tex">\bar{L}</annotation></semantics></math>
@@ -1357,15 +1355,16 @@ is itself increasing in
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math>,
 the two give similar shapes; they differ where growth is fast, since
 interpolating on length compresses the change into the young ages.</p>
-<p><strong>From
+<p>From
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">c(x)</annotation></semantics></math>
-to the standard deviation.</strong> Under
-<code>growth_sd_type = "cv"</code> (the default)
+to the standard deviation. Under <code>growth_sd_type = "cv"</code> (the
+default)
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">c(x)</annotation></semantics></math>
 is a coefficient of variation and is multiplied by mean length, so the
 spread scales with size; under <code>"sd"</code> the two parameters are
 standard deviations already and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">c(x)</annotation></semantics></math><em>is</em> the standard deviation, interpolated by the same rule:</p>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">c(x)</annotation></semantics></math>
+is the standard deviation, interpolated by the same rule:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mi>L</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><mi>c</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo><mspace width="0.167em"></mspace><mover><mi>L</mi><mo accent="true">‾</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="monospace">𝚜𝚍_𝚝𝚢𝚙𝚎 = "𝚌𝚟"</mtext></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mi>c</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="monospace">𝚜𝚍_𝚝𝚢𝚙𝚎 = "𝚜𝚍"</mtext></mtd></mtr></mtable></mrow></mrow><annotation encoding="application/x-tex">\sigma_{L}(x) = \begin{cases}
 c(x)\,\bar{L}(x) &amp; \texttt{sd\_type = "cv"} \\[1ex]
 c(x) &amp; \texttt{sd\_type = "sd"}
@@ -1439,10 +1438,9 @@ way every other age’s does.</p>
 </h5>
 <p>Growth can move over the series in two ways, which answer different
 questions and can be used together.</p>
-<p><strong>Varying the parameters.</strong> Any growth parameter can
-carry a deviation series (<code>growth_tv_model</code> names one
-structure per parameter, <code>"iid"</code> or <code>"rw"</code>), so
-the parameter in year
+<p>Varying the parameters. Any growth parameter can carry a deviation
+series (<code>growth_tv_model</code> names one structure per parameter,
+<code>"iid"</code> or <code>"rw"</code>), so the parameter in year
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>y</mi><annotation encoding="application/x-tex">y</annotation></semantics></math>
 is</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>P</mi><mi>y</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><mi>P</mi><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>δ</mi><mi>y</mi></msub><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="monospace">𝚐𝚛𝚘𝚠𝚝𝚑_𝚝𝚟_𝚕𝚒𝚗𝚔 = "𝚕𝚘𝚐"</mtext></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><msup><mi>P</mi><mrow><mi>l</mi><mi>o</mi></mrow></msup><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>P</mi><mrow><mi>h</mi><mi>i</mi></mrow></msup><mo>−</mo><msup><mi>P</mi><mrow><mi>l</mi><mi>o</mi></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><msup><mrow><mi mathvariant="normal">l</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">g</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">t</mi></mrow><mrow><mi>−</mi><mn>1</mn></mrow></msup><mrow><mo stretchy="true" form="prefix">[</mo><mrow><mi mathvariant="normal">l</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">g</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">t</mi></mrow><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><mstyle displaystyle="true"><mfrac><mrow><mi>P</mi><mo>−</mo><msup><mi>P</mi><mrow><mi>l</mi><mi>o</mi></mrow></msup></mrow><mrow><msup><mi>P</mi><mrow><mi>h</mi><mi>i</mi></mrow></msup><mo>−</mo><msup><mi>P</mi><mrow><mi>l</mi><mi>o</mi></mrow></msup></mrow></mfrac></mstyle><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><msub><mi>δ</mi><mi>y</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="monospace">"𝚕𝚘𝚐𝚒𝚝"</mtext></mtd></mtr></mtable></mrow></mrow><annotation encoding="application/x-tex">P_{y} = \begin{cases}
@@ -1454,12 +1452,11 @@ parameter strictly inside bounds
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>P</mi><mrow><mi>l</mi><mi>o</mi></mrow></msup><mo>,</mo><msup><mi>P</mi><mrow><mi>h</mi><mi>i</mi></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\left( P^{lo}, P^{hi} \right)</annotation></semantics></math>
 however large the deviation, which every growth parameter is. The
 deviations are penalized by the same process error used for selectivity
-(see <em>Growth Deviations</em> under the penalties), and the realized
-parameters are reported year by year as <code>growth_pars_y</code>.</p>
-<p><strong>How the deviated parameters reach size at age</strong> is a
-second choice (<code>growth_tv_type</code>). Under <code>"curve"</code>
-each year’s sizes are simply read off that year’s own curve: a fish of
-age
+(see Growth Deviations under the penalties), and the realized parameters
+are reported year by year as <code>growth_pars_y</code>.</p>
+<p>How the deviated parameters reach size at age is a second choice
+(<code>growth_tv_type</code>). Under <code>"curve"</code> each year’s
+sizes are simply read off that year’s own curve: a fish of age
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math>
 in year
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>y</mi><annotation encoding="application/x-tex">y</annotation></semantics></math>
@@ -1485,19 +1482,19 @@ g_{y}\left( \bar{L}_{y,a-1} \right) &amp; a^{\ast} &lt; a &lt; a_{+} \\[2ex]
 <p>Three consequences follow. Ages still in the linear phase take the
 length at
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>A</mi><mn>1</mn></msub><annotation encoding="application/x-tex">A_{1}</annotation></semantics></math>
-their <em>birth year’s</em> parameters gave them, so a cohort born in a
-poor year carries that start forward. The plus group is the only place
-growth depends on abundance: the cohort just entering it and the fish
-already there are blended by their numbers, which is why growth under
-this option is evaluated inside the population dynamics year loop rather
-than before it. And the coefficient of variation at age is held at the
-first year’s,
+their birth year’s parameters gave them, so a cohort born in a poor year
+carries that start forward. The plus group is the only place growth
+depends on abundance: the cohort just entering it and the fish already
+there are blended by their numbers, which is why growth under this
+option is evaluated inside the population dynamics year loop rather than
+before it. And the coefficient of variation at age is held at the first
+year’s,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">c(x)</annotation></semantics></math>
 being evaluated once from the first year’s curve and parameters and then
 held while the mean moves, so the deviations change mean size without
 also changing the spread.</p>
-<p><strong>Semi-parametric growth.</strong> The second way is a surface
-of deviations on mean length at age itself, indexed by year and age
+<p>Semi-parametric growth. The second way is a surface of deviations on
+mean length at age itself, indexed by year and age
 (<code>growth_semipar</code>),</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mover><mi>L</mi><mo accent="true">‾</mo></mover><mrow><mi>y</mi><mo>,</mo><mi>a</mi></mrow><mo>*</mo></msubsup><mo>=</mo><msub><mover><mi>L</mi><mo accent="true">‾</mo></mover><mrow><mi>y</mi><mo>,</mo><mi>a</mi></mrow></msub><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ε</mi><mrow><mi>y</mi><mo>,</mo><mi>a</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\bar{L}_{y,a}^{\ast} = \bar{L}_{y,a}\exp\left( \varepsilon_{y,a} \right)</annotation></semantics></math></p>
 <p>applied after the curve and after any cohort propagation. The
@@ -1566,7 +1563,7 @@ taken on the log scale, about a median-corrected mean so that
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>z</mi><mrow><mi>l</mi><mo>,</mo><mi>a</mi></mrow></msub><mo>=</mo><mstyle displaystyle="true"><mfrac><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><msub><mi>ℓ</mi><mi>l</mi></msub><mo>−</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">log</mi><mover><mi>L</mi><mo accent="true">‾</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>a</mi><mo stretchy="false" form="postfix">)</mo><mo>−</mo><msubsup><mi>σ</mi><mi>L</mi><mn>2</mn></msubsup><mo stretchy="false" form="prefix">(</mo><mi>a</mi><mo stretchy="false" form="postfix">)</mo><mi>/</mi><mn>2</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mrow><msub><mi>σ</mi><mi>L</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>a</mi><mo stretchy="false" form="postfix">)</mo></mrow></mfrac></mstyle></mrow><annotation encoding="application/x-tex">z_{l,a} = \dfrac{\log \ell_{l} - \left( \log \bar{L}(a) - \sigma_{L}^{2}(a)/2 \right)}{\sigma_{L}(a)}</annotation></semantics></math></p>
 <p>Here
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mi>L</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>a</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\sigma_{L}(a)</annotation></semantics></math>
-is a standard deviation <em>on the log scale</em>, so
+is a standard deviation on the log scale, so
 <code>growth_sd_type = "sd"</code> is the pairing that keeps it
 dimensionally consistent; combining <code>"lognormal"</code> with
 <code>"cv"</code> feeds a length-scale spread into a log-scale
@@ -1838,8 +1835,8 @@ operator cannot represent: fish observed in region
 arrived from regions whose elapsed times differ. The convention adopted
 is that the survey in region
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>r</mi><annotation encoding="application/x-tex">r</annotation></semantics></math>
-observes the population propagated to <em>that region’s</em> survey
-time, which is what the subscript
+observes the population propagated to that region’s survey time, which
+is what the subscript
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>r</mi><annotation encoding="application/x-tex">r</annotation></semantics></math>
 outside the bracket denotes. When
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>t</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>s</mi><mi>f</mi></mrow><mrow><mi>s</mi><mi>r</mi><mi>v</mi></mrow></msubsup><annotation encoding="application/x-tex">t^{srv}_{r,\tau,sf}</annotation></semantics></math>
@@ -2034,9 +2031,8 @@ in every subsequent season:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>ω</mi><mi>τ</mi><mi>k</mi></msubsup><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><msubsup><mi>t</mi><mi>k</mi><mtext mathvariant="normal">tag</mtext></msubsup></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="normal">release season of the release year</mtext></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mn>1</mn></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="normal">otherwise</mtext></mtd></mtr></mtable></mrow></mrow><annotation encoding="application/x-tex">\omega^{k}_{\tau} = \begin{cases} t^{\text{tag}}_{k} &amp; \text{release season of the release year} \\ 1 &amp; \text{otherwise} \end{cases}</annotation></semantics></math></p>
 <p>Note that
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>ω</mi><mi>τ</mi><mi>k</mi></msubsup><annotation encoding="application/x-tex">\omega^{k}_{\tau}</annotation></semantics></math>
-multiplies <strong>every</strong> mortality component, fishing included,
-rather than only the total. This matters for the recapture equation
-below:
+multiplies every mortality component, fishing included, rather than only
+the total. This matters for the recapture equation below:
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mi>/</mi><msup><mi>Z</mi><mtext mathvariant="normal">Tag</mtext></msup></mrow><annotation encoding="application/x-tex">F/Z^{\text{Tag}}</annotation></semantics></math>
 is the fraction of deaths owing to fishing and must lie in
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[0,1]</annotation></semantics></math>.
@@ -2609,10 +2605,10 @@ centered a second time. Further details on how selectivity deviations
 arise can be found in the “Selectivity Process Error” section of this
 document.</p>
 <p>Finally, individual bins can be overridden with their own freely
-estimated annual deviations (<code>*_sel_bin_dev_bins</code>),
+estimated annual deviations (<code>_sel_bin_dev_bins</code>),
 independent of the fleet’s functional form. For each named bin
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>b</mi><mo>*</mo></msup><annotation encoding="application/x-tex">b^{*}</annotation></semantics></math>:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mtext mathvariant="normal">Sel</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><msup><mi>b</mi><mo>*</mo></msup><mo>,</mo><mi>s</mi><mo>,</mo><mi>j</mi></mrow></msub><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><msup><mi>b</mi><mo>*</mo></msup><mo>,</mo><mi>s</mi><mo>,</mo><mi>j</mi></mrow><mtext mathvariant="normal">BinDev</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\text{Sel}_{r,y,b^{*},s,j} = \exp\left( \epsilon_{r,y,b^{*},s,j}^{\text{BinDev}} \right)</annotation></semantics></math></p>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>b</mi><mrow></mrow></msup><annotation encoding="application/x-tex">b^{}</annotation></semantics></math>:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mtext mathvariant="normal">Sel</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><msup><mi>b</mi><mrow></mrow></msup><mo>,</mo><mi>s</mi><mo>,</mo><mi>j</mi></mrow></msub><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><msup><mi>b</mi><mrow></mrow></msup><mo>,</mo><mi>s</mi><mo>,</mo><mi>j</mi></mrow><mtext mathvariant="normal">BinDev</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\text{Sel}_{r,y,b^{},s,j} = \exp\left( \epsilon_{r,y,b^{},s,j}^{\text{BinDev}} \right)</annotation></semantics></math></p>
 <p>replacing whatever the functional form (and any standardization or
 semi-parametric deviation) produced for that bin, while all remaining
 bins keep their parametric shape. The override is applied last, after
@@ -2622,8 +2618,8 @@ youngest bin is governed by availability rather than by the gear (e.g.,
 age-1 availability to a bottom trawl varying with year-class strength):
 that bin becomes freely time-varying without abandoning the parametric
 form elsewhere. The override deviations can carry their own iid or
-random walk process error (<code>cont_tv_*sel_bin_devs</code>),
-described in the Selectivity Process Error section.</p>
+random walk process error (<code>cont_tv_sel_bin_devs</code>), described
+in the Selectivity Process Error section.</p>
 </div>
 </div>
 <div class="section level2">
@@ -3096,21 +3092,64 @@ multiplication. These three structuring options apply identically to
 retained fishery, discarded fishery, and survey composition likelihoods,
 as well as to both region-aggregated and population-specific
 variants.</p>
-<p>Additionally, each fleet’s age compositions can be restricted to a
-subset of observed bins (<code>FishAgeComps_bins</code> /
-<code>SrvAgeComps_bins</code>). Both the observed and expected
-compositions are subset to the named bins and renormalized within
-them:</p>
+<p>Ageing error is fleet specific,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝚯</mi><mrow><mi>y</mi><mo>,</mo><mi>f</mi></mrow></msub><annotation encoding="application/x-tex">\mathbf{\Theta}_{y,f}</annotation></semantics></math>,
+supplied through <code>AgeingError_fish</code> and
+<code>AgeingError_srv</code> to accomodate different reading mehtods.
+Every fleet’s matrix maps onto the same set of observed age bins,
+because the observed composition arrays carry one age dimension shared
+across fleets. The length analogue
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝚲</mi><annotation encoding="application/x-tex">\mathbf{\Lambda}</annotation></semantics></math>
+(<code>LenBinMap</code>) is applied in exactly the same position for
+length compositions, and is shared across fleets.</p>
+<p>Additionally, every composition stream can be restricted to a subset
+of observed bins (the <code>_bins</code> arguments). Both the observed
+and expected compositions are subset to the named bins and renormalized
+within them:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>E</mi><mi>b</mi><mtext mathvariant="normal">fit</mtext></msubsup><mo>=</mo><mfrac><msub><mi>E</mi><mi>b</mi></msub><mrow><munder><mo>∑</mo><mrow><msup><mi>b</mi><mo>′</mo></msup><mo>∈</mo><mi>ℬ</mi></mrow></munder><msub><mi>E</mi><msup><mi>b</mi><mo>′</mo></msup></msub></mrow></mfrac><mo>,</mo><mspace width="2.0em"></mspace><msubsup><mi>O</mi><mi>b</mi><mtext mathvariant="normal">fit</mtext></msubsup><mo>=</mo><mfrac><msub><mi>O</mi><mi>b</mi></msub><mrow><munder><mo>∑</mo><mrow><msup><mi>b</mi><mo>′</mo></msup><mo>∈</mo><mi>ℬ</mi></mrow></munder><msub><mi>O</mi><msup><mi>b</mi><mo>′</mo></msup></msub></mrow></mfrac><mo>,</mo><mspace width="2.0em"></mspace><mi>b</mi><mo>∈</mo><mi>ℬ</mi></mrow><annotation encoding="application/x-tex">E_{b}^{\text{fit}} = \frac{E_{b}}{\sum_{b' \in \mathcal{B}}E_{b'}},\qquad O_{b}^{\text{fit}} = \frac{O_{b}}{\sum_{b' \in \mathcal{B}}O_{b'}},\qquad b \in \mathcal{B}</annotation></semantics></math></p>
 <p>where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℬ</mi><annotation encoding="application/x-tex">\mathcal{B}</annotation></semantics></math>
-is the fitted bin set, indexed on observed bins (i.e., after ageing
-error has mapped model ages onto observed ages). Bins outside
+is the fitted bin set, indexed on observed bins (i.e., after
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝚯</mi><mrow><mi>y</mi><mo>,</mo><mi>f</mi></mrow></msub><annotation encoding="application/x-tex">\mathbf{\Theta}_{y,f}</annotation></semantics></math>
+or
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝚲</mi><annotation encoding="application/x-tex">\mathbf{\Lambda}</annotation></semantics></math>
+has mapped model bins onto observed ones). Bins outside
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℬ</mi><annotation encoding="application/x-tex">\mathcal{B}</annotation></semantics></math>
 are left out of the likelihood entirely rather than being forced to be
 explained, which is appropriate for a gear that only resolves part of
-the age range (e.g., a fishery that never encounters the youngest ages,
+the range (e.g., a fishery that never encounters the youngest ages,
 whose zeros would otherwise carry information).</p>
+<p>The restriction and the mapping are distinct operations applied in
+that order.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝚯</mi><mrow><mi>y</mi><mo>,</mo><mi>f</mi></mrow></msub><annotation encoding="application/x-tex">\mathbf{\Theta}_{y,f}</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝚲</mi><annotation encoding="application/x-tex">\mathbf{\Lambda}</annotation></semantics></math>
+redistribute mass from model bins onto observed bins, conserving it
+wherever a row sums to one, which is every row of an ageing error matrix
+or a length bin collapse. Restricting to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℬ</mi><annotation encoding="application/x-tex">\mathcal{B}</annotation></semantics></math>
+discards the mass outside
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℬ</mi><annotation encoding="application/x-tex">\mathcal{B}</annotation></semantics></math>
+and renormalizes what remains. A row that sums to zero is the one case
+where a mapping also discards, which is what the shifted identity
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝐈</mi><mo stretchy="false" form="prefix">[</mo><mo>,</mo><mn>2</mn><mo>:</mo><msub><mi>n</mi><mi>A</mi></msub><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">\mathbf{I}[, 2{:}n_{A}]</annotation></semantics></math>
+does to drop a model age the observations never resolve. Neither
+substitutes for the other: no subset of the model’s bins reproduces a
+many-to-one collapse, and a mapping that zeroed an observed bin would
+leave it with a structural-zero expectation the composition likelihood
+cannot fit.</p>
+<p>For ‘Joint’ compositions the restriction is taken on each sex’s block
+of the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">[</mo><mi>b</mi><mo>×</mo><mi>s</mi><mo stretchy="true" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">\left\lbrack b \times s \right\rbrack</annotation></semantics></math>
+stack, so the implicit sex ratio those compositions carry becomes the
+ratio within
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℬ</mi><annotation encoding="application/x-tex">\mathcal{B}</annotation></semantics></math>.
+Where the logistic-normal families supply a correlation over bins, the
+covariance is formed across all observed bins and then subset to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℬ</mi><annotation encoding="application/x-tex">\mathcal{B}</annotation></semantics></math>,
+so a gap in
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℬ</mi><annotation encoding="application/x-tex">\mathcal{B}</annotation></semantics></math>
+still contributes to the lag between the bins either side of it.</p>
 </div>
 <div class="section level5">
 <h5 id="conditional-age-at-length">Conditional Age-at-Length<a class="anchor" aria-label="anchor" href="#conditional-age-at-length"></a>
@@ -3291,10 +3330,10 @@ is a selectivity parameter for a given functional form specified,
 is the prior variance, and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>μ</mi><mrow><mi>r</mi><mo>,</mo><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>j</mi></mrow><mtext mathvariant="normal">(Sel)</mtext></msubsup><annotation encoding="application/x-tex">\mu_{r,p,y,s,j}^{\text{(Sel)}}</annotation></semantics></math>
 is the prior mean for the specific selectivity parameter.</p>
-<p>In addition to lognormal priors on individual parameters, a
-<em>centering penalty</em> can be applied jointly to a named set of
-selectivity fixed-effect parameters (<code>Use_*_selex_penalty</code>
-with a <code>*_selex_penalty</code> table). For a set
+<p>In addition to lognormal priors on individual parameters, a centering
+penalty can be applied jointly to a named set of selectivity
+fixed-effect parameters (<code>Use__selex_penalty</code> with a
+<code>_selex_penalty</code> table). For a set
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝒫</mi><annotation encoding="application/x-tex">\mathcal{P}</annotation></semantics></math>
 of parameters held on the log scale, the penalty is:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>P</mi><mtext mathvariant="normal">SelCenter</mtext></msub><mo>=</mo><mi>w</mi><msup><mrow><mo stretchy="true" form="prefix">[</mo><mi mathvariant="normal">log</mi><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mn>1</mn><mrow><mo stretchy="false" form="prefix">|</mo><mi>𝒫</mi><mo stretchy="false" form="prefix">|</mo></mrow></mfrac><munder><mo>∑</mo><mrow><mi>i</mi><mo>∈</mo><mi>𝒫</mi></mrow></munder><mi mathvariant="normal">exp</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>θ</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">P_{\text{SelCenter}} = w\left\lbrack \log\left( \frac{1}{|\mathcal{P}|}\sum_{i \in \mathcal{P}}\exp\left( \theta_{i} \right) \right) \right\rbrack^{2}</annotation></semantics></math></p>
@@ -3413,9 +3452,9 @@ method-of-moments in terms of a mean and standard deviation:</p>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>κ</mi><mrow><mi>p</mi><mo>,</mo><mi>b</mi></mrow><mrow><mo stretchy="false" form="prefix">(</mo><mi>ϕ</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><annotation encoding="application/x-tex">\kappa_{p,b}^{(\phi)}</annotation></semantics></math>
 is the concentration parameter. The stray rate is numerically stabilized
 by squishing the logistic transform away from the boundaries:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>ϕ</mi><mo accent="true">̃</mo></mover><mrow><mi>p</mi><mo>,</mo><mi>b</mi></mrow></msub><mo>=</mo><mi>ϵ</mi><mo>+</mo><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><mn>2</mn><mi>ϵ</mi><mo stretchy="false" form="postfix">)</mo><mo>⋅</mo><mtext mathvariant="normal">logistic</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϕ</mi><mrow><mi>p</mi><mo>,</mo><mi>b</mi></mrow><mo>*</mo></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\tilde{\phi}_{p,b} = \epsilon + (1 - 2\epsilon) \cdot \text{logistic}\left(\phi_{p,b}^{*}\right)</annotation></semantics></math></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>ϕ</mi><mo accent="true">̃</mo></mover><mrow><mi>p</mi><mo>,</mo><mi>b</mi></mrow></msub><mo>=</mo><mi>ϵ</mi><mo>+</mo><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><mn>2</mn><mi>ϵ</mi><mo stretchy="false" form="postfix">)</mo><mo>⋅</mo><mtext mathvariant="normal">logistic</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϕ</mi><mrow><mi>p</mi><mo>,</mo><mi>b</mi></mrow><mrow></mrow></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\tilde{\phi}_{p,b} = \epsilon + (1 - 2\epsilon) \cdot \text{logistic}\left(\phi_{p,b}^{}\right)</annotation></semantics></math></p>
 <p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>ϕ</mi><mrow><mi>p</mi><mo>,</mo><mi>b</mi></mrow><mo>*</mo></msubsup><annotation encoding="application/x-tex">\phi_{p,b}^{*}</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>ϕ</mi><mrow><mi>p</mi><mo>,</mo><mi>b</mi></mrow><mrow></mrow></msubsup><annotation encoding="application/x-tex">\phi_{p,b}^{}</annotation></semantics></math>
 is the logit-scale parameter and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ϵ</mi><annotation encoding="application/x-tex">\epsilon</annotation></semantics></math>
 is a small constant
@@ -3475,8 +3514,8 @@ above are the estimated transition fractions themselves, and the prior
 applies to them directly. For CTMC movement (<code>move_type = 1</code>)
 the model estimates a generator
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>𝐐</mi><mo accent="true">̇</mo></mover><annotation encoding="application/x-tex">\dot{\mathbf{Q}}</annotation></semantics></math>
-rather than fractions, and the prior is evaluated on the
-<strong>annual</strong> fractions obtained from it,</p>
+rather than fractions, and the prior is evaluated on the annual
+fractions obtained from it,</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐦</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>⋅</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><msub><mrow><mo stretchy="true" form="prefix">[</mo><mi mathvariant="normal">exp</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>𝐐</mi><mo accent="true">̇</mo></mover><mrow><mi>p</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow><mrow><mi>r</mi><mo>,</mo><mi>⋅</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\mathbf{m}_{p,r,\cdot,y,\tau,a,s} = \left\lbrack \exp\left( \dot{\mathbf{Q}}_{p,y,\tau,a,s} \right) \right\rbrack_{r,\cdot}</annotation></semantics></math></p>
 <p>i.e. at
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Δ</mi><mi>t</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\Delta t = 1</annotation></semantics></math>,
@@ -3498,9 +3537,9 @@ but 9.91 at
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mi>τ</mi></msub><mo>=</mo><mn>12</mn></mrow><annotation encoding="application/x-tex">n_{\tau} = 12</annotation></semantics></math>;
 evaluated annually it is 1.04 in both cases. Fixing the exponent at one
 year also matches how such priors are elicited, as a belief about the
-fraction of fish moving per <em>year</em>, independent of how the year
-is partitioned. Under the legacy <code>ctmc_scale_by_seasdur = 0</code>
-the two coincide.</p>
+fraction of fish moving per year, independent of how the year is
+partitioned. Under the legacy <code>ctmc_scale_by_seasdur = 0</code> the
+two coincide.</p>
 <p>Because
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mover><mi>𝐐</mi><mo accent="true">̇</mo></mover><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(\dot{\mathbf{Q}})</annotation></semantics></math>
 is a deterministic function of the estimated CTMC parameters, the prior
@@ -3530,19 +3569,18 @@ handle on prior strength. Two cases are worth separating:</p>
 <ul>
 <li>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝐜</mi><mo>=</mo><mn>𝟏</mn></mrow><annotation encoding="application/x-tex">\mathbf{c} = \mathbf{1}</annotation></semantics></math>
-gives a <strong>uniform density over the simplex</strong>: every
-movement vector is equally likely, the contribution to the objective is
-constant, and the gradient is exactly zero. This is the uninformative
-choice.</li>
+gives a uniform density over the simplex: every movement vector is
+equally likely, the contribution to the objective is constant, and the
+gradient is exactly zero. This is the uninformative choice.</li>
 <li>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝐜</mi><mo>=</mo><mi>c</mi><mn>𝟏</mn></mrow><annotation encoding="application/x-tex">\mathbf{c} = c\mathbf{1}</annotation></semantics></math>
 with
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mo>&gt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">c &gt; 1</annotation></semantics></math>
 is symmetric with its mode at
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><msub><mi>n</mi><mi>r</mi></msub></mrow><annotation encoding="application/x-tex">1/n_{r}</annotation></semantics></math>
-in every region, a prior centred on <em>equal movement among all
-regions</em>, which is informative and, for a residency-dominated stock,
-a strong assumption rather than a vague one.</li>
+in every region, a prior centred on equal movement among all regions,
+which is informative and, for a residency-dominated stock, a strong
+assumption rather than a vague one.</li>
 </ul>
 <p>To target a particular movement vector with a chosen strength, set
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>c</mi><mi>k</mi></msub><mo>=</mo><mn>1</mn><mo>+</mo><mi>κ</mi><mspace width="0.167em"></mspace><msub><mtext mathvariant="normal">mode</mtext><mi>k</mi></msub></mrow><annotation encoding="application/x-tex">c_{k} = 1 + \kappa\,\text{mode}_{k}</annotation></semantics></math>.</p>
@@ -3572,9 +3610,9 @@ standard deviation:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>b</mi><mrow><mi>r</mi><mo>,</mo><mi>f</mi></mrow><mrow><mo stretchy="false" form="prefix">(</mo><mi>β</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msubsup><mi>μ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow><mrow><mo stretchy="false" form="prefix">(</mo><mi>β</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>⋅</mo><msubsup><mi>κ</mi><mrow><mi>r</mi><mo>,</mo><mi>f</mi></mrow><mrow><mo stretchy="false" form="prefix">(</mo><mi>β</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup></mrow><annotation encoding="application/x-tex">b_{r,f}^{(\beta)} = \left(1 - \mu_{r,y,f}^{(\beta)}\right) \cdot \kappa_{r,f}^{(\beta)}</annotation></semantics></math></p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>β</mi><mo accent="true">̃</mo></mover><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mrow><mi mathvariant="normal">Γ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>a</mi><mrow><mi>r</mi><mo>,</mo><mi>f</mi></mrow><mrow><mo stretchy="false" form="prefix">(</mo><mi>β</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mo>+</mo><msubsup><mi>b</mi><mrow><mi>r</mi><mo>,</mo><mi>f</mi></mrow><mrow><mo stretchy="false" form="prefix">(</mo><mi>β</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mrow><mi mathvariant="normal">Γ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>a</mi><mrow><mi>r</mi><mo>,</mo><mi>f</mi></mrow><mrow><mo stretchy="false" form="prefix">(</mo><mi>β</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mi mathvariant="normal">Γ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>b</mi><mrow><mi>r</mi><mo>,</mo><mi>f</mi></mrow><mrow><mo stretchy="false" form="prefix">(</mo><mi>β</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac><msubsup><mover><mi>β</mi><mo accent="true">̃</mo></mover><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow><mrow><msubsup><mi>a</mi><mrow><mi>r</mi><mo>,</mo><mi>f</mi></mrow><mrow><mo stretchy="false" form="prefix">(</mo><mi>β</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mo>−</mo><mn>1</mn></mrow></msubsup><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mover><mi>β</mi><mo accent="true">̃</mo></mover><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mrow><msubsup><mi>b</mi><mrow><mi>r</mi><mo>,</mo><mi>f</mi></mrow><mrow><mo stretchy="false" form="prefix">(</mo><mi>β</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mo>−</mo><mn>1</mn></mrow></msup></mrow><annotation encoding="application/x-tex">P\left(\tilde{\beta}_{r,y,f}\right) = \frac{\Gamma\left(a_{r,f}^{(\beta)} + b_{r,f}^{(\beta)}\right)}{\Gamma\left(a_{r,f}^{(\beta)}\right)\Gamma\left(b_{r,f}^{(\beta)}\right)}\tilde{\beta}_{r,y,f}^{a_{r,f}^{(\beta)} - 1}\left(1 - \tilde{\beta}_{r,y,f}\right)^{b_{r,f}^{(\beta)} - 1}</annotation></semantics></math></p>
 <p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>β</mi><mo accent="true">̃</mo></mover><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>=</mo><mi>ϵ</mi><mo>+</mo><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><mn>2</mn><mi>ϵ</mi><mo stretchy="false" form="postfix">)</mo><mo>⋅</mo><mtext mathvariant="normal">logistic</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>β</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow><mo>*</mo></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\tilde{\beta}_{r,y,f} = \epsilon + (1 - 2\epsilon) \cdot \text{logistic}\left(\beta_{r,y,f}^{*}\right)</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>β</mi><mo accent="true">̃</mo></mover><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>=</mo><mi>ϵ</mi><mo>+</mo><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><mn>2</mn><mi>ϵ</mi><mo stretchy="false" form="postfix">)</mo><mo>⋅</mo><mtext mathvariant="normal">logistic</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>β</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow><mrow></mrow></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\tilde{\beta}_{r,y,f} = \epsilon + (1 - 2\epsilon) \cdot \text{logistic}\left(\beta_{r,y,f}^{}\right)</annotation></semantics></math>
 is the numerically stabilized reporting rate with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>β</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow><mo>*</mo></msubsup><annotation encoding="application/x-tex">\beta_{r,y,f}^{*}</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>β</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow><mrow></mrow></msubsup><annotation encoding="application/x-tex">\beta_{r,y,f}^{}</annotation></semantics></math>
 the logit-scale parameter and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ϵ</mi><annotation encoding="application/x-tex">\epsilon</annotation></semantics></math>
 a small constant
@@ -3695,10 +3733,9 @@ also cannot be combined with the bias ramp, whose
 offset is meaningless once the mean is estimated rather than
 asserted.</p>
 <p>Three further refinements act on which deviations are penalized and
-how strongly. First, only <em>estimated</em> deviations are penalized:
-cells mapped off by hand (via <code>map$ln_RecDevs</code>) are excluded
-from the penalty as well as from estimation. Second, the recruitment
-weight
+how strongly. First, only estimated deviations are penalized: cells
+mapped off by hand (via <code>map$ln_RecDevs</code>) are excluded from
+the penalty as well as from estimation. Second, the recruitment weight
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>λ</mi><mtext mathvariant="normal">Rec</mtext></msup><annotation encoding="application/x-tex">\lambda^{\text{Rec}}</annotation></semantics></math>
 (<code>Wt_Rec</code>) may be a per-deviation array rather than a scalar,
 so individual deviations can be down-weighted or removed from the
@@ -3707,9 +3744,9 @@ stock-recruit relationship is fit over a chosen window of years while
 recruitment stays effectively free elsewhere, and is distinct from
 <code>dont_est_recdev_last</code>, which removes the deviations
 themselves so recruitment reverts to the deterministic prediction.</p>
-<p>Third, an optional penalty on the <em>level</em> of the recruitment
-series itself (<code>Use_rec_level_pen</code>) can be applied,
-separately from the deviation penalty:</p>
+<p>Third, an optional penalty on the level of the recruitment series
+itself (<code>Use_rec_level_pen</code>) can be applied, separately from
+the deviation penalty:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ℓ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">log</mi><msub><mi>R</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mn>1</mn><mrow><msqrt><mrow><mn>2</mn><mi>π</mi><msubsup><mi>σ</mi><mtext mathvariant="normal">RecLevel</mtext><mn>2</mn></msubsup></mrow></msqrt><mspace width="0.167em"></mspace></mrow></mfrac><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">log</mi><msub><mi>R</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub><mo>−</mo><msup><mi>μ</mi><mtext mathvariant="normal">RecLevel</mtext></msup><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mrow><mn>2</mn><msubsup><mi>σ</mi><mtext mathvariant="normal">RecLevel</mtext><mn>2</mn></msubsup></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\ell\left( \log R_{p,r,y} \right) = \frac{1}{\sqrt{2\pi\sigma_{\text{RecLevel}}^{2}}\,}\exp\left( - \frac{\left( \log R_{p,r,y} - \mu^{\text{RecLevel}} \right)^{2}}{2\sigma_{\text{RecLevel}}^{2}} \right)</annotation></semantics></math></p>
 <p>evaluated over a chosen set of years
 (<code>rec_level_pen_yrs</code>), with
@@ -3942,7 +3979,7 @@ distribution:</p>
 <p>where process error deviations for the first year are initialized
 with their own standard deviation
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mrow><mn>0</mn><mo>,</mo><mi>j</mi></mrow></msub><annotation encoding="application/x-tex">\sigma_{0,j}</annotation></semantics></math>
-(<code>*sel_rw_init_sigma</code>), which defaults to a large value
+(<code>sel_rw_init_sigma</code>), which defaults to a large value
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>5</mn><annotation encoding="application/x-tex">5</annotation></semantics></math>)
 that leaves the first year effectively unconstrained. Setting it to
 <code>NA</code> instead starts the walk at zero under the walk’s own
@@ -3966,12 +4003,12 @@ remain estimated, which is how a model reproduces assessments that let
 selectivity deviations float subject only to explicit smoothness
 penalties rather than a distributional assumption.</p>
 <p>The bin-override deviations described in the selectivity section
-carry their own process error (<code>cont_tv_*sel_bin_devs</code>),
+carry their own process error (<code>cont_tv_sel_bin_devs</code>),
 either iid or a random walk of exactly the forms above, with their own
 estimated
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>σ</mi><annotation encoding="application/x-tex">\sigma</annotation></semantics></math>
 per overridden bin and their own first-year standard deviation
-(<code>*sel_bin_devs_rw_init_sigma</code>). An overridden bin that is
+(<code>sel_bin_devs_rw_init_sigma</code>). An overridden bin that is
 free of the functional form is thereby still smoothed in time when asked
 to be.</p>
 <p>In addition to being constrained by a normal distribution, both iid
@@ -4099,8 +4136,7 @@ form.</p>
 per fleet (a single specification is shared by every fleet, or an
 unnamed list gives each fleet its own):</p>
 <ul>
-<li>
-<strong>Per-year weights.</strong> Every weight
+<li>Per-year weights. Every weight
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>w</mi><annotation encoding="application/x-tex">w</annotation></semantics></math>
 may be a vector with one value per model year,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>w</mi><mi>y</mi></msub><annotation encoding="application/x-tex">w_{y}</annotation></semantics></math>,
@@ -4117,28 +4153,23 @@ standard deviation
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>y</mi></msub><annotation encoding="application/x-tex">\sigma_{y}</annotation></semantics></math>,
 expressed as a penalty on the realized curve rather than on deviation
 parameters.</li>
-<li>
-<strong>Bin range.</strong> <code>bin_range</code> restricts the
-bins the penalties act over to
+<li>Bin range. <code>bin_range</code> restricts the bins the penalties
+act over to
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><msub><mi>b</mi><mrow><mi>l</mi><mi>o</mi></mrow></msub><mo>,</mo><msub><mi>b</mi><mrow><mi>h</mi><mi>i</mi></mrow></msub><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">\lbrack b_{lo}, b_{hi} \rbrack</annotation></semantics></math>,
 either one range shared by every term or a named list giving each term
 its own. This is how a shape penalty (e.g., the dome or curvature
 penalty) is confined to the older ages where the curve is expected to
 flatten, without constraining the ascending limb.</li>
-<li>
-<strong>Normalization.</strong> <code>normalize</code> controls
-whether the bin-wise weights are divided by the number of penalized bins
-and the year-wise weights by the number of years (the default,
-<code>TRUE</code>); it can likewise be set per term. Turn it off when
-weights are calibrated as explicit variances, as in the random walk
-correspondence above.</li>
-<li>
-<strong>First-year reference.</strong> The year first-difference
-walk has no predecessor in its first penalized year, so that year is
-normally left unpenalized. <code>yr_diff_ref</code> supplies one: the
-first penalized year is held toward a reference log-selectivity vector,
-anchoring an otherwise free series to a known selectivity before the
-data begin.</li>
+<li>Normalization. <code>normalize</code> controls whether the bin-wise
+weights are divided by the number of penalized bins and the year-wise
+weights by the number of years (the default, <code>TRUE</code>); it can
+likewise be set per term. Turn it off when weights are calibrated as
+explicit variances, as in the random walk correspondence above.</li>
+<li>First-year reference. The year first-difference walk has no
+predecessor in its first penalized year, so that year is normally left
+unpenalized. <code>yr_diff_ref</code> supplies one: the first penalized
+year is held toward a reference log-selectivity vector, anchoring an
+otherwise free series to a known selectivity before the data begin.</li>
 </ul>
 </div>
 <div class="section level5">
@@ -4147,10 +4178,9 @@ data begin.</li>
 <p>Growth carries two deviation surfaces, and both are scored by the
 same process error machinery the selectivity deviations use, so the
 vocabulary above carries over unchanged.</p>
-<p>A time-varying growth <strong>parameter</strong> has one deviation
-per year, a surface one column wide. Under <code>"iid"</code> each is
-drawn independently and under <code>"rw"</code> they form a random
-walk:</p>
+<p>A time-varying growth parameter has one deviation per year, a surface
+one column wide. Under <code>"iid"</code> each is drawn independently
+and under <code>"rw"</code> they form a random walk:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="center" style="text-align: center"><msub><mi>δ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>k</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><msubsup><mi>σ</mi><mi>k</mi><mn>2</mn></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mtd><mtd columnalign="center" style="text-align: center"><mtext mathvariant="monospace">𝚒𝚒𝚍</mtext></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><msub><mi>δ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>k</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>δ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>−</mo><mn>1</mn><mo>,</mo><mi>k</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>,</mo><msubsup><mi>σ</mi><mi>k</mi><mn>2</mn></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mtd><mtd columnalign="center" style="text-align: center"><mtext mathvariant="monospace">𝚛𝚠</mtext></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{matrix}
 \delta_{p,r,y,k,s} \sim N\left( 0, \sigma_{k}^{2} \right) &amp; \texttt{iid} \\[1ex]
 \delta_{p,r,y,k,s} \sim N\left( \delta_{p,r,y - 1,k,s}, \sigma_{k}^{2} \right) &amp; \texttt{rw}
@@ -4166,7 +4196,7 @@ walk given its own standard deviation
 <code>growth_tv_years</code> carry a deviation; the rest are held at
 zero, so a parameter can be constant early in a series and varying once
 the data can support it.</p>
-<p>The <strong>semi-parametric</strong> surface
+<p>The semi-parametric surface
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ε</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">\varepsilon_{p,r,y,a,s}</annotation></semantics></math>
 runs over years and ages, so all five structures are available to it:
 <code>"iid"</code> and <code>"rw"</code> as above, <code>"2dar1"</code>
@@ -4234,10 +4264,10 @@ softmax transform.</p>
 <p>For CTMC movement, deviations act on the transition rates rather than
 logits. Specifically, deviations are applied multiplicatively to the
 off-diagonal diffusion terms:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>D</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>→</mo><msup><mi>r</mi><mo>′</mo></msup><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><msub><mover><mi>D</mi><mo accent="true">‾</mo></mover><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>→</mo><msup><mi>r</mi><mo>′</mo></msup><mo>,</mo><msup><mi>y</mi><mo>*</mo></msup><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>⋅</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><msup><mi>r</mi><mo>′</mo></msup><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mtext mathvariant="normal">Move</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="1.0em"></mspace><mrow><mtext mathvariant="normal">for </mtext><mspace width="0.333em"></mspace></mrow><mi>r</mi><mo>≠</mo><msup><mi>r</mi><mo>′</mo></msup></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>D</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>→</mo><msup><mi>r</mi><mo>′</mo></msup><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><msub><mover><mi>D</mi><mo accent="true">‾</mo></mover><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>→</mo><msup><mi>r</mi><mo>′</mo></msup><mo>,</mo><msup><mi>y</mi><mo>,</mo></msup><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>⋅</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><msup><mi>r</mi><mo>′</mo></msup><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mtext mathvariant="normal">Move</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="1.0em"></mspace><mrow><mtext mathvariant="normal">for </mtext><mspace width="0.333em"></mspace></mrow><mi>r</mi><mo>≠</mo><msup><mi>r</mi><mo>′</mo></msup></mrow><annotation encoding="application/x-tex">
 D_{p,r \to r',y,\tau,a,s}
 =
-\bar{D}_{p,r \to r',y^*,\tau,a,s}
+\bar{D}_{p,r \to r',y^,\tau,a,s}
 \cdot
 \exp\left(
 \epsilon^{\text{Move}}_{p,r,r',y,\tau,a,s}
@@ -4245,10 +4275,10 @@ D_{p,r \to r',y,\tau,a,s}
 \quad \text{for } r \ne r'
 </annotation></semantics></math></p>
 <p>where: -
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>D</mi><mo accent="true">‾</mo></mover><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>→</mo><msup><mi>r</mi><mo>′</mo></msup><mo>,</mo><msup><mi>y</mi><mo>*</mo></msup><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">\bar{D}_{p,r \to r',y^*,\tau,a,s}</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>D</mi><mo accent="true">‾</mo></mover><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>→</mo><msup><mi>r</mi><mo>′</mo></msup><mo>,</mo><msup><mi>y</mi><mo>,</mo></msup><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">\bar{D}_{p,r \to r',y^,\tau,a,s}</annotation></semantics></math>
 is the baseline diffusion rate (constructed from covariates and
 parameters, with year lookups capped at
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>y</mi><mo>*</mo></msup><mo>=</mo><mrow><mi mathvariant="normal">min</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>y</mi><mo>,</mo><msub><mi>n</mi><mtext mathvariant="normal">yrs</mtext></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">y^* = \min(y, n_{\text{yrs}})</annotation></semantics></math>),
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>y</mi><mo>=</mo></msup><mrow><mi mathvariant="normal">min</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>y</mi><mo>,</mo><msub><mi>n</mi><mtext mathvariant="normal">yrs</mtext></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">y^ = \min(y, n_{\text{yrs}})</annotation></semantics></math>),
 -
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>ϵ</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><msup><mi>r</mi><mo>′</mo></msup><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mtext mathvariant="normal">Move</mtext></msubsup><annotation encoding="application/x-tex">\epsilon^{\text{Move}}_{p,r,r',y,\tau,a,s}</annotation></semantics></math>
 is the deviation applied on the log scale.</p>

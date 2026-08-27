@@ -153,7 +153,14 @@ Get_Comp_Likelihoods(
   are restricted to these bins and renormalized within them, so bins
   outside the range are left out of the likelihood rather than being
   forced to be explained. Indices refer to observed bins, that is after
-  any ageing error has mapped model bins onto observed ones.
+  any ageing error or length bin map has mapped model bins onto observed
+  ones. The restriction applies to every composition type: for the
+  sex-joint comps (`Comp_Type = 2`) the named bins are dropped from each
+  sex's block of the joint stack, so the sex ratio the joint comps carry
+  is the ratio within the fitted bins. Logistic-normal covariances are
+  built over all observed bins and then cut down to the fitted ones, so
+  a gap in `comp_bins` still counts towards the AR1 lag between the bins
+  on either side of it.
 
 - comp_const_obs:
 

@@ -65,7 +65,10 @@ run_internal_comp_osa(
 
 - bins:
 
-  Vector of age or length bin labels for display.
+  Vector of age or length bin labels for display. Must span every
+  observed bin of the stream, not just the ones a `*_bins` restriction
+  fits: residuals are labelled by true observed bin number, so a subset
+  here shifts every label.
 
 - bin_label:
 

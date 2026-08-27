@@ -124,6 +124,10 @@ and mappings. Must be called after <code><a href="Setup_Mod_Catch_and_F.html">Se
 <span>    <span class="fl">1</span><span class="op">:</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span>, sep <span class="op">=</span> <span class="st">""</span><span class="op">)</span>,</span>
 <span>  fish_idx_ages <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  FishAgeComps_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  FishLenComps_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  Fish_caal_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  FishAgeComps_pop_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  FishLenComps_pop_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  FishIdx_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"lognormal"</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  FishIdx_Cov <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ObsFish_caal <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -523,15 +527,43 @@ every age for every fleet. The fleet's compositions are unaffected.</p></dd>
 <dt id="arg-fishagecomps-bins">FishAgeComps_bins<a class="anchor" aria-label="anchor" href="#arg-fishagecomps-bins"></a></dt>
 <dd><p>Which age bins each fishery fleet's age composition
 is fitted over. Supply a list with one element per fleet, each a vector of
-age indices or <code>NULL</code> for all ages, or an
-<code>[n_ages x n_fish_fleets]</code> array of 0/1 weights. Both observed and
+bin indices or <code>NULL</code> for all bins, or an
+<code>[n_obs_ages x n_fish_fleets]</code> array of 0/1 weights. Both observed and
 expected compositions are restricted to the named bins and renormalized
 within them, so excluded bins are left out of the likelihood rather than
 being forced to be explained; this is how a fleet that only ages part of
 its age range is fitted. Indices refer to observed bins, that is after any
-ageing error has mapped model ages onto observed ones. Every fleet must
-retain at least one bin. Default <code>NULL</code>, which fits all ages for all
-fleets.</p></dd>
+ageing error has mapped model ages onto observed ones. The restriction
+applies whatever the composition type: for sex-joint comps the named bins
+are dropped from each sex's block, so the sex ratio the joint comps carry
+becomes the ratio within the fitted bins. Every fleet must retain at least
+two bins, since the proportion in a lone bin is one whatever the model
+predicts. Default <code>NULL</code>, which fits all bins for all fleets.</p></dd>
+
+
+<dt id="arg-fishlencomps-bins">FishLenComps_bins<a class="anchor" aria-label="anchor" href="#arg-fishlencomps-bins"></a></dt>
+<dd><p>Which length bins each fishery fleet's length
+composition is fitted over, in the same format as
+<code>FishAgeComps_bins</code>. Indices refer to observed length bins, that is
+after any <code>LenBinMap</code> has mapped model bins onto observed ones.</p></dd>
+
+
+<dt id="arg-fish-caal-bins">Fish_caal_bins<a class="anchor" aria-label="anchor" href="#arg-fish-caal-bins"></a></dt>
+<dd><p>Which age bins each fishery fleet's conditional
+age-at-length data are fitted over, in the same format as
+<code>FishAgeComps_bins</code>. Applied to every length bin's row of ages alike.</p></dd>
+
+
+<dt id="arg-fishagecomps-pop-bins">FishAgeComps_pop_bins<a class="anchor" aria-label="anchor" href="#arg-fishagecomps-pop-bins"></a></dt>
+<dd><p>Which age bins each fishery fleet's
+population-specific age composition is fitted over, in the same format as
+<code>FishAgeComps_bins</code>.</p></dd>
+
+
+<dt id="arg-fishlencomps-pop-bins">FishLenComps_pop_bins<a class="anchor" aria-label="anchor" href="#arg-fishlencomps-pop-bins"></a></dt>
+<dd><p>Which length bins each fishery fleet's
+population-specific length composition is fitted over, in the same format
+as <code>FishAgeComps_bins</code>.</p></dd>
 
 
 <dt id="arg-fishidx-liketype">FishIdx_LikeType<a class="anchor" aria-label="anchor" href="#arg-fishidx-liketype"></a></dt>

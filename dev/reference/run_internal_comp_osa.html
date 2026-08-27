@@ -126,7 +126,9 @@ to build <code>model</code>.</p></dd>
 
 
 <dt id="arg-bins">bins<a class="anchor" aria-label="anchor" href="#arg-bins"></a></dt>
-<dd><p>Vector of age or length bin labels for display.</p></dd>
+<dd><p>Vector of age or length bin labels for display. Must span every observed bin of the stream, not just
+the ones a <code>*_bins</code> restriction fits: residuals are labelled by true
+observed bin number, so a subset here shifts every label.</p></dd>
 
 
 <dt id="arg-bin-label">bin_label<a class="anchor" aria-label="anchor" href="#arg-bin-label"></a></dt>

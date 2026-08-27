@@ -81,7 +81,8 @@ those are the only ones the CAAL likelihood supports.</p>
 <span>  <span class="va">n_fleets</span>,</span>
 <span>  <span class="va">n_sexes</span>,</span>
 <span>  <span class="va">addtocomp</span>,</span>
-<span>  return_labels <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  return_labels <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  BinsArr <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -144,6 +145,12 @@ len \times sex \times fleet]\).</p></dd>
 <dd><p>Logical; if <code>TRUE</code>, also builds a per-element label
 data.frame identifying the origin of every entry, in the same order, for
 post-hoc relabeling of <code><a href="https://rdrr.io/pkg/TMB/man/oneStepPredict.html" class="external-link">TMB::oneStepPredict()</a></code> residuals.</p></dd>
+
+
+<dt id="arg-binsarr">BinsArr<a class="anchor" aria-label="anchor" href="#arg-binsarr"></a></dt>
+<dd><p>Optional <code>[n_obs_bins x n_fleets]</code> 0/1 array naming the
+observed age bins each fleet is fitted over, or <code>NULL</code> (default) for
+all bins. Restricted fleets pack a shorter block at every length bin.</p></dd>
 
 </dl></div>
     <div class="section level2">

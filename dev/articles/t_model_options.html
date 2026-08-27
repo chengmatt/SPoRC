@@ -3061,16 +3061,6 @@ the penalty.</p>
 <td>Maturity-at-age (proportions in [0, 1])</td>
 </tr>
 <tr class="odd">
-<td><code>AgeingError</code></td>
-<td>
-<code>[a_\text{model} × a_\text{obs}]</code> or
-<code>[y × a_\text{model} × a_\text{obs}]</code>
-</td>
-<td>Row-stochastic matrix mapping true ages to observed bins. Defaults
-to identity. Supply explicitly when observed ages are a subset of
-modelled ages</td>
-</tr>
-<tr class="even">
 <td><code>SizeAgeTrans</code></td>
 <td><code>[p × r × y × τ × l × a × s]</code></td>
 <td>Size-age transition matrix, shared by every fleet unless
@@ -3078,7 +3068,7 @@ modelled ages</td>
 it. Required when <code>fit_lengths = 1</code>
 </td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>
 <code>SizeAgeTrans_fish</code>, <code>SizeAgeTrans_srv</code>
 </td>
@@ -3097,12 +3087,12 @@ sources for the same quantity. The fixed-data counterpart of
 <code>SizeAgeTrans_fish_input</code>/<code>SizeAgeTrans_srv_input</code>
 on the operating-model side</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>fit_lengths</code></td>
 <td>0/1</td>
 <td>Toggle for fitting length compositions</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>do_caal</code></td>
 <td>0/1</td>
 <td>Toggle for reporting the joint arrays at length and age
@@ -3116,7 +3106,7 @@ length and an age dimension at once, so they are the largest objects the
 model builds and every cell lands on the AD tape; leave off unless they
 are wanted</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>growth_model</code></td>
 <td>
 <code>"none"</code> / <code>"vb_schnute"</code> /
@@ -3138,7 +3128,7 @@ Bertalanffy form at <code>rho = 1</code>. Requires
 <code>fit_lengths = 1</code>
 </td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>
 <code>ln_growth_pars</code> (via <code>...</code>)</td>
 <td><code>[p × r × s × n]</code></td>
@@ -3148,7 +3138,7 @@ through <code>starting_values</code> as every other parameter’s are.
 Defaults to the ends of the length bins with <code>K = 0.15</code> and
 CVs of <code>0.1</code>, so supply your own for any real model</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>growth_spec</code></td>
 <td>
 <code>"est_all"</code> / <code>"est_shared_r"</code> /
@@ -3159,7 +3149,7 @@ CVs of <code>0.1</code>, so supply your own for any real model</td>
 <code>growth_fix</code> holds individual parameters at their starting
 values</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>
 <code>growth_A1</code>, <code>growth_A2</code>
 </td>
@@ -3168,13 +3158,13 @@ values</td>
 <code>growth_A2 = "Linf"</code> makes <code>L2</code> the asymptote
 itself, with no second reference age to solve it from</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>growth_len_lower</code></td>
 <td><code>[l]</code></td>
 <td>Lower edges of the length bins; <code>lens</code> in
 <code>Setup_Mod_Dim</code> are midpoints</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>
 <code>growth_cv_type</code>, <code>growth_sd_type</code>,
 <code>growth_dist</code>
@@ -3188,7 +3178,7 @@ reference ages; whether <code>CV1</code>, <code>CV2</code> scale the
 mean or are standard deviations; the distribution of length at age
 behind the key</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>growth_plus_group</code></td>
 <td>
 <code>"mixture"</code> / <code>"curve"</code>
@@ -3200,7 +3190,7 @@ declining at an assumed 0.2 per year and length rising from the curve at
 the accumulator age to the asymptote; <code>"curve"</code> reads the
 curve at the accumulator age</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>growth_tv_model</code></td>
 <td>
 <code>NULL</code> or per parameter</td>
@@ -3214,7 +3204,7 @@ stream of <code>growth_pe_pars</code>; its realized value by year is
 reported as <code>growth_pars_y</code>
 </td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>growth_tv_years</code></td>
 <td>
 <code>NULL</code>, a vector, or a list</td>
@@ -3223,7 +3213,7 @@ reported as <code>growth_pars_y</code>
 list names them per parameter. Deviations outside the range are held at
 zero</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>growth_tv_link</code></td>
 <td>
 <code>"log"</code> / <code>"logit"</code>
@@ -3233,13 +3223,13 @@ parameter by <code>exp(dev)</code>; <code>"logit"</code> keeps it
 strictly inside <code>growth_par_bounds</code> however large the
 deviation, which every growth parameter is</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>growth_par_bounds</code></td>
 <td><code>[n × 2]</code></td>
 <td>Lower and upper bounds per growth parameter, natural scale; required
 under the logit link</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>growth_tv_sigma_spec</code></td>
 <td>
 <code>"fix"</code> / <code>"est"</code>
@@ -3251,7 +3241,7 @@ through <code>starting_values</code> and defaulting to
 <code>log(0.1)</code>. <code>growth_rw_init_sigma</code> gives the first
 year of a random walk its own standard deviation</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>growth_tv_spec</code></td>
 <td>
 <code>"est_all"</code> / <code>"est_shared_r"</code> /
@@ -3259,7 +3249,7 @@ year of a random walk its own standard deviation</td>
 </td>
 <td>How the deviation series are shared across regions and sexes</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>growth_tv_type</code></td>
 <td>
 <code>"curve"</code> / <code>"cohort"</code>
@@ -3277,7 +3267,7 @@ then held at the first year’s. Because the plus group reads abundance,
 growth under this option is evaluated inside the population dynamics
 year loop</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>growth_semipar</code></td>
 <td>
 <code>"none"</code> / <code>"iid"</code> / <code>"rw"</code> /
@@ -3296,7 +3286,7 @@ spread follows the deviated mean, so under
 along the CV ramp and under <code>"age"</code> the spread at age is
 untouched</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>growth_semipar_spec</code></td>
 <td>
 <code>"fix"</code> / <code>"est"</code>
@@ -3308,7 +3298,7 @@ the same slots the selectivity forms use, supplied through
 <code>0.05</code> with correlations of <code>0.3</code>
 </td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>
 <code>growth_semipar_ages</code>,
 <code>growth_semipar_years</code>
@@ -3319,7 +3309,7 @@ the same slots the selectivity forms use, supplied through
 the deviations are held at zero, which is how a surface is restricted to
 the ages the length data actually inform</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>LenBinMap</code></td>
 <td>
 <code>NULL</code> or <code>[l × l_\text{obs}]</code>
@@ -3330,7 +3320,40 @@ than the population carries. Expected compositions are mapped through it
 inside the likelihood exactly as the ageing error matrix maps ages, and
 the observed arrays are then dimensioned by the observed bins</td>
 </tr>
+<tr class="odd">
+<td><code>AgeingError</code></td>
+<td>
+<code>NULL</code>, <code>[a × a_\text{obs}]</code> or
+<code>[y × a × a_\text{obs}]</code>
+</td>
+<td>Maps the model’s ages onto the ages the compositions are recorded
+on: genuine misclassification (a true age 7 read as 6, 7 or 8), a
+collapse onto coarser observed bins, or both. Each row sums to one, or
+to zero to drop a model age from the observations. The age-axis twin of
+<code>LenBinMap</code>, applied in the same position inside the
+likelihood and validated by the same <code><a href="../reference/check_bin_map.html">check_bin_map()</a></code>
+</td>
+</tr>
 <tr class="even">
+<td>
+<code>AgeingError_fish</code>, <code>AgeingError_srv</code>
+</td>
+<td>
+<code>NULL</code>, <code>[a × a_\text{obs} × n_f]</code> or
+<code>[y × a × a_\text{obs} × n_f]</code>
+</td>
+<td>Per-fleet ageing error, for when a fishery reading otoliths and a
+survey reading scales do not misclassify the same way. <code>NULL</code>
+(default) gives every fleet the shared <code>AgeingError</code>, which
+is what a model written before these existed does. Every fleet must land
+on the same observed age bins, since the observed composition arrays
+carry one age dimension shared across fleets. Wired through the
+operating model too, as <code>AgeingError_fish_input</code> /
+<code>AgeingError_srv_input</code> in
+<code>Setup_Sim_Biologicals</code>
+</td>
+</tr>
+<tr class="odd">
 <td>
 <code>waa_model</code>, <code>wt_len_pars</code>
 </td>
@@ -3872,18 +3895,198 @@ age-based selectivity the two are the same</td>
 </table>
 </div>
 <div class="section level4">
-<h4 id="composition-bin-restriction-fishagecomps_bins-srvagecomps_bins">Composition bin restriction (<code>FishAgeComps_bins</code> /
-<code>SrvAgeComps_bins</code>)<a class="anchor" aria-label="anchor" href="#composition-bin-restriction-fishagecomps_bins-srvagecomps_bins"></a>
+<h4 id="composition-bin-restriction-_bins">Composition bin restriction (<code>*_bins</code>)<a class="anchor" aria-label="anchor" href="#composition-bin-restriction-_bins"></a>
 </h4>
-<p>Same list-or-array format as <code>*_idx_ages</code>, but restricting
-which <em>observed</em> bins (i.e., after ageing error) a fleet’s age
-compositions are fit over. Observed and expected compositions are both
-subset and renormalized within the named bins; bins outside are simply
-left out of the likelihood rather than forced to be explained. Use for
-gears that never resolve part of the age range (e.g., a fishery that
-never catches the youngest ages, whose structural zeros would otherwise
-carry information); leave alone when the zeros are informative sampling
-zeros.</p>
+<p>Which <em>observed</em> bins a fleet’s compositions are fitted over.
+Observed and expected compositions are both subset to the named bins and
+renormalized within them, so bins outside are left out of the likelihood
+rather than forced to be explained. Use for gears that never resolve
+part of the range (a fishery that never catches the youngest ages, whose
+structural zeros would otherwise carry information); leave alone when
+the zeros are informative sampling zeros.</p>
+<p>Every composition stream takes one, and they all share the same
+format: a list with one element per fleet, each a vector of bin indices
+or <code>NULL</code> for all bins, or an
+<code>[n_obs_bins x n_fleets]</code> array of 0/1 weights. Indices are
+into <em>observed</em> bins, that is after any <code>AgeingError</code>
+or <code>LenBinMap</code>. Default <code>NULL</code> fits every bin.</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th>Stream</th>
+<th>Fishery</th>
+<th>Survey</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Marginal age comps</td>
+<td><code>FishAgeComps_bins</code></td>
+<td><code>SrvAgeComps_bins</code></td>
+</tr>
+<tr class="even">
+<td>Marginal length comps</td>
+<td><code>FishLenComps_bins</code></td>
+<td><code>SrvLenComps_bins</code></td>
+</tr>
+<tr class="odd">
+<td>Conditional age-at-length</td>
+<td><code>Fish_caal_bins</code></td>
+<td><code>Srv_caal_bins</code></td>
+</tr>
+<tr class="even">
+<td>Population-specific age comps</td>
+<td><code>FishAgeComps_pop_bins</code></td>
+<td><code>SrvAgeComps_pop_bins</code></td>
+</tr>
+<tr class="odd">
+<td>Population-specific length comps</td>
+<td><code>FishLenComps_pop_bins</code></td>
+<td><code>SrvLenComps_pop_bins</code></td>
+</tr>
+<tr class="even">
+<td>Discard age comps</td>
+<td><code>FishAgeComps_discard_bins</code></td>
+<td>–</td>
+</tr>
+<tr class="odd">
+<td>Discard length comps</td>
+<td><code>FishLenComps_discard_bins</code></td>
+<td>–</td>
+</tr>
+<tr class="even">
+<td>Population-specific discard age comps</td>
+<td><code>FishAgeComps_discard_pop_bins</code></td>
+<td>–</td>
+</tr>
+<tr class="odd">
+<td>Population-specific discard length comps</td>
+<td><code>FishLenComps_discard_pop_bins</code></td>
+<td>–</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># the acoustic survey resolves ages 2-15 only; every other fleet fits all ages</span></span>
+<span><span class="va">SrvAgeComps_bins</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="cn">NULL</span>, <span class="fl">2</span><span class="op">:</span><span class="fl">15</span>, <span class="cn">NULL</span>, <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+<p>Every fleet must keep at least two bins. A composition fitted over
+one bin says nothing, since the proportion in a lone bin is one whatever
+the model predicts, and the one-step-ahead machinery degenerates around
+it: the logistic-normal families spend a bin as the additive log-ratio
+reference and have none left, and the discrete families mark their only
+bin as the multinomial’s determined cell, leaving <code><a href="../reference/get_osa.html">get_osa()</a></code>
+nothing to keep. Setup refuses it and names the fleet.</p>
+<p>The restriction applies whatever the composition type. For sex-joint
+comps (<code>spltRjntS</code>) the named bins are dropped from each
+sex’s block of the <code>[bin x sex]</code> stack, so the sex ratio the
+joint comps carry becomes the ratio <em>within</em> the fitted bins,
+which is usually what you want when the excluded bins are unsampled
+rather than genuinely absent. Logistic-normal covariances are built
+across all observed bins and then cut down to the fitted ones, so a gap
+in the named bins still counts towards the AR1 lag between the bins
+either side of it. One-step-ahead residuals are packed and evaluated
+over the same restricted bins, so <code><a href="../reference/get_osa.html">get_osa()</a></code> and the
+likelihood always agree on what was fitted.</p>
+</div>
+<div class="section level4">
+<h4 id="restricting-bins-versus-remapping-them">Restricting bins versus remapping them<a class="anchor" aria-label="anchor" href="#restricting-bins-versus-remapping-them"></a>
+</h4>
+<p><code>*_bins</code> and the bin maps (<code>AgeingError</code>,
+<code>LenBinMap</code>) are easy to confuse and do different things.</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th></th>
+<th>What it does</th>
+<th>When you need it</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>
+<code>AgeingError</code> / <code>LenBinMap</code>
+</td>
+<td>
+<strong>Remaps</strong>. An <code>[n_model_bins x n_obs_bins]</code>
+matrix the expected composition is multiplied through, so it lands on
+the bins the data were recorded on. Mass is redistributed and, wherever
+a row sums to one, preserved</td>
+<td>The data are on different bins from the model: 1 cm model bins fit
+to 5 cm length compositions, or true ages smeared across observed ages
+by reading error</td>
+</tr>
+<tr class="even">
+<td><code>*_bins</code></td>
+<td>
+<strong>Drops</strong>. Names a subset of the observed bins; the
+rest are excluded from the likelihood and the remainder renormalized.
+Bin definitions do not change, mass in the dropped bins is
+discarded</td>
+<td>The data are on the model’s bins but part of the range is not
+informative: a gear that never ages its youngest fish, or length bins
+nothing is ever sampled from</td>
+</tr>
+</tbody>
+</table>
+<p>They compose, in that order: remap model bins onto observed bins,
+then restrict to the observed bins being fitted. Neither substitutes for
+the other. No subset of fifty 1 cm bins is ever ten 5 cm bins, so a
+restriction cannot do a map’s job; and a map that zeroed a bin out would
+leave an observed bin with a structural-zero expectation the composition
+likelihood cannot fit, so a map cannot do a restriction’s job.
+<code><a href="../reference/check_bin_map.html">check_bin_map()</a></code> enforces both halves of that: map rows must
+sum to one (or to zero, to drop a model bin from the observations
+entirely), and no observed bin may be left with nothing mapped into
+it.</p>
+<p>Worked on six model bins carrying expected proportions
+<code>0.05, 0.10, 0.25, 0.30, 0.20, 0.10</code>:</p>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+</colgroup>
+<thead><tr class="header">
+<th></th>
+<th>Result</th>
+<th>Bins</th>
+<th>What happened to the first two bins’ mass</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>
+<code>LenBinMap</code> collapsing pairs</td>
+<td><code>0.15, 0.55, 0.30</code></td>
+<td>6 → 3</td>
+<td>Summed into the first observed bin. Still there</td>
+</tr>
+<tr class="even">
+<td><code>*_bins = 3:6</code></td>
+<td><code>0.29, 0.35, 0.24, 0.12</code></td>
+<td>6 → 4</td>
+<td>Discarded. The remaining four renormalize to one</td>
+</tr>
+</tbody>
+</table>
+<p>Both shrink the vector, which is why they get confused, but only the
+map carries the first two bins’ fish somewhere rather than throwing them
+away. If bins 1 and 2 are 10 cm fish your survey does catch but records
+in a coarser bin, you want the first row. If they are 10 cm fish your
+survey never sees, so their observed proportion is a sampling artefact
+rather than a measurement, you want the second. Choosing the map when
+you meant the restriction quietly asks the model to explain a bin that
+carries no information; choosing the restriction when you meant the map
+throws away fish that were really there.</p>
+<p>A restriction leaves a visible trace at setup, so you can confirm it
+took:</p>
+<pre><code>SrvAgeComps_bins for fleet 2 is fitted over observed bins: 2, 3, 4, ..., 15</code></pre>
 </div>
 <div class="section level4">
 <h4 id="composition-likelihood-families">Composition likelihood families<a class="anchor" aria-label="anchor" href="#composition-likelihood-families"></a>

@@ -25,7 +25,8 @@ pack_caal_osa(
   n_fleets,
   n_sexes,
   addtocomp,
-  return_labels = FALSE
+  return_labels = FALSE,
+  BinsArr = NULL
 )
 ```
 
@@ -89,6 +90,12 @@ pack_caal_osa(
   relabeling of
   [`TMB::oneStepPredict()`](https://rdrr.io/pkg/TMB/man/oneStepPredict.html)
   residuals.
+
+- BinsArr:
+
+  Optional `[n_obs_bins x n_fleets]` 0/1 array naming the observed age
+  bins each fleet is fitted over, or `NULL` (default) for all bins.
+  Restricted fleets pack a shorter block at every length bin.
 
 ## Value
 

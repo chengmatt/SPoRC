@@ -116,7 +116,10 @@ Get_CAAL_Likelihoods(
 - comp_bins:
 
   Integer vector of age bins the composition is fitted over, or `NULL`
-  (default) for all of them.
+  (default) for all of them. Applied to every length bin's row of ages
+  alike, so a fleet that only ages part of its age range is fitted over
+  that range at each length. Indices refer to observed age bins, that is
+  after ageing error has mapped model ages onto observed ones.
 
 - comp_const_obs:
 

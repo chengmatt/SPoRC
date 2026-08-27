@@ -18,10 +18,10 @@ processes occur in the following order:
     spatial model) and total mortality both act within the season; at
     the end of the final season, individuals advance in age.
 
-How movement and mortality are sequenced *within* step 2 is a user
-choice, set by `move_timing`: movement then mortality (`0`, the default
-and the historical `SPoRC` behaviour), mortality then movement (`1`), or
-the two acting simultaneously and continuously (`2`). This choice is not
+How movement and mortality are sequenced within step 2 is a user choice,
+set by `move_timing`: movement then mortality (`0`, the default and the
+historical `SPoRC` behaviour), mortality then movement (`1`), or the two
+acting simultaneously and continuously (`2`). This choice is not
 confined to the projection equations. It propagates to every quantity
 whose value depends on where fish are partway through a season, spawning
 biomass, catch-at-age, fishery and survey indices, tag recaptures,
@@ -79,8 +79,8 @@ estimated is set separately by `init_F_spec` (`"fix"` or `"est"`), so
 all four combinations are available.
 
 The distinction matters whenever the initial condition is fished. Catch
-constrains only the *product* of numbers-at-age and fishing mortality,
-so under `"prop"` a single parameter both depletes the initial age
+constrains only the product of numbers-at-age and fishing mortality, so
+under `"prop"` a single parameter both depletes the initial age
 structure and scales the F series: the optimizer can fit the observed
 catch equally well with a smaller, harder-fished stock. Use `"abs"` when
 the historical fishing mortality that shaped the initial condition is
@@ -234,7 +234,7 @@ because users can determine whether initial age deviations are estimated
 up to the penultimate age class, or across all classes including the
 plus group.
 
-Finally, the initial age structure can be specified as fully *free*
+Finally, the initial age structure can be specified as fully free
 (`init_age_strc = "free"`), in which case no equilibrium is projected at
 all. The deviations are then the initial numbers themselves rather than
 multipliers on an equilibrium:
@@ -339,7 +339,7 @@ log-slope is derived from steepness as:
 
 so the curve passes through $`(\text{SSB0}, R_0)`$ by construction and
 carries the same compensation ratio as a Beverton-Holt at the same
-$`h`$. This is *not* the textbook steepness definition
+$`h`$. This is not the textbook steepness definition
 $`R(0.2\,\text{SSB0}) = h R_0`$: the Ricker here yields
 $`R(0.2\,\text{SSB0})/R_0 = 0.2\left(4h/(1-h)\right)^{0.8}`$, which
 exceeds $`h`$ and is not bounded above by 1. Steepness values are
@@ -556,7 +556,7 @@ $`\left( \mathbf{N}_{p,y,\tau,a,s} \right)^{T}\mathbf{M}_{p,y,\tau,a,s}`$.
 In a single-region case, no movement is applied (i.e.,
 $`\mathbf{M}_{p,y,\tau,a,s}`$ is an implied identity matrix). For each
 population, year, season, age, and sex combination, the movement matrix
-specifies bulk-transfer coefficients. *Where* within the season that
+specifies bulk-transfer coefficients. Where within the season that
 transfer happens, before mortality, after it, or continuously alongside
 it, is set by `move_timing`, and is what the rest of this section makes
 explicit.
@@ -653,7 +653,7 @@ three cases.
 ##### Where in the Season Each Quantity Is Evaluated
 
 Because $`\mathbf{\Phi}`$ resolves movement at a different point in the
-season under each option, every quantity that is observed *partway*
+season under each option, every quantity that is observed partway
 through a season has to be evaluated consistently. The table below
 summarises where each one is taken; the equations follow in the sections
 indicated.
@@ -667,10 +667,10 @@ indicated.
 | Tag recaptures | Baranov on the tag cohort | Baranov on the tag cohort | Season-integrated tag abundance |
 
 Under continuous movement, note that the survey index is treated
-differently from catch and the fishery index. A survey is a *snapshot*
-at an instant within the season, so it uses the partial propagation
+differently from catch and the fishery index. A survey is a snapshot at
+an instant within the season, so it uses the partial propagation
 $`\exp(\mathbf{\Lambda}\,t^{srv})`$, whereas catch and the fishery index
-*accumulate* over the whole season, so they use the integral of that
+accumulate over the whole season, so they use the integral of that
 propagation. Under the sequential timings the distinction does not
 arise, because movement has already been resolved and the fish are
 stationary for the rest of the season.
@@ -910,12 +910,12 @@ $`\exp\left( \dot{\mathbf{Q}}^{T}\Delta\tau - \text{diag}(\mathbf{Z}) \right)`$,
 which does not factor into a movement matrix times a survival matrix
 unless $`\mathbf{Z}`$ is constant across regions. $`\mathbf{M}`$ is
 still computed and reported, but as a diagnostic, the movement fractions
-that *would* apply in the absence of spatially varying mortality, rather
+that would apply in the absence of spatially varying mortality, rather
 than as a term in the dynamics. `ctmc_scale_by_seasdur` is forced to `1`
 in this case, since combining an unscaled generator with seasdur-scaled
 mortality inside a single exponential is dimensionally inconsistent.
 
-Continuous movement also requires an *estimated* generator: it is
+Continuous movement also requires an estimated generator: it is
 available only for $`\text{move\_type} = 1`$ with
 $`\text{use\_fixed\_movement} = 0`$. Unstructured multinomial-logit
 movement supplies transition fractions with no guaranteed real generator
@@ -989,9 +989,9 @@ on, and whether the two parameters are read as coefficients of variation
 or as standard deviations, are separate choices (`growth_cv_type` and
 `growth_sd_type`).
 
-**The interpolation.** The branches are on real age $`x`$: below
-$`A_{1}`$ the value is held at $`CV_{1}`$, from $`A_{2}`$ on it is held
-at $`CV_{2}`$, and between them it is interpolated. Under
+The interpolation. The branches are on real age $`x`$: below $`A_{1}`$
+the value is held at $`CV_{1}`$, from $`A_{2}`$ on it is held at
+$`CV_{2}`$, and between them it is interpolated. Under
 `growth_cv_type = "len"` (the default) the interpolant is mean length,
 so a fish whose mean length sits halfway from $`L_{1}`$ to $`L_{2}`$
 takes a value halfway from $`CV_{1}`$ to $`CV_{2}`$; under `"age"` it is
@@ -1008,17 +1008,17 @@ CV_{2} & x \geq A_{2}^{cv}
 
 where $`A_{2}^{cv} = A_{2}`$, or the oldest age being evaluated when
 `growth_A2 = "Linf"` and $`L_{2}`$ is read as the asymptote. Note that
-the two choices are independent: under `"len"` the *branch* is still
-taken on age, and only the value inside the middle branch is a function
-of $`\bar{L}(x)`$. Because $`\bar{L}`$ is itself increasing in $`x`$,
-the two give similar shapes; they differ where growth is fast, since
+the two choices are independent: under `"len"` the branch is still taken
+on age, and only the value inside the middle branch is a function of
+$`\bar{L}(x)`$. Because $`\bar{L}`$ is itself increasing in $`x`$, the
+two give similar shapes; they differ where growth is fast, since
 interpolating on length compresses the change into the young ages.
 
-**From $`c(x)`$ to the standard deviation.** Under
-`growth_sd_type = "cv"` (the default) $`c(x)`$ is a coefficient of
-variation and is multiplied by mean length, so the spread scales with
-size; under `"sd"` the two parameters are standard deviations already
-and $`c(x)`$*is* the standard deviation, interpolated by the same rule:
+From $`c(x)`$ to the standard deviation. Under `growth_sd_type = "cv"`
+(the default) $`c(x)`$ is a coefficient of variation and is multiplied
+by mean length, so the spread scales with size; under `"sd"` the two
+parameters are standard deviations already and $`c(x)`$ is the standard
+deviation, interpolated by the same rule:
 
 ``` math
 \sigma_{L}(x) = \begin{cases}
@@ -1069,7 +1069,7 @@ through the season the way every other age’s does.
 Growth can move over the series in two ways, which answer different
 questions and can be used together.
 
-**Varying the parameters.** Any growth parameter can carry a deviation
+Varying the parameters. Any growth parameter can carry a deviation
 series (`growth_tv_model` names one structure per parameter, `"iid"` or
 `"rw"`), so the parameter in year $`y`$ is
 
@@ -1084,10 +1084,10 @@ The log link suits a positive parameter. The logit link keeps a
 parameter strictly inside bounds $`\left( P^{lo}, P^{hi} \right)`$
 however large the deviation, which every growth parameter is. The
 deviations are penalized by the same process error used for selectivity
-(see *Growth Deviations* under the penalties), and the realized
-parameters are reported year by year as `growth_pars_y`.
+(see Growth Deviations under the penalties), and the realized parameters
+are reported year by year as `growth_pars_y`.
 
-**How the deviated parameters reach size at age** is a second choice
+How the deviated parameters reach size at age is a second choice
 (`growth_tv_type`). Under `"curve"` each year’s sizes are simply read
 off that year’s own curve: a fish of age $`a`$ in year $`y`$ has the
 length year $`y`$’s parameters give age $`a`$, with no memory of the
@@ -1112,17 +1112,17 @@ g_{y}\left( \bar{L}_{y,a-1} \right) & a^{\ast} < a < a_{+} \\[2ex]
 ```
 
 Three consequences follow. Ages still in the linear phase take the
-length at $`A_{1}`$ their *birth year’s* parameters gave them, so a
-cohort born in a poor year carries that start forward. The plus group is
-the only place growth depends on abundance: the cohort just entering it
-and the fish already there are blended by their numbers, which is why
-growth under this option is evaluated inside the population dynamics
-year loop rather than before it. And the coefficient of variation at age
-is held at the first year’s, $`c(x)`$ being evaluated once from the
-first year’s curve and parameters and then held while the mean moves, so
-the deviations change mean size without also changing the spread.
+length at $`A_{1}`$ their birth year’s parameters gave them, so a cohort
+born in a poor year carries that start forward. The plus group is the
+only place growth depends on abundance: the cohort just entering it and
+the fish already there are blended by their numbers, which is why growth
+under this option is evaluated inside the population dynamics year loop
+rather than before it. And the coefficient of variation at age is held
+at the first year’s, $`c(x)`$ being evaluated once from the first year’s
+curve and parameters and then held while the mean moves, so the
+deviations change mean size without also changing the spread.
 
-**Semi-parametric growth.** The second way is a surface of deviations on
+Semi-parametric growth. The second way is a surface of deviations on
 mean length at age itself, indexed by year and age (`growth_semipar`),
 
 ``` math
@@ -1181,7 +1181,7 @@ log scale, about a median-corrected mean so that $`E[L] = \bar{L}(a)`$:
 z_{l,a} = \dfrac{\log \ell_{l} - \left( \log \bar{L}(a) - \sigma_{L}^{2}(a)/2 \right)}{\sigma_{L}(a)}
 ```
 
-Here $`\sigma_{L}(a)`$ is a standard deviation *on the log scale*, so
+Here $`\sigma_{L}(a)`$ is a standard deviation on the log scale, so
 `growth_sd_type = "sd"` is the pairing that keeps it dimensionally
 consistent; combining `"lognormal"` with `"cv"` feeds a length-scale
 spread into a log-scale transform.
@@ -1468,11 +1468,10 @@ propagation.
 Survey timing may differ by region, which a single propagation operator
 cannot represent: fish observed in region $`r`$ arrived from regions
 whose elapsed times differ. The convention adopted is that the survey in
-region $`r`$ observes the population propagated to *that region’s*
-survey time, which is what the subscript $`r`$ outside the bracket
-denotes. When $`t^{srv}_{r,\tau,sf}`$ is constant across regions, the
-usual case, this collapses to a single propagation and one matrix
-exponential.
+region $`r`$ observes the population propagated to that region’s survey
+time, which is what the subscript $`r`$ outside the bracket denotes.
+When $`t^{srv}_{r,\tau,sf}`$ is constant across regions, the usual case,
+this collapses to a single propagation and one matrix exponential.
 
 Expected survey catch-at-length ($`I_{p,r,y,\tau,l,s,sf}^{l}`$) is given
 by:
@@ -1675,11 +1674,11 @@ $`1`$ in every subsequent season:
 \omega^{k}_{\tau} = \begin{cases} t^{\text{tag}}_{k} & \text{release season of the release year} \\ 1 & \text{otherwise} \end{cases}
 ```
 
-Note that $`\omega^{k}_{\tau}`$ multiplies **every** mortality
-component, fishing included, rather than only the total. This matters
-for the recapture equation below: $`F/Z^{\text{Tag}}`$ is the fraction
-of deaths owing to fishing and must lie in $`[0,1]`$. Scaling
-$`Z^{\text{Tag}}`$ while leaving $`F`$ at full-season scale would give
+Note that $`\omega^{k}_{\tau}`$ multiplies every mortality component,
+fishing included, rather than only the total. This matters for the
+recapture equation below: $`F/Z^{\text{Tag}}`$ is the fraction of deaths
+owing to fishing and must lie in $`[0,1]`$. Scaling $`Z^{\text{Tag}}`$
+while leaving $`F`$ at full-season scale would give
 $`F/(Z^{\text{Tag}} t^{\text{tag}})`$, which exceeds $`1`$ whenever
 $`t^{\text{tag}} < F/Z^{\text{Tag}}`$ and would predict more recaptures
 than there are dead tags. Scaling both leaves the ratio at
@@ -2199,11 +2198,11 @@ selectivity deviations arise can be found in the “Selectivity Process
 Error” section of this document.
 
 Finally, individual bins can be overridden with their own freely
-estimated annual deviations (`*_sel_bin_dev_bins`), independent of the
-fleet’s functional form. For each named bin $`b^{*}`$:
+estimated annual deviations (`_sel_bin_dev_bins`), independent of the
+fleet’s functional form. For each named bin $`b^{}`$:
 
 ``` math
-\text{Sel}_{r,y,b^{*},s,j} = \exp\left( \epsilon_{r,y,b^{*},s,j}^{\text{BinDev}} \right)
+\text{Sel}_{r,y,b^{},s,j} = \exp\left( \epsilon_{r,y,b^{},s,j}^{\text{BinDev}} \right)
 ```
 
 replacing whatever the functional form (and any standardization or
@@ -2215,7 +2214,7 @@ youngest bin is governed by availability rather than by the gear (e.g.,
 age-1 availability to a bottom trawl varying with year-class strength):
 that bin becomes freely time-varying without abandoning the parametric
 form elsewhere. The override deviations can carry their own iid or
-random walk process error (`cont_tv_*sel_bin_devs`), described in the
+random walk process error (`cont_tv_sel_bin_devs`), described in the
 Selectivity Process Error section.
 
 ## Likelihoods
@@ -2729,22 +2728,50 @@ identically to retained fishery, discarded fishery, and survey
 composition likelihoods, as well as to both region-aggregated and
 population-specific variants.
 
-Additionally, each fleet’s age compositions can be restricted to a
-subset of observed bins (`FishAgeComps_bins` / `SrvAgeComps_bins`). Both
-the observed and expected compositions are subset to the named bins and
-renormalized within them:
+Ageing error is fleet specific, $`\mathbf{\Theta}_{y,f}`$, supplied
+through `AgeingError_fish` and `AgeingError_srv` to accomodate different
+reading mehtods. Every fleet’s matrix maps onto the same set of observed
+age bins, because the observed composition arrays carry one age
+dimension shared across fleets. The length analogue $`\mathbf{\Lambda}`$
+(`LenBinMap`) is applied in exactly the same position for length
+compositions, and is shared across fleets.
+
+Additionally, every composition stream can be restricted to a subset of
+observed bins (the `_bins` arguments). Both the observed and expected
+compositions are subset to the named bins and renormalized within them:
 
 ``` math
 E_{b}^{\text{fit}} = \frac{E_{b}}{\sum_{b' \in \mathcal{B}}E_{b'}},\qquad O_{b}^{\text{fit}} = \frac{O_{b}}{\sum_{b' \in \mathcal{B}}O_{b'}},\qquad b \in \mathcal{B}
 ```
 
 where $`\mathcal{B}`$ is the fitted bin set, indexed on observed bins
-(i.e., after ageing error has mapped model ages onto observed ages).
-Bins outside $`\mathcal{B}`$ are left out of the likelihood entirely
-rather than being forced to be explained, which is appropriate for a
-gear that only resolves part of the age range (e.g., a fishery that
-never encounters the youngest ages, whose zeros would otherwise carry
-information).
+(i.e., after $`\mathbf{\Theta}_{y,f}`$ or $`\mathbf{\Lambda}`$ has
+mapped model bins onto observed ones). Bins outside $`\mathcal{B}`$ are
+left out of the likelihood entirely rather than being forced to be
+explained, which is appropriate for a gear that only resolves part of
+the range (e.g., a fishery that never encounters the youngest ages,
+whose zeros would otherwise carry information).
+
+The restriction and the mapping are distinct operations applied in that
+order. $`\mathbf{\Theta}_{y,f}`$ and $`\mathbf{\Lambda}`$ redistribute
+mass from model bins onto observed bins, conserving it wherever a row
+sums to one, which is every row of an ageing error matrix or a length
+bin collapse. Restricting to $`\mathcal{B}`$ discards the mass outside
+$`\mathcal{B}`$ and renormalizes what remains. A row that sums to zero
+is the one case where a mapping also discards, which is what the shifted
+identity $`\mathbf{I}[, 2{:}n_{A}]`$ does to drop a model age the
+observations never resolve. Neither substitutes for the other: no subset
+of the model’s bins reproduces a many-to-one collapse, and a mapping
+that zeroed an observed bin would leave it with a structural-zero
+expectation the composition likelihood cannot fit.
+
+For ‘Joint’ compositions the restriction is taken on each sex’s block of
+the $`\left\lbrack b \times s \right\rbrack`$ stack, so the implicit sex
+ratio those compositions carry becomes the ratio within $`\mathcal{B}`$.
+Where the logistic-normal families supply a correlation over bins, the
+covariance is formed across all observed bins and then subset to
+$`\mathcal{B}`$, so a gap in $`\mathcal{B}`$ still contributes to the
+lag between the bins either side of it.
 
 ##### Conditional Age-at-Length
 
@@ -2951,9 +2978,9 @@ functional form specified, $`{\sigma^{2}}_{r,p,y,s,j}^{\text{(Sel)}}`$
 is the prior variance, and $`\mu_{r,p,y,s,j}^{\text{(Sel)}}`$ is the
 prior mean for the specific selectivity parameter.
 
-In addition to lognormal priors on individual parameters, a *centering
-penalty* can be applied jointly to a named set of selectivity
-fixed-effect parameters (`Use_*_selex_penalty` with a `*_selex_penalty`
+In addition to lognormal priors on individual parameters, a centering
+penalty can be applied jointly to a named set of selectivity
+fixed-effect parameters (`Use__selex_penalty` with a `_selex_penalty`
 table). For a set $`\mathcal{P}`$ of parameters held on the log scale,
 the penalty is:
 
@@ -3062,11 +3089,11 @@ stray rate is numerically stabilized by squishing the logistic transform
 away from the boundaries:
 
 ``` math
-\tilde{\phi}_{p,b} = \epsilon + (1 - 2\epsilon) \cdot \text{logistic}\left(\phi_{p,b}^{*}\right)
+\tilde{\phi}_{p,b} = \epsilon + (1 - 2\epsilon) \cdot \text{logistic}\left(\phi_{p,b}^{}\right)
 ```
 
-where $`\phi_{p,b}^{*}`$ is the logit-scale parameter and $`\epsilon`$
-is a small constant (e.g. $`10^{-4}`$) ensuring
+where $`\phi_{p,b}^{}`$ is the logit-scale parameter and $`\epsilon`$ is
+a small constant (e.g. $`10^{-4}`$) ensuring
 $`\tilde{\phi}_{p,b} \in (\epsilon, 1-\epsilon)`$. The prior is then:
 
 ``` math
@@ -3108,7 +3135,7 @@ For unstructured movement (`move_type = 0`) the $`\mathbf{M}`$ above are
 the estimated transition fractions themselves, and the prior applies to
 them directly. For CTMC movement (`move_type = 1`) the model estimates a
 generator $`\dot{\mathbf{Q}}`$ rather than fractions, and the prior is
-evaluated on the **annual** fractions obtained from it,
+evaluated on the annual fractions obtained from it,
 
 ``` math
 \mathbf{m}_{p,r,\cdot,y,\tau,a,s} = \left\lbrack \exp\left( \dot{\mathbf{Q}}_{p,y,\tau,a,s} \right) \right\rbrack_{r,\cdot}
@@ -3123,7 +3150,7 @@ $`n_{\tau}`$ grows. On a three-region example the same $`c = 3`$ prior
 costs 1.04 nLL units at $`n_{\tau} = 1`$ but 9.91 at $`n_{\tau} = 12`$;
 evaluated annually it is 1.04 in both cases. Fixing the exponent at one
 year also matches how such priors are elicited, as a belief about the
-fraction of fish moving per *year*, independent of how the year is
+fraction of fish moving per year, independent of how the year is
 partitioned. Under the legacy `ctmc_scale_by_seasdur = 0` the two
 coincide.
 
@@ -3149,15 +3176,14 @@ where $`\kappa`$ behaves as the number of prior pseudo-observations, so
 it is the natural handle on prior strength. Two cases are worth
 separating:
 
-- $`\mathbf{c} = \mathbf{1}`$ gives a **uniform density over the
-  simplex**: every movement vector is equally likely, the contribution
-  to the objective is constant, and the gradient is exactly zero. This
-  is the uninformative choice.
+- $`\mathbf{c} = \mathbf{1}`$ gives a uniform density over the simplex:
+  every movement vector is equally likely, the contribution to the
+  objective is constant, and the gradient is exactly zero. This is the
+  uninformative choice.
 - $`\mathbf{c} = c\mathbf{1}`$ with $`c > 1`$ is symmetric with its mode
-  at $`1/n_{r}`$ in every region, a prior centred on *equal movement
-  among all regions*, which is informative and, for a
-  residency-dominated stock, a strong assumption rather than a vague
-  one.
+  at $`1/n_{r}`$ in every region, a prior centred on equal movement
+  among all regions, which is informative and, for a residency-dominated
+  stock, a strong assumption rather than a vague one.
 
 To target a particular movement vector with a chosen strength, set
 $`c_{k} = 1 + \kappa\,\text{mode}_{k}`$.
@@ -3200,8 +3226,8 @@ P\left(\tilde{\beta}_{r,y,f}\right) = \frac{\Gamma\left(a_{r,f}^{(\beta)} + b_{r
 ```
 
 where
-$`\tilde{\beta}_{r,y,f} = \epsilon + (1 - 2\epsilon) \cdot \text{logistic}\left(\beta_{r,y,f}^{*}\right)`$
-is the numerically stabilized reporting rate with $`\beta_{r,y,f}^{*}`$
+$`\tilde{\beta}_{r,y,f} = \epsilon + (1 - 2\epsilon) \cdot \text{logistic}\left(\beta_{r,y,f}^{}\right)`$
+is the numerically stabilized reporting rate with $`\beta_{r,y,f}^{}`$
 the logit-scale parameter and $`\epsilon`$ a small constant
 (e.g. $`10^{-4}`$). Here $`\sigma_{r,y,f}^{(\beta)}`$ is the literal
 standard deviation of the Beta distribution and must satisfy
@@ -3301,7 +3327,7 @@ also cannot be combined with the bias ramp, whose $`-\sigma^2/2`$ offset
 is meaningless once the mean is estimated rather than asserted.
 
 Three further refinements act on which deviations are penalized and how
-strongly. First, only *estimated* deviations are penalized: cells mapped
+strongly. First, only estimated deviations are penalized: cells mapped
 off by hand (via `map$ln_RecDevs`) are excluded from the penalty as well
 as from estimation. Second, the recruitment weight
 $`\lambda^{\text{Rec}}`$ (`Wt_Rec`) may be a per-deviation array rather
@@ -3312,9 +3338,9 @@ recruitment stays effectively free elsewhere, and is distinct from
 `dont_est_recdev_last`, which removes the deviations themselves so
 recruitment reverts to the deterministic prediction.
 
-Third, an optional penalty on the *level* of the recruitment series
-itself (`Use_rec_level_pen`) can be applied, separately from the
-deviation penalty:
+Third, an optional penalty on the level of the recruitment series itself
+(`Use_rec_level_pen`) can be applied, separately from the deviation
+penalty:
 
 ``` math
 \ell\left( \log R_{p,r,y} \right) = \frac{1}{\sqrt{2\pi\sigma_{\text{RecLevel}}^{2}}\,}\exp\left( - \frac{\left( \log R_{p,r,y} - \mu^{\text{RecLevel}} \right)^{2}}{2\sigma_{\text{RecLevel}}^{2}} \right)
@@ -3521,7 +3547,7 @@ specified about a given parameter, assuming a normal distribution:
 ```
 
 where process error deviations for the first year are initialized with
-their own standard deviation $`\sigma_{0,j}`$ (`*sel_rw_init_sigma`),
+their own standard deviation $`\sigma_{0,j}`$ (`sel_rw_init_sigma`),
 which defaults to a large value ($`5`$) that leaves the first year
 effectively unconstrained. Setting it to `NA` instead starts the walk at
 zero under the walk’s own $`\sigma_{Sel}`$, which is what a first
@@ -3542,12 +3568,11 @@ subject only to explicit smoothness penalties rather than a
 distributional assumption.
 
 The bin-override deviations described in the selectivity section carry
-their own process error (`cont_tv_*sel_bin_devs`), either iid or a
-random walk of exactly the forms above, with their own estimated
-$`\sigma`$ per overridden bin and their own first-year standard
-deviation (`*sel_bin_devs_rw_init_sigma`). An overridden bin that is
-free of the functional form is thereby still smoothed in time when asked
-to be.
+their own process error (`cont_tv_sel_bin_devs`), either iid or a random
+walk of exactly the forms above, with their own estimated $`\sigma`$ per
+overridden bin and their own first-year standard deviation
+(`sel_bin_devs_rw_init_sigma`). An overridden bin that is free of the
+functional form is thereby still smoothed in time when asked to be.
 
 In addition to being constrained by a normal distribution, both iid and
 random walk cases have an optional additional smoothness penalty
@@ -3699,27 +3724,27 @@ Several generalizations of these penalties are available, specified per
 fleet (a single specification is shared by every fleet, or an unnamed
 list gives each fleet its own):
 
-- **Per-year weights.** Every weight $`w`$ may be a vector with one
-  value per model year, $`w_{y}`$, so a penalty can act only in the
-  years where selectivity is allowed to change, or act with a different
+- Per-year weights. Every weight $`w`$ may be a vector with one value
+  per model year, $`w_{y}`$, so a penalty can act only in the years
+  where selectivity is allowed to change, or act with a different
   strength in each year. Years with $`w_{y} = 0`$ are skipped entirely.
   With `normalize = FALSE` (below), a per-year first-difference weight
   of $`w_{y} = 1/(2\sigma_{y}^{2})`$ makes $`P_{SelSmoothYrDiff}`$
   exactly the negative log-kernel of a random walk with year-specific
   standard deviation $`\sigma_{y}`$, expressed as a penalty on the
   realized curve rather than on deviation parameters.
-- **Bin range.** `bin_range` restricts the bins the penalties act over
-  to $`\lbrack b_{lo}, b_{hi} \rbrack`$, either one range shared by
-  every term or a named list giving each term its own. This is how a
-  shape penalty (e.g., the dome or curvature penalty) is confined to the
-  older ages where the curve is expected to flatten, without
-  constraining the ascending limb.
-- **Normalization.** `normalize` controls whether the bin-wise weights
-  are divided by the number of penalized bins and the year-wise weights
-  by the number of years (the default, `TRUE`); it can likewise be set
-  per term. Turn it off when weights are calibrated as explicit
-  variances, as in the random walk correspondence above.
-- **First-year reference.** The year first-difference walk has no
+- Bin range. `bin_range` restricts the bins the penalties act over to
+  $`\lbrack b_{lo}, b_{hi} \rbrack`$, either one range shared by every
+  term or a named list giving each term its own. This is how a shape
+  penalty (e.g., the dome or curvature penalty) is confined to the older
+  ages where the curve is expected to flatten, without constraining the
+  ascending limb.
+- Normalization. `normalize` controls whether the bin-wise weights are
+  divided by the number of penalized bins and the year-wise weights by
+  the number of years (the default, `TRUE`); it can likewise be set per
+  term. Turn it off when weights are calibrated as explicit variances,
+  as in the random walk correspondence above.
+- First-year reference. The year first-difference walk has no
   predecessor in its first penalized year, so that year is normally left
   unpenalized. `yr_diff_ref` supplies one: the first penalized year is
   held toward a reference log-selectivity vector, anchoring an otherwise
@@ -3731,9 +3756,9 @@ Growth carries two deviation surfaces, and both are scored by the same
 process error machinery the selectivity deviations use, so the
 vocabulary above carries over unchanged.
 
-A time-varying growth **parameter** has one deviation per year, a
-surface one column wide. Under `"iid"` each is drawn independently and
-under `"rw"` they form a random walk:
+A time-varying growth parameter has one deviation per year, a surface
+one column wide. Under `"iid"` each is drawn independently and under
+`"rw"` they form a random walk:
 
 ``` math
 \begin{matrix}
@@ -3750,19 +3775,19 @@ own standard deviation (`growth_rw_init_sigma`). Only the years named in
 parameter can be constant early in a series and varying once the data
 can support it.
 
-The **semi-parametric** surface $`\varepsilon_{p,r,y,a,s}`$ runs over
-years and ages, so all five structures are available to it: `"iid"` and
-`"rw"` as above, `"2dar1"` for a separable first-order autoregression
-over ages and years, and `"3dmarg"`/`"3dcond"` for the three-dimensional
-Gaussian Markov random field over age, year and cohort described for
-selectivity, on the marginal or conditional variance. The correlated
-forms are the ones that make a growth surface estimable in practice: the
-deviations are not identified year by year and age by age from length
-data alone, and it is the correlation that lets neighbouring ages and
-years share information. Its hyperparameters live in the second stream
-of `growth_pe_pars`, in the same slots the selectivity forms use, and
-the surface can be restricted to the ages and years the length data
-inform through `growth_semipar_ages` and `growth_semipar_years`.
+The semi-parametric surface $`\varepsilon_{p,r,y,a,s}`$ runs over years
+and ages, so all five structures are available to it: `"iid"` and `"rw"`
+as above, `"2dar1"` for a separable first-order autoregression over ages
+and years, and `"3dmarg"`/`"3dcond"` for the three-dimensional Gaussian
+Markov random field over age, year and cohort described for selectivity,
+on the marginal or conditional variance. The correlated forms are the
+ones that make a growth surface estimable in practice: the deviations
+are not identified year by year and age by age from length data alone,
+and it is the correlation that lets neighbouring ages and years share
+information. Its hyperparameters live in the second stream of
+`growth_pe_pars`, in the same slots the selectivity forms use, and the
+surface can be restricted to the ages and years the length data inform
+through `growth_semipar_ages` and `growth_semipar_years`.
 
 Both enter the objective unweighted, reported as $`L_{\text{GrowthTV}}`$
 and $`L_{\text{GrowthSemipar}}`$.
@@ -3817,7 +3842,7 @@ off-diagonal diffusion terms:
 ``` math
 D_{p,r \to r',y,\tau,a,s}
 =
-\bar{D}_{p,r \to r',y^*,\tau,a,s}
+\bar{D}_{p,r \to r',y^,\tau,a,s}
 \cdot
 \exp\left(
 \epsilon^{\text{Move}}_{p,r,r',y,\tau,a,s}
@@ -3825,9 +3850,9 @@ D_{p,r \to r',y,\tau,a,s}
 \quad \text{for } r \ne r'
 ```
 
-where: - $`\bar{D}_{p,r \to r',y^*,\tau,a,s}`$ is the baseline diffusion
+where: - $`\bar{D}_{p,r \to r',y^,\tau,a,s}`$ is the baseline diffusion
 rate (constructed from covariates and parameters, with year lookups
-capped at $`y^* = \min(y, n_{\text{yrs}})`$), -
+capped at $`y^ = \min(y, n_{\text{yrs}})`$), -
 $`\epsilon^{\text{Move}}_{p,r,r',y,\tau,a,s}`$ is the deviation applied
 on the log scale.
 

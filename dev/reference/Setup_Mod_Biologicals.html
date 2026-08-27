@@ -80,6 +80,8 @@ block structure and mapping. Called after <code><a href="Setup_Mod_Dim.html">Set
 <span>  addtosrvidx <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  addtotag <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  AgeingError <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  AgeingError_fish <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  AgeingError_srv <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  Use_M_prior <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  M_prior <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  fit_lengths <span class="op">=</span> <span class="fl">0</span>,</span>
@@ -211,7 +213,13 @@ recovery observations; default <code>1e-10</code> in <code>Setup_Mod_Weighting</
 
 <dt id="arg-ageingerror">AgeingError<a class="anchor" aria-label="anchor" href="#arg-ageingerror"></a></dt>
 <dd><p>Ageing error (age-age transition) array mapping true modelled ages
-to observed age bins. Accepted forms:</p><dl><dt>2D matrix <code>[n_model_ages × n_obs_ages]</code></dt>
+to observed age bins. Each row is one model age's share across the observed
+bins and sums to one, or to zero to drop that model age from the
+observations. This is the age-axis twin of <code>LenBinMap</code>: the likelihood
+applies the two identically and validates them identically, so read either
+one for the other. It changes which bins the compositions are recorded on;
+to leave observed bins out of the likelihood without changing the bins
+themselves, use the <code>*_bins</code> arguments instead. Accepted forms:</p><dl><dt>2D matrix <code>[n_model_ages × n_obs_ages]</code></dt>
 <dd><p>Time-invariant ageing error;
     replicated internally across all years.</p></dd>
 
@@ -227,6 +235,26 @@ to observed age bins. Accepted forms:</p><dl><dt>2D matrix <code>[n_model_ages �
 
 
 </dl></dd>
+
+
+<dt id="arg-ageingerror-fish">AgeingError_fish<a class="anchor" aria-label="anchor" href="#arg-ageingerror-fish"></a></dt>
+<dd><p>Optional fleet-specific ageing error for the fishery
+fleets, for when the fleets do not read ages the same way. Accepted forms:
+a 3D array <code>[n_model_ages × n_obs_ages × n_fish_fleets]</code> for a
+time-invariant matrix per fleet, a 4D array
+<code>[n_years × n_model_ages × n_obs_ages × n_fish_fleets]</code> for a
+time-varying one, or <code>NULL</code> (default), which gives every fishery fleet
+the shared <code>AgeingError</code>. Each fleet's slice is validated the same way
+<code>AgeingError</code> is, and every fleet must land on the same observed age
+bins, since the observed composition arrays carry one age dimension shared
+across fleets.</p></dd>
+
+
+<dt id="arg-ageingerror-srv">AgeingError_srv<a class="anchor" aria-label="anchor" href="#arg-ageingerror-srv"></a></dt>
+<dd><p>Optional fleet-specific ageing error for the survey
+fleets, in the same forms as <code>AgeingError_fish</code>, with
+<code>n_srv_fleets</code> in place of <code>n_fish_fleets</code>. <code>NULL</code>
+(default) gives every survey fleet the shared <code>AgeingError</code>.</p></dd>
 
 
 <dt id="arg-use-m-prior">Use_M_prior<a class="anchor" aria-label="anchor" href="#arg-use-m-prior"></a></dt>
@@ -423,12 +451,18 @@ years. <code>NULL</code> (default) uses every year.</p></dd>
 <dt id="arg-lenbinmap">LenBinMap<a class="anchor" aria-label="anchor" href="#arg-lenbinmap"></a></dt>
 <dd><p>Optional matrix <code>[n_lens x n_obs_lens]</code> mapping the
 model's length bins onto the bins the length compositions are recorded on,
-each row summing to one, for compositions on coarser bins than the model
-carries (a population of 1 cm bins fit to 5 cm compositions, say). Observed
-length compositions are then dimensioned by <code>n_obs_lens</code> and the
-expected compositions are mapped through it inside the likelihood, the
-way the ageing error matrix maps ages. <code>NULL</code> (default) fits the
-compositions on the model bins.</p></dd>
+for compositions on coarser bins than the model carries (a population of
+1 cm bins fit to 5 cm compositions, say). Observed length compositions are
+then dimensioned by <code>n_obs_lens</code> and the expected compositions are
+mapped through it inside the likelihood. This is the length-axis twin of
+<code>AgeingError</code>: the likelihood applies the two identically and
+validates them identically, so read either one for the other. Each row is
+one model bin's share across the observed bins and sums to one, or to zero
+to drop that model bin from the observations. It changes which bins the
+compositions are recorded on; to leave observed bins out of the likelihood
+without changing the bins themselves, use the <code>*LenComps_bins</code>
+arguments instead. <code>NULL</code> (default) fits the compositions on the model
+bins.</p></dd>
 
 
 <dt id="arg-growth-a-growth-a-">growth_A1, growth_A2<a class="anchor" aria-label="anchor" href="#arg-growth-a-growth-a-"></a></dt>

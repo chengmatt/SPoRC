@@ -22,6 +22,8 @@ Setup_Mod_Biologicals(
   addtosrvidx = NULL,
   addtotag = NULL,
   AgeingError = NULL,
+  AgeingError_fish = NULL,
+  AgeingError_srv = NULL,
   Use_M_prior = 0,
   M_prior = NA,
   fit_lengths = 0,
@@ -161,7 +163,14 @@ Setup_Mod_Biologicals(
 - AgeingError:
 
   Ageing error (age-age transition) array mapping true modelled ages to
-  observed age bins. Accepted forms:
+  observed age bins. Each row is one model age's share across the
+  observed bins and sums to one, or to zero to drop that model age from
+  the observations. This is the age-axis twin of `LenBinMap`: the
+  likelihood applies the two identically and validates them identically,
+  so read either one for the other. It changes which bins the
+  compositions are recorded on; to leave observed bins out of the
+  likelihood without changing the bins themselves, use the `*_bins`
+  arguments instead. Accepted forms:
 
   2D matrix `[n_model_ages × n_obs_ages]`
 
@@ -180,6 +189,26 @@ Setup_Mod_Biologicals(
       shifted identity matrix such as
       `diag(1, n_model_ages)[, obs_age_index]` to avoid a dimensional
       mismatch.
+
+- AgeingError_fish:
+
+  Optional fleet-specific ageing error for the fishery fleets, for when
+  the fleets do not read ages the same way. Accepted forms: a 3D array
+  `[n_model_ages × n_obs_ages × n_fish_fleets]` for a time-invariant
+  matrix per fleet, a 4D array
+  `[n_years × n_model_ages × n_obs_ages × n_fish_fleets]` for a
+  time-varying one, or `NULL` (default), which gives every fishery fleet
+  the shared `AgeingError`. Each fleet's slice is validated the same way
+  `AgeingError` is, and every fleet must land on the same observed age
+  bins, since the observed composition arrays carry one age dimension
+  shared across fleets.
+
+- AgeingError_srv:
+
+  Optional fleet-specific ageing error for the survey fleets, in the
+  same forms as `AgeingError_fish`, with `n_srv_fleets` in place of
+  `n_fish_fleets`. `NULL` (default) gives every survey fleet the shared
+  `AgeingError`.
 
 - Use_M_prior:
 
@@ -379,12 +408,18 @@ Setup_Mod_Biologicals(
 - LenBinMap:
 
   Optional matrix `[n_lens x n_obs_lens]` mapping the model's length
-  bins onto the bins the length compositions are recorded on, each row
-  summing to one, for compositions on coarser bins than the model
-  carries (a population of 1 cm bins fit to 5 cm compositions, say).
-  Observed length compositions are then dimensioned by `n_obs_lens` and
-  the expected compositions are mapped through it inside the likelihood,
-  the way the ageing error matrix maps ages. `NULL` (default) fits the
+  bins onto the bins the length compositions are recorded on, for
+  compositions on coarser bins than the model carries (a population of 1
+  cm bins fit to 5 cm compositions, say). Observed length compositions
+  are then dimensioned by `n_obs_lens` and the expected compositions are
+  mapped through it inside the likelihood. This is the length-axis twin
+  of `AgeingError`: the likelihood applies the two identically and
+  validates them identically, so read either one for the other. Each row
+  is one model bin's share across the observed bins and sums to one, or
+  to zero to drop that model bin from the observations. It changes which
+  bins the compositions are recorded on; to leave observed bins out of
+  the likelihood without changing the bins themselves, use the
+  `*LenComps_bins` arguments instead. `NULL` (default) fits the
   compositions on the model bins.
 
 - growth_A1, growth_A2:

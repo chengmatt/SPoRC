@@ -992,7 +992,7 @@ through a season goes through that one file.</p>
 <code>setup_dimensions.R</code>, <code>setup_recruitment.R</code>,
 <code>setup_sim_containers.R</code>, <code>setup_sim_fleets.R</code>,
 <code>setup_tagging.R</code>, <code>sim_population.R</code>,
-<code>utils_postfit.R</code>
+<code>utils_postfit.R</code>, <code>utils_setup.R</code>
 </td>
 <td></td>
 </tr>
@@ -1029,7 +1029,7 @@ through a season goes through that one file.</p>
 <code>get_comp_prop</code>, <code>get_idx_fits</code>,
 <code>Restrc_Comps</code>
 </td>
-<td>nothing</td>
+<td><code>utils_setup.R</code></td>
 <td>
 <code>diag_francis.R</code>, <code>plot_figures_tables.R</code>
 </td>
@@ -1073,7 +1073,7 @@ through a season goes through that one file.</p>
 </td>
 <td>
 <code>model_lik_caal.R</code>, <code>model_lik_comps.R</code>,
-<code>model_lik_tags.R</code>
+<code>model_lik_tags.R</code>, <code>utils_setup.R</code>
 </td>
 <td></td>
 </tr>
@@ -1182,10 +1182,15 @@ through a season goes through that one file.</p>
 <tr class="odd">
 <td><code>utils_setup.R</code></td>
 <td>
-<code>assign_sel_block</code>, <code>collect_message</code>,
-<code>convert_to_numeric</code>, <code>extend_years</code>,
-<code>obs_len_bins</code>, <code>parse_idx_ages</code>,
-<code>parse_idx_cov</code>, <code>resolve_sel_pen_wts</code>,
+<code>assign_sel_block</code>, <code>bins_or_null</code>,
+<code>check_bin_map</code>, <code>check_comp_bins_min</code>,
+<code>collect_message</code>, <code>convert_to_numeric</code>,
+<code>drop_empty_fitted_blocks</code>,
+<code>expand_fleet_ageing_error</code>, <code>extend_years</code>,
+<code>fleet_ageing_error</code>, <code>obs_bin_count</code>,
+<code>obs_len_bins</code>, <code>parse_bin_subset</code>,
+<code>parse_comp_bins</code>, <code>parse_idx_cov</code>,
+<code>resolve_sel_pen_wts</code>, <code>resync_fitted_blocks</code>,
 <code>safe_extract</code>, <code>seed_dbnrml_peak</code>,
 <code>set_data_indicator_unused</code>, <code>setup_dbnrml_raw</code>,
 <code>setup_dbnrml_startbin</code>, <code>setup_sel_bin_devs</code>,
@@ -1195,17 +1200,17 @@ through a season goes through that one file.</p>
 </td>
 <td>nothing</td>
 <td>
-<code>diag_likelihood_profile.R</code>,
-<code>model_objective.R</code>, <code>plot_figures_tables.R</code>,
-<code>setup_biologicals.R</code>, <code>setup_caal.R</code>,
-<code>setup_dimensions.R</code>, <code>setup_fishery_catch.R</code>,
-<code>setup_fishery_comps.R</code>,
+<code>diag_fits.R</code>, <code>diag_likelihood_profile.R</code>,
+<code>diag_osa_residuals.R</code>, <code>model_objective.R</code>,
+<code>plot_figures_tables.R</code>, <code>setup_biologicals.R</code>,
+<code>setup_caal.R</code>, <code>setup_dimensions.R</code>,
+<code>setup_fishery_catch.R</code>, <code>setup_fishery_comps.R</code>,
 <code>setup_fishery_selectivity.R</code>, <code>setup_mapping.R</code>,
 <code>setup_movement.R</code>, <code>setup_recruitment.R</code>,
 <code>setup_sim_fleets.R</code>, <code>setup_survey_comps.R</code>,
 <code>setup_survey_selectivity.R</code>, <code>setup_tagging.R</code>,
 <code>setup_weighting.R</code>, <code>sim_closed_loop.R</code>,
-<code>sim_observations.R</code>
+<code>sim_observations.R</code>, <code>sim_self_test.R</code>
 </td>
 </tr>
 </tbody>
@@ -1616,7 +1621,7 @@ for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 115 test files in total.</p>
+<p>That is 118 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

@@ -23,7 +23,8 @@ pack_comp_osa(
   family = "discrete",
   pop = FALSE,
   n_pop = 1,
-  return_labels = FALSE
+  return_labels = FALSE,
+  BinsArr = NULL
 )
 ```
 
@@ -97,6 +98,13 @@ pack_comp_osa(
   [`TMB::oneStepPredict()`](https://rdrr.io/pkg/TMB/man/oneStepPredict.html)
   residuals (see \[get_osa()\]); left `FALSE` (default) inside the model
   itself to avoid the extra bookkeeping cost.
+
+- BinsArr:
+
+  Optional `[n_obs_bins x n_fleets]` 0/1 array naming the observed bins
+  each fleet is fitted over, or `NULL` (default) for all bins.
+  Restricted fleets pack a shorter block, and `eval_comp_osa` must be
+  handed the same array so its strides stay in step with the packer.
 
 ## Value
 

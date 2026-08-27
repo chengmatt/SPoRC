@@ -28,7 +28,10 @@ do_likelihood_profile(
 \item{random}{Character vector of random effects to estimate. Default
 \code{NULL}.}
 
-\item{what}{Character string. Name of the parameter to profile.}
+\item{what}{Character string. Name of the parameter to profile. Profiling
+\code{ln_fish_q} or \code{ln_srv_q} requires the matching \code{fish_q_type}
+or \code{srv_q_type} to be \code{"est"} for the fleets being profiled, since
+the analytic forms overwrite catchability before it reaches the likelihood.}
 
 \item{idx}{Vector pointing to the
 specific elements to fix when \code{parameters[[what]]} is an array.

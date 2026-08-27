@@ -3,6 +3,52 @@
 # Likelihood profile over a fixed parameter, showing which data source pulls the
 # estimate where.
 
+#' Refuse a catchability profile when the model solves q analytically
+#'
+#' Analytic catchability is solved from the index data inside the model and never reads
+#' \code{ln_fish_q}/\code{ln_srv_q}, so profiling those parameters refits an identical
+#' model at every grid value and returns a flat surface that reads as an uninformative
+#' index rather than as a catchability the optimiser never saw.
+#'
+#' @param data Data list from the fitted model.
+#' @param parameters Parameter list from the fitted model.
+#' @param what Character string. Name of the parameter being profiled.
+#' @param idx Vector of linear indices into \code{parameters[[what]]}, or \code{NULL}
+#'   to treat every fleet as targeted.
+#'
+#' @return \code{NULL}, invisibly. Called for the error it raises.
+#'
+#' @keywords internal
+#' @noRd
+check_analytic_q <- function(data, parameters, what, idx) {
+
+  if(!what %in% c("ln_fish_q", "ln_srv_q")) return(invisible(NULL))
+
+  q_type_name <- if(what == "ln_fish_q") "fish_q_type" else "srv_q_type"
+  q_type <- data[[q_type_name]]
+  if(is.null(q_type) || all(q_type == 0)) return(invisible(NULL))
+
+  # `idx` holds linear indices into an array dimensioned [region, block, fleet], so the
+  # fleets a profile touches come off the third margin
+  par_dim <- dim(parameters[[what]])
+  if(is.null(idx) || length(par_dim) < 3) fleets <- seq_along(q_type)
+  else fleets <- sort(unique(arrayInd(unlist(idx), .dim = par_dim)[,3]))
+  fleets <- fleets[fleets %in% seq_along(q_type)]
+
+  analytic <- fleets[q_type[fleets] != 0]
+  if(length(analytic) > 0) {
+    stop(paste0("Cannot profile `", what, "` for fleet(s) ", paste(analytic, collapse = ", "),
+                ", because `", q_type_name, "` is set to ",
+                paste(c("est", "arith", "geo")[q_type[analytic] + 1], collapse = ", "),
+                " there. Analytic catchability is solved from the index data and overwrites `", what,
+                "` before it enters the likelihood, so every profile value would return the same fit. ",
+                "Set `", q_type_name, "` to \"est\" for those fleets to profile catchability, or profile a ",
+                "scale parameter such as `ln_global_R0` instead."))
+  }
+
+  invisible(NULL)
+}
+
 #' Run Likelihood Profile
 #'
 #' Profiles the joint negative log-likelihood and all individual likelihood
@@ -14,7 +60,10 @@
 #' @param mapping Mapping list from the fitted model.
 #' @param random Character vector of random effects to estimate. Default
 #'   \code{NULL}.
-#' @param what Character string. Name of the parameter to profile.
+#' @param what Character string. Name of the parameter to profile. Profiling
+#'   \code{ln_fish_q} or \code{ln_srv_q} requires the matching \code{fish_q_type}
+#'   or \code{srv_q_type} to be \code{"est"} for the fleets being profiled, since
+#'   the analytic forms overwrite catchability before it reaches the likelihood.
 #' @param idx Vector pointing to the
 #'   specific elements to fix when \code{parameters[[what]]} is an array.
 #'   \code{NULL} for scalar parameters.
@@ -84,6 +133,8 @@ do_likelihood_profile <- function(data,
   if(min_val > max_val) {
     stop("`min_val` is greater than `max_val`. This likely occurred because you are profiling a log-transformed parameter. Try swapping the values: use the current `min_val` as `max_val`, and vice versa.")
   }
+
+  check_analytic_q(data, parameters, what, idx)
 
   # create values to profile across
   vals <- seq(min_val, max_val, inc)

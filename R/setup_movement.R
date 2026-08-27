@@ -56,6 +56,7 @@ do_move_pars_mapping <- function(input_list, Movement_popblk_spec,
 
   # Setup mapping list
   map_Movement_Pars <- input_list$par$move_pars # initialize array with same dimensions as parameters
+  map_Movement_Pars[] <- NA # any cell no block covers stays fixed rather than sharing a level
   map_log_move_diffusion_pars <- input_list$par$log_move_diffusion_pars # initialize array with same dimensions as parameters
   map_move_preference_pars <- input_list$par$move_preference_pars # initialize array with same dimensions as parameters
 
@@ -73,12 +74,12 @@ do_move_pars_mapping <- function(input_list, Movement_popblk_spec,
 
     # If movement is constant for ages
     if(is.character(Movement_ageblk_spec)){
-      if(Movement_ageblk_spec == "constant") Movement_ageblk_spec_vals <- list(input_list$data$ages)
+      if(Movement_ageblk_spec == "constant") Movement_ageblk_spec_vals <- list(seq_along(input_list$data$ages))
     } else Movement_ageblk_spec_vals <- Movement_ageblk_spec
 
     # If movement is constant across years
     if(is.character(Movement_yearblk_spec)){
-      if(Movement_yearblk_spec == "constant") Movement_yearblk_spec_vals = list(input_list$data$years)
+      if(Movement_yearblk_spec == "constant") Movement_yearblk_spec_vals = list(seq_along(input_list$data$years))
     } else Movement_yearblk_spec_vals = Movement_yearblk_spec
 
     # If movement is constant across sexes

@@ -79,13 +79,21 @@ test_that("the CAAL weight is one pooled inverse variance per fleet, region and 
   } # end f loop
   for(f in setdiff(1:input_list$data$n_srv_fleets, has_caal)) expect_true(all(is.na(w[, , , , , f])))
 
-  # the weight against the definition, pooled by hand over every row used
+  # The weight against the definition, pooled by hand. Francis (2011) TA1.8 for
+  # conditional data forms ONE statistic per fleet, year and season: the length
+  # bins aged in a year are collapsed into that year's mean age, weighted by the
+  # number aged in each, and standardized once. The bins within a year share the
+  # model's error, so they are not independent draws; standardizing each on its
+  # own would treat one systematic miss as many small independent ones and bias
+  # the weight upward.
   f <- has_caal[1]
   cells <- which(!is.na(w[, 1, 1, 1, , f]), arr.ind = TRUE)
   r <- cells[1, 1]
   s <- cells[1, 2]
   res <- c()
+  yrs_with_rows <- 0
   for(y in 1:length(input_list$data$years)) {
+    acc <- NULL
     for(l in 1:dim(input_list$data$UseSrv_caal)[4]) {
       if(input_list$data$UseSrv_caal[r, y, 1, l, f] != 1) next
       p_row <- props$Pred_Srv_caal[r, y, 1, l, , s, f]
@@ -96,11 +104,23 @@ test_that("the CAAL weight is one pooled inverse variance per fleet, region and 
       o_bar <- sum(seq_len(n_bins) * o_row)
       v <- sum(seq_len(n_bins)^2 * p_row) - e_bar^2
       if(!is.finite(v) || v <= 0) next
-      res <- c(res, (o_bar - e_bar) / sqrt(v / n_row))
+      acc <- rbind(acc, c(o_bar, e_bar, v, n_row))
     } # end l loop
+
+    if(is.null(acc)) next
+    yrs_with_rows <- yrs_with_rows + 1
+    wt_l <- acc[,4] / sum(acc[,4])                    # weighted by the number aged in each bin
+    obs_yr <- sum(wt_l * acc[,1])
+    exp_yr <- sum(wt_l * acc[,2])
+    se_yr <- sqrt(sum(wt_l^2 * acc[,3] / acc[,4]))
+    if(!is.finite(se_yr) || se_yr <= 0) next
+    res <- c(res, (obs_yr - exp_yr) / se_yr)
   } # end y loop
 
-  expect_gt(length(res), 50) # the pooling really is over many rows, not a few
+  # one statistic per year with aged fish, not one per length bin. This is the
+  # assertion that distinguishes the pooled form from the per-row form.
+  expect_equal(length(res), yrs_with_rows)
+  expect_gt(length(res), 10)
   expect_equal(unname(w[r, which(!is.na(w[r, , 1, 1, s, f]))[1], 1, 1, s, f]),
                1 / stats::var(res), tolerance = 1e-10)
 })

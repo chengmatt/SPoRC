@@ -731,7 +731,7 @@ Setup_Mod_Tagging <- function(input_list,
   } else move_pop_tag_pool_vals = conv_tag_pop_pool
 
   if(is.character(conv_tag_age_pool)){
-    if(conv_tag_age_pool == "all") move_age_tag_pool_vals = list(input_list$data$ages)
+    if(conv_tag_age_pool == "all") move_age_tag_pool_vals = list(seq_along(input_list$data$ages))
   } else move_age_tag_pool_vals = conv_tag_age_pool
 
   if(is.character(conv_tag_sex_pool)){

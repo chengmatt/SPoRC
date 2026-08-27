@@ -90,7 +90,10 @@ both sequential and parallel execution.</p>
 
 
 <dt id="arg-mapping">mapping<a class="anchor" aria-label="anchor" href="#arg-mapping"></a></dt>
-<dd><p>Mapping list from the fitted model.</p></dd>
+<dd><p>Mapping list from the fitted model. The profile keeps this map for
+every position other than the ones it fixes, so positions the fitted model held
+fixed stay fixed and positions it estimated as one shared parameter stay shared,
+leaving the profile with the same free parameters as the model being profiled.</p></dd>
 
 
 <dt id="arg-random">random<a class="anchor" aria-label="anchor" href="#arg-random"></a></dt>

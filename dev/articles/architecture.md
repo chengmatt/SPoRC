@@ -238,7 +238,7 @@ through that one file.
 | `diag_fits.R` | `get_caal_fits`, `get_caal_prop`, `get_comp_prop`, `get_idx_fits`, `Restrc_Comps` | `utils_setup.R` | `diag_francis.R`, `plot_figures_tables.R` |
 | `diag_francis.R` | `do_francis_reweighting`, `get_francis_weights`, `get_francis_weights_caal`, `run_francis`, `safe_inv_var` | `diag_fits.R`, `model_fit.R` | `diag_retrospective.R` |
 | `diag_jitter.R` | `do_jitter` | `model_fit.R` |  |
-| `diag_likelihood_profile.R` | `check_analytic_q`, `do_likelihood_profile` | `model_fit.R`, `utils_setup.R` |  |
+| `diag_likelihood_profile.R` | `build_profile_map`, `check_analytic_q`, `check_profile_mirrors`, `do_likelihood_profile` | `model_fit.R`, `utils_setup.R` |  |
 | `diag_osa_residuals.R` | `comp_osa_field_map`, `get_osa`, `index_osa_field_map`, `osa_default_bins`, `osa_keep_subset`, `osa_one_step_predict`, `plot_resids`, `run_external_comp_osa`, `run_internal_caal_osa`, `run_internal_comp_osa`, `run_internal_index_osa`, `run_internal_tag_osa`, `validate_osa_method` | `model_lik_caal.R`, `model_lik_comps.R`, `model_lik_tags.R`, `utils_setup.R` |  |
 | `diag_retrospective.R` | `do_retrospective`, `get_retrospective_relative_difference`, `truncate_yr` | `diag_francis.R`, `model_fit.R` | `plot_figures_tables.R` |
 | `diag_runs_test.R` | `do_runs_test` | nothing |  |
@@ -470,11 +470,11 @@ what is under test rather than which stock the fixture happens to use.
 | `test-sim_*` | 5 | Operating model, including simulate then refit self tests |
 | `test-refpts_*` | 10 | SPR and MSY solvers, one file per spatial structure |
 | `test-projection_*` | 3 | Forward projection off a fitted model |
-| `test-diag_*` | 13 | Post fit diagnostics: retrospectives and OSA residuals |
+| `test-diag_*` | 14 | Post fit diagnostics: retrospectives and OSA residuals |
 | `test-integration_*` | 4 | Cross cutting agreement between the objective, the reference points and the operating model |
 | `test-regression_*` | 17 | End to end fits pinning `obj$rep` and `nll` for known configurations |
 
-That is 119 test files in total.
+That is 120 test files in total.
 
 Two groups are worth calling out. The `test-regression_*` files pin
 `obj$rep` and `nll` values for known configurations against bundled

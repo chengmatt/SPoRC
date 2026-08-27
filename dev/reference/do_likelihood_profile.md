@@ -34,7 +34,11 @@ do_likelihood_profile(
 
 - mapping:
 
-  Mapping list from the fitted model.
+  Mapping list from the fitted model. The profile keeps this map for
+  every position other than the ones it fixes, so positions the fitted
+  model held fixed stay fixed and positions it estimated as one shared
+  parameter stay shared, leaving the profile with the same free
+  parameters as the model being profiled.
 
 - random:
 

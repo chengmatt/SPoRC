@@ -99,7 +99,10 @@ both sequential and parallel execution.</p>
 
 
 <dt id="arg-what">what<a class="anchor" aria-label="anchor" href="#arg-what"></a></dt>
-<dd><p>Character string. Name of the parameter to profile.</p></dd>
+<dd><p>Character string. Name of the parameter to profile. Profiling
+<code>ln_fish_q</code> or <code>ln_srv_q</code> requires the matching <code>fish_q_type</code>
+or <code>srv_q_type</code> to be <code>"est"</code> for the fleets being profiled, since
+the analytic forms overwrite catchability before it reaches the likelihood.</p></dd>
 
 
 <dt id="arg-idx">idx<a class="anchor" aria-label="anchor" href="#arg-idx"></a></dt>

@@ -42,7 +42,11 @@ do_likelihood_profile(
 
 - what:
 
-  Character string. Name of the parameter to profile.
+  Character string. Name of the parameter to profile. Profiling
+  `ln_fish_q` or `ln_srv_q` requires the matching `fish_q_type` or
+  `srv_q_type` to be `"est"` for the fleets being profiled, since the
+  analytic forms overwrite catchability before it reaches the
+  likelihood.
 
 - idx:
 

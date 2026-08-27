@@ -109,8 +109,14 @@ draw_index_obs <- function(true, se, like_type = 0, d = NULL, lambda = NULL, u =
     if(is.null(d) || is.null(lambda) || is.null(u)) stop("A multivariate normal index draw needs d, lambda and u from cov_to_factor().")
     return(true + d * (lambda * u + sqrt(1 - lambda^2) * stats::rnorm(n, 0, 1)))
   }
-  if(like_type == 1) return(true + stats::rnorm(n, 0, se))
-  if(like_type == 0) return(true * exp(stats::rnorm(n, 0, se)))
+  # guad against non-finite values
+  se_n <- rep_len(se, n)
+  ok <- is.finite(se_n) & se_n >= 0
+  eps <- rep(NA, n)
+  if(any(ok)) eps[ok] <- stats::rnorm(sum(ok), 0, se_n[ok])
+
+  if(like_type == 1) return(true + eps)
+  if(like_type == 0) return(true * exp(eps))
 }
 
 # Operating model

@@ -57,8 +57,8 @@ integer indices; fixed parameters are `NA`.
 
 ## Details
 
-Sharing behaviour adapts to the density-dependence structure: under
-local density dependence (`rec_dd = 0`) with a single population, each
-region receives its own `ln_sigmaR` estimate; under global density
-dependence or with multiple populations, a single `ln_sigmaR` is shared
-across regions within each population.
+Sharing behavior adapts to the density-dependence structure: under local
+density dependence (`rec_dd = 0`) with a single population, each region
+receives its own `ln_sigmaR` estimate; under global density dependence
+or with multiple populations, a single `ln_sigmaR` is shared across
+regions within each population.

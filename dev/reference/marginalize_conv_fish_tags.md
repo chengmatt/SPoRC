@@ -1,4 +1,4 @@
-# Marginalise conventional fishery tag arrays across unattended dimensions
+# Marginalize conventional fishery tag arrays across unattended dimensions
 
 Collapses population, age, and/or sex dimensions of a tag count array
 `[n_pop × n_ages × n_sexes]` by summing over dimensions absent from

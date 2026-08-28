@@ -138,7 +138,7 @@ $`\mu^{\text{Fsh}}`$, a single parameter both depletes the initial age
 structure and scales the F series. That is the assessment’s own
 construction, so it is reproduced here, but `"abs"` is the better choice
 when a model’s historical F is conceptually independent of the mean F of
-the modelled period.
+the modeled period.
 
 ``` r
 
@@ -286,7 +286,7 @@ Compositions are multinomial. Sablefish is sex structured but its *age*
 compositions are not sex specific, so fishery ages are aggregated across
 sexes (`agg`), meaning the expected proportions are summed over sexes
 before being compared to the observations. Length compositions *are* sex
-specific and are fit as `spltRspltS`, which normalises each sex to sum
+specific and are fit as `spltRspltS`, which normalizes each sex to sum
 to one separately, so no implicit sex ratio is inferred from them.
 
 Only the fixed-gear fleet has an index and age compositions; both fleets
@@ -358,7 +358,7 @@ input_list <- Setup_Mod_SrvIdx_and_Comps(
 
 ## Fishery selectivity and catchability
 
-The fixed-gear fleet is logistic, parameterised by the age at 50%
+The fixed-gear fleet is logistic, parameterized by the age at 50%
 selection and a slope:
 
 ``` math
@@ -369,7 +369,7 @@ and carries three time blocks, 1960–1994, 1995–2015, and 2016–2024,
 reflecting the shift from the pre-IFQ fishery through the IFQ era.
 Catchability is blocked on the same boundaries.
 
-The trawl fleet is dome shaped, using the reparameterised gamma form in
+The trawl fleet is dome shaped, using the reparameterized gamma form in
 which $`a^{\max}`$ is the age at maximum selection and $`\gamma`$
 controls the steepness of the descending limb:
 
@@ -377,7 +377,7 @@ controls the steepness of the descending limb:
 p = \tfrac{1}{2}\left[\sqrt{\left(a^{\max}\right)^{2} + 4\gamma^{2}} - a^{\max}\right],\qquad \text{Sel}^{\text{Fsh}}_{a,s,f=2} = \left(\dfrac{a}{a^{\max}}\right)^{a^{\max}/p}\exp\left(\dfrac{a^{\max} - a}{p}\right)
 ```
 
-Parameter sharing across sexes and blocks stabilises the fit and cannot
+Parameter sharing across sexes and blocks stabilizes the fit and cannot
 be expressed through the `_spec` arguments, so the map is set by hand
 afterwards. The first fixed-gear block shares its slope between sexes;
 the trawl fleet shares parameters across all blocks.
@@ -558,7 +558,7 @@ $`2.4`$ percent everywhere.
 
 The 2024 assessment estimates a single $`\log M`$ under a lognormal
 prior and adds a male offset $`\delta^{M}`$, optionally with annual and
-age deviations. `SPoRC` parameterises sex-specific natural mortality
+age deviations. `SPoRC` parameterizes sex-specific natural mortality
 directly rather than as an offset, so an exact match to the prior
 structure is not available. Both values are therefore fixed at the
 assessment’s estimates, which removes $`M`$ from the comparison entirely

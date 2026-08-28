@@ -8,6 +8,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/ae_ebs_pacific_cod_case_study.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/af_growth_options.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/ah_north_sea_sandeel_case_study.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/articles/aj_development_roadmap.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/architecture.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/b_model_parameters.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/c_model_equations.html</loc></url>
@@ -52,6 +53,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Get_Movement.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Get_Natural_Cubic_Spline_Weights.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Get_PE_loglik.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Get_Reference_Point_Uncertainty.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Get_Reference_Points.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex_Array.html</loc></url>
@@ -181,10 +183,12 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/equil_rec_ssb_deriv.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/eval_caal_osa.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/eval_comp_osa.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/eval_refpt_log_quantities.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/eval_tag_osa.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/expand_fleet_ageing_error.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/extend_years.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/fit_model.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/flatten_refpt.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/fleet_ageing_error.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/generate_fishery_catch_comp_idx.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/generate_fishery_conv_tags_recap.html</loc></url>
@@ -298,6 +302,9 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/prep_at_age_obs.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/rdirM.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/recycle_tag_event_par.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/refpt_draw_devs.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/refpt_par_cov.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/refpt_quad_form.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/release_conv_tag_attr.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/release_conv_tags.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/resolve_idx_factor.html</loc></url>

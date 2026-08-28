@@ -8,7 +8,7 @@ in `SPoRC`.
 
 The model is one area, one sex and one season, with a single fishery and
 a single bottom trawl survey. Everything is fit at length, on 121
-population length bins reported to 24 five centimetre data bins.
+population length bins reported to 24 five centimeter data bins.
 
 | Source | Years | Observations | Likelihood |
 |----|----|----|----|
@@ -19,7 +19,7 @@ population length bins reported to 24 five centimetre data bins.
 | Survey age compositions | 2000–2023 | 23 | Multinomial |
 
 Ages run $`a = 0`$ to $`a_{+} = 20`$, with ages observed from 0 to 12
-and 12 accumulating. Population lengths are 121 one centimetre bins and
+and 12 accumulating. Population lengths are 121 one centimeter bins and
 the compositions are recorded on 24 bins of 5 cm from 4.5. Model years
 run $`y_{1} = 1977`$ to $`y_{\text{end}} = 2024`$. Recruitment is age 0
 entering at the start of the year, mean recruitment with
@@ -107,7 +107,7 @@ birth year.
 ## Biological dynamics
 
 Natural mortality is fixed. Growth is the Richards curve, which
-generalises von Bertalanffy with a sixth parameter raising the lengths
+generalizes von Bertalanffy with a sixth parameter raising the lengths
 to a power, and weight at age is derived from it through the
 weight-length relationship rather than supplied as data.
 
@@ -122,7 +122,7 @@ the order `L1`, `L2`, `K`, `CV1`, `CV2`, `rho`, with a placeholder in
 the four slots that do not vary. The second stream belongs to the
 semi-parametric surface and is unread here.
 
-Maturity at age is taken from the assessment rather than modelled,
+Maturity at age is taken from the assessment rather than modeled,
 because maturity is length based and fixed there. `LenBinMap` maps the
 121 population bins onto the 24 the compositions are recorded on.
 
@@ -389,7 +389,7 @@ cohort growth a late year only reproduces if every earlier year’s
 increment did.
 
 `SPoRC` writes each likelihood component as a proper density where the
-assessment drops normalising constants, so the comparison subtracts
+assessment drops normalizing constants, so the comparison subtracts
 exactly what it omits:
 
 | Component                     | `SPoRC` less constants | Assessment |
@@ -469,7 +469,7 @@ alongside everything else. `SPoRC` has no estimated extra standard
 deviation on an index, so here it is added to the observed standard
 errors and held at the assessment’s value. That is not a small term:
 $`0.093`$ against observed standard errors of $`0.044`$ to $`0.094`$, so
-it roughly doubles them, and the index likelihood is unrecognisable
+it roughly doubles them, and the index likelihood is unrecognizable
 without it. Holding it costs nothing at the assessment’s estimate, where
 the total standard error is identical and the index likelihood
 reproduces to six digits, but it fixes the index’s weight where the

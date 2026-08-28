@@ -168,7 +168,7 @@ get_survey_observation_model(
 - RecDev_anom:
 
   Array `[pop, region, deviation]` of recruitment deviations measured
-  from the centre their penalty asserts, or `NULL` when no fleet
+  from the center their penalty asserts, or `NULL` when no fleet
   observes them. Read only by fleets with `srv_idx_type == 2`.
 
 - do_caal:

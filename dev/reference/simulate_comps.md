@@ -202,5 +202,5 @@ For joint compositions (`comp_type = 2`), the Kronecker product
 `diag(n_sexes) ⊗ AgeingError` is used to apply ageing error across the
 combined age-sex vector. For aggregated compositions (`comp_type = 0`),
 the draw is only executed when `r == n_regions` (i.e., on the final
-region pass), and uses region- and sex-marginalised expected
+region pass), and uses region- and sex-marginalized expected
 proportions.

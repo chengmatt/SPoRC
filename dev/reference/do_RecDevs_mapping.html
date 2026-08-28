@@ -40,6 +40,7 @@ recruitment deviations. The ln_RecDevs array has dimensions
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -92,7 +93,7 @@ across all dimensions. Options when non-<code>NULL</code>:</p><dl><dt><code>"est
 <dd><p>A single set of year-specific
     deviations shared across all populations and regions. Each year
     receives one estimated parameter regardless of how many populations
-    or regions are modelled. Required when <code>rec_dd = "global"</code> and
+    or regions are modeled. Required when <code>rec_dd = "global"</code> and
     <code>n_regions &gt; 1</code>.</p></dd>
 
   <dt><code>"fix"</code></dt>
@@ -128,7 +129,7 @@ across all dimensions. Options when non-<code>NULL</code>:</p><dl><dt><code>"est
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Mapping behaviour is governed by two interacting considerations:</p><ol><li><p><strong>Sharing specification</strong> (<code>RecDevs_spec</code>): controls
+    <p>Mapping behavior is governed by two interacting considerations:</p><ol><li><p><strong>Sharing specification</strong> (<code>RecDevs_spec</code>): controls
     whether deviations are shared across regions and/or populations, or
     estimated independently.</p></li>
 <li><p><strong>No-dispersal constraint</strong>: when <code>rec_region_prop_spec = 1</code>

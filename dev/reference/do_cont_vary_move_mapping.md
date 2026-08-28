@@ -32,7 +32,7 @@ do_cont_vary_move_mapping(
 
   Character string specifying the deviation structure. One of `"none"`,
   `"iid_y"`, `"iid_a"`, `"iid_y_a"`, `"iid_y_a_s"`, `"iid_y_seas_a_s"`,
-  or the population-specific analogues `"iid_p_y"`, `"iid_p_a"`,
+  or the population-specific analogs `"iid_p_y"`, `"iid_p_a"`,
   `"iid_p_y_a"`, `"iid_p_y_a_s"`, `"iid_p_y_seas_a_s"`. Dimensions
   present in the string receive unique estimation indices; absent
   dimensions share a single index. `"none"` maps all deviations to `NA`.

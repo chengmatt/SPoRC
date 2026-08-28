@@ -40,6 +40,7 @@ a rectangular block and the whole block's density is returned as one number."><m
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -91,17 +92,6 @@ a rectangular block and the whole block's density is returned as one number.</p>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>The negative log likelihood of the whole block, a scalar.</p>
-    </div>
-    <div class="section level2">
-    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The residuals are standardised before the separable density is applied, since
-the standard deviations vary by age while the correlation does not. The
-determinant of that scaling is added back.</p>
-<p>The correlations arrive untransformed and are constrained here, before the two
-closures are defined. <code><a href="https://rdrr.io/pkg/RTMB/man/MVgauss.html" class="external-link">dseparable</a></code> evaluates those closures
-in a context of its own, and a constraint left as an unevaluated argument is
-forced inside that context, where the tape reports an invalid <code>advector</code>
-rather than a wrong number.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

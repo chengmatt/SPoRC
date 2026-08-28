@@ -1,6 +1,6 @@
 # Evaluate a symmetric beta log-density
 
-Computes a log-density that penalises a parameter value toward the
+Computes a log-density that penalizes a parameter value toward the
 midpoint of `[p_lb, p_ub]` using a symmetric beta-like kernel. The
 penalty strengthens as `p_prsd` increases and diffuses as `p_prsd`
 decreases. Used in SPoRC as a prior for tag reporting rates to

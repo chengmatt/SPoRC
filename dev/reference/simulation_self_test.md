@@ -56,7 +56,7 @@ simulation_self_test(
 
 - sd_rep:
 
-  `sdreport` object from the fitted model, used to extract optimised
+  `sdreport` object from the fitted model, used to extract optimized
   parameter values in list format via `get_optim_param_list`.
 
 - n_sims:
@@ -101,14 +101,14 @@ simulation_self_test(
 - sim_recruitment:
 
   Character. How the operating model generates recruitment. `"input"`
-  (default, and the historical behaviour) feeds the estimated
-  recruitment series in as `Rec_input`, so every simulated replicate
-  carries the same recruitment and `rec_model` has no effect on the
-  data. That conditions away recruitment and tests everything downstream
-  of it, but it cannot test the stock-recruit relationship itself,
-  because steepness is then informed only by its penalty. `"model"`
-  withholds the input so recruitment is generated from the fitted curve
-  under `rec_model`, which is what to use when the point of the test is
+  (default, and the historical behavior) feeds the estimated recruitment
+  series in as `Rec_input`, so every simulated replicate carries the
+  same recruitment and `rec_model` has no effect on the data. That
+  conditions away recruitment and tests everything downstream of it, but
+  it cannot test the stock-recruit relationship itself, because
+  steepness is then informed only by its penalty. `"model"` withholds
+  the input so recruitment is generated from the fitted curve under
+  `rec_model`, which is what to use when the point of the test is
   whether steepness and `R0` are recoverable.
 
 ## Value

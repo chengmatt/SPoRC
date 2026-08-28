@@ -219,6 +219,7 @@ through that one file.
 | `refpts_main.R` | `build_plus_group_T`, `check_msy_rec_model`, `Get_Reference_Points`, `optim_ref_pts`, `solve_plus_group` | `model_fit.R`, `model_transition.R` | `plot_figures_tables.R`, `refpts_msy.R`, `refpts_spr.R`, `sim_closed_loop.R` |
 | `refpts_msy.R` | `equil_rec_phi`, `equil_rec_ssb`, `equil_rec_ssb_deriv`, `global_Fmsy`, `local_Fmsy_multipop`, `local_Fmsy_sglpop`, `single_region_Fmsy` | `model_transition.R`, `refpts_main.R` |  |
 | `refpts_spr.R` | `global_SPR`, `single_region_SPR` | `model_transition.R`, `refpts_main.R` |  |
+| `refpts_uncertainty.R` | `eval_refpt_log_quantities`, `flatten_refpt`, `Get_Reference_Point_Uncertainty`, `refpt_draw_devs`, `refpt_par_cov`, `refpt_quad_form` | nothing |  |
 
 #### Operating model
 
@@ -474,7 +475,7 @@ what is under test rather than which stock the fixture happens to use.
 | `test-integration_*` | 4 | Cross cutting agreement between the objective, the reference points and the operating model |
 | `test-regression_*` | 17 | End to end fits pinning `obj$rep` and `nll` for known configurations |
 
-That is 123 test files in total.
+That is 124 test files in total.
 
 Two groups are worth calling out. The `test-regression_*` files pin
 `obj$rep` and `nll` values for known configurations against bundled

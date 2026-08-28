@@ -84,7 +84,7 @@ as the structure itself, so the seeding step below converts between the
 two.
 
 The bias ramp is on with every ramp year at the terminal year, which
-centres the recruitment penalty on $`-\sigma_{R}^{2}/2`$. That matches
+centers the recruitment penalty on $`-\sigma_{R}^{2}/2`$. That matches
 the shifted deviations the seeds carry, described in the seeding
 section.
 
@@ -235,7 +235,7 @@ input_list <- Setup_Mod_SrvIdx_and_Comps(
 
 ## Fishery selectivity and catchability
 
-Both fleets use the slope and $`a_{50}`$ parameterisation of the
+Both fleets use the slope and $`a_{50}`$ parameterization of the
 logistic, which is `logist1`:
 
 ``` math
@@ -269,7 +269,7 @@ intent, and it is why the $`q`$ prior term is $`3\times10^{-6}`$ rather
 than a live contribution.
 
 The selectivity constraint is not a prior on the selectivity
-*parameters*. The assessment penalises the realized selectivity value at
+*parameters*. The assessment penalizes the realized selectivity value at
 age 30 towards one with a standard deviation of $`0.003`$:
 
 ``` math
@@ -400,7 +400,7 @@ At that point every reported quantity agrees with the ADMB model:
     fishing mortality   max pct diff: 4.4e-04
 
 The likelihood is checked the same way. `SPoRC` writes each component as
-a proper density while the assessment drops normalising constants, so a
+a proper density while the assessment drops normalizing constants, so a
 like for like comparison subtracts exactly the constants the assessment
 omits. The survey statement keeps its $`\log\sigma`$ term but drops
 $`\sqrt{2\pi}`$, and its standard errors vary by year, so that constant

@@ -45,8 +45,8 @@ run_internal_caal_osa(
 
   Age bins, used to label the residuals. Must span every observed bin of
   the stream, not just the ones a `*_bins` restriction fits: residuals
-  are labelled by true observed bin number, so a subset here shifts
-  every label.
+  are labeled by true observed bin number, so a subset here shifts every
+  label.
 
 - bin_label:
 

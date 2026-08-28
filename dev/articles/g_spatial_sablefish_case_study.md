@@ -101,7 +101,7 @@ coincide exactly.
 
 ## Recruitment and regional apportionment
 
-Recruitment follows a mean-recruitment parameterisation with no stock
+Recruitment follows a mean-recruitment parameterization with no stock
 recruit relationship, and a single global parameter is apportioned among
 regions:
 
@@ -120,7 +120,7 @@ as the reference:
 Apportionment parameters are weakly identified, because regional
 recruitment, regional fishing mortality and movement can trade off
 against one another to produce nearly the same regional abundances. A
-Dirichlet prior regularises them:
+Dirichlet prior regularizes them:
 
 ``` math
 P\left(\boldsymbol{\zeta}\right) = \dfrac{\Gamma\left(\sum_{r}\alpha_{r}\right)}{\prod_{r}\Gamma\left(\alpha_{r}\right)}\prod_{r=1}^{n_{r}}\zeta_{r}^{\alpha_{r}-1}
@@ -128,7 +128,7 @@ P\left(\boldsymbol{\zeta}\right) = \dfrac{\Gamma\left(\sum_{r}\alpha_{r}\right)}
 
 with $`\alpha_{r} = 3`$ in every region. A symmetric
 $`\boldsymbol{\alpha}`$ with $`\alpha > 1`$ has its mode at $`1/n_{r}`$,
-so this is a prior centred on *equal* recruitment across regions,
+so this is a prior centered on *equal* recruitment across regions,
 informative rather than vague. The concentration
 $`\kappa = \sum_{r}\alpha_{r} - n_{r} = 10`$ behaves as the number of
 prior pseudo-observations, which is what to adjust if the prior is
@@ -167,7 +167,7 @@ input_list <- Setup_Mod_Rec(
 ## Biological dynamics
 
 Natural mortality is fixed at a single sex-invariant value. Spatial
-models are heavily parameterised and $`M`$ is poorly identified once
+models are heavily parameterized and $`M`$ is poorly identified once
 movement is also being estimated, since both remove fish from a region,
 so fixing it removes a confounding that the data cannot resolve.
 
@@ -222,7 +222,7 @@ P\left(\mathbf{M}_{r,\cdot}\right) = \dfrac{\Gamma\left(\sum_{k}c_{r,k}\right)}{
 ```
 
 with $`c_{r,k} = 3`$ throughout. The same caution applies as for the
-recruitment apportionment: a symmetric $`c > 1`$ is centred on *equal
+recruitment apportionment: a symmetric $`c > 1`$ is centered on *equal
 movement to every region*, which for a residency-dominated stock is a
 strong assumption, not a vague one. It is used here to keep the
 estimates away from the boundaries of the simplex, where the multinomial
@@ -327,7 +327,7 @@ Several settings control cost and identifiability rather than structure:
   with natural mortality, which is itself already fixed.
 - **Reporting rates shared across regions**, estimated in two time
   blocks, under a symmetric beta prior with $`\sigma = 5`$ that
-  penalises the extremes of $`[0,1]`$ without asserting a central value.
+  penalizes the extremes of $`[0,1]`$ without asserting a central value.
 
 ``` r
 
@@ -415,7 +415,7 @@ compositions sum to one across both sexes together,
 so the data carry information about the sex ratio within a region but
 not about the relative abundance *between* regions. That between-region
 information is deliberately left to the indices and the tagging data.
-Fitting compositions that were normalised across regions instead would
+Fitting compositions that were normalized across regions instead would
 let composition data speak to regional apportionment, which is precisely
 the quantity the tags are there to inform.
 

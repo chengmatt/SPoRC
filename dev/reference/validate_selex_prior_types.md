@@ -2,7 +2,7 @@
 
 Checks the optional `type` column consumed by
 [`get_selex_prior`](https://chengmatt.github.io/SPoRC/dev/reference/get_selex_prior.md).
-A table without the column is all `"par"` rows (the original behaviour)
+A table without the column is all `"par"` rows (the original behavior)
 and passes untouched. `"value"` rows are range-checked here because
 their `par` column indexes the selectivity grid rather than the
 parameter vector, and their `block` must exist in the fleet's block map

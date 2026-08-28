@@ -1,4 +1,4 @@
-# Initialise age structure for a simulation replicate
+# Initialize age structure for a simulation replicate
 
 Simulates or reads in initial age deviations and calls
 [`Get_Init_NAA`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Init_NAA.md)

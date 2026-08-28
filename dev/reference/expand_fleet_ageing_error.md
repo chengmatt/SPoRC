@@ -1,6 +1,6 @@
 # Expand a fleet-specific ageing error specification to its full array
 
-Ageing error is a property of the sampling programme, so a fishery that
+Ageing error is a property of the sampling program, so a fishery that
 ages its catch from otoliths and a survey that reads scales do not
 misclassify the same way. `AgeingError_fish` and `AgeingError_srv` let
 each fleet carry its own matrix, defaulting to the shared `AgeingError`

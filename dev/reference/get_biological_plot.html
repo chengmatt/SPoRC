@@ -40,6 +40,7 @@ are returned as a separate plot per population."><meta name="robots" content="no
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -80,13 +81,13 @@ data list. Used to extract <code>WAA</code>, <code>MatAA</code>, <code>ages</cod
 
 <dt id="arg-rep">rep<a class="anchor" aria-label="anchor" href="#arg-rep"></a></dt>
 <dd><p>List of length <code>n_models</code>, where each element is a SPoRC
-report list (i.e. the output of <code>obj$report()</code> after optimisation).
+report list (i.e. the output of <code>obj$report()</code> after optimization).
 Must contain <code>Movement</code> and <code>natmort</code>.</p></dd>
 
 
 <dt id="arg-model-names">model_names<a class="anchor" aria-label="anchor" href="#arg-model-names"></a></dt>
 <dd><p>Character vector of length <code>n_models</code> giving display
-names for each model run. Used as colour legend labels across all plots.</p></dd>
+names for each model run. Used as color legend labels across all plots.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -95,23 +96,23 @@ names for each model run. Used as colour legend labels across all plots.</p></dd
 <dd><p>A list of <code>n_pop</code> <code>ggplot</code> objects, one
     per population. Each plot shows age-specific movement probabilities for
     all seasons at <code>year_indx</code>, faceted by Region_To × (Region_From +
-    Season), with lines coloured by model and distinguished by sex linetype.
+    Season), with lines colored by model and distinguished by sex linetype.
     If <code>do_recruits_move = 0</code>, age-1 fish are excluded. Y-axis is fixed
     to [0, 1].</p></dd>
 
   <dt>[[2]] natmort_plot</dt>
 <dd><p>Natural mortality at age at <code>year_indx</code>,
-    faceted by Region × Sex. Lines coloured by model and distinguished by
+    faceted by Region × Sex. Lines colored by model and distinguished by
     population linetype.</p></dd>
 
   <dt>[[3]] waa_plot</dt>
 <dd><p>Spawning weight-at-age at <code>year_indx</code>, faceted
-    by Region × (Sex + Season). Lines coloured by model and distinguished by
+    by Region × (Sex + Season). Lines colored by model and distinguished by
     population linetype.</p></dd>
 
   <dt>[[4]] mataa_plot</dt>
 <dd><p>Maturity-at-age at <code>year_indx</code>, faceted by
-    Region × (Sex + Season). Lines coloured by model and distinguished by
+    Region × (Sex + Season). Lines colored by model and distinguished by
     population linetype.</p></dd>
 
 

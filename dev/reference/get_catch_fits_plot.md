@@ -28,7 +28,7 @@ get_catch_fits_plot(data, rep, model_names)
 - rep:
 
   List of length `n_models`, where each element is a SPoRC model report
-  (output of `obj$report()` after optimisation). `PredCatch` and
+  (output of `obj$report()` after optimization). `PredCatch` and
   `PredDiscard` `[n_pop × n_regions × n_yrs × n_seas × n_fish_fleets]`
   are summed across populations for pooled trajectories and used
   directly for population-specific trajectories. `ln_sigmaC` and

@@ -51,6 +51,7 @@
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -208,7 +209,7 @@ which is not what the assessment does.</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>N</mi><mrow><mn>1</mn><mo>,</mo><mi>a</mi></mrow></msub><mo>=</mo><msub><mi>R</mi><mn>0</mn></msub><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><munder><mo>∑</mo><mrow><msup><mi>a</mi><mo>′</mo></msup><mo>&lt;</mo><mi>a</mi></mrow></munder><mrow><mo stretchy="true" form="prefix">[</mo><mi>M</mi><mo>+</mo><msup><mi>F</mi><mtext mathvariant="normal">init</mtext></msup><msub><mtext mathvariant="normal">Sel</mtext><msup><mi>a</mi><mo>′</mo></msup></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">N_{1,a} = R_{0}\exp\left(-\sum_{a' &lt; a}\left[M + F^{\text{init}}\text{Sel}_{a'}\right]\right)</annotation></semantics></math></p>
 <p><code>bias_year</code> is indexed in deviation space rather than in
 calendar years, so <code>c(1, 1, n_yrs + 1, n_yrs + 1)</code> puts the
-whole series in the fully bias corrected limb of the ramp. That centres
+whole series in the fully bias corrected limb of the ramp. That centers
 the recruitment penalty on
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><msubsup><mi>σ</mi><mi>R</mi><mn>2</mn></msubsup><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">-\sigma_{R}^{2}/2</annotation></semantics></math>,
 which is what the shifted deviations in the seeding section below
@@ -359,7 +360,7 @@ both lognormal. Every argument is a vector over the two fleets.</p>
 <h2 id="fishery-selectivity-and-catchability">Fishery selectivity and catchability<a class="anchor" aria-label="anchor" href="#fishery-selectivity-and-catchability"></a>
 </h2>
 <p>Fishery selectivity is a bicubic spline over a five year by five age
-node grid, exponentiated with no normalisation:</p>
+node grid, exponentiated with no normalization:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>y</mi><mo>,</mo><mi>a</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><mo>=</mo><msub><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>𝐖</mi><mtext mathvariant="normal">yr</mtext></msup><mspace width="0.167em"></mspace><mi mathvariant="normal">Θ</mi><mspace width="0.167em"></mspace><msup><mi>𝐖</mi><mrow><mtext mathvariant="normal">bin</mtext><mi>⊤</mi></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mi>y</mi><mo>,</mo><mi>a</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\log \text{Sel}_{y,a}^{\text{Fsh}} = \left(\mathbf{W}^{\text{yr}}\,\Theta\,\mathbf{W}^{\text{bin}\top}\right)_{y,a}</annotation></semantics></math></p>
 <p>where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="normal">Θ</mi><annotation encoding="application/x-tex">\Theta</annotation></semantics></math>
@@ -370,7 +371,7 @@ matrix of node values and the two
 matrices are the spline bases over years and over ages.</p>
 <p><code>SelStyr</code> and <code>NSelBins</code> in the specification
 string are not cosmetic. They set the year range and the bin count that
-the smoothness penalties normalise by, and they impose the assessment’s
+the smoothness penalties normalize by, and they impose the assessment’s
 two edge holds: selectivity is flat before 1964 and flat beyond age 40.
 Getting either wrong changes both the surface and the penalty.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
@@ -396,7 +397,7 @@ Getting either wrong changes both the surface and the penalty.</p>
 </h2>
 <p>Survey selectivity is logistic in both fleets, using the slope and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>a</mi><mn>50</mn></msub><annotation encoding="application/x-tex">a_{50}</annotation></semantics></math>
-parameterisation:</p>
+parameterization:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mtext mathvariant="normal">Sel</mtext><mi>a</mi></msub><mo>=</mo><mstyle displaystyle="true"><mfrac><mn>1</mn><mrow><mn>1</mn><mo>+</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">[</mo><mi>−</mi><mi>k</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>a</mi><mo>−</mo><msub><mi>a</mi><mn>50</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow></mrow></mfrac></mstyle></mrow><annotation encoding="application/x-tex">\text{Sel}_{a} = \dfrac{1}{1 + \exp\left[-k\left(a - a_{50}\right)\right]}</annotation></semantics></math></p>
 <p>Only the Aleutian Islands survey carries a catchability prior.
 Supplying a single row for fleet 1 in <code>srv_q_prior</code> is what
@@ -517,7 +518,7 @@ above compares. Comparing the two reported quantities directly instead
 is a 6 percent difference that says nothing about the model.</p>
 <p>The likelihood is checked the same way. <code>SPoRC</code> writes
 each component as a proper density while the assessment drops
-normalising constants, so a like for like comparison subtracts exactly
+normalizing constants, so a like for like comparison subtracts exactly
 the constants the assessment omits.</p>
 <table class="table">
 <thead><tr class="header">

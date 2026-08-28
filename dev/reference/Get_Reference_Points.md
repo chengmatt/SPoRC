@@ -112,7 +112,7 @@ Get_Reference_Points(
 
   `"local_MSY"`
 
-  :   Region-specific \\F\_{MSY}\\ values that jointly maximise total
+  :   Region-specific \\F\_{MSY}\\ values that jointly maximize total
       yield with movement. Valid for both single- and multi-population
       models.
 
@@ -177,4 +177,5 @@ A named list:
 
 Other Reference Points and Projections:
 [`Do_Population_Projection()`](https://chengmatt.github.io/SPoRC/dev/reference/Do_Population_Projection.md),
+[`Get_Reference_Point_Uncertainty()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Reference_Point_Uncertainty.md),
 [`get_key_quants()`](https://chengmatt.github.io/SPoRC/dev/reference/get_key_quants.md)

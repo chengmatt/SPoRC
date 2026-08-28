@@ -42,6 +42,7 @@ and mappings. Must be called after Setup_Mod_Catch_and_F."><meta name="robots" c
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -90,8 +91,8 @@ and mappings. Must be called after <code><a href="Setup_Mod_Catch_and_F.html">Se
 <span>  FishIdxAA_pop_sigma_form <span class="op">=</span> <span class="st">"none"</span>,</span>
 <span>  AgeObsCorr_fish_idx <span class="op">=</span> <span class="st">"iid"</span>,</span>
 <span>  AgeObsCorr_fish_idx_pop <span class="op">=</span> <span class="st">"iid"</span>,</span>
-<span>  rho_fish_idx_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  rho_fish_idx_pop_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  rho_fish_idx_spec <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  rho_fish_idx_pop_spec <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sigmaFishIdx_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
 <span>  sigmaFishIdx_map <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sigmaFishIdx_pop_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
@@ -269,9 +270,11 @@ the fishery index at age, <code>"iid"</code> (default), <code>"1dar1"</code>,
 fleet. See <code><a href="Setup_Mod_Catch_and_F.html">Setup_Mod_Catch_and_F</a></code>.</p></dd>
 
 
-<dt id="arg-rho-fish-idx-key-rho-fish-idx-pop-key">rho_fish_idx_key, rho_fish_idx_pop_key<a class="anchor" aria-label="anchor" href="#arg-rho-fish-idx-key-rho-fish-idx-pop-key"></a></dt>
-<dd><p>Integer matrices
-<code>[n_sexes, n_fish_fleets]</code> coupling the across-age correlation.</p></dd>
+<dt id="arg-rho-fish-idx-spec-rho-fish-idx-pop-spec">rho_fish_idx_spec, rho_fish_idx_pop_spec<a class="anchor" aria-label="anchor" href="#arg-rho-fish-idx-spec-rho-fish-idx-pop-spec"></a></dt>
+<dd><p>How the correlation parameters
+are shared, over region, sex and fleet, using the package's spec strings.
+<code>NULL</code> (the default) gives one per fleet. See
+<code><a href="Setup_Mod_Catch_and_F.html">Setup_Mod_Catch_and_F</a></code>.</p></dd>
 
 
 <dt id="arg-sigmafishidx-spec">sigmaFishIdx_spec<a class="anchor" aria-label="anchor" href="#arg-sigmafishidx-spec"></a></dt>

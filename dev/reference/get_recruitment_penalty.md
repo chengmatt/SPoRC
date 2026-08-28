@@ -117,7 +117,7 @@ get_recruitment_penalty(
   Sexes sharing one parameter keep only the first sex's copy flagged so
   the shared parameter is not penalized twice; sex-specific deviations
   flag every sex. `NULL` penalizes only the first sex's slice, which is
-  the pre-sex-dimension behaviour.
+  the pre-sex-dimension behavior.
 
 - Use_init_sex_pen:
 
@@ -134,7 +134,7 @@ get_recruitment_penalty(
 
   Numeric vector of length `n_ages - 1`, the bias ramp read at the year
   each initial age was born (deviation index `1 - age`). `NULL` uses the
-  first model year's ramp value for every age, the previous behaviour.
+  first model year's ramp value for every age, the previous behavior.
 
 - map_ln_InitDevs:
 

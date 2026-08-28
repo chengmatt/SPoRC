@@ -51,6 +51,7 @@
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -182,7 +183,7 @@ initial numbers as multiplicative deviations from an equilibrium age
 structure rather than as the structure itself, so the seeding step below
 converts between the two.</p>
 <p>The bias ramp is on with every ramp year at the terminal year, which
-centres the recruitment penalty on
+centers the recruitment penalty on
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><msubsup><mi>σ</mi><mi>R</mi><mn>2</mn></msubsup><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">-\sigma_{R}^{2}/2</annotation></semantics></math>.
 That matches the shifted deviations the seeds carry, described in the
 seeding section.</p>
@@ -328,7 +329,7 @@ errors, and the survey is fit at mid year.</p>
 </h2>
 <p>Both fleets use the slope and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>a</mi><mn>50</mn></msub><annotation encoding="application/x-tex">a_{50}</annotation></semantics></math>
-parameterisation of the logistic, which is <code>logist1</code>:</p>
+parameterization of the logistic, which is <code>logist1</code>:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mtext mathvariant="normal">Sel</mtext><mi>a</mi></msub><mo>=</mo><mstyle displaystyle="true"><mfrac><mn>1</mn><mrow><mn>1</mn><mo>+</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">[</mo><mi>−</mi><mi>k</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>a</mi><mo>−</mo><msub><mi>a</mi><mn>50</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow></mrow></mfrac></mstyle></mrow><annotation encoding="application/x-tex">\text{Sel}_{a} = \dfrac{1}{1 + \exp\left[-k\left(a - a_{50}\right)\right]}</annotation></semantics></math></p>
 <p>Selectivity is time invariant, so there are no deviations and no
 process error. Fishery catchability is not used, because there is no
@@ -358,7 +359,7 @@ prior term is
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>3</mn><mo>×</mo><msup><mn>10</mn><mrow><mi>−</mi><mn>6</mn></mrow></msup></mrow><annotation encoding="application/x-tex">3\times10^{-6}</annotation></semantics></math>
 rather than a live contribution.</p>
 <p>The selectivity constraint is not a prior on the selectivity
-<em>parameters</em>. The assessment penalises the realized selectivity
+<em>parameters</em>. The assessment penalizes the realized selectivity
 value at age 30 towards one with a standard deviation of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.003</mn><annotation encoding="application/x-tex">0.003</annotation></semantics></math>:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>ℓ</mi><mtext mathvariant="normal">Sel</mtext></msup><mo>=</mo><mstyle displaystyle="true"><mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mtext mathvariant="normal">Sel</mtext><mn>30</mn></msub><mo>−</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mrow><mn>2</mn><mo>×</mo><msup><mn>0.003</mn><mn>2</mn></msup></mrow></mfrac></mstyle></mrow><annotation encoding="application/x-tex">\ell^{\text{Sel}} = \dfrac{\left(\text{Sel}_{30} - 1\right)^{2}}{2\times0.003^{2}}</annotation></semantics></math></p>
@@ -472,7 +473,7 @@ recruitment         max pct diff: 2.5e-04
 fishing mortality   max pct diff: 4.4e-04</code></pre>
 <p>The likelihood is checked the same way. <code>SPoRC</code> writes
 each component as a proper density while the assessment drops
-normalising constants, so a like for like comparison subtracts exactly
+normalizing constants, so a like for like comparison subtracts exactly
 the constants the assessment omits. The survey statement keeps its
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mi>σ</mi></mrow><annotation encoding="application/x-tex">\log\sigma</annotation></semantics></math>
 term but drops

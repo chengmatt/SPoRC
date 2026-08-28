@@ -3,13 +3,13 @@
 from predicted recapture arrays, supporting six likelihood structures:
 Poisson, negative binomial, and release- or recovery-conditioned
 multinomial and Dirichlet-multinomial. Dimensions absent from
-tag_recaptures_attr are marginalised by summing over them, and all
+tag_recaptures_attr are marginalized by summing over them, and all
 recaptures are placed into index 1 of the corresponding dimension in the
 output array."><meta property="og:description" content="Draws observed tag recapture counts for a single liberty-season-cohort cell
 from predicted recapture arrays, supporting six likelihood structures:
 Poisson, negative binomial, and release- or recovery-conditioned
 multinomial and Dirichlet-multinomial. Dimensions absent from
-tag_recaptures_attr are marginalised by summing over them, and all
+tag_recaptures_attr are marginalized by summing over them, and all
 recaptures are placed into index 1 of the corresponding dimension in the
 output array."><meta name="robots" content="noindex"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -46,6 +46,7 @@ output array."><meta name="robots" content="noindex"></head><body>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -67,7 +68,7 @@ output array."><meta name="robots" content="noindex"></head><body>
 from predicted recapture arrays, supporting six likelihood structures:
 Poisson, negative binomial, and release- or recovery-conditioned
 multinomial and Dirichlet-multinomial. Dimensions absent from
-<code>tag_recaptures_attr</code> are marginalised by summing over them, and all
+<code>tag_recaptures_attr</code> are marginalized by summing over them, and all
 recaptures are placed into index 1 of the corresponding dimension in the
 output array.</p>
     </div>
@@ -111,7 +112,7 @@ output array.</p>
 dimensions are attended in the recapture likelihood. Built from any
 combination of <code>"p"</code> (population), <code>"a"</code> (age), and <code>"s"</code>
 (sex), joined by underscores. Region and fleet are always retained.
-Unattended dimensions are marginalised and output into index 1.</p></dd>
+Unattended dimensions are marginalized and output into index 1.</p></dd>
 
 
 <dt id="arg-conv-tagged-fish">conv_tagged_fish<a class="anchor" aria-label="anchor" href="#arg-conv-tagged-fish"></a></dt>
@@ -179,7 +180,7 @@ arrays).</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>The <code>obs_conv_tag_fish_recap</code> array with simulated recaptures
   filled in at <code>[ry, rseas, tc, pop_idx, reg_idx, age_idx, sex_idx,
-  flt_idx, sim]</code>. Marginalised dimensions are fixed at index 1.</p>
+  flt_idx, sim]</code>. Marginalized dimensions are fixed at index 1.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

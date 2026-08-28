@@ -325,7 +325,7 @@ We start from `est_all` to get the correctly dimensioned parameter
 array, then overwrite the map. The parameter array `fish_fixed_sel_pars`
 has dimensions
 `[n_regions, n_max_sel_pars, n_max_sel_blocks, n_sexes, n_fish_fleets]`,
-in this example `1 × 2 × 1 × 2 × 2`. The table below summarises the
+in this example `1 × 2 × 1 × 2 × 2`. The table below summarizes the
 intended sharing structure before we implement it:
 
 | Fleet | Parameter | Female index | Male index | Shared? |

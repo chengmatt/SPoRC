@@ -34,6 +34,7 @@
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -54,91 +55,66 @@
 <ul><li>Incorporates population-specific, seasonal, and discarding dynamics.</li>
 </ul><div class="section level3">
 <h3 id="major-changes-1-2-0-9000">Major changes<a class="anchor" aria-label="anchor" href="#major-changes-1-2-0-9000"></a></h3>
-<ul><li>Added population-specific (natal homing) and seasonal dynamics, in both simulation and estimation. Most dimensions now follow population, region, year, season, age, sex, fleet.</li>
-<li>Recoded tagging to allow fleet-specific reporting rates and missing attributes in tagged fish. <code>conv_tag_t_tagging</code>, <code>ln_init_conv_tag_mort</code>, and <code>ln_conv_tag_shed</code> are now per-release-event vectors rather than global scalars (scalars still work, recycled). <code>init_conv_tag_mort_spec</code>/<code>conv_tag_shed_spec</code> take <code>"fix"</code>, <code>"est_shared"</code>, or <code>"est_all"</code>.</li>
-<li>Reference points now support local density-dependence for meta-population and natal homing models.</li>
-<li>Can simulate and fit population-specific catches, indices, compositions, tagging data, discards, and discarded compositions.</li>
-<li>Can build internal OSA residuals for catch, indices, compositions, and tagging data.</li>
-<li>Added <code>Fdev_model</code> (<code>"iid"</code>, <code>"rw"</code>, <code>"ar1"</code>) to <code>Setup_Mod_Catch_and_F</code> for fishing mortality deviations, with <code>Fdev_rho</code>/<code>Fdev_rho_spec</code> for the AR1 case.</li>
-<li>Fishing mortality deviations now distinguish a missing catch observation from a true recorded zero: <code>NA</code> in <code>ObsCatch</code> with <code>UseCatch == 0</code> estimates F as an active year; an observed zero forces <code>Fmort</code> to zero.</li>
-<li>Added age-0 (<code>rec_lag = 0</code>) Beverton-Holt recruitment via <code>rec_lag</code> in <code>Setup_Mod_Rec</code>/<code>Setup_Sim_Rec</code>, driven by the same year’s own SSB.</li>
+<div class="section level4">
+<h4 id="population-structure-and-dynamics-1-2-0-9000">Population structure and dynamics<a class="anchor" aria-label="anchor" href="#population-structure-and-dynamics-1-2-0-9000"></a></h4>
+<ul><li>Added population-specific (natal homing) and seasonal dynamics to both simulation and estimation. Most dimensions now follow population, region, year, season, age, sex, and fleet.</li>
 <li>Added movement-after-mortality and continuous movement dynamics.</li>
-<li>Added <code>move_expm_nsub</code> to <code>Setup_Mod_Movement</code>, selecting how CTMC matrix exponentials are evaluated in both <code>Get_Movement</code> and the <code>move_timing = 2</code> operators. <code>0</code> (default) is the exact <code><a href="https://rdrr.io/pkg/Matrix/man/expm-methods.html" class="external-link">Matrix::expm</a></code>; a power of two <code>n &gt;= 1</code> substitutes <code>n</code> implicit backward Euler substeps, <code>(I - A/n)^-n</code>, which is several times cheaper to differentiate but only first order in <code>1/n</code>. Fractions stay non-negative and catch still balances survivors exactly at any <code>n</code>.</li>
-<li>Added <code>sr_penalty</code> (<code>"none"</code>, <code>"bh"</code>, <code>"ricker"</code>) in <code>Setup_Mod_Rec</code> to fit a stock-recruit curve as a penalty rather than the recruitment process itself, valid only with <code>rec_model = "mean_rec"</code>. <code>sr_R0_spec</code> sets the curve’s scale (<code>"shared"</code>, <code>"est"</code>, <code>"rinit"</code>). MSY reference points remain unavailable under mean recruitment.</li>
-<li>Added <code>fish_sel_norm_bins</code>/<code>srv_sel_norm_bins</code> to name which bins non-parametric log-scale selectivity (<code>"nonparlog"</code>) standardizes over.</li>
-<li>Added a BSAI Atka mackerel case study bridging the 2024 AMAK assessment, with <code>sgl_rg_bsai_atka_data</code>.</li>
-<li>Added a West Coast sablefish case study bridging the 2025 assessment, with <code>sgl_rg_wc_sablefish_data</code>.</li>
-<li>Selectivity sexes can be linked through offsets: <code>fish_sel_sex_offset</code>/<code>ret_sel_sex_offset</code>/<code>srv_sel_sex_offset</code>, with <code>"par"</code>, <code>"scale"</code>, <code>"par_scale"</code>, <code>"apical"</code>, and <code>"par_apical"</code> (double normal only) forms.</li>
-<li>Added an optional <code>_NSelBins_&lt;n&gt;</code> suffix on any selectivity model string, holding bins beyond <code>n</code> at bin <code>n</code>’s value (the plateau convention the bicubic form already had).</li>
-<li>Initial age deviations gained a sex dimension (<code>ln_InitDevs</code> is now <code>[n_pop, n_regions, n_ages - 1, n_sexes]</code>), via <code>InitDevs_sex_spec</code> in <code>Setup_Mod_Rec</code>/<code>Setup_Sim_Rec</code> (<code>"est_shared_s"</code> default, bit-identical to before; <code>"est_all"</code> gives each sex its own curve).</li>
-<li>Sex-specific initial age deviations can be penalized against each other via <code>Use_init_sex_pen</code>/<code>init_sex_pen_sigma</code> in <code>Setup_Mod_Rec</code> (requires <code>InitDevs_sex_spec = "est_all"</code>).</li>
-<li>Corrected the double normal (<code>"dbnrml"</code>) selectivity form: the plateau-start parameter is now on the bin scale, and both limbs are rescaled to hit <code>p5</code>/<code>p6</code> at the first/last bin exactly. Existing <code>"dbnrml"</code> fits should be re-run.</li>
-<li>Growth starting values now go through <code>starting_values</code> in <code>Setup_Mod_Biologicals</code>, like every other parameter: <code>growth_pars</code> is now <code>ln_growth_pars</code>, and <code>growth_tv_sigma</code>/<code>growth_semipar_sigma</code>/<code>growth_semipar_rho</code> are now one array, <code>growth_pe_pars</code>.</li>
-<li>
-<code>SizeAgeTrans_fish</code>/<code>SizeAgeTrans_srv</code> in <code>Setup_Mod_Biologicals</code> let a fleet read its own fixed size-age key under <code>growth_model = "none"</code>, mirroring <code>WAA_fish</code>/<code>WAA_srv</code>.</li>
-<li>
-<code>get_osa</code>’s external path now reads <code>N</code>/<code>DM_theta</code>/<code>LN_Sigma</code> consistently across every <code>comp_type</code>, and fills in <code>bins</code>/<code>bin_label</code> from the data when omitted.</li>
-<li>
-<code>plot_resids</code> facets conditional age-at-length residuals by length bin, so they no longer stack onto a single point.</li>
-<li>Francis reweighting now covers conditional age-at-length, via <code>new_fish_caal_wts</code>/<code>new_srv_caal_wts</code> from <code>do_francis_reweighting</code>.</li>
-<li>Added <code>get_caal_fits</code>, returning conditional age-at-length fits as observed/predicted mean age within each length bin.</li>
-<li>
-<code>Get_Reference_Points</code> now reads the growth-derived weight at age from the report instead of the data placeholder.</li>
-<li>Retrospective peels now truncate the growth deviations, their maps, and the conditional age-at-length arrays, which were previously left at full length and read incorrectly.</li>
-<li>Added <code>srv_waa_selected</code> in <code>Setup_Mod_SrvIdx_and_Comps</code>, the survey twin of <code>fish_waa_selected</code>.</li>
-<li>
-<code>growth_A2</code> in <code>Setup_Mod_Biologicals</code> accepts <code>"Linf"</code> in place of a second reference age.</li>
-<li>Growth parameters can vary over time via <code>growth_tv_model</code> (<code>"iid"</code>/<code>"rw"</code>, with <code>growth_tv_link</code>, <code>growth_tv_years</code>), reported as <code>growth_pars_y</code>.</li>
-<li>Time-varying growth can be carried cohort by cohort via <code>growth_tv_type = "cohort"</code>, evaluated inside the population dynamics year loop.</li>
-<li>Growth gained the Richards form (<code>growth_model = "richards"</code>), a sixth parameter <code>rho</code>; <code>rho = 1</code> is von Bertalanffy.</li>
-<li>Added semi-parametric growth (<code>growth_semipar</code>: <code>"iid"</code>, <code>"rw"</code>, <code>"2dar1"</code>, <code>"3dmarg"</code>, <code>"3dcond"</code>), a year-by-age deviation surface on mean length at age.</li>
-<li>Length compositions can be recorded on coarser bins than the population via <code>LenBinMap</code> in <code>Setup_Mod_Biologicals</code>.</li>
-<li>Length selectivity can be applied at length rather than at age when forming length compositions, via <code>FishLenComps_sel</code>/<code>SrvLenComps_sel</code>.</li>
-<li>The catch in biomass can use the selection-weighted weight at age via <code>fish_waa_selected</code>.</li>
-<li>The double normal’s ascending limb can be anchored at a bin other than the first, via <code>fish_sel_dbnrml_startbin</code>/<code>srv_sel_dbnrml_startbin</code>.</li>
-<li>The initial equilibrium recruitment’s offset from the recruitment level can be penalized via <code>Use_rinit_pen</code>/<code>rinit_pen_sd</code> in <code>Setup_Mod_Rec</code>.</li>
-<li>Added an EBS Pacific cod case study bridging the 2024 assessment, <code><a href="../articles/ae_ebs_pacific_cod_case_study.html">vignette("ae_ebs_pacific_cod_case_study")</a></code>, with <code>sgl_rg_ebs_pcod_data</code>.</li>
-<li>Fixed the 3D GMRF process error’s precision matrix, previously built over the full bin dimension rather than the bins actually evaluated.</li>
+<li>Added continuous-time Markov chain (CTMC) movement estimation using preference functions.</li>
+<li>Added <code>move_expm_nsub</code> to <code>Setup_Mod_Movement</code>, allowing CTMC matrix exponentials to be evaluated using implicit backward Euler substeps, providing a faster alternative for differentiation while preserving non-negative fractions and exact survivor catch balance.</li>
+<li>Added support for local density dependence in reference points for meta-population and natal homing models.</li>
+<li>Added uncertainty estimation for reference points.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="data-and-observation-processes-1-2-0-9000">Data and observation processes<a class="anchor" aria-label="anchor" href="#data-and-observation-processes-1-2-0-9000"></a></h4>
+<ul><li>Added population-specific catches, indices, compositions, tagging data, discards, and discarded compositions to simulation and estimation.</li>
+<li>Recoded tagging to allow fleet-specific reporting rates and missing attributes in tagged fish. <code>conv_tag_t_tagging</code>, <code>ln_init_conv_tag_mort</code>, and <code>ln_conv_tag_shed</code> are now per-release-event vectors rather than global scalars; scalars remain supported and are recycled. <code>init_conv_tag_mort_spec</code>/<code>conv_tag_shed_spec</code> accept <code>"fix"</code>, <code>"est_shared"</code>, or <code>"est_all"</code>.</li>
+<li>Added internal OSA residuals for catch, indices, compositions, and tagging data.</li>
+<li>Added support for at-age data streams (e.g., ICES-style stock assessments).</li>
 <li>Survey fleets can observe recruitment deviations directly via <code>srv_idx_type = "recdev"</code>, reported as <code>RecDev_anom</code>.</li>
-<li>A conditioned operating model now records <code>ln_RecDevs</code> correctly instead of leaving it at zero.</li>
-<li>The double normal’s default starting values now place its peak mid-range instead of at zero, which previously divided by zero.</li>
-<li>Added ability to fit to at-age data streams (i.e., ICES style stock assessments).</li>
 </ul></div>
-<div class="section level3">
-<h3 id="minor-changes-1-2-0-9000">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-2-0-9000"></a></h3>
-<ul><li>
-<code>likelihood_profile</code>/<code>get_nLL_plot</code> now carry <code>Init_Sex_nLL</code>, <code>Rec_level_nLL</code>, and <code>SR_pen_nLL</code>.</li>
-<li>Indices can be restricted to a subset of ages via <code>srv_idx_ages</code>/<code>fish_idx_ages</code>.</li>
-<li>Index catchability can be concentrated out of the likelihood via <code>srv_q_type</code> (<code>"est"</code>/<code>"arith"</code>/<code>"geo"</code>).</li>
-<li>Index likelihoods are now selectable per fleet via <code>SrvIdx_LikeType</code>/<code>FishIdx_LikeType</code> (<code>"lognormal"</code>, <code>"normal"</code>, <code>"mvn"</code>).</li>
-<li>The simulator now draws index observations under the fleet’s chosen error structure instead of always lognormal.</li>
-<li>Population-specific index likelihoods now follow the fleet’s <code>LikeType</code> for <code>"lognormal"</code>/<code>"normal"</code> instead of always lognormal.</li>
-<li>Deviation penalties can be centred on their own mean via <code>RecDevs_pen_center</code>/<code>InitDevs_pen_center</code>/<code>Fdev_pen_center</code> (<code>"own_mean"</code>).</li>
-<li>Fishing mortality can be parameterized as free annual log-F via <code>ln_F_mean_spec = "fix"</code>.</li>
-<li>The steepness prior’s beta support is configurable via <code>lb</code>/<code>ub</code> columns on <code>h_prior</code>.</li>
-<li>Added <code>init_age_strc = 4</code> (“free”), skipping the equilibrium age structure projection entirely.</li>
-<li>Added selectivity form <code>"nonparlog"</code>, non-parametric on the log scale, standardized to average one within a year.</li>
-<li>Added bin-override selectivity deviations via <code>*_sel_bin_dev_bins</code>/<code>cont_tv_*sel_bin_devs</code>.</li>
+<div class="section level4">
+<h4 id="recruitment-and-fishing-mortality-1-2-0-9000">Recruitment and fishing mortality<a class="anchor" aria-label="anchor" href="#recruitment-and-fishing-mortality-1-2-0-9000"></a></h4>
+<ul><li>Added age-0 (<code>rec_lag = 0</code>) Beverton-Holt recruitment, driven by the same year’s SSB.</li>
+<li>Added <code>sr_penalty</code> (<code>"none"</code>, <code>"bh"</code>, <code>"ricker"</code>) to fit a stock-recruit relationship as a penalty rather than as the recruitment process itself. <code>sr_R0_spec</code> controls the scale of the stock-recruit curve. MSY reference points remain unavailable under mean recruitment.</li>
+<li>Added <code>Fdev_model</code> (<code>"iid"</code>, <code>"rw"</code>, <code>"ar1"</code>) to <code>Setup_Mod_Catch_and_F</code>, with <code>Fdev_rho</code>/<code>Fdev_rho_spec</code> for the AR1 case.</li>
+<li>Fishing mortality deviations now distinguish missing catch observations from true recorded zeros: <code>NA</code> in <code>ObsCatch</code> with <code>UseCatch == 0</code> estimates F as an active year, whereas an observed zero forces <code>Fmort</code> to zero.</li>
+<li>Added the ability to parameterize fishing mortality as free annual log-F via <code>ln_F_mean_spec = "fix"</code>.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="biological-processes-and-growth-1-2-0-9000">Biological processes and growth<a class="anchor" aria-label="anchor" href="#biological-processes-and-growth-1-2-0-9000"></a></h4>
+<ul><li>Growth parameters can vary over time via <code>growth_tv_model</code> (<code>"iid"</code>/<code>"rw"</code>), with support for year- and cohort-specific variation.</li>
+<li>Added semi-parametric growth (<code>growth_semipar</code>: <code>"iid"</code>, <code>"rw"</code>, <code>"2dar1"</code>, <code>"3dmarg"</code>, <code>"3dcond"</code>) for year-by-age deviations in mean length at age.</li>
+<li>Added the Richards growth form (<code>growth_model = "richards"</code>), with von Bertalanffy growth recovered when <code>rho = 1</code>.</li>
+<li>Added flexible size-age and weight-at-age inputs, including fleet-specific size-age keys and selection-weighted weight at age.</li>
+<li>Added conditional age-at-length fitting and Francis reweighting.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="selectivity-1-2-0-9000">Selectivity<a class="anchor" aria-label="anchor" href="#selectivity-1-2-0-9000"></a></h4>
+<ul><li>Added non-parametric, bicubic, logistic-with-asymptote, and fixed selectivity forms.</li>
+<li>Added sex-specific selectivity offsets, allowing selectivity parameters to be linked across sexes using <code>"par"</code>, <code>"scale"</code>, <code>"par_scale"</code>, <code>"apical"</code>, and <code>"par_apical"</code> forms.</li>
+<li>Added time-, bin-, and surface-based selectivity deviations and expanded selectivity smoothness penalties.</li>
+<li>Corrected the double-normal (<code>"dbnrml"</code>) selectivity parameterization and added flexible anchoring of its ascending limb.</li>
+<li>Added <code>_NSelBins_&lt;n&gt;</code> suffixes to selectivity model strings to hold bins beyond <code>n</code> at the value of bin <code>n</code>.</li>
+<li>Added <code>fish_sel_norm_bins</code>/<code>srv_sel_norm_bins</code> to specify the bins over which non-parametric log-scale selectivity is standardized.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="reference-points-1-2-0-9000">Reference points<a class="anchor" aria-label="anchor" href="#reference-points-1-2-0-9000"></a></h4>
+<ul><li>Reference points now support local density dependence for meta-population and natal homing models.</li>
+<li>Added uncertainty estimation for reference points.</li>
 <li>
-<code>Wt_Rec</code> now applies inside the sum, accepting a per-deviation weight array; the initial age penalty moved to its own <code>Wt_Init_Rec</code>.</li>
-<li>Added a centering penalty on selectivity fixed-effect parameter sets via <code>Use_fish_selex_penalty</code>/<code>fish_selex_penalty</code> and its retention/survey equivalents.</li>
-<li>Selectivity prior tables gained an optional <code>type</code> column (<code>"par"</code> or <code>"value"</code>, the latter constraining a realized selectivity value rather than a parameter).</li>
-<li>Selectivity smoothness penalties are now specified per fleet and per term rather than shared across all fleets.</li>
-<li>Fishery indices can be observed part-way through a season via <code>t_fish</code>, the same convention <code>t_srv</code> already used.</li>
-<li>Recruitment deviations that are mapped off are no longer penalized.</li>
-<li>Initialization fishing mortality is now its own parameter, <code>init_F_par</code>, with <code>init_F_form</code> (<code>"prop"</code>/<code>"abs"</code>) and <code>init_F_spec</code>.</li>
-<li>Added <code>backwards_compatibility_guard()</code> to fill in fields older input lists predate.</li>
-<li>Renamed <code>ln_srv_fixed_sel_pars</code>/<code>ln_fish_fixed_sel_pars</code> to <code>srv_fixed_sel_pars</code>/<code>fish_fixed_sel_pars</code>.</li>
-<li>Added non-parametric selectivity, bicubic selectivity, logistic selectivity with an asymptote, and fixed selectivity inputs.</li>
-<li>
-<code>init_F_prop</code> is now region/season/fleet-specific rather than tied to the first fishery fleet.</li>
-<li>
-<code>do_retrospective</code> can return the retrospective RTMB model objects via <code>return_models</code>.</li>
+<code>Get_Reference_Points</code> now uses growth-derived weight at age from the model report rather than the data placeholder.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="case-studies-and-applications-1-2-0-9000">Case studies and applications<a class="anchor" aria-label="anchor" href="#case-studies-and-applications-1-2-0-9000"></a></h4>
+<ul><li>Added BSAI Atka mackerel, West Coast sablefish, EBS Pacific cod, North Sea sand eel, GOA Rex Sole, BSAI Northern Rock Sole case studies bridging recent assessments.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="model-fitting-and-diagnostics-1-2-0-9000">Model fitting and diagnostics<a class="anchor" aria-label="anchor" href="#model-fitting-and-diagnostics-1-2-0-9000"></a></h4>
+<ul><li>Improved Newton refinement in <code>fit_model</code> by obtaining the Hessian directly from the AD tape rather than finite differencing.</li>
 <li>Added 95% confidence intervals for SDNR based on a chi-squared test for OSA residuals.</li>
-<li>Non-parametric selectivity is now forced to be mean-standardized.</li>
-<li>Added OSA residuals for time-series observations (indices, catch) as well as compositions and tagging data.</li>
-<li>Consolidated selectivity smoothness penalties into six weights (<code>smooth_bin_curve</code>, <code>smooth_bin_diff</code>, <code>smooth_yr_diff</code>, <code>smooth_yr_curve</code>, <code>smooth_dome</code>, <code>smooth_mean_center</code>) via <code>fish_sel_pen_wts</code>/<code>ret_sel_pen_wts</code>/<code>srv_sel_pen_wts</code>, evaluated on the realized selectivity surface for any form. Removed the old <code>cont_tv_*_sel_penalty</code> flags and the legacy <code>bin_curve</code>/<code>yr_curve</code> terms; all six weights default to off.</li>
+<li>Added OSA residuals for time-series observations, compositions, and tagging data.</li>
 </ul></div>
+</div>
 <div class="section level3">
 <h3 id="improvements-1-2-0-9000">Improvements<a class="anchor" aria-label="anchor" href="#improvements-1-2-0-9000"></a></h3>
 <ul><li>Numeric and character codes are both accepted for simulator dynamics, matching the estimation model.</li>

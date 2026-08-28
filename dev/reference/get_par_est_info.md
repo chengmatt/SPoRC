@@ -6,7 +6,7 @@ posterior estimates, standard errors, and absolute gradients) and one
 for fixed (non-estimated) parameters. Parameter indices are re-sequenced
 to match the sequential numbering used internally by RTMB's `sdreport`,
 and map entries of `NA` (i.e., parameters fixed via `mapping`) are
-labelled `"NE"` (not estimated).
+labeled `"NE"` (not estimated).
 
 ## Usage
 

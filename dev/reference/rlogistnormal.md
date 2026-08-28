@@ -1,7 +1,7 @@
 # Simulate from a logistic-normal distribution
 
 Draws a single composition vector of length \\K\\ from a logistic-normal
-distribution using the additive log-ratio (ALR) parameterisation. The
+distribution using the additive log-ratio (ALR) parameterization. The
 last category is treated as the reference bin: the mean vector of the
 underlying multivariate normal is \\\mu_k = \log(p_k / p_K)\\, \\k = 1,
 \ldots, K-1\\. The draw is back-transformed via the additive softmax so

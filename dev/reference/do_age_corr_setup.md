@@ -17,7 +17,7 @@ do_age_corr_setup(
   fleet_field,
   use_field,
   starting_values = list(),
-  rho_key = NULL,
+  rho_spec = NULL,
   pop = FALSE
 )
 ```
@@ -49,11 +49,14 @@ do_age_corr_setup(
 
   Named list from the caller's `...`.
 
-- rho_key:
+- rho_spec:
 
-  Integer matrix `[n_sexes, n_fleets]` coupling the across-age
-  correlation, or `NULL` for one per fleet shared across sexes. Equal
-  entries share a parameter and `NA` excludes one.
+  Character string controlling how the correlation parameters are
+  shared: `"est_all"`, `"fix"`, or `"est_shared_"` followed by any
+  combination of `r`, `s` and `f`, gaining `p` for the
+  population-specific streams. `NULL` (the default) takes
+  `"est_shared_r_s"`, or `"est_shared_p_r_s"` when `pop`, both of which
+  give one correlation per fleet.
 
 - pop:
 
@@ -75,5 +78,14 @@ correlates over ages and years jointly through a separable AR(1), which
 is defined on a complete grid and so requires the fleet's observed ages
 and years to form one.
 
-Correlations are one per fleet, shared across sexes, unless a key says
-otherwise. A sex a fleet never observes carries no parameter.
+How the correlations are shared follows the package's spec strings
+rather than a structure of its own. They sit over region, sex and fleet,
+with a leading population margin for the population-specific streams, so
+`"est_shared_r_s"` (the default, `"est_shared_p_r_s"` for the population
+form) gives one per fleet, `"est_shared_r_s_f"` a single value,
+`"est_all"` a free one per cell, and `"fix"` holds them all. One spec
+governs the stream's across-age correlation, its across-year correlation
+and its unstructured matrix together, so two fleets sharing a
+correlation share a whole matrix under `"us"`. A region, sex or
+population a fleet never observes carries no parameter whatever the spec
+says, which is what holds the unused slots of a summed margin out.

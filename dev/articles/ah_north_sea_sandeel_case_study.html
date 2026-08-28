@@ -51,6 +51,7 @@
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -215,7 +216,7 @@ approximated, and that affects the observation layer rather than the
 trajectory.</p>
 <p>The recruitment age needs separate handling. Age 0 fish do not exist
 until season 2, so they are exposed to one season of mortality rather
-than two, and their annual rate is set so that the realised exposure
+than two, and their annual rate is set so that the realized exposure
 matches.</p>
 <p>Maturity is doubled. <code>SPoRC</code> multiplies spawning biomass
 by 0.5 for single sex models, on the reasoning that a single sex model
@@ -323,7 +324,7 @@ it is represented with an <code>NA</code>.</p>
 <span><span class="op">)</span></span></code></pre></div>
 <p>A fleet fits the aggregated catch or the catch at age, never both.
 Supplying both is an error rather than a warning: they are the same
-information stated twice, and the factorisation of an at-age observation
+information stated twice, and the factorization of an at-age observation
 into a total and a composition is exact for multinomial counts but not
 for the lognormal used here.</p>
 <div class="section level3">
@@ -656,7 +657,7 @@ parameter, which is what an age a survey never sees wants.</p>
 <h2 id="fitting">Fitting<a class="anchor" aria-label="anchor" href="#fitting"></a>
 </h2>
 <p>The recruitment penalty has to be translated before the two models
-are asked to find the same optimum. <code>smsR</code> penalises its
+are asked to find the same optimum. <code>smsR</code> penalizes its
 deviations towards the hockey stick at a weight of 0.05, set through
 <code>nllfactor</code>, with its recruitment standard deviation
 estimated at 0.897, so the precision reaching the objective is
@@ -709,7 +710,7 @@ natural mortality as a free array over age, year and season, whereas
 annual rate to the sum over seasons preserves the annual trajectory, and
 only the within season split differs.</p>
 <p>Also, the recruitment penalty is not the same statement.
-<code>smsR</code> penalises its deviations towards a hockey stick at a
+<code>smsR</code> penalizes its deviations towards a hockey stick at a
 weight of 0.05, while <code>SPoRC</code> assumes mean recruitment with
 some annual deviations.</p>
 </div>

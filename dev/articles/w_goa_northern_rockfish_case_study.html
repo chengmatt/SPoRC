@@ -51,6 +51,7 @@
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -183,7 +184,7 @@ recruit function:</p>
 <p>with
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mi>R</mi></msub><mo>=</mo><mn>1.5</mn></mrow><annotation encoding="application/x-tex">\sigma_{R} = 1.5</annotation></semantics></math>
 fixed. There is no lognormal bias correction, so
-<code>do_rec_bias_ramp = 0</code> and the penalty is centred on zero,
+<code>do_rec_bias_ramp = 0</code> and the penalty is centered on zero,
 which is what the ADMB template does. Every year carries a deviation,
 including the terminal years, so <code>dont_est_recdev_last = 0</code>.
 The first year sits in an unfished equilibrium age structure with its
@@ -206,7 +207,7 @@ occurs at the start of the year.</p>
 <div class="section level2">
 <h2 id="biological-dynamics">Biological dynamics<a class="anchor" aria-label="anchor" href="#biological-dynamics"></a>
 </h2>
-<p>Natural mortality is estimated under a lognormal prior centred on
+<p>Natural mortality is estimated under a lognormal prior centered on
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.06</mn><annotation encoding="application/x-tex">0.06</annotation></semantics></math>
 with a coefficient of variation of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.05</mn><annotation encoding="application/x-tex">0.05</annotation></semantics></math>:</p>
@@ -337,7 +338,7 @@ and the survey is fit at the start of the year, which
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>a</mi><mn>50</mn></msub><annotation encoding="application/x-tex">a_{50}</annotation></semantics></math>
 and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>a</mi><mn>95</mn></msub><annotation encoding="application/x-tex">a_{95}</annotation></semantics></math>
-parameterisation of the logistic, which is <code>logist2</code>:</p>
+parameterization of the logistic, which is <code>logist2</code>:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mtext mathvariant="normal">Sel</mtext><mi>a</mi></msub><mo>=</mo><mstyle displaystyle="true"><mfrac><mn>1</mn><mrow><mn>1</mn><mo>+</mo><msup><mn>19</mn><mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>a</mi><mn>50</mn></msub><mo>−</mo><mi>a</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>/</mi><msub><mi>a</mi><mn>95</mn></msub></mrow></msup></mrow></mfrac></mstyle></mrow><annotation encoding="application/x-tex">\text{Sel}_{a} = \dfrac{1}{1 + 19^{\left(a_{50} - a\right)/a_{95}}}</annotation></semantics></math></p>
 <p>Selectivity is time invariant, so there are no deviations and no
 process error. Fishery catchability is not used, because there is no
@@ -357,7 +358,7 @@ fishery index to scale.</p>
 <h2 id="survey-selectivity-and-catchability">Survey selectivity and catchability<a class="anchor" aria-label="anchor" href="#survey-selectivity-and-catchability"></a>
 </h2>
 <p>Survey selectivity takes the same logistic form. Catchability is
-estimated under a lognormal prior centred on
+estimated under a lognormal prior centered on
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>1</mn><annotation encoding="application/x-tex">1</annotation></semantics></math>
 with a coefficient of variation of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.45</mn><annotation encoding="application/x-tex">0.45</annotation></semantics></math>,
@@ -437,7 +438,7 @@ spawning biomass    max pct diff: 7.5e-09
 recruitment         max pct diff: 4.7e-14</code></pre>
 <p>The likelihood is checked the same way. <code>SPoRC</code> writes
 each component as a proper density while the assessment drops
-normalising constants, so a like for like comparison subtracts exactly
+normalizing constants, so a like for like comparison subtracts exactly
 the constants the assessment omits. The catch statement is a weighted
 sum of squares, so subtracting <code>SPoRC</code>’s per observation
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mstyle displaystyle="false"><mfrac><mn>1</mn><mn>2</mn></mfrac></mstyle><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mn>2</mn><mi>π</mi><mo>+</mo><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><msup><mi>σ</mi><mi>C</mi></msup></mrow><annotation encoding="application/x-tex">\tfrac{1}{2}\log 2\pi + \log\sigma^{C}</annotation></semantics></math>

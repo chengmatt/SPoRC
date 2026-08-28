@@ -221,7 +221,7 @@ input_list <- Setup_Mod_SrvIdx_and_Comps(
 
 ## Fishery selectivity and catchability
 
-Both fleets use the $`a_{50}`$ and $`a_{95}`$ parameterisation of the
+Both fleets use the $`a_{50}`$ and $`a_{95}`$ parameterization of the
 logistic, which is `logist2`:
 
 ``` math
@@ -248,7 +248,7 @@ input_list <- Setup_Mod_Fishsel_and_Q(
 ## Survey selectivity and catchability
 
 Survey selectivity takes the same logistic form. Catchability is
-estimated under a lognormal prior centred on $`1`$ with a standard
+estimated under a lognormal prior centered on $`1`$ with a standard
 deviation of $`1/\sqrt{5}`$:
 
 ``` math

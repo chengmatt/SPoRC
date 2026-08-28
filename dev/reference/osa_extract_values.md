@@ -1,7 +1,7 @@
 # Extract frozen numeric values from an OSA observation
 
 Returns the numeric *values* of an observation slice, detached from the
-AD tape. This is the R analogue of WHAM's `asDouble()`: it is used to
+AD tape. This is the R analog of WHAM's `asDouble()`: it is used to
 build the running composition remainder so that, when
 [`oneStepPredict`](https://rdrr.io/pkg/RTMB/man/OSA-residuals.html)
 peels and perturbs a single bin, the "all other bins" count does not

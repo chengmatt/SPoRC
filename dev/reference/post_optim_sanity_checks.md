@@ -1,4 +1,4 @@
-# Run post-optimisation convergence checks on a fitted SPoRC model
+# Run post-optimization convergence checks on a fitted SPoRC model
 
 Evaluates four convergence criteria on the output of a fitted RTMB
 model: (1) finiteness of the joint negative log-likelihood, (2) maximum
@@ -35,7 +35,7 @@ post_optim_sanity_checks(
 
   Numeric. Maximum tolerated absolute gradient for any fixed-effect
   parameter. Default `1e-3`; values above this threshold suggest the
-  optimiser did not reach a local minimum.
+  optimizer did not reach a local minimum.
 
 - se_tol:
 

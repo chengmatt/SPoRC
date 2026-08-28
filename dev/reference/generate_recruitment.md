@@ -6,7 +6,7 @@ expected recruitment from
 and then multiplying by lognormal deviations (bias-corrected).
 Recruitment is apportioned across sexes and seasons and written into
 `sim_env$NAA[p, r, y, 1, 1, s, sim]` (first season, age-1 slot).
-Unfished NAA (`NAA0`) is synchronised to match fished NAA at
+Unfished NAA (`NAA0`) is synchronized to match fished NAA at
 recruitment. If `Rec_input` exists in the environment and covers year
 `y`, those values override the stochastic draw entirely.
 

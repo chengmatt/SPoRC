@@ -37,11 +37,10 @@ get_data_fitted_plot(data, model_names)
 ## Value
 
 A single `ggplot` object: a dot-plot with Year on the x-axis and data
-type (labelled by source, population where applicable, season, and
-fleet) on the y-axis, faceted by Model × Region. Points appear only in
-years where the corresponding `Use*` indicator is 1. The legend is
-suppressed; data types are distinguished by y-axis position and fill
-colour.
+type (labeled by source, population where applicable, season, and fleet)
+on the y-axis, faceted by Model × Region. Points appear only in years
+where the corresponding `Use*` indicator is 1. The legend is suppressed;
+data types are distinguished by y-axis position and fill color.
 
 ## See also
 

@@ -1,12 +1,12 @@
 # Compute Beverton-Holt Fmsy for a spatially explicit model
 
-Calculates \\F\_{MSY}\\ by maximising equilibrium yield under a
+Calculates \\F\_{MSY}\\ by maximizing equilibrium yield under a
 Beverton-Holt stock-recruit relationship. Yield is computed from
 spawning biomass per recruit (\\\phi_F\\), the BH equilibrium
 recruitment formula, and catch-at-age integrated across all regions,
 seasons, and movement transitions. Yield includes only landings from
 fleets where `is_discard_fleet == 0`; discard-only fleets contribute to
-total mortality but not to the yield being maximised.
+total mortality but not to the yield being maximized.
 
 ## Usage
 
@@ -120,7 +120,7 @@ global_Fmsy(pars, data)
 
 ## Value
 
-Numeric scalar. Negative total equilibrium yield (minimised to find
+Numeric scalar. Negative total equilibrium yield (minimized to find
 \\F\_{MSY}\\).
 
 ## Details

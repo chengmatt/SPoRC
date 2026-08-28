@@ -18,7 +18,7 @@ marg_AIC(opt, p = 2, n = Inf)
 
 - opt:
 
-  Named list of optimiser output. Must contain `$par` and either
+  Named list of optimizer output. Must contain `$par` and either
   `$objective` (e.g., `nlminb`) or `$value` (e.g., `optim`).
 
 - p:

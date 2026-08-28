@@ -5,7 +5,7 @@ Internal helper called by
 to construct the TMB/RTMB factor map for `rec_seas_prop_pars`, the
 logit-scale parameters controlling the proportion of annual recruitment
 assigned to each season. The array has dimensions
-`[n_pop x (n_seas - 1)]`, using a sum-to-one soft-max parameterisation
+`[n_pop x (n_seas - 1)]`, using a sum-to-one soft-max parameterization
 with one reference season omitted.
 
 ## Usage

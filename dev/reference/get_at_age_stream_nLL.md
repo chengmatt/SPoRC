@@ -84,17 +84,18 @@ get_at_age_stream_nLL(
 
 - trans_rho:
 
-  Unconstrained correlation across ages, over sex by fleet.
+  Unconstrained correlation across ages, over region by sex by fleet,
+  with a leading population margin when `pop` is `TRUE`.
 
 - trans_rho_year:
 
-  Unconstrained correlation across years, over sex by fleet, read under
-  `"2dar1"`.
+  Unconstrained correlation across years, shaped like `trans_rho`, read
+  under `"2dar1"`.
 
 - us_pars:
 
-  Unconstrained correlation parameters, over pair by sex by fleet, read
-  under `"us"`.
+  Unconstrained correlation parameters, over pair by the margins of
+  `trans_rho`, read under `"us"`.
 
 - aa_type:
 

@@ -3,7 +3,7 @@
 Multi-population extension of
 [`local_Fmsy_sglpop`](https://chengmatt.github.io/SPoRC/dev/reference/local_Fmsy_sglpop.md).
 Estimates a vector of region-specific \\F\_{MSY}\\ values that jointly
-maximise total equilibrium yield when multiple populations, each with
+maximize total equilibrium yield when multiple populations, each with
 distinct natal regions, movement schedules, and Beverton-Holt
 parameters, co-occupy a shared spatial domain.
 
@@ -52,7 +52,7 @@ local_Fmsy_multipop(pars, data)
   `n_pop_in_region`
 
   :   Integer vector `[n_regions]`. Number of populations sharing each
-      natal region (used to normalise straying).
+      natal region (used to normalize straying).
 
   `newton_steps`
 
@@ -69,7 +69,7 @@ local_Fmsy_multipop(pars, data)
 ## Value
 
 Numeric scalar. Negative total equilibrium yield across all regions.
-This objective is minimised to obtain the vector of regional
+This objective is minimized to obtain the vector of regional
 \\F\_{MSY}\\ values.
 
 ## Details
@@ -104,7 +104,7 @@ ensuring a consistent equilibrium solution for the terminal age class.
 
 Effective spawning biomass at each population's natal region includes
 contributions from all populations via straying. Stray contributions are
-scaled by `stray_rate` and normalised by `n_pop_in_region` to preserve
+scaled by `stray_rate` and normalized by `n_pop_in_region` to preserve
 mass balance.
 
 Equilibrium recruitment by population is obtained via a Newton-Raphson
@@ -124,4 +124,4 @@ before movement and mortality are applied.
 The objective function is the negative of total yield, summed across all
 populations and regions. Yield includes only landings from fleets where
 `is_discard_fleet == 0`; discard-only fleets contribute to mortality but
-not to the yield being maximised.
+not to the yield being maximized.

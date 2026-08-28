@@ -32,8 +32,8 @@ Setup_Mod_FishIdx_and_Comps(
   FishIdxAA_pop_sigma_form = "none",
   AgeObsCorr_fish_idx = "iid",
   AgeObsCorr_fish_idx_pop = "iid",
-  rho_fish_idx_key = NULL,
-  rho_fish_idx_pop_key = NULL,
+  rho_fish_idx_spec = NULL,
+  rho_fish_idx_pop_spec = NULL,
   sigmaFishIdx_spec = "fix",
   sigmaFishIdx_map = NULL,
   sigmaFishIdx_pop_spec = "fix",
@@ -207,10 +207,12 @@ Setup_Mod_FishIdx_and_Comps(
   or one per fleet. See
   [`Setup_Mod_Catch_and_F`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Catch_and_F.md).
 
-- rho_fish_idx_key, rho_fish_idx_pop_key:
+- rho_fish_idx_spec, rho_fish_idx_pop_spec:
 
-  Integer matrices `[n_sexes, n_fish_fleets]` coupling the across-age
-  correlation.
+  How the correlation parameters are shared, over region, sex and fleet,
+  using the package's spec strings. `NULL` (the default) gives one per
+  fleet. See
+  [`Setup_Mod_Catch_and_F`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Catch_and_F.md).
 
 - sigmaFishIdx_spec:
 

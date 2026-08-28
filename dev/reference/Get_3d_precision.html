@@ -4,17 +4,17 @@
 Gaussian Markov random field (GMRF) with simultaneous autoregressive (SAR)
 structure across three biological dimensions: age, year, and cohort
 (age-year diagonal). The matrix is constructed via the path-matrix
-factorisation \(Q = (I - B)^\top \Omega^{-1} (I - B)\), where \(B\)
+factorization \(Q = (I - B)^\top \Omega^{-1} (I - B)\), where \(B\)
 encodes the partial correlations and \(\Omega\) is a diagonal variance
-matrix. Two variance parameterisations are supported: marginal (stationary)
+matrix. Two variance parameterizations are supported: marginal (stationary)
 and conditional (non-stationary)."><meta property="og:description" content="Builds a sparse \((n_{\text{ages}} \times n_{\text{yrs}}) \times
 (n_{\text{ages}} \times n_{\text{yrs}})\) precision matrix \(Q\) for a
 Gaussian Markov random field (GMRF) with simultaneous autoregressive (SAR)
 structure across three biological dimensions: age, year, and cohort
 (age-year diagonal). The matrix is constructed via the path-matrix
-factorisation \(Q = (I - B)^\top \Omega^{-1} (I - B)\), where \(B\)
+factorization \(Q = (I - B)^\top \Omega^{-1} (I - B)\), where \(B\)
 encodes the partial correlations and \(\Omega\) is a diagonal variance
-matrix. Two variance parameterisations are supported: marginal (stationary)
+matrix. Two variance parameterizations are supported: marginal (stationary)
 and conditional (non-stationary)."><meta name="robots" content="noindex"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
@@ -50,6 +50,7 @@ and conditional (non-stationary)."><meta name="robots" content="noindex"></head>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -72,9 +73,9 @@ and conditional (non-stationary)."><meta name="robots" content="noindex"></head>
 Gaussian Markov random field (GMRF) with simultaneous autoregressive (SAR)
 structure across three biological dimensions: age, year, and cohort
 (age-year diagonal). The matrix is constructed via the path-matrix
-factorisation \(Q = (I - B)^\top \Omega^{-1} (I - B)\), where \(B\)
+factorization \(Q = (I - B)^\top \Omega^{-1} (I - B)\), where \(B\)
 encodes the partial correlations and \(\Omega\) is a diagonal variance
-matrix. Two variance parameterisations are supported: marginal (stationary)
+matrix. Two variance parameterizations are supported: marginal (stationary)
 and conditional (non-stationary).</p>
     </div>
 
@@ -124,7 +125,7 @@ internally to \(\sigma^2 = \exp(\text{ln\_var\_value})\).</p></dd>
 
 
 <dt id="arg-var-type">Var_Type<a class="anchor" aria-label="anchor" href="#arg-var-type"></a></dt>
-<dd><p>Integer. Variance parameterisation: <code>0</code> = marginal
+<dd><p>Integer. Variance parameterization: <code>0</code> = marginal
 (stationary) variance, where diagonal elements of \(\Omega\) are
 solved recursively via the accumulator \((I - B)^{-1}\) to achieve a
 constant marginal variance \(\sigma^2\) at every node (slower);

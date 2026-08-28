@@ -16,7 +16,7 @@ get_ts_plot(rep, sd_rep, model_names, do_ci = TRUE)
 - rep:
 
   List of length `n_models`, where each element is a SPoRC report list
-  (i.e. the output of `obj$report()` after optimisation).
+  (i.e. the output of `obj$report()` after optimization).
 
 - sd_rep:
 
@@ -68,7 +68,7 @@ A named list of seven `ggplot` objects:
 - \[\[7\]\] ssb_ssb0_plot:
 
   SSB and dynamic SSB0 overlaid on the same panel, distinguished by
-  linetype, faceted by Region. Useful for visualising depletion.
+  linetype, faceted by Region. Useful for visualizing depletion.
 
 ## See also
 

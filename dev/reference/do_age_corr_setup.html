@@ -40,6 +40,7 @@ own setting rather than borrowing the aggregated one."><meta name="robots" conte
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -72,7 +73,7 @@ own setting rather than borrowing the aggregated one.</p>
 <span>  <span class="va">fleet_field</span>,</span>
 <span>  <span class="va">use_field</span>,</span>
 <span>  starting_values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  rho_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  rho_spec <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  pop <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -107,10 +108,13 @@ either one setting for every fleet or one per fleet.</p></dd>
 <dd><p>Named list from the caller's <code>...</code>.</p></dd>
 
 
-<dt id="arg-rho-key">rho_key<a class="anchor" aria-label="anchor" href="#arg-rho-key"></a></dt>
-<dd><p>Integer matrix <code>[n_sexes, n_fleets]</code> coupling the
-across-age correlation, or <code>NULL</code> for one per fleet shared across
-sexes. Equal entries share a parameter and <code>NA</code> excludes one.</p></dd>
+<dt id="arg-rho-spec">rho_spec<a class="anchor" aria-label="anchor" href="#arg-rho-spec"></a></dt>
+<dd><p>Character string controlling how the correlation parameters
+are shared: <code>"est_all"</code>, <code>"fix"</code>, or <code>"est_shared_"</code>
+followed by any combination of <code>r</code>, <code>s</code> and <code>f</code>, gaining
+<code>p</code> for the population-specific streams. <code>NULL</code> (the default)
+takes <code>"est_shared_r_s"</code>, or <code>"est_shared_p_r_s"</code> when
+<code>pop</code>, both of which give one correlation per fleet.</p></dd>
 
 
 <dt id="arg-pop">pop<a class="anchor" aria-label="anchor" href="#arg-pop"></a></dt>
@@ -131,8 +135,17 @@ fleet skipping ages is spaced correctly rather than treated as consecutive.
 structure ICES age-structured assessments offer. <code>"2dar1"</code> correlates
 over ages and years jointly through a separable AR(1), which is defined on a
 complete grid and so requires the fleet's observed ages and years to form one.</p>
-<p>Correlations are one per fleet, shared across sexes, unless a key says
-otherwise. A sex a fleet never observes carries no parameter.</p>
+<p>How the correlations are shared follows the package's spec strings rather than
+a structure of its own. They sit over region, sex and fleet, with a leading
+population margin for the population-specific streams, so
+<code>"est_shared_r_s"</code> (the default, <code>"est_shared_p_r_s"</code> for the
+population form) gives one per fleet, <code>"est_shared_r_s_f"</code> a single
+value, <code>"est_all"</code> a free one per cell, and <code>"fix"</code> holds them all.
+One spec governs the stream's across-age correlation, its across-year
+correlation and its unstructured matrix together, so two fleets sharing a
+correlation share a whole matrix under <code>"us"</code>. A region, sex or
+population a fleet never observes carries no parameter whatever the spec says,
+which is what holds the unused slots of a summed margin out.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

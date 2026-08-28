@@ -1,7 +1,7 @@
 # Run the annual cycle for a single simulation year
 
 Orchestrates the complete annual sequence of operating model processes
-for year `y` and simulation replicate `sim`: initialises age structure
+for year `y` and simulation replicate `sim`: initializes age structure
 and generates first-year recruitment at `y = 1`; applies population
 dynamics (movement, mortality, biomass); generates fishery catches,
 indices, and compositions; generates survey indices and compositions;

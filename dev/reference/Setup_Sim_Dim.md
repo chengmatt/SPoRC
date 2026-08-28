@@ -1,4 +1,4 @@
-# Initialise simulation dimension settings
+# Initialize simulation dimension settings
 
 Creates the foundational `sim_list` object used throughout a closed-loop
 simulation or static simulation. All downstream setup functions
@@ -71,7 +71,7 @@ Setup_Sim_Dim(
 
 - n_ages:
 
-  Positive integer. Number of modelled age classes.
+  Positive integer. Number of modeled age classes.
 
 - n_lens:
 
@@ -134,7 +134,7 @@ A named list (`sim_list`) containing:
 
 - `init_iter`:
 
-  Derived value `n_ages * 10` used to initialise equilibrium conditions.
+  Derived value `n_ages * 10` used to initialize equilibrium conditions.
 
 - `run_feedback`, `feedback_start_yr`:
 

@@ -51,6 +51,7 @@
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -87,7 +88,7 @@ Pacific cod assessment (Barbeaux et al. 2024), run in Stock Synthesis 3,
 in <code>SPoRC</code>.</p>
 <p>The model is one area, one sex and one season, with a single fishery
 and a single bottom trawl survey. Everything is fit at length, on 121
-population length bins reported to 24 five centimetre data bins.</p>
+population length bins reported to 24 five centimeter data bins.</p>
 <table class="table">
 <colgroup>
 <col width="25%">
@@ -139,7 +140,7 @@ population length bins reported to 24 five centimetre data bins.</p>
 to
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>a</mi><mo>+</mo></msub><mo>=</mo><mn>20</mn></mrow><annotation encoding="application/x-tex">a_{+} = 20</annotation></semantics></math>,
 with ages observed from 0 to 12 and 12 accumulating. Population lengths
-are 121 one centimetre bins and the compositions are recorded on 24 bins
+are 121 one centimeter bins and the compositions are recorded on 24 bins
 of 5 cm from 4.5. Model years run
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>y</mi><mn>1</mn></msub><mo>=</mo><mn>1977</mn></mrow><annotation encoding="application/x-tex">y_{1} = 1977</annotation></semantics></math>
 to
@@ -225,7 +226,7 @@ birth year.</p>
 <h2 id="biological-dynamics">Biological dynamics<a class="anchor" aria-label="anchor" href="#biological-dynamics"></a>
 </h2>
 <p>Natural mortality is fixed. Growth is the Richards curve, which
-generalises von Bertalanffy with a sixth parameter raising the lengths
+generalizes von Bertalanffy with a sixth parameter raising the lengths
 to a power, and weight at age is derived from it through the
 weight-length relationship rather than supplied as data.</p>
 <p>Three arguments carry the assessment’s growth conventions.
@@ -240,7 +241,7 @@ the order <code>L1</code>, <code>L2</code>, <code>K</code>,
 <code>CV1</code>, <code>CV2</code>, <code>rho</code>, with a placeholder
 in the four slots that do not vary. The second stream belongs to the
 semi-parametric surface and is unread here.</p>
-<p>Maturity at age is taken from the assessment rather than modelled,
+<p>Maturity at age is taken from the assessment rather than modeled,
 because maturity is length based and fixed there. <code>LenBinMap</code>
 maps the 121 population bins onto the 24 the compositions are recorded
 on.</p>
@@ -490,7 +491,7 @@ at age is checked in years spanning the time-varying period, and under
 cohort growth a late year only reproduces if every earlier year’s
 increment did.</p>
 <p><code>SPoRC</code> writes each likelihood component as a proper
-density where the assessment drops normalising constants, so the
+density where the assessment drops normalizing constants, so the
 comparison subtracts exactly what it omits:</p>
 <table class="table">
 <thead><tr class="header">
@@ -658,7 +659,7 @@ against observed standard errors of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.044</mn><annotation encoding="application/x-tex">0.044</annotation></semantics></math>
 to
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.094</mn><annotation encoding="application/x-tex">0.094</annotation></semantics></math>,
-so it roughly doubles them, and the index likelihood is unrecognisable
+so it roughly doubles them, and the index likelihood is unrecognizable
 without it. Holding it costs nothing at the assessment’s estimate, where
 the total standard error is identical and the index likelihood
 reproduces to six digits, but it fixes the index’s weight where the

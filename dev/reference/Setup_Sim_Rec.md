@@ -4,7 +4,7 @@ Populates `sim_list` with all recruitment-related inputs needed by the
 operating model: stock-recruit relationship type and density-dependence
 structure, biological parameters (\\R_0\\, steepness, sex ratio),
 recruitment and initial age-structure deviations, seasonal recruitment
-allocation, spawn timing, and equilibrium initialisation method. Must be
+allocation, spawn timing, and equilibrium initialization method. Must be
 called after
 [`Setup_Sim_Dim`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Dim.md).
 
@@ -70,7 +70,7 @@ rec_seas_prop[, 1, ] <- 1
 - rinit_input:
 
   Unfished equilibrium recruitment scalar used for population
-  initialisation when `use_rinit = 1`, array
+  initialization when `use_rinit = 1`, array
   `[n_pop x n_regions x n_sims]`. Ignored when `use_rinit = 0`. Default:
   `15` for all cells.
 
@@ -139,20 +139,20 @@ rec_seas_prop[, 1, ] <- 1
 - init_dd:
 
   Density-dependence structure for equilibrium age-structure
-  initialisation. Default `"global"`. Same options as `rec_dd`.
+  initialization. Default `"global"`. Same options as `rec_dd`.
 
 - use_rinit:
 
   Integer (0/1). Whether a separate initial recruitment scalar
-  `rinit_input` is used to initialise the population independently of
+  `rinit_input` is used to initialize the population independently of
   `R0_input`. When `0` (default), `rinit_input` is ignored and
-  `R0_input` governs both initialisation and recruitment. When `1`,
-  `rinit_input` is used exclusively for equilibrium initialisation and
+  `R0_input` governs both initialization and recruitment. When `1`,
+  `rinit_input` is used exclusively for equilibrium initialization and
   `R0_input` governs the recruitment relationship.
 
 - init_age_strc:
 
-  Integer specifying the equilibrium age-structure initialisation
+  Integer specifying the equilibrium age-structure initialization
   method. Default `2`. Options:
 
   `0`/`"iterative"`
@@ -167,7 +167,7 @@ rec_seas_prop[, 1, ] <- 1
 
   `2`/`"matrix"`
 
-  :   Matrix geometric series solution that generalises the scalar
+  :   Matrix geometric series solution that generalizes the scalar
       approach to include movement. Recommended default for spatially
       explicit models.
 
@@ -187,7 +187,7 @@ rec_seas_prop[, 1, ] <- 1
       because the deviations are log-numbers rather than log-ratios, any
       penalty acts as a prior on initial abundance: pair with
       `equil_init_age_strc = "equil"` for no such prior, or with
-      `InitDevs_pen_center = "own_mean"` to penalise only the roughness
+      `InitDevs_pen_center = "own_mean"` to penalize only the roughness
       of the age structure and not its level.
 
 - spawn_seas:
@@ -227,7 +227,7 @@ rec_seas_prop[, 1, ] <- 1
   broadcast across sexes) or
   `[n_pop x n_regions x (n_ages - 1) x n_sexes x n_sims]` (one curve per
   sex). The `n_ages - 1` dimension excludes the reference age used
-  during initialisation. If `NULL` (default), deviations are drawn as
+  during initialization. If `NULL` (default), deviations are drawn as
   one shared curve per population and region.
 
 - InitDevs_sex_spec:

@@ -124,7 +124,7 @@ Setup_Mod_Srvsel_and_Q(
       fleet.
 
   Available models (see the model equations vignette for
-  parameterisations):
+  parameterizations):
 
   `"logist1"`
 

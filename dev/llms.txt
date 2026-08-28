@@ -111,7 +111,7 @@ Functions for setting up a `SPoRC` model
 - [`Setup_Mod_Tagging()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Tagging.md)
   : Set up the conventional tagging module for model fitting
 - [`Setup_Mod_Dim()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Dim.md)
-  : Initialise model dimension settings
+  : Initialize model dimension settings
 
 ## Reference Points and Projections
 
@@ -122,6 +122,8 @@ Functions for deriving reference points and catch projections
 - [`Get_Reference_Points()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Reference_Points.md)
   : Compute fishing and biological reference points from an assessment
   or simulation
+- [`Get_Reference_Point_Uncertainty()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Reference_Point_Uncertainty.md)
+  : Confidence intervals for reference points
 - [`get_key_quants()`](https://chengmatt.github.io/SPoRC/dev/reference/get_key_quants.md)
   : Generate Key Projection Quantities and Table Plot
 
@@ -132,18 +134,18 @@ Functions for setting up simulations
 - [`Setup_Sim_Biologicals()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Biologicals.md)
   : Set up biological parameter inputs for closed-loop simulation
 - [`Setup_Sim_Containers()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Containers.md)
-  : Initialise output containers for the operating model simulation
+  : Initialize output containers for the operating model simulation
 - [`Setup_Sim_Fishing()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Fishing.md)
   : Setup Simulation Fishing Inputs
 - [`Setup_Sim_Rec()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Rec.md)
   : Set up recruitment dynamics for the operating model simulation
 - [`Setup_Sim_Survey()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Survey.md)
-  : Set up survey parameterisation for the operating model simulation
+  : Set up survey parameterization for the operating model simulation
 - [`Setup_Sim_Tagging()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Tagging.md)
   : Set up conventional tagging dynamics for the operating model
   simulation
 - [`Setup_Sim_Dim()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Dim.md)
-  : Initialise simulation dimension settings
+  : Initialize simulation dimension settings
 - [`Setup_sim_env()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_sim_env.md)
   : Construct and populate a simulation execution environment
 - [`run_annual_cycle()`](https://chengmatt.github.io/SPoRC/dev/reference/run_annual_cycle.md)
@@ -229,7 +231,7 @@ Functions for convenience
 - [`set_data_indicator_unused()`](https://chengmatt.github.io/SPoRC/dev/reference/set_data_indicator_unused.md)
   : Set data indicators to unused for specified years
 - [`post_optim_sanity_checks()`](https://chengmatt.github.io/SPoRC/dev/reference/post_optim_sanity_checks.md)
-  : Run post-optimisation convergence checks on a fitted SPoRC model
+  : Run post-optimization convergence checks on a fitted SPoRC model
 - [`get_par_est_info()`](https://chengmatt.github.io/SPoRC/dev/reference/get_par_est_info.md)
   : Extract and tabulate parameter estimates and metadata from a fitted
   SPoRC model
@@ -359,5 +361,7 @@ Fitted model output provided by SPoRC
 
 ### For Developers
 
+- [Development
+  Roadmap](https://chengmatt.github.io/SPoRC/dev/articles/aj_development_roadmap.md):
 - [Architecture](https://chengmatt.github.io/SPoRC/dev/articles/architecture.md):
 - [Contributing](https://chengmatt.github.io/SPoRC/dev/articles/contributing.md):

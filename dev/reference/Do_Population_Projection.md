@@ -211,7 +211,7 @@ rec_seas_prop[] <- 1/n_seas
 
   Character. Fishing mortality scenario: \`"HCR"\`, \`"HCR_global"\`,
   \`"Input"\`, or \`"Catch"\`. \`"Catch"\` solves each projection year's
-  fishing mortality so that realised catch matches \`catch_input\`,
+  fishing mortality so that realized catch matches \`catch_input\`,
   leaving every other model quantity untouched.
 
 - catch_input:
@@ -518,7 +518,7 @@ used inconsistently and is noted per element below. In short:
 - `proj_Dynamic_SSB0`:
 
   Array \`\[n_pop, n_regions, n_proj_yrs\]\`. Spawning biomass the
-  population would have carried under the same realised recruitment but
+  population would have carried under the same realized recruitment but
   no fishing, for dynamic depletion.
 
 - `proj_NAA`:
@@ -548,7 +548,7 @@ used inconsistently and is noted per element below. In short:
 
   Array shaped like \`catch_input\`: \`\[n_regions, n_proj_yrs\]\` for
   annual targets, \`\[n_regions, n_proj_yrs, n_seas\]\` for seasonal
-  ones. Relative miss on each catch target, \`(realised - target) /
+  ones. Relative miss on each catch target, \`(realized - target) /
   target\`, and \`NA\` for years carrying no target (including every
   year when \`fmort_opt != "Catch"\`). Should be at or below
   \`catch_tol\` wherever the solve converged, and is worth checking
@@ -606,7 +606,7 @@ Under `fmort_opt = "Catch"` step 7 moves to the front of the following
 year instead: the F that lands a catch target depends on that year's own
 numbers-at-age, not on the previous year's spawning biomass, so it
 cannot be set at the end of the previous year the way the HCR and Input
-options are. The year is run repeatedly at trial F values until realised
+options are. The year is run repeatedly at trial F values until realized
 catch matches the target, then run once more at the accepted F and
 committed. Steps 1 to 6 are otherwise unchanged, and no demographic
 input is modified: only F moves. Regions are solved jointly rather than
@@ -623,7 +623,7 @@ than the target alone implies.
 
 Effective spawning biomass at each population's natal region aggregates
 contributions from all populations, with cross-population contributions
-scaled by `stray_rate` and normalised by the number of populations in
+scaled by `stray_rate` and normalized by the number of populations in
 each natal region.
 
 When `n_sexes = 1`, spawning biomass is multiplied by 0.5. When
@@ -632,5 +632,6 @@ When `n_sexes = 1`, spawning biomass is multiplied by 0.5. When
 ## See also
 
 Other Reference Points and Projections:
+[`Get_Reference_Point_Uncertainty()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Reference_Point_Uncertainty.md),
 [`Get_Reference_Points()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Reference_Points.md),
 [`get_key_quants()`](https://chengmatt.github.io/SPoRC/dev/reference/get_key_quants.md)

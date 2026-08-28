@@ -4,7 +4,7 @@ stock-recruit relationship type and density-dependence structure,
 Beverton-Holt steepness and priors, recruitment variability
 (\(\sigma_R\)), annual and initial age-structure deviations, regional
 and seasonal recruitment apportionment, spawning movement and stray rates,
-sex ratio dynamics, equilibrium initialisation method, and the recruitment
+sex ratio dynamics, equilibrium initialization method, and the recruitment
 bias ramp. Delegates parameter mapping to a family of internal helpers
 (do_sigmaR_mapping, do_RecDevs_mapping,
 do_InitDevs_mapping, do_h_mapping,
@@ -17,7 +17,7 @@ stock-recruit relationship type and density-dependence structure,
 Beverton-Holt steepness and priors, recruitment variability
 (\(\sigma_R\)), annual and initial age-structure deviations, regional
 and seasonal recruitment apportionment, spawning movement and stray rates,
-sex ratio dynamics, equilibrium initialisation method, and the recruitment
+sex ratio dynamics, equilibrium initialization method, and the recruitment
 bias ramp. Delegates parameter mapping to a family of internal helpers
 (do_sigmaR_mapping, do_RecDevs_mapping,
 do_InitDevs_mapping, do_h_mapping,
@@ -60,6 +60,7 @@ before model compilation."><meta name="robots" content="noindex"></head><body>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -82,7 +83,7 @@ stock-recruit relationship type and density-dependence structure,
 Beverton-Holt steepness and priors, recruitment variability
 (\(\sigma_R\)), annual and initial age-structure deviations, regional
 and seasonal recruitment apportionment, spawning movement and stray rates,
-sex ratio dynamics, equilibrium initialisation method, and the recruitment
+sex ratio dynamics, equilibrium initialization method, and the recruitment
 bias ramp. Delegates parameter mapping to a family of internal helpers
 (<code><a href="do_sigmaR_mapping.html">do_sigmaR_mapping</a></code>, <code><a href="do_RecDevs_mapping.html">do_RecDevs_mapping</a></code>,
 <code><a href="do_InitDevs_mapping.html">do_InitDevs_mapping</a></code>, <code><a href="do_h_mapping.html">do_h_mapping</a></code>,
@@ -340,12 +341,12 @@ If \(\leq 1\), a single \(\sigma_R\) is applied throughout. Default
 <dd><p>Non-negative integer. Number of terminal years
 for which recruitment deviations are not estimated. Automatically
 overridden to <code>0</code> if <code>n_proj_yrs_devs &gt; 0</code>, since projected
-deviation years are penalised toward the mean and are effectively
+deviation years are penalized toward the mean and are effectively
 estimated regardless. Default <code>0</code>.</p></dd>
 
 
 <dt id="arg-init-age-strc">init_age_strc<a class="anchor" aria-label="anchor" href="#arg-init-age-strc"></a></dt>
-<dd><p>Initialisation method. Default <code>2</code>. Options
+<dd><p>Initialization method. Default <code>2</code>. Options
 <code>0</code>/<code>"iterative"</code>, <code>1</code>/<code>"scalar_no_move"</code>,
 <code>2</code>/<code>"matrix"</code>, and <code>3</code>/<code>"scalar_plus_only"</code> all
 project an equilibrium age structure forward from <code>R0</code> and treat
@@ -380,7 +381,7 @@ than of log ratios, so the penalty applied through
 
 <dt id="arg-equil-init-age-strc">equil_init_age_strc<a class="anchor" aria-label="anchor" href="#arg-equil-init-age-strc"></a></dt>
 <dd><p>Plus-group treatment during stochastic
-initialisation. Default <code>1</code>.</p><dl><dt><code>0</code>/<code>"equil"</code></dt>
+initialization. Default <code>1</code>.</p><dl><dt><code>0</code>/<code>"equil"</code></dt>
 <dd><p>Deterministic equilibrium; no
     <code>ln_InitDevs</code> are estimated.</p></dd>
 
@@ -410,10 +411,10 @@ initialisation. Default <code>1</code>.</p><dl><dt><code>0</code>/<code>"equil"<
 <dt id="arg-init-f-prop">init_F_prop<a class="anchor" aria-label="anchor" href="#arg-init-f-prop"></a></dt>
 <dd><p>Numeric array <code>[n_regions x n_seas x n_fish_fleets]</code>.
 <strong>Legacy interface, retained for backwards compatibility.</strong> A fixed
-proportion of the estimated mean F applied during equilibrium initialisation.
+proportion of the estimated mean F applied during equilibrium initialization.
 When supplied non-zero (and <code>init_F_par</code> is not given) it is converted to
 <code>ln_init_F = log(init_F_prop)</code> with <code>init_F_form = "prop"</code>, which
-reproduces the previous behaviour exactly. Prefer <code>init_F_par</code>.
+reproduces the previous behavior exactly. Prefer <code>init_F_par</code>.
 Default: zero for all seasons and fleets.</p></dd>
 
 
@@ -486,10 +487,10 @@ n_years]</code>. Default <code>NULL</code> (estimate all independently). See
 
 <dt id="arg-recdevs-pen-center-initdevs-pen-center">RecDevs_pen_center, InitDevs_pen_center<a class="anchor" aria-label="anchor" href="#arg-recdevs-pen-center-initdevs-pen-center"></a></dt>
 <dd><p>Where the recruitment and
-initial age deviation penalties are centred. <code>"fixed"</code> (default)
-centres on the asserted prior mean, zero or the bias-corrected
+initial age deviation penalties are centered. <code>"fixed"</code> (default)
+centers on the asserted prior mean, zero or the bias-corrected
 \(-\sigma_R^2/2\), which constrains both the level and the spread of the
-deviations. <code>"own_mean"</code> centres on the mean of the estimated
+deviations. <code>"own_mean"</code> centers on the mean of the estimated
 deviations themselves, so only their spread is penalized and their level is
 left free; that is what a sum of squares about the series' own mean
 amounts to. The level
@@ -514,9 +515,9 @@ of squares with weight \(w\) corresponds to \(1/\sqrt{2w}\). Default
 
 
 <dt id="arg-rec-level-pen-center">rec_level_pen_center<a class="anchor" aria-label="anchor" href="#arg-rec-level-pen-center"></a></dt>
-<dd><p>Either <code>"own_mean"</code> (default), centring on
+<dd><p>Either <code>"own_mean"</code> (default), centering on
 the mean of the log recruitment series so only its variability is
-penalized, or <code>"fixed"</code>, centring on zero.</p></dd>
+penalized, or <code>"fixed"</code>, centering on zero.</p></dd>
 
 
 <dt id="arg-rec-level-pen-yrs">rec_level_pen_yrs<a class="anchor" aria-label="anchor" href="#arg-rec-level-pen-yrs"></a></dt>
@@ -583,7 +584,7 @@ both places, which is the usual ADMB arrangement.</p></dd>
 <dt id="arg-h-spec">h_spec<a class="anchor" aria-label="anchor" href="#arg-h-spec"></a></dt>
 <dd><p>Character or <code>NULL</code>. Sharing structure for
 stock-recruit steepness <code>steepness_h</code> <code>[n_pop x n_regions]</code>,
-parameterised in bounded logit space \((0.2, 1)\). Default <code>NULL</code>
+parameterized in bounded logit space \((0.2, 1)\). Default <code>NULL</code>
 (estimate by population when <code>n_pop &gt; 1</code>, by region when
 <code>n_pop = 1</code>). Ignored when <code>rec_model = "mean_rec"</code>. See
 <code><a href="do_h_mapping.html">do_h_mapping</a></code> for full option descriptions.</p></dd>
@@ -606,7 +607,7 @@ before spawning. <code>0</code> (default) = spawning before any mortality;
 
 <dt id="arg-stray-rate-spec">stray_rate_spec<a class="anchor" aria-label="anchor" href="#arg-stray-rate-spec"></a></dt>
 <dd><p>Character string. Estimation structure for
-<code>stray_rate_pars</code> <code>[n_pop x max_stray_blocks]</code>, parameterised
+<code>stray_rate_pars</code> <code>[n_pop x max_stray_blocks]</code>, parameterized
 on the logit scale. Ignored when <code>use_fixed_stray_rate = 1</code> or
 <code>n_pop = 1</code>. Default <code>"fix"</code>. Options:</p><dl><dt><code>"fix"</code></dt>
 <dd><p>All parameters fixed at starting values (mapped to
@@ -641,7 +642,7 @@ the temporal block structure for stray rate parameters. Valid formats:</p><dl><d
 
 </dl><p>Default: a single constant block for every population.
 <strong>Note:</strong> stray rate is generally unidentifiable from fisheries data
-alone. Time-blocking is provided for completeness but regularisation via
+alone. Time-blocking is provided for completeness but regularization via
 <code>use_stray_rate_prior</code> in the penalty setup is strongly recommended
 whenever <code>stray_rate_spec != "fix"</code>.</p></dd>
 
@@ -650,7 +651,7 @@ whenever <code>stray_rate_spec != "fix"</code>.</p></dd>
 <dd><p>Integer (0/1). Whether stray rates are supplied
 as a fixed external array (<code>fixed_stray_rate</code>) rather than estimated
 as model parameters. Default <code>1</code> (fixed), preserving existing
-behaviour. Set to <code>0</code> to estimate stray rates via
+behavior. Set to <code>0</code> to estimate stray rates via
 <code>stray_rate_pars</code>.</p></dd>
 
 
@@ -674,7 +675,7 @@ since <code>stray_rate_pars</code> would not be estimated. Default <code>0</code
 Required columns: <code>pop</code> (population index), <code>block</code> (block
 index matching <code>stray_rate_blocks</code>), <code>mu</code> (prior mean, in
 \((0,1)\)), <code>sd</code> (prior standard deviation). One row per
-population x block combination to penalise. Ignored when
+population x block combination to penalize. Ignored when
 <code>use_stray_rate_prior = 0</code>. Default <code>NULL</code>.</p></dd>
 
 
@@ -708,12 +709,12 @@ Valid formats:</p><dl><dt><code>"none_Pop_x_Region_x"</code></dt>
 
 <dt id="arg-use-rinit">use_rinit<a class="anchor" aria-label="anchor" href="#arg-use-rinit"></a></dt>
 <dd><p>Integer (0/1). Whether a separate initial recruitment
-scalar <code>ln_rinit</code> is used to initialise the population
+scalar <code>ln_rinit</code> is used to initialize the population
 independently of the recruitment <code>ln_global_R0</code>. When <code>0</code>
 (default), <code>ln_rinit</code> is fixed and <code>ln_global_R0</code>
-governs both initialisation and recruitment. When <code>1</code>, both
+governs both initialization and recruitment. When <code>1</code>, both
 <code>ln_rinit</code> and <code>ln_global_R0</code> are estimated, with
-<code>ln_rinit</code> used exclusively for equilibrium initialisation
+<code>ln_rinit</code> used exclusively for equilibrium initialization
 and <code>ln_global_R0</code> used for the stock-recruit relationship.</p></dd>
 
 
@@ -734,7 +735,7 @@ use case is replicating ADMB models where ages beyond the data plus group
 share the last estimated deviation, e.g.
 <code>c(1:42, rep(42, 9))</code> for a 52-age model with 43 data ages, giving
 42 free parameters. When <code>NULL</code> (default), age sharing follows the
-standard behaviour determined by <code>equil_init_age_strc</code> alone.</p></dd>
+standard behavior determined by <code>equil_init_age_strc</code> alone.</p></dd>
 
 
 <dt id="arg-use-r-prior">use_r0_prior<a class="anchor" aria-label="anchor" href="#arg-use-r-prior"></a></dt>

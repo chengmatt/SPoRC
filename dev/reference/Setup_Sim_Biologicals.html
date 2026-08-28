@@ -42,6 +42,7 @@ All arrays must conform to the dimension structure stored in sim_list."><meta na
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -132,11 +133,11 @@ otherwise.</p></dd>
 <dd><p>Ageing error (age-length transition) array with
 dimensions <code>[n_yrs × n_model_ages × n_obs_ages × n_sims]</code>, where each
 <code>[n_model_ages × n_obs_ages]</code> slice is a row-stochastic matrix mapping
-true modelled ages to observed age bins. If <code>NULL</code> (default), an
+true modeled ages to observed age bins. If <code>NULL</code> (default), an
 identity matrix is constructed for each year and simulation, which assumes
-that modelled and observed age bins are identical in number and alignment.
-<strong>If observed age bins are a subset of modelled ages</strong> (e.g., observed
-ages 2-10 vs. modelled ages 1-10), the default identity matrix will cause a
+that modeled and observed age bins are identical in number and alignment.
+<strong>If observed age bins are a subset of modeled ages</strong> (e.g., observed
+ages 2-10 vs. modeled ages 1-10), the default identity matrix will cause a
 dimensional mismatch. In that case, supply a shifted identity matrix such as
 <code>diag(1, n_model_ages)[, obs_age_index]</code> to correctly drop or collapse
 model ages into observed bins.</p></dd>

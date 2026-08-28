@@ -62,7 +62,7 @@ catch_at_age(
 - move_timing:
 
   Integer flag for the movement/mortality ordering: `0` = movement then
-  mortality (default, historical SPoRC behaviour), `1` = mortality then
+  mortality (default, historical SPoRC behavior), `1` = mortality then
   movement, `2` = continuous (simultaneous) movement and mortality.
 
 - expm_nsub:

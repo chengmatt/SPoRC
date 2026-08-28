@@ -51,6 +51,7 @@
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -235,7 +236,7 @@ a single parameter both depletes the initial age structure and scales
 the F series. That is the assessment’s own construction, so it is
 reproduced here, but <code>"abs"</code> is the better choice when a
 model’s historical F is conceptually independent of the mean F of the
-modelled period.</p>
+modeled period.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Rec.html">Setup_Mod_Rec</a></span><span class="op">(</span></span>
 <span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
@@ -365,7 +366,7 @@ too many and effectively remove it from the fit.</p>
 aggregated across sexes (<code>agg</code>), meaning the expected
 proportions are summed over sexes before being compared to the
 observations. Length compositions <em>are</em> sex specific and are fit
-as <code>spltRspltS</code>, which normalises each sex to sum to one
+as <code>spltRspltS</code>, which normalizes each sex to sum to one
 separately, so no implicit sex ratio is inferred from them.</p>
 <p>Only the fixed-gear fleet has an index and age compositions; both
 fleets have length compositions.</p>
@@ -431,20 +432,20 @@ in its predicted indices:</p>
 <div class="section level2">
 <h2 id="fishery-selectivity-and-catchability">Fishery selectivity and catchability<a class="anchor" aria-label="anchor" href="#fishery-selectivity-and-catchability"></a>
 </h2>
-<p>The fixed-gear fleet is logistic, parameterised by the age at 50%
+<p>The fixed-gear fleet is logistic, parameterized by the age at 50%
 selection and a slope:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi><mo>=</mo><mn>1</mn></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><mo>=</mo><mstyle displaystyle="true"><mfrac><mn>1</mn><mrow><mn>1</mn><mo>+</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">[</mo><mi>−</mi><msub><mi>k</mi><mi>s</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>a</mi><mo>−</mo><msubsup><mi>a</mi><mi>s</mi><mn>50</mn></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow></mrow></mfrac></mstyle></mrow><annotation encoding="application/x-tex">\text{Sel}^{\text{Fsh}}_{a,s,f=1} = \dfrac{1}{1 + \exp\left[-k_{s}\left(a - a^{50}_{s}\right)\right]}</annotation></semantics></math></p>
 <p>and carries three time blocks, 1960–1994, 1995–2015, and 2016–2024,
 reflecting the shift from the pre-IFQ fishery through the IFQ era.
 Catchability is blocked on the same boundaries.</p>
-<p>The trawl fleet is dome shaped, using the reparameterised gamma form
+<p>The trawl fleet is dome shaped, using the reparameterized gamma form
 in which
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>a</mi><mi mathvariant="normal">max</mi></msup><annotation encoding="application/x-tex">a^{\max}</annotation></semantics></math>
 is the age at maximum selection and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>γ</mi><annotation encoding="application/x-tex">\gamma</annotation></semantics></math>
 controls the steepness of the descending limb:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo>=</mo><mstyle displaystyle="false"><mfrac><mn>1</mn><mn>2</mn></mfrac></mstyle><mrow><mo stretchy="true" form="prefix">[</mo><msqrt><mrow><msup><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>a</mi><mi mathvariant="normal">max</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mo>+</mo><mn>4</mn><msup><mi>γ</mi><mn>2</mn></msup></mrow></msqrt><mo>−</mo><msup><mi>a</mi><mi mathvariant="normal">max</mi></msup><mo stretchy="true" form="postfix">]</mo></mrow><mo>,</mo><mspace width="2.0em"></mspace><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi><mo>=</mo><mn>2</mn></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mstyle displaystyle="true"><mfrac><mi>a</mi><msup><mi>a</mi><mi mathvariant="normal">max</mi></msup></mfrac></mstyle><mo stretchy="true" form="postfix">)</mo></mrow><mrow><msup><mi>a</mi><mi mathvariant="normal">max</mi></msup><mi>/</mi><mi>p</mi></mrow></msup><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mstyle displaystyle="true"><mfrac><mrow><msup><mi>a</mi><mi mathvariant="normal">max</mi></msup><mo>−</mo><mi>a</mi></mrow><mi>p</mi></mfrac></mstyle><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">p = \tfrac{1}{2}\left[\sqrt{\left(a^{\max}\right)^{2} + 4\gamma^{2}} - a^{\max}\right],\qquad \text{Sel}^{\text{Fsh}}_{a,s,f=2} = \left(\dfrac{a}{a^{\max}}\right)^{a^{\max}/p}\exp\left(\dfrac{a^{\max} - a}{p}\right)</annotation></semantics></math></p>
-<p>Parameter sharing across sexes and blocks stabilises the fit and
+<p>Parameter sharing across sexes and blocks stabilizes the fit and
 cannot be expressed through the <code>_spec</code> arguments, so the map
 is set by hand afterwards. The first fixed-gear block shares its slope
 between sexes; the trawl fleet shares parameters across all blocks.</p>
@@ -641,7 +642,7 @@ percent everywhere.</p>
 under a lognormal prior and adds a male offset
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>δ</mi><mi>M</mi></msup><annotation encoding="application/x-tex">\delta^{M}</annotation></semantics></math>,
 optionally with annual and age deviations. <code>SPoRC</code>
-parameterises sex-specific natural mortality directly rather than as an
+parameterizes sex-specific natural mortality directly rather than as an
 offset, so an exact match to the prior structure is not available. Both
 values are therefore fixed at the assessment’s estimates, which removes
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>M</mi><annotation encoding="application/x-tex">M</annotation></semantics></math>

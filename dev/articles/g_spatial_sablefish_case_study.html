@@ -51,6 +51,7 @@
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -201,7 +202,7 @@ options coincide exactly.</p>
 <div class="section level2">
 <h2 id="recruitment-and-regional-apportionment">Recruitment and regional apportionment<a class="anchor" aria-label="anchor" href="#recruitment-and-regional-apportionment"></a>
 </h2>
-<p>Recruitment follows a mean-recruitment parameterisation with no stock
+<p>Recruitment follows a mean-recruitment parameterization with no stock
 recruit relationship, and a single global parameter is apportioned among
 regions:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>N</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><msup><mi>μ</mi><mtext mathvariant="normal">Rec</mtext></msup><mspace width="0.167em"></mspace><msub><mi>ζ</mi><mi>r</mi></msub><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi></mrow><mtext mathvariant="normal">Rec</mtext></msubsup><mo>−</mo><mstyle displaystyle="true"><mfrac><msubsup><mi>σ</mi><mrow><mtext mathvariant="normal">Rec</mtext><mo>,</mo><mi>y</mi></mrow><mn>2</mn></msubsup><mn>2</mn></mfrac></mstyle><msub><mi>b</mi><mi>y</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>ψ</mi><mi>s</mi></msub></mrow><annotation encoding="application/x-tex">N_{r,y,a=1,s} = \mu^{\text{Rec}}\,\zeta_{r}\exp\left(\epsilon^{\text{Rec}}_{r,y} - \dfrac{\sigma^{2}_{\text{Rec},y}}{2}b_{y}\right)\psi_{s}</annotation></semantics></math></p>
@@ -213,7 +214,7 @@ simplex, with the first region as the reference:</p>
 <p>Apportionment parameters are weakly identified, because regional
 recruitment, regional fishing mortality and movement can trade off
 against one another to produce nearly the same regional abundances. A
-Dirichlet prior regularises them:</p>
+Dirichlet prior regularizes them:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>𝛇</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mstyle displaystyle="true"><mfrac><mrow><mi mathvariant="normal">Γ</mi><mrow><mo stretchy="true" form="prefix">(</mo><munder><mo>∑</mo><mi>r</mi></munder><msub><mi>α</mi><mi>r</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mrow><munder><mo>∏</mo><mi>r</mi></munder><mi mathvariant="normal">Γ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>α</mi><mi>r</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac></mstyle><munderover><mo>∏</mo><mrow><mi>r</mi><mo>=</mo><mn>1</mn></mrow><msub><mi>n</mi><mi>r</mi></msub></munderover><msubsup><mi>ζ</mi><mi>r</mi><mrow><msub><mi>α</mi><mi>r</mi></msub><mo>−</mo><mn>1</mn></mrow></msubsup></mrow><annotation encoding="application/x-tex">P\left(\boldsymbol{\zeta}\right) = \dfrac{\Gamma\left(\sum_{r}\alpha_{r}\right)}{\prod_{r}\Gamma\left(\alpha_{r}\right)}\prod_{r=1}^{n_{r}}\zeta_{r}^{\alpha_{r}-1}</annotation></semantics></math></p>
 <p>with
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>α</mi><mi>r</mi></msub><mo>=</mo><mn>3</mn></mrow><annotation encoding="application/x-tex">\alpha_{r} = 3</annotation></semantics></math>
@@ -223,8 +224,8 @@ with
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>&gt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\alpha &gt; 1</annotation></semantics></math>
 has its mode at
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><msub><mi>n</mi><mi>r</mi></msub></mrow><annotation encoding="application/x-tex">1/n_{r}</annotation></semantics></math>,
-so this is a prior centred on <em>equal</em> recruitment across regions,
-informative rather than vague. The concentration
+so this is a prior centered on <em>equal</em> recruitment across
+regions, informative rather than vague. The concentration
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>κ</mi><mo>=</mo><msub><mo>∑</mo><mi>r</mi></msub><msub><mi>α</mi><mi>r</mi></msub><mo>−</mo><msub><mi>n</mi><mi>r</mi></msub><mo>=</mo><mn>10</mn></mrow><annotation encoding="application/x-tex">\kappa = \sum_{r}\alpha_{r} - n_{r} = 10</annotation></semantics></math>
 behaves as the number of prior pseudo-observations, which is what to
 adjust if the prior is fighting the data. Setting
@@ -260,7 +261,7 @@ age structure from a regional difference in early recruitment.</p>
 <h2 id="biological-dynamics">Biological dynamics<a class="anchor" aria-label="anchor" href="#biological-dynamics"></a>
 </h2>
 <p>Natural mortality is fixed at a single sex-invariant value. Spatial
-models are heavily parameterised and
+models are heavily parameterized and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>M</mi><annotation encoding="application/x-tex">M</annotation></semantics></math>
 is poorly identified once movement is also being estimated, since both
 remove fish from a region, so fixing it removes a confounding that the
@@ -311,7 +312,7 @@ unidentified.</p>
 throughout. The same caution applies as for the recruitment
 apportionment: a symmetric
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mo>&gt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">c &gt; 1</annotation></semantics></math>
-is centred on <em>equal movement to every region</em>, which for a
+is centered on <em>equal movement to every region</em>, which for a
 residency-dominated stock is a strong assumption, not a vague one. It is
 used here to keep the estimates away from the boundaries of the simplex,
 where the multinomial logit becomes numerically awkward. To target a
@@ -413,7 +414,7 @@ fixed.</li>
 <strong>Reporting rates shared across regions</strong>, estimated in
 two time blocks, under a symmetric beta prior with
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>σ</mi><mo>=</mo><mn>5</mn></mrow><annotation encoding="application/x-tex">\sigma = 5</annotation></semantics></math>
-that penalises the extremes of
+that penalizes the extremes of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[0,1]</annotation></semantics></math>
 without asserting a central value.</li>
 </ul>
@@ -499,7 +500,7 @@ together,</p>
 <p>so the data carry information about the sex ratio within a region but
 not about the relative abundance <em>between</em> regions. That
 between-region information is deliberately left to the indices and the
-tagging data. Fitting compositions that were normalised across regions
+tagging data. Fitting compositions that were normalized across regions
 instead would let composition data speak to regional apportionment,
 which is precisely the quantity the tags are there to inform.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">

@@ -2,7 +2,7 @@
 
 Calculates the spawning potential ratio (SPR) as a function of a trial
 fishing mortality \\F_x\\, then returns a squared penalty \\100 (SPR -
-SPR_x)^2\\ that is minimised by the outer optimizer to find
+SPR_x)^2\\ that is minimized by the outer optimizer to find
 \\F\_{SPR_x}\\. Supports multiple populations via stray rates but does
 not include spatial movement.
 
@@ -111,7 +111,7 @@ single_region_SPR(pars, data)
 
 ## Value
 
-Numeric scalar. Squared penalty \\(SPR - SPR_x)^2\\. Minimised to zero
+Numeric scalar. Squared penalty \\(SPR - SPR_x)^2\\. Minimized to zero
 at \\F = F\_{SPR_x}\\.
 
 ## Details

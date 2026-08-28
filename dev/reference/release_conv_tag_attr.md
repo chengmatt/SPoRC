@@ -101,7 +101,7 @@ Apportionment weights are constructed from numbers-at-age
 (`platform = "population"`), numbers-at-age multiplied by fishery
 selectivity (`platform = "fishery"`), or numbers-at-age multiplied by
 survey selectivity (`platform = "survey"`), all evaluated at the release
-region, year, and season. Weights are then normalised conditionally on
+region, year, and season. Weights are then normalized conditionally on
 the attended dimensions: the denominator for cell `[p, a, s]` is the sum
 of raw weights across all cells that share the same indices in the
 attended dimensions. This ensures that the marginal totals of

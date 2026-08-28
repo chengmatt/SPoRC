@@ -5,7 +5,7 @@ Internal helper called by
 to construct the TMB/RTMB factor map for `rec_region_prop_pars`, the
 logit-scale parameters controlling the proportion of recruits assigned
 to each region. The array has dimensions `[n_pop x (n_regions - 1)]`,
-using a sum-to-one soft-max parameterisation with one reference region
+using a sum-to-one soft-max parameterization with one reference region
 omitted.
 
 ## Usage

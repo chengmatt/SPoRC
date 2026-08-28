@@ -4,7 +4,7 @@ An observation-error standard deviation needs more than one observation
 to be estimable. Given one, the likelihood is unbounded: the standard
 deviation collapses towards zero on whatever residual the model can fit
 exactly and the `log(sigma)` term runs to negative infinity. The
-optimiser reports convergence, so nothing about the fit announces the
+optimizer reports convergence, so nothing about the fit announces the
 problem.
 
 ## Usage

@@ -4,7 +4,7 @@ Draws observed tag recapture counts for a single liberty-season-cohort
 cell from predicted recapture arrays, supporting six likelihood
 structures: Poisson, negative binomial, and release- or
 recovery-conditioned multinomial and Dirichlet-multinomial. Dimensions
-absent from `tag_recaptures_attr` are marginalised by summing over them,
+absent from `tag_recaptures_attr` are marginalized by summing over them,
 and all recaptures are placed into index 1 of the corresponding
 dimension in the output array.
 
@@ -46,7 +46,7 @@ simulate_conv_tag_fish_recaptures(
   in the recapture likelihood. Built from any combination of `"p"`
   (population), `"a"` (age), and `"s"` (sex), joined by underscores.
   Region and fleet are always retained. Unattended dimensions are
-  marginalised and output into index 1.
+  marginalized and output into index 1.
 
 - conv_tagged_fish:
 
@@ -111,7 +111,7 @@ simulate_conv_tag_fish_recaptures(
 
 The `obs_conv_tag_fish_recap` array with simulated recaptures filled in
 at `[ry, rseas, tc, pop_idx, reg_idx, age_idx, sex_idx, flt_idx, sim]`.
-Marginalised dimensions are fixed at index 1.
+Marginalized dimensions are fixed at index 1.
 
 ## Details
 

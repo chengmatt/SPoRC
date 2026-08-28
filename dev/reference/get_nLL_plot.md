@@ -1,6 +1,6 @@
 # Get Plot of Negative Log Likelihood Values
 
-Extracts, weights, and visualises all negative log-likelihood (nLL)
+Extracts, weights, and visualizes all negative log-likelihood (nLL)
 components from one or more SPoRC model runs. Likelihood weights stored
 in the data list are applied to the relevant components (catch, indices,
 recruitment, tagging, fishing mortality) before plotting, so reported
@@ -25,7 +25,7 @@ get_nLL_plot(data, rep, model_names)
 - rep:
 
   List of length `n_models`, where each element is a SPoRC report list
-  (i.e. the output of `obj$report()` after optimisation). The following
+  (i.e. the output of `obj$report()` after optimization). The following
   nLL components are extracted: `jnLL`, `h_nLL`, `M_nLL`,
   `rec_region_prop_nLL`, `Rec_nLL`, `Init_Rec_nLL`, `Init_Sex_nLL`,
   `Rec_level_nLL`, `SR_pen_nLL`, `sel_nLL`, `conv_fish_tag_nLL`,
@@ -49,9 +49,9 @@ A list of two objects:
 - \[\[1\]\] nLL_plot:
 
   A stacked bar chart (`ggplot`) with one facet per model. Bars show the
-  weighted nLL contribution of each component, coloured by component
-  type (Prior, Penalty, Catch, Index, Age, Length, Tagging, jnLL).
-  Components with value 0 are excluded.
+  weighted nLL contribution of each component, colored by component type
+  (Prior, Penalty, Catch, Index, Age, Length, Tagging, jnLL). Components
+  with value 0 are excluded.
 
 - \[\[2\]\] table_plot:
 

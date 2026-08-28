@@ -167,7 +167,7 @@ and utilized for comparison.
 | `conv_tag_release_indicator` | `n_conv_tag_cohorts × 3` (col 1 = release region, col 2 = release year, col 3 = release season) | Indicator for tag release events |
 | `conv_tag_fish_reporting` | `n_regions × n_years × n_fish_fleets × n_sims` | Tag reporting rate by region, year, and fleet |
 | `conv_tagged_fish` | `n_conv_tag_cohorts × n_pop × n_ages × n_sexes × n_sims` | Number of tagged fish released per cohort, population, age, and sex |
-| `conv_tagged_fish_attr` | `n_conv_tag_cohorts × n_pop × n_ages × n_sexes × n_sims` | Tagged fish release array marginalised to the attended likelihood resolution (via `conv_fish_tag_attr`) |
+| `conv_tagged_fish_attr` | `n_conv_tag_cohorts × n_pop × n_ages × n_sexes × n_sims` | Tagged fish release array marginalized to the attended likelihood resolution (via `conv_fish_tag_attr`) |
 | `ln_init_conv_tag_mort` | `1` | Log-scale initial tag-induced mortality |
 | `ln_conv_tag_shed` | `1` | Log-scale chronic tag shedding rate |
 | `conv_tag_fish_avail` | `(conv_tag_max_liberty + 1) × n_seas × n_conv_tag_cohorts × n_pop × n_regions × n_ages × n_sexes × n_sims` | Tagged fish available for recapture at each time step |

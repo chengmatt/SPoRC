@@ -2,9 +2,9 @@
 
 Generates age- or length-based selectivity plots for all fishery and
 survey fleets across one or more SPoRC model runs. Selectivity curves
-are faceted by sex, region, and fleet, and coloured by year when
-multiple years are requested, allowing visualisation of time-varying
-selectivity alongside model comparisons.
+are faceted by sex, region, and fleet, and colored by year when multiple
+years are requested, allowing visualization of time-varying selectivity
+alongside model comparisons.
 
 ## Usage
 
@@ -17,7 +17,7 @@ get_selex_plot(rep, model_names, Selex_Type = "age", year_indx = NULL)
 - rep:
 
   List of length `n_models`, where each element is a SPoRC report list
-  (i.e. the output of `obj$report()` after optimisation). Must contain
+  (i.e. the output of `obj$report()` after optimization). Must contain
   `fish_sel` and `srv_sel` (age-based) and/or `fish_sel_l` and
   `srv_sel_l` (length-based) depending on `Selex_Type`.
 
@@ -36,7 +36,7 @@ get_selex_plot(rep, model_names, Selex_Type = "age", year_indx = NULL)
 - year_indx:
 
   Integer or integer vector of year indices to include in the plot. When
-  multiple years are supplied, curves are coloured by year on a
+  multiple years are supplied, curves are colored by year on a
   continuous viridis scale, making time-variation in selectivity
   visible. If `NULL` (default), only the terminal year is plotted.
 
@@ -47,7 +47,7 @@ A list of two `ggplot` objects:
 - \[\[1\]\] fish_sel_plot:
 
   Fishery selectivity curves faceted by Sex × (Region + Fleet). Lines
-  are coloured by year and distinguished by linetype across models.
+  are colored by year and distinguished by linetype across models.
 
 - \[\[2\]\] srv_sel_plot:
 
@@ -70,7 +70,7 @@ if (FALSE) { # \dontrun{
   # Terminal year only
   plots <- get_selex_plot(list(rep1, rep2), c("Base", "Sensitivity"))
 
-  # All years to visualise time-varying selectivity
+  # All years to visualize time-varying selectivity
   plots <- get_selex_plot(list(rep1), "Base", Selex_Type = "age", year_indx = 1:40)
 
   plots[[1]] # fishery selectivity

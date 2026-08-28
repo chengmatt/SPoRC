@@ -81,4 +81,4 @@ Coupled parameters are checked against the observations informing them.
 A standard deviation with a single observation is not merely poorly
 determined: the likelihood is unbounded, since it collapses onto
 whatever residual the model can fit exactly and the `log(sigma)` term
-runs to negative infinity. The optimiser reports convergence either way.
+runs to negative infinity. The optimizer reports convergence either way.

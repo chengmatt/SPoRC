@@ -4,7 +4,7 @@ Configures all aspects of spatial movement for the estimation model,
 supporting both unstructured Markov transition (`move_type = 0`) and
 Continuous Time Markov Chain (`move_type = 1`) formulations, with
 optional continuous iid deviations on the movement surface. Validates
-all inputs, initialises parameter arrays, constructs TMB/RTMB factor
+all inputs, initializes parameter arrays, constructs TMB/RTMB factor
 maps, and populates `input_list$data` accordingly. Must be called after
 [`Setup_Mod_Biologicals`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Biologicals.md).
 
@@ -151,7 +151,7 @@ Setup_Mod_Movement(
 
   `"iid_p_y"`, `"iid_p_a"`, `"iid_p_y_a"`, `"iid_p_y_a_s"`, `"iid_p_y_seas_a_s"`
 
-  :   Population-specific analogues of the above.
+  :   Population-specific analogs of the above.
 
 - Movement_cont_pe_pars_spec:
 
@@ -165,7 +165,7 @@ Setup_Mod_Movement(
 
   `"fix"`
 
-  :   Parameters initialised but not estimated; fixes deviation variance
+  :   Parameters initialized but not estimated; fixes deviation variance
       at its starting value.
 
   `"est_shared"`
@@ -222,7 +222,7 @@ Setup_Mod_Movement(
 
   Integer flag setting how movement and mortality are sequenced within a
   season. `0` = movement then mortality (default, historical SPoRC
-  behaviour); `1` = mortality then movement; `2` = continuous, with
+  behavior); `1` = mortality then movement; `2` = continuous, with
   movement and mortality acting simultaneously via the matrix
   exponential of \\Q\Delta - \mathrm{diag}(Z)\\. `move_timing = 2`
   requires an estimated CTMC generator, i.e. `move_type = 1` and
@@ -253,7 +253,7 @@ Setup_Mod_Movement(
 
 - ...:
 
-  Optional starting value overrides, passed by name. Recognised
+  Optional starting value overrides, passed by name. Recognized
   arguments:
 
   `move_pars`
@@ -295,7 +295,7 @@ factor maps in `$map`.
 ## Unstructured Markov movement (`move_type = 0`)
 
 Transition probabilities from region \\r\\ to all other regions are
-parameterised via a multinomial logit with a reference-cell constraint.
+parameterized via a multinomial logit with a reference-cell constraint.
 The parameter array `move_pars` has dimensions
 `[n_pop × n_regions × (n_regions - 1) × n_years × n_seas × n_ages × n_sexes]`.
 Block specifications (`Movement_*blk_spec`) control sharing: indices
@@ -322,7 +322,7 @@ introduced through formula covariates in `ctmc_move_dat`.
 
 IID deviations (`move_devs`) are added to the movement logit surface
 (unstructured Markov) or log-rate surface (CTMC) before computing
-probabilities. Deviations are penalised as normal random effects; the
+probabilities. Deviations are penalized as normal random effects; the
 variance is optionally estimated via `Movement_cont_pe_pars_spec`. If
 `do_recruits_move = 0`, age-1 deviations are fixed at zero.
 

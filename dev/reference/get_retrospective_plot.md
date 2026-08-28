@@ -41,12 +41,12 @@ A list of three `ggplot` objects:
   (where `peel = max(Year) - Year`) are highlighted. Mohn's rho (mean
   relative difference across terminal-year points) is annotated on each
   facet panel. Faceted by Region × (Type + Population); lines and points
-  coloured by peel year on a continuous viridis scale.
+  colored by peel year on a continuous viridis scale.
 
 - \[\[2\]\] abs_retro_plot:
 
   Absolute-scale trajectory plot. Peeled runs (`peel > 0`) are drawn as
-  solid lines coloured by peel; the full-data run (`peel = 0`) is
+  solid lines colored by peel; the full-data run (`peel = 0`) is
   overlaid as a dashed black line. Faceted by Region × (Type +
   Population) with free y-scales.
 
@@ -55,7 +55,7 @@ A list of three `ggplot` objects:
   Cohort-tracking (squid) plot for recruitment. Restricted to the 10
   most recent cohorts. X-axis shows years since the cohort was last
   estimated (`terminal - Year - 1`), y-axis shows recruitment value, and
-  lines are grouped and coloured by cohort year. Faceted by Population ×
+  lines are grouped and colored by cohort year. Faceted by Population ×
   Region with free y-scales.
 
 ## See also

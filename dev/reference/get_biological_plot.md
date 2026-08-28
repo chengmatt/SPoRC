@@ -22,13 +22,13 @@ get_biological_plot(data, rep, model_names)
 - rep:
 
   List of length `n_models`, where each element is a SPoRC report list
-  (i.e. the output of `obj$report()` after optimisation). Must contain
+  (i.e. the output of `obj$report()` after optimization). Must contain
   `Movement` and `natmort`.
 
 - model_names:
 
   Character vector of length `n_models` giving display names for each
-  model run. Used as colour legend labels across all plots.
+  model run. Used as color legend labels across all plots.
 
 ## Value
 
@@ -39,25 +39,25 @@ A list of four elements:
   A list of `n_pop` `ggplot` objects, one per population. Each plot
   shows age-specific movement probabilities for all seasons at
   `year_indx`, faceted by Region_To × (Region_From + Season), with lines
-  coloured by model and distinguished by sex linetype. If
+  colored by model and distinguished by sex linetype. If
   `do_recruits_move = 0`, age-1 fish are excluded. Y-axis is fixed to
   \[0, 1\].
 
 - \[\[2\]\] natmort_plot:
 
   Natural mortality at age at `year_indx`, faceted by Region × Sex.
-  Lines coloured by model and distinguished by population linetype.
+  Lines colored by model and distinguished by population linetype.
 
 - \[\[3\]\] waa_plot:
 
   Spawning weight-at-age at `year_indx`, faceted by Region × (Sex +
-  Season). Lines coloured by model and distinguished by population
+  Season). Lines colored by model and distinguished by population
   linetype.
 
 - \[\[4\]\] mataa_plot:
 
   Maturity-at-age at `year_indx`, faceted by Region × (Sex + Season).
-  Lines coloured by model and distinguished by population linetype.
+  Lines colored by model and distinguished by population linetype.
 
 ## See also
 

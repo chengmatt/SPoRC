@@ -190,7 +190,7 @@ frame is then created to define the covariates associated with movement.
 This data frame must include columns for `pop`, `regions`, `years`,
 `seas`, `ages`, and `sexes`, plus any additional covariates to be used
 in the diffusion or preference formulas. The `seas` column should
-include all seasons being modelled; projection year covariate values can
+include all seasons being modeled; projection year covariate values can
 also be appended to this data frame when `n_proj_yrs_devs > 0`.
 
 ``` r

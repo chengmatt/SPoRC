@@ -162,7 +162,7 @@ Setup_Mod_Biologicals(
 
 - AgeingError:
 
-  Ageing error (age-age transition) array mapping true modelled ages to
+  Ageing error (age-age transition) array mapping true modeled ages to
   observed age bins. Each row is one model age's share across the
   observed bins and sums to one, or to zero to drop that model age from
   the observations. This is the age-axis twin of `LenBinMap`: the
@@ -183,9 +183,9 @@ Setup_Mod_Biologicals(
 
   `NULL` (default)
 
-  :   An identity matrix is constructed, assuming modelled and observed
-      age bins are identical. If observed bins are a subset of modelled
-      ages (e.g., observed ages 2-10 vs. modelled ages 1-10), supply a
+  :   An identity matrix is constructed, assuming modeled and observed
+      age bins are identical. If observed bins are a subset of modeled
+      ages (e.g., observed ages 2-10 vs. modeled ages 1-10), supply a
       shifted identity matrix such as
       `diag(1, n_model_ages)[, obs_age_index]` to avoid a dimensional
       mismatch.
@@ -531,7 +531,7 @@ Setup_Mod_Biologicals(
 - ...:
 
   Optional starting value overrides passed by name. Currently
-  recognised:
+  recognized:
 
   `ln_M`
 

@@ -229,7 +229,7 @@ input_list <- Setup_Mod_SrvIdx_and_Comps(
 
 ## Fishery selectivity and catchability
 
-Both fleets use the slope and $`a_{50}`$ parameterisation of the
+Both fleets use the slope and $`a_{50}`$ parameterization of the
 logistic, which is `logist1`:
 
 ``` math
@@ -256,8 +256,8 @@ input_list <- Setup_Mod_Fishsel_and_Q(
 ## Survey selectivity and catchability
 
 Survey selectivity takes the same logistic form. Catchability is
-estimated under a lognormal prior centred on $`1`$ with a coefficient of
-variation of $`0.05`$, with the same $`\exp(-\text{CV}^{2}/2)`$ shift
+estimated under a lognormal prior centered on $`1`$ with a coefficient
+of variation of $`0.05`$, with the same $`\exp(-\text{CV}^{2}/2)`$ shift
 applied to the median so the prior mean lands where the assessment puts
 it.
 
@@ -383,7 +383,7 @@ est$sdrep <- RTMB::sdreport(est)
     final jnLL: 297.508   max |gradient|: 9.1e-13
     pdHess: TRUE
 
-The optimised objective is the value the seed point already had, to four
+The optimized objective is the value the seed point already had, to four
 decimal places, so the assessment’s maximum likelihood estimate is
 `SPoRC`’s optimum as well.
 

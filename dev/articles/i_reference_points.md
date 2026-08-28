@@ -813,6 +813,162 @@ B_{p,r,msy} = \sum_{o}^{} SBPR_{p,o,r}^{fished} \cdot OrigEqRec_p
 F_{r,msy} = \arg\min_{F_{r,msy}} \left\{-\sum_{p}\sum_r Yield_{p,r}\right\}
 ```
 
+#### Uncertainty in Reference Points
+
+Every reference point above is solved with the estimated quantities
+handed in as fixed data, so each comes back as a single number. They are
+not fixed quantities, though. They are built from selectivity, natural
+mortality, weight at age, and where a stock recruitment curve is used,
+$`R_0`$ and steepness, all of which the assessment estimated with error.
+
+Let $`\boldsymbol{p}`$ be everything the model estimated stacked into
+one vector, and $`\Sigma`$ its covariance matrix from `sdreport`. Every
+reference point in this vignette is the value of $`F`$ that minimizes
+some criterion $`h(\boldsymbol{p}, F)`$, a curve built so that its
+lowest point sits at the answer we want: for $`F_{msy}`$ that criterion
+is negative equilibrium yield, and for $`F_{x\%}`$ it is the squared
+distance between $`SSBPR_F / SSBPR_0`$ and the target. There is no
+formula for the answer, which is what makes the uncertainty awkward.
+$`F^*`$ exists only as the solution to that minimization.
+
+##### Delta method
+
+Here, we will work on the log scale, since fishing mortalities and
+biomasses are positive, and write $`x^* = \log F^*`$. Define the
+sensitivity of the reference point to each estimated parameter:
+
+``` math
+d_j = \frac{\partial x^*}{\partial p_j}
+```
+
+which tells us if parameter $`j`$ moves by one unit, the reference point
+moves by $`d_j`$. Collecting the $`d_j`$ into a row vector
+$`\boldsymbol{d}`$,
+
+``` math
+Var(\log F^*) \approx \boldsymbol{d} \Sigma \boldsymbol{d}^\top
+```
+
+which says that the uncertainty in the reference point is the
+uncertainty in the parameters, weighted by how strongly each one moves
+it. This is the variance of a weighted sum (i.e., the matrix algebra),
+with the sensitivities as weights and $`\Sigma`$ supplying the
+covariance between every pair of parameters. A 95% interval is
+$`F^* \exp\left(\pm 1.96 \sqrt{\boldsymbol{d} \Sigma \boldsymbol{d}^\top}\right)`$,
+which stays positive and is asymmetric on the natural scale.
+
+Writing the same quantity out term by term shows what earns a parameter
+a place in that interval:
+
+``` math
+\boldsymbol{d} \Sigma \boldsymbol{d}^\top = \sum_j d_j^2 \Sigma_{jj} + \sum_{j \neq k} d_j d_k \Sigma_{jk}
+```
+
+which says that each parameter contributes on its own, and then every
+pair contributes again through its correlation. The first sum is a
+product rather than a trade off, so a parameter widens the interval only
+if it both moves the reference point and is itself uncertain, and either
+factor near zero removes it entirely. Recruitment scale is a good
+example: it is estimated with real uncertainty, but it cannot move a
+per-recruit quantity like $`F_{x\%}`$, so $`d_j`$ is zero and it drops
+out no matter how uncertain it is. The second sum then adds to or
+subtracts from the total, so parameters that are correlated and push the
+reference point in opposite directions partly offset one another.
+
+The sensitivities come from the minimization itself. The argument is
+easiest to follow as a walk along the criterion curve.
+
+Start at the solution. The criterion is flat there, because that is what
+being at the bottom means: its slope is zero.
+
+Now change $`p_j`$ a little. The whole curve deforms, and the place you
+are standing is no longer the bottom, so the slope underneath you is no
+longer zero. Say it has become $`0.3`$, meaning the criterion now rises
+as $`x`$ increases.
+
+To find the new bottom, walk until the slope is back to zero. Walking
+changes the slope, at a rate set by how sharply the curve bends. Say the
+slope changes by $`2`$ for every unit of $`x`$ you cover. You need to
+shed $`0.3`$ of slope, so you walk $`0.3 / 2 = 0.15`$, and you walk to
+the left, since the slope was positive and you need to bring it down.
+
+That distance is the sensitivity. The solution moves by the slope the
+parameter gave you, divided by the rate the slope changes as you walk,
+with the minus sign carrying the direction:
+
+``` math
+d_j = -\ \frac{\text{slope gained per unit of } p_j}{\text{slope shed per unit of } x}
+```
+
+![Changing a parameter changes the criterion (dashed) away from its
+fitted shape (solid), leaving a non-zero slope (blue) at the old
+solution. The new solution is how far you must walk to get rid of that
+slope. Both panels get the same parameter change, so both pick up the
+same slope, but the flatter curve on the right gets rid of it four times
+more slowly and the solution travels four times
+further.](figures/i_refpt_sensitivity.png)
+
+Changing a parameter changes the criterion (dashed) away from its fitted
+shape (solid), leaving a non-zero slope (blue) at the old solution. The
+new solution is how far you must walk to get rid of that slope. Both
+panels get the same parameter change, so both pick up the same slope,
+but the flatter curve on the right gets rid of it four times more slowly
+and the solution travels four times further.
+
+Both quantities in that fraction are rates of change of the slope, so
+both are second derivatives of the criterion. Writing them that way,
+
+``` math
+d_j = -\frac{\partial^2 h / \partial x \partial p_j}{\partial^2 h / \partial x^2}
+```
+
+which is the same statement: the numerator is the slope gained, measured
+per unit of $`p_j`$, and the denominator is the slope shed, measured per
+unit of $`x`$. Their ratio carries units of $`x`$ per unit of $`p_j`$,
+which is what a sensitivity should be.
+
+This is where the familiar intuition about flat topped yield curves
+becomes a number. A curve that bends slowly sheds slope slowly, so the
+solution has to travel a long way before it is flat again, and the
+interval widens accordingly.
+
+##### Simulation
+
+The delta method replaces the reference point with a straight line in
+$`\boldsymbol{p}`$ (i.e., because it is a derivative), which is accurate
+near the estimates but can mislead where the reference point minmization
+criterion is strongly curved. The alternative drops the linearization
+entirely and instead does a random draw:
+
+``` math
+\boldsymbol{p}^{(b)} \sim MVN(\hat{\boldsymbol{p}}, \Sigma), \qquad b = 1, \ldots, B
+```
+
+Then for each draw rebuild the population dynamics, re-solve the
+reference point, and take the interval from the quantiles of the
+resulting $`F^{*(b)}`$. Where the linearization holds the two approaches
+agree closely, and a disagreement is the signal that the delta method
+interval should not be trusted.
+
+##### Correlated quantities
+
+Stock status compares a current quantity against a reference point, and
+the two are built from the same parameters. $`SSB_{n_y}`$ and $`B_{40}`$
+both rise when estimated recruitment scale rises, so much of the error
+cancels in their ratio. Treating their intervals as independent
+overstates the uncertainty in status, sometimes by a factor of two or
+more. Both methods carry the ratio through the same calculation rather
+than combining intervals afterwards, so the cancellation is retained.
+
+##### What is not propagated
+
+Only estimated quantities contribute. Maturity at age, natural mortality
+where it is fixed, steepness where it is fixed, and anything switched
+off through `mapping` are treated as known and contribute exactly zero.
+An interval can therefore be tight because the quantities driving it
+were fixed rather than because the reference point is well determined,
+which is worth checking before reporting one.
+
 ## Deriving Catch Advice and Projections
 
 A core part of the assessment process is to convert reference point
@@ -1000,9 +1156,9 @@ abundance and selectivity:
 \frac{projCatch_{p,r,\tau,y,f}}{projCatch_{p',r,\tau,y,f}} \;\; \text{is set by } projN \text{ and } Sel^{Fsh}, \text{ not by } projF_{r,y}
 ```
 
-which is the expected behaviour of a fishery that cannot select on
+which is the expected behavior of a fishery that cannot select on
 population identity. Population-specific catch should therefore be
-summed to a regional total before being supplied. The realised split is
+summed to a regional total before being supplied. The realized split is
 still available in `proj_Catch`, which retains its population dimension,
 and comparing it against an expected split is a useful diagnostic of
 movement and relative abundance. Where populations are region-exclusive
@@ -1151,7 +1307,7 @@ known and therefore in where in the annual cycle they are applied.
 | `"Input"` | `f_ref_pt[r, y-1]`, a fixed user-supplied $`F`$ | end of year $`y-1`$ |
 | `"HCR"` | `HCR_function()` of region $`r`$’s own SSB in year $`y-1`$ | end of year $`y-1`$ |
 | `"HCR_global"` | `HCR_function()` of SSB summed over all regions in year $`y-1`$ | end of year $`y-1`$ |
-| `"Catch"` | solved so that realised catch equals `catch_input[r, y]` | start of year $`y`$ |
+| `"Catch"` | solved so that realized catch equals `catch_input[r, y]` | start of year $`y`$ |
 
 The first three depend only on the *previous* year’s quantities, so they
 are computed at the end of the previous year. This is why
@@ -1256,10 +1412,7 @@ sgl_ref_pt <- Get_Reference_Points(data = sgl_rg_sable_data,
                                    rec_age = 2,
                                    )
 sgl_ref_pt$f_ref_pt # F40
-#> [1] 0.08625413
 sgl_ref_pt$b_ref_pt # B40
-#>          [,1]
-#> [1,] 121.3814
 ```
 
 #### Multi Region
@@ -1294,18 +1447,15 @@ mlt_ref_pt_indp <- Get_Reference_Points(data = mlt_rg_sable_data,
                                                                          mlt_rg_sable_data$n_regions))
                                         )
 mlt_ref_pt_indp$f_ref_pt # F40
-#> [1] 0.08444344 0.08452630 0.08497820 0.08486098 0.08506540
 mlt_ref_pt_indp$b_ref_pt # B40
-#>          [,1]     [,2]    [,3]     [,4]     [,5]
-#> [1,] 30.27698 20.12714 13.1906 30.82732 18.44024
 ```
 
 By contrast, users can also specify global SPR rates. This involves
 simply changing the `what` argument to `global_SPR`, which results in a
 single $`F_{40}`$ being estimated, but region-specific $`B_{p,r,40}`$
 given that regional estimates of recruitment are utilized. Note that the
-$`F_{40}`$ outputs 5 values for the 5 regions modelled in the case
-study, but these values are all identical.
+$`F_{40}`$ outputs 5 values for the 5 regions modeled in the case study,
+but these values are all identical.
 
 ``` r
 
@@ -1326,10 +1476,7 @@ mlt_ref_pt_global <- Get_Reference_Points(data = mlt_rg_sable_data,
                                           ))
                                           )
 mlt_ref_pt_global$f_ref_pt # F40
-#> [1] 0.08443662 0.08443662 0.08443662 0.08443662 0.08443662
 mlt_ref_pt_global$b_ref_pt # B40
-#>          [,1]    [,2]     [,3]     [,4]     [,5]
-#> [1,] 8.322787 13.2863 9.042983 46.78219 35.42803
 ```
 
 Similarly, MSY-based reference points assuming a Beverton-Holt stock
@@ -1340,6 +1487,92 @@ dependence (`what = 'global_BH_MSY'`). For MSY-based methods, the
 `is_discard_fleet` argument can be used to exclude discard-only fleets
 from the landed yield calculation while still allowing them to
 contribute to total mortality.
+
+#### Reference Point Uncertainty
+
+`Get_Reference_Point_Uncertainty` attaches confidence intervals to any
+of the reference points above. Unlike `Get_Reference_Points`, it takes
+the fitted model object rather than a report file, because it needs the
+parameter covariance and the ability to rebuild the report at perturbed
+parameter values. All the reference point arguments are passed through
+unchanged, so a call mirrors the one you would make to
+`Get_Reference_Points`. Here we use the fitted dusky rockfish model that
+ships with the package.
+
+``` r
+
+data("dusky_rtmb_model") # read in fitted dusky rockfish model
+
+rp <- Get_Reference_Point_Uncertainty(obj = dusky_rtmb_model,
+                                      SPR_x = 0.4,
+                                      type = 'single_region',
+                                      what = 'SPR'
+                                      )
+rp$refpts
+```
+
+The `log_se` column is the standard error of $`\log F^*`$, `cv` is the
+coefficient of variation, and `lwr` and `upr` are the exponentiated
+bounds. The `d` element holds the sensitivities, which are worth
+inspecting because many are structurally zero. $`F_{40}`$ is a
+per-recruit quantity, so the scale of recruitment cannot move it, and
+with one fleet and one season the fleet apportionment of $`F`$ is fixed
+at one regardless of the $`F`$ deviations.
+
+``` r
+
+# which parameters actually move F40
+contrib <- abs(rp$d['f_ref_pt', ]) * sqrt(diag(dusky_rtmb_model$sdrep$cov.fixed))
+head(sort(contrib, decreasing = TRUE), 4)
+
+sum(rp$d['f_ref_pt', ] == 0) # parameters with no effect at all
+```
+
+To carry stock status through the same calculation, pass a function of
+the report and the reference points to `extra_quantities`. Setting
+`method = 'both'` also runs the simulation version, which draws
+parameter vectors from the joint covariance and re-solves the reference
+point at each draw.
+
+``` r
+
+# terminal spawning biomass and its ratio to B40
+status <- function(rep, refpts) {
+  ssb <- rep$SSB[1, 1, dim(rep$SSB)[3]]
+  c(SSB_terminal = ssb, status = ssb / as.numeric(refpts$b_ref_pt))
+}
+
+rp_both <- Get_Reference_Point_Uncertainty(obj = dusky_rtmb_model,
+                                           SPR_x = 0.4,
+                                           type = 'single_region',
+                                           what = 'SPR',
+                                           extra_quantities = status,
+                                           method = 'both',
+                                           n_draw = 200,
+                                           seed = 123
+                                           )
+
+# delta method against re-solving at each draw
+data.frame(quantity = rp_both$refpts$quantity,
+           delta_se = round(rp_both$refpts$log_se, 4),
+           sim_sd = round(rp_both$mvn$log_sd, 4))
+```
+
+The two columns agree closely here, indicating that the linearizing
+approximation is fine model. A large disagreement would point to a
+strongly curved reference point minimization criteria and argue for
+reporting the simulation interval instead. Terminal spawning biomass and
+$`B_{40}`$ are each considerably more uncertain than their ratio,
+because the parameters that raise one raise the other.
+
+``` r
+
+se <- setNames(rp_both$refpts$log_se, rp_both$refpts$quantity)
+c(SSB_terminal = se[['SSB_terminal']],
+  B40 = se[['b_ref_pt']],
+  status_joint = se[['status']],
+  status_if_independent = sqrt(se[['SSB_terminal']]^2 + se[['b_ref_pt']]^2))
+```
 
 ### Conducting Catch Projections to Derive Catch Advice (Deterministic Recruitment)
 
@@ -1796,13 +2029,9 @@ $`F`$ value. For example, in the first projection year:
 ``` r
 
 f_ref_pt_indp[,2] # independent SPR
-#> [1] 0.08444344 0.08452630 0.08497820 0.08486098 0.08506540
 f_ref_pt_global[,2] # global SPR
-#> [1] 0.08443662 0.08443662 0.08443662 0.08443662 0.08443662
 b_ref_pt_indp[,,2] # independent SPR
-#> [1] 30.27698 20.12714 13.19060 30.82732 18.44024
 b_ref_pt_global[,,2] # global SPR
-#> [1]  8.322787 13.286298  9.042983 46.782189 35.428033
 ```
 
 For the projections that follow, we use independent SPR rates to allow

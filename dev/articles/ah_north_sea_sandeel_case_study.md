@@ -108,7 +108,7 @@ the observation layer rather than the trajectory.
 
 The recruitment age needs separate handling. Age 0 fish do not exist
 until season 2, so they are exposed to one season of mortality rather
-than two, and their annual rate is set so that the realised exposure
+than two, and their annual rate is set so that the realized exposure
 matches.
 
 Maturity is doubled. `SPoRC` multiplies spawning biomass by 0.5 for
@@ -225,7 +225,7 @@ input_list <- Setup_Mod_Catch_and_F(
 
 A fleet fits the aggregated catch or the catch at age, never both.
 Supplying both is an error rather than a warning: they are the same
-information stated twice, and the factorisation of an at-age observation
+information stated twice, and the factorization of an at-age observation
 into a total and a composition is exact for multinomial counts but not
 for the lognormal used here.
 
@@ -514,7 +514,7 @@ input_list <- Setup_Mod_Weighting(
 ## Fitting
 
 The recruitment penalty has to be translated before the two models are
-asked to find the same optimum. `smsR` penalises its deviations towards
+asked to find the same optimum. `smsR` penalizes its deviations towards
 the hockey stick at a weight of 0.05, set through `nllfactor`, with its
 recruitment standard deviation estimated at 0.897, so the precision
 reaching the objective is $`0.05 / (2 \times 0.897^{2})`$. `SPoRC`
@@ -548,5 +548,5 @@ sum over seasons preserves the annual trajectory, and only the within
 season split differs.
 
 Also, the recruitment penalty is not the same statement. `smsR`
-penalises its deviations towards a hockey stick at a weight of 0.05,
+penalizes its deviations towards a hockey stick at a weight of 0.05,
 while `SPoRC` assumes mean recruitment with some annual deviations.

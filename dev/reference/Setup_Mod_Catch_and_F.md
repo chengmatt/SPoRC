@@ -51,10 +51,10 @@ Setup_Mod_Catch_and_F(
   AgeObsCorr_catch_pop = "iid",
   AgeObsCorr_discard = "iid",
   AgeObsCorr_discard_pop = "iid",
-  rho_catch_key = NULL,
-  rho_catch_pop_key = NULL,
-  rho_discard_key = NULL,
-  rho_discard_pop_key = NULL,
+  rho_catch_spec = NULL,
+  rho_catch_pop_spec = NULL,
+  rho_discard_spec = NULL,
+  rho_discard_pop_spec = NULL,
   UseCatch,
   catch_units = array("biom", dim = c(input_list$data$n_fish_fleets)),
   UseCatch_pop = array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions,
@@ -116,7 +116,7 @@ Setup_Mod_Catch_and_F(
   fits the catch at age directly, every age its own lognormal
   observation, in place of an aggregated catch with compositions. This
   is the native form for ICES age-structured assessments. The two
-  statements are not interchangeable: the exact factorisation of an
+  statements are not interchangeable: the exact factorization of an
   at-age observation into a total and a composition holds for Poisson
   and multinomial, not for lognormal, so a fleet must use one or the
   other and supplying both for the same fleet is an error. `NULL`
@@ -214,12 +214,22 @@ Setup_Mod_Catch_and_F(
   and
   [`Setup_Mod_SrvIdx_and_Comps`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_SrvIdx_and_Comps.md).
 
-- rho_catch_key, rho_discard_key, rho_catch_pop_key,
-  rho_discard_pop_key:
+- rho_catch_spec, rho_discard_spec, rho_catch_pop_spec,
+  rho_discard_pop_spec:
 
-  Integer matrices `[n_sexes, n_fish_fleets]` coupling the across-age
-  correlation. Equal entries share a parameter and `NA` excludes one.
-  Defaults to one correlation per fleet, shared across sexes.
+  How each stream's correlation parameters are shared, using the same
+  spec strings as `sigmaF_spec` and `Fdev_rho_spec`. The correlations
+  sit over region, sex and fleet, with a leading population margin for
+  the population-specific streams, so `"est_shared_r_s"` gives one per
+  fleet, `"est_shared_s"` one per region and fleet, `"est_shared_r_s_f"`
+  a single value, `"est_all"` one per cell, and `"fix"` holds them.
+  `NULL` (the default) takes `"est_shared_r_s"`, or `"est_shared_p_r_s"`
+  for the population streams, both one per fleet. The spec governs the
+  across-age correlation, the across-year correlation and the
+  unstructured matrix together, so fleets sharing under `"us"` share a
+  whole matrix. A region, sex or population a fleet never observes
+  carries no parameter, which is what holds the unused slots of a summed
+  margin out.
 
 - UseCatch:
 
@@ -252,7 +262,7 @@ Setup_Mod_Catch_and_F(
 
 - Use_F_pen:
 
-  Integer flag for applying a fishing mortality penalty to penalise
+  Integer flag for applying a fishing mortality penalty to penalize
   large deviations in `ln_F_devs`. `1` = apply (default); `0` = do not
   apply.
 
@@ -314,9 +324,9 @@ Setup_Mod_Catch_and_F(
 
 - Fdev_pen_center:
 
-  Where the fishing mortality deviation penalty is centred. `"fixed"`
-  (default) centres on zero, constraining both the level and the spread
-  of the deviations. `"own_mean"` centres on the mean of the estimated
+  Where the fishing mortality deviation penalty is centered. `"fixed"`
+  (default) centers on zero, constraining both the level and the spread
+  of the deviations. `"own_mean"` centers on the mean of the estimated
   deviations, penalizing only their spread and leaving the level free,
   which is what a sum of squares about the series' own mean amounts to.
   Under a mean-plus-deviations parameterization the level is already
@@ -369,7 +379,7 @@ Setup_Mod_Catch_and_F(
 
 - Use_dmr_pen:
 
-  Integer flag for applying a discard mortality rate penalty to penalise
+  Integer flag for applying a discard mortality rate penalty to penalize
   large deviations in `logit_dmr_devs`. `1` = apply; `0` = do not apply
   (default). Must be `1` when `dmr_dev_spec = "est_all"` and `0` when
   `dmr_dev_spec = "fix"`.
@@ -428,14 +438,14 @@ Setup_Mod_Catch_and_F(
 - ln_F_mean_spec:
 
   Character string, matched by exact name only because it sits after
-  `...`. `"est"` (default, the previous and only behaviour) or `"fix"`.
+  `...`. `"est"` (default, the previous and only behavior) or `"fix"`.
   `"fix"` maps `ln_F_mean` off at its starting value, which defaults to
   `0` under this spec unless supplied through `...`, so the deviations
   carry all of log fishing mortality: `F = exp(ln_F_devs)`, where it
   follows a free annual log-F parameterization. It must be paired with
   `Fdev_pen_center = "own_mean"` (penalize only the spread about the
   deviations' own mean), `Fdev_model = "rw"`, or `Use_F_pen = 0`: an
-  `"iid"` or `"ar1"` penalty centred on a fixed zero mean would shrink
+  `"iid"` or `"ar1"` penalty centered on a fixed zero mean would shrink
   the deviations toward `F = 1`, so that combination is rejected at
   setup. `"est"` keeps the mean-plus-deviations form, where the `"iid"`
   penalty shrinks each year toward the estimated average F.

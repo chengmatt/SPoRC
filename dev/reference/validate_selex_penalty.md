@@ -2,7 +2,7 @@
 
 Checks the table consumed by
 [`get_selex_fixed_penalty`](https://chengmatt.github.io/SPoRC/dev/reference/get_selex_fixed_penalty.md)
-and normalises its `par` column to a list of integer vectors, so a row
+and normalizes its `par` column to a list of integer vectors, so a row
 may name either one parameter or a whole set.
 
 ## Usage

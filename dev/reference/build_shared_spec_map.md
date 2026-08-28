@@ -49,7 +49,7 @@ build_shared_spec_map(
   supplied, the resulting map is checked for observation-error
   parameters that no data can identify. See
   [`check_spec_map_identifiable`](https://chengmatt.github.io/SPoRC/dev/reference/check_spec_map_identifiable.md).
-  Defaults to `NULL`, which skips the check and leaves behaviour
+  Defaults to `NULL`, which skips the check and leaves behavior
   unchanged.
 
 - what:

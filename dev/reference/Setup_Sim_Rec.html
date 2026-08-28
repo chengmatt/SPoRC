@@ -3,12 +3,12 @@
 operating model: stock-recruit relationship type and density-dependence
 structure, biological parameters (\(R_0\), steepness, sex ratio),
 recruitment and initial age-structure deviations, seasonal recruitment
-allocation, spawn timing, and equilibrium initialisation method. Must be
+allocation, spawn timing, and equilibrium initialization method. Must be
 called after Setup_Sim_Dim."><meta property="og:description" content="Populates sim_list with all recruitment-related inputs needed by the
 operating model: stock-recruit relationship type and density-dependence
 structure, biological parameters (\(R_0\), steepness, sex ratio),
 recruitment and initial age-structure deviations, seasonal recruitment
-allocation, spawn timing, and equilibrium initialisation method. Must be
+allocation, spawn timing, and equilibrium initialization method. Must be
 called after Setup_Sim_Dim."><meta name="robots" content="noindex"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
@@ -44,6 +44,7 @@ called after Setup_Sim_Dim."><meta name="robots" content="noindex"></head><body>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -65,7 +66,7 @@ called after Setup_Sim_Dim."><meta name="robots" content="noindex"></head><body>
 operating model: stock-recruit relationship type and density-dependence
 structure, biological parameters (\(R_0\), steepness, sex ratio),
 recruitment and initial age-structure deviations, seasonal recruitment
-allocation, spawn timing, and equilibrium initialisation method. Must be
+allocation, spawn timing, and equilibrium initialization method. Must be
 called after <code><a href="Setup_Sim_Dim.html">Setup_Sim_Dim</a></code>.</p>
     </div>
 
@@ -132,7 +133,7 @@ cells.</p></dd>
 
 <dt id="arg-rinit-input">rinit_input<a class="anchor" aria-label="anchor" href="#arg-rinit-input"></a></dt>
 <dd><p>Unfished equilibrium recruitment scalar used for
-population initialisation when <code>use_rinit = 1</code>, array
+population initialization when <code>use_rinit = 1</code>, array
 <code>[n_pop x n_regions x n_sims]</code>. Ignored when <code>use_rinit = 0</code>.
 Default: <code>15</code> for all cells.</p></dd>
 
@@ -202,22 +203,22 @@ relationship. Default <code>"global"</code>. Options:</p><dl><dt><code>0</code>/
 
 <dt id="arg-init-dd">init_dd<a class="anchor" aria-label="anchor" href="#arg-init-dd"></a></dt>
 <dd><p>Density-dependence structure for equilibrium age-structure
-initialisation. Default <code>"global"</code>. Same options as <code>rec_dd</code>.</p></dd>
+initialization. Default <code>"global"</code>. Same options as <code>rec_dd</code>.</p></dd>
 
 
 <dt id="arg-use-rinit">use_rinit<a class="anchor" aria-label="anchor" href="#arg-use-rinit"></a></dt>
 <dd><p>Integer (0/1). Whether a separate initial recruitment
-scalar <code>rinit_input</code> is used to initialise the population
+scalar <code>rinit_input</code> is used to initialize the population
 independently of <code>R0_input</code>. When <code>0</code> (default),
 <code>rinit_input</code> is ignored and <code>R0_input</code> governs both
-initialisation and recruitment. When <code>1</code>, <code>rinit_input</code> is
-used exclusively for equilibrium initialisation and <code>R0_input</code>
+initialization and recruitment. When <code>1</code>, <code>rinit_input</code> is
+used exclusively for equilibrium initialization and <code>R0_input</code>
 governs the recruitment relationship.</p></dd>
 
 
 <dt id="arg-init-age-strc">init_age_strc<a class="anchor" aria-label="anchor" href="#arg-init-age-strc"></a></dt>
 <dd><p>Integer specifying the equilibrium age-structure
-initialisation method. Default <code>2</code>. Options:</p><dl><dt><code>0</code>/<code>"iterative"</code></dt>
+initialization method. Default <code>2</code>. Options:</p><dl><dt><code>0</code>/<code>"iterative"</code></dt>
 <dd><p>Iterates the population forward until
     approximate equilibrium. Slowest but most general.</p></dd>
 
@@ -227,7 +228,7 @@ initialisation method. Default <code>2</code>. Options:</p><dl><dt><code>0</code
 
   <dt><code>2</code>/<code>"matrix"</code></dt>
 <dd><p>Matrix geometric series solution that
-    generalises the scalar approach to include movement. Recommended
+    generalizes the scalar approach to include movement. Recommended
     default for spatially explicit models.</p></dd>
 
   <dt><code>3</code>/<code>"scalar_plus_only"</code></dt>
@@ -244,7 +245,7 @@ initialisation method. Default <code>2</code>. Options:</p><dl><dt><code>0</code
     <code>ln_rinit</code>, and because the deviations are log-numbers rather
     than log-ratios, any penalty acts as a prior on initial abundance:
     pair with <code>equil_init_age_strc = "equil"</code> for no such prior, or
-    with <code>InitDevs_pen_center = "own_mean"</code> to penalise only the
+    with <code>InitDevs_pen_center = "own_mean"</code> to penalize only the
     roughness of the age structure and not its level.</p></dd>
 
 
@@ -289,7 +290,7 @@ array, either <code>[n_pop x n_regions x (n_ages - 1) x n_sims]</code> (one
 shared curve, broadcast across sexes) or
 <code>[n_pop x n_regions x (n_ages - 1) x n_sexes x n_sims]</code> (one curve
 per sex). The <code>n_ages - 1</code> dimension excludes the reference age used
-during initialisation. If <code>NULL</code> (default), deviations are drawn as
+during initialization. If <code>NULL</code> (default), deviations are drawn as
 one shared curve per population and region.</p></dd>
 
 

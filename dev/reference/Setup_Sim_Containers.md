@@ -1,6 +1,6 @@
-# Initialise output containers for the operating model simulation
+# Initialize output containers for the operating model simulation
 
-Allocates and appends zero-initialised arrays to `sim_list` for all
+Allocates and appends zero-initialized arrays to `sim_list` for all
 biological, fishery, and survey quantities tracked during simulation.
 This function should be called after
 [`Setup_Sim_Dim`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Dim.md)
@@ -25,7 +25,7 @@ Setup_Sim_Containers(sim_list)
 
 ## Value
 
-The input `sim_list` with the following zero-initialised arrays added:
+The input `sim_list` with the following zero-initialized arrays added:
 
 \*\*Biological containers\*\*
 

@@ -51,6 +51,7 @@
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -908,6 +909,17 @@ through a season goes through that one file.</p>
 </td>
 <td></td>
 </tr>
+<tr class="odd">
+<td><code>refpts_uncertainty.R</code></td>
+<td>
+<code>eval_refpt_log_quantities</code>, <code>flatten_refpt</code>,
+<code>Get_Reference_Point_Uncertainty</code>,
+<code>refpt_draw_devs</code>, <code>refpt_par_cov</code>,
+<code>refpt_quad_form</code>
+</td>
+<td>nothing</td>
+<td></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -1640,7 +1652,7 @@ for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 123 test files in total.</p>
+<p>That is 124 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

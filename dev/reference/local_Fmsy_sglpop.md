@@ -1,7 +1,7 @@
 # Compute region-specific Beverton-Holt Fmsy for a spatially explicit single-population model
 
 Computes the vector of regional \\F\_{MSY}\\ values that jointly
-maximise total equilibrium yield across all regions under a spatially
+maximize total equilibrium yield across all regions under a spatially
 explicit Beverton-Holt stock-recruit relationship. Unlike
 [`global_Fmsy`](https://chengmatt.github.io/SPoRC/dev/reference/global_Fmsy.md),
 which constrains all regions to share a single fishing mortality, this
@@ -58,7 +58,7 @@ local_Fmsy_sglpop(pars, data)
 ## Value
 
 Numeric scalar. Negative total equilibrium yield across all regions.
-This is minimised to obtain the vector of regional \\F\_{MSY}\\ values.
+This is minimized to obtain the vector of regional \\F\_{MSY}\\ values.
 
 ## Details
 

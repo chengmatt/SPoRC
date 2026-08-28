@@ -51,6 +51,7 @@
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -305,7 +306,7 @@ option the deviations are log abundances, so the penalty on them is a
 prior on log abundance directly.</p>
 <p><code>InitDevs_sex_spec = "est_all"</code> gives each sex its own
 curve. Pairing it with <code>InitDevs_pen_center = "own_mean"</code>
-pools the centre over every penalized cell across both sexes, so the
+pools the center over every penalized cell across both sexes, so the
 sexes share one estimated level. That is stationary at the same point as
 the assessment, whose shared
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><msup><mi>N</mi><mtext mathvariant="normal">init</mtext></msup></mrow><mo accent="true">¯</mo></mover><annotation encoding="application/x-tex">\overline{\log N^{\text{init}}}</annotation></semantics></math>
@@ -316,8 +317,8 @@ sexes. A sum of squares with weight one corresponds to
 which is <code>dat$sigmaR</code> here.</p>
 <p>The recruitment deviation penalty is a sum of squares about zero.
 Turning the bias ramp on with every break past the last year is what
-centres it there; <code>do_rec_bias_ramp = 0</code> would instead hold
-the ramp at one and centre the penalty on
+centers it there; <code>do_rec_bias_ramp = 0</code> would instead hold
+the ramp at one and center the penalty on
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><msubsup><mi>σ</mi><mi>R</mi><mn>2</mn></msubsup><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">-\sigma_{R}^{2}/2</annotation></semantics></math>.</p>
 </div>
 <div class="section level2">
@@ -611,7 +612,7 @@ survey selectivity, both sexes   4.4e-16</code></pre>
 significant digits, so the comparison is at the precision the files were
 written.</p>
 <p><code>SPoRC</code> writes each likelihood component as a proper
-density while the assessment drops normalising constants, so the
+density while the assessment drops normalizing constants, so the
 comparison subtracts exactly the constants the assessment omits:</p>
 <table class="table">
 <colgroup>

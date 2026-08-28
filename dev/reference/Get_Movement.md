@@ -158,7 +158,7 @@ Get_Movement(
   Numeric vector of length `n_seas` giving season durations (summing to
   1). Used to scale the CTMC generator when
   `ctmc_scale_by_seasdur == 1`. Defaults to `rep(1, n_seas)`, which
-  reproduces the unscaled behaviour.
+  reproduces the unscaled behavior.
 
 - ctmc_scale_by_seasdur:
 
@@ -171,7 +171,7 @@ Get_Movement(
   arithmetic they expect; the user facing default is `1`, set by
   `Setup_Mod_Movement`.
 
-  Whether this flag changes the fit or only reparameterises it depends
+  Whether this flag changes the fit or only reparameterizes it depends
   on whether the generator varies by season. With a season-agnostic
   generator it matters: the seasonal steps commute, so scaling on
   composes across the year to \\\exp(Q)\\ regardless of `n_seas`,

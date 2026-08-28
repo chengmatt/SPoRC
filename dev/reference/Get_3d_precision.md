@@ -5,9 +5,9 @@ Builds a sparse \\(n\_{\text{ages}} \times n\_{\text{yrs}}) \times
 Gaussian Markov random field (GMRF) with simultaneous autoregressive
 (SAR) structure across three biological dimensions: age, year, and
 cohort (age-year diagonal). The matrix is constructed via the
-path-matrix factorisation \\Q = (I - B)^\top \Omega^{-1} (I - B)\\,
+path-matrix factorization \\Q = (I - B)^\top \Omega^{-1} (I - B)\\,
 where \\B\\ encodes the partial correlations and \\\Omega\\ is a
-diagonal variance matrix. Two variance parameterisations are supported:
+diagonal variance matrix. Two variance parameterizations are supported:
 marginal (stationary) and conditional (non-stationary).
 
 ## Usage
@@ -56,7 +56,7 @@ Get_3d_precision(
 
 - Var_Type:
 
-  Integer. Variance parameterisation: `0` = marginal (stationary)
+  Integer. Variance parameterization: `0` = marginal (stationary)
   variance, where diagonal elements of \\\Omega\\ are solved recursively
   via the accumulator \\(I - B)^{-1}\\ to achieve a constant marginal
   variance \\\sigma^2\\ at every node (slower); `1` = conditional

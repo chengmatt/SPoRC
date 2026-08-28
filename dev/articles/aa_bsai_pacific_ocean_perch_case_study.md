@@ -80,7 +80,7 @@ N_{1,a} = R_{0}\exp\left(-\sum_{a' < a}\left[M + F^{\text{init}}\text{Sel}_{a'}\
 
 `bias_year` is indexed in deviation space rather than in calendar years,
 so `c(1, 1, n_yrs + 1, n_yrs + 1)` puts the whole series in the fully
-bias corrected limb of the ramp. That centres the recruitment penalty on
+bias corrected limb of the ramp. That centers the recruitment penalty on
 $`-\sigma_{R}^{2}/2`$, which is what the shifted deviations in the
 seeding section below require.
 
@@ -234,7 +234,7 @@ input_list <- Setup_Mod_SrvIdx_and_Comps(
 ## Fishery selectivity and catchability
 
 Fishery selectivity is a bicubic spline over a five year by five age
-node grid, exponentiated with no normalisation:
+node grid, exponentiated with no normalization:
 
 ``` math
 \log \text{Sel}_{y,a}^{\text{Fsh}} = \left(\mathbf{W}^{\text{yr}}\,\Theta\,\mathbf{W}^{\text{bin}\top}\right)_{y,a}
@@ -245,7 +245,7 @@ $`\mathbf{W}`$ matrices are the spline bases over years and over ages.
 
 `SelStyr` and `NSelBins` in the specification string are not cosmetic.
 They set the year range and the bin count that the smoothness penalties
-normalise by, and they impose the assessment’s two edge holds:
+normalize by, and they impose the assessment’s two edge holds:
 selectivity is flat before 1964 and flat beyond age 40. Getting either
 wrong changes both the surface and the penalty.
 
@@ -272,7 +272,7 @@ input_list <- Setup_Mod_Fishsel_and_Q(
 ## Survey selectivity and catchability
 
 Survey selectivity is logistic in both fleets, using the slope and
-$`a_{50}`$ parameterisation:
+$`a_{50}`$ parameterization:
 
 ``` math
 \text{Sel}_{a} = \dfrac{1}{1 + \exp\left[-k\left(a - a_{50}\right)\right]}
@@ -404,7 +404,7 @@ compares. Comparing the two reported quantities directly instead is a 6
 percent difference that says nothing about the model.
 
 The likelihood is checked the same way. `SPoRC` writes each component as
-a proper density while the assessment drops normalising constants, so a
+a proper density while the assessment drops normalizing constants, so a
 like for like comparison subtracts exactly the constants the assessment
 omits.
 

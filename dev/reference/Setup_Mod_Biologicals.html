@@ -42,6 +42,7 @@ block structure and mapping. Called after Setup_Mod_Dim."><meta name="robots" co
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -212,7 +213,7 @@ recovery observations; default <code>1e-10</code> in <code>Setup_Mod_Weighting</
 
 
 <dt id="arg-ageingerror">AgeingError<a class="anchor" aria-label="anchor" href="#arg-ageingerror"></a></dt>
-<dd><p>Ageing error (age-age transition) array mapping true modelled ages
+<dd><p>Ageing error (age-age transition) array mapping true modeled ages
 to observed age bins. Each row is one model age's share across the observed
 bins and sums to one, or to zero to drop that model age from the
 observations. This is the age-axis twin of <code>LenBinMap</code>: the likelihood
@@ -227,9 +228,9 @@ themselves, use the <code>*_bins</code> arguments instead. Accepted forms:</p><d
 <dd><p>Time-varying ageing error.</p></dd>
 
   <dt><code>NULL</code> (default)</dt>
-<dd><p>An identity matrix is constructed, assuming modelled
-    and observed age bins are identical. If observed bins are a subset of modelled
-    ages (e.g., observed ages 2-10 vs. modelled ages 1-10), supply a shifted
+<dd><p>An identity matrix is constructed, assuming modeled
+    and observed age bins are identical. If observed bins are a subset of modeled
+    ages (e.g., observed ages 2-10 vs. modeled ages 1-10), supply a shifted
     identity matrix such as <code>diag(1, n_model_ages)[, obs_age_index]</code> to
     avoid a dimensional mismatch.</p></dd>
 
@@ -572,7 +573,7 @@ population-specific M.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Optional starting value overrides passed by name. Currently recognised:</p><dl><dt><code>ln_M</code></dt>
+<dd><p>Optional starting value overrides passed by name. Currently recognized:</p><dl><dt><code>ln_M</code></dt>
 <dd><p>Array of log-scale starting values for natural mortality,
     dimensioned <code>[n_popblks × n_regionblks × n_yearblks × n_ageblks × n_sexblks]</code>.
     Defaults to <code>log(0.5)</code> for all blocks if not supplied.</p></dd>

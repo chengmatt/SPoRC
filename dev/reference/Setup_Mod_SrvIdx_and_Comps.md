@@ -2,7 +2,7 @@
 
 Ingests observed survey index, age composition, and length composition
 data (both pooled and population-specific) into `input_list$data`,
-initialises overdispersion and correlation starting values in
+initializes overdispersion and correlation starting values in
 `input_list$par`, and constructs parameter maps via
 [`do_comp_theta_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_comp_theta_mapping.md)
 and
@@ -42,8 +42,8 @@ Setup_Mod_SrvIdx_and_Comps(
   SrvIdxAA_pop_sigma_form = "none",
   AgeObsCorr_srv_idx = "iid",
   AgeObsCorr_srv_idx_pop = "iid",
-  rho_srv_idx_key = NULL,
-  rho_srv_idx_pop_key = NULL,
+  rho_srv_idx_spec = NULL,
+  rho_srv_idx_pop_spec = NULL,
   sigmaSrvIdx_spec = "fix",
   sigmaSrvIdx_map = NULL,
   sigmaSrvIdx_pop_spec = "fix",
@@ -184,10 +184,12 @@ Setup_Mod_SrvIdx_and_Comps(
   or one per fleet. See
   [`Setup_Mod_Catch_and_F`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Catch_and_F.md).
 
-- rho_srv_idx_key, rho_srv_idx_pop_key:
+- rho_srv_idx_spec, rho_srv_idx_pop_spec:
 
-  Integer matrices `[n_sexes, n_srv_fleets]` coupling the across-age
-  correlation.
+  How the correlation parameters are shared, over region, sex and fleet,
+  using the package's spec strings. `NULL` (the default) gives one per
+  fleet. See
+  [`Setup_Mod_Catch_and_F`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Catch_and_F.md).
 
 - sigmaSrvIdx_spec:
 
@@ -300,7 +302,7 @@ Setup_Mod_SrvIdx_and_Comps(
 
   A `"recdev"` fleet observes year class strength directly rather than
   any part of the population. Its predicted value is
-  `q * (ln_RecDevs - mu)`, with `mu` the centre the recruitment penalty
+  `q * (ln_RecDevs - mu)`, with `mu` the center the recruitment penalty
   asserts for that year, so it measures the anomaly rather than the
   deviation as stored; under a bias ramp the two differ. Such a fleet
   reads no numbers at age, so its selectivity, survey timing and weight

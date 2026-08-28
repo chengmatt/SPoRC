@@ -27,6 +27,6 @@ An \\n \times n\\ correlation matrix.
 ## Details
 
 The parameters fill the strict lower triangle of a matrix whose diagonal
-is one. Normalising each row to unit length makes that matrix a Cholesky
+is one. Normalizing each row to unit length makes that matrix a Cholesky
 factor, so the product with its transpose is a correlation matrix with
 ones on the diagonal and is positive definite for any parameter values.

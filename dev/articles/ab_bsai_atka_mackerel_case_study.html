@@ -51,6 +51,7 @@
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -323,9 +324,9 @@ in both slots. It pairs with <code>Wt_Rec</code>, set under Weighting
 below, and the two together are what reproduce AMAK’s recruitment
 statements.</p>
 <p><code>do_rec_bias_ramp = 1</code> with every break past the last year
-is how the penalty is centred on zero. Setting
+is how the penalty is centered on zero. Setting
 <code>do_rec_bias_ramp = 0</code> does not do that: it sets the ramp to
-one throughout, which centres on
+one throughout, which centers on
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><msubsup><mi>σ</mi><mi>R</mi><mn>2</mn></msubsup><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">-\sigma_{R}^{2}/2</annotation></semantics></math>.</p>
 <p><code>dont_est_recdev_last</code> stays at zero. AMAK estimates every
 deviation and restricts only the years its stock-recruit likelihood
@@ -663,7 +664,7 @@ fishery selectivity              4.7e-14 %
 survey selectivity               4.8e-14 %
 recruitment deviations           0</code></pre>
 <p><code>SPoRC</code> writes each likelihood component as a proper
-density while AMAK drops normalising constants, so the comparison
+density while AMAK drops normalizing constants, so the comparison
 subtracts exactly the constants AMAK omits:</p>
 <table class="table">
 <colgroup>
@@ -764,7 +765,7 @@ rows sum to between 0.972 and 1.013, so its survey expectation is not a
 probability vector. That is the
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>1.337</mn></mrow><annotation encoding="application/x-tex">+1.337</annotation></semantics></math>
 in the table above, and it is an inconsistency between AMAK’s two fleets
-rather than a modelling choice, so <code>SPoRC</code> does not reproduce
+rather than a modeling choice, so <code>SPoRC</code> does not reproduce
 it.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

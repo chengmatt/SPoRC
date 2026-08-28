@@ -33,16 +33,3 @@ get_at_age_2dar1_nLL(resid, sigma, trans_rho_age, trans_rho_year)
 ## Value
 
 The negative log likelihood of the whole block, a scalar.
-
-## Details
-
-The residuals are standardised before the separable density is applied,
-since the standard deviations vary by age while the correlation does
-not. The determinant of that scaling is added back.
-
-The correlations arrive untransformed and are constrained here, before
-the two closures are defined.
-[`dseparable`](https://rdrr.io/pkg/RTMB/man/MVgauss.html) evaluates
-those closures in a context of its own, and a constraint left as an
-unevaluated argument is forced inside that context, where the tape
-reports an invalid `advector` rather than a wrong number.

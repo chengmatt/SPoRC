@@ -42,6 +42,7 @@ multiple seasons and years."><meta name="robots" content="noindex"></head><body>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -270,7 +271,7 @@ point used in harvest control rules.</p></dd>
 <dt id="arg-fmort-opt">fmort_opt<a class="anchor" aria-label="anchor" href="#arg-fmort-opt"></a></dt>
 <dd><p>Character. Fishing mortality scenario:
 `"HCR"`, `"HCR_global"`, `"Input"`, or `"Catch"`. `"Catch"` solves each
-projection year's fishing mortality so that realised catch matches
+projection year's fishing mortality so that realized catch matches
 `catch_input`, leaving every other model quantity untouched.</p></dd>
 
 
@@ -556,7 +557,7 @@ Euler substeps. See [mat_exp()].</p></dd>
 
   <dt><code>proj_Dynamic_SSB0</code></dt>
 <dd><p>Array `[n_pop, n_regions, n_proj_yrs]`.
-    Spawning biomass the population would have carried under the same realised
+    Spawning biomass the population would have carried under the same realized
     recruitment but no fishing, for dynamic depletion.</p></dd>
 
   <dt><code>proj_NAA</code></dt>
@@ -584,7 +585,7 @@ Euler substeps. See [mat_exp()].</p></dd>
 <dd><p>Array shaped like `catch_input`:
     `[n_regions, n_proj_yrs]` for annual targets, `[n_regions, n_proj_yrs, n_seas]`
     for seasonal ones. Relative miss on each catch target,
-    `(realised - target) / target`, and `NA` for years carrying no target
+    `(realized - target) / target`, and `NA` for years carrying no target
     (including every year when `fmort_opt != "Catch"`). Should be at or below
     `catch_tol` wherever the solve converged, and is worth checking directly
     rather than relying on warnings alone.</p></dd>
@@ -633,7 +634,7 @@ recruitment event, matching the classic case.</p>
 year instead: the F that lands a catch target depends on that year's own
 numbers-at-age, not on the previous year's spawning biomass, so it cannot be
 set at the end of the previous year the way the HCR and Input options are.
-The year is run repeatedly at trial F values until realised catch matches the
+The year is run repeatedly at trial F values until realized catch matches the
 target, then run once more at the accepted F and committed. Steps 1 to 6 are
 otherwise unchanged, and no demographic input is modified: only F moves.
 Regions are solved jointly rather than one at a time, because between-season
@@ -647,7 +648,7 @@ a season's catch depends only on the F in that season and earlier ones.</p>
 F than the target alone implies.</p>
 <p>Effective spawning biomass at each population's natal region aggregates
 contributions from all populations, with cross-population contributions
-scaled by <code>stray_rate</code> and normalised by the number of populations
+scaled by <code>stray_rate</code> and normalized by the number of populations
 in each natal region.</p>
 <p>When <code>n_sexes = 1</code>, spawning biomass is multiplied by 0.5. When
 <code>n_regions = 1</code>, movement is skipped.</p>
@@ -655,6 +656,7 @@ in each natal region.</p>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p>Other Reference Points and Projections:
+<code><a href="Get_Reference_Point_Uncertainty.html">Get_Reference_Point_Uncertainty()</a></code>,
 <code><a href="Get_Reference_Points.html">Get_Reference_Points()</a></code>,
 <code><a href="get_key_quants.html">get_key_quants()</a></code></p></div>
     </div>

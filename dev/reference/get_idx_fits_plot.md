@@ -2,7 +2,7 @@
 
 Plots observed survey and fishery indices alongside model-predicted
 values for one or more SPoRC model runs. Observed values are shown as
-points with approximate 95 lines coloured by model. Years where the
+points with approximate 95 lines colored by model. Years where the
 observed index is zero (i.e. `Use*Idx = 0`) are excluded from both the
 points and lines.
 
@@ -23,20 +23,20 @@ get_idx_fits_plot(data, rep, model_names)
 - rep:
 
   List of length `n_models`, where each element is a SPoRC report list
-  (i.e. the output of `obj$report()` after optimisation). Predicted
+  (i.e. the output of `obj$report()` after optimization). Predicted
   index values are extracted internally via `get_idx_fits`.
 
 - model_names:
 
   Character vector of length `n_models` giving display names for each
-  model run. Used as the colour legend label on predicted trajectories.
+  model run. Used as the color legend label on predicted trajectories.
 
 ## Value
 
 A single `ggplot` object. Observed indices are shown as
 `geom_pointrange` (black) with lower and upper confidence interval
 bounds from `get_idx_fits`. Predicted indices are shown as `geom_line`
-coloured by model.
+colored by model.
 
 ## See also
 

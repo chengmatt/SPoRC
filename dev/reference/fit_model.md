@@ -1,10 +1,10 @@
 # Fit a SPoRC RTMB model
 
 Constructs an RTMB automatic differentiation function via
-`RTMB::MakeADFun`, optimises it with
+`RTMB::MakeADFun`, optimizes it with
 [`stats::nlminb`](https://rdrr.io/r/stats/nlminb.html), and optionally
 refines the solution with Newton steps using the analytic Hessian. The
-best parameter vector (`obj$env$last.par.best`), optimiser output, and
+best parameter vector (`obj$env$last.par.best`), optimizer output, and
 model report are attached to the returned object.
 
 ## Usage
@@ -65,13 +65,13 @@ fit_model(
 
 - silent:
 
-  Logical. If `TRUE`, suppresses RTMB and optimiser console output.
+  Logical. If `TRUE`, suppresses RTMB and optimizer console output.
   Default `FALSE`.
 
 - do_optim:
 
   Logical. If `TRUE` (default), runs `nlminb` and Newton refinement. If
-  `FALSE`, returns the un-optimised `MakeADFun` object only.
+  `FALSE`, returns the un-optimized `MakeADFun` object only.
 
 - nlminb_control:
 
@@ -82,7 +82,7 @@ fit_model(
 - lower:
 
   Numeric vector of lower bounds for `obj$par` (the estimated parameter
-  vector, i.e. after mapping and random-effects marginalisation), passed
+  vector, i.e. after mapping and random-effects marginalization), passed
   to [`stats::nlminb`](https://rdrr.io/r/stats/nlminb.html) and used to
   clamp each Newton refinement step. `NULL` (default) is unbounded
   (`-Inf` for every element).
@@ -101,7 +101,7 @@ fit_model(
   [`cmb`](https://chengmatt.github.io/SPoRC/dev/reference/cmb.md).
   Default
   [`SPoRC_rtmb`](https://chengmatt.github.io/SPoRC/dev/reference/SPoRC_rtmb.md).
-  Allows non-SPoRC RTMB models to be fit with the same optimisation and
+  Allows non-SPoRC RTMB models to be fit with the same optimization and
   Newton-refinement machinery.
 
 - ...:

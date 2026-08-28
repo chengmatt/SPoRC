@@ -38,7 +38,7 @@ do_RecDevs_mapping(input_list, RecDevs_spec, rec_dd)
   :   A single set of year-specific deviations shared across all
       populations and regions. Each year receives one estimated
       parameter regardless of how many populations or regions are
-      modelled. Required when `rec_dd = "global"` and `n_regions > 1`.
+      modeled. Required when `rec_dd = "global"` and `n_regions > 1`.
 
   `"fix"`
 
@@ -69,7 +69,7 @@ values in `$par$ln_RecDevs` are reset to `0` for any fixed cells.
 
 ## Details
 
-Mapping behaviour is governed by two interacting considerations:
+Mapping behavior is governed by two interacting considerations:
 
 1.  **Sharing specification** (`RecDevs_spec`): controls whether
     deviations are shared across regions and/or populations, or

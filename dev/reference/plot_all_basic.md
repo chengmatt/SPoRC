@@ -23,7 +23,7 @@ plot_all_basic(data, rep, sd_rep, model_names, out_path)
 - rep:
 
   List of length `n_models`, where each element is a SPoRC report list
-  (i.e. the output of `obj$report()` after optimisation). Passed to
+  (i.e. the output of `obj$report()` after optimization). Passed to
   `get_biological_plot`, `get_ts_plot`, `get_selex_plot`, and
   `get_nLL_plot`.
 

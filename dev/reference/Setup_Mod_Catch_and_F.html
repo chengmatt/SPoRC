@@ -48,6 +48,7 @@ Must be called after Setup_Mod_Biologicals."><meta name="robots" content="noinde
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -116,10 +117,10 @@ Must be called after <code><a href="Setup_Mod_Biologicals.html">Setup_Mod_Biolog
 <span>  AgeObsCorr_catch_pop <span class="op">=</span> <span class="st">"iid"</span>,</span>
 <span>  AgeObsCorr_discard <span class="op">=</span> <span class="st">"iid"</span>,</span>
 <span>  AgeObsCorr_discard_pop <span class="op">=</span> <span class="st">"iid"</span>,</span>
-<span>  rho_catch_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  rho_catch_pop_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  rho_discard_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  rho_discard_pop_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  rho_catch_spec <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  rho_catch_pop_spec <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  rho_discard_spec <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  rho_discard_pop_spec <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">UseCatch</span>,</span>
 <span>  catch_units <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="st">"biom"</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  UseCatch_pop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_pop</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>,</span>
@@ -182,7 +183,7 @@ sexes carries its observation in sex slot one. Supplying this
 fits the catch at age directly, every age its own lognormal observation, in
 place of an aggregated catch with compositions. This is the native form for
 ICES age-structured assessments. The two statements are not interchangeable: the
-exact factorisation of an at-age observation into a total and a composition
+exact factorization of an at-age observation into a total and a composition
 holds for Poisson and multinomial, not for lognormal, so a fleet must use
 one or the other and supplying both for the same fleet is an error.
 <code>NULL</code> (default) leaves the fleet on aggregated catch.</p></dd>
@@ -274,10 +275,19 @@ the aggregated ones. The fishery and survey index streams are set in
 <code><a href="Setup_Mod_SrvIdx_and_Comps.html">Setup_Mod_SrvIdx_and_Comps</a></code>.</p></dd>
 
 
-<dt id="arg-rho-catch-key-rho-discard-key-rho-catch-pop-key-rho-discard-pop-key">rho_catch_key, rho_discard_key, rho_catch_pop_key, rho_discard_pop_key<a class="anchor" aria-label="anchor" href="#arg-rho-catch-key-rho-discard-key-rho-catch-pop-key-rho-discard-pop-key"></a></dt>
-<dd><p>Integer matrices <code>[n_sexes, n_fish_fleets]</code> coupling the across-age
-correlation. Equal entries share a parameter and <code>NA</code> excludes one.
-Defaults to one correlation per fleet, shared across sexes.</p></dd>
+<dt id="arg-rho-catch-spec-rho-discard-spec-rho-catch-pop-spec-rho-discard-pop-spec">rho_catch_spec, rho_discard_spec, rho_catch_pop_spec, rho_discard_pop_spec<a class="anchor" aria-label="anchor" href="#arg-rho-catch-spec-rho-discard-spec-rho-catch-pop-spec-rho-discard-pop-spec"></a></dt>
+<dd><p>How each stream's correlation parameters are shared, using the same spec
+strings as <code>sigmaF_spec</code> and <code>Fdev_rho_spec</code>. The correlations
+sit over region, sex and fleet, with a leading population margin for the
+population-specific streams, so <code>"est_shared_r_s"</code> gives one per fleet,
+<code>"est_shared_s"</code> one per region and fleet, <code>"est_shared_r_s_f"</code> a
+single value, <code>"est_all"</code> one per cell, and <code>"fix"</code> holds them.
+<code>NULL</code> (the default) takes <code>"est_shared_r_s"</code>, or
+<code>"est_shared_p_r_s"</code> for the population streams, both one per fleet.
+The spec governs the across-age correlation, the across-year correlation and
+the unstructured matrix together, so fleets sharing under <code>"us"</code> share
+a whole matrix. A region, sex or population a fleet never observes carries no
+parameter, which is what holds the unused slots of a summed margin out.</p></dd>
 
 
 <dt id="arg-usecatch">UseCatch<a class="anchor" aria-label="anchor" href="#arg-usecatch"></a></dt>
@@ -312,7 +322,7 @@ Values should be in the units specified by <code>catch_units</code>.</p></dd>
 
 <dt id="arg-use-f-pen">Use_F_pen<a class="anchor" aria-label="anchor" href="#arg-use-f-pen"></a></dt>
 <dd><p>Integer flag for applying a fishing mortality penalty to
-penalise large deviations in <code>ln_F_devs</code>. <code>1</code> = apply
+penalize large deviations in <code>ln_F_devs</code>. <code>1</code> = apply
 (default); <code>0</code> = do not apply.</p></dd>
 
 
@@ -376,8 +386,8 @@ intentional, but are common oversights when switching away from
 
 <dt id="arg-fdev-pen-center">Fdev_pen_center<a class="anchor" aria-label="anchor" href="#arg-fdev-pen-center"></a></dt>
 <dd><p>Where the fishing mortality deviation penalty is
-centred. <code>"fixed"</code> (default) centres on zero, constraining both the
-level and the spread of the deviations. <code>"own_mean"</code> centres on the
+centered. <code>"fixed"</code> (default) centers on zero, constraining both the
+level and the spread of the deviations. <code>"own_mean"</code> centers on the
 mean of the estimated deviations, penalizing only their spread and leaving
 the level free, which is what a sum of squares about the series' own mean
 amounts to. Under a mean-plus-deviations parameterization the level is
@@ -432,7 +442,7 @@ Default: <code>NULL</code> (no population-specific discard observations).</p></d
 
 <dt id="arg-use-dmr-pen">Use_dmr_pen<a class="anchor" aria-label="anchor" href="#arg-use-dmr-pen"></a></dt>
 <dd><p>Integer flag for applying a discard mortality rate
-penalty to penalise large deviations in <code>logit_dmr_devs</code>.
+penalty to penalize large deviations in <code>logit_dmr_devs</code>.
 <code>1</code> = apply; <code>0</code> = do not apply (default). Must be <code>1</code>
 when <code>dmr_dev_spec = "est_all"</code> and <code>0</code> when
 <code>dmr_dev_spec = "fix"</code>.</p></dd>
@@ -492,14 +502,14 @@ deviation in every fished cell; requires <code>Use_dmr_pen = 1</code>. See
 <dt id="arg-ln-f-mean-spec">ln_F_mean_spec<a class="anchor" aria-label="anchor" href="#arg-ln-f-mean-spec"></a></dt>
 <dd><p>Character string, matched by exact name only because it
 sits after <code>...</code>. <code>"est"</code> (default, the previous
-and only behaviour) or <code>"fix"</code>. <code>"fix"</code> maps <code>ln_F_mean</code>
+and only behavior) or <code>"fix"</code>. <code>"fix"</code> maps <code>ln_F_mean</code>
 off at its starting value, which defaults to <code>0</code> under this spec
 unless supplied through <code>...</code>, so the deviations carry all of log
 fishing mortality: <code>F = exp(ln_F_devs)</code>, where it follows a free annual log-F
 parameterization. It must be paired with <code>Fdev_pen_center = "own_mean"</code>
 (penalize only the spread about the deviations' own mean),
 <code>Fdev_model = "rw"</code>, or <code>Use_F_pen = 0</code>: an <code>"iid"</code> or
-<code>"ar1"</code> penalty centred on a fixed zero mean would shrink the
+<code>"ar1"</code> penalty centered on a fixed zero mean would shrink the
 deviations toward <code>F = 1</code>, so that combination is rejected at setup.
 <code>"est"</code> keeps the mean-plus-deviations form, where the <code>"iid"</code>
 penalty shrinks each year toward the estimated average F.</p></dd>

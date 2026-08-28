@@ -243,7 +243,7 @@ parameters read as CVs, which scale the mean, or as standard deviations,
 which do not. Bottom left: the two dimensionally coherent pairings at a
 spread of 0.35, normal with `growth_sd_type = "cv"` and lognormal with
 `"sd"`; note the mass the normal puts in the smallest bin at age 1.
-Bottom right: the resulting size-age transition, on a square root colour
+Bottom right: the resulting size-age transition, on a square root color
 scale.*
 
 Two parameters carry the spread, $`CV_{1}`$ and $`CV_{2}`$ at the two
@@ -657,7 +657,7 @@ variance).
 
 The correlated forms are what make the surface estimable. A year-by-age
 deviation is not identified from length data one cell at a time, so the
-process error has to borrow strength across neighbouring cells. `"iid"`
+process error has to borrow strength across neighboring cells. `"iid"`
 provides none of that and is mainly useful as a null. `"2dar1"` is a
 reasonable default. The 3D forms add a hyperparameter and correlate
 along the cohort diagonal as well as over ages and years, which is worth

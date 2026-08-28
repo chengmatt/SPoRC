@@ -334,7 +334,7 @@ The simulation generally includes the following components: 1.
 **Simulation Loop**  
 Iterates over each simulation (`sim in 1:n_sims`).  
 2. **Year Loop**  
-Iterates over each modelled year (`y in 1:n_yrs`).  
+Iterates over each modeled year (`y in 1:n_yrs`).  
 3. **Annual Dynamics**  
 Within these loops, `run_annual_cycle(y, sim, sim_env)` updates
 population dynamics, natural mortality, growth, maturity, and

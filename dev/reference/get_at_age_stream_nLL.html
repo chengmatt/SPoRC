@@ -38,6 +38,7 @@ registered through OBS."><meta name="robots" content="noindex"></head><body>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -136,17 +137,18 @@ matching the aggregated stream's convention.</p></dd>
 
 
 <dt id="arg-trans-rho">trans_rho<a class="anchor" aria-label="anchor" href="#arg-trans-rho"></a></dt>
-<dd><p>Unconstrained correlation across ages, over sex by fleet.</p></dd>
+<dd><p>Unconstrained correlation across ages, over region by sex by
+fleet, with a leading population margin when <code>pop</code> is <code>TRUE</code>.</p></dd>
 
 
 <dt id="arg-trans-rho-year">trans_rho_year<a class="anchor" aria-label="anchor" href="#arg-trans-rho-year"></a></dt>
-<dd><p>Unconstrained correlation across years, over sex by
-fleet, read under <code>"2dar1"</code>.</p></dd>
+<dd><p>Unconstrained correlation across years, shaped like
+<code>trans_rho</code>, read under <code>"2dar1"</code>.</p></dd>
 
 
 <dt id="arg-us-pars">us_pars<a class="anchor" aria-label="anchor" href="#arg-us-pars"></a></dt>
-<dd><p>Unconstrained correlation parameters, over pair by sex by
-fleet, read under <code>"us"</code>.</p></dd>
+<dd><p>Unconstrained correlation parameters, over pair by the margins
+of <code>trans_rho</code>, read under <code>"us"</code>.</p></dd>
 
 
 <dt id="arg-aa-type">aa_type<a class="anchor" aria-label="anchor" href="#arg-aa-type"></a></dt>

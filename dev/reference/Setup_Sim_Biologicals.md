@@ -76,13 +76,13 @@ Setup_Sim_Biologicals(
   Ageing error (age-length transition) array with dimensions
   `[n_yrs × n_model_ages × n_obs_ages × n_sims]`, where each
   `[n_model_ages × n_obs_ages]` slice is a row-stochastic matrix mapping
-  true modelled ages to observed age bins. If `NULL` (default), an
+  true modeled ages to observed age bins. If `NULL` (default), an
   identity matrix is constructed for each year and simulation, which
-  assumes that modelled and observed age bins are identical in number
-  and alignment. **If observed age bins are a subset of modelled ages**
-  (e.g., observed ages 2-10 vs. modelled ages 1-10), the default
-  identity matrix will cause a dimensional mismatch. In that case,
-  supply a shifted identity matrix such as
+  assumes that modeled and observed age bins are identical in number and
+  alignment. **If observed age bins are a subset of modeled ages**
+  (e.g., observed ages 2-10 vs. modeled ages 1-10), the default identity
+  matrix will cause a dimensional mismatch. In that case, supply a
+  shifted identity matrix such as
   `diag(1, n_model_ages)[, obs_age_index]` to correctly drop or collapse
   model ages into observed bins.
 

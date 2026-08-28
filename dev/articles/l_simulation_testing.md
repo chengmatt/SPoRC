@@ -357,7 +357,7 @@ ssb_df_res <- reshape2::melt(ssb_results) %>%
                      dplyr::rename(Region = Var2, Year = Var3, Sim = Var4, True = value), by = c("Year", "Sim")) %>%
   dplyr::mutate(RE = (Est - True) / True * 100) %>%
   dplyr::group_by(Year) %>%
-  dplyr::summarise(median = median(RE, na.rm = T),
+  dplyr::summarize(median = median(RE, na.rm = T),
                    lwr = quantile(RE, 0.1, na.rm = T),
                    upr = quantile(RE, 0.8, na.rm = T))
 

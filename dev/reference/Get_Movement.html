@@ -44,6 +44,7 @@ during projection unless ctmc_move_dat is extended with projection-year rows."><
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -216,7 +217,7 @@ all off-diagonal generator matrix entries are non-negative (valid generator);
 <dd><p>Numeric vector of length <code>n_seas</code> giving season durations
 (summing to 1). Used to scale the CTMC generator when
 <code>ctmc_scale_by_seasdur == 1</code>. Defaults to <code>rep(1, n_seas)</code>, which
-reproduces the unscaled behaviour.</p></dd>
+reproduces the unscaled behavior.</p></dd>
 
 
 <dt id="arg-ctmc-scale-by-seasdur">ctmc_scale_by_seasdur<a class="anchor" aria-label="anchor" href="#arg-ctmc-scale-by-seasdur"></a></dt>
@@ -228,7 +229,7 @@ reproduces the unscaled behaviour.</p></dd>
   to <code>0</code> here so that callers passing an unscaled generator get the
   arithmetic they expect; the user facing default is <code>1</code>, set by
   <code>Setup_Mod_Movement</code>.</p>
-<p>Whether this flag changes the fit or only reparameterises it depends on
+<p>Whether this flag changes the fit or only reparameterizes it depends on
   whether the generator varies by season. With a season-agnostic generator it
   matters: the seasonal steps commute, so scaling on composes across the year to
   \(\exp(Q)\) regardless of <code>n_seas</code>, whereas scaling off composes to

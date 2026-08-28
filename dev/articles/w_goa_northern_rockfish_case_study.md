@@ -80,7 +80,7 @@ function:
 ```
 
 with $`\sigma_{R} = 1.5`$ fixed. There is no lognormal bias correction,
-so `do_rec_bias_ramp = 0` and the penalty is centred on zero, which is
+so `do_rec_bias_ramp = 0` and the penalty is centered on zero, which is
 what the ADMB template does. Every year carries a deviation, including
 the terminal years, so `dont_est_recdev_last = 0`. The first year sits
 in an unfished equilibrium age structure with its own deviations, which
@@ -104,7 +104,7 @@ input_list <- Setup_Mod_Rec(
 
 ## Biological dynamics
 
-Natural mortality is estimated under a lognormal prior centred on
+Natural mortality is estimated under a lognormal prior centered on
 $`0.06`$ with a coefficient of variation of $`0.05`$:
 
 ``` math
@@ -241,7 +241,7 @@ input_list <- Setup_Mod_SrvIdx_and_Comps(
 
 ## Fishery selectivity and catchability
 
-Both fleets use the $`a_{50}`$ and $`a_{95}`$ parameterisation of the
+Both fleets use the $`a_{50}`$ and $`a_{95}`$ parameterization of the
 logistic, which is `logist2`:
 
 ``` math
@@ -268,8 +268,8 @@ input_list <- Setup_Mod_Fishsel_and_Q(
 ## Survey selectivity and catchability
 
 Survey selectivity takes the same logistic form. Catchability is
-estimated under a lognormal prior centred on $`1`$ with a coefficient of
-variation of $`0.45`$, which is loose enough to let the data move it:
+estimated under a lognormal prior centered on $`1`$ with a coefficient
+of variation of $`0.45`$, which is loose enough to let the data move it:
 
 ``` math
 \ell^{q} = \dfrac{\left(\log q - \log \mu_{q}\right)^{2}}{2\,\text{CV}_{q}^{2}}
@@ -355,7 +355,7 @@ numerical precision:
     recruitment         max pct diff: 4.7e-14
 
 The likelihood is checked the same way. `SPoRC` writes each component as
-a proper density while the assessment drops normalising constants, so a
+a proper density while the assessment drops normalizing constants, so a
 like for like comparison subtracts exactly the constants the assessment
 omits. The catch statement is a weighted sum of squares, so subtracting
 `SPoRC`’s per observation $`\tfrac{1}{2}\log 2\pi + \log\sigma^{C}`$

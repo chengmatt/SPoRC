@@ -5,7 +5,7 @@ stock-recruit relationship type and density-dependence structure,
 Beverton-Holt steepness and priors, recruitment variability
 (\\\sigma_R\\), annual and initial age-structure deviations, regional
 and seasonal recruitment apportionment, spawning movement and stray
-rates, sex ratio dynamics, equilibrium initialisation method, and the
+rates, sex ratio dynamics, equilibrium initialization method, and the
 recruitment bias ramp. Delegates parameter mapping to a family of
 internal helpers
 ([`do_sigmaR_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_sigmaR_mapping.md),
@@ -261,12 +261,12 @@ rec_seas_prop[, 1] <- 1
 
   Non-negative integer. Number of terminal years for which recruitment
   deviations are not estimated. Automatically overridden to `0` if
-  `n_proj_yrs_devs > 0`, since projected deviation years are penalised
+  `n_proj_yrs_devs > 0`, since projected deviation years are penalized
   toward the mean and are effectively estimated regardless. Default `0`.
 
 - init_age_strc:
 
-  Initialisation method. Default `2`. Options `0`/`"iterative"`,
+  Initialization method. Default `2`. Options `0`/`"iterative"`,
   `1`/`"scalar_no_move"`, `2`/`"matrix"`, and `3`/`"scalar_plus_only"`
   all project an equilibrium age structure forward from `R0` and treat
   `ln_InitDevs` as multiplicative deviations from it. `4`/`"free"`
@@ -299,7 +299,7 @@ rec_seas_prop[, 1] <- 1
 
 - equil_init_age_strc:
 
-  Plus-group treatment during stochastic initialisation. Default `1`.
+  Plus-group treatment during stochastic initialization. Default `1`.
 
   `0`/`"equil"`
 
@@ -329,10 +329,10 @@ rec_seas_prop[, 1] <- 1
 
   Numeric array `[n_regions x n_seas x n_fish_fleets]`. **Legacy
   interface, retained for backwards compatibility.** A fixed proportion
-  of the estimated mean F applied during equilibrium initialisation.
+  of the estimated mean F applied during equilibrium initialization.
   When supplied non-zero (and `init_F_par` is not given) it is converted
   to `ln_init_F = log(init_F_prop)` with `init_F_form = "prop"`, which
-  reproduces the previous behaviour exactly. Prefer `init_F_par`.
+  reproduces the previous behavior exactly. Prefer `init_F_par`.
   Default: zero for all seasons and fleets.
 
 - init_F_form:
@@ -410,15 +410,15 @@ rec_seas_prop[, 1] <- 1
 
 - RecDevs_pen_center, InitDevs_pen_center:
 
-  Where the recruitment and initial age deviation penalties are centred.
-  `"fixed"` (default) centres on the asserted prior mean, zero or the
-  bias-corrected \\-\sigma_R^2/2\\, which constrains both the level and
-  the spread of the deviations. `"own_mean"` centres on the mean of the
-  estimated deviations themselves, so only their spread is penalized and
-  their level is left free; that is what a sum of squares about the
-  series' own mean amounts to. The level being unpenalized means it must
-  be pinned elsewhere, by a prior on `R0` or by fixing a deviation, or
-  the likelihood is flat along it. Cannot be combined with
+  Where the recruitment and initial age deviation penalties are
+  centered. `"fixed"` (default) centers on the asserted prior mean, zero
+  or the bias-corrected \\-\sigma_R^2/2\\, which constrains both the
+  level and the spread of the deviations. `"own_mean"` centers on the
+  mean of the estimated deviations themselves, so only their spread is
+  penalized and their level is left free; that is what a sum of squares
+  about the series' own mean amounts to. The level being unpenalized
+  means it must be pinned elsewhere, by a prior on `R0` or by fixing a
+  deviation, or the likelihood is flat along it. Cannot be combined with
   `do_rec_bias_ramp = 1`, whose offset is meaningless once the mean is
   estimated rather than asserted.
 
@@ -437,9 +437,9 @@ rec_seas_prop[, 1] <- 1
 
 - rec_level_pen_center:
 
-  Either `"own_mean"` (default), centring on the mean of the log
+  Either `"own_mean"` (default), centering on the mean of the log
   recruitment series so only its variability is penalized, or `"fixed"`,
-  centring on zero.
+  centering on zero.
 
 - rec_level_pen_yrs:
 
@@ -504,7 +504,7 @@ rec_seas_prop[, 1] <- 1
 - h_spec:
 
   Character or `NULL`. Sharing structure for stock-recruit steepness
-  `steepness_h` `[n_pop x n_regions]`, parameterised in bounded logit
+  `steepness_h` `[n_pop x n_regions]`, parameterized in bounded logit
   space \\(0.2, 1)\\. Default `NULL` (estimate by population when
   `n_pop > 1`, by region when `n_pop = 1`). Ignored when
   `rec_model = "mean_rec"`. See
@@ -529,7 +529,7 @@ rec_seas_prop[, 1] <- 1
 - stray_rate_spec:
 
   Character string. Estimation structure for `stray_rate_pars`
-  `[n_pop x max_stray_blocks]`, parameterised on the logit scale.
+  `[n_pop x max_stray_blocks]`, parameterized on the logit scale.
   Ignored when `use_fixed_stray_rate = 1` or `n_pop = 1`. Default
   `"fix"`. Options:
 
@@ -568,7 +568,7 @@ rec_seas_prop[, 1] <- 1
 
   Default: a single constant block for every population. **Note:** stray
   rate is generally unidentifiable from fisheries data alone.
-  Time-blocking is provided for completeness but regularisation via
+  Time-blocking is provided for completeness but regularization via
   `use_stray_rate_prior` in the penalty setup is strongly recommended
   whenever `stray_rate_spec != "fix"`.
 
@@ -576,7 +576,7 @@ rec_seas_prop[, 1] <- 1
 
   Integer (0/1). Whether stray rates are supplied as a fixed external
   array (`fixed_stray_rate`) rather than estimated as model parameters.
-  Default `1` (fixed), preserving existing behaviour. Set to `0` to
+  Default `1` (fixed), preserving existing behavior. Set to `0` to
   estimate stray rates via `stray_rate_pars`.
 
 - fixed_stray_rate:
@@ -600,7 +600,7 @@ rec_seas_prop[, 1] <- 1
   `pop` (population index), `block` (block index matching
   `stray_rate_blocks`), `mu` (prior mean, in \\(0,1)\\), `sd` (prior
   standard deviation). One row per population x block combination to
-  penalise. Ignored when `use_stray_rate_prior = 0`. Default `NULL`.
+  penalize. Ignored when `use_stray_rate_prior = 0`. Default `NULL`.
 
 - spawn_seas:
 
@@ -635,11 +635,11 @@ rec_seas_prop[, 1] <- 1
 - use_rinit:
 
   Integer (0/1). Whether a separate initial recruitment scalar
-  `ln_rinit` is used to initialise the population independently of the
+  `ln_rinit` is used to initialize the population independently of the
   recruitment `ln_global_R0`. When `0` (default), `ln_rinit` is fixed
-  and `ln_global_R0` governs both initialisation and recruitment. When
+  and `ln_global_R0` governs both initialization and recruitment. When
   `1`, both `ln_rinit` and `ln_global_R0` are estimated, with `ln_rinit`
-  used exclusively for equilibrium initialisation and `ln_global_R0`
+  used exclusively for equilibrium initialization and `ln_global_R0`
   used for the stock-recruit relationship.
 
 - init_age_devs_shared:
@@ -659,7 +659,7 @@ rec_seas_prop[, 1] <- 1
   case is replicating ADMB models where ages beyond the data plus group
   share the last estimated deviation, e.g. `c(1:42, rep(42, 9))` for a
   52-age model with 43 data ages, giving 42 free parameters. When `NULL`
-  (default), age sharing follows the standard behaviour determined by
+  (default), age sharing follows the standard behavior determined by
   `equil_init_age_strc` alone.
 
 - use_r0_prior:

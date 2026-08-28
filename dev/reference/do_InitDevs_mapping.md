@@ -42,7 +42,7 @@ do_InitDevs_mapping(
   :   A single set of age-specific deviations shared across all
       populations and regions. Each age class receives one estimated
       parameter regardless of how many populations or regions are
-      modelled. Required when `rec_dd = "global"` and `n_regions > 1`.
+      modeled. Required when `rec_dd = "global"` and `n_regions > 1`.
 
   `"est_shared_r"`
 
@@ -87,13 +87,13 @@ do_InitDevs_mapping(
   case is replicating ADMB models where ages beyond the data plus group
   share the last estimated deviation, e.g. `c(1:42, rep(42, 9))` for a
   52-age model with 43 data ages, giving 42 free parameters. When `NULL`
-  (default), age sharing follows the standard behaviour determined by
+  (default), age sharing follows the standard behavior determined by
   `equil_init_age_strc` alone.
 
 - InitDevs_sex_spec:
 
   Character. `"est_shared_s"` (default) maps every sex onto one shared
-  age curve (the pre-sex-dimension behaviour, penalized once);
+  age curve (the pre-sex-dimension behavior, penalized once);
   `"est_all"` offsets the factor levels per sex so each sex carries its
   own curve, each penalized. Also builds `data$init_devs_pen_use`, which
   flags exactly one penalized copy of every estimated parameter.
@@ -109,9 +109,9 @@ sequential integer indices; plus-group slots (when
 
 ## Details
 
-Mapping behaviour is governed by three interacting considerations:
+Mapping behavior is governed by three interacting considerations:
 
-1.  **Equilibrium initialisation** (`equil_init_age_strc`): if `0`, all
+1.  **Equilibrium initialization** (`equil_init_age_strc`): if `0`, all
     deviations are fixed at zero (no stochastic initial structure). If
     `1`, plus-group deviations are fixed and the remaining ages are
     estimated or shared. If `2`, all ages including the plus group

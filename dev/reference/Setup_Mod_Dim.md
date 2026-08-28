@@ -1,4 +1,4 @@
-# Initialise model dimension settings
+# Initialize model dimension settings
 
 Creates the foundational `input_list` object used throughout the
 estimation model setup. All downstream configuration functions
@@ -41,13 +41,13 @@ Setup_Mod_Dim(
 
 - ages:
 
-  Numeric vector of modelled age classes (e.g., `2:31` for a model
+  Numeric vector of modeled age classes (e.g., `2:31` for a model
   spanning ages 2-31). The final element is treated as a plus-group.
 
 - lens:
 
   Numeric vector of length bin midpoints. Set to `NULL` when length data
-  are not modelled; a scalar placeholder of `1` is stored internally in
+  are not modeled; a scalar placeholder of `1` is stored internally in
   that case.
 
 - n_pop:

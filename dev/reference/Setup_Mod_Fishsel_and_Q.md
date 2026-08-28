@@ -91,11 +91,11 @@ Setup_Mod_Fishsel_and_Q(
 
   `"3dmarg"`
 
-  :   3D GMRF with marginal variance parameterisation.
+  :   3D GMRF with marginal variance parameterization.
 
   `"3dcond"`
 
-  :   3D GMRF with conditional variance parameterisation.
+  :   3D GMRF with conditional variance parameterization.
 
   `"2dar1"`
 
@@ -496,11 +496,11 @@ Setup_Mod_Fishsel_and_Q(
 
   `"3dmarg"`
 
-  :   3D GMRF with marginal variance parameterisation.
+  :   3D GMRF with marginal variance parameterization.
 
   `"3dcond"`
 
-  :   3D GMRF with conditional variance parameterisation.
+  :   3D GMRF with conditional variance parameterization.
 
   `"2dar1"`
 

@@ -4,7 +4,7 @@ Penalizes the log recruitment time series directly, independently of any
 stock-recruit residual penalty. Under a stock-recruit relationship the
 deviations are residuals about the predicted curve, so a model that also
 wants to keep the recruitment series itself from wandering has nowhere
-to say so; this is that second statement. Centring on the series' own
+to say so; this is that second statement. Centering on the series' own
 mean penalizes only its variability and leaves its level to the rest of
 the model.
 
@@ -26,7 +26,7 @@ get_rec_level_penalty(Rec, sigma, center = 1, yrs = NULL)
 
 - center:
 
-  Integer. `1` centres on the mean of the log series, `0` centres on
+  Integer. `1` centers on the mean of the log series, `0` centers on
   zero.
 
 - yrs:

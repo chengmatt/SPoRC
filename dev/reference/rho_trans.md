@@ -2,7 +2,7 @@
 
 Applies the scaled logistic transformation \\2 / (1 + e^{-2x}) - 1\\ to
 map an unconstrained real value to \\(-1, 1)\\, suitable for
-parameterising correlation coefficients. Used in SPoRC to back-transform
+parameterizing correlation coefficients. Used in SPoRC to back-transform
 raw correlation parameters before constructing AR(1) and constant
 covariance matrices for logistic-normal composition likelihoods.
 

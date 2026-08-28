@@ -187,7 +187,7 @@ the deviations are log abundances, so the penalty on them is a prior on
 log abundance directly.
 
 `InitDevs_sex_spec = "est_all"` gives each sex its own curve. Pairing it
-with `InitDevs_pen_center = "own_mean"` pools the centre over every
+with `InitDevs_pen_center = "own_mean"` pools the center over every
 penalized cell across both sexes, so the sexes share one estimated
 level. That is stationary at the same point as the assessment, whose
 shared $`\overline{\log N^{\text{init}}}`$ forces the pooled deviations
@@ -199,8 +199,8 @@ is `dat$sigmaR` here.
 
 The recruitment deviation penalty is a sum of squares about zero.
 Turning the bias ramp on with every break past the last year is what
-centres it there; `do_rec_bias_ramp = 0` would instead hold the ramp at
-one and centre the penalty on $`-\sigma_{R}^{2}/2`$.
+centers it there; `do_rec_bias_ramp = 0` would instead hold the ramp at
+one and center the penalty on $`-\sigma_{R}^{2}/2`$.
 
 ## Biological dynamics
 
@@ -500,7 +500,7 @@ significant digits, so the comparison is at the precision the files were
 written.
 
 `SPoRC` writes each likelihood component as a proper density while the
-assessment drops normalising constants, so the comparison subtracts
+assessment drops normalizing constants, so the comparison subtracts
 exactly the constants the assessment omits:
 
 | Component | `SPoRC` less constants | Assessment | Difference |

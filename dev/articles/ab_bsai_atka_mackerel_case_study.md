@@ -195,8 +195,8 @@ pairs with `Wt_Rec`, set under Weighting below, and the two together are
 what reproduce AMAK’s recruitment statements.
 
 `do_rec_bias_ramp = 1` with every break past the last year is how the
-penalty is centred on zero. Setting `do_rec_bias_ramp = 0` does not do
-that: it sets the ramp to one throughout, which centres on
+penalty is centered on zero. Setting `do_rec_bias_ramp = 0` does not do
+that: it sets the ramp to one throughout, which centers on
 $`-\sigma_{R}^{2}/2`$.
 
 `dont_est_recdev_last` stays at zero. AMAK estimates every deviation and
@@ -541,7 +541,7 @@ optimization:
     recruitment deviations           0
 
 `SPoRC` writes each likelihood component as a proper density while AMAK
-drops normalising constants, so the comparison subtracts exactly the
+drops normalizing constants, so the comparison subtracts exactly the
 constants AMAK omits:
 
 | Component | `SPoRC` less constants | AMAK | Difference |
@@ -582,5 +582,5 @@ AMAK renormalizes its fishery expected compositions after applying
 ageing error and does not renormalize its survey ones. Its ageing error
 rows sum to between 0.972 and 1.013, so its survey expectation is not a
 probability vector. That is the $`+1.337`$ in the table above, and it is
-an inconsistency between AMAK’s two fleets rather than a modelling
+an inconsistency between AMAK’s two fleets rather than a modeling
 choice, so `SPoRC` does not reproduce it.

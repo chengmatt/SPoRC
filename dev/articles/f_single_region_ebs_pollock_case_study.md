@@ -98,10 +98,10 @@ in year $`y-1`$:
 \text{Rec}_{y} = \alpha \text{SSB}_{y-1} \exp\left(-\beta \text{SSB}_{y-1}\right)\exp\left(\epsilon_{y}^{\text{Rec}} - \dfrac{\sigma_{R}^{2}}{2}\right)
 ```
 
-with $`\alpha`$ and $`\beta`$ reparameterised through steepness $`h`$
+with $`\alpha`$ and $`\beta`$ reparameterized through steepness $`h`$
 and unfished recruitment $`R_0`$. Steepness is estimated under a beta
 prior. In the 2024 assessment that prior sits on the unrescaled
-$`(0,1)`$ support and is symmetric, so its centre is $`0.5`$ rather than
+$`(0,1)`$ support and is symmetric, so its center is $`0.5`$ rather than
 the $`0.6`$ its `steepnessprior` constant declares:
 
 ``` math
@@ -109,7 +109,7 @@ h \sim \text{Beta}\left(\mu = 0.5,\ \sigma = 0.09\right)
 ```
 
 Three separate penalties act on recruitment, each with its own variance.
-The stock recruit residuals are penalised over the years 1978 to 2022,
+The stock recruit residuals are penalized over the years 1978 to 2022,
 excluding 1979:
 
 ``` math
@@ -126,7 +126,7 @@ their own mean:
 ```
 
 Initial numbers at age are free parameters (`init_age_strc = 4`) rather
-than derived from an equilibrium, and their penalty is centred on their
+than derived from an equilibrium, and their penalty is centered on their
 own mean.
 
 ``` r
@@ -141,7 +141,7 @@ input_list <- Setup_Mod_Rec(
   rec_lag = 1,
   SR_ref_yr = n_yrs,
   # do_rec_bias_ramp = 0 sets the ramp to 1 throughout, so the recruitment
-  # penalty is centred on -sigmaR^2/2, which is the assessment's +sigmaRsq/2 on the
+  # penalty is centered on -sigmaR^2/2, which is the assessment's +sigmaRsq/2 on the
   # residual.
   do_rec_bias_ramp = 0,
   sigmaR_switch = 1,
@@ -238,7 +238,7 @@ input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging =
 ## Catch and fishing mortality
 
 The 2024 assessment has no mean fishing mortality parameter:
-$`\log F_y`$ is a free annual value penalised about its own mean. In
+$`\log F_y`$ is a free annual value penalized about its own mean. In
 `SPoRC` that is `ln_F_mean_spec = "fix"`, which pins the mean at zero
 and maps it off so the deviations carry all of $`\log F`$, together with
 `Fdev_pen_center = "own_mean"`:
@@ -313,7 +313,7 @@ index is normal.
 
 Two indexing conventions are needed here. `srv_idx_ages` restricts fleet
 4 to age 1, which is what makes it the age 1 index rather than a biomass
-index. And the 2024 assessment normalises the acoustic compositions over
+index. And the 2024 assessment normalizes the acoustic compositions over
 ages 2–15 only, which is `SrvAgeComps_bins`.
 
 ``` r
@@ -527,7 +527,7 @@ srv_pen_wts <- list(
        smooth_yr_diff = ats_rw, normalize = FALSE,
        bin_range = list(smooth_bin_diff = c(5, 8))),
   # the vessel of opportunity index shares the acoustic curve, so it is not
-  # penalised twice
+  # penalized twice
   list(),
   list()
 )
@@ -561,7 +561,7 @@ slots and a fleet with no time variation unmapped. What remains is the
 data window, since deviations before a survey exists have nothing to
 inform them, and the deviation groupings.
 
-`SPoRC` parameterises selectivity deviations as levels while the 2024
+`SPoRC` parameterizes selectivity deviations as levels while the 2024
 assessment uses increments. The two are equivalent, but the first year’s
 level is redundant with the coefficients and has to be held at zero, and
 bins within a group must move together. `est_shared_b` would share a
@@ -750,7 +750,7 @@ be readable at all; its axis is in units of $`10^{-6}`$ percent.
 ![](figures/f_ebs_pol_ts_comparison.png)
 
 Time varying fishery selectivity is reproduced as well. Selectivity in
-this model can exceed one, so the values are normalised to their maximum
+this model can exceed one, so the values are normalized to their maximum
 to make the shape readable.
 
 ![](figures/f_ebs_pol_fishsel_comparison.png)

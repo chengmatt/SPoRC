@@ -23,7 +23,7 @@ get_key_quants(data, rep, reference_points_opt, proj_model_opt, model_names)
 - rep:
 
   A list of length `n_models`, where each element is a SPoRC-formatted
-  report list (i.e., the output of `obj$report()` after optimisation).
+  report list (i.e., the output of `obj$report()` after optimization).
   Each element must include recruitment, selectivity, fishing mortality,
   and numbers-at-age arrays.
 
@@ -159,6 +159,7 @@ diagnostic screening only.
 
 Other Reference Points and Projections:
 [`Do_Population_Projection()`](https://chengmatt.github.io/SPoRC/dev/reference/Do_Population_Projection.md),
+[`Get_Reference_Point_Uncertainty()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Reference_Point_Uncertainty.md),
 [`Get_Reference_Points()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Reference_Points.md)
 
 ## Examples

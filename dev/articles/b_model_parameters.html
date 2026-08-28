@@ -51,6 +51,7 @@
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -276,19 +277,18 @@ keyed by <code>sigmaDAA_key</code>
 </tr>
 <tr class="odd">
 <td><code>trans_rho_catch</code></td>
-<td><code>n_sexes × n_fish_fleets</code></td>
+<td><code>n_regions × n_sexes × n_fish_fleets</code></td>
 <td>Unconstrained AR(1) correlation across ages for catch at age.
-Transformed to <code>(-1, 1)</code> by <code><a href="../reference/rho_trans.html">rho_trans()</a></code>. One per
-fleet shared across sexes unless <code>rho_catch_key</code> says
-otherwise, and mapped to <code>NA</code> unless
-<code>AgeObsCorr_catch</code> is <code>"1dar1"</code> or
-<code>"2dar1"</code>
+Transformed to <code>(-1, 1)</code> by <code><a href="../reference/rho_trans.html">rho_trans()</a></code>. Shared
+according to <code>rho_catch_spec</code>, one per fleet by default, and
+mapped to <code>NA</code> unless <code>AgeObsCorr_catch</code> is
+<code>"1dar1"</code> or <code>"2dar1"</code>
 </td>
 <td>0</td>
 </tr>
 <tr class="even">
 <td><code>trans_rho_catch_year</code></td>
-<td><code>n_sexes × n_fish_fleets</code></td>
+<td><code>n_regions × n_sexes × n_fish_fleets</code></td>
 <td>Correlation across years, read only under
 <code>AgeObsCorr_catch = "2dar1"</code>
 </td>
@@ -296,7 +296,7 @@ otherwise, and mapped to <code>NA</code> unless
 </tr>
 <tr class="odd">
 <td><code>trans_rho_catch_us</code></td>
-<td><code>n_pairs × n_sexes × n_fish_fleets</code></td>
+<td><code>n_pairs × n_regions × n_sexes × n_fish_fleets</code></td>
 <td>Unconstrained entries of the unstructured across-age correlation,
 <code>n_pairs = n_ages(n_ages - 1)/2</code>. Read only under
 <code>AgeObsCorr_catch = "us"</code>
@@ -328,7 +328,7 @@ otherwise, and mapped to <code>NA</code> unless
 <code>trans_rho_srv_idx_us</code>
 </td>
 <td>
-<code>n_sexes × n_srv_fleets</code> (and
+<code>n_regions × n_sexes × n_srv_fleets</code> (and
 <code>n_pairs × …</code>)</td>
 <td>As above, for the survey index at age</td>
 <td>0</td>
@@ -339,7 +339,8 @@ otherwise, and mapped to <code>NA</code> unless
 <code>trans_rho_discard_pop</code>, <code>trans_rho_fish_idx_pop</code>,
 <code>trans_rho_srv_idx_pop</code>
 </td>
-<td>as above</td>
+<td>as above with a leading <code>n_pop</code>
+</td>
 <td>Population-specific counterparts, with their own <code>_year</code>
 and <code>_us</code> forms. The <code>_pop</code> streams carry their
 own correlation rather than borrowing the aggregated one</td>

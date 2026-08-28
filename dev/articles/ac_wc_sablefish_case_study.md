@@ -192,9 +192,9 @@ Natural mortality is one value for both sexes, the assessment’s male
 parameter being set equal to the female’s, under a lognormal prior with
 median $`e^{-2.631}`$ and standard deviation 0.31 on the log scale.
 
-The ageing error matrix maps the 71 modelled ages onto the 51
-composition bins, the last of which accumulates. The assessment prints
-it with the observed bins descending, so it is transposed on the way in.
+The ageing error matrix maps the 71 modeled ages onto the 51 composition
+bins, the last of which accumulates. The assessment prints it with the
+observed bins descending, so it is transposed on the way in.
 
 ## Movement and tagging
 
@@ -427,12 +427,12 @@ predicted value is
 \widehat{I}_{y} = q\left( \varepsilon_{y} - \mu_{y} \right)
 ```
 
-with $`\mu_{y}`$ the centre the recruitment penalty asserts for that
+with $`\mu_{y}`$ the center the recruitment penalty asserts for that
 year. The difference matters here: under a bias ramp `SPoRC`’s stored
 deviation and the deviation the assessment reports differ by the bias
 correction, and it is the anomaly, how strong the year class was against
 what the model expected, that such an index measures. Taking it from the
-penalty’s own centre is what makes the two agree without any special
+penalty’s own center is what makes the two agree without any special
 casing.
 
 Two things follow from the deviations being signed. The fleet takes
@@ -476,7 +476,7 @@ carrying six significant digits:
     expected age compositions          6.5e-07  (absolute)
 
 `SPoRC` writes each likelihood component as a proper density where the
-assessment drops normalising constants, so the comparison subtracts
+assessment drops normalizing constants, so the comparison subtracts
 exactly the constants it omits:
 
 | Component | `SPoRC` less constants | Assessment | Difference |

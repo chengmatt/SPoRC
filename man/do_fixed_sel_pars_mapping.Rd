@@ -40,9 +40,11 @@ number of fleets to loop over (\code{"n_fish_fleets"} for both
 \code{"fish"} and \code{"ret"}, since retention shares fishery fleets;
 \code{"n_srv_fleets"} for \code{"srv"}).}
 
-\item{use_field}{Character. Stub for the usage-indicator fields:
-\code{Use<use_field>} / \code{Use<use_field>_pop}. \code{"Catch"} for
-\code{"fish"}/\code{"ret"}; \code{"SrvIdx"} for \code{"srv"}.}
+\item{use_field}{Character. Stub for the usage-indicator fields read by
+\code{\link{sel_has_data}}: \code{Use<use_field>} and its at-age
+counterpart \code{Use<use_field>AA}, each with a \code{_pop} variant.
+\code{"Catch"} for \code{"fish"}/\code{"ret"}; \code{"SrvIdx"} for
+\code{"srv"}.}
 
 \item{fleet_label}{Character. Used only in the collected setup message,
 e.g. \code{"fishery fleet"} or \code{"survey fleet"}.}

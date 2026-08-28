@@ -1097,7 +1097,9 @@ do_comp_corr_pars_mapping <- function(input_list, comp_prefix, discard = FALSE, 
 #' controlling whether catchability parameters are estimated independently
 #' per region and time block or shared across regions. Cells with no index
 #' observations (aggregated or population-specific) are automatically mapped
-#' to \code{NA}. Serves both the fishery and the survey; \code{prefix} is
+#' to \code{NA}. Catchability scales the aggregated index alone, so an at-age
+#' index stream does not switch one on: its age multiplier lives in the
+#' selectivity. Serves both the fishery and the survey; \code{prefix} is
 #' \code{"fish"} or \code{"srv"} and picks which parameter and data names to
 #' read.
 #'
@@ -1221,9 +1223,11 @@ do_q_mapping <- function(input_list, q_spec, prefix, fleet_field, fleet_label) {
 #'   number of fleets to loop over (\code{"n_fish_fleets"} for both
 #'   \code{"fish"} and \code{"ret"}, since retention shares fishery fleets;
 #'   \code{"n_srv_fleets"} for \code{"srv"}).
-#' @param use_field Character. Stub for the usage-indicator fields:
-#'   \code{Use<use_field>} / \code{Use<use_field>_pop}. \code{"Catch"} for
-#'   \code{"fish"}/\code{"ret"}; \code{"SrvIdx"} for \code{"srv"}.
+#' @param use_field Character. Stub for the usage-indicator fields read by
+#'   \code{\link{sel_has_data}}: \code{Use<use_field>} and its at-age
+#'   counterpart \code{Use<use_field>AA}, each with a \code{_pop} variant.
+#'   \code{"Catch"} for \code{"fish"}/\code{"ret"}; \code{"SrvIdx"} for
+#'   \code{"srv"}.
 #' @param fleet_label Character. Used only in the collected setup message,
 #'   e.g. \code{"fishery fleet"} or \code{"survey fleet"}.
 #'
@@ -1417,9 +1421,11 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
 #' @param fleet_field Character. Name of the \code{$data} field giving the
 #'   number of fleets (\code{"n_fish_fleets"} for \code{"fish"}/\code{"ret"};
 #'   \code{"n_srv_fleets"} for \code{"srv"}).
-#' @param use_field Character. Stub for the usage-indicator fields:
-#'   \code{Use<use_field>} / \code{Use<use_field>_pop}. \code{"Catch"} for
-#'   \code{"fish"}/\code{"ret"}; \code{"SrvIdx"} for \code{"srv"}.
+#' @param use_field Character. Stub for the usage-indicator fields read by
+#'   \code{\link{sel_has_data}}: \code{Use<use_field>} and its at-age
+#'   counterpart \code{Use<use_field>AA}, each with a \code{_pop} variant.
+#'   \code{"Catch"} for \code{"fish"}/\code{"ret"}; \code{"SrvIdx"} for
+#'   \code{"srv"}.
 #' @param fleet_label Character. Used only in the collected setup message.
 #'
 #' @return The input \code{input_list} with \code{$map$<prefix>sel_pe_pars}
@@ -1434,8 +1440,6 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
   cont_tv_nm <- paste0("cont_tv_", prefix, "_sel")
   model_nm <- paste0(prefix, "_sel_model")
   selex_type_nm <- paste0(prefix, "_selex_type")
-  Use_nm <- paste0("Use", use_field)
-  Use_pop_nm <- paste0(Use_nm, "_pop")
   n_fleets <- input_list$data[[fleet_field]]
 
   # Initialize counter and mapping array for process errors
@@ -1458,7 +1462,7 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
     for(r in 1:input_list$data$n_regions) {
 
       # if no time-variation, then fix all parameters for this fleet
-      if(input_list$data[[cont_tv_nm]][r,f] == 0 || (sum(input_list$data[[Use_nm]][r,,,f]) == 0 && sum(input_list$data[[Use_pop_nm]][,r,,,f]) == 0)) {
+      if(input_list$data[[cont_tv_nm]][r,f] == 0 || !sel_has_data(input_list$data, use_field, r, f)) {
         map_pe_pars[r,,,f] <- NA
       } else { # if we have time-variation
 
@@ -1644,9 +1648,11 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
 #' @param fleet_field Character. Name of the \code{$data} field giving the
 #'   number of fleets (\code{"n_fish_fleets"} for \code{"fish"}/\code{"ret"};
 #'   \code{"n_srv_fleets"} for \code{"srv"}).
-#' @param use_field Character. Stub for the usage-indicator fields:
-#'   \code{Use<use_field>} / \code{Use<use_field>_pop}. \code{"Catch"} for
-#'   \code{"fish"}/\code{"ret"}; \code{"SrvIdx"} for \code{"srv"}.
+#' @param use_field Character. Stub for the usage-indicator fields read by
+#'   \code{\link{sel_has_data}}: \code{Use<use_field>} and its at-age
+#'   counterpart \code{Use<use_field>AA}, each with a \code{_pop} variant.
+#'   \code{"Catch"} for \code{"fish"}/\code{"ret"}; \code{"SrvIdx"} for
+#'   \code{"srv"}.
 #' @param fleet_label Character. Used only in the collected setup message.
 #'
 #' @return The input \code{input_list} with \code{$map$ln_<prefix>sel_devs}
@@ -1661,8 +1667,6 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
   par_nm <- paste0("ln_", prefix, "sel_devs")
   cont_tv_nm <- paste0("cont_tv_", prefix, "_sel")
   model_nm <- paste0(prefix, "_sel_model")
-  Use_nm <- paste0("Use", use_field)
-  Use_pop_nm <- paste0(Use_nm, "_pop")
   n_fleets <- input_list$data[[fleet_field]]
 
   # Initialize counter and mapping array for selectivity deviations
@@ -1710,7 +1714,7 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
 
           # Which regions actually have data for this fleet
           reg_has_dat <- sapply(1:input_list$data$n_regions, function(rr)
-            sum(input_list$data[[Use_nm]][rr,,,f]) > 0 || sum(input_list$data[[Use_pop_nm]][,rr,,,f]) > 0)
+            sel_has_data(input_list$data, use_field, rr, f))
           r_anchor <- if(any(reg_has_dat)) min(which(reg_has_dat)) else 1L
           shares_r <- !is.null(sel_devs_spec) &&
             sel_devs_spec[f] %in% c('est_shared_r', 'est_shared_r_s', 'est_shared_r_b', 'est_shared_r_b_s')

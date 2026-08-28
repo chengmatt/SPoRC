@@ -190,7 +190,7 @@ rho_trans <- function(x){
 #' The parameters fill the strict lower triangle of a matrix whose diagonal is
 #' one. Normalizing each row to unit length makes that matrix a Cholesky factor,
 #' so the product with its transpose is a correlation matrix with ones on the
-#' diagonal and is positive definite for any parameter values. 
+#' diagonal and is positive definite for any parameter values.
 #'
 #' @param pars Numeric vector of length \eqn{n(n-1)/2}, unconstrained.
 #' @param n Number of ages.

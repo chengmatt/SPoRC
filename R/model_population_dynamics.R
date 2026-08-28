@@ -317,7 +317,7 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
       # Get Deterministic Recruitment
       tmp_Det_Rec <- do.call(Get_Det_Recruitment, c(det_rec_args, list(recruitment_model = rec_model, R0 = R0, SSB_vals = SSB, y = y)))
 
-      # Predicts the SR curve for use as a penalty 
+      # Predicts the SR curve for use as a penalty
       if(sr_penalty > 0) {
         SR_pred[,, y] <- do.call(Get_Det_Recruitment, c(det_rec_args, list(recruitment_model = sr_penalty, R0 = sr_R0, SSB_vals = SSB, y = y)))
       }

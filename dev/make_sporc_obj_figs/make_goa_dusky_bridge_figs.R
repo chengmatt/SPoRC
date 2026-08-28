@@ -67,8 +67,18 @@ stopifnot(length(admb$SSB) == n_yrs,
 # Optimize ----------------------------------------------------------------------
 input_list <- build_goa_dusky_input(dat)
 
+devtools::load_all(here('R'))
+input_list$data$UseCatch[] <- 0
+input_list$data$UseSrvAgeComps[] <- 0
+input_list$data$UseFishAgeComps[] <- 0
+input_list$data$UseFishLenComps[] <- 0
+input_list$data$UseSrvIdx[] <- 0
 est <- fit_model(input_list$data, input_list$par, input_list$map,
-                 random = NULL, newton_loops = 3, silent = TRUE)
+                 random = 'ln_RecDevs', newton_loops = 3, silent = TRUE, do_optim = F)
+
+image(est$env$spHess(random = T))
+
+
 est$sdrep <- RTMB::sdreport(est)
 
 cat("=== Optimized ===\n")

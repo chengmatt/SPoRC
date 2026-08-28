@@ -53,13 +53,14 @@ matching the aggregated stream's convention.}
 \item{corr_type}{Integer per fleet. \code{0} \code{"iid"}, \code{1}
 \code{"1dar1"}, \code{2} \code{"us"}, \code{3} \code{"2dar1"}.}
 
-\item{trans_rho}{Unconstrained correlation across ages, over sex by fleet.}
+\item{trans_rho}{Unconstrained correlation across ages, over region by sex by
+fleet, with a leading population margin when \code{pop} is \code{TRUE}.}
 
-\item{trans_rho_year}{Unconstrained correlation across years, over sex by
-fleet, read under \code{"2dar1"}.}
+\item{trans_rho_year}{Unconstrained correlation across years, shaped like
+\code{trans_rho}, read under \code{"2dar1"}.}
 
-\item{us_pars}{Unconstrained correlation parameters, over pair by sex by
-fleet, read under \code{"us"}.}
+\item{us_pars}{Unconstrained correlation parameters, over pair by the margins
+of \code{trans_rho}, read under \code{"us"}.}
 
 \item{aa_type}{Integer per fleet naming the split margins, see
 \code{\link{at_age_split}}.}

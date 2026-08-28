@@ -99,7 +99,7 @@ test_that("EBS pollock bridges exactly to the 2024 ADMB assessment at its own ML
   )
 
   # Catch and F: no mean F parameter, so the deviations carry all of log F and
-  # are penalised about their own mean.
+  # are penalized about their own mean.
   suppressWarnings(
     input_list <- Setup_Mod_Catch_and_F(
       input_list = input_list,
@@ -271,7 +271,7 @@ test_that("EBS pollock bridges exactly to the 2024 ADMB assessment at its own ML
   parameters <- input_list$par
   mapping <- input_list$map
 
-  # Mapping. SPoRC parameterises selectivity deviations as levels while the
+  # Mapping. SPoRC parameterizes selectivity deviations as levels while the
   # assessment uses increments, so the first year's level is redundant with the
   # coefficients and is held at zero, and bins within a group move together.
   i_bts_all <- which(yrs >= 1982)
@@ -400,7 +400,7 @@ test_that("EBS pollock bridges exactly to the 2024 ADMB assessment at its own ML
   # too. A specification difference shows up here before it shows up in SSB.
   expect_lt(max(abs(obj$gr(free))), 1e-3)
 
-  # Pinned only because the assessment and SPoRC drop different normalising constants, so
+  # Pinned only because the assessment and SPoRC drop different normalizing constants, so
   # the totals differ by a constant rather than matching outright.
   expect_equal(obj$fn(free), 1547.851, tolerance = 1e-5)
 

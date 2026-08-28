@@ -159,7 +159,7 @@ build_goa_dusky_input <- function(dat) {
   )
 
   ## Fishery selectivity and catchability -------------------------------------
-  # the a50 and a95 parameterisation of the logistic, which is logist2.
+  # the a50 and a95 parameterization of the logistic, which is logist2.
   # selectivity is time invariant, so there are no deviations and no process
   # error, and fishery catchability is not used because there is no fishery
   # index to scale
@@ -175,7 +175,7 @@ build_goa_dusky_input <- function(dat) {
 
   ## Survey selectivity and catchability --------------------------------------
   # the same logistic form, with catchability estimated under a lognormal prior
-  # centred on 1 with a standard deviation of 1 / sqrt(5)
+  # centered on 1 with a standard deviation of 1 / sqrt(5)
   srv_q_prior <- data.frame(
     region = 1,
     block = 1,

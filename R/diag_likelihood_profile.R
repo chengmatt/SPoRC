@@ -8,7 +8,7 @@
 #' Analytic catchability is solved from the index data inside the model and never reads
 #' \code{ln_fish_q}/\code{ln_srv_q}, so profiling those parameters refits an identical
 #' model at every grid value and returns a flat surface that reads as an uninformative
-#' index rather than as a catchability the optimiser never saw.
+#' index rather than as a catchability the optimizer never saw.
 #'
 #' @param data Data list from the fitted model.
 #' @param parameters Parameter list from the fitted model.

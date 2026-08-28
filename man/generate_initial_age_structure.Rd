@@ -2,7 +2,7 @@
 % Please edit documentation in R/sim_population.R
 \name{generate_initial_age_structure}
 \alias{generate_initial_age_structure}
-\title{Initialise age structure for a simulation replicate}
+\title{Initialize age structure for a simulation replicate}
 \usage{
 generate_initial_age_structure(y, sim, sim_env)
 }

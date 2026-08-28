@@ -7,7 +7,7 @@
 
 #' Evaluate a symmetric beta log-density
 #'
-#' Computes a log-density that penalises a parameter value toward the midpoint
+#' Computes a log-density that penalizes a parameter value toward the midpoint
 #' of \code{[p_lb, p_ub]} using a symmetric beta-like kernel. The penalty
 #' strengthens as \code{p_prsd} increases and diffuses as \code{p_prsd}
 #' decreases. Used in SPoRC as a prior for tag reporting rates to discourage
@@ -68,7 +68,7 @@ ddirichlet <- function(x, alpha, log = TRUE) {
 #' Evaluate a Dirichlet-multinomial log-likelihood
 #'
 #' Computes the Dirichlet-multinomial log-likelihood following the
-#' parameterisation of Thorson et al. (CCSRA). The concentration parameters
+#' parameterization of Thorson et al. (CCSRA). The concentration parameters
 #' are \eqn{\alpha_k = \exp(\ln\theta) \times N \times \hat{p}_k}, so
 #' \eqn{\exp(\ln\theta)} is the per-observation overdispersion scalar: values
 #' near zero approach the multinomial and larger values increase variance.
@@ -193,6 +193,7 @@ get_at_age_nLL = function(obs_t, pred_t, sigma, corr_type = 0, rho = 0,
 
   resid = obs_t - pred_t
 
+  # ar1 by age
   if(corr_type == 1) {
     if(is.null(ages)) ages = seq_len(n)
     if(all(diff(ages) == 1)) { # consecutive ages are the recursion itself
@@ -205,7 +206,7 @@ get_at_age_nLL = function(obs_t, pred_t, sigma, corr_type = 0, rho = 0,
     } # end j loop, end i loop
   }
 
-  # standardising keeps the correlation matrix free of the standard deviations,
+  # standardizing keeps the correlation matrix free of the standard deviations,
   # which is what lets an unstructured matrix be built once per fleet and reused
   z = resid / sigma
   nLL[1] = -1 * (RTMB::dmvnorm(z, 0, corr_mat, log = TRUE) - sum(log(sigma)))
@@ -220,15 +221,6 @@ get_at_age_nLL = function(obs_t, pred_t, sigma, corr_type = 0, rho = 0,
 #' product of the two. It is defined over a complete grid, so the caller supplies
 #' a rectangular block and the whole block's density is returned as one number.
 #'
-#' The residuals are standardised before the separable density is applied, since
-#' the standard deviations vary by age while the correlation does not. The
-#' determinant of that scaling is added back.
-#'
-#' The correlations arrive untransformed and are constrained here, before the two
-#' closures are defined. \code{\link[RTMB]{dseparable}} evaluates those closures
-#' in a context of its own, and a constraint left as an unevaluated argument is
-#' forced inside that context, where the tape reports an invalid \code{advector}
-#' rather than a wrong number.
 #'
 #' @param resid Matrix of residuals, years by ages.
 #' @param sigma Matrix of standard deviations, shaped like \code{resid}.
@@ -239,17 +231,12 @@ get_at_age_nLL = function(obs_t, pred_t, sigma, corr_type = 0, rho = 0,
 #'
 #' @keywords internal
 get_at_age_2dar1_nLL = function(resid, sigma, trans_rho_age, trans_rho_year) {
-
   z = resid / sigma
-
-  rho_age = rho_trans(trans_rho_age)   # forced before the closures capture them
+  rho_age = rho_trans(trans_rho_age)
   rho_year = rho_trans(trans_rho_year)
-
   f_year = function(x) RTMB::dautoreg(x, mu = 0, phi = rho_year, log = TRUE)
   f_age = function(x) RTMB::dautoreg(x, mu = 0, phi = rho_age, log = TRUE)
-
   ll = RTMB::dseparable(f_year, f_age)(z) - sum(log(sigma))
-
   return(-1 * ll)
 }
 
@@ -366,7 +353,7 @@ get_index_nLL = function(obs, pred, sigma, like_type, Sigma = NULL, const = 0) {
 #' Evaluate a robust negative binomial log-likelihood
 #'
 #' Computes the negative binomial log-likelihood using a
-#' \eqn{(\mu, \sigma^2 - \mu)} reparameterisation that remains valid for
+#' \eqn{(\mu, \sigma^2 - \mu)} reparameterization that remains valid for
 #' non-integer observations via \code{lgamma}. The overdispersion parameter
 #' is recovered as \eqn{k = \mu^2 / (\sigma^2 - \mu)}.
 #'

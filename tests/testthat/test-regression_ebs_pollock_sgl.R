@@ -169,7 +169,7 @@ test_that("Single-region EBS Pollock RTMB model produces expected results", {
     SrvAgeComps_LikeType = c("Multinomial", "Multinomial", "none", "none"),
     # survey age composition likelihood for survey fleet 1, 2, 3, and 4
     SrvAgeComps_bins = list(NULL, 2:15, NULL, NULL),
-    # the acoustic compositions are normalised over ages 2-15 only
+    # the acoustic compositions are normalized over ages 2-15 only
     SrvLenComps_LikeType = rep("none", n_srv),
     #  survey length composition likelihood for survey fleet 1, 2, 3, and 4
     SrvAgeComps_Type = c(

@@ -23,7 +23,7 @@ across all dimensions. Options when non-\code{NULL}:
   \item{\code{"est_shared_pop_r"}}{A single set of year-specific
     deviations shared across all populations and regions. Each year
     receives one estimated parameter regardless of how many populations
-    or regions are modelled. Required when \code{rec_dd = "global"} and
+    or regions are modeled. Required when \code{rec_dd = "global"} and
     \code{n_regions > 1}.}
   \item{\code{"fix"}}{All \code{ln_RecDevs} parameters fixed at zero
     (mapped to \code{NA}). Equivalent to deterministic recruitment with
@@ -54,7 +54,7 @@ recruitment deviations. The \code{ln_RecDevs} array has dimensions
 \code{[n_pop x n_regions x n_years]}.
 }
 \details{
-Mapping behaviour is governed by two interacting considerations:
+Mapping behavior is governed by two interacting considerations:
 \enumerate{
   \item \strong{Sharing specification} (\code{RecDevs_spec}): controls
     whether deviations are shared across regions and/or populations, or

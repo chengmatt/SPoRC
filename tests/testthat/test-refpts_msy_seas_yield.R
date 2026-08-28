@@ -37,7 +37,7 @@ sel <- 1 / (1 + exp(-1.5 * ((1:n_ages) - 4)))
 M_r <- c(0.15, 0.45)
 rec_region_prop <- c(0.6, 0.4)
 
-# Solve Fmsy, then project at it and return refpts yield alongside realised equilibrium catch
+# Solve Fmsy, then project at it and return refpts yield alongside realized equilibrium catch
 msy_vs_projection <- function(n_seas, move_timing) {
 
   seasdur <- rep(1 / n_seas, n_seas)

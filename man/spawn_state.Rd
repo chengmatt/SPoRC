@@ -36,7 +36,7 @@ stored in \code{ZAA}). Pass zeros for a movement-only step.}
 \item{t_spawn}{Fraction of the season elapsed before spawning, in \code{[0, 1]}.}
 
 \item{move_timing}{Integer flag for the movement/mortality ordering:
-\code{0} = movement then mortality (default, historical SPoRC behaviour),
+\code{0} = movement then mortality (default, historical SPoRC behavior),
 \code{1} = mortality then movement, \code{2} = continuous (simultaneous)
 movement and mortality.}
 

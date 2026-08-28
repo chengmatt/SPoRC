@@ -25,7 +25,7 @@ across all dimensions. Options when non-\code{NULL}:
   \item{\code{"est_shared_pop_r"}}{A single set of age-specific deviations
     shared across all populations and regions. Each age class receives one
     estimated parameter regardless of how many populations or regions
-    are modelled. Required when \code{rec_dd = "global"} and
+    are modeled. Required when \code{rec_dd = "global"} and
     \code{n_regions > 1}.}
   \item{\code{"est_shared_r"}}{Separate age-specific deviations per
     population, shared across regions within each population. Regions
@@ -61,10 +61,10 @@ use case is replicating ADMB models where ages beyond the data plus group
 share the last estimated deviation, e.g.
 \code{c(1:42, rep(42, 9))} for a 52-age model with 43 data ages, giving
 42 free parameters. When \code{NULL} (default), age sharing follows the
-standard behaviour determined by \code{equil_init_age_strc} alone.}
+standard behavior determined by \code{equil_init_age_strc} alone.}
 
 \item{InitDevs_sex_spec}{Character. \code{"est_shared_s"} (default) maps
-every sex onto one shared age curve (the pre-sex-dimension behaviour,
+every sex onto one shared age curve (the pre-sex-dimension behavior,
 penalized once); \code{"est_all"} offsets the factor levels per sex so
 each sex carries its own curve, each penalized. Also builds
 \code{data$init_devs_pen_use}, which flags exactly one penalized copy of
@@ -89,9 +89,9 @@ single-sex slice and then expanded across sexes per
 \code{InitDevs_sex_spec}.
 }
 \details{
-Mapping behaviour is governed by three interacting considerations:
+Mapping behavior is governed by three interacting considerations:
 \enumerate{
-  \item \strong{Equilibrium initialisation} (\code{equil_init_age_strc}):
+  \item \strong{Equilibrium initialization} (\code{equil_init_age_strc}):
     if \code{0}, all deviations are fixed at zero (no stochastic initial
     structure). If \code{1}, plus-group deviations are fixed and the
     remaining ages are estimated or shared. If \code{2}, all ages including

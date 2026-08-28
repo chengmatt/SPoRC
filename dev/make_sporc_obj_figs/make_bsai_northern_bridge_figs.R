@@ -50,7 +50,7 @@ cat("Rec   max pct diff:", 100 * max(abs(as.vector(r$Rec)[1:n_yrs] - dat$admb$Re
 cat("Fmort max pct diff:", 100 * max(abs(as.vector(r$Fmort) - dat$admb$Fmort) / dat$admb$Fmort), "\n")
 
 # The likelihood crosswalk. SPoRC writes each component as a proper density
-# while the assessment drops normalising constants, so each comparison subtracts
+# while the assessment drops normalizing constants, so each comparison subtracts
 # exactly the constants the assessment omits.
 c2pi <- 0.5 * log(2 * pi)
 n_catch_obs <- sum(dat$UseCatch)

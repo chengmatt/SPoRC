@@ -221,7 +221,7 @@ draw_index_obs <- function(true, se, like_type = 0, d = NULL, lambda = NULL, u =
 #' \code{diag(n_sexes) ⊗ AgeingError} is used to apply ageing error across
 #' the combined age-sex vector. For aggregated compositions
 #' (\code{comp_type = 0}), the draw is only executed when \code{r == n_regions}
-#' (i.e., on the final region pass), and uses region- and sex-marginalised
+#' (i.e., on the final region pass), and uses region- and sex-marginalized
 #' expected proportions.
 #'
 #' @param r Integer. Region index.
@@ -711,7 +711,7 @@ simulate_caal <- function(r, y, f, seas, sim, SizeAgeTrans, AtAge, ISS, AgeingEr
 #' from predicted recapture arrays, supporting six likelihood structures:
 #' Poisson, negative binomial, and release- or recovery-conditioned
 #' multinomial and Dirichlet-multinomial. Dimensions absent from
-#' \code{tag_recaptures_attr} are marginalised by summing over them, and all
+#' \code{tag_recaptures_attr} are marginalized by summing over them, and all
 #' recaptures are placed into index 1 of the corresponding dimension in the
 #' output array.
 #'
@@ -735,7 +735,7 @@ simulate_caal <- function(r, y, f, seas, sim, SizeAgeTrans, AtAge, ISS, AgeingEr
 #'   dimensions are attended in the recapture likelihood. Built from any
 #'   combination of \code{"p"} (population), \code{"a"} (age), and \code{"s"}
 #'   (sex), joined by underscores. Region and fleet are always retained.
-#'   Unattended dimensions are marginalised and output into index 1.
+#'   Unattended dimensions are marginalized and output into index 1.
 #' @param conv_tagged_fish Array of released tagged fish
 #'   \code{[n_conv_tag_cohorts × n_pop × n_ages × n_sexes × n_sims]}. Used
 #'   as the release sample size for release-conditioned likelihoods.
@@ -761,7 +761,7 @@ simulate_caal <- function(r, y, f, seas, sim, SizeAgeTrans, AtAge, ISS, AgeingEr
 #'
 #' @return The \code{obs_conv_tag_fish_recap} array with simulated recaptures
 #'   filled in at \code{[ry, rseas, tc, pop_idx, reg_idx, age_idx, sex_idx,
-#'   flt_idx, sim]}. Marginalised dimensions are fixed at index 1.
+#'   flt_idx, sim]}. Marginalized dimensions are fixed at index 1.
 #'
 #'
 #' @keywords internal
@@ -862,7 +862,7 @@ simulate_conv_tag_fish_recaptures <- function(conv_fish_tag_like,
 
 }
 
-#' Marginalise conventional fishery tag arrays across unattended dimensions
+#' Marginalize conventional fishery tag arrays across unattended dimensions
 #'
 #' Collapses population, age, and/or sex dimensions of a tag count array
 #' \code{[n_pop × n_ages × n_sexes]} by summing over dimensions absent from

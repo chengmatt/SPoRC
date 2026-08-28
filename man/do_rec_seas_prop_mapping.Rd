@@ -41,7 +41,7 @@ Internal helper called by \code{\link{Setup_Mod_Rec}} to construct the
 TMB/RTMB factor map for \code{rec_seas_prop_pars}, the logit-scale
 parameters controlling the proportion of annual recruitment assigned to
 each season. The array has dimensions \code{[n_pop x (n_seas - 1)]},
-using a sum-to-one soft-max parameterisation with one reference season
+using a sum-to-one soft-max parameterization with one reference season
 omitted.
 }
 \details{

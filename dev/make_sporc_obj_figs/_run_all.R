@@ -33,7 +33,8 @@ tier_data <- c(
   "make_bsai_atka_data_object.R",
   "make_bsai_nrs_data_object.R",
   "make_three_rg_sablefish_data_spt_comparison.R",
-  "make_five_rg_sablefish_data_spt_comparison.R"
+  "make_five_rg_sablefish_data_spt_comparison.R",
+  "make_refpt_uncertainty_fig.R"
 )
 
 # bridge: single region fits against an ADMB target, writes vignettes/figures

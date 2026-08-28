@@ -52,7 +52,7 @@ test_that("BSAI northern rockfish reproduces the 2023 ADMB assessment at its own
                tolerance = 1e-3, ignore_attr = TRUE)
 
   # Likelihood components. SPoRC writes each component as a proper density while the
-  # assessment drops normalising constants, so each comparison subtracts exactly the
+  # assessment drops normalizing constants, so each comparison subtracts exactly the
   # constants the assessment omits. What is left is a like for like comparison.
   c2pi <- 0.5 * log(2 * pi)
 

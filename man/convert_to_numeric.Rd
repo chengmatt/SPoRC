@@ -18,7 +18,7 @@ Numeric vector or array of the same shape as \code{x}, without names.
 \description{
 Maps a character vector to integer codes via a named lookup, or passes
 numeric input through unchanged. Character arrays and matrices are converted
-element-wise and keep their original dimensions. Unrecognised character
+element-wise and keep their original dimensions. Unrecognized character
 values raise an informative error listing both the invalid inputs and the
 valid options.
 }

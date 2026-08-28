@@ -26,7 +26,7 @@ otherwise returns the density on the probability scale.}
 Numeric. Log-density (or density if \code{log = FALSE}).
 }
 \description{
-Computes a log-density that penalises a parameter value toward the midpoint
+Computes a log-density that penalizes a parameter value toward the midpoint
 of \code{[p_lb, p_ub]} using a symmetric beta-like kernel. The penalty
 strengthens as \code{p_prsd} increases and diffuses as \code{p_prsd}
 decreases. Used in SPoRC as a prior for tag reporting rates to discourage

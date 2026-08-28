@@ -239,7 +239,7 @@ For sharing structures not supported by the convenience arguments, the map can b
 - Fleet 1 (logistic): *a50* is sex-specific, but the slope is shared across sexes
 - Fleet 2 (gamma): all parameters are sex-specific
 
-We start from `est_all` to get the correctly dimensioned parameter array, then overwrite the map. The parameter array `fish_fixed_sel_pars` has dimensions `[n_regions, n_max_sel_pars, n_max_sel_blocks, n_sexes, n_fish_fleets]`, in this example `1 × 2 × 1 × 2 × 2`. The table below summarises the intended sharing structure before we implement it:
+We start from `est_all` to get the correctly dimensioned parameter array, then overwrite the map. The parameter array `fish_fixed_sel_pars` has dimensions `[n_regions, n_max_sel_pars, n_max_sel_blocks, n_sexes, n_fish_fleets]`, in this example `1 × 2 × 1 × 2 × 2`. The table below summarizes the intended sharing structure before we implement it:
 
 | Fleet | Parameter | Female index | Male index | Shared? |
 |-------|-----------|-------------|------------|---------|

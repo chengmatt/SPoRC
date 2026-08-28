@@ -230,13 +230,13 @@ check_msy_rec_model <- function(what, rec_model, sr_penalty = 0) {
                 ": they scale spawning biomass per recruit by mean recruitment and are well defined here.")
 
   # A stock-recruit penalty does fit a curve, but it is scored against the
-  # recruitment deviations rather than governing the stock, so maximising yield
+  # recruitment deviations rather than governing the stock, so maximizing yield
   # over it would assert something the fit never assumed. Its scale and
   # steepness are reported, so a caller who does want that can build srr_opt.
   if(sr_penalty > 0) {
     msg <- paste0(msg, " This fit does carry a stock-recruit penalty (sr_penalty = ", sr_penalty,
                   "), but that curve is scored against the recruitment deviations rather than driving ",
-                  "the dynamics, so maximising equilibrium yield over it would assert a stock-recruit ",
+                  "the dynamics, so maximizing equilibrium yield over it would assert a stock-recruit ",
                   "relationship this fit did not assume. Its scale and steepness are reported as sr_R0 ",
                   "and h_trans, so a projection over that curve can be requested deliberately by ",
                   "passing them through srr_opt.")
@@ -294,7 +294,7 @@ check_msy_rec_model <- function(what, rec_model, sr_penalty = 0) {
 #'     \item{\code{"global_MSY"}}{Single shared \eqn{F_{MSY}} with
 #'       movement. Valid for single-population models only.}
 #'     \item{\code{"local_MSY"}}{Region-specific \eqn{F_{MSY}} values
-#'       that jointly maximise total yield with movement. Valid for both
+#'       that jointly maximize total yield with movement. Valid for both
 #'       single- and multi-population models.}
 #'   }
 #' @param n_avg_yrs Integer. Number of terminal years over which demographic
@@ -398,10 +398,7 @@ Get_Reference_Points <- function(data,
     stop("move_timing == 2 (continuous movement) requires the CTMC generator, but rep$Mrate is NULL. ",
          "Continuous movement reference points need move_type == 1 with use_fixed_movement == 0.")
 
-  # Average the generator on the RATE scale when movement is continuous. Averaging the
-  # exponentiated movement fractions instead would be wrong, since mean(expm(Q)) != expm(mean(Q)),
-  # and the discrepancy grows with movement rate. Returns a zero placeholder of matching
-  # shape when movement is discrete, so downstream data lists always carry the field.
+  # Average the generator on the rate scale when movement is continuous. Average Mrate matrix instead of the movement fracs.
   avg_Mrate <- function(pop_idx, out_dim) {
     if(move_timing != 2) return(array(0, dim = out_dim))
     array(apply(rep$Mrate[pop_idx,,,avg_yrs,,,1,drop = FALSE], c(1,2,3,5,6), mean), dim = out_dim)
@@ -412,6 +409,7 @@ Get_Reference_Points <- function(data,
     if(n_regions > 1) stop("Single region reference points specified, but n_regions > 1!")
 
     data_list <- list() # set up data list
+    
     # Reference points are only correct under the stock-recruit curve the model was
     # fitted with; the two curves agree at (S0, R0) and nowhere else. Absent on
     # older data lists, which predate the Ricker, so default to Beverton-Holt.

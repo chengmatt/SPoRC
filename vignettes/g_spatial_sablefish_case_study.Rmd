@@ -107,7 +107,7 @@ constant across regions the three `move_timing` options coincide exactly.
 
 ## Recruitment and regional apportionment
 
-Recruitment follows a mean-recruitment parameterisation with no stock recruit
+Recruitment follows a mean-recruitment parameterization with no stock recruit
 relationship, and a single global parameter is apportioned among regions:
 
 $$N_{r,y,a=1,s} = \mu^{\text{Rec}}\,\zeta_{r}\exp\left(\epsilon^{\text{Rec}}_{r,y} - \dfrac{\sigma^{2}_{\text{Rec},y}}{2}b_{y}\right)\psi_{s}$$
@@ -119,12 +119,12 @@ $$\zeta_{r} = \dfrac{\exp\left(\varsigma_{r}\right)}{\sum_{k}\exp\left(\varsigma
 
 Apportionment parameters are weakly identified, because regional recruitment,
 regional fishing mortality and movement can trade off against one another to
-produce nearly the same regional abundances. A Dirichlet prior regularises them:
+produce nearly the same regional abundances. A Dirichlet prior regularizes them:
 
 $$P\left(\boldsymbol{\zeta}\right) = \dfrac{\Gamma\left(\sum_{r}\alpha_{r}\right)}{\prod_{r}\Gamma\left(\alpha_{r}\right)}\prod_{r=1}^{n_{r}}\zeta_{r}^{\alpha_{r}-1}$$
 
 with $\alpha_{r} = 3$ in every region. A symmetric $\boldsymbol{\alpha}$ with
-$\alpha > 1$ has its mode at $1/n_{r}$, so this is a prior centred on *equal*
+$\alpha > 1$ has its mode at $1/n_{r}$, so this is a prior centered on *equal*
 recruitment across regions, informative rather than vague. The concentration
 $\kappa = \sum_{r}\alpha_{r} - n_{r} = 10$ behaves as the number of prior
 pseudo-observations, which is what to adjust if the prior is fighting the data.
@@ -160,7 +160,7 @@ input_list <- Setup_Mod_Rec(
 ## Biological dynamics
 
 Natural mortality is fixed at a single sex-invariant value. Spatial models are
-heavily parameterised and $M$ is poorly identified once movement is also being
+heavily parameterized and $M$ is poorly identified once movement is also being
 estimated, since both remove fish from a region, so fixing it removes a
 confounding that the data cannot resolve.
 
@@ -205,7 +205,7 @@ A Dirichlet prior is placed on each row of the movement matrix:
 $$P\left(\mathbf{M}_{r,\cdot}\right) = \dfrac{\Gamma\left(\sum_{k}c_{r,k}\right)}{\prod_{k}\Gamma\left(c_{r,k}\right)}\prod_{k=1}^{n_{r}}M_{r,k}^{c_{r,k}-1}$$
 
 with $c_{r,k} = 3$ throughout. The same caution applies as for the recruitment
-apportionment: a symmetric $c > 1$ is centred on *equal movement to every
+apportionment: a symmetric $c > 1$ is centered on *equal movement to every
 region*, which for a residency-dominated stock is a strong assumption, not a
 vague one. It is used here to keep the estimates away from the boundaries of the
 simplex, where the multinomial logit becomes numerically awkward. To target a
@@ -293,7 +293,7 @@ Several settings control cost and identifiability rather than structure:
 - **Initial tagging mortality and shedding fixed.** Both are confounded with
   natural mortality, which is itself already fixed.
 - **Reporting rates shared across regions**, estimated in two time blocks, under
-  a symmetric beta prior with $\sigma = 5$ that penalises the extremes of
+  a symmetric beta prior with $\sigma = 5$ that penalizes the extremes of
   $[0,1]$ without asserting a central value.
 
 ```{r Setup Tagging, message = FALSE}
@@ -377,7 +377,7 @@ $$\sum_{a}\sum_{s} p_{r,y,a,s} = 1 \quad \text{for each region } r$$
 so the data carry information about the sex ratio within a region but not about
 the relative abundance *between* regions. That between-region information is
 deliberately left to the indices and the tagging data. Fitting compositions that
-were normalised across regions instead would let composition data speak to
+were normalized across regions instead would let composition data speak to
 regional apportionment, which is precisely the quantity the tags are there to
 inform.
 

@@ -9,7 +9,7 @@
 #          1.5 and on K from 2000 carried cohort by cohort, length based double
 #          normal selectivity with two fishery blocks and annual deviations on
 #          the survey's ascending width, and compositions recorded on 24 five
-#          centimetre bins mapped from the model's 121 population bins.
+#          centimeter bins mapped from the model's 121 population bins.
 #
 #          Three stages: set every parameter to the assessment's maximum
 #          likelihood estimate and check the population, the growth and the

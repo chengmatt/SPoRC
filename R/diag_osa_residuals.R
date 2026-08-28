@@ -341,7 +341,7 @@ osa_one_step_predict <- function(model, ..., discreteSupport = NULL, parallel = 
 #' @param pop Logical; population-specific composition source. Default \code{FALSE}.
 #' @param discard Logical; discard composition source. Default \code{FALSE}.
 #' @param bins Vector of age or length bin labels for display. Must span every observed bin of the stream, not just
-#'   the ones a \code{*_bins} restriction fits: residuals are labelled by true
+#'   the ones a \code{*_bins} restriction fits: residuals are labeled by true
 #'   observed bin number, so a subset here shifts every label.
 #' @param bin_label Character label describing whether bins represent ages or lengths.
 #' @param parallel Whether or not to parallelize OSA computation. Defaults to \code{FALSE}.
@@ -432,7 +432,7 @@ run_internal_comp_osa <- function(model, data, comp_source, family,
 #' @param data The data list the model was built from.
 #' @param comp_source Either \code{"Fish_caal"} or \code{"Srv_caal"}.
 #' @param bins Age bins, used to label the residuals. Must span every observed bin of the stream, not just
-#'   the ones a \code{*_bins} restriction fits: residuals are labelled by true
+#'   the ones a \code{*_bins} restriction fits: residuals are labeled by true
 #'   observed bin number, so a subset here shifts every label.
 #' @param bin_label Label for the bin axis, typically \code{"Age"}.
 #' @param osa_method Optional override for the \code{oneStepPredict} method.
@@ -1109,7 +1109,7 @@ plot_resids <- function(osa_results) {
   sdnr_table <- function(res, grp_vars) {
     grouped <- if(length(grp_vars)) dplyr::group_by(res, dplyr::across(dplyr::all_of(grp_vars))) else res
     grouped %>%
-      dplyr::summarise(
+      dplyr::summarize(
         df  = n() - 1,
         HCI = sqrt(qchisq(.975, df) / df),
         LCI = sqrt(qchisq(.025, df) / df),

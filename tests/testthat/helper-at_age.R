@@ -82,3 +82,11 @@ build_at_age <- function(n_yrs = 20, n_ages = 5, n_regions = 1, n_sexes = 1, n_f
 }
 
 at_age_rep <- function(il) fit_model(il$data, il$par, il$map, do_optim = FALSE, silent = TRUE)$rep
+
+# Reference multivariate normal log density, so the correlation tests can state
+# the covariance they expect without taking a dependency on another package.
+dmvn_ref <- function(x, Sigma) {
+  R <- chol(Sigma)
+  z <- backsolve(R, x, transpose = TRUE)
+  return(-0.5 * (length(x) * log(2 * pi) + 2 * sum(log(diag(R))) + sum(z^2)))
+}

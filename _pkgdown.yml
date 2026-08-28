@@ -7,9 +7,12 @@ template:
 
 navbar:
   structure:
-    left:  [reference, articles, case_studies, news]
+    left:  [reference, articles, case_studies, roadmap, news]
     right: [search, github]
   components:
+    roadmap:
+      text: Roadmap
+      href: articles/aj_development_roadmap.html
     case_studies:
       text: Case Studies
       menu:
@@ -94,6 +97,7 @@ articles:
 
   - title: "For Developers"
     contents:
+      - aj_development_roadmap
       - architecture
       - contributing
 

@@ -26,7 +26,7 @@
 #' @param rep Named list of report values from the fitted model
 #'   (\code{obj$rep}).
 #' @param sd_rep \code{sdreport} object from the fitted model, used to
-#'   extract optimised parameter values in list format via
+#'   extract optimized parameter values in list format via
 #'   \code{get_optim_param_list}.
 #' @param n_sims Integer. Number of simulation replicates.
 #' @param newton_loops Integer. Number of Newton refinement steps applied
@@ -45,7 +45,7 @@
 #'   \code{rep}) to extract and store from each replicate. An error is raised
 #'   if any name is not found in \code{rep}. Default \code{c("SSB", "Rec")}.
 #' @param sim_recruitment Character. How the operating model generates
-#'   recruitment. \code{"input"} (default, and the historical behaviour) feeds
+#'   recruitment. \code{"input"} (default, and the historical behavior) feeds
 #'   the estimated recruitment series in as \code{Rec_input}, so every simulated
 #'   replicate carries the same recruitment and \code{rec_model} has no effect on
 #'   the data. That conditions away recruitment and tests everything downstream

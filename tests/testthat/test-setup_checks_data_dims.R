@@ -213,9 +213,9 @@ test_that("composition inputs ignore the observed-age dimension", {
   }
 })
 
-test_that("an unrecognised `what` label validates nothing", {
+test_that("an unrecognized `what` label validates nothing", {
   # Every branch is gated on a `what` match, so a typo silently skips
-  # validation rather than erroring. Pinning this documents the behaviour.
+  # validation rather than erroring. Pinning this documents the behavior.
   expect_silent(check_data(arr(c(1, 1)), "ObsCatchh"))
   expect_silent(check_data(arr(c(1, 1)), "not_a_real_input"))
 })

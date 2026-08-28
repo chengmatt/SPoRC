@@ -66,14 +66,14 @@ equil_rec_ssb_deriv <- function(S, S0, R0, h, rec_model) {
 
 #' Compute Beverton-Holt Fmsy for a single-region or non-spatial model
 #'
-#' Finds \eqn{F_{MSY}} by maximising equilibrium yield under a
+#' Finds \eqn{F_{MSY}} by maximizing equilibrium yield under a
 #' Beverton-Holt stock-recruit relationship. Yield is computed from
 #' spawning biomass per recruit (\eqn{\phi_F}), the BH equilibrium
 #' recruitment formula, and catch-at-age integrated across all seasons.
 #' Supports multiple populations via stray rates but does not include
 #' spatial movement. Yield includes only landings from fleets where
 #' \code{is_discard_fleet == 0}; discard-only fleets contribute to total
-#' mortality but not to the yield being maximised.
+#' mortality but not to the yield being maximized.
 #'
 #' @param pars Named list of RTMB parameters. Must contain:
 #'   \describe{
@@ -92,7 +92,7 @@ equil_rec_ssb_deriv <- function(S, S0, R0, h, rec_model) {
 #'       dynamics and spawning biomass.}
 #'   }
 #'
-#' @return Numeric scalar. Negative total equilibrium yield (minimised to
+#' @return Numeric scalar. Negative total equilibrium yield (minimized to
 #'   find \eqn{F_{MSY}}).
 #'
 #' @keywords internal
@@ -109,7 +109,7 @@ single_region_Fmsy <- function(pars, data) {
   # assigning before getAll, which would collide with its own definition.
   if(!exists("rec_model", inherits = FALSE)) rec_model <- 1
 
-  # rec_model 0 is mean recruitment, which has no curve to maximise yield over.
+  # rec_model 0 is mean recruitment, which has no curve to maximize yield over.
   # The helpers below branch on Ricker against everything else, so without this
   # a mean recruitment fit would come back with Beverton-Holt numbers.
   if(rec_model == 0) stop("rec_model = 0 (mean recruitment) has no stock-recruit curve, so Fmsy is undefined. ",
@@ -309,13 +309,13 @@ single_region_Fmsy <- function(pars, data) {
 
 #' Compute Beverton-Holt Fmsy for a spatially explicit model
 #'
-#' Calculates \eqn{F_{MSY}} by maximising equilibrium yield under a
+#' Calculates \eqn{F_{MSY}} by maximizing equilibrium yield under a
 #' Beverton-Holt stock-recruit relationship. Yield is computed from
 #' spawning biomass per recruit (\eqn{\phi_F}), the BH equilibrium
 #' recruitment formula, and catch-at-age integrated across all regions,
 #' seasons, and movement transitions. Yield includes only landings from
 #' fleets where \code{is_discard_fleet == 0}; discard-only fleets
-#' contribute to total mortality but not to the yield being maximised.
+#' contribute to total mortality but not to the yield being maximized.
 #'
 #' Supports multi-region, single-population models with seasonal movement.
 #' Straying is not included here (use \code{single_region_Fmsy} for
@@ -416,7 +416,7 @@ single_region_Fmsy <- function(pars, data) {
 #'       affect population dynamics and spawning biomass.}
 #'   }
 #'
-#' @return Numeric scalar. Negative total equilibrium yield (minimised to
+#' @return Numeric scalar. Negative total equilibrium yield (minimized to
 #'   find \eqn{F_{MSY}}).
 #'
 #' @keywords internal
@@ -438,7 +438,7 @@ global_Fmsy <- function(pars,
   # implicit matrix exponential option, so fall back to the exact exponential.
   if(!exists("expm_nsub", inherits = FALSE)) expm_nsub <- 0
 
-  # rec_model 0 is mean recruitment, which has no curve to maximise yield over.
+  # rec_model 0 is mean recruitment, which has no curve to maximize yield over.
   # The helpers below branch on Ricker against everything else, so without this
   # a mean recruitment fit would come back with Beverton-Holt numbers.
   if(rec_model == 0) stop("rec_model = 0 (mean recruitment) has no stock-recruit curve, so Fmsy is undefined. ",
@@ -703,7 +703,7 @@ global_Fmsy <- function(pars,
 #' Compute region-specific Beverton-Holt Fmsy for a spatially explicit
 #' single-population model
 #'
-#' Computes the vector of regional \eqn{F_{MSY}} values that jointly maximise
+#' Computes the vector of regional \eqn{F_{MSY}} values that jointly maximize
 #' total equilibrium yield across all regions under a spatially explicit
 #' Beverton-Holt stock-recruit relationship. Unlike \code{\link{global_Fmsy}},
 #' which constrains all regions to share a single fishing mortality, this
@@ -752,7 +752,7 @@ global_Fmsy <- function(pars,
 #'   }
 #'
 #' @return Numeric scalar. Negative total equilibrium yield across all regions.
-#'   This is minimised to obtain the vector of regional \eqn{F_{MSY}} values.
+#'   This is minimized to obtain the vector of regional \eqn{F_{MSY}} values.
 #'
 #' @details
 #' Fishing mortality is decomposed into retained and discarded components:
@@ -804,7 +804,7 @@ local_Fmsy_sglpop <- function(pars, data) {
   # implicit matrix exponential option, so fall back to the exact exponential.
   if(!exists("expm_nsub", inherits = FALSE)) expm_nsub <- 0
 
-  # rec_model 0 is mean recruitment, which has no curve to maximise yield over.
+  # rec_model 0 is mean recruitment, which has no curve to maximize yield over.
   # The helpers below branch on Ricker against everything else, so without this
   # a mean recruitment fit would come back with Beverton-Holt numbers.
   if(rec_model == 0) stop("rec_model = 0 (mean recruitment) has no stock-recruit curve, so Fmsy is undefined. ",
@@ -1071,7 +1071,7 @@ local_Fmsy_sglpop <- function(pars, data) {
   } # end o loop
 
   # Unfished spawning biomass and recruitment by destination region: the two
-  # quantities both stock-recruit curves are parameterised by.
+  # quantities both stock-recruit curves are parameterized by.
   S0_d = rep(0, n_regions)
   for(d in 1:n_regions) S0_d[d] = sum(SB_unfished_mat[, d] * R0 * rec_region_prop)
   R0_d = R0 * rec_region_prop
@@ -1144,7 +1144,7 @@ local_Fmsy_sglpop <- function(pars, data) {
 #' Compute local Beverton-Holt Fmsy for a spatially explicit multi-population model
 #'
 #' Multi-population extension of \code{\link{local_Fmsy_sglpop}}. Estimates a
-#' vector of region-specific \eqn{F_{MSY}} values that jointly maximise total
+#' vector of region-specific \eqn{F_{MSY}} values that jointly maximize total
 #' equilibrium yield when multiple populations, each with distinct natal regions,
 #' movement schedules, and Beverton-Holt parameters, co-occupy a shared spatial
 #' domain.
@@ -1176,7 +1176,7 @@ local_Fmsy_sglpop <- function(pars, data) {
 #'
 #' Effective spawning biomass at each population's natal region includes
 #' contributions from all populations via straying. Stray contributions are
-#' scaled by \code{stray_rate} and normalised by
+#' scaled by \code{stray_rate} and normalized by
 #' \code{n_pop_in_region} to preserve mass balance.
 #'
 #' Equilibrium recruitment by population is obtained via a Newton-Raphson
@@ -1204,7 +1204,7 @@ local_Fmsy_sglpop <- function(pars, data) {
 #'     \item{\code{natal_region}}{Integer vector \code{[n_pop]}. Natal region
 #'       index for each population.}
 #'     \item{\code{n_pop_in_region}}{Integer vector \code{[n_regions]}. Number
-#'       of populations sharing each natal region (used to normalise straying).}
+#'       of populations sharing each natal region (used to normalize straying).}
 #'     \item{\code{newton_steps}}{Integer. Number of Newton-Raphson iterations
 #'       used to solve for equilibrium recruitment.}
 #'     \item{\code{is_discard_fleet}}{Integer vector \code{[n_fish_fleets]}.
@@ -1215,7 +1215,7 @@ local_Fmsy_sglpop <- function(pars, data) {
 #'   }
 #'
 #' @return Numeric scalar. Negative total equilibrium yield across all regions.
-#'   This objective is minimised to obtain the vector of regional
+#'   This objective is minimized to obtain the vector of regional
 #'   \eqn{F_{MSY}} values.
 #'
 #' @details
@@ -1227,7 +1227,7 @@ local_Fmsy_sglpop <- function(pars, data) {
 #' The objective function is the negative of total yield, summed across all
 #' populations and regions. Yield includes only landings from fleets where
 #' \code{is_discard_fleet == 0}; discard-only fleets contribute to mortality
-#' but not to the yield being maximised.
+#' but not to the yield being maximized.
 #'
 #' @keywords internal
 #' @import RTMB
@@ -1247,7 +1247,7 @@ local_Fmsy_multipop <- function(pars, data) {
   # implicit matrix exponential option, so fall back to the exact exponential.
   if(!exists("expm_nsub", inherits = FALSE)) expm_nsub <- 0
 
-  # rec_model 0 is mean recruitment, which has no curve to maximise yield over.
+  # rec_model 0 is mean recruitment, which has no curve to maximize yield over.
   # The helpers below branch on Ricker against everything else, so without this
   # a mean recruitment fit would come back with Beverton-Holt numbers.
   if(rec_model == 0) stop("rec_model = 0 (mean recruitment) has no stock-recruit curve, so Fmsy is undefined. ",

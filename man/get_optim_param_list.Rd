@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils_postfit.R
 \name{get_optim_param_list}
 \alias{get_optim_param_list}
-\title{Populate a parameter list with optimised values from sdreport}
+\title{Populate a parameter list with optimized values from sdreport}
 \usage{
 get_optim_param_list(parameters, mapping, sd_rep, random)
 }
@@ -22,15 +22,15 @@ effects in \code{RTMB::MakeADFun}. Used to route extraction to
 }
 \value{
 The \code{parameters} list with all estimated elements replaced by
-  their optimised values. Fixed (\code{NA}-mapped) elements retain their
+  their optimized values. Fixed (\code{NA}-mapped) elements retain their
   original starting values.
 }
 \description{
 Replaces starting values in \code{parameters} with the corresponding
-optimised estimates from \code{sd_rep}, respecting the factor-map sharing
+optimized estimates from \code{sd_rep}, respecting the factor-map sharing
 structure in \code{mapping}. For each parameter: if a map exists, factor
 level integers are used to index into the estimated value vector so that
-shared elements receive the same optimised value and \code{NA}-mapped
+shared elements receive the same optimized value and \code{NA}-mapped
 (fixed) elements are left unchanged. Parameters absent from \code{mapping}
 are treated as fully estimated and filled in sequentially. Random effects
 are sourced from \code{sd_rep$par.random}; all other estimated parameters

@@ -213,7 +213,7 @@ input_list <- Setup_Mod_SrvIdx_and_Comps(
 
 
 ## Setup Fishery Selectivity and Catchability
-Following defining the data inputs into the model, we can specify the fishery selectivity and catchability parameterizations. Here, no time-varying selectivity is specified, and selectivity is modelled as logistic with parameters $b_{50}$ and $b_{95}$. Catchability is fixed because no fishery indices are included in the model.
+Following defining the data inputs into the model, we can specify the fishery selectivity and catchability parameterizations. Here, no time-varying selectivity is specified, and selectivity is modeled as logistic with parameters $b_{50}$ and $b_{95}$. Catchability is fixed because no fishery indices are included in the model.
 
 ```{r, eval = FALSE}
 input_list <- Setup_Mod_Fishsel_and_Q(
@@ -237,7 +237,7 @@ input_list <- Setup_Mod_Fishsel_and_Q(
 ```
 
 ## Setup Survey Selectivity and Catchability
-Similar to the `Setup_Mod_Fishsel_and_Q` function, we can define the survey selectivity and catchability parameterizations. Again, no time-vaying selectivity is specified, and selectivity is modelled as logistic with parameters $b_{50}$ and $b_{95}$. However, catchabiltiy is estiamted with a estimated for the survey index. Note that the survey prior specifications must be passed into the function as a dataframe with column names: `region`, `block`, `fleet`, `mu`, and `sd.`
+Similar to the `Setup_Mod_Fishsel_and_Q` function, we can define the survey selectivity and catchability parameterizations. Again, no time-vaying selectivity is specified, and selectivity is modeled as logistic with parameters $b_{50}$ and $b_{95}$. However, catchabiltiy is estiamted with a estimated for the survey index. Note that the survey prior specifications must be passed into the function as a dataframe with column names: `region`, `block`, `fleet`, `mu`, and `sd.`
 
 ```{r eval = FALSE}
 
@@ -667,7 +667,7 @@ ggplot() +
                                  Type = c("Recruitment" = "Age 2 Recruitment (millions)", "SSB" = 'SSB (kt)'))) +
   labs(x = "Year", y = "Value") +
   theme_bw(base_size = 20) +
-  scale_color_manual(values = c("red", 'grey')) +
+  scale_color_manual(values = c("red", 'gray')) +
   geom_text(data = jitter_res %>% filter(Type == 'SSB', Year == 1, jitter == 1),
             aes(x = Inf, y = Inf, label = paste("Proportion Converged: ", round(prop_converged$prop_conv, 3))),
             hjust = 1.1, vjust = 1.9, size = 6, color = "black")

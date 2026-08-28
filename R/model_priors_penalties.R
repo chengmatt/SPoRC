@@ -597,7 +597,7 @@ Get_Fdev_PE_loglik <- function(PE_model, ln_sigmaF, Fdev_rho, ln_F_devs, map_ln_
         sigma <- exp(ln_sigmaF[r,seas,f])
         if(PE_model == 3) rho <- rho_trans(Fdev_rho[r,seas,f])
 
-        # Centring on the deviations' own mean penalizes only their spread, leaving
+        # Centering on the deviations' own mean penalizes only their spread, leaving
         # their level free. With a mean-plus-deviations parameterization the level
         # is already carried by the mean, so this is the form that does not
         # penalize it twice.
@@ -850,12 +850,12 @@ get_selex_fixed_penalty <- function(selex_penalty, fixed_sel_pars) {
 #' @param init_bias_ramp Numeric vector of length \code{n_ages - 1}, the bias
 #'   ramp read at the year each initial age was born (deviation index
 #'   \code{1 - age}). \code{NULL} uses the first model year's ramp value for
-#'   every age, the previous behaviour.
+#'   every age, the previous behavior.
 #' @param init_devs_pen_use Array of 0/1 matching \code{ln_InitDevs}, naming
 #'   which cells are penalized. Sexes sharing one parameter keep only the first
 #'   sex's copy flagged so the shared parameter is not penalized twice;
 #'   sex-specific deviations flag every sex. \code{NULL} penalizes only the
-#'   first sex's slice, which is the pre-sex-dimension behaviour.
+#'   first sex's slice, which is the pre-sex-dimension behavior.
 #' @param Use_init_sex_pen Integer (0/1). Whether each later sex's initial
 #'   age deviations are tied to the first sex's through a Gaussian on their
 #'   difference at every penalized age. Only meaningful when the sexes carry
@@ -957,10 +957,10 @@ get_recruitment_penalty <- function(n_pop, n_regions, n_ages, n_est_rec_devs, re
         # figure out indexing
         init_idx <- if(equil_init_age_strc == 1) 1:(n_ages - 2) else if(equil_init_age_strc == 2) 1:dim(ln_InitDevs)[3] else unique(init_age_devs_shared[!is.na(init_age_devs_shared)])
 
-        # The own-mean centre pools every penalized cell across ages and sexes, so
+        # The own-mean center pools every penalized cell across ages and sexes, so
         # sex-specific deviations share one level the way a single estimated mean
-        # would; with only the first sex penalized this is the previous behaviour.
-        # The fixed centre carries each initial age's own bias correction: the ramp
+        # would; with only the first sex penalized this is the previous behavior.
+        # The fixed center carries each initial age's own bias correction: the ramp
         # read at the year that age was born, which precedes the first model year.
         # A caller without that vector gets the first model year's value for every age.
         ramp_init <- if(is.null(init_bias_ramp)) rep(bias_ramp[1], length(init_idx)) else init_bias_ramp[init_idx]
@@ -1007,13 +1007,13 @@ get_recruitment_penalty <- function(n_pop, n_regions, n_ages, n_est_rec_devs, re
 #' stock-recruit residual penalty. Under a stock-recruit relationship the
 #' deviations are residuals about the predicted curve, so a model that also
 #' wants to keep the recruitment series itself from wandering has nowhere to say
-#' so; this is that second statement. Centring on the series' own mean penalizes
+#' so; this is that second statement. Centering on the series' own mean penalizes
 #' only its variability and leaves its level to the rest of the model.
 #'
 #' @param Rec Array \code{[pop, region, year]} of recruitment.
 #' @param sigma Numeric standard deviation of the penalty.
-#' @param center Integer. \code{1} centres on the mean of the log series,
-#'   \code{0} centres on zero.
+#' @param center Integer. \code{1} centers on the mean of the log series,
+#'   \code{0} centers on zero.
 #' @param yrs Integer vector of years the penalty applies over, or \code{NULL}
 #'   for every year.
 #'

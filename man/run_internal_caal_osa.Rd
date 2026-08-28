@@ -22,7 +22,7 @@ run_internal_caal_osa(
 \item{comp_source}{Either \code{"Fish_caal"} or \code{"Srv_caal"}.}
 
 \item{bins}{Age bins, used to label the residuals. Must span every observed bin of the stream, not just
-the ones a \code{*_bins} restriction fits: residuals are labelled by true
+the ones a \code{*_bins} restriction fits: residuals are labeled by true
 observed bin number, so a subset here shifts every label.}
 
 \item{bin_label}{Label for the bin axis, typically \code{"Age"}.}

@@ -10,15 +10,15 @@
 
 #' Size-age transition array for the length-structured fixture
 #'
-#' Spreads each age across the length bins with a normal kernel, normalised so the lengths
+#' Spreads each age across the length bins with a normal kernel, normalized so the lengths
 #' for a given age sum to one. Selectivity at age is then a weighted average of selectivity
 #' at length.
 #'
 #' @keywords internal
 objective_fixture_sizeage <- function(n_lens, n_ages) {
   vapply(seq_len(n_ages), function(a) {
-    centre <- 1 + (a - 1) * (n_lens - 1) / (n_ages - 1)
-    w <- stats::dnorm(seq_len(n_lens), centre, 1)
+    center <- 1 + (a - 1) * (n_lens - 1) / (n_ages - 1)
+    w <- stats::dnorm(seq_len(n_lens), center, 1)
     w / sum(w)
   }, numeric(n_lens))
 }
@@ -220,7 +220,7 @@ objective_fixture_input <- function(rec = list(), catch_f = list(), fishsel = li
 }
 
 
-#' Evaluate the objective without optimising
+#' Evaluate the objective without optimizing
 #'
 #' These tests compare jnLL at a common set of parameter values, so the model is only ever
 #' evaluated, never fitted.

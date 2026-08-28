@@ -27,8 +27,8 @@ Setup_Mod_SrvIdx_and_Comps(
   SrvIdxAA_pop_sigma_form = "none",
   AgeObsCorr_srv_idx = "iid",
   AgeObsCorr_srv_idx_pop = "iid",
-  rho_srv_idx_key = NULL,
-  rho_srv_idx_pop_key = NULL,
+  rho_srv_idx_spec = NULL,
+  rho_srv_idx_pop_spec = NULL,
   sigmaSrvIdx_spec = "fix",
   sigmaSrvIdx_map = NULL,
   sigmaSrvIdx_pop_spec = "fix",
@@ -141,8 +141,10 @@ the survey index at age, \code{"iid"} (default), \code{"1dar1"},
 \code{"us"} or \code{"2dar1"}, one setting for every fleet or one per
 fleet. See \code{\link{Setup_Mod_Catch_and_F}}.}
 
-\item{rho_srv_idx_key, rho_srv_idx_pop_key}{Integer matrices
-\code{[n_sexes, n_srv_fleets]} coupling the across-age correlation.}
+\item{rho_srv_idx_spec, rho_srv_idx_pop_spec}{How the correlation parameters
+are shared, over region, sex and fleet, using the package's spec strings.
+\code{NULL} (the default) gives one per fleet. See
+\code{\link{Setup_Mod_Catch_and_F}}.}
 
 \item{sigmaSrvIdx_spec}{Character string controlling the estimated component of the
 aggregated survey index observation error, one value per fleet. One of:
@@ -218,7 +220,7 @@ Default: all zeros.}
 
   A \code{"recdev"} fleet observes year class strength directly rather than
   any part of the population. Its predicted value is
-  \code{q * (ln_RecDevs - mu)}, with \code{mu} the centre the recruitment
+  \code{q * (ln_RecDevs - mu)}, with \code{mu} the center the recruitment
   penalty asserts for that year, so it measures the anomaly rather than the
   deviation as stored; under a bias ramp the two differ. Such a fleet reads
   no numbers at age, so its selectivity, survey timing and weight at age are
@@ -454,7 +456,7 @@ The input \code{input_list} with survey data stored in \code{$data}
 \description{
 Ingests observed survey index, age composition, and length composition data
 (both pooled and population-specific) into \code{input_list$data},
-initialises overdispersion and correlation starting values in
+initializes overdispersion and correlation starting values in
 \code{input_list$par}, and constructs parameter maps via
 \code{\link{do_comp_theta_mapping}} and \code{\link{do_comp_corr_pars_mapping}}
 (called with \code{comp_prefix = "SrvAge"}/\code{"SrvLen"} and

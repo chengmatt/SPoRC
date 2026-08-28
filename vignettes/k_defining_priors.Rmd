@@ -401,7 +401,7 @@ curve's prediction as `SR_pred`.
 
 When stray rates are estimated (`stray_rate_spec` is not `"fix"`), a beta prior should almost always be used to keep estimation stable. Estimation of stray rates are only applicable when `n_pop > 1`. The prior is specified via a dataframe passed to `stray_rate_prior`, with columns `pop`, `block`, `mu`, and `sd`. The mean (`mu`) and standard deviation (`sd`) are supplied in probability space and are internally converted to beta shape parameters via method-of-moments. Note that `sd` must satisfy $\sigma < \sqrt{\mu(1-\mu)}$ to ensure a valid (unimodal) beta density.
 
-In the example below, stray rates are estimated independently per population using a single time block, with population 1 given a prior centred at 0.1 and population 2 centred at 0.5:
+In the example below, stray rates are estimated independently per population using a single time block, with population 1 given a prior centered at 0.1 and population 2 centered at 0.5:
 
 ```{r, eval = FALSE}
 

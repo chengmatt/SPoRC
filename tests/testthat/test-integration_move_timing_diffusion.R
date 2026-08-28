@@ -15,7 +15,7 @@ library(Matrix)
 # closed form, q = 1, M fixed. The estimation model is then pinned at those generating
 # values and log_move_diffusion_pars is the single free parameter, started away from the
 # truth. That isolates movement: a failure here is a movement-likelihood defect and not a
-# 200-parameter optimisation that wandered off.
+# 200-parameter optimization that wandered off.
 #
 
 N_YRS <- 25
@@ -93,7 +93,7 @@ build_om <- function(move_timing, seed = 1234) {
   )
 
   # CTMC movement at a known diffusion parameter, built through Get_Movement so the
-  # operating model uses exactly the parameterisation the estimation model inverts.
+  # operating model uses exactly the parameterization the estimation model inverts.
   mv <- Get_Movement(
     move_type = 1, do_recruits_move = 0,
     n_pop = 1, n_regions = N_REGIONS, n_yrs = N_YRS, n_proj_yrs_devs = 0,
@@ -325,11 +325,11 @@ test_that("CTMC diffusion parameter is recovered at every movement timing", {
 })
 
 # ---------------------------------------------------------------------------
-# 3. The likelihood surface itself is minimised at the truth
+# 3. The likelihood surface itself is minimized at the truth
 # ---------------------------------------------------------------------------
 
-test_that("likelihood over the diffusion parameter is minimised at the generating value", {
-  # Guards against the optimiser happening to land on the right answer while the surface
+test_that("likelihood over the diffusion parameter is minimized at the generating value", {
+  # Guards against the optimizer happening to land on the right answer while the surface
   # is flat or its minimum sits somewhere else.
   grid <- log(c(0.15, 0.20, 0.25, 0.30, 0.35, 0.45, 0.60))
   for (fx in fixtures) {

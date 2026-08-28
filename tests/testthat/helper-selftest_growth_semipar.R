@@ -7,7 +7,7 @@
 # The surface is smooth in both directions (a slow wave over years times a
 # gradient over ages) rather than white noise, which is what the correlated
 # process errors are for: a 2D AR(1) or a 3D GMRF can borrow strength across
-# neighbouring ages and years, and a surface with no structure would give it
+# neighboring ages and years, and a surface with no structure would give it
 # nothing to borrow.
 
 spcfg <- list(

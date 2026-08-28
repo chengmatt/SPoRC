@@ -59,7 +59,7 @@ test_that("Setup_Sim_Dim derives season durations that sum to one", {
   expect_equal(sum(out$seasdur), 1)
 })
 
-test_that("Setup_Sim_Dim sets the initialisation iterations from the age range", {
+test_that("Setup_Sim_Dim sets the initialization iterations from the age range", {
   expect_equal(sim_dim()$init_iter, 10 * 10)
 })
 

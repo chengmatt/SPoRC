@@ -22,7 +22,7 @@ back on, already expanded over years.}
 Array \code{[n_years x n_ages x n_obs_ages x n_fleets]}.
 }
 \description{
-Ageing error is a property of the sampling programme, so a fishery that ages
+Ageing error is a property of the sampling program, so a fishery that ages
 its catch from otoliths and a survey that reads scales do not misclassify the
 same way. \code{AgeingError_fish} and \code{AgeingError_srv} let each fleet
 carry its own matrix, defaulting to the shared \code{AgeingError} so a model

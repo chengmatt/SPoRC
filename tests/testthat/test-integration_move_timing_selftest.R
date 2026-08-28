@@ -254,7 +254,7 @@ test_that("MSY and SPR reference points agree on per-recruit biology at every ti
   # age structure by different code paths, so their unfished spawning biomass per recruit
   # must agree exactly -- at every move_timing, not just the default.
   #
-  # This is the check that exposed the MSY routines honouring move_timing only inside
+  # This is the check that exposed the MSY routines honoring move_timing only inside
   # build_plus_group_T while their age loops, spawning propagation and catch equation
   # stayed hard-coded to movement-then-mortality. Before the fix these disagreed by 3.1%
   # at timing 1 and 1.3% at timing 2, while agreeing exactly at timing 0.
@@ -348,7 +348,7 @@ test_that("MSY and SPR reference points agree on per-recruit biology at every ti
 })
 
 test_that("projecting at Fmsy under Beverton-Holt feedback equilibrates at Bmsy and Req", {
-  # The MSY analogue of the F40% fixed-point test above, and the sharper version of it:
+  # The MSY analog of the F40% fixed-point test above, and the sharper version of it:
   # here recruitment is not pinned, it is regenerated each year from the Beverton-Holt
   # curve, so the per-recruit biology, the catch equation, the plus group and the
   # stock-recruit machinery all have to agree for the loop to settle on Bmsy.
@@ -719,7 +719,7 @@ test_that("seasonal recruitment is apportioned across regions consistently in MS
 
 test_that("CTMC diffusion parameter is recoverable from continuous movement fractions", {
   # Generate movement under a known diffusion parameter, then estimate it back by
-  # minimising the discrepancy between observed and predicted movement fractions.
+  # minimizing the discrepancy between observed and predicted movement fractions.
   # This checks that Get_Movement's generator and the seasdur scaling are mutually
   # consistent -- if the two disagreed, the recovered value would be biased.
   n_regions <- 3; n_ages <- 3; n_sexes <- 1; n_yrs <- 2; n_seas <- 2

@@ -91,7 +91,7 @@ test_that("Single-region BSAI Pacific ocean perch RTMB model produces expected r
   # recruitment, exp(mean_log_rec + sigmaR^2 / 2). SPoRC builds them as exp(R0), and
   # R0 is seeded with that same bias correction, so unlike the BSAI northern rockfish
   # case the two do not differ by exp(sigmaR^2 / 2) here: this configuration runs the
-  # bias ramp at one, which centres the recruitment penalty on the shift the seeds
+  # bias ramp at one, which centers the recruitment penalty on the shift the seeds
   # carry and leaves R0 where it was put.
   #
   # What is left is a level shift. The assessment declares its recruitment deviations

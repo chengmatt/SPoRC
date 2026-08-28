@@ -7,7 +7,7 @@
 marg_AIC(opt, p = 2, n = Inf)
 }
 \arguments{
-\item{opt}{Named list of optimiser output. Must contain \code{$par} and
+\item{opt}{Named list of optimizer output. Must contain \code{$par} and
 either \code{$objective} (e.g., \code{nlminb}) or \code{$value}
 (e.g., \code{optim}).}
 

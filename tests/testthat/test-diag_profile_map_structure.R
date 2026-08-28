@@ -113,7 +113,7 @@ test_that("an unshared target is not flagged", {
 # The helper above is only worth anything if both execution branches actually route through
 # it, so the tests below drive do_likelihood_profile() end to end and read back the map and
 # the parameter values RTMB was handed. RTMB::MakeADFun is stubbed out, so nothing is
-# optimised and no model is built; the stub records its arguments and then fails, which the
+# optimized and no model is built; the stub records its arguments and then fails, which the
 # profile's own error handling absorbs.
 
 profile_call_args <- function(do_par, idx = 3) {

@@ -43,7 +43,7 @@ Numeric vector of length \eqn{K} summing to 1, representing a
 }
 \description{
 Draws a single composition vector of length \eqn{K} from a logistic-normal
-distribution using the additive log-ratio (ALR) parameterisation. The last
+distribution using the additive log-ratio (ALR) parameterization. The last
 category is treated as the reference bin: the mean vector of the underlying
 multivariate normal is \eqn{\mu_k = \log(p_k / p_K)}, \eqn{k = 1, \ldots,
 K-1}. The draw is back-transformed via the additive softmax so the returned

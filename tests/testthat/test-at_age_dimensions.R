@@ -198,9 +198,9 @@ test_that("an AR(1) across ages is spaced by age, not by position", {
   spaced <- (rho^abs(outer(ages, ages, "-"))) * sig^2
   packed <- (rho^abs(outer(seq_along(ages), seq_along(ages), "-"))) * sig^2
   expect_equal(sum(r$CatchAA_nLL[1, 10, 1, , 1, 1]),
-               -mvtnorm::dmvnorm(resid, sigma = spaced, log = TRUE))
+               -dmvn_ref(resid, spaced))
   expect_false(isTRUE(all.equal(sum(r$CatchAA_nLL[1, 10, 1, , 1, 1]),
-                                -mvtnorm::dmvnorm(resid, sigma = packed, log = TRUE))))
+                                -dmvn_ref(resid, packed))))
 })
 
 test_that("an unstructured correlation matches its matrix and is guarded", {
@@ -218,7 +218,7 @@ test_that("an unstructured correlation matches its matrix and is guarded", {
   R <- build_us_corr(pars, na)
 
   expect_equal(sum(r$CatchAA_nLL[1, 10, 1, , 1, 1]),
-               -mvtnorm::dmvnorm(resid, sigma = R * sig^2, log = TRUE))
+               -dmvn_ref(resid, R * sig^2))
   expect_equal(length(unique(stats::na.omit(as.integer(il$map$trans_rho_catch_us)))),
                na * (na - 1) / 2)
 
@@ -244,7 +244,7 @@ test_that("a separable correlation over ages and years needs a complete grid", {
   Ra <- rho_a^abs(outer(1:na, 1:na, "-")); Ry <- rho_y^abs(outer(1:ny, 1:ny, "-"))
 
   expect_equal(sum(r$CatchAA_nLL[1, , 1, , 1, 1]),
-               -mvtnorm::dmvnorm(resid, sigma = kronecker(Ra, Ry) * sig^2, log = TRUE))
+               -dmvn_ref(resid, kronecker(Ra, Ry) * sig^2))
   expect_false(all(is.na(as.integer(il$map$trans_rho_catch_year))))
 
   gap <- array(1, dim = d); gap[1, 3, 1, 2, 1, 1] <- 0
@@ -271,6 +271,62 @@ test_that("the correlation structure is chosen per fleet", {
   expect_error(build_at_age(n_fleets = 2, ObsCatchAA = array(1, dim = d), UseCatchAA = array(1, dim = d),
                             AgeObsCorr_catch = c("iid", "iid", "iid")),
                "Supply one setting per fleet")
+})
+
+test_that("correlations share through the package's spec strings", {
+  ny <- 20; na <- 5
+  d <- c(2, ny, 1, na, 2, 2)
+  obs <- array(1e3, dim = d); use <- array(1, dim = d)
+  mk <- function(corr, spec) build_at_age(n_regions = 2, n_sexes = 2, n_fleets = 2,
+                                          ObsCatchAA = obs, UseCatchAA = use,
+                                          CatchAA_Type = "spltRspltS",
+                                          AgeObsCorr_catch = corr, rho_catch_spec = spec)
+  n_est <- function(corr, spec) length(unique(stats::na.omit(as.integer(mk(corr, spec)$map$trans_rho_catch))))
+
+  # the correlations sit over region, sex and fleet
+  expect_equal(dim(mk("1dar1", NULL)$par$trans_rho_catch), c(2L, 2L, 2L))
+
+  expect_equal(n_est("1dar1", NULL), 2)                  # default: one per fleet
+  expect_equal(n_est("1dar1", "est_shared_r_s"), 2)      # which is what that spec says
+  expect_equal(n_est("1dar1", "est_shared_s"), 4)        # region by fleet
+  expect_equal(n_est("1dar1", "est_shared_r"), 4)        # sex by fleet
+  expect_equal(n_est("1dar1", "est_shared_r_s_f"), 1)    # one correlation throughout
+  expect_equal(n_est("1dar1", "est_all"), 8)
+  expect_true(all(is.na(as.integer(mk("1dar1", "fix")$map$trans_rho_catch))))
+
+  # the same spec shares whole matrices under "us", each pair its own parameter
+  n_pairs <- na * (na - 1) / 2
+  us_pars <- function(spec) length(unique(stats::na.omit(as.integer(mk("us", spec)$map$trans_rho_catch_us))))
+  expect_equal(us_pars("est_shared_r_s"), 2 * n_pairs)   # one matrix per fleet
+  expect_equal(us_pars("est_shared_r_s_f"), n_pairs)     # one matrix throughout
+  expect_equal(us_pars("est_all"), 8 * n_pairs)
+  expect_equal(us_pars("fix"), 0)
+
+  # a dimension the correlation does not have is refused by name
+  expect_error(mk("1dar1", "est_shared_y"), "not recognized")
+})
+
+test_that("a margin a fleet never observes carries no correlation", {
+  ny <- 20; na <- 5
+  d <- c(2, ny, 1, na, 2, 1)
+
+  # summed over regions: the observation lives in region one, so region two has
+  # nothing to inform a correlation with
+  ur <- array(0, dim = d); ur[1, , , , 1, ] <- 1
+  il <- build_at_age(n_regions = 2, n_sexes = 2, ObsCatchAA = array(2e3, dim = d), UseCatchAA = ur,
+                     CatchAA_Type = "agg", AgeObsCorr_catch = "1dar1", rho_catch_spec = "est_all")
+  m <- array(as.integer(il$map$trans_rho_catch), dim = c(2, 2, 1))
+  expect_false(is.na(m[1, 1, 1]))
+  expect_true(all(is.na(m[2, , 1])))   # region two
+  expect_true(all(is.na(m[, 2, 1])))   # sex two
+
+  # and the population-specific stream carries a population margin of its own
+  dp <- c(1, d)
+  il2 <- build_at_age(n_regions = 2, n_sexes = 2, ObsCatchAA_pop = array(2e3, dim = dp),
+                      UseCatchAA_pop = array(1, dim = dp), CatchAA_pop_Type = "spltRspltS",
+                      AgeObsCorr_catch_pop = "1dar1")
+  expect_equal(dim(il2$par$trans_rho_catch_pop), c(1L, 2L, 2L, 1L))
+  expect_true(is.finite(at_age_rep(il2)$jnLL))
 })
 
 test_that("the population-specific stream carries its own correlation", {
@@ -368,7 +424,7 @@ test_that("the operating model draws catch at age sex by sex", {
                as.numeric(apply(om$CAA[, 1, 10, 1, , 1, 1, 1, drop = FALSE], 5, sum)))
 
   dev <- log(om$ObsCatchAA[1, , 1, , , 1, ] / om$TrueCatchAA[1, , 1, , , 1, ])
-  expect_lt(abs(mean(dev)), 0.02)              # lognormal draws, centred
+  expect_lt(abs(mean(dev)), 0.02)              # lognormal draws, centered
   expect_equal(stats::sd(as.numeric(dev)), 0.2, tolerance = 0.05)
 })
 

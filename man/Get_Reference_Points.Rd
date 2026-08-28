@@ -68,7 +68,7 @@ recent years from the mean recruitment calculation. Default = 1.}
   \item{\code{"global_MSY"}}{Single shared \eqn{F_{MSY}} with
     movement. Valid for single-population models only.}
   \item{\code{"local_MSY"}}{Region-specific \eqn{F_{MSY}} values
-    that jointly maximise total yield with movement. Valid for both
+    that jointly maximize total yield with movement. Valid for both
     single- and multi-population models.}
 }}
 
@@ -122,6 +122,7 @@ SPR-based or Beverton-Holt MSY-based reference points.
 \seealso{
 Other Reference Points and Projections:
 \code{\link[=Do_Population_Projection]{Do_Population_Projection()}},
+\code{\link[=Get_Reference_Point_Uncertainty]{Get_Reference_Point_Uncertainty()}},
 \code{\link[=get_key_quants]{get_key_quants()}}
 }
 \concept{Reference Points and Projections}

@@ -41,7 +41,7 @@ distinguishes initial age-structure deviations (\code{i = 1}) from annual
 recruitment deviations (\code{i = 2}).
 }
 \details{
-Sharing behaviour adapts to the density-dependence structure: under local
+Sharing behavior adapts to the density-dependence structure: under local
 density dependence (\code{rec_dd = 0}) with a single population, each
 region receives its own \code{ln_sigmaR} estimate; under global density
 dependence or with multiple populations, a single \code{ln_sigmaR} is

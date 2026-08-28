@@ -121,7 +121,7 @@ of observed index values and their use flags. Required only when a fleet
 solves catchability analytically.}
 
 \item{RecDev_anom}{Array \code{[pop, region, deviation]} of recruitment
-deviations measured from the centre their penalty asserts, or \code{NULL}
+deviations measured from the center their penalty asserts, or \code{NULL}
 when no fleet observes them. Read only by fleets with
 \code{srv_idx_type == 2}.}
 

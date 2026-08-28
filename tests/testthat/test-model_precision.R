@@ -42,7 +42,7 @@ test_that("Get_3d_precision works", {
   })
 
 
-  # Variance parameterisation
+  # Variance parameterization
   test_that("Var_Type 0: marginal variances are constant and equal exp(ln_var)", {
     ln_var <- log(3)
     Q      <- SPoRC:::Get_3d_precision(3, 4, 0.3, 0.2, 0.1, ln_var, 0)
@@ -84,13 +84,13 @@ test_that("Get_3d_precision works", {
     expect_gt(Matrix::nnzero(Qac), Matrix::nnzero(Qa))
   })
 
-  # Axis wiring: each partial correlation reaches its own neighbour
+  # Axis wiring: each partial correlation reaches its own neighbor
   test_that("pcorr_age links age-adjacent nodes and pcorr_year year-adjacent nodes", {
     n_ages <- 3; n_yrs <- 4
     index  <- expand.grid(seq_len(n_ages), seq_len(n_yrs)) # node n is (age, year)
 
     # with a single partial correlation switched on every node has one
-    # neighbour, so the only off-diagonal entries of Q are the pairs that
+    # neighbor, so the only off-diagonal entries of Q are the pairs that
     # correlation links. Report the step each pair takes along the two axes.
     edge_steps <- function(pcorr_age, pcorr_year) {
       Q  <- as.matrix(SPoRC:::Get_3d_precision(n_ages, n_yrs, pcorr_age, pcorr_year, 0, 0, 1))

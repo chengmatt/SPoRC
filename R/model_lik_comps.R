@@ -153,7 +153,7 @@ Get_Comp_Likelihoods = function(Exp,
   n_fit_bins = length(fit_bins)
   fit_bins_joint = as.vector(outer(fit_bins, (seq_len(n_sexes) - 1) * n_obs_bins, "+"))
   # Comparing against the full run of bins rather than just counting them, so a
-  # reordered comp_bins is honoured rather than passing as unrestricted
+  # reordered comp_bins is honored rather than passing as unrestricted
   restrict = !identical(as.integer(fit_bins), seq_len(n_obs_bins))
   if(restrict) Obs = Obs[,fit_bins,,drop = FALSE]
 

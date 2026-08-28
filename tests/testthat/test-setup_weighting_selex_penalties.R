@@ -73,7 +73,7 @@ test_that("resolve_sel_pen_wts works", {
 
 })
 
-test_that("Get_Selex_Smoothness_Penalty honours per-year weights and bin ranges", {
+test_that("Get_Selex_Smoothness_Penalty honors per-year weights and bin ranges", {
 
   n_yrs <- 4; n_bins <- 6
   set.seed(21)

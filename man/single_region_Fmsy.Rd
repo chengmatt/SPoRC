@@ -26,17 +26,17 @@ single_region_Fmsy(pars, data)
 }}
 }
 \value{
-Numeric scalar. Negative total equilibrium yield (minimised to
+Numeric scalar. Negative total equilibrium yield (minimized to
   find \eqn{F_{MSY}}).
 }
 \description{
-Finds \eqn{F_{MSY}} by maximising equilibrium yield under a
+Finds \eqn{F_{MSY}} by maximizing equilibrium yield under a
 Beverton-Holt stock-recruit relationship. Yield is computed from
 spawning biomass per recruit (\eqn{\phi_F}), the BH equilibrium
 recruitment formula, and catch-at-age integrated across all seasons.
 Supports multiple populations via stray rates but does not include
 spatial movement. Yield includes only landings from fleets where
 \code{is_discard_fleet == 0}; discard-only fleets contribute to total
-mortality but not to the yield being maximised.
+mortality but not to the yield being maximized.
 }
 \keyword{internal}

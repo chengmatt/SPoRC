@@ -12,7 +12,7 @@
 #' operating model: stock-recruit relationship type and density-dependence
 #' structure, biological parameters (\eqn{R_0}, steepness, sex ratio),
 #' recruitment and initial age-structure deviations, seasonal recruitment
-#' allocation, spawn timing, and equilibrium initialisation method. Must be
+#' allocation, spawn timing, and equilibrium initialization method. Must be
 #' called after \code{\link{Setup_Sim_Dim}}.
 #'
 #' @param sim_list Simulation list returned by \code{\link{Setup_Sim_Dim}}.
@@ -38,7 +38,7 @@
 #'       relationship pooled across regions.}
 #'   }
 #' @param init_dd Density-dependence structure for equilibrium age-structure
-#'   initialisation. Default \code{"global"}. Same options as \code{rec_dd}.
+#'   initialization. Default \code{"global"}. Same options as \code{rec_dd}.
 #' @param R0_input Unfished equilibrium recruitment array
 #'   \code{[n_pop x n_regions x n_yrs x n_sims]}. Default: \code{15} for all
 #'   cells.
@@ -61,14 +61,14 @@
 #' @param spawn_seas Integer index of the season in which spawning occurs.
 #'   Default \code{1}.
 #' @param use_rinit Integer (0/1). Whether a separate initial recruitment
-#'   scalar \code{rinit_input} is used to initialise the population
+#'   scalar \code{rinit_input} is used to initialize the population
 #'   independently of \code{R0_input}. When \code{0} (default),
 #'   \code{rinit_input} is ignored and \code{R0_input} governs both
-#'   initialisation and recruitment. When \code{1}, \code{rinit_input} is
-#'   used exclusively for equilibrium initialisation and \code{R0_input}
+#'   initialization and recruitment. When \code{1}, \code{rinit_input} is
+#'   used exclusively for equilibrium initialization and \code{R0_input}
 #'   governs the recruitment relationship.
 #' @param rinit_input Unfished equilibrium recruitment scalar used for
-#'   population initialisation when \code{use_rinit = 1}, array
+#'   population initialization when \code{use_rinit = 1}, array
 #'   \code{[n_pop x n_regions x n_sims]}. Ignored when \code{use_rinit = 0}.
 #'   Default: \code{15} for all cells.
 #' @param t_spawn Spawn timing as a fraction of the season elapsed before
@@ -84,14 +84,14 @@
 #'   the same year; \code{rec_seas_prop_input} must be zero for every season
 #'   before \code{spawn_seas} when \code{rec_lag = 0}.
 #' @param init_age_strc Integer specifying the equilibrium age-structure
-#'   initialisation method. Default \code{2}. Options:
+#'   initialization method. Default \code{2}. Options:
 #'   \describe{
 #'     \item{\code{0}/\code{"iterative"}}{Iterates the population forward until
 #'       approximate equilibrium. Slowest but most general.}
 #'     \item{\code{1}/\code{"scalar_no_move"}}{Scalar geometric series solution
 #'       assuming no movement in any age class.}
 #'     \item{\code{2}/\code{"matrix"}}{Matrix geometric series solution that
-#'       generalises the scalar approach to include movement. Recommended
+#'       generalizes the scalar approach to include movement. Recommended
 #'       default for spatially explicit models.}
 #'     \item{\code{3}/\code{"scalar_plus_only"}}{Scalar geometric series
 #'       solution assuming no movement except in the plus group.}
@@ -104,7 +104,7 @@
 #'       \code{ln_rinit}, and because the deviations are log-numbers rather
 #'       than log-ratios, any penalty acts as a prior on initial abundance:
 #'       pair with \code{equil_init_age_strc = "equil"} for no such prior, or
-#'       with \code{InitDevs_pen_center = "own_mean"} to penalise only the
+#'       with \code{InitDevs_pen_center = "own_mean"} to penalize only the
 #'       roughness of the age structure and not its level.}
 #'   }
 #' @param do_recruits_move Integer flag. \code{0} = age-1 fish do not move
@@ -135,7 +135,7 @@
 #'   shared curve, broadcast across sexes) or
 #'   \code{[n_pop x n_regions x (n_ages - 1) x n_sexes x n_sims]} (one curve
 #'   per sex). The \code{n_ages - 1} dimension excludes the reference age used
-#'   during initialisation. If \code{NULL} (default), deviations are drawn as
+#'   during initialization. If \code{NULL} (default), deviations are drawn as
 #'   one shared curve per population and region.
 #'
 #' @return The input \code{sim_list} with recruitment-related fields appended:
@@ -261,7 +261,7 @@ Setup_Sim_Rec <- function(
 #' distinguishes initial age-structure deviations (\code{i = 1}) from annual
 #' recruitment deviations (\code{i = 2}).
 #'
-#' Sharing behaviour adapts to the density-dependence structure: under local
+#' Sharing behavior adapts to the density-dependence structure: under local
 #' density dependence (\code{rec_dd = 0}) with a single population, each
 #' region receives its own \code{ln_sigmaR} estimate; under global density
 #' dependence or with multiple populations, a single \code{ln_sigmaR} is
@@ -334,9 +334,9 @@ do_sigmaR_mapping <- function(input_list, sigmaR_spec) {
 #' single-sex slice and then expanded across sexes per
 #' \code{InitDevs_sex_spec}.
 #'
-#' Mapping behaviour is governed by three interacting considerations:
+#' Mapping behavior is governed by three interacting considerations:
 #' \enumerate{
-#'   \item \strong{Equilibrium initialisation} (\code{equil_init_age_strc}):
+#'   \item \strong{Equilibrium initialization} (\code{equil_init_age_strc}):
 #'     if \code{0}, all deviations are fixed at zero (no stochastic initial
 #'     structure). If \code{1}, plus-group deviations are fixed and the
 #'     remaining ages are estimated or shared. If \code{2}, all ages including
@@ -361,7 +361,7 @@ do_sigmaR_mapping <- function(input_list, sigmaR_spec) {
 #'     \item{\code{"est_shared_pop_r"}}{A single set of age-specific deviations
 #'       shared across all populations and regions. Each age class receives one
 #'       estimated parameter regardless of how many populations or regions
-#'       are modelled. Required when \code{rec_dd = "global"} and
+#'       are modeled. Required when \code{rec_dd = "global"} and
 #'       \code{n_regions > 1}.}
 #'     \item{\code{"est_shared_r"}}{Separate age-specific deviations per
 #'       population, shared across regions within each population. Regions
@@ -395,9 +395,9 @@ do_sigmaR_mapping <- function(input_list, sigmaR_spec) {
 #'   share the last estimated deviation, e.g.
 #'   \code{c(1:42, rep(42, 9))} for a 52-age model with 43 data ages, giving
 #'   42 free parameters. When \code{NULL} (default), age sharing follows the
-#'   standard behaviour determined by \code{equil_init_age_strc} alone.
+#'   standard behavior determined by \code{equil_init_age_strc} alone.
 #' @param InitDevs_sex_spec Character. \code{"est_shared_s"} (default) maps
-#'   every sex onto one shared age curve (the pre-sex-dimension behaviour,
+#'   every sex onto one shared age curve (the pre-sex-dimension behavior,
 #'   penalized once); \code{"est_all"} offsets the factor levels per sex so
 #'   each sex carries its own curve, each penalized. Also builds
 #'   \code{data$init_devs_pen_use}, which flags exactly one penalized copy of
@@ -636,7 +636,7 @@ do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd, init_age_devs
 #' recruitment deviations. The \code{ln_RecDevs} array has dimensions
 #' \code{[n_pop x n_regions x n_years]}.
 #'
-#' Mapping behaviour is governed by two interacting considerations:
+#' Mapping behavior is governed by two interacting considerations:
 #' \enumerate{
 #'   \item \strong{Sharing specification} (\code{RecDevs_spec}): controls
 #'     whether deviations are shared across regions and/or populations, or
@@ -663,7 +663,7 @@ do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd, init_age_devs
 #'     \item{\code{"est_shared_pop_r"}}{A single set of year-specific
 #'       deviations shared across all populations and regions. Each year
 #'       receives one estimated parameter regardless of how many populations
-#'       or regions are modelled. Required when \code{rec_dd = "global"} and
+#'       or regions are modeled. Required when \code{rec_dd = "global"} and
 #'       \code{n_regions > 1}.}
 #'     \item{\code{"fix"}}{All \code{ln_RecDevs} parameters fixed at zero
 #'       (mapped to \code{NA}). Equivalent to deterministic recruitment with
@@ -1001,7 +1001,7 @@ do_sexratio_pars_mapping <- function(input_list, sexratio_spec) {
 #' TMB/RTMB factor map for \code{rec_region_prop_pars}, the logit-scale
 #' parameters controlling the proportion of recruits assigned to each region.
 #' The array has dimensions \code{[n_pop x (n_regions - 1)]}, using a
-#' sum-to-one soft-max parameterisation with one reference region omitted.
+#' sum-to-one soft-max parameterization with one reference region omitted.
 #'
 #' When \code{n_regions = 1}, the parameter is structurally irrelevant and
 #' both \code{$par$rec_region_prop_pars} and \code{$map$rec_region_prop_pars}
@@ -1169,7 +1169,7 @@ do_stray_rate_mapping <- function(input_list, stray_rate_spec) {
 #' TMB/RTMB factor map for \code{rec_seas_prop_pars}, the logit-scale
 #' parameters controlling the proportion of annual recruitment assigned to
 #' each season. The array has dimensions \code{[n_pop x (n_seas - 1)]},
-#' using a sum-to-one soft-max parameterisation with one reference season
+#' using a sum-to-one soft-max parameterization with one reference season
 #' omitted.
 #'
 #' When \code{n_seas = 1}, the parameter is structurally irrelevant and both
@@ -1281,7 +1281,7 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #' Beverton-Holt steepness and priors, recruitment variability
 #' (\eqn{\sigma_R}), annual and initial age-structure deviations, regional
 #' and seasonal recruitment apportionment, spawning movement and stray rates,
-#' sex ratio dynamics, equilibrium initialisation method, and the recruitment
+#' sex ratio dynamics, equilibrium initialization method, and the recruitment
 #' bias ramp. Delegates parameter mapping to a family of internal helpers
 #' (\code{\link{do_sigmaR_mapping}}, \code{\link{do_RecDevs_mapping}},
 #' \code{\link{do_InitDevs_mapping}}, \code{\link{do_h_mapping}},
@@ -1378,9 +1378,9 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #' @param rec_level_pen_sigma Numeric standard deviation of that penalty. A sum
 #'   of squares with weight \eqn{w} corresponds to \eqn{1/\sqrt{2w}}. Default
 #'   \code{1}.
-#' @param rec_level_pen_center Either \code{"own_mean"} (default), centring on
+#' @param rec_level_pen_center Either \code{"own_mean"} (default), centering on
 #'   the mean of the log recruitment series so only its variability is
-#'   penalized, or \code{"fixed"}, centring on zero.
+#'   penalized, or \code{"fixed"}, centering on zero.
 #' @param rec_level_pen_yrs Vector of years the penalty applies over, or
 #'   \code{NULL} (default) for every year.
 #' @param Use_init_sex_pen Integer (0/1). Whether each later sex's initial age
@@ -1395,10 +1395,10 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   squares with weight \eqn{w} corresponds to \eqn{1/\sqrt{2w}}. Default
 #'   \code{1}.
 #' @param RecDevs_pen_center,InitDevs_pen_center Where the recruitment and
-#'   initial age deviation penalties are centred. \code{"fixed"} (default)
-#'   centres on the asserted prior mean, zero or the bias-corrected
+#'   initial age deviation penalties are centered. \code{"fixed"} (default)
+#'   centers on the asserted prior mean, zero or the bias-corrected
 #'   \eqn{-\sigma_R^2/2}, which constrains both the level and the spread of the
-#'   deviations. \code{"own_mean"} centres on the mean of the estimated
+#'   deviations. \code{"own_mean"} centers on the mean of the estimated
 #'   deviations themselves, so only their spread is penalized and their level is
 #'   left free; that is what a sum of squares about the series' own mean
 #'   amounts to. The level
@@ -1413,10 +1413,10 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #' @param dont_est_recdev_last Non-negative integer. Number of terminal years
 #'   for which recruitment deviations are not estimated. Automatically
 #'   overridden to \code{0} if \code{n_proj_yrs_devs > 0}, since projected
-#'   deviation years are penalised toward the mean and are effectively
+#'   deviation years are penalized toward the mean and are effectively
 #'   estimated regardless. Default \code{0}.
 #'
-#' @param init_age_strc Initialisation method. Default \code{2}. Options
+#' @param init_age_strc Initialization method. Default \code{2}. Options
 #'   \code{0}/\code{"iterative"}, \code{1}/\code{"scalar_no_move"},
 #'   \code{2}/\code{"matrix"}, and \code{3}/\code{"scalar_plus_only"} all
 #'   project an equilibrium age structure forward from \code{R0} and treat
@@ -1441,7 +1441,7 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'       with movement only in the plus group.}
 #'   }
 #' @param equil_init_age_strc Plus-group treatment during stochastic
-#'   initialisation. Default \code{1}.
+#'   initialization. Default \code{1}.
 #'   \describe{
 #'     \item{\code{0}/\code{"equil"}}{Deterministic equilibrium; no
 #'       \code{ln_InitDevs} are estimated.}
@@ -1474,10 +1474,10 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   \code{n_sexes > 1}.
 #' @param init_F_prop Numeric array \code{[n_regions x n_seas x n_fish_fleets]}.
 #'   \strong{Legacy interface, retained for backwards compatibility.} A fixed
-#'   proportion of the estimated mean F applied during equilibrium initialisation.
+#'   proportion of the estimated mean F applied during equilibrium initialization.
 #'   When supplied non-zero (and \code{init_F_par} is not given) it is converted to
 #'   \code{ln_init_F = log(init_F_prop)} with \code{init_F_form = "prop"}, which
-#'   reproduces the previous behaviour exactly. Prefer \code{init_F_par}.
+#'   reproduces the previous behavior exactly. Prefer \code{init_F_par}.
 #'   Default: zero for all seasons and fleets.
 #' @param init_F_form Character. What the \code{init_F_par} parameter MEANS:
 #'   \itemize{
@@ -1553,7 +1553,7 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'
 #' @param h_spec Character or \code{NULL}. Sharing structure for
 #'   stock-recruit steepness \code{steepness_h} \code{[n_pop x n_regions]},
-#'   parameterised in bounded logit space \eqn{(0.2, 1)}. Default \code{NULL}
+#'   parameterized in bounded logit space \eqn{(0.2, 1)}. Default \code{NULL}
 #'   (estimate by population when \code{n_pop > 1}, by region when
 #'   \code{n_pop = 1}). Ignored when \code{rec_model = "mean_rec"}. See
 #'   \code{\link{do_h_mapping}} for full option descriptions.
@@ -1579,14 +1579,14 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #' @param use_fixed_stray_rate Integer (0/1). Whether stray rates are supplied
 #'   as a fixed external array (\code{fixed_stray_rate}) rather than estimated
 #'   as model parameters. Default \code{1} (fixed), preserving existing
-#'   behaviour. Set to \code{0} to estimate stray rates via
+#'   behavior. Set to \code{0} to estimate stray rates via
 #'   \code{stray_rate_pars}.
 #' @param fixed_stray_rate Array \code{[n_pop x n_years]}. Fixed stray rate
 #'   values used when \code{use_fixed_stray_rate = 1}. Values should be in
 #'   \eqn{[0, 1]}. Default: \code{0} (no straying) for all populations and
 #'   years. Ignored when \code{use_fixed_stray_rate = 0}.
 #' @param stray_rate_spec Character string. Estimation structure for
-#'   \code{stray_rate_pars} \code{[n_pop x max_stray_blocks]}, parameterised
+#'   \code{stray_rate_pars} \code{[n_pop x max_stray_blocks]}, parameterized
 #'   on the logit scale. Ignored when \code{use_fixed_stray_rate = 1} or
 #'   \code{n_pop = 1}. Default \code{"fix"}. Options:
 #'   \describe{
@@ -1611,7 +1611,7 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   }
 #'   Default: a single constant block for every population.
 #'   \strong{Note:} stray rate is generally unidentifiable from fisheries data
-#'   alone. Time-blocking is provided for completeness but regularisation via
+#'   alone. Time-blocking is provided for completeness but regularization via
 #'   \code{use_stray_rate_prior} in the penalty setup is strongly recommended
 #'   whenever \code{stray_rate_spec != "fix"}.
 #' @param use_stray_rate_prior Integer (0/1). Whether Beta priors are applied
@@ -1623,7 +1623,7 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   Required columns: \code{pop} (population index), \code{block} (block
 #'   index matching \code{stray_rate_blocks}), \code{mu} (prior mean, in
 #'   \eqn{(0,1)}), \code{sd} (prior standard deviation). One row per
-#'   population x block combination to penalise. Ignored when
+#'   population x block combination to penalize. Ignored when
 #'   \code{use_stray_rate_prior = 0}. Default \code{NULL}.
 #'
 #' @param sexratio_spec Character. Estimation structure for sex ratio
@@ -1663,12 +1663,12 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   Unspecified parameters use internal defaults.
 #'
 #' @param use_rinit Integer (0/1). Whether a separate initial recruitment
-#'   scalar \code{ln_rinit} is used to initialise the population
+#'   scalar \code{ln_rinit} is used to initialize the population
 #'   independently of the recruitment \code{ln_global_R0}. When \code{0}
 #'   (default), \code{ln_rinit} is fixed and \code{ln_global_R0}
-#'   governs both initialisation and recruitment. When \code{1}, both
+#'   governs both initialization and recruitment. When \code{1}, both
 #'   \code{ln_rinit} and \code{ln_global_R0} are estimated, with
-#'   \code{ln_rinit} used exclusively for equilibrium initialisation
+#'   \code{ln_rinit} used exclusively for equilibrium initialization
 #'   and \code{ln_global_R0} used for the stock-recruit relationship.
 #' @param init_age_devs_shared Integer vector of length \code{n_ages - 1}
 #'   specifying an explicit parameter-sharing structure for \code{ln_InitDevs}
@@ -1686,7 +1686,7 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   share the last estimated deviation, e.g.
 #'   \code{c(1:42, rep(42, 9))} for a 52-age model with 43 data ages, giving
 #'   42 free parameters. When \code{NULL} (default), age sharing follows the
-#'   standard behaviour determined by \code{equil_init_age_strc} alone.
+#'   standard behavior determined by \code{equil_init_age_strc} alone.
 #' @param Use_rinit_pen Integer (0/1). Whether to penalize the initial
 #'   equilibrium recruitment's offset from the recruitment level,
 #'   \eqn{\log(R_{init} / R_0) \sim N(0, \mathrm{rinit\_pen\_sd}^2)}, under
@@ -1802,8 +1802,8 @@ Setup_Mod_Rec <- function(input_list,
     # For backwards compatibility, because init_F_prop was a data array of proportions of mean F.
     if(!all(dim(init_F_prop) == init_F_dim)) stop("init_F_prop must have dimensions [n_regions, n_seas, n_fish_fleets] = [", paste(init_F_dim, collapse = ", "), "]")
     if(any(init_F_prop < 0)) stop("init_F_prop cannot be negative")
-    if(init_F_form_num != 0) stop("init_F_prop is a proportion of the mean F, so it requires init_F_form = 'prop'. Supply init_F_par instead to specify an absolute initialisation F.")
-    if(any(init_F_prop >= 1)) stop("init_F_prop must be < 1: it is now transformed with plogis, which bounds the proportion to (0, 1). Use init_F_form = 'abs' if the initialisation F should exceed the mean F.")
+    if(init_F_form_num != 0) stop("init_F_prop is a proportion of the mean F, so it requires init_F_form = 'prop'. Supply init_F_par instead to specify an absolute initialization F.")
+    if(any(init_F_prop >= 1)) stop("init_F_prop must be < 1: it is now transformed with plogis, which bounds the proportion to (0, 1). Use init_F_form = 'abs' if the initialization F should exceed the mean F.")
     input_list$par$init_F_par <- array(stats::qlogis(pmax(init_F_prop, 1e-10)), dim = init_F_dim)
   } else {
     input_list$par$init_F_par <- array(init_F_off, dim = init_F_dim)
@@ -1811,7 +1811,7 @@ Setup_Mod_Rec <- function(input_list,
   }
   input_list$map$init_F_par <- factor(if(init_F_est == 1) seq_len(prod(init_F_dim)) else rep(NA_integer_, prod(init_F_dim)))
 
-  collect_message("Initialisation F is ", ifelse(init_F_est == 1, "estimated", "fixed"), " as ",
+  collect_message("Initialization F is ", ifelse(init_F_est == 1, "estimated", "fixed"), " as ",
                   ifelse(init_F_form_num == 0, "a proportion of the mean F (moves with ln_F_mean)", "an absolute F (independent of ln_F_mean)"), ".")
 
   # Recruitment Model Type and Options --------------------------------------
@@ -2054,7 +2054,7 @@ Setup_Mod_Rec <- function(input_list,
   input_list$data$ln_sigma_rec_level <- log(rec_level_pen_sigma)
   input_list$data$rec_level_pen_center <- convert_to_numeric(rec_level_pen_center, list(fixed = 0, own_mean = 1))
   input_list$data$rec_level_pen_yrs <- if(is.null(rec_level_pen_yrs)) rep(1, length(input_list$data$years)) else as.numeric(input_list$data$years %in% rec_level_pen_yrs)
-  if(Use_rec_level_pen == 1) collect_message("A recruitment level penalty is applied, centred on: ", rec_level_pen_center)
+  if(Use_rec_level_pen == 1) collect_message("A recruitment level penalty is applied, centered on: ", rec_level_pen_center)
   if(!Use_init_sex_pen %in% c(0,1)) stop("Use_init_sex_pen must be 0 or 1")
   if(Use_init_sex_pen == 1 && (input_list$data$n_sexes == 1 || InitDevs_sex_spec != "est_all"))
     stop("Use_init_sex_pen ties each sex's initial age deviations to the first sex's, so it needs n_sexes > 1 and InitDevs_sex_spec = 'est_all'. Under est_shared_s the sexes already read one curve and the tie is identically zero.")
@@ -2080,7 +2080,7 @@ Setup_Mod_Rec <- function(input_list,
     stop("sr_pen_yrs includes the first ", rec_lag, " year(s) of the model, which have no lagged spawning biomass. The stock-recruit prediction there falls back to the fished equilibrium, so the residual would not be a stock-recruit residual. Drop those years.")
   if(sr_penalty != "none") collect_message("Recruitment is a mean with deviations; a ", sr_penalty, " curve is fitted as a penalty on the residual, with its scale ", sr_R0_spec)
   input_list$data$InitDevs_pen_center <- convert_to_numeric(InitDevs_pen_center, list(fixed = 0, own_mean = 1))
-  collect_message("Recruitment deviation penalty is centred on: ", RecDevs_pen_center)
+  collect_message("Recruitment deviation penalty is centered on: ", RecDevs_pen_center)
   input_list$data$init_F_prop <- init_F_prop
   input_list$data$init_F_form <- init_F_form_num
   input_list$data$t_spawn <- t_spawn

@@ -689,7 +689,7 @@ Setup_Sim_Fishing <- function(sim_list,
   return(sim_list)
 }
 
-#' Set up survey parameterisation for the operating model simulation
+#' Set up survey parameterization for the operating model simulation
 #'
 #' Populates \code{sim_list} with all survey-related inputs needed by the
 #' operating model: catchability, selectivity, survey timing, index type,

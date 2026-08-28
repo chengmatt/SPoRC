@@ -59,8 +59,8 @@ input_list <- Setup_Mod_Rec(
   sr_pen_yrs = dat$sr_pen_yrs, sr_R0_spec = "est",
   steepness_h = array(inv_steepness(h_sr), dim = c(1, 1)), h_spec = "est_shared_pop_r",
   ln_sr_R0 = array(log(sr_R0), dim = 1),
-  # the ramp is turned on with every break past the last year, which centres the
-  # penalty on zero; do_rec_bias_ramp = 0 would centre it on -sigma^2/2
+  # the ramp is turned on with every break past the last year, which centers the
+  # penalty on zero; do_rec_bias_ramp = 0 would center it on -sigma^2/2
   do_rec_bias_ramp = 1, bias_year = rep(n_yrs + 1, 4),
   sigmaR_switch = 1, sigmaR_spec = "fix",
   ln_sigmaR = array(log(dat$sigmaR), dim = c(2, 1, 1)),
@@ -210,7 +210,7 @@ cat(sprintf("%-24s max %.3g %%\n", "total biomass (Jan 1)", max(abs(pd(totb_jan1
 cat(sprintf("%-24s max %.3g %%\n", "predicted catch", max(abs(pd(as.vector(rep1$PredCatch[1,1,1:n_yrs,1,1]), dat$fm$pred_catch)))))
 
 # Likelihood crosswalk. SPoRC writes each component as a proper density while
-# the assessment drops normalising constants, so each Gaussian block is compared
+# the assessment drops normalizing constants, so each Gaussian block is compared
 # net of exactly the constants the assessment omits.
 lc <- function(sigma, n) n * (log(sigma) + 0.5 * log(2 * pi))
 lik <- data.frame(

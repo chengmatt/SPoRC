@@ -94,7 +94,7 @@ share the last deviation. `SPoRC` carries the initial numbers as multiplicative
 deviations from an equilibrium age structure rather than as the structure
 itself, so the seeding step below converts between the two.
 
-The bias ramp is on with every ramp year at the terminal year, which centres the
+The bias ramp is on with every ramp year at the terminal year, which centers the
 recruitment penalty on $-\sigma_{R}^{2}/2$. That matches the shifted deviations
 the seeds carry, described in the seeding section.
 
@@ -236,7 +236,7 @@ input_list <- Setup_Mod_SrvIdx_and_Comps(
 
 ## Fishery selectivity and catchability
 
-Both fleets use the slope and $a_{50}$ parameterisation of the logistic, which
+Both fleets use the slope and $a_{50}$ parameterization of the logistic, which
 is `logist1`:
 
 $$\text{Sel}_{a} = \dfrac{1}{1 + \exp\left[-k\left(a - a_{50}\right)\right]}$$
@@ -265,7 +265,7 @@ enough to pin $q$ at one. That is the assessment's intent, and it is why the
 $q$ prior term is $3\times10^{-6}$ rather than a live contribution.
 
 The selectivity constraint is not a prior on the selectivity *parameters*. The
-assessment penalises the realized selectivity value at age 30 towards one with a
+assessment penalizes the realized selectivity value at age 30 towards one with a
 standard deviation of $0.003$:
 
 $$\ell^{\text{Sel}} = \dfrac{\left(\text{Sel}_{30} - 1\right)^{2}}{2\times0.003^{2}}$$
@@ -388,7 +388,7 @@ fishing mortality   max pct diff: 4.4e-04
 ```
 
 The likelihood is checked the same way. `SPoRC` writes each component as a
-proper density while the assessment drops normalising constants, so a like for
+proper density while the assessment drops normalizing constants, so a like for
 like comparison subtracts exactly the constants the assessment omits. The
 survey statement keeps its $\log\sigma$ term but drops $\sqrt{2\pi}$, and its
 standard errors vary by year, so that constant is summed over the observations

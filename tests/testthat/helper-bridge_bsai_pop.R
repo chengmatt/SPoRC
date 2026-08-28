@@ -60,7 +60,7 @@ build_bsai_pop_input <- function(dat) {
   # depleted by raising the mean F.
   #
   # bias_year is indexed in deviation space rather than calendar years, so this
-  # range puts the whole series in the fully bias corrected limb, which centres
+  # range puts the whole series in the fully bias corrected limb, which centers
   # the penalty on -sigmaR^2 / 2 to match the shifted deviations the seeds carry
   init_F_par <- array(log(1e-10), dim = c(dat$n_regions, dat$n_seas, dat$n_fish_fleets))
   init_F_par[1, 1, 1] <- log(dat$mle$historic_F)
@@ -177,8 +177,8 @@ build_bsai_pop_input <- function(dat) {
 
   ## Fishery selectivity and catchability -------------------------------------
   # a bicubic spline over a 5 year by 5 age node grid, exponentiated with no
-  # normalisation. SelStyr and NSelBins are not cosmetic: they set the year
-  # range and bin count the smoothness penalties normalise by, and they impose
+  # normalization. SelStyr and NSelBins are not cosmetic: they set the year
+  # range and bin count the smoothness penalties normalize by, and they impose
   # the assessment's edge holds, flat before 1964 and flat beyond age 40
   fish_sel_spec <- paste0("bicubic_Bin_", dat$fsh_age_nodes,
                           "_Yr_", dat$fsh_yr_nodes,
@@ -283,11 +283,11 @@ seed_bsai_pop_mle <- function(input_list, dat) {
 } # end seed_bsai_pop_mle
 
 
-#' Normalise a selectivity surface by its within-year maximum
+#' Normalize a selectivity surface by its within-year maximum
 #'
 #' The assessment rescales for REPORTING only: selectivity is divided by its
 #' within-year maximum and F multiplied by the same factor, leaving their product
 #' invariant. Its internal selectivity is the raw exponentiated bicubic surface,
-#' so a like-for-like comparison normalises SPoRC's surface the same way and
+#' so a like-for-like comparison normalizes SPoRC's surface the same way and
 #' divides the reported F by the same factor.
 norm_bsai_pop_sel_by_year <- function(m) m / apply(m, 1, max)

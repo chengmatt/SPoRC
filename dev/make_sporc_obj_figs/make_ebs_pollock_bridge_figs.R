@@ -3,7 +3,7 @@
 #          assessment specifies it: Ricker recruitment with the stock recruit
 #          penalty over its year window, steepness estimated under its beta
 #          prior, free initial numbers at age, selectivity through SPoRC's own
-#          forms, and deviation penalties centred on the deviations' own mean.
+#          forms, and deviation penalties centered on the deviations' own mean.
 #
 #          Three stages: set every parameter to the pollock maximum likelihood
 #          estimate and check the objective there, optimize, then compare.
@@ -51,7 +51,7 @@ input_list <- Setup_Mod_Rec(
   rec_lag = 1,
   SR_ref_yr = n_yrs,
   # do_rec_bias_ramp = 0 sets the ramp to 1 throughout, so the recruitment
-  # penalty is centred on -sigmaR^2/2, which is pm.tpl's +sigmaRsq/2 on the
+  # penalty is centered on -sigmaR^2/2, which is pm.tpl's +sigmaRsq/2 on the
   # residual. Setup_Mod_Rec takes bias_year, and an NA bias_year leaves the ramp
   # at zero and the bias correction absent altogether.
   do_rec_bias_ramp = 0,
@@ -72,7 +72,7 @@ input_list <- Setup_Mod_Rec(
   steepness_h = array(inv_steepness(dat$mle$steepness), dim = c(1, 1)),
   h_spec = "est_shared_pop_r",
   # pm.tpl's beta sits on the unrescaled (0,1) support and is symmetric, so its
-  # centre is 0.5 rather than the 0.6 its steepnessprior constant declares.
+  # center is 0.5 rather than the 0.6 its steepnessprior constant declares.
   Use_h_prior = 1,
   h_prior = data.frame(pop = 1, region = 1, mu = 0.5, sd = 0.09, lb = 0, ub = 1),
   # pm.tpl carries a second recruitment statement alongside the stock recruit
@@ -167,7 +167,7 @@ input_list <- Setup_Mod_SrvIdx_and_Comps(
   # Fleet 4 is the acoustic survey's age 1 abundance, which the assessment fits
   # as its own index with its own catchability.
   srv_idx_ages = list(NULL, NULL, NULL, 1),
-  # pm.tpl normalises the acoustic compositions over ages 2-15 only
+  # pm.tpl normalizes the acoustic compositions over ages 2-15 only
   SrvAgeComps_bins = list(NULL, 2:15, NULL, NULL),
   SrvIdx_LikeType = c("mvn", "lognormal", "normal", "lognormal"),
   SrvIdx_Cov = list(dat$SrvIdx_Cov, NULL, NULL, NULL),
@@ -281,7 +281,7 @@ srv_pen_wts <- list(
        bin_range = list(smooth_yr_diff = c(3, 14))),
   ats_spec,
   # the vessel of opportunity index shares the acoustic curve, so it is not
-  # penalised twice
+  # penalized twice
   list(),
   list()
 )

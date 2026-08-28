@@ -27,7 +27,7 @@ nmfs_areas <- nmfs_areas %>% mutate(GEN_NAME = ifelse(NAME %in% c("East Yakutat 
     NAME == "East Yakutat / Southeast Alaska" ~ "EGOA"
   ), NAME = factor(NAME, levels = c("BS", "AI", "WGOA", "CGOA", "EGOA"))) %>%
   group_by(NAME) %>%
-  summarise(geometry = st_union(geometry))
+  summarize(geometry = st_union(geometry))
 
 # Coerce longline areas
 nmfs_areas <- st_make_valid(nmfs_areas) # make valid so that vertices aren't duplicated
@@ -37,7 +37,7 @@ nmfs_areas <- st_shift_longitude(nmfs_areas) # shift longitude for plotting
 # get centroids of the geometry for plotting
 centroids <- nmfs_areas %>%
   group_by(NAME) %>%
-  summarise(geometry = st_centroid(geometry)) %>%
+  summarize(geometry = st_centroid(geometry)) %>%
   ungroup()
 
 colors <- c(

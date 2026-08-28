@@ -81,7 +81,7 @@ of:
     \code{k} for fleet \code{x}, as defined in \code{srv_sel_blocks}.
     Required when multiple blocks are defined for a fleet.}
 }
-Available models (see the model equations vignette for parameterisations):
+Available models (see the model equations vignette for parameterizations):
 \describe{
   \item{\code{"logist1"}}{Logistic with \eqn{a_{50}} and slope \eqn{k} (2 parameters).}
   \item{\code{"logist2"}}{Logistic with \eqn{a_{50}} and \eqn{a_{95}} (2 parameters).}

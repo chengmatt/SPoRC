@@ -21,7 +21,7 @@ The validated table with \code{par} as a list column, or the input
 }
 \description{
 Checks the table consumed by \code{\link{get_selex_fixed_penalty}} and
-normalises its \code{par} column to a list of integer vectors, so a row may
+normalizes its \code{par} column to a list of integer vectors, so a row may
 name either one parameter or a whole set.
 }
 \keyword{internal}

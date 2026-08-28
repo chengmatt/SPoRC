@@ -7,7 +7,7 @@
 #'
 #' Calculates the spawning potential ratio (SPR) as a function of a trial
 #' fishing mortality \eqn{F_x}, then returns a squared penalty
-#' \eqn{100 (SPR - SPR_x)^2} that is minimised by the outer optimizer to find
+#' \eqn{100 (SPR - SPR_x)^2} that is minimized by the outer optimizer to find
 #' \eqn{F_{SPR_x}}. Supports multiple populations via stray rates but does not
 #' include spatial movement.
 #'
@@ -97,7 +97,7 @@
 #'   }
 #'
 #' @return Numeric scalar. Squared penalty \eqn{(SPR - SPR_x)^2}.
-#'   Minimised to zero at \eqn{F = F_{SPR_x}}.
+#'   Minimized to zero at \eqn{F = F_{SPR_x}}.
 #'
 #' @seealso \code{\link{Get_Reference_Points}}
 #' @keywords internal
@@ -270,7 +270,7 @@ single_region_SPR <- function(pars,
 #' tracked across all regions and seasons under movement. A single scalar
 #' \eqn{F_x} is applied uniformly across regions (scaled by region-specific
 #' fleet fractions and selectivity). Returns the squared penalty
-#' \eqn{100 (SPR - SPR_x)^2} for optimisation.
+#' \eqn{100 (SPR - SPR_x)^2} for optimization.
 #'
 #' Supports single- and multi-population models. When \code{n_pop > 1},
 #' effective SSB at each population's natal region accumulates straying

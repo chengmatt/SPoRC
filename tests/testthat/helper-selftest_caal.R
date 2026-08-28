@@ -220,7 +220,7 @@ caal_build_input <- function(sim_data, caal_like = "Multinomial", caal_type = "s
   input_list
 }
 
-# Fit, self-test, and summarise median relative error per reported quantity,
+# Fit, self-test, and summarize median relative error per reported quantity,
 # the same shape selftest_run() in helper-selftest_features.R returns.
 caal_run <- function(input_list, what = c("SSB", "Rec"), n_sims = caal_cfg$n_sims, seed = 1) {
   fit <- fit_model(input_list$data, input_list$par, input_list$map, random = NULL, silent = TRUE)

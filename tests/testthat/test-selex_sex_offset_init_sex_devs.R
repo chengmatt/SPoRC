@@ -157,7 +157,7 @@ test_that("Get_Init_NAA applies sex-specific initial deviations and broadcasts a
   expect_equal(as.numeric(out3[1, 1, 2:n_ages, 1]), as.numeric(out[1, 1, 2:n_ages, 1]), tolerance = 1e-12)
 })
 
-test_that("the initial age penalty scores one copy per parameter and pools its own-mean centre across sexes", {
+test_that("the initial age penalty scores one copy per parameter and pools its own-mean center across sexes", {
 
   n_ages <- 5
   base_args <- list(
@@ -187,7 +187,7 @@ test_that("the initial age penalty scores one copy per parameter and pools its o
   distinct <- do.call(get_recruitment_penalty, c(base_args, list(ln_InitDevs = dev4d, init_devs_pen_use = pen_all)))
   expect_equal(sum(distinct$Init_Rec_nLL), -sum(dnorm(c(devs, devs_m), 0, 0.6, TRUE)), tolerance = 1e-12)
 
-  # the own-mean centre pools every penalized cell across both sexes
+  # the own-mean center pools every penalized cell across both sexes
   own_args <- c(base_args, list(ln_InitDevs = dev4d, init_devs_pen_use = pen_all))
   own_args$InitDevs_pen_center <- 1
   own <- do.call(get_recruitment_penalty, own_args)

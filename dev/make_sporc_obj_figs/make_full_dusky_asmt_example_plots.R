@@ -582,7 +582,7 @@ ggplot() +
                                  Type = c("Recruitment" = "Age 2 Recruitment (millions)", "SSB" = 'SSB (kt)'))) +
   labs(x = "Year", y = "Value") +
   theme_bw(base_size = 20) +
-  scale_color_manual(values = c("red", 'grey')) +
+  scale_color_manual(values = c("red", 'gray')) +
   geom_text(data = jitter_res %>% filter(Type == 'SSB', Year == 1, jitter == 1),
             aes(x = Inf, y = Inf, label = paste("Proportion Converged: ", round(prop_converged$prop_conv, 3))),
             hjust = 1.1, vjust = 1.9, size = 6, color = "black")

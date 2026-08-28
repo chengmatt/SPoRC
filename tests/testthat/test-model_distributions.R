@@ -32,7 +32,7 @@ test_that("Custom Distributions produce consistent results", {
     mid_strong <- dbeta_symmetric(0.5, p_ub = 1, p_lb = 0, p_prsd = 10, log = FALSE)
     off_weak   <- dbeta_symmetric(0.2, p_ub = 1, p_lb = 0, p_prsd = 1,  log = FALSE)
     off_strong <- dbeta_symmetric(0.2, p_ub = 1, p_lb = 0, p_prsd = 10, log = FALSE)
-    # ratio of mid to off-centre should be more extreme under strong prior
+    # ratio of mid to off-center should be more extreme under strong prior
     expect_gt(mid_strong / off_strong, mid_weak / off_weak)
   })
 
@@ -55,7 +55,7 @@ test_that("Custom Distributions produce consistent results", {
     expect_equal(d_dir, d_beta, tolerance = 1e-6)
   })
 
-  test_that("ddirichlet is maximised at alpha / sum(alpha) (mode for alpha > 1)", {
+  test_that("ddirichlet is maximized at alpha / sum(alpha) (mode for alpha > 1)", {
     alpha <- c(4, 6, 2)
     mode  <- alpha / sum(alpha)           # exact mode
     off   <- c(0.1, 0.6, 0.3)            # off-mode but still sums to 1

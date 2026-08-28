@@ -4,7 +4,7 @@ SPoRC rebuilt from the 2024 eastern Bering Sea Pacific cod assessment (Stock
 Synthesis Model 24.1, Barbeaux et al. 2024) and evaluated at the assessment's own
 maximum likelihood estimate. One area, one sex, ages 0-20, 1977-2024, with
 time-varying growth carried cohort by cohort, length-based double normal
-selectivity on 121 population length bins fit to 24 five-centimetre data bins,
+selectivity on 121 population length bins fit to 24 five-centimeter data bins,
 and annual deviations on the survey's ascending width.
 
 This is the bridge that motivated the time-varying growth module: the assessment

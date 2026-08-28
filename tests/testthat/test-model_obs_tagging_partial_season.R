@@ -2,7 +2,7 @@ test_that("partial-season tag exposure keeps F/Z a valid death fraction", {
 
   # A tag cohort released partway through a season is at liberty for a fraction t of it, so it
   # accrues F*t of fishing mortality and Z*t of total mortality. Baranov's ratio must therefore
-  # stay F/Z. Scaling Z alone -- the pre-fix behaviour -- gives F/(Z*t), which is not a fraction.
+  # stay F/Z. Scaling Z alone -- the pre-fix behavior -- gives F/(Z*t), which is not a fraction.
   F_seas <- 0.40
   M_seas <- 0.30
   Z_seas <- F_seas + M_seas

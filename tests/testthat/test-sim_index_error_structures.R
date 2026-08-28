@@ -280,7 +280,7 @@ test_that("an mvn survey fleet draws from the covariance with a shared factor pe
     expect_identical(om$ObsSrvIdx, om2$ObsSrvIdx)
   })
 
-  test_that("the shared factor compresses within-replicate spread of standardised deviations", {
+  test_that("the shared factor compresses within-replicate spread of standardized deviations", {
     # z = lambda * u + sqrt(1 - lambda^2) * e, so var(z) within a replicate is
     # about 1 - 0.9^2 = 0.19 rather than the 1 independent draws would give
     z <- (om$ObsSrvIdx[1, , 1, 1, ] - om$TrueSrvIdx[1, , 1, 1, ]) / d
@@ -293,7 +293,7 @@ test_that("an mvn survey fleet draws from the covariance with a shared factor pe
 
 })
 
-test_that("the population-specific index blocks honour the fleet's LikeType", {
+test_that("the population-specific index blocks honor the fleet's LikeType", {
 
   om <- index_error_om()
   sim_data <- simulation_data_to_SPoRC(sim_env = om, y = om$n_years, sim = 1)

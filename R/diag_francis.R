@@ -770,7 +770,7 @@ run_francis <- function(data,
     # get francis weights
     wts <- do_francis_reweighting(
       data = data, rep = rep,
-      # uses fishery ages to index, because of potential for uneven number of observed and modelled ages
+      # uses fishery ages to index, because of potential for uneven number of observed and modeled ages
       age_labels = 1:dim(data$ObsFishAgeComps)[4],
       len_labels = data$lens,
       year_labels = data$years

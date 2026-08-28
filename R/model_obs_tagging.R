@@ -373,7 +373,7 @@ get_tagging_observation_model <- function(n_fish_fleets, n_regions, n_conv_tag_c
 #' (\code{platform = "population"}), numbers-at-age multiplied by fishery
 #' selectivity (\code{platform = "fishery"}), or numbers-at-age multiplied
 #' by survey selectivity (\code{platform = "survey"}), all evaluated at the
-#' release region, year, and season. Weights are then normalised
+#' release region, year, and season. Weights are then normalized
 #' conditionally on the attended dimensions: the denominator for cell
 #' \code{[p, a, s]} is the sum of raw weights across all cells that share
 #' the same indices in the attended dimensions. This ensures that the

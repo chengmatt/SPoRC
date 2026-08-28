@@ -83,7 +83,7 @@ test_that("West Coast sablefish bridges to the 2025 Stock Synthesis assessment a
   expect_lt(comp_gap(dat$srv_src, dat$srv_sex, function(y, s, f) r$SrvIAA[1, 1, y, 1, , s, f]), 1e-5)
 
   # Likelihoods. SPoRC evaluates proper densities where the assessment drops
-  # normalising constants, so each Gaussian block is compared net of a closed-form
+  # normalizing constants, so each Gaussian block is compared net of a closed-form
   # offset. A change to any of those constants shows up here.
   lc <- function(sigma, n) n * (log(sigma) + 0.5 * log(2 * pi))
   n_est_dev <- sum(yrs %in% dat$yrs_rec_est)

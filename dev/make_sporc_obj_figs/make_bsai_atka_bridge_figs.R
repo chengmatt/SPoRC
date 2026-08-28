@@ -78,8 +78,8 @@ input_list <- Setup_Mod_Rec(
   # starting value mechanism and leaves the default h = 0.6.
   steepness_h = array(inv_steepness(dat$steepness), dim = c(1, 1)),
   h_spec = "fix",
-  # do_rec_bias_ramp = 0 does NOT centre the penalty on zero: it sets the ramp
-  # to one throughout, which centres on -sigmaR^2/2. Breaks past the last year
+  # do_rec_bias_ramp = 0 does NOT center the penalty on zero: it sets the ramp
+  # to one throughout, which centers on -sigmaR^2/2. Breaks past the last year
   # are what leave the offset out.
   do_rec_bias_ramp = 1,
   bias_year = rep(n_yrs + 1, 4),
@@ -309,7 +309,7 @@ cat("stock recruit penalty, quadratic part:",
     "vs AMAK", format(dat$amak$rec_parts[2] - dat$nrecs_est * log(dat$sigmaR), digits = 10), "\n")
 
 # Likelihood crosswalk. SPoRC writes each component as a proper density while
-# AMAK drops normalising constants, so a like for like comparison subtracts
+# AMAK drops normalizing constants, so a like for like comparison subtracts
 # exactly the constants AMAK omits.
 lg2pi <- log(2 * pi)
 const <- c(catch = n_obs * (0.5 * lg2pi + log(dat$sigmaC)),

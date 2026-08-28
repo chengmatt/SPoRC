@@ -99,7 +99,7 @@ test_that("the result is a data.table per component", {
 test_that("a single-chain posterior currently fails", {
   # Dropping warmup uses the default drop = TRUE, so a one-chain posterior
   # loses its chain dimension, n_param reads as NA, and the matrix() call
-  # errors. Pinned as current behaviour: single-chain runs are not supported.
+  # errors. Pinned as current behavior: single-chain runs are not supported.
   expect_error(with_restored_plan(
     SPoRC::get_model_rep_from_mcmc(echo_obj, make_mcmc(n_iter = 5, n_chain = 1, warmup = 2),
                                    what = "p1", n_cores = 1)),

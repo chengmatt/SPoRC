@@ -31,7 +31,7 @@ where an observation informs that cell (e.g. \code{UseCatch},
 \code{UseSrvIdx}). When supplied, the resulting map is checked for
 observation-error parameters that no data can identify. See
 \code{\link{check_spec_map_identifiable}}. Defaults to \code{NULL}, which
-skips the check and leaves behaviour unchanged.}
+skips the check and leaves behavior unchanged.}
 
 \item{what}{Character label for the parameter, used in the check's messages.}
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/sim_observations.R
 \name{marginalize_conv_fish_tags}
 \alias{marginalize_conv_fish_tags}
-\title{Marginalise conventional fishery tag arrays across unattended dimensions}
+\title{Marginalize conventional fishery tag arrays across unattended dimensions}
 \usage{
 marginalize_conv_fish_tags(vals, tag_recaptures_attr, n_pop, n_ages, n_sexes)
 }

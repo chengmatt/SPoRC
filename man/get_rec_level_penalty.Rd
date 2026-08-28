@@ -11,8 +11,8 @@ get_rec_level_penalty(Rec, sigma, center = 1, yrs = NULL)
 
 \item{sigma}{Numeric standard deviation of the penalty.}
 
-\item{center}{Integer. \code{1} centres on the mean of the log series,
-\code{0} centres on zero.}
+\item{center}{Integer. \code{1} centers on the mean of the log series,
+\code{0} centers on zero.}
 
 \item{yrs}{Integer vector of years the penalty applies over, or \code{NULL}
 for every year.}
@@ -26,7 +26,7 @@ Penalizes the log recruitment time series directly, independently of any
 stock-recruit residual penalty. Under a stock-recruit relationship the
 deviations are residuals about the predicted curve, so a model that also
 wants to keep the recruitment series itself from wandering has nowhere to say
-so; this is that second statement. Centring on the series' own mean penalizes
+so; this is that second statement. Centering on the series' own mean penalizes
 only its variability and leaves its level to the rest of the model.
 }
 \keyword{internal}

@@ -288,7 +288,7 @@ test_that("Get_Movement scales the generator by seasdur when asked", {
   }
 })
 
-test_that("Get_Movement defaults to legacy unscaled generator behaviour", {
+test_that("Get_Movement defaults to legacy unscaled generator behavior", {
   # Default ctmc_scale_by_seasdur = 0 keeps existing model results reproducible
   expect_equal(formals(Get_Movement)$ctmc_scale_by_seasdur, 0)
   expect_equal(formals(build_seas_operator)$move_timing, 0)

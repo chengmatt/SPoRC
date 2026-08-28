@@ -60,7 +60,7 @@ ObsCatch <- array(dat$obs_catch, dim = c(1, n_yrs, 1, 1))
 UseCatch <- array(1, dim = c(1, n_yrs, 1, 1))
 
 # Compositions are joint across sexes, females then males in the file, and are
-# normalised the way fm.tpl normalises them before it builds its offset.
+# normalized the way fm.tpl normalizes them before it builds its offset.
 oac_fsh <- dat$oac_fsh / rowSums(dat$oac_fsh)
 oac_srv <- dat$oac_srv / rowSums(dat$oac_srv)
 

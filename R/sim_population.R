@@ -5,7 +5,7 @@
 # Simulate_Pop_Static is the entry point and drives the year loop, calling into
 # sim_observations.R once the true state for a year exists.
 
-#' Initialise age structure for a simulation replicate
+#' Initialize age structure for a simulation replicate
 #'
 #' Simulates or reads in initial age deviations and calls
 #' \code{\link{Get_Init_NAA}} to compute both the fished and unfished
@@ -150,7 +150,7 @@ generate_initial_age_structure <- function(y,
 #' and then multiplying by lognormal deviations (bias-corrected). Recruitment
 #' is apportioned across sexes and seasons and written into
 #' \code{sim_env$NAA[p, r, y, 1, 1, s, sim]} (first season, age-1 slot).
-#' Unfished NAA (\code{NAA0}) is synchronised to match fished NAA at
+#' Unfished NAA (\code{NAA0}) is synchronized to match fished NAA at
 #' recruitment. If \code{Rec_input} exists in the environment and covers year
 #' \code{y}, those values override the stochastic draw entirely.
 #'
@@ -610,7 +610,7 @@ apply_pop_dy <- function(y, sim, sim_env) {
 #' Run the annual cycle for a single simulation year
 #'
 #' Orchestrates the complete annual sequence of operating model processes for
-#' year \code{y} and simulation replicate \code{sim}: initialises age
+#' year \code{y} and simulation replicate \code{sim}: initializes age
 #' structure and generates first-year recruitment at \code{y = 1}; applies
 #' population dynamics (movement, mortality, biomass); generates fishery
 #' catches, indices, and compositions; generates survey indices and

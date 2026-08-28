@@ -7,7 +7,7 @@ library(Matrix)
 # A simulation self-test can only recover the truth if the simulator and the estimation
 # model implement the same dynamics. The operator-level properties are covered in
 # test-transition-operators.R and test-move-timing-selftest.R; what this file guards is
-# that the *simulator* honours move_timing everywhere the estimation model does.
+# that the *simulator* honors move_timing everywhere the estimation model does.
 #
 # Three modules previously defaulted to move_timing = 0 inside the simulator while the
 # estimation model ran at the configured timing, which biased the round trip:

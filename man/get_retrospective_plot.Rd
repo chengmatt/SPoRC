@@ -27,16 +27,16 @@ A list of three \code{ggplot} objects:
     Terminal-year points (where \code{peel = max(Year) - Year}) are
     highlighted. Mohn's rho (mean relative difference across terminal-year
     points) is annotated on each facet panel. Faceted by Region ×
-    (Type + Population); lines and points coloured by peel year on a
+    (Type + Population); lines and points colored by peel year on a
     continuous viridis scale.}
   \item{[[2]] abs_retro_plot}{Absolute-scale trajectory plot. Peeled runs
-    (\code{peel > 0}) are drawn as solid lines coloured by peel; the
+    (\code{peel > 0}) are drawn as solid lines colored by peel; the
     full-data run (\code{peel = 0}) is overlaid as a dashed black line.
     Faceted by Region × (Type + Population) with free y-scales.}
   \item{[[3]] squid_plot}{Cohort-tracking (squid) plot for recruitment.
     Restricted to the 10 most recent cohorts. X-axis shows years since the
     cohort was last estimated (\code{terminal - Year - 1}), y-axis shows
-    recruitment value, and lines are grouped and coloured by cohort year.
+    recruitment value, and lines are grouped and colored by cohort year.
     Faceted by Population × Region with free y-scales.}
 }
 }

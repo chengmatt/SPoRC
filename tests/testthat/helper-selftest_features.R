@@ -157,7 +157,7 @@ selftest_build_input <- function(sim_data, SrvIdx_LikeType = "lognormal", SrvIdx
   input_list
 }
 
-# Fit the base model, run the self-test with the block's own seed, and summarise
+# Fit the base model, run the self-test with the block's own seed, and summarize
 # median relative error per reported quantity. Assertions are the caller's job,
 # so the testthat files use expect_lt while the dev driver stops on violation.
 selftest_run <- function(input_list, what, sim_recruitment = "input", seed = 1) {

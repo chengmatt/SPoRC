@@ -147,7 +147,7 @@ test_that("marg_AIC applies the small-sample correction for finite n", {
   n <- 50
   expect_equal(SPoRC::marg_AIC(opt, n = n),
                2 * k + 2 * 100 + 2 * k * (k + 1) / (n - k - 1))
-  # A finite n must penalise more than the uncorrected form.
+  # A finite n must penalize more than the uncorrected form.
   expect_gt(SPoRC::marg_AIC(opt, n = n), SPoRC::marg_AIC(opt))
 })
 

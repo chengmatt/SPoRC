@@ -161,7 +161,7 @@ build_rebs_input <- function(dat) {
   )
 
   ## Fishery selectivity and catchability -------------------------------------
-  # logist1 is the a50 and slope parameterisation, which is the form this
+  # logist1 is the a50 and slope parameterization, which is the form this
   # assessment uses rather than the a50 and a95 form the rockfish bridges use.
   # selectivity is time invariant, and fishery catchability is not used because
   # there is no fishery index to scale
@@ -232,7 +232,7 @@ seed_rebs_mle <- function(input_list, dat) {
   input_list$par$ln_RecDevs[1, 1, 1:length(mle$rec_dev)] <- mle$rec_dev
 
   ## Initial age structure ----------------------------------------------------
-  # the assessment parameterises it as N(styr, j) = exp(log_rinit - M (j - 1) +
+  # the assessment parameterizes it as N(styr, j) = exp(log_rinit - M (j - 1) +
   # fydev_j), an absolute statement about numbers at age. SPoRC carries
   # multiplicative deviations from an equilibrium age structure, so the
   # deviations it wants are the log ratio of the two. build both and divide.

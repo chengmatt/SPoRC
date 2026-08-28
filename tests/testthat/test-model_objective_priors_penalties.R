@@ -4,7 +4,7 @@ library(testthat)
 # Each prior and penalty below is a single line of SPoRC_rtmb that no other test switches
 # on. The pattern throughout is the same: evaluate the model with the term off, evaluate it
 # again with the term on, and check that jnLL moved by exactly the value worked out by hand
-# from the prior's own mean and standard deviation. Nothing is optimised, so both
+# from the prior's own mean and standard deviation. Nothing is optimized, so both
 # evaluations sit at the same parameter values and the difference is the term itself.
 
 build <- function(...) suppressWarnings(suppressMessages(objective_fixture_input(...)))

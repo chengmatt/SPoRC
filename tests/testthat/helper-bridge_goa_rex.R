@@ -12,7 +12,7 @@
 # area and sex from the survey's conditional age-at-length data.
 #
 # The model is two areas (Western-Central = 1, Eastern = 2), two sexes, one
-# season, ages 0-20 with ages observed from 1, lengths 29 two centimetre bins
+# season, ages 0-20 with ages observed from 1, lengths 29 two centimeter bins
 # from 10 to 66 cm, years 1982-2024, sigmaR 0.6.
 #
 #   Source                          Years        Observations  Likelihood

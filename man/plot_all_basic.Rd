@@ -12,7 +12,7 @@ data list. Passed to \code{get_biological_plot}, \code{get_data_fitted_plot},
 and \code{get_nLL_plot}.}
 
 \item{rep}{List of length \code{n_models}, where each element is a SPoRC
-report list (i.e. the output of \code{obj$report()} after optimisation).
+report list (i.e. the output of \code{obj$report()} after optimization).
 Passed to \code{get_biological_plot}, \code{get_ts_plot},
 \code{get_selex_plot}, and \code{get_nLL_plot}.}
 

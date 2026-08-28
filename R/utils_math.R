@@ -166,7 +166,7 @@ Get_Natural_Cubic_Spline_Weights <- function(x_nodes, x_out) {
 #'
 #' Applies the scaled logistic transformation
 #' \eqn{2 / (1 + e^{-2x}) - 1} to map an unconstrained real value to
-#' \eqn{(-1, 1)}, suitable for parameterising correlation coefficients.
+#' \eqn{(-1, 1)}, suitable for parameterizing correlation coefficients.
 #' Used in SPoRC to back-transform raw correlation parameters before
 #' constructing AR(1) and constant covariance matrices for logistic-normal
 #' composition likelihoods.
@@ -188,7 +188,7 @@ rho_trans <- function(x){
 #' places no shape on how ages covary, at the cost of \eqn{n(n-1)/2} parameters.
 #'
 #' The parameters fill the strict lower triangle of a matrix whose diagonal is
-#' one. Normalising each row to unit length makes that matrix a Cholesky factor,
+#' one. Normalizing each row to unit length makes that matrix a Cholesky factor,
 #' so the product with its transpose is a correlation matrix with ones on the
 #' diagonal and is positive definite for any parameter values. 
 #'

@@ -46,7 +46,7 @@ test_that("GOA northern rockfish reproduces the 2024 ADMB assessment at its own 
                dat$admb$pred_srv, tolerance = 1e-6, ignore_attr = TRUE)
 
   # Likelihood components. SPoRC writes each component as a proper density while the
-  # assessment drops normalising constants, so each comparison subtracts exactly the
+  # assessment drops normalizing constants, so each comparison subtracts exactly the
   # constants the assessment omits. What is left is a like for like comparison. The
   # composition tolerances absorb the two templates' different robustifying
   # constants.
@@ -77,9 +77,9 @@ test_that("GOA northern rockfish reproduces the 2024 ADMB assessment at its own 
 
   # The assessment's recruitment penalty is the lognormal bias corrected sum of
   # squares over all recruitment deviations plus the initial age deviations
-  # excluding the plus group, with no normalising constants. SPoRC's Rec_nLL and
+  # excluding the plus group, with no normalizing constants. SPoRC's Rec_nLL and
   # Init_Rec_nLL carry the same penalties plus the constants subtracted here; the
-  # plus group deviation sits at zero in this parameterisation so it contributes
+  # plus group deviation sits at zero in this parameterization so it contributes
   # nothing on either side.
   s <- dat$sigmaR
   n_recdev <- length(dat$mle$log_Rt)

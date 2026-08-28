@@ -122,7 +122,7 @@ get_idx_fits <- function(data,
     dplyr::mutate(Type = 'Survey') %>%
     dplyr::filter(Year %in% unique(obs_srv$Year), value != 0) %>%
     dplyr::group_by(Region, Year, Seas, Fleet, Type) %>%
-    dplyr::summarise(value = sum(value))
+    dplyr::summarize(value = sum(value))
 
   # Get survey catchability
   srv_q <- reshape2::melt(data$srv_q_blocks) %>%
@@ -150,7 +150,7 @@ get_idx_fits <- function(data,
     dplyr::mutate(Type = 'Fishery') %>%
     dplyr::filter(Year %in% unique(obs_fish$Year), value != 0) %>%
     dplyr::group_by(Region, Year, Seas, Fleet, Type) %>%
-    dplyr::summarise(value = sum(value))
+    dplyr::summarize(value = sum(value))
 
   # Get fishery catchability
   fish_q <- reshape2::melt(data$fish_q_blocks) %>%

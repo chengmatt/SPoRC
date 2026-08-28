@@ -39,7 +39,7 @@ likelihood, both added for it.
 | Survey conditional age-at-length, both areas | 1993--2019 | 482 length bins | Multinomial |
 
 Ages run $a = 0$ to $a_{+} = 20$ with ages observed from $1$ to $20$, lengths
-are 29 two centimetre bins from 10 to 66 cm, and model years run
+are 29 two centimeter bins from 10 to 66 cm, and model years run
 $y_{1} = 1982$ to $y_{\text{end}} = 2024$. Recruitment is age 0, mean
 recruitment apportioned between the two areas by an estimated fraction, with
 $\sigma_{R} = 0.6$. The Eastern area carries no catch, so its population is
@@ -385,7 +385,7 @@ expected conditional age-at-length   1e-04    (absolute)
 ```
 
 `SPoRC` writes each likelihood component as a proper density where the
-assessment drops normalising constants and renormalizes after its composition
+assessment drops normalizing constants and renormalizes after its composition
 constant, so the comparison subtracts exactly what it omits:
 
 | Component | `SPoRC` less constants | Assessment | Difference |

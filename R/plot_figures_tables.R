@@ -13,7 +13,7 @@
 #' sdreport.
 #'
 #' @param rep List of length \code{n_models}, where each element is a SPoRC
-#'   report list (i.e. the output of \code{obj$report()} after optimisation).
+#'   report list (i.e. the output of \code{obj$report()} after optimization).
 #' @param sd_rep List of length \code{n_models}, where each element is a SPoRC
 #'   sdreport list (i.e. the output of \code{sdreport(obj)}). Used to extract
 #'   delta-method standard errors on log-scale quantities (\code{log_SSB},
@@ -35,7 +35,7 @@
 #'   \item{[[5]] total_biom_plot}{Total biomass by population, faceted by Region.}
 #'   \item{[[6]] ssb0_plot}{Dynamic unfished SSB (B0) by population, faceted by Region.}
 #'   \item{[[7]] ssb_ssb0_plot}{SSB and dynamic SSB0 overlaid on the same panel,
-#'     distinguished by linetype, faceted by Region. Useful for visualising depletion.}
+#'     distinguished by linetype, faceted by Region. Useful for visualizing depletion.}
 #' }
 #'
 #' @export get_ts_plot
@@ -201,11 +201,11 @@ get_ts_plot <- function(rep,
 #'
 #' Generates age- or length-based selectivity plots for all fishery and survey
 #' fleets across one or more SPoRC model runs. Selectivity curves are faceted by
-#' sex, region, and fleet, and coloured by year when multiple years are requested,
-#' allowing visualisation of time-varying selectivity alongside model comparisons.
+#' sex, region, and fleet, and colored by year when multiple years are requested,
+#' allowing visualization of time-varying selectivity alongside model comparisons.
 #'
 #' @param rep List of length \code{n_models}, where each element is a SPoRC
-#'   report list (i.e. the output of \code{obj$report()} after optimisation).
+#'   report list (i.e. the output of \code{obj$report()} after optimization).
 #'   Must contain \code{fish_sel} and \code{srv_sel} (age-based) and/or
 #'   \code{fish_sel_l} and \code{srv_sel_l} (length-based) depending on
 #'   \code{Selex_Type}.
@@ -217,14 +217,14 @@ get_ts_plot <- function(rep,
 #'   \code{fish_sel_l} / \code{srv_sel_l} are only populated when
 #'   \code{Selex_Type = 1} in the model).
 #' @param year_indx Integer or integer vector of year indices to include in the
-#'   plot. When multiple years are supplied, curves are coloured by year on a
+#'   plot. When multiple years are supplied, curves are colored by year on a
 #'   continuous viridis scale, making time-variation in selectivity visible.
 #'   If \code{NULL} (default), only the terminal year is plotted.
 #'
 #' @return A list of two \code{ggplot} objects:
 #' \describe{
 #'   \item{[[1]] fish_sel_plot}{Fishery selectivity curves faceted by
-#'     Sex × (Region + Fleet). Lines are coloured by year and distinguished
+#'     Sex × (Region + Fleet). Lines are colored by year and distinguished
 #'     by linetype across models.}
 #'   \item{[[2]] srv_sel_plot}{Survey selectivity curves with identical
 #'     faceting and aesthetic structure as the fishery plot.}
@@ -238,7 +238,7 @@ get_ts_plot <- function(rep,
 #'   # Terminal year only
 #'   plots <- get_selex_plot(list(rep1, rep2), c("Base", "Sensitivity"))
 #'
-#'   # All years to visualise time-varying selectivity
+#'   # All years to visualize time-varying selectivity
 #'   plots <- get_selex_plot(list(rep1), "Base", Selex_Type = "age", year_indx = 1:40)
 #'
 #'   plots[[1]] # fishery selectivity
@@ -337,27 +337,27 @@ get_selex_plot <- function(rep, model_names, Selex_Type = 'age', year_indx = NUL
 #'   data list. Used to extract \code{WAA}, \code{MatAA}, \code{ages},
 #'   \code{n_pop}, and \code{do_recruits_move}.
 #' @param rep List of length \code{n_models}, where each element is a SPoRC
-#'   report list (i.e. the output of \code{obj$report()} after optimisation).
+#'   report list (i.e. the output of \code{obj$report()} after optimization).
 #'   Must contain \code{Movement} and \code{natmort}.
 #' @param model_names Character vector of length \code{n_models} giving display
-#'   names for each model run. Used as colour legend labels across all plots.
+#'   names for each model run. Used as color legend labels across all plots.
 #'
 #' @return A list of four elements:
 #' \describe{
 #'   \item{[[1]] move_plot}{A list of \code{n_pop} \code{ggplot} objects, one
 #'     per population. Each plot shows age-specific movement probabilities for
 #'     all seasons at \code{year_indx}, faceted by Region_To × (Region_From +
-#'     Season), with lines coloured by model and distinguished by sex linetype.
+#'     Season), with lines colored by model and distinguished by sex linetype.
 #'     If \code{do_recruits_move = 0}, age-1 fish are excluded. Y-axis is fixed
 #'     to [0, 1].}
 #'   \item{[[2]] natmort_plot}{Natural mortality at age at \code{year_indx},
-#'     faceted by Region × Sex. Lines coloured by model and distinguished by
+#'     faceted by Region × Sex. Lines colored by model and distinguished by
 #'     population linetype.}
 #'   \item{[[3]] waa_plot}{Spawning weight-at-age at \code{year_indx}, faceted
-#'     by Region × (Sex + Season). Lines coloured by model and distinguished by
+#'     by Region × (Sex + Season). Lines colored by model and distinguished by
 #'     population linetype.}
 #'   \item{[[4]] mataa_plot}{Maturity-at-age at \code{year_indx}, faceted by
-#'     Region × (Sex + Season). Lines coloured by model and distinguished by
+#'     Region × (Sex + Season). Lines colored by model and distinguished by
 #'     population linetype.}
 #' }
 #'
@@ -515,11 +515,11 @@ get_biological_plot <- function(data,
 #'   names for each model run. Used as row facet labels.
 #'
 #' @return A single \code{ggplot} object: a dot-plot with Year on the x-axis
-#'   and data type (labelled by source, population where applicable, season,
+#'   and data type (labeled by source, population where applicable, season,
 #'   and fleet) on the y-axis, faceted by Model × Region. Points appear only
 #'   in years where the corresponding \code{Use*} indicator is 1. The legend
 #'   is suppressed; data types are distinguished by y-axis position and fill
-#'   colour.
+#'   color.
 #'
 #' @export get_data_fitted_plot
 #' @family Plotting
@@ -655,7 +655,7 @@ get_data_fitted_plot <- function(data,
 
 #' Get Plot of Negative Log Likelihood Values
 #'
-#' Extracts, weights, and visualises all negative log-likelihood (nLL)
+#' Extracts, weights, and visualizes all negative log-likelihood (nLL)
 #' components from one or more SPoRC model runs. Likelihood weights stored in
 #' the data list are applied to the relevant components (catch, indices,
 #' recruitment, tagging, fishing mortality) before plotting, so reported values
@@ -667,7 +667,7 @@ get_data_fitted_plot <- function(data,
 #'   \code{Wt_F}, \code{Wt_Rec}, \code{Wt_Tagging}, \code{Wt_SrvIdx}, and
 #'   \code{Wt_FishIdx}.
 #' @param rep List of length \code{n_models}, where each element is a SPoRC
-#'   report list (i.e. the output of \code{obj$report()} after optimisation).
+#'   report list (i.e. the output of \code{obj$report()} after optimization).
 #'   The following nLL components are extracted: \code{jnLL}, \code{h_nLL},
 #'   \code{M_nLL}, \code{rec_region_prop_nLL}, \code{Rec_nLL},
 #'   \code{Init_Rec_nLL}, \code{Init_Sex_nLL}, \code{Rec_level_nLL},
@@ -688,7 +688,7 @@ get_data_fitted_plot <- function(data,
 #' \describe{
 #'   \item{[[1]] nLL_plot}{A stacked bar chart (\code{ggplot}) with one facet
 #'     per model. Bars show the weighted nLL contribution of each component,
-#'     coloured by component type (Prior, Penalty, Catch, Index, Age, Length,
+#'     colored by component type (Prior, Penalty, Catch, Index, Age, Length,
 #'     Tagging, jnLL). Components with value 0 are excluded.}
 #'   \item{[[2]] table_plot}{A \code{ggdraw} table (via \code{gridExtra} and
 #'     \code{cowplot}) showing weighted nLL values in wide format, with one
@@ -800,23 +800,23 @@ get_nLL_plot <- function(data,
 #' Plots observed survey and fishery indices alongside model-predicted values
 #' for one or more SPoRC model runs. Observed values are shown as points with
 #' approximate 95% confidence intervals; predicted trajectories are overlaid as
-#' lines coloured by model. Years where the observed index is zero (i.e.
+#' lines colored by model. Years where the observed index is zero (i.e.
 #' \code{Use*Idx = 0}) are excluded from both the points and lines.
 #'
 #' @param data List of length \code{n_models}, where each element is a SPoRC
 #'   data list. Passed to \code{get_idx_fits} along with \code{rep[[i]]}; year
 #'   labels are taken from \code{data[[i]]$years}.
 #' @param rep List of length \code{n_models}, where each element is a SPoRC
-#'   report list (i.e. the output of \code{obj$report()} after optimisation).
+#'   report list (i.e. the output of \code{obj$report()} after optimization).
 #'   Predicted index values are extracted internally via \code{get_idx_fits}.
 #' @param model_names Character vector of length \code{n_models} giving display
-#'   names for each model run. Used as the colour legend label on predicted
+#'   names for each model run. Used as the color legend label on predicted
 #'   trajectories.
 #'
 #' @return A single \code{ggplot} object. Observed indices are shown as
 #'   \code{geom_pointrange} (black) with lower and upper confidence interval
 #'   bounds from \code{get_idx_fits}. Predicted indices are shown as
-#'   \code{geom_line} coloured by model.
+#'   \code{geom_line} colored by model.
 #'
 #' @export get_idx_fits_plot
 #' @family Model Diagnostics
@@ -926,14 +926,14 @@ get_at_age_fits_plot <- function(data, rep, model_names, stream = "CatchAA") {
   df$upr <- ifelse(df$lognormal, df$Obs * exp(1.96 * df$sigma), df$Obs + 1.96 * df$sigma)
 
   ggplot(df, aes(x = Year)) +
-    geom_pointrange(aes(y = Obs, ymin = lwr, ymax = upr), size = 0.2, colour = "grey40") +
-    geom_line(aes(y = Pred, colour = Model), linewidth = 0.7) +
+    geom_pointrange(aes(y = Obs, ymin = lwr, ymax = upr), size = 0.2, color = "gray40") +
+    geom_line(aes(y = Pred, color = Model), linewidth = 0.7) +
     facet_grid(Age ~ Fleet + Region + Sex, scales = "free_y",
                labeller = labeller(Age = function(x) paste("Age", x),
                                    Fleet = function(x) paste("Fleet", x),
                                    Region = function(x) paste("Region", x),
                                    Sex = function(x) paste("Sex", x))) +
-    labs(x = "Year", y = stream, colour = NULL) +
+    labs(x = "Year", y = stream, color = NULL) +
     theme_bw(base_size = 11) + theme(panel.grid.minor = element_blank())
 }
 
@@ -961,7 +961,7 @@ get_at_age_fits_plot <- function(data, rep, model_names, stream = "CatchAA") {
 #'   corresponding weights are also used.
 #'
 #' @param rep List of length \code{n_models}, where each element is a SPoRC
-#'   model report (output of \code{obj$report()} after optimisation).
+#'   model report (output of \code{obj$report()} after optimization).
 #'   \code{PredCatch} and \code{PredDiscard}
 #'   \code{[n_pop × n_regions × n_yrs × n_seas × n_fish_fleets]} are summed
 #'   across populations for pooled trajectories and used directly for
@@ -1207,16 +1207,16 @@ get_catch_fits_plot <- function(data,
 #'     Terminal-year points (where \code{peel = max(Year) - Year}) are
 #'     highlighted. Mohn's rho (mean relative difference across terminal-year
 #'     points) is annotated on each facet panel. Faceted by Region ×
-#'     (Type + Population); lines and points coloured by peel year on a
+#'     (Type + Population); lines and points colored by peel year on a
 #'     continuous viridis scale.}
 #'   \item{[[2]] abs_retro_plot}{Absolute-scale trajectory plot. Peeled runs
-#'     (\code{peel > 0}) are drawn as solid lines coloured by peel; the
+#'     (\code{peel > 0}) are drawn as solid lines colored by peel; the
 #'     full-data run (\code{peel = 0}) is overlaid as a dashed black line.
 #'     Faceted by Region × (Type + Population) with free y-scales.}
 #'   \item{[[3]] squid_plot}{Cohort-tracking (squid) plot for recruitment.
 #'     Restricted to the 10 most recent cohorts. X-axis shows years since the
 #'     cohort was last estimated (\code{terminal - Year - 1}), y-axis shows
-#'     recruitment value, and lines are grouped and coloured by cohort year.
+#'     recruitment value, and lines are grouped and colored by cohort year.
 #'     Faceted by Population × Region with free y-scales.}
 #' }
 #'
@@ -1269,7 +1269,7 @@ get_retrospective_plot <- function(retro_output, Rec_Age) {
                         pch = 21, size = 6) +
     ggplot2::geom_text(mohns_rho, mapping = aes(x = -Inf, y = Inf, label = paste("Mohns Rho:", round(rho, 4))),
                        hjust = -0.3, vjust = 3, size = 5) +
-    ggplot2::guides(color = ggplot2::guide_colourbar(barwidth = 15, barheight = 1.3)) +
+    ggplot2::guides(color = ggplot2::guide_colorbar(barwidth = 15, barheight = 1.3)) +
     ggplot2::labs(x = 'Year', y = 'Relative Difference from Terminal Year', color = 'Retrospective Year', fill = 'Retrospective Year') +
     ggplot2::scale_color_viridis_c() +
     ggplot2::scale_fill_viridis_c() +
@@ -1313,7 +1313,7 @@ get_retrospective_plot <- function(retro_output, Rec_Age) {
 #'   data list. Passed to \code{get_biological_plot}, \code{get_data_fitted_plot},
 #'   and \code{get_nLL_plot}.
 #' @param rep List of length \code{n_models}, where each element is a SPoRC
-#'   report list (i.e. the output of \code{obj$report()} after optimisation).
+#'   report list (i.e. the output of \code{obj$report()} after optimization).
 #'   Passed to \code{get_biological_plot}, \code{get_ts_plot},
 #'   \code{get_selex_plot}, and \code{get_nLL_plot}.
 #' @param sd_rep List of length \code{n_models}, where each element is a SPoRC
@@ -1377,7 +1377,7 @@ plot_all_basic <- function(data,
 #'   biological inputs (e.g., weight-at-age, maturity, natural mortality).
 #' @param rep A list of length \code{n_models}, where each element is a
 #'   SPoRC-formatted report list (i.e., the output of \code{obj$report()}
-#'   after optimisation). Each element must include recruitment, selectivity,
+#'   after optimization). Each element must include recruitment, selectivity,
 #'   fishing mortality, and numbers-at-age arrays.
 #' @param reference_points_opt A named list of options passed to
 #'   \code{\link{Get_Reference_Points}}. Required elements:

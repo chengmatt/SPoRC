@@ -34,10 +34,10 @@ and \code{natal_region}) plus:
 }
 \value{
 Numeric scalar. Negative total equilibrium yield across all regions.
-  This is minimised to obtain the vector of regional \eqn{F_{MSY}} values.
+  This is minimized to obtain the vector of regional \eqn{F_{MSY}} values.
 }
 \description{
-Computes the vector of regional \eqn{F_{MSY}} values that jointly maximise
+Computes the vector of regional \eqn{F_{MSY}} values that jointly maximize
 total equilibrium yield across all regions under a spatially explicit
 Beverton-Holt stock-recruit relationship. Unlike \code{\link{global_Fmsy}},
 which constrains all regions to share a single fishing mortality, this

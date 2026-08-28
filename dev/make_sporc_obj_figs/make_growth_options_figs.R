@@ -2,7 +2,7 @@
 #          choosing the growth options in Setup_Mod_Biologicals(). Each figure
 #          isolates one decision and shows what the switch does, built from the
 #          same functions the objective function calls, so nothing here is a
-#          sketch of the model's behaviour.
+#          sketch of the model's behavior.
 #
 #          Four figures:
 #            1. the Schnute curve dissected, and what growth_model changes
@@ -30,7 +30,7 @@ thm <- ggplot2::theme_bw(base_size = 17) +
   ggplot2::theme(legend.position = "top",
                  legend.title = ggplot2::element_text(size = 14),
                  legend.text = ggplot2::element_text(size = 13),
-                 strip.background = ggplot2::element_rect(fill = "grey92"))
+                 strip.background = ggplot2::element_rect(fill = "gray92"))
 lvl <- function(x, ...) factor(x, levels = c(...))
 
 ## 1. The curve --------------------------------------------------------------
@@ -49,10 +49,10 @@ crv <- get_laa_curve(ages, L0, L1, L2, K, CV1, CV2, A1, A2)
 # side of the mean, which is the spread the age-length key is built from
 anat <- data.frame(Age = ages, L = crv$L, lo = crv$L - crv$sd, hi = crv$L + crv$sd)
 p_anat <- ggplot(anat, aes(Age, L)) +
-  annotate("rect", xmin = 0, xmax = A1, ymin = -Inf, ymax = Inf, fill = "grey90") +
+  annotate("rect", xmin = 0, xmax = A1, ymin = -Inf, ymax = Inf, fill = "gray90") +
   annotate("text", x = A1 / 2, y = 88, label = "linear\nphase", size = 4.2, lineheight = 0.9) +
-  geom_ribbon(aes(ymin = lo, ymax = hi), fill = "grey60", alpha = 0.35) +
-  geom_hline(yintercept = crv$Linf, linetype = "dashed", colour = "grey30") +
+  geom_ribbon(aes(ymin = lo, ymax = hi), fill = "gray60", alpha = 0.35) +
+  geom_hline(yintercept = crv$Linf, linetype = "dashed", color = "gray30") +
   annotate("text", x = 21.5, y = crv$Linf + 4, label = "L[infinity]", parse = TRUE, size = 5) +
   geom_line(linewidth = 1.1) +
   geom_point(data = data.frame(Age = c(0, A1, A2), L = c(L0, L1, L2)), size = 3.2) +
@@ -68,9 +68,9 @@ rho_df <- bind_rows(lapply(c(0.4, 1, 2.5), function(rr) {
              Option = if(rr == 1) "vb_schnute (rho = 1)" else paste0("richards, rho = ", rr))
 }))
 rho_df$Option <- lvl(rho_df$Option, "vb_schnute (rho = 1)", "richards, rho = 0.4", "richards, rho = 2.5")
-p_rho <- ggplot(rho_df, aes(Age, L, colour = Option, linetype = Option)) +
+p_rho <- ggplot(rho_df, aes(Age, L, color = Option, linetype = Option)) +
   geom_line(linewidth = 1.1) + ggthemes::scale_color_colorblind() +
-  labs(x = "Age", y = "Mean length", colour = "growth_model", linetype = "growth_model") +
+  labs(x = "Age", y = "Mean length", color = "growth_model", linetype = "growth_model") +
   thm + theme(legend.direction = "vertical")
 
 # (c) growth_A2: the same L2 read as the length at a reference age, from which
@@ -85,14 +85,14 @@ a2_df <- bind_rows(
                                            L2_asymptote = 1)$L,
              Option = 'growth_A2 = "Linf"')
 )
-p_a2 <- ggplot(a2_df, aes(Age, L, colour = Option, linetype = Option)) +
+p_a2 <- ggplot(a2_df, aes(Age, L, color = Option, linetype = Option)) +
   geom_line(linewidth = 1.1) +
-  geom_hline(yintercept = L2, colour = "grey40", linetype = "dotted") +
+  geom_hline(yintercept = L2, color = "gray40", linetype = "dotted") +
   geom_point(data = data.frame(Age = A2_y, L = L2), inherit.aes = FALSE,
-             aes(Age, L), colour = "grey20", size = 3) +
+             aes(Age, L), color = "gray20", size = 3) +
   annotate("text", x = 20, y = L2 - 4.5, label = "L[2]==70", parse = TRUE, size = 5) +
   ggthemes::scale_color_colorblind() +
-  labs(x = "Age", y = "Mean length", colour = "L2 is read as",
+  labs(x = "Age", y = "Mean length", color = "L2 is read as",
        linetype = "L2 is read as") +
   thm + theme(legend.direction = "vertical")
 
@@ -106,17 +106,17 @@ pg_df <- bind_rows(
   data.frame(Age = 0:acc, L = crv_acc$L, Option = 'growth_plus_group = "curve"'),
   data.frame(Age = 0:acc, L = pg, Option = 'growth_plus_group = "mixture"')
 )
-p_pg <- ggplot(pg_df, aes(Age, L, colour = Option, linetype = Option)) +
-  geom_hline(yintercept = crv_acc$Linf, linetype = "dashed", colour = "grey30") +
+p_pg <- ggplot(pg_df, aes(Age, L, color = Option, linetype = Option)) +
+  geom_hline(yintercept = crv_acc$Linf, linetype = "dashed", color = "gray30") +
   annotate("text", x = 1.4, y = crv_acc$Linf - 3, label = "L[infinity]", parse = TRUE, size = 5) +
   geom_line(linewidth = 1.1) +
   geom_point(data = subset(pg_df, Age == acc), size = 3.4) +
   annotate("segment", x = acc - 0.9, xend = acc - 0.9, y = crv_acc$L[acc + 1], yend = pg[acc + 1],
-           arrow = grid::arrow(ends = "both", length = grid::unit(0.14, "cm")), colour = "grey20") +
+           arrow = grid::arrow(ends = "both", length = grid::unit(0.14, "cm")), color = "gray20") +
   annotate("text", x = acc - 1.2, y = mean(c(crv_acc$L[acc + 1], pg[acc + 1])),
            label = sprintf("%.1f", pg[acc + 1] - crv_acc$L[acc + 1]), hjust = 1, size = 4.6) +
   ggthemes::scale_color_colorblind() +
-  labs(x = "Age (8 accumulates)", y = "Mean length", colour = "Plus group", linetype = "Plus group") +
+  labs(x = "Age (8 accumulates)", y = "Mean length", color = "Plus group", linetype = "Plus group") +
   thm + theme(legend.direction = "vertical")
 
 ggsave(file.path(fig_dir, "af_growth_curve.png"),
@@ -134,9 +134,9 @@ cv_df <- bind_rows(
   data.frame(Age = ages, cv = get_laa_curve(ages, L0, L1, L2, K, CV1, CV2, A1, A2, cv_type = 1)$cv,
              Option = 'growth_cv_type = "age"')
 )
-p_cv <- ggplot(cv_df, aes(Age, cv, colour = Option, linetype = Option)) +
+p_cv <- ggplot(cv_df, aes(Age, cv, color = Option, linetype = Option)) +
   geom_line(linewidth = 1.1) + ggthemes::scale_color_colorblind() +
-  labs(x = "Age", y = "CV of length at age", colour = NULL, linetype = NULL) +
+  labs(x = "Age", y = "CV of length at age", color = NULL, linetype = NULL) +
   thm + theme(legend.direction = "vertical")
 
 # (b) growth_sd_type: the same two parameters read as CVs, which scale the mean,
@@ -146,9 +146,9 @@ sd_df <- bind_rows(
   data.frame(Age = ages, sd = get_laa_curve(ages, L0, L1, L2, K, CV1 = 3, CV2 = 5, A1, A2, sd_type = 1)$sd,
              Option = 'growth_sd_type = "sd"')
 )
-p_sd <- ggplot(sd_df, aes(Age, sd, colour = Option, linetype = Option)) +
+p_sd <- ggplot(sd_df, aes(Age, sd, color = Option, linetype = Option)) +
   geom_line(linewidth = 1.1) + ggthemes::scale_color_colorblind() +
-  labs(x = "Age", y = "SD of length at age", colour = NULL, linetype = NULL) +
+  labs(x = "Age", y = "SD of length at age", color = NULL, linetype = NULL) +
   thm + theme(legend.direction = "vertical")
 
 # (c) growth_dist: the distribution the key bins. The two forms are close at a
@@ -176,10 +176,10 @@ dist_df <- bind_rows(lapply(c(1, 4), function(a) {
 }))
 dist_df$Age <- lvl(dist_df$Age, "Age 1", "Age 4")
 dist_df$Option <- lvl(dist_df$Option, 'normal, sd_type = "cv"', 'lognormal, sd_type = "sd"')
-p_dist <- ggplot(dist_df, aes(Length, p, colour = Option, linetype = Option)) +
+p_dist <- ggplot(dist_df, aes(Length, p, color = Option, linetype = Option)) +
   geom_line(linewidth = 1.1) + facet_wrap(~Age, scales = "free", ncol = 1) +
   ggthemes::scale_color_colorblind() +
-  labs(x = "Length", y = "Proportion at length", colour = "Spread of 0.35",
+  labs(x = "Length", y = "Proportion at length", color = "Spread of 0.35",
        linetype = "Spread of 0.35") +
   thm + theme(legend.direction = "vertical")
 
@@ -242,10 +242,10 @@ laa_df <- bind_rows(lapply(c(1999, 2003, 2012), function(y) {
   ) %>% mutate(Year = paste("Year", y))
 }))
 laa_df$Year <- lvl(laa_df$Year, "Year 1999", "Year 2003", "Year 2012")
-p_laa <- ggplot(laa_df, aes(Age, L, colour = Option, linetype = Option)) +
+p_laa <- ggplot(laa_df, aes(Age, L, color = Option, linetype = Option)) +
   geom_line(linewidth = 1.1) + facet_wrap(~Year, nrow = 1) +
   ggthemes::scale_color_colorblind() +
-  labs(x = "Age", y = "Mean length at age (cm)", colour = NULL, linetype = NULL) + thm
+  labs(x = "Age", y = "Mean length at age (cm)", color = NULL, linetype = NULL) + thm
 
 ggsave(file.path(fig_dir, "af_growth_tv.png"),
        patchwork::wrap_plots(p_pars, p_laa, ncol = 1, heights = c(0.75, 1)),
@@ -274,7 +274,7 @@ sp_par <- sp_flat$rep$mean_LAA_srv[1, 1, , 1, , 1, 1]
 surf_df <- expand.grid(Year = sp_yrs, Age = sp_ages) %>% mutate(dev = as.vector(sp_sim$devs))
 p_surf <- ggplot(surf_df, aes(Year, Age, fill = dev)) +
   geom_raster() +
-  scale_fill_gradient2(low = "#3B4CC0", mid = "grey95", high = "#B40426") +
+  scale_fill_gradient2(low = "#3B4CC0", mid = "gray95", high = "#B40426") +
   scale_y_continuous(breaks = seq(2, 12, 2)) +
   labs(x = "Year", y = "Age", fill = "Departure from the curve,\nlog mean length at age") +
   thm + theme(legend.key.width = unit(1.5, "cm"))
@@ -289,10 +289,10 @@ sp_laa <- bind_rows(lapply(c(5, 15, 27), function(y) {
 }))
 sp_laa$Year <- lvl(sp_laa$Year, "Year 5", "Year 15", "Year 27")
 sp_laa$Option <- lvl(sp_laa$Option, "Simulated truth", 'growth_semipar = "none"', 'growth_semipar = "2dar1"')
-p_sp_laa <- ggplot(sp_laa, aes(Age, L, colour = Option, linetype = Option)) +
+p_sp_laa <- ggplot(sp_laa, aes(Age, L, color = Option, linetype = Option)) +
   geom_line(linewidth = 1.1) + facet_wrap(~Year, nrow = 1) +
   ggthemes::scale_color_colorblind() +
-  labs(x = "Age", y = "Mean length at age", colour = NULL, linetype = NULL) + thm
+  labs(x = "Age", y = "Mean length at age", color = NULL, linetype = NULL) + thm
 
 ggsave(file.path(fig_dir, "af_growth_semipar.png"),
        patchwork::wrap_plots(p_surf, p_sp_laa, ncol = 1, heights = c(1, 0.85)),

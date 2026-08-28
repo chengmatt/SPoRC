@@ -3,9 +3,9 @@
 # Allocates the arrays the operating model fills in. Called early in the
 # Setup_Sim_* chain so the later stages have somewhere to write.
 
-#' Initialise output containers for the operating model simulation
+#' Initialize output containers for the operating model simulation
 #'
-#' Allocates and appends zero-initialised arrays to \code{sim_list} for all
+#' Allocates and appends zero-initialized arrays to \code{sim_list} for all
 #' biological, fishery, and survey quantities tracked during simulation. This
 #' function should be called after \code{\link{Setup_Sim_Dim}} and before any
 #' operating model dynamics are run. All arrays are pre-allocated and populated
@@ -18,7 +18,7 @@
 #'   \code{n_lens}) are used to size all output containers.
 #'
 #'
-#' @return The input \code{sim_list} with the following zero-initialised arrays added:
+#' @return The input \code{sim_list} with the following zero-initialized arrays added:
 #'
 #'   **Biological containers**
 #'   \describe{

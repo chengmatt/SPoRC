@@ -9,7 +9,7 @@
 # dev/pcod_bridge/R/build_pcod_data.R and is packaged as sgl_rg_ebs_pcod_data.
 #
 # The model is one area, one sex, one season, ages 0-20, lengths on 121 one
-# centimetre population bins reported to 24 five centimetre data bins, and years
+# centimeter population bins reported to 24 five centimeter data bins, and years
 # 1977-2024.
 #
 #   Source                     Years        Observations  Likelihood
@@ -93,7 +93,7 @@ build_ebs_pcod_input <- function(dat) {
   # vector carries their standard deviations and a placeholder for the four
   # parameters that do not.
   #
-  # maturity at age is taken from the assessment rather than modelled, since
+  # maturity at age is taken from the assessment rather than modeled, since
   # maturity is length based and fixed there. LenBinMap maps the 121 population
   # bins onto the 24 bins the compositions are recorded on.
   g <- dat$growth

@@ -13,7 +13,7 @@ biological inputs (e.g., weight-at-age, maturity, natural mortality).}
 
 \item{rep}{A list of length \code{n_models}, where each element is a
 SPoRC-formatted report list (i.e., the output of \code{obj$report()}
-after optimisation). Each element must include recruitment, selectivity,
+after optimization). Each element must include recruitment, selectivity,
 fishing mortality, and numbers-at-age arrays.}
 
 \item{reference_points_opt}{A named list of options passed to
@@ -149,6 +149,7 @@ The quantities returned by this function are \strong{approximate and
 
 Other Reference Points and Projections:
 \code{\link[=Do_Population_Projection]{Do_Population_Projection()}},
+\code{\link[=Get_Reference_Point_Uncertainty]{Get_Reference_Point_Uncertainty()}},
 \code{\link[=Get_Reference_Points]{Get_Reference_Points()}}
 }
 \concept{Reference Points and Projections}

@@ -24,7 +24,7 @@ Numeric. Log-likelihood (or likelihood if \code{give_log = FALSE}).
 }
 \description{
 Computes the negative binomial log-likelihood using a
-\eqn{(\mu, \sigma^2 - \mu)} reparameterisation that remains valid for
+\eqn{(\mu, \sigma^2 - \mu)} reparameterization that remains valid for
 non-integer observations via \code{lgamma}. The overdispersion parameter
 is recovered as \eqn{k = \mu^2 / (\sigma^2 - \mu)}.
 }

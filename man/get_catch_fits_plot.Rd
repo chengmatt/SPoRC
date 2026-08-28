@@ -20,7 +20,7 @@ get_catch_fits_plot(data, rep, model_names)
   corresponding weights are also used.}
 
 \item{rep}{List of length \code{n_models}, where each element is a SPoRC
-model report (output of \code{obj$report()} after optimisation).
+model report (output of \code{obj$report()} after optimization).
 \code{PredCatch} and \code{PredDiscard}
 \code{[n_pop × n_regions × n_yrs × n_seas × n_fish_fleets]} are summed
 across populations for pooled trajectories and used directly for

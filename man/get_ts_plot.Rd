@@ -8,7 +8,7 @@ get_ts_plot(rep, sd_rep, model_names, do_ci = TRUE)
 }
 \arguments{
 \item{rep}{List of length \code{n_models}, where each element is a SPoRC
-report list (i.e. the output of \code{obj$report()} after optimisation).}
+report list (i.e. the output of \code{obj$report()} after optimization).}
 
 \item{sd_rep}{List of length \code{n_models}, where each element is a SPoRC
 sdreport list (i.e. the output of \code{sdreport(obj)}). Used to extract
@@ -34,7 +34,7 @@ A named list of seven \code{ggplot} objects:
   \item{[[5]] total_biom_plot}{Total biomass by population, faceted by Region.}
   \item{[[6]] ssb0_plot}{Dynamic unfished SSB (B0) by population, faceted by Region.}
   \item{[[7]] ssb_ssb0_plot}{SSB and dynamic SSB0 overlaid on the same panel,
-    distinguished by linetype, faceted by Region. Useful for visualising depletion.}
+    distinguished by linetype, faceted by Region. Useful for visualizing depletion.}
 }
 }
 \description{

@@ -82,7 +82,7 @@ estimated and are left unpenalized. \code{NULL} penalizes every cell.}
 which cells are penalized. Sexes sharing one parameter keep only the first
 sex's copy flagged so the shared parameter is not penalized twice;
 sex-specific deviations flag every sex. \code{NULL} penalizes only the
-first sex's slice, which is the pre-sex-dimension behaviour.}
+first sex's slice, which is the pre-sex-dimension behavior.}
 
 \item{Use_init_sex_pen}{Integer (0/1). Whether each later sex's initial
 age deviations are tied to the first sex's through a Gaussian on their
@@ -94,7 +94,7 @@ their own curves.}
 \item{init_bias_ramp}{Numeric vector of length \code{n_ages - 1}, the bias
 ramp read at the year each initial age was born (deviation index
 \code{1 - age}). \code{NULL} uses the first model year's ramp value for
-every age, the previous behaviour.}
+every age, the previous behavior.}
 
 \item{map_ln_InitDevs}{Numeric array matching \code{ln_InitDevs}, the map
 levels (\code{NA} where fixed). Cells sharing a level hold one parameter and

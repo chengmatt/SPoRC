@@ -12,24 +12,24 @@ data list. Passed to \code{get_idx_fits} along with \code{rep[[i]]}; year
 labels are taken from \code{data[[i]]$years}.}
 
 \item{rep}{List of length \code{n_models}, where each element is a SPoRC
-report list (i.e. the output of \code{obj$report()} after optimisation).
+report list (i.e. the output of \code{obj$report()} after optimization).
 Predicted index values are extracted internally via \code{get_idx_fits}.}
 
 \item{model_names}{Character vector of length \code{n_models} giving display
-names for each model run. Used as the colour legend label on predicted
+names for each model run. Used as the color legend label on predicted
 trajectories.}
 }
 \value{
 A single \code{ggplot} object. Observed indices are shown as
   \code{geom_pointrange} (black) with lower and upper confidence interval
   bounds from \code{get_idx_fits}. Predicted indices are shown as
-  \code{geom_line} coloured by model.
+  \code{geom_line} colored by model.
 }
 \description{
 Plots observed survey and fishery indices alongside model-predicted values
 for one or more SPoRC model runs. Observed values are shown as points with
 approximate 95% confidence intervals; predicted trajectories are overlaid as
-lines coloured by model. Years where the observed index is zero (i.e.
+lines colored by model. Years where the observed index is zero (i.e.
 \code{Use*Idx = 0}) are excluded from both the points and lines.
 }
 \examples{

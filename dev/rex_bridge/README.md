@@ -40,7 +40,7 @@ adding its constant; the index likelihood up to 0.5 log(2 pi) per observation;
 the catchability prior up to log(sd) + 0.5 log(2 pi).
 
 Not reproduced, by convention: the recruitment and early-deviation penalties
-(SS3 applies each early year's own bias adjustment, SPoRC centres the initial
+(SS3 applies each early year's own bias adjustment, SPoRC centers the initial
 deviations on the first ramp value), (cross-fleet catchability mirroring is expressed through the map, which ties the
 two surveys' q cells to one parameter).
 Those leave the gradient at the estimate non-zero on R0, the growth parameters and

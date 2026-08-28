@@ -147,7 +147,7 @@ point used in harvest control rules.}
 
 \item{fmort_opt}{Character. Fishing mortality scenario:
 `"HCR"`, `"HCR_global"`, `"Input"`, or `"Catch"`. `"Catch"` solves each
-projection year's fishing mortality so that realised catch matches
+projection year's fishing mortality so that realized catch matches
 `catch_input`, leaving every other model quantity untouched.}
 
 \item{catch_input}{Catch targets in biomass, used when `fmort_opt = "Catch"`
@@ -362,7 +362,7 @@ A named list of projected quantities. Year index 1 is the terminal
     uses for `Total_Biom`, so the projected series continues the estimated one
     without a discontinuity at the terminal year.}
   \item{\code{proj_Dynamic_SSB0}}{Array `[n_pop, n_regions, n_proj_yrs]`.
-    Spawning biomass the population would have carried under the same realised
+    Spawning biomass the population would have carried under the same realized
     recruitment but no fishing, for dynamic depletion.}
   \item{\code{proj_NAA}}{Array
     `[n_pop, n_regions, n_proj_yrs + 1, n_seas, n_ages, n_sexes]`. Fished
@@ -382,7 +382,7 @@ A named list of projected quantities. Year index 1 is the terminal
   \item{\code{proj_catch_resid}}{Array shaped like `catch_input`:
     `[n_regions, n_proj_yrs]` for annual targets, `[n_regions, n_proj_yrs, n_seas]`
     for seasonal ones. Relative miss on each catch target,
-    `(realised - target) / target`, and `NA` for years carrying no target
+    `(realized - target) / target`, and `NA` for years carrying no target
     (including every year when `fmort_opt != "Catch"`). Should be at or below
     `catch_tol` wherever the solve converged, and is worth checking directly
     rather than relying on warnings alone.}
@@ -442,7 +442,7 @@ Under \code{fmort_opt = "Catch"} step 7 moves to the front of the following
 year instead: the F that lands a catch target depends on that year's own
 numbers-at-age, not on the previous year's spawning biomass, so it cannot be
 set at the end of the previous year the way the HCR and Input options are.
-The year is run repeatedly at trial F values until realised catch matches the
+The year is run repeatedly at trial F values until realized catch matches the
 target, then run once more at the accepted F and committed. Steps 1 to 6 are
 otherwise unchanged, and no demographic input is modified: only F moves.
 Regions are solved jointly rather than one at a time, because between-season
@@ -458,7 +458,7 @@ F than the target alone implies.
 
 Effective spawning biomass at each population's natal region aggregates
 contributions from all populations, with cross-population contributions
-scaled by \code{stray_rate} and normalised by the number of populations
+scaled by \code{stray_rate} and normalized by the number of populations
 in each natal region.
 
 When \code{n_sexes = 1}, spawning biomass is multiplied by 0.5. When
@@ -466,6 +466,7 @@ When \code{n_sexes = 1}, spawning biomass is multiplied by 0.5. When
 }
 \seealso{
 Other Reference Points and Projections:
+\code{\link[=Get_Reference_Point_Uncertainty]{Get_Reference_Point_Uncertainty()}},
 \code{\link[=Get_Reference_Points]{Get_Reference_Points()}},
 \code{\link[=get_key_quants]{get_key_quants()}}
 }

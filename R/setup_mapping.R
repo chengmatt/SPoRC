@@ -73,7 +73,7 @@ build_pe_map <- function(dims, share_over = character(0)) {
 #'   \code{UseSrvIdx}). When supplied, the resulting map is checked for
 #'   observation-error parameters that no data can identify. See
 #'   \code{\link{check_spec_map_identifiable}}. Defaults to \code{NULL}, which
-#'   skips the check and leaves behaviour unchanged.
+#'   skips the check and leaves behavior unchanged.
 #' @param what Character label for the parameter, used in the check's messages.
 #' @param min_obs Integer. A group informed by fewer than this many
 #'   observations raises an error. Default \code{2}.
@@ -114,7 +114,7 @@ build_shared_spec_map <- function(dims, spec, dim_abbrev, use = NULL,
 #' An observation-error standard deviation needs more than one observation to
 #' be estimable. Given one, the likelihood is unbounded: the standard deviation
 #' collapses towards zero on whatever residual the model can fit exactly and the
-#' \code{log(sigma)} term runs to negative infinity. The optimiser reports
+#' \code{log(sigma)} term runs to negative infinity. The optimizer reports
 #' convergence, so nothing about the fit announces the problem.
 #'
 #' This is not confined to \code{"est_all"}. Any spec that leaves a dimension
@@ -450,8 +450,17 @@ do_at_age_like_setup <- function(input_list, like_type, sigma_form, stream, flee
 #' over ages and years jointly through a separable AR(1), which is defined on a
 #' complete grid and so requires the fleet's observed ages and years to form one.
 #'
-#' Correlations are one per fleet, shared across sexes, unless a key says
-#' otherwise. A sex a fleet never observes carries no parameter.
+#' How the correlations are shared follows the package's spec strings rather than
+#' a structure of its own. They sit over region, sex and fleet, with a leading
+#' population margin for the population-specific streams, so
+#' \code{"est_shared_r_s"} (the default, \code{"est_shared_p_r_s"} for the
+#' population form) gives one per fleet, \code{"est_shared_r_s_f"} a single
+#' value, \code{"est_all"} a free one per cell, and \code{"fix"} holds them all.
+#' One spec governs the stream's across-age correlation, its across-year
+#' correlation and its unstructured matrix together, so two fleets sharing a
+#' correlation share a whole matrix under \code{"us"}. A region, sex or
+#' population a fleet never observes carries no parameter whatever the spec says,
+#' which is what holds the unused slots of a summed margin out.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par} and \code{$map}.
 #' @param corr \code{"iid"}, \code{"1dar1"}, \code{"us"} or \code{"2dar1"},
@@ -461,9 +470,12 @@ do_at_age_like_setup <- function(input_list, like_type, sigma_form, stream, flee
 #' @param fleet_field \code{"n_fish_fleets"} or \code{"n_srv_fleets"}.
 #' @param use_field Name of the use array for this stream.
 #' @param starting_values Named list from the caller's \code{...}.
-#' @param rho_key Integer matrix \code{[n_sexes, n_fleets]} coupling the
-#'   across-age correlation, or \code{NULL} for one per fleet shared across
-#'   sexes. Equal entries share a parameter and \code{NA} excludes one.
+#' @param rho_spec Character string controlling how the correlation parameters
+#'   are shared: \code{"est_all"}, \code{"fix"}, or \code{"est_shared_"}
+#'   followed by any combination of \code{r}, \code{s} and \code{f}, gaining
+#'   \code{p} for the population-specific streams. \code{NULL} (the default)
+#'   takes \code{"est_shared_r_s"}, or \code{"est_shared_p_r_s"} when
+#'   \code{pop}, both of which give one correlation per fleet.
 #' @param pop Logical. \code{TRUE} for the population-specific stream.
 #'
 #' @return \code{input_list} with the stream's correlation flag and its
@@ -471,7 +483,7 @@ do_at_age_like_setup <- function(input_list, like_type, sigma_form, stream, flee
 #'
 #' @keywords internal
 do_age_corr_setup <- function(input_list, corr, stream, fleet_field, use_field,
-                              starting_values = list(), rho_key = NULL, pop = FALSE) {
+                              starting_values = list(), rho_spec = NULL, pop = FALSE) {
 
   valid <- c("iid", "1dar1", "us", "2dar1")
   n_fleets <- input_list$data[[fleet_field]]
@@ -500,11 +512,22 @@ do_age_corr_setup <- function(input_list, corr, stream, fleet_field, use_field,
   nd <- length(dim(use_arr))
   i_a <- nd - 2
   i_y <- nd - 4
-  obs_by <- apply(use_arr, c(nd - 1, nd), function(x) sum(x != 0)) # sex by fleet
+  # the correlations sit over the margins the observations are split by, so a
+  # slot a fleet never observes drops out on its own
+  n_regions <- input_list$data$n_regions
+  n_pop <- input_list$data$n_pop
+  obs_margins <- if(pop) c(1, 2, nd - 1, nd) else c(1, nd - 1, nd)
+  obs_by <- apply(use_arr, obs_margins, function(x) sum(x != 0)) # (pop,) region, sex, fleet
+
+  spec_dims <- if(pop) c(pop = n_pop, region = n_regions, sex = n_sexes, fleet = n_fleets)
+               else c(region = n_regions, sex = n_sexes, fleet = n_fleets)
+  spec_abbrev <- if(pop) c(p = "pop", r = "region", s = "sex", f = "fleet")
+                 else c(r = "region", s = "sex", f = "fleet")
+  if(is.null(rho_spec)) rho_spec <- if(pop) "est_shared_p_r_s" else "est_shared_r_s"
 
   n_pairs <- max(1, n_ages * (n_ages - 1) / 2)
-  rho_dims <- as.integer(c(n_sexes, n_fleets))
-  us_dims <- as.integer(c(n_pairs, n_sexes, n_fleets))
+  rho_dims <- as.integer(spec_dims)
+  us_dims <- as.integer(c(n_pairs, spec_dims))
 
   for(nm in c(rho_name, yr_name)) {
     input_list$par[[nm]] <- if(nm %in% names(starting_values)) array(starting_values[[nm]], dim = rho_dims)
@@ -513,37 +536,38 @@ do_age_corr_setup <- function(input_list, corr, stream, fleet_field, use_field,
   input_list$par[[us_name]] <- if(us_name %in% names(starting_values)) array(starting_values[[us_name]], dim = us_dims)
                                else array(0, dim = us_dims)
 
-  # one correlation per fleet, shared across sexes, unless a key says otherwise
-  rho_map <- array(rep(seq_len(n_fleets), each = n_sexes), dim = rho_dims)
-  if(!is.null(rho_key)) {
-    if(!identical(dim(as.array(rho_key)), rho_dims)) {
-      stop(rho_name, " key is not the correct dimension. Should be n_sexes, ", fleet_field)
-    }
-    rho_map <- array(as.integer(rho_key), dim = rho_dims)
-  }
-  rho_map[obs_by == 0] <- NA_integer_
-  yr_map <- rho_map
-  for(f in seq_len(n_fleets)) {
-    if(!codes[f] %in% c(1, 3)) rho_map[,f] <- NA_integer_
-    if(codes[f] != 3) yr_map[,f] <- NA_integer_
-  } # end f loop
+  # sharing follows the same spec strings the rest of the package uses, so a
+  # correlation is not a new idea to learn, only a new place to apply one
+  base_map <- array(as.integer(build_shared_spec_map(
+    dims = spec_dims, spec = rho_spec, dim_abbrev = spec_abbrev)), dim = rho_dims)
+  base_map[obs_by == 0] <- NA_integer_   # a slot this fleet never observes
+
   renumber <- function(m) {
     if(any(!is.na(m))) m[!is.na(m)] <- as.integer(factor(m[!is.na(m)]))
     return(m)
   }
+  hold_unless <- function(m, keep) {
+    for(f in seq_len(n_fleets)) {
+      if(!codes[f] %in% keep) {
+        if(pop) m[,,,f] <- NA_integer_ else m[,,f] <- NA_integer_
+      }
+    } # end f loop
+    return(renumber(m))
+  }
 
-  input_list$map[[rho_name]] <- factor(renumber(rho_map))
-  input_list$map[[yr_name]] <- factor(renumber(yr_map))
+  input_list$map[[rho_name]] <- factor(hold_unless(base_map, c(1, 3)))  # across ages
+  input_list$map[[yr_name]] <- factor(hold_unless(base_map, 3))        # across years
 
-  # an unstructured correlation is a block of parameters per fleet, shared over
-  # the sexes that fleet observes
+  # an unstructured correlation shares whole matrices: cells the spec groups
+  # together get one matrix between them, each pair its own parameter within it
   us_map <- array(NA_integer_, dim = us_dims)
-  block <- 0
-  for(f in which(codes == 2)) {
-    idx <- block + seq_len(n_pairs)
-    block <- block + n_pairs
-    for(s in seq_len(n_sexes)) if(obs_by[s,f] > 0) us_map[,s,f] <- idx
-  } # end f loop
+  grp <- hold_unless(base_map, 2)
+  if(any(!is.na(grp))) {
+    n_grp <- max(grp, na.rm = TRUE)
+    # the pair margin runs fastest, so a group's matrix is n_pairs strided ids
+    us_map[] <- rep((seq_len(n_pairs) - 1) * n_grp, times = length(grp)) +
+                rep(as.vector(grp), each = n_pairs)
+  }
   input_list$map[[us_name]] <- factor(us_map)
 
   # guard rails: an unstructured correlation grows with the square of the ages,
@@ -667,7 +691,7 @@ sel_has_data <- function(data, use_field, r, f) {
 #' standard deviation with a single observation is not merely poorly determined:
 #' the likelihood is unbounded, since it collapses onto whatever residual the
 #' model can fit exactly and the \code{log(sigma)} term runs to negative
-#' infinity. The optimiser reports convergence either way.
+#' infinity. The optimizer reports convergence either way.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par} and \code{$map}.
 #' @param key Integer array \code{[n_ages, n_sexes, n_fleets]}, or \code{NULL}

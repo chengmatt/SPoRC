@@ -13,7 +13,7 @@ amr_limits <- function(x, mu) {
   c(mu - 3 * stdev, mu + 3 * stdev)
 }
 
-test_that("control limits are centred on zero for residual-type input", {
+test_that("control limits are centered on zero for residual-type input", {
   set.seed(42)
   x <- rnorm(50)
   out <- SPoRC::do_runs_test(x)
@@ -21,7 +21,7 @@ test_that("control limits are centred on zero for residual-type input", {
   expect_length(out$sig3lim, 2)
   expect_lt(out$sig3lim[1], 0)
   expect_gt(out$sig3lim[2], 0)
-  # Centred on mu = 0, so the limits are symmetric.
+  # Centered on mu = 0, so the limits are symmetric.
   expect_equal(out$sig3lim[1], -out$sig3lim[2])
   expect_equal(out$sig3lim, amr_limits(x, 0))
 })
@@ -32,7 +32,7 @@ test_that("type defaults to residual when NULL", {
   expect_equal(SPoRC::do_runs_test(x, type = NULL), SPoRC::do_runs_test(x, type = "resid"))
 })
 
-test_that("a non-residual type centres the limits on the series mean", {
+test_that("a non-residual type centers the limits on the series mean", {
   set.seed(11)
   x <- rnorm(40, mean = 5)
   out <- SPoRC::do_runs_test(x, type = "mean")

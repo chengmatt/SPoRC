@@ -2,7 +2,7 @@
 % Please edit documentation in R/setup_sim_fleets.R
 \name{Setup_Sim_Survey}
 \alias{Setup_Sim_Survey}
-\title{Set up survey parameterisation for the operating model simulation}
+\title{Set up survey parameterization for the operating model simulation}
 \usage{
 Setup_Sim_Survey(
   sim_list,

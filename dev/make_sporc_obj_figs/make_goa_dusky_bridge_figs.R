@@ -8,7 +8,7 @@
 #          parameter vector, so there is no stage that seeds SPoRC at the
 #          assessment's maximum likelihood estimate. The assessment's fitted
 #          quantities are read straight from its report file instead, and the
-#          comparison is between the two optimised fits.
+#          comparison is between the two optimized fits.
 # Creator: Matthew LH. Cheng
 # Date Created: 8/10/26
 
@@ -64,14 +64,14 @@ stopifnot(length(admb$SSB) == n_yrs,
           length(admb$Rec) == n_yrs,
           identical(as.numeric(admb$ages), as.numeric(dat$mod_ages)))
 
-# Optimise ----------------------------------------------------------------------
+# Optimize ----------------------------------------------------------------------
 input_list <- build_goa_dusky_input(dat)
 
 est <- fit_model(input_list$data, input_list$par, input_list$map,
                  random = NULL, newton_loops = 3, silent = TRUE)
 est$sdrep <- RTMB::sdreport(est)
 
-cat("=== Optimised ===\n")
+cat("=== Optimized ===\n")
 cat("free parameters:", length(est$optim$par), "\n")
 cat("final jnLL:", est$optim$objective, "  max |gradient|:", max(abs(est$gr(est$optim$par))), "\n")
 cat("pdHess:", est$sdrep$pdHess, "\n")
@@ -98,7 +98,7 @@ sel_df <- bind_rows(
 ggplot2::ggsave(here("vignettes", "figures", "x_goa_dusky_sel_comparison.png"),
                 bridge_sel_figure(sel_df), width = 12, height = 7, dpi = 150)
 
-cat("\n=== Optimised SPoRC against the assessment ===\n")
+cat("\n=== Optimized SPoRC against the assessment ===\n")
 print(rbind(bridge_cmp("SSB", ssb, admb$SSB),
             bridge_cmp("Recruitment", rec, admb$Rec),
             bridge_cmp("Fmort", as.vector(rep$Fmort), admb$Fmort),

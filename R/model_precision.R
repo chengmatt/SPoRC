@@ -10,9 +10,9 @@
 #' Gaussian Markov random field (GMRF) with simultaneous autoregressive (SAR)
 #' structure across three biological dimensions: age, year, and cohort
 #' (age-year diagonal). The matrix is constructed via the path-matrix
-#' factorisation \eqn{Q = (I - B)^\top \Omega^{-1} (I - B)}, where \eqn{B}
+#' factorization \eqn{Q = (I - B)^\top \Omega^{-1} (I - B)}, where \eqn{B}
 #' encodes the partial correlations and \eqn{\Omega} is a diagonal variance
-#' matrix. Two variance parameterisations are supported: marginal (stationary)
+#' matrix. Two variance parameterizations are supported: marginal (stationary)
 #' and conditional (non-stationary).
 #'
 #' @param n_ages Integer. Number of age classes.
@@ -25,7 +25,7 @@
 #'   (i.e., between the \eqn{(a-1, y-1)} and \eqn{(a, y)} cell).
 #' @param ln_var_value Numeric. Log of the target variance. Exponentiated
 #'   internally to \eqn{\sigma^2 = \exp(\text{ln\_var\_value})}.
-#' @param Var_Type Integer. Variance parameterisation: \code{0} = marginal
+#' @param Var_Type Integer. Variance parameterization: \code{0} = marginal
 #'   (stationary) variance, where diagonal elements of \eqn{\Omega} are
 #'   solved recursively via the accumulator \eqn{(I - B)^{-1}} to achieve a
 #'   constant marginal variance \eqn{\sigma^2} at every node (slower);
@@ -55,12 +55,12 @@ Get_3d_precision <- function(n_ages, n_yrs, pcorr_age, pcorr_year, pcorr_cohort,
       if(age > 1 ){
         i = c(i, n)
         j = c(j, which(index[,1] == (age-1) & index[,2] == year))
-        x = c(x, pcorr_age) # link to the age-adjacent neighbour in the same year
+        x = c(x, pcorr_age) # link to the age-adjacent neighbor in the same year
       }
       if(year > 1){
         i = c(i, n)
         j = c(j, which(index[,1]==age & index[,2]==(year-1)) )
-        x = c(x, pcorr_year) # link to the year-adjacent neighbour at the same age
+        x = c(x, pcorr_year) # link to the year-adjacent neighbor at the same age
       }
       if( age>1 & year>1 ){
         i = c(i, n)

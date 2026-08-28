@@ -70,8 +70,8 @@ must be \code{"<type>_Fleet_<f>"}. Valid types:
   \item{\code{"none"}}{No continuous time-variation (default).}
   \item{\code{"iid"}}{IID annual deviations on selectivity parameters.}
   \item{\code{"rw"}}{Random walk in selectivity parameters over time.}
-  \item{\code{"3dmarg"}}{3D GMRF with marginal variance parameterisation.}
-  \item{\code{"3dcond"}}{3D GMRF with conditional variance parameterisation.}
+  \item{\code{"3dmarg"}}{3D GMRF with marginal variance parameterization.}
+  \item{\code{"3dcond"}}{3D GMRF with conditional variance parameterization.}
   \item{\code{"2dar1"}}{2D separable AR1 in bin and year dimensions.}
 }
 If any fleet has \code{cont_tv_fish_sel != "none"}, both
@@ -346,8 +346,8 @@ must be \code{"<type>_Fleet_<f>"}. Valid types:
   \item{\code{"none"}}{No continuous time-variation (default).}
   \item{\code{"iid"}}{IID annual deviations on selectivity parameters.}
   \item{\code{"rw"}}{Random walk in selectivity parameters over time.}
-  \item{\code{"3dmarg"}}{3D GMRF with marginal variance parameterisation.}
-  \item{\code{"3dcond"}}{3D GMRF with conditional variance parameterisation.}
+  \item{\code{"3dmarg"}}{3D GMRF with marginal variance parameterization.}
+  \item{\code{"3dcond"}}{3D GMRF with conditional variance parameterization.}
   \item{\code{"2dar1"}}{2D separable AR1 in bin and year dimensions.}
 }
 If any fleet has \code{cont_tv_ret_sel != "none"}, both

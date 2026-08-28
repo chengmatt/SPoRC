@@ -36,7 +36,7 @@ equivalent).}
 (\code{obj$rep}).}
 
 \item{sd_rep}{\code{sdreport} object from the fitted model, used to
-extract optimised parameter values in list format via
+extract optimized parameter values in list format via
 \code{get_optim_param_list}.}
 
 \item{n_sims}{Integer. Number of simulation replicates.}
@@ -63,7 +63,7 @@ RDS file. Passed to \code{\link{Simulate_Pop_Static}}. Default
 if any name is not found in \code{rep}. Default \code{c("SSB", "Rec")}.}
 
 \item{sim_recruitment}{Character. How the operating model generates
-recruitment. \code{"input"} (default, and the historical behaviour) feeds
+recruitment. \code{"input"} (default, and the historical behavior) feeds
 the estimated recruitment series in as \code{Rec_input}, so every simulated
 replicate carries the same recruitment and \code{rec_model} has no effect on
 the data. That conditions away recruitment and tests everything downstream

@@ -45,11 +45,11 @@
 #' @param AgeingError_input Ageing error (age-length transition) array with
 #'   dimensions \code{[n_yrs × n_model_ages × n_obs_ages × n_sims]}, where each
 #'   \code{[n_model_ages × n_obs_ages]} slice is a row-stochastic matrix mapping
-#'   true modelled ages to observed age bins. If \code{NULL} (default), an
+#'   true modeled ages to observed age bins. If \code{NULL} (default), an
 #'   identity matrix is constructed for each year and simulation, which assumes
-#'   that modelled and observed age bins are identical in number and alignment.
-#'   \strong{If observed age bins are a subset of modelled ages} (e.g., observed
-#'   ages 2-10 vs. modelled ages 1-10), the default identity matrix will cause a
+#'   that modeled and observed age bins are identical in number and alignment.
+#'   \strong{If observed age bins are a subset of modeled ages} (e.g., observed
+#'   ages 2-10 vs. modeled ages 1-10), the default identity matrix will cause a
 #'   dimensional mismatch. In that case, supply a shifted identity matrix such as
 #'   \code{diag(1, n_model_ages)[, obs_age_index]} to correctly drop or collapse
 #'   model ages into observed bins.
@@ -138,7 +138,7 @@ Setup_Sim_Biologicals <- function(
     identity_AgeingError <- array(0, dim = c(sim_list$n_yrs, sim_list$n_ages, sim_list$n_ages, sim_list$n_sims))
     for(i in 1:sim_list$n_yrs) for(sim in 1:sim_list$n_sims) diag(identity_AgeingError[i,,,sim]) <- 1 # create identity matrix for each year
     sim_list$AgeingError <- identity_AgeingError
-    warning("No ageing error matrix was provided. A default identity matrix was used, which assumes that the number and structure of modelled age bins exactly match the observed age bins. If the observed age composition data includes fewer age bins than the model (e.g., observed ages 2-10 while modelled ages are 1-10), this default assumption will cause a dimensional mismatch and potentially misalign the modelled and observed compositions. To avoid this, please provide an ageing error matrix of dimension n_model_ages x n_obs_ages that correctly maps modelled ages to observed age bins. For example, if observed ages are 2-10, supply a matrix that drops the first model age by using a shifted identity matrix: diag(1, 10)[, 2:10]. This will ensure the age bins are correctly aligned for likelihood calculations.")
+    warning("No ageing error matrix was provided. A default identity matrix was used, which assumes that the number and structure of modeled age bins exactly match the observed age bins. If the observed age composition data includes fewer age bins than the model (e.g., observed ages 2-10 while modeled ages are 1-10), this default assumption will cause a dimensional mismatch and potentially misalign the modeled and observed compositions. To avoid this, please provide an ageing error matrix of dimension n_model_ages x n_obs_ages that correctly maps modeled ages to observed age bins. For example, if observed ages are 2-10, supply a matrix that drops the first model age by using a shifted identity matrix: diag(1, 10)[, 2:10]. This will ensure the age bins are correctly aligned for likelihood calculations.")
   }
 
   # expand fleet-specific ageing error for the OM for backwards compatbility
@@ -507,7 +507,7 @@ do_growth_mapping <- function(input_list,
 #'   \code{\link{Setup_Mod_Weighting}} instead. Still accepted for backward
 #'   compatibility (forwarded with a message). Small constant added to tag
 #'   recovery observations; default \code{1e-10} in \code{Setup_Mod_Weighting}.
-#' @param AgeingError Ageing error (age-age transition) array mapping true modelled ages
+#' @param AgeingError Ageing error (age-age transition) array mapping true modeled ages
 #'   to observed age bins. Each row is one model age's share across the observed
 #'   bins and sums to one, or to zero to drop that model age from the
 #'   observations. This is the age-axis twin of \code{LenBinMap}: the likelihood
@@ -519,9 +519,9 @@ do_growth_mapping <- function(input_list,
 #'     \item{2D matrix \code{[n_model_ages × n_obs_ages]}}{Time-invariant ageing error;
 #'       replicated internally across all years.}
 #'     \item{3D array \code{[n_years × n_model_ages × n_obs_ages]}}{Time-varying ageing error.}
-#'     \item{\code{NULL} (default)}{An identity matrix is constructed, assuming modelled
-#'       and observed age bins are identical. If observed bins are a subset of modelled
-#'       ages (e.g., observed ages 2-10 vs. modelled ages 1-10), supply a shifted
+#'     \item{\code{NULL} (default)}{An identity matrix is constructed, assuming modeled
+#'       and observed age bins are identical. If observed bins are a subset of modeled
+#'       ages (e.g., observed ages 2-10 vs. modeled ages 1-10), supply a shifted
 #'       identity matrix such as \code{diag(1, n_model_ages)[, obs_age_index]} to
 #'       avoid a dimensional mismatch.}
 #'   }
@@ -734,7 +734,7 @@ do_growth_mapping <- function(input_list,
 #' @param M_sexblk_spec Blocking structure across sexes. Either \code{"constant"}
 #'   (default; shared across sexes) or a list of integer index vectors, e.g.,
 #'   \code{list(1, 2)} for sex-specific M.
-#' @param ... Optional starting value overrides passed by name. Currently recognised:
+#' @param ... Optional starting value overrides passed by name. Currently recognized:
 #'   \describe{
 #'     \item{\code{ln_M}}{Array of log-scale starting values for natural mortality,
 #'       dimensioned \code{[n_popblks × n_regionblks × n_yearblks × n_ageblks × n_sexblks]}.
@@ -1061,7 +1061,7 @@ Setup_Mod_Biologicals <- function(input_list,
     AgeingError <- diag(1, length(input_list$data$ages)) # if no inputs for ageing error, then create identity matrix
     AgeingError_t <- array(0, dim = c(length(input_list$data$years), dim(AgeingError)))
     for(i in 1:length(input_list$data$years)) AgeingError_t[i,,] <- AgeingError
-    warning("No ageing error matrix was provided. A default identity matrix was used, which assumes that the number and structure of modelled age bins exactly match the observed age bins. If the observed age composition data includes fewer age bins than the model (e.g., observed ages 2-10 while modelled ages are 1-10), this default assumption will cause a dimensional mismatch and potentially misalign the modelled and observed compositions. To avoid this, please provide an ageing error matrix of dimension n_model_ages x n_obs_ages that correctly maps modelled ages to observed age bins. For example, if observed ages are 2-10, supply a matrix that drops the first model age by using a shifted identity matrix: diag(1, 10)[, 2:10]. This will ensure the age bins are correctly aligned for likelihood calculations.")
+    warning("No ageing error matrix was provided. A default identity matrix was used, which assumes that the number and structure of modeled age bins exactly match the observed age bins. If the observed age composition data includes fewer age bins than the model (e.g., observed ages 2-10 while modeled ages are 1-10), this default assumption will cause a dimensional mismatch and potentially misalign the modeled and observed compositions. To avoid this, please provide an ageing error matrix of dimension n_model_ages x n_obs_ages that correctly maps modeled ages to observed age bins. For example, if observed ages are 2-10, supply a matrix that drops the first model age by using a shifted identity matrix: diag(1, 10)[, 2:10]. This will ensure the age bins are correctly aligned for likelihood calculations.")
   } else if(length(dim(AgeingError)) == 2) {   # setup ageing error if user-supplied is not year specific
     AgeingError_t <- array(0, dim = c(length(input_list$data$years), dim(AgeingError)))
     for(i in 1:length(input_list$data$years)) AgeingError_t[i,,] <- AgeingError

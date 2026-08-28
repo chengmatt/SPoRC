@@ -39,7 +39,7 @@ posterior estimates, standard errors, and absolute gradients) and one for
 fixed (non-estimated) parameters. Parameter indices are re-sequenced to
 match the sequential numbering used internally by RTMB's \code{sdreport},
 and map entries of \code{NA} (i.e., parameters fixed via \code{mapping})
-are labelled \code{"NE"} (not estimated).
+are labeled \code{"NE"} (not estimated).
 }
 \seealso{
 Other Utility:

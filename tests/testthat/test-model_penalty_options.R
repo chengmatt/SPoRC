@@ -71,7 +71,7 @@ test_that("validate_selex_penalty checks the table only when the flag is on", {
     expect_null(SPoRC:::validate_selex_penalty(NULL, 0, "x"))
   })
 
-  test_that("a plain integer par column is normalised to a list", {
+  test_that("a plain integer par column is normalized to a list", {
     plain <- data.frame(region = 1, fleet = 1, block = 1, sex = 1, par = 2, wt = 1)
     out <- SPoRC:::validate_selex_penalty(plain, 1, "x")
     expect_true(is.list(out$par))

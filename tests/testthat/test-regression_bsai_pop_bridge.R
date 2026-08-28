@@ -24,7 +24,7 @@ test_that("BSAI Pacific ocean perch reproduces the 2024 ADMB assessment at its o
                    do_optim = FALSE, silent = TRUE)
   r <- obj$rep
 
-  # The assessment normalises selectivity to a maximum of one within each year for
+  # The assessment normalizes selectivity to a maximum of one within each year for
   # reporting and multiplies F by the same factor, leaving their product invariant.
   # Its internal selectivity is the raw exponentiated bicubic surface, so both sides
   # are put on the reported convention before comparing. This is the sharpest single
@@ -58,7 +58,7 @@ test_that("BSAI Pacific ocean perch reproduces the 2024 ADMB assessment at its o
                tolerance = 1e-5, ignore_attr = TRUE)
 
   # Likelihood components. SPoRC writes each component as a proper density while the
-  # assessment drops normalising constants, so each comparison subtracts exactly the
+  # assessment drops normalizing constants, so each comparison subtracts exactly the
   # constants the assessment omits. What is left is a like for like comparison.
   c2pi <- 0.5 * log(2 * pi)
   dlc <- unlist(dat$admb$datalikecomp)
@@ -96,10 +96,10 @@ test_that("BSAI Pacific ocean perch reproduces the 2024 ADMB assessment at its o
 
   # The assessment's recruitment penalty keeps its log sigmaR terms and drops only the
   # sqrt(2 pi) constants. The seeded deviations are shifted down by sigmaR^2 / 2 and
-  # the bias ramp centres the penalty on the same shift, so the quadratic term is the
+  # the bias ramp centers the penalty on the same shift, so the quadratic term is the
   # assessment's own statement on its raw deviations. Two constants come off. The
   # sqrt(2 pi) the assessment omits, and the (1 - bias_ramp / 2) log sigmaR credit
-  # SPoRC applies wherever the ramp is active, which the assessment has no analogue
+  # SPoRC applies wherever the ramp is active, which the assessment has no analog
   # for; the ramp is one over the whole series here. The first year is an equilibrium,
   # so there are no initial age deviations to add.
   n_recdev <- dim(input_list$par$ln_RecDevs)[3]

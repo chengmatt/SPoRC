@@ -30,7 +30,7 @@
 #' @param dur Season duration used to scale \code{Q}. Should be
 #'   \code{seasdur[seas]}. Only used when \code{move_timing = 2}.
 #' @param move_timing Integer flag for the movement/mortality ordering:
-#'   \code{0} = movement then mortality (default, historical SPoRC behaviour),
+#'   \code{0} = movement then mortality (default, historical SPoRC behavior),
 #'   \code{1} = mortality then movement, \code{2} = continuous (simultaneous)
 #'   movement and mortality.
 #' @param expm_nsub Integer controlling how the matrix exponential is evaluated

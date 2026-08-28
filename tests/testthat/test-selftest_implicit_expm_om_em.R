@@ -5,7 +5,7 @@ library(Matrix)
 # Operating model on the exact matrix exponential, estimation model on the implicit solve.
 #
 # move_expm_nsub replaces expm(A) with (I - A/n)^-n wherever SPoRC exponentiates a CTMC
-# generator. That is a first-order discretisation, not a cheaper route to the same
+# generator. That is a first-order discretization, not a cheaper route to the same
 # numbers, so the question this file answers is: if the world runs on the exponential and
 # the assessment does not, what does the assessment get wrong, and how fast does that go
 # away as substeps are added?
@@ -94,7 +94,7 @@ build_om <- function(move_timing, seed = 1234) {
   )
 
   # CTMC movement at a known diffusion parameter, built through Get_Movement so the
-  # operating model uses exactly the parameterisation the estimation model inverts.
+  # operating model uses exactly the parameterization the estimation model inverts.
   mv <- Get_Movement(
     move_type = 1, do_recruits_move = 0,
     n_pop = 1, n_regions = N_REGIONS, n_yrs = N_YRS, n_proj_yrs_devs = 0,

@@ -59,7 +59,7 @@ build_goa_nork_input <- function(dat) {
   )
 
   ## Biological dynamics ------------------------------------------------------
-  # natural mortality is estimated under a lognormal prior centred on the
+  # natural mortality is estimated under a lognormal prior centered on the
   # assessment's mean with its coefficient of variation. length compositions are
   # fit through a size at age transition matrix and age compositions pass
   # through an ageing error matrix, so both are declared here rather than at the
@@ -154,7 +154,7 @@ build_goa_nork_input <- function(dat) {
   )
 
   ## Fishery selectivity and catchability -------------------------------------
-  # the a50 and a95 parameterisation of the logistic, which is logist2.
+  # the a50 and a95 parameterization of the logistic, which is logist2.
   # selectivity is time invariant, so there are no deviations and no process
   # error, and fishery catchability is not used because there is no fishery
   # index to scale
@@ -170,7 +170,7 @@ build_goa_nork_input <- function(dat) {
 
   ## Survey selectivity and catchability --------------------------------------
   # the same logistic form, with catchability estimated under a lognormal prior
-  # centred on the assessment's mean, loose enough to let the data move it.
+  # centered on the assessment's mean, loose enough to let the data move it.
   # t_srv = 0 puts the survey at the start of the year
   input_list <- Setup_Mod_Srvsel_and_Q(
     input_list = input_list,

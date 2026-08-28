@@ -74,7 +74,7 @@ test_that("BSAI rougheye reproduces the 2024 ADMB assessment at its own MLE", {
                tolerance = 1e-4, ignore_attr = TRUE)
 
   # Likelihood components. SPoRC writes each component as a proper density while the
-  # assessment drops normalising constants, so each comparison subtracts exactly the
+  # assessment drops normalizing constants, so each comparison subtracts exactly the
   # constants the assessment omits. What is left is a like for like comparison.
   d <- input_list$data
   n_recdev <- length(dat$mle$rec_dev)

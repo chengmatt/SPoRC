@@ -31,7 +31,7 @@ Get_3d_precision(
 \item{ln_var_value}{Numeric. Log of the target variance. Exponentiated
 internally to \eqn{\sigma^2 = \exp(\text{ln\_var\_value})}.}
 
-\item{Var_Type}{Integer. Variance parameterisation: \code{0} = marginal
+\item{Var_Type}{Integer. Variance parameterization: \code{0} = marginal
 (stationary) variance, where diagonal elements of \eqn{\Omega} are
 solved recursively via the accumulator \eqn{(I - B)^{-1}} to achieve a
 constant marginal variance \eqn{\sigma^2} at every node (slower);
@@ -50,9 +50,9 @@ Builds a sparse \eqn{(n_{\text{ages}} \times n_{\text{yrs}}) \times
 Gaussian Markov random field (GMRF) with simultaneous autoregressive (SAR)
 structure across three biological dimensions: age, year, and cohort
 (age-year diagonal). The matrix is constructed via the path-matrix
-factorisation \eqn{Q = (I - B)^\top \Omega^{-1} (I - B)}, where \eqn{B}
+factorization \eqn{Q = (I - B)^\top \Omega^{-1} (I - B)}, where \eqn{B}
 encodes the partial correlations and \eqn{\Omega} is a diagonal variance
-matrix. Two variance parameterisations are supported: marginal (stationary)
+matrix. Two variance parameterizations are supported: marginal (stationary)
 and conditional (non-stationary).
 }
 \keyword{internal}

@@ -25,7 +25,7 @@ local_Fmsy_multipop(pars, data)
   \item{\code{natal_region}}{Integer vector \code{[n_pop]}. Natal region
     index for each population.}
   \item{\code{n_pop_in_region}}{Integer vector \code{[n_regions]}. Number
-    of populations sharing each natal region (used to normalise straying).}
+    of populations sharing each natal region (used to normalize straying).}
   \item{\code{newton_steps}}{Integer. Number of Newton-Raphson iterations
     used to solve for equilibrium recruitment.}
   \item{\code{is_discard_fleet}}{Integer vector \code{[n_fish_fleets]}.
@@ -37,12 +37,12 @@ local_Fmsy_multipop(pars, data)
 }
 \value{
 Numeric scalar. Negative total equilibrium yield across all regions.
-  This objective is minimised to obtain the vector of regional
+  This objective is minimized to obtain the vector of regional
   \eqn{F_{MSY}} values.
 }
 \description{
 Multi-population extension of \code{\link{local_Fmsy_sglpop}}. Estimates a
-vector of region-specific \eqn{F_{MSY}} values that jointly maximise total
+vector of region-specific \eqn{F_{MSY}} values that jointly maximize total
 equilibrium yield when multiple populations, each with distinct natal regions,
 movement schedules, and Beverton-Holt parameters, co-occupy a shared spatial
 domain.
@@ -75,7 +75,7 @@ a consistent equilibrium solution for the terminal age class.
 
 Effective spawning biomass at each population's natal region includes
 contributions from all populations via straying. Stray contributions are
-scaled by \code{stray_rate} and normalised by
+scaled by \code{stray_rate} and normalized by
 \code{n_pop_in_region} to preserve mass balance.
 
 Equilibrium recruitment by population is obtained via a Newton-Raphson
@@ -95,6 +95,6 @@ movement and mortality are applied.
 The objective function is the negative of total yield, summed across all
 populations and regions. Yield includes only landings from fleets where
 \code{is_discard_fleet == 0}; discard-only fleets contribute to mortality
-but not to the yield being maximised.
+but not to the yield being maximized.
 }
 \keyword{internal}

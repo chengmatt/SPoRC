@@ -4,7 +4,7 @@
 # estimate tables, the parameter list for a refit, marginal AIC, and pulling a
 # report out of MCMC draws.
 
-#' Run post-optimisation convergence checks on a fitted SPoRC model
+#' Run post-optimization convergence checks on a fitted SPoRC model
 #'
 #' Evaluates four convergence criteria on the output of a fitted RTMB model:
 #' (1) finiteness of the joint negative log-likelihood, (2) maximum absolute
@@ -20,7 +20,7 @@
 #'   model. Must contain \code{$jnLL}.
 #' @param gradient_tol Numeric. Maximum tolerated absolute gradient for any
 #'   fixed-effect parameter. Default \code{1e-3}; values above this threshold
-#'   suggest the optimiser did not reach a local minimum.
+#'   suggest the optimizer did not reach a local minimum.
 #' @param se_tol Numeric. Maximum tolerated parameter standard error. Default
 #'   \code{100}; very large SEs indicate poorly identified parameters.
 #' @param corr_tol Numeric. Maximum tolerated absolute pairwise parameter
@@ -106,7 +106,7 @@ post_optim_sanity_checks <- function(sd_rep,
 #' fixed (non-estimated) parameters. Parameter indices are re-sequenced to
 #' match the sequential numbering used internally by RTMB's \code{sdreport},
 #' and map entries of \code{NA} (i.e., parameters fixed via \code{mapping})
-#' are labelled \code{"NE"} (not estimated).
+#' are labeled \code{"NE"} (not estimated).
 #'
 #' @param parameters Named list of parameter starting values passed to
 #'   \code{RTMB::MakeADFun}.
@@ -189,13 +189,13 @@ get_par_est_info <- function(parameters, mapping, sd_rep) {
   )
 }
 
-#' Populate a parameter list with optimised values from sdreport
+#' Populate a parameter list with optimized values from sdreport
 #'
 #' Replaces starting values in \code{parameters} with the corresponding
-#' optimised estimates from \code{sd_rep}, respecting the factor-map sharing
+#' optimized estimates from \code{sd_rep}, respecting the factor-map sharing
 #' structure in \code{mapping}. For each parameter: if a map exists, factor
 #' level integers are used to index into the estimated value vector so that
-#' shared elements receive the same optimised value and \code{NA}-mapped
+#' shared elements receive the same optimized value and \code{NA}-mapped
 #' (fixed) elements are left unchanged. Parameters absent from \code{mapping}
 #' are treated as fully estimated and filled in sequentially. Random effects
 #' are sourced from \code{sd_rep$par.random}; all other estimated parameters
@@ -212,7 +212,7 @@ get_par_est_info <- function(parameters, mapping, sd_rep) {
 #'   \code{sd_rep$par.random} rather than \code{sd_rep$par.fixed}.
 #'
 #' @return The \code{parameters} list with all estimated elements replaced by
-#'   their optimised values. Fixed (\code{NA}-mapped) elements retain their
+#'   their optimized values. Fixed (\code{NA}-mapped) elements retain their
 #'   original starting values.
 #'
 #' @keywords internal
@@ -333,7 +333,7 @@ get_model_rep_from_mcmc <- function(rtmb_obj, mcmc_obj, what, n_cores) {
 #' Compatible with output from both \code{optim} (\code{$value}) and
 #' \code{nlminb} (\code{$objective}).
 #'
-#' @param opt Named list of optimiser output. Must contain \code{$par} and
+#' @param opt Named list of optimizer output. Must contain \code{$par} and
 #'   either \code{$objective} (e.g., \code{nlminb}) or \code{$value}
 #'   (e.g., \code{optim}).
 #' @param p Numeric. Penalty multiplier per parameter. Default \code{2}

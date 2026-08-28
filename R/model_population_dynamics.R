@@ -1,6 +1,6 @@
 # Stage 2 of 3: objective function
 #
-# The forward projection at the centre of the objective function. Walks the
+# The forward projection at the center of the objective function. Walks the
 # population through every year and season, applying recruitment, mortality and
 # movement in the order set by move_timing, and records the state each
 # observation model needs.

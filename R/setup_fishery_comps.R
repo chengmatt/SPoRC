@@ -987,8 +987,10 @@ Setup_Mod_Discard_Comps     <- function(input_list,
 #'   the fishery index at age, \code{"iid"} (default), \code{"1dar1"},
 #'   \code{"us"} or \code{"2dar1"}, one setting for every fleet or one per
 #'   fleet. See \code{\link{Setup_Mod_Catch_and_F}}.
-#' @param rho_fish_idx_key,rho_fish_idx_pop_key Integer matrices
-#'   \code{[n_sexes, n_fish_fleets]} coupling the across-age correlation.
+#' @param rho_fish_idx_spec,rho_fish_idx_pop_spec How the correlation parameters
+#'   are shared, over region, sex and fleet, using the package's spec strings.
+#'   \code{NULL} (the default) gives one per fleet. See
+#'   \code{\link{Setup_Mod_Catch_and_F}}.
 #'
 #' @export Setup_Mod_FishIdx_and_Comps
 #' @importFrom stringr str_detect
@@ -1014,8 +1016,8 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
                                         FishIdxAA_pop_sigma_form = "none",
                                         AgeObsCorr_fish_idx = "iid",
                                         AgeObsCorr_fish_idx_pop = "iid",
-                                        rho_fish_idx_key = NULL,
-                                        rho_fish_idx_pop_key = NULL,
+                                        rho_fish_idx_spec = NULL,
+                                        rho_fish_idx_pop_spec = NULL,
                                         sigmaFishIdx_spec = "fix",
                                         sigmaFishIdx_map = NULL,
                                         sigmaFishIdx_pop_spec = "fix",
@@ -1662,9 +1664,9 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
   input_list <- do_at_age_like_setup(input_list, FishIdxAA_pop_LikeType, FishIdxAA_pop_sigma_form, "FishIdxAA", "n_fish_fleets", pop = TRUE)
 
   input_list <- do_age_corr_setup(input_list, AgeObsCorr_fish_idx, "fish_idx", "n_fish_fleets",
-                                  "UseFishIdxAA", starting_values, rho_fish_idx_key)
+                                  "UseFishIdxAA", starting_values, rho_fish_idx_spec)
   input_list <- do_age_corr_setup(input_list, AgeObsCorr_fish_idx_pop, "fish_idx", "n_fish_fleets",
-                                  "UseFishIdxAA_pop", starting_values, rho_fish_idx_pop_key, pop = TRUE)
+                                  "UseFishIdxAA_pop", starting_values, rho_fish_idx_pop_spec, pop = TRUE)
 
   input_list <- do_key_mapping(input_list, sigmaFishIdxAA_key,
                                at_age_sigma_spec(sigmaFishIdxAA_spec, FishIdxAA_sigma_form, any(use_fish_idx_aa == 1)),

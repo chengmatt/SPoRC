@@ -124,6 +124,7 @@ utils::globalVariables(c(
   "ret_sel_blocks", "ret_sel_input", "ret_sel_model", "ret_sel_pen_wts", "ret_selex_penalty",
   "ret_selex_prior", "ret_selex_type", "retsel_bin_devs_pe_pars", "retsel_bin_devs_rw_init_sigma",
   "retsel_devs_min_shared_bins", "retsel_pe_pars", "retsel_pe_wt", "retsel_rw_init_sigma", "rho",
+  "Obs", "Pred",
   "rseas", "ry", "sd", "se", "seas", "Seas", "seasdur", "season", "sex", "Sex", "sex_pool",
   "sex_ratio_f", "sexes", "sexratio_blocks", "sexratio_pars", "sgl_seas_spawning_movement",
   "sigmaR_switch", "SizeAgeTrans", "spawn_seas", "split_index", "SPR_x", "SR_ref_yr",

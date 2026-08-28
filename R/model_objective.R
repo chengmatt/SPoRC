@@ -12,7 +12,7 @@
 # operations rather than as the arithmetic itself.
 
 # Development history of the objective function, kept as provenance for the
-# assessment. Current behaviour is documented at each section below, not here.
+# assessment. Current behavior is documented at each section below, not here.
 
 # version 1 - (M.LH Cheng)
 # Bridge model 23.5 from ADMB to RTMB
@@ -214,6 +214,7 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   n_ages_bc <- length(get("ages", envir = env))
   n_pop_bc <- get("n_pop", envir = env)
   n_sexes_bc <- get("n_sexes", envir = env)
+  n_regions_bc <- get("n_regions", envir = env)
   at_age_dim <- function(n_fleets) c(get("n_regions", envir = env),
                                      length(get("years", envir = env)),
                                      get("n_seas", envir = env), n_ages_bc, n_sexes_bc, n_fleets)
@@ -249,13 +250,14 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
       else set(paste0("AgeObsCorr_", ctag), rep_len(get(paste0("AgeObsCorr_", ctag), envir = env), st$n))
 
       if(!has(sig)) set(sig, array(log(0.5), dim = sd))
-      if(!has(paste0("trans_rho_", ctag))) set(paste0("trans_rho_", ctag), array(0, dim = c(n_sexes_bc, st$n)))
-      if(!has(paste0("trans_rho_", ctag, "_year"))) set(paste0("trans_rho_", ctag, "_year"), array(0, dim = c(n_sexes_bc, st$n)))
-      if(!has(paste0("trans_rho_", ctag, "_us"))) set(paste0("trans_rho_", ctag, "_us"), array(0, dim = c(n_pairs_bc, n_sexes_bc, st$n)))
+      rho_d <- if(is_pop) c(n_pop_bc, n_regions_bc, n_sexes_bc, st$n) else c(n_regions_bc, n_sexes_bc, st$n)
+      if(!has(paste0("trans_rho_", ctag))) set(paste0("trans_rho_", ctag), array(0, dim = rho_d))
+      if(!has(paste0("trans_rho_", ctag, "_year"))) set(paste0("trans_rho_", ctag, "_year"), array(0, dim = rho_d))
+      if(!has(paste0("trans_rho_", ctag, "_us"))) set(paste0("trans_rho_", ctag, "_us"), array(0, dim = c(n_pairs_bc, rho_d)))
 
       # an array or parameter carried over at an older shape would be indexed by
       # position and silently read the wrong age or sex, so it is refused instead
-      want_dims <- c(length(d), length(d), length(d), length(sd), 2L)
+      want_dims <- c(length(d), length(d), length(d), length(sd), length(rho_d))
       names(want_dims) <- c(paste0("Obs", tag), paste0("Use", tag), paste0("Obs", tag, "_SE"),
                             sig, paste0("trans_rho_", ctag))
       for(nm in names(want_dims)) {
@@ -270,7 +272,7 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   } # end st loop
   if(!has("ObsSrvIdx_pop_SE")) set("ObsSrvIdx_pop_SE", array(0, dim = pop_se_dim(n_srv_bc)))
 
-  # Deviation penalties centred on a fixed prior mean unless asked otherwise.
+  # Deviation penalties centered on a fixed prior mean unless asked otherwise.
   if(!has("Fdev_pen_center")) set("Fdev_pen_center", 0)
   if(!has("RecDevs_pen_center")) set("RecDevs_pen_center", 0)
   if(!has("InitDevs_pen_center")) set("InitDevs_pen_center", 0)

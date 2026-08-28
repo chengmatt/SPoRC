@@ -2,7 +2,7 @@
 % Please edit documentation in R/setup_sim_containers.R
 \name{Setup_Sim_Containers}
 \alias{Setup_Sim_Containers}
-\title{Initialise output containers for the operating model simulation}
+\title{Initialize output containers for the operating model simulation}
 \usage{
 Setup_Sim_Containers(sim_list)
 }
@@ -14,7 +14,7 @@ Dimension elements (e.g., \code{n_pop}, \code{n_regions}, \code{n_yrs},
 \code{n_lens}) are used to size all output containers.}
 }
 \value{
-The input \code{sim_list} with the following zero-initialised arrays added:
+The input \code{sim_list} with the following zero-initialized arrays added:
 
   **Biological containers**
   \describe{
@@ -129,7 +129,7 @@ The input \code{sim_list} with the following zero-initialised arrays added:
   }
 }
 \description{
-Allocates and appends zero-initialised arrays to \code{sim_list} for all
+Allocates and appends zero-initialized arrays to \code{sim_list} for all
 biological, fishery, and survey quantities tracked during simulation. This
 function should be called after \code{\link{Setup_Sim_Dim}} and before any
 operating model dynamics are run. All arrays are pre-allocated and populated

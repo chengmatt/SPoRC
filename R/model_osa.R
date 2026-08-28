@@ -26,7 +26,7 @@ osa_squeeze <- function(u) {
 #' Extract frozen numeric values from an OSA observation
 #'
 #' Returns the numeric \emph{values} of an observation slice, detached from the
-#' AD tape. This is the R analogue of WHAM's \code{asDouble()}: it is used to
+#' AD tape. This is the R analog of WHAM's \code{asDouble()}: it is used to
 #' build the running composition remainder so that, when
 #' \code{\link[RTMB]{oneStepPredict}} peels and perturbs a single bin, the
 #' "all other bins" count does not move with the perturbation. Without this the

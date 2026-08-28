@@ -12,11 +12,11 @@ data list. Used to extract \code{WAA}, \code{MatAA}, \code{ages},
 \code{n_pop}, and \code{do_recruits_move}.}
 
 \item{rep}{List of length \code{n_models}, where each element is a SPoRC
-report list (i.e. the output of \code{obj$report()} after optimisation).
+report list (i.e. the output of \code{obj$report()} after optimization).
 Must contain \code{Movement} and \code{natmort}.}
 
 \item{model_names}{Character vector of length \code{n_models} giving display
-names for each model run. Used as colour legend labels across all plots.}
+names for each model run. Used as color legend labels across all plots.}
 }
 \value{
 A list of four elements:
@@ -24,17 +24,17 @@ A list of four elements:
   \item{[[1]] move_plot}{A list of \code{n_pop} \code{ggplot} objects, one
     per population. Each plot shows age-specific movement probabilities for
     all seasons at \code{year_indx}, faceted by Region_To × (Region_From +
-    Season), with lines coloured by model and distinguished by sex linetype.
+    Season), with lines colored by model and distinguished by sex linetype.
     If \code{do_recruits_move = 0}, age-1 fish are excluded. Y-axis is fixed
     to [0, 1].}
   \item{[[2]] natmort_plot}{Natural mortality at age at \code{year_indx},
-    faceted by Region × Sex. Lines coloured by model and distinguished by
+    faceted by Region × Sex. Lines colored by model and distinguished by
     population linetype.}
   \item{[[3]] waa_plot}{Spawning weight-at-age at \code{year_indx}, faceted
-    by Region × (Sex + Season). Lines coloured by model and distinguished by
+    by Region × (Sex + Season). Lines colored by model and distinguished by
     population linetype.}
   \item{[[4]] mataa_plot}{Maturity-at-age at \code{year_indx}, faceted by
-    Region × (Sex + Season). Lines coloured by model and distinguished by
+    Region × (Sex + Season). Lines colored by model and distinguished by
     population linetype.}
 }
 }

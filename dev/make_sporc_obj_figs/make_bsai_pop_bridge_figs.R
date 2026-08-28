@@ -34,7 +34,7 @@ obj <- fit_model(input_list$data, input_list$par, input_list$map,
                  do_optim = FALSE, silent = TRUE)
 r <- obj$rep
 
-# The assessment normalises selectivity to a maximum of one within each year for
+# The assessment normalizes selectivity to a maximum of one within each year for
 # reporting and multiplies F by the same factor, leaving their product invariant.
 # Both sides are put on the reported convention before comparing.
 sel_bridge <- r$fish_sel[1, 1, 1:n_yrs, 1, 1:nsel, 1, 1]
@@ -53,7 +53,7 @@ cat("Total biomass max pct diff:",
     100 * max(abs(as.vector(naa_all %*% dat$pop_waa) - dat$admb$TotBiom[yr_ind]) / dat$admb$TotBiom[yr_ind]), "\n")
 
 # The likelihood crosswalk. SPoRC writes each component as a proper density
-# while the assessment drops normalising constants, so each comparison subtracts
+# while the assessment drops normalizing constants, so each comparison subtracts
 # exactly the constants the assessment omits.
 c2pi <- 0.5 * log(2 * pi)
 dlc <- unlist(dat$admb$datalikecomp)

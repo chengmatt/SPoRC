@@ -87,7 +87,7 @@ test_that("the fused operator and integral conserve abundance exactly under the 
   # get_population_projection takes survivors from T and catch from Integral. Under the
   # exponential these balance by construction; under backward Euler they still do,
   # because 1'(I - A/n) = 1' + z'/n. Without that, catch and numbers at age would drift
-  # apart by the discretisation error rather than agreeing to machine precision.
+  # apart by the discretization error rather than agreeing to machine precision.
   for (nsub in c(1, 4, 32)) {
     for (dur in c(1, 0.4)) {
       n <- 4

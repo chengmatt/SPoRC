@@ -29,7 +29,7 @@ The validated table, or the input unchanged when \code{use_flag} is
 \description{
 Checks the optional \code{type} column consumed by
 \code{\link{get_selex_prior}}. A table without the column is all
-\code{"par"} rows (the original behaviour) and passes untouched.
+\code{"par"} rows (the original behavior) and passes untouched.
 \code{"value"} rows are range-checked here because their \code{par} column
 indexes the selectivity grid rather than the parameter vector, and their
 \code{block} must exist in the fleet's block map to resolve to a year.

@@ -20,7 +20,7 @@ helper functions modify this environment in place.}
 }
 \description{
 Orchestrates the complete annual sequence of operating model processes for
-year \code{y} and simulation replicate \code{sim}: initialises age
+year \code{y} and simulation replicate \code{sim}: initializes age
 structure and generates first-year recruitment at \code{y = 1}; applies
 population dynamics (movement, mortality, biomass); generates fishery
 catches, indices, and compositions; generates survey indices and

@@ -68,12 +68,12 @@ single_region_SPR(pars, data)
 }
 \value{
 Numeric scalar. Squared penalty \eqn{(SPR - SPR_x)^2}.
-  Minimised to zero at \eqn{F = F_{SPR_x}}.
+  Minimized to zero at \eqn{F = F_{SPR_x}}.
 }
 \description{
 Calculates the spawning potential ratio (SPR) as a function of a trial
 fishing mortality \eqn{F_x}, then returns a squared penalty
-\eqn{100 (SPR - SPR_x)^2} that is minimised by the outer optimizer to find
+\eqn{100 (SPR - SPR_x)^2} that is minimized by the outer optimizer to find
 \eqn{F_{SPR_x}}. Supports multiple populations via stray rates but does not
 include spatial movement.
 }

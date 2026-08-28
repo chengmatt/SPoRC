@@ -7,7 +7,7 @@
 #
 # The two sides line up because the operating model draws its deviation about
 # zero and carries the bias correction inside recruitment, while the estimation
-# model carries the deviation and centres its penalty; the anomaly the index
+# model carries the deviation and centers its penalty; the anomaly the index
 # reads is the same quantity in both.
 
 library(SPoRC)

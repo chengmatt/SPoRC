@@ -216,7 +216,7 @@ test_that("correlation-parameter inputs require a trailing axis of exactly 2", {
   expect_error(check_sim(arr(d), "SrvAge_pop_corr_pars"))
 })
 
-test_that("an unrecognised `what` label validates nothing", {
+test_that("an unrecognized `what` label validates nothing", {
   expect_silent(check_sim(arr(c(1, 1)), "Fmort_inputt"))
   expect_silent(check_sim(arr(c(1, 1)), "not_a_real_input"))
 })

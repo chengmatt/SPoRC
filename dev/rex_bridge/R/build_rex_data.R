@@ -416,7 +416,7 @@ add_rex_ss3_report <- function(dat, report) {
 
   } # end f loop
 
-  # early deviations are labelled by the age they set in the start year, so Early_InitAge_n is year styr minus n
+  # early deviations are labeled by the age they set in the start year, so Early_InitAge_n is year styr minus n
   rec <- r$recruit
   main <- p[grep("^Main_RecrDev_", p$Label), ]
   early <- p[grep("^Early_InitAge_|^Early_RecrDev_", p$Label), ]

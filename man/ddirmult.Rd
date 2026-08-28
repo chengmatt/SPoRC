@@ -26,7 +26,7 @@ Numeric. Log-likelihood (or likelihood if \code{give_log = FALSE}).
 }
 \description{
 Computes the Dirichlet-multinomial log-likelihood following the
-parameterisation of Thorson et al. (CCSRA). The concentration parameters
+parameterization of Thorson et al. (CCSRA). The concentration parameters
 are \eqn{\alpha_k = \exp(\ln\theta) \times N \times \hat{p}_k}, so
 \eqn{\exp(\ln\theta)} is the per-observation overdispersion scalar: values
 near zero approach the multinomial and larger values increase variance.

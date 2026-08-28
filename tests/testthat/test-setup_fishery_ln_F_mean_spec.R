@@ -48,9 +48,9 @@ test_that("an invalid spec is rejected", {
   expect_error(mk_catch(mk_base(), ln_F_mean_spec = "nah"), "ln_F_mean_spec")
 })
 
-test_that("a fixed zero mean rejects penalties centred on it and accepts the rest", {
+test_that("a fixed zero mean rejects penalties centered on it and accepts the rest", {
 
-  # iid or ar1 centred on the fixed zero mean shrinks the deviations toward F = 1
+  # iid or ar1 centered on the fixed zero mean shrinks the deviations toward F = 1
   expect_error(mk_catch(mk_base(), ln_F_mean_spec = "fix"), "F = 1")
   expect_error(mk_catch(mk_base(), ln_F_mean_spec = "fix", Fdev_model = "ar1"), "F = 1")
 

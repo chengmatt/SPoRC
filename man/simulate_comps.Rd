@@ -148,7 +148,7 @@ For joint compositions (\code{comp_type = 2}), the Kronecker product
 \code{diag(n_sexes) ⊗ AgeingError} is used to apply ageing error across
 the combined age-sex vector. For aggregated compositions
 (\code{comp_type = 0}), the draw is only executed when \code{r == n_regions}
-(i.e., on the final region pass), and uses region- and sex-marginalised
+(i.e., on the final region pass), and uses region- and sex-marginalized
 expected proportions.
 }
 \keyword{internal}

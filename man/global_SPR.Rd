@@ -86,7 +86,7 @@ Calculates a single, spatially-integrated SPR using a per-recruit cohort
 tracked across all regions and seasons under movement. A single scalar
 \eqn{F_x} is applied uniformly across regions (scaled by region-specific
 fleet fractions and selectivity). Returns the squared penalty
-\eqn{100 (SPR - SPR_x)^2} for optimisation.
+\eqn{100 (SPR - SPR_x)^2} for optimization.
 }
 \details{
 Supports single- and multi-population models. When \code{n_pop > 1},

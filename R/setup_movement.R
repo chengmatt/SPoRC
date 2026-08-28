@@ -182,7 +182,7 @@ do_move_pars_mapping <- function(input_list, Movement_popblk_spec,
 #' @param cont_vary_movement Character string specifying the deviation structure.
 #'   One of \code{"none"}, \code{"iid_y"}, \code{"iid_a"}, \code{"iid_y_a"},
 #'   \code{"iid_y_a_s"}, \code{"iid_y_seas_a_s"}, or the population-specific
-#'   analogues \code{"iid_p_y"}, \code{"iid_p_a"}, \code{"iid_p_y_a"},
+#'   analogs \code{"iid_p_y"}, \code{"iid_p_a"}, \code{"iid_p_y_a"},
 #'   \code{"iid_p_y_a_s"}, \code{"iid_p_y_seas_a_s"}. Dimensions present in
 #'   the string receive unique estimation indices; absent dimensions share a
 #'   single index. \code{"none"} maps all deviations to \code{NA}.
@@ -280,13 +280,13 @@ do_cont_vary_move_mapping <- function(input_list, cont_vary_movement, Movement_c
 #' supporting both unstructured Markov transition (\code{move_type = 0}) and
 #' Continuous Time Markov Chain (\code{move_type = 1}) formulations, with
 #' optional continuous iid deviations on the movement surface. Validates all
-#' inputs, initialises parameter arrays, constructs TMB/RTMB factor maps, and
+#' inputs, initializes parameter arrays, constructs TMB/RTMB factor maps, and
 #' populates \code{input_list$data} accordingly. Must be called after
 #' \code{\link{Setup_Mod_Biologicals}}.
 #'
 #' @section Unstructured Markov movement (\code{move_type = 0}):
 #' Transition probabilities from region \eqn{r} to all other regions are
-#' parameterised via a multinomial logit with a reference-cell constraint.
+#' parameterized via a multinomial logit with a reference-cell constraint.
 #' The parameter array \code{move_pars} has dimensions
 #' \code{[n_pop × n_regions × (n_regions - 1) × n_years × n_seas × n_ages × n_sexes]}.
 #' Block specifications (\code{Movement_*blk_spec}) control sharing: indices
@@ -310,7 +310,7 @@ do_cont_vary_move_mapping <- function(input_list, cont_vary_movement, Movement_c
 #' @section Continuous movement deviations:
 #' IID deviations (\code{move_devs}) are added to the movement logit surface
 #' (unstructured Markov) or log-rate surface (CTMC) before computing
-#' probabilities. Deviations are penalised as normal random effects; the
+#' probabilities. Deviations are penalized as normal random effects; the
 #' variance is optionally estimated via \code{Movement_cont_pe_pars_spec}.
 #' If \code{do_recruits_move = 0}, age-1 deviations are fixed at zero.
 #'
@@ -372,13 +372,13 @@ do_cont_vary_move_mapping <- function(input_list, cont_vary_movement, Movement_c
 #'     \item{\code{"iid_y_a"}}{Year \eqn{\times} age.}
 #'     \item{\code{"iid_y_a_s"}}{Year \eqn{\times} age \eqn{\times} sex.}
 #'     \item{\code{"iid_y_seas_a_s"}}{Year \eqn{\times} season \eqn{\times} age \eqn{\times} sex.}
-#'     \item{\code{"iid_p_y"}, \code{"iid_p_a"}, \code{"iid_p_y_a"}, \code{"iid_p_y_a_s"}, \code{"iid_p_y_seas_a_s"}}{Population-specific analogues of the above.}
+#'     \item{\code{"iid_p_y"}, \code{"iid_p_a"}, \code{"iid_p_y_a"}, \code{"iid_p_y_a_s"}, \code{"iid_p_y_seas_a_s"}}{Population-specific analogs of the above.}
 #'   }
 #' @param Movement_cont_pe_pars_spec Character string specifying estimation of
 #'   process-error variance for \code{cont_vary_movement} deviations. One of:
 #'   \describe{
 #'     \item{\code{"none"}}{No process-error parameters; use with \code{cont_vary_movement = "none"}.}
-#'     \item{\code{"fix"}}{Parameters initialised but not estimated; fixes
+#'     \item{\code{"fix"}}{Parameters initialized but not estimated; fixes
 #'       deviation variance at its starting value.}
 #'     \item{\code{"est_shared"}}{Single variance estimated, shared across all
 #'       dimensions.}
@@ -414,7 +414,7 @@ do_cont_vary_move_mapping <- function(input_list, cont_vary_movement, Movement_c
 #'   (default).
 #' @param move_timing Integer flag setting how movement and mortality are
 #'   sequenced within a season. \code{0} = movement then mortality (default,
-#'   historical SPoRC behaviour); \code{1} = mortality then movement;
+#'   historical SPoRC behavior); \code{1} = mortality then movement;
 #'   \code{2} = continuous, with movement and mortality acting simultaneously via
 #'   the matrix exponential of \eqn{Q\Delta - \mathrm{diag}(Z)}. \code{move_timing = 2}
 #'   requires an estimated CTMC generator, i.e. \code{move_type = 1} and
@@ -434,7 +434,7 @@ do_cont_vary_move_mapping <- function(input_list, cont_vary_movement, Movement_c
 #'   \eqn{\log_2 n} squarings, which is why \eqn{n} must be a power of two. The implicit form has a much cheaper reverse-mode adjoint
 #'   than a matrix exponential, so the gradient is several times faster, but it is a
 #'   first-order approximation: \eqn{n = 1} is plain \code{solve(I - A)} and is an approximation.
-#' @param ... Optional starting value overrides, passed by name. Recognised
+#' @param ... Optional starting value overrides, passed by name. Recognized
 #'   arguments:
 #'   \describe{
 #'     \item{\code{move_pars}}{Array \code{[n_pop × n_regions × (n_regions-1) × n_years × n_seas × n_ages × n_sexes]}. Default: \code{0} (equal movement on logit scale).}

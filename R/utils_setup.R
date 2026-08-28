@@ -315,7 +315,7 @@ set_data_indicator_unused <- function(data,
 #'
 #' Maps a character vector to integer codes via a named lookup, or passes
 #' numeric input through unchanged. Character arrays and matrices are converted
-#' element-wise and keep their original dimensions. Unrecognised character
+#' element-wise and keep their original dimensions. Unrecognized character
 #' values raise an informative error listing both the invalid inputs and the
 #' valid options.
 #'
@@ -457,7 +457,7 @@ parse_idx_cov <- function(cov_list, like_type_vals, use_arr, n_fleets, what) {
 #' Validate a selectivity fixed-effect centering penalty table
 #'
 #' Checks the table consumed by \code{\link{get_selex_fixed_penalty}} and
-#' normalises its \code{par} column to a list of integer vectors, so a row may
+#' normalizes its \code{par} column to a list of integer vectors, so a row may
 #' name either one parameter or a whole set.
 #'
 #' @param selex_penalty Data frame with columns \code{region}, \code{fleet},
@@ -490,7 +490,7 @@ validate_selex_penalty <- function(selex_penalty, use_flag, what) {
 #'
 #' Checks the optional \code{type} column consumed by
 #' \code{\link{get_selex_prior}}. A table without the column is all
-#' \code{"par"} rows (the original behaviour) and passes untouched.
+#' \code{"par"} rows (the original behavior) and passes untouched.
 #' \code{"value"} rows are range-checked here because their \code{par} column
 #' indexes the selectivity grid rather than the parameter vector, and their
 #' \code{block} must exist in the fleet's block map to resolve to a year.
@@ -781,7 +781,7 @@ setup_sel_sex_offset <- function(input_list, sex_offset, prefix, n_fleets, fleet
       stop(prefix, "_sel_sex_offset for ", fleet_label, " ", f, " requests a par offset, but its fixed-parameter specification shares the sex slots, which would read the first sex's parameters as their own offsets. Use est_all or est_shared_r with a par offset.")
   } # end f loop
 
-  # A constant multiplier on the curve is cancelled by the mean standardization
+  # A constant multiplier on the curve is canceled by the mean standardization
   # the non-parametric forms and semi-parametric structures apply afterwards.
   for(f in seq_len(n_fleets)) {
     if(scale_flag[f] == 0) next
@@ -850,7 +850,7 @@ assign_sel_block <- function(arr, blocks_arr, fleet, block, value) {
 
 #' Expand a fleet-specific ageing error specification to its full array
 #'
-#' Ageing error is a property of the sampling programme, so a fishery that ages
+#' Ageing error is a property of the sampling program, so a fishery that ages
 #' its catch from otoliths and a survey that reads scales do not misclassify the
 #' same way. \code{AgeingError_fish} and \code{AgeingError_srv} let each fleet
 #' carry its own matrix, defaulting to the shared \code{AgeingError} so a model

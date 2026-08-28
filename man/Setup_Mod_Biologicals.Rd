@@ -123,7 +123,7 @@ indices; default \code{1e-4} in \code{Setup_Mod_Weighting}.}
 compatibility (forwarded with a message). Small constant added to tag
 recovery observations; default \code{1e-10} in \code{Setup_Mod_Weighting}.}
 
-\item{AgeingError}{Ageing error (age-age transition) array mapping true modelled ages
+\item{AgeingError}{Ageing error (age-age transition) array mapping true modeled ages
 to observed age bins. Each row is one model age's share across the observed
 bins and sums to one, or to zero to drop that model age from the
 observations. This is the age-axis twin of \code{LenBinMap}: the likelihood
@@ -135,9 +135,9 @@ themselves, use the \code{*_bins} arguments instead. Accepted forms:
   \item{2D matrix \code{[n_model_ages × n_obs_ages]}}{Time-invariant ageing error;
     replicated internally across all years.}
   \item{3D array \code{[n_years × n_model_ages × n_obs_ages]}}{Time-varying ageing error.}
-  \item{\code{NULL} (default)}{An identity matrix is constructed, assuming modelled
-    and observed age bins are identical. If observed bins are a subset of modelled
-    ages (e.g., observed ages 2-10 vs. modelled ages 1-10), supply a shifted
+  \item{\code{NULL} (default)}{An identity matrix is constructed, assuming modeled
+    and observed age bins are identical. If observed bins are a subset of modeled
+    ages (e.g., observed ages 2-10 vs. modeled ages 1-10), supply a shifted
     identity matrix such as \code{diag(1, n_model_ages)[, obs_age_index]} to
     avoid a dimensional mismatch.}
 }}
@@ -391,7 +391,7 @@ population-specific M.}
 \code{[n_pop × n_regions × n_years × n_ages × n_sexes]}. Note the absence of an
 \code{n_seas} dimension. Required when \code{M_spec = "fix"}; ignored otherwise.}
 
-\item{...}{Optional starting value overrides passed by name. Currently recognised:
+\item{...}{Optional starting value overrides passed by name. Currently recognized:
 \describe{
   \item{\code{ln_M}}{Array of log-scale starting values for natural mortality,
     dimensioned \code{[n_popblks × n_regionblks × n_yearblks × n_ageblks × n_sexblks]}.

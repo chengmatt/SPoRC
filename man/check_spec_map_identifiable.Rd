@@ -40,7 +40,7 @@ observation informs that cell.}
 An observation-error standard deviation needs more than one observation to
 be estimable. Given one, the likelihood is unbounded: the standard deviation
 collapses towards zero on whatever residual the model can fit exactly and the
-\code{log(sigma)} term runs to negative infinity. The optimiser reports
+\code{log(sigma)} term runs to negative infinity. The optimizer reports
 convergence, so nothing about the fit announces the problem.
 }
 \details{

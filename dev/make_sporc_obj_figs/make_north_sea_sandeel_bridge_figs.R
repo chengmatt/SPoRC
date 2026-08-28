@@ -280,9 +280,9 @@ input_list$par$ln_F_devs <- ln_F_devs
 input_list$map$ln_F_devs <- factor(array(NA_integer_, dim = dev_dim))
 input_list$par$ln_F_mean[] <- -5
 # One initial numbers-at-age parameter per age, all estimated, and this has to be
-# said by hand. equil_init_age_strc "equil" neither penalises nor estimates the
+# said by hand. equil_init_age_strc "equil" neither penalizes nor estimates the
 # deviations, and "stoch_all" does both; under init_age_strc "free" what is
-# wanted is the combination neither offers, estimated and unpenalised, because
+# wanted is the combination neither offers, estimated and unpenalized, because
 # the deviations are the numbers themselves rather than departures from an
 # equilibrium. Setting the map here is one way; init_devs_pen_use[] <- 0 with
 # "stoch_all" is the other, and gives the same fit. Either has to come after the
@@ -315,14 +315,14 @@ sandeel_fig <- function(rep_obj, file) {
   base <- theme_bw(base_size = 11) +
     theme(legend.position = "top", panel.grid.minor = element_blank())
 
-  p1 <- ggplot(lvl, aes(Year, Value, colour = Type)) +
+  p1 <- ggplot(lvl, aes(Year, Value, color = Type)) +
     geom_line(linewidth = 0.6) + geom_point(size = 1.1) +
     facet_wrap(~q, scales = "free_y", ncol = 1) +
-    scale_colour_manual(values = cols) + scale_y_continuous(labels = scales::comma) +
-    labs(x = "Year", y = "Value", colour = "Type") + base
+    scale_color_manual(values = cols) + scale_y_continuous(labels = scales::comma) +
+    labs(x = "Year", y = "Value", color = "Type") + base
   p2 <- ggplot(d, aes(Year, 100 * (SPoRC - smsR) / smsR)) +
-    geom_hline(yintercept = 0, colour = "black") +
-    geom_line(colour = "#E69F00", linewidth = 0.6) + geom_point(colour = "#E69F00", size = 1.1) +
+    geom_hline(yintercept = 0, color = "black") +
+    geom_line(color = "#E69F00", linewidth = 0.6) + geom_point(color = "#E69F00", size = 1.1) +
     facet_wrap(~q, scales = "free_y", ncol = 1) +
     labs(x = "Year", y = "SPoRC vs smsR (%)") + base
 
@@ -385,7 +385,7 @@ sp_F <- apply(seed$rep$tot_FAA[1,1,1:n_yrs,,,1,], c(1,2,3), sum)
 sms_F <- aperm(F0, c(2,3,1))
 rel <- abs(sp_F - sms_F) / pmax(sms_F, 1e-12)
 rel[sms_F < 1e-10] <- 0
-message("seeded at smsR's MLE, not optimised")
+message("seeded at smsR's MLE, not optimized")
 message("  fishing mortality at age, every cell: ", signif(100 * max(rel), 3), " %")
 print(sandeel_fig(seed$rep, NULL))
 

@@ -11,7 +11,7 @@ do_age_corr_setup(
   fleet_field,
   use_field,
   starting_values = list(),
-  rho_key = NULL,
+  rho_spec = NULL,
   pop = FALSE
 )
 }
@@ -30,9 +30,12 @@ either one setting for every fleet or one per fleet.}
 
 \item{starting_values}{Named list from the caller's \code{...}.}
 
-\item{rho_key}{Integer matrix \code{[n_sexes, n_fleets]} coupling the
-across-age correlation, or \code{NULL} for one per fleet shared across
-sexes. Equal entries share a parameter and \code{NA} excludes one.}
+\item{rho_spec}{Character string controlling how the correlation parameters
+are shared: \code{"est_all"}, \code{"fix"}, or \code{"est_shared_"}
+followed by any combination of \code{r}, \code{s} and \code{f}, gaining
+\code{p} for the population-specific streams. \code{NULL} (the default)
+takes \code{"est_shared_r_s"}, or \code{"est_shared_p_r_s"} when
+\code{pop}, both of which give one correlation per fleet.}
 
 \item{pop}{Logical. \code{TRUE} for the population-specific stream.}
 }
@@ -55,7 +58,16 @@ structure ICES age-structured assessments offer. \code{"2dar1"} correlates
 over ages and years jointly through a separable AR(1), which is defined on a
 complete grid and so requires the fleet's observed ages and years to form one.
 
-Correlations are one per fleet, shared across sexes, unless a key says
-otherwise. A sex a fleet never observes carries no parameter.
+How the correlations are shared follows the package's spec strings rather than
+a structure of its own. They sit over region, sex and fleet, with a leading
+population margin for the population-specific streams, so
+\code{"est_shared_r_s"} (the default, \code{"est_shared_p_r_s"} for the
+population form) gives one per fleet, \code{"est_shared_r_s_f"} a single
+value, \code{"est_all"} a free one per cell, and \code{"fix"} holds them all.
+One spec governs the stream's across-age correlation, its across-year
+correlation and its unstructured matrix together, so two fleets sharing a
+correlation share a whole matrix under \code{"us"}. A region, sex or
+population a fleet never observes carries no parameter whatever the spec says,
+which is what holds the unused slots of a summed margin out.
 }
 \keyword{internal}

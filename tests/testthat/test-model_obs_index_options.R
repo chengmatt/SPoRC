@@ -7,7 +7,7 @@ test_that("get_index_nLL dispatches the three index error structures", {
   pred <- c(11, 11.5, 9.5, 14)
   sigma <- c(0.2, 0.25, 0.2, 0.3)
 
-  test_that("lognormal matches a log-scale dnorm and honours the additive constant", {
+  test_that("lognormal matches a log-scale dnorm and honors the additive constant", {
     expect_equal(SPoRC:::get_index_nLL(obs, pred, sigma, 0),
                  -dnorm(log(obs), log(pred), sigma, TRUE), tolerance = 1e-12)
     expect_equal(SPoRC:::get_index_nLL(obs, pred, sigma, 0, const = 0.01),
@@ -132,7 +132,7 @@ test_that("the multivariate normal index likelihood agrees with a hand-computed 
 
 })
 
-test_that("the survey observation model honours age subsets and analytic catchability", {
+test_that("the survey observation model honors age subsets and analytic catchability", {
 
   n_pop <- 1; n_regions <- 1; n_yrs <- 3; n_seas <- 1; n_srv <- 2; n_sexes <- 1; n_ages <- 4
 

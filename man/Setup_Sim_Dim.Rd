@@ -2,7 +2,7 @@
 % Please edit documentation in R/setup_dimensions.R
 \name{Setup_Sim_Dim}
 \alias{Setup_Sim_Dim}
-\title{Initialise simulation dimension settings}
+\title{Initialize simulation dimension settings}
 \usage{
 Setup_Sim_Dim(
   n_sims,
@@ -46,7 +46,7 @@ Must be supplied explicitly when \code{n_pop > 1}, \code{n_pop != n_regions},
 and \code{n_regions > 1}, as multiple populations would share a natal region
 and no sensible default exists.}
 
-\item{n_ages}{Positive integer. Number of modelled age classes.}
+\item{n_ages}{Positive integer. Number of modeled age classes.}
 
 \item{n_lens}{Positive integer. Number of length bins. Set to \code{NULL}
 (default) when length compositions are not simulated.}
@@ -84,7 +84,7 @@ A named list (\code{sim_list}) containing:
     \item{\code{natal_region}}{Integer vector of length \code{n_pop}
       defining natal regions.}
     \item{\code{seasdur}}{Season durations summing to 1.}
-    \item{\code{init_iter}}{Derived value \code{n_ages * 10} used to initialise
+    \item{\code{init_iter}}{Derived value \code{n_ages * 10} used to initialize
       equilibrium conditions.}
     \item{\code{run_feedback}, \code{feedback_start_yr}}{
       Feedback control settings.}

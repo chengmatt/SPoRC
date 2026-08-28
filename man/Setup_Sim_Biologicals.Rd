@@ -51,11 +51,11 @@ otherwise.}
 \item{AgeingError_input}{Ageing error (age-length transition) array with
 dimensions \code{[n_yrs × n_model_ages × n_obs_ages × n_sims]}, where each
 \code{[n_model_ages × n_obs_ages]} slice is a row-stochastic matrix mapping
-true modelled ages to observed age bins. If \code{NULL} (default), an
+true modeled ages to observed age bins. If \code{NULL} (default), an
 identity matrix is constructed for each year and simulation, which assumes
-that modelled and observed age bins are identical in number and alignment.
-\strong{If observed age bins are a subset of modelled ages} (e.g., observed
-ages 2-10 vs. modelled ages 1-10), the default identity matrix will cause a
+that modeled and observed age bins are identical in number and alignment.
+\strong{If observed age bins are a subset of modeled ages} (e.g., observed
+ages 2-10 vs. modeled ages 1-10), the default identity matrix will cause a
 dimensional mismatch. In that case, supply a shifted identity matrix such as
 \code{diag(1, n_model_ages)[, obs_age_index]} to correctly drop or collapse
 model ages into observed bins.}

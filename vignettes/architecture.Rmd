@@ -225,10 +225,10 @@ if (have_igraph) {
        vertex.size = 34, vertex.size2 = 20, vertex.shape = "rectangle",
        vertex.label = lab[igraph::V(sg)$name], vertex.label.color = "black",
        vertex.label.cex = 0.8, vertex.label.family = "sans",
-       edge.width = 0.8 + 1.6 * sqrt(igraph::E(sg)$n), edge.color = "grey55",
+       edge.width = 0.8 + 1.6 * sqrt(igraph::E(sg)$n), edge.color = "gray55",
        edge.arrow.size = 0.45, edge.curved = 0.15,
        edge.label = igraph::E(sg)$n, edge.label.cex = 0.78,
-       edge.label.color = "grey20", edge.label.family = "sans")
+       edge.label.color = "gray20", edge.label.family = "sans")
   par(op)
 } else {
   cat("igraph is not installed, so the stage diagram was not drawn.\n")
@@ -277,14 +277,14 @@ if (have_src) {
   }
 
   brk <- which(st[-1] != st[-n]) + 0.5
-  abline(h = brk, col = "grey62", lwd = 1); abline(v = brk, col = "grey62", lwd = 1)
-  rect(0.5, 0.5, n + 0.5, n + 0.5, border = "grey45")
+  abline(h = brk, col = "gray62", lwd = 1); abline(v = brk, col = "gray62", lwd = 1)
+  rect(0.5, 0.5, n + 0.5, n + 0.5, border = "gray45")
 
   hit <- which(A == 1L, arr.ind = TRUE)
   rect(hit[, 2] - 0.40, hit[, 1] - 0.40, hit[, 2] + 0.40, hit[, 1] + 0.40,
        col = PAL[st[hit[, 1]]], border = "white", lwd = 0.5)
 
-  # Stage colour strips just inside each margin, and stage names down the side.
+  # Stage color strips just inside each margin, and stage names down the side.
   for (k in seq_along(blocks)) {
     idx <- blocks[[k]]; s <- names(blocks)[k]
     rect(-1.9, min(idx) - 0.5, -0.7, max(idx) + 0.5, col = PAL[[s]],

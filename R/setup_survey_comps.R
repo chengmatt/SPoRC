@@ -9,7 +9,7 @@
 #'
 #' Ingests observed survey index, age composition, and length composition data
 #' (both pooled and population-specific) into \code{input_list$data},
-#' initialises overdispersion and correlation starting values in
+#' initializes overdispersion and correlation starting values in
 #' \code{input_list$par}, and constructs parameter maps via
 #' \code{\link{do_comp_theta_mapping}} and \code{\link{do_comp_corr_pars_mapping}}
 #' (called with \code{comp_prefix = "SrvAge"}/\code{"SrvLen"} and
@@ -112,8 +112,10 @@
 #'   the survey index at age, \code{"iid"} (default), \code{"1dar1"},
 #'   \code{"us"} or \code{"2dar1"}, one setting for every fleet or one per
 #'   fleet. See \code{\link{Setup_Mod_Catch_and_F}}.
-#' @param rho_srv_idx_key,rho_srv_idx_pop_key Integer matrices
-#'   \code{[n_sexes, n_srv_fleets]} coupling the across-age correlation.
+#' @param rho_srv_idx_spec,rho_srv_idx_pop_spec How the correlation parameters
+#'   are shared, over region, sex and fleet, using the package's spec strings.
+#'   \code{NULL} (the default) gives one per fleet. See
+#'   \code{\link{Setup_Mod_Catch_and_F}}.
 #'
 #' @param ObsSrvIdx Observed survey index array
 #'   \code{[n_regions × n_years × n_seas × n_srv_fleets]}.
@@ -169,7 +171,7 @@
 #'
 #'   A \code{"recdev"} fleet observes year class strength directly rather than
 #'   any part of the population. Its predicted value is
-#'   \code{q * (ln_RecDevs - mu)}, with \code{mu} the centre the recruitment
+#'   \code{q * (ln_RecDevs - mu)}, with \code{mu} the center the recruitment
 #'   penalty asserts for that year, so it measures the anomaly rather than the
 #'   deviation as stored; under a bias ramp the two differ. Such a fleet reads
 #'   no numbers at age, so its selectivity, survey timing and weight at age are
@@ -360,8 +362,8 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
                                        SrvIdxAA_pop_sigma_form = "none",
                                        AgeObsCorr_srv_idx = "iid",
                                        AgeObsCorr_srv_idx_pop = "iid",
-                                       rho_srv_idx_key = NULL,
-                                       rho_srv_idx_pop_key = NULL,
+                                       rho_srv_idx_spec = NULL,
+                                       rho_srv_idx_pop_spec = NULL,
                                        sigmaSrvIdx_spec = "fix",
                                        sigmaSrvIdx_map = NULL,
                                        sigmaSrvIdx_pop_spec = "fix",
@@ -476,9 +478,9 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
     if(srv_idx_type[f] == 'abd') srv_idx_type_vals[f] <- 0 # abundance
     if(srv_idx_type[f] == 'recdev') {
       srv_idx_type_vals[f] <- 2 # recruitment deviations
-      # a deviation is signed, so a lognormal cannot be used on it, and the anomaly is measured against the penalty's fixed centre
+      # a deviation is signed, so a lognormal cannot be used on it, and the anomaly is measured against the penalty's fixed center
       if(SrvIdx_LikeType[f] != "normal") stop("srv_idx_type is 'recdev' for survey fleet ", f, ". Recruitment deviations are signed, so that fleet needs SrvIdx_LikeType = 'normal' rather than ", SrvIdx_LikeType[f], ".")
-      if(!is.null(input_list$data$RecDevs_pen_center) && input_list$data$RecDevs_pen_center != 0) stop("srv_idx_type is 'recdev' for survey fleet ", f, ". It measures the deviation against the centre its penalty asserts, which is only defined when RecDevs_pen_center is 'fixed' in Setup_Mod_Rec.")
+      if(!is.null(input_list$data$RecDevs_pen_center) && input_list$data$RecDevs_pen_center != 0) stop("srv_idx_type is 'recdev' for survey fleet ", f, ". It measures the deviation against the center its penalty asserts, which is only defined when RecDevs_pen_center is 'fixed' in Setup_Mod_Rec.")
     }
     if(srv_idx_type[f] == 'none') srv_idx_type_vals[f] <- 999 # none
     collect_message(paste("Survey Index", "for survey fleet", f, "specified as:" , srv_idx_type[f]))
@@ -813,9 +815,9 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
   input_list <- do_at_age_like_setup(input_list, SrvIdxAA_pop_LikeType, SrvIdxAA_pop_sigma_form, "SrvIdxAA", "n_srv_fleets", pop = TRUE)
 
   input_list <- do_age_corr_setup(input_list, AgeObsCorr_srv_idx, "srv_idx", "n_srv_fleets",
-                                  "UseSrvIdxAA", starting_values, rho_srv_idx_key)
+                                  "UseSrvIdxAA", starting_values, rho_srv_idx_spec)
   input_list <- do_age_corr_setup(input_list, AgeObsCorr_srv_idx_pop, "srv_idx", "n_srv_fleets",
-                                  "UseSrvIdxAA_pop", starting_values, rho_srv_idx_pop_key, pop = TRUE)
+                                  "UseSrvIdxAA_pop", starting_values, rho_srv_idx_pop_spec, pop = TRUE)
 
   input_list <- do_key_mapping(input_list, sigmaSrvIdxAA_key,
                                at_age_sigma_spec(sigmaSrvIdxAA_spec, SrvIdxAA_sigma_form, any(use_srv_idx_aa == 1)),

@@ -52,7 +52,7 @@ when \code{n_sexes = 1}; \code{0.5} per sex when \code{n_sexes = 2}.}
 cells.}
 
 \item{rinit_input}{Unfished equilibrium recruitment scalar used for
-population initialisation when \code{use_rinit = 1}, array
+population initialization when \code{use_rinit = 1}, array
 \code{[n_pop x n_regions x n_sims]}. Ignored when \code{use_rinit = 0}.
 Default: \code{15} for all cells.}
 
@@ -100,25 +100,25 @@ relationship. Default \code{"global"}. Options:
 }}
 
 \item{init_dd}{Density-dependence structure for equilibrium age-structure
-initialisation. Default \code{"global"}. Same options as \code{rec_dd}.}
+initialization. Default \code{"global"}. Same options as \code{rec_dd}.}
 
 \item{use_rinit}{Integer (0/1). Whether a separate initial recruitment
-scalar \code{rinit_input} is used to initialise the population
+scalar \code{rinit_input} is used to initialize the population
 independently of \code{R0_input}. When \code{0} (default),
 \code{rinit_input} is ignored and \code{R0_input} governs both
-initialisation and recruitment. When \code{1}, \code{rinit_input} is
-used exclusively for equilibrium initialisation and \code{R0_input}
+initialization and recruitment. When \code{1}, \code{rinit_input} is
+used exclusively for equilibrium initialization and \code{R0_input}
 governs the recruitment relationship.}
 
 \item{init_age_strc}{Integer specifying the equilibrium age-structure
-initialisation method. Default \code{2}. Options:
+initialization method. Default \code{2}. Options:
 \describe{
   \item{\code{0}/\code{"iterative"}}{Iterates the population forward until
     approximate equilibrium. Slowest but most general.}
   \item{\code{1}/\code{"scalar_no_move"}}{Scalar geometric series solution
     assuming no movement in any age class.}
   \item{\code{2}/\code{"matrix"}}{Matrix geometric series solution that
-    generalises the scalar approach to include movement. Recommended
+    generalizes the scalar approach to include movement. Recommended
     default for spatially explicit models.}
   \item{\code{3}/\code{"scalar_plus_only"}}{Scalar geometric series
     solution assuming no movement except in the plus group.}
@@ -131,7 +131,7 @@ initialisation method. Default \code{2}. Options:
     \code{ln_rinit}, and because the deviations are log-numbers rather
     than log-ratios, any penalty acts as a prior on initial abundance:
     pair with \code{equil_init_age_strc = "equil"} for no such prior, or
-    with \code{InitDevs_pen_center = "own_mean"} to penalise only the
+    with \code{InitDevs_pen_center = "own_mean"} to penalize only the
     roughness of the age structure and not its level.}
 }}
 
@@ -164,7 +164,7 @@ array, either \code{[n_pop x n_regions x (n_ages - 1) x n_sims]} (one
 shared curve, broadcast across sexes) or
 \code{[n_pop x n_regions x (n_ages - 1) x n_sexes x n_sims]} (one curve
 per sex). The \code{n_ages - 1} dimension excludes the reference age used
-during initialisation. If \code{NULL} (default), deviations are drawn as
+during initialization. If \code{NULL} (default), deviations are drawn as
 one shared curve per population and region.}
 
 \item{InitDevs_sex_spec}{Character. How initial age deviations are drawn
@@ -194,7 +194,7 @@ Populates \code{sim_list} with all recruitment-related inputs needed by the
 operating model: stock-recruit relationship type and density-dependence
 structure, biological parameters (\eqn{R_0}, steepness, sex ratio),
 recruitment and initial age-structure deviations, seasonal recruitment
-allocation, spawn timing, and equilibrium initialisation method. Must be
+allocation, spawn timing, and equilibrium initialization method. Must be
 called after \code{\link{Setup_Sim_Dim}}.
 }
 \seealso{

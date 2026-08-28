@@ -323,7 +323,7 @@ get_fishery_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_fis
 #' @param SrvIAL Array \code{[pop, region, year, season, len, sex, srv_fleet]},
 #'   output container for survey index at length.
 #' @param RecDev_anom Array \code{[pop, region, deviation]} of recruitment
-#'   deviations measured from the centre their penalty asserts, or \code{NULL}
+#'   deviations measured from the center their penalty asserts, or \code{NULL}
 #'   when no fleet observes them. Read only by fleets with
 #'   \code{srv_idx_type == 2}.
 #' @param srv_idx_type Integer vector \code{[srv_fleet]} selecting

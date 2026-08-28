@@ -46,11 +46,11 @@ models that have not converged, where second derivatives can be undefined
 at parameter values the objective and gradient still evaluate at. The
 \code{nlminb} solution is kept in that case.}
 
-\item{silent}{Logical. If \code{TRUE}, suppresses RTMB and optimiser
+\item{silent}{Logical. If \code{TRUE}, suppresses RTMB and optimizer
 console output. Default \code{FALSE}.}
 
 \item{do_optim}{Logical. If \code{TRUE} (default), runs \code{nlminb}
-and Newton refinement. If \code{FALSE}, returns the un-optimised
+and Newton refinement. If \code{FALSE}, returns the un-optimized
 \code{MakeADFun} object only.}
 
 \item{nlminb_control}{Named list of control parameters passed to
@@ -59,7 +59,7 @@ and Newton refinement. If \code{FALSE}, returns the un-optimised
 
 \item{lower}{Numeric vector of lower bounds for \code{obj$par} (the
 estimated parameter vector, i.e. after mapping and random-effects
-marginalisation), passed to \code{stats::nlminb} and used to clamp each
+marginalization), passed to \code{stats::nlminb} and used to clamp each
 Newton refinement step. \code{NULL} (default) is unbounded
 (\code{-Inf} for every element).}
 
@@ -69,7 +69,7 @@ Newton refinement step. \code{NULL} (default) is unbounded
 
 \item{model}{Function with signature \code{function(pars, data)} passed to
 \code{RTMB::MakeADFun} via \code{\link{cmb}}. Default \code{\link{SPoRC_rtmb}}.
-Allows non-SPoRC RTMB models to be fit with the same optimisation and
+Allows non-SPoRC RTMB models to be fit with the same optimization and
 Newton-refinement machinery.}
 
 \item{...}{Additional arguments forwarded to \code{RTMB::MakeADFun}.}
@@ -83,10 +83,10 @@ The RTMB \code{ADFun} object with additional fields: \code{$optim}
 }
 \description{
 Constructs an RTMB automatic differentiation function via
-\code{RTMB::MakeADFun}, optimises it with \code{stats::nlminb}, and
+\code{RTMB::MakeADFun}, optimizes it with \code{stats::nlminb}, and
 optionally refines the solution with Newton steps using the analytic
 Hessian. The best parameter vector (\code{obj$env$last.par.best}),
-optimiser output, and model report are attached to the returned object.
+optimizer output, and model report are attached to the returned object.
 }
 \examples{
 \dontrun{

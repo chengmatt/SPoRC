@@ -100,7 +100,7 @@ MatAA <- array(NA_real_, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexe
 MatAA[1, 1, , 1, , 1] <- matrix(rep(maa_vec, each = n_yrs), nrow = n_yrs)
 
 # The .dat carries the size at age matrix as [length bin x age] with each age
-# column a distribution over length bins, so the columns are normalised.
+# column a distribution over length bins, so the columns are normalized.
 size_age_raw <- read_matrix(90, n_lens, n_ages)
 col_sums <- colSums(size_age_raw)
 col_sums[col_sums == 0] <- 1
@@ -109,7 +109,7 @@ SizeAgeTrans <- array(NA_real_, dim = c(n_pop, n_regions, n_yrs, n_seas, n_lens,
 for(y in seq_len(n_yrs)) SizeAgeTrans[1, 1, y, 1, , , 1] <- size_age_mat
 
 # Ageing error is stored as [observed age x true age]. The ADMB template
-# column-normalises it to P(obs | true); SPoRC multiplies predicted numbers at
+# column-normalizes it to P(obs | true); SPoRC multiplies predicted numbers at
 # age on the right, so it needs [true x obs], and the observed plus group
 # collapses rows 38 to 43 onto row 38.
 age_error_raw <- read_matrix(46, n_ages, n_ages)

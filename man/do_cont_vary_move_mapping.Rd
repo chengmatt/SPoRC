@@ -17,7 +17,7 @@ sublists.}
 \item{cont_vary_movement}{Character string specifying the deviation structure.
 One of \code{"none"}, \code{"iid_y"}, \code{"iid_a"}, \code{"iid_y_a"},
 \code{"iid_y_a_s"}, \code{"iid_y_seas_a_s"}, or the population-specific
-analogues \code{"iid_p_y"}, \code{"iid_p_a"}, \code{"iid_p_y_a"},
+analogs \code{"iid_p_y"}, \code{"iid_p_a"}, \code{"iid_p_y_a"},
 \code{"iid_p_y_a_s"}, \code{"iid_p_y_seas_a_s"}. Dimensions present in
 the string receive unique estimation indices; absent dimensions share a
 single index. \code{"none"} maps all deviations to \code{NA}.}

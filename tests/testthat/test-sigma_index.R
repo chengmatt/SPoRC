@@ -156,7 +156,7 @@ test_that("an estimated sigma is refused on a multivariate normal index", {
     "multivariate normal", ignore.case = TRUE)
 })
 
-test_that("an unrecognised spec is rejected by name", {
+test_that("an unrecognized spec is rejected by name", {
   expect_error(build_toy(sigmaSrvIdx_spec = "estimate_it"),
                "sigmaSrvIdx_spec is .estimate_it., which is not recognized")
 })

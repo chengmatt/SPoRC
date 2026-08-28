@@ -167,11 +167,12 @@ get_at_age_prediction = function(source, arrays, p_idx, r_idx, s_idx, y, seas, a
 #'   matching the aggregated stream's convention.
 #' @param corr_type Integer per fleet. \code{0} \code{"iid"}, \code{1}
 #'   \code{"1dar1"}, \code{2} \code{"us"}, \code{3} \code{"2dar1"}.
-#' @param trans_rho Unconstrained correlation across ages, over sex by fleet.
-#' @param trans_rho_year Unconstrained correlation across years, over sex by
-#'   fleet, read under \code{"2dar1"}.
-#' @param us_pars Unconstrained correlation parameters, over pair by sex by
-#'   fleet, read under \code{"us"}.
+#' @param trans_rho Unconstrained correlation across ages, over region by sex by
+#'   fleet, with a leading population margin when \code{pop} is \code{TRUE}.
+#' @param trans_rho_year Unconstrained correlation across years, shaped like
+#'   \code{trans_rho}, read under \code{"2dar1"}.
+#' @param us_pars Unconstrained correlation parameters, over pair by the margins
+#'   of \code{trans_rho}, read under \code{"us"}.
 #' @param aa_type Integer per fleet naming the split margins, see
 #'   \code{\link{at_age_split}}.
 #'
@@ -229,13 +230,11 @@ get_at_age_stream_nLL = function(obs_t, use, ln_sigma, source, pop, arrays,
     r_all = if(split$region) NULL else all_reg  # NULL means "take the cell's own index"
     s_all = if(split$sex) NULL else all_sex
 
-    # an unstructured correlation is one matrix per sex and fleet, built once and
-    # subset to whichever ages a cell observes
-    us_corr = NULL
-    if(corr_type[f] == 2) {
-      us_corr = vector("list", df[i_s])
-      for(s in seq_len(df[i_s])) us_corr[[s]] = build_us_corr(us_pars[,s,f], df[i_a])
-    } # end s loop
+    # an unstructured correlation is one matrix per cell the spec keeps apart,
+    # built on first use and reused by the cells sharing it. Only a fleet asking
+    # for one allocates the store, and it is indexed rather than named
+    n_us_pop = if(pop) df[1] else 1
+    us_corr = if(corr_type[f] == 2) vector("list", n_us_pop * df[i_r] * df[i_s]) else NULL
 
     # a separable correlation runs over years as well as ages, so year leaves the
     # cell definition and the block of years by ages is evaluated at once
@@ -292,7 +291,9 @@ get_at_age_stream_nLL = function(obs_t, use, ln_sigma, source, pop, arrays,
         resid = matrix(obs_t[slot] - pred_t, nrow = length(obs_yrs))
         scale = matrix(sd_vec, nrow = length(obs_yrs))
         cell_nLL = rep(0, length(pred))
-        cell_nLL[1] = get_at_age_2dar1_nLL(resid, scale, trans_rho[s,f], trans_rho_year[s,f])
+        rho_a = if(pop) trans_rho[p,idx[i_r],s,f] else trans_rho[idx[i_r],s,f]
+        rho_y = if(pop) trans_rho_year[p,idx[i_r],s,f] else trans_rho_year[idx[i_r],s,f]
+        cell_nLL[1] = get_at_age_2dar1_nLL(resid, scale, rho_a, rho_y)
 
         stream_nLL[lin] = cell_nLL
         stream_pred[lin] = pred
@@ -317,9 +318,19 @@ get_at_age_stream_nLL = function(obs_t, use, ln_sigma, source, pop, arrays,
       pred_t = if(like_type[f] == 0) log(pred + const) else pred
 
       # iid returns one value per age; a correlated cell puts its density on the first
-      cell_nLL = get_at_age_nLL(obs_t[slot], pred_t, sd_vec, corr_type[f], rho_trans(trans_rho[s,f]),
-                                ages = obs_ages,
-                                corr_mat = if(corr_type[f] == 2) us_corr[[s]][obs_ages,obs_ages] else NULL)
+      corr_mat = NULL
+      if(corr_type[f] == 2) {
+        us_key = p + (idx[i_r] - 1) * n_us_pop + (s - 1) * n_us_pop * df[i_r]
+        if(is.null(us_corr[[us_key]])) {
+          us_cell = if(pop) us_pars[,p,idx[i_r],s,f] else us_pars[,idx[i_r],s,f]
+          us_corr[[us_key]] = build_us_corr(us_cell, df[i_a])
+        }
+        corr_mat = us_corr[[us_key]][obs_ages,obs_ages]
+      }
+
+      trans_rho_cell = if(pop) trans_rho[p,idx[i_r],s,f] else trans_rho[idx[i_r],s,f]
+      cell_nLL = get_at_age_nLL(obs_t[slot], pred_t, sd_vec, corr_type[f], rho_trans(trans_rho_cell),
+                                ages = obs_ages, corr_mat = corr_mat)
 
       stream_nLL[lin] = cell_nLL
       stream_pred[lin] = pred

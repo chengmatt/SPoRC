@@ -7,7 +7,7 @@
 #
 #          This is a CLOSE bridge, not an exact one. tem.tpl carries several
 #          conventions SPoRC deliberately does not reproduce (sum-to-zero
-#          deviation vectors, a recruitment penalty centred at zero, an
+#          deviation vectors, a recruitment penalty centered at zero, an
 #          uncorrected terminal recruitment, and a survey index reweighted by an
 #          observed sex ratio). The measured gap is reported at the bottom and is
 #          what the vignette's difference table quotes.
@@ -77,7 +77,7 @@ input_list <- Setup_Mod_Biologicals(
   Use_M_prior = 0,
   fit_lengths = 1,
   # tem.tpl estimates a single logm with a male offset mdelta. SPoRC has no
-  # offset parameterisation, so both are fixed at the 2024 estimates rather than
+  # offset parameterization, so both are fixed at the 2024 estimates rather than
   # left as an uncontrolled difference.
   M_spec = "fix",
   Fixed_natmort = fixed_natmort

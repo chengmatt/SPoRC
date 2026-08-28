@@ -104,7 +104,7 @@ test_that("convert_to_numeric maps character labels to their codes", {
   expect_equal(unname(out), c(0, 999, 1))
 })
 
-test_that("convert_to_numeric rejects unrecognised labels for a named-vector lookup", {
+test_that("convert_to_numeric rejects unrecognized labels for a named-vector lookup", {
   lookup <- c("none" = 999, "multinomial" = 0, "dirichlet" = 1)
   expect_error(SPoRC:::convert_to_numeric("multinomal", lookup), "multinomal")
   expect_error(SPoRC:::convert_to_numeric("multinomal", lookup), "Valid options")
@@ -114,7 +114,7 @@ test_that("convert_to_numeric rejects unrecognised labels for a named-vector loo
   expect_match(conditionMessage(err), "bad2")
 })
 
-test_that("convert_to_numeric rejects unrecognised labels for a list lookup", {
+test_that("convert_to_numeric rejects unrecognized labels for a list lookup", {
   # Every caller in R/setup_*.R passes a list, so this is the path that matters.
   lookup <- list("none" = 999, "multinomial" = 0, "dirichlet" = 1)
 

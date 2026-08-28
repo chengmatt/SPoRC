@@ -4,7 +4,7 @@ library(testthat)
 # Two settings added together: a stock-recruit curve fitted as a penalty on the
 # recruitment residual rather than generating recruitment, and a standardization
 # window for non-parametric log-scale selectivity. Both default to the previous
-# behaviour, so the defaults are pinned alongside the new paths.
+# behavior, so the defaults are pinned alongside the new paths.
 
 test_that("get_sr_penalty is a normal density on the log residual over the named years", {
 
@@ -93,7 +93,7 @@ test_that("sel_norm_bins sets which bins the nonparlog standardization averages 
                                         ln_seldevs = NULL, Region = 1, Year = 1, Bin = bins,
                                         Sex = 1, sel_norm_bins = nb)
 
-  # Not supplying a window averages over every bin, which is the behaviour the
+  # Not supplying a window averages over every bin, which is the behavior the
   # argument replaced.
   expect_equal(as.vector(sel(NULL)), exp(pars) / mean(exp(pars)))
   expect_equal(mean(as.vector(sel(NULL))), 1)

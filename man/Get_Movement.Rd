@@ -102,7 +102,7 @@ all off-diagonal generator matrix entries are non-negative (valid generator);
 \item{seasdur}{Numeric vector of length \code{n_seas} giving season durations
 (summing to 1). Used to scale the CTMC generator when
 \code{ctmc_scale_by_seasdur == 1}. Defaults to \code{rep(1, n_seas)}, which
-reproduces the unscaled behaviour.}
+reproduces the unscaled behavior.}
 
 \item{ctmc_scale_by_seasdur}{Integer flag controlling the time units of the CTMC
   generator. \code{1} = treat \eqn{Q} as an annual rate and exponentiate
@@ -113,7 +113,7 @@ reproduces the unscaled behaviour.}
   arithmetic they expect; the user facing default is \code{1}, set by
   \code{Setup_Mod_Movement}.
 
-  Whether this flag changes the fit or only reparameterises it depends on
+  Whether this flag changes the fit or only reparameterizes it depends on
   whether the generator varies by season. With a season-agnostic generator it
   matters: the seasonal steps commute, so scaling on composes across the year to
   \eqn{\exp(Q)} regardless of \code{n_seas}, whereas scaling off composes to

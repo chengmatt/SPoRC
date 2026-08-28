@@ -97,7 +97,7 @@ cat("expected age compositions against the assessment's, max absolute difference
                  comp_gap(dat$srv_src, dat$srv_sex, function(y, s, f) r$SrvIAA[1, 1, y, 1, , s, f]))), 3), "\n")
 
 # Likelihoods. SPoRC writes each component as a proper density and the
-# assessment drops normalising constants, so the comparison subtracts exactly
+# assessment drops normalizing constants, so the comparison subtracts exactly
 # the constants it omits.
 lc <- function(sigma, n) n * (log(sigma) + 0.5 * log(2 * pi))
 n_est_dev <- sum(yrs %in% dat$yrs_rec_est)

@@ -8,7 +8,7 @@ get_selex_plot(rep, model_names, Selex_Type = "age", year_indx = NULL)
 }
 \arguments{
 \item{rep}{List of length \code{n_models}, where each element is a SPoRC
-report list (i.e. the output of \code{obj$report()} after optimisation).
+report list (i.e. the output of \code{obj$report()} after optimization).
 Must contain \code{fish_sel} and \code{srv_sel} (age-based) and/or
 \code{fish_sel_l} and \code{srv_sel_l} (length-based) depending on
 \code{Selex_Type}.}
@@ -23,7 +23,7 @@ Must match the \code{Selex_Type} used when fitting the model (i.e.
 \code{Selex_Type = 1} in the model).}
 
 \item{year_indx}{Integer or integer vector of year indices to include in the
-plot. When multiple years are supplied, curves are coloured by year on a
+plot. When multiple years are supplied, curves are colored by year on a
 continuous viridis scale, making time-variation in selectivity visible.
 If \code{NULL} (default), only the terminal year is plotted.}
 }
@@ -31,7 +31,7 @@ If \code{NULL} (default), only the terminal year is plotted.}
 A list of two \code{ggplot} objects:
 \describe{
   \item{[[1]] fish_sel_plot}{Fishery selectivity curves faceted by
-    Sex × (Region + Fleet). Lines are coloured by year and distinguished
+    Sex × (Region + Fleet). Lines are colored by year and distinguished
     by linetype across models.}
   \item{[[2]] srv_sel_plot}{Survey selectivity curves with identical
     faceting and aesthetic structure as the fishery plot.}
@@ -40,15 +40,15 @@ A list of two \code{ggplot} objects:
 \description{
 Generates age- or length-based selectivity plots for all fishery and survey
 fleets across one or more SPoRC model runs. Selectivity curves are faceted by
-sex, region, and fleet, and coloured by year when multiple years are requested,
-allowing visualisation of time-varying selectivity alongside model comparisons.
+sex, region, and fleet, and colored by year when multiple years are requested,
+allowing visualization of time-varying selectivity alongside model comparisons.
 }
 \examples{
 \dontrun{
   # Terminal year only
   plots <- get_selex_plot(list(rep1, rep2), c("Base", "Sensitivity"))
 
-  # All years to visualise time-varying selectivity
+  # All years to visualize time-varying selectivity
   plots <- get_selex_plot(list(rep1), "Base", Selex_Type = "age", year_indx = 1:40)
 
   plots[[1]] # fishery selectivity

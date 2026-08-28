@@ -167,7 +167,7 @@ build_bsai_nork_input <- function(dat) {
   )
 
   ## Fishery selectivity and catchability -------------------------------------
-  # logist1 is the a50 and slope parameterisation. selectivity is time
+  # logist1 is the a50 and slope parameterization. selectivity is time
   # invariant, and fishery catchability is not used because there is no fishery
   # index to scale
   input_list <- Setup_Mod_Fishsel_and_Q(
@@ -182,7 +182,7 @@ build_bsai_nork_input <- function(dat) {
 
   ## Survey selectivity and catchability --------------------------------------
   # the assessment's survey selectivity constraint is NOT a prior on the
-  # parameters. it penalises the REALIZED selectivity at age 30 towards 1 with a
+  # parameters. it penalizes the REALIZED selectivity at age 30 towards 1 with a
   # standard deviation of 0.003, which is what type = "value" states. it is load
   # bearing: without it the survey age compositions do not identify the
   # selectivity asymptote. the catchability prior is tight enough to pin q at 1
@@ -252,7 +252,7 @@ seed_bsai_nork_mle <- function(input_list, dat) {
   input_list$par$srv_fixed_sel_pars[] <- log(c(mle$sel_a50_srv, mle$sel_aslope_srv))
 
   ## Initial age structure ----------------------------------------------------
-  # the assessment parameterises it as N(styr, j) = exp(log_rinit - M (j - 1) +
+  # the assessment parameterizes it as N(styr, j) = exp(log_rinit - M (j - 1) +
   # fydev_j), with ages beyond the observed range sharing the last deviation and
   # the plus group solved as a geometric series. SPoRC carries multiplicative
   # deviations from an equilibrium age structure, so the deviations it wants are

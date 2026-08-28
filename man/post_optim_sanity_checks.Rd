@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils_postfit.R
 \name{post_optim_sanity_checks}
 \alias{post_optim_sanity_checks}
-\title{Run post-optimisation convergence checks on a fitted SPoRC model}
+\title{Run post-optimization convergence checks on a fitted SPoRC model}
 \usage{
 post_optim_sanity_checks(
   sd_rep,
@@ -22,7 +22,7 @@ model. Must contain \code{$jnLL}.}
 
 \item{gradient_tol}{Numeric. Maximum tolerated absolute gradient for any
 fixed-effect parameter. Default \code{1e-3}; values above this threshold
-suggest the optimiser did not reach a local minimum.}
+suggest the optimizer did not reach a local minimum.}
 
 \item{se_tol}{Numeric. Maximum tolerated parameter standard error. Default
 \code{100}; very large SEs indicate poorly identified parameters.}

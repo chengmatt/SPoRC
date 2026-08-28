@@ -35,7 +35,7 @@ deterministic expected recruitment from \code{\link{Get_Det_Recruitment}}
 and then multiplying by lognormal deviations (bias-corrected). Recruitment
 is apportioned across sexes and seasons and written into
 \code{sim_env$NAA[p, r, y, 1, 1, s, sim]} (first season, age-1 slot).
-Unfished NAA (\code{NAA0}) is synchronised to match fished NAA at
+Unfished NAA (\code{NAA0}) is synchronized to match fished NAA at
 recruitment. If \code{Rec_input} exists in the environment and covers year
 \code{y}, those values override the stochastic draw entirely.
 }

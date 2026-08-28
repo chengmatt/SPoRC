@@ -4,7 +4,7 @@ library(testthat)
 # Tests for fmort_opt = "Catch" in Do_Population_Projection().
 #
 # The central test is a round trip. Run the projection at a known input F, take
-# the realised catch as the target, and re-run under fmort_opt = "Catch". The
+# the realized catch as the target, and re-run under fmort_opt = "Catch". The
 # solver has to recover the original F and reproduce every other projected
 # quantity, which pins down the whole seasonal and spatial catch calculation
 # rather than just checking that some F produces some catch.
@@ -117,7 +117,7 @@ threshold_hcr <- function(x, frp, brp) frp * min(1, x / brp)
 
 test_that("annual catch targets recover the fishing mortality that produced them", {
 
-  # Each configuration runs at a known input F, has its realised catch fed back
+  # Each configuration runs at a known input F, has its realized catch fed back
   # as a target, and must return the same F and the same projection.
   cases <- list(
     list(lab = "1 region, 1 season, 1 fleet",              nr = 1, ns = 1, nf = 1, mt = 0),
@@ -476,7 +476,7 @@ test_that("projected total biomass continues the estimated series and exceeds SS
 
   # Check the definition directly rather than by a monotonicity heuristic: total
   # biomass is numbers times weight over all ages and sexes at the spawning
-  # point, and SSB is the mature-female analogue over the same state. A
+  # point, and SSB is the mature-female analog over the same state. A
   # single-region, single-season model is used so that the spawning-point state
   # is exactly proj_NAA discounted by t_spawn.
   inp1 <- make_proj_inputs(1, 1, 1)
@@ -521,7 +521,7 @@ test_that("returned arrays carry the documented dimensions", {
   expect_equal(dim(got$proj_ZAA), c(n_pop, n_regions, npy + 1L, n_seas, n_ages, n_sexes))
   expect_equal(dim(got$proj_catch_resid), c(n_regions, npy))
 
-  # documented trailing-slot behaviour
+  # documented trailing-slot behavior
   expect_true(any(got$proj_NAA[, , npy + 1, , , ] > 0))   # filled
   expect_true(all(got$proj_ZAA[, , npy + 1, , , ] == 0))  # left at 0
   expect_true(all(got$proj_ret_FAA[, , npy + 1, , , , ] == 0))

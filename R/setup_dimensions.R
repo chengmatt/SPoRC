@@ -6,7 +6,7 @@
 # populations, ages, lengths, years, seasons and sexes are fixed here and every
 # later stage sizes its arrays off them.
 
-#' Initialise simulation dimension settings
+#' Initialize simulation dimension settings
 #'
 #' Creates the foundational \code{sim_list} object used throughout a closed-loop
 #' simulation or static simulation. All downstream setup
@@ -36,7 +36,7 @@
 #'   each season as a fraction of a year. Values must sum to 1. Defaults to
 #'   \code{1} when \code{n_seas == 1}, or \code{rep(1 / n_seas, n_seas)} for
 #'   equal-length seasons otherwise.
-#' @param n_ages Positive integer. Number of modelled age classes.
+#' @param n_ages Positive integer. Number of modeled age classes.
 #' @param n_obs_ages Positive integer. Number of observed age bins in composition
 #'   data. Can differ from \code{n_ages} when the plus group or youngest ages are
 #'   pooled differently in observations. Defaults to \code{n_ages}.
@@ -61,7 +61,7 @@
 #'     \item{\code{natal_region}}{Integer vector of length \code{n_pop}
 #'       defining natal regions.}
 #'     \item{\code{seasdur}}{Season durations summing to 1.}
-#'     \item{\code{init_iter}}{Derived value \code{n_ages * 10} used to initialise
+#'     \item{\code{init_iter}}{Derived value \code{n_ages * 10} used to initialize
 #'       equilibrium conditions.}
 #'     \item{\code{run_feedback}, \code{feedback_start_yr}}{
 #'       Feedback control settings.}
@@ -89,7 +89,7 @@ Setup_Sim_Dim <- function(n_sims,
 
   sim_list <- list() # setup empty list1
 
-  if(n_sexes > 2) stop("The number of sexes modelled cannot be larger than 2!")
+  if(n_sexes > 2) stop("The number of sexes modeled cannot be larger than 2!")
 
   if(is.null(natal_region)) {
     if(n_regions == 1) {
@@ -126,7 +126,7 @@ Setup_Sim_Dim <- function(n_sims,
 
 }
 
-#' Initialise model dimension settings
+#' Initialize model dimension settings
 #'
 #' Creates the foundational \code{input_list} object used throughout the estimation
 #' model setup. All downstream configuration functions
@@ -139,10 +139,10 @@ Setup_Sim_Dim <- function(n_sims,
 #' @param years Numeric vector of calendar years included in the model (e.g.,
 #'   \code{1990:2024}). The length of this vector determines \code{n_years}
 #'   throughout the model.
-#' @param ages Numeric vector of modelled age classes (e.g., \code{2:31} for a
+#' @param ages Numeric vector of modeled age classes (e.g., \code{2:31} for a
 #'   model spanning ages 2-31). The final element is treated as a plus-group.
 #' @param lens Numeric vector of length bin midpoints. Set to \code{NULL} when
-#'   length data are not modelled; a scalar placeholder of \code{1} is stored
+#'   length data are not modeled; a scalar placeholder of \code{1} is stored
 #'   internally in that case.
 #' @param n_pop Positive integer. Number of distinct populations (default \code{1}).
 #'   Populations can have independent stock-recruit relationships and natal regions

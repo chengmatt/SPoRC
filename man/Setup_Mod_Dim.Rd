@@ -2,7 +2,7 @@
 % Please edit documentation in R/setup_dimensions.R
 \name{Setup_Mod_Dim}
 \alias{Setup_Mod_Dim}
-\title{Initialise model dimension settings}
+\title{Initialize model dimension settings}
 \usage{
 Setup_Mod_Dim(
   years,
@@ -28,11 +28,11 @@ Setup_Mod_Dim(
 \code{1990:2024}). The length of this vector determines \code{n_years}
 throughout the model.}
 
-\item{ages}{Numeric vector of modelled age classes (e.g., \code{2:31} for a
+\item{ages}{Numeric vector of modeled age classes (e.g., \code{2:31} for a
 model spanning ages 2-31). The final element is treated as a plus-group.}
 
 \item{lens}{Numeric vector of length bin midpoints. Set to \code{NULL} when
-length data are not modelled; a scalar placeholder of \code{1} is stored
+length data are not modeled; a scalar placeholder of \code{1} is stored
 internally in that case.}
 
 \item{n_pop}{Positive integer. Number of distinct populations (default \code{1}).

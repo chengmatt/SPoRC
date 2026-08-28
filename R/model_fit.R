@@ -8,10 +8,10 @@
 #' Fit a SPoRC RTMB model
 #'
 #' Constructs an RTMB automatic differentiation function via
-#' \code{RTMB::MakeADFun}, optimises it with \code{stats::nlminb}, and
+#' \code{RTMB::MakeADFun}, optimizes it with \code{stats::nlminb}, and
 #' optionally refines the solution with Newton steps using the analytic
 #' Hessian. The best parameter vector (\code{obj$env$last.par.best}),
-#' optimiser output, and model report are attached to the returned object.
+#' optimizer output, and model report are attached to the returned object.
 #'
 #' @param data Named list of model data as constructed by the
 #'   \code{Setup_Mod_*} family of functions.
@@ -34,17 +34,17 @@
 #'   models that have not converged, where second derivatives can be undefined
 #'   at parameter values the objective and gradient still evaluate at. The
 #'   \code{nlminb} solution is kept in that case.
-#' @param silent Logical. If \code{TRUE}, suppresses RTMB and optimiser
+#' @param silent Logical. If \code{TRUE}, suppresses RTMB and optimizer
 #'   console output. Default \code{FALSE}.
 #' @param do_optim Logical. If \code{TRUE} (default), runs \code{nlminb}
-#'   and Newton refinement. If \code{FALSE}, returns the un-optimised
+#'   and Newton refinement. If \code{FALSE}, returns the un-optimized
 #'   \code{MakeADFun} object only.
 #' @param nlminb_control Named list of control parameters passed to
 #'   \code{stats::nlminb}. Default
 #'   \code{list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15)}.
 #' @param lower Numeric vector of lower bounds for \code{obj$par} (the
 #'   estimated parameter vector, i.e. after mapping and random-effects
-#'   marginalisation), passed to \code{stats::nlminb} and used to clamp each
+#'   marginalization), passed to \code{stats::nlminb} and used to clamp each
 #'   Newton refinement step. \code{NULL} (default) is unbounded
 #'   (\code{-Inf} for every element).
 #' @param upper Numeric vector of upper bounds for \code{obj$par}, passed to
@@ -52,7 +52,7 @@
 #'   \code{NULL} (default) is unbounded (\code{Inf} for every element).
 #' @param model Function with signature \code{function(pars, data)} passed to
 #'   \code{RTMB::MakeADFun} via \code{\link{cmb}}. Default \code{\link{SPoRC_rtmb}}.
-#'   Allows non-SPoRC RTMB models to be fit with the same optimisation and
+#'   Allows non-SPoRC RTMB models to be fit with the same optimization and
 #'   Newton-refinement machinery.
 #' @param ... Additional arguments forwarded to \code{RTMB::MakeADFun}.
 #'

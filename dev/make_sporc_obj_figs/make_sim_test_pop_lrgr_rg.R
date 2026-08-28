@@ -692,7 +692,7 @@ df_all <- bind_rows(
 # summarize
 df_summary <- df_all %>%
   group_by(pop, region, year, quantity, model_type) %>%
-  summarise(
+  summarize(
     med   = median(rel_bias, na.rm = TRUE),
     lo    = quantile(rel_bias, 0.025, na.rm = TRUE),
     hi    = quantile(rel_bias, 0.975, na.rm = TRUE),
@@ -701,11 +701,11 @@ df_summary <- df_all %>%
 
 # SSB plot
 png(here("vignettes", "figures", "r_natal_home_ssb_plot_multisim.png"), width = 1000, height = 1000)
-ggplot(df_summary %>% filter(quantity == 'SSB'), aes(x = year, colour = model_type, fill = model_type)) +
-  geom_ribbon(aes(ymin = lo, ymax = hi), alpha = 0.2, colour = NA) +
+ggplot(df_summary %>% filter(quantity == 'SSB'), aes(x = year, color = model_type, fill = model_type)) +
+  geom_ribbon(aes(ymin = lo, ymax = hi), alpha = 0.2, color = NA) +
   geom_line(aes(y = med), linewidth = 1.3) +
-  geom_hline(yintercept = 0, linetype = "dashed", linewidth = 1, colour = "black") +
-  scale_colour_manual(values = c("#E07B39", "#3A86C8")) +
+  geom_hline(yintercept = 0, linetype = "dashed", linewidth = 1, color = "black") +
+  scale_color_manual(values = c("#E07B39", "#3A86C8")) +
   scale_fill_manual(  values = c("#E07B39", "#3A86C8")) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   facet_grid(pop ~ region, scales = "free_y") +
@@ -716,11 +716,11 @@ dev.off()
 
 # Rec plot
 png(here("vignettes", "figures", "r_natal_home_rec_plot_multisim.png"), width = 1000, height = 1000)
-ggplot(df_summary %>% filter(quantity == 'Recruitment'), aes(x = year, colour = model_type, fill = model_type)) +
-  geom_ribbon(aes(ymin = lo, ymax = hi), alpha = 0.2, colour = NA) +
+ggplot(df_summary %>% filter(quantity == 'Recruitment'), aes(x = year, color = model_type, fill = model_type)) +
+  geom_ribbon(aes(ymin = lo, ymax = hi), alpha = 0.2, color = NA) +
   geom_line(aes(y = med), linewidth = 1.3) +
-  geom_hline(yintercept = 0, linetype = "dashed", linewidth = 1, colour = "black") +
-  scale_colour_manual(values = c("#E07B39", "#3A86C8")) +
+  geom_hline(yintercept = 0, linetype = "dashed", linewidth = 1, color = "black") +
+  scale_color_manual(values = c("#E07B39", "#3A86C8")) +
   scale_fill_manual(  values = c("#E07B39", "#3A86C8")) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   facet_grid(pop ~ region, scales = "free_y") +

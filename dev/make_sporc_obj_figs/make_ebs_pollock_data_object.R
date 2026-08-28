@@ -131,7 +131,7 @@ UseSrvAgeComps[1, i_ats, 1, 2] <- 1
 # keeping all 15 entries, so its observed vector sums to more than one while the
 # expected sums to one. Because sam * sum(p * c * log(e)) equals (sam * c) *
 # sum(p * log(e)), that is a per-year inflation of the sample size, applied here
-# to a properly normalised composition. sam_bts and sam_ats are integer vectors
+# to a properly normalized composition. sam_bts and sam_ats are integer vectors
 # in pm.tpl, so both are truncated.
 bts_c <- rowSums(in_dat$oac_bts[, 1:n_ages]) / rowSums(in_dat$oac_bts[, 2:n_ages])
 ISS_SrvAgeComps[1, i_bts, 1, 1, 1] <- floor(in_dat$sam_bts) * bts_c

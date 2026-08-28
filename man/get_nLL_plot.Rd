@@ -13,7 +13,7 @@ data list. Likelihood weights are extracted from \code{Wt_Catch},
 \code{Wt_FishIdx}.}
 
 \item{rep}{List of length \code{n_models}, where each element is a SPoRC
-report list (i.e. the output of \code{obj$report()} after optimisation).
+report list (i.e. the output of \code{obj$report()} after optimization).
 The following nLL components are extracted: \code{jnLL}, \code{h_nLL},
 \code{M_nLL}, \code{rec_region_prop_nLL}, \code{Rec_nLL},
 \code{Init_Rec_nLL}, \code{Init_Sex_nLL}, \code{Rec_level_nLL},
@@ -36,7 +36,7 @@ A list of two objects:
 \describe{
   \item{[[1]] nLL_plot}{A stacked bar chart (\code{ggplot}) with one facet
     per model. Bars show the weighted nLL contribution of each component,
-    coloured by component type (Prior, Penalty, Catch, Index, Age, Length,
+    colored by component type (Prior, Penalty, Catch, Index, Age, Length,
     Tagging, jnLL). Components with value 0 are excluded.}
   \item{[[2]] table_plot}{A \code{ggdraw} table (via \code{gridExtra} and
     \code{cowplot}) showing weighted nLL values in wide format, with one
@@ -44,7 +44,7 @@ A list of two objects:
 }
 }
 \description{
-Extracts, weights, and visualises all negative log-likelihood (nLL)
+Extracts, weights, and visualizes all negative log-likelihood (nLL)
 components from one or more SPoRC model runs. Likelihood weights stored in
 the data list are applied to the relevant components (catch, indices,
 recruitment, tagging, fishing mortality) before plotting, so reported values

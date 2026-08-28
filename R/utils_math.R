@@ -182,6 +182,44 @@ rho_trans <- function(x){
   2/(1+ exp(-2 * x)) - 1 # constraint between -1 and 1
 }
 
+#' Build an unstructured correlation matrix from unconstrained parameters
+#'
+#' An unstructured correlation across ages is also somtimes desirable as a check. It
+#' places no shape on how ages covary, at the cost of \eqn{n(n-1)/2} parameters.
+#'
+#' The parameters fill the strict lower triangle of a matrix whose diagonal is
+#' one. Normalising each row to unit length makes that matrix a Cholesky factor,
+#' so the product with its transpose is a correlation matrix with ones on the
+#' diagonal and is positive definite for any parameter values. 
+#'
+#' @param pars Numeric vector of length \eqn{n(n-1)/2}, unconstrained.
+#' @param n Number of ages.
+#'
+#' @return An \eqn{n \times n} correlation matrix.
+#'
+#' @keywords internal
+build_us_corr <- function(pars, n) {
+
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  if(n == 1) return(matrix(1, 1, 1))
+
+  L = matrix(0, n, n)
+  L[1,1] = 1
+  k = 1
+  for(i in 2:n) {
+    L[i,i] = 1
+    for(j in 1:(i - 1)) {
+      L[i,j] = pars[k]
+      k = k + 1
+    } # end j loop
+  } # end i loop
+
+  for(i in 1:n) L[i,] = L[i,] / sqrt(sum(L[i,]^2)) # unit rows make L a Cholesky factor
+
+  return(L %*% t(L))
+}
+
 #' Construct a logistic-normal covariance matrix
 #'
 #' Builds the covariance matrix \eqn{\Sigma} used in logistic-normal
@@ -260,3 +298,45 @@ get_logistN_Sigma <- function(comp_like,
 
   return(Sigma)
 }
+
+#' Matrix exponential of a movement generator, exactly or by implicit solve
+#'
+#' Turns an instantaneous rate matrix into transition fractions. This is the single
+#' point where \code{SPoRC} decides how a matrix exponential is evaluated, so that
+#' \code{\link{Get_Movement}} and every \code{move_timing = 2} operator in
+#' \code{model_transition.R} share one convention.
+#'
+#' @param A Square matrix, dense or sparse, numeric or \code{advector}. The
+#'   generator whose exponential is wanted, already scaled by whatever time step
+#'   the caller intends (i.e. this returns \eqn{e^{A}}, not \eqn{e^{A\Delta}}).
+#' @param expm_nsub Integer. \code{0} (default) evaluates \eqn{e^{A}} with
+#'   \code{Matrix::expm}. A power of two \eqn{n \ge 1} uses the implicit (backward
+#'   Euler) scheme with \eqn{n} substeps (faster but loses acurracy).
+#'
+#' @return A plain dense matrix of the same dimension as \code{A}.
+#'
+#' @keywords internal
+#' @import RTMB
+mat_exp <- function(A, expm_nsub = 0) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  if(expm_nsub == 0) {
+    A <- methods::as(A, "sparseMatrix") # force sparse
+    return(as.matrix(Matrix::expm(A)))
+  }
+
+  # backwards euler
+  A <- as.matrix(A)
+  out <- solve(diag(1, nrow(A)) - A / expm_nsub)
+
+  reps <- expm_nsub
+  while(reps > 1) {
+    out <- out %*% out
+    reps <- reps / 2 # keep raising to powerr till done
+  } # end reps loop
+
+  out
+}
+

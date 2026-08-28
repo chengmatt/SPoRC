@@ -9,8 +9,8 @@ index_osa_field_map(index_source, pop = FALSE)
 \arguments{
 \item{index_source}{One of \code{"Catch"}, \code{"Discard"}, \code{"FishIdx"},
 \code{"SrvIdx"}, or their at-age forms \code{"CatchAA"}, \code{"DiscardAA"},
-\code{"FishIdxAA"}, \code{"SrvIdxAA"}. At-age sources return an extra
-\code{age} column.}
+\code{"FishIdxAA"}, \code{"SrvIdxAA"}. At-age sources return extra
+\code{age} and \code{sex} columns.}
 
 \item{pop}{Logical; population-specific index source.}
 }

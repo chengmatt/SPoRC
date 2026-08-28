@@ -117,6 +117,25 @@ check_profile_mirrors <- function(par, map, what, idx) {
   invisible(NULL)
 }
 
+#' Weight an at-age likelihood component down to the weight's own dimensions
+#'
+#' An at-age component is reported over age and sex, and its weight is not, so
+#' both margins are summed within a cell before the weight is applied. This is
+#' what the objective does when it forms \code{jnLL}, and the profile has to
+#' match it or the components it reports will not add up to the total.
+#'
+#' @param component An at-age likelihood array, or \code{NULL}.
+#' @param weight The stream's weight.
+#'
+#' @return The weighted component with age and sex summed out, or \code{NULL}.
+#'
+#' @keywords internal
+weight_over_ages <- function(component, weight) {
+  if(is.null(component)) return(NULL)
+  n_dim <- length(dim(component))
+  return(weight * apply(component, seq_len(n_dim)[-c(n_dim - 2, n_dim - 1)], sum))
+}
+
 #' Run Likelihood Profile
 #'
 #' Profiles the joint negative log-likelihood and all individual likelihood
@@ -301,11 +320,6 @@ do_likelihood_profile <- function(data,
         dmr_nLL[j,1] <- sum(data$Wt_D * report$dmr_nLL)
         conv_fish_tag_nLL <- rbind(conv_fish_tag_nLL, reshape2::melt(data$Wt_Tagging * report$conv_fish_tag_nLL) %>% dplyr::mutate(prof_val = vals[j]))
         Catch_nLL <- rbind(Catch_nLL, reshape2::melt(data$Wt_Catch * report$Catch_nLL) %>% dplyr::mutate(prof_val = vals[j]))
-        weight_over_ages <- function(component, weight) {
-          if(is.null(component)) return(NULL)
-          n_dim <- length(dim(component))
-          weight * apply(component, seq_len(n_dim)[-(n_dim - 1)], sum)
-        }
         CatchAA_nLL <- rbind(CatchAA_nLL, reshape2::melt(weight_over_ages(report$CatchAA_nLL, data$Wt_Catch)) %>% dplyr::mutate(prof_val = vals[j]))
         DiscardAA_nLL <- rbind(DiscardAA_nLL, reshape2::melt(weight_over_ages(report$DiscardAA_nLL, data$Wt_Discard)) %>% dplyr::mutate(prof_val = vals[j]))
         FishIdxAA_nLL <- rbind(FishIdxAA_nLL, reshape2::melt(weight_over_ages(report$FishIdxAA_nLL, data$Wt_FishIdx)) %>% dplyr::mutate(prof_val = vals[j]))
@@ -416,8 +430,9 @@ do_likelihood_profile <- function(data,
           local_mapping[[what]] <- factor(NA)
         }
 
-        # make adfun
-        tryCatch({
+        # make adfun. The handler's assignments live in its own frame, so both
+        # branches hand the result back rather than writing into the enclosing one
+        result <- tryCatch({
           SPoRC_rtmb_model <- RTMB::MakeADFun(cmb(SPoRC_rtmb, local_data), parameters = local_parameters, map = local_mapping,
                                               random = local_random, silent = TRUE)
 
@@ -442,6 +457,15 @@ do_likelihood_profile <- function(data,
           result$dmr_nLL <- sum(data$Wt_D * report$dmr_nLL)
           result$conv_fish_tag_nLL <- reshape2::melt(data$Wt_Tagging * report$conv_fish_tag_nLL) %>% dplyr::mutate(prof_val = vals[j])
           result$Catch_nLL <- reshape2::melt(data$Wt_Catch * report$Catch_nLL) %>% dplyr::mutate(prof_val = vals[j])
+          # the at-age streams, collapsed the way the serial path does
+          result$CatchAA_nLL <- reshape2::melt(weight_over_ages(report$CatchAA_nLL, data$Wt_Catch)) %>% dplyr::mutate(prof_val = vals[j])
+          result$DiscardAA_nLL <- reshape2::melt(weight_over_ages(report$DiscardAA_nLL, data$Wt_Discard)) %>% dplyr::mutate(prof_val = vals[j])
+          result$FishIdxAA_nLL <- reshape2::melt(weight_over_ages(report$FishIdxAA_nLL, data$Wt_FishIdx)) %>% dplyr::mutate(prof_val = vals[j])
+          result$SrvIdxAA_nLL <- reshape2::melt(weight_over_ages(report$SrvIdxAA_nLL, data$Wt_SrvIdx)) %>% dplyr::mutate(prof_val = vals[j])
+          result$CatchAA_pop_nLL <- reshape2::melt(weight_over_ages(report$CatchAA_pop_nLL, data$Wt_Catch_pop)) %>% dplyr::mutate(prof_val = vals[j])
+          result$DiscardAA_pop_nLL <- reshape2::melt(weight_over_ages(report$DiscardAA_pop_nLL, data$Wt_Discard_pop)) %>% dplyr::mutate(prof_val = vals[j])
+          result$FishIdxAA_pop_nLL <- reshape2::melt(weight_over_ages(report$FishIdxAA_pop_nLL, data$Wt_FishIdx_pop)) %>% dplyr::mutate(prof_val = vals[j])
+          result$SrvIdxAA_pop_nLL <- reshape2::melt(weight_over_ages(report$SrvIdxAA_pop_nLL, data$Wt_SrvIdx_pop)) %>% dplyr::mutate(prof_val = vals[j])
           result$Discard_nLL <- reshape2::melt(data$Wt_Discard * report$Discard_nLL) %>% dplyr::mutate(prof_val = vals[j])
           result$FishAge_nLL <- reshape2::melt(report$FishAgeComps_nLL) %>% dplyr::mutate(prof_val = vals[j])
           result$FishAgeComps_discard_nLL <- reshape2::melt(report$FishAgeComps_discard_nLL) %>% dplyr::mutate(prof_val = vals[j])
@@ -464,9 +488,13 @@ do_likelihood_profile <- function(data,
           result$SrvAge_pop_nLL  <- reshape2::melt(report$SrvAgeComps_pop_nLL) %>% dplyr::mutate(prof_val = vals[j])
           result$SrvLen_pop_nLL  <- reshape2::melt(report$SrvLenComps_pop_nLL) %>% dplyr::mutate(prof_val = vals[j])
           result$success <- TRUE
+          result
 
         }, error = function(e) {
-          result$error_msg <- e$message
+          # the failing call is what makes a parallel failure diagnosable at all
+          call_txt <- substr(paste(deparse(conditionCall(e)), collapse = " "), 1, 160)
+          result$error_msg <- paste0(e$message, " [in: ", call_txt, "]")
+          result
         })
 
         # Update progress

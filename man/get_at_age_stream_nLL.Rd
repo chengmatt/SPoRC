@@ -5,37 +5,64 @@
 \title{Evaluate one age-disaggregated observation stream}
 \usage{
 get_at_age_stream_nLL(
-  obs_log,
+  obs_t,
   use,
   ln_sigma,
   source,
   pop,
   arrays,
+  obs_se = NULL,
+  sd_form = 0,
+  like_type = 0,
   const = 0,
   corr_type = 0,
-  rho = 0
+  trans_rho = 0,
+  trans_rho_year = 0,
+  us_pars = NULL,
+  aa_type = 1
 )
 }
 \arguments{
-\item{obs_log}{Registered log-scale observations for this stream, one element
-per cell flagged in \code{use}, in \code{which()} order.}
+\item{obs_t}{Registered observations for this stream, one element per cell
+flagged in \code{use}, in \code{which()} order, on the scale its fleet's
+likelihood uses.}
 
 \item{use}{Integer array flagging which cells are fit, dimensioned region by
-year by season by age by fleet, with a leading population dimension when
-\code{pop} is \code{TRUE}.}
+year by season by age by sex by fleet, with a leading population dimension
+when \code{pop} is \code{TRUE}.}
 
-\item{ln_sigma}{Log-scale observation error, over age and fleet, with a
+\item{ln_sigma}{Log-scale observation error, over age by sex by fleet, with a
 leading population dimension when \code{pop} is \code{TRUE}.}
 
-\item{source, pop, arrays}{Passed to \code{\link{get_at_age_prediction}}.}
+\item{source, arrays}{Passed to \code{\link{get_at_age_prediction}}.}
 
-\item{const}{Small constant added inside the log, matching the aggregated
-stream's convention.}
+\item{pop}{Logical. \code{TRUE} for the population-specific stream, whose
+arrays carry a leading population dimension and whose observations are
+never summed over populations.}
 
-\item{corr_type}{Integer. \code{0} is \code{"iid"}, \code{1} is
-\code{"1dar1"}, an AR(1) across ages within a cell.}
+\item{obs_se}{Reported standard errors shaped like \code{use}, read only by
+fleets whose \code{sd_form} asks for them.}
 
-\item{rho}{Correlation per fleet, used when \code{corr_type} is \code{1}.}
+\item{sd_form}{Integer per fleet, see \code{\link{at_age_obs_sd}}.}
+
+\item{like_type}{Integer per fleet. \code{0} lognormal, \code{1} normal.}
+
+\item{const}{Small constant added inside the log of a lognormal cell,
+matching the aggregated stream's convention.}
+
+\item{corr_type}{Integer per fleet. \code{0} \code{"iid"}, \code{1}
+\code{"1dar1"}, \code{2} \code{"us"}, \code{3} \code{"2dar1"}.}
+
+\item{trans_rho}{Unconstrained correlation across ages, over sex by fleet.}
+
+\item{trans_rho_year}{Unconstrained correlation across years, over sex by
+fleet, read under \code{"2dar1"}.}
+
+\item{us_pars}{Unconstrained correlation parameters, over pair by sex by
+fleet, read under \code{"us"}.}
+
+\item{aa_type}{Integer per fleet naming the split margins, see
+\code{\link{at_age_split}}.}
 }
 \value{
 A list with \code{nLL} and \code{pred}, both arrays shaped like
@@ -43,15 +70,16 @@ A list with \code{nLL} and \code{pred}, both arrays shaped like
   they can be reported and plotted directly rather than reconstructed.
 }
 \description{
-Walks the observations a stream fits and returns their negative log
-likelihood, shaped like the stream's use array so it can be weighted and
-reported alongside the aggregated streams.
+Computes the at-age negative log likelihood for every fleet in one stream.
+Observations arrive already transformed by \code{\link{prep_at_age_obs}} and
+registered through \code{\link[RTMB]{OBS}}.
 }
 \details{
-Observations arrive log-scale and already registered through
-\code{RTMB::OBS}. Registration must happen against the name \code{getAll}
-supplied, so the caller does it: a vector registered under a local name does
-not link to the data element, and the objective then diverges from the
-reported likelihood.
+Everything that can differ between fleets does: the margins summed over, the
+error structure, whether reported standard errors enter, and whether the
+density is lognormal or normal. Ages within a cell may be independent, an
+AR(1) across ages, or an unstructured correlation matrix; a fleet may instead
+correlate over both age and year through a separable AR(1), which needs the
+age by year block it is given to be complete.
 }
 \keyword{internal}

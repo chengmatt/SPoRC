@@ -39,9 +39,9 @@
 #' }
 Setup_sim_env <- function(sim_list) {
 
-  # Movement / mortality sequencing. Simulation lists assembled directly through the
-  # Setup_Sim_* helpers never set this, so default it here rather than at every use.
+  # Guard movement stuff
   if(is.null(sim_list$move_timing)) sim_list$move_timing <- 0
+  if(is.null(sim_list$expm_nsub)) sim_list$expm_nsub <- 0
 
   sim_env <- new.env(parent = parent.frame()) # define new environment for simulation
 

@@ -11,6 +11,7 @@
 - Fishing mortality deviations now distinguish a missing catch observation from a true recorded zero: `NA` in `ObsCatch` with `UseCatch == 0` estimates F as an active year; an observed zero forces `Fmort` to zero.
 - Added age-0 (`rec_lag = 0`) Beverton-Holt recruitment via `rec_lag` in `Setup_Mod_Rec`/`Setup_Sim_Rec`, driven by the same year's own SSB.
 - Added movement-after-mortality and continuous movement dynamics.
+- Added `move_expm_nsub` to `Setup_Mod_Movement`, selecting how CTMC matrix exponentials are evaluated in both `Get_Movement` and the `move_timing = 2` operators. `0` (default) is the exact `Matrix::expm`; a power of two `n >= 1` substitutes `n` implicit backward Euler substeps, `(I - A/n)^-n`, which is several times cheaper to differentiate but only first order in `1/n`. Fractions stay non-negative and catch still balances survivors exactly at any `n`.
 - Added `sr_penalty` (`"none"`, `"bh"`, `"ricker"`) in `Setup_Mod_Rec` to fit a stock-recruit curve as a penalty rather than the recruitment process itself, valid only with `rec_model = "mean_rec"`. `sr_R0_spec` sets the curve's scale (`"shared"`, `"est"`, `"rinit"`). MSY reference points remain unavailable under mean recruitment.
 - Added `fish_sel_norm_bins`/`srv_sel_norm_bins` to name which bins non-parametric log-scale selectivity (`"nonparlog"`) standardizes over.
 - Added a BSAI Atka mackerel case study bridging the 2024 AMAK assessment, with `sgl_rg_bsai_atka_data`.
@@ -44,6 +45,7 @@
 - Survey fleets can observe recruitment deviations directly via `srv_idx_type = "recdev"`, reported as `RecDev_anom`.
 - A conditioned operating model now records `ln_RecDevs` correctly instead of leaving it at zero.
 - The double normal's default starting values now place its peak mid-range instead of at zero, which previously divided by zero.
+- Added ability to fit to at-age data streams (i.e., ICES style stock assessments).
 
 ## Minor changes
 - `likelihood_profile`/`get_nLL_plot` now carry `Init_Sex_nLL`, `Rec_level_nLL`, and `SR_pen_nLL`.

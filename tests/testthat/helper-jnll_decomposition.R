@@ -13,8 +13,8 @@
 #   mode    "elementwise" for sum(Wt * nLL), "scalar" for Wt * sum(nLL). These
 #           agree when the weight is a single number and differ when it is an
 #           array, so each term records which form the model uses.
-#           "at_age" collapses an age dimension the weight does not carry before
-#           applying it, which is what an age-disaggregated stream needs.
+#           "at_age" collapses the age and sex dimensions the weight does not
+#           carry before applying it, which an age-disaggregated stream needs.
 #   optional TRUE for a likelihood the model reports only when that data stream
 #           is fit, so its absence is not a term dropped from the sum. Every
 #           other term must be reported by every model.
@@ -130,11 +130,11 @@ jnLL_contributions <- function(model) {
     spec$weight <- wt_name
 
     contribution <- if(spec$mode == "at_age") {
-      # An at-age component carries an age dimension the weight does not, so the
-      # ages are summed within a cell before the cell's weight is applied, which
-      # is what the objective does.
+      # An at-age component carries age and sex dimensions the weight does not,
+      # so both are summed within a cell before the cell's weight is applied,
+      # which is what the objective does.
       nd <- length(dim(component))
-      sum(wt * apply(component, seq_len(nd)[-(nd - 1)], sum))
+      sum(wt * apply(component, seq_len(nd)[-c(nd - 2, nd - 1)], sum))
     } else if(spec$mode == "elementwise") sum(wt * component) else wt * sum(component)
 
     # Every term contributes one number to jnLL. More than one means the mode

@@ -72,15 +72,15 @@ for(y in 1:n_yrs) {
 # gets it through the fleet rather than through an extra key dimension.
 catch_obs <- dat$Catch
 nocatch <- as.matrix(dat$nocatch)
-ObsCatchAA <- array(0, dim = c(n_regions, n_yrs, n_seas, n_ages, n_fish))
-UseCatchAA <- array(0, dim = c(n_regions, n_yrs, n_seas, n_ages, n_fish))
+ObsCatchAA <- array(0, dim = c(n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish))
+UseCatchAA <- array(0, dim = c(n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish))
 for(y in 1:n_yrs) {
   for(s in 1:n_seas) {
     for(a in 2:n_ages) {
       obs <- catch_obs[a, y, s]
       if(!is.na(obs) && obs > 0 && nocatch[y, s] == 1) {
-        ObsCatchAA[1, y, s, a, s] <- obs
-        UseCatchAA[1, y, s, a, s] <- 1
+        ObsCatchAA[1, y, s, a, 1, s] <- obs
+        UseCatchAA[1, y, s, a, 1, s] <- 1
       } # end fished cell
     } # end a loop
   } # end s loop
@@ -91,16 +91,16 @@ for(y in 1:n_yrs) {
 survey_obs <- dat$survey
 ObsSrvIdx <- array(NA, dim = c(n_regions, n_yrs, n_seas, n_srv))
 UseSrvIdx <- array(0, dim = c(n_regions, n_yrs, n_seas, n_srv))
-ObsSrvIdxAA <- array(0, dim = c(n_regions, n_yrs, n_seas, n_ages, n_srv))
-UseSrvIdxAA <- array(0, dim = c(n_regions, n_yrs, n_seas, n_ages, n_srv))
+ObsSrvIdxAA <- array(0, dim = c(n_regions, n_yrs, n_seas, n_ages, n_sexes, n_srv))
+UseSrvIdxAA <- array(0, dim = c(n_regions, n_yrs, n_seas, n_ages, n_sexes, n_srv))
 for(k in 1:n_srv) {
   for(a in srv_ages[[k]]) {
     age_row <- which(ages == a)
     for(y in 1:n_yrs) {
       obs <- survey_obs[age_row, y, k]
       if(!is.na(obs) && obs > 0) {
-        ObsSrvIdxAA[1, y, srv_seas[k], age_row, k] <- obs
-        UseSrvIdxAA[1, y, srv_seas[k], age_row, k] <- 1
+        ObsSrvIdxAA[1, y, srv_seas[k], age_row, 1, k] <- obs
+        UseSrvIdxAA[1, y, srv_seas[k], age_row, 1, k] <- 1
       } # end observed cell
     } # end y loop
   } # end a loop
@@ -109,7 +109,7 @@ for(k in 1:n_srv) {
 # Observation error keyed by age, as smsR groups it. Catchability at age is not
 # a separate parameter: it is the survey selectivity, through the "nonparfree"
 # form, whose values carry the height of the curve as well as its shape.
-srv_sd_key <- array(NA_integer_, dim = c(n_ages, n_srv))
+srv_sd_key <- array(NA_integer_, dim = c(n_ages, n_sexes, n_srv))
 # The Dredge's age-0 standard deviation is held rather than estimated. Age 0
 # appears in one place only, that index, and the recruitment deviations are free,
 # so they can fit it exactly: the residual goes to zero, log sigma runs to
@@ -117,17 +117,18 @@ srv_sd_key <- array(NA_integer_, dim = c(n_ages, n_srv))
 # convergence from inside that hole, at an objective well below the real one.
 # Held at smsR's own value, every starting value from -5 to -15 reaches the same
 # optimum; estimated, only a narrow band of starting values does.
-srv_sd_key[1, 1] <- NA                       # Dredge age 0, held (see above)
-srv_sd_key[2, 1] <- 1                        # Dredge age 1
-srv_sd_key[2, 2] <- 2                        # RTM age 1
-srv_sd_key[3:4, 2] <- 3                      # RTM ages 2 and 3 share
+srv_sd_key[1, 1, 1] <- NA                    # Dredge age 0, held (see above)
+srv_sd_key[2, 1, 1] <- 1                     # Dredge age 1
+srv_sd_key[2, 1, 2] <- 2                     # RTM age 1
+srv_sd_key[3:4, 1, 2] <- 3                   # RTM ages 2 and 3 share
 
-srv_sd_start <- array(log(0.5), dim = c(n_ages, n_srv))
-srv_sd_start[1, 1] <- log(0.4052)            # the held value, smsR's own
+srv_sd_start <- array(log(0.5), dim = c(n_ages, n_sexes, n_srv))
+srv_sd_start[1, 1, 1] <- log(0.4052)         # the held value, smsR's own
 
 # smsR groups its catch standard deviations as ages 1-2 and ages 3 and above,
 # separately by season. With a fleet per season that is the plain [age, fleet] key.
-sdc_key <- cbind(c(NA, 1L, 1L, 2L, 2L), c(NA, 3L, 3L, 4L, 4L))
+sdc_key <- array(c(NA, 1L, 1L, 2L, 2L,
+                   NA, 3L, 3L, 4L, 4L), dim = c(n_ages, n_sexes, n_fish))
 
 # Setup ----------------------------------------------------------------------
 input_list <- Setup_Mod_Dim(
@@ -167,7 +168,7 @@ suppressWarnings(
     UseCatch = array(0, dim = c(n_regions, n_yrs, n_seas, n_fish)),
     ObsCatchAA = ObsCatchAA, UseCatchAA = UseCatchAA,
     sigmaCAA_key = sdc_key, sigmaCAA_spec = "est",
-    ln_sigmaCAA = array(log(0.5), dim = c(n_ages, n_fish)),
+    ln_sigmaCAA = array(log(0.5), dim = c(n_ages, n_sexes, n_fish)),
     catch_units = array("abd", dim = c(n_fish)),
     Use_F_pen = 0, sigmaC_spec = "fix", sigmaF_spec = "fix"))
 

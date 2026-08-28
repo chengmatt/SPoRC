@@ -4,7 +4,7 @@
 \alias{integrate_seas_abundance}
 \title{Integrate abundance over a season under continuous movement}
 \usage{
-integrate_seas_abundance(N, Z, Q, dur = 1)
+integrate_seas_abundance(N, Z, Q, dur = 1, expm_nsub = 0)
 }
 \arguments{
 \item{N}{Numeric vector of length \code{n_regions} at the start of the season.}
@@ -19,6 +19,11 @@ stored in \code{ZAA}). Pass zeros for a movement-only step.}
 
 \item{dur}{Season duration used to scale \code{Q}. Should be
 \code{seasdur[seas]}. Only used when \code{move_timing = 2}.}
+
+\item{expm_nsub}{Integer controlling how the matrix exponential is evaluated
+under \code{move_timing = 2}: \code{0} (default) uses \code{Matrix::expm},
+a value \eqn{n \ge 1} uses the implicit backward Euler scheme
+\eqn{(I - A/n)^{-n}}. See \code{\link{mat_exp}}.}
 }
 \value{
 Numeric vector of length \code{n_regions} giving season-integrated

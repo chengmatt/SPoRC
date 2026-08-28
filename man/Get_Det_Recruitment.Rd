@@ -36,7 +36,8 @@ Get_Det_Recruitment(
   seasdur,
   sexratio_f,
   Mrate = NULL,
-  move_timing = 0
+  move_timing = 0,
+  expm_nsub = 0
 )
 }
 \arguments{

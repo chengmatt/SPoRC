@@ -33,6 +33,10 @@
 #'   \code{0} = movement then mortality (default, historical SPoRC behaviour),
 #'   \code{1} = mortality then movement, \code{2} = continuous (simultaneous)
 #'   movement and mortality.
+#' @param expm_nsub Integer controlling how the matrix exponential is evaluated
+#'   under \code{move_timing = 2}: \code{0} (default) uses \code{Matrix::expm},
+#'   a value \eqn{n \ge 1} uses the implicit backward Euler scheme
+#'   \eqn{(I - A/n)^{-n}}. See \code{\link{mat_exp}}.
 #'
 #' @return A square \code{[n_regions x n_regions]} matrix in row convention.
 #'
@@ -42,7 +46,9 @@
 #' \deqn{T_0 = M \, \mathrm{diag}(s), \qquad T_1 = \mathrm{diag}(s) \, M, \qquad
 #'       T_2 = \left[\exp\left(Q^\top \Delta - \mathrm{diag}(Z)\right)\right]^\top}
 #' where \eqn{\Delta} is \code{dur}. \eqn{Q^\top} converts the stored row-convention
-#' generator back to the column convention used by \code{Matrix::expm}.
+#' generator back to the column convention the exponential is taken in, which is
+#' \code{Matrix::expm} or the implicit solve of \code{\link{mat_exp}} according to
+#' \code{expm_nsub}.
 #'
 #' The three agree exactly when \code{Z} is constant across regions, because a
 #' scalar multiple of the identity commutes with the generator. They also agree
@@ -51,7 +57,7 @@
 #'
 #' @keywords internal
 #' @import RTMB
-build_seas_operator <- function(Move, Z, Q = NULL, dur = 1, move_timing = 0) {
+build_seas_operator <- function(Move, Z, Q = NULL, dur = 1, move_timing = 0, expm_nsub = 0) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -68,8 +74,7 @@ build_seas_operator <- function(Move, Z, Q = NULL, dur = 1, move_timing = 0) {
     # continuous: movement and mortality act simultaneously
     if(is.null(Q)) stop("Q (instantaneous rate matrix) is required when move_timing = 2.")
     A_ss <- t(Q) * dur - diag(Z, n_regions) # column convention generator, net of mortality
-    A_ss <- methods::as(A_ss, "sparseMatrix") # force sparse, as Matrix::expm dispatch requires
-    t(as.matrix(Matrix::expm(A_ss)))
+    t(mat_exp(A_ss, expm_nsub))
   } else stop("move_timing must be 0 (movement then mortality), 1 (mortality then movement), or 2 (continuous).")
 }
 
@@ -87,7 +92,7 @@ build_seas_operator <- function(Move, Z, Q = NULL, dur = 1, move_timing = 0) {
 #'
 #' @keywords internal
 #' @import RTMB
-advance_seas <- function(N, Move, Z, Q = NULL, dur = 1, move_timing = 0) {
+advance_seas <- function(N, Move, Z, Q = NULL, dur = 1, move_timing = 0, expm_nsub = 0) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -97,7 +102,7 @@ advance_seas <- function(N, Move, Z, Q = NULL, dur = 1, move_timing = 0) {
   } else if(move_timing == 1) {
     as.vector(t(N * exp(-Z)) %*% Move)
   } else {
-    as.vector(t(N) %*% build_seas_operator(Move, Z, Q, dur, move_timing))
+    as.vector(t(N) %*% build_seas_operator(Move, Z, Q, dur, move_timing, expm_nsub))
   }
 }
 
@@ -127,7 +132,7 @@ advance_seas <- function(N, Move, Z, Q = NULL, dur = 1, move_timing = 0) {
 #'
 #' @keywords internal
 #' @import RTMB
-spawn_state <- function(N, Move, Z, Q = NULL, dur = 1, t_spawn = 0, move_timing = 0) {
+spawn_state <- function(N, Move, Z, Q = NULL, dur = 1, t_spawn = 0, move_timing = 0, expm_nsub = 0) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -139,8 +144,7 @@ spawn_state <- function(N, Move, Z, Q = NULL, dur = 1, t_spawn = 0, move_timing 
   } else {
     n_regions <- length(Z)
     A_ss <- (t(Q) * dur - diag(Z, n_regions)) * t_spawn
-    A_ss <- methods::as(A_ss, "sparseMatrix") # force sparse
-    as.vector(as.matrix(Matrix::expm(A_ss)) %*% N)
+    as.vector(mat_exp(A_ss, expm_nsub) %*% N)
   }
 }
 
@@ -177,12 +181,12 @@ spawn_state <- function(N, Move, Z, Q = NULL, dur = 1, t_spawn = 0, move_timing 
 #'
 #' @keywords internal
 #' @import RTMB
-integrate_seas_abundance <- function(N, Z, Q, dur = 1) {
+integrate_seas_abundance <- function(N, Z, Q, dur = 1, expm_nsub = 0) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
-  as.vector(seas_operator_and_integral(Z, Q, dur)$Integral %*% N)
+  as.vector(seas_operator_and_integral(Z, Q, dur, expm_nsub)$Integral %*% N)
 }
 
 #' Catch-at-age over one season, consistent with the movement timing
@@ -205,13 +209,13 @@ integrate_seas_abundance <- function(N, Z, Q, dur = 1) {
 #'
 #' @keywords internal
 #' @import RTMB
-catch_at_age <- function(N, Move, Z, Q = NULL, dur = 1, F_landed, move_timing = 0) {
+catch_at_age <- function(N, Move, Z, Q = NULL, dur = 1, F_landed, move_timing = 0, expm_nsub = 0) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   if(move_timing == 2) {
-    F_landed * integrate_seas_abundance(N, Z, Q, dur)
+    F_landed * integrate_seas_abundance(N, Z, Q, dur, expm_nsub)
   } else {
     # under timing 0 movement precedes the fishery; under timing 1 it follows it
     N_at_risk <- if(move_timing == 0) as.vector(t(N) %*% Move) else N
@@ -248,7 +252,7 @@ catch_at_age <- function(N, Move, Z, Q = NULL, dur = 1, F_landed, move_timing = 
 #'
 #' @keywords internal
 #' @import RTMB
-seas_operator_and_integral <- function(Z, Q, dur = 1) {
+seas_operator_and_integral <- function(Z, Q, dur = 1, expm_nsub = 0) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -260,9 +264,7 @@ seas_operator_and_integral <- function(Z, Q, dur = 1) {
   blk <- matrix(0, 2 * n_regions, 2 * n_regions)
   blk[1:n_regions, 1:n_regions] <- A_ss
   blk[1:n_regions, (n_regions + 1):(2 * n_regions)] <- diag(1, n_regions)
-  blk <- methods::as(blk, "sparseMatrix") # force sparse
-
-  E <- as.matrix(Matrix::expm(blk))
+  E <- mat_exp(blk, expm_nsub)
 
   list(T = t(E[1:n_regions, 1:n_regions]),                          # row convention
        Integral = E[1:n_regions, (n_regions + 1):(2 * n_regions)])  # top-right block
@@ -302,7 +304,7 @@ seas_operator_and_integral <- function(Z, Q, dur = 1) {
 #'
 #' @keywords internal
 #' @import RTMB
-survey_state <- function(N, Move, Z, Q = NULL, dur = 1, t_srv = 0, move_timing = 0) {
+survey_state <- function(N, Move, Z, Q = NULL, dur = 1, t_srv = 0, move_timing = 0, expm_nsub = 0) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -320,8 +322,7 @@ survey_state <- function(N, Move, Z, Q = NULL, dur = 1, t_srv = 0, move_timing =
   # read off that region's entry
   out <- rep(0, n_regions)
   for(r in 1:n_regions) {
-    E <- methods::as(A_ss * t_srv[r], "sparseMatrix")
-    out[r] <- (as.matrix(Matrix::expm(E)) %*% N)[r]
-  }
+    out[r] <- (mat_exp(A_ss * t_srv[r], expm_nsub) %*% N)[r]
+  } # end r loop
   out
 }

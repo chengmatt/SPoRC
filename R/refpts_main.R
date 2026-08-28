@@ -91,6 +91,9 @@ optim_ref_pts <- function(model_name, data_list, pars_list) {
 #' @param Mrate_plus Numeric array \code{[n_regions, n_regions, n_seas]}.
 #'   Instantaneous movement rate matrices for the plus-group age. Required when
 #'   \code{move_timing = 2}, ignored otherwise.
+#' @param expm_nsub Integer controlling how the matrix exponential is evaluated under
+#'   \code{move_timing = 2}: \code{0} uses \code{Matrix::expm}, \eqn{n \ge 1} uses
+#'   \eqn{n} implicit backward Euler substeps. See \code{\link{mat_exp}}.
 #' @param move_timing Integer flag for movement/mortality sequencing:
 #'   \code{0} = movement then mortality (default), \code{1} = mortality then
 #'   movement, \code{2} = continuous. See \code{\link{build_seas_operator}}.
@@ -113,14 +116,15 @@ build_plus_group_T <- function(M_penult, M_plus, F_penult, F_plus,
                                Mov_penult, Mov_plus,
                                n_regions, n_seas, seasdur,
                                Mrate_penult = NULL, Mrate_plus = NULL,
-                               move_timing = 0) {
+                               move_timing = 0,
+                               expm_nsub = 0) {
 
   # initialize transition matrices
   T_pu <- T_lu <- T_pf <- T_lf <- diag(n_regions)
 
   # build_seas_operator returns row convention [from, to]; the plus-group recursion
   # composes column-convention operators (applied as T %*% N), hence the transpose.
-  seas_op <- function(Move, Z, Q, dur) t(build_seas_operator(Move, Z, Q, dur, move_timing))
+  seas_op <- function(Move, Z, Q, dur) t(build_seas_operator(Move, Z, Q, dur, move_timing, expm_nsub = expm_nsub))
 
   for (seas in seq_len(n_seas)) {
     Zu_p <- M_penult * seasdur[seas]                      # unfished total mortality
@@ -389,6 +393,7 @@ Get_Reference_Points <- function(data,
 
   # movement / mortality sequencing; absent for input lists built before this option existed
   move_timing <- if(is.null(data$move_timing)) 0 else data$move_timing
+  expm_nsub <- if(is.null(data$move_expm_nsub)) 0 else data$move_expm_nsub
   if(move_timing == 2 && is.null(rep$Mrate))
     stop("move_timing == 2 (continuous movement) requires the CTMC generator, but rep$Mrate is NULL. ",
          "Continuous movement reference points need move_type == 1 with use_fixed_movement == 0.")
@@ -667,6 +672,7 @@ Get_Reference_Points <- function(data,
       Movement_avg <- apply(rep$Movement[,,,avg_yrs,,,1,drop = FALSE], c(1,2,3,5,6), mean)
       data_list$Movement <- array(Movement_avg, dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)) # Movement
       data_list$move_timing <- move_timing
+      data_list$expm_nsub <- expm_nsub
       data_list$seasdur <- data$seasdur
       data_list$Mrate <- avg_Mrate(seq_len(n_pop), c(n_pop, n_regions, n_regions, n_seas, n_ages)) # instantaneous rates
 
@@ -746,6 +752,7 @@ Get_Reference_Points <- function(data,
       Movement_avg <- apply(rep$Movement[1,,,avg_yrs,,,1,drop = FALSE], c(1,2,3,5,6), mean)
       data_list$Movement <- array(Movement_avg, dim = c(n_regions, n_regions, n_seas, n_ages)) # Movement
       data_list$move_timing <- move_timing
+      data_list$expm_nsub <- expm_nsub
       data_list$seasdur <- data$seasdur
       data_list$Mrate <- avg_Mrate(1, c(n_regions, n_regions, n_seas, n_ages)) # instantaneous rates
       data_list$is_discard_fleet <- is_discard_fleet
@@ -794,6 +801,7 @@ Get_Reference_Points <- function(data,
       Movement_avg <- apply(rep$Movement[,,,avg_yrs,,,1,drop = FALSE], c(1,2,3,5,6), mean)
       data_list$Movement <- array(Movement_avg, dim = c(if(n_pop > 1) n_pop else NULL, n_regions, n_regions, n_seas, n_ages)) # Movement
       data_list$move_timing <- move_timing
+      data_list$expm_nsub <- expm_nsub
       data_list$seasdur <- data$seasdur
       data_list$Mrate <- avg_Mrate(seq_len(n_pop), c(if(n_pop > 1) n_pop else NULL, n_regions, n_regions, n_seas, n_ages)) # instantaneous rates
       data_list$is_discard_fleet <- is_discard_fleet

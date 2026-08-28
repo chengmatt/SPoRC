@@ -27,7 +27,8 @@ Get_Movement(
   adjacency_mat,
   ctmc_diffusion_bounds,
   seasdur = rep(1, n_seas),
-  ctmc_scale_by_seasdur = 0
+  ctmc_scale_by_seasdur = 0,
+  expm_nsub = 0
 )
 }
 \arguments{
@@ -130,6 +131,13 @@ reproduces the unscaled behaviour.}
   \code{move_timing = 2} the flag governs only the reported \code{Movement}
   diagnostic: the dynamics take \code{Mrate} and apply \code{seasdur[seas]}
   themselves.}
+
+\item{expm_nsub}{Integer controlling how the CTMC generator is exponentiated
+into movement fractions: \code{0} (default) uses \code{Matrix::expm}, a value
+\eqn{n \ge 1} uses the implicit backward Euler scheme \eqn{(I - Q\Delta/n)^{-n}},
+which is cheaper to differentiate but is a first-order approximation. Only read
+when \code{move_type == 1} and \code{use_fixed_movement == 0}. See
+\code{\link{mat_exp}}.}
 }
 \value{
 A list with components:
@@ -166,7 +174,8 @@ Three movement configurations are supported:
     fractions are estimated via a softmax transform of \code{move_pars + move_devs}.
   \item CTMC movement (\code{move_type == 1}): a generator matrix \eqn{Q = D + Z}
     is constructed from diffusion (\eqn{D}) and taxis (\eqn{Z}) components, then
-    exponentiated via \code{Matrix::expm(Q)} to obtain movement fractions. During
+    exponentiated via \code{\link{mat_exp}} (either \code{Matrix::expm} or the
+    implicit solve, per \code{expm_nsub}) to obtain movement fractions. During
     projection years (\code{y > n_yrs}), covariate lookups are capped at \code{n_yrs}
     (i.e., CTMC base parameters are frozen at their last historical values), while
     \code{move_devs} continue to use the actual projected year index.

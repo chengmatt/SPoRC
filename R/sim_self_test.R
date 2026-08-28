@@ -420,6 +420,8 @@ simulation_self_test <- function(data,
   sim_list$sgl_seas_spawning_movement <- replicate(n = sim_list$n_sims, rep$sgl_seas_spawning_movement[,,,1:length(data$years),,,drop = FALSE])
   # Movement / mortality sequencing; absent for models built before this option existed
   sim_list$move_timing <- if(is.null(data$move_timing)) 0 else data$move_timing
+  # How the matrix exponential is evaluated; likewise absent on older models
+  sim_list$expm_nsub <- if(is.null(data$move_expm_nsub)) 0 else data$move_expm_nsub
   # The instantaneous rate matrix only exists for an estimated CTMC, and is only needed
   # for continuous movement
   sim_list$Mrate <- if(sim_list$move_timing == 2)
@@ -595,9 +597,9 @@ simulation_self_test <- function(data,
         tmp_data$ObsFishIdx_SE[] <- sim_list$ObsFishIdx_SE
         tmp_data$ObsSrvIdx_SE[] <- sim_list$ObsSrvIdx_SE
         if(!is.null(tmp_data$ObsCatchAA) && !is.null(sim_list$ObsCatchAA))
-          tmp_data$ObsCatchAA[] <- sim_list$ObsCatchAA[,,,,,i]
+          tmp_data$ObsCatchAA[] <- sim_list$ObsCatchAA[,,,,,,i]
         if(!is.null(tmp_data$ObsSrvIdxAA) && !is.null(sim_list$ObsSrvIdxAA))
-          tmp_data$ObsSrvIdxAA[] <- sim_list$ObsSrvIdxAA[,,,,,i]
+          tmp_data$ObsSrvIdxAA[] <- sim_list$ObsSrvIdxAA[,,,,,,i]
         if(!is.null(tmp_pars$ln_sigmaCAA)) tmp_pars$ln_sigmaCAA[] <- parameters$ln_sigmaCAA
         if(!is.null(tmp_pars$ln_sigmaSrvIdxAA)) tmp_pars$ln_sigmaSrvIdxAA[] <- parameters$ln_sigmaSrvIdxAA
         if(!is.null(tmp_pars$ln_sigmaFishIdx)) tmp_pars$ln_sigmaFishIdx[] <- parameters$ln_sigmaFishIdx
@@ -768,9 +770,9 @@ simulation_self_test <- function(data,
           tmp_data$ObsFishIdx_SE[] <- sim_list$ObsFishIdx_SE
           tmp_data$ObsSrvIdx_SE[] <- sim_list$ObsSrvIdx_SE
           if(!is.null(tmp_data$ObsCatchAA) && !is.null(sim_list$ObsCatchAA))
-            tmp_data$ObsCatchAA[] <- sim_list$ObsCatchAA[,,,,,i]
+            tmp_data$ObsCatchAA[] <- sim_list$ObsCatchAA[,,,,,,i]
           if(!is.null(tmp_data$ObsSrvIdxAA) && !is.null(sim_list$ObsSrvIdxAA))
-            tmp_data$ObsSrvIdxAA[] <- sim_list$ObsSrvIdxAA[,,,,,i]
+            tmp_data$ObsSrvIdxAA[] <- sim_list$ObsSrvIdxAA[,,,,,,i]
           if(!is.null(tmp_pars$ln_sigmaCAA)) tmp_pars$ln_sigmaCAA[] <- parameters$ln_sigmaCAA
           if(!is.null(tmp_pars$ln_sigmaSrvIdxAA)) tmp_pars$ln_sigmaSrvIdxAA[] <- parameters$ln_sigmaSrvIdxAA
           if(!is.null(tmp_pars$ln_sigmaFishIdx)) tmp_pars$ln_sigmaFishIdx[] <- parameters$ln_sigmaFishIdx

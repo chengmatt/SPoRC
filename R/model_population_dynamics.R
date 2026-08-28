@@ -17,7 +17,7 @@ mortality_args_from_model = function(env = parent.frame()) {
   nm = c("growth_model", "derive_waa", "fish_selex_type", "ret_selex_type", "srv_selex_type",
          "fish_waa_selected", "srv_waa_selected", "fish_sel_l", "ret_sel_l", "srv_sel_l",
          "wt_len_pars", "growth_len_mid_vals",
-         "UseCatch", "UseCatch_pop", "missing_catch", "UseCatchAA", "use_catch_aa",
+         "UseCatch", "UseCatch_pop", "missing_catch", "UseCatchAA", "UseCatchAA_pop", "use_catch_aa",
          "ln_F_mean", "ln_F_devs", "logit_dmr_mean", "logit_dmr_devs",
          "SizeAgeTrans", "natmort", "seasdur",
          "n_pop", "n_regions", "n_seas", "n_ages", "n_sexes", "n_fish_fleets")
@@ -56,9 +56,11 @@ mortality_args_from_model = function(env = parent.frame()) {
 #'   aggregate/pop-specific catch observation.
 #' @param missing_catch Logical array, \code{TRUE} where the aggregate catch
 #'   observation is missing (not a true recorded zero).
-#' @param UseCatchAA Integer array \code{[n_regions, n_years, n_seas, n_ages,
-#'   n_fish_fleets]}, non-zero where a catch at age observation is fit. A fleet
-#'   fitting catch at age is fished in any cell where at least one age is fit.
+#' @param UseCatchAA,UseCatchAA_pop Integer arrays \code{[n_regions, n_years,
+#'   n_seas, n_ages, n_sexes, n_fish_fleets]}, with a leading population
+#'   dimension for the second, non-zero where a catch at age observation is fit.
+#'   A fleet fitting catch at age is fished in any cell where at least one age is
+#'   fit, in either stream.
 #' @param use_catch_aa Integer vector \code{[n_fish_fleets]}, non-zero for fleets
 #'   fitting catch at age rather than aggregated catch.
 #' @param ln_F_mean,ln_F_devs Log fishing mortality mean and deviations.
@@ -76,7 +78,7 @@ mortality_args_from_model = function(env = parent.frame()) {
 compute_mortality_year = function(y, st, growth_model, derive_waa, fish_selex_type, ret_selex_type, srv_selex_type,
                           fish_waa_selected, srv_waa_selected, fish_sel_l, ret_sel_l, srv_sel_l,
                           wt_len_pars, growth_len_mid_vals,
-                          UseCatch, UseCatch_pop, missing_catch, UseCatchAA, use_catch_aa,
+                          UseCatch, UseCatch_pop, missing_catch, UseCatchAA, UseCatchAA_pop, use_catch_aa,
                           ln_F_mean, ln_F_devs, logit_dmr_mean, logit_dmr_devs,
                           SizeAgeTrans, natmort, seasdur,
                           n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets) {
@@ -107,7 +109,8 @@ compute_mortality_year = function(y, st, growth_model, derive_waa, fish_selex_ty
 
         # A cell is a true closure only when no catch is fit
         # A fleet fitting catch at age is fished wherever any age is fit there
-        caa_open = if(use_catch_aa[f] == 1) any(UseCatchAA[r,y,seas,,f] == 1) else FALSE
+        caa_open = if(use_catch_aa[f] == 1) any(UseCatchAA[r,y,seas,,,f] == 1) ||
+                                            any(UseCatchAA_pop[,r,y,seas,,,f] == 1) else FALSE
         is_closed = (UseCatch[r,y,seas,f] == 0) && all(UseCatch_pop[,r,y,seas,f] == 0) &&
           !missing_catch[r,y,seas,f] && !caa_open
 
@@ -252,7 +255,8 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
                                        do_recruits_move, fish_sel, ret_sel, dmr, ZAA,
                                        NAA, NAA0, NAA_bef, NAA_aft, Rec, SSB, Total_Biom, Dynamic_SSB0, eff_SSB,
                                        Mrate = NULL, move_timing = 0, SR_ref_yr = 1,
-                                       sr_penalty = 0, sr_R0 = NULL, growth_mortality_year_fn = NULL, growth_mortality_state = NULL) {
+                                       sr_penalty = 0, sr_R0 = NULL, growth_mortality_year_fn = NULL, growth_mortality_state = NULL,
+                                       expm_nsub = 0) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -387,7 +391,7 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
         biom <- compute_biom_y(y, seas, NAA, NAA0, WAA, MatAA, ZAA, natmort, t_spawn, seasdur,
                               n_seas, n_pop, n_regions, n_ages, n_sexes,
                               sgl_seas_spawning_movement, natal_region, stray_rate,
-                              Movement, Mrate, move_timing, do_recruits_move)
+                              Movement, Mrate, move_timing, do_recruits_move, expm_nsub = expm_nsub)
         SSB[,, y] <- biom$SSB_y
 
         # Deterministic recruitment
@@ -427,7 +431,7 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
         biom <- compute_biom_y(y, seas, NAA, NAA0, WAA, MatAA, ZAA, natmort, t_spawn, seasdur,
                               n_seas, n_pop, n_regions, n_ages, n_sexes,
                               sgl_seas_spawning_movement, natal_region, stray_rate,
-                              Movement, Mrate, move_timing, do_recruits_move)
+                              Movement, Mrate, move_timing, do_recruits_move, expm_nsub = expm_nsub)
         Total_Biom[,, y] <- biom$Total_Biom_y
         SSB[,, y] <- biom$SSB_y
         Dynamic_SSB0[,,y] <- biom$Dynamic_SSB0_y
@@ -448,7 +452,7 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
         if(move_timing == 2) {
           for(p in 1:n_pop) for(a in 1:n_ages) for(s in 1:n_sexes) {
             NAA_int[p,,y,seas,a,s] <- integrate_seas_abundance(NAA[p,,y,seas,a,s], ZAA[p,,y,seas,a,s],
-                                                               Mrate[p,,,y,seas,a,s], seasdur[seas])
+                                                               Mrate[p,,,y,seas,a,s], seasdur[seas], expm_nsub = expm_nsub)
           }
         }
       } else {
@@ -465,15 +469,15 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
               if(move_timing == 2) {
                 # The fished stratum needs both the transition operator and the catch
                 # integral over the same generator, so take them from one exponential.
-                both <- seas_operator_and_integral(ZAA[p,,y,seas,a,s], Qv, seasdur[seas])
+                both <- seas_operator_and_integral(ZAA[p,,y,seas,a,s], Qv, seasdur[seas], expm_nsub = expm_nsub)
                 step_NAA[p,,a,s] <- as.vector(t(NAA[p,,y,seas,a,s]) %*% both$T)
                 NAA_int[p,,y,seas,a,s] <- as.vector(both$Integral %*% NAA[p,,y,seas,a,s])
               } else {
                 step_NAA[p,,a,s] <- advance_seas(NAA[p,,y,seas,a,s], Mv, ZAA[p,,y,seas,a,s],
-                                                 Qv, seasdur[seas], move_timing)
+                                                 Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
               }
               step_NAA0[p,,a,s] <- advance_seas(NAA0[p,,y,seas,a,s], Mv, natmort[p,,y,a,s] * seasdur[seas],
-                                                Qv, seasdur[seas], move_timing)
+                                                Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
             } # end s loop
           } # end a loop
         } # end p loop
@@ -500,7 +504,7 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
         spawn_biom <- compute_biom_y(y, seas, NAA, NAA0, WAA, MatAA, ZAA, natmort, t_spawn, seasdur,
                                     n_seas, n_pop, n_regions, n_ages, n_sexes,
                                     sgl_seas_spawning_movement, natal_region, stray_rate,
-                              Movement, Mrate, move_timing, do_recruits_move)
+                              Movement, Mrate, move_timing, do_recruits_move, expm_nsub = expm_nsub)
         Total_Biom[,, y] <- spawn_biom$Total_Biom_y
         SSB[,, y] <- spawn_biom$SSB_y
         Dynamic_SSB0[,,y] <- spawn_biom$Dynamic_SSB0_y

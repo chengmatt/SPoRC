@@ -61,6 +61,9 @@
 #'   fractions. Only read when `move_timing` is 1 or 2. `NULL` (default) is
 #'   valid for `move_timing = 0`, where movement is applied as a transition
 #'   matrix and no generator is needed.
+#' @param expm_nsub Integer controlling how the matrix exponential is evaluated under
+#'   `move_timing = 2`: `0` uses `Matrix::expm`, `n >= 1` uses `n` implicit backward
+#'   Euler substeps. See [mat_exp()].
 #' @param move_timing Integer. When movement happens relative to mortality
 #'   within a season. `0` (default) applies movement first and mortality
 #'   afterwards; `1` applies mortality first and movement afterwards; `2`
@@ -415,7 +418,8 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
                                      },
                                      Mrate = NULL,
                                      move_timing = 0
-) {
+,
+                                     expm_nsub = 0) {
 
 
   # srr_opt was bh_rec_opt when Beverton-Holt was the only stock-recruit curve.
@@ -545,7 +549,7 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
                     n_seas = n_seas, n_fish_fleets = n_fish_fleets, fratio_fleet = fratio_fleet,
                     fish_sel = fish_sel, ret_sel = ret_sel, dmr = dmr, natmort = natmort,
                     seasdur = seasdur, Movement = Movement, Mrate = Mrate,
-                    move_timing = move_timing, do_recruits_move = do_recruits_move,
+                    move_timing = move_timing, expm_nsub = expm_nsub, do_recruits_move = do_recruits_move,
                     WAA = WAA, MatAA = MatAA, WAA_fish = WAA_fish, t_spawn = t_spawn,
                     spawn_seas = spawn_seas, sgl_seas_spawning_movement = sgl_seas_spawning_movement,
                     natal_region = natal_region, stray_rate = stray_rate, sexratio = sexratio,
@@ -620,8 +624,8 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
                                               fish_sel = srr_opt$fish_sel,
                                               ret_sel = srr_opt$ret_sel,
                                               dmr = srr_opt$dmr,
-                                              move_timing = move_timing
-                          )
+                                              move_timing = move_timing,
+                                              expm_nsub = expm_nsub)
                         }
       )
 
@@ -825,7 +829,7 @@ Do_Population_Projection <- function(n_proj_yrs = 2,
 #'   case it is generated inside the season loop from this year's own SSB.
 #' @param proj_NAA,proj_NAA0,proj_ZAA,proj_ret_FAA,proj_disc_FAA,proj_tot_FAA,proj_CAA,proj_DAA,proj_Catch,proj_SSB,proj_Dynamic_SSB0,proj_eff_SSB
 #'   The projection arrays, as built in \code{Do_Population_Projection}.
-#' @param n_pop,n_regions,n_ages,n_sexes,n_seas,n_fish_fleets,fish_sel,ret_sel,dmr,natmort,seasdur,Movement,Mrate,move_timing,do_recruits_move,WAA,MatAA,WAA_fish,t_spawn,spawn_seas,sgl_seas_spawning_movement,natal_region,stray_rate,sexratio,rec_seas_prop,srr_opt
+#' @param n_pop,n_regions,n_ages,n_sexes,n_seas,n_fish_fleets,fish_sel,ret_sel,dmr,natmort,seasdur,Movement,Mrate,move_timing,expm_nsub,do_recruits_move,WAA,MatAA,WAA_fish,t_spawn,spawn_seas,sgl_seas_spawning_movement,natal_region,stray_rate,sexratio,rec_seas_prop,srr_opt
 #'   Static projection inputs, documented in \code{\link{Do_Population_Projection}}.
 #'
 #' @return A named list holding the same eleven arrays, advanced through year
@@ -845,7 +849,8 @@ run_proj_year <- function(y,
                           Movement, Mrate, move_timing, do_recruits_move,
                           WAA, MatAA, WAA_fish, t_spawn, spawn_seas,
                           sgl_seas_spawning_movement, natal_region, stray_rate,
-                          sexratio, rec_seas_prop, age0_rec, srr_opt) {
+                          sexratio, rec_seas_prop, age0_rec, srr_opt,
+                          expm_nsub = 0) {
 
       for(seas in 1:n_seas) {
 
@@ -921,7 +926,7 @@ run_proj_year <- function(y,
           biom <- derive_proj_biom(y, seas, proj_NAA, proj_NAA0, WAA, MatAA, proj_ZAA, natmort, t_spawn, seasdur,
                                   n_seas, n_pop, n_regions, n_ages, n_sexes,
                                   sgl_seas_spawning_movement, natal_region, stray_rate,
-                                  Movement, Mrate, move_timing, do_recruits_move)
+                                  Movement, Mrate, move_timing, do_recruits_move, expm_nsub = expm_nsub)
           proj_SSB[,, y] <- biom$SSB_y
           proj_Dynamic_SSB0[,,y] <- biom$Dynamic_SSB0_y
           proj_eff_SSB[,y] <- biom$eff_SSB_y
@@ -962,8 +967,8 @@ run_proj_year <- function(y,
                                            fish_sel = srr_opt$fish_sel,
                                            ret_sel = srr_opt$ret_sel,
                                            dmr = srr_opt$dmr,
-                                           move_timing = move_timing
-            )
+                                           move_timing = move_timing,
+                                           expm_nsub = expm_nsub)
             tmp_rec <- array(tmp_rec, dim = c(n_pop, n_regions))
 
             for(p in 1:n_pop) {
@@ -1011,9 +1016,9 @@ run_proj_year <- function(y,
             Mv <- if(moves) Movement[p,,,y,seas,a,s] else diag(n_regions)
             Qv <- if(moves) Mrate[p,,,y,seas,a,s] else matrix(0, n_regions, n_regions)
             pstep_NAA[p,,a,s] <- advance_seas(proj_NAA[p,,y,seas,a,s], Mv, proj_ZAA[p,,y,seas,a,s],
-                                              Qv, seasdur[seas], move_timing)
+                                              Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
             pstep_NAA0[p,,a,s] <- advance_seas(proj_NAA0[p,,y,seas,a,s], Mv, natmort[p,,y,a,s] * seasdur[seas],
-                                               Qv, seasdur[seas], move_timing)
+                                               Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
           }
         }
 
@@ -1034,7 +1039,7 @@ run_proj_year <- function(y,
           biom <- derive_proj_biom(y, seas, proj_NAA, proj_NAA0, WAA, MatAA, proj_ZAA, natmort, t_spawn, seasdur,
                                   n_seas, n_pop, n_regions, n_ages, n_sexes,
                                   sgl_seas_spawning_movement, natal_region, stray_rate,
-                                  Movement, Mrate, move_timing, do_recruits_move)
+                                  Movement, Mrate, move_timing, do_recruits_move, expm_nsub = expm_nsub)
           proj_SSB[,, y] <- biom$SSB_y
           proj_Dynamic_SSB0[,,y] <- biom$Dynamic_SSB0_y
           proj_eff_SSB[,y] <- biom$eff_SSB_y
@@ -1050,7 +1055,7 @@ run_proj_year <- function(y,
             for(a in 1:n_ages) {
               for(s in 1:n_sexes) {
                 proj_NAA_int[p,,a,s] <- integrate_seas_abundance(proj_NAA[p,,y,seas,a,s], proj_ZAA[p,,y,seas,a,s],
-                                                                Mrate[p,,,y,seas,a,s], seasdur[seas])
+                                                                Mrate[p,,,y,seas,a,s], seasdur[seas], expm_nsub = expm_nsub)
               } # end s loop
             } # end a loop
           } # end p loop

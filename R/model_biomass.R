@@ -21,7 +21,8 @@ compute_biom_y = function(y, seas, NAA, NAA0, WAA, MatAA, ZAA, natmort, t_spawn,
                           n_seas, n_pop, n_regions, n_ages, n_sexes,
                           sgl_seas_spawning_movement, natal_region, stray_rate,
                           Movement = NULL, Mrate = NULL, move_timing = 0,
-                          do_recruits_move = 1) {
+                          do_recruits_move = 1,
+                          expm_nsub = 0) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -44,9 +45,9 @@ compute_biom_y = function(y, seas, NAA, NAA0, WAA, MatAA, ZAA, natmort, t_spawn,
         for(s in 1:n_sexes) {
           if(moves) { Mv = Movement[p,,,y,seas,a,s]; Qv = Mrate[p,,,y,seas,a,s] }
           tmp_NAA_spawn[p,,1,1,a,s] = spawn_state(tmp_NAA_spawn[p,,1,1,a,s], Mv,
-                                                  ZAA[p,,y,seas,a,s], Qv, seasdur[seas], t_spawn, move_timing)
+                                                  ZAA[p,,y,seas,a,s], Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub)
           tmp_NAA0_spawn[p,,1,1,a,s] = spawn_state(tmp_NAA0_spawn[p,,1,1,a,s], Mv,
-                                                   natmort[p,,y,a,s] * seasdur[seas], Qv, seasdur[seas], t_spawn, move_timing)
+                                                   natmort[p,,y,a,s] * seasdur[seas], Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub)
         } # end s loop
       } # end a loop
     } # end p loop
@@ -132,7 +133,8 @@ derive_proj_biom = function(y, seas, proj_NAA, proj_NAA0, WAA, MatAA, proj_ZAA, 
                             n_seas, n_pop, n_regions, n_ages, n_sexes,
                             sgl_seas_spawning_movement, natal_region, stray_rate,
                             Movement = NULL, Mrate = NULL, move_timing = 0,
-                            do_recruits_move = 1) {
+                            do_recruits_move = 1,
+                            expm_nsub = 0) {
 
   tmp_NAA_spawn = proj_NAA[,,y,seas,,, drop = FALSE]
   tmp_NAA0_spawn = proj_NAA0[,,y,seas,,, drop = FALSE]
@@ -148,9 +150,9 @@ derive_proj_biom = function(y, seas, proj_NAA, proj_NAA0, WAA, MatAA, proj_ZAA, 
           Mv = if(moves) Movement[p,,,y,seas,a,s] else diag(n_regions)
           Qv = if(moves) Mrate[p,,,y,seas,a,s] else matrix(0, n_regions, n_regions)
           tmp_NAA_spawn[p,,1,1,a,s] = spawn_state(tmp_NAA_spawn[p,,1,1,a,s], Mv,
-                                                  proj_ZAA[p,,y,seas,a,s], Qv, seasdur[seas], t_spawn, move_timing)
+                                                  proj_ZAA[p,,y,seas,a,s], Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub)
           tmp_NAA0_spawn[p,,1,1,a,s] = spawn_state(tmp_NAA0_spawn[p,,1,1,a,s], Mv,
-                                                   natmort[p,,y,a,s] * seasdur[seas], Qv, seasdur[seas], t_spawn, move_timing)
+                                                   natmort[p,,y,a,s] * seasdur[seas], Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub)
         } # end s loop
       } # end a loop
     } # end p loop

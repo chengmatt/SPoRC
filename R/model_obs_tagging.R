@@ -151,7 +151,8 @@ get_tagging_observation_model <- function(n_fish_fleets, n_regions, n_conv_tag_c
                                            conv_fish_tag_attr, conv_tag_release_platform, srv_sel, NAA_bef,
                                            ln_init_conv_tag_mort, do_recruits_move, Movement,
                                            conv_tag_fish_avail, pred_conv_tag_fish_recap,
-                                           Mrate = NULL, move_timing = 0) {
+                                           Mrate = NULL, move_timing = 0,
+                                           expm_nsub = 0) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -291,7 +292,7 @@ get_tagging_observation_model <- function(n_fish_fleets, n_regions, n_conv_tag_c
                 Mv <- if(moves) Movement[p,,,y,rseas,a,s] else diag(n_regions)
                 Qv <- if(moves) Mrate[p,,,y,rseas,a,s] else matrix(0, n_regions, n_regions)
                 tag_step[p,,a,s] <- advance_seas(avail_tc[ry,rseas,p,,a,s], Mv,
-                                                 tmp_ZAA[p,,1,a,s], Qv, tag_dur, move_timing)
+                                                 tmp_ZAA[p,,1,a,s], Qv, tag_dur, move_timing, expm_nsub = expm_nsub)
               } # end s loop
             } # end a loop
           } # end p loop
@@ -328,7 +329,7 @@ get_tagging_observation_model <- function(n_fish_fleets, n_regions, n_conv_tag_c
                 for(s in 1:n_sexes) {
                   Qv <- if(moves) Mrate[p,,,y,rseas,a,s] else matrix(0, n_regions, n_regions)
                   tag_int[,a,s] <- integrate_seas_abundance(avail_tc[ry,rseas,p,,a,s],
-                                                            tmp_ZAA[p,,1,a,s], Qv, tag_dur)
+                                                            tmp_ZAA[p,,1,a,s], Qv, tag_dur, expm_nsub = expm_nsub)
                 } # end s loop
               } # end a loop
               tmp_ret_FAA_slice <- array(tmp_ret_FAA[p,,1,,,f], dim = c(n_regions, n_ages, n_sexes))

@@ -912,7 +912,7 @@ Setup_Mod_Discard_Comps     <- function(input_list,
 #'       standard error and the estimated component added in quadrature, treating
 #'       them as independent variances.}
 #'     \item{\code{"est_replace"}}{An estimated standard deviation replaces the
-#'       reported standard errors entirely, as several ICES assessments do.}
+#'       reported standard errors entirely.}
 #'   }
 #'   An estimated component is confounded with a likelihood weight, since a
 #'   weight on a normal likelihood is the same statement as dividing the
@@ -939,7 +939,7 @@ Setup_Mod_Discard_Comps     <- function(input_list,
 #'       standard error and the estimated component added in quadrature, treating
 #'       them as independent variances.}
 #'     \item{\code{"est_replace"}}{An estimated standard deviation replaces the
-#'       reported standard errors entirely, as several ICES assessments do.}
+#'       reported standard errors entirely.}
 #'   }
 #'   An estimated component is confounded with a likelihood weight, since a
 #'   weight on a normal likelihood is the same statement as dividing the
@@ -955,21 +955,40 @@ Setup_Mod_Discard_Comps     <- function(input_list,
 #'   fleets and pinned others at a bound.
 #'
 #' @param ObsFishIdxAA Observed fishery index at age, an array with dimensions
-#'   \code{[n_regions, n_years, n_seas, n_ages, n_fish_fleets]}. The fishery
-#'   counterpart of \code{ObsSrvIdxAA}: every age its own lognormal observation
-#'   with its own catchability. A fleet uses this or the aggregated index.
+#'   \code{[n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets]}. The
+#'   fishery counterpart of \code{ObsSrvIdxAA}: every age its own observation
+#'   with its own catchability. The sex margin is required whatever the fleet
+#'   reports: a stream summed over sexes carries its observation in sex slot one.
+#'   A fleet uses this or the aggregated index.
 #' @param UseFishIdxAA Integer array shaped like \code{ObsFishIdxAA}.
 #' @param ObsFishIdxAA_pop,UseFishIdxAA_pop Population-specific counterparts.
-#' @param sigmaFishIdxAA_key,sigmaFishIdxAA_pop_key Integer matrices coupling the
-#'   index at age observation error, an integer key matrix, the convention ICES
-#'   assessments use. Equal entries share a parameter and \code{NA} excludes one.
-#'   The age shape of catchability is not set here: an index fit age by age puts
-#'   it in selectivity through the \code{"nonparfree"} form. See
+#' @param ObsFishIdxAA_SE,ObsFishIdxAA_pop_SE Reported standard errors shaped
+#'   like their observation array, read only when \code{FishIdxAA_sigma_form}
+#'   asks for them. This is the parity the aggregated index already has: an index
+#'   disaggregated by age keeps its survey-design errors.
+#' @param sigmaFishIdxAA_key,sigmaFishIdxAA_pop_key Integer arrays
+#'   \code{[n_ages, n_sexes, n_fish_fleets]} coupling the index at age
+#'   observation error. Equal
+#'   entries share a parameter and \code{NA} excludes one. The sex margin is
+#'   required; a key coupling the sexes repeats its entries across them. The age shape of
+#'   catchability is not set here: an index fit age by age puts it in selectivity
+#'   through the \code{"nonparfree"} form. See
 #'   \code{\link{Setup_Mod_Fishsel_and_Q}}.
 #' @param sigmaFishIdxAA_spec,sigmaFishIdxAA_pop_spec \code{"est"} or \code{"fix"}.
-#' @param AgeObsCorr_fish_idx Correlation across ages for the fishery index at
-#'   age, \code{"iid"} (default) or \code{"1dar1"}. See
-#'   \code{\link{Setup_Mod_Catch_and_F}}.
+#' @param FishIdxAA_Type,FishIdxAA_pop_Type Which margins the fleet reports
+#'   separately: \code{"agg"}, \code{"spltRaggS"} (default), \code{"aggRspltS"}
+#'   or \code{"spltRspltS"}. See \code{\link{Setup_Mod_Catch_and_F}}.
+#' @param FishIdxAA_LikeType,FishIdxAA_pop_LikeType \code{"lognormal"} (default)
+#'   or \code{"normal"}, one setting for every fleet or one per fleet.
+#' @param FishIdxAA_sigma_form,FishIdxAA_pop_sigma_form Where the observation
+#'   error comes from: \code{"none"} (default), \code{"data"},
+#'   \code{"est_additive"} or \code{"est_quadrature"}.
+#' @param AgeObsCorr_fish_idx,AgeObsCorr_fish_idx_pop Correlation across ages for
+#'   the fishery index at age, \code{"iid"} (default), \code{"1dar1"},
+#'   \code{"us"} or \code{"2dar1"}, one setting for every fleet or one per
+#'   fleet. See \code{\link{Setup_Mod_Catch_and_F}}.
+#' @param rho_fish_idx_key,rho_fish_idx_pop_key Integer matrices
+#'   \code{[n_sexes, n_fish_fleets]} coupling the across-age correlation.
 #'
 #' @export Setup_Mod_FishIdx_and_Comps
 #' @importFrom stringr str_detect
@@ -979,13 +998,24 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
                                         ObsFishIdx_SE,
                                         ObsFishIdxAA = NULL,
                                         UseFishIdxAA = NULL,
+                                        ObsFishIdxAA_SE = NULL,
                                         ObsFishIdxAA_pop = NULL,
                                         UseFishIdxAA_pop = NULL,
+                                        ObsFishIdxAA_pop_SE = NULL,
                                         sigmaFishIdxAA_key = NULL,
                                         sigmaFishIdxAA_spec = "est",
                                         sigmaFishIdxAA_pop_key = NULL,
                                         sigmaFishIdxAA_pop_spec = "est",
+                                        FishIdxAA_Type = "spltRaggS",
+                                        FishIdxAA_pop_Type = "spltRaggS",
+                                        FishIdxAA_LikeType = "lognormal",
+                                        FishIdxAA_pop_LikeType = "lognormal",
+                                        FishIdxAA_sigma_form = "none",
+                                        FishIdxAA_pop_sigma_form = "none",
                                         AgeObsCorr_fish_idx = "iid",
+                                        AgeObsCorr_fish_idx_pop = "iid",
+                                        rho_fish_idx_key = NULL,
+                                        rho_fish_idx_pop_key = NULL,
                                         sigmaFishIdx_spec = "fix",
                                         sigmaFishIdx_map = NULL,
                                         sigmaFishIdx_pop_spec = "fix",
@@ -1606,43 +1636,42 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
   }
 
 
-  # Fishery index at age, mirroring the survey stream.
-  faa_dim <- as.integer(c(input_list$data$n_regions, length(input_list$data$years),
-                          input_list$data$n_seas, length(input_list$data$ages),
-                          input_list$data$n_fish_fleets))
-  faa_pop_dim <- as.integer(c(input_list$data$n_pop, faa_dim))
+  # Fishery index at age, mirroring the survey stream. A fleet fits this or the
+  # aggregated index, never both.
+  input_list <- do_at_age_data_setup(input_list, ObsFishIdxAA, UseFishIdxAA, ObsFishIdxAA_SE,
+                                     "FishIdxAA", "n_fish_fleets")
+  input_list <- do_at_age_data_setup(input_list, ObsFishIdxAA_pop, UseFishIdxAA_pop, ObsFishIdxAA_pop_SE,
+                                     "FishIdxAA", "n_fish_fleets", pop = TRUE)
+
   use_fish_idx_aa <- rep(0, input_list$data$n_fish_fleets)
-
-  if(!is.null(ObsFishIdxAA)) {
-    if(is.null(UseFishIdxAA)) stop("ObsFishIdxAA was supplied without UseFishIdxAA.")
-    check_data_dimensions(ObsFishIdxAA, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_ages = length(input_list$data$ages), n_pop = input_list$data$n_pop, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsFishIdxAA')
-    check_data_dimensions(UseFishIdxAA, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_ages = length(input_list$data$ages), n_pop = input_list$data$n_pop, n_fish_fleets = input_list$data$n_fish_fleets, what = 'UseFishIdxAA')
-    for(f in 1:input_list$data$n_fish_fleets) {
-      if(any(UseFishIdxAA[,,,,f] == 1)) {
-        use_fish_idx_aa[f] <- 1
-        if(any(UseFishIdx[,,,f] == 1)) {
-          stop("Fishery fleet ", f, " has both an aggregated index and an index at age in use. ",
-               "A fleet fits one or the other.")
-        }
+  for(f in 1:input_list$data$n_fish_fleets) {
+    if(any(input_list$data$UseFishIdxAA[,,,,,f] == 1) ||
+       any(input_list$data$UseFishIdxAA_pop[,,,,,,f] == 1)) {
+      use_fish_idx_aa[f] <- 1
+      if(any(UseFishIdx[,,,f] == 1)) {
+        stop("Fishery fleet ", f, " has both an aggregated index and an index at age in use. ",
+             "A fleet fits one or the other.")
       }
-    } # end f loop
-  } else {
-    ObsFishIdxAA <- array(0, dim = faa_dim); UseFishIdxAA <- array(0, dim = faa_dim)
-  }
-  if(is.null(ObsFishIdxAA_pop)) { ObsFishIdxAA_pop <- array(0, dim = faa_pop_dim); UseFishIdxAA_pop <- array(0, dim = faa_pop_dim) }
-
-  input_list$data$ObsFishIdxAA <- ObsFishIdxAA
-  input_list$data$UseFishIdxAA <- UseFishIdxAA
-  input_list$data$ObsFishIdxAA_pop <- ObsFishIdxAA_pop
-  input_list$data$UseFishIdxAA_pop <- UseFishIdxAA_pop
+    }
+  } # end f loop
   input_list$data$use_fish_idx_aa <- use_fish_idx_aa
 
+  input_list <- do_at_age_type_setup(input_list, FishIdxAA_Type, "FishIdxAA", "n_fish_fleets", "UseFishIdxAA")
+  input_list <- do_at_age_type_setup(input_list, FishIdxAA_pop_Type, "FishIdxAA", "n_fish_fleets", "UseFishIdxAA_pop", pop = TRUE)
+  input_list <- do_at_age_like_setup(input_list, FishIdxAA_LikeType, FishIdxAA_sigma_form, "FishIdxAA", "n_fish_fleets")
+  input_list <- do_at_age_like_setup(input_list, FishIdxAA_pop_LikeType, FishIdxAA_pop_sigma_form, "FishIdxAA", "n_fish_fleets", pop = TRUE)
+
+  input_list <- do_age_corr_setup(input_list, AgeObsCorr_fish_idx, "fish_idx", "n_fish_fleets",
+                                  "UseFishIdxAA", starting_values, rho_fish_idx_key)
+  input_list <- do_age_corr_setup(input_list, AgeObsCorr_fish_idx_pop, "fish_idx", "n_fish_fleets",
+                                  "UseFishIdxAA_pop", starting_values, rho_fish_idx_pop_key, pop = TRUE)
+
   input_list <- do_key_mapping(input_list, sigmaFishIdxAA_key,
-                               if(any(use_fish_idx_aa == 1)) sigmaFishIdxAA_spec else "fix",
+                               at_age_sigma_spec(sigmaFishIdxAA_spec, FishIdxAA_sigma_form, any(use_fish_idx_aa == 1)),
                                "ln_sigmaFishIdxAA", "n_fish_fleets", "UseFishIdxAA", starting_values)
-  input_list <- do_age_corr_setup(input_list, AgeObsCorr_fish_idx, "fish_idx", "n_fish_fleets", starting_values)
   input_list <- do_key_mapping(input_list, sigmaFishIdxAA_pop_key,
-                               if(any(UseFishIdxAA_pop == 1)) sigmaFishIdxAA_pop_spec else "fix",
+                               at_age_sigma_spec(sigmaFishIdxAA_pop_spec, FishIdxAA_pop_sigma_form,
+                                                 any(input_list$data$UseFishIdxAA_pop == 1)),
                                "ln_sigmaFishIdxAA_pop", "n_fish_fleets", "UseFishIdxAA_pop",
                                starting_values, pop = TRUE)
 

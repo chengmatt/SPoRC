@@ -98,7 +98,8 @@ get_fishery_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_fis
                                            do_caal = 0, Fish_caal = NULL, Fish_caal_discard = NULL,
                                            SizeAgeTrans_fish = NULL,
                                            fish_len_comp_sel = NULL, fish_selex_type = 0, ret_selex_type = 0,
-                                           fish_sel_l = NULL, ret_sel_l = NULL, Fmort = NULL) {
+                                           fish_sel_l = NULL, ret_sel_l = NULL, Fmort = NULL,
+                                           expm_nsub = 0) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -121,7 +122,7 @@ get_fishery_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_fis
           for(a in 1:n_ages) {
             for(s in 1:n_sexes) {
               NAA_int[p,,y,seas,a,s] <- integrate_seas_abundance(NAA[p,,y,seas,a,s], ZAA[p,,y,seas,a,s],
-                                                                 Mrate[p,,,y,seas,a,s], seasdur[seas])
+                                                                 Mrate[p,,,y,seas,a,s], seasdur[seas], expm_nsub = expm_nsub)
             } # end s loop
           } # end a loop
         } # end seas loop
@@ -367,7 +368,8 @@ get_survey_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_srv_
                                           RecDev_anom = NULL,
                                           do_caal = 0, Srv_caal = NULL,
                                           SizeAgeTrans_srv = NULL,
-                                          srv_len_comp_sel = NULL) {
+                                          srv_len_comp_sel = NULL,
+                                          expm_nsub = 0) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -392,7 +394,7 @@ get_survey_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_srv_
               for(s in 1:n_sexes) {
                 SrvN[p,,y,seas,a,s,sf] <- survey_state(NAA[p,,y,seas,a,s], NULL, ZAA[p,,y,seas,a,s],
                                                        Mrate[p,,,y,seas,a,s], seasdur[seas],
-                                                       t_srv[,seas,sf], move_timing)
+                                                       t_srv[,seas,sf], move_timing, expm_nsub = expm_nsub)
               } # end s loop
             } # end a loop
           } # end sf loop

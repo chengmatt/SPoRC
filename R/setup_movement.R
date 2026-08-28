@@ -426,6 +426,14 @@ do_cont_vary_move_mapping <- function(input_list, cont_vary_movement, Movement_c
 #'   \eqn{Q} once per season regardless of duration. Only has an effect when
 #'   \code{move_type = 1} and \code{n_seas > 1}; forced to \code{1} when
 #'   \code{move_timing = 2}.
+#' @param move_expm_nsub Integer controlling how matrix exponentials of the CTMC
+#'   generator are evaluated, both when converting \eqn{Q} to movement fractions and
+#'   inside the \code{move_timing = 2} seasonal operators. \code{0} (default)
+#'   uses \code{Matrix::expm}. A power of two \eqn{n \ge 1} instead uses \eqn{n} implicit
+#'   (backward Euler) substeps, \eqn{(I - A/n)^{-n}}, evaluated as one linear solve plus
+#'   \eqn{\log_2 n} squarings, which is why \eqn{n} must be a power of two. The implicit form has a much cheaper reverse-mode adjoint
+#'   than a matrix exponential, so the gradient is several times faster, but it is a
+#'   first-order approximation: \eqn{n = 1} is plain \code{solve(I - A)} and is an approximation.
 #' @param ... Optional starting value overrides, passed by name. Recognised
 #'   arguments:
 #'   \describe{
@@ -471,6 +479,7 @@ Setup_Mod_Movement <- function(input_list,
                                ctmc_diffusion_bounds = 0,
                                move_timing = 0,
                                ctmc_scale_by_seasdur = 1,
+                               move_expm_nsub = 0,
                                ...
 ) {
 
@@ -541,6 +550,27 @@ Setup_Mod_Movement <- function(input_list,
 
   if(!ctmc_scale_by_seasdur %in% c(0, 1))
     stop('ctmc_scale_by_seasdur is not correctly specified. The options are 0 (unscaled, one exponentiation per season) or 1 (scale by season duration)')
+
+  # Matrix exponential evaluation. Backward Euler trades accuracy for a quicker eval
+  if(!is.numeric(move_expm_nsub) || length(move_expm_nsub) != 1 || is.na(move_expm_nsub) ||
+     move_expm_nsub != as.integer(move_expm_nsub) || move_expm_nsub < 0)
+    stop('move_expm_nsub is not correctly specified. It must be a single non-negative integer: 0 (exact, Matrix::expm) or the number of implicit backward Euler substeps.')
+
+  move_expm_nsub <- as.integer(move_expm_nsub)
+
+  # Substeps are applied by repeated squaring, which reaches powers of two exactly and
+  # nothing else. The scheme is first order regardless, so a finer ladder would buy nothing.
+  if(move_expm_nsub > 0 && bitwAnd(move_expm_nsub, move_expm_nsub - 1L) != 0)
+    stop('move_expm_nsub must be a power of two (1, 2, 4, 8, ... ), since substeps are applied by repeated squaring. Got ', move_expm_nsub, '.')
+
+  if(move_type == 1 && use_fixed_movement == 0) {
+    if(move_expm_nsub == 0) collect_message("Matrix exponential is: exact (Matrix::expm)")
+    else collect_message("Matrix exponential is: implicit backward Euler with ", move_expm_nsub,
+                         " substep(s), (I - A/n)^-n. First order in 1/n; the exponential is approximated, not reproduced.")
+  } else if(move_expm_nsub != 0) {
+    collect_message("move_expm_nsub ignored: matrix exponentials are only taken for an estimated CTMC generator (move_type = 1 with use_fixed_movement = 0).")
+    move_expm_nsub <- 0L
+  }
 
   # Mixing an unscaled generator with seasdur-scaled mortality is dimensionally inconsistent,
   # so continuous movement forces the scaling on.
@@ -680,6 +710,7 @@ Setup_Mod_Movement <- function(input_list,
   input_list$data$ctmc_diffusion_bounds <- ctmc_diffusion_bounds
   input_list$data$move_timing <- move_timing
   input_list$data$ctmc_scale_by_seasdur <- ctmc_scale_by_seasdur
+  input_list$data$move_expm_nsub <- move_expm_nsub
 
   # define for continuous varying movement
   cont_move_map <- data.frame(

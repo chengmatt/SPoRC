@@ -148,41 +148,109 @@ dlogistnormal = function(obs, pred, Sigma, give_log = TRUE) {
 #' which array supplies the prediction and which parameter supplies the standard
 #' deviation, so the likelihood itself is written once.
 #'
-#' Observations are lognormal on the natural scale. Ages within one cell may be
-#' independent, or correlated as an AR(1) across ages, as ICES age-structured assessments allow. A correlated cell
-#' contributes its whole density to the first age present, leaving the remaining
-#' ages at zero, so the returned array still sums to the cell's contribution.
+#' Ages within one cell may be independent, correlated as an AR(1) across ages,
+#' or correlated through an unstructured matrix, the three structures ICES
+#' age-structured assessments allow. A correlated cell contributes its whole
+#' density to the first age present, leaving the remaining ages at zero, so the
+#' returned vector still sums to the cell's contribution.
 #'
-#' @param obs_log Numeric vector of log observations for the ages present in one
-#'   cell, already offset by any constant.
-#' @param pred_log Vector of log predictions, matching \code{obs_log}.
-#' @param sigma Vector of standard deviations, matching \code{obs_log}.
-#' @param corr_type Integer. \code{0} is \code{"iid"}, \code{1} is \code{"1dar1"}.
+#' An AR(1) is a statement about age distance, not about position in the
+#' observed vector. A fleet that observes ages 2, 3, 5 and 6 has a gap, and lag
+#' one across that gap is not lag one, so the covariance is built from the ages
+#' themselves whenever they are not consecutive. Consecutive ages take the
+#' autoregressive recursion instead, which is the same density at lower cost.
+#'
+#' @param obs_t Numeric vector of observations for the ages present in one cell,
+#'   on the scale the fleet's likelihood is written on.
+#' @param pred_t Vector of predictions, matching \code{obs_t}.
+#' @param sigma Vector of standard deviations, matching \code{obs_t}.
+#' @param corr_type Integer. \code{0} is \code{"iid"}, \code{1} is
+#'   \code{"1dar1"}, \code{2} is \code{"us"}.
 #' @param rho Correlation for \code{corr_type = 1}, on the natural scale.
+#' @param ages Integer vector of the ages present, used to space the AR(1). The
+#'   position in the vector is assumed when this is \code{NULL}.
+#' @param corr_mat Correlation matrix for \code{corr_type = 2}, already subset to
+#'   the ages present.
 #'
-#' @return Numeric vector the length of \code{obs_log}, the negative log
+#' @return Numeric vector the length of \code{obs_t}, the negative log
 #'   likelihood contribution of each age.
 #'
 #' @keywords internal
-get_at_age_nLL = function(obs_log, pred_log, sigma, corr_type = 0, rho = 0) {
+get_at_age_nLL = function(obs_t, pred_t, sigma, corr_type = 0, rho = 0,
+                          ages = NULL, corr_mat = NULL) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
-  n = length(obs_log)
+  n = length(obs_t)
   nLL = rep(0, n)
 
-  # just simple iid
+  # a single observation carries no correlation to describe
   if(corr_type == 0 || n == 1) {
-    nLL = -1 * RTMB::dnorm(obs_log, pred_log, sigma, TRUE)
+    nLL = -1 * RTMB::dnorm(obs_t, pred_t, sigma, TRUE)
     return(nLL)
   }
 
-  if(corr_type == 1) { # AR(1) across ages
-    nLL[1] = -1 * RTMB::dautoreg(obs_log - pred_log, mu = 0, phi = rho, log = TRUE, scale = sigma)
+  resid = obs_t - pred_t
+
+  if(corr_type == 1) {
+    if(is.null(ages)) ages = seq_len(n)
+    if(all(diff(ages) == 1)) { # consecutive ages are the recursion itself
+      nLL[1] = -1 * RTMB::dautoreg(resid, mu = 0, phi = rho, log = TRUE, scale = sigma)
+      return(nLL)
+    }
+    corr_mat = matrix(0, n, n) # gapped ages need the distance stated explicitly
+    for(i in 1:n) {
+      for(j in 1:n) corr_mat[i,j] = rho^abs(ages[i] - ages[j])
+    } # end j loop, end i loop
   }
 
+  # standardising keeps the correlation matrix free of the standard deviations,
+  # which is what lets an unstructured matrix be built once per fleet and reused
+  z = resid / sigma
+  nLL[1] = -1 * (RTMB::dmvnorm(z, 0, corr_mat, log = TRUE) - sum(log(sigma)))
+
   return(nLL)
+}
+
+#' Evaluate an at-age observation block correlated over both age and year
+#'
+#' A separable first-order autoregression treats the residual surface as an
+#' AR(1) across ages and an AR(1) across years, with the covariance the Kronecker
+#' product of the two. It is defined over a complete grid, so the caller supplies
+#' a rectangular block and the whole block's density is returned as one number.
+#'
+#' The residuals are standardised before the separable density is applied, since
+#' the standard deviations vary by age while the correlation does not. The
+#' determinant of that scaling is added back.
+#'
+#' The correlations arrive untransformed and are constrained here, before the two
+#' closures are defined. \code{\link[RTMB]{dseparable}} evaluates those closures
+#' in a context of its own, and a constraint left as an unevaluated argument is
+#' forced inside that context, where the tape reports an invalid \code{advector}
+#' rather than a wrong number.
+#'
+#' @param resid Matrix of residuals, years by ages.
+#' @param sigma Matrix of standard deviations, shaped like \code{resid}.
+#' @param trans_rho_age Unconstrained correlation between adjacent ages.
+#' @param trans_rho_year Unconstrained correlation between adjacent years.
+#'
+#' @return The negative log likelihood of the whole block, a scalar.
+#'
+#' @keywords internal
+get_at_age_2dar1_nLL = function(resid, sigma, trans_rho_age, trans_rho_year) {
+
+  z = resid / sigma
+
+  rho_age = rho_trans(trans_rho_age)   # forced before the closures capture them
+  rho_year = rho_trans(trans_rho_year)
+
+  f_year = function(x) RTMB::dautoreg(x, mu = 0, phi = rho_year, log = TRUE)
+  f_age = function(x) RTMB::dautoreg(x, mu = 0, phi = rho_age, log = TRUE)
+
+  ll = RTMB::dseparable(f_year, f_age)(z) - sum(log(sigma))
+
+  return(-1 * ll)
 }
 
 #' Combine reported index standard errors with an estimated component

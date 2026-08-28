@@ -1,3 +1,78 @@
+#' Draw one at-age observation stream for one region, year, season and fleet
+#'
+#' The operating model states an at-age observation the way the estimation model
+#' reads it: summed over whichever of regions and sexes the fleet reports
+#' together, with the fleet's own density and its own standard deviation. A
+#' stream summed over regions is one number, so it is drawn once, when the region
+#' loop reaches region one.
+#'
+#' @param numbers Array \code{[n_pop, n_regions, n_ages, n_sexes]} of the
+#'   quantity at age for this year, season and fleet.
+#' @param weight Array shaped like \code{numbers}, read when \code{use_weight}.
+#' @param use Integer array \code{[n_regions, n_ages, n_sexes]} of use flags.
+#' @param se Reported standard errors shaped like \code{use}.
+#' @param ln_sigma Log-scale observation error, \code{[n_ages, n_sexes]}.
+#' @param type_code,like_code,form_code The fleet's aggregation, density and
+#'   error-source codes.
+#' @param use_weight Logical, \code{TRUE} for an observation in weight.
+#' @param r Region the loop is on.
+#'
+#' @return A list with \code{true} and \code{obs}, both \code{[n_ages, n_sexes]}
+#'   and \code{NA} wherever nothing was drawn.
+#'
+#' @keywords internal
+sim_at_age_cell <- function(numbers, weight, use, se, ln_sigma, type_code, like_code,
+                            form_code, use_weight, r) {
+
+  n_regions <- dim(numbers)[2]; n_ages <- dim(numbers)[3]; n_sexes <- dim(numbers)[4]
+  split <- at_age_split(type_code)
+  out_true <- array(NA_real_, dim = c(n_ages, n_sexes))
+  out_obs <- out_true
+
+  # summed over regions the observation is one number, drawn once
+  if(!split$region && r != 1) return(list(true = out_true, obs = out_obs))
+  r_idx <- if(split$region) r else seq_len(n_regions)
+
+  for(s in seq_len(n_sexes)) {
+    if(!split$sex && s > 1) next
+    s_idx <- if(split$sex) s else seq_len(n_sexes)
+    for(a in seq_len(n_ages)) {
+      if(use[r,a,s] != 1) next
+      val <- if(use_weight) sum(numbers[,r_idx,a,s_idx] * weight[,r_idx,a,s_idx])
+             else sum(numbers[,r_idx,a,s_idx])
+      sd <- exp(ln_sigma[a,s])
+      if(form_code != 0) sd <- at_age_obs_sd(se[r,a,s], sd, form_code)
+      out_true[a,s] <- val
+      out_obs[a,s] <- if(like_code == 0) val * exp(stats::rnorm(1, 0, sd))
+                      else val + stats::rnorm(1, 0, sd)
+    } # end a loop
+  } # end s loop
+
+  return(list(true = out_true, obs = out_obs))
+}
+
+#' Write a simulated at-age cell into its true and observed containers
+#'
+#' @param sim_env Environment holding the simulation containers.
+#' @param stream Stream tag, e.g. \code{"CatchAA"}.
+#' @param drawn List returned by \code{\link{sim_at_age_cell}}.
+#' @param r,y,seas,f,sim Region, year, season, fleet and replicate.
+#'
+#' @return \code{invisible(NULL)}, called for its side effect.
+#'
+#' @keywords internal
+store_at_age_cell <- function(sim_env, stream, drawn, r, y, seas, f, sim) {
+
+  got <- which(!is.na(drawn$true), arr.ind = TRUE)
+  for(k in seq_len(nrow(got))) {
+    a <- got[k,1]; s <- got[k,2]
+    sim_env[[paste0("True", stream)]][r,y,seas,a,s,f,sim] <- drawn$true[a,s]
+    sim_env[[paste0("Obs", stream)]][r,y,seas,a,s,f,sim] <- drawn$obs[a,s]
+  } # end k loop
+
+  return(invisible(NULL))
+}
+
 #' Convert an index covariance matrix to common-factor parameters
 #'
 #' A multivariate normal index likelihood is supplied as a full covariance over
@@ -917,7 +992,7 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
         NAA_int <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
         for(p in 1:n_pop) for(a in 1:n_ages) for(s in 1:n_sexes) {
           NAA_int[p,,a,s] <- integrate_seas_abundance(NAA[p,,y,seas,a,s,sim], ZAA[p,,y,seas,a,s,sim],
-                                                      Mrate[p,,,y,seas,a,s,sim], seasdur[seas])
+                                                      Mrate[p,,,y,seas,a,s,sim], seasdur[seas], expm_nsub = expm_nsub)
         }
       }
 
@@ -955,19 +1030,34 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
           if(catch_units[f] == 1) sim_env$TrueCatch[r,y,seas,f,sim] <- sum(CAA[,r,y,seas,,,f,sim] * WAA_fish[,r,y,seas,,,f,sim]) # biomass
           sim_env$ObsCatch[r,y,seas,f,sim] <- TrueCatch[r,y,seas,f,sim] * exp(stats::rnorm(1, 0, exp(ln_sigmaC[r,y,seas,f]))) # Observed Catch w/ lognormal deviations
 
-          # Catch at age, drawn per age from its own standard deviation. A fleet
-          # simulating catch at age is the same fleet that fits it, so the draw
-          # follows use_catch_aa rather than being drawn unconditionally.
+          # Catch and discards at age, drawn per age and sex from their own
+          # standard deviations and summed over whichever margins the fleet
+          # reports together.
+          aa_dim <- c(n_pop, n_regions, n_ages, n_sexes)
+          aa_wt <- array(WAA_fish[,,y,seas,,,f,sim], dim = aa_dim)
+
           if(exists("use_catch_aa") && use_catch_aa[f] == 1) {
-            for(a in 1:n_ages) {
-              if(UseCatchAA[r,y,seas,a,f] == 1) {
-                true_caa <- if(catch_units[f] == 0) sum(CAA[,r,y,seas,a,,f,sim]) else
-                  sum(CAA[,r,y,seas,a,,f,sim] * WAA_fish[,r,y,seas,a,,f,sim])
-                sim_env$TrueCatchAA[r,y,seas,a,f,sim] <- true_caa
-                sim_env$ObsCatchAA[r,y,seas,a,f,sim] <- true_caa *
-                  exp(stats::rnorm(1, 0, exp(ln_sigmaCAA[a,f])))
-              }
-            } # end a loop
+            store_at_age_cell(sim_env, "CatchAA",
+                              sim_at_age_cell(array(CAA[,,y,seas,,,f,sim], dim = aa_dim), aa_wt,
+                                              array(UseCatchAA[,y,seas,,,f], dim = aa_dim[-1]),
+                                              array(ObsCatchAA_SE[,y,seas,,,f], dim = aa_dim[-1]),
+                                              array(ln_sigmaCAA[,,f], dim = c(n_ages, n_sexes)),
+                                              CatchAA_Type[f], CatchAA_LikeType[f], CatchAA_sigma_form[f],
+                                              catch_units[f] == 1, r),
+                              r, y, seas, f, sim)
+          }
+
+          if(exists("use_discard_aa") && use_discard_aa[f] == 1) {
+            daa <- array(DAA[,,y,seas,,,f,sim], dim = aa_dim)
+            for(rr in 1:n_regions) daa[,rr,,] <- daa[,rr,,] / dmr[rr,y,seas,f,sim] # dead discards raised to the total
+            store_at_age_cell(sim_env, "DiscardAA",
+                              sim_at_age_cell(daa, aa_wt,
+                                              array(UseDiscardAA[,y,seas,,,f], dim = aa_dim[-1]),
+                                              array(ObsDiscardAA_SE[,y,seas,,,f], dim = aa_dim[-1]),
+                                              array(ln_sigmaDAA[,,f], dim = c(n_ages, n_sexes)),
+                                              DiscardAA_Type[f], DiscardAA_LikeType[f], DiscardAA_sigma_form[f],
+                                              discard_units[f] == 1, r),
+                              r, y, seas, f, sim)
           }
 
           # Population Specific Catch
@@ -1036,6 +1126,27 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
           if(fish_idx_type[f] == 0) sim_env$TrueFishIdx_pop[,r,y,seas,f,sim] <- fish_q[r,y,f,sim] * apply(tmp_expl_abd[,1,1,1,,,1, drop = FALSE], 1, sum)  # abundance
           if(fish_idx_type[f] == 1) sim_env$TrueFishIdx_pop[,r,y,seas,f,sim] <- fish_q[r,y,f,sim] * apply(tmp_expl_biom[,1,1,1,,,1, drop = FALSE], 1, sum)  # biomass
           sim_env$ObsFishIdx_pop[,r,y,seas,f,sim] <- draw_index_obs(sim_env$TrueFishIdx_pop[,r,y,seas,f,sim], ObsFishIdx_pop_SE[,r,y,seas,f], if(fidx_like == 1) 1 else 0)
+
+          # Fishery index at age. An index fit age by age carries its
+          # catchability in selectivity, so no q is applied here
+          if(exists("use_fish_idx_aa") && use_fish_idx_aa[f] == 1) {
+            faa_dim <- c(n_pop, n_regions, n_ages, n_sexes)
+            fiaa <- array(NAA[,,y,seas,,,sim], dim = faa_dim)
+            for(rr in 1:n_regions) {
+              if(t_fish[rr,seas,f] != 0) {
+                fiaa[,rr,,] <- fiaa[,rr,,] * exp(-t_fish[rr,seas,f] * array(ZAA[,rr,y,seas,,,sim], dim = faa_dim[-2]))
+              }
+              fiaa[,rr,,] <- fiaa[,rr,,] * array(fish_sel[,rr,y,seas,,,f,sim] * ret_sel[,rr,y,seas,,,f,sim], dim = faa_dim[-2])
+            } # end rr loop
+            store_at_age_cell(sim_env, "FishIdxAA",
+                              sim_at_age_cell(fiaa, array(0, dim = faa_dim),
+                                              array(UseFishIdxAA[,y,seas,,,f], dim = faa_dim[-1]),
+                                              array(ObsFishIdxAA_SE[,y,seas,,,f], dim = faa_dim[-1]),
+                                              array(ln_sigmaFishIdxAA[,,f], dim = c(n_ages, n_sexes)),
+                                              FishIdxAA_Type[f], FishIdxAA_LikeType[f], FishIdxAA_sigma_form[f],
+                                              FALSE, r),
+                              r, y, seas, f, sim)
+          }
 
           # Fishery Compositions
           if(Fmort[r,y,seas,f,sim] > 0) { # only simulate if Fishing Mortality > 0
@@ -1349,7 +1460,7 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
         for(p in 1:n_pop) for(sf in 1:n_srv_fleets) for(a in 1:n_ages) for(s in 1:n_sexes) {
           SrvN_sim[p,,a,s,sf] <- survey_state(NAA[p,,y,seas,a,s,sim], NULL, ZAA[p,,y,seas,a,s,sim],
                                               Mrate[p,,,y,seas,a,s,sim], seasdur[seas],
-                                              t_srv[,seas,sf], move_timing)
+                                              t_srv[,seas,sf], move_timing, expm_nsub = expm_nsub)
         }
       }
 
@@ -1386,17 +1497,19 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
             sim_env$ObsSrvIdx[r,y,seas,sf,sim] <- draw_index_obs(TrueSrvIdx[r,y,seas,sf,sim], ObsSrvIdx_SE[r,y,seas,sf], sidx_like)
           }
 
-          # Survey index at age, each age drawn from its own catchability and
-          # standard deviation, mirroring how the at-age likelihood reads them.
+          # Survey index at age, each age and sex drawn from its own catchability
+          # and standard deviation, mirroring how the at-age likelihood reads them.
           if(exists("use_srv_idx_aa") && use_srv_idx_aa[sf] == 1) {
-            for(a in 1:n_ages) {
-              if(UseSrvIdxAA[r,y,seas,a,sf] == 1) {
-                true_saa <- sum(SrvIAA[,r,y,seas,a,,sf,sim])
-                sim_env$TrueSrvIdxAA[r,y,seas,a,sf,sim] <- true_saa
-                sim_env$ObsSrvIdxAA[r,y,seas,a,sf,sim] <- true_saa *
-                  exp(stats::rnorm(1, 0, exp(ln_sigmaSrvIdxAA[a,sf])))
-              }
-            } # end a loop
+            saa_dim <- c(n_pop, n_regions, n_ages, n_sexes)
+            store_at_age_cell(sim_env, "SrvIdxAA",
+                              sim_at_age_cell(array(SrvIAA[,,y,seas,,,sf,sim], dim = saa_dim),
+                                              array(0, dim = saa_dim),
+                                              array(UseSrvIdxAA[,y,seas,,,sf], dim = saa_dim[-1]),
+                                              array(ObsSrvIdxAA_SE[,y,seas,,,sf], dim = saa_dim[-1]),
+                                              array(ln_sigmaSrvIdxAA[,,sf], dim = c(n_ages, n_sexes)),
+                                              SrvIdxAA_Type[sf], SrvIdxAA_LikeType[sf], SrvIdxAA_sigma_form[sf],
+                                              FALSE, r),
+                              r, y, seas, sf, sim)
           }
 
           # Survey Index - Population-Specific. The covariance describes the regional
@@ -1812,7 +1925,7 @@ generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {
                   Mv <- if(moves) Movement[p,,,y,rseas,a,s,sim] else diag(n_regions)
                   Qv <- if(moves) Mrate[p,,,y,rseas,a,s,sim] else matrix(0, n_regions, n_regions)
                   tag_step[p,,a,s] <- advance_seas(avail_tc[ry,rseas,p,,a,s], Mv,
-                                                   tmp_ZAA[p,,1,a,s], Qv, tag_dur, move_timing)
+                                                   tmp_ZAA[p,,1,a,s], Qv, tag_dur, move_timing, expm_nsub = expm_nsub)
                 } # end s loop
               } # end a loop
             } # end p loop
@@ -1847,7 +1960,7 @@ generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {
                   for(s in 1:n_sexes) {
                     Qv <- if(moves) Mrate[p,,,y,rseas,a,s,sim] else matrix(0, n_regions, n_regions)
                     tag_int[,a,s] <- integrate_seas_abundance(avail_tc[ry,rseas,p,,a,s],
-                                                              tmp_ZAA[p,,1,a,s], Qv, tag_dur)
+                                                              tmp_ZAA[p,,1,a,s], Qv, tag_dur, expm_nsub = expm_nsub)
                   } # end s loop
                 } # end a loop
                 # array() guards against R dropping a length-1 sex dimension from the F slice

@@ -893,30 +893,46 @@ get_at_age_fits_plot <- function(data, rep, model_names, stream = "CatchAA") {
     if(is.null(use_arr) || !any(use_arr == 1)) next
 
     fit_cells <- which(use_arr == 1)
-    idx <- arrayInd(fit_cells, dim(use_arr))
-    sigma <- exp(rep[[i]][[sigma_nm]])[cbind(idx[, 4], idx[, 5])]
+    idx <- arrayInd(fit_cells, dim(use_arr))          # region, year, season, age, sex, fleet
+    fleet <- idx[, 6]
 
+    # the standard deviation is whatever the fleet's error source says it is,
+    # so the intervals shown are the ones the likelihood actually used
+    extra <- exp(rep[[i]][[sigma_nm]])[cbind(idx[, 4], idx[, 5], fleet)]
+    form <- data[[i]][[paste0(stream, "_sigma_form")]]
+    se <- data[[i]][[paste0(obs_nm, "_SE")]]
+    sigma <- extra
+    if(!is.null(form) && !is.null(se)) {
+      for(f in unique(fleet)) {
+        on <- fleet == f
+        if(form[f] != 0) sigma[on] <- at_age_obs_sd(se[fit_cells][on], extra[on], form[f])
+      } # end f loop
+    }
+
+    like <- data[[i]][[paste0(stream, "_LikeType")]]
     rows[[length(rows) + 1]] <- data.frame(
       Year = data[[i]]$years[idx[, 2]], Region = idx[, 1], Season = idx[, 3],
-      Age = data[[i]]$ages[idx[, 4]], Fleet = idx[, 5],
+      Age = data[[i]]$ages[idx[, 4]], Sex = idx[, 5], Fleet = fleet,
       Obs = data[[i]][[obs_nm]][fit_cells],
       Pred = rep[[i]][[pred_nm]][fit_cells],
-      sigma = sigma, Model = model_names[i]
+      sigma = sigma, lognormal = if(is.null(like)) TRUE else like[fleet] == 0,
+      Model = model_names[i]
     )
   } # end i loop
 
   if(length(rows) == 0) return(NULL)
   df <- do.call(rbind, rows)
-  df$lwr <- df$Obs * exp(-1.96 * df$sigma)
-  df$upr <- df$Obs * exp(1.96 * df$sigma)
+  df$lwr <- ifelse(df$lognormal, df$Obs * exp(-1.96 * df$sigma), df$Obs - 1.96 * df$sigma)
+  df$upr <- ifelse(df$lognormal, df$Obs * exp(1.96 * df$sigma), df$Obs + 1.96 * df$sigma)
 
   ggplot(df, aes(x = Year)) +
     geom_pointrange(aes(y = Obs, ymin = lwr, ymax = upr), size = 0.2, colour = "grey40") +
     geom_line(aes(y = Pred, colour = Model), linewidth = 0.7) +
-    facet_grid(Age ~ Fleet + Region, scales = "free_y",
+    facet_grid(Age ~ Fleet + Region + Sex, scales = "free_y",
                labeller = labeller(Age = function(x) paste("Age", x),
                                    Fleet = function(x) paste("Fleet", x),
-                                   Region = function(x) paste("Region", x))) +
+                                   Region = function(x) paste("Region", x),
+                                   Sex = function(x) paste("Sex", x))) +
     labs(x = "Year", y = stream, colour = NULL) +
     theme_bw(base_size = 11) + theme(panel.grid.minor = element_blank())
 }
@@ -1589,6 +1605,7 @@ get_key_quants <- function(data,
     # Movement / mortality sequencing must follow the fitted model. Under continuous movement
     # the generator has to be averaged on the rate scale, since mean(expm(Q)) != expm(mean(Q)).
     proj_move_timing <- if(is.null(data[[i]]$move_timing)) 0 else data[[i]]$move_timing
+    proj_expm_nsub <- if(is.null(data[[i]]$move_expm_nsub)) 0 else data[[i]]$move_expm_nsub
     if(proj_move_timing == 2) {
       Mrate_avg <- apply(rep[[i]]$Mrate[,,,avg_yrs,,,,drop = FALSE], c(1,2,3,5,6,7), mean)
       proj_Mrate <- abind::abind(replicate(n_proj_yrs, Mrate_avg, simplify = FALSE), along = 4)
@@ -1672,6 +1689,7 @@ get_key_quants <- function(data,
                                          fmort_opt = 'Input', # Fishing mortality in projection years (whether input or HCR)
                                          srr_opt = srr_opt, # beverton holt projection options
                                          move_timing = proj_move_timing, # movement / mortality sequencing
+                                         expm_nsub = proj_expm_nsub, # exact or implicit matrix exponential
                                          Mrate = proj_Mrate # instantaneous rates (continuous movement only)
     )
 

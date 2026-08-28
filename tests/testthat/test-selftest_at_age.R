@@ -26,7 +26,7 @@ at_age_om <- function(seed = 321) {
                                        dim = c(1, 1, n_yrs, 1, n_ages, 1, 1))
 
   # every age fit, with one standard deviation shared across ages
-  use_aa <- array(1, dim = c(1, n_yrs, 1, n_ages, 1))
+  use_aa <- array(1, dim = c(1, n_yrs, 1, n_ages, 1, 1))
 
   sim_list <- Setup_Sim_Fishing(
     sim_list = sim_list,
@@ -35,7 +35,7 @@ at_age_om <- function(seed = 321) {
     dmr_input = array(0, dim = c(1, n_yrs, 1, 1, 1)),
     Fmort_input = array(rep(seq(0.05, 0.25, length.out = n_yrs), each = 1), dim = c(1, n_yrs, 1, 1, 1)),
     ISS_FishAgeComps = array(50, dim = c(1, n_yrs, 1, 1, 1, 1)),
-    ln_sigmaCAA = array(log(at_age_cfg$sigmaCAA), dim = c(n_ages, 1)),
+    ln_sigmaCAA = array(log(at_age_cfg$sigmaCAA), dim = c(n_ages, 1, 1)),
     UseCatchAA = use_aa,
     use_catch_aa = 1
   )
@@ -45,7 +45,7 @@ at_age_om <- function(seed = 321) {
   sim_list <- Setup_Sim_Survey(sim_list = sim_list, srv_sel_input = replicate(1, curve(1, 3)),
                                ObsSrvIdx_SE = array(0.2, dim = c(1, n_yrs, 1, 1)),
                                ISS_SrvAgeComps = array(50, dim = c(1, n_yrs, 1, 1, 1, 1)),
-                               ln_sigmaSrvIdxAA = array(log(0.2), dim = c(n_ages, 1)),
+                               ln_sigmaSrvIdxAA = array(log(0.2), dim = c(n_ages, 1, 1)),
                                UseSrvIdxAA = use_aa, use_srv_idx_aa = 1)
 
   biol <- function(val) array(rep(val, each = n_yrs), dim = c(1, 1, n_yrs, 1, n_ages, 1))
@@ -75,8 +75,8 @@ test_that("the operating model draws catch at age with the error it was given", 
   om <- at_age_om()
 
   # log residual of the draw against the truth recovers the standard deviation
-  true_caa <- om$TrueCatchAA[1, , 1, , 1, 1]
-  obs_caa <- om$ObsCatchAA[1, , 1, , 1, 1]
+  true_caa <- om$TrueCatchAA[1, , 1, , 1, 1, 1]
+  obs_caa <- om$ObsCatchAA[1, , 1, , 1, 1, 1]
   fit <- true_caa > 0 & obs_caa > 0
 
   expect_gt(sum(fit), 100)  # the draw actually happened
@@ -93,9 +93,9 @@ at_age_em <- function(om, stream = "catch", extra_disc = NULL, extra_fidx = NULL
   n_yrs <- at_age_cfg$n_yrs; n_ages <- at_age_cfg$n_ages
   yrs <- seq_len(n_yrs); ages <- seq_len(n_ages); d1 <- c(1, 1, n_yrs, 1, n_ages, 1)
   zero4 <- array(0, dim = c(1, n_yrs, 1, 1))
-  aa_dim <- c(1, n_yrs, 1, n_ages, 1)
+  aa_dim <- c(1, n_yrs, 1, n_ages, 1, 1)
 
-  obs_aa <- array(om$TrueCatchAA[1, , 1, , 1, 1], dim = aa_dim)
+  obs_aa <- array(om$TrueCatchAA[1, , 1, , 1, 1, 1], dim = aa_dim)
   use_aa <- array(as.numeric(obs_aa > 0), dim = aa_dim)
 
   il <- Setup_Mod_Dim(n_pop = 1, years = yrs, ages = ages, lens = NA, n_regions = 1,
@@ -118,8 +118,8 @@ at_age_em <- function(om, stream = "catch", extra_disc = NULL, extra_fidx = NULL
                      catch_units = array("abd", dim = 1), Use_F_pen = 1,
                      sigmaC_spec = "fix", sigmaF_spec = "fix",
                      ObsCatchAA = obs_aa, UseCatchAA = use_aa,
-                     sigmaCAA_key = array(1L, dim = c(n_ages, 1)), sigmaCAA_spec = "fix",
-                     ln_sigmaCAA = array(log(at_age_cfg$sigmaCAA), dim = c(n_ages, 1)))
+                     sigmaCAA_key = array(1L, dim = c(n_ages, 1, 1)), sigmaCAA_spec = "fix",
+                     ln_sigmaCAA = array(log(at_age_cfg$sigmaCAA), dim = c(n_ages, 1, 1)))
   if(stream == "discard") {
     # the operating model discards nothing, so this checks the discard stream
     # reaches the likelihood and leaves the fit intact
@@ -130,7 +130,7 @@ at_age_em <- function(om, stream = "catch", extra_disc = NULL, extra_fidx = NULL
   if(!is.null(extra_disc)) {
     catch_args <- c(catch_args, list(
       ObsDiscardAA = extra_disc, UseDiscardAA = array(1, dim = aa_dim),
-      sigmaDAA_key = array(1L, dim = c(n_ages, 1)), sigmaDAA_spec = "fix"))
+      sigmaDAA_key = array(1L, dim = c(n_ages, 1, 1)), sigmaDAA_spec = "fix"))
   }
   il <- suppressWarnings(do.call(Setup_Mod_Catch_and_F, catch_args))
 
@@ -144,7 +144,7 @@ at_age_em <- function(om, stream = "catch", extra_disc = NULL, extra_fidx = NULL
     FishAgeComps_Type = "agg_Year_1-terminal_Fleet_1", FishLenComps_Type = "agg_Year_1-terminal_Fleet_1",
     ObsFishIdxAA = extra_fidx,
     UseFishIdxAA = if(is.null(extra_fidx)) NULL else array(1, dim = aa_dim),
-    sigmaFishIdxAA_key = if(is.null(extra_fidx)) NULL else array(1L, dim = c(n_ages, 1)),
+    sigmaFishIdxAA_key = if(is.null(extra_fidx)) NULL else array(1L, dim = c(n_ages, 1, 1)),
     sigmaFishIdxAA_spec = "fix")
 
   srv_args <- list(input_list = il,
@@ -158,14 +158,14 @@ at_age_em <- function(om, stream = "catch", extra_disc = NULL, extra_fidx = NULL
     SrvAgeComps_Type = "agg_Year_1-terminal_Fleet_1", SrvLenComps_Type = "agg_Year_1-terminal_Fleet_1")
   if(stream == "srv_index") {
     # survey index at age instead of the aggregate
-    srv_aa <- array(om$TrueSrvIdxAA[1, , 1, , 1, 1], dim = aa_dim)
+    srv_aa <- array(om$TrueSrvIdxAA[1, , 1, , 1, 1, 1], dim = aa_dim)
     use_srv_aa <- array(as.numeric(srv_aa > 0), dim = aa_dim)
     srv_args$UseSrvIdx <- zero4
     srv_args$ObsSrvIdxAA <- srv_aa
     srv_args$UseSrvIdxAA <- use_srv_aa
-    srv_args$sigmaSrvIdxAA_key <- array(1L, dim = c(n_ages, 1))
+    srv_args$sigmaSrvIdxAA_key <- array(1L, dim = c(n_ages, 1, 1))
     srv_args$sigmaSrvIdxAA_spec <- "fix"
-    srv_args$ln_sigmaSrvIdxAA <- array(log(0.2), dim = c(n_ages, 1))
+    srv_args$ln_sigmaSrvIdxAA <- array(log(0.2), dim = c(n_ages, 1, 1))
   }
   il <- do.call(Setup_Mod_SrvIdx_and_Comps, srv_args)
 
@@ -251,7 +251,7 @@ test_that("one-step-ahead residuals work on every at-age stream", {
   r0 <- fit_model(il$data, il$par, il$map, do_optim = FALSE, silent = TRUE)$rep
 
   n_yrs <- at_age_cfg$n_yrs; n_ages <- at_age_cfg$n_ages
-  aa_dim <- c(1, n_yrs, 1, n_ages, 1)
+  aa_dim <- c(1, n_yrs, 1, n_ages, 1, 1)
   # the operating model retains everything, so it produces no discards to fit;
   # the discard stream is covered by the declared-but-unused test above
   # seeded near, not at, the prediction: an exactly zero residual degenerates
@@ -260,7 +260,7 @@ test_that("one-step-ahead residuals work on every at-age stream", {
   fidx <- array(0, dim = aa_dim)
   for(y in 1:n_yrs) {
     for(a in 1:n_ages) {
-      fidx[1, y, 1, a, 1] <- sum(r0$FishIAA[, 1, y, 1, a, , 1]) * exp(stats::rnorm(1, 0, 0.2))
+      fidx[1, y, 1, a, 1, 1] <- sum(r0$FishIAA[, 1, y, 1, a, , 1]) * exp(stats::rnorm(1, 0, 0.2))
     } # end a loop
   } # end y loop
 

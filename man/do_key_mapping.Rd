@@ -19,9 +19,10 @@ do_key_mapping(
 \arguments{
 \item{input_list}{Named list with \code{$data}, \code{$par} and \code{$map}.}
 
-\item{key}{Integer matrix \code{[n_ages, n_fleets]}, or \code{NULL} for the
-default given by \code{default_shared}. Gains a leading population
-dimension when \code{pop} is \code{TRUE}.}
+\item{key}{Integer array \code{[n_ages, n_sexes, n_fleets]}, or \code{NULL}
+for the default given by \code{default_shared}. Gains a leading population
+dimension when \code{pop} is \code{TRUE}. The sex margin is required: a key
+coupling the sexes says so by repeating its entries across them.}
 
 \item{spec}{\code{"est"} or \code{"fix"}.}
 

@@ -389,7 +389,8 @@ Get_Init_NAA <- function(init_age_strc,
                          ln_InitDevs,
                          Mrate = NULL,
                          move_timing = 0
-) {
+,
+                         expm_nsub = 0) {
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
@@ -482,7 +483,7 @@ Get_Init_NAA <- function(init_age_strc,
                 moves = (do_recruits_move == 1 || a > 1)
                 Mv = if(moves) Movement[p,,,seas,a,s] else diag(n_regions)
                 Qv = if(moves) Mrate[p,,,seas,a,s] else matrix(0, n_regions, n_regions)
-                step_ra[,a] = advance_seas(Init_NAA[p,,a,s], Mv, Z_ra[,a], Qv, seasdur[seas], move_timing)
+                step_ra[,a] = advance_seas(Init_NAA[p,,a,s], Mv, Z_ra[,a], Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
               } # end a loop
               if(seas < n_seas) {
                 Init_NAA_next_year[p,,1:n_ages,s] = step_ra
@@ -599,7 +600,7 @@ Get_Init_NAA <- function(init_age_strc,
                 moves = (do_recruits_move == 1 || a > 1)
                 Mv = if(moves) Movement[p,,,seas,a,s] else diag(n_regions)
                 Qv = if(moves) Mrate[p,,,seas,a,s] else matrix(0, n_regions, n_regions)
-                step_ra[,a] = advance_seas(Init_NAA[p,,a,s], Mv, Z_ra[,a], Qv, seasdur[seas], move_timing)
+                step_ra[,a] = advance_seas(Init_NAA[p,,a,s], Mv, Z_ra[,a], Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
               } # end a loop
               if(seas < n_seas) {
                 Init_NAA[p,,1:n_ages,s] = step_ra
@@ -630,8 +631,8 @@ Get_Init_NAA <- function(init_age_strc,
           Z_plus_s = (natmort[p,,n_ages,s] * seasdur[seas]) + F_plus
           Qp = if(is.null(Mrate)) NULL else Mrate[p,,,seas,n_ages-1,s]
           Ql = if(is.null(Mrate)) NULL else Mrate[p,,,seas,n_ages,s]
-          T_penult = t(build_seas_operator(Movement[p,,,seas,n_ages-1,s], Z_penult, Qp, seasdur[seas], move_timing)) %*% T_penult
-          T_plus = t(build_seas_operator(Movement[p,,,seas,n_ages,s], Z_plus_s, Ql, seasdur[seas], move_timing)) %*% T_plus
+          T_penult = t(build_seas_operator(Movement[p,,,seas,n_ages-1,s], Z_penult, Qp, seasdur[seas], move_timing, expm_nsub = expm_nsub)) %*% T_penult
+          T_plus = t(build_seas_operator(Movement[p,,,seas,n_ages,s], Z_plus_s, Ql, seasdur[seas], move_timing, expm_nsub = expm_nsub)) %*% T_plus
         }
         source = T_penult %*% Init_NAA[p,,n_ages-1,s] # compute forward projection of penultimate age
         Init_NAA[p,,n_ages,s] = solve(diag(n_regions) - T_plus, source)
@@ -687,7 +688,7 @@ Get_Init_NAA <- function(init_age_strc,
                 moves = (do_recruits_move == 1 || a > 1)
                 Mv = if(moves) Movement[p,,,seas,a,s] else diag(n_regions)
                 Qv = if(moves) Mrate[p,,,seas,a,s] else matrix(0, n_regions, n_regions)
-                step_ra[,a] = advance_seas(Init_NAA[p,,a,s], Mv, Z_ra[,a], Qv, seasdur[seas], move_timing)
+                step_ra[,a] = advance_seas(Init_NAA[p,,a,s], Mv, Z_ra[,a], Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
               } # end a loop
               if(seas < n_seas) {
                 Init_NAA[p,,1:n_ages,s] = step_ra

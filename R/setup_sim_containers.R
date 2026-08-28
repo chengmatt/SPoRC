@@ -156,11 +156,13 @@ Setup_Sim_Containers <- function(sim_list) {
   # At-age observation streams. Allocated always so the simulator can write into
   # them whenever a fleet is configured for catch at age or an index at age.
   aa_fish <- c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages,
-               sim_list$n_fish_fleets, sim_list$n_sims)
+               sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims)
   aa_srv <- c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages,
-              sim_list$n_srv_fleets, sim_list$n_sims)
+              sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims)
   sim_list$TrueCatchAA <- array(0, dim = aa_fish)
   sim_list$ObsCatchAA <- array(0, dim = aa_fish)
+  sim_list$TrueDiscardAA <- array(0, dim = aa_fish)
+  sim_list$ObsDiscardAA <- array(0, dim = aa_fish)
   sim_list$TrueSrvIdxAA <- array(0, dim = aa_srv)
   sim_list$ObsSrvIdxAA <- array(0, dim = aa_srv)
   sim_list$TrueFishIdxAA <- array(0, dim = aa_fish)

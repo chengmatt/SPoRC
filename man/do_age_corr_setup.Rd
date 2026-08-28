@@ -2,36 +2,60 @@
 % Please edit documentation in R/setup_mapping.R
 \name{do_age_corr_setup}
 \alias{do_age_corr_setup}
-\title{Set the across-age correlation for one at-age stream}
+\title{Set the correlation structure for one at-age stream}
 \usage{
 do_age_corr_setup(
   input_list,
   corr,
   stream,
   fleet_field,
-  starting_values = list()
+  use_field,
+  starting_values = list(),
+  rho_key = NULL,
+  pop = FALSE
 )
 }
 \arguments{
 \item{input_list}{Named list with \code{$data}, \code{$par} and \code{$map}.}
 
-\item{corr}{\code{"iid"} or \code{"1dar1"}.}
+\item{corr}{\code{"iid"}, \code{"1dar1"}, \code{"us"} or \code{"2dar1"},
+either one setting for every fleet or one per fleet.}
 
 \item{stream}{Stream tag: \code{"catch"}, \code{"discard"},
 \code{"fish_idx"} or \code{"srv_idx"}.}
 
 \item{fleet_field}{\code{"n_fish_fleets"} or \code{"n_srv_fleets"}.}
 
+\item{use_field}{Name of the use array for this stream.}
+
 \item{starting_values}{Named list from the caller's \code{...}.}
+
+\item{rho_key}{Integer matrix \code{[n_sexes, n_fleets]} coupling the
+across-age correlation, or \code{NULL} for one per fleet shared across
+sexes. Equal entries share a parameter and \code{NA} excludes one.}
+
+\item{pop}{Logical. \code{TRUE} for the population-specific stream.}
 }
 \value{
-\code{input_list} with the stream's correlation flag and its per-fleet
-  correlation parameter set.
+\code{input_list} with the stream's correlation flag and its
+  correlation parameters set.
 }
 \description{
-the ICES convention, per stream. Each stream is configured where its
-data are configured, so the catch and discard streams are set in
-\code{\link{Setup_Mod_Catch_and_F}} and the index streams in their own
-setup functions.
+Each stream is configured where its data are configured, so the catch and
+discard streams are set in \code{\link{Setup_Mod_Catch_and_F}} and the index
+streams in their own setup functions. The population-specific form carries its
+own setting rather than borrowing the aggregated one.
+}
+\details{
+Four structures are available, per fleet. \code{"iid"} treats ages as
+independent. \code{"1dar1"} correlates them as an AR(1) in age distance, so a
+fleet skipping ages is spaced correctly rather than treated as consecutive.
+\code{"us"} estimates an unstructured correlation across ages, the third
+structure ICES age-structured assessments offer. \code{"2dar1"} correlates
+over ages and years jointly through a separable AR(1), which is defined on a
+complete grid and so requires the fleet's observed ages and years to form one.
+
+Correlations are one per fleet, shared across sexes, unless a key says
+otherwise. A sex a fleet never observes carries no parameter.
 }
 \keyword{internal}

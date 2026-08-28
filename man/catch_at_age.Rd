@@ -4,7 +4,16 @@
 \alias{catch_at_age}
 \title{Catch-at-age over one season, consistent with the movement timing}
 \usage{
-catch_at_age(N, Move, Z, Q = NULL, dur = 1, F_landed, move_timing = 0)
+catch_at_age(
+  N,
+  Move,
+  Z,
+  Q = NULL,
+  dur = 1,
+  F_landed,
+  move_timing = 0,
+  expm_nsub = 0
+)
 }
 \arguments{
 \item{N}{Numeric vector of length \code{n_regions} at the start of the season.}
@@ -31,6 +40,11 @@ fishing mortality to apply (retained, discarded or landed, per the caller).}
 \code{0} = movement then mortality (default, historical SPoRC behaviour),
 \code{1} = mortality then movement, \code{2} = continuous (simultaneous)
 movement and mortality.}
+
+\item{expm_nsub}{Integer controlling how the matrix exponential is evaluated
+under \code{move_timing = 2}: \code{0} (default) uses \code{Matrix::expm},
+a value \eqn{n \ge 1} uses the implicit backward Euler scheme
+\eqn{(I - A/n)^{-n}}. See \code{\link{mat_exp}}.}
 }
 \value{
 Numeric vector of length \code{n_regions} giving catch by region.

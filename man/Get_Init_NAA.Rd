@@ -26,7 +26,8 @@ Get_Init_NAA(
   do_recruits_move,
   ln_InitDevs,
   Mrate = NULL,
-  move_timing = 0
+  move_timing = 0,
+  expm_nsub = 0
 )
 }
 \arguments{

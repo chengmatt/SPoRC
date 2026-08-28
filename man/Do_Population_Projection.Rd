@@ -53,7 +53,8 @@ Do_Population_Projection(
      rec_seas_prop
  },
   Mrate = NULL,
-  move_timing = 0
+  move_timing = 0,
+  expm_nsub = 0
 )
 }
 \arguments{
@@ -307,6 +308,10 @@ runs the two continuously and simultaneously, which also switches
 catch-at-age to the spatial Baranov form built on season-integrated
 abundance. Must match the timing used to derive the reference points the
 projection is run against.}
+
+\item{expm_nsub}{Integer controlling how the matrix exponential is evaluated under
+`move_timing = 2`: `0` uses `Matrix::expm`, `n >= 1` uses `n` implicit backward
+Euler substeps. See [mat_exp()].}
 }
 \value{
 A named list of projected quantities. Year index 1 is the terminal

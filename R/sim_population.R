@@ -230,7 +230,8 @@ generate_recruitment <- function(y,
                                        Mrate = if(is.null(Mrate)) NULL else array(Mrate[,,,1,,,1,sim], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
                                        move_timing = move_timing
 
-    )
+    ,
+    expm_nsub = expm_nsub)
 
 
     # if Rec_input exists and year index is within bounds
@@ -313,6 +314,7 @@ compute_biom_y_sim <- function(y, seas, sim, sim_env) {
   sgl_seas_spawning_movement <- sim_env$sgl_seas_spawning_movement
   Movement <- sim_env$Movement; Mrate <- sim_env$Mrate
   move_timing <- if(is.null(sim_env$move_timing)) 0 else sim_env$move_timing
+  expm_nsub <- if(is.null(sim_env$expm_nsub)) 0 else sim_env$expm_nsub
   do_recruits_move <- sim_env$do_recruits_move
 
   tmp_NAA_spawn <- NAA[,,y,seas,,,sim, drop = FALSE]
@@ -327,9 +329,9 @@ compute_biom_y_sim <- function(y, seas, sim, sim_env) {
           Mv <- if(moves) Movement[p,,,y,seas,a,s,sim] else diag(n_regions)
           Qv <- if(moves) Mrate[p,,,y,seas,a,s,sim] else matrix(0, n_regions, n_regions)
           tmp_NAA_spawn[p,,1,1,a,s,1] <- spawn_state(tmp_NAA_spawn[p,,1,1,a,s,1], Mv,
-                                                     ZAA[p,,y,seas,a,s,sim], Qv, seasdur[seas], t_spawn, move_timing)
+                                                     ZAA[p,,y,seas,a,s,sim], Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub)
           tmp_NAA0_spawn[p,,1,1,a,s,1] <- spawn_state(tmp_NAA0_spawn[p,,1,1,a,s,1], Mv,
-                                                      natmort[p,,y,a,s,sim] * seasdur[seas], Qv, seasdur[seas], t_spawn, move_timing)
+                                                      natmort[p,,y,a,s,sim] * seasdur[seas], Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub)
         } # end s loop
       } # end a loop
     } # end p loop
@@ -571,9 +573,9 @@ apply_pop_dy <- function(y, sim, sim_env) {
               Mv <- if(moves) Movement[p,,,y,seas,a,s,sim] else diag(n_regions)
               Qv <- if(moves) Mrate[p,,,y,seas,a,s,sim] else matrix(0, n_regions, n_regions)
               sstep_NAA[p,,a,s] <- advance_seas(NAA[p,,y,seas,a,s,sim], Mv, ZAA[p,,y,seas,a,s,sim],
-                                                Qv, seasdur[seas], move_timing)
+                                                Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
               sstep_NAA0[p,,a,s] <- advance_seas(NAA0[p,,y,seas,a,s,sim], Mv, tmp_natmort[p,,a,s],
-                                                 Qv, seasdur[seas], move_timing)
+                                                 Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
             } # end s loop
           } # end a loop
         } # end p loop
@@ -752,6 +754,7 @@ Simulate_Pop_Static <- function(sim_list,
                   Movement = sim_env$Movement,
                   Mrate = sim_env$Mrate,
                   move_timing = sim_env$move_timing,
+                  expm_nsub = if(is.null(sim_env$expm_nsub)) 0 else sim_env$expm_nsub,
                   sgl_seas_spawning_movement = sim_env$sgl_seas_spawning_movement,
                   NAA = sim_env$NAA,
                   NAA_bef = sim_env$NAA_bef,

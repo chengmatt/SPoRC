@@ -41,7 +41,8 @@ get_survey_observation_model(
   do_caal = 0,
   Srv_caal = NULL,
   SizeAgeTrans_srv = NULL,
-  srv_len_comp_sel = NULL
+  srv_len_comp_sel = NULL,
+  expm_nsub = 0
 )
 }
 \arguments{

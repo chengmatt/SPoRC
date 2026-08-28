@@ -595,8 +595,8 @@ run_internal_tag_osa <- function(model, data, osa_method = NULL, parallel = FALS
 #'
 #' @param index_source One of \code{"Catch"}, \code{"Discard"}, \code{"FishIdx"},
 #'   \code{"SrvIdx"}, or their at-age forms \code{"CatchAA"}, \code{"DiscardAA"},
-#'   \code{"FishIdxAA"}, \code{"SrvIdxAA"}. At-age sources return an extra
-#'   \code{age} column.
+#'   \code{"FishIdxAA"}, \code{"SrvIdxAA"}. At-age sources return extra
+#'   \code{age} and \code{sex} columns.
 #' @param pop Logical; population-specific index source.
 #'
 #' @return A named list of field names: \code{Obs}, \code{Use}.
@@ -626,8 +626,8 @@ index_osa_field_map <- function(index_source, pop = FALSE) {
 #'   to build \code{model}.
 #' @param index_source One of \code{"Catch"}, \code{"Discard"}, \code{"FishIdx"},
 #'   \code{"SrvIdx"}, or their at-age forms \code{"CatchAA"}, \code{"DiscardAA"},
-#'   \code{"FishIdxAA"}, \code{"SrvIdxAA"}. At-age sources return an extra
-#'   \code{age} column.
+#'   \code{"FishIdxAA"}, \code{"SrvIdxAA"}. At-age sources return extra
+#'   \code{age} and \code{sex} columns.
 #' @param pop Logical; population-specific index source. Default \code{FALSE}.
 #' @param osa_method Optional override for \code{RTMB::oneStepPredict}'s
 #'   \code{method}. Must be one of \code{"oneStepGeneric"},
@@ -636,10 +636,12 @@ index_osa_field_map <- function(index_source, pop = FALSE) {
 #' @param parallel Whether or not to parallelize OSA computation. Defaults to \code{FALSE}.
 #'
 #' @return A list with one element \code{res}: columns \code{fleet},
-#'   \code{region}, \code{year}, \code{season}, \code{pop}, \code{resid}, and
-#'   \code{idx_type} (set to \code{index_source}; named \code{idx_type} rather
-#'   than \code{comp_type} because index-type sources are not compositions), or
-#'   \code{NULL} if no data of the requested source is present.
+#'   \code{region}, \code{year}, \code{season}, \code{pop}, \code{age},
+#'   \code{sex}, \code{resid}, and \code{idx_type} (set to
+#'   \code{index_source}; named \code{idx_type} rather than \code{comp_type}
+#'   because index-type sources are not compositions), or \code{NULL} if no data
+#'   of the requested source is present. \code{age} and \code{sex} are
+#'   \code{NA} for the aggregated sources.
 #' @keywords internal
 run_internal_index_osa <- function(model, data, index_source, pop = FALSE,
                                    osa_method = NULL, parallel = FALSE) {
@@ -653,9 +655,9 @@ run_internal_index_osa <- function(model, data, index_source, pop = FALSE,
   }
 
   valid_idx <- which(use_arr == 1)
-  # at-age sources carry an age dimension before the fleet
+  # at-age sources carry an age and a sex dimension before the fleet
   at_age <- grepl("AA$", index_source)
-  dim_names <- c(if(pop) "pop", "region", "year", "season", if(at_age) "age", "fleet")
+  dim_names <- c(if(pop) "pop", "region", "year", "season", if(at_age) c("age", "sex"), "fleet")
   map <- as.data.frame(arrayInd(valid_idx, dim(use_arr)))
   colnames(map) <- dim_names
 
@@ -673,6 +675,7 @@ run_internal_index_osa <- function(model, data, index_source, pop = FALSE,
     season = map$season,
     pop = if(pop) map$pop else 1L,
     age = if(at_age) data$ages[map$age] else NA_integer_,
+    sex = if(at_age) map$sex else NA_integer_,
     resid = osa$residual,
     idx_type = index_source
   )
@@ -1156,9 +1159,11 @@ plot_resids <- function(osa_results) {
     multi_region <- has_multi("region")
     multi_seas   <- has_multi("season")
     multi_age    <- has_multi("age")   # at-age sources only
+    multi_sex    <- has_multi("sex")   # and only when the stream splits sexes
 
     idx_row_vars <- c(if(multi_region) "region", if(multi_age) "age")
-    idx_col_vars <- c(if(multi_seas) "season", if(multi_fleet) "fleet", if(multi_pop) "pop")
+    idx_col_vars <- c(if(multi_seas) "season", if(multi_fleet) "fleet", if(multi_pop) "pop",
+                      if(multi_sex) "sex")
 
     sdnr <- sdnr_table(res, c(idx_row_vars, idx_col_vars))
     sdnr_plot <- qq_base(res, sdnr) + build_facet(idx_row_vars, idx_col_vars)

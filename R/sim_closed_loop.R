@@ -483,6 +483,14 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     UseCatchAA = data$UseCatchAA, UseDiscardAA = data$UseDiscardAA,
     UseFishIdxAA = data$UseFishIdxAA, use_catch_aa = data$use_catch_aa,
     use_discard_aa = data$use_discard_aa, use_fish_idx_aa = data$use_fish_idx_aa,
+    ObsCatchAA_SE = data$ObsCatchAA_SE, ObsDiscardAA_SE = data$ObsDiscardAA_SE,
+    ObsFishIdxAA_SE = data$ObsFishIdxAA_SE,
+    CatchAA_Type = data$CatchAA_Type, DiscardAA_Type = data$DiscardAA_Type,
+    FishIdxAA_Type = data$FishIdxAA_Type,
+    CatchAA_LikeType = data$CatchAA_LikeType, DiscardAA_LikeType = data$DiscardAA_LikeType,
+    FishIdxAA_LikeType = data$FishIdxAA_LikeType,
+    CatchAA_sigma_form = data$CatchAA_sigma_form, DiscardAA_sigma_form = data$DiscardAA_sigma_form,
+    FishIdxAA_sigma_form = data$FishIdxAA_sigma_form,
     ln_sigmaC_pop = ln_sigmaC_pop,
     Fmort_input = extend_years(replicate(n = sim_list$n_sims, rep$Fmort[,1:length(data$years),,,drop = FALSE]), n_years = closed_loop_yrs, 2, fill = 'zeros'),
     ln_sigmaD = ln_sigmaD,
@@ -664,6 +672,8 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     ObsSrvIdx_SE = ObsSrvIdx_SE,
     ln_sigmaSrvIdxAA = optim_parameters_list$ln_sigmaSrvIdxAA,
     UseSrvIdxAA = data$UseSrvIdxAA, use_srv_idx_aa = data$use_srv_idx_aa,
+    ObsSrvIdxAA_SE = data$ObsSrvIdxAA_SE, SrvIdxAA_Type = data$SrvIdxAA_Type,
+    SrvIdxAA_LikeType = data$SrvIdxAA_LikeType, SrvIdxAA_sigma_form = data$SrvIdxAA_sigma_form,
     ObsSrvIdx_pop_SE = ObsSrvIdx_pop_SE,
     srv_idx_type = data$srv_idx_type,
     t_srv = data$t_srv,
@@ -858,6 +868,9 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   sim_list$move_timing <- if(!"move_timing" %in% names(args)) {
     if(is.null(data$move_timing)) 0 else data$move_timing
   } else args$move_timing
+  sim_list$expm_nsub <- if(!"move_expm_nsub" %in% names(args)) {
+    if(is.null(data$move_expm_nsub)) 0 else data$move_expm_nsub
+  } else args$move_expm_nsub
   sim_list$Mrate <- if("Mrate" %in% names(args)) args$Mrate else {
     if(sim_list$move_timing != 2 || is.null(rep$Mrate)) NULL
     else extend_years(replicate(n = sim_list$n_sims, rep$Mrate[,,,1:length(data$years),,,,drop = FALSE]), closed_loop_yrs, 4, 'last')
@@ -943,7 +956,8 @@ get_closed_loop_reference_points <- function(use_true_values,
       WAA = array(sim_env$WAA[,,1:y, ,, , sim], dim = c(sim_env$n_pop, sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes)),
       MatAA = array(sim_env$MatAA[,, 1:y,, , , sim], dim = c(sim_env$n_pop, sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes)),
       do_recruits_move = sim_env$do_recruits_move,
-      move_timing = if(is.null(sim_env$move_timing)) 0 else sim_env$move_timing
+      move_timing = if(is.null(sim_env$move_timing)) 0 else sim_env$move_timing,
+      move_expm_nsub = if(is.null(sim_env$expm_nsub)) 0 else sim_env$expm_nsub
     )
 
     # Build rep list if not doing assessment (using truth)

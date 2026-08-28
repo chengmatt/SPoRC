@@ -434,6 +434,10 @@ global_Fmsy <- function(pars,
   # assigning before getAll, which would collide with its own definition.
   if(!exists("rec_model", inherits = FALSE)) rec_model <- 1
 
+  # As with rec_model, expm_nsub is only present on data lists built since the
+  # implicit matrix exponential option, so fall back to the exact exponential.
+  if(!exists("expm_nsub", inherits = FALSE)) expm_nsub <- 0
+
   # rec_model 0 is mean recruitment, which has no curve to maximise yield over.
   # The helpers below branch on Ricker against everything else, so without this
   # a mean recruitment fit would come back with Beverton-Holt numbers.
@@ -518,8 +522,8 @@ global_Fmsy <- function(pars,
       ## Spawning biomass
       if (seas == spawn_seas) {
         # Propagate to the spawning point; movement and t_spawn mortality applied together
-        tmp_unfished_spawn = spawn_state(tmp_unfished, Mv, M_a_seas, Qv, seasdur[seas], t_spawn, move_timing)
-        tmp_fished_spawn   = spawn_state(tmp_fished,   Mv, Z_seas,   Qv, seasdur[seas], t_spawn, move_timing)
+        tmp_unfished_spawn = spawn_state(tmp_unfished, Mv, M_a_seas, Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub)
+        tmp_fished_spawn   = spawn_state(tmp_fished,   Mv, Z_seas,   Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub)
         SB_age[1,, j - 1] = tmp_unfished_spawn * WAA[, spawn_seas, j - 1] * MatAA[, spawn_seas, j - 1]
         SB_age[2,, j - 1] = tmp_fished_spawn * WAA[, spawn_seas, j - 1] * MatAA[, spawn_seas, j - 1]
       }
@@ -528,11 +532,11 @@ global_Fmsy <- function(pars,
       # under move_timing 0, pre-movement under 1. Under continuous movement they
       # redistribute while dying, so the spatial Baranov integral is required instead.
       CAA[,seas, j - 1] = catch_at_age(tmp_fished, Mv, Z_seas, Qv, seasdur[seas],
-                                       landed_F_seas, move_timing)
+                                       landed_F_seas, move_timing, expm_nsub = expm_nsub)
 
       ## Movement, mortality and ageing
-      adv_unfished = advance_seas(tmp_unfished, Mv, M_a_seas, Qv, seasdur[seas], move_timing)
-      adv_fished   = advance_seas(tmp_fished,   Mv, Z_seas,   Qv, seasdur[seas], move_timing)
+      adv_unfished = advance_seas(tmp_unfished, Mv, M_a_seas, Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
+      adv_fished   = advance_seas(tmp_fished,   Mv, Z_seas,   Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
 
       if (seas < n_seas) { # Within season mortality
         Nspr[1,, j - 1] = adv_unfished
@@ -561,9 +565,9 @@ global_Fmsy <- function(pars,
     Z_seas = natmort[,n_ages - 1] * seasdur[seas] + ret_F_seas + disc_F_seas
     CAA[,seas, n_ages - 1] = catch_at_age(tmp_caa, Movement[,,seas,n_ages-1], Z_seas,
                                           Mrate[,,seas,n_ages-1], seasdur[seas],
-                                          landed_F_seas, move_timing)
+                                          landed_F_seas, move_timing, expm_nsub = expm_nsub)
     tmp_caa = advance_seas(tmp_caa, Movement[,,seas,n_ages-1], Z_seas,
-                           Mrate[,,seas,n_ages-1], seasdur[seas], move_timing)
+                           Mrate[,,seas,n_ages-1], seasdur[seas], move_timing, expm_nsub = expm_nsub)
   }
 
   # advance into spawning season
@@ -577,9 +581,9 @@ global_Fmsy <- function(pars,
 
       # Apply seasonal movement and mortality together, per move_timing
       tmp_unfished = advance_seas(tmp_unfished, Movement[,,seas,n_ages-1], M_seas,
-                                  Mrate[,,seas,n_ages-1], seasdur[seas], move_timing)
+                                  Mrate[,,seas,n_ages-1], seasdur[seas], move_timing, expm_nsub = expm_nsub)
       tmp_fished = advance_seas(tmp_fished, Movement[,,seas,n_ages-1], Z_seas,
-                                Mrate[,,seas,n_ages-1], seasdur[seas], move_timing)
+                                Mrate[,,seas,n_ages-1], seasdur[seas], move_timing, expm_nsub = expm_nsub)
 
     } # end seas loop
   }
@@ -588,9 +592,9 @@ global_Fmsy <- function(pars,
   Zu_spawn = natmort[, n_ages - 1] * seasdur[spawn_seas]
   Zf_spawn = Zu_spawn + ret_F_by_region(n_ages - 1, spawn_seas) + disc_F_by_region(n_ages - 1, spawn_seas)
   tmp_unfished = spawn_state(tmp_unfished, Movement[,, spawn_seas, n_ages - 1], Zu_spawn,
-                             Mrate[,, spawn_seas, n_ages - 1], seasdur[spawn_seas], t_spawn, move_timing)
+                             Mrate[,, spawn_seas, n_ages - 1], seasdur[spawn_seas], t_spawn, move_timing, expm_nsub = expm_nsub)
   tmp_fished   = spawn_state(tmp_fished, Movement[,, spawn_seas, n_ages - 1], Zf_spawn,
-                             Mrate[,, spawn_seas, n_ages - 1], seasdur[spawn_seas], t_spawn, move_timing)
+                             Mrate[,, spawn_seas, n_ages - 1], seasdur[spawn_seas], t_spawn, move_timing, expm_nsub = expm_nsub)
   SB_age[1,, n_ages - 1] = tmp_unfished * WAA[, spawn_seas, n_ages - 1] * MatAA[, spawn_seas, n_ages - 1]
   SB_age[2,, n_ages - 1] = tmp_fished * WAA[, spawn_seas, n_ages - 1] * MatAA[, spawn_seas, n_ages - 1]
 
@@ -614,8 +618,8 @@ global_Fmsy <- function(pars,
     seasdur = seasdur,
     Mrate_penult = array(Mrate[,,, n_ages - 1], dim = c(n_regions, n_regions, n_seas)),
     Mrate_plus   = array(Mrate[,,, n_ages], dim = c(n_regions, n_regions, n_seas)),
-    move_timing = move_timing
-  )
+    move_timing = move_timing,
+    expm_nsub = expm_nsub)
 
   pg = solve_plus_group(Ts, Nspr[1,, n_ages - 1], Nspr[2,, n_ages - 1], n_regions)
   Nspr[1,, n_ages] = pg$unfished
@@ -634,9 +638,9 @@ global_Fmsy <- function(pars,
     Z_seas = natmort[,n_ages] * seasdur[seas] + ret_F_seas + disc_F_seas
     CAA[,seas, n_ages] = catch_at_age(tmp_caa, Movement[,,seas,n_ages], Z_seas,
                                       Mrate[,,seas,n_ages], seasdur[seas],
-                                      landed_F_seas, move_timing)
+                                      landed_F_seas, move_timing, expm_nsub = expm_nsub)
     tmp_caa = advance_seas(tmp_caa, Movement[,,seas,n_ages], Z_seas,
-                           Mrate[,,seas,n_ages], seasdur[seas], move_timing)
+                           Mrate[,,seas,n_ages], seasdur[seas], move_timing, expm_nsub = expm_nsub)
   }
 
 
@@ -651,9 +655,9 @@ global_Fmsy <- function(pars,
 
       # Apply seasonal movement and mortality together, per move_timing
       tmp_unfished = advance_seas(tmp_unfished, Movement[,,seas,n_ages], M_seas,
-                                  Mrate[,,seas,n_ages], seasdur[seas], move_timing)
+                                  Mrate[,,seas,n_ages], seasdur[seas], move_timing, expm_nsub = expm_nsub)
       tmp_fished = advance_seas(tmp_fished, Movement[,,seas,n_ages], Z_seas,
-                                Mrate[,,seas,n_ages], seasdur[seas], move_timing)
+                                Mrate[,,seas,n_ages], seasdur[seas], move_timing, expm_nsub = expm_nsub)
 
     } # end seas loop
   }
@@ -662,9 +666,9 @@ global_Fmsy <- function(pars,
   Zu_spawn_plus = natmort[, n_ages] * seasdur[spawn_seas]
   Zf_spawn_plus = Zu_spawn_plus + ret_F_by_region(n_ages, spawn_seas) + disc_F_by_region(n_ages, spawn_seas)
   tmp_unfished = spawn_state(tmp_unfished, Movement[,, spawn_seas, n_ages], Zu_spawn_plus,
-                             Mrate[,, spawn_seas, n_ages], seasdur[spawn_seas], t_spawn, move_timing)
+                             Mrate[,, spawn_seas, n_ages], seasdur[spawn_seas], t_spawn, move_timing, expm_nsub = expm_nsub)
   tmp_fished   = spawn_state(tmp_fished, Movement[,, spawn_seas, n_ages], Zf_spawn_plus,
-                             Mrate[,, spawn_seas, n_ages], seasdur[spawn_seas], t_spawn, move_timing)
+                             Mrate[,, spawn_seas, n_ages], seasdur[spawn_seas], t_spawn, move_timing, expm_nsub = expm_nsub)
   SB_age[1,, n_ages] = tmp_unfished * WAA[, spawn_seas, n_ages] * MatAA[, spawn_seas, n_ages]
   SB_age[2,, n_ages] = tmp_fished * WAA[, spawn_seas, n_ages] * MatAA[, spawn_seas, n_ages]
 
@@ -796,6 +800,10 @@ local_Fmsy_sglpop <- function(pars, data) {
   # assigning before getAll, which would collide with its own definition.
   if(!exists("rec_model", inherits = FALSE)) rec_model <- 1
 
+  # As with rec_model, expm_nsub is only present on data lists built since the
+  # implicit matrix exponential option, so fall back to the exact exponential.
+  if(!exists("expm_nsub", inherits = FALSE)) expm_nsub <- 0
+
   # rec_model 0 is mean recruitment, which has no curve to maximise yield over.
   # The helpers below branch on Ricker against everything else, so without this
   # a mean recruitment fit would come back with Beverton-Holt numbers.
@@ -881,19 +889,19 @@ local_Fmsy_sglpop <- function(pars, data) {
 
         ## Spawning biomass; movement and t_spawn mortality applied together
         if(seas == spawn_seas) {
-          tmp_unfished_spawn = spawn_state(tmp_unfished, Mv, M_seas, Qv, seasdur[seas], t_spawn, move_timing)
-          tmp_fished_spawn   = spawn_state(tmp_fished,   Mv, Z_seas, Qv, seasdur[seas], t_spawn, move_timing)
+          tmp_unfished_spawn = spawn_state(tmp_unfished, Mv, M_seas, Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub)
+          tmp_fished_spawn   = spawn_state(tmp_fished,   Mv, Z_seas, Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub)
           SB_age[1, o,, j - 1] = tmp_unfished_spawn * WAA[, spawn_seas, j - 1] * MatAA[, spawn_seas, j - 1]
           SB_age[2, o,, j - 1] = tmp_fished_spawn   * WAA[, spawn_seas, j - 1] * MatAA[, spawn_seas, j - 1]
         }
 
         # Catch-at-age, taken where the fish are during the season per move_timing
         CAA[o,, seas, j - 1] = catch_at_age(tmp_fished, Mv, Z_seas, Qv, seasdur[seas],
-                                            landed_F_seas, move_timing)
+                                            landed_F_seas, move_timing, expm_nsub = expm_nsub)
 
         ## Movement, mortality and ageing
-        adv_unfished = advance_seas(tmp_unfished, Mv, M_seas, Qv, seasdur[seas], move_timing)
-        adv_fished   = advance_seas(tmp_fished,   Mv, Z_seas, Qv, seasdur[seas], move_timing)
+        adv_unfished = advance_seas(tmp_unfished, Mv, M_seas, Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
+        adv_fished   = advance_seas(tmp_fished,   Mv, Z_seas, Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
 
         if(seas < n_seas) { # Within season mortality
           Nspr[1, o,, j - 1] = adv_unfished
@@ -924,9 +932,9 @@ local_Fmsy_sglpop <- function(pars, data) {
       Z_seas = natmort[, n_ages - 1] * seasdur[seas] + ret_F_seas + disc_F_seas
       CAA[o,, seas, n_ages - 1] = catch_at_age(tmp_caa, Movement[,,seas, n_ages - 1], Z_seas,
                                                Mrate[,,seas, n_ages - 1], seasdur[seas],
-                                               landed_F_seas, move_timing)
+                                               landed_F_seas, move_timing, expm_nsub = expm_nsub)
       tmp_caa = advance_seas(tmp_caa, Movement[,,seas, n_ages - 1], Z_seas,
-                             Mrate[,,seas, n_ages - 1], seasdur[seas], move_timing)
+                             Mrate[,,seas, n_ages - 1], seasdur[seas], move_timing, expm_nsub = expm_nsub)
     }
   }
 
@@ -941,10 +949,10 @@ local_Fmsy_sglpop <- function(pars, data) {
 
         # Apply seasonal movement and mortality together, per move_timing
         tmp_unfished[o,] = advance_seas(tmp_unfished[o,], Movement[,,seas, n_ages - 1], M_seas,
-                                        Mrate[,,seas, n_ages - 1], seasdur[seas], move_timing)
+                                        Mrate[,,seas, n_ages - 1], seasdur[seas], move_timing, expm_nsub = expm_nsub)
         tmp_fished[o,]   = advance_seas(tmp_fished[o,], Movement[,,seas, n_ages - 1],
                                         M_seas + ret_F_seas + disc_F_seas,
-                                        Mrate[,,seas, n_ages - 1], seasdur[seas], move_timing)
+                                        Mrate[,,seas, n_ages - 1], seasdur[seas], move_timing, expm_nsub = expm_nsub)
 
       } # end seas loop
     } # end o loop
@@ -958,10 +966,10 @@ local_Fmsy_sglpop <- function(pars, data) {
   for(o in 1:n_regions) {
     tmp_unfished_spawn[o,] = spawn_state(tmp_unfished_spawn[o,], Movement[,,spawn_seas, n_ages - 1],
                                          Zu_spawn, Mrate[,,spawn_seas, n_ages - 1],
-                                         seasdur[spawn_seas], t_spawn, move_timing)
+                                         seasdur[spawn_seas], t_spawn, move_timing, expm_nsub = expm_nsub)
     tmp_fished_spawn[o,]   = spawn_state(tmp_fished_spawn[o,], Movement[,,spawn_seas, n_ages - 1],
                                          Zf_spawn, Mrate[,,spawn_seas, n_ages - 1],
-                                         seasdur[spawn_seas], t_spawn, move_timing)
+                                         seasdur[spawn_seas], t_spawn, move_timing, expm_nsub = expm_nsub)
   }
 
   SB_age[1,,, n_ages - 1] = tmp_unfished_spawn * WAA[, spawn_seas, n_ages - 1] * MatAA[, spawn_seas, n_ages - 1]
@@ -988,8 +996,8 @@ local_Fmsy_sglpop <- function(pars, data) {
     seasdur    = seasdur,
     Mrate_penult = array(Mrate[,,, n_ages - 1], dim = c(n_regions, n_regions, n_seas)),
     Mrate_plus   = array(Mrate[,,, n_ages],     dim = c(n_regions, n_regions, n_seas)),
-    move_timing  = move_timing
-  )
+    move_timing  = move_timing,
+    expm_nsub = expm_nsub)
 
   for(o in 1:n_regions) {
     # Get and input plus group
@@ -1012,9 +1020,9 @@ local_Fmsy_sglpop <- function(pars, data) {
       Z_seas = natmort[, n_ages] * seasdur[seas] + ret_F_seas + disc_F_seas
       CAA[o,, seas, n_ages] = catch_at_age(tmp_caa, Movement[,,seas, n_ages], Z_seas,
                                            Mrate[,,seas, n_ages], seasdur[seas],
-                                           landed_F_seas, move_timing)
+                                           landed_F_seas, move_timing, expm_nsub = expm_nsub)
       tmp_caa = advance_seas(tmp_caa, Movement[,,seas, n_ages], Z_seas,
-                             Mrate[,,seas, n_ages], seasdur[seas], move_timing)
+                             Mrate[,,seas, n_ages], seasdur[seas], move_timing, expm_nsub = expm_nsub)
     }
   }
 
@@ -1028,9 +1036,9 @@ local_Fmsy_sglpop <- function(pars, data) {
 
         # Apply seasonal movement and mortality together, per move_timing
         tmp_unfished[o,] = advance_seas(tmp_unfished[o,], Movement[,,seas, n_ages], M_seas,
-                                        Mrate[,,seas, n_ages], seasdur[seas], move_timing)
+                                        Mrate[,,seas, n_ages], seasdur[seas], move_timing, expm_nsub = expm_nsub)
         tmp_fished[o,]   = advance_seas(tmp_fished[o,], Movement[,,seas, n_ages], M_seas + F_seas,
-                                        Mrate[,,seas, n_ages], seasdur[seas], move_timing)
+                                        Mrate[,,seas, n_ages], seasdur[seas], move_timing, expm_nsub = expm_nsub)
 
       } # end seas loop
     } # end o loop
@@ -1044,10 +1052,10 @@ local_Fmsy_sglpop <- function(pars, data) {
   for(o in 1:n_regions) {
     tmp_unfished_spawn[o,] = spawn_state(tmp_unfished_spawn[o,], Movement[,,spawn_seas, n_ages],
                                          Zu_spawn_plus, Mrate[,,spawn_seas, n_ages],
-                                         seasdur[spawn_seas], t_spawn, move_timing)
+                                         seasdur[spawn_seas], t_spawn, move_timing, expm_nsub = expm_nsub)
     tmp_fished_spawn[o,]   = spawn_state(tmp_fished_spawn[o,], Movement[,,spawn_seas, n_ages],
                                          Zf_spawn_plus, Mrate[,,spawn_seas, n_ages],
-                                         seasdur[spawn_seas], t_spawn, move_timing)
+                                         seasdur[spawn_seas], t_spawn, move_timing, expm_nsub = expm_nsub)
   }
 
   SB_age[1,,, n_ages] = tmp_unfished_spawn * WAA[, spawn_seas, n_ages] * MatAA[, spawn_seas, n_ages]
@@ -1235,6 +1243,10 @@ local_Fmsy_multipop <- function(pars, data) {
   # assigning before getAll, which would collide with its own definition.
   if(!exists("rec_model", inherits = FALSE)) rec_model <- 1
 
+  # As with rec_model, expm_nsub is only present on data lists built since the
+  # implicit matrix exponential option, so fall back to the exact exponential.
+  if(!exists("expm_nsub", inherits = FALSE)) expm_nsub <- 0
+
   # rec_model 0 is mean recruitment, which has no curve to maximise yield over.
   # The helpers below branch on Ricker against everything else, so without this
   # a mean recruitment fit would come back with Beverton-Holt numbers.
@@ -1327,8 +1339,8 @@ local_Fmsy_multipop <- function(pars, data) {
           if(seas == spawn_seas) {
 
             # Propagate to the spawning point; movement and t_spawn mortality together
-            tmp_unfished_spawn = spawn_state(tmp_unfished, Mv, Mu_a_seas, Qv, seasdur[seas], t_spawn, move_timing)
-            tmp_fished_spawn   = spawn_state(tmp_fished, Mv, Z_a_seas, Qv, seasdur[seas], t_spawn, move_timing)
+            tmp_unfished_spawn = spawn_state(tmp_unfished, Mv, Mu_a_seas, Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub)
+            tmp_fished_spawn   = spawn_state(tmp_fished, Mv, Z_a_seas, Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub)
 
             # If single season natal homing population
             if(n_pop > 1 && n_seas == 1) {
@@ -1345,11 +1357,11 @@ local_Fmsy_multipop <- function(pars, data) {
 
           # Catch-at-age, taken where the fish are during the season per move_timing
           CAA[p,o,,seas,j-1] = catch_at_age(tmp_fished, Mv, Z_a_seas, Qv, seasdur[seas],
-                                            landed_F_a_seas, move_timing)
+                                            landed_F_a_seas, move_timing, expm_nsub = expm_nsub)
 
           # Apply movement and mortality together, per move_timing
-          adv_unfished = advance_seas(tmp_unfished, Mv, Mu_a_seas, Qv, seasdur[seas], move_timing)
-          adv_fished   = advance_seas(tmp_fished, Mv, Z_a_seas, Qv, seasdur[seas], move_timing)
+          adv_unfished = advance_seas(tmp_unfished, Mv, Mu_a_seas, Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
+          adv_fished   = advance_seas(tmp_fished, Mv, Z_a_seas, Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
 
           if(seas < n_seas) {
             # Within-season mortality, no ageing yet
@@ -1385,9 +1397,9 @@ local_Fmsy_multipop <- function(pars, data) {
         Z_seas = natmort[p,, n_ages - 1] * seasdur[seas] + ret_F_seas + disc_F_seas
         CAA[p, o,, seas, n_ages - 1] = catch_at_age(tmp_caa, Movement[p,,,seas, n_ages - 1], Z_seas,
                                                     Mrate[p,,,seas, n_ages - 1], seasdur[seas],
-                                                    landed_F_seas, move_timing)
+                                                    landed_F_seas, move_timing, expm_nsub = expm_nsub)
         tmp_caa = advance_seas(tmp_caa, Movement[p,,,seas, n_ages - 1], Z_seas,
-                               Mrate[p,,,seas, n_ages - 1], seasdur[seas], move_timing)
+                               Mrate[p,,,seas, n_ages - 1], seasdur[seas], move_timing, expm_nsub = expm_nsub)
       }
     }
 
@@ -1402,10 +1414,10 @@ local_Fmsy_multipop <- function(pars, data) {
 
           # Apply seasonal movement and mortality together, per move_timing
           tmp_unfished[o,] = advance_seas(tmp_unfished[o,], Movement[p,,,seas, n_ages - 1], M_seas,
-                                          Mrate[p,,,seas, n_ages - 1], seasdur[seas], move_timing)
+                                          Mrate[p,,,seas, n_ages - 1], seasdur[seas], move_timing, expm_nsub = expm_nsub)
           tmp_fished[o,]   = advance_seas(tmp_fished[o,], Movement[p,,,seas, n_ages - 1],
                                           M_seas + ret_F_seas + disc_F_seas,
-                                          Mrate[p,,,seas, n_ages - 1], seasdur[seas], move_timing)
+                                          Mrate[p,,,seas, n_ages - 1], seasdur[seas], move_timing, expm_nsub = expm_nsub)
 
         } # end seas loop
       } # end o loop
@@ -1418,10 +1430,10 @@ local_Fmsy_multipop <- function(pars, data) {
     for(o in 1:n_regions) {
       tmp_unfished_spawn[o,] = spawn_state(tmp_unfished_spawn[o,], Movement[p,,, spawn_seas, n_ages - 1],
                                            Zu_spawn, Mrate[p,,, spawn_seas, n_ages - 1],
-                                           seasdur[spawn_seas], t_spawn, move_timing)
+                                           seasdur[spawn_seas], t_spawn, move_timing, expm_nsub = expm_nsub)
       tmp_fished_spawn[o,]   = spawn_state(tmp_fished_spawn[o,], Movement[p,,, spawn_seas, n_ages - 1],
                                            Zf_spawn, Mrate[p,,, spawn_seas, n_ages - 1],
-                                           seasdur[spawn_seas], t_spawn, move_timing)
+                                           seasdur[spawn_seas], t_spawn, move_timing, expm_nsub = expm_nsub)
 
       # If single season natal homing population
       if(n_pop > 1 && n_seas == 1) {
@@ -1458,8 +1470,8 @@ local_Fmsy_multipop <- function(pars, data) {
       seasdur    = seasdur,
       Mrate_penult = array(Mrate[p,,, , n_ages - 1], dim = c(n_regions, n_regions, n_seas)),
       Mrate_plus   = array(Mrate[p,,, , n_ages],     dim = c(n_regions, n_regions, n_seas)),
-      move_timing  = move_timing
-    )
+      move_timing  = move_timing,
+      expm_nsub = expm_nsub)
 
     for(o in 1:n_regions) {
       # Get and input plus group
@@ -1482,9 +1494,9 @@ local_Fmsy_multipop <- function(pars, data) {
         Z_seas = natmort[p,, n_ages] * seasdur[seas] + ret_F_seas + disc_F_seas
         CAA[p, o,, seas, n_ages] = catch_at_age(tmp_caa, Movement[p,,,seas, n_ages], Z_seas,
                                                 Mrate[p,,,seas, n_ages], seasdur[seas],
-                                                landed_F_seas, move_timing)
+                                                landed_F_seas, move_timing, expm_nsub = expm_nsub)
         tmp_caa = advance_seas(tmp_caa, Movement[p,,,seas, n_ages], Z_seas,
-                               Mrate[p,,,seas, n_ages], seasdur[seas], move_timing)
+                               Mrate[p,,,seas, n_ages], seasdur[seas], move_timing, expm_nsub = expm_nsub)
       }
     }
 
@@ -1498,9 +1510,9 @@ local_Fmsy_multipop <- function(pars, data) {
 
           # Apply seasonal movement and mortality together, per move_timing
           tmp_unfished[o,] = advance_seas(tmp_unfished[o,], Movement[p,,,seas, n_ages], M_seas,
-                                          Mrate[p,,,seas, n_ages], seasdur[seas], move_timing)
+                                          Mrate[p,,,seas, n_ages], seasdur[seas], move_timing, expm_nsub = expm_nsub)
           tmp_fished[o,]   = advance_seas(tmp_fished[o,], Movement[p,,,seas, n_ages], M_seas + F_seas,
-                                          Mrate[p,,,seas, n_ages], seasdur[seas], move_timing)
+                                          Mrate[p,,,seas, n_ages], seasdur[seas], move_timing, expm_nsub = expm_nsub)
 
         } # end seas loop
       } # end o loop
@@ -1513,10 +1525,10 @@ local_Fmsy_multipop <- function(pars, data) {
     for(o in 1:n_regions) {
       tmp_unfished_spawn[o,] = spawn_state(tmp_unfished_spawn[o,], Movement[p,,, spawn_seas, n_ages],
                                            Zu_spawn_plus, Mrate[p,,, spawn_seas, n_ages],
-                                           seasdur[spawn_seas], t_spawn, move_timing)
+                                           seasdur[spawn_seas], t_spawn, move_timing, expm_nsub = expm_nsub)
       tmp_fished_spawn[o,]   = spawn_state(tmp_fished_spawn[o,], Movement[p,,, spawn_seas, n_ages],
                                            Zf_spawn_plus, Mrate[p,,, spawn_seas, n_ages],
-                                           seasdur[spawn_seas], t_spawn, move_timing)
+                                           seasdur[spawn_seas], t_spawn, move_timing, expm_nsub = expm_nsub)
 
       # If single season natal homing population
       if(n_pop > 1 && n_seas == 1) {

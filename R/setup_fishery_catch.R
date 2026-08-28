@@ -187,10 +187,13 @@ do_Fmort_mapping <- function(input_list) {
     is.na(input_list$data$ObsCatch)
 
   # A fleet fitting catch at age carries its observations in a different array,
-  # and is fished wherever any age is fit. Without this the fishing mortality
-  # level is mapped off and silently held at its starting value.
+  # and is fished wherever any age or sex is fit. Without this the fishing
+  # mortality level is mapped off and silently held at its starting value.
   if(!is.null(input_list$data$UseCatchAA) && any(input_list$data$UseCatchAA == 1)) {
-    has_catch <- has_catch | apply(input_list$data$UseCatchAA == 1, c(1,2,3,5), any)
+    has_catch <- has_catch | apply(input_list$data$UseCatchAA == 1, c(1,2,3,6), any)
+  }
+  if(!is.null(input_list$data$UseCatchAA_pop) && any(input_list$data$UseCatchAA_pop == 1)) {
+    has_catch <- has_catch | apply(input_list$data$UseCatchAA_pop == 1, c(2,3,4,7), any)
   }
 
   F_dev_map <- build_pe_map(dims, share_over = character(0))
@@ -827,7 +830,9 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
 #'   }
 #'
 #' @param ObsCatchAA Observed catch at age, an array with dimensions
-#'   \code{[n_regions, n_years, n_seas, n_ages, n_fish_fleets]}. Supplying this
+#'   \code{[n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets]}. The
+#'   sex margin is required whatever the fleet reports: a stream summed over
+#'   sexes carries its observation in sex slot one. Supplying this
 #'   fits the catch at age directly, every age its own lognormal observation, in
 #'   place of an aggregated catch with compositions. This is the native form for
 #'   ICES age-structured assessments. The two statements are not interchangeable: the
@@ -866,13 +871,44 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
 #'   discards, following the same convention as \code{sigmaCAA_key}.
 #' @param sigmaCAA_pop_spec,sigmaDAA_spec,sigmaDAA_pop_spec \code{"est"} or
 #'   \code{"fix"}.
-#' @param AgeObsCorr_catch,AgeObsCorr_discard Correlation across ages within a
-#'   cell for the retained catch at age and the discards at age. \code{"iid"} (default) treats ages as independent,
-#'   \code{"1dar1"} correlates them as an AR(1) across ages and estimates one
-#'   correlation per fleet. A cell with a single observed age falls back to independent.
-#'   The fishery and survey index streams carry their own settings, in
+#' @param AgeObsCorr_catch,AgeObsCorr_discard,AgeObsCorr_catch_pop,AgeObsCorr_discard_pop
+#'   Correlation across ages within a cell, one setting for every fleet or one
+#'   per fleet. \code{"iid"} (default) treats ages as independent,
+#'   \code{"1dar1"} correlates them as an AR(1) in age distance, \code{"us"}
+#'   estimates an unstructured correlation across ages, and \code{"2dar1"}
+#'   correlates over ages and years jointly through a separable AR(1), which
+#'   requires the fleet's observed ages and years to form a complete grid. A cell
+#'   with a single observed age falls back to independent. The
+#'   population-specific streams carry their own settings rather than borrowing
+#'   the aggregated ones. The fishery and survey index streams are set in
 #'   \code{\link{Setup_Mod_FishIdx_and_Comps}} and
 #'   \code{\link{Setup_Mod_SrvIdx_and_Comps}}.
+#'
+#' @param rho_catch_key,rho_discard_key,rho_catch_pop_key,rho_discard_pop_key
+#'   Integer matrices \code{[n_sexes, n_fish_fleets]} coupling the across-age
+#'   correlation. Equal entries share a parameter and \code{NA} excludes one.
+#'   Defaults to one correlation per fleet, shared across sexes.
+#'
+#' @param ObsCatchAA_SE,ObsDiscardAA_SE,ObsCatchAA_pop_SE,ObsDiscardAA_pop_SE
+#'   Reported standard errors shaped like their observation array, read only when
+#'   the stream's \code{sigma_form} asks for them.
+#'
+#' @param CatchAA_Type,DiscardAA_Type,CatchAA_pop_Type,DiscardAA_pop_Type
+#'   Which margins the fleet reports separately, one setting for every fleet or
+#'   one per fleet, following the composition vocabulary. \code{"agg"} sums over
+#'   regions and sexes, \code{"spltRaggS"} (default) splits regions and sums over
+#'   sexes, \code{"aggRspltS"} does the reverse, and \code{"spltRspltS"} splits
+#'   both. An observation summed over a margin belongs in slot one of it.
+#'
+#' @param CatchAA_LikeType,DiscardAA_LikeType,CatchAA_pop_LikeType,DiscardAA_pop_LikeType
+#'   \code{"lognormal"} (default) or \code{"normal"}, one setting for every
+#'   fleet or one per fleet.
+#'
+#' @param CatchAA_sigma_form,DiscardAA_sigma_form,CatchAA_pop_sigma_form,DiscardAA_pop_sigma_form
+#'   Where the observation error comes from. \code{"none"} (default) uses the
+#'   estimated parameter alone, \code{"data"} the reported standard errors alone,
+#'   and \code{"est_additive"} or \code{"est_quadrature"} both. Naming
+#'   \code{"data"} holds the parameter fixed, since nothing reads it.
 #'
 #' @export Setup_Mod_Catch_and_F
 #' @family Model Setup
@@ -882,22 +918,44 @@ Setup_Mod_Catch_and_F <- function(input_list,
                                   ObsCatch,
                                   ObsCatchAA = NULL,
                                   UseCatchAA = NULL,
+                                  ObsCatchAA_SE = NULL,
                                   sigmaCAA_key = NULL,
                                   sigmaCAA_spec = "est",
                                   ObsDiscardAA = NULL,
                                   UseDiscardAA = NULL,
+                                  ObsDiscardAA_SE = NULL,
                                   ObsDiscardAA_pop = NULL,
                                   UseDiscardAA_pop = NULL,
+                                  ObsDiscardAA_pop_SE = NULL,
                                   ObsCatchAA_pop = NULL,
                                   UseCatchAA_pop = NULL,
+                                  ObsCatchAA_pop_SE = NULL,
                                   sigmaCAA_pop_key = NULL,
                                   sigmaCAA_pop_spec = "est",
                                   sigmaDAA_key = NULL,
                                   sigmaDAA_spec = "est",
                                   sigmaDAA_pop_key = NULL,
                                   sigmaDAA_pop_spec = "est",
+                                  CatchAA_Type = "spltRaggS",
+                                  CatchAA_pop_Type = "spltRaggS",
+                                  DiscardAA_Type = "spltRaggS",
+                                  DiscardAA_pop_Type = "spltRaggS",
+                                  CatchAA_LikeType = "lognormal",
+                                  CatchAA_pop_LikeType = "lognormal",
+                                  DiscardAA_LikeType = "lognormal",
+                                  DiscardAA_pop_LikeType = "lognormal",
+                                  CatchAA_sigma_form = "none",
+                                  CatchAA_pop_sigma_form = "none",
+                                  DiscardAA_sigma_form = "none",
+                                  DiscardAA_pop_sigma_form = "none",
                                   AgeObsCorr_catch = "iid",
+                                  AgeObsCorr_catch_pop = "iid",
                                   AgeObsCorr_discard = "iid",
+                                  AgeObsCorr_discard_pop = "iid",
+                                  rho_catch_key = NULL,
+                                  rho_catch_pop_key = NULL,
+                                  rho_discard_key = NULL,
+                                  rho_discard_pop_key = NULL,
                                   UseCatch,
                                   catch_units = array("biom", dim = c(input_list$data$n_fish_fleets)),
                                   UseCatch_pop = array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions,
@@ -1004,68 +1062,78 @@ Setup_Mod_Catch_and_F <- function(input_list,
   # Retained Catch Stuff
   # Catch at age. A fleet fits either the aggregated catch with compositions or
   # the catch at age, never both: they are the same information stated twice.
+  input_list <- do_at_age_data_setup(input_list, ObsCatchAA, UseCatchAA, ObsCatchAA_SE,
+                                     "CatchAA", "n_fish_fleets")
+  input_list <- do_at_age_data_setup(input_list, ObsCatchAA_pop, UseCatchAA_pop, ObsCatchAA_pop_SE,
+                                     "CatchAA", "n_fish_fleets", pop = TRUE)
+  input_list <- do_at_age_data_setup(input_list, ObsDiscardAA, UseDiscardAA, ObsDiscardAA_SE,
+                                     "DiscardAA", "n_fish_fleets")
+  input_list <- do_at_age_data_setup(input_list, ObsDiscardAA_pop, UseDiscardAA_pop, ObsDiscardAA_pop_SE,
+                                     "DiscardAA", "n_fish_fleets", pop = TRUE)
+
   use_catch_aa <- rep(0, input_list$data$n_fish_fleets)
-  aa_dim <- as.integer(c(input_list$data$n_regions, length(input_list$data$years),
-                         input_list$data$n_seas, length(input_list$data$ages),
-                         input_list$data$n_fish_fleets))
-  if(!is.null(ObsCatchAA)) {
-    if(is.null(UseCatchAA)) stop("ObsCatchAA was supplied without UseCatchAA.")
-    check_data_dimensions(ObsCatchAA, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_ages = length(input_list$data$ages), n_pop = input_list$data$n_pop, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsCatchAA')
-    check_data_dimensions(UseCatchAA, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_ages = length(input_list$data$ages), n_pop = input_list$data$n_pop, n_fish_fleets = input_list$data$n_fish_fleets, what = 'UseCatchAA')
-    for(f in 1:input_list$data$n_fish_fleets) {
-      if(any(UseCatchAA[,,,,f] == 1)) {
-        use_catch_aa[f] <- 1
-        if(any(UseCatch[,,,f] == 1)) {
-          stop("Fishery fleet ", f, " has both aggregated catch and catch at age in use. ",
-               "A fleet fits one or the other: the two are the same information stated twice, ",
-               "and the factorisation of an at-age observation into a total and a composition ",
-               "is exact for multinomial counts but not for the lognormal used here.")
-        }
-      }
-    } # end f loop
-  } else {
-    ObsCatchAA <- array(0, dim = aa_dim)
-    UseCatchAA <- array(0, dim = aa_dim)
-  }
-
-  input_list$data$ObsCatchAA <- ObsCatchAA
-  input_list$data$UseCatchAA <- UseCatchAA
-  input_list$data$use_catch_aa <- use_catch_aa
-
-  # Discards at age, mirroring the retained stream
   use_discard_aa <- rep(0, input_list$data$n_fish_fleets)
-  if(!is.null(ObsDiscardAA)) {
-    if(is.null(UseDiscardAA)) stop("ObsDiscardAA was supplied without UseDiscardAA.")
-    check_data_dimensions(ObsDiscardAA, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_ages = length(input_list$data$ages), n_pop = input_list$data$n_pop, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsDiscardAA')
-    check_data_dimensions(UseDiscardAA, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_ages = length(input_list$data$ages), n_pop = input_list$data$n_pop, n_fish_fleets = input_list$data$n_fish_fleets, what = 'UseDiscardAA')
-    for(f in 1:input_list$data$n_fish_fleets) if(any(UseDiscardAA[,,,,f] == 1)) use_discard_aa[f] <- 1
-  } else {
-    ObsDiscardAA <- array(0, dim = aa_dim); UseDiscardAA <- array(0, dim = aa_dim)
-  }
-  aa_pop_dim <- as.integer(c(input_list$data$n_pop, aa_dim))
-  if(is.null(ObsCatchAA_pop)) { ObsCatchAA_pop <- array(0, dim = aa_pop_dim); UseCatchAA_pop <- array(0, dim = aa_pop_dim) }
-  if(is.null(ObsDiscardAA_pop)) { ObsDiscardAA_pop <- array(0, dim = aa_pop_dim); UseDiscardAA_pop <- array(0, dim = aa_pop_dim) }
+  for(f in 1:input_list$data$n_fish_fleets) {
 
-  input_list$data$ObsDiscardAA <- ObsDiscardAA
-  input_list$data$UseDiscardAA <- UseDiscardAA
-  input_list$data$ObsCatchAA_pop <- ObsCatchAA_pop
-  input_list$data$UseCatchAA_pop <- UseCatchAA_pop
-  input_list$data$ObsDiscardAA_pop <- ObsDiscardAA_pop
-  input_list$data$UseDiscardAA_pop <- UseDiscardAA_pop
+    if(any(input_list$data$UseCatchAA[,,,,,f] == 1) ||
+       any(input_list$data$UseCatchAA_pop[,,,,,,f] == 1)) {
+      use_catch_aa[f] <- 1
+      if(any(UseCatch[,,,f] == 1)) {
+        stop("Fishery fleet ", f, " has both aggregated catch and catch at age in use. ",
+             "A fleet fits one or the other: the two are the same information stated twice, ",
+             "and the factorisation of an at-age observation into a total and a composition ",
+             "is exact for multinomial counts but not for the lognormal used here.")
+      }
+    }
+
+    if(any(input_list$data$UseDiscardAA[,,,,,f] == 1) ||
+       any(input_list$data$UseDiscardAA_pop[,,,,,,f] == 1)) {
+      use_discard_aa[f] <- 1
+      # a fraction is a property of the whole catch, not of one age, so the
+      # at-age stream carries discards in numbers or weight
+      if(!discard_units[f] %in% c(0, 1)) {
+        stop("Fishery fleet ", f, " fits discards at age with discard_units '",
+             c("abd_frac", "biom_frac")[discard_units[f] - 1], "'. A discard fraction is a ",
+             "property of the catch as a whole rather than of a single age. Use 'abd' or ",
+             "'biom' for a fleet reporting discards at age.")
+      }
+    }
+  } # end f loop
+
+  input_list$data$use_catch_aa <- use_catch_aa
   input_list$data$use_discard_aa <- use_discard_aa
 
-  input_list <- do_age_corr_setup(input_list, AgeObsCorr_catch, "catch", "n_fish_fleets", starting_values)
-  input_list <- do_age_corr_setup(input_list, AgeObsCorr_discard, "discard", "n_fish_fleets", starting_values)
+  # how each stream is reported, what density it uses, and where its error comes from
+  input_list <- do_at_age_type_setup(input_list, CatchAA_Type, "CatchAA", "n_fish_fleets", "UseCatchAA")
+  input_list <- do_at_age_type_setup(input_list, CatchAA_pop_Type, "CatchAA", "n_fish_fleets", "UseCatchAA_pop", pop = TRUE)
+  input_list <- do_at_age_type_setup(input_list, DiscardAA_Type, "DiscardAA", "n_fish_fleets", "UseDiscardAA")
+  input_list <- do_at_age_type_setup(input_list, DiscardAA_pop_Type, "DiscardAA", "n_fish_fleets", "UseDiscardAA_pop", pop = TRUE)
 
-  input_list <- do_sigmaCAA_mapping(input_list, sigmaCAA_key, sigmaCAA_spec, starting_values)
+  input_list <- do_at_age_like_setup(input_list, CatchAA_LikeType, CatchAA_sigma_form, "CatchAA", "n_fish_fleets")
+  input_list <- do_at_age_like_setup(input_list, CatchAA_pop_LikeType, CatchAA_pop_sigma_form, "CatchAA", "n_fish_fleets", pop = TRUE)
+  input_list <- do_at_age_like_setup(input_list, DiscardAA_LikeType, DiscardAA_sigma_form, "DiscardAA", "n_fish_fleets")
+  input_list <- do_at_age_like_setup(input_list, DiscardAA_pop_LikeType, DiscardAA_pop_sigma_form, "DiscardAA", "n_fish_fleets", pop = TRUE)
+
+  input_list <- do_age_corr_setup(input_list, AgeObsCorr_catch, "catch", "n_fish_fleets",
+                                  "UseCatchAA", starting_values, rho_catch_key)
+  input_list <- do_age_corr_setup(input_list, AgeObsCorr_catch_pop, "catch", "n_fish_fleets",
+                                  "UseCatchAA_pop", starting_values, rho_catch_pop_key, pop = TRUE)
+  input_list <- do_age_corr_setup(input_list, AgeObsCorr_discard, "discard", "n_fish_fleets",
+                                  "UseDiscardAA", starting_values, rho_discard_key)
+  input_list <- do_age_corr_setup(input_list, AgeObsCorr_discard_pop, "discard", "n_fish_fleets",
+                                  "UseDiscardAA_pop", starting_values, rho_discard_pop_key, pop = TRUE)
+
+  input_list <- do_key_mapping(input_list, sigmaCAA_key,
+                               at_age_sigma_spec(sigmaCAA_spec, CatchAA_sigma_form, any(use_catch_aa == 1)),
+                               "ln_sigmaCAA", "n_fish_fleets", "UseCatchAA", starting_values)
   input_list <- do_key_mapping(input_list, sigmaCAA_pop_key,
-                               if(any(UseCatchAA_pop == 1)) sigmaCAA_pop_spec else "fix",
+                               at_age_sigma_spec(sigmaCAA_pop_spec, CatchAA_pop_sigma_form, any(input_list$data$UseCatchAA_pop == 1)),
                                "ln_sigmaCAA_pop", "n_fish_fleets", "UseCatchAA_pop", starting_values, pop = TRUE)
   input_list <- do_key_mapping(input_list, sigmaDAA_key,
-                               if(any(use_discard_aa == 1)) sigmaDAA_spec else "fix",
+                               at_age_sigma_spec(sigmaDAA_spec, DiscardAA_sigma_form, any(use_discard_aa == 1)),
                                "ln_sigmaDAA", "n_fish_fleets", "UseDiscardAA", starting_values)
   input_list <- do_key_mapping(input_list, sigmaDAA_pop_key,
-                               if(any(UseDiscardAA_pop == 1)) sigmaDAA_pop_spec else "fix",
+                               at_age_sigma_spec(sigmaDAA_pop_spec, DiscardAA_pop_sigma_form, any(input_list$data$UseDiscardAA_pop == 1)),
                                "ln_sigmaDAA_pop", "n_fish_fleets", "UseDiscardAA_pop", starting_values, pop = TRUE)
 
   input_list$data$ObsCatch <- ObsCatch

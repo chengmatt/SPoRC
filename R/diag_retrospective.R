@@ -335,13 +335,19 @@ if(any(data$UseSrvIdx_pop == 1) || any(data$UseSrvAgeComps_pop == 1) || any(data
   retro_data$UseFishAgeComps_discard <- data$UseFishAgeComps_discard[,1:(length(data$years) - j),,,drop = FALSE]
   retro_data$UseFishIdx <- data$UseFishIdx[,1:(length(data$years) - j),,,drop = FALSE]
   n_keep <- length(data$years) - j
-  at_age_arrays <- c("ObsCatchAA", "UseCatchAA", "ObsDiscardAA", "UseDiscardAA", "ObsSrvIdxAA", "UseSrvIdxAA", "ObsFishIdxAA", "UseFishIdxAA")
+  at_age_arrays <- c("ObsCatchAA", "UseCatchAA", "ObsCatchAA_SE",
+                     "ObsDiscardAA", "UseDiscardAA", "ObsDiscardAA_SE",
+                     "ObsSrvIdxAA", "UseSrvIdxAA", "ObsSrvIdxAA_SE",
+                     "ObsFishIdxAA", "UseFishIdxAA", "ObsFishIdxAA_SE")
   for(array_name in at_age_arrays) {
-    if(!is.null(data[[array_name]])) retro_data[[array_name]] <- data[[array_name]][,1:n_keep,,,,drop = FALSE]
+    if(!is.null(data[[array_name]])) retro_data[[array_name]] <- data[[array_name]][,1:n_keep,,,,,drop = FALSE]
   } # end array_name loop
-  at_age_pop_arrays <- paste0(at_age_arrays, "_pop")
+  at_age_pop_arrays <- c("ObsCatchAA_pop", "UseCatchAA_pop", "ObsCatchAA_pop_SE",
+                         "ObsDiscardAA_pop", "UseDiscardAA_pop", "ObsDiscardAA_pop_SE",
+                         "ObsSrvIdxAA_pop", "UseSrvIdxAA_pop", "ObsSrvIdxAA_pop_SE",
+                         "ObsFishIdxAA_pop", "UseFishIdxAA_pop", "ObsFishIdxAA_pop_SE")
   for(array_name in at_age_pop_arrays) {
-    if(!is.null(data[[array_name]])) retro_data[[array_name]] <- data[[array_name]][,,1:n_keep,,,,drop = FALSE]
+    if(!is.null(data[[array_name]])) retro_data[[array_name]] <- data[[array_name]][,,1:n_keep,,,,,drop = FALSE]
   } # end array_name loop
 
   retro_data$UseCatch <- data$UseCatch[,1:(length(data$years) - j),,,drop = FALSE]

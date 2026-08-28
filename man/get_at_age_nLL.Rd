@@ -4,22 +4,37 @@
 \alias{get_at_age_nLL}
 \title{Evaluate an age-disaggregated observation likelihood}
 \usage{
-get_at_age_nLL(obs_log, pred_log, sigma, corr_type = 0, rho = 0)
+get_at_age_nLL(
+  obs_t,
+  pred_t,
+  sigma,
+  corr_type = 0,
+  rho = 0,
+  ages = NULL,
+  corr_mat = NULL
+)
 }
 \arguments{
-\item{obs_log}{Numeric vector of log observations for the ages present in one
-cell, already offset by any constant.}
+\item{obs_t}{Numeric vector of observations for the ages present in one cell,
+on the scale the fleet's likelihood is written on.}
 
-\item{pred_log}{Vector of log predictions, matching \code{obs_log}.}
+\item{pred_t}{Vector of predictions, matching \code{obs_t}.}
 
-\item{sigma}{Vector of standard deviations, matching \code{obs_log}.}
+\item{sigma}{Vector of standard deviations, matching \code{obs_t}.}
 
-\item{corr_type}{Integer. \code{0} is \code{"iid"}, \code{1} is \code{"1dar1"}.}
+\item{corr_type}{Integer. \code{0} is \code{"iid"}, \code{1} is
+\code{"1dar1"}, \code{2} is \code{"us"}.}
 
 \item{rho}{Correlation for \code{corr_type = 1}, on the natural scale.}
+
+\item{ages}{Integer vector of the ages present, used to space the AR(1). The
+position in the vector is assumed when this is \code{NULL}.}
+
+\item{corr_mat}{Correlation matrix for \code{corr_type = 2}, already subset to
+the ages present.}
 }
 \value{
-Numeric vector the length of \code{obs_log}, the negative log
+Numeric vector the length of \code{obs_t}, the negative log
   likelihood contribution of each age.
 }
 \description{
@@ -30,9 +45,16 @@ which array supplies the prediction and which parameter supplies the standard
 deviation, so the likelihood itself is written once.
 }
 \details{
-Observations are lognormal on the natural scale. Ages within one cell may be
-independent, or correlated as an AR(1) across ages, as ICES age-structured assessments allow. A correlated cell
-contributes its whole density to the first age present, leaving the remaining
-ages at zero, so the returned array still sums to the cell's contribution.
+Ages within one cell may be independent, correlated as an AR(1) across ages,
+or correlated through an unstructured matrix, the three structures ICES
+age-structured assessments allow. A correlated cell contributes its whole
+density to the first age present, leaving the remaining ages at zero, so the
+returned vector still sums to the cell's contribution.
+
+An AR(1) is a statement about age distance, not about position in the
+observed vector. A fleet that observes ages 2, 3, 5 and 6 has a gap, and lag
+one across that gap is not lag one, so the covariance is built from the ages
+themselves whenever they are not consecutive. Consecutive ages take the
+autoregressive recursion instead, which is the same density at lower cost.
 }
 \keyword{internal}

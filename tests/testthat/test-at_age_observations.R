@@ -12,7 +12,7 @@ build_aa <- function(n_yrs = 20, n_ages = 5, aa = TRUE,
                      ObsCatchAA_in = NULL, UseCatchAA_in = NULL, fish_t = NULL, ...) {
   yrs <- seq_len(n_yrs); ages <- seq_len(n_ages)
   d1 <- c(1, 1, n_yrs, 1, n_ages, 1)
-  caa_dim <- c(1, n_yrs, 1, n_ages, 1)
+  caa_dim <- c(1, n_yrs, 1, n_ages, 1, 1)
 
   il <- Setup_Mod_Dim(n_pop = 1, years = yrs, ages = ages, lens = NA,
                       n_regions = 1, n_sexes = 1, n_seas = 1,
@@ -130,8 +130,8 @@ test_that("a fleet cannot fit both aggregated catch and catch at age", {
     suppressWarnings(Setup_Mod_Catch_and_F(
       il, ObsCatch = array(1e4, dim = c(1, n_yrs, 1, 1)),
       UseCatch = array(1, dim = c(1, n_yrs, 1, 1)),
-      ObsCatchAA = array(2e3, dim = c(1, n_yrs, 1, n_ages, 1)),
-      UseCatchAA = array(1, dim = c(1, n_yrs, 1, n_ages, 1)),
+      ObsCatchAA = array(2e3, dim = c(1, n_yrs, 1, n_ages, 1, 1)),
+      UseCatchAA = array(1, dim = c(1, n_yrs, 1, n_ages, 1, 1)),
       sigmaC_spec = "fix", sigmaF_spec = "fix"))
   }, "one or the other")
 })
@@ -139,17 +139,17 @@ test_that("a fleet cannot fit both aggregated catch and catch at age", {
 test_that("the key matrix couples, excludes and refuses what it cannot identify", {
   n_ages <- 5
   # one parameter per age
-  il <- build_aa(sigmaCAA_key = array(1:n_ages, dim = c(n_ages, 1)))
+  il <- build_aa(sigmaCAA_key = array(1:n_ages, dim = c(n_ages, 1, 1)))
   expect_equal(length(unique(stats::na.omit(as.integer(il$map$ln_sigmaCAA)))), n_ages)
 
   # by age group
-  il <- build_aa(sigmaCAA_key = array(c(1, 1, 2, 2, 2), dim = c(n_ages, 1)))
+  il <- build_aa(sigmaCAA_key = array(c(1, 1, 2, 2, 2), dim = c(n_ages, 1, 1)))
   m <- as.integer(il$map$ln_sigmaCAA)
   expect_equal(m[1], m[2]); expect_equal(m[3], m[5])
   expect_equal(length(unique(stats::na.omit(m))), 2)
 
   # NA holds an age out
-  il <- build_aa(sigmaCAA_key = array(c(NA, 1, 1, 1, 1), dim = c(n_ages, 1)))
+  il <- build_aa(sigmaCAA_key = array(c(NA, 1, 1, 1, 1), dim = c(n_ages, 1, 1)))
   expect_true(is.na(as.integer(il$map$ln_sigmaCAA)[1]))
 
   # and the wrong shape is rejected by name
@@ -160,17 +160,18 @@ test_that("the key matrix couples, excludes and refuses what it cannot identify"
 test_that("an at-age variance with too few observations is refused", {
   # two years of data and a parameter per age leaves two observations each, which
   # is the floor; one year leaves one, which is unbounded rather than merely poor
-  expect_error(build_aa(n_yrs = 1, sigmaCAA_key = array(1:5, dim = c(5, 1))),
+  expect_error(build_aa(n_yrs = 1, sigmaCAA_key = array(1:5, dim = c(5, 1, 1))),
                "fewer than 2 observations")
 })
 
 test_that("discards at age carry their own parameter, keyed independently", {
   n_yrs <- 20; n_ages <- 5
   # keyed differently from the retained stream, so the two cannot be sharing
-  il <- build_aa(ObsDiscardAA = array(50, dim = c(1, n_yrs, 1, n_ages, 1)),
-                 UseDiscardAA = array(1, dim = c(1, n_yrs, 1, n_ages, 1)),
-                 sigmaCAA_key = array(rep(1L, n_ages), dim = c(n_ages, 1)),
-                 sigmaDAA_key = array(1:n_ages, dim = c(n_ages, 1)))
+  il <- build_aa(ObsDiscardAA = array(50, dim = c(1, n_yrs, 1, n_ages, 1, 1)),
+                 UseDiscardAA = array(1, dim = c(1, n_yrs, 1, n_ages, 1, 1)),
+                 discard_units = "biom",
+                 sigmaCAA_key = array(rep(1L, n_ages), dim = c(n_ages, 1, 1)),
+                 sigmaDAA_key = array(1:n_ages, dim = c(n_ages, 1, 1)))
   expect_true("ln_sigmaDAA" %in% names(il$par))
   expect_equal(length(unique(stats::na.omit(as.integer(il$map$ln_sigmaCAA)))), 1)
   expect_equal(length(unique(stats::na.omit(as.integer(il$map$ln_sigmaDAA)))), n_ages)
@@ -182,8 +183,9 @@ test_that("an observed discard the model says is impossible is not silently abso
   # zero. Observing discards against that is infinitely unlikely and should read
   # as such rather than being quietly finite.
   n_yrs <- 20; n_ages <- 5
-  il <- build_aa(ObsDiscardAA = array(50, dim = c(1, n_yrs, 1, n_ages, 1)),
-                 UseDiscardAA = array(1, dim = c(1, n_yrs, 1, n_ages, 1)))
+  il <- build_aa(ObsDiscardAA = array(50, dim = c(1, n_yrs, 1, n_ages, 1, 1)),
+                 UseDiscardAA = array(1, dim = c(1, n_yrs, 1, n_ages, 1, 1)),
+                 discard_units = "biom")
   expect_false(is.finite(rep_of(il)$jnLL))
 })
 
@@ -252,13 +254,13 @@ test_that("the at-age and aggregated forms agree where the two say the same thin
   agg$data$UseCatch[] <- 1
 
   # and as a catch at age on that one age
-  ObsCatchAA <- array(0, dim = c(1, n_yrs, 1, n_ages, 1))
-  UseCatchAA <- array(0, dim = c(1, n_yrs, 1, n_ages, 1))
-  ObsCatchAA[1, , 1, one_age, 1] <- obs_a
-  UseCatchAA[1, , 1, one_age, 1] <- 1
+  ObsCatchAA <- array(0, dim = c(1, n_yrs, 1, n_ages, 1, 1))
+  UseCatchAA <- array(0, dim = c(1, n_yrs, 1, n_ages, 1, 1))
+  ObsCatchAA[1, , 1, one_age, 1, 1] <- obs_a
+  UseCatchAA[1, , 1, one_age, 1, 1] <- 1
   aa <- build_aa(ObsCatchAA_in = ObsCatchAA, UseCatchAA_in = UseCatchAA,
-                 sigmaCAA_key = array(c(NA, NA, 1L, NA, NA), dim = c(n_ages, 1)),
-                 ln_sigmaCAA = array(log(sig), dim = c(n_ages, 1)))
+                 sigmaCAA_key = array(c(NA, NA, 1L, NA, NA), dim = c(n_ages, 1, 1)),
+                 ln_sigmaCAA = array(log(sig), dim = c(n_ages, 1, 1)))
 
   ragg <- rep_of(agg); raa <- rep_of(aa)
 
@@ -270,10 +272,10 @@ test_that("the at-age and aggregated forms agree where the two say the same thin
 
   aa_ll <- -stats::dnorm(log(obs_a), log(vapply(seq_len(n_yrs), function(y)
     sum(raa$CAA[, 1, y, 1, one_age, , 1]), numeric(1))), sig, log = TRUE)
-  expect_equal(as.numeric(raa$CatchAA_nLL[1, , 1, one_age, 1]), aa_ll, tolerance = 1e-10)
+  expect_equal(as.numeric(raa$CatchAA_nLL[1, , 1, one_age, 1, 1]), aa_ll, tolerance = 1e-10)
 
   # every other age contributes nothing, since the key holds them out
-  expect_equal(sum(raa$CatchAA_nLL[1, , 1, -one_age, 1]), 0)
+  expect_equal(sum(raa$CatchAA_nLL[1, , 1, -one_age, 1, 1]), 0)
 })
 
 test_that("the fishery index at age carries its fleet's seasonal timing", {
@@ -283,7 +285,7 @@ test_that("the fishery index at age carries its fleet's seasonal timing", {
   # reads the same array the aggregated one does, so it inherits that; building
   # it from raw numbers at age would silently ignore the timing.
   n_yrs <- 20; n_ages <- 5
-  aa_dim <- c(1, n_yrs, 1, n_ages, 1)
+  aa_dim <- c(1, n_yrs, 1, n_ages, 1, 1)
   obs <- array(100, dim = aa_dim); use <- array(1, dim = aa_dim)
 
   pred_at <- function(t_fish_val) {

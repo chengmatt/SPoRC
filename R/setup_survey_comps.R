@@ -77,26 +77,43 @@
 #'   fleets and pinned others at a bound.
 #'
 #' @param ObsSrvIdxAA Observed survey index at age, an array with dimensions
-#'   \code{[n_regions, n_years, n_seas, n_ages, n_srv_fleets]}. Supplying this
-#'   fits the index at age directly, every age its own lognormal observation with
-#'   its own catchability, which is the native form for ICES age-structured assessments.
+#'   \code{[n_regions, n_years, n_seas, n_ages, n_sexes, n_srv_fleets]}.
+#'   Supplying this fits the index at age directly, every age its own observation
+#'   with its own catchability. The sex margin is required whatever the fleet
+#'   reports: a stream summed over sexes carries its observation in sex slot one.
 #'   A fleet uses this or the aggregated index, never both.
 #' @param UseSrvIdxAA Integer array shaped like \code{ObsSrvIdxAA}, \code{1}
 #'   where an observation is fit.
 #' @param ObsSrvIdxAA_pop,UseSrvIdxAA_pop Population-specific counterparts, with
 #'   a leading population dimension.
-#' @param sigmaSrvIdxAA_key,sigmaSrvIdxAA_pop_key Integer matrices coupling the
-#'   index at age observation error, an integer key matrix, the convention ICES
-#'   assessments use. Equal entries share a parameter and \code{NA} excludes one.
-#'   The age shape of catchability is not set here: an index fit age by age puts
-#'   it in selectivity through the \code{"nonparfree"} form, which carries the
-#'   height of the curve as well as its shape. See
-#'   \code{\link{Setup_Mod_Srvsel_and_Q}}.
+#' @param ObsSrvIdxAA_SE,ObsSrvIdxAA_pop_SE Reported standard errors shaped like
+#'   their observation array, read only when \code{SrvIdxAA_sigma_form} asks for
+#'   them. This is the parity the aggregated index already has: an index
+#'   disaggregated by age keeps its survey-design errors.
+#' @param sigmaSrvIdxAA_key,sigmaSrvIdxAA_pop_key Integer arrays
+#'   \code{[n_ages, n_sexes, n_srv_fleets]} coupling the index at age
+#'   observation error, the key matrix convention ICES assessments use. Equal
+#'   entries share a parameter and \code{NA} excludes one. The sex margin is
+#'   required; a key coupling the sexes repeats its entries across them. The age shape of
+#'   catchability is not set here: an index fit age by age puts it in selectivity
+#'   through the \code{"nonparfree"} form, which carries the height of the curve
+#'   as well as its shape. See \code{\link{Setup_Mod_Srvsel_and_Q}}.
 #' @param sigmaSrvIdxAA_spec,sigmaSrvIdxAA_pop_spec \code{"est"} (default) or
 #'   \code{"fix"}.
-#' @param AgeObsCorr_srv_idx Correlation across ages for the survey index at
-#'   age, \code{"iid"} (default) or \code{"1dar1"}. See
-#'   \code{\link{Setup_Mod_Catch_and_F}}.
+#' @param SrvIdxAA_Type,SrvIdxAA_pop_Type Which margins the fleet reports
+#'   separately: \code{"agg"}, \code{"spltRaggS"} (default), \code{"aggRspltS"}
+#'   or \code{"spltRspltS"}. See \code{\link{Setup_Mod_Catch_and_F}}.
+#' @param SrvIdxAA_LikeType,SrvIdxAA_pop_LikeType \code{"lognormal"} (default)
+#'   or \code{"normal"}, one setting for every fleet or one per fleet.
+#' @param SrvIdxAA_sigma_form,SrvIdxAA_pop_sigma_form Where the observation error
+#'   comes from: \code{"none"} (default), \code{"data"}, \code{"est_additive"}
+#'   or \code{"est_quadrature"}.
+#' @param AgeObsCorr_srv_idx,AgeObsCorr_srv_idx_pop Correlation across ages for
+#'   the survey index at age, \code{"iid"} (default), \code{"1dar1"},
+#'   \code{"us"} or \code{"2dar1"}, one setting for every fleet or one per
+#'   fleet. See \code{\link{Setup_Mod_Catch_and_F}}.
+#' @param rho_srv_idx_key,rho_srv_idx_pop_key Integer matrices
+#'   \code{[n_sexes, n_srv_fleets]} coupling the across-age correlation.
 #'
 #' @param ObsSrvIdx Observed survey index array
 #'   \code{[n_regions × n_years × n_seas × n_srv_fleets]}.
@@ -327,13 +344,24 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
                                        UseSrvIdx,
                                        ObsSrvIdxAA = NULL,
                                        UseSrvIdxAA = NULL,
+                                       ObsSrvIdxAA_SE = NULL,
                                        ObsSrvIdxAA_pop = NULL,
                                        UseSrvIdxAA_pop = NULL,
+                                       ObsSrvIdxAA_pop_SE = NULL,
                                        sigmaSrvIdxAA_key = NULL,
                                        sigmaSrvIdxAA_spec = "est",
                                        sigmaSrvIdxAA_pop_key = NULL,
                                        sigmaSrvIdxAA_pop_spec = "est",
+                                       SrvIdxAA_Type = "spltRaggS",
+                                       SrvIdxAA_pop_Type = "spltRaggS",
+                                       SrvIdxAA_LikeType = "lognormal",
+                                       SrvIdxAA_pop_LikeType = "lognormal",
+                                       SrvIdxAA_sigma_form = "none",
+                                       SrvIdxAA_pop_sigma_form = "none",
                                        AgeObsCorr_srv_idx = "iid",
+                                       AgeObsCorr_srv_idx_pop = "iid",
+                                       rho_srv_idx_key = NULL,
+                                       rho_srv_idx_pop_key = NULL,
                                        sigmaSrvIdx_spec = "fix",
                                        sigmaSrvIdx_map = NULL,
                                        sigmaSrvIdx_pop_spec = "fix",
@@ -759,45 +787,42 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
   input_list$data$ISS_SrvAgeComps_pop <- ISS_SrvAgeComps_pop
   input_list$data$ISS_SrvLenComps_pop <- ISS_SrvLenComps_pop
   # Survey index at age. A fleet fits this or the aggregated index, never both.
-  aa_dim <- as.integer(c(input_list$data$n_regions, length(input_list$data$years),
-                         input_list$data$n_seas, length(input_list$data$ages),
-                         input_list$data$n_srv_fleets))
-  aa_pop_dim <- as.integer(c(input_list$data$n_pop, aa_dim))
+  input_list <- do_at_age_data_setup(input_list, ObsSrvIdxAA, UseSrvIdxAA, ObsSrvIdxAA_SE,
+                                     "SrvIdxAA", "n_srv_fleets")
+  input_list <- do_at_age_data_setup(input_list, ObsSrvIdxAA_pop, UseSrvIdxAA_pop, ObsSrvIdxAA_pop_SE,
+                                     "SrvIdxAA", "n_srv_fleets", pop = TRUE)
+
   use_srv_idx_aa <- rep(0, input_list$data$n_srv_fleets)
-
-  if(!is.null(ObsSrvIdxAA)) {
-    if(is.null(UseSrvIdxAA)) stop("ObsSrvIdxAA was supplied without UseSrvIdxAA.")
-    check_data_dimensions(ObsSrvIdxAA, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_ages = length(input_list$data$ages), n_pop = input_list$data$n_pop, n_srv_fleets = input_list$data$n_srv_fleets, what = 'ObsSrvIdxAA')
-    check_data_dimensions(UseSrvIdxAA, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_ages = length(input_list$data$ages), n_pop = input_list$data$n_pop, n_srv_fleets = input_list$data$n_srv_fleets, what = 'UseSrvIdxAA')
-    for(sf in 1:input_list$data$n_srv_fleets) {
-      if(any(UseSrvIdxAA[,,,,sf] == 1)) {
-        use_srv_idx_aa[sf] <- 1
-        if(any(UseSrvIdx[,,,sf] == 1)) {
-          stop("Survey fleet ", sf, " has both an aggregated index and an index at age in use. ",
-               "A fleet fits one or the other.")
-        }
+  for(sf in 1:input_list$data$n_srv_fleets) {
+    if(any(input_list$data$UseSrvIdxAA[,,,,,sf] == 1) ||
+       any(input_list$data$UseSrvIdxAA_pop[,,,,,,sf] == 1)) {
+      use_srv_idx_aa[sf] <- 1
+      if(any(UseSrvIdx[,,,sf] == 1)) {
+        stop("Survey fleet ", sf, " has both an aggregated index and an index at age in use. ",
+             "A fleet fits one or the other.")
       }
-    } # end sf loop
-  } else {
-    ObsSrvIdxAA <- array(0, dim = aa_dim)
-    UseSrvIdxAA <- array(0, dim = aa_dim)
-  }
-  if(is.null(ObsSrvIdxAA_pop)) { ObsSrvIdxAA_pop <- array(0, dim = aa_pop_dim); UseSrvIdxAA_pop <- array(0, dim = aa_pop_dim) }
-
-  input_list$data$ObsSrvIdxAA <- ObsSrvIdxAA
-  input_list$data$UseSrvIdxAA <- UseSrvIdxAA
-  input_list$data$ObsSrvIdxAA_pop <- ObsSrvIdxAA_pop
-  input_list$data$UseSrvIdxAA_pop <- UseSrvIdxAA_pop
+    }
+  } # end sf loop
   input_list$data$use_srv_idx_aa <- use_srv_idx_aa
 
   # at-age observation error for both streams. Catchability at age is not set
   # here; it lives in selectivity, through the "nonparfree" form.
+  input_list <- do_at_age_type_setup(input_list, SrvIdxAA_Type, "SrvIdxAA", "n_srv_fleets", "UseSrvIdxAA")
+  input_list <- do_at_age_type_setup(input_list, SrvIdxAA_pop_Type, "SrvIdxAA", "n_srv_fleets", "UseSrvIdxAA_pop", pop = TRUE)
+  input_list <- do_at_age_like_setup(input_list, SrvIdxAA_LikeType, SrvIdxAA_sigma_form, "SrvIdxAA", "n_srv_fleets")
+  input_list <- do_at_age_like_setup(input_list, SrvIdxAA_pop_LikeType, SrvIdxAA_pop_sigma_form, "SrvIdxAA", "n_srv_fleets", pop = TRUE)
+
+  input_list <- do_age_corr_setup(input_list, AgeObsCorr_srv_idx, "srv_idx", "n_srv_fleets",
+                                  "UseSrvIdxAA", starting_values, rho_srv_idx_key)
+  input_list <- do_age_corr_setup(input_list, AgeObsCorr_srv_idx_pop, "srv_idx", "n_srv_fleets",
+                                  "UseSrvIdxAA_pop", starting_values, rho_srv_idx_pop_key, pop = TRUE)
+
   input_list <- do_key_mapping(input_list, sigmaSrvIdxAA_key,
-                               if(any(use_srv_idx_aa == 1)) sigmaSrvIdxAA_spec else "fix",
+                               at_age_sigma_spec(sigmaSrvIdxAA_spec, SrvIdxAA_sigma_form, any(use_srv_idx_aa == 1)),
                                "ln_sigmaSrvIdxAA", "n_srv_fleets", "UseSrvIdxAA", starting_values)
-  input_list <- do_age_corr_setup(input_list, AgeObsCorr_srv_idx, "srv_idx", "n_srv_fleets", starting_values)
   input_list <- do_key_mapping(input_list, sigmaSrvIdxAA_pop_key,
-                               if(any(UseSrvIdxAA_pop == 1)) sigmaSrvIdxAA_pop_spec else "fix",
+                               at_age_sigma_spec(sigmaSrvIdxAA_pop_spec, SrvIdxAA_pop_sigma_form,
+                                                 any(input_list$data$UseSrvIdxAA_pop == 1)),
                                "ln_sigmaSrvIdxAA_pop", "n_srv_fleets", "UseSrvIdxAA_pop",
                                starting_values, pop = TRUE)
 

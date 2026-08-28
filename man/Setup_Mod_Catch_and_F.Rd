@@ -9,22 +9,44 @@ Setup_Mod_Catch_and_F(
   ObsCatch,
   ObsCatchAA = NULL,
   UseCatchAA = NULL,
+  ObsCatchAA_SE = NULL,
   sigmaCAA_key = NULL,
   sigmaCAA_spec = "est",
   ObsDiscardAA = NULL,
   UseDiscardAA = NULL,
+  ObsDiscardAA_SE = NULL,
   ObsDiscardAA_pop = NULL,
   UseDiscardAA_pop = NULL,
+  ObsDiscardAA_pop_SE = NULL,
   ObsCatchAA_pop = NULL,
   UseCatchAA_pop = NULL,
+  ObsCatchAA_pop_SE = NULL,
   sigmaCAA_pop_key = NULL,
   sigmaCAA_pop_spec = "est",
   sigmaDAA_key = NULL,
   sigmaDAA_spec = "est",
   sigmaDAA_pop_key = NULL,
   sigmaDAA_pop_spec = "est",
+  CatchAA_Type = "spltRaggS",
+  CatchAA_pop_Type = "spltRaggS",
+  DiscardAA_Type = "spltRaggS",
+  DiscardAA_pop_Type = "spltRaggS",
+  CatchAA_LikeType = "lognormal",
+  CatchAA_pop_LikeType = "lognormal",
+  DiscardAA_LikeType = "lognormal",
+  DiscardAA_pop_LikeType = "lognormal",
+  CatchAA_sigma_form = "none",
+  CatchAA_pop_sigma_form = "none",
+  DiscardAA_sigma_form = "none",
+  DiscardAA_pop_sigma_form = "none",
   AgeObsCorr_catch = "iid",
+  AgeObsCorr_catch_pop = "iid",
   AgeObsCorr_discard = "iid",
+  AgeObsCorr_discard_pop = "iid",
+  rho_catch_key = NULL,
+  rho_catch_pop_key = NULL,
+  rho_discard_key = NULL,
+  rho_discard_pop_key = NULL,
   UseCatch,
   catch_units = array("biom", dim = c(input_list$data$n_fish_fleets)),
   UseCatch_pop = array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions,
@@ -72,7 +94,9 @@ closure: \code{Fmort} is forced to zero and no deviation is estimated.
 See \code{\link{Get_Fdev_PE_loglik}}.}
 
 \item{ObsCatchAA}{Observed catch at age, an array with dimensions
-\code{[n_regions, n_years, n_seas, n_ages, n_fish_fleets]}. Supplying this
+\code{[n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets]}. The
+sex margin is required whatever the fleet reports: a stream summed over
+sexes carries its observation in sex slot one. Supplying this
 fits the catch at age directly, every age its own lognormal observation, in
 place of an aggregated catch with compositions. This is the native form for
 ICES age-structured assessments. The two statements are not interchangeable: the
@@ -85,6 +109,9 @@ one or the other and supplying both for the same fleet is an error.
 an observation is fit and \code{0} otherwise. A cell that is not fit is also
 not fished, so this governs closures the way \code{UseCatch} does for the
 aggregated stream.}
+
+\item{ObsCatchAA_SE, ObsDiscardAA_SE, ObsCatchAA_pop_SE, ObsDiscardAA_pop_SE}{Reported standard errors shaped like their observation array, read only when
+the stream's \code{sigma_form} asks for them.}
 
 \item{sigmaCAA_key}{Integer matrix \code{[n_ages, n_fish_fleets]} coupling the
 catch at age observation error, an integer key matrix, the convention ICES assessments use. Equal
@@ -114,13 +141,35 @@ discards, following the same convention as \code{sigmaCAA_key}.}
 \item{sigmaCAA_pop_spec, sigmaDAA_spec, sigmaDAA_pop_spec}{\code{"est"} or
 \code{"fix"}.}
 
-\item{AgeObsCorr_catch, AgeObsCorr_discard}{Correlation across ages within a
-cell for the retained catch at age and the discards at age. \code{"iid"} (default) treats ages as independent,
-\code{"1dar1"} correlates them as an AR(1) across ages and estimates one
-correlation per fleet. A cell with a single observed age falls back to independent.
-The fishery and survey index streams carry their own settings, in
+\item{CatchAA_Type, DiscardAA_Type, CatchAA_pop_Type, DiscardAA_pop_Type}{Which margins the fleet reports separately, one setting for every fleet or
+one per fleet, following the composition vocabulary. \code{"agg"} sums over
+regions and sexes, \code{"spltRaggS"} (default) splits regions and sums over
+sexes, \code{"aggRspltS"} does the reverse, and \code{"spltRspltS"} splits
+both. An observation summed over a margin belongs in slot one of it.}
+
+\item{CatchAA_LikeType, DiscardAA_LikeType, CatchAA_pop_LikeType, DiscardAA_pop_LikeType}{\code{"lognormal"} (default) or \code{"normal"}, one setting for every
+fleet or one per fleet.}
+
+\item{CatchAA_sigma_form, DiscardAA_sigma_form, CatchAA_pop_sigma_form, DiscardAA_pop_sigma_form}{Where the observation error comes from. \code{"none"} (default) uses the
+estimated parameter alone, \code{"data"} the reported standard errors alone,
+and \code{"est_additive"} or \code{"est_quadrature"} both. Naming
+\code{"data"} holds the parameter fixed, since nothing reads it.}
+
+\item{AgeObsCorr_catch, AgeObsCorr_discard, AgeObsCorr_catch_pop, AgeObsCorr_discard_pop}{Correlation across ages within a cell, one setting for every fleet or one
+per fleet. \code{"iid"} (default) treats ages as independent,
+\code{"1dar1"} correlates them as an AR(1) in age distance, \code{"us"}
+estimates an unstructured correlation across ages, and \code{"2dar1"}
+correlates over ages and years jointly through a separable AR(1), which
+requires the fleet's observed ages and years to form a complete grid. A cell
+with a single observed age falls back to independent. The
+population-specific streams carry their own settings rather than borrowing
+the aggregated ones. The fishery and survey index streams are set in
 \code{\link{Setup_Mod_FishIdx_and_Comps}} and
 \code{\link{Setup_Mod_SrvIdx_and_Comps}}.}
+
+\item{rho_catch_key, rho_discard_key, rho_catch_pop_key, rho_discard_pop_key}{Integer matrices \code{[n_sexes, n_fish_fleets]} coupling the across-age
+correlation. Equal entries share a parameter and \code{NA} excludes one.
+Defaults to one correlation per fleet, shared across sexes.}
 
 \item{UseCatch}{Binary indicator array
 \code{[n_regions x n_years x n_seas x n_fish_fleets]} controlling which

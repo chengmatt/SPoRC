@@ -27,6 +27,7 @@ Setup_Mod_Movement(
   ctmc_diffusion_bounds = 0,
   move_timing = 0,
   ctmc_scale_by_seasdur = 1,
+  move_expm_nsub = 0,
   ...
 )
 }
@@ -164,6 +165,15 @@ share time units. \code{0} exponentiates
 \eqn{Q} once per season regardless of duration. Only has an effect when
 \code{move_type = 1} and \code{n_seas > 1}; forced to \code{1} when
 \code{move_timing = 2}.}
+
+\item{move_expm_nsub}{Integer controlling how matrix exponentials of the CTMC
+generator are evaluated, both when converting \eqn{Q} to movement fractions and
+inside the \code{move_timing = 2} seasonal operators. \code{0} (default)
+uses \code{Matrix::expm}. A power of two \eqn{n \ge 1} instead uses \eqn{n} implicit
+(backward Euler) substeps, \eqn{(I - A/n)^{-n}}, evaluated as one linear solve plus
+\eqn{\log_2 n} squarings, which is why \eqn{n} must be a power of two. The implicit form has a much cheaper reverse-mode adjoint
+than a matrix exponential, so the gradient is several times faster, but it is a
+first-order approximation: \eqn{n = 1} is plain \code{solve(I - A)} and is an approximation.}
 
 \item{...}{Optional starting value overrides, passed by name. Recognised
 arguments:

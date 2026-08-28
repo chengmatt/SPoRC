@@ -11,13 +11,24 @@ Setup_Mod_SrvIdx_and_Comps(
   UseSrvIdx,
   ObsSrvIdxAA = NULL,
   UseSrvIdxAA = NULL,
+  ObsSrvIdxAA_SE = NULL,
   ObsSrvIdxAA_pop = NULL,
   UseSrvIdxAA_pop = NULL,
+  ObsSrvIdxAA_pop_SE = NULL,
   sigmaSrvIdxAA_key = NULL,
   sigmaSrvIdxAA_spec = "est",
   sigmaSrvIdxAA_pop_key = NULL,
   sigmaSrvIdxAA_pop_spec = "est",
+  SrvIdxAA_Type = "spltRaggS",
+  SrvIdxAA_pop_Type = "spltRaggS",
+  SrvIdxAA_LikeType = "lognormal",
+  SrvIdxAA_pop_LikeType = "lognormal",
+  SrvIdxAA_sigma_form = "none",
+  SrvIdxAA_pop_sigma_form = "none",
   AgeObsCorr_srv_idx = "iid",
+  AgeObsCorr_srv_idx_pop = "iid",
+  rho_srv_idx_key = NULL,
+  rho_srv_idx_pop_key = NULL,
   sigmaSrvIdx_spec = "fix",
   sigmaSrvIdx_map = NULL,
   sigmaSrvIdx_pop_spec = "fix",
@@ -85,31 +96,53 @@ dimensions \code{[n_regions × n_years × n_seas × n_srv_fleets]}.}
 in likelihood; \code{0} = exclude.}
 
 \item{ObsSrvIdxAA}{Observed survey index at age, an array with dimensions
-\code{[n_regions, n_years, n_seas, n_ages, n_srv_fleets]}. Supplying this
-fits the index at age directly, every age its own lognormal observation with
-its own catchability, which is the native form for ICES age-structured assessments.
+\code{[n_regions, n_years, n_seas, n_ages, n_sexes, n_srv_fleets]}.
+Supplying this fits the index at age directly, every age its own observation
+with its own catchability. The sex margin is required whatever the fleet
+reports: a stream summed over sexes carries its observation in sex slot one.
 A fleet uses this or the aggregated index, never both.}
 
 \item{UseSrvIdxAA}{Integer array shaped like \code{ObsSrvIdxAA}, \code{1}
 where an observation is fit.}
 
+\item{ObsSrvIdxAA_SE, ObsSrvIdxAA_pop_SE}{Reported standard errors shaped like
+their observation array, read only when \code{SrvIdxAA_sigma_form} asks for
+them. This is the parity the aggregated index already has: an index
+disaggregated by age keeps its survey-design errors.}
+
 \item{ObsSrvIdxAA_pop, UseSrvIdxAA_pop}{Population-specific counterparts, with
 a leading population dimension.}
 
-\item{sigmaSrvIdxAA_key, sigmaSrvIdxAA_pop_key}{Integer matrices coupling the
-index at age observation error, an integer key matrix, the convention ICES
-assessments use. Equal entries share a parameter and \code{NA} excludes one.
-The age shape of catchability is not set here: an index fit age by age puts
-it in selectivity through the \code{"nonparfree"} form, which carries the
-height of the curve as well as its shape. See
-\code{\link{Setup_Mod_Srvsel_and_Q}}.}
+\item{sigmaSrvIdxAA_key, sigmaSrvIdxAA_pop_key}{Integer arrays
+\code{[n_ages, n_sexes, n_srv_fleets]} coupling the index at age
+observation error, the key matrix convention ICES assessments use. Equal
+entries share a parameter and \code{NA} excludes one. The sex margin is
+required; a key coupling the sexes repeats its entries across them. The age shape of
+catchability is not set here: an index fit age by age puts it in selectivity
+through the \code{"nonparfree"} form, which carries the height of the curve
+as well as its shape. See \code{\link{Setup_Mod_Srvsel_and_Q}}.}
 
 \item{sigmaSrvIdxAA_spec, sigmaSrvIdxAA_pop_spec}{\code{"est"} (default) or
 \code{"fix"}.}
 
-\item{AgeObsCorr_srv_idx}{Correlation across ages for the survey index at
-age, \code{"iid"} (default) or \code{"1dar1"}. See
-\code{\link{Setup_Mod_Catch_and_F}}.}
+\item{SrvIdxAA_Type, SrvIdxAA_pop_Type}{Which margins the fleet reports
+separately: \code{"agg"}, \code{"spltRaggS"} (default), \code{"aggRspltS"}
+or \code{"spltRspltS"}. See \code{\link{Setup_Mod_Catch_and_F}}.}
+
+\item{SrvIdxAA_LikeType, SrvIdxAA_pop_LikeType}{\code{"lognormal"} (default)
+or \code{"normal"}, one setting for every fleet or one per fleet.}
+
+\item{SrvIdxAA_sigma_form, SrvIdxAA_pop_sigma_form}{Where the observation error
+comes from: \code{"none"} (default), \code{"data"}, \code{"est_additive"}
+or \code{"est_quadrature"}.}
+
+\item{AgeObsCorr_srv_idx, AgeObsCorr_srv_idx_pop}{Correlation across ages for
+the survey index at age, \code{"iid"} (default), \code{"1dar1"},
+\code{"us"} or \code{"2dar1"}, one setting for every fleet or one per
+fleet. See \code{\link{Setup_Mod_Catch_and_F}}.}
+
+\item{rho_srv_idx_key, rho_srv_idx_pop_key}{Integer matrices
+\code{[n_sexes, n_srv_fleets]} coupling the across-age correlation.}
 
 \item{sigmaSrvIdx_spec}{Character string controlling the estimated component of the
 aggregated survey index observation error, one value per fleet. One of:

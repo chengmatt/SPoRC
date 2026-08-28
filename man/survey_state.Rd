@@ -4,7 +4,16 @@
 \alias{survey_state}
 \title{Numbers at the survey point within a season}
 \usage{
-survey_state(N, Move, Z, Q = NULL, dur = 1, t_srv = 0, move_timing = 0)
+survey_state(
+  N,
+  Move,
+  Z,
+  Q = NULL,
+  dur = 1,
+  t_srv = 0,
+  move_timing = 0,
+  expm_nsub = 0
+)
 }
 \arguments{
 \item{N}{Numeric vector of length \code{n_regions} at the start of the season.}
@@ -31,6 +40,11 @@ the season elapsed before the survey, per region. A scalar is recycled.}
 \code{0} = movement then mortality (default, historical SPoRC behaviour),
 \code{1} = mortality then movement, \code{2} = continuous (simultaneous)
 movement and mortality.}
+
+\item{expm_nsub}{Integer controlling how the matrix exponential is evaluated
+under \code{move_timing = 2}: \code{0} (default) uses \code{Matrix::expm},
+a value \eqn{n \ge 1} uses the implicit backward Euler scheme
+\eqn{(I - A/n)^{-n}}. See \code{\link{mat_exp}}.}
 }
 \value{
 Numeric vector of length \code{n_regions}.

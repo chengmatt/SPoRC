@@ -16,7 +16,8 @@ build_plus_group_T(
   seasdur,
   Mrate_penult = NULL,
   Mrate_plus = NULL,
-  move_timing = 0
+  move_timing = 0,
+  expm_nsub = 0
 )
 }
 \arguments{
@@ -61,6 +62,10 @@ Instantaneous movement rate matrices for the plus-group age. Required when
 \item{move_timing}{Integer flag for movement/mortality sequencing:
 \code{0} = movement then mortality (default), \code{1} = mortality then
 movement, \code{2} = continuous. See \code{\link{build_seas_operator}}.}
+
+\item{expm_nsub}{Integer controlling how the matrix exponential is evaluated under
+\code{move_timing = 2}: \code{0} uses \code{Matrix::expm}, \eqn{n \ge 1} uses
+\eqn{n} implicit backward Euler substeps. See \code{\link{mat_exp}}.}
 }
 \value{
 A named list with four transition matrices, each of dimension

@@ -10,15 +10,30 @@ Setup_Sim_Fishing(
     sim_list$n_seas, sim_list$n_fish_fleets)),
   ln_sigmaC_pop = array(log(0.02), dim = c(sim_list$n_pop, sim_list$n_regions,
     sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
-  ln_sigmaCAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_fish_fleets)),
-  ln_sigmaDAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_fish_fleets)),
-  ln_sigmaFishIdxAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_fish_fleets)),
+  ln_sigmaCAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_sexes,
+    sim_list$n_fish_fleets)),
+  ln_sigmaDAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_sexes,
+    sim_list$n_fish_fleets)),
+  ln_sigmaFishIdxAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_sexes,
+    sim_list$n_fish_fleets)),
   UseCatchAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
-    sim_list$n_ages, sim_list$n_fish_fleets)),
+    sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
   UseDiscardAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
-    sim_list$n_ages, sim_list$n_fish_fleets)),
+    sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
   UseFishIdxAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
-    sim_list$n_ages, sim_list$n_fish_fleets)),
+    sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
+  ObsCatchAA_SE = NULL,
+  ObsDiscardAA_SE = NULL,
+  ObsFishIdxAA_SE = NULL,
+  CatchAA_Type = "spltRaggS",
+  DiscardAA_Type = "spltRaggS",
+  FishIdxAA_Type = "spltRaggS",
+  CatchAA_LikeType = "lognormal",
+  DiscardAA_LikeType = "lognormal",
+  FishIdxAA_LikeType = "lognormal",
+  CatchAA_sigma_form = "none",
+  DiscardAA_sigma_form = "none",
+  FishIdxAA_sigma_form = "none",
   use_catch_aa = rep(0, sim_list$n_fish_fleets),
   use_discard_aa = rep(0, sim_list$n_fish_fleets),
   use_fish_idx_aa = rep(0, sim_list$n_fish_fleets),
@@ -161,6 +176,33 @@ dimensions `n_regions x n_yrs x n_seas x n_fish_fleets`. Default: log(0.02).}
 \item{ln_sigmaC_pop}{Numeric array. Log-scale observation SD for population-specific catch,
 dimensions `n_pop x n_regions x n_yrs x n_seas x n_fish_fleets`. Default: log(0.02).}
 
+\item{ln_sigmaCAA, ln_sigmaDAA, ln_sigmaFishIdxAA}{Log-scale observation error
+for the at-age streams, `n_ages x n_sexes x n_fish_fleets`. An array without
+the sex margin is required.}
+
+\item{UseCatchAA, UseDiscardAA, UseFishIdxAA}{Integer arrays
+`n_regions x n_yrs x n_seas x n_ages x n_sexes x n_fish_fleets`, `1` where an
+at-age observation is drawn. The sex margin is required: a stream summed
+over sexes carries its flag in sex slot one.}
+
+\item{ObsCatchAA_SE, ObsDiscardAA_SE, ObsFishIdxAA_SE}{Reported standard errors
+shaped like the use arrays, read only when the stream's `sigma_form` asks
+for them.}
+
+\item{CatchAA_Type, DiscardAA_Type, FishIdxAA_Type}{Which margins each fleet
+reports separately: `"agg"`, `"spltRaggS"` (default), `"aggRspltS"` or
+`"spltRspltS"`. A summed margin is drawn once, into slot one.}
+
+\item{CatchAA_LikeType, DiscardAA_LikeType, FishIdxAA_LikeType}{`"lognormal"`
+(default) or `"normal"`, per fleet.}
+
+\item{CatchAA_sigma_form, DiscardAA_sigma_form, FishIdxAA_sigma_form}{Where the
+observation error comes from: `"none"` (default), `"data"`,
+`"est_additive"` or `"est_quadrature"`.}
+
+\item{use_catch_aa, use_discard_aa, use_fish_idx_aa}{Integer vectors
+`n_fish_fleets`, `1` for fleets whose at-age streams are drawn.}
+
 \item{catch_units}{Numeric vector. Catch units (0 = abundance, 1 = biomass),
 length `n_fish_fleets`. Default: 1.}
 
@@ -209,6 +251,36 @@ the fishery index timing, the fraction of the season elapsed when the index
 is observed. Numbers at age are decayed by \code{exp(-t_fish * ZAA)} before
 the index is formed, matching \code{t_srv} for surveys and the estimation
 model's own \code{t_fish}. Defaults to \code{0} (start of season).}
+
+\item{comp_fish_caal_like}{Character or numeric vector `n_fish_fleets` giving the
+conditional age-at-length likelihood per fleet: `"Multinomial"` (0),
+`"Dirichlet-Multinomial"` (1), or `"none"` (999). Only these two families exist
+for CAAL: a CAAL row is the age composition of the otoliths taken from one
+length bin, usually a small and mostly zero sample, which the logistic-normal
+forms cannot support. Default: `"none"` for every fleet.}
+
+\item{ISS_Fish_caal}{Numeric array. Number of fish aged within each length bin,
+dimensions `n_regions x n_yrs x n_seas x n_lens x n_sexes x n_fish_fleets x n_sims`.
+A bin whose sample size rounds to zero is skipped. `NULL` (the default) draws no
+CAAL; supplying it alongside a likelihood other than `"none"` is what switches
+`do_fish_caal` on. Requires `n_lens`.}
+
+\item{ln_Fish_caal_theta}{Numeric array. Log overdispersion for the
+Dirichlet-multinomial, dimensions `n_regions x n_sexes x n_fish_fleets`. Read
+under the split types, `[r, s, f]` when sexes are split and `[r, 1, f]` when they
+are joint, and ignored under the multinomial. Default: log(1).}
+
+\item{ln_Fish_caal_theta_agg}{Numeric vector `n_fish_fleets`. The aggregated type's
+counterpart to `ln_Fish_caal_theta`. Default: log(1).}
+
+\item{Fish_caal_Type}{Numeric or character array giving the composition structure
+per year and fleet, dimensions `n_yrs x n_fish_fleets`: `"agg"` (0) pools regions
+and sexes and is drawn once when the region loop reaches the last region,
+`"spltRspltS"` (1) draws each sex in a bin as its own sample, `"spltRjntS"` (2)
+draws one sample across the age by sex stack, and `"none"` (999) skips the fleet
+in that year. Unlike the estimation model, which parses
+`"CompType_Year_x-y_Fleet_z"` strings, the simulator takes the year by fleet
+array directly. Default: `"none"` throughout.}
 
 \item{comp_fishage_like}{Numeric vector. Likelihood for age composition
 (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants),

@@ -21,8 +21,8 @@ to build \code{model}.}
 
 \item{index_source}{One of \code{"Catch"}, \code{"Discard"}, \code{"FishIdx"},
 \code{"SrvIdx"}, or their at-age forms \code{"CatchAA"}, \code{"DiscardAA"},
-\code{"FishIdxAA"}, \code{"SrvIdxAA"}. At-age sources return an extra
-\code{age} column.}
+\code{"FishIdxAA"}, \code{"SrvIdxAA"}. At-age sources return extra
+\code{age} and \code{sex} columns.}
 
 \item{pop}{Logical; population-specific index source. Default \code{FALSE}.}
 
@@ -35,10 +35,12 @@ to build \code{model}.}
 }
 \value{
 A list with one element \code{res}: columns \code{fleet},
-  \code{region}, \code{year}, \code{season}, \code{pop}, \code{resid}, and
-  \code{idx_type} (set to \code{index_source}; named \code{idx_type} rather
-  than \code{comp_type} because index-type sources are not compositions), or
-  \code{NULL} if no data of the requested source is present.
+  \code{region}, \code{year}, \code{season}, \code{pop}, \code{age},
+  \code{sex}, \code{resid}, and \code{idx_type} (set to
+  \code{index_source}; named \code{idx_type} rather than \code{comp_type}
+  because index-type sources are not compositions), or \code{NULL} if no data
+  of the requested source is present. \code{age} and \code{sex} are
+  \code{NA} for the aggregated sources.
 }
 \description{
 Internal counterpart to \code{\link{run_internal_comp_osa}} for

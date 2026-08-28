@@ -210,6 +210,53 @@
 #'   (0 = aggregated, 1 = split region/sex, 2 = split region joint sex, 999 = none),
 #'   dimensions `n_yrs x n_fish_fleets`. Default: 2.
 #'
+#' @param UseCatchAA,UseDiscardAA,UseFishIdxAA Integer arrays
+#'   `n_regions x n_yrs x n_seas x n_ages x n_sexes x n_fish_fleets`, `1` where an
+#'   at-age observation is drawn. The sex margin is required: a stream summed
+#'   over sexes carries its flag in sex slot one.
+#' @param use_catch_aa,use_discard_aa,use_fish_idx_aa Integer vectors
+#'   `n_fish_fleets`, `1` for fleets whose at-age streams are drawn.
+#' @param ln_sigmaCAA,ln_sigmaDAA,ln_sigmaFishIdxAA Log-scale observation error
+#'   for the at-age streams, `n_ages x n_sexes x n_fish_fleets`. An array without
+#'   the sex margin is required.
+#' @param ObsCatchAA_SE,ObsDiscardAA_SE,ObsFishIdxAA_SE Reported standard errors
+#'   shaped like the use arrays, read only when the stream's `sigma_form` asks
+#'   for them.
+#' @param CatchAA_Type,DiscardAA_Type,FishIdxAA_Type Which margins each fleet
+#'   reports separately: `"agg"`, `"spltRaggS"` (default), `"aggRspltS"` or
+#'   `"spltRspltS"`. A summed margin is drawn once, into slot one.
+#' @param CatchAA_LikeType,DiscardAA_LikeType,FishIdxAA_LikeType `"lognormal"`
+#'   (default) or `"normal"`, per fleet.
+#' @param CatchAA_sigma_form,DiscardAA_sigma_form,FishIdxAA_sigma_form Where the
+#'   observation error comes from: `"none"` (default), `"data"`,
+#'   `"est_additive"` or `"est_quadrature"`.
+#'
+#' @param comp_fish_caal_like Character or numeric vector `n_fish_fleets` giving the
+#'   conditional age-at-length likelihood per fleet: `"Multinomial"` (0),
+#'   `"Dirichlet-Multinomial"` (1), or `"none"` (999). Only these two families exist
+#'   for CAAL: a CAAL row is the age composition of the otoliths taken from one
+#'   length bin, usually a small and mostly zero sample, which the logistic-normal
+#'   forms cannot support. Default: `"none"` for every fleet.
+#' @param ISS_Fish_caal Numeric array. Number of fish aged within each length bin,
+#'   dimensions `n_regions x n_yrs x n_seas x n_lens x n_sexes x n_fish_fleets x n_sims`.
+#'   A bin whose sample size rounds to zero is skipped. `NULL` (the default) draws no
+#'   CAAL; supplying it alongside a likelihood other than `"none"` is what switches
+#'   `do_fish_caal` on. Requires `n_lens`.
+#' @param Fish_caal_Type Numeric or character array giving the composition structure
+#'   per year and fleet, dimensions `n_yrs x n_fish_fleets`: `"agg"` (0) pools regions
+#'   and sexes and is drawn once when the region loop reaches the last region,
+#'   `"spltRspltS"` (1) draws each sex in a bin as its own sample, `"spltRjntS"` (2)
+#'   draws one sample across the age by sex stack, and `"none"` (999) skips the fleet
+#'   in that year. Unlike the estimation model, which parses
+#'   `"CompType_Year_x-y_Fleet_z"` strings, the simulator takes the year by fleet
+#'   array directly. Default: `"none"` throughout.
+#' @param ln_Fish_caal_theta Numeric array. Log overdispersion for the
+#'   Dirichlet-multinomial, dimensions `n_regions x n_sexes x n_fish_fleets`. Read
+#'   under the split types, `[r, s, f]` when sexes are split and `[r, 1, f]` when they
+#'   are joint, and ignored under the multinomial. Default: log(1).
+#' @param ln_Fish_caal_theta_agg Numeric vector `n_fish_fleets`. The aggregated type's
+#'   counterpart to `ln_Fish_caal_theta`. Default: log(1).
+#'
 #' @return A modified `sim_list` with validated fishing-related inputs.
 #'
 #' @export Setup_Sim_Fishing
@@ -219,12 +266,24 @@ Setup_Sim_Fishing <- function(sim_list,
                               # Retained / total fishery dynamics
                               ln_sigmaC = array(log(0.02), dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
                               ln_sigmaC_pop = array(log(0.02), dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
-                              ln_sigmaCAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_fish_fleets)),
-                              ln_sigmaDAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_fish_fleets)),
-                              ln_sigmaFishIdxAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_fish_fleets)),
-                              UseCatchAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_fish_fleets)),
-                              UseDiscardAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_fish_fleets)),
-                              UseFishIdxAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_fish_fleets)),
+                              ln_sigmaCAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
+                              ln_sigmaDAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
+                              ln_sigmaFishIdxAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
+                              UseCatchAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
+                              UseDiscardAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
+                              UseFishIdxAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
+                              ObsCatchAA_SE = NULL,
+                              ObsDiscardAA_SE = NULL,
+                              ObsFishIdxAA_SE = NULL,
+                              CatchAA_Type = "spltRaggS",
+                              DiscardAA_Type = "spltRaggS",
+                              FishIdxAA_Type = "spltRaggS",
+                              CatchAA_LikeType = "lognormal",
+                              DiscardAA_LikeType = "lognormal",
+                              FishIdxAA_LikeType = "lognormal",
+                              CatchAA_sigma_form = "none",
+                              DiscardAA_sigma_form = "none",
+                              FishIdxAA_sigma_form = "none",
                               use_catch_aa = rep(0, sim_list$n_fish_fleets),
                               use_discard_aa = rep(0, sim_list$n_fish_fleets),
                               use_fish_idx_aa = rep(0, sim_list$n_fish_fleets),
@@ -488,12 +547,34 @@ Setup_Sim_Fishing <- function(sim_list,
   sim_list$catch_units <- catch_units # catch units
   sim_list$ln_sigmaC <- ln_sigmaC # Observation sd for catch
   sim_list$ln_sigmaC_pop <- ln_sigmaC_pop
+  aa_use_dim <- c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages,
+                  sim_list$n_sexes, sim_list$n_fish_fleets)
+  aa_sigma_dim <- c(sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)
+  for(nm in c("ln_sigmaCAA", "ln_sigmaDAA", "ln_sigmaFishIdxAA")) check_at_age_shape(get(nm), aa_sigma_dim, nm)
+  for(nm in c("UseCatchAA", "UseDiscardAA", "UseFishIdxAA")) check_at_age_shape(get(nm), aa_use_dim, nm)
   sim_list$ln_sigmaCAA <- ln_sigmaCAA
   sim_list$ln_sigmaDAA <- ln_sigmaDAA
   sim_list$ln_sigmaFishIdxAA <- ln_sigmaFishIdxAA
   sim_list$UseCatchAA <- UseCatchAA
   sim_list$UseDiscardAA <- UseDiscardAA
   sim_list$UseFishIdxAA <- UseFishIdxAA
+  # a conditioned model built before these settings existed passes them through
+  # as NULL, which means the default rather than an error
+  or_default <- function(x, default) if(is.null(x)) default else x
+  for(nm in c("CatchAA", "DiscardAA", "FishIdxAA")) {
+    se <- get(paste0("Obs", nm, "_SE"))
+    check_at_age_shape(se, aa_use_dim, paste0("Obs", nm, "_SE"))
+    use_dim <- dim(sim_list[[paste0("Use", nm)]])
+    sim_list[[paste0("Obs", nm, "_SE")]] <- if(is.null(se) && !is.null(use_dim)) array(0, dim = use_dim) else se
+    sim_list[[paste0(nm, "_Type")]] <- rep_len(convert_to_numeric(or_default(get(paste0(nm, "_Type")), "spltRaggS"),
+                                                                  list(agg = 0, spltRaggS = 1, aggRspltS = 2, spltRspltS = 3)),
+                                               sim_list$n_fish_fleets)
+    sim_list[[paste0(nm, "_LikeType")]] <- rep_len(convert_to_numeric(or_default(get(paste0(nm, "_LikeType")), "lognormal"),
+                                                                      list(lognormal = 0, normal = 1)), sim_list$n_fish_fleets)
+    sim_list[[paste0(nm, "_sigma_form")]] <- rep_len(convert_to_numeric(or_default(get(paste0(nm, "_sigma_form")), "none"),
+                                                                        list(none = 0, data = 1, est_additive = 2, est_quadrature = 3)),
+                                                     sim_list$n_fish_fleets)
+  } # end nm loop
   sim_list$use_catch_aa <- use_catch_aa
   sim_list$use_discard_aa <- use_discard_aa
   sim_list$use_fish_idx_aa <- use_fish_idx_aa # observation sd for pop-specific catch
@@ -723,13 +804,55 @@ Setup_Sim_Fishing <- function(sim_list,
 #'   \code{$SrvLen_pop_corr_pars}, \code{$SrvLenComps_pop_Type}. Character-coded
 #'   inputs are converted to integer equivalents before storage.
 #'
+#' @param UseSrvIdxAA Integer array
+#'   `n_regions x n_yrs x n_seas x n_ages x n_sexes x n_srv_fleets`, `1` where a
+#'   survey index at age is drawn. The sex margin is required: a stream summed
+#'   over sexes carries its flag in sex slot one.
+#' @param use_srv_idx_aa Integer vector `n_srv_fleets`, `1` for fleets whose
+#'   index at age is drawn.
+#' @param ln_sigmaSrvIdxAA Log-scale observation error for the index at age,
+#'   `n_ages x n_sexes x n_srv_fleets`. The sex margin is required.
+#' @param ObsSrvIdxAA_SE Reported standard errors shaped like `UseSrvIdxAA`, read
+#'   only when `SrvIdxAA_sigma_form` asks for them.
+#' @param SrvIdxAA_Type Which margins each fleet reports separately: `"agg"`,
+#'   `"spltRaggS"` (default), `"aggRspltS"` or `"spltRspltS"`.
+#' @param SrvIdxAA_LikeType `"lognormal"` (default) or `"normal"`, per fleet.
+#' @param SrvIdxAA_sigma_form Where the observation error comes from: `"none"`
+#'   (default), `"data"`, `"est_additive"` or `"est_quadrature"`.
+#'
+#' @param comp_srv_caal_like Character or numeric vector `n_srv_fleets` giving the
+#'   conditional age-at-length likelihood per fleet: `"Multinomial"` (0),
+#'   `"Dirichlet-Multinomial"` (1), or `"none"` (999). The survey twin of
+#'   `comp_fish_caal_like`, and only these two families exist for CAAL. Default:
+#'   `"none"` for every fleet.
+#' @param ISS_Srv_caal Numeric array. Number of fish aged within each length bin,
+#'   dimensions `n_regions x n_yrs x n_seas x n_lens x n_sexes x n_srv_fleets x n_sims`.
+#'   A bin whose sample size rounds to zero is skipped. `NULL` (the default) draws no
+#'   CAAL; supplying it alongside a likelihood other than `"none"` switches
+#'   `do_srv_caal` on. Requires `n_lens`.
+#' @param Srv_caal_Type Numeric or character array giving the composition structure
+#'   per year and fleet, dimensions `n_yrs x n_srv_fleets`, with the same codes as
+#'   `Fish_caal_Type`: `"agg"` (0), `"spltRspltS"` (1), `"spltRjntS"` (2), `"none"`
+#'   (999). The simulator takes the year by fleet array directly rather than the
+#'   estimation model's `"CompType_Year_x-y_Fleet_z"` strings. Default: `"none"`
+#'   throughout.
+#' @param ln_Srv_caal_theta Numeric array. Log overdispersion for the
+#'   Dirichlet-multinomial, dimensions `n_regions x n_sexes x n_srv_fleets`, read under
+#'   the split types and ignored under the multinomial. Default: log(1).
+#' @param ln_Srv_caal_theta_agg Numeric vector `n_srv_fleets`. The aggregated type's
+#'   counterpart to `ln_Srv_caal_theta`. Default: log(1).
+#'
 #' @export Setup_Sim_Survey
 #' @family Simulation Setup
 Setup_Sim_Survey <- function(sim_list,
                              srv_sel_input,
                              ObsSrvIdx_SE = array(0.2, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,  sim_list$n_srv_fleets)),
-                             ln_sigmaSrvIdxAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_srv_fleets)),
-                             UseSrvIdxAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_srv_fleets)),
+                             ln_sigmaSrvIdxAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_sexes, sim_list$n_srv_fleets)),
+                             UseSrvIdxAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_srv_fleets)),
+                             ObsSrvIdxAA_SE = NULL,
+                             SrvIdxAA_Type = "spltRaggS",
+                             SrvIdxAA_LikeType = "lognormal",
+                             SrvIdxAA_sigma_form = "none",
                              use_srv_idx_aa = rep(0, sim_list$n_srv_fleets),
                              ObsSrvIdx_pop_SE = array(0.2, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,  sim_list$n_srv_fleets)),
                              srv_q_input = array(1, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_srv_fleets, sim_list$n_sims)),
@@ -855,8 +978,23 @@ Setup_Sim_Survey <- function(sim_list,
   sim_list$srv_sel <- srv_sel_input
   sim_list$srv_q <- srv_q_input
   sim_list$ObsSrvIdx_SE <- ObsSrvIdx_SE
+  srv_aa_dim <- c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages,
+                  sim_list$n_sexes, sim_list$n_srv_fleets)
+  check_at_age_shape(ln_sigmaSrvIdxAA, c(sim_list$n_ages, sim_list$n_sexes, sim_list$n_srv_fleets), "ln_sigmaSrvIdxAA")
+  check_at_age_shape(UseSrvIdxAA, srv_aa_dim, "UseSrvIdxAA")
+  check_at_age_shape(ObsSrvIdxAA_SE, srv_aa_dim, "ObsSrvIdxAA_SE")
   sim_list$ln_sigmaSrvIdxAA <- ln_sigmaSrvIdxAA
   sim_list$UseSrvIdxAA <- UseSrvIdxAA
+  sim_list$ObsSrvIdxAA_SE <- if(is.null(ObsSrvIdxAA_SE) && !is.null(dim(sim_list$UseSrvIdxAA))) array(0, dim = dim(sim_list$UseSrvIdxAA))
+                             else ObsSrvIdxAA_SE
+  # a conditioned model built before these settings existed passes them through
+  # as NULL, which means the default rather than an error
+  if(is.null(SrvIdxAA_Type)) SrvIdxAA_Type <- "spltRaggS"
+  if(is.null(SrvIdxAA_LikeType)) SrvIdxAA_LikeType <- "lognormal"
+  if(is.null(SrvIdxAA_sigma_form)) SrvIdxAA_sigma_form <- "none"
+  sim_list$SrvIdxAA_Type <- rep_len(convert_to_numeric(SrvIdxAA_Type, list(agg = 0, spltRaggS = 1, aggRspltS = 2, spltRspltS = 3)), sim_list$n_srv_fleets)
+  sim_list$SrvIdxAA_LikeType <- rep_len(convert_to_numeric(SrvIdxAA_LikeType, list(lognormal = 0, normal = 1)), sim_list$n_srv_fleets)
+  sim_list$SrvIdxAA_sigma_form <- rep_len(convert_to_numeric(SrvIdxAA_sigma_form, list(none = 0, data = 1, est_additive = 2, est_quadrature = 3)), sim_list$n_srv_fleets)
   sim_list$use_srv_idx_aa <- use_srv_idx_aa
   sim_list$ObsSrvIdx_pop_SE <- ObsSrvIdx_pop_SE
   sim_list$t_srv <- t_srv

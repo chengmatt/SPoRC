@@ -22,11 +22,14 @@ test_that("Get_Reference_Point_Uncertainty returns intervals with the expected s
   expect_true(all(rp$refpts$lwr <= rp$refpts$est))
   expect_true(all(rp$refpts$upr >= rp$refpts$est))
 
-  # unfished SBPR is evaluated at F = 0, so no selectivity parameter can move it
+  # Only selectivity was perturbed here, and an SPR target pins SBPR(F_x) to a fixed
+  # fraction of SBPR(0). Since SBPR(0) is evaluated at F = 0, neither biomass
+  # reference point can respond to selectivity at all; only F_x itself moves. The
+  # residual is rounding, and comes out as an exact zero on some platforms.
   se <- stats::setNames(rp$refpts$log_se, rp$refpts$quantity)
-  expect_equal(se[["virgin_b_ref_pt"]], 0, tolerance = 1e-12)
-  expect_gt(se[["f_ref_pt"]], 0)
-  expect_gt(se[["b_ref_pt"]], 0)
+  expect_equal(se[["virgin_b_ref_pt"]], 0, tolerance = 1e-10)
+  expect_equal(se[["b_ref_pt"]], 0, tolerance = 1e-10)
+  expect_gt(se[["f_ref_pt"]], 1e-6)
 
   # point estimate must match Get_Reference_Points
   base <- Get_Reference_Points(data = dusky_rtmb_model$data,

@@ -2522,7 +2522,11 @@ last historical year unless extended rows are supplied</td>
 <tr class="even">
 <td><code>adjacency_mat</code></td>
 <td>Square <code>[n_regions × n_regions]</code> binary connectivity
-matrix</td>
+matrix, with a <strong>zero diagonal</strong>: residency falls out of
+the generator and is not specified here. A fully connected matrix is
+<code>1 - diag(n_regions)</code>; note that
+<code>diag(1, n_regions)</code> is the identity, which connects nothing
+and is rejected</td>
 </tr>
 <tr class="odd">
 <td><code>area_r</code></td>

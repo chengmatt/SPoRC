@@ -62,8 +62,10 @@ do_sel_devs_mapping(
 
 - use_field:
 
-  Character. Stub for the usage-indicator fields: `Use<use_field>` /
-  `Use<use_field>_pop`. `"Catch"` for `"fish"`/`"ret"`; `"SrvIdx"` for
+  Character. Stub for the usage-indicator fields read by
+  [`sel_has_data`](https://chengmatt.github.io/SPoRC/dev/reference/sel_has_data.md):
+  `Use<use_field>` and its at-age counterpart `Use<use_field>AA`, each
+  with a `_pop` variant. `"Catch"` for `"fish"`/`"ret"`; `"SrvIdx"` for
   `"srv"`.
 
 - fleet_label:

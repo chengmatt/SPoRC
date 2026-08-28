@@ -4,7 +4,9 @@ Constructs the factor map for `ln_fish_q` or `ln_srv_q`, controlling
 whether catchability parameters are estimated independently per region
 and time block or shared across regions. Cells with no index
 observations (aggregated or population-specific) are automatically
-mapped to `NA`. Serves both the fishery and the survey; `prefix` is
+mapped to `NA`. Catchability scales the aggregated index alone, so an
+at-age index stream does not switch one on: its age multiplier lives in
+the selectivity. Serves both the fishery and the survey; `prefix` is
 `"fish"` or `"srv"` and picks which parameter and data names to read.
 
 ## Usage

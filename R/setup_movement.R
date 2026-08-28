@@ -394,7 +394,13 @@ do_cont_vary_move_mapping <- function(input_list, cont_vary_movement, Movement_c
 #'   year to prevent spline extrapolation.
 #' @param adjacency_mat Square numeric matrix \code{[n_regions × n_regions]}
 #'   with 1 indicating an allowed transition and 0 indicating no direct
-#'   connection; diagonal should be 0. Required for \code{move_type = 1}.
+#'   connection. The diagonal must be 0: residency falls out of the generator,
+#'   and a non-zero diagonal leaves the generator columns summing to something
+#'   other than zero, so the movement matrix loses abundance rather than
+#'   redistributing it. A fully connected matrix is \code{1 - diag(n_regions)}
+#'   (note that \code{diag(1, n_regions)} is the identity, not an adjacency
+#'   matrix). Required for \code{move_type = 1}, where it is validated for
+#'   dimension, 0/1 entries, a zero diagonal, and at least one connection.
 #'   For \code{move_type = 0} a fully connected matrix is constructed
 #'   automatically.
 #' @param area_r Numeric vector of length \code{n_regions} giving the area of
@@ -619,6 +625,22 @@ Setup_Mod_Movement <- function(input_list,
     if(nrow(adjacency_mat) != input_list$data$n_regions ||
        ncol(adjacency_mat) != input_list$data$n_regions) {
       stop("adjacency_mat must be a square matrix with dimensions n_regions x n_regions")
+    }
+    if(anyNA(adjacency_mat)) stop("adjacency_mat cannot contain NA values")
+    if(!all(adjacency_mat %in% c(0, 1))) stop("adjacency_mat entries must be 0 (not connected) or 1 (connected)")
+
+    # Guard for adjacency matrix
+    if(any(diag(adjacency_mat) != 0)) {
+      stop("adjacency_mat must have a zero diagonal, since residency is implied by the generator rather than specified. ",
+           "Non-zero diagonal entries in region(s): ", paste(which(diag(adjacency_mat) != 0), collapse = ", "), ". ",
+           "Note that diag(1, n_regions) is the identity matrix, not an adjacency matrix; ",
+           "a fully connected matrix is 1 - diag(n_regions).")
+    }
+
+    # with no off-diagonal connections nothing can move and diffusion is unidentifiable
+    if(use_fixed_movement == 0 && all(adjacency_mat == 0)) {
+      stop("adjacency_mat has no off-diagonal connections, so no transitions are possible and the CTMC diffusion ",
+           "parameters are unidentifiable. Set use_fixed_movement = 1 to run without movement.")
     }
 
     # check area sizes

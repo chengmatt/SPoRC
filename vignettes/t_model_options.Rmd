@@ -646,7 +646,7 @@ Each dimension can be pooled (`'constant'`) or blocked:
 | `ctmc_move_dat` | Data frame of covariates with required columns `pop`, `regions`, `years`, `seas`, `ages`, `sexes`, plus any variables referenced in the formulas. For projection years, covariate lookups are capped at the last historical year unless extended rows are supplied |
 | `diffusion_formula` | R formula for diffusion (e.g., `~ 1`, `~ bs(years, df = 4)`) |
 | `preference_formula` | R formula for taxis/preference |
-| `adjacency_mat` | Square `[n_regions × n_regions]` binary connectivity matrix |
+| `adjacency_mat` | Square `[n_regions × n_regions]` binary connectivity matrix, with a **zero diagonal**: residency falls out of the generator and is not specified here. A fully connected matrix is `1 - diag(n_regions)`; note that `diag(1, n_regions)` is the identity, which connects nothing and is rejected |
 | `area_r` | Numeric vector of region areas (scales diffusion rates) |
 | `ctmc_diffusion_bounds` | 0/1: if `1`, shifts diffusion columns to guarantee all off-diagonal generator-matrix entries are non-negative |
 | `ctmc_scale_by_seasdur` | 0/1 (default `1`): if `1`, treats the generator as an annual rate and exponentiates `Q * seasdur[s]` each season, so movement and mortality share time units. `0` results in `Q * 1` each season.

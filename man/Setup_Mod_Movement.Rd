@@ -127,7 +127,13 @@ year to prevent spline extrapolation.}
 
 \item{adjacency_mat}{Square numeric matrix \code{[n_regions × n_regions]}
 with 1 indicating an allowed transition and 0 indicating no direct
-connection; diagonal should be 0. Required for \code{move_type = 1}.
+connection. The diagonal must be 0: residency falls out of the generator,
+and a non-zero diagonal leaves the generator columns summing to something
+other than zero, so the movement matrix loses abundance rather than
+redistributing it. A fully connected matrix is \code{1 - diag(n_regions)}
+(note that \code{diag(1, n_regions)} is the identity, not an adjacency
+matrix). Required for \code{move_type = 1}, where it is validated for
+dimension, 0/1 entries, a zero diagonal, and at least one connection.
 For \code{move_type = 0} a fully connected matrix is constructed
 automatically.}
 

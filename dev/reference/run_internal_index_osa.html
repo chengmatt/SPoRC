@@ -91,8 +91,8 @@ to build <code>model</code>.</p></dd>
 <dt id="arg-index-source">index_source<a class="anchor" aria-label="anchor" href="#arg-index-source"></a></dt>
 <dd><p>One of <code>"Catch"</code>, <code>"Discard"</code>, <code>"FishIdx"</code>,
 <code>"SrvIdx"</code>, or their at-age forms <code>"CatchAA"</code>, <code>"DiscardAA"</code>,
-<code>"FishIdxAA"</code>, <code>"SrvIdxAA"</code>. At-age sources return an extra
-<code>age</code> column.</p></dd>
+<code>"FishIdxAA"</code>, <code>"SrvIdxAA"</code>. At-age sources return extra
+<code>age</code> and <code>sex</code> columns.</p></dd>
 
 
 <dt id="arg-pop">pop<a class="anchor" aria-label="anchor" href="#arg-pop"></a></dt>
@@ -113,10 +113,12 @@ to build <code>model</code>.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A list with one element <code>res</code>: columns <code>fleet</code>,
-  <code>region</code>, <code>year</code>, <code>season</code>, <code>pop</code>, <code>resid</code>, and
-  <code>idx_type</code> (set to <code>index_source</code>; named <code>idx_type</code> rather
-  than <code>comp_type</code> because index-type sources are not compositions), or
-  <code>NULL</code> if no data of the requested source is present.</p>
+  <code>region</code>, <code>year</code>, <code>season</code>, <code>pop</code>, <code>age</code>,
+  <code>sex</code>, <code>resid</code>, and <code>idx_type</code> (set to
+  <code>index_source</code>; named <code>idx_type</code> rather than <code>comp_type</code>
+  because index-type sources are not compositions), or <code>NULL</code> if no data
+  of the requested source is present. <code>age</code> and <code>sex</code> are
+  <code>NA</code> for the aggregated sources.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

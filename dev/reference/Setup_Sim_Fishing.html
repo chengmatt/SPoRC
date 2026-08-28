@@ -68,15 +68,30 @@ and age- and length-composition parameters for both aggregate and population-spe
 <span>    <span class="va">sim_list</span><span class="op">$</span><span class="va">n_seas</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  ln_sigmaC_pop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">0.02</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_pop</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span>,</span>
 <span>    <span class="va">sim_list</span><span class="op">$</span><span class="va">n_yrs</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_seas</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  ln_sigmaCAA <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">0.2</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_ages</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  ln_sigmaDAA <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">0.2</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_ages</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  ln_sigmaFishIdxAA <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">0.2</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_ages</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  ln_sigmaCAA <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">0.2</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_ages</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_sexes</span>,</span>
+<span>    <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  ln_sigmaDAA <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">0.2</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_ages</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_sexes</span>,</span>
+<span>    <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  ln_sigmaFishIdxAA <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">0.2</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_ages</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_sexes</span>,</span>
+<span>    <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  UseCatchAA <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_yrs</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_seas</span>,</span>
-<span>    <span class="va">sim_list</span><span class="op">$</span><span class="va">n_ages</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    <span class="va">sim_list</span><span class="op">$</span><span class="va">n_ages</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_sexes</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  UseDiscardAA <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_yrs</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_seas</span>,</span>
-<span>    <span class="va">sim_list</span><span class="op">$</span><span class="va">n_ages</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    <span class="va">sim_list</span><span class="op">$</span><span class="va">n_ages</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_sexes</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  UseFishIdxAA <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_yrs</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_seas</span>,</span>
-<span>    <span class="va">sim_list</span><span class="op">$</span><span class="va">n_ages</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    <span class="va">sim_list</span><span class="op">$</span><span class="va">n_ages</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_sexes</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  ObsCatchAA_SE <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ObsDiscardAA_SE <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ObsFishIdxAA_SE <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  CatchAA_Type <span class="op">=</span> <span class="st">"spltRaggS"</span>,</span>
+<span>  DiscardAA_Type <span class="op">=</span> <span class="st">"spltRaggS"</span>,</span>
+<span>  FishIdxAA_Type <span class="op">=</span> <span class="st">"spltRaggS"</span>,</span>
+<span>  CatchAA_LikeType <span class="op">=</span> <span class="st">"lognormal"</span>,</span>
+<span>  DiscardAA_LikeType <span class="op">=</span> <span class="st">"lognormal"</span>,</span>
+<span>  FishIdxAA_LikeType <span class="op">=</span> <span class="st">"lognormal"</span>,</span>
+<span>  CatchAA_sigma_form <span class="op">=</span> <span class="st">"none"</span>,</span>
+<span>  DiscardAA_sigma_form <span class="op">=</span> <span class="st">"none"</span>,</span>
+<span>  FishIdxAA_sigma_form <span class="op">=</span> <span class="st">"none"</span>,</span>
 <span>  use_catch_aa <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  use_discard_aa <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  use_fish_idx_aa <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
@@ -229,6 +244,47 @@ dimensions `n_regions x n_yrs x n_seas x n_fish_fleets`. Default: log(0.02).</p>
 dimensions `n_pop x n_regions x n_yrs x n_seas x n_fish_fleets`. Default: log(0.02).</p></dd>
 
 
+<dt id="arg-ln-sigmacaa-ln-sigmadaa-ln-sigmafishidxaa">ln_sigmaCAA, ln_sigmaDAA, ln_sigmaFishIdxAA<a class="anchor" aria-label="anchor" href="#arg-ln-sigmacaa-ln-sigmadaa-ln-sigmafishidxaa"></a></dt>
+<dd><p>Log-scale observation error
+for the at-age streams, `n_ages x n_sexes x n_fish_fleets`. An array without
+the sex margin is required.</p></dd>
+
+
+<dt id="arg-usecatchaa-usediscardaa-usefishidxaa">UseCatchAA, UseDiscardAA, UseFishIdxAA<a class="anchor" aria-label="anchor" href="#arg-usecatchaa-usediscardaa-usefishidxaa"></a></dt>
+<dd><p>Integer arrays
+`n_regions x n_yrs x n_seas x n_ages x n_sexes x n_fish_fleets`, `1` where an
+at-age observation is drawn. The sex margin is required: a stream summed
+over sexes carries its flag in sex slot one.</p></dd>
+
+
+<dt id="arg-obscatchaa-se-obsdiscardaa-se-obsfishidxaa-se">ObsCatchAA_SE, ObsDiscardAA_SE, ObsFishIdxAA_SE<a class="anchor" aria-label="anchor" href="#arg-obscatchaa-se-obsdiscardaa-se-obsfishidxaa-se"></a></dt>
+<dd><p>Reported standard errors
+shaped like the use arrays, read only when the stream's `sigma_form` asks
+for them.</p></dd>
+
+
+<dt id="arg-catchaa-type-discardaa-type-fishidxaa-type">CatchAA_Type, DiscardAA_Type, FishIdxAA_Type<a class="anchor" aria-label="anchor" href="#arg-catchaa-type-discardaa-type-fishidxaa-type"></a></dt>
+<dd><p>Which margins each fleet
+reports separately: `"agg"`, `"spltRaggS"` (default), `"aggRspltS"` or
+`"spltRspltS"`. A summed margin is drawn once, into slot one.</p></dd>
+
+
+<dt id="arg-catchaa-liketype-discardaa-liketype-fishidxaa-liketype">CatchAA_LikeType, DiscardAA_LikeType, FishIdxAA_LikeType<a class="anchor" aria-label="anchor" href="#arg-catchaa-liketype-discardaa-liketype-fishidxaa-liketype"></a></dt>
+<dd><p>`"lognormal"`
+(default) or `"normal"`, per fleet.</p></dd>
+
+
+<dt id="arg-catchaa-sigma-form-discardaa-sigma-form-fishidxaa-sigma-form">CatchAA_sigma_form, DiscardAA_sigma_form, FishIdxAA_sigma_form<a class="anchor" aria-label="anchor" href="#arg-catchaa-sigma-form-discardaa-sigma-form-fishidxaa-sigma-form"></a></dt>
+<dd><p>Where the
+observation error comes from: `"none"` (default), `"data"`,
+`"est_additive"` or `"est_quadrature"`.</p></dd>
+
+
+<dt id="arg-use-catch-aa-use-discard-aa-use-fish-idx-aa">use_catch_aa, use_discard_aa, use_fish_idx_aa<a class="anchor" aria-label="anchor" href="#arg-use-catch-aa-use-discard-aa-use-fish-idx-aa"></a></dt>
+<dd><p>Integer vectors
+`n_fish_fleets`, `1` for fleets whose at-age streams are drawn.</p></dd>
+
+
 <dt id="arg-catch-units">catch_units<a class="anchor" aria-label="anchor" href="#arg-catch-units"></a></dt>
 <dd><p>Numeric vector. Catch units (0 = abundance, 1 = biomass),
 length `n_fish_fleets`. Default: 1.</p></dd>
@@ -300,6 +356,46 @@ the fishery index timing, the fraction of the season elapsed when the index
 is observed. Numbers at age are decayed by <code>exp(-t_fish * ZAA)</code> before
 the index is formed, matching <code>t_srv</code> for surveys and the estimation
 model's own <code>t_fish</code>. Defaults to <code>0</code> (start of season).</p></dd>
+
+
+<dt id="arg-comp-fish-caal-like">comp_fish_caal_like<a class="anchor" aria-label="anchor" href="#arg-comp-fish-caal-like"></a></dt>
+<dd><p>Character or numeric vector `n_fish_fleets` giving the
+conditional age-at-length likelihood per fleet: `"Multinomial"` (0),
+`"Dirichlet-Multinomial"` (1), or `"none"` (999). Only these two families exist
+for CAAL: a CAAL row is the age composition of the otoliths taken from one
+length bin, usually a small and mostly zero sample, which the logistic-normal
+forms cannot support. Default: `"none"` for every fleet.</p></dd>
+
+
+<dt id="arg-iss-fish-caal">ISS_Fish_caal<a class="anchor" aria-label="anchor" href="#arg-iss-fish-caal"></a></dt>
+<dd><p>Numeric array. Number of fish aged within each length bin,
+dimensions `n_regions x n_yrs x n_seas x n_lens x n_sexes x n_fish_fleets x n_sims`.
+A bin whose sample size rounds to zero is skipped. `NULL` (the default) draws no
+CAAL; supplying it alongside a likelihood other than `"none"` is what switches
+`do_fish_caal` on. Requires `n_lens`.</p></dd>
+
+
+<dt id="arg-ln-fish-caal-theta">ln_Fish_caal_theta<a class="anchor" aria-label="anchor" href="#arg-ln-fish-caal-theta"></a></dt>
+<dd><p>Numeric array. Log overdispersion for the
+Dirichlet-multinomial, dimensions `n_regions x n_sexes x n_fish_fleets`. Read
+under the split types, `[r, s, f]` when sexes are split and `[r, 1, f]` when they
+are joint, and ignored under the multinomial. Default: log(1).</p></dd>
+
+
+<dt id="arg-ln-fish-caal-theta-agg">ln_Fish_caal_theta_agg<a class="anchor" aria-label="anchor" href="#arg-ln-fish-caal-theta-agg"></a></dt>
+<dd><p>Numeric vector `n_fish_fleets`. The aggregated type's
+counterpart to `ln_Fish_caal_theta`. Default: log(1).</p></dd>
+
+
+<dt id="arg-fish-caal-type">Fish_caal_Type<a class="anchor" aria-label="anchor" href="#arg-fish-caal-type"></a></dt>
+<dd><p>Numeric or character array giving the composition structure
+per year and fleet, dimensions `n_yrs x n_fish_fleets`: `"agg"` (0) pools regions
+and sexes and is drawn once when the region loop reaches the last region,
+`"spltRspltS"` (1) draws each sex in a bin as its own sample, `"spltRjntS"` (2)
+draws one sample across the age by sex stack, and `"none"` (999) skips the fleet
+in that year. Unlike the estimation model, which parses
+`"CompType_Year_x-y_Fleet_z"` strings, the simulator takes the year by fleet
+array directly. Default: `"none"` throughout.</p></dd>
 
 
 <dt id="arg-comp-fishage-like">comp_fishage_like<a class="anchor" aria-label="anchor" href="#arg-comp-fishage-like"></a></dt>

@@ -94,7 +94,8 @@ during projection unless <code>ctmc_move_dat</code> is extended with projection-
 <span>  <span class="va">adjacency_mat</span>,</span>
 <span>  <span class="va">ctmc_diffusion_bounds</span>,</span>
 <span>  seasdur <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="va">n_seas</span><span class="op">)</span>,</span>
-<span>  ctmc_scale_by_seasdur <span class="op">=</span> <span class="fl">0</span></span>
+<span>  ctmc_scale_by_seasdur <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  expm_nsub <span class="op">=</span> <span class="fl">0</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -245,6 +246,15 @@ reproduces the unscaled behaviour.</p></dd>
   diagnostic: the dynamics take <code>Mrate</code> and apply <code>seasdur[seas]</code>
   themselves.</p></dd>
 
+
+<dt id="arg-expm-nsub">expm_nsub<a class="anchor" aria-label="anchor" href="#arg-expm-nsub"></a></dt>
+<dd><p>Integer controlling how the CTMC generator is exponentiated
+into movement fractions: <code>0</code> (default) uses <code><a href="https://rdrr.io/pkg/Matrix/man/expm-methods.html" class="external-link">Matrix::expm</a></code>, a value
+\(n \ge 1\) uses the implicit backward Euler scheme \((I - Q\Delta/n)^{-n}\),
+which is cheaper to differentiate but is a first-order approximation. Only read
+when <code>move_type == 1</code> and <code>use_fixed_movement == 0</code>. See
+<code><a href="mat_exp.html">mat_exp</a></code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -277,7 +287,8 @@ reproduces the unscaled behaviour.</p></dd>
     fractions are estimated via a softmax transform of <code>move_pars + move_devs</code>.</p></li>
 <li><p>CTMC movement (<code>move_type == 1</code>): a generator matrix \(Q = D + Z\)
     is constructed from diffusion (\(D\)) and taxis (\(Z\)) components, then
-    exponentiated via <code>Matrix::expm(Q)</code> to obtain movement fractions. During
+    exponentiated via <code><a href="mat_exp.html">mat_exp</a></code> (either <code><a href="https://rdrr.io/pkg/Matrix/man/expm-methods.html" class="external-link">Matrix::expm</a></code> or the
+    implicit solve, per <code>expm_nsub</code>) to obtain movement fractions. During
     projection years (<code>y &gt; n_yrs</code>), covariate lookups are capped at <code>n_yrs</code>
     (i.e., CTMC base parameters are frozen at their last historical values), while
     <code>move_devs</code> continue to use the actual projected year index.</p></li>

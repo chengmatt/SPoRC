@@ -10,7 +10,16 @@ rather than the season integral used for catch.
 ## Usage
 
 ``` r
-survey_state(N, Move, Z, Q = NULL, dur = 1, t_srv = 0, move_timing = 0)
+survey_state(
+  N,
+  Move,
+  Z,
+  Q = NULL,
+  dur = 1,
+  t_srv = 0,
+  move_timing = 0,
+  expm_nsub = 0
+)
 ```
 
 ## Arguments
@@ -52,6 +61,15 @@ survey_state(N, Move, Z, Q = NULL, dur = 1, t_srv = 0, move_timing = 0)
   Integer flag for the movement/mortality ordering: `0` = movement then
   mortality (default, historical SPoRC behaviour), `1` = mortality then
   movement, `2` = continuous (simultaneous) movement and mortality.
+
+- expm_nsub:
+
+  Integer controlling how the matrix exponential is evaluated under
+  `move_timing = 2`: `0` (default) uses
+  [`Matrix::expm`](https://rdrr.io/pkg/Matrix/man/expm-methods.html), a
+  value \\n \ge 1\\ uses the implicit backward Euler scheme \\(I -
+  A/n)^{-n}\\. See
+  [`mat_exp`](https://chengmatt.github.io/SPoRC/dev/reference/mat_exp.md).
 
 ## Value
 

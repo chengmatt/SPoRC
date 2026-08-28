@@ -70,9 +70,14 @@ and correlation parameters. Must be called after <code><a href="Setup_Sim_Dim.ht
 <span>  <span class="va">srv_sel_input</span>,</span>
 <span>  ObsSrvIdx_SE <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0.2</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_yrs</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_seas</span>,</span>
 <span>    <span class="va">sim_list</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  ln_sigmaSrvIdxAA <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">0.2</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_ages</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  ln_sigmaSrvIdxAA <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">0.2</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_ages</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_sexes</span>,</span>
+<span>    <span class="va">sim_list</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  UseSrvIdxAA <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_yrs</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_seas</span>,</span>
-<span>    <span class="va">sim_list</span><span class="op">$</span><span class="va">n_ages</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    <span class="va">sim_list</span><span class="op">$</span><span class="va">n_ages</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_sexes</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  ObsSrvIdxAA_SE <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  SrvIdxAA_Type <span class="op">=</span> <span class="st">"spltRaggS"</span>,</span>
+<span>  SrvIdxAA_LikeType <span class="op">=</span> <span class="st">"lognormal"</span>,</span>
+<span>  SrvIdxAA_sigma_form <span class="op">=</span> <span class="st">"none"</span>,</span>
 <span>  use_srv_idx_aa <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span>,</span>
 <span>  ObsSrvIdx_pop_SE <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0.2</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_pop</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span>,</span>
 <span>    <span class="va">sim_list</span><span class="op">$</span><span class="va">n_yrs</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_seas</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -152,6 +157,42 @@ No default; must be provided.</p></dd>
 array <code>[n_regions × n_yrs × n_seas × n_srv_fleets]</code>. Default: 0.2.</p></dd>
 
 
+<dt id="arg-ln-sigmasrvidxaa">ln_sigmaSrvIdxAA<a class="anchor" aria-label="anchor" href="#arg-ln-sigmasrvidxaa"></a></dt>
+<dd><p>Log-scale observation error for the index at age,
+`n_ages x n_sexes x n_srv_fleets`. The sex margin is required.</p></dd>
+
+
+<dt id="arg-usesrvidxaa">UseSrvIdxAA<a class="anchor" aria-label="anchor" href="#arg-usesrvidxaa"></a></dt>
+<dd><p>Integer array
+`n_regions x n_yrs x n_seas x n_ages x n_sexes x n_srv_fleets`, `1` where a
+survey index at age is drawn. The sex margin is required: a stream summed
+over sexes carries its flag in sex slot one.</p></dd>
+
+
+<dt id="arg-obssrvidxaa-se">ObsSrvIdxAA_SE<a class="anchor" aria-label="anchor" href="#arg-obssrvidxaa-se"></a></dt>
+<dd><p>Reported standard errors shaped like `UseSrvIdxAA`, read
+only when `SrvIdxAA_sigma_form` asks for them.</p></dd>
+
+
+<dt id="arg-srvidxaa-type">SrvIdxAA_Type<a class="anchor" aria-label="anchor" href="#arg-srvidxaa-type"></a></dt>
+<dd><p>Which margins each fleet reports separately: `"agg"`,
+`"spltRaggS"` (default), `"aggRspltS"` or `"spltRspltS"`.</p></dd>
+
+
+<dt id="arg-srvidxaa-liketype">SrvIdxAA_LikeType<a class="anchor" aria-label="anchor" href="#arg-srvidxaa-liketype"></a></dt>
+<dd><p>`"lognormal"` (default) or `"normal"`, per fleet.</p></dd>
+
+
+<dt id="arg-srvidxaa-sigma-form">SrvIdxAA_sigma_form<a class="anchor" aria-label="anchor" href="#arg-srvidxaa-sigma-form"></a></dt>
+<dd><p>Where the observation error comes from: `"none"`
+(default), `"data"`, `"est_additive"` or `"est_quadrature"`.</p></dd>
+
+
+<dt id="arg-use-srv-idx-aa">use_srv_idx_aa<a class="anchor" aria-label="anchor" href="#arg-use-srv-idx-aa"></a></dt>
+<dd><p>Integer vector `n_srv_fleets`, `1` for fleets whose
+index at age is drawn.</p></dd>
+
+
 <dt id="arg-obssrvidx-pop-se">ObsSrvIdx_pop_SE<a class="anchor" aria-label="anchor" href="#arg-obssrvidx-pop-se"></a></dt>
 <dd><p>As above, but for population-specific indices,
 array <code>[n_pop × n_regions × n_yrs × n_seas × n_srv_fleets]</code>.</p></dd>
@@ -196,6 +237,42 @@ of fit flags from the estimation model, used to position each simulated cell
 in the covariance. Its year dimension may be shorter than the simulation,
 in which case later years draw with the mean factor scale and loading.
 Required for mvn fleets. Default: <code>NULL</code>.</p></dd>
+
+
+<dt id="arg-comp-srv-caal-like">comp_srv_caal_like<a class="anchor" aria-label="anchor" href="#arg-comp-srv-caal-like"></a></dt>
+<dd><p>Character or numeric vector `n_srv_fleets` giving the
+conditional age-at-length likelihood per fleet: `"Multinomial"` (0),
+`"Dirichlet-Multinomial"` (1), or `"none"` (999). The survey twin of
+`comp_fish_caal_like`, and only these two families exist for CAAL. Default:
+`"none"` for every fleet.</p></dd>
+
+
+<dt id="arg-iss-srv-caal">ISS_Srv_caal<a class="anchor" aria-label="anchor" href="#arg-iss-srv-caal"></a></dt>
+<dd><p>Numeric array. Number of fish aged within each length bin,
+dimensions `n_regions x n_yrs x n_seas x n_lens x n_sexes x n_srv_fleets x n_sims`.
+A bin whose sample size rounds to zero is skipped. `NULL` (the default) draws no
+CAAL; supplying it alongside a likelihood other than `"none"` switches
+`do_srv_caal` on. Requires `n_lens`.</p></dd>
+
+
+<dt id="arg-ln-srv-caal-theta">ln_Srv_caal_theta<a class="anchor" aria-label="anchor" href="#arg-ln-srv-caal-theta"></a></dt>
+<dd><p>Numeric array. Log overdispersion for the
+Dirichlet-multinomial, dimensions `n_regions x n_sexes x n_srv_fleets`, read under
+the split types and ignored under the multinomial. Default: log(1).</p></dd>
+
+
+<dt id="arg-ln-srv-caal-theta-agg">ln_Srv_caal_theta_agg<a class="anchor" aria-label="anchor" href="#arg-ln-srv-caal-theta-agg"></a></dt>
+<dd><p>Numeric vector `n_srv_fleets`. The aggregated type's
+counterpart to `ln_Srv_caal_theta`. Default: log(1).</p></dd>
+
+
+<dt id="arg-srv-caal-type">Srv_caal_Type<a class="anchor" aria-label="anchor" href="#arg-srv-caal-type"></a></dt>
+<dd><p>Numeric or character array giving the composition structure
+per year and fleet, dimensions `n_yrs x n_srv_fleets`, with the same codes as
+`Fish_caal_Type`: `"agg"` (0), `"spltRspltS"` (1), `"spltRjntS"` (2), `"none"`
+(999). The simulator takes the year by fleet array directly rather than the
+estimation model's `"CompType_Year_x-y_Fleet_z"` strings. Default: `"none"`
+throughout.</p></dd>
 
 
 <dt id="arg-comp-srvage-like">comp_srvage_like<a class="anchor" aria-label="anchor" href="#arg-comp-srvage-like"></a></dt>

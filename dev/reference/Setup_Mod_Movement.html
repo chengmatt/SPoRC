@@ -97,6 +97,7 @@ populates <code>input_list$data</code> accordingly. Must be called after
 <span>  ctmc_diffusion_bounds <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  move_timing <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  ctmc_scale_by_seasdur <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  move_expm_nsub <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -301,6 +302,17 @@ share time units. <code>0</code> exponentiates
 \(Q\) once per season regardless of duration. Only has an effect when
 <code>move_type = 1</code> and <code>n_seas &gt; 1</code>; forced to <code>1</code> when
 <code>move_timing = 2</code>.</p></dd>
+
+
+<dt id="arg-move-expm-nsub">move_expm_nsub<a class="anchor" aria-label="anchor" href="#arg-move-expm-nsub"></a></dt>
+<dd><p>Integer controlling how matrix exponentials of the CTMC
+generator are evaluated, both when converting \(Q\) to movement fractions and
+inside the <code>move_timing = 2</code> seasonal operators. <code>0</code> (default)
+uses <code><a href="https://rdrr.io/pkg/Matrix/man/expm-methods.html" class="external-link">Matrix::expm</a></code>. A power of two \(n \ge 1\) instead uses \(n\) implicit
+(backward Euler) substeps, \((I - A/n)^{-n}\), evaluated as one linear solve plus
+\(\log_2 n\) squarings, which is why \(n\) must be a power of two. The implicit form has a much cheaper reverse-mode adjoint
+than a matrix exponential, so the gradient is several times faster, but it is a
+first-order approximation: \(n = 1\) is plain <code>solve(I - A)</code> and is an approximation.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

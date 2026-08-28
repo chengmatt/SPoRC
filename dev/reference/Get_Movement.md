@@ -34,7 +34,8 @@ Get_Movement(
   adjacency_mat,
   ctmc_diffusion_bounds,
   seasdur = rep(1, n_seas),
-  ctmc_scale_by_seasdur = 0
+  ctmc_scale_by_seasdur = 0,
+  expm_nsub = 0
 )
 ```
 
@@ -191,6 +192,17 @@ Get_Movement(
   only the reported `Movement` diagnostic: the dynamics take `Mrate` and
   apply `seasdur[seas]` themselves.
 
+- expm_nsub:
+
+  Integer controlling how the CTMC generator is exponentiated into
+  movement fractions: `0` (default) uses
+  [`Matrix::expm`](https://rdrr.io/pkg/Matrix/man/expm-methods.html), a
+  value \\n \ge 1\\ uses the implicit backward Euler scheme \\(I -
+  Q\Delta/n)^{-n}\\, which is cheaper to differentiate but is a
+  first-order approximation. Only read when `move_type == 1` and
+  `use_fixed_movement == 0`. See
+  [`mat_exp`](https://chengmatt.github.io/SPoRC/dev/reference/mat_exp.md).
+
 ## Value
 
 A list with components:
@@ -230,7 +242,11 @@ Three movement configurations are supported:
 
 3.  CTMC movement (`move_type == 1`): a generator matrix \\Q = D + Z\\
     is constructed from diffusion (\\D\\) and taxis (\\Z\\) components,
-    then exponentiated via `Matrix::expm(Q)` to obtain movement
+    then exponentiated via
+    [`mat_exp`](https://chengmatt.github.io/SPoRC/dev/reference/mat_exp.md)
+    (either
+    [`Matrix::expm`](https://rdrr.io/pkg/Matrix/man/expm-methods.html)
+    or the implicit solve, per `expm_nsub`) to obtain movement
     fractions. During projection years (`y > n_yrs`), covariate lookups
     are capped at `n_yrs` (i.e., CTMC base parameters are frozen at
     their last historical values), while `move_devs` continue to use the

@@ -117,7 +117,8 @@ multiple seasons and years.</p>
 <span>     <span class="va">rec_seas_prop</span></span>
 <span> <span class="op">}</span>,</span>
 <span>  Mrate <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  move_timing <span class="op">=</span> <span class="fl">0</span></span>
+<span>  move_timing <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  expm_nsub <span class="op">=</span> <span class="fl">0</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -483,6 +484,12 @@ runs the two continuously and simultaneously, which also switches
 catch-at-age to the spatial Baranov form built on season-integrated
 abundance. Must match the timing used to derive the reference points the
 projection is run against.</p></dd>
+
+
+<dt id="arg-expm-nsub">expm_nsub<a class="anchor" aria-label="anchor" href="#arg-expm-nsub"></a></dt>
+<dd><p>Integer controlling how the matrix exponential is evaluated under
+`move_timing = 2`: `0` uses `Matrix::expm`, `n &gt;= 1` uses `n` implicit backward
+Euler substeps. See [mat_exp()].</p></dd>
 
 </dl></div>
     <div class="section level2">

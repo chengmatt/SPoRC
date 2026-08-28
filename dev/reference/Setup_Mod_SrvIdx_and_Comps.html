@@ -96,13 +96,24 @@ before model compilation.</p>
 <span>  <span class="va">UseSrvIdx</span>,</span>
 <span>  ObsSrvIdxAA <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  UseSrvIdxAA <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ObsSrvIdxAA_SE <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ObsSrvIdxAA_pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  UseSrvIdxAA_pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ObsSrvIdxAA_pop_SE <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sigmaSrvIdxAA_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sigmaSrvIdxAA_spec <span class="op">=</span> <span class="st">"est"</span>,</span>
 <span>  sigmaSrvIdxAA_pop_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sigmaSrvIdxAA_pop_spec <span class="op">=</span> <span class="st">"est"</span>,</span>
+<span>  SrvIdxAA_Type <span class="op">=</span> <span class="st">"spltRaggS"</span>,</span>
+<span>  SrvIdxAA_pop_Type <span class="op">=</span> <span class="st">"spltRaggS"</span>,</span>
+<span>  SrvIdxAA_LikeType <span class="op">=</span> <span class="st">"lognormal"</span>,</span>
+<span>  SrvIdxAA_pop_LikeType <span class="op">=</span> <span class="st">"lognormal"</span>,</span>
+<span>  SrvIdxAA_sigma_form <span class="op">=</span> <span class="st">"none"</span>,</span>
+<span>  SrvIdxAA_pop_sigma_form <span class="op">=</span> <span class="st">"none"</span>,</span>
 <span>  AgeObsCorr_srv_idx <span class="op">=</span> <span class="st">"iid"</span>,</span>
+<span>  AgeObsCorr_srv_idx_pop <span class="op">=</span> <span class="st">"iid"</span>,</span>
+<span>  rho_srv_idx_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  rho_srv_idx_pop_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sigmaSrvIdx_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
 <span>  sigmaSrvIdx_map <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sigmaSrvIdx_pop_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
@@ -183,9 +194,10 @@ in likelihood; <code>0</code> = exclude.</p></dd>
 
 <dt id="arg-obssrvidxaa">ObsSrvIdxAA<a class="anchor" aria-label="anchor" href="#arg-obssrvidxaa"></a></dt>
 <dd><p>Observed survey index at age, an array with dimensions
-<code>[n_regions, n_years, n_seas, n_ages, n_srv_fleets]</code>. Supplying this
-fits the index at age directly, every age its own lognormal observation with
-its own catchability, which is the native form for ICES age-structured assessments.
+<code>[n_regions, n_years, n_seas, n_ages, n_sexes, n_srv_fleets]</code>.
+Supplying this fits the index at age directly, every age its own observation
+with its own catchability. The sex margin is required whatever the fleet
+reports: a stream summed over sexes carries its observation in sex slot one.
 A fleet uses this or the aggregated index, never both.</p></dd>
 
 
@@ -194,19 +206,27 @@ A fleet uses this or the aggregated index, never both.</p></dd>
 where an observation is fit.</p></dd>
 
 
+<dt id="arg-obssrvidxaa-se-obssrvidxaa-pop-se">ObsSrvIdxAA_SE, ObsSrvIdxAA_pop_SE<a class="anchor" aria-label="anchor" href="#arg-obssrvidxaa-se-obssrvidxaa-pop-se"></a></dt>
+<dd><p>Reported standard errors shaped like
+their observation array, read only when <code>SrvIdxAA_sigma_form</code> asks for
+them. This is the parity the aggregated index already has: an index
+disaggregated by age keeps its survey-design errors.</p></dd>
+
+
 <dt id="arg-obssrvidxaa-pop-usesrvidxaa-pop">ObsSrvIdxAA_pop, UseSrvIdxAA_pop<a class="anchor" aria-label="anchor" href="#arg-obssrvidxaa-pop-usesrvidxaa-pop"></a></dt>
 <dd><p>Population-specific counterparts, with
 a leading population dimension.</p></dd>
 
 
 <dt id="arg-sigmasrvidxaa-key-sigmasrvidxaa-pop-key">sigmaSrvIdxAA_key, sigmaSrvIdxAA_pop_key<a class="anchor" aria-label="anchor" href="#arg-sigmasrvidxaa-key-sigmasrvidxaa-pop-key"></a></dt>
-<dd><p>Integer matrices coupling the
-index at age observation error, an integer key matrix, the convention ICES
-assessments use. Equal entries share a parameter and <code>NA</code> excludes one.
-The age shape of catchability is not set here: an index fit age by age puts
-it in selectivity through the <code>"nonparfree"</code> form, which carries the
-height of the curve as well as its shape. See
-<code><a href="Setup_Mod_Srvsel_and_Q.html">Setup_Mod_Srvsel_and_Q</a></code>.</p></dd>
+<dd><p>Integer arrays
+<code>[n_ages, n_sexes, n_srv_fleets]</code> coupling the index at age
+observation error, the key matrix convention ICES assessments use. Equal
+entries share a parameter and <code>NA</code> excludes one. The sex margin is
+required; a key coupling the sexes repeats its entries across them. The age shape of
+catchability is not set here: an index fit age by age puts it in selectivity
+through the <code>"nonparfree"</code> form, which carries the height of the curve
+as well as its shape. See <code><a href="Setup_Mod_Srvsel_and_Q.html">Setup_Mod_Srvsel_and_Q</a></code>.</p></dd>
 
 
 <dt id="arg-sigmasrvidxaa-spec-sigmasrvidxaa-pop-spec">sigmaSrvIdxAA_spec, sigmaSrvIdxAA_pop_spec<a class="anchor" aria-label="anchor" href="#arg-sigmasrvidxaa-spec-sigmasrvidxaa-pop-spec"></a></dt>
@@ -214,10 +234,33 @@ height of the curve as well as its shape. See
 <code>"fix"</code>.</p></dd>
 
 
-<dt id="arg-ageobscorr-srv-idx">AgeObsCorr_srv_idx<a class="anchor" aria-label="anchor" href="#arg-ageobscorr-srv-idx"></a></dt>
-<dd><p>Correlation across ages for the survey index at
-age, <code>"iid"</code> (default) or <code>"1dar1"</code>. See
-<code><a href="Setup_Mod_Catch_and_F.html">Setup_Mod_Catch_and_F</a></code>.</p></dd>
+<dt id="arg-srvidxaa-type-srvidxaa-pop-type">SrvIdxAA_Type, SrvIdxAA_pop_Type<a class="anchor" aria-label="anchor" href="#arg-srvidxaa-type-srvidxaa-pop-type"></a></dt>
+<dd><p>Which margins the fleet reports
+separately: <code>"agg"</code>, <code>"spltRaggS"</code> (default), <code>"aggRspltS"</code>
+or <code>"spltRspltS"</code>. See <code><a href="Setup_Mod_Catch_and_F.html">Setup_Mod_Catch_and_F</a></code>.</p></dd>
+
+
+<dt id="arg-srvidxaa-liketype-srvidxaa-pop-liketype">SrvIdxAA_LikeType, SrvIdxAA_pop_LikeType<a class="anchor" aria-label="anchor" href="#arg-srvidxaa-liketype-srvidxaa-pop-liketype"></a></dt>
+<dd><p><code>"lognormal"</code> (default)
+or <code>"normal"</code>, one setting for every fleet or one per fleet.</p></dd>
+
+
+<dt id="arg-srvidxaa-sigma-form-srvidxaa-pop-sigma-form">SrvIdxAA_sigma_form, SrvIdxAA_pop_sigma_form<a class="anchor" aria-label="anchor" href="#arg-srvidxaa-sigma-form-srvidxaa-pop-sigma-form"></a></dt>
+<dd><p>Where the observation error
+comes from: <code>"none"</code> (default), <code>"data"</code>, <code>"est_additive"</code>
+or <code>"est_quadrature"</code>.</p></dd>
+
+
+<dt id="arg-ageobscorr-srv-idx-ageobscorr-srv-idx-pop">AgeObsCorr_srv_idx, AgeObsCorr_srv_idx_pop<a class="anchor" aria-label="anchor" href="#arg-ageobscorr-srv-idx-ageobscorr-srv-idx-pop"></a></dt>
+<dd><p>Correlation across ages for
+the survey index at age, <code>"iid"</code> (default), <code>"1dar1"</code>,
+<code>"us"</code> or <code>"2dar1"</code>, one setting for every fleet or one per
+fleet. See <code><a href="Setup_Mod_Catch_and_F.html">Setup_Mod_Catch_and_F</a></code>.</p></dd>
+
+
+<dt id="arg-rho-srv-idx-key-rho-srv-idx-pop-key">rho_srv_idx_key, rho_srv_idx_pop_key<a class="anchor" aria-label="anchor" href="#arg-rho-srv-idx-key-rho-srv-idx-pop-key"></a></dt>
+<dd><p>Integer matrices
+<code>[n_sexes, n_srv_fleets]</code> coupling the across-age correlation.</p></dd>
 
 
 <dt id="arg-sigmasrvidx-spec">sigmaSrvIdx_spec<a class="anchor" aria-label="anchor" href="#arg-sigmasrvidx-spec"></a></dt>

@@ -432,22 +432,29 @@ through a season goes through that one file.</p>
 <tr class="even">
 <td><code>setup_mapping.R</code></td>
 <td>
+<code>at_age_block_complete</code>, <code>at_age_dims</code>,
+<code>at_age_n_sexes</code>, <code>at_age_sigma_spec</code>,
 <code>build_pe_map</code>, <code>build_shared_spec_map</code>,
+<code>check_at_age_shape</code>,
 <code>check_spec_map_identifiable</code>,
-<code>do_age_corr_setup</code>, <code>do_comp_corr_pars_mapping</code>,
+<code>do_age_corr_setup</code>, <code>do_at_age_data_setup</code>,
+<code>do_at_age_like_setup</code>, <code>do_at_age_type_setup</code>,
+<code>do_comp_corr_pars_mapping</code>,
 <code>do_comp_theta_mapping</code>,
 <code>do_fixed_sel_pars_mapping</code>, <code>do_key_mapping</code>,
 <code>do_q_mapping</code>, <code>do_sel_devs_mapping</code>,
-<code>do_sel_pe_pars_mapping</code>, <code>do_sigmaCAA_mapping</code>,
-<code>do_sigmaIdx_mapping</code>, <code>sel_has_data</code>,
-<code>sync_dev_map_data</code>
+<code>do_sel_pe_pars_mapping</code>, <code>do_sigmaIdx_mapping</code>,
+<code>sel_has_data</code>, <code>sync_dev_map_data</code>
 </td>
-<td><code>utils_setup.R</code></td>
+<td>
+<code>model_lik_at_age.R</code>, <code>utils_setup.R</code>
+</td>
 <td>
 <code>model_fit.R</code>, <code>setup_fishery_catch.R</code>,
 <code>setup_fishery_comps.R</code>,
 <code>setup_fishery_selectivity.R</code>, <code>setup_movement.R</code>,
-<code>setup_recruitment.R</code>, <code>setup_survey_comps.R</code>,
+<code>setup_recruitment.R</code>, <code>setup_sim_fleets.R</code>,
+<code>setup_survey_comps.R</code>,
 <code>setup_survey_selectivity.R</code>
 </td>
 </tr>
@@ -495,8 +502,8 @@ through a season goes through that one file.</p>
 <code>Setup_Sim_Fishing</code>, <code>Setup_Sim_Survey</code>
 </td>
 <td>
-<code>setup_checks.R</code>, <code>sim_observations.R</code>,
-<code>utils_setup.R</code>
+<code>setup_checks.R</code>, <code>setup_mapping.R</code>,
+<code>sim_observations.R</code>, <code>utils_setup.R</code>
 </td>
 <td>
 <code>sim_closed_loop.R</code>, <code>sim_self_test.R</code>
@@ -581,10 +588,10 @@ through a season goes through that one file.</p>
 <code>dbeta_symmetric</code>, <code>ddirichlet</code>,
 <code>ddirmult</code>, <code>dlogistnormal</code>,
 <code>dnbinom_robust_noint</code>, <code>dpois_noint</code>,
-<code>get_at_age_nLL</code>, <code>get_beta_scaled_pars</code>,
-<code>get_index_nLL</code>
+<code>get_at_age_2dar1_nLL</code>, <code>get_at_age_nLL</code>,
+<code>get_beta_scaled_pars</code>, <code>get_index_nLL</code>
 </td>
-<td>nothing</td>
+<td><code>utils_math.R</code></td>
 <td>
 <code>model_lik_at_age.R</code>, <code>model_lik_comps.R</code>,
 <code>model_lik_tags.R</code>, <code>model_objective.R</code>,
@@ -633,11 +640,17 @@ through a season goes through that one file.</p>
 <tr class="even">
 <td><code>model_lik_at_age.R</code></td>
 <td>
-<code>get_at_age_prediction</code>,
-<code>get_at_age_stream_nLL</code>
+<code>at_age_obs_sd</code>, <code>at_age_split</code>,
+<code>get_at_age_prediction</code>, <code>get_at_age_stream_nLL</code>,
+<code>prep_at_age_obs</code>
 </td>
-<td><code>model_distributions.R</code></td>
-<td><code>model_objective.R</code></td>
+<td>
+<code>model_distributions.R</code>, <code>utils_math.R</code>
+</td>
+<td>
+<code>model_objective.R</code>, <code>plot_figures_tables.R</code>,
+<code>setup_mapping.R</code>, <code>sim_observations.R</code>
+</td>
 </tr>
 <tr class="odd">
 <td><code>model_lik_caal.R</code></td>
@@ -688,7 +701,7 @@ through a season goes through that one file.</p>
 <code>Get_Movement</code>,
 <code>get_movement_dp_design_matrix</code>
 </td>
-<td>nothing</td>
+<td><code>utils_math.R</code></td>
 <td>
 <code>model_objective.R</code>, <code>setup_movement.R</code>
 </td>
@@ -708,7 +721,7 @@ through a season goes through that one file.</p>
 <code>model_obs_tagging.R</code>,
 <code>model_population_dynamics.R</code>,
 <code>model_priors_penalties.R</code>, <code>model_selectivity.R</code>,
-<code>utils_math.R</code>, <code>utils_setup.R</code>
+<code>utils_setup.R</code>
 </td>
 <td></td>
 </tr>
@@ -811,7 +824,7 @@ through a season goes through that one file.</p>
 <code>seas_operator_and_integral</code>, <code>spawn_state</code>,
 <code>survey_state</code>
 </td>
-<td>nothing</td>
+<td><code>utils_math.R</code></td>
 <td>
 <code>model_biomass.R</code>, <code>model_init_naa.R</code>,
 <code>model_obs_fishery_survey.R</code>,
@@ -942,14 +955,15 @@ through a season goes through that one file.</p>
 <code>generate_survey_comp_idx</code>,
 <code>marginalize_conv_fish_tags</code>,
 <code>predict_sim_fish_iss_fmort</code>, <code>release_conv_tags</code>,
-<code>resolve_idx_factor</code>, <code>simulate_caal</code>,
-<code>simulate_comps</code>,
-<code>simulate_conv_tag_fish_recaptures</code>
+<code>resolve_idx_factor</code>, <code>sim_at_age_cell</code>,
+<code>simulate_caal</code>, <code>simulate_comps</code>,
+<code>simulate_conv_tag_fish_recaptures</code>,
+<code>store_at_age_cell</code>
 </td>
 <td>
-<code>model_obs_tagging.R</code>, <code>model_transition.R</code>,
-<code>sim_random_variates.R</code>, <code>utils_math.R</code>,
-<code>utils_setup.R</code>
+<code>model_lik_at_age.R</code>, <code>model_obs_tagging.R</code>,
+<code>model_transition.R</code>, <code>sim_random_variates.R</code>,
+<code>utils_math.R</code>, <code>utils_setup.R</code>
 </td>
 <td>
 <code>setup_sim_fleets.R</code>, <code>sim_population.R</code>
@@ -1056,8 +1070,8 @@ through a season goes through that one file.</p>
 <td><code>diag_likelihood_profile.R</code></td>
 <td>
 <code>build_profile_map</code>, <code>check_analytic_q</code>,
-<code>check_profile_mirrors</code>,
-<code>do_likelihood_profile</code>
+<code>check_profile_mirrors</code>, <code>do_likelihood_profile</code>,
+<code>weight_over_ages</code>
 </td>
 <td>
 <code>model_fit.R</code>, <code>utils_setup.R</code>
@@ -1130,8 +1144,8 @@ through a season goes through that one file.</p>
 </td>
 <td>
 <code>diag_fits.R</code>, <code>diag_retrospective.R</code>,
-<code>projection.R</code>, <code>refpts_main.R</code>,
-<code>utils_setup.R</code>
+<code>model_lik_at_age.R</code>, <code>projection.R</code>,
+<code>refpts_main.R</code>, <code>utils_setup.R</code>
 </td>
 <td></td>
 </tr></tbody>
@@ -1157,15 +1171,16 @@ through a season goes through that one file.</p>
 <tr class="odd">
 <td><code>utils_math.R</code></td>
 <td>
-<code>get_AR1_CorrMat</code>, <code>get_Constant_CorrMat</code>,
-<code>get_logistN_Sigma</code>,
-<code>Get_Natural_Cubic_Spline_Weights</code>,
+<code>build_us_corr</code>, <code>get_AR1_CorrMat</code>,
+<code>get_Constant_CorrMat</code>, <code>get_logistN_Sigma</code>,
+<code>Get_Natural_Cubic_Spline_Weights</code>, <code>mat_exp</code>,
 <code>rho_trans</code>
 </td>
 <td>nothing</td>
 <td>
-<code>model_lik_comps.R</code>, <code>model_objective.R</code>,
-<code>model_priors_penalties.R</code>,
+<code>model_distributions.R</code>, <code>model_lik_at_age.R</code>,
+<code>model_lik_comps.R</code>, <code>model_movement.R</code>,
+<code>model_priors_penalties.R</code>, <code>model_transition.R</code>,
 <code>setup_fishery_selectivity.R</code>,
 <code>setup_survey_selectivity.R</code>,
 <code>sim_observations.R</code>, <code>sim_random_variates.R</code>
@@ -1582,7 +1597,7 @@ fixture happens to use.</p>
 </tr>
 <tr class="even">
 <td><code>test-model_*</code></td>
-<td>28</td>
+<td>29</td>
 <td>One objective function module each: selectivity, movement,
 transition, observation models, likelihoods, distributions</td>
 </tr>
@@ -1625,7 +1640,7 @@ for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 120 test files in total.</p>
+<p>That is 123 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

@@ -77,7 +77,16 @@ Baranov) abundance is used instead.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">catch_at_age</span><span class="op">(</span><span class="va">N</span>, <span class="va">Move</span>, <span class="va">Z</span>, Q <span class="op">=</span> <span class="cn">NULL</span>, dur <span class="op">=</span> <span class="fl">1</span>, <span class="va">F_landed</span>, move_timing <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">catch_at_age</span><span class="op">(</span></span>
+<span>  <span class="va">N</span>,</span>
+<span>  <span class="va">Move</span>,</span>
+<span>  <span class="va">Z</span>,</span>
+<span>  Q <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  dur <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  <span class="va">F_landed</span>,</span>
+<span>  move_timing <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  expm_nsub <span class="op">=</span> <span class="fl">0</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -121,6 +130,13 @@ fishing mortality to apply (retained, discarded or landed, per the caller).</p><
 <code>0</code> = movement then mortality (default, historical SPoRC behaviour),
 <code>1</code> = mortality then movement, <code>2</code> = continuous (simultaneous)
 movement and mortality.</p></dd>
+
+
+<dt id="arg-expm-nsub">expm_nsub<a class="anchor" aria-label="anchor" href="#arg-expm-nsub"></a></dt>
+<dd><p>Integer controlling how the matrix exponential is evaluated
+under <code>move_timing = 2</code>: <code>0</code> (default) uses <code><a href="https://rdrr.io/pkg/Matrix/man/expm-methods.html" class="external-link">Matrix::expm</a></code>,
+a value \(n \ge 1\) uses the implicit backward Euler scheme
+\((I - A/n)^{-n}\). See <code><a href="mat_exp.html">mat_exp</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

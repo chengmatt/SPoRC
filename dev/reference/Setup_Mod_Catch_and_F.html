@@ -82,22 +82,44 @@ Must be called after <code><a href="Setup_Mod_Biologicals.html">Setup_Mod_Biolog
 <span>  <span class="va">ObsCatch</span>,</span>
 <span>  ObsCatchAA <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  UseCatchAA <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ObsCatchAA_SE <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sigmaCAA_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sigmaCAA_spec <span class="op">=</span> <span class="st">"est"</span>,</span>
 <span>  ObsDiscardAA <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  UseDiscardAA <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ObsDiscardAA_SE <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ObsDiscardAA_pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  UseDiscardAA_pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ObsDiscardAA_pop_SE <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ObsCatchAA_pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  UseCatchAA_pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ObsCatchAA_pop_SE <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sigmaCAA_pop_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sigmaCAA_pop_spec <span class="op">=</span> <span class="st">"est"</span>,</span>
 <span>  sigmaDAA_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sigmaDAA_spec <span class="op">=</span> <span class="st">"est"</span>,</span>
 <span>  sigmaDAA_pop_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sigmaDAA_pop_spec <span class="op">=</span> <span class="st">"est"</span>,</span>
+<span>  CatchAA_Type <span class="op">=</span> <span class="st">"spltRaggS"</span>,</span>
+<span>  CatchAA_pop_Type <span class="op">=</span> <span class="st">"spltRaggS"</span>,</span>
+<span>  DiscardAA_Type <span class="op">=</span> <span class="st">"spltRaggS"</span>,</span>
+<span>  DiscardAA_pop_Type <span class="op">=</span> <span class="st">"spltRaggS"</span>,</span>
+<span>  CatchAA_LikeType <span class="op">=</span> <span class="st">"lognormal"</span>,</span>
+<span>  CatchAA_pop_LikeType <span class="op">=</span> <span class="st">"lognormal"</span>,</span>
+<span>  DiscardAA_LikeType <span class="op">=</span> <span class="st">"lognormal"</span>,</span>
+<span>  DiscardAA_pop_LikeType <span class="op">=</span> <span class="st">"lognormal"</span>,</span>
+<span>  CatchAA_sigma_form <span class="op">=</span> <span class="st">"none"</span>,</span>
+<span>  CatchAA_pop_sigma_form <span class="op">=</span> <span class="st">"none"</span>,</span>
+<span>  DiscardAA_sigma_form <span class="op">=</span> <span class="st">"none"</span>,</span>
+<span>  DiscardAA_pop_sigma_form <span class="op">=</span> <span class="st">"none"</span>,</span>
 <span>  AgeObsCorr_catch <span class="op">=</span> <span class="st">"iid"</span>,</span>
+<span>  AgeObsCorr_catch_pop <span class="op">=</span> <span class="st">"iid"</span>,</span>
 <span>  AgeObsCorr_discard <span class="op">=</span> <span class="st">"iid"</span>,</span>
+<span>  AgeObsCorr_discard_pop <span class="op">=</span> <span class="st">"iid"</span>,</span>
+<span>  rho_catch_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  rho_catch_pop_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  rho_discard_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  rho_discard_pop_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">UseCatch</span>,</span>
 <span>  catch_units <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="st">"biom"</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  UseCatch_pop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_pop</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>,</span>
@@ -154,7 +176,9 @@ See <code><a href="Get_Fdev_PE_loglik.html">Get_Fdev_PE_loglik</a></code>.</p></
 
 <dt id="arg-obscatchaa">ObsCatchAA<a class="anchor" aria-label="anchor" href="#arg-obscatchaa"></a></dt>
 <dd><p>Observed catch at age, an array with dimensions
-<code>[n_regions, n_years, n_seas, n_ages, n_fish_fleets]</code>. Supplying this
+<code>[n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets]</code>. The
+sex margin is required whatever the fleet reports: a stream summed over
+sexes carries its observation in sex slot one. Supplying this
 fits the catch at age directly, every age its own lognormal observation, in
 place of an aggregated catch with compositions. This is the native form for
 ICES age-structured assessments. The two statements are not interchangeable: the
@@ -169,6 +193,11 @@ one or the other and supplying both for the same fleet is an error.
 an observation is fit and <code>0</code> otherwise. A cell that is not fit is also
 not fished, so this governs closures the way <code>UseCatch</code> does for the
 aggregated stream.</p></dd>
+
+
+<dt id="arg-obscatchaa-se-obsdiscardaa-se-obscatchaa-pop-se-obsdiscardaa-pop-se">ObsCatchAA_SE, ObsDiscardAA_SE, ObsCatchAA_pop_SE, ObsDiscardAA_pop_SE<a class="anchor" aria-label="anchor" href="#arg-obscatchaa-se-obsdiscardaa-se-obscatchaa-pop-se-obsdiscardaa-pop-se"></a></dt>
+<dd><p>Reported standard errors shaped like their observation array, read only when
+the stream's <code>sigma_form</code> asks for them.</p></dd>
 
 
 <dt id="arg-sigmacaa-key">sigmaCAA_key<a class="anchor" aria-label="anchor" href="#arg-sigmacaa-key"></a></dt>
@@ -211,14 +240,44 @@ discards, following the same convention as <code>sigmaCAA_key</code>.</p></dd>
 <code>"fix"</code>.</p></dd>
 
 
-<dt id="arg-ageobscorr-catch-ageobscorr-discard">AgeObsCorr_catch, AgeObsCorr_discard<a class="anchor" aria-label="anchor" href="#arg-ageobscorr-catch-ageobscorr-discard"></a></dt>
-<dd><p>Correlation across ages within a
-cell for the retained catch at age and the discards at age. <code>"iid"</code> (default) treats ages as independent,
-<code>"1dar1"</code> correlates them as an AR(1) across ages and estimates one
-correlation per fleet. A cell with a single observed age falls back to independent.
-The fishery and survey index streams carry their own settings, in
+<dt id="arg-catchaa-type-discardaa-type-catchaa-pop-type-discardaa-pop-type">CatchAA_Type, DiscardAA_Type, CatchAA_pop_Type, DiscardAA_pop_Type<a class="anchor" aria-label="anchor" href="#arg-catchaa-type-discardaa-type-catchaa-pop-type-discardaa-pop-type"></a></dt>
+<dd><p>Which margins the fleet reports separately, one setting for every fleet or
+one per fleet, following the composition vocabulary. <code>"agg"</code> sums over
+regions and sexes, <code>"spltRaggS"</code> (default) splits regions and sums over
+sexes, <code>"aggRspltS"</code> does the reverse, and <code>"spltRspltS"</code> splits
+both. An observation summed over a margin belongs in slot one of it.</p></dd>
+
+
+<dt id="arg-catchaa-liketype-discardaa-liketype-catchaa-pop-liketype-discardaa-pop-liketype">CatchAA_LikeType, DiscardAA_LikeType, CatchAA_pop_LikeType, DiscardAA_pop_LikeType<a class="anchor" aria-label="anchor" href="#arg-catchaa-liketype-discardaa-liketype-catchaa-pop-liketype-discardaa-pop-liketype"></a></dt>
+<dd><p><code>"lognormal"</code> (default) or <code>"normal"</code>, one setting for every
+fleet or one per fleet.</p></dd>
+
+
+<dt id="arg-catchaa-sigma-form-discardaa-sigma-form-catchaa-pop-sigma-form-discardaa-pop-sigma-form">CatchAA_sigma_form, DiscardAA_sigma_form, CatchAA_pop_sigma_form, DiscardAA_pop_sigma_form<a class="anchor" aria-label="anchor" href="#arg-catchaa-sigma-form-discardaa-sigma-form-catchaa-pop-sigma-form-discardaa-pop-sigma-form"></a></dt>
+<dd><p>Where the observation error comes from. <code>"none"</code> (default) uses the
+estimated parameter alone, <code>"data"</code> the reported standard errors alone,
+and <code>"est_additive"</code> or <code>"est_quadrature"</code> both. Naming
+<code>"data"</code> holds the parameter fixed, since nothing reads it.</p></dd>
+
+
+<dt id="arg-ageobscorr-catch-ageobscorr-discard-ageobscorr-catch-pop-ageobscorr-discard-pop">AgeObsCorr_catch, AgeObsCorr_discard, AgeObsCorr_catch_pop, AgeObsCorr_discard_pop<a class="anchor" aria-label="anchor" href="#arg-ageobscorr-catch-ageobscorr-discard-ageobscorr-catch-pop-ageobscorr-discard-pop"></a></dt>
+<dd><p>Correlation across ages within a cell, one setting for every fleet or one
+per fleet. <code>"iid"</code> (default) treats ages as independent,
+<code>"1dar1"</code> correlates them as an AR(1) in age distance, <code>"us"</code>
+estimates an unstructured correlation across ages, and <code>"2dar1"</code>
+correlates over ages and years jointly through a separable AR(1), which
+requires the fleet's observed ages and years to form a complete grid. A cell
+with a single observed age falls back to independent. The
+population-specific streams carry their own settings rather than borrowing
+the aggregated ones. The fishery and survey index streams are set in
 <code><a href="Setup_Mod_FishIdx_and_Comps.html">Setup_Mod_FishIdx_and_Comps</a></code> and
 <code><a href="Setup_Mod_SrvIdx_and_Comps.html">Setup_Mod_SrvIdx_and_Comps</a></code>.</p></dd>
+
+
+<dt id="arg-rho-catch-key-rho-discard-key-rho-catch-pop-key-rho-discard-pop-key">rho_catch_key, rho_discard_key, rho_catch_pop_key, rho_discard_pop_key<a class="anchor" aria-label="anchor" href="#arg-rho-catch-key-rho-discard-key-rho-catch-pop-key-rho-discard-pop-key"></a></dt>
+<dd><p>Integer matrices <code>[n_sexes, n_fish_fleets]</code> coupling the across-age
+correlation. Equal entries share a parameter and <code>NA</code> excludes one.
+Defaults to one correlation per fleet, shared across sexes.</p></dd>
 
 
 <dt id="arg-usecatch">UseCatch<a class="anchor" aria-label="anchor" href="#arg-usecatch"></a></dt>

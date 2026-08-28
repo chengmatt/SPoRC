@@ -68,7 +68,7 @@ the storage convention of <code>Movement</code>.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">build_seas_operator</span><span class="op">(</span><span class="va">Move</span>, <span class="va">Z</span>, Q <span class="op">=</span> <span class="cn">NULL</span>, dur <span class="op">=</span> <span class="fl">1</span>, move_timing <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">build_seas_operator</span><span class="op">(</span><span class="va">Move</span>, <span class="va">Z</span>, Q <span class="op">=</span> <span class="cn">NULL</span>, dur <span class="op">=</span> <span class="fl">1</span>, move_timing <span class="op">=</span> <span class="fl">0</span>, expm_nsub <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -104,6 +104,13 @@ stored in <code>ZAA</code>). Pass zeros for a movement-only step.</p></dd>
 <code>1</code> = mortality then movement, <code>2</code> = continuous (simultaneous)
 movement and mortality.</p></dd>
 
+
+<dt id="arg-expm-nsub">expm_nsub<a class="anchor" aria-label="anchor" href="#arg-expm-nsub"></a></dt>
+<dd><p>Integer controlling how the matrix exponential is evaluated
+under <code>move_timing = 2</code>: <code>0</code> (default) uses <code><a href="https://rdrr.io/pkg/Matrix/man/expm-methods.html" class="external-link">Matrix::expm</a></code>,
+a value \(n \ge 1\) uses the implicit backward Euler scheme
+\((I - A/n)^{-n}\). See <code><a href="mat_exp.html">mat_exp</a></code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -116,7 +123,9 @@ matrix, the three operators are
 $$T_0 = M \, \mathrm{diag}(s), \qquad T_1 = \mathrm{diag}(s) \, M, \qquad
       T_2 = \left[\exp\left(Q^\top \Delta - \mathrm{diag}(Z)\right)\right]^\top$$
 where \(\Delta\) is <code>dur</code>. \(Q^\top\) converts the stored row-convention
-generator back to the column convention used by <code><a href="https://rdrr.io/pkg/Matrix/man/expm-methods.html" class="external-link">Matrix::expm</a></code>.</p>
+generator back to the column convention the exponential is taken in, which is
+<code><a href="https://rdrr.io/pkg/Matrix/man/expm-methods.html" class="external-link">Matrix::expm</a></code> or the implicit solve of <code><a href="mat_exp.html">mat_exp</a></code> according to
+<code>expm_nsub</code>.</p>
 <p>The three agree exactly when <code>Z</code> is constant across regions, because a
 scalar multiple of the identity commutes with the generator. They also agree
 when <code>Z</code> is all zero (movement only) and when movement is absent

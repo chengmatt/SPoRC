@@ -16,13 +16,24 @@ Setup_Mod_FishIdx_and_Comps(
   ObsFishIdx_SE,
   ObsFishIdxAA = NULL,
   UseFishIdxAA = NULL,
+  ObsFishIdxAA_SE = NULL,
   ObsFishIdxAA_pop = NULL,
   UseFishIdxAA_pop = NULL,
+  ObsFishIdxAA_pop_SE = NULL,
   sigmaFishIdxAA_key = NULL,
   sigmaFishIdxAA_spec = "est",
   sigmaFishIdxAA_pop_key = NULL,
   sigmaFishIdxAA_pop_spec = "est",
+  FishIdxAA_Type = "spltRaggS",
+  FishIdxAA_pop_Type = "spltRaggS",
+  FishIdxAA_LikeType = "lognormal",
+  FishIdxAA_pop_LikeType = "lognormal",
+  FishIdxAA_sigma_form = "none",
+  FishIdxAA_pop_sigma_form = "none",
   AgeObsCorr_fish_idx = "iid",
+  AgeObsCorr_fish_idx_pop = "iid",
+  rho_fish_idx_key = NULL,
+  rho_fish_idx_pop_key = NULL,
   sigmaFishIdx_spec = "fix",
   sigmaFishIdx_map = NULL,
   sigmaFishIdx_pop_spec = "fix",
@@ -138,13 +149,22 @@ Setup_Mod_FishIdx_and_Comps(
 - ObsFishIdxAA:
 
   Observed fishery index at age, an array with dimensions
-  `[n_regions, n_years, n_seas, n_ages, n_fish_fleets]`. The fishery
-  counterpart of `ObsSrvIdxAA`: every age its own lognormal observation
-  with its own catchability. A fleet uses this or the aggregated index.
+  `[n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets]`. The
+  fishery counterpart of `ObsSrvIdxAA`: every age its own observation
+  with its own catchability. The sex margin is required whatever the
+  fleet reports: a stream summed over sexes carries its observation in
+  sex slot one. A fleet uses this or the aggregated index.
 
 - UseFishIdxAA:
 
   Integer array shaped like `ObsFishIdxAA`.
+
+- ObsFishIdxAA_SE, ObsFishIdxAA_pop_SE:
+
+  Reported standard errors shaped like their observation array, read
+  only when `FishIdxAA_sigma_form` asks for them. This is the parity the
+  aggregated index already has: an index disaggregated by age keeps its
+  survey-design errors.
 
 - ObsFishIdxAA_pop, UseFishIdxAA_pop:
 
@@ -152,22 +172,45 @@ Setup_Mod_FishIdx_and_Comps(
 
 - sigmaFishIdxAA_key, sigmaFishIdxAA_pop_key:
 
-  Integer matrices coupling the index at age observation error, an
-  integer key matrix, the convention ICES assessments use. Equal entries
-  share a parameter and `NA` excludes one. The age shape of catchability
-  is not set here: an index fit age by age puts it in selectivity
-  through the `"nonparfree"` form. See
+  Integer arrays `[n_ages, n_sexes, n_fish_fleets]` coupling the index
+  at age observation error. Equal entries share a parameter and `NA`
+  excludes one. The sex margin is required; a key coupling the sexes
+  repeats its entries across them. The age shape of catchability is not
+  set here: an index fit age by age puts it in selectivity through the
+  `"nonparfree"` form. See
   [`Setup_Mod_Fishsel_and_Q`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Fishsel_and_Q.md).
 
 - sigmaFishIdxAA_spec, sigmaFishIdxAA_pop_spec:
 
   `"est"` or `"fix"`.
 
-- AgeObsCorr_fish_idx:
+- FishIdxAA_Type, FishIdxAA_pop_Type:
+
+  Which margins the fleet reports separately: `"agg"`, `"spltRaggS"`
+  (default), `"aggRspltS"` or `"spltRspltS"`. See
+  [`Setup_Mod_Catch_and_F`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Catch_and_F.md).
+
+- FishIdxAA_LikeType, FishIdxAA_pop_LikeType:
+
+  `"lognormal"` (default) or `"normal"`, one setting for every fleet or
+  one per fleet.
+
+- FishIdxAA_sigma_form, FishIdxAA_pop_sigma_form:
+
+  Where the observation error comes from: `"none"` (default), `"data"`,
+  `"est_additive"` or `"est_quadrature"`.
+
+- AgeObsCorr_fish_idx, AgeObsCorr_fish_idx_pop:
 
   Correlation across ages for the fishery index at age, `"iid"`
-  (default) or `"1dar1"`. See
+  (default), `"1dar1"`, `"us"` or `"2dar1"`, one setting for every fleet
+  or one per fleet. See
   [`Setup_Mod_Catch_and_F`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Catch_and_F.md).
+
+- rho_fish_idx_key, rho_fish_idx_pop_key:
+
+  Integer matrices `[n_sexes, n_fish_fleets]` coupling the across-age
+  correlation.
 
 - sigmaFishIdx_spec:
 
@@ -194,7 +237,7 @@ Setup_Mod_FishIdx_and_Comps(
   `"est_replace"`
 
   :   An estimated standard deviation replaces the reported standard
-      errors entirely, as several ICES assessments do.
+      errors entirely.
 
   An estimated component is confounded with a likelihood weight, since a
   weight on a normal likelihood is the same statement as dividing the
@@ -237,7 +280,7 @@ Setup_Mod_FishIdx_and_Comps(
   `"est_replace"`
 
   :   An estimated standard deviation replaces the reported standard
-      errors entirely, as several ICES assessments do.
+      errors entirely.
 
   An estimated component is confounded with a likelihood weight, since a
   weight on a normal likelihood is the same statement as dividing the

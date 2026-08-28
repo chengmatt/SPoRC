@@ -62,7 +62,8 @@ get_fishery_observation_model(
   ret_selex_type = 0,
   fish_sel_l = NULL,
   ret_sel_l = NULL,
-  Fmort = NULL
+  Fmort = NULL,
+  expm_nsub = 0
 )
 ```
 

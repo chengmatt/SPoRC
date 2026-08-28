@@ -90,9 +90,10 @@ one parameter per age, one per age group, or one for the whole fleet.</p>
 
 
 <dt id="arg-key">key<a class="anchor" aria-label="anchor" href="#arg-key"></a></dt>
-<dd><p>Integer matrix <code>[n_ages, n_fleets]</code>, or <code>NULL</code> for the
-default given by <code>default_shared</code>. Gains a leading population
-dimension when <code>pop</code> is <code>TRUE</code>.</p></dd>
+<dd><p>Integer array <code>[n_ages, n_sexes, n_fleets]</code>, or <code>NULL</code>
+for the default given by <code>default_shared</code>. Gains a leading population
+dimension when <code>pop</code> is <code>TRUE</code>. The sex margin is required: a key
+coupling the sexes says so by repeating its entries across them.</p></dd>
 
 
 <dt id="arg-spec">spec<a class="anchor" aria-label="anchor" href="#arg-spec"></a></dt>

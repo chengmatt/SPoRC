@@ -27,7 +27,8 @@ derive_proj_biom(
   Movement = NULL,
   Mrate = NULL,
   move_timing = 0,
-  do_recruits_move = 1
+  do_recruits_move = 1,
+  expm_nsub = 0
 )
 ```
 

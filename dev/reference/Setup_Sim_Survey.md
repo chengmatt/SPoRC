@@ -14,9 +14,14 @@ Setup_Sim_Survey(
   srv_sel_input,
   ObsSrvIdx_SE = array(0.2, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
     sim_list$n_srv_fleets)),
-  ln_sigmaSrvIdxAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_srv_fleets)),
+  ln_sigmaSrvIdxAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_sexes,
+    sim_list$n_srv_fleets)),
   UseSrvIdxAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
-    sim_list$n_ages, sim_list$n_srv_fleets)),
+    sim_list$n_ages, sim_list$n_sexes, sim_list$n_srv_fleets)),
+  ObsSrvIdxAA_SE = NULL,
+  SrvIdxAA_Type = "spltRaggS",
+  SrvIdxAA_LikeType = "lognormal",
+  SrvIdxAA_sigma_form = "none",
   use_srv_idx_aa = rep(0, sim_list$n_srv_fleets),
   ObsSrvIdx_pop_SE = array(0.2, dim = c(sim_list$n_pop, sim_list$n_regions,
     sim_list$n_yrs, sim_list$n_seas, sim_list$n_srv_fleets)),
@@ -95,6 +100,42 @@ Setup_Sim_Survey(
   Lognormal observation error SD for survey index, array
   `[n_regions × n_yrs × n_seas × n_srv_fleets]`. Default: 0.2.
 
+- ln_sigmaSrvIdxAA:
+
+  Log-scale observation error for the index at age, \`n_ages x n_sexes x
+  n_srv_fleets\`. The sex margin is required.
+
+- UseSrvIdxAA:
+
+  Integer array \`n_regions x n_yrs x n_seas x n_ages x n_sexes x
+  n_srv_fleets\`, \`1\` where a survey index at age is drawn. The sex
+  margin is required: a stream summed over sexes carries its flag in sex
+  slot one.
+
+- ObsSrvIdxAA_SE:
+
+  Reported standard errors shaped like \`UseSrvIdxAA\`, read only when
+  \`SrvIdxAA_sigma_form\` asks for them.
+
+- SrvIdxAA_Type:
+
+  Which margins each fleet reports separately: \`"agg"\`,
+  \`"spltRaggS"\` (default), \`"aggRspltS"\` or \`"spltRspltS"\`.
+
+- SrvIdxAA_LikeType:
+
+  \`"lognormal"\` (default) or \`"normal"\`, per fleet.
+
+- SrvIdxAA_sigma_form:
+
+  Where the observation error comes from: \`"none"\` (default),
+  \`"data"\`, \`"est_additive"\` or \`"est_quadrature"\`.
+
+- use_srv_idx_aa:
+
+  Integer vector \`n_srv_fleets\`, \`1\` for fleets whose index at age
+  is drawn.
+
 - ObsSrvIdx_pop_SE:
 
   As above, but for population-specific indices, array
@@ -141,6 +182,43 @@ Setup_Sim_Survey(
   in the covariance. Its year dimension may be shorter than the
   simulation, in which case later years draw with the mean factor scale
   and loading. Required for mvn fleets. Default: `NULL`.
+
+- comp_srv_caal_like:
+
+  Character or numeric vector \`n_srv_fleets\` giving the conditional
+  age-at-length likelihood per fleet: \`"Multinomial"\` (0),
+  \`"Dirichlet-Multinomial"\` (1), or \`"none"\` (999). The survey twin
+  of \`comp_fish_caal_like\`, and only these two families exist for
+  CAAL. Default: \`"none"\` for every fleet.
+
+- ISS_Srv_caal:
+
+  Numeric array. Number of fish aged within each length bin, dimensions
+  \`n_regions x n_yrs x n_seas x n_lens x n_sexes x n_srv_fleets x
+  n_sims\`. A bin whose sample size rounds to zero is skipped. \`NULL\`
+  (the default) draws no CAAL; supplying it alongside a likelihood other
+  than \`"none"\` switches \`do_srv_caal\` on. Requires \`n_lens\`.
+
+- ln_Srv_caal_theta:
+
+  Numeric array. Log overdispersion for the Dirichlet-multinomial,
+  dimensions \`n_regions x n_sexes x n_srv_fleets\`, read under the
+  split types and ignored under the multinomial. Default: log(1).
+
+- ln_Srv_caal_theta_agg:
+
+  Numeric vector \`n_srv_fleets\`. The aggregated type's counterpart to
+  \`ln_Srv_caal_theta\`. Default: log(1).
+
+- Srv_caal_Type:
+
+  Numeric or character array giving the composition structure per year
+  and fleet, dimensions \`n_yrs x n_srv_fleets\`, with the same codes as
+  \`Fish_caal_Type\`: \`"agg"\` (0), \`"spltRspltS"\` (1),
+  \`"spltRjntS"\` (2), \`"none"\` (999). The simulator takes the year by
+  fleet array directly rather than the estimation model's
+  \`"CompType_Year_x-y_Fleet_z"\` strings. Default: \`"none"\`
+  throughout.
 
 - comp_srvage_like:
 

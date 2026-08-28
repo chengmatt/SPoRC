@@ -93,6 +93,7 @@ assigned into this frame.</p>
 <span>  <span class="va">UseCatch_pop</span>,</span>
 <span>  <span class="va">missing_catch</span>,</span>
 <span>  <span class="va">UseCatchAA</span>,</span>
+<span>  <span class="va">UseCatchAA_pop</span>,</span>
 <span>  <span class="va">use_catch_aa</span>,</span>
 <span>  <span class="va">ln_F_mean</span>,</span>
 <span>  <span class="va">ln_F_devs</span>,</span>
@@ -166,10 +167,12 @@ aggregate/pop-specific catch observation.</p></dd>
 observation is missing (not a true recorded zero).</p></dd>
 
 
-<dt id="arg-usecatchaa">UseCatchAA<a class="anchor" aria-label="anchor" href="#arg-usecatchaa"></a></dt>
-<dd><p>Integer array <code>[n_regions, n_years, n_seas, n_ages,
-n_fish_fleets]</code>, non-zero where a catch at age observation is fit. A fleet
-fitting catch at age is fished in any cell where at least one age is fit.</p></dd>
+<dt id="arg-usecatchaa-usecatchaa-pop">UseCatchAA, UseCatchAA_pop<a class="anchor" aria-label="anchor" href="#arg-usecatchaa-usecatchaa-pop"></a></dt>
+<dd><p>Integer arrays <code>[n_regions, n_years,
+n_seas, n_ages, n_sexes, n_fish_fleets]</code>, with a leading population
+dimension for the second, non-zero where a catch at age observation is fit.
+A fleet fitting catch at age is fished in any cell where at least one age is
+fit, in either stream.</p></dd>
 
 
 <dt id="arg-use-catch-aa">use_catch_aa<a class="anchor" aria-label="anchor" href="#arg-use-catch-aa"></a></dt>

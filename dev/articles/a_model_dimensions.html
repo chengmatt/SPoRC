@@ -1058,6 +1058,56 @@ observations appear when scanning that fleet’s UseFishIdx slice in array
 order. Validated at setup for symmetry and positive definiteness</td>
 </tr>
 <tr class="odd">
+<td>ObsCatchAA, ObsDiscardAA, ObsFishIdxAA</td>
+<td>Age-disaggregated retained catch, discards and fishery index, each
+dimensioned by n_regions, n_years, n_seas, n_ages, n_sexes,
+n_fish_fleets. A fleet fits these or the aggregated form with
+compositions, never both. The sex margin is required whatever the fleet
+reports: a stream summed over sexes carries its observation in sex slot
+one, and an array a dimension short is refused</td>
+</tr>
+<tr class="even">
+<td>UseCatchAA, UseDiscardAA, UseFishIdxAA</td>
+<td>Arrays shaped like their observations, 1 where an observation is
+fit. A cell not fit for catch at age is also not fished, the way
+UseCatch governs closures for the aggregated stream</td>
+</tr>
+<tr class="odd">
+<td>ObsCatchAA_SE, ObsDiscardAA_SE, ObsFishIdxAA_SE</td>
+<td>Reported standard errors shaped like their observations, read only
+when the stream’s sigma_form asks for them</td>
+</tr>
+<tr class="even">
+<td>CatchAA_Type, DiscardAA_Type, FishIdxAA_Type</td>
+<td>Vectors dimensioned by n_fish_fleets naming the margins each fleet
+reports separately. 0: summed over regions and sexes, 1: split by region
+and summed over sexes (default), 2: summed over regions and split by
+sex, 3: split by both</td>
+</tr>
+<tr class="odd">
+<td>CatchAA_LikeType, DiscardAA_LikeType, FishIdxAA_LikeType</td>
+<td>Vectors dimensioned by n_fish_fleets. 0: Lognormal (default), 1:
+Normal on the arithmetic scale</td>
+</tr>
+<tr class="even">
+<td>CatchAA_sigma_form, DiscardAA_sigma_form, FishIdxAA_sigma_form</td>
+<td>Vectors dimensioned by n_fish_fleets naming where the observation
+error comes from. 0: the estimated parameter alone (default), 1: the
+reported standard errors alone, 2: additive, 3: in quadrature</td>
+</tr>
+<tr class="odd">
+<td>AgeObsCorr_catch, AgeObsCorr_discard, AgeObsCorr_fish_idx</td>
+<td>Vectors dimensioned by n_fish_fleets giving the correlation across
+ages within a cell. 0: iid, 1: AR(1) in age distance, 2: unstructured,
+3: separable AR(1) over ages and years. Each has a _pop counterpart,
+since the population-specific streams carry their own</td>
+</tr>
+<tr class="even">
+<td>ObsCatchAA_pop, UseCatchAA_pop, and the rest</td>
+<td>Population-specific counterparts of every row above, with a leading
+n_pop dimension on the arrays</td>
+</tr>
+<tr class="odd">
 <td>FishAgeComps_bins</td>
 <td>Array dimensioned by n_ages, n_fish_fleets of 0/1 weights selecting
 which observed bins (after ageing error) each fleet’s age compositions
@@ -1442,6 +1492,37 @@ One-step-ahead residuals are only available for lognormal fleets</td>
 <td>List with one element per survey fleet holding the fixed covariance
 matrix for fleets using the multivariate normal, NULL otherwise. Same
 conventions as FishIdx_Cov</td>
+</tr>
+<tr class="even">
+<td>ObsSrvIdxAA</td>
+<td>Age-disaggregated survey index dimensioned by n_regions, n_years,
+n_seas, n_ages, n_sexes, n_srv_fleets. A fleet fits this or the
+aggregated index, never both. Same shape rules as ObsCatchAA</td>
+</tr>
+<tr class="odd">
+<td>UseSrvIdxAA</td>
+<td>Array shaped like ObsSrvIdxAA, 1 where an observation is fit</td>
+</tr>
+<tr class="even">
+<td>ObsSrvIdxAA_SE</td>
+<td>Reported standard errors shaped like ObsSrvIdxAA, read only when
+SrvIdxAA_sigma_form asks for them</td>
+</tr>
+<tr class="odd">
+<td>SrvIdxAA_Type, SrvIdxAA_LikeType, SrvIdxAA_sigma_form</td>
+<td>Vectors dimensioned by n_srv_fleets, following the same codes as
+their fishery counterparts</td>
+</tr>
+<tr class="even">
+<td>AgeObsCorr_srv_idx</td>
+<td>Vector dimensioned by n_srv_fleets giving the correlation across
+ages, with the same codes as AgeObsCorr_catch and a _pop
+counterpart</td>
+</tr>
+<tr class="odd">
+<td>ObsSrvIdxAA_pop, UseSrvIdxAA_pop, ObsSrvIdxAA_pop_SE</td>
+<td>Population-specific counterparts, with a leading n_pop
+dimension</td>
 </tr>
 <tr class="even">
 <td>SrvAgeComps_bins</td>

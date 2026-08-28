@@ -58,7 +58,8 @@ rec_seas_prop[] <- 1/n_seas
      rec_seas_prop
  },
   Mrate = NULL,
-  move_timing = 0
+  move_timing = 0,
+  expm_nsub = 0
 )
 ```
 
@@ -437,6 +438,12 @@ rec_seas_prop[] <- 1/n_seas
   the spatial Baranov form built on season-integrated abundance. Must
   match the timing used to derive the reference points the projection is
   run against.
+
+- expm_nsub:
+
+  Integer controlling how the matrix exponential is evaluated under
+  \`move_timing = 2\`: \`0\` uses \`Matrix::expm\`, \`n \>= 1\` uses
+  \`n\` implicit backward Euler substeps. See \[mat_exp()\].
 
 ## Value
 

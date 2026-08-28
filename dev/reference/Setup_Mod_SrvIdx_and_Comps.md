@@ -26,13 +26,24 @@ Setup_Mod_SrvIdx_and_Comps(
   UseSrvIdx,
   ObsSrvIdxAA = NULL,
   UseSrvIdxAA = NULL,
+  ObsSrvIdxAA_SE = NULL,
   ObsSrvIdxAA_pop = NULL,
   UseSrvIdxAA_pop = NULL,
+  ObsSrvIdxAA_pop_SE = NULL,
   sigmaSrvIdxAA_key = NULL,
   sigmaSrvIdxAA_spec = "est",
   sigmaSrvIdxAA_pop_key = NULL,
   sigmaSrvIdxAA_pop_spec = "est",
+  SrvIdxAA_Type = "spltRaggS",
+  SrvIdxAA_pop_Type = "spltRaggS",
+  SrvIdxAA_LikeType = "lognormal",
+  SrvIdxAA_pop_LikeType = "lognormal",
+  SrvIdxAA_sigma_form = "none",
+  SrvIdxAA_pop_sigma_form = "none",
   AgeObsCorr_srv_idx = "iid",
+  AgeObsCorr_srv_idx_pop = "iid",
+  rho_srv_idx_key = NULL,
+  rho_srv_idx_pop_key = NULL,
   sigmaSrvIdx_spec = "fix",
   sigmaSrvIdx_map = NULL,
   sigmaSrvIdx_pop_spec = "fix",
@@ -112,10 +123,11 @@ Setup_Mod_SrvIdx_and_Comps(
 - ObsSrvIdxAA:
 
   Observed survey index at age, an array with dimensions
-  `[n_regions, n_years, n_seas, n_ages, n_srv_fleets]`. Supplying this
-  fits the index at age directly, every age its own lognormal
-  observation with its own catchability, which is the native form for
-  ICES age-structured assessments. A fleet uses this or the aggregated
+  `[n_regions, n_years, n_seas, n_ages, n_sexes, n_srv_fleets]`.
+  Supplying this fits the index at age directly, every age its own
+  observation with its own catchability. The sex margin is required
+  whatever the fleet reports: a stream summed over sexes carries its
+  observation in sex slot one. A fleet uses this or the aggregated
   index, never both.
 
 - UseSrvIdxAA:
@@ -123,29 +135,59 @@ Setup_Mod_SrvIdx_and_Comps(
   Integer array shaped like `ObsSrvIdxAA`, `1` where an observation is
   fit.
 
+- ObsSrvIdxAA_SE, ObsSrvIdxAA_pop_SE:
+
+  Reported standard errors shaped like their observation array, read
+  only when `SrvIdxAA_sigma_form` asks for them. This is the parity the
+  aggregated index already has: an index disaggregated by age keeps its
+  survey-design errors.
+
 - ObsSrvIdxAA_pop, UseSrvIdxAA_pop:
 
   Population-specific counterparts, with a leading population dimension.
 
 - sigmaSrvIdxAA_key, sigmaSrvIdxAA_pop_key:
 
-  Integer matrices coupling the index at age observation error, an
-  integer key matrix, the convention ICES assessments use. Equal entries
-  share a parameter and `NA` excludes one. The age shape of catchability
-  is not set here: an index fit age by age puts it in selectivity
-  through the `"nonparfree"` form, which carries the height of the curve
-  as well as its shape. See
+  Integer arrays `[n_ages, n_sexes, n_srv_fleets]` coupling the index at
+  age observation error, the key matrix convention ICES assessments use.
+  Equal entries share a parameter and `NA` excludes one. The sex margin
+  is required; a key coupling the sexes repeats its entries across them.
+  The age shape of catchability is not set here: an index fit age by age
+  puts it in selectivity through the `"nonparfree"` form, which carries
+  the height of the curve as well as its shape. See
   [`Setup_Mod_Srvsel_and_Q`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Srvsel_and_Q.md).
 
 - sigmaSrvIdxAA_spec, sigmaSrvIdxAA_pop_spec:
 
   `"est"` (default) or `"fix"`.
 
-- AgeObsCorr_srv_idx:
+- SrvIdxAA_Type, SrvIdxAA_pop_Type:
 
-  Correlation across ages for the survey index at age, `"iid"` (default)
-  or `"1dar1"`. See
+  Which margins the fleet reports separately: `"agg"`, `"spltRaggS"`
+  (default), `"aggRspltS"` or `"spltRspltS"`. See
   [`Setup_Mod_Catch_and_F`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Catch_and_F.md).
+
+- SrvIdxAA_LikeType, SrvIdxAA_pop_LikeType:
+
+  `"lognormal"` (default) or `"normal"`, one setting for every fleet or
+  one per fleet.
+
+- SrvIdxAA_sigma_form, SrvIdxAA_pop_sigma_form:
+
+  Where the observation error comes from: `"none"` (default), `"data"`,
+  `"est_additive"` or `"est_quadrature"`.
+
+- AgeObsCorr_srv_idx, AgeObsCorr_srv_idx_pop:
+
+  Correlation across ages for the survey index at age, `"iid"`
+  (default), `"1dar1"`, `"us"` or `"2dar1"`, one setting for every fleet
+  or one per fleet. See
+  [`Setup_Mod_Catch_and_F`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Catch_and_F.md).
+
+- rho_srv_idx_key, rho_srv_idx_pop_key:
+
+  Integer matrices `[n_sexes, n_srv_fleets]` coupling the across-age
+  correlation.
 
 - sigmaSrvIdx_spec:
 

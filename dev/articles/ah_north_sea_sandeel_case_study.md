@@ -190,17 +190,19 @@ an `NA`.
 ``` r
 
 # ages 1-2 and ages 3+ share a standard deviation, separately by season (fleets are defined as season x fishery fleet in this case to allow for seasonal selex)
-sigmaCAA_key <- cbind(c(NA, 1, 1, 2, 2), c(NA, 3, 3, 4, 4))
+# the key is age by sex by fleet; this stock is single sex, so the sex margin is 1
+sigmaCAA_key <- array(c(NA, 1, 1, 2, 2,
+                        NA, 3, 3, 4, 4), dim = c(n_ages, 1, 2))
 
 nocatch <- as.matrix(sandeel_1r$nocatch)
-ObsCatchAA <- UseCatchAA <- array(0, dim = c(1, n_yrs, n_seas, n_ages, 2))
+ObsCatchAA <- UseCatchAA <- array(0, dim = c(1, n_yrs, n_seas, n_ages, 1, 2))
 for(y in 1:n_yrs) {
   for(s in 1:n_seas) {
     for(a in 2:n_ages) { # age 0 is not fished
       obs = sandeel_1r$Catch[a, y, s]
       if(!is.na(obs) && obs > 0 && nocatch[y, s] == 1) {
-        ObsCatchAA[1, y, s, a, s] = obs
-        UseCatchAA[1, y, s, a, s] = 1
+        ObsCatchAA[1, y, s, a, 1, s] = obs
+        UseCatchAA[1, y, s, a, 1, s] = 1
       }
     } # end a loop
   } # end s loop
@@ -426,31 +428,31 @@ an age a survey never sees wants.
 srv_ages <- list(0:1, 1:3)
 srv_seas <- c(2, 1)
 
-ObsSrvIdxAA <- UseSrvIdxAA <- array(0, dim = c(1, n_yrs, n_seas, n_ages, 2))
+ObsSrvIdxAA <- UseSrvIdxAA <- array(0, dim = c(1, n_yrs, n_seas, n_ages, 1, 2))
 for(k in 1:2) {
   for(a in srv_ages[[k]]) {
     arow = which(ages == a)
     for(y in 1:n_yrs) {
       obs = sandeel_1r$survey[arow, y, k]
       if(!is.na(obs) && obs > 0) {
-        ObsSrvIdxAA[1, y, srv_seas[k], arow, k] = obs
-        UseSrvIdxAA[1, y, srv_seas[k], arow, k] = 1
+        ObsSrvIdxAA[1, y, srv_seas[k], arow, 1, k] = obs
+        UseSrvIdxAA[1, y, srv_seas[k], arow, 1, k] = 1
       }
     } # end y loop
   } # end a loop
 } # end k loop
 
 # smsR groups its survey standard deviations by age within a survey
-sigmaSrvIdxAA_key <- array(NA, dim = c(n_ages, 2))
-sigmaSrvIdxAA_key[2, 1] <- 1
-sigmaSrvIdxAA_key[2, 2] <- 2
-sigmaSrvIdxAA_key[3:4, 2] <- 3
+sigmaSrvIdxAA_key <- array(NA, dim = c(n_ages, 1, 2))
+sigmaSrvIdxAA_key[2, 1, 1] <- 1
+sigmaSrvIdxAA_key[2, 1, 2] <- 2
+sigmaSrvIdxAA_key[3:4, 1, 2] <- 3
 
 # The Dredge's age-0 value is held rather than estimated. Age 0 appears in this
 # one index and nowhere else, and the recruitment deviations are free, so they
 # fit it exactly: the residual goes to zero and the likelihood is unbounded.
-sigmaSrvIdxAA_start <- array(log(0.5), dim = c(n_ages, 2))
-sigmaSrvIdxAA_start[1, 1] <- log(0.4052)   # smsR's own value
+sigmaSrvIdxAA_start <- array(log(0.5), dim = c(n_ages, 1, 2))
+sigmaSrvIdxAA_start[1, 1, 1] <- log(0.4052)   # smsR's own value
 
 empty_srv <- list(
   ObsSrvAgeComps = array(0, dim = c(1, n_yrs, n_seas, n_ages, 1, 2)),

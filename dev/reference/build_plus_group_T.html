@@ -77,7 +77,8 @@ the plus-group age, under either unfished or fished conditions.</p>
 <span>  <span class="va">seasdur</span>,</span>
 <span>  Mrate_penult <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  Mrate_plus <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  move_timing <span class="op">=</span> <span class="fl">0</span></span>
+<span>  move_timing <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  expm_nsub <span class="op">=</span> <span class="fl">0</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -149,6 +150,12 @@ Instantaneous movement rate matrices for the plus-group age. Required when
 <dd><p>Integer flag for movement/mortality sequencing:
 <code>0</code> = movement then mortality (default), <code>1</code> = mortality then
 movement, <code>2</code> = continuous. See <code><a href="build_seas_operator.html">build_seas_operator</a></code>.</p></dd>
+
+
+<dt id="arg-expm-nsub">expm_nsub<a class="anchor" aria-label="anchor" href="#arg-expm-nsub"></a></dt>
+<dd><p>Integer controlling how the matrix exponential is evaluated under
+<code>move_timing = 2</code>: <code>0</code> uses <code><a href="https://rdrr.io/pkg/Matrix/man/expm-methods.html" class="external-link">Matrix::expm</a></code>, \(n \ge 1\) uses
+\(n\) implicit backward Euler substeps. See <code><a href="mat_exp.html">mat_exp</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

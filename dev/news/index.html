@@ -63,6 +63,7 @@
 <li>Fishing mortality deviations now distinguish a missing catch observation from a true recorded zero: <code>NA</code> in <code>ObsCatch</code> with <code>UseCatch == 0</code> estimates F as an active year; an observed zero forces <code>Fmort</code> to zero.</li>
 <li>Added age-0 (<code>rec_lag = 0</code>) Beverton-Holt recruitment via <code>rec_lag</code> in <code>Setup_Mod_Rec</code>/<code>Setup_Sim_Rec</code>, driven by the same year’s own SSB.</li>
 <li>Added movement-after-mortality and continuous movement dynamics.</li>
+<li>Added <code>move_expm_nsub</code> to <code>Setup_Mod_Movement</code>, selecting how CTMC matrix exponentials are evaluated in both <code>Get_Movement</code> and the <code>move_timing = 2</code> operators. <code>0</code> (default) is the exact <code><a href="https://rdrr.io/pkg/Matrix/man/expm-methods.html" class="external-link">Matrix::expm</a></code>; a power of two <code>n &gt;= 1</code> substitutes <code>n</code> implicit backward Euler substeps, <code>(I - A/n)^-n</code>, which is several times cheaper to differentiate but only first order in <code>1/n</code>. Fractions stay non-negative and catch still balances survivors exactly at any <code>n</code>.</li>
 <li>Added <code>sr_penalty</code> (<code>"none"</code>, <code>"bh"</code>, <code>"ricker"</code>) in <code>Setup_Mod_Rec</code> to fit a stock-recruit curve as a penalty rather than the recruitment process itself, valid only with <code>rec_model = "mean_rec"</code>. <code>sr_R0_spec</code> sets the curve’s scale (<code>"shared"</code>, <code>"est"</code>, <code>"rinit"</code>). MSY reference points remain unavailable under mean recruitment.</li>
 <li>Added <code>fish_sel_norm_bins</code>/<code>srv_sel_norm_bins</code> to name which bins non-parametric log-scale selectivity (<code>"nonparlog"</code>) standardizes over.</li>
 <li>Added a BSAI Atka mackerel case study bridging the 2024 AMAK assessment, with <code>sgl_rg_bsai_atka_data</code>.</li>
@@ -101,6 +102,7 @@
 <li>Survey fleets can observe recruitment deviations directly via <code>srv_idx_type = "recdev"</code>, reported as <code>RecDev_anom</code>.</li>
 <li>A conditioned operating model now records <code>ln_RecDevs</code> correctly instead of leaving it at zero.</li>
 <li>The double normal’s default starting values now place its peak mid-range instead of at zero, which previously divided by zero.</li>
+<li>Added ability to fit to at-age data streams (i.e., ICES style stock assessments).</li>
 </ul></div>
 <div class="section level3">
 <h3 id="minor-changes-1-2-0-9000">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-2-0-9000"></a></h3>

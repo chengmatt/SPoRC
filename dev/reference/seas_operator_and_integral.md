@@ -7,7 +7,7 @@ exponential.
 ## Usage
 
 ``` r
-seas_operator_and_integral(Z, Q, dur = 1)
+seas_operator_and_integral(Z, Q, dur = 1, expm_nsub = 0)
 ```
 
 ## Arguments
@@ -28,6 +28,15 @@ seas_operator_and_integral(Z, Q, dur = 1)
 
   Season duration used to scale `Q`. Should be `seasdur[seas]`. Only
   used when `move_timing = 2`.
+
+- expm_nsub:
+
+  Integer controlling how the matrix exponential is evaluated under
+  `move_timing = 2`: `0` (default) uses
+  [`Matrix::expm`](https://rdrr.io/pkg/Matrix/man/expm-methods.html), a
+  value \\n \ge 1\\ uses the implicit backward Euler scheme \\(I -
+  A/n)^{-n}\\. See
+  [`mat_exp`](https://chengmatt.github.io/SPoRC/dev/reference/mat_exp.md).
 
 ## Value
 

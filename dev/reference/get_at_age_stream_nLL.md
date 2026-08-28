@@ -1,62 +1,105 @@
 # Evaluate one age-disaggregated observation stream
 
-Walks the observations a stream fits and returns their negative log
-likelihood, shaped like the stream's use array so it can be weighted and
-reported alongside the aggregated streams.
+Computes the at-age negative log likelihood for every fleet in one
+stream. Observations arrive already transformed by
+[`prep_at_age_obs`](https://chengmatt.github.io/SPoRC/dev/reference/prep_at_age_obs.md)
+and registered through
+[`OBS`](https://rdrr.io/pkg/RTMB/man/TMB-interface.html).
 
 ## Usage
 
 ``` r
 get_at_age_stream_nLL(
-  obs_log,
+  obs_t,
   use,
   ln_sigma,
   source,
   pop,
   arrays,
+  obs_se = NULL,
+  sd_form = 0,
+  like_type = 0,
   const = 0,
   corr_type = 0,
-  rho = 0
+  trans_rho = 0,
+  trans_rho_year = 0,
+  us_pars = NULL,
+  aa_type = 1
 )
 ```
 
 ## Arguments
 
-- obs_log:
+- obs_t:
 
-  Registered log-scale observations for this stream, one element per
-  cell flagged in `use`, in
-  [`which()`](https://rdrr.io/r/base/which.html) order.
+  Registered observations for this stream, one element per cell flagged
+  in `use`, in [`which()`](https://rdrr.io/r/base/which.html) order, on
+  the scale its fleet's likelihood uses.
 
 - use:
 
   Integer array flagging which cells are fit, dimensioned region by year
-  by season by age by fleet, with a leading population dimension when
-  `pop` is `TRUE`.
+  by season by age by sex by fleet, with a leading population dimension
+  when `pop` is `TRUE`.
 
 - ln_sigma:
 
-  Log-scale observation error, over age and fleet, with a leading
+  Log-scale observation error, over age by sex by fleet, with a leading
   population dimension when `pop` is `TRUE`.
 
-- source, pop, arrays:
+- source, arrays:
 
   Passed to
   [`get_at_age_prediction`](https://chengmatt.github.io/SPoRC/dev/reference/get_at_age_prediction.md).
 
+- pop:
+
+  Logical. `TRUE` for the population-specific stream, whose arrays carry
+  a leading population dimension and whose observations are never summed
+  over populations.
+
+- obs_se:
+
+  Reported standard errors shaped like `use`, read only by fleets whose
+  `sd_form` asks for them.
+
+- sd_form:
+
+  Integer per fleet, see
+  [`at_age_obs_sd`](https://chengmatt.github.io/SPoRC/dev/reference/at_age_obs_sd.md).
+
+- like_type:
+
+  Integer per fleet. `0` lognormal, `1` normal.
+
 - const:
 
-  Small constant added inside the log, matching the aggregated stream's
-  convention.
+  Small constant added inside the log of a lognormal cell, matching the
+  aggregated stream's convention.
 
 - corr_type:
 
-  Integer. `0` is `"iid"`, `1` is `"1dar1"`, an AR(1) across ages within
-  a cell.
+  Integer per fleet. `0` `"iid"`, `1` `"1dar1"`, `2` `"us"`, `3`
+  `"2dar1"`.
 
-- rho:
+- trans_rho:
 
-  Correlation per fleet, used when `corr_type` is `1`.
+  Unconstrained correlation across ages, over sex by fleet.
+
+- trans_rho_year:
+
+  Unconstrained correlation across years, over sex by fleet, read under
+  `"2dar1"`.
+
+- us_pars:
+
+  Unconstrained correlation parameters, over pair by sex by fleet, read
+  under `"us"`.
+
+- aa_type:
+
+  Integer per fleet naming the split margins, see
+  [`at_age_split`](https://chengmatt.github.io/SPoRC/dev/reference/at_age_split.md).
 
 ## Value
 
@@ -66,9 +109,10 @@ reported and plotted directly rather than reconstructed.
 
 ## Details
 
-Observations arrive log-scale and already registered through
-[`RTMB::OBS`](https://rdrr.io/pkg/RTMB/man/TMB-interface.html).
-Registration must happen against the name `getAll` supplied, so the
-caller does it: a vector registered under a local name does not link to
-the data element, and the objective then diverges from the reported
-likelihood.
+Everything that can differ between fleets does: the margins summed over,
+the error structure, whether reported standard errors enter, and whether
+the density is lognormal or normal. Ages within a cell may be
+independent, an AR(1) across ages, or an unstructured correlation
+matrix; a fleet may instead correlate over both age and year through a
+separable AR(1), which needs the age by year block it is given to be
+complete.

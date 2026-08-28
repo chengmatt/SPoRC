@@ -31,9 +31,10 @@ do_key_mapping(
 
 - key:
 
-  Integer matrix `[n_ages, n_fleets]`, or `NULL` for the default given
-  by `default_shared`. Gains a leading population dimension when `pop`
-  is `TRUE`.
+  Integer array `[n_ages, n_sexes, n_fleets]`, or `NULL` for the default
+  given by `default_shared`. Gains a leading population dimension when
+  `pop` is `TRUE`. The sex margin is required: a key coupling the sexes
+  says so by repeating its entries across them.
 
 - spec:
 

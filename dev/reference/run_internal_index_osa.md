@@ -34,7 +34,7 @@ run_internal_index_osa(
 
   One of `"Catch"`, `"Discard"`, `"FishIdx"`, `"SrvIdx"`, or their
   at-age forms `"CatchAA"`, `"DiscardAA"`, `"FishIdxAA"`, `"SrvIdxAA"`.
-  At-age sources return an extra `age` column.
+  At-age sources return extra `age` and `sex` columns.
 
 - pop:
 
@@ -55,6 +55,8 @@ run_internal_index_osa(
 ## Value
 
 A list with one element `res`: columns `fleet`, `region`, `year`,
-`season`, `pop`, `resid`, and `idx_type` (set to `index_source`; named
-`idx_type` rather than `comp_type` because index-type sources are not
-compositions), or `NULL` if no data of the requested source is present.
+`season`, `pop`, `age`, `sex`, `resid`, and `idx_type` (set to
+`index_source`; named `idx_type` rather than `comp_type` because
+index-type sources are not compositions), or `NULL` if no data of the
+requested source is present. `age` and `sex` are `NA` for the aggregated
+sources.

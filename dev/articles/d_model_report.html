@@ -482,19 +482,19 @@ applied.</p>
 <tbody>
 <tr class="odd">
 <td><code>CatchAA_nLL</code></td>
-<td>region, year, season, age, fishery fleet</td>
+<td>region, year, season, age, sex, fishery fleet</td>
 </tr>
 <tr class="even">
 <td><code>DiscardAA_nLL</code></td>
-<td>region, year, season, age, fishery fleet</td>
+<td>region, year, season, age, sex, fishery fleet</td>
 </tr>
 <tr class="odd">
 <td><code>FishIdxAA_nLL</code></td>
-<td>region, year, season, age, fishery fleet</td>
+<td>region, year, season, age, sex, fishery fleet</td>
 </tr>
 <tr class="even">
 <td><code>SrvIdxAA_nLL</code></td>
-<td>region, year, season, age, survey fleet</td>
+<td>region, year, season, age, sex, survey fleet</td>
 </tr>
 <tr class="odd">
 <td>
@@ -503,13 +503,26 @@ applied.</p>
 </td>
 <td>as above, with a leading population dimension</td>
 </tr>
+<tr class="even">
+<td>
+<code>PredCatchAA</code>, <code>PredDiscardAA</code>,
+<code>PredFishIdxAA</code>, <code>PredSrvIdxAA</code> (and
+<code>_pop</code>)</td>
+<td>shaped like their likelihood arrays, on the natural scale</td>
+</tr>
 </tbody>
 </table>
+<p>A stream summed over regions or sexes writes into slot one of those
+margins and leaves the rest at zero, so the array’s shape does not tell
+you what the fleet reported; its <code>Type</code> does. A cell whose
+ages are correlated contributes its whole density to the first age
+present, so the array still sums correctly but is not readable age by
+age.</p>
 <p>The parameters behind them are also reported:
 <code>ln_sigmaCAA</code>, <code>ln_sigmaDAA</code>,
 <code>ln_sigmaFishIdxAA</code> and <code>ln_sigmaSrvIdxAA</code>, each
-over age and fleet. The age shape of catchability is not among them: an
-index fit age by age carries it in selectivity, through the
+over age, sex and fleet. The age shape of catchability is not among
+them: an index fit age by age carries it in selectivity, through the
 <code>"nonparfree"</code> form.</p>
 <p>Region-aggregated likelihoods combine contributions across all
 populations; population-specific likelihoods (<code>_pop_</code>) are

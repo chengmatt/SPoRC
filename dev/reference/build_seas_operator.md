@@ -9,7 +9,7 @@ storage convention of `Movement`.
 ## Usage
 
 ``` r
-build_seas_operator(Move, Z, Q = NULL, dur = 1, move_timing = 0)
+build_seas_operator(Move, Z, Q = NULL, dur = 1, move_timing = 0, expm_nsub = 0)
 ```
 
 ## Arguments
@@ -43,6 +43,15 @@ build_seas_operator(Move, Z, Q = NULL, dur = 1, move_timing = 0)
   mortality (default, historical SPoRC behaviour), `1` = mortality then
   movement, `2` = continuous (simultaneous) movement and mortality.
 
+- expm_nsub:
+
+  Integer controlling how the matrix exponential is evaluated under
+  `move_timing = 2`: `0` (default) uses
+  [`Matrix::expm`](https://rdrr.io/pkg/Matrix/man/expm-methods.html), a
+  value \\n \ge 1\\ uses the implicit backward Euler scheme \\(I -
+  A/n)^{-n}\\. See
+  [`mat_exp`](https://chengmatt.github.io/SPoRC/dev/reference/mat_exp.md).
+
 ## Value
 
 A square `[n_regions x n_regions]` matrix in row convention.
@@ -55,8 +64,11 @@ movement matrix, the three operators are \$\$T_0 = M \\
 \left\[\exp\left(Q^\top \Delta -
 \mathrm{diag}(Z)\right)\right\]^\top\$\$ where \\\Delta\\ is `dur`.
 \\Q^\top\\ converts the stored row-convention generator back to the
-column convention used by
-[`Matrix::expm`](https://rdrr.io/pkg/Matrix/man/expm-methods.html).
+column convention the exponential is taken in, which is
+[`Matrix::expm`](https://rdrr.io/pkg/Matrix/man/expm-methods.html) or
+the implicit solve of
+[`mat_exp`](https://chengmatt.github.io/SPoRC/dev/reference/mat_exp.md)
+according to `expm_nsub`.
 
 The three agree exactly when `Z` is constant across regions, because a
 scalar multiple of the identity commutes with the generator. They also

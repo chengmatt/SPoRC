@@ -34,6 +34,7 @@ Setup_Mod_Movement(
   ctmc_diffusion_bounds = 0,
   move_timing = 0,
   ctmc_scale_by_seasdur = 1,
+  move_expm_nsub = 0,
   ...
 )
 ```
@@ -235,6 +236,20 @@ Setup_Mod_Movement(
   share time units. `0` exponentiates \\Q\\ once per season regardless
   of duration. Only has an effect when `move_type = 1` and `n_seas > 1`;
   forced to `1` when `move_timing = 2`.
+
+- move_expm_nsub:
+
+  Integer controlling how matrix exponentials of the CTMC generator are
+  evaluated, both when converting \\Q\\ to movement fractions and inside
+  the `move_timing = 2` seasonal operators. `0` (default) uses
+  [`Matrix::expm`](https://rdrr.io/pkg/Matrix/man/expm-methods.html). A
+  power of two \\n \ge 1\\ instead uses \\n\\ implicit (backward Euler)
+  substeps, \\(I - A/n)^{-n}\\, evaluated as one linear solve plus
+  \\\log_2 n\\ squarings, which is why \\n\\ must be a power of two. The
+  implicit form has a much cheaper reverse-mode adjoint than a matrix
+  exponential, so the gradient is several times faster, but it is a
+  first-order approximation: \\n = 1\\ is plain `solve(I - A)` and is an
+  approximation.
 
 - ...:
 

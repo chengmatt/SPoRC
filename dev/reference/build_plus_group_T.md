@@ -20,7 +20,8 @@ build_plus_group_T(
   seasdur,
   Mrate_penult = NULL,
   Mrate_plus = NULL,
-  move_timing = 0
+  move_timing = 0,
+  expm_nsub = 0
 )
 ```
 
@@ -89,6 +90,14 @@ build_plus_group_T(
   mortality (default), `1` = mortality then movement, `2` = continuous.
   See
   [`build_seas_operator`](https://chengmatt.github.io/SPoRC/dev/reference/build_seas_operator.md).
+
+- expm_nsub:
+
+  Integer controlling how the matrix exponential is evaluated under
+  `move_timing = 2`: `0` uses
+  [`Matrix::expm`](https://rdrr.io/pkg/Matrix/man/expm-methods.html),
+  \\n \ge 1\\ uses \\n\\ implicit backward Euler substeps. See
+  [`mat_exp`](https://chengmatt.github.io/SPoRC/dev/reference/mat_exp.md).
 
 ## Value
 

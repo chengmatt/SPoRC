@@ -46,7 +46,8 @@ get_tagging_observation_model(
   conv_tag_fish_avail,
   pred_conv_tag_fish_recap,
   Mrate = NULL,
-  move_timing = 0
+  move_timing = 0,
+  expm_nsub = 0
 )
 ```
 

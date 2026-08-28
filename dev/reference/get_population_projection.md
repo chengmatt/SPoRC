@@ -60,7 +60,8 @@ get_population_projection(
   sr_penalty = 0,
   sr_R0 = NULL,
   growth_mortality_year_fn = NULL,
-  growth_mortality_state = NULL
+  growth_mortality_state = NULL,
+  expm_nsub = 0
 )
 ```
 

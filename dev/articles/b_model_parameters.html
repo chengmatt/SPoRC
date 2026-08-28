@@ -216,7 +216,7 @@ fleet. See <code><a href="../articles/t_model_options.html">vignette("t_model_op
 <tbody>
 <tr class="odd">
 <td><code>ln_sigmaCAA</code></td>
-<td><code>n_ages × n_fish_fleets</code></td>
+<td><code>n_ages × n_sexes × n_fish_fleets</code></td>
 <td>Log-scale standard deviation for the catch-at-age likelihood. Keyed
 by <code>sigmaCAA_key</code>
 </td>
@@ -224,7 +224,7 @@ by <code>sigmaCAA_key</code>
 </tr>
 <tr class="even">
 <td><code>ln_sigmaCAA_pop</code></td>
-<td><code>n_pop × n_ages × n_fish_fleets</code></td>
+<td><code>n_pop × n_ages × n_sexes × n_fish_fleets</code></td>
 <td>Population-specific counterpart, keyed by
 <code>sigmaCAA_pop_key</code>
 </td>
@@ -232,7 +232,7 @@ by <code>sigmaCAA_key</code>
 </tr>
 <tr class="odd">
 <td><code>ln_sigmaDAA</code></td>
-<td><code>n_ages × n_fish_fleets</code></td>
+<td><code>n_ages × n_sexes × n_fish_fleets</code></td>
 <td>Log-scale standard deviation for the discard-at-age likelihood,
 keyed by <code>sigmaDAA_key</code>
 </td>
@@ -240,7 +240,7 @@ keyed by <code>sigmaDAA_key</code>
 </tr>
 <tr class="even">
 <td><code>ln_sigmaDAA_pop</code></td>
-<td><code>n_pop × n_ages × n_fish_fleets</code></td>
+<td><code>n_pop × n_ages × n_sexes × n_fish_fleets</code></td>
 <td>Population-specific counterpart, keyed by
 <code>sigmaDAA_pop_key</code>
 </td>
@@ -248,7 +248,7 @@ keyed by <code>sigmaDAA_key</code>
 </tr>
 <tr class="odd">
 <td><code>ln_sigmaFishIdxAA</code></td>
-<td><code>n_ages × n_fish_fleets</code></td>
+<td><code>n_ages × n_sexes × n_fish_fleets</code></td>
 <td>Log-scale standard deviation for the fishery index at age, keyed by
 <code>sigmaFishIdxAA_key</code>
 </td>
@@ -256,13 +256,13 @@ keyed by <code>sigmaDAA_key</code>
 </tr>
 <tr class="even">
 <td><code>ln_sigmaFishIdxAA_pop</code></td>
-<td><code>n_pop × n_ages × n_fish_fleets</code></td>
+<td><code>n_pop × n_ages × n_sexes × n_fish_fleets</code></td>
 <td>Population-specific counterpart</td>
 <td>log(0.5)</td>
 </tr>
 <tr class="odd">
 <td><code>ln_sigmaSrvIdxAA</code></td>
-<td><code>n_ages × n_srv_fleets</code></td>
+<td><code>n_ages × n_sexes × n_srv_fleets</code></td>
 <td>Log-scale standard deviation for the survey index at age, keyed by
 <code>sigmaSrvIdxAA_key</code>
 </td>
@@ -270,36 +270,79 @@ keyed by <code>sigmaDAA_key</code>
 </tr>
 <tr class="even">
 <td><code>ln_sigmaSrvIdxAA_pop</code></td>
-<td><code>n_pop × n_ages × n_srv_fleets</code></td>
+<td><code>n_pop × n_ages × n_sexes × n_srv_fleets</code></td>
 <td>Population-specific counterpart</td>
 <td>log(0.5)</td>
 </tr>
 <tr class="odd">
 <td><code>trans_rho_catch</code></td>
-<td><code>n_fish_fleets</code></td>
-<td>Unconstrained AR(1) correlation across ages for catch at age, one
-per fleet. Transformed to <code>(-1, 1)</code> by
-<code><a href="../reference/rho_trans.html">rho_trans()</a></code>. Mapped to <code>NA</code> unless
-<code>AgeObsCorr_catch = "1dar1"</code>
+<td><code>n_sexes × n_fish_fleets</code></td>
+<td>Unconstrained AR(1) correlation across ages for catch at age.
+Transformed to <code>(-1, 1)</code> by <code><a href="../reference/rho_trans.html">rho_trans()</a></code>. One per
+fleet shared across sexes unless <code>rho_catch_key</code> says
+otherwise, and mapped to <code>NA</code> unless
+<code>AgeObsCorr_catch</code> is <code>"1dar1"</code> or
+<code>"2dar1"</code>
 </td>
 <td>0</td>
 </tr>
 <tr class="even">
-<td><code>trans_rho_discard</code></td>
-<td><code>n_fish_fleets</code></td>
+<td><code>trans_rho_catch_year</code></td>
+<td><code>n_sexes × n_fish_fleets</code></td>
+<td>Correlation across years, read only under
+<code>AgeObsCorr_catch = "2dar1"</code>
+</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td><code>trans_rho_catch_us</code></td>
+<td><code>n_pairs × n_sexes × n_fish_fleets</code></td>
+<td>Unconstrained entries of the unstructured across-age correlation,
+<code>n_pairs = n_ages(n_ages - 1)/2</code>. Read only under
+<code>AgeObsCorr_catch = "us"</code>
+</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>
+<code>trans_rho_discard</code>, <code>trans_rho_discard_year</code>,
+<code>trans_rho_discard_us</code>
+</td>
+<td>as above</td>
 <td>As above, for discards at age</td>
 <td>0</td>
 </tr>
 <tr class="odd">
-<td><code>trans_rho_fish_idx</code></td>
-<td><code>n_fish_fleets</code></td>
+<td>
+<code>trans_rho_fish_idx</code>,
+<code>trans_rho_fish_idx_year</code>,
+<code>trans_rho_fish_idx_us</code>
+</td>
+<td>as above</td>
 <td>As above, for the fishery index at age</td>
 <td>0</td>
 </tr>
 <tr class="even">
-<td><code>trans_rho_srv_idx</code></td>
-<td><code>n_srv_fleets</code></td>
+<td>
+<code>trans_rho_srv_idx</code>, <code>trans_rho_srv_idx_year</code>,
+<code>trans_rho_srv_idx_us</code>
+</td>
+<td>
+<code>n_sexes × n_srv_fleets</code> (and
+<code>n_pairs × …</code>)</td>
 <td>As above, for the survey index at age</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>
+<code>trans_rho_catch_pop</code>,
+<code>trans_rho_discard_pop</code>, <code>trans_rho_fish_idx_pop</code>,
+<code>trans_rho_srv_idx_pop</code>
+</td>
+<td>as above</td>
+<td>Population-specific counterparts, with their own <code>_year</code>
+and <code>_us</code> forms. The <code>_pop</code> streams carry their
+own correlation rather than borrowing the aggregated one</td>
 <td>0</td>
 </tr>
 </tbody>

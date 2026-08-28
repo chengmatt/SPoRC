@@ -68,45 +68,70 @@ deviation, so the likelihood itself is written once.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_at_age_nLL</span><span class="op">(</span><span class="va">obs_log</span>, <span class="va">pred_log</span>, <span class="va">sigma</span>, corr_type <span class="op">=</span> <span class="fl">0</span>, rho <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_at_age_nLL</span><span class="op">(</span></span>
+<span>  <span class="va">obs_t</span>,</span>
+<span>  <span class="va">pred_t</span>,</span>
+<span>  <span class="va">sigma</span>,</span>
+<span>  corr_type <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  rho <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  ages <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  corr_mat <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
 
 
-<dl><dt id="arg-obs-log">obs_log<a class="anchor" aria-label="anchor" href="#arg-obs-log"></a></dt>
-<dd><p>Numeric vector of log observations for the ages present in one
-cell, already offset by any constant.</p></dd>
+<dl><dt id="arg-obs-t">obs_t<a class="anchor" aria-label="anchor" href="#arg-obs-t"></a></dt>
+<dd><p>Numeric vector of observations for the ages present in one cell,
+on the scale the fleet's likelihood is written on.</p></dd>
 
 
-<dt id="arg-pred-log">pred_log<a class="anchor" aria-label="anchor" href="#arg-pred-log"></a></dt>
-<dd><p>Vector of log predictions, matching <code>obs_log</code>.</p></dd>
+<dt id="arg-pred-t">pred_t<a class="anchor" aria-label="anchor" href="#arg-pred-t"></a></dt>
+<dd><p>Vector of predictions, matching <code>obs_t</code>.</p></dd>
 
 
 <dt id="arg-sigma">sigma<a class="anchor" aria-label="anchor" href="#arg-sigma"></a></dt>
-<dd><p>Vector of standard deviations, matching <code>obs_log</code>.</p></dd>
+<dd><p>Vector of standard deviations, matching <code>obs_t</code>.</p></dd>
 
 
 <dt id="arg-corr-type">corr_type<a class="anchor" aria-label="anchor" href="#arg-corr-type"></a></dt>
-<dd><p>Integer. <code>0</code> is <code>"iid"</code>, <code>1</code> is <code>"1dar1"</code>.</p></dd>
+<dd><p>Integer. <code>0</code> is <code>"iid"</code>, <code>1</code> is
+<code>"1dar1"</code>, <code>2</code> is <code>"us"</code>.</p></dd>
 
 
 <dt id="arg-rho">rho<a class="anchor" aria-label="anchor" href="#arg-rho"></a></dt>
 <dd><p>Correlation for <code>corr_type = 1</code>, on the natural scale.</p></dd>
 
+
+<dt id="arg-ages">ages<a class="anchor" aria-label="anchor" href="#arg-ages"></a></dt>
+<dd><p>Integer vector of the ages present, used to space the AR(1). The
+position in the vector is assumed when this is <code>NULL</code>.</p></dd>
+
+
+<dt id="arg-corr-mat">corr_mat<a class="anchor" aria-label="anchor" href="#arg-corr-mat"></a></dt>
+<dd><p>Correlation matrix for <code>corr_type = 2</code>, already subset to
+the ages present.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Numeric vector the length of <code>obs_log</code>, the negative log
+    <p>Numeric vector the length of <code>obs_t</code>, the negative log
   likelihood contribution of each age.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Observations are lognormal on the natural scale. Ages within one cell may be
-independent, or correlated as an AR(1) across ages, as ICES age-structured assessments allow. A correlated cell
-contributes its whole density to the first age present, leaving the remaining
-ages at zero, so the returned array still sums to the cell's contribution.</p>
+    <p>Ages within one cell may be independent, correlated as an AR(1) across ages,
+or correlated through an unstructured matrix, the three structures ICES
+age-structured assessments allow. A correlated cell contributes its whole
+density to the first age present, leaving the remaining ages at zero, so the
+returned vector still sums to the cell's contribution.</p>
+<p>An AR(1) is a statement about age distance, not about position in the
+observed vector. A fleet that observes ages 2, 3, 5 and 6 has a gap, and lag
+one across that gap is not lag one, so the covariance is built from the ages
+themselves whenever they are not consecutive. Consecutive ages take the
+autoregressive recursion instead, which is the same density at lower cost.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -218,10 +218,10 @@ test_that("a model with no at-age data is unchanged by the machinery", {
 test_that("an input list built before at-age observations existed still runs", {
   il <- build_aa(aa = FALSE)
   for(nm in c("ObsCatchAA", "UseCatchAA", "ObsDiscardAA", "UseDiscardAA",
-              "ObsSrvIdxAA", "UseSrvIdxAA", "ObsFishIdxAA", "UseFishIdxAA",
-              "use_catch_aa", "use_discard_aa", "use_srv_idx_aa", "use_fish_idx_aa",
+              "ObsSrvIdxAA", "UseSrvIdxAA",
+              "use_catch_aa", "use_discard_aa", "use_srv_idx_aa",
               "AgeObsCorr")) il$data[[nm]] <- NULL
-  for(nm in c("ln_sigmaCAA", "ln_sigmaDAA", "ln_sigmaSrvIdxAA", "ln_sigmaFishIdxAA",
+  for(nm in c("ln_sigmaCAA", "ln_sigmaDAA", "ln_sigmaSrvIdxAA",
               "trans_rho")) {
     il$par[[nm]] <- NULL; il$map[[nm]] <- NULL
   }
@@ -276,29 +276,4 @@ test_that("the at-age and aggregated forms agree where the two say the same thin
 
   # every other age contributes nothing, since the key holds them out
   expect_equal(sum(raa$CatchAA_nLL[1, , 1, -one_age, 1, 1]), 0)
-})
-
-test_that("the fishery index at age carries its fleet's seasonal timing", {
-
-  # t_fish is the fraction of the season elapsed when the index is observed, so
-  # the numbers are decayed by that much total mortality first. The at-age index
-  # reads the same array the aggregated one does, so it inherits that; building
-  # it from raw numbers at age would silently ignore the timing.
-  n_yrs <- 20; n_ages <- 5
-  aa_dim <- c(1, n_yrs, 1, n_ages, 1, 1)
-  obs <- array(100, dim = aa_dim); use <- array(1, dim = aa_dim)
-
-  pred_at <- function(t_fish_val) {
-    il <- build_aa(ObsFishIdxAA = obs, UseFishIdxAA = use,
-                   fish_t = array(t_fish_val, dim = c(1, 1, 1)))
-    as.numeric(rep_of(il)$FishIAA[1, 1, 10, 1, , 1, 1])
-  }
-
-  start_of_season <- pred_at(0)
-  mid_season <- pred_at(0.5)
-
-  # a later index sees fewer fish, and the shortfall grows with age because
-  # older fish carry more accumulated mortality within the season
-  expect_true(all(mid_season < start_of_season))
-  expect_true(all(mid_season > 0))
 })

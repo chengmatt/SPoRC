@@ -37,7 +37,9 @@ parse_caal_type <- function(CAAL_Type, n_yrs, n_fleets, what) {
     fleet <- as.numeric(tmp_vec[5])
 
     if(!comps_type_tmp %in% c("agg", "spltRspltS", "spltRjntS", "none"))
-      stop(paste(what, "not specified correctly. Must be one of: agg, spltRspltS, spltRjntS, none"))
+      stop(what, " is '", tmp, "'. Give it as CompType_Year_x-y_Fleet_x, where CompType is ",
+           "one of agg, spltRspltS, spltRjntS, none and the last year may be 'terminal', ",
+           "for example agg_Year_1-terminal_Fleet_1.")
     if(!fleet %in% 1:n_fleets)
       stop(paste("Invalid fleet specified for", what, ". This needs to be specified as CompType_Year_x-y_Fleet_x"))
 

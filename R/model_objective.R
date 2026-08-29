@@ -223,7 +223,6 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   aa_streams <- list(
     list(tag = "CatchAA", corr = "catch", sigma = "ln_sigmaCAA", n = n_fish_bc, flag = "use_catch_aa"),
     list(tag = "DiscardAA", corr = "discard", sigma = "ln_sigmaDAA", n = n_fish_bc, flag = "use_discard_aa"),
-    list(tag = "FishIdxAA", corr = "fish_idx", sigma = "ln_sigmaFishIdxAA", n = n_fish_bc, flag = "use_fish_idx_aa"),
     list(tag = "SrvIdxAA", corr = "srv_idx", sigma = "ln_sigmaSrvIdxAA", n = n_srv_bc, flag = "use_srv_idx_aa")
   )
 
@@ -515,7 +514,6 @@ SPoRC_rtmb = function(pars, data) {
   PredCatch = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_fish_fleets)) # Predicted retained catch (can be abundance or biomass)
   PredDiscard = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_fish_fleets)) # Predicted discarded catch (can be abundance, biomass, or abdunance or biomass fraction of retained catch)
   PredFishIdx = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_fish_fleets)) # Predicted fishery index
-  FishIAA = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # Fishery index numbers at age
   fish_q = array(0, dim = c(n_regions, n_yrs, n_fish_fleets)) # Fishery catchability
 
   # Survey Processes
@@ -537,8 +535,6 @@ SPoRC_rtmb = function(pars, data) {
   CatchAA_pop_nLL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # Population-specific catch at age
   DiscardAA_nLL = array(0, dim = c(n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # Discard at age likelihoods
   DiscardAA_pop_nLL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # Population-specific discard at age
-  FishIdxAA_nLL = array(0, dim = c(n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # Fishery index at age likelihoods
-  FishIdxAA_pop_nLL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # Population-specific fishery index at age
   SrvIdxAA_nLL = array(0, dim = c(n_regions, n_yrs, n_seas, n_ages, n_sexes, n_srv_fleets)) # Survey index at age likelihoods
   SrvIdxAA_pop_nLL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_srv_fleets)) # Population-specific survey index at age
   SrvIdx_nLL = array(0, dim = c(n_regions, n_yrs, n_seas, n_srv_fleets)) # Survey Index Likelihoods
@@ -1043,7 +1039,7 @@ SPoRC_rtmb = function(pars, data) {
     n_pop = n_pop, n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas, n_fish_fleets = n_fish_fleets, n_sexes = n_sexes,
     fish_q_blocks = fish_q_blocks, ln_fish_q = ln_fish_q, fish_q = fish_q,
     ret_FAA = ret_FAA, disc_FAA = disc_FAA, ZAA = ZAA, NAA = NAA,
-    CAA = CAA, DAA = DAA, CAL = CAL, DAL = DAL, PredCatch = PredCatch, PredDiscard = PredDiscard, PredFishIdx = PredFishIdx, FishIAA = FishIAA,
+    CAA = CAA, DAA = DAA, CAL = CAL, DAL = DAL, PredCatch = PredCatch, PredDiscard = PredDiscard, PredFishIdx = PredFishIdx,
     fit_lengths = fit_lengths, SizeAgeTrans = SizeAgeTrans,
     SizeAgeTrans_fish = SizeAgeTrans_fish,
     fish_len_comp_sel = fish_len_comp_sel, fish_selex_type = fish_selex_type, ret_selex_type = ret_selex_type,
@@ -1059,7 +1055,7 @@ SPoRC_rtmb = function(pars, data) {
     do_caal = do_caal, Fish_caal = Fish_caal, Fish_caal_discard = Fish_caal_discard
   )
 
-  fish_q = tmp_fish_obs$fish_q; CAA = tmp_fish_obs$CAA; DAA = tmp_fish_obs$DAA; FishIAA = tmp_fish_obs$FishIAA
+  fish_q = tmp_fish_obs$fish_q; CAA = tmp_fish_obs$CAA; DAA = tmp_fish_obs$DAA
   CAL = tmp_fish_obs$CAL; DAL = tmp_fish_obs$DAL
   Fish_caal = tmp_fish_obs$Fish_caal; Fish_caal_discard = tmp_fish_obs$Fish_caal_discard
   PredCatch = tmp_fish_obs$PredCatch; PredDiscard = tmp_fish_obs$PredDiscard; PredFishIdx = tmp_fish_obs$PredFishIdx
@@ -1164,8 +1160,6 @@ SPoRC_rtmb = function(pars, data) {
   ObsCatchAA_pop = prep_at_age_obs(ObsCatchAA_pop, UseCatchAA_pop, CatchAA_pop_LikeType)
   ObsDiscardAA = prep_at_age_obs(ObsDiscardAA, UseDiscardAA, DiscardAA_LikeType)
   ObsDiscardAA_pop = prep_at_age_obs(ObsDiscardAA_pop, UseDiscardAA_pop, DiscardAA_pop_LikeType)
-  ObsFishIdxAA = prep_at_age_obs(ObsFishIdxAA, UseFishIdxAA, FishIdxAA_LikeType, addtofishidx)
-  ObsFishIdxAA_pop = prep_at_age_obs(ObsFishIdxAA_pop, UseFishIdxAA_pop, FishIdxAA_pop_LikeType, addtofishidx)
   ObsSrvIdxAA = prep_at_age_obs(ObsSrvIdxAA, UseSrvIdxAA, SrvIdxAA_LikeType, addtosrvidx)
   ObsSrvIdxAA_pop = prep_at_age_obs(ObsSrvIdxAA_pop, UseSrvIdxAA_pop, SrvIdxAA_pop_LikeType, addtosrvidx)
 
@@ -1173,13 +1167,11 @@ SPoRC_rtmb = function(pars, data) {
   if(length(ObsCatchAA_pop)) ObsCatchAA_pop = RTMB::OBS(ObsCatchAA_pop)
   if(length(ObsDiscardAA)) ObsDiscardAA = RTMB::OBS(ObsDiscardAA)
   if(length(ObsDiscardAA_pop)) ObsDiscardAA_pop = RTMB::OBS(ObsDiscardAA_pop)
-  if(length(ObsFishIdxAA)) ObsFishIdxAA = RTMB::OBS(ObsFishIdxAA)
-  if(length(ObsFishIdxAA_pop)) ObsFishIdxAA_pop = RTMB::OBS(ObsFishIdxAA_pop)
   if(length(ObsSrvIdxAA)) ObsSrvIdxAA = RTMB::OBS(ObsSrvIdxAA)
   if(length(ObsSrvIdxAA_pop)) ObsSrvIdxAA_pop = RTMB::OBS(ObsSrvIdxAA_pop)
 
   # get arrays to feed into nLL below
-  at_age_arrays = list(CAA = CAA, DAA = DAA, SrvIAA = SrvIAA, FishIAA = FishIAA, WAA_fish = WAA_fish,
+  at_age_arrays = list(CAA = CAA, DAA = DAA, SrvIAA = SrvIAA, WAA_fish = WAA_fish,
                        dmr = dmr, catch_units = catch_units, discard_units = discard_units)
 
   # get nLL for fishery and survey
@@ -1203,16 +1195,6 @@ SPoRC_rtmb = function(pars, data) {
                                   const = 0, corr_type = AgeObsCorr_discard_pop, trans_rho = trans_rho_discard_pop,
                                   trans_rho_year = trans_rho_discard_pop_year, us_pars = trans_rho_discard_pop_us,
                                   aa_type = DiscardAA_pop_Type)
-  fiaa = get_at_age_stream_nLL(ObsFishIdxAA, UseFishIdxAA, ln_sigmaFishIdxAA, "fish_index", FALSE, at_age_arrays,
-                               obs_se = ObsFishIdxAA_SE, sd_form = FishIdxAA_sigma_form, like_type = FishIdxAA_LikeType,
-                               const = addtofishidx, corr_type = AgeObsCorr_fish_idx, trans_rho = trans_rho_fish_idx,
-                               trans_rho_year = trans_rho_fish_idx_year, us_pars = trans_rho_fish_idx_us,
-                               aa_type = FishIdxAA_Type)
-  fiaa_pop = get_at_age_stream_nLL(ObsFishIdxAA_pop, UseFishIdxAA_pop, ln_sigmaFishIdxAA_pop, "fish_index", TRUE, at_age_arrays,
-                                   obs_se = ObsFishIdxAA_pop_SE, sd_form = FishIdxAA_pop_sigma_form, like_type = FishIdxAA_pop_LikeType,
-                                   const = addtofishidx, corr_type = AgeObsCorr_fish_idx_pop, trans_rho = trans_rho_fish_idx_pop,
-                                   trans_rho_year = trans_rho_fish_idx_pop_year, us_pars = trans_rho_fish_idx_pop_us,
-                                   aa_type = FishIdxAA_pop_Type)
   siaa = get_at_age_stream_nLL(ObsSrvIdxAA, UseSrvIdxAA, ln_sigmaSrvIdxAA, "srv_index", FALSE, at_age_arrays,
                                obs_se = ObsSrvIdxAA_SE, sd_form = SrvIdxAA_sigma_form, like_type = SrvIdxAA_LikeType,
                                const = addtosrvidx, corr_type = AgeObsCorr_srv_idx, trans_rho = trans_rho_srv_idx,
@@ -1229,8 +1211,6 @@ SPoRC_rtmb = function(pars, data) {
   CatchAA_pop_nLL = caa_pop$nLL
   DiscardAA_nLL = daa$nLL
   DiscardAA_pop_nLL = daa_pop$nLL
-  FishIdxAA_nLL = fiaa$nLL
-  FishIdxAA_pop_nLL = fiaa_pop$nLL
   SrvIdxAA_nLL = siaa$nLL
   SrvIdxAA_pop_nLL = siaa_pop$nLL
 
@@ -1239,8 +1219,6 @@ SPoRC_rtmb = function(pars, data) {
   PredCatchAA_pop = caa_pop$pred
   PredDiscardAA = daa$pred
   PredDiscardAA_pop = daa_pop$pred
-  PredFishIdxAA = fiaa$pred
-  PredFishIdxAA_pop = fiaa_pop$pred
   PredSrvIdxAA = siaa$pred
   PredSrvIdxAA_pop = siaa_pop$pred
 
@@ -3008,8 +2986,6 @@ SPoRC_rtmb = function(pars, data) {
     sum(Wt_Catch_pop * apply(CatchAA_pop_nLL, c(1,2,3,4,7), sum)) + # Population-specific catch at age
     sum(Wt_Discard * apply(DiscardAA_nLL, c(1,2,3,6), sum)) +   # Discard at age likelihoods
     sum(Wt_Discard_pop * apply(DiscardAA_pop_nLL, c(1,2,3,4,7), sum)) + # Population-specific discard at age
-    sum(Wt_FishIdx * apply(FishIdxAA_nLL, c(1,2,3,6), sum)) +   # Fishery index at age likelihoods
-    sum(Wt_FishIdx_pop * apply(FishIdxAA_pop_nLL, c(1,2,3,4,7), sum)) + # Population-specific fishery index at age
     sum(Wt_SrvIdx * apply(SrvIdxAA_nLL, c(1,2,3,6), sum)) +     # Survey index at age likelihoods
     sum(Wt_SrvIdx_pop * apply(SrvIdxAA_pop_nLL, c(1,2,3,4,7), sum)) + # Population-specific survey index at age
     sum(Wt_Catch_pop * Catch_pop_nLL) +      # Pop-specific catch likelihoods
@@ -3080,27 +3056,20 @@ SPoRC_rtmb = function(pars, data) {
   RTMB::REPORT(init_F)
   RTMB::REPORT(ln_sigmaC)
   RTMB::REPORT(ln_sigmaCAA)
-  RTMB::REPORT(FishIAA)
   RTMB::REPORT(trans_rho_catch)
   RTMB::REPORT(trans_rho_discard)
-  RTMB::REPORT(trans_rho_fish_idx)
   RTMB::REPORT(trans_rho_srv_idx)
   RTMB::REPORT(CatchAA_nLL)
   RTMB::REPORT(PredCatchAA)
   RTMB::REPORT(PredDiscardAA)
-  RTMB::REPORT(PredFishIdxAA)
   RTMB::REPORT(PredSrvIdxAA)
   RTMB::REPORT(PredCatchAA_pop)
   RTMB::REPORT(PredDiscardAA_pop)
-  RTMB::REPORT(PredFishIdxAA_pop)
   RTMB::REPORT(PredSrvIdxAA_pop)
   RTMB::REPORT(DiscardAA_nLL)
   RTMB::REPORT(DiscardAA_pop_nLL)
   RTMB::REPORT(CatchAA_pop_nLL)
   RTMB::REPORT(SrvIdxAA_nLL)
-  RTMB::REPORT(FishIdxAA_nLL)
-  RTMB::REPORT(FishIdxAA_pop_nLL)
-  RTMB::REPORT(ln_sigmaFishIdxAA)
   RTMB::REPORT(SrvIdxAA_pop_nLL)
   RTMB::REPORT(ln_sigmaSrvIdxAA)
   RTMB::REPORT(ln_sigmaFishIdx)

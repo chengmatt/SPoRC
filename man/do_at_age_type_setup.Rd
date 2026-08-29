@@ -16,9 +16,11 @@ do_at_age_type_setup(
 \arguments{
 \item{input_list}{Named list with \code{$data}, \code{$par} and \code{$map}.}
 
-\item{type}{Character, one of \code{"agg"}, \code{"spltRaggS"},
-\code{"aggRspltS"} or \code{"spltRspltS"}, either one setting for every
-fleet or one per fleet.}
+\item{type}{Character. Either bare values, one of \code{"agg"},
+\code{"spltRaggS"}, \code{"aggRspltS"} or \code{"spltRspltS"}, given once
+for every fleet or once per fleet; or year and fleet specifications such as
+\code{"spltRaggS_Year_1-20_Fleet_1"}, in which case every year of every
+fleet needs an entry covering it.}
 
 \item{stream}{Stream tag naming the data element, e.g. \code{"CatchAA"}.}
 
@@ -29,7 +31,8 @@ fleet or one per fleet.}
 \item{pop}{Logical. \code{TRUE} for the population-specific stream.}
 }
 \value{
-\code{input_list} with \code{$data$<stream>_Type} set.
+\code{input_list} with \code{$data$<stream>_Type} set to a numeric
+  matrix \code{[n_yrs, n_fleets]} of codes.
 }
 \description{
 An at-age observation is stored over regions and sexes whether or not it is
@@ -40,5 +43,10 @@ both kinds of data states them the same way.
 \details{
 A margin the fleet sums over carries its observation in slot one, and a use
 flag anywhere else on that margin is refused rather than quietly ignored.
+
+The setting may change part way through a series, given in the same
+\code{Value_Year_x-y_Fleet_f} form the composition streams take. A bare value
+stands for the whole series, either one setting for every fleet or one per
+fleet.
 }
 \keyword{internal}

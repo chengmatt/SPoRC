@@ -67,29 +67,34 @@ do_move_pars_mapping <- function(input_list, Movement_popblk_spec,
     n_regions_to <- dim(map_Movement_Pars)[3]
 
     # If movement is constant for populations
-    if(is.character(Movement_popblk_spec)){
-      if(Movement_popblk_spec == "constant") Movement_popblk_spec_vals <- list(1:input_list$data$n_pop)
+    if(is.character(Movement_popblk_spec)) {
+      if(!identical(Movement_popblk_spec, "constant")) stop("Movement_popblk_spec must be \"constant\" or a list of population blocks, but was: ", Movement_popblk_spec)
+      Movement_popblk_spec_vals <- list(1:input_list$data$n_pop)
     } else Movement_popblk_spec_vals <- Movement_popblk_spec
 
 
     # If movement is constant for ages
-    if(is.character(Movement_ageblk_spec)){
-      if(Movement_ageblk_spec == "constant") Movement_ageblk_spec_vals <- list(seq_along(input_list$data$ages))
+    if(is.character(Movement_ageblk_spec)) {
+      if(!identical(Movement_ageblk_spec, "constant")) stop("Movement_ageblk_spec must be \"constant\" or a list of age blocks, but was: ", Movement_ageblk_spec)
+      Movement_ageblk_spec_vals <- list(seq_along(input_list$data$ages))
     } else Movement_ageblk_spec_vals <- Movement_ageblk_spec
 
     # If movement is constant across years
-    if(is.character(Movement_yearblk_spec)){
-      if(Movement_yearblk_spec == "constant") Movement_yearblk_spec_vals = list(seq_along(input_list$data$years))
-    } else Movement_yearblk_spec_vals = Movement_yearblk_spec
+    if(is.character(Movement_yearblk_spec)) {
+      if(!identical(Movement_yearblk_spec, "constant")) stop("Movement_yearblk_spec must be \"constant\" or a list of year blocks, but was: ", Movement_yearblk_spec)
+      Movement_yearblk_spec_vals <- list(seq_along(input_list$data$years))
+    } else Movement_yearblk_spec_vals <- Movement_yearblk_spec
 
     # If movement is constant across sexes
-    if(is.character(Movement_sexblk_spec)){
-      if(Movement_sexblk_spec == "constant") Movement_sexblk_spec_vals <- list(1:input_list$data$n_sexes)
+    if(is.character(Movement_sexblk_spec)) {
+      if(!identical(Movement_sexblk_spec, "constant")) stop("Movement_sexblk_spec must be \"constant\" or a list of sex blocks, but was: ", Movement_sexblk_spec)
+      Movement_sexblk_spec_vals <- list(1:input_list$data$n_sexes)
     } else Movement_sexblk_spec_vals <- Movement_sexblk_spec
 
     # If movement is constant across seasons
-    if(is.character(Movement_seasblk_spec)){
-      if(Movement_seasblk_spec == "constant") Movement_seasblk_spec_vals <- list(1:input_list$data$n_seas)
+    if(is.character(Movement_seasblk_spec)) {
+      if(!identical(Movement_seasblk_spec, "constant")) stop("Movement_seasblk_spec must be \"constant\" or a list of season blocks, but was: ", Movement_seasblk_spec)
+      Movement_seasblk_spec_vals <- list(1:input_list$data$n_seas)
     } else Movement_seasblk_spec_vals <- Movement_seasblk_spec
 
     # If spatial model
@@ -746,11 +751,11 @@ Setup_Mod_Movement <- function(input_list,
   # Populate Parameter List -------------------------------------------------
 
   # Movement Parameters (for unstructured markov; move_type == 0)
-  if("move_pars" %in% names(starting_values)) input_list$par$move_pars <- starting_values$move_pars
-  else input_list$par$move_pars <- array(0, dim = c(input_list$data$n_pop,
+  input_list$par$move_pars <- array(0, dim = c(input_list$data$n_pop,
                                                     input_list$data$n_regions, input_list$data$n_regions - 1,
                                                     length(input_list$data$years), input_list$data$n_seas,
                                                     length(input_list$data$ages), input_list$data$n_sexes))
+  input_list$par$move_pars <- use_starting_value(input_list$par$move_pars, starting_values, "move_pars")
 
   # Movement Parameters (for CTMTC; move_type == 1)
   # get design matrix to figure out number of parameters needed
@@ -768,19 +773,15 @@ Setup_Mod_Movement <- function(input_list,
   }
 
   # diffusion parameters
-  if("log_move_diffusion_pars" %in% names(starting_values)) input_list$par$log_move_diffusion_pars <- starting_values$log_move_diffusion_pars
-  else input_list$par$log_move_diffusion_pars <- rep(log(0.1), n_theta)
+  input_list$par$log_move_diffusion_pars <- rep(log(0.1), n_theta)
+  input_list$par$log_move_diffusion_pars <- use_starting_value(input_list$par$log_move_diffusion_pars, starting_values, "log_move_diffusion_pars")
 
   # preference parameters
-  if("move_preference_pars" %in% names(starting_values)) input_list$par$move_preference_pars <- starting_values$move_preference_pars
-  # A preference formula with no terms (e.g. ~ 0) means pure diffusion with no taxis.
-  # RTMB does not accept a zero-length parameter, so keep a length-1 placeholder; it is
-  # mapped off below and never enters the generator.
-  else input_list$par$move_preference_pars <- rep(0, max(n_gamma, 1))
+  input_list$par$move_preference_pars <- rep(0, max(n_gamma, 1))
+  input_list$par$move_preference_pars <- use_starting_value(input_list$par$move_preference_pars, starting_values, "move_preference_pars")
 
   # Movement deviations
-  if("move_devs" %in% names(starting_values)) input_list$par$move_devs <- starting_values$move_devs
-  else {
+  {
     input_list$par$move_devs <- array(0, c(input_list$data$n_pop,
                                            input_list$data$n_regions, input_list$data$n_regions - 1,
                                            length(input_list$data$years) + input_list$data$n_proj_yrs_devs,
@@ -788,12 +789,13 @@ Setup_Mod_Movement <- function(input_list,
                                            length(input_list$data$ages),
                                            input_list$data$n_sexes))
   }
+  input_list$par$move_devs <- use_starting_value(input_list$par$move_devs, starting_values, "move_devs")
 
   # Movement process error parameters
-  if("move_pe_pars" %in% names(starting_values)) input_list$par$move_pe_pars <- starting_values$move_pe_pars
-  else input_list$par$move_pe_pars <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions,
+  input_list$par$move_pe_pars <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions,
                                                        input_list$data$n_seas, length(input_list$data$ages),
                                                        input_list$data$n_sexes)) # max 4 parameters or the ages
+  input_list$par$move_pe_pars <- use_starting_value(input_list$par$move_pe_pars, starting_values, "move_pe_pars")
 
 
   # Mapping Options ---------------------------------------------------------

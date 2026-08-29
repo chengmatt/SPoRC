@@ -68,8 +68,8 @@ A named list containing one dataframe per likelihood component,
       \code{[Region × Year × Seas × Fleet]},
       \code{FishIdx_nLL_df} and \code{SrvIdx_nLL_df}, and their
       age-disaggregated counterparts \code{CatchAA_nLL_df},
-      \code{DiscardAA_nLL_df}, \code{FishIdxAA_nLL_df} and
-      \code{SrvIdxAA_nLL_df} with \code{_pop} variants, each summed over
+      \code{DiscardAA_nLL_df} and \code{SrvIdxAA_nLL_df} with
+      \code{_pop} variants, each summed over
       ages within a cell before its weight is applied
       \code{[Region × Year × Seas × Fleet]},
       \code{FishAge_nLL_df}, \code{FishLen_nLL_df},

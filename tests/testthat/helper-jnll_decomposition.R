@@ -36,8 +36,6 @@ jnLL_terms <- list(
   CatchAA_pop_nLL              = list(weight = "Wt_Catch_pop",    mode = "at_age"),
   DiscardAA_nLL                = list(weight = "Wt_Discard",      mode = "at_age"),
   DiscardAA_pop_nLL            = list(weight = "Wt_Discard_pop",  mode = "at_age"),
-  FishIdxAA_nLL                = list(weight = "Wt_FishIdx",      mode = "at_age"),
-  FishIdxAA_pop_nLL            = list(weight = "Wt_FishIdx_pop",  mode = "at_age"),
   SrvIdxAA_nLL                 = list(weight = "Wt_SrvIdx",       mode = "at_age"),
   SrvIdxAA_pop_nLL             = list(weight = "Wt_SrvIdx_pop",   mode = "at_age"),
 

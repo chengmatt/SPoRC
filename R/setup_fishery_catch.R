@@ -903,8 +903,11 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
 #'   the stream's \code{sigma_form} asks for them.
 #'
 #' @param CatchAA_Type,DiscardAA_Type,CatchAA_pop_Type,DiscardAA_pop_Type
-#'   Which margins the fleet reports separately, one setting for every fleet or
-#'   one per fleet, following the composition vocabulary. \code{"agg"} sums over
+#'   Which margins the fleet reports separately, following the composition
+#'   vocabulary. Give it as one setting for every fleet, one per fleet, or as
+#'   year and fleet specifications such as
+#'   \code{"spltRaggS_Year_1-20_Fleet_1"} when the setting changes part way
+#'   through the series. \code{"agg"} sums over
 #'   regions and sexes, \code{"spltRaggS"} (default) splits regions and sums over
 #'   sexes, \code{"aggRspltS"} does the reverse, and \code{"spltRspltS"} splits
 #'   both. An observation summed over a margin belongs in slot one of it.
@@ -1183,47 +1186,47 @@ Setup_Mod_Catch_and_F <- function(input_list,
   # Populate Parameter List -------------------------------------------------
 
   # Catch observation error
-  if("ln_sigmaC" %in% names(starting_values)) input_list$par$ln_sigmaC <- starting_values$ln_sigmaC
-  else input_list$par$ln_sigmaC <- array(log(0.01), dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets))
+  input_list$par$ln_sigmaC <- array(log(0.01), dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets))
+  input_list$par$ln_sigmaC <- use_starting_value(input_list$par$ln_sigmaC, starting_values, "ln_sigmaC")
 
-  if("ln_sigmaC_pop" %in% names(starting_values)) input_list$par$ln_sigmaC_pop <- starting_values$ln_sigmaC_pop
-  else input_list$par$ln_sigmaC_pop <- array(log(0.01), dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets))
+  input_list$par$ln_sigmaC_pop <- array(log(0.01), dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets))
+  input_list$par$ln_sigmaC_pop <- use_starting_value(input_list$par$ln_sigmaC_pop, starting_values, "ln_sigmaC_pop")
 
   # Process error fishing deviations
-  if("ln_sigmaF" %in% names(starting_values)) input_list$par$ln_sigmaF <- starting_values$ln_sigmaF
-  else input_list$par$ln_sigmaF <- array(log(1), dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
+  input_list$par$ln_sigmaF <- array(log(1), dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
+  input_list$par$ln_sigmaF <- use_starting_value(input_list$par$ln_sigmaF, starting_values, "ln_sigmaF")
 
   # AR1 correlation for fishing mortality deviations (only used when Fdev_model = "ar1")
-  if("Fdev_rho" %in% names(starting_values)) input_list$par$Fdev_rho <- starting_values$Fdev_rho
-  else input_list$par$Fdev_rho <- array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
+  input_list$par$Fdev_rho <- array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
+  input_list$par$Fdev_rho <- use_starting_value(input_list$par$Fdev_rho, starting_values, "Fdev_rho")
 
   # Log mean fishing mortality. A fixed mean defaults to zero so the deviations
   # are log F outright.
-  if("ln_F_mean" %in% names(starting_values)) input_list$par$ln_F_mean <- starting_values$ln_F_mean
-  else input_list$par$ln_F_mean <- array(if(ln_F_mean_spec == "fix") 0 else log(0.1), dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
+  input_list$par$ln_F_mean <- array(if(ln_F_mean_spec == "fix") 0 else log(0.1), dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
+  input_list$par$ln_F_mean <- use_starting_value(input_list$par$ln_F_mean, starting_values, "ln_F_mean")
 
   # Log fishing deviations
-  if("ln_F_devs" %in% names(starting_values)) input_list$par$ln_F_devs <- starting_values$ln_F_devs
-  else input_list$par$ln_F_devs <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets))
+  input_list$par$ln_F_devs <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets))
+  input_list$par$ln_F_devs <- use_starting_value(input_list$par$ln_F_devs, starting_values, "ln_F_devs")
 
   # Discard observation error
-  if("ln_sigmaD" %in% names(starting_values)) input_list$par$ln_sigmaD <- starting_values$ln_sigmaD
-  else input_list$par$ln_sigmaD <- array(log(0.01), dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets))
+  input_list$par$ln_sigmaD <- array(log(0.01), dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets))
+  input_list$par$ln_sigmaD <- use_starting_value(input_list$par$ln_sigmaD, starting_values, "ln_sigmaD")
 
-  if("ln_sigmaD_pop" %in% names(starting_values)) input_list$par$ln_sigmaD_pop <- starting_values$ln_sigmaD_pop
-  else input_list$par$ln_sigmaD_pop <- array(log(0.01), dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets))
+  input_list$par$ln_sigmaD_pop <- array(log(0.01), dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets))
+  input_list$par$ln_sigmaD_pop <- use_starting_value(input_list$par$ln_sigmaD_pop, starting_values, "ln_sigmaD_pop")
 
   # Process error discard deviations
-  if("ln_sigma_dmr" %in% names(starting_values)) input_list$par$ln_sigma_dmr <- starting_values$ln_sigma_dmr
-  else input_list$par$ln_sigma_dmr <- array(log(1), dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
+  input_list$par$ln_sigma_dmr <- array(log(1), dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
+  input_list$par$ln_sigma_dmr <- use_starting_value(input_list$par$ln_sigma_dmr, starting_values, "ln_sigma_dmr")
 
   # Logit mean discard mortality
-  if("logit_dmr_mean" %in% names(starting_values)) input_list$par$logit_dmr_mean <- starting_values$logit_dmr_mean
-  else input_list$par$logit_dmr_mean <- array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
+  input_list$par$logit_dmr_mean <- array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
+  input_list$par$logit_dmr_mean <- use_starting_value(input_list$par$logit_dmr_mean, starting_values, "logit_dmr_mean")
 
   # Logit discard mortality deviations
-  if("logit_dmr_devs" %in% names(starting_values)) input_list$par$logit_dmr_devs <- starting_values$logit_dmr_devs
-  else input_list$par$logit_dmr_devs <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets))
+  input_list$par$logit_dmr_devs <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets))
+  input_list$par$logit_dmr_devs <- use_starting_value(input_list$par$logit_dmr_devs, starting_values, "logit_dmr_devs")
 
   # Mapping Options ---------------------------------------------------------
 

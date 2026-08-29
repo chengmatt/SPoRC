@@ -30,7 +30,7 @@ them \code{NULL}.}
 \code{input_list} with the stream's three data elements set.
 }
 \description{
-Shared by the four streams and their population-specific forms. An absent
+Shared by the three streams and their population-specific forms. An absent
 stream is given a zeroed array so the objective can index it unconditionally.
 }
 \keyword{internal}

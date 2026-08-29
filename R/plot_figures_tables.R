@@ -869,7 +869,7 @@ get_idx_fits_plot <- function(data,
 #'   predicted at-age values and their standard deviations.
 #' @param model_names Character vector naming each model run.
 #' @param stream Which stream to plot: \code{"CatchAA"} (default),
-#'   \code{"DiscardAA"}, \code{"FishIdxAA"} or \code{"SrvIdxAA"}.
+#'   \code{"DiscardAA"} or \code{"SrvIdxAA"}.
 #'
 #' @return A \code{ggplot}, or \code{NULL} when no model fits that stream.
 #'
@@ -877,7 +877,7 @@ get_idx_fits_plot <- function(data,
 #' @family Plotting Functions
 get_at_age_fits_plot <- function(data, rep, model_names, stream = "CatchAA") {
 
-  valid <- c("CatchAA", "DiscardAA", "FishIdxAA", "SrvIdxAA")
+  valid <- c("CatchAA", "DiscardAA", "SrvIdxAA")
   if(!stream %in% valid) stop("stream must be one of: ", paste(valid, collapse = ", "))
 
   obs_nm <- paste0("Obs", stream)
@@ -885,7 +885,7 @@ get_at_age_fits_plot <- function(data, rep, model_names, stream = "CatchAA") {
 
   pred_nm <- paste0("Pred", stream)
   sigma_nm <- switch(stream, CatchAA = "ln_sigmaCAA", DiscardAA = "ln_sigmaDAA",
-                     FishIdxAA = "ln_sigmaFishIdxAA", SrvIdxAA = "ln_sigmaSrvIdxAA")
+                     SrvIdxAA = "ln_sigmaSrvIdxAA")
 
   rows <- list()
   for(i in seq_along(rep)) {
@@ -909,10 +909,22 @@ get_at_age_fits_plot <- function(data, rep, model_names, stream = "CatchAA") {
       } # end f loop
     }
 
+    # a margin the fleet sums over holds its observation in slot one, so naming
+    # that slot after a region or a sex would name one the observation is not
+    # about. The setting may differ between years, so it is read per row
+    aa_type <- data[[i]][[paste0(stream, "_Type")]]
+    code <- if(is.null(aa_type)) rep(3, length(fleet))
+            else if(is.null(dim(aa_type))) aa_type[fleet]
+            else aa_type[cbind(idx[, 2], fleet)]
+    split <- at_age_split(code)
+
     like <- data[[i]][[paste0(stream, "_LikeType")]]
     rows[[length(rows) + 1]] <- data.frame(
-      Year = data[[i]]$years[idx[, 2]], Region = idx[, 1], Season = idx[, 3],
-      Age = data[[i]]$ages[idx[, 4]], Sex = idx[, 5], Fleet = fleet,
+      Year = data[[i]]$years[idx[, 2]], Season = idx[, 3],
+      Region = ifelse(split$region, paste("Region", idx[, 1]), "All regions"),
+      Age = data[[i]]$ages[idx[, 4]],
+      Sex = ifelse(split$sex, paste("Sex", idx[, 5]), "All sexes"),
+      Fleet = fleet,
       Obs = data[[i]][[obs_nm]][fit_cells],
       Pred = rep[[i]][[pred_nm]][fit_cells],
       sigma = sigma, lognormal = if(is.null(like)) TRUE else like[fleet] == 0,
@@ -930,9 +942,7 @@ get_at_age_fits_plot <- function(data, rep, model_names, stream = "CatchAA") {
     geom_line(aes(y = Pred, color = Model), linewidth = 0.7) +
     facet_grid(Age ~ Fleet + Region + Sex, scales = "free_y",
                labeller = labeller(Age = function(x) paste("Age", x),
-                                   Fleet = function(x) paste("Fleet", x),
-                                   Region = function(x) paste("Region", x),
-                                   Sex = function(x) paste("Sex", x))) +
+                                   Fleet = function(x) paste("Fleet", x))) +
     labs(x = "Year", y = stream, color = NULL) +
     theme_bw(base_size = 11) + theme(panel.grid.minor = element_blank())
 }
@@ -1346,6 +1356,13 @@ plot_all_basic <- function(data,
                            sd_rep,
                            model_names,
                            out_path) {
+
+  # here::here() drops a NULL, so an absent out_path leaves pdf() with a
+  # zero-length file name and it writes a file called NA into whatever the
+  # working directory happens to be
+  if(length(out_path) != 1 || is.na(out_path))
+    stop("out_path must be a single directory for plot_results.pdf to be written into, but was ",
+         if(length(out_path) == 0) "empty" else paste(out_path, collapse = ", "), ".")
 
   grDevices::pdf(here::here(out_path, "plot_results.pdf"), width = 25, height = 13)
   print(get_biological_plot(data = data, rep = rep, model_names = model_names))

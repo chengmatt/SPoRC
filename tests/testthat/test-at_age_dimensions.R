@@ -481,9 +481,13 @@ test_that("streams with different margins, densities and correlations coexist", 
                      ObsSrvIdxAA_SE = array(0.2, dim = dim(saa)),
                      AgeObsCorr_srv_idx = "us"))
 
-  # each stream stated its own margins, and the flags landed where they belong
-  expect_equal(as.numeric(il$data$CatchAA_Type), c(3, 3))
-  expect_equal(as.numeric(il$data$SrvIdxAA_Type), 1)
+  # each stream stated its own margins, and the flags landed where they belong.
+  # A Type is carried as year by fleet, since the setting may change part way
+  # through a series; a bare value fills every year of every fleet
+  expect_equal(ncol(il$data$CatchAA_Type), 2L)
+  expect_equal(nrow(il$data$CatchAA_Type), length(il$data$years))
+  expect_true(all(il$data$CatchAA_Type == 3))
+  expect_true(all(il$data$SrvIdxAA_Type == 1))
   expect_equal(as.numeric(il$data$CatchAA_LikeType), c(0, 1))
   expect_equal(as.numeric(il$data$AgeObsCorr_catch), c(1, 0))
   expect_equal(as.numeric(il$data$AgeObsCorr_srv_idx), 2)
@@ -517,7 +521,9 @@ test_that("the at-age fits plot carries the sex and the error the fit used", {
 
   expect_s3_class(p, "ggplot")
   expect_equal(nrow(p$data), ny * na * 2)
-  expect_setequal(unique(p$data$Sex), 1:2)
+  # the facet names the sex because this stream reports sexes separately. A
+  # stream summing over them says so instead of naming a sex it is not about
+  expect_setequal(unique(p$data$Sex), c("Sex 1", "Sex 2"))
   # the interval is drawn from the standard deviation the likelihood used, not
   # from the estimated component alone
   expect_equal(unique(p$data$sigma), sqrt(0.15^2 + 0.5^2))

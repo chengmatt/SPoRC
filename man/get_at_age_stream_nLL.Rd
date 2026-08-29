@@ -62,7 +62,8 @@ fleet, with a leading population margin when \code{pop} is \code{TRUE}.}
 \item{us_pars}{Unconstrained correlation parameters, over pair by the margins
 of \code{trans_rho}, read under \code{"us"}.}
 
-\item{aa_type}{Integer per fleet naming the split margins, see
+\item{aa_type}{Integer codes naming the split margins, as a matrix over year
+by fleet or a vector per fleet standing for every year, see
 \code{\link{at_age_split}}.}
 }
 \value{

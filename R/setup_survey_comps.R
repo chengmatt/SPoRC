@@ -102,7 +102,9 @@
 #'   \code{"fix"}.
 #' @param SrvIdxAA_Type,SrvIdxAA_pop_Type Which margins the fleet reports
 #'   separately: \code{"agg"}, \code{"spltRaggS"} (default), \code{"aggRspltS"}
-#'   or \code{"spltRspltS"}. See \code{\link{Setup_Mod_Catch_and_F}}.
+#'   or \code{"spltRspltS"}, or year and fleet specifications such as
+#'   \code{"spltRaggS_Year_1-20_Fleet_1"}. See
+#'   \code{\link{Setup_Mod_Catch_and_F}}.
 #' @param SrvIdxAA_LikeType,SrvIdxAA_pop_LikeType \code{"lognormal"} (default)
 #'   or \code{"normal"}, one setting for every fleet or one per fleet.
 #' @param SrvIdxAA_sigma_form,SrvIdxAA_pop_sigma_form Where the observation error
@@ -501,42 +503,15 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
   } # end f loop
 
   # Specifying composition type
-  SrvAgeComps_Type_Mat <- array(NA, dim = c(length(input_list$data$years), input_list$data$n_srv_fleets))
-  for(i in 1:length(SrvAgeComps_Type)) {
-
-    # Extract out components from list
-    tmp <- SrvAgeComps_Type[i]
-    tmp_vec <- unlist(strsplit(tmp, "_"))
-    comps_type_tmp <- tmp_vec[1] # get composition type
-    fleet <- as.numeric(tmp_vec[5]) # extract fleet index
-
-    # Checking character string
-    if(!comps_type_tmp %in% c("agg", "spltRspltS", "spltRjntS", 'none')) stop("SrvAgeComps_Type not specified correctly. Must be one of: agg, spltRspltS, spltRjntS, none")
-    if(!fleet %in% c(1:input_list$data$n_srv_fleets)) stop("Invalid fleet specified for SrvAgeComps_Type This needs to be specified as CompType_Year_x-y_Fleet_x")
-
-    # get year ranges
-    if(!str_detect(tmp, "terminal")) { # if not terminal year
-      year_range <- as.numeric(unlist(strsplit(tmp_vec[3], "-")))
-      years <- year_range[1]:year_range[2] # get sequence of years
-    } else { # if terminal year
-      year_range <- unlist(strsplit(tmp_vec[3], '-'))[1] # get year range
-      years <- as.numeric(year_range):length(input_list$data$years) # get sequence of years
-    }
-
-    # define composition types
-    if(comps_type_tmp == "agg") {
-      if(comp_srvage_like_vals[fleet] == 4) stop("Age composition likelihood specified as 2d-Logistic-Normal, but composition type is aggregated. This is not valid.")
-      comps_type_val <- 0
-    }
-    if(comps_type_tmp == "spltRspltS") comps_type_val <- 1
-    if(comps_type_tmp == "spltRjntS") comps_type_val <- 2
-    if(comps_type_tmp == "none") comps_type_val <- 999
-
-    # input into matrix
-    SrvAgeComps_Type_Mat[years,fleet] <- comps_type_val
-  } # end i
-
-  if(any(is.na(SrvAgeComps_Type_Mat))) stop("SrvAgeComps_Type_Mat is returning an NA. Did you update the year range of SrvAgeComps_Type_Mat?")
+  SrvAgeComps_Type_Mat <- parse_year_fleet_spec(
+    SrvAgeComps_Type, "SrvAgeComps_Type", input_list$data$n_srv_fleets, length(input_list$data$years),
+    c(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999),
+    check = function(value, fleet) {
+      if(value == "agg" && comp_srvage_like_vals[fleet] == 4)
+        paste("An aggregated composition is one vector, and the 2d logistic",
+              "normal needs one split by region and sex.")
+      else NULL
+    })
 
   # Specifying composition likelihood for population-specific data
   comp_srvage_pop_like_vals <- vector()
@@ -551,43 +526,15 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
   } # end f loop
 
   # Specifying composition type
-  SrvAgeComps_pop_Type_Mat <- array(NA, dim = c(length(input_list$data$years), input_list$data$n_srv_fleets))
-  for(i in 1:length(SrvAgeComps_pop_Type)) {
-
-    # Extract out components from list
-    tmp <- SrvAgeComps_pop_Type[i]
-    tmp_vec <- unlist(strsplit(tmp, "_"))
-    comps_type_tmp <- tmp_vec[1] # get composition type
-    fleet <- as.numeric(tmp_vec[5]) # extract fleet index
-
-    # Checking character string
-    if(!comps_type_tmp %in% c("agg", "spltRspltS", "spltRjntS", 'none')) stop("SrvAgeComps_pop_Type not specified correctly. Must be one of: agg, spltRspltS, spltRjntS, none")
-    if(!fleet %in% c(1:input_list$data$n_srv_fleets)) stop("Invalid fleet specified for SrvAgeComps_pop_Type. This needs to be specified as CompType_Year_x-y_Fleet_x")
-
-    # get year ranges
-    if(!str_detect(tmp, "terminal")) { # if not terminal year
-      year_range <- as.numeric(unlist(strsplit(tmp_vec[3], "-")))
-      years <- year_range[1]:year_range[2] # get sequence of years
-    } else { # if terminal year
-      year_range <- unlist(strsplit(tmp_vec[3], '-'))[1] # get year range
-      years <- as.numeric(year_range):length(input_list$data$years) # get sequence of years
-    }
-
-    # Composition type
-    # define composition types
-    if(comps_type_tmp == "agg") {
-      if(comp_srvage_pop_like_vals[fleet] == 4) stop("Population Age composition likelihood specified as 2d-Logistic-Normal, but composition type is aggregated. This is not valid.")
-      comps_type_val <- 0
-    }
-    if(comps_type_tmp == "spltRspltS") comps_type_val <- 1
-    if(comps_type_tmp == "spltRjntS") comps_type_val <- 2
-    if(comps_type_tmp == "none") comps_type_val <- 999
-
-    # input into matrix
-    SrvAgeComps_pop_Type_Mat[years,fleet] <- comps_type_val
-  } # end i
-
-  if(any(is.na(SrvAgeComps_pop_Type_Mat))) stop("SrvAgeComps_pop_Type is returning an NA. Did you update the year range of SrvAgeComps_pop_Type?")
+  SrvAgeComps_pop_Type_Mat <- parse_year_fleet_spec(
+    SrvAgeComps_pop_Type, "SrvAgeComps_pop_Type", input_list$data$n_srv_fleets, length(input_list$data$years),
+    c(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999),
+    check = function(value, fleet) {
+      if(value == "agg" && comp_srvage_pop_like_vals[fleet] == 4)
+        paste("An aggregated composition is one vector, and the 2d logistic",
+              "normal needs one split by region and sex.")
+      else NULL
+    })
 
   # Survey Length Composition Options ---------------------------------------
 
@@ -602,42 +549,15 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
     collect_message(paste("Survey Length Composition Likelihoods", "for survey fleet", f, "specified as:" , SrvLenComps_LikeType[f]))
   } # end f loop
 
-  SrvLenComps_Type_Mat <- array(NA, dim = c(length(input_list$data$years), input_list$data$n_srv_fleets))
-  for(i in 1:length(SrvLenComps_Type)) {
-
-    # Extract out components from list
-    tmp <- SrvLenComps_Type[i]
-    tmp_vec <- unlist(strsplit(tmp, "_"))
-    comps_type_tmp <- tmp_vec[1] # get composition type
-    fleet <- as.numeric(tmp_vec[5]) # extract fleet index
-
-    # Checking character string
-    if(!comps_type_tmp %in% c("agg", "spltRspltS", "spltRjntS", 'none')) stop("SrvLenComps_Type not specified correctly. Must be one of: agg, spltRspltS, spltRjntS, none")
-    if(!fleet %in% c(1:input_list$data$n_srv_fleets)) stop("Invalid fleet specified for SrvLenComps_Type This needs to be specified as CompType_Year_x-y_Fleet_x")
-
-    # get year ranges
-    if(!str_detect(tmp, "terminal")) { # if not terminal year
-      year_range <- as.numeric(unlist(strsplit(tmp_vec[3], "-")))
-      years <- year_range[1]:year_range[2] # get sequence of years
-    } else { # if terminal year
-      year_range <- unlist(strsplit(tmp_vec[3], '-'))[1] # get year range
-      years <- as.numeric(year_range):length(input_list$data$years) # get sequence of years
-    }
-
-    # define composition types
-    if(comps_type_tmp == "agg") {
-      if(comp_srvlen_like_vals[fleet] == 4) stop("Length composition likelihood specified as 2d-Logistic-Normal, but composition type is aggregated. This is not valid.")
-      comps_type_val <- 0
-    }
-    if(comps_type_tmp == "spltRspltS") comps_type_val <- 1
-    if(comps_type_tmp == "spltRjntS") comps_type_val <- 2
-    if(comps_type_tmp == "none") comps_type_val <- 999
-
-    # input into matrix
-    SrvLenComps_Type_Mat[years,fleet] <- comps_type_val
-  } # end i
-
-  if(any(is.na(SrvLenComps_Type_Mat))) stop("SrvLenComps_Type_Mat is returning an NA. Did you update the year range of SrvLenComps_Type_Mat?")
+  SrvLenComps_Type_Mat <- parse_year_fleet_spec(
+    SrvLenComps_Type, "SrvLenComps_Type", input_list$data$n_srv_fleets, length(input_list$data$years),
+    c(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999),
+    check = function(value, fleet) {
+      if(value == "agg" && comp_srvlen_like_vals[fleet] == 4)
+        paste("An aggregated composition is one vector, and the 2d logistic",
+              "normal needs one split by region and sex.")
+      else NULL
+    })
 
   # Specifying composition likelihood for population-specific data
   comp_srvlen_pop_like_vals <- vector()
@@ -652,43 +572,15 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
   } # end f loop
 
   # Specifying composition type
-  SrvLenComps_pop_Type_Mat <- array(NA, dim = c(length(input_list$data$years), input_list$data$n_srv_fleets))
-  for(i in 1:length(SrvLenComps_pop_Type)) {
-
-    # Extract out components from list
-    tmp <- SrvLenComps_pop_Type[i]
-    tmp_vec <- unlist(strsplit(tmp, "_"))
-    comps_type_tmp <- tmp_vec[1] # get composition type
-    fleet <- as.numeric(tmp_vec[5]) # extract fleet index
-
-    # Checking character string
-    if(!comps_type_tmp %in% c("agg", "spltRspltS", "spltRjntS", 'none')) stop("SrvLenComps_pop_Type not specified correctly. Must be one of: agg, spltRspltS, spltRjntS, none")
-    if(!fleet %in% c(1:input_list$data$n_srv_fleets)) stop("Invalid fleet specified for SrvLenComps_pop_Type. This needs to be specified as CompType_Year_x-y_Fleet_x")
-
-    # get year ranges
-    if(!str_detect(tmp, "terminal")) { # if not terminal year
-      year_range <- as.numeric(unlist(strsplit(tmp_vec[3], "-")))
-      years <- year_range[1]:year_range[2] # get sequence of years
-    } else { # if terminal year
-      year_range <- unlist(strsplit(tmp_vec[3], '-'))[1] # get year range
-      years <- as.numeric(year_range):length(input_list$data$years) # get sequence of years
-    }
-
-    # Composition type
-    # define composition types
-    if(comps_type_tmp == "agg") {
-      if(comp_srvlen_pop_like_vals[fleet] == 4) stop("Population Len composition likelihood specified as 2d-Logistic-Normal, but composition type is aggregated. This is not valid.")
-      comps_type_val <- 0
-    }
-    if(comps_type_tmp == "spltRspltS") comps_type_val <- 1
-    if(comps_type_tmp == "spltRjntS") comps_type_val <- 2
-    if(comps_type_tmp == "none") comps_type_val <- 999
-
-    # input into matrix
-    SrvLenComps_pop_Type_Mat[years,fleet] <- comps_type_val
-  } # end i
-
-  if(any(is.na(SrvLenComps_pop_Type_Mat))) stop("SrvLenComps_pop_Type is returning an NA. Did you update the year range of SrvLenComps_pop_Type?")
+  SrvLenComps_pop_Type_Mat <- parse_year_fleet_spec(
+    SrvLenComps_pop_Type, "SrvLenComps_pop_Type", input_list$data$n_srv_fleets, length(input_list$data$years),
+    c(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999),
+    check = function(value, fleet) {
+      if(value == "agg" && comp_srvlen_pop_like_vals[fleet] == 4)
+        paste("An aggregated composition is one vector, and the 2d logistic",
+              "normal needs one split by region and sex.")
+      else NULL
+    })
 
   # whether length selectivity is applied at length or through the size-age key.
   # Whether the selectivity is length based is only known once Setup_Mod_Srvsel_and_Q
@@ -856,7 +748,7 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
 
   # Index age selection and error structure ---------------------------------
   if(!all(SrvIdx_LikeType %in% c("lognormal", "normal", "mvn"))) stop("Invalid specification for SrvIdx_LikeType. Should be lognormal, normal, or mvn")
-  if(length(SrvIdx_LikeType) != input_list$data$n_srv_fleets) stop("SrvIdx_LikeType is not length n_srv_fleets")
+  check_fleet_spec_length(SrvIdx_LikeType, input_list$data$n_srv_fleets, "SrvIdx_LikeType")
 
   srv_idx_like_vals <- convert_to_numeric(SrvIdx_LikeType, list(lognormal = 0, normal = 1, mvn = 2))
   srv_idx_ages_arr <- parse_bin_subset(srv_idx_ages, length(input_list$data$ages), input_list$data$n_srv_fleets, "srv_idx_ages")
@@ -907,74 +799,74 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
   # Populate Parameter List -------------------------------------------------
 
   # Dispersion parameters for the survey age comps
-  if("ln_SrvAge_theta" %in% names(starting_values)) input_list$par$ln_SrvAge_theta <- starting_values$ln_SrvAge_theta
-  else input_list$par$ln_SrvAge_theta <- array(0, dim = c(input_list$data$n_regions, input_list$data$n_sexes, input_list$data$n_srv_fleets))
+  input_list$par$ln_SrvAge_theta <- array(0, dim = c(input_list$data$n_regions, input_list$data$n_sexes, input_list$data$n_srv_fleets))
+  input_list$par$ln_SrvAge_theta <- use_starting_value(input_list$par$ln_SrvAge_theta, starting_values, "ln_SrvAge_theta")
 
   # logistic normal correlation parameters for survey age comps
-  if("SrvAge_corr_pars" %in% names(starting_values)) input_list$par$SrvAge_corr_pars <- starting_values$SrvAge_corr_pars
-  else input_list$par$SrvAge_corr_pars <- array(0.01, dim = c(input_list$data$n_regions, input_list$data$n_sexes, input_list$data$n_srv_fleets, 2))
+  input_list$par$SrvAge_corr_pars <- array(0.01, dim = c(input_list$data$n_regions, input_list$data$n_sexes, input_list$data$n_srv_fleets, 2))
+  input_list$par$SrvAge_corr_pars <- use_starting_value(input_list$par$SrvAge_corr_pars, starting_values, "SrvAge_corr_pars")
 
   # aggregated
-  if("ln_SrvAge_theta_agg" %in% names(starting_values)) input_list$par$ln_SrvAge_theta_agg <- starting_values$ln_SrvAge_theta_agg
-  else input_list$par$ln_SrvAge_theta_agg <- array(0, dim = c(input_list$data$n_srv_fleets))
+  input_list$par$ln_SrvAge_theta_agg <- array(0, dim = c(input_list$data$n_srv_fleets))
+  input_list$par$ln_SrvAge_theta_agg <- use_starting_value(input_list$par$ln_SrvAge_theta_agg, starting_values, "ln_SrvAge_theta_agg")
 
   # aggregated correlation parameters
-  if("SrvAge_corr_pars_agg" %in% names(starting_values)) input_list$par$SrvAge_corr_pars_agg <- starting_values$SrvAge_corr_pars_agg
-  else input_list$par$SrvAge_corr_pars_agg <- array(0.01, dim = c(input_list$data$n_srv_fleets))
+  input_list$par$SrvAge_corr_pars_agg <- array(0.01, dim = c(input_list$data$n_srv_fleets))
+  input_list$par$SrvAge_corr_pars_agg <- use_starting_value(input_list$par$SrvAge_corr_pars_agg, starting_values, "SrvAge_corr_pars_agg")
 
   # Dispersion parameters for survey length comps
-  if("ln_SrvLen_theta" %in% names(starting_values)) input_list$par$ln_SrvLen_theta <- starting_values$ln_SrvLen_theta
-  else input_list$par$ln_SrvLen_theta <- array(0, dim = c(input_list$data$n_regions, input_list$data$n_sexes, input_list$data$n_srv_fleets))
+  input_list$par$ln_SrvLen_theta <- array(0, dim = c(input_list$data$n_regions, input_list$data$n_sexes, input_list$data$n_srv_fleets))
+  input_list$par$ln_SrvLen_theta <- use_starting_value(input_list$par$ln_SrvLen_theta, starting_values, "ln_SrvLen_theta")
 
   # logistic normal correlation parameters for survey length comps
-  if("SrvLen_corr_pars" %in% names(starting_values)) input_list$par$SrvLen_corr_pars <- starting_values$SrvLen_corr_pars
-  else input_list$par$SrvLen_corr_pars <- array(0.01, dim = c(input_list$data$n_regions, input_list$data$n_sexes, input_list$data$n_srv_fleets, 2))
+  input_list$par$SrvLen_corr_pars <- array(0.01, dim = c(input_list$data$n_regions, input_list$data$n_sexes, input_list$data$n_srv_fleets, 2))
+  input_list$par$SrvLen_corr_pars <- use_starting_value(input_list$par$SrvLen_corr_pars, starting_values, "SrvLen_corr_pars")
 
   # aggregated
-  if("ln_SrvLen_theta_agg" %in% names(starting_values)) input_list$par$ln_SrvLen_theta_agg <- starting_values$ln_SrvLen_theta_agg
-  else input_list$par$ln_SrvLen_theta_agg <- array(0, dim = c(input_list$data$n_srv_fleets))
+  input_list$par$ln_SrvLen_theta_agg <- array(0, dim = c(input_list$data$n_srv_fleets))
+  input_list$par$ln_SrvLen_theta_agg <- use_starting_value(input_list$par$ln_SrvLen_theta_agg, starting_values, "ln_SrvLen_theta_agg")
 
-  if("SrvLen_corr_pars_agg" %in% names(starting_values)) input_list$par$SrvLen_corr_pars_agg <- starting_values$SrvLen_corr_pars_agg
-  else input_list$par$SrvLen_corr_pars_agg <- array(0.01, dim = c(input_list$data$n_srv_fleets))
+  input_list$par$SrvLen_corr_pars_agg <- array(0.01, dim = c(input_list$data$n_srv_fleets))
+  input_list$par$SrvLen_corr_pars_agg <- use_starting_value(input_list$par$SrvLen_corr_pars_agg, starting_values, "SrvLen_corr_pars_agg")
 
   # Dispersion parameters for the population survey age comps
-  if("ln_SrvAge_pop_theta" %in% names(starting_values)) input_list$par$ln_SrvAge_pop_theta <- starting_values$ln_SrvAge_pop_theta
-  else input_list$par$ln_SrvAge_pop_theta <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, input_list$data$n_sexes, input_list$data$n_srv_fleets))
+  input_list$par$ln_SrvAge_pop_theta <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, input_list$data$n_sexes, input_list$data$n_srv_fleets))
+  input_list$par$ln_SrvAge_pop_theta <- use_starting_value(input_list$par$ln_SrvAge_pop_theta, starting_values, "ln_SrvAge_pop_theta")
 
   # logistic normal correlation parameters for population survey age comps
-  if("SrvAge_pop_corr_pars" %in% names(starting_values)) input_list$par$SrvAge_pop_corr_pars <- starting_values$SrvAge_pop_corr_pars
-  else input_list$par$SrvAge_pop_corr_pars <- array(0.01, dim = c(input_list$data$n_pop,input_list$data$n_regions, input_list$data$n_sexes, input_list$data$n_srv_fleets, 2))
+  input_list$par$SrvAge_pop_corr_pars <- array(0.01, dim = c(input_list$data$n_pop,input_list$data$n_regions, input_list$data$n_sexes, input_list$data$n_srv_fleets, 2))
+  input_list$par$SrvAge_pop_corr_pars <- use_starting_value(input_list$par$SrvAge_pop_corr_pars, starting_values, "SrvAge_pop_corr_pars")
 
   # aggregated population pars
-  if("ln_SrvAge_pop_theta_agg" %in% names(starting_values)) input_list$par$ln_SrvAge_pop_theta_agg <- starting_values$ln_SrvAge_pop_theta_agg
-  else input_list$par$ln_SrvAge_pop_theta_agg <- array(0, dim = c(input_list$data$n_pop,input_list$data$n_srv_fleets))
+  input_list$par$ln_SrvAge_pop_theta_agg <- array(0, dim = c(input_list$data$n_pop,input_list$data$n_srv_fleets))
+  input_list$par$ln_SrvAge_pop_theta_agg <- use_starting_value(input_list$par$ln_SrvAge_pop_theta_agg, starting_values, "ln_SrvAge_pop_theta_agg")
 
   # aggregated population correlation parameters
-  if("SrvAge_pop_corr_pars_agg" %in% names(starting_values)) input_list$par$SrvAge_pop_corr_pars_agg <- starting_values$SrvAge_pop_corr_pars_agg
-  else input_list$par$SrvAge_pop_corr_pars_agg <- array(0.01, dim = c(input_list$data$n_pop,input_list$data$n_srv_fleets))
+  input_list$par$SrvAge_pop_corr_pars_agg <- array(0.01, dim = c(input_list$data$n_pop,input_list$data$n_srv_fleets))
+  input_list$par$SrvAge_pop_corr_pars_agg <- use_starting_value(input_list$par$SrvAge_pop_corr_pars_agg, starting_values, "SrvAge_pop_corr_pars_agg")
 
   # Dispersion parameters for population survey length comps
-  if("ln_SrvLen_pop_theta" %in% names(starting_values)) input_list$par$ln_SrvLen_pop_theta <- starting_values$ln_SrvLen_pop_theta
-  else input_list$par$ln_SrvLen_pop_theta <- array(0, dim = c(input_list$data$n_pop,input_list$data$n_regions, input_list$data$n_sexes, input_list$data$n_srv_fleets))
+  input_list$par$ln_SrvLen_pop_theta <- array(0, dim = c(input_list$data$n_pop,input_list$data$n_regions, input_list$data$n_sexes, input_list$data$n_srv_fleets))
+  input_list$par$ln_SrvLen_pop_theta <- use_starting_value(input_list$par$ln_SrvLen_pop_theta, starting_values, "ln_SrvLen_pop_theta")
 
   # logistic normal correlation parameters for population survey length comps
-  if("SrvLen_pop_corr_pars" %in% names(starting_values)) input_list$par$SrvLen_pop_corr_pars <- starting_values$SrvLen_pop_corr_pars
-  else input_list$par$SrvLen_pop_corr_pars <- array(0.01, dim = c(input_list$data$n_pop,input_list$data$n_regions, input_list$data$n_sexes, input_list$data$n_srv_fleets, 2))
+  input_list$par$SrvLen_pop_corr_pars <- array(0.01, dim = c(input_list$data$n_pop,input_list$data$n_regions, input_list$data$n_sexes, input_list$data$n_srv_fleets, 2))
+  input_list$par$SrvLen_pop_corr_pars <- use_starting_value(input_list$par$SrvLen_pop_corr_pars, starting_values, "SrvLen_pop_corr_pars")
 
   # aggregated population pars
-  if("ln_SrvLen_pop_theta_agg" %in% names(starting_values)) input_list$par$ln_SrvLen_pop_theta_agg <- starting_values$ln_SrvLen_pop_theta_agg
-  else input_list$par$ln_SrvLen_pop_theta_agg <- array(0, dim = c(input_list$data$n_pop,input_list$data$n_srv_fleets))
+  input_list$par$ln_SrvLen_pop_theta_agg <- array(0, dim = c(input_list$data$n_pop,input_list$data$n_srv_fleets))
+  input_list$par$ln_SrvLen_pop_theta_agg <- use_starting_value(input_list$par$ln_SrvLen_pop_theta_agg, starting_values, "ln_SrvLen_pop_theta_agg")
 
-  if("SrvLen_pop_corr_pars_agg" %in% names(starting_values)) input_list$par$SrvLen_pop_corr_pars_agg <- starting_values$SrvLen_pop_corr_pars_agg
-  else input_list$par$SrvLen_pop_corr_pars_agg <- array(0.01, dim = c(input_list$data$n_pop, input_list$data$n_srv_fleets))
+  input_list$par$SrvLen_pop_corr_pars_agg <- array(0.01, dim = c(input_list$data$n_pop, input_list$data$n_srv_fleets))
+  input_list$par$SrvLen_pop_corr_pars_agg <- use_starting_value(input_list$par$SrvLen_pop_corr_pars_agg, starting_values, "SrvLen_pop_corr_pars_agg")
 
 
   # Survey index observation error stuff
-  if("ln_sigmaSrvIdx" %in% names(starting_values)) input_list$par$ln_sigmaSrvIdx <- starting_values$ln_sigmaSrvIdx
-  else input_list$par$ln_sigmaSrvIdx <- rep(log(0.01), input_list$data$n_srv_fleets)
+  input_list$par$ln_sigmaSrvIdx <- rep(log(0.01), input_list$data$n_srv_fleets)
+  input_list$par$ln_sigmaSrvIdx <- use_starting_value(input_list$par$ln_sigmaSrvIdx, starting_values, "ln_sigmaSrvIdx")
 
-  if("ln_sigmaSrvIdx_pop" %in% names(starting_values)) input_list$par$ln_sigmaSrvIdx_pop <- starting_values$ln_sigmaSrvIdx_pop
-  else input_list$par$ln_sigmaSrvIdx_pop <- rep(log(0.01), input_list$data$n_srv_fleets)
+  input_list$par$ln_sigmaSrvIdx_pop <- rep(log(0.01), input_list$data$n_srv_fleets)
+  input_list$par$ln_sigmaSrvIdx_pop <- use_starting_value(input_list$par$ln_sigmaSrvIdx_pop, starting_values, "ln_sigmaSrvIdx_pop")
   sigmaIdx_specs <- c("fix", "est_additive", "est_quadrature", "est_replace")
   for(nm in c("sigmaSrvIdx_spec", "sigmaSrvIdx_pop_spec")) {
     v <- get(nm)

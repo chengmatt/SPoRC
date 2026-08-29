@@ -205,15 +205,13 @@ check_data_dimensions <- function(x,
 # Age-disaggregated observations ------------------------------------------
 
   if(what %in% c('ObsCatchAA', 'UseCatchAA', 'ObsCatchAA_SE',
-                 'ObsDiscardAA', 'UseDiscardAA', 'ObsDiscardAA_SE',
-                 'ObsFishIdxAA', 'UseFishIdxAA', 'ObsFishIdxAA_SE')) {
+                 'ObsDiscardAA', 'UseDiscardAA', 'ObsDiscardAA_SE')) {
     if(sum(dim(x) == c(n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets)) != 6)
       stop(paste(what, " is not the correct dimension. Should be n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets"))
   }
 
   if(what %in% c('ObsCatchAA_pop', 'UseCatchAA_pop', 'ObsCatchAA_pop_SE',
-                 'ObsDiscardAA_pop', 'UseDiscardAA_pop', 'ObsDiscardAA_pop_SE',
-                 'ObsFishIdxAA_pop', 'UseFishIdxAA_pop', 'ObsFishIdxAA_pop_SE')) {
+                 'ObsDiscardAA_pop', 'UseDiscardAA_pop', 'ObsDiscardAA_pop_SE')) {
     if(sum(dim(x) == c(n_pop, n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets)) != 7)
       stop(paste(what, " is not the correct dimension. Should be n_pop, n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets"))
   }

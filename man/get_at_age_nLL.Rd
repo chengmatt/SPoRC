@@ -39,8 +39,8 @@ Numeric vector the length of \code{obs_t}, the negative log
 }
 \description{
 Every at-age observation stream in the model routes through here: retained
-catch at age, discard catch at age, and the fishery and survey indices at age,
-each in an aggregated and a population-specific form. They differ only in
+catch at age, discard catch at age, and the survey index at age, each in an
+aggregated and a population-specific form. They differ only in
 which array supplies the prediction and which parameter supplies the standard
 deviation, so the likelihood itself is written once.
 }

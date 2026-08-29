@@ -32,16 +32,18 @@ test_that("retention process error controls default and reach the data list", {
 
 
 test_that("a wrong length process error weight errors rather than becoming NA per fleet", {
+  # The message names the length rather than the value: a per-fleet setting given
+  # at the wrong length used to be reported as an unrecognized value.
   expect_error(build(fishsel = list(retsel_pe_wt = c(1, 1))),
-               "retsel_pe_wt is not length n_fish_fleets")
+               "retsel_pe_wt has 2 entries for 1 fleet")
   expect_error(build(fishsel = list(retsel_rw_init_sigma = c(5, 5))),
-               "retsel_rw_init_sigma is not length n_fish_fleets")
+               "retsel_rw_init_sigma has 2 entries for 1 fleet")
 
   # the same check now guards the fishery and survey streams it was missing from
   expect_error(build(fishsel = list(fishsel_pe_wt = c(1, 1))),
-               "fishsel_pe_wt is not length n_fish_fleets")
+               "fishsel_pe_wt has 2 entries for 1 fleet")
   expect_error(build(srvsel = list(srvsel_pe_wt = c(1, 1))),
-               "srvsel_pe_wt is not length n_srv_fleets")
+               "srvsel_pe_wt has 2 entries for 1 fleet")
 })
 
 

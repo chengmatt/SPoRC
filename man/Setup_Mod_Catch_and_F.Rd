@@ -141,8 +141,11 @@ discards, following the same convention as \code{sigmaCAA_key}.}
 \item{sigmaCAA_pop_spec, sigmaDAA_spec, sigmaDAA_pop_spec}{\code{"est"} or
 \code{"fix"}.}
 
-\item{CatchAA_Type, DiscardAA_Type, CatchAA_pop_Type, DiscardAA_pop_Type}{Which margins the fleet reports separately, one setting for every fleet or
-one per fleet, following the composition vocabulary. \code{"agg"} sums over
+\item{CatchAA_Type, DiscardAA_Type, CatchAA_pop_Type, DiscardAA_pop_Type}{Which margins the fleet reports separately, following the composition
+vocabulary. Give it as one setting for every fleet, one per fleet, or as
+year and fleet specifications such as
+\code{"spltRaggS_Year_1-20_Fleet_1"} when the setting changes part way
+through the series. \code{"agg"} sums over
 regions and sexes, \code{"spltRaggS"} (default) splits regions and sums over
 sexes, \code{"aggRspltS"} does the reverse, and \code{"spltRspltS"} splits
 both. An observation summed over a margin belongs in slot one of it.}

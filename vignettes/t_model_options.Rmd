@@ -46,6 +46,65 @@ wholesale rather than collapsing a dimension.
 
 ---
 
+# How arguments are named
+
+The setup functions take around five hundred arguments between them, but far fewer ideas: most names are one of a handful of stems assembled from the same pieces. Reading the grammar is faster than reading the list, and it lets you derive a name rather than search for it.
+
+### A data stream's three arrays
+
+Every observed stream is supplied as a triple, and the names differ only in the prefix.
+
+| Prefix | Carries |
+|---|---|
+| `Obs` | The observations |
+| `Use` | A 0/1 flag per cell, saying which observations are fit |
+| `ISS_` | Input sample size, for composition streams |
+
+So the fishery age compositions are `ObsFishAgeComps`, `UseFishAgeComps`, `ISS_FishAgeComps`, and the survey twins swap `Fish` for `Srv`. An `_SE` suffix carries observation error where a stream reports its own (`ObsSrvIdx_SE`).
+
+The `Use` array is the switch. A stream with data present and its `Use` flags at zero is carried through the model and contributes nothing, which is how a stream is turned off without removing it.
+
+### How a stream is configured
+
+Four suffixes appear on nearly every stream.
+
+| Suffix | Chooses |
+|---|---|
+| `_Type` | How the observation is split across regions and sexes: `"agg"`, `"spltRaggS"`, `"aggRspltS"`, `"spltRspltS"` for at-age streams; `"agg"`, `"spltRspltS"`, `"spltRjntS"`, `"none"` for compositions |
+| `_LikeType` | The density: `"lognormal"`/`"normal"` for indices, or the composition families |
+| `_sigma_form` | Where observation error comes from: `"none"`, `"data"`, `"est_additive"`, `"est_quadrature"` |
+| `_spec` | How a parameter is shared or fixed across dimensions, per the sharing conventions above |
+
+A `_Type` may change part way through a series, and says so through a year and fleet specification: `"agg_Year_1-terminal_Fleet_1"`. The years are positions in the year vector rather than calendar years, and the last may be `"terminal"`. A vector of these describes a whole model, one entry per block, and every year of every fleet needs an entry covering it. Later entries overwrite earlier ones where they overlap, so a general setting can be given first and a period carved out of it afterwards.
+
+The two families differ only in what a bare setting means. Composition and CAAL `_Type` strings must carry the range, and the bare setting on its own is rejected with an error naming the full form. At-age `_Type` strings accept either, so a bare `"spltRaggS"` sets the whole series, one value per fleet sets each fleet's whole series, and the grammar is needed only when the setting changes.
+
+### Two infixes that multiply the surface
+
+`AA` marks an age-disaggregated stream, fit age by age rather than as a total: `ObsCatch` against `ObsCatchAA`, with the configuration suffixes following (`CatchAA_Type`, `CatchAA_LikeType`, `CatchAA_sigma_form`, `sigmaCAA_spec`). A fleet fits one or the other, not both.
+
+`_pop` marks the population-specific twin of a stream, fit for one population rather than summed across them. Over a hundred arguments are `_pop` variants, and every one of them is inert in a single-population model. `ObsSrvIdx` has `ObsSrvIdx_pop`; `Wt_SrvIdx` has `Wt_SrvIdx_pop`; `rho_srv_idx_spec` has `rho_srv_idx_pop_spec`.
+
+The two compose, so a single stream can reach `ObsCatchAA_pop_SE`.
+
+### Worked expansion
+
+Everything the survey age compositions accept, derived from the grammar rather than looked up:
+
+| Name | Role |
+|---|---|
+| `ObsSrvAgeComps`, `UseSrvAgeComps`, `ISS_SrvAgeComps` | The data triple |
+| `SrvAgeComps_Type`, `SrvAgeComps_LikeType` | Structure and density |
+| `Wt_SrvAgeComps` | Weight |
+| `ObsSrvAgeComps_pop`, `UseSrvAgeComps_pop`, `ISS_SrvAgeComps_pop` | Population-specific triple |
+| `SrvAgeComps_pop_Type`, `SrvAgeComps_pop_LikeType`, `Wt_SrvAgeComps_pop` | Its configuration and weight |
+
+The remaining stems follow the same shape: `_key` supplies a mapping matrix, `_blocks` a time-blocking string, `rho_*_spec` and `AgeObsCorr_*` the correlation across ages, and `Wt_*` the likelihood weight.
+
+Where a setting names its own legal values, it does so in the error it raises when given something else, so passing a deliberate nonsense string is a quick way to see the options.
+
+---
+
 # Spatial and Demographic Structure
 
 Everything starts with `Setup_Mod_Dim()` (estimation model) or `Setup_Sim_Dim()` (operating model; simulation). These functions define the skeleton that every subsequent setup call validates against.
@@ -989,7 +1048,6 @@ error, since it is the same information stated twice.
 |---|---|
 | `ObsCatchAA` / `UseCatchAA` | Retained catch at age |
 | `ObsDiscardAA` / `UseDiscardAA` | Discards at age |
-| `ObsFishIdxAA` / `UseFishIdxAA` | Fishery index at age |
 | `ObsSrvIdxAA` / `UseSrvIdxAA` | Survey index at age |
 
 Each has a `_pop` counterpart with a leading population dimension. All eight
@@ -1011,11 +1069,26 @@ vocabulary the compositions use:
 | `"aggRspltS"` | summed | separate |
 | `"spltRspltS"` | separate | separate |
 
-`CatchAA_Type`, `DiscardAA_Type`, `FishIdxAA_Type` and `SrvIdxAA_Type` take one
-setting for every fleet or one per fleet, and each has a `_pop` counterpart. A
-margin the fleet sums over carries its observation in slot one of that margin,
-and a use flag anywhere else on it is refused rather than quietly ignored, since
-the prediction has already added those cells in.
+`CatchAA_Type`, `DiscardAA_Type` and `SrvIdxAA_Type` take one
+setting for every fleet, one per fleet, or the year and fleet grammar, and each
+has a `_pop` counterpart. A margin the fleet sums over carries its observation in
+slot one of that margin, and a use flag anywhere else on it is refused rather
+than quietly ignored, since the prediction has already added those cells in. That
+check runs per year, so a fleet reporting sexes separately early and combined
+later is held to each rule in the years where it applies.
+
+A fleet whose reporting changed part way through the series states it directly:
+
+```r
+CatchAA_Type = c("spltRspltS_Year_1-20_Fleet_1",
+                 "spltRaggS_Year_21-terminal_Fleet_1")
+```
+
+One combination is refused. A fleet fitting `"2dar1"` cannot change its
+aggregation between years, because a separable correlation is defined over the
+whole block of years by ages, and a setting that changes inside that block has
+nothing to mean there. Either hold the aggregation constant for that fleet, or
+give each period its own fleet so that each block is its own observation.
 
 The sex margin is required whatever the fleet reports. A stream summed over
 sexes still carries its observation in the full array, in sex slot one, and an
@@ -1059,7 +1132,7 @@ repeating its entries across them. An age and sex a fleet never observes carries
 no parameter whatever the key says, which is what holds the unused sexes of a
 sex-summed stream out.
 
-`sigmaCAA_key`, `sigmaDAA_key`, `sigmaFishIdxAA_key` and `sigmaSrvIdxAA_key`
+`sigmaCAA_key`, `sigmaDAA_key` and `sigmaSrvIdxAA_key`
 carry the observation error. Catchability at age is not keyed here: an index fit
 age by age carries its age shape in selectivity, through the `"nonparfree"` form
 (see Selectivity above), since a free catchability per age and a selectivity
@@ -1080,7 +1153,6 @@ setting rather than borrowing the aggregated one:
 | Argument | Set in |
 |---|---|
 | `AgeObsCorr_catch`, `AgeObsCorr_discard` (and `_pop`) | `Setup_Mod_Catch_and_F()` |
-| `AgeObsCorr_fish_idx` (and `_pop`) | `Setup_Mod_FishIdx_and_Comps()` |
 | `AgeObsCorr_srv_idx` (and `_pop`) | `Setup_Mod_SrvIdx_and_Comps()` |
 
 | String | Meaning | Parameters per fleet |
@@ -1344,14 +1416,25 @@ These are set per data stream via `comp_fishage_like`, `comp_fishlen_like`, `com
 
 ### Composition structure types
 
-Each composition data stream has a "type" controlling how data are aggregated:
+Each composition stream says how its observations are aggregated through a
+`_Type`, given as a year and fleet specification:
 
 | Value | Structure |
 |---|---|
-| 0 | Aggregated across sexes and regions |
-| 1 | Split by sex and region (no implicit sex-ratio information) |
-| 2 | Joint across sexes, split by region (preserves sex-ratio information) |
-| 999 | No data for this fleet/year |
+| `"agg"` | Aggregated across sexes and regions |
+| `"spltRspltS"` | Split by sex and region, carrying no implicit sex-ratio information |
+| `"spltRjntS"` | Joint across sexes, split by region, preserving sex-ratio information |
+| `"none"` | No data for this fleet and year |
+
+A fishery that began sexing its samples in the eighth year of the series reads:
+
+```r
+FishAgeComps_Type = c("agg_Year_1-7_Fleet_1",
+                      "spltRjntS_Year_8-terminal_Fleet_1")
+```
+
+`"agg"` is refused where the likelihood is the 2d logistic normal, which needs a
+composition split by region and sex to correlate over.
 
 ### Data streams
 
@@ -1382,20 +1465,133 @@ Fit CAAL with the marginal length compositions and without the marginal age comp
 
 ---
 
+# Likelihood Weights
+
+Set on `Setup_Mod_Weighting()`. Every weight multiplies its likelihood component in the joint negative log likelihood, so `0` drops a data stream from the fit without removing it from the model or from the reported fits.
+
+Two shapes appear. The scalar weights apply one number to the whole component. The composition weights are arrays `[n_regions × n_years × n_seas × n_sexes × n_fleets]`, so a year, a region or a sex can be down-weighted on its own; a scalar is recycled.
+
+### Scalar weights
+
+| Argument | Component |
+|---|---|
+| `Wt_Catch` | Aggregated catch |
+| `Wt_Discard` | Aggregated discards |
+| `Wt_FishIdx` | Fishery indices |
+| `Wt_SrvIdx` | Survey indices |
+| `Wt_F` | Fishing mortality deviation penalty |
+| `Wt_D` | Discard mortality rate deviation penalty |
+| `Wt_Rec` | Recruitment deviation penalty (see Recruitment; may also be an array) |
+| `Wt_Init_Rec` | Initial age deviation penalty |
+| `Wt_Tagging` | Tag recapture likelihood |
+
+### Composition weights
+
+| Argument | Component |
+|---|---|
+| `Wt_FishAgeComps`, `Wt_FishLenComps` | Fishery age and length compositions |
+| `Wt_SrvAgeComps`, `Wt_SrvLenComps` | Survey age and length compositions |
+| `Wt_FishAgeComps_discard`, `Wt_FishLenComps_discard` | Discard compositions |
+| `Wt_Fish_caal`, `Wt_Srv_caal` | Conditional age-at-length |
+
+### Population-specific weights
+
+Every stream fit separately by population carries a `_pop` twin, weighted independently of its aggregated counterpart: `Wt_Catch_pop`, `Wt_Discard_pop`, `Wt_FishIdx_pop`, `Wt_SrvIdx_pop`, and the four composition arrays `Wt_FishAgeComps_pop`, `Wt_FishLenComps_pop`, `Wt_SrvAgeComps_pop`, `Wt_SrvLenComps_pop`, plus their discard twins `Wt_FishAgeComps_discard_pop` and `Wt_FishLenComps_discard_pop`. These have no effect in a single-population model.
+
+Recommendations. Reach for weights to switch a stream off (`0`) or to reproduce another assessment's weighting, not to tune fit. Where compositions are over-weighted relative to their real information content, the Dirichlet-multinomial or a Francis iteration estimates that down-weighting rather than asserting it; `run_francis()` returns the multipliers to apply here. The at-age observation streams take the same weight as their aggregated counterpart, so a fleet moved from aggregated to at-age keeps whatever weight it already had.
+
+---
+
 # Tagging
 
 Configured via `Setup_Mod_Tagging()` (EM) or `Setup_Sim_Tagging()` (OM).
 
-SPoRC implements a conventional mark-recapture framework (Brownie-type likelihood) where tagged individuals follow the full seasonal population dynamics, movement, mortality, and fishing, after release.
+SPoRC implements a conventional mark-recapture framework (Brownie-type likelihood) where tagged individuals follow the full seasonal population dynamics, movement, mortality, and fishing after release. Tags are tracked as release cohorts and recaptured by fishery fleets.
 
-| Feature | Description |
+### Switching tagging on
+
+`use_conv_fish_tagging` is an integer vector of length `n_fish_fleets`, `1` for fleets that recapture and report tags. All zeros (the default) disables the whole module: the parameters collapse to length-1 placeholders and the likelihood contributes nothing.
+
+### Defining release cohorts
+
+| Argument | Description |
 |---|---|
-| Release structure | Tags released by population, region, season, age, and sex |
-| Recapture structure | Fleet-specific recaptures with release-cohort × recapture-year likelihood |
-| Tag shedding | Chronic tag-loss rate (estimated or fixed) |
-| Initial tag mortality | Immediate post-release mortality parameter |
-| Reporting rates | Fleet-specific tag-reporting rates (estimated or fixed) |
-| Population/age/sex attribution | Tags can carry population, age, and sex information at release |
+| `conv_tag_release_indicator` | Data frame of release cohorts, one row each. Required columns `regions`, `tag_years`, `tag_seas`. Every other tagging array is dimensioned by its row count |
+| `conv_tag_release_platform` | Character matrix `[n_cohorts × 2]`, columns `platform` and `fleet`, aligned row for row with the release indicator. `"population"` releases into the population directly (`fleet` is `NA`); `"fishery"` or `"survey"` releases through that fleet's selectivity |
+| `conv_tag_max_liberty` | Years at liberty tracked per cohort. Sets the recapture container size, so it is a direct cost in tape size. Default `n_ages / 2` |
+
+A cohort is a release *event*, not a release group. Splitting the same tags across more rows multiplies the recapture containers and the tape with them.
+
+### Observations
+
+| Argument | Description |
+|---|---|
+| `conv_tagged_fish` | Numbers released per cohort |
+| `obs_conv_tag_fish_recap` | Observed recaptures, by cohort, year at liberty, and recapture cell |
+
+### What a tag carries (`conv_fish_tag_attr`)
+
+Which biological dimensions are resolved at release and therefore retained at recapture. Region and fleet are always retained. Built from `"p"` (population), `"a"` (age) and `"s"` (sex) joined by underscores: `"p_a_s"`, `"a_s"`, `"p_a"`, `"p_s"`, `"a"`, `"s"`, `"p"`, `"none"`. Default `"p_a_s"`.
+
+A scalar applies to every event; a vector of length `n_cohorts` lets events differ, for a program where early releases recorded less than later ones.
+
+The pooling arguments say how cells are aggregated in the likelihood, and must agree with what the attribution resolves:
+
+| Argument | Default | Use when |
+|---|---|---|
+| `conv_tag_pop_pool` | `as.list(1:n_pop)` | `list(1:n_pop)` when `"p"` is not attended |
+| `conv_tag_age_pool` | `as.list(1:n_ages)` | `list(1:n_ages)` when `"a"` is not attended; custom groups such as `list(1:5, 6:10)` are allowed when it is |
+| `conv_tag_sex_pool` | `as.list(1:n_sexes)` | `list(1:n_sexes)` when `"s"` is not attended |
+
+A pooling structure inconsistent with the attribution warns and is overridden to a single group, so the model runs but not with the structure that was asked for. Set both together.
+
+### Timing
+
+| Argument | Description |
+|---|---|
+| `conv_tag_mixing_period` | Years (or seasons in a seasonal model) after release before recaptures enter the likelihood. Lets tags mix before they inform movement. Default `1` |
+| `conv_tag_t_tagging` | Fraction of the season remaining at release, in `[0, 1]`: `1` at the start, `0.5` mid-season, `0` at the end. Scalar or one value per cohort. Default `1` |
+
+### Recapture likelihood (`conv_fish_tag_like`)
+
+| String | Description |
+|---|---|
+| `"Poisson"` | Poisson on recapture counts (default) |
+| `"NegBin"` | Negative binomial, overdispersion from `ln_conv_fish_tag_theta` |
+| `"Multinomial_Release"` | Multinomial conditioned on the release cohort |
+| `"Multinomial_Recapture"` | Multinomial conditioned on the recapture cell |
+| `"Dirichlet-Multinomial_Release"` | Dirichlet-multinomial on the release conditioning |
+| `"Dirichlet-Multinomial_Recapture"` | Dirichlet-multinomial on the recapture conditioning |
+
+`ln_conv_fish_tag_theta` is read by the negative binomial and both Dirichlet-multinomial forms and ignored otherwise.
+
+### Tag-loss parameters
+
+Both are log scale, scalar or one value per release event, and a scalar is recycled to every event. Both default to `-1000`, which is effectively zero.
+
+| Parameter | Spec argument | Sharing options |
+|---|---|---|
+| `ln_init_conv_tag_mort` | `init_conv_tag_mort_spec` | `"fix"`, `"est_shared"` |
+| `ln_conv_tag_shed` | `conv_tag_shed_spec` | `"fix"`, `"est_shared"` |
+
+Leaving a spec at `NULL` keeps the parameter fixed at its starting value.
+
+### Reporting rates
+
+| Argument | Description |
+|---|---|
+| `conv_tagrep_spec` | Sharing across region, fleet and block: `"est_all"`, `"est_shared_r"`, `"est_shared_f"`, `"est_shared_r_f"`, `"fix"`. Default `"fix"` |
+| `conv_tag_fish_reporting_blocks` | Time blocking for reporting, same syntax as the selectivity and catchability blocks |
+| `use_conv_tag_fishrep_prior` | `0`/`1`, whether reporting priors apply. Default `0` |
+| `conv_tag_fishrep_prior` | Data frame with columns `region`, `block`, `fleet`, `mu`, `sd`, `type`. Ignored unless the switch above is `1` |
+
+`"est_shared_r"` requires identical block structure across regions within a fleet, and `"est_shared_f"` the same across fleets within a region.
+
+Recommendations. Reporting rate and tag loss trade off against each other and against fishing mortality, so estimating all three at once rarely identifies. Fix reporting from a tag-seeding study where one exists, or put a prior on it, and estimate shedding only with a double-tagging component. Keep `conv_tag_max_liberty` no longer than the recoveries actually inform: it is the argument that most directly sets how long the model takes to build.
+
+### Weight
+
+`Wt_Tagging` on `Setup_Mod_Weighting()`.
 
 ---
 

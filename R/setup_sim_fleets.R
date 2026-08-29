@@ -210,24 +210,24 @@
 #'   (0 = aggregated, 1 = split region/sex, 2 = split region joint sex, 999 = none),
 #'   dimensions `n_yrs x n_fish_fleets`. Default: 2.
 #'
-#' @param UseCatchAA,UseDiscardAA,UseFishIdxAA Integer arrays
+#' @param UseCatchAA,UseDiscardAA Integer arrays
 #'   `n_regions x n_yrs x n_seas x n_ages x n_sexes x n_fish_fleets`, `1` where an
 #'   at-age observation is drawn. The sex margin is required: a stream summed
 #'   over sexes carries its flag in sex slot one.
-#' @param use_catch_aa,use_discard_aa,use_fish_idx_aa Integer vectors
+#' @param use_catch_aa,use_discard_aa Integer vectors
 #'   `n_fish_fleets`, `1` for fleets whose at-age streams are drawn.
-#' @param ln_sigmaCAA,ln_sigmaDAA,ln_sigmaFishIdxAA Log-scale observation error
+#' @param ln_sigmaCAA,ln_sigmaDAA Log-scale observation error
 #'   for the at-age streams, `n_ages x n_sexes x n_fish_fleets`. An array without
 #'   the sex margin is required.
-#' @param ObsCatchAA_SE,ObsDiscardAA_SE,ObsFishIdxAA_SE Reported standard errors
+#' @param ObsCatchAA_SE,ObsDiscardAA_SE Reported standard errors
 #'   shaped like the use arrays, read only when the stream's `sigma_form` asks
 #'   for them.
-#' @param CatchAA_Type,DiscardAA_Type,FishIdxAA_Type Which margins each fleet
+#' @param CatchAA_Type,DiscardAA_Type Which margins each fleet
 #'   reports separately: `"agg"`, `"spltRaggS"` (default), `"aggRspltS"` or
 #'   `"spltRspltS"`. A summed margin is drawn once, into slot one.
-#' @param CatchAA_LikeType,DiscardAA_LikeType,FishIdxAA_LikeType `"lognormal"`
+#' @param CatchAA_LikeType,DiscardAA_LikeType `"lognormal"`
 #'   (default) or `"normal"`, per fleet.
-#' @param CatchAA_sigma_form,DiscardAA_sigma_form,FishIdxAA_sigma_form Where the
+#' @param CatchAA_sigma_form,DiscardAA_sigma_form Where the
 #'   observation error comes from: `"none"` (default), `"data"`,
 #'   `"est_additive"` or `"est_quadrature"`.
 #'
@@ -268,25 +268,18 @@ Setup_Sim_Fishing <- function(sim_list,
                               ln_sigmaC_pop = array(log(0.02), dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
                               ln_sigmaCAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
                               ln_sigmaDAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
-                              ln_sigmaFishIdxAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
                               UseCatchAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
                               UseDiscardAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
-                              UseFishIdxAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
                               ObsCatchAA_SE = NULL,
                               ObsDiscardAA_SE = NULL,
-                              ObsFishIdxAA_SE = NULL,
                               CatchAA_Type = "spltRaggS",
                               DiscardAA_Type = "spltRaggS",
-                              FishIdxAA_Type = "spltRaggS",
                               CatchAA_LikeType = "lognormal",
                               DiscardAA_LikeType = "lognormal",
-                              FishIdxAA_LikeType = "lognormal",
                               CatchAA_sigma_form = "none",
                               DiscardAA_sigma_form = "none",
-                              FishIdxAA_sigma_form = "none",
                               use_catch_aa = rep(0, sim_list$n_fish_fleets),
                               use_discard_aa = rep(0, sim_list$n_fish_fleets),
-                              use_fish_idx_aa = rep(0, sim_list$n_fish_fleets),
                               catch_units = array(1, dim = c(sim_list$n_fish_fleets)),
                               init_F_val = array(0, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_fish_fleets)),
                               Fmort_input = array(0.1, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets, sim_list$n_sims)),
@@ -550,25 +543,23 @@ Setup_Sim_Fishing <- function(sim_list,
   aa_use_dim <- c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages,
                   sim_list$n_sexes, sim_list$n_fish_fleets)
   aa_sigma_dim <- c(sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)
-  for(nm in c("ln_sigmaCAA", "ln_sigmaDAA", "ln_sigmaFishIdxAA")) check_at_age_shape(get(nm), aa_sigma_dim, nm)
-  for(nm in c("UseCatchAA", "UseDiscardAA", "UseFishIdxAA")) check_at_age_shape(get(nm), aa_use_dim, nm)
+  for(nm in c("ln_sigmaCAA", "ln_sigmaDAA")) check_at_age_shape(get(nm), aa_sigma_dim, nm)
+  for(nm in c("UseCatchAA", "UseDiscardAA")) check_at_age_shape(get(nm), aa_use_dim, nm)
   sim_list$ln_sigmaCAA <- ln_sigmaCAA
   sim_list$ln_sigmaDAA <- ln_sigmaDAA
-  sim_list$ln_sigmaFishIdxAA <- ln_sigmaFishIdxAA
   sim_list$UseCatchAA <- UseCatchAA
   sim_list$UseDiscardAA <- UseDiscardAA
-  sim_list$UseFishIdxAA <- UseFishIdxAA
   # a conditioned model built before these settings existed passes them through
   # as NULL, which means the default rather than an error
   or_default <- function(x, default) if(is.null(x)) default else x
-  for(nm in c("CatchAA", "DiscardAA", "FishIdxAA")) {
+  for(nm in c("CatchAA", "DiscardAA")) {
     se <- get(paste0("Obs", nm, "_SE"))
     check_at_age_shape(se, aa_use_dim, paste0("Obs", nm, "_SE"))
     use_dim <- dim(sim_list[[paste0("Use", nm)]])
     sim_list[[paste0("Obs", nm, "_SE")]] <- if(is.null(se) && !is.null(use_dim)) array(0, dim = use_dim) else se
-    sim_list[[paste0(nm, "_Type")]] <- rep_len(convert_to_numeric(or_default(get(paste0(nm, "_Type")), "spltRaggS"),
-                                                                  list(agg = 0, spltRaggS = 1, aggRspltS = 2, spltRspltS = 3)),
-                                               sim_list$n_fish_fleets)
+    sim_list[[paste0(nm, "_Type")]] <- at_age_type_matrix(or_default(get(paste0(nm, "_Type")), "spltRaggS"),
+                                                          sim_list$n_fish_fleets, sim_list$n_yrs,
+                                                          paste0(nm, "_Type"))
     sim_list[[paste0(nm, "_LikeType")]] <- rep_len(convert_to_numeric(or_default(get(paste0(nm, "_LikeType")), "lognormal"),
                                                                       list(lognormal = 0, normal = 1)), sim_list$n_fish_fleets)
     sim_list[[paste0(nm, "_sigma_form")]] <- rep_len(convert_to_numeric(or_default(get(paste0(nm, "_sigma_form")), "none"),
@@ -577,7 +568,6 @@ Setup_Sim_Fishing <- function(sim_list,
   } # end nm loop
   sim_list$use_catch_aa <- use_catch_aa
   sim_list$use_discard_aa <- use_discard_aa
-  sim_list$use_fish_idx_aa <- use_fish_idx_aa # observation sd for pop-specific catch
   sim_list$init_F <- init_F_val # initial F value
   sim_list$fish_sel <- fish_sel_input # fishery selectivity
   sim_list$fish_q <- fish_q_input # fishery catchability
@@ -992,7 +982,7 @@ Setup_Sim_Survey <- function(sim_list,
   if(is.null(SrvIdxAA_Type)) SrvIdxAA_Type <- "spltRaggS"
   if(is.null(SrvIdxAA_LikeType)) SrvIdxAA_LikeType <- "lognormal"
   if(is.null(SrvIdxAA_sigma_form)) SrvIdxAA_sigma_form <- "none"
-  sim_list$SrvIdxAA_Type <- rep_len(convert_to_numeric(SrvIdxAA_Type, list(agg = 0, spltRaggS = 1, aggRspltS = 2, spltRspltS = 3)), sim_list$n_srv_fleets)
+  sim_list$SrvIdxAA_Type <- at_age_type_matrix(SrvIdxAA_Type, sim_list$n_srv_fleets, sim_list$n_yrs, "SrvIdxAA_Type")
   sim_list$SrvIdxAA_LikeType <- rep_len(convert_to_numeric(SrvIdxAA_LikeType, list(lognormal = 0, normal = 1)), sim_list$n_srv_fleets)
   sim_list$SrvIdxAA_sigma_form <- rep_len(convert_to_numeric(SrvIdxAA_sigma_form, list(none = 0, data = 1, est_additive = 2, est_quadrature = 3)), sim_list$n_srv_fleets)
   sim_list$use_srv_idx_aa <- use_srv_idx_aa

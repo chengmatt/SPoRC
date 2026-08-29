@@ -16,7 +16,7 @@ predicted at-age values and their standard deviations.}
 \item{model_names}{Character vector naming each model run.}
 
 \item{stream}{Which stream to plot: \code{"CatchAA"} (default),
-\code{"DiscardAA"}, \code{"FishIdxAA"} or \code{"SrvIdxAA"}.}
+\code{"DiscardAA"} or \code{"SrvIdxAA"}.}
 }
 \value{
 A \code{ggplot}, or \code{NULL} when no model fits that stream.

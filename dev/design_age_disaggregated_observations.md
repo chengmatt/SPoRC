@@ -17,7 +17,7 @@ catch at age and index at age directly, every age its own observation, with its
 own catchability and its own variance. That is the native form for the four
 North Sea sandeel stocks, for sprat, and for the SAM lineage generally.
 
-The two are not interchangeable. The exact factorisation of an at-age
+The two are not interchangeable. The exact factorization of an at-age
 observation into a total and a composition holds for Poisson and multinomial,
 where the total is a genuine count sum. Both `smsR` and SAM are lognormal, and
 the sum of lognormals is not lognormal, so no choice of composition likelihood
@@ -31,7 +31,7 @@ selectivity pinned, which is what
 `vignette("ah_north_sea_sandeel_case_study")` does. It works and it bridges, but
 eight fishery fleets and five survey fleets that are really ages is not a pattern
 to recommend, and the pin depends on `nonpar` selectivity being mean
-standardised, which is an implementation detail rather than a contract.
+standardized, which is an implementation detail rather than a contract.
 
 ## What already exists
 
@@ -48,7 +48,7 @@ arrays. This is an observation-layer feature, not a dynamics one.
 Age-specific catchability needs no new machinery either. A free catchability per
 age is the same statement as one catchability times a non-parametric selectivity
 at age, and `SPoRC` already estimates both. The aggregation is what removes the
-age resolution, not the parameterisation.
+age resolution, not the parameterization.
 
 ## Follow SAM's key matrices
 
@@ -87,10 +87,10 @@ it. This should be an error at setup, not a warning.
 
     Setup_Mod_Catch_and_F(
       ...,
-      ObsCatchAA,          # [n_regions, n_years, n_seas, n_ages, n_fish_fleets]
+      ObsCatchAA,          # [n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets]
       UseCatchAA,          # same shape, 0/1
       catchAA_units,       # "abd" or "biom", per fleet
-      sigmaCAA_key,        # [n_fish_fleets, n_ages] integer map, NA excludes
+      sigmaCAA_key,        # [n_ages, n_sexes, n_fish_fleets] integer map, NA excludes
       sigmaCAA_spec        # "fix", "est", or "concentrated"
     )
 
@@ -102,7 +102,7 @@ are fished, replacing the `UseCatch` role, and the closure logic in
 
     Setup_Mod_SrvIdx_and_Comps(
       ...,
-      ObsSrvIdxAA,         # [n_regions, n_years, n_seas, n_ages, n_srv_fleets]
+      ObsSrvIdxAA,         # [n_regions, n_years, n_seas, n_ages, n_sexes, n_srv_fleets]
       UseSrvIdxAA,
       srv_q_key,           # [n_srv_fleets, n_ages], SAM's keyLogFpar
       sigmaSrvIdxAA_key,
@@ -136,12 +136,12 @@ model saturates.
     Setup_Mod_Catch_and_F(..., effort, use_effort, estimate_creep)
 
 `Fmort` is built in exactly one place, `model_population_dynamics.R:110`, and
-everything downstream consumes `Fmort` rather than its parameterisation, so this
+everything downstream consumes `Fmort` rather than its parameterization, so this
 is one branch plus setup plumbing:
 
     Fmort[r,y,seas,f] = effort[r,y,seas,f] * exp(ln_F_mean[r,seas,f])
 
-Two things to get right. `smsR` normalises effort internally, so the raw series
+Two things to get right. `smsR` normalizes effort internally, so the raw series
 and the fitted `Fagein` are on different scales; an estimated mean absorbs the
 constant but anything seeding parameters from a reference fit will not. And
 reference points need a decision: `Fmsy` under an effort-driven fishing mortality
@@ -210,3 +210,17 @@ reproduce what the workaround achieves, something in it is wrong.
 - Does an at-age fleet need its own `Wt_*` weight, and does weighting interact
   with a concentrated variance the way it does with an estimated one? It does,
   and the warning in `Setup_Mod_Weighting()` should extend to cover it.
+
+
+## Addendum, 2026-08-27
+
+The shapes above are as this note was first written. The streams were since
+generalized: every array carries a sex margin, and each fleet names the margins
+it sums over through `CatchAA_Type` and its counterparts, using the composition
+vocabulary. Nothing promotes a short array; the declared shape is the only one
+accepted. Reported standard errors, the choice of lognormal or normal, and where
+the observation error comes from are all per fleet, matching what the aggregated
+index streams already allowed. The correlation options gained `"us"` and
+`"2dar1"` alongside `"iid"` and `"1dar1"`, are chosen per fleet, and the
+population-specific streams carry their own. See `vignette("t_model_options")`
+and `vignette("ai_ices_style_assessments")` for the current interface.

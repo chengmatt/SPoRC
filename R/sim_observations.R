@@ -1042,7 +1042,7 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
                                               array(UseCatchAA[,y,seas,,,f], dim = aa_dim[-1]),
                                               array(ObsCatchAA_SE[,y,seas,,,f], dim = aa_dim[-1]),
                                               array(ln_sigmaCAA[,,f], dim = c(n_ages, n_sexes)),
-                                              CatchAA_Type[f], CatchAA_LikeType[f], CatchAA_sigma_form[f],
+                                              CatchAA_Type[y,f], CatchAA_LikeType[f], CatchAA_sigma_form[f],
                                               catch_units[f] == 1, r),
                               r, y, seas, f, sim)
           }
@@ -1055,7 +1055,7 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
                                               array(UseDiscardAA[,y,seas,,,f], dim = aa_dim[-1]),
                                               array(ObsDiscardAA_SE[,y,seas,,,f], dim = aa_dim[-1]),
                                               array(ln_sigmaDAA[,,f], dim = c(n_ages, n_sexes)),
-                                              DiscardAA_Type[f], DiscardAA_LikeType[f], DiscardAA_sigma_form[f],
+                                              DiscardAA_Type[y,f], DiscardAA_LikeType[f], DiscardAA_sigma_form[f],
                                               discard_units[f] == 1, r),
                               r, y, seas, f, sim)
           }
@@ -1126,27 +1126,6 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
           if(fish_idx_type[f] == 0) sim_env$TrueFishIdx_pop[,r,y,seas,f,sim] <- fish_q[r,y,f,sim] * apply(tmp_expl_abd[,1,1,1,,,1, drop = FALSE], 1, sum)  # abundance
           if(fish_idx_type[f] == 1) sim_env$TrueFishIdx_pop[,r,y,seas,f,sim] <- fish_q[r,y,f,sim] * apply(tmp_expl_biom[,1,1,1,,,1, drop = FALSE], 1, sum)  # biomass
           sim_env$ObsFishIdx_pop[,r,y,seas,f,sim] <- draw_index_obs(sim_env$TrueFishIdx_pop[,r,y,seas,f,sim], ObsFishIdx_pop_SE[,r,y,seas,f], if(fidx_like == 1) 1 else 0)
-
-          # Fishery index at age. An index fit age by age carries its
-          # catchability in selectivity, so no q is applied here
-          if(exists("use_fish_idx_aa") && use_fish_idx_aa[f] == 1) {
-            faa_dim <- c(n_pop, n_regions, n_ages, n_sexes)
-            fiaa <- array(NAA[,,y,seas,,,sim], dim = faa_dim)
-            for(rr in 1:n_regions) {
-              if(t_fish[rr,seas,f] != 0) {
-                fiaa[,rr,,] <- fiaa[,rr,,] * exp(-t_fish[rr,seas,f] * array(ZAA[,rr,y,seas,,,sim], dim = faa_dim[-2]))
-              }
-              fiaa[,rr,,] <- fiaa[,rr,,] * array(fish_sel[,rr,y,seas,,,f,sim] * ret_sel[,rr,y,seas,,,f,sim], dim = faa_dim[-2])
-            } # end rr loop
-            store_at_age_cell(sim_env, "FishIdxAA",
-                              sim_at_age_cell(fiaa, array(0, dim = faa_dim),
-                                              array(UseFishIdxAA[,y,seas,,,f], dim = faa_dim[-1]),
-                                              array(ObsFishIdxAA_SE[,y,seas,,,f], dim = faa_dim[-1]),
-                                              array(ln_sigmaFishIdxAA[,,f], dim = c(n_ages, n_sexes)),
-                                              FishIdxAA_Type[f], FishIdxAA_LikeType[f], FishIdxAA_sigma_form[f],
-                                              FALSE, r),
-                              r, y, seas, f, sim)
-          }
 
           # Fishery Compositions
           if(Fmort[r,y,seas,f,sim] > 0) { # only simulate if Fishing Mortality > 0
@@ -1507,7 +1486,7 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
                                               array(UseSrvIdxAA[,y,seas,,,sf], dim = saa_dim[-1]),
                                               array(ObsSrvIdxAA_SE[,y,seas,,,sf], dim = saa_dim[-1]),
                                               array(ln_sigmaSrvIdxAA[,,sf], dim = c(n_ages, n_sexes)),
-                                              SrvIdxAA_Type[sf], SrvIdxAA_LikeType[sf], SrvIdxAA_sigma_form[sf],
+                                              SrvIdxAA_Type[y,sf], SrvIdxAA_LikeType[sf], SrvIdxAA_sigma_form[sf],
                                               FALSE, r),
                               r, y, seas, sf, sim)
           }

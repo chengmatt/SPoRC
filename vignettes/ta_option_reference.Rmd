@@ -1,0 +1,107 @@
+---
+title: "Setup Estimation Model Argument Reference"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{ta_option_reference}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(SPoRC)
+```
+
+Every argument the eleven `Setup_Mod_*` stages accept, with its default and its own
+documentation. Read this one to find out what a setting is. Read
+[Overview of Model Options](t_model_options.html) to find out why it exists and which
+to specify. 
+
+```{r reference, results = "asis"}
+ref <- option_reference(guide = "t_model_options.Rmd")
+
+esc <- function(x) {
+  x <- gsub("&", "&amp;", x, fixed = TRUE)
+  x <- gsub("<", "&lt;", x, fixed = TRUE)
+  gsub(">", "&gt;", x, fixed = TRUE)
+}
+
+stages <- unique(ref$stage)
+counts <- vapply(stages, function(s) sum(ref$stage == s), integer(1))
+
+cat('<div class="optref">\n')
+cat('<div class="optref-controls">\n')
+cat('<input type="search" id="optref-q" placeholder="Search ', nrow(ref),
+    ' arguments…" aria-label="Search arguments">\n', sep = "")
+cat('<select id="optref-stage" aria-label="Filter by setup stage">\n')
+cat('<option value="">All stages</option>\n')
+for(i in seq_along(stages))
+  cat(sprintf('<option value="%s">%s (%d)</option>\n', stages[i], stages[i], counts[i]))
+cat('</select>\n<span id="optref-tally"></span>\n</div>\n')
+
+for(s in stages) {
+  sub <- ref[ref$stage == s, ]
+  cat(sprintf('<section class="optref-stage" data-stage="%s">\n', s))
+  cat(sprintf('<h3>Setup_Mod_%s <span class="optref-n">%d arguments</span></h3>\n',
+              s, nrow(sub)))
+  cat('<table class="optref-table">\n<thead><tr><th>Argument</th><th>Default</th>',
+      '<th>Description</th></tr></thead>\n<tbody>\n', sep = "")
+  for(i in seq_len(nrow(sub))) {
+    d <- sub$default[i]
+    d <- if(identical(d, "required")) '<em class="optref-req">required</em>'
+         else sprintf("<code>%s</code>", esc(d))
+    cat(sprintf('<tr data-k="%s"><td><code class="optref-arg">%s</code></td><td>%s</td><td>%s</td></tr>\n',
+                esc(tolower(paste(sub$argument[i], sub$default[i], sub$description[i]))),
+                esc(sub$argument[i]), d, esc(sub$description[i])))
+  }
+  cat('</tbody></table>\n</section>\n')
+}
+cat('</div>\n')
+```
+
+```{css, echo = FALSE}
+.optref-controls{position:sticky;top:0;z-index:10;display:flex;gap:8px;align-items:center;
+  flex-wrap:wrap;padding:10px 0;background:inherit;border-bottom:1px solid #ddd;margin-bottom:6px}
+.optref-controls input,.optref-controls select{padding:6px 9px;border:1px solid #ccc;
+  border-radius:5px;font:inherit;font-size:13px;background:inherit;color:inherit}
+.optref-controls input{flex:1 1 220px;min-width:0}
+#optref-tally{margin-left:auto;font-size:12px;opacity:.65;font-variant-numeric:tabular-nums}
+.optref-stage h3{margin:26px 0 8px;font-size:16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.optref-n{font-size:12px;font-weight:400;opacity:.6;font-family:inherit}
+.optref-table{width:100%;border-collapse:collapse;font-size:13px;display:table}
+.optref-table th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+  opacity:.6;padding:6px 8px;border-bottom:1px solid #ddd}
+.optref-table td{padding:6px 8px;border-bottom:1px solid #eee;vertical-align:top}
+.optref-table td:nth-child(1){white-space:nowrap}
+.optref-table td:nth-child(2){max-width:230px;overflow-wrap:anywhere}
+.optref-arg{font-weight:600}
+.optref-req{opacity:.7;font-size:12px}
+.optref-hidden{display:none}
+```
+
+```{js, echo = FALSE}
+(function () {
+  var q = document.getElementById("optref-q"),
+      sel = document.getElementById("optref-stage"),
+      tally = document.getElementById("optref-tally"),
+      rows = Array.prototype.slice.call(document.querySelectorAll(".optref-table tbody tr")),
+      secs = Array.prototype.slice.call(document.querySelectorAll(".optref-stage"));
+
+  function apply() {
+    var term = q.value.toLowerCase().trim(), stage = sel.value, shown = 0;
+    secs.forEach(function (sec) {
+      var on = !stage || sec.dataset.stage === stage, any = false;
+      sec.querySelectorAll("tbody tr").forEach(function (tr) {
+        var hit = on && (!term || tr.dataset.k.indexOf(term) !== -1);
+        tr.classList.toggle("optref-hidden", !hit);
+        if (hit) { any = true; shown++; }
+      });
+      sec.classList.toggle("optref-hidden", !any);
+    });
+    tally.textContent = shown + " of " + rows.length;
+  }
+  q.addEventListener("input", apply);
+  sel.addEventListener("change", apply);
+  apply();
+})();
+```

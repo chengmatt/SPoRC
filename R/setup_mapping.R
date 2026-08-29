@@ -7,6 +7,43 @@
 # if more than one Setup_* file calls it; single caller helpers stay with their
 # caller.
 
+#' Check that a per-fleet setting carries one entry per fleet
+#'
+#' These settings are read one fleet at a time inside the mapping loops. A vector
+#' shorter than the fleet count indexes past its end and yields NA, which the
+#' value check downstream then reports as an unrecognized setting: the caller is
+#' told their value is wrong when its length is what is wrong, and the value named
+#' in the message is often one the message also lists as valid.
+#'
+#' @param spec The setting.
+#' @param n_fleets Number of fleets it must cover.
+#' @param what Argument name, used in the message.
+#' @param allow_null Whether \code{NULL} is a legal value for this setting.
+#'   Settings that are only read when a feature is switched on pass \code{TRUE};
+#'   settings the model always reads leave it \code{FALSE}, so a missing one is
+#'   caught here rather than further in.
+#'
+#' @return \code{invisible(NULL)}. Called for its error.
+#'
+#' @keywords internal
+check_fleet_spec_length <- function(spec, n_fleets, what, allow_null = FALSE) {
+  if(is.null(spec)) {
+    if(allow_null) return(invisible(NULL))
+    stop(what, " is NULL. Give one setting per fleet, for ", n_fleets,
+         if(n_fleets == 1) " fleet." else " fleets.")
+  }
+  if(length(spec) == n_fleets) return(invisible(NULL))
+  # a single value is the common mistake and has an obvious repair, so the message
+  # carries the call rather than only the diagnosis
+  example <- if(length(spec) == 1) {
+    shown <- if(is.character(spec)) paste0("\"", spec[1], "\"") else format(spec[1])
+    paste0(", for example rep(", shown, ", ", n_fleets, ")")
+  } else ""
+  stop(what, " has ", length(spec), if(length(spec) == 1) " entry" else " entries",
+       " for ", n_fleets, if(n_fleets == 1) " fleet." else " fleets.",
+       " Give one setting per fleet", example, ".")
+}
+
 #' Build a generic sharing/process-error parameter map
 #'
 #' Assigns a unique estimation ID to every combination of the "key"
@@ -243,7 +280,7 @@ check_at_age_shape <- function(x, want, what) {
 
 #' Store one at-age stream's observations, use flags and standard errors
 #'
-#' Shared by the four streams and their population-specific forms. An absent
+#' Shared by the three streams and their population-specific forms. An absent
 #' stream is given a zeroed array so the objective can index it unconditionally.
 #'
 #' @param input_list Named list with \code{$data}.
@@ -329,60 +366,67 @@ at_age_sigma_spec <- function(spec, form, any_used) {
 #' A margin the fleet sums over carries its observation in slot one, and a use
 #' flag anywhere else on that margin is refused rather than quietly ignored.
 #'
+#' The setting may change part way through a series, given in the same
+#' \code{Value_Year_x-y_Fleet_f} form the composition streams take. A bare value
+#' stands for the whole series, either one setting for every fleet or one per
+#' fleet.
+#'
 #' @param input_list Named list with \code{$data}, \code{$par} and \code{$map}.
-#' @param type Character, one of \code{"agg"}, \code{"spltRaggS"},
-#'   \code{"aggRspltS"} or \code{"spltRspltS"}, either one setting for every
-#'   fleet or one per fleet.
+#' @param type Character. Either bare values, one of \code{"agg"},
+#'   \code{"spltRaggS"}, \code{"aggRspltS"} or \code{"spltRspltS"}, given once
+#'   for every fleet or once per fleet; or year and fleet specifications such as
+#'   \code{"spltRaggS_Year_1-20_Fleet_1"}, in which case every year of every
+#'   fleet needs an entry covering it.
 #' @param stream Stream tag naming the data element, e.g. \code{"CatchAA"}.
 #' @param fleet_field \code{"n_fish_fleets"} or \code{"n_srv_fleets"}.
 #' @param use_field Name of the use array for this stream.
 #' @param pop Logical. \code{TRUE} for the population-specific stream.
 #'
-#' @return \code{input_list} with \code{$data$<stream>_Type} set.
+#' @return \code{input_list} with \code{$data$<stream>_Type} set to a numeric
+#'   matrix \code{[n_yrs, n_fleets]} of codes.
 #'
 #' @keywords internal
 do_at_age_type_setup <- function(input_list, type, stream, fleet_field, use_field, pop = FALSE) {
 
   valid <- c("agg", "spltRaggS", "aggRspltS", "spltRspltS")
   n_fleets <- input_list$data[[fleet_field]]
+  n_yrs <- length(input_list$data$years)
   tag <- if(pop) paste0(stream, "_pop") else stream
+  arg <- paste0(tag, "_Type")
 
-  if(length(type) == 1) type <- rep(type, n_fleets)
-  if(length(type) != n_fleets) {
-    stop(tag, "_Type has ", length(type), " entries for ", n_fleets, " fleets. Supply ",
-         "one setting per fleet, or one setting for all of them.")
-  }
-  if(!all(type %in% valid)) {
-    stop(tag, "_Type is '", paste(unique(type[!type %in% valid]), collapse = "', '"),
-         "'. Valid options: ", paste(valid, collapse = ", "))
-  }
-
-  codes <- convert_to_numeric(type, list(agg = 0, spltRaggS = 1, aggRspltS = 2, spltRspltS = 3))
-  input_list$data[[paste0(tag, "_Type")]] <- codes
+  codes <- at_age_type_matrix(type, n_fleets, n_yrs, arg)
+  input_list$data[[arg]] <- codes
 
   # a summed margin holds the observation in slot one, so nothing else on that
-  # margin may be flagged: the prediction has already added those cells in
+  # margin may be flagged: the prediction has already added those cells in. The
+  # check is per year as well as per fleet, since the setting may change between
+  # them
   use_arr <- input_list$data[[use_field]]
   nd <- length(dim(use_arr))
   i_r <- if(pop) 2 else 1
+  i_y <- i_r + 1
   i_s <- nd - 1
-  by_region <- apply(use_arr, c(i_r, nd), function(x) sum(x != 0))
-  by_sex <- apply(use_arr, c(i_s, nd), function(x) sum(x != 0))
+  by_region <- apply(use_arr, c(i_r, i_y, nd), function(x) sum(x != 0))
+  by_sex <- apply(use_arr, c(i_s, i_y, nd), function(x) sum(x != 0))
 
   for(f in seq_len(n_fleets)) {
-    split <- at_age_split(codes[f])
-    if(!split$region && dim(use_arr)[i_r] > 1 && any(by_region[-1,f] != 0)) {
-      stop(tag, " fleet ", f, " is '", type[f], "', which sums over regions, but it flags ",
-           "observations in more than one region. An observation summed over regions is ",
-           "one number, so it belongs in region 1. Use a type splitting regions if the ",
-           "fleet reports them separately.")
-    }
-    if(!split$sex && dim(use_arr)[i_s] > 1 && any(by_sex[-1,f] != 0)) {
-      stop(tag, " fleet ", f, " is '", type[f], "', which sums over sexes, but it flags ",
-           "observations in more than one sex. An observation summed over sexes is one ",
-           "number, so it belongs in sex 1. Use a type splitting sexes if the fleet ",
-           "reports them separately.")
-    }
+    for(y in seq_len(n_yrs)) {
+      split <- at_age_split(codes[y, f])
+      when <- if(nrow(unique(codes[, f, drop = FALSE])) > 1) paste(" in year", y) else ""
+      if(!split$region && dim(use_arr)[i_r] > 1 && any(by_region[-1, y, f] != 0)) {
+        stop(tag, " fleet ", f, " is '", valid[codes[y, f] + 1], "'", when,
+             ", which sums over regions, but it flags observations in more than one ",
+             "region. An observation summed over regions is one number, so it belongs ",
+             "in region 1. Use a type splitting regions if the fleet reports them ",
+             "separately.")
+      }
+      if(!split$sex && dim(use_arr)[i_s] > 1 && any(by_sex[-1, y, f] != 0)) {
+        stop(tag, " fleet ", f, " is '", valid[codes[y, f] + 1], "'", when,
+             ", which sums over sexes, but it flags observations in more than one sex. ",
+             "An observation summed over sexes is one number, so it belongs in sex 1. ",
+             "Use a type splitting sexes if the fleet reports them separately.")
+      }
+    } # end y loop
   } # end f loop
 
   return(input_list)
@@ -1133,6 +1177,7 @@ do_q_mapping <- function(input_list, q_spec, prefix, fleet_field, fleet_label) {
   Use_nm <- paste0("Use", cap_prefix, "Idx")
   Use_pop_nm <- paste0(Use_nm, "_pop")
   n_fleets <- input_list$data[[fleet_field]]
+  check_fleet_spec_length(q_spec, n_fleets, paste0(prefix, "_q_spec"), allow_null = TRUE)
 
   # Initialize counter and mapping array for catchability
   q_counter <- 1
@@ -1144,7 +1189,7 @@ do_q_mapping <- function(input_list, q_spec, prefix, fleet_field, fleet_label) {
     # Validate options
     if(!is.null(q_spec)) {
       if(!q_spec[f] %in% c("est_all", "est_shared_r", "fix"))
-        stop(prefix, "_q_spec not correctly specfied. Should be one of these: est_all, est_shared_r, fix")
+        stop(prefix, "_q_spec not correctly specified. Should be one of these: est_all, est_shared_r, fix")
     }
 
     for(r in 1:input_list$data$n_regions) {
@@ -1250,6 +1295,7 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
   Use_nm <- paste0("Use", use_field)
   Use_pop_nm <- paste0(Use_nm, "_pop")
   n_fleets <- input_list$data[[fleet_field]]
+  check_fleet_spec_length(sel_pars_spec, n_fleets, paste0(prefix, "_fixed_sel_pars_spec"), allow_null = TRUE)
 
   # Initialize counter and mapping array for fixed effects selectivity
   sel_pars_counter <- 1
@@ -1261,7 +1307,7 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
     # Validate Options
     if(!sel_pars_spec[f] %in% c("est_all", "est_shared_r", "est_shared_r_s", "fix", "est_shared_s", fix_input_valid) &&
        !stringr::str_detect(sel_pars_spec[f], "est_shared_f_\\d+"))
-      stop(prefix, "_fixed_sel_pars_spec not correctly specfied. Should be one of these: est_all, est_shared_r, est_shared_r_s, est_shared_s, fix, or est_shared_f_# (where # is fleet number)")
+      stop(prefix, "_fixed_sel_pars_spec not correctly specified. Should be one of these: est_all, est_shared_r, est_shared_r_s, est_shared_s, fix, or est_shared_f_# (where # is fleet number)")
     # checking fixed selex options
     if(input_list$data[[use_fixed_nm]][f] == 1 && stringr::str_detect(sel_pars_spec[f], 'est'))
       stop(use_fixed_nm, " has 1s for a given fleet, but ", prefix, "_fixed_sel_pars_spec is specified at an est variant.")
@@ -1441,6 +1487,7 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
   model_nm <- paste0(prefix, "_sel_model")
   selex_type_nm <- paste0(prefix, "_selex_type")
   n_fleets <- input_list$data[[fleet_field]]
+  check_fleet_spec_length(pe_pars_spec, n_fleets, paste0(prefix, "sel_pe_pars_spec"), allow_null = TRUE)
 
   # Initialize counter and mapping array for process errors
   pe_pars_counter <- 1 # initalize counter
@@ -1453,7 +1500,7 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
     if(!is.null(pe_pars_spec)) {
       if(!pe_pars_spec[f] %in% c("fix", "none", "est_all", "est_shared_r", "est_shared_s", "est_shared_r_s") &&
          !stringr::str_detect(pe_pars_spec[f], "est_shared_f_\\d+"))
-        stop(prefix, "sel_pe_pars_spec not correctly specfied. Should be one of these: est_all, est_shared_r, est_shared_r_s, est_shared_s, fix, or est_shared_f_# (where # is fleet number)")
+        stop(prefix, "sel_pe_pars_spec not correctly specified. Should be one of these: est_all, est_shared_r, est_shared_r_s, est_shared_s, fix, or est_shared_f_# (where # is fleet number)")
     }
 
     # Skip fleet sharing specs in first pass
@@ -1556,7 +1603,7 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
 
               # Validate options
               if(!corr_opt_semipar[f] %in% c(NA, "corr_zero_y", "corr_zero_b", "corr_zero_y_b", "corr_zero_c", "corr_zero_y_c", "corr_zero_b_c", "corr_zero_y_b_c"))
-                stop("corr_opt_semipar not correctly specfied. Should be one of these: corr_zero_y, corr_zero_b, corr_zero_y_b, corr_zero_c, corr_zero_y_c, corr_zero_b_c, corr_zero_y_b_c, NA")
+                stop("corr_opt_semipar not correctly specified. Should be one of these: corr_zero_y, corr_zero_b, corr_zero_y_b, corr_zero_c, corr_zero_y_c, corr_zero_b_c, corr_zero_y_b_c, NA")
               if(opt == 5 && corr_opt_semipar[f] %in% c("corr_zero_c","corr_zero_y_c","corr_zero_b_c","corr_zero_y_b_c"))
                 stop("Invalid corr_opt_semipar for 2dar1 (opt=5): cohort correlations are not allowed.")
 
@@ -1668,6 +1715,7 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
   cont_tv_nm <- paste0("cont_tv_", prefix, "_sel")
   model_nm <- paste0(prefix, "_sel_model")
   n_fleets <- input_list$data[[fleet_field]]
+  check_fleet_spec_length(sel_devs_spec, n_fleets, paste0(prefix, "_sel_devs_spec"), allow_null = TRUE)
 
   # Initialize counter and mapping array for selectivity deviations
   sel_devs_counter <- 1
@@ -1693,7 +1741,7 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
       if(!is.null(sel_devs_spec)) {
         if(!sel_devs_spec[f] %in% c("fix", "none", "est_all", "est_shared_r", "est_shared_s", "est_shared_r_s", "est_shared_b", "est_shared_r_b", "est_shared_r_b_s", "est_shared_b_s") &&
            !stringr::str_detect(sel_devs_spec[f], "est_shared_f_\\d+"))
-          stop(prefix, "_sel_devs_spec not correctly specfied. Should be one of these: est_all, est_shared_r, est_shared_r_s, est_shared_s, est_shared_b, est_shared_r_b, est_shared_r_b_s, est_shared_r_s, fix, or est_shared_f_# (where # is fleet number)")
+          stop(prefix, "_sel_devs_spec not correctly specified. Should be one of these: est_all, est_shared_r, est_shared_r_s, est_shared_s, est_shared_b, est_shared_r_b, est_shared_r_b_s, est_shared_r_s, fix, or est_shared_f_# (where # is fleet number)")
         # Sharing across bins needs the deviations to be indexed by bin. That is
         # true for the GMRF and AR1 time-varying forms whatever the functional
         # form, and also for the non-parametric forms under iid or a random walk,

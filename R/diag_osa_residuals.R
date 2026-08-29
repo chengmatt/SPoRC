@@ -595,7 +595,7 @@ run_internal_tag_osa <- function(model, data, osa_method = NULL, parallel = FALS
 #'
 #' @param index_source One of \code{"Catch"}, \code{"Discard"}, \code{"FishIdx"},
 #'   \code{"SrvIdx"}, or their at-age forms \code{"CatchAA"}, \code{"DiscardAA"},
-#'   \code{"FishIdxAA"}, \code{"SrvIdxAA"}. At-age sources return extra
+#'   \code{"SrvIdxAA"}. At-age sources return extra
 #'   \code{age} and \code{sex} columns.
 #' @param pop Logical; population-specific index source.
 #'
@@ -603,7 +603,7 @@ run_internal_tag_osa <- function(model, data, osa_method = NULL, parallel = FALS
 #' @keywords internal
 index_osa_field_map <- function(index_source, pop = FALSE) {
   valid_sources <- c("Catch", "Discard", "FishIdx", "SrvIdx",
-                     "CatchAA", "DiscardAA", "FishIdxAA", "SrvIdxAA")
+                     "CatchAA", "DiscardAA", "SrvIdxAA")
   if(!index_source %in% valid_sources) {
     stop("`index_source` must be one of: ", paste(valid_sources, collapse = ", "))
   }
@@ -626,7 +626,7 @@ index_osa_field_map <- function(index_source, pop = FALSE) {
 #'   to build \code{model}.
 #' @param index_source One of \code{"Catch"}, \code{"Discard"}, \code{"FishIdx"},
 #'   \code{"SrvIdx"}, or their at-age forms \code{"CatchAA"}, \code{"DiscardAA"},
-#'   \code{"FishIdxAA"}, \code{"SrvIdxAA"}. At-age sources return extra
+#'   \code{"SrvIdxAA"}. At-age sources return extra
 #'   \code{age} and \code{sex} columns.
 #' @param pop Logical; population-specific index source. Default \code{FALSE}.
 #' @param osa_method Optional override for \code{RTMB::oneStepPredict}'s
@@ -661,6 +661,18 @@ run_internal_index_osa <- function(model, data, index_source, pop = FALSE,
   map <- as.data.frame(arrayInd(valid_idx, dim(use_arr)))
   colnames(map) <- dim_names
 
+  # a margin the fleet sums over holds its observation in slot one, and that slot
+  # is not the first region or the first sex. Labelling it as such would face
+  # aggregated residuals alongside split ones once the setting varies by year
+  aa_split <- list(region = TRUE, sex = TRUE)
+  if(at_age) {
+    aa_type <- data[[paste0(index_source, if(pop) "_pop", "_Type")]]
+    code <- if(is.null(aa_type)) rep(3, nrow(map)) else
+            if(is.null(dim(aa_type))) aa_type[map$fleet] else
+            aa_type[cbind(map$year, map$fleet)]
+    aa_split <- at_age_split(code)
+  }
+
   tracked_name <- fm$Obs
   method <- if(!is.null(osa_method)) osa_method else "oneStepGeneric"
   validate_osa_method(method)
@@ -670,12 +682,12 @@ run_internal_index_osa <- function(model, data, index_source, pop = FALSE,
 
   res <- data.frame(
     fleet = as.character(map$fleet),
-    region = map$region,
+    region = if(at_age) ifelse(aa_split$region, as.character(map$region), "summed") else map$region,
     year = data$years[map$year],
     season = map$season,
     pop = if(pop) map$pop else 1L,
     age = if(at_age) data$ages[map$age] else NA_integer_,
-    sex = if(at_age) map$sex else NA_integer_,
+    sex = if(at_age) ifelse(aa_split$sex, as.character(map$sex), "summed") else NA_integer_,
     resid = osa$residual,
     idx_type = index_source
   )
@@ -1154,7 +1166,7 @@ plot_resids <- function(osa_results) {
 
   # Index-type OSA Residuals (Catch/Discard/FishIdx/SrvIdx) -------------------
   if(res_type %in% c("Catch", "Discard", "FishIdx", "SrvIdx",
-                     "CatchAA", "DiscardAA", "FishIdxAA", "SrvIdxAA")) {
+                     "CatchAA", "DiscardAA", "SrvIdxAA")) {
 
     multi_region <- has_multi("region")
     multi_seas   <- has_multi("season")

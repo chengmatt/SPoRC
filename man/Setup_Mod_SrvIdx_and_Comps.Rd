@@ -127,7 +127,9 @@ as well as its shape. See \code{\link{Setup_Mod_Srvsel_and_Q}}.}
 
 \item{SrvIdxAA_Type, SrvIdxAA_pop_Type}{Which margins the fleet reports
 separately: \code{"agg"}, \code{"spltRaggS"} (default), \code{"aggRspltS"}
-or \code{"spltRspltS"}. See \code{\link{Setup_Mod_Catch_and_F}}.}
+or \code{"spltRspltS"}, or year and fleet specifications such as
+\code{"spltRaggS_Year_1-20_Fleet_1"}. See
+\code{\link{Setup_Mod_Catch_and_F}}.}
 
 \item{SrvIdxAA_LikeType, SrvIdxAA_pop_LikeType}{\code{"lognormal"} (default)
 or \code{"normal"}, one setting for every fleet or one per fleet.}

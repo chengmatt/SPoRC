@@ -186,14 +186,14 @@ Setup_Mod_Retsel <- function(input_list,
 
   # Input Validation --------------------------------------------------------
   # Continuous Selectivity Deviations
-  if(!is.null(retsel_pe_pars_spec)) if(length(retsel_pe_pars_spec) != input_list$data$n_fish_fleets) stop("retsel_pe_pars_spec is not length n_fish_fleets")
-  if(!is.null(ret_sel_devs_spec)) if(length(ret_sel_devs_spec) != input_list$data$n_fish_fleets) stop("ret_sel_devs_spec is not length n_fish_fleets")
-  if(!is.null(ret_sel_corr_opt_semipar)) if(length(ret_sel_corr_opt_semipar) != input_list$data$n_fish_fleets) stop("ret_sel_corr_opt_semipar is not length n_fish_fleets")
+  check_fleet_spec_length(retsel_pe_pars_spec, input_list$data$n_fish_fleets, "retsel_pe_pars_spec", allow_null = TRUE)
+  check_fleet_spec_length(ret_sel_devs_spec, input_list$data$n_fish_fleets, "ret_sel_devs_spec", allow_null = TRUE)
+  check_fleet_spec_length(ret_sel_corr_opt_semipar, input_list$data$n_fish_fleets, "ret_sel_corr_opt_semipar", allow_null = TRUE)
 
   # A short vector here is read per fleet in the objective, so a length mismatch
   # silently becomes NA rather than being recycled.
-  if(length(retsel_pe_wt) != input_list$data$n_fish_fleets) stop("retsel_pe_wt is not length n_fish_fleets")
-  if(length(retsel_rw_init_sigma) != input_list$data$n_fish_fleets) stop("retsel_rw_init_sigma is not length n_fish_fleets")
+  check_fleet_spec_length(retsel_pe_wt, input_list$data$n_fish_fleets, "retsel_pe_wt")
+  check_fleet_spec_length(retsel_rw_init_sigma, input_list$data$n_fish_fleets, "retsel_rw_init_sigma")
 
   # Selectivity Priors
   if(!Use_ret_selex_prior %in% c(0,1)) stop("Values for Use_ret_selex_prior are not valid. They are == 0 (don't use prior), or == 1 (use prior)")
@@ -212,20 +212,21 @@ Setup_Mod_Retsel <- function(input_list,
   if(any(use_fixed_ret_sel == 1) && ret_selex_type == 'length') check_data_dimensions(ret_sel_input, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_lens = length(input_list$data$lens), n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ret_sel_input_len')
 
   # Selectivity Options -----------------------------------------------------
-  # Age based selectivity
+  # The bin vector is kept as well as its length. Starting values stated on the
+  # bin scale are seeded further down, by which point ret_selex_type holds the
+  # numeric code rather than the name it arrived as.
   if(ret_selex_type == 'age') {
     ret_selex_type <- 0
-    bins <- length(input_list$data$ages)
+    ret_sel_bin_vec <- input_list$data$ages
     collect_message("Retained Fishery Selectivity is aged-based.")
-  } # if age based
-
-  # Length based selectivity
-  if(ret_selex_type == 'length') {
+  } else if(ret_selex_type == 'length') {
     if(input_list$data$fit_lengths == 0) stop("Length composition data are not fit, but retained selectivity is length-based. This is not allowed. Please change to a valid option (either fit lengths or use age-based selectivity).")
     ret_selex_type <- 1
-    bins <- length(input_list$data$lens)
+    ret_sel_bin_vec <- input_list$data$lens
     collect_message("Retained Fishery Selectivity is length-based")
-  } # if length based
+  } else stop("ret_selex_type must be 'age' or 'length', but was: ", ret_selex_type)
+
+  bins <- length(ret_sel_bin_vec)
 
 
   # Continuous Retained Time-Varying Selectivity Options -----------------------------
@@ -248,7 +249,7 @@ Setup_Mod_Retsel <- function(input_list,
     collect_message("Continuous retained fishery time-varying selectivity specified as: ", cont_tv_type, " for fishery fleet ", fleet)
   }
 
-  if(any(cont_tv_ret_sel_mat > 0) && is.null(retsel_pe_pars_spec) && is.null(ret_sel_devs_spec)) stop("Continuous time-varying selectivity specified, but retsel_pe_pars_spec and/or ret_sel_devs_spec is NULL (i.e., not specified)!")
+  if(any(cont_tv_ret_sel_mat > 0) && (is.null(retsel_pe_pars_spec) || is.null(ret_sel_devs_spec))) stop("Continuous time-varying selectivity specified, but retsel_pe_pars_spec and/or ret_sel_devs_spec is NULL (i.e., not specified)!")
 
   # Blocked Retained Time-Varying Selectivity Options --------------------------------
   ret_sel_blocks_arr <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets))
@@ -414,14 +415,14 @@ Setup_Mod_Retsel <- function(input_list,
   max_retsel_blks <- max(apply(input_list$data$ret_sel_blocks, c(1,3), FUN = function(x) length(unique(x))))
   # maximum number of selectivity parameters across all forms
   max_retsel_pars <- max(sel_pars_vec)
-  if("ret_fixed_sel_pars" %in% names(starting_values)) input_list$par$ret_fixed_sel_pars <- starting_values$ret_fixed_sel_pars
-  else input_list$par$ret_fixed_sel_pars <- array(0, dim = c(input_list$data$n_regions, max_retsel_pars, max_retsel_blks, input_list$data$n_sexes, input_list$data$n_fish_fleets))
+  input_list$par$ret_fixed_sel_pars <- array(0, dim = c(input_list$data$n_regions, max_retsel_pars, max_retsel_blks, input_list$data$n_sexes, input_list$data$n_fish_fleets))
+  input_list$par$ret_fixed_sel_pars <- use_starting_value(input_list$par$ret_fixed_sel_pars, starting_values, "ret_fixed_sel_pars")
 
   # a double normal carries its peak on the bin scale, so a default of zero
   # would put it at bin zero, where the ascending limb has no extent
   if(!"ret_fixed_sel_pars" %in% names(starting_values)) {
     input_list$par$ret_fixed_sel_pars <- seed_dbnrml_peak(input_list$par$ret_fixed_sel_pars, ret_sel_model_arr,
-                                          if(ret_selex_type == 'length') input_list$data$lens else input_list$data$ages,
+                                          ret_sel_bin_vec,
                                           ret_sel_sex_offset)
   }
 
@@ -489,14 +490,14 @@ Setup_Mod_Retsel <- function(input_list,
   input_list$data$ret_sel_bicubic_Wyr <- ret_sel_bicubic_Wyr
 
   # Retained Fishery selectivity process error parameters
-  if("retsel_pe_pars" %in% names(starting_values)) input_list$par$retsel_pe_pars <- starting_values$retsel_pe_pars
-  else input_list$par$retsel_pe_pars <- array(0, dim = c(input_list$data$n_regions, max(max_retsel_pars, 4), input_list$data$n_sexes, input_list$data$n_fish_fleets)) # dimensioned 4 as the max number of pars for process errors (e.g., sigmas), and then just map off if not using
+  input_list$par$retsel_pe_pars <- array(0, dim = c(input_list$data$n_regions, max(max_retsel_pars, 4), input_list$data$n_sexes, input_list$data$n_fish_fleets)) # dimensioned 4 as the max number of pars for process errors (e.g., sigmas), and then just map off if not using
+  input_list$par$retsel_pe_pars <- use_starting_value(input_list$par$retsel_pe_pars, starting_values, "retsel_pe_pars")
 
   # Retained Fishery selectivity deviations
   if(input_list$data$ret_selex_type == 0) bins <- length(input_list$data$ages) # age based deviations
   if(input_list$data$ret_selex_type == 1) bins <- length(input_list$data$lens) # length based deviations
-  if("ln_retsel_devs" %in% names(starting_values)) input_list$par$ln_retsel_devs <- starting_values$ln_retsel_devs
-  else input_list$par$ln_retsel_devs <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years) + input_list$data$n_proj_yrs_devs, bins, input_list$data$n_sexes, input_list$data$n_fish_fleets))
+  input_list$par$ln_retsel_devs <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years) + input_list$data$n_proj_yrs_devs, bins, input_list$data$n_sexes, input_list$data$n_fish_fleets))
+  input_list$par$ln_retsel_devs <- use_starting_value(input_list$par$ln_retsel_devs, starting_values, "ln_retsel_devs")
 
   # Sex offsets on retention selectivity (parameter offsets and/or a curve scale offset)
   input_list <- setup_sel_sex_offset(input_list, ret_sel_sex_offset, prefix = "ret",
@@ -988,14 +989,14 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
 
   # Selectivity
   # Continuous Selectivity Deviations
-  if(!is.null(fishsel_pe_pars_spec)) if(length(fishsel_pe_pars_spec) != input_list$data$n_fish_fleets) stop("fishsel_pe_pars_spec is not length n_fish_fleets")
-  if(!is.null(fish_sel_devs_spec)) if(length(fish_sel_devs_spec) != input_list$data$n_fish_fleets) stop("fish_sel_devs_spec is not length n_fish_fleets")
-  if(!is.null(corr_opt_semipar)) if(length(corr_opt_semipar) != input_list$data$n_fish_fleets) stop("corr_opt_semipar is not length n_fish_fleets")
+  check_fleet_spec_length(fishsel_pe_pars_spec, input_list$data$n_fish_fleets, "fishsel_pe_pars_spec", allow_null = TRUE)
+  check_fleet_spec_length(fish_sel_devs_spec, input_list$data$n_fish_fleets, "fish_sel_devs_spec", allow_null = TRUE)
+  check_fleet_spec_length(corr_opt_semipar, input_list$data$n_fish_fleets, "corr_opt_semipar", allow_null = TRUE)
 
   # A short vector here is read per fleet in the objective, so a length mismatch
   # silently becomes NA rather than being recycled.
-  if(length(fishsel_pe_wt) != input_list$data$n_fish_fleets) stop("fishsel_pe_wt is not length n_fish_fleets")
-  if(length(fishsel_rw_init_sigma) != input_list$data$n_fish_fleets) stop("fishsel_rw_init_sigma is not length n_fish_fleets")
+  check_fleet_spec_length(fishsel_pe_wt, input_list$data$n_fish_fleets, "fishsel_pe_wt")
+  check_fleet_spec_length(fishsel_rw_init_sigma, input_list$data$n_fish_fleets, "fishsel_rw_init_sigma")
 
   # Catchability Priors
   if(!Use_fish_q_prior %in% c(0,1)) stop("Values for Use_fish_q_prior are not valid. They are == 0 (don't use prior), or == 1 (use prior)")
@@ -1014,7 +1015,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
   # observed and predicted index over the years with observations. A concentrated
   # fleet's ln_fish_q is never read, so it should also be mapped off.
   if(!all(fish_q_type %in% c("est", "arith", "geo"))) stop("Invalid specification for fish_q_type. Should be one of est, arith, or geo.")
-  if(length(fish_q_type) != input_list$data$n_fish_fleets) stop("fish_q_type is not length n_fish_fleets")
+  check_fleet_spec_length(fish_q_type, input_list$data$n_fish_fleets, "fish_q_type")
   fish_q_type_val <- match(fish_q_type, c("est", "arith", "geo")) - 1
   for(f in 1:input_list$data$n_fish_fleets) collect_message(paste0("Fishery Catchability for fishery ", f, " is: ", fish_q_type[f]))
 
@@ -1036,20 +1037,21 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
   if(any(use_fixed_fish_sel == 1) && fish_selex_type == 'length') check_data_dimensions(fish_sel_input, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_lens = length(input_list$data$lens), n_sexes = input_list$data$n_sexes, n_fish_fleets = input_list$data$n_fish_fleets, what = 'fish_sel_input_len')
 
   # Selectivity Options -----------------------------------------------------
-  # Age based selectivity
+  # The bin vector is kept as well as its length. Starting values stated on the
+  # bin scale are seeded further down, by which point fish_selex_type holds the
+  # numeric code rather than the name it arrived as.
   if(fish_selex_type == 'age') {
     fish_selex_type <- 0
-    bins <- length(input_list$data$ages)
+    fish_sel_bin_vec <- input_list$data$ages
     collect_message("Total Fishery Selectivity is aged-based.")
-  } # if age based
-
-  # Length based selectivity
-  if(fish_selex_type == 'length') {
+  } else if(fish_selex_type == 'length') {
     if(input_list$data$fit_lengths == 0) stop("Length composition data are not fit, but total selectivity is length-based. This is not allowed. Please change to a valid option (either fit lengths or use age-based selectivity).")
     fish_selex_type <- 1
-    bins <- length(input_list$data$lens)
+    fish_sel_bin_vec <- input_list$data$lens
     collect_message("Total Fishery Selectivity is length-based")
-  } # if length based
+  } else stop("fish_selex_type must be 'age' or 'length', but was: ", fish_selex_type)
+
+  bins <- length(fish_sel_bin_vec)
 
   # Continuous Time-Varying Selectivity Options -----------------------------
   cont_tv_fish_sel_mat <- array(NA, dim = c(input_list$data$n_regions, input_list$data$n_fish_fleets))
@@ -1071,7 +1073,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
     collect_message("Continuous fishery time-varying selectivity specified as: ", cont_tv_type, " for fishery fleet ", fleet)
   }
 
-  if(any(cont_tv_fish_sel_mat > 0) && is.null(fishsel_pe_pars_spec) && is.null(fish_sel_devs_spec)) stop("Continuous time-varying selectivity specified, but fishsel_pe_pars_spec and/or fish_sel_devs_spec is NULL (i.e., not specified)!")
+  if(any(cont_tv_fish_sel_mat > 0) && (is.null(fishsel_pe_pars_spec) || is.null(fish_sel_devs_spec))) stop("Continuous time-varying selectivity specified, but fishsel_pe_pars_spec and/or fish_sel_devs_spec is NULL (i.e., not specified)!")
 
   # Blocked Time-Varying Selectivity Options --------------------------------
   fish_sel_blocks_arr <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets))
@@ -1409,29 +1411,29 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
 
   # maximum number of selectivity parameters across all forms
   max_fishsel_pars <- max(sel_pars_vec)
-  if("fish_fixed_sel_pars" %in% names(starting_values)) input_list$par$fish_fixed_sel_pars <- starting_values$fish_fixed_sel_pars
-  else input_list$par$fish_fixed_sel_pars <- array(0, dim = c(input_list$data$n_regions, max_fishsel_pars, max_fishsel_blks, input_list$data$n_sexes, input_list$data$n_fish_fleets))
+  input_list$par$fish_fixed_sel_pars <- array(0, dim = c(input_list$data$n_regions, max_fishsel_pars, max_fishsel_blks, input_list$data$n_sexes, input_list$data$n_fish_fleets))
+  input_list$par$fish_fixed_sel_pars <- use_starting_value(input_list$par$fish_fixed_sel_pars, starting_values, "fish_fixed_sel_pars")
 
   # a double normal carries its peak on the bin scale, so a default of zero
   # would put it at bin zero, where the ascending limb has no extent
   if(!"fish_fixed_sel_pars" %in% names(starting_values)) {
     input_list$par$fish_fixed_sel_pars <- seed_dbnrml_peak(input_list$par$fish_fixed_sel_pars, fish_sel_model_arr,
-                                          if(fish_selex_type == 'length') input_list$data$lens else input_list$data$ages,
+                                          fish_sel_bin_vec,
                                           fish_sel_sex_offset)
   }
 
   # Fishery catchability
   max_fishq_blks <- max(apply(input_list$data$fish_q_blocks, c(1,3), FUN = function(x) length(unique(x)))) # figure out maximum number of fishery catchability blocks for a given reigon and fleet
-  if("ln_fish_q" %in% names(starting_values)) input_list$par$ln_fish_q <- starting_values$ln_fish_q
-  else input_list$par$ln_fish_q <- array(0, dim = c(input_list$data$n_regions, max_fishq_blks, input_list$data$n_fish_fleets))
+  input_list$par$ln_fish_q <- array(0, dim = c(input_list$data$n_regions, max_fishq_blks, input_list$data$n_fish_fleets))
+  input_list$par$ln_fish_q <- use_starting_value(input_list$par$ln_fish_q, starting_values, "ln_fish_q")
 
   # Fishery selectivity process error parameters
-  if("fishsel_pe_pars" %in% names(starting_values)) input_list$par$fishsel_pe_pars <- starting_values$fishsel_pe_pars
-  else input_list$par$fishsel_pe_pars <- array(0, dim = c(input_list$data$n_regions, max(max_fishsel_pars, 4), input_list$data$n_sexes, input_list$data$n_fish_fleets)) # dimensioned 4 as the max number of pars for process errors (e.g., sigmas), and then just map off if not using
+  input_list$par$fishsel_pe_pars <- array(0, dim = c(input_list$data$n_regions, max(max_fishsel_pars, 4), input_list$data$n_sexes, input_list$data$n_fish_fleets)) # dimensioned 4 as the max number of pars for process errors (e.g., sigmas), and then just map off if not using
+  input_list$par$fishsel_pe_pars <- use_starting_value(input_list$par$fishsel_pe_pars, starting_values, "fishsel_pe_pars")
 
   # Fishery selectivity deviations
-  if("ln_fishsel_devs" %in% names(starting_values)) input_list$par$ln_fishsel_devs <- starting_values$ln_fishsel_devs
-  else input_list$par$ln_fishsel_devs <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years) + input_list$data$n_proj_yrs_devs, bins, input_list$data$n_sexes, input_list$data$n_fish_fleets))
+  input_list$par$ln_fishsel_devs <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years) + input_list$data$n_proj_yrs_devs, bins, input_list$data$n_sexes, input_list$data$n_fish_fleets))
+  input_list$par$ln_fishsel_devs <- use_starting_value(input_list$par$ln_fishsel_devs, starting_values, "ln_fishsel_devs")
 
   # Sex offsets on selectivity (parameter offsets and/or a curve scale offset)
   input_list <- setup_sel_sex_offset(input_list, fish_sel_sex_offset, prefix = "fish",

@@ -101,6 +101,11 @@ Setup_Sim_Dim <- function(n_sims,
     } else {
       stop("natal_region must be specified when n_pop != n_regions and n_regions > 1")
     }
+  } else {
+    if(anyNA(natal_region)) stop("natal_region contains NA. Give one region per population, or leave it NULL to have it inferred.")
+    if(length(natal_region) != n_pop) stop("natal_region has ", length(natal_region), " entries for ", n_pop, " populations. Give one region per population.")
+    if(any(natal_region %% 1 != 0)) stop("natal_region must be whole numbers naming regions, but was: ", paste(natal_region, collapse = ", "))
+    if(any(natal_region < 1 | natal_region > n_regions)) stop("natal_region names region(s) outside 1:", n_regions, ": ", paste(natal_region, collapse = ", "))
   }
 
   # output dimensions into list
@@ -237,6 +242,11 @@ Setup_Mod_Dim <- function(years,
     } else {
       stop("natal_region must be specified when n_pop != n_regions and n_regions > 1")
     }
+  } else {
+    if(anyNA(natal_region)) stop("natal_region contains NA. Give one region per population, or leave it NULL to have it inferred.")
+    if(length(natal_region) != n_pop) stop("natal_region has ", length(natal_region), " entries for ", n_pop, " populations. Give one region per population.")
+    if(any(natal_region %% 1 != 0)) stop("natal_region must be whole numbers naming regions, but was: ", paste(natal_region, collapse = ", "))
+    if(any(natal_region < 1 | natal_region > n_regions)) stop("natal_region names region(s) outside 1:", n_regions, ": ", paste(natal_region, collapse = ", "))
   }
 
   # ouput variables into list

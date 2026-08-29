@@ -116,6 +116,93 @@ safe_extract <- function(obj, name) {
   }
 }
 
+#' Check every parameter block against the map that indexes it
+#'
+#' RTMB pairs a parameter with its map by position, so the two must be the same
+#' length. They come apart when a starting value is supplied at the wrong shape,
+#' or when a map is built from dimensions the parameter does not have. Neither is
+#' caught where it happens: the objective reads the shorter of the two past its
+#' end, and RTMB reports an invalid advector from somewhere unrelated.
+#'
+#' @param parameters Parameter list.
+#' @param mapping Map list. Entries naming a parameter that is absent are
+#'   reported too, since a map with no parameter is silently ignored.
+#'
+#' @return \code{invisible(NULL)}. Called for its error.
+#'
+#' @keywords internal
+check_par_map_lengths <- function(parameters, mapping) {
+  if(is.null(mapping) || length(mapping) == 0) return(invisible(NULL))
+
+  problems <- character()
+  for(nm in names(mapping)) {
+    m <- mapping[[nm]]
+    if(is.null(m) || length(m) == 0) next
+    if(!nm %in% names(parameters)) {
+      problems <- c(problems, sprintf("map '%s' has no parameter of that name", nm))
+      next
+    }
+    n_par <- length(parameters[[nm]])
+    if(length(m) != n_par)
+      problems <- c(problems, sprintf("'%s' is length %d against a map of length %d",
+                                      nm, n_par, length(m)))
+  }
+
+  if(length(problems) > 0)
+    stop("parameters and their maps disagree on length. This is usually a starting ",
+         "value supplied at the wrong shape.\n  ", paste(problems, collapse = "\n  "))
+
+  invisible(NULL)
+}
+
+#' Substitute a user-supplied starting value, checking its shape first
+#'
+#' Every \code{Setup_Mod_*} stage builds a default for each parameter and then
+#' lets \code{starting_values} replace it. The replacement used to be taken as
+#' given. A value of the wrong shape is not rejected by that: it is carried into
+#' the objective, read position by position, and indexes past its own end
+#' somewhere far from the argument that caused it. What comes back is RTMB's
+#' \code{'*this' is not a valid 'advector'}, which names nothing useful.
+#'
+#' The default already carries the shape the model expects, so it is the
+#' reference the supplied value is measured against.
+#'
+#' @param default The parameter as the stage built it.
+#' @param starting_values The user's list of starting values.
+#' @param nm Name of the parameter.
+#'
+#' @return \code{starting_values[[nm]]} when it is supplied and correctly
+#'   shaped, otherwise \code{default}.
+#'
+#' @keywords internal
+use_starting_value <- function(default, starting_values, nm) {
+  if(!nm %in% names(starting_values)) return(default)
+  supplied <- starting_values[[nm]]
+
+  # a default the stage has not built yet carries no shape to check against
+  if(is.null(default) || length(default) == 0) return(supplied)
+
+  shape <- function(x) if(is.null(dim(x))) paste0("length ", length(x)) else
+    paste(dim(x), collapse = " by ")
+
+  # A single value where the model wants many is the common slip and has an
+  # obvious repair, so the message carries the call rather than only the
+  # measurement.
+  hint <- if(length(supplied) == 1 && length(default) > 1)
+    paste0(" Recycle it with rep(", nm, ", ", length(default), ") if every element takes the same value.")
+  else ""
+
+  wrong <- if(!is.null(dim(default)) && !is.null(dim(supplied)))
+    !identical(as.integer(dim(supplied)), as.integer(dim(default)))
+  else length(supplied) != length(default)
+
+  if(wrong)
+    stop("starting value for ", nm, " is ", shape(supplied), " where the model expects ",
+         shape(default), ".", hint)
+
+  supplied
+}
+
 #' Extend an array along its year dimension
 #'
 #' Appends additional year slices to an array along a specified dimension,
@@ -154,6 +241,11 @@ safe_extract <- function(obj, name) {
 #'
 #' @keywords internal
 extend_years <- function(arr, n_years, yr_dim, fill = "zeros") {
+
+  # return "array" if just NULL and don't do anything with it
+  if(is.null(arr) || length(arr) == 0) return(arr)
+
+  # fill array based on specified option
   new_dims <- dim(arr); new_dims[yr_dim] <- n_years
   if(fill %in% c("zeros", "F_pattern")) {
     fill_array <- array(0, dim = new_dims)

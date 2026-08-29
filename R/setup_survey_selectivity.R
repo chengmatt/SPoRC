@@ -315,14 +315,14 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
 
   # Selectivity
   # Continuous Selectivity Deviations
-  if(!is.null(srvsel_pe_pars_spec)) if(length(srvsel_pe_pars_spec) != input_list$data$n_srv_fleets) stop("srvsel_pe_pars_spec is not length n_srv_fleets")
-  if(!is.null(srv_sel_devs_spec)) if(length(srv_sel_devs_spec) != input_list$data$n_srv_fleets) stop("srv_sel_devs_spec is not length n_srv_fleets")
-  if(!is.null(corr_opt_semipar)) if(length(corr_opt_semipar) != input_list$data$n_srv_fleets) stop("corr_opt_semipar is not length n_srv_fleets")
+  check_fleet_spec_length(srvsel_pe_pars_spec, input_list$data$n_srv_fleets, "srvsel_pe_pars_spec", allow_null = TRUE)
+  check_fleet_spec_length(srv_sel_devs_spec, input_list$data$n_srv_fleets, "srv_sel_devs_spec", allow_null = TRUE)
+  check_fleet_spec_length(corr_opt_semipar, input_list$data$n_srv_fleets, "corr_opt_semipar", allow_null = TRUE)
 
   # A short vector here is read per fleet in the objective, so a length mismatch
   # silently becomes NA rather than being recycled.
-  if(length(srvsel_pe_wt) != input_list$data$n_srv_fleets) stop("srvsel_pe_wt is not length n_srv_fleets")
-  if(length(srvsel_rw_init_sigma) != input_list$data$n_srv_fleets) stop("srvsel_rw_init_sigma is not length n_srv_fleets")
+  check_fleet_spec_length(srvsel_pe_wt, input_list$data$n_srv_fleets, "srvsel_pe_wt")
+  check_fleet_spec_length(srvsel_rw_init_sigma, input_list$data$n_srv_fleets, "srvsel_rw_init_sigma")
 
   # Catchability Priors
   if(!Use_srv_q_prior %in% c(0,1)) stop("Values for Use_srv_q_prior are not valid. They are == 0 (don't use prior), or == 1 (use prior)")
@@ -353,20 +353,21 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
   if(any(use_fixed_srv_sel == 1) && srv_selex_type == 'length') check_data_dimensions(srv_sel_input, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_lens = length(input_list$data$lens), n_sexes = input_list$data$n_sexes, n_srv_fleets = input_list$data$n_srv_fleets, what = 'srv_sel_input_len')
 
   # Selectivity Options -----------------------------------------------------
-  # Age based selectivity
+  # The bin vector is kept as well as its length. Starting values stated on the
+  # bin scale are seeded further down, by which point srv_selex_type holds the
+  # numeric code rather than the name it arrived as.
   if(srv_selex_type == 'age') {
     srv_selex_type <- 0
-    bins <- length(input_list$data$ages)
+    srv_sel_bin_vec <- input_list$data$ages
     collect_message("Survey Selectivity is aged-based.")
-  } # if age based
-
-  # Length based selectivity
-  if(srv_selex_type == 'length') {
+  } else if(srv_selex_type == 'length') {
     if(input_list$data$fit_lengths == 0) stop("Length composition data are not fit, but survey selectivity is length-based. This is not allowed. Please change to a valid option (either fit lengths or use age-based selectivity).")
     srv_selex_type <- 1
-    bins <- length(input_list$data$lens)
+    srv_sel_bin_vec <- input_list$data$lens
     collect_message("Survey Selectivity is length-based")
-  } # if length based
+  } else stop("srv_selex_type must be 'age' or 'length', but was: ", srv_selex_type)
+
+  bins <- length(srv_sel_bin_vec)
 
   # Continuous Time-Varying Selectivity Options -----------------------------
   # define for continuous time-varying selectivity
@@ -389,7 +390,7 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
     collect_message("Continuous survey time-varying selectivity specified as: ", cont_tv_type, " for survey fleet ", fleet)
   }
 
-  if(any(cont_tv_srv_sel_mat > 0) && is.null(srvsel_pe_pars_spec) && is.null(srv_sel_devs_spec)) stop("Continuous time-varying selectivity specified, but srvsel_pe_pars_spec and/or srv_sel_devs_spec is NULL (i.e., not specified)!")
+  if(any(cont_tv_srv_sel_mat > 0) && (is.null(srvsel_pe_pars_spec) || is.null(srv_sel_devs_spec))) stop("Continuous time-varying selectivity specified, but srvsel_pe_pars_spec and/or srv_sel_devs_spec is NULL (i.e., not specified)!")
 
   # Blocked Time-Varying Selectivity Options --------------------------------
   srv_sel_blocks_arr <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_srv_fleets))
@@ -707,6 +708,7 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
           # after it, and any projection years, since projections reuse the terminal modeled year's
           # block) hold the boundary node weights constant, which for a spline evaluated exactly at
           # its first/last node reduces to full weight on that node.
+
           selstyr_this <- unique(input_list$data$srv_sel_bicubic_selstyr[r, block_years, f])
           selstyr_idx <- if(selstyr_this == 0) min(block_years) else which(input_list$data$years == selstyr_this)
           fit_years <- block_years[block_years >= selstyr_idx]
@@ -733,29 +735,29 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
   input_list$data$srv_sel_bicubic_Wyr <- srv_sel_bicubic_Wyr
 
   max_srvsel_pars <- max(sel_pars_vec) # maximum number of selectivity parameters across all forms
-  if("srv_fixed_sel_pars" %in% names(starting_values)) input_list$par$srv_fixed_sel_pars <- starting_values$srv_fixed_sel_pars
-  else input_list$par$srv_fixed_sel_pars <- array(0, dim = c(input_list$data$n_regions, max_srvsel_pars, max_srvsel_blks, input_list$data$n_sexes, input_list$data$n_srv_fleets))
+  input_list$par$srv_fixed_sel_pars <- array(0, dim = c(input_list$data$n_regions, max_srvsel_pars, max_srvsel_blks, input_list$data$n_sexes, input_list$data$n_srv_fleets))
+  input_list$par$srv_fixed_sel_pars <- use_starting_value(input_list$par$srv_fixed_sel_pars, starting_values, "srv_fixed_sel_pars")
 
   # a double normal carries its peak on the bin scale, so a default of zero
   # would put it at bin zero, where the ascending limb has no extent
   if(!"srv_fixed_sel_pars" %in% names(starting_values)) {
     input_list$par$srv_fixed_sel_pars <- seed_dbnrml_peak(input_list$par$srv_fixed_sel_pars, srv_sel_model_arr,
-                                          if(srv_selex_type == 'length') input_list$data$lens else input_list$data$ages,
+                                          srv_sel_bin_vec,
                                           srv_sel_sex_offset)
   }
 
   # Survey catchability
   max_srvq_blks <- max(apply(input_list$data$srv_q_blocks, c(1,3), FUN = function(x) length(unique(x)))) # figure out maximum number of survey catchability blocks for a given reigon and fleet
-  if("ln_srv_q" %in% names(starting_values)) input_list$par$ln_srv_q <- starting_values$ln_srv_q
-  else input_list$par$ln_srv_q <- array(0, dim = c(input_list$data$n_regions, max_srvq_blks, input_list$data$n_srv_fleets))
+  input_list$par$ln_srv_q <- array(0, dim = c(input_list$data$n_regions, max_srvq_blks, input_list$data$n_srv_fleets))
+  input_list$par$ln_srv_q <- use_starting_value(input_list$par$ln_srv_q, starting_values, "ln_srv_q")
 
   # Survey selectivity process error parameters
-  if("srvsel_pe_pars" %in% names(starting_values)) input_list$par$srvsel_pe_pars <- starting_values$srvsel_pe_pars
-  else input_list$par$srvsel_pe_pars <- array(0, dim = c(input_list$data$n_regions, max(max_srvsel_pars, 4), input_list$data$n_sexes, input_list$data$n_srv_fleets)) # dimensioned 4 as the max number of pars for process errors (e.g., sigmas), and then just map off if not using
+  input_list$par$srvsel_pe_pars <- array(0, dim = c(input_list$data$n_regions, max(max_srvsel_pars, 4), input_list$data$n_sexes, input_list$data$n_srv_fleets)) # dimensioned 4 as the max number of pars for process errors (e.g., sigmas), and then just map off if not using
+  input_list$par$srvsel_pe_pars <- use_starting_value(input_list$par$srvsel_pe_pars, starting_values, "srvsel_pe_pars")
 
   # Survey selectivity deviations
-  if("ln_srvsel_devs" %in% names(starting_values)) input_list$par$ln_srvsel_devs <- starting_values$ln_srvsel_devs
-  else input_list$par$ln_srvsel_devs <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years) + input_list$data$n_proj_yrs_devs, bins, input_list$data$n_sexes, input_list$data$n_srv_fleets))
+  input_list$par$ln_srvsel_devs <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years) + input_list$data$n_proj_yrs_devs, bins, input_list$data$n_sexes, input_list$data$n_srv_fleets))
+  input_list$par$ln_srvsel_devs <- use_starting_value(input_list$par$ln_srvsel_devs, starting_values, "ln_srvsel_devs")
 
   # Sex offsets on selectivity (parameter offsets and/or a curve scale offset)
   input_list <- setup_sel_sex_offset(input_list, srv_sel_sex_offset, prefix = "srv",
@@ -771,14 +773,14 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
   input_list$data$srv_dbnrml_startbin <- setup_dbnrml_startbin(srv_sel_dbnrml_startbin, input_list$data$n_srv_fleets, bins, "srv_sel_dbnrml_startbin")
 
   # Survey catchability covariate effects
-  if("srv_q_coeff" %in% names(starting_values)) input_list$par$srv_q_coeff <- starting_values$srv_q_coeff
-  else input_list$par$srv_q_coeff <- srv_q_coeff # input parameter array
+  input_list$par$srv_q_coeff <- srv_q_coeff # input parameter array
+  input_list$par$srv_q_coeff <- use_starting_value(input_list$par$srv_q_coeff, starting_values, "srv_q_coeff")
 
   # Catchability solving ----------------------------------------------------
   # A fleet whose catchability is concentrated out of the likelihood carries no
-  # free ln_srv_q, so its mapping is fixed regardless of what srv_q_spec asks for.
+  # free ln_srv_q, so its mapping is fixed regardless of what srv_q_spec specifies.
   if(!all(srv_q_type %in% c("est", "arith", "geo"))) stop("Invalid specification for srv_q_type. Should be est, arith, or geo")
-  if(length(srv_q_type) != input_list$data$n_srv_fleets) stop("srv_q_type is not length n_srv_fleets")
+  check_fleet_spec_length(srv_q_type, input_list$data$n_srv_fleets, "srv_q_type")
 
   srv_q_type_vals <- convert_to_numeric(srv_q_type, list(est = 0, arith = 1, geo = 2))
   input_list$data$srv_q_type <- srv_q_type_vals

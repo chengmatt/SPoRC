@@ -853,13 +853,13 @@ Setup_Mod_Tagging <- function(input_list,
   else input_list$par$ln_conv_tag_shed <- rep(-1000, n_tag_par_events)
 
   # tag overdispersion parameter
-  if("ln_conv_fish_tag_theta" %in% names(starting_values)) input_list$par$ln_conv_fish_tag_theta <- starting_values$ln_conv_fish_tag_theta
-  else input_list$par$ln_conv_fish_tag_theta <- 0
+  input_list$par$ln_conv_fish_tag_theta <- 0
+  input_list$par$ln_conv_fish_tag_theta <- use_starting_value(input_list$par$ln_conv_fish_tag_theta, starting_values, "ln_conv_fish_tag_theta")
 
   # tag reporting rate parameters
   max_tagrep_blks <- max(apply(input_list$data$conv_tag_fish_reporting_blocks, c(1,3), FUN = function(x) length(unique(x)))) # figure out maximum number of tag reporting rate blocks for each region and fleet
-  if("conv_tag_fish_reporting_pars" %in% names(starting_values)) input_list$par$conv_tag_fish_reporting_pars <- starting_values$conv_tag_fish_reporting_pars
-  else input_list$par$conv_tag_fish_reporting_pars <- array(0, dim = c(input_list$data$n_regions, max_tagrep_blks, input_list$data$n_fish_fleets)) # specified at 0.5 in inverse logit space
+  input_list$par$conv_tag_fish_reporting_pars <- array(0, dim = c(input_list$data$n_regions, max_tagrep_blks, input_list$data$n_fish_fleets)) # specified at 0.5 in inverse logit space
+  input_list$par$conv_tag_fish_reporting_pars <- use_starting_value(input_list$par$conv_tag_fish_reporting_pars, starting_values, "conv_tag_fish_reporting_pars")
 
   # For fleets with no tagging data, set reporting pars to -1000 on the logit scale
   # (effectively zero reporting probability; these will be fixed via map)

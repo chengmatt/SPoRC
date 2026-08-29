@@ -1135,43 +1135,48 @@ Setup_Mod_Biologicals <- function(input_list,
   # Populate Parameter List -------------------------------------------------
 
   # If M is constant for ages
-  if(is.character(M_ageblk_spec)){
-    if(M_ageblk_spec == "constant") M_ageblk_spec_vals <- list(1:length(input_list$data$ages))
+  if(is.character(M_ageblk_spec)) {
+    if(!identical(M_ageblk_spec, "constant")) stop("M_ageblk_spec must be \"constant\" or a list of age blocks, but was: ", M_ageblk_spec)
+    M_ageblk_spec_vals <- list(1:length(input_list$data$ages))
   } else M_ageblk_spec_vals <- M_ageblk_spec
 
   # If M is constant across years
-  if(is.character(M_yearblk_spec)){
-    if(M_yearblk_spec == "constant") M_yearblk_spec_vals = list(1:length(input_list$data$years))
-  } else M_yearblk_spec_vals = M_yearblk_spec
+  if(is.character(M_yearblk_spec)) {
+    if(!identical(M_yearblk_spec, "constant")) stop("M_yearblk_spec must be \"constant\" or a list of year blocks, but was: ", M_yearblk_spec)
+    M_yearblk_spec_vals <- list(1:length(input_list$data$years))
+  } else M_yearblk_spec_vals <- M_yearblk_spec
 
   # If M is constant across sexes
-  if(is.character(M_sexblk_spec)){
-    if(M_sexblk_spec == "constant") M_sexblk_spec_vals <- list(1:input_list$data$n_sexes)
+  if(is.character(M_sexblk_spec)) {
+    if(!identical(M_sexblk_spec, "constant")) stop("M_sexblk_spec must be \"constant\" or a list of sex blocks, but was: ", M_sexblk_spec)
+    M_sexblk_spec_vals <- list(1:input_list$data$n_sexes)
   } else M_sexblk_spec_vals <- M_sexblk_spec
 
   # If M is constant across regions
-  if(is.character(M_regionblk_spec)){
-    if(M_regionblk_spec == "constant") M_regionblk_spec_vals <- list(1:input_list$data$n_regions)
+  if(is.character(M_regionblk_spec)) {
+    if(!identical(M_regionblk_spec, "constant")) stop("M_regionblk_spec must be \"constant\" or a list of region blocks, but was: ", M_regionblk_spec)
+    M_regionblk_spec_vals <- list(1:input_list$data$n_regions)
   } else M_regionblk_spec_vals <- M_regionblk_spec
 
   # If M is constant across populations
-  if(is.character(M_popblk_spec)){
-    if(M_popblk_spec == "constant") M_popblk_spec_vals <- list(1:input_list$data$n_pop)
+  if(is.character(M_popblk_spec)) {
+    if(!identical(M_popblk_spec, "constant")) stop("M_popblk_spec must be \"constant\" or a list of population blocks, but was: ", M_popblk_spec)
+    M_popblk_spec_vals <- list(1:input_list$data$n_pop)
   } else M_popblk_spec_vals <- M_popblk_spec
 
-  if("ln_M" %in% names(starting_values)) input_list$par$ln_M <- starting_values$ln_M
-  else input_list$par$ln_M <- array(log(0.5), dim = c(length(M_popblk_spec_vals),
+  input_list$par$ln_M <- array(log(0.5), dim = c(length(M_popblk_spec_vals),
                                                       length(M_regionblk_spec_vals),
                                                       length(M_yearblk_spec_vals),
                                                       length(M_ageblk_spec_vals),
                                                       length(M_sexblk_spec_vals)))
+  input_list$par$ln_M <- use_starting_value(input_list$par$ln_M, starting_values, "ln_M")
 
   # Growth parameters, the deviations of any that vary over time, and the
   # semi-parametric surface on mean length at age
   if(growth_model_val != 0) {
 
-    if("ln_growth_pars" %in% names(starting_values)) input_list$par$ln_growth_pars <- starting_values$ln_growth_pars
-    else input_list$par$ln_growth_pars <- log(gp_arr)
+    input_list$par$ln_growth_pars <- log(gp_arr)
+    input_list$par$ln_growth_pars <- use_starting_value(input_list$par$ln_growth_pars, starting_values, "ln_growth_pars")
 
     input_list$par$ln_growth_devs <- array(0, dim = c(n_pop, n_regions, n_yrs, n_gpars, n_sexes))
     input_list$par$ln_growth_semipar_devs <- array(0, dim = c(n_pop, n_regions, n_yrs, n_ages, n_sexes))

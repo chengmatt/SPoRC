@@ -7,11 +7,11 @@
 get_at_age_prediction(source, arrays, p_idx, r_idx, s_idx, y, seas, a, f)
 }
 \arguments{
-\item{source}{Character, one of \code{"catch"}, \code{"discard"},
-\code{"fish_index"} or \code{"srv_index"}.}
+\item{source}{Character, one of \code{"catch"}, \code{"discard"} or
+\code{"srv_index"}.}
 
 \item{arrays}{Named list of the model arrays the prediction reads:
-\code{CAA}, \code{DAA}, \code{SrvIAA}, \code{FishIAA}, \code{WAA_fish},
+\code{CAA}, \code{DAA}, \code{SrvIAA}, \code{WAA_fish},
 \code{dmr}, \code{catch_units} and \code{discard_units}. The two index
 arrays already carry their fleet's selectivity, timing and movement
 treatment, and the age shape of catchability lives in that selectivity: a
@@ -30,8 +30,8 @@ The predicted observation, a scalar.
 Catch and discards are already at age and only need their units applied. The
 discards are dead discards, so they are raised by the discard mortality rate
 to the total the observation counts, exactly as the aggregated stream does.
-The indices apply an age-specific catchability to the numbers available to
-that fleet.
+The survey index applies an age-specific catchability to the numbers
+available to that fleet.
 }
 \details{
 Population, region and sex arrive as index vectors rather than single

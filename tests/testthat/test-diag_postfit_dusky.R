@@ -51,7 +51,7 @@ test_that("Diagnostic and utility functions run on fitted dusky model", {
       suppressWarnings(
         plot_all_basic(list(data), list(dusky_rtmb_model$rep),
                        list(dusky_rtmb_model$sdrep),
-                       'Dusky', out_path = NULL)
+                       'Dusky', out_path = tempdir())
       )
     )
   })

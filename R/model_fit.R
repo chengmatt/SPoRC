@@ -85,6 +85,9 @@ fit_model <- function(data,
                       ...
                       ) {
 
+  # check par n map len
+  check_par_map_lengths(parameters, mapping)
+
   # the deviation penalties key on the map mirrors in the data list, so refresh
   # them from the map actually being handed to MakeADFun
   data <- sync_dev_map_data(data, mapping)

@@ -88,7 +88,7 @@ test_that("the operating model draws catch at age with the error it was given", 
 # operating model's values so the comparison is about the dynamics rather than
 # the abundance/catchability ridge, and init devs are held because the operating
 # model starts from deterministic equilibrium.
-at_age_em <- function(om, stream = "catch", extra_disc = NULL, extra_fidx = NULL) {
+at_age_em <- function(om, stream = "catch", extra_disc = NULL) {
 
   n_yrs <- at_age_cfg$n_yrs; n_ages <- at_age_cfg$n_ages
   yrs <- seq_len(n_yrs); ages <- seq_len(n_ages); d1 <- c(1, 1, n_yrs, 1, n_ages, 1)
@@ -141,11 +141,7 @@ at_age_em <- function(om, stream = "catch", extra_disc = NULL, extra_fidx = NULL
     ObsFishLenComps = array(0, dim = c(1, n_yrs, 1, 1, 1, 1)), UseFishLenComps = zero4,
     ISS_FishLenComps = array(0, dim = c(1, n_yrs, 1, 1, 1)),
     fish_idx_type = "none", FishAgeComps_LikeType = "none", FishLenComps_LikeType = "none",
-    FishAgeComps_Type = "agg_Year_1-terminal_Fleet_1", FishLenComps_Type = "agg_Year_1-terminal_Fleet_1",
-    ObsFishIdxAA = extra_fidx,
-    UseFishIdxAA = if(is.null(extra_fidx)) NULL else array(1, dim = aa_dim),
-    sigmaFishIdxAA_key = if(is.null(extra_fidx)) NULL else array(1L, dim = c(n_ages, 1, 1)),
-    sigmaFishIdxAA_spec = "fix")
+    FishAgeComps_Type = "agg_Year_1-terminal_Fleet_1", FishLenComps_Type = "agg_Year_1-terminal_Fleet_1")
 
   srv_args <- list(input_list = il,
     ObsSrvIdx = array(om$TrueSrvIdx[1, , 1, 1, 1], dim = c(1, n_yrs, 1, 1)),
@@ -254,21 +250,11 @@ test_that("one-step-ahead residuals work on every at-age stream", {
   aa_dim <- c(1, n_yrs, 1, n_ages, 1, 1)
   # the operating model retains everything, so it produces no discards to fit;
   # the discard stream is covered by the declared-but-unused test above
-  # seeded near, not at, the prediction: an exactly zero residual degenerates
-  # the numerical integration one-step-ahead residuals rely on
-  set.seed(4242)
-  fidx <- array(0, dim = aa_dim)
-  for(y in 1:n_yrs) {
-    for(a in 1:n_ages) {
-      fidx[1, y, 1, a, 1, 1] <- sum(r0$FishIAA[, 1, y, 1, a, , 1]) * exp(stats::rnorm(1, 0, 0.2))
-    } # end a loop
-  } # end y loop
-
-  il2 <- at_age_em(om, "catch", extra_fidx = fidx)
+  il2 <- at_age_em(om, "catch")
   fit <- at_age_fit(il2)
   expect_lt(max(abs(fit$gr(fit$env$last.par.best))), 1e-3)
 
-  for(stream_name in c("CatchAA", "FishIdxAA")) {
+  for(stream_name in c("CatchAA")) {
     # the observations are Gaussian on the log scale, so the Gaussian method is
     # exact here and avoids the numerical integration the generic method uses
     osa <- suppressWarnings(get_osa(model = fit, data = il2$data, index_source = stream_name,

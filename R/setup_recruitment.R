@@ -2112,34 +2112,38 @@ Setup_Mod_Rec <- function(input_list,
 
   # Populate Parameter List -------------------------------------------------
 
-  # Global R0
-  if("ln_global_R0" %in% names(starting_values)) input_list$par$ln_global_R0 <- starting_values$ln_global_R0
-  else input_list$par$ln_global_R0 <- array(log(15), dim = c(input_list$data$n_pop))
+  # Global R0, one per population. A starting value of the wrong length is read
+  # position by position further in, so a single value on a model carrying
+  # several populations reaches the objective as an out-of-range index and
+  # surfaces from RTMB as an invalid advector rather than as a problem with this
+  # argument. use_starting_value catches that here, as it does everywhere else.
+  input_list$par$ln_global_R0 <- array(log(15), dim = c(input_list$data$n_pop))
+  input_list$par$ln_global_R0 <- use_starting_value(input_list$par$ln_global_R0, starting_values, "ln_global_R0")
 
   # The stock-recruit curve's own scale, used only when sr_R0_spec = "est".
   # Mapped off otherwise so it never enters the parameter vector by accident.
-  if("ln_sr_R0" %in% names(starting_values)) input_list$par$ln_sr_R0 <- starting_values$ln_sr_R0
-  else input_list$par$ln_sr_R0 <- array(input_list$par$ln_global_R0, dim = c(input_list$data$n_pop))
+  input_list$par$ln_sr_R0 <- array(input_list$par$ln_global_R0, dim = c(input_list$data$n_pop))
+  input_list$par$ln_sr_R0 <- use_starting_value(input_list$par$ln_sr_R0, starting_values, "ln_sr_R0")
   input_list$map$ln_sr_R0 <- if(input_list$data$sr_R0_spec == 1 && input_list$data$sr_penalty > 0) {
     factor(seq_len(length(input_list$par$ln_sr_R0)))
   } else factor(rep(NA, length(input_list$par$ln_sr_R0)))
 
   # Global Initial R0
-  if("ln_rinit" %in% names(starting_values)) input_list$par$ln_rinit <- starting_values$ln_rinit
-  else input_list$par$ln_rinit <- array(log(15), dim = c(input_list$data$n_pop))
+  input_list$par$ln_rinit <- array(log(15), dim = c(input_list$data$n_pop))
+  input_list$par$ln_rinit <- use_starting_value(input_list$par$ln_rinit, starting_values, "ln_rinit")
   if (use_rinit == 0) input_list$map$ln_rinit <- factor(rep(NA, input_list$data$n_pop))
 
   # R0 regional proportion (not availiable when n_regions == 1; altered in do_rec_region_prop_mapping)
-  if("rec_region_prop_pars" %in% names(starting_values)) input_list$par$rec_region_prop_pars <- starting_values$rec_region_prop_pars
-  else input_list$par$rec_region_prop_pars <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions - 1))
+  input_list$par$rec_region_prop_pars <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions - 1))
+  input_list$par$rec_region_prop_pars <- use_starting_value(input_list$par$rec_region_prop_pars, starting_values, "rec_region_prop_pars")
 
   # R0 seasonal proportion (not availiable when n_seas == 1; altered in do_rec_seas_prop_mapping)
-  if("rec_seas_prop_pars" %in% names(starting_values)) input_list$par$rec_seas_prop_pars <- starting_values$rec_seas_prop_pars
-  else input_list$par$rec_seas_prop_pars <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_seas - 1))
+  input_list$par$rec_seas_prop_pars <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_seas - 1))
+  input_list$par$rec_seas_prop_pars <- use_starting_value(input_list$par$rec_seas_prop_pars, starting_values, "rec_seas_prop_pars")
 
   # Steepness in bounded logit space (0.2 and 1)
-  if("steepness_h" %in% names(starting_values)) input_list$par$steepness_h <- starting_values$steepness_h
-  else input_list$par$steepness_h <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions))
+  input_list$par$steepness_h <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions))
+  input_list$par$steepness_h <- use_starting_value(input_list$par$steepness_h, starting_values, "steepness_h")
 
   # Initial age deviations, one age curve per sex; a 3-D starting value array
   # without the sex dimension is broadcast across sexes
@@ -2150,25 +2154,25 @@ Setup_Mod_Rec <- function(input_list,
   else input_list$par$ln_InitDevs <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$ages) - 1, input_list$data$n_sexes))
 
   # Recruitment deviations
-  if("ln_RecDevs" %in% names(starting_values)) input_list$par$ln_RecDevs <- starting_values$ln_RecDevs
-  else input_list$par$ln_RecDevs <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years) - dont_est_recdev_last + input_list$data$n_proj_yrs_devs))
+  input_list$par$ln_RecDevs <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years) - dont_est_recdev_last + input_list$data$n_proj_yrs_devs))
+  input_list$par$ln_RecDevs <- use_starting_value(input_list$par$ln_RecDevs, starting_values, "ln_RecDevs")
 
   # Recruitment variability
-  if("ln_sigmaR" %in% names(starting_values)) input_list$par$ln_sigmaR <- starting_values$ln_sigmaR
-  else input_list$par$ln_sigmaR <- array(log(1), dim = c(2, input_list$data$n_pop, input_list$data$n_regions)) # (early period 1st element, late period 2nd element)
+  input_list$par$ln_sigmaR <- array(log(1), dim = c(2, input_list$data$n_pop, input_list$data$n_regions)) # (early period 1st element, late period 2nd element)
+  input_list$par$ln_sigmaR <- use_starting_value(input_list$par$ln_sigmaR, starting_values, "ln_sigmaR")
 
   # sexratio parameters
   max_sexratio_blks <- max(apply(input_list$data$sexratio_blocks, c(1,2), FUN = function(x) length(unique(x)))) # figure out maximum number ofsex ratio blocks for each region
-  if("sexratio_pars" %in% names(starting_values)) input_list$par$sexratio_pars <- starting_values$sexratio_pars
-  else input_list$par$sexratio_pars <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, max_sexratio_blks)) # specified at 0.5 in inverse logit space
+  input_list$par$sexratio_pars <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, max_sexratio_blks)) # specified at 0.5 in inverse logit space
+  input_list$par$sexratio_pars <- use_starting_value(input_list$par$sexratio_pars, starting_values, "sexratio_pars")
 
   # Stray rate parameters (logit scale)
   max_stray_blks <- if (input_list$data$n_pop > 1) max(apply(stray_rate_blocks_mat, 1, function(x) length(unique(x))))
   else 1
 
   max_stray_blks <- if (input_list$data$n_pop > 1)  max(apply(stray_rate_blocks_mat, 1, function(x) length(unique(x)))) else 1
-  if ("stray_rate_pars" %in% names(starting_values)) input_list$par$stray_rate_pars <- starting_values$stray_rate_pars
-  else input_list$par$stray_rate_pars <- array(0,  dim = c(input_list$data$n_pop, max_stray_blks))
+  input_list$par$stray_rate_pars <- array(0,  dim = c(input_list$data$n_pop, max_stray_blks))
+  input_list$par$stray_rate_pars <- use_starting_value(input_list$par$stray_rate_pars, starting_values, "stray_rate_pars")
 
   # Mapping Options -----------------------------------------------------------
 

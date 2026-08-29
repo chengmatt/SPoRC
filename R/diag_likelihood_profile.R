@@ -180,8 +180,8 @@ weight_over_ages <- function(component, weight) {
 #'       \code{[Region × Year × Seas × Fleet]},
 #'       \code{FishIdx_nLL_df} and \code{SrvIdx_nLL_df}, and their
 #'       age-disaggregated counterparts \code{CatchAA_nLL_df},
-#'       \code{DiscardAA_nLL_df}, \code{FishIdxAA_nLL_df} and
-#'       \code{SrvIdxAA_nLL_df} with \code{_pop} variants, each summed over
+#'       \code{DiscardAA_nLL_df} and \code{SrvIdxAA_nLL_df} with
+#'       \code{_pop} variants, each summed over
 #'       ages within a cell before its weight is applied
 #'       \code{[Region × Year × Seas × Fleet]},
 #'       \code{FishAge_nLL_df}, \code{FishLen_nLL_df},
@@ -250,11 +250,9 @@ do_likelihood_profile <- function(data,
   Catch_nLL <- data.frame()
   CatchAA_nLL <- data.frame()
   DiscardAA_nLL <- data.frame()
-  FishIdxAA_nLL <- data.frame()
   SrvIdxAA_nLL <- data.frame()
   CatchAA_pop_nLL <- data.frame()
   DiscardAA_pop_nLL <- data.frame()
-  FishIdxAA_pop_nLL <- data.frame()
   SrvIdxAA_pop_nLL <- data.frame()
   Discard_nLL <- data.frame()
   Discard_pop_nLL_df <- data.frame()
@@ -322,11 +320,9 @@ do_likelihood_profile <- function(data,
         Catch_nLL <- rbind(Catch_nLL, reshape2::melt(data$Wt_Catch * report$Catch_nLL) %>% dplyr::mutate(prof_val = vals[j]))
         CatchAA_nLL <- rbind(CatchAA_nLL, reshape2::melt(weight_over_ages(report$CatchAA_nLL, data$Wt_Catch)) %>% dplyr::mutate(prof_val = vals[j]))
         DiscardAA_nLL <- rbind(DiscardAA_nLL, reshape2::melt(weight_over_ages(report$DiscardAA_nLL, data$Wt_Discard)) %>% dplyr::mutate(prof_val = vals[j]))
-        FishIdxAA_nLL <- rbind(FishIdxAA_nLL, reshape2::melt(weight_over_ages(report$FishIdxAA_nLL, data$Wt_FishIdx)) %>% dplyr::mutate(prof_val = vals[j]))
         SrvIdxAA_nLL <- rbind(SrvIdxAA_nLL, reshape2::melt(weight_over_ages(report$SrvIdxAA_nLL, data$Wt_SrvIdx)) %>% dplyr::mutate(prof_val = vals[j]))
         CatchAA_pop_nLL <- rbind(CatchAA_pop_nLL, reshape2::melt(weight_over_ages(report$CatchAA_pop_nLL, data$Wt_Catch_pop)) %>% dplyr::mutate(prof_val = vals[j]))
         DiscardAA_pop_nLL <- rbind(DiscardAA_pop_nLL, reshape2::melt(weight_over_ages(report$DiscardAA_pop_nLL, data$Wt_Discard_pop)) %>% dplyr::mutate(prof_val = vals[j]))
-        FishIdxAA_pop_nLL <- rbind(FishIdxAA_pop_nLL, reshape2::melt(weight_over_ages(report$FishIdxAA_pop_nLL, data$Wt_FishIdx_pop)) %>% dplyr::mutate(prof_val = vals[j]))
         SrvIdxAA_pop_nLL <- rbind(SrvIdxAA_pop_nLL, reshape2::melt(weight_over_ages(report$SrvIdxAA_pop_nLL, data$Wt_SrvIdx_pop)) %>% dplyr::mutate(prof_val = vals[j]))
         Discard_nLL <- rbind(Discard_nLL, reshape2::melt(data$Wt_Discard * report$Discard_nLL) %>% dplyr::mutate(prof_val = vals[j]))
         FishAge_nLL <- rbind(FishAge_nLL, reshape2::melt(report$FishAgeComps_nLL) %>% dplyr::mutate(prof_val = vals[j]))
@@ -460,11 +456,9 @@ do_likelihood_profile <- function(data,
           # the at-age streams, collapsed the way the serial path does
           result$CatchAA_nLL <- reshape2::melt(weight_over_ages(report$CatchAA_nLL, data$Wt_Catch)) %>% dplyr::mutate(prof_val = vals[j])
           result$DiscardAA_nLL <- reshape2::melt(weight_over_ages(report$DiscardAA_nLL, data$Wt_Discard)) %>% dplyr::mutate(prof_val = vals[j])
-          result$FishIdxAA_nLL <- reshape2::melt(weight_over_ages(report$FishIdxAA_nLL, data$Wt_FishIdx)) %>% dplyr::mutate(prof_val = vals[j])
           result$SrvIdxAA_nLL <- reshape2::melt(weight_over_ages(report$SrvIdxAA_nLL, data$Wt_SrvIdx)) %>% dplyr::mutate(prof_val = vals[j])
           result$CatchAA_pop_nLL <- reshape2::melt(weight_over_ages(report$CatchAA_pop_nLL, data$Wt_Catch_pop)) %>% dplyr::mutate(prof_val = vals[j])
           result$DiscardAA_pop_nLL <- reshape2::melt(weight_over_ages(report$DiscardAA_pop_nLL, data$Wt_Discard_pop)) %>% dplyr::mutate(prof_val = vals[j])
-          result$FishIdxAA_pop_nLL <- reshape2::melt(weight_over_ages(report$FishIdxAA_pop_nLL, data$Wt_FishIdx_pop)) %>% dplyr::mutate(prof_val = vals[j])
           result$SrvIdxAA_pop_nLL <- reshape2::melt(weight_over_ages(report$SrvIdxAA_pop_nLL, data$Wt_SrvIdx_pop)) %>% dplyr::mutate(prof_val = vals[j])
           result$Discard_nLL <- reshape2::melt(data$Wt_Discard * report$Discard_nLL) %>% dplyr::mutate(prof_val = vals[j])
           result$FishAge_nLL <- reshape2::melt(report$FishAgeComps_nLL) %>% dplyr::mutate(prof_val = vals[j])
@@ -523,9 +517,9 @@ do_likelihood_profile <- function(data,
         dmr_nLL[j,1] <- res$dmr_nLL
         conv_fish_tag_nLL <- rbind(conv_fish_tag_nLL, res$conv_fish_tag_nLL)
         Catch_nLL <- rbind(Catch_nLL, res$Catch_nLL)
-        at_age_components <- c("CatchAA_nLL", "DiscardAA_nLL", "FishIdxAA_nLL", "SrvIdxAA_nLL",
+        at_age_components <- c("CatchAA_nLL", "DiscardAA_nLL", "SrvIdxAA_nLL",
                                "CatchAA_pop_nLL", "DiscardAA_pop_nLL",
-                               "FishIdxAA_pop_nLL", "SrvIdxAA_pop_nLL")
+                               "SrvIdxAA_pop_nLL")
         for(component_name in at_age_components) {
           assign(component_name, rbind(get(component_name), res[[component_name]]))
         } # end component_name loop
@@ -721,9 +715,9 @@ do_likelihood_profile <- function(data,
                        dmr_nLL_df = dmr_nLL_df,
                        Catch_nLL_df = Catch_nLL_df,
                        CatchAA_nLL_df = CatchAA_nLL, DiscardAA_nLL_df = DiscardAA_nLL,
-                       FishIdxAA_nLL_df = FishIdxAA_nLL, SrvIdxAA_nLL_df = SrvIdxAA_nLL,
+                       SrvIdxAA_nLL_df = SrvIdxAA_nLL,
                        CatchAA_pop_nLL_df = CatchAA_pop_nLL, DiscardAA_pop_nLL_df = DiscardAA_pop_nLL,
-                       FishIdxAA_pop_nLL_df = FishIdxAA_pop_nLL, SrvIdxAA_pop_nLL_df = SrvIdxAA_pop_nLL,
+                       SrvIdxAA_pop_nLL_df = SrvIdxAA_pop_nLL,
                        Discard_nLL_df = Discard_nLL_df,
                        conv_fish_tag_nLL_df = conv_fish_tag_nLL_df,
                        FishAge_nLL_df = FishAge_nLL_df,

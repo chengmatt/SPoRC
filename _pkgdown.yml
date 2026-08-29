@@ -51,6 +51,7 @@ articles:
       - o_get_started
       - v_structuring_your_data
       - t_model_options
+      - ta_option_reference
 
   - title: "Model Descriptions"
     contents:
@@ -180,6 +181,7 @@ reference:
     desc: "Functions for convenience"
     contents:
       - fit_model
+      - option_reference
       - set_data_indicator_unused
       - post_optim_sanity_checks
       - get_par_est_info

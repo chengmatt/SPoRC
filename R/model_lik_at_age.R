@@ -86,17 +86,17 @@ prep_at_age_obs = function(obs, use, like_type, const = 0) {
 #' Catch and discards are already at age and only need their units applied. The
 #' discards are dead discards, so they are raised by the discard mortality rate
 #' to the total the observation counts, exactly as the aggregated stream does.
-#' The indices apply an age-specific catchability to the numbers available to
-#' that fleet.
+#' The survey index applies an age-specific catchability to the numbers
+#' available to that fleet.
 #'
 #' Population, region and sex arrive as index vectors rather than single
 #' indices. A margin the fleet splits over is a single index, and a margin it
 #' sums over is the whole extent, so one expression covers every aggregation.
 #'
-#' @param source Character, one of \code{"catch"}, \code{"discard"},
-#'   \code{"fish_index"} or \code{"srv_index"}.
+#' @param source Character, one of \code{"catch"}, \code{"discard"} or
+#'   \code{"srv_index"}.
 #' @param arrays Named list of the model arrays the prediction reads:
-#'   \code{CAA}, \code{DAA}, \code{SrvIAA}, \code{FishIAA}, \code{WAA_fish},
+#'   \code{CAA}, \code{DAA}, \code{SrvIAA}, \code{WAA_fish},
 #'   \code{dmr}, \code{catch_units} and \code{discard_units}. The two index
 #'   arrays already carry their fleet's selectivity, timing and movement
 #'   treatment, and the age shape of catchability lives in that selectivity: a
@@ -125,10 +125,6 @@ get_at_age_prediction = function(source, arrays, p_idx, r_idx, s_idx, y, seas, a
       else total = total + sum(numbers * arrays$WAA_fish[p_idx,rr,y,seas,a,s_idx,f]) # biomass
     } # end rr loop
     return(total)
-  }
-
-  if(source == "fish_index") { # index numbers at age, selectivity already applied
-    return(sum(arrays$FishIAA[p_idx,r_idx,y,seas,a,s_idx,f]))
   }
 
   return(sum(arrays$SrvIAA[p_idx,r_idx,y,seas,a,s_idx,f])) # survey available numbers
@@ -173,7 +169,8 @@ get_at_age_prediction = function(source, arrays, p_idx, r_idx, s_idx, y, seas, a
 #'   \code{trans_rho}, read under \code{"2dar1"}.
 #' @param us_pars Unconstrained correlation parameters, over pair by the margins
 #'   of \code{trans_rho}, read under \code{"us"}.
-#' @param aa_type Integer per fleet naming the split margins, see
+#' @param aa_type Integer codes naming the split margins, as a matrix over year
+#'   by fleet or a vector per fleet standing for every year, see
 #'   \code{\link{at_age_split}}.
 #'
 #' @return A list with \code{nLL} and \code{pred}, both arrays shaped like
@@ -199,15 +196,19 @@ get_at_age_stream_nLL = function(obs_t, use, ln_sigma, source, pop, arrays,
   sd_form = rep_len(sd_form, n_fleets)
   like_type = rep_len(like_type, n_fleets)
   corr_type = rep_len(corr_type, n_fleets)
-  aa_type = rep_len(aa_type, n_fleets)
 
   i_r = if(pop) 2 else 1        # dimension positions within one fleet's slice
   i_y = i_r + 1; i_seas = i_y + 1; i_a = i_seas + 1; i_s = i_a + 1
 
+  # the aggregation may change between years, so it is carried as year by fleet
+  # whatever shape it arrived in
+  if(is.null(dim(aa_type)))
+    aa_type = base::matrix(rep_len(aa_type, n_fleets), nrow = d[i_y],
+                           ncol = n_fleets, byrow = TRUE)
+
   # the prediction array supplies the full extent of every margin a fleet sums
   # over, so an aggregated margin reads as the whole dimension
-  pred_arr = switch(source, catch = arrays$CAA, discard = arrays$DAA,
-                    fish_index = arrays$FishIAA, arrays$SrvIAA)
+  pred_arr = switch(source, catch = arrays$CAA, discard = arrays$DAA, arrays$SrvIAA)
   all_pop = seq_len(dim(pred_arr)[1])
   all_reg = seq_len(dim(pred_arr)[2])
   all_sex = seq_len(dim(pred_arr)[6])
@@ -226,9 +227,14 @@ get_at_age_stream_nLL = function(obs_t, use, ln_sigma, source, pop, arrays,
     use_f = array(use[fleet_off + seq_len(n_cell)], dim = df)
     if(!any(use_f == 1)) next
 
-    split = at_age_split(aa_type[f])
-    r_all = if(split$region) NULL else all_reg  # NULL means "take the cell's own index"
-    s_all = if(split$sex) NULL else all_sex
+    # a separable correlation is defined over the whole block of years by ages, so
+    # the aggregation cannot change inside it
+    if(corr_type[f] == 3 && length(unique(aa_type[,f])) > 1) {
+      stop("Fleet ", f, " fits at-age observations as '2dar1', whose correlation runs ",
+           "over the whole block of years by ages, but its aggregation changes between ",
+           "years. Hold the aggregation constant for this fleet, or give each period its ",
+           "own fleet so that each block is its own observation.")
+    }
 
     # an unstructured correlation is one matrix per cell the spec keeps apart,
     # built on first use and reused by the cells sharing it. Only a fleet asking
@@ -250,8 +256,11 @@ get_at_age_stream_nLL = function(obs_t, use, ln_sigma, source, pop, arrays,
       p = if(pop) idx[1] else 1
       s = idx[i_s]
       p_idx = if(pop) p else all_pop
-      r_idx = if(is.null(r_all)) idx[i_r] else r_all
-      s_idx = if(is.null(s_all)) s else s_all
+      # year is a free dimension under a separable correlation, so the cell has no
+      # year of its own; the guard above makes any year stand for the fleet there
+      split = at_age_split(aa_type[if(corr_type[f] == 3) 1L else idx[i_y], f])
+      r_idx = if(split$region) idx[i_r] else all_reg
+      s_idx = if(split$sex) s else all_sex
 
       # linear position of this cell with every free dimension at its first slot
       base = 1 + sum((pmax(idx, 1) - 1) * strides)

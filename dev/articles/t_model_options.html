@@ -3787,7 +3787,7 @@ information stated twice.</p>
 </tbody>
 </table>
 <p>Each has a <code>_pop</code> counterpart with a leading population
-dimension. All eight evaluate the same at-age likelihood through one
+dimension. All six evaluate the same at-age likelihood through one
 function, differing only in which array supplies the prediction.</p>
 <div class="section level5">
 <h5 id="how-a-stream-is-reported">How a stream is reported<a class="anchor" aria-label="anchor" href="#how-a-stream-is-reported"></a>
@@ -4031,7 +4031,10 @@ or <code>"us"</code> for a ragged stream. The year correlation is
 <code>trans_rho_&lt;stream&gt;_year</code>.</p>
 <p>How the correlations are shared is a spec string, the same one the
 rest of the package uses for <code>sigmaF_spec</code> and
-<code>Fdev_rho_spec</code>, rather than a structure of its own:</p>
+<code>Fdev_rho_spec</code>, rather than a structure of its own:
+<code>rho_catch_spec</code>, <code>rho_discard_spec</code> and
+<code>rho_srv_idx_spec</code>, each with a <code>_pop</code>
+counterpart.</p>
 <p>The correlations sit over region, sex and fleet, with a leading
 population margin for the population-specific streams, so the
 abbreviations are <code>r</code>, <code>s</code>, <code>f</code> and

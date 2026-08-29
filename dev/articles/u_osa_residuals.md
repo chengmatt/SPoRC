@@ -2,9 +2,8 @@
 
 ### Age-disaggregated observations
 
-Catch at age, discards at age, and the fishery and survey indices at age
-all support one-step-ahead residuals. Pass the at-age name as
-`index_source`:
+Catch at age, discards at age, and the survey index at age all support
+one-step-ahead residuals. Pass the at-age name as `index_source`:
 
 ``` r
 

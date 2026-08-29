@@ -1567,8 +1567,8 @@ information stated twice.
 | `ObsSrvIdxAA` / `UseSrvIdxAA`   | Survey index at age   |
 
 Each has a `_pop` counterpart with a leading population dimension. All
-eight evaluate the same at-age likelihood through one function,
-differing only in which array supplies the prediction.
+six evaluate the same at-age likelihood through one function, differing
+only in which array supplies the prediction.
 
 ##### How a stream is reported
 
@@ -1714,7 +1714,8 @@ ragged stream. The year correlation is `trans_rho_<stream>_year`.
 
 How the correlations are shared is a spec string, the same one the rest
 of the package uses for `sigmaF_spec` and `Fdev_rho_spec`, rather than a
-structure of its own:
+structure of its own: `rho_catch_spec`, `rho_discard_spec` and
+`rho_srv_idx_spec`, each with a `_pop` counterpart.
 
 The correlations sit over region, sex and fleet, with a leading
 population margin for the population-specific streams, so the

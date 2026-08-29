@@ -1739,12 +1739,12 @@ use the season-integrated tag abundance:
 
 The integral is evaluated by the same block-matrix construction used for
 the population, with $`\mathbf{\Lambda}^{\text{Tag}}`$ in place of
-$`\mathbf{\Lambda}`$ (see Evaluating the season integral above). Because
-both $`\mathbf{Z}^{\text{Tag}}`$ and the fishing mortality in the
-numerator carry the same $`\omega^{k}_{\tau}`$ scaling, this integrates
-fishing mortality over exactly the at-liberty fraction of the season:
-the substitution $`u = \omega^{k}_{\tau}\upsilon`$ turns the expression
-into
+$`\mathbf{\Lambda}`$ (see Catch Under Continuous Movement above).
+Because both $`\mathbf{Z}^{\text{Tag}}`$ and the fishing mortality in
+the numerator carry the same $`\omega^{k}_{\tau}`$ scaling, this
+integrates fishing mortality over exactly the at-liberty fraction of the
+season: the substitution $`u = \omega^{k}_{\tau}\upsilon`$ turns the
+expression into
 $`\int_{0}^{\omega^{k}_{\tau}}\mathbf{F}\exp\left( \mathbf{\Lambda}u \right)\mathbf{T}^{k}du`$
 on the unscaled full-season generator, which is the continuous-movement
 counterpart of the partial-interval Baranov equation described above.
@@ -2286,17 +2286,18 @@ optimization algorithm to estimate model parameters.
 
 #### Age-Disaggregated Observations
 
-Catch, discards and the fishery and survey indices can each be fit at
-age rather than aggregated with a composition alongside. Every age is
-its own observation with its own standard deviation, and for the indices
+Catch, discards and the survey index can each be fit at age rather than
+aggregated with a composition alongside. Every age is its own
+observation with its own standard deviation, and for the survey index
 its own catchability.
 
 Each stream is stored over regions and sexes whatever a fleet reports,
-and the fleet’s Type $`\mathcal{R}_{f}, \mathcal{S}_{f}`$ names which of
-those margins it reports separately: a split margin is a single index, a
-summed margin is the whole extent and the observation sits in its first
-slot. Writing $`\mathcal{P} = \{1,\dots,n_{p}\}`$ for the populations,
-the prediction for retained catch is
+and the fleet’s Type in that year,
+$`\mathcal{R}_{y,f}, \mathcal{S}_{y,f}`$, names which of those margins
+it reports separately: a split margin is a single index, a summed margin
+is the whole extent and the observation sits in its first slot. Writing
+$`\mathcal{P} = \{1,\dots,n_{p}\}`$ for the populations, the prediction
+for retained catch is
 
 ``` math
 \text{CatchAA}_{r,y,\tau,a,\varsigma,f} =
@@ -2304,9 +2305,9 @@ the prediction for retained catch is
 C_{p,r',y,\tau,a,s,f} \, \left[ w_{p,r',y,\tau,a,s,f} \right]^{u_{f}}
 ```
 
-where $`\mathcal{R}_{f}(r) = \{r\}`$ when the fleet splits regions and
-$`\{1,\dots,n_{r}\}`$ when it sums over them,
-$`\mathcal{S}_{f}(\varsigma)`$ likewise for sexes, and
+where $`\mathcal{R}_{y,f}(r) = \{r\}`$ when the fleet splits regions in
+that year and $`\{1,\dots,n_{r}\}`$ when it sums over them,
+$`\mathcal{S}_{y,f}(\varsigma)`$ likewise for sexes, and
 $`u_{f} \in \{0,1\}`$ selects abundance or biomass through the fleet’s
 units. The population-specific form replaces $`\mathcal{P}`$ with the
 single population being compared. The other two streams differ only in
@@ -2324,11 +2325,10 @@ the quantity summed:
 with the sums running over the same index sets. $`C`$ and $`D`$ are
 retained catch and dead discards at age, $`\text{dmr}`$ the discard
 mortality rate that raises the dead discards to the total discarded,
-$`w`$ weight at age, $`N`$ numbers at age, $`S^{F}`$ and $`S^{R}`$
-fishery selectivity and retention, and $`I`$ the survey-available
-numbers at age. The indices carry no separate $`q`$: an index fit age by
-age holds its age-specific catchability in selectivity, through the
-`"nonparfree"` form.
+$`w`$ weight at age, and $`I`$ the survey-available numbers at age. The
+survey index carries no separate $`q`$: an index fit age by age holds
+its age-specific catchability in selectivity, through the `"nonparfree"`
+form.
 
 A fleet’s observations are lognormal or normal. Writing $`\mu`$ for the
 prediction and $`O`$ for the observation, the residual is

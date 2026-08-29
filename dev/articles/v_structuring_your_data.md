@@ -328,7 +328,7 @@ Every `Setup_Mod_` function checks the dimensions of what you hand it
 internally and fails fast with a specific message (e.g. “ObsFishAgeComps
 is not the correct dimension. Should be n_regions, n_years, n_seas, …”)
 rather than letting a misshapen array propagate into a cryptic RTMB
-error. s
+error.
 
 ## See also
 

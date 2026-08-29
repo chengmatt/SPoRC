@@ -73,26 +73,6 @@ and mappings. Must be called after <code><a href="Setup_Mod_Catch_and_F.html">Se
 <span>  <span class="va">input_list</span>,</span>
 <span>  <span class="va">ObsFishIdx</span>,</span>
 <span>  <span class="va">ObsFishIdx_SE</span>,</span>
-<span>  ObsFishIdxAA <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  UseFishIdxAA <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  ObsFishIdxAA_SE <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  ObsFishIdxAA_pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  UseFishIdxAA_pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  ObsFishIdxAA_pop_SE <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  sigmaFishIdxAA_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  sigmaFishIdxAA_spec <span class="op">=</span> <span class="st">"est"</span>,</span>
-<span>  sigmaFishIdxAA_pop_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  sigmaFishIdxAA_pop_spec <span class="op">=</span> <span class="st">"est"</span>,</span>
-<span>  FishIdxAA_Type <span class="op">=</span> <span class="st">"spltRaggS"</span>,</span>
-<span>  FishIdxAA_pop_Type <span class="op">=</span> <span class="st">"spltRaggS"</span>,</span>
-<span>  FishIdxAA_LikeType <span class="op">=</span> <span class="st">"lognormal"</span>,</span>
-<span>  FishIdxAA_pop_LikeType <span class="op">=</span> <span class="st">"lognormal"</span>,</span>
-<span>  FishIdxAA_sigma_form <span class="op">=</span> <span class="st">"none"</span>,</span>
-<span>  FishIdxAA_pop_sigma_form <span class="op">=</span> <span class="st">"none"</span>,</span>
-<span>  AgeObsCorr_fish_idx <span class="op">=</span> <span class="st">"iid"</span>,</span>
-<span>  AgeObsCorr_fish_idx_pop <span class="op">=</span> <span class="st">"iid"</span>,</span>
-<span>  rho_fish_idx_spec <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  rho_fish_idx_pop_spec <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sigmaFishIdx_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
 <span>  sigmaFishIdx_map <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sigmaFishIdx_pop_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
@@ -205,76 +185,6 @@ and <code>$verbose</code> sublists, as returned by upstream setup functions.</p>
 <dt id="arg-obsfishidx-se">ObsFishIdx_SE<a class="anchor" aria-label="anchor" href="#arg-obsfishidx-se"></a></dt>
 <dd><p>Standard errors of <code>ObsFishIdx</code> on the log scale,
 same dimensions as <code>ObsFishIdx</code>.</p></dd>
-
-
-<dt id="arg-obsfishidxaa">ObsFishIdxAA<a class="anchor" aria-label="anchor" href="#arg-obsfishidxaa"></a></dt>
-<dd><p>Observed fishery index at age, an array with dimensions
-<code>[n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets]</code>. The
-fishery counterpart of <code>ObsSrvIdxAA</code>: every age its own observation
-with its own catchability. The sex margin is required whatever the fleet
-reports: a stream summed over sexes carries its observation in sex slot one.
-A fleet uses this or the aggregated index.</p></dd>
-
-
-<dt id="arg-usefishidxaa">UseFishIdxAA<a class="anchor" aria-label="anchor" href="#arg-usefishidxaa"></a></dt>
-<dd><p>Integer array shaped like <code>ObsFishIdxAA</code>.</p></dd>
-
-
-<dt id="arg-obsfishidxaa-se-obsfishidxaa-pop-se">ObsFishIdxAA_SE, ObsFishIdxAA_pop_SE<a class="anchor" aria-label="anchor" href="#arg-obsfishidxaa-se-obsfishidxaa-pop-se"></a></dt>
-<dd><p>Reported standard errors shaped
-like their observation array, read only when <code>FishIdxAA_sigma_form</code>
-asks for them. This is the parity the aggregated index already has: an index
-disaggregated by age keeps its survey-design errors.</p></dd>
-
-
-<dt id="arg-obsfishidxaa-pop-usefishidxaa-pop">ObsFishIdxAA_pop, UseFishIdxAA_pop<a class="anchor" aria-label="anchor" href="#arg-obsfishidxaa-pop-usefishidxaa-pop"></a></dt>
-<dd><p>Population-specific counterparts.</p></dd>
-
-
-<dt id="arg-sigmafishidxaa-key-sigmafishidxaa-pop-key">sigmaFishIdxAA_key, sigmaFishIdxAA_pop_key<a class="anchor" aria-label="anchor" href="#arg-sigmafishidxaa-key-sigmafishidxaa-pop-key"></a></dt>
-<dd><p>Integer arrays
-<code>[n_ages, n_sexes, n_fish_fleets]</code> coupling the index at age
-observation error. Equal
-entries share a parameter and <code>NA</code> excludes one. The sex margin is
-required; a key coupling the sexes repeats its entries across them. The age shape of
-catchability is not set here: an index fit age by age puts it in selectivity
-through the <code>"nonparfree"</code> form. See
-<code><a href="Setup_Mod_Fishsel_and_Q.html">Setup_Mod_Fishsel_and_Q</a></code>.</p></dd>
-
-
-<dt id="arg-sigmafishidxaa-spec-sigmafishidxaa-pop-spec">sigmaFishIdxAA_spec, sigmaFishIdxAA_pop_spec<a class="anchor" aria-label="anchor" href="#arg-sigmafishidxaa-spec-sigmafishidxaa-pop-spec"></a></dt>
-<dd><p><code>"est"</code> or <code>"fix"</code>.</p></dd>
-
-
-<dt id="arg-fishidxaa-type-fishidxaa-pop-type">FishIdxAA_Type, FishIdxAA_pop_Type<a class="anchor" aria-label="anchor" href="#arg-fishidxaa-type-fishidxaa-pop-type"></a></dt>
-<dd><p>Which margins the fleet reports
-separately: <code>"agg"</code>, <code>"spltRaggS"</code> (default), <code>"aggRspltS"</code>
-or <code>"spltRspltS"</code>. See <code><a href="Setup_Mod_Catch_and_F.html">Setup_Mod_Catch_and_F</a></code>.</p></dd>
-
-
-<dt id="arg-fishidxaa-liketype-fishidxaa-pop-liketype">FishIdxAA_LikeType, FishIdxAA_pop_LikeType<a class="anchor" aria-label="anchor" href="#arg-fishidxaa-liketype-fishidxaa-pop-liketype"></a></dt>
-<dd><p><code>"lognormal"</code> (default)
-or <code>"normal"</code>, one setting for every fleet or one per fleet.</p></dd>
-
-
-<dt id="arg-fishidxaa-sigma-form-fishidxaa-pop-sigma-form">FishIdxAA_sigma_form, FishIdxAA_pop_sigma_form<a class="anchor" aria-label="anchor" href="#arg-fishidxaa-sigma-form-fishidxaa-pop-sigma-form"></a></dt>
-<dd><p>Where the observation
-error comes from: <code>"none"</code> (default), <code>"data"</code>,
-<code>"est_additive"</code> or <code>"est_quadrature"</code>.</p></dd>
-
-
-<dt id="arg-ageobscorr-fish-idx-ageobscorr-fish-idx-pop">AgeObsCorr_fish_idx, AgeObsCorr_fish_idx_pop<a class="anchor" aria-label="anchor" href="#arg-ageobscorr-fish-idx-ageobscorr-fish-idx-pop"></a></dt>
-<dd><p>Correlation across ages for
-the fishery index at age, <code>"iid"</code> (default), <code>"1dar1"</code>,
-<code>"us"</code> or <code>"2dar1"</code>, one setting for every fleet or one per
-fleet. See <code><a href="Setup_Mod_Catch_and_F.html">Setup_Mod_Catch_and_F</a></code>.</p></dd>
-
-
-<dt id="arg-rho-fish-idx-spec-rho-fish-idx-pop-spec">rho_fish_idx_spec, rho_fish_idx_pop_spec<a class="anchor" aria-label="anchor" href="#arg-rho-fish-idx-spec-rho-fish-idx-pop-spec"></a></dt>
-<dd><p>How the correlation parameters
-are shared, over region, sex and fleet, using the package's spec strings.
-<code>NULL</code> (the default) gives one per fleet. See
-<code><a href="Setup_Mod_Catch_and_F.html">Setup_Mod_Catch_and_F</a></code>.</p></dd>
 
 
 <dt id="arg-sigmafishidx-spec">sigmaFishIdx_spec<a class="anchor" aria-label="anchor" href="#arg-sigmafishidx-spec"></a></dt>

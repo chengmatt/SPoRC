@@ -228,6 +228,8 @@ Functions for convenience
 
 - [`fit_model()`](https://chengmatt.github.io/SPoRC/dev/reference/fit_model.md)
   : Fit a SPoRC RTMB model
+- [`option_reference()`](https://chengmatt.github.io/SPoRC/dev/reference/option_reference.md)
+  : Every argument the setup stages accept
 - [`set_data_indicator_unused()`](https://chengmatt.github.io/SPoRC/dev/reference/set_data_indicator_unused.md)
   : Set data indicators to unused for specified years
 - [`post_optim_sanity_checks()`](https://chengmatt.github.io/SPoRC/dev/reference/post_optim_sanity_checks.md)
@@ -314,6 +316,8 @@ Fitted model output provided by SPoRC
   SPoRC](https://chengmatt.github.io/SPoRC/dev/articles/v_structuring_your_data.md):
 - [Overview of Model
   Options](https://chengmatt.github.io/SPoRC/dev/articles/t_model_options.md):
+- [Setup Estimation Model Argument
+  Reference](https://chengmatt.github.io/SPoRC/dev/articles/ta_option_reference.md):
 
 ### Model Descriptions
 

@@ -3,8 +3,8 @@
 Catch and discards are already at age and only need their units applied.
 The discards are dead discards, so they are raised by the discard
 mortality rate to the total the observation counts, exactly as the
-aggregated stream does. The indices apply an age-specific catchability
-to the numbers available to that fleet.
+aggregated stream does. The survey index applies an age-specific
+catchability to the numbers available to that fleet.
 
 ## Usage
 
@@ -16,18 +16,17 @@ get_at_age_prediction(source, arrays, p_idx, r_idx, s_idx, y, seas, a, f)
 
 - source:
 
-  Character, one of `"catch"`, `"discard"`, `"fish_index"` or
-  `"srv_index"`.
+  Character, one of `"catch"`, `"discard"` or `"srv_index"`.
 
 - arrays:
 
   Named list of the model arrays the prediction reads: `CAA`, `DAA`,
-  `SrvIAA`, `FishIAA`, `WAA_fish`, `dmr`, `catch_units` and
-  `discard_units`. The two index arrays already carry their fleet's
-  selectivity, timing and movement treatment, and the age shape of
-  catchability lives in that selectivity: a fleet fit age by age uses
-  the `"nonparfree"` selectivity form, whose values carry the height of
-  the curve as well as its shape.
+  `SrvIAA`, `WAA_fish`, `dmr`, `catch_units` and `discard_units`. The
+  two index arrays already carry their fleet's selectivity, timing and
+  movement treatment, and the age shape of catchability lives in that
+  selectivity: a fleet fit age by age uses the `"nonparfree"`
+  selectivity form, whose values carry the height of the curve as well
+  as its shape.
 
 - p_idx, r_idx, s_idx:
 

@@ -33,8 +33,8 @@ run_internal_index_osa(
 - index_source:
 
   One of `"Catch"`, `"Discard"`, `"FishIdx"`, `"SrvIdx"`, or their
-  at-age forms `"CatchAA"`, `"DiscardAA"`, `"FishIdxAA"`, `"SrvIdxAA"`.
-  At-age sources return extra `age` and `sex` columns.
+  at-age forms `"CatchAA"`, `"DiscardAA"`, `"SrvIdxAA"`. At-age sources
+  return extra `age` and `sex` columns.
 
 - pop:
 

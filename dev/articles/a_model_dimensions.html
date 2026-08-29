@@ -1059,45 +1059,46 @@ observations appear when scanning that fleet’s UseFishIdx slice in array
 order. Validated at setup for symmetry and positive definiteness</td>
 </tr>
 <tr class="odd">
-<td>ObsCatchAA, ObsDiscardAA, ObsFishIdxAA</td>
-<td>Age-disaggregated retained catch, discards and fishery index, each
-dimensioned by n_regions, n_years, n_seas, n_ages, n_sexes,
-n_fish_fleets. A fleet fits these or the aggregated form with
-compositions, never both. The sex margin is required whatever the fleet
-reports: a stream summed over sexes carries its observation in sex slot
-one, and an array a dimension short is refused</td>
+<td>ObsCatchAA, ObsDiscardAA</td>
+<td>Age-disaggregated retained catch and discards, each dimensioned by
+n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets. A fleet fits
+these or the aggregated form with compositions, never both. The sex
+margin is required whatever the fleet reports: a stream summed over
+sexes carries its observation in sex slot one, and an array a dimension
+short is refused</td>
 </tr>
 <tr class="even">
-<td>UseCatchAA, UseDiscardAA, UseFishIdxAA</td>
+<td>UseCatchAA, UseDiscardAA</td>
 <td>Arrays shaped like their observations, 1 where an observation is
 fit. A cell not fit for catch at age is also not fished, the way
 UseCatch governs closures for the aggregated stream</td>
 </tr>
 <tr class="odd">
-<td>ObsCatchAA_SE, ObsDiscardAA_SE, ObsFishIdxAA_SE</td>
+<td>ObsCatchAA_SE, ObsDiscardAA_SE</td>
 <td>Reported standard errors shaped like their observations, read only
 when the stream’s sigma_form asks for them</td>
 </tr>
 <tr class="even">
-<td>CatchAA_Type, DiscardAA_Type, FishIdxAA_Type</td>
-<td>Vectors dimensioned by n_fish_fleets naming the margins each fleet
-reports separately. 0: summed over regions and sexes, 1: split by region
-and summed over sexes (default), 2: summed over regions and split by
-sex, 3: split by both</td>
+<td>CatchAA_Type, DiscardAA_Type</td>
+<td>Matrices dimensioned by n_years, n_fish_fleets naming the margins
+each fleet reports separately, which may change between years. 0: summed
+over regions and sexes, 1: split by region and summed over sexes
+(default), 2: summed over regions and split by sex, 3: split by
+both</td>
 </tr>
 <tr class="odd">
-<td>CatchAA_LikeType, DiscardAA_LikeType, FishIdxAA_LikeType</td>
+<td>CatchAA_LikeType, DiscardAA_LikeType</td>
 <td>Vectors dimensioned by n_fish_fleets. 0: Lognormal (default), 1:
 Normal on the arithmetic scale</td>
 </tr>
 <tr class="even">
-<td>CatchAA_sigma_form, DiscardAA_sigma_form, FishIdxAA_sigma_form</td>
+<td>CatchAA_sigma_form, DiscardAA_sigma_form</td>
 <td>Vectors dimensioned by n_fish_fleets naming where the observation
 error comes from. 0: the estimated parameter alone (default), 1: the
 reported standard errors alone, 2: additive, 3: in quadrature</td>
 </tr>
 <tr class="odd">
-<td>AgeObsCorr_catch, AgeObsCorr_discard, AgeObsCorr_fish_idx</td>
+<td>AgeObsCorr_catch, AgeObsCorr_discard</td>
 <td>Vectors dimensioned by n_fish_fleets giving the correlation across
 ages within a cell. 0: iid, 1: AR(1) in age distance, 2: unstructured,
 3: separable AR(1) over ages and years. Each has a _pop counterpart,
@@ -1510,166 +1511,171 @@ aggregated index, never both. Same shape rules as ObsCatchAA</td>
 SrvIdxAA_sigma_form asks for them</td>
 </tr>
 <tr class="odd">
-<td>SrvIdxAA_Type, SrvIdxAA_LikeType, SrvIdxAA_sigma_form</td>
+<td>SrvIdxAA_Type</td>
+<td>Matrix dimensioned by n_years, n_srv_fleets, following the same
+codes as its fishery counterpart</td>
+</tr>
+<tr class="even">
+<td>SrvIdxAA_LikeType, SrvIdxAA_sigma_form</td>
 <td>Vectors dimensioned by n_srv_fleets, following the same codes as
 their fishery counterparts</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>AgeObsCorr_srv_idx</td>
 <td>Vector dimensioned by n_srv_fleets giving the correlation across
 ages, with the same codes as AgeObsCorr_catch and a _pop
 counterpart</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>ObsSrvIdxAA_pop, UseSrvIdxAA_pop, ObsSrvIdxAA_pop_SE</td>
 <td>Population-specific counterparts, with a leading n_pop
 dimension</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>SrvAgeComps_bins</td>
 <td>Array dimensioned by n_ages, n_srv_fleets of 0/1 weights selecting
 which observed bins each fleet’s age compositions are fit over. Same
 conventions as FishAgeComps_bins</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>ObsSrvIdx_pop</td>
 <td>Population-specific survey index dimensioned by n_pop, n_regions,
 n_years, n_seas, n_srv_fleets</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>ObsSrvIdx_pop_SE</td>
 <td>Population-specific survey index standard errors dimensioned by
 n_pop, n_regions, n_years, n_seas, n_srv_fleets</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>UseSrvIdx_pop</td>
 <td>Array dimensioned by n_pop, n_regions, n_years, n_seas, n_srv_fleets
 describing whether to fit to population-specific survey indices. 0:
 Don’t fit, 1: Fit</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>ObsSrvAgeComps</td>
 <td>Observed survey age compositions dimensioned by n_regions, n_years,
 n_seas, n_ages, n_sexes, n_srv_fleets. Can be input as proportions or
 numbers, as these are normalized within the model</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>UseSrvAgeComps</td>
 <td>Array dimensioned by n_regions, n_years, n_seas, n_srv_fleets
 specifying whether or not to fit to survey age compositions. 0: Don’t
 fit, 1: Fit</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>ISS_SrvAgeComps</td>
 <td>Array dimensioned by n_regions, n_years, n_seas, n_sexes,
 n_srv_fleets specifying the input sample size for a multinomial or
 Dirichlet-multinomial likelihood</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Wt_SrvAgeComps</td>
 <td>Array dimensioned by n_regions, n_years, n_seas, n_sexes,
 n_srv_fleets specifying a multinomial weight to apply to survey age
 compositions, ideally derived using Francis re-weighting</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>ObsSrvAgeComps_pop</td>
 <td>Population-specific observed survey age compositions dimensioned by
 n_pop, n_regions, n_years, n_seas, n_ages, n_sexes, n_srv_fleets. Can be
 input as proportions or numbers</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>UseSrvAgeComps_pop</td>
 <td>Array dimensioned by n_pop, n_regions, n_years, n_seas, n_srv_fleets
 specifying whether to fit to population-specific survey age
 compositions. 0: Don’t fit, 1: Fit</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>ISS_SrvAgeComps_pop</td>
 <td>Array dimensioned by n_pop, n_regions, n_years, n_seas, n_sexes,
 n_srv_fleets specifying the input sample size for population-specific
 survey age composition likelihoods</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Wt_SrvAgeComps_pop</td>
 <td>Array dimensioned by n_pop, n_regions, n_years, n_seas, n_sexes,
 n_srv_fleets specifying a multinomial weight to apply to
 population-specific survey age compositions</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>ObsSrvLenComps</td>
 <td>Observed survey length compositions dimensioned by n_regions,
 n_years, n_seas, n_lens, n_sexes, n_srv_fleets. Can be input as
 proportions or numbers, as these are normalized within the model</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>UseSrvLenComps</td>
 <td>Array dimensioned by n_regions, n_years, n_seas, n_srv_fleets
 specifying whether or not to fit to survey length compositions. 0: Don’t
 fit, 1: Fit</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>ISS_SrvLenComps</td>
 <td>Array dimensioned by n_regions, n_years, n_seas, n_srv_fleets
 specifying the input sample size for a multinomial or
 Dirichlet-multinomial likelihood</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Wt_SrvLenComps</td>
 <td>Array dimensioned by n_regions, n_years, n_seas, n_sexes,
 n_srv_fleets specifying a multinomial weight to apply to survey length
 compositions, ideally derived using Francis re-weighting</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>ObsSrvLenComps_pop</td>
 <td>Population-specific observed survey length compositions dimensioned
 by n_pop, n_regions, n_years, n_seas, n_lens, n_sexes, n_srv_fleets. Can
 be input as proportions or numbers</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>UseSrvLenComps_pop</td>
 <td>Array dimensioned by n_pop, n_regions, n_years, n_seas, n_srv_fleets
 specifying whether to fit to population-specific survey length
 compositions. 0: Don’t fit, 1: Fit</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>ISS_SrvLenComps_pop</td>
 <td>Array dimensioned by n_pop, n_regions, n_years, n_seas, n_srv_fleets
 specifying the input sample size for population-specific survey length
 composition likelihoods</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Wt_SrvLenComps_pop</td>
 <td>Array dimensioned by n_pop, n_regions, n_years, n_seas, n_sexes,
 n_srv_fleets specifying a multinomial weight to apply to
 population-specific survey length compositions</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>SrvAgeComps_LikeType</td>
 <td>Vector dimensioned by n_srv_fleets specifying the likelihood for
 region-aggregated survey age compositions. 0: Multinomial, 1:
 Dirichlet-multinomial, 2: Logistic-normal with iid covariance, 999: None
 Available. Further options in Get_Comp_Likelihoods.R</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>SrvAgeComps_pop_LikeType</td>
 <td>Vector dimensioned by n_srv_fleets specifying the likelihood for
 population-specific survey age compositions. Same options as
 SrvAgeComps_LikeType</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>SrvLenComps_LikeType</td>
 <td>Vector dimensioned by n_srv_fleets specifying the likelihood for
 region-aggregated survey length compositions. 0: Multinomial, 1:
 Dirichlet-multinomial, 2: Logistic-normal with iid covariance, 999: None
 Available. Further options in Get_Comp_Likelihoods.R</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>SrvLenComps_pop_LikeType</td>
 <td>Vector dimensioned by n_srv_fleets specifying the likelihood for
 population-specific survey length compositions. Same options as
 SrvLenComps_LikeType</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>SrvAgeComps_Type</td>
 <td>Matrix dimensioned by n_years, n_srv_fleets specifying how
 region-aggregated age composition data should be structured. 0:
@@ -1677,13 +1683,13 @@ Aggregated across sexes and regions, 1: Split by sexes and regions, 2:
 Joint by sex but split by region, 999: None Available. Further options
 in Get_Comp_Likelihoods.R</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>SrvAgeComps_pop_Type</td>
 <td>Matrix dimensioned by n_years, n_srv_fleets specifying how
 population-specific survey age composition data should be structured.
 Same options as SrvAgeComps_Type</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>SrvLenComps_Type</td>
 <td>Matrix dimensioned by n_years, n_srv_fleets specifying how
 region-aggregated length composition data should be structured. 0:
@@ -1691,23 +1697,23 @@ Aggregated across sexes and regions, 1: Split by sexes and regions, 2:
 Joint by sex but split by region, 999: None Available. Further options
 in Get_Comp_Likelihoods.R</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>SrvLenComps_pop_Type</td>
 <td>Matrix dimensioned by n_years, n_srv_fleets specifying how
 population-specific survey length composition data should be structured.
 Same options as SrvLenComps_Type</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>t_srv</td>
 <td>Array dimensioned by n_regions, n_seas, n_srv_fleets specifying
 survey timing as a proportion of the season</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>do_srv_q_cov</td>
 <td>Numeric value indicating whether a survey catchability covariate is
 used. 0 == Not used, 1 == Used</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>srv_q_cov</td>
 <td>Array dimensioned by n_regions, n_years, n_srv_fleets, n_covariates
 representing the covariates used to compute survey catchability</td>

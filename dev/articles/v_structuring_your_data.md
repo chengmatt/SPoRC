@@ -154,7 +154,6 @@ variants add a leading population dimension.
 |----|----|
 | `ObsCatchAA`, `UseCatchAA` | `n_regions × n_years × n_seas × n_ages × n_fish_fleets` |
 | `ObsDiscardAA`, `UseDiscardAA` | same |
-| `ObsFishIdxAA`, `UseFishIdxAA` | same |
 | `ObsSrvIdxAA`, `UseSrvIdxAA` | `n_regions × n_years × n_seas × n_ages × n_srv_fleets` |
 | any of the above with `_pop` | as above, with `n_pop` in front |
 

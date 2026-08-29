@@ -167,6 +167,185 @@ rather than collapsing a dimension.</p>
 <hr>
 </div>
 <div class="section level2">
+<h2 id="how-arguments-are-named">How arguments are named<a class="anchor" aria-label="anchor" href="#how-arguments-are-named"></a>
+</h2>
+<p>The setup functions take around five hundred arguments between them,
+but far fewer ideas: most names are one of a handful of stems assembled
+from the same pieces. Reading the grammar is faster than reading the
+list, and it lets you derive a name rather than search for it.</p>
+<div class="section level4">
+<h4 id="a-data-streams-three-arrays">A data stream’s three arrays<a class="anchor" aria-label="anchor" href="#a-data-streams-three-arrays"></a>
+</h4>
+<p>Every observed stream is supplied as a triple, and the names differ
+only in the prefix.</p>
+<table class="table">
+<thead><tr class="header">
+<th>Prefix</th>
+<th>Carries</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>Obs</code></td>
+<td>The observations</td>
+</tr>
+<tr class="even">
+<td><code>Use</code></td>
+<td>A 0/1 flag per cell, saying which observations are fit</td>
+</tr>
+<tr class="odd">
+<td><code>ISS_</code></td>
+<td>Input sample size, for composition streams</td>
+</tr>
+</tbody>
+</table>
+<p>So the fishery age compositions are <code>ObsFishAgeComps</code>,
+<code>UseFishAgeComps</code>, <code>ISS_FishAgeComps</code>, and the
+survey twins swap <code>Fish</code> for <code>Srv</code>. An
+<code>_SE</code> suffix carries observation error where a stream reports
+its own (<code>ObsSrvIdx_SE</code>).</p>
+<p>The <code>Use</code> array is the switch. A stream with data present
+and its <code>Use</code> flags at zero is carried through the model and
+contributes nothing, which is how a stream is turned off without
+removing it.</p>
+</div>
+<div class="section level4">
+<h4 id="how-a-stream-is-configured">How a stream is configured<a class="anchor" aria-label="anchor" href="#how-a-stream-is-configured"></a>
+</h4>
+<p>Four suffixes appear on nearly every stream.</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Suffix</th>
+<th>Chooses</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>_Type</code></td>
+<td>How the observation is split across regions and sexes:
+<code>"agg"</code>, <code>"spltRaggS"</code>, <code>"aggRspltS"</code>,
+<code>"spltRspltS"</code> for at-age streams; <code>"agg"</code>,
+<code>"spltRspltS"</code>, <code>"spltRjntS"</code>, <code>"none"</code>
+for compositions</td>
+</tr>
+<tr class="even">
+<td><code>_LikeType</code></td>
+<td>The density: <code>"lognormal"</code>/<code>"normal"</code> for
+indices, or the composition families</td>
+</tr>
+<tr class="odd">
+<td><code>_sigma_form</code></td>
+<td>Where observation error comes from: <code>"none"</code>,
+<code>"data"</code>, <code>"est_additive"</code>,
+<code>"est_quadrature"</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>_spec</code></td>
+<td>How a parameter is shared or fixed across dimensions, per the
+sharing conventions above</td>
+</tr>
+</tbody>
+</table>
+<p>A <code>_Type</code> may change part way through a series, and says
+so through a year and fleet specification:
+<code>"agg_Year_1-terminal_Fleet_1"</code>. The years are positions in
+the year vector rather than calendar years, and the last may be
+<code>"terminal"</code>. A vector of these describes a whole model, one
+entry per block, and every year of every fleet needs an entry covering
+it. Later entries overwrite earlier ones where they overlap, so a
+general setting can be given first and a period carved out of it
+afterwards.</p>
+<p>The two families differ only in what a bare setting means.
+Composition and CAAL <code>_Type</code> strings must carry the range,
+and the bare setting on its own is rejected with an error naming the
+full form. At-age <code>_Type</code> strings accept either, so a bare
+<code>"spltRaggS"</code> sets the whole series, one value per fleet sets
+each fleet’s whole series, and the grammar is needed only when the
+setting changes.</p>
+</div>
+<div class="section level4">
+<h4 id="two-infixes-that-multiply-the-surface">Two infixes that multiply the surface<a class="anchor" aria-label="anchor" href="#two-infixes-that-multiply-the-surface"></a>
+</h4>
+<p><code>AA</code> marks an age-disaggregated stream, fit age by age
+rather than as a total: <code>ObsCatch</code> against
+<code>ObsCatchAA</code>, with the configuration suffixes following
+(<code>CatchAA_Type</code>, <code>CatchAA_LikeType</code>,
+<code>CatchAA_sigma_form</code>, <code>sigmaCAA_spec</code>). A fleet
+fits one or the other, not both.</p>
+<p><code>_pop</code> marks the population-specific twin of a stream, fit
+for one population rather than summed across them. Over a hundred
+arguments are <code>_pop</code> variants, and every one of them is inert
+in a single-population model. <code>ObsSrvIdx</code> has
+<code>ObsSrvIdx_pop</code>; <code>Wt_SrvIdx</code> has
+<code>Wt_SrvIdx_pop</code>; <code>rho_srv_idx_spec</code> has
+<code>rho_srv_idx_pop_spec</code>.</p>
+<p>The two compose, so a single stream can reach
+<code>ObsCatchAA_pop_SE</code>.</p>
+</div>
+<div class="section level4">
+<h4 id="worked-expansion">Worked expansion<a class="anchor" aria-label="anchor" href="#worked-expansion"></a>
+</h4>
+<p>Everything the survey age compositions accept, derived from the
+grammar rather than looked up:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Name</th>
+<th>Role</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>
+<code>ObsSrvAgeComps</code>, <code>UseSrvAgeComps</code>,
+<code>ISS_SrvAgeComps</code>
+</td>
+<td>The data triple</td>
+</tr>
+<tr class="even">
+<td>
+<code>SrvAgeComps_Type</code>,
+<code>SrvAgeComps_LikeType</code>
+</td>
+<td>Structure and density</td>
+</tr>
+<tr class="odd">
+<td><code>Wt_SrvAgeComps</code></td>
+<td>Weight</td>
+</tr>
+<tr class="even">
+<td>
+<code>ObsSrvAgeComps_pop</code>, <code>UseSrvAgeComps_pop</code>,
+<code>ISS_SrvAgeComps_pop</code>
+</td>
+<td>Population-specific triple</td>
+</tr>
+<tr class="odd">
+<td>
+<code>SrvAgeComps_pop_Type</code>,
+<code>SrvAgeComps_pop_LikeType</code>,
+<code>Wt_SrvAgeComps_pop</code>
+</td>
+<td>Its configuration and weight</td>
+</tr>
+</tbody>
+</table>
+<p>The remaining stems follow the same shape: <code>_key</code> supplies
+a mapping matrix, <code>_blocks</code> a time-blocking string,
+<code>rho_*_spec</code> and <code>AgeObsCorr_*</code> the correlation
+across ages, and <code>Wt_*</code> the likelihood weight.</p>
+<p>Where a setting names its own legal values, it does so in the error
+it raises when given something else, so passing a deliberate nonsense
+string is a quick way to see the options.</p>
+<hr>
+</div>
+</div>
+<div class="section level2">
 <h2 id="spatial-and-demographic-structure">Spatial and Demographic Structure<a class="anchor" aria-label="anchor" href="#spatial-and-demographic-structure"></a>
 </h2>
 <p>Everything starts with <code><a href="../reference/Setup_Mod_Dim.html">Setup_Mod_Dim()</a></code> (estimation
@@ -3601,12 +3780,6 @@ information stated twice.</p>
 </tr>
 <tr class="odd">
 <td>
-<code>ObsFishIdxAA</code> / <code>UseFishIdxAA</code>
-</td>
-<td>Fishery index at age</td>
-</tr>
-<tr class="even">
-<td>
 <code>ObsSrvIdxAA</code> / <code>UseSrvIdxAA</code>
 </td>
 <td>Survey index at age</td>
@@ -3654,13 +3827,26 @@ says which of regions and sexes it reports separately through a
 </tr>
 </tbody>
 </table>
-<p><code>CatchAA_Type</code>, <code>DiscardAA_Type</code>,
-<code>FishIdxAA_Type</code> and <code>SrvIdxAA_Type</code> take one
-setting for every fleet or one per fleet, and each has a
-<code>_pop</code> counterpart. A margin the fleet sums over carries its
-observation in slot one of that margin, and a use flag anywhere else on
-it is refused rather than quietly ignored, since the prediction has
-already added those cells in.</p>
+<p><code>CatchAA_Type</code>, <code>DiscardAA_Type</code> and
+<code>SrvIdxAA_Type</code> take one setting for every fleet, one per
+fleet, or the year and fleet grammar, and each has a <code>_pop</code>
+counterpart. A margin the fleet sums over carries its observation in
+slot one of that margin, and a use flag anywhere else on it is refused
+rather than quietly ignored, since the prediction has already added
+those cells in. That check runs per year, so a fleet reporting sexes
+separately early and combined later is held to each rule in the years
+where it applies.</p>
+<p>A fleet whose reporting changed part way through the series states it
+directly:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">CatchAA_Type</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"spltRspltS_Year_1-20_Fleet_1"</span>,</span>
+<span>                 <span class="st">"spltRaggS_Year_21-terminal_Fleet_1"</span><span class="op">)</span></span></code></pre></div>
+<p>One combination is refused. A fleet fitting <code>"2dar1"</code>
+cannot change its aggregation between years, because a separable
+correlation is defined over the whole block of years by ages, and a
+setting that changes inside that block has nothing to mean there. Either
+hold the aggregation constant for that fleet, or give each period its
+own fleet so that each block is its own observation.</p>
 <p>The sex margin is required whatever the fleet reports. A stream
 summed over sexes still carries its observation in the full array, in
 sex slot one, and an array one dimension short is refused rather than
@@ -3746,17 +3932,16 @@ every sharing pattern that would otherwise need its own argument:</p>
 by repeating its entries across them. An age and sex a fleet never
 observes carries no parameter whatever the key says, which is what holds
 the unused sexes of a sex-summed stream out.</p>
-<p><code>sigmaCAA_key</code>, <code>sigmaDAA_key</code>,
-<code>sigmaFishIdxAA_key</code> and <code>sigmaSrvIdxAA_key</code> carry
-the observation error. Catchability at age is not keyed here: an index
-fit age by age carries its age shape in selectivity, through the
-<code>"nonparfree"</code> form (see Selectivity above), since a free
-catchability per age and a selectivity estimated at age are the same
-statement twice. A parameter informed by fewer than two observations is
-refused, and fewer than five warns: an observation error standard
-deviation with a single observation drives the likelihood to negative
-infinity rather than failing outright, and the optimizer reports
-convergence either way.</p>
+<p><code>sigmaCAA_key</code>, <code>sigmaDAA_key</code> and
+<code>sigmaSrvIdxAA_key</code> carry the observation error. Catchability
+at age is not keyed here: an index fit age by age carries its age shape
+in selectivity, through the <code>"nonparfree"</code> form (see
+Selectivity above), since a free catchability per age and a selectivity
+estimated at age are the same statement twice. A parameter informed by
+fewer than two observations is refused, and fewer than five warns: an
+observation error standard deviation with a single observation drives
+the likelihood to negative infinity rather than failing outright, and
+the optimizer reports convergence either way.</p>
 <p>A season needing its own observation error is a separate fleet, the
 same way anything else needing its own selectivity or catchability
 is.</p>
@@ -3785,11 +3970,6 @@ one:</p>
 <td><code><a href="../reference/Setup_Mod_Catch_and_F.html">Setup_Mod_Catch_and_F()</a></code></td>
 </tr>
 <tr class="even">
-<td>
-<code>AgeObsCorr_fish_idx</code> (and <code>_pop</code>)</td>
-<td><code><a href="../reference/Setup_Mod_FishIdx_and_Comps.html">Setup_Mod_FishIdx_and_Comps()</a></code></td>
-</tr>
-<tr class="odd">
 <td>
 <code>AgeObsCorr_srv_idx</code> (and <code>_pop</code>)</td>
 <td><code><a href="../reference/Setup_Mod_SrvIdx_and_Comps.html">Setup_Mod_SrvIdx_and_Comps()</a></code></td>
@@ -4271,7 +4451,7 @@ or <code>LenBinMap</code>. Default <code>NULL</code> fits every bin.</p>
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># the acoustic survey resolves ages 2-15 only; every other fleet fits all ages</span></span>
 <span><span class="va">SrvAgeComps_bins</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="cn">NULL</span>, <span class="fl">2</span><span class="op">:</span><span class="fl">15</span>, <span class="cn">NULL</span>, <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
 <p>Every fleet must keep at least two bins. A composition fitted over
@@ -4438,8 +4618,9 @@ correlation</td>
 <div class="section level4">
 <h4 id="composition-structure-types">Composition structure types<a class="anchor" aria-label="anchor" href="#composition-structure-types"></a>
 </h4>
-<p>Each composition data stream has a “type” controlling how data are
-aggregated:</p>
+<p>Each composition stream says how its observations are aggregated
+through a <code>_Type</code>, given as a year and fleet
+specification:</p>
 <table class="table">
 <colgroup>
 <col width="50%">
@@ -4451,24 +4632,33 @@ aggregated:</p>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td>0</td>
+<td><code>"agg"</code></td>
 <td>Aggregated across sexes and regions</td>
 </tr>
 <tr class="even">
-<td>1</td>
-<td>Split by sex and region (no implicit sex-ratio information)</td>
+<td><code>"spltRspltS"</code></td>
+<td>Split by sex and region, carrying no implicit sex-ratio
+information</td>
 </tr>
 <tr class="odd">
-<td>2</td>
-<td>Joint across sexes, split by region (preserves sex-ratio
-information)</td>
+<td><code>"spltRjntS"</code></td>
+<td>Joint across sexes, split by region, preserving sex-ratio
+information</td>
 </tr>
 <tr class="even">
-<td>999</td>
-<td>No data for this fleet/year</td>
+<td><code>"none"</code></td>
+<td>No data for this fleet and year</td>
 </tr>
 </tbody>
 </table>
+<p>A fishery that began sexing its samples in the eighth year of the
+series reads:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">FishAgeComps_Type</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"agg_Year_1-7_Fleet_1"</span>,</span>
+<span>                      <span class="st">"spltRjntS_Year_8-terminal_Fleet_1"</span><span class="op">)</span></span></code></pre></div>
+<p><code>"agg"</code> is refused where the likelihood is the 2d logistic
+normal, which needs a composition split by region and sex to correlate
+over.</p>
 </div>
 <div class="section level4">
 <h4 id="data-streams">Data streams<a class="anchor" aria-label="anchor" href="#data-streams"></a>
@@ -4590,52 +4780,446 @@ row was conditioned on.</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="tagging">Tagging<a class="anchor" aria-label="anchor" href="#tagging"></a>
+<h2 id="likelihood-weights">Likelihood Weights<a class="anchor" aria-label="anchor" href="#likelihood-weights"></a>
 </h2>
-<p>Configured via <code><a href="../reference/Setup_Mod_Tagging.html">Setup_Mod_Tagging()</a></code> (EM) or
-<code><a href="../reference/Setup_Sim_Tagging.html">Setup_Sim_Tagging()</a></code> (OM).</p>
-<p>SPoRC implements a conventional mark-recapture framework
-(Brownie-type likelihood) where tagged individuals follow the full
-seasonal population dynamics, movement, mortality, and fishing, after
-release.</p>
+<p>Set on <code><a href="../reference/Setup_Mod_Weighting.html">Setup_Mod_Weighting()</a></code>. Every weight multiplies
+its likelihood component in the joint negative log likelihood, so
+<code>0</code> drops a data stream from the fit without removing it from
+the model or from the reported fits.</p>
+<p>Two shapes appear. The scalar weights apply one number to the whole
+component. The composition weights are arrays
+<code>[n_regions × n_years × n_seas × n_sexes × n_fleets]</code>, so a
+year, a region or a sex can be down-weighted on its own; a scalar is
+recycled.</p>
+<div class="section level4">
+<h4 id="scalar-weights">Scalar weights<a class="anchor" aria-label="anchor" href="#scalar-weights"></a>
+</h4>
 <table class="table">
 <colgroup>
 <col width="50%">
 <col width="50%">
 </colgroup>
 <thead><tr class="header">
-<th>Feature</th>
+<th>Argument</th>
+<th>Component</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>Wt_Catch</code></td>
+<td>Aggregated catch</td>
+</tr>
+<tr class="even">
+<td><code>Wt_Discard</code></td>
+<td>Aggregated discards</td>
+</tr>
+<tr class="odd">
+<td><code>Wt_FishIdx</code></td>
+<td>Fishery indices</td>
+</tr>
+<tr class="even">
+<td><code>Wt_SrvIdx</code></td>
+<td>Survey indices</td>
+</tr>
+<tr class="odd">
+<td><code>Wt_F</code></td>
+<td>Fishing mortality deviation penalty</td>
+</tr>
+<tr class="even">
+<td><code>Wt_D</code></td>
+<td>Discard mortality rate deviation penalty</td>
+</tr>
+<tr class="odd">
+<td><code>Wt_Rec</code></td>
+<td>Recruitment deviation penalty (see Recruitment; may also be an
+array)</td>
+</tr>
+<tr class="even">
+<td><code>Wt_Init_Rec</code></td>
+<td>Initial age deviation penalty</td>
+</tr>
+<tr class="odd">
+<td><code>Wt_Tagging</code></td>
+<td>Tag recapture likelihood</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level4">
+<h4 id="composition-weights">Composition weights<a class="anchor" aria-label="anchor" href="#composition-weights"></a>
+</h4>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Argument</th>
+<th>Component</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>
+<code>Wt_FishAgeComps</code>, <code>Wt_FishLenComps</code>
+</td>
+<td>Fishery age and length compositions</td>
+</tr>
+<tr class="even">
+<td>
+<code>Wt_SrvAgeComps</code>, <code>Wt_SrvLenComps</code>
+</td>
+<td>Survey age and length compositions</td>
+</tr>
+<tr class="odd">
+<td>
+<code>Wt_FishAgeComps_discard</code>,
+<code>Wt_FishLenComps_discard</code>
+</td>
+<td>Discard compositions</td>
+</tr>
+<tr class="even">
+<td>
+<code>Wt_Fish_caal</code>, <code>Wt_Srv_caal</code>
+</td>
+<td>Conditional age-at-length</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level4">
+<h4 id="population-specific-weights">Population-specific weights<a class="anchor" aria-label="anchor" href="#population-specific-weights"></a>
+</h4>
+<p>Every stream fit separately by population carries a <code>_pop</code>
+twin, weighted independently of its aggregated counterpart:
+<code>Wt_Catch_pop</code>, <code>Wt_Discard_pop</code>,
+<code>Wt_FishIdx_pop</code>, <code>Wt_SrvIdx_pop</code>, and the four
+composition arrays <code>Wt_FishAgeComps_pop</code>,
+<code>Wt_FishLenComps_pop</code>, <code>Wt_SrvAgeComps_pop</code>,
+<code>Wt_SrvLenComps_pop</code>, plus their discard twins
+<code>Wt_FishAgeComps_discard_pop</code> and
+<code>Wt_FishLenComps_discard_pop</code>. These have no effect in a
+single-population model.</p>
+<p>Recommendations. Reach for weights to switch a stream off
+(<code>0</code>) or to reproduce another assessment’s weighting, not to
+tune fit. Where compositions are over-weighted relative to their real
+information content, the Dirichlet-multinomial or a Francis iteration
+estimates that down-weighting rather than asserting it;
+<code><a href="../reference/run_francis.html">run_francis()</a></code> returns the multipliers to apply here. The
+at-age observation streams take the same weight as their aggregated
+counterpart, so a fleet moved from aggregated to at-age keeps whatever
+weight it already had.</p>
+<hr>
+</div>
+</div>
+<div class="section level2">
+<h2 id="tagging">Tagging<a class="anchor" aria-label="anchor" href="#tagging"></a>
+</h2>
+<p>Configured via <code><a href="../reference/Setup_Mod_Tagging.html">Setup_Mod_Tagging()</a></code> (EM) or
+<code><a href="../reference/Setup_Sim_Tagging.html">Setup_Sim_Tagging()</a></code> (OM).</p>
+<p>SPoRC implements a conventional mark-recapture framework
+(Brownie-type likelihood) where tagged individuals follow the full
+seasonal population dynamics, movement, mortality, and fishing after
+release. Tags are tracked as release cohorts and recaptured by fishery
+fleets.</p>
+<div class="section level4">
+<h4 id="switching-tagging-on">Switching tagging on<a class="anchor" aria-label="anchor" href="#switching-tagging-on"></a>
+</h4>
+<p><code>use_conv_fish_tagging</code> is an integer vector of length
+<code>n_fish_fleets</code>, <code>1</code> for fleets that recapture and
+report tags. All zeros (the default) disables the whole module: the
+parameters collapse to length-1 placeholders and the likelihood
+contributes nothing.</p>
+</div>
+<div class="section level4">
+<h4 id="defining-release-cohorts">Defining release cohorts<a class="anchor" aria-label="anchor" href="#defining-release-cohorts"></a>
+</h4>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Argument</th>
 <th>Description</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td>Release structure</td>
-<td>Tags released by population, region, season, age, and sex</td>
+<td><code>conv_tag_release_indicator</code></td>
+<td>Data frame of release cohorts, one row each. Required columns
+<code>regions</code>, <code>tag_years</code>, <code>tag_seas</code>.
+Every other tagging array is dimensioned by its row count</td>
 </tr>
 <tr class="even">
-<td>Recapture structure</td>
-<td>Fleet-specific recaptures with release-cohort × recapture-year
-likelihood</td>
+<td><code>conv_tag_release_platform</code></td>
+<td>Character matrix <code>[n_cohorts × 2]</code>, columns
+<code>platform</code> and <code>fleet</code>, aligned row for row with
+the release indicator. <code>"population"</code> releases into the
+population directly (<code>fleet</code> is <code>NA</code>);
+<code>"fishery"</code> or <code>"survey"</code> releases through that
+fleet’s selectivity</td>
 </tr>
 <tr class="odd">
-<td>Tag shedding</td>
-<td>Chronic tag-loss rate (estimated or fixed)</td>
-</tr>
-<tr class="even">
-<td>Initial tag mortality</td>
-<td>Immediate post-release mortality parameter</td>
-</tr>
-<tr class="odd">
-<td>Reporting rates</td>
-<td>Fleet-specific tag-reporting rates (estimated or fixed)</td>
-</tr>
-<tr class="even">
-<td>Population/age/sex attribution</td>
-<td>Tags can carry population, age, and sex information at release</td>
+<td><code>conv_tag_max_liberty</code></td>
+<td>Years at liberty tracked per cohort. Sets the recapture container
+size, so it is a direct cost in tape size. Default
+<code>n_ages / 2</code>
+</td>
 </tr>
 </tbody>
 </table>
+<p>A cohort is a release <em>event</em>, not a release group. Splitting
+the same tags across more rows multiplies the recapture containers and
+the tape with them.</p>
+</div>
+<div class="section level4">
+<h4 id="observations">Observations<a class="anchor" aria-label="anchor" href="#observations"></a>
+</h4>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Argument</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>conv_tagged_fish</code></td>
+<td>Numbers released per cohort</td>
+</tr>
+<tr class="even">
+<td><code>obs_conv_tag_fish_recap</code></td>
+<td>Observed recaptures, by cohort, year at liberty, and recapture
+cell</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level4">
+<h4 id="what-a-tag-carries-conv_fish_tag_attr">What a tag carries (<code>conv_fish_tag_attr</code>)<a class="anchor" aria-label="anchor" href="#what-a-tag-carries-conv_fish_tag_attr"></a>
+</h4>
+<p>Which biological dimensions are resolved at release and therefore
+retained at recapture. Region and fleet are always retained. Built from
+<code>"p"</code> (population), <code>"a"</code> (age) and
+<code>"s"</code> (sex) joined by underscores: <code>"p_a_s"</code>,
+<code>"a_s"</code>, <code>"p_a"</code>, <code>"p_s"</code>,
+<code>"a"</code>, <code>"s"</code>, <code>"p"</code>,
+<code>"none"</code>. Default <code>"p_a_s"</code>.</p>
+<p>A scalar applies to every event; a vector of length
+<code>n_cohorts</code> lets events differ, for a program where early
+releases recorded less than later ones.</p>
+<p>The pooling arguments say how cells are aggregated in the likelihood,
+and must agree with what the attribution resolves:</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th>Argument</th>
+<th>Default</th>
+<th>Use when</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>conv_tag_pop_pool</code></td>
+<td><code>as.list(1:n_pop)</code></td>
+<td>
+<code>list(1:n_pop)</code> when <code>"p"</code> is not
+attended</td>
+</tr>
+<tr class="even">
+<td><code>conv_tag_age_pool</code></td>
+<td><code>as.list(1:n_ages)</code></td>
+<td>
+<code>list(1:n_ages)</code> when <code>"a"</code> is not attended;
+custom groups such as <code>list(1:5, 6:10)</code> are allowed when it
+is</td>
+</tr>
+<tr class="odd">
+<td><code>conv_tag_sex_pool</code></td>
+<td><code>as.list(1:n_sexes)</code></td>
+<td>
+<code>list(1:n_sexes)</code> when <code>"s"</code> is not
+attended</td>
+</tr>
+</tbody>
+</table>
+<p>A pooling structure inconsistent with the attribution warns and is
+overridden to a single group, so the model runs but not with the
+structure that was asked for. Set both together.</p>
+</div>
+<div class="section level4">
+<h4 id="timing">Timing<a class="anchor" aria-label="anchor" href="#timing"></a>
+</h4>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Argument</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>conv_tag_mixing_period</code></td>
+<td>Years (or seasons in a seasonal model) after release before
+recaptures enter the likelihood. Lets tags mix before they inform
+movement. Default <code>1</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>conv_tag_t_tagging</code></td>
+<td>Fraction of the season remaining at release, in <code>[0, 1]</code>:
+<code>1</code> at the start, <code>0.5</code> mid-season, <code>0</code>
+at the end. Scalar or one value per cohort. Default <code>1</code>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level4">
+<h4 id="recapture-likelihood-conv_fish_tag_like">Recapture likelihood (<code>conv_fish_tag_like</code>)<a class="anchor" aria-label="anchor" href="#recapture-likelihood-conv_fish_tag_like"></a>
+</h4>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>String</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>"Poisson"</code></td>
+<td>Poisson on recapture counts (default)</td>
+</tr>
+<tr class="even">
+<td><code>"NegBin"</code></td>
+<td>Negative binomial, overdispersion from
+<code>ln_conv_fish_tag_theta</code>
+</td>
+</tr>
+<tr class="odd">
+<td><code>"Multinomial_Release"</code></td>
+<td>Multinomial conditioned on the release cohort</td>
+</tr>
+<tr class="even">
+<td><code>"Multinomial_Recapture"</code></td>
+<td>Multinomial conditioned on the recapture cell</td>
+</tr>
+<tr class="odd">
+<td><code>"Dirichlet-Multinomial_Release"</code></td>
+<td>Dirichlet-multinomial on the release conditioning</td>
+</tr>
+<tr class="even">
+<td><code>"Dirichlet-Multinomial_Recapture"</code></td>
+<td>Dirichlet-multinomial on the recapture conditioning</td>
+</tr>
+</tbody>
+</table>
+<p><code>ln_conv_fish_tag_theta</code> is read by the negative binomial
+and both Dirichlet-multinomial forms and ignored otherwise.</p>
+</div>
+<div class="section level4">
+<h4 id="tag-loss-parameters">Tag-loss parameters<a class="anchor" aria-label="anchor" href="#tag-loss-parameters"></a>
+</h4>
+<p>Both are log scale, scalar or one value per release event, and a
+scalar is recycled to every event. Both default to <code>-1000</code>,
+which is effectively zero.</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th>Parameter</th>
+<th>Spec argument</th>
+<th>Sharing options</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>ln_init_conv_tag_mort</code></td>
+<td><code>init_conv_tag_mort_spec</code></td>
+<td>
+<code>"fix"</code>, <code>"est_shared"</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>ln_conv_tag_shed</code></td>
+<td><code>conv_tag_shed_spec</code></td>
+<td>
+<code>"fix"</code>, <code>"est_shared"</code>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Leaving a spec at <code>NULL</code> keeps the parameter fixed at its
+starting value.</p>
+</div>
+<div class="section level4">
+<h4 id="reporting-rates">Reporting rates<a class="anchor" aria-label="anchor" href="#reporting-rates"></a>
+</h4>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Argument</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>conv_tagrep_spec</code></td>
+<td>Sharing across region, fleet and block: <code>"est_all"</code>,
+<code>"est_shared_r"</code>, <code>"est_shared_f"</code>,
+<code>"est_shared_r_f"</code>, <code>"fix"</code>. Default
+<code>"fix"</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>conv_tag_fish_reporting_blocks</code></td>
+<td>Time blocking for reporting, same syntax as the selectivity and
+catchability blocks</td>
+</tr>
+<tr class="odd">
+<td><code>use_conv_tag_fishrep_prior</code></td>
+<td>
+<code>0</code>/<code>1</code>, whether reporting priors apply.
+Default <code>0</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>conv_tag_fishrep_prior</code></td>
+<td>Data frame with columns <code>region</code>, <code>block</code>,
+<code>fleet</code>, <code>mu</code>, <code>sd</code>, <code>type</code>.
+Ignored unless the switch above is <code>1</code>
+</td>
+</tr>
+</tbody>
+</table>
+<p><code>"est_shared_r"</code> requires identical block structure across
+regions within a fleet, and <code>"est_shared_f"</code> the same across
+fleets within a region.</p>
+<p>Recommendations. Reporting rate and tag loss trade off against each
+other and against fishing mortality, so estimating all three at once
+rarely identifies. Fix reporting from a tag-seeding study where one
+exists, or put a prior on it, and estimate shedding only with a
+double-tagging component. Keep <code>conv_tag_max_liberty</code> no
+longer than the recoveries actually inform: it is the argument that most
+directly sets how long the model takes to build.</p>
+</div>
+<div class="section level4">
+<h4 id="weight">Weight<a class="anchor" aria-label="anchor" href="#weight"></a>
+</h4>
+<p><code>Wt_Tagging</code> on <code><a href="../reference/Setup_Mod_Weighting.html">Setup_Mod_Weighting()</a></code>.</p>
 <hr>
+</div>
 </div>
 <div class="section level2">
 <h2 id="reference-points">Reference Points<a class="anchor" aria-label="anchor" href="#reference-points"></a>

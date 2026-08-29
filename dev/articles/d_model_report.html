@@ -490,25 +490,20 @@ applied.</p>
 <td>region, year, season, age, sex, fishery fleet</td>
 </tr>
 <tr class="odd">
-<td><code>FishIdxAA_nLL</code></td>
-<td>region, year, season, age, sex, fishery fleet</td>
-</tr>
-<tr class="even">
 <td><code>SrvIdxAA_nLL</code></td>
 <td>region, year, season, age, sex, survey fleet</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>
 <code>CatchAA_pop_nLL</code>, <code>DiscardAA_pop_nLL</code>,
-<code>FishIdxAA_pop_nLL</code>, <code>SrvIdxAA_pop_nLL</code>
+<code>SrvIdxAA_pop_nLL</code>
 </td>
 <td>as above, with a leading population dimension</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>
 <code>PredCatchAA</code>, <code>PredDiscardAA</code>,
-<code>PredFishIdxAA</code>, <code>PredSrvIdxAA</code> (and
-<code>_pop</code>)</td>
+<code>PredSrvIdxAA</code> (and <code>_pop</code>)</td>
 <td>shaped like their likelihood arrays, on the natural scale</td>
 </tr>
 </tbody>
@@ -520,11 +515,10 @@ ages are correlated contributes its whole density to the first age
 present, so the array still sums correctly but is not readable age by
 age.</p>
 <p>The parameters behind them are also reported:
-<code>ln_sigmaCAA</code>, <code>ln_sigmaDAA</code>,
-<code>ln_sigmaFishIdxAA</code> and <code>ln_sigmaSrvIdxAA</code>, each
-over age, sex and fleet. The age shape of catchability is not among
-them: an index fit age by age carries it in selectivity, through the
-<code>"nonparfree"</code> form.</p>
+<code>ln_sigmaCAA</code>, <code>ln_sigmaDAA</code>, and
+<code>ln_sigmaSrvIdxAA</code>, each over age, sex and fleet. The age
+shape of catchability is not among them: an index fit age by age carries
+it in selectivity, through the <code>"nonparfree"</code> form.</p>
 <p>Region-aggregated likelihoods combine contributions across all
 populations; population-specific likelihoods (<code>_pop_</code>) are
 only computed when the corresponding <code>UseCatch_pop</code>,

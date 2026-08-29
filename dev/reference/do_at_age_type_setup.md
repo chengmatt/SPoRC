@@ -26,8 +26,11 @@ do_at_age_type_setup(
 
 - type:
 
-  Character, one of `"agg"`, `"spltRaggS"`, `"aggRspltS"` or
-  `"spltRspltS"`, either one setting for every fleet or one per fleet.
+  Character. Either bare values, one of `"agg"`, `"spltRaggS"`,
+  `"aggRspltS"` or `"spltRspltS"`, given once for every fleet or once
+  per fleet; or year and fleet specifications such as
+  `"spltRaggS_Year_1-20_Fleet_1"`, in which case every year of every
+  fleet needs an entry covering it.
 
 - stream:
 
@@ -47,10 +50,16 @@ do_at_age_type_setup(
 
 ## Value
 
-`input_list` with `$data$<stream>_Type` set.
+`input_list` with `$data$<stream>_Type` set to a numeric matrix
+`[n_yrs, n_fleets]` of codes.
 
 ## Details
 
 A margin the fleet sums over carries its observation in slot one, and a
 use flag anywhere else on that margin is refused rather than quietly
 ignored.
+
+The setting may change part way through a series, given in the same
+`Value_Year_x-y_Fleet_f` form the composition streams take. A bare value
+stands for the whole series, either one setting for every fleet or one
+per fleet.

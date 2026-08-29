@@ -31,6 +31,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/r_natal-homing-pop-lrgr-rg.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/s_discard_retention.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/t_model_options.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/articles/ta_option_reference.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/u_osa_residuals.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/v_structuring_your_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/w_goa_northern_rockfish_case_study.html</loc></url>
@@ -92,6 +93,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/at_age_obs_sd.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/at_age_sigma_spec.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/at_age_split.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/at_age_type_matrix.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/bins_or_null.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/build_idx_factor.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/build_idx_sd.html</loc></url>
@@ -109,7 +111,9 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/check_bin_map.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/check_comp_bins_min.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/check_data_dimensions.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/check_fleet_spec_length.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/check_msy_rec_model.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/check_par_map_lengths.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/check_sim_dimensions.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/check_spec_map_identifiable.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/cmb.html</loc></url>
@@ -277,6 +281,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/obs_bin_count.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/obs_len_bins.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/optim_ref_pts.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/option_reference.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/osa_default_bins.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/osa_extract_cdf.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/osa_extract_keep.html</loc></url>
@@ -294,12 +299,15 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/parse_caal_type.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/parse_comp_bins.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/parse_idx_cov.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/parse_year_fleet_spec.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/plot_all_basic.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/plot_resids.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/plus_group_size.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/post_optim_sanity_checks.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/predict_sim_fish_iss_fmort.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/prep_at_age_obs.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/rd_argument_text.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/rd_database.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/rdirM.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/recycle_tag_event_par.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/refpt_draw_devs.html</loc></url>
@@ -331,6 +339,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/setup_sel_bin_devs.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/setup_sel_norm_bins.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/setup_sel_sex_offset.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/setup_stage_order.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_bsai_atka_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_bsai_nork_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_bsai_nrs_data.html</loc></url>
@@ -362,6 +371,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/three_rg_sable_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/three_rg_sable_rep.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/truncate_yr.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/use_starting_value.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/validate_osa_method.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/validate_selex_penalty.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/validate_selex_prior_types.html</loc></url>

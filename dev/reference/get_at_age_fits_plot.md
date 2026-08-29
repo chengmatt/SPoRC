@@ -31,8 +31,8 @@ get_at_age_fits_plot(data, rep, model_names, stream = "CatchAA")
 
 - stream:
 
-  Which stream to plot: `"CatchAA"` (default), `"DiscardAA"`,
-  `"FishIdxAA"` or `"SrvIdxAA"`.
+  Which stream to plot: `"CatchAA"` (default), `"DiscardAA"` or
+  `"SrvIdxAA"`.
 
 ## Value
 

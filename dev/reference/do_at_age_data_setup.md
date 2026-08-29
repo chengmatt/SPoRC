@@ -1,6 +1,6 @@
 # Store one at-age stream's observations, use flags and standard errors
 
-Shared by the four streams and their population-specific forms. An
+Shared by the three streams and their population-specific forms. An
 absent stream is given a zeroed array so the objective can index it
 unconditionally.
 

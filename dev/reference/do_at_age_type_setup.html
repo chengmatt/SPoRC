@@ -85,9 +85,11 @@ both kinds of data states them the same way.</p>
 
 
 <dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>
-<dd><p>Character, one of <code>"agg"</code>, <code>"spltRaggS"</code>,
-<code>"aggRspltS"</code> or <code>"spltRspltS"</code>, either one setting for every
-fleet or one per fleet.</p></dd>
+<dd><p>Character. Either bare values, one of <code>"agg"</code>,
+<code>"spltRaggS"</code>, <code>"aggRspltS"</code> or <code>"spltRspltS"</code>, given once
+for every fleet or once per fleet; or year and fleet specifications such as
+<code>"spltRaggS_Year_1-20_Fleet_1"</code>, in which case every year of every
+fleet needs an entry covering it.</p></dd>
 
 
 <dt id="arg-stream">stream<a class="anchor" aria-label="anchor" href="#arg-stream"></a></dt>
@@ -108,12 +110,17 @@ fleet or one per fleet.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p><code>input_list</code> with <code>$data$&lt;stream&gt;_Type</code> set.</p>
+    <p><code>input_list</code> with <code>$data$&lt;stream&gt;_Type</code> set to a numeric
+  matrix <code>[n_yrs, n_fleets]</code> of codes.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>A margin the fleet sums over carries its observation in slot one, and a use
 flag anywhere else on that margin is refused rather than quietly ignored.</p>
+<p>The setting may change part way through a series, given in the same
+<code>Value_Year_x-y_Fleet_f</code> form the composition streams take. A bare value
+stands for the whole series, either one setting for every fleet or one per
+fleet.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

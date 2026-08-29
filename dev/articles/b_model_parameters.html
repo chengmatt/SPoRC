@@ -248,20 +248,6 @@ keyed by <code>sigmaDAA_key</code>
 <td>log(0.5)</td>
 </tr>
 <tr class="odd">
-<td><code>ln_sigmaFishIdxAA</code></td>
-<td><code>n_ages × n_sexes × n_fish_fleets</code></td>
-<td>Log-scale standard deviation for the fishery index at age, keyed by
-<code>sigmaFishIdxAA_key</code>
-</td>
-<td>log(0.5)</td>
-</tr>
-<tr class="even">
-<td><code>ln_sigmaFishIdxAA_pop</code></td>
-<td><code>n_pop × n_ages × n_sexes × n_fish_fleets</code></td>
-<td>Population-specific counterpart</td>
-<td>log(0.5)</td>
-</tr>
-<tr class="odd">
 <td><code>ln_sigmaSrvIdxAA</code></td>
 <td><code>n_ages × n_sexes × n_srv_fleets</code></td>
 <td>Log-scale standard deviation for the survey index at age, keyed by
@@ -314,16 +300,6 @@ mapped to <code>NA</code> unless <code>AgeObsCorr_catch</code> is
 </tr>
 <tr class="odd">
 <td>
-<code>trans_rho_fish_idx</code>,
-<code>trans_rho_fish_idx_year</code>,
-<code>trans_rho_fish_idx_us</code>
-</td>
-<td>as above</td>
-<td>As above, for the fishery index at age</td>
-<td>0</td>
-</tr>
-<tr class="even">
-<td>
 <code>trans_rho_srv_idx</code>, <code>trans_rho_srv_idx_year</code>,
 <code>trans_rho_srv_idx_us</code>
 </td>
@@ -333,10 +309,10 @@ mapped to <code>NA</code> unless <code>AgeObsCorr_catch</code> is
 <td>As above, for the survey index at age</td>
 <td>0</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>
 <code>trans_rho_catch_pop</code>,
-<code>trans_rho_discard_pop</code>, <code>trans_rho_fish_idx_pop</code>,
+<code>trans_rho_discard_pop</code>,
 <code>trans_rho_srv_idx_pop</code>
 </td>
 <td>as above with a leading <code>n_pop</code>

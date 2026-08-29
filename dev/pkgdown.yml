@@ -33,13 +33,14 @@ articles:
   r_natal-homing-pop-lrgr-rg: r_natal-homing-pop-lrgr-rg.html
   s_discard_retention: s_discard_retention.html
   t_model_options: t_model_options.html
+  ta_option_reference: ta_option_reference.html
   u_osa_residuals: u_osa_residuals.html
   v_structuring_your_data: v_structuring_your_data.html
   w_goa_northern_rockfish_case_study: w_goa_northern_rockfish_case_study.html
   x_goa_dusky_rockfish_case_study: x_goa_dusky_rockfish_case_study.html
   y_bsai_northern_rockfish_case_study: y_bsai_northern_rockfish_case_study.html
   z_bsai_rougheye_rockfish_case_study: z_bsai_rougheye_rockfish_case_study.html
-last_built: 2026-08-28T19:06Z
+last_built: 2026-08-29T18:54Z
 urls:
   reference: https://chengmatt.github.io/SPoRC/reference
   article: https://chengmatt.github.io/SPoRC/articles

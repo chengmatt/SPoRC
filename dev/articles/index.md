@@ -8,6 +8,8 @@
   SPoRC](https://chengmatt.github.io/SPoRC/dev/articles/v_structuring_your_data.md):
 - [Overview of Model
   Options](https://chengmatt.github.io/SPoRC/dev/articles/t_model_options.md):
+- [Setup Estimation Model Argument
+  Reference](https://chengmatt.github.io/SPoRC/dev/articles/ta_option_reference.md):
 
 ### Model Descriptions
 

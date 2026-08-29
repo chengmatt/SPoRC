@@ -93,7 +93,6 @@ populated over <code>1:n_yrs</code>.</p>
 <span>  <span class="va">PredCatch</span>,</span>
 <span>  <span class="va">PredDiscard</span>,</span>
 <span>  <span class="va">PredFishIdx</span>,</span>
-<span>  FishIAA <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">fit_lengths</span>,</span>
 <span>  <span class="va">SizeAgeTrans</span>,</span>
 <span>  <span class="va">catch_units</span>,</span>
@@ -179,13 +178,6 @@ fish_fleet]</code>, output containers for retained/discarded catch at length.</p
 <dt id="arg-predcatch-preddiscard-predfishidx">PredCatch, PredDiscard, PredFishIdx<a class="anchor" aria-label="anchor" href="#arg-predcatch-preddiscard-predfishidx"></a></dt>
 <dd><p>Arrays <code>[pop, region, year,
 season, fish_fleet]</code>, output containers.</p></dd>
-
-
-<dt id="arg-fishiaa">FishIAA<a class="anchor" aria-label="anchor" href="#arg-fishiaa"></a></dt>
-<dd><p>Container for the fishery index numbers at age, defaulting to
-a zero array shaped like <code>CAA</code>. Filled with the
-fleet's timing and movement treatment applied so the at-age index likelihood
-reads the same quantity the aggregated one does.</p></dd>
 
 
 <dt id="arg-fit-lengths">fit_lengths<a class="anchor" aria-label="anchor" href="#arg-fit-lengths"></a></dt>

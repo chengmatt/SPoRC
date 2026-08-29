@@ -18,29 +18,20 @@ Setup_Sim_Fishing(
     sim_list$n_fish_fleets)),
   ln_sigmaDAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_sexes,
     sim_list$n_fish_fleets)),
-  ln_sigmaFishIdxAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_sexes,
-    sim_list$n_fish_fleets)),
   UseCatchAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
     sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
   UseDiscardAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
     sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
-  UseFishIdxAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
-    sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
   ObsCatchAA_SE = NULL,
   ObsDiscardAA_SE = NULL,
-  ObsFishIdxAA_SE = NULL,
   CatchAA_Type = "spltRaggS",
   DiscardAA_Type = "spltRaggS",
-  FishIdxAA_Type = "spltRaggS",
   CatchAA_LikeType = "lognormal",
   DiscardAA_LikeType = "lognormal",
-  FishIdxAA_LikeType = "lognormal",
   CatchAA_sigma_form = "none",
   DiscardAA_sigma_form = "none",
-  FishIdxAA_sigma_form = "none",
   use_catch_aa = rep(0, sim_list$n_fish_fleets),
   use_discard_aa = rep(0, sim_list$n_fish_fleets),
-  use_fish_idx_aa = rep(0, sim_list$n_fish_fleets),
   catch_units = array(1, dim = c(sim_list$n_fish_fleets)),
   init_F_val = array(0, dim = c(sim_list$n_regions, sim_list$n_seas,
     sim_list$n_fish_fleets)),
@@ -190,39 +181,39 @@ Setup_Sim_Fishing(
   dimensions \`n_pop x n_regions x n_yrs x n_seas x n_fish_fleets\`.
   Default: log(0.02).
 
-- ln_sigmaCAA, ln_sigmaDAA, ln_sigmaFishIdxAA:
+- ln_sigmaCAA, ln_sigmaDAA:
 
   Log-scale observation error for the at-age streams, \`n_ages x n_sexes
   x n_fish_fleets\`. An array without the sex margin is required.
 
-- UseCatchAA, UseDiscardAA, UseFishIdxAA:
+- UseCatchAA, UseDiscardAA:
 
   Integer arrays \`n_regions x n_yrs x n_seas x n_ages x n_sexes x
   n_fish_fleets\`, \`1\` where an at-age observation is drawn. The sex
   margin is required: a stream summed over sexes carries its flag in sex
   slot one.
 
-- ObsCatchAA_SE, ObsDiscardAA_SE, ObsFishIdxAA_SE:
+- ObsCatchAA_SE, ObsDiscardAA_SE:
 
   Reported standard errors shaped like the use arrays, read only when
   the stream's \`sigma_form\` asks for them.
 
-- CatchAA_Type, DiscardAA_Type, FishIdxAA_Type:
+- CatchAA_Type, DiscardAA_Type:
 
   Which margins each fleet reports separately: \`"agg"\`,
   \`"spltRaggS"\` (default), \`"aggRspltS"\` or \`"spltRspltS"\`. A
   summed margin is drawn once, into slot one.
 
-- CatchAA_LikeType, DiscardAA_LikeType, FishIdxAA_LikeType:
+- CatchAA_LikeType, DiscardAA_LikeType:
 
   \`"lognormal"\` (default) or \`"normal"\`, per fleet.
 
-- CatchAA_sigma_form, DiscardAA_sigma_form, FishIdxAA_sigma_form:
+- CatchAA_sigma_form, DiscardAA_sigma_form:
 
   Where the observation error comes from: \`"none"\` (default),
   \`"data"\`, \`"est_additive"\` or \`"est_quadrature"\`.
 
-- use_catch_aa, use_discard_aa, use_fish_idx_aa:
+- use_catch_aa, use_discard_aa:
 
   Integer vectors \`n_fish_fleets\`, \`1\` for fleets whose at-age
   streams are drawn.

@@ -177,12 +177,14 @@ Setup_Mod_Catch_and_F(
 
 - CatchAA_Type, DiscardAA_Type, CatchAA_pop_Type, DiscardAA_pop_Type:
 
-  Which margins the fleet reports separately, one setting for every
-  fleet or one per fleet, following the composition vocabulary. `"agg"`
-  sums over regions and sexes, `"spltRaggS"` (default) splits regions
-  and sums over sexes, `"aggRspltS"` does the reverse, and
-  `"spltRspltS"` splits both. An observation summed over a margin
-  belongs in slot one of it.
+  Which margins the fleet reports separately, following the composition
+  vocabulary. Give it as one setting for every fleet, one per fleet, or
+  as year and fleet specifications such as
+  `"spltRaggS_Year_1-20_Fleet_1"` when the setting changes part way
+  through the series. `"agg"` sums over regions and sexes, `"spltRaggS"`
+  (default) splits regions and sums over sexes, `"aggRspltS"` does the
+  reverse, and `"spltRspltS"` splits both. An observation summed over a
+  margin belongs in slot one of it.
 
 - CatchAA_LikeType, DiscardAA_LikeType, CatchAA_pop_LikeType,
   DiscardAA_pop_LikeType:

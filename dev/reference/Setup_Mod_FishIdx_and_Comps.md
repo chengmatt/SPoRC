@@ -14,26 +14,6 @@ Setup_Mod_FishIdx_and_Comps(
   input_list,
   ObsFishIdx,
   ObsFishIdx_SE,
-  ObsFishIdxAA = NULL,
-  UseFishIdxAA = NULL,
-  ObsFishIdxAA_SE = NULL,
-  ObsFishIdxAA_pop = NULL,
-  UseFishIdxAA_pop = NULL,
-  ObsFishIdxAA_pop_SE = NULL,
-  sigmaFishIdxAA_key = NULL,
-  sigmaFishIdxAA_spec = "est",
-  sigmaFishIdxAA_pop_key = NULL,
-  sigmaFishIdxAA_pop_spec = "est",
-  FishIdxAA_Type = "spltRaggS",
-  FishIdxAA_pop_Type = "spltRaggS",
-  FishIdxAA_LikeType = "lognormal",
-  FishIdxAA_pop_LikeType = "lognormal",
-  FishIdxAA_sigma_form = "none",
-  FishIdxAA_pop_sigma_form = "none",
-  AgeObsCorr_fish_idx = "iid",
-  AgeObsCorr_fish_idx_pop = "iid",
-  rho_fish_idx_spec = NULL,
-  rho_fish_idx_pop_spec = NULL,
   sigmaFishIdx_spec = "fix",
   sigmaFishIdx_map = NULL,
   sigmaFishIdx_pop_spec = "fix",
@@ -145,74 +125,6 @@ Setup_Mod_FishIdx_and_Comps(
 
   Standard errors of `ObsFishIdx` on the log scale, same dimensions as
   `ObsFishIdx`.
-
-- ObsFishIdxAA:
-
-  Observed fishery index at age, an array with dimensions
-  `[n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets]`. The
-  fishery counterpart of `ObsSrvIdxAA`: every age its own observation
-  with its own catchability. The sex margin is required whatever the
-  fleet reports: a stream summed over sexes carries its observation in
-  sex slot one. A fleet uses this or the aggregated index.
-
-- UseFishIdxAA:
-
-  Integer array shaped like `ObsFishIdxAA`.
-
-- ObsFishIdxAA_SE, ObsFishIdxAA_pop_SE:
-
-  Reported standard errors shaped like their observation array, read
-  only when `FishIdxAA_sigma_form` asks for them. This is the parity the
-  aggregated index already has: an index disaggregated by age keeps its
-  survey-design errors.
-
-- ObsFishIdxAA_pop, UseFishIdxAA_pop:
-
-  Population-specific counterparts.
-
-- sigmaFishIdxAA_key, sigmaFishIdxAA_pop_key:
-
-  Integer arrays `[n_ages, n_sexes, n_fish_fleets]` coupling the index
-  at age observation error. Equal entries share a parameter and `NA`
-  excludes one. The sex margin is required; a key coupling the sexes
-  repeats its entries across them. The age shape of catchability is not
-  set here: an index fit age by age puts it in selectivity through the
-  `"nonparfree"` form. See
-  [`Setup_Mod_Fishsel_and_Q`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Fishsel_and_Q.md).
-
-- sigmaFishIdxAA_spec, sigmaFishIdxAA_pop_spec:
-
-  `"est"` or `"fix"`.
-
-- FishIdxAA_Type, FishIdxAA_pop_Type:
-
-  Which margins the fleet reports separately: `"agg"`, `"spltRaggS"`
-  (default), `"aggRspltS"` or `"spltRspltS"`. See
-  [`Setup_Mod_Catch_and_F`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Catch_and_F.md).
-
-- FishIdxAA_LikeType, FishIdxAA_pop_LikeType:
-
-  `"lognormal"` (default) or `"normal"`, one setting for every fleet or
-  one per fleet.
-
-- FishIdxAA_sigma_form, FishIdxAA_pop_sigma_form:
-
-  Where the observation error comes from: `"none"` (default), `"data"`,
-  `"est_additive"` or `"est_quadrature"`.
-
-- AgeObsCorr_fish_idx, AgeObsCorr_fish_idx_pop:
-
-  Correlation across ages for the fishery index at age, `"iid"`
-  (default), `"1dar1"`, `"us"` or `"2dar1"`, one setting for every fleet
-  or one per fleet. See
-  [`Setup_Mod_Catch_and_F`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Catch_and_F.md).
-
-- rho_fish_idx_spec, rho_fish_idx_pop_spec:
-
-  How the correlation parameters are shared, over region, sex and fleet,
-  using the package's spec strings. `NULL` (the default) gives one per
-  fleet. See
-  [`Setup_Mod_Catch_and_F`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Catch_and_F.md).
 
 - sigmaFishIdx_spec:
 

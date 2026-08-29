@@ -35,17 +35,14 @@ a standard deviation per age, per age group, or per fleet. See
 | `ln_sigmaCAA_pop` | `n_pop × n_ages × n_sexes × n_fish_fleets` | Population-specific counterpart, keyed by `sigmaCAA_pop_key` | log(0.5) |
 | `ln_sigmaDAA` | `n_ages × n_sexes × n_fish_fleets` | Log-scale standard deviation for the discard-at-age likelihood, keyed by `sigmaDAA_key` | log(0.5) |
 | `ln_sigmaDAA_pop` | `n_pop × n_ages × n_sexes × n_fish_fleets` | Population-specific counterpart, keyed by `sigmaDAA_pop_key` | log(0.5) |
-| `ln_sigmaFishIdxAA` | `n_ages × n_sexes × n_fish_fleets` | Log-scale standard deviation for the fishery index at age, keyed by `sigmaFishIdxAA_key` | log(0.5) |
-| `ln_sigmaFishIdxAA_pop` | `n_pop × n_ages × n_sexes × n_fish_fleets` | Population-specific counterpart | log(0.5) |
 | `ln_sigmaSrvIdxAA` | `n_ages × n_sexes × n_srv_fleets` | Log-scale standard deviation for the survey index at age, keyed by `sigmaSrvIdxAA_key` | log(0.5) |
 | `ln_sigmaSrvIdxAA_pop` | `n_pop × n_ages × n_sexes × n_srv_fleets` | Population-specific counterpart | log(0.5) |
 | `trans_rho_catch` | `n_regions × n_sexes × n_fish_fleets` | Unconstrained AR(1) correlation across ages for catch at age. Transformed to `(-1, 1)` by [`rho_trans()`](https://chengmatt.github.io/SPoRC/dev/reference/rho_trans.md). Shared according to `rho_catch_spec`, one per fleet by default, and mapped to `NA` unless `AgeObsCorr_catch` is `"1dar1"` or `"2dar1"` | 0 |
 | `trans_rho_catch_year` | `n_regions × n_sexes × n_fish_fleets` | Correlation across years, read only under `AgeObsCorr_catch = "2dar1"` | 0 |
 | `trans_rho_catch_us` | `n_pairs × n_regions × n_sexes × n_fish_fleets` | Unconstrained entries of the unstructured across-age correlation, `n_pairs = n_ages(n_ages - 1)/2`. Read only under `AgeObsCorr_catch = "us"` | 0 |
 | `trans_rho_discard`, `trans_rho_discard_year`, `trans_rho_discard_us` | as above | As above, for discards at age | 0 |
-| `trans_rho_fish_idx`, `trans_rho_fish_idx_year`, `trans_rho_fish_idx_us` | as above | As above, for the fishery index at age | 0 |
 | `trans_rho_srv_idx`, `trans_rho_srv_idx_year`, `trans_rho_srv_idx_us` | `n_regions × n_sexes × n_srv_fleets` (and `n_pairs × …`) | As above, for the survey index at age | 0 |
-| `trans_rho_catch_pop`, `trans_rho_discard_pop`, `trans_rho_fish_idx_pop`, `trans_rho_srv_idx_pop` | as above with a leading `n_pop` | Population-specific counterparts, with their own `_year` and `_us` forms. The `_pop` streams carry their own correlation rather than borrowing the aggregated one | 0 |
+| `trans_rho_catch_pop`, `trans_rho_discard_pop`, `trans_rho_srv_idx_pop` | as above with a leading `n_pop` | Population-specific counterparts, with their own `_year` and `_us` forms. The `_pop` streams carry their own correlation rather than borrowing the aggregated one | 0 |
 
 ## Fishery Selectivity
 

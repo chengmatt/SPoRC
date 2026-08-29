@@ -99,7 +99,8 @@ get_at_age_stream_nLL(
 
 - aa_type:
 
-  Integer per fleet naming the split margins, see
+  Integer codes naming the split margins, as a matrix over year by fleet
+  or a vector per fleet standing for every year, see
   [`at_age_split`](https://chengmatt.github.io/SPoRC/dev/reference/at_age_split.md).
 
 ## Value

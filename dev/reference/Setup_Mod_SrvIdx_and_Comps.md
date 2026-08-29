@@ -164,7 +164,8 @@ Setup_Mod_SrvIdx_and_Comps(
 - SrvIdxAA_Type, SrvIdxAA_pop_Type:
 
   Which margins the fleet reports separately: `"agg"`, `"spltRaggS"`
-  (default), `"aggRspltS"` or `"spltRspltS"`. See
+  (default), `"aggRspltS"` or `"spltRspltS"`, or year and fleet
+  specifications such as `"spltRaggS_Year_1-20_Fleet_1"`. See
   [`Setup_Mod_Catch_and_F`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Catch_and_F.md).
 
 - SrvIdxAA_LikeType, SrvIdxAA_pop_LikeType:

@@ -42,7 +42,9 @@ cat('</select>\n<span id="optref-tally"></span>\n</div>\n')
 for(s in stages) {
   sub <- ref[ref$stage == s, ]
   cat(sprintf('<section class="optref-stage" data-stage="%s">\n', s))
-  cat(sprintf('<h3>Setup_Mod_%s <span class="optref-n">%d arguments</span></h3>\n',
+  # the count sits outside the heading: pkgdown builds its sidebar from the
+  # heading text, and a count inside it lands in the table of contents
+  cat(sprintf('<h3>Setup_Mod_%s</h3>\n<p class="optref-n">%d arguments</p>\n',
               s, nrow(sub)))
   cat('<table class="optref-table">\n<thead><tr><th>Argument</th><th>Default</th>',
       '<th>Description</th></tr></thead>\n<tbody>\n', sep = "")
@@ -67,7 +69,7 @@ cat('</div>\n')
 .optref-controls input{flex:1 1 220px;min-width:0}
 #optref-tally{margin-left:auto;font-size:12px;opacity:.65;font-variant-numeric:tabular-nums}
 .optref-stage h3{margin:26px 0 8px;font-size:16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
-.optref-n{font-size:12px;font-weight:400;opacity:.6;font-family:inherit}
+.optref-n{font-size:12px;font-weight:400;opacity:.6;font-family:inherit;margin:-4px 0 8px}
 .optref-table{width:100%;border-collapse:collapse;font-size:13px;display:table}
 .optref-table th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
   opacity:.6;padding:6px 8px;border-bottom:1px solid #ddd}

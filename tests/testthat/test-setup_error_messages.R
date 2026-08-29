@@ -110,9 +110,17 @@ test_that("no setup message still carries the old misspelling", {
   r_dir <- testthat::test_path("..", "..", "R")
   skip_if_not(dir.exists(r_dir), "package source is not laid out beside the tests")
 
-  hits <- unlist(lapply(list.files(r_dir, pattern = "\\.R$", full.names = TRUE), function(f) {
+  # an installed package keeps a lazy-load database in R/ rather than sources, so
+  # the directory exists and holds nothing this can read. That is a reason to skip
+  # rather than to pass: a scan of no files finds no misspellings either way
+  r_files <- list.files(r_dir, pattern = "\\.R$", full.names = TRUE)
+  skip_if(length(r_files) == 0, "package sources are not available to scan")
+
+  # unlist() over a list of empty character vectors returns NULL rather than
+  # character(0), so the comparison is made on a character vector either way
+  hits <- as.character(unlist(lapply(r_files, function(f) {
     grep("specfied", readLines(f, warn = FALSE), value = TRUE)
-  }))
+  })))
 
   expect_equal(hits, character(0))
 })

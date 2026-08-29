@@ -1050,7 +1050,7 @@ error, since it is the same information stated twice.
 | `ObsDiscardAA` / `UseDiscardAA` | Discards at age |
 | `ObsSrvIdxAA` / `UseSrvIdxAA` | Survey index at age |
 
-Each has a `_pop` counterpart with a leading population dimension. All eight
+Each has a `_pop` counterpart with a leading population dimension. All six
 evaluate the same at-age likelihood through one function, differing only in which
 array supplies the prediction.
 
@@ -1187,7 +1187,8 @@ is `trans_rho_<stream>_year`.
 
 How the correlations are shared is a spec string, the same one the rest of the
 package uses for `sigmaF_spec` and `Fdev_rho_spec`, rather than a structure of
-its own:
+its own: `rho_catch_spec`, `rho_discard_spec` and `rho_srv_idx_spec`, each with a
+`_pop` counterpart.
 
 The correlations sit over region, sex and fleet, with a leading population
 margin for the population-specific streams, so the abbreviations are `r`, `s`,

@@ -302,7 +302,7 @@ test_that("Multi-region, population, and seasonal local BH MSY reference points 
   )
 
   # get BH recruitment options
-  bh_rec_opt <- list(
+  srr_opt <- list(
     rec_dd     = 0,
     rec_lag    = 1,
     R0         = apply(sim_pop_obj$R0[,, n_yrs, 1, drop = FALSE], 1, sum),
@@ -375,7 +375,7 @@ test_that("Multi-region, population, and seasonal local BH MSY reference points 
                                   sgl_seas_spawning_movement = sgl_seas_spawning_movement,
                                   stray_rate = stray_rate,
                                   seasdur = seasdur,
-                                  bh_rec_opt = bh_rec_opt
+                                  srr_opt = srr_opt
   )
 
   # Check if F equilibriates back at F40%

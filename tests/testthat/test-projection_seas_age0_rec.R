@@ -48,7 +48,7 @@ test_that("Do_Population_Projection handles age-0 (rec_lag = 0) recruitment with
   terminal_NAA[1,1,2,2:n_ages,1] <- c(700, 550, 380, 240, 590)
   terminal_NAA0 <- terminal_NAA
 
-  bh_rec_opt <- list(
+  srr_opt <- list(
     rec_dd = 1,
     rec_lag = 0,
     do_recruits_move = do_recruits_move,
@@ -99,7 +99,7 @@ test_that("Do_Population_Projection handles age-0 (rec_lag = 0) recruitment with
                                   seasdur = seasdur,
                                   spawn_seas = spawn_seas,
                                   natal_region = 1,
-                                  bh_rec_opt = bh_rec_opt
+                                  srr_opt = srr_opt
   )
 
   # No recruits ever appear pre-spawn (season 1, age index 1)

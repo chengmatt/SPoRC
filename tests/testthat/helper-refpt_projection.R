@@ -27,15 +27,17 @@
 #' @param recruitment_opt \code{"mean_rec"} or \code{"bh_rec"}. Yield has an
 #'   interior maximum in F only under a stock-recruit curve; with mean
 #'   recruitment it rises without bound, so MSY needs \code{"bh_rec"}.
-#' @param bh_rec_opt Beverton-Holt settings, required when
+#' @param bh_rec_opt The deprecated spelling of \code{srr_opt}, carried only so
+#'   the deprecation shim itself can be tested. Leave it \code{NULL}.
+#' @param srr_opt Beverton-Holt settings, required when
 #'   \code{recruitment_opt = "bh_rec"}.
 #'
 #' @return The list from \code{Do_Population_Projection}.
 #'
 #' @keywords internal
 project_at_F <- function(f, n_proj_yrs = 300, recruitment_opt = "mean_rec",
-                         bh_rec_opt = NULL, data = NULL, rep = NULL, rec_window = 45L,
-                         rec_yrs = NULL) {
+                         srr_opt = NULL, data = NULL, rep = NULL, rec_window = 45L,
+                         rec_yrs = NULL, bh_rec_opt = NULL) {
 
   d <- if(is.null(data)) sgl_rg_sable_data else data
   rp <- if(is.null(rep)) sgl_rg_sable_rep else rep
@@ -114,7 +116,7 @@ project_at_F <- function(f, n_proj_yrs = 300, recruitment_opt = "mean_rec",
     b_ref_pt = array(0, dim = c(n_pop, n_regions, n_proj_yrs)),
     HCR_function = function(x, frp, brp, alpha = 0.05) frp,
     recruitment_opt = recruitment_opt, fmort_opt = "Input",
-    t_spawn = 0, bh_rec_opt = bh_rec_opt)
+    t_spawn = 0, srr_opt = srr_opt, bh_rec_opt = bh_rec_opt)
 }
 
 # Projected quantities are laid out with year on the third margin. The final

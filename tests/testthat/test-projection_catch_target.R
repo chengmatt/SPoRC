@@ -190,10 +190,10 @@ test_that("catch targets are met under Beverton-Holt recruitment, including rec_
     f_ref_pt <- array(0, dim = c(n_regions, npy))
     for (r in 1:n_regions) f_ref_pt[r, ] <- seq(0.07, 0.20, length.out = npy) * (1 + 0.2 * r)
 
-    ref <- run_proj(inp, "Input", recruitment_opt = "bh_rec", bh_rec_opt = bh, f_ref_pt = f_ref_pt)
+    ref <- run_proj(inp, "Input", recruitment_opt = "bh_rec", srr_opt = bh, f_ref_pt = f_ref_pt)
     ci <- array(NA_real_, dim = c(n_regions, npy))
     ci[, 2:npy] <- annual_catch(ref, n_regions, npy)[, 2:npy]
-    got <- run_proj(inp, "Catch", recruitment_opt = "bh_rec", bh_rec_opt = bh, catch_input = ci)
+    got <- run_proj(inp, "Catch", recruitment_opt = "bh_rec", srr_opt = bh, catch_input = ci)
 
     expect_equal(got$proj_F[, 2:npy], ref$proj_F[, 2:npy], tolerance = 1e-5,
                  info = paste("rec_lag =", rec_lag))
@@ -533,4 +533,38 @@ test_that("returned arrays carry the documented dimensions", {
                    b_ref_pt = array(2e6, dim = c(n_pop, n_regions, npy)),
                    HCR_function = threshold_hcr)
   expect_equal(dim(got3$proj_catch_resid), dim(ci3))
+})
+
+
+test_that("the deprecated bh_rec_opt still works, warns, and cannot be doubled up", {
+  # Nothing exercised the shim: every call site used the old name, so the rename
+  # to srr_opt silenced the deprecation everywhere and left the shim itself with
+  # no coverage at all. These are the three things it promises.
+  #
+  # The shim is one assignment, srr_opt <- bh_rec_opt, so what needs proving is
+  # that the value is forwarded. Feeding the same incomplete list under either
+  # name and getting the same validation complaint shows that directly, and
+  # costs nothing next to running two projections to compare.
+  skip_if_not(exists("project_at_F"), "the projection helper is not loaded")
+
+  partial <- list(rec_dd = 0, R0 = 1e6, h = 0.7)
+  err <- function(expr) tryCatch({ expr; NA_character_ },
+                                 error = function(e) conditionMessage(e))
+
+  # it warns, and it names its replacement rather than only itself
+  expect_warning(
+    old <- err(project_at_F(0.05, n_proj_yrs = 5, recruitment_opt = "bh_rec",
+                            srr_opt = NULL, bh_rec_opt = partial)),
+    "srr_opt")
+
+  # and the value arrives where srr_opt would have: same list, same complaint
+  new <- err(project_at_F(0.05, n_proj_yrs = 5, recruitment_opt = "bh_rec",
+                          srr_opt = partial))
+  expect_false(is.na(old))
+  expect_identical(old, new)
+
+  # supplying both is a mistake rather than a preference
+  expect_error(project_at_F(0.05, n_proj_yrs = 5, recruitment_opt = "bh_rec",
+                            srr_opt = partial, bh_rec_opt = partial),
+               "not both")
 })

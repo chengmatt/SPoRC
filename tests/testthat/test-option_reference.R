@@ -25,6 +25,13 @@ test_that("every argument carries its own documentation", {
   # The description comes from the function's help page, so an empty one means
   # either an undocumented argument or a change in how the Rd is being read.
   # Either way the vignette would render a blank column rather than fail.
+  #
+  # An installed package without its help index, which is how some coverage and
+  # check runs build it, has no Rd to read and no source man/ to fall back to.
+  # Every description is then blank for a reason that says nothing about the
+  # documentation, so there is nothing here to assert.
+  skip_if(length(SPoRC:::rd_database()) == 0, "the package Rd database is not available")
+
   ref <- option_reference()
   blank <- ref[!nzchar(ref$description), c("stage", "argument")]
 

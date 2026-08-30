@@ -221,7 +221,7 @@ test_that("Do_Population_Projection: age-0 (rec_lag = 0) and classic (rec_lag = 
 
   sexratio <- array(1, dim = c(n_pop, n_regions, n_proj_yrs, n_sexes)) # single-sex model (n_sexes = 1)
 
-  bh_rec_opt_base <- list(
+  srr_opt_base <- list(
     rec_dd = 1,
     do_recruits_move = do_recruits_move,
     R0 = rep$R0,
@@ -242,8 +242,8 @@ test_that("Do_Population_Projection: age-0 (rec_lag = 0) and classic (rec_lag = 
   )
 
   run_proj <- function(rec_lag) {
-    bh_rec_opt <- bh_rec_opt_base
-    bh_rec_opt$rec_lag <- rec_lag
+    srr_opt <- srr_opt_base
+    srr_opt$rec_lag <- rec_lag
     Do_Population_Projection(
       n_proj_yrs = n_proj_yrs, n_pop = n_pop, n_regions = n_regions, n_ages = n_ages, n_sexes = n_sexes,
       sexratio = sexratio, n_fish_fleets = n_fish_fleets, do_recruits_move = do_recruits_move,
@@ -255,7 +255,7 @@ test_that("Do_Population_Projection: age-0 (rec_lag = 0) and classic (rec_lag = 
       f_ref_pt = array(const_F, dim = c(n_regions, n_proj_yrs)), # hold F constant - no HCR
       recruitment_opt = "bh_rec", fmort_opt = "Input",
       t_spawn = t_spawn, n_seas = n_seas, seasdur = data$seasdur, spawn_seas = data$spawn_seas,
-      natal_region = data$natal_region, bh_rec_opt = bh_rec_opt
+      natal_region = data$natal_region, srr_opt = srr_opt
     )
   }
 

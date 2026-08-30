@@ -84,7 +84,7 @@ test_that("Single Region BH MSY (mock) Reference Points Sablefish Model Converge
   sgl_catch_proj <- array(0, dim = c(n_regions, n_proj_yrs, n_fish_fleets))
 
   # BH recruitment options
-  bh_rec_opt <- list(
+  srr_opt <- list(
     rec_dd = 1,
     rec_lag = 2,
     do_recruits_move = do_recruits_move,
@@ -133,7 +133,7 @@ test_that("Single Region BH MSY (mock) Reference Points Sablefish Model Converge
                                   recruitment_opt = "bh_rec",
                                   fmort_opt = "HCR",
                                   t_spawn = t_spawn,
-                                  bh_rec_opt = bh_rec_opt
+                                  srr_opt = srr_opt
   )
 
   # Check if F equilibriates back at F40%

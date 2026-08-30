@@ -81,7 +81,7 @@ test_that("Multi Region Local BH MSY (mock) Reference Points Sablefish Model Con
   sexratio <- array(0.5, dim = c(n_pop, n_regions, n_proj_yrs, n_sexes)) # recruitment sex ratio
 
   # BH recruitment options
-  bh_rec_opt <- list(
+  srr_opt <- list(
     rec_dd = 0,
     rec_lag = 2,
     do_recruits_move = do_recruits_move,
@@ -129,7 +129,7 @@ test_that("Multi Region Local BH MSY (mock) Reference Points Sablefish Model Con
                                   recruitment_opt = "bh_rec",
                                   fmort_opt = "HCR",
                                   t_spawn = t_spawn,
-                                  bh_rec_opt = bh_rec_opt
+                                  srr_opt = srr_opt
   )
 
 

@@ -360,7 +360,7 @@ test_that("projecting at Fmsy under Beverton-Holt feedback equilibrates at Bmsy 
   #   2. Do_Population_Projection's rec_lag != 0 Beverton-Holt call did not forward
   #      Mrate/move_timing, so the SSB0 behind the curve was built at timing 0.
   #
-  # NOTE: global_Fmsy assumes GLOBAL density dependence, so bh_rec_opt$rec_dd must be 1.
+  # NOTE: global_Fmsy assumes GLOBAL density dependence, so srr_opt$rec_dd must be 1.
   # Pairing it with rec_dd = 0 (local) compares two different equilibria and looks like a
   # bug when it is not.
   n_pop <- 1; n_regions <- 3; n_seas <- 1; n_sexes <- 1; n_ages <- 20; n_flt <- 1
@@ -459,7 +459,7 @@ test_that("projecting at Fmsy under Beverton-Holt feedback equilibrates at Bmsy 
       fish_sel = svn(sel), ret_sel = array(1, dim = c(n_pop, n_regions, NY, n_seas, n_ages, n_sexes, n_flt)),
       Movement = Mov, sgl_seas_spawning_movement = sgl, stray_rate = array(0, dim = c(n_pop, NY)),
       f_ref_pt = array(Fval, dim = c(n_regions, NY)), b_ref_pt = NULL, HCR_function = NULL,
-      recruitment_opt = rec_mode, bh_rec_opt = if (rec_mode == "bh_rec") bh else NULL,
+      recruitment_opt = rec_mode, srr_opt = if (rec_mode == "bh_rec") bh else NULL,
       fmort_opt = "Input", t_spawn = t_spawn, n_seas = n_seas, seasdur = seasdur,
       spawn_seas = spawn_seas, rec_seas_prop = array(1 / n_seas, dim = c(n_pop, n_seas)),
       Mrate = Mra, move_timing = tm)
@@ -504,7 +504,7 @@ test_that("local_BH_MSY is a fixed point of a two-season projection under every 
   # season" branches actually execute).
   #
   # Two harness details that matter and are easy to get wrong:
-  #   - bh_rec_opt$rec_dd must be 0 (local) to match local_Fmsy_sglpop.
+  #   - srr_opt$rec_dd must be 0 (local) to match local_Fmsy_sglpop.
   #   - terminal_NAA must be seeded across ALL seasons. Projection year 1 IS the terminal
   #     data year (proj_NAA[,,1,,,] <- terminal_NAA, and the real caller passes
   #     rep$NAA[,,n_yrs,,,]), so its later seasons are inputs, not something the
@@ -603,7 +603,7 @@ test_that("local_BH_MSY is a fixed point of a two-season projection under every 
       fish_sel = svn(sel), ret_sel = array(1, dim = c(n_pop, n_regions, NY, NS, n_ages, n_sexes, n_flt)),
       Movement = Mov, sgl_seas_spawning_movement = sgl, stray_rate = array(0, dim = c(n_pop, NY)),
       f_ref_pt = matrix(Fvec, n_regions, NY), b_ref_pt = NULL, HCR_function = NULL,
-      recruitment_opt = "bh_rec", bh_rec_opt = bh, fmort_opt = "Input", t_spawn = t_spawn,
+      recruitment_opt = "bh_rec", srr_opt = bh, fmort_opt = "Input", t_spawn = t_spawn,
       n_seas = NS, seasdur = seasdur, spawn_seas = SPAWN,
       rec_seas_prop = array(1 / NS, dim = c(n_pop, NS)), Mrate = Mra, move_timing = tm)
   }
@@ -684,7 +684,14 @@ test_that("seasonal recruitment is apportioned across regions consistently in MS
     rec_region_prop = array(rec_prop, dim = n_regions),
     SR_type = 1, h = 0.7, R0 = 100, ln_global_R0 = log(100)))
 
-  spr_data <- function(tm) c(shared(tm), list(
+  # the population-shaped arrays below supersede the region-shaped ones shared()
+  # supplies for global_Fmsy. Dropping them first keeps the concatenated list free
+  # of duplicate names: getAll assigns in order, so the override already won, but
+  # it warned once per duplicate on every retape
+  spr_data <- function(tm) {
+    base <- shared(tm)
+    c(base[setdiff(names(base), c("WAA", "MatAA", "Movement", "Mrate"))],
+      list(
     n_pop = 1,
     natmort = array(rep(M_r, times = n_ages), dim = c(1, n_regions, n_ages)),
     WAA = array(r4(waa), c(1, n_regions, NS, n_ages)),
@@ -697,6 +704,7 @@ test_that("seasonal recruitment is apportioned across regions consistently in MS
                                        dim = c(1, n_regions, n_regions, n_ages)),
     natal_region = 1, n_pop_in_region = array(1, dim = n_regions), SPR_x = 0.40,
     rec_region_prop = array(rec_prop, dim = c(1, n_regions))))
+  }
 
   ev <- function(fn, dat, parname, val) {
     p <- list(); p[[parname]] <- log(val)

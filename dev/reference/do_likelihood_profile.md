@@ -91,7 +91,7 @@ dimensions. Components include:
   tie, recruitment level, and stock-recruit penalties together, each
   with its weight), `M_nLL_df`, `sel_nLL_df`, `rec_prop_nLL_df`,
   `Movement_nLL_df`, `h_nLL_df`, `R0_nLL_df`, `TagRep_nLL_df`,
-  `Fmort_nLL_df`, `fish_q_nLL_df`, `srv_q_nLL_df`.
+  `NAA_state_nLL_df`, `Fmort_nLL_df`, `fish_q_nLL_df`, `srv_q_nLL_df`.
 
 - Pooled data likelihoods:
 

@@ -346,7 +346,7 @@ the standard deviation is estimated at exactly zero when the operating
 model carries no process error at all.
 
 ![Recovery of the process error parameters over thirty replicates per
-structure. Diamonds mark the operating model's true values. (a) the
+structure. Diamonds mark the operating model’s true values. (a) the
 process error standard deviation, (b) the age and year correlations, (c)
 spawning biomass error with the state on and
 off.](figures/naa_state_recovery.png)

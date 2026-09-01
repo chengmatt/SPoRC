@@ -116,6 +116,40 @@ truncate_yr <- function(j,
     retro_mapping$ln_M <- factor(array(mapping$ln_M, dim = dim(parameters$ln_M))[1:max(retro_data$M_blocks), drop = FALSE])
   }
 
+# State-space numbers at age ----------------------------------------------
+
+  # Truncate state-space NAA
+  if(!is.null(data$NAA_re) && data$NAA_re != 0) {
+
+    n_keep <- length(data$years) - j
+
+    retro_parameters$ln_NAA <- parameters$ln_NAA[,, 1:n_keep,,, drop = FALSE]
+    if(any(names(retro_mapping) == 'ln_NAA')) {
+      retro_mapping$ln_NAA <- factor(array(mapping$ln_NAA, dim = dim(parameters$ln_NAA))[,, 1:n_keep,,, drop = FALSE])
+    }
+    if(!is.null(data$map_ln_NAA)) retro_data$map_ln_NAA <- data$map_ln_NAA[,, 1:n_keep,,, drop = FALSE]
+    retro_data$naa_sigma_blocks <- data$naa_sigma_blocks[,, 1:n_keep,,, drop = FALSE]
+
+    # the active years are indices into the year axis, so the peeled ones simply drop out
+    retro_data$naa_re_yrs <- data$naa_re_yrs[data$naa_re_yrs <= n_keep]
+    retro_data$n_est_naa_re <- dim(parameters$ln_NAA)[1] * dim(parameters$ln_NAA)[2] *
+                               length(retro_data$naa_re_yrs) * length(data$naa_re_ages) *
+                               dim(parameters$ln_NAA)[5]
+
+    # a peel that removes every active year leaves nothing to estimate, so the state switches off
+    # rather than carrying an empty slice into the penalty
+    if(length(retro_data$naa_re_yrs) == 0) {
+      retro_data$n_est_naa_re <- 0
+      retro_mapping$ln_NAA <- factor(rep(NA, length(retro_parameters$ln_NAA)))
+    }
+
+    # standard deviations follow their blocks, as natural mortality's do
+    retro_parameters$ln_sigmaNAA <- parameters$ln_sigmaNAA[1:max(retro_data$naa_sigma_blocks), drop = FALSE]
+    if(any(names(retro_mapping) == 'ln_sigmaNAA')) {
+      retro_mapping$ln_sigmaNAA <- factor(array(mapping$ln_sigmaNAA, dim = dim(parameters$ln_sigmaNAA))[1:max(retro_data$naa_sigma_blocks), drop = FALSE])
+    }
+  }
+
 # Growth ------------------------------------------------------------------
 
   # Truncate the growth stuff

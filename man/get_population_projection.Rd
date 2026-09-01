@@ -54,7 +54,11 @@ get_population_projection(
   sr_R0 = NULL,
   growth_mortality_year_fn = NULL,
   growth_mortality_state = NULL,
-  expm_nsub = 0
+  expm_nsub = 0,
+  n_est_naa_re = 0,
+  ln_NAA = NULL,
+  naa_re_ages = NULL,
+  naa_re_yrs = NULL
 )
 }
 \arguments{
@@ -142,6 +146,15 @@ year loop and returned as \code{growth_mortality_state}. Ignored when
 \code{growth_mortality_year_fn} is \code{NULL}.
 This is how cohort growth, whose plus group blends by numbers, is evaluated
 inside the year loop. \code{NULL} (the default) uses the arrays as given.}
+
+\item{n_est_naa_re}{Number of estimated state-space numbers at age. Zero leaves
+the numbers deterministic. Never inferred from \code{dim(ln_NAA)}, which is
+non-zero once the setup function has run at all.}
+
+\item{ln_NAA}{Array \code{[pop, region, year, age, sex]} of log numbers at age,
+overwriting the deterministic prediction wherever the state is active.}
+
+\item{naa_re_ages, naa_re_yrs}{Integer index vectors the state is active over.}
 }
 \value{
 List with elements \code{NAA}, \code{NAA0}, \code{NAA_bef},

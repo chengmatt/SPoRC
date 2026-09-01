@@ -696,6 +696,56 @@ where $\mu_{r,\tau,f}^{\delta}$ is the logit-scale mean discard mortality rate a
 $\epsilon_{r,y,\tau,f}^{\delta}$ are annual deviations. The discard mortality rate
 is bounded between 0 and 1.
 
+### State-Space Numbers at Age
+
+By default the numbers at age past the first are whatever the mortality and
+ageing step produces, and the only stochastic elements in the population are
+recruitment and the initial age structure. Setting `NAA_re` to anything other
+than `"none"` replaces that with a state-space treatment: the log numbers at age
+themselves become estimated quantities for ages two and older, and the
+deterministic step becomes a prediction they are scored against.
+
+Write $\widehat{N}_{p,r,y,a,s}$ for what the mortality and ageing step of the
+previous section produces at the start of year $y$, with the plus group already
+accumulated. The state $\ln N_{p,r,y,a,s}$ replaces it outright, and the
+difference between them is the process error:
+
+$$\eta_{p,r,y,a,s} = \ln N_{p,r,y,a,s} - \ln \widehat{N}_{p,r,y,a,s}$$
+
+This is a centered parameterization: the state is the level rather than a
+deviation multiplying a value the model still computes deterministically, which
+is what separates it from $\epsilon^{\text{Rec}}$. The distinction matters
+beyond bookkeeping. Because $\eta_{y}$ depends on the states in years $y$ and
+$y-1$ and on nothing earlier, each term of the resulting prior is supported on a
+two-year block, and the random-effects Hessian is block-tridiagonal in year. A
+deviation parameterization, where the level is reconstructed by accumulating
+shocks, gives a dense Hessian instead.
+
+The unfished numbers at age take the same realized difference,
+
+$$N^{0}_{p,r,y,a,s} = \widehat{N}^{0}_{p,r,y,a,s}\,\exp\left( \eta_{p,r,y,a,s} \right)$$
+
+so the unfished reference stays on the same trajectory without a random effect
+of its own, and quantities derived from it such as $\text{SSB}^{0}$ remain
+comparable to their fished counterparts. Anything else that advances numbers at
+age in parallel with the population is rescaled by the same factor, the tagged
+cohorts above all, since tagged fish are a subset of the population and the
+innovation is read as unmodelled mortality acting on tagged and untagged alike.
+
+Three parameterizations partition the numbers at age rather than overlapping.
+Age one is recruitment in every year and belongs to $\epsilon^{\text{Rec}}$. Year
+one at ages two and older is the initial age structure and belongs to
+$\epsilon^{\text{Init}}$. The state covers ages two and older in years two
+onward, including the plus group. The plus group is not optional: it is the only
+cell whose influence never decays, because it accumulates every historical
+cohort and never resets, so leaving it deterministic gives up the conditional
+independence the state is worth having for.
+
+The active ages and years can be narrowed with `NAA_re_ages` and
+`NAA_re_years`, each of which must be a contiguous run. Outside them the numbers
+at age are the deterministic prediction, exactly as they are when `NAA_re` is
+`"none"`.
+
 ### Movement Processes
 
 Movement processes can be parameterized as either an unstructured Markov process (discrete-time Markov) or as a Continuous-time Markov chain (CTMC) process. Movement parameterized as an unstructured Markov process is estimated using a multinomial logit link function, with $n_r \times (n_r-1)$ free parameters per stratum:
@@ -2840,6 +2890,104 @@ the predicted curve, so a model that also wants to keep the realized
 recruitment series from wandering has nowhere else to say so; this
 penalty is that second, independent statement, and reproduces the
 recruitment regularity penalties several existing assessments carry.
+
+#### State-Space Numbers at Age
+
+The innovations $\eta_{p,r,y,a,s}$ from the process equations are given a
+zero-mean Gaussian prior whose covariance factorizes across margins, so a
+correlation over one margin says nothing about any other:
+
+$$\text{Corr}\left( \eta_{p,r,y,a,s},\ \eta_{p',r',y',a',s'} \right)
+= C^{\text{pop}}_{p p'}\; C^{\text{reg}}_{r r'}\; R^{ay}_{(y,a),(y',a')}\; C^{\text{sex}}_{s s'}$$
+
+with standard deviation $\sigma^{\text{NAA}}$. Each factor is a correlation
+matrix with a unit diagonal, so only $\sigma^{\text{NAA}}$ carries scale, and
+setting every factor to the identity recovers independent innovations.
+
+**Age and year.** $R^{ay}$ is chosen with `NAA_re`, writing $\rho_a$, $\rho_y$
+and $\rho_c$ for the age, year and cohort correlations:
+
+| `NAA_re` | $R^{ay}$ | parameters |
+|:--|:--|:--|
+| `"iid"` | identity | none |
+| `"1dar1_a"` | $\rho_a^{\lvert a - a' \rvert}$, years independent | $\rho_a$ |
+| `"1dar1_y"` | $\rho_y^{\lvert y - y' \rvert}$, ages independent | $\rho_y$ |
+| `"2dar1"` | the product of the two | $\rho_a,\ \rho_y$ |
+| `"3dcond"`, `"3dmarg"` | Gaussian Markov random field over age, year and cohort | $\rho_a,\ \rho_y,\ \rho_c$ |
+
+These are the same forms the selectivity and growth surfaces use, so a state on
+the numbers at age and a surface on selectivity are scored the same way. The
+three-dimensional field is the only one that does not factor into an age density
+times a year density, because its cohort term couples the two margins.
+
+**Population, region and sex.** $C^{\text{pop}}$, $C^{\text{reg}}$ and
+$C^{\text{sex}}$ are set with `NAA_re_pop`, `NAA_re_region` and `NAA_re_sex`,
+each either the identity or unstructured. Unstructured places no shape on how the
+levels covary, at $n(n-1)/2$ parameters, and is the natural choice for margins
+with no ordering: regions are not in a line, so a correlation decaying with
+distance has nothing to decay along. `NAA_re_region_spec` sets how the region
+correlations are shared over populations and sexes.
+
+These enter by whitening rather than by forming the joint covariance (i.e., writing as a lower Cholesky with independent devs). With
+$\mathbf{L}$ the Cholesky factor of a margin's correlation,
+$\mathbf{z} = \mathbf{L}^{-1}\boldsymbol{\eta}$ leaves that margin independent,
+so each slice is then scored by whatever $R^{ay}$ calls for, and the log
+determinant of $\mathbf{L}$ enters once per cell of the margins it does not span.
+That is what lets a cross-region correlation compose with the three-dimensional
+field, whose age-year block cannot be factored.
+
+**Standard deviations.** $\sigma^{\text{NAA}}$ is blocked over populations,
+regions, years, ages and sexes with the `NAA_sigma_*blk_spec` arguments, exactly
+as natural mortality is. Blocking shares a standard deviation; it never removes a
+cell from the state. Only `"iid"` admits one that varies over years or ages,
+since every other form is separable or Markov in one of those margins and a
+per-cell variance is neither. The rest carry one standard deviation per
+population, region and sex.
+
+**The full covariance.** Assembled over all five margins,
+
+$$\boldsymbol{\Sigma} = \left( \sigma^{\text{NAA}} \right)^{2}
+\left( \mathbf{C}^{\text{sex}} \otimes \mathbf{R}^{a} \otimes \mathbf{R}^{y}
+\otimes \mathbf{C}^{\text{reg}} \otimes \mathbf{C}^{\text{pop}} \right)$$
+
+of dimension $n_p n_r n_y n_a n_x$, built from five small factors. The factors
+appear in the reverse of the array's margin order, which is worth stating only
+because getting it wrong is silent: a transposed ordering still gives a valid
+covariance and a converging fit, reporting an age correlation that is really a
+year correlation. The implementation never writes the ordering down, because it
+whitens the margins one at a time in the order the array is dimensioned.
+
+**A worked case.** Two regions, three ages (2 to 4), three years (1995 to 1997),
+one population and one sex, with `NAA_re = "2dar1"` and `NAA_re_region = "us"`.
+Take $\rho_a = 0.6$, $\rho_y = 0.3$, region correlation $\rho_r = 0.5$ and
+$\sigma^{\text{NAA}} = 0.4$. Then
+
+$$\mathbf{R}^{a} = \begin{bmatrix} 1 & 0.6 & 0.36 \\ 0.6 & 1 & 0.6 \\ 0.36 & 0.6 & 1 \end{bmatrix},
+\quad
+\mathbf{R}^{y} = \begin{bmatrix} 1 & 0.3 & 0.09 \\ 0.3 & 1 & 0.3 \\ 0.09 & 0.3 & 1 \end{bmatrix},
+\quad
+\mathbf{C}^{\text{reg}} = \begin{bmatrix} 1 & 0.5 \\ 0.5 & 1 \end{bmatrix}$$
+
+and with the population and sex factors both $1 \times 1$ identities the full
+covariance is
+
+$$\boldsymbol{\Sigma} = 0.4^{2}\left( \mathbf{R}^{a} \otimes \mathbf{R}^{y} \otimes \mathbf{C}^{\text{reg}} \right)$$
+
+an $18 \times 18$ matrix from four parameters. Any single correlation is the
+product of the three pieces. The age-3 innovation in region 1 in 1995 against the
+age-4 innovation in region 2 in 1996:
+
+$$\text{Corr}\left( \eta_{1,1995,3},\ \eta_{2,1996,4} \right)
+= \underbrace{0.5}_{\text{regions}} \times \underbrace{0.6^{\lvert 3-4 \rvert}}_{\text{ages}}
+\times \underbrace{0.3^{\lvert 1995-1996 \rvert}}_{\text{years}} = 0.09$$
+
+with covariance $0.4^{2} \times 0.09 = 0.0144$. Same region, same year, adjacent
+ages gives $0.6$; the same two ages one region apart gives $0.5 \times 0.6 = 0.30$.
+
+Setting $\rho_r = 0$ drops $\mathbf{C}^{\text{reg}}$ to the identity and leaves
+two independent single-region models. Setting $\rho_a = \rho_y = 0$ as well
+leaves $\boldsymbol{\Sigma} = (\sigma^{\text{NAA}})^{2}\mathbf{I}$, which is
+`NAA_re = "iid"`.
 
 #### Initial Recruitment Offset
 

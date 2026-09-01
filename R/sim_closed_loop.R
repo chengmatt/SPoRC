@@ -879,6 +879,66 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     else extend_years(replicate(n = sim_list$n_sims, rep$Mrate[,,,1:length(data$years),,,,drop = FALSE]), closed_loop_yrs, 4, 'last')
   }
 
+  # State-space numbers at age ----------------------------------------------
+  sim_list$NAA_re <- if("NAA_re" %in% names(args)) args$NAA_re else {
+    if(is.null(data$NAA_re)) 0 else data$NAA_re
+  }
+  state_on <- isTRUE(sim_list$NAA_re > 0)
+
+  # Extend sigma blocks for years etc
+  sim_list$sigmaNAA <- if("sigmaNAA" %in% names(args)) args$sigmaNAA else {
+    if(!state_on || is.null(optim_parameters_list$ln_sigmaNAA)) 0 else {
+      blk <- data$naa_sigma_blocks[,,1:length(data$years),,,drop = FALSE]
+      extend_years(array(exp(optim_parameters_list$ln_sigmaNAA)[as.vector(blk)], dim = dim(blk)),
+                   closed_loop_yrs, 3, 'last')
+    }
+  }
+
+  # The simulator takes one correlation per margin, so shared parameters come across as they are
+  # and per-cell ones are averaged before transforming.
+  sim_list$naa_rho <- if("naa_rho" %in% names(args)) args$naa_rho else {
+    pe <- optim_parameters_list$NAA_pe_pars
+    if(!state_on || is.null(pe)) c(age = 0, year = 0, cohort = 0)
+    else c(age = rho_trans(mean(pe[,,1,])), year = rho_trans(mean(pe[,,2,])),
+           cohort = rho_trans(mean(pe[,,3,])))
+  }
+
+  for(nm in c("NAA_re_pop", "NAA_re_region", "NAA_re_sex")) {
+    sim_list[[nm]] <- if(nm %in% names(args)) args[[nm]] else {
+      if(!state_on || is.null(data[[nm]])) 0 else data[[nm]]
+    }
+  } # end nm loop
+
+  # Unconstrained parameters become the correlations themselves, in the lower-triangle order the
+  # simulator's unstructured factor reads them in.
+  corr_from <- function(pars, n) {
+    if(is.null(pars) || n < 2) return(0)
+    C <- build_us_corr(as.vector(pars), n)
+    C[lower.tri(C)]
+  }
+  sim_list$naa_pop_corr <- if("naa_pop_corr" %in% names(args)) args$naa_pop_corr else {
+    if(!state_on || !isTRUE(sim_list$NAA_re_pop == 1)) 0
+    else corr_from(optim_parameters_list$NAA_pop_corr_pars, sim_list$n_pop)
+  }
+  sim_list$naa_region_corr <- if("naa_region_corr" %in% names(args)) args$naa_region_corr else {
+    if(!state_on || !isTRUE(sim_list$NAA_re_region == 1)) 0
+    else corr_from(optim_parameters_list$NAA_region_corr_pars, sim_list$n_regions)
+  }
+  sim_list$naa_sex_corr <- if("naa_sex_corr" %in% names(args)) args$naa_sex_corr else {
+    if(!state_on || !isTRUE(sim_list$NAA_re_sex == 1)) 0
+    else corr_from(optim_parameters_list$NAA_sex_corr_pars, sim_list$n_sexes)
+  }
+
+  # The active ages carry over unchanged, and the active years run on through the projection: the
+  # operating model should keep generating process error in the future, not stop at the data.
+  sim_list$naa_re_ages <- if("naa_re_ages" %in% names(args)) args$naa_re_ages else {
+    if(!state_on || is.null(data$naa_re_ages)) integer(0) else data$naa_re_ages
+  }
+  sim_list$naa_re_yrs <- if("naa_re_yrs" %in% names(args)) args$naa_re_yrs else {
+    if(!state_on || is.null(data$naa_re_yrs) || !length(data$naa_re_yrs)) integer(0)
+    else seq(min(data$naa_re_yrs), sim_list$n_yrs)
+  }
+
   return(sim_list)
 }
 

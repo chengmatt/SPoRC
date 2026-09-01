@@ -137,6 +137,12 @@ get_tag_mort <- function(y, rseas, n_pop, n_regions, n_ages, n_sexes, n_fish_fle
 #' @param pred_conv_tag_fish_recap Array \code{[liberty, season, cohort, pop,
 #'   region, age, sex, fish_fleet]}, output container for predicted
 #'   recaptures.
+#' @param NAA_scalar Array \code{[pop, region, year, age, sex]} of the factor the
+#'   state-space numbers at age applied to the deterministic prediction, one
+#'   wherever it did not apply. Tagged fish are a subset of the population and the
+#'   innovation reads as unmodelled mortality, so the cohorts take the same
+#'   factor at the year boundary. \code{NULL} (the default) leaves them on the
+#'   deterministic trajectory, which is correct only when the state is off.
 #'
 #' @return List with elements \code{conv_tag_fish_reporting},
 #'   \code{conv_tag_fish_avail}, \code{pred_conv_tag_fish_recap}.
@@ -152,7 +158,7 @@ get_tagging_observation_model <- function(n_fish_fleets, n_regions, n_conv_tag_c
                                            ln_init_conv_tag_mort, do_recruits_move, Movement,
                                            conv_tag_fish_avail, pred_conv_tag_fish_recap,
                                            Mrate = NULL, move_timing = 0,
-                                           expm_nsub = 0) {
+                                           expm_nsub = 0, NAA_scalar = NULL) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -312,6 +318,12 @@ get_tagging_observation_model <- function(n_fish_fleets, n_regions, n_conv_tag_c
           # Accumulate plus group
           avail_tc[ry + 1, 1, , , n_ages, ] <-
             avail_tc[ry + 1, 1, , , n_ages, ] + tag_step[,,n_ages,]
+
+          # State-space numbers at age shoudl rescale tag cohorts as well if applied
+          if(!is.null(NAA_scalar) && (ry + 1) <= dim(NAA_scalar)[3]) {
+            avail_tc[ry + 1, 1, , , 2:n_ages, ] <-
+              avail_tc[ry + 1, 1, , , 2:n_ages, ] * NAA_scalar[,,ry + 1,2:n_ages,]
+          }
         }
 
         # # Apply Baranov's to get predicted recaptures

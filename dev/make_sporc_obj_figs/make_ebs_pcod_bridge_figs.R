@@ -42,6 +42,9 @@ input_list <- seed_ebs_pcod_mle(suppressWarnings(suppressMessages(build_ebs_pcod
 at_mle <- fit_model(input_list$data, input_list$par, input_list$map, do_optim = FALSE, silent = TRUE)
 r <- at_mle$rep
 
+library(Matrix)
+image(at_mle$env$spHess(random = T))
+
 pct <- function(a, b) 100 * max(abs(a / b - 1), na.rm = TRUE)
 yr_row <- function(m, y) { rr <- as.integer(rownames(m)); m[as.character(max(rr[rr <= y])), ] }
 
@@ -54,7 +57,7 @@ cat("survey index        ", sprintf("%.4g%%", pct(r$PredSrvIdx[1,1,match(s3$cpue
 
 ## Stage 2: refit -------------------------------------------------------------
 refit <- fit_model(input_list$data, input_list$par, input_list$map, do_optim = TRUE,
-                   silent = TRUE, newton_loops = 3)
+                   silent = F, newton_loops = 3)
 # fit_model returns the RTMB object without an sdreport, so it is taken here.
 # the analytical Hessian is passed rather than letting sdreport call optimHess,
 # which reports a non positive definite Hessian on models where it is fine

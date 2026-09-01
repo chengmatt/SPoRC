@@ -235,6 +235,12 @@ compute_mortality_year = function(y, st, growth_model, derive_waa, fish_selex_ty
 #'   \code{growth_mortality_year_fn} is \code{NULL}.
 #'   This is how cohort growth, whose plus group blends by numbers, is evaluated
 #'   inside the year loop. \code{NULL} (the default) uses the arrays as given.
+#' @param n_est_naa_re Number of estimated state-space numbers at age. Zero leaves
+#'   the numbers deterministic. Never inferred from \code{dim(ln_NAA)}, which is
+#'   non-zero once the setup function has run at all.
+#' @param ln_NAA Array \code{[pop, region, year, age, sex]} of log numbers at age,
+#'   overwriting the deterministic prediction wherever the state is active.
+#' @param naa_re_ages,naa_re_yrs Integer index vectors the state is active over.
 #'
 #' @return List with elements \code{NAA}, \code{NAA0}, \code{NAA_bef},
 #'   \code{NAA_aft}, \code{Rec}, \code{SSB}, \code{Total_Biom},
@@ -256,13 +262,19 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
                                        NAA, NAA0, NAA_bef, NAA_aft, Rec, SSB, Total_Biom, Dynamic_SSB0, eff_SSB,
                                        Mrate = NULL, move_timing = 0, SR_ref_yr = 1,
                                        sr_penalty = 0, sr_R0 = NULL, growth_mortality_year_fn = NULL, growth_mortality_state = NULL,
-                                       expm_nsub = 0) {
+                                       expm_nsub = 0, n_est_naa_re = 0, ln_NAA = NULL, naa_re_ages = NULL, naa_re_yrs = NULL) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   # Season-integrated abundance for the spatial Baranov, filled in below only under move_timing == 2.
   NAA_int <- array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
+
+  # Array for deterministic numbers at age the mortality and ageing step predicts before overwritten by state-space mode
+  NAA_pred <- array(0, dim = c(n_pop, n_regions, n_yrs, n_ages, n_sexes))
+
+  # Array for multiplicative factor the state applies to the deterministic prediction
+  NAA_scalar <- array(1, dim = c(n_pop, n_regions, n_yrs, n_ages, n_sexes))
 
   # Stock recruitment prediction - only used when mean recruitment, but penalize the mean recruits to an SR curve
   SR_pred <- array(1, dim = c(n_pop, n_regions, n_yrs))
@@ -354,9 +366,7 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
       # Record values prior to movement
       NAA_bef[,,y,seas,,] <- NAA[,,y,seas,,]
 
-      # Movement is applied at the start of the season only under move_timing == 0.
-      # Under move_timing 1 (mortality then movement) and 2 (continuous) it is folded
-      # into the mortality/ageing step at the end of the season instead.
+      # Movement is applied at the start of the season only under move_timing == 0
       if(n_regions > 1 && move_timing == 0) {
         for(p in 1:n_pop) {
           # Recruits don't move
@@ -439,49 +449,63 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
 
       } # end if rec_lag == 0 && seas == spawn_seas
 
-      ### Movement (timing 1 and 2), Mortality and Ageing or Continuous Movement and Mortality ---------------------------
-      # Post-season state at every age, before the ageing shift. Under move_timing == 0
-      # movement was already applied at the top of the season, so this reduces to the
-      # original elementwise survival; under move_timing 1 and 2 the seasonal transition
-      # operator carries movement and mortality together.
-      if(move_timing == 0 || n_regions == 1) {
-        step_NAA <- array(NAA[,,y,seas,1:n_ages,] * exp(-ZAA[,,y,seas,1:n_ages,]),
-                          dim = c(n_pop, n_regions, n_ages, n_sexes))
-        step_NAA0 <- array(NAA0[,,y,seas,1:n_ages,] * exp(-(natmort[,,y,1:n_ages,] * seasdur[seas])),
-                           dim = c(n_pop, n_regions, n_ages, n_sexes))
+      ### Season Step: Mortality, Ageing, and End of Season Movement ---------------------------
+
+      # Post-season state at every age, before the ageing shift
+      if(n_regions == 1) {
+        # One region, so no timing has anything to move and the step is elementwise survival.
+        step_NAA <- array(NAA[,,y,seas,1:n_ages,] * exp(-ZAA[,,y,seas,1:n_ages,]), dim = c(n_pop, n_regions, n_ages, n_sexes))
+        step_NAA0 <- array(NAA0[,,y,seas,1:n_ages,] * exp(-(natmort[,,y,1:n_ages,] * seasdur[seas])),  dim = c(n_pop, n_regions, n_ages, n_sexes))
+
+        # Get the season integrated abundance here
         if(move_timing == 2) {
           for(p in 1:n_pop) for(a in 1:n_ages) for(s in 1:n_sexes) {
-            NAA_int[p,,y,seas,a,s] <- integrate_seas_abundance(NAA[p,,y,seas,a,s], ZAA[p,,y,seas,a,s],
-                                                               Mrate[p,,,y,seas,a,s], seasdur[seas], expm_nsub = expm_nsub)
-          }
+            NAA_int[p,,y,seas,a,s] <- integrate_seas_abundance(NAA[p,,y,seas,a,s], ZAA[p,,y,seas,a,s], Mrate[p,,,y,seas,a,s], seasdur[seas], expm_nsub = expm_nsub)
+          } # end p, a, s loop
         }
-      } else {
+
+      } else if(move_timing == 0) {
+        # Movement then mortality
+        step_NAA <- array(NAA[,,y,seas,1:n_ages,] * exp(-ZAA[,,y,seas,1:n_ages,]), dim = c(n_pop, n_regions, n_ages, n_sexes))
+        step_NAA0 <- array(NAA0[,,y,seas,1:n_ages,] * exp(-(natmort[,,y,1:n_ages,] * seasdur[seas])),  dim = c(n_pop, n_regions, n_ages, n_sexes))
+
+      } else if(move_timing == 1) {
+        # Mortality then movement
         step_NAA <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
         step_NAA0 <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
         for(p in 1:n_pop) {
           for(a in 1:n_ages) {
-            # Recruits only move when allowed; otherwise an identity transition and a zero
-            # generator leave survival unchanged under either timing.
-            moves <- (do_recruits_move == 1 || a > 1)
+            moves <- (do_recruits_move == 1 || a > 1) # recruits only move when allowed
             for(s in 1:n_sexes) {
-              Mv <- if(moves) Movement[p,,,y,seas,a,s] else diag(n_regions)
-              Qv <- if(moves) Mrate[p,,,y,seas,a,s] else matrix(0, n_regions, n_regions)
-              if(move_timing == 2) {
-                # The fished stratum needs both the transition operator and the catch
-                # integral over the same generator, so take them from one exponential.
-                both <- seas_operator_and_integral(ZAA[p,,y,seas,a,s], Qv, seasdur[seas], expm_nsub = expm_nsub)
-                step_NAA[p,,a,s] <- as.vector(t(NAA[p,,y,seas,a,s]) %*% both$T)
-                NAA_int[p,,y,seas,a,s] <- as.vector(both$Integral %*% NAA[p,,y,seas,a,s])
-              } else {
-                step_NAA[p,,a,s] <- advance_seas(NAA[p,,y,seas,a,s], Mv, ZAA[p,,y,seas,a,s],
-                                                 Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
-              }
-              step_NAA0[p,,a,s] <- advance_seas(NAA0[p,,y,seas,a,s], Mv, natmort[p,,y,a,s] * seasdur[seas],
-                                                Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
+              Mv <- if(moves) Movement[p,,,y,seas,a,s] else diag(n_regions) # identity leaves survival unchanged
+              step_NAA[p,,a,s] <- advance_seas(NAA[p,,y,seas,a,s], Mv, ZAA[p,,y,seas,a,s], NULL, seasdur[seas], move_timing, expm_nsub = expm_nsub)
+              step_NAA0[p,,a,s] <- advance_seas(NAA0[p,,y,seas,a,s], Mv, natmort[p,,y,a,s] * seasdur[seas], NULL, seasdur[seas], move_timing, expm_nsub = expm_nsub)
             } # end s loop
           } # end a loop
         } # end p loop
-        # Movement happens at season end under these timings, so record it here
+
+        # Movement happens at season end for discontinuous movement cases so record
+        NAA_aft[,,y,seas,,] <- step_NAA
+
+      } else {
+        # Continuous movement and mortality, acting simultaneously. This runs off Mrate, the
+        # instantaneous rate matrix; Movement plays no part at this timing and is never read.
+        step_NAA <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
+        step_NAA0 <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
+        for(p in 1:n_pop) {
+          for(a in 1:n_ages) {
+            moves <- (do_recruits_move == 1 || a > 1) # recruits only move when allowed
+            for(s in 1:n_sexes) {
+              Qv <- if(moves) Mrate[p,,,y,seas,a,s] else matrix(0, n_regions, n_regions) # zero generator leaves survival unchanged for recruits
+              both <- seas_operator_and_integral(ZAA[p,,y,seas,a,s], Qv, seasdur[seas], expm_nsub = expm_nsub)
+              step_NAA[p,,a,s] <- as.vector(t(NAA[p,,y,seas,a,s]) %*% both$T) # end of season state, forward
+              NAA_int[p,,y,seas,a,s] <- as.vector(both$Integral %*% NAA[p,,y,seas,a,s]) # season integral, to the catch equation
+              step_NAA0[p,,a,s] <- advance_seas(NAA0[p,,y,seas,a,s], NULL, natmort[p,,y,a,s] * seasdur[seas], Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
+            } # end s loop
+          } # end a loop
+        } # end p loop
+
+        # Movement happens at season end for discontinuous movement cases so record
         NAA_aft[,,y,seas,,] <- step_NAA
       }
 
@@ -497,14 +521,27 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
         # Unfished
         NAA0[,,y+1,1,2:n_ages,] <- step_NAA0[,,1:(n_ages-1),] # Exponential mortality for individuals not in plus group
         NAA0[,,y+1,1,n_ages,] <- NAA0[,,y+1,1,n_ages,] + step_NAA0[,,n_ages,] # Acuumulate plus group
+
+        # State-space numbers at age applied after 
+        if(n_est_naa_re > 0 && (y + 1) <= n_yrs && (y + 1) %in% naa_re_yrs) {
+          NAA_pred[,,y+1,,] <- NAA[,,y+1,1,,]
+          for(a in naa_re_ages) {
+            for(s in 1:n_sexes) {
+              delta <- ln_NAA[,,y+1,a,s] - log(NAA_pred[,,y+1,a,s]) # realized deviation
+              NAA[,,y+1,1,a,s] <- exp(ln_NAA[,,y+1,a,s]) # input predicted state-space numbers at age
+              NAA0[,,y+1,1,a,s] <- NAA0[,,y+1,1,a,s] * exp(delta) # update with scalar
+              NAA_scalar[,,y+1,a,s] <- exp(delta) # record devs / multiplicative factor for state space mode
+            } # end s loop
+          } # end a loop
+        }
       }
 
       ### Compute Biomass Quantities (rec_lag != 0)
       if(rec_lag != 0 && seas == spawn_seas) {
-        spawn_biom <- compute_biom_y(y, seas, NAA, NAA0, WAA, MatAA, ZAA, natmort, t_spawn, seasdur,
-                                    n_seas, n_pop, n_regions, n_ages, n_sexes,
-                                    sgl_seas_spawning_movement, natal_region, stray_rate,
-                              Movement, Mrate, move_timing, do_recruits_move, expm_nsub = expm_nsub)
+        spawn_biom <- compute_biom_y(y, seas, NAA, NAA0, WAA, MatAA, ZAA, natmort, t_spawn, seasdur, n_seas, n_pop, n_regions, n_ages, n_sexes,
+                                    sgl_seas_spawning_movement, natal_region, stray_rate, Movement, Mrate, move_timing, do_recruits_move, expm_nsub = expm_nsub)
+
+        # extract out quantities
         Total_Biom[,, y] <- spawn_biom$Total_Biom_y
         SSB[,, y] <- spawn_biom$SSB_y
         Dynamic_SSB0[,,y] <- spawn_biom$Dynamic_SSB0_y
@@ -521,5 +558,6 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
   return(list(NAA = NAA, NAA0 = NAA0, NAA_bef = NAA_bef, NAA_aft = NAA_aft, Rec = Rec,
               SSB = SSB, Total_Biom = Total_Biom, Dynamic_SSB0 = Dynamic_SSB0, eff_SSB = eff_SSB,
               Aggregated_SSB = Aggregated_SSB, Dynamic_Aggregated_SSB0 = Dynamic_Aggregated_SSB0,
-              NAA_int = NAA_int, SR_pred = SR_pred, growth_mortality_state = growth_mortality_state))
+              NAA_int = NAA_int, NAA_pred = NAA_pred, NAA_scalar = NAA_scalar, SR_pred = SR_pred,
+              growth_mortality_state = growth_mortality_state))
 }

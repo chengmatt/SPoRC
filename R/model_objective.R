@@ -358,6 +358,24 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
     if(!has(paste0("map_ln_", pre, "sel_bin_devs"))) set(paste0("map_ln_", pre, "sel_bin_devs"), array(NA_real_, dim = dim(get(paste0("ln_", pre, "sel_bin_devs"), envir = env))))
   } # end pre loop
 
+  # State-space numbers at age. Older input lists carry none of it, and n_est_naa_re is the
+  # only thing that decides whether the state is live: it is never inferred from dim(ln_NAA),
+  # which is non-zero the moment the setup function has run at all.
+  if(!has("NAA_re")) set("NAA_re", 0)
+  if(!has("n_est_naa_re")) set("n_est_naa_re", 0)
+  if(!has("naa_re_ages")) set("naa_re_ages", integer(0))
+  if(!has("naa_re_yrs")) set("naa_re_yrs", integer(0))
+  if(!has("naa_sigma_blocks")) set("naa_sigma_blocks", array(1, dim = c(get("n_pop", envir = env), get("n_regions", envir = env), length(get("years", envir = env)), n_ages_bc, get("n_sexes", envir = env))))
+  if(!has("ln_NAA")) set("ln_NAA", array(0, dim = c(get("n_pop", envir = env), get("n_regions", envir = env), length(get("years", envir = env)), n_ages_bc, get("n_sexes", envir = env))))
+  if(!has("ln_sigmaNAA")) set("ln_sigmaNAA", array(log(0.3), dim = c(1, 1, 1, 1, 1)))
+  if(!has("NAA_pe_pars")) set("NAA_pe_pars", array(0, dim = c(get("n_pop", envir = env), get("n_regions", envir = env), 3, get("n_sexes", envir = env))))
+  if(!has("NAA_re_region")) set("NAA_re_region", 0)
+  if(!has("NAA_re_pop")) set("NAA_re_pop", 0)
+  if(!has("NAA_re_sex")) set("NAA_re_sex", 0)
+  if(!has("NAA_pop_corr_pars")) set("NAA_pop_corr_pars", rep(0, max(1, get("n_pop", envir = env) * (get("n_pop", envir = env) - 1) / 2)))
+  if(!has("NAA_sex_corr_pars")) set("NAA_sex_corr_pars", rep(0, max(1, get("n_sexes", envir = env) * (get("n_sexes", envir = env) - 1) / 2)))
+  if(!has("NAA_region_corr_pars")) set("NAA_region_corr_pars", array(0, dim = c(get("n_pop", envir = env), max(1, get("n_regions", envir = env) * (get("n_regions", envir = env) - 1) / 2), get("n_sexes", envir = env))))
+
   # Selectivity parameter centering penalties. The flag guards every reference to
   # the table, so older input lists need only the flag.
   if(!has("Use_fish_selex_penalty")) set("Use_fish_selex_penalty", 0)
@@ -1006,7 +1024,9 @@ SPoRC_rtmb = function(pars, data) {
     sr_penalty = sr_penalty,
     sr_R0 = sr_R0,
     growth_mortality_year_fn = update_cohort_growth_and_mortality,
-    growth_mortality_state = mortality_state
+    growth_mortality_state = mortality_state,
+    n_est_naa_re = n_est_naa_re, ln_NAA = ln_NAA,
+    naa_re_ages = naa_re_ages, naa_re_yrs = naa_re_yrs
   )
 
   # the years update_cohort_growth_and_mortality built come back through the state it carried
@@ -1029,10 +1049,28 @@ SPoRC_rtmb = function(pars, data) {
 
   NAA = tmp_pop_proj$NAA; NAA0 = tmp_pop_proj$NAA0; NAA_bef = tmp_pop_proj$NAA_bef; NAA_aft = tmp_pop_proj$NAA_aft
   NAA_int = tmp_pop_proj$NAA_int # season-integrated abundance (move_timing == 2 only)
+  NAA_pred = tmp_pop_proj$NAA_pred # deterministic prediction behind the state (NAA_re != none only)
+  NAA_scalar = tmp_pop_proj$NAA_scalar # factor the state applied, one wherever it did not
   Rec = tmp_pop_proj$Rec; SSB = tmp_pop_proj$SSB; Total_Biom = tmp_pop_proj$Total_Biom
   Dynamic_SSB0 = tmp_pop_proj$Dynamic_SSB0; eff_SSB = tmp_pop_proj$eff_SSB
   Aggregated_SSB = tmp_pop_proj$Aggregated_SSB; Dynamic_Aggregated_SSB0 = tmp_pop_proj$Dynamic_Aggregated_SSB0
   SR_pred = tmp_pop_proj$SR_pred
+
+  ## State-Space Numbers at Age Penalty ---------------------------------------
+  # Scored here rather than inside the dynamics so the deterministic prediction and the state are
+  # both in hand. The standard deviations are gathered from their blocks in one pass: naa_sigma_blocks
+  # is plain data, so indexing the exponentiated parameter by it is a single taped gather rather than
+  # a five-deep loop of scalar assignments.
+  NAA_state_nLL = 0
+  if(n_est_naa_re > 0) {
+    sigmaNAA = array(exp(ln_sigmaNAA)[as.vector(naa_sigma_blocks)], dim = dim(naa_sigma_blocks))
+    NAA_state_nLL = Get_NAA_state_penalty(ln_NAA, NAA_pred, sigmaNAA, naa_re_ages, naa_re_yrs,
+                                          NAA_re = NAA_re, NAA_pe_pars = NAA_pe_pars,
+                                          NAA_re_region = NAA_re_region,
+                                          NAA_region_corr_pars = NAA_region_corr_pars,
+                                          NAA_re_pop = NAA_re_pop, NAA_pop_corr_pars = NAA_pop_corr_pars,
+                                          NAA_re_sex = NAA_re_sex, NAA_sex_corr_pars = NAA_sex_corr_pars)
+  }
 
   ## Fishery Observation Model -----------------------------------------------
   tmp_fish_obs = get_fishery_observation_model(
@@ -1112,7 +1150,8 @@ SPoRC_rtmb = function(pars, data) {
       srv_sel = srv_sel, NAA_bef = NAA_bef, ln_init_conv_tag_mort = ln_init_conv_tag_mort,
       do_recruits_move = do_recruits_move, Movement = Movement,
       conv_tag_fish_avail = conv_tag_fish_avail, pred_conv_tag_fish_recap = pred_conv_tag_fish_recap,
-      Mrate = Mrate, move_timing = move_timing, expm_nsub = move_expm_nsub
+      Mrate = Mrate, move_timing = move_timing, expm_nsub = move_expm_nsub,
+      NAA_scalar = if(n_est_naa_re > 0) NAA_scalar else NULL
     )
 
     conv_tag_fish_reporting = tmp_tag_obs$conv_tag_fish_reporting
@@ -3017,6 +3056,7 @@ SPoRC_rtmb = function(pars, data) {
     sum(Init_Sex_nLL) +                       # Initial age deviations, tie between sexes
     sum(Rec_level_nLL) +                      # Recruitment level penalty
     sum(SR_pen_nLL) +                         # Stock-recruit residual penalty (mean recruitment only)
+    NAA_state_nLL +                            # State-space numbers at age penalty
     sel_nLL +                                  # Selectivity penalty
     M_nLL +                                    # Natural mortality prior
     R0_nLL +                                   # Global R0 prior
@@ -3044,6 +3084,9 @@ SPoRC_rtmb = function(pars, data) {
   RTMB::REPORT(NAA_bef)
   RTMB::REPORT(NAA_aft)
   RTMB::REPORT(NAA_int)
+  RTMB::REPORT(NAA_pred)
+  RTMB::REPORT(NAA_scalar)
+  RTMB::REPORT(NAA_state_nLL)
   RTMB::REPORT(ZAA)
   RTMB::REPORT(natmort)
   RTMB::REPORT(bias_ramp)

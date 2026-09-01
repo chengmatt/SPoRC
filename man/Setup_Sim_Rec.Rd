@@ -203,6 +203,7 @@ Other Simulation Setup:
 \code{\link[=Setup_Sim_Containers]{Setup_Sim_Containers()}},
 \code{\link[=Setup_Sim_Dim]{Setup_Sim_Dim()}},
 \code{\link[=Setup_Sim_Fishing]{Setup_Sim_Fishing()}},
+\code{\link[=Setup_Sim_NAA_state]{Setup_Sim_NAA_state()}},
 \code{\link[=Setup_Sim_Survey]{Setup_Sim_Survey()}},
 \code{\link[=Setup_Sim_Tagging]{Setup_Sim_Tagging()}},
 \code{\link[=Setup_sim_env]{Setup_sim_env()}},

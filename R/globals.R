@@ -101,6 +101,7 @@ utils::globalVariables(c(
   "move_expm_nsub", "move_pe_pars", "move_preference_pars", "move_timing", "move_type", "Movement", "Movement_prior",
   "Mrate", "n_age_dim", "n_ages", "n_conv_tag_cohorts", "n_fish_fleets", "n_pop", "n_pop_in_region",
   "n_proj_yrs_devs", "n_regions", "n_seas", "n_sexes", "n_srv_fleets", "name", "natal_region",
+  "NAA_re", "n_est_naa_re", "naa_re_ages", "naa_re_yrs", "naa_sigma_blocks", "ln_NAA", "ln_sigmaNAA", "NAA_pe_pars", "NAA_re_region", "NAA_region_corr_pars", "NAA_re_pop", "NAA_pop_corr_pars", "NAA_re_sex", "NAA_sex_corr_pars", "NAA_scalar", "sigmaNAA", "naa_rho", "naa_pop_corr", "naa_region_corr", "naa_sex_corr", "naa_eta",
   "natmort", "newton_steps", "obs", "obs_conv_tag_fish_recap", "ObsFishAgeComps",
   "ObsFishAgeComps_discard", "ObsFishAgeComps_discard_pop", "ObsFishAgeComps_pop",
   "ObsFishIdx_pop_SE", "ObsFishIdx_SE", "ObsFishLenComps", "ObsFishLenComps_discard",

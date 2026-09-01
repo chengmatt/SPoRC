@@ -592,6 +592,15 @@ apply_pop_dy <- function(y, sim, sim_env) {
         sim_env$NAA[,,y+1,1,n_ages,,sim] = NAA[,,y+1,1,n_ages,,sim] + sstep_NAA[,,n_ages,] # Acuumulate plus group (fished)
         sim_env$NAA0[,,y+1,1,2:n_ages,,sim] = sstep_NAA0[,,1:(n_ages-1),] # fished
         sim_env$NAA0[,,y+1,1,n_ages,,sim] = NAA0[,,y+1,1,n_ages,,sim] + sstep_NAA0[,,n_ages,] # Acuumulate plus group (unfished)
+
+        # State-space numbers at age, applied where the estimation model applies it: after the plus
+        # group accumulates, at the year boundary, with the unfished numbers taking the same factor
+        if(sim_env$NAA_re > 0 && (y + 1) <= n_yrs) {
+          sim_env$NAA_pred[,,y+1,,,sim] = sim_env$NAA[,,y+1,1,,,sim]
+          fac <- exp(sim_env$naa_eta[,,y+1,,])
+          sim_env$NAA[,,y+1,1,,,sim] = sim_env$NAA[,,y+1,1,,,sim] * fac
+          sim_env$NAA0[,,y+1,1,,,sim] = sim_env$NAA0[,,y+1,1,,,sim] * fac
+        }
       }
 
       # Compute Biomass Quantities (rec_lag != 0: unchanged original timing)
@@ -643,11 +652,13 @@ run_annual_cycle <- function(y,
                              sim_env) {
 
   if(y == 1) {
+    # The whole replicate's innovations are drawn up front: the matrix is conditional on all
+    # previous states and formed rectangular over age and year
+    if(isTRUE(sim_env$NAA_re > 0)) {
+      sim_env$naa_eta <- draw_naa_innovations(sim_env)
+      sim_env$naa_eta_all[,,,,,sim] <- sim_env$naa_eta
+    }
     generate_initial_age_structure(y = 1, sim, sim_env) # Initialize age structure
-    # rec_lag == 0 (age-0 recruitment): recruitment for year y depends on
-    # year y's own SSB, which isn't known until apply_pop_dy(y) reaches
-    # spawn_seas - generate_recruitment() is called from inside apply_pop_dy
-    # in that case instead (see apply_pop_dy / compute_biom_y_sim).
     if(sim_env$rec_lag != 0) generate_recruitment(y = 1, sim, sim_env) # Get recruitment in the first year
   }
 
@@ -736,6 +747,8 @@ Simulate_Pop_Static <- function(sim_list,
                   ret_sel = sim_env$ret_sel,
                   fish_q = sim_env$fish_q,
                   ln_RecDevs = sim_env$ln_RecDevs,
+                  naa_eta = sim_env$naa_eta_all,
+                  NAA_pred = sim_env$NAA_pred,
                   ln_InitDevs = sim_env$ln_InitDevs,
                   natmort = sim_env$natmort,
                   ZAA = sim_env$ZAA,

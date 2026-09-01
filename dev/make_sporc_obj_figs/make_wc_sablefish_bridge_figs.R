@@ -183,3 +183,5 @@ ggplot2::ggsave(here("vignettes", "figures", "ac_wc_sablefish_sel_comparison.png
                 bridge_sel_figure(sel_df, nrow = 4), width = 15, height = 12, dpi = 170)
 
 cat("\nfigures written to vignettes/figures\n")
+
+saveRDS(est, here('dev', 'dev_output', 'wc_sabie.RDS'))

@@ -66,6 +66,7 @@ jnLL_terms <- list(
   Init_Sex_nLL                 = list(weight = NA,          mode = "scalar"),
   SR_pen_nLL                   = list(weight = NA,          mode = "scalar"),
 
+  NAA_state_nLL                = list(weight = NA, mode = "scalar"),
   sel_nLL                      = list(weight = NA, mode = "scalar"),
   growth_tv_nLL                = list(weight = NA, mode = "scalar"),
   growth_semipar_nLL           = list(weight = NA, mode = "scalar"),

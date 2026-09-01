@@ -514,7 +514,7 @@ Setup_Mod_Retsel <- function(input_list,
   input_list <- do_sel_devs_mapping(input_list, ret_sel_devs_spec, retsel_devs_shared_bins, bins,
                                     prefix = "ret", fleet_field = "n_fish_fleets", use_field = "Catch", fleet_label = "fishery fleet")
 
-  return(input_list)
+   return(input_list)
 }
 
 #' Set up total and retained fishery selectivity and catchability specifications

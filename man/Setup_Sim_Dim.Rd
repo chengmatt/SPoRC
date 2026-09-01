@@ -103,6 +103,7 @@ Other Simulation Setup:
 \code{\link[=Setup_Sim_Biologicals]{Setup_Sim_Biologicals()}},
 \code{\link[=Setup_Sim_Containers]{Setup_Sim_Containers()}},
 \code{\link[=Setup_Sim_Fishing]{Setup_Sim_Fishing()}},
+\code{\link[=Setup_Sim_NAA_state]{Setup_Sim_NAA_state()}},
 \code{\link[=Setup_Sim_Rec]{Setup_Sim_Rec()}},
 \code{\link[=Setup_Sim_Survey]{Setup_Sim_Survey()}},
 \code{\link[=Setup_Sim_Tagging]{Setup_Sim_Tagging()}},

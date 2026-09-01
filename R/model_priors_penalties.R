@@ -1181,10 +1181,7 @@ get_steepness_prior <- function(h_prior, h_trans) {
   for(i in 1:nrow(h_prior)) {
     p <- h_prior$pop[i]
     r <- h_prior$region[i]
-    # The support defaults to the usual (0.2, 1) for steepness, but is settable,
-    # because a beta placed on (0, 1) instead is a different function of h rather
-    # than the same one shifted: it carries log(h) where the rescaled form
-    # carries log(h - 0.2), so no choice of shape reconciles the two.
+    # bounding for steepness, but also can be user specified
     lb <- if(is.null(h_prior$lb)) 0.2 else h_prior$lb[i]
     ub <- if(is.null(h_prior$ub)) 1 else h_prior$ub[i]
     beta_pars <- get_beta_scaled_pars(low = lb, high = ub, mu = h_prior$mu[i], sigma = h_prior$sd[i]) # get alpha and beta parameters
@@ -1432,4 +1429,169 @@ get_tagrep_prior <- function(conv_tag_fishrep_prior, conv_tag_fish_reporting_par
   } # end i loop
 
   return(nLL)
+}
+
+#' State-space numbers at age
+#'
+#' Scores the realized innovation of the centered numbers-at-age state,
+#' \eqn{\eta = \log N - \log \hat{N}}, where \eqn{\hat{N}} is the deterministic
+#' mortality and ageing prediction the dynamics computed into \code{NAA_pred}
+#' before the state overwrote \code{NAA}.
+#'
+#' The state is a level rather than a deviation, so the prediction is subtracted
+#' here instead of multiplying a deviation onto a value the dynamics still
+#' computes. That is what makes the random-effects Hessian block-tridiagonal in
+#' year: every term is supported on a two-year block, because \eqn{\eta_y}
+#' depends on the states in years \eqn{y} and \eqn{y-1} and on nothing earlier.
+#'
+#' @param ln_NAA Array \code{[pop, region, year, age, sex]} of log numbers at age.
+#' @param NAA_pred Array of the same shape holding the deterministic prediction.
+#' @param sigmaNAA Array of the same shape holding the process error standard
+#'   deviation for each cell, already expanded from its blocking structure.
+#' @param naa_re_ages Integer vector of age indices the state is active over.
+#' @param naa_re_yrs Integer vector of year indices the state is active over.
+#' @param NAA_re Integer code for the structure over the age-year grid.
+#'   \code{1} independent, \code{2} AR(1)
+#'   over ages, \code{3} AR(1) over years with ages independent, \code{4}
+#'   separable AR(1) over ages and years, \code{5} and \code{6} the
+#'   three-dimensional Gaussian Markov random field on the conditional and the
+#'   marginal variance respectively.
+#' @param NAA_pe_pars Array \code{[pop, region, 3, sex]} of correlation
+#'   parameters on the unconstrained scale, read as age, year and cohort. Unused
+#'   under \code{NAA_re = 1}.
+#' @param NAA_re_region Integer code for the structure across regions. \code{0}
+#'   independent, \code{1} unstructured.
+#' @param NAA_region_corr_pars Array \code{[pop, n_regions(n_regions-1)/2, sex]}
+#'   of unconstrained parameters for the region correlation.
+#' @param NAA_re_pop,NAA_re_sex Integer codes for the structure across populations
+#'   and across sexes. \code{0} independent, \code{1} unstructured.
+#' @param NAA_pop_corr_pars,NAA_sex_corr_pars Numeric vectors of unconstrained
+#'   parameters for those correlations, one per pair. Both are global to the
+#'   model rather than varying over the other margins, which is what keeps a
+#'   two-level margin at exactly one parameter.
+#'
+#' @details
+#' Only the independent form admits a standard deviation that varies cell by
+#' cell. Every other structure is separable or Markov in a margin, and a
+#' per-cell variance is neither, so the setup function holds the year and age
+#' standard deviation blocks to one apiece whenever a correlated form is chosen
+#' and this function reads one standard deviation per population, region and sex.
+#'
+#' @return Scalar negative log likelihood.
+#'
+#' @keywords internal
+#' @import RTMB
+Get_NAA_state_penalty <- function(ln_NAA, NAA_pred, sigmaNAA, naa_re_ages, naa_re_yrs,
+                                  NAA_re = 1, NAA_pe_pars = NULL,
+                                  NAA_re_region = 0, NAA_region_corr_pars = NULL,
+                                  NAA_re_pop = 0, NAA_pop_corr_pars = NULL,
+                                  NAA_re_sex = 0, NAA_sex_corr_pars = NULL) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  d <- dim(ln_NAA)
+  n_pop <- d[1]; n_regions <- d[2]; n_sexes <- d[5]
+  ny <- length(naa_re_yrs); na <- length(naa_re_ages)
+
+  # compute the epsilon
+  eta <- ln_NAA[,,naa_re_yrs,naa_re_ages,,drop = FALSE] - log(NAA_pred[,,naa_re_yrs,naa_re_ages,,drop = FALSE])
+  sig <- sigmaNAA[,,naa_re_yrs,naa_re_ages,,drop = FALSE] # get sigma NAA
+
+  # Compute nLL for independent deviatiosn on every dimension
+  if(NAA_re == 1 && NAA_re_region == 0 && NAA_re_pop == 0 && NAA_re_sex == 0) return(-sum(RTMB::dnorm(as.vector(eta), 0, as.vector(sig), TRUE)))
+
+  # initialize nll for other cases (beyond independent cases)
+  nll <- 0
+
+  # get correaltion by population (unstructured)
+  if(NAA_re_pop > 0) {
+    Lp <- build_us_chol(NAA_pop_corr_pars, n_pop)
+    flat <- array(eta, dim = c(n_pop, n_regions * ny * na * n_sexes))
+    eta <- array(solve(Lp, flat), dim = c(n_pop, n_regions, ny, na, n_sexes))
+    nll <- nll + n_regions * ny * na * n_sexes * sum(log(diag(Lp)))
+  }
+
+  # get correaltion by sexes (unstructured)
+  if(NAA_re_sex > 0) {
+    Ls <- build_us_chol(NAA_sex_corr_pars, n_sexes)
+    flat <- array(eta, dim = c(n_pop * n_regions * ny * na, n_sexes))
+    eta <- array(t(solve(Ls, t(flat))), dim = c(n_pop, n_regions, ny, na, n_sexes))
+    nll <- nll + n_pop * n_regions * ny * na * sum(log(diag(Ls)))
+  }
+
+  for(p in 1:n_pop) {
+    for(s in 1:n_sexes) {
+
+      # get epsilon
+      eps <- array(eta[p,,,,s], dim = c(n_regions, ny, na))
+
+      # get correlation by region (unstructured)
+      if(NAA_re_region > 0) {
+        Lc <- build_us_chol(NAA_region_corr_pars[p,,s], n_regions)
+        flat <- array(eps, dim = c(n_regions, ny * na))
+        eps <- array(solve(Lc, flat), dim = c(n_regions, ny, na))
+        nll <- nll + ny * na * sum(log(diag(Lc)))
+      }
+
+      for(r in 1:n_regions) {
+        sd_prs <- sig[p,r,1,1,s]
+        eps_ya <- array(eps[r,,], dim = c(ny, na)) # year by age, matching the deviation surfaces
+        nll <- nll + penalize_naa_age_year(eps_ya, sd_prs, NAA_re, if(is.null(NAA_pe_pars)) NULL else NAA_pe_pars[p,r,,s], ny, na)
+      } # end r loop
+
+    } # end s loop
+  } # end p loop
+
+  nll
+}
+
+#' Compare one region's age-by-year innovation surface
+#'
+#' The age and year half of \code{\link{Get_NAA_state_penalty}}, split out so the
+#' region correlation can whiten its margin and then reuse this unchanged for
+#' every structure, including the three-dimensional field whose cohort term makes
+#' it non-separable.
+#'
+#' @param eps_ya Matrix \code{[year, age]} of innovations, already whitened across
+#'   regions when a region correlation is active.
+#' @param sd_prs Standard deviation for this population, region and sex.
+#' @param NAA_re Integer structure code, as in \code{\link{Get_NAA_state_penalty}}.
+#' @param pe Numeric vector of three correlation parameters on the unconstrained
+#'   scale, read as age, year and cohort.
+#' @param ny,na Number of active years and ages.
+#'
+#' @return Scalar negative log likelihood.
+#'
+#' @keywords internal
+#' @import RTMB
+penalize_naa_age_year <- function(eps_ya, sd_prs, NAA_re, pe, ny, na) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  # 1 = independent over ages and years
+  if(NAA_re == 1) return(-sum(RTMB::dnorm(as.vector(eps_ya), 0, sd_prs, TRUE)))
+
+  # 3 = autoregression over ages, 7 = over years, 4 = separable over both. The margin a form
+  # leaves alone takes an independent standard normal, a valid mean zero unit variance factor
+  if(NAA_re %in% c(2, 3, 4)) {
+    rho_a <- if(NAA_re %in% c(2, 4)) rho_trans(pe[1]) else 0 # 1dar1 over ages
+    rho_y <- if(NAA_re %in% c(3, 4)) rho_trans(pe[2]) else 0 # 1dar1_y over years, 2dar1 over both
+    scale <- sd_prs / sqrt(1 - rho_y^2) / sqrt(1 - rho_a^2) # get unit scale
+    iid_f <- function(x) sum(RTMB::dnorm(x, 0, 1, TRUE)) # the margin left independent
+    f_yr <- if(NAA_re %in% c(3, 4)) function(x) RTMB::dautoreg(x, mu = 0, phi = rho_y, log = TRUE) else iid_f
+    f_ag <- if(NAA_re %in% c(2, 4)) function(x) RTMB::dautoreg(x, mu = 0, phi = rho_a, log = TRUE) else iid_f
+    return(-RTMB::dseparable(f_yr, f_ag)(eps_ya, scale = scale))
+  }
+
+  # 5 and 6 = three-dimensional field on the conditional and the marginal variance
+  if(NAA_re %in% c(5, 6)) {
+    Q <- Get_3d_precision(na, ny, rho_trans(pe[1]), rho_trans(pe[2]), rho_trans(pe[3]),
+                          2 * log(sd_prs), Var_Type = if(NAA_re == 5) 1 else 0)
+    # Get_3d_precision numbers its nodes age fastest, so the vector is laid out the same way
+    return(-RTMB::dgmrf(x = as.vector(t(eps_ya)), mu = 0, Q = Q, log = TRUE))
+  }
+
+  stop("NAA_re code ", NAA_re, " has no scoring branch.")
 }

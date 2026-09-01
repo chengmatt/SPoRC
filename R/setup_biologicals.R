@@ -577,7 +577,7 @@ do_growth_mapping <- function(input_list,
 #'   \code{0} = no (default); \code{1} = yes. Requires \code{fit_lengths = 1}.
 #'   Turning this on adds \code{Fish_caal}, \code{Fish_caal_discard} and \code{Srv_caal} to the
 #'   report, holding predicted retained catch, discards and survey index jointly
-#'   by length and age. 
+#'   by length and age.
 #' @param growth_model Character. \code{"none"} (default) keeps \code{SizeAgeTrans}
 #'   and the weight-at-age arrays as data. \code{"vb_schnute"} builds the size-age
 #'   transition from estimable von Bertalanffy parameters in Schnute's form:
@@ -718,6 +718,64 @@ do_growth_mapping <- function(input_list,
 #'     \item{\code{"fix"}}{Fix mortality to \code{Fixed_natmort}; \code{ln_M} parameters
 #'       are mapped to \code{NA} and not passed to the optimizer.}
 #'   }
+#' @param NAA_re Character. State-space numbers at age: the log numbers themselves
+#'   become parameters for ages two and older, including the plus group, and the
+#'   deterministic mortality and ageing step becomes a prediction they are scored
+#'   against. \code{"none"} (default) leaves the numbers deterministic. Otherwise
+#'   one of \code{"iid"},
+#'   \code{"1dar1_a"} (an autoregression over ages, years independent),
+#'   \code{"1dar1_y"} (an autoregression over years, ages independent),
+#'   \code{"2dar1"} (a separable
+#'   autoregression over ages and years), or \code{"3dcond"} and \code{"3dmarg"}
+#'   (a three-dimensional Gaussian Markov random field over age, year and cohort,
+#'   on the conditional or the marginal variance). These are the same process
+#'   error forms the selectivity and growth surfaces use, so a state on the
+#'   numbers and a surface on selectivity are scored the same way. Age one belongs
+#'   to \code{ln_RecDevs} and year one at ages two and older to
+#'   \code{ln_InitDevs}, so the three partition the numbers at age rather than
+#'   overlapping. The state is the log numbers, not a deviation, so \code{ln_NAA}
+#'   starts from an equilibrium decay from \eqn{R_0} at the mean \eqn{M}, split
+#'   over regions and sexes, with the plus group accumulated. Pass \code{ln_NAA}
+#'   through \code{starting_values} to start somewhere else.
+#' @param NAA_re_ages Ages the state is estimated over, as ages rather than
+#'   indices. \code{NULL} (default) uses every age from the second onward. Must be
+#'   a contiguous run.
+#' @param NAA_re_years Calendar years the state is estimated over. \code{NULL}
+#'   (default) uses every year from the second onward. Must be a contiguous run.
+#' @param NAA_re_region Character. Correlation across regions, composed with
+#'   whatever \code{NAA_re} gives over the age and year grid. \code{"iid"} (the
+#'   default) leaves regions independent; \code{"us"} estimates an unstructured
+#'   correlation, \eqn{n_r(n_r-1)/2} parameters, placing no shape on how regions
+#'   covary. Independence is the default deliberately: a flexible correlation
+#'   manufactures structure from independent data far more readily than it misses
+#'   real structure.
+#' @param NAA_re_region_spec Character controlling how the region correlations are
+#'   shared, following the package's spec strings: \code{"est_all"} (the default)
+#'   gives a free correlation matrix per population and sex, \code{"est_shared_p"}
+#'   and \code{"est_shared_s"} share it over one of those margins,
+#'   \code{"est_shared_p_s"} gives a single matrix for the whole model, and
+#'   \code{"fix"} holds them all.
+#' @param NAA_re_pop,NAA_re_sex Character. Correlation across populations and
+#'   across sexes, composed with the region, age and year structures the same way.
+#'   \code{"iid"} (the default) leaves them independent; \code{"us"} estimates an
+#'   unstructured correlation. Both are global to the model rather than varying
+#'   over the other margins, so a two-sex model spends exactly one parameter on
+#'   \code{NAA_re_sex = "us"}. Note that a survival correlation between sexes is
+#'   weakly identified in most configurations: spawning biomass reads the first
+#'   sex while abundance indices sum over sexes, so an antisymmetric shock moves
+#'   spawning biomass at almost no cost in the indices, and only sex-structured
+#'   compositions push back on it.
+#' @param NAA_sigma_spec Character, whether the process error standard deviations
+#'   are estimated (\code{"est"}, the default) or held at their starting values
+#'   (\code{"fix"}). The states themselves are always estimated.
+#' @param NAA_sigma_popblk_spec,NAA_sigma_regionblk_spec,NAA_sigma_yearblk_spec,NAA_sigma_ageblk_spec,NAA_sigma_sexblk_spec
+#'   Blocking for the process error standard deviation, each either
+#'   \code{"constant"} (the default) or a list of integer vectors assigning
+#'   indices to blocks, exactly as the \code{M_*blk_spec} arguments do. Blocking
+#'   shares a standard deviation; it never removes a cell from the state. Only
+#'   \code{NAA_re = "iid"} admits a standard deviation that varies over years or
+#'   ages: every other form is separable or Markov in a margin, so it carries one
+#'   standard deviation per population, region and sex.
 #' @param Fixed_natmort Numeric array of fixed natural mortality rates with dimensions
 #'   \code{[n_pop × n_regions × n_years × n_ages × n_sexes]}. Note the absence of an
 #'   \code{n_seas} dimension. Required when \code{M_spec = "fix"}; ignored otherwise.
@@ -818,6 +876,19 @@ Setup_Mod_Biologicals <- function(input_list,
                                   M_yearblk_spec = 'constant',
                                   M_sexblk_spec = 'constant',
                                   Fixed_natmort = NULL,
+                                  NAA_re = "none",
+                                  NAA_re_ages = NULL,
+                                  NAA_re_years = NULL,
+                                  NAA_sigma_spec = "est",
+                                  NAA_re_region = "iid",
+                                  NAA_re_region_spec = "est_all",
+                                  NAA_re_pop = "iid",
+                                  NAA_re_sex = "iid",
+                                  NAA_sigma_popblk_spec = 'constant',
+                                  NAA_sigma_regionblk_spec = 'constant',
+                                  NAA_sigma_yearblk_spec = 'constant',
+                                  NAA_sigma_ageblk_spec = 'constant',
+                                  NAA_sigma_sexblk_spec = 'constant',
                                   ...
                                   ) {
 
@@ -878,7 +949,7 @@ Setup_Mod_Biologicals <- function(input_list,
       if(!is.null(names(growth_tv_model)) && all(names(growth_tv_model) != "")) {
         bad <- setdiff(names(growth_tv_model), gpar_names[1:n_gpars])
         if(length(bad) > 0) stop("growth_tv_model names not growth parameters: ", paste(bad, collapse = ", "), ". Use ", paste(gpar_names[1:n_gpars], collapse = ", "))
-        for(nm in names(growth_tv_model)) tv_vals[nm] <- tv_codes[[growth_tv_model[[nm]]]]
+        for(name in names(growth_tv_model)) tv_vals[name] <- tv_codes[[growth_tv_model[[name]]]]
       } else {
         if(length(growth_tv_model) != n_gpars) stop("an unnamed growth_tv_model must have one entry per growth parameter (", n_gpars, "), or be named by parameter")
         for(k in 1:n_gpars) tv_vals[k] <- tv_codes[[growth_tv_model[k]]]
@@ -1214,6 +1285,30 @@ Setup_Mod_Biologicals <- function(input_list,
   # Mapping Options ---------------------------------------------------------
   input_list <- do_natmort_mapping(input_list, M_spec, M_popblk_spec_vals, M_regionblk_spec_vals,
                              M_yearblk_spec_vals, M_ageblk_spec_vals, M_sexblk_spec_vals) # natural mortality mapping
+
+  # State-space numbers at age
+  NAA_sigma_blk_vals <- lapply(
+    list(pop = NAA_sigma_popblk_spec, region = NAA_sigma_regionblk_spec, year = NAA_sigma_yearblk_spec,
+         age = NAA_sigma_ageblk_spec, sex = NAA_sigma_sexblk_spec),
+    function(x) x)
+  n_by_dim <- list(pop = input_list$data$n_pop, region = input_list$data$n_regions,
+                   year = length(input_list$data$years), age = length(input_list$data$ages),
+                   sex = input_list$data$n_sexes)
+  for(name in names(NAA_sigma_blk_vals)) {
+    if(is.character(NAA_sigma_blk_vals[[name]])) {
+      if(!identical(NAA_sigma_blk_vals[[name]], "constant"))
+        stop("NAA_sigma_", name, "blk_spec must be \"constant\" or a list of blocks, but was: ",
+             NAA_sigma_blk_vals[[name]])
+      NAA_sigma_blk_vals[[name]] <- list(1:n_by_dim[[name]])
+    }
+  } # end name loop
+
+  input_list <- do_NAAstate_mapping(input_list, NAA_re, NAA_re_ages, NAA_re_years, NAA_sigma_spec,
+                                    NAA_re_region, NAA_re_region_spec, NAA_re_pop, NAA_re_sex,
+                                    starting_values,
+                                    NAA_sigma_blk_vals$pop, NAA_sigma_blk_vals$region,
+                                    NAA_sigma_blk_vals$year, NAA_sigma_blk_vals$age,
+                                    NAA_sigma_blk_vals$sex)
   if(growth_model_val != 0) input_list <- do_growth_mapping(input_list, growth_spec, growth_fix, tv_vals, tv_active, growth_tv_spec,
                                                             growth_tv_sigma_spec, semipar_val, growth_semipar_spec,
                                                             semipar_age_idx, semipar_yr_idx) # growth mapping
@@ -1224,3 +1319,285 @@ Setup_Mod_Biologicals <- function(input_list,
   return(input_list)
 }
 
+
+#' Set up the state-space numbers at age
+#'
+#' Builds the \code{ln_NAA} parameter array and its map, the process error
+#' standard deviations and their blocking index, and the data fields the
+#' dynamics and the penalty read.
+#'
+#' The state covers ages 2 and older, including the plus group, over years 2 and
+#' later. Year 1 at those ages belongs to \code{ln_InitDevs} and age 1 belongs to
+#' \code{ln_RecDevs} in every year, so the three parameterizations partition the
+#' numbers at age rather than overlapping. The plus group is inside the state and
+#' not optional: it is the only cell whose influence never decays, so leaving it
+#' deterministic gives up the conditional independence the state is worth having
+#' for.
+#'
+#' Ages and years must each be a contiguous run. The penalty scores the active
+#' cells as one rectangular slice, and a gap would either leave scored cells the
+#' dynamics never wrote or force a per-cell branch onto the tape.
+#'
+#' @param input_list Named list with \code{$data}, \code{$par} and \code{$map}.
+#' @param NAA_re Character. \code{"none"} (default) leaves the numbers at age
+#'   deterministic. \code{"iid"} gives every active cell an independent Gaussian
+#'   innovation.
+#' @param NAA_re_ages Ages the state is active over, as ages rather than indices.
+#'   \code{NULL} (default) uses every age from the second onward.
+#' @param NAA_re_years Calendar years the state is active over. \code{NULL}
+#'   (default) uses every year from the second onward.
+#' @param NAA_sigma_spec Character, \code{"est"} or \code{"fix"}, whether the
+#'   process error standard deviations are estimated.
+#' @param NAA_sigma_popblk_spec_vals,NAA_sigma_regionblk_spec_vals,NAA_sigma_yearblk_spec_vals,NAA_sigma_ageblk_spec_vals,NAA_sigma_sexblk_spec_vals
+#'   Lists of integer vectors assigning indices to blocks, exactly as the
+#'   \code{M_*blk_spec_vals} arguments do. Blocking shares the standard
+#'   deviation; it never removes a cell from the state.
+#'
+#' @return \code{input_list} with \code{$par$ln_NAA}, \code{$par$ln_sigmaNAA},
+#'   their maps, and the data fields \code{NAA_re}, \code{n_est_naa_re},
+#'   \code{naa_re_ages}, \code{naa_re_yrs} and \code{naa_sigma_blocks}.
+#'
+#' @keywords internal
+do_NAAstate_mapping <- function(input_list,
+                                NAA_re,
+                                NAA_re_ages,
+                                NAA_re_years,
+                                NAA_sigma_spec,
+                                NAA_re_region = "iid",
+                                NAA_re_region_spec = "est_all",
+                                NAA_re_pop = "iid",
+                                NAA_re_sex = "iid",
+                                starting_values = list(),
+                                NAA_sigma_popblk_spec_vals,
+                                NAA_sigma_regionblk_spec_vals,
+                                NAA_sigma_yearblk_spec_vals,
+                                NAA_sigma_ageblk_spec_vals,
+                                NAA_sigma_sexblk_spec_vals) {
+
+  n_pop <- input_list$data$n_pop
+  n_regions <- input_list$data$n_regions
+  n_sexes <- input_list$data$n_sexes
+  ages <- input_list$data$ages
+  years <- input_list$data$years
+  n_ages <- length(ages)
+  n_yrs <- length(years)
+
+  # 1dar1 without a suffix means across ages, matching do_age_corr_setup, where age is the only
+  # margin those observations have. The state has two, so both are also spellable explicitly.
+  naa_codes <- c(none = 0, iid = 1, `1dar1_a` = 2, `1dar1_y` = 3, `2dar1` = 4, `3dcond` = 5, `3dmarg` = 6)
+  if(length(NAA_re) != 1 || !NAA_re %in% names(naa_codes))
+    stop("NAA_re is '", NAA_re, "'. Valid options: ", paste(names(naa_codes), collapse = ", "))
+  naa_val <- naa_codes[[NAA_re]]
+
+  # the array always exists so the objective can index it unconditionally; whether any of it
+  # is estimated is carried by n_est_naa_re, never inferred from the array's dimensions.
+  # Unseeded, the cold start is an equilibrium decay from R0 at the mean M, split over regions and
+  # sexes, with the plus group accumulated. A constant would put every age at the same abundance,
+  # which is nowhere near any plausible solution; the decay at least has the right shape. A seed
+  # from a deterministic pass, passed as starting_values$ln_NAA, is always better and overrides it.
+  M_bar <- mean(exp(as.vector(input_list$par$ln_M)))
+  ln_R0 <- if(is.null(input_list$par$ln_global_R0)) 5 else as.vector(input_list$par$ln_global_R0)[1]
+  eq_naa <- ln_R0 - log(n_regions) - log(n_sexes) - M_bar * (seq_len(n_ages) - 1)
+  eq_naa[n_ages] <- eq_naa[n_ages] - log(1 - exp(-M_bar)) # plus group at equilibrium
+  if(!all(is.finite(eq_naa))) eq_naa <- rep(5, n_ages)
+  input_list$par$ln_NAA <- use_starting_value(
+    array(rep(eq_naa, each = n_pop * n_regions * n_yrs),
+          dim = c(n_pop, n_regions, n_yrs, n_ages, n_sexes)),
+    starting_values, "ln_NAA")
+
+  # map all of this stuff off if no process error
+  if(NAA_re == "none") {
+    input_list$map$ln_NAA <- factor(rep(NA, length(input_list$par$ln_NAA)))
+    input_list$par$ln_sigmaNAA <- array(log(0.3), dim = c(1, 1, 1, 1, 1))
+    input_list$map$ln_sigmaNAA <- factor(NA)
+    input_list$data$NAA_re <- 0
+    input_list$data$n_est_naa_re <- 0
+    input_list$data$naa_re_ages <- integer(0)
+    input_list$data$naa_re_yrs <- integer(0)
+    input_list$data$naa_sigma_blocks <- array(1, dim = c(n_pop, n_regions, n_yrs, n_ages, n_sexes))
+    input_list$par$NAA_pe_pars <- array(0, dim = c(n_pop, n_regions, 3, n_sexes))
+    input_list$map$NAA_pe_pars <- factor(rep(NA, length(input_list$par$NAA_pe_pars)))
+    input_list$data$NAA_re_region <- 0
+    input_list$par$NAA_region_corr_pars <- array(0, dim = c(n_pop, max(1, n_regions * (n_regions - 1) / 2), n_sexes))
+    input_list$map$NAA_region_corr_pars <- factor(rep(NA, length(input_list$par$NAA_region_corr_pars)))
+    input_list$data$NAA_re_pop <- 0
+    input_list$data$NAA_re_sex <- 0
+    input_list$par$NAA_pop_corr_pars <- rep(0, max(1, n_pop * (n_pop - 1) / 2))
+    input_list$map$NAA_pop_corr_pars <- factor(rep(NA, length(input_list$par$NAA_pop_corr_pars)))
+    input_list$par$NAA_sex_corr_pars <- rep(0, max(1, n_sexes * (n_sexes - 1) / 2))
+    input_list$map$NAA_sex_corr_pars <- factor(rep(NA, length(input_list$par$NAA_sex_corr_pars)))
+    return(input_list)
+  }
+
+  # A time-blocked M that is freely estimated is the same unpenalized log-survival surface the
+  # state already carries, so the two trade off one for one and neither is pinned down.
+  m_map <- input_list$map$ln_M
+  m_estimated <- is.null(m_map) || any(!is.na(m_map))
+  if(m_estimated && length(dim(input_list$par$ln_M)) >= 3 && dim(input_list$par$ln_M)[3] > 1)
+    stop("A freely estimated time-blocked natural mortality and the numbers-at-age state are not ",
+         "separately identified: both are an unpenalized log-survival surface over years and ages. ",
+         "Fix M with M_spec = 'fix', or drop the year blocking, or turn the state off.")
+
+  # Ages and years the state runs over
+  age_use <- if(is.null(NAA_re_ages)) ages[-1] else NAA_re_ages
+  yr_use <- if(is.null(NAA_re_years)) years[-1] else NAA_re_years
+  if(!all(age_use %in% ages)) stop("NAA_re_ages has ages outside the model ages.")
+  if(!all(yr_use %in% years)) stop("NAA_re_years has years outside the model years.")
+
+  age_idx <- sort(match(age_use, ages))
+  yr_idx <- sort(match(yr_use, years))
+
+  if(any(age_idx < 2))
+    stop("NAA_re_ages includes the first age. Age one is recruitment and belongs to ln_RecDevs; ",
+         "the state covers ages two and older.")
+  if(any(yr_idx < 2))
+    stop("NAA_re_years includes the first year. Year one at ages two and older belongs to ",
+         "ln_InitDevs; the state covers years two and later.")
+  if(length(age_idx) > 1 && !all(diff(age_idx) == 1))
+    stop("NAA_re_ages must be a contiguous run of ages. The state is scored as one rectangular ",
+         "slice, so a gap would leave scored cells the dynamics never wrote.")
+  if(length(yr_idx) > 1 && !all(diff(yr_idx) == 1))
+    stop("NAA_re_years must be a contiguous run of years. The state is scored as one rectangular ",
+         "slice, so a gap would leave scored cells the dynamics never wrote.")
+
+  # Map: estimate the active rectangle, hold everything else
+  map_naa <- array(NA_integer_, dim = dim(input_list$par$ln_NAA))
+  n_active <- n_pop * n_regions * length(yr_idx) * length(age_idx) * n_sexes
+  map_naa[,,yr_idx,age_idx,] <- seq_len(n_active)
+  input_list$map$ln_NAA <- factor(map_naa)
+  input_list$data$map_ln_NAA <- array(as.numeric(input_list$map$ln_NAA), dim = dim(map_naa))
+
+  # Process error standard deviations, blocked the way natural mortality is
+  sigma_blocks <- array(0, dim = c(n_pop, n_regions, n_yrs, n_ages, n_sexes))
+  counter <- 1
+  for(popblk in 1:length(NAA_sigma_popblk_spec_vals)) {
+    map_p <- NAA_sigma_popblk_spec_vals[[popblk]]
+    for(regionblk in 1:length(NAA_sigma_regionblk_spec_vals)) {
+      map_r <- NAA_sigma_regionblk_spec_vals[[regionblk]]
+      for(yearblk in 1:length(NAA_sigma_yearblk_spec_vals)) {
+        map_y <- NAA_sigma_yearblk_spec_vals[[yearblk]]
+        for(ageblk in 1:length(NAA_sigma_ageblk_spec_vals)) {
+          map_a <- NAA_sigma_ageblk_spec_vals[[ageblk]]
+          for(sexblk in 1:length(NAA_sigma_sexblk_spec_vals)) {
+            map_s <- NAA_sigma_sexblk_spec_vals[[sexblk]]
+            sigma_blocks[map_p, map_r, map_y, map_a, map_s] <- counter
+            counter <- counter + 1
+          } # end sexblk loop
+        } # end ageblk loop
+      } # end yearblk loop
+    } # end regionblk loop
+  } # end popblk loop
+
+  if(any(sigma_blocks == 0))
+    stop("The NAA_sigma block specifications do not cover every cell. Each of the population, ",
+         "region, year, age and sex block lists must partition its dimension.")
+
+  input_list$par$ln_sigmaNAA <- array(log(0.3), dim = c(length(NAA_sigma_popblk_spec_vals),
+                                                        length(NAA_sigma_regionblk_spec_vals),
+                                                        length(NAA_sigma_yearblk_spec_vals),
+                                                        length(NAA_sigma_ageblk_spec_vals),
+                                                        length(NAA_sigma_sexblk_spec_vals)))
+
+  if(!NAA_sigma_spec %in% c("est", "fix"))
+    stop("NAA_sigma_spec is '", NAA_sigma_spec, "'. Valid options: est, fix")
+  if(NAA_sigma_spec == "est") input_list$map$ln_sigmaNAA <- factor(1:length(input_list$par$ln_sigmaNAA))
+  if(NAA_sigma_spec == "fix") input_list$map$ln_sigmaNAA <- factor(rep(NA, length(input_list$par$ln_sigmaNAA)))
+
+  # Only the independent form admits a standard deviation that varies cell by cell. Every other
+  # structure is separable or Markov in a margin, so one standard deviation has to serve the whole
+  # age-year grid within a population, region and sex; a per-cell variance would break separability.
+  if(naa_val > 1 && (length(NAA_sigma_yearblk_spec_vals) > 1 || length(NAA_sigma_ageblk_spec_vals) > 1)) {
+    stop("NAA_re = \"", NAA_re, "\" is a correlated structure over the age and year grid, but the ",
+         "process error standard deviation is blocked over ", length(NAA_sigma_yearblk_spec_vals),
+         " year and ", length(NAA_sigma_ageblk_spec_vals), " age blocks. A separable or Markov ",
+         "correlation carries one standard deviation per population, region and sex. Hold ",
+         "NAA_sigma_yearblk_spec and NAA_sigma_ageblk_spec at \"constant\", or use NAA_re = \"iid\", ",
+         "which is the only form a cell-varying standard deviation is defined for.")
+  }
+
+  # Correlation parameters, read as age, year and cohort
+  input_list$par$NAA_pe_pars <- array(0, dim = c(n_pop, n_regions, 3, n_sexes))
+  input_list$par$NAA_pe_pars <- use_starting_value(input_list$par$NAA_pe_pars, starting_values, "NAA_pe_pars")
+  # which of the three slots (age, year, cohort) a form reads; the rest stay at zero and mapped off
+  pe_slots <- list(`1` = integer(0), `2` = 1L, `3` = 2L, `4` = c(1L, 2L),
+                   `5` = 1:3, `6` = 1:3)[[as.character(naa_val)]]
+  map_pe <- array(NA_integer_, dim = dim(input_list$par$NAA_pe_pars))
+  if(length(pe_slots)) map_pe[,,pe_slots,] <- seq_len(n_pop * n_regions * length(pe_slots) * n_sexes)
+  input_list$map$NAA_pe_pars <- factor(map_pe)
+
+  # Correlation across regions
+  region_codes <- c(iid = 0, us = 1)
+  if(length(NAA_re_region) != 1 || !NAA_re_region %in% names(region_codes))
+    stop("NAA_re_region is '", NAA_re_region, "'. Valid options: ", paste(names(region_codes), collapse = ", "))
+  region_val <- region_codes[[NAA_re_region]]
+
+  if(region_val > 0 && n_regions == 1)
+    stop("NAA_re_region = \"", NAA_re_region, "\" needs more than one region, but the model has one. ",
+         "There is nothing for a cross-region correlation to describe; leave it at \"iid\".")
+
+  n_pairs <- max(1, n_regions * (n_regions - 1) / 2)
+  input_list$par$NAA_region_corr_pars <- array(0, dim = c(n_pop, n_pairs, n_sexes))
+  input_list$par$NAA_region_corr_pars <- use_starting_value(input_list$par$NAA_region_corr_pars,
+                                                            starting_values, "NAA_region_corr_pars")
+
+  # The correlation sits over population and sex, so "est_shared_p_s" gives one correlation matrix for the whole
+  # model and "est_all" a free one per population and sex.
+  valid_spec <- c("est_all", "est_shared_p", "est_shared_s", "est_shared_p_s", "fix")
+  if(length(NAA_re_region_spec) != 1 || !NAA_re_region_spec %in% valid_spec)
+    stop("NAA_re_region_spec is '", NAA_re_region_spec, "'. Valid options: ",
+         paste(valid_spec, collapse = ", "))
+
+  map_rc <- array(NA_integer_, dim = c(n_pop, n_pairs, n_sexes))
+  if(region_val > 0 && NAA_re_region_spec != "fix") {
+    share_p <- NAA_re_region_spec %in% c("est_shared_p", "est_shared_p_s")
+    share_s <- NAA_re_region_spec %in% c("est_shared_s", "est_shared_p_s")
+    for(p1 in 1:n_pop) {
+      for(k in 1:n_pairs) {
+        for(s1 in 1:n_sexes) {
+          pi_ <- if(share_p) 1 else p1
+          si_ <- if(share_s) 1 else s1
+          map_rc[p1,k,s1] <- (pi_ - 1) * n_pairs * n_sexes + (k - 1) * n_sexes + si_
+        } # end s1 loop
+      } # end k loop
+    } # end p1 loop
+    map_rc[] <- as.integer(factor(map_rc)) # renumber to a dense sequence
+  }
+  input_list$map$NAA_region_corr_pars <- factor(map_rc)
+  input_list$data$NAA_re_region <- region_val
+
+  # Population and sex correlations
+  for(mg in c("pop", "sex")) {
+    val_chr <- if(mg == "pop") NAA_re_pop else NAA_re_sex
+    n_lvl <- if(mg == "pop") n_pop else n_sexes
+    if(length(val_chr) != 1 || !val_chr %in% names(region_codes))
+      stop("NAA_re_", mg, " is '", val_chr, "'. Valid options: ", paste(names(region_codes), collapse = ", "))
+    val <- region_codes[[val_chr]]
+    if(val > 0 && n_lvl == 1)
+      stop("NAA_re_", mg, " = \"", val_chr, "\" needs more than one ", mg, ", but the model has one. ",
+           "There is nothing for the correlation to describe; leave it at \"iid\".")
+    name <- paste0("NAA_", mg, "_corr_pars")
+    input_list$par[[name]] <- rep(0, max(1, n_lvl * (n_lvl - 1) / 2))
+    input_list$par[[name]] <- use_starting_value(input_list$par[[name]], starting_values, name)
+    input_list$map[[name]] <- factor(if(val > 0) seq_along(input_list$par[[name]])
+                                   else rep(NA, length(input_list$par[[name]])))
+    input_list$data[[paste0("NAA_re_", mg)]] <- val
+  } # end mg loop
+
+  # A correlated survival shock between sexes
+  if(input_list$data$NAA_re_sex > 0)
+    collect_message("NAA_re_sex is estimating a survival correlation between sexes. Spawning biomass ",
+                    "reads sex one while indices sum over sexes, so this is weakly identified unless ",
+                    "sex-structured compositions carry the contrast. Profile it before trusting it.")
+
+  input_list$data$NAA_re <- naa_val
+  input_list$data$n_est_naa_re <- n_active
+  input_list$data$naa_re_ages <- age_idx
+  input_list$data$naa_re_yrs <- yr_idx
+  input_list$data$naa_sigma_blocks <- sigma_blocks
+
+  collect_message("State-space numbers at age: ", NAA_re, " innovations over ",
+                  length(yr_idx), " years and ", length(age_idx), " ages (",
+                  n_active, " states), process error ", NAA_sigma_spec)
+
+  input_list
+}

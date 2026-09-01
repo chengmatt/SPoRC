@@ -39,7 +39,8 @@ get_tagging_observation_model(
   pred_conv_tag_fish_recap,
   Mrate = NULL,
   move_timing = 0,
-  expm_nsub = 0
+  expm_nsub = 0,
+  NAA_scalar = NULL
 )
 }
 \arguments{
@@ -113,6 +114,13 @@ region, age, sex]}, output container for tags available for recapture.}
 \item{pred_conv_tag_fish_recap}{Array \code{[liberty, season, cohort, pop,
 region, age, sex, fish_fleet]}, output container for predicted
 recaptures.}
+
+\item{NAA_scalar}{Array \code{[pop, region, year, age, sex]} of the factor the
+state-space numbers at age applied to the deterministic prediction, one
+wherever it did not apply. Tagged fish are a subset of the population and the
+innovation reads as unmodelled mortality, so the cohorts take the same
+factor at the year boundary. \code{NULL} (the default) leaves them on the
+deterministic trajectory, which is correct only when the state is off.}
 }
 \value{
 List with elements \code{conv_tag_fish_reporting},

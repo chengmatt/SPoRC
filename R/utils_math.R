@@ -199,6 +199,30 @@ rho_trans <- function(x){
 #'
 #' @keywords internal
 build_us_corr <- function(pars, n) {
+  L <- build_us_chol(pars, n)
+  return(L %*% t(L))
+}
+
+#' Cholesky factor of an unstructured correlation matrix
+#'
+#' The factor behind \code{\link{build_us_corr}}, returned in its own right for
+#' callers that need to whiten rather than to form the correlation. Whitening a
+#' margin, \eqn{z = L^{-1} x}, is what lets a correlation over one margin compose
+#' with an arbitrary structure over the others: the transformed margin is
+#' independent, so each slice can then be scored by whatever density the
+#' remaining margins call for, separable or not.
+#'
+#' Rows are normalized to unit length, which makes the lower triangular matrix a
+#' Cholesky factor of a correlation matrix for any parameter values, so no
+#' positive-definiteness constraint is needed on the parameters themselves.
+#'
+#' @param pars Numeric vector of length \eqn{n(n-1)/2}, unconstrained.
+#' @param n Dimension of the margin.
+#'
+#' @return An \eqn{n 	imes n} lower triangular matrix with unit-length rows.
+#'
+#' @keywords internal
+build_us_chol <- function(pars, n) {
 
   "[<-" <- RTMB::ADoverload("[<-")
 
@@ -217,7 +241,7 @@ build_us_corr <- function(pars, n) {
 
   for(i in 1:n) L[i,] = L[i,] / sqrt(sum(L[i,]^2)) # unit rows make L a Cholesky factor
 
-  return(L %*% t(L))
+  return(L)
 }
 
 #' Construct a logistic-normal covariance matrix

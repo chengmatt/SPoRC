@@ -47,6 +47,7 @@ Imports:
 Suggests: 
     igraph,
     knitr,
+    pkgdown,
     purrr,
     rmarkdown,
     splines2,

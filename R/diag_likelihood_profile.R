@@ -175,6 +175,7 @@ weight_over_ages <- function(component, weight) {
 #'       level, and stock-recruit penalties together, each with its weight),
 #'       \code{M_nLL_df}, \code{sel_nLL_df}, \code{rec_prop_nLL_df},
 #'       \code{Movement_nLL_df}, \code{h_nLL_df}, \code{R0_nLL_df}, \code{TagRep_nLL_df},
+#'       \code{NAA_state_nLL_df},
 #'       \code{Fmort_nLL_df}, \code{fish_q_nLL_df}, \code{srv_q_nLL_df}.}
 #'     \item{Pooled data likelihoods}{\code{Catch_nLL_df}
 #'       \code{[Region × Year × Seas × Fleet]},
@@ -241,6 +242,7 @@ do_likelihood_profile <- function(data,
   M_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
   rec_prop_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
   h_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
+  NAA_state_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
   R0_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
   Movement_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
   TagRep_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
@@ -312,6 +314,7 @@ do_likelihood_profile <- function(data,
         rec_prop_nLL[j,1] <- report$rec_prop_nLL
         Movement_nLL[j,1] <- report$Movement_nLL
         h_nLL[j,1] <- report$h_nLL
+        NAA_state_nLL[j,1] <- safe_extract(report, "NAA_state_nLL")
         R0_nLL[j,1] <- report$R0_nLL
         TagRep_nLL[j,1] <- report$TagRep_nLL
         Fmort_nLL[j,1] <- sum(data$Wt_F * report$Fmort_nLL)
@@ -385,6 +388,7 @@ do_likelihood_profile <- function(data,
           rec_prop_nLL = NA,
           Movement_nLL = NA,
           h_nLL = NA,
+          NAA_state_nLL = NA,
           R0_nLL = NA,
           TagRep_nLL = NA,
           Fmort_nLL = NA,
@@ -447,6 +451,7 @@ do_likelihood_profile <- function(data,
           result$rec_prop_nLL <- report$rec_prop_nLL
           result$Movement_nLL <- report$Movement_nLL
           result$h_nLL <- report$h_nLL
+          result$NAA_state_nLL <- safe_extract(report, "NAA_state_nLL")
           result$R0_nLL <- report$R0_nLL
           result$TagRep_nLL <- report$TagRep_nLL
           result$Fmort_nLL <- sum(data$Wt_F * report$Fmort_nLL)
@@ -511,6 +516,7 @@ do_likelihood_profile <- function(data,
         rec_prop_nLL[j,1] <- res$rec_prop_nLL
         Movement_nLL[j,1] <- res$Movement_nLL
         h_nLL[j,1] <- res$h_nLL
+        NAA_state_nLL[j,1] <- res$NAA_state_nLL
         R0_nLL[j,1] <- res$R0_nLL
         TagRep_nLL[j,1] <- res$TagRep_nLL
         Fmort_nLL[j,1] <- res$Fmort_nLL
@@ -582,6 +588,7 @@ do_likelihood_profile <- function(data,
     dplyr::rename(prof_val = Var1) %>%
     dplyr::mutate(type = 'Move Prior')
   h_nLL_df <- reshape2::melt(h_nLL) %>% dplyr::select(-Var2) %>% dplyr::rename(prof_val = Var1) %>% dplyr::mutate(type = 'h Prior')
+  NAA_state_nLL_df <- reshape2::melt(NAA_state_nLL) %>% dplyr::select(-Var2) %>% dplyr::rename(prof_val = Var1) %>% dplyr::mutate(type = 'NAA State')
   R0_nLL_df <- reshape2::melt(R0_nLL) %>% dplyr::select(-Var2) %>% dplyr::rename(prof_val = Var1) %>% dplyr::mutate(type = 'R0 Prior')
   TagRep_nLL_df <- reshape2::melt(TagRep_nLL) %>%
     dplyr::select(-Var2) %>%
@@ -665,6 +672,7 @@ do_likelihood_profile <- function(data,
 
   # Get likelihoods aggregated across all dimensions
   agg_nLL <- rbind(jnLL_df, rec_nLL_df, M_nLL_df, rec_prop_nLL_df, Movement_nLL_df, h_nLL_df, R0_nLL_df,
+                   NAA_state_nLL_df,
                    TagRep_nLL_df,Fmort_nLL_df, dmr_nLL_df, sel_nLL_df,
                    Catch_nLL_df %>% dplyr::group_by(prof_val, type) %>%
                      dplyr::summarize(value = sum(value)),
@@ -709,6 +717,7 @@ do_likelihood_profile <- function(data,
                        rec_prop_nLL_df = rec_prop_nLL_df,
                        Movement_nLL_df = Movement_nLL_df,
                        h_nLL_df = h_nLL_df,
+                       NAA_state_nLL_df = NAA_state_nLL_df,
                        R0_nLL_df = R0_nLL_df,
                        TagRep_nLL_df = TagRep_nLL_df,
                        Fmort_nLL_df = Fmort_nLL_df,

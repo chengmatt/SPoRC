@@ -63,6 +63,7 @@ A named list containing one dataframe per likelihood component,
       level, and stock-recruit penalties together, each with its weight),
       \code{M_nLL_df}, \code{sel_nLL_df}, \code{rec_prop_nLL_df},
       \code{Movement_nLL_df}, \code{h_nLL_df}, \code{R0_nLL_df}, \code{TagRep_nLL_df},
+      \code{NAA_state_nLL_df},
       \code{Fmort_nLL_df}, \code{fish_q_nLL_df}, \code{srv_q_nLL_df}.}
     \item{Pooled data likelihoods}{\code{Catch_nLL_df}
       \code{[Region × Year × Seas × Fleet]},

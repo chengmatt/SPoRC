@@ -79,6 +79,7 @@ articles:
 
   - title: "Simulation and Projections"
     contents:
+      - ak_state_space_naa_spatial_sim
       - h_closed_loop_simulations
       - i_reference_points
       - l_simulation_testing
@@ -132,6 +133,7 @@ reference:
       - Setup_Sim_Biologicals
       - Setup_Sim_Containers
       - Setup_Sim_Fishing
+      - Setup_Sim_NAA_state
       - Setup_Sim_Rec
       - Setup_Sim_Survey
       - Setup_Sim_Tagging

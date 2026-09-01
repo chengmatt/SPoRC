@@ -125,7 +125,11 @@ here rather than derived from <code>NAA</code>.</p>
 <span>  sr_R0 <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  growth_mortality_year_fn <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  growth_mortality_state <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  expm_nsub <span class="op">=</span> <span class="fl">0</span></span>
+<span>  expm_nsub <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  n_est_naa_re <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  ln_NAA <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  naa_re_ages <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  naa_re_yrs <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -262,6 +266,21 @@ year loop and returned as <code>growth_mortality_state</code>. Ignored when
 <code>growth_mortality_year_fn</code> is <code>NULL</code>.
 This is how cohort growth, whose plus group blends by numbers, is evaluated
 inside the year loop. <code>NULL</code> (the default) uses the arrays as given.</p></dd>
+
+
+<dt id="arg-n-est-naa-re">n_est_naa_re<a class="anchor" aria-label="anchor" href="#arg-n-est-naa-re"></a></dt>
+<dd><p>Number of estimated state-space numbers at age. Zero leaves
+the numbers deterministic. Never inferred from <code>dim(ln_NAA)</code>, which is
+non-zero once the setup function has run at all.</p></dd>
+
+
+<dt id="arg-ln-naa">ln_NAA<a class="anchor" aria-label="anchor" href="#arg-ln-naa"></a></dt>
+<dd><p>Array <code>[pop, region, year, age, sex]</code> of log numbers at age,
+overwriting the deterministic prediction wherever the state is active.</p></dd>
+
+
+<dt id="arg-naa-re-ages-naa-re-yrs">naa_re_ages, naa_re_yrs<a class="anchor" aria-label="anchor" href="#arg-naa-re-ages-naa-re-yrs"></a></dt>
+<dd><p>Integer index vectors the state is active over.</p></dd>
 
 </dl></div>
     <div class="section level2">

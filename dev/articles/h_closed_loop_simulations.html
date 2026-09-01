@@ -129,7 +129,12 @@ executed, assuming that data are available every fifth year.
 Accordingly, assessments will be conducted every five years, with catch
 advice set five years in advance. Future recruitment will be sampled
 from the burn-in period, while uncertainty in the composition data
-(input sample sizes) will follow the fishing mortality pattern.</p>
+(input sample sizes) will follow the fishing mortality pattern. If the
+assessment estimated a state-space process on numbers at age, its
+standard deviations and correlations are carried across as well and the
+state stays active through the projection, so the operating model keeps
+generating process error rather than running deterministically once the
+data stop.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">closed_loop_yrs</span> <span class="op">&lt;-</span> <span class="fl">30</span> <span class="co"># number of closed loop years to do</span></span>
 <span><span class="va">burnin_years</span> <span class="op">&lt;-</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span> <span class="co"># number of conditioning years</span></span>

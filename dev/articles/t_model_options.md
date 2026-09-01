@@ -1120,6 +1120,67 @@ a data frame with columns `popblk`, `regionblk`, `yearblk`, `ageblk`,
 
 ------------------------------------------------------------------------
 
+## State-Space Numbers at Age
+
+Set in
+[`Setup_Mod_Biologicals()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Biologicals.md).
+By default (`NAA_re = "none"`) the numbers at age past the first are
+whatever mortality and ageing produce, and only recruitment and the
+initial age structure are stochastic. Turning the state on makes the log
+numbers themselves parameters for ages two and older, with the
+deterministic step as the prediction they are compared against. Further
+details can be found in the model equations vignette.
+
+#### Turning it on
+
+| Argument | Description |
+|----|----|
+| `NAA_re` | `"none"` (default), or the structure over the age-year grid: `"iid"` (independent across both ages and years), `"1dar1_a"` (autoregression over ages, years independent), `"1dar1_y"` (over years, ages independent), `"2dar1"` (separable over both), `"3dcond"` and `"3dmarg"` (three-dimensional field over age, year and cohort, on the conditional or marginal variance) |
+| `NAA_re_ages`, `NAA_re_years` | Ages and calendar years the state covers. `NULL` (default) uses everything from the second onward. Each must be a contiguous run, because the penalty compares the likelihood for one rectangular matrix |
+| `NAA_sigma_spec` | `"est"` (default) or `"fix"`, whether the process error standard deviations are estimated. The states themselves are always estimated |
+
+#### Correlation across populations, regions and sexes
+
+| Argument | Description |
+|----|----|
+| `NAA_re_pop`, `NAA_re_region`, `NAA_re_sex` | `"iid"` (default) or `"us"`, an unstructured correlation over that margin, $`n(n-1)/2`$ parameters. Composed with whatever `NAA_re` gives over the age-year grid, so a correlation over one margin says nothing about the others |
+| `NAA_re_region_spec` | How the region correlations are shared: `"est_all"` (default), `"est_shared_p"`, `"est_shared_s"`, `"est_shared_p_s"`, `"fix"` |
+
+Unstructured is the only non-independent option on these margins because
+none of them has an ordering: regions are not in a line, so a
+correlation decaying with distance has nothing to decay along.
+
+#### Standard deviations
+
+| Argument | Description |
+|----|----|
+| `NAA_sigma_popblk_spec`, `NAA_sigma_regionblk_spec`, `NAA_sigma_yearblk_spec`, `NAA_sigma_ageblk_spec`, `NAA_sigma_sexblk_spec` | `"constant"` (default) or a list of integer vectors assigning indices to blocks, exactly as the `M_*blk_spec` arguments do |
+
+Blocking shares a standard deviation; it never removes a cell from the
+state. Only `NAA_re = "iid"` admits a standard deviation that varies
+over years or ages: every other form is separable or Markov in one of
+those margins, and a per-cell variance is neither. The setup errors
+rather than silently ignoring a year or age block under a correlated
+form.
+
+#### What it does not combine with
+
+A freely estimated natural mortality that varies over time is the same
+log-survival surface the state carries, and `ln_M` is unpenalized while
+the state pays a marginal likelihood cost, so the optimizer loads the
+signal into `ln_M`. `NAA_re` together with `M_spec = "est_ln_M"` over
+more than one year block is refused. Time-varying $`M`$ alongside the
+state comes in as data through a `Fixed_natmort` array with
+`M_spec = "fix"`.
+
+Time-varying selectivity is a softer case. The data see numbers at age
+and selectivity only through their product, so a free age-by-year
+surface on selectivity and a free age-by-year state describe overlapping
+objects. Both are penalized and the compositions and catch constrain the
+product, so the pair is identified in the same sense it is in WHAM and
+SAM, but the two lean on their priors more than either does alone. Worth
+a profile rather than a prohibition.
+
 ## Movement
 
 Configured via

@@ -1095,6 +1095,62 @@ specified as random effects)</td>
 <td>0</td>
 </tr>
 <tr class="even">
+<td><code>ln_NAA</code></td>
+<td><code>n_pop × n_regions × n_years × n_ages × n_sexes</code></td>
+<td>Log-scale numbers at age when <code>NAA_re</code> is on. A centered
+state, the log numbers themselves rather than a deviation, estimated for
+ages two and older in years two onward including the plus group; cells
+outside <code>NAA_re_ages</code> and <code>NAA_re_years</code> are
+mapped off. Specified as random effects. Starts from an equilibrium
+decay from
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>0</mn></msub><annotation encoding="application/x-tex">R_0</annotation></semantics></math>
+at the mean
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>M</mi><annotation encoding="application/x-tex">M</annotation></semantics></math>,
+split over regions and sexes, with the plus group accumulated; supply
+<code>ln_NAA</code> in <code>starting_values</code> to override</td>
+<td>equilibrium</td>
+</tr>
+<tr class="odd">
+<td><code>ln_sigmaNAA</code></td>
+<td><code>n_pop_block × n_regions_block × n_years_block × n_ages_block × n_sexes_block</code></td>
+<td>Log-scale process error standard deviation for <code>ln_NAA</code>,
+dimensioned by the <code>NAA_sigma_*blk_spec</code> blocks as
+<code>ln_M</code> is. Only <code>NAA_re = "iid"</code> admits variation
+over the year and age margins</td>
+<td>log(0.3)</td>
+</tr>
+<tr class="even">
+<td><code>NAA_pe_pars</code></td>
+<td><code>n_pop × n_regions × 3 × n_sexes</code></td>
+<td>Unconstrained correlations over the age-year grid for
+<code>ln_NAA</code>, read as age, year and cohort. Only the slots the
+chosen <code>NAA_re</code> form uses are estimated</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td><code>NAA_region_corr_pars</code></td>
+<td><code>n_pop × n_regions(n_regions - 1)/2 × n_sexes</code></td>
+<td>Unconstrained parameters for an unstructured correlation across
+regions, shared according to <code>NAA_re_region_spec</code>
+</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td><code>NAA_pop_corr_pars</code></td>
+<td><code>n_pop(n_pop - 1)/2</code></td>
+<td>Unconstrained parameters for an unstructured correlation across
+populations, global to the model</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td><code>NAA_sex_corr_pars</code></td>
+<td><code>n_sexes(n_sexes - 1)/2</code></td>
+<td>Unconstrained parameters for an unstructured correlation across
+sexes, global to the model. One parameter with two sexes, and weakly
+identified unless sex-structured compositions carry the contrast</td>
+<td>0</td>
+</tr>
+<tr class="even">
 <td><code>sexratio_pars</code></td>
 <td><code>n_pop × n_regions × n_blocks</code></td>
 <td>Logit-scale sex ratio parameters (defaults to 50:50 when n_sexes =

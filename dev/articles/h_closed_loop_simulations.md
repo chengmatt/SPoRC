@@ -53,7 +53,12 @@ executed, assuming that data are available every fifth year.
 Accordingly, assessments will be conducted every five years, with catch
 advice set five years in advance. Future recruitment will be sampled
 from the burn-in period, while uncertainty in the composition data
-(input sample sizes) will follow the fishing mortality pattern.
+(input sample sizes) will follow the fishing mortality pattern. If the
+assessment estimated a state-space process on numbers at age, its
+standard deviations and correlations are carried across as well and the
+state stays active through the projection, so the operating model keeps
+generating process error rather than running deterministically once the
+data stop.
 
 ``` r
 

@@ -182,33 +182,55 @@ mortality together)</td>
 <td><code>n_pop × n_regions × (n_years + 1) × n_seas × n_ages × n_sexes</code></td>
 </tr>
 <tr class="even">
+<td><code>NAA_pred</code></td>
+<td>Deterministic numbers-at-age the mortality and ageing step predicts,
+before the state-space overwrite. Zero unless <code>NAA_re</code> is on.
+The realized innovation is <code>log(exp(ln_NAA)) - log(NAA_pred)</code>
+over the active cells</td>
+<td><code>n_pop × n_regions × n_years × n_ages × n_sexes</code></td>
+</tr>
+<tr class="odd">
+<td><code>NAA_scalar</code></td>
+<td>Multiplicative factor the state applied to that prediction, one
+wherever it did not apply. Tag cohorts and the unfished numbers take the
+same factor</td>
+<td><code>n_pop × n_regions × n_years × n_ages × n_sexes</code></td>
+</tr>
+<tr class="even">
+<td><code>NAA_state_nLL</code></td>
+<td>Penalty on the state-space numbers-at-age innovations. Zero when
+<code>NAA_re</code> is <code>"none"</code>
+</td>
+<td>scalar</td>
+</tr>
+<tr class="odd">
 <td><code>ZAA</code></td>
 <td>Total instantaneous mortality</td>
 <td><code>n_pop × n_regions × n_years × n_seas × n_ages × n_sexes</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>natmort</code></td>
 <td>Instantaneous natural mortality</td>
 <td><code>n_pop × n_regions × n_years × n_ages × n_sexes</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>bias_ramp</code></td>
 <td>Vector of bias ramp correction values applied to recruitment
 deviations</td>
 <td><code>n_est_rec_devs</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>Movement</code></td>
 <td>Movement (transition) matrix</td>
 <td><code>n_pop × n_regions × n_regions × (n_years + n_proj_yrs_devs) × n_seas × n_ages × n_sexes</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>Mrate</code></td>
 <td>Instantaneous movement rate matrix (CTMC movement only;
 <code>NULL</code> otherwise)</td>
 <td><code>n_pop × n_regions × n_regions × (n_years + n_proj_yrs_devs) × n_seas × n_ages × n_sexes</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>sgl_seas_spawning_movement</code></td>
 <td>Spawning movement matrix applied during the spawning event when
 <code>n_seas == 1</code> and <code>n_pop &gt; 1</code>

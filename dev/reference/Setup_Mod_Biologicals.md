@@ -64,6 +64,19 @@ Setup_Mod_Biologicals(
   M_yearblk_spec = "constant",
   M_sexblk_spec = "constant",
   Fixed_natmort = NULL,
+  NAA_re = "none",
+  NAA_re_ages = NULL,
+  NAA_re_years = NULL,
+  NAA_sigma_spec = "est",
+  NAA_re_region = "iid",
+  NAA_re_region_spec = "est_all",
+  NAA_re_pop = "iid",
+  NAA_re_sex = "iid",
+  NAA_sigma_popblk_spec = "constant",
+  NAA_sigma_regionblk_spec = "constant",
+  NAA_sigma_yearblk_spec = "constant",
+  NAA_sigma_ageblk_spec = "constant",
+  NAA_sigma_sexblk_spec = "constant",
   ...
 )
 ```
@@ -527,6 +540,88 @@ Setup_Mod_Biologicals(
   `[n_pop × n_regions × n_years × n_ages × n_sexes]`. Note the absence
   of an `n_seas` dimension. Required when `M_spec = "fix"`; ignored
   otherwise.
+
+- NAA_re:
+
+  Character. State-space numbers at age: the log numbers themselves
+  become parameters for ages two and older, including the plus group,
+  and the deterministic mortality and ageing step becomes a prediction
+  they are scored against. `"none"` (default) leaves the numbers
+  deterministic. Otherwise one of `"iid"`, `"1dar1_a"` (an
+  autoregression over ages, years independent), `"1dar1_y"` (an
+  autoregression over years, ages independent), `"2dar1"` (a separable
+  autoregression over ages and years), or `"3dcond"` and `"3dmarg"` (a
+  three-dimensional Gaussian Markov random field over age, year and
+  cohort, on the conditional or the marginal variance). These are the
+  same process error forms the selectivity and growth surfaces use, so a
+  state on the numbers and a surface on selectivity are scored the same
+  way. Age one belongs to `ln_RecDevs` and year one at ages two and
+  older to `ln_InitDevs`, so the three partition the numbers at age
+  rather than overlapping. The state is the log numbers, not a
+  deviation, so `ln_NAA` starts from an equilibrium decay from \\R_0\\
+  at the mean \\M\\, split over regions and sexes, with the plus group
+  accumulated. Pass `ln_NAA` through `starting_values` to start
+  somewhere else.
+
+- NAA_re_ages:
+
+  Ages the state is estimated over, as ages rather than indices. `NULL`
+  (default) uses every age from the second onward. Must be a contiguous
+  run.
+
+- NAA_re_years:
+
+  Calendar years the state is estimated over. `NULL` (default) uses
+  every year from the second onward. Must be a contiguous run.
+
+- NAA_sigma_spec:
+
+  Character, whether the process error standard deviations are estimated
+  (`"est"`, the default) or held at their starting values (`"fix"`). The
+  states themselves are always estimated.
+
+- NAA_re_region:
+
+  Character. Correlation across regions, composed with whatever `NAA_re`
+  gives over the age and year grid. `"iid"` (the default) leaves regions
+  independent; `"us"` estimates an unstructured correlation,
+  \\n_r(n_r-1)/2\\ parameters, placing no shape on how regions covary.
+  Independence is the default deliberately: a flexible correlation
+  manufactures structure from independent data far more readily than it
+  misses real structure.
+
+- NAA_re_region_spec:
+
+  Character controlling how the region correlations are shared,
+  following the package's spec strings: `"est_all"` (the default) gives
+  a free correlation matrix per population and sex, `"est_shared_p"` and
+  `"est_shared_s"` share it over one of those margins,
+  `"est_shared_p_s"` gives a single matrix for the whole model, and
+  `"fix"` holds them all.
+
+- NAA_re_pop, NAA_re_sex:
+
+  Character. Correlation across populations and across sexes, composed
+  with the region, age and year structures the same way. `"iid"` (the
+  default) leaves them independent; `"us"` estimates an unstructured
+  correlation. Both are global to the model rather than varying over the
+  other margins, so a two-sex model spends exactly one parameter on
+  `NAA_re_sex = "us"`. Note that a survival correlation between sexes is
+  weakly identified in most configurations: spawning biomass reads the
+  first sex while abundance indices sum over sexes, so an antisymmetric
+  shock moves spawning biomass at almost no cost in the indices, and
+  only sex-structured compositions push back on it.
+
+- NAA_sigma_popblk_spec, NAA_sigma_regionblk_spec,
+  NAA_sigma_yearblk_spec, NAA_sigma_ageblk_spec, NAA_sigma_sexblk_spec:
+
+  Blocking for the process error standard deviation, each either
+  `"constant"` (the default) or a list of integer vectors assigning
+  indices to blocks, exactly as the `M_*blk_spec` arguments do. Blocking
+  shares a standard deviation; it never removes a cell from the state.
+  Only `NAA_re = "iid"` admits a standard deviation that varies over
+  years or ages: every other form is separable or Markov in a margin, so
+  it carries one standard deviation per population, region and sex.
 
 - ...:
 

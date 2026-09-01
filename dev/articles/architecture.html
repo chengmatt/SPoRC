@@ -341,8 +341,8 @@ through a season goes through that one file.</p>
 <tr class="odd">
 <td><code>setup_biologicals.R</code></td>
 <td>
-<code>do_growth_mapping</code>, <code>do_natmort_mapping</code>,
-<code>Setup_Mod_Biologicals</code>,
+<code>do_growth_mapping</code>, <code>do_NAAstate_mapping</code>,
+<code>do_natmort_mapping</code>, <code>Setup_Mod_Biologicals</code>,
 <code>Setup_Sim_Biologicals</code>
 </td>
 <td>
@@ -785,7 +785,10 @@ through a season goes through that one file.</p>
 <td><code>model_precision.R</code></td>
 <td><code>Get_3d_precision</code></td>
 <td>nothing</td>
-<td><code>model_priors_penalties.R</code></td>
+<td>
+<code>model_priors_penalties.R</code>,
+<code>sim_naa_state.R</code>
+</td>
 </tr>
 <tr class="odd">
 <td><code>model_priors_penalties.R</code></td>
@@ -793,14 +796,15 @@ through a season goes through that one file.</p>
 <code>get_dmr_penalty</code>, <code>Get_Fdev_PE_loglik</code>,
 <code>Get_move_PE_loglik</code>,
 <code>get_movement_dirichlet_prior</code>,
-<code>get_natmort_prior</code>, <code>Get_PE_loglik</code>,
-<code>get_q_prior</code>, <code>get_r0_prior</code>,
-<code>get_rec_level_penalty</code>,
+<code>Get_NAA_state_penalty</code>, <code>get_natmort_prior</code>,
+<code>Get_PE_loglik</code>, <code>get_q_prior</code>,
+<code>get_r0_prior</code>, <code>get_rec_level_penalty</code>,
 <code>get_recruitment_penalty</code>,
 <code>get_recruitment_proportion_priors</code>,
 <code>get_selex_fixed_penalty</code>, <code>get_selex_prior</code>,
 <code>Get_Selex_Smoothness_Penalty</code>, <code>get_sr_penalty</code>,
-<code>get_steepness_prior</code>, <code>get_tagrep_prior</code>
+<code>get_steepness_prior</code>, <code>get_tagrep_prior</code>,
+<code>penalize_naa_age_year</code>
 </td>
 <td>
 <code>model_distributions.R</code>, <code>model_precision.R</code>,
@@ -959,12 +963,21 @@ through a season goes through that one file.</p>
 <code>refpts_main.R</code>, <code>setup_biologicals.R</code>,
 <code>setup_dimensions.R</code>, <code>setup_recruitment.R</code>,
 <code>setup_sim_containers.R</code>, <code>setup_sim_fleets.R</code>,
-<code>setup_tagging.R</code>, <code>utils_postfit.R</code>,
-<code>utils_setup.R</code>
+<code>setup_tagging.R</code>, <code>utils_math.R</code>,
+<code>utils_postfit.R</code>, <code>utils_setup.R</code>
 </td>
 <td></td>
 </tr>
 <tr class="even">
+<td><code>sim_naa_state.R</code></td>
+<td>
+<code>color_naa_margin</code>, <code>draw_naa_innovations</code>,
+<code>Setup_Sim_NAA_state</code>
+</td>
+<td><code>model_precision.R</code></td>
+<td><code>sim_population.R</code></td>
+</tr>
+<tr class="odd">
 <td><code>sim_observations.R</code></td>
 <td>
 <code>build_idx_factor</code>, <code>cov_to_factor</code>,
@@ -988,7 +1001,7 @@ through a season goes through that one file.</p>
 <code>setup_sim_fleets.R</code>, <code>sim_population.R</code>
 </td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>sim_population.R</code></td>
 <td>
 <code>apply_pop_dy</code>, <code>compute_biom_y_sim</code>,
@@ -998,12 +1011,12 @@ through a season goes through that one file.</p>
 </td>
 <td>
 <code>model_init_naa.R</code>, <code>model_recruitment.R</code>,
-<code>model_transition.R</code>, <code>sim_observations.R</code>,
-<code>sim_setup.R</code>
+<code>model_transition.R</code>, <code>sim_naa_state.R</code>,
+<code>sim_observations.R</code>, <code>sim_setup.R</code>
 </td>
 <td><code>sim_self_test.R</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>sim_random_variates.R</code></td>
 <td>
 <code>rdirM</code>, <code>rinvgauss_rec</code>,
@@ -1014,7 +1027,7 @@ through a season goes through that one file.</p>
 <code>projection.R</code>, <code>sim_observations.R</code>
 </td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>sim_self_test.R</code></td>
 <td>
 <code>simulation_data_to_SPoRC</code>,
@@ -1029,7 +1042,7 @@ through a season goes through that one file.</p>
 </td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>sim_setup.R</code></td>
 <td><code>Setup_sim_env</code></td>
 <td>nothing</td>
@@ -1191,8 +1204,9 @@ through a season goes through that one file.</p>
 <tr class="odd">
 <td><code>utils_math.R</code></td>
 <td>
-<code>build_us_corr</code>, <code>get_AR1_CorrMat</code>,
-<code>get_Constant_CorrMat</code>, <code>get_logistN_Sigma</code>,
+<code>build_us_chol</code>, <code>build_us_corr</code>,
+<code>get_AR1_CorrMat</code>, <code>get_Constant_CorrMat</code>,
+<code>get_logistN_Sigma</code>,
 <code>Get_Natural_Cubic_Spline_Weights</code>, <code>mat_exp</code>,
 <code>rho_trans</code>
 </td>
@@ -1202,7 +1216,7 @@ through a season goes through that one file.</p>
 <code>model_lik_comps.R</code>, <code>model_movement.R</code>,
 <code>model_priors_penalties.R</code>, <code>model_transition.R</code>,
 <code>setup_fishery_selectivity.R</code>,
-<code>setup_survey_selectivity.R</code>,
+<code>setup_survey_selectivity.R</code>, <code>sim_closed_loop.R</code>,
 <code>sim_observations.R</code>, <code>sim_random_variates.R</code>
 </td>
 </tr>
@@ -1682,7 +1696,7 @@ for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 140 test files in total.</p>
+<p>That is 144 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

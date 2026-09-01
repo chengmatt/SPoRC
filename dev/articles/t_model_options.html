@@ -2578,6 +2578,151 @@ with columns <code>popblk</code>, <code>regionblk</code>,
 </div>
 </div>
 <div class="section level2">
+<h2 id="state-space-numbers-at-age">State-Space Numbers at Age<a class="anchor" aria-label="anchor" href="#state-space-numbers-at-age"></a>
+</h2>
+<p>Set in <code><a href="../reference/Setup_Mod_Biologicals.html">Setup_Mod_Biologicals()</a></code>. By default
+(<code>NAA_re = "none"</code>) the numbers at age past the first are
+whatever mortality and ageing produce, and only recruitment and the
+initial age structure are stochastic. Turning the state on makes the log
+numbers themselves parameters for ages two and older, with the
+deterministic step as the prediction they are compared against. Further
+details can be found in the model equations vignette.</p>
+<div class="section level4">
+<h4 id="turning-it-on">Turning it on<a class="anchor" aria-label="anchor" href="#turning-it-on"></a>
+</h4>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Argument</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>NAA_re</code></td>
+<td>
+<code>"none"</code> (default), or the structure over the age-year
+grid: <code>"iid"</code> (independent across both ages and years),
+<code>"1dar1_a"</code> (autoregression over ages, years independent),
+<code>"1dar1_y"</code> (over years, ages independent),
+<code>"2dar1"</code> (separable over both), <code>"3dcond"</code> and
+<code>"3dmarg"</code> (three-dimensional field over age, year and
+cohort, on the conditional or marginal variance)</td>
+</tr>
+<tr class="even">
+<td>
+<code>NAA_re_ages</code>, <code>NAA_re_years</code>
+</td>
+<td>Ages and calendar years the state covers. <code>NULL</code>
+(default) uses everything from the second onward. Each must be a
+contiguous run, because the penalty compares the likelihood for one
+rectangular matrix</td>
+</tr>
+<tr class="odd">
+<td><code>NAA_sigma_spec</code></td>
+<td>
+<code>"est"</code> (default) or <code>"fix"</code>, whether the
+process error standard deviations are estimated. The states themselves
+are always estimated</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level4">
+<h4 id="correlation-across-populations-regions-and-sexes">Correlation across populations, regions and sexes<a class="anchor" aria-label="anchor" href="#correlation-across-populations-regions-and-sexes"></a>
+</h4>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Argument</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>
+<code>NAA_re_pop</code>, <code>NAA_re_region</code>,
+<code>NAA_re_sex</code>
+</td>
+<td>
+<code>"iid"</code> (default) or <code>"us"</code>, an unstructured
+correlation over that margin,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo stretchy="false" form="prefix">(</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">n(n-1)/2</annotation></semantics></math>
+parameters. Composed with whatever <code>NAA_re</code> gives over the
+age-year grid, so a correlation over one margin says nothing about the
+others</td>
+</tr>
+<tr class="even">
+<td><code>NAA_re_region_spec</code></td>
+<td>How the region correlations are shared: <code>"est_all"</code>
+(default), <code>"est_shared_p"</code>, <code>"est_shared_s"</code>,
+<code>"est_shared_p_s"</code>, <code>"fix"</code>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Unstructured is the only non-independent option on these margins
+because none of them has an ordering: regions are not in a line, so a
+correlation decaying with distance has nothing to decay along.</p>
+</div>
+<div class="section level4">
+<h4 id="standard-deviations">Standard deviations<a class="anchor" aria-label="anchor" href="#standard-deviations"></a>
+</h4>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Argument</th>
+<th>Description</th>
+</tr></thead>
+<tbody><tr class="odd">
+<td>
+<code>NAA_sigma_popblk_spec</code>,
+<code>NAA_sigma_regionblk_spec</code>,
+<code>NAA_sigma_yearblk_spec</code>, <code>NAA_sigma_ageblk_spec</code>,
+<code>NAA_sigma_sexblk_spec</code>
+</td>
+<td>
+<code>"constant"</code> (default) or a list of integer vectors
+assigning indices to blocks, exactly as the <code>M_*blk_spec</code>
+arguments do</td>
+</tr></tbody>
+</table>
+<p>Blocking shares a standard deviation; it never removes a cell from
+the state. Only <code>NAA_re = "iid"</code> admits a standard deviation
+that varies over years or ages: every other form is separable or Markov
+in one of those margins, and a per-cell variance is neither. The setup
+errors rather than silently ignoring a year or age block under a
+correlated form.</p>
+</div>
+<div class="section level4">
+<h4 id="what-it-does-not-combine-with">What it does not combine with<a class="anchor" aria-label="anchor" href="#what-it-does-not-combine-with"></a>
+</h4>
+<p>A freely estimated natural mortality that varies over time is the
+same log-survival surface the state carries, and <code>ln_M</code> is
+unpenalized while the state pays a marginal likelihood cost, so the
+optimizer loads the signal into <code>ln_M</code>. <code>NAA_re</code>
+together with <code>M_spec = "est_ln_M"</code> over more than one year
+block is refused. Time-varying
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>M</mi><annotation encoding="application/x-tex">M</annotation></semantics></math>
+alongside the state comes in as data through a
+<code>Fixed_natmort</code> array with <code>M_spec = "fix"</code>.</p>
+<p>Time-varying selectivity is a softer case. The data see numbers at
+age and selectivity only through their product, so a free age-by-year
+surface on selectivity and a free age-by-year state describe overlapping
+objects. Both are penalized and the compositions and catch constrain the
+product, so the pair is identified in the same sense it is in WHAM and
+SAM, but the two lean on their priors more than either does alone. Worth
+a profile rather than a prohibition.</p>
+</div>
+</div>
+<div class="section level2">
 <h2 id="movement">Movement<a class="anchor" aria-label="anchor" href="#movement"></a>
 </h2>
 <p>Configured via <code><a href="../reference/Setup_Mod_Movement.html">Setup_Mod_Movement()</a></code> (EM) or

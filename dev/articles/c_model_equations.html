@@ -1094,6 +1094,67 @@ and 1.</p>
 </div>
 </div>
 <div class="section level4">
+<h4 id="state-space-numbers-at-age">State-Space Numbers at Age<a class="anchor" aria-label="anchor" href="#state-space-numbers-at-age"></a>
+</h4>
+<p>By default the numbers at age past the first are whatever the
+mortality and ageing step produces, and the only stochastic elements in
+the population are recruitment and the initial age structure. Setting
+<code>NAA_re</code> to anything other than <code>"none"</code> replaces
+that with a state-space treatment: the log numbers at age themselves
+become estimated quantities for ages two and older, and the
+deterministic step becomes a prediction they are scored against.</p>
+<p>Write
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>N</mi><mo accent="true">̂</mo></mover><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">\widehat{N}_{p,r,y,a,s}</annotation></semantics></math>
+for what the mortality and ageing step of the previous section produces
+at the start of year
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>y</mi><annotation encoding="application/x-tex">y</annotation></semantics></math>,
+with the plus group already accumulated. The state
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\ln N_{p,r,y,a,s}</annotation></semantics></math>
+replaces it outright, and the difference between them is the process
+error:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>η</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>−</mo><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><msub><mover><mi>N</mi><mo accent="true">̂</mo></mover><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\eta_{p,r,y,a,s} = \ln N_{p,r,y,a,s} - \ln \widehat{N}_{p,r,y,a,s}</annotation></semantics></math></p>
+<p>This is a centered parameterization: the state is the level rather
+than a deviation multiplying a value the model still computes
+deterministically, which is what separates it from
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>ϵ</mi><mtext mathvariant="normal">Rec</mtext></msup><annotation encoding="application/x-tex">\epsilon^{\text{Rec}}</annotation></semantics></math>.
+The distinction matters beyond bookkeeping. Because
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>η</mi><mi>y</mi></msub><annotation encoding="application/x-tex">\eta_{y}</annotation></semantics></math>
+depends on the states in years
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>y</mi><annotation encoding="application/x-tex">y</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mo>−</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">y-1</annotation></semantics></math>
+and on nothing earlier, each term of the resulting prior is supported on
+a two-year block, and the random-effects Hessian is block-tridiagonal in
+year. A deviation parameterization, where the level is reconstructed by
+accumulating shocks, gives a dense Hessian instead.</p>
+<p>The unfished numbers at age take the same realized difference,</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mn>0</mn></msubsup><mo>=</mo><msubsup><mover><mi>N</mi><mo accent="true">̂</mo></mover><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mn>0</mn></msubsup><mspace width="0.167em"></mspace><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>η</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">N^{0}_{p,r,y,a,s} = \widehat{N}^{0}_{p,r,y,a,s}\,\exp\left( \eta_{p,r,y,a,s} \right)</annotation></semantics></math></p>
+<p>so the unfished reference stays on the same trajectory without a
+random effect of its own, and quantities derived from it such as
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mtext mathvariant="normal">SSB</mtext><mn>0</mn></msup><annotation encoding="application/x-tex">\text{SSB}^{0}</annotation></semantics></math>
+remain comparable to their fished counterparts. Anything else that
+advances numbers at age in parallel with the population is rescaled by
+the same factor, the tagged cohorts above all, since tagged fish are a
+subset of the population and the innovation is read as unmodelled
+mortality acting on tagged and untagged alike.</p>
+<p>Three parameterizations partition the numbers at age rather than
+overlapping. Age one is recruitment in every year and belongs to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>ϵ</mi><mtext mathvariant="normal">Rec</mtext></msup><annotation encoding="application/x-tex">\epsilon^{\text{Rec}}</annotation></semantics></math>.
+Year one at ages two and older is the initial age structure and belongs
+to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>ϵ</mi><mtext mathvariant="normal">Init</mtext></msup><annotation encoding="application/x-tex">\epsilon^{\text{Init}}</annotation></semantics></math>.
+The state covers ages two and older in years two onward, including the
+plus group. The plus group is not optional: it is the only cell whose
+influence never decays, because it accumulates every historical cohort
+and never resets, so leaving it deterministic gives up the conditional
+independence the state is worth having for.</p>
+<p>The active ages and years can be narrowed with
+<code>NAA_re_ages</code> and <code>NAA_re_years</code>, each of which
+must be a contiguous run. Outside them the numbers at age are the
+deterministic prediction, exactly as they are when <code>NAA_re</code>
+is <code>"none"</code>.</p>
+</div>
+<div class="section level4">
 <h4 id="movement-processes">Movement Processes<a class="anchor" aria-label="anchor" href="#movement-processes"></a>
 </h4>
 <p>Movement processes can be parameterized as either an unstructured
@@ -3866,6 +3927,173 @@ predicted curve, so a model that also wants to keep the realized
 recruitment series from wandering has nowhere else to say so; this
 penalty is that second, independent statement, and reproduces the
 recruitment regularity penalties several existing assessments carry.</p>
+</div>
+<div class="section level5">
+<h5 id="state-space-numbers-at-age-1">State-Space Numbers at Age<a class="anchor" aria-label="anchor" href="#state-space-numbers-at-age-1"></a>
+</h5>
+<p>The innovations
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>η</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">\eta_{p,r,y,a,s}</annotation></semantics></math>
+from the process equations are given a zero-mean Gaussian prior whose
+covariance factorizes across margins, so a correlation over one margin
+says nothing about any other:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">Corr</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>η</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>,</mo><mspace width="0.222em"></mspace><msub><mi>η</mi><mrow><msup><mi>p</mi><mo>′</mo></msup><mo>,</mo><msup><mi>r</mi><mo>′</mo></msup><mo>,</mo><msup><mi>y</mi><mo>′</mo></msup><mo>,</mo><msup><mi>a</mi><mo>′</mo></msup><mo>,</mo><msup><mi>s</mi><mo>′</mo></msup></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msubsup><mi>C</mi><mrow><mi>p</mi><msup><mi>p</mi><mo>′</mo></msup></mrow><mtext mathvariant="normal">pop</mtext></msubsup><mspace width="0.278em"></mspace><msubsup><mi>C</mi><mrow><mi>r</mi><msup><mi>r</mi><mo>′</mo></msup></mrow><mtext mathvariant="normal">reg</mtext></msubsup><mspace width="0.278em"></mspace><msubsup><mi>R</mi><mrow><mo stretchy="false" form="prefix">(</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo stretchy="false" form="postfix">)</mo><mo>,</mo><mo stretchy="false" form="prefix">(</mo><msup><mi>y</mi><mo>′</mo></msup><mo>,</mo><msup><mi>a</mi><mo>′</mo></msup><mo stretchy="false" form="postfix">)</mo></mrow><mrow><mi>a</mi><mi>y</mi></mrow></msubsup><mspace width="0.278em"></mspace><msubsup><mi>C</mi><mrow><mi>s</mi><msup><mi>s</mi><mo>′</mo></msup></mrow><mtext mathvariant="normal">sex</mtext></msubsup></mrow><annotation encoding="application/x-tex">\text{Corr}\left( \eta_{p,r,y,a,s},\ \eta_{p',r',y',a',s'} \right)
+= C^{\text{pop}}_{p p'}\; C^{\text{reg}}_{r r'}\; R^{ay}_{(y,a),(y',a')}\; C^{\text{sex}}_{s s'}</annotation></semantics></math></p>
+<p>with standard deviation
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>σ</mi><mtext mathvariant="normal">NAA</mtext></msup><annotation encoding="application/x-tex">\sigma^{\text{NAA}}</annotation></semantics></math>.
+Each factor is a correlation matrix with a unit diagonal, so only
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>σ</mi><mtext mathvariant="normal">NAA</mtext></msup><annotation encoding="application/x-tex">\sigma^{\text{NAA}}</annotation></semantics></math>
+carries scale, and setting every factor to the identity recovers
+independent innovations.</p>
+<p><strong>Age and year.</strong>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>R</mi><mrow><mi>a</mi><mi>y</mi></mrow></msup><annotation encoding="application/x-tex">R^{ay}</annotation></semantics></math>
+is chosen with <code>NAA_re</code>, writing
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ρ</mi><mi>a</mi></msub><annotation encoding="application/x-tex">\rho_a</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ρ</mi><mi>y</mi></msub><annotation encoding="application/x-tex">\rho_y</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ρ</mi><mi>c</mi></msub><annotation encoding="application/x-tex">\rho_c</annotation></semantics></math>
+for the age, year and cohort correlations:</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th align="left"><code>NAA_re</code></th>
+<th align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>R</mi><mrow><mi>a</mi><mi>y</mi></mrow></msup><annotation encoding="application/x-tex">R^{ay}</annotation></semantics></math></th>
+<th align="left">parameters</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left"><code>"iid"</code></td>
+<td align="left">identity</td>
+<td align="left">none</td>
+</tr>
+<tr class="even">
+<td align="left"><code>"1dar1_a"</code></td>
+<td align="left">
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>ρ</mi><mi>a</mi><mrow><mo stretchy="false" form="prefix">|</mo><mi>a</mi><mo>−</mo><msup><mi>a</mi><mo>′</mo></msup><mo stretchy="false" form="postfix">|</mo></mrow></msubsup><annotation encoding="application/x-tex">\rho_a^{\lvert a - a' \rvert}</annotation></semantics></math>,
+years independent</td>
+<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ρ</mi><mi>a</mi></msub><annotation encoding="application/x-tex">\rho_a</annotation></semantics></math></td>
+</tr>
+<tr class="odd">
+<td align="left"><code>"1dar1_y"</code></td>
+<td align="left">
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>ρ</mi><mi>y</mi><mrow><mo stretchy="false" form="prefix">|</mo><mi>y</mi><mo>−</mo><msup><mi>y</mi><mo>′</mo></msup><mo stretchy="false" form="postfix">|</mo></mrow></msubsup><annotation encoding="application/x-tex">\rho_y^{\lvert y - y' \rvert}</annotation></semantics></math>,
+ages independent</td>
+<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ρ</mi><mi>y</mi></msub><annotation encoding="application/x-tex">\rho_y</annotation></semantics></math></td>
+</tr>
+<tr class="even">
+<td align="left"><code>"2dar1"</code></td>
+<td align="left">the product of the two</td>
+<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ρ</mi><mi>a</mi></msub><mo>,</mo><mspace width="0.222em"></mspace><msub><mi>ρ</mi><mi>y</mi></msub></mrow><annotation encoding="application/x-tex">\rho_a,\ \rho_y</annotation></semantics></math></td>
+</tr>
+<tr class="odd">
+<td align="left">
+<code>"3dcond"</code>, <code>"3dmarg"</code>
+</td>
+<td align="left">Gaussian Markov random field over age, year and
+cohort</td>
+<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ρ</mi><mi>a</mi></msub><mo>,</mo><mspace width="0.222em"></mspace><msub><mi>ρ</mi><mi>y</mi></msub><mo>,</mo><mspace width="0.222em"></mspace><msub><mi>ρ</mi><mi>c</mi></msub></mrow><annotation encoding="application/x-tex">\rho_a,\ \rho_y,\ \rho_c</annotation></semantics></math></td>
+</tr>
+</tbody>
+</table>
+<p>These are the same forms the selectivity and growth surfaces use, so
+a state on the numbers at age and a surface on selectivity are scored
+the same way. The three-dimensional field is the only one that does not
+factor into an age density times a year density, because its cohort term
+couples the two margins.</p>
+<p><strong>Population, region and sex.</strong>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>C</mi><mtext mathvariant="normal">pop</mtext></msup><annotation encoding="application/x-tex">C^{\text{pop}}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>C</mi><mtext mathvariant="normal">reg</mtext></msup><annotation encoding="application/x-tex">C^{\text{reg}}</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>C</mi><mtext mathvariant="normal">sex</mtext></msup><annotation encoding="application/x-tex">C^{\text{sex}}</annotation></semantics></math>
+are set with <code>NAA_re_pop</code>, <code>NAA_re_region</code> and
+<code>NAA_re_sex</code>, each either the identity or unstructured.
+Unstructured places no shape on how the levels covary, at
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo stretchy="false" form="prefix">(</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">n(n-1)/2</annotation></semantics></math>
+parameters, and is the natural choice for margins with no ordering:
+regions are not in a line, so a correlation decaying with distance has
+nothing to decay along. <code>NAA_re_region_spec</code> sets how the
+region correlations are shared over populations and sexes.</p>
+<p>These enter by whitening rather than by forming the joint covariance
+(i.e., writing as a lower Cholesky with independent devs). With
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐋</mi><annotation encoding="application/x-tex">\mathbf{L}</annotation></semantics></math>
+the Cholesky factor of a margin’s correlation,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝐳</mi><mo>=</mo><msup><mi>𝐋</mi><mrow><mi>−</mi><mn>1</mn></mrow></msup><mi>𝛈</mi></mrow><annotation encoding="application/x-tex">\mathbf{z} = \mathbf{L}^{-1}\boldsymbol{\eta}</annotation></semantics></math>
+leaves that margin independent, so each slice is then scored by whatever
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>R</mi><mrow><mi>a</mi><mi>y</mi></mrow></msup><annotation encoding="application/x-tex">R^{ay}</annotation></semantics></math>
+calls for, and the log determinant of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐋</mi><annotation encoding="application/x-tex">\mathbf{L}</annotation></semantics></math>
+enters once per cell of the margins it does not span. That is what lets
+a cross-region correlation compose with the three-dimensional field,
+whose age-year block cannot be factored.</p>
+<p><strong>Standard deviations.</strong>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>σ</mi><mtext mathvariant="normal">NAA</mtext></msup><annotation encoding="application/x-tex">\sigma^{\text{NAA}}</annotation></semantics></math>
+is blocked over populations, regions, years, ages and sexes with the
+<code>NAA_sigma_*blk_spec</code> arguments, exactly as natural mortality
+is. Blocking shares a standard deviation; it never removes a cell from
+the state. Only <code>"iid"</code> admits one that varies over years or
+ages, since every other form is separable or Markov in one of those
+margins and a per-cell variance is neither. The rest carry one standard
+deviation per population, region and sex.</p>
+<p><strong>The full covariance.</strong> Assembled over all five
+margins,</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝚺</mi><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>σ</mi><mtext mathvariant="normal">NAA</mtext></msup><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>𝐂</mi><mtext mathvariant="normal">sex</mtext></msup><mo>⊗</mo><msup><mi>𝐑</mi><mi>a</mi></msup><mo>⊗</mo><msup><mi>𝐑</mi><mi>y</mi></msup><mo>⊗</mo><msup><mi>𝐂</mi><mtext mathvariant="normal">reg</mtext></msup><mo>⊗</mo><msup><mi>𝐂</mi><mtext mathvariant="normal">pop</mtext></msup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\boldsymbol{\Sigma} = \left( \sigma^{\text{NAA}} \right)^{2}
+\left( \mathbf{C}^{\text{sex}} \otimes \mathbf{R}^{a} \otimes \mathbf{R}^{y}
+\otimes \mathbf{C}^{\text{reg}} \otimes \mathbf{C}^{\text{pop}} \right)</annotation></semantics></math></p>
+<p>of dimension
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mi>p</mi></msub><msub><mi>n</mi><mi>r</mi></msub><msub><mi>n</mi><mi>y</mi></msub><msub><mi>n</mi><mi>a</mi></msub><msub><mi>n</mi><mi>x</mi></msub></mrow><annotation encoding="application/x-tex">n_p n_r n_y n_a n_x</annotation></semantics></math>,
+built from five small factors. The factors appear in the reverse of the
+array’s margin order, which is worth stating only because getting it
+wrong is silent: a transposed ordering still gives a valid covariance
+and a converging fit, reporting an age correlation that is really a year
+correlation. The implementation never writes the ordering down, because
+it whitens the margins one at a time in the order the array is
+dimensioned.</p>
+<p><strong>A worked case.</strong> Two regions, three ages (2 to 4),
+three years (1995 to 1997), one population and one sex, with
+<code>NAA_re = "2dar1"</code> and <code>NAA_re_region = "us"</code>.
+Take
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ρ</mi><mi>a</mi></msub><mo>=</mo><mn>0.6</mn></mrow><annotation encoding="application/x-tex">\rho_a = 0.6</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ρ</mi><mi>y</mi></msub><mo>=</mo><mn>0.3</mn></mrow><annotation encoding="application/x-tex">\rho_y = 0.3</annotation></semantics></math>,
+region correlation
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ρ</mi><mi>r</mi></msub><mo>=</mo><mn>0.5</mn></mrow><annotation encoding="application/x-tex">\rho_r = 0.5</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>σ</mi><mtext mathvariant="normal">NAA</mtext></msup><mo>=</mo><mn>0.4</mn></mrow><annotation encoding="application/x-tex">\sigma^{\text{NAA}} = 0.4</annotation></semantics></math>.
+Then</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>𝐑</mi><mi>a</mi></msup><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><mn>1</mn></mtd><mtd columnalign="center" style="text-align: center"><mn>0.6</mn></mtd><mtd columnalign="center" style="text-align: center"><mn>0.36</mn></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mn>0.6</mn></mtd><mtd columnalign="center" style="text-align: center"><mn>1</mn></mtd><mtd columnalign="center" style="text-align: center"><mn>0.6</mn></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mn>0.36</mn></mtd><mtd columnalign="center" style="text-align: center"><mn>0.6</mn></mtd><mtd columnalign="center" style="text-align: center"><mn>1</mn></mtd></mtr></mtable><mo stretchy="true" form="postfix">]</mo></mrow><mo>,</mo><mspace width="1.0em"></mspace><msup><mi>𝐑</mi><mi>y</mi></msup><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><mn>1</mn></mtd><mtd columnalign="center" style="text-align: center"><mn>0.3</mn></mtd><mtd columnalign="center" style="text-align: center"><mn>0.09</mn></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mn>0.3</mn></mtd><mtd columnalign="center" style="text-align: center"><mn>1</mn></mtd><mtd columnalign="center" style="text-align: center"><mn>0.3</mn></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mn>0.09</mn></mtd><mtd columnalign="center" style="text-align: center"><mn>0.3</mn></mtd><mtd columnalign="center" style="text-align: center"><mn>1</mn></mtd></mtr></mtable><mo stretchy="true" form="postfix">]</mo></mrow><mo>,</mo><mspace width="1.0em"></mspace><msup><mi>𝐂</mi><mtext mathvariant="normal">reg</mtext></msup><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><mn>1</mn></mtd><mtd columnalign="center" style="text-align: center"><mn>0.5</mn></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mn>0.5</mn></mtd><mtd columnalign="center" style="text-align: center"><mn>1</mn></mtd></mtr></mtable><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">\mathbf{R}^{a} = \begin{bmatrix} 1 &amp; 0.6 &amp; 0.36 \\ 0.6 &amp; 1 &amp; 0.6 \\ 0.36 &amp; 0.6 &amp; 1 \end{bmatrix},
+\quad
+\mathbf{R}^{y} = \begin{bmatrix} 1 &amp; 0.3 &amp; 0.09 \\ 0.3 &amp; 1 &amp; 0.3 \\ 0.09 &amp; 0.3 &amp; 1 \end{bmatrix},
+\quad
+\mathbf{C}^{\text{reg}} = \begin{bmatrix} 1 &amp; 0.5 \\ 0.5 &amp; 1 \end{bmatrix}</annotation></semantics></math></p>
+<p>and with the population and sex factors both
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>×</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">1 \times 1</annotation></semantics></math>
+identities the full covariance is</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝚺</mi><mo>=</mo><msup><mn>0.4</mn><mn>2</mn></msup><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>𝐑</mi><mi>a</mi></msup><mo>⊗</mo><msup><mi>𝐑</mi><mi>y</mi></msup><mo>⊗</mo><msup><mi>𝐂</mi><mtext mathvariant="normal">reg</mtext></msup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\boldsymbol{\Sigma} = 0.4^{2}\left( \mathbf{R}^{a} \otimes \mathbf{R}^{y} \otimes \mathbf{C}^{\text{reg}} \right)</annotation></semantics></math></p>
+<p>an
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>18</mn><mo>×</mo><mn>18</mn></mrow><annotation encoding="application/x-tex">18 \times 18</annotation></semantics></math>
+matrix from four parameters. Any single correlation is the product of
+the three pieces. The age-3 innovation in region 1 in 1995 against the
+age-4 innovation in region 2 in 1996:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">Corr</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>η</mi><mrow><mn>1</mn><mo>,</mo><mn>1995</mn><mo>,</mo><mn>3</mn></mrow></msub><mo>,</mo><mspace width="0.222em"></mspace><msub><mi>η</mi><mrow><mn>2</mn><mo>,</mo><mn>1996</mn><mo>,</mo><mn>4</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><munder><munder><mn>0.5</mn><mo accent="true">⏟</mo></munder><mtext mathvariant="normal">regions</mtext></munder><mo>×</mo><munder><munder><msup><mn>0.6</mn><mrow><mo stretchy="false" form="prefix">|</mo><mn>3</mn><mo>−</mo><mn>4</mn><mo stretchy="false" form="postfix">|</mo></mrow></msup><mo accent="true">⏟</mo></munder><mtext mathvariant="normal">ages</mtext></munder><mo>×</mo><munder><munder><msup><mn>0.3</mn><mrow><mo stretchy="false" form="prefix">|</mo><mn>1995</mn><mo>−</mo><mn>1996</mn><mo stretchy="false" form="postfix">|</mo></mrow></msup><mo accent="true">⏟</mo></munder><mtext mathvariant="normal">years</mtext></munder><mo>=</mo><mn>0.09</mn></mrow><annotation encoding="application/x-tex">\text{Corr}\left( \eta_{1,1995,3},\ \eta_{2,1996,4} \right)
+= \underbrace{0.5}_{\text{regions}} \times \underbrace{0.6^{\lvert 3-4 \rvert}}_{\text{ages}}
+\times \underbrace{0.3^{\lvert 1995-1996 \rvert}}_{\text{years}} = 0.09</annotation></semantics></math></p>
+<p>with covariance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mn>0.4</mn><mn>2</mn></msup><mo>×</mo><mn>0.09</mn><mo>=</mo><mn>0.0144</mn></mrow><annotation encoding="application/x-tex">0.4^{2} \times 0.09 = 0.0144</annotation></semantics></math>.
+Same region, same year, adjacent ages gives
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.6</mn><annotation encoding="application/x-tex">0.6</annotation></semantics></math>;
+the same two ages one region apart gives
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0.5</mn><mo>×</mo><mn>0.6</mn><mo>=</mo><mn>0.30</mn></mrow><annotation encoding="application/x-tex">0.5 \times 0.6 = 0.30</annotation></semantics></math>.</p>
+<p>Setting
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ρ</mi><mi>r</mi></msub><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\rho_r = 0</annotation></semantics></math>
+drops
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>𝐂</mi><mtext mathvariant="normal">reg</mtext></msup><annotation encoding="application/x-tex">\mathbf{C}^{\text{reg}}</annotation></semantics></math>
+to the identity and leaves two independent single-region models. Setting
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ρ</mi><mi>a</mi></msub><mo>=</mo><msub><mi>ρ</mi><mi>y</mi></msub><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\rho_a = \rho_y = 0</annotation></semantics></math>
+as well leaves
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝚺</mi><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msup><mi>σ</mi><mtext mathvariant="normal">NAA</mtext></msup><msup><mo stretchy="false" form="postfix">)</mo><mn>2</mn></msup><mi>𝐈</mi></mrow><annotation encoding="application/x-tex">\boldsymbol{\Sigma} = (\sigma^{\text{NAA}})^{2}\mathbf{I}</annotation></semantics></math>,
+which is <code>NAA_re = "iid"</code>.</p>
 </div>
 <div class="section level5">
 <h5 id="initial-recruitment-offset">Initial Recruitment Offset<a class="anchor" aria-label="anchor" href="#initial-recruitment-offset"></a>

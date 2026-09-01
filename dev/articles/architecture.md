@@ -169,7 +169,7 @@ through that one file.
 
 | Script | Defines | Calls into | Called from |
 |----|----|----|----|
-| `setup_biologicals.R` | `do_growth_mapping`, `do_natmort_mapping`, `Setup_Mod_Biologicals`, `Setup_Sim_Biologicals` | `setup_checks.R`, `utils_setup.R` | `sim_closed_loop.R`, `sim_self_test.R` |
+| `setup_biologicals.R` | `do_growth_mapping`, `do_NAAstate_mapping`, `do_natmort_mapping`, `Setup_Mod_Biologicals`, `Setup_Sim_Biologicals` | `setup_checks.R`, `utils_setup.R` | `sim_closed_loop.R`, `sim_self_test.R` |
 | `setup_caal.R` | `parse_caal_type`, `setup_caal_stream` | `utils_setup.R` | `setup_fishery_comps.R`, `setup_survey_comps.R` |
 | `setup_checks.R` | `check_data_dimensions`, `check_sim_dimensions` | nothing | `setup_biologicals.R`, `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_fishery_selectivity.R`, `setup_movement.R`, `setup_recruitment.R`, `setup_sim_fleets.R`, `setup_survey_comps.R`, `setup_survey_selectivity.R`, `setup_tagging.R` |
 | `setup_dimensions.R` | `Setup_Mod_Dim`, `Setup_Sim_Dim` | `utils_setup.R` | `sim_closed_loop.R`, `sim_self_test.R` |
@@ -205,8 +205,8 @@ through that one file.
 | `model_obs_tagging.R` | `get_tag_mort`, `get_tagging_observation_model`, `release_conv_tag_attr` | `model_transition.R` | `model_objective.R`, `sim_observations.R` |
 | `model_osa.R` | `ddirmult_osa`, `ddirmult2`, `dmultinom_osa`, `osa_extract_cdf`, `osa_extract_keep`, `osa_extract_values`, `osa_extract_x`, `osa_pbetabinom`, `osa_pbinom`, `osa_squeeze` | nothing | `model_lik_comps.R`, `model_lik_tags.R` |
 | `model_population_dynamics.R` | `compute_mortality_year`, `get_population_projection`, `mortality_args_from_model` | `model_biomass.R`, `model_growth.R`, `model_transition.R` | `model_objective.R` |
-| `model_precision.R` | `Get_3d_precision` | nothing | `model_priors_penalties.R` |
-| `model_priors_penalties.R` | `get_dmr_penalty`, `Get_Fdev_PE_loglik`, `Get_move_PE_loglik`, `get_movement_dirichlet_prior`, `get_natmort_prior`, `Get_PE_loglik`, `get_q_prior`, `get_r0_prior`, `get_rec_level_penalty`, `get_recruitment_penalty`, `get_recruitment_proportion_priors`, `get_selex_fixed_penalty`, `get_selex_prior`, `Get_Selex_Smoothness_Penalty`, `get_sr_penalty`, `get_steepness_prior`, `get_tagrep_prior` | `model_distributions.R`, `model_precision.R`, `utils_math.R` | `model_objective.R` |
+| `model_precision.R` | `Get_3d_precision` | nothing | `model_priors_penalties.R`, `sim_naa_state.R` |
+| `model_priors_penalties.R` | `get_dmr_penalty`, `Get_Fdev_PE_loglik`, `Get_move_PE_loglik`, `get_movement_dirichlet_prior`, `Get_NAA_state_penalty`, `get_natmort_prior`, `Get_PE_loglik`, `get_q_prior`, `get_r0_prior`, `get_rec_level_penalty`, `get_recruitment_penalty`, `get_recruitment_proportion_priors`, `get_selex_fixed_penalty`, `get_selex_prior`, `Get_Selex_Smoothness_Penalty`, `get_sr_penalty`, `get_steepness_prior`, `get_tagrep_prior`, `penalize_naa_age_year` | `model_distributions.R`, `model_precision.R`, `utils_math.R` | `model_objective.R` |
 | `model_recruitment.R` | `Get_Det_Recruitment` | `model_transition.R` | `projection.R`, `sim_population.R` |
 | `model_selectivity.R` | `Get_Selex`, `Get_Selex_Array` | nothing | `model_objective.R` |
 | `model_transition.R` | `advance_seas`, `build_seas_operator`, `catch_at_age`, `integrate_seas_abundance`, `seas_operator_and_integral`, `spawn_state`, `survey_state` | `utils_math.R` | `model_biomass.R`, `model_init_naa.R`, `model_obs_fishery_survey.R`, `model_obs_tagging.R`, `model_population_dynamics.R`, `model_recruitment.R`, `projection.R`, `refpts_main.R`, `refpts_msy.R`, `refpts_spr.R`, `sim_observations.R`, `sim_population.R` |
@@ -225,9 +225,10 @@ through that one file.
 
 | Script | Defines | Calls into | Called from |
 |----|----|----|----|
-| `sim_closed_loop.R` | `catch_to_F_multifleet`, `catch_to_F_singlefleet`, `condition_closed_loop_simulations`, `get_closed_loop_reference_points` | `refpts_main.R`, `setup_biologicals.R`, `setup_dimensions.R`, `setup_recruitment.R`, `setup_sim_containers.R`, `setup_sim_fleets.R`, `setup_tagging.R`, `utils_postfit.R`, `utils_setup.R` |  |
+| `sim_closed_loop.R` | `catch_to_F_multifleet`, `catch_to_F_singlefleet`, `condition_closed_loop_simulations`, `get_closed_loop_reference_points` | `refpts_main.R`, `setup_biologicals.R`, `setup_dimensions.R`, `setup_recruitment.R`, `setup_sim_containers.R`, `setup_sim_fleets.R`, `setup_tagging.R`, `utils_math.R`, `utils_postfit.R`, `utils_setup.R` |  |
+| `sim_naa_state.R` | `color_naa_margin`, `draw_naa_innovations`, `Setup_Sim_NAA_state` | `model_precision.R` | `sim_population.R` |
 | `sim_observations.R` | `build_idx_factor`, `cov_to_factor`, `draw_index_obs`, `generate_fishery_catch_comp_idx`, `generate_fishery_conv_tags_recap`, `generate_survey_comp_idx`, `marginalize_conv_fish_tags`, `predict_sim_fish_iss_fmort`, `release_conv_tags`, `resolve_idx_factor`, `sim_at_age_cell`, `simulate_caal`, `simulate_comps`, `simulate_conv_tag_fish_recaptures`, `store_at_age_cell` | `model_lik_at_age.R`, `model_obs_tagging.R`, `model_transition.R`, `sim_random_variates.R`, `utils_math.R`, `utils_setup.R` | `setup_sim_fleets.R`, `sim_population.R` |
-| `sim_population.R` | `apply_pop_dy`, `compute_biom_y_sim`, `generate_initial_age_structure`, `generate_recruitment`, `run_annual_cycle`, `Simulate_Pop_Static` | `model_init_naa.R`, `model_recruitment.R`, `model_transition.R`, `sim_observations.R`, `sim_setup.R` | `sim_self_test.R` |
+| `sim_population.R` | `apply_pop_dy`, `compute_biom_y_sim`, `generate_initial_age_structure`, `generate_recruitment`, `run_annual_cycle`, `Simulate_Pop_Static` | `model_init_naa.R`, `model_recruitment.R`, `model_transition.R`, `sim_naa_state.R`, `sim_observations.R`, `sim_setup.R` | `sim_self_test.R` |
 | `sim_random_variates.R` | `rdirM`, `rinvgauss_rec`, `rlogistnormal` | `utils_math.R` | `projection.R`, `sim_observations.R` |
 | `sim_self_test.R` | `simulation_data_to_SPoRC`, `simulation_self_test` | `model_fit.R`, `setup_biologicals.R`, `setup_dimensions.R`, `setup_recruitment.R`, `setup_sim_containers.R`, `setup_sim_fleets.R`, `setup_tagging.R`, `sim_population.R`, `utils_postfit.R`, `utils_setup.R` |  |
 | `sim_setup.R` | `Setup_sim_env` | nothing | `sim_population.R` |
@@ -254,7 +255,7 @@ through that one file.
 
 | Script | Defines | Calls into | Called from |
 |----|----|----|----|
-| `utils_math.R` | `build_us_corr`, `get_AR1_CorrMat`, `get_Constant_CorrMat`, `get_logistN_Sigma`, `Get_Natural_Cubic_Spline_Weights`, `mat_exp`, `rho_trans` | nothing | `model_distributions.R`, `model_lik_at_age.R`, `model_lik_comps.R`, `model_movement.R`, `model_priors_penalties.R`, `model_transition.R`, `setup_fishery_selectivity.R`, `setup_survey_selectivity.R`, `sim_observations.R`, `sim_random_variates.R` |
+| `utils_math.R` | `build_us_chol`, `build_us_corr`, `get_AR1_CorrMat`, `get_Constant_CorrMat`, `get_logistN_Sigma`, `Get_Natural_Cubic_Spline_Weights`, `mat_exp`, `rho_trans` | nothing | `model_distributions.R`, `model_lik_at_age.R`, `model_lik_comps.R`, `model_movement.R`, `model_priors_penalties.R`, `model_transition.R`, `setup_fishery_selectivity.R`, `setup_survey_selectivity.R`, `sim_closed_loop.R`, `sim_observations.R`, `sim_random_variates.R` |
 | `utils_option_reference.R` | `option_reference`, `rd_argument_text`, `rd_database`, `setup_stage_order` | nothing |  |
 | `utils_postfit.R` | `get_model_rep_from_mcmc`, `get_optim_param_list`, `get_par_est_info`, `marg_AIC`, `post_optim_sanity_checks` | nothing | `sim_closed_loop.R`, `sim_self_test.R` |
 | `utils_setup.R` | `assign_sel_block`, `bins_or_null`, `check_bin_map`, `check_comp_bins_min`, `check_par_map_lengths`, `collect_message`, `convert_to_numeric`, `drop_empty_fitted_blocks`, `expand_fleet_ageing_error`, `extend_years`, `fleet_ageing_error`, `obs_bin_count`, `obs_len_bins`, `parse_bin_subset`, `parse_comp_bins`, `parse_idx_cov`, `resolve_sel_pen_wts`, `resync_fitted_blocks`, `safe_extract`, `seed_dbnrml_peak`, `set_data_indicator_unused`, `setup_dbnrml_raw`, `setup_dbnrml_startbin`, `setup_sel_bin_devs`, `setup_sel_norm_bins`, `setup_sel_sex_offset`, `use_starting_value`, `validate_selex_penalty`, `validate_selex_prior_types` | nothing | `diag_fits.R`, `diag_likelihood_profile.R`, `diag_osa_residuals.R`, `model_fit.R`, `model_objective.R`, `plot_figures_tables.R`, `setup_biologicals.R`, `setup_caal.R`, `setup_dimensions.R`, `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_fishery_selectivity.R`, `setup_mapping.R`, `setup_movement.R`, `setup_recruitment.R`, `setup_sim_fleets.R`, `setup_survey_comps.R`, `setup_survey_selectivity.R`, `setup_tagging.R`, `setup_weighting.R`, `sim_closed_loop.R`, `sim_observations.R`, `sim_self_test.R` |
@@ -477,7 +478,7 @@ what is under test rather than which stock the fixture happens to use.
 | `test-integration_*` | 4 | Cross cutting agreement between the objective, the reference points and the operating model |
 | `test-regression_*` | 17 | End to end fits pinning `obj$rep` and `nll` for known configurations |
 
-That is 140 test files in total.
+That is 144 test files in total.
 
 Two groups are worth calling out. The `test-regression_*` files pin
 `obj$rep` and `nll` values for known configurations against bundled

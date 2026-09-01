@@ -26,7 +26,7 @@ recruitment, mortality and movement, so any misspecification in natural
 mortality, in selectivity or in the reported catch is absorbed by the
 recruitment deviations. Estimating process error on the whole numbers at
 age surface, as in SAM and WHAM, lets that misspecification enter at the
-age it occurs instead.
+age it occurs instead. (This has now been implemented).
 
 ## Close-kin mark-recapture
 

@@ -113,7 +113,8 @@ projection and selectivity sections.</p>
 <span>  <span class="va">pred_conv_tag_fish_recap</span>,</span>
 <span>  Mrate <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  move_timing <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>  expm_nsub <span class="op">=</span> <span class="fl">0</span></span>
+<span>  expm_nsub <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  NAA_scalar <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -236,6 +237,15 @@ region, age, sex]</code>, output container for tags available for recapture.</p>
 <dd><p>Array <code>[liberty, season, cohort, pop,
 region, age, sex, fish_fleet]</code>, output container for predicted
 recaptures.</p></dd>
+
+
+<dt id="arg-naa-scalar">NAA_scalar<a class="anchor" aria-label="anchor" href="#arg-naa-scalar"></a></dt>
+<dd><p>Array <code>[pop, region, year, age, sex]</code> of the factor the
+state-space numbers at age applied to the deterministic prediction, one
+wherever it did not apply. Tagged fish are a subset of the population and the
+innovation reads as unmodelled mortality, so the cohorts take the same
+factor at the year boundary. <code>NULL</code> (the default) leaves them on the
+deterministic trajectory, which is correct only when the state is off.</p></dd>
 
 </dl></div>
     <div class="section level2">

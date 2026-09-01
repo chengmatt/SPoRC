@@ -61,7 +61,11 @@ get_population_projection(
   sr_R0 = NULL,
   growth_mortality_year_fn = NULL,
   growth_mortality_state = NULL,
-  expm_nsub = 0
+  expm_nsub = 0,
+  n_est_naa_re = 0,
+  ln_NAA = NULL,
+  naa_re_ages = NULL,
+  naa_re_yrs = NULL
 )
 ```
 
@@ -193,6 +197,21 @@ get_population_projection(
   `growth_mortality_year_fn` is `NULL`. This is how cohort growth, whose
   plus group blends by numbers, is evaluated inside the year loop.
   `NULL` (the default) uses the arrays as given.
+
+- n_est_naa_re:
+
+  Number of estimated state-space numbers at age. Zero leaves the
+  numbers deterministic. Never inferred from `dim(ln_NAA)`, which is
+  non-zero once the setup function has run at all.
+
+- ln_NAA:
+
+  Array `[pop, region, year, age, sex]` of log numbers at age,
+  overwriting the deterministic prediction wherever the state is active.
+
+- naa_re_ages, naa_re_yrs:
+
+  Integer index vectors the state is active over.
 
 ## Value
 

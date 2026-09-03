@@ -385,7 +385,7 @@ mod_est <- fit_model(
   # c('ln_InitDevs', 'ln_RecDevs'),
   do_optim = T,
   silent = FALSE,
-  newton_loops = 3e
+  newton_loops = 3
 )
 
 sd_rep <- sdreport(mod_est)

@@ -131,6 +131,7 @@ the order they are defined.
 | adjacency_collapsed | Collapsed adjacency matrix (n_regions × n_regions - 1) defining allowed transitions between regions for CTMC movement, excluding diagonals |
 | area_r | Numeric vector of region areas (length n_regions) used to scale diffusion rates in CTMC movement |
 | ctmc_diffusion_bounds | Integer flag (0 or 1) indicating whether diffusion bounds are applied to ensure the generator matrix is Metzler (1 = bounds enforced) |
+| ctmc_diffusion_eps | Positive numeric softplus width used by the diffusion bounds (default 0.1); the flow on an edge where taxis exactly cancels diffusion is eps \* log(2) |
 
 ## Data Inputs for Defining Tagging Processes
 

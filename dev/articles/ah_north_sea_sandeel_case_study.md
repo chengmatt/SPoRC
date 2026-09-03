@@ -513,17 +513,9 @@ input_list <- Setup_Mod_Weighting(
 
 ## Fitting
 
-The recruitment penalty has to be translated before the two models are
-asked to find the same optimum. `smsR` penalizes its deviations towards
-the hockey stick at a weight of 0.05, set through `nllfactor`, with its
-recruitment standard deviation estimated at 0.897, so the precision
-reaching the objective is $`0.05 / (2 \times 0.897^{2})`$. `SPoRC`
-carries the weight and the standard deviation separately, so the same
-statement at a weight of one needs $`\sigma_{R} = 4.013`$.
-
 ``` r
 
-input_list$par$ln_sigmaR[] <- log(4.0128) # matches nllfactor 0.05 at sigmaR 0.897
+input_list$par$ln_sigmaR[] <- log(1) 
 est <- fit_model(input_list$data, input_list$par, input_list$map,
                  random = NULL, newton_loops = 3, silent = F)
 ```

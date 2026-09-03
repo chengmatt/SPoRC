@@ -6,7 +6,7 @@ Read [Overview of Model
 Options](https://chengmatt.github.io/SPoRC/dev/articles/t_model_options.md)
 to find out why it exists and which to specify.
 
-All stages Dim (15) Rec (58) Biologicals (65) Movement (22) Tagging (19)
+All stages Dim (15) Rec (58) Biologicals (65) Movement (23) Tagging (19)
 Catch_and_F (64) FishIdx_and_Comps (67) SrvIdx_and_Comps (66)
 Fishsel_and_Q (48) Srvsel_and_Q (32) Weighting (35)
 
@@ -171,7 +171,7 @@ Fishsel_and_Q (48) Srvsel_and_Q (32) Weighting (35)
 
 ### Setup_Mod_Movement
 
-22 arguments
+23 arguments
 
 | Argument | Default | Description |
 |----|----|----|
@@ -194,6 +194,7 @@ Fishsel_and_Q (48) Srvsel_and_Q (32) Weighting (35)
 | `diffusion_formula` | `NULL` | R formula defining the linear predictor for the CTMC diffusion () component (e.g., ~ bs(depth, df = 4)). All right-hand-side variables must be present in ctmc_move_dat. Required for move_type = 1. |
 | `preference_formula` | `NULL` | R formula defining the linear predictor for the CTMC habitat-preference (taxis, ) component. All variables must be present in ctmc_move_dat. Required for move_type = 1. |
 | `ctmc_diffusion_bounds` | `0` | Integer flag. 1 = apply bounds to diffusion parameters to ensure the CTMC generator matrix is a valid Metzler matrix (non-negative off-diagonal entries). 0 = no bounds (default). |
+| `ctmc_diffusion_eps` | `0.1` |  |
 | `move_timing` | `0` | Integer flag setting how movement and mortality are sequenced within a season. 0 = movement then mortality (default, historical SPoRC behavior); 1 = mortality then movement; 2 = continuous, with movement and mortality acting simultaneously via the matrix exponential of Q- (Z). move_timing = 2 requires an estimated CTMC generator, i.e. move_type = 1 and use_fixed_movement = 0. |
 | `ctmc_scale_by_seasdur` | `1` | Integer flag controlling the time units of the CTMC generator. 1 (default) treats Q as an annual rate, exponentiating Q \[s\] in each season so that movement and mortality share time units. 0 exponentiates Q once per season regardless of duration. Only has an effect when move_type = 1 and n_seas \> 1; forced to 1 when move_timing = 2. |
 | `move_expm_nsub` | `0` | Integer controlling how matrix exponentials of the CTMC generator are evaluated, both when converting Q to movement fractions and inside the move_timing = 2 seasonal operators. 0 (default) uses Matrix::expm. A power of two n instead uses n implicit (backward Euler) substeps, (I - A/n)^{-n}, evaluated as one linear solve plus \_2 n squarings, which is why n must be a power of two. The implicit form has a much cheaper reverse-mode adjoint than a matrix exponential, so the gradient is several times faster, but it is a first-order approximation: n = 1 is plain solve(I - A) and is an approximation. |

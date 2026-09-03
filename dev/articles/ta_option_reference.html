@@ -86,12 +86,12 @@ what a setting is. Read <a href="t_model_options.html">Overview of Model
 Options</a> to find out why it exists and which to specify.</p>
 <div class="optref">
 <div class="optref-controls">
-<p><input type="search" id="optref-q" placeholder="Search 491 arguments…" aria-label="Search arguments"><select id="optref-stage" aria-label="Filter by setup stage"><option value="">All stages</option>
+<p><input type="search" id="optref-q" placeholder="Search 492 arguments…" aria-label="Search arguments"><select id="optref-stage" aria-label="Filter by setup stage"><option value="">All stages</option>
 <option value="Dim">Dim
 (15)</option>
 <option value="Rec">Rec (58)</option>
 <option value="Biologicals">Biologicals (65)</option>
-<option value="Movement">Movement (22)</option>
+<option value="Movement">Movement (23)</option>
 <option value="Tagging">Tagging (19)</option>
 <option value="Catch_and_F">Catch_and_F (64)</option>
 <option value="FishIdx_and_Comps">FishIdx_and_Comps (67)</option>
@@ -1515,7 +1515,7 @@ year from the second onward. Must be a contiguous run.
 Setup_Mod_Movement
 </h3>
 <p class="optref-n">
-22 arguments
+23 arguments
 </p>
 <table class="table optref-table">
 <thead><tr>
@@ -1732,6 +1732,16 @@ Required for move_type = 1.
 Integer flag. 1 = apply bounds to diffusion parameters to ensure the
 CTMC generator matrix is a valid Metzler matrix (non-negative
 off-diagonal entries). 0 = no bounds (default).
+</td>
+</tr>
+<tr data-k="ctmc_diffusion_eps 0.1 ">
+<td>
+<code class="optref-arg">ctmc_diffusion_eps</code>
+</td>
+<td>
+<code>0.1</code>
+</td>
+<td>
 </td>
 </tr>
 <tr data-k="move_timing 0 integer flag setting how movement and mortality are sequenced within a season. 0 = movement then mortality (default, historical sporc behavior); 1 = mortality then movement; 2 = continuous, with movement and mortality acting simultaneously via the matrix exponential of q\delta - \mathrm{diag}(z). move_timing = 2 requires an estimated ctmc generator, i.e. move_type = 1 and use_fixed_movement = 0.">

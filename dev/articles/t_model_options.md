@@ -369,7 +369,7 @@ it consistent with how reference points are computed.
 | `RecDevs_spec` | Estimation structure for annual $`\ln(\text{RecDevs})`$ |
 | `InitDevs_spec` | Estimation structure for initial age deviations |
 | `InitDevs_sex_spec` | `"est_shared_s"` (default): one initial age curve read by every sex. `"est_all"`: one curve per sex, each penalized, with an `"own_mean"` `InitDevs_pen_center` pooled across sexes so the sexes share a single estimated level. This is how assessments with a common mean-log-initial and sex-specific initial deviations are written. Requires `n_sexes > 1` |
-| `sigmaR_spec` | Recruitment variability: `"est_all"`, `"fix_early_est_late"`, `"est_shared_all"`, `"fix"` |
+| `sigmaR_spec` | Recruitment variability: `"est_all"`, `"est_shared_r"`, `"fix_early_est_late"`, `"est_shared_all"`, `"fix"` |
 | `sigmaR_switch` | Year index separating the early and late $`\sigma_R`$ periods |
 | `do_rec_bias_ramp` | Methot & Taylor bias adjustment (0 = off, 1 = on) |
 | `bias_year`, `max_bias_ramp_fct` | Bias ramp breakpoints and maximum correction factor |
@@ -1223,7 +1223,8 @@ Each dimension can be pooled (`'constant'`) or blocked:
 | `preference_formula` | R formula for taxis/preference |
 | `adjacency_mat` | Square `[n_regions × n_regions]` binary connectivity matrix, with a **zero diagonal**: residency falls out of the generator and is not specified here. A fully connected matrix is `1 - diag(n_regions)`; note that `diag(1, n_regions)` is the identity, which connects nothing and is rejected |
 | `area_r` | Numeric vector of region areas (scales diffusion rates) |
-| `ctmc_diffusion_bounds` | 0/1: if `1`, shifts diffusion columns to guarantee all off-diagonal generator-matrix entries are non-negative |
+| `ctmc_diffusion_bounds` | 0/1: if `1`, takes a softplus of `D + Z` on the adjacency edges so every off-diagonal generator entry stays non-negative; an edge where taxis outweighs diffusion decays toward zero instead of going negative |
+| `ctmc_diffusion_eps` | Positive numeric (default `0.1`): softplus width for `ctmc_diffusion_bounds = 1`. An edge where taxis exactly cancels diffusion carries `eps * log(2)`; `0.001` behaves like a hard clamp and leaves shut edges gradient-dead |
 | `ctmc_scale_by_seasdur` | 0/1 (default `1`): if `1`, treats the generator as an annual rate and exponentiates `Q * seasdur[s]` each season, so movement and mortality share time units. `0` results in `Q * 1` each season. |
 | `move_expm_nsub` | Integer (default `0`): how matrix exponentials of the generator are evaluated. `0` is exact ([`Matrix::expm`](https://rdrr.io/pkg/Matrix/man/expm-methods.html)); a power of two `n >= 1` substitutes `n` implicit backward Euler substeps. See below |
 

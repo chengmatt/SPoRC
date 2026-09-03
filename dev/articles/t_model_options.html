@@ -920,8 +920,8 @@ deviations are written. Requires <code>n_sexes &gt; 1</code>
 <tr class="even">
 <td><code>sigmaR_spec</code></td>
 <td>Recruitment variability: <code>"est_all"</code>,
-<code>"fix_early_est_late"</code>, <code>"est_shared_all"</code>,
-<code>"fix"</code>
+<code>"est_shared_r"</code>, <code>"fix_early_est_late"</code>,
+<code>"est_shared_all"</code>, <code>"fix"</code>
 </td>
 </tr>
 <tr class="odd">
@@ -2858,10 +2858,19 @@ and is rejected</td>
 </tr>
 <tr class="even">
 <td><code>ctmc_diffusion_bounds</code></td>
-<td>0/1: if <code>1</code>, shifts diffusion columns to guarantee all
-off-diagonal generator-matrix entries are non-negative</td>
+<td>0/1: if <code>1</code>, takes a softplus of <code>D + Z</code> on
+the adjacency edges so every off-diagonal generator entry stays
+non-negative; an edge where taxis outweighs diffusion decays toward zero
+instead of going negative</td>
 </tr>
 <tr class="odd">
+<td><code>ctmc_diffusion_eps</code></td>
+<td>Positive numeric (default <code>0.1</code>): softplus width for
+<code>ctmc_diffusion_bounds = 1</code>. An edge where taxis exactly
+cancels diffusion carries <code>eps * log(2)</code>; <code>0.001</code>
+behaves like a hard clamp and leaves shut edges gradient-dead</td>
+</tr>
+<tr class="even">
 <td><code>ctmc_scale_by_seasdur</code></td>
 <td>0/1 (default <code>1</code>): if <code>1</code>, treats the
 generator as an annual rate and exponentiates
@@ -2869,7 +2878,7 @@ generator as an annual rate and exponentiates
 time units. <code>0</code> results in <code>Q * 1</code> each
 season.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>move_expm_nsub</code></td>
 <td>Integer (default <code>0</code>): how matrix exponentials of the
 generator are evaluated. <code>0</code> is exact

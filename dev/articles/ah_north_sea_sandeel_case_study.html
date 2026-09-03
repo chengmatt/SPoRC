@@ -656,17 +656,8 @@ parameter, which is what an age a survey never sees wants.</p>
 <div class="section level2">
 <h2 id="fitting">Fitting<a class="anchor" aria-label="anchor" href="#fitting"></a>
 </h2>
-<p>The recruitment penalty has to be translated before the two models
-are asked to find the same optimum. <code>smsR</code> penalizes its
-deviations towards the hockey stick at a weight of 0.05, set through
-<code>nllfactor</code>, with its recruitment standard deviation
-estimated at 0.897, so the precision reaching the objective is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0.05</mn><mi>/</mi><mo stretchy="false" form="prefix">(</mo><mn>2</mn><mo>×</mo><msup><mn>0.897</mn><mn>2</mn></msup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">0.05 / (2 \times 0.897^{2})</annotation></semantics></math>.
-<code>SPoRC</code> carries the weight and the standard deviation
-separately, so the same statement at a weight of one needs
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mi>R</mi></msub><mo>=</mo><mn>4.013</mn></mrow><annotation encoding="application/x-tex">\sigma_{R} = 4.013</annotation></semantics></math>.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">ln_sigmaR</span><span class="op">[</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">4.0128</span><span class="op">)</span> <span class="co"># matches nllfactor 0.05 at sigmaR 0.897</span></span>
+<code class="sourceCode R"><span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">ln_sigmaR</span><span class="op">[</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span> </span>
 <span><span class="va">est</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_model.html">fit_model</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">par</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">map</span>,</span>
 <span>                 random <span class="op">=</span> <span class="cn">NULL</span>, newton_loops <span class="op">=</span> <span class="fl">3</span>, silent <span class="op">=</span> <span class="cn">F</span><span class="op">)</span></span></code></pre></div>
 <table class="table">

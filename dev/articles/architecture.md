@@ -478,7 +478,7 @@ what is under test rather than which stock the fixture happens to use.
 | `test-integration_*` | 4 | Cross cutting agreement between the objective, the reference points and the operating model |
 | `test-regression_*` | 17 | End to end fits pinning `obj$rep` and `nll` for known configurations |
 
-That is 145 test files in total.
+That is 146 test files in total.
 
 Two groups are worth calling out. The `test-regression_*` files pin
 `obj$rep` and `nll` values for known configurations against bundled

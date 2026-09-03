@@ -160,7 +160,9 @@ test_that("Get_Movement works", {
                              pref_pars = NULL,
                              diff_pars = NULL,
                              ctmc_diffusion_bounds = 0,
-                             do_recruits_move = 1) {
+                             ctmc_diffusion_eps = 0.1,
+                             do_recruits_move = 1,
+                             preference_formula = ~ 1) {
     n_total <- n_yrs + n_proj
     dat <- make_ctmc_dat(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes)
 
@@ -185,13 +187,14 @@ test_that("Get_Movement works", {
       use_fixed_movement      = 0,
       Fixed_Movement          = NULL,
       ctmc_move_dat           = dat,
-      preference_formula      = ~ 1,
+      preference_formula      = preference_formula,
       diffusion_formula       = ~ 1,
       log_move_diffusion_pars = diff_pars,
       move_preference_pars    = pref_pars,
       area_r                  = rep(1, n_regions),
       adjacency_mat           = make_adjacency(n_regions),
-      ctmc_diffusion_bounds   = ctmc_diffusion_bounds
+      ctmc_diffusion_bounds   = ctmc_diffusion_bounds,
+      ctmc_diffusion_eps      = ctmc_diffusion_eps
     )
   }
 
@@ -262,6 +265,28 @@ test_that("Get_Movement works", {
                    tolerance = 1e-9,
                    label = sprintf("bounds row sum r%d y%d a%d", r, y, a))
     }
+  })
+
+  test_that("CTMC movement: ctmc_diffusion_eps sets the flow on an edge where taxis cancels diffusion", {
+    # theta = exp(0) / area 1 = 1 on every edge; preference c(0, 1, 0) puts a taxis
+    # contrast of -1 on the edges leaving region 2, so D + Z is exactly 0 there and
+    # the softplus floor eps * log(2) is what the generator carries
+    for (eps in c(0.1, 0.5)) {
+      res <- make_ctmc_call(ctmc_diffusion_bounds = 1, ctmc_diffusion_eps = eps,
+                            pref_pars = c(0, 1, 0), preference_formula = ~ 0 + factor(regions))
+      q <- res$Mrate[1, , , 1, 1, 2, 1]
+      cancelled <- c(q[2, 1], q[1, 2])
+      expect_true(any(abs(cancelled - eps * log(2)) < 1e-8),
+                  label = sprintf("eps %.1f floor on the cancelled edge", eps))
+      # the opposite direction carries D + 1 = 2 up to the softplus tail
+      expect_true(any(abs(cancelled - (2 + eps * log1p(exp(-2 / eps)))) < 1e-8),
+                  label = sprintf("eps %.1f open edge", eps))
+    }
+    # a hard-clamp width shuts the cancelled edge to the floor of 0.001 * log(2)
+    res <- make_ctmc_call(ctmc_diffusion_bounds = 1, ctmc_diffusion_eps = 0.001,
+                          pref_pars = c(0, 1, 0), preference_formula = ~ 0 + factor(regions))
+    q <- res$Mrate[1, , , 1, 1, 2, 1]
+    expect_lt(min(q[2, 1], q[1, 2]), 1e-3)
   })
 
   test_that("CTMC movement: Mrate is NULL when use_fixed_movement = 1", {

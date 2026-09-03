@@ -126,6 +126,7 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   # recruit. The first year is what the model always used, so that stays the default.
   if(!has("SR_ref_yr")) set("SR_ref_yr", 1)
   if(!has("ctmc_scale_by_seasdur")) set("ctmc_scale_by_seasdur", 0)
+  if(!has("ctmc_diffusion_eps")) set("ctmc_diffusion_eps", 0.1)
 
   # Initialization of F. Older input lists carried init_F_prop, a fixed proportion of
   # the mean F held as data; it is now the init_F_par parameter plus init_F_form,
@@ -629,6 +630,7 @@ SPoRC_rtmb = function(pars, data) {
     area_r = area_r,
     adjacency_mat = adjacency_mat,
     ctmc_diffusion_bounds = ctmc_diffusion_bounds,
+    ctmc_diffusion_eps = ctmc_diffusion_eps,
     seasdur = seasdur,
     ctmc_scale_by_seasdur = ctmc_scale_by_seasdur,
     expm_nsub = move_expm_nsub

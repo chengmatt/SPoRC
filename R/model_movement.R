@@ -92,9 +92,12 @@ get_movement_dp_design_matrix <- function(data,
 #' @param adjacency_mat Square \code{[n_regions x n_regions]} matrix defining
 #'   connectivity among regions (1 = adjacent, 0 = not adjacent). Required when
 #'   \code{move_type == 1}.
-#' @param ctmc_diffusion_bounds Integer flag: 1 = shift diffusion columns to ensure
-#'   all off-diagonal generator matrix entries are non-negative (valid generator);
-#'   0 = no bounds applied.
+#' @param ctmc_diffusion_bounds Integer flag: 1 = softplus of \eqn{D + Z} on the
+#'   adjacency edges so every off-diagonal generator entry stays non-negative (valid
+#'   generator); 0 = no bounds applied.
+#' @param ctmc_diffusion_eps Positive numeric width of the softplus used when
+#'   \code{ctmc_diffusion_bounds == 1}. An edge where taxis exactly cancels diffusion
+#'   carries \code{eps * log(2)}; smaller values approach a hard hinge. Default 0.1.
 #' @param seasdur Numeric vector of length \code{n_seas} giving season durations
 #'   (summing to 1). Used to scale the CTMC generator when
 #'   \code{ctmc_scale_by_seasdur == 1}. Defaults to \code{rep(1, n_seas)}, which
@@ -146,9 +149,10 @@ get_movement_dp_design_matrix <- function(data,
 #'     mortality must apply \code{seasdur[seas]} themselves (see
 #'     \code{build_seas_operator}).}
 #'   \item{\code{move_pen}}{Numeric movement penalty used for regularization.
-#'     For CTMC movement, equal to \eqn{\sum_{\text{strata}} (\sum_r \gamma_{z,r})^2},
-#'     which penalizes large net preference values across regions. Zero for unstructured
-#'     or fixed movement.}
+#'     For CTMC movement, equal to \eqn{\sum_k \gamma_k^2}, a ridge on the
+#'     preference coefficients applied once (not per stratum) that pins the
+#'     otherwise unidentified level and spread. Zero for unstructured or fixed
+#'     movement.}
 #' }
 #'
 #' @details
@@ -189,6 +193,7 @@ Get_Movement <- function(move_type,
                          area_r,
                          adjacency_mat,
                          ctmc_diffusion_bounds,
+                         ctmc_diffusion_eps = 0.1,
                          seasdur = rep(1, n_seas),
                          ctmc_scale_by_seasdur = 0,
                          expm_nsub = 0
@@ -275,6 +280,9 @@ Get_Movement <- function(move_type,
     if(design_mat$n_gamma == 0) gamma_z = rep(0, nrow(ctmc_move_dat))
     else gamma_z = (W_zk %*% gamma_k)[,1] # multiply preference parameters by design matrix
 
+    # ridge on the preference coefficients, applied once; pins both level and spread
+    move_pen = move_pen + sum(gamma_k^2)
+
     # Make instantaneous diffusion rate matrix
     for( index in seq_len(nrow(loop)) ){
 
@@ -307,7 +315,7 @@ Get_Movement <- function(move_type,
         counter = 1  # Reset counter for each origin region
         for(r in 1:n_regions) {  # r = destination (to)
           # Only apply deviations to off-diagonal elements (actual transitions, not residency)
-          if(adjacency_mat[r, rr] == 1 && r != rr) {  # if adjacent BUT NOT diagonal
+          if(adjacency_mat[r, rr] == 1 && r != rr) {  # if adjacent but not diagonal
             # Apply deviation: rr is origin, counter indexes non-diagonal destinations
             D_ss[r, rr] = D_ss[r, rr] * exp(move_devs[pop_idx, rr, counter, y_idx, seas_idx, a_idx, s_idx])
             counter = counter + 1  # Increment counter for next valid destination from rr
@@ -315,15 +323,12 @@ Get_Movement <- function(move_type,
         } # end r (to)
       } # end rr (from)
 
-      # apply diffusion bounds to ensure valid generator matrix
-      if(ctmc_diffusion_bounds == 1) { # ensure D_ss(i,j) + Z_ss(i,j) > 0 for all i != j
-        eps <- 0.1
-        for(j in 1:n_regions) {
-          zj = Z_ss[,j]
-          mj = sum(zj) / n_regions
-          minval = mj - eps * log(sum(exp((mj - zj) / eps)))  # smooth minimum of column j
-          for(i in 1:n_regions) D_ss[i,j] = D_ss[i,j] - adjacency_mat[i,j] * minval
-        } # end j loop
+      # apply diffusion bounds to ensure a valid generator matrix
+      if(ctmc_diffusion_bounds == 1) {
+        Q_off = adjacency_mat * (D_ss + Z_ss)
+        eps = ctmc_diffusion_eps # softplus width; softplus(0) = eps * log(2)
+        D_ss = adjacency_mat * ((Q_off + abs(Q_off)) / 2 + eps * log(1 + exp(-abs(Q_off) / eps)))
+        Z_ss = Z_ss * 0 # taxis already inside the smoothed flows so zero it out here
       }
 
       # conserve abundance
@@ -342,7 +347,6 @@ Get_Movement <- function(move_type,
       Mrate[pop_idx,,,y_idx,seas_idx,a_idx,s_idx] = t(as.matrix(Q_ss))
 
       # return penalty (Lagrange multiplier)
-      move_pen = move_pen + sum(pref_s)^2
 
     } # end index loop
   }

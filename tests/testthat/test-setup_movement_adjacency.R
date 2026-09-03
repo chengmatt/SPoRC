@@ -89,3 +89,18 @@ test_that("a valid adjacency matrix yields a conservative generator", {
   expect_equal(rowSums(Q), c(0, 0), tolerance = 1e-10) # Mrate is stored transposed
   expect_true(all(M > 0)) # both regions genuinely exchange
 })
+
+test_that("ctmc_diffusion_eps is stored with a 0.1 default and rejected when not positive", {
+  A <- matrix(c(0, 1, 1, 0), 2, 2)
+  setup_eps <- function(...) {
+    Setup_Mod_Movement(input_list = make_dim_input_list(2),
+                       use_fixed_movement = 0, do_recruits_move = 0, move_type = 1,
+                       adjacency_mat = A, diffusion_formula = ~1, preference_formula = ~0,
+                       move_timing = 2, ctmc_move_dat = make_ctmc_dat(2), ...)
+  }
+  expect_equal(setup_eps()$data$ctmc_diffusion_eps, 0.1)
+  expect_equal(setup_eps(ctmc_diffusion_bounds = 1, ctmc_diffusion_eps = 0.05)$data$ctmc_diffusion_eps, 0.05)
+  expect_error(setup_eps(ctmc_diffusion_eps = 0), "single positive number")
+  expect_error(setup_eps(ctmc_diffusion_eps = c(0.1, 0.2)), "single positive number")
+  expect_error(setup_eps(ctmc_diffusion_eps = "0.1"), "single positive number")
+})

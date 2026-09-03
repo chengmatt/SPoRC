@@ -347,7 +347,7 @@ mat_exp <- function(A, expm_nsub = 0) {
   "[<-" <- RTMB::ADoverload("[<-")
 
   if(expm_nsub == 0) {
-    A <- methods::as(A, "sparseMatrix") # force sparse
+    if(is.matrix(A) && is.numeric(A)) A <- methods::as(A, "sparseMatrix")
     return(as.matrix(Matrix::expm(A)))
   }
 

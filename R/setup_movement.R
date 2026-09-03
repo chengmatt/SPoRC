@@ -419,10 +419,12 @@ do_cont_vary_move_mapping <- function(input_list, cont_vary_movement, Movement_c
 #'   the CTMC habitat-preference (taxis, \eqn{\gamma}) component. All
 #'   variables must be present in \code{ctmc_move_dat}. Required for
 #'   \code{move_type = 1}.
-#' @param ctmc_diffusion_bounds Integer flag. \code{1} = apply bounds to
-#'   diffusion parameters to ensure the CTMC generator matrix is a valid
-#'   Metzler matrix (non-negative off-diagonal entries). \code{0} = no bounds
-#'   (default).
+#' @param ctmc_diffusion_bounds Integer flag keeping the CTMC generator a valid
+#'   Metzler matrix (non-negative off-diagonal entries) when taxis outweighs
+#'   diffusion. \code{0} = no bounds (default). \code{1} = elementwise smooth
+#'   positive part (softplus of width \code{ctmc_diffusion_eps}) of \eqn{D + Z}.
+#' @param ctmc_diffusion_eps Positive numeric width of the softplus applied when
+#'   \code{ctmc_diffusion_bounds = 1} (default \code{0.1}).
 #' @param move_timing Integer flag setting how movement and mortality are
 #'   sequenced within a season. \code{0} = movement then mortality (default,
 #'   historical SPoRC behavior); \code{1} = mortality then movement;
@@ -488,6 +490,7 @@ Setup_Mod_Movement <- function(input_list,
                                diffusion_formula = NULL,
                                preference_formula = NULL,
                                ctmc_diffusion_bounds = 0,
+                               ctmc_diffusion_eps = 0.1,
                                move_timing = 0,
                                ctmc_scale_by_seasdur = 1,
                                move_expm_nsub = 0,
@@ -734,7 +737,19 @@ Setup_Mod_Movement <- function(input_list,
   input_list$data$ctmc_move_dat <- ctmc_move_dat
   input_list$data$diffusion_formula <- diffusion_formula
   input_list$data$preference_formula <- preference_formula
+
+  # error to ensure bounds because taxis makes Q = D + Z, and without the bounds correction an off diagonal of Q can go negative
+  if(move_type == 1 && !is.null(preference_formula) && ctmc_diffusion_bounds == 0) {
+    pref_terms <- length(attr(stats::terms(preference_formula), "term.labels")) + attr(stats::terms(preference_formula), "intercept")
+    if(pref_terms > 0) collect_message("preference_formula has terms but ctmc_diffusion_bounds = 0; the generator can go invalid where taxis outweighs diffusion. ctmc_diffusion_bounds = 1 is recommended.")
+  }
+
   input_list$data$ctmc_diffusion_bounds <- ctmc_diffusion_bounds
+
+  # softplus width for the bounds
+  if(!is.numeric(ctmc_diffusion_eps) || length(ctmc_diffusion_eps) != 1 || !is.finite(ctmc_diffusion_eps) || ctmc_diffusion_eps <= 0) stop("ctmc_diffusion_eps must be a single positive number: the softplus width used when ctmc_diffusion_bounds = 1 (default 0.1)")
+  if(move_type == 1 && ctmc_diffusion_bounds == 1) collect_message("CTMC diffusion bounds: softplus of width ", ctmc_diffusion_eps, " on the adjacency edges")
+  input_list$data$ctmc_diffusion_eps <- ctmc_diffusion_eps
   input_list$data$move_timing <- move_timing
   input_list$data$ctmc_scale_by_seasdur <- ctmc_scale_by_seasdur
   input_list$data$move_expm_nsub <- move_expm_nsub

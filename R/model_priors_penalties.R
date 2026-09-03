@@ -931,10 +931,8 @@ get_recruitment_penalty <- function(n_pop, n_regions, n_ages, n_est_rec_devs, re
   }
   init_wt <- share_wt(init_map_active, dim(ln_InitDevs))
 
-  # The prior mean of a deviation is either asserted (zero, or the bias-corrected
-  # -sigma^2/2) or estimated from the deviations themselves. The second form
-  # penalizes only the spread and leaves the level unconstrained, which is what a
-  # sum of squares about the series' own mean amounts to.
+  # The prior mean of a deviation is either zero, or the bias-corrected ... the second form
+  # penalizes only the spread and leaves the level unconstrained, which is what a sum of squares about the series' own mean amounts to.
   own_mean <- function(x, w) {
     if(sum(w) < 2) return(0)
     sum(x * w) / sum(w)
@@ -943,26 +941,19 @@ get_recruitment_penalty <- function(n_pop, n_regions, n_ages, n_est_rec_devs, re
   for(p in 1:n_pop) {
     for(r in 1:n_regions) {
 
-      # get sigma index
-      sigma_idx <- ifelse(n_pop == 1 && rec_dd == 0, r, natal_region[p])
+      # each region reads its own sigmaR dim
+      sigma_idx <- r
 
       # Skip penalty if no dispersal and p = r has no recruits
       if(rec_region_prop_spec == 1 && as.numeric(rec_region_prop[p,r]) == 0) next
 
-      # Initial age deviations (if equil_init_age_strc == 0; don't penalize at all).
-      # init_idx is only computed inside the guard: the shared-subset case reads
-      # init_age_devs_shared, which a model without that option never carries.
+      # Initial age deviations (if equil_init_age_strc == 0; don't penalize at all)
       if(equil_init_age_strc %in% c(1,2,3)) {
 
         # figure out indexing
         init_idx <- if(equil_init_age_strc == 1) 1:(n_ages - 2) else if(equil_init_age_strc == 2) 1:dim(ln_InitDevs)[3] else unique(init_age_devs_shared[!is.na(init_age_devs_shared)])
 
-        # The own-mean center pools every penalized cell across ages and sexes, so
-        # sex-specific deviations share one level the way a single estimated mean
-        # would; with only the first sex penalized this is the previous behavior.
-        # The fixed center carries each initial age's own bias correction: the ramp
-        # read at the year that age was born, which precedes the first model year.
-        # A caller without that vector gets the first model year's value for every age.
+        # The own-mean center pools every penalized cell across ages and sexes
         ramp_init <- if(is.null(init_bias_ramp)) rep(bias_ramp[1], length(init_idx)) else init_bias_ramp[init_idx]
         init_mu <- if(InitDevs_pen_center == 1) own_mean(ln_InitDevs[p,r,init_idx,], init_devs_pen_use[p,r,init_idx,]) else -exp(ln_sigmaR[1,p,sigma_idx])^2/2 * ramp_init
         for(s_init in 1:n_init_sexes) {

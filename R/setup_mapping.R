@@ -1317,6 +1317,11 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
     # Skip fleet sharing specs in first pass
     if(stringr::str_detect(sel_pars_spec[f], "est_shared_f")) next
 
+    # sharing anchors on the fleet's first region with data rather than region
+    # one, which a fleet observing only a later region never reaches
+    data_r <- which(sapply(1:input_list$data$n_regions, function(rr) sel_has_data(input_list$data, use_field, rr, f)))
+    anchor_r <- if(length(data_r) > 0) data_r[1] else 1
+
     for(r in 1:input_list$data$n_regions) {
 
       # Only add a counter if catches/index data are avaliable in some years for a given region and fleet combination
@@ -1370,7 +1375,7 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
               } # end if
 
               # Estimating parameters shared across regions (but unique for each sex, fleet, parameter)
-              if(sel_pars_spec[f] == 'est_shared_r' && r == 1) {
+              if(sel_pars_spec[f] == 'est_shared_r' && r == anchor_r) {
                 for(rr in 1:input_list$data$n_regions) {
                   if(sel_blocks_tmp[b] %in% input_list$data[[blocks_nm]][rr,,f]) {
                     for(bi in group_bins) map_sel_pars[rr, bi, b, s, f] <- sel_pars_counter
@@ -1388,7 +1393,7 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
               } # end if
 
               # Estimating parameters shared across regions and sexes (but unique for each fleet, parameter)
-              if(sel_pars_spec[f] == 'est_shared_r_s' && r == 1 && s == 1) {
+              if(sel_pars_spec[f] == 'est_shared_r_s' && r == anchor_r && s == 1) {
                 for(rr in 1:input_list$data$n_regions) {
                   for(ss in 1:input_list$data$n_sexes) {
                     if(sel_blocks_tmp[b] %in% input_list$data[[blocks_nm]][rr,,f]) {
@@ -1421,8 +1426,21 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
       if(flt_shared > n_fleets || flt_shared < 1) stop("Fleet sharing specification 'est_shared_f", flt_shared, "' for fleet ", f, " references invalid fleet number.")
       if(stringr::str_detect(sel_pars_spec[flt_shared], "est_shared_f")) stop("Fleet ", f, " cannot share with fleet ", flt_shared, " because fleet ", flt_shared, " is self-sharing parameters, which does not make sense.")
 
-      # Copy mapping from reference fleet
+      # copy the reference fleet's mapping
       map_sel_pars[,,,,f] <- map_sel_pars[,,,,flt_shared]
+      d_sel <- dim(map_sel_pars)
+      for(r in 1:input_list$data$n_regions) {
+        if(!sel_has_data(input_list$data, use_field, r, f)) next
+        for(bi in 1:d_sel[2]) {
+          for(b in 1:d_sel[3]) {
+            for(s in 1:d_sel[4]) {
+              if(!is.na(map_sel_pars[r, bi, b, s, f])) next
+              ref_r <- which(!is.na(map_sel_pars[, bi, b, s, flt_shared]))
+              if(length(ref_r) > 0) map_sel_pars[r, bi, b, s, f] <- map_sel_pars[ref_r[1], bi, b, s, flt_shared]
+            } # end s loop
+          } # end b loop
+        } # end bi loop
+      } # end r loop
       collect_message(prefix, "_fixed_sel_pars_spec is specified as: ", sel_pars_spec[f], " for ", fleet_label, " ", f, " (sharing with fleet ", flt_shared, ")")
     } # end if statement
   } # end f loop
@@ -1506,6 +1524,10 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
     # Skip fleet sharing specs in first pass
     if(!is.null(pe_pars_spec)) if(stringr::str_detect(pe_pars_spec[f], "est_shared_f")) next
 
+    # sharing anchors on the fleet's first region with data, as for the fixed effects
+    data_r <- which(sapply(1:input_list$data$n_regions, function(rr) sel_has_data(input_list$data, use_field, rr, f)))
+    anchor_r <- if(length(data_r) > 0) data_r[1] else 1
+
     for(r in 1:input_list$data$n_regions) {
 
       # if no time-variation, then fix all parameters for this fleet
@@ -1537,7 +1559,7 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
               } # end est_all
 
               # Estimating process error parameters shared across regions (but unique for each sex, fleet, parameter)
-              if(pe_pars_spec[f] == 'est_shared_r' && r == 1) {
+              if(pe_pars_spec[f] == 'est_shared_r' && r == anchor_r) {
                 map_pe_pars[,i,s,f] <- pe_pars_counter
                 pe_pars_counter <- pe_pars_counter + 1
               }
@@ -1549,7 +1571,7 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
               }
 
               # Estimating process error parameters shared across regions and sexes (but unique for each fleet, parameter)
-              if(pe_pars_spec[f] == 'est_shared_r_s' && r == 1 && s == 1) {
+              if(pe_pars_spec[f] == 'est_shared_r_s' && r == anchor_r && s == 1) {
                 map_pe_pars[,i,,f] <- pe_pars_counter
                 pe_pars_counter <- pe_pars_counter + 1
               }
@@ -1577,7 +1599,7 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
               } # end est_all
 
               # Estimating process error parameters shared across regions (but unique for each sex, fleet, parameter)
-              if(pe_pars_spec[f] == 'est_shared_r' && r == 1) {
+              if(pe_pars_spec[f] == 'est_shared_r' && r == anchor_r) {
                 map_pe_pars[,i,s,f] <- pe_pars_counter
                 pe_pars_counter <- pe_pars_counter + 1
               }
@@ -1589,7 +1611,7 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
               }
 
               # Estimating process error parameters shared across regions and sexes (but unique for each fleet, parameter)
-              if(pe_pars_spec[f] == 'est_shared_r_s' && r == 1 && s == 1) {
+              if(pe_pars_spec[f] == 'est_shared_r_s' && r == anchor_r && s == 1) {
                 map_pe_pars[,i,,f] <- pe_pars_counter
                 pe_pars_counter <- pe_pars_counter + 1
               }
@@ -1651,8 +1673,19 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
       if(flt_shared > n_fleets || flt_shared < 1) stop("Fleet sharing specification 'est_shared_f", flt_shared, "' for fleet ", f, " references invalid fleet number.")
       if(stringr::str_detect(pe_pars_spec[flt_shared], "est_shared_f")) stop("Fleet ", f, " cannot share with fleet ", flt_shared, " because fleet ", flt_shared, " is self-sharing parameters, which does not make sense.")
 
-      # Copy mapping from reference fleet
+      # copy the reference fleet's mapping, region aware as for the fixed effects
       map_pe_pars[,,,f] <- map_pe_pars[,,,flt_shared]
+      d_pe <- dim(map_pe_pars)
+      for(r in 1:input_list$data$n_regions) {
+        if(input_list$data[[cont_tv_nm]][r,f] == 0 || !sel_has_data(input_list$data, use_field, r, f)) next
+        for(i in 1:d_pe[2]) {
+          for(s in 1:d_pe[3]) {
+            if(!is.na(map_pe_pars[r, i, s, f])) next
+            ref_r <- which(!is.na(map_pe_pars[, i, s, flt_shared]))
+            if(length(ref_r) > 0) map_pe_pars[r, i, s, f] <- map_pe_pars[ref_r[1], i, s, flt_shared]
+          } # end s loop
+        } # end i loop
+      } # end r loop
       collect_message(prefix, "sel_pe_pars_spec is specified as: ", pe_pars_spec[f], " for ", fleet_label, " ", f, " (sharing with fleet ", flt_shared, ")")
     } # end if statement
   } # end f loop

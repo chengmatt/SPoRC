@@ -149,7 +149,7 @@ input_list <- Setup_Mod_Rec(
   sigmaR_spec = "fix", do_rec_bias_ramp = 0,
   init_age_strc = "free", equil_init_age_strc = "equil",
   ln_global_R0 = log(2e8))
-input_list$par$ln_sigmaR[] <- log(4.0128)    # nllfactor 0.05 at smsR's sigmaR 0.897
+input_list$par$ln_sigmaR[] <- log(1)
 
 input_list <- Setup_Mod_Biologicals(
   input_list, WAA = WAA, WAA_fish = WAA_fish, WAA_srv = WAA_srv,
@@ -279,6 +279,7 @@ for(y in 1:dev_dim[2]) {
 input_list$par$ln_F_devs <- ln_F_devs
 input_list$map$ln_F_devs <- factor(array(NA_integer_, dim = dev_dim))
 input_list$par$ln_F_mean[] <- -5
+
 # One initial numbers-at-age parameter per age, all estimated, and this has to be
 # said by hand. equil_init_age_strc "equil" neither penalizes nor estimates the
 # deviations, and "stoch_all" does both; under init_age_strc "free" what is

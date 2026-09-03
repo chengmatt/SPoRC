@@ -261,11 +261,10 @@ Setup_Sim_Rec <- function(
 #' distinguishes initial age-structure deviations (\code{i = 1}) from annual
 #' recruitment deviations (\code{i = 2}).
 #'
-#' Sharing behavior adapts to the density-dependence structure: under local
-#' density dependence (\code{rec_dd = 0}) with a single population, each
-#' region receives its own \code{ln_sigmaR} estimate; under global density
-#' dependence or with multiple populations, a single \code{ln_sigmaR} is
-#' shared across regions within each population.
+#' The map decides what is shared, and the recruitment penalty reads each
+#' region's own slot. Under \code{rec_region_prop_spec = 1} with multiple
+#' populations, a population's non-natal region slots carry no deviations and
+#' are mapped off automatically.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
 #'   sublists, as constructed by upstream setup functions.
@@ -274,13 +273,15 @@ Setup_Sim_Rec <- function(
 #'   \describe{
 #'     \item{\code{"est_all"}}{Estimate \code{ln_sigmaR} separately for both
 #'       the initial deviation period (\code{i = 1}) and the annual deviation
-#'       period (\code{i = 2}), respecting the density-dependence sharing rules
-#'       described above.}
+#'       period (\code{i = 2}), and for every population and region.}
+#'     \item{\code{"est_shared_r"}}{Separate per deviation period and
+#'       population, shared across regions within each.}
 #'     \item{\code{"est_shared_all"}}{Single \code{ln_sigmaR} shared across
 #'       both deviation periods, all populations, and all regions.}
 #'     \item{\code{"fix_early_est_late"}}{Fix \code{ln_sigmaR} for the initial
 #'       deviation period (\code{i = 1}) at its starting value; estimate
-#'       \code{ln_sigmaR} for the annual deviation period (\code{i = 2}).
+#'       \code{ln_sigmaR} for the annual deviation period (\code{i = 2}),
+#'       per population and region.
 #'       Useful when initial age-structure uncertainty is assumed known.}
 #'     \item{\code{"fix"}}{Fix all \code{ln_sigmaR} parameters at their
 #'       starting values (all mapped to \code{NA}).}
@@ -294,26 +295,29 @@ Setup_Sim_Rec <- function(
 do_sigmaR_mapping <- function(input_list, sigmaR_spec) {
 
   # Define valid sigmaR options
-  valid_options <- c("est_all", "est_shared_all", "fix_early_est_late", "fix")
+  valid_options <- c("est_all", "est_shared_r", "est_shared_all", "fix_early_est_late", "fix")
 
   # Checking to see if valid options
   if (!sigmaR_spec %in% valid_options) stop("Invalid sigmaR_spec. Must be one of: ", paste(valid_options, collapse = ", "))
 
   dims <- c(period = 2, pop = input_list$data$n_pop, region = input_list$data$n_regions)
 
-  # Single population w/ locally density-dependent recruitment: each region
-  # gets its own sigmaR. Otherwise sigmaR is shared across regions (unique
-  # per population instead).
-  region_shared <- !(input_list$data$n_pop == 1 && input_list$data$rec_dd == 0)
-  share_over <- if(region_shared) "region" else character(0)
-
   if(sigmaR_spec == 'fix') {
     input_list$map$ln_sigmaR <- factor(rep(NA, prod(dims)))
   } else if(sigmaR_spec == 'est_shared_all') {
     input_list$map$ln_sigmaR <- factor(rep(1, prod(dims)))
   } else {
-    # "est_all" or "fix_early_est_late"
+    # "est_all" and "fix_early_est_late" resolve every period, population and
+    # region; "est_shared_r" shares across regions within a period and population
+    share_over <- if(sigmaR_spec == 'est_shared_r') "region" else character(0)
     map_sigmaR <- build_pe_map(dims, share_over = share_over)
+
+    # a population confined to its natal region has no deviations elsewhere, so
+    # those slots carry no information and stay off
+    if(isTRUE(input_list$data$rec_region_prop_spec == 1) && input_list$data$n_pop > 1) {
+      for(p in 1:input_list$data$n_pop) map_sigmaR[, p, -input_list$data$natal_region[p]] <- NA
+    } # end if
+
     if(sigmaR_spec == 'fix_early_est_late') map_sigmaR[1,,] <- NA # fix early period, keep late period estimated
     input_list$map$ln_sigmaR <- factor(as.vector(map_sigmaR))
   }

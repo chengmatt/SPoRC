@@ -1072,9 +1072,10 @@ get_osa <- function(obs_mat = NULL,
 #'
 #' @param osa_results List obtained from get_osa() containing residuals dataframe.
 #'
-#' @return List of plots: \code{sdnr_plot} (QQ-plot) and a second element
-#'   that is a \code{bubble_plot} (composition/tag residual magnitude and
-#'   sign) or a \code{resid_plot} (index-type residual vs. year).
+#' @return List of two plots, named and also safe to index by position:
+#'   \code{sdnr_plot} (QQ-plot) first, then \code{bubble_plot}
+#'   (composition/tag residual magnitude and sign) or \code{resid_plot}
+#'   (index-type residual vs. year).
 #' @export plot_resids
 #' @family Model Diagnostics
 #' @import dplyr
@@ -1189,7 +1190,7 @@ plot_resids <- function(osa_results) {
       theme(legend.position = 'top') +
       build_facet(idx_row_vars, idx_col_vars)
 
-    return(list(sdnr_plot, resid_plot))
+    return(list(sdnr_plot = sdnr_plot, resid_plot = resid_plot))
   }
 
   # Aggregated Comps ----------------------------------------------------------
@@ -1229,7 +1230,7 @@ plot_resids <- function(osa_results) {
     theme(legend.position = 'top') +
     build_facet(c("region", if(has_len) "len"), c("sex", comp_extra_cols))
 
-  return(list(sdnr_plot, bubble_plot))
+  return(list(sdnr_plot = sdnr_plot, bubble_plot = bubble_plot))
 
 }
 

@@ -19,7 +19,7 @@ utils::globalVariables(c(
   "conv_tag_fish_reporting_blocks", "conv_tag_fish_reporting_pars", "conv_tag_fishrep_prior",
   "conv_tag_max_liberty", "conv_tag_mixing_period", "conv_tag_pop_pool",
   "conv_tag_release_indicator", "conv_tag_release_platform", "conv_tag_sex_pool",
-  "conv_tag_t_tagging", "conv_tagged_fish", "ctmc_diffusion_bounds", "ctmc_move_dat",
+  "conv_tag_t_tagging", "conv_tagged_fish", "ctmc_diffusion_bounds", "ctmc_diffusion_eps", "ctmc_move_dat",
   "ctmc_scale_by_seasdur", "diffusion_formula", "discard_units", "dmr", "do_fish_q_cov",
   "do_internal_comp_osa", "do_internal_conv_tag_osa", "do_rec_bias_ramp", "do_recruits_move",
   "do_srv_q_cov", "equil_init_age_strc", "est", "F_fract_flt", "Fdev_model", "Fdev_pen_center",

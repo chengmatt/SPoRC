@@ -100,6 +100,7 @@ input_list <- Setup_Mod_Biologicals(
   fit_lengths = 1, SizeAgeTrans = NA,
   AgeingError = dat$AgeingError,
   M_spec = "fix",
+  do_caal = 1,
   Fixed_natmort = array(dat$growth[[1]]$M, dim = c(1, n_reg, n_yrs, n_ages, n_sex)),
   addtocomp = dat$comp$addtocomp_age, comp_const_obs = 1,
   addtosrvidx = 0, addtofishidx = 0,

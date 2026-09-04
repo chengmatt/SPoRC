@@ -29,8 +29,13 @@ do_sigmaR_mapping(input_list, sigmaR_spec)
   `"est_all"`
 
   :   Estimate `ln_sigmaR` separately for both the initial deviation
-      period (`i = 1`) and the annual deviation period (`i = 2`),
-      respecting the density-dependence sharing rules described above.
+      period (`i = 1`) and the annual deviation period (`i = 2`), and
+      for every population and region.
+
+  `"est_shared_r"`
+
+  :   Separate per deviation period and population, shared across
+      regions within each.
 
   `"est_shared_all"`
 
@@ -41,8 +46,8 @@ do_sigmaR_mapping(input_list, sigmaR_spec)
 
   :   Fix `ln_sigmaR` for the initial deviation period (`i = 1`) at its
       starting value; estimate `ln_sigmaR` for the annual deviation
-      period (`i = 2`). Useful when initial age-structure uncertainty is
-      assumed known.
+      period (`i = 2`), per population and region. Useful when initial
+      age-structure uncertainty is assumed known.
 
   `"fix"`
 
@@ -57,8 +62,7 @@ integer indices; fixed parameters are `NA`.
 
 ## Details
 
-Sharing behavior adapts to the density-dependence structure: under local
-density dependence (`rec_dd = 0`) with a single population, each region
-receives its own `ln_sigmaR` estimate; under global density dependence
-or with multiple populations, a single `ln_sigmaR` is shared across
-regions within each population.
+The map decides what is shared, and the recruitment penalty reads each
+region's own slot. Under `rec_region_prop_spec = 1` with multiple
+populations, a population's non-natal region slots carry no deviations
+and are mapped off automatically.

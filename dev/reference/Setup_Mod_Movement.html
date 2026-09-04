@@ -96,6 +96,7 @@ populates <code>input_list$data</code> accordingly. Must be called after
 <span>  diffusion_formula <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  preference_formula <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ctmc_diffusion_bounds <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  ctmc_diffusion_eps <span class="op">=</span> <span class="fl">0.1</span>,</span>
 <span>  move_timing <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  ctmc_scale_by_seasdur <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  move_expm_nsub <span class="op">=</span> <span class="fl">0</span>,</span>
@@ -285,10 +286,27 @@ variables must be present in <code>ctmc_move_dat</code>. Required for
 
 
 <dt id="arg-ctmc-diffusion-bounds">ctmc_diffusion_bounds<a class="anchor" aria-label="anchor" href="#arg-ctmc-diffusion-bounds"></a></dt>
-<dd><p>Integer flag. <code>1</code> = apply bounds to
-diffusion parameters to ensure the CTMC generator matrix is a valid
-Metzler matrix (non-negative off-diagonal entries). <code>0</code> = no bounds
-(default).</p></dd>
+<dd><p>How the CTMC generator is kept a valid Metzler
+matrix (non-negative off-diagonal entries) when taxis outweighs diffusion.
+Writing \(d\) for the preference gradient along an edge and \(\theta_j\)
+for the diffusion rate out of its origin, the accepted values are
+<code>"none"</code> (or <code>0</code>, the default) for \(\theta_j + d\) unbounded;
+<code>"softplus"</code> (or <code>1</code>) for a softplus of \(\theta_j + d\) of width
+<code>ctmc_diffusion_eps</code>; <code>"clamp"</code> for its hard positive part;
+<code>"upwind"</code> for the discontinuous Galerkin (finite volume) flux
+\(\theta_j + \max(d, 0)\); <code>"barker"</code> for
+\(\theta_j\,\mathrm{logit}^{-1}(d)\); and <code>"logsoftplus"</code> for
+\(\theta_j \log(1 + e^{d})\). The last two are positive by construction and
+ignore <code>ctmc_diffusion_eps</code> entirely: they have no floor, no kink and no
+gradient-dead region, and they leave the diffusion parameter interior when the
+data want one-way flow. See <code>Get_Movement</code> for the full comparison.</p></dd>
+
+
+<dt id="arg-ctmc-diffusion-eps">ctmc_diffusion_eps<a class="anchor" aria-label="anchor" href="#arg-ctmc-diffusion-eps"></a></dt>
+<dd><p>Positive numeric width of the softplus applied when
+<code>ctmc_diffusion_bounds = "softplus"</code> (default <code>0.1</code>). An edge where
+taxis exactly cancels diffusion carries <code>eps * log(2)</code>, so this sets a
+floor on exchange as well as smoothing the hinge.</p></dd>
 
 
 <dt id="arg-move-timing">move_timing<a class="anchor" aria-label="anchor" href="#arg-move-timing"></a></dt>

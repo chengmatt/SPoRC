@@ -89,8 +89,11 @@ sublists, as constructed by upstream setup functions.</p></dd>
 <code>ln_sigmaR</code>. One of:</p><dl><dt><code>"est_all"</code></dt>
 <dd><p>Estimate <code>ln_sigmaR</code> separately for both
     the initial deviation period (<code>i = 1</code>) and the annual deviation
-    period (<code>i = 2</code>), respecting the density-dependence sharing rules
-    described above.</p></dd>
+    period (<code>i = 2</code>), and for every population and region.</p></dd>
+
+  <dt><code>"est_shared_r"</code></dt>
+<dd><p>Separate per deviation period and
+    population, shared across regions within each.</p></dd>
 
   <dt><code>"est_shared_all"</code></dt>
 <dd><p>Single <code>ln_sigmaR</code> shared across
@@ -99,7 +102,8 @@ sublists, as constructed by upstream setup functions.</p></dd>
   <dt><code>"fix_early_est_late"</code></dt>
 <dd><p>Fix <code>ln_sigmaR</code> for the initial
     deviation period (<code>i = 1</code>) at its starting value; estimate
-    <code>ln_sigmaR</code> for the annual deviation period (<code>i = 2</code>).
+    <code>ln_sigmaR</code> for the annual deviation period (<code>i = 2</code>),
+    per population and region.
     Useful when initial age-structure uncertainty is assumed known.</p></dd>
 
   <dt><code>"fix"</code></dt>
@@ -118,11 +122,10 @@ sublists, as constructed by upstream setup functions.</p></dd>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Sharing behavior adapts to the density-dependence structure: under local
-density dependence (<code>rec_dd = 0</code>) with a single population, each
-region receives its own <code>ln_sigmaR</code> estimate; under global density
-dependence or with multiple populations, a single <code>ln_sigmaR</code> is
-shared across regions within each population.</p>
+    <p>The map decides what is shared, and the recruitment penalty reads each
+region's own slot. Under <code>rec_region_prop_spec = 1</code> with multiple
+populations, a population's non-natal region slots carry no deviations and
+are mapped off automatically.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

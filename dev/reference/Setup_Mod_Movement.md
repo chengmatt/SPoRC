@@ -32,6 +32,7 @@ Setup_Mod_Movement(
   diffusion_formula = NULL,
   preference_formula = NULL,
   ctmc_diffusion_bounds = 0,
+  ctmc_diffusion_eps = 0.1,
   move_timing = 0,
   ctmc_scale_by_seasdur = 1,
   move_expm_nsub = 0,
@@ -221,9 +222,27 @@ Setup_Mod_Movement(
 
 - ctmc_diffusion_bounds:
 
-  Integer flag. `1` = apply bounds to diffusion parameters to ensure the
-  CTMC generator matrix is a valid Metzler matrix (non-negative
-  off-diagonal entries). `0` = no bounds (default).
+  How the CTMC generator is kept a valid Metzler matrix (non-negative
+  off-diagonal entries) when taxis outweighs diffusion. Writing \\d\\
+  for the preference gradient along an edge and \\\theta_j\\ for the
+  diffusion rate out of its origin, the accepted values are `"none"` (or
+  `0`, the default) for \\\theta_j + d\\ unbounded; `"softplus"` (or
+  `1`) for a softplus of \\\theta_j + d\\ of width `ctmc_diffusion_eps`;
+  `"clamp"` for its hard positive part; `"upwind"` for the discontinuous
+  Galerkin (finite volume) flux \\\theta_j + \max(d, 0)\\; `"barker"`
+  for \\\theta_j\\\mathrm{logit}^{-1}(d)\\; and `"logsoftplus"` for
+  \\\theta_j \log(1 + e^{d})\\. The last two are positive by
+  construction and ignore `ctmc_diffusion_eps` entirely: they have no
+  floor, no kink and no gradient-dead region, and they leave the
+  diffusion parameter interior when the data want one-way flow. See
+  `Get_Movement` for the full comparison.
+
+- ctmc_diffusion_eps:
+
+  Positive numeric width of the softplus applied when
+  `ctmc_diffusion_bounds = "softplus"` (default `0.1`). An edge where
+  taxis exactly cancels diffusion carries `eps * log(2)`, so this sets a
+  floor on exchange as well as smoothing the hinge.
 
 - move_timing:
 

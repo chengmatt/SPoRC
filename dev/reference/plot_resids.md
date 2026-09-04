@@ -18,9 +18,9 @@ plot_resids(osa_results)
 
 ## Value
 
-List of plots: `sdnr_plot` (QQ-plot) and a second element that is a
-`bubble_plot` (composition/tag residual magnitude and sign) or a
-`resid_plot` (index-type residual vs. year).
+List of two plots, named and also safe to index by position: `sdnr_plot`
+(QQ-plot) first, then `bubble_plot` (composition/tag residual magnitude
+and sign) or `resid_plot` (index-type residual vs. year).
 
 ## Details
 

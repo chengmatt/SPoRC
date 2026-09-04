@@ -2858,19 +2858,34 @@ and is rejected</td>
 </tr>
 <tr class="even">
 <td><code>ctmc_diffusion_bounds</code></td>
-<td>0/1: if <code>1</code>, takes a softplus of <code>D + Z</code> on
-the adjacency edges so every off-diagonal generator entry stays
-non-negative; an edge where taxis outweighs diffusion decays toward zero
-instead of going negative</td>
+<td>How the off-diagonal generator entries are kept non-negative,
+evaluated on the adjacency edges only. With <code>d</code> the
+preference gradient along an edge and <code>theta</code> the diffusion
+rate out of its origin: <code>"none"</code> (or <code>0</code>) leaves
+<code>theta + d</code> unbounded; <code>"softplus"</code> (or
+<code>1</code>) smooths its positive part with width
+<code>ctmc_diffusion_eps</code>; <code>"upwind"</code> (or
+<code>2</code>) is the discontinuous Galerkin (finite volume) flux
+<code>theta + max(d, 0)</code>
+</td>
 </tr>
 <tr class="odd">
-<td><code>ctmc_diffusion_eps</code></td>
-<td>Positive numeric (default <code>0.1</code>): softplus width for
-<code>ctmc_diffusion_bounds = 1</code>. An edge where taxis exactly
-cancels diffusion carries <code>eps * log(2)</code>; <code>0.001</code>
-behaves like a hard clamp and leaves shut edges gradient-dead</td>
+<td></td>
+<td>
+<code>"upwind"</code> carries diffusion whole and hinges only the
+taxis, so positivity in the rate estiamtes don’t depend on the two
+cancelling</td>
 </tr>
 <tr class="even">
+<td><code>ctmc_diffusion_eps</code></td>
+<td>Positive numeric (default <code>0.1</code>): softplus width for
+<code>ctmc_diffusion_bounds = "softplus"</code>, read by no other form.
+An edge where taxis exactly cancels diffusion carries
+<code>eps * log(2)</code>, so eps is a minimum exchange rate as well as
+a smoothing width and the fit moves with it; <code>0.001</code> behaves
+like a hard clamp and leaves shut edges gradient-dead</td>
+</tr>
+<tr class="odd">
 <td><code>ctmc_scale_by_seasdur</code></td>
 <td>0/1 (default <code>1</code>): if <code>1</code>, treats the
 generator as an annual rate and exponentiates
@@ -2878,7 +2893,7 @@ generator as an annual rate and exponentiates
 time units. <code>0</code> results in <code>Q * 1</code> each
 season.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>move_expm_nsub</code></td>
 <td>Integer (default <code>0</code>): how matrix exponentials of the
 generator are evaluated. <code>0</code> is exact

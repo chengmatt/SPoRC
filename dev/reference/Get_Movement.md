@@ -33,6 +33,7 @@ Get_Movement(
   area_r,
   adjacency_mat,
   ctmc_diffusion_bounds,
+  ctmc_diffusion_eps = 0.1,
   seasdur = rep(1, n_seas),
   ctmc_scale_by_seasdur = 0,
   expm_nsub = 0
@@ -149,9 +150,61 @@ Get_Movement(
 
 - ctmc_diffusion_bounds:
 
-  Integer flag: 1 = shift diffusion columns to ensure all off-diagonal
-  generator matrix entries are non-negative (valid generator); 0 = no
-  bounds applied.
+  How the off-diagonal generator entries are kept non-negative (a valid
+  generator). Every form is evaluated on the adjacency edges only, so
+  non-edges stay exactly zero. Taking \\d\\ as the preference gradient
+  \\\gamma_i - \gamma_j\\ along the edge from \\j\\ to \\i\\ and
+  \\\theta_j\\ as the diffusion rate out of \\j\\:
+
+  `"none"` (or `0`)
+
+  :   \\q = \theta_j + d\\, unbounded. Valid only where diffusion
+      outweighs taxis everywhere.
+
+  `"softplus"` (or `1`)
+
+  :   softplus of \\\theta_j + d\\ with width `ctmc_diffusion_eps`.
+      Smooth, but an edge where taxis cancels diffusion carries a floor
+      of `eps * log(2)`.
+
+  `"clamp"`
+
+  :   hard positive part of \\\theta_j + d\\. Same fit as the softplus
+      but the optimum sits on a kink, so gradient-based convergence
+      checks stop meaning anything.
+
+  `"upwind"`
+
+  :   discontinuous Galerkin / finite volume upwind flux, \\q =
+      \theta_j + \max(d, 0)\\: diffusion is carried whole and only the
+      down-gradient half of the taxis flux is added, so positivity does
+      not depend on cancelling the two.
+
+  `"barker"`
+
+  :   \\q = \theta_j\\\mathrm{logit}^{-1}(d)\\. Positive by construction
+      with no floor and no kink; the rate is bounded by \\\theta_j\\,
+      and \\q\_{ij}/q\_{ji} = e^d\\ so preference is a log density field
+      with stationary abundance proportional to \\\mathrm{area} \times
+      e^{\gamma}\\.
+
+  `"logsoftplus"`
+
+  :   \\q = \theta_j \log(1 + e^{d})\\. Positive by construction,
+      unbounded above, linear in the preference gradient once taxis
+      dominates.
+
+  `"barker"` and `"logsoftplus"` do not read `ctmc_diffusion_eps` at
+  all.
+
+- ctmc_diffusion_eps:
+
+  Positive numeric width of the softplus used when
+  `ctmc_diffusion_bounds` is `"softplus"`. An edge where taxis exactly
+  cancels diffusion carries `eps * log(2)`, so this is a floor on
+  exchange and not only a smoothing width; smaller values approach a
+  hard hinge and can underflow a shut edge to a gradient-dead exact
+  zero. Default 0.1.
 
 - seasdur:
 
@@ -225,9 +278,9 @@ A list with components:
 - `move_pen`:
 
   Numeric movement penalty used for regularization. For CTMC movement,
-  equal to \\\sum\_{\text{strata}} (\sum_r \gamma\_{z,r})^2\\, which
-  penalizes large net preference values across regions. Zero for
-  unstructured or fixed movement.
+  equal to \\\sum_k \gamma_k^2\\, a ridge on the preference coefficients
+  applied once (not per stratum) that pins the otherwise unidentified
+  level and spread. Zero for unstructured or fixed movement.
 
 ## Details
 

@@ -199,7 +199,7 @@ through that one file.
 | `model_lik_caal.R` | `caal_sum_pop`, `caal_sum_pop_len`, `eval_caal_osa`, `Get_CAAL_Likelihoods`, `pack_caal_osa` | `model_lik_comps.R` | `diag_osa_residuals.R`, `model_objective.R` |
 | `model_lik_comps.R` | `eval_comp_osa`, `Get_Comp_Likelihoods`, `Get_Comp_Likelihoods_OSA`, `pack_comp_osa` | `model_distributions.R`, `model_osa.R`, `utils_math.R` | `diag_osa_residuals.R`, `model_lik_caal.R`, `model_objective.R` |
 | `model_lik_tags.R` | `eval_tag_osa`, `get_conv_tag_likelihoods`, `pack_tag_osa`, `tag_fam_of`, `tag_grid` | `model_distributions.R`, `model_osa.R` | `diag_osa_residuals.R`, `model_objective.R` |
-| `model_movement.R` | `Get_Movement`, `get_movement_dp_design_matrix` | `utils_math.R` | `model_objective.R`, `setup_movement.R` |
+| `model_movement.R` | `get_ctmc_bound_form`, `Get_Movement`, `get_movement_dp_design_matrix` | `utils_math.R` | `model_objective.R`, `setup_movement.R` |
 | `model_objective.R` | `maintain_backwards_compatibility`, `SPoRC_rtmb` | `model_distributions.R`, `model_growth.R`, `model_init_naa.R`, `model_lik_at_age.R`, `model_lik_caal.R`, `model_lik_comps.R`, `model_lik_tags.R`, `model_movement.R`, `model_obs_fishery_survey.R`, `model_obs_tagging.R`, `model_population_dynamics.R`, `model_priors_penalties.R`, `model_selectivity.R`, `utils_setup.R` |  |
 | `model_obs_fishery_survey.R` | `get_fishery_observation_model`, `get_survey_observation_model` | `model_transition.R` | `model_objective.R` |
 | `model_obs_tagging.R` | `get_tag_mort`, `get_tagging_observation_model`, `release_conv_tag_attr` | `model_transition.R` | `model_objective.R`, `sim_observations.R` |

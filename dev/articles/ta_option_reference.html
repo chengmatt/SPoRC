@@ -1721,28 +1721,15 @@ R formula defining the linear predictor for the CTMC habitat-preference
 Required for move_type = 1.
 </td>
 </tr>
-<tr data-k="ctmc_diffusion_bounds 0 integer flag. 1 = apply bounds to diffusion parameters to ensure the ctmc generator matrix is a valid metzler matrix (non-negative off-diagonal entries). 0 = no bounds (default).">
-<td>
-<code class="optref-arg">ctmc_diffusion_bounds</code>
-</td>
-<td>
-<code>0</code>
-</td>
-<td>
-Integer flag. 1 = apply bounds to diffusion parameters to ensure the
-CTMC generator matrix is a valid Metzler matrix (non-negative
-off-diagonal entries). 0 = no bounds (default).
-</td>
+<tr data-k="ctmc_diffusion_bounds 0 how the ctmc generator is kept a valid metzler matrix (non-negative off-diagonal entries) when taxis outweighs diffusion. writing d for the preference gradient along an edge and \theta_j for the diffusion rate out of its origin, the accepted values are " none the default for d unbounded a softplus of width ctmc_diffusion_eps its hard positive part discontinuous galerkin volume flux and e last two are by construction ignore entirely: they have no floor kink gradient-dead region leave diffusion parameter interior when data want one-way flow. see get_movement full comparison.>
+<td><code class="optref-arg">ctmc_diffusion_bounds</code></td>
+<td><code>0</code></td>
+<td>How the CTMC generator is kept a valid Metzler matrix (non-negative off-diagonal entries) when taxis outweighs diffusion. Writing d for the preference gradient along an edge and \theta_j for the diffusion rate out of its origin, the accepted values are "none" (or 0, the default) for \theta_j + d unbounded; "softplus" (or 1) for a softplus of \theta_j + d of width ctmc_diffusion_eps; "clamp" for its hard positive part; "upwind" for the discontinuous Galerkin (finite volume) flux \theta_j + \max(d, 0); "barker" for \theta_j\,\mathrm{logit}^{-1}(d); and "logsoftplus" for \theta_j \log(1 + e^{d}). The last two are positive by construction and ignore ctmc_diffusion_eps entirely: they have no floor, no kink and no gradient-dead region, and they leave the diffusion parameter interior when the data want one-way flow. See Get_Movement for the full comparison.</td>
 </tr>
-<tr data-k="ctmc_diffusion_eps 0.1 ">
-<td>
-<code class="optref-arg">ctmc_diffusion_eps</code>
-</td>
-<td>
-<code>0.1</code>
-</td>
-<td>
-</td>
+<tr data-k="ctmc_diffusion_eps 0.1 positive numeric width of the softplus applied when ctmc_diffusion_bounds = " softplus an edge where taxis exactly cancels diffusion carries eps log so this sets a floor on exchange as well smoothing the hinge.>
+<td><code class="optref-arg">ctmc_diffusion_eps</code></td>
+<td><code>0.1</code></td>
+<td>Positive numeric width of the softplus applied when ctmc_diffusion_bounds = "softplus" (default 0.1). An edge where taxis exactly cancels diffusion carries eps * log(2), so this sets a floor on exchange as well as smoothing the hinge.</td>
 </tr>
 <tr data-k="move_timing 0 integer flag setting how movement and mortality are sequenced within a season. 0 = movement then mortality (default, historical sporc behavior); 1 = mortality then movement; 2 = continuous, with movement and mortality acting simultaneously via the matrix exponential of q\delta - \mathrm{diag}(z). move_timing = 2 requires an estimated ctmc generator, i.e. move_type = 1 and use_fixed_movement = 0.">
 <td>

@@ -130,8 +130,8 @@ the order they are defined.
 | adjacency_mat | Square adjacency matrix (n_regions × n_regions) defining allowed transitions between regions for CTMC movement |
 | adjacency_collapsed | Collapsed adjacency matrix (n_regions × n_regions - 1) defining allowed transitions between regions for CTMC movement, excluding diagonals |
 | area_r | Numeric vector of region areas (length n_regions) used to scale diffusion rates in CTMC movement |
-| ctmc_diffusion_bounds | Integer flag (0 or 1) indicating whether diffusion bounds are applied to ensure the generator matrix is Metzler (1 = bounds enforced) |
-| ctmc_diffusion_eps | Positive numeric softplus width used by the diffusion bounds (default 0.1); the flow on an edge where taxis exactly cancels diffusion is eps \* log(2) |
+| ctmc_diffusion_bounds | How the generator is kept Metzler: `"none"` (0), `"softplus"` (1), or `"upwind"` (2), the discontinuous Galerkin flux, which carries diffusion whole and reads no eps |
+| ctmc_diffusion_eps | Positive numeric softplus width used by `ctmc_diffusion_bounds = "softplus"` (default 0.1); the flow on an edge where taxis exactly cancels diffusion is eps \* log(2), so it is a floor on exchange and not only a smoothing width |
 
 ## Data Inputs for Defining Tagging Processes
 

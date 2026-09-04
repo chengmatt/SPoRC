@@ -26,6 +26,7 @@ Get_Movement(
   area_r,
   adjacency_mat,
   ctmc_diffusion_bounds,
+  ctmc_diffusion_eps = 0.1,
   seasdur = rep(1, n_seas),
   ctmc_scale_by_seasdur = 0,
   expm_nsub = 0
@@ -95,9 +96,41 @@ scale diffusion rates. Required when \code{move_type == 1}.}
 connectivity among regions (1 = adjacent, 0 = not adjacent). Required when
 \code{move_type == 1}.}
 
-\item{ctmc_diffusion_bounds}{Integer flag: 1 = shift diffusion columns to ensure
-all off-diagonal generator matrix entries are non-negative (valid generator);
-0 = no bounds applied.}
+\item{ctmc_diffusion_bounds}{How the off-diagonal generator entries are kept
+non-negative (a valid generator). Every form is evaluated on the adjacency
+edges only, so non-edges stay exactly zero. Taking \eqn{d} as the preference
+gradient \eqn{\gamma_i - \gamma_j} along the edge from \eqn{j} to \eqn{i} and
+\eqn{\theta_j} as the diffusion rate out of \eqn{j}:
+\describe{
+  \item{\code{"none"} (or \code{0})}{\eqn{q = \theta_j + d}, unbounded. Valid
+    only where diffusion outweighs taxis everywhere.}
+  \item{\code{"softplus"} (or \code{1})}{softplus of \eqn{\theta_j + d} with
+    width \code{ctmc_diffusion_eps}. Smooth, but an edge where taxis cancels
+    diffusion carries a floor of \code{eps * log(2)}.}
+  \item{\code{"clamp"}}{hard positive part of \eqn{\theta_j + d}. Same fit as
+    the softplus but the optimum sits on a kink, so gradient-based
+    convergence checks stop meaning anything.}
+  \item{\code{"upwind"}}{discontinuous Galerkin / finite volume upwind flux,
+    \eqn{q = \theta_j + \max(d, 0)}: diffusion is carried whole and only the
+    down-gradient half of the taxis flux is added, so positivity does not
+    depend on cancelling the two.}
+  \item{\code{"barker"}}{\eqn{q = \theta_j\,\mathrm{logit}^{-1}(d)}. Positive
+    by construction with no floor and no kink; the rate is bounded by
+    \eqn{\theta_j}, and \eqn{q_{ij}/q_{ji} = e^d} so preference is a log
+    density field with stationary abundance proportional to
+    \eqn{\mathrm{area} \times e^{\gamma}}.}
+  \item{\code{"logsoftplus"}}{\eqn{q = \theta_j \log(1 + e^{d})}. Positive by
+    construction, unbounded above, linear in the preference gradient once
+    taxis dominates.}
+}
+\code{"barker"} and \code{"logsoftplus"} do not read \code{ctmc_diffusion_eps}
+at all.}
+
+\item{ctmc_diffusion_eps}{Positive numeric width of the softplus used when
+\code{ctmc_diffusion_bounds} is \code{"softplus"}. An edge where taxis exactly
+cancels diffusion carries \code{eps * log(2)}, so this is a floor on exchange
+and not only a smoothing width; smaller values approach a hard hinge and can
+underflow a shut edge to a gradient-dead exact zero. Default 0.1.}
 
 \item{seasdur}{Numeric vector of length \code{n_seas} giving season durations
 (summing to 1). Used to scale the CTMC generator when
@@ -152,9 +185,10 @@ A list with components:
     mortality must apply \code{seasdur[seas]} themselves (see
     \code{build_seas_operator}).}
   \item{\code{move_pen}}{Numeric movement penalty used for regularization.
-    For CTMC movement, equal to \eqn{\sum_{\text{strata}} (\sum_r \gamma_{z,r})^2},
-    which penalizes large net preference values across regions. Zero for unstructured
-    or fixed movement.}
+    For CTMC movement, equal to \eqn{\sum_k \gamma_k^2}, a ridge on the
+    preference coefficients applied once (not per stratum) that pins the
+    otherwise unidentified level and spread. Zero for unstructured or fixed
+    movement.}
 }
 }
 \description{

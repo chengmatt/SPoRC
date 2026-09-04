@@ -419,12 +419,17 @@ do_cont_vary_move_mapping <- function(input_list, cont_vary_movement, Movement_c
 #'   the CTMC habitat-preference (taxis, \eqn{\gamma}) component. All
 #'   variables must be present in \code{ctmc_move_dat}. Required for
 #'   \code{move_type = 1}.
-#' @param ctmc_diffusion_bounds Integer flag keeping the CTMC generator a valid
-#'   Metzler matrix (non-negative off-diagonal entries) when taxis outweighs
-#'   diffusion. \code{0} = no bounds (default). \code{1} = elementwise smooth
-#'   positive part (softplus of width \code{ctmc_diffusion_eps}) of \eqn{D + Z}.
+#' @param ctmc_diffusion_bounds How the CTMC generator is kept a valid Metzler
+#'   matrix (non-negative off-diagonal entries) when taxis outweighs diffusion.
+#'   \code{"softplus"} for a softplus of \eqn{\theta_j + d} of width
+#'   \code{ctmc_diffusion_eps}; and \code{"upwind"} (or \code{2}) for the discontinuous Galerkin
+#'   (finite volume) flux \eqn{\theta_j + \max(d, 0)}, which carries diffusion whole
+#'   and adds only the down-gradient taxis, so positivity never depends on the two
+#'   cancelling.
 #' @param ctmc_diffusion_eps Positive numeric width of the softplus applied when
-#'   \code{ctmc_diffusion_bounds = 1} (default \code{0.1}).
+#'   \code{ctmc_diffusion_bounds = "softplus"} (default \code{0.1}). An edge where
+#'   taxis exactly cancels diffusion carries \code{eps * log(2)}, so this sets a
+#'   floor on exchange as well as smoothing the hinge.
 #' @param move_timing Integer flag setting how movement and mortality are
 #'   sequenced within a season. \code{0} = movement then mortality (default,
 #'   historical SPoRC behavior); \code{1} = mortality then movement;
@@ -738,17 +743,27 @@ Setup_Mod_Movement <- function(input_list,
   input_list$data$diffusion_formula <- diffusion_formula
   input_list$data$preference_formula <- preference_formula
 
-  # error to ensure bounds because taxis makes Q = D + Z, and without the bounds correction an off diagonal of Q can go negative
-  if(move_type == 1 && !is.null(preference_formula) && ctmc_diffusion_bounds == 0) {
+  # taxis makes Q = D + Z, so without a bound an off diagonal of Q can go negative
+  bound_form <- get_ctmc_bound_form(ctmc_diffusion_bounds)
+  if(is.na(bound_form)) stop('ctmc_diffusion_bounds must be 0, 1, 2, or the matching name "none", "softplus", "upwind"')
+
+  if(move_type == 1 && !is.null(preference_formula) && bound_form == "none") {
     pref_terms <- length(attr(stats::terms(preference_formula), "term.labels")) + attr(stats::terms(preference_formula), "intercept")
-    if(pref_terms > 0) collect_message("preference_formula has terms but ctmc_diffusion_bounds = 0; the generator can go invalid where taxis outweighs diffusion. ctmc_diffusion_bounds = 1 is recommended.")
+    if(pref_terms > 0) collect_message('preference_formula has terms but ctmc_diffusion_bounds is "none"; the generator can go invalid where taxis outweighs diffusion. A bounded form is recommended.')
   }
 
   input_list$data$ctmc_diffusion_bounds <- ctmc_diffusion_bounds
 
   # softplus width for the bounds
-  if(!is.numeric(ctmc_diffusion_eps) || length(ctmc_diffusion_eps) != 1 || !is.finite(ctmc_diffusion_eps) || ctmc_diffusion_eps <= 0) stop("ctmc_diffusion_eps must be a single positive number: the softplus width used when ctmc_diffusion_bounds = 1 (default 0.1)")
-  if(move_type == 1 && ctmc_diffusion_bounds == 1) collect_message("CTMC diffusion bounds: softplus of width ", ctmc_diffusion_eps, " on the adjacency edges")
+  if(!is.numeric(ctmc_diffusion_eps) || length(ctmc_diffusion_eps) != 1 || !is.finite(ctmc_diffusion_eps) || ctmc_diffusion_eps <= 0) stop('ctmc_diffusion_eps must be a single positive number: the softplus width used when ctmc_diffusion_bounds = "softplus" (default 0.1)')
+  if(move_type == 1) {
+    msg <- switch(bound_form,
+                  none = "unbounded generator",
+                  softplus = paste0("softplus of width ", ctmc_diffusion_eps, " on the adjacency edges, so a cancelled edge carries a floor of ", signif(ctmc_diffusion_eps * log(2), 3)),
+                  upwind = "discontinuous Galerkin upwind flux, diffusion carried whole")
+    collect_message("CTMC generator bounds: ", msg)
+    if(bound_form == "upwind" && ctmc_diffusion_eps != 0.1) collect_message('ctmc_diffusion_eps is not read by the "upwind" form.')
+  }
   input_list$data$ctmc_diffusion_eps <- ctmc_diffusion_eps
   input_list$data$move_timing <- move_timing
   input_list$data$ctmc_scale_by_seasdur <- ctmc_scale_by_seasdur

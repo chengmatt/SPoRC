@@ -25,6 +25,7 @@ Setup_Mod_Movement(
   diffusion_formula = NULL,
   preference_formula = NULL,
   ctmc_diffusion_bounds = 0,
+  ctmc_diffusion_eps = 0.1,
   move_timing = 0,
   ctmc_scale_by_seasdur = 1,
   move_expm_nsub = 0,
@@ -151,10 +152,25 @@ the CTMC habitat-preference (taxis, \eqn{\gamma}) component. All
 variables must be present in \code{ctmc_move_dat}. Required for
 \code{move_type = 1}.}
 
-\item{ctmc_diffusion_bounds}{Integer flag. \code{1} = apply bounds to
-diffusion parameters to ensure the CTMC generator matrix is a valid
-Metzler matrix (non-negative off-diagonal entries). \code{0} = no bounds
-(default).}
+\item{ctmc_diffusion_bounds}{How the CTMC generator is kept a valid Metzler
+matrix (non-negative off-diagonal entries) when taxis outweighs diffusion.
+Writing \eqn{d} for the preference gradient along an edge and \eqn{\theta_j}
+for the diffusion rate out of its origin, the accepted values are
+\code{"none"} (or \code{0}, the default) for \eqn{\theta_j + d} unbounded;
+\code{"softplus"} (or \code{1}) for a softplus of \eqn{\theta_j + d} of width
+\code{ctmc_diffusion_eps}; \code{"clamp"} for its hard positive part;
+\code{"upwind"} for the discontinuous Galerkin (finite volume) flux
+\eqn{\theta_j + \max(d, 0)}; \code{"barker"} for
+\eqn{\theta_j\,\mathrm{logit}^{-1}(d)}; and \code{"logsoftplus"} for
+\eqn{\theta_j \log(1 + e^{d})}. The last two are positive by construction and
+ignore \code{ctmc_diffusion_eps} entirely: they have no floor, no kink and no
+gradient-dead region, and they leave the diffusion parameter interior when the
+data want one-way flow. See \code{Get_Movement} for the full comparison.}
+
+\item{ctmc_diffusion_eps}{Positive numeric width of the softplus applied when
+\code{ctmc_diffusion_bounds = "softplus"} (default \code{0.1}). An edge where
+taxis exactly cancels diffusion carries \code{eps * log(2)}, so this sets a
+floor on exchange as well as smoothing the hinge.}
 
 \item{move_timing}{Integer flag setting how movement and mortality are
 sequenced within a season. \code{0} = movement then mortality (default,

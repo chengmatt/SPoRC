@@ -10,9 +10,10 @@ plot_resids(osa_results)
 \item{osa_results}{List obtained from get_osa() containing residuals dataframe.}
 }
 \value{
-List of plots: \code{sdnr_plot} (QQ-plot) and a second element
-  that is a \code{bubble_plot} (composition/tag residual magnitude and
-  sign) or a \code{resid_plot} (index-type residual vs. year).
+List of two plots, named and also safe to index by position:
+  \code{sdnr_plot} (QQ-plot) first, then \code{bubble_plot}
+  (composition/tag residual magnitude and sign) or \code{resid_plot}
+  (index-type residual vs. year).
 }
 \description{
 Generates diagnostic plots for one-step-ahead (OSA) residuals. Includes

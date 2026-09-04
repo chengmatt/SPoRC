@@ -104,3 +104,20 @@ test_that("ctmc_diffusion_eps is stored with a 0.1 default and rejected when not
   expect_error(setup_eps(ctmc_diffusion_eps = c(0.1, 0.2)), "single positive number")
   expect_error(setup_eps(ctmc_diffusion_eps = "0.1"), "single positive number")
 })
+
+test_that("ctmc_diffusion_bounds stores its form and rejects an unknown one", {
+  A <- matrix(c(0, 1, 1, 0), 2, 2)
+  setup_bf <- function(...) {
+    Setup_Mod_Movement(input_list = make_dim_input_list(2),
+                       use_fixed_movement = 0, do_recruits_move = 0, move_type = 1,
+                       adjacency_mat = A, diffusion_formula = ~1, preference_formula = ~0,
+                       move_timing = 2, ctmc_move_dat = make_ctmc_dat(2), ...)
+  }
+  for (bf in c("none", "softplus", "upwind"))
+    expect_equal(setup_bf(ctmc_diffusion_bounds = bf)$data$ctmc_diffusion_bounds, bf)
+  for (code in 0:2) expect_equal(setup_bf(ctmc_diffusion_bounds = code)$data$ctmc_diffusion_bounds, code) # codes store as-is
+  for (bad in c("upstream", "clamp", "barker", "logsoftplus"))
+    expect_error(setup_bf(ctmc_diffusion_bounds = bad), "ctmc_diffusion_bounds must be")
+  expect_error(setup_bf(ctmc_diffusion_bounds = 3), "ctmc_diffusion_bounds must be")
+  expect_error(setup_bf(ctmc_diffusion_bounds = -1), "ctmc_diffusion_bounds must be")
+})

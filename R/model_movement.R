@@ -2,7 +2,24 @@
 #
 # Turns movement parameters into the movement arrays the dynamics use, for both
 # the unstructured and the continuous time parameterizations.
-# get_movement_dp_design_matrix is shared with setup_movement.R.
+# get_movement_dp_design_matrix and get_ctmc_bound_form are shared with setup_movement.R.
+
+#' Names for the CTMC generator bound forms
+#'
+#' @param x The \code{ctmc_diffusion_bounds} value: the code \code{0}, \code{1} or
+#'   \code{2}, or the matching name \code{"none"}, \code{"softplus"} or
+#'   \code{"upwind"}.
+#'
+#' @return Character scalar naming the form, or \code{NA_character_} if \code{x} is
+#'   not one of the accepted values.
+#'
+#' @keywords internal
+get_ctmc_bound_form <- function(x) {
+  forms <- c("none", "softplus", "upwind") # codes 0, 1 and 2 in this order
+  if(is.numeric(x) && length(x) == 1 && x %in% (seq_along(forms) - 1)) return(forms[x + 1])
+  if(is.character(x) && length(x) == 1 && x %in% forms) return(x)
+  NA_character_
+}
 
 #' Get Design Matrices for CTMC Movement
 #'
@@ -92,12 +109,25 @@ get_movement_dp_design_matrix <- function(data,
 #' @param adjacency_mat Square \code{[n_regions x n_regions]} matrix defining
 #'   connectivity among regions (1 = adjacent, 0 = not adjacent). Required when
 #'   \code{move_type == 1}.
-#' @param ctmc_diffusion_bounds Integer flag: 1 = softplus of \eqn{D + Z} on the
-#'   adjacency edges so every off-diagonal generator entry stays non-negative (valid
-#'   generator); 0 = no bounds applied.
+#' @param ctmc_diffusion_bounds How the off-diagonal generator entries are kept
+#'   non-negative (a valid generator). Every form is evaluated on the adjacency
+#'   edges only, so non-edges stay exactly zero. Taking \eqn{d} as the preference
+#'   gradient \eqn{\gamma_i - \gamma_j} along the edge from \eqn{j} to \eqn{i} and
+#'   \eqn{\theta_j} as the diffusion rate out of \eqn{j}:
+#'   \describe{
+#'     \item{\code{"none"} (or \code{0})}{\eqn{q = \theta_j + d}, unbounded. Valid
+#'       only where diffusion outweighs taxis everywhere.}
+#'     \item{\code{"softplus"} (or \code{1})}{softplus of \eqn{\theta_j + d} with
+#'       width \code{ctmc_diffusion_eps}. Smooth, but an edge where taxis cancels
+#'       diffusion carries a floor of \code{eps * log(2)}, so the width is a
+#'       minimum exchange rate and not only a smoothing constant.}
+#'     \item{\code{"upwind"} (or \code{2})}{discontinuous Galerkin / finite volume upwind flux,
+#'       \eqn{q = \theta_j + \max(d, 0)}: diffusion is carried whole and only the
+#'       down-gradient half of the taxis flux is added, so positivity never depends
+#'       on the two cancelling. }
+#'   }
 #' @param ctmc_diffusion_eps Positive numeric width of the softplus used when
-#'   \code{ctmc_diffusion_bounds == 1}. An edge where taxis exactly cancels diffusion
-#'   carries \code{eps * log(2)}; smaller values approach a hard hinge. Default 0.1.
+#'   \code{ctmc_diffusion_bounds} is \code{"softplus"}. Default 0.1.
 #' @param seasdur Numeric vector of length \code{n_seas} giving season durations
 #'   (summing to 1). Used to scale the CTMC generator when
 #'   \code{ctmc_scale_by_seasdur == 1}. Defaults to \code{rep(1, n_seas)}, which
@@ -110,25 +140,6 @@ get_movement_dp_design_matrix <- function(data,
 #'   to \code{0} here so that callers passing an unscaled generator get the
 #'   arithmetic they expect; the user facing default is \code{1}, set by
 #'   \code{Setup_Mod_Movement}.
-#'
-#'   Whether this flag changes the fit or only reparameterizes it depends on
-#'   whether the generator varies by season. With a season-agnostic generator it
-#'   matters: the seasonal steps commute, so scaling on composes across the year to
-#'   \eqn{\exp(Q)} regardless of \code{n_seas}, whereas scaling off composes to
-#'   \eqn{\exp(n_{seas} Q)} and inflates movement as the seasonal time step shrinks.
-#'   With a season-varying generator the scaling is absorbed --- \eqn{Q} is linear in
-#'   \eqn{\theta}, so scaling \eqn{Q} by \code{seasdur[s]} equals shifting
-#'   \code{log_move_diffusion_pars} by \eqn{\tfrac{1}{2}\log \mathrm{seasdur}[s]} ---
-#'   but only if \emph{both} formulas carry a season term, since the flag scales
-#'   diffusion and taxis together while only \eqn{\theta} can absorb it.
-#'
-#'   Note that even where the scaling is absorbed, it changes what the estimated
-#'   diffusion means (per-season step vs annual rate, hence not comparable across
-#'   seasons of unequal length), and the Dirichlet movement prior is evaluated on
-#'   annual fractions \eqn{\exp(Q)} irrespective of this flag. Under
-#'   \code{move_timing = 2} the flag governs only the reported \code{Movement}
-#'   diagnostic: the dynamics take \code{Mrate} and apply \code{seasdur[seas]}
-#'   themselves.
 #'
 #' @param expm_nsub Integer controlling how the CTMC generator is exponentiated
 #'   into movement fractions: \code{0} (default) uses \code{Matrix::expm}, a value
@@ -283,6 +294,24 @@ Get_Movement <- function(move_type,
     # ridge on the preference coefficients, applied once; pins both level and spread
     move_pen = move_pen + sum(gamma_k^2)
 
+    # Generator edges, held as the (destination, origin) pairs the adjacency allows.
+    # Every flow transform below runs on this value slot rather than on the full
+    # n_regions x n_regions matrix, so a non-edge stays exactly zero by construction
+    # rather than by cancellation, and the elementwise work scales with the number of
+    # edges instead of with n_regions^2.
+    bound_form = get_ctmc_bound_form(ctmc_diffusion_bounds)
+    edge_ij = which(adjacency_mat == 1 & diag(1, n_regions) == 0, arr.ind = TRUE)
+    edge_to = edge_ij[,1] # destination region
+    edge_from = edge_ij[,2] # origin region
+    edge_lin = edge_to + (edge_from - 1) * n_regions # linear index into [dest, origin]
+
+    # move_devs counts the non-diagonal destinations of each origin in region order
+    edge_dev = integer(length(edge_from))
+    for(rr in 1:n_regions) {
+      rr_edges = which(edge_from == rr)
+      edge_dev[rr_edges[order(edge_to[rr_edges])]] = seq_along(rr_edges)
+    } # end rr loop
+
     # Make instantaneous diffusion rate matrix
     for( index in seq_len(nrow(loop)) ){
 
@@ -299,44 +328,40 @@ Get_Movement <- function(move_type,
       # rows of ctmc_move_dat holding this stratum, one per region in region order
       which_index = ctmc_row[cbind(pop_idx, 1:n_regions, y_lookup, seas_idx, a_idx, s_idx)]
 
-      # preference for each strata, year, age, sex combination
+      # preference and diffusion for each strata, year, age, sex combination,
+      # gathered onto the edges: d_e is the preference gradient along the edge and
+      # t_e the diffusion rate out of its origin region
       pref_s = gamma_z[which_index] # get corresponding gammas
-      Z_ss = adjacency_mat * outer( pref_s, pref_s, FUN = "-" )
-
-      # base diffusion parameters for this stratum
       theta_base = theta_z[which_index]
 
-      # create base diffusion matrix (w/ corresponding thetas)
-      D_ss = adjacency_mat %*% diag(theta_base, n_regions)
+      d_e = pref_s[edge_to] - pref_s[edge_from]
+      t_e = theta_base[edge_from]
 
-      # Note: move_devs is indexed as [origin_region, counter, year, seas, age, sex]
-      # where counter goes through non-diagonal destinations for that origin
-      for(rr in 1:n_regions) {  # rr = origin (from)
-        counter = 1  # Reset counter for each origin region
-        for(r in 1:n_regions) {  # r = destination (to)
-          # Only apply deviations to off-diagonal elements (actual transitions, not residency)
-          if(adjacency_mat[r, rr] == 1 && r != rr) {  # if adjacent but not diagonal
-            # Apply deviation: rr is origin, counter indexes non-diagonal destinations
-            D_ss[r, rr] = D_ss[r, rr] * exp(move_devs[pop_idx, rr, counter, y_idx, seas_idx, a_idx, s_idx])
-            counter = counter + 1  # Increment counter for next valid destination from rr
-          } # end if
-        } # end r (to)
-      } # end rr (from)
+      # Deviations scale the diffusion rate of their edge, before the flow transform.
+      # move_devs is indexed as [origin_region, counter, year, seas, age, sex] where
+      # counter goes through non-diagonal destinations for that origin
+      for(e in seq_along(edge_lin)) {
+        t_e[e] = t_e[e] * exp(move_devs[pop_idx, edge_from[e], edge_dev[e], y_idx, seas_idx, a_idx, s_idx])
+      } # end e loop
 
-      # apply diffusion bounds to ensure a valid generator matrix
-      if(ctmc_diffusion_bounds == 1) {
-        Q_off = adjacency_mat * (D_ss + Z_ss)
+      # edge flows, kept non-negative by the requested form
+      if(bound_form == "none") q_e = t_e + d_e
+      if(bound_form == "softplus") {
+        u_e = t_e + d_e
         eps = ctmc_diffusion_eps # softplus width; softplus(0) = eps * log(2)
-        D_ss = adjacency_mat * ((Q_off + abs(Q_off)) / 2 + eps * log(1 + exp(-abs(Q_off) / eps)))
-        Z_ss = Z_ss * 0 # taxis already inside the smoothed flows so zero it out here
+        q_e = (u_e + abs(u_e)) / 2 + eps * log(1 + exp(-abs(u_e) / eps))
       }
+      # discontinuous Galerkin (upwind) flux: diffusion is carried whole and only the
+      # down-gradient half of the taxis flux is added, so the two never cancel and a
+      # down-gradient edge carries theta exactly. (d + abs(d)) / 2 is the positive part
+      # written branch-free, since a branch would freeze at its tape-build value
+      if(bound_form == "upwind") q_e = t_e + (d_e + abs(d_e)) / 2
 
-      # conserve abundance
-      diag(D_ss) = -1 * Matrix::colSums(D_ss) # diag to enforce sum to 0
-      diag(Z_ss) = -1 * Matrix::colSums(Z_ss) # diag to enforce sum to 0
-      D_ss = as(D_ss, "sparseMatrix") # force sparse
-
-      Q_ss = D_ss + Z_ss # rate matrix
+      # scatter the edge flows back and conserve abundance
+      Q_ss = adjacency_mat * 0
+      Q_ss[edge_lin] = q_e
+      diag(Q_ss) = -1 * Matrix::colSums(Q_ss) # diag to enforce sum to 0
+      Q_ss = as(Q_ss, "sparseMatrix") # force sparse
 
       # Time units for turning the generator into fractions.
       dur = if(ctmc_scale_by_seasdur == 1) seasdur[seas_idx] else 1
